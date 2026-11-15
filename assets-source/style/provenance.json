@@ -203,5 +203,95 @@
     "jobId": "7679c5f5-a8e5-4c19-a46a-6a6457ae878b",
     "sha256": "d44afd09052e2d1cfb0120bf566cb4c61a162013c30a39066967b0ab8bca0820",
     "generatedAt": "2026-11-15T23:34:48.985Z"
+  },
+  {
+    "key": "room-sheet-1",
+    "file": "assets-source/concepts/room-sheet-1.png",
+    "model": "nano_banana_pro",
+    "aspect": "16:9",
+    "resolution": "2k",
+    "prompt": "Environment concept sheet for the hero room, a circular wizard's study about 6 metres across in a clockwork tower. Panels: (1) a large first-person view at seated eye height from the entrance, with the central vertical shaft of turning brass gears, the tall stained-glass window opposite, curved walnut bookshelves, a writing desk with candles and a brass exit door; (2) a top-down floor plan view showing the round room, the central gear shaft, the window, two doors and the furniture layout; (3) close-ups of three key props: the gear shaft base grate, a brass candle sconce, and the stained-glass window pattern. Follow the first reference image exactly for art direction 'Gilded Lamplight': painterly semi-realism with visible oil-painting brushwork, warm amber candlelight, polished brass, dark oiled walnut, jewel-tone stained glass in ruby, sapphire and emerald as the only cool accents, deep warm shadows. Large readable forms and clean silhouettes, detail in surface texture and light rather than dense geometry, buildable as a low-poly game asset. Presented as a clean concept sheet on a dark neutral background in tidy panels. Original design. No text, no letters, no labels, no logos, no watermark.",
+    "refs": [
+      "locked/L-board-1.png",
+      "explore/A-room.png"
+    ],
+    "jobId": "39d5fdd0-8c62-4b3a-bd9e-f1030ca7baba",
+    "sha256": "ae85e896be2151350ce53511681b13e9136bda53af5efaf1b1431e504c395dc6",
+    "generatedAt": "2026-11-15T23:42:50.381Z"
+  },
+  {
+    "key": "room-sheet-2",
+    "file": "assets-source/concepts/room-sheet-2.png",
+    "model": "nano_banana_pro",
+    "aspect": "16:9",
+    "resolution": "2k",
+    "prompt": "Environment concept sheet for the hero room, a circular wizard's study about 6 metres across in a clockwork tower, reimagined with a mezzanine: a curved walnut gallery with brass railings runs halfway around the upper wall, reached by a short spiral stair, while the central shaft of turning brass gears rises through a hole in the gallery floor. Panels: (1) a large first-person view at seated eye height from the entrance toward the tall stained-glass window; (2) a top-down floor plan view of the ground floor and the gallery; (3) close-ups of three key props: the gallery railing, a hanging brass lantern, and a reading lectern. Follow the first reference image exactly for art direction 'Gilded Lamplight': painterly semi-realism with visible oil-painting brushwork, warm amber candlelight, polished brass, dark oiled walnut, jewel-tone stained glass in ruby, sapphire and emerald as the only cool accents, deep warm shadows. Large readable forms and clean silhouettes, detail in surface texture and light rather than dense geometry, buildable as a low-poly game asset. Presented as a clean concept sheet on a dark neutral background in tidy panels. Original design. No text, no letters, no labels, no logos, no watermark.",
+    "refs": [
+      "locked/L-board-1.png",
+      "explore/A-room.png"
+    ],
+    "jobId": "5295b7ed-4f8e-4b5c-a515-9271b7772e31",
+    "sha256": "00dc7053cbc2d4a4350b1cc26500c22848b7eed3a092d14255644750719ad20a",
+    "generatedAt": "2026-11-15T23:42:34.232Z"
+  },
+  {
+    "key": "sentry-sheet-1",
+    "file": "assets-source/concepts/sentry-sheet-1.png",
+    "model": "nano_banana_pro",
+    "aspect": "16:9",
+    "resolution": "2k",
+    "prompt": "Character concept sheet of the 'Cog Sentry', a man-sized slender clockwork automaton enemy with the exact proportions of the automaton in the first reference image: long limbs, smooth polished brass plates over dark gunmetal joints, a narrow head with two glowing amber eye slits, one glowing amber chest core. Panels: front, side and back views in a relaxed A-pose at identical scale, orthographic, plus three small action poses: guard stance, lunging strike, and frozen mid-step with dimmed eyes. Follow the first reference image exactly for art direction 'Gilded Lamplight': painterly semi-realism with visible oil-painting brushwork, warm amber candlelight, polished brass, dark oiled walnut, jewel-tone stained glass in ruby, sapphire and emerald as the only cool accents, deep warm shadows. Large readable forms and clean silhouettes, detail in surface texture and light rather than dense geometry, buildable as a low-poly game asset. Presented as a clean concept sheet on a dark neutral background in tidy panels. Original design. No text, no letters, no labels, no logos, no watermark.",
+    "refs": [
+      "locked/L-board-1.png",
+      "locked/L-automaton.png"
+    ],
+    "jobId": "cdef93ee-ebd1-4970-a637-f350b3d85b48",
+    "sha256": "c5373556e0cc0765f71a74d08d4f3e50c473917ad23bdf5e605218d737404e34",
+    "generatedAt": "2026-11-15T23:42:25.656Z"
+  },
+  {
+    "key": "sentry-sheet-2",
+    "file": "assets-source/concepts/sentry-sheet-2.png",
+    "model": "nano_banana_pro",
+    "aspect": "16:9",
+    "resolution": "2k",
+    "prompt": "Character concept sheet of the 'Cog Sentry', a man-sized slender clockwork automaton enemy combining the slim proportions of the first reference with the second reference's broader shoulder plates and small ruby, sapphire and emerald gem inlays at shoulders, elbows and knees; narrow head with two glowing amber eye slits, glowing amber chest core, a small exposed gear wheel turning on its back. Panels: front, side and back views in a relaxed A-pose at identical scale, orthographic, plus three small action poses: guard stance, lunging strike, and frozen mid-step with dimmed eyes. Follow the first reference image exactly for art direction 'Gilded Lamplight': painterly semi-realism with visible oil-painting brushwork, warm amber candlelight, polished brass, dark oiled walnut, jewel-tone stained glass in ruby, sapphire and emerald as the only cool accents, deep warm shadows. Large readable forms and clean silhouettes, detail in surface texture and light rather than dense geometry, buildable as a low-poly game asset. Presented as a clean concept sheet on a dark neutral background in tidy panels. Original design. No text, no letters, no labels, no logos, no watermark.",
+    "refs": [
+      "locked/L-board-1.png",
+      "locked/L-automaton.png"
+    ],
+    "jobId": "705f6c05-b7bb-4eb2-9903-dd599d6534c0",
+    "sha256": "88012be9a7240f9c8a7c91c1d541dcde48dd257608783bb84cf1940ed4a82f35",
+    "generatedAt": "2026-11-15T23:42:29.235Z"
+  },
+  {
+    "key": "table-sheet-1",
+    "file": "assets-source/concepts/table-sheet-1.png",
+    "model": "nano_banana_pro",
+    "aspect": "16:9",
+    "resolution": "2k",
+    "prompt": "Prop concept sheet for the combat table that unfolds around a seated player when time freezes. Design: a round brass and walnut table that opens like a mechanical iris. Panels: (1) folded: a compact brass drum on a single pedestal, about knee height; (2) mid-unfold: curved walnut petals rotating outward on brass arms, gears visible; (3) fully unfolded seen from the seated player's first-person view: a wide crescent of walnut and brass wrapping in front of the player at lap height, with a recessed ruby-velvet dice tray at the centre, a slot on the left for a deck of cards and a discard slot on the right, and two clockwork automaton enemies standing frozen across the room beyond it. Follow the first reference image exactly for art direction 'Gilded Lamplight': painterly semi-realism with visible oil-painting brushwork, warm amber candlelight, polished brass, dark oiled walnut, jewel-tone stained glass in ruby, sapphire and emerald as the only cool accents, deep warm shadows. Large readable forms and clean silhouettes, detail in surface texture and light rather than dense geometry, buildable as a low-poly game asset. Presented as a clean concept sheet on a dark neutral background in tidy panels. Original design. No text, no letters, no labels, no logos, no watermark.",
+    "refs": [
+      "locked/L-board-1.png",
+      "locked/L-board-2.png"
+    ],
+    "jobId": "0b07f3ca-5b0d-431f-abc2-ec306e0cb685",
+    "sha256": "bc5823964df0b85cce0c984d4555f2af7c57e5e55e7ae5740dbb35fd4dcb9f4c",
+    "generatedAt": "2026-11-15T23:42:29.308Z"
+  },
+  {
+    "key": "table-sheet-2",
+    "file": "assets-source/concepts/table-sheet-2.png",
+    "model": "nano_banana_pro",
+    "aspect": "16:9",
+    "resolution": "2k",
+    "prompt": "Prop concept sheet for the combat table that unfolds around a seated player when time freezes. Design: a rectangular walnut map table with inlaid brass that unfolds from a brass column like a folding writing desk. Panels: (1) folded: a slim upright walnut cabinet with brass corners, about chest height; (2) mid-unfold: leaves swinging down and sliding out on brass hinges and scissor arms; (3) fully unfolded seen from the seated player's first-person view: a broad flat table at lap height with inlaid brass sigil lines, a recessed ruby-velvet dice tray at the near edge, card slots at both sides, and two clockwork automaton enemies standing frozen across the room beyond it. Follow the first reference image exactly for art direction 'Gilded Lamplight': painterly semi-realism with visible oil-painting brushwork, warm amber candlelight, polished brass, dark oiled walnut, jewel-tone stained glass in ruby, sapphire and emerald as the only cool accents, deep warm shadows. Large readable forms and clean silhouettes, detail in surface texture and light rather than dense geometry, buildable as a low-poly game asset. Presented as a clean concept sheet on a dark neutral background in tidy panels. Original design. No text, no letters, no labels, no logos, no watermark.",
+    "refs": [
+      "locked/L-board-1.png",
+      "locked/L-board-2.png"
+    ],
+    "jobId": "c2de03da-294e-4129-9236-a53bf944dff8",
+    "sha256": "4045fdc448ac7a5c4b089ba6dc1e71f5364edd66c37131c4d3451089a1b309bc",
+    "generatedAt": "2026-11-15T23:42:30.669Z"
   }
 ]

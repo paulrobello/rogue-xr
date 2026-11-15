@@ -1,0 +1,43 @@
+{
+  "model": "nano_banana_pro",
+  "resolution": "2k",
+  "shared": "Follow the first reference image exactly for art direction 'Gilded Lamplight': painterly semi-realism with visible oil-painting brushwork, warm amber candlelight, polished brass, dark oiled walnut, jewel-tone stained glass in ruby, sapphire and emerald as the only cool accents, deep warm shadows. Large readable forms and clean silhouettes, detail in surface texture and light rather than dense geometry, buildable as a low-poly game asset. Presented as a clean concept sheet on a dark neutral background in tidy panels. Original design. No text, no letters, no labels, no logos, no watermark.",
+  "jobs": [
+    {
+      "key": "room-sheet-1",
+      "aspect": "16:9",
+      "refs": ["locked/L-board-1.png", "explore/A-room.png"],
+      "prompt": "Environment concept sheet for the hero room, a circular wizard's study about 6 metres across in a clockwork tower. Panels: (1) a large first-person view at seated eye height from the entrance, with the central vertical shaft of turning brass gears, the tall stained-glass window opposite, curved walnut bookshelves, a writing desk with candles and a brass exit door; (2) a top-down floor plan view showing the round room, the central gear shaft, the window, two doors and the furniture layout; (3) close-ups of three key props: the gear shaft base grate, a brass candle sconce, and the stained-glass window pattern."
+    },
+    {
+      "key": "room-sheet-2",
+      "aspect": "16:9",
+      "refs": ["locked/L-board-1.png", "explore/A-room.png"],
+      "prompt": "Environment concept sheet for the hero room, a circular wizard's study about 6 metres across in a clockwork tower, reimagined with a mezzanine: a curved walnut gallery with brass railings runs halfway around the upper wall, reached by a short spiral stair, while the central shaft of turning brass gears rises through a hole in the gallery floor. Panels: (1) a large first-person view at seated eye height from the entrance toward the tall stained-glass window; (2) a top-down floor plan view of the ground floor and the gallery; (3) close-ups of three key props: the gallery railing, a hanging brass lantern, and a reading lectern."
+    },
+    {
+      "key": "sentry-sheet-1",
+      "aspect": "16:9",
+      "refs": ["locked/L-board-1.png", "locked/L-automaton.png"],
+      "prompt": "Character concept sheet of the 'Cog Sentry', a man-sized slender clockwork automaton enemy with the exact proportions of the automaton in the first reference image: long limbs, smooth polished brass plates over dark gunmetal joints, a narrow head with two glowing amber eye slits, one glowing amber chest core. Panels: front, side and back views in a relaxed A-pose at identical scale, orthographic, plus three small action poses: guard stance, lunging strike, and frozen mid-step with dimmed eyes."
+    },
+    {
+      "key": "sentry-sheet-2",
+      "aspect": "16:9",
+      "refs": ["locked/L-board-1.png", "locked/L-automaton.png"],
+      "prompt": "Character concept sheet of the 'Cog Sentry', a man-sized slender clockwork automaton enemy combining the slim proportions of the first reference with the second reference's broader shoulder plates and small ruby, sapphire and emerald gem inlays at shoulders, elbows and knees; narrow head with two glowing amber eye slits, glowing amber chest core, a small exposed gear wheel turning on its back. Panels: front, side and back views in a relaxed A-pose at identical scale, orthographic, plus three small action poses: guard stance, lunging strike, and frozen mid-step with dimmed eyes."
+    },
+    {
+      "key": "table-sheet-1",
+      "aspect": "16:9",
+      "refs": ["locked/L-board-1.png", "locked/L-board-2.png"],
+      "prompt": "Prop concept sheet for the combat table that unfolds around a seated player when time freezes. Design: a round brass and walnut table that opens like a mechanical iris. Panels: (1) folded: a compact brass drum on a single pedestal, about knee height; (2) mid-unfold: curved walnut petals rotating outward on brass arms, gears visible; (3) fully unfolded seen from the seated player's first-person view: a wide crescent of walnut and brass wrapping in front of the player at lap height, with a recessed ruby-velvet dice tray at the centre, a slot on the left for a deck of cards and a discard slot on the right, and two clockwork automaton enemies standing frozen across the room beyond it."
+    },
+    {
+      "key": "table-sheet-2",
+      "aspect": "16:9",
+      "refs": ["locked/L-board-1.png", "locked/L-board-2.png"],
+      "prompt": "Prop concept sheet for the combat table that unfolds around a seated player when time freezes. Design: a rectangular walnut map table with inlaid brass that unfolds from a brass column like a folding writing desk. Panels: (1) folded: a slim upright walnut cabinet with brass corners, about chest height; (2) mid-unfold: leaves swinging down and sliding out on brass hinges and scissor arms; (3) fully unfolded seen from the seated player's first-person view: a broad flat table at lap height with inlaid brass sigil lines, a recessed ruby-velvet dice tray at the near edge, card slots at both sides, and two clockwork automaton enemies standing frozen across the room beyond it."
+    }
+  ]
+}
