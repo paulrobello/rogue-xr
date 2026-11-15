@@ -1,0 +1,30 @@
+{
+  "piece": "room-proof",
+  "blender": "5.3.0",
+  "size": 1024,
+  "samples": 512,
+  "triangles": 102,
+  "materials": 4,
+  "lightmap_density": {
+    "mean_px_per_m": 66.46,
+    "min_px_per_m": 60.7,
+    "max_px_per_m": 66.57
+  },
+  "device": "GPU:METAL (Apple M4 (GPU - 10 cores))",
+  "bake_seconds": 15.44,
+  "denoise": "compositor OIDN, HDR, accurate prefilter, high quality",
+  "lightmap": {
+    "coverage": 0.8187,
+    "scale": 7.582313,
+    "clipped_fraction": 0.001,
+    "mean_irradiance": 0.117233,
+    "p05_irradiance": 0.047324
+  },
+  "files": {
+    "room-proof.glb": "228a4c748b34c7b703ce3163492d007d6a240f9166f5ad1c8068d95854ca0450",
+    "room-proof.lightmap.png": "b9603c1570a1868be81d6c3904af130eb4e1c87b1034203534a9bad41bbb9d0a",
+    "room-proof.manifest.json": "77ba127c26db257ca227b4832ce53eb37507ac65d6495960a1a094684bb9160f",
+    "room-proof.reference-diffuse.png": "8d38f4a57d268927c8e61a2ead90cc111f1c396e667dbef873977c76a0647bed",
+    "room-proof.reference.png": "105ad092583e92eabe2808935efff2b5a1e765f32cf438792d6c0ca1b149a5e2"
+  }
+}

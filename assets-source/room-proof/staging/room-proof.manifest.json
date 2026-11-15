@@ -1,0 +1,11 @@
+{
+  "template": "room-proof",
+  "glb": "room-proof.glb",
+  "lightmap": {
+    "file": "room-proof.lightmap.png",
+    "uv": 1,
+    "encoding": "srgb-scaled",
+    "scale": 7.58231258392334,
+    "intensity": 23.820538
+  }
+}

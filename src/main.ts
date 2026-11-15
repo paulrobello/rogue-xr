@@ -2,13 +2,16 @@ import * as THREE from 'three';
 import { ActionBus } from './core/actions.ts';
 import { createDesktopControls } from './desktop/controls.ts';
 import { PALETTE } from './palette.ts';
+import { mountLightmapProof } from './world/lightmap-proof.ts';
 import { createPlaceholderRoom } from './world/placeholder-room.ts';
 import { createXrRig } from './xr/session.ts';
 
 const app = document.querySelector<HTMLDivElement>('#app');
 if (!app) throw new Error('Missing #app root');
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const proofView = new URLSearchParams(location.search).get('view') === 'lightmap-proof';
+// The proof view keeps its frame readable so a check can diff it against the Blender reference.
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: proofView });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -17,7 +20,6 @@ app.append(renderer.domElement);
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(PALETTE.void);
-scene.add(createPlaceholderRoom());
 
 // The rig is the player's locomotion root; the camera sits at seated-calibrated eye height.
 const rig = new THREE.Group();
@@ -27,6 +29,12 @@ camera.position.set(0, 1.6, 0);
 rig.add(camera);
 rig.position.set(0, 0, 2);
 scene.add(rig);
+
+if (proofView) {
+  await mountLightmapProof(scene, rig, camera, renderer);
+} else {
+  scene.add(createPlaceholderRoom());
+}
 
 const actions = new ActionBus();
 const xr = createXrRig(renderer, scene, rig, camera, actions);
@@ -49,6 +57,7 @@ Object.assign(enterButton.style, {
 });
 enterButton.addEventListener('click', () => void xr.enter());
 app.append(enterButton);
+if (proofView) enterButton.hidden = true;
 void xr.supported().then((ok) => {
   enterButton.disabled = !ok;
   if (!ok) enterButton.textContent = 'VR not available';

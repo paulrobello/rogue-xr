@@ -8,3 +8,4 @@ test-results/
 # Staged from @par/xr-workspace by scripts/prepare-assets.ts
 public/fonts/
 public/assets/xr-hands/
+__pycache__/
