@@ -40,7 +40,8 @@ def select_device(device: str) -> str:
 def unwrap_lightmap_uv(obj: bpy.types.Object, size: int, gap_px: int = 16) -> None:
     """Adds UV1 (`lightmap`) with angle-based islands at uniform texel density.
 
-    The island gap must exceed 2 x bake margin + 2 px or neighbouring islands bleed in the mips.
+    `gap_px` pads each island, so islands end up 2 x gap_px apart (32 px measured at 16 on the
+    room-proof). That gap must exceed 2 x bake margin + 2 px or neighbouring islands bleed.
     """
     mesh = obj.data
     if LIGHTMAP_UV not in mesh.uv_layers:
