@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.local/
+.env*
+*.local.*
+test-results/
+.claude/worktrees/
+# Staged from @par/xr-workspace by scripts/prepare-assets.ts
+public/fonts/
+public/assets/xr-hands/

@@ -1,0 +1,7 @@
+#!/bin/sh
+# Run the fast gate unless the commit only touches documentation.
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -z "$staged" ] && exit 0
+code=$(printf '%s\n' "$staged" | grep -vE '\.(md|txt)$|^docs/|^plans/' || true)
+[ -z "$code" ] && exit 0
+exec make checkall
