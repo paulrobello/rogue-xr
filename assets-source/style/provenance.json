@@ -161,5 +161,47 @@
     "jobId": "042450f1-e56d-41f4-ba43-38cc8d03d62f",
     "sha256": "d889c4f1e518f3b5e5641be8a6a78515db5998c3d11c1b8c9291c804240cb268",
     "generatedAt": "2026-11-15T23:31:24.813Z"
+  },
+  {
+    "key": "attack-strike-back",
+    "file": "assets-source/cards/attack-strike/attack-strike-back.png",
+    "model": "nano_banana_pro",
+    "aspect": "1:1",
+    "resolution": "2k",
+    "prompt": "Recreate only the deep background of the reference card's circular illustration as a full square painting: a wall of large interlocking brass gears receding into warm ruby-red darkness, glowing orange-red light from the centre. No fist, no arm, no foreground object. Painterly semi-realism with visible oil-painting brushwork, polished brass and warm ruby-red light, matching the reference card illustration exactly in style and palette. Original design. No text, no frame, no border, no vignette, no card.",
+    "refs": [
+      "../cards/attack-strike/frame-source.png"
+    ],
+    "jobId": "ac93e08e-c6da-4915-90f9-b1bad9c0c541",
+    "sha256": "5965cbc4cddcb42ea80dcbd69bbf025b5b3ecd1e6fb66b35393cb37e824da781",
+    "generatedAt": "2026-11-15T23:34:42.821Z"
+  },
+  {
+    "key": "attack-strike-mid",
+    "file": "assets-source/cards/attack-strike/attack-strike-mid.png",
+    "model": "nano_banana_pro",
+    "aspect": "1:1",
+    "resolution": "2k",
+    "prompt": "Recreate only the single large brass gear ring from the reference card's illustration, seen face-on and centred, with its central hub missing so it is a ring, glowing faintly orange at the inner edge, isolated on a flat pure green background (#00ff00). No fist, no arm, no other gears. Painterly semi-realism with visible oil-painting brushwork, polished brass and warm ruby-red light, matching the reference card illustration exactly in style and palette. Original design. No text, no frame, no border, no vignette, no card.",
+    "refs": [
+      "../cards/attack-strike/frame-source.png"
+    ],
+    "jobId": "1eaec070-8ef4-4f85-bb82-8752f94d8b8c",
+    "sha256": "bddbb1af5c2a7f1cd7ff0ca50d6cb510aa32f3f3c9f0547bd3daaefe45e41c76",
+    "generatedAt": "2026-11-15T23:34:33.442Z"
+  },
+  {
+    "key": "attack-strike-front",
+    "file": "assets-source/cards/attack-strike/attack-strike-front.png",
+    "model": "nano_banana_pro",
+    "aspect": "1:1",
+    "resolution": "2k",
+    "prompt": "Recreate only the clenched brass automaton fist and forearm from the reference card's illustration, entering from the lower left and striking toward the upper right, with a hot orange-red glow around the knuckles, isolated on a flat pure green background (#00ff00). No gears, no background scenery. Painterly semi-realism with visible oil-painting brushwork, polished brass and warm ruby-red light, matching the reference card illustration exactly in style and palette. Original design. No text, no frame, no border, no vignette, no card.",
+    "refs": [
+      "../cards/attack-strike/frame-source.png"
+    ],
+    "jobId": "7679c5f5-a8e5-4c19-a46a-6a6457ae878b",
+    "sha256": "d44afd09052e2d1cfb0120bf566cb4c61a162013c30a39066967b0ab8bca0820",
+    "generatedAt": "2026-11-15T23:34:48.985Z"
   }
 ]

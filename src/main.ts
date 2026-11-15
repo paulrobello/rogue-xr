@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mountCardProof } from './cards/card-proof.ts';
 import { ActionBus } from './core/actions.ts';
 import { createDesktopControls } from './desktop/controls.ts';
 import { PALETTE } from './palette.ts';
@@ -9,9 +10,14 @@ import { createXrRig } from './xr/session.ts';
 const app = document.querySelector<HTMLDivElement>('#app');
 if (!app) throw new Error('Missing #app root');
 
-const proofView = new URLSearchParams(location.search).get('view') === 'lightmap-proof';
-// The proof view keeps its frame readable so a check can diff it against the Blender reference.
-const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: proofView });
+const view = new URLSearchParams(location.search).get('view');
+const proofView = view === 'lightmap-proof' || view === 'card-proof';
+// Proof views keep their frame readable so a check can sample it. Stencil backs the card portals.
+const renderer = new THREE.WebGLRenderer({
+  antialias: true,
+  stencil: true,
+  preserveDrawingBuffer: proofView,
+});
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -30,8 +36,11 @@ rig.add(camera);
 rig.position.set(0, 0, 2);
 scene.add(rig);
 
-if (proofView) {
+let cardProof: Awaited<ReturnType<typeof mountCardProof>> | undefined;
+if (view === 'lightmap-proof') {
   await mountLightmapProof(scene, rig, camera, renderer);
+} else if (view === 'card-proof') {
+  cardProof = await mountCardProof(scene, rig);
 } else {
   scene.add(createPlaceholderRoom());
 }
@@ -83,5 +92,6 @@ renderer.setAnimationLoop((time, frame) => {
   const deltaSeconds = Math.min(timer.getDelta(), 0.1);
   if (xr.presenting) xr.update(deltaSeconds, frame);
   else desktop.update(deltaSeconds);
+  cardProof?.update(time / 1000, xr.presenting);
   renderer.render(scene, camera);
 });

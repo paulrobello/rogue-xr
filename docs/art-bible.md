@@ -66,6 +66,10 @@ card families, never as large wall or floor areas. No teal and no cool ambient f
   emerald for sigil spell.
 - Illustrations are painted, centred on one subject, and lit by that subject's own glow.
 - Generated art never contains text. Card names and numbers are rendered at runtime.
+- The illustration window is a depth portal (`src/cards/holo-card.ts`). Each illustration is painted
+  as separate layers: an opaque backdrop, one or two mid elements and the subject, the cut-out
+  layers on flat green for background removal. Layers sit 5 to 30 mm behind the card face, and
+  the window glass carries a faint view-dependent foil sheen.
 
 ## Dice, sigils and UI
 

@@ -1,0 +1,25 @@
+{
+  "model": "nano_banana_pro",
+  "resolution": "2k",
+  "shared": "Painterly semi-realism with visible oil-painting brushwork, polished brass and warm ruby-red light, matching the reference card illustration exactly in style and palette. Original design. No text, no frame, no border, no vignette, no card.",
+  "jobs": [
+    {
+      "key": "attack-strike-back",
+      "aspect": "1:1",
+      "refs": ["../cards/attack-strike/frame-source.png"],
+      "prompt": "Recreate only the deep background of the reference card's circular illustration as a full square painting: a wall of large interlocking brass gears receding into warm ruby-red darkness, glowing orange-red light from the centre. No fist, no arm, no foreground object."
+    },
+    {
+      "key": "attack-strike-mid",
+      "aspect": "1:1",
+      "refs": ["../cards/attack-strike/frame-source.png"],
+      "prompt": "Recreate only the single large brass gear ring from the reference card's illustration, seen face-on and centred, with its central hub missing so it is a ring, glowing faintly orange at the inner edge, isolated on a flat pure green background (#00ff00). No fist, no arm, no other gears."
+    },
+    {
+      "key": "attack-strike-front",
+      "aspect": "1:1",
+      "refs": ["../cards/attack-strike/frame-source.png"],
+      "prompt": "Recreate only the clenched brass automaton fist and forearm from the reference card's illustration, entering from the lower left and striking toward the upper right, with a hot orange-red glow around the knuckles, isolated on a flat pure green background (#00ff00). No gears, no background scenery."
+    }
+  ]
+}
