@@ -1,0 +1,21 @@
+{
+  "model": "nano_banana_pro",
+  "resolution": "2k",
+  "shared": "Original concept art for a first-person VR roguelike set in a wizard tower built of brass clockwork that rebuilds itself. Large readable forms, clean silhouettes, detail in surface texture and light rather than dense geometry. No text, no logos, no watermark, no UI.",
+  "directions": {
+    "A": "Art direction 'Gilded Lamplight': painterly semi-realism, deep warm shadows, amber candlelight, polished brass and dark oiled walnut, saturated jewel-tone stained glass (ruby, sapphire, emerald), rich and premium, oil-painting brushwork.",
+    "B": "Art direction 'Storybook Brass': stylized hand-painted look, slightly exaggerated chunky proportions, rounded bevels, soft warm bounce light, gentle saturated palette of honey brass, caramel walnut and candy-bright stained glass, clean painted textures like a high-end stylized game.",
+    "C": "Art direction 'Nouveau Orrery': art nouveau whiplash curves and delicate brass filigree, celestial orrery motifs, teal and gold complementary palette, cool blue moonlight through stained glass contrasting warm candle pools, elegant and mysterious.",
+    "D": "Art direction 'Alchemist's Forge': heavier grittier clockwork, copper, blackened iron and brass with soot and verdigris, ember orange furnace glow inside machines, smoky warm palette, riveted plates, heavy industrial wizardry."
+  },
+  "subjects": {
+    "board": {
+      "aspect": "16:9",
+      "text": "A single art-direction style board laid out as a clean presentation sheet on a dark neutral background, arranged in tidy panels: (1) a small interior view of a tower room, (2) a full-body front view of a rogue clockwork automaton enemy, man-sized, with a glowing core and readable silhouette, (3) one illustrated spell card with an ornate brass card frame and a painted illustration of a sigil spell, (4) two physical brass and enamel dice, a d6 and a d10, (5) a glowing hand-drawn arcane sigil glyph, (6) a row of seven flat colour swatches summarising the palette. Consistent style across every panel."
+    },
+    "room": {
+      "aspect": "16:9",
+      "text": "First-person view at seated eye height inside a circular wizard's study in the tower: a central vertical shaft of turning brass gears rising through the floor and ceiling, a tall stained-glass window on the far wall casting coloured light, walnut bookshelves, a writing desk with candles, a brass door on the right leading onward. Lit mainly by candles and the window. Wide-angle game concept frame."
+    }
+  }
+}

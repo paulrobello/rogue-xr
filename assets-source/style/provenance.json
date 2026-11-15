@@ -1,0 +1,90 @@
+[
+  {
+    "key": "A-board",
+    "file": "assets-source/style/explore/A-board.png",
+    "model": "nano_banana_pro",
+    "aspect": "16:9",
+    "resolution": "2k",
+    "prompt": "A single art-direction style board laid out as a clean presentation sheet on a dark neutral background, arranged in tidy panels: (1) a small interior view of a tower room, (2) a full-body front view of a rogue clockwork automaton enemy, man-sized, with a glowing core and readable silhouette, (3) one illustrated spell card with an ornate brass card frame and a painted illustration of a sigil spell, (4) two physical brass and enamel dice, a d6 and a d10, (5) a glowing hand-drawn arcane sigil glyph, (6) a row of seven flat colour swatches summarising the palette. Consistent style across every panel. Art direction 'Gilded Lamplight': painterly semi-realism, deep warm shadows, amber candlelight, polished brass and dark oiled walnut, saturated jewel-tone stained glass (ruby, sapphire, emerald), rich and premium, oil-painting brushwork. Original concept art for a first-person VR roguelike set in a wizard tower built of brass clockwork that rebuilds itself. Large readable forms, clean silhouettes, detail in surface texture and light rather than dense geometry. No text, no logos, no watermark, no UI.",
+    "jobId": "b46eacaa-acd1-408c-8c8b-258ee40eaf37",
+    "sha256": "4f8dabd334d57f95d25483634e81ccb303c98ecee46510be59869d6ff5505184",
+    "generatedAt": "2026-11-15T23:28:26.556Z"
+  },
+  {
+    "key": "A-room",
+    "file": "assets-source/style/explore/A-room.png",
+    "model": "nano_banana_pro",
+    "aspect": "16:9",
+    "resolution": "2k",
+    "prompt": "First-person view at seated eye height inside a circular wizard's study in the tower: a central vertical shaft of turning brass gears rising through the floor and ceiling, a tall stained-glass window on the far wall casting coloured light, walnut bookshelves, a writing desk with candles, a brass door on the right leading onward. Lit mainly by candles and the window. Wide-angle game concept frame. Art direction 'Gilded Lamplight': painterly semi-realism, deep warm shadows, amber candlelight, polished brass and dark oiled walnut, saturated jewel-tone stained glass (ruby, sapphire, emerald), rich and premium, oil-painting brushwork. Original concept art for a first-person VR roguelike set in a wizard tower built of brass clockwork that rebuilds itself. Large readable forms, clean silhouettes, detail in surface texture and light rather than dense geometry. No text, no logos, no watermark, no UI.",
+    "jobId": "5e7f34a1-ac00-4f61-97bb-901011c49c7e",
+    "sha256": "d5b3ee7d1ff4ac83d04ea4986740450b76b4b3d5065a29cbbf1de5fc7b239a0d",
+    "generatedAt": "2026-11-15T23:28:26.404Z"
+  },
+  {
+    "key": "B-board",
+    "file": "assets-source/style/explore/B-board.png",
+    "model": "nano_banana_pro",
+    "aspect": "16:9",
+    "resolution": "2k",
+    "prompt": "A single art-direction style board laid out as a clean presentation sheet on a dark neutral background, arranged in tidy panels: (1) a small interior view of a tower room, (2) a full-body front view of a rogue clockwork automaton enemy, man-sized, with a glowing core and readable silhouette, (3) one illustrated spell card with an ornate brass card frame and a painted illustration of a sigil spell, (4) two physical brass and enamel dice, a d6 and a d10, (5) a glowing hand-drawn arcane sigil glyph, (6) a row of seven flat colour swatches summarising the palette. Consistent style across every panel. Art direction 'Storybook Brass': stylized hand-painted look, slightly exaggerated chunky proportions, rounded bevels, soft warm bounce light, gentle saturated palette of honey brass, caramel walnut and candy-bright stained glass, clean painted textures like a high-end stylized game. Original concept art for a first-person VR roguelike set in a wizard tower built of brass clockwork that rebuilds itself. Large readable forms, clean silhouettes, detail in surface texture and light rather than dense geometry. No text, no logos, no watermark, no UI.",
+    "jobId": "4c9366ba-99ec-41ca-a731-10a0312ae68f",
+    "sha256": "c527b6f9f9f28433290e0ee0b7ace5152bb682a22cc7c91a5eb03282a5a6ca9c",
+    "generatedAt": "2026-11-15T23:28:20.644Z"
+  },
+  {
+    "key": "B-room",
+    "file": "assets-source/style/explore/B-room.png",
+    "model": "nano_banana_pro",
+    "aspect": "16:9",
+    "resolution": "2k",
+    "prompt": "First-person view at seated eye height inside a circular wizard's study in the tower: a central vertical shaft of turning brass gears rising through the floor and ceiling, a tall stained-glass window on the far wall casting coloured light, walnut bookshelves, a writing desk with candles, a brass door on the right leading onward. Lit mainly by candles and the window. Wide-angle game concept frame. Art direction 'Storybook Brass': stylized hand-painted look, slightly exaggerated chunky proportions, rounded bevels, soft warm bounce light, gentle saturated palette of honey brass, caramel walnut and candy-bright stained glass, clean painted textures like a high-end stylized game. Original concept art for a first-person VR roguelike set in a wizard tower built of brass clockwork that rebuilds itself. Large readable forms, clean silhouettes, detail in surface texture and light rather than dense geometry. No text, no logos, no watermark, no UI.",
+    "jobId": "13912dea-2af2-4dfd-a1c0-147fa79c5d66",
+    "sha256": "70a313e0b6a472b2381b5946dffcd1d77fe23e5b800e13c8d0470c699226ba76",
+    "generatedAt": "2026-11-15T23:28:17.712Z"
+  },
+  {
+    "key": "C-board",
+    "file": "assets-source/style/explore/C-board.png",
+    "model": "nano_banana_pro",
+    "aspect": "16:9",
+    "resolution": "2k",
+    "prompt": "A single art-direction style board laid out as a clean presentation sheet on a dark neutral background, arranged in tidy panels: (1) a small interior view of a tower room, (2) a full-body front view of a rogue clockwork automaton enemy, man-sized, with a glowing core and readable silhouette, (3) one illustrated spell card with an ornate brass card frame and a painted illustration of a sigil spell, (4) two physical brass and enamel dice, a d6 and a d10, (5) a glowing hand-drawn arcane sigil glyph, (6) a row of seven flat colour swatches summarising the palette. Consistent style across every panel. Art direction 'Nouveau Orrery': art nouveau whiplash curves and delicate brass filigree, celestial orrery motifs, teal and gold complementary palette, cool blue moonlight through stained glass contrasting warm candle pools, elegant and mysterious. Original concept art for a first-person VR roguelike set in a wizard tower built of brass clockwork that rebuilds itself. Large readable forms, clean silhouettes, detail in surface texture and light rather than dense geometry. No text, no logos, no watermark, no UI.",
+    "jobId": "a07eb05a-5cc4-4933-8c1f-d1e2e1e3ee9e",
+    "sha256": "69a811a50ed4a01115dd0405f81867ffeabb53b3748c8a886c6fffca36ea307c",
+    "generatedAt": "2026-11-15T23:28:29.367Z"
+  },
+  {
+    "key": "C-room",
+    "file": "assets-source/style/explore/C-room.png",
+    "model": "nano_banana_pro",
+    "aspect": "16:9",
+    "resolution": "2k",
+    "prompt": "First-person view at seated eye height inside a circular wizard's study in the tower: a central vertical shaft of turning brass gears rising through the floor and ceiling, a tall stained-glass window on the far wall casting coloured light, walnut bookshelves, a writing desk with candles, a brass door on the right leading onward. Lit mainly by candles and the window. Wide-angle game concept frame. Art direction 'Nouveau Orrery': art nouveau whiplash curves and delicate brass filigree, celestial orrery motifs, teal and gold complementary palette, cool blue moonlight through stained glass contrasting warm candle pools, elegant and mysterious. Original concept art for a first-person VR roguelike set in a wizard tower built of brass clockwork that rebuilds itself. Large readable forms, clean silhouettes, detail in surface texture and light rather than dense geometry. No text, no logos, no watermark, no UI.",
+    "jobId": "5a1fed22-94cb-4102-bdd7-b6fba40554d9",
+    "sha256": "a815ed6b228f28d0d2038e040baab200ffa9fa83ab1fd9ee8032603b86d3af12",
+    "generatedAt": "2026-11-15T23:28:20.387Z"
+  },
+  {
+    "key": "D-board",
+    "file": "assets-source/style/explore/D-board.png",
+    "model": "nano_banana_pro",
+    "aspect": "16:9",
+    "resolution": "2k",
+    "prompt": "A single art-direction style board laid out as a clean presentation sheet on a dark neutral background, arranged in tidy panels: (1) a small interior view of a tower room, (2) a full-body front view of a rogue clockwork automaton enemy, man-sized, with a glowing core and readable silhouette, (3) one illustrated spell card with an ornate brass card frame and a painted illustration of a sigil spell, (4) two physical brass and enamel dice, a d6 and a d10, (5) a glowing hand-drawn arcane sigil glyph, (6) a row of seven flat colour swatches summarising the palette. Consistent style across every panel. Art direction 'Alchemist's Forge': heavier grittier clockwork, copper, blackened iron and brass with soot and verdigris, ember orange furnace glow inside machines, smoky warm palette, riveted plates, heavy industrial wizardry. Original concept art for a first-person VR roguelike set in a wizard tower built of brass clockwork that rebuilds itself. Large readable forms, clean silhouettes, detail in surface texture and light rather than dense geometry. No text, no logos, no watermark, no UI.",
+    "jobId": "b323267d-b4d9-4ffc-be97-40bfc850c39f",
+    "sha256": "24f46aef3d3a020daf474ec6e974dff0d153bb8ad1bc2a38c2c0862fe00456c5",
+    "generatedAt": "2026-11-15T23:28:41.278Z"
+  },
+  {
+    "key": "D-room",
+    "file": "assets-source/style/explore/D-room.png",
+    "model": "nano_banana_pro",
+    "aspect": "16:9",
+    "resolution": "2k",
+    "prompt": "First-person view at seated eye height inside a circular wizard's study in the tower: a central vertical shaft of turning brass gears rising through the floor and ceiling, a tall stained-glass window on the far wall casting coloured light, walnut bookshelves, a writing desk with candles, a brass door on the right leading onward. Lit mainly by candles and the window. Wide-angle game concept frame. Art direction 'Alchemist's Forge': heavier grittier clockwork, copper, blackened iron and brass with soot and verdigris, ember orange furnace glow inside machines, smoky warm palette, riveted plates, heavy industrial wizardry. Original concept art for a first-person VR roguelike set in a wizard tower built of brass clockwork that rebuilds itself. Large readable forms, clean silhouettes, detail in surface texture and light rather than dense geometry. No text, no logos, no watermark, no UI.",
+    "jobId": "66cb5cc0-ca53-458c-8ba1-016b1febe9c4",
+    "sha256": "b5a54586a9cf4449f8a0fc42ae23c1d4e7a757e7b7c47762d2de98cd599a4a77",
+    "generatedAt": "2026-11-15T23:28:26.466Z"
+  }
+]
