@@ -1,9 +1,9 @@
 # Clockwork Spire — art bible
 
-Status: **draft, awaiting Paul's approval of the style board (P4-T1).** Direction chosen by Paul on
-2026-11-15: "Gilded Lamplight" (exploration A) as the base, borrowing the slender automaton
-silhouette and the card-frame layout from "Nouveau Orrery" (exploration C). Exploration record:
-[assets-source/style/brief.md](../assets-source/style/brief.md).
+Status: **approved by Paul on 2026-11-15** ("All recommendations for art direction are approved, as well as any needed spend", in chat). This covers the
+direction (exploration A "Gilded Lamplight" with exploration C's slender automaton silhouette and
+card-frame layout), `L-board-1.png` as the canonical style board, every rule below, and the depth
+portal card window. Exploration record: [assets-source/style/brief.md](../assets-source/style/brief.md).
 
 Every 2D asset is generated against the canonical references below (PRD D8), and every 3D asset is
 modeled to match them.
@@ -88,5 +88,4 @@ from the `shared` block in `assets-source/style/prompts-locked.json`. Generate w
 
 ## Runtime palette
 
-Once the board is approved, `src/palette.ts` must follow this table. Today it still carries
-`stainedTeal` and has no sapphire or emerald.
+`src/palette.ts` follows the palette table. Change both together.

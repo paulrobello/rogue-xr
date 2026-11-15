@@ -32,3 +32,8 @@ Paul chose the recommendation "A as the base, borrowing C's slender automaton si
 frame layout" with a one-word "Yes" in chat on 2026-11-15. This picks the direction to refine. It
 is not approval of the style board; that owner gate (P4-T1) stays open until Paul approves the
 locked board.
+
+## Board approval (2026-11-15)
+
+Paul approved the locked board and every art-direction recommendation in chat: "All recommendations for art direction are approved, as well as any needed spend".
+Canonical board: `locked/L-board-1.png`. Rules: `docs/art-bible.md`.

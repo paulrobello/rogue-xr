@@ -129,7 +129,7 @@ Sources stay immutable under `assets-source/<asset>/`. Runtime copies are promot
 
 ### Slice asset list (boundary of the standing spend approval)
 
-Paid generation **inside this list** is pre-approved for the slice, with up to about 3 times the count as retry headroom. Anything outside it needs a new approval. Meshy is not authorized, because 3D models go through Blender.
+Paid generation **inside this list** is pre-approved for the slice, with up to about 3 times the count as retry headroom. Anything outside it needs a new approval. On 2026-11-15 Paul widened this for art-direction work in chat: "All recommendations for art direction are approved, as well as any needed spend". Spend needed to produce art that follows the approved art bible (`docs/art-bible.md`) no longer needs a per-batch ask. Meshy is not authorized, because 3D models go through Blender.
 
 | Provider | Assets | Count |
 | --- | --- | --- |
