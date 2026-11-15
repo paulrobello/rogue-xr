@@ -86,5 +86,80 @@
     "jobId": "66cb5cc0-ca53-458c-8ba1-016b1febe9c4",
     "sha256": "b5a54586a9cf4449f8a0fc42ae23c1d4e7a757e7b7c47762d2de98cd599a4a77",
     "generatedAt": "2026-11-15T23:28:26.466Z"
+  },
+  {
+    "key": "L-board-1",
+    "file": "assets-source/style/locked/L-board-1.png",
+    "model": "nano_banana_pro",
+    "aspect": "16:9",
+    "resolution": "2k",
+    "prompt": "Use the first reference image for rendering style, palette and lighting, and the second only for the slender automaton silhouette and the card frame layout. A single art-direction style board on a dark neutral background, in tidy panels: (1) a candlelit tower study with a brass gear shaft and a stained-glass window, (2) a full-body front view of the slender clockwork automaton enemy, (3) one spell card in the ornate brass frame with a painted glowing sigil in the circular window, (4) two brass and enamel dice, a d6 and a d10, (5) a glowing hand-drawn amber arcane sigil, (6) a row of seven flat palette swatches: candle amber, polished brass, oiled walnut, warm black, ruby, sapphire, emerald. Art direction 'Gilded Lamplight': painterly semi-realism with visible oil-painting brushwork, deep warm shadows, amber candlelight, polished brass and dark oiled walnut, saturated jewel-tone stained glass in ruby, sapphire and emerald as the only cool accents. Clockwork automatons are slender and elegant: long limbs, segmented polished brass plates over dark gunmetal joints, a narrow head with two glowing amber eye slits, one glowing amber core in the chest. Card frames are tall portrait cards with an ornate brass frame, a circular illustration window in the upper two thirds, a parchment panel below and small corner medallions. Large readable forms and clean silhouettes, detail carried by surface texture and light rather than dense geometry. Original design. No text, no letters, no numbers on cards, no logos, no watermark.",
+    "refs": [
+      "explore/A-board.png",
+      "explore/C-board.png"
+    ],
+    "jobId": "87653848-46e7-446a-8807-2d3391f88baa",
+    "sha256": "d3fffc8eb300cc6f40236c28930401ef1bd06be0e27be76999839e3bfeacc018",
+    "generatedAt": "2026-11-15T23:31:35.690Z"
+  },
+  {
+    "key": "L-board-2",
+    "file": "assets-source/style/locked/L-board-2.png",
+    "model": "nano_banana_pro",
+    "aspect": "16:9",
+    "resolution": "2k",
+    "prompt": "Use the first reference image for rendering style, palette and lighting, and the second only for the slender automaton silhouette and the card frame layout. A single art-direction style board on a dark neutral background, in tidy panels: (1) a candlelit tower corridor of walnut and brass with a stained-glass window, (2) a full-body three-quarter view of the slender clockwork automaton enemy in a combat stance, (3) one attack card in the ornate brass frame with a painted brass fist striking in the circular window, (4) a brass combat table with inlaid walnut and a recessed dice tray, (5) a glowing hand-drawn amber arcane sigil, (6) a row of seven flat palette swatches: candle amber, polished brass, oiled walnut, warm black, ruby, sapphire, emerald. Art direction 'Gilded Lamplight': painterly semi-realism with visible oil-painting brushwork, deep warm shadows, amber candlelight, polished brass and dark oiled walnut, saturated jewel-tone stained glass in ruby, sapphire and emerald as the only cool accents. Clockwork automatons are slender and elegant: long limbs, segmented polished brass plates over dark gunmetal joints, a narrow head with two glowing amber eye slits, one glowing amber core in the chest. Card frames are tall portrait cards with an ornate brass frame, a circular illustration window in the upper two thirds, a parchment panel below and small corner medallions. Large readable forms and clean silhouettes, detail carried by surface texture and light rather than dense geometry. Original design. No text, no letters, no numbers on cards, no logos, no watermark.",
+    "refs": [
+      "explore/A-board.png",
+      "explore/C-board.png"
+    ],
+    "jobId": "24353da6-7942-47e5-98bb-799e4d7338aa",
+    "sha256": "730ff60882930f503d1a0307fc046cc698577af1712e4407803851f433d7a0b2",
+    "generatedAt": "2026-11-15T23:31:41.430Z"
+  },
+  {
+    "key": "L-automaton",
+    "file": "assets-source/style/locked/L-automaton.png",
+    "model": "nano_banana_pro",
+    "aspect": "16:9",
+    "resolution": "2k",
+    "prompt": "Use the first reference image for the slender automaton's proportions and silhouette and the second for rendering style and materials. Character turnaround concept sheet of the 'Cog Sentry', a man-sized slender clockwork automaton enemy: front, side and back views standing in a relaxed A-pose at identical scale on a plain warm grey background, orthographic, full body, evenly lit by warm key light, with a small close-up of the head and the chest core. Readable separate plates and joints suitable for a low-poly game model. Art direction 'Gilded Lamplight': painterly semi-realism with visible oil-painting brushwork, deep warm shadows, amber candlelight, polished brass and dark oiled walnut, saturated jewel-tone stained glass in ruby, sapphire and emerald as the only cool accents. Clockwork automatons are slender and elegant: long limbs, segmented polished brass plates over dark gunmetal joints, a narrow head with two glowing amber eye slits, one glowing amber core in the chest. Card frames are tall portrait cards with an ornate brass frame, a circular illustration window in the upper two thirds, a parchment panel below and small corner medallions. Large readable forms and clean silhouettes, detail carried by surface texture and light rather than dense geometry. Original design. No text, no letters, no numbers on cards, no logos, no watermark.",
+    "refs": [
+      "explore/C-board.png",
+      "explore/A-board.png"
+    ],
+    "jobId": "4c850863-334d-40ce-b9e4-db60fe7c855d",
+    "sha256": "48553d5f490b528b84774ad63a705bf0609ef47360b6a35ef4025b6431adb505",
+    "generatedAt": "2026-11-15T23:31:34.266Z"
+  },
+  {
+    "key": "L-cards",
+    "file": "assets-source/style/locked/L-cards.png",
+    "model": "nano_banana_pro",
+    "aspect": "16:9",
+    "resolution": "2k",
+    "prompt": "Use the first reference image for the card frame layout and the second for rendering style and materials. Three game cards side by side on a dark walnut table, same ornate brass frame family: an attack card with ruby gem medallions and a painted brass fist striking a gear, a skill card with sapphire gem medallions and a painted brass shield ward glowing blue, a sigil spell card with emerald gem medallions and a painted glowing arcane sigil. Each has a circular painted illustration window and an empty parchment panel below. Front-on view. Art direction 'Gilded Lamplight': painterly semi-realism with visible oil-painting brushwork, deep warm shadows, amber candlelight, polished brass and dark oiled walnut, saturated jewel-tone stained glass in ruby, sapphire and emerald as the only cool accents. Clockwork automatons are slender and elegant: long limbs, segmented polished brass plates over dark gunmetal joints, a narrow head with two glowing amber eye slits, one glowing amber core in the chest. Card frames are tall portrait cards with an ornate brass frame, a circular illustration window in the upper two thirds, a parchment panel below and small corner medallions. Large readable forms and clean silhouettes, detail carried by surface texture and light rather than dense geometry. Original design. No text, no letters, no numbers on cards, no logos, no watermark.",
+    "refs": [
+      "explore/C-board.png",
+      "explore/A-board.png"
+    ],
+    "jobId": "bdeba300-ce22-4922-9fba-63922b9bef91",
+    "sha256": "207a60d3465942c8d16ddb5eee674db576a4a19e3b7070579313f844050b2c52",
+    "generatedAt": "2026-11-15T23:31:30.802Z"
+  },
+  {
+    "key": "L-study",
+    "file": "assets-source/style/locked/L-study.png",
+    "model": "nano_banana_pro",
+    "aspect": "16:9",
+    "resolution": "2k",
+    "prompt": "Use the first reference image for the room, composition, palette and lighting, and the second only for the automaton's slender silhouette. First-person view at seated eye height inside the circular candlelit wizard's study with the central brass gear shaft, walnut bookshelves, writing desk and tall jewel-toned stained-glass window. A slender clockwork automaton enemy stands across the room beside the gear shaft, eyes glowing amber, at true human scale. Wide-angle game concept frame. Art direction 'Gilded Lamplight': painterly semi-realism with visible oil-painting brushwork, deep warm shadows, amber candlelight, polished brass and dark oiled walnut, saturated jewel-tone stained glass in ruby, sapphire and emerald as the only cool accents. Clockwork automatons are slender and elegant: long limbs, segmented polished brass plates over dark gunmetal joints, a narrow head with two glowing amber eye slits, one glowing amber core in the chest. Card frames are tall portrait cards with an ornate brass frame, a circular illustration window in the upper two thirds, a parchment panel below and small corner medallions. Large readable forms and clean silhouettes, detail carried by surface texture and light rather than dense geometry. Original design. No text, no letters, no numbers on cards, no logos, no watermark.",
+    "refs": [
+      "explore/A-room.png",
+      "explore/C-board.png"
+    ],
+    "jobId": "042450f1-e56d-41f4-ba43-38cc8d03d62f",
+    "sha256": "d889c4f1e518f3b5e5641be8a6a78515db5998c3d11c1b8c9291c804240cb268",
+    "generatedAt": "2026-11-15T23:31:24.813Z"
   }
 ]

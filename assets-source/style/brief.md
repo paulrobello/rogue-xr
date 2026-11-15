@@ -25,3 +25,10 @@ Per direction: one style board (environment thumbnail, automaton, card, dice, si
 one hero-room frame (the study with the gear shaft and stained-glass window, seated eye height).
 
 Model: Higgsfield `nano_banana_pro`, 2k. Prompts, job ids and hashes in `provenance.json`.
+
+## Direction choice (2026-11-15)
+
+Paul chose the recommendation "A as the base, borrowing C's slender automaton silhouette and card
+frame layout" with a one-word "Yes" in chat on 2026-11-15. This picks the direction to refine. It
+is not approval of the style board; that owner gate (P4-T1) stays open until Paul approves the
+locked board.
