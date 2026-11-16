@@ -1,7 +1,19 @@
 import * as THREE from 'three';
 import { BatchedText, Text } from 'troika-three-text';
+import { type CardAtlas, frameToCard } from '../cards/card-atlas.ts';
+import {
+  addCardFaceAttributes,
+  applyCardFaceArt,
+  type CardFaceArt,
+  cardFaceInstance,
+  createCardFaceMaterial,
+  requestCardFaceArt,
+  writeCardFace,
+  writeCardTint,
+} from '../cards/card-face-material.ts';
 import type { SliceCard } from '../content/cards.ts';
 import { PALETTE } from '../palette.ts';
+import { onFirstRender, sharedKtx2Loader } from '../ui/first-render.ts';
 import {
   DEFAULT_FAN,
   type FanOptions,
@@ -13,9 +25,11 @@ import {
 } from './fan-layout.ts';
 
 /**
- * The off-hand card hand. Rendering is a deliberately flat stand-in for the holo card (a portal
- * card is 6+ draws each): one InstancedMesh of card bodies with per-instance tint, one InstancedMesh
- * of cost gems and one troika BatchedText holding every label. The whole hand is 3 draws at any size.
+ * The off-hand card hand. Rendering is a flat version of the holo card (a portal card is 8 draws
+ * each): one InstancedMesh of card faces whose shader samples the card atlas (frame plus the
+ * composited art layers, no parallax), one InstancedMesh of dark discs behind the cost numbers and
+ * one troika BatchedText holding every label. The whole hand is 3 draws at any size, hovered or
+ * held. The atlas loads (KTX2) the first time the fan is drawn; until then cards are flat tints.
  *
  * The fan owns no game rules. It reports intents (hover, grab, release, returned) and the combat
  * controller decides what they mean.
@@ -45,6 +59,8 @@ export interface CardFanOptions {
   mainGrip?: THREE.Object3D;
   /** Run troika typesetting after `setHand`. Off in tests, where no font can be fetched. */
   syncLabels?: boolean;
+  /** Load the card atlas on the first render. Default true; tests pass art with `setArt`. */
+  loadArt?: boolean;
   hoverSeconds?: number;
   returnSeconds?: number;
 }
@@ -69,14 +85,52 @@ const copyPose = (to: Pose, from: Pose): void => {
   to.scale = from.scale;
 };
 
-/** Card-local layout, in units of card width (x) and height (y). */
-const GEM_DIAMETER = 0.24;
-const GEM_AT = [-0.3, 0.41] as const;
-const TITLE_AT = [-0.12, 0.41] as const;
-const DESC_AT = [-0.43, 0.2] as const;
-const TITLE_FONT = 0.088;
-const DESC_FONT = 0.07;
-const COST_FONT = 0.15;
+/**
+ * Card-local text layout, in units of card width (x) and height (y), from the slice atlas frame's
+ * `textRegions` (672 x 1016 px frame): the cost gem medallion at (66, 70) r 40, the name band
+ * (88, 722, 496, 60) and the description panel (88, 786, 496, 196). `setArt` re-derives them from
+ * the loaded atlas.
+ */
+interface TextLayout {
+  gemAt: readonly [number, number];
+  gemDiameter: number;
+  titleAt: readonly [number, number];
+  titleWidth: number;
+  descAt: readonly [number, number];
+  descWidth: number;
+}
+const DEFAULT_TEXT: TextLayout = {
+  gemAt: [66 / 672 - 0.5, 0.5 - 70 / 1016],
+  gemDiameter: 76 / 672,
+  titleAt: [0, 0.5 - 752 / 1016],
+  titleWidth: 496 / 672,
+  descAt: [88 / 672 - 0.5, 0.5 - 790 / 1016],
+  descWidth: 496 / 672,
+};
+function textLayout(atlas: CardAtlas): TextLayout {
+  const frame = atlas.frames.attack;
+  const { cost, name, description } = frame.textRegions;
+  const [gx, gy] = frameToCard(frame, cost.centre[0], cost.centre[1]);
+  const [tx, ty] = frameToCard(
+    frame,
+    name.rect[0] + name.rect[2] / 2,
+    name.rect[1] + name.rect[3] / 2,
+  );
+  const [dx, dy] = frameToCard(frame, description.rect[0], description.rect[1] + 4);
+  return {
+    gemAt: [gx, gy],
+    gemDiameter: (cost.radius * 2 * 0.95) / frame.rect[2],
+    titleAt: [tx, ty],
+    titleWidth: name.rect[2] / frame.rect[2],
+    descAt: [dx, dy],
+    descWidth: description.rect[2] / frame.rect[2],
+  };
+}
+const TITLE_FONT = 0.082;
+const DESC_FONT = 0.062;
+const COST_FONT = 0.105;
+/** Dark ink for text on the parchment panel. */
+const INK = '#2a1a0e';
 /** Depth offsets above the card face, metres, so layers never z-fight. */
 const GEM_Z = 0.0003;
 const TEXT_Z = 0.0007;
@@ -150,6 +204,8 @@ export class CardFan {
   private readonly hoverSeconds: number;
   private readonly returnSeconds: number;
   private readonly syncLabels: boolean;
+  private text: TextLayout = DEFAULT_TEXT;
+  private art: CardFaceArt | null = null;
   private mainGrip: THREE.Object3D | undefined;
 
   private readonly body: THREE.InstancedMesh;
@@ -178,19 +234,27 @@ export class CardFan {
     this.mainGrip = opts.mainGrip;
     this.root.name = 'card-fan';
 
-    this.body = new THREE.InstancedMesh(
-      new THREE.PlaneGeometry(1, 1),
-      new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.FrontSide }),
-      MAX_HAND,
-    );
+    const bodyGeometry = new THREE.PlaneGeometry(1, 1);
+    addCardFaceAttributes(bodyGeometry, MAX_HAND);
+    this.body = new THREE.InstancedMesh(bodyGeometry, createCardFaceMaterial(), MAX_HAND);
     this.body.name = 'card-fan-bodies';
     this.body.count = 0;
     this.body.frustumCulled = false;
-    this.body.setColorAt(0, tmpColor.set(PALETTE.walnut));
+    if (opts.loadArt ?? true) {
+      onFirstRender(this.body, (renderer) => {
+        requestCardFaceArt(sharedKtx2Loader(renderer)).then(
+          (art) => {
+            if (!this.disposed) this.setArt(art);
+          },
+          (error: unknown) => console.warn('card atlas failed to load; flat cards stay', error),
+        );
+      });
+    }
 
+    // A dark disc inside the painted cost medallion so the light cost number reads over the gem.
     this.gems = new THREE.InstancedMesh(
       new THREE.CircleGeometry(0.5, 20),
-      new THREE.MeshBasicMaterial({ color: PALETTE.brass, side: THREE.FrontSide }),
+      new THREE.MeshBasicMaterial({ color: '#1a0f08', side: THREE.FrontSide, toneMapped: false }),
       MAX_HAND,
     );
     this.gems.name = 'card-fan-gems';
@@ -242,6 +306,21 @@ export class CardFan {
     return countDraws(this.root);
   }
 
+  /** True once the faces sample the atlas; until then cards are flat tints. */
+  get hasArt(): boolean {
+    return this.art !== null;
+  }
+
+  /** Gives the faces their atlas pages and moves the labels onto the frame's text regions. */
+  setArt(art: CardFaceArt): void {
+    this.art = art;
+    this.text = textLayout(art.atlas);
+    applyCardFaceArt(this.body.material as THREE.ShaderMaterial, art);
+    this.writeFaces();
+    this.rebuildLabels();
+    this.write();
+  }
+
   /** Layout slot per card, grip-local, for the current hand. */
   get layout(): readonly FanSlot[] {
     return this.slots;
@@ -268,10 +347,7 @@ export class CardFan {
 
     this.body.count = cards.length;
     this.gems.count = cards.length;
-    cards.forEach((card, i) => {
-      this.body.setColorAt(i, tmpColor.set(TYPE_COLOR[card.type]));
-    });
-    if (this.body.instanceColor) this.body.instanceColor.needsUpdate = true;
+    this.writeFaces();
 
     this.rebuildLabels();
     this.write();
@@ -404,6 +480,15 @@ export class CardFan {
     this.listeners.clear();
   }
 
+  /** Per-instance face data: atlas rects when the art is loaded, and the flat tint either way. */
+  private writeFaces(): void {
+    const geometry = this.body.geometry;
+    this.cards.forEach((card, i) => {
+      writeCardTint(geometry, i, tmpColor.set(TYPE_COLOR[card.type]));
+      if (this.art) writeCardFace(geometry, i, cardFaceInstance(this.art.atlas, card.id));
+    });
+  }
+
   private describe(index: number): GrabbedCard {
     return {
       index,
@@ -440,33 +525,42 @@ export class CardFan {
   private rebuildLabels(): void {
     this.clearMembers();
     const w = this.options.cardWidth;
+    const layout = this.text;
     this.members = this.cards.map((card) => {
       const cost = new Text();
       cost.text = String(card.cost);
       cost.fontSize = COST_FONT * w;
-      cost.color = PALETTE.void;
+      cost.color = PALETTE.candle;
       cost.anchorX = 'center';
       cost.anchorY = 'middle';
 
       const title = new Text();
       title.text = card.name;
       title.fontSize = TITLE_FONT * w;
-      title.maxWidth = (0.5 - TITLE_AT[0] - 0.04) * w;
-      title.color = PALETTE.parchment;
-      title.anchorX = 'left';
+      title.maxWidth = layout.titleWidth * w;
+      title.color = INK;
+      title.anchorX = 'center';
       title.anchorY = 'middle';
-      title.textAlign = 'left';
-      title.lineHeight = 1.05;
+      title.textAlign = 'center';
+      title.whiteSpace = 'nowrap';
 
       const desc = new Text();
       desc.text = card.description;
       desc.fontSize = DESC_FONT * w;
-      desc.maxWidth = 0.86 * w;
-      desc.color = PALETTE.parchment;
+      desc.maxWidth = layout.descWidth * w;
+      desc.color = INK;
       desc.anchorX = 'left';
       desc.anchorY = 'top';
       desc.textAlign = 'left';
-      desc.lineHeight = 1.1;
+      desc.lineHeight = 1.15;
+      // A stroke in the fill colour thickens the thin SDF glyphs on parchment. Unlike an outline it
+      // is drawn in the same pass, so the batch stays one draw.
+      for (const text of [cost, title, desc]) {
+        // The toolkit's ambient troika typings omit the stroke properties.
+        const stroked = text as unknown as { strokeWidth: string; strokeColor: string };
+        stroked.strokeWidth = '3%';
+        stroked.strokeColor = text === cost ? PALETTE.candle : INK;
+      }
       for (const text of [cost, title, desc]) {
         text.matrixAutoUpdate = false;
         this.labels.addText(text);
@@ -489,6 +583,7 @@ export class CardFan {
   /** Writes instance matrices, gem matrices and label matrices from the current poses. */
   private write(): void {
     const { cardWidth: w, cardHeight: h } = this.options;
+    const { gemAt, gemDiameter, titleAt, descAt } = this.text;
     for (let i = 0; i < this.cards.length; i++) {
       const pose = this.poses[i] as Pose;
       const state = this.states[i];
@@ -497,7 +592,7 @@ export class CardFan {
       tmpMatrix.compose(pose.position, pose.quaternion, tmpScale.set(w * s, h * s, 1));
       this.body.setMatrixAt(i, tmpMatrix);
 
-      this.place(pose, s, GEM_AT[0] * w, GEM_AT[1] * h, GEM_Z, GEM_DIAMETER * w, tmpMatrix);
+      this.place(pose, s, gemAt[0] * w, gemAt[1] * h, GEM_Z, gemDiameter * w, tmpMatrix);
       this.gems.setMatrixAt(i, tmpMatrix);
 
       const member = this.members[i];
@@ -505,13 +600,13 @@ export class CardFan {
       // The description is only readable on a raised or held card, so a resting fan skips it.
       const detailed =
         state === 'grabbed' || state === 'returning' || (this.hoverT[i] as number) > 0.5;
-      this.place(pose, s, GEM_AT[0] * w, GEM_AT[1] * h, TEXT_Z, 1, member.cost.matrix);
-      this.place(pose, s, TITLE_AT[0] * w, TITLE_AT[1] * h, TEXT_Z, 1, member.title.matrix);
+      this.place(pose, s, gemAt[0] * w, gemAt[1] * h, TEXT_Z, 1, member.cost.matrix);
+      this.place(pose, s, titleAt[0] * w, titleAt[1] * h, TEXT_Z, 1, member.title.matrix);
       this.place(
         pose,
         detailed ? s : 0,
-        DESC_AT[0] * w,
-        DESC_AT[1] * h,
+        descAt[0] * w,
+        descAt[1] * h,
         TEXT_Z,
         1,
         member.desc.matrix,

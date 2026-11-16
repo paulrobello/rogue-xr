@@ -28,6 +28,13 @@ import {
   rayToPlate,
   SigilPlate,
 } from '../sigil-plate/index.ts';
+import { type IconId, INTENT_ICON, STATUS_ICON } from '../ui/icon-atlas.ts';
+import {
+  drawIconRow,
+  type IconSheet,
+  iconSheet,
+  iconSheetOnFirstRender,
+} from '../ui/icon-sheet.ts';
 import type { EncounterDirector } from './encounter.ts';
 import type { TablePose } from './placement.ts';
 
@@ -259,7 +266,7 @@ export class CombatSession {
     this.endLabel = buttonLabel(this.endButton, 'END TURN');
     this.throwLabel = buttonLabel(this.throwButton, 'THROW');
 
-    this.status = safeLabel(512, 256, 0.5);
+    this.status = safeLabel(512, 320, 0.5);
     if (this.status) {
       this.status.mesh.position.copy(onTable(-0.6, 0.15, 0.45));
       this.status.mesh.rotation.y = yawRad;
@@ -267,14 +274,27 @@ export class CombatSession {
     }
     this.enemyIds.forEach((id, i) => {
       const body = this.bodies[i];
-      const label = safeLabel(384, 160, 0.6);
+      const label = safeLabel(640, 260, 0.85);
       if (!body || !label) return;
       const at = body.getWorldPosition(new THREE.Vector3());
-      label.mesh.position.set(at.x, at.y + (body.userData.tier === 'guardian' ? 1.3 : 0.75), at.z);
+      // Float the readout clear of the automaton's top so the body never hides it.
+      const top = new THREE.Box3().setFromObject(body).max.y;
+      const lift = Number.isFinite(top) ? top - at.y + 0.22 : 0.75;
+      label.mesh.position.set(
+        at.x,
+        at.y + Math.max(lift, body.userData.tier === 'guardian' ? 1.3 : 0.75),
+        at.z,
+      );
       label.mesh.rotation.y = yawRad;
       this.group.add(label.mesh);
       this.labels.push({ id, label });
     });
+    // UI atlas icons are drawn into these canvases; the page loads when a label is first drawn.
+    const iconHost = this.status?.mesh ?? this.labels[0]?.label.mesh;
+    if (iconHost)
+      iconSheetOnFirstRender(iconHost, () => {
+        this.dirty = true;
+      });
 
     this.platePose = deps.sockets.sigilPlate
       ? platePoseFromNode(deps.sockets.sigilPlate)
@@ -748,6 +768,15 @@ export class CombatSession {
 
   private paint(): void {
     const state = this.controller.state;
+    const icons: IconSheet | null = iconSheet();
+    const statusChips = (statuses: Readonly<Partial<Record<keyof typeof STATUS_ICON, number>>>) =>
+      (Object.entries(statuses) as [keyof typeof STATUS_ICON, number | undefined][])
+        .filter(([, n]) => (n ?? 0) > 0)
+        .map(([status, n]) => ({ icon: STATUS_ICON[status], text: String(n), fallback: status }));
+    const vitals = (hp: number, maxHp: number, block: number) => [
+      { icon: 'hp' as IconId, text: `${hp}/${maxHp}`, fallback: 'HP' },
+      ...(block ? [{ icon: 'block' as IconId, text: String(block), fallback: 'Block' }] : []),
+    ];
     for (const { id, label } of this.labels) {
       const enemy = state.enemies.find((e) => e.id === id);
       if (!enemy) continue;
@@ -757,13 +786,45 @@ export class CombatSession {
         roundRect(ctx, 4, 4, w - 8, h - 8, 14);
         ctx.fill();
         ctx.fillStyle = PALETTE.parchment;
-        ctx.font = 'bold 34px system-ui, sans-serif';
+        ctx.font = 'bold 38px system-ui, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(`${enemy.name}  ${enemy.hp}/${enemy.maxHp}`, w / 2, 52);
-        ctx.font = '600 28px system-ui, sans-serif';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(enemy.name, w / 2, 38);
+        ctx.font = 'bold 44px system-ui, sans-serif';
+        drawIconRow(
+          ctx,
+          icons,
+          vitals(enemy.hp, enemy.maxHp, enemy.block),
+          w / 2,
+          104,
+          64,
+          'center',
+        );
+        // Intent icon with its amount (damage, hits, block, status), then the enemy's statuses.
+        const amount = intentText(enemy, intentDamage(state, enemy.id))
+          .split(' ')
+          .slice(1)
+          .join(' ');
+        const intent = enemy.intent
+          ? [
+              {
+                icon: INTENT_ICON[enemy.intent.intent],
+                text: amount,
+                fallback: enemy.intent.intent,
+              },
+            ]
+          : [];
         ctx.fillStyle = PALETTE.candle;
-        const intent = intentText(enemy, intentDamage(state, enemy.id));
-        ctx.fillText(`${intent}${enemy.block ? `  [${enemy.block} block]` : ''}`, w / 2, 110);
+        ctx.font = 'bold 50px system-ui, sans-serif';
+        drawIconRow(
+          ctx,
+          icons,
+          [...intent, ...statusChips(enemy.statuses)],
+          w / 2,
+          200,
+          92,
+          'center',
+        );
       });
     }
     this.status?.draw((ctx, w, h) => {
@@ -771,15 +832,24 @@ export class CombatSession {
       roundRect(ctx, 4, 4, w - 8, h - 8, 16);
       ctx.fill();
       ctx.fillStyle = PALETTE.parchment;
-      ctx.font = 'bold 36px system-ui, sans-serif';
+      ctx.font = 'bold 40px system-ui, sans-serif';
       const p = state.player;
-      ctx.fillText(`HP ${p.hp}/${p.maxHp}${p.block ? `  [${p.block}]` : ''}`, 24, 60);
-      ctx.fillText(`Steam ${p.steam}   Turn ${state.turn}`, 24, 110);
+      drawIconRow(ctx, icons, vitals(p.hp, p.maxHp, p.block), 24, 50, 60);
+      drawIconRow(
+        ctx,
+        icons,
+        [{ icon: 'steam', text: String(p.steam), fallback: 'Steam' }, ...statusChips(p.statuses)],
+        24,
+        122,
+        60,
+      );
       ctx.fillStyle = PALETTE.candle;
       ctx.font = '600 30px system-ui, sans-serif';
-      ctx.fillText(this.banner || `Stage: ${this.stage}`, 24, 170);
+      ctx.textBaseline = 'middle';
+      ctx.fillText(`Turn ${state.turn}`, 24, 186);
+      ctx.fillText(this.banner || `Stage: ${this.stage}`, 24, 236);
       const last = this.rolls[this.rolls.length - 1];
-      if (last) ctx.fillText(`Last roll ${last.value}`, 24, 220);
+      if (last) ctx.fillText(`Last roll ${last.value}`, 24, 284);
     });
     (this.throwButton.material as THREE.MeshStandardMaterial).emissive.set(
       this.pendingThrow ? PALETTE.brass : '#000000',

@@ -1,6 +1,14 @@
 import * as THREE from 'three';
 import type { Stream } from '../core/rng.ts';
 import { PALETTE } from '../palette.ts';
+import { onFirstRender, sharedKtx2Loader } from '../ui/first-render.ts';
+import {
+  type DieFaceSet,
+  dieFace,
+  loadUiAtlas,
+  UI_ATLAS_BASE,
+  type UiAtlasManifest,
+} from '../ui/icon-atlas.ts';
 import { D6_HALF_EXTENT, D8_CIRCUMRADIUS, type DieKind, faceNormals } from './faces.ts';
 import { DiceWorld, type DiceWorldOptions } from './world.ts';
 
@@ -41,20 +49,108 @@ function canvas2d(size: number): CanvasRenderingContext2D | null {
   }
 }
 
-function faceTexture(value: number): THREE.CanvasTexture | null {
-  const ctx = canvas2d(64);
-  if (!ctx) return null;
-  ctx.fillStyle = PALETTE.brass;
-  ctx.fillRect(0, 0, 64, 64);
-  ctx.fillStyle = PALETTE.warmBlack;
-  ctx.font = 'bold 40px serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(String(value), 32, 35);
-  const texture = new THREE.CanvasTexture(ctx.canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  return texture;
+/** The UI atlas die each presenter kind wears. */
+export const DIE_ATLAS_ID = { d6: 'brass-d6', d8: 'glass-d8' } as const satisfies Record<
+  DieKind,
+  string
+>;
+
+/**
+ * UVs for a `BoxGeometry` (4 vertices per group, groups +X, -X, +Y, -Y, +Z, -Z, each spanning 0..1)
+ * that put the atlas face of `BOX_GROUP_FACE[group]` on each side, so face index `i` of
+ * `faces.ts` shows the atlas face with index `i`.
+ */
+export function d6FaceUvs(set: DieFaceSet, unit: ArrayLike<number>): Float32Array {
+  const out = new Float32Array(unit.length);
+  BOX_GROUP_FACE.forEach((face, group) => {
+    const uv = set.faces.find((f) => f.index === face)?.uv;
+    if (!uv) throw new RangeError(`${set.kind} atlas has no face ${face}`);
+    for (let v = group * 4; v < group * 4 + 4; v++) {
+      out[v * 2] = uv.u0 + (unit[v * 2] as number) * (uv.u1 - uv.u0);
+      out[v * 2 + 1] = uv.v0 + (unit[v * 2 + 1] as number) * (uv.v1 - uv.v0);
+    }
+  });
+  return out;
 }
+
+/**
+ * UVs for a non-indexed octahedron (3 vertices per triangle, counter-clockwise from outside): each
+ * triangle is matched to its `faces.ts` face by normal and gets that face's atlas triangle, corners
+ * assigned apex, bottom-left, bottom-right so the UV winding matches the mesh and numerals are not
+ * mirrored.
+ */
+export function d8FaceUvs(set: DieFaceSet, positions: ArrayLike<number>): Float32Array {
+  const corners = set.triangle;
+  if (corners?.length !== 3) throw new RangeError('d8 atlas needs a face triangle');
+  const [apex, right, left] = corners as readonly (readonly [number, number])[];
+  const order = [apex, left, right] as const;
+  const normals = faceNormals('d8');
+  const out = new Float32Array((positions.length / 3) * 2);
+  const a = new THREE.Vector3();
+  const b = new THREE.Vector3();
+  const c = new THREE.Vector3();
+  for (let t = 0; t < positions.length / 9; t++) {
+    a.fromArray(positions as number[], t * 9);
+    b.fromArray(positions as number[], t * 9 + 3);
+    c.fromArray(positions as number[], t * 9 + 6);
+    const n = b.clone().sub(a).cross(c.clone().sub(a)).normalize();
+    let face = 0;
+    let best = Number.NEGATIVE_INFINITY;
+    normals.forEach((m, i) => {
+      const d = n.x * m.x + n.y * m.y + n.z * m.z;
+      if (d > best) {
+        best = d;
+        face = i;
+      }
+    });
+    const uv = set.faces.find((f) => f.index === face)?.uv;
+    if (!uv) throw new RangeError(`d8 atlas has no face ${face}`);
+    order.forEach(([tx, ty], k) => {
+      out[(t * 3 + k) * 2] = uv.u0 + tx * (uv.u1 - uv.u0);
+      out[(t * 3 + k) * 2 + 1] = uv.v1 - ty * (uv.v1 - uv.v0);
+    });
+  }
+  return out;
+}
+
+/** The face index of `kind` that `faces.ts` maps to `value`, and its atlas entry. */
+export function atlasFaceFor(manifest: UiAtlasManifest, kind: DieKind, faceIndex: number) {
+  return dieFace(manifest, DIE_ATLAS_ID[kind], faceIndex);
+}
+
+let diePages: Promise<{ manifest: UiAtlasManifest; d6: THREE.Texture; d8: THREE.Texture }> | null =
+  null;
+
+/** Loads the UI atlas manifest and both dice pages once (KTX2), shared by every presenter. */
+function loadDiePages(renderer: THREE.WebGLRenderer) {
+  if (!diePages) {
+    diePages = (async () => {
+      const manifest = await loadUiAtlas();
+      const loader = sharedKtx2Loader(renderer);
+      const page = async (name: 'dice-d6' | 'dice-d8') => {
+        const entry = manifest.pages[name];
+        if (!entry?.ktx2) throw new Error(`UI atlas page ${name} has no KTX2`);
+        const texture = await loader.loadAsync(`${UI_ATLAS_BASE}/${entry.ktx2}`);
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.anisotropy = 4;
+        texture.minFilter = THREE.LinearMipmapLinearFilter;
+        return texture;
+      };
+      const [d6, d8] = await Promise.all([page('dice-d6'), page('dice-d8')]);
+      return { manifest, d6, d8 };
+    })();
+    diePages.catch(() => {
+      diePages = null;
+    });
+  }
+  return diePages;
+}
+
+const whitePixel = (): THREE.Texture => {
+  const texture = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1);
+  texture.needsUpdate = true;
+  return texture;
+};
 
 /** A small floating number above a settled die, so the result reads from the seat. */
 function resultSprite(value: number): THREE.Sprite | null {
@@ -109,8 +205,9 @@ export class DicePresenter {
   private readonly geometries: THREE.BufferGeometry[] = [];
   private readonly materials: THREE.Material[] = [];
   private readonly textures: THREE.Texture[] = [];
-  private readonly d6Materials: THREE.Material[];
-  private readonly d8Material: THREE.Material;
+  private readonly d6Material: THREE.MeshStandardMaterial;
+  private readonly d8Material: THREE.MeshStandardMaterial;
+  private facesRequested = false;
   private readonly d6Geometry: THREE.BufferGeometry;
   private readonly d8Geometry: THREE.BufferGeometry;
   private readonly offSettled: () => void;
@@ -127,28 +224,32 @@ export class DicePresenter {
       D6_HALF_EXTENT * 2,
       D6_HALF_EXTENT * 2,
     );
+    // One material per die (one draw): the faces are regions of the UI atlas dice pages, mapped
+    // by UV. Until the pages load, the dice are plain brass and sapphire with a white map, so the
+    // texture swap does not recompile the program.
+    this.d6Geometry.clearGroups();
     this.d8Geometry = buildD8Geometry();
     this.geometries.push(this.d6Geometry, this.d8Geometry);
-    const d6Values = options.faces?.d6 ?? [1, 2, 3, 4, 5, 6];
-    this.d6Materials = BOX_GROUP_FACE.map((face) => {
-      const map = faceTexture(d6Values[face] ?? face + 1);
-      if (map) this.textures.push(map);
-      return new THREE.MeshStandardMaterial({
-        color: map ? '#ffffff' : PALETTE.brass,
-        map,
-        metalness: 0.6,
-        roughness: 0.35,
-      });
+    const blank = whitePixel();
+    this.textures.push(blank);
+    this.d6Material = new THREE.MeshStandardMaterial({
+      color: PALETTE.brass,
+      map: blank,
+      emissiveMap: blank,
+      emissive: '#000000',
+      metalness: 0.6,
+      roughness: 0.35,
     });
     this.d8Material = new THREE.MeshStandardMaterial({
       color: PALETTE.sapphire,
+      map: blank,
+      emissiveMap: blank,
+      emissive: '#000000',
       metalness: 0.1,
-      roughness: 0.1,
-      transparent: true,
-      opacity: 0.85,
+      roughness: 0.15,
       flatShading: true,
     });
-    this.materials.push(...this.d6Materials, this.d8Material);
+    this.materials.push(this.d6Material, this.d8Material);
     this.offSettled = world.onSettled((event) => {
       const entry = this.dice.get(event.id);
       if (!entry) return;
@@ -225,9 +326,20 @@ export class DicePresenter {
     this.world.throwDie(id, kind, position, linvel, angvel, face);
     const mesh =
       kind === 'd6'
-        ? new THREE.Mesh(this.d6Geometry, this.d6Materials)
+        ? new THREE.Mesh(this.d6Geometry, this.d6Material)
         : new THREE.Mesh(this.d8Geometry, this.d8Material);
     mesh.name = id;
+    if (!this.facesRequested) {
+      this.facesRequested = true;
+      onFirstRender(mesh, (renderer) => {
+        loadDiePages(renderer).then(
+          (pages) => {
+            if (!this.disposed) this.applyFaces(pages);
+          },
+          (error: unknown) => console.warn('dice face atlas failed to load', error),
+        );
+      });
+    }
     mesh.castShadow = true;
     this.root.add(mesh);
     this.dice.set(id, { mesh, kind, face, value, label: null });
@@ -270,6 +382,27 @@ export class DicePresenter {
     for (const m of this.materials) m.dispose();
     for (const t of this.textures) t.dispose();
     this.root.removeFromParent();
+  }
+
+  /** Maps the atlas dice faces onto both geometries and swaps the pages in. */
+  applyFaces(pages: { manifest: UiAtlasManifest; d6: THREE.Texture; d8: THREE.Texture }): void {
+    const d6Uv = this.d6Geometry.getAttribute('uv') as THREE.BufferAttribute;
+    d6Uv.set(d6FaceUvs(pages.manifest.dice['brass-d6'], d6Uv.array));
+    d6Uv.needsUpdate = true;
+    const d8Uv = this.d8Geometry.getAttribute('uv') as THREE.BufferAttribute;
+    d8Uv.set(
+      d8FaceUvs(pages.manifest.dice['glass-d8'], this.d8Geometry.getAttribute('position').array),
+    );
+    d8Uv.needsUpdate = true;
+    for (const [material, page, glow] of [
+      [this.d6Material, pages.d6, '#3a2a12'],
+      [this.d8Material, pages.d8, '#5a4a30'],
+    ] as const) {
+      material.map = page;
+      material.emissiveMap = page;
+      material.emissive.set(glow);
+      material.color.set('#ffffff');
+    }
   }
 
   private copyPose(id: string): void {

@@ -43,9 +43,9 @@ export interface FanOptions {
 
 export const MAX_HAND = 10;
 
-/** Holo card width and frame aspect, mirrored from `cards/card-proof.ts` (0.063 m, 1086x716 frame). */
+/** Holo card width (metres) and the slice atlas frame aspect (`card-atlas.json`, 672x1016 px frames). */
 export const HOLO_CARD_WIDTH = 0.063;
-export const HOLO_CARD_ASPECT = 1086 / 716;
+export const HOLO_CARD_ASPECT = 1016 / 672;
 
 export const DEFAULT_FAN: FanOptions = {
   cardWidth: HOLO_CARD_WIDTH,
