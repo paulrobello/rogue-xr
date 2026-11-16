@@ -1,8 +1,10 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
+import { DEFAULT_EYE_HEIGHT, TABLE_HALF_DEPTH, WAIST_DROP } from '../src/combat/placement.ts';
 import type { Box } from '../src/content/rooms.ts';
 import { ActionBus } from '../src/core/actions.ts';
 import { formatSeed, isValidSeed, normalizeSeed, randomSeed } from '../src/core/rng.ts';
+import { combatPitch, createDesktopControls } from '../src/desktop/controls.ts';
 import { WALK_SPEED, Walker } from '../src/desktop/walker.ts';
 import { generateFloor } from '../src/floor/generate.ts';
 import { buildFloorWorld, type FloorWorld } from '../src/world/floor-world.ts';
@@ -144,5 +146,62 @@ describe('desktop walk through a seeded floor', () => {
     const past = (rig.position.x - x) * out[0] + (rig.position.z - z) * out[1];
     expect(past).toBeLessThan(0);
     world.dispose();
+  });
+});
+
+describe('desktop combat framing', () => {
+  const setup = () => {
+    const camera = new THREE.PerspectiveCamera(70, 1.6, 0.05, 100);
+    camera.position.set(0, DEFAULT_EYE_HEIGHT, 0);
+    const controls = createDesktopControls(
+      camera,
+      document.createElement('canvas'),
+      new ActionBus(),
+    );
+    return { camera, controls };
+  };
+
+  it('tilts the view down to the table while a fight runs and restores it after', () => {
+    const { camera, controls } = setup();
+    controls.update();
+    expect(camera.rotation.x).toBe(0);
+    // True only on the opening frame, which is when main.ts turns the walker to the table.
+    expect(controls.frameCombat(-0.4)).toBe(true);
+    controls.update();
+    expect(camera.rotation.x).toBe(-0.4);
+    // The loop calls it every frame of the fight; the saved pitch must survive that.
+    expect(controls.frameCombat(-0.5)).toBe(false);
+    expect(controls.pitch).toBe(-0.4);
+    controls.frameCombat(null);
+    controls.update();
+    expect(controls.pitch).toBe(0);
+    expect(camera.rotation.x).toBe(0);
+  });
+
+  // The bug bash found fights opening with the table below the view (seed SPIRE001, room 2: the
+  // table fell back to 0.5 m), so the sigil plate and dice tray could not be seen or drawn on.
+  for (const distance of [0.5, 0.65]) {
+    it(`frames the table centre and the automaton line with the table ${distance} m ahead`, () => {
+      const { camera, controls } = setup();
+      const top = DEFAULT_EYE_HEIGHT - WAIST_DROP;
+      controls.frameCombat(combatPitch(distance, DEFAULT_EYE_HEIGHT - top, camera.fov));
+      controls.update();
+      camera.updateMatrixWorld(true);
+      const points = [
+        new THREE.Vector3(0, top, -distance),
+        new THREE.Vector3(0, top, -distance - TABLE_HALF_DEPTH),
+        new THREE.Vector3(0, 1.6, -distance - 2),
+      ];
+      for (const p of points) {
+        const ndc = p.clone().project(camera);
+        expect(Math.abs(ndc.y), `point ${p.toArray()}`).toBeLessThanOrEqual(1);
+      }
+    });
+  }
+
+  it('lands on about -0.4 rad at the default placement', () => {
+    expect(
+      combatPitch(0.65, DEFAULT_EYE_HEIGHT - (DEFAULT_EYE_HEIGHT - WAIST_DROP), 70),
+    ).toBeCloseTo(-0.4, 1);
   });
 });

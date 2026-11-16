@@ -17,7 +17,7 @@ import { STARTER_DECK } from './content/cards.ts';
 import { REWARD_POOL } from './content/rewards.ts';
 import { ActionBus } from './core/actions.ts';
 import { randomSeed } from './core/rng.ts';
-import { createDesktopControls } from './desktop/controls.ts';
+import { combatPitch, createDesktopControls } from './desktop/controls.ts';
 import { Walker } from './desktop/walker.ts';
 import { loadSentry, type SentryActor, type SentryAsset } from './enemies/sentry-asset.ts';
 import { type FlowPhase, RunFlow } from './flow/flow.ts';
@@ -728,6 +728,17 @@ renderer.setAnimationLoop((time, frame) => {
       });
     }
   } else {
+    const pose = floor?.encounter.tablePose;
+    const fighting = floor?.encounter.phase === 'unfolding' || floor?.encounter.phase === 'active';
+    if (fighting && pose) {
+      const eye = camera.getWorldPosition(new THREE.Vector3());
+      const ahead = Math.hypot(pose.x - eye.x, pose.z - eye.z);
+      // Walls can push the table off the player's heading, and the walker cannot turn mid-fight,
+      // so the desktop view turns to the table as the fight opens.
+      if (desktop.frameCombat(combatPitch(ahead, eye.y - pose.height, camera.fov))) {
+        walker.yaw = pose.yaw;
+      }
+    } else desktop.frameCombat(null);
     desktop.update();
     walker.enabled = !floor?.locked && !ui?.visible;
     walker.update(deltaSeconds);

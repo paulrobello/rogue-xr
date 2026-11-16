@@ -479,7 +479,11 @@ export class CombatSession {
     this.plate.update(dt);
     if (this.plate.phase === 'done') {
       this.plateDone += dt;
-      if (this.plateDone >= PLATE_DONE_SECONDS) this.plate.hide();
+      if (this.plateDone >= PLATE_DONE_SECONDS) {
+        this.plate.hide();
+        // A sigil card staged while the last result still showed gets its plate now.
+        this.dirty = true;
+      }
     }
     for (const [actor] of this.atImpact) if (actor.state !== 'attack') this.flushImpact(actor);
     if (this.deathWait > 0) this.deathWait -= dt;

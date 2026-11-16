@@ -30,7 +30,7 @@ interface Rig {
 
 async function openFight(
   seed = 'SPIRE002',
-  options?: { enemyHp?: number; playerHp?: number },
+  options?: { enemyHp?: number; playerHp?: number; deck?: readonly string[] },
 ): Promise<Rig & { session: CombatSession }> {
   const scene = new THREE.Scene();
   const player = new THREE.Group();
@@ -265,6 +265,31 @@ describe('combat session', () => {
     expect(rig.hook.session).toBeNull();
     expect(rig.actions.listenerCount()).toBe(rig.baseListeners);
   });
+
+  // P6-T2 bug bash (SPIRE002, room 4): a sigil card played while the last cast's result still
+  // showed left the controller waiting on a plate that never came back.
+  it('shows the plate for a sigil card staged while the last result is on screen', async () => {
+    const rig = await openFight('SPIRE002', { deck: Array(10).fill('warding-glyph') });
+    const { session } = rig;
+    const table = at(session, 'table');
+    const first = session.controller.state.piles.hand[0]?.uid as number;
+    drag(rig, session, first, table);
+    expect(session.controller.stage).toBe('sigil');
+    drawSigil(rig, session);
+    expect(session.plate.phase).toBe('done');
+    const blockAfterFirst = session.controller.state.player.block;
+    expect(blockAfterFirst).toBeGreaterThan(0);
+
+    const second = session.controller.state.piles.hand[0]?.uid as number;
+    drag(rig, session, second, table);
+    expect(session.controller.stage).toBe('sigil');
+    rig.step(2);
+    expect(session.plate.phase).toBe('ready');
+    expect(session.plate.sigilId).toBe('ward');
+    drawSigil(rig, session);
+    expect(session.controller.stage).toBe('idle');
+    expect(session.controller.state.player.block).toBeGreaterThan(blockAfterFirst);
+  }, 60_000);
 
   it('replays the same fight identically from the same seed', async () => {
     const a = await playFight(await openFight());
