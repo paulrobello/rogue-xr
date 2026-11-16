@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import type { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
 
 /** Lightmap contract (PRD "Lightmap contract"): scaled irradiance on UV1, sRGB-encoded 8-bit. */
 export interface LightmapSpec {
@@ -17,6 +18,22 @@ export interface TemplateManifest {
   lightmap: LightmapSpec;
 }
 
+/** Extensions a template's lightmap may ship as, in preference order. */
+const LIGHTMAP_EXTENSIONS = ['ktx2', 'png'] as const;
+
+/** The only filenames that can be `template`'s lightmap, in preference order. */
+export function lightmapFileNames(template: string): string[] {
+  return LIGHTMAP_EXTENSIONS.map((ext) => `${template}.lightmap.${ext}`);
+}
+
+/**
+ * Picks `template`'s lightmap from a directory listing by exact filename. Near misses such as
+ * `xstudy.lightmap.ktx2` or `study-lightmap-old.ktx2` are never candidates, whatever they contain.
+ */
+export function selectLightmapFile(template: string, files: readonly string[]): string | undefined {
+  return lightmapFileNames(template).find((name) => files.includes(name));
+}
+
 export function parseTemplateManifest(value: unknown): TemplateManifest {
   const m = value as Partial<TemplateManifest> | null;
   const lm = m?.lightmap as Partial<LightmapSpec> | undefined;
@@ -25,7 +42,7 @@ export function parseTemplateManifest(value: unknown): TemplateManifest {
   if (m.glb !== `${m.template}.glb`) throw new Error(`manifest: glb must be ${m.template}.glb`);
   if (!lm) throw new Error('manifest: missing lightmap');
   // Bound by exact filename, never inferred from a substring of some other map's name.
-  const allowed = [`${m.template}.lightmap.png`, `${m.template}.lightmap.ktx2`];
+  const allowed = lightmapFileNames(m.template);
   if (typeof lm.file !== 'string' || !allowed.includes(lm.file)) {
     throw new Error(`manifest: lightmap file must be one of ${allowed.join(', ')}`);
   }
@@ -48,11 +65,75 @@ export function configureLightmapTexture(
   texture.channel = spec.uv;
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.flipY = false;
-  texture.generateMipmaps = true;
-  texture.minFilter = THREE.LinearMipmapLinearFilter;
   texture.magFilter = THREE.LinearFilter;
+  const compressed = texture as THREE.CompressedTexture;
+  if (compressed.isCompressedTexture) {
+    // A KTX2 file carries its own mip chain, and a compressed texture cannot generate one.
+    texture.generateMipmaps = false;
+    texture.minFilter =
+      compressed.mipmaps.length > 1 ? THREE.LinearMipmapLinearFilter : THREE.LinearFilter;
+  } else {
+    texture.generateMipmaps = true;
+    texture.minFilter = THREE.LinearMipmapLinearFilter;
+  }
   texture.needsUpdate = true;
   return texture;
+}
+
+/** Any loader with `loadAsync`, such as KTX2Loader or an ImageBitmap-backed texture loader. */
+export interface LightmapLoader {
+  loadAsync(url: string): Promise<THREE.Texture>;
+}
+
+/** Loaders by file kind. A `.ktx2` lightmap goes to `ktx2`, a `.png` one to `image`. */
+export interface LightmapLoaders {
+  ktx2?: LightmapLoader | KTX2Loader;
+  image?: LightmapLoader;
+}
+
+/**
+ * Decodes images off the main thread through `createImageBitmap` (PRD uploads budget). The bitmap
+ * keeps its pixels as stored: no flip (the contract sets flipY false), no premultiply, no colour
+ * space conversion, because the PNG is already sRGB-encoded data.
+ */
+export function createBitmapTextureLoader(): LightmapLoader {
+  const loader = new THREE.ImageBitmapLoader().setOptions({
+    imageOrientation: 'from-image',
+    premultiplyAlpha: 'none',
+    colorSpaceConversion: 'none',
+  });
+  return {
+    async loadAsync(url) {
+      const texture = new THREE.Texture(await loader.loadAsync(url));
+      texture.needsUpdate = true;
+      return texture;
+    },
+  };
+}
+
+export interface RoomLightmap {
+  texture: THREE.Texture;
+  url: string;
+  /** Materials the lightmap was bound to, 0 when no `root` was given. */
+  bound: number;
+}
+
+/**
+ * Loads exactly the manifest's lightmap file from `baseUrl` and configures it for UV channel 1 at
+ * the manifest intensity. The manifest is re-validated first, so a file that is not
+ * `<template>.lightmap.ktx2|png` is rejected rather than guessed from a substring. With `root`,
+ * also binds the texture to every mesh material under it.
+ */
+export async function loadRoomLightmap(
+  manifest: TemplateManifest,
+  baseUrl: string,
+  loader: LightmapLoader | KTX2Loader,
+  root?: THREE.Object3D,
+): Promise<RoomLightmap> {
+  const { lightmap } = parseTemplateManifest(manifest);
+  const url = `${baseUrl.replace(/\/+$/, '')}/${lightmap.file}`;
+  const texture = configureLightmapTexture(await loader.loadAsync(url), lightmap);
+  return { texture, url, bound: root ? bindLightmap(root, texture, lightmap) : 0 };
 }
 
 /**
@@ -85,20 +166,24 @@ export function bindLightmap(
   return bound;
 }
 
-/** Loads a room template GLB with its lightmap from `<base>/<template>.manifest.json`. */
+/**
+ * Loads a room template GLB with its lightmap from `<base>/<template>.manifest.json`. PNG
+ * lightmaps decode through ImageBitmap unless `loaders.image` overrides it. A KTX2 lightmap needs
+ * `loaders.ktx2`.
+ */
 export async function loadLightmappedTemplate(
   base: string,
   template: string,
+  loaders: LightmapLoaders = {},
 ): Promise<THREE.Group> {
   const response = await fetch(`${base}/${template}.manifest.json`);
   if (!response.ok) throw new Error(`manifest ${template}: HTTP ${response.status}`);
   const manifest = parseTemplateManifest(await response.json());
-  const [gltf, texture] = await Promise.all([
-    new GLTFLoader().loadAsync(`${base}/${manifest.glb}`),
-    new THREE.TextureLoader().loadAsync(`${base}/${manifest.lightmap.file}`),
-  ]);
-  configureLightmapTexture(texture, manifest.lightmap);
-  bindLightmap(gltf.scene, texture, manifest.lightmap);
+  const isKtx2 = manifest.lightmap.file.endsWith('.ktx2');
+  const loader = isKtx2 ? loaders.ktx2 : (loaders.image ?? createBitmapTextureLoader());
+  if (!loader) throw new Error(`template ${template}: lightmap is KTX2 but no ktx2 loader given`);
+  const gltf = await new GLTFLoader().loadAsync(`${base}/${manifest.glb}`);
+  await loadRoomLightmap(manifest, base, loader, gltf.scene);
   gltf.scene.name = template;
   return gltf.scene;
 }

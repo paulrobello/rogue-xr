@@ -8,6 +8,7 @@ test-results/
 # Staged from @par/xr-workspace by scripts/prepare-assets.ts
 public/fonts/
 public/assets/xr-hands/
+public/vendor/
 __pycache__/
 # Reproduced byte for byte by scripts/assets/build_materials.py
 assets-source/materials/derived/*.png

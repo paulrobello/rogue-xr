@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { createKtx2Loader } from './ktx2.ts';
 import { loadLightmappedTemplate } from './lightmap.ts';
 
 /**
@@ -18,6 +19,8 @@ export async function mountLightmapProof(
   rig.position.set(0, 0, 2.4);
   camera.fov = 70;
   camera.updateProjectionMatrix();
-  scene.add(await loadLightmappedTemplate('/assets/fixtures/room-proof', 'room-proof'));
+  const ktx2 = createKtx2Loader(renderer);
+  scene.add(await loadLightmappedTemplate('/assets/fixtures/room-proof', 'room-proof', { ktx2 }));
+  ktx2.dispose();
   (window as unknown as { __lightmapProofReady: boolean }).__lightmapProofReady = true;
 }

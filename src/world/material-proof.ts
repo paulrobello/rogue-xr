@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
 import { PALETTE } from '../palette.ts';
+import { createKtx2Loader } from './ktx2.ts';
 import { loadPbrSet } from './materials.ts';
 
 const ORDER = [
@@ -31,12 +31,7 @@ export async function mountMaterialProof(
   const tilt = THREE.MathUtils.degToRad(Number(params.get('tilt') ?? 0));
   scene.background = new THREE.Color(PALETTE.void);
 
-  let ktx2: KTX2Loader | undefined;
-  if (params.get('tex') === 'ktx2') {
-    // Dev-server path to three's own transcoder; P4-T7 self-hosts it for production builds.
-    ktx2 = new KTX2Loader().setTranscoderPath('/node_modules/three/examples/jsm/libs/basis/');
-    ktx2.detectSupport(renderer);
-  }
+  const ktx2 = params.get('tex') === 'ktx2' ? createKtx2Loader(renderer) : undefined;
   const { manifest, materials } = await loadPbrSet('/assets/materials', {
     anisotropy: renderer.capabilities.getMaxAnisotropy(),
     ktx2,
