@@ -474,10 +474,10 @@ try {
           const run = flow.run;
           const lit = floor.hearth.hearths.find((h) => h.object.name === hearth);
           const coals = lit?.object.getObjectByName('hearth-coals')?.material.color;
-          let nodes = 0;
-          floor.world.group.traverse(() => {
-            nodes += 1;
-          });
+          // Break-apart debris from the fight just won (H9) sinks and disposes on its own clock.
+          const count = (o) =>
+            o.name === 'break-apart' ? 0 : 1 + o.children.reduce((n, c) => n + count(c), 0);
+          const nodes = count(floor.world.group);
           return {
             phase: flow.phase,
             hp: run.hp,
@@ -2427,6 +2427,10 @@ try {
     }
     await waitFor('death', () => window.__flow.flow.phase === 'death');
     await settle(800);
+    // Return to title swaps in a pristine floor (H1), so the dead floor is the one held now.
+    await ev(() => {
+      window.__xrEmuDeadFloor = window.__combat.floor;
+    });
     const board = await ev(() => {
       const probe = window.__xrEmu;
       const at = probe.worldOf('summary-board');
@@ -2461,7 +2465,6 @@ try {
 
     // New Run after death without leaving XR: a fresh floor, same session.
     await ev(() => {
-      window.__xrEmuDeadFloor = window.__combat.floor;
       window.__xrEmuSession = window.__xrEmu.ctx().renderer.xr.getSession();
     });
     await press('title-new-run');
