@@ -1,0 +1,287 @@
+{
+  "piece": "gear-shaft",
+  "blender": "5.2.2 LTS",
+  "host_load_start": 9.29,
+  "lightmap_size": 2048,
+  "samples": 256,
+  "generator": "scripts/assets/build-room-kit.py",
+  "helper": "scripts/assets/room_kit.py (reuses build-room-study.py functions)",
+  "high": {
+    "triangles": 28918,
+    "slots": 8
+  },
+  "low": {
+    "triangles": 4434,
+    "vertices": 3088,
+    "materials": 8,
+    "lightmap_density": {
+      "mean_px_per_m": 61.3,
+      "min_px_per_m": 51.6,
+      "max_px_per_m": 61.37
+    },
+    "lightmap_density_by_slot": {
+      "brass-aged": {
+        "area_m2": 31.94,
+        "median_px_per_m": 61.4,
+        "min_px_per_m": 51.6
+      },
+      "brass-polished": {
+        "area_m2": 10.55,
+        "median_px_per_m": 61.0,
+        "min_px_per_m": 51.6
+      },
+      "flame": {
+        "area_m2": 1.98,
+        "median_px_per_m": 61.4,
+        "min_px_per_m": 61.4
+      },
+      "lamp-glass": {
+        "area_m2": 0.27,
+        "median_px_per_m": 57.1,
+        "min_px_per_m": 57.1
+      },
+      "stone-floor": {
+        "area_m2": 104.16,
+        "median_px_per_m": 61.4,
+        "min_px_per_m": 61.4
+      },
+      "wallpaper": {
+        "area_m2": 153.28,
+        "median_px_per_m": 61.4,
+        "min_px_per_m": 61.4
+      },
+      "walnut": {
+        "area_m2": 176.07,
+        "median_px_per_m": 61.4,
+        "min_px_per_m": 61.4
+      },
+      "wax": {
+        "area_m2": 0.05,
+        "median_px_per_m": 59.8,
+        "min_px_per_m": 55.2
+      }
+    },
+    "rigid_nodes": {
+      "gear-shaft_gear_ring": {
+        "triangles": 2392,
+        "lightmap_density": {
+          "mean_px_per_m": 59.89,
+          "min_px_per_m": 51.83,
+          "max_px_per_m": 61.36
+        },
+        "location_blender": [
+          0.0,
+          0.0,
+          3.6
+        ]
+      }
+    }
+  },
+  "canonicalized_primitives": 10,
+  "glb_bytes": 297248,
+  "device": "GPU:METAL (Apple M4 Max (GPU - 40 cores))",
+  "lightmap_bake": {
+    "seconds": 14.08,
+    "host_load": [
+      9.67,
+      11.57
+    ],
+    "timing_valid": true
+  },
+  "rigid_lightmap": {
+    "gear-shaft_gear_ring": {
+      "azimuth": {
+        "sector_means": [
+          0.08269,
+          0.08159,
+          0.08101,
+          0.08004,
+          0.07981,
+          0.08063,
+          0.08195,
+          0.08138
+        ],
+        "min_over_max": 0.965,
+        "sectors": 8
+      },
+      "casts_baked_shadow": false
+    }
+  },
+  "denoise": "compositor OIDN, HDR, accurate prefilter, high quality",
+  "lightmap": {
+    "coverage": 0.7142,
+    "scale": 7.025497,
+    "clipped_fraction": 0.00994,
+    "mean_irradiance": 0.380445,
+    "p05_irradiance": 0.0,
+    "percentile": 99.0,
+    "encoded_p05_255": 0,
+    "encoded_median_255": 43
+  },
+  "ktx2": {
+    "tool": "ktx version: v4.4.2",
+    "encodes": {
+      "gear-shaft.lightmap.ktx2": "create --format R8G8B8_SRGB --assign-tf srgb --encode uastc --uastc-quality 2 --zstd 18 --generate-mipmap"
+    }
+  },
+  "renders": [
+    "hero.high.png",
+    "hero.lightmapped.png",
+    "hero.low.png",
+    "hero.reference-diffuse.png",
+    "ring.high.png",
+    "ring.lightmapped.png",
+    "ring.low.png"
+  ],
+  "blend": {
+    "gear-shaft_high.blend": {
+      "sha256": "c48dc6d66c86259d25232c47401fe094d133eb57156fc78612f57dbc9abe43db",
+      "bytes": 802506
+    },
+    "gear-shaft_low.blend": {
+      "sha256": "2e4581c3a3037a6cb7914a0b08094eef46a81a630cc0e30029129989dd31c92d",
+      "bytes": 255747
+    }
+  },
+  "colliders_added": [
+    {
+      "min": [
+        2.56,
+        0,
+        4.06
+      ],
+      "max": [
+        3.44,
+        0.81,
+        4.94
+      ]
+    }
+  ],
+  "bake_lights": [
+    {
+      "name": "furnace_0",
+      "blender": [
+        1.55,
+        0.0,
+        0.55
+      ],
+      "watts": 40.0
+    },
+    {
+      "name": "furnace_1",
+      "blender": [
+        0.0,
+        1.55,
+        0.55
+      ],
+      "watts": 40.0
+    },
+    {
+      "name": "furnace_2",
+      "blender": [
+        -1.55,
+        0.0,
+        0.55
+      ],
+      "watts": 40.0
+    },
+    {
+      "name": "furnace_3",
+      "blender": [
+        0.0,
+        -1.55,
+        0.55
+      ],
+      "watts": 40.0
+    },
+    {
+      "name": "lamp_n",
+      "blender": [
+        3.6,
+        5.6,
+        2.4
+      ],
+      "watts": 40.0
+    },
+    {
+      "name": "lamp_s",
+      "blender": [
+        -3.6,
+        -5.6,
+        2.4
+      ],
+      "watts": 40.0
+    },
+    {
+      "name": "sconce_0",
+      "blender": [
+        3.83,
+        -3.0,
+        2.16
+      ],
+      "watts": 18.0
+    },
+    {
+      "name": "sconce_1",
+      "blender": [
+        3.83,
+        3.0,
+        2.16
+      ],
+      "watts": 18.0
+    },
+    {
+      "name": "sconce_2",
+      "blender": [
+        -3.83,
+        3.6,
+        2.16
+      ],
+      "watts": 18.0
+    },
+    {
+      "name": "sconce_3",
+      "blender": [
+        -3.83,
+        -3.8,
+        2.16
+      ],
+      "watts": 18.0
+    }
+  ],
+  "cameras_runtime": {
+    "hero": {
+      "eye": [
+        -1.0,
+        1.6,
+        5.0
+      ],
+      "look": [
+        0.4,
+        2.9,
+        -3.0
+      ],
+      "vfov": 70.0
+    },
+    "ring": {
+      "eye": [
+        2.6,
+        1.6,
+        -2.4
+      ],
+      "look": [
+        -0.6,
+        3.5,
+        0.8
+      ],
+      "vfov": 70.0
+    }
+  },
+  "host_load_end": 11.99,
+  "files": {
+    "gear-shaft.glb": "bb57a7997cc8188e46eb84f589158f71ae6dd21e9a153f19c75a0c247b900927",
+    "gear-shaft.lightmap.ktx2": "9e0d15ef0b1e68731bb31ae9cdbbd3e1f04a224f4a5e05844364805a07067ea9",
+    "gear-shaft.lightmap.png": "078e863b58fec78d4e8d04af62957945e613524ce32636bd7d3f81f90d183500",
+    "gear-shaft.manifest.json": "5f54cf59c2d6c79ca122379144c7312da1412b3bfd41150a7a5b693b094e40a3"
+  }
+}

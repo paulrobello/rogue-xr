@@ -12,10 +12,20 @@ import { DEFAULT_FLOOR_PARAMS, generateFloor, worldRooms } from '../src/floor/ge
 import { parseTemplateManifest, selectLightmapFile } from '../src/world/lightmap.ts';
 import { heroTemplates, parseStudyManifest } from '../src/world/study-room.ts';
 
-/** P5-T1 kit rooms: baked templates that must stand in for their greybox twins unchanged. */
-const KIT = ['hall', 'corridor'] as const;
+/** P5-T1 and P5-T2 kit rooms: baked templates that must stand in for their greybox twins unchanged. */
+const KIT = ['hall', 'corridor', 'gear-shaft', 'guardian-vault'] as const;
+/** Every baked template floor generation can place: the P4-T4 study plus the kit rooms. */
+const BAKED = ['study', ...KIT] as const;
 
 interface GltfJson {
+  nodes: {
+    name?: string;
+    mesh?: number;
+    translation?: number[];
+    rotation?: number[];
+    children?: number[];
+  }[];
+  scenes: { nodes: number[] }[];
   meshes: {
     primitives: { attributes: Record<string, number>; material?: number; indices?: number }[];
   }[];
@@ -51,7 +61,7 @@ const inside = (
   z >= (b.min[2] ?? 0) - m &&
   z <= (b.max[2] ?? 0) + m;
 
-describe.each(KIT)('kit room asset %s (P5-T1)', (id) => {
+describe.each(KIT)('kit room asset %s (P5-T1, P5-T2)', (id) => {
   const raw = rawManifest(id);
   const room = parseRoomTemplate(raw);
   const greybox = templateById(id);
@@ -135,18 +145,48 @@ describe.each(KIT)('kit room asset %s (P5-T1)', (id) => {
   });
 });
 
-describe('kit rooms in floor generation (1,000-seed property run)', () => {
-  const hall = parseRoomTemplate(rawManifest('hall'));
-  const corridor = parseRoomTemplate(rawManifest('corridor'));
-  const kit = heroTemplates(corridor, heroTemplates(hall));
+describe('gear-shaft crown gear (P5-T2 rigid node)', () => {
+  const raw = rawManifest('gear-shaft') as {
+    rigidNodes?: { node: string; pivot: number[]; axis: number[]; radPerSec: number }[];
+  };
+  const gltf = glbJson('gear-shaft');
 
-  it('swaps both baked templates in (not silently kept greybox)', () => {
-    expect(kit.find((t) => t.id === 'hall')).toBe(hall);
-    expect(kit.find((t) => t.id === 'corridor')).toBe(corridor);
+  it('names one root mesh node on the spin axis, unrotated at rest', () => {
+    expect(raw.rigidNodes).toHaveLength(1);
+    const ring = raw.rigidNodes?.[0];
+    expect(ring?.node).toBe('gear-shaft_gear_ring');
+    expect(ring?.axis).toEqual([0, 1, 0]);
+    expect(ring?.radPerSec).toBeGreaterThan(0);
+    const index = gltf.nodes.findIndex((n) => n.name === ring?.node);
+    expect(index).toBeGreaterThanOrEqual(0);
+    expect(gltf.scenes[0]?.nodes).toContain(index);
+    const node = gltf.nodes[index];
+    expect(node?.mesh).toBeTypeOf('number');
+    expect(node?.children ?? []).toHaveLength(0);
+    expect(node?.rotation ?? [0, 0, 0, 1]).toEqual([0, 0, 0, 1]);
+    node?.translation?.forEach((v, i) => {
+      expect(v).toBeCloseTo(ring?.pivot[i] ?? Number.NaN, 5);
+    });
+    expect(ring?.pivot[0]).toBe(0);
+    expect(ring?.pivot[2]).toBe(0);
+  });
+});
+
+describe('kit rooms in floor generation (1,000-seed property run)', () => {
+  const baked = Object.fromEntries(
+    BAKED.map((id) => [id, parseRoomTemplate(rawManifest(id))]),
+  ) as Record<(typeof BAKED)[number], RoomTemplate>;
+  const kit = BAKED.reduce<readonly RoomTemplate[]>(
+    (templates, id) => heroTemplates(baked[id], templates),
+    heroTemplates(null),
+  );
+
+  it('swaps every baked template in (not silently kept greybox)', () => {
+    for (const id of BAKED) expect(kit.find((t) => t.id === id)).toBe(baked[id]);
   });
 
-  it('places every hall and corridor where the greybox would, on 1,000 seeds', () => {
-    const counts = { hall: 0, corridor: 0 };
+  it('places every baked room where the greybox would, on 1,000 seeds', () => {
+    const counts = Object.fromEntries(BAKED.map((id) => [id, 0])) as Record<string, number>;
     for (let i = 0; i < 1000; i++) {
       const seed = `KA${i.toString().padStart(6, '0')}`;
       const grey = generateFloor(seed);
@@ -155,15 +195,15 @@ describe('kit rooms in floor generation (1,000-seed property run)', () => {
       const before = worldRooms(grey);
       const after = worldRooms(plan, kit);
       plan.rooms.forEach((r, index) => {
-        if (r.templateId !== 'hall' && r.templateId !== 'corridor') return;
-        counts[r.templateId]++;
-        const asset: RoomTemplate = r.templateId === 'hall' ? hall : corridor;
+        if (!(r.templateId in counts)) return;
+        counts[r.templateId] = (counts[r.templateId] ?? 0) + 1;
+        const asset = baked[r.templateId as (typeof BAKED)[number]];
         expect(after[index]?.template).toEqual(rotateTemplate(asset, r.turns));
         expect(after[index]?.footprint).toEqual(before[index]?.footprint);
         expect(after[index]?.doors).toEqual(before[index]?.doors);
       });
     }
     expect(counts.hall).toBeGreaterThanOrEqual(1000);
-    expect(counts.corridor).toBeGreaterThan(0);
+    for (const id of BAKED) expect(counts[id]).toBeGreaterThan(0);
   });
 });

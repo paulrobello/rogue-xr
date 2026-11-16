@@ -1,0 +1,74 @@
+{
+  "glb": "gear-shaft.glb",
+  "glb_sha256": "bb57a7997cc8188e46eb84f589158f71ae6dd21e9a153f19c75a0c247b900927",
+  "blender": "5.2.2 LTS",
+  "meshes": [
+    "gear-shaft",
+    "gear-shaft_gear_ring"
+  ],
+  "triangles": 4434,
+  "materials": [
+    "gear-shaft_brass-aged",
+    "gear-shaft_brass-polished",
+    "gear-shaft_flame",
+    "gear-shaft_lamp-glass",
+    "gear-shaft_stone-floor",
+    "gear-shaft_wallpaper",
+    "gear-shaft_walnut",
+    "gear-shaft_wax"
+  ],
+  "material_count": 8,
+  "uv_layers": [
+    [
+      "UVMap",
+      "UVMap.001"
+    ]
+  ],
+  "embedded_images": 0,
+  "bounds_blender": {
+    "min": [
+      -4.0,
+      -6.0,
+      0.0
+    ],
+    "max": [
+      4.0,
+      6.0,
+      5.0
+    ]
+  },
+  "texture_px": {
+    "gear-shaft.lightmap.ktx2": {
+      "width": 2048,
+      "height": 2048
+    }
+  },
+  "checks": {
+    "triangles_le_100k": true,
+    "materials_le_16": true,
+    "materials_are_manifest_slots": true,
+    "textures_le_2048": true,
+    "two_uv_layers_every_mesh": true,
+    "no_embedded_images": true,
+    "floor_at_zero": true,
+    "inside_ceiling": true,
+    "footprint_x": true,
+    "footprint_y": true,
+    "inside_footprint": true,
+    "gear_ring_node_on_axis": true
+  },
+  "rigid_nodes": {
+    "gear-shaft_gear_ring": {
+      "found": true,
+      "location_blender": [
+        0.0,
+        0.0,
+        3.6
+      ],
+      "rotation_angle": 0.0,
+      "parent": null,
+      "triangles": 2392
+    }
+  },
+  "pass": true
+}

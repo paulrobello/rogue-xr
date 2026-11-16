@@ -18,6 +18,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parents[3]
 TILE = (640, 360)
+TASK = {"gear-shaft": "P5-T2", "guardian-vault": "P5-T2"}
 
 
 def panels(room: str) -> list[tuple[Path, str, tuple | None]]:
@@ -30,9 +31,16 @@ def panels(room: str) -> list[tuple[Path, str, tuple | None]]:
     seams = {"hall": [("seam-north", "In engine: north door into the corridor (seam)"), ("seam-west-turned", "In engine: west door, corridor turned once (seam)"),
                       ("floor-sealed-west", "Floor world KA000013: sealed west door (runtime cap)")],
              "corridor": [("seam-from-corridor", "In engine: corridor into the hall's north door (seam)"),
-                          ("floor-sealed-north", "Floor world KA000013: sealed north door (runtime cap)")]}[room]
+                          ("floor-sealed-north", "Floor world KA000013: sealed north door (runtime cap)")],
+             "gear-shaft": [("hero-gear-turned", "In engine: crown gear node turned 37 deg (getObjectByName)"),
+                            ("ring-gear-turned", "In engine: ring camera, gear turned 37 deg"),
+                            ("hero.diffuse-gear-turned", "Lightmap only, gear turned: no baked gear shadow"),
+                            ("seam-north", "In engine: north door into a corridor (seam)")],
+             "guardian-vault": [("reward-eye", "In engine: eye level at the reward, lancets behind"),
+                                ("seam-south", "In engine: south door into a corridor (seam)"),
+                                ("seam-from-corridor", "In engine: from the corridor into the vault (seam)")]}[room]
     out = [
-        (ROOT / "assets-source/concepts/room-sheet-1.png", "Kit reference: study concept (no hall/corridor sheet)", (48, 28, 2712, 812)),
+        (ROOT / "assets-source/concepts/room-sheet-1.png", f"Kit reference: study concept (no {room} sheet)", (48, 28, 2712, 812)),
         (r / "hero.lightmapped.png", "Textured EEVEE still, lit by the shipped lightmap", None),
         (r / "hero.high.png", f"High poly, EEVEE, hero camera ({report['high']['triangles']:,} tris)", None),
         (r / "hero.low.png", f"Low poly, EEVEE, same camera ({report['low']['triangles']:,} tris)", None),
@@ -65,7 +73,7 @@ def main(room: str) -> None:
     rows = (len(items) + cols - 1) // cols
     sheet = Image.new("RGB", (cols * TILE[0] + (cols + 1) * pad, head + rows * (TILE[1] + label_h + pad) + pad), (24, 20, 18))
     draw = ImageDraw.Draw(sheet)
-    draw.text((pad, 14), f"P5-T1 {room}: review sheet (concept, creative and owner gates pending)", fill=(243, 190, 101), font=font(24))
+    draw.text((pad, 14), f"{TASK.get(room, 'P5-T1')} {room}: review sheet (concept, creative and owner gates pending)", fill=(243, 190, 101), font=font(24))
     for i, (path, label, crop) in enumerate(items):
         img = Image.open(path).convert("RGB")
         img = fit(img.crop(crop)) if crop else img.resize(TILE, Image.LANCZOS)

@@ -4,16 +4,16 @@
   "route": "scripted",
   "generator": {
     "path": "scripts/assets/build-room-kit.py",
-    "sha256": "162a10f40005568730b9d73ca746557c8b9b01afab44279b78a4f00d2a3d6527"
+    "sha256": "d93dcb87c43733bd661850808e1055cb1104093347940f8e42d22d1bd48c4d48"
   },
   "generatorDeps": [
     {
       "path": "scripts/assets/room_kit.py",
-      "sha256": "237e63d896d3e35d58149821936b9746a0c24b53314c0209eb686b5bf042919b"
+      "sha256": "0e850b3688d935eea2ece632ce57614a30edbe6b51e78d323a6a0ee599b73ff4"
     },
     {
       "path": "scripts/assets/build-room-study.py",
-      "sha256": "c48be956cc1468fc6b7352d16e7173e37a66d3e1ba4f840575f3abbeba217618"
+      "sha256": "2e20a14f0968fa4fe4b0adecec9d44945887dcfb47d19d3d31859767b523e016"
     },
     {
       "path": "scripts/assets/lightmap_helpers.py",

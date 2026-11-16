@@ -1277,4 +1277,5 @@ def main() -> None:
     print(json.dumps({k: report[k] for k in ("low", "high")}, indent=2))
 
 
-main()
+if __name__ == "__main__":
+    main()

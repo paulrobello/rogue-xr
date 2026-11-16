@@ -1,0 +1,344 @@
+{
+  "piece": "guardian-vault",
+  "blender": "5.2.2 LTS",
+  "host_load_start": 11.29,
+  "lightmap_size": 2048,
+  "samples": 256,
+  "generator": "scripts/assets/build-room-kit.py",
+  "helper": "scripts/assets/room_kit.py (reuses build-room-study.py functions)",
+  "high": {
+    "triangles": 49465,
+    "slots": 8
+  },
+  "low": {
+    "triangles": 7263,
+    "vertices": 4952,
+    "materials": 8,
+    "lightmap_density": {
+      "mean_px_per_m": 45.28,
+      "min_px_per_m": 38.09,
+      "max_px_per_m": 45.31
+    },
+    "lightmap_density_by_slot": {
+      "brass-aged": {
+        "area_m2": 42.69,
+        "median_px_per_m": 45.3,
+        "min_px_per_m": 38.1
+      },
+      "brass-polished": {
+        "area_m2": 19.61,
+        "median_px_per_m": 45.3,
+        "min_px_per_m": 38.1
+      },
+      "flame": {
+        "area_m2": 5.35,
+        "median_px_per_m": 45.3,
+        "min_px_per_m": 45.3
+      },
+      "stained-glass": {
+        "area_m2": 6.84,
+        "median_px_per_m": 45.3,
+        "min_px_per_m": 45.3
+      },
+      "stone-floor": {
+        "area_m2": 216.31,
+        "median_px_per_m": 45.3,
+        "min_px_per_m": 45.3
+      },
+      "wallpaper": {
+        "area_m2": 230.92,
+        "median_px_per_m": 45.3,
+        "min_px_per_m": 45.3
+      },
+      "walnut": {
+        "area_m2": 285.3,
+        "median_px_per_m": 45.3,
+        "min_px_per_m": 45.3
+      },
+      "wax": {
+        "area_m2": 0.1,
+        "median_px_per_m": 43.5,
+        "min_px_per_m": 43.5
+      }
+    }
+  },
+  "canonicalized_primitives": 8,
+  "glb_bytes": 474732,
+  "device": "GPU:METAL (Apple M4 Max (GPU - 40 cores))",
+  "lightmap_bake": {
+    "seconds": 9.93,
+    "host_load": [
+      11.29,
+      11.32
+    ],
+    "timing_valid": true
+  },
+  "denoise": "compositor OIDN, HDR, accurate prefilter, high quality",
+  "lightmap": {
+    "coverage": 0.6832,
+    "scale": 6.427347,
+    "clipped_fraction": 0.00993,
+    "mean_irradiance": 0.280742,
+    "p05_irradiance": 0.0,
+    "percentile": 99.0,
+    "encoded_p05_255": 0,
+    "encoded_median_255": 43
+  },
+  "ktx2": {
+    "tool": "ktx version: v4.4.2",
+    "encodes": {
+      "guardian-vault.lightmap.ktx2": "create --format R8G8B8_SRGB --assign-tf srgb --encode uastc --uastc-quality 2 --zstd 18 --generate-mipmap"
+    }
+  },
+  "renders": [
+    "brazier.high.png",
+    "brazier.lightmapped.png",
+    "brazier.low.png",
+    "hero.high.png",
+    "hero.lightmapped.png",
+    "hero.low.png",
+    "hero.reference-diffuse.png"
+  ],
+  "blend": {
+    "guardian-vault_high.blend": {
+      "sha256": "51eeba39d73f9054ab35da8f1d4fbcada45ee1bca251c430227e6a9c2909b809",
+      "bytes": 1448615
+    },
+    "guardian-vault_low.blend": {
+      "sha256": "5e22b9492f766fabeea51b1759e541840c0de47add41e2e4132ff8d15b7b2e68",
+      "bytes": 373437
+    }
+  },
+  "colliders_added": [
+    {
+      "min": [
+        -4.7,
+        0,
+        -4.7
+      ],
+      "max": [
+        -3.3,
+        1.41,
+        -3.3
+      ]
+    },
+    {
+      "min": [
+        3.3,
+        0,
+        -4.7
+      ],
+      "max": [
+        4.7,
+        1.41,
+        -3.3
+      ]
+    },
+    {
+      "min": [
+        -4.7,
+        0,
+        3.3
+      ],
+      "max": [
+        -3.3,
+        1.41,
+        4.7
+      ]
+    },
+    {
+      "min": [
+        3.3,
+        0,
+        3.3
+      ],
+      "max": [
+        4.7,
+        1.41,
+        4.7
+      ]
+    }
+  ],
+  "bake_lights": [
+    {
+      "name": "chandelier_0",
+      "blender": [
+        0.5405,
+        0.2239,
+        4.505
+      ],
+      "watts": 14.0
+    },
+    {
+      "name": "chandelier_1",
+      "blender": [
+        0.2239,
+        0.5405,
+        4.505
+      ],
+      "watts": 14.0
+    },
+    {
+      "name": "chandelier_2",
+      "blender": [
+        -0.2239,
+        0.5405,
+        4.505
+      ],
+      "watts": 14.0
+    },
+    {
+      "name": "chandelier_3",
+      "blender": [
+        -0.5405,
+        0.2239,
+        4.505
+      ],
+      "watts": 14.0
+    },
+    {
+      "name": "chandelier_4",
+      "blender": [
+        -0.5405,
+        -0.2239,
+        4.505
+      ],
+      "watts": 14.0
+    },
+    {
+      "name": "chandelier_5",
+      "blender": [
+        -0.2239,
+        -0.5405,
+        4.505
+      ],
+      "watts": 14.0
+    },
+    {
+      "name": "chandelier_6",
+      "blender": [
+        0.2239,
+        -0.5405,
+        4.505
+      ],
+      "watts": 14.0
+    },
+    {
+      "name": "chandelier_7",
+      "blender": [
+        0.5405,
+        -0.2239,
+        4.505
+      ],
+      "watts": 14.0
+    },
+    {
+      "name": "brazier_nw_in",
+      "blender": [
+        -3.3282,
+        3.3282,
+        1.75
+      ],
+      "watts": 30.0
+    },
+    {
+      "name": "brazier_nw_out",
+      "blender": [
+        -4.6718,
+        4.6718,
+        1.75
+      ],
+      "watts": 15.0
+    },
+    {
+      "name": "brazier_ne_in",
+      "blender": [
+        3.3282,
+        3.3282,
+        1.75
+      ],
+      "watts": 30.0
+    },
+    {
+      "name": "brazier_ne_out",
+      "blender": [
+        4.6718,
+        4.6718,
+        1.75
+      ],
+      "watts": 15.0
+    },
+    {
+      "name": "brazier_sw_in",
+      "blender": [
+        -3.3282,
+        -3.3282,
+        1.75
+      ],
+      "watts": 30.0
+    },
+    {
+      "name": "brazier_sw_out",
+      "blender": [
+        -4.6718,
+        -4.6718,
+        1.75
+      ],
+      "watts": 15.0
+    },
+    {
+      "name": "brazier_se_in",
+      "blender": [
+        3.3282,
+        -3.3282,
+        1.75
+      ],
+      "watts": 30.0
+    },
+    {
+      "name": "brazier_se_out",
+      "blender": [
+        4.6718,
+        -4.6718,
+        1.75
+      ],
+      "watts": 15.0
+    }
+  ],
+  "cameras_runtime": {
+    "hero": {
+      "eye": [
+        1.0,
+        1.6,
+        5.2
+      ],
+      "look": [
+        0.0,
+        2.7,
+        -5.5
+      ],
+      "vfov": 70.0
+    },
+    "brazier": {
+      "eye": [
+        -1.5,
+        1.6,
+        2.5
+      ],
+      "look": [
+        4.0,
+        1.8,
+        -4.0
+      ],
+      "vfov": 70.0
+    }
+  },
+  "host_load_end": 12.0,
+  "files": {
+    "guardian-vault.glb": "ebe98219f0e43d4dc6c4d8a341c9153072850caa15b37115cdabdad61fa758b8",
+    "guardian-vault.lightmap.ktx2": "2dfd5b0b156a1e5c942d0e09e8adacce59e536d9a33f9305e6e9435e25f5d999",
+    "guardian-vault.lightmap.png": "500d64c0c2425aba8812e29b1c7d66a73a03cafa27177a0f26f5d308a3a3e3f1",
+    "guardian-vault.manifest.json": "b19fdf51cceebcfa3a7201af7f2e2fda059ce41b51326967d9ac9f8f6c168b0d",
+    "uv1-report.json": "8b478d9eb2f4bec7a9ae1bb539e9e959d56b569bb73e25533b4f8540c46f1bf7"
+  }
+}

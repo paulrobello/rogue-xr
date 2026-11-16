@@ -1,0 +1,357 @@
+{
+  "template": "guardian-vault",
+  "glb": "guardian-vault.glb",
+  "lightmap": {
+    "file": "guardian-vault.lightmap.ktx2",
+    "uv": 1,
+    "encoding": "srgb-scaled",
+    "scale": 6.427347183227539,
+    "intensity": 20.192107
+  },
+  "id": "guardian-vault",
+  "kinds": [
+    "guardian"
+  ],
+  "footprint": {
+    "min": [
+      -6,
+      -6
+    ],
+    "max": [
+      6,
+      6
+    ]
+  },
+  "doors": [
+    {
+      "id": "s",
+      "facing": "S",
+      "position": [
+        1,
+        0,
+        6
+      ],
+      "width": 1.6
+    }
+  ],
+  "rotations": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "enemySockets": [
+    {
+      "id": "guardian",
+      "position": [
+        0,
+        0,
+        -3
+      ],
+      "yaw": 180
+    }
+  ],
+  "lootSockets": [
+    {
+      "id": "reward",
+      "position": [
+        0,
+        0,
+        -5
+      ],
+      "yaw": 180
+    }
+  ],
+  "dressingSockets": [
+    {
+      "id": "pillar-nw",
+      "position": [
+        -4,
+        0,
+        -4
+      ],
+      "yaw": 0
+    },
+    {
+      "id": "pillar-ne",
+      "position": [
+        4,
+        0,
+        -4
+      ],
+      "yaw": 0
+    },
+    {
+      "id": "pillar-sw",
+      "position": [
+        -4,
+        0,
+        4
+      ],
+      "yaw": 0
+    },
+    {
+      "id": "pillar-se",
+      "position": [
+        4,
+        0,
+        4
+      ],
+      "yaw": 0
+    }
+  ],
+  "lightSockets": [
+    {
+      "id": "brazier-nw",
+      "position": [
+        -4,
+        1.4,
+        -4
+      ],
+      "yaw": 0
+    },
+    {
+      "id": "brazier-ne",
+      "position": [
+        4,
+        1.4,
+        -4
+      ],
+      "yaw": 0
+    },
+    {
+      "id": "brazier-sw",
+      "position": [
+        -4,
+        1.4,
+        4
+      ],
+      "yaw": 0
+    },
+    {
+      "id": "brazier-se",
+      "position": [
+        4,
+        1.4,
+        4
+      ],
+      "yaw": 0
+    }
+  ],
+  "probe": [
+    0,
+    2,
+    0
+  ],
+  "walkable": [
+    {
+      "min": [
+        -5.6,
+        -5.6
+      ],
+      "max": [
+        5.6,
+        5.6
+      ]
+    }
+  ],
+  "colliders": [
+    {
+      "min": [
+        -6,
+        0,
+        -6.1
+      ],
+      "max": [
+        6,
+        4,
+        -5.9
+      ]
+    },
+    {
+      "min": [
+        -6,
+        0,
+        5.9
+      ],
+      "max": [
+        0.19999999999999996,
+        4,
+        6.1
+      ]
+    },
+    {
+      "min": [
+        1.8,
+        0,
+        5.9
+      ],
+      "max": [
+        6,
+        4,
+        6.1
+      ]
+    },
+    {
+      "min": [
+        -6.1,
+        0,
+        -6
+      ],
+      "max": [
+        -5.9,
+        4,
+        6
+      ]
+    },
+    {
+      "min": [
+        5.9,
+        0,
+        -6
+      ],
+      "max": [
+        6.1,
+        4,
+        6
+      ]
+    },
+    {
+      "min": [
+        -4.5,
+        0,
+        -4.5
+      ],
+      "max": [
+        -3.5,
+        4,
+        -3.5
+      ]
+    },
+    {
+      "min": [
+        -4.5,
+        0,
+        3.5
+      ],
+      "max": [
+        -3.5,
+        4,
+        4.5
+      ]
+    },
+    {
+      "min": [
+        3.5,
+        0,
+        -4.5
+      ],
+      "max": [
+        4.5,
+        4,
+        -3.5
+      ]
+    },
+    {
+      "min": [
+        3.5,
+        0,
+        3.5
+      ],
+      "max": [
+        4.5,
+        4,
+        4.5
+      ]
+    },
+    {
+      "min": [
+        -4.7,
+        0,
+        -4.7
+      ],
+      "max": [
+        -3.3,
+        1.41,
+        -3.3
+      ]
+    },
+    {
+      "min": [
+        3.3,
+        0,
+        -4.7
+      ],
+      "max": [
+        4.7,
+        1.41,
+        -3.3
+      ]
+    },
+    {
+      "min": [
+        -4.7,
+        0,
+        3.3
+      ],
+      "max": [
+        -3.3,
+        1.41,
+        4.7
+      ]
+    },
+    {
+      "min": [
+        3.3,
+        0,
+        3.3
+      ],
+      "max": [
+        4.7,
+        1.41,
+        4.7
+      ]
+    }
+  ],
+  "budget": {
+    "tris": 7263,
+    "materials": 8,
+    "texturePx": 2048
+  },
+  "materials": {
+    "guardian-vault_stone-floor": {
+      "pbr": "stone-floor",
+      "tileMeters": 1.5
+    },
+    "guardian-vault_wallpaper": {
+      "pbr": "wallpaper",
+      "tileMeters": 0.75
+    },
+    "guardian-vault_walnut": {
+      "pbr": "walnut",
+      "tileMeters": 0.5
+    },
+    "guardian-vault_brass-aged": {
+      "pbr": "brass-aged",
+      "tileMeters": 0.5
+    },
+    "guardian-vault_brass-polished": {
+      "pbr": "brass-polished",
+      "tileMeters": 0.5
+    },
+    "guardian-vault_stained-glass": {
+      "pbr": "stained-glass",
+      "tileMeters": 0.6
+    },
+    "guardian-vault_wax": {
+      "color": "#e7d7b8",
+      "roughness": 0.55
+    },
+    "guardian-vault_flame": {
+      "color": "#ffce81",
+      "emissive": "#ffce81",
+      "emissiveIntensity": 3.0
+    }
+  },
+  "glassEmissiveIntensity": 0.8
+}

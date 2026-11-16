@@ -3,7 +3,10 @@ touching src/main.ts: a same-origin page routed through Playwright imports
 assets-source/rooms/hall/engine-proof.ts through Vite, which loads each room with the runtime's
 loadStudyAsset() (shared KTX2 set, lightmap on UV1, baked-room shader patch).
 
-    ~/.local/share/uv/tools/playwright/bin/python3 -I assets-source/rooms/hall/engine_shot.py [--only <shot-prefix>]
+    ~/.local/share/uv/tools/playwright/bin/python3 -I assets-source/rooms/hall/engine_shot.py [--room <id>] [--only <shot-prefix>]
+
+`--room` limits the run to one room's shots, so re-shooting one room never rewrites another room's
+provenance-pinned evidence. Shared by P5-T1 (hall, corridor) and P5-T2 (gear-shaft, guardian-vault).
 
 Cameras come from each room's staging/report.json (the Blender review cameras in runtime
 coordinates). Writes staging/renders/engine.<shot>.png per room and docs/verification/
@@ -53,7 +56,7 @@ MEAN_JS = """(() => {
 def shots() -> list[tuple[str, str, dict]]:
     """(room the shot belongs to, shot name, Shot config)."""
     out = []
-    for room in ("hall", "corridor"):
+    for room in ("hall", "corridor", "gear-shaft", "guardian-vault"):
         cams = json.loads((ROOMS / room / "staging/report.json").read_text())["cameras_runtime"]
         alone = [{"id": room, "position": [0, 0], "turns": 0}]
         for name, cam in cams.items():
@@ -77,6 +80,28 @@ def shots() -> list[tuple[str, str, dict]]:
     out.append(("hall", "floor-sealed-west", floor([0, 0], [-2.2, 1.6, 1.0], [-5.0, 1.4, -1.2])))
     out.append(("hall", "floor-sealed-west-close", floor([0, 0], [-4.1, 1.3, 0.5], [-5.0, 0.5, -1.6])))
     out.append(("corridor", "floor-sealed-north", floor([-1, -9], [-1.4, 1.6, -9.6], [-1.0, 1.3, -13.0])))
+
+    # P5-T2. Gear-shaft: the crown gear turned by an arbitrary 37 degrees through getObjectByName (the
+    # P5-T12 integration path); the lightmap must still read (no baked shadow breaks); and the north
+    # door seam into a corridor at (1, -10).
+    gs = [{"id": "gear-shaft", "position": [0, 0], "turns": 0}]
+    gcam = json.loads((ROOMS / "gear-shaft/staging/report.json").read_text())["cameras_runtime"]
+    for name in ("hero", "ring"):
+        c = gcam[name]
+        out.append(("gear-shaft", f"{name}-gear-turned", {"rooms": gs, "eye": c["eye"], "look": c["look"], "vfov": c["vfov"], "diffuse": False,
+                                                          "spin": {"node": "gear-shaft_gear_ring", "angle": 0.6458}}))
+    c = gcam["hero"]
+    out.append(("gear-shaft", "hero.diffuse-gear-turned", {"rooms": gs, "eye": c["eye"], "look": c["look"], "vfov": c["vfov"], "diffuse": True,
+                                                           "spin": {"node": "gear-shaft_gear_ring", "angle": 0.6458}}))
+    gn = [*gs, {"id": "corridor", "position": [1, -10], "turns": 0}]
+    out.append(("gear-shaft", "seam-north", {"rooms": gn, "eye": [0.4, 1.6, -3.0], "look": [1.0, 1.5, -14.0], "vfov": 70.0, "diffuse": False}))
+    # Guardian vault: its only door (south) into a corridor at (1, 10), seen from the corridor and
+    # back; and a brazier close-up beside a known object (the 0.8 m crate height is the scale cue
+    # in the gear-shaft; here the 1 m pillar plinth).
+    vn = [{"id": "guardian-vault", "position": [0, 0], "turns": 0}, {"id": "corridor", "position": [1, 10], "turns": 0}]
+    out.append(("guardian-vault", "seam-from-corridor", {"rooms": vn, "eye": [1.0, 1.6, 12.6], "look": [0.4, 1.8, 0.0], "vfov": 70.0, "diffuse": False}))
+    out.append(("guardian-vault", "seam-south", {"rooms": vn, "eye": [0.6, 1.6, 2.0], "look": [1.0, 1.3, 13.0], "vfov": 70.0, "diffuse": False}))
+    out.append(("guardian-vault", "reward-eye", {"rooms": vn[:1], "eye": [0.3, 1.6, -1.0], "look": [0.0, 1.6, -6.0], "vfov": 70.0, "diffuse": False}))
     return out
 
 
@@ -87,8 +112,9 @@ def main() -> int:
     with sync_playwright() as p:
         browser = p.chromium.launch(channel="chromium", headless=True, args=["--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist"])
         only = sys.argv[sys.argv.index("--only") + 1] if "--only" in sys.argv else ""
+        only_room = sys.argv[sys.argv.index("--room") + 1] if "--room" in sys.argv else ""
         for room, name, shot in shots():
-            if not name.startswith(only):
+            if not name.startswith(only) or (only_room and room != only_room):
                 continue
             page = browser.new_page(viewport={"width": W, "height": H})
             page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)

@@ -1,0 +1,59 @@
+{
+  "glb": "guardian-vault.glb",
+  "glb_sha256": "ebe98219f0e43d4dc6c4d8a341c9153072850caa15b37115cdabdad61fa758b8",
+  "blender": "5.2.2 LTS",
+  "meshes": [
+    "guardian-vault"
+  ],
+  "triangles": 7263,
+  "materials": [
+    "guardian-vault_brass-aged",
+    "guardian-vault_brass-polished",
+    "guardian-vault_flame",
+    "guardian-vault_stained-glass",
+    "guardian-vault_stone-floor",
+    "guardian-vault_wallpaper",
+    "guardian-vault_walnut",
+    "guardian-vault_wax"
+  ],
+  "material_count": 8,
+  "uv_layers": [
+    [
+      "UVMap",
+      "UVMap.001"
+    ]
+  ],
+  "embedded_images": 0,
+  "bounds_blender": {
+    "min": [
+      -6.0,
+      -6.0,
+      0.0
+    ],
+    "max": [
+      6.0,
+      6.0,
+      6.0
+    ]
+  },
+  "texture_px": {
+    "guardian-vault.lightmap.ktx2": {
+      "width": 2048,
+      "height": 2048
+    }
+  },
+  "checks": {
+    "triangles_le_100k": true,
+    "materials_le_16": true,
+    "materials_are_manifest_slots": true,
+    "textures_le_2048": true,
+    "two_uv_layers_every_mesh": true,
+    "no_embedded_images": true,
+    "floor_at_zero": true,
+    "inside_ceiling": true,
+    "footprint_x": true,
+    "footprint_y": true,
+    "inside_footprint": true
+  },
+  "pass": true
+}

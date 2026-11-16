@@ -1,0 +1,491 @@
+{
+  "pieceId": "gear-shaft",
+  "version": 1,
+  "route": "scripted",
+  "generator": {
+    "path": "scripts/assets/build-room-kit.py",
+    "sha256": "d93dcb87c43733bd661850808e1055cb1104093347940f8e42d22d1bd48c4d48"
+  },
+  "generatorDeps": [
+    {
+      "path": "scripts/assets/room_kit.py",
+      "sha256": "0e850b3688d935eea2ece632ce57614a30edbe6b51e78d323a6a0ee599b73ff4"
+    },
+    {
+      "path": "scripts/assets/build-room-study.py",
+      "sha256": "2e20a14f0968fa4fe4b0adecec9d44945887dcfb47d19d3d31859767b523e016"
+    },
+    {
+      "path": "scripts/assets/lightmap_helpers.py",
+      "sha256": "c74c968a3d3ed95bae831262af3c5ab1bacedfa0e2e131b95d5d7bf4e59d66ad"
+    },
+    {
+      "path": "scripts/assets/build-cog-sentry.py",
+      "sha256": "9f045c4e6314b29a4bb82572fa040a0a0f9f68079b311b630d76fd0e1918d0a6"
+    }
+  ],
+  "authoringAgent": {
+    "harness": "claude-code (dispatched sub-agent)",
+    "model": "claude-opus-5-5"
+  },
+  "blender": "5.2.2 LTS",
+  "toolVersions": {
+    "ktx": "ktx version: v4.4.2",
+    "gltfExporter": "Blender 5.2.2 bundled io_scene_gltf2"
+  },
+  "blendFiles": {
+    "store": "assets-source/rooms/gear-shaft/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)",
+    "files": {
+      "gear-shaft_high.blend": {
+        "sha256": "c48dc6d66c86259d25232c47401fe094d133eb57156fc78612f57dbc9abe43db",
+        "bytes": 802506
+      },
+      "gear-shaft_low.blend": {
+        "sha256": "2e4581c3a3037a6cb7914a0b08094eef46a81a630cc0e30029129989dd31c92d",
+        "bytes": 255747
+      }
+    }
+  },
+  "bake": {
+    "device": "GPU:METAL (Apple M4 Max (GPU - 40 cores))",
+    "lightmap": {
+      "coverage": 0.7142,
+      "scale": 7.025497,
+      "clipped_fraction": 0.00994,
+      "mean_irradiance": 0.380445,
+      "p05_irradiance": 0.0,
+      "percentile": 99.0,
+      "encoded_p05_255": 0,
+      "encoded_median_255": 43,
+      "seconds": 14.08,
+      "host_load": [
+        9.67,
+        11.57
+      ],
+      "timing_valid": true,
+      "size": 2048,
+      "samples": 256,
+      "pass": "DIFFUSE direct+indirect, colour off, metallic forced 0, OIDN",
+      "marginPx": 8,
+      "islandPadPx": 10
+    },
+    "books": null,
+    "ktx2": {
+      "tool": "ktx version: v4.4.2",
+      "encodes": {
+        "gear-shaft.lightmap.ktx2": "create --format R8G8B8_SRGB --assign-tf srgb --encode uastc --uastc-quality 2 --zstd 18 --generate-mipmap"
+      }
+    }
+  },
+  "budgets": {
+    "triangles": 4434,
+    "materials": 8,
+    "texturePx": {
+      "gear-shaft.lightmap.ktx2": {
+        "width": 2048,
+        "height": 2048
+      }
+    },
+    "highTriangles": 28918,
+    "glbBytes": 297248
+  },
+  "texelDensityPxPerM": {
+    "lightmap": {
+      "mean_px_per_m": 61.3,
+      "min_px_per_m": 51.6,
+      "max_px_per_m": 61.37
+    },
+    "lightmapBySlot": {
+      "brass-aged": {
+        "area_m2": 31.94,
+        "median_px_per_m": 61.4,
+        "min_px_per_m": 51.6
+      },
+      "brass-polished": {
+        "area_m2": 10.55,
+        "median_px_per_m": 61.0,
+        "min_px_per_m": 51.6
+      },
+      "flame": {
+        "area_m2": 1.98,
+        "median_px_per_m": 61.4,
+        "min_px_per_m": 61.4
+      },
+      "lamp-glass": {
+        "area_m2": 0.27,
+        "median_px_per_m": 57.1,
+        "min_px_per_m": 57.1
+      },
+      "stone-floor": {
+        "area_m2": 104.16,
+        "median_px_per_m": 61.4,
+        "min_px_per_m": 61.4
+      },
+      "wallpaper": {
+        "area_m2": 153.28,
+        "median_px_per_m": 61.4,
+        "min_px_per_m": 61.4
+      },
+      "walnut": {
+        "area_m2": 176.07,
+        "median_px_per_m": 61.4,
+        "min_px_per_m": 61.4
+      },
+      "wax": {
+        "area_m2": 0.05,
+        "median_px_per_m": 59.8,
+        "min_px_per_m": 55.2
+      }
+    }
+  },
+  "pivot": "floor centre, z = 0 (runtime y = 0)",
+  "sockets": {
+    "doors": [
+      {
+        "id": "n",
+        "facing": "N",
+        "position": [
+          1,
+          0,
+          -6
+        ],
+        "width": 1.6
+      },
+      {
+        "id": "s",
+        "facing": "S",
+        "position": [
+          -1,
+          0,
+          6
+        ],
+        "width": 1.6
+      },
+      {
+        "id": "w",
+        "facing": "W",
+        "position": [
+          -4,
+          0,
+          1
+        ],
+        "width": 1.6
+      }
+    ],
+    "enemySockets": [
+      {
+        "id": "enemy-a",
+        "position": [
+          0,
+          0,
+          -3.5
+        ],
+        "yaw": 180
+      },
+      {
+        "id": "enemy-b",
+        "position": [
+          -2,
+          0,
+          -3
+        ],
+        "yaw": 160
+      },
+      {
+        "id": "enemy-c",
+        "position": [
+          2,
+          0,
+          -3
+        ],
+        "yaw": 200
+      }
+    ],
+    "lootSockets": [],
+    "dressingSockets": [
+      {
+        "id": "shaft",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "yaw": 0
+      },
+      {
+        "id": "crate",
+        "position": [
+          3,
+          0,
+          4.5
+        ],
+        "yaw": 0
+      }
+    ],
+    "lightSockets": [
+      {
+        "id": "furnace",
+        "position": [
+          0,
+          0.5,
+          0
+        ],
+        "yaw": 0
+      },
+      {
+        "id": "lamp-n",
+        "position": [
+          3.6,
+          2.4,
+          -5.6
+        ],
+        "yaw": 0
+      },
+      {
+        "id": "lamp-s",
+        "position": [
+          -3.6,
+          2.4,
+          5.6
+        ],
+        "yaw": 0
+      }
+    ],
+    "probe": [
+      2,
+      1.6,
+      2
+    ]
+  },
+  "derivedFiles": [
+    {
+      "path": "public/assets/rooms/gear-shaft/gear-shaft.glb",
+      "sha256": "bb57a7997cc8188e46eb84f589158f71ae6dd21e9a153f19c75a0c247b900927",
+      "bytes": 297248
+    },
+    {
+      "path": "public/assets/rooms/gear-shaft/gear-shaft.lightmap.ktx2",
+      "sha256": "9e0d15ef0b1e68731bb31ae9cdbbd3e1f04a224f4a5e05844364805a07067ea9",
+      "bytes": 2460260
+    },
+    {
+      "path": "public/assets/rooms/gear-shaft/gear-shaft.manifest.json",
+      "sha256": "5f54cf59c2d6c79ca122379144c7312da1412b3bfd41150a7a5b693b094e40a3",
+      "bytes": 3435
+    }
+  ],
+  "stagingFiles": {
+    "gear-shaft.glb": "bb57a7997cc8188e46eb84f589158f71ae6dd21e9a153f19c75a0c247b900927",
+    "gear-shaft.lightmap.ktx2": "9e0d15ef0b1e68731bb31ae9cdbbd3e1f04a224f4a5e05844364805a07067ea9",
+    "gear-shaft.lightmap.png": "078e863b58fec78d4e8d04af62957945e613524ce32636bd7d3f81f90d183500",
+    "gear-shaft.manifest.json": "5f54cf59c2d6c79ca122379144c7312da1412b3bfd41150a7a5b693b094e40a3"
+  },
+  "references": [
+    {
+      "path": "assets-source/style/locked/L-board-1.png",
+      "sha256": "d3fffc8eb300cc6f40236c28930401ef1bd06be0e27be76999839e3bfeacc018",
+      "provider": "higgsfield",
+      "note": "kit language only (approved art bible board, L-study and the study's room-sheet-1); no gear-shaft concept sheet exists"
+    },
+    {
+      "path": "assets-source/style/locked/L-study.png",
+      "sha256": "d889c4f1e518f3b5e5641be8a6a78515db5998c3d11c1b8c9291c804240cb268",
+      "provider": "higgsfield",
+      "note": "kit language only (approved art bible board, L-study and the study's room-sheet-1); no gear-shaft concept sheet exists"
+    },
+    {
+      "path": "assets-source/concepts/room-sheet-1.png",
+      "sha256": "ae85e896be2151350ce53511681b13e9136bda53af5efaf1b1431e504c395dc6",
+      "provider": "higgsfield",
+      "note": "kit language only (approved art bible board, L-study and the study's room-sheet-1); no gear-shaft concept sheet exists"
+    }
+  ],
+  "materialsUsed": "approved P4-T3 set (public/assets/materials), bound by slot name; not regenerated",
+  "license": "Original work generated in Blender from a checked-in script; concept references from Paul's paid Higgsfield plan (Terms of Use 4.4)",
+  "reimport": {
+    "triangles": 4434,
+    "material_count": 8,
+    "uv_layers": [
+      [
+        "UVMap",
+        "UVMap.001"
+      ]
+    ],
+    "embedded_images": 0,
+    "bounds_blender": {
+      "min": [
+        -4.0,
+        -6.0,
+        0.0
+      ],
+      "max": [
+        4.0,
+        6.0,
+        5.0
+      ]
+    },
+    "checks": {
+      "triangles_le_100k": true,
+      "materials_le_16": true,
+      "materials_are_manifest_slots": true,
+      "textures_le_2048": true,
+      "two_uv_layers_every_mesh": true,
+      "no_embedded_images": true,
+      "floor_at_zero": true,
+      "inside_ceiling": true,
+      "footprint_x": true,
+      "footprint_y": true,
+      "inside_footprint": true,
+      "gear_ring_node_on_axis": true
+    },
+    "pass": true
+  },
+  "validation": {
+    "pass": true,
+    "date": "2026-11-15",
+    "checks": [
+      "presence",
+      "hashes",
+      "glb budgets",
+      "uv1 on every primitive",
+      "uv1 no overlap, gap >= 8 px",
+      "image-free glb",
+      "ktx2 size/mips/transfer",
+      "manifest consistency",
+      "clean reimport"
+    ]
+  },
+  "approvals": [
+    {
+      "gate": "concept",
+      "status": "pending",
+      "notes": "no template-specific concept sheet; built in the approved study kit language (art bible). Owner decides whether one is needed"
+    },
+    {
+      "gate": "technical",
+      "status": "pending",
+      "notes": "validate-generated-assets verdict is reported to the orchestrator, not self-recorded"
+    },
+    {
+      "gate": "creative",
+      "status": "pending",
+      "notes": "review sheet assets-source/rooms/gear-shaft/staging/review-sheet.jpg"
+    },
+    {
+      "gate": "rights",
+      "status": "pending",
+      "notes": "original procedural geometry; shared P4-T3 sets carry their own provenance"
+    },
+    {
+      "gate": "owner",
+      "status": "pending",
+      "notes": "in-engine look approval (docs/blender-kit-project.md ruling 3)"
+    },
+    {
+      "gate": "independent visual score",
+      "status": "unscored",
+      "notes": "blender-kit-pieces requires an independent >= 80/100 score; unscored means unaccepted"
+    }
+  ],
+  "rigidNodes": {
+    "manifest": [
+      {
+        "node": "gear-shaft_gear_ring",
+        "pivot": [
+          0,
+          3.6,
+          0
+        ],
+        "axis": [
+          0,
+          1,
+          0
+        ],
+        "radPerSec": 0.35,
+        "note": "spin node.rotation.y; lightmap baked at rest with the node invisible to shadow rays, so turning it breaks no baked shadow"
+      }
+    ],
+    "lowPoly": {
+      "gear-shaft_gear_ring": {
+        "triangles": 2392,
+        "lightmap_density": {
+          "mean_px_per_m": 59.89,
+          "min_px_per_m": 51.83,
+          "max_px_per_m": 61.36
+        },
+        "location_blender": [
+          0.0,
+          0.0,
+          3.6
+        ]
+      }
+    },
+    "lightmap": {
+      "gear-shaft_gear_ring": {
+        "azimuth": {
+          "sector_means": [
+            0.08269,
+            0.08159,
+            0.08101,
+            0.08004,
+            0.07981,
+            0.08063,
+            0.08195,
+            0.08138
+          ],
+          "min_over_max": 0.965,
+          "sectors": 8
+        },
+        "casts_baked_shadow": false
+      }
+    },
+    "reimport": {
+      "gear-shaft_gear_ring": {
+        "found": true,
+        "location_blender": [
+          0.0,
+          0.0,
+          3.6
+        ],
+        "rotation_angle": 0.0,
+        "parent": null,
+        "triangles": 2392
+      }
+    },
+    "shadowPolicy": "baked with the node invisible to shadow rays (Cycles visible_shadow off), so no static surface holds its shadow"
+  },
+  "reviewEvidence": [
+    {
+      "path": "assets-source/rooms/gear-shaft/staging/review-sheet.jpg",
+      "sha256": "6e9c239b3901bd05fa0cfb60c9065a1867c305ff13cbbd7e6fc2e57577a30e1b"
+    },
+    {
+      "path": "docs/verification/p5-rooms-gear-shaft-hero-gear-turned.jpg",
+      "sha256": "fb8ba32a810c3f863055fefeca3015d88f8fe205fbf41def27c16771aa275d4c"
+    },
+    {
+      "path": "docs/verification/p5-rooms-gear-shaft-hero.diffuse-gear-turned.jpg",
+      "sha256": "463bc34a248ffa5ad03565e7e916cc36fb95dea075f2e1e664bdc63ba69f4026"
+    },
+    {
+      "path": "docs/verification/p5-rooms-gear-shaft-hero.diffuse.jpg",
+      "sha256": "766eb14771421fbec51d2a497c174ba99f31716059b18e042b123c73b074e3c6"
+    },
+    {
+      "path": "docs/verification/p5-rooms-gear-shaft-hero.jpg",
+      "sha256": "2c588f97b1231e8e3fb7870409c91d63d9dbbbf4fef4f86a4f0a541bdd8394c8"
+    },
+    {
+      "path": "docs/verification/p5-rooms-gear-shaft-ring-gear-turned.jpg",
+      "sha256": "cbab894fc29197e63fe525c9dba31406e8d0ecc7b279fe0bb6d2a8ca549700e5"
+    },
+    {
+      "path": "docs/verification/p5-rooms-gear-shaft-ring.jpg",
+      "sha256": "dc0ac3b84547af0ca4bf5aa5be154b8d0fa6f29da201ba8e43b516643d0caa36"
+    },
+    {
+      "path": "docs/verification/p5-rooms-gear-shaft-seam-north.jpg",
+      "sha256": "177eea1e54742530700edc9119e57c3f6ea1f9a065ee847e208f2a5cd7d1d23e"
+    }
+  ]
+}

@@ -1,8 +1,8 @@
-"""Shared helper for the P5-T1 kit room templates (`hall`, `corridor`), built by build-room-kit.py.
+"""Shared helper for the kit room templates (P5-T1 `hall`, `corridor`; P5-T2 `gear-shaft`,
+`guardian-vault`), built by build-room-kit.py.
 
-Reuses the approved study generator (scripts/assets/build-room-study.py) without editing it: its
-source is executed into a private module namespace with the trailing top-level `main()` call left
-out, so importing never rebuilds the study. The kit then points that namespace's module globals
+Reuses the approved study generator (scripts/assets/build-room-study.py): it is imported as a
+module (its `main()` runs only under `__main__`), so importing never rebuilds the study. The kit then points that namespace's module globals
 (PIECE, paths, SLOTS, TILE, CONST, HALF, DOORS, WIN, wall_frame) at the room being built and calls
 the study's Builder, material, UV, light, render and export functions unchanged. Only what the
 study cannot express is new here: rectangular rooms, the room specs and props.
@@ -14,7 +14,6 @@ with the same float arithmetic, so the manifests equal the greybox templates exa
 
 from __future__ import annotations
 
-import ast
 import importlib.util
 import math
 import types
@@ -29,16 +28,10 @@ SENTRY_GENERATOR = HERE / "build-cog-sentry.py"
 
 
 def load_study() -> types.ModuleType:
-    """The study generator as a module, minus its trailing `main()` call (asserted, not assumed)."""
-    tree = ast.parse(STUDY_GENERATOR.read_text(), filename=str(STUDY_GENERATOR))
-    last = tree.body[-1]
-    if not (isinstance(last, ast.Expr) and isinstance(last.value, ast.Call) and isinstance(last.value.func, ast.Name)
-            and last.value.func.id == "main" and not last.value.args):
-        raise RuntimeError("build-room-study.py no longer ends with a bare main() call; review room_kit.load_study")
-    tree.body = tree.body[:-1]
-    mod = types.ModuleType("build_room_study")
-    mod.__file__ = str(STUDY_GENERATOR)
-    exec(compile(tree, str(STUDY_GENERATOR), "exec"), mod.__dict__)  # noqa: S102
+    """The study generator as a module (its `main()` runs only under `__main__`)."""
+    spec = importlib.util.spec_from_file_location("build_room_study", STUDY_GENERATOR)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
     return mod
 
 
@@ -390,4 +383,276 @@ def banner(b, wall_x: float, x_face: float, y: float, high: bool) -> None:
     b.xf = Matrix.Translation((x_face + 0.006, y, 2.25)) @ Matrix.Rotation(math.pi / 2, 4, "Y")
     S.SHAFT_R = 0.03
     b.gear(0.0, 0.2, 14, 0.01, "brass-polished", high)
+    b.xf = Matrix.Identity(4)
+
+
+# ---------------------------------------------------------------------------------------------
+# P5-T2: gear-shaft chamber and guardian vault
+# ---------------------------------------------------------------------------------------------
+
+SPECS["gear-shaft"] = {
+    "kinds": ["combat", "corridor"],
+    "footprint": {"min": [-4, -6], "max": [4, 6]},
+    "doors": [_door("n", "N", 1, -6), _door("s", "S", -1, 6), _door("w", "W", -4, 1)],
+    "rotations": [0, 1, 2, 3],
+    "enemySockets": [_sock("enemy-a", 0, -3.5, 180), _sock("enemy-b", -2, -3, 160), _sock("enemy-c", 2, -3, 200)],
+    "lootSockets": [],
+    "dressingSockets": [_sock("shaft", 0, 0), _sock("crate", 3, 4.5)],
+    "lightSockets": [_sock("furnace", 0, 0, 0, 0.5), _sock("lamp-n", 3.6, -5.6, 0, 2.4), _sock("lamp-s", -3.6, 5.6, 0, 2.4)],
+    "probe": [2, 1.6, 2],
+    "extraColliders": [{"min": [-1.2, 0, -1.2], "max": [1.2, 4, 1.2]}],
+}
+SPECS["guardian-vault"] = {
+    "kinds": ["guardian"],
+    "footprint": {"min": [-6, -6], "max": [6, 6]},
+    "doors": [_door("s", "S", 1, 6)],
+    "rotations": [0, 1, 2, 3],
+    "enemySockets": [_sock("guardian", 0, -3, 180)],
+    "lootSockets": [_sock("reward", 0, -5, 180)],
+    "dressingSockets": [_sock("pillar-nw", -4, -4), _sock("pillar-ne", 4, -4), _sock("pillar-sw", -4, 4), _sock("pillar-se", 4, 4)],
+    "lightSockets": [_sock("brazier-nw", -4, -4, 0, 1.4), _sock("brazier-ne", 4, -4, 0, 1.4), _sock("brazier-sw", -4, 4, 0, 1.4),
+                     _sock("brazier-se", 4, 4, 0, 1.4)],
+    "probe": [0, 2, 0],
+    # rooms.ts: [-4, 4].flatMap((x) => [-4, 4].map((z) => ...)), same order and arithmetic.
+    "extraColliders": [{"min": [x - 0.5, 0, z - 0.5], "max": [x + 0.5, 4, z + 0.5]} for x in (-4, 4) for z in (-4, 4)],
+}
+
+
+def greybox_colliders(spec: dict) -> list:
+    """`template()` in rooms.ts: perimeter boxes, then the greybox's extraColliders verbatim."""
+    return [*perimeter_colliders(spec), *spec.get("extraColliders", [])]
+
+
+def unwrap_lightmap_uv_multi(objs: list, size: int, gap_px: int = 10) -> None:
+    """lightmap_helpers.unwrap_lightmap_uv for several objects packed into ONE UV1 atlas (multi-object
+    edit mode packs every island together), so a rigid animated node shares the room's lightmap."""
+    import bpy
+
+    for obj in objs:
+        mesh = obj.data
+        if S.lm.LIGHTMAP_UV not in mesh.uv_layers:
+            mesh.uv_layers.new(name=S.lm.LIGHTMAP_UV)
+        mesh.uv_layers.active = mesh.uv_layers[S.lm.LIGHTMAP_UV]
+    if bpy.context.object is not None and bpy.context.object.mode != "OBJECT":
+        bpy.ops.object.mode_set(mode="OBJECT")
+    for other in bpy.context.view_layer.objects:
+        other.select_set(other in objs)
+    bpy.context.view_layer.objects.active = objs[0]
+    bpy.ops.object.mode_set(mode="EDIT")
+    bpy.ops.mesh.select_all(action="SELECT")
+    bpy.ops.uv.smart_project(angle_limit=math.radians(66), island_margin=0.0, scale_to_bounds=False)
+    bpy.ops.uv.pack_islands(rotate=True, margin_method="FRACTION", margin=gap_px / size)
+    bpy.ops.object.mode_set(mode="OBJECT")
+
+
+def bake_irradiance_multi(objs: list, size: int, samples: int, no_shadow: list, margin_px: int = 8):
+    """lightmap_helpers.bake_irradiance for several objects into one image in one bake call. Objects
+    in `no_shadow` (rigid animated nodes) are invisible to shadow rays, so the static surfaces carry
+    no baked shadow of a part that moves at runtime."""
+    import time
+
+    import bpy
+
+    scene = bpy.context.scene
+    scene.cycles.samples = samples
+    scene.cycles.use_denoising = False
+    image = bpy.data.images.new(f"{objs[0].name}_lightmap", size, size, alpha=True, float_buffer=True)
+    image.generated_color = (0.0, 0.0, 0.0, 0.0)
+    image.colorspace_settings.name = "Non-Color"
+    mats = []
+    for obj in objs:
+        for slot in obj.material_slots:
+            if slot.material not in mats:
+                mats.append(slot.material)
+    restore = []
+    for mat in mats:
+        nodes = mat.node_tree.nodes
+        metallic = next(n for n in nodes if n.type == "BSDF_PRINCIPLED").inputs["Metallic"]
+        restore.append((mat, metallic.default_value))
+        metallic.default_value = 0.0
+        tex = nodes.new("ShaderNodeTexImage")
+        tex.name = "lightmap_bake_target"
+        tex.image = image
+        nodes.active = tex
+    for obj in objs:
+        obj.data.uv_layers.active = obj.data.uv_layers[S.lm.LIGHTMAP_UV]
+    for obj in no_shadow:
+        obj.visible_shadow = False
+    for other in bpy.context.view_layer.objects:
+        other.select_set(other in objs)
+    bpy.context.view_layer.objects.active = objs[0]
+    started = time.monotonic()
+    bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT", "INDIRECT"}, margin=margin_px, margin_type="EXTEND",
+                        use_clear=True, target="IMAGE_TEXTURES")
+    elapsed = time.monotonic() - started
+    for obj in no_shadow:
+        obj.visible_shadow = True
+    for mat, value in restore:
+        nodes = mat.node_tree.nodes
+        next(n for n in nodes if n.type == "BSDF_PRINCIPLED").inputs["Metallic"].default_value = value
+        nodes.remove(nodes["lightmap_bake_target"])
+    for obj in objs:
+        obj.data.uv_layers.active = obj.data.uv_layers[0]
+    return image, elapsed
+
+
+def export_glb_multi(objs: list, path: Path) -> None:
+    """The study's export_glb with several selected objects (room plus its rigid animated nodes)."""
+    import bpy
+
+    for other in bpy.context.view_layer.objects:
+        other.select_set(other in objs)
+    bpy.context.view_layer.objects.active = objs[0]
+    bpy.ops.export_scene.gltf(filepath=str(path), export_format="GLB", use_selection=True, use_active_scene=True, export_texcoords=True,
+                              export_normals=True, export_tangents=False, export_materials="EXPORT", export_image_format="NONE",
+                              export_cameras=False, export_lights=False, export_apply=True, export_extras=False)
+
+
+def azimuth_uniformity(obj, rgba, size: int, sectors: int = 8) -> dict:
+    """Area-weighted mean baked irradiance of a rigid node's faces per azimuth sector about its local
+    Z axis. A node spinning about Z carries its texels with it, so similar sectors mean the turned
+    node still reads as lit by the static lights. `rgba` is lightmap_helpers.image_rgba (row 0 top)."""
+    import numpy as np
+
+    mesh = obj.data
+    uv = mesh.uv_layers[S.lm.LIGHTMAP_UV].data
+    lum = rgba[..., :3] @ np.array([0.2126, 0.7152, 0.0722])
+    acc = [[0.0, 0.0] for _ in range(sectors)]
+    for poly in mesh.polygons:
+        if poly.area <= 1e-9:
+            continue
+        n = len(poly.loop_indices)
+        u = sum(uv[i].uv.x for i in poly.loop_indices) / n
+        v = sum(uv[i].uv.y for i in poly.loop_indices) / n
+        px, py = min(size - 1, max(0, int(u * size))), min(size - 1, max(0, int((1 - v) * size)))
+        c = poly.center
+        k = int(((math.atan2(c.y, c.x) % (2 * math.pi)) / (2 * math.pi)) * sectors) % sectors
+        acc[k][0] += float(lum[py, px]) * poly.area
+        acc[k][1] += poly.area
+    means = [a / w if w else 0.0 for a, w in acc]
+    lo, hi = min(means), max(means)
+    return {"sector_means": [round(m, 5) for m in means], "min_over_max": round(lo / hi, 3) if hi else 0.0, "sectors": sectors}
+
+
+def gear_ring(name: str, pivot_z: float, high: bool, r_tip: float, teeth: int, thick: float, hub_r: float):
+    """The gear-shaft's turning crown gear: its own Builder and object (never welded to the shaft),
+    built around its own Z axis, origin on the rotation axis at height `pivot_z`."""
+    b = S.Builder(name)
+    S.SHAFT_R = hub_r
+    b.gear(0.0, r_tip, teeth, thick, "brass-aged", high)
+    seg = 64 if high else 32
+    rim_in = r_tip - min(0.08, r_tip * 0.12) - min(0.08, r_tip * 0.13)
+    b.annulus(0, 0, rim_in - 0.09, rim_in, -thick / 2 + 0.015, thick / 2 - 0.015, seg, "brass-polished", sides="tbi")  # inner bead
+    b.annulus(0, 0, hub_r, hub_r + 0.16, thick / 2 + 0.02, thick / 2 + 0.07, seg // 2, "brass-polished", sides="tbo")  # hub collars
+    b.annulus(0, 0, hub_r, hub_r + 0.16, -thick / 2 - 0.07, -thick / 2 - 0.02, seg // 2, "brass-polished", sides="tbo")
+    for s in range(6):  # heavy spokes between the gear's own light ones
+        b.xf = Matrix.Rotation(2 * math.pi * s / 6, 4, "Z")
+        b.box(hub_r + 0.12, rim_in - 0.08, -0.045, 0.045, -thick / 2 + 0.01, thick / 2 - 0.01, "brass-aged", drop="xX")
+        b.xf = Matrix.Identity(4)
+    obj = b.finish()
+    obj.location = (0.0, 0.0, pivot_z)
+    return obj
+
+
+def furnace_shaft(b, high: bool, height: float, shaft_r: float) -> list:
+    """Masonry firebox inside the greybox's 2.4 m shaft collider with a glowing grate on each face, and
+    the polished drive shaft rising from it to a ceiling boss. Returns four bake-light points in open
+    air outside the grates: 4-fold symmetric about the axis, so the turning ring sees even light."""
+    h = 1.1
+    seg = 48 if high else 20
+    fz = 1.3
+    b.box(-h - 0.05, h + 0.05, -h - 0.05, h + 0.05, 0.0, 0.16, "brass-aged", drop="b")  # plinth
+    b.box(-h - 0.05, h + 0.05, -h - 0.05, h + 0.05, fz - 0.12, fz, "brass-aged", drop="")  # cap band
+    lights = []
+    for k in range(4):
+        b.xf = Matrix.Rotation(math.pi / 2 * k, 4, "Z")
+        # Stone face around a recessed grate opening (y -0.45..0.45, z 0.25..0.8).
+        b.face([(h, -h, 0.16), (h, -0.45, 0.16), (h, -0.45, fz - 0.12), (h, -h, fz - 0.12)], (1, 0, 0), "stone-floor")
+        b.face([(h, 0.45, 0.16), (h, h, 0.16), (h, h, fz - 0.12), (h, 0.45, fz - 0.12)], (1, 0, 0), "stone-floor")
+        b.face([(h, -0.45, 0.16), (h, 0.45, 0.16), (h, 0.45, 0.25), (h, -0.45, 0.25)], (1, 0, 0), "stone-floor")
+        b.face([(h, -0.45, 0.8), (h, 0.45, 0.8), (h, 0.45, fz - 0.12), (h, -0.45, fz - 0.12)], (1, 0, 0), "stone-floor")
+        d = h - 0.1  # ember panel depth
+        b.face([(d, -0.45, 0.25), (d, 0.45, 0.25), (d, 0.45, 0.8), (d, -0.45, 0.8)], (1, 0, 0), "flame")
+        b.face([(d, -0.45, 0.25), (h, -0.45, 0.25), (h, 0.45, 0.25), (d, 0.45, 0.25)], (0, 0, 1), "stone-floor")
+        b.face([(d, -0.45, 0.8), (h, -0.45, 0.8), (h, 0.45, 0.8), (d, 0.45, 0.8)], (0, 0, -1), "stone-floor")
+        b.face([(d, -0.45, 0.25), (h, -0.45, 0.25), (h, -0.45, 0.8), (d, -0.45, 0.8)], (0, 1, 0), "stone-floor")
+        b.face([(d, 0.45, 0.25), (h, 0.45, 0.25), (h, 0.45, 0.8), (d, 0.45, 0.8)], (0, -1, 0), "stone-floor")
+        for j in range(7):
+            y = -0.39 + j * 0.13
+            b.box(h - 0.04, h + 0.01, y - 0.015, y + 0.015, 0.25, 0.8, "brass-polished", drop="bt")
+        b.box(h - 0.02, h + 0.04, -0.52, 0.52, 0.8, 0.87, "brass-polished", drop="")  # lintel
+        lights.append(b.xf @ Vector((h + 0.45, 0.0, 0.55)))
+        b.xf = Matrix.Identity(4)
+    b.annulus(0, 0, shaft_r, 0.75, fz, fz + 0.12, seg, "brass-aged", sides="to")  # collar
+    b.cylinder(0, 0, shaft_r, fz + 0.12, height, seg, "brass-polished", caps="")
+    for z in (2.2, 2.9, 4.4):
+        b.annulus(0, 0, shaft_r, shaft_r + 0.06, z - 0.04, z + 0.04, seg, "brass-aged", sides="tbo")
+    b.annulus(0, 0, shaft_r, 0.85, height - 0.14, height, seg, "brass-aged", sides="bo")  # ceiling boss
+    return lights
+
+
+def crate(b, cx: float, cy: float, s: float) -> dict:
+    """Walnut parts crate with brass-aged corner straps. Returns its runtime collider."""
+    h = s / 2
+    b.box(cx - h, cx + h, cy - h, cy + h, 0.0, s, "walnut", drop="b")
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            x, y = cx + sx * (h - 0.03), cy + sy * (h - 0.03)
+            b.box(x - 0.035, x + 0.035, y - 0.035, y + 0.035, 0.0, s + 0.01, "brass-aged", drop="b")
+    b.box(cx - h - 0.01, cx + h + 0.01, cy - h - 0.01, cy + h + 0.01, s * 0.45, s * 0.55, "brass-aged", drop="bt")  # band
+    return S.runtime_box(Vector((cx - h - 0.04, cy - h - 0.04, 0)), Vector((cx + h + 0.04, cy + h + 0.04, 0)), s + 0.01)
+
+
+def big_flame(b, cx: float, cy: float, z: float, h: float, r: float) -> None:
+    """Crossed-card brazier flame (the study's candle flame, scaled)."""
+    for ang in (0.0, math.pi / 2):
+        c, s = math.cos(ang), math.sin(ang)
+        b.face([(cx - r * c, cy - r * s, z), (cx + r * c, cy + r * s, z), (cx, cy, z + h)], (-s, c, 0), "flame")
+
+
+def pillar(b, cx: float, cy: float, height: float) -> tuple[list, dict]:
+    """Stone vault pillar inside the greybox's 1 m collider: brass plinth and capital, and a brass
+    brazier trough around it at the 1.4 m light socket. Returns two bake-light points in open air
+    (room-facing and wall-facing diagonals) and the brazier's added collider."""
+    b.box(cx - 0.5, cx + 0.5, cy - 0.5, cy + 0.5, 0.0, 0.2, "brass-aged", drop="b")
+    b.box(cx - 0.42, cx + 0.42, cy - 0.42, cy + 0.42, 0.2, height - 0.42, "stone-floor", drop="bt")
+    b.box(cx - 0.5, cx + 0.5, cy - 0.5, cy + 0.5, height - 0.42, height - 0.3, "brass-aged", drop="")
+    b.box(cx - 0.46, cx + 0.46, cy - 0.46, cy + 0.46, height - 0.3, height, "walnut", drop="t")
+    z0, z1, ro = 1.2, 1.4, 0.66
+    b.box(cx - ro, cx + ro, cy - ro, cy + ro, z0, z1, "brass-aged", drop="t")
+    b.box(cx - ro - 0.03, cx + ro + 0.03, cy - ro - 0.03, cy + ro + 0.03, z1 - 0.03, z1 + 0.01, "brass-polished", drop="")  # lip
+    for k in range(4):  # ember bed between the pillar and the lip, flames along it
+        b.xf = Matrix.Translation((cx, cy, 0)) @ Matrix.Rotation(math.pi / 2 * k, 4, "Z")
+        b.face([(0.42, -0.42, z1 + 0.012), (ro, -ro, z1 + 0.012), (ro, ro, z1 + 0.012), (0.42, 0.42, z1 + 0.012)], (0, 0, 1), "flame")
+        for t in (-0.3, 0.0, 0.3):
+            big_flame(b, 0.54, t, z1 + 0.012, 0.26 if t == 0.0 else 0.18, 0.06)
+        b.xf = Matrix.Identity(4)
+    for sx in (-1, 1):  # bracket feet down the pillar corners
+        for sy in (-1, 1):
+            x, y = cx + sx * 0.47, cy + sy * 0.47
+            b.box(x - 0.03, x + 0.03, y - 0.03, y + 0.03, 0.9, z0, "brass-polished", drop="t")
+    toward = Vector((-cx, -cy, 0)).normalized()
+    lights = [Vector((cx, cy, 1.75)) + toward * 0.95, Vector((cx, cy, 1.75)) - toward * 0.95]
+    collider = S.runtime_box(Vector((cx - ro - 0.04, cy - ro - 0.04, 0)), Vector((cx + ro + 0.04, cy + ro + 0.04, 0)), z1 + 0.01)
+    return lights, collider
+
+
+def arena_circle(b, cx: float, cy: float, high: bool) -> None:
+    """Brass duelling circle inlaid in the floor under the guardian socket (6 mm proud, no collider)."""
+    seg = 72 if high else 40
+    b.annulus(cx, cy, 1.9, 2.02, 0.0, 0.006, seg, "brass-aged", sides="tio")
+    b.annulus(cx, cy, 1.55, 1.6, 0.0, 0.006, seg, "brass-polished", sides="tio")
+    for k in range(24):
+        b.xf = Matrix.Translation((cx, cy, 0)) @ Matrix.Rotation(2 * math.pi * k / 24, 4, "Z")
+        b.box(1.6, 1.9, -0.02, 0.02, 0.0, 0.005, "brass-aged", drop="bxX")
+        b.xf = Matrix.Identity(4)
+
+
+def wall_gear(b, room: Room, wall: str, a: float, z: float, r_tip: float, teeth: int, high: bool) -> None:
+    """Flat brass gear relief on a wall (wall-local a, centre height z), its face toward the room."""
+    S.SHAFT_R = 0.1
+    # Hub collars reach 0.04 m behind the gear's mid-plane: 0.05 keeps everything inside the wall.
+    b.xf = room.frame(wall) @ Matrix.Translation((a, 0.05, z)) @ Matrix.Rotation(-math.pi / 2, 4, "X")
+    b.gear(0.0, r_tip, teeth, 0.04, "brass-aged", high)
+    b.cylinder(0, 0, 0.1, -0.03, 0.05, 24 if high else 12, "brass-polished", caps="t")
     b.xf = Matrix.Identity(4)

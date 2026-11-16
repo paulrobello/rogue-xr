@@ -74,7 +74,34 @@ ROOMS = {
         "stile_step": 0.8,
         "percentile": 98.0,
     },
+    # P5-T2. 5 m tall: the drive shaft and its turning crown gear need headroom above the 4 m greybox.
+    "gear-shaft": {
+        "height": 5.0,
+        "lightmap": 2048,
+        "slots": ["stone-floor", "wallpaper", "walnut", "brass-aged", "brass-polished", "wax", "flame", "lamp-glass"],
+        "cameras": {
+            "hero": {"loc": (-1.0, -5.0, 1.6), "look": (0.4, 3.0, 2.9), "vfov": 70.0},
+            "ring": {"loc": (2.6, 2.4, 1.6), "look": (-0.6, -0.8, 3.5), "vfov": 70.0},
+        },
+        "stile_step": 0.9,
+        "percentile": 99.0,
+    },
+    "guardian-vault": {
+        "height": 6.0,
+        "lightmap": 2048,
+        "slots": ["stone-floor", "wallpaper", "walnut", "brass-aged", "brass-polished", "stained-glass", "wax", "flame"],
+        "cameras": {
+            "hero": {"loc": (1.0, -5.2, 1.6), "look": (0.0, 5.5, 2.7), "vfov": 70.0},
+            "brazier": {"loc": (-1.5, -2.5, 1.6), "look": (4.0, 4.0, 1.8), "vfov": 70.0},
+        },
+        "stile_step": 0.9,
+        "percentile": 99.0,
+    },
 }
+# Gear-shaft crown gear: a separate rigid glTF node spun at runtime about its own Y axis (P5-T12).
+GEAR_RING = {"node": "gear-shaft_gear_ring", "pivot_z": 3.6, "r_tip": 2.0, "teeth": 56, "thick": 0.12, "hub_r": 0.36, "shaft_r": 0.3,
+             "radPerSec": 0.35}
+VAULT_WINDOWS = [{"wall": "N", "a": a, "half_w": 0.55, "sill": 1.7, "spring": 3.1} for a in (-2.6, 0.0, 2.6)]
 
 
 def parse_args() -> argparse.Namespace:
@@ -148,13 +175,75 @@ def build_corridor(b, room: kit.Room, high: bool) -> tuple[list, list]:
     return [], lights
 
 
-BUILDERS = {"hall": build_hall, "corridor": build_corridor}
+def lancet_opening(w: dict) -> tuple:
+    apex = w["spring"] + math.sqrt((2 * w["half_w"]) ** 2 - w["half_w"] ** 2)
+    return (w["a"] - w["half_w"], w["a"] + w["half_w"], w["sill"], apex)
+
+
+def build_gear_shaft(b, room: kit.Room, high: bool) -> tuple[list, list]:
+    """Furnace-driven gear shaft: masonry firebox with four glowing grates at the centre, polished
+    drive shaft to a ceiling boss, a parts crate, two lanterns and four candle sconces. The turning
+    crown gear is built separately (rigid_parts)."""
+    kit.build_shell(b, room, {}, ROOMS["gear-shaft"]["stile_step"])
+    T = room.height
+    for c in (-3.5, 3.5):  # walnut beams across the chamber, clear of the shaft boss
+        b.box(-room.hx, room.hx, c - 0.14, c + 0.14, T - 0.3, T, "walnut", drop="txX")
+    furnace = kit.furnace_shaft(b, high, T, GEAR_RING["shaft_r"])
+    colliders = [kit.crate(b, 3.0, -4.5, 0.8)]  # crate socket (runtime 3, 4.5)
+    lamps = [kit.lantern(b, 3.6, 5.6, 2.4, room.hx, high), kit.lantern(b, -3.6, -5.6, 2.4, -room.hx, high)]  # lamp-n, lamp-s
+    S.SCONCES = [("E", 3.0), ("E", -3.0), ("W", 3.6), ("W", -3.8)]
+    sconces = S.build_sconces(b, high)
+    lights = [(f"furnace_{i}", p, 40.0) for i, p in enumerate(furnace)]
+    lights += [(n, p, 40.0) for n, p in zip(("lamp_n", "lamp_s"), lamps)]
+    lights += [(f"sconce_{i}", p, 18.0) for i, p in enumerate(sconces)]
+    return colliders, lights
+
+
+def build_guardian_vault(b, room: kit.Room, high: bool) -> tuple[list, list]:
+    """Guardian arena: 6 m vault, four stone pillars with brazier troughs at the light sockets, three
+    stained-glass lancets and a brass gear rosette behind the reward, walnut ceiling grid, a gear
+    chandelier over the brass duelling circle and a processional inlay from the door."""
+    kit.build_shell(b, room, {"N": [lancet_opening(w) for w in VAULT_WINDOWS]}, ROOMS["guardian-vault"]["stile_step"])
+    for w in VAULT_WINDOWS:
+        S.WIN = {"x0": -w["half_w"], "x1": w["half_w"], "sill": w["sill"], "spring": w["spring"], "apex": lancet_opening(w)[3]}
+        S.wall_frame = lambda wall, a=w["a"]: room.frame(wall) @ Matrix.Translation((a, 0, 0))
+        S.build_window(b, high)
+    S.wall_frame = room.frame
+    T = room.height
+    for c in (-4.0, 4.0):
+        b.box(-room.hx, room.hx, c - 0.16, c + 0.16, T - 0.32, T, "walnut", drop="txX")
+        b.box(c - 0.16, c + 0.16, -room.hy, room.hy, T - 0.28, T, "walnut", drop="tyY")
+    kit.wall_gear(b, room, "N", 0.0, 5.0, 0.72, 26, high)
+    kit.wall_gear(b, room, "W", 0.0, 3.4, 1.0, 32, high)
+    kit.wall_gear(b, room, "E", 0.0, 3.4, 1.0, 32, high)
+    kit.arena_circle(b, 0.0, 3.0, high)  # guardian socket (runtime 0, -3)
+    for x in (0.35, 1.65):  # processional inlay from the south door to the circle
+        b.box(x - 0.03, x + 0.03, -room.hy + 0.06, 0.95, 0.0, 0.005, "brass-aged", drop="b")
+    lights = [(f"chandelier_{i}", p, 14.0) for i, p in enumerate(kit.chandelier(b, room, high, 4.3))]
+    colliders = []
+    for name, (x, z) in zip(("nw", "ne", "sw", "se"), ((-4, -4), (4, -4), (-4, 4), (4, 4))):  # runtime pillar sockets
+        pts, box = kit.pillar(b, float(x), float(-z), T)
+        colliders.append(box)
+        lights += [(f"brazier_{name}_in", pts[0], 30.0), (f"brazier_{name}_out", pts[1], 15.0)]
+    return colliders, lights
+
+
+BUILDERS = {"hall": build_hall, "corridor": build_corridor, "gear-shaft": build_gear_shaft, "guardian-vault": build_guardian_vault}
+
+
+def rigid_parts(room: kit.Room, high: bool) -> list:
+    """Separate rigid objects a template animates at runtime (each its own glTF node)."""
+    if room.piece != "gear-shaft":
+        return []
+    g = GEAR_RING
+    return [kit.gear_ring(f"{g['node']}_high" if high else g["node"], g["pivot_z"], high, g["r_tip"], g["teeth"], g["thick"], g["hub_r"])]
 
 
 def build(room: kit.Room, high: bool):
     b = S.Builder(f"{room.piece}_high" if high else room.piece)
     colliders, lights = BUILDERS[room.piece](b, room, high)
-    return b.finish(), colliders, lights
+    obj = b.finish()
+    return obj, colliders, lights, rigid_parts(room, high)
 
 
 def build_lights(room: kit.Room, lights: list) -> None:
@@ -190,6 +279,25 @@ def build_lights(room: kit.Room, lights: list) -> None:
         area.location = (WINDOW["a"], room.hy + 0.4, (o[2] + o[3]) / 2)
         area.rotation_euler = (math.radians(-90), 0, 0)
         scene.collection.objects.link(area)
+    if room.piece == "guardian-vault":  # the same late sun, and sky behind each of the three lancets
+        sun_data = bpy.data.lights.new("guardian-vault_sun", "SUN")
+        sun_data.energy = 7.0
+        sun_data.angle = math.radians(1.0)
+        sun_data.color = (1.0, 0.86, 0.66)
+        sun = bpy.data.objects.new("guardian-vault_sun", sun_data)
+        sun.rotation_euler = Vector((0.12, -0.75, -0.65)).normalized().to_track_quat("-Z", "Y").to_euler()
+        scene.collection.objects.link(sun)
+        for i, w in enumerate(VAULT_WINDOWS):
+            o = lancet_opening(w)
+            area_data = bpy.data.lights.new(f"guardian-vault_window_sky_{i}", "AREA")
+            area_data.shape = "RECTANGLE"
+            area_data.size, area_data.size_y = 1.1, o[3] - o[2]
+            area_data.energy = 60.0
+            area_data.color = (1.0, 0.8, 0.6)
+            area = bpy.data.objects.new(f"guardian-vault_window_sky_{i}", area_data)
+            area.location = (w["a"], room.hy + 0.4, (o[2] + o[3]) / 2)
+            area.rotation_euler = (math.radians(-90), 0, 0)
+            scene.collection.objects.link(area)
 
 
 # ---------------------------------------------------------------------------------------------
@@ -212,18 +320,25 @@ def manifest_entry(room: kit.Room, colliders: list, lightmap: dict | None, budge
             else:
                 entry["roughness"] = rough
             materials[f"{p}_{slot}"] = entry
-    return {
+    entry = {
         "template": p,
         "glb": S.GLB_NAME,
         "lightmap": lightmap,
         "id": p,
         **{k: spec[k] for k in ("kinds", "footprint", "doors", "rotations", "enemySockets", "lootSockets", "dressingSockets", "lightSockets", "probe")},
         "walkable": kit.walkable(spec),
-        "colliders": [*kit.perimeter_colliders(spec), *colliders],
+        "colliders": [*kit.greybox_colliders(spec), *colliders],
         "budget": budget,
         "materials": materials,
         "glassEmissiveIntensity": 0.8,
     }
+    if p == "gear-shaft":
+        g = GEAR_RING
+        entry["rigidNodes"] = [{
+            "node": g["node"], "pivot": [0, g["pivot_z"], 0], "axis": [0, 1, 0], "radPerSec": g["radPerSec"],
+            "note": "spin node.rotation.y; lightmap baked at rest with the node invisible to shadow rays, so turning it breaks no baked shadow",
+        }]
+    return entry
 
 
 def reimport(room: kit.Room) -> None:
@@ -271,6 +386,16 @@ def reimport(room: kit.Room) -> None:
             "inside_footprint": lo[0] >= -room.hx - 1e-3 and hi[0] <= room.hx + 1e-3 and lo[1] >= -room.hy - 1e-3 and hi[1] <= room.hy + 1e-3,
         },
     }
+    if room.piece == "gear-shaft":
+        g = GEAR_RING
+        ring = bpy.data.objects.get(g["node"])
+        found = ring is not None
+        loc = ring.matrix_world.to_translation() if found else Vector((9, 9, 9))
+        angle = ring.matrix_world.to_quaternion().angle if found else 9.0
+        result["rigid_nodes"] = {g["node"]: {"found": found, "location_blender": [round(v, 4) for v in loc], "rotation_angle": round(angle, 6),
+                                             "parent": ring.parent.name if found and ring.parent else None,
+                                             "triangles": sum(len(p.vertices) - 2 for p in ring.data.polygons) if found else 0}}
+        result["checks"]["gear_ring_node_on_axis"] = found and (loc - Vector((0, 0, g["pivot_z"]))).length < 1e-4 and angle < 1e-6
     result["pass"] = all(result["checks"].values())
     (S.STAGING / "reimport.json").write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps(result, indent=2))
@@ -283,8 +408,11 @@ def reimport(room: kit.Room) -> None:
 # ---------------------------------------------------------------------------------------------
 
 
-def export(low, path: Path) -> int:
-    S.export_glb(low, path)
+def export(low, path: Path, rigid: list) -> int:
+    if rigid:
+        kit.export_glb_multi([low, *rigid], path)
+    else:
+        S.export_glb(low, path)
     return CANONICALIZE(path)
 
 
@@ -307,43 +435,53 @@ def main() -> None:
     report: dict = {"piece": P, "blender": bpy.app.version_string, "host_load_start": S.load_avg(), "lightmap_size": size, "samples": args.samples,
                     "generator": "scripts/assets/build-room-kit.py", "helper": "scripts/assets/room_kit.py (reuses build-room-study.py functions)"}
 
-    high, _, _ = build(room, True)
-    S.uv0_tiled(high)
-    S.apply_bevel(high)
-    report["high"] = {"triangles": S.count_tris(high), "slots": len(S.SLOTS)}
+    high, _, _, high_rigid = build(room, True)
+    for obj in (high, *high_rigid):
+        S.uv0_tiled(obj)
+        S.apply_bevel(obj)
+    report["high"] = {"triangles": sum(S.count_tris(o) for o in (high, *high_rigid)), "slots": len(S.SLOTS)}
+    high_all = [high, *high_rigid]
 
-    low, colliders, lights = build(room, False)
+    low, colliders, lights, rigid = build(room, False)
+    low_all = [low, *rigid]
     backing = S.build_door_backing()
     build_lights(room, lights)
     cams = {name: S.make_camera(name) for name in cfg["cameras"]}
-    S.uv0_tiled(low)
+    for obj in low_all:
+        S.uv0_tiled(obj)
     bpy.context.view_layer.update()
     if not args.glb_out:
-        S.set_visible([low], False)
+        S.set_visible(low_all, False)
         bpy.ops.wm.save_as_mainfile(filepath=str(S.BLEND_DIR / f"{P}_high.blend"), copy=True, compress=True)
-        S.set_visible([low], True)
+        S.set_visible(low_all, True)
 
-    lm.unwrap_lightmap_uv(low, size, gap_px=10)
-    tris = S.count_tris(low)
+    if rigid:
+        kit.unwrap_lightmap_uv_multi(low_all, size, gap_px=10)
+    else:
+        lm.unwrap_lightmap_uv(low, size, gap_px=10)
+    tris = sum(S.count_tris(o) for o in low_all)
     report["low"] = {
         "triangles": tris,
-        "vertices": len(low.data.vertices),
-        "materials": len({p.material_index for p in low.data.polygons}),
+        "vertices": sum(len(o.data.vertices) for o in low_all),
+        "materials": len({p.material_index for o in low_all for p in o.data.polygons}),
         "lightmap_density": lm.lightmap_texel_density(low, size),
         "lightmap_density_by_slot": S.density_by_slot(low, size),
     }
-    print(f"[{P}] high tris={report['high']['triangles']} low tris={tris} density={report['low']['lightmap_density']}")
+    if rigid:
+        report["low"]["rigid_nodes"] = {o.name: {"triangles": S.count_tris(o), "lightmap_density": lm.lightmap_texel_density(o, size),
+                                                 "location_blender": [round(v, 4) for v in o.location]} for o in rigid}
+    print(f"[{P}] high tris={report['high']['triangles']} low tris={tris} density={report['low']['lightmap_density']} by_slot={report['low']['lightmap_density_by_slot']}")
     assert tris <= 100_000 and len(S.SLOTS) <= 16, "PRD room budget exceeded"
     assert report["low"]["materials"] == len(S.SLOTS), "every slot must be used (manifest lists all)"
 
     glb = Path(args.glb_out) if args.glb_out else S.STAGING / S.GLB_NAME
-    report["canonicalized_primitives"] = export(low, glb)
+    report["canonicalized_primitives"] = export(low, glb, rigid)
     report["glb_bytes"] = glb.stat().st_size
     if args.glb_out:
         print(f"[{P}] determinism GLB {glb} {S.sha256(glb)}")
         return
 
-    S.set_visible([high], False)
+    S.set_visible(high_all, False)
     if "lamp-glass" in S.SLOTS:  # after export, so the GLB's material factors do not depend on it
         kit.bake_transmitting_glass("lamp-glass")
     lightmap = None
@@ -351,11 +489,17 @@ def main() -> None:
         report["device"] = lm.select_device(args.device)
         S.set_metal_links(False)
         load0 = S.load_avg()
-        raw, seconds = lm.bake_irradiance(low, size, args.samples)
+        if rigid:
+            raw, seconds = kit.bake_irradiance_multi(low_all, size, args.samples, no_shadow=rigid)
+        else:
+            raw, seconds = lm.bake_irradiance(low, size, args.samples)
         S.set_metal_links(True)
         report["lightmap_bake"] = {"seconds": round(seconds, 2), "host_load": [load0, S.load_avg()], "timing_valid": max(load0, S.load_avg()) <= 15}
         lm.save_exr(raw, S.SCRATCH / f"{P}.lightmap.raw.exr")
         image = lm.denoise_image(raw, S.SCRATCH)
+        if rigid:
+            rgba = lm.image_rgba(image)
+            report["rigid_lightmap"] = {o.name: {"azimuth": kit.azimuth_uniformity(o, rgba, size), "casts_baked_shadow": False} for o in rigid}
         report["denoise"] = "compositor OIDN, HDR, accurate prefilter, high quality"
         encoded, scale, stats = lm.encode_scaled_srgb(lm.image_rgba(image), percentile=cfg["percentile"])
         stats["percentile"] = cfg["percentile"]
@@ -385,19 +529,23 @@ def main() -> None:
         S.render_settings("BLENDER_EEVEE", 64)
         S.set_visible([backing], True)
         for name, cam in cams.items():
-            S.set_visible([low], False)
-            S.set_visible([high], True)
+            S.set_visible(low_all, False)
+            S.set_visible(high_all, True)
             S.render_to(cam, renders / f"{name}.high.png")
-            S.set_visible([high], False)
-            S.set_visible([low], True)
+            S.set_visible(high_all, False)
+            S.set_visible(low_all, True)
             S.render_to(cam, renders / f"{name}.low.png")
         if lightmap is not None:
             originals = S.lightmapped_preview_materials(low, S.STAGING / f"{P}.lightmap.png", lightmap["scale"])
+            for obj in rigid:  # same slot order: the rigid nodes take the same preview materials
+                for i, mat in enumerate(low.data.materials):
+                    obj.data.materials[i] = mat
             scene.view_settings.view_transform = "Standard"
             for name, cam in cams.items():
                 S.render_to(cam, renders / f"{name}.lightmapped.png")
-            for i, mat in enumerate(originals):
-                low.data.materials[i] = mat
+            for obj in low_all:
+                for i, mat in enumerate(originals):
+                    obj.data.materials[i] = mat
             S.render_settings("CYCLES", 96)
             scene.view_settings.view_transform = "Standard"
             S.set_metal_links(False)
@@ -409,8 +557,9 @@ def main() -> None:
             S.set_metal_links(True)
         report["renders"] = sorted(p.name for p in renders.glob("*.png"))
 
-    S.set_visible([high], False)
-    bpy.data.objects.remove(high)
+    S.set_visible(high_all, False)
+    for obj in high_all:
+        bpy.data.objects.remove(obj)
     bpy.ops.wm.save_as_mainfile(filepath=str(S.BLEND_DIR / f"{P}_low.blend"), copy=True, compress=True)
     report["blend"] = {p.name: {"sha256": S.sha256(p), "bytes": p.stat().st_size} for p in sorted(S.BLEND_DIR.glob("*.blend"))}
     report["colliders_added"] = colliders

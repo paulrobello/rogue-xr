@@ -36,7 +36,9 @@ export interface Shot {
    * templates swapped in -> dressRoom() per kit room (as floor-view's useRoomAsset does), sealed
    * door caps included; `at` is the floor point that picks the current room.
    */
-  floor?: { seed: string; at: [number, number] };
+  floor?: { seed: string; at: [number, number]; kit?: string[] };
+  /** Turns a named rigid node (e.g. the gear-shaft crown gear) about its local Y before the frame. */
+  spin?: { node: string; angle: number };
 }
 
 export async function mountKitProof(w: number, h: number, shot: Shot) {
@@ -61,7 +63,7 @@ export async function mountKitProof(w: number, h: number, shot: Shot) {
   });
   const assets = new Map<string, StudyAsset>();
   const manifests: StudyManifest[] = [];
-  const ids = shot.floor ? ['hall', 'corridor'] : shot.rooms.map((r) => r.id);
+  const ids = shot.floor ? (shot.floor.kit ?? ['hall', 'corridor']) : shot.rooms.map((r) => r.id);
   for (const id of ids) {
     if (assets.has(id)) continue;
     const base = `/assets/rooms/${id}`;
@@ -104,6 +106,16 @@ export async function mountKitProof(w: number, h: number, shot: Shot) {
       models.push(model);
     }
   }
+  let spun = 0;
+  if (shot.spin) {
+    for (const model of models) {
+      const node = model.getObjectByName(shot.spin.node);
+      if (!node) continue;
+      node.rotation.y = shot.spin.angle;
+      spun++;
+    }
+    if (spun === 0) throw new Error(`kit proof: no node ${shot.spin.node}`);
+  }
   for (const model of models) {
     model.traverse((node) => {
       const mesh = node as THREE.Mesh;
@@ -127,6 +139,7 @@ export async function mountKitProof(w: number, h: number, shot: Shot) {
     calls: renderer.info.render.calls,
     triangles,
     sealed,
+    spun,
     programs: renderer.info.programs?.length ?? 0,
   };
 }

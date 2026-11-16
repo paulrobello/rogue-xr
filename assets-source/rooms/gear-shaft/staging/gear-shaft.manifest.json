@@ -1,0 +1,181 @@
+{
+  "template": "gear-shaft",
+  "glb": "gear-shaft.glb",
+  "lightmap": {
+    "file": "gear-shaft.lightmap.ktx2",
+    "uv": 1,
+    "encoding": "srgb-scaled",
+    "scale": 7.0254974365234375,
+    "intensity": 22.071251
+  },
+  "id": "gear-shaft",
+  "kinds": ["combat", "corridor"],
+  "footprint": {
+    "min": [-4, -6],
+    "max": [4, 6]
+  },
+  "doors": [
+    {
+      "id": "n",
+      "facing": "N",
+      "position": [1, 0, -6],
+      "width": 1.6
+    },
+    {
+      "id": "s",
+      "facing": "S",
+      "position": [-1, 0, 6],
+      "width": 1.6
+    },
+    {
+      "id": "w",
+      "facing": "W",
+      "position": [-4, 0, 1],
+      "width": 1.6
+    }
+  ],
+  "rotations": [0, 1, 2, 3],
+  "enemySockets": [
+    {
+      "id": "enemy-a",
+      "position": [0, 0, -3.5],
+      "yaw": 180
+    },
+    {
+      "id": "enemy-b",
+      "position": [-2, 0, -3],
+      "yaw": 160
+    },
+    {
+      "id": "enemy-c",
+      "position": [2, 0, -3],
+      "yaw": 200
+    }
+  ],
+  "lootSockets": [],
+  "dressingSockets": [
+    {
+      "id": "shaft",
+      "position": [0, 0, 0],
+      "yaw": 0
+    },
+    {
+      "id": "crate",
+      "position": [3, 0, 4.5],
+      "yaw": 0
+    }
+  ],
+  "lightSockets": [
+    {
+      "id": "furnace",
+      "position": [0, 0.5, 0],
+      "yaw": 0
+    },
+    {
+      "id": "lamp-n",
+      "position": [3.6, 2.4, -5.6],
+      "yaw": 0
+    },
+    {
+      "id": "lamp-s",
+      "position": [-3.6, 2.4, 5.6],
+      "yaw": 0
+    }
+  ],
+  "probe": [2, 1.6, 2],
+  "walkable": [
+    {
+      "min": [-3.6, -5.6],
+      "max": [3.6, 5.6]
+    }
+  ],
+  "colliders": [
+    {
+      "min": [-4, 0, -6.1],
+      "max": [0.19999999999999996, 4, -5.9]
+    },
+    {
+      "min": [1.8, 0, -6.1],
+      "max": [4, 4, -5.9]
+    },
+    {
+      "min": [-4, 0, 5.9],
+      "max": [-1.8, 4, 6.1]
+    },
+    {
+      "min": [-0.19999999999999996, 0, 5.9],
+      "max": [4, 4, 6.1]
+    },
+    {
+      "min": [-4.1, 0, -6],
+      "max": [-3.9, 4, 0.19999999999999996]
+    },
+    {
+      "min": [-4.1, 0, 1.8],
+      "max": [-3.9, 4, 6]
+    },
+    {
+      "min": [3.9, 0, -6],
+      "max": [4.1, 4, 6]
+    },
+    {
+      "min": [-1.2, 0, -1.2],
+      "max": [1.2, 4, 1.2]
+    },
+    {
+      "min": [2.56, 0, 4.06],
+      "max": [3.44, 0.81, 4.94]
+    }
+  ],
+  "budget": {
+    "tris": 4434,
+    "materials": 8,
+    "texturePx": 2048
+  },
+  "materials": {
+    "gear-shaft_stone-floor": {
+      "pbr": "stone-floor",
+      "tileMeters": 1.5
+    },
+    "gear-shaft_wallpaper": {
+      "pbr": "wallpaper",
+      "tileMeters": 0.75
+    },
+    "gear-shaft_walnut": {
+      "pbr": "walnut",
+      "tileMeters": 0.5
+    },
+    "gear-shaft_brass-aged": {
+      "pbr": "brass-aged",
+      "tileMeters": 0.5
+    },
+    "gear-shaft_brass-polished": {
+      "pbr": "brass-polished",
+      "tileMeters": 0.5
+    },
+    "gear-shaft_wax": {
+      "color": "#e7d7b8",
+      "roughness": 0.55
+    },
+    "gear-shaft_flame": {
+      "color": "#ffce81",
+      "emissive": "#ffce81",
+      "emissiveIntensity": 3.0
+    },
+    "gear-shaft_lamp-glass": {
+      "color": "#ffda99",
+      "emissive": "#ffda99",
+      "emissiveIntensity": 1.5
+    }
+  },
+  "glassEmissiveIntensity": 0.8,
+  "rigidNodes": [
+    {
+      "node": "gear-shaft_gear_ring",
+      "pivot": [0, 3.6, 0],
+      "axis": [0, 1, 0],
+      "radPerSec": 0.35,
+      "note": "spin node.rotation.y; lightmap baked at rest with the node invisible to shadow rays, so turning it breaks no baked shadow"
+    }
+  ]
+}

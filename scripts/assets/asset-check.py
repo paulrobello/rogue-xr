@@ -31,7 +31,8 @@ KHR_DF_TRANSFER_LINEAR, KHR_DF_TRANSFER_SRGB = 1, 2
 # Generator and the helpers it imports; provenance pins their hashes.
 _KIT_DEPS = ["scripts/assets/build-room-kit.py", "scripts/assets/room_kit.py", "scripts/assets/build-room-study.py",
              "scripts/assets/lightmap_helpers.py", "scripts/assets/build-cog-sentry.py"]
-GENERATOR_DEPS = {"study": ["scripts/assets/build-room-study.py", "scripts/assets/lightmap_helpers.py"], "hall": _KIT_DEPS, "corridor": _KIT_DEPS}
+GENERATOR_DEPS = {"study": ["scripts/assets/build-room-study.py", "scripts/assets/lightmap_helpers.py"], "hall": _KIT_DEPS, "corridor": _KIT_DEPS,
+                  "gear-shaft": _KIT_DEPS, "guardian-vault": _KIT_DEPS}
 _KIT_REFERENCES = ["assets-source/style/locked/L-board-1.png", "assets-source/style/locked/L-study.png", "assets-source/concepts/room-sheet-1.png"]
 REFERENCES = {
     "study": [
@@ -40,11 +41,15 @@ REFERENCES = {
     ],
     "hall": _KIT_REFERENCES,
     "corridor": _KIT_REFERENCES,
+    "gear-shaft": _KIT_REFERENCES,
+    "guardian-vault": _KIT_REFERENCES,
 }
 REFERENCE_NOTES = {
     "study": "P4-T2 concept sheets; room-sheet-1 picked (docs/art-bible.md)",
     "hall": "kit language only (approved art bible board, L-study and the study's room-sheet-1); no hall concept sheet exists",
     "corridor": "kit language only (approved art bible board, L-study and the study's room-sheet-1); no corridor concept sheet exists",
+    "gear-shaft": "kit language only (approved art bible board, L-study and the study's room-sheet-1); no gear-shaft concept sheet exists",
+    "guardian-vault": "kit language only (approved art bible board, L-study and the study's room-sheet-1); no guardian-vault concept sheet exists",
 }
 _KIT_GATES = [
     {"gate": "concept", "status": "pending", "notes": "no template-specific concept sheet; built in the approved study kit language (art bible). Owner decides whether one is needed"},
@@ -62,8 +67,12 @@ APPROVALS = {
     ],
     "hall": [{**g, "notes": g["notes"].format(t="hall")} for g in _KIT_GATES],
     "corridor": [{**g, "notes": g["notes"].format(t="corridor")} for g in _KIT_GATES],
+    "gear-shaft": [{**g, "notes": g["notes"].format(t="gear-shaft")} for g in _KIT_GATES],
+    "guardian-vault": [{**g, "notes": g["notes"].format(t="guardian-vault")} for g in _KIT_GATES],
 }
 BLEND_STORE_NOTE = {"study": "PRD project file section 1.5"}
+# Templates that must ship named rigid animated nodes (manifest rigidNodes).
+RIGID_REQUIRED = {"gear-shaft": {"gear-shaft_gear_ring"}}
 
 
 def sha256(path: Path) -> str:
@@ -166,6 +175,31 @@ def check_room(template: str, errors: list[str], warnings: list[str]) -> dict:
     unknown = [n for n in glb["materials"] if n not in m.get("materials", {})]
     if unknown:
         err(f"GLB material slots missing from the manifest: {unknown}")
+    # Rigid animated nodes (P5-T2 gear ring): a named root node with a mesh, its origin on the spin
+    # axis, unrotated and unscaled, so the runtime can turn node.rotation about the manifest axis.
+    rigid = m.get("rigidNodes", [])
+    if template in RIGID_REQUIRED and {r.get("node") for r in rigid} != RIGID_REQUIRED[template]:
+        err(f"manifest rigidNodes must name {sorted(RIGID_REQUIRED[template])}")
+    if rigid:
+        g = glb_json(rt / f"{template}.glb")
+        nodes = g.get("nodes", [])
+        roots = set(g.get("scenes", [{}])[g.get("scene", 0)].get("nodes", []))
+        for r in rigid:
+            idx = next((i for i, n in enumerate(nodes) if n.get("name") == r.get("node")), None)
+            if idx is None:
+                err(f"rigid node {r.get('node')} not in the GLB")
+                continue
+            n = nodes[idx]
+            t = n.get("translation", [0, 0, 0])
+            if idx not in roots or "mesh" not in n or n.get("children"):
+                err(f"rigid node {r['node']} must be a root mesh node without children")
+            if any(abs(a - b) > 1e-5 for a, b in zip(t, r.get("pivot", []))) or len(r.get("pivot", [])) != 3:
+                err(f"rigid node {r['node']} translation {t} != manifest pivot {r.get('pivot')}")
+            if any(abs(a - b) > 1e-6 for a, b in zip(n.get("rotation", [0, 0, 0, 1]), [0, 0, 0, 1])) or n.get("scale", [1, 1, 1]) != [1, 1, 1]:
+                err(f"rigid node {r['node']} must be unrotated and unscaled at rest")
+            if r.get("axis") != [0, 1, 0] or not r.get("radPerSec", 0) > 0:
+                err(f"rigid node {r['node']} needs axis [0, 1, 0] and a positive radPerSec")
+        summary["rigidNodes"] = [r["node"] for r in rigid]
     budget = m.get("budget", {})
     if budget.get("tris") != glb["triangles"]:
         err(f"manifest budget.tris {budget.get('tris')} != measured {glb['triangles']}")
@@ -611,6 +645,10 @@ def assemble(template: str) -> None:
         "validation": {"pass": False, "date": datetime.date.today().isoformat(), "checks": []},
         "approvals": APPROVALS[template],
     }
+    if manifest.get("rigidNodes"):
+        prov["rigidNodes"] = {"manifest": manifest["rigidNodes"], "lowPoly": report["low"].get("rigid_nodes"), "lightmap": report.get("rigid_lightmap"),
+                              "reimport": reimport.get("rigid_nodes"),
+                              "shadowPolicy": "baked with the node invisible to shadow rays (Cycles visible_shadow off), so no static surface holds its shadow"}
     if template != "study":  # kit rooms bind their review evidence to the bytes shown
         prov["reviewEvidence"] = [{"path": str(p.relative_to(ROOT)), "sha256": sha256(p)} for p in
                                   [src / "staging/review-sheet.jpg", *sorted((ROOT / "docs/verification").glob(f"p5-rooms-{template}-*.jpg"))] if p.exists()]

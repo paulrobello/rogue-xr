@@ -1,0 +1,419 @@
+{
+  "pieceId": "guardian-vault",
+  "version": 1,
+  "route": "scripted",
+  "generator": {
+    "path": "scripts/assets/build-room-kit.py",
+    "sha256": "d93dcb87c43733bd661850808e1055cb1104093347940f8e42d22d1bd48c4d48"
+  },
+  "generatorDeps": [
+    {
+      "path": "scripts/assets/room_kit.py",
+      "sha256": "0e850b3688d935eea2ece632ce57614a30edbe6b51e78d323a6a0ee599b73ff4"
+    },
+    {
+      "path": "scripts/assets/build-room-study.py",
+      "sha256": "2e20a14f0968fa4fe4b0adecec9d44945887dcfb47d19d3d31859767b523e016"
+    },
+    {
+      "path": "scripts/assets/lightmap_helpers.py",
+      "sha256": "c74c968a3d3ed95bae831262af3c5ab1bacedfa0e2e131b95d5d7bf4e59d66ad"
+    },
+    {
+      "path": "scripts/assets/build-cog-sentry.py",
+      "sha256": "9f045c4e6314b29a4bb82572fa040a0a0f9f68079b311b630d76fd0e1918d0a6"
+    }
+  ],
+  "authoringAgent": {
+    "harness": "claude-code (dispatched sub-agent)",
+    "model": "claude-opus-5-5"
+  },
+  "blender": "5.2.2 LTS",
+  "toolVersions": {
+    "ktx": "ktx version: v4.4.2",
+    "gltfExporter": "Blender 5.2.2 bundled io_scene_gltf2"
+  },
+  "blendFiles": {
+    "store": "assets-source/rooms/guardian-vault/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)",
+    "files": {
+      "guardian-vault_high.blend": {
+        "sha256": "51eeba39d73f9054ab35da8f1d4fbcada45ee1bca251c430227e6a9c2909b809",
+        "bytes": 1448615
+      },
+      "guardian-vault_low.blend": {
+        "sha256": "5e22b9492f766fabeea51b1759e541840c0de47add41e2e4132ff8d15b7b2e68",
+        "bytes": 373437
+      }
+    }
+  },
+  "bake": {
+    "device": "GPU:METAL (Apple M4 Max (GPU - 40 cores))",
+    "lightmap": {
+      "coverage": 0.6832,
+      "scale": 6.427347,
+      "clipped_fraction": 0.00993,
+      "mean_irradiance": 0.280742,
+      "p05_irradiance": 0.0,
+      "percentile": 99.0,
+      "encoded_p05_255": 0,
+      "encoded_median_255": 43,
+      "seconds": 9.93,
+      "host_load": [
+        11.29,
+        11.32
+      ],
+      "timing_valid": true,
+      "size": 2048,
+      "samples": 256,
+      "pass": "DIFFUSE direct+indirect, colour off, metallic forced 0, OIDN",
+      "marginPx": 8,
+      "islandPadPx": 10
+    },
+    "books": null,
+    "ktx2": {
+      "tool": "ktx version: v4.4.2",
+      "encodes": {
+        "guardian-vault.lightmap.ktx2": "create --format R8G8B8_SRGB --assign-tf srgb --encode uastc --uastc-quality 2 --zstd 18 --generate-mipmap"
+      }
+    }
+  },
+  "budgets": {
+    "triangles": 7263,
+    "materials": 8,
+    "texturePx": {
+      "guardian-vault.lightmap.ktx2": {
+        "width": 2048,
+        "height": 2048
+      }
+    },
+    "highTriangles": 49465,
+    "glbBytes": 474732
+  },
+  "texelDensityPxPerM": {
+    "lightmap": {
+      "mean_px_per_m": 45.28,
+      "min_px_per_m": 38.09,
+      "max_px_per_m": 45.31
+    },
+    "lightmapBySlot": {
+      "brass-aged": {
+        "area_m2": 42.69,
+        "median_px_per_m": 45.3,
+        "min_px_per_m": 38.1
+      },
+      "brass-polished": {
+        "area_m2": 19.61,
+        "median_px_per_m": 45.3,
+        "min_px_per_m": 38.1
+      },
+      "flame": {
+        "area_m2": 5.35,
+        "median_px_per_m": 45.3,
+        "min_px_per_m": 45.3
+      },
+      "stained-glass": {
+        "area_m2": 6.84,
+        "median_px_per_m": 45.3,
+        "min_px_per_m": 45.3
+      },
+      "stone-floor": {
+        "area_m2": 216.31,
+        "median_px_per_m": 45.3,
+        "min_px_per_m": 45.3
+      },
+      "wallpaper": {
+        "area_m2": 230.92,
+        "median_px_per_m": 45.3,
+        "min_px_per_m": 45.3
+      },
+      "walnut": {
+        "area_m2": 285.3,
+        "median_px_per_m": 45.3,
+        "min_px_per_m": 45.3
+      },
+      "wax": {
+        "area_m2": 0.1,
+        "median_px_per_m": 43.5,
+        "min_px_per_m": 43.5
+      }
+    }
+  },
+  "pivot": "floor centre, z = 0 (runtime y = 0)",
+  "sockets": {
+    "doors": [
+      {
+        "id": "s",
+        "facing": "S",
+        "position": [
+          1,
+          0,
+          6
+        ],
+        "width": 1.6
+      }
+    ],
+    "enemySockets": [
+      {
+        "id": "guardian",
+        "position": [
+          0,
+          0,
+          -3
+        ],
+        "yaw": 180
+      }
+    ],
+    "lootSockets": [
+      {
+        "id": "reward",
+        "position": [
+          0,
+          0,
+          -5
+        ],
+        "yaw": 180
+      }
+    ],
+    "dressingSockets": [
+      {
+        "id": "pillar-nw",
+        "position": [
+          -4,
+          0,
+          -4
+        ],
+        "yaw": 0
+      },
+      {
+        "id": "pillar-ne",
+        "position": [
+          4,
+          0,
+          -4
+        ],
+        "yaw": 0
+      },
+      {
+        "id": "pillar-sw",
+        "position": [
+          -4,
+          0,
+          4
+        ],
+        "yaw": 0
+      },
+      {
+        "id": "pillar-se",
+        "position": [
+          4,
+          0,
+          4
+        ],
+        "yaw": 0
+      }
+    ],
+    "lightSockets": [
+      {
+        "id": "brazier-nw",
+        "position": [
+          -4,
+          1.4,
+          -4
+        ],
+        "yaw": 0
+      },
+      {
+        "id": "brazier-ne",
+        "position": [
+          4,
+          1.4,
+          -4
+        ],
+        "yaw": 0
+      },
+      {
+        "id": "brazier-sw",
+        "position": [
+          -4,
+          1.4,
+          4
+        ],
+        "yaw": 0
+      },
+      {
+        "id": "brazier-se",
+        "position": [
+          4,
+          1.4,
+          4
+        ],
+        "yaw": 0
+      }
+    ],
+    "probe": [
+      0,
+      2,
+      0
+    ]
+  },
+  "derivedFiles": [
+    {
+      "path": "public/assets/rooms/guardian-vault/guardian-vault.glb",
+      "sha256": "ebe98219f0e43d4dc6c4d8a341c9153072850caa15b37115cdabdad61fa758b8",
+      "bytes": 474732
+    },
+    {
+      "path": "public/assets/rooms/guardian-vault/guardian-vault.lightmap.ktx2",
+      "sha256": "2dfd5b0b156a1e5c942d0e09e8adacce59e536d9a33f9305e6e9435e25f5d999",
+      "bytes": 2488202
+    },
+    {
+      "path": "public/assets/rooms/guardian-vault/guardian-vault.manifest.json",
+      "sha256": "b19fdf51cceebcfa3a7201af7f2e2fda059ce41b51326967d9ac9f8f6c168b0d",
+      "bytes": 4696
+    }
+  ],
+  "stagingFiles": {
+    "guardian-vault.glb": "ebe98219f0e43d4dc6c4d8a341c9153072850caa15b37115cdabdad61fa758b8",
+    "guardian-vault.lightmap.ktx2": "2dfd5b0b156a1e5c942d0e09e8adacce59e536d9a33f9305e6e9435e25f5d999",
+    "guardian-vault.lightmap.png": "500d64c0c2425aba8812e29b1c7d66a73a03cafa27177a0f26f5d308a3a3e3f1",
+    "guardian-vault.manifest.json": "b19fdf51cceebcfa3a7201af7f2e2fda059ce41b51326967d9ac9f8f6c168b0d",
+    "uv1-report.json": "8b478d9eb2f4bec7a9ae1bb539e9e959d56b569bb73e25533b4f8540c46f1bf7"
+  },
+  "references": [
+    {
+      "path": "assets-source/style/locked/L-board-1.png",
+      "sha256": "d3fffc8eb300cc6f40236c28930401ef1bd06be0e27be76999839e3bfeacc018",
+      "provider": "higgsfield",
+      "note": "kit language only (approved art bible board, L-study and the study's room-sheet-1); no guardian-vault concept sheet exists"
+    },
+    {
+      "path": "assets-source/style/locked/L-study.png",
+      "sha256": "d889c4f1e518f3b5e5641be8a6a78515db5998c3d11c1b8c9291c804240cb268",
+      "provider": "higgsfield",
+      "note": "kit language only (approved art bible board, L-study and the study's room-sheet-1); no guardian-vault concept sheet exists"
+    },
+    {
+      "path": "assets-source/concepts/room-sheet-1.png",
+      "sha256": "ae85e896be2151350ce53511681b13e9136bda53af5efaf1b1431e504c395dc6",
+      "provider": "higgsfield",
+      "note": "kit language only (approved art bible board, L-study and the study's room-sheet-1); no guardian-vault concept sheet exists"
+    }
+  ],
+  "materialsUsed": "approved P4-T3 set (public/assets/materials), bound by slot name; not regenerated",
+  "license": "Original work generated in Blender from a checked-in script; concept references from Paul's paid Higgsfield plan (Terms of Use 4.4)",
+  "reimport": {
+    "triangles": 7263,
+    "material_count": 8,
+    "uv_layers": [
+      [
+        "UVMap",
+        "UVMap.001"
+      ]
+    ],
+    "embedded_images": 0,
+    "bounds_blender": {
+      "min": [
+        -6.0,
+        -6.0,
+        0.0
+      ],
+      "max": [
+        6.0,
+        6.0,
+        6.0
+      ]
+    },
+    "checks": {
+      "triangles_le_100k": true,
+      "materials_le_16": true,
+      "materials_are_manifest_slots": true,
+      "textures_le_2048": true,
+      "two_uv_layers_every_mesh": true,
+      "no_embedded_images": true,
+      "floor_at_zero": true,
+      "inside_ceiling": true,
+      "footprint_x": true,
+      "footprint_y": true,
+      "inside_footprint": true
+    },
+    "pass": true
+  },
+  "validation": {
+    "pass": true,
+    "date": "2026-11-15",
+    "checks": [
+      "presence",
+      "hashes",
+      "glb budgets",
+      "uv1 on every primitive",
+      "uv1 no overlap, gap >= 8 px",
+      "image-free glb",
+      "ktx2 size/mips/transfer",
+      "manifest consistency",
+      "clean reimport"
+    ]
+  },
+  "approvals": [
+    {
+      "gate": "concept",
+      "status": "pending",
+      "notes": "no template-specific concept sheet; built in the approved study kit language (art bible). Owner decides whether one is needed"
+    },
+    {
+      "gate": "technical",
+      "status": "pending",
+      "notes": "validate-generated-assets verdict is reported to the orchestrator, not self-recorded"
+    },
+    {
+      "gate": "creative",
+      "status": "pending",
+      "notes": "review sheet assets-source/rooms/guardian-vault/staging/review-sheet.jpg"
+    },
+    {
+      "gate": "rights",
+      "status": "pending",
+      "notes": "original procedural geometry; shared P4-T3 sets carry their own provenance"
+    },
+    {
+      "gate": "owner",
+      "status": "pending",
+      "notes": "in-engine look approval (docs/blender-kit-project.md ruling 3)"
+    },
+    {
+      "gate": "independent visual score",
+      "status": "unscored",
+      "notes": "blender-kit-pieces requires an independent >= 80/100 score; unscored means unaccepted"
+    }
+  ],
+  "reviewEvidence": [
+    {
+      "path": "assets-source/rooms/guardian-vault/staging/review-sheet.jpg",
+      "sha256": "d3a4780992198053e2808d00f73ed662dbc4ef31aaf951613721db2a43e50324"
+    },
+    {
+      "path": "docs/verification/p5-rooms-guardian-vault-brazier.jpg",
+      "sha256": "a8c479066ef25ee1e705708ff444167df09d52231d774842323ed7d3cadc69c9"
+    },
+    {
+      "path": "docs/verification/p5-rooms-guardian-vault-hero.diffuse.jpg",
+      "sha256": "be26b15061e44ec92b01f3d7397a32057d4a3e474505b45a171e365a988c473d"
+    },
+    {
+      "path": "docs/verification/p5-rooms-guardian-vault-hero.jpg",
+      "sha256": "b5ed09fc30ea0020dd56d19f72e3baa0f60e1a926e1d4f63b0a32a3929f56f6b"
+    },
+    {
+      "path": "docs/verification/p5-rooms-guardian-vault-reward-eye.jpg",
+      "sha256": "3c78d09c8c8f92bbc1ac5ff8d0f238888d078294979287cbbc8cb9befbfb576d"
+    },
+    {
+      "path": "docs/verification/p5-rooms-guardian-vault-seam-from-corridor.jpg",
+      "sha256": "2cb36d41ba484b545713528bf982a191ae72576af97686ecb7288f7621325f3b"
+    },
+    {
+      "path": "docs/verification/p5-rooms-guardian-vault-seam-south.jpg",
+      "sha256": "b73232ed2bed9f755a83899b1b25f1c591a5272765c48f4ce9ead1cf4ff146f1"
+    }
+  ]
+}
