@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { mountCardProof } from './cards/card-proof.ts';
+import { mountCombatDebugView } from './combat-view/index.ts';
 import { ActionBus } from './core/actions.ts';
 import { createDesktopControls } from './desktop/controls.ts';
 import { mountSeedTitle } from './desktop/seed-title.ts';
@@ -16,7 +17,11 @@ const app = document.querySelector<HTMLDivElement>('#app');
 if (!app) throw new Error('Missing #app root');
 
 const view = new URLSearchParams(location.search).get('view');
-const proofView = view === 'lightmap-proof' || view === 'card-proof' || view === 'material-proof';
+const proofView =
+  view === 'lightmap-proof' ||
+  view === 'card-proof' ||
+  view === 'material-proof' ||
+  view === 'combat';
 // Proof views keep their frame readable so a check can sample it. Stencil backs the card portals.
 const renderer = new THREE.WebGLRenderer({
   antialias: true,
@@ -49,6 +54,8 @@ if (view === 'lightmap-proof') {
   await mountMaterialProof(scene, rig, renderer);
 } else if (view === 'card-proof') {
   cardProof = await mountCardProof(scene, rig);
+} else if (view === 'combat') {
+  mountCombatDebugView(scene, rig, camera, renderer, { search: location.search });
 } else {
   floor = mountFloorView(scene, rig, seedFromQuery(location.search));
 }
