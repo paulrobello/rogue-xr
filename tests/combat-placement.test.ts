@@ -329,7 +329,8 @@ describe('planEncounter on generated floors', () => {
     expect(plans).toBeGreaterThan(300);
     // The seats that cannot host a fight are the ones jammed against walls and pillars.
     expect(ok / plans).toBeGreaterThan(0.8);
-  });
+    // A census over every generated floor: 7.1 s on a 6-core Linux VPS, past the 5 s default.
+  }, 30_000);
 
   it('fails explicitly when no room is left', () => {
     const corridor = combatRoom(worldRoom(templateById('corridor'), 0, [0, 0]));
