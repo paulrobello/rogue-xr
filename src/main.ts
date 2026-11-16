@@ -42,13 +42,14 @@ import {
   saveSettings,
 } from './persist/db.ts';
 import { loadRunSnapshot, loadWorkshop, type RunSnapshot } from './persist/saves.ts';
-import type { RewardTier } from './rules/run.ts';
+import { parseLootKey, type RewardTier } from './rules/run.ts';
 import { createWorkshop } from './rules/workshop.ts';
 import { mountUpdateNotice } from './update/index.ts';
 import { type FloorView, mountFloorView, seedFromQuery } from './world/floor-view.ts';
 import { dressHeroRooms, fetchHeroRooms, loadHeroAssets } from './world/hero-rooms.ts';
 import { createKtx2Loader } from './world/ktx2.ts';
 import { mountLightmapProof } from './world/lightmap-proof.ts';
+import type { LootMaterials, LootPick } from './world/loot.ts';
 import { mountMaterialProof } from './world/material-proof.ts';
 import { loadPbrSet } from './world/materials.ts';
 import { mountRoomAssetProof } from './world/room-asset-proof.ts';
@@ -360,6 +361,30 @@ const sealedDoorMaterial: Promise<{ material: THREE.Material; tileMeters: number
       })
       .catch(() => null)
   : Promise.resolve(null);
+// Treasure coffers: walnut and aged brass from the same set, cloned so the rooms' own materials keep
+// their probe intensity. The flat placeholders in `CofferKit` stay on any failure.
+const lootMaterials: Promise<LootMaterials | null> = heroSet
+  ? heroSet
+      .then(({ set }) => {
+        const wood = set.materials.get('walnut');
+        const brass = set.materials.get('brass-aged');
+        if (!wood || !brass) return null;
+        const dress = (source: THREE.MeshStandardMaterial, name: string, intensity: number) => {
+          const material = source.clone();
+          material.name = name;
+          if (heroEnv) {
+            material.envMap = heroEnv;
+            material.envMapIntensity = intensity;
+          }
+          return material;
+        };
+        return {
+          wood: dress(wood, 'coffer-wood', 0.12),
+          brass: dress(brass, 'coffer-brass', 0.45),
+        };
+      })
+      .catch(() => null)
+  : Promise.resolve(null);
 // One fetch per enemy kind for the session, whatever the floor count. A kind whose model is not
 // shipped yet resolves null at once (one console.info) and keeps its capsules.
 const enemyMaterials = heroSet?.then(({ set }) => set).catch(() => null) ?? null;
@@ -382,10 +407,11 @@ const dressFloor = async (target: FloorView): Promise<void> => {
         target.useEnemyAssets(new Map([[asset.id, asset]]), prepareEnemy);
     }),
   );
-  const [rooms, door] = await Promise.all([roomAssets, sealedDoorMaterial]);
+  const [rooms, door, coffers] = await Promise.all([roomAssets, sealedDoorMaterial, lootMaterials]);
   if (target === floor) {
     dressHeroRooms(target, rooms);
     if (door) target.world.dressSealedDoors(door.material, door.tileMeters);
+    if (coffers) target.loot.dress(coffers);
   }
   await Promise.all(dressed);
 };
@@ -421,6 +447,18 @@ const persistence = db
   ? bindFlowPersistence(flow, db, () => floor?.world.current ?? flow.room)
   : null;
 flow.onChange((event) => {
+  if (event.type === 'loot') {
+    storedSnapshot = flow.snapshot(Date.now(), floor?.world.current ?? flow.room);
+    if (floor?.loot.open(event.room, event.socketId, event.loot)) {
+      const coffer = floor.loot.coffers.find(
+        (c) => c.room === event.room && c.socketId === event.socketId,
+      );
+      const at = coffer?.object.getWorldPosition(new THREE.Vector3());
+      audio?.playSfx('gear-clank', at);
+      audio?.playSfx(event.loot.kind === 'cogs' ? 'cog-pickup' : 'card-draw', at);
+    }
+    return;
+  }
   if (event.type !== 'phase') return;
   if (event.to === 'explore' || event.to === 'reward') {
     storedSnapshot = flow.snapshot(Date.now(), floor?.world.current ?? flow.room);
@@ -454,6 +492,10 @@ const continueRun = (): void => {
   if (!snap || flow.phase !== 'title') return;
   const target = freshFloor(snap.floorSeed);
   for (const room of snap.clearedEncounters) target.markCleared(Number(room));
+  for (const key of snap.run.openedLoot ?? []) {
+    const opened = parseLootKey(key);
+    if (opened) target.loot.markOpened(opened.room, opened.socketId);
+  }
   const at = target.standPoint(snap.roomIndex) ?? target.world.spawnPoint();
   rig.position.set(at.x, rig.position.y, at.z);
   target.world.update(at.x, at.z);
@@ -522,6 +564,41 @@ window.addEventListener('pointermove', (event) => {
   if (!ui?.visible || xr.presenting || event.target !== renderer.domElement) return;
   const ray = mouseRay(event);
   ui.hover(pickUi(ray.origin, ray.direction));
+});
+// Treasure: a desktop click on a coffer in the current room opens it, in the capture phase so the
+// press never starts drag-to-look. A click that misses falls through to looking around.
+const canOpenLoot = (): boolean =>
+  !!floor && flow.phase === 'explore' && floor.encounter.phase === 'idle' && !ui?.visible;
+const openCoffer = (pick: LootPick | null): boolean =>
+  !!pick && canOpenLoot() && flow.openLoot(pick.room, pick.socketId, pick.kind) !== null;
+/** Ray origin and direction of an XR controller (its -Z axis, the beam the laser draws). */
+const controllerRay = (
+  controller: THREE.Object3D,
+): { origin: THREE.Vector3; direction: THREE.Vector3 } => {
+  controller.updateWorldMatrix(true, false);
+  return {
+    origin: new THREE.Vector3().setFromMatrixPosition(controller.matrixWorld),
+    direction: new THREE.Vector3(0, 0, -1).transformDirection(controller.matrixWorld),
+  };
+};
+window.addEventListener(
+  'pointerdown',
+  (event) => {
+    if (xr.presenting || event.button !== 0 || event.target !== renderer.domElement) return;
+    if (!floor || !canOpenLoot()) return;
+    const { origin, direction } = mouseRay(event);
+    if (openCoffer(floor.loot.pick(origin, direction))) event.stopPropagation();
+  },
+  { capture: true },
+);
+window.addEventListener('pointermove', (event) => {
+  if (xr.presenting || event.target !== renderer.domElement) return;
+  let over = false;
+  if (floor && canOpenLoot()) {
+    const { origin, direction } = mouseRay(event);
+    over = floor.loot.pick(origin, direction) !== null;
+  }
+  renderer.domElement.style.cursor = over ? 'pointer' : '';
 });
 // Keyboard on the boards: type a seed, arrows move focus, Enter activates, Escape backs out.
 let focusIndex = -1;
@@ -630,7 +707,13 @@ for (const index of [0, 1]) {
     });
   };
   controller.addEventListener('select', () => {
-    if (!ui?.visible) return;
+    if (!ui?.visible) {
+      if (floor && canOpenLoot() && xr.presenting) {
+        const { origin, direction } = controllerRay(controller);
+        openCoffer(floor.loot.pick(origin, direction));
+      }
+      return;
+    }
     const hit = uiPointer.castFrom(controller, ui.targets());
     const id = hit ? ui.controlAt(hit.object) : null;
     if (id) actions.emit({ type: 'select', controlId: id });
@@ -680,8 +763,47 @@ if (floor && params.has('debug')) {
     }
     return null;
   };
+  /** Where a scripted approach stands facing the first unopened coffer (or `room`'s), or null. */
+  const lootStand = (
+    room?: number,
+  ): { x: number; z: number; yaw: number; coffer: string } | null => {
+    const target = floor;
+    if (!target) return null;
+    const coffer = target.loot.coffers.find(
+      (c) => !c.opened && (room === undefined || c.room === room),
+    );
+    const at = coffer ? target.loot.approachPoint(coffer.room, coffer.socketId) : null;
+    if (!coffer || !at) return null;
+    const there = coffer.object.getWorldPosition(new THREE.Vector3());
+    const yaw = (Math.atan2(there.x - at.x, -(there.z - at.z)) * 180) / Math.PI;
+    return { x: at.x, z: at.z, yaw, coffer: coffer.object.name };
+  };
+  /** Screen point of a coffer's lid, for pointer automation, or null when it is behind the view. */
+  const screenOfCoffer = (name: string) => {
+    const node = floor?.world.group.getObjectByName(name);
+    if (!node) return null;
+    const p = node.getWorldPosition(new THREE.Vector3());
+    p.y += 0.3;
+    camera.updateMatrixWorld(true);
+    p.project(camera);
+    if (p.z > 1) return null;
+    const rect = renderer.domElement.getBoundingClientRect();
+    return {
+      x: rect.left + ((p.x + 1) / 2) * rect.width,
+      y: rect.top + ((1 - p.y) / 2) * rect.height,
+    };
+  };
   Object.assign(window, {
     __combat: {
+      /** Moves the rig to a spot facing the first unopened coffer (or `room`'s), as the walk does for fights. */
+      teleportToLoot(room?: number) {
+        const stand = lootStand(room);
+        if (!stand) return null;
+        rig.position.set(stand.x, rig.position.y, stand.z);
+        walker.yaw = stand.yaw;
+        return stand.coffer;
+      },
+      screenOfCoffer,
       get session() {
         return combat?.session ?? null;
       },
@@ -861,6 +983,16 @@ renderer.setAnimationLoop((time, frame) => {
     const hit = ray ? uiPointer.castFrom(ray, ui.targets()) : null;
     ui.hover(hit ? ui.controlAt(hit.object) : null);
     laserHits[MAIN_HAND] = hit ? hit.distance : null;
+  }
+  if (floor && xr.presenting && canOpenLoot()) {
+    // The beam ends on a coffer it can open.
+    for (const side of ['left', 'right'] as const) {
+      const source = xr.rays()[side];
+      if (!source) continue;
+      const { origin, direction } = controllerRay(source);
+      const pick = floor.loot.pick(origin, direction);
+      if (pick) laserHits[side] = pick.distance;
+    }
   }
   if (floor && audio) {
     audio.setState(audioFor(flow.phase, floor.encounter.phase));

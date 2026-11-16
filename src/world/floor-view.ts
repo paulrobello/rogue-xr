@@ -7,8 +7,10 @@ import { isValidSeed, normalizeSeed, randomSeed } from '../core/rng.ts';
 import type { EnemyActor, EnemyAsset } from '../enemies/enemy-asset.ts';
 import { generateFloor } from '../floor/generate.ts';
 import { PALETTE } from '../palette.ts';
+import type { TreasureLoot } from '../rules/run.ts';
 import { yawFromMatrix } from '../xr/locomotion.ts';
 import { buildFloorWorld, type FloorWorld } from './floor-world.ts';
+import { type Coffer, type LootMaterials, type LootPick, LootToast, pickCoffer } from './loot.ts';
 import { type RigidNode, rigidAngle } from './study-room.ts';
 
 /** The run seed from `?seed=`, or a fresh random one when it is missing or malformed. */
@@ -19,8 +21,31 @@ export function seedFromQuery(search: string): string {
   return randomSeed();
 }
 
+/** Farthest a pointer reaches a coffer, in metres: the study's desk is about 3.5 m from its door. */
+export const LOOT_REACH = 4;
+/** Height above a coffer's base where its toast hangs, in metres. */
+const TOAST_LIFT = 0.95;
+
+/** The treasure coffers of a floor: picking, opening and the found-item panel. */
+export interface FloorLoot {
+  readonly coffers: readonly Coffer[];
+  /** The nearest unopened coffer in the current room a ray reaches, or null. */
+  pick(origin: THREE.Vector3, direction: THREE.Vector3, maxDistance?: number): LootPick | null;
+  /** Swings the coffer's lid open and shows `found` on a panel over it. Returns false for an unknown coffer. */
+  open(room: number, socketId: string, found: TreasureLoot): boolean;
+  /** Shows a coffer already open, with no panel (resuming a saved run). */
+  markOpened(room: number, socketId: string): void;
+  /** Dresses the coffers in the game's walnut and brass (the flat placeholders stay on a failure). */
+  dress(materials: LootMaterials): void;
+  /** The panel on screen: its first line (what was found) and the canvas it is drawn on. */
+  readonly toast: { readonly text: string; readonly canvas: HTMLCanvasElement } | null;
+  /** A floor point `distance` m from the coffer toward its room's centre, for scripted approaches. */
+  approachPoint(room: number, socketId: string, distance?: number): THREE.Vector3 | null;
+}
+
 export interface FloorView {
   world: FloorWorld;
+  loot: FloorLoot;
   seed: string;
   encounter: EncounterDirector;
   /** True while an encounter holds the player in place. */
@@ -174,8 +199,55 @@ export function mountFloorView(
     actors.delete(actor.object);
     actor.dispose();
   };
+  let toast: LootToast | null = null;
+  const dropToast = (): void => {
+    toast?.dispose();
+    toast = null;
+  };
+  const cofferOf = (room: number, socketId: string): Coffer | undefined =>
+    world.coffers.find((c) => c.room === room && c.socketId === socketId);
+  const loot: FloorLoot = {
+    coffers: world.coffers,
+    pick(origin, direction, maxDistance = LOOT_REACH) {
+      const here = world.coffers.filter((c) => c.room === world.current);
+      return pickCoffer(here, origin, direction, maxDistance);
+    },
+    open(room, socketId, found) {
+      const coffer = cofferOf(room, socketId);
+      if (!coffer) return false;
+      coffer.open(true);
+      dropToast();
+      const at = coffer.object.getWorldPosition(new THREE.Vector3());
+      toast = new LootToast(found, at.setY(at.y + TOAST_LIFT));
+      world.group.add(toast.root);
+      return true;
+    },
+    markOpened(room, socketId) {
+      cofferOf(room, socketId)?.open(false);
+    },
+    dress(materials) {
+      world.dressCoffers(materials);
+    },
+    get toast() {
+      return toast ? { text: toast.text, canvas: toast.canvas } : null;
+    },
+    approachPoint(room, socketId, distance = 2.2) {
+      const coffer = cofferOf(room, socketId);
+      const footprint = world.rooms[room]?.footprint;
+      if (!coffer || !footprint) return null;
+      const base = coffer.object.getWorldPosition(new THREE.Vector3());
+      const toCentre = new THREE.Vector3(
+        (footprint.min[0] + footprint.max[0]) / 2 - base.x,
+        0,
+        (footprint.min[1] + footprint.max[1]) / 2 - base.z,
+      );
+      if (toCentre.lengthSq() < 1e-6) toCentre.set(0, 0, 1);
+      return new THREE.Vector3(base.x, 0, base.z).addScaledVector(toCentre.normalize(), distance);
+    },
+  };
   return {
     world,
+    loot,
     seed,
     encounter,
     get suspendTriggers() {
@@ -235,6 +307,7 @@ export function mountFloorView(
       return spinners.length;
     },
     dispose() {
+      dropToast();
       spinners.length = 0;
       for (const actor of [...actors.values()]) disposeActor(actor);
       models.clear();
@@ -281,6 +354,11 @@ export function mountFloorView(
     },
     update(head, dt) {
       spin(dt);
+      for (const coffer of world.coffers) coffer.update(dt);
+      if (toast) {
+        head.getWorldPosition(at);
+        if (!toast.update(dt, at)) dropToast();
+      }
       encounter.update(dt);
       dressEnemies();
       // Clips run on real seconds; the freeze is a pose, not a slowed clock.

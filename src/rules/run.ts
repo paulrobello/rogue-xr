@@ -20,6 +20,8 @@ export interface RunState {
   readonly bonusDice?: number;
   /** Cards `rewardOffer` offers. Absent means `REWARD_CHOICES`. Set by workshop upgrades. */
   readonly rewardChoices?: number;
+  /** Keys (`lootKey`) of the treasure pickups already opened this run. Absent means none. */
+  readonly openedLoot?: readonly string[];
 }
 
 /** Mirrors `EncounterTier` in `floor/generate.ts`; rules may not import from `floor/`. */
@@ -82,6 +84,11 @@ export type TreasureLoot =
 export interface TreasureLootResult {
   readonly run: RunState;
   readonly loot: TreasureLoot;
+}
+
+/** The key a treasure pickup is recorded under in `RunState.openedLoot`: its room and loot socket. */
+export function lootKey(room: number, socketId: string): string {
+  return `${room}/${socketId}`;
 }
 
 /** A fresh run: all streams seeded from `seed` (see `RunRng`), the starter deck copied in. */
@@ -193,4 +200,30 @@ export function treasureLoot(
     run: { ...run, ...withLoot(run, stream), deck: [...run.deck, card] },
     loot: { kind, card },
   };
+}
+
+/** The room and socket a `lootKey` names, or null for a malformed key. */
+export function parseLootKey(key: string): { room: number; socketId: string } | null {
+  const at = key.indexOf('/');
+  const room = Number(key.slice(0, at));
+  return at > 0 && at < key.length - 1 && Number.isInteger(room) && room >= 0
+    ? { room, socketId: key.slice(at + 1) }
+    : null;
+}
+
+/**
+ * Opens the treasure pickup `key` once. Returns null, touching nothing, when the run already opened
+ * it, so a second call can never re-roll or pay twice. Otherwise applies `treasureLoot` and records
+ * the key, advancing only the `loot` stream.
+ */
+export function openTreasure(
+  run: RunState,
+  key: string,
+  kind: TreasureKind,
+  pool: readonly string[],
+): TreasureLootResult | null {
+  const opened = run.openedLoot ?? [];
+  if (opened.includes(key)) return null;
+  const result = treasureLoot(run, kind, pool);
+  return { run: { ...result.run, openedLoot: [...opened, key] }, loot: result.loot };
 }

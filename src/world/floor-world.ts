@@ -10,6 +10,7 @@ import {
 import { type FloorPlan, type WorldRoom, worldRooms } from '../floor/generate.ts';
 import { PALETTE } from '../palette.ts';
 import { buildGreyboxRoom, createGreyboxMaterials, type GreyboxMaterials } from './greybox.ts';
+import { type Coffer, CofferKit, type LootMaterials, surfaceHeightAt } from './loot.ts';
 
 /** Rooms joined to `room` by a door. */
 export function neighbours(plan: FloorPlan, room: number): number[] {
@@ -65,6 +66,10 @@ export interface FloorWorld {
    * markers. The automatons and sealed-door caps stay. `model` is room-local.
    */
   dressRoom(room: number, model: THREE.Object3D): void;
+  /** The treasure coffers on this floor, one per treasure-room loot pickup. */
+  readonly coffers: readonly Coffer[];
+  /** Re-dresses every coffer in `materials` (owned by the caller); they start in flat placeholders. */
+  dressCoffers(materials: LootMaterials): void;
   /** The closed-door leaves in every sealed doorway. */
   readonly sealedDoors: readonly THREE.Mesh[];
   /**
@@ -103,6 +108,7 @@ function buildRoom(
   index: number,
   materials: GreyboxMaterials,
   enemyMaterial: THREE.Material,
+  kit: CofferKit,
 ) {
   const placed = plan.rooms[index];
   if (!placed) throw new Error(`room ${index} missing`);
@@ -123,7 +129,20 @@ function buildRoom(
     group.add(body);
     enemies.push(body);
   }
-  return { group, enemies };
+  // Only a treasure room shows its loot: the guardian vault's card is paid by the win itself.
+  const coffers: Coffer[] = [];
+  if (placed.role === 'treasure') {
+    for (const pickup of placed.loot) {
+      const s = t.lootSockets.find((socket) => socket.id === pickup.socketId);
+      if (!s) continue;
+      const surface = surfaceHeightAt(t.colliders, s.position[0], s.position[2]);
+      const coffer = kit.build(index, s, pickup.kind, surface);
+      group.add(coffer.object);
+      group.getObjectByName(`socket-${s.id}`)?.removeFromParent();
+      coffers.push(coffer);
+    }
+  }
+  return { group, enemies, coffers };
 }
 
 /** Builds the greybox world for a floor plan: every room, sealed door caps, enemy placeholders. */
@@ -138,6 +157,8 @@ export function buildFloorWorld(
     roughness: 0.45,
   });
   const capMaterial = new THREE.MeshStandardMaterial({ color: PALETTE.walnut, roughness: 0.8 });
+  const kit = new CofferKit();
+  const coffers: Coffer[] = [];
   const rooms = worldRooms(plan, templates);
   const group = new THREE.Group();
   group.name = `floor-${plan.seed}`;
@@ -145,7 +166,8 @@ export function buildFloorWorld(
   const enemies = new Map<number, THREE.Object3D[]>();
   plan.rooms.forEach((r, index) => {
     const t = templates.find((c) => c.id === r.templateId) as RoomTemplate;
-    const built = buildRoom(t, plan, index, materials, enemyMaterial);
+    const built = buildRoom(t, plan, index, materials, enemyMaterial, kit);
+    coffers.push(...built.coffers);
     roomGroups.push(built.group);
     enemies.set(index, built.enemies);
     group.add(built.group);
@@ -253,6 +275,10 @@ export function buildFloorWorld(
       return true;
     },
     sealedDoors,
+    coffers,
+    dressCoffers(loot) {
+      kit.dress(loot);
+    },
     dressSealedDoors(material, tileMeters) {
       const uv = capGeometry.getAttribute('uv') as THREE.BufferAttribute;
       for (let i = 0; i < capUvMeters.length; i++) uv.array[i] = (capUvMeters[i] ?? 0) / tileMeters;
@@ -273,6 +299,7 @@ export function buildFloorWorld(
       for (const m of [...Object.values(materials), enemyMaterial, capMaterial]) m.dispose();
       capGeometry.dispose();
       fillGeometry.dispose();
+      kit.dispose();
     },
   };
   function applyVisibility() {

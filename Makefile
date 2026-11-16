@@ -45,7 +45,7 @@ preview:
 xr-emu:
 	node scripts/xr-emu/walk.mjs --base http://localhost:$(DEV_PORT)
 
-# Automated desktop full runs (SPIRE001, 002, 004, 010 and 034 plus a death run) against the running dev server.
+# Automated desktop full runs (SPIRE001, 002, 003, 004, 010 and 034 plus a death run) against the running dev server.
 # Reports and screenshots land in /tmp/full-run/<seed>/. Not in checkall; see scripts/full-run/run.mjs.
 .PHONY: full-run
 full-run:

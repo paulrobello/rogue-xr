@@ -27,6 +27,8 @@ const { values: opts } = parseArgs({
     turns: { type: 'boolean', default: false },
     // Only the turned-away Enter VR check (XO5): the title must be re-placed in front of the head.
     recenter: { type: 'boolean', default: false },
+    // Only the treasure check: open a coffer with the controller ray and trigger.
+    treasure: { type: 'boolean', default: false },
   },
 });
 
@@ -38,6 +40,8 @@ const GPU_ARGS =
 const SEATED_HEAD_Y = 1.2;
 /** Seed whose first regular room seats two automatons (a Cog Sentry and a Spring Hound). */
 const TURN_SEED = 'SPIRE002';
+/** Seed with a treasure room holding a card coffer (room 3, found with `generateFloor`). */
+const TREASURE_SEED = 'SPIRE001';
 const MAIN = 'right';
 const OFF = 'left';
 /** Controller offsets from the head, in tracking space: hands low and forward, as when seated. */
@@ -165,10 +169,202 @@ try {
     await enemyTurnCheck();
   } else if (opts.recenter) {
     await recenterCheck();
+  } else if (opts.treasure) {
+    await treasureCheck();
   } else {
     await walk();
     await enemyTurnCheck();
     await recenterCheck();
+    await treasureCheck();
+  }
+
+  /**
+   * P6 treasure: a seated player points the main-hand ray at the treasure room's coffer and pulls the
+   * trigger. It opens once, pays exactly what the panel shows, saves, and stays open on a second pull.
+   */
+  async function treasureCheck() {
+    const base = opts.base.replace(/\/$/, '');
+    await page.goto(`${base}/?seed=${TREASURE_SEED}&debug`);
+    await waitFor(
+      'treasure-app',
+      () => window.__combat?.floor && window.__xrEmu.ctx().renderer,
+      undefined,
+      60000,
+    );
+    await ev(() => window.__combat.heroReady);
+    await settle(1500);
+    await enterVr();
+    const name = await ev(() => window.__combat.teleportToLoot());
+    record('xr-treasure-teleport', typeof name === 'string' && name.startsWith('coffer-'), {
+      name,
+    });
+    if (!name) return;
+    await settle(1200);
+    // Turn the seated head toward the coffer (tracking yaw is relative to the rig's heading).
+    await ev((coffer) => {
+      const probe = window.__xrEmu;
+      const { rig } = probe.ctx();
+      const at = probe.worldOf(coffer, [0, 0.25, 0]);
+      const { head } = probe.headTo(at);
+      const dx = at.x - head.x;
+      const dz = at.z - head.z;
+      const yaw = Math.atan2(-dx, -dz) - rig.rotation.y;
+      probe.setHead(1.2, Math.atan2(at.y - head.y, Math.hypot(dx, dz)), yaw);
+    }, name);
+    await settle(500);
+    const state = () =>
+      ev(
+        async ({ coffer }) => {
+          const flow = window.__flow.flow;
+          const { getCard } = await import('/src/content/cards.ts');
+          const run = flow.run;
+          const toast = window.__combat.floor.loot.toast;
+          const last = flow.lastLoot;
+          const shown =
+            last?.loot.kind === 'cogs'
+              ? `+${last.loot.cogs} cogs`
+              : last
+                ? `New card: ${getCard(last.loot.card).name}`
+                : null;
+          const lid = window.__combat.floor.world.group
+            .getObjectByName(coffer)
+            ?.getObjectByName('coffer-lid');
+          return {
+            phase: flow.phase,
+            cogs: run.cogs,
+            deck: run.deck.length,
+            opened: run.openedLoot ?? [],
+            toast: toast?.text ?? null,
+            shown,
+            lid: lid?.rotation.x ?? null,
+            board: window.__flow.ui.visible,
+          };
+        },
+        { coffer: name },
+      );
+    const before = await state();
+    await shot('17-treasure-closed');
+    const target = await ev((coffer) => window.__xrEmu.worldOf(coffer, [0, 0.25, 0]), name);
+    await aim(MAIN, target);
+    await settle(300);
+    await pullTrigger(MAIN);
+    await settle(900);
+    const after = await state();
+    await shot('17-treasure-opened');
+    const paid = after.cogs - before.cogs;
+    const cards = after.deck - before.deck;
+    record(
+      'xr-treasure-trigger-opens-coffer',
+      after.opened.length === 1 && before.opened.length === 0 && (after.lid ?? 0) > 1.5,
+      { before, after },
+    );
+    record(
+      'xr-treasure-pays-what-the-panel-shows',
+      after.toast !== null &&
+        after.toast === after.shown &&
+        ((paid > 0 && cards === 0) || (paid === 0 && cards === 1)),
+      {
+        toast: after.toast,
+        shown: after.shown,
+        paid,
+        cards,
+      },
+    );
+    record('xr-treasure-no-board-lock', after.phase === 'explore' && after.board === false, {
+      phase: after.phase,
+      board: after.board,
+    });
+    const inView = await ev(() => {
+      const { renderer, camera } = window.__xrEmu.ctx();
+      const eye = renderer.xr.getCamera().cameras?.[0] ?? camera;
+      const panel = window.__combat.floor.world.group.getObjectByName('loot-toast-root');
+      if (!panel) return null;
+      const p = panel.getWorldPosition(panel.position.clone()).project(eye);
+      return { x: p.x, y: p.y, z: p.z };
+    });
+    record(
+      'xr-treasure-panel-in-view',
+      inView !== null && Math.abs(inView.x) < 1 && Math.abs(inView.y) < 1 && inView.z < 1,
+      inView,
+    );
+    await aim(MAIN, target);
+    await pullTrigger(MAIN);
+    await settle(400);
+    const again = await state();
+    record(
+      'xr-treasure-second-pull-pays-nothing',
+      again.cogs === after.cogs && again.deck === after.deck && again.opened.length === 1,
+      { after, again },
+    );
+    await ev(() => window.__flow.flushed());
+    const saved = await ev(async () => {
+      const { openDb } = await import('/src/persist/db.ts');
+      const { loadRunSnapshot } = await import('/src/persist/saves.ts');
+      const snap = await loadRunSnapshot(await openDb());
+      return snap
+        ? { opened: snap.run.openedLoot ?? [], cogs: snap.run.cogs, deck: snap.run.deck.length }
+        : null;
+    });
+    record(
+      'xr-treasure-saved',
+      saved !== null &&
+        saved.opened.length === 1 &&
+        saved.cogs === again.cogs &&
+        saved.deck === again.deck,
+      saved,
+    );
+
+    // Resume: reload to the title, Continue with the ray. The coffer is open at once, nothing is
+    // repaid, and the ray and trigger no longer open it.
+    await page.goto(`${base}/?title&debug`);
+    await waitFor(
+      'treasure-reload',
+      () => window.__flow?.ui && window.__xrEmu.ctx().renderer,
+      undefined,
+      60000,
+    );
+    await ev(() => window.__combat.heroReady);
+    await settle(1500);
+    await enterVr();
+    const hasContinue = await ev(() => window.__xrEmu.worldOf('title-continue') !== null);
+    if (hasContinue) await press('title-continue');
+    await settle(1000);
+    const resumed = await state();
+    const lidOpen = await ev((coffer) => {
+      const node = window.__combat.floor.world.group.getObjectByName(coffer);
+      return {
+        opened: window.__combat.floor.loot.coffers.some((k) => k.opened),
+        lid: node?.getObjectByName('coffer-lid')?.rotation.x ?? null,
+        panel: window.__combat.floor.loot.toast !== null,
+      };
+    }, name);
+    await shot('18-treasure-resumed');
+    record(
+      'xr-treasure-resume-shows-coffer-open',
+      hasContinue &&
+        resumed.phase === 'explore' &&
+        resumed.cogs === again.cogs &&
+        resumed.deck === again.deck &&
+        resumed.opened.length === 1 &&
+        lidOpen.opened &&
+        (lidOpen.lid ?? 0) > 1.5 &&
+        !lidOpen.panel,
+      { hasContinue, resumed, lidOpen },
+    );
+    await aim(MAIN, target);
+    await pullTrigger(MAIN);
+    await settle(400);
+    const repulled = await state();
+    record(
+      'xr-treasure-resume-cannot-reopen',
+      repulled.cogs === resumed.cogs &&
+        repulled.deck === resumed.deck &&
+        repulled.opened.length === 1 &&
+        repulled.toast === null,
+      { resumed, repulled },
+    );
+    await ev(() => window.__xrEmu.ctx().renderer.xr.getSession()?.end());
+    await settle(400);
   }
 
   /** XO5: a player facing away from the desktop title at Enter VR still finds it in front. */

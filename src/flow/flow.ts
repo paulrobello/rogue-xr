@@ -3,12 +3,16 @@ import { snapshotRun } from '../persist/saves.ts';
 import {
   chooseReward,
   createRun,
+  lootKey,
+  openTreasure,
   type RewardChoice,
   type RewardOffer,
   type RewardTier,
   type RunState,
   rewardOffer,
   SKIP_REWARD,
+  type TreasureKind,
+  type TreasureLoot,
 } from '../rules/run.ts';
 import {
   bankRunCogs,
@@ -68,9 +72,17 @@ export interface RunSummary {
   readonly bankTotal: number;
 }
 
+/** A treasure pickup opened while exploring, already applied to the run. */
+export interface OpenedLoot {
+  readonly room: number;
+  readonly socketId: string;
+  readonly loot: TreasureLoot;
+}
+
 export type FlowEvent =
   | { readonly type: 'phase'; readonly from: FlowPhase; readonly to: FlowPhase }
-  | { readonly type: 'workshop' };
+  | { readonly type: 'workshop' }
+  | ({ readonly type: 'loot' } & OpenedLoot);
 
 export interface FlowOptions {
   workshop: WorkshopState;
@@ -90,6 +102,7 @@ export class RunFlow {
   private runValue: RunState | null = null;
   private offerValue: RewardOffer | null = null;
   private summaryValue: RunSummary | null = null;
+  private lootValue: OpenedLoot | null = null;
   private readonly clearedRooms: number[] = [];
   private readonly reached = new Set<number>();
   private roomValue = 0;
@@ -117,6 +130,14 @@ export class RunFlow {
   }
   get summary(): RunSummary | null {
     return this.summaryValue;
+  }
+  /** The treasure pickup opened last in this run, or null before the first one. */
+  get lastLoot(): OpenedLoot | null {
+    return this.lootValue;
+  }
+  /** Whether the run already opened the pickup at `socketId` in `room`. */
+  isLootOpened(room: number, socketId: string): boolean {
+    return this.runValue?.openedLoot?.includes(lootKey(room, socketId)) ?? false;
   }
   get cleared(): readonly number[] {
     return this.clearedRooms;
@@ -236,6 +257,22 @@ export class RunFlow {
     return this.go('reward');
   }
 
+  /**
+   * Opens a treasure pickup while exploring: rolls it from the `loot` stream, applies it to the run
+   * and records it, so it can never open twice (a resumed run keeps it recorded). Returns what was
+   * found, or null (changing nothing) outside `explore` or when it was already opened.
+   */
+  openLoot(room: number, socketId: string, kind: TreasureKind): TreasureLoot | null {
+    const run = this.runValue;
+    if (this.phaseValue !== 'explore' || !run) return null;
+    const result = openTreasure(run, lootKey(room, socketId), kind, this.opts.rewardPool);
+    if (!result) return null;
+    this.runValue = result.run;
+    this.lootValue = { room, socketId, loot: result.loot };
+    this.emit({ type: 'loot', ...this.lootValue });
+    return result.loot;
+  }
+
   /** Claims the reward on screen: its cogs always, plus the chosen card unless `'skip'`. */
   pickReward(choice: RewardChoice): boolean {
     const run = this.runValue;
@@ -275,6 +312,7 @@ export class RunFlow {
   private resetRunBookkeeping(room: number, cleared: readonly number[]): void {
     this.offerValue = null;
     this.summaryValue = null;
+    this.lootValue = null;
     this.clearedRooms.length = 0;
     this.clearedRooms.push(...cleared);
     this.reached.clear();

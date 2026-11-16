@@ -137,6 +137,8 @@ function validateRunState(raw: unknown, path: string): RunState {
     r.bonusDice === undefined ? undefined : int(r.bonusDice, `${path}.bonusDice`, 0);
   const rewardChoices =
     r.rewardChoices === undefined ? undefined : int(r.rewardChoices, `${path}.rewardChoices`, 1);
+  // Added after version 1 shipped: absent in older saves, which then simply have nothing opened.
+  const openedLoot = r.openedLoot === undefined ? [] : strings(r.openedLoot, `${path}.openedLoot`);
   return {
     seed,
     rng,
@@ -146,6 +148,7 @@ function validateRunState(raw: unknown, path: string): RunState {
     maxHp,
     ...(bonusDice === undefined ? {} : { bonusDice }),
     ...(rewardChoices === undefined ? {} : { rewardChoices }),
+    ...(openedLoot.length === 0 ? {} : { openedLoot }),
   };
 }
 

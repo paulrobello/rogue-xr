@@ -4,8 +4,10 @@
 // room through its doors, a mouse drag turns the view, cards are dragged at an automaton or onto
 // the table, `T` throws dice, sigils are traced with the mouse on the plate and `E` ends the turn.
 // The `?debug` hooks are read for state and screen positions only; nothing here writes rules state.
-// A run clears the non-elite fights in the side wings first, then the route to the guardian; an
-// elite is fought only when it stands on that route (see the policy block below).
+// A run clears the non-elite fights in the side wings first, then takes the route to the
+// guardian, opening any treasure coffer a cleared way offers (a mouse click on its lid, checked against
+// the panel it shows) just before the guardian; an elite is fought only when it stands on that route
+// (see the policy block below).
 //
 //   node scripts/full-run/run.mjs [--base http://localhost:4260] [--out /tmp/full-run]
 //        [--seeds SPIRE001,SPIRE002] [--death SPIRE001] [--headed]
@@ -22,7 +24,7 @@ const { values: opts } = parseArgs({
   options: {
     base: { type: 'string', default: 'http://localhost:4260' },
     out: { type: 'string', default: '/tmp/full-run' },
-    seeds: { type: 'string', default: 'SPIRE001,SPIRE002,SPIRE004,SPIRE010,SPIRE034' },
+    seeds: { type: 'string', default: 'SPIRE001,SPIRE002,SPIRE003,SPIRE004,SPIRE010,SPIRE034' },
     death: { type: 'string', default: 'SPIRE001' },
     headed: { type: 'boolean', default: false },
     'max-turns': { type: 'string', default: '45' },
@@ -363,6 +365,7 @@ async function runSeed(seed, mode) {
     route: [],
     fights: [],
     rewards: [],
+    treasure: [],
     hpCurve: [],
     cogsEarned: 0,
     summary: null,
@@ -500,10 +503,14 @@ async function runSeed(seed, mode) {
       POLICY.optional,
     ).map((room) => ({ room, tier: rooms.find((r) => r.room === room).tier }));
     report.sideFights = side.map((t) => t.room);
+    // Treasure is opened just before the guardian. A pickup draws from the `loot` stream the rewards
+    // share, so opening one earlier would change every later offer (and the deck the elite and guardian
+    // meet); at this point only the guardian's own purse, a flat 60, is left to draw.
     const targets = [...side, ...route];
-    for (const target of targets) {
-      const result = await approachAndFight(target);
-      if (result === 'stop') break;
+    for (const [i, target] of targets.entries()) {
+      if (i === targets.length - 1 && target.tier === 'guardian' && mode !== 'death')
+        await treasure();
+      if ((await approachAndFight(target)) === 'stop') break;
     }
     const end = await phase();
     report.end = end === 'victory' || end === 'death' ? end : `stopped in ${end}`;
@@ -676,6 +683,145 @@ async function runSeed(seed, mode) {
     }
     fail('could-not-open-fight', { room: target.room });
     return 'stop';
+  }
+
+  /** Opens every coffer the route offers: walk up, aim the mouse at the lid, click, check the find. */
+  async function treasure() {
+    const coffers = await ev(() => window.__fr.coffers());
+    for (const coffer of coffers) {
+      const record = { room: coffer.room, socketId: coffer.socketId, planned: coffer.kind };
+      report.treasure.push(record);
+      if (!(await ev((room) => window.__fr.routeIsClear(room), coffer.room))) {
+        record.skipped = 'an uncleared encounter stands on the way';
+        continue;
+      }
+      let arrived = false;
+      for (let attempt = 0; attempt < 4 && !arrived; attempt++) {
+        const plan = await ev((name) => window.__fr.pathToCoffer(name), coffer.name);
+        if (!plan) {
+          fail('no-path-to-coffer', { room: coffer.room });
+          record.skipped = 'no path';
+          break;
+        }
+        const result = await walk(plan.points);
+        if (result === 'fight') {
+          fail('fight-on-the-way-to-coffer', { room: coffer.room });
+          return;
+        }
+        if (result === 'arrived') arrived = true;
+        else {
+          await hold(new Set(['KeyS']));
+          await wait(400);
+          await hold(new Set());
+        }
+      }
+      if (!arrived) {
+        if (!record.skipped) fail('could-not-reach-coffer', { room: coffer.room });
+        continue;
+      }
+      await turnTo(await ev((name) => window.__fr.bearingTo(name), coffer.name));
+      await wait(400);
+      const room = await ev(() => window.__combat.floor.world.current);
+      if (room !== coffer.room) fail('coffer-room-not-current', { room, want: coffer.room });
+      await shot(`treasure-closed-r${coffer.room}`);
+      const before = await ev(() => window.__fr.treasureState());
+      if (before.opened) fail('coffer-open-before-click', { room: coffer.room });
+      const point = await ev((name) => window.__combat.screenOfCoffer(name), coffer.name);
+      const onScreen =
+        point &&
+        point.x > 0 &&
+        point.y > 0 &&
+        point.x < VIEWPORT.width &&
+        point.y < VIEWPORT.height;
+      if (!onScreen) {
+        fail('coffer-not-on-screen', { room: coffer.room, point });
+        continue;
+      }
+      await page.mouse.move(point.x, point.y, { steps: 4 });
+      await wait(120);
+      await page.mouse.click(point.x, point.y);
+      const opened = await until(
+        'coffer-opened',
+        () => window.__fr.treasureState().opened,
+        undefined,
+        5000,
+      );
+      if (!opened) continue;
+      await wait(1000);
+      const after = await ev(() => window.__fr.treasureState());
+      await shot(`treasure-opened-r${coffer.room}`);
+      const brief = (run) => ({ cogs: run.cogs, hp: run.hp, deck: run.deck.length });
+      Object.assign(record, {
+        before: brief(before.run),
+        after: brief(after.run),
+        added: after.run.deck.slice(before.run.deck.length),
+        shown: after.toast,
+        found: after.last?.loot ?? null,
+      });
+      checkTreasure(coffer, before, after);
+      // A second click on the open coffer changes nothing.
+      await page.mouse.move(point.x, point.y, { steps: 2 });
+      await page.mouse.click(point.x, point.y);
+      await wait(500);
+      const again = await ev(() => window.__fr.treasureState());
+      if (JSON.stringify(again.run) !== JSON.stringify(after.run))
+        fail('coffer-paid-twice', { room: coffer.room, after: after.run, again: again.run });
+      // The pickup is on disk: the saved snapshot holds the opened key and the purse and deck as shown.
+      await ev(() => window.__flow.flushed());
+      const saved = await ev(async () => {
+        const { openDb } = await import('/src/persist/db.ts');
+        const { loadRunSnapshot } = await import('/src/persist/saves.ts');
+        const snap = await loadRunSnapshot(await openDb());
+        return snap
+          ? { openedLoot: snap.run.openedLoot ?? [], cogs: snap.run.cogs, deck: snap.run.deck }
+          : null;
+      });
+      record.saved = saved;
+      const key = `${coffer.room}/${coffer.socketId}`;
+      const matches =
+        saved?.openedLoot.includes(key) &&
+        saved.cogs === after.run.cogs &&
+        saved.deck.join() === after.run.deck.join();
+      if (!matches) fail('coffer-not-saved', { saved, key, run: after.run });
+      await runHp(`treasure r${coffer.room}`);
+      await wait(900);
+      await turnTo(0);
+    }
+  }
+
+  /** The find must be the one shown, of the planned kind, and change only what it names. */
+  function checkTreasure(coffer, before, after) {
+    const text = after.toast?.text ?? null;
+    if (!text) return fail('coffer-no-toast', { room: coffer.room });
+    if (!after.toast.drawn.includes(text)) fail('coffer-toast-not-drawn', after.toast);
+    const cogsGain = after.run.cogs - before.run.cogs;
+    const deckGain = after.run.deck.length - before.run.deck.length;
+    const found = after.last?.loot;
+    if (after.last?.room !== coffer.room || after.last?.socketId !== coffer.socketId)
+      fail('coffer-wrong-pickup', { last: after.last });
+    if (found?.kind !== coffer.kind) fail('coffer-kind-mismatch', { planned: coffer.kind, found });
+    const cogs = /^\+(\d+) cogs$/.exec(text);
+    const card = /^New card: (.+)$/.exec(text);
+    if (cogs) {
+      const n = Number(cogs[1]);
+      if (cogsGain !== n || deckGain !== 0 || n < 15 || n > 25)
+        fail('coffer-cogs-mismatch', { text, cogsGain, deckGain });
+      if (found?.cogs !== n) fail('coffer-cogs-differ-from-result', { text, found });
+    } else if (card) {
+      const added = after.run.deck.at(-1);
+      if (cogsGain !== 0 || deckGain !== 1 || after.cardNames[added] !== card[1])
+        fail('coffer-card-mismatch', { text, cogsGain, deckGain, added });
+      if (found?.card !== added) fail('coffer-card-differs-from-result', { text, found, added });
+    } else fail('coffer-toast-unreadable', { text });
+    for (const stream of ['floor', 'deck', 'dice', 'ai'])
+      if (JSON.stringify(after.run.rng[stream]) !== JSON.stringify(before.run.rng[stream]))
+        fail('coffer-advanced-another-stream', { stream });
+    if (JSON.stringify(after.run.rng.loot) === JSON.stringify(before.run.rng.loot))
+      fail('coffer-did-not-draw-loot', {});
+    if (after.run.hp !== before.run.hp)
+      fail('coffer-changed-hp', { before: before.run.hp, after: after.run.hp });
+    if (!after.run.openedLoot.includes(`${coffer.room}/${coffer.socketId}`))
+      fail('coffer-not-recorded', { openedLoot: after.run.openedLoot });
   }
 
   async function reward(room) {
@@ -928,6 +1074,7 @@ async function runSeed(seed, mode) {
 /** In-page helpers (read-only): state snapshots, the route, a walkable-grid path and screen maps. */
 async function installHelpers() {
   const { SIGIL_TEMPLATES } = await import('/src/sigil/templates.ts');
+  const { CARDS } = await import('/src/content/cards.ts');
   const c = window.__combat;
   const rig = c.camera.parent;
   const scene = rig.parent;
@@ -935,6 +1082,7 @@ async function installHelpers() {
   const visited = [];
   const fr = {
     visited,
+    cardNames: Object.fromEntries(CARDS.map((card) => [card.id, card.name])),
     pose() {
       const floor = c.floor;
       const room = floor.world.current;
@@ -983,10 +1131,73 @@ async function installHelpers() {
     },
     /** A* over a 0.1 m grid of the floor's footprints minus the colliders (inflated by the body). */
     pathToEnemy(room) {
-      const world = c.floor.world;
-      const body = (world.enemies.get(room) ?? []).find((b) => b.parent !== null);
+      const body = (c.floor.world.enemies.get(room) ?? []).find((b) => b.parent !== null);
       if (!body) return null;
-      const goalV = body.getWorldPosition(body.position.clone());
+      return fr.pathTo(body.getWorldPosition(body.position.clone()));
+    },
+    /** Every coffer on the floor: its plan, name and whether it is open. */
+    coffers() {
+      return c.floor.loot.coffers.map((k) => ({
+        room: k.room,
+        socketId: k.socketId,
+        kind: k.kind,
+        name: k.object.name,
+        opened: k.opened,
+      }));
+    },
+    /** True when no uncleared encounter stands in a room between the entry and `room` (`room` aside). */
+    routeIsClear(room) {
+      const plan = c.floor.world.plan;
+      const prev = new Map([[0, -1]]);
+      const queue = [0];
+      while (queue.length) {
+        const r = queue.shift();
+        for (const [a, b] of plan.connections) {
+          const next = a.room === r ? b.room : b.room === r ? a.room : null;
+          if (next === null || prev.has(next)) continue;
+          prev.set(next, r);
+          queue.push(next);
+        }
+      }
+      for (let r = prev.get(room); r > 0; r = prev.get(r)) {
+        if (plan.rooms[r].encounter && !c.floor.encounter.isCleared(r)) return false;
+      }
+      return true;
+    },
+    /** A* path to a standing point 2 m from the coffer, toward its room's centre. */
+    pathToCoffer(name) {
+      const coffer = c.floor.loot.coffers.find((k) => k.object.name === name);
+      const at = coffer && c.floor.loot.approachPoint(coffer.room, coffer.socketId, 2);
+      return at ? fr.pathTo(at) : null;
+    },
+    /** Compass bearing in degrees (0 north, clockwise) from the player to a coffer. */
+    bearingTo(name) {
+      const node = c.floor.world.group.getObjectByName(name);
+      const p = node.getWorldPosition(rig.position.clone());
+      return (Math.atan2(p.x - rig.position.x, -(p.z - rig.position.z)) * 180) / Math.PI;
+    },
+    /** The run and the coffer panel as the player sees them right now. */
+    treasureState() {
+      const flow = window.__flow.flow;
+      const run = flow.run;
+      const toast = c.floor.loot.toast;
+      return {
+        opened: c.floor.loot.coffers.some((k) => k.opened),
+        run: {
+          cogs: run.cogs,
+          hp: run.hp,
+          deck: [...run.deck],
+          rng: JSON.parse(JSON.stringify(run.rng)),
+          openedLoot: [...(run.openedLoot ?? [])],
+        },
+        last: flow.lastLoot ? JSON.parse(JSON.stringify(flow.lastLoot)) : null,
+        toast: toast ? { text: toast.text, drawn: [...(toast.canvas.__texts ?? [])] } : null,
+        cardNames: fr.cardNames,
+      };
+    },
+    /** A* over a 0.1 m grid of the floor's footprints minus the colliders (inflated by the body), to a world point. */
+    pathTo(goalV) {
+      const world = c.floor.world;
       const cell = 0.1;
       const inflate = 0.32;
       const rects = world.rooms.map((r) => r.footprint);

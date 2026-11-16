@@ -9,7 +9,8 @@ export interface FlowPersistence {
 }
 
 /**
- * Writes the flow to IndexedDB as it changes: a run snapshot at every explore and reward boundary,
+ * Writes the flow to IndexedDB as it changes: a run snapshot at every explore and reward boundary and
+ * after every treasure pickup (which changes the purse or deck without changing phase),
  * the workshop after a purchase, and at run end the snapshot cleared before the banked workshop is
  * saved, so a crash between the two writes can lose the payout but never bank it twice. Writes run in
  * order on one queue. `roomIndex` reports the player's current room for the snapshot.
@@ -27,6 +28,11 @@ export function bindFlowPersistence(
     if (event.type === 'workshop') {
       const ws = flow.workshop;
       enqueue(() => saveWorkshop(db, ws));
+      return;
+    }
+    if (event.type === 'loot') {
+      const snapshot = flow.snapshot(Date.now(), roomIndex());
+      if (snapshot) enqueue(() => saveRunSnapshot(db, snapshot));
       return;
     }
     if (event.to === 'explore' || event.to === 'reward') {

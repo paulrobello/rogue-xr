@@ -1,0 +1,233 @@
+import * as THREE from 'three';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { getCard } from '../src/content/cards.ts';
+import { GREYBOX_TEMPLATES, type RoomTemplate } from '../src/content/rooms.ts';
+import { generateFloor, worldRooms } from '../src/floor/generate.ts';
+import { mountFloorView } from '../src/world/floor-view.ts';
+import { buildFloorWorld } from '../src/world/floor-world.ts';
+import { lootLines, surfaceHeightAt } from '../src/world/loot.ts';
+
+/** The desk collider the baked study manifest adds (`public/assets/rooms/study`). */
+const DESK = { min: [1.721, 0, 1.721], max: [3.079, 1.07, 3.079] } as const;
+const STUDY_WITH_DESK: readonly RoomTemplate[] = GREYBOX_TEMPLATES.map((t) =>
+  t.id === 'study'
+    ? { ...t, colliders: [...t.colliders, { min: [...DESK.min], max: [...DESK.max] }] }
+    : t,
+);
+
+const SEEDS = ['SPIRE001', 'SPIRE002', 'SPIRE003', 'SPIRE005', 'SPIRE034', 'SPIRE004', 'SPIRE010'];
+
+function treasureRooms(seed: string) {
+  return generateFloor(seed).rooms.filter((r) => r.role === 'treasure' && r.loot.length > 0);
+}
+
+describe('coffers in the floor world', () => {
+  it('stands one in each treasure room and none anywhere else, guardian vault included', () => {
+    for (const seed of SEEDS) {
+      const plan = generateFloor(seed);
+      const world = buildFloorWorld(plan);
+      const expected = treasureRooms(seed).flatMap((r) =>
+        r.loot.map((l) => `coffer-${r.index}-${l.socketId}`),
+      );
+      expect(world.coffers.map((c) => c.object.name).sort()).toEqual(expected.sort());
+      expect(world.coffers.every((c) => c.room !== plan.guardianRoom)).toBe(true);
+      expect(plan.rooms[plan.guardianRoom]?.loot.length).toBeGreaterThan(0);
+      world.dispose();
+    }
+  });
+
+  it('places each coffer at its manifest loot socket, in world space, facing its yaw', () => {
+    for (const seed of SEEDS) {
+      const plan = generateFloor(seed);
+      const world = buildFloorWorld(plan);
+      world.group.updateMatrixWorld(true);
+      const rooms = worldRooms(plan);
+      for (const coffer of world.coffers) {
+        const room = rooms[coffer.room];
+        const placed = plan.rooms[coffer.room];
+        const socket = room?.template.lootSockets.find((s) => s.id === coffer.socketId);
+        expect(room && placed && socket).toBeTruthy();
+        if (!room || !placed || !socket) continue;
+        const at = coffer.object.getWorldPosition(new THREE.Vector3());
+        expect(at.x).toBeCloseTo(placed.position[0] + socket.position[0], 6);
+        expect(at.z).toBeCloseTo(placed.position[1] + socket.position[2], 6);
+        expect(at.y).toBeCloseTo(0, 6);
+        const front = new THREE.Vector3(0, 0, -1).transformDirection(coffer.object.matrixWorld);
+        const yaw = (socket.yaw * Math.PI) / 180;
+        expect(front.x).toBeCloseTo(Math.sin(yaw), 6);
+        expect(front.z).toBeCloseTo(-Math.cos(yaw), 6);
+        expect(coffer.kind).toBe(placed.loot.find((l) => l.socketId === coffer.socketId)?.kind);
+      }
+      world.dispose();
+    }
+  });
+
+  it('stands on the desk top when the room has one and on the floor in the greybox', () => {
+    expect(
+      surfaceHeightAt(STUDY_WITH_DESK.find((t) => t.id === 'study')?.colliders ?? [], 2.6, 2.6),
+    ).toBeCloseTo(1.07);
+    expect(
+      surfaceHeightAt(GREYBOX_TEMPLATES.find((t) => t.id === 'study')?.colliders ?? [], 2.6, 2.6),
+    ).toBe(0);
+    const plan = generateFloor('SPIRE002');
+    const world = buildFloorWorld(plan, STUDY_WITH_DESK);
+    world.group.updateMatrixWorld(true);
+    const [coffer] = world.coffers;
+    expect(coffer?.object.getWorldPosition(new THREE.Vector3()).y).toBeCloseTo(1.07, 6);
+    world.dispose();
+  });
+
+  it('removes the greybox marker the coffer replaces', () => {
+    const world = buildFloorWorld(generateFloor('SPIRE002'));
+    const coffer = world.coffers[0];
+    const group = world.roomGroups[coffer?.room ?? -1];
+    expect(group?.getObjectByName('socket-desk-drawer')).toBeUndefined();
+    world.dispose();
+  });
+
+  it('frees its geometry and placeholder materials with the floor', () => {
+    const world = buildFloorWorld(generateFloor('SPIRE002'));
+    const mesh = world.coffers[0]?.object.getObjectByName('coffer-body') as THREE.Mesh;
+    const body = mesh.geometry;
+    const material = mesh.material as THREE.Material;
+    let freed = 0;
+    body.addEventListener('dispose', () => freed++);
+    material.addEventListener('dispose', () => freed++);
+    world.dispose();
+    expect(freed).toBe(2);
+  });
+});
+
+/** A do-nothing 2D context: happy-dom has no canvas, and the toast draws on one. */
+function stubCanvas2d(): void {
+  const handler: ProxyHandler<object> = {
+    get: (_target, key) =>
+      key === 'measureText'
+        ? (text: string) => ({ width: String(text).length * 10 })
+        : () => new Proxy({}, handler),
+    set: () => true,
+  };
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(
+    () => new Proxy({}, handler) as unknown as CanvasRenderingContext2D,
+  );
+}
+
+describe('floor loot view', () => {
+  beforeEach(stubCanvas2d);
+  afterEach(() => vi.restoreAllMocks());
+  const mount = (seed: string) => {
+    const scene = new THREE.Scene();
+    const rig = new THREE.Group();
+    scene.add(rig);
+    const view = mountFloorView(scene, rig, seed);
+    return { scene, rig, view };
+  };
+  /** Moves the floor's current room to the coffer's room. */
+  const enter = (view: ReturnType<typeof mount>['view'], room: number) => {
+    const r = view.world.rooms[room];
+    const fp = r?.footprint;
+    if (!fp) throw new Error('no room');
+    view.world.update((fp.min[0] + fp.max[0]) / 2, (fp.min[1] + fp.max[1]) / 2);
+    expect(view.world.current).toBe(room);
+    view.world.group.updateMatrixWorld(true);
+  };
+
+  it('picks an unopened coffer in the current room along a ray, within reach', () => {
+    const { view } = mount('SPIRE002');
+    const coffer = view.loot.coffers[0];
+    if (!coffer) throw new Error('SPIRE002 has a coffer');
+    // Room 0 is current at the start: the coffer is not pickable from another room.
+    const target = coffer.object.getWorldPosition(new THREE.Vector3());
+    const from = target.clone().add(new THREE.Vector3(0, 0.6, 2));
+    expect(view.loot.pick(from, target.clone().sub(from))).toBeNull();
+    enter(view, coffer.room);
+    const hit = view.loot.pick(from, target.clone().sub(from));
+    expect(hit).toMatchObject({ room: coffer.room, socketId: 'desk-drawer', kind: 'cogs' });
+    expect(hit?.distance).toBeGreaterThan(1);
+    expect(view.loot.pick(from, target.clone().sub(from), 1)).toBeNull();
+    expect(view.loot.pick(from, new THREE.Vector3(0, 1, 0))).toBeNull();
+    view.dispose();
+  });
+
+  it('opens a coffer: the lid swings, the picked coffer stops being a target, a panel shows the find', () => {
+    const { view } = mount('SPIRE002');
+    const coffer = view.loot.coffers[0];
+    if (!coffer) throw new Error('SPIRE002 has a coffer');
+    enter(view, coffer.room);
+    const target = coffer.object.getWorldPosition(new THREE.Vector3());
+    const from = target.clone().add(new THREE.Vector3(0, 0.6, 2));
+    const fp = view.world.rooms[coffer.room]?.footprint;
+    const head = new THREE.Object3D();
+    head.position.set(
+      ((fp?.min[0] ?? 0) + (fp?.max[0] ?? 0)) / 2,
+      1.6,
+      ((fp?.min[1] ?? 0) + (fp?.max[1] ?? 0)) / 2,
+    );
+    view.suspendTriggers = true;
+    expect(coffer.opened).toBe(false);
+    expect(view.loot.open(coffer.room, 'desk-drawer', { kind: 'cogs', cogs: 19 })).toBe(true);
+    expect(view.loot.open(9999, 'x', { kind: 'cogs', cogs: 1 })).toBe(false);
+    expect(coffer.opened).toBe(true);
+    for (let i = 0; i < 20; i++) view.update(head, 0.05);
+    const lid = coffer.object.getObjectByName('coffer-lid');
+    expect(lid?.rotation.x).toBeGreaterThan(1.5);
+    expect(coffer.object.getObjectByName('coffer-glow')?.visible).toBe(true);
+    expect(view.loot.toast?.text).toBe('+19 cogs');
+    expect(view.loot.pick(from, target.clone().sub(from))).toBeNull();
+    // The panel faces the head, then expires and is freed.
+    const panel = view.world.group.getObjectByName('loot-toast-root');
+    expect(panel).toBeDefined();
+    const toastBefore = view.loot.toast;
+    for (let i = 0; i < 100; i++) view.update(head, 0.05);
+    expect(view.loot.toast).toBeNull();
+    expect(view.world.group.getObjectByName('loot-toast-root')).toBeUndefined();
+    expect(toastBefore?.text).toBe('+19 cogs');
+    view.dispose();
+  });
+
+  it('shows a resumed coffer open at once with no panel', () => {
+    const { view } = mount('SPIRE002');
+    const coffer = view.loot.coffers[0];
+    if (!coffer) throw new Error('SPIRE002 has a coffer');
+    view.loot.markOpened(coffer.room, 'desk-drawer');
+    expect(coffer.opened).toBe(true);
+    expect(coffer.object.getObjectByName('coffer-lid')?.rotation.x).toBeGreaterThan(1.5);
+    expect(view.loot.toast).toBeNull();
+    view.dispose();
+  });
+
+  it('disposes a live panel with the floor and leaves no coffer nodes behind', () => {
+    const { scene, view } = mount('SPIRE002');
+    const coffer = view.loot.coffers[0];
+    if (!coffer) throw new Error('SPIRE002 has a coffer');
+    view.loot.open(coffer.room, 'desk-drawer', { kind: 'cogs', cogs: 17 });
+    view.dispose();
+    let nodes = 0;
+    scene.traverse(() => nodes++);
+    expect(nodes).toBe(2);
+  });
+
+  it('keeps the same node count open and closed so scene-leak checks stay exact', () => {
+    const { view } = mount('SPIRE002');
+    const count = (): number => {
+      let n = 0;
+      view.world.group.traverse(() => n++);
+      return n;
+    };
+    const coffer = view.loot.coffers[0];
+    if (!coffer) throw new Error('SPIRE002 has a coffer');
+    const closed = count();
+    view.loot.markOpened(coffer.room, 'desk-drawer');
+    expect(count()).toBe(closed);
+    view.dispose();
+  });
+});
+
+describe('lootLines', () => {
+  it('words a cog pickup and a card pickup', () => {
+    expect(lootLines({ kind: 'cogs', cogs: 21 }).text).toBe('+21 cogs');
+    expect(lootLines({ kind: 'card', card: 'arc-bolt' }).text).toBe(
+      `New card: ${getCard('arc-bolt').name}`,
+    );
+  });
+});

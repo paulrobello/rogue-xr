@@ -17,6 +17,7 @@ PW_GPU=swiftshader node scripts/xr-emu/walk.mjs # software GL, only when no GPU 
 node scripts/xr-emu/walk.mjs --focus          # New Run, one fight: only the fan and sigil checks
 node scripts/xr-emu/walk.mjs --turns          # a two-automaton fight (SPIRE002): only the enemy-phase and hit-flash checks
 node scripts/xr-emu/walk.mjs --recenter       # Enter VR facing away from the title: only the board re-placement check (XO5)
+node scripts/xr-emu/walk.mjs --treasure       # SPIRE001: open the treasure room's coffer with the main-hand ray and trigger
 ```
 
 The update-notice check needs a production build (the dev server stamps no build id):
@@ -29,8 +30,8 @@ node scripts/xr-emu/walk.mjs --notice http://localhost:4262
 
 Screenshots land in `docs/verification/xr-emu-*.jpg` with a JSON report
 (`xr-emu-report.json`, `xr-emu-report-notice.json`). The exit code is 1 when any check fails
-(`make` reports 2). As of 2026-11-15 both runs pass every check (41 for the walk, 5 for
-`--notice`); XO1 to XO4 in `docs/playtesting.md` record the fixes. The two console 404s in the
+(`make` reports 2). As of 2026-11-16 the walk passes every check (52, which includes the 11 treasure and resume checks;
+`xr-sigil-stage` failed intermittently in earlier runs, see `docs/playtesting.md`) and `--notice` last passed its 5 on 2026-11-15; XO1 to XO4 in `docs/playtesting.md` record the fixes. The two console 404s in the
 notice run are the music tracks that are not produced yet.
 
 ## How it works
@@ -46,6 +47,16 @@ notice run are the music tracks that are not produced yet.
 - Fights are ended with the debug `K` key (win) and `?cheat`-style `__flow.setCheat('lose')` plus
   `E` (end turn) for the death; the reward, death and title boards are always used with the ray.
 - The head sits at a seated 1.2 m, so the recenter's height lift is visible in the checks.
+- The treasure check (`treasureCheck`, 11 checks) starts SPIRE001 (room 3 is a study with a card coffer),
+  moves the seated rig to a spot 2.2 m from the coffer with the debug `__combat.teleportToLoot()`, turns the
+  head toward it, aims the main-hand ray at the lid and pulls the trigger. It checks that the lid opens
+  and the opened key is recorded, that the purse or deck changed by exactly what the in-scene panel
+  shows, that no board locked locomotion, that the panel is inside the left eye's view, that a second
+  trigger pull pays nothing, and that the saved snapshot holds the opened key. It then reloads to the
+  title, resumes with Continue and checks that the coffer is open at once and a trigger pull pays
+  nothing. The 2.2 m approach is the
+  only teleport: the ray, the pick and the opening are the game's own paths. Pick a seed for it with
+  `generateFloor(seed).rooms.filter((r) => r.role === 'treasure')`.
 - In the first fight the walk holds the off hand up to read the fan (`12-fan-held`), stages a
   sigil card with a main-hand squeeze released over the table, and traces the card's template by
   holding the trigger and sweeping the main-hand ray across the plate. `xr-sigil-trail` counts
