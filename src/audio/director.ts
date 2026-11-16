@@ -9,13 +9,15 @@ import {
   type GuardianPhase,
   MUSIC,
   MUSIC_FILES,
-  MUSIC_IDS,
+  MUSIC_PRELOAD,
   type MusicDirective,
   type MusicId,
   MusicMixer,
   type MusicScene,
   type MusicSink,
+  musicChain,
   musicCueFor,
+  musicKeepSet,
   type PoolVoice,
   resolveMusic,
   SFX,
@@ -36,7 +38,7 @@ export interface Vec3Like {
 
 /** The slice of `THREE.Audio` the director uses. */
 export interface FlatVoice extends PoolVoice {
-  setBuffer(buffer: AudioBuffer): unknown;
+  setBuffer(buffer: AudioBuffer | null): unknown;
   setVolume(volume: number): unknown;
   setLoop(loop: boolean): unknown;
   play(): unknown;
@@ -118,6 +120,7 @@ export interface AudioDirectorOptions {
   warn?: (message: string) => void;
 }
 
+/** What `load()` fetched. Music is not in it: music cues load on demand as states ask for them. */
 export interface LoadReport {
   readonly loaded: readonly string[];
   readonly missing: readonly string[];
@@ -136,7 +139,10 @@ function joinUrl(base: string, ...parts: string[]): string {
 /**
  * Plays the game's music and SFX. Voices are created once and reused (a burst steals the oldest
  * voice rather than allocating), music crossfades equal-power across looping layers, and a missing
- * or undecodable file leaves that cue silent and logs once. Construct it once, add `root` to the
+ * or undecodable file leaves that cue silent and logs once. SFX decode in `load()`. Music decodes
+ * on demand: a state's cue loads when first requested (its fallback plays meanwhile), the cue
+ * most likely to follow loads once the current one plays, and a cue nothing needs is freed, so
+ * decoded music stays at the playing cue, its fallbacks and one preload. Construct it once, add `root` to the
  * scene, call `load()`, drive it with `setState`/`syncGame`/`playSfx`, call `update(dt)` each frame
  * and `unlockOnGesture` / `unlockOnXrSession` so the context resumes on first input.
  */
@@ -154,12 +160,21 @@ export class AudioDirector {
   private readonly mixer: MusicMixer<MusicId>;
   private readonly sfxBuffers = new Map<SfxId, AudioBuffer>();
   private readonly musicBuffers = new Map<MusicId, AudioBuffer>();
+  private readonly musicPending = new Set<MusicId>();
+  private readonly musicMissing = new Set<MusicId>();
+  /** The buffer each music voice holds, so freeing a cue also lets go of a voice that played it. */
+  private readonly slotBuffers: (AudioBuffer | null)[] = new Array<AudioBuffer | null>(
+    MUSIC_SLOTS,
+  ).fill(null);
+  private liveLayers = 0;
+  /** The cue and gain last sent to the mixer, or null after a stop. */
+  private musicSent: { cue: MusicId; gain: number } | null = null;
   private readonly lastPlayed = new Map<SfxId, number>();
   private readonly lastStinger = new Map<StingerFamily, number>();
   private readonly unlockers: (() => void)[] = [];
   private stateValue: AudioState | null = null;
   /** The cue the current state asks for, before falling back to what loaded. */
-  private musicWant: { cue: MusicId; gain: number } | null = null;
+  private musicWant: { cue: MusicId; gain: number; fade: number } | null = null;
   private guardianPhase: GuardianPhase = 1;
   private sfxVolume = 1;
   private musicVolume = 1;
@@ -201,6 +216,20 @@ export class AudioDirector {
     return this.musicWant?.cue ?? null;
   }
 
+  /** The music cues whose decoded audio the director holds in its cache. */
+  get decodedMusic(): MusicId[] {
+    return [...this.musicBuffers.keys()];
+  }
+
+  /** Bytes of decoded music held: the cache plus any buffer a music voice still references. */
+  get decodedMusicBytes(): number {
+    const held = new Set<AudioBuffer>(this.musicBuffers.values());
+    for (const buffer of this.slotBuffers) if (buffer) held.add(buffer);
+    let bytes = 0;
+    for (const b of held) bytes += b.length * b.numberOfChannels * 4;
+    return bytes;
+  }
+
   get spatialPool(): VoicePool<SpatialVoice> {
     return this.spatial;
   }
@@ -210,47 +239,37 @@ export class AudioDirector {
   }
 
   /**
-   * Fetches and decodes every registered file. A missing or broken file is skipped: that cue
-   * stays silent, and one warning per kind (music, SFX) names what is missing.
+   * Fetches and decodes every SFX file. A missing or broken file is skipped: that cue stays
+   * silent, and one warning names what is missing. Music is not loaded here (see the class doc).
    */
   async load(): Promise<LoadReport> {
     const loaded: string[] = [];
     const missing: string[] = [];
-    const fetchOne = (key: string, file: string, store: (buffer: AudioBuffer) => void) =>
-      new Promise<void>((resolve) => {
-        this.deps.loader.load(
-          joinUrl(this.baseUrl, AUDIO_DIR, file),
-          (buffer) => {
-            if (!this.disposed) store(buffer);
-            loaded.push(key);
-            resolve();
-          },
-          undefined,
-          () => {
-            missing.push(key);
-            resolve();
-          },
-        );
-      });
-    await Promise.all([
-      ...SFX_IDS.map((id) => fetchOne(id, SFX[id].file, (b) => this.sfxBuffers.set(id, b))),
-      ...MUSIC_IDS.map((id) =>
-        fetchOne(`music:${id}`, MUSIC_FILES[id], (b) => this.musicBuffers.set(id, b)),
+    await Promise.all(
+      SFX_IDS.map(
+        (id) =>
+          new Promise<void>((resolve) => {
+            this.deps.loader.load(
+              joinUrl(this.baseUrl, AUDIO_DIR, SFX[id].file),
+              (buffer) => {
+                if (!this.disposed) this.sfxBuffers.set(id, buffer);
+                loaded.push(id);
+                resolve();
+              },
+              undefined,
+              () => {
+                missing.push(id);
+                resolve();
+              },
+            );
+          }),
       ),
-    ]);
-    const missingMusic = missing.filter((m) => m.startsWith('music:')).map((m) => m.slice(6));
-    const missingSfx = missing.filter((m) => !m.startsWith('music:'));
-    if (missingMusic.length > 0) {
+    );
+    if (missing.length > 0) {
       this.warn(
-        `[audio] music not found (${missingMusic.join(', ')}): each plays its fallback cue when that loaded, otherwise silence`,
+        `[audio] ${missing.length} SFX not found (${missing.join(', ')}): those cues stay silent`,
       );
     }
-    if (missingSfx.length > 0) {
-      this.warn(
-        `[audio] ${missingSfx.length} SFX not found (${missingSfx.join(', ')}): those cues stay silent`,
-      );
-    }
-    if (!this.disposed) this.startLoadedMusic();
     return { loaded, missing };
   }
 
@@ -328,7 +347,10 @@ export class AudioDirector {
 
   /** Advances the music crossfades by `dt` real seconds. */
   update(dt: number): void {
-    if (!this.disposed) this.mixer.update(dt);
+    if (this.disposed) return;
+    this.mixer.update(dt);
+    // A layer finishing its fade frees its cue and lets the next preload start.
+    if (this.mixer.liveLayers !== this.liveLayers) this.pumpMusic();
   }
 
   /** Master, music-bus and SFX-bus volumes, 0..1. Omitted fields are unchanged. */
@@ -377,6 +399,8 @@ export class AudioDirector {
     this.root.clear();
     this.sfxBuffers.clear();
     this.musicBuffers.clear();
+    this.musicPending.clear();
+    this.slotBuffers.fill(null);
     this.lastPlayed.clear();
     this.lastStinger.clear();
     this.deps.dispose?.();
@@ -393,12 +417,120 @@ export class AudioDirector {
     if (directive.kind === 'hold') return;
     if (directive.kind === 'stop') {
       this.musicWant = null;
+      this.musicSent = null;
       this.mixer.stop(directive.fadeSeconds);
+      this.pumpMusic();
       return;
     }
-    this.musicWant = { cue: directive.cue, gain: directive.gain };
-    const play = resolveMusic(directive.cue, directive.gain, (id) => this.musicBuffers.has(id));
-    this.mixer.request(play.cue, play.gain, directive.fadeSeconds);
+    this.musicWant = { cue: directive.cue, gain: directive.gain, fade: directive.fadeSeconds };
+    this.loadWanted();
+    this.playWanted(directive.fadeSeconds, false);
+    this.pumpMusic();
+  }
+
+  /** Starts decoding the wanted cue, or the next one down its fallback chain when a file is missing. */
+  private loadWanted(): void {
+    if (!this.musicWant) return;
+    for (const cue of musicChain(this.musicWant.cue)) {
+      if (this.musicBuffers.has(cue) || this.musicPending.has(cue)) return;
+      if (this.musicMissing.has(cue)) continue;
+      this.fetchMusic(cue);
+      if (this.musicBuffers.has(cue) || this.musicPending.has(cue)) return;
+    }
+  }
+
+  private fetchMusic(cue: MusicId): void {
+    this.musicPending.add(cue);
+    let sync = true;
+    this.deps.loader.load(
+      joinUrl(this.baseUrl, AUDIO_DIR, MUSIC_FILES[cue]),
+      (buffer) => {
+        this.musicPending.delete(cue);
+        if (this.disposed) return;
+        this.musicBuffers.set(cue, buffer);
+        if (!sync) this.onMusicSettled();
+      },
+      undefined,
+      () => {
+        this.musicPending.delete(cue);
+        if (this.disposed) return;
+        this.musicMissing.add(cue);
+        this.warn(
+          `[audio] music not found (${cue}): plays its fallback cue when that loaded, otherwise silence`,
+        );
+        if (!sync) this.onMusicSettled();
+      },
+    );
+    sync = false;
+  }
+
+  /** A cue finished decoding or failed after `setState` returned: re-resolve the request against what is there. */
+  private onMusicSettled(): void {
+    this.loadWanted();
+    this.playWanted(LATE_MUSIC_FADE, true);
+    this.pumpMusic();
+  }
+
+  /**
+   * Sends the first cue down the wanted cue's chain whose file exists to the mixer. While that cue
+   * is still decoding, the cue already playing keeps playing, so a state change never fades to
+   * silence and never holds a second cue in memory just to cover the decode. A cue whose file is
+   * absent is skipped to its fallback, at the fallback's gain. `late` marks a re-resolve after a
+   * load: it leaves a running fade alone unless the cue or gain it resolves to changed.
+   */
+  private playWanted(fade: number, late: boolean): void {
+    const want = this.musicWant;
+    if (!want) return;
+    const play = resolveMusic(want.cue, want.gain, (id) => !this.musicMissing.has(id));
+    if (
+      !this.musicBuffers.has(play.cue) &&
+      this.musicPending.has(play.cue) &&
+      this.mixer.current !== null
+    ) {
+      return;
+    }
+    const sent = this.musicSent;
+    if (!late || !sent || sent.cue !== play.cue || sent.gain !== play.gain) {
+      this.mixer.request(play.cue, play.gain, fade);
+      this.musicSent = play;
+    }
+    for (let slot = 0; slot < MUSIC_SLOTS; slot++) {
+      const cue = this.mixer.layerCue(slot);
+      const voice = this.musicVoices[slot];
+      if (cue && voice && !voice.isPlaying) this.startMusicVoice(slot, cue);
+    }
+    this.mixer.refresh();
+  }
+
+  /**
+   * Once the wanted cue plays and no crossfade is running, decodes the cues likely to follow it,
+   * then frees every decoded cue that is neither wanted, a fallback in use, a preload target nor
+   * still playing.
+   */
+  private pumpMusic(): void {
+    if (this.disposed) return;
+    this.liveLayers = this.mixer.liveLayers;
+    const want = this.musicWant;
+    if (want && this.musicBuffers.has(want.cue) && this.liveLayers <= 1) {
+      for (const next of MUSIC_PRELOAD[want.cue]) {
+        if (
+          !this.musicBuffers.has(next) &&
+          !this.musicPending.has(next) &&
+          !this.musicMissing.has(next)
+        ) {
+          this.fetchMusic(next);
+        }
+      }
+    }
+    const playing: MusicId[] = [];
+    for (let slot = 0; slot < MUSIC_SLOTS; slot++) {
+      const cue = this.mixer.layerCue(slot);
+      if (cue) playing.push(cue);
+    }
+    const keep = musicKeepSet(want?.cue ?? null, (id) => this.musicMissing.has(id), playing);
+    for (const cue of [...this.musicBuffers.keys()]) {
+      if (!keep.has(cue)) this.musicBuffers.delete(cue);
+    }
   }
 
   private makeSpatial(): SpatialVoice {
@@ -434,6 +566,10 @@ export class AudioDirector {
       stop: (slot) => {
         const voice = this.musicVoices[slot];
         if (voice?.isPlaying) voice.stop();
+        if (this.slotBuffers[slot]) {
+          voice?.setBuffer(null);
+          this.slotBuffers[slot] = null;
+        }
       },
       setGain: (slot, gain) => {
         this.musicVoices[slot]?.setVolume(gain * this.musicVolume);
@@ -447,26 +583,9 @@ export class AudioDirector {
     if (!voice || !buffer) return;
     if (voice.isPlaying) voice.stop();
     voice.setBuffer(buffer);
+    this.slotBuffers[slot] = buffer;
     voice.setLoop(MUSIC[cue].loop);
     voice.setVolume(0);
     voice.play();
-  }
-
-  /**
-   * Music requested before `load()` finished: the request is resolved again against the files that
-   * loaded (a missing cue moves to its fallback), and any layer still without a voice starts.
-   */
-  private startLoadedMusic(): void {
-    const want = this.musicWant;
-    if (want) {
-      const play = resolveMusic(want.cue, want.gain, (id) => this.musicBuffers.has(id));
-      if (play.cue !== this.mixer.current) this.mixer.request(play.cue, play.gain, LATE_MUSIC_FADE);
-    }
-    for (let slot = 0; slot < MUSIC_SLOTS; slot++) {
-      const cue = this.mixer.layerCue(slot);
-      const voice = this.musicVoices[slot];
-      if (cue && voice && !voice.isPlaying) this.startMusicVoice(slot, cue);
-    }
-    this.mixer.refresh();
   }
 }

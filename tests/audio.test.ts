@@ -15,10 +15,13 @@ import {
   MUSIC,
   MUSIC_FILES,
   MUSIC_IDS,
+  MUSIC_PRELOAD,
   type MusicId,
   MusicMixer,
   type MusicSink,
+  musicChain,
   musicCueFor,
+  musicKeepSet,
   resolveMusic,
   SFX,
   SFX_IDS,
@@ -71,10 +74,18 @@ class ThreeFakeVoice extends THREE.Object3D implements SpatialVoice {
   }
 }
 
-const ALL_FILES = [...SFX_IDS.map((id) => SFX[id].file), ...MUSIC_IDS.map((id) => MUSIC_FILES[id])];
+interface PendingLoad {
+  readonly url: string;
+  readonly ok: (buffer: AudioBuffer) => void;
+  readonly fail: (error: unknown) => void;
+}
 
 interface Harness {
   director: AudioDirector;
+  /** Loads held back by `harness([], 8, { deferred: true })`, oldest first. */
+  held: PendingLoad[];
+  /** Completes every held load whose url contains `match`, and returns how many that was. */
+  settle(match?: string): number;
   voices: FakeVoice[];
   flat: FakeVoice[];
   requested: string[];
@@ -84,8 +95,17 @@ interface Harness {
 }
 
 /** A loader that serves every file except those whose path contains one of `missing`. */
-function harness(missing: readonly string[] = [], spatialVoices = 8): Harness {
+function fakeBuffer(): AudioBuffer {
+  return { duration: 1, length: 100, numberOfChannels: 2 } as AudioBuffer;
+}
+
+function harness(
+  missing: readonly string[] = [],
+  spatialVoices = 8,
+  options: { deferred?: boolean } = {},
+): Harness {
   const requested: string[] = [];
+  const held: PendingLoad[] = [];
   const warnings: string[] = [];
   const voices: FakeVoice[] = [];
   const flat: FakeVoice[] = [];
@@ -94,8 +114,10 @@ function harness(missing: readonly string[] = [], spatialVoices = 8): Harness {
   const loader: AudioLoaderLike = {
     load(url, onLoad, _onProgress, onError) {
       requested.push(url);
-      if (missing.some((m) => url.includes(m))) onError?.(new Error(`404 ${url}`));
-      else onLoad({ duration: 1 } as AudioBuffer);
+      const fail = (error: unknown) => onError?.(error);
+      if (options.deferred && url.includes('/music/')) held.push({ url, ok: onLoad, fail });
+      else if (missing.some((m) => url.includes(m))) fail(new Error(`404 ${url}`));
+      else onLoad(fakeBuffer());
     },
   };
   const deps: AudioDeps = {
@@ -120,8 +142,22 @@ function harness(missing: readonly string[] = [], spatialVoices = 8): Harness {
     now: () => clock.t,
     warn: (m) => warnings.push(m),
   });
-  return { director, voices, flat, requested, warnings, context, clock };
+  const settle = (match = '') => {
+    const ready = held.filter((entry) => entry.url.includes(match));
+    for (const entry of ready) {
+      held.splice(held.indexOf(entry), 1);
+      if (missing.some((m) => entry.url.includes(m))) entry.fail(new Error(`404 ${entry.url}`));
+      else entry.ok(fakeBuffer());
+    }
+    return ready.length;
+  };
+  return { director, held, settle, voices, flat, requested, warnings, context, clock };
 }
+
+const musicRequests = (h: Harness) =>
+  h.requested
+    .filter((u) => u.includes('/music/'))
+    .map((u) => u.replace(/^.*\/(music\/)/, '$1').replace(/\.ogg$/, ''));
 
 describe('state to music cue mapping', () => {
   it('maps every audio state to a directive', () => {
@@ -420,13 +456,15 @@ describe('voice pool', () => {
 });
 
 describe('AudioDirector', () => {
-  it('loads every registered file once, under the audio directory', async () => {
+  it('loads every SFX file once under the audio directory and leaves music to the states', async () => {
     const h = harness();
     const report = await h.director.load();
+    const sfxFiles = SFX_IDS.map((id) => SFX[id].file);
     expect(report.missing).toEqual([]);
-    expect(report.loaded).toHaveLength(ALL_FILES.length);
-    expect(h.requested.sort()).toEqual(ALL_FILES.map((f) => `/${AUDIO_DIR}/${f}`).sort());
+    expect(report.loaded).toHaveLength(sfxFiles.length);
+    expect(h.requested.sort()).toEqual(sfxFiles.map((f) => `/${AUDIO_DIR}/${f}`).sort());
     expect(h.warnings).toEqual([]);
+    expect(h.director.decodedMusic).toEqual([]);
   });
 
   it('creates its voices once and reuses them under a burst of sounds', async () => {
@@ -491,15 +529,12 @@ describe('AudioDirector', () => {
     await vi.waitFor(() => expect(h.context.resume).toHaveBeenCalledTimes(2));
   });
 
-  it('falls back to silence for missing files and warns once per kind', async () => {
+  it('falls back to silence for missing files and warns once per file', async () => {
     const h = harness(['music/', 'sfx/door-open', 'sfx/dice-roll']);
     const report = await h.director.load();
-    expect([...report.missing].sort()).toEqual(
-      ['dice-roll', 'door-open', ...MUSIC_IDS.map((id) => `music:${id}`)].sort(),
-    );
-    expect(h.warnings).toHaveLength(2);
-    expect(h.warnings[0]).toContain('music');
-    expect(h.warnings[1]).toContain('dice-roll');
+    expect([...report.missing].sort()).toEqual(['dice-roll', 'door-open']);
+    expect(h.warnings).toHaveLength(1);
+    expect(h.warnings[0]).toContain('dice-roll');
     expect(h.director.playSfx('door-open', { x: 0, y: 0, z: 0 })).toBe(false);
     expect(h.director.playSfx('card-draw', { x: 0, y: 0, z: 0 })).toBe(true);
 
@@ -507,8 +542,15 @@ describe('AudioDirector', () => {
     h.director.setState('encounter-active');
     h.director.update(5);
     expect(h.flat.every((v) => !v.isPlaying || v.buffer !== null)).toBe(true);
-    expect(h.warnings).toHaveLength(2);
+    expect(h.warnings).toHaveLength(3);
+    expect(h.warnings.filter((w) => w.includes('music not found (explore)'))).toHaveLength(1);
+    expect(h.warnings.filter((w) => w.includes('music not found (combat)'))).toHaveLength(1);
     expect(h.director.musicCue).toBe('combat');
+    // A file that is absent is asked for once, however often its state returns.
+    h.director.setState('explore');
+    h.director.setState('encounter-active');
+    expect(musicRequests(h).filter((f) => f === 'music/explore')).toHaveLength(1);
+    expect(h.warnings).toHaveLength(3);
   });
 
   it('crossfades music with state changes and plays the stinger for run end', async () => {
@@ -558,14 +600,18 @@ describe('AudioDirector', () => {
     h.director.update(3);
     expect(h.director.musicRequest).toBe('victory');
     expect(music.filter((v) => v.isPlaying)).toHaveLength(0);
-    expect(h.warnings.filter((w) => w.includes('music'))).toHaveLength(1);
+    expect(h.warnings.filter((w) => w.includes('music not found'))).toHaveLength(3);
+    expect(h.warnings.filter((w) => w.includes('music not found (title)'))).toHaveLength(1);
   });
 
-  it('moves a request made before loading to its fallback once the files are in', async () => {
-    const h = harness(['music/workshop']);
+  it('moves a request made before its file loaded to the fallback when the file is absent', async () => {
+    const h = harness(['music/workshop'], 8, { deferred: true });
     h.director.setState('workshop');
     expect(h.director.musicCue).toBe('workshop');
-    await h.director.load();
+    expect(h.flat.slice(4).some((v) => v.isPlaying)).toBe(false);
+    h.settle('music/workshop');
+    expect(h.director.musicCue).toBe('workshop');
+    h.settle('music/explore');
     h.director.update(1);
     expect(h.director.musicCue).toBe('explore');
     const music = h.flat.slice(4).filter((v) => v.isPlaying);
@@ -684,12 +730,12 @@ describe('AudioDirector', () => {
     });
   });
 
-  it('starts music requested before the files finished loading', async () => {
-    const h = harness();
+  it('starts music requested before its file finished decoding', async () => {
+    const h = harness([], 8, { deferred: true });
     h.director.setState('title');
     const music = h.flat.slice(4);
     expect(music.some((v) => v.isPlaying)).toBe(false);
-    await h.director.load();
+    h.settle('music/title');
     expect(music.filter((v) => v.isPlaying)).toHaveLength(1);
   });
 
@@ -791,6 +837,205 @@ describe('registry against the files on disk', () => {
     for (const f of readdirSync(musicDir).filter((n) => n.endsWith('.ogg'))) {
       expect(MUSIC_IDS).toContain(f.replace(/\.ogg$/, '') as (typeof MUSIC_IDS)[number]);
     }
+  });
+});
+
+describe('music on demand', () => {
+  /** Runs the director through each state, long enough for every fade to finish. */
+  const WALK: readonly AudioState[] = [
+    'title',
+    'workshop',
+    'explore',
+    'rest',
+    'encounter-unfolding',
+    'encounter-active',
+    'encounter-folding',
+    'reward',
+    'explore',
+    'elite-unfolding',
+    'elite-active',
+    'reward',
+    'explore',
+    'guardian-unfolding',
+    'guardian-active',
+    'encounter-folding',
+    'defeat',
+    'title',
+    'explore',
+    'guardian-unfolding',
+    'guardian-active',
+    'victory',
+  ];
+
+  it('derives the chain and the keep set from the registry', () => {
+    expect(musicChain('guardian-2')).toEqual(['guardian-2', 'guardian-1', 'combat']);
+    expect(musicChain('combat')).toEqual(['combat']);
+    for (const id of MUSIC_IDS) {
+      expect(musicChain(id)[0]).toBe(id);
+      for (const next of MUSIC_PRELOAD[id]) {
+        expect(MUSIC_IDS).toContain(next);
+        expect(next).not.toBe(id);
+      }
+    }
+    const none = () => false;
+    expect([...musicKeepSet('guardian-2', none, [])].sort()).toEqual(['guardian-2', 'victory']);
+    // A fallback is kept only while the cues above it have no file.
+    expect([...musicKeepSet('guardian-2', (id) => id === 'guardian-2', [])].sort()).toEqual(
+      ['guardian-1', 'guardian-2', 'victory'].sort(),
+    );
+    expect([...musicKeepSet(null, none, ['combat'])]).toEqual(['combat']);
+  });
+
+  it('decodes only the cue a state asks for plus its likely next', async () => {
+    const h = harness();
+    await h.director.load();
+    expect(musicRequests(h)).toEqual([]);
+    h.director.setState('explore');
+    expect(musicRequests(h).sort()).toEqual(['music/combat', 'music/explore']);
+    expect([...h.director.decodedMusic].sort()).toEqual(['combat', 'explore']);
+  });
+
+  it('holds only the playing cue, its fallback chain and one preload through every state', async () => {
+    const h = harness();
+    await h.director.load();
+    for (const state of WALK) {
+      h.director.setState(state);
+      // Mid-fade the outgoing cue is still held, because its voice still plays it.
+      for (const dt of [0.3, 0.3, 0.6, 1.5, 4]) {
+        h.director.update(dt);
+        const want = h.director.musicRequest;
+        const decoded = h.director.decodedMusic;
+        expect(decoded.length).toBeLessThanOrEqual(3);
+        if (dt !== 4 || !want) continue;
+        // Settled: nothing but the playing cue and its preload targets is in memory.
+        const allowed = new Set<MusicId>([h.director.musicCue as MusicId, ...MUSIC_PRELOAD[want]]);
+        for (const cue of decoded) expect(allowed.has(cue), `${state}: ${cue}`).toBe(true);
+        expect(decoded).toContain(h.director.musicCue as MusicId);
+        expect(h.director.decodedMusicBytes).toBe(decoded.length * 100 * 2 * 4);
+      }
+    }
+  });
+
+  it('frees a cue once its fade ends and the next state no longer needs it', async () => {
+    const h = harness();
+    await h.director.load();
+    h.director.setState('explore');
+    h.director.update(3);
+    h.director.setState('encounter-unfolding');
+    // Both cues play during the crossfade, so both stay decoded and no preload starts yet.
+    expect([...h.director.decodedMusic].sort()).toEqual(['combat', 'explore']);
+    expect(musicRequests(h)).not.toContain('music/reward');
+    h.director.update(1);
+    expect([...h.director.decodedMusic].sort()).toEqual(['combat', 'reward']);
+    expect(h.flat.slice(4).filter((v) => v.buffer !== null)).toHaveLength(1);
+  });
+
+  it('plays a preloaded next cue in the same call as the state change', async () => {
+    const h = harness([], 8, { deferred: true });
+    h.director.setState('explore');
+    h.settle('music/explore');
+    expect(h.held.map((x) => x.url)).toEqual([expect.stringContaining('music/combat')]);
+    h.settle('music/combat');
+    h.director.update(3);
+    const before = musicRequests(h).length;
+    const plays = h.flat.slice(4).reduce((n, v) => n + v.plays, 0);
+    h.director.setState('encounter-unfolding');
+    expect(h.flat.slice(4).reduce((n, v) => n + v.plays, 0)).toBe(plays + 1);
+    expect(h.director.musicCue).toBe('combat');
+    expect(musicRequests(h)).toHaveLength(before);
+    expect(h.flat.slice(4).filter((v) => v.isPlaying)).toHaveLength(2);
+  });
+
+  it('preloads the guardian phase-2 cue so the case opening has no gap', async () => {
+    const h = harness();
+    await h.director.load();
+    h.director.setState('guardian-unfolding');
+    h.director.setState('guardian-active');
+    h.director.update(2);
+    expect([...h.director.decodedMusic].sort()).toEqual(['guardian-1', 'guardian-2']);
+    const before = musicRequests(h).length;
+    const plays = h.flat.slice(4).reduce((n, v) => n + v.plays, 0);
+    h.director.playCombatEvent({ type: 'enemy-phase', enemyId: 'grand-escapement', phase: 2 });
+    expect(h.flat.slice(4).reduce((n, v) => n + v.plays, 0)).toBe(plays + 1);
+    expect(h.director.musicCue).toBe('guardian-2');
+    expect(musicRequests(h)).toHaveLength(before);
+  });
+
+  it('keeps the playing cue while a cue with no decoded fallback decodes, then crossfades to it', async () => {
+    const h = harness([], 8, { deferred: true });
+    h.director.setState('explore');
+    h.settle('music/explore');
+    h.settle('music/combat');
+    h.director.update(3);
+    // Defeat has no fallback and is not preloaded from explore: the exploring cue keeps playing.
+    h.director.setState('defeat');
+    expect(h.director.musicRequest).toBe('defeat');
+    expect(h.director.musicCue).toBe('explore');
+    expect(h.flat.slice(4).some((v) => v.isPlaying)).toBe(true);
+    h.settle('music/defeat');
+    expect(h.director.musicCue).toBe('defeat');
+  });
+
+  it('does not hold a second cue in memory to cover a decode', async () => {
+    const h = harness([], 8, { deferred: true });
+    h.director.setState('explore');
+    h.settle('music/explore');
+    h.settle('music/combat');
+    h.director.update(3);
+    expect([...h.director.decodedMusic].sort()).toEqual(['combat', 'explore']);
+    // Elite is pending and its fallback combat is decoded (the preload): combat is not kept for it.
+    h.director.setState('elite-unfolding');
+    expect(h.director.musicCue).toBe('explore');
+    expect(h.director.decodedMusic).toEqual(['explore']);
+    h.settle('music/elite');
+    h.director.update(2);
+    expect(h.director.musicCue).toBe('elite');
+  });
+
+  it('plays the fallback when the wanted cue has no file, and decodes only that fallback', async () => {
+    const h = harness(['music/reward'], 8, { deferred: true });
+    h.director.setState('explore');
+    h.settle('music/explore');
+    h.settle('music/combat');
+    h.director.update(3);
+    h.director.setState('reward');
+    h.settle('music/reward');
+    h.director.update(2.5);
+    expect(h.director.musicRequest).toBe('reward');
+    expect(h.director.musicCue).toBe('explore');
+    expect(h.flat.slice(4).find((v) => v.isPlaying)?.volume).toBeCloseTo(0.5);
+    expect(h.director.decodedMusic).toEqual(['explore']);
+  });
+
+  it('leaves a running fade at its own length when a preload finishes decoding', async () => {
+    const h = harness([], 8, { deferred: true });
+    h.director.setState('explore');
+    h.settle('music/explore');
+    h.director.update(1);
+    const voice = h.flat.slice(4).find((v) => v.isPlaying);
+    // Equal-power fade of 3 s, one third in.
+    expect(voice?.volume).toBeCloseTo(Math.sin(Math.PI / 6));
+    h.settle('music/combat');
+    h.director.update(1);
+    expect(voice?.volume).toBeCloseTo(Math.sin(Math.PI / 3));
+  });
+
+  it('ignores a decode that finishes after the director is disposed', async () => {
+    const h = harness([], 8, { deferred: true });
+    h.director.setState('explore');
+    h.director.dispose();
+    expect(h.settle()).toBe(1);
+    expect(h.director.decodedMusic).toEqual([]);
+    expect(h.director.decodedMusicBytes).toBe(0);
+  });
+
+  it('releases every music buffer on dispose', async () => {
+    const h = harness();
+    await h.director.load();
+    h.director.setState('explore');
+    expect(h.director.decodedMusicBytes).toBeGreaterThan(0);
+    h.director.dispose();
+    expect(h.director.decodedMusicBytes).toBe(0);
   });
 });
 

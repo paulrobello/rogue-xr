@@ -134,6 +134,58 @@ export function resolveMusic(
   return { cue, gain };
 }
 
+/** `cue` then each fallback after it, in the order `resolveMusic` tries them. */
+export function musicChain(cue: MusicId): MusicId[] {
+  const chain: MusicId[] = [cue];
+  for (let at: MusicId = cue; ; ) {
+    const def: MusicDef = MUSIC[at];
+    if (!def.fallback) break;
+    at = def.fallback.cue as MusicId;
+    if (chain.includes(at)) break;
+    chain.push(at);
+  }
+  return chain;
+}
+
+/**
+ * The cue most likely to follow each cue. The director decodes these once the current cue is
+ * playing, so the first entry into them has no gap. One target per cue keeps the worst case at
+ * two music cues plus whatever is still fading out.
+ */
+export const MUSIC_PRELOAD: Readonly<Record<MusicId, readonly MusicId[]>> = {
+  title: ['explore'],
+  explore: ['combat'],
+  combat: ['reward'],
+  reward: ['explore'],
+  rest: ['explore'],
+  elite: ['reward'],
+  defeat: ['title'],
+  workshop: ['explore'],
+  'guardian-1': ['guardian-2'],
+  'guardian-2': ['victory'],
+  victory: ['title'],
+};
+
+/**
+ * The cues whose decoded audio must stay in memory: `want`, or the first cue down its fallback
+ * chain whose file exists when `want`'s does not, the cue's preload targets, and every cue a
+ * voice is still playing.
+ */
+export function musicKeepSet(
+  want: MusicId | null,
+  missing: (id: MusicId) => boolean,
+  playing: Iterable<MusicId>,
+): Set<MusicId> {
+  const keep = new Set<MusicId>(playing);
+  if (want === null) return keep;
+  for (const cue of musicChain(want)) {
+    keep.add(cue);
+    if (!missing(cue)) break;
+  }
+  for (const next of MUSIC_PRELOAD[want]) keep.add(next);
+  return keep;
+}
+
 /** The audio-relevant game states. Defeat and victory are run-level and have no `GamePhase`. */
 export type AudioState =
   | 'title'
