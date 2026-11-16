@@ -18,7 +18,12 @@ import {
   TRAIL_COOL_SECONDS,
   TrailHeat,
 } from '../src/sigil-plate/spark-pool.ts';
-import type { SigilSparks } from '../src/sigil-plate/sparks.ts';
+import {
+  DOT_SLOT,
+  POINTS_SIZE_ASSIGN,
+  POINTS_SIZE_DECL,
+  type SigilSparks,
+} from '../src/sigil-plate/sparks.ts';
 
 const RAMP: SparkRamp = { hot: [1, 0.9, 0.2], mid: [0.9, 0.3, 0.05] };
 const FRAME = 1 / 72;
@@ -199,10 +204,15 @@ describe('SigilPlate sparks', () => {
     expect(sparks.touching).toBe(true);
     expect(sparks.pool.alive).toBeGreaterThan(3);
     expect(sparks.pool.alive).toBeLessThan(20);
-    const dot = plate.getObjectByName('sigil-plate-contact') as THREE.Mesh;
-    expect(dot.visible).toBe(true);
-    expect(dot.position.x).toBeCloseTo(0.05);
-    expect(dot.position.y).toBeCloseTo(0.02);
+    const points = plate.getObjectByName('sigil-sparks-points') as THREE.Points;
+    expect(points.visible).toBe(true);
+    expect(sparks.dotBrightness).toBe(1);
+    const position = points.geometry.getAttribute('position');
+    expect(position.getX(DOT_SLOT)).toBeCloseTo(0.05);
+    expect(position.getY(DOT_SLOT)).toBeCloseTo(0.02);
+    const scale = points.geometry.getAttribute('pointScale');
+    expect(scale.getX(DOT_SLOT)).toBeGreaterThan(2);
+    expect(points.geometry.getAttribute('color').getX(DOT_SLOT)).toBeGreaterThan(0.5);
     plate.dispose();
   });
 
@@ -302,33 +312,51 @@ describe('SigilPlate sparks', () => {
     plate.dispose();
   });
 
+  it('draws the sparks and the contact dot in one Points call', () => {
+    const plate = new SigilPlate();
+    const sparks = sparksOf(plate);
+    const drawables: THREE.Object3D[] = [];
+    sparks.traverse((o) => {
+      if ((o as THREE.Mesh).isMesh || (o as THREE.Points).isPoints || (o as THREE.Line).isLine)
+        drawables.push(o);
+    });
+    expect(drawables.map((o) => o.name)).toEqual(['sigil-sparks-points']);
+    expect(DOT_SLOT).toBe(SPARK_CAPACITY);
+    // The per-point scale is spliced into three's own points shader: both lines must still exist.
+    const source = THREE.ShaderLib.points.vertexShader;
+    expect(source).toContain(POINTS_SIZE_DECL);
+    expect(source).toContain(POINTS_SIZE_ASSIGN);
+    const material = (plate.getObjectByName('sigil-sparks-points') as THREE.Points)
+      .material as THREE.PointsMaterial;
+    const shader = { vertexShader: source, fragmentShader: '', uniforms: {} };
+    material.onBeforeCompile(
+      shader as unknown as THREE.WebGLProgramParametersWithUniforms,
+      {} as THREE.WebGLRenderer,
+    );
+    expect(shader.vertexShader).toContain('attribute float pointScale;');
+    expect(shader.vertexShader).toContain('gl_PointSize = size * pointScale;');
+    expect(material.customProgramCacheKey()).toBe('sigil-sparks-scaled');
+    plate.dispose();
+  });
+
   it('keeps one fixed point buffer and disposes everything it made', () => {
     const plate = new SigilPlate();
     const points = plate.getObjectByName('sigil-sparks-points') as THREE.Points;
-    const dot = plate.getObjectByName('sigil-plate-contact') as THREE.Mesh;
-    expect(points.geometry.drawRange.count).toBe(SPARK_CAPACITY);
-    expect(points.geometry.getAttribute('position').count).toBe(SPARK_CAPACITY);
+    expect(points.geometry.drawRange.count).toBe(SPARK_CAPACITY + 1);
+    expect(points.geometry.getAttribute('position').count).toBe(SPARK_CAPACITY + 1);
+    expect(points.geometry.getAttribute('pointScale').count).toBe(SPARK_CAPACITY + 1);
     const pointsMaterial = points.material as THREE.PointsMaterial;
     expect(pointsMaterial.blending).toBe(THREE.AdditiveBlending);
     expect(pointsMaterial.depthWrite).toBe(false);
-    const dotMaterial = dot.material as THREE.MeshBasicMaterial;
     const disposed = new Set<string>();
     const watch = (name: string, target: THREE.EventDispatcher<{ dispose: object }>): void => {
       target.addEventListener('dispose', () => disposed.add(name));
     };
     watch('points-geometry', points.geometry);
     watch('points-material', pointsMaterial);
-    watch('dot-geometry', dot.geometry);
-    watch('dot-material', dotMaterial);
     watch('texture', pointsMaterial.map as THREE.Texture);
     plate.dispose();
-    expect([...disposed].sort()).toEqual([
-      'dot-geometry',
-      'dot-material',
-      'points-geometry',
-      'points-material',
-      'texture',
-    ]);
+    expect([...disposed].sort()).toEqual(['points-geometry', 'points-material', 'texture']);
   });
 
   it('replays identically: the sparks draw from their own keyed stream', () => {

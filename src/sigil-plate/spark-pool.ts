@@ -53,7 +53,9 @@ export interface SparkRamp {
 
 /**
  * Fixed ring of sparks. `positions` and `colors` (xyz and linear rgb per slot) are the arrays the
- * renderer draws; a dead slot is black, which additive blending shows as nothing.
+ * renderer draws; a dead slot is black, which additive blending shows as nothing. `extraSlots`
+ * appends slots after the ring that the pool never emits into or steps, for points the caller
+ * drives itself in the same draw; `clear` blacks them out with the rest.
  */
 export class SparkPool {
   readonly capacity: number;
@@ -64,10 +66,10 @@ export class SparkPool {
   private readonly lives: Float32Array;
   private head = 0;
 
-  constructor(capacity = SPARK_CAPACITY) {
+  constructor(capacity = SPARK_CAPACITY, extraSlots = 0) {
     this.capacity = capacity;
-    this.positions = new Float32Array(capacity * 3);
-    this.colors = new Float32Array(capacity * 3);
+    this.positions = new Float32Array((capacity + extraSlots) * 3);
+    this.colors = new Float32Array((capacity + extraSlots) * 3);
     this.velocities = new Float32Array(capacity * 3);
     this.ages = new Float32Array(capacity);
     this.lives = new Float32Array(capacity);

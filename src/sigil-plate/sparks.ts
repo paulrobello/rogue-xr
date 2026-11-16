@@ -22,6 +22,11 @@ const SPARK_SIZE = 0.007;
 const SPARK_Z = 0.006;
 const DOT_SIZE = 0.022;
 const DOT_Z = 0.005;
+/** The contact dot's slot: the one point after the spark ring, drawn in the same call. */
+export const DOT_SLOT = SPARK_CAPACITY;
+/** Lines of three's points vertex shader the per-point scale is spliced into. */
+export const POINTS_SIZE_DECL = 'uniform float size;';
+export const POINTS_SIZE_ASSIGN = 'gl_PointSize = size;';
 /** Seconds the contact dot takes to fade once the beam leaves the plate. */
 const DOT_FADE_SECONDS = 0.12;
 /** Speed below this (m/s) is controller jitter, not a stroke. */
@@ -38,6 +43,7 @@ export function linearRgb(hex: string): LinearRgb {
 }
 
 const RAMP: SparkRamp = { hot: linearRgb(GLOW_HOT), mid: linearRgb(SPARK_AMBER) };
+const DOT_RGB = linearRgb(GLOW_HOT);
 
 /** 16 x 16 white disc with a soft alpha falloff, shared by the sparks and the contact dot. */
 function discTexture(): THREE.DataTexture {
@@ -63,20 +69,19 @@ function discTexture(): THREE.DataTexture {
  * Brass-amber sparks and a hot contact dot where the beam meets the sigil plate. Lives in plate
  * space (a child of `SigilPlate`, +Z toward the player): `setContact` each sample, `clearContact`
  * when the beam leaves the plate or the stroke ends, `update` once per frame with gravity in plate
- * space. One pooled `THREE.Points` draw for the sparks and one quad for the dot; no per-frame
- * allocation. Randomness is visual only and comes from its own keyed stream, never a run stream.
+ * space. One `THREE.Points` draw holds the pooled sparks and, in its last slot, the dot (a
+ * per-point scale attribute sizes it); no per-frame allocation. Randomness is visual only and comes from its own keyed stream, never a run stream.
  */
 export class SigilSparks extends THREE.Group {
-  readonly pool = new SparkPool(SPARK_CAPACITY);
+  readonly pool = new SparkPool(SPARK_CAPACITY, 1);
   private readonly emitter = new SparkEmitter();
   private readonly stream = Stream.fromKey('sigil-sparks');
   private readonly texture = discTexture();
   private readonly points: THREE.Points;
   private readonly pointsMaterial: THREE.PointsMaterial;
-  private readonly dot: THREE.Mesh;
-  private readonly dotMaterial: THREE.MeshBasicMaterial;
   private readonly positionAttr: THREE.BufferAttribute;
   private readonly colorAttr: THREE.BufferAttribute;
+  private readonly scaleAttr: THREE.BufferAttribute;
   private contact = false;
   private tracking = false;
   private cx = 0;
@@ -97,9 +102,13 @@ export class SigilSparks extends THREE.Group {
     this.positionAttr.setUsage(THREE.DynamicDrawUsage);
     this.colorAttr = new THREE.BufferAttribute(this.pool.colors, 3);
     this.colorAttr.setUsage(THREE.DynamicDrawUsage);
+    const scales = new Float32Array(SPARK_CAPACITY + 1).fill(1);
+    this.scaleAttr = new THREE.BufferAttribute(scales, 1);
+    this.scaleAttr.setUsage(THREE.DynamicDrawUsage);
     geometry.setAttribute('position', this.positionAttr);
     geometry.setAttribute('color', this.colorAttr);
-    geometry.setDrawRange(0, SPARK_CAPACITY);
+    geometry.setAttribute('pointScale', this.scaleAttr);
+    geometry.setDrawRange(0, SPARK_CAPACITY + 1);
     this.pointsMaterial = new THREE.PointsMaterial({
       size: SPARK_SIZE,
       sizeAttenuation: true,
@@ -110,30 +119,19 @@ export class SigilSparks extends THREE.Group {
       blending: THREE.AdditiveBlending,
       toneMapped: false,
     });
+    this.pointsMaterial.onBeforeCompile = (shader) => {
+      shader.vertexShader = shader.vertexShader
+        .replace(POINTS_SIZE_DECL, `${POINTS_SIZE_DECL}\nattribute float pointScale;`)
+        .replace(POINTS_SIZE_ASSIGN, 'gl_PointSize = size * pointScale;');
+    };
+    this.pointsMaterial.customProgramCacheKey = () => 'sigil-sparks-scaled';
     this.points = new THREE.Points(geometry, this.pointsMaterial);
     this.points.name = 'sigil-sparks-points';
     this.points.frustumCulled = false;
     this.points.renderOrder = GLOW_RENDER_ORDER;
     this.points.visible = false;
     this.add(this.points);
-
-    this.dotMaterial = new THREE.MeshBasicMaterial({
-      map: this.texture,
-      color: new THREE.Color(GLOW_HOT),
-      transparent: true,
-      opacity: 0,
-      depthWrite: false,
-      side: THREE.DoubleSide,
-      blending: THREE.AdditiveBlending,
-      toneMapped: false,
-    });
-    this.dot = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), this.dotMaterial);
-    this.dot.name = 'sigil-plate-contact';
-    this.dot.renderOrder = GLOW_RENDER_ORDER;
-    this.dot.frustumCulled = false;
-    this.dot.visible = false;
-    this.dot.position.z = DOT_Z;
-    this.add(this.dot);
+    this.positionAttr.setXYZ(DOT_SLOT, 0, 0, DOT_Z);
   }
 
   /** True while the beam rests on the plate. */
@@ -172,8 +170,6 @@ export class SigilSparks extends THREE.Group {
     this.clearContact();
     this.pool.clear();
     this.dotLevel = 0;
-    this.dot.visible = false;
-    this.dotMaterial.opacity = 0;
     this.points.visible = false;
     this.positionAttr.needsUpdate = true;
     this.colorAttr.needsUpdate = true;
@@ -196,35 +192,43 @@ export class SigilSparks extends THREE.Group {
     }
 
     const alive = this.pool.step(h, gx, gy, gz, RAMP);
-    // Once every spark has died and the arrays went black, stop uploading until the next spark.
-    if (alive > 0 || !this.idle) {
-      this.positionAttr.needsUpdate = true;
-      this.colorAttr.needsUpdate = true;
-    }
-    this.idle = alive === 0;
-    this.points.visible = alive > 0;
 
     const target = this.contact ? 1 : 0;
     this.dotLevel =
-      target > this.dotLevel
+      target >= this.dotLevel
         ? Math.min(1, this.dotLevel + h / 0.04)
         : Math.max(0, this.dotLevel - h / DOT_FADE_SECONDS);
-    this.dot.visible = this.dotLevel > 0;
-    if (this.dot.visible) {
+    const level = this.dotLevel;
+    let scale = 0;
+    if (level > 0) {
       const flicker = 0.85 + 0.3 * this.stream.next();
       const swell = 1 + Math.min(0.5, this.speed * 0.8);
-      this.dot.position.x = this.cx;
-      this.dot.position.y = this.cy;
-      this.dot.scale.setScalar(DOT_SIZE * flicker * swell * (0.6 + 0.4 * this.dotLevel));
-      this.dotMaterial.opacity = this.dotLevel;
+      scale = (DOT_SIZE / SPARK_SIZE) * flicker * swell * (0.6 + 0.4 * level);
+      this.positionAttr.setXYZ(DOT_SLOT, this.cx, this.cy, DOT_Z);
     }
+    // Additive blending: the dot fades by darkening its colour, the way the sparks do.
+    this.colorAttr.setXYZ(DOT_SLOT, DOT_RGB[0] * level, DOT_RGB[1] * level, DOT_RGB[2] * level);
+    this.scaleAttr.setX(DOT_SLOT, scale);
+
+    const lit = alive > 0 || level > 0;
+    // Once every spark has died, the dot is out and the arrays went black, stop uploading.
+    if (lit || !this.idle) {
+      this.positionAttr.needsUpdate = true;
+      this.colorAttr.needsUpdate = true;
+      this.scaleAttr.needsUpdate = true;
+    }
+    this.idle = !lit;
+    this.points.visible = lit;
+  }
+
+  /** The contact dot's brightness, 0 (out) to 1 (beam on the plate). */
+  get dotBrightness(): number {
+    return this.dotLevel;
   }
 
   dispose(): void {
     this.points.geometry.dispose();
     this.pointsMaterial.dispose();
-    this.dot.geometry.dispose();
-    this.dotMaterial.dispose();
     this.texture.dispose();
   }
 
