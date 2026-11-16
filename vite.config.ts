@@ -68,9 +68,25 @@ function buildVersionPlugin(): Plugin {
   };
 }
 
+/** Every SFX runtime file, so the unlinked audition page lists each one even when it has no spec. */
+function sfxFileNames(): string[] {
+  const dir = 'public/assets/audio/sfx';
+  return existsSync(dir)
+    ? readdirSync(dir)
+        .filter((name) => name.endsWith('.ogg'))
+        .sort()
+    : [];
+}
+
 export default defineConfig({
   plugins: [buildVersionPlugin()],
+  define: { __AUDITION_SFX_FILES__: JSON.stringify(sfxFileNames()) },
   server: { host: '0.0.0.0', port: 4260, strictPort: true },
   preview: { host: '0.0.0.0', port: 4261, strictPort: true },
-  build: { target: 'es2023', sourcemap: true },
+  build: {
+    target: 'es2023',
+    sourcemap: true,
+    // audition.html is a second entry that nothing links to: the owner reaches it by URL.
+    rolldownOptions: { input: { main: 'index.html', audition: 'audition.html' } },
+  },
 });

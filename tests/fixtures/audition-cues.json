@@ -1,0 +1,29 @@
+{
+  "cues": [
+    {
+      "order": 2,
+      "id": "combat",
+      "title": "Combat",
+      "when": "While the table is unfolded and the fight runs",
+      "loop": true,
+      "sourceFile": "assets-source/audio/music/combat.wav",
+      "runtimeFile": "public/assets/audio/music/combat.ogg",
+      "prompt": "Driving brass clockwork percussion.",
+      "settings": { "Weirdness": "20%", "Style Influence": "75%" }
+    },
+    {
+      "order": 1,
+      "id": "explore",
+      "title": "Explore",
+      "when": "Walking the floor",
+      "loop": true,
+      "runtimeFile": "/assets/audio/music/explore.ogg",
+      "prompt": "Felt piano and music box.",
+      "settings": "Instrumental on",
+      "measured": { "integrated_lufs": -18.2, "true_peak_dbtp": -1.3 }
+    },
+    { "id": "stinger", "title": "No order", "loop": false },
+    { "title": "No id" },
+    "garbage"
+  ]
+}
