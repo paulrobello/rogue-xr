@@ -1,16 +1,19 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { applyGlowLook, writeGlowIslands } from '/src/enemies/glow.ts';
 import { PALETTE } from '/src/palette.ts';
 import { loadPbrSet } from '/src/world/materials.ts';
 
 /**
- * Standalone in-engine stills of one automaton (P5-T3): its own three.js renderer, the shipped GLB
+ * Standalone in-engine stills of one automaton (P5-T3, P5-T4): its own three.js renderer, the shipped GLB
  * and manifest from public/assets/enemies/<id>/, the shared P4-T3 sets bound by slot name exactly
  * as the sentry runtime binds them, warm candle lighting, and the model turned by the encounter's
  * heading convention (rotation.y = -heading) toward a seated player 2.6 m away at +Z, eye height
- * 1.2 m. Clips are posed directly on an AnimationMixer, so the shots show the authored clips, not
- * the runtime actor's freeze tint or hit flash. Served by Vite; driven by engine_shot.py.
+ * 1.2 m. The glow slot gets the runtime D11 look (glow islands, untonemapped amber ramp) exactly as
+ * enemy-asset.ts binds it. Clips are posed directly on an AnimationMixer, so the shots show the
+ * authored clips, not the runtime actor's freeze tint or hit flash. `view` 'close' frames the upper
+ * body for the glow evidence. Served by Vite; driven by engine_shot.py.
  */
 export async function mountAutomatonProof(id: string, width: number, height: number) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
@@ -56,22 +59,41 @@ export async function mountAutomatonProof(id: string, width: number, height: num
     if (shared) {
       const clone = shared.clone();
       clone.normalScale.set(slot.normalScale ?? 1, slot.normalScale ?? 1);
+      if (slot.tint)
+        clone.color.multiply(new THREE.Color().setRGB(...slot.tint, THREE.LinearSRGBColorSpace));
       clone.name = source.name;
+      material = clone;
+    } else if (slot?.tint && source instanceof THREE.MeshStandardMaterial) {
+      const clone = source.clone();
+      clone.color.multiply(new THREE.Color().setRGB(...slot.tint, THREE.LinearSRGBColorSpace));
       material = clone;
     }
     bound.set(source, material);
     return material;
   };
   const unbound: string[] = [];
+  const glowName = manifest.emissive.material;
+  let glowLooks = 0;
   gltf.scene.traverse((o) => {
     if (!(o instanceof THREE.Mesh)) return;
-    o.material = Array.isArray(o.material) ? o.material.map(bind) : bind(o.material);
+    if (!Array.isArray(o.material) && o.material.name === glowName) {
+      writeGlowIslands(o.geometry);
+      const glow = (o.material as THREE.MeshStandardMaterial).clone();
+      applyGlowLook(glow, manifest.emissive.color);
+      o.material = glow;
+      glowLooks += 1;
+    } else {
+      o.material = Array.isArray(o.material) ? o.material.map(bind) : bind(o.material);
+    }
     if (o instanceof THREE.SkinnedMesh && manifest.cull) {
       const [x, y, z] = manifest.cull.center;
       o.boundingSphere = new THREE.Sphere(new THREE.Vector3(x, y, z), manifest.cull.radius);
     }
   });
-  for (const [name, slot] of Object.entries(manifest.materialSlots) as [string, { set: string | null }][]) {
+  for (const [name, slot] of Object.entries(manifest.materialSlots) as [
+    string,
+    { set: string | null },
+  ][]) {
     if (slot.set && !set.materials.has(slot.set)) unbound.push(name);
   }
   const root = gltf.scene;
@@ -80,7 +102,8 @@ export async function mountAutomatonProof(id: string, width: number, height: num
   const mixer = new THREE.AnimationMixer(root);
   const top = manifest.bounds.max[1] as number;
 
-  const pose = (clip: string, time: number) => {
+  const pose = (clip: string, time: number, view = 'seat') => {
+    // phase-change (guardian only) is posed like any other clip; it is not in the runtime clip list yet.
     const anim = gltf.animations.find((a) => a.name === clip);
     if (!anim) throw new Error(`clip ${clip} missing`);
     mixer.stopAllAction();
@@ -91,6 +114,11 @@ export async function mountAutomatonProof(id: string, width: number, height: num
     action.play();
     action.time = time;
     mixer.update(0);
+    // Taller models (warden rings, the 3.2 m guardian) need a wider lens at the same seat.
+    camera.fov = top > 2.9 ? 64 : top > 2.3 ? 56 : 50;
+    // 'close' is the seat camera at the 50 degree lens the docs/verification/p6-glow-*.jpg stills used.
+    if (view === 'close') camera.fov = 50;
+    camera.updateProjectionMatrix();
     camera.position.set(0.7, 1.2, 2.6);
     camera.lookAt(0, clip === 'death' ? 0.3 : top * 0.5, 0);
     renderer.render(scene, camera);
@@ -100,6 +128,7 @@ export async function mountAutomatonProof(id: string, width: number, height: num
       calls: renderer.info.render.calls,
       triangles: renderer.info.render.triangles,
       unbound,
+      glowLooks,
     };
   };
   pose('idle', 0.5);

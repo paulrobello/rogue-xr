@@ -1,8 +1,8 @@
 {
   "piece": "spring-hound",
-  "blender": "5.2.2 LTS",
+  "blender": "5.3.0",
   "generator": "scripts/assets/build-spring-hound.py",
-  "generator_sha256": "8a5d3476edf78381618874e69f0e6782813feea4fa4350e6e064632477dccb20",
+  "generator_sha256": "1959b6bd78e8002a7508e30dd503dfdfef075b3a3f0bb068efc3780eb7755026",
   "concept": {
     "file": "assets-source/concepts/hound-sheet-1.png",
     "sha256": "7f16cf73b18efffb7a612cc1f6a01fdadc4e20f06a0fcadb84fb94e07b50c7e6",
@@ -21,8 +21,8 @@
     }
   },
   "triangles": {
-    "low": 23044,
-    "high": 82136
+    "low": 22824,
+    "high": 81964
   },
   "bones": 33,
   "authoringAgent": "Claude Code subagent (claude-opus-5-5), dispatched by the rogue-xr primary session",
@@ -35,17 +35,17 @@
       "frames": 61,
       "min_z": -0.0,
       "min_z_frame": 42,
-      "max_z": 1.2473,
-      "final_max_z": 1.2327,
+      "max_z": 1.2326,
+      "final_max_z": 1.2175,
       "final_min_z": -0.0,
       "loop_seam_m": 0.0
     },
     "attack": {
       "frames": 34,
-      "min_z": -0.013,
+      "min_z": -0.0129,
       "min_z_frame": 13,
-      "max_z": 1.229,
-      "final_max_z": 1.229,
+      "max_z": 1.2131,
+      "final_max_z": 1.2131,
       "final_min_z": -0.0,
       "loop_seam_m": 0.0
     },
@@ -53,8 +53,8 @@
       "frames": 19,
       "min_z": -0.0,
       "min_z_frame": 17,
-      "max_z": 1.3889,
-      "final_max_z": 1.229,
+      "max_z": 1.3888,
+      "final_max_z": 1.2131,
       "final_min_z": -0.0,
       "loop_seam_m": 0.0
     },
@@ -62,42 +62,42 @@
       "frames": 61,
       "min_z": 0.004,
       "min_z_frame": 25,
-      "max_z": 1.3276,
-      "final_max_z": 0.461,
+      "max_z": 1.337,
+      "final_max_z": 0.4657,
       "final_min_z": 0.004,
-      "loop_seam_m": 1.04767
+      "loop_seam_m": 1.03518
     },
     "frozen": {
       "frames": 31,
       "min_z": -0.0,
       "min_z_frame": 0,
-      "max_z": 1.1007,
-      "final_max_z": 1.1007,
+      "max_z": 1.0867,
+      "final_max_z": 1.0867,
       "final_min_z": -0.0,
       "loop_seam_m": 0.0
     }
   },
   "cull": {
     "center": [
-      -0.252,
+      -0.261,
       0.688,
       -0.042
     ],
-    "radius": 1.132,
+    "radius": 1.134,
     "maxDistanceFromSentryCullCentre": 1.384
   },
   "canonicalized_primitives": 4,
   "reimport": {
-    "glb_sha256": "7352854362851933552c3e05339af1b50554befcff3e8e7885d4ebab590c1930",
-    "glb_bytes": 1515432,
-    "triangles": 23044,
+    "glb_sha256": "740b96c207652c39a38106386b1b826c2832b35e2cb6c3c2526f405cfc0f6573",
+    "glb_bytes": 1672056,
+    "triangles": 22824,
     "materials": [
       "brass-polished",
       "brass-aged",
       "gunmetal",
       "hound-glow"
     ],
-    "vertices": 19511,
+    "vertices": 19532,
     "joints": [
       "root",
       "pelvis",
@@ -139,13 +139,13 @@
     "unweighted_vertices": 0,
     "bounds": {
       "min": [
-        -0.2104,
+        -0.2158,
         0.0,
         -0.906
       ],
       "max": [
-        0.2104,
-        1.2302,
+        0.2158,
+        1.2133,
         0.76
       ]
     },
@@ -255,13 +255,13 @@
     "compare-front",
     "compare-back"
   ],
-  "render_seconds": 3.1,
+  "render_seconds": 3.3,
   "files": {
-    "assets-source/enemies/spring-hound/blend/spring-hound.high.blend": "b354113deba04fac56c0e6fd3922bd245e46dc2599a6b2fa6acc4b3c42f1c534",
-    "assets-source/enemies/spring-hound/blend/spring-hound.low.blend": "80991ff3f76cc405d4353845bd0e9a245a32818f5ef0bc3dfb0befe51a641c1b",
-    "assets-source/enemies/spring-hound/staging/reimport.json": "11be1029efe7aff28298b1bf06a567686ba84a92330fd00ef79af1adca523285",
-    "public/assets/enemies/spring-hound/spring-hound.glb": "7352854362851933552c3e05339af1b50554befcff3e8e7885d4ebab590c1930",
-    "public/assets/enemies/spring-hound/spring-hound.manifest.json": "d4a5eb87640e7cc4e287ee6ecc9ca97d9ce71d12d5097f336cb8611b609b3ecb"
+    "assets-source/enemies/spring-hound/blend/spring-hound.high.blend": "ce3bdc702b3ec76ae186573cca17a84e5dce581a560c5e6ea24b8df22c3f5186",
+    "assets-source/enemies/spring-hound/blend/spring-hound.low.blend": "d0339249e9de8d263276f9b934b1076342c0d52c18dcc29cbc419590b429e237",
+    "assets-source/enemies/spring-hound/staging/reimport.json": "eeeaee009ac62b0712b3f8a06147782f3281c70093a72b1bb71fe6c00acdef26",
+    "public/assets/enemies/spring-hound/spring-hound.glb": "740b96c207652c39a38106386b1b826c2832b35e2cb6c3c2526f405cfc0f6573",
+    "public/assets/enemies/spring-hound/spring-hound.manifest.json": "3e3c5cc1da45b34bb292d6435d71a797acffc1b373dfe60960e11971be45bdf4"
   },
-  "total_seconds": 4.4
+  "total_seconds": 4.7
 }

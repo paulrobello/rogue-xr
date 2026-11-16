@@ -308,7 +308,7 @@
     },
     {
       "gate": "independent visual score",
-      "status": "unscored",
+      "status": "cleared: 82/100 (bar 80), build d950e09",
       "notes": "create-rigged-character-assets requires an independent >= 80/100 score; unscored means unaccepted"
     }
   ],

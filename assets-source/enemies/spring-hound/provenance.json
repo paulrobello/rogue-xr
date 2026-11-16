@@ -4,13 +4,13 @@
   "route": "scripted (procedural Blender geometry, rig and keyed clips; no provider generation)",
   "generator": {
     "path": "scripts/assets/build-spring-hound.py",
-    "sha256": "8a5d3476edf78381618874e69f0e6782813feea4fa4350e6e064632477dccb20"
+    "sha256": "1959b6bd78e8002a7508e30dd503dfdfef075b3a3f0bb068efc3780eb7755026"
   },
   "authoringAgent": {
     "harness": "claude-code (dispatched sub-agent)",
     "model": "claude-opus-5-5"
   },
-  "blender": "5.2.2 LTS",
+  "blender": "5.3.0",
   "toolVersions": {
     "gltfExporter": "Blender 5.2.2 bundled io_scene_gltf2"
   },
@@ -18,12 +18,12 @@
     "store": "assets-source/enemies/spring-hound/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)"
   },
   "budgets": {
-    "triangles": 23044,
-    "highTriangles": 82136,
+    "triangles": 22824,
+    "highTriangles": 81964,
     "materials": 4,
     "bones": 33,
     "maxInfluences": 1,
-    "glbBytes": 1515432
+    "glbBytes": 1672056
   },
   "skin": {
     "policy": "rigid: one bone per vertex at weight 1.0",
@@ -98,17 +98,17 @@
       "frames": 61,
       "min_z": -0.0,
       "min_z_frame": 42,
-      "max_z": 1.2473,
-      "final_max_z": 1.2327,
+      "max_z": 1.2326,
+      "final_max_z": 1.2175,
       "final_min_z": -0.0,
       "loop_seam_m": 0.0
     },
     "attack": {
       "frames": 34,
-      "min_z": -0.013,
+      "min_z": -0.0129,
       "min_z_frame": 13,
-      "max_z": 1.229,
-      "final_max_z": 1.229,
+      "max_z": 1.2131,
+      "final_max_z": 1.2131,
       "final_min_z": -0.0,
       "loop_seam_m": 0.0
     },
@@ -116,8 +116,8 @@
       "frames": 19,
       "min_z": -0.0,
       "min_z_frame": 17,
-      "max_z": 1.3889,
-      "final_max_z": 1.229,
+      "max_z": 1.3888,
+      "final_max_z": 1.2131,
       "final_min_z": -0.0,
       "loop_seam_m": 0.0
     },
@@ -125,17 +125,17 @@
       "frames": 61,
       "min_z": 0.004,
       "min_z_frame": 25,
-      "max_z": 1.3276,
-      "final_max_z": 0.461,
+      "max_z": 1.337,
+      "final_max_z": 0.4657,
       "final_min_z": 0.004,
-      "loop_seam_m": 1.04767
+      "loop_seam_m": 1.03518
     },
     "frozen": {
       "frames": 31,
       "min_z": -0.0,
       "min_z_frame": 0,
-      "max_z": 1.1007,
-      "final_max_z": 1.1007,
+      "max_z": 1.0867,
+      "final_max_z": 1.0867,
       "final_min_z": -0.0,
       "loop_seam_m": 0.0
     }
@@ -180,77 +180,82 @@
   "derivedFiles": [
     {
       "path": "public/assets/enemies/spring-hound/spring-hound.glb",
-      "sha256": "7352854362851933552c3e05339af1b50554befcff3e8e7885d4ebab590c1930",
-      "bytes": 1515432
+      "sha256": "740b96c207652c39a38106386b1b826c2832b35e2cb6c3c2526f405cfc0f6573",
+      "bytes": 1672056
     },
     {
       "path": "public/assets/enemies/spring-hound/spring-hound.manifest.json",
-      "sha256": "d4a5eb87640e7cc4e287ee6ecc9ca97d9ce71d12d5097f336cb8611b609b3ecb",
-      "bytes": 3035
+      "sha256": "3e3c5cc1da45b34bb292d6435d71a797acffc1b373dfe60960e11971be45bdf4",
+      "bytes": 3163
     }
   ],
   "sourceFiles": [
     {
       "path": "assets-source/enemies/spring-hound/blend/spring-hound.high.blend",
-      "sha256": "b354113deba04fac56c0e6fd3922bd245e46dc2599a6b2fa6acc4b3c42f1c534",
-      "bytes": 2422987
+      "sha256": "ce3bdc702b3ec76ae186573cca17a84e5dce581a560c5e6ea24b8df22c3f5186",
+      "bytes": 2400818
     },
     {
       "path": "assets-source/enemies/spring-hound/blend/spring-hound.low.blend",
-      "sha256": "80991ff3f76cc405d4353845bd0e9a245a32818f5ef0bc3dfb0befe51a641c1b",
-      "bytes": 873969
+      "sha256": "d0339249e9de8d263276f9b934b1076342c0d52c18dcc29cbc419590b429e237",
+      "bytes": 870816
     },
     {
       "path": "assets-source/enemies/spring-hound/staging/report.json",
-      "sha256": "37d8bce117097c8944cf893bdbd32edac73039fef0e43f9f842b184199eb328e",
+      "sha256": "9a84a8dc94fc2edcf515870c2e64222e1d836d3c90b4f1530fb086e94a2f4af1",
       "bytes": 6361
     },
     {
       "path": "assets-source/enemies/spring-hound/staging/reimport.json",
-      "sha256": "11be1029efe7aff28298b1bf06a567686ba84a92330fd00ef79af1adca523285",
+      "sha256": "eeeaee009ac62b0712b3f8a06147782f3281c70093a72b1bb71fe6c00acdef26",
       "bytes": 2437
     },
     {
       "path": "assets-source/enemies/spring-hound/engine_shot.py",
-      "sha256": "ed466039f3da00d16add1b2bb9d6b7b8cf16bacbde00fcfa33b8794a985b16df",
-      "bytes": 4050
+      "sha256": "535877a21959bd6b785d58065d9942ef3505593155a68fdde399d1001972bada",
+      "bytes": 4666
     },
     {
       "path": "assets-source/enemies/spring-hound/engine-proof.ts",
-      "sha256": "7a8ca2630cd04fcdb815722adc2064e83b890dfeb3def2fec84ba09b3fd75a68",
-      "bytes": 4719
+      "sha256": "54ec8ce813516c76cf28084c8fdb0e1b200a14fe6bf157650c8d8f5ff066dc81",
+      "bytes": 6180
     }
   ],
   "reviewEvidence": [
     {
       "path": "assets-source/enemies/spring-hound/spring-hound.review-sheet.jpg",
-      "sha256": "b76084e9426d4530aac5d139e4ed19e2910df76bf86e9abc9c804b6575a7bd9c",
-      "bytes": 510624
+      "sha256": "ac3fdc48ffb1cb032a997d924af6fe9ffe39e610e315e3c39f10fa979d0f3600",
+      "bytes": 520527
     },
     {
       "path": "assets-source/enemies/spring-hound/staging/engine/attack.jpg",
-      "sha256": "fa7a1c55d08a101244066a13fe7addbf4c1128c9171ee3037cd88092c69f3891",
-      "bytes": 26703
+      "sha256": "aa550c395c4a929c0f2733f12ae5b73844ad972bc36ae56db92de5efd53efde5",
+      "bytes": 26469
     },
     {
       "path": "assets-source/enemies/spring-hound/staging/engine/death.jpg",
-      "sha256": "dd0c2c32dc7bcfe57ca6fe16efac2c7dccd674ff249f3f98193d3a1a7561fbdc",
-      "bytes": 26781
+      "sha256": "1f40b5a722e755637bf241345637de53a660a3d1777c97aa6db1206edac418fb",
+      "bytes": 26913
     },
     {
       "path": "assets-source/enemies/spring-hound/staging/engine/frozen.jpg",
-      "sha256": "31364d837636321f7f6bcf223ae28454c45a7d7e2e857a4f614c15f81df74778",
-      "bytes": 24241
+      "sha256": "407411b663d06e2da94a1e286eb02631cf98ac780f8d68dffb86c16afafab4a9",
+      "bytes": 24073
+    },
+    {
+      "path": "assets-source/enemies/spring-hound/staging/engine/glow-close.jpg",
+      "sha256": "6e6c604fc863ff36783fd64cabb44d10bf121117da28c25ba21ca89b9389b305",
+      "bytes": 25702
     },
     {
       "path": "assets-source/enemies/spring-hound/staging/engine/hit.jpg",
-      "sha256": "89dadf4e0ad0a2158fd348f0065166cfdff8386b5df514f083d1c60fd5ce7a8c",
-      "bytes": 25560
+      "sha256": "e4b4ac742288828362eed73196fb86703d6815140f917e7bbda474202f6bd2b4",
+      "bytes": 25900
     },
     {
       "path": "assets-source/enemies/spring-hound/staging/engine/idle.jpg",
-      "sha256": "23aa7ba017a9874540d3da1455e4eb081e41bf1315d096c87b937e38ee43bf77",
-      "bytes": 25548
+      "sha256": "6e6c604fc863ff36783fd64cabb44d10bf121117da28c25ba21ca89b9389b305",
+      "bytes": 25702
     }
   ],
   "references": [
@@ -261,7 +266,7 @@
       "note": "P5-T3 concept sheet (Higgsfield nano_banana_pro); concept approved by Paul 2026-11-16 (D8)"
     }
   ],
-  "materialsUsed": "approved P4-T3 brass-polished and brass-aged sets bound by slot name at runtime; gunmetal and hound-glow are factor-only",
+  "materialsUsed": "approved P4-T3 brass-polished and brass-aged sets bound by slot name at runtime and tinted by the manifest slot tint [1.0, 0.86, 0.90] (linear multiplier); gunmetal (gunmetal and ruby from COLOR_0) and hound-glow are factor-only",
   "license": "Original work generated in Blender from a checked-in script; concept reference from Paul's paid Higgsfield plan (Terms of Use 4.4)",
   "validation": {
     "pass": true,
@@ -303,31 +308,33 @@
     },
     {
       "gate": "independent visual score",
-      "status": "unscored",
+      "status": "below bar: 74/100 (bar 80), build the hound refinement commit after 10d325d",
       "notes": "create-rigged-character-assets requires an independent >= 80/100 score; unscored means unaccepted"
     }
   ],
   "authorSelfScore": {
-    "score": 67,
+    "score": 76,
     "scale": "0-100 visual fidelity to the concept",
     "scorer": "author self-score (the authoring agent; not the independent score create-rigged-character-assets requires)",
     "date": "2026-11-16",
     "gaps": [
-      "Ruby jewels on the shoulder and thigh bosses are brass caps: the 4-material budget (two shared brass sets, gunmetal, hound-glow) and no vertex colours leave no red material.",
-      "Glow reads peach rather than hot orange in the Blender compare at the project's GLOW_STRENGTH 0.7 convention; the grille and side lenses are less luminous than the concept.",
-      "Front view: the skull reads narrower and much darker than the concept's broad lit face, and the eye slits are small from the front; the ears read as upturned flaps rather than folded rose ears.",
-      "Forelegs are plated cylinders with a gunmetal wrist joint and a short angled pastern; the concept's forearm plate is a more sculpted taper with engraved panels, and its far-side legs are staggered while the model's rest stance is symmetric.",
-      "Front view chest is a single smooth bulb with the grille low on the prow; the concept's cuirass carries more plate seams, rivets and engraved panel lines everywhere.",
-      "Paws are simpler than the concept's arched, individually jointed toes."
+      "The muzzle is still long and straight in profile: the domed cranium and deeper jaw soften the crocodile read, but the concept's shorter greyhound face with a visible stop is not matched.",
+      "Head-on the eye slits read small and dim beside the concept's large glowing eyes, and the face is narrower than the concept's broad lit head.",
+      "Glow hue is the project's amber (F08C2C): the engine grille is hue 35 to 42 against the concept's 25, and in the Blender compare the grille and lenses read peach at the GLOW_STRENGTH 0.7 convention.",
+      "Ruby saturation falls short of the concept (engine S 0.50 to 0.61 against 0.86): the warm key lights and the gunmetal slot's 0.42 roughness, 0.7 metallic add a pale specular.",
+      "The tail hangs to a key at z 0.45 m, where the concept's tail curls back up to a key at about 0.54 m; the far-side legs are not staggered and the rest stance is symmetric.",
+      "Legs are still mostly plated cylinders below the forearm and gaskin; paws are simpler than the concept's arched, individually jointed toes.",
+      "In the engine idle frame the chest prow's key-light highlight lifts the chest brass to V 0.63 (concept 0.45 to 0.53); the whole-body median is in range."
     ],
-    "method": "Author self-score from spring-hound.fidelity-compare.jpg: orthographic Blender renders of the low-poly model at the concept's side, front and back angles, framed at the concept's own metres per pixel (side 1.2 m / 855 px, front/back 1.21 m / 875 px), judged side by side and by 50/50 overlay. Supporting silhouette IoU against background-thresholded masks (difference > 22 from the corner colour, 5 px median): side 0.43, front 0.33, back 0.23. The IoU understates the match: the polished skull and gunmetal parts render near the background tone head-on and drop out of the render mask, and the painted concept's soft shading and far-side legs inflate its mask. The compare lighting is the fixed warden-matched rig and was not tuned to the score.",
+    "method": "Author self-score on the reviewer's rubric: silhouette and proportions 21/30, signature features 20/25, surface detail and material read 13/20, colour and value 13/15, readability at play distance 9/10. Judged from spring-hound.fidelity-compare.jpg (orthographic EEVEE renders of the low-poly model at the concept's side, front and back angles, framed at the concept's own metres per pixel: side 1.2 m / 855 px, front and back 1.21 m / 875 px) side by side, from close EEVEE crops of the chest, side lens, head and bosses, and from the six in-engine shots in staging/engine, which now bind the brass slots with the manifest tint and render hound-glow through the runtime D11 glow (writeGlowIslands and applyGlowLook from src/enemies/glow.ts). glow-close uses the same 50 degree seat lens as idle for a model this size, so the two frames match. Changes since the 65 review: the cranium is domed (top 1.208 m at y 0.625 against the concept's 1.210) and the jaw is a narrower, deeper wedge; the skull is now aged rather than polished brass, so head-on it reads lit (engine head median V 0.59 against the concept's 0.53) instead of mirroring the dark backdrop; the rose ears fold back over the occiput (top 1.213 m, widest 0.118 m from the midline); the loin is tucked and the keel deepened; the forearm plate bulges at the front and tapers, the gaskin is fuller and the hock has a point. The grille is the single focal light: five 6 mm bars at 25 mm pitch over a flat glow face, and the side lenses are upright slatted ovals (105 mm tall) whose glow sits behind four louvre blades 18 mm deep, so head-on they show brass and from the side the glow shows between the blades. In the engine idle shot the grille's saturated glow is 520 px against about 10 px of visible lens glow. The shoulder and thigh bosses are rubies (COLOR_0 on the gunmetal slot) in polished bezels: engine median about #7B3038 to #884448 (hue 354 to 357, S 0.50 to 0.61, V 0.48 to 0.53) against the concept's #680F23. Engraved gunmetal seams run from the collar to the grille, from the grille ring up to the shoulders and down-outward, and down the shoulder, haunch and forearm plates; each front seam stands 3.7 to 5.1 mm proud of the plate (placed by ray-casting the plate mesh). Rivets ring the collar and the grille. Engine whole-body brass median #846141 (hue 29, S 0.51, V 0.52) against the concept's 24 to 29; gunmetal joints read warm black (#2A1C11). The compare lighting is the fixed warden-matched rig and was not tuned to the score.",
     "evidence": {
       "path": "assets-source/enemies/spring-hound/spring-hound.fidelity-compare.jpg",
-      "sha256": "7b30831c46c767096e24702f8916ae2eb5d7dc7faa4cbf0073a3c89d48388c62"
-    }
+      "sha256": "0200a1468aea74dd347925fae459ee27123b06367f057e9592b109320841ac8b"
+    },
+    "independentScore": 74
   },
   "independentScore": {
-    "score": 65,
+    "score": 74,
     "scale": "0-100 visual fidelity to the concept",
     "scorer": "independent reviewer agent (separate from the authoring agent; did not build the model)",
     "date": "2026-11-16",
@@ -336,41 +343,41 @@
     "rubric": [
       {
         "criterion": "silhouette and proportions",
-        "points": 19,
+        "points": 20,
         "max": 30,
-        "note": "Unchanged geometry, unchanged score. The side view keeps the long low body, coil spine and key tail. The legs are straight plated tubes without the concept's angled hocks and tapered forearm plates. The head is a long flat crocodile snout with a spatulate lower jaw instead of the concept's short greyhound skull, and head-on the ears flare up and out like horns rather than folding as rose ears."
+        "note": "Up 1 from 19. Confirmed on the fidelity compare: the ears now fold back over a domed cranium (side view) instead of flaring like horns, the keel is deeper and the forearm plates bulge and taper. Still off: in profile the muzzle stays a long, straight, flat-topped wedge with no stop, so the head reads rat or possum rather than greyhound, with a row of thin needle teeth along the whole jaw. The hind leg is a near-vertical column from gaskin to paw with only a small hock point, where the concept has a long sloped thigh and a clearly angled hock. Head-on the chest is a broad barrel nearly as wide as the shoulder plates, against the concept's narrow oval chest, and the head sits forward on the coils rather than high on an upright neck."
       },
       {
         "criterion": "signature features",
-        "points": 16,
+        "points": 21,
         "max": 25,
-        "note": "Coil spine, neck coils, winding key on a segmented tail and hinged toothed jaw are all present. The eye slits now read as lit amber slits head-on (#F0A235 and #F4B743), which is the gain since 61. The chest is still wrong against the concept: the concept front shows one bright grille core, while the model shows two round side lenses that out-shine and out-size it. The lenses measure value 0.96 to 0.98 (#F5B741, #FAD04E); the grille core reads 0.80 in its brightest gaps (#CB963D) and 0.60 between bars (#996A39). The ruby bosses are still brass caps."
+        "note": "Up 5 from 16, the main gain. The grille is now the single chest light: in engine idle.jpg every glow pixel (saturation over 0.6, value over 0.85, 444 px) sits in the grille or the eyes, 418 px in the grille box (400,355)-(465,400) and none on the side lenses, which show brass louvres head-on as the concept does. Rubies now sit on the shoulders and thighs in bezels (side compare median (175,42,76), hue 346, against the concept's (93,14,34) to (99,6,31), hue 344 to 345). Coil spine, neck coils, hinged jaw and key tail remain. Deductions: the eyes are tiny, 26 glow px in idle.jpg (box (392,195)-(450,225)) against the concept's large lit eyes; the winding key is two separate octagonal rings on a thin rod (compare crop (940,580)-(1080,700)) rather than the concept's one flat butterfly bow with two holes, and the tail is a thin bead chain against the concept's chunky segments; the rubies are small (57 red px in idle.jpg) and read pink."
       },
       {
         "criterion": "surface detail and material read",
-        "points": 11,
+        "points": 13,
         "max": 20,
-        "note": "Unchanged. Plates separate cleanly over gunmetal joints but are smooth, with none of the concept's engraved panel lines, seams or rivets. The hammered normal reads as noise, and the paws are simplified blocks. In the engine shot the chest bulb carries a blown specular patch (#FBF1DE, saturation 0.12) that reads as a white spot."
+        "note": "Up 2 from 11. Seams, collar and grille rivets and bezels are present and the forearm and hock shapes add plate breaks. But the seams read as single thin black slits (one vertical line down the chest prow in idle.jpg) rather than the concept's layered, bevelled panel edges. The hammered normal still reads as crumpled foil on the head and chest in the Blender compare and as a matte suede on the engine head. The chest prow still carries a pale specular blob in idle.jpg (box (425,320)-(445,345) median (173,136,95), 90th percentile (246,220,185)). Paws remain simple blocks."
       },
       {
         "criterion": "colour and value",
-        "points": 11,
+        "points": 12,
         "max": 15,
-        "note": "Fixed: the glow is now saturated amber. Glow pixels in the after crop of p6-glow-before-after.jpg have a median of #F5B140 (hue 39, saturation 0.74), against #C68D5C peach at the same pixels before. That matches the art bible's candle amber #F3BE65 in hue and is slightly more saturated; the concept's glow is a little more orange (side lens mid tone around #C36E28). Lit engine brass sits at hue 32 to 37, saturation 0.46 to 0.58, close to the concept's lit brass (#8F6D48, hue 31, saturation 0.50). Still missing: the ruby accent (#93212B in the bible)."
+        "note": "Up 1 from 11. Measured with Pillow and NumPy as sRGB medians over a warm-metal mask (max channel over 35, R over B plus 12). Concept side body (138,69)-(1321,950) of the full-resolution sheet median (94,64,48), hue 21, HSV S 0.49, V 0.37, highlight 90th percentile (220,184,119). Engine idle.jpg chest (390,300)-(500,400) (127,89,55), hue 28, V 0.50, and fore-leg column (405,420)-(428,500) (110,79,47), hue 30, V 0.43: warm brass, hue within about 7 to 9 deg of the concept but lighter. The engine floor is (135,95,69), so whole-leg boxes were avoided. Glow matches: engine grille glow (243,185,74), hue 39, against the concept grille glow (249,166,35), hue 37, measured with the same glow mask at (1640,390)-(1760,520) of the full-resolution sheet; the author's 'concept 25' comes from an unmasked box. Faults: the engine head (395,190)-(440,235) is (161,117,79), V 0.63, paler and duller than the chest and the concept head (115,80,54), V 0.45, so the head reads as a separate tan material; rubies are desaturated (engine (131,57,67), HSV S 0.56, against the concept's 0.85 to 0.94); Blender highlights are cream (243,222,197) against the concept's gold (220,184,119)."
       },
       {
         "criterion": "readability at play distance",
         "points": 8,
         "max": 10,
-        "note": "At about 2.6 m the hound reads as a low brass dog, distinct from the upright roster, and the face now has visible amber eyes. The chest shows three similar amber blobs instead of one focal core, so the hit-reaction light has no single point to read."
+        "note": "Level with 8. Gain: the chest now has one focal amber point, so the hit-reaction light has a single place to read (hit.jpg 512 glow px against idle 444). Loss: the eyes are a few pixels at 2.6 m (26 glow px in idle.jpg), so the face reads as a pale tan snout with a black nose rather than the concept's lit glare. The body separates from the floor by value (attack.jpg head (360,330)-(400,420) (182,141,97), V 0.71, against the floor beside it (300,380)-(340,460) (135,99,75), V 0.53). frozen.jpg shows no visible tint shift from idle.jpg; the freeze is the roster-wide runtime ice tint (see the Warden record), so it is noted here but not charged to the hound."
       }
     ],
     "topFixes": [
-      "Make the grille core the single focal light, as the art bible requires: enlarge the lit panel behind the grille bars and make it brighter than the side lenses, and shrink or dim the side lenses so they read only from the side, as in the concept. The colour half of the earlier fix is done.",
-      "Restore the ruby bosses on the shoulders and thighs through COLOR_0 on a factor material, as the warden's planets and the escapement's sapphires do, or merge the two brass sets to free a material slot.",
-      "Reshape the head into a shorter, broader greyhound skull with folded rose ears, and give the legs angled hocks with tapered, engraved forearm plates."
+      "Rebuild the head profile: shorten the muzzle and add a visible stop so the head reads greyhound, not rat; drop the needle-teeth row to a few larger teeth near the front as in the concept; and enlarge the eyes into lit slits large enough to read at 2.6 m (now 26 glow px against 418 px for the grille).",
+      "Fix the head material and value: the head is matte tan (161,117,79), V 0.63, against chest brass (127,89,55) and the concept head (115,80,54), V 0.45. Put it on the same polished brass as the body and reduce the hammered normal strength, which reads as crumpled foil in Blender and suede in the engine.",
+      "Reshape the body and hind legs: narrow the barrel chest toward the concept's oval, slope the hind thigh and angle the hock clearly, make the winding key one flat butterfly bow on a thicker segmented tail, and saturate the rubies (HSV S 0.56 now, concept 0.85 to 0.94)."
     ],
-    "method": "Independent visual review against assets-source/concepts/hound-sheet-1.png by a separate reviewer agent, re-scored after the glow fix in commit ab14b81 with the geometry unchanged. Judged the concept at native resolution against the side, front and back orthographic compare, the owner review sheet (including its five engine thumbnails), the low 3/4 Blender render, the attack engine shot for pose, and the new engine shots p6-glow-spring-hound.jpg and the spring-hound row of p6-glow-before-after.jpg (before, after and frozen). Glow colour was measured as sRGB with Pillow: 5x5 median samples on each lens, the grille gaps and each eye in p6-glow-spring-hound.jpg, and the median of all pixels with saturation above 0.6 and value above 0.85 in the after crop, compared with the same pixels in the before crop. Same rubric as the previous review: silhouette and proportions 30, signature features 25, surface detail and material read 20, colour and value 15, readability at play distance 10.",
+    "method": "Independent re-score of the uncommitted hound refinement on 10d325d with the same five-criterion rubric, re-checking every point of the 65 review against new evidence rather than carrying it forward. Shape was judged on the fidelity compare (orthographic side, front and back at the concept's metres per pixel) with Pillow crops of the side head and the front upper body, and on the review sheet's Blender model, rig and animation rows. In-engine read was judged on the six state shots (idle and glow-close share sha256 6e6c604f, so they are one frame) with an upscaled crop of the idle head and chest. Colour was measured as sRGB medians with HLS/HSV hue, saturation and value over a warm-metal mask, glow as saturation over 0.6 and value over 0.85, rubies as red-hue pixels with saturation over 0.35, all in explicit pixel boxes stated in the notes, with engine boxes kept off the floor (floor (135,95,69)). Concept boxes are in full-resolution 2752x1536 pixels. The art bible (one amber chest core as focal point, jewel inlays at shoulders, polished brass over dark joints) is a secondary check. The in-room Warden crops in /tmp/wtint were not used. The rise from 65 comes mostly from the single grille core and the restored rubies (+5 signature), with smaller gains from the folded ears and domed cranium, the seams and rivets, and the warmer brass.",
     "evidence": [
       {
         "path": "assets-source/concepts/hound-sheet-1.png",
@@ -381,30 +388,39 @@
         "sha256": "11da71b45f24eeb258ef77d328ef1aa009297a9231608cb80bb429aa3ff2ad6a"
       },
       {
-        "path": "docs/verification/p6-glow-spring-hound.jpg",
-        "sha256": "25735004335e5527da11da578e27332c55d3fb7beead94afea36126f51301fc2"
-      },
-      {
-        "path": "docs/verification/p6-glow-before-after.jpg",
-        "sha256": "969dcdf4814240af1f08f34da968232c875c70526148378a0c9b2ad6e3366d6d"
-      },
-      {
         "path": "assets-source/enemies/spring-hound/spring-hound.fidelity-compare.jpg",
-        "sha256": "7b30831c46c767096e24702f8916ae2eb5d7dc7faa4cbf0073a3c89d48388c62"
+        "sha256": "0200a1468aea74dd347925fae459ee27123b06367f057e9592b109320841ac8b"
       },
       {
         "path": "assets-source/enemies/spring-hound/spring-hound.review-sheet.jpg",
-        "sha256": "b76084e9426d4530aac5d139e4ed19e2910df76bf86e9abc9c804b6575a7bd9c"
+        "sha256": "ac3fdc48ffb1cb032a997d924af6fe9ffe39e610e315e3c39f10fa979d0f3600"
       },
       {
-        "path": "assets-source/enemies/spring-hound/staging/renders/model-low-three-quarter.png",
-        "sha256": "3fe78d924918ffe0b2a2ec422a5cea5f5cc379cba8fa0db3dc74cedd867d5bb3"
+        "path": "assets-source/enemies/spring-hound/staging/engine/idle.jpg",
+        "sha256": "6e6c604fc863ff36783fd64cabb44d10bf121117da28c25ba21ca89b9389b305"
+      },
+      {
+        "path": "assets-source/enemies/spring-hound/staging/engine/glow-close.jpg",
+        "sha256": "6e6c604fc863ff36783fd64cabb44d10bf121117da28c25ba21ca89b9389b305"
       },
       {
         "path": "assets-source/enemies/spring-hound/staging/engine/attack.jpg",
-        "sha256": "fa7a1c55d08a101244066a13fe7addbf4c1128c9171ee3037cd88092c69f3891"
+        "sha256": "aa550c395c4a929c0f2733f12ae5b73844ad972bc36ae56db92de5efd53efde5"
+      },
+      {
+        "path": "assets-source/enemies/spring-hound/staging/engine/hit.jpg",
+        "sha256": "e4b4ac742288828362eed73196fb86703d6815140f917e7bbda474202f6bd2b4"
+      },
+      {
+        "path": "assets-source/enemies/spring-hound/staging/engine/frozen.jpg",
+        "sha256": "407411b663d06e2da94a1e286eb02631cf98ac780f8d68dffb86c16afafab4a9"
+      },
+      {
+        "path": "assets-source/enemies/spring-hound/staging/engine/death.jpg",
+        "sha256": "1f40b5a722e755637bf241345637de53a660a3d1777c97aa6db1206edac418fb"
       }
     ],
-    "previousScore": 61
+    "previousScore": 65,
+    "build": "the hound refinement commit after 10d325d"
   }
 }

@@ -60,12 +60,17 @@ LIMITS = {"tris": 25_000, "materials": 4, "bones": 40, "influences": 4}
 GLOW = "hound-glow"
 MATS = ["brass-polished", "brass-aged", "gunmetal", GLOW]
 BP, BA, GM, GL = range(4)
+RB = 20  # pseudo slot: build_body maps it to GM and writes the ruby into COLOR_0
+RUBY_SRGB = (0xB8, 0x00, 0x5C)  # art bible ruby pushed toward crimson: the warm key lights and the 0.7-metallic slot shift it orange
+GM_SRGB = (0x2E, 0x2A, 0x2A)  # gunmetal, carried by COLOR_0 on the white gunmetal slot
 SETS = {"brass-polished": 0.35, "brass-aged": 0.35}  # shared set -> normal scale on this model
+TINTS = {"brass-polished": [1.0, 0.86, 0.90], "brass-aged": [1.0, 0.86, 0.90]}  # runtime set tint toward the concept's hue
 TILE_METERS = 0.5  # both brass sets tile at 0.5 m (public/assets/materials/materials.json)
 FACTORS = {  # sRGB base, roughness, metallic: the GLB look, and the fallback when the sets fail
     "brass-polished": ((0xDE, 0xC1, 0x6A), 0.3, 1.0),
     "brass-aged": ((0xA8, 0x86, 0x48), 0.45, 1.0),
-    "gunmetal": ((0x2E, 0x2A, 0x2A), 0.5, 0.85),
+    # hue from COLOR_0 (gunmetal and ruby); at 0.85 metallic the ruby reads near black
+    "gunmetal": ((0xFF, 0xFF, 0xFF), 0.42, 0.7),
     GLOW: ((0x6A, 0x34, 0x0C), 0.4, 0.0),
 }
 GLOW_SRGB = (0xF0, 0x8C, 0x2C)
@@ -165,15 +170,22 @@ def lin(c: int) -> float:
 # Geometry: closed lofted plates and swept springs, each vertex weighted to one bone
 
 
+def frame_axes(d):
+    """Local X and Y for a unit local Z `d`: X stays as close to world X as possible."""
+    from mathutils import Vector
+
+    x = Vector((1, 0, 0)) if abs(d.x) < 0.9 else Vector((0, 1, 0))
+    x = (x - d * x.dot(d)).normalized()
+    return x, d.cross(x)
+
+
 def axis_frame(a, b):
     """4x4 with origin a and local Z along a->b; local X stays as close to world X as possible."""
     from mathutils import Matrix, Vector
 
     a, b = Vector(a), Vector(b)
     d = (b - a).normalized()
-    x = Vector((1, 0, 0)) if abs(d.x) < 0.9 else Vector((0, 1, 0))
-    x = (x - d * x.dot(d)).normalized()
-    y = d.cross(x)
+    x, y = frame_axes(d)
     m = Matrix((x, y, d)).transposed().to_4x4()
     m.translation = a
     return m, (b - a).length
@@ -379,24 +391,62 @@ def _at(stations: list[tuple], y: float) -> tuple[float, float, float, float]:
     raise ValueError(y)
 
 
+def _bvh(faces: list):
+    """BVH over a set of bmesh faces (their current vertex positions)."""
+    from mathutils.bvhtree import BVHTree
+
+    idx: dict = {}
+    pts, polys = [], []
+    for f in faces:
+        poly = []
+        for v in f.verts:
+            if v not in idx:
+                idx[v] = len(pts)
+                pts.append(v.co.copy())
+            poly.append(idx[v])
+        polys.append(poly)
+    return BVHTree.FromPolygons(pts, polys)
+
+
+def skull_x(st: list[tuple], y: float, z: float, e: float = 2.4) -> float:
+    """Half-width of a +Y-running loft (linear between stations) at height z of the section at y."""
+    cz, a, bt, bb = _at(st, y)
+    f = min(abs(z - cz) / (bt if z >= cz else bb), 0.999)
+    return a * (1 - f ** e) ** (1 / e)
+
+
 def build_parts(P: Parts) -> None:
     from mathutils import Vector
 
     L, D = P.loft, P.disc
 
-    # ---- Head: long narrow greyhound skull (polished), separate hinged jaw (aged), rose ears,
+    def line(pts: list, bone: str, ref=(1, 0, 0)) -> None:
+        """Engraved panel line: a thin gunmetal strip through `pts`, 7 mm along `ref` and 5 mm across."""
+        L([(tuple(p), 0.0035, 0.0025, 0.0025, 2.0) for p in pts], GM, bone, n=4, sub=1, caps=(False, False), ref=ref)
+
+    def rivets(c, normal, a: float, b: float, off: float, count: int, bone: str) -> None:
+        """Domed rivets round the front face (`off` along the normal) of a `P.ring` band."""
+        d = Vector(normal).normalized()
+        x, y = frame_axes(d)
+        for i in range(count):
+            u = 2 * math.pi * (i + 0.5) / count
+            p = Vector(c) + x * (a * math.cos(u)) + y * (b * math.sin(u)) + d * off
+            L([(tuple(p), 0.005, 0.005, 0.005, 2.0), (tuple(p + d * 0.003), 0.003, 0.003, 0.003, 2.0)], BA, bone, n=6, sub=1,
+              caps=(False, True))
+
+    # ---- Head: long narrow greyhound skull and separate hinged jaw (aged: polished mirrors a dark room head-on), rose ears,
     # amber eye slits under a brow ledge, gunmetal nose, cheek guards and hinge bolts.
     skull = [((0, 0.495, 1.090), 0.040, 0.050, 0.050, 2.2), ((0, 0.525, 1.092), 0.060, 0.092, 0.085, 2.4),
-             ((0, 0.570, 1.090), 0.074, 0.106, 0.090, 2.5), ((0, 0.625, 1.094), 0.073, 0.098, 0.078, 2.5),
-             ((0, 0.680, 1.098), 0.064, 0.074, 0.066, 2.4), ((0, 0.735, 1.090), 0.046, 0.048, 0.054, 2.3),
-             ((0, 0.790, 1.073), 0.037, 0.036, 0.044, 2.2), ((0, 0.845, 1.058), 0.029, 0.028, 0.034, 2.1),
+             ((0, 0.570, 1.090), 0.076, 0.110, 0.090, 2.5), ((0, 0.625, 1.096), 0.078, 0.112, 0.080, 2.5),
+             ((0, 0.680, 1.100), 0.070, 0.095, 0.068, 2.4), ((0, 0.735, 1.093), 0.052, 0.073, 0.058, 2.3),
+             ((0, 0.790, 1.075), 0.039, 0.040, 0.046, 2.2), ((0, 0.845, 1.058), 0.029, 0.028, 0.034, 2.1),
              ((0, 0.880, 1.050), 0.022, 0.022, 0.026, 2.0)]
-    L(skull, BP, "head")
+    L(skull, BA, "head")
     L([((0, 0.872, 1.052), 0.020, 0.018, 0.020, 2.0), ((0, 0.893, 1.049), 0.016, 0.014, 0.016, 2.0),
        ((0, 0.903, 1.046), 0.008, 0.007, 0.008, 2.0)], GM, "head", n="small", sub=1)  # nose
-    jaw = [((0, 0.600, 1.022), 0.050, 0.020, 0.026, 2.6), ((0, 0.660, 1.012), 0.046, 0.019, 0.027, 2.6),
-           ((0, 0.720, 1.000), 0.038, 0.016, 0.022, 2.4), ((0, 0.780, 0.990), 0.030, 0.013, 0.018, 2.3),
-           ((0, 0.830, 0.982), 0.022, 0.010, 0.014, 2.2), ((0, 0.852, 0.979), 0.012, 0.007, 0.008, 2.0)]
+    jaw = [((0, 0.600, 1.018), 0.044, 0.022, 0.034, 2.4), ((0, 0.660, 1.008), 0.040, 0.021, 0.032, 2.4),
+           ((0, 0.720, 0.998), 0.033, 0.018, 0.027, 2.3), ((0, 0.780, 0.989), 0.026, 0.015, 0.021, 2.2),
+           ((0, 0.830, 0.982), 0.019, 0.011, 0.015, 2.1), ((0, 0.852, 0.979), 0.010, 0.007, 0.008, 2.0)]
     L(jaw, BA, "jaw")
     for s in (1, -1):
         # Teeth: upper row hangs from the muzzle, lower row stands on the jaw; a fang at each end.
@@ -404,32 +454,35 @@ def build_parts(P: Parts) -> None:
             y = 0.705 + 0.032 * k
             cz, a, _bt, bb = _at(skull, y)
             L([((s * 0.55 * a, y, cz - bb + 0.006), 0.005, 0.004, 0.004, 2.0),
-               ((s * 0.55 * a, y, cz - bb - 0.014), 0.001, 0.001, 0.001, 2.0)], BP, "head", n=4, sub=1, ref=(0, 1, 0))
+               ((s * 0.55 * a, y, cz - bb - 0.014), 0.001, 0.001, 0.001, 2.0)], BP, "head", n=4, sub=1, ref=(0, 1, 0),
+              caps=(False, False))
             cz, a, bt, _bb = _at(jaw, y - 0.012)
             L([((s * 0.55 * a, y - 0.012, cz + bt - 0.004), 0.004, 0.0035, 0.0035, 2.0),
-               ((s * 0.55 * a, y - 0.012, cz + bt + 0.011), 0.001, 0.001, 0.001, 2.0)], BP, "jaw", n=4, sub=1, ref=(0, 1, 0))
+               ((s * 0.55 * a, y - 0.012, cz + bt + 0.011), 0.001, 0.001, 0.001, 2.0)], BP, "jaw", n=4, sub=1, ref=(0, 1, 0),
+              caps=(False, False))
         cz, a, _bt, bb = _at(skull, 0.842)
         L([((s * 0.5 * a, 0.842, cz - bb + 0.006), 0.006, 0.006, 0.006, 2.0), ((s * 0.5 * a, 0.844, cz - bb - 0.022), 0.0012, 0.0012, 0.0012, 2.0)],
-          BP, "head", n=5, sub=1, ref=(0, 1, 0))  # upper fang
-        # Brow ledge, dark socket and amber slit, slanting down toward the nose.
-        L([((s * 0.060, 0.668, 1.158), 0.006, 0.004, 0.004, 2.0), ((s * 0.050, 0.688, 1.160), 0.010, 0.007, 0.006, 2.6),
-           ((s * 0.034, 0.716, 1.150), 0.008, 0.006, 0.005, 2.4), ((s * 0.022, 0.732, 1.140), 0.004, 0.003, 0.003, 2.0)],
+          BP, "head", n=5, sub=1, ref=(0, 1, 0), caps=(False, False))  # upper fang
+        # Brow ledge, dark socket and amber slit, slanting down toward the nose, each placed on the
+        # skull surface. The socket is taller than the slit but not wider, so the slit stays proud.
+        eye = [(0.694, 1.136, 0.006, 2.0), (0.718, 1.130, 0.017, 2.4), (0.746, 1.114, 0.006, 2.0)]  # y, z, r, e
+        brow = [(0.006, 0.004, 0.004, 2.0), (0.010, 0.007, 0.006, 2.6), (0.004, 0.003, 0.003, 2.0)]
+        socket = [(0.012, 0.012, 0.012, 2.5), (0.016, 0.023, 0.023, 2.8), (0.012, 0.012, 0.012, 2.5)]
+        L([((s * (skull_x(skull, y, z + 0.014) + 0.002), y, z + 0.014), *b) for (y, z, _r, _e), b in zip(eye, brow)],
           BP, "head", n="small", sub=1)
-        L([((s * 0.060, 0.668, 1.142), 0.009, 0.015, 0.015, 2.5), ((s * 0.048, 0.694, 1.140), 0.013, 0.021, 0.021, 2.8),
-           ((s * 0.028, 0.726, 1.128), 0.008, 0.012, 0.012, 2.5)], GM, "head", n="small", sub=1)
-        L([((s * 0.063, 0.668, 1.144), 0.005, 0.005, 0.005, 2.0), ((s * 0.052, 0.694, 1.141), 0.014, 0.014, 0.014, 2.4),
-           ((s * 0.031, 0.727, 1.130), 0.004, 0.004, 0.004, 2.0)], GL, "head", n="small", sub=1)
+        L([((s * (skull_x(skull, y, z) - 0.006), y, z), *k) for (y, z, _r, _e), k in zip(eye, socket)], GM, "head", n="small", sub=1)
+        L([((s * (skull_x(skull, y, z) - 0.003), y, z), r, r, r, e) for y, z, r, e in eye], GL, "head", n="small", sub=1)
         # Cheek guard over the jaw hinge, and the hinge bolt.
-        L([((s * 0.069, 0.560, 1.050), 0.005, 0.020, 0.020, 3.0), ((s * 0.071, 0.600, 1.046), 0.006, 0.030, 0.030, 3.4),
-           ((s * 0.068, 0.650, 1.040), 0.005, 0.022, 0.020, 3.0), ((s * 0.062, 0.680, 1.036), 0.004, 0.010, 0.010, 2.4)],
+        L([((s * 0.072, 0.560, 1.050), 0.005, 0.020, 0.020, 3.0), ((s * 0.074, 0.600, 1.046), 0.006, 0.030, 0.030, 3.4),
+           ((s * 0.071, 0.650, 1.040), 0.005, 0.022, 0.020, 3.0), ((s * 0.065, 0.680, 1.036), 0.004, 0.010, 0.010, 2.4)],
           BA, "head", n="small", sub=1)
-        D((s * 0.075, 0.632, 1.044), (1, 0, 0), 0.014, 0.012, GM, "head", n="small")
-        D((s * 0.082, 0.632, 1.044), (1, 0, 0), 0.008, 0.006, BP, "head", n="small")
-        # Rose ear: a thin leaf folded out and back, tip drooping.
+        D((s * 0.078, 0.632, 1.044), (1, 0, 0), 0.014, 0.012, GM, "head", n="small")
+        D((s * 0.085, 0.632, 1.044), (1, 0, 0), 0.008, 0.006, BP, "head", n="small")
+        # Rose ear: a thin leaf folded back over the occiput like a roof tile, tip drooping.
         ear = f"ear.{'R' if s > 0 else 'L'}"
-        L([((s * 0.045, 0.585, 1.160), 0.030, 0.007, 0.007, 2.2), ((s * 0.075, 0.570, 1.190), 0.040, 0.006, 0.006, 2.4),
-           ((s * 0.105, 0.548, 1.195), 0.040, 0.005, 0.005, 2.4), ((s * 0.130, 0.525, 1.170), 0.030, 0.004, 0.004, 2.2),
-           ((s * 0.142, 0.512, 1.132), 0.010, 0.003, 0.003, 2.0)], BP, ear, ref=(0, -0.6, 0.8), n="small")
+        L([((s * 0.050, 0.592, 1.152), 0.024, 0.006, 0.006, 2.2), ((s * 0.066, 0.566, 1.182), 0.030, 0.006, 0.006, 2.4),
+           ((s * 0.084, 0.538, 1.188), 0.028, 0.005, 0.005, 2.4), ((s * 0.102, 0.512, 1.170), 0.018, 0.004, 0.004, 2.2),
+           ((s * 0.110, 0.498, 1.140), 0.007, 0.003, 0.003, 2.0)], BP, ear, ref=(s * 0.55, 0.0, 0.83), n="small")
 
     # ---- Neck: gunmetal column wound with a six-turn coil spring, collar flange at the chest.
     L([((0, 0.400, 0.825), 0.046, 0.046, 0.046, 2.0), ((0, 0.480, 0.955), 0.042, 0.042, 0.042, 2.0)], GM, "neck.1", n="small", sub=1)
@@ -437,6 +490,7 @@ def build_parts(P: Parts) -> None:
     P.helix([((0, 0.405, 0.830), 0.090, 0.092), ((0, 0.455, 0.912), 0.082, 0.084), ((0, 0.505, 0.995), 0.073, 0.075),
              ((0, 0.548, 1.068), 0.064, 0.066)], 6.0, 0.0155, BA, lambda c: "neck.1" if c.y < 0.48 else "neck.2")
     P.ring((0, 0.418, 0.852), (0, 0.45, 0.89), 0.098, 0.100, 0.014, 0.012, BA, "chest")
+    rivets((0, 0.418, 0.852), (0, 0.45, 0.89), 0.112, 0.114, 0.004, 8, "chest")  # outer edge, clear of the neck coil
 
     # ---- Chest: an egg-shaped cuirass (deep keel, the widest part of the body) in three polished
     # plates over a gunmetal core, a grille with an amber core on the prow, and a keel blade.
@@ -447,35 +501,69 @@ def build_parts(P: Parts) -> None:
     L([(c, a * 0.97, bt * 0.97, bb * 0.97, e) for c, a, bt, bb, e in chest], GM, "chest")
     L(chest[:3] + [((0, 0.298, 0.770), 0.148, 0.203, 0.218, 2.1)], BP, "chest")
     L([((0, 0.312, 0.768), 0.149, 0.204, 0.219, 2.1), chest[3], ((0, 0.405, 0.747), 0.146, 0.173, 0.206, 2.1)], BP, "chest")
+    f0 = len(P.bm.faces)
     L([((0, 0.419, 0.742), 0.144, 0.164, 0.200, 2.1)] + chest[5:], BP, "chest")
-    for s in (1, -1):  # side vents on the cuirass prow: the glow reads from the side as well
-        vc, vn = Vector((s * 0.104, 0.490, 0.655)), Vector((s * 0.66, 0.74, -0.08)).normalized()
-        P.ring(tuple(vc), tuple(vn), 0.040, 0.046, 0.008, 0.010, BA, "chest", k=6)
-        L([(tuple(vc - vn * 0.020), 0.044, 0.036, 0.036, 2.0), (tuple(vc + vn * 0.005), 0.042, 0.034, 0.034, 2.0),
-           (tuple(vc + vn * 0.012), 0.022, 0.018, 0.018, 2.0)], GL, "chest", sub=1, ref=(0, 0, 1))
+    prow_bvh = _bvh(list(P.bm.faces)[f0:])  # the front plate as built (its rings tilt with the path)
+    for s in (1, -1):  # side vents: tall slatted ovals facing sideways, so head-on the grille core dominates
+        vc, vn = Vector((s * 0.108, 0.484, 0.657)), Vector((s * 0.88, 0.45, -0.10)).normalized()
+        P.ring(tuple(vc), tuple(vn), 0.032, 0.062, 0.007, 0.009, BA, "chest", k=4)
+        # Glow inside the ring's opening (25 mm by 55 mm half-sizes) and behind the louvre tops; bevel
+        # 0.2 keeps the cap's tip behind them.
+        L([(tuple(vc - vn * 0.018), 0.052, 0.022, 0.022, 2.0), (tuple(vc + vn * 0.000), 0.051, 0.021, 0.021, 2.0),
+           (tuple(vc + vn * 0.004), 0.038, 0.015, 0.015, 2.0)], GL, "chest", sub=1, ref=(0, 0, 1), bevel=0.2)
+        hv = Vector((0, 0, 1)).cross(vn).normalized()  # the lens's in-plane horizontal axis
+        # Louvre blades 18 mm deep along the lens normal: head-on they overlap and hide the glow, from
+        # the side the glow shows between them.
+        for off in (-0.0165, -0.0055, 0.0055, 0.0165):
+            p = vc + vn * 0.004 + hv * off
+            L([(tuple(p + Vector((0, 0, 0.052))), 0.009, 0.0025, 0.0025, 2.4), (tuple(p - Vector((0, 0, 0.052))), 0.009, 0.0025, 0.0025, 2.4)],
+              BA, "chest", n=4, sub=1, caps=(False, False), ref=tuple(vn))
     gc, gn = (0, 0.536, 0.664), (0, 1.0, -0.18)
-    P.ring(gc, gn, 0.064, 0.064, 0.011, 0.016, BA, "chest", k=8)
+    P.ring(gc, gn, 0.064, 0.056, 0.011, 0.016, BA, "chest", k=8)
+    rivets(gc, gn, 0.064, 0.056, 0.014, 8, "chest")
     gv = Vector(gn).normalized()
     g0 = Vector(gc)
+    # Flat glow face just behind the bars (bevel 0.2 keeps the cap's tip behind the bars' front).
     L([(tuple(g0 - gv * 0.030), 0.058, 0.058, 0.058, 2.0), (tuple(g0 + gv * 0.004), 0.058, 0.058, 0.058, 2.0),
-       (tuple(g0 + gv * 0.012), 0.045, 0.045, 0.045, 2.0), (tuple(g0 + gv * 0.018), 0.022, 0.022, 0.022, 2.0)], GL, "chest", sub=1)
-    for x in (-0.040, -0.020, 0.0, 0.020, 0.040):
-        h = math.sqrt(0.060 ** 2 - x * x)
+       (tuple(g0 + gv * 0.012), 0.054, 0.054, 0.054, 2.0), (tuple(g0 + gv * 0.016), 0.046, 0.046, 0.046, 2.0)], GL, "chest", sub=1,
+      bevel=0.2)
+    for x in (-0.050, -0.025, 0.0, 0.025, 0.050):
+        h = math.sqrt(0.056 ** 2 - x * x)
         base = g0 + gv * 0.021 + Vector((x, 0, 0))
-        L([(tuple(base - Vector((0, h * 0.18, h))), 0.0045, 0.005, 0.005, 3.0),
-           (tuple(base + Vector((0, h * 0.18, h))), 0.0045, 0.005, 0.005, 3.0)], BA, "chest", n=6, sub=1)
-    L([((0, 0.320, 0.585), 0.014, 0.034, 0.030, 2.4), ((0, 0.230, 0.580), 0.012, 0.028, 0.016, 2.4),
-       ((0, 0.130, 0.600), 0.009, 0.020, 0.010, 2.2), ((0, 0.030, 0.640), 0.002, 0.003, 0.002, 2.0)], BA, "chest", n="small")
+        L([(tuple(base - Vector((0, h * 0.18, h))), 0.003, 0.005, 0.005, 3.0),
+           (tuple(base + Vector((0, h * 0.18, h))), 0.003, 0.005, 0.005, 3.0)], BA, "chest", n=6, sub=1)
+    # Engraved front seams (concept front view, model x and z): thin gunmetal strips 1.5 mm proud of
+    # the prow, which also break up its single convex highlight. Each point is the front plate's
+    # surface seen head-on (a ray along -Y), lifted along the surface normal.
+
+    def prow(x: float, z: float, lift: float = 0.0015) -> tuple[float, float, float]:
+        loc, nrm, _i, _d = prow_bvh.ray_cast(Vector((x, 2.0, z)), Vector((0, -1, 0)))
+        if loc is None:
+            raise ValueError((x, z))
+        nrm = nrm.normalized() * (1 if nrm.y >= 0 else -1)
+        return tuple(loc + nrm * lift)
+
+    def seam(p0: tuple[float, float], p1: tuple[float, float], k: int) -> None:
+        line([prow(p0[0] + (p1[0] - p0[0]) * i / (k - 1), p0[1] + (p1[1] - p0[1]) * i / (k - 1)) for i in range(k)], "chest")
+
+    seam((0.0, 0.802), (0.0, 0.722), 5)  # collar to grille top
+    for s in (1, -1):
+        seam((s * 0.073, 0.702), (s * 0.131, 0.771), 5)  # grille ring up-outward to the shoulder
+        # Grille ring down-outward. The concept runs on to (0.111, 0.553), but this cuirass turns under
+        # below z 0.61, so the seam starts higher and stops where the plate turns under.
+        seam((s * 0.062, 0.632), (s * 0.090, 0.608), 5)
+    L([((0, 0.320, 0.585), 0.014, 0.034, 0.030, 2.4), ((0, 0.230, 0.575), 0.012, 0.030, 0.030, 2.4),
+       ((0, 0.130, 0.590), 0.010, 0.024, 0.030, 2.2), ((0, 0.010, 0.632), 0.002, 0.004, 0.003, 2.0)], BA, "chest", n="small")
 
     # ---- Spring spine: one helix swept around the body profile (deep at the chest, tucked at the
     # loin), ten turns, each coil leaning forward; a gunmetal rod through it.
     spine_bone = lambda c: ("pelvis" if c.y < -0.19 else "spine.1" if c.y < -0.06 else "spine.2" if c.y < 0.07  # noqa: E731
                             else "spine.3" if c.y < 0.185 else "chest")
-    P.helix([((0, -0.215, 0.862), 0.082, 0.082), ((0, -0.100, 0.850), 0.094, 0.106), ((0, 0.000, 0.834), 0.104, 0.122),
+    P.helix([((0, -0.215, 0.862), 0.082, 0.082), ((0, -0.100, 0.874), 0.094, 0.074), ((0, 0.000, 0.861), 0.104, 0.092),
              ((0, 0.100, 0.810), 0.112, 0.139), ((0, 0.210, 0.782), 0.118, 0.150)], 10.0, 0.019, BA, spine_bone, tilt=-0.34)
-    for y0, y1, bone in ((-0.24, -0.06, "spine.1"), (-0.06, 0.07, "spine.2"), (0.07, 0.20, "spine.3")):
-        L([((0, y0, 0.832 - 0.12 * y0), 0.028, 0.028, 0.028, 2.0), ((0, y1, 0.832 - 0.12 * y1), 0.028, 0.028, 0.028, 2.0)],
-          GM, bone, n="small", sub=1)
+    rod = [(-0.24, 0.862), (-0.06, 0.870), (0.07, 0.850), (0.20, 0.787)]  # (y, z): stays inside the tucked coil
+    for (y0, z0), (y1, z1), bone in zip(rod, rod[1:], ("spine.1", "spine.2", "spine.3")):
+        L([((0, y0, z0), 0.028, 0.028, 0.028, 2.0), ((0, y1, z1), 0.028, 0.028, 0.028, 2.0)], GM, bone, n="small", sub=1)
 
     # ---- Pelvis: a swept rump cowl arcing from the coil top down over the haunch to the tail
     # root (lofted along that arc, so its outer skin is the silhouette), spike guards, tail hub.
@@ -534,18 +622,22 @@ def build_parts(P: Parts) -> None:
                     ((s * 0.152, 0.322, 0.720), 0.046, 0.095, 0.085, 2.4), ((s * 0.150, 0.312, 0.640), 0.045, 0.085, 0.075, 2.4),
                     ((s * 0.145, 0.300, 0.570), 0.040, 0.060, 0.055, 2.4), ((s * 0.138, 0.290, 0.515), 0.032, 0.040, 0.038, 2.3)]
         L(shoulder, BP, f"upperarm.{n}")
-        # Gunmetal backing plate, a little larger than the shoulder plate: the dark outline around it.
-        L([(c, a * 0.6, bt * 1.14, bb * 1.16, e) for c, a, bt, bb, e in shoulder], GM, f"upperarm.{n}")
+        # Gunmetal backing plate, a thin lip larger than the shoulder plate: the dark outline around it.
+        L([(c, a * 0.5, bt * 1.05, bb * 1.06, e) for c, a, bt, bb, e in shoulder], GM, f"upperarm.{n}")
         D((s * 0.195, 0.320, 0.700), (1, 0, 0), 0.030, 0.012, GM, f"upperarm.{n}")
-        D((s * 0.203, 0.320, 0.700), (1, 0, 0), 0.019, 0.010, BA, f"upperarm.{n}")
+        ruby(P, s, s * 0.200, 0.320, 0.700, f"upperarm.{n}")
+        # Shoulder line from under the ruby down to the elbow, on the plate's outer face.
+        line([(s * 0.199, 0.326, 0.668)] + [(c[0] + s * (a * (1 - 0.4 ** e) ** (1 / e) + 0.0015), c[1] + 0.4 * bt, c[2])
+                                            for c, a, bt, _bb, e in shoulder[3:6]], f"upperarm.{n}", ref=(0, 1, 0))
         D((fx, 0.270, 0.490), (1, 0, 0), 0.036, 0.085, GM, f"forearm.{n}")
         D((fx + s * 0.044, 0.270, 0.490), (1, 0, 0), 0.020, 0.008, BA, f"forearm.{n}", n="small")
-        fore = [((fx, 0.276, 0.475), 0.038, 0.058, 0.054, 2.6), ((fx, 0.280, 0.420), 0.040, 0.060, 0.052, 2.6),
-                ((fx, 0.280, 0.330), 0.036, 0.050, 0.042, 2.5), ((fx, 0.278, 0.240), 0.029, 0.036, 0.030, 2.4),
-                ((fx, 0.276, 0.172), 0.022, 0.024, 0.021, 2.3)]
+        fore = [((fx, 0.276, 0.475), 0.038, 0.066, 0.054, 3.0), ((fx, 0.280, 0.420), 0.040, 0.066, 0.052, 3.0),
+                ((fx, 0.280, 0.330), 0.036, 0.046, 0.042, 2.5), ((fx, 0.278, 0.240), 0.029, 0.030, 0.030, 2.4),
+                ((fx, 0.276, 0.172), 0.022, 0.020, 0.021, 2.3)]
         L([(c, a * 0.9, bt * 0.9, bb * 0.9, e) for c, a, bt, bb, e in fore], GM, f"forearm.{n}", ref=(1, 0, 0))
-        L(fore[:2] + [((fx, 0.280, 0.352), 0.037, 0.052, 0.044, 2.5)], BP, f"forearm.{n}")
-        L([((fx, 0.280, 0.338), 0.036, 0.051, 0.043, 2.5)] + fore[3:], BP, f"forearm.{n}")
+        L(fore[:2] + [((fx, 0.280, 0.352), 0.037, 0.051, 0.044, 2.6)], BP, f"forearm.{n}")
+        L([((fx, 0.280, 0.338), 0.036, 0.048, 0.043, 2.5)] + fore[3:], BP, f"forearm.{n}")
+        line([(c[0], c[1] + bt + 0.0015, c[2]) for c, _a, bt, _bb, _e in fore], f"forearm.{n}")  # front line
         D((fx, 0.275, 0.142), (1, 0, 0), 0.026, 0.050, GM, f"wrist.{n}", n="small")
         L([((fx, 0.280, 0.124), 0.020, 0.024, 0.020, 2.6), ((fx, 0.292, 0.088), 0.021, 0.024, 0.020, 2.6),
            ((fx, 0.302, 0.056), 0.019, 0.020, 0.017, 2.6)], BA, f"wrist.{n}", n="small", sub=1)
@@ -559,20 +651,33 @@ def build_parts(P: Parts) -> None:
         L([(c, a * 0.85, bt * 1.06, bb * 1.06, e) for c, a, bt, bb, e in thigh], GM, f"thigh.{n}")
         L(thigh[:4] + [((hx - s * 0.014, -0.343, 0.705), 0.054, 0.099, 0.100, 2.1)], BP, f"thigh.{n}")
         L([((hx - s * 0.013, -0.344, 0.688), 0.054, 0.096, 0.097, 2.1)] + thigh[4:], BP, f"thigh.{n}")
+        # Haunch line from under the ruby down the back of the thigh, on the plate's outer face.
+        line([(s * 0.150, -0.340, 0.745)] + [(c[0] + s * (a * (1 - 0.3 ** e) ** (1 / e) + 0.0015), c[1] - 0.3 * bb, c[2])
+                                             for c, a, _bt, bb, e in thigh[4:7]], f"thigh.{n}", ref=(0, 1, 0))
         D((s * 0.146, -0.335, 0.775), (1, 0, 0.0), 0.032, 0.012, GM, f"thigh.{n}")
-        D((s * 0.154, -0.335, 0.775), (1, 0, 0.0), 0.020, 0.010, BA, f"thigh.{n}")
+        ruby(P, s, s * 0.151, -0.335, 0.775, f"thigh.{n}")
         D((hx, -0.360, 0.490), (1, 0, 0), 0.046, 0.088, GM, f"shin.{n}")
         D((hx + s * 0.047, -0.360, 0.490), (1, 0, 0), 0.024, 0.008, BA, f"shin.{n}", n="small")
-        L([((hx, -0.352, 0.505), 0.042, 0.060, 0.068, 2.4), ((hx, -0.392, 0.455), 0.040, 0.054, 0.064, 2.4),
-           ((hx, -0.442, 0.395), 0.036, 0.042, 0.048, 2.4), ((hx, -0.492, 0.335), 0.030, 0.032, 0.035, 2.4),
+        L([((hx, -0.352, 0.505), 0.042, 0.068, 0.080, 2.4), ((hx, -0.392, 0.455), 0.040, 0.062, 0.074, 2.4),
+           ((hx, -0.442, 0.395), 0.036, 0.046, 0.054, 2.4), ((hx, -0.492, 0.335), 0.030, 0.032, 0.035, 2.4),
            ((hx, -0.530, 0.288), 0.026, 0.025, 0.026, 2.2)], BP, f"shin.{n}")
         L([((hx, -0.420, 0.470), 0.011, 0.011, 0.011, 2.0), ((hx, -0.500, 0.380), 0.011, 0.011, 0.011, 2.0),
            ((hx, -0.570, 0.290), 0.010, 0.010, 0.010, 2.0)], GM, f"shin.{n}", n="small", sub=1)
         D((hx, -0.547, 0.264), (1, 0, 0), 0.029, 0.054, GM, f"hock.{n}", n="small")
         L([((hx, -0.546, 0.252), 0.025, 0.026, 0.022, 2.6), ((hx, -0.538, 0.160), 0.024, 0.024, 0.021, 2.6),
-           ((hx, -0.532, 0.075), 0.022, 0.022, 0.020, 2.5)], BA, f"hock.{n}", n="small", sub=1)
+           ((hx, -0.532, 0.075), 0.020, 0.018, 0.017, 2.5)], BA, f"hock.{n}", n="small", sub=1)
+        L([((hx, -0.560, 0.300), 0.016, 0.016, 0.016, 2.2), ((hx, -0.585, 0.262), 0.012, 0.012, 0.012, 2.2),
+           ((hx, -0.592, 0.240), 0.004, 0.004, 0.004, 2.0)], BA, f"hock.{n}", n=6, sub=1)  # point of hock
         L([((hx, -0.565, 0.240), 0.008, 0.008, 0.008, 2.0), ((hx, -0.556, 0.090), 0.008, 0.008, 0.008, 2.0)], GM, f"hock.{n}", n=6, sub=1)
         paw(P, hx, -0.565, -0.470, f"hindpaw.{n}")
+
+
+def ruby(P: Parts, s: int, x: float, y: float, z: float, bone: str) -> None:
+    """Ruby boss on a gunmetal socket disc whose outer face is at x + s * 0.001: a polished bezel and
+    a domed ruby (COLOR_0 on the gunmetal slot) stepping out along +-X."""
+    P.ring((x + s * 0.004, y, z), (s, 0, 0), 0.027, 0.027, 0.006, 0.005, BP, bone, n="small", k=4)
+    P.loft([((x, y, z), 0.023, 0.023, 0.023, 2.0), ((x + s * 0.006, y, z), 0.020, 0.020, 0.020, 2.0),
+            ((x + s * 0.012, y, z), 0.011, 0.011, 0.011, 2.0)], RB, bone, n=10, sub=1, caps=(False, True), ref=(0, 1, 0))
 
 
 def paw(P: Parts, x: float, heel: float, toe: float, bone: str) -> None:
@@ -588,7 +693,7 @@ def paw(P: Parts, x: float, heel: float, toe: float, bone: str) -> None:
         L([((x + dx, y0, 0.040), 0.012, 0.020, 0.014, 2.4), ((x + dx, y0 + 0.026, 0.050), 0.014, 0.026, 0.024, 2.6),
            ((x + dx, y0 + 0.052, 0.034), 0.012, 0.016, 0.018, 2.4)], BP, bone, n="small", sub=1)
         L([((x + dx, y0 + 0.058, 0.018), 0.004, 0.005, 0.004, 2.0), ((x + dx, y0 + 0.070, 0.006), 0.001, 0.001, 0.001, 2.0)],
-          GM, bone, n=5, sub=1)
+          GM, bone, n=5, sub=1, caps=(False, False))
 
 
 def tile_uvs(bm) -> None:
@@ -610,6 +715,14 @@ def build_body(bpy, bmesh, scene, detail: str, arm_obj):
     for v in P.bm.verts:  # soles land on exactly z = 0 (the rest-pose floor contract)
         if abs(v.co.z) < 5e-4:
             v.co.z = 0.0
+    col = P.bm.loops.layers.float_color.new("tint")
+    shade = {GM: (*(lin(c) for c in GM_SRGB), 1.0), RB: (*(lin(c) for c in RUBY_SRGB), 1.0)}
+    for f in P.bm.faces:
+        rgba = shade.get(f.material_index, (1.0, 1.0, 1.0, 1.0))
+        for loop in f.loops:
+            loop[col] = rgba
+        if f.material_index == RB:
+            f.material_index = GM
     bmesh.ops.recalc_face_normals(P.bm, faces=P.bm.faces[:])
     # Fixed triangulation here: the exporter's own quad split follows float noise between runs.
     bmesh.ops.triangulate(P.bm, faces=P.bm.faces[:], quad_method="FIXED", ngon_method="EAR_CLIP")
@@ -618,6 +731,8 @@ def build_body(bpy, bmesh, scene, detail: str, arm_obj):
     me = bpy.data.meshes.new(f"{BODY}-{detail}")
     P.bm.to_mesh(me)
     P.bm.free()
+    me.color_attributes.active_color_name = "tint"
+    me.color_attributes.render_color_index = me.color_attributes.active_color_index
     obj = bpy.data.objects.new(BODY if detail == "low" else f"{BODY}-{detail}", me)
     scene.collection.objects.link(obj)
     for name in BONE_NAMES:
@@ -977,6 +1092,10 @@ def _principled(mat, name: str):
     if name == GLOW:
         bsdf.inputs["Emission Color"].default_value = (*(lin(c) for c in GLOW_SRGB), 1.0)
         bsdf.inputs["Emission Strength"].default_value = GLOW_STRENGTH
+    if name == "gunmetal":  # gunmetal and ruby from the corner colours (exported as COLOR_0)
+        attr = mat.node_tree.nodes.new("ShaderNodeVertexColor")
+        attr.layer_name = "tint"
+        mat.node_tree.links.new(attr.outputs["Color"], bsdf.inputs["Base Color"])
     return bsdf
 
 
@@ -1074,7 +1193,9 @@ def export_glb(bpy, keep: list, active, path: Path) -> None:
         export_optimize_animation_size=False,  # `frozen` is constant and must keep its channels
         export_frame_range=False, export_anim_single_armature=True, export_reset_pose_bones=True,
         export_rest_position_armature=True, export_apply=False, export_yup=True,
-        export_vertex_color="NONE",  # no colour attributes: MATERIAL mode can write a white COLOR_0 placeholder
+        # ACTIVE, not MATERIAL: Blender 5.2 MATERIAL mode writes a white COLOR_0 placeholder and moves the
+        # layer to COLOR_1, which three.js ignores.
+        export_vertex_color="ACTIVE",  # COLOR_0 for the gunmetal slot (white on every other corner)
     )
 
 
@@ -1175,8 +1296,10 @@ def gate_glb(path: Path) -> dict:
         errors.append(f"{tris} triangles over {LIMITS['tris']}")
     if sorted(mats) != sorted(MATS):
         errors.append(f"materials {mats} != {MATS}")
-    if any("COLOR_0" in p["attributes"] or "COLOR_1" in p["attributes"] for p in prims):
-        errors.append("vertex colour attribute exported (the hound uses none)")
+    if any("COLOR_1" in p["attributes"] for p in prims):
+        errors.append("COLOR_1 exported (three.js reads only COLOR_0)")
+    if not any("COLOR_0" in p["attributes"] for p in prims if mats[p["material"]] == "gunmetal"):
+        errors.append("gunmetal primitive without COLOR_0 (its gunmetal and ruby hues)")
     if g.get("images") or g.get("textures"):
         errors.append("GLB must be image-free")
     skins = g.get("skins", [])
@@ -1305,7 +1428,8 @@ def build_manifest(gate: dict, cull: dict) -> dict:
         "sockets": gate["sockets"],
         "emissive": {"material": GLOW, "color": "#{:02X}{:02X}{:02X}".format(*GLOW_SRGB), "intensity": GLOW_STRENGTH,
                      "nodes": ["socket-eye", "socket-hit"]},
-        "materialSlots": {name: ({"set": name, "tileMeters": TILE_METERS, "normalScale": SETS[name]} if name in SETS
+        "materialSlots": {name: ({"set": name, "tileMeters": TILE_METERS, "normalScale": SETS[name],
+                                  **({"tint": TINTS[name]} if name in TINTS else {})} if name in SETS
                                  else {"set": None, "factorOnly": True, **({"emissive": True} if name == GLOW else {})}) for name in MATS},
         "budget": {"tris": gate["triangles"], "materials": len(gate["materials"]), "bones": gate["bone_count"], "influences": LIMITS["influences"]},
         "cull": {"center": cull["center"], "radius": cull["radius"]},
@@ -1490,7 +1614,7 @@ def compare_renders(bpy, scene, out: Path) -> list[str]:
 # --------------------------------------------------------------------------------------------------
 # Review sheet, fidelity compare and the author self-score (system Python + Pillow)
 
-ENGINE_SHOTS = ["idle", "attack", "hit", "frozen", "death"]
+ENGINE_SHOTS = ["idle", "attack", "hit", "frozen", "death", "glow-close"]  # glow-close: idle at the 50 degree lens of the p6-glow stills
 APPROVAL_NOTE = ('Concept approval PENDING (Paul). Modeled under Paul\'s standing approval of 2026-11-15: "you have standing approval '
                  'for all spending / modeling / deployments needed for this project". Model, rig, animation approvals pending.')
 TITLE = f"P5-T3 Spring Hound ({PIECE}) - owner review sheet"
@@ -1563,6 +1687,7 @@ def compose_sheet(out: Path) -> Path:
     r = out / "renders"
     eng = out / "engine"
     t = 360
+    te = (5 * (t + 10)) // len(ENGINE_SHOTS) - 10  # the engine row fits the sheet width
     rows = [
         ("REFERENCE - hound-sheet-1.png (concept; owner approval PENDING)", [("concept sheet", CONCEPT, 5 * t + 40, 2 * t)]),
         ("FIDELITY - concept views beside the model at the same angle and framing", [(COMPARE_SHEET, compare, 5 * t + 40, 2 * t)]),
@@ -1578,8 +1703,8 @@ def compose_sheet(out: Path) -> Path:
             ("idle 0.5 s", r / "anim-idle.png", t, t), ("attack impact 0.5 s", r / "anim-attack-impact.png", t, t),
             ("hit 0.1 s", r / "anim-hit.png", t, t), ("frozen (held)", r / "anim-frozen.png", t, t),
             ("death end 2.0 s", r / "anim-death-end.png", t, t)]),
-        ("IN ENGINE - three.js 0.186.1, headless Chromium on the GPU, seated player 2.6 m away", [
-            (name, eng / f"{name}.jpg", t, t) for name in ENGINE_SHOTS]),
+        ("IN ENGINE - three.js 0.186.1, headless Chromium on the GPU, seated player 2.6 m away, runtime D11 glow", [
+            (name, eng / f"{name}.jpg", te, te) for name in ENGINE_SHOTS]),
     ]
     sheet = _sheet(rows, TITLE, APPROVAL_NOTE + "\n" + fidelity_note(out), 5 * (t + 10) + 10)
     path = out.parent / f"{PIECE}.review-sheet.jpg"
