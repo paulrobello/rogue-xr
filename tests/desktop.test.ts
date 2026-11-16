@@ -4,9 +4,11 @@ import { DEFAULT_EYE_HEIGHT, TABLE_HALF_DEPTH, WAIST_DROP } from '../src/combat/
 import type { Box } from '../src/content/rooms.ts';
 import { ActionBus } from '../src/core/actions.ts';
 import { formatSeed, isValidSeed, normalizeSeed, randomSeed } from '../src/core/rng.ts';
+import { fitCombatFraming, projectToNdc, type XYZ } from '../src/desktop/combat-framing.ts';
 import { combatPitch, createDesktopControls } from '../src/desktop/controls.ts';
 import { WALK_SPEED, Walker } from '../src/desktop/walker.ts';
 import { generateFloor } from '../src/floor/generate.ts';
+import { platePoseAboveTable } from '../src/sigil-plate/index.ts';
 import { buildFloorWorld, type FloorWorld } from '../src/world/floor-world.ts';
 
 const DT = 1 / 60;
@@ -203,5 +205,118 @@ describe('desktop combat framing', () => {
     expect(
       combatPitch(0.65, DEFAULT_EYE_HEIGHT - (DEFAULT_EYE_HEIGHT - WAIST_DROP), 70),
     ).toBeCloseTo(-0.4, 1);
+  });
+});
+
+describe('desktop combat framing fit', () => {
+  const EYE: XYZ = { x: 0, y: DEFAULT_EYE_HEIGHT, z: 0 };
+  const TOP = DEFAULT_EYE_HEIGHT - WAIST_DROP;
+  /** The tray (0.3 to 0.05 m toward the player from the table centre), the plate and two automatons. */
+  const scene = (distance: number, heading: number) => {
+    const fx = Math.sin((heading * Math.PI) / 180);
+    const fz = -Math.cos((heading * Math.PI) / 180);
+    const at = (forward: number, lateral: number, y: number): XYZ => ({
+      x: fx * forward + fz * -lateral,
+      y,
+      z: fz * forward + fx * lateral,
+    });
+    const table = { x: fx * distance, z: fz * distance, yaw: heading, height: TOP };
+    const must: XYZ[] = [];
+    for (const forward of [distance - 0.3, distance - 0.05])
+      for (const lateral of [-0.2, 0.2])
+        for (const y of [TOP, TOP + 0.08]) must.push(at(forward, lateral, y));
+    const plate = platePoseAboveTable(table);
+    for (const x of [-plate.halfWidth, plate.halfWidth])
+      for (const y of [-plate.halfHeight, plate.halfHeight])
+        must.push({
+          x: plate.center.x + plate.right.x * x + plate.up.x * y,
+          y: plate.center.y + plate.right.y * x + plate.up.y * y,
+          z: plate.center.z + plate.right.z * x + plate.up.z * y,
+        });
+    const want = [at(distance + 1.2, -0.4, 1), at(distance + 1.6, 0.4, 1)];
+    return { must, want };
+  };
+
+  it('matches the three.js camera projection', () => {
+    const camera = new THREE.PerspectiveCamera(80, 1.6, 0.05, 100);
+    camera.position.set(EYE.x, EYE.y, EYE.z);
+    camera.rotation.set(-0.6, (-37 * Math.PI) / 180, 0, 'YXZ');
+    camera.updateMatrixWorld(true);
+    const p = { x: 0.7, y: 0.9, z: -0.6 };
+    const ndc = new THREE.Vector3(p.x, p.y, p.z).project(camera);
+    const mine = projectToNdc(p, EYE, 37, -0.6, 80, 1.6);
+    expect(mine?.x).toBeCloseTo(ndc.x, 6);
+    expect(mine?.y).toBeCloseTo(ndc.y, 6);
+  });
+
+  for (const heading of [0, 90, 215]) {
+    for (const distance of [0.5, 0.55, 0.65, 0.8]) {
+      for (const aspect of [1.6, 16 / 9, 4 / 3]) {
+        it(`keeps the tray, plate and automatons inside the view (table ${distance} m, heading ${heading}, aspect ${aspect.toFixed(2)})`, () => {
+          const { must, want } = scene(distance, heading);
+          const fit = fitCombatFraming({
+            eye: EYE,
+            headingDeg: heading,
+            aspect,
+            baseFov: 70,
+            must,
+            want,
+          });
+          expect(fit.fov).toBeGreaterThanOrEqual(70);
+          expect(fit.fov).toBeLessThanOrEqual(95);
+          for (const p of [...must, ...want]) {
+            const ndc = projectToNdc(p, EYE, heading, fit.pitch, fit.fov, aspect);
+            expect(ndc, `point ${JSON.stringify(p)}`).not.toBeNull();
+            expect(Math.abs(ndc?.x ?? 9)).toBeLessThanOrEqual(0.9);
+            expect(Math.abs(ndc?.y ?? 9)).toBeLessThanOrEqual(0.9);
+          }
+        });
+      }
+    }
+  }
+
+  it('keeps the base field of view when everything fits and widens it only when it does not', () => {
+    const wide = scene(0.65, 0);
+    const input = { eye: EYE, headingDeg: 0, aspect: 1.6, baseFov: 70 };
+    expect(fitCombatFraming({ ...input, ...wide }).fov).toBe(70);
+    // An automaton 6 m out and 2.5 m up cannot share a 70 degree view with the tray.
+    const far = { must: wide.must, want: [{ x: 0, y: 4.1, z: -6.65 }] };
+    expect(fitCombatFraming({ ...input, ...far }).fov).toBeGreaterThan(70);
+  });
+
+  it('falls back to the best pitch for the must-fit points when nothing fits', () => {
+    const { must } = scene(0.5, 0);
+    const fit = fitCombatFraming({
+      eye: EYE,
+      headingDeg: 0,
+      aspect: 1.6,
+      baseFov: 70,
+      maxFov: 70,
+      must: [...must, { x: 0, y: 40, z: -0.6 }],
+      want: [],
+    });
+    expect(fit.fov).toBe(70);
+    expect(fit.pitch).toBeLessThanOrEqual(0);
+  });
+
+  it('refines the opening pitch and widens the fov for the fight, and restores both after', () => {
+    const camera = new THREE.PerspectiveCamera(70, 1.6, 0.05, 100);
+    const controls = createDesktopControls(
+      camera,
+      document.createElement('canvas'),
+      new ActionBus(),
+    );
+    controls.refineCombat({ pitch: -0.9, fov: 90 });
+    expect(controls.pitch).toBe(0);
+    expect(camera.fov).toBe(70);
+    controls.frameCombat(-0.4);
+    controls.refineCombat({ pitch: -0.77, fov: 80 });
+    expect(controls.pitch).toBe(-0.77);
+    expect(camera.fov).toBe(80);
+    expect(controls.baseFov).toBe(70);
+    controls.frameCombat(null);
+    expect(controls.pitch).toBe(0);
+    expect(camera.fov).toBe(70);
+    expect(controls.baseFov).toBe(70);
   });
 });

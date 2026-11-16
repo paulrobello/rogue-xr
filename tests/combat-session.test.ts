@@ -291,12 +291,131 @@ describe('combat session', () => {
     expect(session.controller.state.player.block).toBeGreaterThan(blockAfterFirst);
   }, 60_000);
 
+  // Sigil traces bash (BASH7000 room 5): after a sigil cast, the next card grabbed at the same fan
+  // index sprang back to the fan, so a drag at an enemy staged it without ever targeting it.
+  it('plays a targeted card dragged at an enemy right after a sigil cast', async () => {
+    const rig = await openFight('SPIRE002');
+    const { session } = rig;
+    const controller = session.controller;
+    const state = controller.state;
+    controller.state = {
+      ...state,
+      player: { ...state.player, steam: 9 },
+      piles: {
+        ...state.piles,
+        hand: [
+          { uid: 9001, def: getCard('warding-glyph') },
+          { uid: 9002, def: getCard('strike') },
+        ],
+      },
+    };
+    (controller as unknown as { changed(): void }).changed();
+    rig.step(0.5);
+
+    drag(rig, session, 9001, at(session, 'table'));
+    expect(controller.stage).toBe('sigil');
+    drawSigil(rig, session);
+    expect(controller.stage).toBe('idle');
+    rig.step(2);
+    expect(controller.state.piles.hand.map((c) => c.uid)).toEqual([9002]);
+
+    const enemy = session.enemies[0];
+    if (!enemy) throw new Error('no enemy');
+    const hpBefore = controller.state.enemies.find((e) => e.id === enemy.id)?.hp as number;
+    drag(rig, session, 9002, at(session, 'enemy', enemy.id));
+    expect(controller.state.piles.hand.map((c) => c.uid)).toEqual([]);
+    expect(controller.state.enemies.find((e) => e.id === enemy.id)?.hp).toBeLessThan(hpBefore);
+    rig.hook.dispose();
+  }, 60_000);
+
   it('replays the same fight identically from the same seed', async () => {
     const a = await playFight(await openFight());
     const b = await playFight(await openFight());
     expect(b.log).toEqual(a.log);
     expect(b.rolls).toEqual(a.rolls);
   }, 120_000);
+});
+
+describe('desktop HUD fit', () => {
+  const ndcOf = (camera: THREE.PerspectiveCamera, points: THREE.Vector3[]) => {
+    camera.updateMatrixWorld(true);
+    const ndc = points.map((p) => p.clone().project(camera));
+    return {
+      x: [Math.min(...ndc.map((p) => p.x)), Math.max(...ndc.map((p) => p.x))],
+      y: [Math.min(...ndc.map((p) => p.y)), Math.max(...ndc.map((p) => p.y))],
+    };
+  };
+  /** The desktop view at the close fallback table (0.5 m ahead) with the opening pitch combatPitch gives. */
+  const closeView = (rig: Rig, pitch: number): THREE.PerspectiveCamera => {
+    const pose = rig.view.encounter.tablePose;
+    if (!pose) throw new Error('no table pose');
+    const yaw = (pose.yaw * Math.PI) / 180;
+    const camera = new THREE.PerspectiveCamera(70, 1.6, 0.05, 100);
+    camera.position.set(
+      pose.x - Math.sin(yaw) * 0.5,
+      pose.height + 0.75,
+      pose.z + Math.cos(yaw) * 0.5,
+    );
+    camera.rotation.set(pitch, -yaw, 0, 'YXZ');
+    return camera;
+  };
+  const hud = (session: CombatSession) =>
+    session.hudPoints().filter((e) => e.name !== 'tray' && e.name !== 'plate');
+
+  it('slides the buttons (and the panel and readouts, where labels exist) into the view, and back for XR', async () => {
+    const rig = await openFight();
+    const camera = closeView(rig, -0.53);
+    const home = hud(rig.session).map((e) => e.points.map((p) => p.clone()));
+    const outside = hud(rig.session).filter((e) => {
+      const { x, y } = ndcOf(camera, e.points);
+      return (x[0] ?? 0) < -1 || (x[1] ?? 0) > 1 || (y[0] ?? 0) < -1 || (y[1] ?? 0) > 1;
+    });
+    // Without the fit the close fallback table cuts the HUD off, which is the reported bug.
+    expect(outside.map((e) => e.name)).toEqual(expect.arrayContaining(['end-turn', 'throw']));
+
+    rig.session.fitHudToView(camera);
+    const names = hud(rig.session).map((e) => e.name);
+    // The panel and readouts are canvas labels, which the test environment cannot make; the browser check covers them.
+    expect(names).toEqual(expect.arrayContaining(['end-turn', 'throw']));
+    for (const { name, points } of hud(rig.session)) {
+      const { x, y } = ndcOf(camera, points);
+      expect(x[0], `${name} left`).toBeGreaterThanOrEqual(-1);
+      expect(x[1], `${name} right`).toBeLessThanOrEqual(1);
+      expect(y[0], `${name} bottom`).toBeGreaterThanOrEqual(-1);
+      expect(y[1], `${name} top`).toBeLessThanOrEqual(1);
+    }
+
+    // The XR layout is the home layout: a reset puts every element back where it was built.
+    rig.session.resetHud();
+    hud(rig.session).forEach((e, i) => {
+      e.points.forEach((p, j) => {
+        expect(p.distanceTo(home[i]?.[j] as THREE.Vector3)).toBeLessThan(1e-9);
+      });
+    });
+    rig.hook.dispose();
+  }, 60_000);
+
+  it('leaves a HUD that already fits where it is', async () => {
+    const rig = await openFight();
+    const camera = closeView(rig, -0.53);
+    rig.session.fitHudToView(camera);
+    const fitted = hud(rig.session).map((e) => e.points.map((p) => p.clone()));
+    rig.session.fitHudToView(camera);
+    hud(rig.session).forEach((e, i) => {
+      e.points.forEach((p, j) => {
+        expect(p.distanceTo(fitted[i]?.[j] as THREE.Vector3)).toBeLessThan(1e-6);
+      });
+    });
+    rig.hook.dispose();
+  }, 60_000);
+
+  it('reports the tray, plate and automatons for the framing fit', async () => {
+    const rig = await openFight();
+    const { must, want } = rig.session.framingPoints();
+    expect(must.length).toBe(12);
+    expect(want.length).toBe(rig.session.enemies.length);
+    rig.hook.dispose();
+  }, 60_000);
 });
 
 describe('dice presenter', () => {

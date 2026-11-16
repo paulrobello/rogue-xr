@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { ActionBus } from '../core/actions.ts';
+import type { CombatFraming } from './combat-framing.ts';
 
 /** Degrees of turn per pixel of mouse travel. */
 const LOOK_DEGREES_PER_PIXEL = 0.23;
@@ -11,8 +12,9 @@ const TABLE_NDC_Y = -0.7;
 /**
  * The desktop pitch a fight opens at: the table centre `distance` metres ahead and `drop` metres
  * below the eye lands at `TABLE_NDC_Y`. At the default placement (0.65 m ahead, 0.75 m down, 70°
- * fov) that is about -0.4 rad, which keeps the table, dice tray, sigil plate and the automatons'
- * readouts in view at 1600x1000 (measured in the P6-T2 bug bash); End Turn and Throw stay on E and T.
+ * fov) that is about -0.4 rad. It only frames the table while the fight opens; once the combat
+ * HUD exists `fitCombatFraming` replaces it with a pitch and fov that keep the tray, plate and
+ * automatons in view.
  */
 export function combatPitch(distance: number, drop: number, fovDeg: number): number {
   const down = Math.atan2(drop, Math.max(distance, 1e-3));
@@ -33,8 +35,14 @@ export function createDesktopControls(
   const keys = new Set<string>();
   let pitch = 0;
   let dragging = false;
-  /** The pitch before a fight framed the table, restored when it ends; null outside a fight. */
-  let beforeCombat: number | null = null;
+  /** The view before a fight framed the table, restored when it ends; null outside a fight. */
+  let beforeCombat: { pitch: number; fov: number } | null = null;
+
+  const setFov = (fov: number): void => {
+    if (camera.fov === fov) return;
+    camera.fov = fov;
+    camera.updateProjectionMatrix();
+  };
 
   element.addEventListener('pointerdown', () => {
     dragging = true;
@@ -65,20 +73,35 @@ export function createDesktopControls(
     },
     /**
      * Tilts the view to `combatPitchRad` when a fight opens (see `combatPitch`) and back to the
-     * earlier pitch once it ends (null). Later calls during the fight keep the player's own look.
+     * earlier pitch and field of view once it ends (null). Later calls during the fight keep the
+     * player's own look.
      * Returns true on the call that framed a new fight, so the caller can turn to the table too.
      */
     frameCombat(combatPitchRad: number | null): boolean {
       if (combatPitchRad !== null && beforeCombat === null) {
-        beforeCombat = pitch;
+        beforeCombat = { pitch, fov: camera.fov };
         pitch = combatPitchRad;
         return true;
       }
       if (combatPitchRad === null && beforeCombat !== null) {
-        pitch = beforeCombat;
+        pitch = beforeCombat.pitch;
+        setFov(beforeCombat.fov);
         beforeCombat = null;
       }
       return false;
+    },
+    /** The vertical field of view outside a fight framing (a fight may widen it). */
+    get baseFov(): number {
+      return beforeCombat?.fov ?? camera.fov;
+    },
+    /**
+     * Replaces the opening pitch of the fight in progress with a fitted pitch and field of view,
+     * once the fight's HUD exists (see `fitCombatFraming`). Does nothing outside a fight.
+     */
+    refineCombat(framing: CombatFraming): void {
+      if (beforeCombat === null) return;
+      pitch = framing.pitch;
+      setFov(framing.fov);
     },
     update() {
       camera.rotation.set(pitch, 0, 0);

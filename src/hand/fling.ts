@@ -189,6 +189,9 @@ export class FlingController {
   /** Samples the main grip while a card is held. Call every frame with the frame time step. */
   update(dt: number): void {
     this.clock += Math.max(0, dt);
+    // A cast that played the staged card leaves no plate to abandon; a stale entry would spring
+    // the next grabbed card at the same fan index back into the fan.
+    if (this.staged && this.combat.stage !== 'sigil') this.staged = null;
     if (this.held && this.mainGrip) this.sample(this.mainGrip);
   }
 

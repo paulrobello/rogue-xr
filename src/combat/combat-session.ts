@@ -53,6 +53,12 @@ const TIP_OFFSET = 0.06;
 const TRAY_HALF_X = 0.2;
 const TRAY_HALF_Z = 0.11;
 const ENEMY_RADIUS = 0.5;
+/** The HUD stays inside this normalized device extent of the desktop view (1 is the screen edge). */
+const HUD_VIEW_MARGIN = 0.92;
+/** Clear space left between HUD panels in the desktop view, in normalized device units. */
+const HUD_GAP = 0.04;
+/** The status panel is drawn at this scale in the desktop view, so it clears the sigil plate at close tables. */
+const DESKTOP_STATUS_SCALE = 0.6;
 /** Longest the win handover waits on death clips, from the first death; a stalled clip never hangs it. */
 export const DEATH_WAIT_SECONDS = 3;
 
@@ -79,6 +85,36 @@ function safeLabel(px: number, py: number, width: number): CanvasLabel | null {
   } catch {
     return null;
   }
+}
+
+interface NdcRect {
+  x0: number;
+  x1: number;
+  y0: number;
+  y1: number;
+  /** Mean distance in front of the camera, metres. */
+  depth: number;
+}
+
+/** The eight corners of a mesh's geometry bounds in world space. */
+function worldCorners(mesh: THREE.Mesh): THREE.Vector3[] {
+  mesh.geometry.computeBoundingBox();
+  const box = mesh.geometry.boundingBox;
+  if (!box) return [];
+  const out: THREE.Vector3[] = [];
+  for (const x of [box.min.x, box.max.x])
+    for (const y of [box.min.y, box.max.y])
+      for (const z of [box.min.z, box.max.z])
+        out.push(new THREE.Vector3(x, y, z).applyMatrix4(mesh.matrixWorld));
+  return out;
+}
+
+/** How far to move a span `[lo, hi]` so it sits inside `[-margin, margin]` (centred when too wide). */
+function shiftInto(lo: number, hi: number, margin: number): number {
+  if (hi - lo > 2 * margin) return -(lo + hi) / 2;
+  if (lo < -margin) return -margin - lo;
+  if (hi > margin) return margin - hi;
+  return 0;
 }
 
 export interface CombatSessionDeps {
@@ -152,6 +188,15 @@ export class CombatSession {
   private readonly endLabel: CanvasLabel | null;
   private readonly throwLabel: CanvasLabel | null;
   private readonly disposers: (() => void)[] = [];
+  /** Objects the desktop view may slide to keep them on screen, with their XR layout positions. */
+  private readonly anchors: {
+    object: THREE.Mesh;
+    home: THREE.Vector3;
+    /** Scale in the desktop view; 1 in the XR layout. */
+    scale: number;
+    kind: 'button' | 'readout' | 'status';
+  }[] = [];
+  private hudMoved = false;
   private readonly raycaster = new THREE.Raycaster();
   private platePose: PlatePose;
   private handKey = '';
@@ -302,6 +347,13 @@ export class CombatSession {
       this.group.add(label.mesh);
       this.labels.push({ id, label });
     });
+    const anchor = (object: THREE.Mesh, kind: 'button' | 'readout' | 'status', scale = 1) =>
+      this.anchors.push({ object, home: object.position.clone(), scale, kind });
+    anchor(this.endButton, 'button');
+    anchor(this.throwButton, 'button');
+    for (const { label } of this.labels) anchor(label.mesh, 'readout');
+    // The status panel goes last so it can step clear of the readouts.
+    if (this.status) anchor(this.status.mesh, 'status', DESKTOP_STATUS_SCALE);
     // UI atlas icons are drawn into these canvases; the page loads when a label is first drawn.
     const iconHost = this.status?.mesh ?? this.labels[0]?.label.mesh;
     if (iconHost)
@@ -436,6 +488,133 @@ export class CombatSession {
         );
       }
     }
+  }
+
+  /**
+   * World-space corners of every HUD element a desktop player must be able to see: End Turn,
+   * Throw, the dice tray, the sigil plate, the status panel and each automaton's readout.
+   */
+  hudPoints(): { name: string; points: THREE.Vector3[] }[] {
+    this.deps.root.updateWorldMatrix(true, true);
+    const out: { name: string; points: THREE.Vector3[] }[] = [
+      { name: 'end-turn', points: worldCorners(this.endButton) },
+      { name: 'throw', points: worldCorners(this.throwButton) },
+      { name: 'tray', points: worldCorners(this.trayHit) },
+      { name: 'plate', points: this.plateCorners() },
+    ];
+    if (this.status) out.push({ name: 'status', points: worldCorners(this.status.mesh) });
+    for (const { id, label } of this.labels)
+      out.push({ name: `readout:${id}`, points: worldCorners(label.mesh) });
+    return out;
+  }
+
+  /**
+   * What the desktop framing fits: `must` (the dice tray and the sigil plate, which sit in the
+   * world) and `want` (each automaton's aim point). The buttons, status panel and readouts are
+   * not here because `fitHudToView` moves them into whatever view results.
+   */
+  framingPoints(): { must: THREE.Vector3[]; want: THREE.Vector3[] } {
+    this.deps.root.updateWorldMatrix(true, true);
+    const want = this.enemies.map(({ id, body }) => this.aimOf(id, body));
+    return { must: [...worldCorners(this.trayHit), ...this.plateCorners()], want };
+  }
+
+  /**
+   * Desktop only: slides the buttons, status panel and readouts from their XR layout positions
+   * into `camera`'s view wherever the view would cut them off. Each is moved in the camera's
+   * plane, so its size on screen is unchanged. The status panel is also scaled down and then
+   * steps below any readout it would cover. Call `resetHud` when the camera is not the player's desktop view.
+   */
+  fitHudToView(camera: THREE.PerspectiveCamera, margin = HUD_VIEW_MARGIN): void {
+    if (this.disposed) return;
+    this.deps.root.updateWorldMatrix(true, true);
+    camera.updateWorldMatrix(true, false);
+    const tanY = Math.tan((camera.fov * DEG) / 2);
+    const tanX = tanY * camera.aspect;
+    const rotation = camera.getWorldQuaternion(new THREE.Quaternion());
+    const inverse = camera.matrixWorld.clone().invert();
+    const rectOfPoints = (corners: THREE.Vector3[]): NdcRect | null => {
+      const rect: NdcRect = { x0: Infinity, x1: -Infinity, y0: Infinity, y1: -Infinity, depth: 0 };
+      for (const corner of corners) {
+        const c = corner.clone().applyMatrix4(inverse);
+        if (c.z > -0.02) return null;
+        rect.x0 = Math.min(rect.x0, c.x / (-c.z * tanX));
+        rect.x1 = Math.max(rect.x1, c.x / (-c.z * tanX));
+        rect.y0 = Math.min(rect.y0, c.y / (-c.z * tanY));
+        rect.y1 = Math.max(rect.y1, c.y / (-c.z * tanY));
+        rect.depth += -c.z / corners.length;
+      }
+      return rect;
+    };
+    const rectOf = (mesh: THREE.Mesh): NdcRect | null => {
+      mesh.updateMatrixWorld(true);
+      return rectOfPoints(worldCorners(mesh));
+    };
+    const plate = rectOfPoints(this.plateCorners());
+    const overlaps = (a: NdcRect, b: NdcRect): boolean =>
+      a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0;
+    const move = (mesh: THREE.Mesh, rect: NdcRect, dx: number, dy: number): void => {
+      mesh.position.add(
+        new THREE.Vector3(dx * tanX * rect.depth, dy * tanY * rect.depth, 0).applyQuaternion(
+          rotation,
+        ),
+      );
+    };
+    this.hudMoved = true;
+    const placed: NdcRect[] = [];
+    for (const anchor of this.anchors) {
+      const mesh = anchor.object;
+      mesh.position.copy(anchor.home);
+      mesh.scale.setScalar(anchor.scale);
+      let rect = rectOf(mesh);
+      for (let pass = 0; pass < 3 && rect; pass++) {
+        const dx = shiftInto(rect.x0, rect.x1, margin);
+        const dy = shiftInto(rect.y0, rect.y1, margin);
+        if (dx === 0 && dy === 0) break;
+        move(mesh, rect, dx, dy);
+        rect = rectOf(mesh);
+      }
+      if (rect && anchor.kind === 'status') {
+        const cover = placed.find((p) => rect && overlaps(p, rect));
+        if (cover && cover.y0 - HUD_GAP - (rect.y1 - rect.y0) >= -margin) {
+          move(mesh, rect, 0, cover.y0 - HUD_GAP - rect.y1);
+          rect = rectOf(mesh);
+        }
+      } else if (rect && plate && anchor.kind === 'readout') {
+        // A readout rises above the sigil plate when the view has room, so a cast never hides it.
+        const lift = plate.y1 + HUD_GAP - rect.y0;
+        if (overlaps(plate, rect) && rect.y1 + lift <= margin) {
+          move(mesh, rect, 0, lift);
+          rect = rectOf(mesh);
+        }
+      }
+      if (rect) placed.push(rect);
+    }
+  }
+
+  /** Puts the buttons, status panel and readouts back at their XR layout positions. */
+  resetHud(): void {
+    if (!this.hudMoved) return;
+    this.hudMoved = false;
+    for (const anchor of this.anchors) {
+      anchor.object.position.copy(anchor.home);
+      anchor.object.scale.setScalar(1);
+    }
+  }
+
+  private plateCorners(): THREE.Vector3[] {
+    const p = this.platePose;
+    const out: THREE.Vector3[] = [];
+    for (const x of [-p.halfWidth, p.halfWidth])
+      for (const y of [-p.halfHeight, p.halfHeight])
+        out.push(
+          new THREE.Vector3(
+            p.center.x + p.right.x * x + p.up.x * y,
+            p.center.y + p.right.y * x + p.up.y * y,
+            p.center.z + p.right.z * x + p.up.z * y,
+          ),
+        );
+    return out;
   }
 
   /** The current sigil plate pose, world space. */
