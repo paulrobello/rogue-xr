@@ -91,7 +91,7 @@ describe('SampleWindow', () => {
   });
 });
 
-describe('releaseVelocity against recorded traces', () => {
+describe('releaseVelocity against synthetic traces', () => {
   it.each(FLICKS.map((t) => [t.name, t] as const))(
     '%s recovers the flick velocity within 10%',
     (_name, trace) => {

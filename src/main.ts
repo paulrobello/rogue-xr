@@ -60,8 +60,11 @@ import {
   type StudyAsset,
 } from './world/study-room.ts';
 import { runVeil } from './world/veil.ts';
-import { Locomotion } from './xr/locomotion.ts';
+import { ComfortVignette } from './xr/comfort-vignette.ts';
+import { Locomotion, locomotionSettingsFrom } from './xr/locomotion.ts';
+import { LocomotionDrive } from './xr/locomotion-drive.ts';
 import { createXrRig } from './xr/session.ts';
+import { TeleportView } from './xr/teleport-view.ts';
 
 const app = document.querySelector<HTMLDivElement>('#app');
 if (!app) throw new Error('Missing #app root');
@@ -177,7 +180,18 @@ const actions = new ActionBus();
 const xr = createXrRig(renderer, scene, rig, camera, actions);
 const desktop = createDesktopControls(camera, renderer.domElement, actions);
 const walker = new Walker(rig, actions, () => floor?.world.nearbyColliders() ?? []);
-const locomotion = new Locomotion(rig, camera);
+const locomotion = new Locomotion(
+  rig,
+  camera,
+  locomotionSettingsFrom(settings ?? DEFAULT_SETTINGS),
+);
+const drive = new LocomotionDrive(locomotion);
+// Comfort cues: the teleport arc lives in the world (walls hide it), the vignette is a camera-locked
+// pass drawn after the boards and before the red hit flash.
+const teleportView = new TeleportView();
+scene.add(teleportView.root);
+const comfortVignette = new ComfortVignette();
+renderer.compile(comfortVignette.scene, camera);
 // Head pose is only known once frames arrive, so height calibration waits for the first XR frame.
 let recenterPending = false;
 actions.on('recenter', () => {
@@ -518,6 +532,7 @@ const ui = floor
           music: next.musicVolume,
           sfx: next.sfxVolume,
         });
+        Object.assign(locomotion.settings, locomotionSettingsFrom(next));
         if (db) void saveSettings(db, next);
       },
     })
@@ -817,6 +832,10 @@ if (floor && params.has('debug')) {
       screenOf,
       teleportToEncounter,
       hitFx,
+      locomotion,
+      drive,
+      comfortVignette,
+      teleportView,
       heroReady,
       /** Draw calls and triangles of the last scene pass (before the board pass). */
       get stats() {
@@ -918,14 +937,21 @@ renderer.setAnimationLoop((time, frame) => {
       ui?.recenter(camera);
     }
     const { left, right } = xr.sticks();
-    if (!floor?.locked && !ui?.visible) {
-      locomotion.update(deltaSeconds, {
-        moveX: left[0],
-        moveY: left[1],
-        turnX: right[0],
-        teleportAim: null,
-      });
-    }
+    const aimSource = xr.rays().left;
+    const aimRay = aimSource ? controllerRay(aimSource) : null;
+    drive.step({
+      dt: deltaSeconds,
+      left,
+      right,
+      leftRay: aimRay
+        ? {
+            origin: [aimRay.origin.x, aimRay.origin.y, aimRay.origin.z],
+            direction: [aimRay.direction.x, aimRay.direction.y, aimRay.direction.z],
+          }
+        : null,
+      locked: floor?.locked ?? false,
+      boardVisible: ui?.visible ?? false,
+    });
   } else {
     const pose = floor?.encounter.tablePose;
     const fighting = floor?.encounter.phase === 'unfolding' || floor?.encounter.phase === 'active';
@@ -998,6 +1024,7 @@ renderer.setAnimationLoop((time, frame) => {
     audio.setState(audioFor(flow.phase, floor.encounter.phase));
     audio.update(deltaSeconds);
   }
+  teleportView.update(xr.presenting ? locomotion.teleportPreview : null);
   renderer.render(scene, camera);
   sceneStats.calls = renderer.info.render.calls;
   sceneStats.triangles = renderer.info.render.triangles;
@@ -1005,6 +1032,18 @@ renderer.setAnimationLoop((time, frame) => {
     renderer.autoClear = false;
     renderer.clearDepth();
     renderer.render(uiScene, camera);
+    renderer.autoClear = true;
+  }
+  // Comfort vignette, then the red hit flash on top of it, so the two stack.
+  comfortVignette.update(
+    xr.presenting ? locomotion.vignetteStrength : 0,
+    camera,
+    xr.presenting ? projectionTan(renderer.xr.getCamera().projectionMatrix) : viewTan(camera),
+    xr.presenting,
+  );
+  if (comfortVignette.active) {
+    renderer.autoClear = false;
+    renderer.render(comfortVignette.scene, camera);
     renderer.autoClear = true;
   }
   hitFx.update(

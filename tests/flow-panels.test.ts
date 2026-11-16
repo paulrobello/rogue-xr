@@ -133,3 +133,46 @@ describe('FlowUi XR recenter (XO5)', () => {
     ui.dispose();
   });
 });
+
+describe('FlowUi settings board comfort toggles', () => {
+  it('flips teleport and turn mode through onSettings and shows the new state', () => {
+    const flow = new RunFlow({
+      workshop: createWorkshop(),
+      starterDeck: STARTER_DECK,
+      rewardPool: REWARD_POOL,
+    });
+    let stored = { ...DEFAULT_SETTINGS };
+    const saved: (typeof DEFAULT_SETTINGS)[] = [];
+    const ui = new FlowUi({
+      flow,
+      keyArt: { url: '', titleSafe: { x: 0, y: 0, w: 0.3, h: 0.4 } },
+      seed: 'BRASS042',
+      snapshot: () => null,
+      settings: () => stored,
+      onNewRun: (seed) => flow.newRun(seed),
+      onContinue: () => {},
+      onSettings: (next) => {
+        stored = next;
+        saved.push(next);
+      },
+    });
+    const head = new THREE.Object3D();
+    ui.sync(head);
+    expect(flow.openSettings()).toBe(true);
+    ui.sync(head);
+    expect(ui.controlIds()).toContain('settings-teleportEnabled-toggle');
+    expect(ui.controlIds()).toContain('settings-turnMode-toggle');
+
+    expect(stored.teleportEnabled).toBe(false);
+    expect(ui.activate('settings-teleportEnabled-toggle')).toBe(true);
+    expect(stored.teleportEnabled).toBe(true);
+    expect(ui.activate('settings-turnMode-toggle')).toBe(true);
+    expect(stored.turnMode).toBe('smooth');
+    expect(ui.activate('settings-teleportEnabled-toggle')).toBe(true);
+    expect(stored.teleportEnabled).toBe(false);
+    expect(saved).toHaveLength(3);
+    // Each flip keeps the other fields (volumes are untouched).
+    expect(stored.masterVolume).toBe(DEFAULT_SETTINGS.masterVolume);
+    ui.dispose();
+  });
+});

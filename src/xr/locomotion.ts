@@ -141,6 +141,19 @@ export function smoothTurnRate(x: number, maxRate = DEFAULT_SMOOTH_TURN_RATE): n
   return scaled * maxRate;
 }
 
+export const AIM_ENGAGE = 0.7;
+export const AIM_RELEASE = 0.3;
+
+/**
+ * Teleport aim hysteresis on the forward stick: aiming starts once the stick passes `AIM_ENGAGE`
+ * and holds until it falls below `AIM_RELEASE`, so the release that commits is a deliberate
+ * return toward centre, not the stick wobbling around one threshold.
+ */
+export function stepTeleportAim(aiming: boolean, forward: number): boolean {
+  const f = finiteOr(forward, 0);
+  return aiming ? f >= AIM_RELEASE : f >= AIM_ENGAGE;
+}
+
 // --- Comfort vignette ---------------------------------------------------------------------------
 
 export interface VignetteConfig {
@@ -480,6 +493,26 @@ export interface LocomotionSettings {
   standingEyeHeight: number;
 }
 
+/** The subset of the persisted profile settings that drive locomotion. */
+export interface ComfortProfile {
+  turnMode: 'snap' | 'smooth';
+  snapDegrees: number;
+  vignette: boolean;
+  eyeHeight: number;
+  teleportEnabled: boolean;
+}
+
+/** Maps persisted comfort options onto locomotion settings. */
+export function locomotionSettingsFrom(profile: ComfortProfile): Partial<LocomotionSettings> {
+  return {
+    turnMode: profile.turnMode,
+    snapDegrees: profile.snapDegrees,
+    vignette: profile.vignette,
+    standingEyeHeight: profile.eyeHeight,
+    teleport: profile.teleportEnabled,
+  };
+}
+
 export const DEFAULT_LOCOMOTION_SETTINGS: LocomotionSettings = {
   turnMode: 'snap',
   snapDegrees: DEFAULT_SNAP_DEGREES,
@@ -545,6 +578,11 @@ export class Locomotion {
   /** The current teleport arc, for drawing, or null when not aiming. */
   get teleportPreview(): TeleportResult | null {
     return this.preview;
+  }
+
+  /** Drops a held teleport aim without committing it (a board or a fight took the controls). */
+  cancelTeleport(): void {
+    this.preview = null;
   }
 
   /** Lifts the rig so the seated head sits at the virtual standing eye height. */
@@ -614,6 +652,8 @@ export class Locomotion {
     if (landing) {
       this.rig.position.x += landing[0] - headXZ[0];
       this.rig.position.z += landing[2] - headXZ[1];
+      // The jump shows as a vignette pulse that fades on the normal release ramp.
+      this.strength = DEFAULT_VIGNETTE.maxStrength;
     }
   }
 }

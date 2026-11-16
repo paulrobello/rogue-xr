@@ -18,6 +18,7 @@ node scripts/xr-emu/walk.mjs --focus          # New Run, one fight: only the fan
 node scripts/xr-emu/walk.mjs --turns          # a two-automaton fight (SPIRE002): only the enemy-phase and hit-flash checks
 node scripts/xr-emu/walk.mjs --recenter       # Enter VR facing away from the title: only the board re-placement check (XO5)
 node scripts/xr-emu/walk.mjs --treasure       # SPIRE001: open the treasure room's coffer with the main-hand ray and trigger
+node scripts/xr-emu/walk.mjs --loco           # Settings comfort toggles, New Run, then smooth move, snap turn, the comfort vignette and teleport
 ```
 
 The update-notice check needs a production build (the dev server stamps no build id):
@@ -30,7 +31,7 @@ node scripts/xr-emu/walk.mjs --notice http://localhost:4262
 
 Screenshots land in `docs/verification/xr-emu-*.jpg` with a JSON report
 (`xr-emu-report.json`, `xr-emu-report-notice.json`). The exit code is 1 when any check fails
-(`make` reports 2). As of 2026-11-16 the walk passes every check (52, which includes the 11 treasure and resume checks;
+(`make` reports 2). As of 2026-11-16 the walk passes every check (59, which includes the 11 treasure and resume checks and the 9 comfort checks, 8 of which `--loco` runs on its own;
 `xr-sigil-stage` failed intermittently until the walk waited for XR frames after pose writes, see `docs/playtesting.md`) and `--notice` last passed its 5 on 2026-11-15; XO1 to XO4 in `docs/playtesting.md` record the fixes. The two console 404s in the
 notice run are the music tracks that are not produced yet.
 
@@ -47,6 +48,22 @@ notice run are the music tracks that are not produced yet.
 - Fights are ended with the debug `K` key (win) and `?cheat`-style `__flow.setCheat('lose')` plus
   `E` (end turn) for the death; the reward, death and title boards are always used with the ray.
 - The head sits at a seated 1.2 m, so the recenter's height lift is visible in the checks.
+- The locomotion checks (`locomotionCheck`, run inside the walk and alone with `--loco`) use the left
+  stick and the left controller. Smooth move and snap turn come first. The comfort vignette is then read
+  three ways: `__combat.locomotion.vignetteStrength` and `__combat.comfortVignette` while the stick is held
+  and after it is released, whether the comfort pass appears in `__xrEmu.passes`, and the mean luma of
+  the outer frame band and the centre box at one pose with `comfortVignette.hold = 0.7` against the same
+  view with it off (the hit flash is then held on top, to check the two stack). The teleport check turns
+  teleport on through the app's settings path (the title's Settings toggles are pressed with the ray in
+  `settingsComfortCheck`, which also reads the stored profile from IndexedDB), pushes the left stick
+  forward and scans controller aims in 8 headings until the app itself reports an invalid landing
+  (a wall, preferably), checks the arc and ring are dim red and that releasing moves nothing, then scans
+  until the app reports a valid landing at least 1.5 m away, and checks the head ends within 3 cm of the
+  landing the arc showed, with `rig.position.y` unchanged and a vignette pulse that fades. The aims are
+  found by scanning because the room geometry is generated per seed. Every pose or axes write is followed
+  by `__xrEmu.frames()` before anything is read. `locomotion-locked-in-combat` runs only in the full
+  walk, inside the first fight: with the table up, a held left stick moves nothing with teleport off
+  and on, no aim is held and the vignette stays 0.
 - The treasure check (`treasureCheck`, 11 checks) starts SPIRE001 (room 3 is a study with a card coffer),
   moves the seated rig to a spot 2.2 m from the coffer with the debug `__combat.teleportToLoot()`, turns the
   head toward it, aims the main-hand ray at the lid and pulls the trigger. It checks that the lid opens

@@ -29,6 +29,8 @@ const { values: opts } = parseArgs({
     recenter: { type: 'boolean', default: false },
     // Only the treasure check: open a coffer with the controller ray and trigger.
     treasure: { type: 'boolean', default: false },
+    // Only the comfort checks: the Settings toggles, New Run, then locomotion (move, turn, vignette, teleport).
+    loco: { type: 'boolean', default: false },
   },
 });
 
@@ -171,6 +173,8 @@ try {
     await recenterCheck();
   } else if (opts.treasure) {
     await treasureCheck();
+  } else if (opts.loco) {
+    await walk();
   } else {
     await walk();
     await enemyTurnCheck();
@@ -441,6 +445,15 @@ try {
       return;
     }
 
+    if (opts.loco) {
+      await enterVr();
+      await settingsComfortCheck();
+      await press('title-new-run');
+      await settle(800);
+      await locomotionCheck();
+      return;
+    }
+
     // --- P0-T2 criterion 2: the session through createXrSession, foveation, scale, hands --------
     await enterVr();
     const session = await ev(() => {
@@ -579,6 +592,8 @@ try {
       control: 'Lower/Raise buttons (no slider on the board)',
     });
 
+    await settingsComfortCheck();
+
     // Seed keypad.
     hovered = await press('title-enter-seed');
     const padOpen = await ev(() => window.__flow.ui.seedEntry === '');
@@ -695,16 +710,448 @@ try {
       yawDeg: [moved.yaw, yaw1, yaw2],
       steps: [step1, step2],
     });
-    record('locomotion-teleport', null, 'not wired: main.ts passes teleportAim: null every frame');
-    record(
-      'locomotion-vignette',
-      null,
-      'not drawn: Locomotion.vignetteStrength is computed but nothing in src reads it',
-    );
-    // Turn back so the rest of the walk faces the way the floor expects.
+    // Turn back so the checks below face the way the floor expects.
     await ev(() => {
       window.__xrEmu.ctx().rig.rotation.y = 0;
     });
+    await comfortVignetteCheck();
+    await teleportCheck();
+  }
+
+  /** While the table is up neither smooth move nor teleport moves the rig, and no aim is held. */
+  async function combatLocksLocomotionCheck() {
+    const read = () =>
+      ev(() => {
+        const { rig } = window.__xrEmu.ctx();
+        const { locomotion, drive, floor } = window.__combat;
+        return {
+          at: [rig.position.x, rig.position.z],
+          vignette: locomotion.vignetteStrength,
+          aiming: drive.isAiming,
+          preview: locomotion.teleportPreview !== null,
+          locked: floor.locked,
+        };
+      });
+    const setTeleport = (on) =>
+      ev((on) => {
+        const { ui } = window.__flow;
+        ui.deps.onSettings({ ...ui.deps.settings(), teleportEnabled: on });
+      }, on);
+    const before = await read();
+    const held = {};
+    for (const teleport of [false, true]) {
+      await setTeleport(teleport);
+      await stick('left', 0, -1);
+      await frames(3);
+      await settle(400);
+      held[teleport ? 'teleport' : 'smooth'] = await read();
+      await stick('left', 0, 0);
+      await frames(3);
+    }
+    await setTeleport(false);
+    const after = await read();
+    const still = (r) =>
+      Math.hypot(r.at[0] - before.at[0], r.at[1] - before.at[1]) < 1e-6 &&
+      r.vignette === 0 &&
+      !r.aiming &&
+      !r.preview;
+    record(
+      'locomotion-locked-in-combat',
+      before.locked && still(held.smooth) && still(held.teleport) && still(after),
+      { before, held, after },
+    );
+  }
+
+  /** The comfort options on the Settings board: flip with the ray, then read the app, locomotion and the stored profile. */
+  async function settingsComfortCheck() {
+    const stored = () =>
+      ev(
+        () =>
+          new Promise((resolve) => {
+            const open = indexedDB.open('rogue-xr');
+            open.onerror = () => resolve(null);
+            open.onsuccess = () => {
+              const db = open.result;
+              const get = db.transaction('settings').objectStore('settings').get('current');
+              get.onsuccess = () => {
+                db.close();
+                resolve(get.result ?? null);
+              };
+              get.onerror = () => {
+                db.close();
+                resolve(null);
+              };
+            };
+          }),
+      );
+    const read = () =>
+      ev(() => {
+        const live = window.__flow.ui.deps.settings();
+        const { settings: loco } = window.__combat.locomotion;
+        return {
+          teleportEnabled: live.teleportEnabled,
+          turnMode: live.turnMode,
+          locoTeleport: loco.teleport,
+          locoTurnMode: loco.turnMode,
+        };
+      });
+    await press('title-settings');
+    const open = (await phase()) === 'settings';
+    const initial = await read();
+    await press('settings-teleportEnabled-toggle');
+    await settle(400);
+    const teleOn = { live: await read(), stored: await stored() };
+    await shot('3b-settings-comfort');
+    await press('settings-teleportEnabled-toggle');
+    await settle(400);
+    const teleOff = { live: await read(), stored: await stored() };
+    record(
+      'settings-teleport-toggle',
+      open &&
+        initial.teleportEnabled === false &&
+        teleOn.live.teleportEnabled === true &&
+        teleOn.live.locoTeleport === true &&
+        teleOn.stored?.teleportEnabled === true &&
+        teleOff.live.teleportEnabled === false &&
+        teleOff.live.locoTeleport === false &&
+        teleOff.stored?.teleportEnabled === false,
+      { initial, teleOn, teleOff },
+    );
+    await press('settings-turnMode-toggle');
+    await settle(400);
+    const smooth = { live: await read(), stored: await stored() };
+    await press('settings-turnMode-toggle');
+    await settle(400);
+    const snap = { live: await read(), stored: await stored() };
+    record(
+      'settings-turn-toggle',
+      initial.turnMode === 'snap' &&
+        smooth.live.turnMode === 'smooth' &&
+        smooth.live.locoTurnMode === 'smooth' &&
+        smooth.stored?.turnMode === 'smooth' &&
+        snap.live.turnMode === 'snap' &&
+        snap.live.locoTurnMode === 'snap' &&
+        snap.stored?.turnMode === 'snap',
+      { initial, smooth, snap },
+    );
+    await press('settings-back');
+    record('settings-comfort-back', (await phase()) === 'title', null);
+  }
+
+  /** Sets a controller's thumbstick; the app reads it in the next XR frame. */
+  function stick(hand, x, y) {
+    return ev(
+      ({ hand, x, y }) => window.__xrEmu.device.controllers[hand].updateAxes('thumbstick', x, y),
+      { hand, x, y },
+    );
+  }
+
+  /**
+   * Mean luma of the outer frame band and of the centre box in two screenshots (same pose), so the
+   * edge darkening of the comfort vignette and the unchanged centre can be compared.
+   */
+  function bandLuma(a, b) {
+    return ev(
+      async ({ a, b }) => {
+        const read = async (src) => {
+          const img = new Image();
+          img.src = `data:image/png;base64,${src}`;
+          await img.decode();
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const g = canvas.getContext('2d');
+          g.drawImage(img, 0, 0);
+          return g.getImageData(0, 0, img.width, img.height);
+        };
+        const bands = (image) => {
+          const { data, width: w, height: h } = image;
+          let edge = 0;
+          let edgeN = 0;
+          let center = 0;
+          let centerN = 0;
+          for (let y = 0; y < h; y += 1) {
+            for (let x = 0; x < w; x += 1) {
+              const i = (y * w + x) * 4;
+              const luma = 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
+              const u = x / w;
+              const v = y / h;
+              if (u < 0.08 || u > 0.92 || v < 0.1 || v > 0.9) {
+                edge += luma;
+                edgeN += 1;
+              } else if (Math.abs(u - 0.5) < 0.12 && Math.abs(v - 0.5) < 0.15) {
+                center += luma;
+                centerN += 1;
+              }
+            }
+          }
+          return { edge: edge / edgeN, center: center / centerN };
+        };
+        return { first: bands(await read(a)), second: bands(await read(b)) };
+      },
+      { a: a.toString('base64'), b: b.toString('base64') },
+    );
+  }
+
+  /** The comfort vignette: strength follows motion in the app, its pass renders only while moving, the edge band darkens at a held strength. */
+  async function comfortVignetteCheck() {
+    const sample = () =>
+      ev(() => {
+        const { locomotion, comfortVignette } = window.__combat;
+        return {
+          strength: locomotion.vignetteStrength,
+          shown: comfortVignette.strength,
+          active: comfortVignette.active,
+          uuid: comfortVignette.scene.uuid,
+          now: performance.now(),
+        };
+      });
+    const passesSince = (uuid, since) =>
+      ev(
+        ({ uuid, since }) =>
+          window.__xrEmu.passes.filter((p) => p.scene === uuid && p.t > since).length,
+        { uuid, since },
+      );
+    const stillBefore = await sample();
+    await stick('left', 0, -1);
+    await settle(500);
+    const moving = await sample();
+    await settle(300);
+    const movingPasses = await passesSince(moving.uuid, moving.now);
+    await stick('left', 0, 0);
+    await settle(1200);
+    const still = await sample();
+    await settle(300);
+    const stillPasses = await passesSince(still.uuid, still.now);
+    record(
+      'locomotion-vignette-follows-motion',
+      stillBefore.strength === 0 &&
+        moving.strength > 0.3 &&
+        moving.active &&
+        moving.shown > 0.4 &&
+        movingPasses > 3 &&
+        still.strength === 0 &&
+        !still.active &&
+        stillPasses === 0,
+      { stillBefore, moving, movingPasses, still, stillPasses },
+    );
+    // Pixels at one pose: the vignette held at its cap against the same view with it off.
+    await ev(() => {
+      window.__combat.comfortVignette.hold = 0.7;
+    });
+    await frames(4);
+    const dark = await page.screenshot({ type: 'png' });
+    await shot('p6-comfort-vignette-held');
+    await ev(() => {
+      window.__combat.comfortVignette.hold = null;
+    });
+    await frames(4);
+    const clear = await page.screenshot({ type: 'png' });
+    const luma = await bandLuma(dark, clear);
+    const edgeRatio = luma.first.edge / Math.max(luma.second.edge, 1e-6);
+    const centerDelta = Math.abs(luma.first.center - luma.second.center);
+    record('locomotion-vignette-edge-band', edgeRatio < 0.8 && centerDelta < 4, {
+      held: luma.first,
+      clear: luma.second,
+      edgeRatio: Number(edgeRatio.toFixed(3)),
+      centerDelta: Number(centerDelta.toFixed(2)),
+      note: 'outer band mean luma with the vignette held at its cap vs off, same pose; centre box unchanged',
+    });
+    // The red hit flash stacks on top of the held comfort vignette instead of being replaced by it.
+    await ev(() => {
+      window.__combat.comfortVignette.hold = 0.7;
+      window.__combat.hitFx.hold({ kind: 'hit', amount: 8, blocked: 0, hpLost: 8 });
+    });
+    await frames(4);
+    const both = await page.screenshot({ type: 'png' });
+    await ev(() => {
+      window.__combat.hitFx.release();
+      window.__combat.comfortVignette.hold = null;
+    });
+    await frames(4);
+    const stacked = await redEdgePixels(dark, both);
+    record(
+      'locomotion-vignette-composes-with-hit',
+      stacked.edgeShare > 0.05 && stacked.centerShare < 0.005,
+      {
+        ...stacked,
+        note: 'new red pixels at the frame band vs the centre when the hit flash is added over the held comfort vignette',
+      },
+    );
+  }
+
+  /** Teleport on: aim with the left stick and controller, an invalid aim does not move, a valid release lands where the arc ended. */
+  async function teleportCheck() {
+    await ev(() => {
+      const { ui } = window.__flow;
+      ui.deps.onSettings({ ...ui.deps.settings(), teleportEnabled: true });
+    });
+    const state = () =>
+      ev(() => {
+        const probe = window.__xrEmu;
+        const { rig } = probe.ctx();
+        const { locomotion, teleportView } = window.__combat;
+        // The tracked head in world space. The camera's own world position is moved back along the
+        // view axis by three.js when it renders the union of both eyes, which is not the head the
+        // locomotion moves.
+        const at = probe.device.position;
+        rig.updateMatrixWorld(true);
+        const head = rig.localToWorld(rig.position.clone().set(at.x, at.y, at.z));
+        const p = locomotion.teleportPreview;
+        return {
+          head: [head.x, head.z],
+          rigY: rig.position.y,
+          vignette: locomotion.vignetteStrength,
+          preview: p && {
+            valid: p.valid,
+            reason: p.reason,
+            landing: p.landing,
+            end: p.points.at(-1),
+          },
+          view: {
+            visible: teleportView.visible,
+            ring: teleportView.ring.visible,
+            ringColor: teleportView.ring.material.color.getHexString(),
+            arcColor: teleportView.arc.material.color.getHexString(),
+            dots: teleportView.arc.count,
+          },
+        };
+      });
+    const aimAt = async (yaw, elev) => {
+      const from = await ev(() => {
+        const probe = window.__xrEmu;
+        const { rig } = probe.ctx();
+        const at = probe.device.position;
+        rig.updateMatrixWorld(true);
+        const head = rig.localToWorld(rig.position.clone().set(at.x, at.y - 0.3, at.z));
+        return { x: head.x, y: head.y, z: head.z };
+      });
+      const y = (yaw * Math.PI) / 180;
+      const l = (elev * Math.PI) / 180;
+      const target = {
+        x: from.x + 5 * Math.cos(l) * Math.sin(y),
+        y: from.y + 5 * Math.sin(l),
+        z: from.z - 5 * Math.cos(l) * Math.cos(y),
+      };
+      await ev(({ from, target }) => window.__xrEmu.placeAt('left', from, target), {
+        from,
+        target,
+      });
+      await frames(3);
+      return state();
+    };
+    const YAWS = [0, 45, 315, 90, 270, 135, 225, 180];
+    const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+    const before = await state();
+
+    // Invalid: scan aims until the app's own validation rejects one (a wall, preferably).
+    await stick('left', 0, -1);
+    await frames(2);
+    let invalid = null;
+    for (const elev of [4, 20, 40]) {
+      for (const yaw of YAWS) {
+        const s = await aimAt(yaw, elev);
+        if (s.preview && !s.preview.valid && (!invalid || s.preview.reason === 'blocked')) {
+          invalid = { yaw, elev };
+          if (s.preview.reason === 'blocked') break;
+        }
+      }
+      if (invalid) break;
+    }
+    let invalidResult = null;
+    if (invalid) {
+      const aimed = await aimAt(invalid.yaw, invalid.elev);
+      await shot('p6-teleport-invalid');
+      await stick('left', 0, 0);
+      await frames(3);
+      invalidResult = { aimed, after: await state() };
+    }
+    const invalidOk =
+      !!invalidResult &&
+      invalidResult.aimed.view.visible &&
+      invalidResult.aimed.view.ringColor === '7c2a24' &&
+      invalidResult.aimed.view.arcColor === '7c2a24' &&
+      dist(invalidResult.after.head, before.head) < 1e-3 &&
+      invalidResult.after.rigY === before.rigY &&
+      invalidResult.after.preview === null;
+    record('locomotion-teleport-invalid-stays', invalidOk, {
+      aimedYawElev: invalid && [invalid.yaw, invalid.elev],
+      reason: invalidResult?.aimed.preview?.reason ?? null,
+      view: invalidResult?.aimed.view ?? null,
+      movedMetres: invalidResult
+        ? Number(dist(invalidResult.after.head, before.head).toFixed(4))
+        : null,
+    });
+
+    // Valid: the landing the arc showed is where the head ends up, at the same seated lift.
+    await stick('left', 0, -1);
+    await frames(2);
+    let valid = null;
+    for (const elev of [20, 32, 12]) {
+      for (const yaw of YAWS) {
+        const s = await aimAt(yaw, elev);
+        const land = s.preview?.valid ? s.preview.landing : null;
+        if (land && dist(s.head, [land[0], land[2]]) > 1.5) {
+          valid = { yaw, elev };
+          break;
+        }
+      }
+      if (valid) break;
+    }
+    let validResult = null;
+    if (valid) {
+      // Look toward the aim and a little down, so the arc and the ring are in the screenshot.
+      await ev(({ y, yaw }) => window.__xrEmu.setHead(y, -0.3, (-yaw * Math.PI) / 180), {
+        y: SEATED_HEAD_Y,
+        yaw: valid.yaw,
+      });
+      await frames(3);
+      const aimed = await aimAt(valid.yaw, valid.elev);
+      await shot('p6-teleport-aim');
+      await stick('left', 0, 0);
+      await frames(2);
+      const landed = await state();
+      await shot('p6-teleport-jump');
+      await settle(1000);
+      const faded = await state();
+      validResult = { aimed, landed, faded };
+    }
+    const target = validResult?.aimed.preview?.landing && [
+      validResult.aimed.preview.landing[0],
+      validResult.aimed.preview.landing[2],
+    ];
+    const validOk =
+      !!validResult &&
+      !!target &&
+      validResult.aimed.view.visible &&
+      validResult.aimed.view.ring &&
+      validResult.aimed.view.ringColor === 'dec16a' &&
+      validResult.aimed.view.arcColor === 'dec16a' &&
+      dist(validResult.aimed.head, before.head) < 1e-3 &&
+      dist(validResult.landed.head, target) < 0.03 &&
+      validResult.landed.rigY === before.rigY &&
+      validResult.landed.vignette > 0.3 &&
+      validResult.faded.vignette === 0 &&
+      !validResult.faded.view.visible;
+    record('locomotion-teleport-valid-moves', validOk, {
+      aimedYawElev: valid && [valid.yaw, valid.elev],
+      landing: target,
+      headBefore: validResult?.aimed.head ?? null,
+      headAfter: validResult?.landed.head ?? null,
+      errorMetres:
+        validResult && target ? Number(dist(validResult.landed.head, target).toFixed(4)) : null,
+      rigY: validResult && [before.rigY, validResult.landed.rigY],
+      view: validResult?.aimed.view ?? null,
+      vignettePulse: validResult && [validResult.landed.vignette, validResult.faded.vignette],
+    });
+
+    await ev((y) => window.__xrEmu.setHead(y, 0, 0), SEATED_HEAD_Y);
+    // Back to smooth move for the rest of the walk, through the app's own settings path.
+    await ev(() => {
+      const { ui } = window.__flow;
+      ui.deps.onSettings({ ...ui.deps.settings(), teleportEnabled: false });
+    });
+    await frames(2);
   }
 
   /**
@@ -732,6 +1179,7 @@ try {
         phase: window.__flow.flow.phase,
         hasSession: window.__combat.session !== null,
       }));
+      if (fightIndex === 0) await combatLocksLocomotionCheck();
       await page.keyboard.press('KeyK');
       await waitFor(`reward-${fightIndex}`, () => window.__flow.flow.phase === 'reward');
       await settle(800);

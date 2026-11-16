@@ -629,15 +629,39 @@ export class FlowUi {
         { id: `${key}-up`, label: 'Raise', onSelect: () => set(0.1) },
       ];
     };
+    // Comfort: a label that states the current choice and a Switch button that flips it.
+    const comfort = (
+      id: string,
+      label: string,
+      flip: (current: Settings) => Settings,
+    ): readonly MenuCell[] => [
+      { id: `${id}-label`, label, weight: 3 },
+      {
+        id: `${id}-toggle`,
+        label: 'Switch',
+        onSelect: () => {
+          this.deps.onSettings(flip(this.deps.settings()));
+          this.refresh();
+        },
+      },
+    ];
     this.board(
       'settings',
       [
         knob('masterVolume', 'Master volume'),
         knob('musicVolume', 'Music'),
         knob('sfxVolume', 'Effects'),
+        comfort('turnMode', `Turning: ${s.turnMode === 'snap' ? 'Snap' : 'Smooth'}`, (cur) => ({
+          ...cur,
+          turnMode: cur.turnMode === 'snap' ? 'smooth' : 'snap',
+        })),
+        comfort('teleportEnabled', `Teleport: ${s.teleportEnabled ? 'On' : 'Off'}`, (cur) => ({
+          ...cur,
+          teleportEnabled: !cur.teleportEnabled,
+        })),
         { id: 'back', label: 'Back to title', onSelect: () => this.deps.flow.toTitle() },
       ],
-      { x: 0, y: 0.15, z: -BOARD_DISTANCE },
+      { x: 0, y: 0.2, z: -BOARD_DISTANCE },
       { width: 0.8, heading: 'Settings' },
     );
   }

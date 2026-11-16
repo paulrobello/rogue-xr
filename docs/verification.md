@@ -26,7 +26,7 @@ Desktop frame numbers only rank variants. Only headset measurements close a budg
 
 | Goal | Status | Gap |
 | --- | --- | --- |
-| G1 Full seeded run on a Quest 3 | Partially met | The run loop is met on browser evidence. No recorded title-to-death-or-victory run on a physical Quest 3. Seated comfort is unchecked. Teleport is not wired and the locomotion comfort vignette is computed but never drawn. |
+| G1 Full seeded run on a Quest 3 | Partially met | The run loop is met on browser evidence. No recorded title-to-death-or-victory run on a physical Quest 3. Seated comfort is unchecked on a headset. The teleport toggle and the drawn comfort vignette are wired and pass the emulator walk, so only their comfort remains open. |
 | G2 Premium, consistent look approved by Paul | Partially met | Direction, style board and the six core materials are approved. The in-engine look of rooms, automatons, cards, UI and dice is not approved, every model has model, rig and animation gates pending, and nothing was viewed at Quest resolution. See [owner-review.md](owner-review.md). |
 | G3 72 Hz exploring, 45 fps floor in combat, measured on the headset | Not met | No headset measurement exists. |
 | G4 The VR verbs are the fun | Partially met | Logic and desktop equivalents are met on browser evidence. Fling, dice and sigil feel on the headset is not met. The fling aim-assist criterion was checked against synthetic traces only. |
@@ -45,7 +45,8 @@ Requires: title screen to death or victory in one seeded run, on a Quest 3, seat
 | G1.4 The XR code paths for the loop run | Emulator | Emulator evidence only. The fights were ended with a debug key, not played out. |
 | G1.5 A whole run on a physical Quest 3, title to death or victory | Physical | Not met |
 | G1.6a Seated height calibration, 30 degree snap turn and smooth move work as logic | Browser | Met |
-| G1.6b Seated comfort, drawn vignette, teleport toggle (PRD D7) | Physical | Not met. Teleport is unwired and the vignette is never drawn. |
+| G1.6b Seated comfort, drawn vignette, teleport toggle (PRD D7) | Physical | Not met. Both are wired (G1.6c), but nobody has worn them. Paul's seated run decides whether the vignette strength, the arc and the teleport feel are comfortable. |
+| G1.6c The teleport toggle and the drawn comfort vignette work (PRD D7) | Emulator | Emulator evidence only |
 | G1.7 Enter VR on Quest 3 from the HTTPS URL (P0-T6) | Physical | Not met (unrecorded) |
 
 ### G1 browser evidence
@@ -61,9 +62,10 @@ Requires: title screen to death or victory in one seeded run, on a Quest 3, seat
 
 Emulator evidence, not a headset run.
 
-- G1.4: Enter VR starts an `immersive-vr` session, boards sit in front of the head, the seed keypad types a seed, three fights are won with the debug `K` key and rewards picked with the ray, a death comes from a real automaton hit, the workshop Buy spends cogs, New Run in the same `XRSession` rebuilds the floor, and Continue resumes after a reload. 52 of 52 checks pass after the walk fix in `f32f508` (10 consecutive full walks documented in [playtesting.md](playtesting.md), 52 checks stated in [scripts/xr-emu/README.md](../scripts/xr-emu/README.md)).
-- The committed [xr-emu-report.json](verification/xr-emu-report.json) holds the earlier 30-check run (2026-11-15 20:52 PST). The 41- and 52-check reports were written to `/tmp` and are cited from the docs only.
-- G1.6: `xr-seated-recenter`, `locomotion-smooth-move` (2 m in 1 s) and `locomotion-snap-turn` (exactly 30 degrees twice) pass. `locomotion-teleport` and `locomotion-vignette` record `pass: null` in the committed report. `src/main.ts` passes `teleportAim: null`, and nothing in `src` reads `Locomotion.vignetteStrength`. PRD D7 promises both.
+- G1.4: Enter VR starts an `immersive-vr` session, boards sit in front of the head, the seed keypad types a seed, three fights are won with the debug `K` key and rewards picked with the ray, a death comes from a real automaton hit, the workshop Buy spends cogs, New Run in the same `XRSession` rebuilds the floor, and Continue resumes after a reload. 52 of 52 checks passed after the walk fix in `f32f508` (10 consecutive full walks documented in [playtesting.md](playtesting.md)). The walk now has 59 checks and passes them all (G1.6c below, [scripts/xr-emu/README.md](../scripts/xr-emu/README.md)).
+- The committed [xr-emu-report.json](verification/xr-emu-report.json) holds the earlier 30-check run (2026-11-15 20:52 PST). The 41-, 52- and 59-check reports were written to `/tmp` or the host's scratch directory and are cited from the docs only.
+- G1.6: `xr-seated-recenter`, `locomotion-smooth-move` (2 m in 1 s) and `locomotion-snap-turn` (exactly 30 degrees twice) pass.
+- G1.6c (2026-11-16, MiniMac, walk of 59 checks, 0 failed, 0 console errors): the title's Settings board has a Turning row (Snap or Smooth) and a Teleport row (On or Off). `settings-teleport-toggle` and `settings-turn-toggle` press them with the ray and read the app's settings, the locomotion settings and the profile stored in IndexedDB. The comfort vignette is drawn as its own pass after the boards and before the hit flash. `locomotion-vignette-follows-motion`: strength 0 while still, 0.7 with the stick held (pass rendered 18 times in 300 ms), 0 again 1.2 s after release with no pass. `locomotion-vignette-edge-band`: with the vignette held at its cap, the outer band's mean luma is 0.42 of the same view without it and the centre box is identical. `locomotion-vignette-composes-with-hit`: the red hit flash held on top still adds red at the frame edge (5.3 percent of the band) and none at the centre. Teleport: `locomotion-teleport-invalid-stays` (an arc blocked by a wall draws dim red with no ring, releasing moves the head 0 m) and `locomotion-teleport-valid-moves` (the head lands 0 m from the landing the arc showed, `rig.position.y` stays 0.4, the vignette pulses to 0.63 and is 0 a second later). `locomotion-locked-in-combat`: with the table up, neither smooth move nor teleport moves the rig. Smooth move stays the default (`teleportEnabled` now defaults to false). Screenshots: `p6-teleport-aim.jpg`, `p6-teleport-invalid.jpg`, `p6-comfort-vignette-held.jpg`.
 - The emulator found XF1, XF2 and XO1 to XO4 (seated lift 1 m too high, Skip did nothing, rig height reset on New Run, update notice hidden under boards, no pointer ray), all fixed with tests per [playtesting.md](playtesting.md).
 - Screenshots: `xr-emu-1-session-hands.jpg`, `xr-emu-2-title-hover.jpg`, `xr-emu-5-explore.jpg`, `xr-emu-6-fight.jpg`, `xr-emu-8-death-board.jpg`, `xr-emu-9-workshop.jpg`, `p6-fullrun-xr-title-after-turned-entry.jpg`.
 
@@ -73,7 +75,7 @@ Emulator evidence, not a headset run.
 - Informal, from commit messages only: Paul played a Quest 3 fight on 2026-11-15 and reported defects that became commit `8b5d7f4` (21:34 PST: the card fan clipped the off hand and sigil tracing produced no trail) and commit `8208232` (22:06 PST: enemies attacked at once and hits had no visible effect). No verdict, no run length, and no re-check after the fixes were recorded. The commits do not say whether he used `https://spire.pardev.net` or an adb-reverse dev URL.
 - Pending for Paul: P0-T6, P1-T7, P5-T13, P6-T4 in the table at the end of this file.
 
-Status: partially met. Met on browser evidence for the run loop. Not met: a physical Quest 3 run, seated comfort, teleport and the drawn locomotion vignette.
+Status: partially met. Met on browser evidence for the run loop, and on emulator evidence for the teleport toggle and the drawn comfort vignette. Not met: a physical Quest 3 run and seated comfort, including how the vignette strength and the teleport feel.
 
 ## G2: premium look, one consistent style approved by Paul
 
@@ -248,7 +250,7 @@ None of these are recorded anywhere. They are the cards that carry the physical 
 | Card | Check | Closes |
 | --- | --- | --- |
 | P0-T6 | Open `https://spire.pardev.net` in Quest Browser, press Enter VR, confirm brass hands and the title board | G1.7 |
-| P1-T7 | Walk a seeded floor seated: comfort, snap turn, locomotion. Teleport and the drawn vignette do not exist yet | G1.6b |
+| P1-T7 | Walk a seeded floor seated: comfort, snap turn, locomotion, with the teleport toggle on (Settings, Teleport) and off and the comfort vignette. Judge the vignette strength and the arc | G1.6b |
 | P3-T8 | Fight seated with controllers: fan feel, fling, dice readability, sigil drawing, correction visibility, 45 fps floor | G4.7, G4.8, G4.2, G3.2 |
 | P4-T10 | Measure exploring in the study and the worst combat view with `?perf=1`, tune scale, approve the look | G3.1, G3.2, G3.3, G2.6, G2.8 |
 | P5-T13 | Full seeded run on Quest 3, title to workshop, budgets held, numbers recorded | G1.5, G3 |
@@ -261,5 +263,5 @@ The individual headset checks Paul listed (fan feel, sigil trail and hint legibi
 ## Corrections noticed while writing this file
 
 - [playtesting.md](playtesting.md), "Flow, audio and frame numbers", says the elites and the guardian "are still capsule placeholders". That was accurate at `d8c73e9` and is out of date: commits `dfa29bf` and `7ae84dc` put rigged models in for the Orrery Warden and the Grand Escapement, and the frame numbers in the same bullet predate them. This file was not edited here because it belongs to another owner.
-- `docs/verification/xr-emu-report.json` is the 30-check run of 2026-11-15, not the 52-check run the README cites.
+- `docs/verification/xr-emu-report.json` is the 30-check run of 2026-11-15, not the 59-check run the README cites.
 - [plans/phase-6-slice-release.md](../plans/phase-6-slice-release.md) P6-T3 asks for unverified criteria to be named as not met. They are, above.

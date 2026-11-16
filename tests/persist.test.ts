@@ -78,6 +78,23 @@ describe('persist db', () => {
     closeDb(handle);
   });
 
+  it('defaults to smooth move with teleport off and keeps a flipped teleport toggle across a reopen', async () => {
+    expect(DEFAULT_SETTINGS.teleportEnabled).toBe(false);
+    const factory = new IDBFactory();
+    const first = await openDb(factory);
+    await saveSettings(first, { ...DEFAULT_SETTINGS, teleportEnabled: true, turnMode: 'smooth' });
+    closeDb(first);
+    const second = await openDb(factory);
+    const stored = await loadSettings(second);
+    expect(stored.teleportEnabled).toBe(true);
+    expect(stored.turnMode).toBe('smooth');
+    await saveSettings(second, { ...stored, teleportEnabled: false });
+    closeDb(second);
+    const third = await openDb(factory);
+    expect((await loadSettings(third)).teleportEnabled).toBe(false);
+    closeDb(third);
+  });
+
   it('writes, then reopens and reads the same data', async () => {
     const factory = new IDBFactory();
     const first = await openDb(factory);
