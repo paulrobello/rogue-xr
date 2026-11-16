@@ -5,7 +5,8 @@
     "license": "Stability AI Community License (free commercial use below USD 1M annual revenue) plus Gemma terms for the T5Gemma encoder",
     "request": "Paul, 2026-11-16, in the rogue-xr session: \"use local audio gen to create placeholder music\"",
     "rights": "pending: owner to confirm the Community License revenue threshold applies",
-    "prompts": "assets-source/audio/music/cues.json (the Suno prompts, first 1000 chars; Exclude styles as the negative prompt)"
+    "prompts": "assets-source/audio/music/cues.json (the Suno prompts, first 1000 chars; Exclude styles as the negative prompt)",
+    "approval": "Paul, 2026-11-16, in the rogue-xr session: \"all audio auditions approved\" (creative and owner, as placeholder music; rights still pending)"
   },
   "generations": [
     {

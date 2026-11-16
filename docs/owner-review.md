@@ -32,7 +32,8 @@ Paul's words are quoted. The rows are removed from the tables below. Work still 
 | D13 | "all my plans are paid with commercial use" | ElevenLabs rights gate approved in `assets-source/audio/provenance.json` and the [audio README](../assets-source/audio/README.md). |
 | D21 | "store the raw data on parnas1 in /Volumes/homes/game-data/rogue-xr" | 127 raw card files (825 MB) copied to parnas1. Every sha256 matched, and the hashes are in `assets-source/cards/raw-store.json`. The raw files are now gitignored. |
 | Rest room | "the rest room is approved except the contents of the hearth look very flat add more detail" | Hall creative and owner gates approved in its rest-room role. The hearth coal bed was detailed in `e4f18cb` ([close-up](verification/p6-rest-hearth-closeup.jpg)) and waits on your look. |
-| Audio review | "create a web page for all the audio auditions so i can review each" | Live at https://spire.pardev.net/audition.html (`b545342`). Export your verdicts there and paste them back. |
+| Audio review | "create a web page for all the audio auditions so i can review each" | Live at https://spire.pardev.net/audition.html (`b545342`). |
+| A17, music | "all audio auditions approved" | Creative and owner gates approved for the 20 ElevenLabs SFX and for the 11 Stable Audio 3 cues as placeholder music. The placeholder music's license threshold is still yours to confirm (D12 row). |
 
 ## Assets awaiting approval
 
@@ -82,9 +83,7 @@ Modeling of A9 to A12 proceeded under your 2026-11-15 standing approval of spend
 
 ### Audio
 
-| Code | Asset | Review | Self-score | Gates pending | Approving unblocks |
-| --- | --- | --- | --- | --- | --- |
-| A17 | 20 ElevenLabs SFX (card draw, fling, impacts, dice, sigil, steam, gears, doors, UI, stingers) | Listen: the files are in [public/assets/audio/sfx/](../public/assets/audio/sfx/), measurements in [report.json](../public/assets/audio/report.json), prompts and gates in [assets-source/audio/README.md](../assets-source/audio/README.md) | none | creative (nobody has auditioned them in the live mix), owner (rights cleared, D13). Technical passes for SFX, with 12 cues below -16 LUFS because of full-scale peaks over quiet bodies (flagged, not limited). | P5-T8 SFX half |
+Nothing waiting. A17 and the placeholder music were approved on 2026-11-16 (Answered table above).
 
 ## Decisions waiting on Paul
 

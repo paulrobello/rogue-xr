@@ -35,6 +35,6 @@ SFX -16 LUFS integrated and music -18 LUFS, true peak at most -1.0 dBTP, toleran
 | Gate | Status |
 | --- | --- |
 | Technical | SFX pass: full decode in Node and in Chromium 156 with exact frame counts, loop and mono checks, deterministic rebuild, hashes reconciled. Loudness deviations above are open. Placeholder music: full decode, every cue meets -18 LUFS within the 1 LU tolerance (elite measures -18.9), true peak at most -1.1 dBTP. All nine loops have a clean seam and matched head and tail levels. The interior-dropout check fails on eight of them, because the musical rests between phrases run 0.2 to 0.7 s, and 1.3 s on title. |
-| Creative | Pending. No cue has been auditioned by a person or in the live mix. |
+| Creative | Approved 2026-11-16: Paul auditioned every SFX and placeholder music cue on the audition page: "all audio auditions approved". |
 | Rights | Cleared 2026-11-16 (D13): Paul confirms all his plans are paid with commercial use. The API reported the Starter plan the same day. |
-| Owner | Pending. Nothing here records Paul's approval. |
+| Owner | Approved 2026-11-16 for the SFX and, as placeholder music, the Stable Audio 3 cues ("all audio auditions approved"). The placeholder music's rights (Stability AI Community License threshold) are still unconfirmed. |
