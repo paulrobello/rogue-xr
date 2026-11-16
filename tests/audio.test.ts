@@ -1,4 +1,4 @@
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import * as THREE from 'three';
 import { describe, expect, it, vi } from 'vitest';
@@ -7,14 +7,19 @@ import {
   type AudioDeps,
   AudioDirector,
   type AudioLoaderLike,
+  type AudioState,
   audioStateFor,
+  audioStateForFlow,
   crossfadeGains,
   type FlatVoice,
+  MUSIC,
   MUSIC_FILES,
   MUSIC_IDS,
+  type MusicId,
   MusicMixer,
   type MusicSink,
   musicCueFor,
+  resolveMusic,
   SFX,
   SFX_IDS,
   type SfxId,
@@ -120,38 +125,97 @@ function harness(missing: readonly string[] = [], spatialVoices = 8): Harness {
 
 describe('state to music cue mapping', () => {
   it('maps every audio state to a directive', () => {
-    expect(musicCueFor('title')).toMatchObject({ kind: 'play', cue: 'explore' });
+    expect(musicCueFor('title')).toMatchObject({ kind: 'play', cue: 'title' });
+    expect(musicCueFor('workshop')).toMatchObject({ kind: 'play', cue: 'workshop' });
     expect(musicCueFor('explore')).toMatchObject({ kind: 'play', cue: 'explore', gain: 1 });
+    expect(musicCueFor('rest')).toMatchObject({ kind: 'play', cue: 'rest' });
     expect(musicCueFor('encounter-unfolding')).toMatchObject({ kind: 'play', cue: 'combat' });
     expect(musicCueFor('encounter-active')).toMatchObject({ kind: 'play', cue: 'combat' });
+    expect(musicCueFor('elite-unfolding')).toMatchObject({ kind: 'play', cue: 'elite' });
+    expect(musicCueFor('elite-active')).toMatchObject({ kind: 'play', cue: 'elite' });
+    expect(musicCueFor('guardian-unfolding')).toMatchObject({ kind: 'play', cue: 'guardian-1' });
+    expect(musicCueFor('guardian-active')).toMatchObject({ kind: 'play', cue: 'guardian-1' });
+    expect(musicCueFor('guardian-active', 2)).toMatchObject({ kind: 'play', cue: 'guardian-2' });
+    expect(musicCueFor('guardian-unfolding', 2)).toMatchObject({ cue: 'guardian-1' });
     expect(musicCueFor('encounter-folding')).toEqual({ kind: 'hold' });
     expect(musicCueFor('reward')).toMatchObject({
       kind: 'play',
-      cue: 'explore',
+      cue: 'reward',
       stinger: 'reward-chime',
     });
-    expect(musicCueFor('defeat')).toMatchObject({ kind: 'stop', stinger: 'defeat-sting' });
-    expect(musicCueFor('victory')).toMatchObject({ kind: 'stop', stinger: 'victory-sting' });
+    expect(musicCueFor('defeat')).toMatchObject({
+      kind: 'play',
+      cue: 'defeat',
+      stinger: 'defeat-sting',
+    });
+    expect(musicCueFor('victory')).toMatchObject({
+      kind: 'play',
+      cue: 'victory',
+      stinger: 'victory-sting',
+    });
   });
 
-  it('only ever names cues and stingers that exist in the registries', () => {
-    const states = [
+  it('only ever names cues and stingers that exist in the registries, and every cue is used', () => {
+    const states: AudioState[] = [
       'title',
       'workshop',
       'explore',
+      'rest',
       'encounter-unfolding',
       'encounter-active',
+      'elite-unfolding',
+      'elite-active',
+      'guardian-unfolding',
+      'guardian-active',
       'encounter-folding',
       'reward',
       'defeat',
       'victory',
-    ] as const;
+    ];
+    const used = new Set<MusicId>();
     for (const state of states) {
-      const d = musicCueFor(state);
-      if (d.kind === 'play') expect(MUSIC_IDS).toContain(d.cue);
-      if (d.kind !== 'hold' && d.stinger) expect(SFX_IDS).toContain(d.stinger);
-      if (d.kind !== 'hold') expect(d.fadeSeconds).toBeGreaterThan(0);
+      for (const phase of [1, 2] as const) {
+        const d = musicCueFor(state, phase);
+        if (d.kind === 'play') {
+          expect(MUSIC_IDS).toContain(d.cue);
+          used.add(d.cue);
+        }
+        if (d.kind !== 'hold' && d.stinger) expect(SFX_IDS).toContain(d.stinger);
+        if (d.kind !== 'hold') expect(d.fadeSeconds).toBeGreaterThan(0);
+      }
     }
+    expect([...used].sort()).toEqual([...MUSIC_IDS].sort());
+  });
+
+  it('keeps every fallback chain inside the registry and loop cues looping', () => {
+    for (const id of MUSIC_IDS) {
+      const fallback = MUSIC[id].fallback;
+      if (fallback) {
+        expect(MUSIC_IDS).toContain(fallback.cue);
+        expect(fallback.gain).toBeGreaterThan(0);
+      }
+    }
+    expect(MUSIC_IDS.filter((id) => !MUSIC[id].loop).sort()).toEqual(['defeat', 'victory']);
+  });
+
+  it('falls back down the chain to the first cue that loaded, else keeps the request', () => {
+    const only =
+      (...ids: MusicId[]) =>
+      (id: MusicId) =>
+        ids.includes(id);
+    expect(resolveMusic('title', 1, only('title', 'explore'))).toEqual({ cue: 'title', gain: 1 });
+    expect(resolveMusic('title', 1, only('explore'))).toEqual({ cue: 'explore', gain: 0.6 });
+    expect(resolveMusic('reward', 0.8, only('explore'))).toEqual({ cue: 'explore', gain: 0.5 });
+    expect(resolveMusic('guardian-2', 1, only('guardian-1', 'combat'))).toEqual({
+      cue: 'guardian-1',
+      gain: 1,
+    });
+    expect(resolveMusic('guardian-2', 1, only('combat'))).toEqual({ cue: 'combat', gain: 1 });
+    expect(resolveMusic('elite', 1, only())).toEqual({ cue: 'elite', gain: 1 });
+    expect(resolveMusic('victory', 1, only('explore', 'combat'))).toEqual({
+      cue: 'victory',
+      gain: 1,
+    });
   });
 
   it('enters combat faster than it returns to exploration', () => {
@@ -170,6 +234,31 @@ describe('state to music cue mapping', () => {
     expect(audioStateFor('combat', 'folding')).toBe('encounter-folding');
     expect(audioStateFor('reward', 'idle')).toBe('reward');
     expect(audioStateFor('combat', 'idle')).toBe('explore');
+  });
+
+  it('picks the elite, guardian and rest-room cues from the scene', () => {
+    expect(audioStateFor('explore', 'unfolding', { tier: 'elite' })).toBe('elite-unfolding');
+    expect(audioStateFor('combat', 'active', { tier: 'elite' })).toBe('elite-active');
+    expect(audioStateFor('explore', 'unfolding', { tier: 'guardian' })).toBe('guardian-unfolding');
+    expect(audioStateFor('combat', 'active', { tier: 'guardian' })).toBe('guardian-active');
+    expect(audioStateFor('combat', 'active', { tier: 'regular' })).toBe('encounter-active');
+    expect(audioStateFor('combat', 'folding', { tier: 'guardian' })).toBe('encounter-folding');
+    expect(audioStateFor('explore', 'idle', { room: 'rest' })).toBe('rest');
+    expect(audioStateFor('explore', 'idle', { room: 'treasure' })).toBe('explore');
+    expect(audioStateFor('explore', 'active', { room: 'rest', tier: null })).toBe(
+      'encounter-active',
+    );
+    expect(audioStateFor('reward', 'idle', { room: 'rest' })).toBe('reward');
+  });
+
+  it('maps every flow screen, including the run-end and settings screens', () => {
+    expect(audioStateForFlow('death', 'idle')).toBe('defeat');
+    expect(audioStateForFlow('victory', 'folding')).toBe('victory');
+    expect(audioStateForFlow('settings', 'idle')).toBe('title');
+    expect(audioStateForFlow('title', 'idle')).toBe('title');
+    expect(audioStateForFlow('workshop', 'idle')).toBe('workshop');
+    expect(audioStateForFlow('combat', 'active', { tier: 'guardian' })).toBe('guardian-active');
+    expect(audioStateForFlow('explore', 'idle', { room: 'rest' })).toBe('rest');
   });
 
   it('maps rules events to SFX and keeps state-owned events silent', () => {
@@ -405,12 +494,9 @@ describe('AudioDirector', () => {
   it('falls back to silence for missing files and warns once per kind', async () => {
     const h = harness(['music/', 'sfx/door-open', 'sfx/dice-roll']);
     const report = await h.director.load();
-    expect([...report.missing].sort()).toEqual([
-      'dice-roll',
-      'door-open',
-      'music:combat',
-      'music:explore',
-    ]);
+    expect([...report.missing].sort()).toEqual(
+      ['dice-roll', 'door-open', ...MUSIC_IDS.map((id) => `music:${id}`)].sort(),
+    );
     expect(h.warnings).toHaveLength(2);
     expect(h.warnings[0]).toContain('music');
     expect(h.warnings[1]).toContain('dice-roll');
@@ -447,8 +533,78 @@ describe('AudioDirector', () => {
     h.director.setState('defeat');
     expect(h.flat.slice(0, 4).reduce((n, v) => n + v.plays, 0)).toBe(stingersBefore + 1);
     h.director.update(1.5);
+    const playing = music.filter((v) => v.isPlaying);
+    expect(playing).toHaveLength(1);
+    expect(h.director.musicCue).toBe('defeat');
+    // The defeat lament is a one-shot: it plays once to its end.
+    expect(playing[0]?.loop).toBe(false);
+  });
+
+  it('falls back to the cue that covered a state when its own file is missing', async () => {
+    const h = harness(['music/title', 'music/reward', 'music/guardian-', 'music/victory']);
+    await h.director.load();
+    const music = h.flat.slice(4);
+    h.director.setState('title');
+    h.director.update(3);
+    expect(h.director.musicRequest).toBe('title');
+    expect(h.director.musicCue).toBe('explore');
+    expect(music.find((v) => v.isPlaying)?.volume).toBeCloseTo(0.6);
+
+    h.director.setState('guardian-active');
+    h.director.update(1);
+    expect(h.director.musicCue).toBe('combat');
+
+    h.director.setState('victory');
+    h.director.update(3);
+    expect(h.director.musicRequest).toBe('victory');
     expect(music.filter((v) => v.isPlaying)).toHaveLength(0);
-    expect(h.director.musicCue).toBeNull();
+    expect(h.warnings.filter((w) => w.includes('music'))).toHaveLength(1);
+  });
+
+  it('moves a request made before loading to its fallback once the files are in', async () => {
+    const h = harness(['music/workshop']);
+    h.director.setState('workshop');
+    expect(h.director.musicCue).toBe('workshop');
+    await h.director.load();
+    h.director.update(1);
+    expect(h.director.musicCue).toBe('explore');
+    const music = h.flat.slice(4).filter((v) => v.isPlaying);
+    expect(music).toHaveLength(1);
+    expect(music[0]?.volume).toBeCloseTo(0.5);
+  });
+
+  it('crossfades the guardian to its phase-2 cue when the case opens, and resets for the next fight', async () => {
+    const h = harness();
+    await h.director.load();
+    h.director.setState('guardian-unfolding');
+    h.director.setState('guardian-active');
+    h.director.update(1);
+    expect(h.director.musicCue).toBe('guardian-1');
+
+    h.director.playCombatEvent({ type: 'enemy-phase', enemyId: 'grand-escapement', phase: 2 });
+    expect(h.director.musicCue).toBe('guardian-2');
+    h.director.update(0.75);
+    expect(h.flat.slice(4).filter((v) => v.isPlaying)).toHaveLength(2);
+    h.director.update(1);
+    expect(h.flat.slice(4).filter((v) => v.isPlaying)).toHaveLength(1);
+
+    h.director.setState('encounter-folding');
+    expect(h.director.musicCue).toBe('guardian-2');
+    h.director.setState('explore');
+    h.director.setState('guardian-unfolding');
+    h.director.setState('guardian-active');
+    expect(h.director.musicCue).toBe('guardian-1');
+  });
+
+  it('ignores the phase event outside a guardian fight', async () => {
+    const h = harness();
+    await h.director.load();
+    h.director.setState('elite-active');
+    h.director.playCombatEvent({ type: 'enemy-phase', enemyId: 'orrery-warden', phase: 2 });
+    expect(h.director.musicCue).toBe('elite');
+    h.director.setState('explore');
+    h.director.setState('guardian-active');
+    expect(h.director.musicCue).toBe('guardian-1');
   });
 
   describe('stinger families', () => {
@@ -482,7 +638,7 @@ describe('AudioDirector', () => {
       h.clock.t += 1;
       h.director.setState('reward');
       expect(stingerPlays(h)).toBe(1);
-      expect(h.director.musicCue).toBe('explore');
+      expect(h.director.musicCue).toBe('reward');
     });
 
     it('drops a run victory stinger that follows the fight victory stinger', async () => {
@@ -593,6 +749,40 @@ describe('registry against the files on disk', () => {
     const files = readdirSync(resolve(dir, 'sfx')).filter((f) => f.endsWith('.ogg'));
     const ids = files.map((f) => f.replace(/\.ogg$/, '')).sort();
     expect(ids).toEqual([...SFX_IDS].sort() as SfxId[]);
+  });
+
+  it('matches the cue list the build and the Suno handoff read', () => {
+    const musicSrc = resolve(import.meta.dirname, '..', 'assets-source', 'audio', 'music');
+    const cues = (
+      JSON.parse(readFileSync(resolve(musicSrc, 'cues.json'), 'utf8')) as {
+        cues: {
+          order: number;
+          id: string;
+          title: string;
+          when: string;
+          loop: boolean;
+          sourceFile: string;
+          runtimeFile: string;
+          prompt: string;
+          settings: Record<string, string>;
+        }[];
+      }
+    ).cues;
+    const handoff = readFileSync(resolve(musicSrc, 'SUNO-HANDOFF.md'), 'utf8');
+    expect(cues.map((c) => c.id)).toEqual(MUSIC_IDS);
+    expect(cues.map((c) => c.order)).toEqual(cues.map((_, i) => i + 1));
+    for (const c of cues) {
+      const id = c.id as MusicId;
+      expect(c.loop).toBe(MUSIC[id].loop);
+      expect(c.sourceFile).toBe(`assets-source/audio/music/${id}.wav`);
+      expect(c.runtimeFile).toBe(`public/${AUDIO_DIR}/${MUSIC_FILES[id]}`);
+      expect(c.title.length).toBeGreaterThan(0);
+      expect(c.when.length).toBeGreaterThan(0);
+      expect(handoff).toContain(c.prompt);
+      expect(handoff).toContain(c.settings['Exclude styles']);
+      expect(c.settings.Instrumental).toBe('On');
+      expect(c.settings.Lyrics).toBe('');
+    }
   });
 
   it.skipIf(!present)('has a music file for each present music cue and none unregistered', () => {

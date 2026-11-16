@@ -142,7 +142,7 @@ Paid generation **inside this list** is pre-approved for the slice, with up to a
 | Higgsfield | Sigil glyph designs | 5 |
 | Higgsfield | Texture sources (stained glass, wallpaper, fabric, window vistas) | ~10 |
 | Higgsfield | Title key art | 1 |
-| Suno | Music cues: exploration loop, combat loop | 2 |
+| Suno | Music cues (D12, 2026-11-16): title, explore, combat, reward, rest, elite, defeat, workshop, guardian phase 1 and 2, victory; list in `assets-source/audio/music/cues.json` | 11 |
 | ElevenLabs | SFX (card draw, fling, impacts, dice, sigil, steam, gears, doors, UI) | ~20 |
 
 ## Phases
@@ -210,7 +210,7 @@ Acceptance:
 
 ### P5 — Slice content
 
-Scope: the remaining 3 to 4 room templates, 2 more regular automatons + the elite + the floor guardian, all 15 card illustrations and frames, UI icons, dice faces and models, 5 sigil glyphs, the title key art, 2 music cues, about 20 SFX, the title screen with seed entry, the reward screen, death and victory flow, the workshop hub with 3 upgrades, run currency, a run snapshot for resume, and save export and import.
+Scope: the remaining 3 to 4 room templates, 2 more regular automatons + the elite + the floor guardian, all 15 card illustrations and frames, UI icons, dice faces and models, 5 sigil glyphs, the title key art, 11 music cues (owner-generated in Suno, D12), about 20 SFX, the title screen with seed entry, the reward screen, death and victory flow, the workshop hub with 3 upgrades, run currency, a run snapshot for resume, and save export and import.
 
 Depends on P3 and P4.
 

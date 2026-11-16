@@ -10,7 +10,8 @@ Music and SFX for Clockwork Spire. Runtime files are in `public/assets/audio/`, 
 | `sfx/raw/*.mp3` | Immutable ElevenLabs outputs, 44.1 kHz stereo MP3 (the Starter plan cannot request PCM). Never edited. |
 | `sfx/generation-log.json` | One entry per request: payload, response headers (including `character-cost`), sha256, size, time. |
 | `sfx/meter-before.txt`, `meter-after.txt` | `GET /v1/user/subscription` credit counters around the batch. |
-| `music/SUNO-HANDOFF.md` | Suno prompts, settings and loop preparation. Music is owner-generated; no music source exists yet. |
+| `music/SUNO-HANDOFF.md` | Suno prompts, settings and loop preparation for all eleven music cues (D12). Music is owner-generated; no music source exists yet. |
+| `music/cues.json` | The music cue list in first-heard order: id, loop flag, source and runtime paths, Style prompt and Suno settings. The build and the audition page read it; a test keeps it in step with `src/audio/cues.ts`. |
 | `derived/*.wav` | Lossless 48 kHz float intermediates, one per cue, rebuilt by the script. |
 | `provenance.json` | Machine-readable record: rights, approvals, prompts, per-cue source and runtime hashes and processing steps. Written by the build. |
 

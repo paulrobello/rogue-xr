@@ -15,9 +15,11 @@ Targets (PRD slice proposal, newly defined here): SFX -16 LUFS integrated, music
 peak at most -1.0 dBTP. A cue whose crest factor cannot reach its loudness target under the peak
 ceiling is mastered to the ceiling and reported as a deviation, never retargeted.
 
-Music is optional: a cue with no source WAV is skipped (the runtime falls back to silence).
+Music is optional: a cue with no source WAV is skipped (the runtime plays its fallback cue or
+silence). The cue list and each cue's loop flag come from assets-source/audio/music/cues.json.
 Loops get an equal-power tail-over-head crossfade that retains the start sample position, so the
-wrap rejoins the correct material.
+wrap rejoins the correct material. One-shots are cut to optional start_s/end_s, trimmed of
+silence and given a short raised-cosine fade out, so their natural ending is kept.
 
 Outputs: public/assets/audio/{sfx,music}/<id>.ogg, public/assets/audio/report.json,
 assets-source/audio/provenance.json, assets-source/audio/derived/<id>.wav (lossless intermediates).
@@ -61,7 +63,13 @@ def silence_floor(x: np.ndarray) -> float:
     """Samples below this are silence: 50 dB under the clip's own peak, never above -80 dBFS."""
     return max(float(np.abs(x).max()) * 10 ** (SILENCE_BELOW_PEAK_DB / 20), SILENCE_ABS_FLOOR)
 SHORT_CLIP_S = 1.0
-MUSIC_IDS = ("explore", "combat")
+MUSIC_CUES_FILE = AUDIO_SRC / "music" / "cues.json"
+ONE_SHOT_FADE_OUT_S = 0.25
+
+
+def music_cues() -> list[dict]:
+    """The music cue list (id, loop flag, ...) in first-heard order, shared with the runtime registry."""
+    return json.loads(MUSIC_CUES_FILE.read_text())["cues"]
 OPUS_KBPS = {"sfx-mono": 64, "sfx-stereo": 96, "music": 128}
 SKILL_SCRIPTS = Path.home() / ".claude" / "skills" / "create-game-audio-assets" / "scripts"
 
@@ -359,7 +367,8 @@ def build_music(music_src: Path, only: set[str], derived: Path, out: Path) -> di
     results: dict[str, dict] = {}
     loops_cfg_path = music_src / "loops.json"
     loops_cfg = json.loads(loops_cfg_path.read_text()) if loops_cfg_path.exists() else {}
-    for mid in MUSIC_IDS:
+    for cue in music_cues():
+        mid = cue["id"]
         if only and mid not in only:
             continue
         candidates = sorted(music_src.glob(f"{mid}.*"))
@@ -370,26 +379,43 @@ def build_music(music_src: Path, only: set[str], derived: Path, out: Path) -> di
         cfg = loops_cfg.get(mid, {})
         clip = decode(src, 2)
         steps: list[str] = []
-        loud = np.flatnonzero(np.abs(clip).max(axis=1) > silence_floor(clip))
-        start = int(cfg.get("loop_start_s", loud[0] / SR if loud.size else 0.0) * SR)
-        end = int(cfg["loop_end_s"] * SR) if "loop_end_s" in cfg else None
-        xf = int(cfg.get("crossfade_s", 2.0) * SR)
-        source_metrics = loop_metrics(clip)
-        clip = crossfade_loop(clip, start, end, xf)
-        steps.append(
-            f"loop body from {start / SR:.3f}s, {xf / SR:.2f}s equal-power tail-over-head crossfade, "
-            "start position retained"
-        )
+        if cue["loop"]:
+            loud = np.flatnonzero(np.abs(clip).max(axis=1) > silence_floor(clip))
+            start = int(cfg.get("loop_start_s", loud[0] / SR if loud.size else 0.0) * SR)
+            end = int(cfg["loop_end_s"] * SR) if "loop_end_s" in cfg else None
+            xf = int(cfg.get("crossfade_s", 2.0) * SR)
+            source_metrics = loop_metrics(clip)
+            clip = crossfade_loop(clip, start, end, xf)
+            steps.append(
+                f"loop body from {start / SR:.3f}s, {xf / SR:.2f}s equal-power tail-over-head crossfade, "
+                "start position retained"
+            )
+        else:
+            cut_start = int(cfg.get("start_s", 0.0) * SR)
+            cut_end = int(cfg["end_s"] * SR) if "end_s" in cfg else len(clip)
+            clip, trim = trim_silence(clip[cut_start:cut_end])
+            fade_out_s = float(cfg.get("fade_out_s", ONE_SHOT_FADE_OUT_S))
+            clip = fade_edges(clip, 0.002, fade_out_s)
+            steps.append(
+                f"one-shot cut {cut_start / SR:.3f}s..{cut_end / SR:.3f}s, silence trimmed "
+                f"(head {trim['trimmed_head_ms']} ms, tail {trim['trimmed_tail_ms']} ms), "
+                f"2 ms fade in, {fade_out_s:.2f}s raised-cosine fade out"
+            )
         dest = out / "music" / f"{mid}.ogg"
         result = master_and_encode(mid, clip, "music", MUSIC_LUFS, derived, dest)
         decoded = result.pop("decoded")
+        if cue["loop"]:
+            shape = {"loop": {"source": source_metrics, "runtime": loop_metrics(decoded),
+                              "loop_start_s": start / SR, "crossfade_s": xf / SR}}
+        else:
+            shape = {"one_shot": {"cut_start_s": cut_start / SR, "cut_end_s": cut_end / SR,
+                                  "trim": trim, "fade_out_s": fade_out_s}}
         result.update({
             "id": mid,
             "source_file": rel(src),
             "source_sha256": sha256_file(src),
             "source_probe": probe(src),
-            "loop": {"source": source_metrics, "runtime": loop_metrics(decoded),
-                     "loop_start_s": start / SR, "crossfade_s": xf / SR},
+            **shape,
             "steps": steps,
             "runtime_file": rel(dest),
             "runtime_sha256": sha256_file(dest),
@@ -397,8 +423,9 @@ def build_music(music_src: Path, only: set[str], derived: Path, out: Path) -> di
             "runtime_probe": probe(dest),
         })
         results[mid] = result
+        shape_note = f"loop pass={result['loop']['runtime']['pass']}" if cue["loop"] else "one-shot"
         print(f"music {mid}: {result['measured']['integrated_lufs']} LUFS, "
-              f"{result['measured']['true_peak_dbtp']} dBTP, loop pass={result['loop']['runtime']['pass']}")
+              f"{result['measured']['true_peak_dbtp']} dBTP, {shape_note}")
     return results
 
 
@@ -429,7 +456,7 @@ def main() -> None:
     music = build_music(Path(args.music_src), only, derived, out)
 
     loops = [out / "sfx" / f"{k}.ogg" for k, v in sfx.items() if "loop" in v]
-    loops += [out / "music" / f"{k}.ogg" for k in music]
+    loops += [out / "music" / f"{k}.ogg" for k, v in music.items() if "loop" in v]
     stereo = [out / "sfx" / f"{k}.ogg" for k, v in sfx.items() if v["runtime_probe"]["channels"] == 2]
     report = {
         "tools": tool_versions(),

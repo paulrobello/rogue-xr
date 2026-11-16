@@ -6,13 +6,18 @@ import {
   AUDIO_DIR,
   type AudioState,
   audioStateFor,
+  type GuardianPhase,
+  MUSIC,
   MUSIC_FILES,
   MUSIC_IDS,
+  type MusicDirective,
   type MusicId,
   MusicMixer,
+  type MusicScene,
   type MusicSink,
   musicCueFor,
   type PoolVoice,
+  resolveMusic,
   SFX,
   SFX_IDS,
   type SfxId,
@@ -119,6 +124,8 @@ export interface LoadReport {
 }
 
 const MUSIC_SLOTS = 3;
+/** Crossfade, in seconds, when loading finds the requested cue missing and moves to its fallback. */
+const LATE_MUSIC_FADE = 0.5;
 const UNLOCK_EVENTS = ['pointerdown', 'keydown', 'touchend', 'click'] as const;
 
 function joinUrl(base: string, ...parts: string[]): string {
@@ -151,6 +158,9 @@ export class AudioDirector {
   private readonly lastStinger = new Map<StingerFamily, number>();
   private readonly unlockers: (() => void)[] = [];
   private stateValue: AudioState | null = null;
+  /** The cue the current state asks for, before falling back to what loaded. */
+  private musicWant: { cue: MusicId; gain: number } | null = null;
+  private guardianPhase: GuardianPhase = 1;
   private sfxVolume = 1;
   private musicVolume = 1;
   private disposed = false;
@@ -181,9 +191,14 @@ export class AudioDirector {
     return this.stateValue;
   }
 
-  /** The music cue fading in or holding, or null. */
+  /** The music cue fading in or holding (after any fallback), or null. */
   get musicCue(): MusicId | null {
     return this.mixer.current;
+  }
+
+  /** The cue the current state asks for, whether or not its file loaded, or null. */
+  get musicRequest(): MusicId | null {
+    return this.musicWant?.cue ?? null;
   }
 
   get spatialPool(): VoicePool<SpatialVoice> {
@@ -226,14 +241,16 @@ export class AudioDirector {
     const missingMusic = missing.filter((m) => m.startsWith('music:')).map((m) => m.slice(6));
     const missingSfx = missing.filter((m) => !m.startsWith('music:'));
     if (missingMusic.length > 0) {
-      this.warn(`[audio] music not found (${missingMusic.join(', ')}): music stays silent`);
+      this.warn(
+        `[audio] music not found (${missingMusic.join(', ')}): each plays its fallback cue when that loaded, otherwise silence`,
+      );
     }
     if (missingSfx.length > 0) {
       this.warn(
         `[audio] ${missingSfx.length} SFX not found (${missingSfx.join(', ')}): those cues stay silent`,
       );
     }
-    this.startLoadedMusic();
+    if (!this.disposed) this.startLoadedMusic();
     return { loaded, missing };
   }
 
@@ -241,17 +258,16 @@ export class AudioDirector {
   setState(state: AudioState): void {
     if (this.disposed || state === this.stateValue) return;
     this.stateValue = state;
-    const directive = musicCueFor(state);
-    if (directive.kind === 'hold') return;
-    if (directive.kind === 'play')
-      this.mixer.request(directive.cue, directive.gain, directive.fadeSeconds);
-    else this.mixer.stop(directive.fadeSeconds);
-    if (directive.stinger) this.playSfx(directive.stinger);
+    // A guardian fight starts closed; only its own active state and the fold keep the open case.
+    if (state !== 'guardian-active' && state !== 'encounter-folding') this.guardianPhase = 1;
+    const directive = musicCueFor(state, this.guardianPhase);
+    this.applyMusic(directive);
+    if (directive.kind !== 'hold' && directive.stinger) this.playSfx(directive.stinger);
   }
 
   /** Derives the audio state from the game phase and the encounter phase. Call it every frame; it only acts on change. */
-  syncGame(phase: GamePhase, encounter: EncounterPhase): void {
-    this.setState(audioStateFor(phase, encounter));
+  syncGame(phase: GamePhase, encounter: EncounterPhase, scene: MusicScene = {}): void {
+    this.setState(audioStateFor(phase, encounter, scene));
   }
 
   /**
@@ -286,6 +302,7 @@ export class AudioDirector {
 
   /** Plays the SFX for a rules event, from `at` when it has a location. Returns the cue played, or null. */
   playCombatEvent(event: CombatEvent, at?: Vec3Like): SfxId | null {
+    if (event.type === 'enemy-phase') this.openGuardianCase();
     const id = sfxForCombatEvent(event);
     return id !== null && this.playSfx(id, at) ? id : null;
   }
@@ -365,6 +382,25 @@ export class AudioDirector {
     this.deps.dispose?.();
   }
 
+  /** The guardian's case opened (rules `enemy-phase`): the guardian fight moves to its phase-2 cue. */
+  private openGuardianCase(): void {
+    if (this.disposed || this.guardianPhase === 2) return;
+    this.guardianPhase = 2;
+    if (this.stateValue === 'guardian-active') this.applyMusic(musicCueFor('guardian-active', 2));
+  }
+
+  private applyMusic(directive: MusicDirective): void {
+    if (directive.kind === 'hold') return;
+    if (directive.kind === 'stop') {
+      this.musicWant = null;
+      this.mixer.stop(directive.fadeSeconds);
+      return;
+    }
+    this.musicWant = { cue: directive.cue, gain: directive.gain };
+    const play = resolveMusic(directive.cue, directive.gain, (id) => this.musicBuffers.has(id));
+    this.mixer.request(play.cue, play.gain, directive.fadeSeconds);
+  }
+
   private makeSpatial(): SpatialVoice {
     const voice = this.deps.createSpatial();
     if (voice instanceof THREE.Object3D) this.root.add(voice);
@@ -411,13 +447,21 @@ export class AudioDirector {
     if (!voice || !buffer) return;
     if (voice.isPlaying) voice.stop();
     voice.setBuffer(buffer);
-    voice.setLoop(true);
+    voice.setLoop(MUSIC[cue].loop);
     voice.setVolume(0);
     voice.play();
   }
 
-  /** Music requested before `load()` finished starts as soon as its buffer exists. */
+  /**
+   * Music requested before `load()` finished: the request is resolved again against the files that
+   * loaded (a missing cue moves to its fallback), and any layer still without a voice starts.
+   */
   private startLoadedMusic(): void {
+    const want = this.musicWant;
+    if (want) {
+      const play = resolveMusic(want.cue, want.gain, (id) => this.musicBuffers.has(id));
+      if (play.cue !== this.mixer.current) this.mixer.request(play.cue, play.gain, LATE_MUSIC_FADE);
+    }
     for (let slot = 0; slot < MUSIC_SLOTS; slot++) {
       const cue = this.mixer.layerCue(slot);
       const voice = this.musicVoices[slot];

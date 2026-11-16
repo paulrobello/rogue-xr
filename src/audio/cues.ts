@@ -4,7 +4,10 @@
  * `director.ts` binds it to three.js.
  */
 import type { EncounterPhase } from '../combat/encounter.ts';
+import type { RoomKind } from '../content/rooms.ts';
 import type { GamePhase } from '../core/state.ts';
+import type { FlowPhase } from '../flow/flow.ts';
+import type { RewardTier } from '../rules/run.ts';
 import { type CombatEvent, PLAYER_ID } from '../rules/types.ts';
 
 /** Where runtime files live, relative to the site base. Written by `scripts/assets/build_audio.py`. */
@@ -69,25 +72,93 @@ export const STINGER_FAMILY: Readonly<Partial<Record<SfxId, StingerFamily>>> = {
 /** Seconds a stinger family stays claimed after one of its cues plays. */
 export const STINGER_WINDOW = 3;
 
-export const MUSIC_FILES = {
-  explore: 'music/explore.ogg',
-  combat: 'music/combat.ogg',
-} as const;
+export interface MusicDef {
+  /** Path under `AUDIO_DIR`. */
+  readonly file: string;
+  /** Loops forever when true; a one-shot plays once to its natural end. */
+  readonly loop: boolean;
+  /**
+   * What plays while this cue's file is missing: the cue that covered the moment before this one
+   * existed, at an absolute layer gain. Followed in a chain; silence when nothing in it loaded.
+   */
+  readonly fallback?: { readonly cue: string; readonly gain: number };
+}
 
-export type MusicId = keyof typeof MUSIC_FILES;
-export const MUSIC_IDS = Object.keys(MUSIC_FILES) as MusicId[];
+function music(id: string, loop: boolean, fallback?: MusicDef['fallback']): MusicDef {
+  return { file: `music/${id}.ogg`, loop, ...(fallback ? { fallback } : {}) };
+}
 
-/** The audio-relevant game states. Defeat and victory are run-level and have no `GamePhase` yet. */
+/**
+ * Every music cue, in the order a player first hears it. Mirrors
+ * `assets-source/audio/music/cues.json`, which the build and the Suno handoff read; a test keeps
+ * the two in step.
+ */
+export const MUSIC = {
+  title: music('title', true, { cue: 'explore', gain: 0.6 }),
+  explore: music('explore', true),
+  combat: music('combat', true),
+  reward: music('reward', true, { cue: 'explore', gain: 0.5 }),
+  rest: music('rest', true, { cue: 'explore', gain: 1 }),
+  elite: music('elite', true, { cue: 'combat', gain: 1 }),
+  defeat: music('defeat', false),
+  workshop: music('workshop', true, { cue: 'explore', gain: 0.5 }),
+  'guardian-1': music('guardian-1', true, { cue: 'combat', gain: 1 }),
+  'guardian-2': music('guardian-2', true, { cue: 'guardian-1', gain: 1 }),
+  victory: music('victory', false),
+} as const satisfies Record<string, MusicDef>;
+
+export type MusicId = keyof typeof MUSIC;
+export const MUSIC_IDS = Object.keys(MUSIC) as MusicId[];
+export const MUSIC_FILES = Object.fromEntries(MUSIC_IDS.map((id) => [id, MUSIC[id].file])) as {
+  readonly [K in MusicId]: string;
+};
+
+/**
+ * The cue and gain to play for `cue` given which files loaded: the cue itself when `available`,
+ * else the first available cue down its fallback chain, else `cue` unchanged (it stays silent).
+ */
+export function resolveMusic(
+  cue: MusicId,
+  gain: number,
+  available: (id: MusicId) => boolean,
+): { cue: MusicId; gain: number } {
+  let at: MusicId = cue;
+  let atGain = gain;
+  for (let hops = 0; hops <= MUSIC_IDS.length; hops++) {
+    if (available(at)) return { cue: at, gain: atGain };
+    const next: MusicDef['fallback'] = MUSIC[at].fallback;
+    if (!next) break;
+    at = next.cue as MusicId;
+    atGain = next.gain;
+  }
+  return { cue, gain };
+}
+
+/** The audio-relevant game states. Defeat and victory are run-level and have no `GamePhase`. */
 export type AudioState =
   | 'title'
   | 'workshop'
   | 'explore'
+  | 'rest'
   | 'encounter-unfolding'
   | 'encounter-active'
+  | 'elite-unfolding'
+  | 'elite-active'
+  | 'guardian-unfolding'
+  | 'guardian-active'
   | 'encounter-folding'
   | 'reward'
   | 'defeat'
   | 'victory';
+
+/** Where the player is, beyond the phase: the running fight's tier and the current room's role. */
+export interface MusicScene {
+  readonly tier?: RewardTier | null;
+  readonly room?: RoomKind | null;
+}
+
+/** The guardian fight's phase: its case opens (phase 2) at a hit-point threshold. */
+export type GuardianPhase = 1 | 2;
 
 export type MusicDirective =
   | {
@@ -103,34 +174,70 @@ export type MusicDirective =
   | { readonly kind: 'hold' };
 
 const MUSIC_BY_STATE: Readonly<Record<AudioState, MusicDirective>> = {
-  title: { kind: 'play', cue: 'explore', gain: 0.6, fadeSeconds: 2.5 },
-  workshop: { kind: 'play', cue: 'explore', gain: 0.5, fadeSeconds: 2.0 },
+  title: { kind: 'play', cue: 'title', gain: 1, fadeSeconds: 2.5 },
+  workshop: { kind: 'play', cue: 'workshop', gain: 1, fadeSeconds: 2.0 },
   explore: { kind: 'play', cue: 'explore', gain: 1, fadeSeconds: 3.0 },
-  // The table unfolds in 0.6 s, so combat music comes in fast.
+  rest: { kind: 'play', cue: 'rest', gain: 1, fadeSeconds: 3.0 },
+  // The table unfolds in 0.6 s, so fight music comes in fast.
   'encounter-unfolding': { kind: 'play', cue: 'combat', gain: 1, fadeSeconds: 1.0 },
   'encounter-active': { kind: 'play', cue: 'combat', gain: 1, fadeSeconds: 0.5 },
-  // Combat music rides through the fold; the next state (reward, explore, defeat) decides what follows.
+  'elite-unfolding': { kind: 'play', cue: 'elite', gain: 1, fadeSeconds: 1.0 },
+  'elite-active': { kind: 'play', cue: 'elite', gain: 1, fadeSeconds: 0.5 },
+  'guardian-unfolding': { kind: 'play', cue: 'guardian-1', gain: 1, fadeSeconds: 1.0 },
+  'guardian-active': { kind: 'play', cue: 'guardian-1', gain: 1, fadeSeconds: 0.5 },
+  // Fight music rides through the fold; the next state (reward, explore, defeat) decides what follows.
   'encounter-folding': { kind: 'hold' },
-  reward: { kind: 'play', cue: 'explore', gain: 0.5, fadeSeconds: 2.0, stinger: 'reward-chime' },
-  defeat: { kind: 'stop', fadeSeconds: 1.5, stinger: 'defeat-sting' },
-  victory: { kind: 'stop', fadeSeconds: 2.0, stinger: 'victory-sting' },
+  reward: { kind: 'play', cue: 'reward', gain: 0.8, fadeSeconds: 2.0, stinger: 'reward-chime' },
+  defeat: { kind: 'play', cue: 'defeat', gain: 1, fadeSeconds: 1.5, stinger: 'defeat-sting' },
+  victory: { kind: 'play', cue: 'victory', gain: 1, fadeSeconds: 2.0, stinger: 'victory-sting' },
 };
 
-/** What the music bus does when the game enters `state`. */
-export function musicCueFor(state: AudioState): MusicDirective {
+/** The guardian's phase-2 cue, crossfaded in when its case opens. */
+const GUARDIAN_PHASE_TWO: MusicDirective = {
+  kind: 'play',
+  cue: 'guardian-2',
+  gain: 1,
+  fadeSeconds: 1.5,
+};
+
+/** What the music bus does when the game enters `state`; `guardian` picks the guardian fight's cue. */
+export function musicCueFor(state: AudioState, guardian: GuardianPhase = 1): MusicDirective {
+  if (guardian === 2 && state === 'guardian-active') return GUARDIAN_PHASE_TWO;
   return MUSIC_BY_STATE[state];
 }
 
 /**
  * The audio state for the live game: a running encounter wins over the phase, because the
- * encounter director owns the unfold and fold timing and the phase machine may lag it.
+ * encounter director owns the unfold and fold timing and the phase machine may lag it. `scene`
+ * picks the elite and guardian fight cues and the rest-room cue; without it every fight is a
+ * regular one and every room plays the exploring cue.
  */
-export function audioStateFor(phase: GamePhase, encounter: EncounterPhase): AudioState {
-  if (encounter === 'unfolding') return 'encounter-unfolding';
-  if (encounter === 'active') return 'encounter-active';
+export function audioStateFor(
+  phase: GamePhase,
+  encounter: EncounterPhase,
+  scene: MusicScene = {},
+): AudioState {
   if (encounter === 'folding') return 'encounter-folding';
+  if (encounter === 'unfolding' || encounter === 'active') {
+    const step = encounter === 'unfolding' ? 'unfolding' : 'active';
+    if (scene.tier === 'elite') return `elite-${step}`;
+    if (scene.tier === 'guardian') return `guardian-${step}`;
+    return `encounter-${step}`;
+  }
   if (phase === 'title' || phase === 'workshop' || phase === 'reward') return phase;
-  return 'explore';
+  return scene.room === 'rest' ? 'rest' : 'explore';
+}
+
+/** The audio state for a flow screen: the run-end and settings screens, then `audioStateFor`. */
+export function audioStateForFlow(
+  phase: FlowPhase,
+  encounter: EncounterPhase,
+  scene: MusicScene = {},
+): AudioState {
+  if (phase === 'death') return 'defeat';
+  if (phase === 'victory') return 'victory';
+  if (phase === 'settings') return 'title';
+  return audioStateFor(phase, encounter, scene);
 }
 
 /** The SFX for a rules event, or null when the event is silent or owned by the state cues. */
