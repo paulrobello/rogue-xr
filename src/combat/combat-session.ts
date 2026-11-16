@@ -15,6 +15,7 @@ import type { DiceWorldOptions } from '../dice/world.ts';
 import type { SentryActor } from '../enemies/sentry-asset.ts';
 import type { AimRay } from '../hand/aim.ts';
 import { CardFan } from '../hand/card-fan.ts';
+import { GRIP_FAN_ORIGIN } from '../hand/fan-layout.ts';
 import { FlingController, type FlingTargetSite, rayFromObject } from '../hand/fling.ts';
 import { PALETTE } from '../palette.ts';
 import { type CombatEvent, intentDamage, PLAYER_ID } from '../rules/index.ts';
@@ -50,6 +51,8 @@ export const SIGIL_CAST_SECONDS = 0.6;
 const DRAG_LIFT = 0.12;
 const DRAG_REACH = 3;
 const TIP_OFFSET = 0.06;
+/** How to trace a glyph with controllers, shown above the plate and as the staged-card message. */
+export const XR_SIGIL_HINT = 'Hold the trigger and point at the plate to trace the glyph';
 const TRAY_HALF_X = 0.2;
 const TRAY_HALF_Z = 0.11;
 const ENEMY_RADIUS = 0.5;
@@ -640,12 +643,14 @@ export class CombatSession {
         new THREE.Ray(new THREE.Vector3(...r.origin), new THREE.Vector3(...r.direction)),
       );
     }
+    this.plate.setHint(this.xr ? XR_SIGIL_HINT : '');
     if (this.drawing === 'xr' && this.xr?.main) {
       const tip = this.tipOf(this.xr.main);
       const ray = this.xr.mainRay ? rayFromObject(this.xr.mainRay) : null;
-      const added =
-        this.plate.addTip(tip) ||
-        (ray !== null && this.plate.addRay(toV(ray.origin), toV(ray.direction)));
+      const added = this.plate.addPen(
+        tip,
+        ray && { origin: toV(ray.origin), direction: toV(ray.direction) },
+      );
       if (added) this.deps.audio?.startLoop('sigil-trace', this.platePose.center);
     }
     if (this.castTimer > 0 && this.drawing === null) {
@@ -801,7 +806,8 @@ export class CombatSession {
     this.holding = null;
     const decision = this.fling.release();
     if (decision?.outcome === 'sprung-back' && decision.reason) this.message = decision.reason;
-    if (decision?.outcome === 'staged') this.message = 'Draw the sigil on the plate';
+    if (decision?.outcome === 'staged')
+      this.message = this.xr ? XR_SIGIL_HINT : 'Draw the sigil on the plate';
   }
 
   private endTurn(): void {
@@ -1114,7 +1120,8 @@ export class CombatSession {
     const was = this.xr;
     this.xr = next;
     if (next) {
-      if (this.fan.root.parent !== next.off) this.fan.attach(next.off as THREE.Object3D);
+      if (this.fan.root.parent !== next.off)
+        this.fan.attach(next.off as THREE.Object3D, GRIP_FAN_ORIGIN);
       if (was?.main !== next.main) {
         this.fling.setMainGrip(next.main ?? undefined);
         this.fan.setMainGrip(next.main ?? undefined);

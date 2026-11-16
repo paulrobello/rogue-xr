@@ -60,6 +60,15 @@ export const DEFAULT_FAN: FanOptions = {
   minScale: 0.85,
 };
 
+/**
+ * Fan centre on the off-hand controller grip, grip-local metres. `DEFAULT_FAN.origin` sat on the
+ * toolkit hand's wrist cap (the grip space puts the wrist at +y +z), so the hand showed through the
+ * middle of the fan. Here the fan rises 7 cm along the card up and moves 5 cm farther from the eyes:
+ * it sits on the fist with its bottom edges just above the knuckles and clears the hand, wrist cap
+ * and arm at every hand size, hover and finger curl (tests/fan-hand-clearance.test.ts).
+ */
+export const GRIP_FAN_ORIGIN: Vec3 = [0, 0.13, -0.04];
+
 /** Cards beyond this count no longer shrink; below it they keep full size. */
 const FULL_SIZE_COUNT = 5;
 

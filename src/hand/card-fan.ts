@@ -22,6 +22,7 @@ import {
   fanLayout,
   hitTestFan,
   MAX_HAND,
+  type Vec3,
 } from './fan-layout.ts';
 
 /**
@@ -278,9 +279,14 @@ export class CardFan {
     this.root.add(this.body, this.gems, this.labels);
   }
 
-  /** Parent the fan to the off-hand grip. */
-  attach(grip: THREE.Object3D): void {
-    grip.add(this.root);
+  /**
+   * Parents the fan, centred on `origin` in the parent's space (default: the layout origin). The
+   * layout is unchanged; the root moves, so hit tests and released poses follow it.
+   */
+  attach(parent: THREE.Object3D, origin: Vec3 = this.options.origin): void {
+    const o = this.options.origin;
+    this.root.position.set(origin[0] - o[0], origin[1] - o[1], origin[2] - o[2]);
+    parent.add(this.root);
   }
 
   detach(): void {

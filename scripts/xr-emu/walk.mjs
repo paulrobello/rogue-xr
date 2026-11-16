@@ -21,6 +21,8 @@ const { values: opts } = parseArgs({
     seed: { type: 'string', default: 'BRASS042' },
     notice: { type: 'string' },
     headed: { type: 'boolean', default: false },
+    // Only the card fan and sigil checks: New Run, one fight, then stop.
+    focus: { type: 'boolean', default: false },
   },
 });
 
@@ -174,6 +176,26 @@ try {
     });
     record('desktop-boot', desk.phase === 'title', desk);
     await shot('0-desktop-title');
+
+    if (opts.focus) {
+      await enterVr();
+      await press('title-new-run');
+      await settle(800);
+      await ev(() => window.__flow.setCheat('win'));
+      await ev(() => window.__combat.teleportToEncounter());
+      if (
+        await waitFor(
+          'focus-fight-active',
+          () => window.__combat.floor.encounter.phase === 'active',
+          undefined,
+          30000,
+        )
+      ) {
+        await settle(1200);
+        await fanAndSigilCheck();
+      }
+      return;
+    }
 
     // --- P0-T2 criterion 2: the session through createXrSession, foveation, scale, hands --------
     await enterVr();
@@ -458,7 +480,10 @@ try {
         30000,
       );
       await settle(1200);
-      if (fightIndex === 0) await shot('6-fight');
+      if (fightIndex === 0) {
+        await shot('6-fight');
+        await fanAndSigilCheck();
+      }
       const fight = await ev(() => ({
         phase: window.__flow.flow.phase,
         hasSession: window.__combat.session !== null,
@@ -505,6 +530,249 @@ try {
       );
       if (picked.cogs >= 30) break;
     }
+  }
+
+  /** Head-relative world point: `offset` metres in the rig's frame from the XR camera. */
+  function headPoint(offset) {
+    return ev((o) => {
+      const { rig, camera } = window.__xrEmu.ctx();
+      camera.updateWorldMatrix(true, false);
+      const head = camera.getWorldPosition(camera.position.clone());
+      const turn = rig.getWorldQuaternion(rig.quaternion.clone());
+      const p = head.add(
+        camera.position
+          .clone()
+          .set(...o)
+          .applyQuaternion(turn),
+      );
+      return { x: p.x, y: p.y, z: p.z };
+    }, offset);
+  }
+
+  /** Holds the off hand up to read the fan: the ray points away from the eyes, forward and low. */
+  async function holdFan() {
+    const from = await headPoint([-0.1, -0.22, -0.3]);
+    const aim = await headPoint([-0.25, -0.45, -1.0]);
+    await ev(({ from, aim }) => window.__xrEmu.placeAt('left', from, aim), { from, aim });
+  }
+
+  /** Trail-coloured pixels (the additive near-white #fff0b8) present in `after` but not in `before`. */
+  function newTrailPixels(before, after) {
+    return ev(
+      async ({ a, b }) => {
+        const read = async (src) => {
+          const img = new Image();
+          img.src = `data:image/png;base64,${src}`;
+          await img.decode();
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const g = canvas.getContext('2d');
+          g.drawImage(img, 0, 0);
+          return g.getImageData(0, 0, img.width, img.height).data;
+        };
+        const pa = await read(a);
+        const pb = await read(b);
+        const trail = (d, i) => d[i] > 225 && d[i + 1] > 205 && d[i + 2] > 120;
+        let count = 0;
+        for (let i = 0; i < pa.length; i += 4) if (trail(pb, i) && !trail(pa, i)) count += 1;
+        return count;
+      },
+      { a: before.toString('base64'), b: after.toString('base64') },
+    );
+  }
+
+  /**
+   * The off-hand card fan held up in view (screenshot evidence for the wrist-through-cards fix,
+   * proven geometrically in tests/fan-hand-clearance.test.ts), then a sigil card staged through the
+   * real XR path (main-hand squeeze on the hovered card, released over the table) and its glyph
+   * traced by holding the trigger and sweeping the main-hand ray across the plate along the card's
+   * own template. The trail must show in the rendered frame and the cast must resolve.
+   */
+  async function fanAndSigilCheck() {
+    // Bring a sigil card into the hand: end turns until one is drawn.
+    for (let turn = 0; turn < 6; turn += 1) {
+      const has = await ev(() =>
+        window.__combat.session.controller.state.piles.hand.some((c) => c.def.type === 'sigil'),
+      );
+      if (has) break;
+      await page.keyboard.press('KeyE');
+      await settle(2500);
+    }
+    await ev(() => window.__xrEmu.setHead(1.2, -0.35));
+    await holdFan();
+    await ev(({ from, aim }) => window.__xrEmu.placeAt('right', from, aim), {
+      from: await headPoint([0.2, -0.32, -0.25]),
+      aim: await headPoint([0.3, -0.6, -1]),
+    });
+    await settle(500);
+    const fan = await ev(() => {
+      const s = window.__combat.session;
+      const parent = s.fan.root.parent;
+      return {
+        cards: s.fan.count,
+        onGrip: parent?.parent?.name === 'player-rig',
+        rootOffset: s.fan.root.position.toArray().map((v) => Number(v.toFixed(3))),
+      };
+    });
+    await shot('12-fan-held');
+    record('xr-fan-in-off-hand', fan.onGrip && fan.cards > 0, {
+      ...fan,
+      note: 'clearance is proven in tests/fan-hand-clearance.test.ts; this is the visual',
+    });
+    await ev(() => window.__xrEmu.setHead(1.2, 0));
+    await holdFan();
+
+    // Stage the sigil card with the main hand: point at it, squeeze, carry it over the table, let go.
+    const pick = await ev(() => {
+      const s = window.__combat.session;
+      const hand = s.controller.state.piles.hand;
+      const index = hand.findIndex((c) => c.def.type === 'sigil');
+      if (index < 0) return null;
+      const card = hand[index];
+      const at = s.worldOf('card', card.uid);
+      return { index, uid: card.uid, id: card.def.id, at: { x: at.x, y: at.y, z: at.z } };
+    });
+    if (!pick) {
+      record('xr-sigil-stage', false, 'no sigil card reached the hand');
+      return;
+    }
+    const mainFrom = await headPoint([0.18, -0.28, -0.3]);
+    await ev(({ from, at }) => window.__xrEmu.placeAt('right', from, at), {
+      from: mainFrom,
+      at: pick.at,
+    });
+    await settle(300);
+    const hoveredCard = await ev(() => window.__combat.session.fan.hovered);
+    await ev(() => window.__xrEmu.device.controllers.right.updateButtonValue('squeeze', 1));
+    await settle(300);
+    const table = await ev(() => {
+      const p = window.__combat.session.worldOf('table');
+      return { x: p.x, y: p.y, z: p.z };
+    });
+    const over = { x: table.x, y: table.y + 0.3, z: table.z };
+    for (let step = 1; step <= 6; step += 1) {
+      const t = step / 6;
+      const from = {
+        x: mainFrom.x + (over.x - mainFrom.x) * t,
+        y: mainFrom.y + (over.y - mainFrom.y) * t,
+        z: mainFrom.z + (over.z - mainFrom.z) * t,
+      };
+      await ev(({ from, table }) => window.__xrEmu.placeAt('right', from, table), { from, table });
+      await settle(60);
+    }
+    await settle(300);
+    await ev(() => window.__xrEmu.device.controllers.right.updateButtonValue('squeeze', 0));
+    await settle(500);
+    const staged = await ev(() => {
+      const s = window.__combat.session;
+      return {
+        stage: s.controller.stage,
+        plate: s.plate.phase,
+        hint: s.plate.hintText ?? null,
+        message: s.message,
+        fling: s.fling.debugText(),
+      };
+    });
+    record('xr-sigil-stage', staged.stage === 'sigil' && staged.plate === 'ready', {
+      card: pick.id,
+      hoveredCard,
+      ...staged,
+    });
+    if (staged.plate !== 'ready') return;
+    record('xr-sigil-hint', /trigger/i.test(staged.hint ?? '') && /trigger/i.test(staged.message), {
+      plateHint: staged.hint,
+      message: staged.message,
+    });
+
+    // Trace the card's own glyph with the main-hand ray, trigger held, from a resting hand.
+    const glyph = await ev(async (cardId) => {
+      const { SIGIL_TEMPLATES } = await import('/src/sigil/templates.ts');
+      const { CARDS_BY_ID } = await import('/src/content/cards.ts');
+      const sigil = CARDS_BY_ID.get(cardId).sigil;
+      const p = window.__combat.session.platePoseNow;
+      const size = Math.min(p.halfWidth, p.halfHeight) * 2 * 0.8;
+      const world = (pt) => {
+        const x = (pt.x - 0.5) * size;
+        const y = (pt.y - 0.5) * size;
+        return {
+          x: p.center.x + p.right.x * x + p.up.x * y,
+          y: p.center.y + p.right.y * x + p.up.y * y,
+          z: p.center.z + p.right.z * x + p.up.z * y,
+        };
+      };
+      return { sigil, strokes: SIGIL_TEMPLATES[sigil].strokes.map((s) => s.map(world)) };
+    }, pick.id);
+    const pen = await headPoint([0.15, -0.3, -0.25]);
+    const pointAt = (target) =>
+      ev(({ from, target }) => window.__xrEmu.placeAt('right', from, target), {
+        from: pen,
+        target,
+      });
+    const home = glyph.strokes[0][0];
+    await pointAt(home);
+    await settle(300);
+    const before = await page.screenshot({ type: 'png' });
+    const trace = [];
+    for (const [s, stroke] of glyph.strokes.entries()) {
+      await pointAt(stroke[0]);
+      await settle(80);
+      await ev(() => window.__xrEmu.device.controllers.right.updateButtonValue('trigger', 1));
+      await settle(80);
+      for (const [i, point] of stroke.entries()) {
+        await pointAt(point);
+        await settle(40);
+        if (s === 0 && i === Math.floor(stroke.length * 0.6)) await shot('13-sigil-tracing');
+      }
+      if (s === glyph.strokes.length - 1) {
+        await pointAt(home);
+        await settle(150);
+      }
+      trace.push(
+        await ev(() => {
+          const s = window.__combat.session;
+          const trail = s.plate.getObjectByName('sigil-plate-trail');
+          return {
+            points: s.plate.pointCount,
+            strokes: s.plate.strokes.length,
+            trailDrawCount: trail.geometry.drawRange.count,
+            phase: s.plate.phase,
+          };
+        }),
+      );
+      if (s === glyph.strokes.length - 1) {
+        const after = await page.screenshot({ type: 'png' });
+        trace.push({ newTrailPixels: await newTrailPixels(before, after) });
+      }
+      await ev(() => window.__xrEmu.device.controllers.right.updateButtonValue('trigger', 0));
+      await settle(120);
+    }
+    const drawn = trace.at(-2);
+    const pixels = trace.at(-1).newTrailPixels;
+    record('xr-sigil-trail', drawn.trailDrawCount > 0 && pixels > 150, {
+      sigil: glyph.sigil,
+      perStroke: trace.slice(0, -1),
+      newTrailPixels: pixels,
+    });
+    await settle(1200);
+    await shot('14-sigil-cast');
+    const cast = await ev(() => {
+      const s = window.__combat.session;
+      return {
+        label: s.plate.labelText,
+        plate: s.plate.phase,
+        message: s.message,
+        stage: s.controller.stage,
+        log: s.log.slice(-3),
+      };
+    });
+    record(
+      'xr-sigil-cast',
+      cast.label !== '' &&
+        !/too short|fizzle/i.test(cast.label) &&
+        !/too short/i.test(cast.message),
+      cast,
+    );
   }
 
   async function deathAndBack() {

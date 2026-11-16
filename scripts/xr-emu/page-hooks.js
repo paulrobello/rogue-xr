@@ -130,6 +130,24 @@
     return { from: from.toArray(), target: local.toArray() };
   };
 
+  /** Poses a controller at world point `from` with its -Z pointing at world point `target`. */
+  probe.placeAt = (hand, from, target) => {
+    const { rig } = probe.ctx();
+    const Vector3 = ctor(rig, 'position');
+    const Quaternion = ctor(rig, 'quaternion');
+    const Matrix4 = ctor(rig, 'matrix');
+    rig.updateMatrixWorld(true);
+    const a = rig.worldToLocal(new Vector3(from.x, from.y, from.z));
+    const b = rig.worldToLocal(new Vector3(target.x, target.y, target.z));
+    const q = new Quaternion().setFromRotationMatrix(
+      new Matrix4().lookAt(a, b, new Vector3(0, 1, 0)),
+    );
+    const controller = device.controllers[hand];
+    controller.position.set(a.x, a.y, a.z);
+    controller.quaternion.set(q.x, q.y, q.z, q.w);
+    return { from: a.toArray(), target: b.toArray() };
+  };
+
   /** World position of a named object in either scene, or of a point in its local frame. */
   probe.worldOf = (name, local = [0, 0, 0]) => {
     const { world, uiScene } = probe.ctx();

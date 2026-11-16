@@ -286,9 +286,89 @@ describe('combat session', () => {
     rig.step(2);
     expect(session.plate.phase).toBe('ready');
     expect(session.plate.sigilId).toBe('ward');
+    // The controller how-to line is XR only; the desktop HUD carries its own instructions.
+    expect(session.plate.hintText).toBe('');
     drawSigil(rig, session);
     expect(session.controller.stage).toBe('idle');
     expect(session.controller.state.player.block).toBeGreaterThan(blockAfterFirst);
+  }, 60_000);
+
+  // Quest 3 report 2026-11-15: tracing on the plate with a controller drew nothing and the cast
+  // said "too short". The tip, out of reach of the plate, fed a miss every frame that closed the
+  // stroke the ray had just started, so no stroke ever held two points.
+  it('casts a sigil traced in XR by holding the trigger and pointing at the plate', async () => {
+    const rig = await openFight('SPIRE002', { deck: Array(10).fill('warding-glyph') });
+    const { session, camera } = rig;
+    const scene = camera.parent as THREE.Scene;
+    const head = camera.getWorldPosition(new THREE.Vector3());
+    const main = new THREE.Group();
+    const mainRay = new THREE.Group();
+    const off = new THREE.Group();
+    off.position.copy(head).add(new THREE.Vector3(-0.18, -0.3, -0.3));
+    scene.add(main, mainRay, off);
+    const xr = { main, mainRay, off };
+    const pose = (from: THREE.Vector3, target: THREE.Vector3) => {
+      for (const o of [main, mainRay]) {
+        o.position.copy(from);
+        o.lookAt(target);
+        o.rotateY(Math.PI);
+        o.updateMatrixWorld(true);
+      }
+    };
+    const step = (seconds = DT) => {
+      for (let t = 0; t < seconds - 1e-9; t += DT) {
+        camera.updateMatrixWorld(true);
+        rig.view.update(camera, DT);
+        rig.hook.update(DT, xr);
+      }
+    };
+    const hand = (control: 'squeeze' | 'trigger', pressed: boolean) =>
+      rig.actions.emit({ type: 'combat-hand', hand: 'main', control, pressed });
+
+    const rest = head.clone().add(new THREE.Vector3(0.18, -0.3, -0.3));
+    step();
+    const uid = session.controller.state.piles.hand[0]?.uid as number;
+    pose(rest, at(session, 'card', uid));
+    step();
+    expect(session.fan.hovered).toBe(0);
+    hand('squeeze', true);
+    step();
+    const table = at(session, 'table');
+    for (let i = 1; i <= 6; i++) {
+      pose(rest.clone().lerp(table.clone().setY(table.y + 0.25), i / 6), table);
+      step();
+    }
+    hand('squeeze', false);
+    step(0.5);
+    expect(session.controller.stage).toBe('sigil');
+    expect(session.plate.phase).toBe('ready');
+    expect(session.plate.hintText).toMatch(/trigger/i);
+
+    const p = session.platePoseNow;
+    const size = Math.min(p.halfWidth, p.halfHeight) * 1.6;
+    const onPlate = (pt: { x: number; y: number }) =>
+      new THREE.Vector3(p.center.x, p.center.y, p.center.z)
+        .addScaledVector(new THREE.Vector3(p.right.x, p.right.y, p.right.z), (pt.x - 0.5) * size)
+        .addScaledVector(new THREE.Vector3(p.up.x, p.up.y, p.up.z), (pt.y - 0.5) * size);
+    const trail = session.plate.getObjectByName('sigil-plate-trail') as THREE.Mesh;
+    for (const stroke of SIGIL_TEMPLATES.ward.strokes) {
+      pose(rest, onPlate(stroke[0] as { x: number; y: number }));
+      step();
+      hand('trigger', true);
+      for (const pt of stroke) {
+        pose(rest, onPlate(pt));
+        step();
+      }
+      expect(trail.geometry.drawRange.count).toBeGreaterThan(0);
+      hand('trigger', false);
+      step(0.1);
+    }
+    step(SIGIL_CAST_SECONDS + 0.1);
+    expect(session.plate.phase).toBe('done');
+    expect(session.plate.labelText).not.toMatch(/too short|fizzle/i);
+    expect(session.controller.stage).toBe('idle');
+    expect(session.controller.state.player.block).toBeGreaterThan(0);
+    rig.hook.dispose();
   }, 60_000);
 
   // Sigil traces bash (BASH7000 room 5): after a sigil cast, the next card grabbed at the same fan

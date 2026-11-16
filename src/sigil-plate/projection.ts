@@ -202,6 +202,19 @@ export function rayToPlate(
   return { x: hit.x, y: hit.y };
 }
 
+/**
+ * One controller sample on the plate: the tip when it touches the plate (`projectTip`), else where
+ * the controller ray meets it (`rayToPlate`), else null. Feed the result to the trace once per
+ * frame: feeding a tip miss and a ray hit separately closes the stroke on every frame.
+ */
+export function penToPlate(
+  pose: PlatePose,
+  tip: Vec3,
+  ray: { readonly origin: Vec3; readonly direction: Vec3 } | null,
+): Point | null {
+  return projectTip(pose, tip) ?? (ray ? rayToPlate(pose, ray.origin, ray.direction) : null);
+}
+
 /** The slice of a three.js camera that mouse picking needs: both matrices must be current. */
 export interface RayCamera {
   readonly matrixWorld: { readonly elements: ArrayLike<number> };

@@ -14,6 +14,7 @@ Start the dev server first (`make dev-start`, port 4260), then:
 make xr-emu                                     # node scripts/xr-emu/walk.mjs
 node scripts/xr-emu/walk.mjs --out /tmp/xr-emu  # keep screenshots out of the repo
 PW_GPU=swiftshader node scripts/xr-emu/walk.mjs # software GL, only when no GPU is available
+node scripts/xr-emu/walk.mjs --focus          # New Run, one fight: only the fan and sigil checks
 ```
 
 The update-notice check needs a production build (the dev server stamps no build id):
@@ -26,7 +27,7 @@ node scripts/xr-emu/walk.mjs --notice http://localhost:4262
 
 Screenshots land in `docs/verification/xr-emu-*.jpg` with a JSON report
 (`xr-emu-report.json`, `xr-emu-report-notice.json`). The exit code is 1 when any check fails
-(`make` reports 2). As of 2026-11-15 both runs pass every check (30 for the walk, 5 for
+(`make` reports 2). As of 2026-11-15 both runs pass every check (35 for the walk, 5 for
 `--notice`); XO1 to XO4 in `docs/playtesting.md` record the fixes. The two console 404s in the
 notice run are the music tracks that are not produced yet.
 
@@ -43,3 +44,9 @@ notice run are the music tracks that are not produced yet.
 - Fights are ended with the debug `K` key (win) and `?cheat`-style `__flow.setCheat('lose')` plus
   `E` (end turn) for the death; the reward, death and title boards are always used with the ray.
 - The head sits at a seated 1.2 m, so the recenter's height lift is visible in the checks.
+- In the first fight the walk holds the off hand up to read the fan (`12-fan-held`), stages a
+  sigil card with a main-hand squeeze released over the table, and traces the card's template by
+  holding the trigger and sweeping the main-hand ray across the plate. `xr-sigil-trail` counts
+  trail-coloured pixels that appear between two screenshots taken at the same controller pose, so
+  it fails unless the trail is in the rendered XR frame; `xr-sigil-cast` fails on Too short or
+  Fizzle.

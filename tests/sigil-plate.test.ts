@@ -23,6 +23,7 @@ import {
   mouseToPlate,
   PLATE_MARGIN,
   type PlatePose,
+  penToPlate,
   platePoseAboveTable,
   projectTip,
   projectToPlate,
@@ -409,11 +410,51 @@ describe('SigilPlate', () => {
     expect(plate.finish()).toBeNull();
   });
 
+  it('traces with the controller ray while the tip is out of reach (XR pointing)', () => {
+    const pose = posedPlate(30, 25);
+    const plate = new SigilPlate();
+    plate.show('ward', pose);
+    // A seated player's controller: well in front of the plate, its tip never within reach.
+    const hand = worldPoint(pose, 0.15, -0.35, 0.7);
+    const trail = plate.getObjectByName('sigil-plate-trail') as THREE.Mesh;
+    for (const stroke of templateStrokes('ward')) {
+      plate.beginStroke();
+      for (const p of stroke) {
+        const target = worldPoint(pose, p.x, p.y);
+        const direction = {
+          x: target.x - hand.x,
+          y: target.y - hand.y,
+          z: target.z - hand.z,
+        };
+        plate.addPen(hand, { origin: hand, direction });
+      }
+      plate.endStroke();
+    }
+    expect(plate.strokes).toHaveLength(SIGIL_TEMPLATES.ward.strokes.length);
+    expect(plate.pointCount).toBeGreaterThanOrEqual(MIN_CAST_POINTS);
+    expect(trail.geometry.drawRange.count).toBeGreaterThan(0);
+    const result = plate.finish();
+    expect(result).not.toBeNull();
+    expect(result?.quality).not.toBe('Fizzle');
+  });
+
+  it('prefers the touching tip over the ray, and misses only when both miss', () => {
+    const pose = posedPlate(0);
+    const away = { x: 0, y: 0, z: -1 };
+    const tip = worldPoint(pose, 0.05, 0.02, 0.01);
+    const ray = { origin: worldPoint(pose, -0.1, 0, 0.5), direction: away };
+    expect(penToPlate(pose, tip, ray)).toEqual(projectTip(pose, tip));
+    const far = worldPoint(pose, 0, 0, 0.5);
+    expect(penToPlate(pose, far, ray)).toEqual(rayToPlate(pose, ray.origin, away));
+    expect(penToPlate(pose, far, null)).toBeNull();
+    expect(penToPlate(pose, far, { origin: far, direction: { x: 0, y: 0, z: 1 } })).toBeNull();
+  });
+
   it('caps the trail buffer and updates it in place', () => {
     const pose = posedPlate(0);
     const plate = new SigilPlate();
     plate.show('spiral', pose);
-    const trail = plate.getObjectByName('sigil-plate-trail') as THREE.LineSegments;
+    const trail = plate.getObjectByName('sigil-plate-trail') as THREE.Mesh;
     const attr = trail.geometry.getAttribute('position') as THREE.BufferAttribute;
     const array = attr.array;
     const length = array.length;
@@ -427,7 +468,9 @@ describe('SigilPlate', () => {
     expect(trail.geometry.getAttribute('position')).toBe(attr);
     expect(attr.array).toBe(array);
     expect(attr.array.length).toBe(length);
-    expect(trail.geometry.drawRange.count).toBeLessThanOrEqual(MAX_TRACE_POINTS * 2);
+    // Two triangles per segment: the trail is a ribbon, since a 1 px line is lost in a headset.
+    expect(trail.geometry.drawRange.count).toBeLessThanOrEqual(MAX_TRACE_POINTS * 6);
+    expect(trail.geometry.drawRange.count % 6).toBe(0);
     expect(trail.geometry.drawRange.count).toBeGreaterThan(0);
 
     plate.show('flame', pose);

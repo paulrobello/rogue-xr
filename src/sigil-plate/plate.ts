@@ -7,6 +7,7 @@ import {
   makePlatePose,
   mouseToPlate,
   type PlatePose,
+  penToPlate,
   projectTip,
   type RayCamera,
   rayToPlate,
@@ -27,6 +28,10 @@ const LABEL_POP_SECONDS = 0.15;
 const LABEL_WIDTH = 0.34;
 const LABEL_HEIGHT = 0.17;
 const TRAIL_Z = 0.004;
+/** Trail ribbon width, metres: a 1 px line is lost at headset resolution and foveation. */
+const TRAIL_WIDTH = 0.009;
+const HINT_HEIGHT = 0.05;
+const HINT_CANVAS = { width: 1024, height: 112 } as const;
 const GUIDE_Z = 0.002;
 const LABEL_CANVAS = { width: 256, height: 128 } as const;
 
@@ -59,6 +64,16 @@ function lineBuffer(segments: number): THREE.BufferGeometry {
   return geometry;
 }
 
+/** Room for `segments` trail quads, two triangles each. */
+function ribbonBuffer(segments: number): THREE.BufferGeometry {
+  const geometry = new THREE.BufferGeometry();
+  const attr = new THREE.BufferAttribute(new Float32Array(segments * 6 * 3), 3);
+  attr.setUsage(THREE.DynamicDrawUsage);
+  geometry.setAttribute('position', attr);
+  geometry.setDrawRange(0, 0);
+  return geometry;
+}
+
 /**
  * The glowing plate a sigil card reveals above the table. Plate space is the group's local XY plane
  * (+Z faces the player), so a trace point from `projection.ts` maps to a vertex at (x, y, z) with no
@@ -73,12 +88,17 @@ export class SigilPlate extends THREE.Group {
   private readonly face: THREE.Mesh;
   private readonly rim: THREE.LineLoop;
   private readonly guide: THREE.LineSegments;
-  private readonly trail: THREE.LineSegments;
+  private readonly trail: THREE.Mesh;
   private readonly label: THREE.Mesh;
+  private readonly hint: THREE.Mesh;
+  private readonly hintMaterial: THREE.MeshBasicMaterial;
+  private readonly hintCanvas: HTMLCanvasElement | null;
+  private readonly hintTexture: THREE.CanvasTexture | null;
+  private hintWords = '';
   private readonly faceMaterial: THREE.MeshBasicMaterial;
   private readonly rimMaterial: THREE.LineBasicMaterial;
   private readonly guideMaterial: THREE.LineBasicMaterial;
-  private readonly trailMaterial: THREE.LineBasicMaterial;
+  private readonly trailMaterial: THREE.MeshBasicMaterial;
   private readonly labelMaterial: THREE.MeshBasicMaterial;
   private readonly labelCanvas: HTMLCanvasElement | null;
   private readonly labelTexture: THREE.CanvasTexture | null;
@@ -135,14 +155,15 @@ export class SigilPlate extends THREE.Group {
     this.guide.frustumCulled = false;
     this.add(this.guide);
 
-    this.trailMaterial = new THREE.LineBasicMaterial({
+    this.trailMaterial = new THREE.MeshBasicMaterial({
       color: '#fff0b8',
       transparent: true,
       opacity: 1,
       depthWrite: false,
+      side: THREE.DoubleSide,
       blending: THREE.AdditiveBlending,
     });
-    this.trail = new THREE.LineSegments(lineBuffer(MAX_TRACE_POINTS), this.trailMaterial);
+    this.trail = new THREE.Mesh(ribbonBuffer(MAX_TRACE_POINTS), this.trailMaterial);
     this.trail.name = 'sigil-plate-trail';
     this.trail.frustumCulled = false;
     this.add(this.trail);
@@ -168,6 +189,24 @@ export class SigilPlate extends THREE.Group {
     this.label.name = 'sigil-plate-label';
     this.label.visible = false;
     this.add(this.label);
+
+    this.hintCanvas = typeof document === 'undefined' ? null : document.createElement('canvas');
+    if (this.hintCanvas) {
+      this.hintCanvas.width = HINT_CANVAS.width;
+      this.hintCanvas.height = HINT_CANVAS.height;
+    }
+    this.hintTexture = this.hintCanvas ? new THREE.CanvasTexture(this.hintCanvas) : null;
+    if (this.hintTexture) this.hintTexture.colorSpace = THREE.SRGBColorSpace;
+    this.hintMaterial = new THREE.MeshBasicMaterial({
+      map: this.hintTexture,
+      transparent: true,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    });
+    this.hint = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), this.hintMaterial);
+    this.hint.name = 'sigil-plate-hint';
+    this.hint.visible = false;
+    this.add(this.hint);
   }
 
   get phase(): PlatePhase {
@@ -191,6 +230,32 @@ export class SigilPlate extends THREE.Group {
 
   get pointCount(): number {
     return this.builder.pointCount;
+  }
+
+  /** How-to-draw line shown above the plate while it waits for a trace. */
+  get hintText(): string {
+    return this.hintWords;
+  }
+
+  /** Sets the how-to-draw line; an empty string hides it. */
+  setHint(text: string): void {
+    if (text === this.hintWords) return;
+    this.hintWords = text;
+    if (!text) return;
+    const ctx = this.hintCanvas?.getContext('2d');
+    if (!ctx || !this.hintTexture) return;
+    const { width, height } = HINT_CANVAS;
+    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = 'rgba(18,12,7,0.78)';
+    ctx.beginPath();
+    ctx.roundRect(4, 4, width - 8, height - 8, 24);
+    ctx.fill();
+    ctx.fillStyle = PALETTE.parchment;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 44px system-ui, sans-serif';
+    ctx.fillText(text, width / 2, height / 2, width - 40);
+    this.hintTexture.needsUpdate = true;
   }
 
   /** Text of the result label ("×1.18 Clean"), or "" when none is shown. */
@@ -248,6 +313,15 @@ export class SigilPlate extends THREE.Group {
   addTip(worldPoint: Vec3): boolean {
     if (!this.platePose) return false;
     return this.addPoint(projectTip(this.platePose, worldPoint));
+  }
+
+  /**
+   * Feeds one controller sample per frame while the trigger is held: the tip when it touches the
+   * plate, else where `ray` meets it (`penToPlate`). Returns true when a point was stored.
+   */
+  addPen(tip: Vec3, ray: { readonly origin: Vec3; readonly direction: Vec3 } | null): boolean {
+    if (!this.platePose) return false;
+    return this.addPoint(penToPlate(this.platePose, tip, ray));
   }
 
   /** Feeds a world-space ray (a point-and-trigger controller ray, or any desktop pick ray). */
@@ -309,6 +383,9 @@ export class SigilPlate extends THREE.Group {
     this.rimMaterial.opacity = 0.6 + 0.4 * pulse;
     this.guideMaterial.opacity = 0.2 + 0.14 * pulse;
 
+    const waiting = this.currentPhase === 'ready' || this.currentPhase === 'drawing';
+    this.hint.visible = waiting && this.hintWords !== '' && !this.label.visible;
+
     if (this.label.visible) {
       this.labelAge += dt;
       const fade = 1 - (this.labelAge - LABEL_HOLD_SECONDS) / LABEL_FADE_SECONDS;
@@ -322,9 +399,11 @@ export class SigilPlate extends THREE.Group {
   }
 
   dispose(): void {
-    for (const child of [this.face, this.rim, this.guide, this.trail, this.label]) {
+    for (const child of [this.face, this.rim, this.guide, this.trail, this.label, this.hint]) {
       child.geometry.dispose();
     }
+    this.hintMaterial.dispose();
+    this.hintTexture?.dispose();
     this.faceMaterial.dispose();
     this.rimMaterial.dispose();
     this.guideMaterial.dispose();
@@ -343,16 +422,28 @@ export class SigilPlate extends THREE.Group {
     const a = stroke[stroke.length - 2] as Point;
     const b = stroke[stroke.length - 1] as Point;
     const attr = this.trail.geometry.getAttribute('position') as THREE.BufferAttribute;
-    const i = this.trailSegments * 6;
-    attr.array[i] = a.x;
-    attr.array[i + 1] = a.y;
-    attr.array[i + 2] = TRAIL_Z;
-    attr.array[i + 3] = b.x;
-    attr.array[i + 4] = b.y;
-    attr.array[i + 5] = TRAIL_Z;
+    // A quad across the segment, TRAIL_WIDTH wide, extended by half a width at each end so
+    // neighbouring quads overlap at the joins.
+    const length = Math.hypot(b.x - a.x, b.y - a.y);
+    const half = TRAIL_WIDTH / 2;
+    const tx = length > 1e-9 ? ((b.x - a.x) / length) * half : half;
+    const ty = length > 1e-9 ? ((b.y - a.y) / length) * half : 0;
+    const corners = [
+      [a.x - tx - ty, a.y - ty + tx],
+      [a.x - tx + ty, a.y - ty - tx],
+      [b.x + tx - ty, b.y + ty + tx],
+      [b.x + tx + ty, b.y + ty - tx],
+    ] as const;
+    let i = this.trailSegments * 18;
+    for (const k of [0, 1, 2, 2, 1, 3] as const) {
+      const corner = corners[k];
+      attr.array[i++] = corner[0];
+      attr.array[i++] = corner[1];
+      attr.array[i++] = TRAIL_Z;
+    }
     this.trailSegments++;
     attr.needsUpdate = true;
-    this.trail.geometry.setDrawRange(0, this.trailSegments * 2);
+    this.trail.geometry.setDrawRange(0, this.trailSegments * 6);
     return true;
   }
 
@@ -377,6 +468,8 @@ export class SigilPlate extends THREE.Group {
     attr.needsUpdate = true;
     this.guide.geometry.setDrawRange(0, segments * 2);
     this.label.position.set(0, pose.halfHeight + LABEL_HEIGHT * 0.6, 0.01);
+    this.hint.scale.set(pose.halfWidth * 2, HINT_HEIGHT, 1);
+    this.hint.position.set(0, pose.halfHeight + HINT_HEIGHT * 0.8, 0.01);
   }
 
   private showLabel(top: string, bottom: string, color: string): void {
