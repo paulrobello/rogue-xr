@@ -78,6 +78,12 @@ actions.on('recenter', () => {
 });
 const perf = mountPerf(renderer, scene, rig, { camera });
 if (floor) mountSeedTitle(app, floor.seed, actions);
+// Until the combat loop is wired in, debug keys resolve a fight.
+window.addEventListener('keydown', (event) => {
+  if (!floor || floor.encounter.phase !== 'active') return;
+  if (event.code === 'KeyK') floor.encounter.end('win');
+  if (event.code === 'KeyF') floor.encounter.end('flee');
+});
 actions.on('new-run', ({ seed }) => {
   const url = new URL(location.href);
   if (seed) url.searchParams.set('seed', seed);
@@ -125,7 +131,6 @@ window.addEventListener('resize', () => {
 });
 
 const timer = new THREE.Timer();
-const head = new THREE.Vector3();
 renderer.setAnimationLoop((time, frame) => {
   perf.frame(null, time);
   timer.update(time);
@@ -138,21 +143,28 @@ renderer.setAnimationLoop((time, frame) => {
       recenterPending = false;
     }
     const { left, right } = xr.sticks();
-    locomotion.update(deltaSeconds, {
-      moveX: left[0],
-      moveY: left[1],
-      turnX: right[0],
-      teleportAim: null,
-    });
+    if (!floor?.locked) {
+      locomotion.update(deltaSeconds, {
+        moveX: left[0],
+        moveY: left[1],
+        turnX: right[0],
+        teleportAim: null,
+      });
+    }
   } else {
     desktop.update();
+    walker.enabled = !floor?.locked;
     walker.update(deltaSeconds);
   }
   cardProof?.update(time / 1000, xr.presenting);
-  floor?.update(camera.getWorldPosition(head));
+  floor?.update(camera, deltaSeconds);
   renderer.render(scene, camera);
   if (floor && !xr.presenting) {
     const room = floor.world.plan.rooms[floor.world.current];
-    hud.textContent = `seed ${floor.seed} · room ${floor.world.current} ${room?.templateId} (${room?.role}) · calls ${renderer.info.render.calls}`;
+    const fight =
+      floor.encounter.phase === 'idle'
+        ? ''
+        : ` · encounter ${floor.encounter.phase} (K win, F flee)`;
+    hud.textContent = `seed ${floor.seed} · room ${floor.world.current} ${room?.templateId} (${room?.role}) · calls ${renderer.info.render.calls}${fight}`;
   }
 });
