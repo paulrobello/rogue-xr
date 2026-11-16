@@ -20,7 +20,8 @@ import {
 import { createWorkshop } from '../src/rules/workshop.ts';
 import { mountFloorView } from '../src/world/floor-view.ts';
 import { buildFloorWorld } from '../src/world/floor-world.ts';
-import { hearthLines, hearthSocket } from '../src/world/hearth.ts';
+import { type Hearth, hearthLines, hearthSocket } from '../src/world/hearth.ts';
+import { coalLumpGeometry, flameGeometry } from '../src/world/hearth-coals.ts';
 
 /** Floors with one rest room (SPIRE007, room 4) and with two (SPIRE024, rooms 1 and 6). */
 const REST_SEED = 'SPIRE007';
@@ -448,5 +449,205 @@ describe('floor hearth view', () => {
     expect(at?.distanceTo(new THREE.Vector3(base.x, 0, base.z))).toBeCloseTo(2, 6);
     expect(view.hearth.approachPoint(9999, 'x')).toBeNull();
     view.dispose();
+  });
+});
+
+describe('the hearth coal bed', () => {
+  /** Draw calls (visible meshes) and triangles one hearth renders. */
+  const cost = (hearth: Hearth): { calls: number; triangles: number } => {
+    let calls = 0;
+    let triangles = 0;
+    hearth.object.traverseVisible((o) => {
+      const mesh = o as THREE.Mesh;
+      if (!mesh.isMesh || !(mesh.material as THREE.Material).visible) return;
+      calls++;
+      const g = mesh.geometry;
+      triangles += (g.index ? g.index.count : (g.attributes.position?.count ?? 0)) / 3;
+    });
+    return { calls, triangles };
+  };
+  const parts = (hearth: Hearth) => {
+    const coals = hearth.object.getObjectByName('hearth-coals') as THREE.Mesh;
+    const lumps = hearth.object.getObjectByName('hearth-coal-lumps') as THREE.Mesh;
+    const flames = hearth.object.getObjectByName('hearth-flames') as THREE.Mesh;
+    return {
+      coals,
+      lumps,
+      flames,
+      color: (coals.material as THREE.MeshBasicMaterial).color,
+      lumpUniforms: (lumps.material as THREE.ShaderMaterial).uniforms,
+      flameUniforms: (flames.material as THREE.ShaderMaterial).uniforms,
+    };
+  };
+  const glow = (c: THREE.Color): number => c.r + c.g + c.b;
+  const array = (g: THREE.BufferGeometry, name: string): number[] =>
+    Array.from((g.attributes[name] as THREE.BufferAttribute).array);
+
+  it('stays inside the Quest budget: under 4,000 triangles and 2 draw calls over the flat disc', () => {
+    for (const seed of [REST_SEED, TWO_REST_SEED, 'SPIRE065']) {
+      const world = buildFloorWorld(generateFloor(seed));
+      expect(world.hearths.length).toBeGreaterThan(0);
+      for (const hearth of world.hearths) {
+        const { calls, triangles } = cost(hearth);
+        // The flat-disc hearth drew 10 meshes (bowl, rim, ring, 3 legs, 3 feet, coals).
+        expect(calls).toBeLessThanOrEqual(12);
+        expect(triangles).toBeLessThan(4000);
+      }
+      world.dispose();
+    }
+  });
+
+  it('heaps a mound of separate lumps that rises above the rim', () => {
+    const geometry = coalLumpGeometry('4/chest');
+    const corners = (geometry.attributes.position as THREE.BufferAttribute).count;
+    // Icosahedron lumps: 20 faces, 60 corners each.
+    expect(corners % 60).toBe(0);
+    expect(corners / 60).toBeGreaterThanOrEqual(60);
+    geometry.computeBoundingBox();
+    expect(geometry.boundingBox?.max.y).toBeGreaterThan(0.1);
+    expect(geometry.boundingBox?.max.x).toBeLessThan(0.34);
+    geometry.dispose();
+  });
+
+  it('scatters lumps and flames from the hearth key, the same on every load', () => {
+    const a = coalLumpGeometry('4/chest');
+    const b = coalLumpGeometry('4/chest');
+    const c = coalLumpGeometry('1/chest');
+    for (const name of ['position', 'color', 'ashColor', 'seed'])
+      expect(array(a, name)).toEqual(array(b, name));
+    expect(array(a, 'position')).not.toEqual(array(c, 'position'));
+    const f = flameGeometry('4/chest');
+    const g = flameGeometry('4/chest');
+    expect(array(f, 'position')).toEqual(array(g, 'position'));
+    expect(array(f, 'params')).toEqual(array(g, 'params'));
+    for (const geometry of [a, b, c, f, g]) geometry.dispose();
+
+    const first = buildFloorWorld(generateFloor(TWO_REST_SEED));
+    const second = buildFloorWorld(generateFloor(TWO_REST_SEED));
+    const lumpsOf = (world: typeof first): number[][] =>
+      world.hearths.map((h) => array(parts(h).lumps.geometry, 'position'));
+    expect(lumpsOf(first)).toEqual(lumpsOf(second));
+    const [one, two] = lumpsOf(first);
+    expect(one).not.toEqual(two);
+    first.dispose();
+    second.dispose();
+  });
+
+  it('does not depend on Math.random to build or animate', () => {
+    // three.js draws object uuids from Math.random, so pin it to two different values instead.
+    const run = (value: number) => {
+      const spy = vi.spyOn(Math, 'random').mockReturnValue(value);
+      const world = buildFloorWorld(generateFloor(TWO_REST_SEED));
+      for (let i = 0; i < 30; i++) for (const h of world.hearths) h.update(1 / 30);
+      const shown = world.hearths.map((h) => {
+        const { lumps, flames, color, lumpUniforms } = parts(h);
+        return {
+          lumps: array(lumps.geometry, 'position'),
+          lit: array(lumps.geometry, 'color'),
+          flames: array(flames.geometry, 'params'),
+          color: color.toArray(),
+          time: lumpUniforms.uTime?.value,
+        };
+      });
+      spy.mockRestore();
+      world.dispose();
+      return shown;
+    };
+    expect(run(0.1)).toEqual(run(0.9));
+  });
+
+  it('flickers while lit without dropping below the glow the scripted checks require', () => {
+    const world = buildFloorWorld(generateFloor(REST_SEED));
+    const hearth = world.hearths[0];
+    if (!hearth) throw new Error('SPIRE007 has a hearth');
+    const { flames, color, lumpUniforms, flameUniforms } = parts(hearth);
+    let low = Number.POSITIVE_INFINITY;
+    let high = 0;
+    for (let i = 0; i < 1200; i++) {
+      hearth.update(1 / 60);
+      low = Math.min(low, glow(color));
+      high = Math.max(high, glow(color));
+    }
+    expect(low).toBeGreaterThanOrEqual(0.9);
+    expect(high - low).toBeGreaterThan(0.1);
+    expect(flames.visible).toBe(true);
+    expect(lumpUniforms.uDim?.value).toBe(0);
+    expect(flameUniforms.uFade?.value).toBe(1);
+    expect(lumpUniforms.uTime?.value).toBeCloseTo(20, 6);
+    expect(flameUniforms.uTime?.value).toBeCloseTo(20, 6);
+    world.dispose();
+  });
+
+  it('keeps the glow a saturated amber, out of tone mapping', () => {
+    const world = buildFloorWorld(generateFloor(REST_SEED));
+    const hearth = world.hearths[0];
+    if (!hearth) throw new Error('SPIRE007 has a hearth');
+    const { coals, lumps, flames } = parts(hearth);
+    for (const mesh of [coals, lumps, flames])
+      expect((mesh.material as THREE.Material).toneMapped).toBe(false);
+    // The bed's crown vertex is the hottest: an amber hue, fully saturated (not peach).
+    const bed = coals.geometry.attributes.color as THREE.BufferAttribute;
+    const hsl = new THREE.Color(bed.getX(0), bed.getY(0), bed.getZ(0)).getHSL({ h: 0, s: 0, l: 0 });
+    expect(hsl.h * 360).toBeGreaterThan(15);
+    expect(hsl.h * 360).toBeLessThan(45);
+    expect(hsl.s).toBeGreaterThan(0.9);
+    world.dispose();
+  });
+
+  it('burns down to ash: flames out, lumps grey, then nothing animates', () => {
+    const world = buildFloorWorld(generateFloor(REST_SEED));
+    const hearth = world.hearths[0];
+    if (!hearth) throw new Error('SPIRE007 has a hearth');
+    const { flames, color, lumpUniforms, flameUniforms } = parts(hearth);
+    for (let i = 0; i < 30; i++) hearth.update(1 / 30);
+    const lit = glow(color);
+    hearth.use(true);
+    hearth.update(0.5);
+    expect(flames.visible).toBe(true);
+    expect(lumpUniforms.uDim?.value).toBeGreaterThan(0);
+    expect(lumpUniforms.uDim?.value).toBeLessThan(1);
+    for (let i = 0; i < 60; i++) hearth.update(1 / 30);
+    expect(flames.visible).toBe(false);
+    expect(lumpUniforms.uDim?.value).toBe(1);
+    expect(flameUniforms.uFade?.value).toBe(0);
+    expect(glow(color)).toBeLessThan(0.3);
+    expect(glow(color)).toBeLessThan(lit * 0.3);
+    const frozen = {
+      color: color.clone(),
+      lumpTime: lumpUniforms.uTime?.value,
+      flameTime: flameUniforms.uTime?.value,
+    };
+    for (let i = 0; i < 60; i++) hearth.update(1 / 30);
+    expect(color.equals(frozen.color)).toBe(true);
+    expect(lumpUniforms.uTime?.value).toBe(frozen.lumpTime);
+    expect(flameUniforms.uTime?.value).toBe(frozen.flameTime);
+    world.dispose();
+  });
+
+  it('shows a resumed hearth as ash at once, flames out', () => {
+    const world = buildFloorWorld(generateFloor(REST_SEED));
+    const hearth = world.hearths[0];
+    if (!hearth) throw new Error('SPIRE007 has a hearth');
+    const { flames, color, lumpUniforms } = parts(hearth);
+    hearth.use(false);
+    expect(flames.visible).toBe(false);
+    expect(lumpUniforms.uDim?.value).toBe(1);
+    expect(color.r).toBeLessThan(0.2);
+    world.dispose();
+  });
+
+  it('frees the lumps and flames with the floor', () => {
+    const world = buildFloorWorld(generateFloor(TWO_REST_SEED));
+    let freed = 0;
+    for (const hearth of world.hearths) {
+      const { lumps, flames } = parts(hearth);
+      for (const mesh of [lumps, flames]) {
+        mesh.geometry.addEventListener('dispose', () => freed++);
+        (mesh.material as THREE.Material).addEventListener('dispose', () => freed++);
+      }
+    }
+    const count = world.hearths.length;
+    world.dispose();
+    expect(freed).toBe(count * 4);
   });
 });

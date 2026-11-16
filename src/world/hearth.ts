@@ -2,6 +2,13 @@ import * as THREE from 'three';
 import type { RoomTemplate, Socket } from '../content/rooms.ts';
 import { PALETTE } from '../palette.ts';
 import { lootKey } from '../rules/run.ts';
+import {
+  coalBedGeometry,
+  coalLumpGeometry,
+  coalLumpMaterial,
+  flameGeometry,
+  flameMaterial,
+} from './hearth-coals.ts';
 import type { ToastLines } from './loot.ts';
 
 const BOWL_RADIUS = 0.34;
@@ -13,8 +20,9 @@ const LEG_COUNT = 3;
 /** Seconds the coals take to fade from glowing to ash once the hearth is used. */
 const DIM_SECONDS = 1.4;
 
-const LIT = new THREE.Color('#ff8a24');
-const ASH = new THREE.Color('#2b1a10');
+/** Tint of the glowing bed's vertex colours (its own hot-core-to-red-edge ramp) while lit, and once spent. */
+const LIT = new THREE.Color('#ffffff');
+const ASH = new THREE.Color('#1a1512');
 
 /**
  * Where a rest room's hearth stands: the template's first loot socket (the generator gives a rest
@@ -51,8 +59,9 @@ export interface Hearth {
 
 /**
  * Shared geometry and placeholder materials for every hearth on one floor: a brass tripod brazier
- * with a rim and a bowl of coals. The coals are an unlit emissive surface, so a hearth adds no
- * dynamic light. The kit owns what it creates; materials handed to `dress` stay the caller's.
+ * with a rim and a bowl of coals. Each hearth heaps its own seeded lumps (keyed by its used key) on
+ * a glowing bed, with a few flame tongues; all of it is unlit, so a hearth adds no dynamic light.
+ * The kit owns what it creates; materials handed to `dress` stay the caller's.
  */
 export class HearthKit {
   private readonly geometries: THREE.BufferGeometry[] = [];
@@ -73,13 +82,7 @@ export class HearthKit {
   );
   private readonly leg = this.geometry(new THREE.CylinderGeometry(0.02, 0.028, RIM_Y, 6));
   private readonly foot = this.geometry(new THREE.SphereGeometry(0.04, 8, 6));
-  private readonly coals = this.geometry(
-    new THREE.SphereGeometry(BOWL_RADIUS - 0.02, 16, 6, 0, Math.PI * 2, 0, Math.PI / 2).scale(
-      1,
-      0.32,
-      1,
-    ),
-  );
+  private readonly coals = this.geometry(coalBedGeometry(BOWL_RADIUS - 0.02));
   private readonly hitBox = this.geometry(new THREE.BoxGeometry(0.8, 1.1, 0.8));
   private dressing: HearthMaterials | null = null;
 
@@ -138,25 +141,52 @@ export class HearthKit {
       const foot = this.part(this.foot, object, 'hearth-foot');
       foot.position.set(Math.cos(angle) * LEG_BASE_RADIUS, 0.03, Math.sin(angle) * LEG_BASE_RADIUS);
     }
-    const coalMaterial = new THREE.MeshBasicMaterial({ color: LIT.clone(), toneMapped: false });
+    // The bed carries the coals' state colour (scripts read `hearth-coals` material.color); the
+    // lumps heaped on it and the flames over them follow it.
+    const coalMaterial = new THREE.MeshBasicMaterial({
+      color: LIT.clone(),
+      vertexColors: true,
+      toneMapped: false,
+    });
     const coals = new THREE.Mesh(this.coals, coalMaterial);
     coals.name = 'hearth-coals';
-    coals.position.y = RIM_Y - 0.01;
+    coals.position.y = RIM_Y;
     object.add(coals);
+    const key = lootKey(room, socket.id);
+    const lumpMaterial = coalLumpMaterial();
+    const lumps = new THREE.Mesh(this.geometry(coalLumpGeometry(key)), lumpMaterial);
+    lumps.name = 'hearth-coal-lumps';
+    lumps.position.y = RIM_Y;
+    object.add(lumps);
+    const flameMat = flameMaterial();
+    const flames = new THREE.Mesh(this.geometry(flameGeometry(key)), flameMat);
+    flames.name = 'hearth-flames';
+    flames.position.y = RIM_Y;
+    // The vertex shader moves each quad off its base point, so the stored bounds are too small.
+    flames.frustumCulled = false;
+    flames.renderOrder = 1;
+    object.add(flames);
     const hit = new THREE.Mesh(this.hitBox, this.invisible);
     hit.name = 'hearth-hit';
     hit.position.y = 0.55;
     object.add(hit);
-    this.ownedMaterials.push(coalMaterial);
+    this.ownedMaterials.push(coalMaterial, lumpMaterial, flameMat);
 
     let clock = 0;
     let target = 0;
     let dim = 0;
+    /** Shows the coals `dim` of the way from lit (0) to ash (1); the flames are gone at ash. */
+    const show = (): void => {
+      coalMaterial.color.copy(LIT).lerp(ASH, dim);
+      lumpMaterial.uniforms.uDim.value = dim;
+      flameMat.uniforms.uFade.value = 1 - dim;
+      flames.visible = dim < 1;
+    };
     const hearth: Hearth = {
       object,
       room,
       socketId: socket.id,
-      key: lootKey(room, socket.id),
+      key,
       hit,
       get used() {
         return target > 0;
@@ -165,16 +195,19 @@ export class HearthKit {
         target = 1;
         if (!animate) {
           dim = 1;
-          coalMaterial.color.copy(ASH);
+          show();
         }
       },
       update(dt) {
+        if (dim >= 1) return;
         clock += dt;
+        lumpMaterial.uniforms.uTime.value = clock;
+        flameMat.uniforms.uTime.value = clock;
         if (dim < target) {
           dim = Math.min(target, dim + dt / DIM_SECONDS);
-          coalMaterial.color.copy(LIT).lerp(ASH, dim);
-        } else if (target === 0) {
-          // A slow flicker of the coals: brightness only, no light.
+          show();
+        } else {
+          // A slow flicker of the bed: brightness only, no light.
           const flicker = 0.88 + 0.12 * Math.sin(clock * 5.1) * Math.sin(clock * 2.3 + 1);
           coalMaterial.color.copy(LIT).multiplyScalar(flicker);
         }
