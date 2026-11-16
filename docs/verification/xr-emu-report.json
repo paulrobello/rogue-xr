@@ -1,5 +1,5 @@
 {
-  "when": "2026-11-16T15:18:29.821Z",
+  "when": "2026-11-16T15:48:32.162Z",
   "results": [
     {
       "id": "gpu",
@@ -281,7 +281,7 @@
       "id": "new-run-in-xr",
       "pass": true,
       "detail": {
-        "bootFloor": "832BA9G9",
+        "bootFloor": "Q255W7JQ",
         "phase": "explore",
         "seed": "BRASS042",
         "rebuilt": true,
@@ -309,7 +309,7 @@
       "id": "locomotion-smooth-move",
       "pass": true,
       "detail": {
-        "metres": 2.031,
+        "metres": 2,
         "from": {
           "x": 0,
           "z": 2,
@@ -317,7 +317,7 @@
         },
         "to": {
           "x": 0,
-          "z": -0.030800000071525627,
+          "z": -0.00020000004768327279,
           "yaw": 0
         }
       }
@@ -338,23 +338,23 @@
           "strength": 0,
           "shown": 0,
           "active": false,
-          "uuid": "454c5765-706e-42ae-ad5c-cc2aeaa175b3",
-          "now": 25259.19999998808
+          "uuid": "9fc1308c-291b-417a-a320-5c3ebac7f42c",
+          "now": 25305.19999998808
         },
         "moving": {
           "strength": 0.7,
           "shown": 1,
           "active": true,
-          "uuid": "454c5765-706e-42ae-ad5c-cc2aeaa175b3",
-          "now": 25761.600000023842
+          "uuid": "9fc1308c-291b-417a-a320-5c3ebac7f42c",
+          "now": 25809.399999976158
         },
-        "movingPasses": 18,
+        "movingPasses": 19,
         "still": {
           "strength": 0,
           "shown": 0,
           "active": false,
-          "uuid": "454c5765-706e-42ae-ad5c-cc2aeaa175b3",
-          "now": 27265.19999998808
+          "uuid": "9fc1308c-291b-417a-a320-5c3ebac7f42c",
+          "now": 27315.799999952316
         },
         "stillPasses": 0
       }
@@ -364,12 +364,12 @@
       "pass": true,
       "detail": {
         "held": {
-          "edge": 22.549994471489835,
-          "center": 55.60034750696262
+          "edge": 22.542123416849577,
+          "center": 55.557143331357985
         },
         "clear": {
-          "edge": 53.54482154093675,
-          "center": 55.60034750696262
+          "edge": 53.537272052681125,
+          "center": 55.557143331357985
         },
         "edgeRatio": 0.421,
         "centerDelta": 0,
@@ -408,9 +408,9 @@
       "pass": true,
       "detail": {
         "aimedYawElev": [135, 20],
-        "landing": [3.7836501661906, 2.154050844860755],
-        "headBefore": [0, -1.6296000001430515],
-        "headAfter": [3.7836501661906, 2.1540508448607545],
+        "landing": [3.7836501661906, 2.150050844979965],
+        "headBefore": [0, -1.6336000000238415],
+        "headAfter": [3.7836501661906, 2.1500508449799645],
         "errorMetres": 0,
         "rigY": [0.39999995231628427, 0.39999995231628427],
         "view": {
@@ -420,7 +420,7 @@
           "arcColor": "dec16a",
           "dots": 11
         },
-        "vignettePulse": [0.6184999999403953, 0]
+        "vignettePulse": [0.618999999910593, 0]
       }
     },
     {
@@ -662,16 +662,16 @@
             "moveId": "brace",
             "motion": "clip",
             "start": 2.17,
-            "impact": 2.73,
-            "end": 3.38
+            "impact": 2.72,
+            "end": 3.37
           },
           {
             "enemyId": "spring-hound",
             "moveId": "snap",
             "motion": "clip",
             "start": 3.73,
-            "impact": 4.23,
-            "end": 4.85
+            "impact": 4.25,
+            "end": 4.83
           }
         ],
         "burst": [
@@ -696,7 +696,7 @@
             "phase": true,
             "t": 2.92,
             "acting": "cog-sentry",
-            "flash": 0.303,
+            "flash": 0.275,
             "hp": 75
           },
           {
@@ -704,7 +704,7 @@
             "phase": true,
             "t": 3.18,
             "acting": "cog-sentry",
-            "flash": 0.017,
+            "flash": 0.011,
             "hp": 75
           },
           {
@@ -718,7 +718,7 @@
           {
             "name": "15-enemy-turn-05",
             "phase": true,
-            "t": 3.72,
+            "t": 3.71,
             "acting": null,
             "flash": 0,
             "hp": 75
@@ -736,7 +736,7 @@
             "phase": true,
             "t": 4.25,
             "acting": "spring-hound",
-            "flash": 0.418,
+            "flash": 0.217,
             "hp": 69
           },
           {
@@ -744,7 +744,7 @@
             "phase": true,
             "t": 4.52,
             "acting": "spring-hound",
-            "flash": 0.155,
+            "flash": 0.174,
             "hp": 69
           },
           {
@@ -777,14 +777,14 @@
             "amount": 3,
             "blocked": 0,
             "hpLost": 3,
-            "at": 5.882900000035754
+            "at": 5.859499999999997
           },
           {
             "kind": "hit",
             "amount": 6,
             "blocked": 0,
             "hpLost": 6,
-            "at": 7.383200000047677
+            "at": 7.392199999988073
           }
         ],
         "hp": [78, 69],
@@ -878,9 +878,9 @@
       "id": "xr-treasure-panel-in-view",
       "pass": true,
       "detail": {
-        "x": 0.029778457819827645,
-        "y": 0.34098869244855057,
-        "z": 0.9539400368611279
+        "x": 0.02977924226418208,
+        "y": 0.34120702405807113,
+        "z": 0.953938797161308
       }
     },
     {
@@ -1037,8 +1037,8 @@
       "id": "xr-rest-coals-dim",
       "pass": true,
       "detail": {
-        "lit": 2.367214772166566,
-        "spent": 0.5561784215386453
+        "lit": 2.332758253316553,
+        "spent": 0.5555406811446004
       }
     },
     {
@@ -1055,7 +1055,7 @@
           "toast": null,
           "last": null,
           "spent": false,
-          "coals": 2.7554657178597632,
+          "coals": 2.8821569146461625,
           "nodes": 205,
           "board": false
         },
@@ -1074,7 +1074,7 @@
             "hp": 78
           },
           "spent": true,
-          "coals": 0.5561784215386453,
+          "coals": 0.5555406811446004,
           "nodes": 207,
           "board": false
         }
@@ -1092,9 +1092,9 @@
       "id": "xr-rest-panel-in-view",
       "pass": true,
       "detail": {
-        "x": 0.030012525212563746,
-        "y": 0.29644011854096586,
-        "z": 0.9540464422657877
+        "x": 0.030015131032856756,
+        "y": 0.29665470758510726,
+        "z": 0.954042365500858
       }
     },
     {
@@ -1220,6 +1220,162 @@
         "phaseChanges": 0,
         "state": "frozen"
       }
+    },
+    {
+      "id": "enter-vr-clickable",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "id": "xr-guardian-phase2-teleport",
+      "pass": true,
+      "detail": {
+        "room": 7
+      }
+    },
+    {
+      "id": "xr-guardian-phase2-hook-leaves-hp-just-above-threshold",
+      "pass": true,
+      "detail": {
+        "placed": {
+          "id": "grand-escapement",
+          "hp": 81,
+          "maxHp": 160,
+          "threshold": 80
+        },
+        "before": {
+          "hp": 160,
+          "maxHp": 160,
+          "phase": 1,
+          "shownPhase": 1,
+          "moves": ["tick", "tock", "pallet", "mainspring"],
+          "intent": "mainspring",
+          "shownIntent": "mainspring",
+          "shownHp": 160,
+          "playerHp": 65,
+          "stage": "idle",
+          "caseOpen": false,
+          "caseOpening": false,
+          "phaseChanges": 0,
+          "actorState": "frozen",
+          "boneDeg": 105.00000345413568,
+          "events": 0,
+          "audioState": "guardian-active",
+          "musicRequest": "guardian-1"
+        },
+        "near": {
+          "hp": 81,
+          "maxHp": 160,
+          "phase": 1,
+          "shownPhase": 1,
+          "moves": ["tick", "tock", "pallet", "mainspring"],
+          "intent": "mainspring",
+          "shownIntent": "mainspring",
+          "shownHp": 81,
+          "playerHp": 65,
+          "stage": "idle",
+          "caseOpen": false,
+          "caseOpening": false,
+          "phaseChanges": 0,
+          "actorState": "frozen",
+          "boneDeg": 105.00000345413568,
+          "events": 0,
+          "audioState": "guardian-active",
+          "musicRequest": "guardian-1"
+        }
+      }
+    },
+    {
+      "id": "xr-guardian-phase2-card-crosses-threshold",
+      "pass": true,
+      "detail": {
+        "played": {
+          "ok": true
+        },
+        "near": 81,
+        "crossed": {
+          "hp": 75,
+          "maxHp": 160,
+          "phase": 2,
+          "shownPhase": 2,
+          "moves": ["tick", "tock", "pallet", "mainspring", "overwind", "toll"],
+          "intent": "mainspring",
+          "shownIntent": "mainspring",
+          "shownHp": 75,
+          "playerHp": 65,
+          "stage": "idle",
+          "caseOpen": false,
+          "caseOpening": true,
+          "phaseChanges": 1,
+          "actorState": "phase-change",
+          "boneDeg": 104.89419505914395,
+          "events": 1,
+          "audioState": "guardian-active",
+          "musicRequest": "guardian-2"
+        }
+      }
+    },
+    {
+      "id": "xr-guardian-phase2-enemy-phase-event-fires-once",
+      "pass": true,
+      "detail": {
+        "events": [
+          {
+            "type": "enemy-phase",
+            "enemyId": "grand-escapement",
+            "phase": 2,
+            "t": 6260.899999976158
+          }
+        ],
+        "total": 1
+      }
+    },
+    {
+      "id": "xr-guardian-phase2-clip-plays-and-case-held-open",
+      "pass": true,
+      "detail": {
+        "opened": true,
+        "phaseChanges": [1, 1],
+        "samples": 680,
+        "openSamples": 575,
+        "statesWhileOpen": ["frozen", "attack", "idle"],
+        "worstBoneDegreesWhileOpen": 0,
+        "closedBoneDegrees": 105.00000345413568
+      }
+    },
+    {
+      "id": "xr-guardian-phase2-intents-come-from-the-six-moves",
+      "pass": true,
+      "detail": {
+        "moves": ["tick", "tock", "pallet", "mainspring", "overwind", "toll"],
+        "intents": ["tick", "tock", "tick", "mainspring", "tock", "toll"]
+      }
+    },
+    {
+      "id": "xr-guardian-phase2-shows-a-phase-two-only-move",
+      "pass": true,
+      "detail": {
+        "found": {
+          "turn": 6,
+          "intent": "toll"
+        },
+        "intents": ["tick", "tock", "tick", "mainspring", "tock", "toll"],
+        "limit": 14
+      }
+    },
+    {
+      "id": "xr-guardian-phase2-music-request-is-guardian-2",
+      "pass": true,
+      "detail": {
+        "before": ["guardian-active", "guardian-1"],
+        "open": ["guardian-active", "guardian-2"],
+        "last": ["guardian-active", "guardian-2"]
+      }
+    },
+    {
+      "id": "xr-guardian-phase2-no-console-errors",
+      "pass": true,
+      "detail": []
     }
   ],
   "consoleErrors": []

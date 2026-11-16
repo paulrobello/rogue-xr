@@ -883,6 +883,26 @@ if (floor && params.has('debug')) {
         return stand.coffer;
       },
       screenOfCoffer,
+      /**
+       * Lowers the live phase-1 guardian to `margin` hp (default 1) above its phase-2 threshold, so
+       * the next card that damages it crosses the threshold through the rules' own `checkPhase`.
+       * Never raises hp, and flips no flag. Returns the new hp and the threshold, or null when no
+       * fight is live or no enemy with a phase 2 is in phase 1.
+       */
+      setGuardianNearPhaseTwo(margin = 1) {
+        const controller = combat?.session?.controller;
+        const enemy = controller?.state.enemies.find(
+          (e) => e.phaseTwo && e.phase === 1 && e.hp > 0,
+        );
+        if (!controller || !enemy?.phaseTwo) return null;
+        const threshold = enemy.maxHp * enemy.phaseTwo.hpFraction;
+        const hp = Math.min(enemy.hp, Math.floor(threshold) + Math.max(1, Math.floor(margin)));
+        controller.state = {
+          ...controller.state,
+          enemies: controller.state.enemies.map((e) => (e.id === enemy.id ? { ...e, hp } : e)),
+        };
+        return { id: enemy.id, hp, maxHp: enemy.maxHp, threshold };
+      },
       /** Moves the rig to a spot facing the first unused hearth (or `room`'s). Returns its node name, or null. */
       teleportToHearth(room?: number) {
         const stand = hearthStand(room);
@@ -893,6 +913,10 @@ if (floor && params.has('debug')) {
       },
       get session() {
         return combat?.session ?? null;
+      },
+      /** The floor's audio director, for reading its state and music request. */
+      get audio() {
+        return audio;
       },
       get banner() {
         return combat?.banner ?? '';

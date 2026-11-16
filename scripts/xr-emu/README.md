@@ -19,7 +19,7 @@ node scripts/xr-emu/walk.mjs --turns          # a two-automaton fight (SPIRE002)
 node scripts/xr-emu/walk.mjs --recenter       # Enter VR facing away from the title: only the board re-placement check (XO5)
 node scripts/xr-emu/walk.mjs --treasure       # SPIRE001: open the treasure room's coffer with the main-hand ray and trigger
 node scripts/xr-emu/walk.mjs --rest           # SPIRE007: lose hp in a real fight, then use the rest room's hearth with the main-hand ray and trigger
-node scripts/xr-emu/walk.mjs --guardian       # SPIRE004: the Grand Escapement's phase-1 half (case closed, four moves, clip never played)
+node scripts/xr-emu/walk.mjs --guardian       # SPIRE004: the Grand Escapement's phase 1 (case closed, four moves) and phase 2 (hp hook, real card, clip, six moves, music)
 node scripts/xr-emu/walk.mjs --loco           # Settings comfort toggles, New Run, then smooth move, snap turn, the comfort vignette and teleport
 ```
 
@@ -33,7 +33,7 @@ node scripts/xr-emu/walk.mjs --notice http://localhost:4262
 
 Screenshots land in `docs/verification/xr-emu-*.jpg` with a JSON report
 (`xr-emu-report.json`, `xr-emu-report-notice.json`). The exit code is 1 when any check fails
-(`make` reports 2). As of 2026-11-16 the walk passes every check (85, which includes the 3 difficulty checks, the 11 treasure and resume checks, the 17 rest checks, the 6 guardian checks and the 9 comfort checks, 8 of which `--loco` runs on its own;
+(`make` reports 2). As of 2026-11-16 the walk passes every check (95, which includes the 3 difficulty checks, the 11 treasure and resume checks, the 17 rest checks, the 16 guardian checks (6 for phase 1 and 10 for phase 2, each counting its Enter VR check) and the 9 comfort checks, 8 of which `--loco` runs on its own;
 `xr-sigil-stage` failed intermittently until the walk waited for XR frames after pose writes, see `docs/playtesting.md`) and `--notice` last passed its 5 on 2026-11-15; XO1 to XO4 in `docs/playtesting.md` record the fixes. The two console 404s in the
 notice run are the music tracks that are not produced yet.
 
@@ -95,18 +95,32 @@ notice run are the music tracks that are not produced yet.
   Casual), New Run starts at it (`xr-new-run-difficulty`) and the resumed run after the reload keeps it
   (`xr-continue-keeps-difficulty`). The choice is saved, so the checks that run later in the same browser
   context play Casual. None of them depends on enemy numbers, except the guardian check, which is pinned.
-- The guardian check (`guardianPhaseCheck`, 6 checks) loads `/?seed=SPIRE004&debug&difficulty=hard`, the
+- The guardian phase-1 check (`guardianPhaseCheck`, 6 checks with Enter VR) loads `/?seed=SPIRE004&debug&difficulty=hard`, the
   content as written (the lower levels shrink the guardian's hp and move its threshold), fights the Grand
-  Escapement in a real XR session and reads
-  its phase-1 half: the model carries the `phase-change` clip, the case is closed, the phase is 1 in the rules
-  and in the shown state, the move list is the four phase-1 moves without toll and overwind, the intents shown
-  over three real enemy turns come from those four, and the clip never plays. **The phase flip itself is not
-  walked.** It needs the guardian at 80 hp or less, and the starter deck cannot get there with legitimate play:
-  a greedy player (every attack, then block, sigil cards skipped) simulated through `CombatController` on four
-  seeds is dead on turn 6 to 8 with the guardian still at 97 to 103 hp, and the debug cheats only set an
-  enemy's hp to 1. Faking the hp would be a rules hack, so the flip is covered by `tests/guardian-phase.test.ts`
-  (threshold, move lists, determinism) and `tests/guardian-case.test.ts` (the real GLB: the clip plays once and
-  the hinge bones stay open under idle, attack, hit, frozen and death).
+  Escapement in a real XR session and reads its phase-1 half: the model carries the `phase-change` clip, the
+  case is closed, the phase is 1 in the rules and in the shown state, the move list is the four phase-1 moves
+  without toll and overwind, the intents shown over three real enemy turns come from those four, and the clip
+  never plays.
+- The guardian phase-2 check (`guardianPhaseTwoCheck`, 10 checks with Enter VR and the teleport, also run by `--guardian`) starts a fresh Hard
+  fight. A starter-deck player cannot reach the flip with legitimate play (a greedy player, every attack then
+  block with sigil cards skipped, simulated through `CombatController` on four seeds is dead on turn 6 to 8 with
+  the guardian still at 97 to 103 hp), so the debug hook `__combat.setGuardianNearPhaseTwo()` (`src/main.ts`,
+  `?debug` only) lowers the guardian's hp to one above its threshold (81 of 160) and flips nothing else. A
+  Strike then selected and aimed through the controller (the path a desktop click takes) crosses the threshold
+  through the rules' own `checkPhase`. The checks: the hook leaves hp at threshold plus one with the case still
+  closed (hinge bones 105 degrees from the clip's last pose), phase 1 and no event; the card drops hp to the
+  threshold or below with phase 2 in the rules and the shown state and the six-move list; the `enemy-phase` event
+  fires exactly once (counted by wrapping `audio.playCombatEvent`, which receives every rules event once); the
+  clip plays once (`caseOpening`, state `phase-change`) and the case is held open, with the door and plate bones
+  at the clip's last keyframe within 1 degree in every sample (every 30 ms, about 580 samples) across idle, frozen
+  and attack; every intent shown over the real enemy turns after the flip comes from the six moves and a
+  phase-2-only one (toll or overwind) is shown within 14 turns (the player only plays Brass Guard, so the fight
+  lasts; the seed makes the pick sequence repeatable, toll showed on turn 6); the audio director's
+  `musicRequest` goes from `guardian-1` to `guardian-2` in the `guardian-active` state; and no console error
+  appears during the check. Evidence: `xr-emu-22-guardian-phase2-before.jpg` (case closed, 81 hp),
+  `xr-emu-22-guardian-phase2-open.jpg` (case open, 75 hp) and `xr-emu-22-guardian-phase2-intent.jpg` (toll shown
+  as a 30 damage attack, 75 hp). The rules side stays covered by `tests/guardian-phase.test.ts` and the GLB side
+  by `tests/guardian-case.test.ts`.
 - In the first fight the walk holds the off hand up to read the fan (`12-fan-held`), stages a
   sigil card with a main-hand squeeze released over the table, and traces the card's template by
   holding the trigger and sweeping the main-hand ray across the plate. `xr-sigil-trail` counts

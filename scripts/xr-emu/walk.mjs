@@ -187,6 +187,7 @@ try {
     await restCheck();
   } else if (opts.guardian) {
     await guardianPhaseCheck();
+    await guardianPhaseTwoCheck();
   } else if (opts.loco) {
     await walk();
   } else {
@@ -196,6 +197,7 @@ try {
     await treasureCheck();
     await restCheck();
     await guardianPhaseCheck();
+    await guardianPhaseTwoCheck();
   }
 
   /**
@@ -655,16 +657,13 @@ try {
   }
 
   /**
-   * P6 guardian phase 2 in XR. The phase flip needs the guardian at 80 hp or less. The starter deck
-   * cannot get there legitimately: a greedy player (every attack, then block, sigils skipped) is dead
-   * by turn 6 to 8 with the guardian still at 97 to 103 hp on four seeds (simulated with
-   * CombatController over four seeds), and the debug cheats only lower hp to 1. So the flip
-   * itself is proven by tests/guardian-phase.test.ts (rules) and tests/guardian-case.test.ts (the real
-   * GLB: clip plays once, hinge bones held open under every other clip). What the emulated session
-   * adds, and what this checks, is the phase-1 half of the real fight: the guardian model carries its
-   * phase-change clip, stands with its case closed, never plays the clip, and shows only the four
-   * phase-1 moves as intents over real enemy turns. Pinned to Hard (`&difficulty=hard`, the content as
-   * written): the lower levels shrink the guardian's hp, which moves its threshold within reach.
+   * P6 guardian phase 1 in XR: the guardian model carries its phase-change clip, stands with its case
+   * closed, never plays the clip, and shows only the four phase-1 moves as intents over real enemy
+   * turns. Pinned to Hard (`&difficulty=hard`, the content as written): the lower levels shrink the
+   * guardian's hp, which moves its threshold. The flip itself is `guardianPhaseTwoCheck`: a starter-deck
+   * player is dead by turn 6 to 8 with the guardian still at 97 to 103 hp (simulated through
+   * CombatController over four seeds), so that check lowers the guardian's hp with a debug hook and
+   * lets a real card play cross the threshold.
    */
   async function guardianPhaseCheck() {
     const base = opts.base.replace(/\/$/, '');
@@ -765,6 +764,305 @@ try {
       last,
     );
     await shot('21-guardian-phase1-after-turns');
+    await page.keyboard.press('KeyK');
+    await settle(800);
+    await ev(() => window.__xrEmu.ctx().renderer.xr.getSession()?.end());
+    await settle(400);
+  }
+
+  /**
+   * P6 guardian phase 2 in XR. The debug hook `setGuardianNearPhaseTwo` leaves the Grand Escapement one
+   * hp above its threshold (the starter deck cannot get it there: see `guardianPhaseCheck`), then a
+   * real Strike played through the controller crosses it through the rules' `checkPhase`. Checks the
+   * `enemy-phase` event (counted at the audio director, which sees every rules event once), the
+   * phase-change clip and the held-open case (the four hinge bones against the clip's last keyframe,
+   * sampled every 30 ms across the clip, idle, attack and hit), the six-move list and a phase-2-only
+   * intent over real enemy turns (the player only defends, so the fight keeps going), and the music
+   * request.
+   */
+  async function guardianPhaseTwoCheck() {
+    const base = opts.base.replace(/\/$/, '');
+    const errorsBefore = consoleErrors.length;
+    await page.goto(`${base}/?seed=${GUARDIAN_SEED}&debug&difficulty=hard`);
+    await waitFor(
+      'guardian2-app',
+      () => window.__combat?.floor && window.__xrEmu.ctx().renderer,
+      undefined,
+      60000,
+    );
+    await ev(() => window.__combat.heroReady);
+    await settle(1500);
+    await enterVr();
+    const room = await ev(() => window.__combat.teleportToEncounter({ guardian: true }));
+    record('xr-guardian-phase2-teleport', typeof room === 'number', { room });
+    if (room === null) return;
+    await waitFor(
+      'guardian2-fight-active',
+      () => window.__combat.floor.encounter.phase === 'active' && window.__combat.session !== null,
+      undefined,
+      30000,
+    );
+    await waitFor(
+      'guardian2-model',
+      () => {
+        const s = window.__combat.session;
+        return s && s.enemies.length === 1 && window.__combat.floor.actorOf(s.enemies[0].body);
+      },
+      undefined,
+      30000,
+    );
+    await settle(1800);
+    await ev(() => window.__xrEmu.setHead(1.2, -0.1));
+    await ev(() => window.__xrEmu.frames(4));
+
+    // In-page instruments: every rules event the session sounds passes the audio director once, so
+    // wrapping it counts `enemy-phase`; a 30 ms sampler records the actor's clip and how far the four
+    // hinge bones sit from the phase-change clip's last keyframe.
+    await ev(() => {
+      const audio = window.__combat.audio;
+      const events = [];
+      const play = audio.playCombatEvent.bind(audio);
+      audio.playCombatEvent = (event, at) => {
+        if (event.type === 'enemy-phase') events.push({ ...event, t: performance.now() });
+        return play(event, at);
+      };
+      window.__phaseEvents = events;
+      const names = ['door.L', 'door.R', 'plate.L', 'plate.R'];
+      const actor = () => {
+        const body = window.__combat.session?.enemies[0]?.body;
+        return body ? window.__combat.floor.actorOf(body) : null;
+      };
+      const trace = [];
+      window.__phaseTrace = trace;
+      window.__phaseDeg = () => {
+        const a = actor();
+        const clip = a.asset.phaseClip;
+        let worst = 0;
+        for (const name of names) {
+          const key = name.replace(/\s/g, '_').replace(/[[\].:/]/g, '');
+          const bone = a.object.getObjectByName(key) ?? a.object.getObjectByName(name);
+          const track = clip.tracks.find((t) => t.name === `${bone.name}.quaternion`);
+          const last = bone.quaternion
+            .clone()
+            .fromArray(track.values, track.values.length - 4)
+            .normalize();
+          worst = Math.max(worst, (bone.quaternion.angleTo(last) * 180) / Math.PI);
+        }
+        return worst;
+      };
+      window.__phaseTimer = setInterval(() => {
+        const a = actor();
+        if (!a || trace.length > 40000) return;
+        trace.push({
+          t: performance.now(),
+          state: a.state,
+          open: a.caseOpen,
+          opening: a.caseOpening,
+          deg: window.__phaseDeg(),
+        });
+      }, 30);
+    });
+    const read = () =>
+      ev(() => {
+        const s = window.__combat.session;
+        const enemy = s.controller.state.enemies[0];
+        const actor = window.__combat.floor.actorOf(s.enemies[0].body);
+        const audio = window.__combat.audio;
+        return {
+          hp: enemy.hp,
+          maxHp: enemy.maxHp,
+          phase: enemy.phase,
+          shownPhase: s.view.enemies[0]?.phase ?? null,
+          moves: enemy.moves.map((m) => m.id),
+          intent: enemy.intent?.id ?? null,
+          shownIntent: s.view.enemies[0]?.intent?.id ?? null,
+          shownHp: s.view.enemies[0]?.hp ?? null,
+          playerHp: s.controller.state.player.hp,
+          stage: s.controller.stage,
+          caseOpen: actor?.caseOpen ?? null,
+          caseOpening: actor?.caseOpening ?? null,
+          phaseChanges: actor?.phaseChanges ?? null,
+          actorState: actor?.state ?? null,
+          boneDeg: window.__phaseDeg(),
+          events: window.__phaseEvents.length,
+          audioState: audio.state,
+          musicRequest: audio.musicRequest,
+        };
+      });
+    /** Plays every Brass Guard in hand (select, then the table click) so the player outlasts the turns. */
+    const defend = () =>
+      ev(() => {
+        const c = window.__combat.session.controller;
+        let played = 0;
+        for (;;) {
+          const card = c.state.piles.hand.find(
+            (h) => h.def.id === 'defend' && h.def.cost <= c.state.player.steam,
+          );
+          if (!card || c.stage !== 'idle' || !c.select(card.uid).ok || !c.table().ok) break;
+          played += 1;
+        }
+        return played;
+      });
+
+    const before = await read();
+    const placed = await ev(() => window.__combat.setGuardianNearPhaseTwo());
+    await ev(() => window.__xrEmu.frames(6));
+    const near = await read();
+    const threshold = near.maxHp * 0.5;
+    record(
+      'xr-guardian-phase2-hook-leaves-hp-just-above-threshold',
+      placed !== null &&
+        near.hp === Math.floor(threshold) + 1 &&
+        near.hp > threshold &&
+        near.phase === 1 &&
+        near.shownPhase === 1 &&
+        near.caseOpen === false &&
+        near.events === 0 &&
+        before.phase === 1 &&
+        before.moves.length === 4 &&
+        before.boneDeg > 5,
+      { placed, before, near },
+    );
+    await shot('22-guardian-phase2-before');
+
+    // A real card: select a Strike and aim it at the guardian, the controller path a desktop click takes.
+    const played = await ev(() => {
+      const c = window.__combat.session.controller;
+      const card = c.state.piles.hand.find(
+        (h) => h.def.id === 'strike' && h.def.cost <= c.state.player.steam,
+      );
+      const enemy = c.state.enemies[0];
+      if (!card) return { ok: false, reason: 'no Strike in hand' };
+      return c.select(card.uid).ok ? c.target(enemy.id) : { ok: false, reason: 'select failed' };
+    });
+    await ev(() => window.__xrEmu.frames(6));
+    const crossed = await read();
+    record(
+      'xr-guardian-phase2-card-crosses-threshold',
+      played.ok === true &&
+        crossed.hp > 0 &&
+        crossed.hp <= threshold &&
+        crossed.hp < near.hp &&
+        crossed.phase === 2 &&
+        crossed.shownPhase === 2 &&
+        crossed.moves.length === 6,
+      { played, near: near.hp, crossed },
+    );
+    const opened = await waitFor(
+      'guardian2-case-open',
+      () => window.__combat.floor.actorOf(window.__combat.session.enemies[0].body).caseOpen,
+      undefined,
+      15000,
+    );
+    await settle(900);
+    const open = await read();
+    await ev(() => window.__xrEmu.frames(4));
+    await shot('22-guardian-phase2-open');
+
+    // Real enemy turns. The pick made before the flip stands for the first one, then every pick
+    // draws from the six moves; stop once a phase-2-only intent is shown.
+    const MAX_TURNS = 14;
+    const PHASE_TWO_ONLY = ['toll', 'overwind'];
+    const six = ['tick', 'tock', 'pallet', 'mainspring', 'overwind', 'toll'];
+    const intents = [];
+    let found = null;
+    for (let turn = 0; turn < MAX_TURNS; turn += 1) {
+      const now = await read();
+      if (now.playerHp <= 12 || now.stage === 'over') break;
+      await defend();
+      await page.keyboard.press('KeyE');
+      await settle(300);
+      await enemyPhaseOver(`guardian2-turn-${turn}`, 30000);
+      await settle(1000);
+      const after = await read();
+      intents.push(after.shownIntent);
+      if (PHASE_TWO_ONLY.includes(after.shownIntent)) {
+        found = { turn: turn + 1, intent: after.shownIntent };
+        await ev(() => window.__xrEmu.frames(4));
+        await shot('22-guardian-phase2-intent');
+        break;
+      }
+    }
+    // The case must also have been seen holding open under an attack: run one more turn if none was.
+    const sawAttack = () =>
+      ev(() => window.__phaseTrace.some((p) => p.open && p.state === 'attack'));
+    if (!(await sawAttack())) {
+      const now = await read();
+      if (now.playerHp > 12 && now.stage !== 'over') {
+        await defend();
+        await page.keyboard.press('KeyE');
+        await settle(300);
+        await enemyPhaseOver('guardian2-extra-turn', 30000);
+        await settle(1000);
+      }
+    }
+    const last = await read();
+    const trace = await ev(() => window.__phaseTrace);
+    const events = await ev(() => window.__phaseEvents);
+    const openSamples = trace.filter((p) => p.open);
+    const heldWorst = openSamples.reduce((m, p) => Math.max(m, p.deg), 0);
+    const statesOpen = [...new Set(openSamples.map((p) => p.state))];
+
+    record(
+      'xr-guardian-phase2-enemy-phase-event-fires-once',
+      events.length === 1 &&
+        events[0].enemyId === 'grand-escapement' &&
+        events[0].phase === 2 &&
+        last.events === 1,
+      { events, total: last.events },
+    );
+    record(
+      'xr-guardian-phase2-clip-plays-and-case-held-open',
+      opened &&
+        open.phaseChanges === 1 &&
+        last.phaseChanges === 1 &&
+        trace.some((p) => p.state === 'phase-change' && p.opening) &&
+        open.caseOpen === true &&
+        open.boneDeg < 1 &&
+        openSamples.length > 20 &&
+        statesOpen.includes('idle') &&
+        statesOpen.includes('attack') &&
+        heldWorst < 1 &&
+        last.caseOpen === true &&
+        last.boneDeg < 1,
+      {
+        opened,
+        phaseChanges: [open.phaseChanges, last.phaseChanges],
+        samples: trace.length,
+        openSamples: openSamples.length,
+        statesWhileOpen: statesOpen,
+        worstBoneDegreesWhileOpen: heldWorst,
+        closedBoneDegrees: before.boneDeg,
+      },
+    );
+    record(
+      'xr-guardian-phase2-intents-come-from-the-six-moves',
+      JSON.stringify(last.moves) === JSON.stringify(six) &&
+        intents.length > 0 &&
+        intents.every((id) => six.includes(id)),
+      { moves: last.moves, intents },
+    );
+    record('xr-guardian-phase2-shows-a-phase-two-only-move', found !== null, {
+      found,
+      intents,
+      limit: MAX_TURNS,
+    });
+    record(
+      'xr-guardian-phase2-music-request-is-guardian-2',
+      before.audioState === 'guardian-active' &&
+        before.musicRequest === 'guardian-1' &&
+        open.musicRequest === 'guardian-2' &&
+        last.musicRequest === 'guardian-2' &&
+        last.audioState === 'guardian-active',
+      {
+        before: [before.audioState, before.musicRequest],
+        open: [open.audioState, open.musicRequest],
+        last: [last.audioState, last.musicRequest],
+      },
+    );
+    await ev(() => clearInterval(window.__phaseTimer));
+    const errors = consoleErrors.slice(errorsBefore);
+    record('xr-guardian-phase2-no-console-errors', errors.length === 0, errors.slice(0, 5));
     await page.keyboard.press('KeyK');
     await settle(800);
     await ev(() => window.__xrEmu.ctx().renderer.xr.getSession()?.end());
