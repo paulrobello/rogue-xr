@@ -58,3 +58,18 @@ export {
   withStacks,
 } from './statuses.ts';
 export * from './types.ts';
+export {
+  bankRunCogs,
+  buyUpgrade,
+  createWorkshop,
+  maxTier,
+  nextCost,
+  runOptionsFrom,
+  UPGRADE_IDS,
+  UPGRADES,
+  type UpgradeDef,
+  type UpgradeEffect,
+  type UpgradeId,
+  WORKSHOP_VERSION,
+  type WorkshopState,
+} from './workshop.ts';

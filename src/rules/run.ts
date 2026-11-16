@@ -16,6 +16,10 @@ export interface RunState {
   readonly cogs: number;
   readonly hp: number;
   readonly maxHp: number;
+  /** Extra dice the combat layer adds to the starting loadout. Absent means 0. Set by workshop upgrades. */
+  readonly bonusDice?: number;
+  /** Cards `rewardOffer` offers. Absent means `REWARD_CHOICES`. Set by workshop upgrades. */
+  readonly rewardChoices?: number;
 }
 
 /** Mirrors `EncounterTier` in `floor/generate.ts`; rules may not import from `floor/`. */
@@ -49,6 +53,10 @@ export interface RunOptions {
   readonly hp?: number;
   /** Defaults to 0. */
   readonly cogs?: number;
+  /** Stored on the run when given. Non-negative integer. */
+  readonly bonusDice?: number;
+  /** Stored on the run when given. Positive integer; `rewardOffer` falls back to `REWARD_CHOICES`. */
+  readonly rewardChoices?: number;
 }
 
 /** What a finished fight offers: three distinct card ids (pool order is not preserved) and a cog payout. */
@@ -92,7 +100,21 @@ export function createRun(
     throw new RulesError('hp must be in [0, maxHp]');
   if (!Number.isInteger(cogs) || cogs < 0)
     throw new RulesError('cogs must be a non-negative integer');
-  return { seed: rng.seed, rng: rng.snapshot(), deck: [...starterDeck], cogs, hp, maxHp };
+  const { bonusDice, rewardChoices } = opts;
+  if (bonusDice !== undefined && (!Number.isInteger(bonusDice) || bonusDice < 0))
+    throw new RulesError('bonusDice must be a non-negative integer');
+  if (rewardChoices !== undefined && (!Number.isInteger(rewardChoices) || rewardChoices < 1))
+    throw new RulesError('rewardChoices must be a positive integer');
+  return {
+    seed: rng.seed,
+    rng: rng.snapshot(),
+    deck: [...starterDeck],
+    cogs,
+    hp,
+    maxHp,
+    ...(bonusDice === undefined ? {} : { bonusDice }),
+    ...(rewardChoices === undefined ? {} : { rewardChoices }),
+  };
 }
 
 function rollCogs(stream: Stream, range: CogRange): number {
@@ -113,19 +135,20 @@ function distinctPool(pool: readonly string[], needed: number): string[] {
 
 /**
  * Rolls the post-combat reward from the `loot` stream only. Draw order: the cog payout (one draw), then
- * a Fisher-Yates shuffle of the de-duplicated pool whose first `REWARD_CHOICES` ids are offered. Every
- * tier draws uniformly: the pool carries no rarity, so elites and guardians pay more cogs, not rarer
- * cards. Throws `RulesError` when the pool has fewer than `REWARD_CHOICES` distinct ids.
+ * a Fisher-Yates shuffle of the de-duplicated pool whose first `run.rewardChoices ?? REWARD_CHOICES` ids
+ * are offered. Every tier draws uniformly: the pool carries no rarity, so elites and guardians pay more
+ * cogs, not rarer cards. Throws `RulesError` when the pool has fewer distinct ids than the offer size.
  */
 export function rewardOffer(
   run: RunState,
   tier: RewardTier,
   pool: readonly string[],
 ): RewardOfferResult {
-  const ids = distinctPool(pool, REWARD_CHOICES);
+  const choices = run.rewardChoices ?? REWARD_CHOICES;
+  const ids = distinctPool(pool, choices);
   const stream = new Stream(run.rng.loot);
   const cogs = rollCogs(stream, REWARD_COGS[tier]);
-  const cards = stream.shuffle(ids).slice(0, REWARD_CHOICES);
+  const cards = stream.shuffle(ids).slice(0, choices);
   return { run: { ...run, ...withLoot(run, stream) }, offer: { tier, cards, cogs } };
 }
 
