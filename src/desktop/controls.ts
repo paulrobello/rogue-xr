@@ -1,16 +1,22 @@
 import * as THREE from 'three';
+import type { ActionBus } from '../core/actions.ts';
 
-const LOOK_SPEED = 0.004;
-const MOVE_SPEED = 2;
+/** Degrees of turn per pixel of mouse travel. */
+const LOOK_DEGREES_PER_PIXEL = 0.23;
+const PITCH_RADIANS_PER_PIXEL = 0.004;
+const PITCH_LIMIT = 1.4;
 
-/** Placeholder desktop camera: drag to look, WASD to walk. Replaced by P1-T5's action-bus controls. */
+/**
+ * Desktop presenter: WASD becomes `move` intents and mouse drag becomes `turn` intents on the
+ * action bus, so desktop and XR drive the same walker. Pitch is presentation only and stays on
+ * the camera.
+ */
 export function createDesktopControls(
-  rig: THREE.Group,
   camera: THREE.PerspectiveCamera,
   element: HTMLElement,
+  actions: ActionBus,
 ) {
   const keys = new Set<string>();
-  let yaw = 0;
   let pitch = 0;
   let dragging = false;
 
@@ -22,25 +28,31 @@ export function createDesktopControls(
   });
   window.addEventListener('pointermove', (event) => {
     if (!dragging) return;
-    yaw -= event.movementX * LOOK_SPEED;
-    pitch = THREE.MathUtils.clamp(pitch - event.movementY * LOOK_SPEED, -1.4, 1.4);
+    if (event.movementX)
+      actions.emit({ type: 'turn', degrees: event.movementX * LOOK_DEGREES_PER_PIXEL });
+    pitch = THREE.MathUtils.clamp(
+      pitch - event.movementY * PITCH_RADIANS_PER_PIXEL,
+      -PITCH_LIMIT,
+      PITCH_LIMIT,
+    );
   });
-  window.addEventListener('keydown', (event) => keys.add(event.code));
+  window.addEventListener('keydown', (event) => {
+    if (event.target instanceof HTMLInputElement) return;
+    keys.add(event.code);
+  });
   window.addEventListener('keyup', (event) => keys.delete(event.code));
+  window.addEventListener('blur', () => keys.clear());
 
-  const forward = new THREE.Vector3();
-  const right = new THREE.Vector3();
   return {
-    update(deltaSeconds: number) {
-      rig.rotation.y = yaw;
+    update() {
       camera.rotation.set(pitch, 0, 0);
-      const ahead = Number(keys.has('KeyW')) - Number(keys.has('KeyS'));
+      const forward =
+        Number(keys.has('KeyW') || keys.has('ArrowUp')) -
+        Number(keys.has('KeyS') || keys.has('ArrowDown'));
       const strafe = Number(keys.has('KeyD')) - Number(keys.has('KeyA'));
-      if (!ahead && !strafe) return;
-      forward.set(-Math.sin(yaw), 0, -Math.cos(yaw));
-      right.set(Math.cos(yaw), 0, -Math.sin(yaw));
-      rig.position.addScaledVector(forward, ahead * MOVE_SPEED * deltaSeconds);
-      rig.position.addScaledVector(right, strafe * MOVE_SPEED * deltaSeconds);
+      const turn = Number(keys.has('ArrowRight')) - Number(keys.has('ArrowLeft'));
+      if (forward || strafe) actions.emit({ type: 'move', forward, strafe });
+      if (turn) actions.emit({ type: 'turn', degrees: turn * 2 });
     },
   };
 }

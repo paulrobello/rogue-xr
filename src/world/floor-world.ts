@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { DOOR_WIDTH, GREYBOX_TEMPLATES, type RoomTemplate } from '../content/rooms.ts';
+import { type Box, DOOR_WIDTH, GREYBOX_TEMPLATES, type RoomTemplate } from '../content/rooms.ts';
 import { type FloorPlan, type WorldRoom, worldRooms } from '../floor/generate.ts';
 import { PALETTE } from '../palette.ts';
 import { buildGreyboxRoom, createGreyboxMaterials, type GreyboxMaterials } from './greybox.ts';
@@ -38,7 +38,11 @@ export interface FloorWorld {
   roomGroups: readonly THREE.Group[];
   /** Placeholder automatons keyed by room index. */
   enemies: ReadonlyMap<number, readonly THREE.Object3D[]>;
+  /** World-space collision boxes per room: template colliders plus sealed-door caps. */
+  colliders: readonly (readonly Box[])[];
   current: number;
+  /** Colliders of the current room and its neighbours, the only walls the player can reach. */
+  nearbyColliders(): readonly Box[];
   /** Re-evaluates the current room from a world-space floor point; returns true when it changed. */
   update(x: number, z: number): boolean;
   spawnPoint(): THREE.Vector3;
@@ -103,6 +107,13 @@ export function buildFloorWorld(
   });
   // attach() converts world to local space, so room matrices must be current first.
   group.updateMatrixWorld(true);
+  const colliders: Box[][] = rooms.map((r, i) => {
+    const [ox, oz] = plan.rooms[i]?.position ?? [0, 0];
+    return r.template.colliders.map((c) => ({
+      min: [c.min[0] + ox, c.min[1], c.min[2] + oz],
+      max: [c.max[0] + ox, c.max[1], c.max[2] + oz],
+    }));
+  });
   const capGeometry = new THREE.BoxGeometry(DOOR_WIDTH, 4, 0.2);
   for (const s of plan.sealed) {
     const door = rooms[s.room]?.doors.find((d) => d.id === s.door);
@@ -110,7 +121,13 @@ export function buildFloorWorld(
     const cap = new THREE.Mesh(capGeometry, capMaterial);
     cap.name = `sealed-${s.room}-${s.door}`;
     cap.position.set(door.world[0], 2, door.world[1]);
-    if (door.facing === 'E' || door.facing === 'W') cap.rotation.y = Math.PI / 2;
+    const ew = door.facing === 'E' || door.facing === 'W';
+    if (ew) cap.rotation.y = Math.PI / 2;
+    const [hx, hz] = ew ? [0.1, DOOR_WIDTH / 2] : [DOOR_WIDTH / 2, 0.1];
+    colliders[s.room]?.push({
+      min: [door.world[0] - hx, 0, door.world[1] - hz],
+      max: [door.world[0] + hx, 4, door.world[1] + hz],
+    });
     cap.userData.room = s.room;
     roomGroups[s.room]?.attach(cap);
   }
@@ -121,7 +138,11 @@ export function buildFloorWorld(
     rooms,
     roomGroups,
     enemies,
+    colliders,
     current: 0,
+    nearbyColliders() {
+      return [...visibleSet(plan, world.current)].flatMap((i) => colliders[i] ?? []);
+    },
     update(x, z) {
       const next = roomAt(rooms, x, z, world.current);
       if (next < 0 || next === world.current) return false;

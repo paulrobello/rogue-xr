@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { mountCardProof } from './cards/card-proof.ts';
 import { ActionBus } from './core/actions.ts';
 import { createDesktopControls } from './desktop/controls.ts';
+import { mountSeedTitle } from './desktop/seed-title.ts';
+import { Walker } from './desktop/walker.ts';
 import { PALETTE } from './palette.ts';
 import { type FloorView, mountFloorView, seedFromQuery } from './world/floor-view.ts';
 import { mountLightmapProof } from './world/lightmap-proof.ts';
@@ -64,7 +66,15 @@ if (floor) app.append(hud);
 
 const actions = new ActionBus();
 const xr = createXrRig(renderer, scene, rig, camera, actions);
-const desktop = createDesktopControls(rig, camera, renderer.domElement);
+const desktop = createDesktopControls(camera, renderer.domElement, actions);
+const walker = new Walker(rig, actions, () => floor?.world.nearbyColliders() ?? []);
+if (floor) mountSeedTitle(app, floor.seed, actions);
+actions.on('new-run', ({ seed }) => {
+  const url = new URL(location.href);
+  if (seed) url.searchParams.set('seed', seed);
+  else url.searchParams.delete('seed');
+  location.assign(url);
+});
 
 const enterButton = document.createElement('button');
 enterButton.textContent = 'Enter VR';
@@ -108,7 +118,10 @@ renderer.setAnimationLoop((time, frame) => {
   timer.update(time);
   const deltaSeconds = Math.min(timer.getDelta(), 0.1);
   if (xr.presenting) xr.update(deltaSeconds, frame);
-  else desktop.update(deltaSeconds);
+  else {
+    desktop.update();
+    walker.update(deltaSeconds);
+  }
   cardProof?.update(time / 1000, xr.presenting);
   floor?.update(rig.position);
   renderer.render(scene, camera);

@@ -129,6 +129,12 @@ export function normalizeSeed(input: string): string {
   return cleaned;
 }
 
+/** Display form of a normalized seed, split in two groups of four (`SP1R-E001`). */
+export function formatSeed(seed: string): string {
+  const s = normalizeSeed(seed);
+  return `${s.slice(0, 4)}-${s.slice(4)}`;
+}
+
 export function isValidSeed(input: string): boolean {
   try {
     normalizeSeed(input);
