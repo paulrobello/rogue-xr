@@ -54,8 +54,21 @@ export interface FloorWorld {
   /** Re-evaluates the current room from a world-space floor point; returns true when it changed. */
   update(x: number, z: number): boolean;
   spawnPoint(): THREE.Vector3;
+  /**
+   * Swaps one of `room`'s automaton bodies for `next` (a loaded model), keeping its place, heading,
+   * name and userData. Returns false, touching nothing, when `body` is not a live body of `room`.
+   */
+  replaceEnemy(room: number, body: THREE.Object3D, next: THREE.Object3D): boolean;
+  /**
+   * Dresses `room` with a baked template model in place of its greybox floor, walls and socket
+   * markers. The automatons and sealed-door caps stay. `model` is room-local.
+   */
+  dressRoom(room: number, model: THREE.Object3D): void;
   dispose(): void;
 }
+
+/** Greybox children a baked room model replaces: the floor, collider walls and socket markers. */
+const GREYBOX_PART = /^(floor|collider-\d+|socket-.+|light-.+)$/;
 
 const enemyGeometry = new THREE.CapsuleGeometry(0.35, 1.2, 4, 12);
 const guardianGeometry = new THREE.CapsuleGeometry(0.6, 1.8, 4, 12);
@@ -178,6 +191,29 @@ export function buildFloorWorld(
         0,
         (entry.min[1] + entry.max[1]) / 2 + 2,
       );
+    },
+    replaceEnemy(room, body, next) {
+      const list = enemies.get(room);
+      const index = list?.indexOf(body) ?? -1;
+      const parent = body.parent;
+      if (!list || index < 0 || !parent) return false;
+      next.name = body.name;
+      next.userData = { ...body.userData };
+      next.position.set(body.position.x, 0, body.position.z);
+      next.rotation.copy(body.rotation);
+      parent.add(next);
+      body.removeFromParent();
+      list[index] = next;
+      return true;
+    },
+    dressRoom(room, model) {
+      const g = roomGroups[room];
+      if (!g) return;
+      for (const child of [...g.children]) {
+        if (GREYBOX_PART.test(child.name)) child.removeFromParent();
+      }
+      model.userData.room = room;
+      g.add(model);
     },
     dispose() {
       group.removeFromParent();

@@ -1,7 +1,10 @@
 import * as THREE from 'three';
 import { EncounterDirector } from '../combat/encounter.ts';
+import { chooseEncounter } from '../combat/encounter-choice.ts';
 import { buildTableGreybox, disposeTable, TABLE_NODES } from '../combat/table-greybox.ts';
+import type { RoomTemplate } from '../content/rooms.ts';
 import { isValidSeed, normalizeSeed, randomSeed } from '../core/rng.ts';
+import type { SentryActor, SentryAsset } from '../enemies/sentry-asset.ts';
 import { generateFloor } from '../floor/generate.ts';
 import { PALETTE } from '../palette.ts';
 import { yawFromMatrix } from '../xr/locomotion.ts';
@@ -37,6 +40,21 @@ export interface FloorView {
   /** The table's dice-tray and sigil-plate sockets (the greybox has no plate socket). */
   tableSockets(): { diceTray: THREE.Object3D | null; sigilPlate: THREE.Object3D | null };
   /**
+   * Dresses every room built from `templateId` with `instantiate()`'s baked model in place of its
+   * greybox. Rooms keep the greybox when this is never called (the asset failed to load).
+   */
+  useRoomAsset(templateId: string, instantiate: () => THREE.Object3D): number;
+  /**
+   * Swaps every Cog Sentry placeholder for a spawned actor, as soon as no fight is running. Bodies
+   * already removed (cleared rooms) are skipped. `prepare` runs on each new actor before it is
+   * placed. Without this call the capsules stay.
+   */
+  useSentryAsset(asset: SentryAsset, prepare?: (actor: SentryActor) => void): void;
+  /** The actor standing in for an automaton body, or null for a placeholder. */
+  actorOf(body: THREE.Object3D): SentryActor | null;
+  /** Live sentry actors on this floor. */
+  readonly actors: readonly SentryActor[];
+  /**
    * While true, `update` still runs the encounter (so a finished fight folds away) but never starts a
    * new one. The game flow sets it outside exploration, so a lost fight cannot re-trigger.
    */
@@ -49,9 +67,33 @@ export interface FloorView {
   dispose(): void;
 }
 
+/** The enemy kind each body will play, in socket order, from the room's seeded encounter. */
+function tagEnemyKinds(world: FloorWorld, seed: string): void {
+  for (const [room, bodies] of world.enemies) {
+    const tier = world.plan.rooms[room]?.encounter?.tier;
+    if (!tier || bodies.length === 0) continue;
+    const { enemies } = chooseEncounter(seed, room, tier, bodies.length);
+    bodies.forEach((body, i) => {
+      const kind = enemies[i];
+      if (kind) body.userData.enemyKind = kind;
+    });
+  }
+}
+
+export interface FloorViewOptions {
+  /** Templates the world is built from (the floor plan always uses the greybox set). */
+  templates?: readonly RoomTemplate[];
+}
+
 /** Greybox exploration view: the generated floor, flat greybox lighting, the rig at the entry. */
-export function mountFloorView(scene: THREE.Scene, rig: THREE.Object3D, seed: string): FloorView {
-  const world = buildFloorWorld(generateFloor(seed));
+export function mountFloorView(
+  scene: THREE.Scene,
+  rig: THREE.Object3D,
+  seed: string,
+  options: FloorViewOptions = {},
+): FloorView {
+  const world = buildFloorWorld(generateFloor(seed), options.templates);
+  tagEnemyKinds(world, seed);
   scene.add(world.group);
   // Greybox lighting is two global lights; per-room sockets get real lights with the lightmaps (P4-T7).
   const sun = new THREE.DirectionalLight(PALETTE.candle, 1.4);
@@ -77,6 +119,28 @@ export function mountFloorView(scene: THREE.Scene, rig: THREE.Object3D, seed: st
     },
   });
   const at = new THREE.Vector3();
+  const actors = new Map<THREE.Object3D, SentryActor>();
+  let sentry: { asset: SentryAsset; prepare?: ((actor: SentryActor) => void) | undefined } | null =
+    null;
+  const dressSentries = (): void => {
+    if (!sentry || encounter.phase !== 'idle') return;
+    const { asset, prepare } = sentry;
+    sentry = null;
+    for (const [room, bodies] of world.enemies) {
+      for (const body of [...bodies]) {
+        const placeholder = body.userData.enemyKind === 'cog-sentry' && !actors.has(body);
+        if (!placeholder || body.userData.tier === 'guardian' || !body.parent) continue;
+        const actor = asset.spawn();
+        prepare?.(actor);
+        if (world.replaceEnemy(room, body, actor.object)) actors.set(actor.object, actor);
+        else actor.dispose();
+      }
+    }
+  };
+  const disposeActor = (actor: SentryActor): void => {
+    actors.delete(actor.object);
+    actor.dispose();
+  };
   return {
     world,
     seed,
@@ -103,7 +167,28 @@ export function mountFloorView(scene: THREE.Scene, rig: THREE.Object3D, seed: st
       const len = Math.hypot(dx, dz) || 1;
       return new THREE.Vector3(door[0] + dx / len, 0, door[1] + dz / len);
     },
+    get actors() {
+      return [...actors.values()];
+    },
+    actorOf(body) {
+      return actors.get(body) ?? null;
+    },
+    useSentryAsset(asset, prepare) {
+      sentry = { asset, prepare };
+      dressSentries();
+    },
+    useRoomAsset(templateId, instantiate) {
+      let dressed = 0;
+      world.plan.rooms.forEach((room, index) => {
+        if (room.templateId !== templateId) return;
+        world.dressRoom(index, instantiate());
+        dressed++;
+      });
+      return dressed;
+    },
     dispose() {
+      for (const actor of [...actors.values()]) disposeActor(actor);
+      sentry = null;
       encounter.dispose();
       if (greybox) disposeTable(greybox);
       greybox = null;
@@ -146,6 +231,18 @@ export function mountFloorView(scene: THREE.Scene, rig: THREE.Object3D, seed: st
     },
     update(head, dt) {
       encounter.update(dt);
+      dressSentries();
+      // Clips run on real seconds; the freeze is a pose, not a slowed clock.
+      for (const actor of [...actors.values()]) {
+        if (!actor.object.parent) {
+          disposeActor(actor);
+          continue;
+        }
+        if (encounter.frozen) {
+          if (!actor.frozen && !actor.dead && actor.state === 'idle') actor.freeze();
+        } else if (actor.frozen) actor.unfreeze();
+        actor.update(dt);
+      }
       head.getWorldPosition(at);
       // The fight owns the room until it ends, so streaming holds still meanwhile.
       if (encounter.phase !== 'idle') return;

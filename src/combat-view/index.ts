@@ -5,6 +5,8 @@ import { PALETTE } from '../palette.ts';
 import { type Effect, type EnemyState, intentDamage } from '../rules/index.ts';
 import { type Point, SIGIL_TEMPLATES, type SigilId } from '../sigil/index.ts';
 import { mouseToPlate, type PlatePose, TraceBuilder, type Vec3 } from '../sigil-plate/index.ts';
+import { INTENT_ICON, STATUS_ICON } from '../ui/icon-atlas.ts';
+import type { IconChip } from '../ui/icon-sheet.ts';
 import { CanvasLabel, roundRect, wrapText } from './canvas-label.ts';
 import {
   CombatController,
@@ -102,6 +104,42 @@ export function intentText(enemy: EnemyState, damage: readonly number[]): string
   });
   const status = intent.effects.flatMap((e) => (e.type === 'apply-status' ? [`${e.status}`] : []));
   return [intent.intent.toUpperCase(), ...dmg, ...extras, ...status.map((s) => `+${s}`)].join(' ');
+}
+
+/**
+ * The visible intent as one icon chip per part, so a multi-part move reads unambiguously: Brace is
+ * `[attack 4] [block 7]`, never "4 block 7". Damage uses the after-status numbers from `damage`.
+ * A move with no numeric part shows its intent icon alone.
+ */
+export function intentChips(enemy: EnemyState, damage: readonly number[]): IconChip[] {
+  const intent = enemy.intent;
+  if (!intent) return [];
+  const chips: IconChip[] = [];
+  let hit = 0;
+  const amount = (a: unknown): string => (typeof a === 'number' ? String(a) : '?');
+  for (const effect of intent.effects) {
+    if (effect.type === 'damage') {
+      const d = damage[hit++];
+      const hits = typeof effect.hits === 'number' ? effect.hits : 1;
+      const text = d === undefined ? amount(effect.amount) : String(d);
+      chips.push({
+        icon: intent.intent === 'attack-debuff' ? INTENT_ICON['attack-debuff'] : 'intent-attack',
+        text: hits > 1 ? `${text}x${hits}` : text,
+        fallback: 'Attack',
+      });
+    } else if (effect.type === 'block') {
+      chips.push({ icon: 'block', text: amount(effect.amount), fallback: 'Block' });
+    } else if (effect.type === 'apply-status') {
+      chips.push({
+        icon: STATUS_ICON[effect.status],
+        text: typeof effect.stacks === 'number' ? String(effect.stacks) : '?',
+        fallback: effect.status,
+      });
+    }
+  }
+  return chips.length > 0
+    ? chips
+    : [{ icon: INTENT_ICON[intent.intent], text: '', fallback: intent.intent }];
 }
 
 function statusText(statuses: Readonly<Partial<Record<string, number>>>): string {

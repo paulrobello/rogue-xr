@@ -50,8 +50,15 @@ export interface CombatOptions {
   readonly deck?: readonly string[];
   /** Debug cheat: every enemy starts at this many hit points (max hit points unchanged). */
   readonly enemyHp?: number;
-  /** Debug cheat: the player starts at this many hit points (max stays 70). */
+  /** The player starts at this many hit points, capped at the max. Defaults to the max. */
   readonly playerHp?: number;
+  /** The run's maximum hit points (workshop Sturdy Frame). Defaults to `PLAYER_START_HP`. */
+  readonly playerMaxHp?: number;
+  /**
+   * Extra dice from the run's loadout (workshop Spare Die). Each dice card rolls `1 + bonusDice`
+   * times from the dice stream and keeps the highest result. 0 rolls exactly as before.
+   */
+  readonly bonusDice?: number;
 }
 
 /** What the view can ask the controller to do next: `target` an enemy, `table` click, or draw a `sigil`. */
@@ -175,7 +182,8 @@ export function describeEvent(event: CombatEvent, state: CombatState): string | 
 export class CombatController {
   readonly options: CombatOptions;
   readonly seed: string;
-  readonly playerMaxHp = PLAYER_START_HP;
+  readonly playerMaxHp: number;
+  readonly bonusDice: number;
   state: CombatState;
   /** Presentation log lines, oldest first. */
   readonly log: string[] = [];
@@ -191,8 +199,13 @@ export class CombatController {
     this.seed = normalizeSeed(
       options.seed !== undefined && isValidSeed(options.seed) ? options.seed : DEFAULT_SEED,
     );
+    this.playerMaxHp = Math.max(1, Math.floor(options.playerMaxHp ?? PLAYER_START_HP));
+    this.bonusDice = Math.max(0, Math.floor(options.bonusDice ?? 0));
     const started = startCombat({
-      player: { hp: options.playerHp ?? PLAYER_START_HP, maxHp: PLAYER_START_HP },
+      player: {
+        hp: Math.min(this.playerMaxHp, options.playerHp ?? this.playerMaxHp),
+        maxHp: this.playerMaxHp,
+      },
       deck: deckDefs(options.deck ?? STARTER_DECK),
       enemies: resolveSetups({ ...options, seed: this.seed }),
       rng: new RunRng(this.seed).snapshot(),
@@ -353,15 +366,19 @@ export class CombatController {
     let dice: number | undefined;
     if (info.dice !== undefined) {
       const die = dieById(info.dice);
-      const rolled = rollDice(current, die);
-      current = rolled.state;
-      dice = rolled.roll.value;
+      let best = Number.NEGATIVE_INFINITY;
+      for (let n = 0; n <= this.bonusDice; n++) {
+        const rolled = rollDice(current, die);
+        current = rolled.state;
+        best = Math.max(best, rolled.roll.value);
+      }
+      dice = best;
       this.lastDice = {
         cardId: info.id,
         cardName: info.name,
         dieName: die.name,
         faces: die.faces.length,
-        value: rolled.roll.value,
+        value: best,
       };
     }
     const action = {

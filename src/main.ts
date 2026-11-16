@@ -1,5 +1,6 @@
 import { createPointer } from '@par/xr-workspace';
 import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { type AudioState, audioStateFor } from './audio/cues.ts';
 import { AudioDirector } from './audio/index.ts';
@@ -18,6 +19,7 @@ import { ActionBus } from './core/actions.ts';
 import { randomSeed } from './core/rng.ts';
 import { createDesktopControls } from './desktop/controls.ts';
 import { Walker } from './desktop/walker.ts';
+import { loadSentry, type SentryActor, type SentryAsset } from './enemies/sentry-asset.ts';
 import { type FlowPhase, RunFlow } from './flow/flow.ts';
 import { FlowUi } from './flow/panels.ts';
 import { bindFlowPersistence } from './flow/persist.ts';
@@ -34,9 +36,18 @@ import { loadRunSnapshot, loadWorkshop, type RunSnapshot } from './persist/saves
 import type { RewardTier } from './rules/run.ts';
 import { createWorkshop } from './rules/workshop.ts';
 import { type FloorView, mountFloorView, seedFromQuery } from './world/floor-view.ts';
+import { createKtx2Loader } from './world/ktx2.ts';
 import { mountLightmapProof } from './world/lightmap-proof.ts';
 import { mountMaterialProof } from './world/material-proof.ts';
+import { loadPbrSet } from './world/materials.ts';
 import { mountRoomAssetProof } from './world/room-asset-proof.ts';
+import {
+  fetchStudyManifest,
+  heroTemplates,
+  loadStudyAsset,
+  type StudyAsset,
+} from './world/study-room.ts';
+import { runVeil } from './world/veil.ts';
 import { Locomotion } from './xr/locomotion.ts';
 import { createXrRig } from './xr/session.ts';
 
@@ -104,7 +115,18 @@ const directSeed = params.has('seed') && !params.has('title');
 const bootSeed = params.has('seed')
   ? seedFromQuery(location.search)
   : (storedSnapshot?.run.seed ?? randomSeed());
-if (!proofView) floor = mountFloorView(scene, rig, bootSeed);
+// The baked study's manifest carries its desk and shelf colliders, so the world is built from it
+// before the first floor; its model, the sentry and the table load afterwards (P4-T9).
+const studyManifest = proofView
+  ? null
+  : await fetchStudyManifest().catch((error: unknown) => {
+      console.warn('study manifest unavailable, greybox study kept', error);
+      return null;
+    });
+const worldTemplates = heroTemplates(studyManifest?.template ?? null);
+const mountFloor = (seed: string): FloorView =>
+  mountFloorView(scene, rig, seed, { templates: worldTemplates });
+if (!proofView) floor = mountFloor(bootSeed);
 /** True once a run has played on the mounted floor, so the next run needs a fresh one. */
 let floorUsed = false;
 
@@ -172,12 +194,17 @@ if (audio) {
 // Real combat on the floor: a session opens when an encounter goes active. Each fight takes the
 // run's deck and hit points; `?cheat=win|lose` (or `__flow.setCheat` under `?debug`) rigs it.
 let cheat = params.get('cheat');
-/** Combat's player max hp is fixed in the controller, so a run's hp is capped to it. */
-const COMBAT_MAX_HP = 70;
 const fightOptions = () => {
   const run = flow.run;
   return {
-    ...(run ? { deck: run.deck, playerHp: Math.max(1, Math.min(COMBAT_MAX_HP, run.hp)) } : {}),
+    ...(run
+      ? {
+          deck: run.deck,
+          playerHp: Math.max(1, Math.min(run.maxHp, run.hp)),
+          playerMaxHp: run.maxHp,
+          bonusDice: run.bonusDice ?? 0,
+        }
+      : {}),
     ...(cheat === 'win' ? { enemyHp: 1 } : {}),
     ...(cheat === 'lose' ? { playerHp: 1 } : {}),
   };
@@ -213,6 +240,28 @@ const endFight = (outcome: 'win' | 'flee'): void => {
   flow.fightEnded({ room, outcome, tier: fightTier(target, room) });
 };
 
+// Hero assets reflect a dim neutral room until the baked probes ship, as their proof views do.
+const heroEnv: THREE.Texture | null = floor
+  ? (() => {
+      const pmrem = new THREE.PMREMGenerator(renderer);
+      const texture = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+      pmrem.dispose();
+      return texture;
+    })()
+  : null;
+const reflect = (root: THREE.Object3D, intensity: number): void => {
+  root.traverse((node) => {
+    const mesh = node as THREE.Mesh;
+    if (!mesh.isMesh || !heroEnv) return;
+    for (const m of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
+      const lit = m as THREE.MeshStandardMaterial;
+      if (!lit.isMeshStandardMaterial) continue;
+      lit.envMap = heroEnv;
+      lit.envMapIntensity = intensity;
+    }
+  });
+};
+
 // The P4-T5 table asset replaces the greybox once it loads; the greybox stays on any failure.
 // Every rebuilt floor gets a clone of the same loaded asset.
 const tableAsset: Promise<{ scene: THREE.Object3D; top: number } | null> = floor
@@ -224,6 +273,7 @@ const tableAsset: Promise<{ scene: THREE.Object3D; top: number } | null> = floor
       await bindTableMaterials(gltf.scene, manifest, renderer).catch((error: unknown) =>
         console.warn('combat table materials fell back to factors', error),
       );
+      reflect(gltf.scene, 0.45);
       return { scene: gltf.scene, top: manifest.authoredTopHeight };
     })().catch((error: unknown) => {
       console.warn('combat table asset unavailable, greybox kept', error);
@@ -238,6 +288,69 @@ const fitTable = (target: FloorView): void => {
   });
 };
 if (floor) fitTable(floor);
+
+// P4-T9 hero assets: the baked study dresses every study room and the Cog Sentry replaces its
+// capsules. One KTX2 material set backs both; each falls back to its greybox on its own failure.
+const heroSet = floor
+  ? (async () => {
+      const ktx2 = createKtx2Loader(renderer);
+      const set = await loadPbrSet('/assets/materials', {
+        anisotropy: renderer.capabilities.getMaxAnisotropy(),
+        ktx2,
+      });
+      return { ktx2, set };
+    })()
+  : null;
+const studyAsset: Promise<StudyAsset | null> =
+  heroSet && studyManifest
+    ? heroSet
+        .then(({ ktx2, set }) =>
+          loadStudyAsset({ study: studyManifest, set, ktx2, envMap: heroEnv }),
+        )
+        .catch((error: unknown) => {
+          console.warn('study asset unavailable, greybox study kept', error);
+          return null;
+        })
+    : Promise.resolve(null);
+const sentryAsset: Promise<SentryAsset | null> = heroSet
+  ? heroSet
+      .then(({ set }) => loadSentry({ materials: set }))
+      .catch((error: unknown) => {
+        console.warn('cog sentry asset unavailable, capsules kept', error);
+        return null;
+      })
+  : Promise.resolve(null);
+const prepareSentry = (actor: SentryActor): void => reflect(actor.object, 0.45);
+const dressFloor = async (target: FloorView): Promise<void> => {
+  const [study, sentry] = await Promise.all([studyAsset, sentryAsset]);
+  if (target !== floor) return;
+  if (study) target.useRoomAsset('study', study.instantiate);
+  if (sentry) target.useSentryAsset(sentry, prepareSentry);
+};
+/** Resolves once the boot floor wears its hero assets and their programs are compiled. */
+const heroReady: Promise<void> = floor
+  ? (async () => {
+      const target = floor;
+      await dressFloor(target);
+      void heroSet?.then(({ ktx2 }) => ktx2.dispose());
+      const [study, sentry] = await Promise.all([studyAsset, sentryAsset]);
+      const variants: THREE.Object3D[] = [];
+      const studyVariant = study?.instantiate() ?? null;
+      if (studyVariant) variants.push(studyVariant);
+      const actor = sentry?.spawn() ?? null;
+      if (actor) {
+        prepareSentry(actor);
+        variants.push(actor.object);
+      }
+      const table = await tableAsset;
+      if (table) variants.push(table.scene);
+      try {
+        await runVeil(renderer, scene, camera, study?.textures ?? [], { variants });
+      } finally {
+        actor?.dispose();
+      }
+    })().catch((error: unknown) => console.warn('hero asset warm-up failed', error))
+  : Promise.resolve();
 
 // Flow glue: persistence, the in-scene boards, starting and resuming runs on a fresh floor.
 const persistence = db
@@ -256,9 +369,10 @@ const freshFloor = (seed: string): FloorView => {
   if (floor && floor.seed === seed && !floorUsed) return floor;
   combat?.dispose();
   floor?.dispose();
-  floor = mountFloorView(scene, rig, seed);
+  floor = mountFloor(seed);
   combat = makeCombat(floor);
   fitTable(floor);
+  void dressFloor(floor);
   return floor;
 };
 const startRun = (seed: string): void => {
@@ -507,6 +621,11 @@ if (floor && params.has('debug')) {
       camera,
       screenOf,
       teleportToEncounter,
+      heroReady,
+      /** Draw calls and triangles of the last scene pass (before the board pass). */
+      get stats() {
+        return { ...sceneStats };
+      },
     },
     __flow: {
       flow,
@@ -584,6 +703,7 @@ const audioFor = (phase: FlowPhase, encounter: FloorView['encounter']['phase']):
   return audioStateFor(phase, encounter);
 };
 
+const sceneStats = { calls: 0, triangles: 0 };
 const timer = new THREE.Timer();
 renderer.setAnimationLoop((time, frame) => {
   perf.frame(null, time);
@@ -631,6 +751,8 @@ renderer.setAnimationLoop((time, frame) => {
     audio.update(deltaSeconds);
   }
   renderer.render(scene, camera);
+  sceneStats.calls = renderer.info.render.calls;
+  sceneStats.triangles = renderer.info.render.triangles;
   if (ui?.visible) {
     renderer.autoClear = false;
     renderer.clearDepth();
@@ -649,6 +771,7 @@ renderer.setAnimationLoop((time, frame) => {
   if (floor) {
     const text = combat?.banner ?? '';
     banner.textContent = text;
-    banner.style.display = text && !xr.presenting ? '' : 'none';
+    // A flow board (reward, death, victory) replaces the fight banner, never sits under it.
+    banner.style.display = text && !xr.presenting && !ui?.visible ? '' : 'none';
   }
 });

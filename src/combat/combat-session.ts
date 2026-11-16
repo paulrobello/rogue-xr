@@ -2,20 +2,16 @@ import * as THREE from 'three';
 import type { SfxId } from '../audio/cues.ts';
 import { CanvasLabel, roundRect } from '../combat-view/canvas-label.ts';
 import { CombatController, type CombatOptions, type Stage } from '../combat-view/controller.ts';
-import { intentText } from '../combat-view/index.ts';
+import { intentChips } from '../combat-view/index.ts';
 import { getCard } from '../content/cards.ts';
 import { dieById } from '../content/dice.ts';
-import {
-  ENCOUNTERS,
-  type Encounter,
-  type EncounterTier,
-  encounterSetups,
-} from '../content/enemies.ts';
+import { type EncounterTier, encounterSetups } from '../content/enemies.ts';
 import type { ActionBus, GameAction } from '../core/actions.ts';
 import { Stream } from '../core/rng.ts';
 import type { DieKind } from '../dice/faces.ts';
 import { DicePresenter, type PresentedRoll } from '../dice/presenter.ts';
 import type { DiceWorldOptions } from '../dice/world.ts';
+import type { SentryActor } from '../enemies/sentry-asset.ts';
 import type { AimRay } from '../hand/aim.ts';
 import { CardFan } from '../hand/card-fan.ts';
 import { FlingController, type FlingTargetSite, rayFromObject } from '../hand/fling.ts';
@@ -28,7 +24,7 @@ import {
   rayToPlate,
   SigilPlate,
 } from '../sigil-plate/index.ts';
-import { type IconId, INTENT_ICON, STATUS_ICON } from '../ui/icon-atlas.ts';
+import { type IconId, STATUS_ICON } from '../ui/icon-atlas.ts';
 import {
   drawIconRow,
   type IconSheet,
@@ -36,10 +32,12 @@ import {
   iconSheetOnFirstRender,
 } from '../ui/icon-sheet.ts';
 import type { EncounterDirector } from './encounter.ts';
+import { chooseEncounter, enemyKindOf, fightSeed } from './encounter-choice.ts';
 import type { TablePose } from './placement.ts';
 
+export { chooseEncounter, fightSeed } from './encounter-choice.ts';
+
 const DEG = Math.PI / 180;
-const CROCKFORD = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 /** Seconds the victory banner holds before the table folds and the room clears. */
 export const WIN_HOLD_SECONDS = 1.2;
 /** Seconds the defeat banner holds before the automatons go home. */
@@ -54,6 +52,8 @@ const TIP_OFFSET = 0.06;
 const TRAY_HALF_X = 0.2;
 const TRAY_HALF_Z = 0.11;
 const ENEMY_RADIUS = 0.5;
+/** Longest the win handover waits on death clips, from the first death; a stalled clip never hangs it. */
+export const DEATH_WAIT_SECONDS = 3;
 
 type Vec3T = readonly [number, number, number];
 
@@ -70,25 +70,6 @@ export interface XrHands {
   main: THREE.Object3D | null;
   mainRay: THREE.Object3D | null;
   off: THREE.Object3D | null;
-}
-
-/** The encounter the floor plan's room gets: one of its tier whose size matches the room's automatons. */
-export function chooseEncounter(
-  seed: string,
-  room: number,
-  tier: EncounterTier,
-  count: number,
-): Encounter {
-  const fits = ENCOUNTERS[tier].filter((e) => e.enemies.length === count);
-  return Stream.fromKey(`${seed}:room-${room}:encounter`).pick(
-    fits.length > 0 ? fits : ENCOUNTERS[tier],
-  );
-}
-
-/** A per-room combat seed derived from the run seed, so each fight shuffles and rolls its own way. */
-export function fightSeed(seed: string, room: number): string {
-  const s = Stream.fromKey(`${seed}:room-${room}:fight`);
-  return Array.from({ length: 8 }, () => CROCKFORD[s.int(0, 31)]).join('');
 }
 
 function safeLabel(px: number, py: number, width: number): CanvasLabel | null {
@@ -116,8 +97,10 @@ export interface CombatSessionDeps {
   /** Called once the fight is decided and its banner has held. */
   end: (outcome: 'win' | 'defeat') => void;
   audio?: CombatAudio;
-  /** Debug cheats and deck override passed to the controller. */
-  options?: Pick<CombatOptions, 'enemyHp' | 'playerHp' | 'deck'>;
+  /** The run's deck, hp, max hp and bonus dice, plus debug cheats, passed to the controller. */
+  options?: Pick<CombatOptions, 'enemyHp' | 'playerHp' | 'playerMaxHp' | 'bonusDice' | 'deck'>;
+  /** The animated actor standing in for a body (the Cog Sentry), or null for a placeholder. */
+  actorOf?: (body: THREE.Object3D) => SentryActor | null;
   /** Typeset card labels with troika (off in tests). */
   syncLabels?: boolean;
   dice?: Partial<DiceWorldOptions>;
@@ -182,6 +165,13 @@ export class CombatSession {
   private disposed = false;
   private xr: XrHands | null = null;
   private dirty = true;
+  /** Animated actors by rules enemy id. */
+  private readonly actors = new Map<string, SentryActor>();
+  /** Enemy attack cues held until the attacker's swing reaches its `impact` beat. */
+  private readonly atImpact = new Map<SentryActor, CombatEvent[]>();
+  /** Actors playing their death clip; checked each frame, since `die()`'s promise settles a task late. */
+  private readonly dying = new Set<SentryActor>();
+  private deathWait = -1;
 
   private constructor(deps: CombatSessionDeps, dice: DicePresenter) {
     this.deps = deps;
@@ -194,14 +184,34 @@ export class CombatSession {
       return (w.x - this.pose.x) * rx + (w.z - this.pose.z) * rz;
     };
     // Left to right across the table, the order the director placed them in.
-    this.bodies = [...deps.bodies].sort((a, b) => lateral(a) - lateral(b));
-    const encounter = chooseEncounter(deps.seed, deps.room, deps.tier, this.bodies.length);
+    const ordered = [...deps.bodies].sort((a, b) => lateral(a) - lateral(b));
+    const encounter = chooseEncounter(deps.seed, deps.room, deps.tier, ordered.length);
     this.controller = new CombatController({
       ...deps.options,
       seed: fightSeed(deps.seed, deps.room),
       setups: encounterSetups(encounter),
     });
     this.enemyIds = this.controller.state.enemies.map((e) => e.id);
+    // A body the floor tagged with an enemy kind wears that kind's model, so it plays that enemy;
+    // untagged bodies take the rest left to right.
+    const free = [...ordered];
+    const take = (kind: string): THREE.Object3D | undefined => {
+      const tagged = free.findIndex((b) => b.userData.enemyKind === kind);
+      const at = tagged >= 0 ? tagged : free.findIndex((b) => b.userData.enemyKind === undefined);
+      return free.splice(at >= 0 ? at : 0, 1)[0];
+    };
+    this.bodies = [...this.enemyIds.map((id) => take(enemyKindOf(id))), ...free].filter(
+      (b): b is THREE.Object3D => b !== undefined,
+    );
+    this.enemyIds.forEach((id, i) => {
+      const body = this.bodies[i];
+      const actor = body ? (deps.actorOf?.(body) ?? null) : null;
+      if (!actor) return;
+      this.actors.set(id, actor);
+      actor.onEvent = (event) => {
+        if (event === 'impact') this.flushImpact(actor);
+      };
+    });
     for (const body of this.bodies.slice(this.enemyIds.length)) {
       if (body.visible) this.hidden.push(body);
       body.visible = false;
@@ -395,10 +405,10 @@ export class CombatSession {
         this.fan.root.updateWorldMatrix(true, false);
         return this.fan.root.localToWorld(new THREE.Vector3(...slot.position));
       }
-      case 'enemy':
-        return (
-          this.enemies.find((e) => e.id === key)?.body.getWorldPosition(new THREE.Vector3()) ?? null
-        );
+      case 'enemy': {
+        const enemy = this.enemies.find((e) => e.id === key);
+        return enemy ? this.aimOf(enemy.id, enemy.body) : null;
+      }
       case 'end-turn':
         return this.endButton.getWorldPosition(new THREE.Vector3());
       case 'throw':
@@ -468,6 +478,8 @@ export class CombatSession {
       this.plateDone += dt;
       if (this.plateDone >= PLATE_DONE_SECONDS) this.plate.hide();
     }
+    for (const [actor] of this.atImpact) if (actor.state !== 'attack') this.flushImpact(actor);
+    if (this.deathWait > 0) this.deathWait -= dt;
     const outcome = this.controller.outcome;
     if (outcome !== null && !this.ended) {
       if (this.endTimer < 0) {
@@ -477,7 +489,12 @@ export class CombatSession {
         this.paint();
       }
       this.endTimer -= dt;
-      if (this.endTimer <= 0) {
+      // A win hands over only once the last automaton lies still, because the room clears on `end`.
+      for (const actor of this.dying) {
+        if (actor.disposed || !actor.action('death').isRunning()) this.dying.delete(actor);
+      }
+      const deathsDone = outcome !== 'won' || this.dying.size === 0 || this.deathWait <= 1e-6;
+      if (this.endTimer <= 0 && deathsDone) {
         this.ended = true;
         this.deps.end(outcome === 'won' ? 'win' : 'defeat');
       }
@@ -488,6 +505,8 @@ export class CombatSession {
     if (this.disposed) return;
     this.disposed = true;
     this.deps.audio?.stopLoop('sigil-trace');
+    for (const actor of this.actors.values()) actor.onEvent = null;
+    this.atImpact.clear();
     for (const off of this.disposers.splice(0)) off();
     this.fan.dispose();
     this.fan.detach();
@@ -723,16 +742,38 @@ export class CombatSession {
   private sync(): void {
     this.dirty = false;
     const state = this.controller.state;
+    const attackers = new Set<SentryActor>();
+    const hits = new Set<SentryActor>();
+    const deaths = new Set<SentryActor>();
     for (const event of this.controller.drainEvents()) {
       const target = 'target' in event ? (event.target as string | null) : null;
       const enemyId = 'enemyId' in event ? (event.enemyId as string) : target;
-      const body =
-        enemyId && enemyId !== PLAYER_ID
-          ? this.enemies.find((e) => e.id === enemyId)?.body
-          : undefined;
-      const at = body?.getWorldPosition(new THREE.Vector3());
-      this.deps.audio?.playCombatEvent(event, at);
+      if (event.type === 'damage-dealt' && event.target === PLAYER_ID && event.source) {
+        const attacker = this.actors.get(event.source);
+        if (attacker && !attacker.dead) {
+          // The rules resolve the blow at once; its sound waits for the swing's impact beat.
+          attackers.add(attacker);
+          this.atImpact.set(attacker, [...(this.atImpact.get(attacker) ?? []), event]);
+          continue;
+        }
+      }
+      const actor = enemyId ? this.actors.get(enemyId) : undefined;
+      if (actor && event.type === 'damage-dealt' && event.amount > 0) hits.add(actor);
+      if (actor && event.type === 'enemy-died') deaths.add(actor);
+      const at = enemyId && enemyId !== PLAYER_ID ? this.aimOfId(enemyId) : null;
+      this.deps.audio?.playCombatEvent(event, at ?? undefined);
     }
+    for (const actor of deaths) {
+      hits.delete(actor);
+      attackers.delete(actor);
+      this.flushImpact(actor);
+      if (actor.dead) continue;
+      this.dying.add(actor);
+      if (this.deathWait < 0) this.deathWait = DEATH_WAIT_SECONDS;
+      void actor.die();
+    }
+    for (const actor of hits) actor.hit();
+    for (const actor of attackers) actor.attack();
     const key = state.piles.hand.map((c) => c.uid).join(',');
     if (key !== this.handKey) {
       this.handKey = key;
@@ -761,7 +802,8 @@ export class CombatSession {
       this.plate.hide();
     state.enemies.forEach((enemy, i) => {
       const body = this.bodies[i];
-      if (body) body.visible = enemy.hp > 0;
+      // An actor stays visible to play its death and lie on the floor; a placeholder just vanishes.
+      if (body && !this.actors.has(enemy.id)) body.visible = enemy.hp > 0;
     });
     this.paint();
   }
@@ -800,20 +842,8 @@ export class CombatSession {
           64,
           'center',
         );
-        // Intent icon with its amount (damage, hits, block, status), then the enemy's statuses.
-        const amount = intentText(enemy, intentDamage(state, enemy.id))
-          .split(' ')
-          .slice(1)
-          .join(' ');
-        const intent = enemy.intent
-          ? [
-              {
-                icon: INTENT_ICON[enemy.intent.intent],
-                text: amount,
-                fallback: enemy.intent.intent,
-              },
-            ]
-          : [];
+        // One icon chip per intent part (attack 4, block 7), then the enemy's statuses.
+        const intent = intentChips(enemy, intentDamage(state, enemy.id));
         ctx.fillStyle = PALETTE.candle;
         ctx.font = 'bold 50px system-ui, sans-serif';
         drawIconRow(
@@ -858,9 +888,28 @@ export class CombatSession {
 
   private targetSites(): FlingTargetSite[] {
     return this.enemies.map(({ id, body }) => {
-      const p = body.getWorldPosition(new THREE.Vector3());
+      const p = this.aimOf(id, body);
       return { id, position: [p.x, p.y, p.z], radius: ENEMY_RADIUS };
     });
+  }
+
+  /** Where cards aim at an enemy: an actor's hit socket (its origin is at its feet), else the body. */
+  private aimOf(id: string, body: THREE.Object3D): THREE.Vector3 {
+    const socket = this.actors.get(id)?.socket('socket-hit');
+    return (socket ?? body).getWorldPosition(new THREE.Vector3());
+  }
+
+  private aimOfId(id: string): THREE.Vector3 | null {
+    const body = this.enemies.find((e) => e.id === id)?.body;
+    return body ? this.aimOf(id, body) : null;
+  }
+
+  /** Plays the attack cues held for `actor`'s impact beat. */
+  private flushImpact(actor: SentryActor): void {
+    const events = this.atImpact.get(actor);
+    if (!events) return;
+    this.atImpact.delete(actor);
+    for (const event of events) this.deps.audio?.playCombatEvent(event);
   }
 
   private pointRay(): AimRay | null {
@@ -909,6 +958,8 @@ export interface CombatHookFloor {
     group: THREE.Object3D;
   };
   tableSockets(): CombatSessionDeps['sockets'];
+  /** The animated actor standing in for a body, when the floor has one. */
+  actorOf?(body: THREE.Object3D): SentryActor | null;
 }
 
 export interface CombatHookDeps {
@@ -939,6 +990,8 @@ export class CombatHook {
   private pending: { room: number; promise: Promise<CombatSession> } | null = null;
   private readonly deps: CombatHookDeps;
   private disposed = false;
+  /** True once the open fight's `onEnd` fired; cleared when the next fight opens. */
+  private handedOver = false;
 
   constructor(deps: CombatHookDeps) {
     this.deps = deps;
@@ -957,7 +1010,10 @@ export class CombatHook {
     if (this.session && (!active || encounter.activeRoom !== this.session.room)) this.close();
     if (active && !this.session && !this.pending) this.open();
     this.session?.update(dt, xr);
-    if (this.session?.banner) {
+    if (this.handedOver) {
+      this.banner = '';
+      this.bannerTimer = 0;
+    } else if (this.session?.banner) {
       this.banner = this.session.banner;
       this.bannerTimer = 3;
     } else if (!this.session && this.bannerTimer > 0) {
@@ -979,6 +1035,7 @@ export class CombatHook {
     if (!pose || !tier) return;
     const bodies = (floor.world.enemies.get(room) ?? []).filter((b) => b.parent !== null);
     const options = this.deps.fightOptions?.() ?? this.deps.options;
+    this.handedOver = false;
     const promise = CombatSession.create({
       seed: floor.seed,
       room,
@@ -989,8 +1046,11 @@ export class CombatHook {
       camera: this.deps.camera,
       sockets: floor.tableSockets(),
       actions: this.deps.actions,
+      actorOf: (body) => floor.actorOf?.(body) ?? null,
       end: (outcome) => {
         const playerHp = this.session?.controller.state.player.hp ?? null;
+        // The flow's board takes over from here, so the banner must not cover it.
+        this.handedOver = true;
         floor.encounter.end(outcome);
         this.deps.onEnd?.({ room, outcome, playerHp });
       },
