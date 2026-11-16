@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import type { Stream } from '../core/rng.ts';
 import { PALETTE } from '../palette.ts';
 import { onFirstRender, sharedKtx2Loader } from '../ui/first-render.ts';
@@ -9,6 +10,7 @@ import {
   UI_ATLAS_BASE,
   type UiAtlasManifest,
 } from '../ui/icon-atlas.ts';
+import type { DiceAsset } from './dice-asset.ts';
 import { D6_HALF_EXTENT, D8_CIRCUMRADIUS, type DieKind, faceNormals } from './faces.ts';
 import { DiceWorld, type DiceWorldOptions } from './world.ts';
 
@@ -31,6 +33,31 @@ export interface DicePresenterOptions {
   halfZ: number;
   /** Values printed on face `i` per kind, for the result label and the d6 face numbers. */
   faces?: Partial<Record<DieKind, readonly number[]>>;
+  /**
+   * The authored dice models. Null or absent keeps the greybox dice. The presenter never disposes
+   * them: the owner loads them once, shares them across fights and calls `models.dispose()`.
+   */
+  models?: DiceAsset | null;
+}
+
+/**
+ * Reflection strength of the room probe on the authored dice. At 0 the metal body reads black in the
+ * tray (no `scene.environment`); 0.35 puts the brass between the table's ring and gear brass.
+ */
+export const DICE_ENV_INTENSITY = 0.35;
+
+const probes = new WeakMap<THREE.WebGLRenderer, THREE.Texture>();
+
+/** A dim neutral room probe per renderer, the same one the table and sentry reflect. */
+function roomProbe(renderer: THREE.WebGLRenderer): THREE.Texture {
+  let probe = probes.get(renderer);
+  if (!probe) {
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    probe = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    pmrem.dispose();
+    probes.set(renderer, probe);
+  }
+  return probe;
 }
 
 /** BoxGeometry material groups are +X, -X, +Y, -Y, +Z, -Z; this is the D6 face index on each. */
@@ -325,13 +352,15 @@ export class DicePresenter {
     const angvel = { x: span(18), y: span(18), z: span(18) };
     this.world.throwDie(id, kind, position, linvel, angvel, face);
     const mesh =
-      kind === 'd6'
+      this.options.models?.spawn(kind) ??
+      (kind === 'd6'
         ? new THREE.Mesh(this.d6Geometry, this.d6Material)
-        : new THREE.Mesh(this.d8Geometry, this.d8Material);
+        : new THREE.Mesh(this.d8Geometry, this.d8Material));
     mesh.name = id;
     if (!this.facesRequested) {
       this.facesRequested = true;
       onFirstRender(mesh, (renderer) => {
+        this.options.models?.setEnvironment(roomProbe(renderer), DICE_ENV_INTENSITY);
         loadDiePages(renderer).then(
           (pages) => {
             if (!this.disposed) this.applyFaces(pages);
@@ -340,7 +369,7 @@ export class DicePresenter {
         );
       });
     }
-    mesh.castShadow = true;
+    if (!this.options.models) mesh.castShadow = true;
     this.root.add(mesh);
     this.dice.set(id, { mesh, kind, face, value, label: null });
     this.copyPose(id);
@@ -386,6 +415,7 @@ export class DicePresenter {
 
   /** Maps the atlas dice faces onto both geometries and swaps the pages in. */
   applyFaces(pages: { manifest: UiAtlasManifest; d6: THREE.Texture; d8: THREE.Texture }): void {
+    this.options.models?.bindFaceMaps({ d6: pages.d6, d8: pages.d8 });
     const d6Uv = this.d6Geometry.getAttribute('uv') as THREE.BufferAttribute;
     d6Uv.set(d6FaceUvs(pages.manifest.dice['brass-d6'], d6Uv.array));
     d6Uv.needsUpdate = true;

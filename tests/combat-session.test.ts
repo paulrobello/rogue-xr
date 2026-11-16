@@ -53,6 +53,7 @@ async function openFight(
     camera,
     actions,
     syncLabels: false,
+    models: null,
     ...(options ? { options } : {}),
   });
   const step = (seconds = DT) => {

@@ -150,8 +150,27 @@ export class DiceAsset {
     const die = this.die(kind);
     const mesh = new THREE.Mesh(die.geometry, die.materials);
     mesh.name = die.manifest.id;
-    mesh.castShadow = true;
+    // A transparent shell would cast an opaque shadow, so a glass die casts none.
+    mesh.castShadow = !die.materials.some((m) => m.transparent);
     return mesh;
+  }
+
+  /**
+   * Lights the dice from `envMap` at `intensity` on every standard material. The metal body reads
+   * black without a reflection source, and the combat scene has no `scene.environment`. The map
+   * stays owned by the caller.
+   */
+  setEnvironment(envMap: THREE.Texture | null, intensity: number): void {
+    if (this.disposed) return;
+    for (const die of this.dice.values()) {
+      for (const m of die.materials) {
+        const lit = m as THREE.MeshStandardMaterial;
+        if (!lit.isMeshStandardMaterial) continue;
+        lit.envMap = envMap;
+        lit.envMapIntensity = intensity;
+        lit.needsUpdate = true;
+      }
+    }
   }
 
   /** Binds the UI atlas pages (`dice-d6`, `dice-d8`) to the face slots. Pass null to unbind. */

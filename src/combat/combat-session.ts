@@ -8,6 +8,7 @@ import { dieById } from '../content/dice.ts';
 import { type EncounterTier, encounterSetups } from '../content/enemies.ts';
 import type { ActionBus, GameAction } from '../core/actions.ts';
 import { Stream } from '../core/rng.ts';
+import { type DiceAsset, loadDice } from '../dice/dice-asset.ts';
 import type { DieKind } from '../dice/faces.ts';
 import { DicePresenter, type PresentedRoll } from '../dice/presenter.ts';
 import type { DiceWorldOptions } from '../dice/world.ts';
@@ -104,6 +105,8 @@ export interface CombatSessionDeps {
   /** Typeset card labels with troika (off in tests). */
   syncLabels?: boolean;
   dice?: Partial<DiceWorldOptions>;
+  /** The authored dice, owned by the caller; null keeps the greybox dice. */
+  models?: DiceAsset | null;
 }
 
 export type SessionStage = Stage | 'dice';
@@ -355,7 +358,7 @@ export class CombatSession {
     const stream = Stream.fromKey(`${deps.seed}:room-${deps.room}:dice-throw`);
     const presenter = await DicePresenter.create(
       stream,
-      { halfX: TRAY_HALF_X, halfZ: TRAY_HALF_Z },
+      { halfX: TRAY_HALF_X, halfZ: TRAY_HALF_Z, ...(deps.models ? { models: deps.models } : {}) },
       deps.dice,
     );
     return new CombatSession(deps, presenter);
@@ -949,6 +952,28 @@ function toV(v: readonly number[]): { x: number; y: number; z: number } {
   return { x: v[0] as number, y: v[1] as number, z: v[2] as number };
 }
 
+let sharedModels: Promise<DiceAsset | null> | null = null;
+
+/**
+ * The authored dice, fetched once and shared by every fight and floor for the page's lifetime
+ * (never disposed). A failed load resolves null so the fight keeps its greybox dice, and the next
+ * fight tries again.
+ */
+function sharedDiceModels(): Promise<DiceAsset | null> {
+  if (!sharedModels) {
+    const load = loadDice().then(
+      (asset) => asset,
+      (error: unknown) => {
+        console.warn('dice models unavailable, greybox dice kept', error);
+        if (sharedModels === load) sharedModels = null;
+        return null;
+      },
+    );
+    sharedModels = load;
+  }
+  return sharedModels;
+}
+
 export interface CombatHookFloor {
   seed: string;
   encounter: Pick<EncounterDirector, 'phase' | 'activeRoom' | 'tablePose' | 'end'>;
@@ -972,6 +997,8 @@ export interface CombatHookDeps {
   fightOptions?: () => CombatSessionDeps['options'];
   syncLabels?: boolean;
   dice?: Partial<DiceWorldOptions>;
+  /** The dice models every fight uses, or null for greybox; loaded once and shared when absent. */
+  models?: DiceAsset | null;
   /** Called with each new session, e.g. for a debug handle. */
   onSession?: (session: CombatSession | null) => void;
   /** Called once a fight is decided and its banner has held, with the player's remaining hp. */
@@ -1036,29 +1063,34 @@ export class CombatHook {
     const bodies = (floor.world.enemies.get(room) ?? []).filter((b) => b.parent !== null);
     const options = this.deps.fightOptions?.() ?? this.deps.options;
     this.handedOver = false;
-    const promise = CombatSession.create({
-      seed: floor.seed,
-      room,
-      tier,
-      tablePose: pose,
-      bodies,
-      root: floor.world.group,
-      camera: this.deps.camera,
-      sockets: floor.tableSockets(),
-      actions: this.deps.actions,
-      actorOf: (body) => floor.actorOf?.(body) ?? null,
-      end: (outcome) => {
-        const playerHp = this.session?.controller.state.player.hp ?? null;
-        // The flow's board takes over from here, so the banner must not cover it.
-        this.handedOver = true;
-        floor.encounter.end(outcome);
-        this.deps.onEnd?.({ room, outcome, playerHp });
-      },
-      ...(this.deps.audio ? { audio: this.deps.audio } : {}),
-      ...(options ? { options } : {}),
-      ...(this.deps.syncLabels === undefined ? {} : { syncLabels: this.deps.syncLabels }),
-      ...(this.deps.dice ? { dice: this.deps.dice } : {}),
-    });
+    const models =
+      this.deps.models === undefined ? sharedDiceModels() : Promise.resolve(this.deps.models);
+    const promise = models.then((diceModels) =>
+      CombatSession.create({
+        seed: floor.seed,
+        room,
+        tier,
+        tablePose: pose,
+        bodies,
+        root: floor.world.group,
+        camera: this.deps.camera,
+        sockets: floor.tableSockets(),
+        actions: this.deps.actions,
+        actorOf: (body) => floor.actorOf?.(body) ?? null,
+        end: (outcome) => {
+          const playerHp = this.session?.controller.state.player.hp ?? null;
+          // The flow's board takes over from here, so the banner must not cover it.
+          this.handedOver = true;
+          floor.encounter.end(outcome);
+          this.deps.onEnd?.({ room, outcome, playerHp });
+        },
+        ...(this.deps.audio ? { audio: this.deps.audio } : {}),
+        ...(options ? { options } : {}),
+        ...(this.deps.syncLabels === undefined ? {} : { syncLabels: this.deps.syncLabels }),
+        ...(this.deps.dice ? { dice: this.deps.dice } : {}),
+        ...(diceModels ? { models: diceModels } : {}),
+      }),
+    );
     this.pending = { room, promise };
     void promise.then(
       (session) => {

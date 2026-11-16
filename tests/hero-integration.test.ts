@@ -211,6 +211,7 @@ function openHook(
     camera,
     actions: new ActionBus(),
     syncLabels: false,
+    models: null,
     onEnd: ({ outcome }) => ends.push({ outcome, at: clock }),
     ...extra,
   });
