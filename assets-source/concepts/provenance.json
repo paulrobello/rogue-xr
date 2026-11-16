@@ -1,0 +1,126 @@
+[
+  {
+    "key": "hound-sheet-1",
+    "file": "assets-source/concepts/hound-sheet-1.png",
+    "model": "nano_banana_pro",
+    "aspect": "16:9",
+    "resolution": "2k",
+    "prompt": "Creature concept sheet of the 'Spring Hound', a FOUR-LEGGED clockwork hound automaton, not a humanoid: a low, lean greyhound-like body about 0.9 metres tall at the shoulder and 1.6 metres long, standing on four slender jointed legs. Its exposed spine is one thick coiled brass spring running between a rounded chest plate and a hip plate. Narrow tapered head with two glowing amber eye slits and a hinged brass lower jaw. One glowing amber core in the chest behind a round grille. A short segmented tail ending in a small brass winding key. Same family as the reference automatons: separate smooth polished brass plates over dark gunmetal ball joints, small ruby inlays at the shoulders and hips. Use the second reference only for plate-and-joint construction and the third reference only for the sheet layout, materials and rendering; the subject is a four-legged hound. Panels: side, front and back views of the hound standing at identical scale, orthographic, across the top; three small action poses below: a snapping bite with the jaw wide open and head low, a crouched pouncing leap with the spine spring compressed, and a coiled defensive curl with the tail key glowing amber. Follow the first reference image exactly for art direction 'Gilded Lamplight': painterly semi-realism with visible oil-painting brushwork, warm amber candlelight, polished brass, dark oiled walnut, jewel-tone stained glass in ruby, sapphire and emerald as the only cool accents, deep warm shadows. Large readable forms and clean silhouettes, detail in surface texture and light rather than dense geometry, buildable as a low-poly game asset. Presented as a clean concept sheet on a dark neutral background in tidy panels. Original design. No text, no letters, no labels, no logos, no watermark.",
+    "refs": [
+      "locked/L-board-1.png",
+      "locked/L-automaton.png",
+      "../concepts/sentry-sheet-1.png"
+    ],
+    "jobId": "e8ed205a-d0c1-4729-87af-f695e9750931",
+    "sha256": "7f16cf73b18efffb7a612cc1f6a01fdadc4e20f06a0fcadb84fb94e07b50c7e6",
+    "generatedAt": "2026-11-16T05:02:36.575Z",
+    "refSha256": {
+      "locked/L-board-1.png": "d3fffc8eb300cc6f40236c28930401ef1bd06be0e27be76999839e3bfeacc018",
+      "locked/L-automaton.png": "48553d5f490b528b84774ad63a705bf0609ef47360b6a35ef4025b6431adb505",
+      "../concepts/sentry-sheet-1.png": "c5373556e0cc0765f71a74d08d4f3e50c473917ad23bdf5e605218d737404e34"
+    },
+    "credits": 2,
+    "status": "candidate",
+    "rejectReason": null,
+    "approval": {
+      "concept": "pending",
+      "creative": "pending",
+      "rights": "pending",
+      "owner": "pending"
+    },
+    "inspection": "Inspected at native 2752x1536 (views and every pose panel cropped at full resolution): correct four-legged subject, coiled spring spine, amber slit eyes, chest core grille, ruby inlays, tail winding key; three intent poses (snap, pounce, coil) read clearly. No text. No defects found."
+  },
+  {
+    "key": "golem-sheet-1",
+    "file": "assets-source/concepts/golem-sheet-1.png",
+    "model": "nano_banana_pro",
+    "aspect": "16:9",
+    "resolution": "2k",
+    "prompt": "Character concept sheet of the 'Bellows Golem', a heavy squat clockwork automaton, deliberately broad and not slender: about 2.1 metres tall and almost as wide, a barrel torso built around a large dark walnut and leather accordion bellows framed by brass ribs, one glowing amber furnace core behind a round brass grille above the bellows, two short brass exhaust chimneys on the shoulders with glowing amber vent mouths, very long heavy arms ending in big round brass fists that hang near the knees, short thick legs, and a small narrow head sunk low between the shoulders with two glowing amber eye slits. Same family as the reference automatons: separate polished brass plates over dark gunmetal joints, small emerald inlays at the shoulders and knees. Use the second reference only for plate-and-joint construction and the third reference only for the sheet layout, materials and rendering. Panels: front, side and back views in a neutral stance at identical scale, orthographic, across the top; three small action poses below: both fists raised overhead for a crushing slam, the bellows squeezed shut with both shoulder vents glowing bright amber and no smoke, and a braced guard with forearms crossed in front of the bellows. Follow the first reference image exactly for art direction 'Gilded Lamplight': painterly semi-realism with visible oil-painting brushwork, warm amber candlelight, polished brass, dark oiled walnut, jewel-tone stained glass in ruby, sapphire and emerald as the only cool accents, deep warm shadows. Large readable forms and clean silhouettes, detail in surface texture and light rather than dense geometry, buildable as a low-poly game asset. Presented as a clean concept sheet on a dark neutral background in tidy panels. Original design. No text, no letters, no labels, no logos, no watermark.",
+    "refs": [
+      "locked/L-board-1.png",
+      "locked/L-automaton.png",
+      "../concepts/sentry-sheet-1.png"
+    ],
+    "jobId": "7a63b261-4eff-403d-ac99-9ce4e7a74edc",
+    "sha256": "8c5bafcf4a25372cab90935515ca4372933bb5c83d61213a528958a1ec29352b",
+    "generatedAt": "2026-11-16T05:02:40.340Z",
+    "refSha256": {
+      "locked/L-board-1.png": "d3fffc8eb300cc6f40236c28930401ef1bd06be0e27be76999839e3bfeacc018",
+      "locked/L-automaton.png": "48553d5f490b528b84774ad63a705bf0609ef47360b6a35ef4025b6431adb505",
+      "../concepts/sentry-sheet-1.png": "c5373556e0cc0765f71a74d08d4f3e50c473917ad23bdf5e605218d737404e34"
+    },
+    "credits": 2,
+    "status": "candidate",
+    "rejectReason": null,
+    "approval": {
+      "concept": "pending",
+      "creative": "pending",
+      "rights": "pending",
+      "owner": "pending"
+    },
+    "inspection": "Inspected at native 2752x1536 (views and every pose panel cropped at full resolution): correct squat broad subject with walnut bellows barrel, chest grille core, shoulder chimneys, emerald inlays, three intent poses (slam, vent, guard). Deviations: eyes are two round amber lights rather than slits; faint glow wisps above the chimney mouths in the views and a flame plume above one chimney in the vent pose (model as emissive mouth only). No text."
+  },
+  {
+    "key": "warden-sheet-1",
+    "file": "assets-source/concepts/warden-sheet-1.png",
+    "model": "nano_banana_pro",
+    "aspect": "16:9",
+    "resolution": "2k",
+    "prompt": "Character concept sheet of the 'Orrery Warden', an elite clockwork automaton: a very tall slender humanoid about 2.4 metres tall with the long limbs, narrow head and twin glowing amber eye slits of the reference automaton, set apart by a large brass orrery mounted on its back: two concentric tilted brass armillary rings framing the head like a halo, and three small glass planet spheres in ruby, sapphire and emerald on thin brass arms orbiting around the rings. Its chest core is a round glowing amber sun disc. A long split skirt of overlapping brass plates hangs from the waist to the knees over gunmetal legs. Separate polished brass plates over dark gunmetal joints. Use the second and third references for proportions, construction, sheet layout and rendering. Panels: front, side and back views in a relaxed A-pose at identical scale, orthographic, across the top; three small action poses below: arms sweeping as the three planets swing outward on their arms to strike, a dark brass eclipse disc sliding across the glowing chest sun, and both arms raised with the sun core lifted overhead. Follow the first reference image exactly for art direction 'Gilded Lamplight': painterly semi-realism with visible oil-painting brushwork, warm amber candlelight, polished brass, dark oiled walnut, jewel-tone stained glass in ruby, sapphire and emerald as the only cool accents, deep warm shadows. Large readable forms and clean silhouettes, detail in surface texture and light rather than dense geometry, buildable as a low-poly game asset. Presented as a clean concept sheet on a dark neutral background in tidy panels. Original design. No text, no letters, no labels, no logos, no watermark.",
+    "refs": [
+      "locked/L-board-1.png",
+      "locked/L-automaton.png",
+      "../concepts/sentry-sheet-1.png"
+    ],
+    "jobId": "61b312b4-5137-420a-a136-a830569e315b",
+    "sha256": "c07d34ae5d7412f26c561508bc5a80f14de584ffebbcff31272cc356b07ec5c7",
+    "generatedAt": "2026-11-16T05:03:28.239Z",
+    "refSha256": {
+      "locked/L-board-1.png": "d3fffc8eb300cc6f40236c28930401ef1bd06be0e27be76999839e3bfeacc018",
+      "locked/L-automaton.png": "48553d5f490b528b84774ad63a705bf0609ef47360b6a35ef4025b6431adb505",
+      "../concepts/sentry-sheet-1.png": "c5373556e0cc0765f71a74d08d4f3e50c473917ad23bdf5e605218d737404e34"
+    },
+    "credits": 2,
+    "status": "candidate",
+    "rejectReason": null,
+    "approval": {
+      "concept": "pending",
+      "creative": "pending",
+      "rights": "pending",
+      "owner": "pending"
+    },
+    "inspection": "Inspected at native 2752x1536 (views and every pose panel cropped at full resolution): correct tall humanoid with armillary rings and ruby/sapphire/emerald planets, sun-disc chest core, plate skirt; three intent poses (planet sweep, eclipse disc over core, sun raised). Artifact outside the subject panels: a stray partial copy of the Cog Sentry with a spear (leaked from the third reference) fades out below the front view, outside the panels. Kept, not retried: the subject itself is correct and the retry rule covers wrong subject, text garbage and broken anatomy only."
+  },
+  {
+    "key": "escapement-sheet-1",
+    "file": "assets-source/concepts/escapement-sheet-1.png",
+    "model": "nano_banana_pro",
+    "aspect": "16:9",
+    "resolution": "2k",
+    "prompt": "Boss concept sheet of the 'Grand Escapement', the floor guardian: a towering clockwork automaton about 3.2 metres tall shaped like a walking longcase clock. A tall dark walnut and brass clock-case torso with glass-fronted chest doors, behind which a huge brass escapement wheel and a long pendulum are visible; one glowing amber core at the hub of the escapement wheel; a narrow head with two glowing amber eye slits under a small brass bell crown; broad brass pauldrons; long arms ending in anchor-shaped brass pallet claws; thick plated legs; a large brass winding key on its back. Same family as the reference automatons: separate polished brass plates over dark gunmetal joints, small sapphire inlays at the shoulders and knees. Use the second and third references only for construction, sheet layout and rendering. Two phases. Top row, phase one, wound and closed: front, side and back views at identical scale, orthographic, chest doors shut, pendulum hanging calm, soft amber glow. Bottom row, three panels: (1) phase two, overwound, front view of the same body with the chest doors and side case plates sprung open on hinges, the escapement wheel exposed and blazing bright amber, the winding key spinning; (2) the phase change mid-transition, case plates bursting open while the body rears back; (3) a close-up call-out of the escapement wheel, pallet anchor and pendulum inside the chest. Follow the first reference image exactly for art direction 'Gilded Lamplight': painterly semi-realism with visible oil-painting brushwork, warm amber candlelight, polished brass, dark oiled walnut, jewel-tone stained glass in ruby, sapphire and emerald as the only cool accents, deep warm shadows. Large readable forms and clean silhouettes, detail in surface texture and light rather than dense geometry, buildable as a low-poly game asset. Presented as a clean concept sheet on a dark neutral background in tidy panels. Original design. No text, no letters, no labels, no logos, no watermark.",
+    "refs": [
+      "locked/L-board-1.png",
+      "locked/L-automaton.png",
+      "../concepts/sentry-sheet-1.png"
+    ],
+    "jobId": "a0abfe99-eae6-49de-b922-0bb46389685c",
+    "sha256": "42f8031f0391d392cbafd30756f7c69fde1a3c0c216f37aef3fc7060c8a61b9f",
+    "generatedAt": "2026-11-16T05:02:25.534Z",
+    "refSha256": {
+      "locked/L-board-1.png": "d3fffc8eb300cc6f40236c28930401ef1bd06be0e27be76999839e3bfeacc018",
+      "locked/L-automaton.png": "48553d5f490b528b84774ad63a705bf0609ef47360b6a35ef4025b6431adb505",
+      "../concepts/sentry-sheet-1.png": "c5373556e0cc0765f71a74d08d4f3e50c473917ad23bdf5e605218d737404e34"
+    },
+    "credits": 2,
+    "status": "candidate",
+    "rejectReason": null,
+    "approval": {
+      "concept": "pending",
+      "creative": "pending",
+      "rights": "pending",
+      "owner": "pending"
+    },
+    "inspection": "Inspected at native 2752x1536 (views and every pose panel cropped at full resolution): correct subject, walnut clock-case torso with glass doors, bell crown, anchor pallet claws, winding key, sapphire inlays. Phase one front/side/back, phase two open case with blazing escapement and pendulum, mid-transition, and escapement close-up. Panel numerals 1-3 are rendered cleanly. Minor: the case reads as a squat cabinet rather than a tall longcase; the side view holds the anchor claw like a spear; the phase-two panel crops at the knees."
+  }
+]
