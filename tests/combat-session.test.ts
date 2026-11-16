@@ -17,11 +17,64 @@ import { dieById } from '../src/content/dice.ts';
 import { encounterSetups } from '../src/content/enemies.ts';
 import { ActionBus } from '../src/core/actions.ts';
 import { Stream } from '../src/core/rng.ts';
+import { fitCombatFraming } from '../src/desktop/combat-framing.ts';
 import { DicePresenter } from '../src/dice/presenter.ts';
 import { SIGIL_TEMPLATES } from '../src/sigil/index.ts';
 import { type FloorView, mountFloorView } from '../src/world/floor-view.ts';
 
 const DT = 1 / 60;
+/** The real table's authored top and its tray and plate sockets (`combat-table.manifest.json`). */
+const TABLE_ASSET_TOP = 0.756;
+function tableAssetStandIn(): THREE.Object3D {
+  const asset = new THREE.Group();
+  for (const [name, y, z] of [
+    ['socket-dice-tray', 0.756, 0.18],
+    ['socket-sigil-plate', 1.05, -0.15],
+  ] as const) {
+    const socket = new THREE.Object3D();
+    socket.name = name;
+    socket.position.set(0, y, z);
+    asset.add(socket);
+  }
+  return asset;
+}
+
+interface Rect {
+  x0: number;
+  x1: number;
+  y0: number;
+  y1: number;
+}
+/** Screen rectangle (normalized device coordinates) of `points` seen through `camera`. */
+function rectOf(camera: THREE.PerspectiveCamera, points: THREE.Vector3[]): Rect {
+  camera.updateMatrixWorld(true);
+  const ndc = points.map((p) => p.clone().project(camera));
+  return {
+    x0: Math.min(...ndc.map((p) => p.x)),
+    x1: Math.max(...ndc.map((p) => p.x)),
+    y0: Math.min(...ndc.map((p) => p.y)),
+    y1: Math.max(...ndc.map((p) => p.y)),
+  };
+}
+const overlap = (a: Rect, b: Rect): boolean =>
+  a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0;
+
+/**
+ * A do-nothing 2D context, so the canvas labels (status panel, readouts) exist in happy-dom, which
+ * has no canvas. Restore with `vi.restoreAllMocks()`.
+ */
+function stubCanvas2d(): void {
+  const handler: ProxyHandler<object> = {
+    get: (_target, key) =>
+      key === 'measureText'
+        ? (text: string) => ({ width: String(text).length * 10 })
+        : () => new Proxy({}, handler),
+    set: () => true,
+  };
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(
+    () => new Proxy({}, handler) as unknown as CanvasRenderingContext2D,
+  );
+}
 
 interface Rig {
   view: FloorView;
@@ -38,12 +91,17 @@ async function openFight(
   seed = 'SPIRE002',
   options?: { enemyHp?: number; playerHp?: number; deck?: readonly string[] },
   extra: Pick<CombatHookDeps, 'onPlayerHit'> = {},
+  where: { tier?: 'regular' | 'guardian'; tableAsset?: THREE.Object3D } = {},
 ): Promise<Rig & { session: CombatSession }> {
   const scene = new THREE.Scene();
   const player = new THREE.Group();
   const view = mountFloorView(scene, player, seed);
+  if (where.tableAsset) view.useTableAsset(where.tableAsset, TABLE_ASSET_TOP);
   // A regular fight: the scripted policy is not meant to beat the elite or the guardian.
-  const room = view.world.plan.rooms.findIndex((r) => r.encounter?.tier === 'regular');
+  const room =
+    where.tier === 'guardian'
+      ? view.world.plan.guardianRoom
+      : view.world.plan.rooms.findIndex((r) => r.encounter?.tier === 'regular');
   const placed = view.world.plan.rooms[room];
   if (placed) view.world.update(placed.position[0], placed.position[1]);
   const bodies = view.world.enemies.get(room);
@@ -520,6 +578,159 @@ describe('desktop HUD fit', () => {
     expect(must.length).toBe(12);
     expect(want.length).toBe(rig.session.enemies.length);
     rig.hook.dispose();
+  }, 60_000);
+
+  /**
+   * The player's desktop view as main.ts frames it: the eye `distance` behind the table centre at
+   * the seated height, pitch and fov from `fitCombatFraming` on the session's framing points.
+   */
+  const framed = (rig: Rig & { session: CombatSession }, distance: number) => {
+    const pose = rig.view.encounter.tablePose;
+    if (!pose) throw new Error('no table pose');
+    const yaw = (pose.yaw * Math.PI) / 180;
+    const camera = rig.camera;
+    camera.position.set(
+      pose.x - Math.sin(yaw) * distance,
+      pose.height + 0.75,
+      pose.z + Math.cos(yaw) * distance,
+    );
+    const { must, want, floor } = rig.session.framingPoints();
+    const fit = fitCombatFraming({
+      eye: camera.position,
+      headingDeg: pose.yaw,
+      aspect: 1.6,
+      baseFov: 70,
+      must,
+      want,
+      floor,
+    });
+    camera.aspect = 1.6;
+    camera.fov = fit.fov;
+    camera.updateProjectionMatrix();
+    camera.rotation.set(fit.pitch, -yaw, 0, 'YXZ');
+    camera.updateMatrixWorld(true);
+    return camera;
+  };
+  // The bug bash placements: the 0.5 m fallback table, the default 0.65 m one, and the guardian
+  // (taller, its readout higher), on the real table's sockets and on the greybox.
+  const placements = [
+    { tier: 'regular', distance: 0.5, asset: true },
+    { tier: 'regular', distance: 0.65, asset: true },
+    { tier: 'guardian', distance: 0.5, asset: true },
+    { tier: 'guardian', distance: 0.65, asset: true },
+    { tier: 'regular', distance: 0.5, asset: false },
+  ] as const;
+  for (const { tier, distance, asset } of placements) {
+    const where = `${tier}, table ${distance} m, ${asset ? 'table asset' : 'greybox'}`;
+    it(`keeps the hand off the tray and the plate and its label off every readout (${where})`, async () => {
+      stubCanvas2d();
+      try {
+        const rig = await openFight(
+          'SPIRE002',
+          undefined,
+          {},
+          {
+            tier,
+            ...(asset ? { tableAsset: tableAssetStandIn() } : {}),
+          },
+        );
+        const camera = framed(rig, distance);
+        rig.session.fitHudToView(camera);
+        const { session } = rig;
+        expect(session.fan.count).toBeGreaterThan(0);
+        const points = new Map(session.hudPoints().map((e) => [e.name, e.points]));
+        const readouts = [...points.keys()].filter((n) => n.startsWith('readout:'));
+        expect(readouts.length).toBeGreaterThan(0);
+        // O7: a thrown die lands in the tray, which must not sit behind the hand strip.
+        const tray = rectOf(camera, points.get('tray') ?? []);
+        const hand = rectOf(camera, session.handCorners());
+        expect(
+          overlap(hand, tray),
+          `hand ${JSON.stringify(hand)} tray ${JSON.stringify(tray)}`,
+        ).toBe(false);
+        // O6: the plate and the result label it shows after a cast never cover a readout.
+        const plate = rectOf(camera, [
+          ...(points.get('plate') ?? []),
+          ...session.resultLabelCorners(),
+        ]);
+        for (const name of readouts) {
+          const readout = rectOf(camera, points.get(name) ?? []);
+          expect(
+            overlap(plate, readout),
+            `${name} ${JSON.stringify(readout)} plate ${JSON.stringify(plate)}`,
+          ).toBe(false);
+          expect(readout.x0, `${name} left`).toBeGreaterThanOrEqual(-1);
+          expect(readout.x1, `${name} right`).toBeLessThanOrEqual(1);
+          expect(readout.y0, `${name} bottom`).toBeGreaterThanOrEqual(-1);
+          expect(readout.y1, `${name} top`).toBeLessThanOrEqual(1);
+        }
+        // The tray and the plate stay in the view the framing chose.
+        for (const r of [tray, rectOf(camera, points.get('plate') ?? []), hand]) {
+          expect(r.x0).toBeGreaterThanOrEqual(-1);
+          expect(r.x1).toBeLessThanOrEqual(1);
+          expect(r.y1).toBeLessThanOrEqual(1);
+        }
+        expect(hand.y0).toBeGreaterThanOrEqual(-1);
+        rig.hook.dispose();
+      } finally {
+        vi.restoreAllMocks();
+      }
+    }, 60_000);
+  }
+});
+
+describe('XR status panel', () => {
+  it('sits inside both eyes of the seated forward view at the 0.5 m and 0.65 m tables', async () => {
+    stubCanvas2d();
+    try {
+      for (const asset of [true, false]) {
+        const rig = await openFight(
+          'SPIRE002',
+          undefined,
+          {},
+          asset ? { tableAsset: tableAssetStandIn() } : {},
+        );
+        rig.session.resetHud();
+        const pose = rig.view.encounter.tablePose;
+        if (!pose) throw new Error('no table pose');
+        const status = rig.session.hudPoints().find((e) => e.name === 'status')?.points;
+        expect(status?.length).toBe(8);
+        const plate = rig.session.hudPoints().find((e) => e.name === 'plate')?.points ?? [];
+        const yaw = (pose.yaw * Math.PI) / 180;
+        const [fx, fz] = [Math.sin(yaw), -Math.cos(yaw)];
+        const [rx, rz] = [Math.cos(yaw), Math.sin(yaw)];
+        for (const distance of [0.5, 0.65]) {
+          for (const eye of [-0.032, 0.032]) {
+            // The emulated Quest 3 eye (IWER: 90 degree vertical fov, half of a 1600 x 900 canvas),
+            // level, at the seated eye height (the table top sits 0.75 m below it).
+            const camera = new THREE.PerspectiveCamera(90, 800 / 900, 0.05, 100);
+            camera.position.set(
+              pose.x - fx * distance + rx * eye,
+              pose.height + 0.75,
+              pose.z - fz * distance + rz * eye,
+            );
+            camera.rotation.set(0, -yaw, 0, 'YXZ');
+            camera.updateMatrixWorld(true);
+            const where = `table ${distance} m, eye ${eye}, ${asset ? 'asset' : 'greybox'}`;
+            for (const p of status ?? []) {
+              const ndc = p.clone().project(camera);
+              expect(Math.abs(ndc.x), where).toBeLessThanOrEqual(0.95);
+              expect(Math.abs(ndc.y), where).toBeLessThanOrEqual(0.95);
+              expect(ndc.z, where).toBeLessThan(1);
+            }
+            // Clear of the real table's sigil plate in the same view (the greybox plate stands
+            // taller and nearer; it only shows when the table asset fails to load).
+            if (asset)
+              expect(overlap(rectOf(camera, status ?? []), rectOf(camera, plate)), where).toBe(
+                false,
+              );
+          }
+        }
+        rig.hook.dispose();
+      }
+    } finally {
+      vi.restoreAllMocks();
+    }
   }, 60_000);
 });
 

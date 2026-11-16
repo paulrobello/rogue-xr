@@ -38,6 +38,12 @@ export interface DicePresenterOptions {
    * them: the owner loads them once, shares them across fights and calls `models.dispose()`.
    */
   models?: DiceAsset | null;
+  /**
+   * The room's reflection probe (main.ts `heroEnv`, the one the table and automatons reflect). The
+   * dice materials take it at `DICE_ENV_INTENSITY`; `scene.environment` stays unset so the baked
+   * rooms are not relit. Absent, the dice fall back to a probe of their own on first render.
+   */
+  envMap?: THREE.Texture | null;
 }
 
 /**
@@ -277,6 +283,14 @@ export class DicePresenter {
       flatShading: true,
     });
     this.materials.push(this.d6Material, this.d8Material);
+    const env = options.envMap;
+    if (env) {
+      for (const material of [this.d6Material, this.d8Material]) {
+        material.envMap = env;
+        material.envMapIntensity = DICE_ENV_INTENSITY;
+      }
+      options.models?.setEnvironment(env, DICE_ENV_INTENSITY);
+    }
     this.offSettled = world.onSettled((event) => {
       const entry = this.dice.get(event.id);
       if (!entry) return;
@@ -360,7 +374,8 @@ export class DicePresenter {
     if (!this.facesRequested) {
       this.facesRequested = true;
       onFirstRender(mesh, (renderer) => {
-        this.options.models?.setEnvironment(roomProbe(renderer), DICE_ENV_INTENSITY);
+        if (!this.options.envMap)
+          this.options.models?.setEnvironment(roomProbe(renderer), DICE_ENV_INTENSITY);
         loadDiePages(renderer).then(
           (pages) => {
             if (!this.disposed) this.applyFaces(pages);

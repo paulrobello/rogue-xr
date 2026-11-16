@@ -103,10 +103,17 @@
 
   const ctor = (object, key) => object[key].constructor;
 
-  /** Seated head pose in tracking space, looking down -Z with an optional pitch (radians). */
-  probe.setHead = (y, pitch = 0) => {
+  /**
+   * Seated head pose in tracking space, looking down -Z with an optional pitch and yaw (radians,
+   * yaw counter-clockwise about +Y, applied before the pitch).
+   */
+  probe.setHead = (y, pitch = 0, yaw = 0) => {
     device.position.set(0, y, 0);
-    device.quaternion.set(Math.sin(pitch / 2), 0, 0, Math.cos(pitch / 2));
+    const sp = Math.sin(pitch / 2);
+    const cp = Math.cos(pitch / 2);
+    const sy = Math.sin(yaw / 2);
+    const cy = Math.cos(yaw / 2);
+    device.quaternion.set(cy * sp, sy * cp, -sy * sp, cy * cp);
   };
 
   /**

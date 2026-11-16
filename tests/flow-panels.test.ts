@@ -61,3 +61,75 @@ describe('FlowUi reward board', () => {
     ui.dispose();
   });
 });
+
+describe('FlowUi XR recenter (XO5)', () => {
+  const makeUi = (flow: RunFlow) =>
+    new FlowUi({
+      flow,
+      keyArt: { url: '', titleSafe: { x: 0, y: 0, w: 0.3, h: 0.4 } },
+      seed: 'BRASS042',
+      snapshot: () => null,
+      settings: () => ({ ...DEFAULT_SETTINGS }),
+      onNewRun: (seed) => flow.newRun(seed),
+      onContinue: () => {},
+      onSettings: () => {},
+    });
+  const makeFlow = () =>
+    new RunFlow({ workshop: createWorkshop(), starterDeck: STARTER_DECK, rewardPool: REWARD_POOL });
+  /** Horizontal bearing of the title board from the head, radians (0 is straight ahead). */
+  const bearing = (ui: FlowUi, head: THREE.Object3D): number => {
+    head.updateMatrixWorld(true);
+    ui.root.updateMatrixWorld(true);
+    const board = ui.root.getObjectByName('title-board');
+    if (!board) throw new Error('no title board');
+    const to = board
+      .getWorldPosition(new THREE.Vector3())
+      .sub(head.getWorldPosition(new THREE.Vector3()));
+    const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(
+      head.getWorldQuaternion(new THREE.Quaternion()),
+    );
+    return Math.atan2(forward.x * to.z - forward.z * to.x, forward.x * to.x + forward.z * to.z);
+  };
+
+  it('re-places the title in front of a head that turned away before the session started', () => {
+    const flow = makeFlow();
+    const ui = makeUi(flow);
+    // The desktop places the title from the desktop camera, facing -Z.
+    const rig = new THREE.Group();
+    const head = new THREE.Object3D();
+    rig.add(head);
+    head.position.set(0, 1.6, 0);
+    ui.sync(head);
+    expect(flow.phase).toBe('title');
+    expect(Math.abs(bearing(ui, head))).toBeLessThan(0.6);
+
+    // Enter VR facing the other way, with the seated lift on the rig: the board is behind.
+    head.position.set(0.1, 1.2, 0.05);
+    head.rotation.set(-0.1, Math.PI, 0, 'YXZ');
+    rig.position.y = 0.4;
+    rig.updateMatrixWorld(true);
+    ui.sync(head);
+    expect(Math.abs(bearing(ui, head))).toBeGreaterThan(2.5);
+
+    ui.recenter(head);
+    expect(Math.abs(bearing(ui, head))).toBeLessThan(0.6);
+    // The same layout as any placement: the root sits on the eye, level.
+    const eye = head.getWorldPosition(new THREE.Vector3());
+    expect(ui.root.position.distanceTo(eye)).toBeLessThan(1e-9);
+    expect(ui.root.rotation.x).toBe(0);
+    ui.dispose();
+  });
+
+  it('leaves a hidden flow (exploring) alone', () => {
+    const flow = makeFlow();
+    const ui = makeUi(flow);
+    const head = new THREE.Object3D();
+    flow.newRun('BRASS042');
+    ui.sync(head);
+    expect(ui.visible).toBe(false);
+    head.rotation.y = Math.PI;
+    ui.recenter(head);
+    expect(ui.root.rotation.y).toBe(0);
+    ui.dispose();
+  });
+});

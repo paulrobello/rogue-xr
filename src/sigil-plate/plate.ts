@@ -525,3 +525,20 @@ export function platePoseFromNode(
     { x: e[4] as number, y: e[5] as number, z: e[6] as number },
   );
 }
+
+/**
+ * Corners of the result label ("×1.25 Masterful") the plate shows above itself after a cast, at
+ * full size, in the pose's space. The desktop HUD keeps the enemy readouts clear of it.
+ */
+export function plateLabelCorners(pose: PlatePose): Vec3[] {
+  const rise = pose.halfHeight + LABEL_HEIGHT * 0.6;
+  const out: Vec3[] = [];
+  for (const x of [-LABEL_WIDTH / 2, LABEL_WIDTH / 2])
+    for (const y of [rise - LABEL_HEIGHT / 2, rise + LABEL_HEIGHT / 2])
+      out.push({
+        x: pose.center.x + pose.right.x * x + pose.up.x * y,
+        y: pose.center.y + pose.right.y * x + pose.up.y * y,
+        z: pose.center.z + pose.right.z * x + pose.up.z * y,
+      });
+  return out;
+}

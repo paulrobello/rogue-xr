@@ -309,6 +309,14 @@ export class FlowUi {
     if (this.root.visible) this.place(head);
   }
 
+  /**
+   * Re-places the visible boards in front of `head` without rebuilding them. `sync` only places on
+   * a phase change, so an XR session that starts on a board calls this once the head pose is known.
+   */
+  recenter(head: THREE.Object3D): void {
+    if (this.root.visible) this.place(head);
+  }
+
   /** Rebuilds the current phase's boards in place (after a purchase or a settings change). */
   refresh(): void {
     const { position, quaternion } = this.root;

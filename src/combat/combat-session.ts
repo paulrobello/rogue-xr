@@ -29,12 +29,13 @@ import type { DiceWorldOptions } from '../dice/world.ts';
 import type { SentryActor } from '../enemies/sentry-asset.ts';
 import type { AimRay } from '../hand/aim.ts';
 import { CardFan } from '../hand/card-fan.ts';
-import { GRIP_FAN_ORIGIN } from '../hand/fan-layout.ts';
+import { DEFAULT_FAN, GRIP_FAN_ORIGIN } from '../hand/fan-layout.ts';
 import { FlingController, type FlingTargetSite, rayFromObject } from '../hand/fling.ts';
 import { PALETTE } from '../palette.ts';
 import { type CombatEvent, type CombatState, intentDamage, PLAYER_ID } from '../rules/index.ts';
 import {
   type PlatePose,
+  plateLabelCorners,
   platePoseAboveTable,
   platePoseFromNode,
   rayToPlate,
@@ -75,7 +76,24 @@ const HUD_VIEW_MARGIN = 0.92;
 /** Clear space left between HUD panels in the desktop view, in normalized device units. */
 const HUD_GAP = 0.04;
 /** The status panel is drawn at this scale in the desktop view, so it clears the sigil plate at close tables. */
-const DESKTOP_STATUS_SCALE = 0.6;
+const DESKTOP_STATUS_SCALE = 0.8;
+/**
+ * XR layout of the player's status panel, table metres (right, toward the enemies, above the top):
+ * up and left of the sigil plate, turned to face a seat `STATUS_FACE_SEAT` behind the table centre,
+ * so a seated player sees all of it from the forward pose at the 0.5 to 0.65 m placements.
+ */
+const STATUS_WIDTH = 0.38;
+const STATUS_AT = { right: -0.38, forward: 0.32, lift: 0.68 } as const;
+const STATUS_FACE_SEAT = 0.6;
+/** The desktop hand strip, a camera child: its pose at the base field of view. */
+const HAND_HOME = { position: [0, -0.26, -0.42] as const, pitch: 0.2, scale: 0.9 } as const;
+/**
+ * Highest normalized device y the desktop hand strip reaches. The framing keeps the dice tray above
+ * it (`framingPoints().floor`), so a thrown die is never behind the cards.
+ */
+export const DESKTOP_HAND_TOP = -0.48;
+/** Readout sizes tried, largest first, when no position clears the sigil plate at full size. */
+const READOUT_SHRINK = [1, 0.75, 0.55] as const;
 /** Longest the win handover waits on death clips, from the first death; a stalled clip never hangs it. */
 export const DEATH_WAIT_SECONDS = 3;
 /** Seconds between one enemy's turn resolving and the next one starting. */
@@ -181,6 +199,8 @@ export interface CombatSessionDeps {
   dice?: Partial<DiceWorldOptions>;
   /** The authored dice, owned by the caller; null keeps the greybox dice. */
   models?: DiceAsset | null;
+  /** The room reflection probe the dice reflect (see `DicePresenterOptions.envMap`). */
+  diceEnv?: THREE.Texture | null;
 }
 
 export type SessionStage = Stage | 'dice' | 'enemy';
@@ -414,10 +434,11 @@ export class CombatSession {
     this.endText = 'END TURN';
     this.throwLabel = buttonLabel(this.throwButton, 'THROW');
 
-    this.status = safeLabel(512, 320, 0.5);
+    this.status = safeLabel(512, 320, STATUS_WIDTH);
     if (this.status) {
-      this.status.mesh.position.copy(onTable(-0.6, 0.15, 0.45));
-      this.status.mesh.rotation.y = yawRad;
+      this.status.mesh.position.copy(onTable(STATUS_AT.right, STATUS_AT.forward, STATUS_AT.lift));
+      this.status.mesh.rotation.y =
+        yawRad + Math.atan2(-STATUS_AT.right, STATUS_AT.forward + STATUS_FACE_SEAT);
       this.group.add(this.status.mesh);
     }
     // The floating damage number rides on the status panel, so it follows the desktop HUD fit.
@@ -466,9 +487,9 @@ export class CombatSession {
     deps.root.add(this.plate);
 
     this.handAnchor.name = 'desktop-hand';
-    this.handAnchor.position.set(0, -0.26, -0.42);
-    this.handAnchor.rotation.x = 0.2;
-    this.handAnchor.scale.setScalar(0.9);
+    this.handAnchor.position.set(...HAND_HOME.position);
+    this.handAnchor.rotation.x = HAND_HOME.pitch;
+    this.handAnchor.scale.setScalar(HAND_HOME.scale);
     deps.camera.add(this.handAnchor);
     this.mouseGrip.name = 'mouse-grip';
     this.group.add(this.mouseGrip);
@@ -508,7 +529,12 @@ export class CombatSession {
     const stream = Stream.fromKey(`${deps.seed}:room-${deps.room}:dice-throw`);
     const presenter = await DicePresenter.create(
       stream,
-      { halfX: TRAY_HALF_X, halfZ: TRAY_HALF_Z, ...(deps.models ? { models: deps.models } : {}) },
+      {
+        halfX: TRAY_HALF_X,
+        halfZ: TRAY_HALF_Z,
+        ...(deps.models ? { models: deps.models } : {}),
+        ...(deps.diceEnv ? { envMap: deps.diceEnv } : {}),
+      },
       deps.dice,
     );
     return new CombatSession(deps, presenter);
@@ -625,20 +651,28 @@ export class CombatSession {
 
   /**
    * What the desktop framing fits: `must` (the dice tray and the sigil plate, which sit in the
-   * world) and `want` (each automaton's aim point). The buttons, status panel and readouts are
+   * world), `want` (each automaton's aim point) and `floor`, the lowest view y the `must` points may
+   * take, which keeps the tray above the hand strip. The buttons, status panel and readouts are
    * not here because `fitHudToView` moves them into whatever view results.
    */
-  framingPoints(): { must: THREE.Vector3[]; want: THREE.Vector3[] } {
+  framingPoints(): { must: THREE.Vector3[]; want: THREE.Vector3[]; floor: number } {
     this.deps.root.updateWorldMatrix(true, true);
     const want = this.enemies.map(({ id, body }) => this.aimOf(id, body));
-    return { must: [...worldCorners(this.trayHit), ...this.plateCorners()], want };
+    return {
+      must: [...worldCorners(this.trayHit), ...this.plateCorners()],
+      want,
+      floor: DESKTOP_HAND_TOP + HUD_GAP,
+    };
   }
 
   /**
    * Desktop only: slides the buttons, status panel and readouts from their XR layout positions
    * into `camera`'s view wherever the view would cut them off. Each is moved in the camera's
    * plane, so its size on screen is unchanged. The status panel is also scaled down and then
-   * steps below any readout it would cover. Call `resetHud` when the camera is not the player's desktop view.
+   * steps below any readout it would cover. A readout the sigil plate or its result label would
+   * cover rises above them, else moves to the side, shrinking if it must. The hand strip keeps its
+   * screen size at any field of view and stays below `DESKTOP_HAND_TOP`.
+   * Call `resetHud` when the camera is not the player's desktop view.
    */
   fitHudToView(camera: THREE.PerspectiveCamera, margin = HUD_VIEW_MARGIN): void {
     if (this.disposed) return;
@@ -665,9 +699,10 @@ export class CombatSession {
       mesh.updateMatrixWorld(true);
       return rectOfPoints(worldCorners(mesh));
     };
-    const plate = rectOfPoints(this.plateCorners());
     const overlaps = (a: NdcRect, b: NdcRect): boolean =>
       a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0;
+    const inside = (r: NdcRect): boolean =>
+      r.x0 >= -margin && r.x1 <= margin && r.y0 >= -margin && r.y1 <= margin;
     const move = (mesh: THREE.Mesh, rect: NdcRect, dx: number, dy: number): void => {
       mesh.position.add(
         new THREE.Vector3(dx * tanX * rect.depth, dy * tanY * rect.depth, 0).applyQuaternion(
@@ -676,7 +711,21 @@ export class CombatSession {
       );
     };
     this.hudMoved = true;
+    this.fitHand(camera, rectOfPoints);
+    const plate = rectOfPoints(this.plateCorners());
+    const label = rectOfPoints(this.resultLabelCorners());
+    const zone =
+      plate && label
+        ? {
+            x0: Math.min(plate.x0, label.x0),
+            x1: Math.max(plate.x1, label.x1),
+            y0: Math.min(plate.y0, label.y0),
+            y1: Math.max(plate.y1, label.y1),
+            depth: plate.depth,
+          }
+        : plate;
     const placed: NdcRect[] = [];
+    const readouts: NdcRect[] = [];
     for (const anchor of this.anchors) {
       const mesh = anchor.object;
       mesh.position.copy(anchor.home);
@@ -695,15 +744,102 @@ export class CombatSession {
           move(mesh, rect, 0, cover.y0 - HUD_GAP - rect.y1);
           rect = rectOf(mesh);
         }
-      } else if (rect && plate && anchor.kind === 'readout') {
-        // A readout rises above the sigil plate when the view has room, so a cast never hides it.
-        const lift = plate.y1 + HUD_GAP - rect.y0;
-        if (overlaps(plate, rect) && rect.y1 + lift <= margin) {
-          move(mesh, rect, 0, lift);
-          rect = rectOf(mesh);
+      } else if (rect && zone && anchor.kind === 'readout') {
+        // A cast must never hide a readout: try above the plate and its result label, then the
+        // side nearer the readout, then the far side, at full size and then smaller.
+        const blocked = (r: NdcRect): boolean =>
+          overlaps(zone, r) || readouts.some((p) => overlaps(p, r));
+        if (blocked(rect)) {
+          const start = mesh.position.clone();
+          let found: NdcRect | null = null;
+          for (const shrink of READOUT_SHRINK) {
+            mesh.position.copy(start);
+            mesh.scale.setScalar(anchor.scale * shrink);
+            const r = rectOf(mesh);
+            if (!r) break;
+            const left = zone.x0 - HUD_GAP - r.x1;
+            const right = zone.x1 + HUD_GAP - r.x0;
+            const near = r.x0 + r.x1 <= zone.x0 + zone.x1 ? [left, right] : [right, left];
+            const moves: [number, number][] = [
+              [0, zone.y1 + HUD_GAP - r.y0],
+              [near[0] as number, 0],
+              [near[1] as number, 0],
+              [0, 0],
+            ];
+            for (const [dx, dy] of moves) {
+              mesh.position.copy(start);
+              move(mesh, r, dx, dy);
+              const moved = rectOf(mesh);
+              if (moved && inside(moved) && !blocked(moved)) {
+                found = moved;
+                break;
+              }
+            }
+            if (found) break;
+          }
+          if (found) rect = found;
+          else {
+            mesh.position.copy(start);
+            mesh.scale.setScalar(anchor.scale);
+            rect = rectOf(mesh);
+          }
         }
+        if (rect) readouts.push(rect);
       }
       if (rect) placed.push(rect);
+    }
+  }
+
+  /**
+   * World corners of each card of the desktop hand at rest (hover lifts one card above this),
+   * for the HUD fit and tests.
+   */
+  handCorners(): THREE.Vector3[] {
+    const root = this.fan.root;
+    root.updateWorldMatrix(true, false);
+    const out: THREE.Vector3[] = [];
+    const slot = new THREE.Matrix4();
+    const euler = new THREE.Euler();
+    for (const s of this.fan.layout) {
+      euler.set(s.rotation.pitch, s.rotation.yaw, s.rotation.roll, 'YXZ');
+      slot.compose(
+        new THREE.Vector3(...s.position),
+        new THREE.Quaternion().setFromEuler(euler),
+        new THREE.Vector3(s.scale, s.scale, s.scale),
+      );
+      for (const x of [-0.5, 0.5])
+        for (const y of [-0.5, 0.5])
+          out.push(
+            new THREE.Vector3(x * DEFAULT_FAN.cardWidth, y * DEFAULT_FAN.cardHeight, 0)
+              .applyMatrix4(slot)
+              .applyMatrix4(root.matrixWorld),
+          );
+    }
+    return out;
+  }
+
+  /** World corners of the sigil plate's result label, where it shows after a cast. */
+  resultLabelCorners(): THREE.Vector3[] {
+    return plateLabelCorners(this.platePose).map((p) => new THREE.Vector3(p.x, p.y, p.z));
+  }
+
+  /**
+   * Desktop hand strip: back at its home pose, then lowered if its top would pass
+   * `DESKTOP_HAND_TOP`, where the framing keeps the dice tray. A wider field of view (close tables)
+   * draws the strip smaller and higher, so this is where it moves.
+   */
+  private fitHand(
+    camera: THREE.PerspectiveCamera,
+    rectOfPoints: (corners: THREE.Vector3[]) => NdcRect | null,
+  ): void {
+    const anchor = this.handAnchor;
+    anchor.position.set(...HAND_HOME.position);
+    if (this.fan.root.parent !== anchor || this.fan.count === 0) return;
+    anchor.updateMatrixWorld(true);
+    const rect = rectOfPoints(this.handCorners());
+    if (rect && rect.y1 > DESKTOP_HAND_TOP) {
+      anchor.position.y -=
+        (rect.y1 - DESKTOP_HAND_TOP) * Math.tan((camera.fov * DEG) / 2) * rect.depth;
     }
   }
 
@@ -1560,6 +1696,8 @@ export interface CombatHookDeps {
   dice?: Partial<DiceWorldOptions>;
   /** The dice models every fight uses, or null for greybox; loaded once and shared when absent. */
   models?: DiceAsset | null;
+  /** The room reflection probe for the dice, read when each fight opens. */
+  diceEnv?: () => THREE.Texture | null;
   /** Called with each new session, e.g. for a debug handle. */
   onSession?: (session: CombatSession | null) => void;
   /** Passed to each session: damage landing on the player (the edge flash and haptics). */
@@ -1653,6 +1791,7 @@ export class CombatHook {
         ...(this.deps.syncLabels === undefined ? {} : { syncLabels: this.deps.syncLabels }),
         ...(this.deps.dice ? { dice: this.deps.dice } : {}),
         ...(diceModels ? { models: diceModels } : {}),
+        diceEnv: this.deps.diceEnv?.() ?? null,
       }),
     );
     this.pending = { room, promise };

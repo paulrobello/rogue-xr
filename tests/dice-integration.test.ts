@@ -11,7 +11,7 @@ import {
   parseDiceManifest,
 } from '../src/dice/dice-asset.ts';
 import type { DieKind } from '../src/dice/faces.ts';
-import { DicePresenter } from '../src/dice/presenter.ts';
+import { DICE_ENV_INTENSITY, DicePresenter } from '../src/dice/presenter.ts';
 import type { UiAtlasManifest } from '../src/ui/icon-atlas.ts';
 
 const KINDS: readonly DieKind[] = ['d6', 'd8'];
@@ -143,6 +143,32 @@ describe('dice presenter with the authored models', () => {
     }
     expect(asset.spawn('d6').castShadow).toBe(true);
     expect(asset.spawn('d8').castShadow).toBe(false);
+    asset.setEnvironment(null, 0);
+  });
+
+  it('gives the thrown metal dice the supplied room probe (the tray read dark without one)', async () => {
+    const env = new THREE.Texture();
+    for (const models of [asset, null]) {
+      const presenter = await DicePresenter.create(stream(), {
+        ...TRAY,
+        models,
+        envMap: env,
+      });
+      let metal = 0;
+      for (const kind of KINDS) {
+        const mesh = presenter.mesh(presenter.throw(kind, 0, 1));
+        const materials = [mesh?.material ?? []].flat() as THREE.MeshStandardMaterial[];
+        expect(materials.length).toBeGreaterThan(0);
+        for (const m of materials) {
+          expect(m.envMap, `${kind} ${m.name}`).toBe(env);
+          expect(m.envMapIntensity).toBe(DICE_ENV_INTENSITY);
+          if (m.metalness >= 0.9) metal++;
+        }
+      }
+      // The authored brass is metalness 1: the case that renders black with no reflection.
+      if (models) expect(metal).toBeGreaterThan(0);
+      presenter.dispose();
+    }
     asset.setEnvironment(null, 0);
   });
 });

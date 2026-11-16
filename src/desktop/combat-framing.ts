@@ -26,6 +26,11 @@ export interface FramingInput {
   want: readonly XYZ[];
   /** Largest normalized device coordinate a point may reach (1 is the screen edge). */
   margin?: number;
+  /**
+   * Lowest normalized device y a `must` point may take (default `-margin`). The desktop hand strip
+   * owns the band below it, so the dice tray never sits behind the cards.
+   */
+  floor?: number;
   /** The widest vertical field of view the fit may use. */
   maxFov?: number;
 }
@@ -61,12 +66,24 @@ export function projectToNdc(
   return { x: lateral / (depth * tanHalf * aspect), y: up / (depth * tanHalf) };
 }
 
-function worst(points: readonly XYZ[], input: FramingInput, pitch: number, fov: number): number {
+/**
+ * The largest extent of `points` in the view, compared against `margin`. With a `floor`, a point
+ * below it counts as far out as it is under the floor, so the result stays at or under `margin`
+ * exactly when every point is inside the margin and at or above the floor.
+ */
+function worst(
+  points: readonly XYZ[],
+  input: FramingInput,
+  pitch: number,
+  fov: number,
+  margin: number,
+  floor = -margin,
+): number {
   let out = 0;
   for (const p of points) {
     const n = projectToNdc(p, input.eye, input.headingDeg, pitch, fov, input.aspect);
     if (!n) return Number.POSITIVE_INFINITY;
-    out = Math.max(out, Math.abs(n.x), Math.abs(n.y));
+    out = Math.max(out, Math.abs(n.x), n.y, margin + floor - n.y);
   }
   return out;
 }
@@ -84,13 +101,13 @@ export function fitCombatFraming(input: FramingInput): CombatFraming {
   for (let fov = input.baseFov; fov <= maxFov + 1e-6; fov += FOV_STEP) {
     let best: { pitch: number; score: number } | null = null;
     for (let pitch = 0; pitch >= -PITCH_LIMIT; pitch -= PITCH_STEP) {
-      const mustWorst = worst(input.must, input, pitch, fov);
+      const mustWorst = worst(input.must, input, pitch, fov, margin, input.floor);
       if (mustWorst < fallbackMust) {
         fallbackMust = mustWorst;
         fallback = { pitch, fov };
       }
       if (mustWorst > margin) continue;
-      const score = Math.max(mustWorst, worst(input.want, input, pitch, fov));
+      const score = Math.max(mustWorst, worst(input.want, input, pitch, fov, margin));
       if (!best || score < best.score) best = { pitch, score };
     }
     if (best && (best.score <= margin || fov + FOV_STEP > maxFov + 1e-6)) {

@@ -16,6 +16,7 @@ node scripts/xr-emu/walk.mjs --out /tmp/xr-emu  # keep screenshots out of the re
 PW_GPU=swiftshader node scripts/xr-emu/walk.mjs # software GL, only when no GPU is available
 node scripts/xr-emu/walk.mjs --focus          # New Run, one fight: only the fan and sigil checks
 node scripts/xr-emu/walk.mjs --turns          # a two-automaton fight (SPIRE002): only the enemy-phase and hit-flash checks
+node scripts/xr-emu/walk.mjs --recenter       # Enter VR facing away from the title: only the board re-placement check (XO5)
 ```
 
 The update-notice check needs a production build (the dev server stamps no build id):
@@ -28,7 +29,7 @@ node scripts/xr-emu/walk.mjs --notice http://localhost:4262
 
 Screenshots land in `docs/verification/xr-emu-*.jpg` with a JSON report
 (`xr-emu-report.json`, `xr-emu-report-notice.json`). The exit code is 1 when any check fails
-(`make` reports 2). As of 2026-11-15 both runs pass every check (39 for the walk, 5 for
+(`make` reports 2). As of 2026-11-15 both runs pass every check (41 for the walk, 5 for
 `--notice`); XO1 to XO4 in `docs/playtesting.md` record the fixes. The two console 404s in the
 notice run are the music tracks that are not produced yet.
 

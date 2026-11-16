@@ -247,6 +247,8 @@ const makeCombat = (target: FloorView): CombatHook => {
     ...(audio ? { audio } : {}),
     onPlayerHit,
     fightOptions,
+    // Read when a fight opens: `heroEnv` is declared below this hook's construction.
+    diceEnv: () => heroEnv,
     onEnd: ({ room, outcome, playerHp }) =>
       flow.fightEnded({
         room,
@@ -789,6 +791,9 @@ renderer.setAnimationLoop((time, frame) => {
     if (recenterPending && frame) {
       locomotion.recenter();
       recenterPending = false;
+      // A board up at Enter VR (the title) still holds its desktop placement, which can sit
+      // behind a player who entered facing elsewhere.
+      ui?.recenter(camera);
     }
     const { left, right } = xr.sticks();
     if (!floor?.locked && !ui?.visible) {
@@ -815,7 +820,7 @@ renderer.setAnimationLoop((time, frame) => {
       if (session && (framedSession !== session || framedAspect !== camera.aspect)) {
         framedSession = session;
         framedAspect = camera.aspect;
-        const { must, want } = session.framingPoints();
+        const { must, want, floor: handFloor } = session.framingPoints();
         desktop.refineCombat(
           fitCombatFraming({
             eye,
@@ -824,6 +829,7 @@ renderer.setAnimationLoop((time, frame) => {
             baseFov: desktop.baseFov,
             must,
             want,
+            floor: handFloor,
           }),
         );
       }

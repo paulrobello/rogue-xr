@@ -25,6 +25,8 @@ const { values: opts } = parseArgs({
     focus: { type: 'boolean', default: false },
     // Only the enemy-phase checks: one two-automaton fight on TURN_SEED.
     turns: { type: 'boolean', default: false },
+    // Only the turned-away Enter VR check (XO5): the title must be re-placed in front of the head.
+    recenter: { type: 'boolean', default: false },
   },
 });
 
@@ -123,7 +125,7 @@ try {
       return info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : 'unknown';
     });
 
-  const enterVr = async () => {
+  const enterVr = async (yaw = 0) => {
     await waitFor(
       'enter-vr-enabled',
       () => {
@@ -135,7 +137,7 @@ try {
       undefined,
       30000,
     );
-    await ev((y) => window.__xrEmu.setHead(y), SEATED_HEAD_Y);
+    await ev(({ y, yaw }) => window.__xrEmu.setHead(y, 0, yaw), { y: SEATED_HEAD_Y, yaw });
     const button = page.getByRole('button', { name: 'Enter VR' });
     try {
       await button.click({ timeout: 3000 });
@@ -161,9 +163,48 @@ try {
     await noticeCheck();
   } else if (opts.turns) {
     await enemyTurnCheck();
+  } else if (opts.recenter) {
+    await recenterCheck();
   } else {
     await walk();
     await enemyTurnCheck();
+    await recenterCheck();
+  }
+
+  /** XO5: a player facing away from the desktop title at Enter VR still finds it in front. */
+  async function recenterCheck() {
+    const base = opts.base.replace(/\/$/, '');
+    await page.goto(`${base}/?title&debug`);
+    await waitFor(
+      'recenter-app',
+      () => window.__flow?.ui && window.__xrEmu.ctx().renderer,
+      undefined,
+      60000,
+    );
+    await settle(1500);
+    await enterVr(Math.PI);
+    await settle(400);
+    const bearing = await ev(() => {
+      const probe = window.__xrEmu;
+      const { camera } = probe.ctx();
+      const board = probe.worldOf('title-board');
+      if (!board) return null;
+      camera.updateWorldMatrix(true, false);
+      const e = camera.matrixWorld.elements;
+      // Camera forward is -Z of its world matrix.
+      const fx = -e[8];
+      const fz = -e[10];
+      const dx = board.x - e[12];
+      const dz = board.z - e[14];
+      const angle = Math.abs(Math.atan2(fx * dz - fz * dx, fx * dx + fz * dz));
+      return { degrees: (angle * 180) / Math.PI, forward: [fx, fz], toBoard: [dx, dz] };
+    });
+    record(
+      'xr-title-in-front-after-turned-entry',
+      bearing !== null && bearing.degrees < 30,
+      bearing,
+    );
+    await shot('16-title-after-turned-entry');
   }
 
   async function walk() {
