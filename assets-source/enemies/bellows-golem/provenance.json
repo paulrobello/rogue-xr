@@ -328,7 +328,7 @@
     "independentScoreNote": "the recorded independentScore scored the previous build; an independent re-score of this build is pending"
   },
   "independentScore": {
-    "score": 43,
+    "score": 59,
     "scale": "0-100 visual fidelity to the concept",
     "scorer": "independent reviewer agent (separate from the authoring agent; did not build the model)",
     "date": "2026-11-16",
@@ -337,78 +337,103 @@
     "rubric": [
       {
         "criterion": "silhouette and proportions",
-        "points": 12,
+        "points": 19,
         "max": 30,
-        "note": "The base idea is there: a barrel torso on short legs, two chimneys and a small domed head. The design calls it the broadest shape in the roster because of massive pauldrons, long gorilla arms and cylinder forearms ending in huge round fists at knee height. The model has sphere shoulders, thin stick upper arms, faceted cuffs ending at the hip and small dark ball fists in brass claws. The lower body is a faceted brass bucket rather than a pleated bellows, and the overall width falls short of the concept."
+        "note": "Much closer than the previous build. The arms are now long, with large cylinder forearms and big fists hanging near ankle height, and the barrel-on-short-legs gestalt with two chimneys matches the sheet. The remaining gaps are structural. The head is a small brass cap sunk behind the top hoop, where the sheet has a distinct dome rising proud of the barrel between the chimneys. The shoulders are round disc caps instead of massive overhanging pauldrons. The torso splits into a spherical dome over a narrower separate pleat cylinder, where the sheet has one continuous barrel whose lower half tapers into ribs. The arms hang vertically in the side view, where the sheet angles the forearm forward, and the gunmetal thighs are slimmer than the sheet's armoured brass legs."
       },
       {
         "criterion": "signature features",
-        "points": 10,
+        "points": 13,
         "max": 25,
-        "note": "Present: the barrel with vertical brass straps and a round chest grille, the two chimneys, and round eyes (the documented deviation). Missing or wrong: the bellows pleats are black rings rather than walnut pleats, and the huge fists are absent. The chest grille does not glow even though a golem-glow material exists (the grille samples pale tan, about sRGB 196, 157, 118). There are no emerald inlays, no back grille, and the chimney mouths have only thin peach rims."
+        "note": "Present: vertical brass barrel straps with a riveted waist band, an oval front grille, a back grille, two chimneys, walnut bellows pleats, emerald inlays at the shoulder, elbow and knee, and big fists. Missing or wrong: none of the glow signature reads. The front grille gap measures sRGB 211, 164, 126 in the engine idle shot against 254, 234, 52 in the concept. The eyes (about 208, 157, 112) and chimney mouths (about 207, 157, 115) are flat peach discs with no flame. The head and face plate are effectively absent, and the curved horizontal strap across the back is missing."
       },
       {
         "criterion": "surface detail and material read",
-        "points": 9,
+        "points": 11,
         "max": 20,
-        "note": "The walnut grain on the barrel reads well. The brass parts are low-segment prisms with flat-shaded facets, and in the engine a blown-out white facet stripe runs down each forearm. The feet are plain trapezoid blocks."
+        "note": "Smooth shading replaces the old facets, and the plank seams, riveted bands, grille bars and knee caps add believable detail. The walnut is a flat colour with no grain or plank wear, the pleats read as flat louvre slats rather than soft bellows folds, and the brass carries a noisy swirl texture that looks like brushed noise up close. The fists are a comb of four parallel finger tubes, where the sheet has rounded heavy mitts with knuckles and a thumb, and the feet are plain blocks."
       },
       {
         "criterion": "colour and value",
-        "points": 6,
+        "points": 10,
         "max": 15,
-        "note": "The barrel walnut measures about sRGB 140, 93, 64 in the engine idle shot, against about 84, 53, 34 in the concept and the art bible's oiled walnut #583C26. That is roughly 1.6x too light and reads pinkish. The model has no emerald and no amber focal light."
+        "note": "The barrel walnut median measures sRGB 88, 59, 39 (#583B27) in the engine idle shot, essentially equal to the art bible's oiled walnut #583C26 and inside the concept's range (87, 56, 37 front left; 82, 53, 36 back). The brass hue and emerald accents fit. The concept's value hierarchy depends on a saturated amber core and eyes as the brightest point, and the model replaces that with desaturated peach, so the warm focal accent the palette calls for is missing."
       },
       {
         "criterion": "readability at play distance",
         "points": 6,
         "max": 10,
-        "note": "At 2.6 m it reads as a distinct barrel robot and the raised-fist attack pose reads. It has no focal light, and the small fists and arms do not read as a heavy crusher."
+        "note": "At 2.6 m the golem fills the view and reads clearly as a heavy brass-and-walnut barrel brute, and the large forearms and fists now sell the crusher role. It has no glowing focal point to draw the eye, the face is unreadable, and the frozen shot looks like the idle material with no state tint."
       }
     ],
     "topFixes": [
-      "Rebuild the arms to the concept: layered pauldrons, long arms, large smooth-shaded cylinder forearms and huge rounded brass fists hanging to knee height.",
-      "Use golem-glow on the front and back chest grilles and the chimney mouths so the core reads as the focal light, and add the emerald shoulder, elbow and knee inlays through COLOR_0.",
-      "Darken the walnut to the art-bible value. Replace the black rings with walnut or leather bellows pleats, and smooth-shade the faceted brass."
+      "Make the core actually glow: drive the front and back grille interiors, both eyes and the chimney mouths with a saturated amber emissive that survives tone mapping (for example toneMapped false or a higher emissive intensity on golem-glow) so the engine samples near the concept's sRGB 254, 234, 52 instead of today's 211, 164, 126, and add the chimney flame wisps.",
+      "Build the head and shoulders to the sheet: a distinct brass dome with a face plate and two round eyes standing proud of the top hoop between the chimneys, and massive layered pauldrons that overhang the shoulders in place of the disc caps.",
+      "Make the torso one continuous barrel whose lower half tapers into rounded bellows ribs instead of a dome stacked on a narrower louvre cylinder, add the curved horizontal back strap, and replace the four-tube comb fists with rounded mitt fists that have knuckles and a thumb."
     ],
-    "method": "independent visual review against assets-source/concepts/golem-sheet-1.png by a separate reviewer agent. No fidelity-compare sheet exists, so the concept sheet was judged at native resolution directly against the low front, side and 3/4 Blender renders, the owner review sheet and the five in-engine clip shots (seated player, 2.6 m), with a 2x crop of the idle shot. Walnut value was measured as the median sRGB of barrel patches. Rubric: silhouette and proportions 30, signature features 25, surface detail and material read 20, colour and value 15, readability at play distance in the engine shots 10.",
+    "method": "Independent visual review by a separate reviewer agent that did not build the model. The concept sheet assets-source/concepts/golem-sheet-1.png was judged at native resolution against the low front, side, back and three-quarter Blender renders, the front, side and back compare crops, the owner review sheet and the five in-engine clip shots (seated player, 2.6 m), with 2x and 3x crops of the idle barrel and head made with Pillow. The author's fidelity-compare sheet and self-score text were not used for scoring. Colour was measured as the median sRGB of barrel pixels in the engine idle shot (box x 318-625, y 110-295, brass and grille pixels masked out by hue, saturation and green-to-red ratio), compared with matching patches on the concept front and back and with the art bible's oiled walnut #583C26. Grille, eye and chimney-mouth colours were sampled the same way. Rubric: silhouette and proportions 30, signature features 25, surface detail and material read 20, colour and value 15, readability at play distance in the engine shots 10.",
     "evidence": [
       {
         "path": "assets-source/concepts/golem-sheet-1.png",
         "sha256": "8c5bafcf4a25372cab90935515ca4372933bb5c83d61213a528958a1ec29352b"
       },
       {
+        "path": "docs/art-bible.md",
+        "sha256": "ee9a545c8bf02212a04e438dd95c9044270a1fb5d00ece7b8e839d7be320fec1"
+      },
+      {
         "path": "assets-source/enemies/bellows-golem/bellows-golem.review-sheet.jpg",
-        "sha256": "c4b8ae645848ae5f0dc3775f8c3d79a77d52ada157e7eb57984768ae7311d9d0"
+        "sha256": "50e10a162de09fcb9501926ce39267596e061e745067cd210159e0b4145bf93a"
       },
       {
         "path": "assets-source/enemies/bellows-golem/staging/renders/model-low-front.png",
-        "sha256": "18c722d4b226619e41efa2e8e3b8722af57f034f537e8ac7f952f48e58fafd94"
+        "sha256": "1d7cf359a0d9ba438a0e30e422fb368dc5332a5a84614ef6a34e7e81e7f5371b"
       },
       {
         "path": "assets-source/enemies/bellows-golem/staging/renders/model-low-side.png",
-        "sha256": "416537dd2bb4d748ddeb48b0a15930d8c3a1ada679072b4dab836e288da28ddf"
+        "sha256": "a71c876ed7c24b0870956fcb0160822c1891fedd9b139d62de48524395d03571"
+      },
+      {
+        "path": "assets-source/enemies/bellows-golem/staging/renders/model-low-back.png",
+        "sha256": "471fadd7e8ed395e842092a29a131622950544ee4e069df08d4c1a0cebd39b7c"
+      },
+      {
+        "path": "assets-source/enemies/bellows-golem/staging/renders/model-low-three-quarter.png",
+        "sha256": "9e87fbfab3e2d421fa351bc02ba37b45f712f483f516c4bdbf81584db04501cc"
+      },
+      {
+        "path": "assets-source/enemies/bellows-golem/staging/renders/compare-front.png",
+        "sha256": "f3328f7c1e530a1b22ebf806920660bcd794c4f0037c37f45e6fd8c10c5ab9d8"
+      },
+      {
+        "path": "assets-source/enemies/bellows-golem/staging/renders/compare-side.png",
+        "sha256": "ed925f05f0c55512f4105f942aff2dba4a0fe7c15c65d4a47f4dfeb6d96d27b1"
+      },
+      {
+        "path": "assets-source/enemies/bellows-golem/staging/renders/compare-back.png",
+        "sha256": "6591d7e70b73e00e6d1de75709a1812a9eface01993ef3756cd713bca0c198bd"
       },
       {
         "path": "assets-source/enemies/bellows-golem/staging/engine/idle.jpg",
-        "sha256": "29aa469c87328d15afb8e213f8aaa68eade199074f01c78a74c913084a9f2b80"
+        "sha256": "d6e34561b0f234fef0db6b764d8f7662f149524b0e10233d41ed79b2a36ffac6"
       },
       {
         "path": "assets-source/enemies/bellows-golem/staging/engine/attack.jpg",
-        "sha256": "fe72f922d9a0a76509c003a7e78b337c5e08c8e981f241fc3966043aeb9d5425"
+        "sha256": "44ef0b42952f1c6ce34882167ffd8a6d9eb5349a3d1abcd1c987f976fc477e09"
       },
       {
         "path": "assets-source/enemies/bellows-golem/staging/engine/hit.jpg",
-        "sha256": "9accc0b66f27e85e30436db700ecf8d6e315ac4d96ce06f417998eaa0d4aa917"
+        "sha256": "47cec75b4d3ddf25746727f6588417c8457105f3d89e438baf74be5585d28bcf"
       },
       {
         "path": "assets-source/enemies/bellows-golem/staging/engine/frozen.jpg",
-        "sha256": "7558be9cd16b6fee5ebaaa4fba661d16a22945b1cd80b51de1bbc1650dd637f9"
+        "sha256": "8fbb49e4f7c2ebb943217a62895f064737ffeb0d7b35c2ebff4075094edbd686"
       },
       {
         "path": "assets-source/enemies/bellows-golem/staging/engine/death.jpg",
-        "sha256": "0a0f1a5a1d2e2c0ce22dd463010c9aafae88b3536b7c8355c6949200b36f8a7e"
+        "sha256": "5af4f08fd8de395e8551265741320c8b33b838f678bec754958e88b22aa88ecd"
       }
-    ]
+    ],
+    "previousScore": 43
   }
 }
