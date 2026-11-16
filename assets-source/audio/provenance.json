@@ -955,6 +955,126 @@
       ]
     }
   },
-  "music": {},
-  "music_note": "Suno is owner-generated; see assets-source/audio/music/SUNO-HANDOFF.md"
+  "music": {
+    "title": {
+      "source_file": "assets-source/audio/music/placeholder/title.mp3",
+      "source_sha256": "7e351b8e8345f087ff90f4951ff05d536b8e06819aeea43e1a2e33e2f014a522",
+      "runtime_file": "public/assets/audio/music/title.ogg",
+      "runtime_sha256": "d091c46ff5de8fe8adaa67790073fb24f5a3472a1e6b80bc0f6f7a82397e6145",
+      "runtime_bytes": 864405,
+      "steps": [
+        "loop body from 4.750s, 2.00s equal-power tail-over-head crossfade, start position retained"
+      ]
+    },
+    "explore": {
+      "source_file": "assets-source/audio/music/placeholder/explore.mp3",
+      "source_sha256": "b82efe11f44b659d810d4aaeb201973d4dfe91935b17173d1cea29d60564b6c5",
+      "runtime_file": "public/assets/audio/music/explore.ogg",
+      "runtime_sha256": "db03fe8207bdd43f26fe09acfb9843108ef1854afb4be79152ac100f1c559151",
+      "runtime_bytes": 1448968,
+      "steps": [
+        "loop body from 7.500s, 2.00s equal-power tail-over-head crossfade, start position retained"
+      ]
+    },
+    "combat": {
+      "source_file": "assets-source/audio/music/placeholder/combat.mp3",
+      "source_sha256": "2e1316e8c4cba6b8d8dc3bc5b892869f1164ab6f8a8a973524675b7dbfcef009",
+      "runtime_file": "public/assets/audio/music/combat.ogg",
+      "runtime_sha256": "cb2234b2d19a666ac8dd7b275299f5ebfcc472af980651ce797676a441ccecce",
+      "runtime_bytes": 1323437,
+      "steps": [
+        "loop body from 5.250s, 1.50s equal-power tail-over-head crossfade, start position retained"
+      ]
+    },
+    "reward": {
+      "source_file": "assets-source/audio/music/placeholder/reward.mp3",
+      "source_sha256": "9daf54f3d7d3d6c0ac4fe1f81319dadb05f30c31d5c8095e9d6d9aec97e07582",
+      "runtime_file": "public/assets/audio/music/reward.ogg",
+      "runtime_sha256": "3ec98c1adf9b59d9a738e3c4ecef9ece79f6d0866c54874e273baf60334f9fa6",
+      "runtime_bytes": 593075,
+      "steps": [
+        "loop body from 7.750s, 2.00s equal-power tail-over-head crossfade, start position retained"
+      ]
+    },
+    "rest": {
+      "source_file": "assets-source/audio/music/placeholder/rest.mp3",
+      "source_sha256": "27907e8355c946d5f8f716cb1c8b80d87b22be292009b7edf37e26a03f06ae43",
+      "runtime_file": "public/assets/audio/music/rest.ogg",
+      "runtime_sha256": "f4755ba40ad2ea0d026d4e655a6e7682242d724801af11b4e91b87c4d15fd340",
+      "runtime_bytes": 961149,
+      "steps": [
+        "loop body from 4.750s, 2.00s equal-power tail-over-head crossfade, start position retained"
+      ]
+    },
+    "elite": {
+      "source_file": "assets-source/audio/music/placeholder/elite.mp3",
+      "source_sha256": "ddc752ec46b6250e5adb56965fddba2c9ebb64812820b62197a6b37d570a8171",
+      "runtime_file": "public/assets/audio/music/elite.ogg",
+      "runtime_sha256": "d73b26d248d7682aecb7a1521cd4b2b39f3147e2de3f9e595bbe00860ce34b7e",
+      "runtime_bytes": 785875,
+      "steps": [
+        "loop body from 3.750s, 1.50s equal-power tail-over-head crossfade, start position retained"
+      ]
+    },
+    "defeat": {
+      "source_file": "assets-source/audio/music/placeholder/defeat.mp3",
+      "source_sha256": "7c752099d127c778f5edfad603416315d03a14c683fa16619352deb93dd70753",
+      "runtime_file": "public/assets/audio/music/defeat.ogg",
+      "runtime_sha256": "03ec36b322cb916e9033190632ff1369706d8e1091a8d4b5d07a75d0ae02056a",
+      "runtime_bytes": 847434,
+      "steps": [
+        "one-shot cut 0.000s..45.000s, silence trimmed (head 0.0 ms, tail 992.5 ms), 2 ms fade in, 0.25s raised-cosine fade out"
+      ]
+    },
+    "workshop": {
+      "source_file": "assets-source/audio/music/placeholder/workshop.mp3",
+      "source_sha256": "e0002da781af92e6055a91544fedf2c03b721d79a154972d44b380d04f3b8ce2",
+      "runtime_file": "public/assets/audio/music/workshop.ogg",
+      "runtime_sha256": "e5d0672f8bd4400f7cabaef9d8329939feaa8c5be89eb7389eb58511f220e330",
+      "runtime_bytes": 892301,
+      "steps": [
+        "loop body from 6.750s, 2.00s equal-power tail-over-head crossfade, start position retained"
+      ]
+    },
+    "guardian-1": {
+      "source_file": "assets-source/audio/music/placeholder/guardian-1.mp3",
+      "source_sha256": "11f365abee02f8ad39b801090a719647504a68a7a9fad2cbbbd2dcdc964579da",
+      "runtime_file": "public/assets/audio/music/guardian-1.ogg",
+      "runtime_sha256": "9715746646dbdd1d63d6f63e81dc040c0c165747cf52cf237c07839bae37a358",
+      "runtime_bytes": 922694,
+      "steps": [
+        "loop body from 2.750s, 1.50s equal-power tail-over-head crossfade, start position retained"
+      ]
+    },
+    "guardian-2": {
+      "source_file": "assets-source/audio/music/placeholder/guardian-2.mp3",
+      "source_sha256": "27672af0a6353437645954a27d798a2079d18c51fcf2363e132515e921c14f91",
+      "runtime_file": "public/assets/audio/music/guardian-2.ogg",
+      "runtime_sha256": "52999b2e3cf463c64f3f7653d88a67d0081a5e14eb4e1b8abd01147673418c02",
+      "runtime_bytes": 909729,
+      "steps": [
+        "loop body from 2.000s, 1.50s equal-power tail-over-head crossfade, start position retained"
+      ]
+    },
+    "victory": {
+      "source_file": "assets-source/audio/music/placeholder/victory.mp3",
+      "source_sha256": "c241e4c2fa5e11d5795b75e644222d40263770c8530db7ea6f5e70a953396087",
+      "runtime_file": "public/assets/audio/music/victory.ogg",
+      "runtime_sha256": "0cb8f77e3b75836bda9924b4b0f807cc4e1b4cc02fe227f7a28debed147843af",
+      "runtime_bytes": 1069386,
+      "steps": [
+        "one-shot cut 0.000s..60.000s, silence trimmed (head 0.0 ms, tail 765.3 ms), 2 ms fade in, 0.25s raised-cosine fade out"
+      ]
+    }
+  },
+  "music_note": "Suno is owner-generated; see assets-source/audio/music/SUNO-HANDOFF.md",
+  "music_source": {
+    "kind": "placeholder until the owner-generated Suno cues land (Suno downloads exhausted until 2026-11-25)",
+    "provider": "Stable Audio 3 medium, local MLX inference (stabilityai/stable-audio-3-optimized) via ~/Repos/stable-audio-3-lab",
+    "license": "Stability AI Community License (free commercial use below USD 1M annual revenue) plus Gemma terms for the T5Gemma encoder",
+    "request": "Paul, 2026-11-16, in the rogue-xr session: \"use local audio gen to create placeholder music\"",
+    "rights": "pending: owner to confirm the Community License revenue threshold applies",
+    "prompts": "assets-source/audio/music/cues.json (the Suno prompts, first 1000 chars; Exclude styles as the negative prompt)"
+  },
+  "music_generation_log": "assets-source/audio/music/placeholder/generation-log.json"
 }

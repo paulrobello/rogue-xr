@@ -10,7 +10,8 @@ Music and SFX for Clockwork Spire. Runtime files are in `public/assets/audio/`, 
 | `sfx/raw/*.mp3` | Immutable ElevenLabs outputs, 44.1 kHz stereo MP3 (the Starter plan cannot request PCM). Never edited. |
 | `sfx/generation-log.json` | One entry per request: payload, response headers (including `character-cost`), sha256, size, time. |
 | `sfx/meter-before.txt`, `meter-after.txt` | `GET /v1/user/subscription` credit counters around the batch. |
-| `music/SUNO-HANDOFF.md` | Suno prompts, settings and loop preparation for all eleven music cues (D12). Music is owner-generated; no music source exists yet. |
+| `music/SUNO-HANDOFF.md` | Suno prompts, settings and loop preparation for all eleven music cues (D12). The final music is owner-generated in Suno. |
+| `music/placeholder/` | Placeholder music until the Suno cues land: all eleven cues from Stable Audio 3 medium, run locally, with the Suno prompts. `generation-log.json` holds every request, seed and timing, and `loops.json` the loop points. Build with `python3 -I scripts/assets/build_audio.py --music-src assets-source/audio/music/placeholder`. |
 | `music/cues.json` | The music cue list in first-heard order: id, loop flag, source and runtime paths, Style prompt and Suno settings. The build and the audition page read it; a test keeps it in step with `src/audio/cues.ts`. |
 | `derived/*.wav` | Lossless 48 kHz float intermediates, one per cue, rebuilt by the script. |
 | `provenance.json` | Machine-readable record: rights, approvals, prompts, per-cue source and runtime hashes and processing steps. Written by the build. |
@@ -33,7 +34,7 @@ SFX -16 LUFS integrated and music -18 LUFS, true peak at most -1.0 dBTP, toleran
 
 | Gate | Status |
 | --- | --- |
-| Technical | SFX pass: full decode in Node and in Chromium 156 with exact frame counts, loop and mono checks, deterministic rebuild, hashes reconciled. Loudness deviations above are open. Music: no source, so nothing to check. |
+| Technical | SFX pass: full decode in Node and in Chromium 156 with exact frame counts, loop and mono checks, deterministic rebuild, hashes reconciled. Loudness deviations above are open. Placeholder music: full decode, every cue meets -18 LUFS within the 1 LU tolerance (elite measures -18.9), true peak at most -1.1 dBTP. All nine loops have a clean seam and matched head and tail levels. The interior-dropout check fails on eight of them, because the musical rests between phrases run 0.2 to 0.7 s, and 1.3 s on title. |
 | Creative | Pending. No cue has been auditioned by a person or in the live mix. |
 | Rights | Cleared 2026-11-16 (D13): Paul confirms all his plans are paid with commercial use. The API reported the Starter plan the same day. |
 | Owner | Pending. Nothing here records Paul's approval. |

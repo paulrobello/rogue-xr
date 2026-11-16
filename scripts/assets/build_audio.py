@@ -493,6 +493,10 @@ def main() -> None:
                       for k, v in music.items()},
             "music_note": "Suno is owner-generated; see assets-source/audio/music/SUNO-HANDOFF.md",
         }
+        music_log = Path(args.music_src) / "generation-log.json"
+        if music and music_log.exists():
+            provenance["music_source"] = json.loads(music_log.read_text())["source"]
+            provenance["music_generation_log"] = rel(music_log)
         (AUDIO_SRC / "provenance.json").write_text(json.dumps(provenance, indent=2) + "\n")
     print(f"wrote {out / 'report.json'}")
 

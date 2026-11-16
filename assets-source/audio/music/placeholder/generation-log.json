@@ -1,0 +1,617 @@
+{
+  "source": {
+    "kind": "placeholder until the owner-generated Suno cues land (Suno downloads exhausted until 2026-11-25)",
+    "provider": "Stable Audio 3 medium, local MLX inference (stabilityai/stable-audio-3-optimized) via ~/Repos/stable-audio-3-lab",
+    "license": "Stability AI Community License (free commercial use below USD 1M annual revenue) plus Gemma terms for the T5Gemma encoder",
+    "request": "Paul, 2026-11-16, in the rogue-xr session: \"use local audio gen to create placeholder music\"",
+    "rights": "pending: owner to confirm the Community License revenue threshold applies",
+    "prompts": "assets-source/audio/music/cues.json (the Suno prompts, first 1000 chars; Exclude styles as the negative prompt)"
+  },
+  "generations": [
+    {
+      "id": "title",
+      "request": {
+        "prompt": "Original instrumental title theme for a cosy clockwork wizard tower roguelike. Inviting, warm, wondrous and a little melancholy. A memorable original melody on felt piano answered by solo French horn, music-box and celesta glints, warm string pad, plucked harp arpeggios, a slow ticking clockwork pulse like a grandfather clock escapement, soft low cello. Approximately 76 BPM, D dorian, 4/4, eight-bar phrases that state the theme, then repeat it with fuller strings and brass. Lamplit analog room sound, gentle and intimate. No drums, no big build and no fade-out ending. Leave the upper midrange open for small brass and glass interface sounds.",
+        "negativePrompt": "vocals, singing, spoken word, choir, electric guitar, synth lead, heavy drums, trap hats, EDM drops, risers, epic trailer percussion, fade out, harsh high frequencies",
+        "mode": "music",
+        "model": "medium",
+        "duration": 66,
+        "steps": 20,
+        "cfgScale": 2,
+        "format": "mp3",
+        "seed": 20261117
+      },
+      "providerFile": "roguexr_title_placeholder.mp3",
+      "providerMeta": {
+        "filename": "roguexr_title_placeholder.mp3",
+        "audioUrl": "/outputs/roguexr_title_placeholder.mp3",
+        "metadataUrl": "/outputs/roguexr_title_placeholder.mp3.json",
+        "createdAt": "2026-11-16T16:09:17.726Z",
+        "backend": "mlx",
+        "generationDurationMs": 13326,
+        "title": "rogue-xr title placeholder",
+        "request": {
+          "prompt": "Original instrumental title theme for a cosy clockwork wizard tower roguelike. Inviting, warm, wondrous and a little melancholy. A memorable original melody on felt piano answered by solo French horn, music-box and celesta glints, warm string pad, plucked harp arpeggios, a slow ticking clockwork pulse like a grandfather clock escapement, soft low cello. Approximately 76 BPM, D dorian, 4/4, eight-bar phrases that state the theme, then repeat it with fuller strings and brass. Lamplit analog room sound, gentle and intimate. No drums, no big build and no fade-out ending. Leave the upper midrange open for small brass and glass interface sounds.",
+          "negativePrompt": "vocals, singing, spoken word, choir, electric guitar, synth lead, heavy drums, trap hats, EDM drops, risers, epic trailer percussion, fade out, harsh high frequencies",
+          "mode": "music",
+          "model": "medium",
+          "duration": 66,
+          "steps": 20,
+          "cfgScale": 2,
+          "format": "mp3",
+          "seed": 20261117,
+          "mock": false,
+          "title": "rogue-xr title placeholder",
+          "autoTitle": false
+        },
+        "settings": {
+          "prompt": "Original instrumental title theme for a cosy clockwork wizard tower roguelike. Inviting, warm, wondrous and a little melancholy. A memorable original melody on felt piano answered by solo French horn, music-box and celesta glints, warm string pad, plucked harp arpeggios, a slow ticking clockwork pulse like a grandfather clock escapement, soft low cello. Approximately 76 BPM, D dorian, 4/4, eight-bar phrases that state the theme, then repeat it with fuller strings and brass. Lamplit analog room sound, gentle and intimate. No drums, no big build and no fade-out ending. Leave the upper midrange open for small brass and glass interface sounds.",
+          "negativePrompt": "vocals, singing, spoken word, choir, electric guitar, synth lead, heavy drums, trap hats, EDM drops, risers, epic trailer percussion, fade out, harsh high frequencies",
+          "mode": "music",
+          "model": "medium",
+          "duration": 66,
+          "steps": 20,
+          "cfgScale": 2,
+          "format": "mp3",
+          "seed": 20261117,
+          "mock": false
+        },
+        "python": {
+          "exitCode": 0
+        }
+      },
+      "elapsed_s": 13.4,
+      "file": "assets-source/audio/music/placeholder/title.mp3"
+    },
+    {
+      "id": "explore",
+      "request": {
+        "prompt": "Original instrumental exploration music for a cosy clockwork wizard tower. Warm, curious, unhurried and gently mysterious. Felt piano playing a sparse repeating motif, music-box and celesta glints, soft brass pad swells, plucked harp and pizzicato strings, a quiet ticking clockwork percussion pattern like a distant escapement, warm low cello drone. Approximately 72 BPM, D dorian, steady four-bar phrases that repeat with small variations. Intimate warm room sound, lamplit and analog. No big build, no climax and no fade-out ending. Leave the upper midrange open for small brass and glass sound effects.",
+        "negativePrompt": "vocals, singing, spoken word, choir, electric guitar, distorted guitar, heavy drums, dubstep, trap hats, EDM drops, risers, big orchestral climax, fade out, harsh high frequencies",
+        "mode": "music",
+        "model": "medium",
+        "duration": 96,
+        "steps": 20,
+        "cfgScale": 2,
+        "format": "mp3",
+        "seed": 20261118
+      },
+      "providerFile": "roguexr_explore_placeholder_2.mp3",
+      "providerMeta": {
+        "filename": "roguexr_explore_placeholder_2.mp3",
+        "audioUrl": "/outputs/roguexr_explore_placeholder_2.mp3",
+        "metadataUrl": "/outputs/roguexr_explore_placeholder_2.mp3.json",
+        "createdAt": "2026-11-16T16:09:00.997Z",
+        "backend": "mlx",
+        "generationDurationMs": 19234,
+        "title": "rogue-xr explore placeholder",
+        "request": {
+          "prompt": "Original instrumental exploration music for a cosy clockwork wizard tower. Warm, curious, unhurried and gently mysterious. Felt piano playing a sparse repeating motif, music-box and celesta glints, soft brass pad swells, plucked harp and pizzicato strings, a quiet ticking clockwork percussion pattern like a distant escapement, warm low cello drone. Approximately 72 BPM, D dorian, steady four-bar phrases that repeat with small variations. Intimate warm room sound, lamplit and analog. No big build, no climax and no fade-out ending. Leave the upper midrange open for small brass and glass sound effects.",
+          "negativePrompt": "vocals, singing, spoken word, choir, electric guitar, distorted guitar, heavy drums, dubstep, trap hats, EDM drops, risers, big orchestral climax, fade out, harsh high frequencies",
+          "mode": "music",
+          "model": "medium",
+          "duration": 96,
+          "steps": 20,
+          "cfgScale": 2,
+          "format": "mp3",
+          "seed": 20261118,
+          "mock": false,
+          "title": "rogue-xr explore placeholder",
+          "autoTitle": false
+        },
+        "settings": {
+          "prompt": "Original instrumental exploration music for a cosy clockwork wizard tower. Warm, curious, unhurried and gently mysterious. Felt piano playing a sparse repeating motif, music-box and celesta glints, soft brass pad swells, plucked harp and pizzicato strings, a quiet ticking clockwork percussion pattern like a distant escapement, warm low cello drone. Approximately 72 BPM, D dorian, steady four-bar phrases that repeat with small variations. Intimate warm room sound, lamplit and analog. No big build, no climax and no fade-out ending. Leave the upper midrange open for small brass and glass sound effects.",
+          "negativePrompt": "vocals, singing, spoken word, choir, electric guitar, distorted guitar, heavy drums, dubstep, trap hats, EDM drops, risers, big orchestral climax, fade out, harsh high frequencies",
+          "mode": "music",
+          "model": "medium",
+          "duration": 96,
+          "steps": 20,
+          "cfgScale": 2,
+          "format": "mp3",
+          "seed": 20261118,
+          "mock": false
+        },
+        "python": {
+          "exitCode": 0
+        }
+      },
+      "elapsed_s": 19.3,
+      "file": "assets-source/audio/music/placeholder/explore.mp3"
+    },
+    {
+      "id": "combat",
+      "request": {
+        "prompt": "Original instrumental combat music for a clockwork brass automaton duel in a wizard tower. Tense, driving and mechanical but readable. Pulsing low strings ostinato, muted brass stabs, ticking and clanking metallic percussion like gears, soft war-drum pulse on a steady half-time groove, harpsichord and plucked harp counter-line, low cello and bass clarinet. Approximately 108 BPM, D minor, steady eight-bar phrases with constant energy. Warm brass and walnut room sound, dry and focused. No breakdown to silence, no fade-out ending and no solo drum fills. Leave the upper midrange open for card, dice and impact sound effects.",
+        "negativePrompt": "vocals, singing, spoken word, choir, electric guitar, distorted guitar, dubstep, trap hats, EDM drops, risers, breakdown, silence gap, fade out, harsh high frequencies, long reverb",
+        "mode": "music",
+        "model": "medium",
+        "duration": 96,
+        "steps": 20,
+        "cfgScale": 2,
+        "format": "mp3",
+        "seed": 20261119
+      },
+      "providerFile": "roguexr_combat_placeholder.mp3",
+      "providerMeta": {
+        "filename": "roguexr_combat_placeholder.mp3",
+        "audioUrl": "/outputs/roguexr_combat_placeholder.mp3",
+        "metadataUrl": "/outputs/roguexr_combat_placeholder.mp3.json",
+        "createdAt": "2026-11-16T16:09:35.027Z",
+        "backend": "mlx",
+        "generationDurationMs": 17287,
+        "title": "rogue-xr combat placeholder",
+        "request": {
+          "prompt": "Original instrumental combat music for a clockwork brass automaton duel in a wizard tower. Tense, driving and mechanical but readable. Pulsing low strings ostinato, muted brass stabs, ticking and clanking metallic percussion like gears, soft war-drum pulse on a steady half-time groove, harpsichord and plucked harp counter-line, low cello and bass clarinet. Approximately 108 BPM, D minor, steady eight-bar phrases with constant energy. Warm brass and walnut room sound, dry and focused. No breakdown to silence, no fade-out ending and no solo drum fills. Leave the upper midrange open for card, dice and impact sound effects.",
+          "negativePrompt": "vocals, singing, spoken word, choir, electric guitar, distorted guitar, dubstep, trap hats, EDM drops, risers, breakdown, silence gap, fade out, harsh high frequencies, long reverb",
+          "mode": "music",
+          "model": "medium",
+          "duration": 96,
+          "steps": 20,
+          "cfgScale": 2,
+          "format": "mp3",
+          "seed": 20261119,
+          "mock": false,
+          "title": "rogue-xr combat placeholder",
+          "autoTitle": false
+        },
+        "settings": {
+          "prompt": "Original instrumental combat music for a clockwork brass automaton duel in a wizard tower. Tense, driving and mechanical but readable. Pulsing low strings ostinato, muted brass stabs, ticking and clanking metallic percussion like gears, soft war-drum pulse on a steady half-time groove, harpsichord and plucked harp counter-line, low cello and bass clarinet. Approximately 108 BPM, D minor, steady eight-bar phrases with constant energy. Warm brass and walnut room sound, dry and focused. No breakdown to silence, no fade-out ending and no solo drum fills. Leave the upper midrange open for card, dice and impact sound effects.",
+          "negativePrompt": "vocals, singing, spoken word, choir, electric guitar, distorted guitar, dubstep, trap hats, EDM drops, risers, breakdown, silence gap, fade out, harsh high frequencies, long reverb",
+          "mode": "music",
+          "model": "medium",
+          "duration": 96,
+          "steps": 20,
+          "cfgScale": 2,
+          "format": "mp3",
+          "seed": 20261119,
+          "mock": false
+        },
+        "python": {
+          "exitCode": 0
+        }
+      },
+      "elapsed_s": 17.3,
+      "file": "assets-source/audio/music/placeholder/combat.mp3"
+    },
+    {
+      "id": "reward",
+      "request": {
+        "prompt": "Original instrumental reward music for choosing spoils after a won duel in a clockwork wizard tower. Relieved, warm, quietly triumphant and curious. Rippling harp and celesta arpeggios, a music-box melody, warm brass chorale swells, pizzicato strings, soft glockenspiel accents, light ticking clockwork percussion. Approximately 84 BPM, D major, 4/4, gentle four-bar phrases that repeat with small variations. Warm intimate room sound. No big fanfare, no heavy drums and no fade-out ending. Leave the upper midrange open for card and chime sound effects.",
+        "negativePrompt": "vocals, singing, spoken word, choir, electric guitar, heavy drums, trap hats, EDM drops, risers, big fanfare, march, fade out, harsh high frequencies",
+        "mode": "music",
+        "model": "medium",
+        "duration": 51,
+        "steps": 20,
+        "cfgScale": 2,
+        "format": "mp3",
+        "seed": 20261120
+      },
+      "providerFile": "roguexr_reward_placeholder.mp3",
+      "providerMeta": {
+        "filename": "roguexr_reward_placeholder.mp3",
+        "audioUrl": "/outputs/roguexr_reward_placeholder.mp3",
+        "metadataUrl": "/outputs/roguexr_reward_placeholder.mp3.json",
+        "createdAt": "2026-11-16T16:09:45.915Z",
+        "backend": "mlx",
+        "generationDurationMs": 10871,
+        "title": "rogue-xr reward placeholder",
+        "request": {
+          "prompt": "Original instrumental reward music for choosing spoils after a won duel in a clockwork wizard tower. Relieved, warm, quietly triumphant and curious. Rippling harp and celesta arpeggios, a music-box melody, warm brass chorale swells, pizzicato strings, soft glockenspiel accents, light ticking clockwork percussion. Approximately 84 BPM, D major, 4/4, gentle four-bar phrases that repeat with small variations. Warm intimate room sound. No big fanfare, no heavy drums and no fade-out ending. Leave the upper midrange open for card and chime sound effects.",
+          "negativePrompt": "vocals, singing, spoken word, choir, electric guitar, heavy drums, trap hats, EDM drops, risers, big fanfare, march, fade out, harsh high frequencies",
+          "mode": "music",
+          "model": "medium",
+          "duration": 51,
+          "steps": 20,
+          "cfgScale": 2,
+          "format": "mp3",
+          "seed": 20261120,
+          "mock": false,
+          "title": "rogue-xr reward placeholder",
+          "autoTitle": false
+        },
+        "settings": {
+          "prompt": "Original instrumental reward music for choosing spoils after a won duel in a clockwork wizard tower. Relieved, warm, quietly triumphant and curious. Rippling harp and celesta arpeggios, a music-box melody, warm brass chorale swells, pizzicato strings, soft glockenspiel accents, light ticking clockwork percussion. Approximately 84 BPM, D major, 4/4, gentle four-bar phrases that repeat with small variations. Warm intimate room sound. No big fanfare, no heavy drums and no fade-out ending. Leave the upper midrange open for card and chime sound effects.",
+          "negativePrompt": "vocals, singing, spoken word, choir, electric guitar, heavy drums, trap hats, EDM drops, risers, big fanfare, march, fade out, harsh high frequencies",
+          "mode": "music",
+          "model": "medium",
+          "duration": 51,
+          "steps": 20,
+          "cfgScale": 2,
+          "format": "mp3",
+          "seed": 20261120,
+          "mock": false
+        },
+        "python": {
+          "exitCode": 0
+        }
+      },
+      "elapsed_s": 10.9,
+      "file": "assets-source/audio/music/placeholder/reward.mp3"
+    },
+    {
+      "id": "rest",
+      "request": {
+        "prompt": "Original instrumental lullaby for a safe resting nook beside a warm brass hearth in a clockwork wizard tower. Peaceful, cosy, restorative and tender. Slow felt piano melody, warm solo cello, soft bowed string pad, gentle music box, low warm clarinet, very soft brushed ticking like a slow pendulum clock. Approximately 60 BPM, D major, 4/4, slow four-bar phrases that repeat with small variations. Intimate close room sound, candlelit and analog. No percussion build, no climax and no fade-out ending. Leave the upper midrange open for steam and brass sound effects.",
+        "negativePrompt": "vocals, singing, spoken word, choir, electric guitar, drums, trap hats, EDM, risers, crackling fire sound effects, rain sounds, ambient noise, fade out, harsh high frequencies",
+        "mode": "music",
+        "model": "medium",
+        "duration": 66,
+        "steps": 20,
+        "cfgScale": 2,
+        "format": "mp3",
+        "seed": 20261121
+      },
+      "providerFile": "roguexr_rest_placeholder.mp3",
+      "providerMeta": {
+        "filename": "roguexr_rest_placeholder.mp3",
+        "audioUrl": "/outputs/roguexr_rest_placeholder.mp3",
+        "metadataUrl": "/outputs/roguexr_rest_placeholder.mp3.json",
+        "createdAt": "2026-11-16T16:10:00.248Z",
+        "backend": "mlx",
+        "generationDurationMs": 14301,
+        "title": "rogue-xr rest placeholder",
+        "request": {
+          "prompt": "Original instrumental lullaby for a safe resting nook beside a warm brass hearth in a clockwork wizard tower. Peaceful, cosy, restorative and tender. Slow felt piano melody, warm solo cello, soft bowed string pad, gentle music box, low warm clarinet, very soft brushed ticking like a slow pendulum clock. Approximately 60 BPM, D major, 4/4, slow four-bar phrases that repeat with small variations. Intimate close room sound, candlelit and analog. No percussion build, no climax and no fade-out ending. Leave the upper midrange open for steam and brass sound effects.",
+          "negativePrompt": "vocals, singing, spoken word, choir, electric guitar, drums, trap hats, EDM, risers, crackling fire sound effects, rain sounds, ambient noise, fade out, harsh high frequencies",
+          "mode": "music",
+          "model": "medium",
+          "duration": 66,
+          "steps": 20,
+          "cfgScale": 2,
+          "format": "mp3",
+          "seed": 20261121,
+          "mock": false,
+          "title": "rogue-xr rest placeholder",
+          "autoTitle": false
+        },
+        "settings": {
+          "prompt": "Original instrumental lullaby for a safe resting nook beside a warm brass hearth in a clockwork wizard tower. Peaceful, cosy, restorative and tender. Slow felt piano melody, warm solo cello, soft bowed string pad, gentle music box, low warm clarinet, very soft brushed ticking like a slow pendulum clock. Approximately 60 BPM, D major, 4/4, slow four-bar phrases that repeat with small variations. Intimate close room sound, candlelit and analog. No percussion build, no climax and no fade-out ending. Leave the upper midrange open for steam and brass sound effects.",
+          "negativePrompt": "vocals, singing, spoken word, choir, electric guitar, drums, trap hats, EDM, risers, crackling fire sound effects, rain sounds, ambient noise, fade out, harsh high frequencies",
+          "mode": "music",
+          "model": "medium",
+          "duration": 66,
+          "steps": 20,
+          "cfgScale": 2,
+          "format": "mp3",
+          "seed": 20261121,
+          "mock": false
+        },
+        "python": {
+          "exitCode": 0
+        }
+      },
+      "elapsed_s": 14.3,
+      "file": "assets-source/audio/music/placeholder/rest.mp3"
+    },
+    {
+      "id": "elite",
+      "request": {
+        "prompt": "Original instrumental elite combat music for a duel with a towering brass orrery automaton in a clockwork wizard tower. Ominous, heavier and more urgent than an ordinary fight but still readable. Driving low strings ostinato, high celesta and glass harmonica arpeggios that circle like orbiting planets, heavy muted brass hits, timpani and deep metallic gear clanks on a steady groove, harpsichord counter-line, low contrabassoon. Approximately 116 BPM, D minor, 4/4, steady eight-bar phrases with constant high energy. Warm, dry, focused room sound. No breakdown to silence, no fade-out ending and no solo drum fills. Leave the upper midrange open for card, dice and impact sound effects.",
+        "negativePrompt": "vocals, singing, spoken word, choir, electric guitar, distorted guitar, dubstep, trap hats, EDM drops, risers, breakdown, silence gap, fade out, harsh high frequencies, long reverb",
+        "mode": "music",
+        "model": "medium",
+        "duration": 66,
+        "steps": 20,
+        "cfgScale": 2,
+        "format": "mp3",
+        "seed": 20261122
+      },
+      "providerFile": "roguexr_elite_placeholder.mp3",
+      "providerMeta": {
+        "filename": "roguexr_elite_placeholder.mp3",
+        "audioUrl": "/outputs/roguexr_elite_placeholder.mp3",
+        "metadataUrl": "/outputs/roguexr_elite_placeholder.mp3.json",
+        "createdAt": "2026-11-16T16:10:13.894Z",
+        "backend": "mlx",
+        "generationDurationMs": 13629,
+        "title": "rogue-xr elite placeholder",
+        "request": {
+          "prompt": "Original instrumental elite combat music for a duel with a towering brass orrery automaton in a clockwork wizard tower. Ominous, heavier and more urgent than an ordinary fight but still readable. Driving low strings ostinato, high celesta and glass harmonica arpeggios that circle like orbiting planets, heavy muted brass hits, timpani and deep metallic gear clanks on a steady groove, harpsichord counter-line, low contrabassoon. Approximately 116 BPM, D minor, 4/4, steady eight-bar phrases with constant high energy. Warm, dry, focused room sound. No breakdown to silence, no fade-out ending and no solo drum fills. Leave the upper midrange open for card, dice and impact sound effects.",
+          "negativePrompt": "vocals, singing, spoken word, choir, electric guitar, distorted guitar, dubstep, trap hats, EDM drops, risers, breakdown, silence gap, fade out, harsh high frequencies, long reverb",
+          "mode": "music",
+          "model": "medium",
+          "duration": 66,
+          "steps": 20,
+          "cfgScale": 2,
+          "format": "mp3",
+          "seed": 20261122,
+          "mock": false,
+          "title": "rogue-xr elite placeholder",
+          "autoTitle": false
+        },
+        "settings": {
+          "prompt": "Original instrumental elite combat music for a duel with a towering brass orrery automaton in a clockwork wizard tower. Ominous, heavier and more urgent than an ordinary fight but still readable. Driving low strings ostinato, high celesta and glass harmonica arpeggios that circle like orbiting planets, heavy muted brass hits, timpani and deep metallic gear clanks on a steady groove, harpsichord counter-line, low contrabassoon. Approximately 116 BPM, D minor, 4/4, steady eight-bar phrases with constant high energy. Warm, dry, focused room sound. No breakdown to silence, no fade-out ending and no solo drum fills. Leave the upper midrange open for card, dice and impact sound effects.",
+          "negativePrompt": "vocals, singing, spoken word, choir, electric guitar, distorted guitar, dubstep, trap hats, EDM drops, risers, breakdown, silence gap, fade out, harsh high frequencies, long reverb",
+          "mode": "music",
+          "model": "medium",
+          "duration": 66,
+          "steps": 20,
+          "cfgScale": 2,
+          "format": "mp3",
+          "seed": 20261122,
+          "mock": false
+        },
+        "python": {
+          "exitCode": 0
+        }
+      },
+      "elapsed_s": 13.6,
+      "file": "assets-source/audio/music/placeholder/elite.mp3"
+    },
+    {
+      "id": "defeat",
+      "request": {
+        "prompt": "Original instrumental short lament for the end of a failed climb in a clockwork wizard tower. Sorrowful, gentle and reflective, not horror. Opens softly on a held low chord, then a solo cello melody over slow felt piano, a music box that winds down and slows, a soft string pad, and a final distant low clock chime. Approximately 66 BPM, slowing at the end, D minor, 4/4. A complete short piece of about 45 seconds with a clear ending on a sustained low D minor chord that rings out naturally to silence. Intimate warm room sound.",
+        "negativePrompt": "vocals, singing, spoken word, choir, electric guitar, drums, trap hats, EDM, risers, horror stingers, jump scare, abrupt cut, harsh high frequencies",
+        "mode": "music",
+        "model": "medium",
+        "duration": 45,
+        "steps": 20,
+        "cfgScale": 2,
+        "format": "mp3",
+        "seed": 20261123
+      },
+      "providerFile": "roguexr_defeat_placeholder.mp3",
+      "providerMeta": {
+        "filename": "roguexr_defeat_placeholder.mp3",
+        "audioUrl": "/outputs/roguexr_defeat_placeholder.mp3",
+        "metadataUrl": "/outputs/roguexr_defeat_placeholder.mp3.json",
+        "createdAt": "2026-11-16T16:10:23.950Z",
+        "backend": "mlx",
+        "generationDurationMs": 10043,
+        "title": "rogue-xr defeat placeholder",
+        "request": {
+          "prompt": "Original instrumental short lament for the end of a failed climb in a clockwork wizard tower. Sorrowful, gentle and reflective, not horror. Opens softly on a held low chord, then a solo cello melody over slow felt piano, a music box that winds down and slows, a soft string pad, and a final distant low clock chime. Approximately 66 BPM, slowing at the end, D minor, 4/4. A complete short piece of about 45 seconds with a clear ending on a sustained low D minor chord that rings out naturally to silence. Intimate warm room sound.",
+          "negativePrompt": "vocals, singing, spoken word, choir, electric guitar, drums, trap hats, EDM, risers, horror stingers, jump scare, abrupt cut, harsh high frequencies",
+          "mode": "music",
+          "model": "medium",
+          "duration": 45,
+          "steps": 20,
+          "cfgScale": 2,
+          "format": "mp3",
+          "seed": 20261123,
+          "mock": false,
+          "title": "rogue-xr defeat placeholder",
+          "autoTitle": false
+        },
+        "settings": {
+          "prompt": "Original instrumental short lament for the end of a failed climb in a clockwork wizard tower. Sorrowful, gentle and reflective, not horror. Opens softly on a held low chord, then a solo cello melody over slow felt piano, a music box that winds down and slows, a soft string pad, and a final distant low clock chime. Approximately 66 BPM, slowing at the end, D minor, 4/4. A complete short piece of about 45 seconds with a clear ending on a sustained low D minor chord that rings out naturally to silence. Intimate warm room sound.",
+          "negativePrompt": "vocals, singing, spoken word, choir, electric guitar, drums, trap hats, EDM, risers, horror stingers, jump scare, abrupt cut, harsh high frequencies",
+          "mode": "music",
+          "model": "medium",
+          "duration": 45,
+          "steps": 20,
+          "cfgScale": 2,
+          "format": "mp3",
+          "seed": 20261123,
+          "mock": false
+        },
+        "python": {
+          "exitCode": 0
+        }
+      },
+      "elapsed_s": 10.1,
+      "file": "assets-source/audio/music/placeholder/defeat.mp3"
+    },
+    {
+      "id": "workshop",
+      "request": {
+        "prompt": "Original instrumental workshop music for an apprentice tinkering at a warm brass workbench between climbs of a clockwork wizard tower. Hopeful, playful, busy and cosy. Bouncy pizzicato strings, a felt piano and celesta melody, clarinet and bassoon counter-lines, plucked harp, a light ticking and ratcheting clockwork percussion groove like small tools at work, warm low strings. Approximately 88 BPM, G major, 4/4, steady four-bar phrases that repeat with small variations. Warm intimate room sound. No big build, no heavy drums and no fade-out ending. Leave the upper midrange open for small brass and interface sounds.",
+        "negativePrompt": "vocals, singing, spoken word, choir, electric guitar, heavy drums, trap hats, EDM drops, risers, big orchestral climax, fade out, harsh high frequencies",
+        "mode": "music",
+        "model": "medium",
+        "duration": 66,
+        "steps": 20,
+        "cfgScale": 2,
+        "format": "mp3",
+        "seed": 20261124
+      },
+      "providerFile": "roguexr_workshop_placeholder.mp3",
+      "providerMeta": {
+        "filename": "roguexr_workshop_placeholder.mp3",
+        "audioUrl": "/outputs/roguexr_workshop_placeholder.mp3",
+        "metadataUrl": "/outputs/roguexr_workshop_placeholder.mp3.json",
+        "createdAt": "2026-11-16T16:10:40.293Z",
+        "backend": "mlx",
+        "generationDurationMs": 16332,
+        "title": "rogue-xr workshop placeholder",
+        "request": {
+          "prompt": "Original instrumental workshop music for an apprentice tinkering at a warm brass workbench between climbs of a clockwork wizard tower. Hopeful, playful, busy and cosy. Bouncy pizzicato strings, a felt piano and celesta melody, clarinet and bassoon counter-lines, plucked harp, a light ticking and ratcheting clockwork percussion groove like small tools at work, warm low strings. Approximately 88 BPM, G major, 4/4, steady four-bar phrases that repeat with small variations. Warm intimate room sound. No big build, no heavy drums and no fade-out ending. Leave the upper midrange open for small brass and interface sounds.",
+          "negativePrompt": "vocals, singing, spoken word, choir, electric guitar, heavy drums, trap hats, EDM drops, risers, big orchestral climax, fade out, harsh high frequencies",
+          "mode": "music",
+          "model": "medium",
+          "duration": 66,
+          "steps": 20,
+          "cfgScale": 2,
+          "format": "mp3",
+          "seed": 20261124,
+          "mock": false,
+          "title": "rogue-xr workshop placeholder",
+          "autoTitle": false
+        },
+        "settings": {
+          "prompt": "Original instrumental workshop music for an apprentice tinkering at a warm brass workbench between climbs of a clockwork wizard tower. Hopeful, playful, busy and cosy. Bouncy pizzicato strings, a felt piano and celesta melody, clarinet and bassoon counter-lines, plucked harp, a light ticking and ratcheting clockwork percussion groove like small tools at work, warm low strings. Approximately 88 BPM, G major, 4/4, steady four-bar phrases that repeat with small variations. Warm intimate room sound. No big build, no heavy drums and no fade-out ending. Leave the upper midrange open for small brass and interface sounds.",
+          "negativePrompt": "vocals, singing, spoken word, choir, electric guitar, heavy drums, trap hats, EDM drops, risers, big orchestral climax, fade out, harsh high frequencies",
+          "mode": "music",
+          "model": "medium",
+          "duration": 66,
+          "steps": 20,
+          "cfgScale": 2,
+          "format": "mp3",
+          "seed": 20261124,
+          "mock": false
+        },
+        "python": {
+          "exitCode": 0
+        }
+      },
+      "elapsed_s": 16.3,
+      "file": "assets-source/audio/music/placeholder/workshop.mp3"
+    },
+    {
+      "id": "guardian-1",
+      "request": {
+        "prompt": "Original instrumental final boss music, first phase, for a duel with a giant grandfather-clock automaton guardian at the top of a clockwork wizard tower. Grave, majestic and menacing, measured and controlled. Deep pipe organ pedal tones, low brass chorale, a heavy tick-tock pendulum percussion on every beat, low strings ostinato, a distant tower bell on the first beat of every fourth bar, harpsichord figures, timpani. Approximately 96 BPM, D minor, 4/4, steady eight-bar phrases with constant restrained intensity, held back as if something is still locked inside. Warm, dry, focused room sound. No breakdown to silence, no fade-out ending and no solo drum fills. Leave the upper midrange open for card, dice and impact sound effects.",
+        "negativePrompt": "vocals, singing, spoken word, choir, epic choir, electric guitar, distorted guitar, dubstep, trap hats, EDM drops, trailer braams, risers, breakdown, silence gap, fade out, harsh high frequencies, long reverb",
+        "mode": "music",
+        "model": "medium",
+        "duration": 66,
+        "steps": 20,
+        "cfgScale": 2,
+        "format": "mp3",
+        "seed": 20261125
+      },
+      "providerFile": "roguexr_guardian1_placeholder.mp3",
+      "providerMeta": {
+        "filename": "roguexr_guardian1_placeholder.mp3",
+        "audioUrl": "/outputs/roguexr_guardian1_placeholder.mp3",
+        "metadataUrl": "/outputs/roguexr_guardian1_placeholder.mp3.json",
+        "createdAt": "2026-11-16T16:10:55.688Z",
+        "backend": "mlx",
+        "generationDurationMs": 15374,
+        "title": "rogue-xr guardian-1 placeholder",
+        "request": {
+          "prompt": "Original instrumental final boss music, first phase, for a duel with a giant grandfather-clock automaton guardian at the top of a clockwork wizard tower. Grave, majestic and menacing, measured and controlled. Deep pipe organ pedal tones, low brass chorale, a heavy tick-tock pendulum percussion on every beat, low strings ostinato, a distant tower bell on the first beat of every fourth bar, harpsichord figures, timpani. Approximately 96 BPM, D minor, 4/4, steady eight-bar phrases with constant restrained intensity, held back as if something is still locked inside. Warm, dry, focused room sound. No breakdown to silence, no fade-out ending and no solo drum fills. Leave the upper midrange open for card, dice and impact sound effects.",
+          "negativePrompt": "vocals, singing, spoken word, choir, epic choir, electric guitar, distorted guitar, dubstep, trap hats, EDM drops, trailer braams, risers, breakdown, silence gap, fade out, harsh high frequencies, long reverb",
+          "mode": "music",
+          "model": "medium",
+          "duration": 66,
+          "steps": 20,
+          "cfgScale": 2,
+          "format": "mp3",
+          "seed": 20261125,
+          "mock": false,
+          "title": "rogue-xr guardian-1 placeholder",
+          "autoTitle": false
+        },
+        "settings": {
+          "prompt": "Original instrumental final boss music, first phase, for a duel with a giant grandfather-clock automaton guardian at the top of a clockwork wizard tower. Grave, majestic and menacing, measured and controlled. Deep pipe organ pedal tones, low brass chorale, a heavy tick-tock pendulum percussion on every beat, low strings ostinato, a distant tower bell on the first beat of every fourth bar, harpsichord figures, timpani. Approximately 96 BPM, D minor, 4/4, steady eight-bar phrases with constant restrained intensity, held back as if something is still locked inside. Warm, dry, focused room sound. No breakdown to silence, no fade-out ending and no solo drum fills. Leave the upper midrange open for card, dice and impact sound effects.",
+          "negativePrompt": "vocals, singing, spoken word, choir, epic choir, electric guitar, distorted guitar, dubstep, trap hats, EDM drops, trailer braams, risers, breakdown, silence gap, fade out, harsh high frequencies, long reverb",
+          "mode": "music",
+          "model": "medium",
+          "duration": 66,
+          "steps": 20,
+          "cfgScale": 2,
+          "format": "mp3",
+          "seed": 20261125,
+          "mock": false
+        },
+        "python": {
+          "exitCode": 0
+        }
+      },
+      "elapsed_s": 15.4,
+      "file": "assets-source/audio/music/placeholder/guardian-1.mp3"
+    },
+    {
+      "id": "guardian-2",
+      "request": {
+        "prompt": "Original instrumental final boss music, second phase, for a giant grandfather-clock automaton guardian whose case has burst open to reveal racing gears. Furious, urgent and climactic but still readable. The same grave organ and brass world at full force: full brass section, tolling tower bells, racing double-time strings ostinato, rapid ticking and ratcheting metallic gear percussion, pounding timpani and low war drums, harpsichord runs, full pipe organ. Approximately 96 BPM with a driving double-time feel, D minor, 4/4, steady eight-bar phrases with constant maximum energy. Warm, dry, focused room sound. No breakdown to silence, no fade-out ending and no solo drum fills. Leave the upper midrange open for card, dice and impact sound effects.",
+        "negativePrompt": "vocals, singing, spoken word, choir, epic choir, electric guitar, distorted guitar, dubstep, trap hats, EDM drops, trailer braams, risers, breakdown, silence gap, fade out, harsh high frequencies, long reverb",
+        "mode": "music",
+        "model": "medium",
+        "duration": 66,
+        "steps": 20,
+        "cfgScale": 2,
+        "format": "mp3",
+        "seed": 20261126
+      },
+      "providerFile": "roguexr_guardian2_placeholder.mp3",
+      "providerMeta": {
+        "filename": "roguexr_guardian2_placeholder.mp3",
+        "audioUrl": "/outputs/roguexr_guardian2_placeholder.mp3",
+        "metadataUrl": "/outputs/roguexr_guardian2_placeholder.mp3.json",
+        "createdAt": "2026-11-16T16:11:09.136Z",
+        "backend": "mlx",
+        "generationDurationMs": 13432,
+        "title": "rogue-xr guardian-2 placeholder",
+        "request": {
+          "prompt": "Original instrumental final boss music, second phase, for a giant grandfather-clock automaton guardian whose case has burst open to reveal racing gears. Furious, urgent and climactic but still readable. The same grave organ and brass world at full force: full brass section, tolling tower bells, racing double-time strings ostinato, rapid ticking and ratcheting metallic gear percussion, pounding timpani and low war drums, harpsichord runs, full pipe organ. Approximately 96 BPM with a driving double-time feel, D minor, 4/4, steady eight-bar phrases with constant maximum energy. Warm, dry, focused room sound. No breakdown to silence, no fade-out ending and no solo drum fills. Leave the upper midrange open for card, dice and impact sound effects.",
+          "negativePrompt": "vocals, singing, spoken word, choir, epic choir, electric guitar, distorted guitar, dubstep, trap hats, EDM drops, trailer braams, risers, breakdown, silence gap, fade out, harsh high frequencies, long reverb",
+          "mode": "music",
+          "model": "medium",
+          "duration": 66,
+          "steps": 20,
+          "cfgScale": 2,
+          "format": "mp3",
+          "seed": 20261126,
+          "mock": false,
+          "title": "rogue-xr guardian-2 placeholder",
+          "autoTitle": false
+        },
+        "settings": {
+          "prompt": "Original instrumental final boss music, second phase, for a giant grandfather-clock automaton guardian whose case has burst open to reveal racing gears. Furious, urgent and climactic but still readable. The same grave organ and brass world at full force: full brass section, tolling tower bells, racing double-time strings ostinato, rapid ticking and ratcheting metallic gear percussion, pounding timpani and low war drums, harpsichord runs, full pipe organ. Approximately 96 BPM with a driving double-time feel, D minor, 4/4, steady eight-bar phrases with constant maximum energy. Warm, dry, focused room sound. No breakdown to silence, no fade-out ending and no solo drum fills. Leave the upper midrange open for card, dice and impact sound effects.",
+          "negativePrompt": "vocals, singing, spoken word, choir, epic choir, electric guitar, distorted guitar, dubstep, trap hats, EDM drops, trailer braams, risers, breakdown, silence gap, fade out, harsh high frequencies, long reverb",
+          "mode": "music",
+          "model": "medium",
+          "duration": 66,
+          "steps": 20,
+          "cfgScale": 2,
+          "format": "mp3",
+          "seed": 20261126,
+          "mock": false
+        },
+        "python": {
+          "exitCode": 0
+        }
+      },
+      "elapsed_s": 13.4,
+      "file": "assets-source/audio/music/placeholder/guardian-2.mp3"
+    },
+    {
+      "id": "victory",
+      "request": {
+        "prompt": "Original instrumental victory music for reaching the top of a clockwork wizard tower after defeating its guardian. Triumphant, warm, relieved and wondrous. Opens softly on a held chord for two seconds, then a bright brass fanfare on an original melody, celebratory tolling bells, sweeping strings, rippling harp and celesta, timpani rolls, then a calm warm coda on felt piano and music box. Approximately 92 BPM, D major, 4/4. A complete short piece of about 60 seconds with a clear ending on a sustained D major chord that rings out naturally to silence. Lamplit warm hall sound.",
+        "negativePrompt": "vocals, singing, spoken word, choir, electric guitar, trap hats, EDM drops, dubstep, risers, abrupt cut, harsh high frequencies",
+        "mode": "music",
+        "model": "medium",
+        "duration": 60,
+        "steps": 20,
+        "cfgScale": 2,
+        "format": "mp3",
+        "seed": 20261127
+      },
+      "providerFile": "roguexr_victory_placeholder.mp3",
+      "providerMeta": {
+        "filename": "roguexr_victory_placeholder.mp3",
+        "audioUrl": "/outputs/roguexr_victory_placeholder.mp3",
+        "metadataUrl": "/outputs/roguexr_victory_placeholder.mp3.json",
+        "createdAt": "2026-11-16T16:11:21.397Z",
+        "backend": "mlx",
+        "generationDurationMs": 12249,
+        "title": "rogue-xr victory placeholder",
+        "request": {
+          "prompt": "Original instrumental victory music for reaching the top of a clockwork wizard tower after defeating its guardian. Triumphant, warm, relieved and wondrous. Opens softly on a held chord for two seconds, then a bright brass fanfare on an original melody, celebratory tolling bells, sweeping strings, rippling harp and celesta, timpani rolls, then a calm warm coda on felt piano and music box. Approximately 92 BPM, D major, 4/4. A complete short piece of about 60 seconds with a clear ending on a sustained D major chord that rings out naturally to silence. Lamplit warm hall sound.",
+          "negativePrompt": "vocals, singing, spoken word, choir, electric guitar, trap hats, EDM drops, dubstep, risers, abrupt cut, harsh high frequencies",
+          "mode": "music",
+          "model": "medium",
+          "duration": 60,
+          "steps": 20,
+          "cfgScale": 2,
+          "format": "mp3",
+          "seed": 20261127,
+          "mock": false,
+          "title": "rogue-xr victory placeholder",
+          "autoTitle": false
+        },
+        "settings": {
+          "prompt": "Original instrumental victory music for reaching the top of a clockwork wizard tower after defeating its guardian. Triumphant, warm, relieved and wondrous. Opens softly on a held chord for two seconds, then a bright brass fanfare on an original melody, celebratory tolling bells, sweeping strings, rippling harp and celesta, timpani rolls, then a calm warm coda on felt piano and music box. Approximately 92 BPM, D major, 4/4. A complete short piece of about 60 seconds with a clear ending on a sustained D major chord that rings out naturally to silence. Lamplit warm hall sound.",
+          "negativePrompt": "vocals, singing, spoken word, choir, electric guitar, trap hats, EDM drops, dubstep, risers, abrupt cut, harsh high frequencies",
+          "mode": "music",
+          "model": "medium",
+          "duration": 60,
+          "steps": 20,
+          "cfgScale": 2,
+          "format": "mp3",
+          "seed": 20261127,
+          "mock": false
+        },
+        "python": {
+          "exitCode": 0
+        }
+      },
+      "elapsed_s": 12.3,
+      "file": "assets-source/audio/music/placeholder/victory.mp3"
+    }
+  ]
+}

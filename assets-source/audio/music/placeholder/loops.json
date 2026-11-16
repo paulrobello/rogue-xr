@@ -1,0 +1,47 @@
+{
+  "title": {
+    "loop_start_s": 4.75,
+    "loop_end_s": 51.5,
+    "crossfade_s": 2.0
+  },
+  "explore": {
+    "loop_start_s": 7.5,
+    "loop_end_s": 79.0,
+    "crossfade_s": 2.0
+  },
+  "combat": {
+    "loop_start_s": 5.25,
+    "loop_end_s": 88.5,
+    "crossfade_s": 1.5
+  },
+  "reward": {
+    "loop_start_s": 7.75,
+    "loop_end_s": 35.75,
+    "crossfade_s": 2.0
+  },
+  "rest": {
+    "loop_start_s": 4.75,
+    "loop_end_s": 53.0,
+    "crossfade_s": 2.0
+  },
+  "elite": {
+    "loop_start_s": 3.75,
+    "loop_end_s": 52.0,
+    "crossfade_s": 1.5
+  },
+  "workshop": {
+    "loop_start_s": 6.75,
+    "loop_end_s": 53.75,
+    "crossfade_s": 2.0
+  },
+  "guardian-1": {
+    "loop_start_s": 2.75,
+    "loop_end_s": 51.75,
+    "crossfade_s": 1.5
+  },
+  "guardian-2": {
+    "loop_start_s": 2.0,
+    "loop_end_s": 49.5,
+    "crossfade_s": 1.5
+  }
+}
