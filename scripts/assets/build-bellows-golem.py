@@ -3,15 +3,16 @@ golem-sheet-1.png, notes assets-source/concepts/p5-automatons-design.md, style d
 built procedurally as rigid plated parts, each weighted 1.0 to one bone of a 22-bone armature, with
 the five automaton clips of the Cog Sentry contract (P4-T6): idle (loop, the bellows pumping),
 attack (the two-fist crush), hit, death (one-shot, ends lying prone) and frozen (the held mid-step
-pose of the time freeze). The silhouette follows the sheet: layered shoulder pauldrons, long
-gorilla arms with big brass forearm cylinders and huge rounded fists hanging to the shins, a walnut
-stave barrel over a pleated bellows, two chimneys and a small domed head in a collar. The vent
-intent is modeled as glowing chimney mouths only, with no flame or smoke geometry (art bible).
+pose of the time freeze). The silhouette follows the sheet: drum shoulder pauldrons, long gorilla
+arms with big brass forearm cylinders and huge rounded mitt fists hanging to the shins, a walnut
+stave barrel over a tapering pleated bellows, two chimneys and a capsule head rising out of a collar
+bezel. The vent intent is modeled as glowing chimney mouths (an ember dome in each) only, with no
+flame or smoke geometry (design notes, art bible).
 
 Exported as an image-free skinned GLB. The brass-polished slot carries the name of the shared
 P4-T3 tileable set (`public/assets/materials/`), so the runtime binds it by name; UV0 is in tile
 units (metres / tileMeters). The other three slots are factor-only: golem-case (white base, its hue
-from the COLOR_0 vertex colours: walnut staves, leather-dark pleats, the barrel interior),
+from the COLOR_0 vertex colours: walnut staves, walnut pleats, the barrel interior),
 golem-metal (white base, COLOR_0: gunmetal joints and the emerald inlays) and golem-glow (the chest
 and back grilles, the eyes and the chimney mouths). The walnut is factor-only because the shared
 walnut set renders about 1.6x too light against the art bible's #583C26. After export the GLB's
@@ -69,11 +70,11 @@ METAL = "golem-metal"  # factor-only, hue from COLOR_0: gunmetal joints, emerald
 MATS = ["brass-polished", CASE, METAL, GLOW]
 BP, CS, MT, GL = range(4)
 # Pseudo slots: build_body maps 10-19 to CS and 20-29 to MT and writes the shade into COLOR_0.
-WN1, WN2, WN3, WP, WD = 10, 11, 12, 13, 14
+WN1, WN2, WN3, WD = 10, 11, 12, 14
 GM, EM = 20, 21
-SHADES = {WN1: (0x34, 0x1A, 0x07), WN2: (0x2E, 0x17, 0x06), WN3: (0x3A, 0x1E, 0x08), WP: (0x2A, 0x15, 0x05), WD: (0x12, 0x0A, 0x05),
+SHADES = {WN1: (0x34, 0x1A, 0x07), WN2: (0x2E, 0x17, 0x06), WN3: (0x3A, 0x1E, 0x08), WD: (0x12, 0x0A, 0x05),
           GM: (0x3A, 0x38, 0x3A), EM: (0x0C, 0x8A, 0x3E)}
-SETS = {"brass-polished": 0.35}  # shared set -> normal scale (as on the combat table)
+SETS = {"brass-polished": 0.15}  # shared set -> normal scale (0.35 read as swirl noise at play distance)
 TILE_METERS = 0.5  # the brass set tiles at 0.5 m (public/assets/materials/materials.json)
 FACTORS = {  # sRGB base, roughness, metallic: the GLB look, and the fallback when the set fails
     "brass-polished": ((0xDE, 0xC1, 0x6A), 0.3, 1.0),
@@ -89,7 +90,7 @@ GLOW_SRGB = (0xF0, 0x8C, 0x2C)
 GLOW_STRENGTH = 1.0
 
 # Armature: name, parent, head, tail (Blender metres). R is Blender +X.
-SHOULDER = (0.66, 0.0, 1.56)
+SHOULDER = (0.66, 0.0, 1.50)  # on the pauldron drum's axle, so the drum turns in place as the arm pitches
 ELBOW = (0.86, 0.02, 1.06)
 WRIST = (0.92, 0.29, 0.53)
 FIST_Y = 0.09  # the fists hang forward of the body, as on the side panel
@@ -102,12 +103,12 @@ BONES: list[tuple[str, str | None, tuple, tuple]] = [
     ("spine", "pelvis", (0, 0, 0.80), (0, 0, 1.20)),
     ("bellows", "spine", (0, 0, 0.98), (0, 0, 1.18)),
     ("chest", "spine", (0, 0, 1.20), (0, 0, 1.80)),
-    ("head", "chest", (0, 0.30, 1.80), (0, 0.30, 2.02)),
+    ("head", "chest", (0, 0.42, 1.83), (0, 0.42, 2.05)),  # pivots at the collar band centre, so the head turns inside it
 ]
 for _s, _n in ((1, "R"), (-1, "L")):
     BONES += [
         (f"chimney.{_n}", "chest", (_s * 0.40, -0.12, 1.76), (_s * 0.44, -0.15, 2.10)),
-        (f"clavicle.{_n}", "chest", (_s * 0.12, 0, 1.56), (_s * 0.56, 0, 1.56)),
+        (f"clavicle.{_n}", "chest", (_s * 0.12, 0, SHOULDER[2]), (_s * 0.56, 0, SHOULDER[2])),
         (f"upperarm.{_n}", f"clavicle.{_n}", (_s * SHOULDER[0], SHOULDER[1], SHOULDER[2]), (_s * ELBOW[0], ELBOW[1], ELBOW[2])),
         (f"forearm.{_n}", f"upperarm.{_n}", (_s * ELBOW[0], ELBOW[1], ELBOW[2]), (_s * WRIST[0], WRIST[1], WRIST[2])),
         (f"hand.{_n}", f"forearm.{_n}", (_s * WRIST[0], WRIST[1], WRIST[2]), (_s * 0.93, 0.22 + FIST_Y, 0.20)),
@@ -452,9 +453,16 @@ def _m(p, s: int) -> tuple:
 
 SY = 0.9  # barrel and bellows depth / width (the side panel's barrel is nearly round)
 BARREL = (1.20, 1.94)  # stave span
-PLEAT_Z = (0.80, 1.215)
-PLEAT_R = (0.43, 0.505)  # valley, ridge
+PLEAT_Z = (0.77, 1.215)  # the top pleat stays under the barrel's bottom band through the 3.2 cm pump
+PLEAT_RIDGE = (0.455, 0.515)  # bottom and top pleat ridge radius: the bellows tapers into the barrel
+PLEAT_DEPTH = 0.03  # ridge to valley
 PLEATS = 6
+
+
+def pleat_ridge(z: float) -> float:
+    """Ridge radius of the pleat at height z (linear in the pleat index, clamped to the stack)."""
+    k = (z - PLEAT_Z[0]) / ((PLEAT_Z[1] - PLEAT_Z[0]) / PLEATS) - 0.5
+    return PLEAT_RIDGE[0] + (PLEAT_RIDGE[1] - PLEAT_RIDGE[0]) * min(max(k, 0.0), PLEATS - 1) / (PLEATS - 1)
 
 
 def barrel_r(z: float) -> float:
@@ -473,7 +481,7 @@ def strap_path(x: float, z0: float, z1: float, rfun, sign: int, off: float, n: i
     return out
 
 
-def grille(P: Parts, z: float, sign: int, ax: float, az: float, bars: list) -> None:
+def grille(P: Parts, z: float, sign: int, ax: float, az: float, bars: list, bar: float = 0.045) -> None:
     """Round chest grille on the barrel front (sign 1) or back (-1): a dark iron housing set into the
     staves, a glowing core, brass bars and a brass bezel with riveted side tabs."""
     y = sign * SY * barrel_r(z)
@@ -482,7 +490,7 @@ def grille(P: Parts, z: float, sign: int, ax: float, az: float, bars: list) -> N
     P.lathe((0, y + sign * 0.006, z), axis, [(1.0, 0.0), (1.0, 0.012)], GL, "chest", sx=ax * 0.9, sy=az * 0.9)
     for x in bars:
         h = 2 * az * 0.9 * math.sqrt(max(0.0, 1 - (x / (ax * 0.9)) ** 2))
-        P.bbox((x, y + sign * 0.024, z), (0.03, 0.022, h), BP, "chest", bevel=0.007)
+        P.bbox((x, y + sign * 0.024, z), (bar, 0.022, h), BP, "chest", bevel=0.007)
     P.band((0, y + sign * 0.022, z), axis, ax, 0.042, 0.052, BP, "chest", n=P.n(36), rb=az)
     for s in (1, -1):
         tx = s * (ax + 0.045)
@@ -496,7 +504,7 @@ def mark(P: Parts, label: str) -> None:
 
 
 def build_parts(P: Parts) -> None:
-    from mathutils import Matrix
+    from mathutils import Matrix, Vector
 
     # Barrel: walnut staves in three shades over a dark interior, curling in to the head collar.
     z0, z1 = BARREL
@@ -510,90 +518,106 @@ def build_parts(P: Parts) -> None:
         a1 = 2 * math.pi * (i + 1) / staves - gap / 2
         P.wrap((0, 0, z0), (0, 0, z1), lambda v: barrel_r(z0 + span * v), a0, a1, 0.035, shades[(i * 7) % 3], "chest",
                nu=2, nv=P.n(8), sy=SY, bevel=0.0, crown=0.007)
-    for z, w, t in ((z0 + 0.025, 0.03, 0.075), (1.905, 0.028, 0.045)):
-        r = barrel_r(z) + 0.006 + w / 2
-        P.band((0, 0, z), (0, 0, 1), r, w, t, BP, "chest", n=P.n(36), rb=SY * r)
+    # A strap rather than a ledge; its lower edge stays at today's 1.1875 so it still hides the pump slide.
+    r = barrel_r(z0 + 0.012) + 0.006 + 0.015
+    P.band((0, 0, z0 + 0.012), (0, 0, 1), r, 0.03, 0.05, BP, "chest", n=P.n(36), rb=SY * r)
+    # The top band is a back arc only (angles from +X toward the +Y front), so it does not cross the face.
+    r = barrel_r(1.905) + 0.006 + 0.014
+    P.sweep_ring((0, 0, 1.905), (0, 0, 1), r, SY * r, chamfer_rect(0.028, 0.045), BP, "chest", n=P.n(36), arc=(130.0, 410.0))
     P.shell((0, 0, z1 - 0.02), (0, 0, 1), [(0.001, 0.0), (barrel_r(z1 - 0.02) - 0.01, 0.0), (0.26, 0.05), (0.001, 0.075)], WN2, "chest",
             sides=P.n(32), sy=SY)  # closed walnut crown under the collar
-    r = barrel_r(1.32) + 0.018
-    P.sweep_ring((0, 0, 1.32), (0, 0, 1), r, SY * r, chamfer_rect(0.024, 0.055), BP, "chest", n=P.n(28), arc=(200.0, 340.0))
+    # Arched back strap: its tilted plane rises from z 1.38 at the sides to 1.49 at the spine; the radii
+    # keep its inner face within 4 mm of the stave surface along the whole arc.
+    r = barrel_r(1.40) + 0.012
+    P.sweep_ring((0, 0, 1.36), (0, 0.25, 1), r, SY * r * 1.045, chamfer_rect(0.024, 0.055), BP, "chest", n=P.n(28), arc=(190.0, 350.0))
     # Vertical straps, front and back, over the barrel and down the bellows to the belt.
     for sign in (1, -1):
         for x in (-0.31, 0.31):
             hint = (x, sign * 1.0, 0.0)
             P.sweep(strap_path(x, z0 - 0.01, 1.90, barrel_r, sign, 0.016, n=10), chamfer_rect(0.022, 0.06), BP, "chest", hint=hint)
-            P.sweep(strap_path(x, 0.77, z0 + 0.01, lambda _z: PLEAT_R[1], sign, 0.012, n=4), chamfer_rect(0.022, 0.06), BP, "spine", hint=hint)
+            P.sweep(strap_path(x, 0.77, z0 + 0.01, pleat_ridge, sign, 0.012, n=4), chamfer_rect(0.022, 0.06), BP, "spine", hint=hint)
     # Chest core (front) and the smaller back grille: the focal light.
-    grille(P, 1.50, 1, 0.235, 0.185, [-0.135, -0.045, 0.045, 0.135])
-    grille(P, 1.68, -1, 0.17, 0.13, [-0.06, 0.0, 0.06])
+    # Round grilles with five glowing slots between thick bars; a slot, not a bar, on the centreline,
+    # where the runtime glow ramp is hottest. The back bars stay 3 cm so its five slots stay equal.
+    grille(P, 1.43, 1, 0.20, 0.19, [-0.12, -0.04, 0.04, 0.12])
+    grille(P, 1.70, -1, 0.15, 0.145, [-0.09, -0.03, 0.03, 0.09], bar=0.03)
     mark(P, "barrel, straps, grilles")
 
-    # Bellows: walnut and leather-dark pleats round a dark drum; the upper three ride the pump.
+    # Bellows: rounded walnut rolls with narrow valleys round a dark drum, tapering up into the barrel;
+    # the upper three ride the pump.
     pz0, pz1 = PLEAT_Z
     h = (pz1 - pz0) / PLEATS
-    P.lathe((0, 0, pz0 - 0.02), (0, 0, 1), [(PLEAT_R[0] - 0.02, 0.0), (PLEAT_R[0] - 0.02, pz1 - pz0 + 0.04)], WD, "spine", sides=P.n(32), sy=SY)
+    rd = PLEAT_RIDGE[0] - PLEAT_DEPTH - 0.02
+    P.lathe((0, 0, pz0 - 0.02), (0, 0, 1), [(rd, 0.0), (rd, pz1 - pz0 + 0.04)], WD, "spine", sides=P.n(32), sy=SY)
     for k in range(PLEATS):
-        prof = [(PLEAT_R[0], 0.0), (PLEAT_R[1], h * 0.42), (PLEAT_R[1] - 0.006, h * 0.6), (PLEAT_R[0], h)]
-        P.lathe((0, 0, pz0 + h * k), (0, 0, 1), prof, WP if k % 2 else WN2, "bellows" if k >= PLEATS // 2 else "spine",
-                sides=P.n(32), sy=SY)
+        rr = PLEAT_RIDGE[0] + (PLEAT_RIDGE[1] - PLEAT_RIDGE[0]) * k / (PLEATS - 1)
+        rv = rr - PLEAT_DEPTH
+        prof = [(rv, 0.0), (rv + 0.018, h * 0.12), (rr, h * 0.38), (rr, h * 0.62), (rv + 0.018, h * 0.88), (rv, h)]
+        P.lathe((0, 0, pz0 + h * k), (0, 0, 1), prof, WN1 if k % 2 else WN2, "bellows" if k >= PLEATS // 2 else "spine",
+                sides=P.n(28), sy=SY)
     # Brass belt with rivets, iron hips, a brass plate front and back.
-    P.band((0, 0, 0.775), (0, 0, 1), 0.495, 0.05, 0.075, BP, "spine", n=P.n(36), rb=SY * 0.495)
+    P.band((0, 0, 0.765), (0, 0, 1), 0.47, 0.05, 0.075, BP, "spine", n=P.n(36), rb=SY * 0.47)
     for k in range(10):
         a = 2 * math.pi * (k + 0.5) / 10
-        P.ball((0.522 * math.sin(a), SY * 0.522 * math.cos(a), 0.775), 0.014, BP, "spine", segs=(8, 5))
+        P.ball((0.497 * math.sin(a), SY * 0.497 * math.cos(a), 0.765), 0.014, BP, "spine", segs=(8, 5))
     P.lathe((0, 0, 0.53), (0, 0, 1), [(0.20, 0.0), (0.32, 0.05), (0.39, 0.16), (0.42, 0.25)], GM, "pelvis", sides=P.n(28), sy=0.85)
     for sign in (1, -1):
         plate = [(-0.11, 0.0), (0.11, 0.0), (0.08, -0.17), (0.0, -0.215), (-0.08, -0.17)]
         P.extrude(plate, xz_frame(sign * 0.33) @ Matrix.Translation((0, 0.755, 0)), 0.035, BP, "pelvis", bevel=0.009)
     mark(P, "bellows, belt, hips")
 
-    # Head: brass dome with a centre ridge and two round amber eyes, sunk in a brass collar.
-    hy, hz = HEAD["head"][1], HEAD["head"][2]
-    P.band((0, hy + 0.03, hz + 0.06), (0, 1, 0.55), 0.205, 0.05, 0.07, BP, "chest", n=P.n(36))
-    P.lathe((0, hy - 0.01, hz + 0.05), (0, 1, 0.55), [(0.185, 0.0), (0.185, 0.05)], GM, "chest", sides=P.n(24))
-    P.shell((0, hy, hz), (0, 0, 1), [(0.001, 0.0), (0.145, 0.0), (0.152, 0.08), (0.145, 0.15), (0.115, 0.20), (0.065, 0.228), (0.001, 0.236)],
+    # Head: a tall brass capsule, tilted slightly forward and standing proud of the barrel front, with a
+    # centre ridge and two plain glowing eyes. It rises out of a collar bezel set into the barrel's
+    # front-top: a brass sleeve emerging from the staves, a band on its rim and a dark throat inside it.
+    # The head bone pivots at the band centre (0, 0.42, 1.83); the skin is rigid, so the shell may sit off the bone.
+    collar = (0, 0.6, 0.8)
+    P.lathe((0, 0.33, 1.71), collar, [(0.19, 0.0), (0.19, 0.15)], BP, "chest", sides=P.n(28))
+    P.band((0, 0.42, 1.83), collar, 0.19, 0.05, 0.07, BP, "chest", n=P.n(36))
+    # The throat's cap stands 1 cm above the sleeve's cap (coplanar caps would z-fight).
+    P.lathe((0, 0.39, 1.79), collar, [(0.165, 0.0), (0.165, 0.06)], GM, "chest", sides=P.n(24))
+    hc, hax = (0, 0.385, 1.72), (0, 0.25, 1)
+    P.shell(hc, hax, [(0.001, 0.0), (0.12, 0.0), (0.13, 0.08), (0.13, 0.16), (0.118, 0.22), (0.09, 0.27), (0.05, 0.305), (0.001, 0.315)],
             BP, "head", sides=P.n(24))
-    ridge = [(0.153, 0.05), (0.15, 0.11), (0.136, 0.16), (0.108, 0.205), (0.06, 0.232), (0.0, 0.241)]
-    P.sweep([(0, hy + r + 0.002, hz + z) for r, z in ridge], chamfer_rect(0.014, 0.026), BP, "head", hint=(0, 0.6, 1))
+    hm, _ = axis_frame(hc, Vector(hc) + Vector(hax))
+    ridge = [(0.128, 0.05), (0.132, 0.11), (0.132, 0.16), (0.12, 0.22), (0.092, 0.27), (0.052, 0.305), (0.0, 0.318)]
+    P.sweep([tuple(hm @ Vector((0, r + 0.002, z))) for r, z in ridge], chamfer_rect(0.014, 0.026), BP, "head",
+            hint=tuple(hm.to_3x3() @ Vector((0, 0.6, 1))))
     for s in (1, -1):
-        ex = s * 0.062
-        ey = hy + math.sqrt(0.151 ** 2 - ex * ex)
-        P.band((ex, ey + 0.004, hz + 0.075), (s * 0.25, 1, 0), 0.04, 0.014, 0.02, GM, "head", n=P.n(16))
-        P.ball((ex, ey - 0.004, hz + 0.075), 0.034, GL, "head", scale=(1.0, 0.6, 1.0), segs=(P.n(12), P.n(7)))
+        # y 0.537 is the shell surface at x 0.058, z 1.85 (measured through the head frame), so the
+        # flattened ball stands about 2 cm proud. Each eye is its own glow island.
+        P.ball((s * 0.058, 0.537, 1.85), 0.037, GL, "head", scale=(1.0, 0.55, 1.0), segs=(P.n(12), P.n(7)))
 
-    # Chimneys: brass stacks with flared mouths; the throat and a raised inner lip glow (no flame).
+    # Chimneys: brass stacks with flared mouths; the throat, a raised inner lip and a low ember dome in the
+    # mouth glow. No flame or smoke geometry: p5-automatons-design.md models the vent as an emissive
+    # chimney mouth only, and the art bible rules out smoke. The dome is its own glow island (no shared
+    # vertex positions with the throat or the lip), so the runtime ramp keeps a hot centre on it.
     for s, n_ in ((1, "R"), (-1, "L")):
         b = f"chimney.{n_}"
         p0, p1 = HEAD[b], TAIL[b]
         ax = _sub(p1, p0)
         P.lathe(p0, ax, [(0.068, 0.0), (0.068, 0.18), (0.074, 0.205), (0.108, 0.30), (0.118, 0.33), (0.10, 0.338)], BP, b, sides=P.n(24))
         P.lathe(lerp(p0, p1, 0.98), ax, [(0.09, 0.0), (0.09, 0.012)], GL, b, sides=P.n(24))
-        P.band(lerp(p0, p1, 1.0), ax, 0.096, 0.02, 0.032, GL, b, n=P.n(24))
-        P.band(lerp(p0, p1, 0.36), ax, 0.082, 0.026, 0.04, BP, b, n=P.n(24))
-        P.band(lerp(p0, p1, 0.58), ax, 0.076, 0.018, 0.028, GM, b, n=P.n(24))
+        P.band(lerp(p0, p1, 1.0), ax, 0.096, 0.02, 0.032, GL, b, n=P.n(16))
+        P.ball(lerp(p0, p1, 1.0), 0.085, GL, b, scale=(1.0, 1.0, 0.45), segs=(P.n(12), P.n(6)))
+        P.band(lerp(p0, p1, 0.36), ax, 0.082, 0.026, 0.04, BP, b, n=P.n(16))
+        P.band(lerp(p0, p1, 0.58), ax, 0.076, 0.018, 0.028, GM, b, n=P.n(16))
     mark(P, "head, chimneys")
 
     for s, n_ in ((1, "R"), (-1, "L")):
         ua, fa, hd = f"upperarm.{n_}", f"forearm.{n_}", f"hand.{n_}"
         S, E, W = _m(SHOULDER, s), _m(ELBOW, s), _m(WRIST, s)
-        # Layered pauldron: a tall rounded brass cap over the shoulder (the widest shape at the shoulder
-        # line; narrow and tall from the front, nearly round from the side, as drawn), a raised plate
-        # on its outer face and an emerald boss.
-        P.ball(S, 0.15, GM, ua)
-        px, pz = s * 0.655, 1.53
-
-        def cap(x: float, rx: float, rz: float, half: float, lo: float) -> None:
-            secs = []
-            for f in (0.0, 0.03, 0.1, 0.22, 0.38, 0.5, 0.62, 0.78, 0.9, 0.97, 1.0):
-                k = max(lo, math.sqrt(max(0.0, 1 - (2 * f - 1) ** 2)))
-                secs.append((f, rx * k, rz * k, 2.4, 0, 0))
-            P.loft((x, -half, pz), (x, half, pz), secs, BP, ua)
-
-        cap(px, 0.13, 0.29, 0.27, 0.12)
-        cap(px + s * 0.09, 0.05, 0.22, 0.2, 0.12)
-        bx = px + s * 0.158
-        P.band((bx, 0.0, pz), (s, 0, 0), 0.06, 0.022, 0.03, BP, ua, n=P.n(20))
-        P.ball((bx, 0.0, pz), 0.054, EM, ua, scale=(0.45, 1.0, 1.0), segs=(P.n(12), P.n(7)))
+        # Pauldron drum on the X axis: a block with a flat top edge from the front, a round porthole from
+        # the side (bezel ring, dark hub, emerald boss), with a layered lip at its inner end. The inner end
+        # sinks into the barrel. The gunmetal joint ball is 0.095 so it stays inside the drum's outer face.
+        P.ball(S, 0.095, GM, ua)
+        P.lathe((s * 0.50, 0.0, 1.50), (s, 0, 0), [(0.20, 0.0), (0.262, 0.015), (0.275, 0.05), (0.275, 0.20), (0.262, 0.235), (0.215, 0.255),
+                                                    (0.001, 0.265)], BP, ua, sides=P.n(28))
+        P.band((s * 0.52, 0.0, 1.50), (s, 0, 0), 0.285, 0.03, 0.04, BP, ua, n=P.n(28))
+        P.band((s * 0.766, 0.0, 1.50), (s, 0, 0), 0.19, 0.035, 0.03, BP, ua, n=P.n(28))
+        P.lathe((s * 0.76, 0.0, 1.50), (s, 0, 0), [(0.12, 0.0), (0.12, 0.02)], GM, ua, sides=P.n(20))
+        bx = s * 0.785
+        P.band((bx, 0.0, 1.50), (s, 0, 0), 0.06, 0.022, 0.03, BP, ua, n=P.n(20))
+        P.ball((bx, 0.0, 1.50), 0.054, EM, ua, scale=(0.45, 1.0, 1.0), segs=(P.n(12), P.n(7)))
         # Gunmetal upper arm with a brass cuff.
         L1 = math.dist(S, E)
         P.lathe(S, _sub(E, S), [(0.105, 0.0), (0.118, 0.16), (0.112, 0.32), (0.10, L1)], GM, ua, sides=P.n(18))
@@ -607,24 +631,23 @@ def build_parts(P: Parts) -> None:
         P.lathe(E, _sub(W, E), [(0.195, 0.052), (0.195, 0.066)], GM, fa, sides=P.n(32))
         P.lathe(E, _sub(W, E), [(0.20, 0.07), (0.236, 0.074), (0.252, 0.09), (0.252, 0.15), (0.237, 0.162), (0.233, 0.36), (0.252, 0.372),
                                  (0.258, 0.45), (0.25, 0.53), (0.215, 0.55)], BP, fa, sides=P.n(36))
-        # Huge rounded fist: back of the hand, four curled fingers with knuckles, a thumb on the inner side.
+        # Huge rounded mitt: the back of the hand, one heavy finger roll across the front with a knuckle row
+        # on top and four round fingertip pads along the bottom, and a thumb on the inner side.
         fx, fy = s * 0.93, FIST_Y
-        P.band(W, _sub(W, E), 0.17, 0.04, 0.05, GM, hd, n=P.n(28))
-        P.loft((fx, 0.17 + fy, 0.20), (fx, 0.17 + fy, 0.51), [(0.0, 0.16, 0.12, 3.0, 0, 0), (0.12, 0.2, 0.15, 3.0, 0, 0),
+        P.band(W, _sub(W, E), 0.17, 0.04, 0.05, GM, hd, n=P.n(20))
+        P.loft((fx, 0.17 + fy, 0.14), (fx, 0.17 + fy, 0.51), [(0.0, 0.16, 0.12, 3.0, 0, 0), (0.12, 0.2, 0.15, 3.0, 0, 0),
                                                               (0.82, 0.205, 0.155, 3.0, 0, 0), (1.0, 0.16, 0.12, 3.0, 0, 0)], BP, hd)
-        P.bbox((fx, 0.30 + fy, 0.30), (0.34, 0.12, 0.24), BP, hd, bevel=0.02)
-        P.tube((fx - 0.19, 0.33 + fy, 0.45), (fx + 0.19, 0.33 + fy, 0.45), 0.07, 0.07, BP, hd, sides=P.n(14))
+        # On this X axis a section's rx runs along world Y (depth) and ry along world Z (height).
+        P.loft((fx - 0.20, 0.31 + fy, 0.25), (fx + 0.20, 0.31 + fy, 0.25), [(0.0, 0.06, 0.08, 2.6, 0, 0), (0.025, 0.10, 0.13, 2.6, 0, 0),
+                                                                            (0.07, 0.13, 0.17, 2.6, 0, 0), (0.93, 0.13, 0.17, 2.6, 0, 0),
+                                                                            (0.975, 0.10, 0.13, 2.6, 0, 0), (1.0, 0.06, 0.08, 2.6, 0, 0)], BP, hd)
         for dx in (-0.15, -0.05, 0.05, 0.15):
-            x = fx + dx
-            P.ball((x, 0.35 + fy, 0.45), 0.078, BP, hd, segs=(10, 6))
-            P.tube((x, 0.39 + fy, 0.43), (x, 0.405 + fy, 0.29), 0.07, 0.068, BP, hd, sides=10)
-            P.ball((x, 0.40 + fy, 0.28), 0.068, BP, hd, segs=(10, 6))
-            P.tube((x, 0.40 + fy, 0.28), (x, 0.30 + fy, 0.17), 0.066, 0.062, BP, hd, sides=10)
-            P.ball((x, 0.30 + fy, 0.17), 0.064, BP, hd, segs=(10, 6))
+            P.ball((fx + dx, 0.38 + fy, 0.39), 0.072, BP, hd, segs=(8, 5))
+            P.ball((fx + dx, 0.42 + fy, 0.13), 0.068, BP, hd, scale=(1.0, 0.75, 0.85), segs=(8, 5))
         tx = s * (0.93 - 0.215)
-        P.ball((tx, 0.17 + fy, 0.42), 0.08, BP, hd, segs=(10, 6))
-        P.tube((tx, 0.17 + fy, 0.42), (s * (0.93 - 0.19), 0.35 + fy, 0.33), 0.07, 0.064, BP, hd, sides=10)
-        P.ball((s * (0.93 - 0.19), 0.35 + fy, 0.33), 0.064, BP, hd, segs=(10, 6))
+        P.ball((tx, 0.17 + fy, 0.42), 0.08, BP, hd, segs=(8, 5))
+        P.tube((tx, 0.17 + fy, 0.42), (s * (0.93 - 0.19), 0.35 + fy, 0.33), 0.07, 0.064, BP, hd, sides=8)
+        P.ball((s * (0.93 - 0.19), 0.35 + fy, 0.33), 0.064, BP, hd, segs=(8, 5))
         mark(P, f"forearm, fist {n_}")
 
         # Legs: iron hip and thigh under a brass plate, a domed knee with an emerald, a brass greave
@@ -632,15 +655,15 @@ def build_parts(P: Parts) -> None:
         th, sh, ft = f"thigh.{n_}", f"shin.{n_}", f"foot.{n_}"
         H, K, A = _m(HIP, s), _m(KNEE, s), _m(ANKLE, s)
         P.ball(H, 0.125, GM, th)
-        P.lathe(H, _sub(K, H), [(0.115, 0.0), (0.125, 0.12), (0.11, math.dist(H, K))], GM, th, sides=P.n(18))
-        P.wrap(H, K, 0.14, -1.15, 1.15, 0.025, BP, th, v0=0.12, v1=0.86, nv=3, crown=0.012)
+        P.lathe(H, _sub(K, H), [(0.125, 0.0), (0.135, 0.12), (0.12, math.dist(H, K))], GM, th, sides=P.n(18))
+        P.wrap(H, K, 0.165, -1.9, 1.9, 0.03, BP, th, v0=0.08, v1=0.90, nv=3, crown=0.014)
         P.ball(K, 0.105, GM, sh)
-        P.shell((K[0], K[1] + 0.075, K[2]), (0, 1, 0), [(0.001, 0.0), (0.115, 0.0), (0.11, 0.04), (0.075, 0.078), (0.001, 0.088)], BP, sh,
+        P.shell((K[0], K[1] + 0.075, K[2]), (0, 1, 0), [(0.001, 0.0), (0.13, 0.0), (0.124, 0.04), (0.085, 0.078), (0.001, 0.088)], BP, sh,
                 sides=P.n(20))
         P.band((K[0] - s * 0.1, K[1], K[2]), (-s, 0, 0), 0.04, 0.016, 0.022, BP, sh, n=P.n(16))
         P.ball((K[0] - s * 0.1, K[1], K[2]), 0.034, EM, sh, scale=(0.45, 1.0, 1.0))
         L2 = math.dist(K, A)
-        P.lathe(K, _sub(A, K), [(0.10, 0.05), (0.13, 0.06), (0.138, 0.09), (0.152, 0.17), (0.166, 0.18), (0.166, L2 - 0.02), (0.135, L2)], BP, sh,
+        P.lathe(K, _sub(A, K), [(0.10, 0.05), (0.13, 0.06), (0.138, 0.09), (0.17, 0.17), (0.185, 0.18), (0.185, L2 - 0.035), (0.135, L2)], BP, sh,
                 sides=P.n(24))
         P.ball(A, 0.078, GM, ft)
         P.loft((A[0], -0.14, 0.061), (A[0], 0.30, 0.061), [(0.0, 0.135, 0.06, 3.0, 0, 0), (0.1, 0.16, 0.062, 3.0, 0, 0),
@@ -666,10 +689,15 @@ def build_body(bpy, bmesh, scene, detail: str, arm_obj):
     print(f"[{PIECE}] {detail} cumulative tris by section: {P.tally}")
     col = P.bm.loops.layers.float_color.new("tint")
     shade = {k: (*(lin(c) for c in v), 1.0) for k, v in SHADES.items()}
+    chest = BONE_NAMES.index("chest")
     for f in P.bm.faces:
         rgba = shade.get(f.material_index, (1.0, 1.0, 1.0, 1.0))
+        # Painted walnut on the barrel (chest-weighted walnut: staves and crown, not the pleats): a soft
+        # bulge highlight at the widest line and darker stave ends, per loop from the vertex height.
+        painted = f.material_index in (WN1, WN2, WN3) and f.verts[0][P.deform].get(chest, 0.0) > 0.0
         for loop in f.loops:
-            loop[col] = rgba
+            k = 0.80 + 0.30 * max(0.0, 1.0 - ((loop.vert.co.z - 1.52) / 0.42) ** 2) if painted else 1.0
+            loop[col] = (rgba[0] * k, rgba[1] * k, rgba[2] * k, rgba[3])
         if f.material_index in shade:
             f.material_index = CS if f.material_index < 20 else MT
     bmesh.ops.recalc_face_normals(P.bm, faces=P.bm.faces[:])
@@ -1099,9 +1127,9 @@ def set_slots(obj, mats: list) -> None:
 # Sockets, export, reimport gate
 
 SOCKETS = {
-    "socket-hit": ("chest", (0, 0.62, 1.50)),  # in front of the amber core: hit sparks and aim point
-    "socket-eye": ("head", (0, 0.47, 1.875)),  # between the eyes
-    "socket-weapon": ("hand.R", (0.93, 0.49, 0.30)),  # the striking right fist's knuckles
+    "socket-hit": ("chest", (0, 0.62, 1.43)),  # in front of the amber core: hit sparks and aim point
+    "socket-eye": ("head", (0, 0.57, 1.85)),  # between the eyes, just in front of them
+    "socket-weapon": ("hand.R", (0.93, 0.54, 0.26)),  # the front centre of the striking right fist's finger roll
 }
 
 
@@ -1606,7 +1634,7 @@ def renders(bpy, low_scene, high_scene, arm, actions: dict, out: Path) -> list[s
 # --------------------------------------------------------------------------------------------------
 # Review sheet (system Python + Pillow)
 
-ENGINE_SHOTS = ["idle", "attack", "hit", "frozen", "death"]
+ENGINE_SHOTS = ["idle", "attack", "hit", "frozen", "death", "glow-close"]  # glow-close: idle, the seat camera narrowed to the upper body
 APPROVAL_NOTE = ('Concept approval PENDING (Paul). Modeled under Paul\'s standing approval of 2026-11-15: "you have standing approval '
                  'for all spending / modeling / deployments needed for this project". Model, rig, animation approvals pending.')
 
@@ -1663,12 +1691,14 @@ def fidelity_note(out: Path) -> str:
 
 
 TITLE = f"P5-T3 Bellows Golem ({PIECE}) - owner review sheet"
+VENT_NOTE = ("Design deviation from the sheet: the chimney flame plume is not modeled. p5-automatons-design.md models the vent as an "
+             "emissive chimney mouth only and the art bible rules out smoke, so each mouth carries a glowing ember dome instead.")
 
 
 def compose_sheet(out: Path) -> Path:
     r = out / "renders"
     eng = out / "engine"
-    note = fidelity_note(out)
+    note = fidelity_note(out) + "\n" + VENT_NOTE
     pairs = fidelity_pairs(out)
     compare = _grid([("FIDELITY - concept view beside the model at the same angle and framing", pairs)], 6,
                     TITLE.replace("owner review sheet", "fidelity comparison"), note, tw=300, th=420)

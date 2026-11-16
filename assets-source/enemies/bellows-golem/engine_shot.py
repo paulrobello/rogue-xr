@@ -4,6 +4,7 @@ imports engine-proof.ts from this folder through Vite, loads the shipped GLB, ma
 material sets, and poses each clip at the seated player's play distance (2.6 m, eye height 1.2 m).
 
     ~/.local/share/uv/tools/playwright/bin/python3 -I assets-source/enemies/<id>/engine_shot.py
+    (SHOT_ORIGIN=http://localhost:<port> selects another dev server port)
 
 Writes assets-source/enemies/<id>/staging/engine/<shot>.jpg and prints each frame's GPU string,
 draw calls and mean colour, so a black frame or a software renderer is caught.
@@ -11,6 +12,7 @@ draw calls and mean colour, so a black frame or a software renderer is caught.
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -21,9 +23,9 @@ ID = HERE.name
 REPO = HERE.parents[2]
 OUT = HERE / "staging/engine"
 PROOF = f"/assets-source/enemies/{ID}/engine-proof.ts"
-ORIGIN = "http://localhost:4260"
+ORIGIN = os.environ.get("SHOT_ORIGIN", "http://localhost:4260")
 W, H = 960, 720
-SHOTS = {"idle": 0.5, "attack": None, "hit": 0.1, "frozen": 0.0, "death": None}  # None: the clip's event time
+SHOTS = {"idle": 0.5, "attack": None, "hit": 0.1, "frozen": 0.0, "death": None, "glow-close": 0.5}  # None: the clip's event time
 PAGE = """<!doctype html><html><body style="margin:0;background:#000">
 <script type="module">
 import { mountAutomatonProof } from '%PROOF%';
@@ -53,6 +55,10 @@ def main() -> int:
 
     manifest = json.loads((REPO / f"public/assets/enemies/{ID}/{ID}.manifest.json").read_text())
     times = {"attack": manifest["clips"]["attack"]["events"]["impact"], "death": manifest["clips"]["death"]["duration"]}
+    shots = dict(SHOTS)
+    if "phase-change" in manifest["clips"]:  # guardian: mid-transition and the held open end
+        pc = manifest["clips"]["phase-change"]
+        shots["phase-change-mid"], shots["phase-change-end"] = pc["events"]["open"], pc["duration"]
     page_html = PAGE.replace("%PROOF%", PROOF).replace("%ID%", ID).replace("%W%", str(W)).replace("%H%", str(H))
     OUT.mkdir(parents=True, exist_ok=True)
     with sync_playwright() as p:
@@ -70,14 +76,16 @@ def main() -> int:
             return 1
         print(f"gpu: {page.evaluate('window.__gpu')}")
         failed = False
-        for name, t in SHOTS.items():
+        for name, t in shots.items():
             t = times[name] if t is None else t
-            info = page.evaluate(f"window.__proof.pose('{name}', {t})")
+            clip = "phase-change" if name.startswith("phase-change") else "idle" if name == "glow-close" else name
+            view = "close" if name == "glow-close" else "seat"
+            info = page.evaluate(f"window.__proof.pose('{clip}', {t}, '{view}')")
             jpg = OUT / f"{name}.jpg"
             page.locator("canvas").screenshot(path=str(jpg), type="jpeg", quality=88)
             mean = page.evaluate(MEAN_JS)
             print(f"{name}: {info} mean={mean} -> {jpg.relative_to(REPO)}")
-            failed |= sum(mean) < 15 or bool(info["unbound"])
+            failed |= sum(mean) < 15 or bool(info["unbound"]) or not info.get("glowLooks")
         browser.close()
     for e in errors:
         print(f"console error: {e}")

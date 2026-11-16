@@ -1,8 +1,8 @@
 {
   "piece": "bellows-golem",
-  "blender": "5.2.2 LTS",
+  "blender": "5.3.0",
   "generator": "scripts/assets/build-bellows-golem.py",
-  "generator_sha256": "79ceffdf1ec375d8583ec65c0592b0f526436e738e8416e36d27781c22e53bec",
+  "generator_sha256": "237adb8bb2636477d342e2ebdb432b6050d35a9808f2ec6ca93a9cb7ad5337bf",
   "concept": {
     "file": "assets-source/concepts/golem-sheet-1.png",
     "sha256": "8c5bafcf4a25372cab90935515ca4372933bb5c83d61213a528958a1ec29352b",
@@ -16,13 +16,13 @@
     }
   },
   "triangles": {
-    "low": 23474,
-    "high": 50574
+    "low": 21792,
+    "high": 49946
   },
   "bones": 22,
   "authoringAgent": "Claude Code subagent (claude-opus-5-5), dispatched by the rogue-xr primary session",
   "ground_clamp_death_max_lift_m": [
-    0.4742,
+    0.5364,
     0.0
   ],
   "pose_checks": {
@@ -30,8 +30,8 @@
       "frames": 73,
       "min_z": 0.0,
       "min_z_frame": 6,
-      "max_z": 2.1399,
-      "final_max_z": 2.1306,
+      "max_z": 2.1473,
+      "final_max_z": 2.1382,
       "final_min_z": 0.0,
       "loop_seam_m": 0.0
     },
@@ -39,8 +39,8 @@
       "frames": 46,
       "min_z": 0.0,
       "min_z_frame": 23,
-      "max_z": 2.963,
-      "final_max_z": 2.1306,
+      "max_z": 2.8959,
+      "final_max_z": 2.1382,
       "final_min_z": 0.0,
       "loop_seam_m": 0.0
     },
@@ -48,58 +48,58 @@
       "frames": 22,
       "min_z": 0.0,
       "min_z_frame": 9,
-      "max_z": 2.1306,
-      "final_max_z": 2.1306,
+      "max_z": 2.1382,
+      "final_max_z": 2.1382,
       "final_min_z": 0.0,
       "loop_seam_m": 0.0
     },
     "death": {
       "frames": 73,
       "min_z": 0.004,
-      "min_z_frame": 34,
-      "max_z": 2.1345,
-      "final_max_z": 1.4307,
+      "min_z_frame": 32,
+      "max_z": 2.1422,
+      "final_max_z": 1.463,
       "final_min_z": 0.004,
-      "loop_seam_m": 1.72241
+      "loop_seam_m": 1.75021
     },
     "frozen": {
       "frames": 31,
       "min_z": 0.0,
       "min_z_frame": 0,
-      "max_z": 2.0837,
-      "final_max_z": 2.0837,
+      "max_z": 2.0904,
+      "final_max_z": 2.0904,
       "final_min_z": 0.0,
       "loop_seam_m": 0.0
     }
   },
   "cull": {
     "center": [
-      0.001,
-      1.482,
-      -0.264
+      -0.002,
+      1.448,
+      -0.219
     ],
-    "radius": 2.335,
-    "maxDistanceFromSentryCullCentre": 2.253
+    "radius": 2.334,
+    "maxDistanceFromSentryCullCentre": 2.204
   },
   "canonicalized_primitives": 4,
   "canonicalized_normals": {
-    "vertices": 25564,
-    "fans": 20084,
+    "vertices": 23624,
+    "fans": 18859,
     "zero_area_triangles": 32,
     "max_dev_deg": 0.0,
     "over_1deg": 0
   },
   "reimport": {
-    "glb_sha256": "9e746f00f85a5cd12168a3098bae88e04f662bd8c6fa941ee8aff54cd6533d53",
-    "glb_bytes": 1952820,
-    "triangles": 23474,
+    "glb_sha256": "ab4f95836787a8b380173125c9345e7a9b71a7836eb139c6233237ded80efec0",
+    "glb_bytes": 1826348,
+    "triangles": 21792,
     "materials": [
       "brass-polished",
       "golem-case",
       "golem-metal",
       "golem-glow"
     ],
-    "vertices": 25564,
+    "vertices": 23624,
     "joints": [
       "root",
       "pelvis",
@@ -132,12 +132,12 @@
       "min": [
         -1.16,
         0.0,
-        -0.5877
+        -0.6061
       ],
       "max": [
         1.1619,
-        2.1306,
-        0.5619
+        2.1382,
+        0.5656
       ]
     },
     "clips": {
@@ -178,7 +178,7 @@
         "parent": "chest",
         "position": [
           0.0,
-          1.5,
+          1.43,
           -0.62
         ]
       },
@@ -187,8 +187,8 @@
         "parent": "head",
         "position": [
           0.0,
-          1.875,
-          -0.47
+          1.85,
+          -0.57
         ]
       },
       "socket-weapon": {
@@ -196,8 +196,8 @@
         "parent": "hand.R",
         "position": [
           0.93,
-          0.3,
-          -0.49
+          0.26,
+          -0.54
         ]
       }
     },
@@ -247,11 +247,11 @@
   ],
   "render_seconds": 2.9,
   "files": {
-    "assets-source/enemies/bellows-golem/blend/bellows-golem.high.blend": "7cd60f9900a48f8ef3de75b69a6eafebdea82453da1f07582d63e82afc53d91a",
-    "assets-source/enemies/bellows-golem/blend/bellows-golem.low.blend": "6259abdd558887d32a904f8796909b0b7bca2245251fa231a2891e77cc70d161",
-    "assets-source/enemies/bellows-golem/staging/reimport.json": "869d1a06950b6986f20f2ead8e2b01679e331d3753441eef77e9dc244c453dde",
-    "public/assets/enemies/bellows-golem/bellows-golem.glb": "9e746f00f85a5cd12168a3098bae88e04f662bd8c6fa941ee8aff54cd6533d53",
-    "public/assets/enemies/bellows-golem/bellows-golem.manifest.json": "0575c446ac27145dd3029878dbd6a564db8c2e56c51e5638599059e2c58c0d6f"
+    "assets-source/enemies/bellows-golem/blend/bellows-golem.high.blend": "124a6b19601390cf28b4abbcd34fd1c46b036a6f0cffd1bf3166b144d95f1a2b",
+    "assets-source/enemies/bellows-golem/blend/bellows-golem.low.blend": "47afc4fc5fd4ceded84105124c7c900c9395c6bf2ae76f0120fa543a10fa2fac",
+    "assets-source/enemies/bellows-golem/staging/reimport.json": "7566ba98d16b8bc7623281922163a29ed027a497ff0108c2375c5528d6edabb3",
+    "public/assets/enemies/bellows-golem/bellows-golem.glb": "ab4f95836787a8b380173125c9345e7a9b71a7836eb139c6233237ded80efec0",
+    "public/assets/enemies/bellows-golem/bellows-golem.manifest.json": "7fc5b4b634e766849898d283acc5c3054b74350eb6629857fad44e8e2c001d9a"
   },
-  "total_seconds": 8.2
+  "total_seconds": 7.6
 }

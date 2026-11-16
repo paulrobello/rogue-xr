@@ -4,13 +4,13 @@
   "route": "scripted (procedural Blender geometry, rig and keyed clips; no provider generation)",
   "generator": {
     "path": "scripts/assets/build-bellows-golem.py",
-    "sha256": "79ceffdf1ec375d8583ec65c0592b0f526436e738e8416e36d27781c22e53bec"
+    "sha256": "237adb8bb2636477d342e2ebdb432b6050d35a9808f2ec6ca93a9cb7ad5337bf"
   },
   "authoringAgent": {
     "harness": "claude-code (dispatched sub-agent)",
     "model": "claude-opus-5-5"
   },
-  "blender": "5.2.2 LTS",
+  "blender": "5.3.0",
   "toolVersions": {
     "gltfExporter": "Blender 5.2.2 bundled io_scene_gltf2"
   },
@@ -18,12 +18,12 @@
     "store": "assets-source/enemies/bellows-golem/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)"
   },
   "budgets": {
-    "triangles": 23474,
-    "highTriangles": 50574,
+    "triangles": 21792,
+    "highTriangles": 49946,
     "materials": 4,
     "bones": 22,
     "maxInfluences": 1,
-    "glbBytes": 1952820
+    "glbBytes": 1826348
   },
   "skin": {
     "policy": "rigid: one bone per vertex at weight 1.0",
@@ -98,8 +98,8 @@
       "frames": 73,
       "min_z": 0.0,
       "min_z_frame": 6,
-      "max_z": 2.1399,
-      "final_max_z": 2.1306,
+      "max_z": 2.1473,
+      "final_max_z": 2.1382,
       "final_min_z": 0.0,
       "loop_seam_m": 0.0
     },
@@ -107,8 +107,8 @@
       "frames": 46,
       "min_z": 0.0,
       "min_z_frame": 23,
-      "max_z": 2.963,
-      "final_max_z": 2.1306,
+      "max_z": 2.8959,
+      "final_max_z": 2.1382,
       "final_min_z": 0.0,
       "loop_seam_m": 0.0
     },
@@ -116,26 +116,26 @@
       "frames": 22,
       "min_z": 0.0,
       "min_z_frame": 9,
-      "max_z": 2.1306,
-      "final_max_z": 2.1306,
+      "max_z": 2.1382,
+      "final_max_z": 2.1382,
       "final_min_z": 0.0,
       "loop_seam_m": 0.0
     },
     "death": {
       "frames": 73,
       "min_z": 0.004,
-      "min_z_frame": 34,
-      "max_z": 2.1345,
-      "final_max_z": 1.4307,
+      "min_z_frame": 32,
+      "max_z": 2.1422,
+      "final_max_z": 1.463,
       "final_min_z": 0.004,
-      "loop_seam_m": 1.72241
+      "loop_seam_m": 1.75021
     },
     "frozen": {
       "frames": 31,
       "min_z": 0.0,
       "min_z_frame": 0,
-      "max_z": 2.0837,
-      "final_max_z": 2.0837,
+      "max_z": 2.0904,
+      "final_max_z": 2.0904,
       "final_min_z": 0.0,
       "loop_seam_m": 0.0
     }
@@ -154,7 +154,7 @@
       "parent": "chest",
       "position": [
         0.0,
-        1.5,
+        1.43,
         -0.62
       ]
     },
@@ -163,8 +163,8 @@
       "parent": "head",
       "position": [
         0.0,
-        1.875,
-        -0.47
+        1.85,
+        -0.57
       ]
     },
     "socket-weapon": {
@@ -172,85 +172,90 @@
       "parent": "hand.R",
       "position": [
         0.93,
-        0.3,
-        -0.49
+        0.26,
+        -0.54
       ]
     }
   },
   "derivedFiles": [
     {
       "path": "public/assets/enemies/bellows-golem/bellows-golem.glb",
-      "sha256": "9e746f00f85a5cd12168a3098bae88e04f662bd8c6fa941ee8aff54cd6533d53",
-      "bytes": 1952820
+      "sha256": "ab4f95836787a8b380173125c9345e7a9b71a7836eb139c6233237ded80efec0",
+      "bytes": 1826348
     },
     {
       "path": "public/assets/enemies/bellows-golem/bellows-golem.manifest.json",
-      "sha256": "0575c446ac27145dd3029878dbd6a564db8c2e56c51e5638599059e2c58c0d6f",
-      "bytes": 2839
+      "sha256": "7fc5b4b634e766849898d283acc5c3054b74350eb6629857fad44e8e2c001d9a",
+      "bytes": 2841
     }
   ],
   "sourceFiles": [
     {
       "path": "assets-source/enemies/bellows-golem/blend/bellows-golem.high.blend",
-      "sha256": "7cd60f9900a48f8ef3de75b69a6eafebdea82453da1f07582d63e82afc53d91a",
-      "bytes": 1460239
+      "sha256": "124a6b19601390cf28b4abbcd34fd1c46b036a6f0cffd1bf3166b144d95f1a2b",
+      "bytes": 1466427
     },
     {
       "path": "assets-source/enemies/bellows-golem/blend/bellows-golem.low.blend",
-      "sha256": "6259abdd558887d32a904f8796909b0b7bca2245251fa231a2891e77cc70d161",
-      "bytes": 900032
+      "sha256": "47afc4fc5fd4ceded84105124c7c900c9395c6bf2ae76f0120fa543a10fa2fac",
+      "bytes": 849963
     },
     {
       "path": "assets-source/enemies/bellows-golem/staging/report.json",
-      "sha256": "9358782b017d050fbdea4212874841e86f261888898c213a5528b0f1cb485570",
-      "bytes": 6042
+      "sha256": "494cc76dbd78ffd8378f3deea479ee89e3c9c886a001ba339f07e81512e1c48c",
+      "bytes": 6040
     },
     {
       "path": "assets-source/enemies/bellows-golem/staging/reimport.json",
-      "sha256": "869d1a06950b6986f20f2ead8e2b01679e331d3753441eef77e9dc244c453dde",
-      "bytes": 2296
+      "sha256": "7566ba98d16b8bc7623281922163a29ed027a497ff0108c2375c5528d6edabb3",
+      "bytes": 2297
     },
     {
       "path": "assets-source/enemies/bellows-golem/engine_shot.py",
-      "sha256": "ed466039f3da00d16add1b2bb9d6b7b8cf16bacbde00fcfa33b8794a985b16df",
-      "bytes": 4050
+      "sha256": "535877a21959bd6b785d58065d9942ef3505593155a68fdde399d1001972bada",
+      "bytes": 4666
     },
     {
       "path": "assets-source/enemies/bellows-golem/engine-proof.ts",
-      "sha256": "7a8ca2630cd04fcdb815722adc2064e83b890dfeb3def2fec84ba09b3fd75a68",
-      "bytes": 4719
+      "sha256": "5d29a075fed0a6471e151d044a2e5ff1c38bdf37480a7fce384103f240ada7d0",
+      "bytes": 6330
     }
   ],
   "reviewEvidence": [
     {
       "path": "assets-source/enemies/bellows-golem/bellows-golem.review-sheet.jpg",
-      "sha256": "50e10a162de09fcb9501926ce39267596e061e745067cd210159e0b4145bf93a",
-      "bytes": 575316
+      "sha256": "486baddf11941eecb432aac108b8e7e41bec6f210b5032cb5e8e8955bb7bb9c3",
+      "bytes": 589950
     },
     {
       "path": "assets-source/enemies/bellows-golem/staging/engine/attack.jpg",
-      "sha256": "44ef0b42952f1c6ce34882167ffd8a6d9eb5349a3d1abcd1c987f976fc477e09",
-      "bytes": 107784
+      "sha256": "353da08b028645189db2abdbcfa8496819b40c7134c65a25a14d1684ca37c044",
+      "bytes": 99220
     },
     {
       "path": "assets-source/enemies/bellows-golem/staging/engine/death.jpg",
-      "sha256": "5af4f08fd8de395e8551265741320c8b33b838f678bec754958e88b22aa88ecd",
-      "bytes": 67040
+      "sha256": "b5e8f14b8a239ae4ae54bf51c213798b79a409429e1f3d812c8a4295b840f044",
+      "bytes": 65879
     },
     {
       "path": "assets-source/enemies/bellows-golem/staging/engine/frozen.jpg",
-      "sha256": "8fbb49e4f7c2ebb943217a62895f064737ffeb0d7b35c2ebff4075094edbd686",
-      "bytes": 98234
+      "sha256": "cd48348b494131fe2c364b166be8984be3d1cca41a789c5613b4a205255fa787",
+      "bytes": 91418
+    },
+    {
+      "path": "assets-source/enemies/bellows-golem/staging/engine/glow-close.jpg",
+      "sha256": "e20d08784a06a1a5852fffd924fe6cae8b5c7ec18466ac5edc0ac29a594d0435",
+      "bytes": 99899
     },
     {
       "path": "assets-source/enemies/bellows-golem/staging/engine/hit.jpg",
-      "sha256": "47cec75b4d3ddf25746727f6588417c8457105f3d89e438baf74be5585d28bcf",
-      "bytes": 86898
+      "sha256": "86dba64c316f9b791ee96353a95d4adba2ea8739feeb3041d2a9290c683cbf7c",
+      "bytes": 84075
     },
     {
       "path": "assets-source/enemies/bellows-golem/staging/engine/idle.jpg",
-      "sha256": "d6e34561b0f234fef0db6b764d8f7662f149524b0e10233d41ed79b2a36ffac6",
-      "bytes": 93653
+      "sha256": "39800d3f38ed1d0a52b29c3acd9a451c5a5d0c37bb91d06e58156edadda088a5",
+      "bytes": 88835
     }
   ],
   "references": [
@@ -303,33 +308,33 @@
     },
     {
       "gate": "independent visual score",
-      "status": "unscored",
+      "status": "below bar: 68/100 (bar 80), build the golem refinement commit after 4387c0f",
       "notes": "create-rigged-character-assets requires an independent >= 80/100 score; unscored means unaccepted"
     }
   ],
   "authorSelfScore": {
-    "score": 66,
+    "score": 72,
     "scale": "0-100 visual fidelity to the concept",
     "scorer": "author self-score (the authoring agent; not the independent score create-rigged-character-assets requires)",
     "date": "2026-11-16",
     "gaps": [
-      "The front grille and chimney mouths read pale peach in the engine (front grille about sRGB 208, 164, 127) where the sheet shows saturated amber-orange: three.js AgX tone mapping desaturates F08C2C emission, and GLOW_STRENGTH is held at 1.0 (above the 0.7 convention) as a compromise.",
-      "The fists read as a row of four finger tubes from the front, a little comb-like; the sheet's fists are rounder, heavier mitts with a broad back of hand.",
-      "The head is smaller than the sheet's and partly hidden behind the top hoop from a low seated eye line; the side view shows no distinct face plate.",
-      "The legs (gunmetal thighs, brass greaves and sabatons) are slimmer and shorter-looking than the sheet's chunky armoured legs.",
-      "The arms hang close to vertical from the side; the sheet angles the forearms forward more strongly.",
-      "The walnut and brass are factor-only (no wood grain, plank wear or brass engraving textures); the barrel stays slightly lighter and warmer than the sheet's walnut in direct light.",
-      "The back reads as a walnut barrel with a small glowing grille and pleats; the sheet's back detailing (straps, vent plate) is simplified."
+      "The head sits lower in the collar than the sheet's, so from the front the capsule shows less above the barrel top and the bezel reads larger relative to the head.",
+      "The fists are rounded mitts with a finger roll and pad rows; the sheet's fists are clenched, with distinct knuckles and a thumb wrapped across the front.",
+      "The arms hang close to vertical from the side; the sheet angles the forearms forward more strongly, with the fists ahead of the knees.",
+      "The legs remain slimmer than the sheet's, and the knees lack the sheet's large round joint with an emerald seen from the front.",
+      "The brass is about 20% darker and less saturated than the sheet's in the engine (median V 0.47 against 0.60), and the walnut is about 20% lighter than the sheet's.",
+      "The walnut and brass are factor-only or the shared tileable set: no plank grain, wear or engraving as painted on the sheet.",
+      "In the EEVEE compare renders the grilles read pale because the D11 glow ramp is runtime-only; the engine shots show the intended amber core."
     ],
-    "method": "Author self-score from bellows-golem.fidelity-compare.jpg: orthographic EEVEE renders (AgX, the fixed shared light rig, not tuned to the score) of the low-poly model at the concept sheet's front, side and back angles, framed at the sheet's own scale (2.1 m over 806 sheet pixels), judged side by side against the sheet crops, plus the five in-engine clip shots in staging/engine (three.js 0.186.1, headless Chromium launched with ANGLE Metal GPU flags; the WebGL renderer string was not retained, so the backend is unconfirmed). This pass rebuilt the body from the independent review's list: rounded layered brass pauldrons with emerald bosses as the widest shape at the shoulder line, gunmetal upper arms, big smooth brass cylinder forearms, huge brass fists hanging forward of the body near knee height, a six-pleat walnut bellows with a brass belt, emissive front and back grilles and chimney mouths (golem-glow), emerald inlays at shoulders, elbows and knees from COLOR_0, walnut staves and pleats instead of black rings, and smooth-shaded brass. Walnut colour was matched by sampling the engine idle shot: the barrel reads about sRGB (105, 68, 44) lit and (71, 45, 32) in shadow against the concept's about (84, 53, 34); the previous build measured about (140, 93, 64).",
+    "method": "Author self-score from bellows-golem.fidelity-compare.jpg: orthographic EEVEE renders (AgX, the fixed shared light rig, not tuned to the score) of the low-poly model at the concept sheet's front, side and back angles, framed at the sheet's own scale (2.1 m over 806 sheet pixels), judged side by side against the sheet crops, plus the six in-engine shots in staging/engine (three.js 0.186.1, headless Chromium on ANGLE Metal, Apple M4, with the runtime D11 glow look; glow-close is the seat camera narrowed to the upper body). This pass followed the independent review (59/100): collar sleeve and band with a taller forward capsule head and two glowing eyes, the barrel top band cut to a back arc, round front and back grilles with five glowing slots, layered pauldron drums with emerald bosses, one continuous stave barrel over rounded walnut pleats, an arched back strap, armoured thighs and greaves, rounded mitt fists, per-loop painted walnut value, brass normal scale 0.15, and the head and shoulder pivots moved onto the collar and drum axes so the head and drums turn in place. Engine colour medians (idle shot, the spec's boxes and masks): upper-body brass sRGB (119, 93, 55), hue 36, S 0.54, V 0.47 (concept 154, 111, 57); barrel walnut (83, 55, 36), V 0.33 (concept 68, 42, 27); front grille glow (236, 186, 89); eyes (243, 178, 70); glow-close grille (247, 195, 74). Vent: the chimney flame plume on the sheet is not modeled. p5-automatons-design.md models the vent as an emissive chimney mouth only and the art bible rules out smoke, so each mouth carries a glowing ember dome instead; this is a design-note deviation, not a fidelity gap.",
     "evidence": {
       "path": "assets-source/enemies/bellows-golem/bellows-golem.fidelity-compare.jpg",
-      "sha256": "ae0d395c97875ef59e20b7bab445630deddf4b9b7e645401a2902b12112865cc"
+      "sha256": "9904a061988984a4c292dd2ded1d840f9345d6be27116d19928fcf579faf1d25"
     },
     "independentScoreNote": "the recorded independentScore scored the previous build; an independent re-score of this build is pending"
   },
   "independentScore": {
-    "score": 59,
+    "score": 68,
     "scale": "0-100 visual fidelity to the concept",
     "scorer": "independent reviewer agent (separate from the authoring agent; did not build the model)",
     "date": "2026-11-16",
@@ -338,41 +343,41 @@
     "rubric": [
       {
         "criterion": "silhouette and proportions",
-        "points": 19,
+        "points": 20,
         "max": 30,
-        "note": "Much closer than the previous build. The arms are now long, with large cylinder forearms and big fists hanging near ankle height, and the barrel-on-short-legs gestalt with two chimneys matches the sheet. The remaining gaps are structural. The head is a small brass cap sunk behind the top hoop, where the sheet has a distinct dome rising proud of the barrel between the chimneys. The shoulders are round disc caps instead of massive overhanging pauldrons. The torso splits into a spherical dome over a narrower separate pleat cylinder, where the sheet has one continuous barrel whose lower half tapers into ribs. The arms hang vertically in the side view, where the sheet angles the forearm forward, and the gunmetal thighs are slimmer than the sheet's armoured brass legs."
+        "note": "The barrel on short legs with long arms, two chimneys and wide shoulders still matches the sheet, and the pauldron drums now turned on the X axis widen the shoulder line. The head is still a small dome sunk inside a ring collar: from the front it barely clears the barrel top and has no face plate, where the sheet's capsule head rises proud between the chimneys. The drums read as side-on cylinders rather than the sheet's curved plates that cap and overhang the shoulder. The barrel has straight, near-vertical sides and the rib stack does not visibly narrow toward the waist, where the sheet is an egg that tapers into the bellows. The arms still hang vertically in the side view (the sheet angles the forearm forward with the fist ahead of the knee), the side profile stands upright instead of hunched, and the fists are rectangular slabs, which changes the largest shapes in the frame."
       },
       {
         "criterion": "signature features",
-        "points": 13,
+        "points": 17,
         "max": 25,
-        "note": "Present: vertical brass barrel straps with a riveted waist band, an oval front grille, a back grille, two chimneys, walnut bellows pleats, emerald inlays at the shoulder, elbow and knee, and big fists. Missing or wrong: none of the glow signature reads. The front grille gap measures sRGB 211, 164, 126 in the engine idle shot against 254, 234, 52 in the concept. The eyes (about 208, 157, 112) and chimney mouths (about 207, 157, 115) are flat peach discs with no flame. The head and face plate are effectively absent, and the curved horizontal strap across the back is missing."
+        "note": "The amber core now reads: the round front grille with its brass bezel and side lugs glows at sRGB (241, 188, 87) in the idle engine shot against the concept's (244, 155, 53), the two round eyes measure (242, 179, 73) against (246, 187, 68), and both chimney mouths carry glowing ember domes at (233, 155, 83) and (236, 148, 59), which meets the design note's emissive-mouth rule. Emerald bosses sit on the drum ends and elbows. Still wrong or missing: the grille has four wide brass bars that cover most of the opening, where the sheet has about six thin slots with glowing gaps; the head has no face plate; the back strap in the back compare view is a near-straight horizontal band, not the sheet's strong downward arc; no emerald reads on the knees from the front; and the fists are slabs with two rows of spheres and a thumb bar, not clenched fists with knuckles."
       },
       {
         "criterion": "surface detail and material read",
-        "points": 11,
+        "points": 12,
         "max": 20,
-        "note": "Smooth shading replaces the old facets, and the plank seams, riveted bands, grille bars and knee caps add believable detail. The walnut is a flat colour with no grain or plank wear, the pleats read as flat louvre slats rather than soft bellows folds, and the brass carries a noisy swirl texture that looks like brushed noise up close. The fists are a comb of four parallel finger tubes, where the sheet has rounded heavy mitts with knuckles and a thumb, and the feet are plain blocks."
+        "note": "The pleats are now rounded tube rings rather than flat louvres, and the riveted waist band, grille lugs, plank seams and knee caps add credible detail. The brass still carries a visible circular swirl on the head, drums and grille bars in glow-close, so lowering the normal strength reduced the noise but did not remove it. The walnut is a flat colour with no grain or plank wear, the bead-row fists read as decorative trim rather than heavy mechanical hands, the dark gunmetal pelvis bulges as a plain black sphere under the barrel, and the feet are plain blocks."
       },
       {
         "criterion": "colour and value",
-        "points": 10,
+        "points": 12,
         "max": 15,
-        "note": "The barrel walnut median measures sRGB 88, 59, 39 (#583B27) in the engine idle shot, essentially equal to the art bible's oiled walnut #583C26 and inside the concept's range (87, 56, 37 front left; 82, 53, 36 back). The brass hue and emerald accents fit. The concept's value hierarchy depends on a saturated amber core and eyes as the brightest point, and the model replaces that with desaturated peach, so the warm focal accent the palette calls for is missing."
+        "note": "The barrel walnut on clean patches measures (77, 48, 34) to (92, 64, 50), V 0.30 to 0.36, inside the concept's range of (77, 49, 34) to (104, 67, 42) and close to the art bible's oiled walnut #583C26. The forearm brass measures (143, 110, 68), V 0.56 and S 0.52, against the concept's (148, 105, 55), V 0.58 and S 0.63: the value matches but the brass is less saturated. The glow hues now give the warm focal accent the palette asks for. The bellows pleats measure (86, 56, 39), V 0.34, against the concept's (44, 28, 23), V 0.17, so they are twice as bright and lose the sheet's dark-bellows-under-lit-barrel value split."
       },
       {
         "criterion": "readability at play distance",
-        "points": 6,
+        "points": 7,
         "max": 10,
-        "note": "At 2.6 m the golem fills the view and reads clearly as a heavy brass-and-walnut barrel brute, and the large forearms and fists now sell the crusher role. It has no glowing focal point to draw the eye, the face is unreadable, and the frozen shot looks like the idle material with no state tint."
+        "note": "At 2.6 m the golem reads as a heavy brass-and-walnut brute, and the glowing grille and eyes now give the eye a clear focal point. The bead-slab fists are the nearest and largest shapes in the seated view and read as beaded boxes. The frozen shot has no state tint (pauldron brass (117, 92, 54) against idle (120, 94, 55)), and the hit shot shows no visible core flare beyond the idle glow, so the two states rely on pose alone."
       }
     ],
     "topFixes": [
-      "Make the core actually glow: drive the front and back grille interiors, both eyes and the chimney mouths with a saturated amber emissive that survives tone mapping (for example toneMapped false or a higher emissive intensity on golem-glow) so the engine samples near the concept's sRGB 254, 234, 52 instead of today's 211, 164, 126, and add the chimney flame wisps.",
-      "Build the head and shoulders to the sheet: a distinct brass dome with a face plate and two round eyes standing proud of the top hoop between the chimneys, and massive layered pauldrons that overhang the shoulders in place of the disc caps.",
-      "Make the torso one continuous barrel whose lower half tapers into rounded bellows ribs instead of a dome stacked on a narrower louvre cylinder, add the curved horizontal back strap, and replace the four-tube comb fists with rounded mitt fists that have knuckles and a thumb."
+      "Rebuild the fists as clenched mitts: a rounded fist mass with four distinct knuckle rolls across the front and a thumb wrapped over them, sized as large as today, replacing the rectangular slab with two bead rows. They dominate the seated view, so this moves silhouette, signature and readability at once.",
+      "Bring the head up and forward to the sheet: a taller capsule head with a flat face plate holding the two eyes, standing clearly above the barrel top between the chimneys instead of a small dome inside a ring collar, and replace the side-on drum pauldrons with curved layered plates that cap and overhang the shoulder.",
+      "Shape the barrel and the back: give the barrel an egg profile that narrows through the rib stack toward the waist, darken the pleats toward the concept's V 0.17, bend the back strap into the sheet's strong downward arc, and thin the grille to about six slots so more of the amber core shows between the bars."
     ],
-    "method": "Independent visual review by a separate reviewer agent that did not build the model. The concept sheet assets-source/concepts/golem-sheet-1.png was judged at native resolution against the low front, side, back and three-quarter Blender renders, the front, side and back compare crops, the owner review sheet and the five in-engine clip shots (seated player, 2.6 m), with 2x and 3x crops of the idle barrel and head made with Pillow. The author's fidelity-compare sheet and self-score text were not used for scoring. Colour was measured as the median sRGB of barrel pixels in the engine idle shot (box x 318-625, y 110-295, brass and grille pixels masked out by hue, saturation and green-to-red ratio), compared with matching patches on the concept front and back and with the art bible's oiled walnut #583C26. Grille, eye and chimney-mouth colours were sampled the same way. Rubric: silhouette and proportions 30, signature features 25, surface detail and material read 20, colour and value 15, readability at play distance in the engine shots 10.",
+    "method": "Re-score of the uncommitted golem refinement on HEAD 4387c0f by a separate reviewer agent that did not build the model, re-checking every point of the 59 review rather than carrying it forward. The concept sheet was judged at native resolution against the model front, side and back panels of bellows-golem.fidelity-compare.jpg (cropped and enlarged 2x with Pillow), the owner review sheet, and the six in-engine shots (seated player, 2.6 m, with the runtime D11 glow look), including a 2x crop of the idle fist. The pale grilles in the EEVEE compare panels were not counted against glow, which was judged from the engine shots only. The author's self-score and gap text were read for the claimed changes, and each claim was checked against the images: head forward out of the collar (partly: still small and sunk), barrel top band cut to a back arc (yes), round front grille with four thick bars (yes, but the bars hide most of the core), pauldron drums on the X axis (yes), continuous rounded ribs (rounded yes, no visible taper), arched back strap (not visible: near straight), mitt fists (no: bead-row slabs), heavier legs (slightly), walnut value gradient (not visible at play distance), chimney ember domes (yes; flames not expected per p5-automatons-design.md), brass normal reduced (swirl still visible). Colour is the median sRGB of body pixels in hand-placed boxes checked by overlay, never floor: glow by a max-channel-over-180 mask, walnut on strap-free barrel patches, pleats and brass with hue and ratio masks, compared with matching boxes on the concept front view. Rubric: silhouette and proportions 30, signature features 25, surface detail and material read 20, colour and value 15, readability at play distance 10; bar 80.",
     "evidence": [
       {
         "path": "assets-source/concepts/golem-sheet-1.png",
@@ -380,61 +385,46 @@
       },
       {
         "path": "docs/art-bible.md",
-        "sha256": "ee9a545c8bf02212a04e438dd95c9044270a1fb5d00ece7b8e839d7be320fec1"
+        "sha256": "11da71b45f24eeb258ef77d328ef1aa009297a9231608cb80bb429aa3ff2ad6a"
+      },
+      {
+        "path": "assets-source/concepts/p5-automatons-design.md",
+        "sha256": "36c069d9fd9e45ceb84f8ff1d26a04bd2d9dfac73ca084047d5b606ac346cc83"
+      },
+      {
+        "path": "assets-source/enemies/bellows-golem/bellows-golem.fidelity-compare.jpg",
+        "sha256": "9904a061988984a4c292dd2ded1d840f9345d6be27116d19928fcf579faf1d25"
       },
       {
         "path": "assets-source/enemies/bellows-golem/bellows-golem.review-sheet.jpg",
-        "sha256": "50e10a162de09fcb9501926ce39267596e061e745067cd210159e0b4145bf93a"
-      },
-      {
-        "path": "assets-source/enemies/bellows-golem/staging/renders/model-low-front.png",
-        "sha256": "1d7cf359a0d9ba438a0e30e422fb368dc5332a5a84614ef6a34e7e81e7f5371b"
-      },
-      {
-        "path": "assets-source/enemies/bellows-golem/staging/renders/model-low-side.png",
-        "sha256": "a71c876ed7c24b0870956fcb0160822c1891fedd9b139d62de48524395d03571"
-      },
-      {
-        "path": "assets-source/enemies/bellows-golem/staging/renders/model-low-back.png",
-        "sha256": "471fadd7e8ed395e842092a29a131622950544ee4e069df08d4c1a0cebd39b7c"
-      },
-      {
-        "path": "assets-source/enemies/bellows-golem/staging/renders/model-low-three-quarter.png",
-        "sha256": "9e87fbfab3e2d421fa351bc02ba37b45f712f483f516c4bdbf81584db04501cc"
-      },
-      {
-        "path": "assets-source/enemies/bellows-golem/staging/renders/compare-front.png",
-        "sha256": "f3328f7c1e530a1b22ebf806920660bcd794c4f0037c37f45e6fd8c10c5ab9d8"
-      },
-      {
-        "path": "assets-source/enemies/bellows-golem/staging/renders/compare-side.png",
-        "sha256": "ed925f05f0c55512f4105f942aff2dba4a0fe7c15c65d4a47f4dfeb6d96d27b1"
-      },
-      {
-        "path": "assets-source/enemies/bellows-golem/staging/renders/compare-back.png",
-        "sha256": "6591d7e70b73e00e6d1de75709a1812a9eface01993ef3756cd713bca0c198bd"
+        "sha256": "486baddf11941eecb432aac108b8e7e41bec6f210b5032cb5e8e8955bb7bb9c3"
       },
       {
         "path": "assets-source/enemies/bellows-golem/staging/engine/idle.jpg",
-        "sha256": "d6e34561b0f234fef0db6b764d8f7662f149524b0e10233d41ed79b2a36ffac6"
+        "sha256": "39800d3f38ed1d0a52b29c3acd9a451c5a5d0c37bb91d06e58156edadda088a5"
       },
       {
         "path": "assets-source/enemies/bellows-golem/staging/engine/attack.jpg",
-        "sha256": "44ef0b42952f1c6ce34882167ffd8a6d9eb5349a3d1abcd1c987f976fc477e09"
+        "sha256": "353da08b028645189db2abdbcfa8496819b40c7134c65a25a14d1684ca37c044"
       },
       {
         "path": "assets-source/enemies/bellows-golem/staging/engine/hit.jpg",
-        "sha256": "47cec75b4d3ddf25746727f6588417c8457105f3d89e438baf74be5585d28bcf"
+        "sha256": "86dba64c316f9b791ee96353a95d4adba2ea8739feeb3041d2a9290c683cbf7c"
       },
       {
         "path": "assets-source/enemies/bellows-golem/staging/engine/frozen.jpg",
-        "sha256": "8fbb49e4f7c2ebb943217a62895f064737ffeb0d7b35c2ebff4075094edbd686"
+        "sha256": "cd48348b494131fe2c364b166be8984be3d1cca41a789c5613b4a205255fa787"
       },
       {
         "path": "assets-source/enemies/bellows-golem/staging/engine/death.jpg",
-        "sha256": "5af4f08fd8de395e8551265741320c8b33b838f678bec754958e88b22aa88ecd"
+        "sha256": "b5e8f14b8a239ae4ae54bf51c213798b79a409429e1f3d812c8a4295b840f044"
+      },
+      {
+        "path": "assets-source/enemies/bellows-golem/staging/engine/glow-close.jpg",
+        "sha256": "e20d08784a06a1a5852fffd924fe6cae8b5c7ec18466ac5edc0ac29a594d0435"
       }
     ],
-    "previousScore": 43
+    "previousScore": 59,
+    "build": "the golem refinement commit after 4387c0f"
   }
 }
