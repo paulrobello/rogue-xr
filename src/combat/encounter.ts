@@ -19,6 +19,11 @@ import {
 const DEG = Math.PI / 180;
 const REGULAR_RADIUS = 0.5;
 const GUARDIAN_RADIUS = 0.8;
+/**
+ * Clear space kept between the seated head and any automaton's horizontal extent when a fight ends.
+ * An automaton whose pre-fight home is closer than its extent plus this holds its combat slot.
+ */
+export const HEAD_CLEARANCE = 0.3;
 const EPS = 1e-9;
 
 export type EncounterPhase = 'idle' | 'unfolding' | 'active' | 'folding';
@@ -82,6 +87,20 @@ function smoothstep(t: number): number {
   return c * c * (3 - 2 * c);
 }
 
+/**
+ * How far an automaton reaches from its origin on the floor plane: the farthest corner of its world
+ * bounding box, and at least its placement radius.
+ */
+export function enemyReach(obj: THREE.Object3D): number {
+  const base = obj.userData.tier === 'guardian' ? GUARDIAN_RADIUS : REGULAR_RADIUS;
+  const box = new THREE.Box3().setFromObject(obj);
+  if (box.isEmpty()) return base;
+  const at = obj.getWorldPosition(new THREE.Vector3());
+  const dx = Math.max(Math.abs(box.min.x - at.x), Math.abs(box.max.x - at.x));
+  const dz = Math.max(Math.abs(box.min.z - at.z), Math.abs(box.max.z - at.z));
+  return Math.max(base, Math.hypot(dx, dz));
+}
+
 function wrapRadians(a: number): number {
   return a - Math.PI * 2 * Math.round(a / (Math.PI * 2));
 }
@@ -115,6 +134,8 @@ export class EncounterDirector {
   private cooldown = 0;
   private room = -1;
   private pose: TablePose | null = null;
+  /** Where the seated player was when the fight began, on the floor plane. */
+  private seat: readonly [number, number] | null = null;
   private moves: Move[] = [];
   private movesDone = true;
 
@@ -236,6 +257,7 @@ export class EncounterDirector {
 
     this.room = room;
     this.pose = pose;
+    this.seat = [player.x, player.z];
     this.table.position.set(pose.x, 0, pose.z);
     this.table.rotation.y = -pose.yaw * DEG;
     setTableHeight(this.table, pose.height);
@@ -254,7 +276,10 @@ export class EncounterDirector {
 
   /**
    * Ends the fight and reverses everything. A win removes the room's automatons and clears the
-   * room; any other outcome sends them back to their sockets. Locomotion unlocks and the freeze
+   * room. A defeat ends the run, so the automatons hold their combat slots, 2 to 3 m beyond the
+   * table. A flee sends them back to their sockets, except one whose socket would put it inside the
+   * seated player's head clearance (its home is where the trigger fired, within the trigger radius,
+   * and the guardian is 3.5 m wide): that one holds its slot too. Locomotion unlocks and the freeze
    * lifts when the table has finished folding.
    */
   end(outcome: EncounterOutcome): void {
@@ -269,11 +294,20 @@ export class EncounterDirector {
       this.movesDone = true;
       return;
     }
+    if (outcome === 'defeat') {
+      this.moves = [];
+      this.movesDone = true;
+      return;
+    }
+    const seat = this.seat;
     const moves = this.liveEnemies(this.room).flatMap((obj) => {
       const home = this.homes.get(obj);
       if (!home || !obj.parent) return [];
       obj.parent.updateWorldMatrix(true, false);
       const w = obj.parent.localToWorld(new THREE.Vector3(home.x, home.y, home.z));
+      if (seat && Math.hypot(w.x - seat[0], w.z - seat[1]) < enemyReach(obj) + HEAD_CLEARANCE) {
+        return [];
+      }
       const parentRotY = this.parentRotY(obj);
       return [{ obj, world: [w.x, w.z] as const, worldRotY: home.rotY + parentRotY }];
     });
@@ -310,6 +344,7 @@ export class EncounterDirector {
     this.frozenValue = false;
     this.room = -1;
     this.pose = null;
+    this.seat = null;
     this.cooldown = this.retryCooldown;
     setTableUnfold(this.table, 0);
     this.lock(false);

@@ -101,7 +101,8 @@ export function rayFromObject(object: THREE.Object3D): AimRay {
  *   released over the table or flicked across it, else springs back. A card the rules refuse springs
  *   back and the selection is cancelled.
  *
- * A played card is left hidden in the fan until the caller re-sets the hand. A `staged` sigil card
+ * A played or staged card burns away (`CardFan.playOut`) from where it was let go, drifting toward
+ * its target; its fan slot stays hidden until the caller re-sets the hand. A `staged` sigil card
  * stays selected for the sigil plate, which calls `abortStaged()` if the cast is abandoned; grabbing another card aborts it too.
  */
 export class FlingController {
@@ -238,7 +239,8 @@ export class FlingController {
       if (id === null) return springBack('none', 'No target in reach, aim at an enemy');
       const result = this.combat.target(id);
       if (!result.ok) return springBack(via, result.reason, id);
-      return this.settle(held, via, id, speed, angleDeg);
+      const site = sites.find((s) => s.id === id);
+      return this.settle(held, via, id, speed, angleDeg, site ? site.position : null);
     }
 
     const table = this.tableOf();
@@ -253,7 +255,7 @@ export class FlingController {
       const result = this.combat.table();
       if (!result.ok) return springBack('drop', result.reason);
     }
-    return this.settle(held, flick ? 'flick' : 'drop', null, speed, null);
+    return this.settle(held, flick ? 'flick' : 'drop', null, speed, null, null);
   }
 
   /** Abandons a staged sigil cast: cancels the selection and springs the card back to the fan. */
@@ -271,7 +273,11 @@ export class FlingController {
     targetId: string | null,
     speed: number,
     angleDeg: number | null,
+    target: Vec3 | null,
   ): FlingDecision {
+    // The card leaves the hand either way: a staged sigil card burns as it is laid on the table and
+    // springs back whole if the cast is abandoned.
+    this.fan.playOut(held.index, target ? tmpPos.set(target[0], target[1], target[2]) : null);
     if (this.combat.stage === 'sigil') {
       this.staged = held;
       return this.record(held, 'staged', via, targetId, speed, angleDeg, null);

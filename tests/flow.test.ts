@@ -300,7 +300,12 @@ describe('floor triggers after a defeat', () => {
     expect(view.encounter.phase).toBe('idle');
     expect(view.locked).toBe(false);
 
-    // Without the suspension the same spot does fight again, which is what the flow prevents.
+    // A defeat leaves the automatons on their combat slots, clear of the seat (H1). Walking up to
+    // one stays quiet while suspended; without the suspension it fights again, which the flow prevents.
+    bodies?.[0]?.getWorldPosition(target);
+    head.position.set(target.x, 1.2, target.z + 1);
+    step(2);
+    expect(view.encounter.phase).toBe('idle');
     view.suspendTriggers = false;
     step(0.5);
     expect(view.encounter.phase).not.toBe('idle');

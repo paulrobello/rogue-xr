@@ -295,3 +295,19 @@ XO5 is fixed (F7). The walk run 2026-11-15 for the full run (`node scripts/xr-em
 ### Screenshots (emulated eye buffer, both eyes)
 
 `docs/verification/xr-emu-0-desktop-title.jpg` (desktop title over the placeholder brass room), `-1-session-hands`, `-2-title-hover`, `-3-settings`, `-4-seed-keypad`, `-5-explore`, `-6-fight`, `-7-reward-hover`, `-8-death-board`, `-9-workshop` (after the Buy), `-10-rerun-explore` (byte-identical to `-5-explore` as expected: same seed, same spawn; the rebuild proof is `rebuilt: true, sameSession: true` in the report), `-11a-desktop-notice`, `-11b-xr-update-notice`. Raw results: `xr-emu-report.json`, `xr-emu-report-notice.json`.
+
+## Headset playtest by Paul (Quest 3, build 24ead5d, 2026-11-16)
+
+Paul's first playtest in the headset, on the deployed build. His notes, with their status:
+
+| Code | Paul's note | Kind | Status |
+| --- | --- | --- | --- |
+| H1 | After defeat in the final boss room, the guardian moved to where he stood and his view was partly inside it; after Return to title it was still on him. | Bug | Fixed, awaiting headset: a defeat keeps automatons on their combat slots (at least 2 m out), a flee only returns them home when home clears the head, and Return to title swaps in a fresh floor (`src/combat/encounter.ts`, `src/main.ts`, `tests/guardian-defeat.test.ts`) |
+| H2 | Dice cards finish before he rolls the dice. | Bug | Fixed, awaiting headset: a dice card holds its damage, log and banner until the die settles; cards and End Turn wait for the throw, with a 30 s auto-throw and 6 s settle fallback (`src/combat/combat-session.ts`, `tests/dice-card-hold.test.ts`) |
+| H3 | Glyph trace should have sparks or an effect where the beam meets the plate. | Feature | Done, awaiting look: pooled amber sparks and a hot contact dot where the beam meets the plate, and the stroke cools behind its tip; 2 draw calls (`src/sigil-plate/sparks.ts`, `tests/sigil-sparks.test.ts`) |
+| H4 | Playing a card needs a transition; it just disappears. | Feature | Done, awaiting look: a played card flares, then burns from the edges inward while drifting toward its target, in spare instances of the fan mesh (`src/cards/card-burn.ts`, `src/hand/card-fan.ts`, `tests/card-burn.test.ts`) |
+| H5 | The combat table comes out too close. | Tuning | Tuned, awaiting headset: the table centre moves from 0.65 m to 0.85 m, with 0.65 m and then 0.5 m only when a room has no space (`src/combat/placement.ts`, `tests/table-distance.test.ts`) |
+| H6 | Left stick should be snap turn and teleport, right stick smooth strafe and move. | Change | Changed, awaiting headset: left stick x turns (snap by default), left stick forward aims a teleport and commits on release; right stick strafes and moves smoothly. Teleport now defaults on, so a profile saved with it off needs the Settings toggle flipped once (`src/xr/locomotion-drive.ts`, `tests/comfort.test.ts`) |
+| H7 | There was no sound at all. | Bug | Fixed, awaiting headset: audio unlock listeners stay armed all session, controller select and squeeze resume the context, Enter VR resumes it inside its click, and a suspended context retries; `?debug` HUD shows the unlock history (`src/audio/director.ts`, `tests/audio-unlock.test.ts`) |
+| H8 | The card art windows should have depth, like a portal. | Feature | Done, awaiting look: each art layer samples at its own depth along the view ray, with a warm haze and an edge lip shadow, and no extra texture taps (`src/cards/card-face-material.ts`, `tests/card-portal.test.ts`) |
+| H9 | Defeated automatons should crumble or fall apart after falling over. | Feature | Done, awaiting look: when the death clip ends the automaton splits by bone into up to 14 parts that tumble, settle and sink away, with loose cogs and sparks; deterministic per run seed (`src/enemies/break-apart.ts`, `src/world/floor-view.ts`, `tests/break-apart.test.ts`) |

@@ -57,10 +57,35 @@ export interface ListenerTarget {
   removeEventListener(type: string, listener: () => void): unknown;
 }
 
-/** `renderer.xr` (a `WebXRManager`) or any `EventTarget` that fires `sessionstart`. */
+/**
+ * `renderer.xr` (a `WebXRManager`): fires `sessionstart`/`sessionend` and hands out the live
+ * `XRSession`, whose controller `select`/`squeeze` events are the only input inside immersive mode.
+ */
 export interface SessionEvents {
-  addEventListener(type: 'sessionstart', listener: () => void): unknown;
-  removeEventListener(type: 'sessionstart', listener: () => void): unknown;
+  addEventListener(type: 'sessionstart' | 'sessionend', listener: () => void): unknown;
+  removeEventListener(type: 'sessionstart' | 'sessionend', listener: () => void): unknown;
+  getSession?(): ListenerTarget | null;
+}
+
+/** The slice of `AudioContext` the director uses. */
+export interface ContextLike {
+  readonly state: string;
+  resume(): Promise<void> | void;
+  addEventListener?(type: 'statechange', listener: () => void): unknown;
+  removeEventListener?(type: 'statechange', listener: () => void): unknown;
+}
+
+/** One line of the unlock history: a resume attempt and how it ended, or a context state change. */
+export interface UnlockEntry {
+  /** Seconds, from the director's clock. */
+  readonly at: number;
+  /** The event or caller that asked (`click`, `select`, `enter-vr`, `statechange`, ...). */
+  readonly source: string;
+  /** Context state when the entry was written. */
+  readonly state: string;
+  readonly outcome: 'attempt' | 'resolved' | 'rejected' | 'state';
+  /** Error name of a rejected or throwing `resume()`. */
+  readonly error?: string;
 }
 
 export interface AudioLoaderLike {
@@ -74,7 +99,7 @@ export interface AudioLoaderLike {
 
 /** Everything the director needs from the browser, injectable so tests run without Web Audio. */
 export interface AudioDeps {
-  readonly context: { readonly state: string; resume(): Promise<void> | void };
+  readonly context: ContextLike;
   readonly loader: AudioLoaderLike;
   createSpatial(): SpatialVoice;
   createFlat(): FlatVoice;
@@ -129,7 +154,16 @@ export interface LoadReport {
 const MUSIC_SLOTS = 3;
 /** Crossfade, in seconds, when loading finds the requested cue missing and moves to its fallback. */
 const LATE_MUSIC_FADE = 0.5;
-const UNLOCK_EVENTS = ['pointerdown', 'keydown', 'touchend', 'click'] as const;
+// `pointerup` is the activation event for touch and pen pointers, `pointerdown` only for a mouse.
+const UNLOCK_EVENTS = ['pointerdown', 'pointerup', 'keydown', 'touchend', 'click'] as const;
+/** XRSession controller events: window pointer and key events do not fire inside immersive mode. */
+const XR_INPUT_EVENTS = ['selectstart', 'select', 'squeezestart', 'squeeze'] as const;
+const UNLOCK_LOG_SIZE = 16;
+
+function errorName(error: unknown): string {
+  if (typeof error === 'object' && error !== null && 'name' in error) return String(error.name);
+  return String(error);
+}
 
 function joinUrl(base: string, ...parts: string[]): string {
   const root = base.endsWith('/') ? base : `${base}/`;
@@ -144,7 +178,9 @@ function joinUrl(base: string, ...parts: string[]): string {
  * most likely to follow loads once the current one plays, and a cue nothing needs is freed, so
  * decoded music stays at the playing cue, its fallbacks and one preload. Construct it once, add `root` to the
  * scene, call `load()`, drive it with `setState`/`syncGame`/`playSfx`, call `update(dt)` each frame
- * and `unlockOnGesture` / `unlockOnXrSession` so the context resumes on first input.
+ * and `unlockOnGesture` / `unlockOnXrSession` so the context resumes on input. Those stay armed for
+ * the session: the platform can suspend a running context again (entering immersive, the system
+ * menu, proximity sleep), and every later gesture, controller trigger or state change retries.
  */
 export class AudioDirector {
   /** Parent of the positional voices. Add it to the scene, world-space, untransformed. */
@@ -172,6 +208,9 @@ export class AudioDirector {
   private readonly lastPlayed = new Map<SfxId, number>();
   private readonly lastStinger = new Map<StingerFamily, number>();
   private readonly unlockers: (() => void)[] = [];
+  private readonly unlockEntries: UnlockEntry[] = [];
+  /** True once the context has run: a later drop out of `running` is the platform's, so retry. */
+  private hasRun: boolean;
   private stateValue: AudioState | null = null;
   /** The cue the current state asks for, before falling back to what loaded. */
   private musicWant: { cue: MusicId; gain: number; fade: number } | null = null;
@@ -184,6 +223,13 @@ export class AudioDirector {
     const deps = options.deps ?? (options.camera ? createThreeDeps(options.camera) : null);
     if (!deps) throw new Error('AudioDirector needs a camera or deps');
     this.deps = deps;
+    this.hasRun = deps.context.state === 'running';
+    const context = deps.context;
+    if (context.addEventListener && context.removeEventListener) {
+      const onState = () => this.onContextState();
+      context.addEventListener('statechange', onState);
+      this.unlockers.push(() => context.removeEventListener?.('statechange', onState));
+    }
     this.baseUrl = options.baseUrl ?? import.meta.env.BASE_URL;
     this.now = options.now ?? (() => performance.now() / 1000);
     this.warn = options.warn ?? ((message) => console.warn(message));
@@ -228,6 +274,27 @@ export class AudioDirector {
     let bytes = 0;
     for (const b of held) bytes += b.length * b.numberOfChannels * 4;
     return bytes;
+  }
+
+  /** The audio context's state: `running` plays, anything else is silent. */
+  get contextState(): string {
+    return this.deps.context.state;
+  }
+
+  /** The last unlock attempts and context state changes, oldest first (at most 16). */
+  get unlockLog(): readonly UnlockEntry[] {
+    return [...this.unlockEntries];
+  }
+
+  /** One line for the debug readout: the context state and the last three unlock entries. */
+  get statusLine(): string {
+    const recent = this.unlockEntries
+      .slice(-3)
+      .map(
+        (e) =>
+          `${e.source} ${e.outcome === 'state' ? e.state : e.outcome}${e.error ? ` ${e.error}` : ''}`,
+      );
+    return `audio ${this.deps.context.state}${recent.length > 0 ? ` · ${recent.join(' · ')}` : ''}`;
   }
 
   get spatialPool(): VoicePool<SpatialVoice> {
@@ -368,14 +435,65 @@ export class AudioDirector {
     if (this.deps.context.state !== 'running') await this.deps.context.resume();
   }
 
-  /** Resumes the context on the first user input on `target`. Returns a function that disarms it. */
+  /**
+   * Resumes a context that is not running. `resume()` is called before this returns, so a caller
+   * inside a user-activation handler (the Enter VR click, before `requestSession`) spends that
+   * activation on it. Every attempt and its outcome lands in `unlockLog`.
+   */
+  unlock(source: string): void {
+    const context = this.deps.context;
+    if (this.disposed || context.state === 'running' || context.state === 'closed') return;
+    let pending: Promise<void> | void;
+    try {
+      pending = context.resume();
+    } catch (error) {
+      this.record(source, 'rejected', error);
+      return;
+    }
+    this.record(source, 'attempt');
+    if (pending && typeof pending.then === 'function') {
+      pending.then(
+        () => {
+          if (this.deps.context.state === 'running') this.hasRun = true;
+          this.record(source, 'resolved');
+        },
+        (error: unknown) => this.record(source, 'rejected', error),
+      );
+    }
+  }
+
+  /** Resumes the context on user input on `target`, for the whole session. Returns a function that disarms it. */
   unlockOnGesture(target: ListenerTarget, events: readonly string[] = UNLOCK_EVENTS): () => void {
     return this.arm(target, events);
   }
 
-  /** Resumes the context when an immersive session starts (`renderer.xr` fires `sessionstart`). */
+  /**
+   * Resumes the context when an immersive session starts, then on every controller trigger and
+   * squeeze in it: window pointer and key events do not fire inside immersive mode.
+   */
   unlockOnXrSession(xr: SessionEvents): () => void {
-    return this.arm(xr, ['sessionstart']);
+    let offInput: (() => void) | null = null;
+    const onEnd = () => {
+      offInput?.();
+      offInput = null;
+    };
+    const onStart = () => {
+      this.unlock('sessionstart');
+      onEnd();
+      const session = xr.getSession?.();
+      if (session) offInput = this.arm(session, XR_INPUT_EVENTS);
+    };
+    xr.addEventListener('sessionstart', onStart);
+    xr.addEventListener('sessionend', onEnd);
+    const off = () => {
+      xr.removeEventListener('sessionstart', onStart);
+      xr.removeEventListener('sessionend', onEnd);
+      onEnd();
+      const at = this.unlockers.indexOf(off);
+      if (at >= 0) this.unlockers.splice(at, 1);
+    };
+    this.unlockers.push(off);
+    return off;
   }
 
   dispose(): void {
@@ -545,19 +663,39 @@ export class AudioDirector {
   }
 
   private arm(target: ListenerTarget, events: readonly string[]): () => void {
+    const handlers = events.map((name) => [name, () => this.unlock(name)] as const);
+    for (const [name, handler] of handlers) target.addEventListener(name, handler);
     const off = () => {
-      for (const name of events) target.removeEventListener(name, handler);
+      for (const [name, handler] of handlers) target.removeEventListener(name, handler);
       const at = this.unlockers.indexOf(off);
       if (at >= 0) this.unlockers.splice(at, 1);
     };
-    const handler = () => {
-      void this.resume().then(() => {
-        if (this.deps.context.state === 'running') off();
-      });
-    };
-    for (const name of events) target.addEventListener(name, handler);
     this.unlockers.push(off);
     return off;
+  }
+
+  private onContextState(): void {
+    if (this.disposed) return;
+    const state = this.deps.context.state;
+    this.record('statechange', 'state');
+    if (state === 'running') {
+      this.hasRun = true;
+      return;
+    }
+    // The page was activated once, so a resume without a fresh gesture can succeed; if it cannot,
+    // the next gesture or controller trigger retries.
+    if (this.hasRun) this.unlock('statechange');
+  }
+
+  private record(source: string, outcome: UnlockEntry['outcome'], error?: unknown): void {
+    if (this.disposed) return;
+    const state = this.deps.context.state;
+    const entry: UnlockEntry =
+      error === undefined
+        ? { at: this.now(), source, state, outcome }
+        : { at: this.now(), source, state, outcome, error: errorName(error) };
+    this.unlockEntries.push(entry);
+    if (this.unlockEntries.length > UNLOCK_LOG_SIZE) this.unlockEntries.shift();
   }
 
   private musicSink(): MusicSink<MusicId> {

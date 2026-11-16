@@ -7,10 +7,13 @@ import {
   AIM_ENGAGE,
   AIM_RELEASE,
   DEFAULT_LOCOMOTION_SETTINGS,
+  DEFAULT_SNAP_DEGREES,
   DEFAULT_VIGNETTE,
   Locomotion,
   locomotionSettingsFrom,
+  readThumbstick,
   stepTeleportAim,
+  yawFromMatrix,
 } from '../src/xr/locomotion.ts';
 import { type DriveInput, LocomotionDrive } from '../src/xr/locomotion-drive.ts';
 import { INVALID_COLOR, TeleportView, VALID_COLOR } from '../src/xr/teleport-view.ts';
@@ -57,9 +60,9 @@ const base: DriveInput = {
 };
 
 describe('comfort settings mapping', () => {
-  it('maps the persisted profile onto locomotion, teleport off by default', () => {
+  it('maps the persisted profile onto locomotion, teleport on by default', () => {
     const mapped = locomotionSettingsFrom(DEFAULT_SETTINGS);
-    expect(mapped.teleport).toBe(false);
+    expect(mapped.teleport).toBe(true);
     expect(mapped.turnMode).toBe('snap');
     expect(mapped.standingEyeHeight).toBe(DEFAULT_SETTINGS.eyeHeight);
     const on = locomotionSettingsFrom({
@@ -69,28 +72,140 @@ describe('comfort settings mapping', () => {
       vignette: false,
     });
     expect(on).toMatchObject({ teleport: true, turnMode: 'smooth', vignette: false });
-    expect(DEFAULT_LOCOMOTION_SETTINGS.teleport).toBe(false);
+    expect(DEFAULT_LOCOMOTION_SETTINGS.teleport).toBe(true);
   });
 
-  it('switching the toggle at runtime changes how the same stick behaves', () => {
-    const { rig, head, loco, drive } = build();
+  it('switching the toggle at runtime turns the left stick forward into a teleport aim and leaves the right stick moving', () => {
+    const { rig, head, loco, drive } = build({ teleport: false });
     rig.position.set(2, rig.position.y, 2);
     const walk = () => {
-      for (let i = 0; i < 20; i++) drive.step({ ...base, left: [0, 1] });
+      for (let i = 0; i < 20; i++) drive.step({ ...base, right: [0, 1] });
     };
     const before = headXZ(head);
     walk();
     expect(Math.hypot(headXZ(head)[0] - before[0], headXZ(head)[1] - before[1])).toBeGreaterThan(
       0.3,
     );
+    drive.step({ ...base, left: [0, 1], leftRay: GOOD_AIM });
+    expect(drive.isAiming).toBe(false);
     Object.assign(
       loco.settings,
       locomotionSettingsFrom({ ...DEFAULT_SETTINGS, teleportEnabled: true }),
     );
+    drive.step({ ...base, left: [0, 1], leftRay: GOOD_AIM });
+    expect(drive.isAiming).toBe(true);
+    drive.step({ ...base });
     const parked = headXZ(head);
     walk();
-    expect(headXZ(head)[0]).toBeCloseTo(parked[0], 9);
-    expect(headXZ(head)[1]).toBeCloseTo(parked[1], 9);
+    expect(Math.hypot(headXZ(head)[0] - parked[0], headXZ(head)[1] - parked[1])).toBeGreaterThan(
+      0.3,
+    );
+  });
+});
+
+describe('stick layout: left turns and teleports, right moves', () => {
+  const yawOf = (head: THREE.Object3D) => {
+    head.updateWorldMatrix(true, false);
+    return yawFromMatrix(head.matrixWorld.elements);
+  };
+  const displacement = (head: THREE.Object3D, from: [number, number]) =>
+    headXZ(head).map((v, i) => v - (from[i] as number)) as [number, number];
+
+  it('the left stick x snap turns one step per push and the right stick x does not turn', () => {
+    const { rig, head, drive } = build();
+    rig.position.set(2, rig.position.y, 2);
+    drive.step({ ...base, left: [1, 0] });
+    drive.step({ ...base, left: [1, 0] });
+    expect(yawOf(head)).toBeCloseTo(DEFAULT_SNAP_DEGREES, 4);
+    drive.step({ ...base });
+    drive.step({ ...base, left: [-1, 0] });
+    expect(yawOf(head)).toBeCloseTo(0, 4);
+    for (let i = 0; i < 10; i++) drive.step({ ...base, right: [1, 0] });
+    expect(yawOf(head)).toBeCloseTo(0, 4);
+  });
+
+  it('the left stick x turns smoothly when the turn mode is smooth', () => {
+    const { rig, head, drive } = build({ turnMode: 'smooth' });
+    rig.position.set(2, rig.position.y, 2);
+    for (let i = 0; i < 20; i++) drive.step({ ...base, left: [1, 0] });
+    expect(yawOf(head)).toBeGreaterThan(10);
+  });
+
+  it('the right stick strafes on x and moves forward and back on y, relative to the head', () => {
+    const { rig, head, drive } = build();
+    rig.position.set(2, rig.position.y, 2);
+    const start = headXZ(head);
+    for (let i = 0; i < 20; i++) drive.step({ ...base, right: [1, 0] });
+    const strafe = displacement(head, start);
+    expect(strafe[0]).toBeGreaterThan(0.3);
+    expect(Math.abs(strafe[1])).toBeLessThan(1e-6);
+
+    const fwdStart = headXZ(head);
+    for (let i = 0; i < 20; i++) drive.step({ ...base, right: [0, 1] });
+    const fwd = displacement(head, fwdStart);
+    expect(fwd[1]).toBeLessThan(-0.3);
+    expect(Math.abs(fwd[0])).toBeLessThan(1e-6);
+
+    const backStart = headXZ(head);
+    for (let i = 0; i < 20; i++) drive.step({ ...base, right: [0, -1] });
+    expect(displacement(head, backStart)[1]).toBeGreaterThan(0.3);
+  });
+
+  it('maps Quest gamepad axes by handedness: left axes turn, right axes move', () => {
+    // Quest reports each stick on axes 2 and 3 with up as negative; the rig reads them per hand.
+    const fake = (handedness: 'left' | 'right', x: number, up: number) => ({
+      handedness,
+      gamepad: { axes: [0, 0, x, -up] },
+    });
+    const sticks = (inputs: ReturnType<typeof fake>[]): Pick<DriveInput, 'left' | 'right'> => {
+      const out: Pick<DriveInput, 'left' | 'right'> = { left: [0, 0], right: [0, 0] };
+      for (const { handedness, gamepad } of inputs) out[handedness] = readThumbstick(gamepad.axes);
+      return out;
+    };
+    const turn = build();
+    turn.rig.position.set(2, turn.rig.position.y, 2);
+    turn.drive.step({ ...base, ...sticks([fake('left', 1, 0), fake('right', 0, 0)]) });
+    expect(yawOf(turn.head)).toBeCloseTo(DEFAULT_SNAP_DEGREES, 4);
+    expect(headXZ(turn.head)).toEqual([2, 2]);
+
+    const move = build();
+    move.rig.position.set(2, move.rig.position.y, 2);
+    for (let i = 0; i < 20; i++) {
+      move.drive.step({ ...base, ...sticks([fake('left', 0, 0), fake('right', 0, 1)]) });
+    }
+    expect(headXZ(move.head)[1]).toBeLessThan(1.7);
+    expect(yawOf(move.head)).toBeCloseTo(0, 4);
+  });
+
+  it('the left stick alone never moves the head, with teleport on or off', () => {
+    for (const teleport of [false, true]) {
+      const { rig, head, drive } = build({ teleport });
+      rig.position.set(2, rig.position.y, 2);
+      for (let i = 0; i < 20; i++) drive.step({ ...base, left: [0.4, 0.5] });
+      expect(headXZ(head)).toEqual([2, 2]);
+    }
+  });
+
+  it('the right stick respects its dead zone and the left stick turn needs the snap trigger', () => {
+    const { rig, head, drive } = build();
+    rig.position.set(2, rig.position.y, 2);
+    for (let i = 0; i < 20; i++) drive.step({ ...base, right: [0.1, 0.1], left: [0.5, 0] });
+    expect(headXZ(head)).toEqual([2, 2]);
+    expect(yawOf(head)).toBeCloseTo(0, 4);
+  });
+
+  it('smooth move on the right stick still works while teleport is on, and a jump replaces that frame', () => {
+    const { rig, head, loco, drive } = build({ teleport: true });
+    rig.position.set(2, rig.position.y, 2);
+    for (let i = 0; i < 20; i++) drive.step({ ...base, right: [0, 1] });
+    const walked = headXZ(head);
+    expect(walked[1]).toBeLessThan(1.7);
+
+    drive.step({ ...base, left: [0, 1], right: [0, 1], leftRay: GOOD_AIM });
+    const landing = loco.teleportPreview?.landing as Vec3;
+    drive.step({ ...base, left: [0, 0], right: [0, 1], leftRay: GOOD_AIM });
+    expect(headXZ(head)[0]).toBeCloseTo(landing[0], 6);
+    expect(headXZ(head)[1]).toBeCloseTo(landing[2], 6);
   });
 });
 
@@ -105,7 +220,7 @@ describe('comfort vignette wiring', () => {
     vignette.update(loco.vignetteStrength, camera, tan, true);
     expect(vignette.active).toBe(false);
 
-    for (let i = 0; i < 20; i++) drive.step({ ...base, left: [0, 1] });
+    for (let i = 0; i < 20; i++) drive.step({ ...base, right: [0, 1] });
     vignette.update(loco.vignetteStrength, camera, tan, true);
     expect(vignette.active).toBe(true);
     expect(vignette.strength).toBeGreaterThan(0.4);
@@ -120,10 +235,10 @@ describe('comfort vignette wiring', () => {
 
   it('smooth turning raises it too, and the vignette setting off keeps it clear', () => {
     const smooth = build({ turnMode: 'smooth' });
-    for (let i = 0; i < 20; i++) smooth.drive.step({ ...base, right: [1, 0] });
+    for (let i = 0; i < 20; i++) smooth.drive.step({ ...base, left: [1, 0] });
     expect(smooth.loco.vignetteStrength).toBeGreaterThan(0.3);
     const off = build({ turnMode: 'smooth', vignette: false });
-    for (let i = 0; i < 20; i++) off.drive.step({ ...base, right: [1, 0] });
+    for (let i = 0; i < 20; i++) off.drive.step({ ...base, left: [1, 0] });
     expect(off.loco.vignetteStrength).toBe(0);
   });
 
@@ -202,13 +317,13 @@ describe('teleport drive', () => {
     expect(headXZ(head)).toEqual([-1, 2]);
   });
 
-  it('does not aim or teleport with the toggle off, and smooth move still works', () => {
-    const { rig, head, loco, drive } = build();
+  it('does not aim, teleport or move with the left stick forward when the toggle is off', () => {
+    const { rig, head, loco, drive } = build({ teleport: false });
     rig.position.set(2, rig.position.y, 2);
-    drive.step({ ...base, left: [0, 1], leftRay: GOOD_AIM });
+    for (let i = 0; i < 20; i++) drive.step({ ...base, left: [0, 1], leftRay: GOOD_AIM });
     expect(drive.isAiming).toBe(false);
     expect(loco.teleportPreview).toBeNull();
-    expect(headXZ(head)[1]).toBeLessThan(2);
+    expect(headXZ(head)).toEqual([2, 2]);
   });
 
   it('drops an aim when the controller is lost instead of committing it', () => {
@@ -256,7 +371,7 @@ describe('locomotion gate', () => {
   it('lets the vignette fade while a board holds the controls', () => {
     const { rig, loco, drive } = build();
     rig.position.set(2, rig.position.y, 2);
-    for (let i = 0; i < 20; i++) drive.step({ ...base, left: [0, 1] });
+    for (let i = 0; i < 20; i++) drive.step({ ...base, right: [0, 1] });
     expect(loco.vignetteStrength).toBeGreaterThan(0.4);
     for (let i = 0; i < 90; i++) drive.step({ ...base, left: [0, 1], boardVisible: true });
     expect(loco.vignetteStrength).toBe(0);

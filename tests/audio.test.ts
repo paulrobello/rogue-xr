@@ -518,7 +518,7 @@ describe('AudioDirector', () => {
     target.dispatchEvent(new Event('pointerdown'));
     await vi.waitFor(() => expect(h.context.resume).toHaveBeenCalledTimes(1));
     expect(h.director.playSfx('ui-tick')).toBe(true);
-    // disarmed after the context runs
+    // a running context is not resumed again
     target.dispatchEvent(new Event('pointerdown'));
     expect(h.context.resume).toHaveBeenCalledTimes(1);
 
@@ -1043,7 +1043,11 @@ describe('integration types', () => {
   it('accepts window and renderer.xr for the unlock hooks (checked by tsc)', () => {
     const wire = (director: AudioDirector, renderer: THREE.WebGLRenderer) => {
       director.unlockOnGesture(window);
+      director.unlockOnGesture(document, ['visibilitychange']);
       director.unlockOnXrSession(renderer.xr);
+      director.unlock('enter-vr');
+      const line: string = director.statusLine;
+      return line;
     };
     expect(typeof wire).toBe('function');
   });

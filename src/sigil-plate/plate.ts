@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { GLOW_HOT } from '../enemies/glow.ts';
 import { PALETTE } from '../palette.ts';
 import { type Point, SIGIL_IDS, SIGIL_TEMPLATES, type SigilId } from '../sigil/index.ts';
 import {
@@ -17,6 +18,8 @@ import {
   type TraceResult,
   type Vec3,
 } from './projection.ts';
+import { type HeatRamp, heatColor, TrailHeat } from './spark-pool.ts';
+import { GLOW_RENDER_ORDER, linearRgb, SigilSparks, SPARK_AMBER, SPARK_GRAVITY } from './sparks.ts';
 
 /** Fraction of the plate's shorter side the guide glyph's unit box fills. */
 const GLYPH_FILL = 0.8;
@@ -34,6 +37,18 @@ const HINT_HEIGHT = 0.05;
 const HINT_CANVAS = { width: 1024, height: 112 } as const;
 const GUIDE_Z = 0.002;
 const LABEL_CANVAS = { width: 256, height: 128 } as const;
+
+/**
+ * The trail skips tone mapping so its hot head can show the D11 amber. Its settled colour is what
+ * the stroke's '#fff0b8' rendered as under AgX at exposure 1 (linear), so the cooled tail looks as
+ * it did before the head glow existed.
+ */
+const TRAIL_HEAT: HeatRamp = {
+  cool: [0.5931, 0.5483, 0.4312],
+  mid: linearRgb(SPARK_AMBER),
+  hot: linearRgb(GLOW_HOT),
+};
+const FLOATS_PER_SEGMENT = 18;
 
 const QUALITY_COLOR: Readonly<Record<SigilQuality, string>> = {
   Fizzle: '#e0707a',
@@ -70,6 +85,9 @@ function ribbonBuffer(segments: number): THREE.BufferGeometry {
   const attr = new THREE.BufferAttribute(new Float32Array(segments * 6 * 3), 3);
   attr.setUsage(THREE.DynamicDrawUsage);
   geometry.setAttribute('position', attr);
+  const color = new THREE.BufferAttribute(new Float32Array(segments * 6 * 3), 3);
+  color.setUsage(THREE.DynamicDrawUsage);
+  geometry.setAttribute('color', color);
   geometry.setDrawRange(0, 0);
   return geometry;
 }
@@ -103,6 +121,10 @@ export class SigilPlate extends THREE.Group {
   private readonly labelCanvas: HTMLCanvasElement | null;
   private readonly labelTexture: THREE.CanvasTexture | null;
   private trailSegments = 0;
+  private readonly trailHeat = new TrailHeat(MAX_TRACE_POINTS);
+  private readonly sparks = new SigilSparks();
+  private readonly gravityTurn = new THREE.Quaternion();
+  private readonly gravity = new THREE.Vector3();
   private plateSigil: SigilId | null = null;
   private platePose: PlatePose | null = null;
   private currentPhase: PlatePhase = 'hidden';
@@ -156,7 +178,9 @@ export class SigilPlate extends THREE.Group {
     this.add(this.guide);
 
     this.trailMaterial = new THREE.MeshBasicMaterial({
-      color: '#fff0b8',
+      color: '#ffffff',
+      vertexColors: true,
+      toneMapped: false,
       transparent: true,
       opacity: 1,
       depthWrite: false,
@@ -166,7 +190,9 @@ export class SigilPlate extends THREE.Group {
     this.trail = new THREE.Mesh(ribbonBuffer(MAX_TRACE_POINTS), this.trailMaterial);
     this.trail.name = 'sigil-plate-trail';
     this.trail.frustumCulled = false;
+    this.trail.renderOrder = GLOW_RENDER_ORDER;
     this.add(this.trail);
+    this.add(this.sparks);
 
     this.labelCanvas = typeof document === 'undefined' ? null : document.createElement('canvas');
     if (this.labelCanvas) {
@@ -267,9 +293,8 @@ export class SigilPlate extends THREE.Group {
   show(sigilId: SigilId, pose: PlatePose): void {
     this.plateSigil = sigilId;
     this.platePose = pose;
-    this.builder.clear();
-    this.trailSegments = 0;
-    this.trail.geometry.setDrawRange(0, 0);
+    this.resetTrail();
+    this.sparks.reset();
     this.clearLabel();
 
     const basis = new THREE.Matrix4().makeBasis(
@@ -296,9 +321,8 @@ export class SigilPlate extends THREE.Group {
     this.currentPhase = 'hidden';
     this.plateSigil = null;
     this.platePose = null;
-    this.builder.clear();
-    this.trailSegments = 0;
-    this.trail.geometry.setDrawRange(0, 0);
+    this.resetTrail();
+    this.sparks.reset();
     this.clearLabel();
   }
 
@@ -340,6 +364,7 @@ export class SigilPlate extends THREE.Group {
   endStroke(): void {
     if (this.currentPhase !== 'drawing') return;
     this.builder.endStroke();
+    this.sparks.clearContact();
     this.currentPhase = 'ready';
   }
 
@@ -352,10 +377,9 @@ export class SigilPlate extends THREE.Group {
     const sigilId = this.plateSigil as SigilId;
     this.builder.endStroke();
     const result = scoreTrace(this.builder.strokes, sigilId);
+    this.sparks.clearContact();
     if (!result.castable) {
-      this.builder.clear();
-      this.trailSegments = 0;
-      this.trail.geometry.setDrawRange(0, 0);
+      this.resetTrail();
       this.showLabel('', 'Too short', QUALITY_COLOR.Rough);
       this.currentPhase = 'ready';
       return null;
@@ -382,6 +406,7 @@ export class SigilPlate extends THREE.Group {
     this.faceMaterial.opacity = 0.26 + 0.12 * pulse + drawing;
     this.rimMaterial.opacity = 0.6 + 0.4 * pulse;
     this.guideMaterial.opacity = 0.2 + 0.14 * pulse;
+    this.stepTrace(dt);
 
     const waiting = this.currentPhase === 'ready' || this.currentPhase === 'drawing';
     this.hint.visible = waiting && this.hintWords !== '' && !this.label.visible;
@@ -399,6 +424,7 @@ export class SigilPlate extends THREE.Group {
   }
 
   dispose(): void {
+    this.sparks.dispose();
     for (const child of [this.face, this.rim, this.guide, this.trail, this.label, this.hint]) {
       child.geometry.dispose();
     }
@@ -414,6 +440,9 @@ export class SigilPlate extends THREE.Group {
 
   private addPoint(point: Point | null): boolean {
     if (this.currentPhase !== 'drawing') return false;
+    // The contact follows every sample, stored or not: a resting beam still fizzes.
+    if (point) this.sparks.setContact(point.x, point.y);
+    else this.sparks.clearContact();
     const stored = this.builder.add(point);
     if (!stored) return false;
     const strokes = this.builder.strokes;
@@ -444,7 +473,37 @@ export class SigilPlate extends THREE.Group {
     this.trailSegments++;
     attr.needsUpdate = true;
     this.trail.geometry.setDrawRange(0, this.trailSegments * 6);
+    const segment = this.trailHeat.push();
+    if (segment >= 0) this.writeHeat(segment, 1);
     return true;
+  }
+
+  /** Cools the trail behind the tip and runs the contact sparks under world gravity. */
+  private stepTrace(dt: number): void {
+    const from = this.trailHeat.advance(dt);
+    const to = this.trailHeat.segments;
+    for (let i = from; i < to; i++) this.writeHeat(i, this.trailHeat.heat(i));
+
+    if (this.currentPhase !== 'drawing') this.sparks.clearContact();
+    this.getWorldQuaternion(this.gravityTurn).invert();
+    this.gravity.set(0, -SPARK_GRAVITY, 0).applyQuaternion(this.gravityTurn);
+    this.sparks.update(dt, this.gravity.x, this.gravity.y, this.gravity.z);
+  }
+
+  private writeHeat(segment: number, heat: number): void {
+    const color = this.trail.geometry.getAttribute('color') as THREE.BufferAttribute;
+    const array = color.array as Float32Array;
+    const o = segment * FLOATS_PER_SEGMENT;
+    heatColor(heat, TRAIL_HEAT, array, o);
+    for (let k = 3; k < FLOATS_PER_SEGMENT; k++) array[o + k] = array[o + (k % 3)] as number;
+    color.needsUpdate = true;
+  }
+
+  private resetTrail(): void {
+    this.builder.clear();
+    this.trailSegments = 0;
+    this.trailHeat.clear();
+    this.trail.geometry.setDrawRange(0, 0);
   }
 
   private writeGuide(sigilId: SigilId, pose: PlatePose): void {

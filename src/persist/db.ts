@@ -27,7 +27,7 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = Object.freeze({
   masterVolume: 0.8,
   musicVolume: 0.6,
   sfxVolume: 0.8,
-  teleportEnabled: false,
+  teleportEnabled: true,
   difficulty: DEFAULT_DIFFICULTY,
 });
 

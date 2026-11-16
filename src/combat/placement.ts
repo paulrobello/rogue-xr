@@ -8,10 +8,12 @@
  *
  * Table strategy (`tableCandidates`): the ideal spot is `distance` metres straight ahead of the
  * seated player. If the table's footprint, inflated by `margin`, leaves the walkable area or hits a
- * collider, the search tries, in order: a shorter distance (down to `minDistance`) at the same
+ * collider, the search tries, in order: a shorter distance (down to `comfortDistance`) at the same
  * heading, then the same distances at headings rotated by +-`offsetStepDeg`, +-2 steps, and so
- * on up to `maxOffsetDeg`. The table always faces the player: its heading is the heading from the
- * player to the table centre, and its near edge is the side the player sits on.
+ * on up to `maxOffsetDeg`. Only when no heading fits at a comfortable distance does a second pass
+ * walk the closer distances (below `comfortDistance`, down to `minDistance`) in the same heading
+ * order, so a cramped room still gets its fight. The table always faces the player: its heading is
+ * the heading from the player to the table centre, and its near edge is the side the player sits on.
  *
  * Enemy strategy (`placeEnemies`): slots lie on an arc around the table centre at a distance
  * `D`, spread laterally by `spacing`. Each enemy takes the first candidate from the ladder
@@ -70,6 +72,17 @@ export interface EnemyPlacement {
 export const TABLE_HALF_WIDTH = 0.75;
 export const TABLE_HALF_DEPTH = 0.4;
 
+/**
+ * Player-to-table-centre distance on the floor plane, metres: the ideal, the closest comfortable
+ * fallback, and the last resort for a cramped room. At 0.85 m the near edge sits 0.45 m ahead of
+ * the head (0.25 m at 0.65 m), clear of a seated chest, and the drop zone (footprint plus 0.1 m)
+ * starts 0.35 m ahead, inside an easy reach. The 2026-11-16 Quest playtest found the old 0.65 m
+ * table (0.5 m fallback) too close: its near edge was 0.25 m (0.1 m) from the head.
+ */
+export const DEFAULT_TABLE_DISTANCE = 0.85;
+export const COMFORT_TABLE_DISTANCE = 0.65;
+export const MIN_TABLE_DISTANCE = 0.5;
+
 export const DEFAULT_EYE_HEIGHT = 1.6;
 /** Table-top height is the eye height minus this drop, clamped, which lands near a seated waist. */
 export const WAIST_DROP = 0.75;
@@ -79,6 +92,8 @@ export const MAX_TABLE_HEIGHT = 1.1;
 export interface TableOptions {
   /** Ideal player-to-table-centre distance, metres. */
   distance?: number;
+  /** Shortest distance the first pass, over every heading, tries before any closer one. */
+  comfortDistance?: number;
   /** Shortest distance the search may fall back to. */
   minDistance?: number;
   distanceStep?: number;
@@ -248,20 +263,27 @@ export function tableCandidates(
   room: CombatRoom,
   opts: TableOptions = {},
 ): TablePlacement[] {
-  const distance = opts.distance ?? 0.65;
-  const minDistance = Math.min(opts.minDistance ?? 0.5, distance);
+  const distance = opts.distance ?? DEFAULT_TABLE_DISTANCE;
+  const minDistance = Math.min(opts.minDistance ?? MIN_TABLE_DISTANCE, distance);
+  const comfort = clamp(opts.comfortDistance ?? COMFORT_TABLE_DISTANCE, minDistance, distance);
   const step = Math.max(opts.distanceStep ?? 0.05, 0.01);
   const margin = opts.margin ?? 0.1;
   const height = tableHeightFor(opts.eyeHeight ?? player.eyeHeight, opts.waistDrop);
-  const distances: number[] = [];
-  for (let d = distance; d >= minDistance - EPS; d -= step) distances.push(d);
+  const near: number[] = [];
+  const close: number[] = [];
+  for (let d = distance; d >= minDistance - EPS; d -= step) {
+    (d >= comfort - EPS ? near : close).push(d);
+  }
+  const headings = offsets(opts.offsetStepDeg ?? 15, opts.maxOffsetDeg ?? 180);
   const out: TablePlacement[] = [];
-  for (const offsetDeg of offsets(opts.offsetStepDeg ?? 15, opts.maxOffsetDeg ?? 180)) {
-    const yaw = wrapHeading(player.yaw + offsetDeg);
-    const [fx, fz] = forwardOf(yaw);
-    for (const d of distances) {
-      const pose: TablePose = { x: player.x + fx * d, z: player.z + fz * d, yaw, height };
-      if (tableFootprintClear(pose, room, margin)) out.push({ pose, offsetDeg, distance: d });
+  for (const distances of [near, close]) {
+    for (const offsetDeg of headings) {
+      const yaw = wrapHeading(player.yaw + offsetDeg);
+      const [fx, fz] = forwardOf(yaw);
+      for (const d of distances) {
+        const pose: TablePose = { x: player.x + fx * d, z: player.z + fz * d, yaw, height };
+        if (tableFootprintClear(pose, room, margin)) out.push({ pose, offsetDeg, distance: d });
+      }
     }
   }
   return out;
@@ -319,7 +341,10 @@ export function placeEnemies(
   const separation = opts.separation ?? Math.max(0.9, radius * 2);
   const [fx, fz] = forwardOf(table.yaw);
   const [ux, uz] = rightOf(table.yaw);
-  const player: Vec2 = opts.player ?? [table.x - fx * 0.65, table.z - fz * 0.65];
+  const player: Vec2 = opts.player ?? [
+    table.x - fx * DEFAULT_TABLE_DISTANCE,
+    table.z - fz * DEFAULT_TABLE_DISTANCE,
+  ];
   const ladder = distanceLadder(preferred, min, max);
   const placements: (EnemyPlacement | null)[] = [];
   const failed: number[] = [];

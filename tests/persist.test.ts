@@ -78,8 +78,8 @@ describe('persist db', () => {
     closeDb(handle);
   });
 
-  it('defaults to smooth move with teleport off and keeps a flipped teleport toggle across a reopen', async () => {
-    expect(DEFAULT_SETTINGS.teleportEnabled).toBe(false);
+  it('defaults to teleport on and keeps a flipped teleport toggle across a reopen', async () => {
+    expect(DEFAULT_SETTINGS.teleportEnabled).toBe(true);
     const factory = new IDBFactory();
     const first = await openDb(factory);
     await saveSettings(first, { ...DEFAULT_SETTINGS, teleportEnabled: true, turnMode: 'smooth' });

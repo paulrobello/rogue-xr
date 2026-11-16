@@ -130,16 +130,16 @@ describe('tableHeightFor', () => {
 });
 
 describe('placeTable', () => {
-  it('puts the table 0.65 m straight ahead at waist height in open space', () => {
+  it('puts the table 0.85 m straight ahead at waist height in open space', () => {
     const r = placeTable({ x: 0, z: 0, yaw: 90, eyeHeight: 1.5 }, hall());
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.pose.x).toBeCloseTo(0.65);
+    expect(r.pose.x).toBeCloseTo(0.85);
     expect(r.pose.z).toBeCloseTo(0);
     expect(r.pose.yaw).toBeCloseTo(90);
     expect(r.pose.height).toBeCloseTo(0.75);
     expect(r.offsetDeg).toBe(0);
-    expect(r.distance).toBeCloseTo(0.65);
+    expect(r.distance).toBeCloseTo(0.85);
   });
 
   it('falls back to a shorter distance, then a rotated heading, beside a wall', () => {
@@ -148,7 +148,7 @@ describe('placeTable', () => {
     const wall = placeTable({ x: 0, z: -4.0, yaw: 0 }, room);
     expect(wall.ok).toBe(true);
     if (wall.ok) {
-      expect(wall.offsetDeg === 0 && wall.distance === 0.65).toBe(false);
+      expect(wall.offsetDeg === 0 && wall.distance === 0.85).toBe(false);
       expect(tableIsClear(room, wall.pose)).toBe(true);
     }
     // Pressed against the wall: the table must turn away.
@@ -166,7 +166,7 @@ describe('placeTable', () => {
     expect(r.ok).toBe(true);
     if (!r.ok) return;
     expect(tableIsClear(room, r.pose)).toBe(true);
-    expect(r.offsetDeg === 0 && r.distance === 0.65).toBe(false);
+    expect(r.offsetDeg === 0 && r.distance === 0.85).toBe(false);
   });
 
   it('reports failure instead of placing a table where it cannot fit', () => {
@@ -177,7 +177,7 @@ describe('placeTable', () => {
     expect(tableCandidates({ x: 0, z: 0, yaw: 0 }, corridor)).toHaveLength(0);
   });
 
-  it('faces the player, sits 0.5 to 0.65 m away at waist height and is clear on every generated floor', () => {
+  it('faces the player, sits 0.65 to 0.85 m away at waist height and is clear on every generated floor', () => {
     let placed = 0;
     let central = 0;
     let centralOk = 0;
@@ -196,8 +196,8 @@ describe('placeTable', () => {
             placed++;
             const dx = r.pose.x - x;
             const dz = r.pose.z - z;
-            expect(Math.hypot(dx, dz)).toBeGreaterThanOrEqual(0.5 - 1e-9);
-            expect(Math.hypot(dx, dz)).toBeLessThanOrEqual(0.65 + 1e-9);
+            expect(Math.hypot(dx, dz)).toBeGreaterThanOrEqual(0.65 - 1e-9);
+            expect(Math.hypot(dx, dz)).toBeLessThanOrEqual(0.85 + 1e-9);
             // Faces the player: its forward axis points from the player to the table centre.
             expect(headingDelta(r.pose.yaw, headingTo([x, z], [r.pose.x, r.pose.z]))).toBeLessThan(
               1e-6,
@@ -247,7 +247,7 @@ describe('placeEnemies', () => {
       expect(p.distance).toBeGreaterThanOrEqual(2 - 1e-9);
       expect(p.distance).toBeLessThanOrEqual(3 + 1e-9);
       expect(inWalkable(room, p.x, p.z)).toBe(true);
-      expect(colliderDistance(room, p.x, p.z)).toBeGreaterThanOrEqual(0.5 - 1e-9);
+      expect(colliderDistance(room, p.x, p.z)).toBeGreaterThanOrEqual(0.65 - 1e-9);
     }
   });
 

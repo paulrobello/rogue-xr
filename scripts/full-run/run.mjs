@@ -1289,13 +1289,13 @@ async function runSeed(seed, mode) {
       await wait(120);
       const s = await ev(() => window.__fr.snap());
       const inHand = s.hand.some((c) => c.uid === card.uid);
-      if (s.outcome) return true;
       if (s.awaitingThrow) {
         await page.keyboard.press('KeyT');
         threw = Date.now();
         await wait(250);
         continue;
       }
+      if (s.outcome) return true;
       if (s.stage === 'sigil' && s.plate === 'ready' && !traced) {
         const result = await trace(card.sigil);
         traced = true;

@@ -56,7 +56,7 @@ import {
 } from '../ui/icon-sheet.ts';
 import type { EncounterDirector } from './encounter.ts';
 import { chooseEncounter, enemyKindOf, fightSeed } from './encounter-choice.ts';
-import type { TablePose } from './placement.ts';
+import { DEFAULT_TABLE_DISTANCE, type TablePose } from './placement.ts';
 
 export { chooseEncounter, fightSeed } from './encounter-choice.ts';
 
@@ -85,12 +85,13 @@ const HUD_GAP = 0.04;
 const DESKTOP_STATUS_SCALE = 0.8;
 /**
  * XR layout of the player's status panel, table metres (right, toward the enemies, above the top):
- * up and left of the sigil plate, turned to face a seat `STATUS_FACE_SEAT` behind the table centre,
- * so a seated player sees all of it from the forward pose at the 0.5 to 0.65 m placements.
+ * up and left of the sigil plate, turned to face a seat `STATUS_FACE_SEAT` behind the table centre
+ * (the default table distance), so a seated player sees all of it from the forward pose at the 0.5
+ * to 0.85 m placements.
  */
 const STATUS_WIDTH = 0.38;
 const STATUS_AT = { right: -0.38, forward: 0.32, lift: 0.68 } as const;
-const STATUS_FACE_SEAT = 0.6;
+const STATUS_FACE_SEAT = DEFAULT_TABLE_DISTANCE;
 /** The desktop hand strip, a camera child: its pose at the base field of view. */
 const HAND_HOME = { position: [0, -0.26, -0.42] as const, pitch: 0.2, scale: 0.9 } as const;
 /**
@@ -102,6 +103,13 @@ export const DESKTOP_HAND_TOP = -0.48;
 const READOUT_SHRINK = [1, 0.75, 0.55] as const;
 /** Longest the win handover waits on death clips, from the first death; a stalled clip never hangs it. */
 export const DEATH_WAIT_SECONDS = 3;
+/**
+ * A dice card's effects wait for its die (H2): they show once the thrown die settles. A rolled die
+ * nobody throws is thrown for the player after this long, so an idle fight never stalls.
+ */
+export const DICE_AUTO_THROW_SECONDS = 30;
+/** A thrown die that has not settled after this long releases its card's effects anyway. */
+export const DICE_SETTLE_FALLBACK_SECONDS = 6;
 /** Seconds between one enemy's turn resolving and the next one starting. */
 export const ENEMY_GAP_SECONDS = 0.35;
 /** A capsule's lunge at the player; its blow lands at the peak. */
@@ -311,6 +319,16 @@ export class CombatSession {
   private handKey = '';
   private lastDice: CombatController['lastDice'] = null;
   private pendingThrow: { kind: DieKind; face: number; value: number } | null = null;
+  /**
+   * A played dice card's effects and the view from before it, held until its die settles: `waiting`
+   * counts seconds since the roll (before the throw) or since the throw (after it).
+   */
+  private held: {
+    state: CombatState;
+    events: CombatEvent[];
+    logLength: number;
+    waiting: number;
+  } | null = null;
   private lastRay: AimRay | null = null;
   private lastNdc: readonly [number, number] | null = null;
   private holding: 'mouse' | 'xr' | null = null;
@@ -532,6 +550,7 @@ export class CombatSession {
       }),
       dice.onSettled((roll) => {
         this.rolls.push(roll);
+        this.releaseHeld();
         this.message = `Rolled ${roll.value}`;
         this.sfx('dice-settle', dice.root.position);
       }),
@@ -560,11 +579,14 @@ export class CombatSession {
     return new CombatSession(deps, presenter);
   }
 
-  /** The combat stage for the HUD: the controller's, or `dice` while a rolled die waits to be thrown. */
+  /**
+   * The combat stage for the HUD: the controller's, or `dice` from the roll of a dice card until its
+   * die settles (its effects wait for that, even a killing blow's).
+   */
   get stage(): SessionStage {
     if (this.shown) return 'enemy';
-    if (this.controller.stage === 'over') return 'over';
-    return this.pendingThrow ? 'dice' : this.controller.stage;
+    if (this.pendingThrow || this.held) return 'dice';
+    return this.controller.stage;
   }
 
   /** True while the enemy phase plays one enemy at a time; the player cannot act meanwhile. */
@@ -579,16 +601,22 @@ export class CombatSession {
 
   /** The state the view shows: the enemy phase's partial replay while it plays, else the rules state. */
   get view(): CombatState {
-    return this.shown ?? this.controller.state;
+    return this.shown ?? this.held?.state ?? this.controller.state;
   }
 
   /** The combat log as far as the view has shown it: an enemy's lines appear when it acts. */
   get log(): readonly string[] {
-    return this.shown ? [...this.logBase, ...this.logShown] : this.controller.log;
+    if (this.shown) return [...this.logBase, ...this.logShown];
+    return this.held ? this.controller.log.slice(0, this.held.logLength) : this.controller.log;
   }
 
   get awaitingThrow(): boolean {
     return this.pendingThrow !== null;
+  }
+
+  /** True from a dice card's roll until its die settles: its effects are not shown yet. */
+  get awaitingDice(): boolean {
+    return this.held !== null;
   }
 
   /** The rules enemy id for each stand-in body, left to right. */
@@ -940,6 +968,7 @@ export class CombatSession {
     this.fling.update(dt);
     this.fan.update(dt);
     this.dice.update(dt);
+    this.stepHeld(dt);
     this.plate.update(dt);
     if (this.plate.phase === 'done') {
       this.plateDone += dt;
@@ -951,7 +980,7 @@ export class CombatSession {
     }
     if (this.deathWait > 0) this.deathWait -= dt;
     // A fight decided mid-phase (the killing blow) shows its banner once that blow has played.
-    const outcome = this.shown ? null : this.controller.outcome;
+    const outcome = this.shown || this.held ? null : this.controller.outcome;
     if (outcome !== null && !this.ended) {
       if (this.endTimer < 0) {
         this.endTimer = outcome === 'won' ? WIN_HOLD_SECONDS : DEFEAT_HOLD_SECONDS;
@@ -981,6 +1010,7 @@ export class CombatSession {
     this.beat = null;
     this.queue.length = 0;
     this.shown = null;
+    this.held = null;
     this.hitNumber?.dispose();
     for (const off of this.disposers.splice(0)) off();
     this.fan.dispose();
@@ -1023,7 +1053,7 @@ export class CombatSession {
       if (this.holding === 'mouse') this.release(ray);
       return;
     }
-    if (this.controller.outcome !== null || this.busy()) return;
+    if ((this.controller.outcome !== null && !this.pendingThrow) || this.busy()) return;
     const hit = this.hitAt(ray);
     if (hit === 'throw' || hit === 'tray') this.throwDice();
     else if (hit === 'plate') {
@@ -1053,11 +1083,11 @@ export class CombatSession {
       if (this.drawing === 'xr') this.liftPen();
       return;
     }
-    if (this.controller.outcome !== null) return;
     if (this.pendingThrow) {
       this.throwDice();
       return;
     }
+    if (this.controller.outcome !== null) return;
     if (this.plateLive()) {
       this.plate.beginStroke();
       this.castTimer = -1;
@@ -1075,11 +1105,7 @@ export class CombatSession {
   }
 
   private grab(index: number, by: 'mouse' | 'xr'): void {
-    if (this.busy()) return;
-    if (this.pendingThrow) {
-      this.message = 'Throw the dice first';
-      return;
-    }
+    if (this.busy() || this.diceFirst()) return;
     if (this.fling.grab(index)) {
       this.holding = by;
       this.message = '';
@@ -1098,10 +1124,7 @@ export class CombatSession {
 
   private endTurn(): void {
     if (this.disposed || this.controller.outcome !== null || this.busy()) return;
-    if (this.pendingThrow) {
-      this.message = 'Throw the dice first';
-      return;
-    }
+    if (this.diceFirst()) return;
     this.fling.abortStaged();
     this.plate.hide();
     this.sfx('ui-tick');
@@ -1117,10 +1140,44 @@ export class CombatSession {
       return;
     }
     this.pendingThrow = null;
+    if (this.held) this.held.waiting = 0;
     this.dice.throw(pending.kind, pending.face, pending.value);
     this.sfx('dice-roll', this.dice.root.position);
     this.message = '';
     this.paint();
+  }
+
+  /** True (with a HUD prompt) from a dice card's roll until its die settles: the next verb waits. */
+  private diceFirst(): boolean {
+    if (this.pendingThrow) {
+      this.message = 'Throw the dice first';
+      return true;
+    }
+    if (this.held) {
+      this.message = 'The dice are rolling';
+      return true;
+    }
+    return false;
+  }
+
+  /** Steps a held dice card: throws for an idle player, or releases a die that never settles. */
+  private stepHeld(dt: number): void {
+    const held = this.held;
+    if (!held) return;
+    held.waiting += dt;
+    if (this.pendingThrow) {
+      if (held.waiting >= DICE_AUTO_THROW_SECONDS) this.throwDice();
+    } else if (held.waiting >= DICE_SETTLE_FALLBACK_SECONDS) this.releaseHeld();
+  }
+
+  /** Shows a dice card's held effects once its die has settled. */
+  private releaseHeld(): void {
+    const held = this.held;
+    if (!held || this.pendingThrow) return;
+    this.held = null;
+    this.lastShown = this.controller.state;
+    this.present(held.events);
+    this.dirty = true;
   }
 
   /** True (with a HUD prompt) while the enemy phase plays: every player verb waits for it. */
@@ -1228,6 +1285,7 @@ export class CombatSession {
     this.dirty = false;
     const events = this.controller.drainEvents();
     const segments = segmentEvents(events);
+    const rolled = this.controller.lastDice !== this.lastDice ? this.controller.lastDice : null;
     if (this.shown || segments.some((seg) => seg.kind === 'enemy')) {
       // The enemy phase plays one enemy at a time from the state the view last showed.
       if (!this.shown) {
@@ -1242,6 +1300,16 @@ export class CombatSession {
       }
       this.queue.push(...segments);
       this.advance(0);
+    } else if (rolled && getCard(rolled.cardId).dice !== undefined) {
+      // The card waits for its die: the view keeps the state from before the play until it settles.
+      const state = this.controller.state;
+      const fresh = events.filter((e) => describeEvent(e, state) !== null).length;
+      this.held = {
+        state: this.lastShown,
+        events: segments.flatMap((seg) => (seg.kind === 'instant' ? seg.events : [])),
+        logLength: Math.max(0, this.controller.log.length - fresh),
+        waiting: 0,
+      };
     } else {
       for (const seg of segments) if (seg.kind === 'instant') this.present(seg.events);
       this.lastShown = this.controller.state;

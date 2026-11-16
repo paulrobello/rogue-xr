@@ -3,7 +3,8 @@ import { EncounterDirector } from '../combat/encounter.ts';
 import { chooseEncounter } from '../combat/encounter-choice.ts';
 import { buildTableGreybox, disposeTable, TABLE_NODES } from '../combat/table-greybox.ts';
 import type { RoomTemplate } from '../content/rooms.ts';
-import { isValidSeed, normalizeSeed, randomSeed } from '../core/rng.ts';
+import { isValidSeed, normalizeSeed, randomSeed, Stream } from '../core/rng.ts';
+import { BreakApart } from '../enemies/break-apart.ts';
 import type { EnemyActor, EnemyAsset } from '../enemies/enemy-asset.ts';
 import { generateFloor } from '../floor/generate.ts';
 import { PALETTE } from '../palette.ts';
@@ -187,6 +188,11 @@ export function mountFloorView(
   });
   const at = new THREE.Vector3();
   const actors = new Map<THREE.Object3D, EnemyActor>();
+  // H9: an automaton whose death clip has ended falls apart into its parts, under the floor group
+  // so a cleared room (which unparents and disposes the actor) never takes the pieces with it.
+  const debris = new BreakApart(world.group);
+  const shattered = new WeakSet<EnemyActor>();
+  let shatters = 0;
   const models = new Map<
     string,
     { asset: EnemyAsset; prepare?: ((actor: EnemyActor) => void) | undefined }
@@ -348,7 +354,11 @@ export function mountFloorView(
       return actors.get(body) ?? null;
     },
     useEnemyAssets(assets, prepare) {
-      for (const [kind, asset] of assets) models.set(kind, { asset, prepare });
+      for (const [kind, asset] of assets) {
+        models.set(kind, { asset, prepare });
+        // Splits each kind once now, so the first death does not pay for it.
+        debris.prepareAsset(asset);
+      }
       undressed = true;
       dressEnemies();
     },
@@ -378,6 +388,7 @@ export function mountFloorView(
     dispose() {
       dropToast();
       spinners.length = 0;
+      debris.dispose();
       for (const actor of [...actors.values()]) disposeActor(actor);
       models.clear();
       undressed = false;
@@ -441,7 +452,12 @@ export function mountFloorView(
           if (!actor.frozen && !actor.dead && actor.state === 'idle') actor.freeze();
         } else if (actor.frozen) actor.unfreeze();
         actor.update(dt);
+        if (actor.dead && !shattered.has(actor) && !actor.action('death').isRunning()) {
+          shattered.add(actor);
+          debris.shatterActor(actor, Stream.fromKey(`${world.plan.seed}:shatter:${shatters++}`));
+        }
       }
+      debris.update(dt);
       head.getWorldPosition(at);
       // The fight owns the room until it ends, so streaming holds still meanwhile.
       if (encounter.phase !== 'idle') return;

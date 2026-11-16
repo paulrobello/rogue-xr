@@ -487,7 +487,7 @@ export interface LocomotionSettings {
   smoothTurnRate: number;
   /** Smooth move speed at full stick, m/s. */
   moveSpeed: number;
-  /** Teleport replaces smooth move when true. */
+  /** Left stick forward aims and commits a teleport when true. Smooth move on the right stick stays on. */
   teleport: boolean;
   vignette: boolean;
   standingEyeHeight: number;
@@ -518,7 +518,7 @@ export const DEFAULT_LOCOMOTION_SETTINGS: LocomotionSettings = {
   snapDegrees: DEFAULT_SNAP_DEGREES,
   smoothTurnRate: DEFAULT_SMOOTH_TURN_RATE,
   moveSpeed: 2,
-  teleport: false,
+  teleport: true,
   vignette: true,
   standingEyeHeight: DEFAULT_STANDING_EYE_HEIGHT,
 };
@@ -530,10 +530,10 @@ export interface TeleportAim {
 }
 
 export interface LocomotionInput {
-  /** Raw left stick: x right, y forward positive (see `readThumbstick`). */
+  /** Raw right stick (smooth move): x right, y forward positive (see `readThumbstick`). */
   moveX: number;
   moveY: number;
-  /** Raw right stick x, right positive. */
+  /** Raw left stick x (snap or smooth turn), right positive. */
   turnX: number;
   /** Non-null while the player holds the teleport aim. Releasing it commits a valid landing. */
   teleportAim: TeleportAim | null;
@@ -619,9 +619,9 @@ export class Locomotion {
     }
 
     let speed = 0;
-    if (this.settings.teleport) {
-      this.updateTeleport(input.teleportAim, headXZ);
-    } else {
+    // A committed jump replaces this frame's smooth move, which would start from a stale head.
+    const jumped = this.settings.teleport && this.updateTeleport(input.teleportAim, headXZ);
+    if (!jumped) {
       const [sx, sy] = applyDeadzone(input.moveX, input.moveY);
       const delta = smoothMove(yaw, sy, sx, this.settings.moveSpeed, dt);
       if (delta[0] !== 0 || delta[1] !== 0) {
@@ -637,7 +637,8 @@ export class Locomotion {
     this.rig.updateMatrixWorld(true);
   }
 
-  private updateTeleport(aim: TeleportAim | null, headXZ: Vec2): void {
+  /** Holds or commits the teleport aim. Returns true on the frame a jump lands. */
+  private updateTeleport(aim: TeleportAim | null, headXZ: Vec2): boolean {
     if (aim) {
       this.preview = resolveTeleport(
         aim.origin,
@@ -645,7 +646,7 @@ export class Locomotion {
         { walkable: this.walkable, colliders: this.colliders, floorY: this.floorY },
         DEFAULT_TELEPORT,
       );
-      return;
+      return false;
     }
     const landing = this.preview?.valid ? this.preview.landing : null;
     this.preview = null;
@@ -654,6 +655,8 @@ export class Locomotion {
       this.rig.position.z += landing[2] - headXZ[1];
       // The jump shows as a vignette pulse that fades on the normal release ramp.
       this.strength = DEFAULT_VIGNETTE.maxStrength;
+      return true;
     }
+    return false;
   }
 }

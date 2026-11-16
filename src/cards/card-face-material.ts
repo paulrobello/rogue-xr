@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import type { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
+import { GLOW_HOT } from '../enemies/glow.ts';
+import { PALETTE } from '../palette.ts';
 import {
   type CardAtlas,
   type CardAtlasCard,
@@ -12,9 +14,15 @@ import {
 /**
  * The flat card face for the fanned hand: one ShaderMaterial on one InstancedMesh draws every card.
  * Each instance carries its frame rect, its three art layer rects and its art page; the fragment
- * shader composites back, mid, glow and front inside the frame window (the holo card's layers
- * without parallax) and shows the frame everywhere else. The three art pages and the frame page are
- * four sampler uniforms; a card's layers always share one page, so the shader branches once.
+ * shader composites back, mid, glow and front inside the frame window and shows the frame
+ * everywhere else. The window is a portal: each layer is sampled where the view ray meets its plane
+ * at the atlas depth behind the face (the holo card's depths, offset per eye, no extra texture
+ * taps), deeper layers sink into a warm haze, and the window lip shades the art nearest the eye.
+ * The three art pages and the frame page are four sampler uniforms; a card's layers always share
+ * one page, so the shader branches once.
+ *
+ * `aBurn` drives the played-card burn (`card-burn.ts`): an amber flare, then a noise-broken burn
+ * front that eats the card from its edges inward with a hot rim. It is zero on hand cards.
  *
  * Until `setArt` provides pages, cards draw as a flat per-instance tint.
  */
@@ -37,6 +45,7 @@ attribute vec4 aMidUv;
 attribute vec4 aFrontUv;
 attribute vec4 aOffsets;
 attribute vec4 aGlowPage;
+attribute vec4 aBurn;
 attribute vec3 aTint;
 varying vec2 vUv;
 varying vec4 vFrameUv;
@@ -45,7 +54,10 @@ varying vec4 vMidUv;
 varying vec4 vFrontUv;
 varying vec4 vOffsets;
 varying vec4 vGlowPage;
+varying vec4 vBurn;
 varying vec3 vTint;
+// Card-local vector from the surface toward the eye (x right, y up, z out of the face), metres.
+varying vec3 vEye;
 void main() {
   vUv = uv;
   vFrameUv = aFrameUv;
@@ -54,12 +66,22 @@ void main() {
   vFrontUv = aFrontUv;
   vOffsets = aOffsets;
   vGlowPage = aGlowPage;
+  vBurn = aBurn;
   vTint = aTint;
-  vec4 local = vec4(position, 1.0);
 #ifdef USE_INSTANCING
-  local = instanceMatrix * local;
+  mat4 cardView = modelViewMatrix * instanceMatrix;
+#else
+  mat4 cardView = modelViewMatrix;
 #endif
-  gl_Position = projectionMatrix * modelViewMatrix * local;
+  vec4 viewPos = cardView * vec4(position, 1.0);
+  // The instance scale is (width, height, 1), so the axes are normalised before projecting.
+  vec3 e = -viewPos.xyz;
+  vEye = vec3(
+    dot(e, normalize(cardView[0].xyz)),
+    dot(e, normalize(cardView[1].xyz)),
+    dot(e, normalize(cardView[2].xyz))
+  );
+  gl_Position = projectionMatrix * viewPos;
 }`;
 
 const FRAGMENT = /* glsl */ `
@@ -72,6 +94,13 @@ uniform float uHasArt;
 uniform vec4 uWindow;
 // Layer plane sizes in window diameters: back, mid, glow, front.
 uniform vec4 uSizes;
+// Layer depths behind the face in window diameters: back, mid, glow, front.
+uniform vec4 uDepths;
+// Depth haze colour (linear rgb) and its density per window diameter of depth.
+uniform vec4 uFog;
+// Burn colours (linear): the ember at the char line and the hot core at the burn front.
+uniform vec3 uEmber;
+uniform vec3 uHot;
 varying vec2 vUv;
 varying vec4 vFrameUv;
 varying vec4 vBackUv;
@@ -79,7 +108,17 @@ varying vec4 vMidUv;
 varying vec4 vFrontUv;
 varying vec4 vOffsets;
 varying vec4 vGlowPage;
+varying vec4 vBurn;
 varying vec3 vTint;
+varying vec3 vEye;
+
+// Steepest view slope the parallax follows; the back layer's margin runs out beyond it.
+const float MAX_SLOPE = 1.2;
+// Depth of the window's inner wall, window diameters: the lip shadow shifts by this much.
+const float WALL = 0.12;
+// Width of the glowing burn front and of the char band behind it, in burn-field units.
+const float RIM = 0.05;
+const float CHAR = 0.12;
 
 vec4 pageSample(float page, vec2 uv, vec2 gx, vec2 gy) {
   if (page < 0.5) return textureGrad(uPage0, uv, gx, gy);
@@ -93,44 +132,90 @@ float inside(vec2 l) {
   return s.x * s.y;
 }
 
+float hash12(vec2 p) {
+  vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+  p3 += dot(p3, p3.yzx + 33.33);
+  return fract((p3.x + p3.y) * p3.z);
+}
+
+float valueNoise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+  vec2 s = f * f * (3.0 - 2.0 * f);
+  float a = hash12(i);
+  float b = hash12(i + vec2(1.0, 0.0));
+  float c = hash12(i + vec2(0.0, 1.0));
+  float d = hash12(i + vec2(1.0, 1.0));
+  return mix(mix(a, b, s.x), mix(c, d, s.x), s.y);
+}
+
+// The played-card burn: x front 0..1, y noise seed, z flare 0..1, w 1 while burning.
+vec3 burnCard(vec3 color) {
+  vec2 c = abs(vUv - 0.5) * 2.0;
+  float edge = 1.0 - max(c.x, c.y);
+  vec2 p = vec2(vUv.x, vUv.y * uWindow.w) * 6.0 + vBurn.y * 17.0;
+  float n = 0.65 * valueNoise(p) + 0.35 * valueNoise(p * 2.7 + 5.0);
+  // 0 at the card edge, about 1 at the centre, broken up by noise: the edges go first.
+  float field = 0.55 * edge + 0.45 * n;
+  float d = field - mix(-0.2, 1.05, vBurn.x);
+  if (d < 0.0) discard;
+  float rim = 1.0 - smoothstep(0.0, RIM, d);
+  float charred = 1.0 - smoothstep(RIM, RIM + CHAR, d);
+  color = mix(color, color * 0.22, charred);
+  color = mix(color, color + uHot * 0.6, vBurn.z);
+  return mix(color, mix(uEmber, uHot, rim * rim), rim);
+}
+
 void main() {
+  vec3 color;
   if (uHasArt < 0.5) {
-    gl_FragColor = vec4(vTint, 1.0);
-    #include <colorspace_fragment>
-    return;
-  }
-  // Window space: x right, y up, in window diameters from the window centre.
-  float diameter = 2.0 * uWindow.z;
-  vec2 w = vec2(vUv.x - uWindow.x, ((1.0 - vUv.y) - uWindow.y) * uWindow.w);
-  bool inWindow = length(w) < uWindow.z;
-  vec2 q = vec2(w.x, -w.y) / diameter;
-  vec2 qx = dFdx(q);
-  vec2 qy = dFdy(q);
+    color = vTint;
+  } else {
+    // Window space: x right, y up, in window diameters from the window centre.
+    float diameter = 2.0 * uWindow.z;
+    vec2 w = vec2(vUv.x - uWindow.x, ((1.0 - vUv.y) - uWindow.y) * uWindow.w);
+    bool inWindow = length(w) < uWindow.z;
+    vec2 q = vec2(w.x, -w.y) / diameter;
+    vec2 qx = dFdx(q);
+    vec2 qy = dFdy(q);
 
-  vec2 frameUv = mix(vFrameUv.xy, vFrameUv.zw, vUv);
-  vec4 frame = texture2D(uFrame, frameUv);
-  if (!inWindow && frame.a < 0.5) discard;
-  vec3 color = frame.rgb;
+    vec2 frameUv = mix(vFrameUv.xy, vFrameUv.zw, vUv);
+    vec4 frame = texture2D(uFrame, frameUv);
+    if (!inWindow && frame.a < 0.5) discard;
+    color = frame.rgb;
 
-  if (inWindow) {
-    float page = vGlowPage.w;
-    vec2 backL = q / uSizes.x + 0.5;
-    vec2 midL = q / uSizes.y + 0.5;
-    vec2 frontL = (q - vOffsets.xy) / uSizes.w + 0.5;
-    vec2 backSpan = vBackUv.zw - vBackUv.xy;
-    vec2 midSpan = vMidUv.zw - vMidUv.xy;
-    vec2 frontSpan = vFrontUv.zw - vFrontUv.xy;
-    vec3 art = pageSample(page, vBackUv.xy + backL * backSpan, qx / uSizes.x * backSpan, qy / uSizes.x * backSpan).rgb;
-    vec4 mid = pageSample(page, vMidUv.xy + clamp(midL, 0.0, 1.0) * midSpan, qx / uSizes.y * midSpan, qy / uSizes.y * midSpan);
-    art = mix(art, mid.rgb, mid.a * inside(midL));
-    // The holo card's radial glow texture: 1 at the centre, 0.45 at 35%, 0 at the edge.
-    float r = length(q - vOffsets.zw) / (0.5 * uSizes.z);
-    float glow = r < 0.35 ? mix(1.0, 0.45, r / 0.35) : mix(0.45, 0.0, clamp((r - 0.35) / 0.65, 0.0, 1.0));
-    art += vGlowPage.rgb * glow * 0.9;
-    vec4 front = pageSample(page, vFrontUv.xy + clamp(frontL, 0.0, 1.0) * frontSpan, qx / uSizes.w * frontSpan, qy / uSizes.w * frontSpan);
-    art = mix(art, front.rgb, front.a * inside(frontL));
-    color = mix(art, frame.rgb, frame.a);
+    if (inWindow) {
+      // Portal depth: each layer is sampled where the view ray meets its plane behind the face.
+      vec3 eye = normalize(vEye);
+      vec2 slope = vec2(eye.x, -eye.y) / max(eye.z, 0.2);
+      float steep = length(slope);
+      if (steep > MAX_SLOPE) slope *= MAX_SLOPE / steep;
+      float page = vGlowPage.w;
+      vec2 backL = clamp((q - slope * uDepths.x) / uSizes.x + 0.5, 0.0, 1.0);
+      vec2 midL = (q - slope * uDepths.y) / uSizes.y + 0.5;
+      vec2 frontL = (q - slope * uDepths.w - vOffsets.xy) / uSizes.w + 0.5;
+      vec2 backSpan = vBackUv.zw - vBackUv.xy;
+      vec2 midSpan = vMidUv.zw - vMidUv.xy;
+      vec2 frontSpan = vFrontUv.zw - vFrontUv.xy;
+      vec3 art = pageSample(page, vBackUv.xy + backL * backSpan, qx / uSizes.x * backSpan, qy / uSizes.x * backSpan).rgb;
+      art = mix(art, uFog.rgb, 1.0 - exp(-uDepths.x * uFog.w));
+      vec4 mid = pageSample(page, vMidUv.xy + clamp(midL, 0.0, 1.0) * midSpan, qx / uSizes.y * midSpan, qy / uSizes.y * midSpan);
+      vec3 midRgb = mix(mid.rgb, uFog.rgb, 1.0 - exp(-uDepths.y * uFog.w));
+      art = mix(art, midRgb, mid.a * inside(midL));
+      // The holo card's radial glow texture: 1 at the centre, 0.45 at 35%, 0 at the edge.
+      float r = length(q - slope * uDepths.z - vOffsets.zw) / (0.5 * uSizes.z);
+      float glow = r < 0.35 ? mix(1.0, 0.45, r / 0.35) : mix(0.45, 0.0, clamp((r - 0.35) / 0.65, 0.0, 1.0));
+      art += vGlowPage.rgb * glow * 0.9;
+      vec4 front = pageSample(page, vFrontUv.xy + clamp(frontL, 0.0, 1.0) * frontSpan, qx / uSizes.w * frontSpan, qy / uSizes.w * frontSpan);
+      art = mix(art, front.rgb, front.a * inside(frontL));
+      // The window's inner lip: a soft ring of shade, deeper on the side nearer the eye.
+      float lip = length(q + slope * WALL) * 2.0;
+      float ring = length(q) * 2.0;
+      art *= max(0.0, 1.0 - 0.6 * smoothstep(0.7, 1.05, lip) - 0.25 * smoothstep(0.8, 1.0, ring));
+      color = mix(art, frame.rgb, frame.a);
+    }
   }
+  if (vBurn.w > 0.5) color = burnCard(color);
   gl_FragColor = vec4(color, 1.0);
   #include <colorspace_fragment>
 }`;
@@ -147,8 +232,16 @@ const placeholder = (): THREE.Texture => {
   return texture;
 };
 
+/** Warm black from the art bible: the haze deeper layers sink into. */
+export const CARD_FOG = '#231d1a';
+/** Haze density per window diameter of depth: the back layer (about 0.57) takes about a quarter. */
+export const FOG_DENSITY = 0.5;
+/** The holo card width (metres) the atlas layer depths were authored for (`card-proof.ts`). */
+export const ATLAS_CARD_WIDTH = 0.063;
+
 export function createCardFaceMaterial(): THREE.ShaderMaterial {
   const blank = placeholder();
+  const fog = new THREE.Color(CARD_FOG);
   return new THREE.ShaderMaterial({
     vertexShader: VERTEX,
     fragmentShader: FRAGMENT,
@@ -160,6 +253,10 @@ export function createCardFaceMaterial(): THREE.ShaderMaterial {
       uHasArt: { value: 0 },
       uWindow: { value: new THREE.Vector4(0.5, 0.37, 0.41, 1.5) },
       uSizes: { value: new THREE.Vector4(2.6, 0.95, 0.7, 1.05) },
+      uDepths: { value: new THREE.Vector4(0.57, 0.3, 0.13, 0.1) },
+      uFog: { value: new THREE.Vector4(fog.r, fog.g, fog.b, FOG_DENSITY) },
+      uEmber: { value: new THREE.Color(PALETTE.candle) },
+      uHot: { value: new THREE.Color(GLOW_HOT) },
     },
     side: THREE.FrontSide,
     // Painted card art shows its authored colours; scene tone mapping would desaturate it.
@@ -168,10 +265,16 @@ export function createCardFaceMaterial(): THREE.ShaderMaterial {
 }
 
 /**
- * Points the material at the atlas pages. Window, aspect and layer sizes are shared by every frame
- * and card in the slice atlas (checked by tests), so they are uniforms; the rest is per instance.
+ * Points the material at the atlas pages. Window, aspect, layer sizes and depths are shared by
+ * every frame and card in the slice atlas (checked by tests), so they are uniforms; the rest is per
+ * instance. Depths are metres on a card `cardWidth` wide, turned into window diameters so a card
+ * drawn at any scale keeps the same portal proportions.
  */
-export function applyCardFaceArt(material: THREE.ShaderMaterial, art: CardFaceArt): void {
+export function applyCardFaceArt(
+  material: THREE.ShaderMaterial,
+  art: CardFaceArt,
+  cardWidth = ATLAS_CARD_WIDTH,
+): void {
   const { atlas, pages } = art;
   const frame = atlas.frames.attack;
   const sample = Object.values(atlas.cards)[0] as CardAtlasCard;
@@ -192,6 +295,13 @@ export function applyCardFaceArt(material: THREE.ShaderMaterial, art: CardFaceAr
     sample.stack.mid.size,
     sample.stack.glow.size,
     sample.stack.front.size,
+  );
+  const diameter = 2 * frame.window.radius * cardWidth;
+  (u.uDepths as THREE.IUniform<THREE.Vector4>).value.set(
+    sample.stack.back.depth / diameter,
+    sample.stack.mid.depth / diameter,
+    sample.stack.glow.depth / diameter,
+    sample.stack.front.depth / diameter,
   );
   (u.uHasArt as THREE.IUniform).value = 1;
 }
@@ -237,6 +347,28 @@ export function addCardFaceAttributes(geometry: THREE.BufferGeometry, capacity: 
     'aTint',
     new THREE.InstancedBufferAttribute(new Float32Array(capacity * 3).fill(1), 3),
   );
+  geometry.setAttribute(
+    'aBurn',
+    new THREE.InstancedBufferAttribute(new Float32Array(capacity * 4), 4),
+  );
+}
+
+/**
+ * Writes the burn state at `index`: front 0..1, noise seed 0..1 and flare 0..1 while `burning`,
+ * all zero otherwise (a hand card).
+ */
+export function writeCardBurn(
+  geometry: THREE.BufferGeometry,
+  index: number,
+  burning: boolean,
+  front = 0,
+  seed = 0,
+  flare = 0,
+): void {
+  const attribute = geometry.getAttribute('aBurn') as THREE.InstancedBufferAttribute;
+  if (burning) attribute.setXYZW(index, front, seed, flare, 1);
+  else attribute.setXYZW(index, 0, 0, 0, 0);
+  attribute.needsUpdate = true;
 }
 
 /** Writes one card's instance data at `index`. */

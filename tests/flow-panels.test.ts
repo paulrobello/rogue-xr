@@ -163,13 +163,13 @@ describe('FlowUi settings board comfort toggles', () => {
     expect(ui.controlIds()).toContain('settings-teleportEnabled-toggle');
     expect(ui.controlIds()).toContain('settings-turnMode-toggle');
 
-    expect(stored.teleportEnabled).toBe(false);
-    expect(ui.activate('settings-teleportEnabled-toggle')).toBe(true);
     expect(stored.teleportEnabled).toBe(true);
+    expect(ui.activate('settings-teleportEnabled-toggle')).toBe(true);
+    expect(stored.teleportEnabled).toBe(false);
     expect(ui.activate('settings-turnMode-toggle')).toBe(true);
     expect(stored.turnMode).toBe('smooth');
     expect(ui.activate('settings-teleportEnabled-toggle')).toBe(true);
-    expect(stored.teleportEnabled).toBe(false);
+    expect(stored.teleportEnabled).toBe(true);
     expect(saved).toHaveLength(3);
     // Each flip keeps the other fields (volumes are untouched).
     expect(stored.masterVolume).toBe(DEFAULT_SETTINGS.masterVolume);

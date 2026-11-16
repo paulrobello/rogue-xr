@@ -20,9 +20,10 @@ export interface DriveInput {
 }
 
 /**
- * Turns the frame's sticks and controller ray into `Locomotion` input. Pushing the left stick
- * forward holds the teleport aim from the left controller while teleport is on, and returning the
- * stick toward centre commits it. While a fight or a board has the controls, nothing moves, a held
+ * Turns the frame's sticks and controller ray into `Locomotion` input. The left stick turns (x) and
+ * teleports (y): pushing it forward holds the teleport aim from the left controller while teleport
+ * is on, and returning the stick toward centre commits it. The right stick smooth strafes (x) and
+ * moves forward and back (y). While a fight or a board has the controls, nothing moves, a held
  * aim is dropped instead of committed when the controls come back, and the vignette still ramps down.
  */
 export class LocomotionDrive {
@@ -54,9 +55,9 @@ export class LocomotionDrive {
       locomotion.cancelTeleport();
     }
     locomotion.update(input.dt, {
-      moveX: input.left[0],
-      moveY: input.left[1],
-      turnX: input.right[0],
+      moveX: input.right[0],
+      moveY: input.right[1],
+      turnX: input.left[0],
       teleportAim: aim,
     });
   }

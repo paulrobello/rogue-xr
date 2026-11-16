@@ -155,6 +155,8 @@ const mountFloor = (seed: string): FloorView =>
 if (!proofView) floor = mountFloor(bootSeed);
 /** True once a run has played on the mounted floor, so the next run needs a fresh one. */
 let floorUsed = false;
+/** Set when a finished run returns to the title: the next frame swaps in a pristine floor (H1). */
+let titleReset = false;
 
 // Debug readout, under `?debug` only: seed, current room, the last frame's draw calls (Quest budget:
 // under 200) and, in a fight, the combat stage, log and key help.
@@ -229,6 +231,7 @@ if (audio) {
   }
   void audio.load();
   audio.unlockOnGesture(window);
+  audio.unlockOnGesture(document, ['visibilitychange']);
   audio.unlockOnXrSession(renderer.xr);
 }
 
@@ -509,6 +512,8 @@ flow.onChange((event) => {
   } else if (event.to === 'death' || event.to === 'victory') {
     storedSnapshot = null;
   }
+  if (event.to === 'title' && (event.from === 'death' || event.from === 'victory'))
+    titleReset = true;
 });
 /** Puts a pristine floor for `seed` under the player, rebuilding in place (no reload, XR stays up). */
 const freshFloor = (seed: string): FloorView => {
@@ -983,7 +988,11 @@ Object.assign(enterButton.style, {
   border: 'none',
   borderRadius: '6px',
 });
-enterButton.addEventListener('click', () => void xr.enter());
+enterButton.addEventListener('click', () => {
+  // Resume audio inside the click, before requestSession: window gestures stop once immersive.
+  audio?.unlock('enter-vr');
+  void xr.enter();
+});
 app.append(enterButton);
 if (proofView) enterButton.hidden = true;
 void xr.supported().then((ok) => {
@@ -1079,6 +1088,17 @@ renderer.setAnimationLoop((time, frame) => {
     walker.update(deltaSeconds);
   }
   cardProof?.update(time / 1000, xr.presenting);
+  if (titleReset) {
+    // Rebuilt between frames: Return to title fires inside the board's input handling.
+    titleReset = false;
+    const target = freshFloor(ui?.seed ?? randomSeed());
+    const spawn = target.world.spawnPoint();
+    rig.position.set(spawn.x, rig.position.y, spawn.z);
+    floorUsed = false;
+    // The title board was placed before the move: re-place it in front of the moved head.
+    rig.updateMatrixWorld(true);
+    ui?.recenter(camera);
+  }
   if (floor) floor.suspendTriggers = flow.phase !== 'explore';
   floor?.update(camera, deltaSeconds);
   if (floor && flow.inRun) {
@@ -1165,7 +1185,7 @@ renderer.setAnimationLoop((time, frame) => {
     const combatLines = session
       ? `\n${session.hudText()}\n${session.log.slice(-4).join('\n')}\nDrag a card at an enemy or onto the table · draw on the plate · T throw dice · E end turn · Esc cancel`
       : '';
-    hud.textContent = `seed ${floor.seed} · room ${floor.world.current} ${room?.templateId} (${room?.role}) · calls ${renderer.info.render.calls}${fight}${combatLines}`;
+    hud.textContent = `seed ${floor.seed} · room ${floor.world.current} ${room?.templateId} (${room?.role}) · calls ${renderer.info.render.calls}${fight}${audio ? `\n${audio.statusLine}` : ''}${combatLines}`;
   }
   if (floor) {
     const text = combat?.banner ?? '';

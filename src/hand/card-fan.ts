@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { BatchedText, Text } from 'troika-three-text';
 import { type CardAtlas, frameToCard } from '../cards/card-atlas.ts';
+import { BurnPool, burnFrame, newBurnFrame } from '../cards/card-burn.ts';
 import {
   addCardFaceAttributes,
   applyCardFaceArt,
@@ -8,6 +9,7 @@ import {
   cardFaceInstance,
   createCardFaceMaterial,
   requestCardFaceArt,
+  writeCardBurn,
   writeCardFace,
   writeCardTint,
 } from '../cards/card-face-material.ts';
@@ -26,11 +28,15 @@ import {
 } from './fan-layout.ts';
 
 /**
- * The off-hand card hand. Rendering is a flat version of the holo card (a portal card is 8 draws
- * each): one InstancedMesh of card faces whose shader samples the card atlas (frame plus the
- * composited art layers, no parallax), one InstancedMesh of dark discs behind the cost numbers and
- * one troika BatchedText holding every label. The whole hand is 3 draws at any size, hovered or
- * held. The atlas loads (KTX2) the first time the fan is drawn; until then cards are flat tints.
+ * The off-hand card hand. Rendering is a single-pass version of the holo card (a portal card is 8
+ * draws each): one InstancedMesh of card faces whose shader samples the card atlas (frame plus the
+ * art layers, offset by the view angle so the window reads as a recessed portal), one InstancedMesh
+ * of dark discs behind the cost numbers and one troika BatchedText holding every label. The whole
+ * hand is 3 draws at any size, hovered or held. The atlas loads (KTX2) the first time the fan is
+ * drawn; until then cards are flat tints.
+ *
+ * A played card (`playOut`) burns away in world space as one of `BURN_SLOTS` spare instances after
+ * the hand slots of the same mesh, so the burn costs no extra draw and outlives `setHand`.
  *
  * The fan owns no game rules. It reports intents (hover, grab, release, returned) and the combat
  * controller decides what they mean.
@@ -157,6 +163,14 @@ const HOLD_PITCH = -0.7;
 const HOLD_SCALE = 1.3;
 /** Hit-test slack so a card's edge is easy to point at, metres. */
 const HIT_MARGIN = 0.004;
+/** Cards that can burn at once; a fourth play reuses the oldest slot. */
+export const BURN_SLOTS = 3;
+/** A burning card drifts this far toward its target (at most half the way), metres. */
+const BURN_DRIFT = 0.2;
+/** With no target (a table drop) it sinks this far, metres. */
+const BURN_SINK = 0.05;
+/** Roll about the card normal over the burn, radians. */
+const BURN_SPIN = 0.35;
 
 const TYPE_COLOR: Record<SliceCard['type'], string> = {
   attack: PALETTE.ruby,
@@ -180,6 +194,23 @@ const tmpVec = new THREE.Vector3();
 const tmpQuat = new THREE.Quaternion();
 const tmpColor = new THREE.Color();
 const tmpPose = newPose();
+const tmpInverse = new THREE.Matrix4();
+const tmpBurnPos = new THREE.Vector3();
+const tmpBurnQuat = new THREE.Quaternion();
+const ZERO_MATRIX = new THREE.Matrix4().makeScale(0, 0, 0);
+const NORMAL_AXIS = new THREE.Vector3(0, 0, 1);
+const burnState = newBurnFrame();
+
+/** A burning card's world-space start pose and drift. */
+interface Burn {
+  card: SliceCard | null;
+  position: THREE.Vector3;
+  quaternion: THREE.Quaternion;
+  scale: number;
+  /** Unit drift direction (world) and the distance covered by the end of the burn. */
+  direction: THREE.Vector3;
+  distance: number;
+}
 
 function slotPose(slot: FanSlot, out: Pose): Pose {
   const r: FanRotation = slot.rotation;
@@ -237,6 +268,15 @@ export class CardFan {
   private hoverIndex: number | null = null;
   private grabbedIndex: number | null = null;
   private disposed = false;
+  private readonly burns = new BurnPool(BURN_SLOTS);
+  private readonly burning: Burn[] = Array.from({ length: BURN_SLOTS }, () => ({
+    card: null,
+    position: new THREE.Vector3(),
+    quaternion: new THREE.Quaternion(),
+    scale: 1,
+    direction: new THREE.Vector3(),
+    distance: 0,
+  }));
 
   constructor(opts: CardFanOptions = {}) {
     this.options = { ...DEFAULT_FAN, ...opts.layout };
@@ -247,8 +287,12 @@ export class CardFan {
     this.root.name = 'card-fan';
 
     const bodyGeometry = new THREE.PlaneGeometry(1, 1);
-    addCardFaceAttributes(bodyGeometry, MAX_HAND);
-    this.body = new THREE.InstancedMesh(bodyGeometry, createCardFaceMaterial(), MAX_HAND);
+    addCardFaceAttributes(bodyGeometry, MAX_HAND + BURN_SLOTS);
+    this.body = new THREE.InstancedMesh(
+      bodyGeometry,
+      createCardFaceMaterial(),
+      MAX_HAND + BURN_SLOTS,
+    );
     this.body.name = 'card-fan-bodies';
     this.body.count = 0;
     this.body.frustumCulled = false;
@@ -321,6 +365,11 @@ export class CardFan {
   /** Draw calls the fan costs right now. */
   get drawCalls(): number {
     return countDraws(this.root);
+  }
+
+  /** Cards burning away right now. */
+  get burningCount(): number {
+    return this.burns.active;
   }
 
   /** True once the faces sample the atlas; until then cards are flat tints. */
@@ -433,6 +482,38 @@ export class CardFan {
     return released;
   }
 
+  /**
+   * Burns a released card away: it flares and burns from its edges inward over `BURN_SECONDS`
+   * while drifting toward `target` (world space; an enemy) or sinking when there is none (a table
+   * drop). The slot stays released (hidden) until `setHand` or `returnToFan`; the burn is separate
+   * and outlives both. False when the card is not released.
+   */
+  playOut(index: number, target: THREE.Vector3 | null = null): boolean {
+    if (this.states[index] !== 'released') return false;
+    const slot = this.burns.start();
+    const burn = this.burning[slot] as Burn;
+    const pose = this.poses[index] as Pose;
+    this.root.updateWorldMatrix(true, false);
+    burn.card = this.cards[index] as SliceCard;
+    burn.position.copy(pose.position).applyMatrix4(this.root.matrixWorld);
+    this.root.getWorldQuaternion(burn.quaternion).multiply(pose.quaternion);
+    this.root.getWorldScale(tmpScale);
+    burn.scale = pose.scale * tmpScale.x;
+    if (target) {
+      burn.direction.subVectors(target, burn.position);
+      const length = burn.direction.length();
+      burn.distance = Math.min(BURN_DRIFT, length / 2);
+      if (length > 1e-6) burn.direction.divideScalar(length);
+      else burn.distance = 0;
+    } else {
+      burn.direction.set(0, -1, 0);
+      burn.distance = BURN_SINK;
+    }
+    this.writeBurnFace(slot);
+    this.write();
+    return true;
+  }
+
   /** Springs a held or released card back into its slot. */
   returnToFan(index: number): void {
     const state = this.states[index];
@@ -479,12 +560,14 @@ export class CardFan {
         }
       }
     }
+    this.burns.update(step);
     this.write();
   }
 
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
+    this.burns.clear();
     this.detach();
     this.clearMembers();
     this.labels.dispose();
@@ -504,6 +587,57 @@ export class CardFan {
       writeCardTint(geometry, i, tmpColor.set(TYPE_COLOR[card.type]));
       if (this.art) writeCardFace(geometry, i, cardFaceInstance(this.art.atlas, card.id));
     });
+    for (let slot = 0; slot < BURN_SLOTS; slot++) {
+      if (this.burns.isLive(slot)) this.writeBurnFace(slot);
+    }
+  }
+
+  /** Face data for the burn instance in `slot`. */
+  private writeBurnFace(slot: number): void {
+    const card = (this.burning[slot] as Burn).card;
+    if (!card) return;
+    const geometry = this.body.geometry;
+    const index = MAX_HAND + slot;
+    writeCardTint(geometry, index, tmpColor.set(TYPE_COLOR[card.type]));
+    if (this.art) writeCardFace(geometry, index, cardFaceInstance(this.art.atlas, card.id));
+  }
+
+  /**
+   * Burn instances after the hand slots. While any card burns the mesh draws every slot up to the
+   * last burn instance; unused hand slots in between get a zero matrix.
+   */
+  private writeBurns(): void {
+    const geometry = this.body.geometry;
+    if (this.burns.active === 0) {
+      if (this.body.count !== this.cards.length) {
+        for (let slot = 0; slot < BURN_SLOTS; slot++)
+          writeCardBurn(geometry, MAX_HAND + slot, false);
+      }
+      this.body.count = this.cards.length;
+      return;
+    }
+    const { cardWidth: w, cardHeight: h } = this.options;
+    for (let i = this.cards.length; i < MAX_HAND; i++) this.body.setMatrixAt(i, ZERO_MATRIX);
+    this.root.updateWorldMatrix(true, false);
+    tmpInverse.copy(this.root.matrixWorld).invert();
+    for (let slot = 0; slot < BURN_SLOTS; slot++) {
+      const index = MAX_HAND + slot;
+      if (!this.burns.isLive(slot)) {
+        this.body.setMatrixAt(index, ZERO_MATRIX);
+        writeCardBurn(geometry, index, false);
+        continue;
+      }
+      const burn = this.burning[slot] as Burn;
+      const frame = burnFrame(this.burns.progress(slot), burnState);
+      tmpBurnPos.copy(burn.position).addScaledVector(burn.direction, burn.distance * frame.travel);
+      tmpBurnQuat.setFromAxisAngle(NORMAL_AXIS, BURN_SPIN * frame.u);
+      tmpBurnQuat.premultiply(burn.quaternion);
+      const s = burn.scale * frame.scale;
+      tmpMatrix.compose(tmpBurnPos, tmpBurnQuat, tmpScale.set(w * s, h * s, 1));
+      this.body.setMatrixAt(index, tmpMatrix.premultiply(tmpInverse));
+      writeCardBurn(geometry, index, true, frame.burn, this.burns.seed(slot), frame.flare);
+    }
+    this.body.count = MAX_HAND + BURN_SLOTS;
   }
 
   private describe(index: number): GrabbedCard {
@@ -622,6 +756,7 @@ export class CardFan {
         member.desc.matrix,
       );
     }
+    this.writeBurns();
     this.body.instanceMatrix.needsUpdate = true;
     this.gems.instanceMatrix.needsUpdate = true;
   }

@@ -225,9 +225,14 @@ async function playFight(rig: Rig & { session: CombatSession }): Promise<FightLo
   const { session } = rig;
   const verbs = new Set<string>();
   const rolls: number[] = [];
-  for (let guard = 0; guard < 400 && session.controller.outcome === null; guard++) {
+  // A dice card's effects wait for its throw (H2), even a killing blow's, so a pending throw is
+  // thrown before the loop checks the outcome.
+  for (
+    let guard = 0;
+    guard < 400 && (session.controller.outcome === null || session.awaitingThrow);
+    guard++
+  ) {
     waitEnemyPhase(rig, session);
-    if (session.controller.outcome !== null) break;
     if (session.awaitingThrow) {
       const roll = session.controller.lastDice;
       pointerAt(rig, at(session, 'throw'), 'down');
@@ -243,6 +248,7 @@ async function playFight(rig: Rig & { session: CombatSession }): Promise<FightLo
       verbs.add('dice');
       continue;
     }
+    if (session.controller.outcome !== null) break;
     if (session.controller.stage === 'sigil') {
       drawSigil(rig, session);
       verbs.add('sigil');
@@ -611,14 +617,18 @@ describe('desktop HUD fit', () => {
     camera.updateMatrixWorld(true);
     return camera;
   };
-  // The bug bash placements: the 0.5 m fallback table, the default 0.65 m one, and the guardian
-  // (taller, its readout higher), on the real table's sockets and on the greybox.
+  // The bug bash placements: the 0.5 m last-resort table, the 0.65 m comfortable fallback, the
+  // default 0.85 m one (H5), and the guardian (taller, its readout higher), on the real table's
+  // sockets and on the greybox.
   const placements = [
     { tier: 'regular', distance: 0.5, asset: true },
     { tier: 'regular', distance: 0.65, asset: true },
+    { tier: 'regular', distance: 0.85, asset: true },
     { tier: 'guardian', distance: 0.5, asset: true },
     { tier: 'guardian', distance: 0.65, asset: true },
+    { tier: 'guardian', distance: 0.85, asset: true },
     { tier: 'regular', distance: 0.5, asset: false },
+    { tier: 'regular', distance: 0.85, asset: false },
   ] as const;
   for (const { tier, distance, asset } of placements) {
     const where = `${tier}, table ${distance} m, ${asset ? 'table asset' : 'greybox'}`;
@@ -680,7 +690,7 @@ describe('desktop HUD fit', () => {
 });
 
 describe('XR status panel', () => {
-  it('sits inside both eyes of the seated forward view at the 0.5 m and 0.65 m tables', async () => {
+  it('sits inside both eyes of the seated forward view at the 0.5, 0.65 and 0.85 m tables', async () => {
     stubCanvas2d();
     try {
       for (const asset of [true, false]) {
@@ -699,7 +709,7 @@ describe('XR status panel', () => {
         const yaw = (pose.yaw * Math.PI) / 180;
         const [fx, fz] = [Math.sin(yaw), -Math.cos(yaw)];
         const [rx, rz] = [Math.cos(yaw), Math.sin(yaw)];
-        for (const distance of [0.5, 0.65]) {
+        for (const distance of [0.5, 0.65, 0.85]) {
           for (const eye of [-0.032, 0.032]) {
             // The emulated Quest 3 eye (IWER: 90 degree vertical fov, half of a 1600 x 900 canvas),
             // level, at the seated eye height (the table top sits 0.75 m below it).

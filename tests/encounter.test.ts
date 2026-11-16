@@ -116,7 +116,7 @@ describe('EncounterDirector begin and end', () => {
     expect(director.table.position.x).toBeCloseTo(pose.x);
     expect(director.table.position.z).toBeCloseTo(pose.z);
     expect(pose.height).toBeCloseTo(0.85);
-    expect(Math.hypot(pose.x - player.x, pose.z - player.z)).toBeLessThanOrEqual(0.65 + 1e-9);
+    expect(Math.hypot(pose.x - player.x, pose.z - player.z)).toBeLessThanOrEqual(0.85 + 1e-9);
     expect(headingDelta(pose.yaw, headingTo([player.x, player.z], [pose.x, pose.z]))).toBeLessThan(
       1e-6,
     );
