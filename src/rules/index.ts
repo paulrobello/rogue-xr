@@ -19,6 +19,27 @@ export {
   validate,
 } from './engine.ts';
 export {
+  type CogRange,
+  chooseReward,
+  createRun,
+  DEFAULT_MAX_HP,
+  REWARD_CHOICES,
+  REWARD_COGS,
+  type RewardChoice,
+  type RewardOffer,
+  type RewardOfferResult,
+  type RewardTier,
+  type RunOptions,
+  type RunState,
+  rewardOffer,
+  SKIP_REWARD,
+  TREASURE_COGS,
+  type TreasureKind,
+  type TreasureLoot,
+  type TreasureLootResult,
+  treasureLoot,
+} from './run.ts';
+export {
   clampMultiplier,
   playCardWithSigil,
   SIGIL_MAX_MULTIPLIER,
