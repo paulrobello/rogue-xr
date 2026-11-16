@@ -1,0 +1,337 @@
+{
+  "when": "2026-11-16T04:52:33.269Z",
+  "results": [
+    {
+      "id": "gpu",
+      "pass": null,
+      "detail": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Max, Unspecified Version)"
+    },
+    {
+      "id": "desktop-boot",
+      "pass": true,
+      "detail": {
+        "phase": "title",
+        "sceneChildren": 7
+      }
+    },
+    {
+      "id": "enter-vr-clickable",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "id": "xr-session-immersive-vr",
+      "pass": true,
+      "detail": {
+        "presenting": true,
+        "mode": "immersive-vr",
+        "optionalFeatures": ["local-floor", "local", "hand-tracking"],
+        "enterButtonHidden": true
+      }
+    },
+    {
+      "id": "xr-foveation-medium",
+      "pass": true,
+      "detail": {
+        "threeGetFoveation": 0.5,
+        "layerWrites": [
+          {
+            "value": 1,
+            "count": 1
+          },
+          {
+            "value": 0.5,
+            "count": 95
+          }
+        ],
+        "toolkitMedium": 0.5,
+        "perfXrFoveation": 0.5,
+        "note": "requested value; IWER emulation mode does not apply foveation"
+      }
+    },
+    {
+      "id": "xr-framebuffer-scale",
+      "pass": true,
+      "detail": {
+        "layerInits": [
+          {
+            "antialias": true,
+            "alpha": true,
+            "depth": true,
+            "stencil": true,
+            "framebufferScaleFactor": 0.85
+          }
+        ],
+        "note": "requested at layer creation; IWER emulation renders at the canvas size"
+      }
+    },
+    {
+      "id": "xr-seated-recenter",
+      "pass": true,
+      "detail": {
+        "rigY": 0.39999995231628427,
+        "headLocalY": 1.2000000476837158,
+        "expectedRigY": 0.40000000000000013
+      }
+    },
+    {
+      "id": "xr-brass-hands",
+      "pass": true,
+      "detail": [
+        {
+          "visible": true,
+          "asset": "loaded",
+          "skinColor": "946e3b",
+          "visibleMeshes": 3
+        },
+        {
+          "visible": true,
+          "asset": "loaded",
+          "skinColor": "946e3b",
+          "visibleMeshes": 3
+        }
+      ]
+    },
+    {
+      "id": "boards-placement-title",
+      "pass": true,
+      "detail": {
+        "board": {
+          "head": {
+            "x": 0,
+            "y": 1.6,
+            "z": 2.0354375005699694
+          },
+          "distance": 1.3546769237982799
+        },
+        "art": {
+          "head": {
+            "x": 0,
+            "y": 1.6,
+            "z": 2.0354375005699694
+          },
+          "distance": 2.7358944277008357
+        },
+        "uiPassInXr": true,
+        "uiPassAfterClear": true
+      }
+    },
+    {
+      "id": "boards-own-pass-in-xr",
+      "pass": true,
+      "detail": {
+        "uiPassInXr": true,
+        "uiPassAfterClear": true
+      }
+    },
+    {
+      "id": "hover-main-hand",
+      "pass": true,
+      "detail": {
+        "mainHover": "title-new-run",
+        "offHandHover": null
+      }
+    },
+    {
+      "id": "settings-volume",
+      "pass": true,
+      "detail": {
+        "hovered": "title-settings",
+        "lowered": "settings-masterVolume-down",
+        "before": 0.8,
+        "after": 0.7,
+        "control": "Lower/Raise buttons (no slider on the board)"
+      }
+    },
+    {
+      "id": "seed-keypad",
+      "pass": true,
+      "detail": {
+        "draft": "BRASS042",
+        "seed": "BRASS042"
+      }
+    },
+    {
+      "id": "workshop-open",
+      "pass": true,
+      "detail": {
+        "phase": "workshop",
+        "cogs": 0
+      }
+    },
+    {
+      "id": "new-run-in-xr",
+      "pass": true,
+      "detail": {
+        "bootFloor": "43PJTN3F",
+        "phase": "explore",
+        "seed": "BRASS042",
+        "rebuilt": true,
+        "presenting": true,
+        "rigY": 0.39999995231628427
+      }
+    },
+    {
+      "id": "seated-height-after-new-run",
+      "pass": true,
+      "detail": {
+        "rigY": 0.39999995231628427,
+        "expected": 0.40000000000000013
+      }
+    },
+    {
+      "id": "locomotion-smooth-move",
+      "pass": true,
+      "detail": {
+        "metres": 1.997,
+        "from": {
+          "x": 0,
+          "z": 2,
+          "yaw": 0
+        },
+        "to": {
+          "x": 0,
+          "z": 0.0030000000000003912,
+          "yaw": 0
+        }
+      }
+    },
+    {
+      "id": "locomotion-snap-turn",
+      "pass": true,
+      "detail": {
+        "yawDeg": [0, -29.999999999999996, -59.99999999999999],
+        "steps": [29.999999999999996, 29.999999999999996]
+      }
+    },
+    {
+      "id": "locomotion-teleport",
+      "pass": null,
+      "detail": "not wired: main.ts passes teleportAim: null every frame"
+    },
+    {
+      "id": "locomotion-vignette",
+      "pass": null,
+      "detail": "not drawn: Locomotion.vignetteStrength is computed but nothing in src reads it"
+    },
+    {
+      "id": "enter-vr-clickable",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "id": "seated-height-after-continue",
+      "pass": true,
+      "detail": {
+        "rigY": 0.39999995231628427,
+        "expected": 0.40000000000000013
+      }
+    },
+    {
+      "id": "continue-in-xr",
+      "pass": true,
+      "detail": {
+        "hovered": "title-continue",
+        "phase": "explore",
+        "seed": "BRASS042",
+        "presenting": true,
+        "rigY": 0.39999995231628427
+      }
+    },
+    {
+      "id": "fight-0-and-reward",
+      "pass": true,
+      "detail": {
+        "room": 2,
+        "fight": {
+          "phase": "combat",
+          "hasSession": true
+        },
+        "end": "KeyK debug win (endFight) while presenting",
+        "pick": "reward-rivet-volley",
+        "hovered": "reward-rivet-volley",
+        "cardDistance": 1.3269836769842656,
+        "deck": [10, 11],
+        "runCogs": 14
+      }
+    },
+    {
+      "id": "fight-1-and-reward",
+      "pass": true,
+      "detail": {
+        "room": 4,
+        "fight": {
+          "phase": "combat",
+          "hasSession": true
+        },
+        "end": "KeyK debug win (endFight) while presenting",
+        "pick": "reward-skip-skip",
+        "hovered": "reward-skip-skip",
+        "cardDistance": 1.3269836769842656,
+        "deck": [11, 11],
+        "runCogs": 28
+      }
+    },
+    {
+      "id": "fight-2-and-reward",
+      "pass": true,
+      "detail": {
+        "room": 6,
+        "fight": {
+          "phase": "combat",
+          "hasSession": true
+        },
+        "end": "KeyK debug win (endFight) while presenting",
+        "pick": "reward-skip-skip",
+        "hovered": "reward-skip-skip",
+        "cardDistance": 1.3269836769842656,
+        "deck": [11, 11],
+        "runCogs": 56
+      }
+    },
+    {
+      "id": "death-board",
+      "pass": true,
+      "detail": {
+        "room": 7,
+        "path": "end-turn (KeyE) with ?cheat lose",
+        "board": {
+          "head": {
+            "x": 27,
+            "y": 1.6,
+            "z": 4.035437500569969
+          },
+          "distance": 1.3199808967828173
+        },
+        "hovered": "summary-title"
+      }
+    },
+    {
+      "id": "workshop-buy",
+      "pass": true,
+      "detail": {
+        "id": "workshop-buy-sturdy-frame",
+        "cogs": 56,
+        "after": 26,
+        "note": "bought with the ray"
+      }
+    },
+    {
+      "id": "rerun-floor-rebuild-in-xr",
+      "pass": true,
+      "detail": {
+        "phase": "explore",
+        "rebuilt": true,
+        "sameSession": true,
+        "presenting": true,
+        "rigY": 0.39999995231628427
+      }
+    },
+    {
+      "id": "session-end",
+      "pass": true,
+      "detail": null
+    }
+  ],
+  "consoleErrors": []
+}

@@ -44,7 +44,8 @@ export function createDomNotice({
   Object.assign(root.style, {
     position: 'fixed',
     left: '50%',
-    bottom: '20px',
+    // Top centre: the Enter VR button owns the bottom centre and must stay clickable.
+    top: '12px',
     transform: 'translateX(-50%)',
     zIndex: '2147483000',
     display: 'none',

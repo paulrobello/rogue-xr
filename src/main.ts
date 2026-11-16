@@ -17,6 +17,7 @@ import { STARTER_DECK } from './content/cards.ts';
 import { REWARD_POOL } from './content/rewards.ts';
 import { ActionBus } from './core/actions.ts';
 import { randomSeed } from './core/rng.ts';
+import { fitCombatFraming } from './desktop/combat-framing.ts';
 import { combatPitch, createDesktopControls } from './desktop/controls.ts';
 import { Walker } from './desktop/walker.ts';
 import { loadSentry, type SentryActor, type SentryAsset } from './enemies/sentry-asset.ts';
@@ -175,7 +176,9 @@ actions.on('recenter', () => {
   recenterPending = true;
 });
 const perf = mountPerf(renderer, scene, rig, { camera });
-mountUpdateNotice({ scene, renderer, xr, search: location.search });
+// The in-scene notice gets its own pass after the boards, which clear depth and would cover it.
+const noticeScene = new THREE.Scene();
+mountUpdateNotice({ scene: noticeScene, renderer, xr, search: location.search });
 
 // Audio: one director for the floor, resumed by the first gesture or the XR session start.
 const audio = floor ? new AudioDirector({ camera }) : null;
@@ -380,7 +383,9 @@ const freshFloor = (seed: string): FloorView => {
 const startRun = (seed: string): void => {
   if (flow.phase !== 'title') return;
   const target = freshFloor(seed);
-  rig.position.copy(target.world.spawnPoint());
+  // x/z only: in XR the rig's y holds the seated-height lift from the recenter.
+  const spawn = target.world.spawnPoint();
+  rig.position.set(spawn.x, rig.position.y, spawn.z);
   walker.yaw = 0;
   floorUsed = true;
   flow.newRun(target.seed);
@@ -391,7 +396,7 @@ const continueRun = (): void => {
   const target = freshFloor(snap.floorSeed);
   for (const room of snap.clearedEncounters) target.markCleared(Number(room));
   const at = target.standPoint(snap.roomIndex) ?? target.world.spawnPoint();
-  rig.position.set(at.x, 0, at.z);
+  rig.position.set(at.x, rig.position.y, at.z);
   target.world.update(at.x, at.z);
   floorUsed = true;
   flow.continueRun(snap);
@@ -594,16 +599,23 @@ if (floor && params.has('debug')) {
       y: rect.top + ((1 - point.y) / 2) * rect.height,
     };
   };
-  /** Moves the rig 1 m south of the first live automaton, facing north at it, to start that fight. */
-  const teleportToEncounter = (opts: { guardian?: boolean } = {}): number | null => {
+  /**
+   * Moves the rig 1 m south of the first live automaton, facing north at it, to start that fight.
+   * A room number picks that room's fight (guardian included); otherwise the first uncleared
+   * regular room, or the guardian's with `{ guardian: true }`.
+   */
+  const teleportToEncounter = (opts: { guardian?: boolean } | number = {}): number | null => {
     const target = floor;
     if (!target) return null;
+    const only = typeof opts === 'number' ? opts : null;
+    const guardian = typeof opts === 'number' ? false : (opts.guardian ?? false);
     for (const [room, bodies] of target.world.enemies) {
       const body = bodies.find((b) => b.parent !== null);
       if (!body || target.encounter.isCleared(room)) continue;
-      if ((room === target.world.plan.guardianRoom) !== (opts.guardian ?? false)) continue;
+      if (only !== null ? room !== only : (room === target.world.plan.guardianRoom) !== guardian)
+        continue;
       const at = body.getWorldPosition(new THREE.Vector3());
-      rig.position.set(at.x, 0, at.z + 1);
+      rig.position.set(at.x, rig.position.y, at.z + 1);
       walker.yaw = 0;
       return room;
     }
@@ -706,6 +718,8 @@ const audioFor = (phase: FlowPhase, encounter: FloorView['encounter']['phase']):
 };
 
 const sceneStats = { calls: 0, triangles: 0 };
+let framedSession: unknown = null;
+let framedAspect = 0;
 const timer = new THREE.Timer();
 renderer.setAnimationLoop((time, frame) => {
   perf.frame(null, time);
@@ -738,7 +752,27 @@ renderer.setAnimationLoop((time, frame) => {
       if (desktop.frameCombat(combatPitch(ahead, eye.y - pose.height, camera.fov))) {
         walker.yaw = pose.yaw;
       }
-    } else desktop.frameCombat(null);
+      // Once the HUD exists, fit the tray, plate and automatons (wider fov if the table is close).
+      const session = combat?.session;
+      if (session && (framedSession !== session || framedAspect !== camera.aspect)) {
+        framedSession = session;
+        framedAspect = camera.aspect;
+        const { must, want } = session.framingPoints();
+        desktop.refineCombat(
+          fitCombatFraming({
+            eye,
+            headingDeg: pose.yaw,
+            aspect: camera.aspect,
+            baseFov: desktop.baseFov,
+            must,
+            want,
+          }),
+        );
+      }
+    } else {
+      desktop.frameCombat(null);
+      framedSession = null;
+    }
     desktop.update();
     walker.enabled = !floor?.locked && !ui?.visible;
     walker.update(deltaSeconds);
@@ -753,6 +787,9 @@ renderer.setAnimationLoop((time, frame) => {
     }
   }
   combat?.update(deltaSeconds, xr.presenting ? xrHands() : null);
+  // The XR layout is the 3D table's; only the desktop view slides the HUD into frame.
+  if (xr.presenting) combat?.session?.resetHud();
+  else combat?.session?.fitHudToView(camera);
   ui?.sync(camera);
   const laserHits = { left: null as number | null, right: null as number | null };
   if (ui?.visible && xr.presenting) {
@@ -776,6 +813,7 @@ renderer.setAnimationLoop((time, frame) => {
   }
   if (xr.presenting) {
     renderer.autoClear = false;
+    renderer.render(noticeScene, camera);
     renderer.render(xr.updateLasers(laserHits), camera);
     renderer.autoClear = true;
   }

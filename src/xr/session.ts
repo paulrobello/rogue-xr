@@ -133,7 +133,8 @@ export function createXrRig(
     },
     update(deltaSeconds, frame) {
       if (!session.presenting) return;
-      session.update(frame);
+      const pose = session.update(frame);
+      if (pose) applyViewerPose(camera, pose);
       for (const source of sources) source.update(deltaSeconds);
     },
     sticks() {
@@ -159,6 +160,21 @@ export function createXrRig(
     },
     dispose: () => session.dispose(),
   };
+}
+
+/**
+ * Puts the head camera (a child of the rig) at this frame's viewer pose. three.js only does that
+ * inside render(), so without it the frame's logic before render reads last frame's head, and on
+ * a session's first frame the zeroed head: the seated recenter then lifted the rig by its 1 m
+ * maximum instead of to standing eye height.
+ */
+export function applyViewerPose(
+  head: THREE.Object3D,
+  pose: { readonly transform: Pick<XRRigidTransform, 'position' | 'orientation'> },
+): void {
+  const { position: p, orientation: q } = pose.transform;
+  head.position.set(p.x, p.y, p.z);
+  head.quaternion.set(q.x, q.y, q.z, q.w);
 }
 
 function byHand<T>(

@@ -1,0 +1,52 @@
+{
+  "when": "2026-11-16T04:51:47.208Z",
+  "results": [
+    {
+      "id": "gpu",
+      "pass": null,
+      "detail": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Max, Unspecified Version)"
+    },
+    {
+      "id": "enter-vr-clickable",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "id": "xr-notice-shown",
+      "pass": true,
+      "detail": {
+        "found": true,
+        "visible": true,
+        "at": {
+          "head": {
+            "x": 0,
+            "y": 1.6,
+            "z": 2.0354375005699694
+          },
+          "distance": 1.1457358193460208
+        }
+      }
+    },
+    {
+      "id": "xr-notice-above-boards",
+      "pass": true,
+      "detail": {
+        "boardsVisible": true,
+        "lastPasses": ["world", "boards", "notice", "other"],
+        "noticeAfterBoards": true,
+        "note": "the notice must draw in a pass after the boards, which clear depth"
+      }
+    },
+    {
+      "id": "xr-notice-later",
+      "pass": true,
+      "detail": {
+        "hiddenAfterLater": true
+      }
+    }
+  ],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 (File not found)",
+    "Failed to load resource: the server responded with a status of 404 (File not found)"
+  ]
+}

@@ -186,6 +186,23 @@ function pct(v: number): string {
 const clamp01 = (v: number): number => Math.max(0, Math.min(1, Math.round(v * 10) / 10));
 
 /**
+ * Splits a control id (`<board>-<cell>`) into its board and cell. Board names prefix each other
+ * ('reward' and 'reward-skip'), so the longest matching board name wins.
+ */
+export function splitControlId(
+  boards: readonly string[],
+  controlId: string,
+): { board: string; cell: string } | null {
+  let best: string | null = null;
+  for (const name of boards) {
+    if (controlId.startsWith(`${name}-`) && (best === null || name.length > best.length)) {
+      best = name;
+    }
+  }
+  return best === null ? null : { board: best, cell: controlId.slice(best.length + 1) };
+}
+
+/**
  * Every between-room screen of the flow as in-scene boards built on the toolkit's `createMenuPanel`:
  * title over the key art, seed keypad, workshop, settings, reward, death and victory. The toolkit owns
  * layout, typesetting, hit-testing and activation; this layer adds the Gilded Lamplight plates (the
@@ -256,11 +273,8 @@ export class FlowUi {
   }
 
   activate(controlId: string): boolean {
-    for (const board of this.boards) {
-      const prefix = `${board.name}-`;
-      if (controlId.startsWith(prefix)) return board.panel.activate(controlId.slice(prefix.length));
-    }
-    return false;
+    const target = this.boardOf(controlId);
+    return target ? target.board.panel.activate(target.cell) : false;
   }
 
   hover(controlId: string | null): void {
@@ -454,18 +468,24 @@ export class FlowUi {
       face.mesh.position.z = on ? 0.012 : 0.002;
       return;
     }
-    for (const board of this.boards) {
-      const prefix = `${board.name}-`;
-      if (!controlId.startsWith(prefix)) continue;
-      const plate = board.plates.get(controlId.slice(prefix.length));
-      if (!plate) return;
-      const material = plate.material as THREE.MeshBasicMaterial;
-      const { width, height } = (plate.geometry as THREE.PlaneGeometry).parameters;
-      material.map?.dispose();
-      material.map = on
-        ? plateTexture('#6e4a2c', PALETTE.candle, width, height)
-        : plateTexture(PALETTE.walnut, PALETTE.brass, width, height);
-    }
+    const target = this.boardOf(controlId);
+    const plate = target?.board.plates.get(target.cell);
+    if (!plate) return;
+    const material = plate.material as THREE.MeshBasicMaterial;
+    const { width, height } = (plate.geometry as THREE.PlaneGeometry).parameters;
+    material.map?.dispose();
+    material.map = on
+      ? plateTexture('#6e4a2c', PALETTE.candle, width, height)
+      : plateTexture(PALETTE.walnut, PALETTE.brass, width, height);
+  }
+
+  private boardOf(controlId: string): { board: Board; cell: string } | null {
+    const split = splitControlId(
+      this.boards.map((b) => b.name),
+      controlId,
+    );
+    const board = split ? this.boards.find((b) => b.name === split.board) : undefined;
+    return board && split ? { board, cell: split.cell } : null;
   }
 
   private keyArt(): void {

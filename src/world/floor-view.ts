@@ -100,7 +100,9 @@ export function mountFloorView(
   sun.position.set(6, 12, 4);
   const sky = new THREE.HemisphereLight(PALETTE.candle, PALETTE.void, 0.8);
   scene.add(sun, sky);
-  rig.position.copy(world.spawnPoint());
+  // x/z only: in XR the rig's y holds the seated-height lift, and floors rebuild mid-session.
+  const spawn = world.spawnPoint();
+  rig.position.set(spawn.x, rig.position.y, spawn.z);
 
   let locked = false;
   let suspended = false;

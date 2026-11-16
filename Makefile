@@ -38,3 +38,9 @@ dev-stop:
 dev-restart: dev-stop dev-start
 preview:
 	bun run preview
+
+# Emulated-XR walk (IWER, headless GPU Chromium) against the running dev server. Not in checkall.
+# Emulator evidence only; see scripts/xr-emu/README.md.
+.PHONY: xr-emu
+xr-emu:
+	node scripts/xr-emu/walk.mjs --base http://localhost:$(DEV_PORT)
