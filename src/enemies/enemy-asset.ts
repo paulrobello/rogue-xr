@@ -3,6 +3,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import { ENEMIES, type EnemyKind } from '../content/enemies.ts';
 import { loadPbrSet, type PbrSet } from '../world/materials.ts';
+import { applyGlowLook, writeGlowIslands } from './glow.ts';
 
 /**
  * Runtime contract of every automaton model, `public/assets/enemies/<id>/<id>.manifest.json` plus
@@ -231,9 +232,11 @@ export async function parseEnemyAsset(
     bound.set(source, material);
     return material;
   };
+  const glowName = manifest.emissive.material;
   gltf.scene.traverse((o) => {
     if (!(o instanceof THREE.Mesh)) return;
     geometries.add(o.geometry);
+    if (!Array.isArray(o.material) && o.material.name === glowName) writeGlowIslands(o.geometry);
     o.material = Array.isArray(o.material) ? o.material.map(bind) : bind(o.material);
   });
   const materials = new Set<THREE.Material>([...bound.keys(), ...bound.values()]);
@@ -404,11 +407,13 @@ export class EnemyActor {
       if (!clone) {
         clone = o.material.clone();
         clones.set(o.material, clone);
+        const glow = clone.name === glowName;
+        if (glow) applyGlowLook(clone, asset.manifest.emissive.color);
         this.materials.push({
           material: clone,
           color: clone.color.clone(),
           emissiveIntensity: clone.emissiveIntensity,
-          glow: clone.name === glowName,
+          glow,
         });
       }
       o.material = clone;
