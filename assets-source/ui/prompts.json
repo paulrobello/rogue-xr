@@ -1,0 +1,25 @@
+{
+  "model": "nano_banana_pro",
+  "resolution": "2k",
+  "shared": "Art direction 'Gilded Lamplight': painterly semi-realism with visible oil-painting brushwork, deep warm shadows, amber candlelight, polished brass and dark oiled walnut, saturated jewel-tone accents in ruby, sapphire and emerald as the only cool colours. Large readable forms and clean silhouettes. Original design. No text, no letters, no numbers, no logos, no watermark.",
+  "jobs": [
+    {
+      "key": "icons-sheet",
+      "aspect": "1:1",
+      "refs": ["assets-source/style/locked/L-board-1.png"],
+      "prompt": "Use the reference image only for palette, brass rendering and brushwork. A game UI icon sheet: a strict 4 by 4 grid of sixteen separate round icon medallions, evenly spaced with wide empty gutters between them, every medallion the same size and fully inside its cell, on a perfectly flat uniform pure green background (#00FF00) with no shadows, no texture and nothing else. Each medallion is a warm black (#231D1A) disc with a thin polished brass rim, holding ONE bold, simple, thick-stroked polished brass symbol with a soft amber glow, readable at a tiny size, no fine filigree. Row 1, left to right: (1) a puff of steam rising from a small brass valve, emerald tint; (2) a heater shield, sapphire inlay; (3) a heart of brass with a ruby gem; (4) a single gear cog coin. Row 2: (5) a sword pointing straight down, ruby edge; (6) a shield with a raised brass rivet boss, sapphire; (7) a bold upward arrow chevron, amber; (8) a bold downward arrow chevron, emerald. Row 3: (9) a sword crossed with a downward arrow, ruby; (10) a keyhole; (11) a snapped broken sword blade; (12) a cracked shield split down the middle. Row 4: (13) a flame rising from a gear, ruby and amber; (14) a clockwork wind-up key; (15) two stacked playing cards seen from the back, fanned slightly; (16) a single six-sided die showing three pips. Flat front view, centred symbols, consistent line weight across all sixteen."
+    },
+    {
+      "key": "dice-plates",
+      "aspect": "16:9",
+      "refs": ["assets-source/style/locked/L-board-1.png"],
+      "prompt": "Use the reference image (panel 4, the dice) for the dice material, palette and brushwork. A texture source sheet on a perfectly flat uniform warm black background (#231D1A), two blank die faces seen perfectly straight on, flat orthographic, no perspective, no shadow, side by side with wide space between them. Left: one square face of a brass d6, a polished brass bevelled rim framing a recessed dark oiled-walnut inlay, worn brass edges, completely blank, no pips, no marks. Right: one equilateral triangle face of a glass d8, point up, a thin polished brass edge framing smoky amber-tinted glass with soft internal glow and subtle painted refraction, completely blank, no numbers, no marks. Both faces fill most of their half of the image."
+    },
+    {
+      "key": "key-art",
+      "aspect": "16:9",
+      "refs": ["assets-source/style/locked/L-board-1.png", "assets-source/style/explore/A-room.png"],
+      "prompt": "Use the first reference for palette, brass rendering and brushwork, the second for the tower interior and candle lighting. Title key art for a VR roguelike: looking up the hollow interior of an immense wizard tower built of brass clockwork that rebuilds itself, spiral walnut stairs and turning brass gear rings rising into warm darkness, tall stained-glass windows in ruby, sapphire and emerald throwing coloured light, candles and lamps making warm pools. One slender brass clockwork automaton with a glowing amber core and two amber eye slits stands small on a landing at the right third, silhouetted against a window. The upper centre of the frame is calm, darker and low in detail, a clear empty area for a title to be overlaid later; keep the left third quieter too. Strong single focal glow at the top of the spiral. Wide cinematic composition, deep warm shadows, no fog, no smoke, no volumetric light shafts."
+    }
+  ]
+}

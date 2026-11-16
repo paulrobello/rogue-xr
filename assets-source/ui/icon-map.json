@@ -1,0 +1,24 @@
+{
+  "source": "raw/icons-sheet.png",
+  "cutout": "raw/icons-sheet.cutout.png",
+  "grid": { "cols": 4, "rows": 4 },
+  "note": "Cell order is row-major, matching the prompt's numbered list. Checked by eye against the source sheet on 2026-11-15; the build script finds each medallion's bounding box inside its cell.",
+  "cells": [
+    "steam",
+    "block",
+    "hp",
+    "cogs",
+    "intent-attack",
+    "intent-defend",
+    "intent-buff",
+    "intent-debuff",
+    "intent-attack-debuff",
+    "intent-unknown",
+    "status-weak",
+    "status-vulnerable",
+    "status-overheat",
+    "status-wound-up",
+    "draw",
+    "dice"
+  ]
+}

@@ -1,0 +1,347 @@
+{
+  "asset": "P5-T6 UI icons, dice faces, sigil glyphs, title key art",
+  "brief": "docs/art-bible.md (Gilded Lamplight, approved 2026-11-15); prompts in assets-source/ui/prompts.json",
+  "rights": {
+    "provider": "Higgsfield (paid plan)",
+    "commercialUse": "cleared: Higgsfield Terms of Use section 4.4, recorded in PRD standing spend approval",
+    "references": "assets-source/style/locked/L-board-1.png and assets-source/style/explore/A-room.png, both project-owned Higgsfield outputs",
+    "font": "Noto Sans Regular (SIL Open Font License 1.1), used to rasterize d8 numerals and verification labels",
+    "attribution": "none required"
+  },
+  "spend": {
+    "generations": 3,
+    "backgroundRemovals": 1,
+    "credits": "2 + 2 + 2 (nano_banana_pro 2k, 1:1 and 16:9 both priced at 2 by `higgsfield generate cost`) + 1 (image_background_remover) = 7 estimated; the CLI job record exposes no charged-credit field",
+    "retries": 0,
+    "note": "The first runner lost its downloads (missing output dir); the three completed jobs were recovered by id from `higgsfield generate list`, not regenerated."
+  },
+  "approvals": {
+    "technical": "pending validate-generated-assets review by the orchestrating session",
+    "creative": "pending Paul",
+    "owner": "pending Paul"
+  },
+  "procedural": {
+    "sigilGlyphs": "Rendered by scripts/assets/build_ui_atlas.py from assets-source/ui/sigil-strokes.json, dumped from src/sigil/templates.ts with bun; no generation.",
+    "dicePipsAndNumerals": "Rendered by the build script onto the generated blank face plates."
+  },
+  "sources": [
+    {
+      "key": "icons-sheet",
+      "file": "assets-source/ui/raw/icons-sheet.png",
+      "provider": "higgsfield",
+      "model": "nano_banana_pro",
+      "aspect": "1:1",
+      "resolution": "2k",
+      "prompt": "Use the reference image only for palette, brass rendering and brushwork. A game UI icon sheet: a strict 4 by 4 grid of sixteen separate round icon medallions, evenly spaced with wide empty gutters between them, every medallion the same size and fully inside its cell, on a perfectly flat uniform pure green background (#00FF00) with no shadows, no texture and nothing else. Each medallion is a warm black (#231D1A) disc with a thin polished brass rim, holding ONE bold, simple, thick-stroked polished brass symbol with a soft amber glow, readable at a tiny size, no fine filigree. Row 1, left to right: (1) a puff of steam rising from a small brass valve, emerald tint; (2) a heater shield, sapphire inlay; (3) a heart of brass with a ruby gem; (4) a single gear cog coin. Row 2: (5) a sword pointing straight down, ruby edge; (6) a shield with a raised brass rivet boss, sapphire; (7) a bold upward arrow chevron, amber; (8) a bold downward arrow chevron, emerald. Row 3: (9) a sword crossed with a downward arrow, ruby; (10) a keyhole; (11) a snapped broken sword blade; (12) a cracked shield split down the middle. Row 4: (13) a flame rising from a gear, ruby and amber; (14) a clockwork wind-up key; (15) two stacked playing cards seen from the back, fanned slightly; (16) a single six-sided die showing three pips. Flat front view, centred symbols, consistent line weight across all sixteen. Art direction 'Gilded Lamplight': painterly semi-realism with visible oil-painting brushwork, deep warm shadows, amber candlelight, polished brass and dark oiled walnut, saturated jewel-tone accents in ruby, sapphire and emerald as the only cool colours. Large readable forms and clean silhouettes. Original design. No text, no letters, no numbers, no logos, no watermark.",
+      "refs": [
+        "assets-source/style/locked/L-board-1.png"
+      ],
+      "jobId": "af666225-7fb1-4389-9784-841c468200f0",
+      "createdAt": "2026-11-16T02:12:45.716148Z",
+      "sha256": "76c8c3937481c4ddc10e1505fc1489ec9c9d54c6f0a21c3e96db8ce517b8e092",
+      "bytes": 6404749,
+      "width": 2048,
+      "height": 2048,
+      "mode": "RGB",
+      "settings": {
+        "aspectRatio": "1:1",
+        "resolution": "2k",
+        "seed": "unknown (not exposed by the provider)"
+      },
+      "promptCheckedAgainstProvider": true
+    },
+    {
+      "key": "dice-plates",
+      "file": "assets-source/ui/raw/dice-plates.png",
+      "provider": "higgsfield",
+      "model": "nano_banana_pro",
+      "aspect": "16:9",
+      "resolution": "2k",
+      "prompt": "Use the reference image (panel 4, the dice) for the dice material, palette and brushwork. A texture source sheet on a perfectly flat uniform warm black background (#231D1A), two blank die faces seen perfectly straight on, flat orthographic, no perspective, no shadow, side by side with wide space between them. Left: one square face of a brass d6, a polished brass bevelled rim framing a recessed dark oiled-walnut inlay, worn brass edges, completely blank, no pips, no marks. Right: one equilateral triangle face of a glass d8, point up, a thin polished brass edge framing smoky amber-tinted glass with soft internal glow and subtle painted refraction, completely blank, no numbers, no marks. Both faces fill most of their half of the image. Art direction 'Gilded Lamplight': painterly semi-realism with visible oil-painting brushwork, deep warm shadows, amber candlelight, polished brass and dark oiled walnut, saturated jewel-tone accents in ruby, sapphire and emerald as the only cool colours. Large readable forms and clean silhouettes. Original design. No text, no letters, no numbers, no logos, no watermark.",
+      "refs": [
+        "assets-source/style/locked/L-board-1.png"
+      ],
+      "jobId": "70665131-8331-4fca-a240-dc6070452f1b",
+      "createdAt": "2026-11-16T02:12:45.533169Z",
+      "sha256": "1c19cb476f8adfcf9f5c18bf3bcbd7696d0b4effd549fdf3e8de2772484061e1",
+      "bytes": 5314967,
+      "width": 2752,
+      "height": 1536,
+      "mode": "RGB",
+      "settings": {
+        "aspectRatio": "16:9",
+        "resolution": "2k",
+        "seed": "unknown (not exposed by the provider)"
+      },
+      "promptCheckedAgainstProvider": true
+    },
+    {
+      "key": "key-art",
+      "file": "assets-source/ui/raw/key-art.png",
+      "provider": "higgsfield",
+      "model": "nano_banana_pro",
+      "aspect": "16:9",
+      "resolution": "2k",
+      "prompt": "Use the first reference for palette, brass rendering and brushwork, the second for the tower interior and candle lighting. Title key art for a VR roguelike: looking up the hollow interior of an immense wizard tower built of brass clockwork that rebuilds itself, spiral walnut stairs and turning brass gear rings rising into warm darkness, tall stained-glass windows in ruby, sapphire and emerald throwing coloured light, candles and lamps making warm pools. One slender brass clockwork automaton with a glowing amber core and two amber eye slits stands small on a landing at the right third, silhouetted against a window. The upper centre of the frame is calm, darker and low in detail, a clear empty area for a title to be overlaid later; keep the left third quieter too. Strong single focal glow at the top of the spiral. Wide cinematic composition, deep warm shadows, no fog, no smoke, no volumetric light shafts. Art direction 'Gilded Lamplight': painterly semi-realism with visible oil-painting brushwork, deep warm shadows, amber candlelight, polished brass and dark oiled walnut, saturated jewel-tone accents in ruby, sapphire and emerald as the only cool colours. Large readable forms and clean silhouettes. Original design. No text, no letters, no numbers, no logos, no watermark.",
+      "refs": [
+        "assets-source/style/locked/L-board-1.png",
+        "assets-source/style/explore/A-room.png"
+      ],
+      "jobId": "36e53969-1e2f-4ce4-8ed7-9053a5635696",
+      "createdAt": "2026-11-16T02:12:51.125344Z",
+      "sha256": "447a015a52aabb47f3733bca0704a70c57e70a1370529e99e5e7afa071591d64",
+      "bytes": 7953547,
+      "width": 2752,
+      "height": 1536,
+      "mode": "RGB",
+      "settings": {
+        "aspectRatio": "16:9",
+        "resolution": "2k",
+        "seed": "unknown (not exposed by the provider)"
+      },
+      "promptCheckedAgainstProvider": true
+    },
+    {
+      "key": "icons-sheet.cutout",
+      "file": "assets-source/ui/raw/icons-sheet.cutout.png",
+      "provider": "higgsfield",
+      "model": "image_background_remover",
+      "input": "job af666225-7fb1-4389-9784-841c468200f0 (icons-sheet)",
+      "jobId": "029a228d-ba6a-4401-9077-3f28ad95823e",
+      "sha256": "139b8b37c51227d262f1caa9d5bd419b7d7c687d2ba2e1bf3dce2e4d4e013683",
+      "bytes": 6723791,
+      "width": 2048,
+      "height": 2048,
+      "mode": "RGBA",
+      "settings": {
+        "seed": "n/a"
+      }
+    }
+  ],
+  "derivatives": {
+    "script": "scripts/assets/build_ui_atlas.py",
+    "ktx": "ktx 4.4.2",
+    "font": {
+      "file": "node_modules/@par/xr-workspace/assets/fonts/NotoSans-Regular.ttf",
+      "sha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+      "license": "SIL OFL 1.1"
+    },
+    "iconCrops": [
+      {
+        "id": "steam",
+        "sourceRect": {
+          "x": 50,
+          "y": 47,
+          "w": 451,
+          "h": 451
+        }
+      },
+      {
+        "id": "block",
+        "sourceRect": {
+          "x": 549,
+          "y": 48,
+          "w": 450,
+          "h": 450
+        }
+      },
+      {
+        "id": "hp",
+        "sourceRect": {
+          "x": 1049,
+          "y": 47,
+          "w": 451,
+          "h": 451
+        }
+      },
+      {
+        "id": "cogs",
+        "sourceRect": {
+          "x": 1547,
+          "y": 47,
+          "w": 451,
+          "h": 451
+        }
+      },
+      {
+        "id": "intent-attack",
+        "sourceRect": {
+          "x": 50,
+          "y": 547,
+          "w": 451,
+          "h": 451
+        }
+      },
+      {
+        "id": "intent-defend",
+        "sourceRect": {
+          "x": 548,
+          "y": 547,
+          "w": 452,
+          "h": 452
+        }
+      },
+      {
+        "id": "intent-buff",
+        "sourceRect": {
+          "x": 1048,
+          "y": 547,
+          "w": 452,
+          "h": 452
+        }
+      },
+      {
+        "id": "intent-debuff",
+        "sourceRect": {
+          "x": 1547,
+          "y": 547,
+          "w": 451,
+          "h": 451
+        }
+      },
+      {
+        "id": "intent-attack-debuff",
+        "sourceRect": {
+          "x": 50,
+          "y": 1048,
+          "w": 451,
+          "h": 451
+        }
+      },
+      {
+        "id": "intent-unknown",
+        "sourceRect": {
+          "x": 549,
+          "y": 1048,
+          "w": 451,
+          "h": 451
+        }
+      },
+      {
+        "id": "status-weak",
+        "sourceRect": {
+          "x": 1049,
+          "y": 1048,
+          "w": 451,
+          "h": 451
+        }
+      },
+      {
+        "id": "status-vulnerable",
+        "sourceRect": {
+          "x": 1547,
+          "y": 1048,
+          "w": 451,
+          "h": 451
+        }
+      },
+      {
+        "id": "status-overheat",
+        "sourceRect": {
+          "x": 51,
+          "y": 1549,
+          "w": 449,
+          "h": 449
+        }
+      },
+      {
+        "id": "status-wound-up",
+        "sourceRect": {
+          "x": 549,
+          "y": 1548,
+          "w": 451,
+          "h": 451
+        }
+      },
+      {
+        "id": "draw",
+        "sourceRect": {
+          "x": 1049,
+          "y": 1548,
+          "w": 451,
+          "h": 451
+        }
+      },
+      {
+        "id": "dice",
+        "sourceRect": {
+          "x": 1547,
+          "y": 1548,
+          "w": 451,
+          "h": 451
+        }
+      }
+    ],
+    "dicePlateRects": {
+      "d6PlateRect": {
+        "x": 137,
+        "y": 182,
+        "w": 1239,
+        "h": 1161
+      },
+      "d8PlateRect": {
+        "x": 1376,
+        "y": 194,
+        "w": 1308,
+        "h": 1159
+      }
+    },
+    "files": [
+      {
+        "file": "public/assets/ui/dice-d6.ktx2",
+        "bytes": 124804,
+        "sha256": "db13abd5a165cf04d255901f16e8793218837d2131c5d72a03f69452ee61eb1d"
+      },
+      {
+        "file": "public/assets/ui/dice-d6.png",
+        "bytes": 264304,
+        "sha256": "55271faab542335a8232b6b711b0efff03848178a48ef8baa0733a6d682adea4"
+      },
+      {
+        "file": "public/assets/ui/dice-d8.ktx2",
+        "bytes": 88794,
+        "sha256": "6cdbc2b8e3366ecdb180d949cad9c90e2e56ceb2a412b224714c350891f8e6c1"
+      },
+      {
+        "file": "public/assets/ui/dice-d8.png",
+        "bytes": 186155,
+        "sha256": "a4a308e288bbf89973de5bb542c5a1cfa54e29f9d83016549df8fda6d50a574b"
+      },
+      {
+        "file": "public/assets/ui/glyphs.ktx2",
+        "bytes": 78943,
+        "sha256": "2101d2dfac236e98f7a6892d9b3739eb74ecbbcacb4d4025560f0ac16825e142"
+      },
+      {
+        "file": "public/assets/ui/glyphs.png",
+        "bytes": 102777,
+        "sha256": "b59eef75bea90e1c1a10f49635d9e857279b295c999a718aaa467af9b7271bd5"
+      },
+      {
+        "file": "public/assets/ui/icons.ktx2",
+        "bytes": 203795,
+        "sha256": "626af387088a22300b70979f83055b9ccbf41ccbfcda07eae4b481a3d1833def"
+      },
+      {
+        "file": "public/assets/ui/icons.png",
+        "bytes": 443900,
+        "sha256": "73a87071da4e66593bc947022c26637f61e692a1ef08a9ea45c3db625afcf5a5"
+      },
+      {
+        "file": "public/assets/ui/title-1024.jpg",
+        "bytes": 110629,
+        "sha256": "b6993926dd5e1a30826121a5e9863e7dbe23126360fd70f42c0bc0e82929cee4"
+      },
+      {
+        "file": "public/assets/ui/title-2048.jpg",
+        "bytes": 348533,
+        "sha256": "346be7b9c5050cbb7199f30d65da34126028dea47bf912382099a0abcce4ea21"
+      },
+      {
+        "file": "public/assets/ui/ui-atlas.json",
+        "bytes": 11045,
+        "sha256": "210ffe63325ce8bd5fc2c5c55ed7678626cd0d6811d188b590624a90f8d88800"
+      }
+    ]
+  }
+}
