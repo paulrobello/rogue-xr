@@ -1,0 +1,435 @@
+{
+  "pieceId": "hall",
+  "version": 1,
+  "route": "scripted",
+  "generator": {
+    "path": "scripts/assets/build-room-kit.py",
+    "sha256": "162a10f40005568730b9d73ca746557c8b9b01afab44279b78a4f00d2a3d6527"
+  },
+  "generatorDeps": [
+    {
+      "path": "scripts/assets/room_kit.py",
+      "sha256": "237e63d896d3e35d58149821936b9746a0c24b53314c0209eb686b5bf042919b"
+    },
+    {
+      "path": "scripts/assets/build-room-study.py",
+      "sha256": "c48be956cc1468fc6b7352d16e7173e37a66d3e1ba4f840575f3abbeba217618"
+    },
+    {
+      "path": "scripts/assets/lightmap_helpers.py",
+      "sha256": "c74c968a3d3ed95bae831262af3c5ab1bacedfa0e2e131b95d5d7bf4e59d66ad"
+    },
+    {
+      "path": "scripts/assets/build-cog-sentry.py",
+      "sha256": "9f045c4e6314b29a4bb82572fa040a0a0f9f68079b311b630d76fd0e1918d0a6"
+    }
+  ],
+  "authoringAgent": {
+    "harness": "claude-code (dispatched sub-agent)",
+    "model": "claude-opus-5-5"
+  },
+  "blender": "5.2.2 LTS",
+  "toolVersions": {
+    "ktx": "ktx version: v4.4.2",
+    "gltfExporter": "Blender 5.2.2 bundled io_scene_gltf2"
+  },
+  "blendFiles": {
+    "store": "assets-source/rooms/hall/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)",
+    "files": {
+      "hall_high.blend": {
+        "sha256": "4a60a3cc7da00468a087bca09e131ac8d6d381d01268d641f81a4c5e5b4ebdf4",
+        "bytes": 764308
+      },
+      "hall_low.blend": {
+        "sha256": "c4830e740b9ec3976a282ab0a2dd14b25717fc7a036194303d80b9eab4da7f1a",
+        "bytes": 256660
+      }
+    }
+  },
+  "bake": {
+    "device": "GPU:METAL (Apple M4 Max (GPU - 40 cores))",
+    "lightmap": {
+      "coverage": 0.7424,
+      "scale": 2.999473,
+      "clipped_fraction": 0.00997,
+      "mean_irradiance": 0.470745,
+      "p05_irradiance": 0.0,
+      "percentile": 99.0,
+      "encoded_p05_255": 0,
+      "encoded_median_255": 50,
+      "seconds": 9.0,
+      "host_load": [
+        11.38,
+        11.48
+      ],
+      "timing_valid": true,
+      "size": 2048,
+      "samples": 256,
+      "pass": "DIFFUSE direct+indirect, colour off, metallic forced 0, OIDN",
+      "marginPx": 8,
+      "islandPadPx": 10
+    },
+    "books": null,
+    "ktx2": {
+      "tool": "ktx version: v4.4.2",
+      "encodes": {
+        "hall.lightmap.ktx2": "create --format R8G8B8_SRGB --assign-tf srgb --encode uastc --uastc-quality 2 --zstd 18 --generate-mipmap"
+      }
+    }
+  },
+  "budgets": {
+    "triangles": 4213,
+    "materials": 8,
+    "texturePx": {
+      "hall.lightmap.ktx2": {
+        "width": 2048,
+        "height": 2048
+      }
+    },
+    "highTriangles": 25115,
+    "glbBytes": 296924
+  },
+  "texelDensityPxPerM": {
+    "lightmap": {
+      "mean_px_per_m": 68.6,
+      "min_px_per_m": 55.78,
+      "max_px_per_m": 68.78
+    },
+    "lightmapBySlot": {
+      "brass-aged": {
+        "area_m2": 13.12,
+        "median_px_per_m": 68.7,
+        "min_px_per_m": 55.8
+      },
+      "brass-polished": {
+        "area_m2": 2.2,
+        "median_px_per_m": 68.7,
+        "min_px_per_m": 59.1
+      },
+      "flame": {
+        "area_m2": 0.02,
+        "median_px_per_m": 68.2,
+        "min_px_per_m": 68.2
+      },
+      "stained-glass": {
+        "area_m2": 2.26,
+        "median_px_per_m": 68.7,
+        "min_px_per_m": 68.7
+      },
+      "stone-floor": {
+        "area_m2": 100.0,
+        "median_px_per_m": 68.8,
+        "min_px_per_m": 68.8
+      },
+      "wallpaper": {
+        "area_m2": 108.78,
+        "median_px_per_m": 68.2,
+        "min_px_per_m": 68.1
+      },
+      "walnut": {
+        "area_m2": 199.38,
+        "median_px_per_m": 68.8,
+        "min_px_per_m": 68.1
+      },
+      "wax": {
+        "area_m2": 0.28,
+        "median_px_per_m": 66.7,
+        "min_px_per_m": 62.8
+      }
+    }
+  },
+  "pivot": "floor centre, z = 0 (runtime y = 0)",
+  "sockets": {
+    "doors": [
+      {
+        "id": "n",
+        "facing": "N",
+        "position": [
+          -1,
+          0,
+          -5
+        ],
+        "width": 1.6
+      },
+      {
+        "id": "e",
+        "facing": "E",
+        "position": [
+          5,
+          0,
+          1
+        ],
+        "width": 1.6
+      },
+      {
+        "id": "s",
+        "facing": "S",
+        "position": [
+          1,
+          0,
+          5
+        ],
+        "width": 1.6
+      },
+      {
+        "id": "w",
+        "facing": "W",
+        "position": [
+          -5,
+          0,
+          -1
+        ],
+        "width": 1.6
+      }
+    ],
+    "enemySockets": [
+      {
+        "id": "enemy-a",
+        "position": [
+          0,
+          0,
+          -2.5
+        ],
+        "yaw": 180
+      },
+      {
+        "id": "enemy-b",
+        "position": [
+          2,
+          0,
+          -2
+        ],
+        "yaw": 200
+      }
+    ],
+    "lootSockets": [
+      {
+        "id": "chest",
+        "position": [
+          -3.5,
+          0,
+          3.5
+        ],
+        "yaw": 45
+      }
+    ],
+    "dressingSockets": [
+      {
+        "id": "bench-w",
+        "position": [
+          -4,
+          0,
+          0
+        ],
+        "yaw": 90
+      },
+      {
+        "id": "bench-e",
+        "position": [
+          4,
+          0,
+          0
+        ],
+        "yaw": 270
+      },
+      {
+        "id": "rug",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "yaw": 0
+      }
+    ],
+    "lightSockets": [
+      {
+        "id": "sconce-nw",
+        "position": [
+          -4.6,
+          2.2,
+          -4.6
+        ],
+        "yaw": 0
+      },
+      {
+        "id": "sconce-se",
+        "position": [
+          4.6,
+          2.2,
+          4.6
+        ],
+        "yaw": 0
+      }
+    ],
+    "probe": [
+      0,
+      1.6,
+      0
+    ]
+  },
+  "derivedFiles": [
+    {
+      "path": "public/assets/rooms/hall/hall.glb",
+      "sha256": "fa5469d0138bbd1b59c4180f60a0bc9e38c90763a446f52e194874c0a6f478ad",
+      "bytes": 296924
+    },
+    {
+      "path": "public/assets/rooms/hall/hall.lightmap.ktx2",
+      "sha256": "9479b0593d456758e09d273cb40127ecf5bda1bede5db44213c081e9ca733531",
+      "bytes": 2676830
+    },
+    {
+      "path": "public/assets/rooms/hall/hall.manifest.json",
+      "sha256": "acdac691968688ddb102b70161e0c6a00a15bbbab42ab705c8f746a84799b573",
+      "bytes": 4984
+    }
+  ],
+  "stagingFiles": {
+    "hall.glb": "fa5469d0138bbd1b59c4180f60a0bc9e38c90763a446f52e194874c0a6f478ad",
+    "hall.lightmap.ktx2": "9479b0593d456758e09d273cb40127ecf5bda1bede5db44213c081e9ca733531",
+    "hall.lightmap.png": "37715cd8deee18235fe74b19404a1c41bfb723349c3b38d45c9d589a976a3b23",
+    "hall.manifest.json": "acdac691968688ddb102b70161e0c6a00a15bbbab42ab705c8f746a84799b573",
+    "uv1-report.json": "64600c740e5bf8fc9f80b3b60380dcae1f275989b0c213156f8162a64f8e16d5"
+  },
+  "references": [
+    {
+      "path": "assets-source/style/locked/L-board-1.png",
+      "sha256": "d3fffc8eb300cc6f40236c28930401ef1bd06be0e27be76999839e3bfeacc018",
+      "provider": "higgsfield",
+      "note": "kit language only (approved art bible board, L-study and the study's room-sheet-1); no hall concept sheet exists"
+    },
+    {
+      "path": "assets-source/style/locked/L-study.png",
+      "sha256": "d889c4f1e518f3b5e5641be8a6a78515db5998c3d11c1b8c9291c804240cb268",
+      "provider": "higgsfield",
+      "note": "kit language only (approved art bible board, L-study and the study's room-sheet-1); no hall concept sheet exists"
+    },
+    {
+      "path": "assets-source/concepts/room-sheet-1.png",
+      "sha256": "ae85e896be2151350ce53511681b13e9136bda53af5efaf1b1431e504c395dc6",
+      "provider": "higgsfield",
+      "note": "kit language only (approved art bible board, L-study and the study's room-sheet-1); no hall concept sheet exists"
+    }
+  ],
+  "materialsUsed": "approved P4-T3 set (public/assets/materials), bound by slot name; not regenerated",
+  "license": "Original work generated in Blender from a checked-in script; concept references from Paul's paid Higgsfield plan (Terms of Use 4.4)",
+  "reimport": {
+    "triangles": 4213,
+    "material_count": 8,
+    "uv_layers": [
+      [
+        "UVMap",
+        "UVMap.001"
+      ]
+    ],
+    "embedded_images": 0,
+    "bounds_blender": {
+      "min": [
+        -5.0,
+        -5.0,
+        0.0
+      ],
+      "max": [
+        5.0,
+        5.0,
+        4.0
+      ]
+    },
+    "checks": {
+      "triangles_le_100k": true,
+      "materials_le_16": true,
+      "materials_are_manifest_slots": true,
+      "textures_le_2048": true,
+      "two_uv_layers_every_mesh": true,
+      "no_embedded_images": true,
+      "floor_at_zero": true,
+      "inside_ceiling": true,
+      "footprint_x": true,
+      "footprint_y": true,
+      "inside_footprint": true
+    },
+    "pass": true
+  },
+  "validation": {
+    "pass": true,
+    "date": "2026-11-15",
+    "checks": [
+      "presence",
+      "hashes",
+      "glb budgets",
+      "uv1 on every primitive",
+      "uv1 no overlap, gap >= 8 px",
+      "image-free glb",
+      "ktx2 size/mips/transfer",
+      "manifest consistency",
+      "clean reimport"
+    ]
+  },
+  "approvals": [
+    {
+      "gate": "concept",
+      "status": "pending",
+      "notes": "no template-specific concept sheet; built in the approved study kit language (art bible). Owner decides whether one is needed"
+    },
+    {
+      "gate": "technical",
+      "status": "pending",
+      "notes": "validate-generated-assets verdict is reported to the orchestrator, not self-recorded"
+    },
+    {
+      "gate": "creative",
+      "status": "pending",
+      "notes": "review sheet assets-source/rooms/hall/staging/review-sheet.jpg"
+    },
+    {
+      "gate": "rights",
+      "status": "pending",
+      "notes": "original procedural geometry; shared P4-T3 sets carry their own provenance"
+    },
+    {
+      "gate": "owner",
+      "status": "pending",
+      "notes": "in-engine look approval (docs/blender-kit-project.md ruling 3)"
+    },
+    {
+      "gate": "independent visual score",
+      "status": "unscored",
+      "notes": "blender-kit-pieces requires an independent >= 80/100 score; unscored means unaccepted"
+    }
+  ],
+  "reviewEvidence": [
+    {
+      "path": "assets-source/rooms/hall/staging/review-sheet.jpg",
+      "sha256": "3f73c880cf8f7e8910c8237a8be9a0bd97fd34001b534d2578cbe0a0720c278a"
+    },
+    {
+      "path": "docs/verification/p5-rooms-hall-bench.jpg",
+      "sha256": "6d21cc2785f0dcd0c3f2ba1d213ce23479e8fe7c812dac643374d8159c20d30c"
+    },
+    {
+      "path": "docs/verification/p5-rooms-hall-floor-sealed-west-close.jpg",
+      "sha256": "c20876184ed3d23627ceb92b67f2fd05fbd766bb7c91df6704652f7bdab95d02"
+    },
+    {
+      "path": "docs/verification/p5-rooms-hall-floor-sealed-west.jpg",
+      "sha256": "7acd64d65cbb729fa219c51074c84c305104f245260a81a81be9371f309ba557"
+    },
+    {
+      "path": "docs/verification/p5-rooms-hall-hero.diffuse.jpg",
+      "sha256": "5f156e31c1649768589bfc1dce719ba7e64a8771ed3feffbc152f40a9aae260d"
+    },
+    {
+      "path": "docs/verification/p5-rooms-hall-hero.jpg",
+      "sha256": "31b3fd5cff6164c579be1b716d028e5d9b1a9401a6651b47833ba1da144b2cc3"
+    },
+    {
+      "path": "docs/verification/p5-rooms-hall-seam-north.jpg",
+      "sha256": "a3eb40a496ad49147d904264f29417ed452fddbeb6296cc86be262b37bae9bde"
+    },
+    {
+      "path": "docs/verification/p5-rooms-hall-seam-west-turned.jpg",
+      "sha256": "6e03a9cac05a0f7831acf5fad39f6a85c814f94bb295c554d14ac80969c05124"
+    }
+  ]
+}

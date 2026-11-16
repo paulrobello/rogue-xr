@@ -1,0 +1,337 @@
+{
+  "piece": "hall",
+  "blender": "5.2.2 LTS",
+  "host_load_start": 11.58,
+  "lightmap_size": 2048,
+  "samples": 256,
+  "generator": "scripts/assets/build-room-kit.py",
+  "helper": "scripts/assets/room_kit.py (reuses build-room-study.py functions)",
+  "high": {
+    "triangles": 25115,
+    "slots": 8
+  },
+  "low": {
+    "triangles": 4213,
+    "vertices": 3121,
+    "materials": 8,
+    "lightmap_density": {
+      "mean_px_per_m": 68.6,
+      "min_px_per_m": 55.78,
+      "max_px_per_m": 68.78
+    },
+    "lightmap_density_by_slot": {
+      "brass-aged": {
+        "area_m2": 13.12,
+        "median_px_per_m": 68.7,
+        "min_px_per_m": 55.8
+      },
+      "brass-polished": {
+        "area_m2": 2.2,
+        "median_px_per_m": 68.7,
+        "min_px_per_m": 59.1
+      },
+      "flame": {
+        "area_m2": 0.02,
+        "median_px_per_m": 68.2,
+        "min_px_per_m": 68.2
+      },
+      "stained-glass": {
+        "area_m2": 2.26,
+        "median_px_per_m": 68.7,
+        "min_px_per_m": 68.7
+      },
+      "stone-floor": {
+        "area_m2": 100.0,
+        "median_px_per_m": 68.8,
+        "min_px_per_m": 68.8
+      },
+      "wallpaper": {
+        "area_m2": 108.78,
+        "median_px_per_m": 68.2,
+        "min_px_per_m": 68.1
+      },
+      "walnut": {
+        "area_m2": 199.38,
+        "median_px_per_m": 68.8,
+        "min_px_per_m": 68.1
+      },
+      "wax": {
+        "area_m2": 0.28,
+        "median_px_per_m": 66.7,
+        "min_px_per_m": 62.8
+      }
+    }
+  },
+  "canonicalized_primitives": 8,
+  "glb_bytes": 296924,
+  "device": "GPU:METAL (Apple M4 Max (GPU - 40 cores))",
+  "lightmap_bake": {
+    "seconds": 9.0,
+    "host_load": [
+      11.38,
+      11.48
+    ],
+    "timing_valid": true
+  },
+  "denoise": "compositor OIDN, HDR, accurate prefilter, high quality",
+  "lightmap": {
+    "coverage": 0.7424,
+    "scale": 2.999473,
+    "clipped_fraction": 0.00997,
+    "mean_irradiance": 0.470745,
+    "p05_irradiance": 0.0,
+    "percentile": 99.0,
+    "encoded_p05_255": 0,
+    "encoded_median_255": 50
+  },
+  "ktx2": {
+    "tool": "ktx version: v4.4.2",
+    "encodes": {
+      "hall.lightmap.ktx2": "create --format R8G8B8_SRGB --assign-tf srgb --encode uastc --uastc-quality 2 --zstd 18 --generate-mipmap"
+    }
+  },
+  "renders": [
+    "bench.high.png",
+    "bench.lightmapped.png",
+    "bench.low.png",
+    "engine.bench.png",
+    "engine.hero.diffuse.png",
+    "engine.hero.png",
+    "engine.seam-north.png",
+    "engine.seam-west-turned.png",
+    "hero.high.png",
+    "hero.lightmapped.png",
+    "hero.low.png",
+    "hero.reference-diffuse.png"
+  ],
+  "blend": {
+    "hall_high.blend": {
+      "sha256": "4a60a3cc7da00468a087bca09e131ac8d6d381d01268d641f81a4c5e5b4ebdf4",
+      "bytes": 764308
+    },
+    "hall_low.blend": {
+      "sha256": "c4830e740b9ec3976a282ab0a2dd14b25717fc7a036194303d80b9eab4da7f1a",
+      "bytes": 256660
+    }
+  },
+  "colliders_added": [
+    {
+      "min": [
+        -4.77,
+        0,
+        -4.77
+      ],
+      "max": [
+        -4.43,
+        2.04,
+        -4.43
+      ]
+    },
+    {
+      "min": [
+        4.43,
+        0,
+        4.43
+      ],
+      "max": [
+        4.77,
+        2.04,
+        4.77
+      ]
+    },
+    {
+      "min": [
+        4.43,
+        0,
+        -4.77
+      ],
+      "max": [
+        4.77,
+        2.04,
+        -4.43
+      ]
+    },
+    {
+      "min": [
+        -4.77,
+        0,
+        4.43
+      ],
+      "max": [
+        -4.43,
+        2.04,
+        4.77
+      ]
+    },
+    {
+      "min": [
+        -4.215,
+        0,
+        -0.455
+      ],
+      "max": [
+        -3.785,
+        0.47,
+        0.455
+      ]
+    },
+    {
+      "min": [
+        3.785,
+        0,
+        -0.455
+      ],
+      "max": [
+        4.215,
+        0.47,
+        0.455
+      ]
+    }
+  ],
+  "bake_lights": [
+    {
+      "name": "chandelier_0",
+      "blender": [
+        0.5405,
+        0.2239,
+        3.055
+      ],
+      "watts": 14.0
+    },
+    {
+      "name": "chandelier_1",
+      "blender": [
+        0.2239,
+        0.5405,
+        3.055
+      ],
+      "watts": 14.0
+    },
+    {
+      "name": "chandelier_2",
+      "blender": [
+        -0.2239,
+        0.5405,
+        3.055
+      ],
+      "watts": 14.0
+    },
+    {
+      "name": "chandelier_3",
+      "blender": [
+        -0.5405,
+        0.2239,
+        3.055
+      ],
+      "watts": 14.0
+    },
+    {
+      "name": "chandelier_4",
+      "blender": [
+        -0.5405,
+        -0.2239,
+        3.055
+      ],
+      "watts": 14.0
+    },
+    {
+      "name": "chandelier_5",
+      "blender": [
+        -0.2239,
+        -0.5405,
+        3.055
+      ],
+      "watts": 14.0
+    },
+    {
+      "name": "chandelier_6",
+      "blender": [
+        0.2239,
+        -0.5405,
+        3.055
+      ],
+      "watts": 14.0
+    },
+    {
+      "name": "chandelier_7",
+      "blender": [
+        0.5405,
+        -0.2239,
+        3.055
+      ],
+      "watts": 14.0
+    },
+    {
+      "name": "torchere_0",
+      "blender": [
+        -4.6,
+        4.6,
+        2.2
+      ],
+      "watts": 40.0
+    },
+    {
+      "name": "torchere_1",
+      "blender": [
+        4.6,
+        -4.6,
+        2.2
+      ],
+      "watts": 40.0
+    },
+    {
+      "name": "torchere_2",
+      "blender": [
+        4.6,
+        4.6,
+        2.2
+      ],
+      "watts": 40.0
+    },
+    {
+      "name": "torchere_3",
+      "blender": [
+        -4.6,
+        -4.6,
+        2.2
+      ],
+      "watts": 40.0
+    }
+  ],
+  "cameras_runtime": {
+    "hero": {
+      "eye": [
+        1.0,
+        1.6,
+        4.2
+      ],
+      "look": [
+        -0.4,
+        1.9,
+        -5.0
+      ],
+      "vfov": 70.0
+    },
+    "bench": {
+      "eye": [
+        3.6,
+        1.6,
+        -3.4
+      ],
+      "look": [
+        -4.2,
+        0.8,
+        1.5
+      ],
+      "vfov": 70.0
+    }
+  },
+  "host_load_end": 11.21,
+  "files": {
+    "hall.glb": "fa5469d0138bbd1b59c4180f60a0bc9e38c90763a446f52e194874c0a6f478ad",
+    "hall.lightmap.ktx2": "9479b0593d456758e09d273cb40127ecf5bda1bede5db44213c081e9ca733531",
+    "hall.lightmap.png": "37715cd8deee18235fe74b19404a1c41bfb723349c3b38d45c9d589a976a3b23",
+    "hall.manifest.json": "acdac691968688ddb102b70161e0c6a00a15bbbab42ab705c8f746a84799b573",
+    "uv1-report.json": "64600c740e5bf8fc9f80b3b60380dcae1f275989b0c213156f8162a64f8e16d5"
+  }
+}

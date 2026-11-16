@@ -1,0 +1,18 @@
+{
+  "lightmap_vs_cycles_diffuse": {
+    "frame_ratio": 0.892,
+    "rmse_srgb": 0.0234,
+    "bands": {
+      "ceiling": 0.894,
+      "upper walls": 0.869,
+      "lower walls": 0.91,
+      "floor near": 0.931
+    }
+  },
+  "frame_means_255": {
+    "engine.hero.diffuse.png": 32.3,
+    "engine.hero.png": 48.4,
+    "engine.lamp.png": 44.7,
+    "engine.seam-from-corridor.png": 46.5
+  }
+}

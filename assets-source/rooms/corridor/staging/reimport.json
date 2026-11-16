@@ -1,0 +1,60 @@
+{
+  "glb": "corridor.glb",
+  "glb_sha256": "ec2afaae06bd274327d256298aef0c7afcef02db9901283ec454c7a67f38da47",
+  "blender": "5.2.2 LTS",
+  "meshes": [
+    "corridor"
+  ],
+  "triangles": 1556,
+  "materials": [
+    "corridor_brass-aged",
+    "corridor_brass-polished",
+    "corridor_cloth",
+    "corridor_flame",
+    "corridor_lamp-glass",
+    "corridor_stone-floor",
+    "corridor_wallpaper",
+    "corridor_walnut",
+    "corridor_wax"
+  ],
+  "material_count": 9,
+  "uv_layers": [
+    [
+      "UVMap",
+      "UVMap.001"
+    ]
+  ],
+  "embedded_images": 0,
+  "bounds_blender": {
+    "min": [
+      -1.0,
+      -4.0,
+      0.0
+    ],
+    "max": [
+      1.0,
+      4.0,
+      3.4
+    ]
+  },
+  "texture_px": {
+    "corridor.lightmap.ktx2": {
+      "width": 1024,
+      "height": 1024
+    }
+  },
+  "checks": {
+    "triangles_le_100k": true,
+    "materials_le_16": true,
+    "materials_are_manifest_slots": true,
+    "textures_le_2048": true,
+    "two_uv_layers_every_mesh": true,
+    "no_embedded_images": true,
+    "floor_at_zero": true,
+    "inside_ceiling": true,
+    "footprint_x": true,
+    "footprint_y": true,
+    "inside_footprint": true
+  },
+  "pass": true
+}

@@ -29,13 +29,41 @@ LIGHTMAP_SIZES = {1024, 2048}
 KTX2_MAGIC = b"\xabKTX 20\xbb\r\n\x1a\n"
 KHR_DF_TRANSFER_LINEAR, KHR_DF_TRANSFER_SRGB = 1, 2
 # Generator and the helpers it imports; provenance pins their hashes.
-GENERATOR_DEPS = {"study": ["scripts/assets/build-room-study.py", "scripts/assets/lightmap_helpers.py"]}
+_KIT_DEPS = ["scripts/assets/build-room-kit.py", "scripts/assets/room_kit.py", "scripts/assets/build-room-study.py",
+             "scripts/assets/lightmap_helpers.py", "scripts/assets/build-cog-sentry.py"]
+GENERATOR_DEPS = {"study": ["scripts/assets/build-room-study.py", "scripts/assets/lightmap_helpers.py"], "hall": _KIT_DEPS, "corridor": _KIT_DEPS}
+_KIT_REFERENCES = ["assets-source/style/locked/L-board-1.png", "assets-source/style/locked/L-study.png", "assets-source/concepts/room-sheet-1.png"]
 REFERENCES = {
     "study": [
         "assets-source/concepts/room-sheet-1.png",
         "assets-source/concepts/room-sheet-2.png",
-    ]
+    ],
+    "hall": _KIT_REFERENCES,
+    "corridor": _KIT_REFERENCES,
 }
+REFERENCE_NOTES = {
+    "study": "P4-T2 concept sheets; room-sheet-1 picked (docs/art-bible.md)",
+    "hall": "kit language only (approved art bible board, L-study and the study's room-sheet-1); no hall concept sheet exists",
+    "corridor": "kit language only (approved art bible board, L-study and the study's room-sheet-1); no corridor concept sheet exists",
+}
+_KIT_GATES = [
+    {"gate": "concept", "status": "pending", "notes": "no template-specific concept sheet; built in the approved study kit language (art bible). Owner decides whether one is needed"},
+    {"gate": "technical", "status": "pending", "notes": "validate-generated-assets verdict is reported to the orchestrator, not self-recorded"},
+    {"gate": "creative", "status": "pending", "notes": "review sheet assets-source/rooms/{t}/staging/review-sheet.jpg"},
+    {"gate": "rights", "status": "pending", "notes": "original procedural geometry; shared P4-T3 sets carry their own provenance"},
+    {"gate": "owner", "status": "pending", "notes": "in-engine look approval (docs/blender-kit-project.md ruling 3)"},
+    {"gate": "independent visual score", "status": "unscored", "notes": "blender-kit-pieces requires an independent >= 80/100 score; unscored means unaccepted"},
+]
+APPROVALS = {
+    "study": [
+        {"who": "Paul", "when": "2026-11-15", "gate": "concept", "status": "approved", "evidence": "docs/art-bible.md: room-sheet-1.png picked for the hero study"},
+        {"gate": "creative", "status": "pending", "notes": "review sheet assets-source/rooms/study/staging/review-sheet.jpg"},
+        {"gate": "owner", "status": "pending", "notes": "in-engine look approval (P4-T10)"},
+    ],
+    "hall": [{**g, "notes": g["notes"].format(t="hall")} for g in _KIT_GATES],
+    "corridor": [{**g, "notes": g["notes"].format(t="corridor")} for g in _KIT_GATES],
+}
+BLEND_STORE_NOTE = {"study": "PRD project file section 1.5"}
 
 
 def sha256(path: Path) -> str:
@@ -189,6 +217,10 @@ def check_room(template: str, errors: list[str], warnings: list[str]) -> dict:
         path = ROOT / ref["path"]
         if not path.exists() or sha256(path) != ref["sha256"]:
             err(f"reference {ref['path']} missing or changed")
+    for ev in prov.get("reviewEvidence", []):
+        path = ROOT / ev["path"]
+        if not path.exists() or sha256(path) != ev["sha256"]:
+            err(f"review evidence {ev['path']} missing or changed since provenance (re-review needed)")
     uv1 = src / "staging/uv1-report.json"  # written by scripts/assets/asset-check-uv1.py
     if not uv1.exists():
         err("staging/uv1-report.json missing (run scripts/assets/asset-check-uv1.py)")
@@ -555,7 +587,7 @@ def assemble(template: str) -> None:
         "blender": report["blender"],
         "toolVersions": {"ktx": report.get("ktx2", {}).get("tool"), "gltfExporter": "Blender 5.2.2 bundled io_scene_gltf2"},
         "blendFiles": {
-            "store": "assets-source/rooms/study/blend (storage ruling pending, PRD project file section 1.5)",
+            "store": f"assets-source/rooms/{template}/blend (storage ruling pending, {BLEND_STORE_NOTE.get(template, 'docs/blender-kit-project.md ruling 5')})",
             "files": report.get("blend", {}),
         },
         "bake": {
@@ -572,17 +604,16 @@ def assemble(template: str) -> None:
         "sockets": {k: manifest[k] for k in ("doors", "enemySockets", "lootSockets", "dressingSockets", "lightSockets", "probe")},
         "derivedFiles": derived,
         "stagingFiles": report.get("files", {}),
-        "references": [{"path": r, "sha256": sha256(ROOT / r), "provider": "higgsfield", "note": "P4-T2 concept sheets; room-sheet-1 picked (docs/art-bible.md)"} for r in REFERENCES[template]],
+        "references": [{"path": r, "sha256": sha256(ROOT / r), "provider": "higgsfield", "note": REFERENCE_NOTES[template]} for r in REFERENCES[template]],
         "materialsUsed": "approved P4-T3 set (public/assets/materials), bound by slot name; not regenerated",
         "license": "Original work generated in Blender from a checked-in script; concept references from Paul's paid Higgsfield plan (Terms of Use 4.4)",
         "reimport": {k: reimport[k] for k in ("triangles", "material_count", "uv_layers", "embedded_images", "bounds_blender", "checks", "pass")},
         "validation": {"pass": False, "date": datetime.date.today().isoformat(), "checks": []},
-        "approvals": [
-            {"who": "Paul", "when": "2026-11-15", "gate": "concept", "status": "approved", "evidence": "docs/art-bible.md: room-sheet-1.png picked for the hero study"},
-            {"gate": "creative", "status": "pending", "notes": "review sheet assets-source/rooms/study/staging/review-sheet.jpg"},
-            {"gate": "owner", "status": "pending", "notes": "in-engine look approval (P4-T10)"},
-        ],
+        "approvals": APPROVALS[template],
     }
+    if template != "study":  # kit rooms bind their review evidence to the bytes shown
+        prov["reviewEvidence"] = [{"path": str(p.relative_to(ROOT)), "sha256": sha256(p)} for p in
+                                  [src / "staging/review-sheet.jpg", *sorted((ROOT / "docs/verification").glob(f"p5-rooms-{template}-*.jpg"))] if p.exists()]
     prov_path = src / "provenance.json"
     prov_path.write_text(json.dumps(prov, indent=2) + "\n")
     errors: list[str] = []

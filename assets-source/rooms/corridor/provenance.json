@@ -1,0 +1,356 @@
+{
+  "pieceId": "corridor",
+  "version": 1,
+  "route": "scripted",
+  "generator": {
+    "path": "scripts/assets/build-room-kit.py",
+    "sha256": "162a10f40005568730b9d73ca746557c8b9b01afab44279b78a4f00d2a3d6527"
+  },
+  "generatorDeps": [
+    {
+      "path": "scripts/assets/room_kit.py",
+      "sha256": "237e63d896d3e35d58149821936b9746a0c24b53314c0209eb686b5bf042919b"
+    },
+    {
+      "path": "scripts/assets/build-room-study.py",
+      "sha256": "c48be956cc1468fc6b7352d16e7173e37a66d3e1ba4f840575f3abbeba217618"
+    },
+    {
+      "path": "scripts/assets/lightmap_helpers.py",
+      "sha256": "c74c968a3d3ed95bae831262af3c5ab1bacedfa0e2e131b95d5d7bf4e59d66ad"
+    },
+    {
+      "path": "scripts/assets/build-cog-sentry.py",
+      "sha256": "9f045c4e6314b29a4bb82572fa040a0a0f9f68079b311b630d76fd0e1918d0a6"
+    }
+  ],
+  "authoringAgent": {
+    "harness": "claude-code (dispatched sub-agent)",
+    "model": "claude-opus-5-5"
+  },
+  "blender": "5.2.2 LTS",
+  "toolVersions": {
+    "ktx": "ktx version: v4.4.2",
+    "gltfExporter": "Blender 5.2.2 bundled io_scene_gltf2"
+  },
+  "blendFiles": {
+    "store": "assets-source/rooms/corridor/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)",
+    "files": {
+      "corridor_high.blend": {
+        "sha256": "3d851a3f804004bbb4a65258878d7f05dabe8851e4cc68e74ce3bb6ee5246b0f",
+        "bytes": 387669
+      },
+      "corridor_low.blend": {
+        "sha256": "34a960f68cd2c21bc36149d0a14d642130bf82be54a341b83dd4bda9216755c9",
+        "bytes": 168248
+      }
+    }
+  },
+  "bake": {
+    "device": "GPU:METAL (Apple M4 Max (GPU - 40 cores))",
+    "lightmap": {
+      "coverage": 0.658,
+      "scale": 2.818017,
+      "clipped_fraction": 0.01997,
+      "mean_irradiance": 0.460576,
+      "p05_irradiance": 0.0,
+      "percentile": 98.0,
+      "encoded_p05_255": 0,
+      "encoded_median_255": 64,
+      "seconds": 2.15,
+      "host_load": [
+        10.99,
+        10.75
+      ],
+      "timing_valid": true,
+      "size": 1024,
+      "samples": 256,
+      "pass": "DIFFUSE direct+indirect, colour off, metallic forced 0, OIDN",
+      "marginPx": 8,
+      "islandPadPx": 10
+    },
+    "books": null,
+    "ktx2": {
+      "tool": "ktx version: v4.4.2",
+      "encodes": {
+        "corridor.lightmap.ktx2": "create --format R8G8B8_SRGB --assign-tf srgb --encode uastc --uastc-quality 2 --zstd 18 --generate-mipmap"
+      }
+    }
+  },
+  "budgets": {
+    "triangles": 1556,
+    "materials": 9,
+    "texturePx": {
+      "corridor.lightmap.ktx2": {
+        "width": 1024,
+        "height": 1024
+      }
+    },
+    "highTriangles": 9917,
+    "glbBytes": 120300
+  },
+  "texelDensityPxPerM": {
+    "lightmap": {
+      "mean_px_per_m": 52.82,
+      "min_px_per_m": 44.05,
+      "max_px_per_m": 55.24
+    },
+    "lightmapBySlot": {
+      "brass-aged": {
+        "area_m2": 4.86,
+        "median_px_per_m": 49.8,
+        "min_px_per_m": 46.5
+      },
+      "brass-polished": {
+        "area_m2": 0.51,
+        "median_px_per_m": 51.4,
+        "min_px_per_m": 46.1
+      },
+      "cloth": {
+        "area_m2": 2.03,
+        "median_px_per_m": 55.2,
+        "min_px_per_m": 55.2
+      },
+      "flame": {
+        "area_m2": 0.0,
+        "median_px_per_m": 49.0,
+        "min_px_per_m": 49.0
+      },
+      "lamp-glass": {
+        "area_m2": 0.13,
+        "median_px_per_m": 51.4,
+        "min_px_per_m": 49.0
+      },
+      "stone-floor": {
+        "area_m2": 16.0,
+        "median_px_per_m": 49.8,
+        "min_px_per_m": 49.8
+      },
+      "wallpaper": {
+        "area_m2": 43.52,
+        "median_px_per_m": 55.2,
+        "min_px_per_m": 49.0
+      },
+      "walnut": {
+        "area_m2": 52.53,
+        "median_px_per_m": 49.8,
+        "min_px_per_m": 49.0
+      },
+      "wax": {
+        "area_m2": 0.05,
+        "median_px_per_m": 49.0,
+        "min_px_per_m": 44.1
+      }
+    }
+  },
+  "pivot": "floor centre, z = 0 (runtime y = 0)",
+  "sockets": {
+    "doors": [
+      {
+        "id": "n",
+        "facing": "N",
+        "position": [
+          0,
+          0,
+          -4
+        ],
+        "width": 1.6
+      },
+      {
+        "id": "s",
+        "facing": "S",
+        "position": [
+          0,
+          0,
+          4
+        ],
+        "width": 1.6
+      }
+    ],
+    "enemySockets": [],
+    "lootSockets": [],
+    "dressingSockets": [
+      {
+        "id": "banner",
+        "position": [
+          -0.8,
+          0,
+          0
+        ],
+        "yaw": 90
+      }
+    ],
+    "lightSockets": [
+      {
+        "id": "lamp",
+        "position": [
+          0.8,
+          2.2,
+          0
+        ],
+        "yaw": 0
+      }
+    ],
+    "probe": [
+      0,
+      1.6,
+      0
+    ]
+  },
+  "derivedFiles": [
+    {
+      "path": "public/assets/rooms/corridor/corridor.glb",
+      "sha256": "ec2afaae06bd274327d256298aef0c7afcef02db9901283ec454c7a67f38da47",
+      "bytes": 120300
+    },
+    {
+      "path": "public/assets/rooms/corridor/corridor.lightmap.ktx2",
+      "sha256": "8072428e28fc77876713ba778b08f1fa815c927f1c95d079b17e5a53c040d59a",
+      "bytes": 746787
+    },
+    {
+      "path": "public/assets/rooms/corridor/corridor.manifest.json",
+      "sha256": "37ef2a667f836c7d27f88bf1fba344681668137c92b856aa021106261f96651e",
+      "bytes": 2952
+    }
+  ],
+  "stagingFiles": {
+    "corridor.glb": "ec2afaae06bd274327d256298aef0c7afcef02db9901283ec454c7a67f38da47",
+    "corridor.lightmap.ktx2": "8072428e28fc77876713ba778b08f1fa815c927f1c95d079b17e5a53c040d59a",
+    "corridor.lightmap.png": "ac2f0c7bd2b883e2f253ce02459c3ad21626f5c174e6b800be8e44142a4a3db2",
+    "corridor.manifest.json": "37ef2a667f836c7d27f88bf1fba344681668137c92b856aa021106261f96651e",
+    "uv1-report.json": "591d68bba9dc641b47b32775aed7c0363305dfd395bd3f16b4f9162216a890d6"
+  },
+  "references": [
+    {
+      "path": "assets-source/style/locked/L-board-1.png",
+      "sha256": "d3fffc8eb300cc6f40236c28930401ef1bd06be0e27be76999839e3bfeacc018",
+      "provider": "higgsfield",
+      "note": "kit language only (approved art bible board, L-study and the study's room-sheet-1); no corridor concept sheet exists"
+    },
+    {
+      "path": "assets-source/style/locked/L-study.png",
+      "sha256": "d889c4f1e518f3b5e5641be8a6a78515db5998c3d11c1b8c9291c804240cb268",
+      "provider": "higgsfield",
+      "note": "kit language only (approved art bible board, L-study and the study's room-sheet-1); no corridor concept sheet exists"
+    },
+    {
+      "path": "assets-source/concepts/room-sheet-1.png",
+      "sha256": "ae85e896be2151350ce53511681b13e9136bda53af5efaf1b1431e504c395dc6",
+      "provider": "higgsfield",
+      "note": "kit language only (approved art bible board, L-study and the study's room-sheet-1); no corridor concept sheet exists"
+    }
+  ],
+  "materialsUsed": "approved P4-T3 set (public/assets/materials), bound by slot name; not regenerated",
+  "license": "Original work generated in Blender from a checked-in script; concept references from Paul's paid Higgsfield plan (Terms of Use 4.4)",
+  "reimport": {
+    "triangles": 1556,
+    "material_count": 9,
+    "uv_layers": [
+      [
+        "UVMap",
+        "UVMap.001"
+      ]
+    ],
+    "embedded_images": 0,
+    "bounds_blender": {
+      "min": [
+        -1.0,
+        -4.0,
+        0.0
+      ],
+      "max": [
+        1.0,
+        4.0,
+        3.4
+      ]
+    },
+    "checks": {
+      "triangles_le_100k": true,
+      "materials_le_16": true,
+      "materials_are_manifest_slots": true,
+      "textures_le_2048": true,
+      "two_uv_layers_every_mesh": true,
+      "no_embedded_images": true,
+      "floor_at_zero": true,
+      "inside_ceiling": true,
+      "footprint_x": true,
+      "footprint_y": true,
+      "inside_footprint": true
+    },
+    "pass": true
+  },
+  "validation": {
+    "pass": true,
+    "date": "2026-11-15",
+    "checks": [
+      "presence",
+      "hashes",
+      "glb budgets",
+      "uv1 on every primitive",
+      "uv1 no overlap, gap >= 8 px",
+      "image-free glb",
+      "ktx2 size/mips/transfer",
+      "manifest consistency",
+      "clean reimport"
+    ]
+  },
+  "approvals": [
+    {
+      "gate": "concept",
+      "status": "pending",
+      "notes": "no template-specific concept sheet; built in the approved study kit language (art bible). Owner decides whether one is needed"
+    },
+    {
+      "gate": "technical",
+      "status": "pending",
+      "notes": "validate-generated-assets verdict is reported to the orchestrator, not self-recorded"
+    },
+    {
+      "gate": "creative",
+      "status": "pending",
+      "notes": "review sheet assets-source/rooms/corridor/staging/review-sheet.jpg"
+    },
+    {
+      "gate": "rights",
+      "status": "pending",
+      "notes": "original procedural geometry; shared P4-T3 sets carry their own provenance"
+    },
+    {
+      "gate": "owner",
+      "status": "pending",
+      "notes": "in-engine look approval (docs/blender-kit-project.md ruling 3)"
+    },
+    {
+      "gate": "independent visual score",
+      "status": "unscored",
+      "notes": "blender-kit-pieces requires an independent >= 80/100 score; unscored means unaccepted"
+    }
+  ],
+  "reviewEvidence": [
+    {
+      "path": "assets-source/rooms/corridor/staging/review-sheet.jpg",
+      "sha256": "97a73103f4839bd345489f1f679f9e11c697c309104e890d7050b60376238aa1"
+    },
+    {
+      "path": "docs/verification/p5-rooms-corridor-floor-sealed-north.jpg",
+      "sha256": "312dcc5279050cc47c80083508fd4fd22c3b94f1ef543e7000d94d4b4df19066"
+    },
+    {
+      "path": "docs/verification/p5-rooms-corridor-hero.diffuse.jpg",
+      "sha256": "55fc99018c5cbfad9c2f4cb75c5be80eed158f1b43f8778500ce68afa99722f5"
+    },
+    {
+      "path": "docs/verification/p5-rooms-corridor-hero.jpg",
+      "sha256": "72c9d64fcf1339ad68ba6768ba5fb5757c04d73cbea4c7410bff063cff66a49b"
+    },
+    {
+      "path": "docs/verification/p5-rooms-corridor-lamp.jpg",
+      "sha256": "aa34181f6f23202b3dcf4fc27bc673011964afe79abae43e5019f0a43502b726"
+    },
+    {
+      "path": "docs/verification/p5-rooms-corridor-seam-from-corridor.jpg",
+      "sha256": "cdb8e858e0562c708731f22602113d6832c582043d1731610e8acd8ff57bb68d"
+    }
+  ]
+}

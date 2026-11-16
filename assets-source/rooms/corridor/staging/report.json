@@ -1,0 +1,205 @@
+{
+  "piece": "corridor",
+  "blender": "5.2.2 LTS",
+  "host_load_start": 11.43,
+  "lightmap_size": 1024,
+  "samples": 256,
+  "generator": "scripts/assets/build-room-kit.py",
+  "helper": "scripts/assets/room_kit.py (reuses build-room-study.py functions)",
+  "high": {
+    "triangles": 9917,
+    "slots": 9
+  },
+  "low": {
+    "triangles": 1556,
+    "vertices": 1182,
+    "materials": 9,
+    "lightmap_density": {
+      "mean_px_per_m": 52.82,
+      "min_px_per_m": 44.05,
+      "max_px_per_m": 55.24
+    },
+    "lightmap_density_by_slot": {
+      "brass-aged": {
+        "area_m2": 4.86,
+        "median_px_per_m": 49.8,
+        "min_px_per_m": 46.5
+      },
+      "brass-polished": {
+        "area_m2": 0.51,
+        "median_px_per_m": 51.4,
+        "min_px_per_m": 46.1
+      },
+      "cloth": {
+        "area_m2": 2.03,
+        "median_px_per_m": 55.2,
+        "min_px_per_m": 55.2
+      },
+      "flame": {
+        "area_m2": 0.0,
+        "median_px_per_m": 49.0,
+        "min_px_per_m": 49.0
+      },
+      "lamp-glass": {
+        "area_m2": 0.13,
+        "median_px_per_m": 51.4,
+        "min_px_per_m": 49.0
+      },
+      "stone-floor": {
+        "area_m2": 16.0,
+        "median_px_per_m": 49.8,
+        "min_px_per_m": 49.8
+      },
+      "wallpaper": {
+        "area_m2": 43.52,
+        "median_px_per_m": 55.2,
+        "min_px_per_m": 49.0
+      },
+      "walnut": {
+        "area_m2": 52.53,
+        "median_px_per_m": 49.8,
+        "min_px_per_m": 49.0
+      },
+      "wax": {
+        "area_m2": 0.05,
+        "median_px_per_m": 49.0,
+        "min_px_per_m": 44.1
+      }
+    }
+  },
+  "canonicalized_primitives": 9,
+  "glb_bytes": 120300,
+  "device": "GPU:METAL (Apple M4 Max (GPU - 40 cores))",
+  "lightmap_bake": {
+    "seconds": 2.15,
+    "host_load": [
+      10.99,
+      10.75
+    ],
+    "timing_valid": true
+  },
+  "denoise": "compositor OIDN, HDR, accurate prefilter, high quality",
+  "lightmap": {
+    "coverage": 0.658,
+    "scale": 2.818017,
+    "clipped_fraction": 0.01997,
+    "mean_irradiance": 0.460576,
+    "p05_irradiance": 0.0,
+    "percentile": 98.0,
+    "encoded_p05_255": 0,
+    "encoded_median_255": 64
+  },
+  "ktx2": {
+    "tool": "ktx version: v4.4.2",
+    "encodes": {
+      "corridor.lightmap.ktx2": "create --format R8G8B8_SRGB --assign-tf srgb --encode uastc --uastc-quality 2 --zstd 18 --generate-mipmap"
+    }
+  },
+  "renders": [
+    "engine.hero.diffuse.png",
+    "engine.hero.png",
+    "engine.lamp.png",
+    "engine.seam-from-corridor.png",
+    "hero.high.png",
+    "hero.lightmapped.png",
+    "hero.low.png",
+    "hero.reference-diffuse.png",
+    "lamp.high.png",
+    "lamp.lightmapped.png",
+    "lamp.low.png"
+  ],
+  "blend": {
+    "corridor_high.blend": {
+      "sha256": "3d851a3f804004bbb4a65258878d7f05dabe8851e4cc68e74ce3bb6ee5246b0f",
+      "bytes": 387669
+    },
+    "corridor_low.blend": {
+      "sha256": "34a960f68cd2c21bc36149d0a14d642130bf82be54a341b83dd4bda9216755c9",
+      "bytes": 168248
+    }
+  },
+  "colliders_added": [],
+  "bake_lights": [
+    {
+      "name": "lamp",
+      "blender": [
+        0.8,
+        0.0,
+        2.2
+      ],
+      "watts": 35.0
+    },
+    {
+      "name": "sconce_0",
+      "blender": [
+        -0.83,
+        2.9,
+        2.16
+      ],
+      "watts": 18.0
+    },
+    {
+      "name": "sconce_1",
+      "blender": [
+        -0.83,
+        -2.9,
+        2.16
+      ],
+      "watts": 18.0
+    },
+    {
+      "name": "sconce_2",
+      "blender": [
+        0.83,
+        -2.9,
+        2.16
+      ],
+      "watts": 18.0
+    },
+    {
+      "name": "sconce_3",
+      "blender": [
+        0.83,
+        2.9,
+        2.16
+      ],
+      "watts": 18.0
+    }
+  ],
+  "cameras_runtime": {
+    "hero": {
+      "eye": [
+        0.25,
+        1.6,
+        3.5
+      ],
+      "look": [
+        -0.1,
+        1.5,
+        -4.0
+      ],
+      "vfov": 70.0
+    },
+    "lamp": {
+      "eye": [
+        -0.55,
+        1.6,
+        -2.9
+      ],
+      "look": [
+        0.9,
+        1.7,
+        1.0
+      ],
+      "vfov": 70.0
+    }
+  },
+  "host_load_end": 10.37,
+  "files": {
+    "corridor.glb": "ec2afaae06bd274327d256298aef0c7afcef02db9901283ec454c7a67f38da47",
+    "corridor.lightmap.ktx2": "8072428e28fc77876713ba778b08f1fa815c927f1c95d079b17e5a53c040d59a",
+    "corridor.lightmap.png": "ac2f0c7bd2b883e2f253ce02459c3ad21626f5c174e6b800be8e44142a4a3db2",
+    "corridor.manifest.json": "37ef2a667f836c7d27f88bf1fba344681668137c92b856aa021106261f96651e",
+    "uv1-report.json": "591d68bba9dc641b47b32775aed7c0363305dfd395bd3f16b4f9162216a890d6"
+  }
+}

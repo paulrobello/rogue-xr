@@ -1,0 +1,59 @@
+{
+  "glb": "hall.glb",
+  "glb_sha256": "fa5469d0138bbd1b59c4180f60a0bc9e38c90763a446f52e194874c0a6f478ad",
+  "blender": "5.2.2 LTS",
+  "meshes": [
+    "hall"
+  ],
+  "triangles": 4213,
+  "materials": [
+    "hall_brass-aged",
+    "hall_brass-polished",
+    "hall_flame",
+    "hall_stained-glass",
+    "hall_stone-floor",
+    "hall_wallpaper",
+    "hall_walnut",
+    "hall_wax"
+  ],
+  "material_count": 8,
+  "uv_layers": [
+    [
+      "UVMap",
+      "UVMap.001"
+    ]
+  ],
+  "embedded_images": 0,
+  "bounds_blender": {
+    "min": [
+      -5.0,
+      -5.0,
+      0.0
+    ],
+    "max": [
+      5.0,
+      5.0,
+      4.0
+    ]
+  },
+  "texture_px": {
+    "hall.lightmap.ktx2": {
+      "width": 2048,
+      "height": 2048
+    }
+  },
+  "checks": {
+    "triangles_le_100k": true,
+    "materials_le_16": true,
+    "materials_are_manifest_slots": true,
+    "textures_le_2048": true,
+    "two_uv_layers_every_mesh": true,
+    "no_embedded_images": true,
+    "floor_at_zero": true,
+    "inside_ceiling": true,
+    "footprint_x": true,
+    "footprint_y": true,
+    "inside_footprint": true
+  },
+  "pass": true
+}
