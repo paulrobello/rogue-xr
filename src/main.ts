@@ -14,13 +14,14 @@ import {
 } from './combat/table-asset-proof.ts';
 import { mountCombatDebugView } from './combat-view/index.ts';
 import { STARTER_DECK } from './content/cards.ts';
+import { ENEMIES } from './content/enemies.ts';
 import { REWARD_POOL } from './content/rewards.ts';
 import { ActionBus } from './core/actions.ts';
 import { randomSeed } from './core/rng.ts';
 import { fitCombatFraming } from './desktop/combat-framing.ts';
 import { combatPitch, createDesktopControls } from './desktop/controls.ts';
 import { Walker } from './desktop/walker.ts';
-import { loadSentry, type SentryActor, type SentryAsset } from './enemies/sentry-asset.ts';
+import { type EnemyActor, type EnemyAsset, tryLoadEnemyAsset } from './enemies/enemy-asset.ts';
 import { type FlowPhase, RunFlow } from './flow/flow.ts';
 import { FlowUi } from './flow/panels.ts';
 import { bindFlowPersistence } from './flow/persist.ts';
@@ -293,8 +294,9 @@ const fitTable = (target: FloorView): void => {
 };
 if (floor) fitTable(floor);
 
-// P4-T9 hero assets: the baked study dresses every study room and the Cog Sentry replaces its
-// capsules. One KTX2 material set backs both; each falls back to its greybox on its own failure.
+// P4-T9 hero assets: the baked rooms dress their templates and each automaton model replaces its
+// kind's capsules. One KTX2 material set backs them all; each falls back to its greybox on its own
+// failure.
 const heroSet = floor
   ? (async () => {
       const ktx2 = createKtx2Loader(renderer);
@@ -334,21 +336,34 @@ const sealedDoorMaterial: Promise<{ material: THREE.Material; tileMeters: number
       })
       .catch(() => null)
   : Promise.resolve(null);
-const sentryAsset: Promise<SentryAsset | null> = heroSet
-  ? heroSet
-      .then(({ set }) => loadSentry({ materials: set }))
-      .catch((error: unknown) => {
-        console.warn('cog sentry asset unavailable, capsules kept', error);
-        return null;
-      })
-  : Promise.resolve(null);
-const prepareSentry = (actor: SentryActor): void => reflect(actor.object, 0.45);
+// One fetch per enemy kind for the session, whatever the floor count. A kind whose model is not
+// shipped yet resolves null at once (one console.info) and keeps its capsules.
+const enemyMaterials = heroSet?.then(({ set }) => set).catch(() => null) ?? null;
+const enemyAssets = new Map<string, Promise<EnemyAsset | null>>(
+  enemyMaterials
+    ? Object.keys(ENEMIES).map((kind) => [
+        kind,
+        enemyMaterials.then((set) => (set ? tryLoadEnemyAsset(kind, { materials: set }) : null)),
+      ])
+    : [],
+);
+const loadedEnemies = async (): Promise<EnemyAsset[]> =>
+  (await Promise.all(enemyAssets.values())).filter((a): a is EnemyAsset => a !== null);
+const prepareEnemy = (actor: EnemyActor): void => reflect(actor.object, 0.45);
 const dressFloor = async (target: FloorView): Promise<void> => {
-  const [rooms, sentry, door] = await Promise.all([roomAssets, sentryAsset, sealedDoorMaterial]);
-  if (target !== floor) return;
-  dressHeroRooms(target, rooms);
-  if (door) target.world.dressSealedDoors(door.material, door.tileMeters);
-  if (sentry) target.useSentryAsset(sentry, prepareSentry);
+  // Each model dresses its kind as soon as it lands, so a slow or broken one holds back no other.
+  const dressed = [...enemyAssets.values()].map((pending) =>
+    pending.then((asset) => {
+      if (asset && target === floor)
+        target.useEnemyAssets(new Map([[asset.id, asset]]), prepareEnemy);
+    }),
+  );
+  const [rooms, door] = await Promise.all([roomAssets, sealedDoorMaterial]);
+  if (target === floor) {
+    dressHeroRooms(target, rooms);
+    if (door) target.world.dressSealedDoors(door.material, door.tileMeters);
+  }
+  await Promise.all(dressed);
 };
 /** Resolves once the boot floor wears its hero assets and their programs are compiled. */
 const heroReady: Promise<void> = floor
@@ -356,13 +371,14 @@ const heroReady: Promise<void> = floor
       const target = floor;
       await dressFloor(target);
       void heroSet?.then(({ ktx2 }) => ktx2.dispose());
-      const [rooms, sentry] = await Promise.all([roomAssets, sentryAsset]);
-      // One instance per baked room, so every room's programs (the corridor's cloth and lamp glass,
-      // the vault's braziers) link behind the veil even when this floor never places that room.
+      const [rooms, models] = await Promise.all([roomAssets, loadedEnemies()]);
+      // One instance per baked room and per loaded automaton, so every program (the corridor's
+      // cloth and lamp glass, the vault's braziers, each model's skinning) links behind the veil
+      // even when this floor never places it.
       const variants: THREE.Object3D[] = rooms.map((room) => room.instantiate());
-      const actor = sentry?.spawn() ?? null;
-      if (actor) {
-        prepareSentry(actor);
+      const actors = models.map((model) => model.spawn());
+      for (const actor of actors) {
+        prepareEnemy(actor);
         variants.push(actor.object);
       }
       const table = await tableAsset;
@@ -371,7 +387,7 @@ const heroReady: Promise<void> = floor
         const textures = new Set(rooms.flatMap((room) => room.textures));
         await runVeil(renderer, scene, camera, [...textures], { variants });
       } finally {
-        actor?.dispose();
+        for (const actor of actors) actor.dispose();
       }
     })().catch((error: unknown) => console.warn('hero asset warm-up failed', error))
   : Promise.resolve();

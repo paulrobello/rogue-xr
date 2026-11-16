@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { PALETTE } from '../palette.ts';
-import { loadSentry, type SentryActor, type SentryClip } from './sentry-asset.ts';
+import { type EnemyActor, type EnemyClip, loadEnemyAsset } from './enemy-asset.ts';
 
 const DEG = Math.PI / 180;
 
 export interface SentryProofInfo {
-  clip: SentryClip;
+  clip: EnemyClip;
   time: number;
   calls: number;
   triangles: number;
@@ -18,7 +18,7 @@ export interface SentryProofInfo {
  * Holds `actor` on one frame of `clip` for a still: the actor's own entry path (play, hit,
  * freeze, die) runs first so fades, rime and death state are real, then the clip time is pinned.
  */
-export function holdSentryPose(actor: SentryActor, clip: SentryClip, time: number): void {
+export function holdSentryPose(actor: EnemyActor, clip: EnemyClip, time: number): void {
   actor.reset();
   if (clip === 'frozen') actor.freeze();
   else if (clip === 'death') void actor.die();
@@ -39,7 +39,7 @@ export function holdSentryPose(actor: SentryActor, clip: SentryClip, time: numbe
 export async function mountStandaloneSentryProof(
   width: number,
   height: number,
-): Promise<{ pose(clip: SentryClip, time: number): SentryProofInfo }> {
+): Promise<{ pose(clip: EnemyClip, time: number): SentryProofInfo }> {
   const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
   renderer.setPixelRatio(1);
   renderer.setSize(width, height);
@@ -68,14 +68,16 @@ export async function mountStandaloneSentryProof(
   scene.environmentIntensity = 0.45;
   pmrem.dispose();
 
-  const asset = await loadSentry({ anisotropy: renderer.capabilities.getMaxAnisotropy() });
+  const asset = await loadEnemyAsset('cog-sentry', {
+    anisotropy: renderer.capabilities.getMaxAnisotropy(),
+  });
   const actor = asset.spawn();
   // The seated player sits 2.6 m away at +Z; heading from the sentry to the player is 180 deg.
   const headingDeg = 180;
   actor.object.rotation.y = -headingDeg * DEG;
   scene.add(actor.object);
 
-  const pose = (clip: SentryClip, time: number): SentryProofInfo => {
+  const pose = (clip: EnemyClip, time: number): SentryProofInfo => {
     holdSentryPose(actor, clip, time);
     if (clip === 'death') {
       camera.position.set(1.5, 1.5, 2.3);

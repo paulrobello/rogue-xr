@@ -1,0 +1,565 @@
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
+import { loadPbrSet, type PbrSet } from '../world/materials.ts';
+
+/**
+ * Runtime contract of every automaton model, `public/assets/enemies/<id>/<id>.manifest.json` plus
+ * its GLB (the schema scripts/assets/build-cog-sentry.py writes). The root sits at the feet and the
+ * model faces local -Z, so `rotation.y = -heading` (as src/combat/encounter.ts sets it) turns it
+ * toward the heading. Root motion is code-owned: every clip plays in place.
+ */
+export const ENEMY_ASSET_ROOT = '/assets/enemies';
+export const ENEMY_CLIPS = ['idle', 'attack', 'hit', 'death', 'frozen'] as const;
+export type EnemyClip = (typeof ENEMY_CLIPS)[number];
+export const ENEMY_SOCKETS = ['socket-hit', 'socket-eye', 'socket-weapon'] as const;
+export type EnemySocket = (typeof ENEMY_SOCKETS)[number];
+/** Sockets the runtime reads (combat-session aims hit sparks at `socket-hit`). */
+const REQUIRED_SOCKETS: readonly EnemySocket[] = ['socket-hit'];
+
+export interface EnemyClipSpec {
+  duration: number;
+  loop: 'repeat' | 'once';
+  events: Record<string, number>;
+  held?: boolean;
+  endsOnFloor?: boolean;
+}
+
+export interface EnemyMaterialSlot {
+  set: string | null;
+  factorOnly?: boolean;
+  emissive?: boolean;
+  tileMeters?: number;
+  normalScale?: number;
+}
+
+export interface EnemyManifest {
+  id: string;
+  version: number;
+  glb: string;
+  frame: { units: string; up: string; forward: string; origin: string };
+  root: string;
+  mesh: string;
+  bounds: { min: number[]; max: number[] };
+  skeleton: { root: string; bones: number; joints: string[]; maxInfluences: number };
+  rootMotion: string;
+  clips: Record<EnemyClip, EnemyClipSpec>;
+  sockets: Partial<
+    Record<EnemySocket, { bone: string; parent: string | null; position: number[] }>
+  >;
+  emissive: { material: string; color: string; intensity: number; nodes: string[] };
+  materialSlots: Record<string, EnemyMaterialSlot>;
+  budget: { tris: number; materials: number; bones: number; influences: number };
+  /** Optional culling sphere covering every clip; derived from `bounds` when absent. */
+  cull?: { center: number[]; radius: number };
+}
+
+/** Validates a manifest against the runtime contract; `id`, when given, must match its `id`. */
+export function parseEnemyManifest(raw: unknown, id?: string): EnemyManifest {
+  const m = raw as Partial<EnemyManifest>;
+  const who = id ?? (typeof m?.id === 'string' ? m.id : 'enemy');
+  if (typeof m !== 'object' || m === null) throw new Error(`${who} manifest: expected an object`);
+  if (id !== undefined && m.id !== id) throw new Error(`${who} manifest: id is ${String(m.id)}`);
+  if (typeof m.glb !== 'string' || typeof m.root !== 'string')
+    throw new Error(`${who} manifest: glb or root missing`);
+  if (m.frame?.forward !== '-Z') throw new Error(`${who} manifest: forward must be -Z`);
+  for (const clip of ENEMY_CLIPS) {
+    const spec = m.clips?.[clip];
+    if (!spec || !(spec.duration > 0) || (spec.loop !== 'repeat' && spec.loop !== 'once')) {
+      throw new Error(`${who} manifest: clip ${clip} missing or invalid`);
+    }
+  }
+  for (const socket of ENEMY_SOCKETS) {
+    const entry = m.sockets?.[socket];
+    if ((entry || REQUIRED_SOCKETS.includes(socket)) && entry?.position?.length !== 3)
+      throw new Error(`${who} manifest: socket ${socket} missing`);
+  }
+  if (!m.materialSlots || !m.emissive?.material)
+    throw new Error(`${who} manifest: materialSlots or emissive missing`);
+  return m as EnemyManifest;
+}
+
+/** The Cog Sentry's hand-fitted sphere: covers every clip, the lying death pose included. */
+const SENTRY_CULL = { center: [0, 1, 0], radius: 1.7 };
+
+/**
+ * The culling sphere of a manifest: its own `cull`, the sentry's fitted sphere, or one around the
+ * standing bounds wide enough for the model to lie its full height along the floor.
+ */
+function cullSphere(manifest: EnemyManifest): THREE.Sphere {
+  const fit = manifest.cull ?? (manifest.id === 'cog-sentry' ? SENTRY_CULL : null);
+  if (fit) {
+    const [x = 0, y = 0, z = 0] = fit.center;
+    return new THREE.Sphere(new THREE.Vector3(x, y, z), fit.radius);
+  }
+  const [minX = 0, , minZ = 0] = manifest.bounds.min;
+  const [maxX = 0, maxY = 2, maxZ = 0] = manifest.bounds.max;
+  const reach = Math.max(maxY, maxX - minX, maxZ - minZ);
+  return new THREE.Sphere(new THREE.Vector3(0, maxY / 2, 0), reach * 1.15);
+}
+
+/** Pale rime tint the plates take on while frozen, and how far toward it they move. */
+const RIME = new THREE.Color('#cfd8dc');
+const RIME_MIX = 0.22;
+const RIME_GLOW = 0.3;
+const HIT_FLASH = 2.5;
+const FLASH_DECAY = 6;
+
+interface Owned {
+  materials: THREE.Material[];
+  geometries: THREE.BufferGeometry[];
+}
+
+/**
+ * One loaded automaton model: the template scene, its clips, and the resources every actor shares
+ * (geometry, skeleton template, the bound slot materials). `spawn()` builds pooled actors;
+ * `dispose()` stops new spawns and releases the shared resources once the last live actor is gone.
+ */
+export class EnemyAsset {
+  private disposed = false;
+  private released = false;
+  private readonly live = new Set<EnemyActor>();
+
+  constructor(
+    readonly manifest: EnemyManifest,
+    readonly template: THREE.Object3D,
+    readonly clips: ReadonlyMap<EnemyClip, THREE.AnimationClip>,
+    private readonly owned: Owned,
+  ) {}
+
+  get id(): string {
+    return this.manifest.id;
+  }
+
+  /** Actors spawned from this asset and not yet disposed. */
+  get liveActors(): number {
+    return this.live.size;
+  }
+
+  spawn(): EnemyActor {
+    if (this.disposed) throw new Error(`${this.id} asset disposed`);
+    const actor = new EnemyActor(this);
+    this.live.add(actor);
+    return actor;
+  }
+
+  dispose(): void {
+    this.disposed = true;
+    if (this.live.size === 0) this.release();
+  }
+
+  /** Called once by each actor's `dispose`. */
+  retire(actor: EnemyActor): void {
+    this.live.delete(actor);
+    if (this.disposed && this.live.size === 0) this.release();
+  }
+
+  private release(): void {
+    if (this.released) return;
+    this.released = true;
+    for (const g of this.owned.geometries) g.dispose();
+    for (const m of this.owned.materials) m.dispose();
+  }
+}
+
+/**
+ * Builds the asset from GLB bytes. Brass slots take clones of the shared P4-T3 set materials by
+ * slot name (their textures stay owned by the set); slots without a set, or a missing set, keep
+ * the GLB's factor-only material, which is the load-failure look.
+ */
+export async function parseEnemyAsset(
+  glb: ArrayBuffer,
+  manifest: EnemyManifest,
+  set: PbrSet | null = null,
+): Promise<EnemyAsset> {
+  const who = manifest.id;
+  const gltf = await new GLTFLoader().parseAsync(glb, '');
+  const clips = new Map<EnemyClip, THREE.AnimationClip>();
+  for (const name of ENEMY_CLIPS) {
+    const clip = gltf.animations.find((a) => a.name === name);
+    if (!clip) throw new Error(`${who} glb: clip ${name} missing`);
+    clips.set(name, clip);
+  }
+  if (!gltf.scene.getObjectByName(manifest.root)) throw new Error(`${who} glb: root node missing`);
+  for (const socket of ENEMY_SOCKETS) {
+    if (!manifest.sockets[socket]) continue;
+    if (!gltf.scene.getObjectByName(socket)) throw new Error(`${who} glb: ${socket} missing`);
+  }
+
+  const bound = new Map<THREE.Material, THREE.Material>();
+  const geometries = new Set<THREE.BufferGeometry>();
+  const bind = (source: THREE.Material): THREE.Material => {
+    const cached = bound.get(source);
+    if (cached) return cached;
+    const slot = manifest.materialSlots[source.name];
+    const shared = slot?.set ? set?.materials.get(slot.set) : undefined;
+    let material: THREE.Material = source;
+    if (shared) {
+      const clone = shared.clone();
+      const s = slot?.normalScale ?? 1;
+      clone.normalScale.set(s, s);
+      clone.name = source.name;
+      material = clone;
+    }
+    bound.set(source, material);
+    return material;
+  };
+  gltf.scene.traverse((o) => {
+    if (!(o instanceof THREE.Mesh)) return;
+    geometries.add(o.geometry);
+    o.material = Array.isArray(o.material) ? o.material.map(bind) : bind(o.material);
+  });
+  const materials = new Set<THREE.Material>([...bound.keys(), ...bound.values()]);
+  return new EnemyAsset(manifest, gltf.scene, clips, {
+    materials: [...materials],
+    geometries: [...geometries],
+  });
+}
+
+export interface EnemyLoadOptions {
+  /** Directory holding `<id>/<id>.manifest.json`; defaults to {@link ENEMY_ASSET_ROOT}. */
+  root?: string;
+  /** The shared brass sets, or null to skip them; loaded from `materialsBase` when omitted. */
+  materials?: PbrSet | null;
+  materialsBase?: string;
+  anisotropy?: number;
+}
+
+/** Thrown when an id has no model on the server; the caller keeps its capsule without an error. */
+export class EnemyAssetMissing extends Error {
+  constructor(
+    readonly id: string,
+    what: string,
+  ) {
+    super(`${id}: ${what} not shipped`);
+    this.name = 'EnemyAssetMissing';
+  }
+}
+
+const GLB_MAGIC = 0x46546c67;
+
+/**
+ * Fetches `<root>/<id>/<id>.manifest.json` and its GLB and binds the shared sets. Throws
+ * {@link EnemyAssetMissing} when either file is absent: a 404, or the dev server's HTML fallback
+ * for an unknown path. Any other failure (bad JSON contract, corrupt GLB) throws as itself.
+ */
+export async function loadEnemyAsset(
+  id: string,
+  options: EnemyLoadOptions = {},
+): Promise<EnemyAsset> {
+  const base = `${options.root ?? ENEMY_ASSET_ROOT}/${id}`;
+  const res = await fetch(`${base}/${id}.manifest.json`);
+  const text = res.ok ? await res.text() : '';
+  if (!res.ok || !(res.headers.get('content-type') ?? '').includes('json') || /^\s*</.test(text))
+    throw new EnemyAssetMissing(id, 'manifest');
+  const manifest = parseEnemyManifest(JSON.parse(text), id);
+  const [glb, set] = await Promise.all([
+    fetch(`${base}/${manifest.glb}`).then(async (r) => {
+      const bytes = r.ok ? await r.arrayBuffer() : new ArrayBuffer(0);
+      const magic = bytes.byteLength >= 4 ? new DataView(bytes).getUint32(0, true) : 0;
+      if (!r.ok || (magic !== GLB_MAGIC && /html/.test(r.headers.get('content-type') ?? '')))
+        throw new EnemyAssetMissing(id, 'glb');
+      return bytes;
+    }),
+    options.materials !== undefined
+      ? Promise.resolve(options.materials)
+      : loadPbrSet(options.materialsBase ?? '/assets/materials', {
+          anisotropy: options.anisotropy ?? 4,
+        }).catch(() => null),
+  ]);
+  return parseEnemyAsset(glb, manifest, set);
+}
+
+/**
+ * {@link loadEnemyAsset} that never rejects: an id that is not shipped logs one `console.info`, one
+ * that fails logs one `console.warn`, and either resolves to null so its capsules stay.
+ */
+export function tryLoadEnemyAsset(
+  id: string,
+  options: EnemyLoadOptions = {},
+): Promise<EnemyAsset | null> {
+  return loadEnemyAsset(id, options).catch((error: unknown) => {
+    if (error instanceof EnemyAssetMissing) console.info(`${error.message}; capsules kept`);
+    else console.warn(`${id} model unavailable, capsules kept`, error);
+    return null;
+  });
+}
+
+/**
+ * One {@link tryLoadEnemyAsset} per distinct id, all in parallel, each failing on its own. Every
+ * call fetches again, so keep the returned promises for the session.
+ */
+export function loadEnemyAssets(
+  ids: readonly string[],
+  options: EnemyLoadOptions = {},
+): Map<string, Promise<EnemyAsset | null>> {
+  return new Map([...new Set(ids)].map((id) => [id, tryLoadEnemyAsset(id, options)]));
+}
+
+export interface EnemyPlayOptions {
+  /** Cross-fade seconds from whatever is playing. */
+  fade?: number;
+  timeScale?: number;
+}
+
+interface Fade {
+  from: number;
+  to: number;
+  t: number;
+  duration: number;
+}
+
+interface MaterialState {
+  material: THREE.MeshStandardMaterial;
+  color: THREE.Color;
+  emissiveIntensity: number;
+  glow: boolean;
+}
+
+/**
+ * One automaton instance: a skinned clone with its own mixer and its own material clones (for the
+ * hit flash and the freeze rime). Fades are stepped here rather than by `AnimationAction.fadeIn`,
+ * so an interrupted fade blends on from its current weight instead of popping.
+ */
+export class EnemyActor {
+  readonly object: THREE.Object3D;
+  readonly mixer: THREE.AnimationMixer;
+  /** Called when a clip passes one of its manifest events, such as the attack's `impact`. */
+  onEvent: ((event: string, clip: EnemyClip) => void) | null = null;
+  readonly asset: EnemyAsset;
+  private readonly actions = new Map<EnemyClip, THREE.AnimationAction>();
+  private readonly fades = new Map<EnemyClip, Fade>();
+  private readonly materials: MaterialState[] = [];
+  private currentClip: EnemyClip | null = null;
+  private frozenFlag = false;
+  private deadFlag = false;
+  private disposedFlag = false;
+  private flash = 0;
+  private death: { promise: Promise<void>; resolve: () => void } | null = null;
+  private readonly onFinished = (e: { action: THREE.AnimationAction }): void => {
+    const clip = this.clipOf(e.action);
+    if (clip === 'death') {
+      this.death?.resolve();
+    } else if (
+      (clip === 'attack' || clip === 'hit') &&
+      clip === this.currentClip &&
+      !this.deadFlag
+    ) {
+      this.play(this.frozenFlag ? 'frozen' : 'idle', { fade: 0.25 });
+    }
+  };
+
+  constructor(asset: EnemyAsset) {
+    this.asset = asset;
+    this.object = cloneSkinned(asset.template);
+    this.object.name = asset.manifest.id;
+    const clones = new Map<THREE.Material, THREE.MeshStandardMaterial>();
+    const glowName = asset.manifest.emissive.material;
+    const cull = cullSphere(asset.manifest);
+    this.object.traverse((o) => {
+      if (o instanceof THREE.SkinnedMesh) o.boundingSphere = cull.clone();
+      if (!(o instanceof THREE.Mesh) || !(o.material instanceof THREE.MeshStandardMaterial)) return;
+      let clone = clones.get(o.material);
+      if (!clone) {
+        clone = o.material.clone();
+        clones.set(o.material, clone);
+        this.materials.push({
+          material: clone,
+          color: clone.color.clone(),
+          emissiveIntensity: clone.emissiveIntensity,
+          glow: clone.name === glowName,
+        });
+      }
+      o.material = clone;
+    });
+    this.mixer = new THREE.AnimationMixer(this.object);
+    for (const name of ENEMY_CLIPS) {
+      const clip = asset.clips.get(name);
+      if (!clip) throw new Error(`${asset.id} clip ${name} missing`);
+      const action = this.mixer.clipAction(clip);
+      const once = asset.manifest.clips[name].loop === 'once';
+      action.setLoop(once ? THREE.LoopOnce : THREE.LoopRepeat, Infinity);
+      action.clampWhenFinished = once;
+      this.actions.set(name, action);
+    }
+    this.mixer.addEventListener('finished', this.onFinished);
+    this.play('idle', { fade: 0 });
+  }
+
+  /** The enemy kind this actor plays, its manifest id. */
+  get kind(): string {
+    return this.asset.manifest.id;
+  }
+  get state(): EnemyClip | null {
+    return this.currentClip;
+  }
+  get frozen(): boolean {
+    return this.frozenFlag;
+  }
+  get dead(): boolean {
+    return this.deadFlag;
+  }
+  get disposed(): boolean {
+    return this.disposedFlag;
+  }
+
+  action(clip: EnemyClip): THREE.AnimationAction {
+    const action = this.actions.get(clip);
+    if (!action) throw new Error(`${this.kind} clip ${clip} missing`);
+    return action;
+  }
+
+  socket(name: EnemySocket): THREE.Object3D | undefined {
+    return this.object.getObjectByName(name);
+  }
+
+  /** Starts `clip`, cross-fading every other running clip out from its current weight. */
+  play(clip: EnemyClip, options: EnemyPlayOptions = {}): THREE.AnimationAction {
+    const next = this.action(clip);
+    if (this.disposedFlag) return next;
+    const fade = Math.max(0, options.fade ?? 0.2);
+    if (clip !== 'frozen' && this.frozenFlag) this.setRime(false);
+    for (const [name, action] of this.actions) {
+      if (name === clip || !action.isScheduled()) continue;
+      const w = action.getEffectiveWeight();
+      if (fade === 0 || w === 0) {
+        action.stop();
+        this.fades.delete(name);
+      } else {
+        this.fades.set(name, { from: w, to: 0, t: 0, duration: fade });
+      }
+    }
+    next.reset();
+    next.setEffectiveTimeScale(options.timeScale ?? 1);
+    next.setEffectiveWeight(fade === 0 ? 1 : 0);
+    next.play();
+    if (fade === 0) this.fades.delete(clip);
+    else this.fades.set(clip, { from: 0, to: 1, t: 0, duration: fade });
+    this.currentClip = clip;
+    return next;
+  }
+
+  attack(): void {
+    if (!this.deadFlag) this.play('attack', { fade: 0.15 });
+  }
+
+  /** Hit reaction: interrupts anything but death, flashes the emissive core. */
+  hit(): void {
+    if (this.deadFlag) return;
+    this.play('hit', { fade: 0.06 });
+    this.flash = 1;
+  }
+
+  /** The time-freeze pose: blends into the held `frozen` clip and rimes the plates. */
+  freeze(): void {
+    if (this.deadFlag || this.frozenFlag) return;
+    this.play('frozen', { fade: 0.35 });
+    this.setRime(true);
+  }
+
+  unfreeze(): void {
+    if (!this.frozenFlag) return;
+    this.setRime(false);
+    if (!this.deadFlag) this.play('idle', { fade: 0.35 });
+  }
+
+  /** Plays death once; resolves when the clip ends, lying on the floor (or on reset/dispose). */
+  die(): Promise<void> {
+    if (this.death) return this.death.promise;
+    let resolve: () => void = () => {};
+    const promise = new Promise<void>((r) => {
+      resolve = r;
+    });
+    this.death = { promise, resolve };
+    if (this.frozenFlag) this.setRime(false);
+    this.deadFlag = true;
+    this.play('death', { fade: 0.15 });
+    return promise;
+  }
+
+  update(dt: number): void {
+    if (this.disposedFlag || !(dt >= 0)) return;
+    for (const [name, f] of this.fades) {
+      const action = this.action(name);
+      f.t = Math.min(f.duration, f.t + dt);
+      const k = f.t / f.duration;
+      const s = k * k * (3 - 2 * k);
+      action.setEffectiveWeight(f.from + (f.to - f.from) * s);
+      if (f.t >= f.duration) {
+        this.fades.delete(name);
+        if (f.to === 0) action.stop();
+      }
+    }
+    const current = this.currentClip ? this.action(this.currentClip) : null;
+    const before = current ? current.time : 0;
+    this.mixer.update(dt);
+    if (current && this.currentClip && this.onEvent) {
+      const events = this.asset.manifest.clips[this.currentClip].events;
+      for (const [event, at] of Object.entries(events)) {
+        if (before < at && current.time >= at) this.onEvent(event, this.currentClip);
+      }
+    }
+    if (this.flash > 0) {
+      this.flash = Math.max(0, this.flash - dt * FLASH_DECAY);
+      this.applyGlow();
+    }
+  }
+
+  /** Returns the actor to a fresh idle state for pool reuse; the transform is the caller's. */
+  reset(): void {
+    if (this.disposedFlag) return;
+    this.mixer.stopAllAction();
+    this.fades.clear();
+    this.death?.resolve();
+    this.death = null;
+    this.deadFlag = false;
+    this.flash = 0;
+    this.setRime(false);
+    this.applyGlow();
+    this.currentClip = null;
+    this.play('idle', { fade: 0 });
+    this.mixer.update(0);
+  }
+
+  /** Releases the mixer, its listener and this instance's materials; shared geometry stays. */
+  dispose(): void {
+    if (this.disposedFlag) return;
+    this.mixer.stopAllAction();
+    this.mixer.removeEventListener('finished', this.onFinished);
+    for (const clip of this.asset.clips.values()) this.mixer.uncacheClip(clip);
+    this.mixer.uncacheRoot(this.object);
+    this.fades.clear();
+    for (const m of this.materials) m.material.dispose();
+    this.materials.length = 0;
+    this.object.removeFromParent();
+    this.death?.resolve();
+    this.death = null;
+    this.onEvent = null;
+    this.currentClip = null;
+    this.disposedFlag = true;
+    this.asset.retire(this);
+  }
+
+  private clipOf(action: THREE.AnimationAction): EnemyClip | null {
+    for (const [name, a] of this.actions) if (a === action) return name;
+    return null;
+  }
+
+  private setRime(on: boolean): void {
+    this.frozenFlag = on;
+    for (const m of this.materials) {
+      if (m.glow) continue;
+      m.material.color.copy(m.color);
+      if (on) m.material.color.lerp(RIME, RIME_MIX);
+    }
+    this.applyGlow();
+  }
+
+  private applyGlow(): void {
+    for (const m of this.materials) {
+      if (!m.glow) continue;
+      const base = m.emissiveIntensity * (this.frozenFlag ? RIME_GLOW : 1);
+      m.material.emissiveIntensity = base + this.flash * HIT_FLASH;
+    }
+  }
+}

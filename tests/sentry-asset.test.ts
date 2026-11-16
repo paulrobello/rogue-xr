@@ -3,18 +3,20 @@ import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
-  parseSentry,
-  parseSentryManifest,
-  SENTRY_CLIPS,
-  SENTRY_SOCKETS,
-  type SentryActor,
-  type SentryAsset,
-  type SentryManifest,
-} from '../src/enemies/sentry-asset.ts';
+  ENEMY_CLIPS,
+  ENEMY_SOCKETS,
+  type EnemyActor,
+  type EnemyAsset,
+  type EnemyManifest,
+  parseEnemyAsset,
+  parseEnemyManifest,
+} from '../src/enemies/enemy-asset.ts';
+import * as sentryCompat from '../src/enemies/sentry-asset.ts';
 
 const base = new URL('../public/assets/enemies/cog-sentry/', import.meta.url);
-const manifest: SentryManifest = parseSentryManifest(
+const manifest: EnemyManifest = parseEnemyManifest(
   JSON.parse(readFileSync(new URL('cog-sentry.manifest.json', base), 'utf8')),
+  'cog-sentry',
 );
 const glbBytes = readFileSync(new URL(manifest.glb, base));
 
@@ -91,10 +93,10 @@ describe('cog sentry asset (GLB + manifest)', () => {
         Math.max(...a.samplers.map((s) => gltf.accessors[s.input]?.max?.[0] ?? 0)),
       ]),
     );
-    expect(Object.keys(clips).sort()).toEqual([...SENTRY_CLIPS].sort());
+    expect(Object.keys(clips).sort()).toEqual([...ENEMY_CLIPS].sort());
     for (const a of gltf.animations) expect(a.channels.length).toBeGreaterThan(0);
     const expected = { idle: 2, attack: 1.2, hit: 0.6, death: 2, frozen: 1 } as const;
-    for (const clip of SENTRY_CLIPS) {
+    for (const clip of ENEMY_CLIPS) {
       expect(clips[clip]).toBeCloseTo(expected[clip], 2);
       expect(manifest.clips[clip].duration).toBeCloseTo(expected[clip], 2);
     }
@@ -109,40 +111,40 @@ describe('cog sentry asset (GLB + manifest)', () => {
   });
 
   it('names the root, mesh and sockets, stands on y = 0 and faces -Z', () => {
-    for (const name of [manifest.root, 'root', ...SENTRY_SOCKETS])
-      expect(nodeNames).toContain(name);
+    for (const name of [manifest.root, 'root', ...ENEMY_SOCKETS]) expect(nodeNames).toContain(name);
     expect(manifest.frame.forward).toBe('-Z');
     expect(manifest.bounds.min[1]).toBeCloseTo(0, 3);
     expect(manifest.bounds.max[1]).toBeGreaterThan(1.8);
     expect(manifest.bounds.max[1]).toBeLessThan(2.1);
     // The amber core faces the player: the hit socket sits in front of the chest (local -Z).
     const hit = manifest.sockets['socket-hit'];
+    if (!hit) throw new Error('socket-hit missing');
     expect(hit.bone).toBe('chest');
     expect(hit.position[1]).toBeGreaterThan(1.3);
     expect(hit.position[2]).toBeLessThan(-0.1);
-    expect(manifest.sockets['socket-eye'].position[1]).toBeGreaterThan(1.75);
+    expect(manifest.sockets['socket-eye']?.position[1]).toBeGreaterThan(1.75);
   });
 });
 
 describe('cog sentry engine lifecycle (GLTFLoader + AnimationMixer)', () => {
-  let asset: SentryAsset | null = null;
-  const actors: SentryActor[] = [];
+  let asset: EnemyAsset | null = null;
+  const actors: EnemyActor[] = [];
   afterEach(() => {
     for (const a of actors.splice(0)) a.dispose();
     asset?.dispose();
     asset = null;
   });
 
-  const step = (actor: SentryActor, seconds: number, dt = 1 / 60): void => {
+  const step = (actor: EnemyActor, seconds: number, dt = 1 / 60): void => {
     for (let t = 0; t < seconds; t += dt) actor.update(dt);
   };
-  const weight = (actor: SentryActor, clip: (typeof SENTRY_CLIPS)[number]): number =>
+  const weight = (actor: EnemyActor, clip: (typeof ENEMY_CLIPS)[number]): number =>
     actor.action(clip).isScheduled() ? actor.action(clip).getEffectiveWeight() : 0;
-  const totalWeight = (actor: SentryActor): number =>
-    SENTRY_CLIPS.reduce((sum, clip) => sum + weight(actor, clip), 0);
+  const totalWeight = (actor: EnemyActor): number =>
+    ENEMY_CLIPS.reduce((sum, clip) => sum + weight(actor, clip), 0);
 
   it('spawns, plays, interrupts, freezes, dies and disposes without leaks', async () => {
-    asset = await parseSentry(glbArrayBuffer(), manifest);
+    asset = await parseEnemyAsset(glbArrayBuffer(), manifest);
     const actor = asset.spawn();
     actors.push(actor);
     const scene = new THREE.Scene();
@@ -239,7 +241,7 @@ describe('cog sentry engine lifecycle (GLTFLoader + AnimationMixer)', () => {
   });
 
   it('pools: two actors share geometry but own their materials and mixers', async () => {
-    asset = await parseSentry(glbArrayBuffer(), manifest);
+    asset = await parseEnemyAsset(glbArrayBuffer(), manifest);
     const a = asset.spawn();
     const b = asset.spawn();
     actors.push(a, b);
@@ -270,7 +272,7 @@ describe('cog sentry engine lifecycle (GLTFLoader + AnimationMixer)', () => {
   });
 
   it('survives 20 spawn/play/dispose cycles with nothing left on any mixer', async () => {
-    asset = await parseSentry(glbArrayBuffer(), manifest);
+    asset = await parseEnemyAsset(glbArrayBuffer(), manifest);
     const scene = new THREE.Scene();
     for (let i = 0; i < 20; i++) {
       const actor = asset.spawn();
@@ -289,11 +291,49 @@ describe('cog sentry engine lifecycle (GLTFLoader + AnimationMixer)', () => {
   });
 
   it('rejects corrupt bytes and contract-invalid data, so the caller keeps its greybox fallback', async () => {
-    await expect(parseSentry(new ArrayBuffer(64), manifest)).rejects.toThrow();
+    await expect(parseEnemyAsset(new ArrayBuffer(64), manifest)).rejects.toThrow();
     const noDeath = { ...manifest, clips: { ...manifest.clips, death: undefined } };
-    expect(() => parseSentryManifest(noDeath)).toThrow(/death/);
+    expect(() => parseEnemyManifest(noDeath)).toThrow(/death/);
     expect(() =>
-      parseSentryManifest({ ...manifest, frame: { ...manifest.frame, forward: '+Z' } }),
+      parseEnemyManifest({ ...manifest, frame: { ...manifest.frame, forward: '+Z' } }),
     ).toThrow(/forward/);
+    expect(() => parseEnemyManifest(manifest, 'spring-hound')).toThrow(/id is cog-sentry/);
+  });
+
+  it('keeps shared geometry until the asset is disposed and its last actor is gone', async () => {
+    asset = await parseEnemyAsset(glbArrayBuffer(), manifest);
+    const disposed: THREE.BufferGeometry[] = [];
+    asset.template.traverse((o) => {
+      if (o instanceof THREE.Mesh)
+        o.geometry.addEventListener('dispose', () => disposed.push(o.geometry));
+    });
+    const a = asset.spawn();
+    const b = asset.spawn();
+    expect(asset.liveActors).toBe(2);
+    asset.dispose();
+    expect(() => asset?.spawn()).toThrow(/disposed/);
+    a.dispose();
+    a.dispose();
+    expect(asset.liveActors).toBe(1);
+    expect(disposed).toHaveLength(0);
+    b.update(1 / 60);
+    b.dispose();
+    expect(asset.liveActors).toBe(0);
+    expect(disposed.length).toBeGreaterThan(0);
+  });
+
+  it('keeps the sentry cull sphere and the P4 names as aliases of the per-id loader', async () => {
+    asset = await parseEnemyAsset(glbArrayBuffer(), manifest);
+    const actor = asset.spawn();
+    actors.push(actor);
+    let sphere: THREE.Sphere | null = null;
+    actor.object.traverse((o) => {
+      if (o instanceof THREE.SkinnedMesh) sphere = o.boundingSphere;
+    });
+    expect(sphere).toEqual(new THREE.Sphere(new THREE.Vector3(0, 1, 0), 1.7));
+    expect(actor.kind).toBe('cog-sentry');
+    expect(sentryCompat.SENTRY_CLIPS).toBe(ENEMY_CLIPS);
+    expect(sentryCompat.parseSentry).toBe(parseEnemyAsset);
+    expect(sentryCompat.SENTRY_ASSET_BASE).toBe('/assets/enemies/cog-sentry');
   });
 });

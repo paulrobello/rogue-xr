@@ -3,12 +3,17 @@ import { join } from 'node:path';
 import * as THREE from 'three';
 import { describe, expect, it, vi } from 'vitest';
 import { CombatHook, type CombatSession } from '../src/combat/combat-session.ts';
+import { enemyKindOf } from '../src/combat/encounter-choice.ts';
 import { CombatController } from '../src/combat-view/controller.ts';
 import { intentChips } from '../src/combat-view/index.ts';
 import { getCard } from '../src/content/cards.ts';
 import { GREYBOX_TEMPLATES, templateById } from '../src/content/rooms.ts';
 import { ActionBus } from '../src/core/actions.ts';
-import { parseSentry, parseSentryManifest, type SentryAsset } from '../src/enemies/sentry-asset.ts';
+import {
+  type EnemyAsset,
+  parseEnemyAsset,
+  parseEnemyManifest,
+} from '../src/enemies/enemy-asset.ts';
 import type { EnemyState } from '../src/rules/index.ts';
 import { type FloorView, mountFloorView } from '../src/world/floor-view.ts';
 import { heroTemplates, parseStudyManifest } from '../src/world/study-room.ts';
@@ -18,19 +23,26 @@ const SEED = 'SPIRE002';
 
 // happy-dom serves import.meta.url over http, so asset paths resolve from the repo root.
 const asset = (path: string): string => join(process.cwd(), 'public/assets', path);
-const sentryManifest = parseSentryManifest(
+const sentryManifest = parseEnemyManifest(
   JSON.parse(readFileSync(asset('enemies/cog-sentry/cog-sentry.manifest.json'), 'utf8')),
+  'cog-sentry',
 );
 const sentryBytes = readFileSync(asset(`enemies/cog-sentry/${sentryManifest.glb}`));
-const loadTestSentry = (): Promise<SentryAsset> =>
-  parseSentry(
+/**
+ * The shipped sentry GLB, optionally relabelled as another kind: only cog-sentry has a model on
+ * disk, so a second kind's model is the same bytes under its own manifest id.
+ */
+const loadTestModel = (kind = 'cog-sentry'): Promise<EnemyAsset> =>
+  parseEnemyAsset(
     sentryBytes.buffer.slice(
       sentryBytes.byteOffset,
       sentryBytes.byteOffset + sentryBytes.byteLength,
     ) as ArrayBuffer,
-    sentryManifest,
+    { ...sentryManifest, id: kind },
     null,
   );
+const loadTestSentry = (): Promise<EnemyAsset> => loadTestModel();
+const only = (asset: EnemyAsset): Map<string, EnemyAsset> => new Map([[asset.id, asset]]);
 const studyRaw: unknown = JSON.parse(
   readFileSync(asset('rooms/study/study.manifest.json'), 'utf8'),
 );
@@ -276,7 +288,7 @@ describe('Cog Sentry on the floor', () => {
       ?.find((b) => b.userData.enemyKind === 'cog-sentry') as THREE.Object3D;
     const { x, z } = capsule.position;
     const rotY = capsule.rotation.y;
-    view.useSentryAsset(await loadTestSentry());
+    view.useEnemyAssets(only(await loadTestSentry()));
     const body = view.world.enemies
       .get(room)
       ?.find((b) => b.userData.enemyKind === 'cog-sentry') as THREE.Object3D;
@@ -299,7 +311,7 @@ describe('Cog Sentry on the floor', () => {
   it('freezes on contact, swings on its attack, and dies before the win hands over', async () => {
     const view = mountFloorView(new THREE.Scene(), new THREE.Group(), SEED);
     const room = sentryRoom(view);
-    view.useSentryAsset(await loadTestSentry());
+    view.useEnemyAssets(only(await loadTestSentry()));
     const rig = openHook(view, room, { options: { enemyHp: 1 } });
     rig.step(0.5);
     const actor = view.actors.find((a) => a.object.userData.room === room);
@@ -337,4 +349,148 @@ describe('Cog Sentry on the floor', () => {
     expect(actor.disposed).toBe(true);
     rig.hook.dispose();
   }, 30_000);
+});
+
+/** A seed and room whose regular encounter mixes a Cog Sentry with a Spring Hound. */
+function mixedRoom(): { seed: string; room: number } {
+  for (let i = 0; i < 400; i++) {
+    const seed = `MXD${i.toString().padStart(5, '0')}`;
+    const view = mountFloorView(new THREE.Scene(), new THREE.Group(), seed);
+    for (const [room, bodies] of view.world.enemies) {
+      const kinds = bodies.map((b) => b.userData.enemyKind);
+      if (kinds.includes('cog-sentry') && kinds.includes('spring-hound')) {
+        view.dispose();
+        return { seed, room };
+      }
+    }
+    view.dispose();
+  }
+  throw new Error('no mixed sentry-hound room in 400 seeds');
+}
+
+describe('per-enemy models on the floor', () => {
+  const mixed = mixedRoom();
+
+  it('dresses each body with its own kind and keeps capsules for kinds without a model', async () => {
+    const sentry = await loadTestModel('cog-sentry');
+    const hound = await loadTestModel('spring-hound');
+    const view = mountFloorView(new THREE.Scene(), new THREE.Group(), mixed.seed);
+    view.useEnemyAssets(only(sentry));
+    const room = view.world.enemies.get(mixed.room) ?? [];
+    const houndBody = room.find((b) => b.userData.enemyKind === 'spring-hound');
+    expect((houndBody as THREE.Mesh | undefined)?.isMesh).toBe(true);
+    expect(houndBody && view.actorOf(houndBody)).toBeNull();
+    // The hound's model lands later: only its capsules change, the sentries keep their actors.
+    const sentryActors = [...view.actors];
+    view.useEnemyAssets(only(hound));
+    expect(view.actors.filter((a) => sentryActors.includes(a))).toHaveLength(sentryActors.length);
+    for (const bodies of view.world.enemies.values()) {
+      for (const body of bodies) {
+        const kind = body.userData.enemyKind;
+        const actor = view.actorOf(body);
+        if (kind === 'cog-sentry' || kind === 'spring-hound') expect(actor?.kind).toBe(kind);
+        else {
+          expect(actor).toBeNull();
+          expect((body as THREE.Mesh).isMesh).toBe(true);
+        }
+      }
+    }
+    expect(view.world.enemies.get(mixed.room)?.map((b) => view.actorOf(b)?.kind)).toEqual(
+      view.world.enemies.get(mixed.room)?.map((b) => b.userData.enemyKind),
+    );
+    view.dispose();
+    expect(sentry.liveActors + hound.liveActors).toBe(0);
+  });
+
+  it('starts a mixed fight where each enemy plays its own model or its capsule', async () => {
+    const sentry = await loadTestModel('cog-sentry');
+    const view = mountFloorView(new THREE.Scene(), new THREE.Group(), mixed.seed);
+    view.useEnemyAssets(only(sentry));
+    const rig = openHook(view, mixed.room);
+    rig.step(1.3);
+    const session = await rig.hook.ready();
+    if (!session) throw new Error('no session');
+    const kinds = session.enemies.map((e) => enemyKindOf(e.id)).sort();
+    expect(kinds).toEqual(['cog-sentry', 'spring-hound']);
+    for (const { id, body } of session.enemies) {
+      expect(body.userData.enemyKind).toBe(enemyKindOf(id));
+      const actor = view.actorOf(body);
+      if (enemyKindOf(id) === 'cog-sentry') expect(actor?.kind).toBe('cog-sentry');
+      else {
+        expect(actor).toBeNull();
+        expect((body as THREE.Mesh).isMesh).toBe(true);
+      }
+    }
+    rig.hook.dispose();
+    view.dispose();
+
+    // With both models, both enemies play actors of their own kind.
+    const hound = await loadTestModel('spring-hound');
+    const both = mountFloorView(new THREE.Scene(), new THREE.Group(), mixed.seed);
+    both.useEnemyAssets(new Map([...only(sentry), ...only(hound)]));
+    const rig2 = openHook(both, mixed.room);
+    rig2.step(1.3);
+    const session2 = await rig2.hook.ready();
+    for (const { id, body } of session2?.enemies ?? []) {
+      expect(both.actorOf(body)?.kind).toBe(enemyKindOf(id));
+    }
+    expect(session2?.enemies).toHaveLength(2);
+    rig2.hook.dispose();
+    both.dispose();
+  }, 30_000);
+
+  it('leaves no scene children, mixers or shared-resource disposals across three rebuilds', async () => {
+    const sentry = await loadTestModel('cog-sentry');
+    const hound = await loadTestModel('spring-hound');
+    const models = new Map([...only(sentry), ...only(hound)]);
+    const disposed = new Set<THREE.BufferGeometry>();
+    for (const model of models.values()) {
+      model.template.traverse((o) => {
+        if (o instanceof THREE.Mesh)
+          o.geometry.addEventListener('dispose', () => disposed.add(o.geometry));
+      });
+    }
+    const scene = new THREE.Scene();
+    const baseline = scene.children.length;
+    const seen: { mixer: THREE.AnimationMixer; actor: { disposed: boolean } }[] = [];
+    // Each actor's own material clones, and whether they have been disposed.
+    const cloned = new Map<THREE.Material, boolean>();
+    let previous: FloorView | null = null;
+    for (const seed of [mixed.seed, SEED, mixed.seed]) {
+      const view = mountFloorView(scene, new THREE.Group(), seed);
+      view.useEnemyAssets(models);
+      expect(view.actors.length).toBeGreaterThan(0);
+      for (const actor of view.actors) {
+        seen.push({ mixer: actor.mixer, actor });
+        actor.object.traverse((o) => {
+          if (!(o instanceof THREE.Mesh)) return;
+          const material = o.material as THREE.Material;
+          if (cloned.has(material)) return;
+          cloned.set(material, false);
+          material.addEventListener('dispose', () => cloned.set(material, true));
+        });
+      }
+      const head = new THREE.Object3D();
+      for (let i = 0; i < 10; i++) view.update(head, DT);
+      // The previous floor is gone and nothing it owned is left on the scene or the assets.
+      previous?.dispose();
+      expect(sentry.liveActors + hound.liveActors).toBe(view.actors.length);
+      expect(disposed.size).toBe(0);
+      previous = view;
+    }
+    previous?.dispose();
+    expect(scene.children).toHaveLength(baseline);
+    expect(sentry.liveActors + hound.liveActors).toBe(0);
+    for (const { mixer, actor } of seen) {
+      expect(actor.disposed).toBe(true);
+      expect(mixer.stats.actions.total).toBe(0);
+      expect(mixer.stats.bindings.total).toBe(0);
+    }
+    expect(cloned.size).toBeGreaterThan(0);
+    expect([...cloned.values()].every(Boolean)).toBe(true);
+    // The shared geometry outlives every floor; it goes only with the assets themselves.
+    expect(disposed.size).toBe(0);
+    for (const model of models.values()) model.dispose();
+    expect(disposed.size).toBeGreaterThan(0);
+  });
 });

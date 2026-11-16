@@ -4,7 +4,7 @@ import { chooseEncounter } from '../combat/encounter-choice.ts';
 import { buildTableGreybox, disposeTable, TABLE_NODES } from '../combat/table-greybox.ts';
 import type { RoomTemplate } from '../content/rooms.ts';
 import { isValidSeed, normalizeSeed, randomSeed } from '../core/rng.ts';
-import type { SentryActor, SentryAsset } from '../enemies/sentry-asset.ts';
+import type { EnemyActor, EnemyAsset } from '../enemies/enemy-asset.ts';
 import { generateFloor } from '../floor/generate.ts';
 import { PALETTE } from '../palette.ts';
 import { yawFromMatrix } from '../xr/locomotion.ts';
@@ -53,15 +53,20 @@ export interface FloorView {
   /** Rigid nodes (the gear-shaft crown gear) this floor turns each frame. */
   readonly spinnerCount: number;
   /**
-   * Swaps every Cog Sentry placeholder for a spawned actor, as soon as no fight is running. Bodies
-   * already removed (cleared rooms) are skipped. `prepare` runs on each new actor before it is
-   * placed. Without this call the capsules stay.
+   * Adds loaded models, keyed by enemy kind, and swaps each placeholder of that kind for a spawned
+   * actor as soon as no fight is running. Calls accumulate, so models can arrive one at a time;
+   * kinds never given keep their capsules. Bodies already removed (cleared rooms) are skipped.
+   * `prepare` runs on each new actor before it is placed. The assets stay the caller's: disposing
+   * the floor disposes its actors, never the shared assets.
    */
-  useSentryAsset(asset: SentryAsset, prepare?: (actor: SentryActor) => void): void;
+  useEnemyAssets(
+    assets: ReadonlyMap<string, EnemyAsset>,
+    prepare?: (actor: EnemyActor) => void,
+  ): void;
   /** The actor standing in for an automaton body, or null for a placeholder. */
-  actorOf(body: THREE.Object3D): SentryActor | null;
-  /** Live sentry actors on this floor. */
-  readonly actors: readonly SentryActor[];
+  actorOf(body: THREE.Object3D): EnemyActor | null;
+  /** Live automaton actors on this floor. */
+  readonly actors: readonly EnemyActor[];
   /**
    * While true, `update` still runs the encounter (so a finished fight folds away) but never starts a
    * new one. The game flow sets it outside exploration, so a lost fight cannot re-trigger.
@@ -129,19 +134,22 @@ export function mountFloorView(
     },
   });
   const at = new THREE.Vector3();
-  const actors = new Map<THREE.Object3D, SentryActor>();
-  let sentry: { asset: SentryAsset; prepare?: ((actor: SentryActor) => void) | undefined } | null =
-    null;
-  const dressSentries = (): void => {
-    if (!sentry || encounter.phase !== 'idle') return;
-    const { asset, prepare } = sentry;
-    sentry = null;
+  const actors = new Map<THREE.Object3D, EnemyActor>();
+  const models = new Map<
+    string,
+    { asset: EnemyAsset; prepare?: ((actor: EnemyActor) => void) | undefined }
+  >();
+  let undressed = false;
+  const dressEnemies = (): void => {
+    if (!undressed || encounter.phase !== 'idle') return;
+    undressed = false;
     for (const [room, bodies] of world.enemies) {
       for (const body of [...bodies]) {
-        const placeholder = body.userData.enemyKind === 'cog-sentry' && !actors.has(body);
-        if (!placeholder || body.userData.tier === 'guardian' || !body.parent) continue;
-        const actor = asset.spawn();
-        prepare?.(actor);
+        const kind = body.userData.enemyKind;
+        const model = typeof kind === 'string' ? models.get(kind) : undefined;
+        if (!model || actors.has(body) || !body.parent) continue;
+        const actor = model.asset.spawn();
+        model.prepare?.(actor);
         if (world.replaceEnemy(room, body, actor.object)) actors.set(actor.object, actor);
         else actor.dispose();
       }
@@ -162,7 +170,7 @@ export function mountFloorView(
         s.node.quaternion.setFromAxisAngle(s.axis, rigidAngle(s.radPerSec, clock));
     }
   };
-  const disposeActor = (actor: SentryActor): void => {
+  const disposeActor = (actor: EnemyActor): void => {
     actors.delete(actor.object);
     actor.dispose();
   };
@@ -198,9 +206,10 @@ export function mountFloorView(
     actorOf(body) {
       return actors.get(body) ?? null;
     },
-    useSentryAsset(asset, prepare) {
-      sentry = { asset, prepare };
-      dressSentries();
+    useEnemyAssets(assets, prepare) {
+      for (const [kind, asset] of assets) models.set(kind, { asset, prepare });
+      undressed = true;
+      dressEnemies();
     },
     useRoomAsset(templateId, instantiate, rigidNodes = []) {
       let dressed = 0;
@@ -228,7 +237,8 @@ export function mountFloorView(
     dispose() {
       spinners.length = 0;
       for (const actor of [...actors.values()]) disposeActor(actor);
-      sentry = null;
+      models.clear();
+      undressed = false;
       encounter.dispose();
       if (greybox) disposeTable(greybox);
       greybox = null;
@@ -272,7 +282,7 @@ export function mountFloorView(
     update(head, dt) {
       spin(dt);
       encounter.update(dt);
-      dressSentries();
+      dressEnemies();
       // Clips run on real seconds; the freeze is a pose, not a slowed clock.
       for (const actor of [...actors.values()]) {
         if (!actor.object.parent) {
