@@ -56,9 +56,9 @@ KTX2 check: `?view=material-proof&tex=ktx2` loads the copies through `KTX2Loader
 | Gate | Status | Evidence |
 | --- | --- | --- |
 | Technical | Pass on desktop | All 6 raw sha256 values match `provenance.json`. All 19 runtime maps fully decode as 1024x1024 RGB and match the sha256 in `report.json`. Every `materials.json` reference exists. The rebuild is byte-identical. Seam, mip and live-render checks are in the table above, and `tests/materials.test.ts` covers manifest parsing, colour spaces, ORM binding, tile repeat and the KTX2 copies. All 19 KTX2 copies render within 2.4 of 255 of the PNGs. |
-| Creative | Pending owner review | Live sheet and 2x2 sheet in `docs/verification/` |
+| Creative | Approved by Paul, 2026-11-15 | Asked "Do you approve the six materials as shown in the two review sheets?" about `docs/verification/p4-materials-live.jpg` and `p4-materials-2x2.jpg`. Paul answered: "Yes" |
 | Rights | Pending | Generated under Paul's Higgsfield account with spend approved in the PRD. The plan's commercial-use terms are not recorded in the repo. |
-| Owner | Pending | Paul has not reviewed the set |
+| Owner | Approved by Paul, 2026-11-15 | Same answer, for use as the slice's core room materials |
 
 Not tested: Quest 3 on-device rendering and memory, a missing-texture fallback (no consumer defines one yet, and `loadPbrSet` rejects the whole set when any map fails to load), and dispose and reload cycles (the room loader in P4-T4 and P4-T7 owns texture lifetime).
 
