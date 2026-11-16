@@ -1,0 +1,231 @@
+import type { RunRngState } from '../core/rng.ts';
+
+/** Steam (energy) refilled at the start of every player turn (D3). */
+export const STEAM_PER_TURN = 3;
+/** Cards drawn at the start of every player turn (D3). */
+export const DRAW_PER_TURN = 5;
+
+/** `'player'` or an enemy id. Enemy ids must never be `'player'`. */
+export type ActorId = string;
+export const PLAYER_ID = 'player';
+
+export type StatusId = 'weak' | 'vulnerable' | 'overheat' | 'wound-up';
+/** Stack counts by status. A status with zero stacks is absent. */
+export type Statuses = Readonly<Partial<Record<StatusId, number>>>;
+
+/**
+ * A number, or `base + dice × <caller-supplied dice result>`. Enemy moves may only use plain numbers;
+ * a card using a dice amount must be played with a `dice` value.
+ */
+export type Amount = number | { readonly base?: number; readonly dice: number };
+
+/**
+ * Who an effect lands on, relative to the actor resolving it: `'self'` is the actor, `'target'` is the
+ * card's chosen enemy (for an enemy move, the player), `'all-opponents'` is every living enemy (for an
+ * enemy move, the player).
+ */
+export type EffectTarget = 'self' | 'target' | 'all-opponents';
+
+export type Effect =
+  | {
+      readonly type: 'damage';
+      readonly amount: Amount;
+      /** Repeat the hit this many times (default 1). Each hit is modified and blocked separately. */
+      readonly hits?: number;
+      readonly target: 'target' | 'all-opponents';
+    }
+  | { readonly type: 'block'; readonly amount: Amount }
+  | { readonly type: 'gain-steam'; readonly amount: Amount }
+  | { readonly type: 'lose-steam'; readonly amount: Amount }
+  | {
+      readonly type: 'apply-status';
+      readonly status: StatusId;
+      readonly stacks: Amount;
+      readonly target: EffectTarget;
+    }
+  | { readonly type: 'draw'; readonly amount: Amount };
+
+/** How a card picks its target: an enemy, or nothing (dropped on the table, D5). */
+export type CardTargetRule = 'enemy' | 'none';
+
+/**
+ * The engine's view of a card. Content (P2-T2) may extend this interface with extra fields; the engine
+ * carries the whole object through the piles untouched.
+ */
+export interface CardDef {
+  readonly id: string;
+  readonly cost: number;
+  readonly target: CardTargetRule;
+  readonly effects: readonly Effect[];
+  /** Goes to the exhaust pile instead of discard after it is played. */
+  readonly exhaust?: boolean;
+}
+
+/** A card instance in a pile. `uid` is unique within one combat. */
+export interface CombatCard {
+  readonly uid: number;
+  readonly def: CardDef;
+}
+
+export type IntentKind = 'attack' | 'defend' | 'buff' | 'debuff' | 'attack-debuff' | 'unknown';
+
+/** One enemy move. Its effects resolve from the enemy's point of view (see `EffectTarget`). */
+export interface EnemyMove {
+  readonly id: string;
+  readonly intent: IntentKind;
+  readonly effects: readonly Effect[];
+  /** Relative weight for the `ai`-stream pick (default 1). */
+  readonly weight?: number;
+}
+
+export interface Fighter {
+  readonly hp: number;
+  readonly maxHp: number;
+  readonly block: number;
+  readonly statuses: Statuses;
+}
+
+export interface PlayerState extends Fighter {
+  readonly steam: number;
+}
+
+export interface EnemyState extends Fighter {
+  readonly id: string;
+  readonly name: string;
+  readonly moves: readonly EnemyMove[];
+  /** The visible next intent; `null` once the enemy is dead. */
+  readonly intent: EnemyMove | null;
+}
+
+export interface Piles {
+  /** Index 0 is the top of the draw pile. */
+  readonly draw: readonly CombatCard[];
+  readonly hand: readonly CombatCard[];
+  readonly discard: readonly CombatCard[];
+  readonly exhaust: readonly CombatCard[];
+}
+
+/**
+ * `idle` before start-combat; `awaiting-turn` when start-turn is next; `player` while cards may be
+ * played; `enemy` when enemy-act is next; `over` once the combat is won or lost.
+ */
+export type CombatPhase = 'idle' | 'awaiting-turn' | 'player' | 'enemy' | 'over';
+export type CombatOutcome = 'won' | 'lost' | null;
+
+/** Plain, JSON-serializable combat state. Never mutated by `apply`. */
+export interface CombatState {
+  readonly phase: CombatPhase;
+  readonly outcome: CombatOutcome;
+  /** Player turn number; 0 before the first start-turn. */
+  readonly turn: number;
+  readonly player: PlayerState;
+  readonly enemies: readonly EnemyState[];
+  readonly piles: Piles;
+  /** Run RNG snapshot. The engine draws from `deck` (shuffles) and `ai` (intents) only. */
+  readonly rng: RunRngState;
+}
+
+export interface EnemySetup {
+  readonly id: string;
+  readonly name: string;
+  readonly hp: number;
+  readonly maxHp?: number;
+  readonly moves: readonly EnemyMove[];
+  readonly statuses?: Statuses;
+}
+
+export interface PlayerSetup {
+  readonly hp: number;
+  readonly maxHp: number;
+  readonly statuses?: Statuses;
+}
+
+export type Action =
+  | {
+      readonly type: 'start-combat';
+      readonly player: PlayerSetup;
+      readonly deck: readonly CardDef[];
+      readonly enemies: readonly EnemySetup[];
+      readonly rng: RunRngState;
+    }
+  | { readonly type: 'start-turn' }
+  | {
+      readonly type: 'play-card';
+      readonly uid: number;
+      /** Enemy id, required when the card's target rule is `'enemy'`. */
+      readonly target?: string;
+      /** Dice result resolved by the caller from the `dice` stream before presentation (D1). */
+      readonly dice?: number;
+    }
+  | { readonly type: 'end-turn' }
+  | { readonly type: 'enemy-act' };
+
+export type DamageSource = 'attack' | 'overheat';
+
+/** Presentation events, in resolution order. Every field is always present, so logs serialize stably. */
+export type CombatEvent =
+  | {
+      readonly type: 'combat-started';
+      readonly enemies: readonly string[];
+      readonly deckSize: number;
+    }
+  | { readonly type: 'turn-started'; readonly turn: number }
+  | { readonly type: 'turn-ended'; readonly turn: number }
+  | { readonly type: 'steam-changed'; readonly from: number; readonly to: number }
+  | { readonly type: 'card-drawn'; readonly uid: number; readonly cardId: string }
+  | { readonly type: 'reshuffled'; readonly count: number }
+  | {
+      readonly type: 'card-played';
+      readonly uid: number;
+      readonly cardId: string;
+      readonly target: string | null;
+      readonly dice: number | null;
+    }
+  | { readonly type: 'card-discarded'; readonly uid: number; readonly cardId: string }
+  | { readonly type: 'card-exhausted'; readonly uid: number; readonly cardId: string }
+  | {
+      readonly type: 'damage-dealt';
+      readonly source: ActorId | null;
+      readonly target: ActorId;
+      readonly kind: DamageSource;
+      /** Damage after modifiers, before block. */
+      readonly amount: number;
+      readonly blocked: number;
+      readonly hpLost: number;
+    }
+  | { readonly type: 'block-gained'; readonly target: ActorId; readonly amount: number }
+  | { readonly type: 'block-cleared'; readonly target: ActorId; readonly amount: number }
+  | {
+      readonly type: 'status-applied';
+      readonly target: ActorId;
+      readonly status: StatusId;
+      readonly stacks: number;
+      readonly total: number;
+    }
+  | {
+      readonly type: 'status-ticked';
+      readonly target: ActorId;
+      readonly status: StatusId;
+      readonly from: number;
+      readonly to: number;
+    }
+  | {
+      readonly type: 'enemy-intent';
+      readonly enemyId: string;
+      readonly moveId: string;
+      readonly intent: IntentKind;
+    }
+  | { readonly type: 'enemy-acted'; readonly enemyId: string; readonly moveId: string }
+  | { readonly type: 'enemy-died'; readonly enemyId: string }
+  | { readonly type: 'combat-won' }
+  | { readonly type: 'combat-lost' };
+
+export interface ApplyResult {
+  readonly state: CombatState;
+  readonly events: readonly CombatEvent[];
+}
+
+/** Thrown by `apply` for an action that is illegal in the given state. */
+export class RulesError extends Error {
+  override readonly name = 'RulesError';
+}

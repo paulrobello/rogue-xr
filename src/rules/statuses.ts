@@ -1,0 +1,56 @@
+import type { Fighter, Statuses, StatusId } from './types.ts';
+
+/**
+ * Status semantics. "Owner" is the fighter carrying the status; a turn boundary is the owner's own
+ * turn (the player's turn, or one enemy's action during enemy-act).
+ *
+ * - Weak: the owner's attack damage is multiplied by 0.75, rounded down. Loses 1 stack at the end of
+ *   the owner's turn.
+ * - Vulnerable: attack damage taken by the owner is multiplied by 1.5, rounded down. Loses 1 stack at
+ *   the end of the owner's turn.
+ * - Overheat: at the start of the owner's turn the owner loses HP equal to its stacks, ignoring block,
+ *   Weak and Vulnerable; then it loses 1 stack.
+ * - Wound-up: each of the owner's attack hits deals +stacks damage, added before Weak and Vulnerable.
+ *   It never decays and lasts the whole combat.
+ */
+export const STATUS_IDS: readonly StatusId[] = ['weak', 'vulnerable', 'overheat', 'wound-up'];
+
+/** Statuses that lose one stack at the end of their owner's turn. */
+export const DECAYS_AT_TURN_END: readonly StatusId[] = ['weak', 'vulnerable'];
+
+export const WEAK_MULTIPLIER = 0.75;
+export const VULNERABLE_MULTIPLIER = 1.5;
+
+export function stacks(statuses: Statuses, id: StatusId): number {
+  return statuses[id] ?? 0;
+}
+
+/** Adds stacks (which may be negative) and drops the status when it reaches zero. */
+export function withStacks(statuses: Statuses, id: StatusId, delta: number): Statuses {
+  const next = Math.max(0, stacks(statuses, id) + delta);
+  const out: Partial<Record<StatusId, number>> = {};
+  for (const key of STATUS_IDS) {
+    const value = key === id ? next : stacks(statuses, key);
+    if (value > 0) out[key] = value;
+  }
+  return out;
+}
+
+/**
+ * Attack damage of one hit after the attacker's and defender's statuses, before block:
+ * `floor(floor((base + Wound-up) × Weak) × Vulnerable)`, never below 0.
+ */
+export function attackDamage(base: number, attacker: Fighter, defender: Fighter): number {
+  let damage = base + stacks(attacker.statuses, 'wound-up');
+  if (stacks(attacker.statuses, 'weak') > 0) damage = Math.floor(damage * WEAK_MULTIPLIER);
+  if (stacks(defender.statuses, 'vulnerable') > 0) {
+    damage = Math.floor(damage * VULNERABLE_MULTIPLIER);
+  }
+  return Math.max(0, damage);
+}
+
+/** Splits incoming damage into the part block absorbs and the part that reaches HP. */
+export function absorb(damage: number, block: number): { blocked: number; hpLost: number } {
+  const blocked = Math.min(block, damage);
+  return { blocked, hpLost: damage - blocked };
+}
