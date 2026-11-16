@@ -1095,7 +1095,7 @@
   "external_checks": {
     "check-audio-loops": {
       "exit": 0,
-      "stdout": "/Users/probello/Repos/rogue-xr-p0/public/assets/audio/sfx/sigil-trace.ogg wrap    521 / p99.9    620   head  -13.7 dB   tail  -14.0 dB   min  -26.0 dB   ok\n\nPASS: 1 file(s) wrap cleanly with no interior dropout"
+      "stdout": "public/assets/audio/sfx/sigil-trace.ogg wrap    521 / p99.9    620   head  -13.7 dB   tail  -14.0 dB   min  -26.0 dB   ok\n\nPASS: 1 file(s) wrap cleanly with no interior dropout"
     },
     "check-mono-compatibility": {
       "exit": 0,

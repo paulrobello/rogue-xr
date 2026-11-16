@@ -37,6 +37,11 @@ from pathlib import Path
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
+
+
+def repo_relative(output: bytes) -> str:
+    """Tool output with the checkout's absolute path removed, so reports carry no machine paths."""
+    return output.decode().strip().replace(f"{ROOT}/", "")
 AUDIO_SRC = ROOT / "assets-source" / "audio"
 SR = 48000
 SFX_LUFS = -16.0
@@ -280,10 +285,10 @@ def external_checks(files: list[Path], loops: list[Path], stereo: list[Path]) ->
     mono_script = SKILL_SCRIPTS / "check-mono-compatibility.py"
     if loops and loop_script.exists():
         proc = run([sys.executable, "-I", str(loop_script), *map(str, loops)])
-        out["check-audio-loops"] = {"exit": proc.returncode, "stdout": proc.stdout.decode().strip()}
+        out["check-audio-loops"] = {"exit": proc.returncode, "stdout": repo_relative(proc.stdout)}
     if stereo and mono_script.exists():
         proc = run([sys.executable, "-I", str(mono_script), *map(str, stereo)])
-        out["check-mono-compatibility"] = {"exit": proc.returncode, "stdout": proc.stdout.decode().strip()}
+        out["check-mono-compatibility"] = {"exit": proc.returncode, "stdout": repo_relative(proc.stdout)}
     return out
 
 
