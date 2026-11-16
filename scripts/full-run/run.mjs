@@ -4,6 +4,8 @@
 // room through its doors, a mouse drag turns the view, cards are dragged at an automaton or onto
 // the table, `T` throws dice, sigils are traced with the mouse on the plate and `E` ends the turn.
 // The `?debug` hooks are read for state and screen positions only; nothing here writes rules state.
+// A run clears the non-elite fights in the side wings first, then the route to the guardian; an
+// elite is fought only when it stands on that route (see the policy block below).
 //
 //   node scripts/full-run/run.mjs [--base http://localhost:4260] [--out /tmp/full-run]
 //        [--seeds SPIRE001,SPIRE002] [--death SPIRE001] [--headed]
@@ -20,7 +22,7 @@ const { values: opts } = parseArgs({
   options: {
     base: { type: 'string', default: 'http://localhost:4260' },
     out: { type: 'string', default: '/tmp/full-run' },
-    seeds: { type: 'string', default: 'SPIRE001,SPIRE002,SPIRE003,SPIRE004,SPIRE005' },
+    seeds: { type: 'string', default: 'SPIRE001,SPIRE002,SPIRE004,SPIRE010,SPIRE034' },
     death: { type: 'string', default: 'SPIRE001' },
     headed: { type: 'boolean', default: false },
     'max-turns': { type: 'string', default: '45' },
@@ -36,6 +38,264 @@ const MAX_TURNS = Number(opts['max-turns']);
 /** Degrees of turn per pixel of drag (src/desktop/controls.ts LOOK_DEGREES_PER_PIXEL). */
 const LOOK_DEG_PER_PX = 0.23;
 const MUSIC = /\/audio\/music\/|music not found/;
+
+/**
+ * The bot's policy. It reads only what a player sees: hand, steam, hp, block, statuses and the
+ * intents on the enemies. It never reads the draw pile, the rng streams or an enemy's later moves.
+ * A turn is planned by searching the orders of the cards in hand with expected dice rolls and a
+ * perfectly traced sigil (x1.25), scoring damage dealt against the hp the visible intents would take.
+ */
+const POLICY = {
+  hpWeight: 4,
+  killBonus: 4,
+  woundValue: 6,
+  overheatValue: 0.7,
+  sigilPower: 1.25,
+  rewardMin: 3,
+  dupPenalty: 1,
+  optional: 'regular',
+};
+const DIE_MEAN = { 'brass-d6': 3.5, 'glass-d8': 4.5 };
+
+const stackOf = (st, id) => st?.[id] || 0;
+
+/** Mirrors rules/statuses.ts attackDamage. */
+function hitDamage(base, attacker, defender) {
+  let d = base + stackOf(attacker, 'wound-up');
+  if (stackOf(attacker, 'weak') > 0) d = Math.floor(d * 0.75);
+  if (stackOf(defender, 'vulnerable') > 0) d = Math.floor(d * 1.5);
+  return Math.max(0, d);
+}
+
+function amountOf(a, card) {
+  if (typeof a === 'number') return a;
+  const mean = DIE_MEAN[card.dice] ?? 3.5;
+  return (a.base ?? 0) + a.dice * mean;
+}
+
+function scaled(x, card) {
+  if (!card.sigil) return Math.floor(x);
+  return Math.floor(x * POLICY.sigilPower + 0.5 + 1e-9);
+}
+
+function cloneModel(m) {
+  return {
+    hp: m.hp,
+    block: m.block,
+    steam: m.steam,
+    pst: { ...m.pst },
+    bonus: m.bonus,
+    enemies: m.enemies.map((e) => ({ ...e, st: { ...e.st } })),
+  };
+}
+
+/** Plays `card` at `target` (enemy id or null) into model `m`, in place. */
+function applyCard(m, card, target) {
+  m.steam -= card.cost;
+  for (const e of card.effects) {
+    if (e.type === 'damage') {
+      const base = scaled(amountOf(e.amount, card), card);
+      const targets =
+        e.target === 'all-opponents'
+          ? m.enemies.filter((x) => x.hp > 0)
+          : m.enemies.filter((x) => x.id === target && x.hp > 0);
+      for (let h = 0; h < (e.hits ?? 1); h++) {
+        for (const t of targets) {
+          if (t.hp <= 0) continue;
+          const d = hitDamage(base, m.pst, t.st);
+          const blocked = Math.min(t.block, d);
+          t.block -= blocked;
+          const lost = Math.min(t.hp, d - blocked);
+          t.hp -= lost;
+          t.dealt += lost;
+        }
+      }
+    } else if (e.type === 'block') {
+      m.block += scaled(amountOf(e.amount, card), card);
+    } else if (e.type === 'gain-steam') {
+      m.steam += amountOf(e.amount, card);
+      m.bonus += 0.5;
+    } else if (e.type === 'draw') {
+      m.bonus += 2.5 * amountOf(e.amount, card);
+    } else if (e.type === 'apply-status') {
+      const n = scaled(amountOf(e.stacks, card), card);
+      if (e.target === 'self') {
+        m.pst[e.status] = stackOf(m.pst, e.status) + n;
+        if (e.status === 'wound-up') m.bonus += POLICY.woundValue * n * m.woundScale;
+      } else {
+        const targets =
+          e.target === 'all-opponents'
+            ? m.enemies.filter((x) => x.hp > 0)
+            : m.enemies.filter((x) => x.id === target && x.hp > 0);
+        for (const t of targets) {
+          t.st[e.status] = stackOf(t.st, e.status) + n;
+          if (e.status === 'overheat') {
+            const had = stackOf(t.st, 'overheat') - n;
+            const total = ((had + n) * (had + n + 1)) / 2 - (had * (had + 1)) / 2;
+            m.bonus += Math.min(total, t.hp) * POLICY.overheatValue;
+          }
+        }
+      }
+    }
+  }
+}
+
+/** Score of the position after the player's turn: damage progress minus the hp the visible intents take. */
+function leaf(m) {
+  let score = m.bonus;
+  for (const e of m.enemies) {
+    score += e.dealt;
+    if (e.hp <= 0) score += POLICY.killBonus;
+  }
+  if (m.enemies.every((e) => e.hp <= 0)) return score + 1000;
+  let block = m.block;
+  let hpLoss = 0;
+  for (const e of m.enemies) {
+    if (e.hp <= 0 || !e.intent) continue;
+    for (const f of e.intent.effects) {
+      if (f.type !== 'damage') continue;
+      for (let h = 0; h < (f.hits ?? 1); h++) {
+        const d = hitDamage(typeof f.amount === 'number' ? f.amount : 0, e.st, m.pst);
+        const absorbed = Math.min(block, d);
+        block -= absorbed;
+        hpLoss += d - absorbed;
+      }
+    }
+    // The enemy's own block, buffs and overheat tick on its next action are not modelled.
+  }
+  // Dying to the visible intents is the one outcome that ends the run.
+  if (hpLoss >= m.hp) score -= 500;
+  return score - POLICY.hpWeight * Math.min(hpLoss, m.hp);
+}
+
+const KIND_ORDER = (c) =>
+  c.effects.some((e) => e.type === 'apply-status' && e.target === 'self')
+    ? 0
+    : c.effects.some((e) => e.type === 'gain-steam' || e.type === 'draw')
+      ? 1
+      : c.effects.some((e) => e.type === 'apply-status')
+        ? 2
+        : c.effects.some((e) => e.type === 'damage')
+          ? 3
+          : 4;
+
+/** The next card to play this turn as `{ uid, id, enemy }`, or null to end the turn. */
+function choose(s, failed = new Set()) {
+  const live = s.enemies.filter((e) => e.hp > 0);
+  if (!live.length) return null;
+  const hand = s.hand.filter((c) => !failed.has(c.uid));
+  const totalHp = live.reduce((n, e) => n + e.hp, 0);
+  const root = {
+    hp: s.player.hp,
+    block: s.player.block,
+    steam: s.player.steam,
+    pst: { ...(s.player.statuses ?? {}) },
+    bonus: 0,
+    woundScale: Math.max(0.5, Math.min(1.5, totalHp / 60)),
+    enemies: live.map((e) => ({
+      id: e.id,
+      hp: e.hp,
+      block: e.block,
+      st: { ...(e.statuses ?? {}) },
+      intent: e.intent ?? null,
+      dealt: 0,
+    })),
+  };
+  let best = null;
+  const search = (m, cards, first, depth) => {
+    const value = leaf(m);
+    if (first) {
+      const better =
+        !best ||
+        value > best.value + 1e-9 ||
+        (Math.abs(value - best.value) <= 1e-9 &&
+          (depth < best.depth ||
+            (depth === best.depth && KIND_ORDER(first.card) < KIND_ORDER(best.first.card))));
+      if (better) best = { value, first, depth };
+    }
+    if (depth >= 7) return;
+    const seen = new Set();
+    for (let i = 0; i < cards.length; i++) {
+      const card = cards[i];
+      if (card.cost > m.steam) continue;
+      const targets =
+        card.target === 'enemy' ? m.enemies.filter((e) => e.hp > 0).map((e) => e.id) : [null];
+      for (const target of targets) {
+        const key = `${card.id}:${target}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        const next = cloneModel(m);
+        next.woundScale = m.woundScale;
+        applyCard(next, card, target);
+        search(
+          next,
+          cards.filter((_, j) => j !== i),
+          first ?? { card, target },
+          depth + 1,
+        );
+      }
+    }
+  };
+  search(root, hand, null, 0);
+  if (!best) return null;
+  // Only play when it beats ending the turn now.
+  const idle = leaf(root);
+  if (best.value <= idle + 1e-9) return null;
+  const { card, target } = best.first;
+  return { ...card, enemy: target };
+}
+
+/**
+ * Side-wing encounter rooms to clear before the route to the guardian, wing by wing in door order.
+ * `rooms` are `{ room, wing, depth, tier, count }`; `mode` is none, cheap (a lone automaton) or regular.
+ * A wing stops at its elite: the rooms behind it are only reachable through that fight.
+ */
+function optionalRooms(rooms, path, mode) {
+  if (mode === 'none') return [];
+  const onPath = new Set(path);
+  const wings = new Map();
+  for (const r of rooms) {
+    if (r.room === 0 || onPath.has(r.room)) continue;
+    wings.set(r.wing, [...(wings.get(r.wing) ?? []), r]);
+  }
+  const out = [];
+  for (const list of wings.values()) {
+    list.sort((a, b) => a.depth - b.depth);
+    for (const r of list) {
+      if (!r.tier) continue;
+      if (r.tier === 'elite' || (mode === 'cheap' && r.count > 1)) break;
+      out.push(r.room);
+    }
+  }
+  return out;
+}
+
+const REWARD_SCORE = {
+  'arc-bolt': 9,
+  'furnace-brand': 8,
+  'escapement-hammer': 7,
+  'warding-glyph': 7,
+  'spanner-jam': 6,
+  overwind: 6,
+  'ratchet-flurry': 5,
+  'time-spiral': 5,
+  cogstorm: 4,
+  'release-valve': 4,
+  'lucky-rivets': 3,
+  'cog-toss': 4,
+  'rivet-volley': 2,
+};
+
+/** Best offered card for the deck (or null to skip). */
+function pickReward(offer, deck) {
+  let best = null;
+  for (const id of offer.cards) {
+    const have = deck.filter((d) => d === id).length;
+    const score = (REWARD_SCORE[id] ?? 0) - (id === 'furnace-brand' ? 0 : POLICY.dupPenalty * have);
+    if (!best || score > best.score) best = { id, score };
+  }
+  return best && best.score >= POLICY.rewardMin ? best.id : null;
+}
 
 /** Runs before any app script: catches the renderer and scenes, and the text each canvas draws. */
 const INIT = `(() => {
@@ -128,6 +388,7 @@ async function runSeed(seed, mode) {
     else if (msg.type() === 'warning') report.console.warnings.push(text);
   });
   page.on('pageerror', (error) => report.console.errors.push(`pageerror: ${error}`));
+  page.on('crash', () => fail('page-crash'));
   page.on('requestfailed', (req) =>
     (MUSIC.test(req.url()) ? report.network.music : report.network.failed).push(
       `${req.url()} ${req.failure()?.errorText ?? ''}`,
@@ -230,8 +491,16 @@ async function runSeed(seed, mode) {
     await shot('explore-start');
     await lookAround();
 
-    // Encounter rooms along the route to the guardian, in order.
-    const targets = report.route.filter((r) => r.encounter);
+    // Side-wing fights first (cards and cogs before the elite and guardian), then the route's encounters.
+    const route = report.route.filter((r) => r.encounter);
+    const rooms = await ev(() => window.__fr.encounters());
+    const side = optionalRooms(
+      rooms,
+      report.route.map((r) => r.room),
+      POLICY.optional,
+    ).map((room) => ({ room, tier: rooms.find((r) => r.room === room).tier }));
+    report.sideFights = side.map((t) => t.room);
+    const targets = [...side, ...route];
     for (const target of targets) {
       const result = await approachAndFight(target);
       if (result === 'stop') break;
@@ -413,8 +682,8 @@ async function runSeed(seed, mode) {
     await wait(700);
     const offer = await ev(() => window.__flow.flow.offer);
     await shot(`reward-r${room}`);
-    const pick = offer?.cards?.[0] ?? null;
     const before = await ev(() => window.__flow.flow.run);
+    const pick = offer ? pickReward(offer, before.deck) : null;
     await clickControl(pick ? `reward-${pick}` : 'reward-skip-skip');
     await until('reward-claimed', () => window.__flow.flow.phase === 'explore');
     const after = await ev(() => window.__flow.flow.run);
@@ -499,7 +768,7 @@ async function runSeed(seed, mode) {
     let shotMid = false;
     for (let turn = 0; turn < MAX_TURNS; turn++) {
       const failed = new Set();
-      for (let plays = 0; plays < 12; plays++) {
+      for (let plays = 0; plays < 20; plays++) {
         s = await ev(() => window.__fr.snap());
         if (s.outcome) break;
         const desync = await ev(() => window.__fr.readoutDesync());
@@ -550,35 +819,6 @@ async function runSeed(seed, mode) {
         fail('run-hp-desync', { room, runHp: run.hp, fightHp: s.player.hp });
     }
     return s.outcome;
-  }
-
-  /** Deterministic test policy: lethal first, block when the intent outdamages the block, else attack. */
-  function choose(s, failed) {
-    const live = s.enemies.filter((e) => e.hp > 0);
-    if (!live.length) return null;
-    const hand = s.hand.filter((c) => c.cost <= s.player.steam && !failed.has(c.uid));
-    const focus = [...live].sort((a, b) => a.hp + a.block - (b.hp + b.block))[0];
-    const hits = (c) => c.dmg > 0;
-    for (const c of hand.filter(hits)) {
-      for (const e of live) {
-        const lands = c.target === 'enemy' ? c.dmg : c.dmg / Math.max(1, live.length);
-        if (lands >= e.hp + e.block) return { ...c, enemy: c.target === 'enemy' ? e.id : null };
-      }
-    }
-    const incoming = live.reduce((n, e) => n + e.incoming, 0);
-    if (incoming > s.player.block) {
-      const guard = hand
-        .filter((c) => c.blockGain > 0)
-        .sort((a, b) => b.blockGain - a.blockGain)[0];
-      if (guard) return { ...guard, enemy: guard.target === 'enemy' ? focus.id : null };
-    }
-    const attack = hand
-      .filter(hits)
-      .sort((a, b) => b.dmg / Math.max(1, b.cost) - a.dmg / Math.max(1, a.cost))[0];
-    if (attack) return { ...attack, enemy: attack.target === 'enemy' ? focus.id : null };
-    const other = hand.find((c) => c.blockGain === 0);
-    if (other) return { ...other, enemy: other.target === 'enemy' ? focus.id : null };
-    return null;
   }
 
   async function play(card, record) {
@@ -687,14 +927,12 @@ async function runSeed(seed, mode) {
 
 /** In-page helpers (read-only): state snapshots, the route, a walkable-grid path and screen maps. */
 async function installHelpers() {
-  const { intentDamage } = await import('/src/rules/engine.ts');
   const { SIGIL_TEMPLATES } = await import('/src/sigil/templates.ts');
   const c = window.__combat;
   const rig = c.camera.parent;
   const scene = rig.parent;
   const renderer = window.__THREE_DEVTOOLS__.objects.find((o) => o?.isWebGLRenderer);
   const visited = [];
-  const amount = (a) => (typeof a === 'number' ? a : (a.base ?? 0) + a.dice * 3.5);
   const fr = {
     visited,
     pose() {
@@ -731,6 +969,16 @@ async function installHelpers() {
         role: plan.rooms[room].role,
         encounter: !!plan.rooms[room].encounter,
         tier: room === plan.guardianRoom ? 'guardian' : (plan.rooms[room].encounter?.tier ?? null),
+      }));
+    },
+    /** Every room with its wing, depth and encounter (tier, automaton count). */
+    encounters() {
+      return c.floor.world.plan.rooms.map((r) => ({
+        room: r.index,
+        wing: r.wing,
+        depth: r.depth,
+        tier: r.encounter?.tier ?? null,
+        count: r.encounter?.socketIds.length ?? 0,
       }));
     },
     /** A* over a 0.1 m grid of the floor's footprints minus the colliders (inflated by the body). */
@@ -789,7 +1037,7 @@ async function installHelpers() {
       const goal = nearestFree(toCell(goalV.x, goalV.z));
       if (!start || !goal) return null;
       const idx = (i, j) => j * W + i;
-      const g = new Float32Array(W * H).fill(Infinity);
+      const g = new Float64Array(W * H).fill(Infinity);
       const from = new Int32Array(W * H).fill(-1);
       const open = [[0, idx(...start)]];
       g[idx(...start)] = 0;
@@ -866,17 +1114,6 @@ async function installHelpers() {
       const s = c.session;
       if (!s) return { outcome: null, stage: 'none', hand: [], enemies: [], player: {}, turn: 0 };
       const st = s.controller.state;
-      const live = st.enemies.filter((e) => e.hp > 0).length;
-      const estimate = (def) => {
-        let dmg = 0;
-        let blockGain = 0;
-        for (const e of def.effects) {
-          if (e.type === 'damage')
-            dmg += amount(e.amount) * (e.hits ?? 1) * (e.target === 'all-opponents' ? live : 1);
-          if (e.type === 'block') blockGain += amount(e.amount);
-        }
-        return { dmg, blockGain };
-      };
       return {
         outcome: s.controller.outcome,
         time: s.time,
@@ -893,6 +1130,7 @@ async function installHelpers() {
           maxHp: st.player.maxHp,
           block: st.player.block,
           steam: st.player.steam,
+          statuses: st.player.statuses,
         },
         enemies: st.enemies.map((e) => ({
           id: e.id,
@@ -900,7 +1138,8 @@ async function installHelpers() {
           hp: e.hp,
           maxHp: e.maxHp,
           block: e.block,
-          incoming: e.hp > 0 ? intentDamage(st, e.id).reduce((a, b) => a + b, 0) : 0,
+          statuses: e.statuses,
+          intent: e.intent ? { id: e.intent.id, effects: e.intent.effects } : null,
         })),
         hand: st.piles.hand.map((card) => ({
           uid: card.uid,
@@ -908,7 +1147,8 @@ async function installHelpers() {
           cost: card.def.cost,
           target: card.def.target,
           sigil: card.def.sigil ?? null,
-          ...estimate(card.def),
+          dice: card.def.dice ?? null,
+          effects: card.def.effects,
         })),
       };
     },
