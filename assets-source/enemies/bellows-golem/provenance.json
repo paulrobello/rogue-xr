@@ -1,0 +1,309 @@
+{
+  "pieceId": "bellows-golem",
+  "version": 1,
+  "route": "scripted (procedural Blender geometry, rig and keyed clips; no provider generation)",
+  "generator": {
+    "path": "scripts/assets/build-bellows-golem.py",
+    "sha256": "e3048057b025013acf2e9071389c1dae015d85e4267bd856b6b757d4c33f21eb"
+  },
+  "authoringAgent": {
+    "harness": "claude-code (dispatched sub-agent)",
+    "model": "claude-opus-5-5"
+  },
+  "blender": "5.2.2 LTS",
+  "toolVersions": {
+    "gltfExporter": "Blender 5.2.2 bundled io_scene_gltf2"
+  },
+  "blendFiles": {
+    "store": "assets-source/enemies/bellows-golem/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)"
+  },
+  "budgets": {
+    "triangles": 9400,
+    "highTriangles": 34096,
+    "materials": 4,
+    "bones": 22,
+    "maxInfluences": 1,
+    "glbBytes": 822632
+  },
+  "skin": {
+    "policy": "rigid: one bone per vertex at weight 1.0",
+    "maxWeightSumError": 0.0,
+    "unweightedVertices": 0
+  },
+  "clips": {
+    "idle": {
+      "duration": 2.4,
+      "loop": "repeat",
+      "events": {},
+      "measured": {
+        "duration": 2.4,
+        "start": 0.0,
+        "channels": 66,
+        "rootAnimated": []
+      }
+    },
+    "attack": {
+      "duration": 1.5,
+      "loop": "once",
+      "events": {
+        "impact": 0.85
+      },
+      "measured": {
+        "duration": 1.5,
+        "start": 0.0,
+        "channels": 66,
+        "rootAnimated": []
+      }
+    },
+    "hit": {
+      "duration": 0.7,
+      "loop": "once",
+      "events": {},
+      "measured": {
+        "duration": 0.7,
+        "start": 0.0,
+        "channels": 66,
+        "rootAnimated": []
+      }
+    },
+    "death": {
+      "duration": 2.4,
+      "loop": "once",
+      "events": {
+        "down": 1.7
+      },
+      "endsOnFloor": true,
+      "measured": {
+        "duration": 2.4,
+        "start": 0.0,
+        "channels": 66,
+        "rootAnimated": []
+      }
+    },
+    "frozen": {
+      "duration": 1.0,
+      "loop": "repeat",
+      "events": {},
+      "held": true,
+      "measured": {
+        "duration": 1.0,
+        "start": 0.0,
+        "channels": 66,
+        "rootAnimated": []
+      }
+    }
+  },
+  "poseChecks": {
+    "idle": {
+      "frames": 73,
+      "min_z": -0.0,
+      "min_z_frame": 6,
+      "max_z": 2.0727,
+      "final_max_z": 2.0624,
+      "final_min_z": -0.0,
+      "loop_seam_m": 0.0
+    },
+    "attack": {
+      "frames": 46,
+      "min_z": -0.0,
+      "min_z_frame": 10,
+      "max_z": 2.665,
+      "final_max_z": 2.0624,
+      "final_min_z": -0.0,
+      "loop_seam_m": 0.0
+    },
+    "hit": {
+      "frames": 22,
+      "min_z": -0.0,
+      "min_z_frame": 2,
+      "max_z": 2.0624,
+      "final_max_z": 2.0624,
+      "final_min_z": -0.0,
+      "loop_seam_m": 0.0
+    },
+    "death": {
+      "frames": 73,
+      "min_z": 0.004,
+      "min_z_frame": 36,
+      "max_z": 2.0664,
+      "final_max_z": 0.984,
+      "final_min_z": 0.004,
+      "loop_seam_m": 1.63552
+    },
+    "frozen": {
+      "frames": 31,
+      "min_z": 0.0,
+      "min_z_frame": 0,
+      "max_z": 2.0322,
+      "final_max_z": 2.0322,
+      "final_min_z": 0.0,
+      "loop_seam_m": 0.0
+    }
+  },
+  "rootMotion": "code-owned: the root joint is never animated and every clip plays in place",
+  "frame": {
+    "units": "m",
+    "up": "+Y",
+    "forward": "-Z",
+    "origin": "feet centre on the floor (y = 0)",
+    "note": "encounter.ts rotation.y = -heading turns local -Z onto the heading"
+  },
+  "sockets": {
+    "socket-hit": {
+      "bone": "chest",
+      "parent": "chest",
+      "position": [
+        0.0,
+        1.38,
+        -0.56
+      ]
+    },
+    "socket-eye": {
+      "bone": "head",
+      "parent": "head",
+      "position": [
+        0.0,
+        1.76,
+        -0.2
+      ]
+    },
+    "socket-weapon": {
+      "bone": "hand.R",
+      "parent": "hand.R",
+      "position": [
+        0.68,
+        0.4,
+        -0.22
+      ]
+    }
+  },
+  "derivedFiles": [
+    {
+      "path": "public/assets/enemies/bellows-golem/bellows-golem.glb",
+      "sha256": "fb82b76c1b24b3368d5210f351cfa207884d279e03e2c4bb52703b32b06d30b5",
+      "bytes": 822632
+    },
+    {
+      "path": "public/assets/enemies/bellows-golem/bellows-golem.manifest.json",
+      "sha256": "64921e5036273d1505b702eb840495d04b7ae6c04d8148eb4fe64e35b2d89887",
+      "bytes": 2861
+    }
+  ],
+  "sourceFiles": [
+    {
+      "path": "assets-source/enemies/bellows-golem/blend/bellows-golem.high.blend",
+      "sha256": "ce5bdbe9423e82990d56e73336d830d222e9a0805818f1fdc875160ee343d55e",
+      "bytes": 934237
+    },
+    {
+      "path": "assets-source/enemies/bellows-golem/blend/bellows-golem.low.blend",
+      "sha256": "80604a53ff023eb988cab1f3eb89a29df9f813b7377813402e9e2348177b066f",
+      "bytes": 506594
+    },
+    {
+      "path": "assets-source/enemies/bellows-golem/staging/report.json",
+      "sha256": "bf56edb6722328656ad47180571b7b399f184ae2ba659b44d397e4ac0bd51625",
+      "bytes": 6100
+    },
+    {
+      "path": "assets-source/enemies/bellows-golem/staging/reimport.json",
+      "sha256": "480c47701b4f9c2c0f381a4e8c0528060979ecb80b47cda344588296cd751601",
+      "bytes": 2287
+    },
+    {
+      "path": "assets-source/enemies/bellows-golem/engine_shot.py",
+      "sha256": "ed466039f3da00d16add1b2bb9d6b7b8cf16bacbde00fcfa33b8794a985b16df",
+      "bytes": 4050
+    },
+    {
+      "path": "assets-source/enemies/bellows-golem/engine-proof.ts",
+      "sha256": "7a8ca2630cd04fcdb815722adc2064e83b890dfeb3def2fec84ba09b3fd75a68",
+      "bytes": 4719
+    }
+  ],
+  "reviewEvidence": [
+    {
+      "path": "assets-source/enemies/bellows-golem/bellows-golem.review-sheet.jpg",
+      "sha256": "c4b8ae645848ae5f0dc3775f8c3d79a77d52ada157e7eb57984768ae7311d9d0",
+      "bytes": 352524
+    },
+    {
+      "path": "assets-source/enemies/bellows-golem/staging/engine/attack.jpg",
+      "sha256": "fe72f922d9a0a76509c003a7e78b337c5e08c8e981f241fc3966043aeb9d5425",
+      "bytes": 81912
+    },
+    {
+      "path": "assets-source/enemies/bellows-golem/staging/engine/death.jpg",
+      "sha256": "0a0f1a5a1d2e2c0ce22dd463010c9aafae88b3536b7c8355c6949200b36f8a7e",
+      "bytes": 60408
+    },
+    {
+      "path": "assets-source/enemies/bellows-golem/staging/engine/frozen.jpg",
+      "sha256": "7558be9cd16b6fee5ebaaa4fba661d16a22945b1cd80b51de1bbc1650dd637f9",
+      "bytes": 73365
+    },
+    {
+      "path": "assets-source/enemies/bellows-golem/staging/engine/hit.jpg",
+      "sha256": "9accc0b66f27e85e30436db700ecf8d6e315ac4d96ce06f417998eaa0d4aa917",
+      "bytes": 65201
+    },
+    {
+      "path": "assets-source/enemies/bellows-golem/staging/engine/idle.jpg",
+      "sha256": "29aa469c87328d15afb8e213f8aaa68eade199074f01c78a74c913084a9f2b80",
+      "bytes": 67894
+    }
+  ],
+  "references": [
+    {
+      "path": "assets-source/concepts/golem-sheet-1.png",
+      "sha256": "8c5bafcf4a25372cab90935515ca4372933bb5c83d61213a528958a1ec29352b",
+      "provider": "higgsfield",
+      "note": "P5-T3 concept sheet (Higgsfield nano_banana_pro); owner approval pending (assets-source/concepts/p5-automatons-design.md)"
+    }
+  ],
+  "materialsUsed": "approved P4-T3 brass-polished and walnut sets bound by slot name at runtime; gunmetal and golem-glow are factor-only",
+  "license": "Original work generated in Blender from a checked-in script; concept reference from Paul's paid Higgsfield plan (Terms of Use 4.4)",
+  "validation": {
+    "pass": true,
+    "date": "2026-11-15",
+    "checks": [
+      "presence",
+      "hashes",
+      "glb budgets (tris, materials, bones)",
+      "one skin, one weight set",
+      "image-free glb",
+      "clip set",
+      "manifest consistency",
+      "reimport gate (weights, influences, clips, root motion, bounds, sockets)",
+      "evaluated pose checks (floor, death on the floor, loop seams)"
+    ]
+  },
+  "approvals": [
+    {
+      "gate": "concept",
+      "status": "pending",
+      "notes": "assets-source/concepts/p5-automatons-design.md, Decisions for Paul 1",
+      "modelingProceededUnder": "Paul, 2026-11-15, in the rogue-xr session: \"you have standing approval for all spending / modeling / deployments needed for this project\". Modeling proceeded under it; it is not a concept, creative or owner approval of this asset."
+    },
+    {
+      "gate": "model",
+      "status": "pending",
+      "notes": "assets-source/enemies/bellows-golem/bellows-golem.review-sheet.jpg, MODEL section"
+    },
+    {
+      "gate": "rig",
+      "status": "pending",
+      "notes": "review sheet RIG section"
+    },
+    {
+      "gate": "animation",
+      "status": "pending",
+      "notes": "review sheet ANIMATION sections (Blender frames and engine stills)"
+    },
+    {
+      "gate": "independent visual score",
+      "status": "unscored",
+      "notes": "create-rigged-character-assets requires an independent >= 80/100 score; unscored means unaccepted"
+    }
+  ]
+}

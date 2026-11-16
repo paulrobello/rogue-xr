@@ -1,0 +1,137 @@
+{
+  "glb_sha256": "fb82b76c1b24b3368d5210f351cfa207884d279e03e2c4bb52703b32b06d30b5",
+  "glb_bytes": 822632,
+  "triangles": 9400,
+  "materials": [
+    "brass-polished",
+    "walnut",
+    "gunmetal",
+    "golem-glow"
+  ],
+  "vertices": 9420,
+  "joints": [
+    "root",
+    "pelvis",
+    "spine",
+    "bellows",
+    "chest",
+    "chimney.L",
+    "chimney.R",
+    "clavicle.L",
+    "upperarm.L",
+    "forearm.L",
+    "hand.L",
+    "clavicle.R",
+    "upperarm.R",
+    "forearm.R",
+    "hand.R",
+    "head",
+    "thigh.L",
+    "shin.L",
+    "foot.L",
+    "thigh.R",
+    "shin.R",
+    "foot.R"
+  ],
+  "bone_count": 22,
+  "max_influences": 1,
+  "max_weight_sum_error": 0.0,
+  "unweighted_vertices": 0,
+  "bounds": {
+    "min": [
+      -0.9168,
+      0.0,
+      -0.5039
+    ],
+    "max": [
+      0.9168,
+      2.0624,
+      0.4704
+    ]
+  },
+  "clips": {
+    "attack": {
+      "duration": 1.5,
+      "start": 0.0,
+      "channels": 66,
+      "rootAnimated": []
+    },
+    "death": {
+      "duration": 2.4,
+      "start": 0.0,
+      "channels": 66,
+      "rootAnimated": []
+    },
+    "frozen": {
+      "duration": 1.0,
+      "start": 0.0,
+      "channels": 66,
+      "rootAnimated": []
+    },
+    "hit": {
+      "duration": 0.7,
+      "start": 0.0,
+      "channels": 66,
+      "rootAnimated": []
+    },
+    "idle": {
+      "duration": 2.4,
+      "start": 0.0,
+      "channels": 66,
+      "rootAnimated": []
+    }
+  },
+  "sockets": {
+    "socket-hit": {
+      "bone": "chest",
+      "parent": "chest",
+      "position": [
+        0.0,
+        1.38,
+        -0.56
+      ]
+    },
+    "socket-eye": {
+      "bone": "head",
+      "parent": "head",
+      "position": [
+        0.0,
+        1.76,
+        -0.2
+      ]
+    },
+    "socket-weapon": {
+      "bone": "hand.R",
+      "parent": "hand.R",
+      "position": [
+        0.68,
+        0.4,
+        -0.22
+      ]
+    }
+  },
+  "scene_roots": [
+    "bellows-golem"
+  ],
+  "errors": [],
+  "pass": true,
+  "blender_reimport": {
+    "armatures": 1,
+    "bones": 22,
+    "meshes": 1,
+    "actions": [
+      "attack.001",
+      "death.001",
+      "frozen.001",
+      "hit.001",
+      "idle.001"
+    ],
+    "objects": [
+      "bellows-golem.001",
+      "golem-body.001",
+      "socket-eye.001",
+      "socket-hit.001",
+      "socket-weapon.001"
+    ]
+  }
+}

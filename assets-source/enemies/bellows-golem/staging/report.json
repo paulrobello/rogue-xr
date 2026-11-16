@@ -1,0 +1,252 @@
+{
+  "piece": "bellows-golem",
+  "blender": "5.2.2 LTS",
+  "generator": "scripts/assets/build-bellows-golem.py",
+  "generator_sha256": "e3048057b025013acf2e9071389c1dae015d85e4267bd856b6b757d4c33f21eb",
+  "concept": {
+    "file": "assets-source/concepts/golem-sheet-1.png",
+    "sha256": "8c5bafcf4a25372cab90935515ca4372933bb5c83d61213a528958a1ec29352b",
+    "status": "owner approval pending; modeled under Paul's standing approval of 2026-11-15"
+  },
+  "source_materials": {
+    "brass-polished": {
+      "basecolor": "e06711b70706c57713bad023bfd9690715a67ae7b85fcc3041d596f7b0630e15",
+      "normal": "48e62a85458bfc64ffc095f4f6a44c69b0058b90e01a664a3f3682a0222bfb3c",
+      "orm": "ac621605925e523ca9b25bd18bbfe4bdab575bb3a9876a5390adc5a29c559e9a"
+    },
+    "walnut": {
+      "basecolor": "c2c1d72ba308c02f6304ee389a86d6663199d01a352160c347801cefd4042a0b",
+      "normal": "3ee262cb20e41fe1f8b6dac8528f0b3f51e6e129cc9542f99d81c21242046558",
+      "orm": "6de73e58bc870595d74968b44e4f94b153c2dfc529ae6cb5c9e2beda5c24846d"
+    }
+  },
+  "triangles": {
+    "low": 9400,
+    "high": 34096
+  },
+  "bones": 22,
+  "authoringAgent": "Claude Code subagent (claude-opus-5-5), dispatched by the rogue-xr primary session",
+  "ground_clamp_death_max_lift_m": [
+    0.1844,
+    0.0
+  ],
+  "pose_checks": {
+    "idle": {
+      "frames": 73,
+      "min_z": -0.0,
+      "min_z_frame": 6,
+      "max_z": 2.0727,
+      "final_max_z": 2.0624,
+      "final_min_z": -0.0,
+      "loop_seam_m": 0.0
+    },
+    "attack": {
+      "frames": 46,
+      "min_z": -0.0,
+      "min_z_frame": 10,
+      "max_z": 2.665,
+      "final_max_z": 2.0624,
+      "final_min_z": -0.0,
+      "loop_seam_m": 0.0
+    },
+    "hit": {
+      "frames": 22,
+      "min_z": -0.0,
+      "min_z_frame": 2,
+      "max_z": 2.0624,
+      "final_max_z": 2.0624,
+      "final_min_z": -0.0,
+      "loop_seam_m": 0.0
+    },
+    "death": {
+      "frames": 73,
+      "min_z": 0.004,
+      "min_z_frame": 36,
+      "max_z": 2.0664,
+      "final_max_z": 0.984,
+      "final_min_z": 0.004,
+      "loop_seam_m": 1.63552
+    },
+    "frozen": {
+      "frames": 31,
+      "min_z": 0.0,
+      "min_z_frame": 0,
+      "max_z": 2.0322,
+      "final_max_z": 2.0322,
+      "final_min_z": 0.0,
+      "loop_seam_m": 0.0
+    }
+  },
+  "cull": {
+    "center": [
+      0.028,
+      1.332,
+      -0.316
+    ],
+    "radius": 2.013,
+    "maxDistanceFromSentryCullCentre": 1.876
+  },
+  "canonicalized_primitives": 4,
+  "reimport": {
+    "glb_sha256": "fb82b76c1b24b3368d5210f351cfa207884d279e03e2c4bb52703b32b06d30b5",
+    "glb_bytes": 822632,
+    "triangles": 9400,
+    "materials": [
+      "brass-polished",
+      "walnut",
+      "gunmetal",
+      "golem-glow"
+    ],
+    "vertices": 9420,
+    "joints": [
+      "root",
+      "pelvis",
+      "spine",
+      "bellows",
+      "chest",
+      "chimney.L",
+      "chimney.R",
+      "clavicle.L",
+      "upperarm.L",
+      "forearm.L",
+      "hand.L",
+      "clavicle.R",
+      "upperarm.R",
+      "forearm.R",
+      "hand.R",
+      "head",
+      "thigh.L",
+      "shin.L",
+      "foot.L",
+      "thigh.R",
+      "shin.R",
+      "foot.R"
+    ],
+    "bone_count": 22,
+    "max_influences": 1,
+    "max_weight_sum_error": 0.0,
+    "unweighted_vertices": 0,
+    "bounds": {
+      "min": [
+        -0.9168,
+        0.0,
+        -0.5039
+      ],
+      "max": [
+        0.9168,
+        2.0624,
+        0.4704
+      ]
+    },
+    "clips": {
+      "attack": {
+        "duration": 1.5,
+        "start": 0.0,
+        "channels": 66,
+        "rootAnimated": []
+      },
+      "death": {
+        "duration": 2.4,
+        "start": 0.0,
+        "channels": 66,
+        "rootAnimated": []
+      },
+      "frozen": {
+        "duration": 1.0,
+        "start": 0.0,
+        "channels": 66,
+        "rootAnimated": []
+      },
+      "hit": {
+        "duration": 0.7,
+        "start": 0.0,
+        "channels": 66,
+        "rootAnimated": []
+      },
+      "idle": {
+        "duration": 2.4,
+        "start": 0.0,
+        "channels": 66,
+        "rootAnimated": []
+      }
+    },
+    "sockets": {
+      "socket-hit": {
+        "bone": "chest",
+        "parent": "chest",
+        "position": [
+          0.0,
+          1.38,
+          -0.56
+        ]
+      },
+      "socket-eye": {
+        "bone": "head",
+        "parent": "head",
+        "position": [
+          0.0,
+          1.76,
+          -0.2
+        ]
+      },
+      "socket-weapon": {
+        "bone": "hand.R",
+        "parent": "hand.R",
+        "position": [
+          0.68,
+          0.4,
+          -0.22
+        ]
+      }
+    },
+    "scene_roots": [
+      "bellows-golem"
+    ],
+    "errors": [],
+    "pass": true,
+    "blender_reimport": {
+      "armatures": 1,
+      "bones": 22,
+      "meshes": 1,
+      "actions": [
+        "attack.001",
+        "death.001",
+        "frozen.001",
+        "hit.001",
+        "idle.001"
+      ],
+      "objects": [
+        "bellows-golem.001",
+        "golem-body.001",
+        "socket-eye.001",
+        "socket-hit.001",
+        "socket-weapon.001"
+      ]
+    }
+  },
+  "renders": [
+    "model-low-front",
+    "model-low-side",
+    "model-low-back",
+    "model-low-three-quarter",
+    "model-high-three-quarter",
+    "rig-rom-reach",
+    "rig-rom-crouch",
+    "anim-idle",
+    "anim-attack-raise",
+    "anim-attack-slam",
+    "anim-hit",
+    "anim-frozen",
+    "anim-death-kneel",
+    "anim-death-end"
+  ],
+  "render_seconds": 1.9,
+  "files": {
+    "assets-source/enemies/bellows-golem/blend/bellows-golem.high.blend": "ce5bdbe9423e82990d56e73336d830d222e9a0805818f1fdc875160ee343d55e",
+    "assets-source/enemies/bellows-golem/blend/bellows-golem.low.blend": "80604a53ff023eb988cab1f3eb89a29df9f813b7377813402e9e2348177b066f",
+    "assets-source/enemies/bellows-golem/staging/reimport.json": "480c47701b4f9c2c0f381a4e8c0528060979ecb80b47cda344588296cd751601",
+    "public/assets/enemies/bellows-golem/bellows-golem.glb": "fb82b76c1b24b3368d5210f351cfa207884d279e03e2c4bb52703b32b06d30b5",
+    "public/assets/enemies/bellows-golem/bellows-golem.manifest.json": "64921e5036273d1505b702eb840495d04b7ae6c04d8148eb4fe64e35b2d89887"
+  },
+  "total_seconds": 4.5
+}

@@ -1,0 +1,261 @@
+{
+  "piece": "spring-hound",
+  "blender": "5.2.2 LTS",
+  "generator": "scripts/assets/build-spring-hound.py",
+  "generator_sha256": "a6e6dc6a2887f09b5b4627c8c44ed5610e7cf7bb0453243487204f28849df72d",
+  "concept": {
+    "file": "assets-source/concepts/hound-sheet-1.png",
+    "sha256": "7f16cf73b18efffb7a612cc1f6a01fdadc4e20f06a0fcadb84fb94e07b50c7e6",
+    "status": "owner approval pending; modeled under Paul's standing approval of 2026-11-15"
+  },
+  "source_materials": {
+    "brass-polished": {
+      "basecolor": "e06711b70706c57713bad023bfd9690715a67ae7b85fcc3041d596f7b0630e15",
+      "normal": "48e62a85458bfc64ffc095f4f6a44c69b0058b90e01a664a3f3682a0222bfb3c",
+      "orm": "ac621605925e523ca9b25bd18bbfe4bdab575bb3a9876a5390adc5a29c559e9a"
+    },
+    "brass-aged": {
+      "basecolor": "f731331533f5e9293ab3172f052aef3f3984924012dfe3c44540756af17b4316",
+      "normal": "752f6211fca91fa4e2beb4e43c11ba097d2da7139268fdf33fb5b2ee26bfbe3a",
+      "orm": "dab4896ed62310c39b975954f70cddf116f86518842eb7d84b0fde14dc7adbeb"
+    }
+  },
+  "triangles": {
+    "low": 7344,
+    "high": 33808
+  },
+  "bones": 30,
+  "authoringAgent": "Claude Code subagent (claude-opus-5-5), dispatched by the rogue-xr primary session",
+  "ground_clamp_death_max_lift_m": [
+    0.313,
+    0.0
+  ],
+  "pose_checks": {
+    "idle": {
+      "frames": 61,
+      "min_z": -0.0,
+      "min_z_frame": 37,
+      "max_z": 1.2565,
+      "final_max_z": 1.2406,
+      "final_min_z": -0.0,
+      "loop_seam_m": 0.0
+    },
+    "attack": {
+      "frames": 34,
+      "min_z": -0.0001,
+      "min_z_frame": 20,
+      "max_z": 1.238,
+      "final_max_z": 1.238,
+      "final_min_z": -0.0,
+      "loop_seam_m": 0.0
+    },
+    "hit": {
+      "frames": 19,
+      "min_z": -0.0,
+      "min_z_frame": 14,
+      "max_z": 1.4074,
+      "final_max_z": 1.238,
+      "final_min_z": -0.0,
+      "loop_seam_m": 0.0
+    },
+    "death": {
+      "frames": 61,
+      "min_z": 0.004,
+      "min_z_frame": 7,
+      "max_z": 1.3422,
+      "final_max_z": 0.4987,
+      "final_min_z": 0.004,
+      "loop_seam_m": 1.00973
+    },
+    "frozen": {
+      "frames": 31,
+      "min_z": -0.0,
+      "min_z_frame": 0,
+      "max_z": 1.1281,
+      "final_max_z": 1.1281,
+      "final_min_z": -0.0,
+      "loop_seam_m": 0.0
+    }
+  },
+  "cull": {
+    "center": [
+      -0.256,
+      0.704,
+      0.072
+    ],
+    "radius": 1.29,
+    "maxDistanceFromSentryCullCentre": 1.385
+  },
+  "canonicalized_primitives": 4,
+  "reimport": {
+    "glb_sha256": "2bec4f5de9f5fbe0d2937a40ffc5de58d63d2294d5650846eae05bf7ee1209d6",
+    "glb_bytes": 774580,
+    "triangles": 7344,
+    "materials": [
+      "brass-polished",
+      "brass-aged",
+      "gunmetal",
+      "hound-glow"
+    ],
+    "vertices": 7907,
+    "joints": [
+      "root",
+      "pelvis",
+      "spine.1",
+      "spine.2",
+      "spine.3",
+      "chest",
+      "neck.1",
+      "neck.2",
+      "head",
+      "jaw",
+      "upperarm.L",
+      "forearm.L",
+      "wrist.L",
+      "forepaw.L",
+      "upperarm.R",
+      "forearm.R",
+      "wrist.R",
+      "forepaw.R",
+      "tail.1",
+      "tail.2",
+      "tail.3",
+      "key",
+      "thigh.L",
+      "shin.L",
+      "hock.L",
+      "hindpaw.L",
+      "thigh.R",
+      "shin.R",
+      "hock.R",
+      "hindpaw.R"
+    ],
+    "bone_count": 30,
+    "max_influences": 1,
+    "max_weight_sum_error": 0.0,
+    "unweighted_vertices": 0,
+    "bounds": {
+      "min": [
+        -0.205,
+        0.0,
+        -0.9678
+      ],
+      "max": [
+        0.205,
+        1.238,
+        1.0275
+      ]
+    },
+    "clips": {
+      "attack": {
+        "duration": 1.1,
+        "start": 0.0,
+        "channels": 90,
+        "rootAnimated": []
+      },
+      "death": {
+        "duration": 2.0,
+        "start": 0.0,
+        "channels": 90,
+        "rootAnimated": []
+      },
+      "frozen": {
+        "duration": 1.0,
+        "start": 0.0,
+        "channels": 90,
+        "rootAnimated": []
+      },
+      "hit": {
+        "duration": 0.6,
+        "start": 0.0,
+        "channels": 90,
+        "rootAnimated": []
+      },
+      "idle": {
+        "duration": 2.0,
+        "start": 0.0,
+        "channels": 90,
+        "rootAnimated": []
+      }
+    },
+    "sockets": {
+      "socket-hit": {
+        "bone": "chest",
+        "parent": "chest",
+        "position": [
+          0.0,
+          0.74,
+          -0.64
+        ]
+      },
+      "socket-eye": {
+        "bone": "head",
+        "parent": "head",
+        "position": [
+          0.0,
+          1.15,
+          -0.73
+        ]
+      },
+      "socket-weapon": {
+        "bone": "jaw",
+        "parent": "jaw",
+        "position": [
+          0.0,
+          1.02,
+          -0.9
+        ]
+      }
+    },
+    "scene_roots": [
+      "spring-hound"
+    ],
+    "errors": [],
+    "pass": true,
+    "blender_reimport": {
+      "armatures": 1,
+      "bones": 30,
+      "meshes": 1,
+      "actions": [
+        "attack.001",
+        "death.001",
+        "frozen.001",
+        "hit.001",
+        "idle.001"
+      ],
+      "objects": [
+        "hound-body.001",
+        "socket-eye.001",
+        "socket-hit.001",
+        "socket-weapon.001",
+        "spring-hound.001"
+      ]
+    }
+  },
+  "renders": [
+    "model-low-front",
+    "model-low-side",
+    "model-low-back",
+    "model-low-three-quarter",
+    "model-high-three-quarter",
+    "rig-rom-stretch",
+    "rig-rom-crouch",
+    "anim-idle",
+    "anim-attack-crouch",
+    "anim-attack-snap",
+    "anim-attack-impact",
+    "anim-hit",
+    "anim-frozen",
+    "anim-death-slump",
+    "anim-death-end"
+  ],
+  "render_seconds": 2.2,
+  "files": {
+    "assets-source/enemies/spring-hound/blend/spring-hound.high.blend": "af7b4f04fd7c2e988f31377d14119bee040c79c369c839cb106a194a64677ec7",
+    "assets-source/enemies/spring-hound/blend/spring-hound.low.blend": "aafccef43c8426bc8ae19d3a56425b21dd2bd1b3bc2ac48179d226fa92fa2b91",
+    "assets-source/enemies/spring-hound/staging/reimport.json": "fe62fa9d1f03f7e61b1cfa5675a3eab49c6dc04cc9b701b5a4ddf71903c9852d",
+    "public/assets/enemies/spring-hound/spring-hound.glb": "2bec4f5de9f5fbe0d2937a40ffc5de58d63d2294d5650846eae05bf7ee1209d6",
+    "public/assets/enemies/spring-hound/spring-hound.manifest.json": "c832391fc9f93f28bbdbdc811d7234c7e816975f9ddeebb71cf87f0e0b2e2bf8"
+  },
+  "total_seconds": 5.6
+}

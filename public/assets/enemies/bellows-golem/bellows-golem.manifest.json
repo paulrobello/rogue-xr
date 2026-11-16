@@ -1,0 +1,163 @@
+{
+  "id": "bellows-golem",
+  "version": 1,
+  "glb": "bellows-golem.glb",
+  "frame": {
+    "units": "m",
+    "up": "+Y",
+    "forward": "-Z",
+    "origin": "feet centre on the floor (y = 0)",
+    "note": "encounter.ts rotation.y = -heading turns local -Z onto the heading"
+  },
+  "root": "bellows-golem",
+  "mesh": "golem-body",
+  "bounds": {
+    "min": [
+      -0.9168,
+      0.0,
+      -0.5039
+    ],
+    "max": [
+      0.9168,
+      2.0624,
+      0.4704
+    ]
+  },
+  "skeleton": {
+    "root": "root",
+    "bones": 22,
+    "joints": [
+      "root",
+      "pelvis",
+      "spine",
+      "bellows",
+      "chest",
+      "chimney.L",
+      "chimney.R",
+      "clavicle.L",
+      "upperarm.L",
+      "forearm.L",
+      "hand.L",
+      "clavicle.R",
+      "upperarm.R",
+      "forearm.R",
+      "hand.R",
+      "head",
+      "thigh.L",
+      "shin.L",
+      "foot.L",
+      "thigh.R",
+      "shin.R",
+      "foot.R"
+    ],
+    "maxInfluences": 1,
+    "skinning": "rigid: every vertex weighted 1.0 to one bone"
+  },
+  "rootMotion": "code-owned: the root joint is never animated and every clip plays in place",
+  "clips": {
+    "idle": {
+      "duration": 2.4,
+      "loop": "repeat",
+      "events": {}
+    },
+    "attack": {
+      "duration": 1.5,
+      "loop": "once",
+      "events": {
+        "impact": 0.85
+      }
+    },
+    "hit": {
+      "duration": 0.7,
+      "loop": "once",
+      "events": {}
+    },
+    "death": {
+      "duration": 2.4,
+      "loop": "once",
+      "events": {
+        "down": 1.7
+      },
+      "endsOnFloor": true
+    },
+    "frozen": {
+      "duration": 1.0,
+      "loop": "repeat",
+      "events": {},
+      "held": true
+    }
+  },
+  "sockets": {
+    "socket-hit": {
+      "bone": "chest",
+      "parent": "chest",
+      "position": [
+        0.0,
+        1.38,
+        -0.56
+      ]
+    },
+    "socket-eye": {
+      "bone": "head",
+      "parent": "head",
+      "position": [
+        0.0,
+        1.76,
+        -0.2
+      ]
+    },
+    "socket-weapon": {
+      "bone": "hand.R",
+      "parent": "hand.R",
+      "position": [
+        0.68,
+        0.4,
+        -0.22
+      ]
+    }
+  },
+  "emissive": {
+    "material": "golem-glow",
+    "color": "#F08C2C",
+    "intensity": 0.7,
+    "nodes": [
+      "socket-eye",
+      "socket-hit"
+    ]
+  },
+  "materialSlots": {
+    "brass-polished": {
+      "set": "brass-polished",
+      "tileMeters": 0.5,
+      "normalScale": 0.35
+    },
+    "walnut": {
+      "set": "walnut",
+      "tileMeters": 0.5,
+      "normalScale": 1.0
+    },
+    "gunmetal": {
+      "set": null,
+      "factorOnly": true
+    },
+    "golem-glow": {
+      "set": null,
+      "factorOnly": true,
+      "emissive": true
+    }
+  },
+  "budget": {
+    "tris": 9400,
+    "materials": 4,
+    "bones": 22,
+    "influences": 4
+  },
+  "cull": {
+    "center": [
+      0.028,
+      1.332,
+      -0.316
+    ],
+    "radius": 2.013
+  }
+}

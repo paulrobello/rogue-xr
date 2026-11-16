@@ -1,0 +1,145 @@
+{
+  "glb_sha256": "2bec4f5de9f5fbe0d2937a40ffc5de58d63d2294d5650846eae05bf7ee1209d6",
+  "glb_bytes": 774580,
+  "triangles": 7344,
+  "materials": [
+    "brass-polished",
+    "brass-aged",
+    "gunmetal",
+    "hound-glow"
+  ],
+  "vertices": 7907,
+  "joints": [
+    "root",
+    "pelvis",
+    "spine.1",
+    "spine.2",
+    "spine.3",
+    "chest",
+    "neck.1",
+    "neck.2",
+    "head",
+    "jaw",
+    "upperarm.L",
+    "forearm.L",
+    "wrist.L",
+    "forepaw.L",
+    "upperarm.R",
+    "forearm.R",
+    "wrist.R",
+    "forepaw.R",
+    "tail.1",
+    "tail.2",
+    "tail.3",
+    "key",
+    "thigh.L",
+    "shin.L",
+    "hock.L",
+    "hindpaw.L",
+    "thigh.R",
+    "shin.R",
+    "hock.R",
+    "hindpaw.R"
+  ],
+  "bone_count": 30,
+  "max_influences": 1,
+  "max_weight_sum_error": 0.0,
+  "unweighted_vertices": 0,
+  "bounds": {
+    "min": [
+      -0.205,
+      0.0,
+      -0.9678
+    ],
+    "max": [
+      0.205,
+      1.238,
+      1.0275
+    ]
+  },
+  "clips": {
+    "attack": {
+      "duration": 1.1,
+      "start": 0.0,
+      "channels": 90,
+      "rootAnimated": []
+    },
+    "death": {
+      "duration": 2.0,
+      "start": 0.0,
+      "channels": 90,
+      "rootAnimated": []
+    },
+    "frozen": {
+      "duration": 1.0,
+      "start": 0.0,
+      "channels": 90,
+      "rootAnimated": []
+    },
+    "hit": {
+      "duration": 0.6,
+      "start": 0.0,
+      "channels": 90,
+      "rootAnimated": []
+    },
+    "idle": {
+      "duration": 2.0,
+      "start": 0.0,
+      "channels": 90,
+      "rootAnimated": []
+    }
+  },
+  "sockets": {
+    "socket-hit": {
+      "bone": "chest",
+      "parent": "chest",
+      "position": [
+        0.0,
+        0.74,
+        -0.64
+      ]
+    },
+    "socket-eye": {
+      "bone": "head",
+      "parent": "head",
+      "position": [
+        0.0,
+        1.15,
+        -0.73
+      ]
+    },
+    "socket-weapon": {
+      "bone": "jaw",
+      "parent": "jaw",
+      "position": [
+        0.0,
+        1.02,
+        -0.9
+      ]
+    }
+  },
+  "scene_roots": [
+    "spring-hound"
+  ],
+  "errors": [],
+  "pass": true,
+  "blender_reimport": {
+    "armatures": 1,
+    "bones": 30,
+    "meshes": 1,
+    "actions": [
+      "attack.001",
+      "death.001",
+      "frozen.001",
+      "hit.001",
+      "idle.001"
+    ],
+    "objects": [
+      "hound-body.001",
+      "socket-eye.001",
+      "socket-hit.001",
+      "socket-weapon.001",
+      "spring-hound.001"
+    ]
+  }
+}

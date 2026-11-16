@@ -1,0 +1,171 @@
+{
+  "id": "spring-hound",
+  "version": 1,
+  "glb": "spring-hound.glb",
+  "frame": {
+    "units": "m",
+    "up": "+Y",
+    "forward": "-Z",
+    "origin": "body centre on the floor (y = 0)",
+    "note": "encounter.ts rotation.y = -heading turns local -Z onto the heading"
+  },
+  "root": "spring-hound",
+  "mesh": "hound-body",
+  "bounds": {
+    "min": [
+      -0.205,
+      0.0,
+      -0.9678
+    ],
+    "max": [
+      0.205,
+      1.238,
+      1.0275
+    ]
+  },
+  "skeleton": {
+    "root": "root",
+    "bones": 30,
+    "joints": [
+      "root",
+      "pelvis",
+      "spine.1",
+      "spine.2",
+      "spine.3",
+      "chest",
+      "neck.1",
+      "neck.2",
+      "head",
+      "jaw",
+      "upperarm.L",
+      "forearm.L",
+      "wrist.L",
+      "forepaw.L",
+      "upperarm.R",
+      "forearm.R",
+      "wrist.R",
+      "forepaw.R",
+      "tail.1",
+      "tail.2",
+      "tail.3",
+      "key",
+      "thigh.L",
+      "shin.L",
+      "hock.L",
+      "hindpaw.L",
+      "thigh.R",
+      "shin.R",
+      "hock.R",
+      "hindpaw.R"
+    ],
+    "maxInfluences": 1,
+    "skinning": "rigid: every vertex weighted 1.0 to one bone"
+  },
+  "rootMotion": "code-owned: the root joint is never animated and every clip plays in place",
+  "clips": {
+    "idle": {
+      "duration": 2.0,
+      "loop": "repeat",
+      "events": {}
+    },
+    "attack": {
+      "duration": 1.1,
+      "loop": "once",
+      "events": {
+        "impact": 0.5
+      }
+    },
+    "hit": {
+      "duration": 0.6,
+      "loop": "once",
+      "events": {}
+    },
+    "death": {
+      "duration": 2.0,
+      "loop": "once",
+      "events": {
+        "down": 1.4
+      },
+      "endsOnFloor": true
+    },
+    "frozen": {
+      "duration": 1.0,
+      "loop": "repeat",
+      "events": {},
+      "held": true
+    }
+  },
+  "sockets": {
+    "socket-hit": {
+      "bone": "chest",
+      "parent": "chest",
+      "position": [
+        0.0,
+        0.74,
+        -0.64
+      ]
+    },
+    "socket-eye": {
+      "bone": "head",
+      "parent": "head",
+      "position": [
+        0.0,
+        1.15,
+        -0.73
+      ]
+    },
+    "socket-weapon": {
+      "bone": "jaw",
+      "parent": "jaw",
+      "position": [
+        0.0,
+        1.02,
+        -0.9
+      ]
+    }
+  },
+  "emissive": {
+    "material": "hound-glow",
+    "color": "#F08C2C",
+    "intensity": 0.7,
+    "nodes": [
+      "socket-eye",
+      "socket-hit"
+    ]
+  },
+  "materialSlots": {
+    "brass-polished": {
+      "set": "brass-polished",
+      "tileMeters": 0.5,
+      "normalScale": 0.35
+    },
+    "brass-aged": {
+      "set": "brass-aged",
+      "tileMeters": 0.5,
+      "normalScale": 0.35
+    },
+    "gunmetal": {
+      "set": null,
+      "factorOnly": true
+    },
+    "hound-glow": {
+      "set": null,
+      "factorOnly": true,
+      "emissive": true
+    }
+  },
+  "budget": {
+    "tris": 7344,
+    "materials": 4,
+    "bones": 30,
+    "influences": 4
+  },
+  "cull": {
+    "center": [
+      -0.256,
+      0.704,
+      0.072
+    ],
+    "radius": 1.29
+  }
+}

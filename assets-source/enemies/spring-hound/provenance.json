@@ -1,0 +1,309 @@
+{
+  "pieceId": "spring-hound",
+  "version": 1,
+  "route": "scripted (procedural Blender geometry, rig and keyed clips; no provider generation)",
+  "generator": {
+    "path": "scripts/assets/build-spring-hound.py",
+    "sha256": "a6e6dc6a2887f09b5b4627c8c44ed5610e7cf7bb0453243487204f28849df72d"
+  },
+  "authoringAgent": {
+    "harness": "claude-code (dispatched sub-agent)",
+    "model": "claude-opus-5-5"
+  },
+  "blender": "5.2.2 LTS",
+  "toolVersions": {
+    "gltfExporter": "Blender 5.2.2 bundled io_scene_gltf2"
+  },
+  "blendFiles": {
+    "store": "assets-source/enemies/spring-hound/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)"
+  },
+  "budgets": {
+    "triangles": 7344,
+    "highTriangles": 33808,
+    "materials": 4,
+    "bones": 30,
+    "maxInfluences": 1,
+    "glbBytes": 774580
+  },
+  "skin": {
+    "policy": "rigid: one bone per vertex at weight 1.0",
+    "maxWeightSumError": 0.0,
+    "unweightedVertices": 0
+  },
+  "clips": {
+    "idle": {
+      "duration": 2.0,
+      "loop": "repeat",
+      "events": {},
+      "measured": {
+        "duration": 2.0,
+        "start": 0.0,
+        "channels": 90,
+        "rootAnimated": []
+      }
+    },
+    "attack": {
+      "duration": 1.1,
+      "loop": "once",
+      "events": {
+        "impact": 0.5
+      },
+      "measured": {
+        "duration": 1.1,
+        "start": 0.0,
+        "channels": 90,
+        "rootAnimated": []
+      }
+    },
+    "hit": {
+      "duration": 0.6,
+      "loop": "once",
+      "events": {},
+      "measured": {
+        "duration": 0.6,
+        "start": 0.0,
+        "channels": 90,
+        "rootAnimated": []
+      }
+    },
+    "death": {
+      "duration": 2.0,
+      "loop": "once",
+      "events": {
+        "down": 1.4
+      },
+      "endsOnFloor": true,
+      "measured": {
+        "duration": 2.0,
+        "start": 0.0,
+        "channels": 90,
+        "rootAnimated": []
+      }
+    },
+    "frozen": {
+      "duration": 1.0,
+      "loop": "repeat",
+      "events": {},
+      "held": true,
+      "measured": {
+        "duration": 1.0,
+        "start": 0.0,
+        "channels": 90,
+        "rootAnimated": []
+      }
+    }
+  },
+  "poseChecks": {
+    "idle": {
+      "frames": 61,
+      "min_z": -0.0,
+      "min_z_frame": 37,
+      "max_z": 1.2565,
+      "final_max_z": 1.2406,
+      "final_min_z": -0.0,
+      "loop_seam_m": 0.0
+    },
+    "attack": {
+      "frames": 34,
+      "min_z": -0.0001,
+      "min_z_frame": 20,
+      "max_z": 1.238,
+      "final_max_z": 1.238,
+      "final_min_z": -0.0,
+      "loop_seam_m": 0.0
+    },
+    "hit": {
+      "frames": 19,
+      "min_z": -0.0,
+      "min_z_frame": 14,
+      "max_z": 1.4074,
+      "final_max_z": 1.238,
+      "final_min_z": -0.0,
+      "loop_seam_m": 0.0
+    },
+    "death": {
+      "frames": 61,
+      "min_z": 0.004,
+      "min_z_frame": 7,
+      "max_z": 1.3422,
+      "final_max_z": 0.4987,
+      "final_min_z": 0.004,
+      "loop_seam_m": 1.00973
+    },
+    "frozen": {
+      "frames": 31,
+      "min_z": -0.0,
+      "min_z_frame": 0,
+      "max_z": 1.1281,
+      "final_max_z": 1.1281,
+      "final_min_z": -0.0,
+      "loop_seam_m": 0.0
+    }
+  },
+  "rootMotion": "code-owned: the root joint is never animated and every clip plays in place",
+  "frame": {
+    "units": "m",
+    "up": "+Y",
+    "forward": "-Z",
+    "origin": "body centre on the floor (y = 0)",
+    "note": "encounter.ts rotation.y = -heading turns local -Z onto the heading"
+  },
+  "sockets": {
+    "socket-hit": {
+      "bone": "chest",
+      "parent": "chest",
+      "position": [
+        0.0,
+        0.74,
+        -0.64
+      ]
+    },
+    "socket-eye": {
+      "bone": "head",
+      "parent": "head",
+      "position": [
+        0.0,
+        1.15,
+        -0.73
+      ]
+    },
+    "socket-weapon": {
+      "bone": "jaw",
+      "parent": "jaw",
+      "position": [
+        0.0,
+        1.02,
+        -0.9
+      ]
+    }
+  },
+  "derivedFiles": [
+    {
+      "path": "public/assets/enemies/spring-hound/spring-hound.glb",
+      "sha256": "2bec4f5de9f5fbe0d2937a40ffc5de58d63d2294d5650846eae05bf7ee1209d6",
+      "bytes": 774580
+    },
+    {
+      "path": "public/assets/enemies/spring-hound/spring-hound.manifest.json",
+      "sha256": "c832391fc9f93f28bbdbdc811d7234c7e816975f9ddeebb71cf87f0e0b2e2bf8",
+      "bytes": 2981
+    }
+  ],
+  "sourceFiles": [
+    {
+      "path": "assets-source/enemies/spring-hound/blend/spring-hound.high.blend",
+      "sha256": "af7b4f04fd7c2e988f31377d14119bee040c79c369c839cb106a194a64677ec7",
+      "bytes": 966816
+    },
+    {
+      "path": "assets-source/enemies/spring-hound/blend/spring-hound.low.blend",
+      "sha256": "aafccef43c8426bc8ae19d3a56425b21dd2bd1b3bc2ac48179d226fa92fa2b91",
+      "bytes": 415387
+    },
+    {
+      "path": "assets-source/enemies/spring-hound/staging/report.json",
+      "sha256": "e6932e364e71910906ee4f73575a3add76f81e69037e8b4ca797ad700c8922ef",
+      "bytes": 6243
+    },
+    {
+      "path": "assets-source/enemies/spring-hound/staging/reimport.json",
+      "sha256": "fe62fa9d1f03f7e61b1cfa5675a3eab49c6dc04cc9b701b5a4ddf71903c9852d",
+      "bytes": 2389
+    },
+    {
+      "path": "assets-source/enemies/spring-hound/engine_shot.py",
+      "sha256": "ed466039f3da00d16add1b2bb9d6b7b8cf16bacbde00fcfa33b8794a985b16df",
+      "bytes": 4050
+    },
+    {
+      "path": "assets-source/enemies/spring-hound/engine-proof.ts",
+      "sha256": "7a8ca2630cd04fcdb815722adc2064e83b890dfeb3def2fec84ba09b3fd75a68",
+      "bytes": 4719
+    }
+  ],
+  "reviewEvidence": [
+    {
+      "path": "assets-source/enemies/spring-hound/spring-hound.review-sheet.jpg",
+      "sha256": "5f39cb936423bbad4401b5c46ab13f48ded2636473583c6c7b83d22336ad8ba3",
+      "bytes": 294033
+    },
+    {
+      "path": "assets-source/enemies/spring-hound/staging/engine/attack.jpg",
+      "sha256": "3a3b9e1465bb52bf318c2abcf6e52452ddc5b33b41811f1847ece2a71777138d",
+      "bytes": 25947
+    },
+    {
+      "path": "assets-source/enemies/spring-hound/staging/engine/death.jpg",
+      "sha256": "608f2a50c0d61ed54172e32dc7494b894917327aa3d32e257558284a2f57c248",
+      "bytes": 26388
+    },
+    {
+      "path": "assets-source/enemies/spring-hound/staging/engine/frozen.jpg",
+      "sha256": "bbb5356eebdf2162ed121d8060b1bae2746929f5349dbd1070432d85c84987ff",
+      "bytes": 24140
+    },
+    {
+      "path": "assets-source/enemies/spring-hound/staging/engine/hit.jpg",
+      "sha256": "ed3116151ab64dce6a116f80d4b0ea1a55b5e53103ade8a71e950b72da6c7de9",
+      "bytes": 24972
+    },
+    {
+      "path": "assets-source/enemies/spring-hound/staging/engine/idle.jpg",
+      "sha256": "c92048a242a10f294a70791b4d954c360a811f9fa7b320f7eff2b52f2129fc87",
+      "bytes": 24823
+    }
+  ],
+  "references": [
+    {
+      "path": "assets-source/concepts/hound-sheet-1.png",
+      "sha256": "7f16cf73b18efffb7a612cc1f6a01fdadc4e20f06a0fcadb84fb94e07b50c7e6",
+      "provider": "higgsfield",
+      "note": "P5-T3 concept sheet (Higgsfield nano_banana_pro); owner approval pending (assets-source/concepts/p5-automatons-design.md)"
+    }
+  ],
+  "materialsUsed": "approved P4-T3 brass-polished and brass-aged sets bound by slot name at runtime; gunmetal and hound-glow are factor-only",
+  "license": "Original work generated in Blender from a checked-in script; concept reference from Paul's paid Higgsfield plan (Terms of Use 4.4)",
+  "validation": {
+    "pass": true,
+    "date": "2026-11-15",
+    "checks": [
+      "presence",
+      "hashes",
+      "glb budgets (tris, materials, bones)",
+      "one skin, one weight set",
+      "image-free glb",
+      "clip set",
+      "manifest consistency",
+      "reimport gate (weights, influences, clips, root motion, bounds, sockets)",
+      "evaluated pose checks (floor, death on the floor, loop seams)"
+    ]
+  },
+  "approvals": [
+    {
+      "gate": "concept",
+      "status": "pending",
+      "notes": "assets-source/concepts/p5-automatons-design.md, Decisions for Paul 1",
+      "modelingProceededUnder": "Paul, 2026-11-15, in the rogue-xr session: \"you have standing approval for all spending / modeling / deployments needed for this project\". Modeling proceeded under it; it is not a concept, creative or owner approval of this asset."
+    },
+    {
+      "gate": "model",
+      "status": "pending",
+      "notes": "assets-source/enemies/spring-hound/spring-hound.review-sheet.jpg, MODEL section"
+    },
+    {
+      "gate": "rig",
+      "status": "pending",
+      "notes": "review sheet RIG section"
+    },
+    {
+      "gate": "animation",
+      "status": "pending",
+      "notes": "review sheet ANIMATION sections (Blender frames and engine stills)"
+    },
+    {
+      "gate": "independent visual score",
+      "status": "unscored",
+      "notes": "create-rigged-character-assets requires an independent >= 80/100 score; unscored means unaccepted"
+    }
+  ]
+}

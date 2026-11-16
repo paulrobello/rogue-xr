@@ -281,8 +281,29 @@ ENEMY_RUNTIME = ROOT / "public/assets/enemies"
 ENEMY_SOURCES = ROOT / "assets-source/enemies"
 ENEMY_LIMITS = {"tris": 25_000, "materials": 4, "bones": 40, "influences": 4}
 ENEMY_CLIPS = {"idle", "attack", "hit", "death", "frozen"}
-ENEMY_GENERATORS = {"cog-sentry": "scripts/assets/build-cog-sentry.py"}
-ENEMY_REFERENCES = {"cog-sentry": ["assets-source/concepts/sentry-sheet-1.png"]}
+ENEMY_GENERATORS = {"cog-sentry": "scripts/assets/build-cog-sentry.py", "spring-hound": "scripts/assets/build-spring-hound.py",
+                     "bellows-golem": "scripts/assets/build-bellows-golem.py"}
+ENEMY_REFERENCES = {"cog-sentry": ["assets-source/concepts/sentry-sheet-1.png"], "spring-hound": ["assets-source/concepts/hound-sheet-1.png"],
+                    "bellows-golem": ["assets-source/concepts/golem-sheet-1.png"]}
+_STANDING = ("Paul, 2026-11-15, in the rogue-xr session: \"you have standing approval for all spending / modeling / deployments needed "
+             "for this project\". Modeling proceeded under it; it is not a concept, creative or owner approval of this asset.")
+_P5_META = {
+    "reference_note": "P5-T3 concept sheet (Higgsfield nano_banana_pro); owner approval pending (assets-source/concepts/p5-automatons-design.md)",
+    "evidence_glob": ("assets-source/enemies/{enemy}/staging/engine", "*.jpg"),
+    "concept": {"gate": "concept", "status": "pending", "notes": "assets-source/concepts/p5-automatons-design.md, Decisions for Paul 1",
+                "modelingProceededUnder": _STANDING},
+}
+# Per-enemy provenance fields that differ by asset (the sentry entry reproduces its P4-T6 record).
+ENEMY_META = {
+    "cog-sentry": {
+        "reference_note": "P4-T2 concept sheet picked for the Cog Sentry (docs/art-bible.md)",
+        "materials_used": "approved P4-T3 brass-polished and brass-aged sets bound by slot name at runtime; gunmetal and sentry-glow are factor-only",
+        "evidence_glob": ("docs/verification", "p4-sentry-*.jpg"),
+        "concept": {"who": "Paul", "when": "2026-11-15", "gate": "concept", "status": "approved", "evidence": "docs/art-bible.md: sentry-sheet-1.png picked for the Cog Sentry"},
+    },
+    "spring-hound": {**_P5_META, "materials_used": "approved P4-T3 brass-polished and brass-aged sets bound by slot name at runtime; gunmetal and hound-glow are factor-only"},
+    "bellows-golem": {**_P5_META, "materials_used": "approved P4-T3 brass-polished and walnut sets bound by slot name at runtime; gunmetal and golem-glow are factor-only"},
+}
 
 
 def check_enemy(enemy: str, errors: list[str], warnings: list[str]) -> dict:
@@ -380,9 +401,12 @@ def assemble_enemy(enemy: str) -> None:
     reimport = json.loads((src / "staging/reimport.json").read_text())
     manifest = json.loads((rt / f"{enemy}.manifest.json").read_text())
     gen = ENEMY_GENERATORS[enemy]
+    meta = ENEMY_META[enemy]
     entry = lambda p: {"path": str(p.relative_to(ROOT)), "sha256": sha256(p), "bytes": p.stat().st_size}  # noqa: E731
     sources = [entry(p) for p in sorted((src / "blend").iterdir()) if p.suffix == ".blend"]
     sources += [entry(src / "staging/report.json"), entry(src / "staging/reimport.json")]
+    if meta["evidence_glob"][0].startswith("assets-source"):  # the engine-shot tools that made the evidence
+        sources += [entry(src / n) for n in ("engine_shot.py", "engine-proof.ts") if (src / n).exists()]
     prov = {
         "pieceId": enemy,
         "version": 1,
@@ -405,15 +429,15 @@ def assemble_enemy(enemy: str) -> None:
         "sourceFiles": sources,
         # What Paul reviews for the model, rig and animation gates, bound to the bytes shown.
         "reviewEvidence": [entry(src / f"{enemy}.review-sheet.jpg")]
-        + [entry(p) for p in sorted((ROOT / "docs/verification").glob(f"p4-{enemy.split('-')[-1]}-*.jpg"))],
-        "references": [{"path": r, "sha256": sha256(ROOT / r), "provider": "higgsfield", "note": "P4-T2 concept sheet picked for the Cog Sentry (docs/art-bible.md)"}
+        + [entry(p) for p in sorted((ROOT / meta["evidence_glob"][0].format(enemy=enemy)).glob(meta["evidence_glob"][1]))],
+        "references": [{"path": r, "sha256": sha256(ROOT / r), "provider": "higgsfield", "note": meta["reference_note"]}
                        for r in ENEMY_REFERENCES[enemy]],
-        "materialsUsed": "approved P4-T3 brass-polished and brass-aged sets bound by slot name at runtime; gunmetal and sentry-glow are factor-only",
+        "materialsUsed": meta["materials_used"],
         "license": "Original work generated in Blender from a checked-in script; concept reference from Paul's paid Higgsfield plan (Terms of Use 4.4)",
         "validation": {"pass": False, "date": datetime.date.today().isoformat(), "checks": []},
         "approvals": [
-            {"who": "Paul", "when": "2026-11-15", "gate": "concept", "status": "approved", "evidence": "docs/art-bible.md: sentry-sheet-1.png picked for the Cog Sentry"},
-            {"gate": "model", "status": "pending", "notes": f"assets-source/enemies/{enemy}/cog-sentry.review-sheet.jpg, MODEL section"},
+            meta["concept"],
+            {"gate": "model", "status": "pending", "notes": f"assets-source/enemies/{enemy}/{enemy}.review-sheet.jpg, MODEL section"},
             {"gate": "rig", "status": "pending", "notes": "review sheet RIG section"},
             {"gate": "animation", "status": "pending", "notes": "review sheet ANIMATION sections (Blender frames and engine stills)"},
             {"gate": "independent visual score", "status": "unscored", "notes": "create-rigged-character-assets requires an independent >= 80/100 score; unscored means unaccepted"},
