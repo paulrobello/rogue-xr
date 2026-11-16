@@ -1,0 +1,19 @@
+[extend]
+useDefault = true
+
+# Asset provenance and build reports record sha256 digests next to file names
+# such as cog-sentry.*, which trips the sentry-access-token rule.
+[[allowlists]]
+description = "sha256 digests in asset provenance and reports"
+condition = "AND"
+regexTarget = "secret"
+regexes = ['''^[0-9a-f]{64}$''']
+paths = ['''^assets-source/.+\.json$''', '''^public/assets/.+\.json$''']
+
+# Card provenance keys are asset slugs (arc-bolt-mid-r1.cutout), not credentials.
+[[allowlists]]
+description = "asset slugs under key fields in card provenance"
+condition = "AND"
+regexTarget = "secret"
+regexes = ['''^[a-z0-9]+(?:[-.][a-z0-9]+)*$''']
+paths = ['''^assets-source/cards/provenance\.json$''']
