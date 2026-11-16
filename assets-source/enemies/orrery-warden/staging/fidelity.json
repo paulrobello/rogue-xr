@@ -1,12 +1,17 @@
 {
-  "score": 62,
-  "scorer": "author self-assessment (not the independent score the gate requires)",
+  "score": 78,
+  "date": "2026-11-16",
+  "method": "Author self-score from orrery-warden.fidelity-compare.jpg: orthographic EEVEE renders of the low-poly model at the concept's front, side and back angles, framed at the concept's own scale (2.70 m over the crop height, 2.66 mm per sheet pixel), judged side by side and in zoomed crops of the head, chest, core, skirt, legs and feet, plus the five in-engine clip shots in staging/engine. Proportions (chest and waist widths, belt and hem heights, pauldron span, ring radii and centre, orbit band tilt and planet positions, and the glowing core's diameter of about 0.165 m) were measured on the concept front view at the same framing. The concept's three views disagree with each other (the back view mirrors the planets, the side view puts the band behind the shoulders), so the model follows the front view. The compare lighting is the fixed shared rig and was not tuned to the score; a throwaway shadows-off diagnostic render (not shipped) showed the chest's dimness comes from plate orientation, not shadowing.",
   "gaps": [
-    "chest reads boxy and flat; the concept's sculpted cuirass and bright glowing core are weaker (core emission reads dull)",
-    "front skirt reads as one bright sheet under frontal light; panel separation is weak",
-    "legs and greaves thinner than the concept's armoured legs; hands small",
-    "torso slimmer than the concept's muscular build",
-    "a bright vertical mast/yoke reads on the back",
-    "the planets' orbit band floats with no visible strut"
+    "The sun core's glowing area now matches the concept's size, but its colour reads peach to salmon rather than hot orange with a yellow-white centre: at the project's GLOW_STRENGTH 0.7 convention AgX desaturates F08C2C, in both the Blender compare and the engine shots.",
+    "The head follows the concept's mask layout (brow-panel seams narrowing to the crown, round glowing eyes in dark sockets, cheek seams, a mouth slit over a chin plate) as seams on a smooth lofted helm; the concept's sculpted relief, with deep cheek recesses and a raised brow plate, is not modelled.",
+    "The cuirass now reads as inner core-framing panels and outer pectorals parted by gunmetal seams, but the panels carry no engraved lines and stay dimmer face-on than the concept's bright chest (polished brass mirrors the dark background under the frontal key).",
+    "Engraving is limited to the skirt tassets (gunmetal border grooves); the pauldrons, vambraces and greaves have no panel lines or rivets.",
+    "The front skirt still reads brighter and paler than the concept's bronze under the frontal key, though the tassets separate with dark gaps, a centre slit and engraved borders.",
+    "Greaves are faceted brass shields with one gunmetal strap, slightly wider than the concept's slim segmented greaves; sabatons are lofted shells with ankle cops, simpler than the concept's layered, pointed sabatons.",
+    "Arms read as smooth tubes with gunmetal bands; gauntlets are blocky (box palm, tube fingers) beside the concept's sculpted hands.",
+    "Orbit band placement compromises between views: from the side it swings about 0.4 m in front of the chest, where the concept's side view keeps it behind the shoulders.",
+    "The outer halo ring and back skirt read cream under the back key.",
+    "In the death pose the folded orbit band intersects the halo rings on the floor."
   ]
 }

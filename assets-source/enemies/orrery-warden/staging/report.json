@@ -2,7 +2,7 @@
   "piece": "orrery-warden",
   "blender": "5.2.2 LTS",
   "generator": "scripts/assets/build-orrery-warden.py",
-  "generator_sha256": "8ea6bab94a18a70bb1cba94c0b4fbc44e1445f3dd0ac5ee5c32207173aa508a8",
+  "generator_sha256": "ed89c907dd2ff2d2e788a1366265d0fb19396ccb8a0cef312603a2a089429836",
   "concept": {
     "file": "assets-source/concepts/warden-sheet-1.png",
     "sha256": "c07d34ae5d7412f26c561508bc5a80f14de584ffebbcff31272cc356b07ec5c7",
@@ -16,13 +16,13 @@
     }
   },
   "triangles": {
-    "low": 23822,
-    "high": 72514
+    "low": 24794,
+    "high": 74430
   },
-  "bones": 32,
+  "bones": 31,
   "authoringAgent": "Claude Code subagent (claude-opus-5-5), dispatched by the rogue-xr primary session",
   "ground_clamp_death_max_lift_m": [
-    0.2727,
+    0.276,
     0.0
   ],
   "pose_checks": {
@@ -30,17 +30,17 @@
       "frames": 361,
       "min_z": -0.0,
       "min_z_frame": 64,
-      "max_z": 2.6251,
-      "final_max_z": 2.6209,
+      "max_z": 2.6465,
+      "final_max_z": 2.6406,
       "final_min_z": -0.0,
       "loop_seam_m": 0.0
     },
     "attack": {
       "frames": 49,
       "min_z": -0.0,
-      "min_z_frame": 43,
-      "max_z": 2.6214,
-      "final_max_z": 2.6209,
+      "min_z_frame": 20,
+      "max_z": 2.6408,
+      "final_max_z": 2.6406,
       "final_min_z": -0.0,
       "loop_seam_m": 0.0
     },
@@ -48,51 +48,51 @@
       "frames": 22,
       "min_z": -0.0,
       "min_z_frame": 4,
-      "max_z": 2.6209,
-      "final_max_z": 2.6209,
+      "max_z": 2.6406,
+      "final_max_z": 2.6406,
       "final_min_z": -0.0,
       "loop_seam_m": 0.0
     },
     "death": {
       "frames": 79,
       "min_z": 0.004,
-      "min_z_frame": 54,
-      "max_z": 2.6249,
-      "final_max_z": 0.8079,
+      "min_z_frame": 11,
+      "max_z": 2.719,
+      "final_max_z": 0.8215,
       "final_min_z": 0.004,
-      "loop_seam_m": 2.2308
+      "loop_seam_m": 2.2217
     },
     "frozen": {
       "frames": 31,
       "min_z": -0.0,
       "min_z_frame": 0,
-      "max_z": 2.6066,
-      "final_max_z": 2.6066,
+      "max_z": 2.6227,
+      "final_max_z": 2.6227,
       "final_min_z": -0.0,
       "loop_seam_m": 0.0
     }
   },
   "cull": {
     "center": [
-      0.014,
-      1.313,
-      -0.204
+      0.005,
+      1.359,
+      -0.272
     ],
-    "radius": 1.866,
-    "maxDistanceFromSentryCullCentre": 1.643
+    "radius": 1.954,
+    "maxDistanceFromSentryCullCentre": 1.789
   },
   "canonicalized_primitives": 4,
   "reimport": {
-    "glb_sha256": "48b38b8cb4e30c60c6b2055b7329ec9c5ebb0ae9972ef467eb9284547e2d7c4d",
-    "glb_bytes": 2502184,
-    "triangles": 23822,
+    "glb_sha256": "e33d829f3482c4ba2581d72ca7fc4916975da7d60503c6512c2a076693c26a59",
+    "glb_bytes": 2592392,
+    "triangles": 24794,
     "materials": [
       "brass-polished",
       "gunmetal",
       "warden-glow",
       "warden-jewel"
     ],
-    "vertices": 26477,
+    "vertices": 28312,
     "joints": [
       "root",
       "pelvis",
@@ -111,15 +111,14 @@
       "forearm.R",
       "hand.R",
       "eclipse",
-      "mast",
-      "ring.inner",
-      "ring.outer",
       "neck",
       "head",
       "orbit",
       "planet.emerald",
       "planet.ruby",
       "planet.sapphire",
+      "ring.inner",
+      "ring.outer",
       "thigh.L",
       "shin.L",
       "foot.L",
@@ -127,51 +126,51 @@
       "shin.R",
       "foot.R"
     ],
-    "bone_count": 32,
+    "bone_count": 31,
     "max_influences": 1,
     "max_weight_sum_error": 0.0,
     "unweighted_vertices": 0,
     "bounds": {
       "min": [
-        -0.9017,
+        -0.978,
         0.0,
-        -0.5716
+        -0.4765
       ],
       "max": [
-        0.9017,
-        2.6209,
-        0.651
+        0.978,
+        2.6406,
+        0.9165
       ]
     },
     "clips": {
       "attack": {
         "duration": 1.6,
         "start": 0.0,
-        "channels": 96,
+        "channels": 93,
         "rootAnimated": []
       },
       "death": {
         "duration": 2.6,
         "start": 0.0,
-        "channels": 96,
+        "channels": 93,
         "rootAnimated": []
       },
       "frozen": {
         "duration": 1.0,
         "start": 0.0,
-        "channels": 96,
+        "channels": 93,
         "rootAnimated": []
       },
       "hit": {
         "duration": 0.7,
         "start": 0.0,
-        "channels": 96,
+        "channels": 93,
         "rootAnimated": []
       },
       "idle": {
         "duration": 12.0,
         "start": 0.0,
-        "channels": 96,
+        "channels": 93,
         "rootAnimated": []
       }
     },
@@ -198,8 +197,8 @@
         "bone": "hand.R",
         "parent": "hand.R",
         "position": [
-          0.85,
-          1.04,
+          0.885,
+          1.05,
           -0.04
         ]
       }
@@ -211,7 +210,7 @@
     "pass": true,
     "blender_reimport": {
       "armatures": 1,
-      "bones": 32,
+      "bones": 31,
       "meshes": 1,
       "actions": [
         "attack.001",
@@ -229,12 +228,32 @@
       ]
     }
   },
+  "renders": [
+    "model-low-front",
+    "model-low-side",
+    "model-low-back",
+    "model-low-three-quarter",
+    "model-high-three-quarter",
+    "rig-rom-reach",
+    "rig-rom-crouch",
+    "anim-idle",
+    "anim-attack-wind",
+    "anim-attack-thrust",
+    "anim-hit",
+    "anim-frozen",
+    "anim-death-kneel",
+    "anim-death-end",
+    "compare-front",
+    "compare-side",
+    "compare-back"
+  ],
+  "render_seconds": 2.8,
   "files": {
-    "assets-source/enemies/orrery-warden/blend/orrery-warden.high.blend": "50e4b728e8a2c3f664c1b003395e00b0825047f5ea80c4308240f75c43dfe91a",
-    "assets-source/enemies/orrery-warden/blend/orrery-warden.low.blend": "757ebc19d43ab081162aace5afd2ca8a59357e1d8704478f10c380bd3b462012",
-    "assets-source/enemies/orrery-warden/staging/reimport.json": "fa8afe56fbbe1e4851b79b3a1a21bd492bba64348af7f5478ff41c4dae5d2eb6",
-    "public/assets/enemies/orrery-warden/orrery-warden.glb": "48b38b8cb4e30c60c6b2055b7329ec9c5ebb0ae9972ef467eb9284547e2d7c4d",
-    "public/assets/enemies/orrery-warden/orrery-warden.manifest.json": "2bb0a402bd72fe5f19a6f04182fb17f37438a16f002e60c08efa6784861072f0"
+    "assets-source/enemies/orrery-warden/blend/orrery-warden.high.blend": "1698d04e72f740179bb9cd85d9e95c8cbc080ebaad8ba5f7176c1ae836a5bd0b",
+    "assets-source/enemies/orrery-warden/blend/orrery-warden.low.blend": "9873f00f6617dca2740f35060e616c2acd88f04c0cb6230699aa8a8b24ca0a87",
+    "assets-source/enemies/orrery-warden/staging/reimport.json": "0da6c7c8c37143e4c1bef810320c840da424349101cf91d369aee63e3a6b4026",
+    "public/assets/enemies/orrery-warden/orrery-warden.glb": "e33d829f3482c4ba2581d72ca7fc4916975da7d60503c6512c2a076693c26a59",
+    "public/assets/enemies/orrery-warden/orrery-warden.manifest.json": "ac2badd90e78e990eb0c6c9dce30b3d0f4a62a69a39aa7bc9c6be7a430815b68"
   },
-  "total_seconds": 6.4
+  "total_seconds": 9.6
 }

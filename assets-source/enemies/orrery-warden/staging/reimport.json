@@ -1,14 +1,14 @@
 {
-  "glb_sha256": "48b38b8cb4e30c60c6b2055b7329ec9c5ebb0ae9972ef467eb9284547e2d7c4d",
-  "glb_bytes": 2502184,
-  "triangles": 23822,
+  "glb_sha256": "e33d829f3482c4ba2581d72ca7fc4916975da7d60503c6512c2a076693c26a59",
+  "glb_bytes": 2592392,
+  "triangles": 24794,
   "materials": [
     "brass-polished",
     "gunmetal",
     "warden-glow",
     "warden-jewel"
   ],
-  "vertices": 26477,
+  "vertices": 28312,
   "joints": [
     "root",
     "pelvis",
@@ -27,15 +27,14 @@
     "forearm.R",
     "hand.R",
     "eclipse",
-    "mast",
-    "ring.inner",
-    "ring.outer",
     "neck",
     "head",
     "orbit",
     "planet.emerald",
     "planet.ruby",
     "planet.sapphire",
+    "ring.inner",
+    "ring.outer",
     "thigh.L",
     "shin.L",
     "foot.L",
@@ -43,51 +42,51 @@
     "shin.R",
     "foot.R"
   ],
-  "bone_count": 32,
+  "bone_count": 31,
   "max_influences": 1,
   "max_weight_sum_error": 0.0,
   "unweighted_vertices": 0,
   "bounds": {
     "min": [
-      -0.9017,
+      -0.978,
       0.0,
-      -0.5716
+      -0.4765
     ],
     "max": [
-      0.9017,
-      2.6209,
-      0.651
+      0.978,
+      2.6406,
+      0.9165
     ]
   },
   "clips": {
     "attack": {
       "duration": 1.6,
       "start": 0.0,
-      "channels": 96,
+      "channels": 93,
       "rootAnimated": []
     },
     "death": {
       "duration": 2.6,
       "start": 0.0,
-      "channels": 96,
+      "channels": 93,
       "rootAnimated": []
     },
     "frozen": {
       "duration": 1.0,
       "start": 0.0,
-      "channels": 96,
+      "channels": 93,
       "rootAnimated": []
     },
     "hit": {
       "duration": 0.7,
       "start": 0.0,
-      "channels": 96,
+      "channels": 93,
       "rootAnimated": []
     },
     "idle": {
       "duration": 12.0,
       "start": 0.0,
-      "channels": 96,
+      "channels": 93,
       "rootAnimated": []
     }
   },
@@ -114,8 +113,8 @@
       "bone": "hand.R",
       "parent": "hand.R",
       "position": [
-        0.85,
-        1.04,
+        0.885,
+        1.05,
         -0.04
       ]
     }
@@ -127,7 +126,7 @@
   "pass": true,
   "blender_reimport": {
     "armatures": 1,
-    "bones": 32,
+    "bones": 31,
     "meshes": 1,
     "actions": [
       "attack.001",

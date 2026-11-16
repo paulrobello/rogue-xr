@@ -4,7 +4,7 @@
   "route": "scripted (procedural Blender geometry, rig and keyed clips; no provider generation)",
   "generator": {
     "path": "scripts/assets/build-orrery-warden.py",
-    "sha256": "8ea6bab94a18a70bb1cba94c0b4fbc44e1445f3dd0ac5ee5c32207173aa508a8"
+    "sha256": "ed89c907dd2ff2d2e788a1366265d0fb19396ccb8a0cef312603a2a089429836"
   },
   "authoringAgent": {
     "harness": "claude-code (dispatched sub-agent)",
@@ -18,12 +18,12 @@
     "store": "assets-source/enemies/orrery-warden/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)"
   },
   "budgets": {
-    "triangles": 23822,
-    "highTriangles": 72514,
+    "triangles": 24794,
+    "highTriangles": 74430,
     "materials": 4,
-    "bones": 32,
+    "bones": 31,
     "maxInfluences": 1,
-    "glbBytes": 2502184
+    "glbBytes": 2592392
   },
   "skin": {
     "policy": "rigid: one bone per vertex at weight 1.0",
@@ -38,7 +38,7 @@
       "measured": {
         "duration": 12.0,
         "start": 0.0,
-        "channels": 96,
+        "channels": 93,
         "rootAnimated": []
       }
     },
@@ -51,7 +51,7 @@
       "measured": {
         "duration": 1.6,
         "start": 0.0,
-        "channels": 96,
+        "channels": 93,
         "rootAnimated": []
       }
     },
@@ -62,7 +62,7 @@
       "measured": {
         "duration": 0.7,
         "start": 0.0,
-        "channels": 96,
+        "channels": 93,
         "rootAnimated": []
       }
     },
@@ -76,7 +76,7 @@
       "measured": {
         "duration": 2.6,
         "start": 0.0,
-        "channels": 96,
+        "channels": 93,
         "rootAnimated": []
       }
     },
@@ -88,7 +88,7 @@
       "measured": {
         "duration": 1.0,
         "start": 0.0,
-        "channels": 96,
+        "channels": 93,
         "rootAnimated": []
       }
     }
@@ -98,17 +98,17 @@
       "frames": 361,
       "min_z": -0.0,
       "min_z_frame": 64,
-      "max_z": 2.6251,
-      "final_max_z": 2.6209,
+      "max_z": 2.6465,
+      "final_max_z": 2.6406,
       "final_min_z": -0.0,
       "loop_seam_m": 0.0
     },
     "attack": {
       "frames": 49,
       "min_z": -0.0,
-      "min_z_frame": 43,
-      "max_z": 2.6214,
-      "final_max_z": 2.6209,
+      "min_z_frame": 20,
+      "max_z": 2.6408,
+      "final_max_z": 2.6406,
       "final_min_z": -0.0,
       "loop_seam_m": 0.0
     },
@@ -116,26 +116,26 @@
       "frames": 22,
       "min_z": -0.0,
       "min_z_frame": 4,
-      "max_z": 2.6209,
-      "final_max_z": 2.6209,
+      "max_z": 2.6406,
+      "final_max_z": 2.6406,
       "final_min_z": -0.0,
       "loop_seam_m": 0.0
     },
     "death": {
       "frames": 79,
       "min_z": 0.004,
-      "min_z_frame": 54,
-      "max_z": 2.6249,
-      "final_max_z": 0.8079,
+      "min_z_frame": 11,
+      "max_z": 2.719,
+      "final_max_z": 0.8215,
       "final_min_z": 0.004,
-      "loop_seam_m": 2.2308
+      "loop_seam_m": 2.2217
     },
     "frozen": {
       "frames": 31,
       "min_z": -0.0,
       "min_z_frame": 0,
-      "max_z": 2.6066,
-      "final_max_z": 2.6066,
+      "max_z": 2.6227,
+      "final_max_z": 2.6227,
       "final_min_z": -0.0,
       "loop_seam_m": 0.0
     }
@@ -171,8 +171,8 @@
       "bone": "hand.R",
       "parent": "hand.R",
       "position": [
-        0.85,
-        1.04,
+        0.885,
+        1.05,
         -0.04
       ]
     }
@@ -180,35 +180,35 @@
   "derivedFiles": [
     {
       "path": "public/assets/enemies/orrery-warden/orrery-warden.glb",
-      "sha256": "48b38b8cb4e30c60c6b2055b7329ec9c5ebb0ae9972ef467eb9284547e2d7c4d",
-      "bytes": 2502184
+      "sha256": "e33d829f3482c4ba2581d72ca7fc4916975da7d60503c6512c2a076693c26a59",
+      "bytes": 2592392
     },
     {
       "path": "public/assets/enemies/orrery-warden/orrery-warden.manifest.json",
-      "sha256": "2bb0a402bd72fe5f19a6f04182fb17f37438a16f002e60c08efa6784861072f0",
-      "bytes": 3030
+      "sha256": "ac2badd90e78e990eb0c6c9dce30b3d0f4a62a69a39aa7bc9c6be7a430815b68",
+      "bytes": 3016
     }
   ],
   "sourceFiles": [
     {
       "path": "assets-source/enemies/orrery-warden/blend/orrery-warden.high.blend",
-      "sha256": "50e4b728e8a2c3f664c1b003395e00b0825047f5ea80c4308240f75c43dfe91a",
-      "bytes": 2195463
+      "sha256": "1698d04e72f740179bb9cd85d9e95c8cbc080ebaad8ba5f7176c1ae836a5bd0b",
+      "bytes": 2348077
     },
     {
       "path": "assets-source/enemies/orrery-warden/blend/orrery-warden.low.blend",
-      "sha256": "757ebc19d43ab081162aace5afd2ca8a59357e1d8704478f10c380bd3b462012",
-      "bytes": 1272739
+      "sha256": "9873f00f6617dca2740f35060e616c2acd88f04c0cb6230699aa8a8b24ca0a87",
+      "bytes": 1310625
     },
     {
       "path": "assets-source/enemies/orrery-warden/staging/report.json",
-      "sha256": "5b538e0c87da4e421c171cea213b8651520d24071cd96add8c257b517fa3616d",
-      "bytes": 5669
+      "sha256": "188d05454dc927c273f86ee24f8b11ea1c2f8bac86b4b2269df24ad31c3d1d80",
+      "bytes": 6079
     },
     {
       "path": "assets-source/enemies/orrery-warden/staging/reimport.json",
-      "sha256": "fa8afe56fbbe1e4851b79b3a1a21bd492bba64348af7f5478ff41c4dae5d2eb6",
-      "bytes": 2467
+      "sha256": "0da6c7c8c37143e4c1bef810320c840da424349101cf91d369aee63e3a6b4026",
+      "bytes": 2455
     },
     {
       "path": "assets-source/enemies/orrery-warden/engine_shot.py",
@@ -224,33 +224,33 @@
   "reviewEvidence": [
     {
       "path": "assets-source/enemies/orrery-warden/orrery-warden.review-sheet.jpg",
-      "sha256": "a0ae43031e5a49e9d10af74a81f18130380643dda90a80bd68d76048c7f52f14",
-      "bytes": 454549
+      "sha256": "6df0ebc3db17b01239479df59cf71cd5315af4bc282fc262ea26bf35e2905354",
+      "bytes": 535399
     },
     {
       "path": "assets-source/enemies/orrery-warden/staging/engine/attack.jpg",
-      "sha256": "300f822b91dad49cc8d14e1c952d17012807999cae3d7064c79e8871b99045e2",
-      "bytes": 51243
+      "sha256": "3b6457a07a00a7555963386e4f9513af522e01caebdaf7eaa1161b172f2989aa",
+      "bytes": 60593
     },
     {
       "path": "assets-source/enemies/orrery-warden/staging/engine/death.jpg",
-      "sha256": "6333f4b563572b4447741cd51b57edffede1c62ea0fd938c4d622df6db573712",
-      "bytes": 36364
+      "sha256": "f0c07f50038c402d71d4c58f2cc4ad6fef1f4b9dfe00f0a1c2f731749d9163b4",
+      "bytes": 44140
     },
     {
       "path": "assets-source/enemies/orrery-warden/staging/engine/frozen.jpg",
-      "sha256": "3af77e4453372d1d89ec977aa781fc35ef40a4247bbe3bb3550091ba38698e63",
-      "bytes": 51075
+      "sha256": "a6502c9761f5678f1a760fa8667c2ebe2f7ffe93ad232ad57e299f42e1f4b1b2",
+      "bytes": 58696
     },
     {
       "path": "assets-source/enemies/orrery-warden/staging/engine/hit.jpg",
-      "sha256": "a716f59552ff29242c3527fa6ffab5aa81e7880ec9b7d7480bc597ed4384393a",
-      "bytes": 46614
+      "sha256": "b69592340ac7c9a57f318192dd06a527f4b2c52f2a4c7ede8b0ff0854803f430",
+      "bytes": 56250
     },
     {
       "path": "assets-source/enemies/orrery-warden/staging/engine/idle.jpg",
-      "sha256": "f9dcb95a609d726b4839da9f21d1507534144330c192baf1139ffdf66ffd9770",
-      "bytes": 51662
+      "sha256": "3c06e6601183d30ae4230f0b0dfd7d3c68465e9a15ed5ad243e2af4024c8b139",
+      "bytes": 59463
     }
   ],
   "references": [
@@ -265,7 +265,7 @@
   "license": "Original work generated in Blender from a checked-in script; concept reference from Paul's paid Higgsfield plan (Terms of Use 4.4)",
   "validation": {
     "pass": true,
-    "date": "2026-11-15",
+    "date": "2026-11-16",
     "checks": [
       "presence",
       "hashes",
@@ -305,5 +305,29 @@
       "status": "unscored",
       "notes": "create-rigged-character-assets requires an independent >= 80/100 score; unscored means unaccepted"
     }
-  ]
+  ],
+  "authorSelfScore": {
+    "score": 78,
+    "scale": "0-100 visual fidelity to the concept",
+    "scorer": "author self-score (the authoring agent; not the independent score create-rigged-character-assets requires)",
+    "date": "2026-11-16",
+    "gaps": [
+      "The sun core's glowing area now matches the concept's size, but its colour reads peach to salmon rather than hot orange with a yellow-white centre: at the project's GLOW_STRENGTH 0.7 convention AgX desaturates F08C2C, in both the Blender compare and the engine shots.",
+      "The head follows the concept's mask layout (brow-panel seams narrowing to the crown, round glowing eyes in dark sockets, cheek seams, a mouth slit over a chin plate) as seams on a smooth lofted helm; the concept's sculpted relief, with deep cheek recesses and a raised brow plate, is not modelled.",
+      "The cuirass now reads as inner core-framing panels and outer pectorals parted by gunmetal seams, but the panels carry no engraved lines and stay dimmer face-on than the concept's bright chest (polished brass mirrors the dark background under the frontal key).",
+      "Engraving is limited to the skirt tassets (gunmetal border grooves); the pauldrons, vambraces and greaves have no panel lines or rivets.",
+      "The front skirt still reads brighter and paler than the concept's bronze under the frontal key, though the tassets separate with dark gaps, a centre slit and engraved borders.",
+      "Greaves are faceted brass shields with one gunmetal strap, slightly wider than the concept's slim segmented greaves; sabatons are lofted shells with ankle cops, simpler than the concept's layered, pointed sabatons.",
+      "Arms read as smooth tubes with gunmetal bands; gauntlets are blocky (box palm, tube fingers) beside the concept's sculpted hands.",
+      "Orbit band placement compromises between views: from the side it swings about 0.4 m in front of the chest, where the concept's side view keeps it behind the shoulders.",
+      "The outer halo ring and back skirt read cream under the back key.",
+      "In the death pose the folded orbit band intersects the halo rings on the floor."
+    ],
+    "method": "Author self-score from orrery-warden.fidelity-compare.jpg: orthographic EEVEE renders of the low-poly model at the concept's front, side and back angles, framed at the concept's own scale (2.70 m over the crop height, 2.66 mm per sheet pixel), judged side by side and in zoomed crops of the head, chest, core, skirt, legs and feet, plus the five in-engine clip shots in staging/engine. Proportions (chest and waist widths, belt and hem heights, pauldron span, ring radii and centre, orbit band tilt and planet positions, and the glowing core's diameter of about 0.165 m) were measured on the concept front view at the same framing. The concept's three views disagree with each other (the back view mirrors the planets, the side view puts the band behind the shoulders), so the model follows the front view. The compare lighting is the fixed shared rig and was not tuned to the score; a throwaway shadows-off diagnostic render (not shipped) showed the chest's dimness comes from plate orientation, not shadowing.",
+    "evidence": {
+      "path": "assets-source/enemies/orrery-warden/orrery-warden.fidelity-compare.jpg",
+      "sha256": "6371655a269d935a6e1d7d4594d72c0c1049018c4db76c1a087dce824df53784"
+    },
+    "independentScore": "pending"
+  }
 }
