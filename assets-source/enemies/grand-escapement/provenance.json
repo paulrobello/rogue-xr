@@ -356,98 +356,103 @@
     "evidence": {
       "path": "assets-source/enemies/grand-escapement/grand-escapement.fidelity-compare.jpg",
       "sha256": "8673cd12d331b49bfb75447cc4081c601a10f54c4f522fff89661c5da318e395"
-    },
-    "independentScore": {
-      "score": 77,
-      "scale": "0-100 visual fidelity to the concept",
-      "scorer": "independent reviewer agent (separate from the authoring agent; did not build the model)",
-      "date": "2026-11-16",
-      "acceptanceBar": 80,
-      "clearsBar": false,
-      "rubric": [
-        {
-          "criterion": "silhouette and proportions",
-          "points": 25,
-          "max": 30,
-          "note": "The boxy case with pediment on long brass legs, the long arms with anchors and the bell crown match the concept closely. The shoulders are bulbous spheres rather than layered pauldrons, the case reads slightly tall and narrow, and the side view holds the anchors edge-on behind the legs."
-        },
-        {
-          "criterion": "signature features",
-          "points": 21,
-          "max": 25,
-          "note": "Present and readable: the case and pediment, the glazed double doors, the pendulum and escapement wheel through the glass, both anchors, the bell crown, the back winding key and the sapphire inlays. In phase 2 the doors and side plates open on the same skeleton. The eyes read as goggle rings rather than glowing slits, and in phase 1 the core is a flat amber pane rather than a glow behind frosted glass."
-        },
-        {
-          "criterion": "surface detail and material read",
-          "points": 13,
-          "max": 20,
-          "note": "The case mouldings, door frames and brass trims read well, and the glass is convincingly transparent in the engine. The brass limbs are smooth with no engraving, and the case wood has little painted value variation."
-        },
-        {
-          "criterion": "colour and value",
-          "points": 10,
-          "max": 15,
-          "note": "The mahogany is lighter than the sheet's near-black, the brass is more saturated, and the phase-2 wheel reads peach without the sheet's blaze (the convention is accepted, but the wheel should still dominate the case)."
-        },
-        {
-          "criterion": "readability at play distance",
-          "points": 8,
-          "max": 10,
-          "note": "In the engine shots the case, anchors and open phase-2 case are unmistakable. In phase 1 the core does not pop as a focal light."
-        }
-      ],
-      "topFixes": [
-        "Give phase 1 a bright core behind frosted glass (a stronger emissive pendulum bob and backlit wheel), and make the phase-2 escapement wheel blaze clearly brighter than the case.",
-        "Add glowing amber eye slits on a face plate that reads from the front and the side.",
-        "Darken the case toward the sheet's near-black mahogany, and replace the sphere shoulders with layered, engraved pauldrons."
-      ],
-      "method": "independent visual review against assets-source/concepts/escapement-sheet-1.png by a separate reviewer agent. Judged the concept sheet at native resolution against the front, side and back orthographic compare (front panels cropped and enlarged), the low 3/4 and phase-end Blender renders, and the seven in-engine clip shots (including phase change mid and end, seated player about 2.6 m). Rubric: silhouette and proportions 30, signature features 25, surface detail and material read 20, colour and value 15, readability at play distance in the engine shots 10.",
-      "evidence": [
-        {
-          "path": "assets-source/concepts/escapement-sheet-1.png",
-          "sha256": "42f8031f0391d392cbafd30756f7c69fde1a3c0c216f37aef3fc7060c8a61b9f"
-        },
-        {
-          "path": "assets-source/enemies/grand-escapement/grand-escapement.fidelity-compare.jpg",
-          "sha256": "8673cd12d331b49bfb75447cc4081c601a10f54c4f522fff89661c5da318e395"
-        },
-        {
-          "path": "assets-source/enemies/grand-escapement/staging/renders/model-low-three-quarter.png",
-          "sha256": "846b0b5dfb378d1565e03d4ce496953f4a7d1103712fa657932cd61ae9b4e0ec"
-        },
-        {
-          "path": "assets-source/enemies/grand-escapement/staging/renders/anim-phase-end.png",
-          "sha256": "2d73afb697f2a1fafc3045fa89b31de7f13e85a2de52e589a4341f1b8ab29215"
-        },
-        {
-          "path": "assets-source/enemies/grand-escapement/staging/engine/idle.jpg",
-          "sha256": "23eb251591f6a2a51ee0fb87b3963ef268e626d6419894db48d00dde27e69ef4"
-        },
-        {
-          "path": "assets-source/enemies/grand-escapement/staging/engine/attack.jpg",
-          "sha256": "a752e5dc32faaff3149597b66bf4a252f2fbc477be5403ae71727fa49cc74ae0"
-        },
-        {
-          "path": "assets-source/enemies/grand-escapement/staging/engine/hit.jpg",
-          "sha256": "28f79e33f4a386f77d555fac7e9de81f802675a1aead15ac4946364c851abd0f"
-        },
-        {
-          "path": "assets-source/enemies/grand-escapement/staging/engine/frozen.jpg",
-          "sha256": "9903f80e11bc087b77241f2fc601541dbf16819dfa03f24a9553d09b2eee7064"
-        },
-        {
-          "path": "assets-source/enemies/grand-escapement/staging/engine/death.jpg",
-          "sha256": "2972db4d7ef0f55ed80b6b902ac5b577907671f60568b659213ea200524cb9f4"
-        },
-        {
-          "path": "assets-source/enemies/grand-escapement/staging/engine/phase-change-mid.jpg",
-          "sha256": "bf4a007a53b742400394a32678902717d807081c0cec33e9146fbe80dad77543"
-        },
-        {
-          "path": "assets-source/enemies/grand-escapement/staging/engine/phase-change-end.jpg",
-          "sha256": "429af1bbfc49c6c03d9bf1df816c6bd5ba6ed4a4b1a3b84fef15bb67cbd75980"
-        }
-      ]
     }
+  },
+  "independentScore": {
+    "score": 80,
+    "scale": "0-100 visual fidelity to the concept",
+    "scorer": "independent reviewer agent (separate from the authoring agent; did not build the model)",
+    "date": "2026-11-16",
+    "acceptanceBar": 80,
+    "clearsBar": true,
+    "rubric": [
+      {
+        "criterion": "silhouette and proportions",
+        "points": 25,
+        "max": 30,
+        "note": "Geometry is unchanged since the score of 77, so this holds at 25. The boxy case and pediment on long brass legs, the long arms with anchors and the bell crown match the sheet. The shoulders are bulbous spheres rather than layered pauldrons, the case reads slightly tall and narrow, and in the side view the arms hang in the frontal plane with the anchors edge-on behind the legs where the sheet angles them forward."
+      },
+      {
+        "criterion": "signature features",
+        "points": 22,
+        "max": 25,
+        "note": "Up 1. In phase 1 the escapement wheel and pendulum bob now read as an amber light source through the glass instead of a flat pane, and the eyes glow amber (about sRGB 229, 163, 67). Phase 2 now plays in the game: the guardian-vault log shows 'opens its case: phase 2' and the doors and side plates open on the same skeleton. Still short: the eyes are round goggle rings rather than the art bible's slits, the glass is clear rather than frosted, and the wheel is a flat emissive disc with thin spokes laid over it rather than the sheet's brass toothed wheel with a blazing rim."
+      },
+      {
+        "criterion": "surface detail and material read",
+        "points": 13,
+        "max": 20,
+        "note": "Unchanged at 13, since the geometry and materials are the same. The case mouldings, door frames and brass trims read well, and the glass is transparent in the engine. The brass limbs are smooth with no engraving, and the case wood has little painted value variation."
+      },
+      {
+        "criterion": "colour and value",
+        "points": 11,
+        "max": 15,
+        "note": "Up 1. With the case open, the core measures about sRGB (246, 183, 66), hue 35-39 and saturation 0.70, against the sheet's blazing wheel at (243, 159, 65), hue 32 and saturation 0.72. That is slightly yellower than the sheet but matches the art bible's candle amber F3BE65. Still off in three ways. Through the closed doors the core washes to about (230, 175, 100) at saturation 0.56, against the sheet's (234, 154, 65) at 0.73. A salmon corona ring around the disc, about (215, 142, 102) at hue 22, still covers roughly a third of the glow area (about 3,100 px against 6,300 amber px), and the sheet has almost no pixels in that band. The case wood reads about (89-114, 63-73, 51-55) against the sheet's near-black mahogany at (64-71, 36-41, 30-31)."
+      },
+      {
+        "criterion": "readability at play distance",
+        "points": 9,
+        "max": 10,
+        "note": "Up 1. In the engine shots at the seated 2.6 m distance, the amber core is now the brightest and most saturated element of the case in both phases, and the open case, anchors and silhouette are unmistakable. The closed-door core is still small and washed out behind the glass. The desktop game camera crops the head and most of the case off the top of the frame, which is camera framing, not the model, and is not scored."
+      }
+    ],
+    "topFixes": [
+      "Finish the glow pass: recolour the salmon corona ring around the escapement disc to the same amber, and frost or tint the door glass so the closed-door core reads as saturated orange (sheet about sRGB 234, 154, 65) rather than a pale (230, 175, 100) wash. Make the wheel itself a brass toothed rim lit from behind, not a flat emissive disc.",
+      "Replace the round goggle eyes with amber eye slits on a face plate that reads from the front and the side.",
+      "Darken the case toward the sheet's near-black mahogany (about sRGB 66, 38, 29), and replace the sphere shoulders with layered, engraved pauldrons."
+    ],
+    "method": "Independent visual review against assets-source/concepts/escapement-sheet-1.png and docs/art-bible.md by a separate reviewer agent, using the same rubric as the previous score of 77 (silhouette and proportions 30, signature features 25, surface detail and material read 20, colour and value 15, readability at play distance 10). The new in-engine shots after the glow fix ab14b81 were judged: p6-glow-grand-escapement.jpg (closed), p6-glow-grand-escapement-open.jpg (phase-2 open) and the grand-escapement row of p6-glow-before-after.jpg. Glow colour was measured with Pillow as sRGB medians over HSV masks (amber core: hue 30-50, saturation above 0.6, value above 0.85; salmon ring: hue 8-28, saturation 0.3-0.62) and compared with the same masks on the sheet's panel 1, panel 3 and front doors. The game shots p6-guardian-phase-opening.jpg and p6-guardian-phase-open.jpg were committed in 2990e46, before the glow fix, and measure peach (about 202, 128, 90, hue 20), so they were used only as evidence that phase 2 plays in the game, not for colour. Geometry was judged from the unchanged fidelity compare, review sheet and model-low front and three-quarter renders, and pose readability from the older engine phase-change-end clip. Silhouette and surface were held at their previous points because the geometry is unchanged. This object replaces the previous score of 77, which had been written nested inside authorSelfScore and is now at top level, matching bellows-golem.",
+    "evidence": [
+      {
+        "path": "assets-source/concepts/escapement-sheet-1.png",
+        "sha256": "42f8031f0391d392cbafd30756f7c69fde1a3c0c216f37aef3fc7060c8a61b9f"
+      },
+      {
+        "path": "docs/art-bible.md",
+        "sha256": "11da71b45f24eeb258ef77d328ef1aa009297a9231608cb80bb429aa3ff2ad6a"
+      },
+      {
+        "path": "docs/verification/p6-glow-grand-escapement.jpg",
+        "sha256": "faf339da7cac54bfea62b2eb9c3225e94e102729ce041aad424d73a514ff2500"
+      },
+      {
+        "path": "docs/verification/p6-glow-grand-escapement-open.jpg",
+        "sha256": "2253bc18bd81de5407845b3dda444ff1d725fcc4b31c0249e66ee9c6044e45ef"
+      },
+      {
+        "path": "docs/verification/p6-glow-before-after.jpg",
+        "sha256": "969dcdf4814240af1f08f34da968232c875c70526148378a0c9b2ad6e3366d6d"
+      },
+      {
+        "path": "docs/verification/p6-guardian-phase-opening.jpg",
+        "sha256": "d693cf36d99f45b5fa82fb1a293f031c0271db077f31e636e0457d14c2b59733"
+      },
+      {
+        "path": "docs/verification/p6-guardian-phase-open.jpg",
+        "sha256": "e18aed80fd44787a658046e42bb5681a05505eae7e3e49d659fce0f8c3753e50"
+      },
+      {
+        "path": "assets-source/enemies/grand-escapement/grand-escapement.fidelity-compare.jpg",
+        "sha256": "8673cd12d331b49bfb75447cc4081c601a10f54c4f522fff89661c5da318e395"
+      },
+      {
+        "path": "assets-source/enemies/grand-escapement/grand-escapement.review-sheet.jpg",
+        "sha256": "f84bd062cac54be69ec0bc0cb17d4940dae2d4d9bc2300828c55dddb3a4e9b10"
+      },
+      {
+        "path": "assets-source/enemies/grand-escapement/staging/renders/model-low-front.png",
+        "sha256": "3967a6892ff96a786264ac4e8e85d95c0b0c262215dff2adbeca9c4a9b7de18d"
+      },
+      {
+        "path": "assets-source/enemies/grand-escapement/staging/renders/model-low-three-quarter.png",
+        "sha256": "846b0b5dfb378d1565e03d4ce496953f4a7d1103712fa657932cd61ae9b4e0ec"
+      },
+      {
+        "path": "assets-source/enemies/grand-escapement/staging/engine/phase-change-end.jpg",
+        "sha256": "429af1bbfc49c6c03d9bf1df816c6bd5ba6ed4a4b1a3b84fef15bb67cbd75980"
+      }
+    ],
+    "previousScore": 77
   }
 }

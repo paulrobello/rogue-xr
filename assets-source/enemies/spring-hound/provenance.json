@@ -324,90 +324,87 @@
     "evidence": {
       "path": "assets-source/enemies/spring-hound/spring-hound.fidelity-compare.jpg",
       "sha256": "7b30831c46c767096e24702f8916ae2eb5d7dc7faa4cbf0073a3c89d48388c62"
-    },
-    "independentScore": {
-      "score": 61,
-      "scale": "0-100 visual fidelity to the concept",
-      "scorer": "independent reviewer agent (separate from the authoring agent; did not build the model)",
-      "date": "2026-11-16",
-      "acceptanceBar": 80,
-      "clearsBar": false,
-      "rubric": [
-        {
-          "criterion": "silhouette and proportions",
-          "points": 19,
-          "max": 30,
-          "note": "Side view keeps the long, low body, the coil spine and the key tail, so the outline matches at a glance. The legs are straight stiff tubes without the concept's angled hocks and tapered forearm plates, the head is a long flat crocodile snout instead of the greyhound skull, and head-on the skull is narrow and dark with ears that flare like horns."
-        },
-        {
-          "criterion": "signature features",
-          "points": 15,
-          "max": 25,
-          "note": "Present and readable: the coiled spring spine, the neck coils, the winding key on a segmented tail and the hinged toothed jaw. Weak or missing: the chest grille is unlit bars between two peach side lenses, so the lenses out-read the core. The eye slits are small peach dashes, and the ruby bosses are brass caps. The ruby is a choice, not the budget: the warden and escapement carry jewel colour through COLOR_0 within 4 materials, while the hound spent a slot on a second brass set."
-        },
-        {
-          "criterion": "surface detail and material read",
-          "points": 11,
-          "max": 20,
-          "note": "The plates separate cleanly over gunmetal joints. They are smooth, with none of the concept's engraved panel lines, seams or rivets. The hammered normal reads as noise rather than painted wear, and the paws are simplified blocks."
-        },
-        {
-          "criterion": "colour and value",
-          "points": 9,
-          "max": 15,
-          "note": "The brass reads saturated orange-copper against the concept's olive gold, the ruby accent is absent, and the glow reads peach and dim (the GLOW_STRENGTH convention is accepted; the failure is that it does not act as a focal light)."
-        },
-        {
-          "criterion": "readability at play distance",
-          "points": 7,
-          "max": 10,
-          "note": "The engine shots read clearly as a low brass hound, distinct from the upright roster. The face goes dark head-on and no chest light marks the hit-reaction focal point."
-        }
-      ],
-      "topFixes": [
-        "Make the chest core the focal light: a bright hound-glow panel behind the grille bars, larger and brighter than the side lenses, plus brighter and longer eye slits.",
-        "Restore the ruby bosses through COLOR_0 on a factor material, as the warden's planets and the escapement's sapphires do, or merge the two brass sets to free a material slot.",
-        "Reshape the head into a broader, shorter greyhound skull with folded rose ears and a lit face. Give the legs angled hocks and tapered, engraved forearm plates."
-      ],
-      "method": "independent visual review against assets-source/concepts/hound-sheet-1.png by a separate reviewer agent. Judged the concept sheet at native resolution against the side, front and back orthographic compare, the owner review sheet, the low 3/4 Blender render and the five in-engine clip shots (seated player, about 2.6 m). Rubric: silhouette and proportions 30, signature features 25, surface detail and material read 20, colour and value 15, readability at play distance in the engine shots 10.",
-      "evidence": [
-        {
-          "path": "assets-source/concepts/hound-sheet-1.png",
-          "sha256": "7f16cf73b18efffb7a612cc1f6a01fdadc4e20f06a0fcadb84fb94e07b50c7e6"
-        },
-        {
-          "path": "assets-source/enemies/spring-hound/spring-hound.fidelity-compare.jpg",
-          "sha256": "7b30831c46c767096e24702f8916ae2eb5d7dc7faa4cbf0073a3c89d48388c62"
-        },
-        {
-          "path": "assets-source/enemies/spring-hound/spring-hound.review-sheet.jpg",
-          "sha256": "b76084e9426d4530aac5d139e4ed19e2910df76bf86e9abc9c804b6575a7bd9c"
-        },
-        {
-          "path": "assets-source/enemies/spring-hound/staging/renders/model-low-three-quarter.png",
-          "sha256": "3fe78d924918ffe0b2a2ec422a5cea5f5cc379cba8fa0db3dc74cedd867d5bb3"
-        },
-        {
-          "path": "assets-source/enemies/spring-hound/staging/engine/idle.jpg",
-          "sha256": "23aa7ba017a9874540d3da1455e4eb081e41bf1315d096c87b937e38ee43bf77"
-        },
-        {
-          "path": "assets-source/enemies/spring-hound/staging/engine/attack.jpg",
-          "sha256": "fa7a1c55d08a101244066a13fe7addbf4c1128c9171ee3037cd88092c69f3891"
-        },
-        {
-          "path": "assets-source/enemies/spring-hound/staging/engine/hit.jpg",
-          "sha256": "89dadf4e0ad0a2158fd348f0065166cfdff8386b5df514f083d1c60fd5ce7a8c"
-        },
-        {
-          "path": "assets-source/enemies/spring-hound/staging/engine/frozen.jpg",
-          "sha256": "31364d837636321f7f6bcf223ae28454c45a7d7e2e857a4f614c15f81df74778"
-        },
-        {
-          "path": "assets-source/enemies/spring-hound/staging/engine/death.jpg",
-          "sha256": "dd0c2c32dc7bcfe57ca6fe16efac2c7dccd674ff249f3f98193d3a1a7561fbdc"
-        }
-      ]
     }
+  },
+  "independentScore": {
+    "score": 65,
+    "scale": "0-100 visual fidelity to the concept",
+    "scorer": "independent reviewer agent (separate from the authoring agent; did not build the model)",
+    "date": "2026-11-16",
+    "acceptanceBar": 80,
+    "clearsBar": false,
+    "rubric": [
+      {
+        "criterion": "silhouette and proportions",
+        "points": 19,
+        "max": 30,
+        "note": "Unchanged geometry, unchanged score. The side view keeps the long low body, coil spine and key tail. The legs are straight plated tubes without the concept's angled hocks and tapered forearm plates. The head is a long flat crocodile snout with a spatulate lower jaw instead of the concept's short greyhound skull, and head-on the ears flare up and out like horns rather than folding as rose ears."
+      },
+      {
+        "criterion": "signature features",
+        "points": 16,
+        "max": 25,
+        "note": "Coil spine, neck coils, winding key on a segmented tail and hinged toothed jaw are all present. The eye slits now read as lit amber slits head-on (#F0A235 and #F4B743), which is the gain since 61. The chest is still wrong against the concept: the concept front shows one bright grille core, while the model shows two round side lenses that out-shine and out-size it. The lenses measure value 0.96 to 0.98 (#F5B741, #FAD04E); the grille core reads 0.80 in its brightest gaps (#CB963D) and 0.60 between bars (#996A39). The ruby bosses are still brass caps."
+      },
+      {
+        "criterion": "surface detail and material read",
+        "points": 11,
+        "max": 20,
+        "note": "Unchanged. Plates separate cleanly over gunmetal joints but are smooth, with none of the concept's engraved panel lines, seams or rivets. The hammered normal reads as noise, and the paws are simplified blocks. In the engine shot the chest bulb carries a blown specular patch (#FBF1DE, saturation 0.12) that reads as a white spot."
+      },
+      {
+        "criterion": "colour and value",
+        "points": 11,
+        "max": 15,
+        "note": "Fixed: the glow is now saturated amber. Glow pixels in the after crop of p6-glow-before-after.jpg have a median of #F5B140 (hue 39, saturation 0.74), against #C68D5C peach at the same pixels before. That matches the art bible's candle amber #F3BE65 in hue and is slightly more saturated; the concept's glow is a little more orange (side lens mid tone around #C36E28). Lit engine brass sits at hue 32 to 37, saturation 0.46 to 0.58, close to the concept's lit brass (#8F6D48, hue 31, saturation 0.50). Still missing: the ruby accent (#93212B in the bible)."
+      },
+      {
+        "criterion": "readability at play distance",
+        "points": 8,
+        "max": 10,
+        "note": "At about 2.6 m the hound reads as a low brass dog, distinct from the upright roster, and the face now has visible amber eyes. The chest shows three similar amber blobs instead of one focal core, so the hit-reaction light has no single point to read."
+      }
+    ],
+    "topFixes": [
+      "Make the grille core the single focal light, as the art bible requires: enlarge the lit panel behind the grille bars and make it brighter than the side lenses, and shrink or dim the side lenses so they read only from the side, as in the concept. The colour half of the earlier fix is done.",
+      "Restore the ruby bosses on the shoulders and thighs through COLOR_0 on a factor material, as the warden's planets and the escapement's sapphires do, or merge the two brass sets to free a material slot.",
+      "Reshape the head into a shorter, broader greyhound skull with folded rose ears, and give the legs angled hocks with tapered, engraved forearm plates."
+    ],
+    "method": "Independent visual review against assets-source/concepts/hound-sheet-1.png by a separate reviewer agent, re-scored after the glow fix in commit ab14b81 with the geometry unchanged. Judged the concept at native resolution against the side, front and back orthographic compare, the owner review sheet (including its five engine thumbnails), the low 3/4 Blender render, the attack engine shot for pose, and the new engine shots p6-glow-spring-hound.jpg and the spring-hound row of p6-glow-before-after.jpg (before, after and frozen). Glow colour was measured as sRGB with Pillow: 5x5 median samples on each lens, the grille gaps and each eye in p6-glow-spring-hound.jpg, and the median of all pixels with saturation above 0.6 and value above 0.85 in the after crop, compared with the same pixels in the before crop. Same rubric as the previous review: silhouette and proportions 30, signature features 25, surface detail and material read 20, colour and value 15, readability at play distance 10.",
+    "evidence": [
+      {
+        "path": "assets-source/concepts/hound-sheet-1.png",
+        "sha256": "7f16cf73b18efffb7a612cc1f6a01fdadc4e20f06a0fcadb84fb94e07b50c7e6"
+      },
+      {
+        "path": "docs/art-bible.md",
+        "sha256": "11da71b45f24eeb258ef77d328ef1aa009297a9231608cb80bb429aa3ff2ad6a"
+      },
+      {
+        "path": "docs/verification/p6-glow-spring-hound.jpg",
+        "sha256": "25735004335e5527da11da578e27332c55d3fb7beead94afea36126f51301fc2"
+      },
+      {
+        "path": "docs/verification/p6-glow-before-after.jpg",
+        "sha256": "969dcdf4814240af1f08f34da968232c875c70526148378a0c9b2ad6e3366d6d"
+      },
+      {
+        "path": "assets-source/enemies/spring-hound/spring-hound.fidelity-compare.jpg",
+        "sha256": "7b30831c46c767096e24702f8916ae2eb5d7dc7faa4cbf0073a3c89d48388c62"
+      },
+      {
+        "path": "assets-source/enemies/spring-hound/spring-hound.review-sheet.jpg",
+        "sha256": "b76084e9426d4530aac5d139e4ed19e2910df76bf86e9abc9c804b6575a7bd9c"
+      },
+      {
+        "path": "assets-source/enemies/spring-hound/staging/renders/model-low-three-quarter.png",
+        "sha256": "3fe78d924918ffe0b2a2ec422a5cea5f5cc379cba8fa0db3dc74cedd867d5bb3"
+      },
+      {
+        "path": "assets-source/enemies/spring-hound/staging/engine/attack.jpg",
+        "sha256": "fa7a1c55d08a101244066a13fe7addbf4c1128c9171ee3037cd88092c69f3891"
+      }
+    ],
+    "previousScore": 61
   }
 }
