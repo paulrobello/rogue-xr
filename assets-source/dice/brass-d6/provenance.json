@@ -1,0 +1,275 @@
+{
+  "pieceId": "brass-d6",
+  "version": 1,
+  "route": "scripted (procedural Blender geometry; no provider generation; face art reused from the P5-T6 UI atlas)",
+  "generator": {
+    "path": "scripts/assets/build-dice.py",
+    "sha256": "fe24e8b7422253f50d8988078f3f1b28b988e35527d55b6da0c4cebea9c9757c"
+  },
+  "generatorDeps": [
+    {
+      "path": "scripts/assets/build-cog-sentry.py",
+      "sha256": "9f045c4e6314b29a4bb82572fa040a0a0f9f68079b311b630d76fd0e1918d0a6",
+      "use": "read_glb and canonicalize_indices"
+    }
+  ],
+  "authoringAgent": {
+    "harness": "claude-code (dispatched sub-agent)",
+    "model": "claude-opus-5-5"
+  },
+  "blender": "5.2.2 LTS",
+  "toolVersions": {
+    "gltfExporter": "Blender 5.2.2 bundled io_scene_gltf2"
+  },
+  "blendFiles": {
+    "store": "assets-source/dice/brass-d6/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)"
+  },
+  "budgets": {
+    "triangles": 684,
+    "highTriangles": 3564,
+    "materials": 2,
+    "texturesProduced": 0,
+    "texturesSampled": [
+      "ui/dice-d6 (shared UI atlas page, resident for the UI)"
+    ],
+    "glbBytes": 23208
+  },
+  "lods": "LOD0 only: a 40 mm die stays under 700 triangles, so a LOD chain saves nothing measurable",
+  "bake": "none: face art is the shared atlas page and brass is a factor (or the shared brass-polished set), so nothing is baked",
+  "collider": {
+    "shape": "cuboid",
+    "halfExtent": 0.02,
+    "source": "src/dice/faces.ts D6_HALF_EXTENT"
+  },
+  "frame": {
+    "units": "m",
+    "up": "+Y",
+    "origin": "die centre",
+    "convention": "src/dice/faces.ts die-local frame; identity orientation = DicePresenter's",
+    "uv": "TEXCOORD_0 is glTF (v down); loadDice flips v once so face UVs are in the UI atlas's bottom-left texture space"
+  },
+  "faces": [
+    {
+      "index": 0,
+      "value": 1,
+      "normal": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "atlas": {
+        "page": "dice-d6",
+        "uv": {
+          "u0": 0.0,
+          "v0": 0.5,
+          "u1": 0.25,
+          "v1": 1.0
+        }
+      }
+    },
+    {
+      "index": 1,
+      "value": 2,
+      "normal": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "atlas": {
+        "page": "dice-d6",
+        "uv": {
+          "u0": 0.25,
+          "v0": 0.5,
+          "u1": 0.5,
+          "v1": 1.0
+        }
+      }
+    },
+    {
+      "index": 2,
+      "value": 3,
+      "normal": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "atlas": {
+        "page": "dice-d6",
+        "uv": {
+          "u0": 0.5,
+          "v0": 0.5,
+          "u1": 0.75,
+          "v1": 1.0
+        }
+      }
+    },
+    {
+      "index": 3,
+      "value": 4,
+      "normal": [
+        0.0,
+        0.0,
+        -1.0
+      ],
+      "atlas": {
+        "page": "dice-d6",
+        "uv": {
+          "u0": 0.75,
+          "v0": 0.5,
+          "u1": 1.0,
+          "v1": 1.0
+        }
+      }
+    },
+    {
+      "index": 4,
+      "value": 5,
+      "normal": [
+        -1.0,
+        0.0,
+        0.0
+      ],
+      "atlas": {
+        "page": "dice-d6",
+        "uv": {
+          "u0": 0.0,
+          "v0": 0.0,
+          "u1": 0.25,
+          "v1": 0.5
+        }
+      }
+    },
+    {
+      "index": 5,
+      "value": 6,
+      "normal": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "atlas": {
+        "page": "dice-d6",
+        "uv": {
+          "u0": 0.25,
+          "v0": 0.0,
+          "u1": 0.5,
+          "v1": 0.5
+        }
+      }
+    }
+  ],
+  "derivedFiles": [
+    {
+      "path": "public/assets/dice/brass-d6/brass-d6.glb",
+      "sha256": "a06386150610ceefcea629191853bcee75967854a7a971e38ad7a878487ab23f",
+      "bytes": 23208
+    },
+    {
+      "path": "public/assets/dice/brass-d6/brass-d6.manifest.json",
+      "sha256": "5c6aa491f10f687b142d761cddc5c3877ae85089c9bd822e223ef6a37be2db8e",
+      "bytes": 2873
+    }
+  ],
+  "sourceFiles": [
+    {
+      "path": "assets-source/dice/brass-d6/blend/brass-d6.high.blend",
+      "sha256": "2edacc5a8ed8478a5483c3d5dd23575eafadeaa852dc1b4009e67049db95934f",
+      "bytes": 133994
+    },
+    {
+      "path": "assets-source/dice/brass-d6/blend/brass-d6.low.blend",
+      "sha256": "3d417e5d5dd4f8fae2fbc19ea64a32514661d578017e5fb44f772d56b378e4f5",
+      "bytes": 83359
+    },
+    {
+      "path": "assets-source/dice/brass-d6/staging/report.json",
+      "sha256": "9e77425a27f8943cb555a5c759ab1496d3dfb59c562396c3cf3c9d4e71573698",
+      "bytes": 2729
+    },
+    {
+      "path": "assets-source/dice/brass-d6/staging/reimport.json",
+      "sha256": "4417816505f200d673d833b3b6c7f905429e885c35b31835f7c16796566b6339",
+      "bytes": 956
+    }
+  ],
+  "atlasInputs": [
+    {
+      "path": "public/assets/ui/ui-atlas.json",
+      "sha256": "210ffe63325ce8bd5fc2c5c55ed7678626cd0d6811d188b590624a90f8d88800"
+    },
+    {
+      "path": "public/assets/ui/dice-d6.png",
+      "sha256": "55271faab542335a8232b6b711b0efff03848178a48ef8baa0733a6d682adea4",
+      "bytes": 264304
+    }
+  ],
+  "reviewEvidence": [
+    {
+      "path": "assets-source/dice/dice.review-sheet.jpg",
+      "sha256": "a30f7bb1fadec9870aa92baa841d5de8285b8e4d75b7004add93a688f7a49b41",
+      "bytes": 250993
+    },
+    {
+      "path": "docs/verification/p5-dice-brass-d6-lineup.jpg",
+      "sha256": "19b60e6f5d3124b0e4d6b189a1f3520d2ad8c6bbe9665fdf10daa47669dd28ce",
+      "bytes": 37342
+    },
+    {
+      "path": "docs/verification/p5-dice-brass-d6.jpg",
+      "sha256": "01873b1f68681f7def73e8b4cda35249323623e4a2a3b77a3e8935cc853f0eb5",
+      "bytes": 34173
+    }
+  ],
+  "references": [
+    {
+      "path": "assets-source/style/locked/L-board-1.png",
+      "sha256": "d3fffc8eb300cc6f40236c28930401ef1bd06be0e27be76999839e3bfeacc018",
+      "provider": "higgsfield",
+      "note": "canonical style board (docs/art-bible.md): dice panel 4"
+    }
+  ],
+  "materialsUsed": "factor-only polished brass named after the approved P4-T3 brass-polished set (bindable at runtime); the face slot samples the shared P5-T6 UI atlas page",
+  "license": "Original work generated in Blender from a checked-in script; face art and style reference from Paul's paid Higgsfield plan (Terms of Use 4.4)",
+  "validation": {
+    "pass": true,
+    "date": "2026-11-15",
+    "checks": [
+      "presence",
+      "hashes",
+      "glb budgets (<= 1500 tris, <= 2 materials)",
+      "image-free glb",
+      "single-sided materials",
+      "face table (GLB extras and manifest) equals faces.ts and content/dice.ts",
+      "bounds equal the collider",
+      "manifest consistency",
+      "reimport gate (face-up UVs in the atlas cell, no mirrored UVs, Blender reimport)"
+    ]
+  },
+  "approvals": [
+    {
+      "gate": "technical",
+      "status": "pending",
+      "notes": "validate-generated-assets verdict is reported to the orchestrator, not self-recorded"
+    },
+    {
+      "gate": "creative",
+      "status": "pending",
+      "notes": "assets-source/dice/dice.review-sheet.jpg"
+    },
+    {
+      "gate": "rights",
+      "status": "pending",
+      "notes": "original procedural geometry; face art from the P5-T6 atlas (its own provenance)"
+    },
+    {
+      "gate": "owner",
+      "status": "pending",
+      "notes": "Paul approves the in-engine look (docs/blender-kit-project.md ruling 3)"
+    },
+    {
+      "gate": "independent visual score",
+      "status": "unscored",
+      "notes": "blender-kit-pieces requires an independent >= 80/100 score; unscored means unaccepted"
+    }
+  ]
+}

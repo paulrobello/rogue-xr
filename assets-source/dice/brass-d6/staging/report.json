@@ -1,0 +1,96 @@
+{
+  "piece": "brass-d6",
+  "blender": "5.2.2 LTS",
+  "generator": "scripts/assets/build-dice.py",
+  "generator_sha256": "fe24e8b7422253f50d8988078f3f1b28b988e35527d55b6da0c4cebea9c9757c",
+  "generator_deps": {
+    "scripts/assets/build-cog-sentry.py": "9f045c4e6314b29a4bb82572fa040a0a0f9f68079b311b630d76fd0e1918d0a6"
+  },
+  "atlas": {
+    "manifest": "public/assets/ui/ui-atlas.json",
+    "sha256": "210ffe63325ce8bd5fc2c5c55ed7678626cd0d6811d188b590624a90f8d88800",
+    "page": "public/assets/ui/dice-d6.png",
+    "page_sha256": "55271faab542335a8232b6b711b0efff03848178a48ef8baa0733a6d682adea4"
+  },
+  "triangles": {
+    "low": 684,
+    "high": 3564
+  },
+  "authoringAgent": "Claude Code subagent (claude-opus-5-5), dispatched by the rogue-xr primary session",
+  "exact_bevel_normals": 376,
+  "canonicalized_primitives": 2,
+  "reimport": {
+    "glb_sha256": "a06386150610ceefcea629191853bcee75967854a7a971e38ad7a878487ab23f",
+    "glb_bytes": 23208,
+    "triangles": 684,
+    "materials": [
+      "brass-polished",
+      "brass-d6-face"
+    ],
+    "bounds": {
+      "min": [
+        -0.02,
+        -0.02,
+        -0.02
+      ],
+      "max": [
+        0.02,
+        0.02,
+        0.02
+      ]
+    },
+    "faces": {
+      "0": {
+        "triangles": 2,
+        "inside_cell": true
+      },
+      "1": {
+        "triangles": 2,
+        "inside_cell": true
+      },
+      "2": {
+        "triangles": 2,
+        "inside_cell": true
+      },
+      "3": {
+        "triangles": 2,
+        "inside_cell": true
+      },
+      "4": {
+        "triangles": 2,
+        "inside_cell": true
+      },
+      "5": {
+        "triangles": 2,
+        "inside_cell": true
+      }
+    },
+    "mirrored_uv_triangles": 0,
+    "errors": [],
+    "pass": true,
+    "blender_reimport": {
+      "objects": 1,
+      "meshes": 1,
+      "triangles": 684,
+      "materials": [
+        "brass-d6-face",
+        "brass-polished"
+      ]
+    }
+  },
+  "renders": [
+    "model-low-three-quarter",
+    "model-low-top",
+    "model-high-three-quarter",
+    "faces-lineup"
+  ],
+  "render_seconds": 0.9,
+  "files": {
+    "assets-source/dice/brass-d6/blend/brass-d6.high.blend": "2edacc5a8ed8478a5483c3d5dd23575eafadeaa852dc1b4009e67049db95934f",
+    "assets-source/dice/brass-d6/blend/brass-d6.low.blend": "3d417e5d5dd4f8fae2fbc19ea64a32514661d578017e5fb44f772d56b378e4f5",
+    "assets-source/dice/brass-d6/staging/reimport.json": "4417816505f200d673d833b3b6c7f905429e885c35b31835f7c16796566b6339",
+    "public/assets/dice/brass-d6/brass-d6.glb": "a06386150610ceefcea629191853bcee75967854a7a971e38ad7a878487ab23f",
+    "public/assets/dice/brass-d6/brass-d6.manifest.json": "5c6aa491f10f687b142d761cddc5c3877ae85089c9bd822e223ef6a37be2db8e"
+  },
+  "total_seconds": 1.1
+}

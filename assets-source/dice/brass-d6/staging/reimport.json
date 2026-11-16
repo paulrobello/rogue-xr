@@ -1,0 +1,59 @@
+{
+  "glb_sha256": "a06386150610ceefcea629191853bcee75967854a7a971e38ad7a878487ab23f",
+  "glb_bytes": 23208,
+  "triangles": 684,
+  "materials": [
+    "brass-polished",
+    "brass-d6-face"
+  ],
+  "bounds": {
+    "min": [
+      -0.02,
+      -0.02,
+      -0.02
+    ],
+    "max": [
+      0.02,
+      0.02,
+      0.02
+    ]
+  },
+  "faces": {
+    "0": {
+      "triangles": 2,
+      "inside_cell": true
+    },
+    "1": {
+      "triangles": 2,
+      "inside_cell": true
+    },
+    "2": {
+      "triangles": 2,
+      "inside_cell": true
+    },
+    "3": {
+      "triangles": 2,
+      "inside_cell": true
+    },
+    "4": {
+      "triangles": 2,
+      "inside_cell": true
+    },
+    "5": {
+      "triangles": 2,
+      "inside_cell": true
+    }
+  },
+  "mirrored_uv_triangles": 0,
+  "errors": [],
+  "pass": true,
+  "blender_reimport": {
+    "objects": 1,
+    "meshes": 1,
+    "triangles": 684,
+    "materials": [
+      "brass-d6-face",
+      "brass-polished"
+    ]
+  }
+}

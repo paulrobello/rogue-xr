@@ -370,6 +370,170 @@ def assemble_enemy(enemy: str) -> None:
     print(f"wrote {prov_path.relative_to(ROOT)}")
 
 
+DICE_RUNTIME = ROOT / "public/assets/dice"
+DICE_SOURCES = ROOT / "assets-source/dice"
+DICE_LIMITS = {"tris": 1500, "materials": 2}
+DICE_GENERATOR = "scripts/assets/build-dice.py"
+DICE_GENERATOR_DEPS = ["scripts/assets/build-cog-sentry.py"]
+# faces.ts face order: d6 normals by index, d8 sign bits (i & 4 -> x, i & 2 -> y, i & 1 -> z).
+_S3 = 1 / math.sqrt(3)
+DICE_FACES = {
+    "brass-d6": {"kind": "d6", "half": 0.02, "values": list(range(1, 7)),
+                 "normals": [(0, 1, 0), (1, 0, 0), (0, 0, 1), (0, 0, -1), (-1, 0, 0), (0, -1, 0)]},
+    "glass-d8": {"kind": "d8", "half": 0.026, "values": list(range(1, 9)),
+                 "normals": [((-1 if i & 4 else 1) * _S3, (-1 if i & 2 else 1) * _S3, (-1 if i & 1 else 1) * _S3) for i in range(8)]},
+}
+
+
+def check_dice(die: str, errors: list[str], warnings: list[str]) -> dict:
+    rt = DICE_RUNTIME / die
+    src = DICE_SOURCES / die
+    err = lambda msg: errors.append(f"dice/{die}: {msg}")  # noqa: E731
+    summary: dict = {"die": die}
+    spec = DICE_FACES.get(die)
+    if spec is None:
+        err("unknown die id (not in DICE_FACES)")
+        return summary
+    files = {f"{die}.glb", f"{die}.manifest.json"}
+    for name in sorted(files):
+        if not (rt / name).exists():
+            err(f"missing runtime file {name}")
+    extra = sorted(p.name for p in rt.iterdir() if p.name not in files)
+    if extra:
+        err(f"unlisted runtime files {extra}")
+    if any(not (rt / n).exists() for n in files):
+        return summary
+    m = json.loads((rt / f"{die}.manifest.json").read_text())
+    if m.get("id") != die or m.get("glb") != f"{die}.glb" or m.get("kind") != spec["kind"]:
+        err("manifest id/glb/kind do not match the directory")
+    g = glb_json(rt / f"{die}.glb")
+    glb = glb_stats(rt / f"{die}.glb")
+    summary["glb"] = glb
+    if glb["triangles"] > DICE_LIMITS["tris"]:
+        err(f"{glb['triangles']} triangles over {DICE_LIMITS['tris']}")
+    if len(glb["materials"]) > DICE_LIMITS["materials"]:
+        err(f"{len(glb['materials'])} materials over {DICE_LIMITS['materials']}")
+    if glb["images"] or glb["textures"]:
+        err("GLB must be image-free (faces sample the shared UI atlas page)")
+    if any(mat.get("doubleSided") for mat in g.get("materials", [])):
+        err("materials must be single-sided")
+    budget = m.get("budget", {})
+    if budget.get("tris") != glb["triangles"] or budget.get("materials") != len(glb["materials"]) or budget.get("texturesProduced") != 0:
+        err(f"manifest budget {budget} != measured tris {glb['triangles']}, materials {len(glb['materials'])}, 0 textures")
+    if sorted(glb["materials"]) != sorted(m.get("materialSlots", {})):
+        err(f"GLB materials {glb['materials']} != manifest slots {sorted(m.get('materialSlots', {}))}")
+    want = [{"index": i, "value": v, "normal": [float(x) for x in n]} for i, (v, n) in enumerate(zip(spec["values"], spec["normals"]))]
+    node = next((n for n in g.get("nodes", []) if n.get("name") == m.get("node")), {})
+    got_glb = node.get("extras", {}).get("die", {}).get("faces")
+    got_manifest = [{k: f[k] for k in ("index", "value", "normal")} for f in m.get("faces", [])]
+    for label, got in (("GLB node extras", got_glb), ("manifest", got_manifest)):
+        if not got or len(got) != len(want) or any(
+            a["index"] != b["index"] or a["value"] != b["value"] or max(abs(x - y) for x, y in zip(a["normal"], b["normal"])) > 1e-9
+            for a, b in zip(got, want)
+        ):
+            err(f"{label} face table differs from faces.ts / content/dice.ts")
+    bounds = m.get("bounds", {})
+    if any(abs(abs(v) - spec["half"]) > 1e-6 for v in bounds.get("min", [9]) + bounds.get("max", [9])):
+        err(f"bounds {bounds} do not match the collider half extent {spec['half']}")
+
+    prov_path = src / "provenance.json"
+    if not prov_path.exists():
+        err("provenance.json missing (run --assemble-dice)")
+        return summary
+    prov = json.loads(prov_path.read_text())
+    if not prov.get("validation", {}).get("pass"):
+        err("provenance validation.pass is not true")
+    recorded = {d["path"]: d["sha256"] for d in prov.get("derivedFiles", []) + prov.get("sourceFiles", [])}
+    for name in sorted(files):
+        rel = f"public/assets/dice/{die}/{name}"
+        if rel not in recorded:
+            err(f"{rel} not recorded in provenance")
+        elif recorded[rel] != sha256(rt / name):
+            err(f"{rel} hash differs from provenance")
+    for d in prov.get("sourceFiles", []):
+        path = ROOT / d["path"]
+        if not path.exists() or sha256(path) != d["sha256"]:
+            err(f"source {d['path']} missing or changed since provenance")
+    for dep in [prov.get("generator", {})] + prov.get("generatorDeps", []):
+        if not (ROOT / dep.get("path", "")).exists():
+            err(f"generator {dep.get('path')} missing")
+        elif sha256(ROOT / dep["path"]) != dep.get("sha256"):
+            warnings.append(f"dice/{die}: {dep['path']} changed since the build (stale; rebuild before re-review)")
+    for ref in prov.get("references", []) + prov.get("reviewEvidence", []) + prov.get("atlasInputs", []):
+        path = ROOT / ref["path"]
+        if not path.exists() or sha256(path) != ref["sha256"]:
+            err(f"reference, atlas input or review evidence {ref['path']} missing or changed since provenance")
+    reimport = src / "staging/reimport.json"
+    if not reimport.exists():
+        err("staging/reimport.json missing")
+    else:
+        r = json.loads(reimport.read_text())
+        if not r.get("pass") or r.get("glb_sha256") != sha256(rt / f"{die}.glb"):
+            err("reimport gate did not pass for the shipped GLB")
+    return summary
+
+
+def assemble_dice(die: str) -> None:
+    src = DICE_SOURCES / die
+    rt = DICE_RUNTIME / die
+    report = json.loads((src / "staging/report.json").read_text())
+    reimport = json.loads((src / "staging/reimport.json").read_text())
+    manifest = json.loads((rt / f"{die}.manifest.json").read_text())
+    entry = lambda p: {"path": str(p.relative_to(ROOT)), "sha256": sha256(p), "bytes": p.stat().st_size}  # noqa: E731
+    sources = [entry(p) for p in sorted((src / "blend").iterdir()) if p.suffix == ".blend"]
+    sources += [entry(src / "staging/report.json"), entry(src / "staging/reimport.json")]
+    prov = {
+        "pieceId": die,
+        "version": 1,
+        "route": "scripted (procedural Blender geometry; no provider generation; face art reused from the P5-T6 UI atlas)",
+        "generator": {"path": DICE_GENERATOR, "sha256": sha256(ROOT / DICE_GENERATOR)},
+        "generatorDeps": [{"path": d, "sha256": sha256(ROOT / d), "use": "read_glb and canonicalize_indices"} for d in DICE_GENERATOR_DEPS],
+        "authoringAgent": {"harness": "claude-code (dispatched sub-agent)", "model": "claude-opus-5-5"},
+        "blender": report["blender"],
+        "toolVersions": {"gltfExporter": "Blender 5.2.2 bundled io_scene_gltf2"},
+        "blendFiles": {"store": f"assets-source/dice/{die}/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)"},
+        "budgets": {"triangles": reimport["triangles"], "highTriangles": report["triangles"]["high"], "materials": len(reimport["materials"]),
+                    "texturesProduced": 0, "texturesSampled": manifest["budget"]["texturesSampled"], "glbBytes": reimport["glb_bytes"]},
+        "lods": "LOD0 only: a 40 mm die stays under 700 triangles, so a LOD chain saves nothing measurable",
+        "bake": "none: face art is the shared atlas page and brass is a factor (or the shared brass-polished set), so nothing is baked",
+        "collider": manifest["collider"],
+        "frame": manifest["frame"],
+        "faces": manifest["faces"],
+        "derivedFiles": [entry(p) for p in sorted(rt.iterdir())],
+        "sourceFiles": sources,
+        "atlasInputs": [{"path": report["atlas"]["manifest"], "sha256": sha256(ROOT / report["atlas"]["manifest"])}, entry(ROOT / report["atlas"]["page"])],
+        "reviewEvidence": [entry(DICE_SOURCES / "dice.review-sheet.jpg")]
+        + [entry(p) for p in sorted((ROOT / "docs/verification").glob(f"p5-dice-{die}*.jpg"))],
+        "references": [{"path": "assets-source/style/locked/L-board-1.png", "sha256": sha256(ROOT / "assets-source/style/locked/L-board-1.png"),
+                        "provider": "higgsfield", "note": "canonical style board (docs/art-bible.md): dice panel 4"}],
+        "materialsUsed": "factor-only polished brass named after the approved P4-T3 brass-polished set (bindable at runtime); the face slot samples the shared P5-T6 UI atlas page",
+        "license": "Original work generated in Blender from a checked-in script; face art and style reference from Paul's paid Higgsfield plan (Terms of Use 4.4)",
+        "validation": {"pass": False, "date": datetime.date.today().isoformat(), "checks": []},
+        "approvals": [
+            {"gate": "technical", "status": "pending", "notes": "validate-generated-assets verdict is reported to the orchestrator, not self-recorded"},
+            {"gate": "creative", "status": "pending", "notes": "assets-source/dice/dice.review-sheet.jpg"},
+            {"gate": "rights", "status": "pending", "notes": "original procedural geometry; face art from the P5-T6 atlas (its own provenance)"},
+            {"gate": "owner", "status": "pending", "notes": "Paul approves the in-engine look (docs/blender-kit-project.md ruling 3)"},
+            {"gate": "independent visual score", "status": "unscored", "notes": "blender-kit-pieces requires an independent >= 80/100 score; unscored means unaccepted"},
+        ],
+    }
+    prov_path = src / "provenance.json"
+    prov_path.write_text(json.dumps(prov, indent=2) + "\n")
+    errors: list[str] = []
+    warnings: list[str] = []
+    check_dice(die, errors, warnings)
+    remaining = [e for e in errors if "validation.pass" not in e]
+    if remaining:
+        prov_path.unlink()
+        raise SystemExit("assemble refused, gate errors:\n" + "\n".join(remaining))
+    prov["validation"] = {"pass": True, "date": datetime.date.today().isoformat(),
+                          "checks": ["presence", "hashes", "glb budgets (<= 1500 tris, <= 2 materials)", "image-free glb", "single-sided materials",
+                                     "face table (GLB extras and manifest) equals faces.ts and content/dice.ts", "bounds equal the collider",
+                                     "manifest consistency", "reimport gate (face-up UVs in the atlas cell, no mirrored UVs, Blender reimport)"]}
+    prov_path.write_text(json.dumps(prov, indent=2) + "\n")
+    print(f"wrote {prov_path.relative_to(ROOT)}")
+
+
 def assemble(template: str) -> None:
     src = SOURCES / template
     rt = RUNTIME / template
@@ -439,11 +603,14 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--assemble", metavar="TEMPLATE")
     parser.add_argument("--assemble-enemy", metavar="ENEMY")
+    parser.add_argument("--assemble-dice", metavar="DIE")
     args = parser.parse_args()
     if args.assemble:
         assemble(args.assemble)
     if args.assemble_enemy:
         assemble_enemy(args.assemble_enemy)
+    if args.assemble_dice:
+        assemble_dice(args.assemble_dice)
     errors: list[str] = []
     warnings: list[str] = []
     rooms = sorted(p.name for p in RUNTIME.iterdir() if p.is_dir()) if RUNTIME.exists() else []
@@ -459,6 +626,11 @@ def main() -> int:
         s = check_enemy(enemy, errors, warnings)
         glb = s.get("glb", {})
         print(f"asset-check enemies/{enemy}: {glb.get('triangles')} tris, {len(glb.get('materials', []))} materials, {s.get('bones')} bones, clips {s.get('clips')}")
+    dice = sorted(p.name for p in DICE_RUNTIME.iterdir() if p.is_dir()) if DICE_RUNTIME.exists() else []
+    for die in dice:
+        s = check_dice(die, errors, warnings)
+        glb = s.get("glb", {})
+        print(f"asset-check dice/{die}: {glb.get('triangles')} tris, {len(glb.get('materials', []))} materials, {glb.get('images')} images")
     for w in warnings:
         print(f"WARN {w}")
     for e in errors:

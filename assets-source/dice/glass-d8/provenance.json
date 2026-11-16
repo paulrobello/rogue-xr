@@ -1,0 +1,311 @@
+{
+  "pieceId": "glass-d8",
+  "version": 1,
+  "route": "scripted (procedural Blender geometry; no provider generation; face art reused from the P5-T6 UI atlas)",
+  "generator": {
+    "path": "scripts/assets/build-dice.py",
+    "sha256": "fe24e8b7422253f50d8988078f3f1b28b988e35527d55b6da0c4cebea9c9757c"
+  },
+  "generatorDeps": [
+    {
+      "path": "scripts/assets/build-cog-sentry.py",
+      "sha256": "9f045c4e6314b29a4bb82572fa040a0a0f9f68079b311b630d76fd0e1918d0a6",
+      "use": "read_glb and canonicalize_indices"
+    }
+  ],
+  "authoringAgent": {
+    "harness": "claude-code (dispatched sub-agent)",
+    "model": "claude-opus-5-5"
+  },
+  "blender": "5.2.2 LTS",
+  "toolVersions": {
+    "gltfExporter": "Blender 5.2.2 bundled io_scene_gltf2"
+  },
+  "blendFiles": {
+    "store": "assets-source/dice/glass-d8/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)"
+  },
+  "budgets": {
+    "triangles": 200,
+    "highTriangles": 264,
+    "materials": 2,
+    "texturesProduced": 0,
+    "texturesSampled": [
+      "ui/dice-d8 (shared UI atlas page, resident for the UI)"
+    ],
+    "glbBytes": 14304
+  },
+  "lods": "LOD0 only: a 40 mm die stays under 700 triangles, so a LOD chain saves nothing measurable",
+  "bake": "none: face art is the shared atlas page and brass is a factor (or the shared brass-polished set), so nothing is baked",
+  "collider": {
+    "shape": "convexHull",
+    "circumradius": 0.026,
+    "source": "src/dice/faces.ts D8_CIRCUMRADIUS"
+  },
+  "frame": {
+    "units": "m",
+    "up": "+Y",
+    "origin": "die centre",
+    "convention": "src/dice/faces.ts die-local frame; identity orientation = DicePresenter's",
+    "uv": "TEXCOORD_0 is glTF (v down); loadDice flips v once so face UVs are in the UI atlas's bottom-left texture space"
+  },
+  "faces": [
+    {
+      "index": 0,
+      "value": 1,
+      "normal": [
+        0.5773502691896258,
+        0.5773502691896258,
+        0.5773502691896258
+      ],
+      "atlas": {
+        "page": "dice-d8",
+        "uv": {
+          "u0": 0.0,
+          "v0": 0.5,
+          "u1": 0.25,
+          "v1": 1.0
+        }
+      }
+    },
+    {
+      "index": 1,
+      "value": 2,
+      "normal": [
+        0.5773502691896258,
+        0.5773502691896258,
+        -0.5773502691896258
+      ],
+      "atlas": {
+        "page": "dice-d8",
+        "uv": {
+          "u0": 0.25,
+          "v0": 0.5,
+          "u1": 0.5,
+          "v1": 1.0
+        }
+      }
+    },
+    {
+      "index": 2,
+      "value": 3,
+      "normal": [
+        0.5773502691896258,
+        -0.5773502691896258,
+        0.5773502691896258
+      ],
+      "atlas": {
+        "page": "dice-d8",
+        "uv": {
+          "u0": 0.5,
+          "v0": 0.5,
+          "u1": 0.75,
+          "v1": 1.0
+        }
+      }
+    },
+    {
+      "index": 3,
+      "value": 4,
+      "normal": [
+        0.5773502691896258,
+        -0.5773502691896258,
+        -0.5773502691896258
+      ],
+      "atlas": {
+        "page": "dice-d8",
+        "uv": {
+          "u0": 0.75,
+          "v0": 0.5,
+          "u1": 1.0,
+          "v1": 1.0
+        }
+      }
+    },
+    {
+      "index": 4,
+      "value": 5,
+      "normal": [
+        -0.5773502691896258,
+        0.5773502691896258,
+        0.5773502691896258
+      ],
+      "atlas": {
+        "page": "dice-d8",
+        "uv": {
+          "u0": 0.0,
+          "v0": 0.0,
+          "u1": 0.25,
+          "v1": 0.5
+        }
+      }
+    },
+    {
+      "index": 5,
+      "value": 6,
+      "normal": [
+        -0.5773502691896258,
+        0.5773502691896258,
+        -0.5773502691896258
+      ],
+      "atlas": {
+        "page": "dice-d8",
+        "uv": {
+          "u0": 0.25,
+          "v0": 0.0,
+          "u1": 0.5,
+          "v1": 0.5
+        }
+      }
+    },
+    {
+      "index": 6,
+      "value": 7,
+      "normal": [
+        -0.5773502691896258,
+        -0.5773502691896258,
+        0.5773502691896258
+      ],
+      "atlas": {
+        "page": "dice-d8",
+        "uv": {
+          "u0": 0.5,
+          "v0": 0.0,
+          "u1": 0.75,
+          "v1": 0.5
+        }
+      }
+    },
+    {
+      "index": 7,
+      "value": 8,
+      "normal": [
+        -0.5773502691896258,
+        -0.5773502691896258,
+        -0.5773502691896258
+      ],
+      "atlas": {
+        "page": "dice-d8",
+        "uv": {
+          "u0": 0.75,
+          "v0": 0.0,
+          "u1": 1.0,
+          "v1": 0.5
+        }
+      }
+    }
+  ],
+  "derivedFiles": [
+    {
+      "path": "public/assets/dice/glass-d8/glass-d8.glb",
+      "sha256": "b8d4e87b984c28fb0546592f7e49bc176f0d2ae463ab4b3a9d95f47f1f3e3495",
+      "bytes": 14304
+    },
+    {
+      "path": "public/assets/dice/glass-d8/glass-d8.manifest.json",
+      "sha256": "ef9d5a6b8c092147feefebc31cd866a7519e239329b2efc82a944108d77d35b2",
+      "bytes": 3807
+    }
+  ],
+  "sourceFiles": [
+    {
+      "path": "assets-source/dice/glass-d8/blend/glass-d8.high.blend",
+      "sha256": "0a4082dc028a65b16957fb3e1d686f203b152b781cca49cfeeca9e95fa101b71",
+      "bytes": 72986
+    },
+    {
+      "path": "assets-source/dice/glass-d8/blend/glass-d8.low.blend",
+      "sha256": "0c3d04bdd8bacad9a6c6fa98976e35ce99e9f81249d15f056eebab8e410f2516",
+      "bytes": 74306
+    },
+    {
+      "path": "assets-source/dice/glass-d8/staging/report.json",
+      "sha256": "ddae5deee37f9597711b3c3d64eee3663568e5128e22993755a99a5492e650c9",
+      "bytes": 2880
+    },
+    {
+      "path": "assets-source/dice/glass-d8/staging/reimport.json",
+      "sha256": "828d478ee9354219736441e3300b53ffb72a370d2292e11e0f799b4042f2c1a2",
+      "bytes": 1094
+    }
+  ],
+  "atlasInputs": [
+    {
+      "path": "public/assets/ui/ui-atlas.json",
+      "sha256": "210ffe63325ce8bd5fc2c5c55ed7678626cd0d6811d188b590624a90f8d88800"
+    },
+    {
+      "path": "public/assets/ui/dice-d8.png",
+      "sha256": "a4a308e288bbf89973de5bb542c5a1cfa54e29f9d83016549df8fda6d50a574b",
+      "bytes": 186155
+    }
+  ],
+  "reviewEvidence": [
+    {
+      "path": "assets-source/dice/dice.review-sheet.jpg",
+      "sha256": "a30f7bb1fadec9870aa92baa841d5de8285b8e4d75b7004add93a688f7a49b41",
+      "bytes": 250993
+    },
+    {
+      "path": "docs/verification/p5-dice-glass-d8-lineup.jpg",
+      "sha256": "9fd53bcc0469ffcacc6a368db6d7529dcf2b370d0826584058246fbf0eccb58f",
+      "bytes": 23944
+    },
+    {
+      "path": "docs/verification/p5-dice-glass-d8.jpg",
+      "sha256": "1e385461cb95d558e6e2401dd007aac536854f40f53944f82fdbc26db484d137",
+      "bytes": 24178
+    }
+  ],
+  "references": [
+    {
+      "path": "assets-source/style/locked/L-board-1.png",
+      "sha256": "d3fffc8eb300cc6f40236c28930401ef1bd06be0e27be76999839e3bfeacc018",
+      "provider": "higgsfield",
+      "note": "canonical style board (docs/art-bible.md): dice panel 4"
+    }
+  ],
+  "materialsUsed": "factor-only polished brass named after the approved P4-T3 brass-polished set (bindable at runtime); the face slot samples the shared P5-T6 UI atlas page",
+  "license": "Original work generated in Blender from a checked-in script; face art and style reference from Paul's paid Higgsfield plan (Terms of Use 4.4)",
+  "validation": {
+    "pass": true,
+    "date": "2026-11-15",
+    "checks": [
+      "presence",
+      "hashes",
+      "glb budgets (<= 1500 tris, <= 2 materials)",
+      "image-free glb",
+      "single-sided materials",
+      "face table (GLB extras and manifest) equals faces.ts and content/dice.ts",
+      "bounds equal the collider",
+      "manifest consistency",
+      "reimport gate (face-up UVs in the atlas cell, no mirrored UVs, Blender reimport)"
+    ]
+  },
+  "approvals": [
+    {
+      "gate": "technical",
+      "status": "pending",
+      "notes": "validate-generated-assets verdict is reported to the orchestrator, not self-recorded"
+    },
+    {
+      "gate": "creative",
+      "status": "pending",
+      "notes": "assets-source/dice/dice.review-sheet.jpg"
+    },
+    {
+      "gate": "rights",
+      "status": "pending",
+      "notes": "original procedural geometry; face art from the P5-T6 atlas (its own provenance)"
+    },
+    {
+      "gate": "owner",
+      "status": "pending",
+      "notes": "Paul approves the in-engine look (docs/blender-kit-project.md ruling 3)"
+    },
+    {
+      "gate": "independent visual score",
+      "status": "unscored",
+      "notes": "blender-kit-pieces requires an independent >= 80/100 score; unscored means unaccepted"
+    }
+  ]
+}

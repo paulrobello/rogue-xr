@@ -1,0 +1,166 @@
+{
+  "id": "brass-d6",
+  "version": 1,
+  "kind": "d6",
+  "glb": "brass-d6.glb",
+  "node": "brass-d6",
+  "frame": {
+    "units": "m",
+    "up": "+Y",
+    "origin": "die centre",
+    "convention": "src/dice/faces.ts die-local frame; identity orientation = DicePresenter's",
+    "uv": "TEXCOORD_0 is glTF (v down); loadDice flips v once so face UVs are in the UI atlas's bottom-left texture space"
+  },
+  "collider": {
+    "shape": "cuboid",
+    "halfExtent": 0.02,
+    "source": "src/dice/faces.ts D6_HALF_EXTENT"
+  },
+  "bounds": {
+    "min": [
+      -0.02,
+      -0.02,
+      -0.02
+    ],
+    "max": [
+      0.02,
+      0.02,
+      0.02
+    ]
+  },
+  "faces": [
+    {
+      "index": 0,
+      "value": 1,
+      "normal": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "atlas": {
+        "page": "dice-d6",
+        "uv": {
+          "u0": 0.0,
+          "v0": 0.5,
+          "u1": 0.25,
+          "v1": 1.0
+        }
+      }
+    },
+    {
+      "index": 1,
+      "value": 2,
+      "normal": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "atlas": {
+        "page": "dice-d6",
+        "uv": {
+          "u0": 0.25,
+          "v0": 0.5,
+          "u1": 0.5,
+          "v1": 1.0
+        }
+      }
+    },
+    {
+      "index": 2,
+      "value": 3,
+      "normal": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "atlas": {
+        "page": "dice-d6",
+        "uv": {
+          "u0": 0.5,
+          "v0": 0.5,
+          "u1": 0.75,
+          "v1": 1.0
+        }
+      }
+    },
+    {
+      "index": 3,
+      "value": 4,
+      "normal": [
+        0.0,
+        0.0,
+        -1.0
+      ],
+      "atlas": {
+        "page": "dice-d6",
+        "uv": {
+          "u0": 0.75,
+          "v0": 0.5,
+          "u1": 1.0,
+          "v1": 1.0
+        }
+      }
+    },
+    {
+      "index": 4,
+      "value": 5,
+      "normal": [
+        -1.0,
+        0.0,
+        0.0
+      ],
+      "atlas": {
+        "page": "dice-d6",
+        "uv": {
+          "u0": 0.0,
+          "v0": 0.0,
+          "u1": 0.25,
+          "v1": 0.5
+        }
+      }
+    },
+    {
+      "index": 5,
+      "value": 6,
+      "normal": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "atlas": {
+        "page": "dice-d6",
+        "uv": {
+          "u0": 0.25,
+          "v0": 0.0,
+          "u1": 0.5,
+          "v1": 0.5
+        }
+      }
+    }
+  ],
+  "materialSlots": {
+    "brass-polished": {
+      "role": "body",
+      "set": "brass-polished",
+      "tileMeters": 0.5,
+      "factorOnly": true
+    },
+    "brass-d6-face": {
+      "role": "face",
+      "atlasPage": "dice-d6",
+      "roughness": 0.55,
+      "metalness": 0.0,
+      "emissiveIntensity": 0.35,
+      "transparent": false,
+      "opacity": 1.0
+    }
+  },
+  "budget": {
+    "tris": 684,
+    "materials": 2,
+    "texturesProduced": 0,
+    "texturesSampled": [
+      "ui/dice-d6 (shared UI atlas page, resident for the UI)"
+    ]
+  }
+}
