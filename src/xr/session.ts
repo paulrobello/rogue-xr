@@ -16,6 +16,15 @@ interface TrackedSource {
   update(deltaSeconds: number): void;
   hide(): void;
   readonly input: XRInputSource | null;
+  readonly grip: THREE.Object3D;
+  /** The WebXR target-ray space: its -Z axis is where the controller points. */
+  readonly ray: THREE.Object3D;
+}
+
+/** A per-handedness pair; null while that hand has no tracked input. */
+export interface HandPair<T> {
+  left: T | null;
+  right: T | null;
 }
 
 export interface XrSticks {
@@ -31,6 +40,10 @@ export interface XrRig {
   readonly presenting: boolean;
   update(deltaSeconds: number, frame?: XRFrame): void;
   sticks(): XrSticks;
+  /** Controller grip objects by handedness, null while that hand is not tracked. */
+  grips(): HandPair<THREE.Object3D>;
+  /** Controller target-ray objects (pointing, -Z) by handedness. */
+  rays(): HandPair<THREE.Object3D>;
   dispose(): void;
 }
 
@@ -82,6 +95,8 @@ export function createXrRig(
       get input() {
         return input;
       },
+      grip,
+      ray: controller,
     };
   });
 
@@ -116,6 +131,20 @@ export function createXrRig(
       }
       return out;
     },
+    grips: () => byHand(sources, (source) => source.grip),
+    rays: () => byHand(sources, (source) => source.ray),
     dispose: () => session.dispose(),
   };
+}
+
+function byHand<T>(
+  sources: readonly TrackedSource[],
+  pick: (source: TrackedSource) => T,
+): HandPair<T> {
+  const out: HandPair<T> = { left: null, right: null };
+  for (const source of sources) {
+    const side = source.input?.handedness;
+    if (side === 'left' || side === 'right') out[side] = pick(source);
+  }
+  return out;
 }
