@@ -268,8 +268,54 @@
     },
     {
       "gate": "independent visual score",
-      "status": "unscored",
+      "status": "below bar: 71/100 (bar 80), scored 2026-11-16",
       "notes": "blender-kit-pieces requires an independent >= 80/100 score; unscored means unaccepted"
     }
-  ]
+  ],
+  "independentScore": {
+    "score": 71,
+    "scale": "0-100 visual fidelity to the concept and art bible",
+    "scorer": "independent reviewer agent (separate from the authoring agent; did not build the asset)",
+    "date": "2026-11-16",
+    "acceptanceBar": 80,
+    "clearsBar": false,
+    "rubric": [
+      {
+        "criterion": "silhouette and proportions",
+        "points": 25,
+        "max": 30,
+        "note": "Close match to L-board-1 panel 4: a rounded-corner brass cube with a raised brass frame around inset faces, and the frame width and corner radius in proportion. Points lost because the reference's faces sit in a visibly recessed, dark-bevelled well with a chunky softened shell, while the model's inset is shallow, the inner frame edge is hard and the faces read nearly flush (Blender low top view and engine closeup)."
+      },
+      {
+        "criterion": "signature features",
+        "points": 16,
+        "max": 25,
+        "note": "Brass body and walnut faces are present (the bible allows walnut), and the pip layout is correct with opposite faces summing to 7. The hero feature of panel 4 is missing: its pips are recessed, glowing amber lights (sampled #FAED6A, S 0.94). The model's pips are flat cream discs with no recess, no emissive and no glow halo (engine #D6C2A4, S 0.38)."
+      },
+      {
+        "criterion": "surface detail and material read",
+        "points": 12,
+        "max": 20,
+        "note": "The walnut atlas grain is painterly and works. The brass is a uniform factor-only material: no worn edges, no soft value variation (both of which the bible requires) and no edge wear. In engine it reads as smooth gold plastic, olive-tinted in the env sweep. The no-env shot (p5-dice-ingame-d6-no-env-black.jpg) shows the brass dropping to near-black, so its read depends entirely on probes."
+      },
+      {
+        "criterion": "colour and value",
+        "points": 9,
+        "max": 15,
+        "note": "The value structure is right: light frame, dark face, light pips. Lit brass measures #988354 to #BEAD82 (S 0.29 to 0.32), about half the saturation of palette polished brass #DEC16A (S about 0.63). Walnut #50372E to #543B2D (hue 15 to 21 degrees) is near oiled walnut #583C26 (hue 26) but slightly redder. The atlas pips have saturated amber cores (#FADA9C, S 0.90), but the rendered pips wash to cream (#D6C2A4), losing the candle amber (#F3BE65) accent entirely."
+      },
+      {
+        "criterion": "readability at play distance",
+        "points": 9,
+        "max": 10,
+        "note": "Pip against walnut, #D6C2A4 vs #50372E, gives a contrast ratio of about 6.3:1. A pip of about 5 to 6 mm on a 40 mm die covers roughly 7 to 14 px at 0.5 to 1 m on Quest 3, so the pips are countable. One point off because this is desktop evidence only."
+      }
+    ],
+    "topFixes": [
+      "Make the pips emissive candle amber (#F3BE65, about 1.5 to 2x intensity so they glow under tone mapping) and recess them into small cups so they match panel 4's glowing pip wells, instead of flat cream discs.",
+      "Replace the factor-only brass with the approved brass-polished set, or add edge-wear and value variation, and lift lit brass saturation toward #DEC16A (S 0.63 against the current 0.29 to 0.32); keep a readable value with no env probe.",
+      "Deepen the face inset with a dark bevelled lip between frame and walnut, and darken or desaturate the walnut grain highlights toward #583C26 so the face reads as a dark field behind the amber pips."
+    ],
+    "method": "Independent reviewer read docs/art-bible.md, assets-source/dice/brass-d6/provenance.json, the reference assets-source/style/locked/L-board-1.png (panel 4), assets-source/dice/dice.review-sheet.jpg, public/assets/ui/dice-d6.png, and docs/verification p5-dice-ingame-d6-tray.jpg, -closeup.jpg, -env-sweep.jpg, -no-env-black.jpg, -tray-greybox.jpg, p5-dice-brass-d6.jpg, p5-dice-brass-d6-lineup.jpg, p5-ui-dice-d6.jpg and p3-desktop-fight-2-dice.jpg; Pillow mean samples. Desktop and Blender evidence only, no headset capture. Date 2026-11-16."
+  }
 }

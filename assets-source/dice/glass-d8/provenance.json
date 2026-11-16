@@ -304,8 +304,54 @@
     },
     {
       "gate": "independent visual score",
-      "status": "unscored",
+      "status": "below bar: 49/100 (bar 80), scored 2026-11-16",
       "notes": "blender-kit-pieces requires an independent >= 80/100 score; unscored means unaccepted"
     }
-  ]
+  ],
+  "independentScore": {
+    "score": 49,
+    "scale": "0-100 visual fidelity to the concept and art bible",
+    "scorer": "independent reviewer agent (separate from the authoring agent; did not build the asset)",
+    "date": "2026-11-16",
+    "acceptanceBar": 80,
+    "clearsBar": false,
+    "rubric": [
+      {
+        "criterion": "silhouette and proportions",
+        "points": 18,
+        "max": 30,
+        "note": "A correct, crisp regular octahedron (the reference shows a d20; the d8 shape is a gameplay requirement). It loses points against panel 4's construction of chunky bevelled brass rails between faces and softened solid edges: the model's brass is wire-thin edge trim, about 1 to 2 px in the 600 px closeup, so the die reads as a faceted gem rather than a brass-bodied die."
+      },
+      {
+        "criterion": "signature features",
+        "points": 11,
+        "max": 25,
+        "note": "The plan names this die 'glass d8', so glass is sanctioned, but the result loses the brass body almost entirely and renders as pale clear glass with cream numerals. Numerals from the back faces show through mirrored (the reversed 3 in the Blender 3/4 view, the mirrored 5 in the tray) and compete with the face-up value. The jewel-tone internal flecks are a nice nod to the palette. The atlas page (dark smoked glass, thick brass bevel, glowing amber numerals) is on-bible, but the model does not carry it through."
+      },
+      {
+        "criterion": "surface detail and material read",
+        "points": 11,
+        "max": 20,
+        "note": "The Blender renders show attractive refraction and jewel caustics. In engine (p5-dice-ingame-d8-tray.jpg, the closeup and the lineup) it reads as frosted pale plastic. The atlas's brass bevel band is not visible on the model faces. Its look depends heavily on the environment: dark and amber in p5-ui-dice-d8.jpg, washed out on the lit tray."
+      },
+      {
+        "criterion": "colour and value",
+        "points": 6,
+        "max": 15,
+        "note": "The glass body renders at #8B684F to #9D7F63 (L 0.43 to 0.50), much lighter than the atlas face median #67523A (L 0.32). The numerals render #B2926C to #CAAE87 (S 0.31 to 0.39) against an atlas amber core of #FAD99B (S 0.90), so candle amber is lost. The die is a low-contrast tan within the value range of the brass tray wall and walnut table."
+      },
+      {
+        "criterion": "readability at play distance",
+        "points": 3,
+        "max": 10,
+        "note": "In the tray shot the face-up 7 measures #CAAE87 against adjacent glass #9D7A5A, a contrast ratio of about 1.8:1. The mirrored back-face 5 (#C5AF8B) is equally bright and sits at the visual centre of the die, so the rolled value is ambiguous. Numerals cover roughly 8 to 15 px at 0.5 to 1 m on Quest 3: legible in size, failing on contrast."
+      }
+    ],
+    "topFixes": [
+      "Make the glass dark and mostly opaque (smoked warm-black near #231D1A to #3A2A1E with low transmission), or hide back faces and through-body numerals, so only the face-up numeral shows and no mirrored digits.",
+      "Render the numerals as emissive candle amber (#F3BE65 / #FAD99B core); target a contrast ratio of at least 4.5:1 against the face, from the current 1.8:1.",
+      "Thicken the brass into real bevelled edge rails (or the atlas's brass bevel band around each face) so the die reads as brass-bodied with glass panels, per the art bible and panel 4."
+    ],
+    "method": "Independent reviewer read docs/art-bible.md, PRD.md and plans/ (the 'glass d8' naming), assets-source/dice/glass-d8/provenance.json, assets-source/style/locked/L-board-1.png (panel 4), assets-source/dice/dice.review-sheet.jpg, public/assets/ui/dice-d8.png, and docs/verification p5-dice-ingame-d8-tray.jpg, -closeup.jpg, p5-dice-glass-d8.jpg, p5-dice-glass-d8-lineup.jpg and p5-ui-dice-d8.jpg; Pillow samples. Desktop and Blender evidence only, no headset capture. Date 2026-11-16."
+  }
 }
