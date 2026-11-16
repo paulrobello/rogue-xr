@@ -329,6 +329,13 @@ describe('Cog Sentry on the floor', () => {
     rig.step(DT);
     if (attacks) expect(actor.state).toBe('attack');
     rig.step(1.4);
+    // The enemy phase plays out before the player acts again.
+    for (let i = 0; i < 600 && session.enemyPhase; i++) rig.step(DT);
+    expect(session.enemyPhase).toBe(false);
+    // Its swing over, the sentry settles back into the time-freeze pose.
+    rig.step(0.5);
+    expect(actor.frozen).toBe(true);
+    expect(actor.state).toBe('frozen');
 
     const killedAt = rig.time();
     killAll(session, rig);

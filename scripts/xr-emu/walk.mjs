@@ -23,6 +23,8 @@ const { values: opts } = parseArgs({
     headed: { type: 'boolean', default: false },
     // Only the card fan and sigil checks: New Run, one fight, then stop.
     focus: { type: 'boolean', default: false },
+    // Only the enemy-phase checks: one two-automaton fight on TURN_SEED.
+    turns: { type: 'boolean', default: false },
   },
 });
 
@@ -32,6 +34,8 @@ const GPU_ARGS =
     ? ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist']
     : ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'];
 const SEATED_HEAD_Y = 1.2;
+/** Seed whose first regular room seats two automatons (a Cog Sentry and a Spring Hound). */
+const TURN_SEED = 'SPIRE002';
 const MAIN = 'right';
 const OFF = 'left';
 /** Controller offsets from the head, in tracking space: hands low and forward, as when seated. */
@@ -155,8 +159,11 @@ try {
 
   if (opts.notice) {
     await noticeCheck();
+  } else if (opts.turns) {
+    await enemyTurnCheck();
   } else {
     await walk();
+    await enemyTurnCheck();
   }
 
   async function walk() {
@@ -597,7 +604,9 @@ try {
       );
       if (has) break;
       await page.keyboard.press('KeyE');
-      await settle(2500);
+      await settle(300);
+      await enemyPhaseOver(`fan-turn-${turn}`);
+      await settle(400);
     }
     await ev(() => window.__xrEmu.setHead(1.2, -0.35));
     await holdFan();
@@ -775,6 +784,207 @@ try {
     );
   }
 
+  /** New-red pixels (the hit flash) present in `after` but not in `before`, at the frame edge and centre. */
+  function redEdgePixels(before, after) {
+    return ev(
+      async ({ a, b }) => {
+        const read = async (src) => {
+          const img = new Image();
+          img.src = `data:image/png;base64,${src}`;
+          await img.decode();
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const g = canvas.getContext('2d');
+          g.drawImage(img, 0, 0);
+          return {
+            data: g.getImageData(0, 0, img.width, img.height).data,
+            w: img.width,
+            h: img.height,
+          };
+        };
+        const pa = await read(a);
+        const pb = await read(b);
+        const { w, h } = pb;
+        let edge = 0;
+        let edgeArea = 0;
+        let center = 0;
+        let centerArea = 0;
+        for (let y = 0; y < h; y += 1) {
+          for (let x = 0; x < w; x += 1) {
+            const i = (y * w + x) * 4;
+            const redder =
+              pb.data[i] - pa.data[i] > 20 && pb.data[i] > pb.data[i + 1] + 25 && pb.data[i] > 70;
+            const u = x / w;
+            const v = y / h;
+            const isEdge = u < 0.08 || u > 0.92 || v < 0.1 || v > 0.9;
+            const isCenter = Math.abs(u - 0.5) < 0.12 && Math.abs(v - 0.5) < 0.15;
+            if (isEdge) {
+              edgeArea += 1;
+              if (redder) edge += 1;
+            } else if (isCenter) {
+              centerArea += 1;
+              if (redder) center += 1;
+            }
+          }
+        }
+        return {
+          edge,
+          center,
+          edgeShare: Number((edge / edgeArea).toFixed(4)),
+          centerShare: Number((center / centerArea).toFixed(4)),
+        };
+      },
+      { a: before.toString('base64'), b: after.toString('base64') },
+    );
+  }
+
+  /** Steps until the enemy phase is over (each automaton takes its turn in order). */
+  async function enemyPhaseOver(label, timeout = 20000) {
+    return waitFor(label, () => window.__combat.session?.enemyPhase !== true, undefined, timeout);
+  }
+
+  /**
+   * The enemy phase in XR on a two-automaton fight (TURN_SEED room 2): each automaton acts only
+   * after the one before it resolved plus the gap, a natural hit drew the edge flash pass while
+   * presenting, and the flash (held at its peak) shows red at the edges of the XR frame and not in
+   * the middle. Runs on a fresh page load so the walk's own seed and checks stay as they were.
+   */
+  async function enemyTurnCheck() {
+    const base = opts.base.replace(/\/$/, '');
+    await page.goto(`${base}/?seed=${TURN_SEED}&debug`);
+    await waitFor(
+      'turns-app',
+      () => window.__combat?.floor && window.__xrEmu.ctx().renderer,
+      undefined,
+      60000,
+    );
+    await settle(1500);
+    await enterVr();
+    const room = await ev(() => window.__combat.teleportToEncounter());
+    await waitFor(
+      'turns-fight-active',
+      () => window.__combat.floor.encounter.phase === 'active' && window.__combat.session !== null,
+      undefined,
+      30000,
+    );
+    await settle(1800);
+    await ev(() => window.__xrEmu.setHead(1.2, -0.25));
+    await settle(300);
+    const setup = await ev(() => {
+      const s = window.__combat.session;
+      const floor = window.__combat.floor;
+      return {
+        enemies: s.view.enemies.filter((e) => e.hp > 0).map((e) => e.id),
+        models: s.enemies.map((e) => floor.actorOf(e.body) !== null),
+        hp: s.view.player.hp,
+        trace: s.turnTrace.length,
+        hits: window.__combat.hitFx.log.length,
+      };
+    });
+    // In-page sampler: the flash's peak opacity and whether its pass rendered while presenting.
+    await ev(() => {
+      const fx = window.__combat.hitFx;
+      const probe = window.__xrEmu;
+      const sampler = { max: 0, passSeen: false, enemyStageSeen: false };
+      sampler.timer = setInterval(() => {
+        sampler.max = Math.max(sampler.max, fx.opacity);
+        if (probe.passes.slice(-12).some((p) => p.scene === fx.scene.uuid)) sampler.passSeen = true;
+        if (window.__combat.session?.stage === 'enemy') sampler.enemyStageSeen = true;
+      }, 10);
+      window.__turnSampler = sampler;
+    });
+    await page.keyboard.press('KeyE');
+    const burst = [];
+    for (let i = 0; i < 16; i += 1) {
+      await settle(220);
+      const st = await ev(() => {
+        const s = window.__combat.session;
+        const open = s.turnTrace.at(-1);
+        return {
+          phase: s.enemyPhase,
+          t: Number(s.time.toFixed(2)),
+          acting: open && open.end === null ? open.enemyId : null,
+          flash: Number(window.__combat.hitFx.opacity.toFixed(3)),
+          hp: s.view.player.hp,
+        };
+      });
+      if (!st.phase) break;
+      const name = `15-enemy-turn-${String(i).padStart(2, '0')}`;
+      await shot(name);
+      burst.push({ name, ...st });
+    }
+    await enemyPhaseOver('turns-phase-over');
+    const after = await ev((from) => {
+      const s = window.__combat.session;
+      const sampler = window.__turnSampler;
+      clearInterval(sampler.timer);
+      return {
+        trace: s.turnTrace.slice(from.trace),
+        hits: window.__combat.hitFx.log.slice(from.hits),
+        sampler: {
+          max: sampler.max,
+          passSeen: sampler.passSeen,
+          enemyStageSeen: sampler.enemyStageSeen,
+        },
+        hp: s.view.player.hp,
+        fan: s.fan.count,
+      };
+    }, setup);
+    const gap = 0.35;
+    const ordered =
+      after.trace.length === setup.enemies.length &&
+      after.trace.every((b, i) => b.enemyId === setup.enemies[i]);
+    const sequential = after.trace.every(
+      (b, i) =>
+        b.impact !== null &&
+        b.end !== null &&
+        b.impact >= b.start &&
+        (i === 0 || b.start >= after.trace[i - 1].end + gap - 0.02),
+    );
+    record(
+      'xr-enemy-turns-sequential',
+      setup.enemies.length >= 2 && ordered && sequential && after.sampler.enemyStageSeen,
+      {
+        room,
+        enemies: setup.enemies,
+        models: setup.models,
+        trace: after.trace.map((b) => ({
+          ...b,
+          start: Number(b.start.toFixed(2)),
+          impact: b.impact === null ? null : Number(b.impact.toFixed(2)),
+          end: b.end === null ? null : Number(b.end.toFixed(2)),
+        })),
+        burst,
+        fanAfter: after.fan,
+      },
+    );
+    record(
+      'xr-hit-flash-natural',
+      after.hits.length > 0 ? after.sampler.max > 0.05 && after.sampler.passSeen : null,
+      {
+        hits: after.hits,
+        hp: [setup.hp, after.hp],
+        maxOpacity: Number(after.sampler.max.toFixed(3)),
+        passRenderedWhilePresenting: after.sampler.passSeen,
+        note: after.hits.length > 0 ? 'a real enemy blow fired it' : 'no blow landed this turn',
+      },
+    );
+    // Pixel check: the flash held at its peak against the same pose without it.
+    await ev(() => window.__combat.hitFx.hold({ kind: 'hit', amount: 8, blocked: 0, hpLost: 8 }));
+    await settle(300);
+    const withFlash = await page.screenshot({ type: 'png' });
+    await shot('16-hit-vignette-held');
+    await ev(() => window.__combat.hitFx.release());
+    await settle(900);
+    const without = await page.screenshot({ type: 'png' });
+    const px = await redEdgePixels(without, withFlash);
+    record('xr-hit-vignette-visible', px.edgeShare > 0.05 && px.centerShare < 0.005, {
+      ...px,
+      note: 'new red pixels at the outer frame band vs the centre, flash held at peak',
+    });
+  }
+
   async function deathAndBack() {
     await ev(() => window.__flow.setCheat('lose'));
     let room = await ev(() => window.__combat.teleportToEncounter());
@@ -791,7 +1001,9 @@ try {
     let path = 'end-turn (KeyE) with ?cheat lose';
     for (let i = 0; i < 6 && (await phase()) !== 'death'; i += 1) {
       await page.keyboard.press('KeyE');
-      await settle(2500);
+      await settle(300);
+      await enemyPhaseOver(`death-turn-${i}`);
+      await settle(2200);
     }
     if ((await phase()) !== 'death') {
       path = 'flow.fightEnded defeat (fallback)';

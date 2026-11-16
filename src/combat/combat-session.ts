@@ -1,7 +1,21 @@
 import * as THREE from 'three';
 import type { SfxId } from '../audio/cues.ts';
 import { CanvasLabel, roundRect } from '../combat-view/canvas-label.ts';
-import { CombatController, type CombatOptions, type Stage } from '../combat-view/controller.ts';
+import {
+  CombatController,
+  type CombatOptions,
+  describeEvent,
+  type Stage,
+} from '../combat-view/controller.ts';
+import {
+  type EnemyBeat,
+  foldEvents,
+  type PlayerHit,
+  playerHit,
+  segmentEvents,
+  type TurnSegment,
+} from '../combat-view/enemy-turn.ts';
+import { HIT_RED } from '../combat-view/hit-feedback.ts';
 import { intentChips } from '../combat-view/index.ts';
 import { getCard } from '../content/cards.ts';
 import { dieById } from '../content/dice.ts';
@@ -18,7 +32,7 @@ import { CardFan } from '../hand/card-fan.ts';
 import { GRIP_FAN_ORIGIN } from '../hand/fan-layout.ts';
 import { FlingController, type FlingTargetSite, rayFromObject } from '../hand/fling.ts';
 import { PALETTE } from '../palette.ts';
-import { type CombatEvent, intentDamage, PLAYER_ID } from '../rules/index.ts';
+import { type CombatEvent, type CombatState, intentDamage, PLAYER_ID } from '../rules/index.ts';
 import {
   type PlatePose,
   platePoseAboveTable,
@@ -64,6 +78,25 @@ const HUD_GAP = 0.04;
 const DESKTOP_STATUS_SCALE = 0.6;
 /** Longest the win handover waits on death clips, from the first death; a stalled clip never hangs it. */
 export const DEATH_WAIT_SECONDS = 3;
+/** Seconds between one enemy's turn resolving and the next one starting. */
+export const ENEMY_GAP_SECONDS = 0.35;
+/** A capsule's lunge at the player; its blow lands at the peak. */
+export const LUNGE_SECONDS = 0.6;
+const LUNGE_METRES = 0.35;
+/** A move that deals no damage (block, buff, debuff): a short rise and settle; it lands at the top. */
+export const BRACE_SECONDS = 0.55;
+const BRACE_METRES = 0.12;
+/** An enemy that only took its Overheat tick (and may have died of it) holds the stage this long. */
+export const LEAD_ONLY_SECONDS = 0.6;
+/** An actor's blow lands at its clip's `impact` beat, or this long after it if the event never fires. */
+const IMPACT_GRACE_SECONDS = 0.4;
+/** Longest an actor's attack may run past its clip before its turn resolves anyway. */
+const CLIP_GRACE_SECONDS = 0.5;
+/** The floating damage number rises and fades, and the HP readout's red tint fades, over this long. */
+export const HIT_NUMBER_SECONDS = 1.1;
+const HIT_NUMBER_RISE = 0.08;
+/** Kept entries of the turn trace and hit log. */
+const TRACE_CAP = 60;
 
 type Vec3T = readonly [number, number, number];
 
@@ -141,6 +174,8 @@ export interface CombatSessionDeps {
   options?: Pick<CombatOptions, 'enemyHp' | 'playerHp' | 'playerMaxHp' | 'bonusDice' | 'deck'>;
   /** The animated actor standing in for a body (the Cog Sentry), or null for a placeholder. */
   actorOf?: (body: THREE.Object3D) => SentryActor | null;
+  /** Called as damage lands on the player (or is fully blocked), at the blow's impact. */
+  onPlayerHit?: (hit: PlayerHit) => void;
   /** Typeset card labels with troika (off in tests). */
   syncLabels?: boolean;
   dice?: Partial<DiceWorldOptions>;
@@ -148,7 +183,41 @@ export interface CombatSessionDeps {
   models?: DiceAsset | null;
 }
 
-export type SessionStage = Stage | 'dice';
+export type SessionStage = Stage | 'dice' | 'enemy';
+
+export type EnemyMotion = 'clip' | 'lunge' | 'brace' | 'none';
+
+/** One enemy's turn as it played, on the session clock (seconds since the session opened). */
+export interface EnemyTurnTrace {
+  readonly enemyId: string;
+  readonly moveId: string | null;
+  readonly motion: EnemyMotion;
+  readonly start: number;
+  /** When its move's effects were shown; null until then. */
+  impact: number | null;
+  /** When its turn resolved (motion back home); null until then. */
+  end: number | null;
+}
+
+/** A player hit as the HUD showed it, on the session clock. */
+export type ShownHit = PlayerHit & { readonly at: number; readonly enemyId: string | null };
+
+interface BeatRun {
+  readonly seg: EnemyBeat;
+  readonly trace: EnemyTurnTrace;
+  readonly actor: SentryActor | null;
+  readonly body: THREE.Object3D | null;
+  /** The body's local position before the motion, restored when the turn resolves. */
+  readonly home: THREE.Vector3 | null;
+  /** Local-frame displacement of one metre of motion (toward the player, or up). */
+  readonly toward: THREE.Vector3 | null;
+  readonly impactAt: number;
+  readonly endAt: number;
+  t: number;
+  impacted: boolean;
+  /** The actor's clip passed its `impact` event. */
+  cue: boolean;
+}
 
 /** What a combat pickable is, for scripted pointer tests and the debug hook. */
 export type CombatPick = 'card' | 'enemy' | 'end-turn' | 'throw' | 'plate' | 'table';
@@ -176,6 +245,10 @@ export class CombatSession {
   banner = '';
   /** Latest prompt or refusal, for the HUD. */
   message = '';
+  /** Each enemy turn played, oldest first (capped): order and timing evidence for checks. */
+  readonly turnTrace: EnemyTurnTrace[] = [];
+  /** Each player hit shown, oldest first (capped). */
+  readonly hitLog: ShownHit[] = [];
 
   private readonly deps: CombatSessionDeps;
   private readonly pose: TablePose;
@@ -218,8 +291,26 @@ export class CombatSession {
   private dirty = true;
   /** Animated actors by rules enemy id. */
   private readonly actors = new Map<string, SentryActor>();
-  /** Enemy attack cues held until the attacker's swing reaches its `impact` beat. */
-  private readonly atImpact = new Map<SentryActor, CombatEvent[]>();
+  /**
+   * The state the view shows while the enemy phase plays one enemy at a time; null otherwise, when
+   * the view shows the rules state. The rules have already resolved the whole phase.
+   */
+  private shown: CombatState | null = null;
+  /** The rules state as of the last presented batch: the fold's starting point. */
+  private lastShown: CombatState;
+  /** Segments waiting to be shown, in rules order. */
+  private readonly queue: TurnSegment[] = [];
+  private beat: BeatRun | null = null;
+  private gap = 0;
+  private clock = 0;
+  private readonly hitNumber: CanvasLabel | null;
+  private hitNumberAge = Infinity;
+  /** While the enemy phase plays: the log before it, and the lines of what has been shown since. */
+  private logBase: readonly string[] = [];
+  private readonly logShown: string[] = [];
+  private hpPulse = 0;
+  private hpRed = false;
+  private endText = '';
   /** Actors playing their death clip; checked each frame, since `die()`'s promise settles a task late. */
   private readonly dying = new Set<SentryActor>();
   private deathWait = -1;
@@ -242,6 +333,7 @@ export class CombatSession {
       seed: fightSeed(deps.seed, deps.room),
       setups: encounterSetups(encounter),
     });
+    this.lastShown = this.controller.state;
     this.enemyIds = this.controller.state.enemies.map((e) => e.id);
     // A body the floor tagged with an enemy kind wears that kind's model, so it plays that enemy;
     // untagged bodies take the rest left to right.
@@ -260,7 +352,7 @@ export class CombatSession {
       if (!actor) return;
       this.actors.set(id, actor);
       actor.onEvent = (event) => {
-        if (event === 'impact') this.flushImpact(actor);
+        if (event === 'impact' && this.beat?.actor === actor) this.beat.cue = true;
       };
     });
     for (const body of this.bodies.slice(this.enemyIds.length)) {
@@ -315,16 +407,11 @@ export class CombatSession {
       label.mesh.position.set(0, 0.017, 0);
       label.mesh.rotation.x = -Math.PI / 2;
       mesh.add(label.mesh);
-      label.draw((ctx, w, h) => {
-        ctx.fillStyle = PALETTE.parchment;
-        ctx.font = 'bold 44px system-ui, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(text, w / 2, h / 2);
-      });
+      drawButtonText(label, text);
       return label;
     };
     this.endLabel = buttonLabel(this.endButton, 'END TURN');
+    this.endText = 'END TURN';
     this.throwLabel = buttonLabel(this.throwButton, 'THROW');
 
     this.status = safeLabel(512, 320, 0.5);
@@ -332,6 +419,14 @@ export class CombatSession {
       this.status.mesh.position.copy(onTable(-0.6, 0.15, 0.45));
       this.status.mesh.rotation.y = yawRad;
       this.group.add(this.status.mesh);
+    }
+    // The floating damage number rides on the status panel, so it follows the desktop HUD fit.
+    this.hitNumber = this.status ? safeLabel(384, 192, 0.3) : null;
+    if (this.status && this.hitNumber) {
+      this.hitNumber.mesh.name = 'hit-number';
+      this.hitNumber.mesh.visible = false;
+      this.hitNumber.mesh.renderOrder = 1;
+      this.status.mesh.add(this.hitNumber.mesh);
     }
     this.enemyIds.forEach((id, i) => {
       const body = this.bodies[i];
@@ -421,12 +516,29 @@ export class CombatSession {
 
   /** The combat stage for the HUD: the controller's, or `dice` while a rolled die waits to be thrown. */
   get stage(): SessionStage {
+    if (this.shown) return 'enemy';
     if (this.controller.stage === 'over') return 'over';
     return this.pendingThrow ? 'dice' : this.controller.stage;
   }
 
+  /** True while the enemy phase plays one enemy at a time; the player cannot act meanwhile. */
+  get enemyPhase(): boolean {
+    return this.shown !== null;
+  }
+
+  /** Seconds since the session opened: the clock of `turnTrace` and `hitLog`. */
+  get time(): number {
+    return this.clock;
+  }
+
+  /** The state the view shows: the enemy phase's partial replay while it plays, else the rules state. */
+  get view(): CombatState {
+    return this.shown ?? this.controller.state;
+  }
+
+  /** The combat log as far as the view has shown it: an enemy's lines appear when it acts. */
   get log(): readonly string[] {
-    return this.controller.log;
+    return this.shown ? [...this.logBase, ...this.logShown] : this.controller.log;
   }
 
   get awaitingThrow(): boolean {
@@ -443,8 +555,8 @@ export class CombatSession {
 
   /** One HUD line. */
   hudText(): string {
-    const { player, turn } = this.controller.state;
-    const foes = this.controller.state.enemies
+    const { player, turn } = this.view;
+    const foes = this.view.enemies
       .map((e) => `${e.name} ${e.hp}/${e.maxHp}${e.block ? ` [${e.block}]` : ''}`)
       .join(', ');
     const msg = this.message ? ` · ${this.message}` : '';
@@ -635,8 +747,12 @@ export class CombatSession {
   /** Per-frame step. `xr` is the tracked hands while presenting, null on the desktop. */
   update(dt: number, xr: XrHands | null = null): void {
     if (this.disposed) return;
+    this.clock += dt;
     this.setXr(xr);
+    // Before sync, so the frame the enemy phase ends also deals the new hand.
+    this.advance(dt);
     if (this.dirty) this.sync();
+    this.stepHitFeedback(dt);
     if (this.xr && this.holding === null && this.xr.mainRay) {
       const r = rayFromObject(this.xr.mainRay);
       this.fan.pointerHover(
@@ -669,9 +785,9 @@ export class CombatSession {
         this.dirty = true;
       }
     }
-    for (const [actor] of this.atImpact) if (actor.state !== 'attack') this.flushImpact(actor);
     if (this.deathWait > 0) this.deathWait -= dt;
-    const outcome = this.controller.outcome;
+    // A fight decided mid-phase (the killing blow) shows its banner once that blow has played.
+    const outcome = this.shown ? null : this.controller.outcome;
     if (outcome !== null && !this.ended) {
       if (this.endTimer < 0) {
         this.endTimer = outcome === 'won' ? WIN_HOLD_SECONDS : DEFEAT_HOLD_SECONDS;
@@ -697,7 +813,11 @@ export class CombatSession {
     this.disposed = true;
     this.deps.audio?.stopLoop('sigil-trace');
     for (const actor of this.actors.values()) actor.onEvent = null;
-    this.atImpact.clear();
+    if (this.beat?.body && this.beat.home) this.beat.body.position.copy(this.beat.home);
+    this.beat = null;
+    this.queue.length = 0;
+    this.shown = null;
+    this.hitNumber?.dispose();
     for (const off of this.disposers.splice(0)) off();
     this.fan.dispose();
     this.fan.detach();
@@ -739,7 +859,7 @@ export class CombatSession {
       if (this.holding === 'mouse') this.release(ray);
       return;
     }
-    if (this.controller.outcome !== null) return;
+    if (this.controller.outcome !== null || this.busy()) return;
     const hit = this.hitAt(ray);
     if (hit === 'throw' || hit === 'tray') this.throwDice();
     else if (hit === 'plate') {
@@ -757,6 +877,7 @@ export class CombatSession {
   private hand(action: Extract<GameAction, { type: 'combat-hand' }>): void {
     const xr = this.xr;
     if (!xr || action.hand !== 'main' || this.disposed) return;
+    if (action.pressed && this.busy()) return;
     if (action.control === 'squeeze') {
       if (action.pressed) {
         const index = this.fan.hovered;
@@ -790,6 +911,7 @@ export class CombatSession {
   }
 
   private grab(index: number, by: 'mouse' | 'xr'): void {
+    if (this.busy()) return;
     if (this.pendingThrow) {
       this.message = 'Throw the dice first';
       return;
@@ -811,7 +933,7 @@ export class CombatSession {
   }
 
   private endTurn(): void {
-    if (this.disposed || this.controller.outcome !== null) return;
+    if (this.disposed || this.controller.outcome !== null || this.busy()) return;
     if (this.pendingThrow) {
       this.message = 'Throw the dice first';
       return;
@@ -824,7 +946,7 @@ export class CombatSession {
   }
 
   private throwDice(): void {
-    if (this.disposed) return;
+    if (this.disposed || this.busy()) return;
     const pending = this.pendingThrow;
     if (!pending) {
       this.message = 'No dice to throw';
@@ -835,6 +957,13 @@ export class CombatSession {
     this.sfx('dice-roll', this.dice.root.position);
     this.message = '';
     this.paint();
+  }
+
+  /** True (with a HUD prompt) while the enemy phase plays: every player verb waits for it. */
+  private busy(): boolean {
+    if (!this.shown) return false;
+    this.message = 'Enemies are acting';
+    return true;
   }
 
   private cancel(): void {
@@ -933,45 +1062,35 @@ export class CombatSession {
 
   private sync(): void {
     this.dirty = false;
-    const state = this.controller.state;
-    const attackers = new Set<SentryActor>();
-    const hits = new Set<SentryActor>();
-    const deaths = new Set<SentryActor>();
-    for (const event of this.controller.drainEvents()) {
-      const target = 'target' in event ? (event.target as string | null) : null;
-      const enemyId = 'enemyId' in event ? (event.enemyId as string) : target;
-      if (event.type === 'damage-dealt' && event.target === PLAYER_ID && event.source) {
-        const attacker = this.actors.get(event.source);
-        if (attacker && !attacker.dead) {
-          // The rules resolve the blow at once; its sound waits for the swing's impact beat.
-          attackers.add(attacker);
-          this.atImpact.set(attacker, [...(this.atImpact.get(attacker) ?? []), event]);
-          continue;
-        }
+    const events = this.controller.drainEvents();
+    const segments = segmentEvents(events);
+    if (this.shown || segments.some((seg) => seg.kind === 'enemy')) {
+      // The enemy phase plays one enemy at a time from the state the view last showed.
+      if (!this.shown) {
+        this.shown = this.lastShown;
+        const state = this.controller.state;
+        const fresh = events.filter((e) => describeEvent(e, state) !== null).length;
+        this.logBase = this.controller.log.slice(
+          0,
+          Math.max(0, this.controller.log.length - fresh),
+        );
+        this.logShown.length = 0;
       }
-      const actor = enemyId ? this.actors.get(enemyId) : undefined;
-      if (actor && event.type === 'damage-dealt' && event.amount > 0) hits.add(actor);
-      if (actor && event.type === 'enemy-died') deaths.add(actor);
-      const at = enemyId && enemyId !== PLAYER_ID ? this.aimOfId(enemyId) : null;
-      this.deps.audio?.playCombatEvent(event, at ?? undefined);
+      this.queue.push(...segments);
+      this.advance(0);
+    } else {
+      for (const seg of segments) if (seg.kind === 'instant') this.present(seg.events);
+      this.lastShown = this.controller.state;
     }
-    for (const actor of deaths) {
-      hits.delete(actor);
-      attackers.delete(actor);
-      this.flushImpact(actor);
-      if (actor.dead) continue;
-      this.dying.add(actor);
-      if (this.deathWait < 0) this.deathWait = DEATH_WAIT_SECONDS;
-      void actor.die();
-    }
-    for (const actor of hits) actor.hit();
-    for (const actor of attackers) actor.attack();
-    const key = state.piles.hand.map((c) => c.uid).join(',');
+    const state = this.controller.state;
+    // The new hand is dealt once the enemies are done; the fan stays empty meanwhile.
+    const hand = this.shown ? [] : state.piles.hand;
+    const key = hand.map((c) => c.uid).join(',');
     if (key !== this.handKey) {
       this.handKey = key;
       this.fan.setHand(
-        state.piles.hand.map((c) => getCard(c.def.id)),
-        state.piles.hand.map((c) => c.uid),
+        hand.map((c) => getCard(c.def.id)),
+        hand.map((c) => c.uid),
       );
     }
     if (this.controller.lastDice !== this.lastDice) {
@@ -992,16 +1111,249 @@ export class CombatSession {
     if (awaited && this.plate.phase === 'hidden') this.plate.show(awaited, this.platePose);
     else if (!awaited && (this.plate.phase === 'ready' || this.plate.phase === 'drawing'))
       this.plate.hide();
-    state.enemies.forEach((enemy, i) => {
-      const body = this.bodies[i];
-      // An actor stays visible to play its death and lie on the floor; a placeholder just vanishes.
-      if (body && !this.actors.has(enemy.id)) body.visible = enemy.hp > 0;
-    });
+    this.showBodies();
     this.paint();
   }
 
+  /** An actor stays visible to play its death and lie on the floor; a placeholder just vanishes. */
+  private showBodies(): void {
+    this.view.enemies.forEach((enemy, i) => {
+      const body = this.bodies[i];
+      if (body && !this.actors.has(enemy.id)) body.visible = enemy.hp > 0;
+    });
+  }
+
+  // ---- the enemy phase, one enemy at a time ------------------------------------------------------
+
+  /**
+   * Plays the queued segments: instant ones at once, each enemy beat to its end plus a gap before
+   * the next. When the queue empties the view goes back to the rules state and the hand is dealt.
+   */
+  private advance(dt: number): void {
+    if (!this.shown) return;
+    if (this.beat) {
+      this.stepBeat(this.beat, dt);
+      if (!this.beatDone(this.beat)) return;
+      this.finishBeat(this.beat);
+      this.beat = null;
+      this.gap = ENEMY_GAP_SECONDS;
+      return;
+    }
+    if (this.gap > 0) {
+      this.gap -= dt;
+      if (this.gap > 1e-9) return;
+      this.gap = 0;
+    }
+    while (this.queue.length > 0) {
+      const next = this.queue.shift() as TurnSegment;
+      if (next.kind === 'instant') {
+        this.present(next.events);
+        continue;
+      }
+      this.beat = this.startBeat(next);
+      this.stepBeat(this.beat, 0);
+      return;
+    }
+    this.shown = null;
+    this.lastShown = this.controller.state;
+    this.dirty = true;
+  }
+
+  private startBeat(seg: EnemyBeat): BeatRun {
+    const id = seg.enemyId;
+    this.present(seg.lead);
+    const actor = this.actors.get(id) ?? null;
+    const body = this.enemies.find((e) => e.id === id)?.body ?? null;
+    const alive = (this.view.enemies.find((e) => e.id === id)?.hp ?? 0) > 0;
+    const motion: EnemyMotion =
+      seg.act.length === 0 || !alive
+        ? 'none'
+        : seg.attacks && actor && !actor.dead
+          ? 'clip'
+          : seg.attacks
+            ? 'lunge'
+            : 'brace';
+    const trace: EnemyTurnTrace = {
+      enemyId: id,
+      moveId: seg.moveId,
+      motion,
+      start: this.clock,
+      impact: null,
+      end: null,
+    };
+    this.turnTrace.push(trace);
+    if (this.turnTrace.length > TRACE_CAP) this.turnTrace.shift();
+    let impactAt = 0;
+    let endAt = seg.lead.length > 0 ? LEAD_ONLY_SECONDS : 0;
+    if (motion === 'clip' && actor) {
+      const spec = actor.asset.manifest.clips.attack;
+      actor.attack();
+      impactAt = (spec.events.impact ?? spec.duration / 2) + IMPACT_GRACE_SECONDS;
+      endAt = spec.duration + CLIP_GRACE_SECONDS;
+    } else if (motion === 'lunge') {
+      impactAt = LUNGE_SECONDS / 2;
+      endAt = LUNGE_SECONDS;
+    } else if (motion === 'brace') {
+      impactAt = BRACE_SECONDS / 2;
+      endAt = BRACE_SECONDS;
+    }
+    let home: THREE.Vector3 | null = null;
+    let toward: THREE.Vector3 | null = null;
+    const parent = body?.parent;
+    if (body && parent && (motion === 'lunge' || motion === 'brace')) {
+      home = body.position.clone();
+      body.updateWorldMatrix(true, false);
+      const world = body.getWorldPosition(new THREE.Vector3());
+      const dir = new THREE.Vector3(0, 1, 0);
+      if (motion === 'lunge') {
+        const eye = this.deps.camera.getWorldPosition(new THREE.Vector3());
+        dir.set(eye.x - world.x, 0, eye.z - world.z);
+        if (dir.lengthSq() < 1e-8)
+          dir.set(-Math.sin(this.pose.yaw * DEG), 0, Math.cos(this.pose.yaw * DEG));
+        dir.normalize();
+      }
+      toward = parent.worldToLocal(world.clone().add(dir)).sub(parent.worldToLocal(world.clone()));
+    }
+    this.paint();
+    return {
+      seg,
+      trace,
+      actor,
+      body,
+      home,
+      toward,
+      impactAt,
+      endAt,
+      t: 0,
+      impacted: false,
+      cue: false,
+    };
+  }
+
+  private stepBeat(b: BeatRun, dt: number): void {
+    b.t += dt;
+    if (b.body && b.home && b.toward) {
+      const lunge = b.trace.motion === 'lunge';
+      const k = Math.min(1, b.t / (lunge ? LUNGE_SECONDS : BRACE_SECONDS));
+      const reach = (lunge ? LUNGE_METRES : BRACE_METRES) * Math.sin(Math.PI * k);
+      b.body.position.copy(b.home).addScaledVector(b.toward, reach);
+    }
+    const due = b.trace.motion === 'clip' ? b.cue || b.t >= b.impactAt : b.t >= b.impactAt;
+    if (!b.impacted && due) {
+      b.impacted = true;
+      b.trace.impact = this.clock;
+      this.present(b.seg.act);
+      this.paint();
+    }
+  }
+
+  private beatDone(b: BeatRun): boolean {
+    if (!b.impacted) return false;
+    if (b.trace.motion === 'clip' && b.actor) {
+      return b.actor.dead || b.actor.state !== 'attack' || b.t >= b.endAt;
+    }
+    return b.t >= b.endAt;
+  }
+
+  private finishBeat(b: BeatRun): void {
+    if (b.body && b.home) b.body.position.copy(b.home);
+    b.trace.end = this.clock;
+  }
+
+  /** Shows a batch of rules events: folds them into the shown state, sounds them, reacts to them. */
+  private present(events: readonly CombatEvent[]): void {
+    if (events.length === 0) return;
+    if (this.shown) {
+      this.shown = foldEvents(this.shown, events);
+      for (const event of events) {
+        const line = describeEvent(event, this.shown);
+        if (line !== null) this.logShown.push(line);
+      }
+    }
+    const hits = new Set<SentryActor>();
+    const deaths = new Set<SentryActor>();
+    for (const event of events) {
+      if (event.type === 'damage-dealt' && event.target === PLAYER_ID) {
+        // A fully blocked blow rings the ward (in showPlayerHit) instead of the clank.
+        if (event.hpLost > 0) this.deps.audio?.playCombatEvent(event);
+        continue;
+      }
+      const target = 'target' in event ? (event.target as string | null) : null;
+      const enemyId = 'enemyId' in event ? (event.enemyId as string) : target;
+      const actor = enemyId ? this.actors.get(enemyId) : undefined;
+      if (actor && event.type === 'damage-dealt' && event.amount > 0) hits.add(actor);
+      if (actor && event.type === 'enemy-died') deaths.add(actor);
+      const at = enemyId && enemyId !== PLAYER_ID ? this.aimOfId(enemyId) : null;
+      this.deps.audio?.playCombatEvent(event, at ?? undefined);
+    }
+    for (const actor of deaths) {
+      hits.delete(actor);
+      if (actor.dead) continue;
+      this.dying.add(actor);
+      if (this.deathWait < 0) this.deathWait = DEATH_WAIT_SECONDS;
+      void actor.die();
+    }
+    for (const actor of hits) actor.hit();
+    const hit = playerHit(events);
+    if (hit) this.showPlayerHit(hit);
+    this.showBodies();
+  }
+
+  /** The HUD side of a hit: HP readout tint, floating number, block chime, and the caller's flash. */
+  private showPlayerHit(hit: PlayerHit): void {
+    this.hitLog.push({ ...hit, at: this.clock, enemyId: this.beat?.seg.enemyId ?? null });
+    if (this.hitLog.length > TRACE_CAP) this.hitLog.shift();
+    if (hit.blocked > 0) this.sfx('block-ward');
+    if (hit.hpLost > 0) this.hpPulse = 1;
+    this.hitNumberAge = 0;
+    this.hitNumber?.draw((ctx, w, h) => {
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.lineWidth = 10;
+      ctx.strokeStyle = 'rgba(18,12,7,0.9)';
+      const line = (text: string, color: string, y: number, size: number) => {
+        ctx.font = `bold ${size}px system-ui, sans-serif`;
+        ctx.strokeText(text, w / 2, y);
+        ctx.fillStyle = color;
+        ctx.fillText(text, w / 2, y);
+      };
+      if (hit.kind === 'blocked') line(`Blocked ${hit.blocked}`, PALETTE.brass, h / 2, 64);
+      else if (hit.kind === 'hit') line(`-${hit.hpLost}`, HIT_RED, h / 2, 110);
+      else {
+        line(`-${hit.hpLost}`, HIT_RED, h * 0.36, 96);
+        line(`Blocked ${hit.blocked}`, PALETTE.brass, h * 0.8, 48);
+      }
+    });
+    this.deps.onPlayerHit?.(hit);
+  }
+
+  /** Steps the floating number and the HP readout's red tint. */
+  private stepHitFeedback(dt: number): void {
+    const number = this.hitNumber?.mesh;
+    if (number && this.status) {
+      this.hitNumberAge += dt;
+      const k = this.hitNumberAge / HIT_NUMBER_SECONDS;
+      number.visible = k < 1;
+      if (number.visible) {
+        const half = this.status.mesh.geometry.parameters.height / 2;
+        number.position.set(0, half + 0.08 + HIT_NUMBER_RISE * k, 0.005);
+        number.material.opacity = 1 - k * k;
+      }
+    }
+    if (this.hpPulse > 0) {
+      this.hpPulse = Math.max(0, this.hpPulse - dt / HIT_NUMBER_SECONDS);
+      const p = this.hpPulse;
+      this.status?.mesh.material.color.setRGB(1, 1 - 0.55 * p, 1 - 0.55 * p);
+    }
+    const red = this.hpPulse > 0.35;
+    if (red !== this.hpRed) {
+      this.hpRed = red;
+      this.paint();
+    }
+  }
+
   private paint(): void {
-    const state = this.controller.state;
+    const state = this.view;
     const icons: IconSheet | null = iconSheet();
     const statusChips = (statuses: Readonly<Partial<Record<keyof typeof STATUS_ICON, number>>>) =>
       (Object.entries(statuses) as [keyof typeof STATUS_ICON, number | undefined][])
@@ -1053,10 +1405,17 @@ export class CombatSession {
       ctx.fillStyle = 'rgba(18,12,7,0.82)';
       roundRect(ctx, 4, 4, w - 8, h - 8, 16);
       ctx.fill();
-      ctx.fillStyle = PALETTE.parchment;
+      if (this.hpRed) {
+        ctx.strokeStyle = HIT_RED;
+        ctx.lineWidth = 8;
+        roundRect(ctx, 8, 8, w - 16, h - 16, 14);
+        ctx.stroke();
+      }
+      ctx.fillStyle = this.hpRed ? HIT_RED : PALETTE.parchment;
       ctx.font = 'bold 40px system-ui, sans-serif';
       const p = state.player;
       drawIconRow(ctx, icons, vitals(p.hp, p.maxHp, p.block), 24, 50, 60);
+      ctx.fillStyle = PALETTE.parchment;
       drawIconRow(
         ctx,
         icons,
@@ -1076,6 +1435,16 @@ export class CombatSession {
     (this.throwButton.material as THREE.MeshStandardMaterial).emissive.set(
       this.pendingThrow ? PALETTE.brass : '#000000',
     );
+    // End Turn reads as disabled while the enemies act.
+    const waiting = this.shown !== null;
+    (this.endButton.material as THREE.MeshStandardMaterial).color.set(
+      waiting ? PALETTE.warmBlack : PALETTE.walnut,
+    );
+    const endText = waiting ? 'ENEMY TURN' : 'END TURN';
+    if (this.endLabel && endText !== this.endText) {
+      this.endText = endText;
+      drawButtonText(this.endLabel, endText, waiting ? PALETTE.brassDark : PALETTE.parchment);
+    }
   }
 
   private targetSites(): FlingTargetSite[] {
@@ -1094,14 +1463,6 @@ export class CombatSession {
   private aimOfId(id: string): THREE.Vector3 | null {
     const body = this.enemies.find((e) => e.id === id)?.body;
     return body ? this.aimOf(id, body) : null;
-  }
-
-  /** Plays the attack cues held for `actor`'s impact beat. */
-  private flushImpact(actor: SentryActor): void {
-    const events = this.atImpact.get(actor);
-    if (!events) return;
-    this.atImpact.delete(actor);
-    for (const event of events) this.deps.audio?.playCombatEvent(event);
   }
 
   private pointRay(): AimRay | null {
@@ -1136,6 +1497,16 @@ export class CombatSession {
   private sfx(id: SfxId, at?: { x: number; y: number; z: number }): void {
     this.deps.audio?.playSfx(id, at ? { x: at.x, y: at.y, z: at.z } : undefined);
   }
+}
+
+function drawButtonText(label: CanvasLabel, text: string, color: string = PALETTE.parchment): void {
+  label.draw((ctx, w, h) => {
+    ctx.fillStyle = color;
+    ctx.font = `bold ${text.length > 8 ? 36 : 44}px system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, w / 2, h / 2);
+  });
 }
 
 function toV(v: readonly number[]): { x: number; y: number; z: number } {
@@ -1191,6 +1562,8 @@ export interface CombatHookDeps {
   models?: DiceAsset | null;
   /** Called with each new session, e.g. for a debug handle. */
   onSession?: (session: CombatSession | null) => void;
+  /** Passed to each session: damage landing on the player (the edge flash and haptics). */
+  onPlayerHit?: (hit: PlayerHit) => void;
   /** Called once a fight is decided and its banner has held, with the player's remaining hp. */
   onEnd?: (end: { room: number; outcome: 'win' | 'defeat'; playerHp: number | null }) => void;
 }
@@ -1267,6 +1640,7 @@ export class CombatHook {
         sockets: floor.tableSockets(),
         actions: this.deps.actions,
         actorOf: (body) => floor.actorOf?.(body) ?? null,
+        ...(this.deps.onPlayerHit ? { onPlayerHit: this.deps.onPlayerHit } : {}),
         end: (outcome) => {
           const playerHp = this.session?.controller.state.player.hp ?? null;
           // The flow's board takes over from here, so the banner must not cover it.

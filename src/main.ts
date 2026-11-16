@@ -12,6 +12,13 @@ import {
   parseTableAssetManifest,
   TABLE_ASSET_BASE,
 } from './combat/table-asset-proof.ts';
+import {
+  HitFeedback,
+  hapticFor,
+  projectionTan,
+  pulseHaptics,
+  viewTan,
+} from './combat-view/hit-feedback.ts';
 import { mountCombatDebugView } from './combat-view/index.ts';
 import { STARTER_DECK } from './content/cards.ts';
 import { ENEMIES } from './content/enemies.ts';
@@ -196,6 +203,20 @@ if (audio) {
   audio.unlockOnXrSession(renderer.xr);
 }
 
+// Player hit feedback: an edge flash drawn after the boards (desktop and both XR eyes) and a
+// controller pulse in XR. Settings has no reduced-motion option, so the OS preference softens it.
+const hitFx = new HitFeedback({
+  reducedMotion: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false,
+});
+// Compiled now (compile visits hidden meshes) so the first hit does not stall on a shader build.
+renderer.compile(hitFx.scene, camera);
+const onPlayerHit = (hit: Parameters<HitFeedback['trigger']>[0]): void => {
+  hitFx.trigger(hit);
+  if (!xr.presenting) return;
+  const { intensity, milliseconds } = hapticFor(hit);
+  pulseHaptics(renderer.xr.getSession()?.inputSources, intensity, milliseconds);
+};
+
 // Real combat on the floor: a session opens when an encounter goes active. Each fight takes the
 // run's deck and hit points; `?cheat=win|lose` (or `__flow.setCheat` under `?debug`) rigs it.
 let cheat = params.get('cheat');
@@ -224,6 +245,7 @@ const makeCombat = (target: FloorView): CombatHook => {
     camera,
     actions,
     ...(audio ? { audio } : {}),
+    onPlayerHit,
     fightOptions,
     onEnd: ({ room, outcome, playerHp }) =>
       flow.fightEnded({
@@ -670,6 +692,7 @@ if (floor && params.has('debug')) {
       camera,
       screenOf,
       teleportToEncounter,
+      hitFx,
       heroReady,
       /** Draw calls and triangles of the last scene pass (before the board pass). */
       get stats() {
@@ -844,6 +867,17 @@ renderer.setAnimationLoop((time, frame) => {
     renderer.autoClear = false;
     renderer.clearDepth();
     renderer.render(uiScene, camera);
+    renderer.autoClear = true;
+  }
+  hitFx.update(
+    deltaSeconds,
+    camera,
+    xr.presenting ? projectionTan(renderer.xr.getCamera().projectionMatrix) : viewTan(camera),
+    xr.presenting,
+  );
+  if (hitFx.active) {
+    renderer.autoClear = false;
+    renderer.render(hitFx.scene, camera);
     renderer.autoClear = true;
   }
   if (xr.presenting) {

@@ -2,13 +2,19 @@ import * as THREE from 'three';
 import { describe, expect, it, vi } from 'vitest';
 import {
   CombatHook,
+  type CombatHookDeps,
   type CombatPick,
   type CombatSession,
   chooseEncounter,
+  ENEMY_GAP_SECONDS,
+  fightSeed,
   SIGIL_CAST_SECONDS,
 } from '../src/combat/combat-session.ts';
+import { CombatController } from '../src/combat-view/controller.ts';
+import { type PlayerHit, playerHit, segmentEvents } from '../src/combat-view/enemy-turn.ts';
 import { getCard } from '../src/content/cards.ts';
 import { dieById } from '../src/content/dice.ts';
+import { encounterSetups } from '../src/content/enemies.ts';
 import { ActionBus } from '../src/core/actions.ts';
 import { Stream } from '../src/core/rng.ts';
 import { DicePresenter } from '../src/dice/presenter.ts';
@@ -31,6 +37,7 @@ interface Rig {
 async function openFight(
   seed = 'SPIRE002',
   options?: { enemyHp?: number; playerHp?: number; deck?: readonly string[] },
+  extra: Pick<CombatHookDeps, 'onPlayerHit'> = {},
 ): Promise<Rig & { session: CombatSession }> {
   const scene = new THREE.Scene();
   const player = new THREE.Group();
@@ -55,6 +62,7 @@ async function openFight(
     syncLabels: false,
     models: null,
     ...(options ? { options } : {}),
+    ...extra,
   });
   const step = (seconds = DT) => {
     for (let t = 0; t < seconds - 1e-9; t += DT) {
@@ -68,6 +76,17 @@ async function openFight(
   const session = await hook.ready();
   if (!session) throw new Error('no session');
   return { view, camera, actions, hook, room, bodies, baseListeners, step, session };
+}
+
+/** Steps until the enemy phase has played out (one enemy at a time); returns the seconds it took. */
+function waitEnemyPhase(rig: Rig, session: CombatSession, limit = 15): number {
+  let t = 0;
+  while (session.enemyPhase && t < limit) {
+    rig.step();
+    t += DT;
+  }
+  expect(session.enemyPhase).toBe(false);
+  return t;
 }
 
 /** Emits a combat-pointer action whose ray runs from the camera through `world`. */
@@ -149,6 +168,8 @@ async function playFight(rig: Rig & { session: CombatSession }): Promise<FightLo
   const verbs = new Set<string>();
   const rolls: number[] = [];
   for (let guard = 0; guard < 400 && session.controller.outcome === null; guard++) {
+    waitEnemyPhase(rig, session);
+    if (session.controller.outcome !== null) break;
     if (session.awaitingThrow) {
       const roll = session.controller.lastDice;
       pointerAt(rig, at(session, 'throw'), 'down');
@@ -256,6 +277,10 @@ describe('combat session', () => {
       rig.step();
     }
     expect(rig.session.controller.outcome).toBe('lost');
+    // The banner waits for the killing blow to play out.
+    rig.step(0.1);
+    expect(rig.hook.banner).toBe('');
+    waitEnemyPhase(rig, rig.session);
     rig.step(0.1);
     expect(rig.hook.banner).toBe('DEFEAT');
     rig.step(2);
@@ -522,4 +547,194 @@ describe('dice presenter', () => {
     }
     presenter.dispose();
   });
+});
+
+// Quest 3 playtest 2026-11-15: "the enemies attack at same time they should take turns, hits that
+// land on player should have some kind of visible effect".
+describe('enemy phase, one enemy at a time', () => {
+  /** Ends the turn through the action bus and samples the shown state each frame until it is over. */
+  const endTurnAndWatch = (rig: Rig & { session: CombatSession }) => {
+    const { session } = rig;
+    const from = session.turnTrace.length;
+    const hitsFrom = session.hitLog.length;
+    rig.actions.emit({ type: 'end-turn' });
+    const samples: { t: number; hp: number; intents: (string | null)[]; log: string[] }[] = [];
+    for (let i = 0; i < 900; i++) {
+      rig.step();
+      if (!session.enemyPhase) break;
+      samples.push({
+        t: session.time,
+        hp: session.view.player.hp,
+        intents: session.view.enemies.map((e) => e.intent?.id ?? null),
+        log: [...session.log],
+      });
+    }
+    expect(session.enemyPhase).toBe(false);
+    return {
+      trace: session.turnTrace.slice(from),
+      hits: session.hitLog.slice(hitsFrom),
+      samples,
+    };
+  };
+
+  /** A bare controller with the session's fight: the unsequenced resolution. */
+  const bareTwin = (rig: Rig & { session: CombatSession }, deck?: readonly string[]) => {
+    const tier = rig.view.world.plan.rooms[rig.room]?.encounter?.tier ?? 'regular';
+    const encounter = chooseEncounter(rig.view.seed, rig.room, tier, rig.bodies.length);
+    return new CombatController({
+      seed: fightSeed(rig.view.seed, rig.room),
+      setups: encounterSetups(encounter),
+      ...(deck ? { deck } : {}),
+    });
+  };
+
+  it('plays each enemy in rules order, the next only after the last resolved plus a gap', async () => {
+    const rig = await openFight('SPIRE002');
+    const { session } = rig;
+    expect(session.controller.state.enemies.length).toBeGreaterThanOrEqual(2);
+    for (let turn = 0; turn < 3 && session.controller.outcome === null; turn++) {
+      const order = session.controller.state.enemies.filter((e) => e.hp > 0).map((e) => e.id);
+      const before = session.view.enemies.map((e) => e.intent?.id ?? null);
+      const hp0 = session.view.player.hp;
+      const { trace, hits, samples } = endTurnAndWatch(rig);
+      expect(trace.map((b) => b.enemyId)).toEqual(order);
+      trace.forEach((b, i) => {
+        // Capsules (no models in tests) lunge to attack and brace otherwise.
+        expect(['lunge', 'brace']).toContain(b.motion);
+        expect(b.impact).not.toBeNull();
+        expect(b.end).not.toBeNull();
+        expect(b.impact as number).toBeGreaterThanOrEqual(b.start);
+        expect(b.end as number).toBeGreaterThanOrEqual(b.impact as number);
+        const prev = trace[i - 1];
+        if (prev)
+          expect(b.start).toBeGreaterThanOrEqual((prev.end as number) + ENEMY_GAP_SECONDS - 1e-6);
+      });
+      // Readouts follow each enemy: between the first and second impacts only the first has acted.
+      const [a, b] = trace;
+      if (a && b) {
+        const between = samples.filter(
+          (s) => s.t >= (a.impact as number) && s.t < (b.impact as number),
+        );
+        expect(between.length).toBeGreaterThan(0);
+        const after = session.controller.state.enemies.map((e) => e.intent?.id ?? null);
+        const firstHit = hits
+          .filter((h) => h.enemyId === a.enemyId)
+          .reduce((n, h) => n + h.hpLost, 0);
+        for (const s of between) {
+          expect(s.intents[1]).toBe(before[1]);
+          expect(s.intents[0]).toBe(after[0]);
+          expect(s.hp).toBe(hp0 - firstHit);
+        }
+        for (const s of samples.filter((x) => x.t < (a.impact as number))) expect(s.hp).toBe(hp0);
+      }
+      expect(session.view).toBe(session.controller.state);
+      // The log tells each enemy's move as it plays, never ahead of it.
+      const full = session.controller.log;
+      expect(samples[0]?.log.length).toBeLessThan(full.length);
+      for (const s of samples) expect(full.slice(0, s.log.length)).toEqual(s.log);
+      expect(session.log).toEqual(full);
+    }
+    rig.hook.dispose();
+  }, 60_000);
+
+  it('resolves exactly like the unsequenced rules, and shows each hit with its numbers', async () => {
+    const kinds = new Set<string>();
+    for (const [seed, deck] of [
+      ['SPIRE002', undefined],
+      ['SPIRE003', undefined],
+      ['SPIRE002', Array(10).fill('defend')],
+      ['SPIRE003', Array(10).fill('defend')],
+    ] as const) {
+      const seen: PlayerHit[] = [];
+      const rig = await openFight(seed, deck ? { deck } : undefined, {
+        onPlayerHit: (hit) => seen.push(hit),
+      });
+      const { session } = rig;
+      const twin = bareTwin(rig, deck);
+      twin.drainEvents();
+      expect(session.controller.state).toEqual(twin.state);
+      for (let turn = 0; turn < 6 && session.controller.outcome === null; turn++) {
+        // Spend the steam on Brass Guards in both, through the controller (no drags needed).
+        for (const c of [session.controller, twin]) {
+          for (let i = 0; i < 3; i++) {
+            const card = c.state.piles.hand.find(
+              (h) => h.def.id === 'defend' && getCard(h.def.id).cost <= c.state.player.steam,
+            );
+            if (!card) break;
+            c.select(card.uid);
+            c.table();
+          }
+        }
+        rig.step();
+        twin.drainEvents();
+        const seenFrom = seen.length;
+        const { hits } = endTurnAndWatch(rig);
+        twin.endTurn();
+        expect(session.controller.state).toEqual(twin.state);
+        const expected = segmentEvents(twin.drainEvents()).flatMap((seg) => {
+          const hit = seg.kind === 'enemy' ? playerHit([...seg.lead, ...seg.act]) : null;
+          return hit && seg.kind === 'enemy' ? [{ ...hit, enemyId: seg.enemyId }] : [];
+        });
+        expect(hits.map(({ at: _at, ...h }) => h)).toEqual(expected);
+        expect(seen.slice(seenFrom)).toEqual(expected.map(({ enemyId: _id, ...h }) => h));
+        for (const h of hits) kinds.add(h.kind);
+      }
+      rig.hook.dispose();
+    }
+    expect(kinds).toContain('hit');
+    expect(kinds.has('blocked') || kinds.has('partial')).toBe(true);
+  }, 120_000);
+
+  it('locks End Turn, cards and dice until the last enemy is done', async () => {
+    const rig = await openFight('SPIRE002');
+    const { session } = rig;
+    const handBefore = session.controller.state.piles.hand.length;
+    rig.actions.emit({ type: 'end-turn' });
+    rig.step();
+    expect(session.enemyPhase).toBe(true);
+    expect(session.stage).toBe('enemy');
+    expect(session.fan.count).toBe(0);
+    const frozen = JSON.stringify(session.controller.state);
+    const turn = session.controller.state.turn;
+    rig.actions.emit({ type: 'end-turn' });
+    rig.actions.emit({ type: 'throw-dice' });
+    pointerAt(rig, at(session, 'end-turn'), 'down');
+    pointerAt(rig, at(session, 'end-turn'), 'up');
+    pointerAt(rig, at(session, 'table'), 'down');
+    pointerAt(rig, at(session, 'table'), 'up');
+    rig.step();
+    expect(JSON.stringify(session.controller.state)).toBe(frozen);
+    expect(session.message).toBe('Enemies are acting');
+    expect(session.fan.count).toBe(0);
+    for (let i = 0; i < 900 && session.enemyPhase; i++) rig.step();
+    expect(session.enemyPhase).toBe(false);
+    expect(session.controller.state.turn).toBe(turn);
+    expect(session.fan.count).toBe(session.controller.state.piles.hand.length);
+    expect(session.fan.count).toBe(handBefore);
+    // The next End Turn is accepted again.
+    rig.actions.emit({ type: 'end-turn' });
+    rig.step();
+    expect(session.enemyPhase || session.controller.state.turn > turn).toBe(true);
+    rig.hook.dispose();
+  }, 60_000);
+
+  it('puts every lunging or bracing capsule back exactly where it stood', async () => {
+    const rig = await openFight('SPIRE002');
+    const { session } = rig;
+    const homes = session.enemies.map(({ body }) => body.position.clone());
+    let moved = 0;
+    rig.actions.emit({ type: 'end-turn' });
+    for (let i = 0; i < 900; i++) {
+      rig.step();
+      session.enemies.forEach(({ body }, k) => {
+        if (body.position.distanceTo(homes[k] as THREE.Vector3) > 0.05) moved++;
+      });
+      if (!session.enemyPhase) break;
+    }
+    expect(moved).toBeGreaterThan(0);
+    session.enemies.forEach(({ body }, k) => {
+      expect(body.position.toArray()).toEqual((homes[k] as THREE.Vector3).toArray());
+    });
+    rig.hook.dispose();
+  }, 60_000);
 });
