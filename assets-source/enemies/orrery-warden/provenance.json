@@ -329,54 +329,53 @@
     "evidence": {
       "path": "assets-source/enemies/orrery-warden/orrery-warden.fidelity-compare.jpg",
       "sha256": "2dbeae47c5434210a99fb2a8d29a8c0ecb3110f7de6dab6e1fca0478514d3baa"
-    },
-    "independentScoreNote": "the recorded independentScore scored the previous build; an independent re-score of this build is pending"
+    }
   },
   "independentScore": {
-    "score": 77,
+    "score": 81,
     "scale": "0-100 visual fidelity to the concept",
     "scorer": "independent reviewer agent (separate from the authoring agent; did not build the model)",
     "date": "2026-11-16",
     "acceptanceBar": 80,
-    "clearsBar": false,
+    "clearsBar": true,
     "rubric": [
       {
         "criterion": "silhouette and proportions",
-        "points": 22,
+        "points": 23,
         "max": 30,
-        "note": "Unchanged geometry, so unchanged score. The two halo rings, the tilted orbit band and the long tasset skirt give the right outline. Below the skirt the concept's slim, segmented greaves and pointed sabatons are wide faceted brass blocks with one strap and rounded shell feet, the arms are plain tubes with box-palm hands and the pauldrons are domes, so the tapered figure turns stocky. In the side view the orbit band sits about 0.4 m in front of the chest where the concept keeps it behind the shoulders."
+        "note": "The outline from the front is right: two halo rings, the tilted orbit band, the long tasset skirt. Confirmed changes: the feet are now pointed, segmented sabatons (clear in the idle and side views), and the hands are fingered gauntlets that close into a fist in the attack shot instead of box palms. The greaves are only partly slimmed. In the front ortho compare they are two stacked straight cylinders, about 30 px wide at the upper segment and 24 px at the lower (a stepped ratio of 0.8), while the concept greave swells at the calf (about 33 px) and narrows smoothly to about 23 px at the ankle, with knee cops the model lacks. The side view is unchanged: the torso is a thin column with no chest depth, the head is a round egg, the pauldrons are domes, and the orbit band still swings in front of the chest where the concept keeps it behind the shoulders."
       },
       {
         "criterion": "signature features",
-        "points": 22,
+        "points": 23,
         "max": 25,
-        "note": "All present: two halo rings, the orbit band with ruby, sapphire and emerald planets, shoulder jewels, the eclipse disc and the sun core. The core now reads as a hot light, a yellow centre (252,222,84) ramping to an amber rim (241,153,47), with a short amber slot below it and amber waist slits, and the eyes are lit amber. Still short of the concept: the core is a round disc in a bezel rather than the concept's keyhole-shaped core with glow bleeding down the abdomen, and the head is a smooth helm with seam lines rather than the sculpted mask."
+        "note": "All signature parts are present: two halo rings, the orbit band with ruby, sapphire and emerald planets, shoulder jewels, the eclipse disc and the sun core. The core is now a round glowing disc with a stem and a lit channel running down to the waist, so it reads as a keyhole with glow bleeding down the abdomen, though the disc stays much larger and rounder than the concept's small keyhole in a ribbed bezel. The mask has dark diagonal cheek recesses and a faint ledge above the eyes, but no clearly raised brow plate, and the eyes are large round goggle lenses where the concept has small narrow eye slits in an elongated skull mask."
       },
       {
         "criterion": "surface detail and material read",
-        "points": 12,
+        "points": 14,
         "max": 20,
-        "note": "Unchanged. The plates separate and the skirt tassets carry gunmetal border grooves. The cuirass, pauldrons, vambraces and greaves are smooth with no engraved panel lines or rivets, the brushed streak texture still looks stretched on the skirt, and the head has seams but none of the concept's cheek recesses or raised brow plate."
+        "note": "Engraved detail is now visible in the engine shots: dark grooves with rivet heads on the vambraces and greaves, studs around the outer halo ring, and banded segments on the sabatons. The skirt tassets keep their gunmetal border grooves. The cuirass and the dome pauldrons are still largely smooth, without the concept's layered plate edges, and the brushed streak texture still swirls and stretches across the skirt. At play distance the new grooves read as thin dark slits rather than the concept's carved panel lines."
       },
       {
         "criterion": "colour and value",
         "points": 12,
         "max": 15,
-        "note": "Glow measured as sRGB from p6-glow-orrery-warden.jpg: core glow median (244,165,65) against the concept core median (242,177,71), core centre (252,222,84) against the concept's near-white peak (255,252,198), eyes (245,183,64) against the concept eyes (247,196,75). Hue and saturation now match the concept and the art bible's candle amber, though the centre stays saturated yellow rather than white-hot. The planets keep correct jewel tones. The brass is still brighter and yellower than the concept's darker bronze, the front skirt goes pale gold under the frontal key, and the outer ring and back skirt go cream in the back renders."
+        "note": "Measured as sRGB from p6-glow-orrery-warden.jpg. Core: warm-pixel median (245,173,70) against the concept core (246,167,58), a match. Core centre 9x9 (250,206,76) and 95th percentile of the core disc (252,217,140), so the centre is still saturated yellow, not the concept's near-white peak (255,252,198). Eyes (240,184,77) against the previous concept measurement (247,196,75). Brass is unchanged and still too yellow and pale: chest plate median (116,92,56), hue 36 deg, lightness 0.34, against the concept chest (70,55,41), hue 29 deg, lightness 0.22. Skirt left panel hue 34 deg against the concept's 24 deg. The skirt 90th-percentile highlight is cream (233,212,178) against the concept's bronze (195,150,94). Planets keep correct jewel tones."
       },
       {
         "criterion": "readability at play distance",
         "points": 9,
         "max": 10,
-        "note": "In the new idle shot the core is the brightest, most saturated point on the figure and reads as the focal light against the polished brass. The halo and planets still separate the Warden from the Sentry and the other automatons. Poses read clearly in the older attack, hit and frozen clip shots; in the death pose the folded orbit band intersects the halo rings on the floor."
+        "note": "In the idle, attack, hit and frozen engine shots the core is the brightest saturated point, and the halo and planets set the Warden apart from the other automatons. The attack reach with a closed gauntlet reads clearly. In the death pose the body lies inside the flattened halo rings and orbit band, which is busy but still readable."
       }
     ],
     "topFixes": [
-      "Slim the lower legs into tapered, segmented greaves with layered, pointed sabatons, and replace the box-palm hands with sculpted gauntlets, to restore the concept's slender silhouette.",
-      "Add engraved panel lines and rivets to the cuirass, pauldrons, vambraces and greaves, and sculpt the mask relief (raised brow plate, cheek recesses), so the plates read as the concept's detailed armour rather than smooth shells.",
-      "Pull the brass toward the concept's darker bronze, especially the pale front skirt and the cream back ring and skirt, and reshape the core from a round disc into the concept's keyhole with a white-hot centre and glow running down the abdomen."
+      "Pull the brass toward the concept's darker bronze (chest near (70,55,41), hue about 25 deg) and tame the cream skirt and ring highlights, since colour has not moved since the 72 and 77 reviews and is now the largest single gap.",
+      "Rebuild the side profile and head: give the torso chest depth with layered pauldrons, move the orbit band behind the shoulders, and reshape the egg head into the concept's elongated skull mask with narrow eye slits and a raised brow plate.",
+      "Finish the lower legs and core: replace the stepped greave cylinders with a calf swell that tapers to the ankle with knee cops, and shrink the core disc into a smaller keyhole in a ribbed bezel with a white-hot centre."
     ],
-    "method": "Re-score after the glow fix (commit ab14b81, geometry unchanged), using the same five-criterion rubric as the previous independent score of 72 so the two compare. Judged the concept sheet at native resolution (the stray Sentry artifact ignored) against the front, side and back orthographic fidelity compare (front and lower-leg panels cropped and enlarged with Pillow), the low-poly Blender renders, the review sheet, the new in-engine idle shot p6-glow-orrery-warden.jpg and the orrery-warden row of p6-glow-before-after.jpg. Glow colour was measured as sRGB with Pillow and NumPy: the median of warm saturated pixels (R over 200, R minus B over 80) in the core and eye regions of the new engine shot and of the concept front view, plus a 9 by 9 sample at the core centre. The Blender compare and renders still show the old peach core, so colour was judged on the new engine shots only, and the older staging/engine clip shots were used for pose readability only. Art bible palette (candle amber F3BE65 for cores and eyes, polished brass DEC16A) checked in docs/art-bible.md.",
+    "method": "Re-score of build d291e3c with the same five-criterion rubric as the previous independent scores (72, then 77), re-measuring everything rather than inheriting it. Compared the concept sheet at native resolution (stray Sentry artifact ignored) against the front and side panels of the fidelity compare, cropped and enlarged with Pillow (lower legs, head, side profile), the low-poly three-quarter render, the review sheet, and the in-engine idle, attack, hit, frozen and death shots. glow-close.jpg and p6-glow-orrery-warden.jpg have identical sha256, so they are one shot, not two. Greave taper was measured as per-row widths of non-background pixel runs in the model front ortho panel and estimated from the outline in the concept front panel. Colour was measured only on the engine shots with Pillow and NumPy: median of warm saturated pixels (R over 200, R minus B over 80) in the core and eye regions, a 9x9 sample and 95th percentile in the core disc, and median, hue, lightness and 90th percentile of brass regions (chest, skirt, greave) against the same regions of the concept front view. The brightest pixels near the core (255,254,236) are brass speculars, not the core, so they were not counted as a white-hot centre. Author claims were credited only where visible: sabatons, fingered gauntlets, grooves and rivets, cheek recesses and the keyhole channel are confirmed; the slim taper is partial; the raised brow plate is not visible.",
     "evidence": [
       {
         "path": "assets-source/concepts/warden-sheet-1.png",
@@ -388,57 +387,46 @@
       },
       {
         "path": "docs/verification/p6-glow-orrery-warden.jpg",
-        "sha256": "24ac7e68a9a87f028e4fce37d17bac296366132b20d19573653a4e9253502b42"
-      },
-      {
-        "path": "docs/verification/p6-glow-before-after.jpg",
-        "sha256": "969dcdf4814240af1f08f34da968232c875c70526148378a0c9b2ad6e3366d6d"
-      },
-      {
-        "path": "assets-source/enemies/orrery-warden/staging/renders/model-low-front.png",
-        "sha256": "cab8dd57d6d35ded757a472779d873ee2d198b6af5aa485c90afb782d740d66a"
-      },
-      {
-        "path": "assets-source/enemies/orrery-warden/staging/renders/model-low-side.png",
-        "sha256": "9a6bd11a76f7694914f376eb14cd7b36b09d5fb8e74189f2e0dd1e7ca294d639"
-      },
-      {
-        "path": "assets-source/enemies/orrery-warden/staging/renders/model-low-back.png",
-        "sha256": "4150f7f9f916bd79a469f091bc0742c5bf116aba97cf156d6b0e278283426ed0"
-      },
-      {
-        "path": "assets-source/enemies/orrery-warden/staging/renders/model-low-three-quarter.png",
-        "sha256": "e46c7d2a272b07a9fdbe9ac431d6681e482b6ffb5ecb348993ac006d7c6501b1"
-      },
-      {
-        "path": "assets-source/enemies/orrery-warden/orrery-warden.review-sheet.jpg",
-        "sha256": "6df0ebc3db17b01239479df59cf71cd5315af4bc282fc262ea26bf35e2905354"
-      },
-      {
-        "path": "assets-source/enemies/orrery-warden/orrery-warden.fidelity-compare.jpg",
-        "sha256": "6371655a269d935a6e1d7d4594d72c0c1049018c4db76c1a087dce824df53784"
-      },
-      {
-        "path": "assets-source/enemies/orrery-warden/staging/engine/idle.jpg",
-        "sha256": "3c06e6601183d30ae4230f0b0dfd7d3c68465e9a15ed5ad243e2af4024c8b139"
+        "sha256": "10a814906286d3a086de6a2e2ff77a34321b8990dd43cbd327c96a3d9217c343"
       },
       {
         "path": "assets-source/enemies/orrery-warden/staging/engine/attack.jpg",
-        "sha256": "3b6457a07a00a7555963386e4f9513af522e01caebdaf7eaa1161b172f2989aa"
-      },
-      {
-        "path": "assets-source/enemies/orrery-warden/staging/engine/hit.jpg",
-        "sha256": "b69592340ac7c9a57f318192dd06a527f4b2c52f2a4c7ede8b0ff0854803f430"
-      },
-      {
-        "path": "assets-source/enemies/orrery-warden/staging/engine/frozen.jpg",
-        "sha256": "a6502c9761f5678f1a760fa8667c2ebe2f7ffe93ad232ad57e299f42e1f4b1b2"
+        "sha256": "4a0e9736133a9c6bc9628e84bee4f57d4d963828edc92633b2275a7cf6ea4ff6"
       },
       {
         "path": "assets-source/enemies/orrery-warden/staging/engine/death.jpg",
-        "sha256": "f0c07f50038c402d71d4c58f2cc4ad6fef1f4b9dfe00f0a1c2f731749d9163b4"
+        "sha256": "1c5543d3de996a5d7039ff6dc1bcad136e56ee8cf39c9d9934d8b2d6489c1ad2"
+      },
+      {
+        "path": "assets-source/enemies/orrery-warden/staging/engine/frozen.jpg",
+        "sha256": "e48ed475e771aab7ce92702e5b7c152e36e926df48c436505aa4b7b246e09473"
+      },
+      {
+        "path": "assets-source/enemies/orrery-warden/staging/engine/glow-close.jpg",
+        "sha256": "10a814906286d3a086de6a2e2ff77a34321b8990dd43cbd327c96a3d9217c343"
+      },
+      {
+        "path": "assets-source/enemies/orrery-warden/staging/engine/hit.jpg",
+        "sha256": "2d634390fe9df2a7b9a7a1bf0e755ff59a8fe5fe5466e156e4ec5b653e8d0ed2"
+      },
+      {
+        "path": "assets-source/enemies/orrery-warden/staging/engine/idle.jpg",
+        "sha256": "45c94d790357e1f95a8e58f942b2fd4f4fcb6c29a90c9e2c629594f18ea68dde"
+      },
+      {
+        "path": "assets-source/enemies/orrery-warden/orrery-warden.fidelity-compare.jpg",
+        "sha256": "2dbeae47c5434210a99fb2a8d29a8c0ecb3110f7de6dab6e1fca0478514d3baa"
+      },
+      {
+        "path": "assets-source/enemies/orrery-warden/orrery-warden.review-sheet.jpg",
+        "sha256": "41df688d35440eecf0b346abfec1603d1098a0e696a0cf4ebd4ad05fcec54bbe"
+      },
+      {
+        "path": "assets-source/enemies/orrery-warden/staging/renders/model-low-three-quarter.png",
+        "sha256": "7ffd90186ea2cd165b565ce2baa3ee1609a9b224072c9960f1ae2d6517e3a21e"
       }
     ],
-    "previousScore": 72
+    "previousScore": 77,
+    "build": "d291e3c"
   }
 }
