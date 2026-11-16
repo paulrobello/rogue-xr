@@ -18,6 +18,9 @@ modeled to match them.
 | `L-study.png` | Room composition and enemy scale at seated eye height (ignore its teal foreground cards) |
 | `../explore/A-room.png` | Hero study composition and lighting |
 
+Concept sheets picked by Paul on 2026-11-15 (`assets-source/concepts/`): `room-sheet-1.png` for the
+hero study, `sentry-sheet-1.png` for the Cog Sentry and `table-sheet-1.png` for the combat table.
+
 `L-board-2.png` is kept for provenance only: its teal card frame is off-direction.
 
 ## Palette

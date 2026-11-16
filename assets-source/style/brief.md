@@ -37,3 +37,10 @@ locked board.
 
 Paul approved the locked board and every art-direction recommendation in chat: "All recommendations for art direction are approved, as well as any needed spend".
 Canonical board: `locked/L-board-1.png`. Rules: `docs/art-bible.md`.
+
+## Concept sheet picks (P4-T2, 2026-11-15)
+
+Paul in chat: "Go with yours". Chosen: `concepts/room-sheet-1.png` (single-level round study),
+`concepts/sentry-sheet-1.png` (slender Cog Sentry), `concepts/table-sheet-1.png` (iris drum table
+unfolding into a crescent around the seated player). The option-2 sheets stay as references only;
+the gallery study is a candidate for a later room template.
