@@ -9,7 +9,24 @@ export type GameAction =
   | { type: 'move'; forward: number; strafe: number }
   | { type: 'turn'; degrees: number }
   | { type: 'select'; controlId: string }
-  | { type: 'new-run'; seed?: string };
+  | { type: 'new-run'; seed?: string }
+  /**
+   * Combat pointer (desktop mouse, or any world ray): `down` presses on whatever the ray hits (a fan
+   * card, the sigil plate, End Turn, the dice tray), `move` drags or hovers, `up` releases. `ndc` is
+   * the mouse in normalized device coordinates when the ray comes from the camera.
+   */
+  | {
+      type: 'combat-pointer';
+      phase: 'down' | 'move' | 'up';
+      origin: readonly [number, number, number];
+      direction: readonly [number, number, number];
+      ndc?: readonly [number, number];
+    }
+  /** A tracked controller button in combat: main-hand squeeze grabs and flings, trigger draws and points. */
+  | { type: 'combat-hand'; hand: 'main' | 'off'; control: 'squeeze' | 'trigger'; pressed: boolean }
+  | { type: 'end-turn' }
+  | { type: 'throw-dice' }
+  | { type: 'combat-cancel' };
 
 export type ActionType = GameAction['type'];
 type Listener<T extends ActionType> = (action: Extract<GameAction, { type: T }>) => void;
@@ -23,6 +40,14 @@ export class ActionBus {
     set.add(wrapped);
     this.listeners.set(type, set);
     return () => set.delete(wrapped);
+  }
+
+  /** Live listeners for `type`, or across every type when omitted. */
+  listenerCount(type?: ActionType): number {
+    if (type) return this.listeners.get(type)?.size ?? 0;
+    let total = 0;
+    for (const set of this.listeners.values()) total += set.size;
+    return total;
   }
 
   emit(action: GameAction): void {

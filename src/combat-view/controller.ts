@@ -45,6 +45,8 @@ export interface CombatOptions {
   readonly enemy?: EnemyKind;
   /** Picks an encounter of this tier from the seed's `floor` stream. */
   readonly encounter?: EncounterTier;
+  /** Explicit enemy setups (a floor room's chosen encounter); wins over `enemy` and `encounter`. */
+  readonly setups?: readonly EnemySetup[];
   readonly deck?: readonly string[];
   /** Debug cheat: every enemy starts at this many hit points (max hit points unchanged). */
   readonly enemyHp?: number;
@@ -113,9 +115,11 @@ export function parseCombatQuery(search: string): CombatOptions {
 /** The enemy setups for `options`, with any hit point cheat applied. */
 export function resolveSetups(options: CombatOptions): EnemySetup[] {
   const seed = normalizeSeed(options.seed ?? DEFAULT_SEED);
-  const base = options.encounter
-    ? encounterSetups(pickEncounter(options.encounter, new RunRng(seed).stream('floor')))
-    : [ENEMIES[options.enemy ?? DEFAULT_ENEMY]];
+  const base = options.setups
+    ? [...options.setups]
+    : options.encounter
+      ? encounterSetups(pickEncounter(options.encounter, new RunRng(seed).stream('floor')))
+      : [ENEMIES[options.enemy ?? DEFAULT_ENEMY]];
   const cap = options.enemyHp;
   return cap === undefined
     ? base
@@ -178,6 +182,8 @@ export class CombatController {
   lastDice: DiceReadout | null = null;
   lastSigil: SigilResult | null = null;
   private pending: { uid: number; target?: string } | null = null;
+  /** Rules events since the last `drainEvents`, for presenters that react to them (audio, effects). */
+  private readonly recentEvents: CombatEvent[] = [];
   private readonly listeners = new Set<Listener>();
 
   constructor(options: CombatOptions = {}) {
@@ -203,6 +209,11 @@ export class CombatController {
 
   get outcome(): CombatState['outcome'] {
     return this.state.outcome;
+  }
+
+  /** Returns and clears the rules events recorded since the previous call. */
+  drainEvents(): CombatEvent[] {
+    return this.recentEvents.splice(0, this.recentEvents.length);
   }
 
   /** The card the player picked up, if any. */
@@ -378,6 +389,9 @@ export class CombatController {
   }
 
   private record(result: { state: CombatState; events: readonly CombatEvent[] }): void {
+    this.recentEvents.push(...result.events);
+    if (this.recentEvents.length > LOG_CAP)
+      this.recentEvents.splice(0, this.recentEvents.length - LOG_CAP);
     for (const event of result.events) {
       const line = describeEvent(event, result.state);
       if (line !== null) this.log.push(line);

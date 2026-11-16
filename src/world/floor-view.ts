@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { EncounterDirector } from '../combat/encounter.ts';
+import { buildTableGreybox, disposeTable, TABLE_NODES } from '../combat/table-greybox.ts';
 import { isValidSeed, normalizeSeed, randomSeed } from '../core/rng.ts';
 import { generateFloor } from '../floor/generate.ts';
 import { PALETTE } from '../palette.ts';
@@ -25,6 +26,16 @@ export interface FloorView {
    * frame before rendering.
    */
   update(head: THREE.Object3D, dt: number): void;
+  /**
+   * Swaps the greybox table for a loaded asset (the P4-T5 GLB). The asset must expose `leaf-left`
+   * and `leaf-right`; its top is `authoredTopHeight` above its origin and is fitted to each
+   * encounter's waist height on a parent group, since `setTableUnfold` owns the root's scale.
+   */
+  useTableAsset(asset: THREE.Object3D, authoredTopHeight: number): void;
+  /** True once `useTableAsset` replaced the greybox. */
+  readonly realTable: boolean;
+  /** The table's dice-tray and sigil-plate sockets (the greybox has no plate socket). */
+  tableSockets(): { diceTray: THREE.Object3D | null; sigilPlate: THREE.Object3D | null };
 }
 
 /** Greybox exploration view: the generated floor, flat greybox lighting, the rig at the entry. */
@@ -38,8 +49,16 @@ export function mountFloorView(scene: THREE.Scene, rig: THREE.Object3D, seed: st
   rig.position.copy(world.spawnPoint());
 
   let locked = false;
+  // The director keeps this host for its life; the greybox or the real asset hangs under it.
+  const tableHost = new THREE.Group();
+  tableHost.name = 'combat-table-host';
+  let greybox: THREE.Object3D | null = buildTableGreybox();
+  tableHost.add(greybox);
+  let fit: THREE.Group | null = null;
+  let authoredTop = 1;
   const encounter = new EncounterDirector({
     world,
+    table: tableHost,
     lockLocomotion: (l) => {
       locked = l;
     },
@@ -52,6 +71,33 @@ export function mountFloorView(scene: THREE.Scene, rig: THREE.Object3D, seed: st
     get locked() {
       return locked;
     },
+    get realTable() {
+      return fit !== null;
+    },
+    useTableAsset(asset, authoredTopHeight) {
+      if (greybox) {
+        greybox.removeFromParent();
+        disposeTable(greybox);
+        greybox = null;
+      }
+      fit?.removeFromParent();
+      fit = new THREE.Group();
+      fit.name = 'combat-table-fit';
+      fit.add(asset);
+      authoredTop = authoredTopHeight;
+      tableHost.add(fit);
+      const pose = encounter.tablePose;
+      if (pose) fit.scale.set(1, pose.height / authoredTop, 1);
+    },
+    tableSockets() {
+      return {
+        diceTray:
+          tableHost.getObjectByName('socket-dice-tray') ??
+          tableHost.getObjectByName(TABLE_NODES.diceTray) ??
+          null,
+        sigilPlate: tableHost.getObjectByName('socket-sigil-plate') ?? null,
+      };
+    },
     update(head, dt) {
       encounter.update(dt);
       head.getWorldPosition(at);
@@ -60,12 +106,13 @@ export function mountFloorView(scene: THREE.Scene, rig: THREE.Object3D, seed: st
       world.update(at.x, at.z);
       const hit = encounter.checkTrigger({ x: at.x, z: at.z });
       if (!hit) return;
-      encounter.begin(hit.room, {
+      const began = encounter.begin(hit.room, {
         x: at.x,
         z: at.z,
         yaw: yawFromMatrix(head.matrixWorld.elements),
         eyeHeight: at.y,
       });
+      if (began.ok && fit) fit.scale.set(1, began.table.pose.height / authoredTop, 1);
     },
   };
 }
