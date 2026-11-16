@@ -116,11 +116,13 @@ export async function mountAutomatonProof(id: string, width: number, height: num
     mixer.update(0);
     // Taller models (warden rings, the 3.2 m guardian) need a wider lens at the same seat.
     camera.fov = top > 2.9 ? 64 : top > 2.3 ? 56 : 50;
-    // 'close' is the seat camera at the 50 degree lens the docs/verification/p6-glow-*.jpg stills used.
-    if (view === 'close') camera.fov = 50;
+    // 'close' is the seat camera narrowed to the upper body (head, grille chest, eyes): at this model's
+    // height the seat lens is already 50 degrees, so a 50 degree close shot would repeat the idle frame.
+    const close = view === 'close';
+    if (close) camera.fov = 30;
     camera.updateProjectionMatrix();
     camera.position.set(0.7, 1.2, 2.6);
-    camera.lookAt(0, clip === 'death' ? 0.3 : top * 0.5, 0);
+    camera.lookAt(0, clip === 'death' ? 0.3 : close ? top * 0.75 : top * 0.5, 0);
     renderer.render(scene, camera);
     return {
       clip,

@@ -61,16 +61,17 @@ GLOW = "hound-glow"
 MATS = ["brass-polished", "brass-aged", "gunmetal", GLOW]
 BP, BA, GM, GL = range(4)
 RB = 20  # pseudo slot: build_body maps it to GM and writes the ruby into COLOR_0
-RUBY_SRGB = (0xB8, 0x00, 0x5C)  # art bible ruby pushed toward crimson: the warm key lights and the 0.7-metallic slot shift it orange
+RUBY_SRGB = (0xA0, 0x00, 0x48)  # deep crimson: the warm key lights shift it orange, and 0xB8005C read pink (engine S 0.63)
 GM_SRGB = (0x2E, 0x2A, 0x2A)  # gunmetal, carried by COLOR_0 on the white gunmetal slot
-SETS = {"brass-polished": 0.35, "brass-aged": 0.35}  # shared set -> normal scale on this model
+SETS = {"brass-polished": 0.18, "brass-aged": 0.18}  # shared set -> normal scale on this model (0.35 read as crumpled foil)
 TINTS = {"brass-polished": [1.0, 0.86, 0.90], "brass-aged": [1.0, 0.86, 0.90]}  # runtime set tint toward the concept's hue
 TILE_METERS = 0.5  # both brass sets tile at 0.5 m (public/assets/materials/materials.json)
 FACTORS = {  # sRGB base, roughness, metallic: the GLB look, and the fallback when the sets fail
     "brass-polished": ((0xDE, 0xC1, 0x6A), 0.3, 1.0),
     "brass-aged": ((0xA8, 0x86, 0x48), 0.45, 1.0),
-    # hue from COLOR_0 (gunmetal and ruby); at 0.85 metallic the ruby reads near black
-    "gunmetal": ((0xFF, 0xFF, 0xFF), 0.42, 0.7),
+    # hue from COLOR_0 (gunmetal and ruby). Engine ruby saturation rises with metallic (0.6: S 0.61, 0.8: S 0.70
+    # to 0.76) and roughness 0.42 spread a white sheen; at 0.85 the ruby read near black.
+    "gunmetal": ((0xFF, 0xFF, 0xFF), 0.25, 0.8),
     GLOW: ((0x6A, 0x34, 0x0C), 0.4, 0.0),
 }
 GLOW_SRGB = (0xF0, 0x8C, 0x2C)
@@ -434,44 +435,48 @@ def build_parts(P: Parts) -> None:
             L([(tuple(p), 0.005, 0.005, 0.005, 2.0), (tuple(p + d * 0.003), 0.003, 0.003, 0.003, 2.0)], BA, bone, n=6, sub=1,
               caps=(False, True))
 
-    # ---- Head: long narrow greyhound skull and separate hinged jaw (aged: polished mirrors a dark room head-on), rose ears,
+    # ---- Head: greyhound skull with a stop and a separate hinged jaw, on the body's polished brass, rose ears,
     # amber eye slits under a brow ledge, gunmetal nose, cheek guards and hinge bolts.
     skull = [((0, 0.495, 1.090), 0.040, 0.050, 0.050, 2.2), ((0, 0.525, 1.092), 0.060, 0.092, 0.085, 2.4),
              ((0, 0.570, 1.090), 0.076, 0.110, 0.090, 2.5), ((0, 0.625, 1.096), 0.078, 0.112, 0.080, 2.5),
              ((0, 0.680, 1.100), 0.070, 0.095, 0.068, 2.4), ((0, 0.735, 1.093), 0.052, 0.073, 0.058, 2.3),
-             ((0, 0.790, 1.075), 0.039, 0.040, 0.046, 2.2), ((0, 0.845, 1.058), 0.029, 0.028, 0.034, 2.1),
-             ((0, 0.880, 1.050), 0.022, 0.022, 0.026, 2.0)]
-    L(skull, BA, "head")
-    L([((0, 0.872, 1.052), 0.020, 0.018, 0.020, 2.0), ((0, 0.893, 1.049), 0.016, 0.014, 0.016, 2.0),
-       ((0, 0.903, 1.046), 0.008, 0.007, 0.008, 2.0)], GM, "head", n="small", sub=1)  # nose
+             # Stop: the brow drops 34 mm between y 0.752 and 0.772 (concept 1.156 -> 1.119), then a deep
+             # muzzle whose underside closes onto the jaw (concept mouth line 1.016 at y 0.79, 1.006 at 0.84).
+             ((0, 0.752, 1.090), 0.048, 0.062, 0.059, 2.3), ((0, 0.772, 1.072), 0.043, 0.046, 0.050, 2.3),
+             ((0, 0.800, 1.058), 0.038, 0.042, 0.044, 2.2), ((0, 0.845, 1.042), 0.029, 0.033, 0.036, 2.1),
+             ((0, 0.875, 1.038), 0.021, 0.020, 0.022, 2.0)]
+    L(skull, BP, "head")
+    L([((0, 0.866, 1.040), 0.020, 0.018, 0.020, 2.0), ((0, 0.887, 1.037), 0.016, 0.014, 0.016, 2.0),
+       ((0, 0.897, 1.034), 0.008, 0.007, 0.008, 2.0)], GM, "head", n="small", sub=1)  # nose
     jaw = [((0, 0.600, 1.018), 0.044, 0.022, 0.034, 2.4), ((0, 0.660, 1.008), 0.040, 0.021, 0.032, 2.4),
            ((0, 0.720, 0.998), 0.033, 0.018, 0.027, 2.3), ((0, 0.780, 0.989), 0.026, 0.015, 0.021, 2.2),
            ((0, 0.830, 0.982), 0.019, 0.011, 0.015, 2.1), ((0, 0.852, 0.979), 0.010, 0.007, 0.008, 2.0)]
-    L(jaw, BA, "jaw")
+    L(jaw, BP, "jaw")
     for s in (1, -1):
-        # Teeth: upper row hangs from the muzzle, lower row stands on the jaw; a fang at each end.
-        for k in range(5):
-            y = 0.705 + 0.032 * k
+        # Teeth: a few large ones at the front only (concept), three upper and two lower, and a fang.
+        for y in (0.790, 0.810, 0.830):
             cz, a, _bt, bb = _at(skull, y)
-            L([((s * 0.55 * a, y, cz - bb + 0.006), 0.005, 0.004, 0.004, 2.0),
-               ((s * 0.55 * a, y, cz - bb - 0.014), 0.001, 0.001, 0.001, 2.0)], BP, "head", n=4, sub=1, ref=(0, 1, 0),
+            L([((s * 0.55 * a, y, cz - bb + 0.006), 0.0065, 0.005, 0.005, 2.0),
+               ((s * 0.55 * a, y, cz - bb - 0.013), 0.0012, 0.0012, 0.0012, 2.0)], BP, "head", n=4, sub=1, ref=(0, 1, 0),
               caps=(False, False))
-            cz, a, bt, _bb = _at(jaw, y - 0.012)
-            L([((s * 0.55 * a, y - 0.012, cz + bt - 0.004), 0.004, 0.0035, 0.0035, 2.0),
-               ((s * 0.55 * a, y - 0.012, cz + bt + 0.011), 0.001, 0.001, 0.001, 2.0)], BP, "jaw", n=4, sub=1, ref=(0, 1, 0),
+        for y in (0.800, 0.820):
+            cz, a, bt, _bb = _at(jaw, y)
+            L([((s * 0.55 * a, y, cz + bt - 0.004), 0.006, 0.0045, 0.0045, 2.0),
+               ((s * 0.55 * a, y, cz + bt + 0.012), 0.0012, 0.0012, 0.0012, 2.0)], BP, "jaw", n=4, sub=1, ref=(0, 1, 0),
               caps=(False, False))
-        cz, a, _bt, bb = _at(skull, 0.842)
-        L([((s * 0.5 * a, 0.842, cz - bb + 0.006), 0.006, 0.006, 0.006, 2.0), ((s * 0.5 * a, 0.844, cz - bb - 0.022), 0.0012, 0.0012, 0.0012, 2.0)],
+        cz, a, _bt, bb = _at(skull, 0.848)
+        L([((s * 0.5 * a, 0.848, cz - bb + 0.006), 0.007, 0.007, 0.007, 2.0), ((s * 0.5 * a, 0.850, cz - bb - 0.020), 0.0014, 0.0014, 0.0014, 2.0)],
           BP, "head", n=5, sub=1, ref=(0, 1, 0), caps=(False, False))  # upper fang
-        # Brow ledge, dark socket and amber slit, slanting down toward the nose, each placed on the
-        # skull surface. The socket is taller than the slit but not wider, so the slit stays proud.
-        eye = [(0.694, 1.136, 0.006, 2.0), (0.718, 1.130, 0.017, 2.4), (0.746, 1.114, 0.006, 2.0)]  # y, z, r, e
-        brow = [(0.006, 0.004, 0.004, 2.0), (0.010, 0.007, 0.006, 2.6), (0.004, 0.003, 0.003, 2.0)]
-        socket = [(0.012, 0.012, 0.012, 2.5), (0.016, 0.023, 0.023, 2.8), (0.012, 0.012, 0.012, 2.5)]
-        L([((s * (skull_x(skull, y, z + 0.014) + 0.002), y, z + 0.014), *b) for (y, z, _r, _e), b in zip(eye, brow)],
-          BP, "head", n="small", sub=1)
-        L([((s * (skull_x(skull, y, z) - 0.006), y, z), *k) for (y, z, _r, _e), k in zip(eye, socket)], GM, "head", n="small", sub=1)
-        L([((s * (skull_x(skull, y, z) - 0.003), y, z), r, r, r, e) for y, z, r, e in eye], GL, "head", n="small", sub=1)
+        # Amber eye at the stop: a long almond (54 mm by 32 mm) standing 17 mm proud of the skull,
+        # so head-on it shows past the muzzle. The dark socket sits lower than the glow (4 mm proud)
+        # and only frames it from the side; the brow ledge covers the back two thirds only.
+        eye = [(0.696, 1.134, 0.010, 0.008), (0.714, 1.127, 0.019, 0.016), (0.734, 1.118, 0.019, 0.014),
+               (0.750, 1.108, 0.010, 0.006)]  # y, z, a (proud), half-height
+        L([((s * (skull_x(skull, y, z) - 0.002), y, z), a, h, h, 2.4) for y, z, a, h in eye], GL, "head", n="small", sub=1)
+        L([((s * (skull_x(skull, y, z) - 0.010), y, z), 0.014, h + 0.006, h + 0.006, 2.6) for y, z, _a, h in eye],
+          GM, "head", n="small", sub=1)
+        L([((s * (skull_x(skull, y, z + 0.019) + 0.002), y, z + 0.019), a, b, b, 2.2)
+           for (y, z, _a, _h), (a, b) in zip(eye[:3], ((0.006, 0.004), (0.009, 0.006), (0.003, 0.003)))], BP, "head", n="small", sub=1)
         # Cheek guard over the jaw hinge, and the hinge bolt.
         L([((s * 0.072, 0.560, 1.050), 0.005, 0.020, 0.020, 3.0), ((s * 0.074, 0.600, 1.046), 0.006, 0.030, 0.030, 3.4),
            ((s * 0.071, 0.650, 1.040), 0.005, 0.022, 0.020, 3.0), ((s * 0.065, 0.680, 1.036), 0.004, 0.010, 0.010, 2.4)],
@@ -495,14 +500,14 @@ def build_parts(P: Parts) -> None:
     # ---- Chest: an egg-shaped cuirass (deep keel, the widest part of the body) in three polished
     # plates over a gunmetal core, a grille with an amber core on the prow, and a keel blade.
     chest = [((0, 0.175, 0.800), 0.100, 0.140, 0.120, 2.1), ((0, 0.215, 0.790), 0.128, 0.180, 0.190, 2.1),
-             ((0, 0.270, 0.775), 0.145, 0.200, 0.215, 2.1), ((0, 0.340, 0.765), 0.150, 0.205, 0.220, 2.1),
-             ((0, 0.410, 0.745), 0.146, 0.170, 0.205, 2.1), ((0, 0.470, 0.720), 0.128, 0.120, 0.170, 2.1),
+             ((0, 0.270, 0.775), 0.126, 0.200, 0.215, 2.1), ((0, 0.340, 0.765), 0.128, 0.205, 0.220, 2.1),
+             ((0, 0.410, 0.745), 0.127, 0.170, 0.205, 2.1), ((0, 0.470, 0.720), 0.128, 0.120, 0.170, 2.1),
              ((0, 0.515, 0.700), 0.100, 0.085, 0.120, 2.1), ((0, 0.540, 0.690), 0.070, 0.060, 0.080, 2.1)]
     L([(c, a * 0.97, bt * 0.97, bb * 0.97, e) for c, a, bt, bb, e in chest], GM, "chest")
-    L(chest[:3] + [((0, 0.298, 0.770), 0.148, 0.203, 0.218, 2.1)], BP, "chest")
-    L([((0, 0.312, 0.768), 0.149, 0.204, 0.219, 2.1), chest[3], ((0, 0.405, 0.747), 0.146, 0.173, 0.206, 2.1)], BP, "chest")
+    L(chest[:3] + [((0, 0.298, 0.770), 0.127, 0.203, 0.218, 2.1)], BP, "chest")
+    L([((0, 0.312, 0.768), 0.128, 0.204, 0.219, 2.1), chest[3], ((0, 0.405, 0.747), 0.127, 0.173, 0.206, 2.1)], BP, "chest")
     f0 = len(P.bm.faces)
-    L([((0, 0.419, 0.742), 0.144, 0.164, 0.200, 2.1)] + chest[5:], BP, "chest")
+    L([((0, 0.419, 0.742), 0.126, 0.164, 0.200, 2.1)] + chest[5:], BP, "chest")
     prow_bvh = _bvh(list(P.bm.faces)[f0:])  # the front plate as built (its rings tilt with the path)
     for s in (1, -1):  # side vents: tall slatted ovals facing sideways, so head-on the grille core dominates
         vc, vn = Vector((s * 0.108, 0.484, 0.657)), Vector((s * 0.88, 0.45, -0.10)).normalized()
@@ -548,10 +553,10 @@ def build_parts(P: Parts) -> None:
 
     seam((0.0, 0.802), (0.0, 0.722), 5)  # collar to grille top
     for s in (1, -1):
-        seam((s * 0.073, 0.702), (s * 0.131, 0.771), 5)  # grille ring up-outward to the shoulder
+        seam((s * 0.073, 0.702), (s * 0.112, 0.771), 5)  # grille ring up-outward to the shoulder (chest now 0.128 wide)
         # Grille ring down-outward. The concept runs on to (0.111, 0.553), but this cuirass turns under
         # below z 0.61, so the seam starts higher and stops where the plate turns under.
-        seam((s * 0.062, 0.632), (s * 0.090, 0.608), 5)
+        seam((s * 0.062, 0.632), (s * 0.084, 0.612), 5)
     L([((0, 0.320, 0.585), 0.014, 0.034, 0.030, 2.4), ((0, 0.230, 0.575), 0.012, 0.030, 0.030, 2.4),
        ((0, 0.130, 0.590), 0.010, 0.024, 0.030, 2.2), ((0, 0.010, 0.632), 0.002, 0.004, 0.003, 2.0)], BA, "chest", n="small")
 
@@ -595,23 +600,24 @@ def build_parts(P: Parts) -> None:
         return (0.0, y0 + (y1 - y0) * f, z0 + (z1 - z0) * f)
 
     L([((0, y, z), 0.009, 0.009, 0.009, 2.0) for y, z in tail_pts], GM, tail_bone, n="small", sub=1)
-    nseg, total = 12, cum[-1]
+    nseg, total = 10, cum[-1]  # concept: chunky cylinders about 31 mm across, longer than wide
     pitch = total / nseg
     for k in range(nseg):
         d0, d1 = k * pitch + 0.002, (k + 1) * pitch - 0.003
-        r = 0.019 - 0.006 * k / (nseg - 1)
-        L([(tail_at(d0), r * 0.82, r * 0.82, r * 0.82, 2.0), (tail_at(d0 + 0.004), r, r, r, 2.0),
-           (tail_at(d1 - 0.004), r, r, r, 2.0), (tail_at(d1), r * 0.82, r * 0.82, r * 0.82, 2.0)],
+        r = 0.019 - 0.003 * k / (nseg - 1)
+        L([(tail_at(d0), r * 0.9, r * 0.9, r * 0.9, 2.0), (tail_at(d0 + 0.003), r, r, r, 2.0),
+           (tail_at(d1 - 0.003), r, r, r, 2.0), (tail_at(d1), r * 0.9, r * 0.9, r * 0.9, 2.0)],
           BA, tail_bone(Vector(tail_at((d0 + d1) / 2))), n="small", sub=1)
-    # Winding key: collar, shaft, hub and a two-lobed bow in the sagittal plane.
+    # Winding key: collar, a thick shaft, hub and one flat butterfly bow in the sagittal plane, centred
+    # on the key bone's axis (z 0.449 at y -0.716) so the wind-up spin does not wobble: two round
+    # lobes (56 mm across, 24 mm holes, 105 mm apart as in the concept) joined by a flat waist.
     D((0, -0.606, 0.455), (0, -1, 0.04), 0.016, 0.014, BP, "key", n="small")
-    L([((0, -0.610, 0.454), 0.008, 0.008, 0.008, 2.0), ((0, -0.672, 0.451), 0.008, 0.008, 0.008, 2.0)], BP, "key", n="small", sub=1)
+    L([((0, -0.610, 0.454), 0.010, 0.010, 0.010, 2.0), ((0, -0.704, 0.450), 0.010, 0.010, 0.010, 2.0)], BP, "key", n="small", sub=1)
     D((0, -0.680, 0.451), (0, -1, 0.0), 0.014, 0.018, BP, "key", n="small")
-    for dz in (0.037, -0.037):
-        c = (0, -0.716, 0.451 + dz)
-        P.ring(c, (1, 0, 0), 0.028, 0.028, 0.016, 0.007, BP, "key", n="small", k=6)
-        L([((0, -0.690, 0.451 + dz * 0.25), 0.005, 0.009, 0.009, 2.6), ((0, -0.708, 0.451 + dz * 0.62), 0.005, 0.011, 0.011, 2.6)],
-          BP, "key", n="small", sub=1)
+    for dz in (0.0525, -0.0525):
+        P.ring((0, -0.716, 0.449 + dz), (1, 0, 0), 0.020, 0.020, 0.0085, 0.006, BP, "key", n=12, k=6)
+    L([((0, -0.716, 0.449 - 0.034), 0.021, 0.006, 0.006, 3.0), ((0, -0.716, 0.449), 0.015, 0.006, 0.006, 3.0),
+       ((0, -0.716, 0.449 + 0.034), 0.021, 0.006, 0.006, 3.0)], BP, "key", n="small", sub=1, ref=(0, 1, 0))
 
     # ---- Legs.
     for s, n in ((1, "R"), (-1, "L")):
@@ -644,13 +650,14 @@ def build_parts(P: Parts) -> None:
         paw(P, fx, 0.262, 0.425, f"forepaw.{n}")
         # Hind leg: haunch plate in two panels over a gunmetal core with a jewel boss, stifle axle,
         # gaskin plate with a gunmetal tendon, hock joint, metatarsus and a four-toed paw.
-        thigh = [((hx - s * 0.015, -0.335, 0.850), 0.040, 0.050, 0.050, 2.1), ((hx - s * 0.015, -0.338, 0.830), 0.052, 0.085, 0.088, 2.1),
-                 ((hx - s * 0.015, -0.340, 0.795), 0.058, 0.110, 0.112, 2.1), ((hx - s * 0.015, -0.342, 0.740), 0.056, 0.110, 0.112, 2.1),
-                 ((hx - s * 0.012, -0.345, 0.650), 0.051, 0.090, 0.090, 2.1), ((hx - s * 0.008, -0.350, 0.575), 0.044, 0.066, 0.068, 2.1),
+        # Haunch rear edge trimmed to the concept (back edge y -0.41 at z 0.70 to 0.74, was -0.45).
+        thigh = [((hx - s * 0.015, -0.335, 0.850), 0.040, 0.050, 0.050, 2.1), ((hx - s * 0.015, -0.338, 0.830), 0.052, 0.085, 0.072, 2.1),
+                 ((hx - s * 0.015, -0.340, 0.795), 0.058, 0.110, 0.082, 2.1), ((hx - s * 0.015, -0.342, 0.740), 0.056, 0.110, 0.080, 2.1),
+                 ((hx - s * 0.012, -0.345, 0.650), 0.051, 0.090, 0.070, 2.1), ((hx - s * 0.008, -0.350, 0.575), 0.044, 0.066, 0.068, 2.1),
                  ((hx, -0.355, 0.530), 0.034, 0.045, 0.045, 2.1)]
         L([(c, a * 0.85, bt * 1.06, bb * 1.06, e) for c, a, bt, bb, e in thigh], GM, f"thigh.{n}")
-        L(thigh[:4] + [((hx - s * 0.014, -0.343, 0.705), 0.054, 0.099, 0.100, 2.1)], BP, f"thigh.{n}")
-        L([((hx - s * 0.013, -0.344, 0.688), 0.054, 0.096, 0.097, 2.1)] + thigh[4:], BP, f"thigh.{n}")
+        L(thigh[:4] + [((hx - s * 0.014, -0.343, 0.705), 0.054, 0.099, 0.076, 2.1)], BP, f"thigh.{n}")
+        L([((hx - s * 0.013, -0.344, 0.688), 0.054, 0.096, 0.074, 2.1)] + thigh[4:], BP, f"thigh.{n}")
         # Haunch line from under the ruby down the back of the thigh, on the plate's outer face.
         line([(s * 0.150, -0.340, 0.745)] + [(c[0] + s * (a * (1 - 0.3 ** e) ** (1 / e) + 0.0015), c[1] - 0.3 * bb, c[2])
                                              for c, a, _bt, bb, e in thigh[4:7]], f"thigh.{n}", ref=(0, 1, 0))
@@ -658,8 +665,10 @@ def build_parts(P: Parts) -> None:
         ruby(P, s, s * 0.151, -0.335, 0.775, f"thigh.{n}")
         D((hx, -0.360, 0.490), (1, 0, 0), 0.046, 0.088, GM, f"shin.{n}")
         D((hx + s * 0.047, -0.360, 0.490), (1, 0, 0), 0.024, 0.008, BA, f"shin.{n}", n="small")
-        L([((hx, -0.352, 0.505), 0.042, 0.068, 0.080, 2.4), ((hx, -0.392, 0.455), 0.040, 0.062, 0.074, 2.4),
-           ((hx, -0.442, 0.395), 0.036, 0.046, 0.054, 2.4), ((hx, -0.492, 0.335), 0.030, 0.032, 0.035, 2.4),
+        # Gaskin bulges forward (concept front edge y -0.31 at z 0.42, was about -0.38), so the stifle
+        # to hock line reads as a sloped muscle with a clear angle at the hock.
+        L([((hx, -0.352, 0.505), 0.042, 0.068, 0.080, 2.4), ((hx, -0.372, 0.455), 0.040, 0.072, 0.066, 2.4),
+           ((hx, -0.416, 0.395), 0.036, 0.058, 0.050, 2.4), ((hx, -0.492, 0.335), 0.030, 0.032, 0.035, 2.4),
            ((hx, -0.530, 0.288), 0.026, 0.025, 0.026, 2.2)], BP, f"shin.{n}")
         L([((hx, -0.420, 0.470), 0.011, 0.011, 0.011, 2.0), ((hx, -0.500, 0.380), 0.011, 0.011, 0.011, 2.0),
            ((hx, -0.570, 0.290), 0.010, 0.010, 0.010, 2.0)], GM, f"shin.{n}", n="small", sub=1)
@@ -1614,7 +1623,7 @@ def compare_renders(bpy, scene, out: Path) -> list[str]:
 # --------------------------------------------------------------------------------------------------
 # Review sheet, fidelity compare and the author self-score (system Python + Pillow)
 
-ENGINE_SHOTS = ["idle", "attack", "hit", "frozen", "death", "glow-close"]  # glow-close: idle at the 50 degree lens of the p6-glow stills
+ENGINE_SHOTS = ["idle", "attack", "hit", "frozen", "death", "glow-close"]  # glow-close: idle through a 30 degree lens on the upper body
 APPROVAL_NOTE = ('Concept approval PENDING (Paul). Modeled under Paul\'s standing approval of 2026-11-15: "you have standing approval '
                  'for all spending / modeling / deployments needed for this project". Model, rig, animation approvals pending.')
 TITLE = f"P5-T3 Spring Hound ({PIECE}) - owner review sheet"
