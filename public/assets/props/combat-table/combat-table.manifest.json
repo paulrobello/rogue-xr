@@ -1,0 +1,340 @@
+{
+  "piece": "combat-table",
+  "glb": "combat-table.glb",
+  "frame": "runtime metres, +Y up, player at +Z looking toward -Z; enemies beyond the table at -Z",
+  "origin": "table centre on the floor",
+  "authoredTopHeight": 0.75,
+  "unfoldRoute": "node-transforms",
+  "nodes": {
+    "socket-draw": {
+      "parent": "leaf-left",
+      "translation": [
+        -0.16,
+        0.0365,
+        0.13
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "leaf-left": {
+      "parent": "combat-table",
+      "translation": [
+        -0.4,
+        0.715,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0.707107,
+        0.707107
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "socket-discard": {
+      "parent": "leaf-right",
+      "translation": [
+        0.16,
+        0.0365,
+        0.13
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "leaf-right": {
+      "parent": "combat-table",
+      "translation": [
+        0.4,
+        0.715,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        -0.707107,
+        0.707107
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "socket-dice-tray": {
+      "parent": "combat-table",
+      "translation": [
+        0,
+        0.756,
+        0.18
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "socket-sigil-plate": {
+      "parent": "combat-table",
+      "translation": [
+        0,
+        1.05,
+        -0.15
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "table-body": {
+      "parent": "combat-table",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "combat-table": {
+      "parent": null,
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    }
+  },
+  "leaves": {
+    "leaf-left": {
+      "hinge": [
+        -0.4,
+        0.715,
+        0
+      ],
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "foldedRotation": [
+        0,
+        0,
+        0.707107,
+        0.707107
+      ],
+      "unfoldedRotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "openAngleDeg": 90.0,
+      "note": "Rest pose is folded: 90 degrees about runtime +Z through the hinge, leaf hanging down. Unfold slerps the node rotation to identity."
+    },
+    "leaf-right": {
+      "hinge": [
+        0.4,
+        0.715,
+        0
+      ],
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "foldedRotation": [
+        0,
+        0,
+        -0.707107,
+        0.707107
+      ],
+      "unfoldedRotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "openAngleDeg": 90.0,
+      "note": "Rest pose is folded: 90 degrees about runtime -Z through the hinge, leaf hanging down. Unfold slerps the node rotation to identity."
+    }
+  },
+  "socketsUnfoldedWorld": {
+    "socket-dice-tray": [
+      0.0,
+      0.756,
+      0.18
+    ],
+    "socket-draw": [
+      -0.56,
+      0.7515,
+      0.13
+    ],
+    "socket-discard": [
+      0.56,
+      0.7515,
+      0.13
+    ],
+    "socket-sigil-plate": [
+      0.0,
+      1.05,
+      -0.15
+    ]
+  },
+  "sockets": {
+    "socket-dice-tray": "felt floor centre of the dice tray; +Y up",
+    "socket-draw": "felt pad centre of the draw slot on leaf-left; card long axis along Z",
+    "socket-discard": "felt pad centre of the discard slot on leaf-right; card long axis along Z",
+    "socket-sigil-plate": "floating plate centre above the gear medallion; the plate faces +Z (the player)"
+  },
+  "surface": {
+    "topHeight": 0.75,
+    "ellipseSemiAxesUnfolded": {
+      "x": 0.75,
+      "z": 0.4
+    },
+    "centreHalfWidth": 0.4,
+    "rimLipHeight": 0.004,
+    "rimLipWidth": 0.02,
+    "trayInner": {
+      "centre": [
+        0.0,
+        0.756,
+        0.18
+      ],
+      "size": [
+        0.31,
+        0.19
+      ],
+      "floorHeight": 0.756,
+      "wallTopHeight": 0.795
+    },
+    "medallion": {
+      "centre": [
+        0.0,
+        0.756,
+        -0.15
+      ],
+      "radius": 0.105
+    }
+  },
+  "boundsUnfolded": {
+    "min": [
+      -0.7477,
+      0.0,
+      -0.4
+    ],
+    "max": [
+      0.7477,
+      0.795,
+      0.4
+    ]
+  },
+  "budgets": {
+    "triangles": 4184,
+    "triangleLimit": 20000,
+    "materials": 4,
+    "materialLimit": 4
+  },
+  "materialSlots": {
+    "walnut": {
+      "set": "walnut",
+      "setManifest": "/assets/materials/materials.json",
+      "uv0": "tile units (metres / tileMeters): bind the set at repeat (1, 1)",
+      "tileMeters": 0.5,
+      "normalScale": 1.0
+    },
+    "brass-aged": {
+      "set": "brass-aged",
+      "setManifest": "/assets/materials/materials.json",
+      "uv0": "tile units (metres / tileMeters): bind the set at repeat (1, 1)",
+      "tileMeters": 0.5,
+      "normalScale": 0.35
+    },
+    "brass-polished": {
+      "set": "brass-polished",
+      "setManifest": "/assets/materials/materials.json",
+      "uv0": "tile units (metres / tileMeters): bind the set at repeat (1, 1)",
+      "tileMeters": 0.5,
+      "normalScale": 0.35
+    },
+    "felt": {
+      "set": null,
+      "factorOnly": true,
+      "note": "flat ruby velvet; keep the GLB material (factors only, no maps)"
+    }
+  },
+  "ao": {
+    "png": "combat-table.ao.png",
+    "ktx2": "combat-table.ao.ktx2",
+    "uv": 1,
+    "channel": 1,
+    "flipY": false,
+    "colorSpace": "linear",
+    "binding": "replaces aoMap on every slot (felt included), read through UV1; the shared ORM still drives roughness and metalness on UV0"
+  },
+  "binder": [
+    "Clone each shared material (and its textures) before changing it: loadPbrSet shares textures across consumers that set repeat.",
+    "Bind a slot by its exact GLB material name; never by substring.",
+    "The GLB has no TANGENT: three derives the tangent frame from UV0 derivatives, matching the shared sets' flipY = true upload.",
+    "If the sets or the AO map fail to load, the GLB's factor-only materials stay bound (fallback)."
+  ],
+  "drawCalls": {
+    "perEye": 12,
+    "stereo": 24
+  }
+}
