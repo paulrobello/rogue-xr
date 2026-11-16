@@ -22,17 +22,17 @@ Paul's words are quoted. The rows are removed from the tables below. Work still 
 
 | Code | Answer | Recorded or acted on |
 | --- | --- | --- |
-| D1, D2 | "lower the hp (also add difficulty level selection so casual players dont struggle)" | In progress: Casual, Normal and Hard levels, with Normal lowering the Orrery Warden and Grand Escapement hp. Hard keeps the old numbers. |
+| D1, D2 | "lower the hp (also add difficulty level selection so casual players dont struggle)" | Done in `392ee72`. Normal (the default) lowers the Orrery Warden from 92 to 69 hp and the Grand Escapement from 160 to 120. Casual also scales enemy hp, enemy damage by 0.85 and player hp by 1.2. Hard keeps the old numbers. Planning-bot replay: Hard 9.8 percent, Normal 26.5 percent, Casual 76.3 percent wins. |
 | D3 | "approved" | One-use rest hearth, 30 percent heal, as shipped in `2990e46`. |
 | D4 | "approved" | Guardian phase 2 at 50 percent hp, as shipped in `2990e46`. |
-| D5, D6, D9, D10 | "yes to all Quick picks" | D5: debug readout only under `?debug` (in progress). D6: the desktop status panel faces the desktop camera (in progress). D9: the Orrery Warden sheet is accepted with its stray artifact. D10: the other rooms are accepted in the study-kit language, with no new room concept sheets. |
+| D5, D6, D9, D10 | "yes to all Quick picks" | D5: debug readout only under `?debug` (`392ee72`). D6: the desktop status panel faces the desktop camera (`392ee72`). D9: the Orrery Warden sheet is accepted with its stray artifact. D10: the other rooms are accepted in the study-kit language, with no new room concept sheets. |
 | D8 | "concepts look good amend the requirements to allow them" | Concept gate approved in `assets-source/concepts/provenance.json` and in the four enemy provenance files. The [art bible](art-bible.md) automaton line now names the four roster exceptions. This also clears A18 to A21 and the concept gate of A9 to A12. |
-| D11 | "fix the glow" | In progress: the automaton glow reads as saturated amber in the engine. |
-| D12 | "generate all needed suno music prompts and settings in order they are needed" | In progress: every music cue, in the order it is first heard, in [SUNO-HANDOFF.md](../assets-source/audio/music/SUNO-HANDOFF.md) and `cues.json`. |
+| D11 | "fix the glow" | Done in `ab14b81`: every automaton glow reads as saturated amber (images in `docs/verification/p6-glow-*.jpg`). Headset check pending. |
+| D12 | "generate all needed suno music prompts and settings in order they are needed" | Done in `a32ab5d`: 11 cues in the order they are first heard, in [SUNO-HANDOFF.md](../assets-source/audio/music/SUNO-HANDOFF.md) and `cues.json`. Generating them in Suno is yours. |
 | D13 | "all my plans are paid with commercial use" | ElevenLabs rights gate approved in `assets-source/audio/provenance.json` and the [audio README](../assets-source/audio/README.md). |
 | D21 | "store the raw data on parnas1 in /Volumes/homes/game-data/rogue-xr" | 127 raw card files (825 MB) copied to parnas1. Every sha256 matched, and the hashes are in `assets-source/cards/raw-store.json`. The raw files are now gitignored. |
-| Rest room | "the rest room is approved except the contents of the hearth look very flat add more detail" | Hall creative and owner gates approved in its rest-room role. In progress: a detailed coal bed for the hearth. |
-| Audio review | "create a web page for all the audio auditions so i can review each" | In progress: `audition.html` on the site. |
+| Rest room | "the rest room is approved except the contents of the hearth look very flat add more detail" | Hall creative and owner gates approved in its rest-room role. The hearth coal bed was detailed in `e4f18cb` ([close-up](verification/p6-rest-hearth-closeup.jpg)) and waits on your look. |
+| Audio review | "create a web page for all the audio auditions so i can review each" | Live at https://spire.pardev.net/audition.html (`b545342`). Export your verdicts there and paste them back. |
 
 ## Assets awaiting approval
 
