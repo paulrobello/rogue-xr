@@ -1,0 +1,14 @@
+{
+  "score": 66,
+  "date": "2026-11-16",
+  "method": "Author self-score from bellows-golem.fidelity-compare.jpg: orthographic EEVEE renders (AgX, the fixed shared light rig, not tuned to the score) of the low-poly model at the concept sheet's front, side and back angles, framed at the sheet's own scale (2.1 m over 806 sheet pixels), judged side by side against the sheet crops, plus the five in-engine clip shots in staging/engine (three.js 0.186.1, headless Chromium launched with ANGLE Metal GPU flags; the WebGL renderer string was not retained, so the backend is unconfirmed). This pass rebuilt the body from the independent review's list: rounded layered brass pauldrons with emerald bosses as the widest shape at the shoulder line, gunmetal upper arms, big smooth brass cylinder forearms, huge brass fists hanging forward of the body near knee height, a six-pleat walnut bellows with a brass belt, emissive front and back grilles and chimney mouths (golem-glow), emerald inlays at shoulders, elbows and knees from COLOR_0, walnut staves and pleats instead of black rings, and smooth-shaded brass. Walnut colour was matched by sampling the engine idle shot: the barrel reads about sRGB (105, 68, 44) lit and (71, 45, 32) in shadow against the concept's about (84, 53, 34); the previous build measured about (140, 93, 64).",
+  "gaps": [
+    "The front grille and chimney mouths read pale peach in the engine (front grille about sRGB 208, 164, 127) where the sheet shows saturated amber-orange: three.js AgX tone mapping desaturates F08C2C emission, and GLOW_STRENGTH is held at 1.0 (above the 0.7 convention) as a compromise.",
+    "The fists read as a row of four finger tubes from the front, a little comb-like; the sheet's fists are rounder, heavier mitts with a broad back of hand.",
+    "The head is smaller than the sheet's and partly hidden behind the top hoop from a low seated eye line; the side view shows no distinct face plate.",
+    "The legs (gunmetal thighs, brass greaves and sabatons) are slimmer and shorter-looking than the sheet's chunky armoured legs.",
+    "The arms hang close to vertical from the side; the sheet angles the forearms forward more strongly.",
+    "The walnut and brass are factor-only (no wood grain, plank wear or brass engraving textures); the barrel stays slightly lighter and warmer than the sheet's walnut in direct light.",
+    "The back reads as a walnut barrel with a small glowing grille and pleats; the sheet's back detailing (straps, vent plate) is simplified."
+  ]
+}

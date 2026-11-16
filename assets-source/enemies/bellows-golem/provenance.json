@@ -4,7 +4,7 @@
   "route": "scripted (procedural Blender geometry, rig and keyed clips; no provider generation)",
   "generator": {
     "path": "scripts/assets/build-bellows-golem.py",
-    "sha256": "e3048057b025013acf2e9071389c1dae015d85e4267bd856b6b757d4c33f21eb"
+    "sha256": "79ceffdf1ec375d8583ec65c0592b0f526436e738e8416e36d27781c22e53bec"
   },
   "authoringAgent": {
     "harness": "claude-code (dispatched sub-agent)",
@@ -18,12 +18,12 @@
     "store": "assets-source/enemies/bellows-golem/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)"
   },
   "budgets": {
-    "triangles": 9400,
-    "highTriangles": 34096,
+    "triangles": 23474,
+    "highTriangles": 50574,
     "materials": 4,
     "bones": 22,
     "maxInfluences": 1,
-    "glbBytes": 822632
+    "glbBytes": 1952820
   },
   "skin": {
     "policy": "rigid: one bone per vertex at weight 1.0",
@@ -96,46 +96,46 @@
   "poseChecks": {
     "idle": {
       "frames": 73,
-      "min_z": -0.0,
+      "min_z": 0.0,
       "min_z_frame": 6,
-      "max_z": 2.0727,
-      "final_max_z": 2.0624,
-      "final_min_z": -0.0,
+      "max_z": 2.1399,
+      "final_max_z": 2.1306,
+      "final_min_z": 0.0,
       "loop_seam_m": 0.0
     },
     "attack": {
       "frames": 46,
-      "min_z": -0.0,
-      "min_z_frame": 10,
-      "max_z": 2.665,
-      "final_max_z": 2.0624,
-      "final_min_z": -0.0,
+      "min_z": 0.0,
+      "min_z_frame": 23,
+      "max_z": 2.963,
+      "final_max_z": 2.1306,
+      "final_min_z": 0.0,
       "loop_seam_m": 0.0
     },
     "hit": {
       "frames": 22,
-      "min_z": -0.0,
-      "min_z_frame": 2,
-      "max_z": 2.0624,
-      "final_max_z": 2.0624,
-      "final_min_z": -0.0,
+      "min_z": 0.0,
+      "min_z_frame": 9,
+      "max_z": 2.1306,
+      "final_max_z": 2.1306,
+      "final_min_z": 0.0,
       "loop_seam_m": 0.0
     },
     "death": {
       "frames": 73,
       "min_z": 0.004,
-      "min_z_frame": 36,
-      "max_z": 2.0664,
-      "final_max_z": 0.984,
+      "min_z_frame": 34,
+      "max_z": 2.1345,
+      "final_max_z": 1.4307,
       "final_min_z": 0.004,
-      "loop_seam_m": 1.63552
+      "loop_seam_m": 1.72241
     },
     "frozen": {
       "frames": 31,
       "min_z": 0.0,
       "min_z_frame": 0,
-      "max_z": 2.0322,
-      "final_max_z": 2.0322,
+      "max_z": 2.0837,
+      "final_max_z": 2.0837,
       "final_min_z": 0.0,
       "loop_seam_m": 0.0
     }
@@ -154,8 +154,8 @@
       "parent": "chest",
       "position": [
         0.0,
-        1.38,
-        -0.56
+        1.5,
+        -0.62
       ]
     },
     "socket-eye": {
@@ -163,52 +163,52 @@
       "parent": "head",
       "position": [
         0.0,
-        1.76,
-        -0.2
+        1.875,
+        -0.47
       ]
     },
     "socket-weapon": {
       "bone": "hand.R",
       "parent": "hand.R",
       "position": [
-        0.68,
-        0.4,
-        -0.22
+        0.93,
+        0.3,
+        -0.49
       ]
     }
   },
   "derivedFiles": [
     {
       "path": "public/assets/enemies/bellows-golem/bellows-golem.glb",
-      "sha256": "fb82b76c1b24b3368d5210f351cfa207884d279e03e2c4bb52703b32b06d30b5",
-      "bytes": 822632
+      "sha256": "9e746f00f85a5cd12168a3098bae88e04f662bd8c6fa941ee8aff54cd6533d53",
+      "bytes": 1952820
     },
     {
       "path": "public/assets/enemies/bellows-golem/bellows-golem.manifest.json",
-      "sha256": "64921e5036273d1505b702eb840495d04b7ae6c04d8148eb4fe64e35b2d89887",
-      "bytes": 2861
+      "sha256": "0575c446ac27145dd3029878dbd6a564db8c2e56c51e5638599059e2c58c0d6f",
+      "bytes": 2839
     }
   ],
   "sourceFiles": [
     {
       "path": "assets-source/enemies/bellows-golem/blend/bellows-golem.high.blend",
-      "sha256": "ce5bdbe9423e82990d56e73336d830d222e9a0805818f1fdc875160ee343d55e",
-      "bytes": 934237
+      "sha256": "7cd60f9900a48f8ef3de75b69a6eafebdea82453da1f07582d63e82afc53d91a",
+      "bytes": 1460239
     },
     {
       "path": "assets-source/enemies/bellows-golem/blend/bellows-golem.low.blend",
-      "sha256": "80604a53ff023eb988cab1f3eb89a29df9f813b7377813402e9e2348177b066f",
-      "bytes": 506594
+      "sha256": "6259abdd558887d32a904f8796909b0b7bca2245251fa231a2891e77cc70d161",
+      "bytes": 900032
     },
     {
       "path": "assets-source/enemies/bellows-golem/staging/report.json",
-      "sha256": "bf56edb6722328656ad47180571b7b399f184ae2ba659b44d397e4ac0bd51625",
-      "bytes": 6100
+      "sha256": "9358782b017d050fbdea4212874841e86f261888898c213a5528b0f1cb485570",
+      "bytes": 6042
     },
     {
       "path": "assets-source/enemies/bellows-golem/staging/reimport.json",
-      "sha256": "480c47701b4f9c2c0f381a4e8c0528060979ecb80b47cda344588296cd751601",
-      "bytes": 2287
+      "sha256": "869d1a06950b6986f20f2ead8e2b01679e331d3753441eef77e9dc244c453dde",
+      "bytes": 2296
     },
     {
       "path": "assets-source/enemies/bellows-golem/engine_shot.py",
@@ -224,33 +224,33 @@
   "reviewEvidence": [
     {
       "path": "assets-source/enemies/bellows-golem/bellows-golem.review-sheet.jpg",
-      "sha256": "c4b8ae645848ae5f0dc3775f8c3d79a77d52ada157e7eb57984768ae7311d9d0",
-      "bytes": 352524
+      "sha256": "50e10a162de09fcb9501926ce39267596e061e745067cd210159e0b4145bf93a",
+      "bytes": 575316
     },
     {
       "path": "assets-source/enemies/bellows-golem/staging/engine/attack.jpg",
-      "sha256": "fe72f922d9a0a76509c003a7e78b337c5e08c8e981f241fc3966043aeb9d5425",
-      "bytes": 81912
+      "sha256": "44ef0b42952f1c6ce34882167ffd8a6d9eb5349a3d1abcd1c987f976fc477e09",
+      "bytes": 107784
     },
     {
       "path": "assets-source/enemies/bellows-golem/staging/engine/death.jpg",
-      "sha256": "0a0f1a5a1d2e2c0ce22dd463010c9aafae88b3536b7c8355c6949200b36f8a7e",
-      "bytes": 60408
+      "sha256": "5af4f08fd8de395e8551265741320c8b33b838f678bec754958e88b22aa88ecd",
+      "bytes": 67040
     },
     {
       "path": "assets-source/enemies/bellows-golem/staging/engine/frozen.jpg",
-      "sha256": "7558be9cd16b6fee5ebaaa4fba661d16a22945b1cd80b51de1bbc1650dd637f9",
-      "bytes": 73365
+      "sha256": "8fbb49e4f7c2ebb943217a62895f064737ffeb0d7b35c2ebff4075094edbd686",
+      "bytes": 98234
     },
     {
       "path": "assets-source/enemies/bellows-golem/staging/engine/hit.jpg",
-      "sha256": "9accc0b66f27e85e30436db700ecf8d6e315ac4d96ce06f417998eaa0d4aa917",
-      "bytes": 65201
+      "sha256": "47cec75b4d3ddf25746727f6588417c8457105f3d89e438baf74be5585d28bcf",
+      "bytes": 86898
     },
     {
       "path": "assets-source/enemies/bellows-golem/staging/engine/idle.jpg",
-      "sha256": "29aa469c87328d15afb8e213f8aaa68eade199074f01c78a74c913084a9f2b80",
-      "bytes": 67894
+      "sha256": "d6e34561b0f234fef0db6b764d8f7662f149524b0e10233d41ed79b2a36ffac6",
+      "bytes": 93653
     }
   ],
   "references": [
@@ -261,11 +261,11 @@
       "note": "P5-T3 concept sheet (Higgsfield nano_banana_pro); owner approval pending (assets-source/concepts/p5-automatons-design.md)"
     }
   ],
-  "materialsUsed": "approved P4-T3 brass-polished and walnut sets bound by slot name at runtime; gunmetal and golem-glow are factor-only",
+  "materialsUsed": "approved P4-T3 brass-polished set bound by slot name at runtime; golem-case (walnut, pleats from COLOR_0), golem-metal (gunmetal and emerald from COLOR_0) and golem-glow are factor-only",
   "license": "Original work generated in Blender from a checked-in script; concept reference from Paul's paid Higgsfield plan (Terms of Use 4.4)",
   "validation": {
     "pass": true,
-    "date": "2026-11-15",
+    "date": "2026-11-16",
     "checks": [
       "presence",
       "hashes",
@@ -306,6 +306,27 @@
       "notes": "create-rigged-character-assets requires an independent >= 80/100 score; unscored means unaccepted"
     }
   ],
+  "authorSelfScore": {
+    "score": 66,
+    "scale": "0-100 visual fidelity to the concept",
+    "scorer": "author self-score (the authoring agent; not the independent score create-rigged-character-assets requires)",
+    "date": "2026-11-16",
+    "gaps": [
+      "The front grille and chimney mouths read pale peach in the engine (front grille about sRGB 208, 164, 127) where the sheet shows saturated amber-orange: three.js AgX tone mapping desaturates F08C2C emission, and GLOW_STRENGTH is held at 1.0 (above the 0.7 convention) as a compromise.",
+      "The fists read as a row of four finger tubes from the front, a little comb-like; the sheet's fists are rounder, heavier mitts with a broad back of hand.",
+      "The head is smaller than the sheet's and partly hidden behind the top hoop from a low seated eye line; the side view shows no distinct face plate.",
+      "The legs (gunmetal thighs, brass greaves and sabatons) are slimmer and shorter-looking than the sheet's chunky armoured legs.",
+      "The arms hang close to vertical from the side; the sheet angles the forearms forward more strongly.",
+      "The walnut and brass are factor-only (no wood grain, plank wear or brass engraving textures); the barrel stays slightly lighter and warmer than the sheet's walnut in direct light.",
+      "The back reads as a walnut barrel with a small glowing grille and pleats; the sheet's back detailing (straps, vent plate) is simplified."
+    ],
+    "method": "Author self-score from bellows-golem.fidelity-compare.jpg: orthographic EEVEE renders (AgX, the fixed shared light rig, not tuned to the score) of the low-poly model at the concept sheet's front, side and back angles, framed at the sheet's own scale (2.1 m over 806 sheet pixels), judged side by side against the sheet crops, plus the five in-engine clip shots in staging/engine (three.js 0.186.1, headless Chromium launched with ANGLE Metal GPU flags; the WebGL renderer string was not retained, so the backend is unconfirmed). This pass rebuilt the body from the independent review's list: rounded layered brass pauldrons with emerald bosses as the widest shape at the shoulder line, gunmetal upper arms, big smooth brass cylinder forearms, huge brass fists hanging forward of the body near knee height, a six-pleat walnut bellows with a brass belt, emissive front and back grilles and chimney mouths (golem-glow), emerald inlays at shoulders, elbows and knees from COLOR_0, walnut staves and pleats instead of black rings, and smooth-shaded brass. Walnut colour was matched by sampling the engine idle shot: the barrel reads about sRGB (105, 68, 44) lit and (71, 45, 32) in shadow against the concept's about (84, 53, 34); the previous build measured about (140, 93, 64).",
+    "evidence": {
+      "path": "assets-source/enemies/bellows-golem/bellows-golem.fidelity-compare.jpg",
+      "sha256": "ae0d395c97875ef59e20b7bab445630deddf4b9b7e645401a2902b12112865cc"
+    },
+    "independentScoreNote": "the recorded independentScore scored the previous build; an independent re-score of this build is pending"
+  },
   "independentScore": {
     "score": 43,
     "scale": "0-100 visual fidelity to the concept",

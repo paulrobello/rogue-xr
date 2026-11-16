@@ -307,7 +307,7 @@ ENEMY_META = {
         "concept": {"who": "Paul", "when": "2026-11-15", "gate": "concept", "status": "approved", "evidence": "docs/art-bible.md: sentry-sheet-1.png picked for the Cog Sentry"},
     },
     "spring-hound": {**_P5_META, "materials_used": "approved P4-T3 brass-polished and brass-aged sets bound by slot name at runtime; gunmetal and hound-glow are factor-only"},
-    "bellows-golem": {**_P5_META, "materials_used": "approved P4-T3 brass-polished and walnut sets bound by slot name at runtime; gunmetal and golem-glow are factor-only"},
+    "bellows-golem": {**_P5_META, "materials_used": "approved P4-T3 brass-polished set bound by slot name at runtime; golem-case (walnut, pleats from COLOR_0), golem-metal (gunmetal and emerald from COLOR_0) and golem-glow are factor-only"},
     "orrery-warden": {**_P5_META, "reference_note": _P5_META["reference_note"].replace("P5-T3", "P5-T4"),
                       "materials_used": "approved P4-T3 brass-polished set bound by slot name at runtime; gunmetal, warden-glow and warden-jewel "
                                         "(ruby, sapphire and emerald from COLOR_0) are factor-only"},

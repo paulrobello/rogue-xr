@@ -1,20 +1,33 @@
-"""P5-T3 Bellows Golem: a squat, wide brass-and-walnut automaton (concept assets-source/concepts/
+"""P5-T3 Bellows Golem: a squat, broad brass-and-walnut automaton (concept assets-source/concepts/
 golem-sheet-1.png, notes assets-source/concepts/p5-automatons-design.md, style docs/art-bible.md),
 built procedurally as rigid plated parts, each weighted 1.0 to one bone of a 22-bone armature, with
 the five automaton clips of the Cog Sentry contract (P4-T6): idle (loop, the bellows pumping),
 attack (the two-fist crush), hit, death (one-shot, ends lying prone) and frozen (the held mid-step
-pose of the time freeze). The vent intent is modeled as an emissive chimney mouth only, with no
-flame or smoke geometry (art bible). Exported as an image-free skinned GLB whose set-bound slots
-carry the names of the shared P4-T3 tileable sets (`public/assets/materials/`: brass-polished and
-walnut), so the runtime binds them by name. UV0 is in tile units (metres / tileMeters). The
-manifest uses the sentry's schema plus an optional `cull` sphere measured over every clip frame.
+pose of the time freeze). The silhouette follows the sheet: layered shoulder pauldrons, long
+gorilla arms with big brass forearm cylinders and huge rounded fists hanging to the shins, a walnut
+stave barrel over a pleated bellows, two chimneys and a small domed head in a collar. The vent
+intent is modeled as glowing chimney mouths only, with no flame or smoke geometry (art bible).
+
+Exported as an image-free skinned GLB. The brass-polished slot carries the name of the shared
+P4-T3 tileable set (`public/assets/materials/`), so the runtime binds it by name; UV0 is in tile
+units (metres / tileMeters). The other three slots are factor-only: golem-case (white base, its hue
+from the COLOR_0 vertex colours: walnut staves, leather-dark pleats, the barrel interior),
+golem-metal (white base, COLOR_0: gunmetal joints and the emerald inlays) and golem-glow (the chest
+and back grilles, the eyes and the chimney mouths). The walnut is factor-only because the shared
+walnut set renders about 1.6x too light against the art bible's #583C26. After export the GLB's
+triangle order and NORMALs are canonicalized (sort_triangles, canonicalize_normals) because the
+exporter's are run-dependent, so rebuilds are byte-identical. The manifest uses the sentry's schema
+plus an optional `cull` sphere measured over every clip frame.
 
 Blender run (build, pose checks, export, reimport gate, manifest, renders, .blend sources):
     "$BLENDER" -b --factory-startup --python-exit-code 1 -P scripts/assets/build-bellows-golem.py -- \
         [--out assets-source/enemies/bellows-golem/staging] [--runtime public/assets/enemies/bellows-golem] \
-        [--blend-dir assets-source/enemies/bellows-golem/blend] [--skip-renders]
-Review sheet (system Python with Pillow, after the Blender run and the engine shots):
+        [--blend-dir assets-source/enemies/bellows-golem/blend] [--skip-renders] [--compare-only]
+Review sheet and fidelity compare, then the author fidelity record (system Python with Pillow,
+after the Blender run, the engine shots and the hand-written staging/fidelity.json):
     python3 -I scripts/assets/build-bellows-golem.py --sheet [--out ...]
+    python3 -I scripts/assets/asset-check.py --assemble-enemy bellows-golem
+    python3 -I scripts/assets/build-bellows-golem.py --record-fidelity [--out ...]
 
 Frame: Blender is Z-up; runtime (x, y, z) = Blender (x, z, -y). The golem faces Blender +Y, which
 is runtime -Z (encounter.ts sets rotation.y = -heading). The root sits at the feet (runtime
@@ -30,6 +43,7 @@ import json
 import math
 import re
 import struct
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -42,44 +56,64 @@ DEFAULT_RUNTIME = REPO / f"public/assets/enemies/{PIECE}"
 DEFAULT_BLEND = REPO / f"assets-source/enemies/{PIECE}/blend"
 MATERIAL_DIR = REPO / "public/assets/materials"
 CONCEPT = REPO / "assets-source/concepts/golem-sheet-1.png"
+# Concept panels in sheet pixels (2752x1536): front, side, back (top row), centred on each figure.
+CONCEPT_CROPS = {"front": (99, 40, 1099, 924), "side": (1105, 40, 1695, 924), "back": (1700, 40, 2700, 924)}
 FPS = 30
-HEIGHT_RANGE = (2.0, 2.2)  # metres, rest pose (design notes: about 2.1 m)
-DEATH_MAX_Z = 1.1  # lying prone: the barrel alone is 0.94 m deep
+HEIGHT_RANGE = (2.0, 2.2)  # metres to the chimney mouths, rest pose (design notes: about 2.1 m)
+DEATH_MAX_Z = 1.5  # lying on its back: the barrel is 1.1 m deep and the pauldrons and forward fists stand proud
 
 LIMITS = {"tris": 25_000, "materials": 4, "bones": 40, "influences": 4}
 GLOW = "golem-glow"
-MATS = ["brass-polished", "walnut", "gunmetal", GLOW]
-BP, WN, GM, GL = range(4)
-SETS = {"brass-polished": 0.35, "walnut": 1.0}  # shared set -> normal scale (as on the combat table)
-TILE_METERS = 0.5  # both sets tile at 0.5 m (public/assets/materials/materials.json)
-FACTORS = {  # sRGB base, roughness, metallic: the GLB look, and the fallback when the sets fail
+CASE = "golem-case"  # factor-only, hue from COLOR_0: walnut staves, pleats, barrel interior
+METAL = "golem-metal"  # factor-only, hue from COLOR_0: gunmetal joints, emerald inlays
+MATS = ["brass-polished", CASE, METAL, GLOW]
+BP, CS, MT, GL = range(4)
+# Pseudo slots: build_body maps 10-19 to CS and 20-29 to MT and writes the shade into COLOR_0.
+WN1, WN2, WN3, WP, WD = 10, 11, 12, 13, 14
+GM, EM = 20, 21
+SHADES = {WN1: (0x34, 0x1A, 0x07), WN2: (0x2E, 0x17, 0x06), WN3: (0x3A, 0x1E, 0x08), WP: (0x2A, 0x15, 0x05), WD: (0x12, 0x0A, 0x05),
+          GM: (0x3A, 0x38, 0x3A), EM: (0x0C, 0x8A, 0x3E)}
+SETS = {"brass-polished": 0.35}  # shared set -> normal scale (as on the combat table)
+TILE_METERS = 0.5  # the brass set tiles at 0.5 m (public/assets/materials/materials.json)
+FACTORS = {  # sRGB base, roughness, metallic: the GLB look, and the fallback when the set fails
     "brass-polished": ((0xDE, 0xC1, 0x6A), 0.3, 1.0),
-    "walnut": ((0x58, 0x3C, 0x26), 0.6, 0.0),
-    "gunmetal": ((0x2E, 0x2A, 0x2A), 0.5, 0.85),
-    GLOW: ((0x6A, 0x34, 0x0C), 0.4, 0.0),
+    CASE: ((0xFF, 0xFF, 0xFF), 0.85, 0.0),  # hue from COLOR_0: oiled walnut, rough enough to keep env specular off
+    METAL: ((0xFF, 0xFF, 0xFF), 0.38, 0.7),  # hue from COLOR_0: gunmetal and emerald
+    # A dark, fairly rough base keeps the lit surface from adding white and washing the orange to peach.
+    GLOW: ((0x3A, 0x14, 0x04), 0.5, 0.0),
 }
 GLOW_SRGB = (0xF0, 0x8C, 0x2C)
-GLOW_STRENGTH = 0.7
+# Above the project's usual 0.7: the chest core is the golem's focal light (the sheet paints it
+# yellow-hot). three.js AgX desaturates bright emission toward peach, so 1.0 is the compromise
+# between reading lit and staying orange (about sRGB 204, 148, 94 on screen).
+GLOW_STRENGTH = 1.0
 
 # Armature: name, parent, head, tail (Blender metres). R is Blender +X.
+SHOULDER = (0.66, 0.0, 1.56)
+ELBOW = (0.86, 0.02, 1.06)
+WRIST = (0.92, 0.29, 0.53)
+FIST_Y = 0.09  # the fists hang forward of the body, as on the side panel
+HIP = (0.27, 0.0, 0.64)
+KNEE = (0.32, 0.06, 0.36)
+ANKLE = (0.33, 0.0, 0.12)
 BONES: list[tuple[str, str | None, tuple, tuple]] = [
     ("root", None, (0, 0, 0), (0, 0, 0.2)),
-    ("pelvis", "root", (0, 0, 0.70), (0, 0, 0.86)),
-    ("spine", "pelvis", (0, 0, 0.86), (0, 0, 1.12)),
-    ("bellows", "spine", (0, 0, 0.98), (0, 0, 1.10)),
-    ("chest", "spine", (0, 0, 1.12), (0, 0, 1.62)),
-    ("head", "chest", (0, 0.06, 1.64), (0, 0.06, 1.90)),
+    ("pelvis", "root", (0, 0, 0.66), (0, 0, 0.80)),
+    ("spine", "pelvis", (0, 0, 0.80), (0, 0, 1.20)),
+    ("bellows", "spine", (0, 0, 0.98), (0, 0, 1.18)),
+    ("chest", "spine", (0, 0, 1.20), (0, 0, 1.80)),
+    ("head", "chest", (0, 0.30, 1.80), (0, 0.30, 2.02)),
 ]
 for _s, _n in ((1, "R"), (-1, "L")):
     BONES += [
-        (f"chimney.{_n}", "chest", (_s * 0.27, -0.14, 1.56), (_s * 0.29, -0.16, 2.0)),
-        (f"clavicle.{_n}", "chest", (_s * 0.12, 0, 1.50), (_s * 0.50, 0, 1.50)),
-        (f"upperarm.{_n}", f"clavicle.{_n}", (_s * 0.62, 0, 1.46), (_s * 0.66, 0, 1.06)),
-        (f"forearm.{_n}", f"upperarm.{_n}", (_s * 0.66, 0, 1.06), (_s * 0.68, 0.04, 0.58)),
-        (f"hand.{_n}", f"forearm.{_n}", (_s * 0.68, 0.04, 0.58), (_s * 0.68, 0.05, 0.30)),
-        (f"thigh.{_n}", "pelvis", (_s * 0.24, 0, 0.72), (_s * 0.25, 0.04, 0.42)),
-        (f"shin.{_n}", f"thigh.{_n}", (_s * 0.25, 0.04, 0.42), (_s * 0.25, 0, 0.11)),
-        (f"foot.{_n}", f"shin.{_n}", (_s * 0.25, 0, 0.11), (_s * 0.25, 0.18, 0.04)),
+        (f"chimney.{_n}", "chest", (_s * 0.40, -0.12, 1.76), (_s * 0.44, -0.15, 2.10)),
+        (f"clavicle.{_n}", "chest", (_s * 0.12, 0, 1.56), (_s * 0.56, 0, 1.56)),
+        (f"upperarm.{_n}", f"clavicle.{_n}", (_s * SHOULDER[0], SHOULDER[1], SHOULDER[2]), (_s * ELBOW[0], ELBOW[1], ELBOW[2])),
+        (f"forearm.{_n}", f"upperarm.{_n}", (_s * ELBOW[0], ELBOW[1], ELBOW[2]), (_s * WRIST[0], WRIST[1], WRIST[2])),
+        (f"hand.{_n}", f"forearm.{_n}", (_s * WRIST[0], WRIST[1], WRIST[2]), (_s * 0.93, 0.22 + FIST_Y, 0.20)),
+        (f"thigh.{_n}", "pelvis", (_s * HIP[0], HIP[1], HIP[2]), (_s * KNEE[0], KNEE[1], KNEE[2])),
+        (f"shin.{_n}", f"thigh.{_n}", (_s * KNEE[0], KNEE[1], KNEE[2]), (_s * ANKLE[0], ANKLE[1], ANKLE[2])),
+        (f"foot.{_n}", f"shin.{_n}", (_s * ANKLE[0], ANKLE[1], ANKLE[2]), (_s * 0.33, 0.2, 0.04)),
     ]
 BONE_NAMES = [b[0] for b in BONES]
 PARENT = {b[0]: b[1] for b in BONES}
@@ -98,7 +132,7 @@ CLIPS = {
     "frozen": {"duration": 1.0, "loop": "repeat", "events": {}},
 }
 
-DETAIL = {"low": {"sides": 12, "sphere": (14, 8), "ring": (20, 5)}, "high": {"sides": 28, "sphere": (28, 16), "ring": (44, 8)}}
+DETAIL = {"low": 0.7, "high": 1.6}  # segment multiplier
 
 
 def sha256(path: Path) -> str:
@@ -113,7 +147,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--runtime", type=Path, default=DEFAULT_RUNTIME)
     p.add_argument("--blend-dir", type=Path, default=DEFAULT_BLEND)
     p.add_argument("--skip-renders", action="store_true")
+    p.add_argument("--compare-only", action="store_true", help="model, then only the concept-angle renders (iteration)")
     p.add_argument("--sheet", action="store_true", help="compose the review sheet (system Python)")
+    p.add_argument("--record-fidelity", action="store_true", help="copy staging/fidelity.json into provenance.json (system Python)")
     return p.parse_args(argv)
 
 
@@ -140,143 +176,478 @@ def axis_frame(a, b):
     return m, (b - a).length
 
 
+def sect(rx: float, ry: float, n: int, p: float = 2.0, cx: float = 0.0, cy: float = 0.0) -> list:
+    """Superellipse section (p = 2 ellipse, larger p squarer), n points counter-clockwise."""
+    out = []
+    for i in range(n):
+        a = 2 * math.pi * i / n
+        c, s = math.cos(a), math.sin(a)
+        out.append((cx + rx * math.copysign(abs(c) ** (2 / p), c), cy + ry * math.copysign(abs(s) ** (2 / p), s)))
+    return out
+
+
+def chamfer_rect(w: float, h: float, c: float | None = None) -> list:
+    """Rectangle section (w across, h along) with chamfered corners: a bevelled band profile."""
+    c = min(w, h) * 0.22 if c is None else c
+    x, y = w / 2, h / 2
+    return [(-x + c, -y), (x - c, -y), (x, -y + c), (x, y - c), (x - c, y), (-x + c, y), (-x, y - c), (-x, -y + c)]
+
+
 class Parts:
     def __init__(self, bmesh, detail: str):
         self.bmesh = bmesh
         self.bm = bmesh.new()
         self.deform = self.bm.verts.layers.deform.verify()
-        self.d = DETAIL[detail]
+        self.k = DETAIL[detail]
+        self.colored: list = []  # (faces, linear rgb) written into COLOR_0
+        self.tally: list = []  # (section, cumulative triangles)
 
-    def _tag(self, verts, faces, mat: int, bone: str, smooth: bool) -> None:
+    def n(self, base: int) -> int:
+        return max(3, int(round(base * self.k)))
+
+    def _tag(self, verts, faces, mat: int, bone: str, color=None) -> None:
+        # A case-slot shade stays a pseudo material index here (bevels copy the index onto the faces
+        # they create); build_body turns it into the COLOR_0 hue on the CS slot.
         gi = BONE_NAMES.index(bone)
         for v in verts:
             v[self.deform][gi] = 1.0
         for f in faces:
             f.material_index = mat
-            f.smooth = smooth
+            f.smooth = True
+        if color is not None:
+            self.colored.append((list(faces), color))
 
-    def rings(self, profile: list[list[tuple[float, float]]], zs: list[float], m, mat: int, bone: str, smooth=False) -> None:
+    def _bevel(self, verts, faces, edges, mat: int, bone: str, offset: float, color=None) -> None:
+        self._tag(verts, faces, mat, bone, color)
+        if offset <= 0 or not edges:
+            return
+        res = self.bmesh.ops.bevel(self.bm, geom=list(edges), offset=offset, offset_type="OFFSET", segments=1,
+                                   profile=0.5, affect="EDGES", clamp_overlap=True)
+        self._tag(res["verts"], res["faces"], mat, bone, color)
+
+    def rings(self, profile: list, zs: list, m, mat: int, bone: str, caps=True, color=None) -> None:
         from mathutils import Vector
 
         bm = self.bm
         vr = [[bm.verts.new(m @ Vector((x, y, z))) for x, y in ring] for ring, z in zip(profile, zs)]
         n = len(profile[0])
         faces = [bm.faces.new((a[i], a[(i + 1) % n], b[(i + 1) % n], b[i])) for a, b in zip(vr, vr[1:]) for i in range(n)]
-        faces += [bm.faces.new(list(reversed(vr[0]))), bm.faces.new(vr[-1])]
-        self._tag([v for r in vr for v in r], faces, mat, bone, smooth)
+        if caps:
+            faces += [bm.faces.new(list(reversed(vr[0]))), bm.faces.new(vr[-1])]
+        self._tag([v for r in vr for v in r], faces, mat, bone, color)
 
-    def tube(self, p0, p1, r0: float, r1: float, mat: int, bone: str, sides: int | None = None, sx=1.0, sy=1.0, smooth=False) -> None:
-        """Frustum p0->p1, elliptical section (r * sx across world X, r * sy across the other axis)."""
+    def loft(self, p0, p1, secs: list, mat: int, bone: str, color=None) -> None:
+        """Sections [(f, rx, ry, p, cx, cy)] at fraction f along p0->p1 (local X ~ world X)."""
         m, length = axis_frame(p0, p1)
-        n = sides or self.d["sides"]
+        n = self.n(20)
+        self.rings([sect(rx, ry, n, pw, cx, cy) for _, rx, ry, pw, cx, cy in secs], [f * length for f, *_ in secs], m, mat, bone, color=color)
+
+    def tube(self, p0, p1, r0: float, r1: float, mat: int, bone: str, sides: int | None = None, sx=1.0, sy=1.0) -> None:
+        m, length = axis_frame(p0, p1)
+        n = sides or self.n(14)
         ring = lambda r: [(r * sx * math.cos(2 * math.pi * i / n), r * sy * math.sin(2 * math.pi * i / n)) for i in range(n)]  # noqa: E731
-        self.rings([ring(r0), ring(r1)], [0.0, length], m, mat, bone, smooth)
+        self.rings([ring(r0), ring(r1)], [0.0, length], m, mat, bone)
 
-    def box(self, c, size, mat: int, bone: str, taper=1.0) -> None:
-        from mathutils import Matrix
-
-        hx, hy, hz = (s / 2 for s in size)
-        base = [(-hx, -hy), (hx, -hy), (hx, hy), (-hx, hy)]
-        self.rings([base, [(x * taper, y * taper) for x, y in base]], [-hz, hz], Matrix.Translation(c), mat, bone)
-
-    def ball(self, c, r: float, mat: int, bone: str, scale=(1.0, 1.0, 1.0)) -> None:
-        from mathutils import Matrix
-
-        u, v = self.d["sphere"]
-        m = Matrix.Translation(c) @ Matrix.Diagonal((r * scale[0], r * scale[1], r * scale[2], 1.0))
-        verts = self.bmesh.ops.create_uvsphere(self.bm, u_segments=u, v_segments=v, radius=1.0, matrix=m)["verts"]
-        faces = {f for x in verts for f in x.link_faces}
-        self._tag(verts, faces, mat, bone, smooth=True)
-
-    def torus(self, c, normal, a: float, b: float, t: float, mat: int, bone: str) -> None:
-        """Elliptical ring (semi-axes a across world X, b across the other axis) of tube radius t."""
+    def lathe(self, c, axis, prof: list, mat: int, bone: str, sides: int | None = None, sx=1.0, sy=1.0, color=None) -> None:
+        """Surface of revolution of [(r, z)] about c + t * axis."""
         from mathutils import Vector
 
-        n, k = self.d["ring"]
+        m, _ = axis_frame(c, Vector(c) + Vector(axis))
+        n = sides or self.n(18)
+        secs = [[(max(r, 1e-3) * sx * math.cos(2 * math.pi * i / n), max(r, 1e-3) * sy * math.sin(2 * math.pi * i / n)) for i in range(n)] for r, _ in prof]
+        self.rings(secs, [z for _, z in prof], m, mat, bone, color=color)
+
+    def ball(self, c, r: float, mat: int, bone: str, scale=(1.0, 1.0, 1.0), color=None, segs=None) -> None:
+        from mathutils import Matrix
+
+        u, v = segs or (self.n(14), self.n(8))
+        m = Matrix.Translation(c) @ Matrix.Diagonal((r * scale[0], r * scale[1], r * scale[2], 1.0))
+        verts = self.bmesh.ops.create_uvsphere(self.bm, u_segments=u, v_segments=v, radius=1.0, matrix=m)["verts"]
+        faces = []
+        for x in verts:
+            faces += [f for f in x.link_faces if f not in faces]
+        self._tag(verts, faces, mat, bone, color)
+
+    def sweep_ring(self, c, normal, a: float, b: float, section: list, mat: int, bone: str, n: int | None = None,
+                   sa=1.0, sb=1.0, arc=(0.0, 360.0), color=None) -> None:
+        """Section [(radial, axial)] swept round an ellipse (semi-axes a, b) about `normal`; with a
+        partial `arc` the ends are capped. Bands, rims, lathed shells (a = b = 0)."""
+        from mathutils import Vector
+
+        n = n or self.n(32)
+        full = abs(arc[1] - arc[0]) >= 359.999
         m, _ = axis_frame(c, Vector(c) + Vector(normal))
         bm = self.bm
+        k = len(section)
+        cnt = n if full else n + 1
         grid = []
-        for i in range(n):
-            u = 2 * math.pi * i / n
-            grid.append([bm.verts.new(m @ Vector((math.cos(u) * (a + t * math.cos(2 * math.pi * j / k)),
-                                                  math.sin(u) * (b + t * math.cos(2 * math.pi * j / k)),
-                                                  t * math.sin(2 * math.pi * j / k)))) for j in range(k)])
+        for i in range(cnt):
+            u = math.radians(arc[0] + (arc[1] - arc[0]) * i / n)
+            grid.append([bm.verts.new(m @ Vector((math.cos(u) * (a + r * sa), math.sin(u) * (b + r * sb), z))) for r, z in section])
+        faces = [bm.faces.new((grid[i][j], grid[(i + 1) % cnt][j], grid[(i + 1) % cnt][(j + 1) % k], grid[i][(j + 1) % k]))
+                 for i in range(cnt if full else cnt - 1) for j in range(k)]
+        if not full:
+            faces += [bm.faces.new(grid[0]), bm.faces.new(list(reversed(grid[-1])))]
+        self._tag([v for row in grid for v in row], faces, mat, bone, color)
+
+    def band(self, c, normal, r: float, w: float, t: float, mat: int, bone: str, n: int | None = None, rb: float | None = None) -> None:
+        """Flat ring band of radial width w and axial thickness t with chamfered edges."""
+        self.sweep_ring(c, normal, r, r if rb is None else rb, chamfer_rect(w, t), mat, bone, n)
+
+    def shell(self, c, axis, prof: list, mat: int, bone: str, sides: int | None = None, sx=1.0, sy=1.0, color=None) -> None:
+        """Closed lathed shell from a closed (r, z) outline: pauldrons, cups, bezels, bells."""
+        from mathutils import Vector
+
+        n = sides or self.n(20)
+        m, _ = axis_frame(c, Vector(c) + Vector(axis))
+        bm = self.bm
+        k = len(prof)
+        grid = [[bm.verts.new(m @ Vector((math.cos(2 * math.pi * i / n) * max(r, 1e-3) * sx, math.sin(2 * math.pi * i / n) * max(r, 1e-3) * sy, z)))
+                 for r, z in prof] for i in range(n)]
         faces = [bm.faces.new((grid[i][j], grid[(i + 1) % n][j], grid[(i + 1) % n][(j + 1) % k], grid[i][(j + 1) % k]))
                  for i in range(n) for j in range(k)]
-        self._tag([v for row in grid for v in row], faces, mat, bone, smooth=True)
+        self._tag([v for row in grid for v in row], faces, mat, bone, color)
+
+    def seam(self, p0, p1, radius, a: float, v0: float, v1: float, mat: int, bone: str, w: float = 0.016, n: int = 6) -> None:
+        """Piping along a wrapped plate's edge: same axis, angle and radius conventions as wrap(),
+        sunk so it covers the plate's edge face and stands just proud of its outer surface."""
+        from mathutils import Vector
+
+        m, length = axis_frame(p0, p1)
+        aa = math.pi - a if (m.to_3x3() @ Vector((0, 1, 0))).y < -1e-6 else a
+        f = lambda g, x: g(x) if callable(g) else g  # noqa: E731
+        pts = [m @ Vector(((f(radius, v) - 0.003) * math.sin(aa), (f(radius, v) - 0.003) * math.cos(aa), v * length))
+               for v in [v0 + (v1 - v0) * k / n for k in range(n + 1)]]
+        self.sweep(pts, chamfer_rect(w, w), mat, bone, hint=tuple(m.to_3x3() @ Vector((math.sin(aa), math.cos(aa), 0.0))))
+
+    def wrap(self, p0, p1, radius, a0, a1, t: float, mat: int, bone: str, v0=0.0, v1=1.0, nu: int | None = None,
+             nv: int = 4, sx=1.0, sy=1.0, bevel=0.004, p: float = 2.0, color=None, crown: float = 0.0) -> None:
+        """Bevelled plate of thickness t wrapped round the axis p0->p1: angle (radians from local +Y
+        toward local +X) from a0 to a1 and axial fraction from v0 to v1. radius(v), a0(v), a1(v),
+        v0(u), v1(u) may be callables, which shapes tapered, pointed and cut-out plates. `crown`
+        bulges the plate's middle outward, so each plate carries its own highlight."""
+        from mathutils import Vector
+
+        m, length = axis_frame(p0, p1)
+        f = lambda g, x: g(x) if callable(g) else g  # noqa: E731
+        nu = nu or self.n(10)
+
+        flip = (m.to_3x3() @ Vector((0, 1, 0))).y < -1e-6  # keep angle 0 on the world front for downward axes
+
+        def pt(u: float, v: float, off: float):
+            vv = f(v0, u) + (f(v1, u) - f(v0, u)) * v
+            a = f(a0, vv) + (f(a1, vv) - f(a0, vv)) * u
+            a = math.pi - a if flip else a
+            r = f(radius, vv) + off + crown * math.sin(math.pi * u)
+            s, c = math.sin(a), math.cos(a)
+            return m @ Vector((r * sx * math.copysign(abs(s) ** (2 / p), s), r * f(sy, vv) * math.copysign(abs(c) ** (2 / p), c), vv * length))
+
+        bm = self.bm
+        front = [[bm.verts.new(pt(i / nu, j / nv, 0.0)) for j in range(nv + 1)] for i in range(nu + 1)]
+        back = [[bm.verts.new(pt(i / nu, j / nv, -t)) for j in range(nv + 1)] for i in range(nu + 1)]
+        faces = []
+        for i in range(nu):
+            for j in range(nv):
+                faces.append(bm.faces.new((front[i][j], front[i + 1][j], front[i + 1][j + 1], front[i][j + 1])))
+                faces.append(bm.faces.new((back[i][j + 1], back[i + 1][j + 1], back[i + 1][j], back[i][j])))
+        border = [(i, 0) for i in range(nu)] + [(nu, j) for j in range(nv)] + [(i, nv) for i in range(nu, 0, -1)] + [(0, j) for j in range(nv, 0, -1)]
+        nxt = border[1:] + border[:1]
+        for (i0, j0), (i1, j1) in zip(border, nxt):
+            faces.append(bm.faces.new((front[i1][j1], front[i0][j0], back[i0][j0], back[i1][j1])))
+        edges = []
+        for (i0, j0), (i1, j1) in zip(border, nxt):
+            for g in (front, back):
+                e = bm.edges.get((g[i0][j0], g[i1][j1]))
+                if e and e not in edges:
+                    edges.append(e)
+        verts = [v for g in (front, back) for row in g for v in row]
+        self._bevel(verts, faces, edges, mat, bone, bevel, color)
+
+    def extrude(self, outline: list, m, depth: float, mat: int, bone: str, bevel=0.003, color=None) -> None:
+        """Flat outline [(x, y)] in the local XY plane of m, extruded symmetrically along local Z."""
+        from mathutils import Vector
+
+        bm = self.bm
+        n = len(outline)
+        top = [bm.verts.new(m @ Vector((x, y, depth / 2))) for x, y in outline]
+        bot = [bm.verts.new(m @ Vector((x, y, -depth / 2))) for x, y in outline]
+        faces = [bm.faces.new(top), bm.faces.new(list(reversed(bot)))]
+        faces += [bm.faces.new((bot[i], bot[(i + 1) % n], top[(i + 1) % n], top[i])) for i in range(n)]
+        edges = [bm.edges.get((g[i], g[(i + 1) % n])) for g in (top, bot) for i in range(n)]
+        self._bevel(top + bot, faces, [e for e in edges if e], mat, bone, bevel, color)
+
+    def annulus(self, outer: list, inner: list, m, depth: float, mat: int, bone: str, color=None) -> None:
+        """Flat ring between two equal-count outlines (outer toothed, inner round), extruded."""
+        from mathutils import Vector
+
+        bm = self.bm
+        n = len(outer)
+        lay = lambda pts, z: [bm.verts.new(m @ Vector((x, y, z))) for x, y in pts]  # noqa: E731
+        ot, it, ob, ib = lay(outer, depth / 2), lay(inner, depth / 2), lay(outer, -depth / 2), lay(inner, -depth / 2)
+        faces = []
+        for i in range(n):
+            j = (i + 1) % n
+            faces += [bm.faces.new((ot[i], ot[j], it[j], it[i])), bm.faces.new((ob[j], ob[i], ib[i], ib[j])),
+                      bm.faces.new((ob[i], ob[j], ot[j], ot[i])), bm.faces.new((ib[j], ib[i], it[i], it[j]))]
+        self._tag(ot + it + ob + ib, faces, mat, bone, color)
+
+    def bbox(self, c, size, mat: int, bone: str, rot=None, bevel=0.004) -> None:
+        """Bevelled box centred at c, optionally rotated by a 3x3 (mathutils Matrix)."""
+        from mathutils import Matrix
+
+        m = Matrix.Translation(c) @ (rot.to_4x4() if rot is not None else Matrix.Identity(4)) @ Matrix.Diagonal((*size, 1.0))
+        res = self.bmesh.ops.create_cube(self.bm, size=1.0, matrix=m)
+        verts = res["verts"]
+        faces, edges = [], []
+        for v in verts:  # ordered walk (no sets: bevel output order must not depend on hashing)
+            faces += [f for f in v.link_faces if f not in faces]
+            edges += [e for e in v.link_edges if e not in edges]
+        self._bevel(verts, faces, edges, mat, bone, bevel)
+
+    def sweep(self, path: list, section: list, mat: int, bone: str, hint=(0, 0, 1), scales=None, color=None) -> None:
+        """Section [(u, v)] swept along a polyline; u runs along the path normal from `hint`."""
+        from mathutils import Vector
+
+        P = [Vector(p) for p in path]
+        bm = self.bm
+        rows = []
+        for i, p in enumerate(P):
+            t = (P[min(i + 1, len(P) - 1)] - P[max(i - 1, 0)]).normalized()
+            up = Vector(hint)
+            up = (up - t * up.dot(t)).normalized()
+            side = t.cross(up)
+            s = scales[i] if scales else 1.0
+            rows.append([bm.verts.new(p + up * (u * s) + side * (v * s)) for u, v in section])
+        k = len(section)
+        faces = [bm.faces.new((a[j], a[(j + 1) % k], b[(j + 1) % k], b[j])) for a, b in zip(rows, rows[1:]) for j in range(k)]
+        faces += [bm.faces.new(list(reversed(rows[0]))), bm.faces.new(rows[-1])]
+        self._tag([v for r in rows for v in r], faces, mat, bone, color)
 
 
 def lerp(p, q, f: float) -> tuple:
     return tuple(a + (b - a) * f for a, b in zip(p, q))
 
 
+def box(P: Parts, lo, hi, mat: int, bone: str, bevel=0.006) -> None:
+    """Bevelled box from its min and max corners."""
+    P.bbox(tuple((a + b) / 2 for a, b in zip(lo, hi)), tuple(b - a for a, b in zip(lo, hi)), mat, bone, bevel=bevel)
+
+
+def xz_frame(y: float, flip: bool = False):
+    """4x4 mapping an outline's local (x, y) to world (x, z) on the plane at depth y (normal +-Y)."""
+    from mathutils import Matrix
+
+    m = Matrix(((1, 0, 0, 0), (0, 0, -1 if flip else 1, y), (0, 1, 0, 0), (0, 0, 0, 1)))
+    return m
+
+
+def _sub(a, b) -> tuple:
+    return tuple(x - y for x, y in zip(a, b))
+
+
+def _m(p, s: int) -> tuple:
+    """Mirror a right-side (+X) point to side s (+1 right, -1 left)."""
+    return (s * p[0], p[1], p[2])
+
+
+SY = 0.9  # barrel and bellows depth / width (the side panel's barrel is nearly round)
+BARREL = (1.20, 1.94)  # stave span
+PLEAT_Z = (0.80, 1.215)
+PLEAT_R = (0.43, 0.505)  # valley, ridge
+PLEATS = 6
+
+
+def barrel_r(z: float) -> float:
+    """Stave radius across X at height z: widest at 1.52 m, curling in to the head collar."""
+    d, k = ((z - 1.52) / 0.55, 0.75) if z < 1.52 else ((z - 1.52) / 0.48, 0.85)
+    return 0.60 * math.sqrt(max(0.0, 1.0 - k * d * d))
+
+
+def strap_path(x: float, z0: float, z1: float, rfun, sign: int, off: float, n: int = 14) -> list:
+    """Points on the (elliptical) barrel or bellows surface at fixed x, front (sign 1) or back (-1)."""
+    out = []
+    for i in range(n + 1):
+        z = z0 + (z1 - z0) * i / n
+        r = rfun(z)
+        out.append((x, sign * (SY * math.sqrt(max(r * r - x * x, 0.0)) + off), z))
+    return out
+
+
+def grille(P: Parts, z: float, sign: int, ax: float, az: float, bars: list) -> None:
+    """Round chest grille on the barrel front (sign 1) or back (-1): a dark iron housing set into the
+    staves, a glowing core, brass bars and a brass bezel with riveted side tabs."""
+    y = sign * SY * barrel_r(z)
+    axis = (0, sign, 0)
+    P.lathe((0, y - sign * 0.07, z), axis, [(1.0, 0.0), (1.0, 0.08)], GM, "chest", sx=ax * 0.96, sy=az * 0.96)
+    P.lathe((0, y + sign * 0.006, z), axis, [(1.0, 0.0), (1.0, 0.012)], GL, "chest", sx=ax * 0.9, sy=az * 0.9)
+    for x in bars:
+        h = 2 * az * 0.9 * math.sqrt(max(0.0, 1 - (x / (ax * 0.9)) ** 2))
+        P.bbox((x, y + sign * 0.024, z), (0.03, 0.022, h), BP, "chest", bevel=0.007)
+    P.band((0, y + sign * 0.022, z), axis, ax, 0.042, 0.052, BP, "chest", n=P.n(36), rb=az)
+    for s in (1, -1):
+        tx = s * (ax + 0.045)
+        ty = sign * SY * math.sqrt(max(barrel_r(z) ** 2 - tx * tx, 0.0))
+        P.bbox((tx, ty + sign * 0.006, z), (0.07, 0.03, 0.08), BP, "chest", bevel=0.01)
+        P.ball((tx, ty + sign * 0.022, z), 0.013, BP, "chest", segs=(8, 5))
+
+
+def mark(P: Parts, label: str) -> None:
+    P.tally.append((label, sum(len(f.verts) - 2 for f in P.bm.faces)))
+
+
 def build_parts(P: Parts) -> None:
     from mathutils import Matrix
 
-    T, B = P.tube, P.ball
-    # Barrel: walnut staves bulging between brass hoops, with two brass straps over the top.
-    prof = [(1.12, 0.44), (1.22, 0.52), (1.36, 0.56), (1.50, 0.54), (1.60, 0.46), (1.66, 0.36)]
-    n = P.d["sides"] * 2
-    ring = lambda r: [(r * math.cos(2 * math.pi * i / n), 0.84 * r * math.sin(2 * math.pi * i / n)) for i in range(n)]  # noqa: E731
-    P.rings([ring(r) for _, r in prof], [z for z, _ in prof], Matrix.Identity(4), WN, "chest", smooth=True)
-    for z, r in ((1.17, 0.49), (1.55, 0.515)):
-        P.torus((0, 0, z), (0, 0, 1), r, 0.84 * r, 0.024, BP, "chest")
-    P.torus((0, 0, 1.645), (0, 0, 1), 0.37, 0.31, 0.022, BP, "chest")
+    # Barrel: walnut staves in three shades over a dark interior, curling in to the head collar.
+    z0, z1 = BARREL
+    span = z1 - z0
+    P.lathe((0, 0, z0 - 0.01), (0, 0, 1), [(barrel_r(z0 + span * f) - 0.03, 0.01 + span * f) for f in (0.0, 0.25, 0.5, 0.75, 0.97)],
+            WD, "chest", sides=P.n(32), sy=SY)
+    staves, gap = 18, 0.018
+    shades = (WN1, WN2, WN3)
+    for i in range(staves):
+        a0 = 2 * math.pi * i / staves + gap / 2
+        a1 = 2 * math.pi * (i + 1) / staves - gap / 2
+        P.wrap((0, 0, z0), (0, 0, z1), lambda v: barrel_r(z0 + span * v), a0, a1, 0.035, shades[(i * 7) % 3], "chest",
+               nu=2, nv=P.n(8), sy=SY, bevel=0.0, crown=0.007)
+    for z, w, t in ((z0 + 0.025, 0.03, 0.075), (1.905, 0.028, 0.045)):
+        r = barrel_r(z) + 0.006 + w / 2
+        P.band((0, 0, z), (0, 0, 1), r, w, t, BP, "chest", n=P.n(36), rb=SY * r)
+    P.shell((0, 0, z1 - 0.02), (0, 0, 1), [(0.001, 0.0), (barrel_r(z1 - 0.02) - 0.01, 0.0), (0.26, 0.05), (0.001, 0.075)], WN2, "chest",
+            sides=P.n(32), sy=SY)  # closed walnut crown under the collar
+    r = barrel_r(1.32) + 0.018
+    P.sweep_ring((0, 0, 1.32), (0, 0, 1), r, SY * r, chamfer_rect(0.024, 0.055), BP, "chest", n=P.n(28), arc=(200.0, 340.0))
+    # Vertical straps, front and back, over the barrel and down the bellows to the belt.
+    for sign in (1, -1):
+        for x in (-0.31, 0.31):
+            hint = (x, sign * 1.0, 0.0)
+            P.sweep(strap_path(x, z0 - 0.01, 1.90, barrel_r, sign, 0.016, n=10), chamfer_rect(0.022, 0.06), BP, "chest", hint=hint)
+            P.sweep(strap_path(x, 0.77, z0 + 0.01, lambda _z: PLEAT_R[1], sign, 0.012, n=4), chamfer_rect(0.022, 0.06), BP, "spine", hint=hint)
+    # Chest core (front) and the smaller back grille: the focal light.
+    grille(P, 1.50, 1, 0.235, 0.185, [-0.135, -0.045, 0.045, 0.135])
+    grille(P, 1.68, -1, 0.17, 0.13, [-0.06, 0.0, 0.06])
+    mark(P, "barrel, straps, grilles")
+
+    # Bellows: walnut and leather-dark pleats round a dark drum; the upper three ride the pump.
+    pz0, pz1 = PLEAT_Z
+    h = (pz1 - pz0) / PLEATS
+    P.lathe((0, 0, pz0 - 0.02), (0, 0, 1), [(PLEAT_R[0] - 0.02, 0.0), (PLEAT_R[0] - 0.02, pz1 - pz0 + 0.04)], WD, "spine", sides=P.n(32), sy=SY)
+    for k in range(PLEATS):
+        prof = [(PLEAT_R[0], 0.0), (PLEAT_R[1], h * 0.42), (PLEAT_R[1] - 0.006, h * 0.6), (PLEAT_R[0], h)]
+        P.lathe((0, 0, pz0 + h * k), (0, 0, 1), prof, WP if k % 2 else WN2, "bellows" if k >= PLEATS // 2 else "spine",
+                sides=P.n(32), sy=SY)
+    # Brass belt with rivets, iron hips, a brass plate front and back.
+    P.band((0, 0, 0.775), (0, 0, 1), 0.495, 0.05, 0.075, BP, "spine", n=P.n(36), rb=SY * 0.495)
+    for k in range(10):
+        a = 2 * math.pi * (k + 0.5) / 10
+        P.ball((0.522 * math.sin(a), SY * 0.522 * math.cos(a), 0.775), 0.014, BP, "spine", segs=(8, 5))
+    P.lathe((0, 0, 0.53), (0, 0, 1), [(0.20, 0.0), (0.32, 0.05), (0.39, 0.16), (0.42, 0.25)], GM, "pelvis", sides=P.n(28), sy=0.85)
+    for sign in (1, -1):
+        plate = [(-0.11, 0.0), (0.11, 0.0), (0.08, -0.17), (0.0, -0.215), (-0.08, -0.17)]
+        P.extrude(plate, xz_frame(sign * 0.33) @ Matrix.Translation((0, 0.755, 0)), 0.035, BP, "pelvis", bevel=0.009)
+    mark(P, "bellows, belt, hips")
+
+    # Head: brass dome with a centre ridge and two round amber eyes, sunk in a brass collar.
+    hy, hz = HEAD["head"][1], HEAD["head"][2]
+    P.band((0, hy + 0.03, hz + 0.06), (0, 1, 0.55), 0.205, 0.05, 0.07, BP, "chest", n=P.n(36))
+    P.lathe((0, hy - 0.01, hz + 0.05), (0, 1, 0.55), [(0.185, 0.0), (0.185, 0.05)], GM, "chest", sides=P.n(24))
+    P.shell((0, hy, hz), (0, 0, 1), [(0.001, 0.0), (0.145, 0.0), (0.152, 0.08), (0.145, 0.15), (0.115, 0.20), (0.065, 0.228), (0.001, 0.236)],
+            BP, "head", sides=P.n(24))
+    ridge = [(0.153, 0.05), (0.15, 0.11), (0.136, 0.16), (0.108, 0.205), (0.06, 0.232), (0.0, 0.241)]
+    P.sweep([(0, hy + r + 0.002, hz + z) for r, z in ridge], chamfer_rect(0.014, 0.026), BP, "head", hint=(0, 0.6, 1))
     for s in (1, -1):
-        P.torus((s * 0.22, 0, 1.37), (1, 0, 0), 0.448, 0.29, 0.02, BP, "chest")
-    # Chest core: amber lamp behind brass grille bars in a brass bezel.
-    P.torus((0, 0.475, 1.38), (0, 1, 0.05), 0.10, 0.115, 0.024, BP, "chest")
-    B((0, 0.452, 1.38), 0.10, GL, "chest", (1.0, 0.42, 1.12))
-    for x in (-0.048, -0.016, 0.016, 0.048):
-        P.box((x, 0.49, 1.38), (0.014, 0.016, 0.2), BP, "chest")
-    # Head: small brass dome sunk into the barrel top, two round amber eyes.
-    T((0, 0.06, 1.60), (0, 0.06, 1.80), 0.13, 0.13, BP, "head")
-    B((0, 0.06, 1.80), 0.13, BP, "head", (1.0, 1.0, 0.85))
-    P.box((0, 0.185, 1.815), (0.16, 0.03, 0.02), BP, "head")
-    for s in (1, -1):
-        B((s * 0.05, 0.178, 1.76), 0.027, GL, "head")
-    P.torus((0, 0.05, 1.655), (0, 0, 1), 0.17, 0.16, 0.025, GM, "head")
-    # Chimneys: brass stacks with flared mouths; the mouth lip and throat glow (no flame geometry).
+        ex = s * 0.062
+        ey = hy + math.sqrt(0.151 ** 2 - ex * ex)
+        P.band((ex, ey + 0.004, hz + 0.075), (s * 0.25, 1, 0), 0.04, 0.014, 0.02, GM, "head", n=P.n(16))
+        P.ball((ex, ey - 0.004, hz + 0.075), 0.034, GL, "head", scale=(1.0, 0.6, 1.0), segs=(P.n(12), P.n(7)))
+
+    # Chimneys: brass stacks with flared mouths; the throat and a raised inner lip glow (no flame).
     for s, n_ in ((1, "R"), (-1, "L")):
-        bone = f"chimney.{n_}"
-        T((s * 0.27, -0.14, 1.56), (s * 0.29, -0.16, 1.95), 0.066, 0.06, BP, bone)
-        T((s * 0.29, -0.16, 1.94), (s * 0.29, -0.165, 2.05), 0.062, 0.10, BP, bone)
-        T((s * 0.29, -0.165, 1.99), (s * 0.29, -0.165, 2.045), 0.085, 0.088, GL, bone)
-        P.torus((s * 0.29, -0.165, 2.05), (0, 0, 1), 0.094, 0.094, 0.013, GL, bone)
-        P.torus((s * 0.28, -0.15, 1.72), (0, 0, 1), 0.07, 0.07, 0.016, GM, bone)
-    # Bellows: dark leather pleats around a gunmetal drum; the upper pleats ride the pump.
-    T((0, 0, 0.84), (0, 0, 1.14), 0.36, 0.38, GM, "spine", sy=0.84)
-    for z, r, bone in ((0.90, 0.42, "spine"), (0.96, 0.44, "spine"), (1.02, 0.45, "bellows"), (1.08, 0.455, "bellows")):
-        P.torus((0, 0, z), (0, 0, 1), r, 0.84 * r, 0.032, GM, bone)
-    # Pelvis: brass hip skirt and front plate.
-    T((0, 0, 0.60), (0, 0, 0.86), 0.30, 0.37, BP, "pelvis", sx=1.05, sy=0.8)
-    P.box((0, 0.24, 0.64), (0.22, 0.06, 0.2), BP, "pelvis", taper=0.75)
+        b = f"chimney.{n_}"
+        p0, p1 = HEAD[b], TAIL[b]
+        ax = _sub(p1, p0)
+        P.lathe(p0, ax, [(0.068, 0.0), (0.068, 0.18), (0.074, 0.205), (0.108, 0.30), (0.118, 0.33), (0.10, 0.338)], BP, b, sides=P.n(24))
+        P.lathe(lerp(p0, p1, 0.98), ax, [(0.09, 0.0), (0.09, 0.012)], GL, b, sides=P.n(24))
+        P.band(lerp(p0, p1, 1.0), ax, 0.096, 0.02, 0.032, GL, b, n=P.n(24))
+        P.band(lerp(p0, p1, 0.36), ax, 0.082, 0.026, 0.04, BP, b, n=P.n(24))
+        P.band(lerp(p0, p1, 0.58), ax, 0.076, 0.018, 0.028, GM, b, n=P.n(24))
+    mark(P, "head, chimneys")
+
     for s, n_ in ((1, "R"), (-1, "L")):
-        # Arm: brass pauldron, gunmetal upper arm and elbow, a huge brass gauntlet and fist.
-        B((s * 0.58, 0, 1.55), 0.22, BP, f"clavicle.{n_}", (1.0, 1.0, 0.82))
-        B((s * 0.62, 0, 1.46), 0.11, GM, f"upperarm.{n_}")
-        T((s * 0.62, 0, 1.44), (s * 0.66, 0, 1.08), 0.085, 0.08, GM, f"upperarm.{n_}")
-        B((s * 0.66, 0, 1.06), 0.105, GM, f"forearm.{n_}")
-        T((s * 0.664, 0.012, 1.00), (s * 0.68, 0.036, 0.62), 0.18, 0.21, BP, f"forearm.{n_}")
-        for f in (0.2, 0.75):
-            c = lerp((s * 0.664, 0.012, 1.00), (s * 0.68, 0.036, 0.62), f)
-            P.torus(c, (0, 0.08, -1), 0.2 + 0.025 * f, 0.2 + 0.025 * f, 0.022, GM, f"forearm.{n_}")
-        T((s * 0.68, 0.04, 0.62), (s * 0.68, 0.045, 0.56), 0.16, 0.16, GM, f"hand.{n_}")
-        B((s * 0.68, 0.05, 0.39), 0.185, GM, f"hand.{n_}", (0.92, 0.95, 1.0))
-        P.box((s * 0.68, -0.09, 0.40), (0.30, 0.08, 0.30), BP, f"hand.{n_}", taper=0.9)
-        for k in range(4):
-            z = 0.50 - 0.07 * k
-            y = 0.17 - 0.014 * abs(k - 1.5)
-            T((s * 0.68 - 0.12, y, z), (s * 0.68 + 0.12, y, z), 0.04, 0.04, BP, f"hand.{n_}")
-        T((s * 0.53, 0.06, 0.47), (s * 0.55, 0.16, 0.37), 0.048, 0.04, BP, f"hand.{n_}")  # thumb on the inner side
-        # Leg: gunmetal hip and thigh, kneecap, brass greave, ankle and a broad brass foot.
-        B((s * 0.24, 0, 0.72), 0.11, GM, f"thigh.{n_}")
-        T((s * 0.24, 0.0, 0.70), (s * 0.25, 0.04, 0.45), 0.10, 0.09, GM, f"thigh.{n_}")
-        B((s * 0.25, 0.04, 0.42), 0.10, GM, f"shin.{n_}")
-        B((s * 0.25, 0.13, 0.44), 0.09, BP, f"shin.{n_}", (1.0, 0.6, 1.0))
-        T((s * 0.25, 0.035, 0.38), (s * 0.25, 0.005, 0.15), 0.14, 0.12, BP, f"shin.{n_}")
-        B((s * 0.25, 0.0, 0.11), 0.075, GM, f"foot.{n_}")
-        P.box((s * 0.25, 0.06, 0.05), (0.26, 0.40, 0.10), BP, f"foot.{n_}", taper=0.85)
+        ua, fa, hd = f"upperarm.{n_}", f"forearm.{n_}", f"hand.{n_}"
+        S, E, W = _m(SHOULDER, s), _m(ELBOW, s), _m(WRIST, s)
+        # Layered pauldron: a tall rounded brass cap over the shoulder (the widest shape at the shoulder
+        # line; narrow and tall from the front, nearly round from the side, as drawn), a raised plate
+        # on its outer face and an emerald boss.
+        P.ball(S, 0.15, GM, ua)
+        px, pz = s * 0.655, 1.53
+
+        def cap(x: float, rx: float, rz: float, half: float, lo: float) -> None:
+            secs = []
+            for f in (0.0, 0.03, 0.1, 0.22, 0.38, 0.5, 0.62, 0.78, 0.9, 0.97, 1.0):
+                k = max(lo, math.sqrt(max(0.0, 1 - (2 * f - 1) ** 2)))
+                secs.append((f, rx * k, rz * k, 2.4, 0, 0))
+            P.loft((x, -half, pz), (x, half, pz), secs, BP, ua)
+
+        cap(px, 0.13, 0.29, 0.27, 0.12)
+        cap(px + s * 0.09, 0.05, 0.22, 0.2, 0.12)
+        bx = px + s * 0.158
+        P.band((bx, 0.0, pz), (s, 0, 0), 0.06, 0.022, 0.03, BP, ua, n=P.n(20))
+        P.ball((bx, 0.0, pz), 0.054, EM, ua, scale=(0.45, 1.0, 1.0), segs=(P.n(12), P.n(7)))
+        # Gunmetal upper arm with a brass cuff.
+        L1 = math.dist(S, E)
+        P.lathe(S, _sub(E, S), [(0.105, 0.0), (0.118, 0.16), (0.112, 0.32), (0.10, L1)], GM, ua, sides=P.n(18))
+        P.band(lerp(S, E, 0.66), _sub(E, S), 0.12, 0.03, 0.055, BP, ua, n=P.n(24))
+        # Elbow ball with an emerald on its outer face.
+        P.ball(E, 0.135, GM, fa)
+        P.band((E[0] + s * 0.12, E[1], E[2]), (s, 0, 0), 0.052, 0.02, 0.028, BP, fa, n=P.n(20))
+        P.ball((E[0] + s * 0.122, E[1], E[2]), 0.046, EM, fa, scale=(0.45, 1.0, 1.0), segs=(P.n(12), P.n(7)))
+        mark(P, f"pauldron, upper arm, elbow {n_}")
+        # Big brass forearm cylinder with a cuff band at each end, open to a dark mouth at the elbow.
+        P.lathe(E, _sub(W, E), [(0.195, 0.052), (0.195, 0.066)], GM, fa, sides=P.n(32))
+        P.lathe(E, _sub(W, E), [(0.20, 0.07), (0.236, 0.074), (0.252, 0.09), (0.252, 0.15), (0.237, 0.162), (0.233, 0.36), (0.252, 0.372),
+                                 (0.258, 0.45), (0.25, 0.53), (0.215, 0.55)], BP, fa, sides=P.n(36))
+        # Huge rounded fist: back of the hand, four curled fingers with knuckles, a thumb on the inner side.
+        fx, fy = s * 0.93, FIST_Y
+        P.band(W, _sub(W, E), 0.17, 0.04, 0.05, GM, hd, n=P.n(28))
+        P.loft((fx, 0.17 + fy, 0.20), (fx, 0.17 + fy, 0.51), [(0.0, 0.16, 0.12, 3.0, 0, 0), (0.12, 0.2, 0.15, 3.0, 0, 0),
+                                                              (0.82, 0.205, 0.155, 3.0, 0, 0), (1.0, 0.16, 0.12, 3.0, 0, 0)], BP, hd)
+        P.bbox((fx, 0.30 + fy, 0.30), (0.34, 0.12, 0.24), BP, hd, bevel=0.02)
+        P.tube((fx - 0.19, 0.33 + fy, 0.45), (fx + 0.19, 0.33 + fy, 0.45), 0.07, 0.07, BP, hd, sides=P.n(14))
+        for dx in (-0.15, -0.05, 0.05, 0.15):
+            x = fx + dx
+            P.ball((x, 0.35 + fy, 0.45), 0.078, BP, hd, segs=(10, 6))
+            P.tube((x, 0.39 + fy, 0.43), (x, 0.405 + fy, 0.29), 0.07, 0.068, BP, hd, sides=10)
+            P.ball((x, 0.40 + fy, 0.28), 0.068, BP, hd, segs=(10, 6))
+            P.tube((x, 0.40 + fy, 0.28), (x, 0.30 + fy, 0.17), 0.066, 0.062, BP, hd, sides=10)
+            P.ball((x, 0.30 + fy, 0.17), 0.064, BP, hd, segs=(10, 6))
+        tx = s * (0.93 - 0.215)
+        P.ball((tx, 0.17 + fy, 0.42), 0.08, BP, hd, segs=(10, 6))
+        P.tube((tx, 0.17 + fy, 0.42), (s * (0.93 - 0.19), 0.35 + fy, 0.33), 0.07, 0.064, BP, hd, sides=10)
+        P.ball((s * (0.93 - 0.19), 0.35 + fy, 0.33), 0.064, BP, hd, segs=(10, 6))
+        mark(P, f"forearm, fist {n_}")
+
+        # Legs: iron hip and thigh under a brass plate, a domed knee with an emerald, a brass greave
+        # and a broad layered sabaton.
+        th, sh, ft = f"thigh.{n_}", f"shin.{n_}", f"foot.{n_}"
+        H, K, A = _m(HIP, s), _m(KNEE, s), _m(ANKLE, s)
+        P.ball(H, 0.125, GM, th)
+        P.lathe(H, _sub(K, H), [(0.115, 0.0), (0.125, 0.12), (0.11, math.dist(H, K))], GM, th, sides=P.n(18))
+        P.wrap(H, K, 0.14, -1.15, 1.15, 0.025, BP, th, v0=0.12, v1=0.86, nv=3, crown=0.012)
+        P.ball(K, 0.105, GM, sh)
+        P.shell((K[0], K[1] + 0.075, K[2]), (0, 1, 0), [(0.001, 0.0), (0.115, 0.0), (0.11, 0.04), (0.075, 0.078), (0.001, 0.088)], BP, sh,
+                sides=P.n(20))
+        P.band((K[0] - s * 0.1, K[1], K[2]), (-s, 0, 0), 0.04, 0.016, 0.022, BP, sh, n=P.n(16))
+        P.ball((K[0] - s * 0.1, K[1], K[2]), 0.034, EM, sh, scale=(0.45, 1.0, 1.0))
+        L2 = math.dist(K, A)
+        P.lathe(K, _sub(A, K), [(0.10, 0.05), (0.13, 0.06), (0.138, 0.09), (0.152, 0.17), (0.166, 0.18), (0.166, L2 - 0.02), (0.135, L2)], BP, sh,
+                sides=P.n(24))
+        P.ball(A, 0.078, GM, ft)
+        P.loft((A[0], -0.14, 0.061), (A[0], 0.30, 0.061), [(0.0, 0.135, 0.06, 3.0, 0, 0), (0.1, 0.16, 0.062, 3.0, 0, 0),
+                                                           (0.78, 0.17, 0.062, 3.0, 0, 0), (1.0, 0.12, 0.04, 3.0, 0, 0.015)], BP, ft)
+        P.loft((A[0], 0.10, 0.10), (A[0], 0.34, 0.07), [(0.0, 0.16, 0.035, 3.0, 0, 0), (0.85, 0.165, 0.035, 3.0, 0, 0),
+                                                        (1.0, 0.12, 0.02, 3.0, 0, 0)], BP, ft)
+        mark(P, f"leg {n_}")
 
 
 def tile_uvs(bm) -> None:
@@ -292,6 +663,15 @@ def tile_uvs(bm) -> None:
 def build_body(bpy, bmesh, scene, detail: str, arm_obj):
     P = Parts(bmesh, detail)
     build_parts(P)
+    print(f"[{PIECE}] {detail} cumulative tris by section: {P.tally}")
+    col = P.bm.loops.layers.float_color.new("tint")
+    shade = {k: (*(lin(c) for c in v), 1.0) for k, v in SHADES.items()}
+    for f in P.bm.faces:
+        rgba = shade.get(f.material_index, (1.0, 1.0, 1.0, 1.0))
+        for loop in f.loops:
+            loop[col] = rgba
+        if f.material_index in shade:
+            f.material_index = CS if f.material_index < 20 else MT
     bmesh.ops.recalc_face_normals(P.bm, faces=P.bm.faces[:])
     # Fixed triangulation here: the exporter's own quad split follows float noise between runs.
     bmesh.ops.triangulate(P.bm, faces=P.bm.faces[:], quad_method="FIXED", ngon_method="EAR_CLIP")
@@ -300,6 +680,9 @@ def build_body(bpy, bmesh, scene, detail: str, arm_obj):
     me = bpy.data.meshes.new(f"{BODY}-{detail}")
     P.bm.to_mesh(me)
     P.bm.free()
+    me.set_sharp_from_angle(angle=math.radians(38))
+    me.color_attributes.active_color_name = "tint"
+    me.color_attributes.render_color_index = me.color_attributes.active_color_index
     obj = bpy.data.objects.new(BODY if detail == "low" else f"{BODY}-{detail}", me)
     scene.collection.objects.link(obj)
     for name in BONE_NAMES:
@@ -423,8 +806,8 @@ START = {**ARMS_REST, "ik": PLANT}
 RAISED = {"pelvis_loc": (0, -0.03, 0.0), "spine": (7, 0, 0), "chest": (4, 0, 0), "head": (10, 0, 0),
           "upperarm.R": (158, 0, 0), "upperarm.L": (158, 0, 0), "forearm.R": (30, 0, 0), "forearm.L": (30, 0, 0),
           "hand.R": (10, 0, 0), "hand.L": (10, 0, 0), "loc": {"bellows": (0, 0, 0.01)}, "ik": PLANT}
-SLAM = {"pelvis_loc": (0, 0.06, -0.16), "spine": (-16, 0, 0), "chest": (-12, 0, 0), "head": (-4, 0, 0),
-        "upperarm.R": (34, 0, 0), "upperarm.L": (34, 0, 0), "forearm.R": (12, 0, 0), "forearm.L": (12, 0, 0),
+SLAM = {"pelvis_loc": (0, 0.04, -0.10), "spine": (-10, 0, 0), "chest": (-8, 0, 0), "head": (-4, 0, 0),
+        "upperarm.R": (40, 0, 0), "upperarm.L": (40, 0, 0), "forearm.R": (6, 0, 0), "forearm.L": (6, 0, 0),
         "hand.R": (-8, 0, 0), "hand.L": (-8, 0, 0), "chimney.R": (-8, 0, 0), "chimney.L": (-8, 0, 0),
         "loc": {"bellows": (0, 0, -0.03)}, "ik": PLANT}
 ATTACK_KEYS = [
@@ -432,7 +815,7 @@ ATTACK_KEYS = [
     (0.45, RAISED),
     (0.62, {**RAISED, "upperarm.R": (166, 0, 0), "upperarm.L": (166, 0, 0), "spine": (9, 0, 0)}),
     (0.85, SLAM),
-    (1.05, {**SLAM, "pelvis_loc": (0, 0.05, -0.14), "chimney.R": (4, 0, 0), "chimney.L": (4, 0, 0)}),
+    (1.05, {**SLAM, "pelvis_loc": (0, 0.035, -0.085), "chimney.R": (4, 0, 0), "chimney.L": (4, 0, 0)}),
     (1.5, START),
 ]
 HIT_KEYS = [
@@ -652,6 +1035,10 @@ def _principled(mat, name: str):
     if name == GLOW:
         bsdf.inputs["Emission Color"].default_value = (*(lin(c) for c in GLOW_SRGB), 1.0)
         bsdf.inputs["Emission Strength"].default_value = GLOW_STRENGTH
+    if name in (CASE, METAL):  # walnut, pleats, gunmetal and emerald from the corner colours (exported as COLOR_0)
+        attr = mat.node_tree.nodes.new("ShaderNodeVertexColor")
+        attr.layer_name = "tint"
+        mat.node_tree.links.new(attr.outputs["Color"], bsdf.inputs["Base Color"])
     return bsdf
 
 
@@ -712,9 +1099,9 @@ def set_slots(obj, mats: list) -> None:
 # Sockets, export, reimport gate
 
 SOCKETS = {
-    "socket-hit": ("chest", (0, 0.56, 1.38)),  # in front of the amber core: hit sparks and aim point
-    "socket-eye": ("head", (0, 0.2, 1.76)),  # between the eyes
-    "socket-weapon": ("hand.R", (0.68, 0.22, 0.40)),  # the striking right fist
+    "socket-hit": ("chest", (0, 0.62, 1.50)),  # in front of the amber core: hit sparks and aim point
+    "socket-eye": ("head", (0, 0.47, 1.875)),  # between the eyes
+    "socket-weapon": ("hand.R", (0.93, 0.49, 0.30)),  # the striking right fist's knuckles
 }
 
 
@@ -743,6 +1130,8 @@ def export_glb(bpy, keep: list, active, path: Path) -> None:
     bpy.ops.export_scene.gltf(
         filepath=str(path), export_format="GLB", use_selection=True, use_active_scene=True,
         export_texcoords=True, export_normals=True, export_tangents=False,  # three derives tangents
+        # ACTIVE, not MATERIAL: Blender 5.2 MATERIAL mode can write a white COLOR_0 placeholder.
+        export_vertex_color="ACTIVE",  # COLOR_0 for the case and metal slots (white on every other corner)
         export_materials="EXPORT", export_image_format="NONE", export_cameras=False, export_lights=False,
         export_skins=True, export_all_influences=False, export_def_bones=False,
         export_animations=True, export_animation_mode="ACTIONS", export_force_sampling=True,
@@ -804,6 +1193,73 @@ def sort_triangles(path: Path) -> int:
             n += 1
     path.write_bytes(bytes(data))
     return n
+
+
+def canonicalize_normals(path: Path) -> dict:
+    """Recomputes every NORMAL from the (byte-stable) positions and sorted triangles. The exporter's
+    corner normals carry run-dependent float noise (up to ~3e-5 measured), so they are only used to
+    tell fans apart: corners at one position on one bone (each part is rigid on a single bone) whose
+    exported normals agree within ~0.3 degrees form one fan (a smooth vertex split by a UV or material
+    seam), and each fan gets the angle-weighted mean of its triangles' face normals, Blender's smooth
+    rule. Zero-area triangles (collinear points on extruded outlines) get no weight here; the
+    exporter's normals give their 180-degree corner full weight, so the few fans that hold one move
+    (the stats record how many and how far)."""
+    import numpy as np
+
+    data = bytearray(path.read_bytes())
+    gltf, acc, (bin_off, _blen) = parse_glb(bytes(data))
+    stats = {"vertices": 0, "fans": 0, "zero_area_triangles": 0, "max_dev_deg": 0.0, "over_1deg": 0}
+    for mesh in gltf["meshes"]:
+        prims = mesh["primitives"]
+        pos = [acc(pr["attributes"]["POSITION"]).astype(np.float32) for pr in prims]
+        nrm = [acc(pr["attributes"]["NORMAL"]).astype(np.float64) for pr in prims]
+        base = np.cumsum([0] + [len(x) for x in pos])
+        P, N = np.concatenate(pos), np.concatenate(nrm)
+        J = np.concatenate([acc(pr["attributes"]["JOINTS_0"])[:, 0].astype(np.uint32) for pr in prims])
+        T = np.concatenate([acc(pr["indices"]).astype(np.int64).reshape(-1, 3) + base[i] for i, pr in enumerate(prims)])
+        key = np.concatenate([np.ascontiguousarray(P).view(np.uint8).reshape(-1, 12), J.view(np.uint8).reshape(-1, 4)], axis=1)
+        _u, gid = np.unique(np.ascontiguousarray(key).view(np.dtype((np.void, 16)))[:, 0], return_inverse=True)
+        fan = np.empty(len(P), dtype=np.int64)
+        reps: dict[int, list[tuple[int, np.ndarray]]] = {}
+        nf = 0
+        for v in range(len(P)):  # index order: deterministic; the noise (~3e-5) sits far inside the 0.99999 cut
+            for f_, rn in reps.setdefault(int(gid[v]), []):
+                if float(rn @ N[v]) > 0.99999:
+                    fan[v] = f_
+                    break
+            else:
+                reps[int(gid[v])].append((nf, N[v]))
+                fan[v] = nf
+                nf += 1
+        Pd = P.astype(np.float64)
+        p0, p1, p2 = Pd[T[:, 0]], Pd[T[:, 1]], Pd[T[:, 2]]
+        fn = np.cross(p1 - p0, p2 - p0)
+        ln = np.linalg.norm(fn, axis=1)
+        fn = np.where(ln[:, None] > 0, fn / np.maximum(ln, 1e-300)[:, None], 0.0)
+        sums = np.zeros((nf, 3))
+        for k, (a_, b_, c_) in enumerate(((p0, p1, p2), (p1, p2, p0), (p2, p0, p1))):
+            e1, e2 = b_ - a_, c_ - a_
+            ang = np.arctan2(np.linalg.norm(np.cross(e1, e2), axis=1), np.einsum("ij,ij->i", e1, e2))
+            np.add.at(sums, fan[T[:, k]], fn * ang[:, None])
+        sl = np.linalg.norm(sums, axis=1)
+        out = np.where((sl > 1e-12)[:, None], sums / np.maximum(sl, 1e-300)[:, None], 0.0)[fan]
+        keep = ~(sl > 1e-12)[fan]
+        out[keep] = N[keep]
+        dev = np.degrees(np.arccos(np.clip(np.einsum("ij,ij->i", out, N), -1.0, 1.0)))
+        stats["vertices"] += len(P)
+        stats["fans"] += nf
+        stats["zero_area_triangles"] += int((ln == 0).sum())
+        stats["max_dev_deg"] = max(stats["max_dev_deg"], round(float(dev.max()), 1))
+        stats["over_1deg"] += int((dev > 1.0).sum())
+        for i, pr in enumerate(prims):
+            a = gltf["accessors"][pr["attributes"]["NORMAL"]]
+            view = gltf["bufferViews"][a["bufferView"]]
+            start = bin_off + view.get("byteOffset", 0) + a.get("byteOffset", 0)
+            if view.get("byteStride", 12) != 12 or a["componentType"] != 5126:
+                raise ValueError("NORMAL accessor is not tightly packed float32")
+            data[start : start + a["count"] * 12] = out[base[i] : base[i + 1]].astype(np.float32).tobytes()
+    path.write_bytes(bytes(data))
+    return stats
 
 
 def trs(node):
@@ -987,13 +1443,17 @@ def build_manifest(gate: dict, cull: dict) -> dict:
 # --------------------------------------------------------------------------------------------------
 # Review renders (EEVEE)
 
-VIEWS = {"front": ((0, 5.4, 1.2), (0, 0, 1.0)), "side": ((5.4, 0, 1.2), (0, 0, 1.0)),
-         "back": ((0, -5.4, 1.2), (0, 0, 1.0)), "three-quarter": ((3.4, 4.2, 1.9), (0, 0, 1.0))}
-ANIM_CAMERA = ((3.8, 3.8, 2.0), (0, 0.2, 0.95), 40.0)
+VIEWS = {"front": ((0, 6.0, 1.2), (0, 0, 1.05)), "side": ((6.0, 0, 1.2), (0, 0, 1.05)),
+         "back": ((0, -6.0, 1.2), (0, 0, 1.05)), "three-quarter": ((3.8, 4.7, 2.0), (0, 0, 1.05))}
+ANIM_CAMERA = ((4.2, 4.2, 2.2), (0, 0.2, 1.05), 35.0)
 ROM = {"rig-rom-reach": {"upperarm.R": (150, 0, 0), "forearm.R": (40, 0, 0), "upperarm.L": (0, -50, 0), "forearm.L": (70, 0, 0),
                          "head": (0, 0, 30), "chest": (0, 0, 15), "chimney.R": (14, 0, 0), "ik": PLANT},
        "rig-rom-crouch": {"pelvis_loc": (0, 0, -0.2), "spine": (-15, 0, 0), "upperarm.R": (30, 0, 0), "upperarm.L": (30, 0, 0),
                           "forearm.R": (40, 0, 0), "forearm.L": (40, 0, 0), "loc": {"bellows": (0, 0, -0.04)}, "ik": PLANT}}
+# Concept-angle comparison: orthographic, framed like the concept panels (camera side, offset).
+COMPARE = {"front": (0, 1, 0), "side": (-1, 0, 0), "back": (0, -1, 0)}  # camera direction from the figure (side: its left, as drawn)
+M_PER_PX = 2.1 / 806  # concept sheet: feet (y 914 px) to chimney mouths (y 108 px) for the 2.1 m design height
+COMPARE_Z = (914 - 482) * M_PER_PX  # crop centre height (crop centre at y 482 px)
 FRAMES = {"anim-idle": ("idle", 0.6), "anim-attack-raise": ("attack", 0.55), "anim-attack-slam": ("attack", 0.85),
           "anim-hit": ("hit", 0.12), "anim-frozen": ("frozen", 0.0), "anim-death-kneel": ("death", 0.95), "anim-death-end": ("death", 2.4)}
 
@@ -1057,6 +1517,55 @@ def shoot(bpy, scene, path: Path) -> None:
     bpy.ops.render.render(write_still=True, scene=scene.name)
 
 
+def compare_renders(bpy, scene, out: Path) -> list[str]:
+    """Orthographic renders at the concept's front, side and back angles, framed like the concept
+    crops (CONCEPT_CROPS), on a grey close to the sheet's, for the side-by-side fidelity check."""
+    from mathutils import Vector
+
+    rdir = out / "renders"
+    rdir.mkdir(parents=True, exist_ok=True)
+    cs = bpy.data.scenes.new(f"{PIECE}-compare")
+    for o in scene.objects:
+        if o.type in {"MESH", "ARMATURE"} and not o.name.startswith("review-"):
+            cs.collection.objects.link(o)
+    w_, h_ = 460, 415
+    setup_render(cs, w_, h_)
+    world = bpy.data.worlds.new(f"{PIECE}-compare-world")
+    bg = next(n for n in world.node_tree.nodes if n.type == "BACKGROUND")
+    bg.inputs["Color"].default_value = (0.046, 0.039, 0.036, 1.0)
+    cs.world = world
+    cam = bpy.data.objects.new("compare-cam", bpy.data.cameras.new("compare-cam"))
+    cs.collection.objects.link(cam)
+    cs.camera = cam
+    cam.data.type = "ORTHO"
+    key = bpy.data.objects.new("compare-key", bpy.data.lights.new("compare-key", "AREA"))
+    fill = bpy.data.objects.new("compare-fill", bpy.data.lights.new("compare-fill", "AREA"))
+    for o, e in ((key, 300.0), (fill, 90.0)):
+        o.data.energy, o.data.size, o.data.color = e, 2.5, (1.0, 0.86, 0.66)
+        cs.collection.objects.link(o)
+    done = []
+    with bpy.context.temp_override(scene=cs, view_layer=cs.view_layers[0]):
+        if bpy.context.window is not None:
+            bpy.context.window.scene = cs
+        for view, d in COMPARE.items():
+            box_ = CONCEPT_CROPS[view]
+            cs.render.resolution_x, cs.render.resolution_y = (box_[2] - box_[0]) // 2, (box_[3] - box_[1]) // 2
+            cam.data.ortho_scale = max(box_[2] - box_[0], box_[3] - box_[1]) * M_PER_PX
+            d = Vector(d)
+            side = d.cross(Vector((0, 0, 1)))
+            target = Vector((0, 0, COMPARE_Z))
+            cam.location = target + d * 8.0
+            cam.rotation_euler = (-d).to_track_quat("-Z", "Y").to_euler()
+            for o, loc in ((key, target + d * 3.0 + side * 1.6 + Vector((0, 0, 1.4))), (fill, target + d * 3.0 - side * 2.0)):
+                o.location = loc
+                o.rotation_euler = (target - loc).to_track_quat("-Z", "Y").to_euler()
+            shoot(bpy, cs, rdir / f"compare-{view}.png")
+            done.append(f"compare-{view}")
+    if bpy.context.window is not None:
+        bpy.context.window.scene = scene
+    return done
+
+
 def renders(bpy, low_scene, high_scene, arm, actions: dict, out: Path) -> list[str]:
     rdir = out / "renders"
     rdir.mkdir(parents=True, exist_ok=True)
@@ -1102,14 +1611,73 @@ APPROVAL_NOTE = ('Concept approval PENDING (Paul). Modeled under Paul\'s standin
                  'for all spending / modeling / deployments needed for this project". Model, rig, animation approvals pending.')
 
 
-def compose_sheet(out: Path) -> Path:
+def fidelity_pairs(out: Path) -> list:
+    """(label, image) tiles: each concept view crop beside the textured render at the same angle."""
+    from PIL import Image
+
+    sheet = Image.open(CONCEPT).convert("RGB")
+    tiles = []
+    for view, box in CONCEPT_CROPS.items():
+        tiles.append((f"concept {view}", sheet.crop(box)))
+        tiles.append((f"model {view} (ortho, same framing)", out / "renders" / f"compare-{view}.png"))
+    return tiles
+
+
+def _grid(sections, cols: int, title: str, note: str, tw=360, th=360):
     from PIL import Image, ImageDraw
 
+    pad, cap, head = 10, 24, 34
+    lines = note.split("\n")
+    top = 50 + 18 * len(lines)
+    sheet = Image.new("RGB", (cols * (tw + pad) + pad, top + len(sections) * (head + th + cap + pad) + pad), (28, 24, 22))
+    d = ImageDraw.Draw(sheet)
+    d.text((pad, 12), title, fill=(243, 190, 101))
+    for i, line in enumerate(lines):
+        d.text((pad, 34 + 18 * i), line, fill=(222, 193, 106))
+    y = top
+    for stitle, tiles in sections:
+        d.text((pad, y + 10), stitle, fill=(243, 190, 101))
+        y += head
+        for k, (label, src) in enumerate(tiles):
+            x = pad + k * (tw + pad)
+            w = tw if src != CONCEPT else cols * (tw + pad) - pad
+            img = src if isinstance(src, Image.Image) else (Image.open(src).convert("RGB") if src.exists() else None)
+            if img is not None:
+                img = img.copy()
+                img.thumbnail((w, th))
+                sheet.paste(img, (x + (w - img.width) // 2, y + cap + (th - img.height) // 2))
+            else:
+                d.text((x + 8, y + cap + 8), f"missing: {src.name}", fill=(200, 80, 80))
+            d.text((x, y + 4), label, fill=(222, 193, 106))
+        y += th + cap + pad
+    return sheet
+
+
+def fidelity_note(out: Path) -> str:
+    f = out / "fidelity.json"
+    if not f.exists():
+        return "Fidelity self-assessment: not yet scored."
+    j = json.loads(f.read_text())
+    gaps = "".join(f"\n  - {g}" for g in j.get("gaps", []))
+    return f"Fidelity self-assessment (author, not an independent score): {j['score']}/100. Remaining gaps: {gaps}"
+
+
+TITLE = f"P5-T3 Bellows Golem ({PIECE}) - owner review sheet"
+
+
+def compose_sheet(out: Path) -> Path:
     r = out / "renders"
     eng = out / "engine"
+    note = fidelity_note(out)
+    pairs = fidelity_pairs(out)
+    compare = _grid([("FIDELITY - concept view beside the model at the same angle and framing", pairs)], 6,
+                    TITLE.replace("owner review sheet", "fidelity comparison"), note, tw=300, th=420)
+    compare.save(out.parent / f"{PIECE}.fidelity-compare.jpg", quality=88)
     sections = [
         ("REFERENCE - golem-sheet-1.png (concept; owner approval PENDING)", [("concept sheet", CONCEPT)]),
-        ("MODEL - textured Blender renders (shared brass and walnut sets), approval PENDING", [
+        ("FIDELITY - concept view beside the model at the same angle (orthographic, same framing)", pairs),
+        ("MODEL - textured Blender renders (shared brass-polished set; walnut, pleats, gunmetal and emerald from COLOR_0; glow factor-only), "
+         "approval PENDING", [
             ("low front", r / "model-low-front.png"), ("low side", r / "model-low-side.png"), ("low back", r / "model-low-back.png"),
             ("low 3/4", r / "model-low-three-quarter.png"), ("high source 3/4", r / "model-high-three-quarter.png")]),
         (f"RIG - approval PENDING: {len(BONES)} bones, rigid 1-bone skinning, planar leg solve", [
@@ -1122,30 +1690,37 @@ def compose_sheet(out: Path) -> Path:
         ("IN ENGINE - three.js 0.186.1, headless Chromium on the GPU, seated player 2.6 m away", [
             (name, eng / f"{name}.jpg") for name in ENGINE_SHOTS]),
     ]
-    tw, th, pad, cap, head = 360, 360, 10, 24, 34
-    cols = 5
-    sheet = Image.new("RGB", (cols * (tw + pad) + pad, 70 + len(sections) * (head + th + cap + pad) + pad), (28, 24, 22))
-    d = ImageDraw.Draw(sheet)
-    d.text((pad, 12), f"P5-T3 Bellows Golem ({PIECE}) - owner review sheet", fill=(243, 190, 101))
-    d.text((pad, 34), APPROVAL_NOTE, fill=(222, 193, 106))
-    y = 70
-    for title, tiles in sections:
-        d.text((pad, y + 10), title, fill=(243, 190, 101))
-        y += head
-        for k, (label, path) in enumerate(tiles):
-            x = pad + k * (tw + pad)
-            w = tw if path != CONCEPT else cols * (tw + pad) - pad
-            if path.exists():
-                img = Image.open(path).convert("RGB")
-                img.thumbnail((w, th))
-                sheet.paste(img, (x + (w - img.width) // 2, y + cap + (th - img.height) // 2))
-            else:
-                d.text((x + 8, y + cap + 8), f"missing: {path.name}", fill=(200, 80, 80))
-            d.text((x, y + 4), label, fill=(222, 193, 106))
-        y += th + cap + pad
+    sheet = _grid(sections, 6, TITLE, APPROVAL_NOTE + "\n" + note)
     path = out.parent / f"{PIECE}.review-sheet.jpg"
     sheet.save(path, quality=86)
     return path
+
+
+def record_fidelity(out: Path) -> Path:
+    """Adds the author's self-score (staging/fidelity.json) to provenance.json as `authorSelfScore`,
+    bound to the compare image's bytes. Run after `asset-check.py --assemble-enemy`, which rebuilds
+    provenance from scratch and so drops the reviewer's `independentScore`: that block is copied back
+    unchanged from the committed provenance (it scored the previous build; a re-score is pending)."""
+    prov_path = out.parent / "provenance.json"
+    prov = json.loads(prov_path.read_text())
+    fid = json.loads((out / "fidelity.json").read_text())
+    compare = out.parent / f"{PIECE}.fidelity-compare.jpg"
+    rel = str(prov_path.relative_to(REPO))
+    head = json.loads(subprocess.run(["git", "-C", str(REPO), "show", f"HEAD:{rel}"], check=True, capture_output=True, text=True).stdout)
+    independent = head.get("independentScore", prov.get("independentScore"))
+    prov["authorSelfScore"] = {
+        "score": fid["score"], "scale": "0-100 visual fidelity to the concept",
+        "scorer": "author self-score (the authoring agent; not the independent score create-rigged-character-assets requires)",
+        "date": fid.get("date"), "gaps": fid.get("gaps", []), "method": fid.get("method"),
+        "evidence": {"path": str(compare.relative_to(REPO)), "sha256": sha256(compare)},
+        "independentScoreNote": "the recorded independentScore scored the previous build; an independent re-score of this build is pending",
+    }
+    if independent is not None:
+        prov["independentScore"] = independent
+    prov_path.write_text(json.dumps(prov, indent=2) + "\n")
+    if independent is not None and json.loads(prov_path.read_text())["independentScore"] != head.get("independentScore", independent):
+        raise SystemExit("independentScore differs from the committed provenance")
+    return prov_path
 
 
 # --------------------------------------------------------------------------------------------------
@@ -1177,6 +1752,11 @@ def main_blender(args: argparse.Namespace) -> None:
         bpy.context.window.scene = low_scene
     arm = build_armature(bpy, low_scene, PIECE)
     body = build_body(bpy, bmesh, low_scene, "low", arm)
+    if args.compare_only:
+        set_slots(body, source_materials(bpy))
+        print(f"[{PIECE}] tris low={sum(len(p.vertices) - 2 for p in body.data.polygons)}")
+        compare_renders(bpy, low_scene, args.out.resolve())
+        return
     tris_low = sum(len(p.vertices) - 2 for p in body.data.polygons)
     tris_high = sum(len(p.vertices) - 2 for p in body_high.data.polygons)
     print(f"[{PIECE}] tris low={tris_low} high={tris_high}")
@@ -1220,6 +1800,7 @@ def main_blender(args: argparse.Namespace) -> None:
     glb = runtime / f"{PIECE}.glb"
     export_glb(bpy, [arm, body, *sockets.values()], arm, glb)
     report["canonicalized_primitives"] = sort_triangles(glb)
+    report["canonicalized_normals"] = canonicalize_normals(glb)
     gate = gate_glb(glb)
     gate["errors"] += pose_errors
     br = blender_reimport(bpy, glb)
@@ -1241,7 +1822,7 @@ def main_blender(args: argparse.Namespace) -> None:
 
     if not args.skip_renders:
         t0 = time.monotonic()
-        report["renders"] = renders(bpy, low_scene, high_scene, arm, actions, out)
+        report["renders"] = renders(bpy, low_scene, high_scene, arm, actions, out) + compare_renders(bpy, low_scene, out)
         report["render_seconds"] = round(time.monotonic() - t0, 1)
 
     report["files"] = {
@@ -1259,5 +1840,7 @@ if __name__ == "__main__":
     ARGS = parse_args()
     if ARGS.sheet:
         print(compose_sheet(ARGS.out.resolve()))
+    elif ARGS.record_fidelity:
+        print(record_fidelity(ARGS.out.resolve()))
     else:
         main_blender(ARGS)
