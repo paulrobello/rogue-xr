@@ -46,7 +46,8 @@ export function configurePbrTexture(
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;
   texture.anisotropy = anisotropy;
-  texture.generateMipmaps = true;
+  // Compressed textures carry their own mip chain and cannot generate one.
+  texture.generateMipmaps = !(texture as THREE.CompressedTexture).isCompressedTexture;
   texture.minFilter = THREE.LinearMipmapLinearFilter;
   return texture;
 }
@@ -88,15 +89,31 @@ export interface PbrSet {
   materials: Map<string, THREE.MeshStandardMaterial>;
 }
 
-export async function loadPbrSet(base: string, anisotropy = 4): Promise<PbrSet> {
+/** The KTX2 copy sits beside each PNG with the same stem (scripts/assets/encode_materials_ktx2.py). */
+export function ktx2File(file: string): string {
+  return file.replace(/\.png$/, '.ktx2');
+}
+
+/** Any loader with `loadAsync`, such as KTX2Loader, which is configured by its caller. */
+export interface CompressedTextureLoader {
+  loadAsync(url: string): Promise<THREE.Texture>;
+}
+
+export async function loadPbrSet(
+  base: string,
+  options: { anisotropy?: number; ktx2?: CompressedTextureLoader } = {},
+): Promise<PbrSet> {
+  const { anisotropy = 4, ktx2 } = options;
   const manifest = parsePbrManifest(await (await fetch(`${base}/materials.json`)).json());
-  const loader = new THREE.TextureLoader();
+  const png = new THREE.TextureLoader();
   const materials = new Map<string, THREE.MeshStandardMaterial>();
   await Promise.all(
     Object.entries(manifest).map(async ([name, entry]) => {
       const loaded = await Promise.all(
         Object.entries(entry.maps).map(async ([role, file]) => {
-          const texture = await loader.loadAsync(`${base}/${name}/${file}`);
+          const texture = ktx2
+            ? await ktx2.loadAsync(`${base}/${name}/${ktx2File(file)}`)
+            : await png.loadAsync(`${base}/${name}/${file}`);
           return [role, configurePbrTexture(texture, role as PbrRole, anisotropy)] as const;
         }),
       );

@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import {
   configurePbrTexture,
   createPbrMaterial,
+  ktx2File,
   parsePbrManifest,
   tileRepeat,
 } from '../src/world/materials.ts';
@@ -79,6 +80,27 @@ describe('createPbrMaterial', () => {
     });
     expect(material.emissiveMap).toBe(emissive);
     expect(material.emissiveIntensity).toBe(0);
+  });
+});
+
+describe('KTX2 copies', () => {
+  it('sit beside every manifest PNG with the same stem', () => {
+    const manifest = parsePbrManifest(JSON.parse(readFileSync(manifestPath, 'utf8')));
+    for (const [name, entry] of Object.entries(manifest)) {
+      for (const file of Object.values(entry.maps)) {
+        const path = new URL(
+          `../public/assets/materials/${name}/${ktx2File(file)}`,
+          import.meta.url,
+        );
+        expect(readFileSync(path).subarray(0, 12).toString('latin1')).toBe('«KTX 20»\r\n\u001a\n');
+      }
+    }
+  });
+
+  it('keep their own mip chain instead of generating one', () => {
+    const compressed = configurePbrTexture(new THREE.CompressedTexture([], 4, 4), 'normal');
+    expect(compressed.generateMipmaps).toBe(false);
+    expect(configurePbrTexture(new THREE.Texture(), 'normal').generateMipmaps).toBe(true);
   });
 });
 

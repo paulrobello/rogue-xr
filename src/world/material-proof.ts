@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
 import { PALETTE } from '../palette.ts';
 import { loadPbrSet } from './materials.ts';
 
@@ -17,7 +18,8 @@ const GAP = 0.15;
  * `?view=material-proof`: every core material on a wall panel two tiles wide at true world scale,
  * so repeats, seams and texel density read as they will in the room.
  * `&light=neutral|grazing|warm` picks the rig, `&dist=<m>` the camera distance, `&x=<m>` its offset,
- * `&tilt=<deg>` turns the panels away from the camera for oblique and mip checks.
+ * `&tilt=<deg>` turns the panels away from the camera for oblique and mip checks,
+ * `&tex=ktx2` loads the KTX2 copies instead of the PNGs.
  */
 export async function mountMaterialProof(
   scene: THREE.Scene,
@@ -29,10 +31,17 @@ export async function mountMaterialProof(
   const tilt = THREE.MathUtils.degToRad(Number(params.get('tilt') ?? 0));
   scene.background = new THREE.Color(PALETTE.void);
 
-  const { manifest, materials } = await loadPbrSet(
-    '/assets/materials',
-    renderer.capabilities.getMaxAnisotropy(),
-  );
+  let ktx2: KTX2Loader | undefined;
+  if (params.get('tex') === 'ktx2') {
+    // Dev-server path to three's own transcoder; P4-T7 self-hosts it for production builds.
+    ktx2 = new KTX2Loader().setTranscoderPath('/node_modules/three/examples/jsm/libs/basis/');
+    ktx2.detectSupport(renderer);
+  }
+  const { manifest, materials } = await loadPbrSet('/assets/materials', {
+    anisotropy: renderer.capabilities.getMaxAnisotropy(),
+    ktx2,
+  });
+  ktx2?.dispose();
   const widths = ORDER.map((name) => 2 * (manifest[name]?.tileMeters ?? 1));
   const total = widths.reduce((a, b) => a + b, 0) + GAP * (ORDER.length - 1);
   let x = -total / 2;

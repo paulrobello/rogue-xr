@@ -1,0 +1,145 @@
+{
+  "tool": "ktx version: v4.4.2",
+  "settings": "uastc q2 rdo, zstd 18, generated mips, texcoord origin bottom-left",
+  "files": {
+    "brass-aged/brass-aged.basecolor.ktx2": {
+      "role": "basecolor",
+      "png_bytes": 1527031,
+      "ktx2_bytes": 927392,
+      "gpu_bytes_astc4x4": 1398128,
+      "sha256": "963a148c1c91d2b5eb07027de044f56b743c2dc90c7d579c5449e2c7f5122220"
+    },
+    "brass-aged/brass-aged.normal.ktx2": {
+      "role": "normal",
+      "png_bytes": 2773435,
+      "ktx2_bytes": 1257358,
+      "gpu_bytes_astc4x4": 1398128,
+      "sha256": "aeb71b168a8f1cb5331cb937a5b174a45afbb6877e7dfa76373b0c8178ffb00c"
+    },
+    "brass-aged/brass-aged.orm.ktx2": {
+      "role": "orm",
+      "png_bytes": 1585442,
+      "ktx2_bytes": 880031,
+      "gpu_bytes_astc4x4": 1398128,
+      "sha256": "bd07515bf1f352d3f7cfd7af29dba4762b8a6f90e22b99ae7c5e11fa6dd0a35d"
+    },
+    "brass-polished/brass-polished.basecolor.ktx2": {
+      "role": "basecolor",
+      "png_bytes": 718130,
+      "ktx2_bytes": 271214,
+      "gpu_bytes_astc4x4": 1398128,
+      "sha256": "ea9e10cc91374c8c8f5806133f1801df6dfce454017871a9f7a609600d503883"
+    },
+    "brass-polished/brass-polished.normal.ktx2": {
+      "role": "normal",
+      "png_bytes": 2527311,
+      "ktx2_bytes": 1156774,
+      "gpu_bytes_astc4x4": 1398128,
+      "sha256": "90e9a727b63475dd2f5f21ff302f3815cc849629f5b47c371026c5e3e82351c1"
+    },
+    "brass-polished/brass-polished.orm.ktx2": {
+      "role": "orm",
+      "png_bytes": 1520663,
+      "ktx2_bytes": 765000,
+      "gpu_bytes_astc4x4": 1398128,
+      "sha256": "ba95ad4306359fb3930da2c8359844f319acdf20f52321a0b587646f0a5920f4"
+    },
+    "walnut/walnut.basecolor.ktx2": {
+      "role": "basecolor",
+      "png_bytes": 1248557,
+      "ktx2_bytes": 690185,
+      "gpu_bytes_astc4x4": 1398128,
+      "sha256": "7d49dadf3b5d7a598cf14eb68b957fde82d17a403dff4114e2d339954c4e2698"
+    },
+    "walnut/walnut.normal.ktx2": {
+      "role": "normal",
+      "png_bytes": 1660589,
+      "ktx2_bytes": 1031553,
+      "gpu_bytes_astc4x4": 1398128,
+      "sha256": "e0aae949afcc4002fed059a3dcf2cbc3f49cff4cb702e0a23bcde14d51689c5b"
+    },
+    "walnut/walnut.orm.ktx2": {
+      "role": "orm",
+      "png_bytes": 961034,
+      "ktx2_bytes": 613000,
+      "gpu_bytes_astc4x4": 1398128,
+      "sha256": "429d9d4eccb74bc7548a9e62bbb80059171ba1f88a1a05a3d2ab27b00091e052"
+    },
+    "stone-floor/stone-floor.basecolor.ktx2": {
+      "role": "basecolor",
+      "png_bytes": 1176848,
+      "ktx2_bytes": 672872,
+      "gpu_bytes_astc4x4": 1398128,
+      "sha256": "26f369f34aa88933592c389f78513c2998e36ff10c62a52dfba9a8d2afc09d56"
+    },
+    "stone-floor/stone-floor.normal.ktx2": {
+      "role": "normal",
+      "png_bytes": 2275857,
+      "ktx2_bytes": 1136385,
+      "gpu_bytes_astc4x4": 1398128,
+      "sha256": "cc20e0fb5500d7b2db46589d92a8595998c5d4a78bd65ef2002cb546cff13e3b"
+    },
+    "stone-floor/stone-floor.orm.ktx2": {
+      "role": "orm",
+      "png_bytes": 719049,
+      "ktx2_bytes": 550140,
+      "gpu_bytes_astc4x4": 1398128,
+      "sha256": "01bd26a74331ef610b3a9245c03b6d0981a6c6ffaf3712ead9ab0e9a220792af"
+    },
+    "stained-glass/stained-glass.basecolor.ktx2": {
+      "role": "basecolor",
+      "png_bytes": 1581762,
+      "ktx2_bytes": 993082,
+      "gpu_bytes_astc4x4": 1398128,
+      "sha256": "ece416d27ec83505e1c171c2b64c37fe795adde9ec99abd77b8251580f79f2bc"
+    },
+    "stained-glass/stained-glass.normal.ktx2": {
+      "role": "normal",
+      "png_bytes": 1283442,
+      "ktx2_bytes": 774114,
+      "gpu_bytes_astc4x4": 1398128,
+      "sha256": "83e7774ab6b0ca3f39ab1cd3cf6d06f6d4aebaf74187dc57c4389acb16c25bac"
+    },
+    "stained-glass/stained-glass.orm.ktx2": {
+      "role": "orm",
+      "png_bytes": 615147,
+      "ktx2_bytes": 478669,
+      "gpu_bytes_astc4x4": 1398128,
+      "sha256": "77ac3584d2b6fa13f8a3c5df302a1d45b3b280c62e9528eb57c6ce0fc8728a05"
+    },
+    "stained-glass/stained-glass.emissive.ktx2": {
+      "role": "emissive",
+      "png_bytes": 1581762,
+      "ktx2_bytes": 993082,
+      "gpu_bytes_astc4x4": 1398128,
+      "sha256": "ece416d27ec83505e1c171c2b64c37fe795adde9ec99abd77b8251580f79f2bc"
+    },
+    "wallpaper/wallpaper.basecolor.ktx2": {
+      "role": "basecolor",
+      "png_bytes": 1605017,
+      "ktx2_bytes": 924819,
+      "gpu_bytes_astc4x4": 1398128,
+      "sha256": "6dc2fad5bfc67f1b461f3b8b61ecc76c7e0cc9c3b4682d8714dac669dfc5e8f9"
+    },
+    "wallpaper/wallpaper.normal.ktx2": {
+      "role": "normal",
+      "png_bytes": 1353651,
+      "ktx2_bytes": 921738,
+      "gpu_bytes_astc4x4": 1398128,
+      "sha256": "1e3977c9c347dc40a9254af66df159b153a09005447e118345b7f2035287e8bd"
+    },
+    "wallpaper/wallpaper.orm.ktx2": {
+      "role": "orm",
+      "png_bytes": 594283,
+      "ktx2_bytes": 494112,
+      "gpu_bytes_astc4x4": 1398128,
+      "sha256": "765a6b2c5915929628df0429d9021a329cde3657b4f1db20d97564e6a625a8e3"
+    }
+  },
+  "totals": {
+    "png_bytes": 27309010,
+    "ktx2_bytes": 15531520,
+    "gpu_bytes_astc4x4": 26564432,
+    "gpu_bytes_uncompressed_rgba8": 106257728
+  }
+}

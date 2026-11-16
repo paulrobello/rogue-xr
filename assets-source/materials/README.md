@@ -40,13 +40,22 @@ Rebuild: `python3 -I scripts/assets/build_materials.py [--only name,name]` (syst
 
 ## Budget
 
-Uncompressed, each 1024 px RGBA map with mips takes about 5.6 MB of GPU memory, so the 19 maps take about 106 MB. That is too much for Quest 3, so the runtime will load KTX2 copies (P4-T7). The KTX2 copies and their sizes are pending, because KTX-Software is not installed and downloading it needs Paul's approval.
+Each map has a KTX2 copy beside its PNG (`<name>.<role>.ktx2`), made by `python3 -I scripts/assets/encode_materials_ktx2.py` with KTX-Software 4.4.2, installed from Khronos's signed and notarized release into `~/.local/opt/ktx-software-4.4.2`. The encoding is UASTC at quality 2 with RDO, Zstandard level 18 and an encoder-generated mip chain. The copies are stored bottom-up, because three.js flips PNGs on upload but cannot flip compressed data. Per-file sizes and sha256 are in `public/assets/materials/ktx2-report.json`.
+
+| All 19 maps | PNG | KTX2 |
+| --- | --- | --- |
+| Download | 27.3 MB | 15.5 MB |
+| GPU memory with mips | about 106 MB (RGBA8) | 26.6 MB (ASTC 4x4 on Quest 3) |
+
+The two copies of the stained-glass base colour and emissive maps are identical, about 1 MB each. Pointing the emissive role at the base colour file would save that if memory gets tight.
+
+KTX2 check: `?view=material-proof&tex=ktx2` loads the copies through `KTX2Loader`. Rendered against the PNG path at four views (near brass, grazing stone, warm glass and wallpaper, 70 degree oblique), the mean difference is 0.16 to 2.4 out of 255. A vertically flipped comparison differs by 28 to 59 out of 255, which confirms orientation and normal-map green match. That was measured on desktop Chrome on an M-series Mac, whose transcode target differs from Quest 3's ASTC.
 
 ## Validation (`validate-generated-assets`, 2026-11-15)
 
 | Gate | Status | Evidence |
 | --- | --- | --- |
-| Technical | Pass, except KTX2 | All 6 raw sha256 values match `provenance.json`. All 19 runtime maps fully decode as 1024x1024 RGB and match the sha256 in `report.json`. Every `materials.json` reference exists. The rebuild is byte-identical. Seam, mip and live-render checks are in the table above, and `tests/materials.test.ts` covers manifest parsing, colour spaces, ORM binding and tile repeat. KTX2 copies and their sizes are pending. |
+| Technical | Pass on desktop | All 6 raw sha256 values match `provenance.json`. All 19 runtime maps fully decode as 1024x1024 RGB and match the sha256 in `report.json`. Every `materials.json` reference exists. The rebuild is byte-identical. Seam, mip and live-render checks are in the table above, and `tests/materials.test.ts` covers manifest parsing, colour spaces, ORM binding, tile repeat and the KTX2 copies. All 19 KTX2 copies render within 2.4 of 255 of the PNGs. |
 | Creative | Pending owner review | Live sheet and 2x2 sheet in `docs/verification/` |
 | Rights | Pending | Generated under Paul's Higgsfield account with spend approved in the PRD. The plan's commercial-use terms are not recorded in the repo. |
 | Owner | Pending | Paul has not reviewed the set |
