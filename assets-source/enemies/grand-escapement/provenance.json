@@ -356,6 +356,97 @@
       "path": "assets-source/enemies/grand-escapement/grand-escapement.fidelity-compare.jpg",
       "sha256": "8673cd12d331b49bfb75447cc4081c601a10f54c4f522fff89661c5da318e395"
     },
-    "independentScore": "pending"
+    "independentScore": {
+      "score": 77,
+      "scale": "0-100 visual fidelity to the concept",
+      "scorer": "independent reviewer agent (separate from the authoring agent; did not build the model)",
+      "date": "2026-11-16",
+      "acceptanceBar": 80,
+      "clearsBar": false,
+      "rubric": [
+        {
+          "criterion": "silhouette and proportions",
+          "points": 25,
+          "max": 30,
+          "note": "The boxy case with pediment on long brass legs, the long arms with anchors and the bell crown match the concept closely. The shoulders are bulbous spheres rather than layered pauldrons, the case reads slightly tall and narrow, and the side view holds the anchors edge-on behind the legs."
+        },
+        {
+          "criterion": "signature features",
+          "points": 21,
+          "max": 25,
+          "note": "Present and readable: the case and pediment, the glazed double doors, the pendulum and escapement wheel through the glass, both anchors, the bell crown, the back winding key and the sapphire inlays. In phase 2 the doors and side plates open on the same skeleton. The eyes read as goggle rings rather than glowing slits, and in phase 1 the core is a flat amber pane rather than a glow behind frosted glass."
+        },
+        {
+          "criterion": "surface detail and material read",
+          "points": 13,
+          "max": 20,
+          "note": "The case mouldings, door frames and brass trims read well, and the glass is convincingly transparent in the engine. The brass limbs are smooth with no engraving, and the case wood has little painted value variation."
+        },
+        {
+          "criterion": "colour and value",
+          "points": 10,
+          "max": 15,
+          "note": "The mahogany is lighter than the sheet's near-black, the brass is more saturated, and the phase-2 wheel reads peach without the sheet's blaze (the convention is accepted, but the wheel should still dominate the case)."
+        },
+        {
+          "criterion": "readability at play distance",
+          "points": 8,
+          "max": 10,
+          "note": "In the engine shots the case, anchors and open phase-2 case are unmistakable. In phase 1 the core does not pop as a focal light."
+        }
+      ],
+      "topFixes": [
+        "Give phase 1 a bright core behind frosted glass (a stronger emissive pendulum bob and backlit wheel), and make the phase-2 escapement wheel blaze clearly brighter than the case.",
+        "Add glowing amber eye slits on a face plate that reads from the front and the side.",
+        "Darken the case toward the sheet's near-black mahogany, and replace the sphere shoulders with layered, engraved pauldrons."
+      ],
+      "method": "independent visual review against assets-source/concepts/escapement-sheet-1.png by a separate reviewer agent. Judged the concept sheet at native resolution against the front, side and back orthographic compare (front panels cropped and enlarged), the low 3/4 and phase-end Blender renders, and the seven in-engine clip shots (including phase change mid and end, seated player about 2.6 m). Rubric: silhouette and proportions 30, signature features 25, surface detail and material read 20, colour and value 15, readability at play distance in the engine shots 10.",
+      "evidence": [
+        {
+          "path": "assets-source/concepts/escapement-sheet-1.png",
+          "sha256": "42f8031f0391d392cbafd30756f7c69fde1a3c0c216f37aef3fc7060c8a61b9f"
+        },
+        {
+          "path": "assets-source/enemies/grand-escapement/grand-escapement.fidelity-compare.jpg",
+          "sha256": "8673cd12d331b49bfb75447cc4081c601a10f54c4f522fff89661c5da318e395"
+        },
+        {
+          "path": "assets-source/enemies/grand-escapement/staging/renders/model-low-three-quarter.png",
+          "sha256": "846b0b5dfb378d1565e03d4ce496953f4a7d1103712fa657932cd61ae9b4e0ec"
+        },
+        {
+          "path": "assets-source/enemies/grand-escapement/staging/renders/anim-phase-end.png",
+          "sha256": "2d73afb697f2a1fafc3045fa89b31de7f13e85a2de52e589a4341f1b8ab29215"
+        },
+        {
+          "path": "assets-source/enemies/grand-escapement/staging/engine/idle.jpg",
+          "sha256": "23eb251591f6a2a51ee0fb87b3963ef268e626d6419894db48d00dde27e69ef4"
+        },
+        {
+          "path": "assets-source/enemies/grand-escapement/staging/engine/attack.jpg",
+          "sha256": "a752e5dc32faaff3149597b66bf4a252f2fbc477be5403ae71727fa49cc74ae0"
+        },
+        {
+          "path": "assets-source/enemies/grand-escapement/staging/engine/hit.jpg",
+          "sha256": "28f79e33f4a386f77d555fac7e9de81f802675a1aead15ac4946364c851abd0f"
+        },
+        {
+          "path": "assets-source/enemies/grand-escapement/staging/engine/frozen.jpg",
+          "sha256": "9903f80e11bc087b77241f2fc601541dbf16819dfa03f24a9553d09b2eee7064"
+        },
+        {
+          "path": "assets-source/enemies/grand-escapement/staging/engine/death.jpg",
+          "sha256": "2972db4d7ef0f55ed80b6b902ac5b577907671f60568b659213ea200524cb9f4"
+        },
+        {
+          "path": "assets-source/enemies/grand-escapement/staging/engine/phase-change-mid.jpg",
+          "sha256": "bf4a007a53b742400394a32678902717d807081c0cec33e9146fbe80dad77543"
+        },
+        {
+          "path": "assets-source/enemies/grand-escapement/staging/engine/phase-change-end.jpg",
+          "sha256": "429af1bbfc49c6c03d9bf1df816c6bd5ba6ed4a4b1a3b84fef15bb67cbd75980"
+        }
+      ]
+    }
   }
 }

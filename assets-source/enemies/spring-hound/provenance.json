@@ -324,6 +324,89 @@
       "path": "assets-source/enemies/spring-hound/spring-hound.fidelity-compare.jpg",
       "sha256": "7b30831c46c767096e24702f8916ae2eb5d7dc7faa4cbf0073a3c89d48388c62"
     },
-    "independentScore": "pending"
+    "independentScore": {
+      "score": 61,
+      "scale": "0-100 visual fidelity to the concept",
+      "scorer": "independent reviewer agent (separate from the authoring agent; did not build the model)",
+      "date": "2026-11-16",
+      "acceptanceBar": 80,
+      "clearsBar": false,
+      "rubric": [
+        {
+          "criterion": "silhouette and proportions",
+          "points": 19,
+          "max": 30,
+          "note": "Side view keeps the long, low body, the coil spine and the key tail, so the outline matches at a glance. The legs are straight stiff tubes without the concept's angled hocks and tapered forearm plates, the head is a long flat crocodile snout instead of the greyhound skull, and head-on the skull is narrow and dark with ears that flare like horns."
+        },
+        {
+          "criterion": "signature features",
+          "points": 15,
+          "max": 25,
+          "note": "Present and readable: the coiled spring spine, the neck coils, the winding key on a segmented tail and the hinged toothed jaw. Weak or missing: the chest grille is unlit bars between two peach side lenses, so the lenses out-read the core. The eye slits are small peach dashes, and the ruby bosses are brass caps. The ruby is a choice, not the budget: the warden and escapement carry jewel colour through COLOR_0 within 4 materials, while the hound spent a slot on a second brass set."
+        },
+        {
+          "criterion": "surface detail and material read",
+          "points": 11,
+          "max": 20,
+          "note": "The plates separate cleanly over gunmetal joints. They are smooth, with none of the concept's engraved panel lines, seams or rivets. The hammered normal reads as noise rather than painted wear, and the paws are simplified blocks."
+        },
+        {
+          "criterion": "colour and value",
+          "points": 9,
+          "max": 15,
+          "note": "The brass reads saturated orange-copper against the concept's olive gold, the ruby accent is absent, and the glow reads peach and dim (the GLOW_STRENGTH convention is accepted; the failure is that it does not act as a focal light)."
+        },
+        {
+          "criterion": "readability at play distance",
+          "points": 7,
+          "max": 10,
+          "note": "The engine shots read clearly as a low brass hound, distinct from the upright roster. The face goes dark head-on and no chest light marks the hit-reaction focal point."
+        }
+      ],
+      "topFixes": [
+        "Make the chest core the focal light: a bright hound-glow panel behind the grille bars, larger and brighter than the side lenses, plus brighter and longer eye slits.",
+        "Restore the ruby bosses through COLOR_0 on a factor material, as the warden's planets and the escapement's sapphires do, or merge the two brass sets to free a material slot.",
+        "Reshape the head into a broader, shorter greyhound skull with folded rose ears and a lit face. Give the legs angled hocks and tapered, engraved forearm plates."
+      ],
+      "method": "independent visual review against assets-source/concepts/hound-sheet-1.png by a separate reviewer agent. Judged the concept sheet at native resolution against the side, front and back orthographic compare, the owner review sheet, the low 3/4 Blender render and the five in-engine clip shots (seated player, about 2.6 m). Rubric: silhouette and proportions 30, signature features 25, surface detail and material read 20, colour and value 15, readability at play distance in the engine shots 10.",
+      "evidence": [
+        {
+          "path": "assets-source/concepts/hound-sheet-1.png",
+          "sha256": "7f16cf73b18efffb7a612cc1f6a01fdadc4e20f06a0fcadb84fb94e07b50c7e6"
+        },
+        {
+          "path": "assets-source/enemies/spring-hound/spring-hound.fidelity-compare.jpg",
+          "sha256": "7b30831c46c767096e24702f8916ae2eb5d7dc7faa4cbf0073a3c89d48388c62"
+        },
+        {
+          "path": "assets-source/enemies/spring-hound/spring-hound.review-sheet.jpg",
+          "sha256": "b76084e9426d4530aac5d139e4ed19e2910df76bf86e9abc9c804b6575a7bd9c"
+        },
+        {
+          "path": "assets-source/enemies/spring-hound/staging/renders/model-low-three-quarter.png",
+          "sha256": "3fe78d924918ffe0b2a2ec422a5cea5f5cc379cba8fa0db3dc74cedd867d5bb3"
+        },
+        {
+          "path": "assets-source/enemies/spring-hound/staging/engine/idle.jpg",
+          "sha256": "23aa7ba017a9874540d3da1455e4eb081e41bf1315d096c87b937e38ee43bf77"
+        },
+        {
+          "path": "assets-source/enemies/spring-hound/staging/engine/attack.jpg",
+          "sha256": "fa7a1c55d08a101244066a13fe7addbf4c1128c9171ee3037cd88092c69f3891"
+        },
+        {
+          "path": "assets-source/enemies/spring-hound/staging/engine/hit.jpg",
+          "sha256": "89dadf4e0ad0a2158fd348f0065166cfdff8386b5df514f083d1c60fd5ce7a8c"
+        },
+        {
+          "path": "assets-source/enemies/spring-hound/staging/engine/frozen.jpg",
+          "sha256": "31364d837636321f7f6bcf223ae28454c45a7d7e2e857a4f614c15f81df74778"
+        },
+        {
+          "path": "assets-source/enemies/spring-hound/staging/engine/death.jpg",
+          "sha256": "dd0c2c32dc7bcfe57ca6fe16efac2c7dccd674ff249f3f98193d3a1a7561fbdc"
+        }
+      ]
+    }
   }
 }

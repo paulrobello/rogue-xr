@@ -328,6 +328,85 @@
       "path": "assets-source/enemies/orrery-warden/orrery-warden.fidelity-compare.jpg",
       "sha256": "6371655a269d935a6e1d7d4594d72c0c1049018c4db76c1a087dce824df53784"
     },
-    "independentScore": "pending"
+    "independentScore": {
+      "score": 72,
+      "scale": "0-100 visual fidelity to the concept",
+      "scorer": "independent reviewer agent (separate from the authoring agent; did not build the model)",
+      "date": "2026-11-16",
+      "acceptanceBar": 80,
+      "clearsBar": false,
+      "rubric": [
+        {
+          "criterion": "silhouette and proportions",
+          "points": 22,
+          "max": 30,
+          "note": "The halo rings, the tilted orbit band and the long plate skirt give the right outline. The greaves and sabatons are wide boxy blocks, the arms are plain tubes with box-palm hands and the pauldrons are domes, so the concept's slender, tapered figure turns stocky below the skirt. In side view the orbit band sits in front of the chest."
+        },
+        {
+          "criterion": "signature features",
+          "points": 20,
+          "max": 25,
+          "note": "Present: two halo rings, the orbit band with ruby, sapphire and emerald planets, shoulder jewels, the eclipse disc and the sun core. The core is a flat peach disc with no bright centre, and the eyes are dim peach dots rather than glowing lights."
+        },
+        {
+          "criterion": "surface detail and material read",
+          "points": 12,
+          "max": 20,
+          "note": "The plates separate, and the skirt tassets carry gunmetal grooves. Elsewhere the cuirass, pauldrons, vambraces and greaves are smooth with no engraving or rivets, and the brushed streak texture looks stretched on the skirt."
+        },
+        {
+          "criterion": "colour and value",
+          "points": 10,
+          "max": 15,
+          "note": "The planets have correct jewel tones. The brass is brighter and yellower than the concept's bronze, the skirt and outer ring go cream under the back key, and the core reads salmon (the glow convention is accepted, but it does not out-shine the brass)."
+        },
+        {
+          "criterion": "readability at play distance",
+          "points": 8,
+          "max": 10,
+          "note": "The halo and planets read clearly in every engine shot and separate it from the Sentry. The core is visible, but it is not a focal light."
+        }
+      ],
+      "topFixes": [
+        "Make the sun core a focal light, with a hot inner disc brighter than its rim and brighter eye lights, so it out-reads the polished brass.",
+        "Slim the lower legs into tapered, segmented greaves with layered, pointed sabatons, and sculpt the hands, to restore the slender silhouette.",
+        "Add engraved panel lines and rivets to the cuirass, pauldrons and vambraces, and pull the skirt value down toward the concept bronze."
+      ],
+      "method": "independent visual review against assets-source/concepts/warden-sheet-1.png by a separate reviewer agent. Judged the concept sheet at native resolution against the front, side and back orthographic compare (front panels cropped and enlarged), the low 3/4 Blender render and the five in-engine clip shots (seated player, about 2.6 m). The spear artifact outside the sheet panels was ignored. Rubric: silhouette and proportions 30, signature features 25, surface detail and material read 20, colour and value 15, readability at play distance in the engine shots 10.",
+      "evidence": [
+        {
+          "path": "assets-source/concepts/warden-sheet-1.png",
+          "sha256": "c07d34ae5d7412f26c561508bc5a80f14de584ffebbcff31272cc356b07ec5c7"
+        },
+        {
+          "path": "assets-source/enemies/orrery-warden/orrery-warden.fidelity-compare.jpg",
+          "sha256": "6371655a269d935a6e1d7d4594d72c0c1049018c4db76c1a087dce824df53784"
+        },
+        {
+          "path": "assets-source/enemies/orrery-warden/staging/renders/model-low-three-quarter.png",
+          "sha256": "e46c7d2a272b07a9fdbe9ac431d6681e482b6ffb5ecb348993ac006d7c6501b1"
+        },
+        {
+          "path": "assets-source/enemies/orrery-warden/staging/engine/idle.jpg",
+          "sha256": "3c06e6601183d30ae4230f0b0dfd7d3c68465e9a15ed5ad243e2af4024c8b139"
+        },
+        {
+          "path": "assets-source/enemies/orrery-warden/staging/engine/attack.jpg",
+          "sha256": "3b6457a07a00a7555963386e4f9513af522e01caebdaf7eaa1161b172f2989aa"
+        },
+        {
+          "path": "assets-source/enemies/orrery-warden/staging/engine/hit.jpg",
+          "sha256": "b69592340ac7c9a57f318192dd06a527f4b2c52f2a4c7ede8b0ff0854803f430"
+        },
+        {
+          "path": "assets-source/enemies/orrery-warden/staging/engine/frozen.jpg",
+          "sha256": "a6502c9761f5678f1a760fa8667c2ebe2f7ffe93ad232ad57e299f42e1f4b1b2"
+        },
+        {
+          "path": "assets-source/enemies/orrery-warden/staging/engine/death.jpg",
+          "sha256": "f0c07f50038c402d71d4c58f2cc4ad6fef1f4b9dfe00f0a1c2f731749d9163b4"
+        }
+      ]
+    }
   }
 }

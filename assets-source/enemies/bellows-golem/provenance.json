@@ -305,5 +305,89 @@
       "status": "unscored",
       "notes": "create-rigged-character-assets requires an independent >= 80/100 score; unscored means unaccepted"
     }
-  ]
+  ],
+  "independentScore": {
+    "score": 43,
+    "scale": "0-100 visual fidelity to the concept",
+    "scorer": "independent reviewer agent (separate from the authoring agent; did not build the model)",
+    "date": "2026-11-16",
+    "acceptanceBar": 80,
+    "clearsBar": false,
+    "rubric": [
+      {
+        "criterion": "silhouette and proportions",
+        "points": 12,
+        "max": 30,
+        "note": "The base idea is there: a barrel torso on short legs, two chimneys and a small domed head. The design calls it the broadest shape in the roster because of massive pauldrons, long gorilla arms and cylinder forearms ending in huge round fists at knee height. The model has sphere shoulders, thin stick upper arms, faceted cuffs ending at the hip and small dark ball fists in brass claws. The lower body is a faceted brass bucket rather than a pleated bellows, and the overall width falls short of the concept."
+      },
+      {
+        "criterion": "signature features",
+        "points": 10,
+        "max": 25,
+        "note": "Present: the barrel with vertical brass straps and a round chest grille, the two chimneys, and round eyes (the documented deviation). Missing or wrong: the bellows pleats are black rings rather than walnut pleats, and the huge fists are absent. The chest grille does not glow even though a golem-glow material exists (the grille samples pale tan, about sRGB 196, 157, 118). There are no emerald inlays, no back grille, and the chimney mouths have only thin peach rims."
+      },
+      {
+        "criterion": "surface detail and material read",
+        "points": 9,
+        "max": 20,
+        "note": "The walnut grain on the barrel reads well. The brass parts are low-segment prisms with flat-shaded facets, and in the engine a blown-out white facet stripe runs down each forearm. The feet are plain trapezoid blocks."
+      },
+      {
+        "criterion": "colour and value",
+        "points": 6,
+        "max": 15,
+        "note": "The barrel walnut measures about sRGB 140, 93, 64 in the engine idle shot, against about 84, 53, 34 in the concept and the art bible's oiled walnut #583C26. That is roughly 1.6x too light and reads pinkish. The model has no emerald and no amber focal light."
+      },
+      {
+        "criterion": "readability at play distance",
+        "points": 6,
+        "max": 10,
+        "note": "At 2.6 m it reads as a distinct barrel robot and the raised-fist attack pose reads. It has no focal light, and the small fists and arms do not read as a heavy crusher."
+      }
+    ],
+    "topFixes": [
+      "Rebuild the arms to the concept: layered pauldrons, long arms, large smooth-shaded cylinder forearms and huge rounded brass fists hanging to knee height.",
+      "Use golem-glow on the front and back chest grilles and the chimney mouths so the core reads as the focal light, and add the emerald shoulder, elbow and knee inlays through COLOR_0.",
+      "Darken the walnut to the art-bible value. Replace the black rings with walnut or leather bellows pleats, and smooth-shade the faceted brass."
+    ],
+    "method": "independent visual review against assets-source/concepts/golem-sheet-1.png by a separate reviewer agent. No fidelity-compare sheet exists, so the concept sheet was judged at native resolution directly against the low front, side and 3/4 Blender renders, the owner review sheet and the five in-engine clip shots (seated player, 2.6 m), with a 2x crop of the idle shot. Walnut value was measured as the median sRGB of barrel patches. Rubric: silhouette and proportions 30, signature features 25, surface detail and material read 20, colour and value 15, readability at play distance in the engine shots 10.",
+    "evidence": [
+      {
+        "path": "assets-source/concepts/golem-sheet-1.png",
+        "sha256": "8c5bafcf4a25372cab90935515ca4372933bb5c83d61213a528958a1ec29352b"
+      },
+      {
+        "path": "assets-source/enemies/bellows-golem/bellows-golem.review-sheet.jpg",
+        "sha256": "c4b8ae645848ae5f0dc3775f8c3d79a77d52ada157e7eb57984768ae7311d9d0"
+      },
+      {
+        "path": "assets-source/enemies/bellows-golem/staging/renders/model-low-front.png",
+        "sha256": "18c722d4b226619e41efa2e8e3b8722af57f034f537e8ac7f952f48e58fafd94"
+      },
+      {
+        "path": "assets-source/enemies/bellows-golem/staging/renders/model-low-side.png",
+        "sha256": "416537dd2bb4d748ddeb48b0a15930d8c3a1ada679072b4dab836e288da28ddf"
+      },
+      {
+        "path": "assets-source/enemies/bellows-golem/staging/engine/idle.jpg",
+        "sha256": "29aa469c87328d15afb8e213f8aaa68eade199074f01c78a74c913084a9f2b80"
+      },
+      {
+        "path": "assets-source/enemies/bellows-golem/staging/engine/attack.jpg",
+        "sha256": "fe72f922d9a0a76509c003a7e78b337c5e08c8e981f241fc3966043aeb9d5425"
+      },
+      {
+        "path": "assets-source/enemies/bellows-golem/staging/engine/hit.jpg",
+        "sha256": "9accc0b66f27e85e30436db700ecf8d6e315ac4d96ce06f417998eaa0d4aa917"
+      },
+      {
+        "path": "assets-source/enemies/bellows-golem/staging/engine/frozen.jpg",
+        "sha256": "7558be9cd16b6fee5ebaaa4fba661d16a22945b1cd80b51de1bbc1650dd637f9"
+      },
+      {
+        "path": "assets-source/enemies/bellows-golem/staging/engine/death.jpg",
+        "sha256": "0a0f1a5a1d2e2c0ce22dd463010c9aafae88b3536b7c8355c6949200b36f8a7e"
+      }
+    ]
+  }
 }
