@@ -1,14 +1,14 @@
 {
-  "glb_sha256": "ab4f95836787a8b380173125c9345e7a9b71a7836eb139c6233237ded80efec0",
-  "glb_bytes": 1826348,
-  "triangles": 21792,
+  "glb_sha256": "11adc35a1ac44871cb261dc5717d03366a9b9fa10e93b06bcdfdea079e02aab4",
+  "glb_bytes": 1886280,
+  "triangles": 22380,
   "materials": [
     "brass-polished",
     "golem-case",
     "golem-metal",
     "golem-glow"
   ],
-  "vertices": 23624,
+  "vertices": 24564,
   "joints": [
     "root",
     "pelvis",
@@ -46,7 +46,7 @@
     "max": [
       1.1619,
       2.1382,
-      0.5656
+      0.5608
     ]
   },
   "clips": {
@@ -96,8 +96,8 @@
       "parent": "head",
       "position": [
         0.0,
-        1.85,
-        -0.57
+        1.9,
+        -0.595
       ]
     },
     "socket-weapon": {
@@ -105,8 +105,8 @@
       "parent": "hand.R",
       "position": [
         0.93,
-        0.26,
-        -0.54
+        0.27,
+        -0.51
       ]
     }
   },

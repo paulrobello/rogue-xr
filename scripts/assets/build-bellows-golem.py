@@ -3,8 +3,8 @@ golem-sheet-1.png, notes assets-source/concepts/p5-automatons-design.md, style d
 built procedurally as rigid plated parts, each weighted 1.0 to one bone of a 22-bone armature, with
 the five automaton clips of the Cog Sentry contract (P4-T6): idle (loop, the bellows pumping),
 attack (the two-fist crush), hit, death (one-shot, ends lying prone) and frozen (the held mid-step
-pose of the time freeze). The silhouette follows the sheet: drum shoulder pauldrons, long gorilla
-arms with big brass forearm cylinders and huge rounded mitt fists hanging to the shins, a walnut
+pose of the time freeze). The silhouette follows the sheet: domed, overhanging shoulder pauldrons, long gorilla
+arms with big brass forearm cylinders and huge clenched mitt fists hanging to the shins, a walnut
 stave barrel over a tapering pleated bellows, two chimneys and a capsule head rising out of a collar
 bezel. The vent intent is modeled as glowing chimney mouths (an ember dome in each) only, with no
 flame or smoke geometry (design notes, art bible).
@@ -71,10 +71,12 @@ MATS = ["brass-polished", CASE, METAL, GLOW]
 BP, CS, MT, GL = range(4)
 # Pseudo slots: build_body maps 10-19 to CS and 20-29 to MT and writes the shade into COLOR_0.
 WN1, WN2, WN3, WD = 10, 11, 12, 14
+WP1, WP2 = 13, 15  # bellows pleats: about half the staves' value (sheet pleats V 0.17 under the lit barrel, V 0.30 to 0.36)
 GM, EM = 20, 21
 SHADES = {WN1: (0x34, 0x1A, 0x07), WN2: (0x2E, 0x17, 0x06), WN3: (0x3A, 0x1E, 0x08), WD: (0x12, 0x0A, 0x05),
+          WP1: (0x10, 0x07, 0x03), WP2: (0x0D, 0x06, 0x02),  # engine V 0.24 at (0x1E, 0x0F, 0x05), 0.20 here (env specular)
           GM: (0x3A, 0x38, 0x3A), EM: (0x0C, 0x8A, 0x3E)}
-SETS = {"brass-polished": 0.15}  # shared set -> normal scale (0.35 read as swirl noise at play distance)
+SETS = {"brass-polished": 0.06}  # shared set -> normal scale (0.35, then 0.15, still read as swirl noise at play distance)
 TILE_METERS = 0.5  # the brass set tiles at 0.5 m (public/assets/materials/materials.json)
 FACTORS = {  # sRGB base, roughness, metallic: the GLB look, and the fallback when the set fails
     "brass-polished": ((0xDE, 0xC1, 0x6A), 0.3, 1.0),
@@ -405,8 +407,8 @@ class Parts:
             edges += [e for e in v.link_edges if e not in edges]
         self._bevel(verts, faces, edges, mat, bone, bevel)
 
-    def sweep(self, path: list, section: list, mat: int, bone: str, hint=(0, 0, 1), scales=None, color=None) -> None:
-        """Section [(u, v)] swept along a polyline; u runs along the path normal from `hint`."""
+    def sweep(self, path: list, section: list, mat: int, bone: str, hint=(0, 0, 1), scales=None, color=None, hints=None) -> None:
+        """Section [(u, v)] swept along a polyline; u runs along the path normal from `hint` (or per point from `hints`)."""
         from mathutils import Vector
 
         P = [Vector(p) for p in path]
@@ -414,7 +416,7 @@ class Parts:
         rows = []
         for i, p in enumerate(P):
             t = (P[min(i + 1, len(P) - 1)] - P[max(i - 1, 0)]).normalized()
-            up = Vector(hint)
+            up = Vector(hints[i] if hints else hint)
             up = (up - t * up.dot(t)).normalized()
             side = t.cross(up)
             s = scales[i] if scales else 1.0
@@ -454,7 +456,7 @@ def _m(p, s: int) -> tuple:
 SY = 0.9  # barrel and bellows depth / width (the side panel's barrel is nearly round)
 BARREL = (1.20, 1.94)  # stave span
 PLEAT_Z = (0.77, 1.215)  # the top pleat stays under the barrel's bottom band through the 3.2 cm pump
-PLEAT_RIDGE = (0.455, 0.515)  # bottom and top pleat ridge radius: the bellows tapers into the barrel
+PLEAT_RIDGE = (0.43, 0.515)  # bottom and top pleat ridge radius: the egg tapers through the ribs to the waist (sheet: +-0.44 at z 0.75)
 PLEAT_DEPTH = 0.03  # ridge to valley
 PLEATS = 6
 
@@ -463,6 +465,24 @@ def pleat_ridge(z: float) -> float:
     """Ridge radius of the pleat at height z (linear in the pleat index, clamped to the stack)."""
     k = (z - PLEAT_Z[0]) / ((PLEAT_Z[1] - PLEAT_Z[0]) / PLEATS) - 0.5
     return PLEAT_RIDGE[0] + (PLEAT_RIDGE[1] - PLEAT_RIDGE[0]) * min(max(k, 0.0), PLEATS - 1) / (PLEATS - 1)
+
+
+HEAD_C, HEAD_AX = (0, 0.385, 1.72), (0, 0.25, 1)  # head shell base and axis (tilted forward), Blender metres
+# Head sections (h along HEAD_AX, half-width, half-depth, forward offset). Below h 0.16 it is the old
+# capsule; above, the sections shift forward so the back keeps the old outline (the band clearance at the
+# hit and death head pitch was +0.7 mm), while the front and sides grow into the taller capsule.
+HEAD_SECS = [(0.0, 0.12, 0.12, 0.0), (0.08, 0.13, 0.13, 0.0), (0.16, 0.13, 0.13, 0.0), (0.22, 0.13, 0.124, 0.011),
+             (0.27, 0.135, 0.113, 0.027), (0.31, 0.122, 0.095, 0.045), (0.348, 0.098, 0.077, 0.055), (0.375, 0.064, 0.054, 0.056),
+             (0.395, 0.022, 0.02, 0.056)]
+
+
+def head_r(h: float) -> float:
+    """Head front distance from HEAD_AX at axial distance h (offset plus half-depth, linear between sections)."""
+    pts = [(hh, cy + ry) for hh, _, ry, cy in HEAD_SECS]
+    for (h0, r0), (h1, r1) in zip(pts, pts[1:]):
+        if h0 <= h <= h1:
+            return r0 + (r1 - r0) * (h - h0) / (h1 - h0)
+    return pts[0][1] if h < 0 else pts[-1][1]
 
 
 def barrel_r(z: float) -> float:
@@ -504,7 +524,7 @@ def mark(P: Parts, label: str) -> None:
 
 
 def build_parts(P: Parts) -> None:
-    from mathutils import Matrix, Vector
+    from mathutils import Matrix
 
     # Barrel: walnut staves in three shades over a dark interior, curling in to the head collar.
     z0, z1 = BARREL
@@ -526,10 +546,19 @@ def build_parts(P: Parts) -> None:
     P.sweep_ring((0, 0, 1.905), (0, 0, 1), r, SY * r, chamfer_rect(0.028, 0.045), BP, "chest", n=P.n(36), arc=(130.0, 410.0))
     P.shell((0, 0, z1 - 0.02), (0, 0, 1), [(0.001, 0.0), (barrel_r(z1 - 0.02) - 0.01, 0.0), (0.26, 0.05), (0.001, 0.075)], WN2, "chest",
             sides=P.n(32), sy=SY)  # closed walnut crown under the collar
-    # Arched back strap: its tilted plane rises from z 1.38 at the sides to 1.49 at the spine; the radii
-    # keep its inner face within 4 mm of the stave surface along the whole arc.
-    r = barrel_r(1.40) + 0.012
-    P.sweep_ring((0, 0, 1.36), (0, 0.25, 1), r, SY * r * 1.045, chamfer_rect(0.024, 0.055), BP, "chest", n=P.n(28), arc=(190.0, 350.0))
+    # Arched back strap, bent into the sheet's arc: z 1.47 at the spine falling as cos(u)^2 to about 1.28
+    # where it tucks under the pauldrons (sheet: 1.47 at the spine, about 1.32 at x +-0.5), swept along the
+    # stave surface. Its radial centre is 1.0 cm out, so the 2.4 cm strap sinks 2 to 3 mm into the stave
+    # edges and up to 9 mm at the stave crowns. Per-point meridian hints keep its thickness on the surface normal.
+    path, hints = [], []
+    for i in range(P.n(28) + 1):
+        u = math.radians(190.0 + 160.0 * i / P.n(28))
+        z = 1.47 - 0.20 * math.cos(u) ** 2
+        r = barrel_r(z) + 0.010
+        dr = (barrel_r(z + 0.01) - barrel_r(z - 0.01)) / 0.02
+        path.append((r * math.cos(u), SY * r * math.sin(u), z))
+        hints.append((dr * math.cos(u), SY * dr * math.sin(u), 1.0))  # the stave meridian: width along the sloping surface
+    P.sweep(path, chamfer_rect(0.055, 0.024), BP, "chest", hints=hints)
     # Vertical straps, front and back, over the barrel and down the bellows to the belt.
     for sign in (1, -1):
         for x in (-0.31, 0.31):
@@ -537,9 +566,10 @@ def build_parts(P: Parts) -> None:
             P.sweep(strap_path(x, z0 - 0.01, 1.90, barrel_r, sign, 0.016, n=10), chamfer_rect(0.022, 0.06), BP, "chest", hint=hint)
             P.sweep(strap_path(x, 0.77, z0 + 0.01, pleat_ridge, sign, 0.012, n=4), chamfer_rect(0.022, 0.06), BP, "spine", hint=hint)
     # Chest core (front) and the smaller back grille: the focal light.
-    # Round grilles with five glowing slots between thick bars; a slot, not a bar, on the centreline,
-    # where the runtime glow ramp is hottest. The back bars stay 3 cm so its five slots stay equal.
-    grille(P, 1.43, 1, 0.20, 0.19, [-0.12, -0.04, 0.04, 0.12])
+    # Round grilles. The front follows the sheet's six slots: five thin bars 2.4 cm wide at 0, +-0.065 and
+    # +-0.13 (sheet: about 2 cm bars at 0, +-0.063, +-0.113), leaving slots of about 4 cm. The back keeps
+    # five slots between 3 cm bars.
+    grille(P, 1.43, 1, 0.20, 0.19, [-0.13, -0.065, 0.0, 0.065, 0.13], bar=0.024)
     grille(P, 1.70, -1, 0.15, 0.145, [-0.09, -0.03, 0.03, 0.09], bar=0.03)
     mark(P, "barrel, straps, grilles")
 
@@ -553,14 +583,16 @@ def build_parts(P: Parts) -> None:
         rr = PLEAT_RIDGE[0] + (PLEAT_RIDGE[1] - PLEAT_RIDGE[0]) * k / (PLEATS - 1)
         rv = rr - PLEAT_DEPTH
         prof = [(rv, 0.0), (rv + 0.018, h * 0.12), (rr, h * 0.38), (rr, h * 0.62), (rv + 0.018, h * 0.88), (rv, h)]
-        P.lathe((0, 0, pz0 + h * k), (0, 0, 1), prof, WN1 if k % 2 else WN2, "bellows" if k >= PLEATS // 2 else "spine",
+        P.lathe((0, 0, pz0 + h * k), (0, 0, 1), prof, WP1 if k % 2 else WP2, "bellows" if k >= PLEATS // 2 else "spine",
                 sides=P.n(28), sy=SY)
     # Brass belt with rivets, iron hips, a brass plate front and back.
-    P.band((0, 0, 0.765), (0, 0, 1), 0.47, 0.05, 0.075, BP, "spine", n=P.n(36), rb=SY * 0.47)
+    # The belt follows the bottom pleat (1 cm into its ridge, as before); the iron hips stay 2.5 cm inside it.
+    rb = PLEAT_RIDGE[0] + 0.015
+    P.band((0, 0, 0.765), (0, 0, 1), rb, 0.05, 0.075, BP, "spine", n=P.n(36), rb=SY * rb)
     for k in range(10):
         a = 2 * math.pi * (k + 0.5) / 10
-        P.ball((0.497 * math.sin(a), SY * 0.497 * math.cos(a), 0.765), 0.014, BP, "spine", segs=(8, 5))
-    P.lathe((0, 0, 0.53), (0, 0, 1), [(0.20, 0.0), (0.32, 0.05), (0.39, 0.16), (0.42, 0.25)], GM, "pelvis", sides=P.n(28), sy=0.85)
+        P.ball(((rb + 0.027) * math.sin(a), SY * (rb + 0.027) * math.cos(a), 0.765), 0.014, BP, "spine", segs=(8, 5))
+    P.lathe((0, 0, 0.53), (0, 0, 1), [(0.20, 0.0), (0.32, 0.05), (0.38, 0.16), (rb - 0.025, 0.25)], GM, "pelvis", sides=P.n(28), sy=0.85)
     for sign in (1, -1):
         plate = [(-0.11, 0.0), (0.11, 0.0), (0.08, -0.17), (0.0, -0.215), (-0.08, -0.17)]
         P.extrude(plate, xz_frame(sign * 0.33) @ Matrix.Translation((0, 0.755, 0)), 0.035, BP, "pelvis", bevel=0.009)
@@ -575,17 +607,20 @@ def build_parts(P: Parts) -> None:
     P.band((0, 0.42, 1.83), collar, 0.19, 0.05, 0.07, BP, "chest", n=P.n(36))
     # The throat's cap stands 1 cm above the sleeve's cap (coplanar caps would z-fight).
     P.lathe((0, 0.39, 1.79), collar, [(0.165, 0.0), (0.165, 0.06)], GM, "chest", sides=P.n(24))
-    hc, hax = (0, 0.385, 1.72), (0, 0.25, 1)
-    P.shell(hc, hax, [(0.001, 0.0), (0.12, 0.0), (0.13, 0.08), (0.13, 0.16), (0.118, 0.22), (0.09, 0.27), (0.05, 0.305), (0.001, 0.315)],
-            BP, "head", sides=P.n(24))
-    hm, _ = axis_frame(hc, Vector(hc) + Vector(hax))
-    ridge = [(0.128, 0.05), (0.132, 0.11), (0.132, 0.16), (0.12, 0.22), (0.092, 0.27), (0.052, 0.305), (0.0, 0.318)]
-    P.sweep([tuple(hm @ Vector((0, r + 0.002, z))) for r, z in ridge], chamfer_rect(0.014, 0.026), BP, "head",
-            hint=tuple(hm.to_3x3() @ Vector((0, 0.6, 1))))
+    # Taller capsule (0.27 wide, top z 2.096, about 11 cm above the band's back rim; sheet: 0.268 wide, top
+    # z 2.04, 11 cm above its ring), unchanged below h 0.16 where it passes the band. A raised face plate
+    # between two seams holds the eyes, which sit on the seams as on the sheet (eyes x +-0.065, z 1.85 there;
+    # 1.90 here so they clear the band's front lip from the seated camera).
+    hc, hax = HEAD_C, HEAD_AX
+    hl = HEAD_SECS[-1][0]
+    htop = tuple(c + a * hl / math.hypot(*hax) for c, a in zip(hc, hax))
+    P.loft(hc, htop, [(hh / hl, rx, ry, 2.0, 0.0, cy) for hh, rx, ry, cy in HEAD_SECS], BP, "head")
+    P.wrap(hc, htop, lambda v: head_r(v * hl) + 0.006, -0.62, 0.62, 0.014, BP, "head",
+           v0=0.12 / hl, v1=0.35 / hl, nv=6, bevel=0.003, crown=0.003)
     for s in (1, -1):
-        # y 0.537 is the shell surface at x 0.058, z 1.85 (measured through the head frame), so the
+        # y 0.561: the plate's front at x 0.062, z 1.90 is y 0.559 (solved through the head frame), so the
         # flattened ball stands about 2 cm proud. Each eye is its own glow island.
-        P.ball((s * 0.058, 0.537, 1.85), 0.037, GL, "head", scale=(1.0, 0.55, 1.0), segs=(P.n(12), P.n(7)))
+        P.ball((s * 0.062, 0.561, 1.90), 0.034, GL, "head", scale=(1.0, 0.55, 1.0), segs=(P.n(12), P.n(7)))
 
     # Chimneys: brass stacks with flared mouths; the throat, a raised inner lip and a low ember dome in the
     # mouth glow. No flame or smoke geometry: p5-automatons-design.md models the vent as an emissive
@@ -606,18 +641,22 @@ def build_parts(P: Parts) -> None:
     for s, n_ in ((1, "R"), (-1, "L")):
         ua, fa, hd = f"upperarm.{n_}", f"forearm.{n_}", f"hand.{n_}"
         S, E, W = _m(SHOULDER, s), _m(ELBOW, s), _m(WRIST, s)
-        # Pauldron drum on the X axis: a block with a flat top edge from the front, a round porthole from
-        # the side (bezel ring, dark hub, emerald boss), with a layered lip at its inner end. The inner end
-        # sinks into the barrel. The gunmetal joint ball is 0.095 so it stays inside the drum's outer face.
+        # Pauldron on the X axis, still a surface of revolution about the shoulder pivot so it turns in place
+        # through the 158-166 degree attack raise (an off-axis plate on the upperarm bone would swing into
+        # the chimneys; one on the clavicle would be pierced by the raised arm). The inner end is unchanged
+        # (chimney clearance); outboard of a groove a wider cap layer overhangs the body by 2.3 cm and domes
+        # over the outer shoulder (the sheet's rounded shoulder plate), with a small bezel, hub and emerald
+        # boss on the domed outer face. The gunmetal joint ball is 0.095 so it stays inside the cap.
         P.ball(S, 0.095, GM, ua)
-        P.lathe((s * 0.50, 0.0, 1.50), (s, 0, 0), [(0.20, 0.0), (0.262, 0.015), (0.275, 0.05), (0.275, 0.20), (0.262, 0.235), (0.215, 0.255),
-                                                    (0.001, 0.265)], BP, ua, sides=P.n(28))
+        P.lathe((s * 0.50, 0.0, 1.50), (s, 0, 0), [(0.20, 0.0), (0.262, 0.015), (0.275, 0.05), (0.275, 0.085), (0.262, 0.095), (0.292, 0.11),
+                                                    (0.298, 0.135), (0.29, 0.165), (0.268, 0.195), (0.232, 0.222), (0.18, 0.243), (0.12, 0.256),
+                                                    (0.001, 0.262)], BP, ua, sides=P.n(28))
         P.band((s * 0.52, 0.0, 1.50), (s, 0, 0), 0.285, 0.03, 0.04, BP, ua, n=P.n(28))
-        P.band((s * 0.766, 0.0, 1.50), (s, 0, 0), 0.19, 0.035, 0.03, BP, ua, n=P.n(28))
-        P.lathe((s * 0.76, 0.0, 1.50), (s, 0, 0), [(0.12, 0.0), (0.12, 0.02)], GM, ua, sides=P.n(20))
-        bx = s * 0.785
-        P.band((bx, 0.0, 1.50), (s, 0, 0), 0.06, 0.022, 0.03, BP, ua, n=P.n(20))
-        P.ball((bx, 0.0, 1.50), 0.054, EM, ua, scale=(0.45, 1.0, 1.0), segs=(P.n(12), P.n(7)))
+        P.band((s * 0.75, 0.0, 1.50), (s, 0, 0), 0.115, 0.025, 0.025, BP, ua, n=P.n(24))
+        P.lathe((s * 0.745, 0.0, 1.50), (s, 0, 0), [(0.08, 0.0), (0.08, 0.02)], GM, ua, sides=P.n(20))
+        bx = s * 0.775
+        P.band((bx, 0.0, 1.50), (s, 0, 0), 0.05, 0.02, 0.026, BP, ua, n=P.n(20))
+        P.ball((s * 0.785, 0.0, 1.50), 0.054, EM, ua, scale=(0.45, 1.0, 1.0), segs=(P.n(12), P.n(7)))
         # Gunmetal upper arm with a brass cuff.
         L1 = math.dist(S, E)
         P.lathe(S, _sub(E, S), [(0.105, 0.0), (0.118, 0.16), (0.112, 0.32), (0.10, L1)], GM, ua, sides=P.n(18))
@@ -631,23 +670,28 @@ def build_parts(P: Parts) -> None:
         P.lathe(E, _sub(W, E), [(0.195, 0.052), (0.195, 0.066)], GM, fa, sides=P.n(32))
         P.lathe(E, _sub(W, E), [(0.20, 0.07), (0.236, 0.074), (0.252, 0.09), (0.252, 0.15), (0.237, 0.162), (0.233, 0.36), (0.252, 0.372),
                                  (0.258, 0.45), (0.25, 0.53), (0.215, 0.55)], BP, fa, sides=P.n(36))
-        # Huge rounded mitt: the back of the hand, one heavy finger roll across the front with a knuckle row
-        # on top and four round fingertip pads along the bottom, and a thumb on the inner side.
+        # Clenched mitt: the back of the hand, four curled fingers side by side across the front over a
+        # gunmetal core, and a thumb wrapped from the inner side across the index and middle fingers. Each
+        # finger is three separate blocks (a forward-pointing knuckle, a front segment and a tucked tip) with
+        # 2 to 2.5 cm creases at the bends, where the dark core shows as on the sheet; one smooth curled roll
+        # read as an open hand's hanging fingers from the seated view. Abutting end caps would z-fight, so
+        # the blocks never touch. Sizes from the sheet's front panel: fist about 0.47 m wide and 0.46 m tall.
         fx, fy = s * 0.93, FIST_Y
         P.band(W, _sub(W, E), 0.17, 0.04, 0.05, GM, hd, n=P.n(20))
         P.loft((fx, 0.17 + fy, 0.14), (fx, 0.17 + fy, 0.51), [(0.0, 0.16, 0.12, 3.0, 0, 0), (0.12, 0.2, 0.15, 3.0, 0, 0),
                                                               (0.82, 0.205, 0.155, 3.0, 0, 0), (1.0, 0.16, 0.12, 3.0, 0, 0)], BP, hd)
         # On this X axis a section's rx runs along world Y (depth) and ry along world Z (height).
-        P.loft((fx - 0.20, 0.31 + fy, 0.25), (fx + 0.20, 0.31 + fy, 0.25), [(0.0, 0.06, 0.08, 2.6, 0, 0), (0.025, 0.10, 0.13, 2.6, 0, 0),
-                                                                            (0.07, 0.13, 0.17, 2.6, 0, 0), (0.93, 0.13, 0.17, 2.6, 0, 0),
-                                                                            (0.975, 0.10, 0.13, 2.6, 0, 0), (1.0, 0.06, 0.08, 2.6, 0, 0)], BP, hd)
-        for dx in (-0.15, -0.05, 0.05, 0.15):
-            P.ball((fx + dx, 0.38 + fy, 0.39), 0.072, BP, hd, segs=(8, 5))
-            P.ball((fx + dx, 0.42 + fy, 0.13), 0.068, BP, hd, scale=(1.0, 0.75, 0.85), segs=(8, 5))
-        tx = s * (0.93 - 0.215)
-        P.ball((tx, 0.17 + fy, 0.42), 0.08, BP, hd, segs=(8, 5))
-        P.tube((tx, 0.17 + fy, 0.42), (s * (0.93 - 0.19), 0.35 + fy, 0.33), 0.07, 0.064, BP, hd, sides=8)
-        P.ball((s * (0.93 - 0.19), 0.35 + fy, 0.33), 0.064, BP, hd, segs=(8, 5))
+        P.loft((fx - 0.175, 0.28 + fy, 0.25), (fx + 0.175, 0.28 + fy, 0.25), [(0.0, 0.06, 0.09, 2.6, 0, 0), (0.06, 0.08, 0.12, 2.6, 0, 0),
+                                                                              (0.94, 0.08, 0.12, 2.6, 0, 0), (1.0, 0.06, 0.09, 2.6, 0, 0)], GM, hd)
+        phalanges = ([(0.19, 0.41), (0.33, 0.41)], [(0.37, 0.335), (0.37, 0.205)], [(0.335, 0.135), (0.23, 0.115)])
+        # Index (inner, thumb side) to little finger (outer): the outer fingers sit a little higher and smaller.
+        for dx, dz, k in ((-0.15, 0.0, 1.0), (-0.05, -0.005, 1.03), (0.05, 0.01, 0.97), (0.15, 0.035, 0.86)):
+            x = fx + s * dx
+            for seg in phalanges:
+                P.sweep([(x, fy + y - (1 - k) * 0.08, z + dz) for y, z in seg], sect(0.043 * k, 0.05 * k, 12, 3.0), BP, hd, hint=(1, 0, 0))
+        thumb = [(0.715, 0.24, 0.43), (0.70, 0.36, 0.40), (0.715, 0.47, 0.36), (0.77, 0.53, 0.335), (0.84, 0.545, 0.325)]
+        P.sweep([(s * x, y, z) for x, y, z in thumb], sect(0.05, 0.05, 12, 2.6), BP, hd, hint=(0, 0, 1), scales=[1.1, 1.05, 1.0, 0.93, 0.82])
+        P.ball((s * 0.84, 0.545, 0.325), 0.041, BP, hd, segs=(8, 5))
         mark(P, f"forearm, fist {n_}")
 
         # Legs: iron hip and thigh under a brass plate, a domed knee with an emerald, a brass greave
@@ -1128,8 +1172,8 @@ def set_slots(obj, mats: list) -> None:
 
 SOCKETS = {
     "socket-hit": ("chest", (0, 0.62, 1.43)),  # in front of the amber core: hit sparks and aim point
-    "socket-eye": ("head", (0, 0.57, 1.85)),  # between the eyes, just in front of them
-    "socket-weapon": ("hand.R", (0.93, 0.54, 0.26)),  # the front centre of the striking right fist's finger roll
+    "socket-eye": ("head", (0, 0.595, 1.90)),  # between the eyes, just in front of them
+    "socket-weapon": ("hand.R", (0.93, 0.51, 0.27)),  # the front centre of the striking right fist's front finger segments
 }
 
 

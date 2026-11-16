@@ -20,7 +20,7 @@
     "max": [
       1.1619,
       2.1382,
-      0.5656
+      0.5608
     ]
   },
   "skeleton": {
@@ -102,8 +102,8 @@
       "parent": "head",
       "position": [
         0.0,
-        1.85,
-        -0.57
+        1.9,
+        -0.595
       ]
     },
     "socket-weapon": {
@@ -111,8 +111,8 @@
       "parent": "hand.R",
       "position": [
         0.93,
-        0.26,
-        -0.54
+        0.27,
+        -0.51
       ]
     }
   },
@@ -129,7 +129,7 @@
     "brass-polished": {
       "set": "brass-polished",
       "tileMeters": 0.5,
-      "normalScale": 0.15
+      "normalScale": 0.06
     },
     "golem-case": {
       "set": null,
@@ -146,17 +146,17 @@
     }
   },
   "budget": {
-    "tris": 21792,
+    "tris": 22380,
     "materials": 4,
     "bones": 22,
     "influences": 4
   },
   "cull": {
     "center": [
-      -0.002,
-      1.448,
-      -0.219
+      0.004,
+      1.45,
+      -0.247
     ],
-    "radius": 2.334
+    "radius": 2.27
   }
 }
