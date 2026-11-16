@@ -1,0 +1,23 @@
+{
+  "lightmap_vs_cycles_diffuse": {
+    "frame_ratio": 0.905,
+    "rmse_srgb": 0.0338,
+    "regions": {
+      "floor": 0.943,
+      "ceiling": 0.894,
+      "left bookcase": 0.845,
+      "right wall": 0.865,
+      "back wall": 1.447
+    }
+  },
+  "ktx2_vs_png": {
+    "mean_abs_diff_255": 1.02,
+    "vs_flipped_png_255": 32.97
+  },
+  "frame_means_255": {
+    "engine.desk.png": 46.6,
+    "engine.hero.diffuse.png": 22.2,
+    "engine.hero.png": 41.9,
+    "engine.hero.png-maps.png": 42.2
+  }
+}

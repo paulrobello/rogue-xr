@@ -1,0 +1,182 @@
+{
+  "template": "study",
+  "glb": "study.glb",
+  "lightmap": {
+    "file": "study.lightmap.ktx2",
+    "uv": 1,
+    "encoding": "srgb-scaled",
+    "scale": 2.987797498703003,
+    "intensity": 9.386443
+  },
+  "id": "study",
+  "kinds": ["combat", "treasure", "rest"],
+  "footprint": {
+    "min": [-4, -4],
+    "max": [4, 4]
+  },
+  "doors": [
+    {
+      "id": "s",
+      "facing": "S",
+      "position": [-1, 0, 4],
+      "width": 1.6
+    },
+    {
+      "id": "e",
+      "facing": "E",
+      "position": [4, 0, -1],
+      "width": 1.6
+    }
+  ],
+  "rotations": [0, 1, 2, 3],
+  "enemySockets": [
+    {
+      "id": "enemy-a",
+      "position": [-1, 0, -2],
+      "yaw": 180
+    },
+    {
+      "id": "enemy-b",
+      "position": [1.5, 0, -2.2],
+      "yaw": 200
+    }
+  ],
+  "lootSockets": [
+    {
+      "id": "desk-drawer",
+      "position": [2.6, 0, 2.6],
+      "yaw": 270
+    }
+  ],
+  "dressingSockets": [
+    {
+      "id": "desk",
+      "position": [2.4, 0, 2.4],
+      "yaw": 225
+    },
+    {
+      "id": "shelf-w",
+      "position": [-3.6, 0, 0],
+      "yaw": 90
+    },
+    {
+      "id": "gear-shaft",
+      "position": [0, 0, 0],
+      "yaw": 0
+    }
+  ],
+  "lightSockets": [
+    {
+      "id": "candles",
+      "position": [2.4, 1.1, 2.4],
+      "yaw": 0
+    },
+    {
+      "id": "window",
+      "position": [0, 2.5, -3.8],
+      "yaw": 0
+    }
+  ],
+  "probe": [0, 1.6, 1],
+  "walkable": [
+    {
+      "min": [-3.6, -3.6],
+      "max": [3.6, 3.6]
+    }
+  ],
+  "colliders": [
+    {
+      "min": [-4.0, 0.0, -4.1],
+      "max": [4.0, 4.0, -3.9]
+    },
+    {
+      "min": [-4.0, 0.0, 3.9],
+      "max": [-1.8, 4.0, 4.1]
+    },
+    {
+      "min": [-0.2, 0.0, 3.9],
+      "max": [4.0, 4.0, 4.1]
+    },
+    {
+      "min": [-4.1, 0.0, -4.0],
+      "max": [-3.9, 4.0, 4.0]
+    },
+    {
+      "min": [3.9, 0.0, -4.0],
+      "max": [4.1, 4.0, -1.8]
+    },
+    {
+      "min": [3.9, 0.0, -0.2],
+      "max": [4.1, 4.0, 4.0]
+    },
+    {
+      "min": [-0.6, 0, -0.6],
+      "max": [0.6, 4, 0.6]
+    },
+    {
+      "min": [-3.46, 0, -4.0],
+      "max": [-0.94, 2.78, -3.55]
+    },
+    {
+      "min": [0.94, 0, -4.0],
+      "max": [3.46, 2.78, -3.55]
+    },
+    {
+      "min": [-4.0, 0, -1.46],
+      "max": [-3.55, 2.78, 1.46]
+    },
+    {
+      "min": [1.721, 0, 1.721],
+      "max": [3.079, 1.07, 3.079]
+    }
+  ],
+  "budget": {
+    "tris": 6948,
+    "materials": 9,
+    "texturePx": 2048
+  },
+  "materials": {
+    "study_stone-floor": {
+      "pbr": "stone-floor",
+      "tileMeters": 1.5
+    },
+    "study_wallpaper": {
+      "pbr": "wallpaper",
+      "tileMeters": 0.75
+    },
+    "study_walnut": {
+      "pbr": "walnut",
+      "tileMeters": 0.5
+    },
+    "study_brass-aged": {
+      "pbr": "brass-aged",
+      "tileMeters": 0.5
+    },
+    "study_brass-polished": {
+      "pbr": "brass-polished",
+      "tileMeters": 0.5
+    },
+    "study_stained-glass": {
+      "pbr": "stained-glass",
+      "tileMeters": 0.6
+    },
+    "study_books": {
+      "maps": {
+        "basecolor": "study.basecolor.ktx2",
+        "normal": "study.normal.ktx2",
+        "orm": "study.orm.ktx2"
+      },
+      "uv": 0
+    },
+    "study_wax": {
+      "color": "#e7d7b8",
+      "roughness": 0.55
+    },
+    "study_flame": {
+      "color": "#ffce81",
+      "emissive": "#ffce81",
+      "emissiveIntensity": 3.0
+    }
+  },
+  "glassEmissiveIntensity": 0.8
+}

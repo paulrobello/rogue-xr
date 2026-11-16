@@ -1,0 +1,414 @@
+{
+  "pieceId": "study",
+  "version": 1,
+  "route": "scripted",
+  "generator": {
+    "path": "scripts/assets/build-room-study.py",
+    "sha256": "c48be956cc1468fc6b7352d16e7173e37a66d3e1ba4f840575f3abbeba217618"
+  },
+  "generatorDeps": [
+    {
+      "path": "scripts/assets/lightmap_helpers.py",
+      "sha256": "c74c968a3d3ed95bae831262af3c5ab1bacedfa0e2e131b95d5d7bf4e59d66ad"
+    }
+  ],
+  "authoringAgent": {
+    "harness": "claude-code (dispatched sub-agent)",
+    "model": "claude-opus-5-5"
+  },
+  "blender": "5.2.2 LTS",
+  "toolVersions": {
+    "ktx": "ktx version: v4.4.2",
+    "gltfExporter": "Blender 5.2.2 bundled io_scene_gltf2"
+  },
+  "blendFiles": {
+    "store": "assets-source/rooms/study/blend (storage ruling pending, PRD project file section 1.5)",
+    "files": {
+      "study_high.blend": {
+        "sha256": "6051842a201630b2c11c8e00bd5d9979e8b182c0e1a2e122fc5c8cce282aa1ce",
+        "bytes": 3933615
+      },
+      "study_low.blend": {
+        "sha256": "1919b753268ea2e04217e3fbd43f95f0a0ab0d8465086161990d57767e8492a7",
+        "bytes": 359203
+      }
+    }
+  },
+  "bake": {
+    "device": "GPU:METAL (Apple M4 Max (GPU - 40 cores))",
+    "lightmap": {
+      "coverage": 0.7133,
+      "scale": 2.987797,
+      "clipped_fraction": 0.00398,
+      "mean_irradiance": 0.206811,
+      "p05_irradiance": 0.0,
+      "percentile": 99.6,
+      "seconds": 7.31,
+      "host_load": [
+        51.49,
+        46.53
+      ],
+      "timing_valid": false,
+      "size": 2048,
+      "samples": 256,
+      "pass": "DIFFUSE direct+indirect, colour off, metallic forced 0, OIDN",
+      "marginPx": 8,
+      "islandPadPx": 10
+    },
+    "books": {
+      "size": 2048,
+      "device": "GPU:METAL (Apple M4 Max (GPU - 40 cores))",
+      "cage_extrusion_m": 0.03,
+      "max_ray_distance_m": 0.08,
+      "ao_distance_m": 0.12,
+      "margin_px": 8,
+      "seconds": {
+        "albedo": 1.22,
+        "normal": 1.08,
+        "ao": 1.55
+      },
+      "coverage": 0.4506,
+      "ao_mean": 0.7662,
+      "ao_p05": 0.275,
+      "albedo_mean_srgb8": [
+        103.0,
+        83.5,
+        71.6
+      ],
+      "normal_mean": [
+        0.49,
+        0.5741,
+        0.8709
+      ],
+      "host_load": [
+        55.6,
+        52.75
+      ]
+    },
+    "ktx2": {
+      "tool": "ktx version: v4.4.2",
+      "encodes": {
+        "study.lightmap.ktx2": "create --format R8G8B8_SRGB --assign-tf srgb --encode uastc --uastc-quality 2 --zstd 18 --generate-mipmap",
+        "study.basecolor.ktx2": "create --format R8G8B8_SRGB --assign-tf srgb --encode uastc --uastc-quality 2 --zstd 18 --generate-mipmap",
+        "study.normal.ktx2": "create --format R8G8B8_UNORM --assign-tf linear --encode uastc --uastc-quality 2 --zstd 18 --generate-mipmap --normalize",
+        "study.orm.ktx2": "create --format R8G8B8_UNORM --assign-tf linear --encode uastc --uastc-quality 2 --zstd 18 --generate-mipmap"
+      }
+    }
+  },
+  "budgets": {
+    "triangles": 6948,
+    "materials": 9,
+    "texturePx": {
+      "study.basecolor.ktx2": {
+        "width": 2048,
+        "height": 2048
+      },
+      "study.lightmap.ktx2": {
+        "width": 2048,
+        "height": 2048
+      },
+      "study.normal.ktx2": {
+        "width": 2048,
+        "height": 2048
+      },
+      "study.orm.ktx2": {
+        "width": 2048,
+        "height": 2048
+      }
+    },
+    "highTriangles": 124581,
+    "glbBytes": 434064
+  },
+  "texelDensityPxPerM": {
+    "lightmap": {
+      "mean_px_per_m": 66.28,
+      "min_px_per_m": 52.93,
+      "max_px_per_m": 70.14
+    },
+    "lightmapBySlot": {
+      "books": {
+        "area_m2": 26.94,
+        "median_px_per_m": 70.1,
+        "min_px_per_m": 58.8
+      },
+      "brass-aged": {
+        "area_m2": 16.81,
+        "median_px_per_m": 69.9,
+        "min_px_per_m": 53.0
+      },
+      "brass-polished": {
+        "area_m2": 7.2,
+        "median_px_per_m": 68.4,
+        "min_px_per_m": 52.9
+      },
+      "flame": {
+        "area_m2": 0.01,
+        "median_px_per_m": 67.0,
+        "min_px_per_m": 58.8
+      },
+      "stained-glass": {
+        "area_m2": 2.26,
+        "median_px_per_m": 59.1,
+        "min_px_per_m": 59.1
+      },
+      "stone-floor": {
+        "area_m2": 64.0,
+        "median_px_per_m": 70.1,
+        "min_px_per_m": 70.1
+      },
+      "wallpaper": {
+        "area_m2": 89.26,
+        "median_px_per_m": 59.1,
+        "min_px_per_m": 58.8
+      },
+      "walnut": {
+        "area_m2": 206.98,
+        "median_px_per_m": 70.1,
+        "min_px_per_m": 58.8
+      },
+      "wax": {
+        "area_m2": 0.07,
+        "median_px_per_m": 68.3,
+        "min_px_per_m": 53.9
+      }
+    }
+  },
+  "pivot": "floor centre, z = 0 (runtime y = 0)",
+  "sockets": {
+    "doors": [
+      {
+        "id": "s",
+        "facing": "S",
+        "position": [
+          -1,
+          0,
+          4
+        ],
+        "width": 1.6
+      },
+      {
+        "id": "e",
+        "facing": "E",
+        "position": [
+          4,
+          0,
+          -1
+        ],
+        "width": 1.6
+      }
+    ],
+    "enemySockets": [
+      {
+        "id": "enemy-a",
+        "position": [
+          -1,
+          0,
+          -2
+        ],
+        "yaw": 180
+      },
+      {
+        "id": "enemy-b",
+        "position": [
+          1.5,
+          0,
+          -2.2
+        ],
+        "yaw": 200
+      }
+    ],
+    "lootSockets": [
+      {
+        "id": "desk-drawer",
+        "position": [
+          2.6,
+          0,
+          2.6
+        ],
+        "yaw": 270
+      }
+    ],
+    "dressingSockets": [
+      {
+        "id": "desk",
+        "position": [
+          2.4,
+          0,
+          2.4
+        ],
+        "yaw": 225
+      },
+      {
+        "id": "shelf-w",
+        "position": [
+          -3.6,
+          0,
+          0
+        ],
+        "yaw": 90
+      },
+      {
+        "id": "gear-shaft",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "yaw": 0
+      }
+    ],
+    "lightSockets": [
+      {
+        "id": "candles",
+        "position": [
+          2.4,
+          1.1,
+          2.4
+        ],
+        "yaw": 0
+      },
+      {
+        "id": "window",
+        "position": [
+          0,
+          2.5,
+          -3.8
+        ],
+        "yaw": 0
+      }
+    ],
+    "probe": [
+      0,
+      1.6,
+      1
+    ]
+  },
+  "derivedFiles": [
+    {
+      "path": "public/assets/rooms/study/study.basecolor.ktx2",
+      "sha256": "4ad918307378e0ef2c5be4ef252370beb4d850c301ff5e774bd6cbffc30e8162",
+      "bytes": 472469
+    },
+    {
+      "path": "public/assets/rooms/study/study.glb",
+      "sha256": "5ca942a30e3599112fa2ed55a975fbec73f5dfec0637fb3c79c7d917fd5f381d",
+      "bytes": 434064
+    },
+    {
+      "path": "public/assets/rooms/study/study.lightmap.ktx2",
+      "sha256": "011e2adb85bd486f240a7a75b3a40c5829680baee40f31caebf22876f6ef3854",
+      "bytes": 2602088
+    },
+    {
+      "path": "public/assets/rooms/study/study.manifest.json",
+      "sha256": "4ae8fc365345b3e676bd0da54f6a8589020fc3acf339bf0fe561c84bc6d8704a",
+      "bytes": 3322
+    },
+    {
+      "path": "public/assets/rooms/study/study.normal.ktx2",
+      "sha256": "0815797da8b347c9556917a18ab2d23ffdeba853675b194a41f71341ec2b28bf",
+      "bytes": 1855663
+    },
+    {
+      "path": "public/assets/rooms/study/study.orm.ktx2",
+      "sha256": "d2c410c88cf1584dee4ab5dc2991d84ff16d2d913e5c3202547dcae5d37c8b5c",
+      "bytes": 1570406
+    }
+  ],
+  "stagingFiles": {
+    "engine-compare.json": "63a4126625f469cc5c5896592fab1359e832b77055d79f5d0f0f51cea78e9c07",
+    "study.basecolor.ktx2": "4ad918307378e0ef2c5be4ef252370beb4d850c301ff5e774bd6cbffc30e8162",
+    "study.basecolor.png": "45d2fca5be44134b6841fd22824081f5df8f6134724746fe096598e9d58241ea",
+    "study.glb": "5ca942a30e3599112fa2ed55a975fbec73f5dfec0637fb3c79c7d917fd5f381d",
+    "study.lightmap.ktx2": "011e2adb85bd486f240a7a75b3a40c5829680baee40f31caebf22876f6ef3854",
+    "study.lightmap.png": "ed2652f2c16645e650d627e085e9d53c166fcf8cf7bc7e38802aeb087970e8ca",
+    "study.manifest.json": "4ae8fc365345b3e676bd0da54f6a8589020fc3acf339bf0fe561c84bc6d8704a",
+    "study.normal.ktx2": "0815797da8b347c9556917a18ab2d23ffdeba853675b194a41f71341ec2b28bf",
+    "study.normal.png": "8fedc8b774aea2ceecd6512bf6dbb50f05e3d7c4ac0faffe9ed5ad027c889553",
+    "study.orm.ktx2": "d2c410c88cf1584dee4ab5dc2991d84ff16d2d913e5c3202547dcae5d37c8b5c",
+    "study.orm.png": "912f8f5cadc87ed0dec30dd85cf444a4b14e1ede38de48185144535ad98ac8f2"
+  },
+  "references": [
+    {
+      "path": "assets-source/concepts/room-sheet-1.png",
+      "sha256": "ae85e896be2151350ce53511681b13e9136bda53af5efaf1b1431e504c395dc6",
+      "provider": "higgsfield",
+      "note": "P4-T2 concept sheets; room-sheet-1 picked (docs/art-bible.md)"
+    },
+    {
+      "path": "assets-source/concepts/room-sheet-2.png",
+      "sha256": "00dc7053cbc2d4a4350b1cc26500c22848b7eed3a092d14255644750719ad20a",
+      "provider": "higgsfield",
+      "note": "P4-T2 concept sheets; room-sheet-1 picked (docs/art-bible.md)"
+    }
+  ],
+  "materialsUsed": "approved P4-T3 set (public/assets/materials), bound by slot name; not regenerated",
+  "license": "Original work generated in Blender from a checked-in script; concept references from Paul's paid Higgsfield plan (Terms of Use 4.4)",
+  "reimport": {
+    "triangles": 6948,
+    "material_count": 9,
+    "uv_layers": [
+      [
+        "UVMap",
+        "UVMap.001"
+      ]
+    ],
+    "embedded_images": 0,
+    "bounds_blender": {
+      "min": [
+        -4.0,
+        -4.0,
+        0.0
+      ],
+      "max": [
+        4.0,
+        4.0,
+        4.0
+      ]
+    },
+    "checks": {
+      "triangles_le_100k": true,
+      "materials_le_16": true,
+      "textures_le_2048": true,
+      "two_uv_layers_every_mesh": true,
+      "no_embedded_images": true,
+      "floor_at_zero": true,
+      "footprint_8m": true
+    },
+    "pass": true
+  },
+  "validation": {
+    "pass": true,
+    "date": "2026-11-15",
+    "checks": [
+      "presence",
+      "hashes",
+      "glb budgets",
+      "uv1 on every primitive",
+      "uv1 no overlap, gap >= 8 px",
+      "image-free glb",
+      "ktx2 size/mips/transfer",
+      "manifest consistency",
+      "clean reimport"
+    ]
+  },
+  "approvals": [
+    {
+      "who": "Paul",
+      "when": "2026-11-15",
+      "gate": "concept",
+      "status": "approved",
+      "evidence": "docs/art-bible.md: room-sheet-1.png picked for the hero study"
+    },
+    {
+      "gate": "creative",
+      "status": "pending",
+      "notes": "review sheet assets-source/rooms/study/staging/review-sheet.jpg"
+    },
+    {
+      "gate": "owner",
+      "status": "pending",
+      "notes": "in-engine look approval (P4-T10)"
+    }
+  ]
+}

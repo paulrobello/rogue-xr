@@ -21,6 +21,11 @@ checkall: lint typecheck test build
 checkall-ci: checkall
 	gitleaks dir . --redact --no-banner
 
+# Room asset gate: presence, hashes against provenance and PRD budgets (no Blender needed).
+.PHONY: asset-check
+asset-check:
+	python3 -I scripts/assets/asset-check.py
+
 # Foreground dev server (port 4260).
 dev:
 	bun run dev

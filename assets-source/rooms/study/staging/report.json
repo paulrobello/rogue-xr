@@ -1,0 +1,214 @@
+{
+  "piece": "study",
+  "blender": "5.2.2 LTS",
+  "host_load_start": 59.14,
+  "lightmap_size": 2048,
+  "atlas_size": 2048,
+  "samples": 256,
+  "high": {
+    "triangles": 124581,
+    "slots": 17
+  },
+  "device": "GPU:METAL (Apple M4 Max (GPU - 40 cores))",
+  "books_bake": {
+    "size": 2048,
+    "device": "GPU:METAL (Apple M4 Max (GPU - 40 cores))",
+    "cage_extrusion_m": 0.03,
+    "max_ray_distance_m": 0.08,
+    "ao_distance_m": 0.12,
+    "margin_px": 8,
+    "seconds": {
+      "albedo": 1.22,
+      "normal": 1.08,
+      "ao": 1.55
+    },
+    "coverage": 0.4506,
+    "ao_mean": 0.7662,
+    "ao_p05": 0.275,
+    "albedo_mean_srgb8": [
+      103.0,
+      83.5,
+      71.6
+    ],
+    "normal_mean": [
+      0.49,
+      0.5741,
+      0.8709
+    ],
+    "host_load": [
+      55.6,
+      52.75
+    ]
+  },
+  "low": {
+    "triangles": 6948,
+    "vertices": 4431,
+    "materials": 9,
+    "lightmap_density": {
+      "mean_px_per_m": 66.28,
+      "min_px_per_m": 52.93,
+      "max_px_per_m": 70.14
+    },
+    "lightmap_density_by_slot": {
+      "books": {
+        "area_m2": 26.94,
+        "median_px_per_m": 70.1,
+        "min_px_per_m": 58.8
+      },
+      "brass-aged": {
+        "area_m2": 16.81,
+        "median_px_per_m": 69.9,
+        "min_px_per_m": 53.0
+      },
+      "brass-polished": {
+        "area_m2": 7.2,
+        "median_px_per_m": 68.4,
+        "min_px_per_m": 52.9
+      },
+      "flame": {
+        "area_m2": 0.01,
+        "median_px_per_m": 67.0,
+        "min_px_per_m": 58.8
+      },
+      "stained-glass": {
+        "area_m2": 2.26,
+        "median_px_per_m": 59.1,
+        "min_px_per_m": 59.1
+      },
+      "stone-floor": {
+        "area_m2": 64.0,
+        "median_px_per_m": 70.1,
+        "min_px_per_m": 70.1
+      },
+      "wallpaper": {
+        "area_m2": 89.26,
+        "median_px_per_m": 59.1,
+        "min_px_per_m": 58.8
+      },
+      "walnut": {
+        "area_m2": 206.98,
+        "median_px_per_m": 70.1,
+        "min_px_per_m": 58.8
+      },
+      "wax": {
+        "area_m2": 0.07,
+        "median_px_per_m": 68.3,
+        "min_px_per_m": 53.9
+      }
+    }
+  },
+  "glb_bytes": 434064,
+  "lightmap_bake": {
+    "seconds": 7.31,
+    "host_load": [
+      51.49,
+      46.53
+    ],
+    "timing_valid": false
+  },
+  "denoise": "compositor OIDN, HDR, accurate prefilter, high quality",
+  "lightmap": {
+    "coverage": 0.7133,
+    "scale": 2.987797,
+    "clipped_fraction": 0.00398,
+    "mean_irradiance": 0.206811,
+    "p05_irradiance": 0.0,
+    "percentile": 99.6
+  },
+  "ktx2": {
+    "tool": "ktx version: v4.4.2",
+    "encodes": {
+      "study.lightmap.ktx2": "create --format R8G8B8_SRGB --assign-tf srgb --encode uastc --uastc-quality 2 --zstd 18 --generate-mipmap",
+      "study.basecolor.ktx2": "create --format R8G8B8_SRGB --assign-tf srgb --encode uastc --uastc-quality 2 --zstd 18 --generate-mipmap",
+      "study.normal.ktx2": "create --format R8G8B8_UNORM --assign-tf linear --encode uastc --uastc-quality 2 --zstd 18 --generate-mipmap --normalize",
+      "study.orm.ktx2": "create --format R8G8B8_UNORM --assign-tf linear --encode uastc --uastc-quality 2 --zstd 18 --generate-mipmap"
+    }
+  },
+  "renders": [
+    "desk.high.png",
+    "desk.lightmapped.png",
+    "desk.low.png",
+    "engine.desk.png",
+    "engine.hero.diffuse.png",
+    "engine.hero.png",
+    "engine.hero.png-maps.png",
+    "hero.high.png",
+    "hero.lightmapped.png",
+    "hero.low.png",
+    "hero.reference-diffuse.png"
+  ],
+  "blend": {
+    "study_high.blend": {
+      "sha256": "6051842a201630b2c11c8e00bd5d9979e8b182c0e1a2e122fc5c8cce282aa1ce",
+      "bytes": 3933615
+    },
+    "study_low.blend": {
+      "sha256": "1919b753268ea2e04217e3fbd43f95f0a0ab0d8465086161990d57767e8492a7",
+      "bytes": 359203
+    }
+  },
+  "colliders_added": [
+    {
+      "min": [
+        -3.46,
+        0,
+        -4.0
+      ],
+      "max": [
+        -0.94,
+        2.78,
+        -3.55
+      ]
+    },
+    {
+      "min": [
+        0.94,
+        0,
+        -4.0
+      ],
+      "max": [
+        3.46,
+        2.78,
+        -3.55
+      ]
+    },
+    {
+      "min": [
+        -4.0,
+        0,
+        -1.46
+      ],
+      "max": [
+        -3.55,
+        2.78,
+        1.46
+      ]
+    },
+    {
+      "min": [
+        1.721,
+        0,
+        1.721
+      ],
+      "max": [
+        3.079,
+        1.07,
+        3.079
+      ]
+    }
+  ],
+  "host_load_end": 44.76,
+  "files": {
+    "engine-compare.json": "63a4126625f469cc5c5896592fab1359e832b77055d79f5d0f0f51cea78e9c07",
+    "study.basecolor.ktx2": "4ad918307378e0ef2c5be4ef252370beb4d850c301ff5e774bd6cbffc30e8162",
+    "study.basecolor.png": "45d2fca5be44134b6841fd22824081f5df8f6134724746fe096598e9d58241ea",
+    "study.glb": "5ca942a30e3599112fa2ed55a975fbec73f5dfec0637fb3c79c7d917fd5f381d",
+    "study.lightmap.ktx2": "011e2adb85bd486f240a7a75b3a40c5829680baee40f31caebf22876f6ef3854",
+    "study.lightmap.png": "ed2652f2c16645e650d627e085e9d53c166fcf8cf7bc7e38802aeb087970e8ca",
+    "study.manifest.json": "4ae8fc365345b3e676bd0da54f6a8589020fc3acf339bf0fe561c84bc6d8704a",
+    "study.normal.ktx2": "0815797da8b347c9556917a18ab2d23ffdeba853675b194a41f71341ec2b28bf",
+    "study.normal.png": "8fedc8b774aea2ceecd6512bf6dbb50f05e3d7c4ac0faffe9ed5ad027c889553",
+    "study.orm.ktx2": "d2c410c88cf1584dee4ab5dc2991d84ff16d2d913e5c3202547dcae5d37c8b5c",
+    "study.orm.png": "912f8f5cadc87ed0dec30dd85cf444a4b14e1ede38de48185144535ad98ac8f2"
+  }
+}

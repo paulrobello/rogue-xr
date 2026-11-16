@@ -1,0 +1,68 @@
+{
+  "glb": "study.glb",
+  "glb_sha256": "5ca942a30e3599112fa2ed55a975fbec73f5dfec0637fb3c79c7d917fd5f381d",
+  "blender": "5.2.2 LTS",
+  "meshes": [
+    "study"
+  ],
+  "triangles": 6948,
+  "materials": [
+    "study_books",
+    "study_brass-aged",
+    "study_brass-polished",
+    "study_flame",
+    "study_stained-glass",
+    "study_stone-floor",
+    "study_wallpaper",
+    "study_walnut",
+    "study_wax"
+  ],
+  "material_count": 9,
+  "uv_layers": [
+    [
+      "UVMap",
+      "UVMap.001"
+    ]
+  ],
+  "embedded_images": 0,
+  "bounds_blender": {
+    "min": [
+      -4.0,
+      -4.0,
+      0.0
+    ],
+    "max": [
+      4.0,
+      4.0,
+      4.0
+    ]
+  },
+  "texture_px": {
+    "study.basecolor.ktx2": {
+      "width": 2048,
+      "height": 2048
+    },
+    "study.lightmap.ktx2": {
+      "width": 2048,
+      "height": 2048
+    },
+    "study.normal.ktx2": {
+      "width": 2048,
+      "height": 2048
+    },
+    "study.orm.ktx2": {
+      "width": 2048,
+      "height": 2048
+    }
+  },
+  "checks": {
+    "triangles_le_100k": true,
+    "materials_le_16": true,
+    "textures_le_2048": true,
+    "two_uv_layers_every_mesh": true,
+    "no_embedded_images": true,
+    "floor_at_zero": true,
+    "footprint_8m": true
+  },
+  "pass": true
+}

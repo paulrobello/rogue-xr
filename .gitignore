@@ -15,3 +15,9 @@ assets-source/materials/derived/*.png
 assets-source/materials/checks/
 # Reproduced byte for byte by scripts/assets/build_audio.py
 assets-source/audio/derived/*.wav
+# Reproduced by scripts/assets/build-room-study.py (dev-only inputs for ?tex=png and compare_engine.py)
+assets-source/rooms/*/staging/renders/*.png
+assets-source/rooms/*/staging/*.png
+*.blend1
+# Per-run Blender logs carry absolute paths
+assets-source/**/staging/build.log
