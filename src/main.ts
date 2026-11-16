@@ -5,9 +5,11 @@ import { createDesktopControls } from './desktop/controls.ts';
 import { mountSeedTitle } from './desktop/seed-title.ts';
 import { Walker } from './desktop/walker.ts';
 import { PALETTE } from './palette.ts';
+import { mountPerf } from './perf/index.ts';
 import { type FloorView, mountFloorView, seedFromQuery } from './world/floor-view.ts';
 import { mountLightmapProof } from './world/lightmap-proof.ts';
 import { mountMaterialProof } from './world/material-proof.ts';
+import { Locomotion } from './xr/locomotion.ts';
 import { createXrRig } from './xr/session.ts';
 
 const app = document.querySelector<HTMLDivElement>('#app');
@@ -68,6 +70,13 @@ const actions = new ActionBus();
 const xr = createXrRig(renderer, scene, rig, camera, actions);
 const desktop = createDesktopControls(camera, renderer.domElement, actions);
 const walker = new Walker(rig, actions, () => floor?.world.nearbyColliders() ?? []);
+const locomotion = new Locomotion(rig, camera);
+// Head pose is only known once frames arrive, so height calibration waits for the first XR frame.
+let recenterPending = false;
+actions.on('recenter', () => {
+  recenterPending = true;
+});
+const perf = mountPerf(renderer, scene, rig, { camera });
 if (floor) mountSeedTitle(app, floor.seed, actions);
 actions.on('new-run', ({ seed }) => {
   const url = new URL(location.href);
@@ -101,10 +110,12 @@ void xr.supported().then((ok) => {
 actions.on('enter-xr', () => {
   enterButton.style.display = 'none';
   camera.position.set(0, 0, 0);
+  recenterPending = true;
 });
 actions.on('exit-xr', () => {
   enterButton.style.display = '';
   camera.position.set(0, 1.6, 0);
+  rig.position.y = 0;
 });
 
 window.addEventListener('resize', () => {
@@ -114,16 +125,31 @@ window.addEventListener('resize', () => {
 });
 
 const timer = new THREE.Timer();
+const head = new THREE.Vector3();
 renderer.setAnimationLoop((time, frame) => {
+  perf.frame(null, time);
   timer.update(time);
   const deltaSeconds = Math.min(timer.getDelta(), 0.1);
-  if (xr.presenting) xr.update(deltaSeconds, frame);
-  else {
+  if (xr.presenting) {
+    xr.update(deltaSeconds, frame);
+    if (floor) locomotion.setWorld(floor.world.nearbyColliders(), floor.world.nearbyWalkable());
+    if (recenterPending && frame) {
+      locomotion.recenter();
+      recenterPending = false;
+    }
+    const { left, right } = xr.sticks();
+    locomotion.update(deltaSeconds, {
+      moveX: left[0],
+      moveY: left[1],
+      turnX: right[0],
+      teleportAim: null,
+    });
+  } else {
     desktop.update();
     walker.update(deltaSeconds);
   }
   cardProof?.update(time / 1000, xr.presenting);
-  floor?.update(rig.position);
+  floor?.update(camera.getWorldPosition(head));
   renderer.render(scene, camera);
   if (floor && !xr.presenting) {
     const room = floor.world.plan.rooms[floor.world.current];

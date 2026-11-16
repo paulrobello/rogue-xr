@@ -1,5 +1,11 @@
 import * as THREE from 'three';
-import { type Box, DOOR_WIDTH, GREYBOX_TEMPLATES, type RoomTemplate } from '../content/rooms.ts';
+import {
+  type Box,
+  DOOR_WIDTH,
+  GREYBOX_TEMPLATES,
+  type Rect,
+  type RoomTemplate,
+} from '../content/rooms.ts';
 import { type FloorPlan, type WorldRoom, worldRooms } from '../floor/generate.ts';
 import { PALETTE } from '../palette.ts';
 import { buildGreyboxRoom, createGreyboxMaterials, type GreyboxMaterials } from './greybox.ts';
@@ -43,6 +49,8 @@ export interface FloorWorld {
   current: number;
   /** Colliders of the current room and its neighbours, the only walls the player can reach. */
   nearbyColliders(): readonly Box[];
+  /** World-space walkable rects of the current room and its neighbours (teleport landings). */
+  nearbyWalkable(): readonly Rect[];
   /** Re-evaluates the current room from a world-space floor point; returns true when it changed. */
   update(x: number, z: number): boolean;
   spawnPoint(): THREE.Vector3;
@@ -140,6 +148,17 @@ export function buildFloorWorld(
     enemies,
     colliders,
     current: 0,
+    nearbyWalkable() {
+      return [...visibleSet(plan, world.current)].flatMap((i) => {
+        const [ox, oz] = plan.rooms[i]?.position ?? [0, 0];
+        return (rooms[i]?.template.walkable ?? []).map(
+          (w): Rect => ({
+            min: [w.min[0] + ox, w.min[1] + oz],
+            max: [w.max[0] + ox, w.max[1] + oz],
+          }),
+        );
+      });
+    },
     nearbyColliders() {
       return [...visibleSet(plan, world.current)].flatMap((i) => colliders[i] ?? []);
     },
