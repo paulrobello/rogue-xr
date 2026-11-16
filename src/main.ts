@@ -3,9 +3,9 @@ import { mountCardProof } from './cards/card-proof.ts';
 import { ActionBus } from './core/actions.ts';
 import { createDesktopControls } from './desktop/controls.ts';
 import { PALETTE } from './palette.ts';
+import { type FloorView, mountFloorView, seedFromQuery } from './world/floor-view.ts';
 import { mountLightmapProof } from './world/lightmap-proof.ts';
 import { mountMaterialProof } from './world/material-proof.ts';
-import { createPlaceholderRoom } from './world/placeholder-room.ts';
 import { createXrRig } from './xr/session.ts';
 
 const app = document.querySelector<HTMLDivElement>('#app');
@@ -38,6 +38,7 @@ rig.position.set(0, 0, 2);
 scene.add(rig);
 
 let cardProof: Awaited<ReturnType<typeof mountCardProof>> | undefined;
+let floor: FloorView | undefined;
 if (view === 'lightmap-proof') {
   await mountLightmapProof(scene, rig, camera, renderer);
 } else if (view === 'material-proof') {
@@ -45,8 +46,21 @@ if (view === 'lightmap-proof') {
 } else if (view === 'card-proof') {
   cardProof = await mountCardProof(scene, rig);
 } else {
-  scene.add(createPlaceholderRoom());
+  floor = mountFloorView(scene, rig, seedFromQuery(location.search));
 }
+
+// Debug readout: seed, current room and the last frame's draw calls (Quest budget: under 200).
+const hud = document.createElement('div');
+hud.id = 'debug-hud';
+Object.assign(hud.style, {
+  position: 'fixed',
+  top: '12px',
+  left: '12px',
+  font: '500 13px ui-monospace, monospace',
+  color: PALETTE.candle,
+  pointerEvents: 'none',
+});
+if (floor) app.append(hud);
 
 const actions = new ActionBus();
 const xr = createXrRig(renderer, scene, rig, camera, actions);
@@ -96,5 +110,10 @@ renderer.setAnimationLoop((time, frame) => {
   if (xr.presenting) xr.update(deltaSeconds, frame);
   else desktop.update(deltaSeconds);
   cardProof?.update(time / 1000, xr.presenting);
+  floor?.update(rig.position);
   renderer.render(scene, camera);
+  if (floor && !xr.presenting) {
+    const room = floor.world.plan.rooms[floor.world.current];
+    hud.textContent = `seed ${floor.seed} · room ${floor.world.current} ${room?.templateId} (${room?.role}) · calls ${renderer.info.render.calls}`;
+  }
 });

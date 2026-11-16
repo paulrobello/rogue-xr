@@ -1,0 +1,156 @@
+import * as THREE from 'three';
+import { DOOR_WIDTH, GREYBOX_TEMPLATES, type RoomTemplate } from '../content/rooms.ts';
+import { type FloorPlan, type WorldRoom, worldRooms } from '../floor/generate.ts';
+import { PALETTE } from '../palette.ts';
+import { buildGreyboxRoom, createGreyboxMaterials, type GreyboxMaterials } from './greybox.ts';
+
+/** Rooms joined to `room` by a door. */
+export function neighbours(plan: FloorPlan, room: number): number[] {
+  const out: number[] = [];
+  for (const [a, b] of plan.connections) {
+    if (a.room === room) out.push(b.room);
+    else if (b.room === room) out.push(a.room);
+  }
+  return out;
+}
+
+/** The current room and its door neighbours: everything the player can see into. */
+export function visibleSet(plan: FloorPlan, current: number): Set<number> {
+  return new Set([current, ...neighbours(plan, current)]);
+}
+
+/** Index of the room whose footprint holds the floor point, preferring `hint` on shared walls. */
+export function roomAt(rooms: readonly WorldRoom[], x: number, z: number, hint = -1): number {
+  const inside = (i: number) => {
+    const fp = rooms[i]?.footprint;
+    return !!fp && x >= fp.min[0] && x <= fp.max[0] && z >= fp.min[1] && z <= fp.max[1];
+  };
+  if (hint >= 0 && inside(hint)) return hint;
+  for (let i = 0; i < rooms.length; i++) if (inside(i)) return i;
+  return -1;
+}
+
+export interface FloorWorld {
+  group: THREE.Group;
+  plan: FloorPlan;
+  rooms: readonly WorldRoom[];
+  /** One group per room, in plan order; only the current room and its neighbours are visible. */
+  roomGroups: readonly THREE.Group[];
+  /** Placeholder automatons keyed by room index. */
+  enemies: ReadonlyMap<number, readonly THREE.Object3D[]>;
+  current: number;
+  /** Re-evaluates the current room from a world-space floor point; returns true when it changed. */
+  update(x: number, z: number): boolean;
+  spawnPoint(): THREE.Vector3;
+  dispose(): void;
+}
+
+const enemyGeometry = new THREE.CapsuleGeometry(0.35, 1.2, 4, 12);
+const guardianGeometry = new THREE.CapsuleGeometry(0.6, 1.8, 4, 12);
+
+function buildRoom(
+  t: RoomTemplate,
+  plan: FloorPlan,
+  index: number,
+  materials: GreyboxMaterials,
+  enemyMaterial: THREE.Material,
+) {
+  const placed = plan.rooms[index];
+  if (!placed) throw new Error(`room ${index} missing`);
+  const group = buildGreyboxRoom(t, materials);
+  group.name = `room-${index}-${t.id}`;
+  group.position.set(placed.position[0], 0, placed.position[1]);
+  // Templates rotate clockwise seen from above, which is a negative rotation about +Y.
+  group.rotation.y = (-Math.PI / 2) * placed.turns;
+  const enemies: THREE.Object3D[] = [];
+  for (const socketId of placed.encounter?.socketIds ?? []) {
+    const s = t.enemySockets.find((socket) => socket.id === socketId);
+    if (!s) continue;
+    const guardian = placed.encounter?.tier === 'guardian';
+    const body = new THREE.Mesh(guardian ? guardianGeometry : enemyGeometry, enemyMaterial);
+    body.name = `enemy-${socketId}`;
+    body.position.set(s.position[0], guardian ? 1.5 : 0.95, s.position[2]);
+    body.userData = { room: index, tier: placed.encounter?.tier, socketId };
+    group.add(body);
+    enemies.push(body);
+  }
+  return { group, enemies };
+}
+
+/** Builds the greybox world for a floor plan: every room, sealed door caps, enemy placeholders. */
+export function buildFloorWorld(
+  plan: FloorPlan,
+  templates: readonly RoomTemplate[] = GREYBOX_TEMPLATES,
+): FloorWorld {
+  const materials = createGreyboxMaterials();
+  const enemyMaterial = new THREE.MeshStandardMaterial({
+    color: PALETTE.ruby,
+    metalness: 0.5,
+    roughness: 0.45,
+  });
+  const capMaterial = new THREE.MeshStandardMaterial({ color: PALETTE.warmBlack, roughness: 0.9 });
+  const rooms = worldRooms(plan, templates);
+  const group = new THREE.Group();
+  group.name = `floor-${plan.seed}`;
+  const roomGroups: THREE.Group[] = [];
+  const enemies = new Map<number, THREE.Object3D[]>();
+  plan.rooms.forEach((r, index) => {
+    const t = templates.find((c) => c.id === r.templateId) as RoomTemplate;
+    const built = buildRoom(t, plan, index, materials, enemyMaterial);
+    roomGroups.push(built.group);
+    enemies.set(index, built.enemies);
+    group.add(built.group);
+  });
+  // attach() converts world to local space, so room matrices must be current first.
+  group.updateMatrixWorld(true);
+  const capGeometry = new THREE.BoxGeometry(DOOR_WIDTH, 4, 0.2);
+  for (const s of plan.sealed) {
+    const door = rooms[s.room]?.doors.find((d) => d.id === s.door);
+    if (!door) continue;
+    const cap = new THREE.Mesh(capGeometry, capMaterial);
+    cap.name = `sealed-${s.room}-${s.door}`;
+    cap.position.set(door.world[0], 2, door.world[1]);
+    if (door.facing === 'E' || door.facing === 'W') cap.rotation.y = Math.PI / 2;
+    cap.userData.room = s.room;
+    roomGroups[s.room]?.attach(cap);
+  }
+
+  const world: FloorWorld = {
+    group,
+    plan,
+    rooms,
+    roomGroups,
+    enemies,
+    current: 0,
+    update(x, z) {
+      const next = roomAt(rooms, x, z, world.current);
+      if (next < 0 || next === world.current) return false;
+      world.current = next;
+      applyVisibility();
+      return true;
+    },
+    spawnPoint() {
+      const entry = rooms[0]?.footprint;
+      if (!entry) return new THREE.Vector3();
+      // Stand near the middle of the entry, a step back from centre so the room is in view.
+      return new THREE.Vector3(
+        (entry.min[0] + entry.max[0]) / 2,
+        0,
+        (entry.min[1] + entry.max[1]) / 2 + 2,
+      );
+    },
+    dispose() {
+      group.removeFromParent();
+      for (const m of [...Object.values(materials), enemyMaterial, capMaterial]) m.dispose();
+      capGeometry.dispose();
+    },
+  };
+  function applyVisibility() {
+    const visible = visibleSet(plan, world.current);
+    roomGroups.forEach((g, i) => {
+      g.visible = visible.has(i);
+    });
+  }
+  applyVisibility();
+  return world;
+}
