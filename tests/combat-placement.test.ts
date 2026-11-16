@@ -212,7 +212,8 @@ describe('placeTable', () => {
     expect(placed).toBeGreaterThan(500);
     expect(central).toBeGreaterThan(0);
     expect(centralOk).toBe(central);
-  });
+    // A census over every generated floor: the two-distance search runs past 5 s on CI runners.
+  }, 30_000);
 });
 
 describe('placeEnemies', () => {
