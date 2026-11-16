@@ -1399,9 +1399,9 @@ try {
         return { x: rig.position.x, z: rig.position.z, yaw: (rig.rotation.y * 180) / Math.PI };
       });
     const start = await read();
-    await ev(() => window.__xrEmu.device.controllers.left.updateAxes('thumbstick', 0, -1));
+    await ev(() => window.__xrEmu.device.controllers.right.updateAxes('thumbstick', 0, -1));
     await settle(1000);
-    await ev(() => window.__xrEmu.device.controllers.left.updateAxes('thumbstick', 0, 0));
+    await ev(() => window.__xrEmu.device.controllers.right.updateAxes('thumbstick', 0, 0));
     await settle(200);
     const moved = await read();
     const distance = Math.hypot(moved.x - start.x, moved.z - start.z);
@@ -1411,9 +1411,9 @@ try {
       to: moved,
     });
     const snap = async () => {
-      await ev(() => window.__xrEmu.device.controllers.right.updateAxes('thumbstick', 1, 0));
+      await ev(() => window.__xrEmu.device.controllers.left.updateAxes('thumbstick', 1, 0));
       await settle(400);
-      await ev(() => window.__xrEmu.device.controllers.right.updateAxes('thumbstick', 0, 0));
+      await ev(() => window.__xrEmu.device.controllers.left.updateAxes('thumbstick', 0, 0));
       await settle(300);
       return (await read()).yaw;
     };
@@ -1433,7 +1433,7 @@ try {
     await teleportCheck();
   }
 
-  /** While the table is up neither smooth move nor teleport moves the rig, and no aim is held. */
+  /** While the table is up neither smooth move (right stick) nor teleport (left stick forward) moves the rig, and no aim is held. */
   async function combatLocksLocomotionCheck() {
     const read = () =>
       ev(() => {
@@ -1456,14 +1456,16 @@ try {
     const held = {};
     for (const teleport of [false, true]) {
       await setTeleport(teleport);
+      await stick('right', 0, -1);
       await stick('left', 0, -1);
       await frames(3);
       await settle(400);
       held[teleport ? 'teleport' : 'smooth'] = await read();
+      await stick('right', 0, 0);
       await stick('left', 0, 0);
       await frames(3);
     }
-    await setTeleport(false);
+    await setTeleport(true);
     const after = await read();
     const still = (r) =>
       Math.hypot(r.at[0] - before.at[0], r.at[1] - before.at[1]) < 1e-6 &&
@@ -1515,22 +1517,22 @@ try {
     const initial = await read();
     await press('settings-teleportEnabled-toggle');
     await settle(400);
-    const teleOn = { live: await read(), stored: await stored() };
+    const teleOff = { live: await read(), stored: await stored() };
     await shot('3b-settings-comfort');
     await press('settings-teleportEnabled-toggle');
     await settle(400);
-    const teleOff = { live: await read(), stored: await stored() };
+    const teleOn = { live: await read(), stored: await stored() };
     record(
       'settings-teleport-toggle',
       open &&
-        initial.teleportEnabled === false &&
+        initial.teleportEnabled === true &&
         teleOn.live.teleportEnabled === true &&
         teleOn.live.locoTeleport === true &&
         teleOn.stored?.teleportEnabled === true &&
         teleOff.live.teleportEnabled === false &&
         teleOff.live.locoTeleport === false &&
         teleOff.stored?.teleportEnabled === false,
-      { initial, teleOn, teleOff },
+      { initial, teleOff, teleOn },
     );
     await press('settings-turnMode-toggle');
     await settle(400);
@@ -1628,12 +1630,12 @@ try {
         { uuid, since },
       );
     const stillBefore = await sample();
-    await stick('left', 0, -1);
+    await stick('right', 0, -1);
     await settle(500);
     const moving = await sample();
     await settle(300);
     const movingPasses = await passesSince(moving.uuid, moving.now);
-    await stick('left', 0, 0);
+    await stick('right', 0, 0);
     await settle(1200);
     const still = await sample();
     await settle(300);
@@ -1861,10 +1863,10 @@ try {
     });
 
     await ev((y) => window.__xrEmu.setHead(y, 0, 0), SEATED_HEAD_Y);
-    // Back to smooth move for the rest of the walk, through the app's own settings path.
+    // Back to the default (teleport on) for the rest of the walk, through the app's own settings path.
     await ev(() => {
       const { ui } = window.__flow;
-      ui.deps.onSettings({ ...ui.deps.settings(), teleportEnabled: false });
+      ui.deps.onSettings({ ...ui.deps.settings(), teleportEnabled: true });
     });
     await frames(2);
   }
