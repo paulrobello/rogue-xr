@@ -4,6 +4,7 @@ import { ActionBus } from './core/actions.ts';
 import { createDesktopControls } from './desktop/controls.ts';
 import { PALETTE } from './palette.ts';
 import { mountLightmapProof } from './world/lightmap-proof.ts';
+import { mountMaterialProof } from './world/material-proof.ts';
 import { createPlaceholderRoom } from './world/placeholder-room.ts';
 import { createXrRig } from './xr/session.ts';
 
@@ -11,7 +12,7 @@ const app = document.querySelector<HTMLDivElement>('#app');
 if (!app) throw new Error('Missing #app root');
 
 const view = new URLSearchParams(location.search).get('view');
-const proofView = view === 'lightmap-proof' || view === 'card-proof';
+const proofView = view === 'lightmap-proof' || view === 'card-proof' || view === 'material-proof';
 // Proof views keep their frame readable so a check can sample it. Stencil backs the card portals.
 const renderer = new THREE.WebGLRenderer({
   antialias: true,
@@ -39,6 +40,8 @@ scene.add(rig);
 let cardProof: Awaited<ReturnType<typeof mountCardProof>> | undefined;
 if (view === 'lightmap-proof') {
   await mountLightmapProof(scene, rig, camera, renderer);
+} else if (view === 'material-proof') {
+  await mountMaterialProof(scene, rig, renderer);
 } else if (view === 'card-proof') {
   cardProof = await mountCardProof(scene, rig);
 } else {

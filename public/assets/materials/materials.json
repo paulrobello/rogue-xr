@@ -1,0 +1,51 @@
+{
+  "brass-aged": {
+    "tileMeters": 0.5,
+    "maps": {
+      "basecolor": "brass-aged.basecolor.png",
+      "normal": "brass-aged.normal.png",
+      "orm": "brass-aged.orm.png"
+    }
+  },
+  "brass-polished": {
+    "tileMeters": 0.5,
+    "maps": {
+      "basecolor": "brass-polished.basecolor.png",
+      "normal": "brass-polished.normal.png",
+      "orm": "brass-polished.orm.png"
+    }
+  },
+  "walnut": {
+    "tileMeters": 0.5,
+    "maps": {
+      "basecolor": "walnut.basecolor.png",
+      "normal": "walnut.normal.png",
+      "orm": "walnut.orm.png"
+    }
+  },
+  "stone-floor": {
+    "tileMeters": 1.5,
+    "maps": {
+      "basecolor": "stone-floor.basecolor.png",
+      "normal": "stone-floor.normal.png",
+      "orm": "stone-floor.orm.png"
+    }
+  },
+  "stained-glass": {
+    "tileMeters": 0.6,
+    "maps": {
+      "basecolor": "stained-glass.basecolor.png",
+      "normal": "stained-glass.normal.png",
+      "orm": "stained-glass.orm.png",
+      "emissive": "stained-glass.emissive.png"
+    }
+  },
+  "wallpaper": {
+    "tileMeters": 0.75,
+    "maps": {
+      "basecolor": "wallpaper.basecolor.png",
+      "normal": "wallpaper.normal.png",
+      "orm": "wallpaper.orm.png"
+    }
+  }
+}

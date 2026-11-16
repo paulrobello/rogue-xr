@@ -293,5 +293,89 @@
     "jobId": "c2de03da-294e-4129-9236-a53bf944dff8",
     "sha256": "4045fdc448ac7a5c4b089ba6dc1e71f5364edd66c37131c4d3451089a1b309bc",
     "generatedAt": "2026-11-15T23:42:30.669Z"
+  },
+  {
+    "key": "mat-brass-aged",
+    "file": "assets-source/materials/raw/mat-brass-aged.png",
+    "model": "nano_banana_pro",
+    "aspect": "1:1",
+    "resolution": "2k",
+    "prompt": "Aged brass sheet metal surface: warm golden brass with soft tarnish mottling, fine brushed scratches in mixed directions, faint darker oxidised patches and a few tiny dents, honey and ochre tones. Seamless tileable texture source, perfectly flat orthographic straight-down view filling the entire square frame edge to edge, even soft diffuse illumination, no cast shadows, no specular highlights, no vignette, no perspective, no border, no objects, no focal point, uniform feature distribution, no text, no watermark. Painterly semi-realistic hand-painted game texture with subtle visible brushwork, matching the reference style board's warm Gilded Lamplight palette.",
+    "refs": [
+      "locked/L-board-1.png"
+    ],
+    "jobId": "fdfc5937-e8d6-4c43-b012-b7f1ba44c73a",
+    "sha256": "07dc6c6057821a14c50d728a2536fd82c27e172b056a0731e9c2d83085de324c",
+    "generatedAt": "2026-11-16T00:17:31.656Z"
+  },
+  {
+    "key": "mat-brass-polished",
+    "file": "assets-source/materials/raw/mat-brass-polished.png",
+    "model": "nano_banana_pro",
+    "aspect": "1:1",
+    "resolution": "2k",
+    "prompt": "Polished brass surface: clean bright golden brass with very fine circular polishing marks and gentle tonal variation, almost uniform, light honey gold. Seamless tileable texture source, perfectly flat orthographic straight-down view filling the entire square frame edge to edge, even soft diffuse illumination, no cast shadows, no specular highlights, no vignette, no perspective, no border, no objects, no focal point, uniform feature distribution, no text, no watermark. Painterly semi-realistic hand-painted game texture with subtle visible brushwork, matching the reference style board's warm Gilded Lamplight palette.",
+    "refs": [
+      "locked/L-board-1.png"
+    ],
+    "jobId": "40d818fd-1fd8-481b-82b3-98822da3280d",
+    "sha256": "382c0a59a3e605e27aa3e06c4d48d2fb8925e927465539fbffbfac696c6b3f53",
+    "generatedAt": "2026-11-16T00:18:00.582Z"
+  },
+  {
+    "key": "mat-walnut",
+    "file": "assets-source/materials/raw/mat-walnut.png",
+    "model": "nano_banana_pro",
+    "aspect": "1:1",
+    "resolution": "2k",
+    "prompt": "Dark oiled walnut wood planks running vertically, four planks across with thin dark seams, rich chocolate and caramel grain with gentle figure, slight wear, satin oiled finish. Seamless tileable texture source, perfectly flat orthographic straight-down view filling the entire square frame edge to edge, even soft diffuse illumination, no cast shadows, no specular highlights, no vignette, no perspective, no border, no objects, no focal point, uniform feature distribution, no text, no watermark. Painterly semi-realistic hand-painted game texture with subtle visible brushwork, matching the reference style board's warm Gilded Lamplight palette.",
+    "refs": [
+      "locked/L-board-1.png"
+    ],
+    "jobId": "a71e8568-c72e-470e-be1e-65dfdb64a651",
+    "sha256": "1ab82a6546fb74b028fff2ba212d6b2329054f503627c47c0b53d2891082f162",
+    "generatedAt": "2026-11-16T00:17:34.393Z"
+  },
+  {
+    "key": "mat-stone-floor",
+    "file": "assets-source/materials/raw/mat-stone-floor.png",
+    "model": "nano_banana_pro",
+    "aspect": "1:1",
+    "resolution": "2k",
+    "prompt": "Worn warm grey-beige flagstone floor of irregular rectangular stones with narrow dark mortar joints, softly worn edges, subtle warm sandstone tones and faint scuffs, stones of varied size with no single dominant stone. Seamless tileable texture source, perfectly flat orthographic straight-down view filling the entire square frame edge to edge, even soft diffuse illumination, no cast shadows, no specular highlights, no vignette, no perspective, no border, no objects, no focal point, uniform feature distribution, no text, no watermark. Painterly semi-realistic hand-painted game texture with subtle visible brushwork, matching the reference style board's warm Gilded Lamplight palette.",
+    "refs": [
+      "locked/L-board-1.png"
+    ],
+    "jobId": "518a6b8e-c958-4c5d-8822-26f7a4cfa662",
+    "sha256": "80da881db018109d52110f22adf79f5567614592e17b29cb5c85868fe6e02b70",
+    "generatedAt": "2026-11-16T00:17:39.199Z"
+  },
+  {
+    "key": "mat-stained-glass",
+    "file": "assets-source/materials/raw/mat-stained-glass.png",
+    "model": "nano_banana_pro",
+    "aspect": "1:1",
+    "resolution": "2k",
+    "prompt": "Stained glass panel pattern seen flat and backlit: a repeating lattice of diamond and lozenge glass pieces in deep ruby red, sapphire blue, emerald green and a few amber pieces, separated by dark lead came lines of even width, slight hand-made glass texture and colour variation within each piece. Seamless tileable texture source, perfectly flat orthographic straight-down view filling the entire square frame edge to edge, even soft diffuse illumination, no cast shadows, no specular highlights, no vignette, no perspective, no border, no objects, no focal point, uniform feature distribution, no text, no watermark. Painterly semi-realistic hand-painted game texture with subtle visible brushwork, matching the reference style board's warm Gilded Lamplight palette.",
+    "refs": [
+      "locked/L-board-1.png"
+    ],
+    "jobId": "8f435a38-99a8-47be-b39d-5677b417da59",
+    "sha256": "1b7a83275fd5a068fb6399e0da00010a1dc85a8a2014137a8092fd204e1d455c",
+    "generatedAt": "2026-11-16T00:17:33.919Z"
+  },
+  {
+    "key": "mat-wallpaper",
+    "file": "assets-source/materials/raw/mat-wallpaper.png",
+    "model": "nano_banana_pro",
+    "aspect": "1:1",
+    "resolution": "2k",
+    "prompt": "Victorian damask wallpaper: muted deep burgundy background with an aged gold repeating floral and gear-motif damask pattern, slightly faded and worn, soft paper texture. Seamless tileable texture source, perfectly flat orthographic straight-down view filling the entire square frame edge to edge, even soft diffuse illumination, no cast shadows, no specular highlights, no vignette, no perspective, no border, no objects, no focal point, uniform feature distribution, no text, no watermark. Painterly semi-realistic hand-painted game texture with subtle visible brushwork, matching the reference style board's warm Gilded Lamplight palette.",
+    "refs": [
+      "locked/L-board-1.png"
+    ],
+    "jobId": "f88c9fda-bb34-4ee2-a817-16ad2513c39b",
+    "sha256": "7cbb6f8619f9dcfa74bcf7bac94c9a80d362cbf1f08893b53bade7c5309627c1",
+    "generatedAt": "2026-11-16T00:17:50.463Z"
   }
 ]

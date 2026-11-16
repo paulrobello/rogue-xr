@@ -1,0 +1,423 @@
+{
+  "brass-aged": {
+    "material": {
+      "name": "brass-aged",
+      "tile_m": 0.5,
+      "metallic": 1.0,
+      "roughness": 0.45,
+      "roughness_var": 0.18,
+      "normal_strength": 2.0,
+      "detail_sigma": 0.041666666666666664,
+      "delight": 0.5,
+      "emissive": false,
+      "repair": [
+        "feather",
+        "feather"
+      ],
+      "crop_cols": [
+        0,
+        2048
+      ],
+      "color_contrast": 1.0
+    },
+    "source": "assets-source/materials/raw/mat-brass-aged.png",
+    "crop": {
+      "x": 0,
+      "y": 0,
+      "crop_px": 2048,
+      "seam_x_est": null,
+      "seam_y_est": 1.63
+    },
+    "quilted_axes": [
+      "y:feather"
+    ],
+    "source_sha256": "07dc6c6057821a14c50d728a2536fd82c27e172b056a0731e9c2d83085de324c",
+    "seam_after": {
+      "x": 1.31,
+      "y": 0.92
+    },
+    "files": {
+      "derived/brass-aged.basecolor.png": "1e9fe50cdc734006cc266afc211b6940a4297797faabe32e574a2fb42ed4016c",
+      "runtime/brass-aged/brass-aged.basecolor.png": "f731331533f5e9293ab3172f052aef3f3984924012dfe3c44540756af17b4316",
+      "derived/brass-aged.normal.png": "432279dc809ddcb963d78275cdd4d8cca8d7b3bd219cd60a4b04e5ecc5e14e2e",
+      "runtime/brass-aged/brass-aged.normal.png": "752f6211fca91fa4e2beb4e43c11ba097d2da7139268fdf33fb5b2ee26bfbe3a",
+      "derived/brass-aged.orm.png": "38df4ab5cef9933aff5492b557658befe81d8326e5af7ec319f2b9e56dc07780",
+      "runtime/brass-aged/brass-aged.orm.png": "dab4896ed62310c39b975954f70cddf116f86518842eb7d84b0fde14dc7adbeb"
+    },
+    "mips": {
+      "basecolor": {
+        "wrap_excess_8bit": -0.41,
+        "mean_drift": 0.0
+      },
+      "normal": {
+        "wrap_excess_8bit": -0.53,
+        "mean_drift": 0.0,
+        "min_normal_length": 0.863
+      },
+      "orm": {
+        "wrap_excess_8bit": 0.34,
+        "mean_drift": 0.0
+      }
+    },
+    "ranges": {
+      "roughness": [
+        0.36,
+        0.54
+      ],
+      "ao": [
+        0.6,
+        1.0
+      ]
+    }
+  },
+  "brass-polished": {
+    "material": {
+      "name": "brass-polished",
+      "tile_m": 0.5,
+      "metallic": 1.0,
+      "roughness": 0.22,
+      "roughness_var": 0.06,
+      "normal_strength": 0.8,
+      "detail_sigma": 0.041666666666666664,
+      "delight": 1.0,
+      "emissive": false,
+      "repair": [
+        "feather",
+        "feather"
+      ],
+      "crop_cols": [
+        0,
+        2048
+      ],
+      "color_contrast": 0.4
+    },
+    "source": "assets-source/materials/raw/mat-brass-polished.png",
+    "crop": {
+      "x": 0,
+      "y": 0,
+      "crop_px": 2048,
+      "seam_x_est": null,
+      "seam_y_est": 4.86
+    },
+    "quilted_axes": [
+      "y:feather",
+      "x:feather"
+    ],
+    "source_sha256": "382c0a59a3e605e27aa3e06c4d48d2fb8925e927465539fbffbfac696c6b3f53",
+    "seam_after": {
+      "x": 0.86,
+      "y": 0.98
+    },
+    "files": {
+      "derived/brass-polished.basecolor.png": "4f00e444fc240c9cfe71477cb54a90e416f0138ca2b8cc2075c518ef4d00e1fc",
+      "runtime/brass-polished/brass-polished.basecolor.png": "e06711b70706c57713bad023bfd9690715a67ae7b85fcc3041d596f7b0630e15",
+      "derived/brass-polished.normal.png": "aeebe46425f221da674d4c4dbe4c3bf3d6c3b337fdba1552cf56f2886fba7664",
+      "runtime/brass-polished/brass-polished.normal.png": "48e62a85458bfc64ffc095f4f6a44c69b0058b90e01a664a3f3682a0222bfb3c",
+      "derived/brass-polished.orm.png": "b705f314f21f406912c0a2594df60bcbee9b03af2e564c81219b8e4b80e3746f",
+      "runtime/brass-polished/brass-polished.orm.png": "ac621605925e523ca9b25bd18bbfe4bdab575bb3a9876a5390adc5a29c559e9a"
+    },
+    "mips": {
+      "basecolor": {
+        "wrap_excess_8bit": 0.09,
+        "mean_drift": 0.0
+      },
+      "normal": {
+        "wrap_excess_8bit": 0.09,
+        "mean_drift": 0.0,
+        "min_normal_length": 0.945
+      },
+      "orm": {
+        "wrap_excess_8bit": -0.08,
+        "mean_drift": 0.0
+      }
+    },
+    "ranges": {
+      "roughness": [
+        0.19,
+        0.25
+      ],
+      "ao": [
+        0.6,
+        1.0
+      ]
+    }
+  },
+  "walnut": {
+    "material": {
+      "name": "walnut",
+      "tile_m": 0.5,
+      "metallic": 0.0,
+      "roughness": 0.55,
+      "roughness_var": 0.12,
+      "normal_strength": 3.0,
+      "detail_sigma": 0.03125,
+      "delight": 0.4,
+      "emissive": false,
+      "repair": [
+        "feather",
+        "none"
+      ],
+      "crop_cols": [
+        512,
+        1540
+      ],
+      "color_contrast": 1.0
+    },
+    "source": "assets-source/materials/raw/mat-walnut.png",
+    "crop": {
+      "x": 512,
+      "y": 492,
+      "crop_px": 1028,
+      "seam_x_est": null,
+      "seam_y_est": 3.65
+    },
+    "quilted_axes": [
+      "y:feather"
+    ],
+    "source_sha256": "1ab82a6546fb74b028fff2ba212d6b2329054f503627c47c0b53d2891082f162",
+    "seam_after": {
+      "x": 1.0,
+      "y": 0.88
+    },
+    "files": {
+      "derived/walnut.basecolor.png": "9621a2e82ae72e1323057bae504f05555714663c1a3f89aa1e7858774ba07b77",
+      "runtime/walnut/walnut.basecolor.png": "c2c1d72ba308c02f6304ee389a86d6663199d01a352160c347801cefd4042a0b",
+      "derived/walnut.normal.png": "90efeedf2b783531a2a6aeb1abbe375578ef82d5415429ff1848c575c3382370",
+      "runtime/walnut/walnut.normal.png": "3ee262cb20e41fe1f8b6dac8528f0b3f51e6e129cc9542f99d81c21242046558",
+      "derived/walnut.orm.png": "e636e4fc036ccebce5360b6c1ca645ee1c81bdcbe244f9df7d21da45f71b8cf6",
+      "runtime/walnut/walnut.orm.png": "6de73e58bc870595d74968b44e4f94b153c2dfc529ae6cb5c9e2beda5c24846d"
+    },
+    "mips": {
+      "basecolor": {
+        "wrap_excess_8bit": 1.14,
+        "mean_drift": 0.0
+      },
+      "normal": {
+        "wrap_excess_8bit": 2.15,
+        "mean_drift": 0.0,
+        "min_normal_length": 0.963
+      },
+      "orm": {
+        "wrap_excess_8bit": -0.75,
+        "mean_drift": 0.0
+      }
+    },
+    "ranges": {
+      "roughness": [
+        0.49,
+        0.61
+      ],
+      "ao": [
+        0.6,
+        1.0
+      ]
+    }
+  },
+  "stone-floor": {
+    "material": {
+      "name": "stone-floor",
+      "tile_m": 1.5,
+      "metallic": 0.0,
+      "roughness": 0.82,
+      "roughness_var": 0.08,
+      "normal_strength": 5.0,
+      "detail_sigma": 0.0625,
+      "delight": 0.4,
+      "emissive": false,
+      "repair": [
+        "quilt",
+        "quilt"
+      ],
+      "crop_cols": null,
+      "color_contrast": 1.0
+    },
+    "source": "assets-source/materials/raw/mat-stone-floor.png",
+    "crop": {
+      "x": 32,
+      "y": 32,
+      "crop_px": 1984,
+      "seam_x_est": 1.24,
+      "seam_y_est": 2.45
+    },
+    "quilted_axes": [
+      "y:quilt",
+      "x:quilt"
+    ],
+    "source_sha256": "80da881db018109d52110f22adf79f5567614592e17b29cb5c85868fe6e02b70",
+    "seam_after": {
+      "x": 1.1,
+      "y": 1.16
+    },
+    "files": {
+      "derived/stone-floor.basecolor.png": "96c1b04813f70a768271f8f2a15027654e73c8b51dec4059c23823c119794875",
+      "runtime/stone-floor/stone-floor.basecolor.png": "9ff95890f076e9d6886715be934eb0b640d203942a2ec6b9f8562e65758732fd",
+      "derived/stone-floor.normal.png": "45e1f425053edc357522cb714a3f39c1c68cf6e13d05fe60c5e5f6f1e97172f0",
+      "runtime/stone-floor/stone-floor.normal.png": "47adde7526f66f09f17705c6f3a802345b50bbd9d1d505f10fbe228004aefa7a",
+      "derived/stone-floor.orm.png": "3a99db862169fb0bbef2978a9163b0a733e3362b6d629cc0931367bedd0e3d4d",
+      "runtime/stone-floor/stone-floor.orm.png": "09a537be8f1a15fc993513d08d8feb34e76559d878c383ed356c08ebc07aff48"
+    },
+    "mips": {
+      "basecolor": {
+        "wrap_excess_8bit": -4.4,
+        "mean_drift": 0.0
+      },
+      "normal": {
+        "wrap_excess_8bit": -0.61,
+        "mean_drift": 0.0,
+        "min_normal_length": 0.9
+      },
+      "orm": {
+        "wrap_excess_8bit": -2.03,
+        "mean_drift": 0.0
+      }
+    },
+    "ranges": {
+      "roughness": [
+        0.78,
+        0.86
+      ],
+      "ao": [
+        0.6,
+        1.0
+      ]
+    }
+  },
+  "stained-glass": {
+    "material": {
+      "name": "stained-glass",
+      "tile_m": 0.6,
+      "metallic": 0.0,
+      "roughness": 0.12,
+      "roughness_var": 0.04,
+      "normal_strength": 2.0,
+      "detail_sigma": 0.03125,
+      "delight": 0.0,
+      "emissive": true,
+      "repair": [
+        "quilt",
+        "quilt"
+      ],
+      "crop_cols": null,
+      "color_contrast": 1.0
+    },
+    "source": "assets-source/materials/raw/mat-stained-glass.png",
+    "crop": {
+      "x": 520,
+      "y": 72,
+      "crop_px": 1024,
+      "seam_x_est": 0.55,
+      "seam_y_est": 0.61
+    },
+    "quilted_axes": [],
+    "source_sha256": "1b7a83275fd5a068fb6399e0da00010a1dc85a8a2014137a8092fd204e1d455c",
+    "seam_after": {
+      "x": 1.32,
+      "y": 1.54
+    },
+    "files": {
+      "derived/stained-glass.basecolor.png": "5238a1576e9524a59e9332986d000e3b8d9d6bd9a31d8fff83bf0d3172726c6f",
+      "runtime/stained-glass/stained-glass.basecolor.png": "5238a1576e9524a59e9332986d000e3b8d9d6bd9a31d8fff83bf0d3172726c6f",
+      "derived/stained-glass.normal.png": "b61f334ada3526b111dab517c98779b85df5d5e46257edcbacb6a36ced568543",
+      "runtime/stained-glass/stained-glass.normal.png": "813a90190a58e3020a6460051ed7312ae5c46303ec72ed0bc5457938703cd9a4",
+      "derived/stained-glass.orm.png": "1df8dfb0bece81ed62325c2e41f91df69e72e2f170dbd831d909bdb4337449b0",
+      "runtime/stained-glass/stained-glass.orm.png": "78668429544058672bb01a728cb884ecf84d569ca90ec15aa890f069216b191c",
+      "derived/stained-glass.emissive.png": "5238a1576e9524a59e9332986d000e3b8d9d6bd9a31d8fff83bf0d3172726c6f",
+      "runtime/stained-glass/stained-glass.emissive.png": "5238a1576e9524a59e9332986d000e3b8d9d6bd9a31d8fff83bf0d3172726c6f"
+    },
+    "mips": {
+      "basecolor": {
+        "wrap_excess_8bit": 0.29,
+        "mean_drift": 0.0
+      },
+      "normal": {
+        "wrap_excess_8bit": -2.03,
+        "mean_drift": 0.0,
+        "min_normal_length": 0.988
+      },
+      "orm": {
+        "wrap_excess_8bit": -0.87,
+        "mean_drift": 0.0
+      },
+      "emissive": {
+        "wrap_excess_8bit": 0.29,
+        "mean_drift": 0.0
+      }
+    },
+    "ranges": {
+      "roughness": [
+        0.1,
+        0.14
+      ],
+      "ao": [
+        0.6,
+        1.0
+      ]
+    }
+  },
+  "wallpaper": {
+    "material": {
+      "name": "wallpaper",
+      "tile_m": 0.75,
+      "metallic": 0.0,
+      "roughness": 0.75,
+      "roughness_var": 0.06,
+      "normal_strength": 1.5,
+      "detail_sigma": 0.020833333333333332,
+      "delight": 0.3,
+      "emissive": false,
+      "repair": [
+        "quilt",
+        "quilt"
+      ],
+      "crop_cols": null,
+      "color_contrast": 1.0
+    },
+    "source": "assets-source/materials/raw/mat-wallpaper.png",
+    "crop": {
+      "x": 572,
+      "y": 496,
+      "crop_px": 1024,
+      "seam_x_est": 0.3,
+      "seam_y_est": 0.29
+    },
+    "quilted_axes": [],
+    "source_sha256": "7cbb6f8619f9dcfa74bcf7bac94c9a80d362cbf1f08893b53bade7c5309627c1",
+    "seam_after": {
+      "x": 1.2,
+      "y": 0.99
+    },
+    "files": {
+      "derived/wallpaper.basecolor.png": "bd7f468fc9da8746953cfd2f4a1366699a5682ddb11cb3865ce14d3fdd95b325",
+      "runtime/wallpaper/wallpaper.basecolor.png": "69b5d8a277feac6f173386517da9fec24c96e3f48dd9e4a3dd872eba12527650",
+      "derived/wallpaper.normal.png": "2b4956bb859c75622d6256140274fa0ae6dc5a010f64fe8530690f6967d60c4f",
+      "runtime/wallpaper/wallpaper.normal.png": "7e73ec5d953baeafd92f4adb7aa80dc4779175fde5353af6a465cd64a090e64b",
+      "derived/wallpaper.orm.png": "df692f1499b481b7633308091f8829b9f30c9f2025ca16aba03b56c5f7ce1890",
+      "runtime/wallpaper/wallpaper.orm.png": "7a1d8afac8984b205de1006d01649064f31e9d45655a9c912f6303d8804487d6"
+    },
+    "mips": {
+      "basecolor": {
+        "wrap_excess_8bit": -4.09,
+        "mean_drift": 0.0
+      },
+      "normal": {
+        "wrap_excess_8bit": -0.47,
+        "mean_drift": 0.0,
+        "min_normal_length": 0.954
+      },
+      "orm": {
+        "wrap_excess_8bit": -2.53,
+        "mean_drift": 0.0
+      }
+    },
+    "ranges": {
+      "roughness": [
+        0.72,
+        0.78
+      ],
+      "ao": [
+        0.6,
+        1.0
+      ]
+    }
+  }
+}

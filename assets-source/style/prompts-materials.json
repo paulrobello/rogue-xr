@@ -1,0 +1,43 @@
+{
+  "model": "nano_banana_pro",
+  "resolution": "2k",
+  "shared": "Seamless tileable texture source, perfectly flat orthographic straight-down view filling the entire square frame edge to edge, even soft diffuse illumination, no cast shadows, no specular highlights, no vignette, no perspective, no border, no objects, no focal point, uniform feature distribution, no text, no watermark. Painterly semi-realistic hand-painted game texture with subtle visible brushwork, matching the reference style board's warm Gilded Lamplight palette.",
+  "jobs": [
+    {
+      "key": "mat-brass-aged",
+      "aspect": "1:1",
+      "refs": ["locked/L-board-1.png"],
+      "prompt": "Aged brass sheet metal surface: warm golden brass with soft tarnish mottling, fine brushed scratches in mixed directions, faint darker oxidised patches and a few tiny dents, honey and ochre tones."
+    },
+    {
+      "key": "mat-brass-polished",
+      "aspect": "1:1",
+      "refs": ["locked/L-board-1.png"],
+      "prompt": "Polished brass surface: clean bright golden brass with very fine circular polishing marks and gentle tonal variation, almost uniform, light honey gold."
+    },
+    {
+      "key": "mat-walnut",
+      "aspect": "1:1",
+      "refs": ["locked/L-board-1.png"],
+      "prompt": "Dark oiled walnut wood planks running vertically, four planks across with thin dark seams, rich chocolate and caramel grain with gentle figure, slight wear, satin oiled finish."
+    },
+    {
+      "key": "mat-stone-floor",
+      "aspect": "1:1",
+      "refs": ["locked/L-board-1.png"],
+      "prompt": "Worn warm grey-beige flagstone floor of irregular rectangular stones with narrow dark mortar joints, softly worn edges, subtle warm sandstone tones and faint scuffs, stones of varied size with no single dominant stone."
+    },
+    {
+      "key": "mat-stained-glass",
+      "aspect": "1:1",
+      "refs": ["locked/L-board-1.png"],
+      "prompt": "Stained glass panel pattern seen flat and backlit: a repeating lattice of diamond and lozenge glass pieces in deep ruby red, sapphire blue, emerald green and a few amber pieces, separated by dark lead came lines of even width, slight hand-made glass texture and colour variation within each piece."
+    },
+    {
+      "key": "mat-wallpaper",
+      "aspect": "1:1",
+      "refs": ["locked/L-board-1.png"],
+      "prompt": "Victorian damask wallpaper: muted deep burgundy background with an aged gold repeating floral and gear-motif damask pattern, slightly faded and worn, soft paper texture."
+    }
+  ]
+}
