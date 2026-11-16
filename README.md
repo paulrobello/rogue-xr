@@ -2,7 +2,7 @@
 
 A seated WebXR roguelike deckbuilder for Meta Quest 3: climb a self-rebuilding arcane-brass wizard tower, fight rogue automatons with cards held in your hand, physical dice and drawn spell sigils.
 
-Status: planning. See [PRD.md](PRD.md) for goals and the phase ladder, and [plans/](plans/) for per-phase implementation plans.
+Status: vertical slice in progress, playable at <https://spire.pardev.net> (open it in the Quest 3 browser and press Enter VR). See [PRD.md](PRD.md) for goals and the phase ladder, and [plans/](plans/) for per-phase implementation plans.
 
 ## CI and deploy
 
