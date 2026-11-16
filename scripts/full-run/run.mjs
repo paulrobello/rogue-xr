@@ -10,9 +10,11 @@
 // (see the policy block below). A rest-room hearth is used (a mouse click on its bowl) over a cleared
 // route when the bot is hurt, and any left over just before the guardian; the hp it gives is checked
 // against the rule. The guardian fight is watched frame by frame for its phase 2 (see watchGuardian).
+// Each run picks its difficulty on the title (a click on the level's button) before New Run. The
+// default is Hard, the content as written, so the recorded outcomes stay comparable across passes.
 //
 //   node scripts/full-run/run.mjs [--base http://localhost:4260] [--out /tmp/full-run]
-//        [--seeds SPIRE001,SPIRE002] [--death SPIRE001] [--headed]
+//        [--seeds SPIRE001,SPIRE002] [--death SPIRE001] [--difficulty hard] [--headed]
 //
 // Each seed gets a fresh browser context (its own IndexedDB) and writes screenshots and
 // report.json to <out>/<seed>/ (the death run to <out>/<seed>-death/). The summary lands in
@@ -32,6 +34,7 @@ const { values: opts } = parseArgs({
         'SPIRE001,SPIRE002,SPIRE003,SPIRE004,SPIRE010,SPIRE034,SPIRE021,SPIRE024,SPIRE065,SPIRE086',
     },
     death: { type: 'string', default: 'SPIRE001' },
+    difficulty: { type: 'string', default: 'hard' },
     headed: { type: 'boolean', default: false },
     'max-turns': { type: 'string', default: '45' },
   },
@@ -43,6 +46,11 @@ const GPU_ARGS =
     : ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'];
 const VIEWPORT = { width: 1600, height: 1000 };
 const MAX_TURNS = Number(opts['max-turns']);
+const DIFFICULTY = opts.difficulty;
+if (!['casual', 'normal', 'hard'].includes(DIFFICULTY)) {
+  console.error(`--difficulty must be casual, normal or hard, not ${DIFFICULTY}`);
+  process.exit(2);
+}
 /** Degrees of turn per pixel of drag (src/desktop/controls.ts LOOK_DEGREES_PER_PIXEL). */
 const LOOK_DEG_PER_PX = 0.23;
 const MUSIC = /\/audio\/music\/|music not found/;
@@ -376,6 +384,7 @@ async function runSeed(seed, mode) {
   const report = {
     seed,
     mode,
+    difficulty: DIFFICULTY,
     end: 'unfinished',
     gpu: null,
     roomsVisited: [],
@@ -497,8 +506,11 @@ async function runSeed(seed, mode) {
     await shot('title');
     if ((await phase()) !== 'title') fail('boot-not-title', { phase: await phase() });
 
+    await clickControl(`title-difficulty-${DIFFICULTY}`);
     await clickControl('title-new-run');
     if (!(await until('explore', () => window.__flow.flow.phase === 'explore'))) return report;
+    const runLevel = await ev(() => window.__flow.flow.run.difficulty);
+    if (runLevel !== DIFFICULTY) fail('wrong-difficulty', { runLevel, want: DIFFICULTY });
     const floorSeed = await ev(() => window.__combat.floor.seed);
     report.floorSeed = floorSeed;
     const want = await ev(
@@ -537,6 +549,8 @@ async function runSeed(seed, mode) {
     report.end = end === 'victory' || end === 'death' ? end : `stopped in ${end}`;
     if (end === 'victory' || end === 'death') {
       report.summary = await ev(() => window.__flow.flow.summary);
+      if (report.summary?.difficulty !== DIFFICULTY)
+        fail('summary-wrong-difficulty', { summary: report.summary?.difficulty, want: DIFFICULTY });
       report.cogsEarned = report.summary?.cogsEarned ?? 0;
       const atEnd = await ev(() => window.__fr.census());
       await wait(600);
@@ -1165,6 +1179,8 @@ async function runSeed(seed, mode) {
    */
   async function checkGuardianPhase(log, outcome) {
     const rule = await ev(() => window.__fr.guardianRule());
+    // The threshold is a fraction of the guardian's max hp in this fight, which the difficulty scales.
+    rule.threshold = (log[0]?.maxHp ?? Number.NaN) * rule.fraction;
     const only2 = new Set(rule.phaseTwoOnly);
     const all6 = new Set(rule.phaseTwo);
     const facts = {
@@ -1495,7 +1511,7 @@ async function installHelpers() {
       const one = g.moves.map((m) => m.id);
       const two = g.phaseTwo.moves.map((m) => m.id);
       return {
-        threshold: g.hp * GUARDIAN_PHASE_TWO_HP_FRACTION,
+        fraction: GUARDIAN_PHASE_TWO_HP_FRACTION,
         phaseOne: one,
         phaseTwo: two,
         phaseTwoOnly: two.filter((id) => !one.includes(id)),

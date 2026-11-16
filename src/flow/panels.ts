@@ -14,6 +14,12 @@ import { appendSeedChar, SEED_ALPHABET, SEED_LENGTH } from '../desktop/seed-titl
 import { PALETTE } from '../palette.ts';
 import type { Settings } from '../persist/db.ts';
 import type { RunSnapshot } from '../persist/saves.ts';
+import {
+  DIFFICULTIES,
+  DIFFICULTY_LABEL,
+  type Difficulty,
+  runDifficulty,
+} from '../rules/difficulty.ts';
 import { SKIP_REWARD } from '../rules/run.ts';
 import { maxTier, nextCost, UPGRADE_IDS, UPGRADES, type UpgradeId } from '../rules/workshop.ts';
 import type { FlowPhase, RunFlow } from './flow.ts';
@@ -30,8 +36,9 @@ export interface FlowUiDeps {
   /** The seed New Run uses unless the player enters another. */
   seed: string;
   snapshot: () => RunSnapshot | null;
+  /** Current settings; `difficulty` is the level New Run starts at. */
   settings: () => Settings;
-  onNewRun: (seed: string) => void;
+  onNewRun: (seed: string, difficulty: Difficulty) => void;
   onContinue: () => void;
   onSettings: (next: Settings) => void;
 }
@@ -42,6 +49,16 @@ const FAMILY: Readonly<Record<string, string>> = {
   skill: PALETTE.sapphire,
   sigil: PALETTE.emerald,
 };
+
+/** What the title says about each level, under its buttons. */
+const DIFFICULTY_NOTE: Readonly<Record<Difficulty, string>> = {
+  casual: 'Weaker automatons, more hp for you',
+  normal: 'A softer elite and guardian',
+  hard: 'The Spire as it was built',
+};
+/** Plate of the chosen option in a row of choices (the title's difficulty). */
+const SELECTED_FILL = PALETTE.brassDark;
+const SELECTED_EDGE = PALETTE.candle;
 
 const ROW = 0.07;
 const BOARD_WIDTH = 0.66;
@@ -216,6 +233,8 @@ export class FlowUi {
   private extras: THREE.Object3D[] = [];
   private cardFaces = new Map<string, { mesh: THREE.Mesh; card: string }>();
   private hoveredId: string | null = null;
+  /** Control ids drawn as the chosen option. */
+  private readonly selectedIds = new Set<string>();
   private subview: Subview = 'main';
   private seedValue: string;
   private seedDraft = '';
@@ -369,6 +388,7 @@ export class FlowUi {
     this.boards = [];
     this.extras = [];
     this.cardFaces.clear();
+    this.selectedIds.clear();
     this.hoveredId = null;
   }
 
@@ -412,7 +432,12 @@ export class FlowUi {
     name: string,
     rows: readonly MenuRow[],
     at: THREE.Vector3Like,
-    opts: { width?: number; rowHeight?: number; heading?: string } = {},
+    opts: {
+      width?: number;
+      rowHeight?: number;
+      heading?: string;
+      selected?: readonly string[];
+    } = {},
   ): Board {
     const width = opts.width ?? BOARD_WIDTH;
     const rowHeight = opts.rowHeight ?? ROW;
@@ -454,7 +479,11 @@ export class FlowUi {
       const mesh = child as THREE.Mesh<THREE.PlaneGeometry>;
       if (!cell || !mesh.geometry?.parameters) continue;
       const { width: w, height: h } = mesh.geometry.parameters;
-      const plate = plateMesh(PALETTE.walnut, PALETTE.brass, w, h);
+      const chosen = opts.selected?.includes(cell) ?? false;
+      if (chosen) this.selectedIds.add(`${name}-${cell}`);
+      const plate = chosen
+        ? plateMesh(SELECTED_FILL, SELECTED_EDGE, w, h)
+        : plateMesh(PALETTE.walnut, PALETTE.brass, w, h);
       plate.position.set(mesh.position.x, mesh.position.y, -0.002);
       plate.visible = mesh.visible;
       panel.root.add(plate);
@@ -484,7 +513,9 @@ export class FlowUi {
     material.map?.dispose();
     material.map = on
       ? plateTexture('#6e4a2c', PALETTE.candle, width, height)
-      : plateTexture(PALETTE.walnut, PALETTE.brass, width, height);
+      : this.selectedIds.has(controlId)
+        ? plateTexture(SELECTED_FILL, SELECTED_EDGE, width, height)
+        : plateTexture(PALETTE.walnut, PALETTE.brass, width, height);
   }
 
   private boardOf(controlId: string): { board: Board; cell: string } | null {
@@ -529,17 +560,28 @@ export class FlowUi {
     const { flow } = this.deps;
     this.keyArt();
     const snap = this.deps.snapshot();
+    const level = this.deps.settings().difficulty;
     const rows: MenuRow[] = [
-      { id: 'new-run', label: 'New Run', onSelect: () => this.deps.onNewRun(this.seedValue) },
+      {
+        id: 'new-run',
+        label: 'New Run',
+        onSelect: () => this.deps.onNewRun(this.seedValue, this.deps.settings().difficulty),
+      },
       [
         { id: 'seed', label: `Seed ${formatSeed(this.seedValue)}`, weight: 2 },
         { id: 'enter-seed', label: 'Enter seed', onSelect: () => this.setSubview('seed') },
       ],
+      DIFFICULTIES.map((d) => ({
+        id: `difficulty-${d}`,
+        label: DIFFICULTY_LABEL[d],
+        onSelect: () => this.chooseDifficulty(d),
+      })),
+      { id: 'difficulty-note', label: `${DIFFICULTY_LABEL[level]}: ${DIFFICULTY_NOTE[level]}` },
     ];
     if (snap) {
       rows.push({
         id: 'continue',
-        label: `Continue  ${formatSeed(snap.run.seed)} · ${snap.clearedEncounters.length} won · ${snap.run.cogs} cogs`,
+        label: `Continue  ${formatSeed(snap.run.seed)} · ${DIFFICULTY_LABEL[runDifficulty(snap.run)]} · ${snap.clearedEncounters.length} won · ${snap.run.cogs} cogs`,
         onSelect: () => this.deps.onContinue(),
       });
     }
@@ -548,7 +590,19 @@ export class FlowUi {
       { id: 'settings', label: 'Settings', onSelect: () => flow.openSettings() },
     ]);
     rows.push({ id: 'bank', label: `${flow.workshop.cogsBanked} cogs banked in the workshop` });
-    this.board('title', rows, { x: -0.42, y: -0.08, z: -BOARD_DISTANCE }, { width: 0.6 });
+    this.board(
+      'title',
+      rows,
+      { x: -0.42, y: -0.08, z: -BOARD_DISTANCE },
+      { width: 0.6, selected: [`difficulty-${level}`] },
+    );
+  }
+
+  /** Picks the level the next New Run starts at; settings remember it as the title's default. */
+  private chooseDifficulty(level: Difficulty): void {
+    if (this.deps.settings().difficulty === level) return;
+    this.deps.onSettings({ ...this.deps.settings(), difficulty: level });
+    this.refresh();
   }
 
   private buildSeedPad(): void {
@@ -728,7 +782,10 @@ export class FlowUi {
     this.board(
       'summary',
       [
-        { id: 'seed', label: `Seed ${formatSeed(s.seed)}` },
+        [
+          { id: 'seed', label: `Seed ${formatSeed(s.seed)}`, weight: 2 },
+          { id: 'difficulty', label: DIFFICULTY_LABEL[s.difficulty] },
+        ],
         [
           { id: 'rooms-l', label: 'Rooms reached', weight: 2 },
           { id: 'rooms', label: String(s.roomsReached) },

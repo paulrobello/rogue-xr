@@ -1,3 +1,5 @@
+import { DEFAULT_DIFFICULTY, type Difficulty, isDifficulty } from '../rules/difficulty.ts';
+
 export const DB_NAME = 'rogue-xr';
 
 export type TurnMode = 'snap' | 'smooth';
@@ -12,6 +14,8 @@ export interface Settings {
   musicVolume: number;
   sfxVolume: number;
   teleportEnabled: boolean;
+  /** The level the title offers for the next New Run: the last one chosen. */
+  difficulty: Difficulty;
 }
 
 export const DEFAULT_SETTINGS: Readonly<Settings> = Object.freeze({
@@ -24,6 +28,7 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = Object.freeze({
   musicVolume: 0.6,
   sfxVolume: 0.8,
   teleportEnabled: false,
+  difficulty: DEFAULT_DIFFICULTY,
 });
 
 export const STORE_SETTINGS = 'settings';
@@ -86,6 +91,7 @@ export function validateSettings(raw: unknown): Settings {
     musicVolume: pickNum(r.musicVolume, d.musicVolume, 0, 1),
     sfxVolume: pickNum(r.sfxVolume, d.sfxVolume, 0, 1),
     teleportEnabled: pickBool(r.teleportEnabled, d.teleportEnabled),
+    difficulty: isDifficulty(r.difficulty) ? r.difficulty : d.difficulty,
   };
 }
 

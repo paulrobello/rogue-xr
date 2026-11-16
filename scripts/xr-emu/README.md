@@ -33,7 +33,7 @@ node scripts/xr-emu/walk.mjs --notice http://localhost:4262
 
 Screenshots land in `docs/verification/xr-emu-*.jpg` with a JSON report
 (`xr-emu-report.json`, `xr-emu-report-notice.json`). The exit code is 1 when any check fails
-(`make` reports 2). As of 2026-11-16 the walk passes every check (82, which includes the 11 treasure and resume checks, the 17 rest checks, the 6 guardian checks and the 9 comfort checks, 8 of which `--loco` runs on its own;
+(`make` reports 2). As of 2026-11-16 the walk passes every check (85, which includes the 3 difficulty checks, the 11 treasure and resume checks, the 17 rest checks, the 6 guardian checks and the 9 comfort checks, 8 of which `--loco` runs on its own;
 `xr-sigil-stage` failed intermittently until the walk waited for XR frames after pose writes, see `docs/playtesting.md`) and `--notice` last passed its 5 on 2026-11-15; XO1 to XO4 in `docs/playtesting.md` record the fixes. The two console 404s in the
 notice run are the music tracks that are not produced yet.
 
@@ -91,7 +91,13 @@ notice run are the music tracks that are not produced yet.
   the saved snapshot holds the key and the new hp; and after a reload and Continue the hearth is spent at
   once, no panel shows, and a trigger pull heals nothing. The run on 2026-11-16 lost 12 hp, so it also
   exercised the cap (+12, not +18).
-- The guardian check (`guardianPhaseCheck`, 6 checks) fights the Grand Escapement in a real XR session and reads
+- Difficulty (3 checks): on the title the ray presses Casual (`xr-title-difficulty`, the settings now hold
+  Casual), New Run starts at it (`xr-new-run-difficulty`) and the resumed run after the reload keeps it
+  (`xr-continue-keeps-difficulty`). The choice is saved, so the checks that run later in the same browser
+  context play Casual. None of them depends on enemy numbers, except the guardian check, which is pinned.
+- The guardian check (`guardianPhaseCheck`, 6 checks) loads `/?seed=SPIRE004&debug&difficulty=hard`, the
+  content as written (the lower levels shrink the guardian's hp and move its threshold), fights the Grand
+  Escapement in a real XR session and reads
   its phase-1 half: the model carries the `phase-change` clip, the case is closed, the phase is 1 in the rules
   and in the shown state, the move list is the four phase-1 moves without toll and overwind, the intents shown
   over three real enemy turns come from those four, and the clip never plays. **The phase flip itself is not

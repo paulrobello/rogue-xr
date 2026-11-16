@@ -8,6 +8,18 @@ export {
   validateDie,
 } from './dice.ts';
 export {
+  DEFAULT_DIFFICULTY,
+  DIFFICULTIES,
+  DIFFICULTY_LABEL,
+  DIFFICULTY_SCALE,
+  type Difficulty,
+  type DifficultyScale,
+  difficultyMaxHp,
+  isDifficulty,
+  runDifficulty,
+  scaleEnemySetup,
+} from './difficulty.ts';
+export {
   apply,
   createIdleState,
   intentDamage,

@@ -128,6 +128,7 @@ describe('flow transitions', () => {
     expect(flow.summary).toEqual({
       outcome: 'death',
       seed: normalizeSeed(SEED),
+      difficulty: 'normal',
       roomsReached: 4,
       fightsWon: 1,
       cogsEarned: purse,

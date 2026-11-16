@@ -1,4 +1,5 @@
 import { normalizeSeed, STREAMS, type StreamState } from '../core/rng.ts';
+import { isDifficulty } from '../rules/difficulty.ts';
 import type { RewardOffer, RewardTier, RunState } from '../rules/run.ts';
 import {
   createWorkshop,
@@ -141,6 +142,11 @@ function validateRunState(raw: unknown, path: string): RunState {
   const openedLoot = r.openedLoot === undefined ? [] : strings(r.openedLoot, `${path}.openedLoot`);
   const usedHearths =
     r.usedHearths === undefined ? [] : strings(r.usedHearths, `${path}.usedHearths`);
+  // Also added after version 1: an older save names no level and resumes as `DEFAULT_DIFFICULTY`.
+  if (r.difficulty !== undefined && !isDifficulty(r.difficulty)) {
+    fail(`${path}.difficulty`, 'unknown difficulty');
+  }
+  const difficulty = r.difficulty;
   return {
     seed,
     rng,
@@ -152,6 +158,7 @@ function validateRunState(raw: unknown, path: string): RunState {
     ...(rewardChoices === undefined ? {} : { rewardChoices }),
     ...(openedLoot.length === 0 ? {} : { openedLoot }),
     ...(usedHearths.length === 0 ? {} : { usedHearths }),
+    ...(difficulty === undefined ? {} : { difficulty }),
   };
 }
 

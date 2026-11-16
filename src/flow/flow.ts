@@ -1,6 +1,12 @@
 import type { RunSnapshot } from '../persist/saves.ts';
 import { snapshotRun } from '../persist/saves.ts';
 import {
+  DEFAULT_DIFFICULTY,
+  type Difficulty,
+  difficultyMaxHp,
+  runDifficulty,
+} from '../rules/difficulty.ts';
+import {
   chooseReward,
   createRun,
   lootKey,
@@ -65,6 +71,8 @@ export interface FightResult {
 export interface RunSummary {
   readonly outcome: 'death' | 'victory';
   readonly seed: string;
+  /** The level the run was played on. */
+  readonly difficulty: Difficulty;
   readonly roomsReached: number;
   readonly fightsWon: number;
   /** Cogs the run collected, all of which were banked. */
@@ -215,10 +223,18 @@ export class RunFlow {
     return true;
   }
 
-  /** Starts a fresh run on `seed` from the title, with the workshop's upgrades applied. */
-  newRun(seed: string): boolean {
+  /**
+   * Starts a fresh run on `seed` from the title at `difficulty`, with the workshop's upgrades applied
+   * and the level's player max hp on top. The level is stored on the run.
+   */
+  newRun(seed: string, difficulty: Difficulty = DEFAULT_DIFFICULTY): boolean {
     if (this.phaseValue !== 'title') return false;
-    this.runValue = createRun(seed, this.opts.starterDeck, runOptionsFrom(this.workshopValue));
+    const base = runOptionsFrom(this.workshopValue);
+    this.runValue = createRun(seed, this.opts.starterDeck, {
+      ...base,
+      maxHp: difficultyMaxHp(base.maxHp, difficulty),
+      difficulty,
+    });
     this.resetRunBookkeeping(0, []);
     return this.go('explore');
   }
@@ -367,6 +383,7 @@ export class RunFlow {
     this.summaryValue = {
       outcome,
       seed: run.seed,
+      difficulty: runDifficulty(run),
       roomsReached: this.reached.size,
       fightsWon: this.clearedRooms.length,
       cogsEarned: run.cogs,

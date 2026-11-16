@@ -1,5 +1,5 @@
 {
-  "when": "2026-11-16T04:52:33.269Z",
+  "when": "2026-11-16T15:18:29.821Z",
   "results": [
     {
       "id": "gpu",
@@ -11,7 +11,7 @@
       "pass": true,
       "detail": {
         "phase": "title",
-        "sceneChildren": 7
+        "sceneChildren": 8
       }
     },
     {
@@ -25,7 +25,11 @@
       "detail": {
         "presenting": true,
         "mode": "immersive-vr",
-        "optionalFeatures": ["local-floor", "local", "hand-tracking"],
+        "optionalFeatures": [
+          "local-floor",
+          "local",
+          "hand-tracking"
+        ],
         "enterButtonHidden": true
       }
     },
@@ -144,6 +148,115 @@
       }
     },
     {
+      "id": "settings-teleport-toggle",
+      "pass": true,
+      "detail": {
+        "initial": {
+          "teleportEnabled": false,
+          "turnMode": "snap",
+          "locoTeleport": false,
+          "locoTurnMode": "snap"
+        },
+        "teleOn": {
+          "live": {
+            "teleportEnabled": true,
+            "turnMode": "snap",
+            "locoTeleport": true,
+            "locoTurnMode": "snap"
+          },
+          "stored": {
+            "turnMode": "snap",
+            "snapDegrees": 30,
+            "vignette": true,
+            "vignetteStrength": 0.6,
+            "eyeHeight": 1.6,
+            "masterVolume": 0.7,
+            "musicVolume": 0.6,
+            "sfxVolume": 0.8,
+            "teleportEnabled": true,
+            "difficulty": "normal"
+          }
+        },
+        "teleOff": {
+          "live": {
+            "teleportEnabled": false,
+            "turnMode": "snap",
+            "locoTeleport": false,
+            "locoTurnMode": "snap"
+          },
+          "stored": {
+            "turnMode": "snap",
+            "snapDegrees": 30,
+            "vignette": true,
+            "vignetteStrength": 0.6,
+            "eyeHeight": 1.6,
+            "masterVolume": 0.7,
+            "musicVolume": 0.6,
+            "sfxVolume": 0.8,
+            "teleportEnabled": false,
+            "difficulty": "normal"
+          }
+        }
+      }
+    },
+    {
+      "id": "settings-turn-toggle",
+      "pass": true,
+      "detail": {
+        "initial": {
+          "teleportEnabled": false,
+          "turnMode": "snap",
+          "locoTeleport": false,
+          "locoTurnMode": "snap"
+        },
+        "smooth": {
+          "live": {
+            "teleportEnabled": false,
+            "turnMode": "smooth",
+            "locoTeleport": false,
+            "locoTurnMode": "smooth"
+          },
+          "stored": {
+            "turnMode": "smooth",
+            "snapDegrees": 30,
+            "vignette": true,
+            "vignetteStrength": 0.6,
+            "eyeHeight": 1.6,
+            "masterVolume": 0.7,
+            "musicVolume": 0.6,
+            "sfxVolume": 0.8,
+            "teleportEnabled": false,
+            "difficulty": "normal"
+          }
+        },
+        "snap": {
+          "live": {
+            "teleportEnabled": false,
+            "turnMode": "snap",
+            "locoTeleport": false,
+            "locoTurnMode": "snap"
+          },
+          "stored": {
+            "turnMode": "snap",
+            "snapDegrees": 30,
+            "vignette": true,
+            "vignetteStrength": 0.6,
+            "eyeHeight": 1.6,
+            "masterVolume": 0.7,
+            "musicVolume": 0.6,
+            "sfxVolume": 0.8,
+            "teleportEnabled": false,
+            "difficulty": "normal"
+          }
+        }
+      }
+    },
+    {
+      "id": "settings-comfort-back",
+      "pass": true,
+      "detail": null
+    },
+    {
       "id": "seed-keypad",
       "pass": true,
       "detail": {
@@ -160,15 +273,32 @@
       }
     },
     {
+      "id": "xr-title-difficulty",
+      "pass": true,
+      "detail": {
+        "levelBefore": "normal",
+        "hovered": "title-difficulty-casual",
+        "levelAfter": "casual"
+      }
+    },
+    {
       "id": "new-run-in-xr",
       "pass": true,
       "detail": {
-        "bootFloor": "43PJTN3F",
+        "bootFloor": "832BA9G9",
         "phase": "explore",
         "seed": "BRASS042",
         "rebuilt": true,
         "presenting": true,
-        "rigY": 0.39999995231628427
+        "rigY": 0.39999995231628427,
+        "difficulty": "casual"
+      }
+    },
+    {
+      "id": "xr-new-run-difficulty",
+      "pass": true,
+      "detail": {
+        "difficulty": "casual"
       }
     },
     {
@@ -183,7 +313,7 @@
       "id": "locomotion-smooth-move",
       "pass": true,
       "detail": {
-        "metres": 1.997,
+        "metres": 2.031,
         "from": {
           "x": 0,
           "z": 2,
@@ -191,7 +321,7 @@
         },
         "to": {
           "x": 0,
-          "z": 0.0030000000000003912,
+          "z": -0.030800000071525627,
           "yaw": 0
         }
       }
@@ -200,24 +330,142 @@
       "id": "locomotion-snap-turn",
       "pass": true,
       "detail": {
-        "yawDeg": [0, -29.999999999999996, -59.99999999999999],
-        "steps": [29.999999999999996, 29.999999999999996]
+        "yawDeg": [
+          0,
+          -29.999999999999996,
+          -59.99999999999999
+        ],
+        "steps": [
+          29.999999999999996,
+          29.999999999999996
+        ]
       }
     },
     {
-      "id": "locomotion-teleport",
-      "pass": null,
-      "detail": "not wired: main.ts passes teleportAim: null every frame"
+      "id": "locomotion-vignette-follows-motion",
+      "pass": true,
+      "detail": {
+        "stillBefore": {
+          "strength": 0,
+          "shown": 0,
+          "active": false,
+          "uuid": "454c5765-706e-42ae-ad5c-cc2aeaa175b3",
+          "now": 25259.19999998808
+        },
+        "moving": {
+          "strength": 0.7,
+          "shown": 1,
+          "active": true,
+          "uuid": "454c5765-706e-42ae-ad5c-cc2aeaa175b3",
+          "now": 25761.600000023842
+        },
+        "movingPasses": 18,
+        "still": {
+          "strength": 0,
+          "shown": 0,
+          "active": false,
+          "uuid": "454c5765-706e-42ae-ad5c-cc2aeaa175b3",
+          "now": 27265.19999998808
+        },
+        "stillPasses": 0
+      }
     },
     {
-      "id": "locomotion-vignette",
-      "pass": null,
-      "detail": "not drawn: Locomotion.vignetteStrength is computed but nothing in src reads it"
+      "id": "locomotion-vignette-edge-band",
+      "pass": true,
+      "detail": {
+        "held": {
+          "edge": 22.549994471489835,
+          "center": 55.60034750696262
+        },
+        "clear": {
+          "edge": 53.54482154093675,
+          "center": 55.60034750696262
+        },
+        "edgeRatio": 0.421,
+        "centerDelta": 0,
+        "note": "outer band mean luma with the vignette held at its cap vs off, same pose; centre box unchanged"
+      }
+    },
+    {
+      "id": "locomotion-vignette-composes-with-hit",
+      "pass": true,
+      "detail": {
+        "edge": 24969,
+        "center": 0,
+        "edgeShare": 0.0531,
+        "centerShare": 0,
+        "note": "new red pixels at the frame band vs the centre when the hit flash is added over the held comfort vignette"
+      }
+    },
+    {
+      "id": "locomotion-teleport-invalid-stays",
+      "pass": true,
+      "detail": {
+        "aimedYawElev": [
+          0,
+          4
+        ],
+        "reason": "blocked",
+        "view": {
+          "visible": true,
+          "ring": false,
+          "ringColor": "7c2a24",
+          "arcColor": "7c2a24",
+          "dots": 7
+        },
+        "movedMetres": 0
+      }
+    },
+    {
+      "id": "locomotion-teleport-valid-moves",
+      "pass": true,
+      "detail": {
+        "aimedYawElev": [
+          135,
+          20
+        ],
+        "landing": [
+          3.7836501661906,
+          2.154050844860755
+        ],
+        "headBefore": [
+          0,
+          -1.6296000001430515
+        ],
+        "headAfter": [
+          3.7836501661906,
+          2.1540508448607545
+        ],
+        "errorMetres": 0,
+        "rigY": [
+          0.39999995231628427,
+          0.39999995231628427
+        ],
+        "view": {
+          "visible": true,
+          "ring": true,
+          "ringColor": "dec16a",
+          "arcColor": "dec16a",
+          "dots": 11
+        },
+        "vignettePulse": [
+          0.6184999999403953,
+          0
+        ]
+      }
     },
     {
       "id": "enter-vr-clickable",
       "pass": true,
       "detail": {}
+    },
+    {
+      "id": "xr-continue-keeps-difficulty",
+      "pass": true,
+      "detail": {
+        "difficulty": "casual"
+      }
     },
     {
       "id": "seated-height-after-continue",
@@ -235,7 +483,123 @@
         "phase": "explore",
         "seed": "BRASS042",
         "presenting": true,
-        "rigY": 0.39999995231628427
+        "rigY": 0.39999995231628427,
+        "difficulty": "casual"
+      }
+    },
+    {
+      "id": "xr-fan-in-off-hand",
+      "pass": true,
+      "detail": {
+        "cards": 5,
+        "onGrip": true,
+        "rootOffset": [
+          0,
+          0.03,
+          -0.08
+        ],
+        "note": "clearance is proven in tests/fan-hand-clearance.test.ts; this is the visual"
+      }
+    },
+    {
+      "id": "xr-sigil-stage",
+      "pass": true,
+      "detail": {
+        "card": "warding-glyph",
+        "index": 1,
+        "hoveredCard": 1,
+        "stage": "sigil",
+        "plate": "ready",
+        "hint": "Hold the trigger and point at the plate to trace the glyph",
+        "message": "Hold the trigger and point at the plate to trace the glyph",
+        "fling": "fling: staged drop warding-glyph v=0.00"
+      }
+    },
+    {
+      "id": "xr-sigil-hint",
+      "pass": true,
+      "detail": {
+        "plateHint": "Hold the trigger and point at the plate to trace the glyph",
+        "message": "Hold the trigger and point at the plate to trace the glyph"
+      }
+    },
+    {
+      "id": "xr-sigil-trail",
+      "pass": true,
+      "detail": {
+        "sigil": "ward",
+        "perStroke": [
+          {
+            "points": 59,
+            "strokes": 1,
+            "trailDrawCount": 348,
+            "phase": "drawing"
+          }
+        ],
+        "newTrailPixels": 1606
+      }
+    },
+    {
+      "id": "xr-sigil-cast",
+      "pass": true,
+      "detail": {
+        "label": "×1.25 Masterful",
+        "plate": "done",
+        "message": "Hold the trigger and point at the plate to trace the glyph",
+        "stage": "idle",
+        "log": [
+          "-- Turn 2 --",
+          "Played Warding Glyph",
+          "You gained 10 block"
+        ]
+      }
+    },
+    {
+      "id": "locomotion-locked-in-combat",
+      "pass": true,
+      "detail": {
+        "before": {
+          "at": [
+            8,
+            -0.9999999999999996
+          ],
+          "vignette": 0,
+          "aiming": false,
+          "preview": false,
+          "locked": true
+        },
+        "held": {
+          "smooth": {
+            "at": [
+              8,
+              -0.9999999999999996
+            ],
+            "vignette": 0,
+            "aiming": false,
+            "preview": false,
+            "locked": true
+          },
+          "teleport": {
+            "at": [
+              8,
+              -0.9999999999999996
+            ],
+            "vignette": 0,
+            "aiming": false,
+            "preview": false,
+            "locked": true
+          }
+        },
+        "after": {
+          "at": [
+            8,
+            -0.9999999999999996
+          ],
+          "vignette": 0,
+          "aiming": false,
+          "preview": false,
+          "locked": true
+        }
       }
     },
     {
@@ -251,7 +615,10 @@
         "pick": "reward-rivet-volley",
         "hovered": "reward-rivet-volley",
         "cardDistance": 1.3269836769842656,
-        "deck": [10, 11],
+        "deck": [
+          10,
+          11
+        ],
         "runCogs": 14
       }
     },
@@ -268,7 +635,10 @@
         "pick": "reward-skip-skip",
         "hovered": "reward-skip-skip",
         "cardDistance": 1.3269836769842656,
-        "deck": [11, 11],
+        "deck": [
+          11,
+          11
+        ],
         "runCogs": 28
       }
     },
@@ -285,7 +655,10 @@
         "pick": "reward-skip-skip",
         "hovered": "reward-skip-skip",
         "cardDistance": 1.3269836769842656,
-        "deck": [11, 11],
+        "deck": [
+          11,
+          11
+        ],
         "runCogs": 56
       }
     },
@@ -331,6 +704,640 @@
       "id": "session-end",
       "pass": true,
       "detail": null
+    },
+    {
+      "id": "enter-vr-clickable",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "id": "xr-enemy-turns-sequential",
+      "pass": true,
+      "detail": {
+        "room": 2,
+        "enemies": [
+          "cog-sentry",
+          "spring-hound"
+        ],
+        "models": [
+          true,
+          true
+        ],
+        "trace": [
+          {
+            "enemyId": "cog-sentry",
+            "moveId": "brace",
+            "motion": "clip",
+            "start": 2.17,
+            "impact": 2.73,
+            "end": 3.38
+          },
+          {
+            "enemyId": "spring-hound",
+            "moveId": "snap",
+            "motion": "clip",
+            "start": 3.73,
+            "impact": 4.23,
+            "end": 4.85
+          }
+        ],
+        "burst": [
+          {
+            "name": "15-enemy-turn-00",
+            "phase": true,
+            "t": 2.37,
+            "acting": "cog-sentry",
+            "flash": 0,
+            "hp": 78
+          },
+          {
+            "name": "15-enemy-turn-01",
+            "phase": true,
+            "t": 2.65,
+            "acting": "cog-sentry",
+            "flash": 0,
+            "hp": 78
+          },
+          {
+            "name": "15-enemy-turn-02",
+            "phase": true,
+            "t": 2.92,
+            "acting": "cog-sentry",
+            "flash": 0.303,
+            "hp": 75
+          },
+          {
+            "name": "15-enemy-turn-03",
+            "phase": true,
+            "t": 3.18,
+            "acting": "cog-sentry",
+            "flash": 0.017,
+            "hp": 75
+          },
+          {
+            "name": "15-enemy-turn-04",
+            "phase": true,
+            "t": 3.45,
+            "acting": null,
+            "flash": 0,
+            "hp": 75
+          },
+          {
+            "name": "15-enemy-turn-05",
+            "phase": true,
+            "t": 3.72,
+            "acting": null,
+            "flash": 0,
+            "hp": 75
+          },
+          {
+            "name": "15-enemy-turn-06",
+            "phase": true,
+            "t": 3.98,
+            "acting": "spring-hound",
+            "flash": 0,
+            "hp": 75
+          },
+          {
+            "name": "15-enemy-turn-07",
+            "phase": true,
+            "t": 4.25,
+            "acting": "spring-hound",
+            "flash": 0.418,
+            "hp": 69
+          },
+          {
+            "name": "15-enemy-turn-08",
+            "phase": true,
+            "t": 4.52,
+            "acting": "spring-hound",
+            "flash": 0.155,
+            "hp": 69
+          },
+          {
+            "name": "15-enemy-turn-09",
+            "phase": true,
+            "t": 4.78,
+            "acting": "spring-hound",
+            "flash": 0,
+            "hp": 69
+          },
+          {
+            "name": "15-enemy-turn-10",
+            "phase": true,
+            "t": 5.05,
+            "acting": null,
+            "flash": 0,
+            "hp": 69
+          }
+        ],
+        "fanAfter": 5
+      }
+    },
+    {
+      "id": "xr-hit-flash-natural",
+      "pass": true,
+      "detail": {
+        "hits": [
+          {
+            "kind": "hit",
+            "amount": 3,
+            "blocked": 0,
+            "hpLost": 3,
+            "at": 5.882900000035754
+          },
+          {
+            "kind": "hit",
+            "amount": 6,
+            "blocked": 0,
+            "hpLost": 6,
+            "at": 7.383200000047677
+          }
+        ],
+        "hp": [
+          78,
+          69
+        ],
+        "maxOpacity": 0.619,
+        "passRenderedWhilePresenting": true,
+        "note": "a real enemy blow fired it"
+      }
+    },
+    {
+      "id": "xr-hit-vignette-visible",
+      "pass": true,
+      "detail": {
+        "edge": 67029,
+        "center": 0,
+        "edgeShare": 0.1425,
+        "centerShare": 0,
+        "note": "new red pixels at the outer frame band vs the centre, flash held at peak"
+      }
+    },
+    {
+      "id": "enter-vr-clickable",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "id": "xr-title-in-front-after-turned-entry",
+      "pass": true,
+      "detail": {
+        "degrees": 18.094130832326233,
+        "forward": [
+          -1.2246468525851679e-16,
+          1
+        ],
+        "toBoard": [
+          0.4199999999999998,
+          1.2854375005699694
+        ]
+      }
+    },
+    {
+      "id": "enter-vr-clickable",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "id": "xr-treasure-teleport",
+      "pass": true,
+      "detail": {
+        "name": "coffer-3-desk-drawer"
+      }
+    },
+    {
+      "id": "xr-treasure-trigger-opens-coffer",
+      "pass": true,
+      "detail": {
+        "before": {
+          "phase": "explore",
+          "cogs": 0,
+          "deck": 10,
+          "opened": [],
+          "toast": null,
+          "shown": null,
+          "lid": 0,
+          "board": false
+        },
+        "after": {
+          "phase": "explore",
+          "cogs": 0,
+          "deck": 11,
+          "opened": [
+            "3/desk-drawer"
+          ],
+          "toast": "New card: Overwind",
+          "shown": "New card: Overwind",
+          "lid": 1.95,
+          "board": false
+        }
+      }
+    },
+    {
+      "id": "xr-treasure-pays-what-the-panel-shows",
+      "pass": true,
+      "detail": {
+        "toast": "New card: Overwind",
+        "shown": "New card: Overwind",
+        "paid": 0,
+        "cards": 1
+      }
+    },
+    {
+      "id": "xr-treasure-no-board-lock",
+      "pass": true,
+      "detail": {
+        "phase": "explore",
+        "board": false
+      }
+    },
+    {
+      "id": "xr-treasure-panel-in-view",
+      "pass": true,
+      "detail": {
+        "x": 0.029778457819827645,
+        "y": 0.34098869244855057,
+        "z": 0.9539400368611279
+      }
+    },
+    {
+      "id": "xr-treasure-second-pull-pays-nothing",
+      "pass": true,
+      "detail": {
+        "after": {
+          "phase": "explore",
+          "cogs": 0,
+          "deck": 11,
+          "opened": [
+            "3/desk-drawer"
+          ],
+          "toast": "New card: Overwind",
+          "shown": "New card: Overwind",
+          "lid": 1.95,
+          "board": false
+        },
+        "again": {
+          "phase": "explore",
+          "cogs": 0,
+          "deck": 11,
+          "opened": [
+            "3/desk-drawer"
+          ],
+          "toast": "New card: Overwind",
+          "shown": "New card: Overwind",
+          "lid": 1.95,
+          "board": false
+        }
+      }
+    },
+    {
+      "id": "xr-treasure-saved",
+      "pass": true,
+      "detail": {
+        "opened": [
+          "3/desk-drawer"
+        ],
+        "cogs": 0,
+        "deck": 11
+      }
+    },
+    {
+      "id": "enter-vr-clickable",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "id": "xr-treasure-resume-shows-coffer-open",
+      "pass": true,
+      "detail": {
+        "hasContinue": true,
+        "resumed": {
+          "phase": "explore",
+          "cogs": 0,
+          "deck": 11,
+          "opened": [
+            "3/desk-drawer"
+          ],
+          "toast": null,
+          "shown": null,
+          "lid": 1.95,
+          "board": false
+        },
+        "lidOpen": {
+          "opened": true,
+          "lid": 1.95,
+          "panel": false
+        }
+      }
+    },
+    {
+      "id": "xr-treasure-resume-cannot-reopen",
+      "pass": true,
+      "detail": {
+        "resumed": {
+          "phase": "explore",
+          "cogs": 0,
+          "deck": 11,
+          "opened": [
+            "3/desk-drawer"
+          ],
+          "toast": null,
+          "shown": null,
+          "lid": 1.95,
+          "board": false
+        },
+        "repulled": {
+          "phase": "explore",
+          "cogs": 0,
+          "deck": 11,
+          "opened": [
+            "3/desk-drawer"
+          ],
+          "toast": null,
+          "shown": null,
+          "lid": 1.95,
+          "board": false
+        }
+      }
+    },
+    {
+      "id": "enter-vr-clickable",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "id": "xr-rest-fight-won-by-a-played-card",
+      "pass": true,
+      "detail": {
+        "ok": true
+      }
+    },
+    {
+      "id": "xr-rest-wounded-by-a-real-fight",
+      "pass": true,
+      "detail": {
+        "hp": 61,
+        "maxHp": 78
+      }
+    },
+    {
+      "id": "xr-rest-teleport",
+      "pass": true,
+      "detail": {
+        "name": "hearth-4-chest"
+      }
+    },
+    {
+      "id": "xr-rest-beam-ends-on-hearth",
+      "pass": true,
+      "detail": [
+        {
+          "index": 1,
+          "distance": 1.995957193113845,
+          "room": 4
+        }
+      ]
+    },
+    {
+      "id": "xr-rest-trigger-heals-what-the-panel-shows",
+      "pass": true,
+      "detail": {
+        "before": 61,
+        "after": 78,
+        "maxHp": 78,
+        "want": 17,
+        "toast": "+17 hp"
+      }
+    },
+    {
+      "id": "xr-rest-hearth-spent-and-recorded",
+      "pass": true,
+      "detail": {
+        "used": [
+          "4/chest"
+        ],
+        "last": {
+          "room": 4,
+          "socketId": "chest",
+          "healed": 17,
+          "hp": 78
+        }
+      }
+    },
+    {
+      "id": "xr-rest-coals-dim",
+      "pass": true,
+      "detail": {
+        "lit": 2.367214772166566,
+        "spent": 0.5561784215386453
+      }
+    },
+    {
+      "id": "xr-rest-changes-only-hp",
+      "pass": true,
+      "detail": {
+        "before": {
+          "phase": "explore",
+          "hp": 61,
+          "maxHp": 78,
+          "cogs": 12,
+          "deck": 10,
+          "used": [],
+          "toast": null,
+          "last": null,
+          "spent": false,
+          "coals": 2.7554657178597632,
+          "nodes": 205,
+          "board": false
+        },
+        "after": {
+          "phase": "explore",
+          "hp": 78,
+          "maxHp": 78,
+          "cogs": 12,
+          "deck": 10,
+          "used": [
+            "4/chest"
+          ],
+          "toast": "+17 hp",
+          "last": {
+            "room": 4,
+            "socketId": "chest",
+            "healed": 17,
+            "hp": 78
+          },
+          "spent": true,
+          "coals": 0.5561784215386453,
+          "nodes": 207,
+          "board": false
+        }
+      }
+    },
+    {
+      "id": "xr-rest-no-board-lock",
+      "pass": true,
+      "detail": {
+        "phase": "explore",
+        "board": false
+      }
+    },
+    {
+      "id": "xr-rest-panel-in-view",
+      "pass": true,
+      "detail": {
+        "x": 0.030012525212563746,
+        "y": 0.29644011854096586,
+        "z": 0.9540464422657877
+      }
+    },
+    {
+      "id": "xr-rest-second-pull-heals-nothing",
+      "pass": true,
+      "detail": {
+        "after": 78,
+        "again": 78,
+        "beamAfter": []
+      }
+    },
+    {
+      "id": "xr-rest-no-stale-panel-or-nodes",
+      "pass": true,
+      "detail": {
+        "before": 205,
+        "settled": 205,
+        "toast": null
+      }
+    },
+    {
+      "id": "xr-rest-saved",
+      "pass": true,
+      "detail": {
+        "used": [
+          "4/chest"
+        ],
+        "hp": 78
+      }
+    },
+    {
+      "id": "enter-vr-clickable",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "id": "xr-rest-resume-shows-hearth-spent",
+      "pass": true,
+      "detail": {
+        "hasContinue": true,
+        "resumed": {
+          "phase": "explore",
+          "hp": 78,
+          "maxHp": 78,
+          "cogs": 12,
+          "deck": 10,
+          "used": [
+            "4/chest"
+          ],
+          "toast": null,
+          "last": null,
+          "spent": true,
+          "coals": 0.023877688087211246,
+          "nodes": 205,
+          "board": false
+        }
+      }
+    },
+    {
+      "id": "xr-rest-resume-cannot-reuse",
+      "pass": true,
+      "detail": {
+        "resumed": 78,
+        "repulled": 78
+      }
+    },
+    {
+      "id": "enter-vr-clickable",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "id": "xr-guardian-teleport",
+      "pass": true,
+      "detail": {
+        "room": 7
+      }
+    },
+    {
+      "id": "xr-guardian-phase1-case-closed",
+      "pass": true,
+      "detail": {
+        "id": "grand-escapement",
+        "hp": 160,
+        "maxHp": 160,
+        "phase": 1,
+        "moves": [
+          "tick",
+          "tock",
+          "pallet",
+          "mainspring"
+        ],
+        "intent": "mainspring",
+        "shownPhase": 1,
+        "shownIntent": "mainspring",
+        "playerHp": 65,
+        "model": true,
+        "clip": "phase-change",
+        "caseOpen": false,
+        "caseOpening": false,
+        "phaseChanges": 0,
+        "state": "frozen"
+      }
+    },
+    {
+      "id": "xr-guardian-phase1-moves-without-toll-and-overwind",
+      "pass": true,
+      "detail": [
+        "tick",
+        "tock",
+        "pallet",
+        "mainspring"
+      ]
+    },
+    {
+      "id": "xr-guardian-phase1-intents-from-the-four-move-list",
+      "pass": true,
+      "detail": [
+        "mainspring",
+        "tick",
+        "tick",
+        "tick"
+      ]
+    },
+    {
+      "id": "xr-guardian-phase1-clip-never-played",
+      "pass": true,
+      "detail": {
+        "id": "grand-escapement",
+        "hp": 160,
+        "maxHp": 160,
+        "phase": 1,
+        "moves": [
+          "tick",
+          "tock",
+          "pallet",
+          "mainspring"
+        ],
+        "intent": "tick",
+        "shownPhase": 1,
+        "shownIntent": "tick",
+        "playerHp": 25,
+        "model": true,
+        "clip": "phase-change",
+        "caseOpen": false,
+        "caseOpening": false,
+        "phaseChanges": 0,
+        "state": "frozen"
+      }
     }
   ],
   "consoleErrors": []

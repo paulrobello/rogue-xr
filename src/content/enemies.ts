@@ -1,4 +1,5 @@
 import type { Stream } from '../core/rng.ts';
+import { type Difficulty, scaleEnemySetup } from '../rules/difficulty.ts';
 import type { Effect, EnemyMove, EnemySetup } from '../rules/types.ts';
 
 /**
@@ -169,14 +170,16 @@ export function pickEncounter(
 
 /**
  * The start-combat enemy setups for an encounter. A kind that appears more than once gets numbered
- * ids (`spring-hound`, `spring-hound-2`), because enemy ids must be unique within a combat.
+ * ids (`spring-hound`, `spring-hound-2`), because enemy ids must be unique within a combat. With a
+ * `difficulty`, each setup is scaled for that level and the encounter's tier (`scaleEnemySetup`);
+ * without one, the content fights as written (Hard).
  */
-export function encounterSetups(enc: Encounter): EnemySetup[] {
+export function encounterSetups(enc: Encounter, difficulty?: Difficulty): EnemySetup[] {
   const seen = new Map<EnemyKind, number>();
   return enc.enemies.map((kind) => {
     const count = (seen.get(kind) ?? 0) + 1;
     seen.set(kind, count);
-    const base = ENEMIES[kind];
+    const base = difficulty ? scaleEnemySetup(ENEMIES[kind], enc.tier, difficulty) : ENEMIES[kind];
     return count === 1 ? base : { ...base, id: `${base.id}-${count}` };
   });
 }

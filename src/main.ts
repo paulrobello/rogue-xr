@@ -2,7 +2,7 @@ import { createPointer } from '@par/xr-workspace';
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { type AudioState, audioStateFor } from './audio/cues.ts';
+import { audioStateForFlow } from './audio/cues.ts';
 import { AudioDirector } from './audio/index.ts';
 import { mountCardProof } from './cards/card-proof.ts';
 import { CombatHook, type CombatPick, type XrHands } from './combat/combat-session.ts';
@@ -29,7 +29,7 @@ import { fitCombatFraming } from './desktop/combat-framing.ts';
 import { combatPitch, createDesktopControls } from './desktop/controls.ts';
 import { Walker } from './desktop/walker.ts';
 import { type EnemyActor, type EnemyAsset, tryLoadEnemyAsset } from './enemies/enemy-asset.ts';
-import { type FlowPhase, RunFlow } from './flow/flow.ts';
+import { RunFlow } from './flow/flow.ts';
 import { FlowUi } from './flow/panels.ts';
 import { bindFlowPersistence } from './flow/persist.ts';
 import { PALETTE } from './palette.ts';
@@ -42,6 +42,12 @@ import {
   saveSettings,
 } from './persist/db.ts';
 import { loadRunSnapshot, loadWorkshop, type RunSnapshot } from './persist/saves.ts';
+import {
+  DEFAULT_DIFFICULTY,
+  type Difficulty,
+  isDifficulty,
+  runDifficulty,
+} from './rules/difficulty.ts';
 import { parseLootKey, type RewardTier } from './rules/run.ts';
 import { createWorkshop } from './rules/workshop.ts';
 import { mountUpdateNotice } from './update/index.ts';
@@ -126,6 +132,12 @@ const db = playMode ? await openDb() : null;
 const workshop = db ? await loadWorkshop(db).catch(() => createWorkshop()) : createWorkshop();
 let storedSnapshot: RunSnapshot | null = db ? await loadRunSnapshot(db).catch(() => null) : null;
 let settings: Settings | null = db ? await loadSettings(db) : null;
+// `?difficulty=casual|normal|hard` sets the level a `?seed=` link starts at and the title's choice,
+// for this page only (saved once the player changes a setting).
+const queryDifficulty = params.get('difficulty');
+if (isDifficulty(queryDifficulty)) {
+  settings = { ...(settings ?? DEFAULT_SETTINGS), difficulty: queryDifficulty };
+}
 const flow = new RunFlow({ workshop, starterDeck: STARTER_DECK, rewardPool: REWARD_POOL });
 const directSeed = params.has('seed') && !params.has('title');
 const bootSeed = params.has('seed')
@@ -144,8 +156,9 @@ if (!proofView) floor = mountFloor(bootSeed);
 /** True once a run has played on the mounted floor, so the next run needs a fresh one. */
 let floorUsed = false;
 
-// Debug readout: seed, current room, the last frame's draw calls (Quest budget: under 200) and,
-// in a fight, the combat stage and log.
+// Debug readout, under `?debug` only: seed, current room, the last frame's draw calls (Quest budget:
+// under 200) and, in a fight, the combat stage, log and key help.
+const showDebugHud = params.has('debug');
 const hud = document.createElement('div');
 hud.id = 'debug-hud';
 Object.assign(hud.style, {
@@ -158,7 +171,7 @@ Object.assign(hud.style, {
   whiteSpace: 'pre',
   textShadow: '0 1px 2px #000',
 });
-if (floor) app.append(hud);
+if (floor && showDebugHud) app.append(hud);
 const banner = document.createElement('div');
 banner.id = 'combat-banner';
 Object.assign(banner.style, {
@@ -245,6 +258,7 @@ const fightOptions = () => {
           playerHp: Math.max(1, Math.min(run.maxHp, run.hp)),
           playerMaxHp: run.maxHp,
           bonusDice: run.bonusDice ?? 0,
+          difficulty: runDifficulty(run),
         }
       : {}),
     ...(cheat === 'win' ? { enemyHp: 1 } : {}),
@@ -507,7 +521,7 @@ const freshFloor = (seed: string): FloorView => {
   void dressFloor(floor);
   return floor;
 };
-const startRun = (seed: string): void => {
+const startRun = (seed: string, difficulty: Difficulty): void => {
   if (flow.phase !== 'title') return;
   const target = freshFloor(seed);
   // x/z only: in XR the rig's y holds the seated-height lift from the recenter.
@@ -515,7 +529,7 @@ const startRun = (seed: string): void => {
   rig.position.set(spawn.x, rig.position.y, spawn.z);
   walker.yaw = 0;
   floorUsed = true;
-  flow.newRun(target.seed);
+  flow.newRun(target.seed, difficulty);
 };
 const continueRun = (): void => {
   const snap = storedSnapshot;
@@ -561,7 +575,7 @@ const ui = floor
 // fight that just ended never hide the reward or summary in front of the player.
 const uiScene = new THREE.Scene();
 if (ui) uiScene.add(ui.root);
-if (ui && directSeed) startRun(bootSeed);
+if (ui && directSeed) startRun(bootSeed, settings?.difficulty ?? DEFAULT_DIFFICULTY);
 actions.on('select', ({ controlId }) => {
   ui?.activate(controlId);
 });
@@ -925,7 +939,9 @@ if (floor && params.has('debug')) {
 }
 
 actions.on('new-run', ({ seed }) => {
-  if (flow.phase === 'title') startRun(seed ?? ui?.seed ?? randomSeed());
+  if (flow.phase === 'title') {
+    startRun(seed ?? ui?.seed ?? randomSeed(), settings?.difficulty ?? DEFAULT_DIFFICULTY);
+  }
 });
 
 const enterButton = document.createElement('button');
@@ -966,15 +982,6 @@ window.addEventListener('resize', () => {
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
-
-/** The audio state for the flow: a running encounter wins inside a run, the screens map directly. */
-const audioFor = (phase: FlowPhase, encounter: FloorView['encounter']['phase']): AudioState => {
-  if (phase === 'death') return 'defeat';
-  if (phase === 'victory') return 'victory';
-  if (phase === 'settings') return 'title';
-  if (phase === 'combat') return audioStateFor('combat', encounter);
-  return audioStateFor(phase, encounter);
-};
 
 const sceneStats = { calls: 0, triangles: 0 };
 let framedSession: unknown = null;
@@ -1079,7 +1086,13 @@ renderer.setAnimationLoop((time, frame) => {
     }
   }
   if (floor && audio) {
-    audio.setState(audioFor(flow.phase, floor.encounter.phase));
+    const fighting = floor.encounter.phase !== 'idle';
+    audio.setState(
+      audioStateForFlow(flow.phase, floor.encounter.phase, {
+        tier: fighting ? fightTier(floor, floor.encounter.activeRoom) : null,
+        room: floor.world.plan.rooms[floor.world.current]?.role ?? null,
+      }),
+    );
     audio.update(deltaSeconds);
   }
   teleportView.update(xr.presenting ? locomotion.teleportPreview : null);
@@ -1121,7 +1134,7 @@ renderer.setAnimationLoop((time, frame) => {
     renderer.render(xr.updateLasers(laserHits), camera);
     renderer.autoClear = true;
   }
-  if (floor && !xr.presenting) {
+  if (floor && showDebugHud && !xr.presenting) {
     const room = floor.world.plan.rooms[floor.world.current];
     const fight = floor.encounter.phase === 'idle' ? '' : ` · encounter ${floor.encounter.phase}`;
     const session = combat?.session;

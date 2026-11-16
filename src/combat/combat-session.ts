@@ -32,7 +32,13 @@ import { CardFan } from '../hand/card-fan.ts';
 import { DEFAULT_FAN, GRIP_FAN_ORIGIN } from '../hand/fan-layout.ts';
 import { FlingController, type FlingTargetSite, rayFromObject } from '../hand/fling.ts';
 import { PALETTE } from '../palette.ts';
-import { type CombatEvent, type CombatState, intentDamage, PLAYER_ID } from '../rules/index.ts';
+import {
+  type CombatEvent,
+  type CombatState,
+  type Difficulty,
+  intentDamage,
+  PLAYER_ID,
+} from '../rules/index.ts';
 import {
   type PlatePose,
   plateLabelCorners,
@@ -188,8 +194,13 @@ export interface CombatSessionDeps {
   /** Called once the fight is decided and its banner has held. */
   end: (outcome: 'win' | 'defeat') => void;
   audio?: CombatAudio;
-  /** The run's deck, hp, max hp and bonus dice, plus debug cheats, passed to the controller. */
-  options?: Pick<CombatOptions, 'enemyHp' | 'playerHp' | 'playerMaxHp' | 'bonusDice' | 'deck'>;
+  /**
+   * The run's deck, hp, max hp and bonus dice, plus debug cheats, passed to the controller, and the
+   * run's difficulty, which scales the encounter's enemies (absent: the content as written).
+   */
+  options?: Pick<CombatOptions, 'enemyHp' | 'playerHp' | 'playerMaxHp' | 'bonusDice' | 'deck'> & {
+    readonly difficulty?: Difficulty;
+  };
   /** The animated actor standing in for a body (the Cog Sentry), or null for a placeholder. */
   actorOf?: (body: THREE.Object3D) => SentryActor | null;
   /** Called as damage lands on the player (or is fully blocked), at the blow's impact. */
@@ -288,6 +299,8 @@ export class CombatSession {
   private readonly anchors: {
     object: THREE.Mesh;
     home: THREE.Vector3;
+    /** XR layout rotation; the desktop view turns the status panel to face the camera instead. */
+    turn: THREE.Quaternion;
     /** Scale in the desktop view; 1 in the XR layout. */
     scale: number;
     kind: 'button' | 'readout' | 'status';
@@ -348,10 +361,11 @@ export class CombatSession {
     // Left to right across the table, the order the director placed them in.
     const ordered = [...deps.bodies].sort((a, b) => lateral(a) - lateral(b));
     const encounter = chooseEncounter(deps.seed, deps.room, deps.tier, ordered.length);
+    const { difficulty, ...controllerOptions } = deps.options ?? {};
     this.controller = new CombatController({
-      ...deps.options,
+      ...controllerOptions,
       seed: fightSeed(deps.seed, deps.room),
-      setups: encounterSetups(encounter),
+      setups: encounterSetups(encounter, difficulty),
     });
     this.lastShown = this.controller.state;
     this.enemyIds = this.controller.state.enemies.map((e) => e.id);
@@ -467,7 +481,13 @@ export class CombatSession {
       this.labels.push({ id, label });
     });
     const anchor = (object: THREE.Mesh, kind: 'button' | 'readout' | 'status', scale = 1) =>
-      this.anchors.push({ object, home: object.position.clone(), scale, kind });
+      this.anchors.push({
+        object,
+        home: object.position.clone(),
+        turn: object.quaternion.clone(),
+        scale,
+        kind,
+      });
     anchor(this.endButton, 'button');
     anchor(this.throwButton, 'button');
     for (const { label } of this.labels) anchor(label.mesh, 'readout');
@@ -669,7 +689,8 @@ export class CombatSession {
    * Desktop only: slides the buttons, status panel and readouts from their XR layout positions
    * into `camera`'s view wherever the view would cut them off. Each is moved in the camera's
    * plane, so its size on screen is unchanged. The status panel is also scaled down and then
-   * steps below any readout it would cover. A readout the sigil plate or its result label would
+   * steps below any readout it would cover, turned parallel to the view so it reads square on
+   * (in XR it keeps its turn toward the seat). A readout the sigil plate or its result label would
    * cover rises above them, else moves to the side, shrinking if it must. The hand strip keeps its
    * screen size at any field of view and stays below `DESKTOP_HAND_TOP`.
    * Call `resetHud` when the camera is not the player's desktop view.
@@ -730,6 +751,12 @@ export class CombatSession {
       const mesh = anchor.object;
       mesh.position.copy(anchor.home);
       mesh.scale.setScalar(anchor.scale);
+      if (anchor.kind === 'status' && mesh.parent) {
+        mesh.quaternion
+          .copy(mesh.parent.getWorldQuaternion(new THREE.Quaternion()))
+          .invert()
+          .multiply(rotation);
+      }
       let rect = rectOf(mesh);
       for (let pass = 0; pass < 3 && rect; pass++) {
         const dx = shiftInto(rect.x0, rect.x1, margin);
@@ -849,6 +876,7 @@ export class CombatSession {
     this.hudMoved = false;
     for (const anchor of this.anchors) {
       anchor.object.position.copy(anchor.home);
+      anchor.object.quaternion.copy(anchor.turn);
       anchor.object.scale.setScalar(1);
     }
   }

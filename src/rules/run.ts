@@ -1,4 +1,5 @@
 import { RunRng, type RunRngState, Stream } from '../core/rng.ts';
+import { type Difficulty, isDifficulty } from './difficulty.ts';
 import { RulesError } from './types.ts';
 
 /**
@@ -24,6 +25,8 @@ export interface RunState {
   readonly openedLoot?: readonly string[];
   /** Keys (`lootKey`) of the rest-room hearths already used this run. Absent means none. */
   readonly usedHearths?: readonly string[];
+  /** The level chosen for this run. Absent (every save made before levels existed) means `DEFAULT_DIFFICULTY`. */
+  readonly difficulty?: Difficulty;
 }
 
 /** Mirrors `EncounterTier` in `floor/generate.ts`; rules may not import from `floor/`. */
@@ -61,6 +64,8 @@ export interface RunOptions {
   readonly bonusDice?: number;
   /** Stored on the run when given. Positive integer; `rewardOffer` falls back to `REWARD_CHOICES`. */
   readonly rewardChoices?: number;
+  /** Stored on the run when given. Scales nothing here: callers apply it to max hp and enemies. */
+  readonly difficulty?: Difficulty;
 }
 
 /** What a finished fight offers: three distinct card ids (pool order is not preserved) and a cog payout. */
@@ -109,11 +114,13 @@ export function createRun(
     throw new RulesError('hp must be in [0, maxHp]');
   if (!Number.isInteger(cogs) || cogs < 0)
     throw new RulesError('cogs must be a non-negative integer');
-  const { bonusDice, rewardChoices } = opts;
+  const { bonusDice, rewardChoices, difficulty } = opts;
   if (bonusDice !== undefined && (!Number.isInteger(bonusDice) || bonusDice < 0))
     throw new RulesError('bonusDice must be a non-negative integer');
   if (rewardChoices !== undefined && (!Number.isInteger(rewardChoices) || rewardChoices < 1))
     throw new RulesError('rewardChoices must be a positive integer');
+  if (difficulty !== undefined && !isDifficulty(difficulty))
+    throw new RulesError(`Unknown difficulty ${String(difficulty)}`);
   return {
     seed: rng.seed,
     rng: rng.snapshot(),
@@ -123,6 +130,7 @@ export function createRun(
     maxHp,
     ...(bonusDice === undefined ? {} : { bonusDice }),
     ...(rewardChoices === undefined ? {} : { rewardChoices }),
+    ...(difficulty === undefined ? {} : { difficulty }),
   };
 }
 

@@ -663,11 +663,12 @@ try {
    * GLB: clip plays once, hinge bones held open under every other clip). What the emulated session
    * adds, and what this checks, is the phase-1 half of the real fight: the guardian model carries its
    * phase-change clip, stands with its case closed, never plays the clip, and shows only the four
-   * phase-1 moves as intents over real enemy turns.
+   * phase-1 moves as intents over real enemy turns. Pinned to Hard (`&difficulty=hard`, the content as
+   * written): the lower levels shrink the guardian's hp, which moves its threshold within reach.
    */
   async function guardianPhaseCheck() {
     const base = opts.base.replace(/\/$/, '');
-    await page.goto(`${base}/?seed=${GUARDIAN_SEED}&debug`);
+    await page.goto(`${base}/?seed=${GUARDIAN_SEED}&debug&difficulty=hard`);
     await waitFor(
       'guardian-app',
       () => window.__combat?.floor && window.__xrEmu.ctx().renderer,
@@ -1015,6 +1016,17 @@ try {
     await press('workshop-back');
     record('workshop-open', shop.phase === 'workshop' && (await phase()) === 'title', shop);
 
+    // Difficulty with the ray: Casual is chosen on the title, remembered, and the run starts at it.
+    const levelBefore = await ev(() => window.__flow.ui.deps.settings().difficulty);
+    hovered = await press('title-difficulty-casual');
+    const levelAfter = await ev(() => window.__flow.ui.deps.settings().difficulty);
+    await shot('4b-title-difficulty');
+    record(
+      'xr-title-difficulty',
+      hovered === 'title-difficulty-casual' && levelAfter === 'casual',
+      { levelBefore, hovered, levelAfter },
+    );
+
     // New Run on the keyed seed: the floor is rebuilt in place while presenting.
     const bootFloor = await ev(() => {
       window.__xrEmuBootFloor = window.__combat.floor;
@@ -1028,11 +1040,13 @@ try {
       rebuilt: window.__combat.floor !== window.__xrEmuBootFloor,
       presenting: window.__xrEmu.ctx().renderer.xr.isPresenting,
       rigY: window.__xrEmu.ctx().rig.position.y,
+      difficulty: window.__flow.flow.run?.difficulty ?? null,
     }));
     record('new-run-in-xr', run.phase === 'explore' && run.seed === opts.seed && run.presenting, {
       bootFloor,
       ...run,
     });
+    record('xr-new-run-difficulty', run.difficulty === 'casual', { difficulty: run.difficulty });
     record('seated-height-after-new-run', Math.abs(run.rigY - (1.6 - SEATED_HEAD_Y)) < 0.02, {
       rigY: run.rigY,
       expected: 1.6 - SEATED_HEAD_Y,
@@ -1055,7 +1069,11 @@ try {
       seed: window.__flow.flow.run?.seed ?? null,
       presenting: window.__xrEmu.ctx().renderer.xr.isPresenting,
       rigY: window.__xrEmu.ctx().rig.position.y,
+      difficulty: window.__flow.flow.run?.difficulty ?? null,
     }));
+    record('xr-continue-keeps-difficulty', resumed.difficulty === 'casual', {
+      difficulty: resumed.difficulty,
+    });
     record('seated-height-after-continue', Math.abs(resumed.rigY - (1.6 - SEATED_HEAD_Y)) < 0.02, {
       rigY: resumed.rigY,
       expected: 1.6 - SEATED_HEAD_Y,

@@ -237,7 +237,7 @@ describe('rules/run.ts purity', () => {
     const file = resolve(dirname(fileURLToPath(import.meta.url)), '../src/rules/run.ts');
     const source = readFileSync(file, 'utf8');
     const specifiers = [...source.matchAll(/\bfrom\s*['"]([^'"]+)['"]/g)].map((m) => m[1]);
-    expect(specifiers.sort()).toEqual(['../core/rng.ts', './types.ts']);
+    expect(specifiers.sort()).toEqual(['../core/rng.ts', './difficulty.ts', './types.ts']);
     expect(source).not.toMatch(/\bimport\s*\(/);
   });
 });
