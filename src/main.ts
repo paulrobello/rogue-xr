@@ -32,6 +32,7 @@ import { type EnemyActor, type EnemyAsset, tryLoadEnemyAsset } from './enemies/e
 import { RunFlow } from './flow/flow.ts';
 import { FlowUi } from './flow/panels.ts';
 import { bindFlowPersistence } from './flow/persist.ts';
+import { flingTraceLog } from './hand/fling-trace.ts';
 import { PALETTE } from './palette.ts';
 import { mountPerf } from './perf/index.ts';
 import {
@@ -999,13 +1000,52 @@ void xr.supported().then((ok) => {
   enterButton.disabled = !ok;
   if (!ok) enterButton.textContent = 'VR not available';
 });
+// `?debug` keeps every card release as a replay trace (P3-T3) and offers them as one JSON download
+// outside the headset session, for `tests/fixtures/fling/recorded/`.
+const traceButton = document.createElement('button');
+traceButton.id = 'fling-trace-download';
+Object.assign(traceButton.style, {
+  position: 'fixed',
+  bottom: '24px',
+  right: '24px',
+  padding: '10px 18px',
+  font: '600 14px system-ui, sans-serif',
+  color: PALETTE.void,
+  background: PALETTE.candle,
+  border: 'none',
+  borderRadius: '6px',
+  display: 'none',
+});
+traceButton.addEventListener('click', () => {
+  const url = URL.createObjectURL(new Blob([flingTraceLog.toJson()], { type: 'application/json' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `fling-traces-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
+let traceCount = -1;
+const syncTraceButton = (inXr: boolean): void => {
+  const n = flingTraceLog.traces.length;
+  if (n !== traceCount) {
+    traceCount = n;
+    traceButton.textContent = `Download ${n} fling trace${n === 1 ? '' : 's'}`;
+  }
+  traceButton.style.display = !inXr && n > 0 ? '' : 'none';
+};
+if (showDebugHud) {
+  flingTraceLog.enabled = true;
+  app.append(traceButton);
+}
 actions.on('enter-xr', () => {
   enterButton.style.display = 'none';
+  syncTraceButton(true);
   camera.position.set(0, 0, 0);
   recenterPending = true;
 });
 actions.on('exit-xr', () => {
   enterButton.style.display = '';
+  syncTraceButton(false);
   camera.position.set(0, 1.6, 0);
   rig.position.y = 0;
 });
@@ -1185,6 +1225,7 @@ renderer.setAnimationLoop((time, frame) => {
     const combatLines = session
       ? `\n${session.hudText()}\n${session.log.slice(-4).join('\n')}\nDrag a card at an enemy or onto the table · draw on the plate · T throw dice · E end turn · Esc cancel`
       : '';
+    syncTraceButton(renderer.xr.isPresenting);
     hud.textContent = `seed ${floor.seed} · room ${floor.world.current} ${room?.templateId} (${room?.role}) · calls ${renderer.info.render.calls}${fight}${audio ? `\n${audio.statusLine}` : ''}${combatLines}`;
   }
   if (floor) {

@@ -16,7 +16,8 @@ import {
   type TableHalfExtents,
   throwCrossesTable,
 } from './aim.ts';
-import type { CardFan, GrabbedCard } from './card-fan.ts';
+import type { CardFan, GrabbedCard, ReleasedCard } from './card-fan.ts';
+import { type FlingTrace, flingTraceLog, medianHz, traceSamples } from './fling-trace.ts';
 import { DEFAULT_WINDOW_SECONDS, releaseVelocity, SampleWindow, type Vec3 } from './velocity.ts';
 
 /** Where an enemy stands, world space. The controller decides whether it is a legal target. */
@@ -203,7 +204,51 @@ export class FlingController {
     this.held = null;
     const released = this.fan.release();
     if (!released) return null;
+    // Snapshot before resolving: a played card changes the rules' state the targets are read from.
+    const trace = flingTraceLog.enabled ? this.snapshot(released) : null;
+    const decision = this.resolve(held, released);
+    if (trace) {
+      flingTraceLog.add({
+        ...trace,
+        decision: {
+          outcome: decision.outcome,
+          via: decision.via,
+          targetId: decision.targetId,
+          speed: decision.speed,
+          angleDeg: decision.angleDeg,
+        },
+      });
+    }
+    return decision;
+  }
 
+  private snapshot(released: ReleasedCard): Omit<FlingTrace, 'decision'> {
+    const samples = traceSamples(this.window);
+    const alive = new Set(livingEnemies(this.combat.state).map((e) => e.id));
+    const p = released.position;
+    return {
+      name: flingTraceLog.nextName(),
+      recordedAt: new Date().toISOString(),
+      hz: medianHz(samples),
+      windowSeconds: this.tuning.windowSeconds,
+      coneDeg: this.tuning.coneDeg,
+      minSpeed: this.tuning.minSpeed,
+      releaseTime: samples.length > 0 ? (samples[samples.length - 1]?.[0] as number) : 0,
+      samples,
+      origin: [p.x, p.y, p.z],
+      cardId: released.card.id,
+      cardTarget: released.card.target,
+      targets: this.targetsOf().map((s) => ({
+        id: s.id,
+        position: [s.position[0], s.position[1], s.position[2]] as Vec3,
+        ...(s.radius === undefined ? {} : { radius: s.radius }),
+        valid: alive.has(s.id),
+      })),
+      intended: null,
+    };
+  }
+
+  private resolve(held: GrabbedCard, released: ReleasedCard): FlingDecision {
     const velocity = releaseVelocity(this.window, this.tuning);
     const speed = velocity ? speedOf(velocity) : 0;
     const flick = velocity !== null && speed >= this.tuning.minSpeed;

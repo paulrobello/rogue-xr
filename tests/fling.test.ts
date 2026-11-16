@@ -13,6 +13,13 @@ import {
 import { CardFan, type CardFanIntent } from '../src/hand/card-fan.ts';
 import { FlingController, type FlingTargetSite } from '../src/hand/fling.ts';
 import {
+  type FlingTrace,
+  FlingTraceLog,
+  flingTraceLog,
+  medianHz,
+  replayTrace,
+} from '../src/hand/fling-trace.ts';
+import {
   DEFAULT_WINDOW_SECONDS,
   releaseVelocity,
   SampleWindow,
@@ -620,4 +627,112 @@ describe('FlingController: bookkeeping', () => {
     }
     expect(r.fling.history.length).toBeLessThanOrEqual(20);
   });
+});
+
+describe('fling traces', () => {
+  const record = (fn: () => void): FlingTrace[] => {
+    flingTraceLog.clear();
+    flingTraceLog.enabled = true;
+    try {
+      fn();
+    } finally {
+      flingTraceLog.enabled = false;
+    }
+    const out = [...flingTraceLog.traces];
+    flingTraceLog.clear();
+    return out;
+  };
+
+  it('records nothing while the log is off', () => {
+    flingTraceLog.clear();
+    const r = rig();
+    const grab = r.replay(FLICKS[1] as Trace, 'strike');
+    r.place(grab.last, FLICKS[1] as Trace, 3.2);
+    r.fling.release();
+    expect(flingTraceLog.traces).toHaveLength(0);
+  });
+
+  it('keeps the release window, the targets before the play and the decision', () => {
+    const trace = FLICKS[1] as Trace;
+    let enemyId = '';
+    const [saved] = record(() => {
+      const r = rig();
+      enemyId = r.enemyId;
+      const grab = r.replay(trace, 'strike');
+      r.place(grab.last, trace, 3.2);
+      r.place(grab.last, trace, 1.5, 'ghost');
+      r.fling.release();
+    });
+    if (!saved) throw new Error('no trace');
+    expect(saved.cardId).toBe('strike');
+    expect(saved.cardTarget).toBe('enemy');
+    expect(saved.hz).toBe(90);
+    expect(saved.samples.length).toBe(48);
+    expect(saved.samples[0]?.[0]).toBe(0);
+    expect(saved.releaseTime).toBeCloseTo(saved.samples[saved.samples.length - 1]?.[0] as number);
+    expect(saved.targets.map((t) => [t.id, t.valid])).toEqual([
+      [enemyId, true],
+      ['ghost', false],
+    ]);
+    expect(saved.decision).toMatchObject({ outcome: 'played', via: 'flick', targetId: enemyId });
+    expect(saved.intended).toBeNull();
+    expect(JSON.parse(JSON.stringify(saved))).toEqual(saved);
+  });
+
+  it('replays a saved trace to the same speed and target the controller chose', () => {
+    for (const trace of FLICKS) {
+      const [saved] = record(() => {
+        const r = rig();
+        const grab = r.replay(trace, 'strike');
+        r.place(grab.last, trace, 3.2);
+        r.fling.release();
+      });
+      if (!saved) throw new Error('no trace');
+      const replay = replayTrace(saved);
+      expect(replay.flickTarget).toBe(saved.decision.targetId);
+      expect(Math.abs(replay.speed - saved.decision.speed) / saved.decision.speed).toBeLessThan(
+        0.02,
+      );
+    }
+  });
+
+  it('bounds the log, names traces in order and reads the median rate', () => {
+    const log = new FlingTraceLog(2);
+    expect([log.nextName(), log.nextName()]).toEqual(['fling-001', 'fling-002']);
+    const stub = { name: 'x' } as FlingTrace;
+    for (let i = 0; i < 3; i++) log.add({ ...stub, name: `t${i}` });
+    expect(log.traces.map((t) => t.name)).toEqual(['t1', 't2']);
+    expect(JSON.parse(log.toJson()).traces).toHaveLength(2);
+    expect(medianHz([[0], [1 / 72], [2 / 72], [2 / 72 + 0.05], [3 / 72 + 0.05]])).toBe(72);
+    expect(medianHz([[0]])).toBe(0);
+  });
+});
+
+// Real Quest flicks, downloaded under `?debug` and saved here. A trace's `intended` is the enemy
+// the player meant, written in by hand from the session notes; null means not reviewed yet.
+const RECORDED = Object.values(
+  import.meta.glob<{ traces: FlingTrace[] }>('./fixtures/fling/recorded/*.json', {
+    eager: true,
+    import: 'default',
+  }),
+).flatMap((file) => file.traces);
+
+describe.skipIf(RECORDED.length === 0)('recorded Quest flicks', () => {
+  it.each(RECORDED.map((t) => [t.name, t] as const))('%s replays to its decision', (_n, trace) => {
+    const replay = replayTrace(trace);
+    expect(Math.abs(replay.speed - trace.decision.speed)).toBeLessThan(
+      0.02 * Math.max(1, trace.decision.speed),
+    );
+    if (trace.decision.via === 'flick' && trace.cardTarget === 'enemy') {
+      expect(replay.flickTarget).toBe(trace.decision.targetId);
+    }
+  });
+
+  const reviewed = RECORDED.filter((t) => t.intended !== null && t.cardTarget === 'enemy');
+  it.each(reviewed.map((t) => [t.name, t] as const))(
+    '%s lands on the enemy the player meant',
+    (_n, trace) => {
+      expect(replayTrace(trace).flickTarget ?? trace.decision.targetId).toBe(trace.intended);
+    },
+  );
 });
