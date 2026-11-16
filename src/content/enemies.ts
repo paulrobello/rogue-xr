@@ -1,0 +1,166 @@
+import type { Stream } from '../core/rng.ts';
+import type { Effect, EnemyMove, EnemySetup } from '../rules/types.ts';
+
+/**
+ * The automaton roster. Each enemy's intent script is its weighted move list: the engine draws the
+ * next intent from the `ai` stream (`ai.int(1, totalWeight)`) after every action, so a run's seed fixes
+ * every intent. Tuned for a ~70 HP player with 3 steam and 5 cards a turn.
+ *
+ * Weak and Vulnerable lose one stack at the end of their owner's turn, so a move that puts either on
+ * the player applies at least 2 stacks; one stack would decay before the next enemy action.
+ */
+export type EnemyKind =
+  | 'cog-sentry'
+  | 'spring-hound'
+  | 'bellows-golem'
+  | 'orrery-warden'
+  | 'grand-escapement';
+
+export type EncounterTier = 'regular' | 'elite' | 'guardian';
+
+const hit = (amount: number, hits?: number): Effect =>
+  hits === undefined
+    ? { type: 'damage', amount, target: 'target' }
+    : { type: 'damage', amount, hits, target: 'target' };
+const block = (amount: number): Effect => ({ type: 'block', amount });
+const windUp = (stacks: number): Effect => ({
+  type: 'apply-status',
+  status: 'wound-up',
+  stacks,
+  target: 'self',
+});
+const onPlayer = (status: 'weak' | 'vulnerable' | 'overheat', stacks: number): Effect => ({
+  type: 'apply-status',
+  status,
+  stacks,
+  target: 'target',
+});
+
+const move = (
+  id: string,
+  intent: EnemyMove['intent'],
+  weight: number,
+  effects: Effect[],
+): EnemyMove => ({ id, intent, weight, effects });
+
+export const ENEMIES: Readonly<Record<EnemyKind, EnemySetup>> = {
+  'cog-sentry': {
+    id: 'cog-sentry',
+    name: 'Cog Sentry',
+    hp: 38,
+    moves: [
+      move('bolt', 'attack', 3, [hit(8)]),
+      move('brace', 'defend', 2, [block(7), hit(4)]),
+      move('jam', 'debuff', 1, [onPlayer('weak', 2)]),
+    ],
+  },
+  'spring-hound': {
+    id: 'spring-hound',
+    name: 'Spring Hound',
+    hp: 30,
+    moves: [
+      move('snap', 'attack', 3, [hit(3, 2)]),
+      move('pounce', 'attack', 2, [hit(9)]),
+      move('coil', 'buff', 1, [windUp(1), block(4)]),
+    ],
+  },
+  'bellows-golem': {
+    id: 'bellows-golem',
+    name: 'Bellows Golem',
+    hp: 52,
+    moves: [
+      move('crush', 'attack', 2, [hit(12)]),
+      move('vent', 'attack-debuff', 2, [hit(4), onPlayer('overheat', 3)]),
+      move('bank', 'defend', 1, [block(12)]),
+    ],
+  },
+  'orrery-warden': {
+    id: 'orrery-warden',
+    name: 'Orrery Warden',
+    hp: 92,
+    moves: [
+      move('transit', 'attack', 3, [hit(5, 3)]),
+      move('eclipse', 'attack-debuff', 2, [hit(10), onPlayer('vulnerable', 2)]),
+      move('align', 'buff', 1, [windUp(2), block(10)]),
+      move('zenith', 'attack', 1, [hit(17)]),
+    ],
+  },
+  'grand-escapement': {
+    id: 'grand-escapement',
+    name: 'Grand Escapement',
+    hp: 160,
+    moves: [
+      move('tick', 'attack', 3, [hit(8, 2)]),
+      move('tock', 'defend', 2, [block(16), hit(7)]),
+      move('pallet', 'attack-debuff', 2, [hit(13), onPlayer('weak', 2)]),
+      move('mainspring', 'buff', 1, [windUp(2), block(8)]),
+      move('overwind', 'debuff', 1, [onPlayer('overheat', 3), onPlayer('vulnerable', 2)]),
+      move('toll', 'attack', 1, [hit(26)]),
+    ],
+  },
+};
+
+/** Threat cost of one enemy against a floor budget. */
+export const ENEMY_THREAT: Readonly<Record<EnemyKind, number>> = {
+  'cog-sentry': 2,
+  'spring-hound': 2,
+  'bellows-golem': 3,
+  'orrery-warden': 6,
+  'grand-escapement': 10,
+};
+
+export interface Encounter {
+  readonly id: string;
+  readonly tier: EncounterTier;
+  readonly enemies: readonly EnemyKind[];
+  /** Sum of the enemies' threat; the floor generator spends its budget on this. */
+  readonly threat: number;
+}
+
+const encounter = (id: string, tier: EncounterTier, enemies: EnemyKind[]): Encounter => ({
+  id,
+  tier,
+  enemies,
+  threat: enemies.reduce((sum, kind) => sum + ENEMY_THREAT[kind], 0),
+});
+
+export const ENCOUNTERS: Readonly<Record<EncounterTier, readonly Encounter[]>> = {
+  regular: [
+    encounter('sentry', 'regular', ['cog-sentry']),
+    encounter('hound', 'regular', ['spring-hound']),
+    encounter('golem', 'regular', ['bellows-golem']),
+    encounter('hound-pack', 'regular', ['spring-hound', 'spring-hound']),
+    encounter('sentry-hound', 'regular', ['cog-sentry', 'spring-hound']),
+    encounter('sentry-pair', 'regular', ['cog-sentry', 'cog-sentry']),
+  ],
+  elite: [encounter('warden', 'elite', ['orrery-warden'])],
+  guardian: [encounter('escapement', 'guardian', ['grand-escapement'])],
+};
+
+/**
+ * Picks an encounter of `tier` uniformly from `stream` (the `floor` or `ai` stream), considering only
+ * encounters whose threat fits `budget`. Draws exactly once. Throws when nothing fits.
+ */
+export function pickEncounter(
+  tier: EncounterTier,
+  stream: Stream,
+  budget = Number.POSITIVE_INFINITY,
+): Encounter {
+  const fits = ENCOUNTERS[tier].filter((e) => e.threat <= budget);
+  if (fits.length === 0) throw new RangeError(`No ${tier} encounter fits threat budget ${budget}`);
+  return stream.pick(fits);
+}
+
+/**
+ * The start-combat enemy setups for an encounter. A kind that appears more than once gets numbered
+ * ids (`spring-hound`, `spring-hound-2`), because enemy ids must be unique within a combat.
+ */
+export function encounterSetups(enc: Encounter): EnemySetup[] {
+  const seen = new Map<EnemyKind, number>();
+  return enc.enemies.map((kind) => {
+    const count = (seen.get(kind) ?? 0) + 1;
+    seen.set(kind, count);
+    const base = ENEMIES[kind];
+    return count === 1 ? base : { ...base, id: `${base.id}-${count}` };
+  });
+}
