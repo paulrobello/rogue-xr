@@ -16,6 +16,9 @@ import {
   SFX,
   SFX_IDS,
   type SfxId,
+  STINGER_FAMILY,
+  STINGER_WINDOW,
+  type StingerFamily,
   sfxForCombatEvent,
   VoicePool,
 } from './cues.ts';
@@ -145,6 +148,7 @@ export class AudioDirector {
   private readonly sfxBuffers = new Map<SfxId, AudioBuffer>();
   private readonly musicBuffers = new Map<MusicId, AudioBuffer>();
   private readonly lastPlayed = new Map<SfxId, number>();
+  private readonly lastStinger = new Map<StingerFamily, number>();
   private readonly unlockers: (() => void)[] = [];
   private stateValue: AudioState | null = null;
   private sfxVolume = 1;
@@ -253,7 +257,8 @@ export class AudioDirector {
   /**
    * Plays an SFX. Positional cues with `at` are spatialised from that world point, everything else
    * plays flat. Returns false when the cue was dropped: missing file, context not running,
-   * retrigger guard, or the director is disposed.
+   * retrigger guard, a stinger of the same outcome family playing within `STINGER_WINDOW`, or the
+   * director is disposed.
    */
   playSfx(id: SfxId, at?: Vec3Like, volume = 1): boolean {
     const def = SFX[id];
@@ -262,10 +267,14 @@ export class AudioDirector {
     const now = this.now();
     const last = this.lastPlayed.get(id);
     if (last !== undefined && now - last < def.minGap) return false;
+    const family = STINGER_FAMILY[id];
+    const lastInFamily = family === undefined ? undefined : this.lastStinger.get(family);
+    if (lastInFamily !== undefined && now - lastInFamily < STINGER_WINDOW) return false;
     const spatial = def.kind === 'positional' && at !== undefined;
     const acquired = spatial ? this.spatial.acquire() : this.flat.acquire();
     if (!acquired) return false;
     this.lastPlayed.set(id, now);
+    if (family !== undefined) this.lastStinger.set(family, now);
     const voice = acquired.voice;
     if (spatial && at) this.place(voice as SpatialVoice, at);
     voice.setBuffer(buffer);
@@ -352,6 +361,7 @@ export class AudioDirector {
     this.sfxBuffers.clear();
     this.musicBuffers.clear();
     this.lastPlayed.clear();
+    this.lastStinger.clear();
     this.deps.dispose?.();
   }
 

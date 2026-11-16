@@ -126,11 +126,22 @@ function textLayout(atlas: CardAtlas): TextLayout {
     descWidth: description.rect[2] / frame.rect[2],
   };
 }
-const TITLE_FONT = 0.082;
-const DESC_FONT = 0.062;
-const COST_FONT = 0.105;
+const TITLE_FONT = 0.092;
+const DESC_FONT = 0.066;
+const COST_FONT = 0.115;
 /** Dark ink for text on the parchment panel. */
 const INK = '#2a1a0e';
+/** Average glyph advance over font size; a long name shrinks until its estimated width fits the band. */
+const TITLE_ADVANCE = 0.55;
+/**
+ * A colour for troika's batched text. BatchedText packs each member colour with `Color.getHex()`,
+ * which returns sRGB bytes, but its shader writes them out as linear `diffuse`. The output encode
+ * then lifts every colour (the dark ink came out mid grey), so the colour is decoded once more here
+ * and the two cancel.
+ */
+const batchedInk = (css: string): THREE.Color => new THREE.Color(css).convertSRGBToLinear();
+const inkColor = batchedInk(INK);
+const costColor = batchedInk(PALETTE.candle);
 /** Depth offsets above the card face, metres, so layers never z-fight. */
 const GEM_Z = 0.0003;
 const TEXT_Z = 0.0007;
@@ -530,15 +541,16 @@ export class CardFan {
       const cost = new Text();
       cost.text = String(card.cost);
       cost.fontSize = COST_FONT * w;
-      cost.color = PALETTE.candle;
+      cost.color = costColor;
       cost.anchorX = 'center';
       cost.anchorY = 'middle';
 
       const title = new Text();
       title.text = card.name;
-      title.fontSize = TITLE_FONT * w;
+      title.fontSize =
+        Math.min(TITLE_FONT, layout.titleWidth / (card.name.length * TITLE_ADVANCE)) * w;
       title.maxWidth = layout.titleWidth * w;
-      title.color = INK;
+      title.color = inkColor;
       title.anchorX = 'center';
       title.anchorY = 'middle';
       title.textAlign = 'center';
@@ -548,19 +560,11 @@ export class CardFan {
       desc.text = card.description;
       desc.fontSize = DESC_FONT * w;
       desc.maxWidth = layout.descWidth * w;
-      desc.color = INK;
+      desc.color = inkColor;
       desc.anchorX = 'left';
       desc.anchorY = 'top';
       desc.textAlign = 'left';
       desc.lineHeight = 1.15;
-      // A stroke in the fill colour thickens the thin SDF glyphs on parchment. Unlike an outline it
-      // is drawn in the same pass, so the batch stays one draw.
-      for (const text of [cost, title, desc]) {
-        // The toolkit's ambient troika typings omit the stroke properties.
-        const stroked = text as unknown as { strokeWidth: string; strokeColor: string };
-        stroked.strokeWidth = '3%';
-        stroked.strokeColor = text === cost ? PALETTE.candle : INK;
-      }
       for (const text of [cost, title, desc]) {
         text.matrixAutoUpdate = false;
         this.labels.addText(text);

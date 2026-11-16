@@ -174,6 +174,26 @@ describe('CardFan draw cost', () => {
     expect(members.size).toBe(30);
   });
 
+  it('packs name and rules ink dark: the batch writes member colours as linear bytes', () => {
+    const { fan } = makeFan(3);
+    const batch = fan.root.children.find((c) => c.name === 'card-fan-labels') as unknown as {
+      _members: Map<{ text: string; color: THREE.Color }, unknown>;
+    };
+    const ink = new THREE.Color('#2a1a0e');
+    const packed = new THREE.Color();
+    let inked = 0;
+    for (const member of batch._members.keys()) {
+      if (member.text === '1' || /^\d$/.test(member.text)) continue;
+      packed.set(member.color);
+      // BatchedText stores getHex() (sRGB bytes) and its shader reads them back as linear, so the
+      // bytes must equal the ink's linear value, not its sRGB value.
+      expect(packed.getHex() >> 16).toBeCloseTo(Math.round(ink.r * 255), -1);
+      expect(packed.getHex() >> 16).toBeLessThan(10);
+      inked++;
+    }
+    expect(inked).toBe(6);
+  });
+
   it('rejects more than 10 cards', () => {
     const { fan } = makeFan(3);
     expect(() => fan.setHand(hand(11))).toThrow(RangeError);

@@ -55,6 +55,20 @@ export const SFX = {
 export type SfxId = keyof typeof SFX;
 export const SFX_IDS = Object.keys(SFX) as SfxId[];
 
+/**
+ * Run-outcome stingers, grouped by outcome. A fight's own stinger (the combat session) and the
+ * flow's state stinger (`setState`) announce the same moment, so one family sounds at most once per
+ * `STINGER_WINDOW`: whichever plays first wins and the other is dropped.
+ */
+export type StingerFamily = 'win' | 'loss';
+export const STINGER_FAMILY: Readonly<Partial<Record<SfxId, StingerFamily>>> = {
+  'victory-sting': 'win',
+  'reward-chime': 'win',
+  'defeat-sting': 'loss',
+};
+/** Seconds a stinger family stays claimed after one of its cues plays. */
+export const STINGER_WINDOW = 3;
+
 export const MUSIC_FILES = {
   explore: 'music/explore.ogg',
   combat: 'music/combat.ogg',

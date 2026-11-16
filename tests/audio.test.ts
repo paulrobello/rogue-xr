@@ -19,6 +19,8 @@ import {
   SFX_IDS,
   type SfxId,
   type SpatialVoice,
+  STINGER_FAMILY,
+  STINGER_WINDOW,
   sfxForCombatEvent,
   VoicePool,
 } from '../src/audio/index.ts';
@@ -447,6 +449,83 @@ describe('AudioDirector', () => {
     h.director.update(1.5);
     expect(music.filter((v) => v.isPlaying)).toHaveLength(0);
     expect(h.director.musicCue).toBeNull();
+  });
+
+  describe('stinger families', () => {
+    const stingerPlays = (h: Harness) => h.flat.slice(0, 4).reduce((n, v) => n + v.plays, 0);
+
+    it('registers only existing cues, and every state stinger belongs to a family', () => {
+      for (const id of Object.keys(STINGER_FAMILY)) expect(SFX_IDS).toContain(id);
+      for (const state of ['reward', 'defeat', 'victory'] as const) {
+        const d = musicCueFor(state);
+        if (d.kind === 'hold' || !d.stinger) throw new Error(`${state} has no stinger`);
+        expect(STINGER_FAMILY[d.stinger]).toBeDefined();
+      }
+    });
+
+    it("drops the flow's defeat stinger when the fight's own defeat stinger just played", async () => {
+      const h = harness();
+      await h.director.load();
+      h.clock.t = 10;
+      expect(h.director.playSfx('defeat-sting')).toBe(true);
+      h.clock.t += 1;
+      h.director.setState('defeat');
+      expect(stingerPlays(h)).toBe(1);
+      expect(h.director.state).toBe('defeat');
+    });
+
+    it("drops the flow's reward chime when the fight's victory stinger just played", async () => {
+      const h = harness();
+      await h.director.load();
+      h.clock.t = 10;
+      expect(h.director.playSfx('victory-sting')).toBe(true);
+      h.clock.t += 1;
+      h.director.setState('reward');
+      expect(stingerPlays(h)).toBe(1);
+      expect(h.director.musicCue).toBe('explore');
+    });
+
+    it('drops a run victory stinger that follows the fight victory stinger', async () => {
+      const h = harness();
+      await h.director.load();
+      h.clock.t = 10;
+      h.director.playSfx('victory-sting');
+      h.clock.t += SFX['victory-sting'].minGap + 0.1;
+      h.director.setState('victory');
+      expect(stingerPlays(h)).toBe(1);
+    });
+
+    it('lets the family sound again once the window has passed', async () => {
+      const h = harness();
+      await h.director.load();
+      h.clock.t = 10;
+      h.director.playSfx('victory-sting');
+      h.clock.t += STINGER_WINDOW - 0.01;
+      expect(h.director.playSfx('reward-chime')).toBe(false);
+      h.clock.t += 0.02;
+      expect(h.director.playSfx('reward-chime')).toBe(true);
+      expect(stingerPlays(h)).toBe(2);
+    });
+
+    it('keeps outcome families independent and leaves ordinary cues alone', async () => {
+      const h = harness();
+      await h.director.load();
+      h.clock.t = 10;
+      expect(h.director.playSfx('defeat-sting')).toBe(true);
+      expect(h.director.playSfx('victory-sting')).toBe(true);
+      expect(h.director.playSfx('ui-tick')).toBe(true);
+    });
+
+    it('does not extend the window with a dropped stinger', async () => {
+      const h = harness();
+      await h.director.load();
+      h.clock.t = 10;
+      h.director.playSfx('victory-sting');
+      h.clock.t += 2;
+      expect(h.director.playSfx('reward-chime')).toBe(false);
+      h.clock.t += 1.01;
+      expect(h.director.playSfx('reward-chime')).toBe(true);
+    });
   });
 
   it('starts music requested before the files finished loading', async () => {
