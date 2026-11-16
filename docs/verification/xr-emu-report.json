@@ -25,11 +25,7 @@
       "detail": {
         "presenting": true,
         "mode": "immersive-vr",
-        "optionalFeatures": [
-          "local-floor",
-          "local",
-          "hand-tracking"
-        ],
+        "optionalFeatures": ["local-floor", "local", "hand-tracking"],
         "enterButtonHidden": true
       }
     },
@@ -330,15 +326,8 @@
       "id": "locomotion-snap-turn",
       "pass": true,
       "detail": {
-        "yawDeg": [
-          0,
-          -29.999999999999996,
-          -59.99999999999999
-        ],
-        "steps": [
-          29.999999999999996,
-          29.999999999999996
-        ]
+        "yawDeg": [0, -29.999999999999996, -59.99999999999999],
+        "steps": [29.999999999999996, 29.999999999999996]
       }
     },
     {
@@ -402,10 +391,7 @@
       "id": "locomotion-teleport-invalid-stays",
       "pass": true,
       "detail": {
-        "aimedYawElev": [
-          0,
-          4
-        ],
+        "aimedYawElev": [0, 4],
         "reason": "blocked",
         "view": {
           "visible": true,
@@ -421,27 +407,12 @@
       "id": "locomotion-teleport-valid-moves",
       "pass": true,
       "detail": {
-        "aimedYawElev": [
-          135,
-          20
-        ],
-        "landing": [
-          3.7836501661906,
-          2.154050844860755
-        ],
-        "headBefore": [
-          0,
-          -1.6296000001430515
-        ],
-        "headAfter": [
-          3.7836501661906,
-          2.1540508448607545
-        ],
+        "aimedYawElev": [135, 20],
+        "landing": [3.7836501661906, 2.154050844860755],
+        "headBefore": [0, -1.6296000001430515],
+        "headAfter": [3.7836501661906, 2.1540508448607545],
         "errorMetres": 0,
-        "rigY": [
-          0.39999995231628427,
-          0.39999995231628427
-        ],
+        "rigY": [0.39999995231628427, 0.39999995231628427],
         "view": {
           "visible": true,
           "ring": true,
@@ -449,10 +420,7 @@
           "arcColor": "dec16a",
           "dots": 11
         },
-        "vignettePulse": [
-          0.6184999999403953,
-          0
-        ]
+        "vignettePulse": [0.6184999999403953, 0]
       }
     },
     {
@@ -493,11 +461,7 @@
       "detail": {
         "cards": 5,
         "onGrip": true,
-        "rootOffset": [
-          0,
-          0.03,
-          -0.08
-        ],
+        "rootOffset": [0, 0.03, -0.08],
         "note": "clearance is proven in tests/fan-hand-clearance.test.ts; this is the visual"
       }
     },
@@ -547,11 +511,7 @@
         "plate": "done",
         "message": "Hold the trigger and point at the plate to trace the glyph",
         "stage": "idle",
-        "log": [
-          "-- Turn 2 --",
-          "Played Warding Glyph",
-          "You gained 10 block"
-        ]
+        "log": ["-- Turn 2 --", "Played Warding Glyph", "You gained 10 block"]
       }
     },
     {
@@ -559,10 +519,7 @@
       "pass": true,
       "detail": {
         "before": {
-          "at": [
-            8,
-            -0.9999999999999996
-          ],
+          "at": [8, -0.9999999999999996],
           "vignette": 0,
           "aiming": false,
           "preview": false,
@@ -570,20 +527,14 @@
         },
         "held": {
           "smooth": {
-            "at": [
-              8,
-              -0.9999999999999996
-            ],
+            "at": [8, -0.9999999999999996],
             "vignette": 0,
             "aiming": false,
             "preview": false,
             "locked": true
           },
           "teleport": {
-            "at": [
-              8,
-              -0.9999999999999996
-            ],
+            "at": [8, -0.9999999999999996],
             "vignette": 0,
             "aiming": false,
             "preview": false,
@@ -591,10 +542,7 @@
           }
         },
         "after": {
-          "at": [
-            8,
-            -0.9999999999999996
-          ],
+          "at": [8, -0.9999999999999996],
           "vignette": 0,
           "aiming": false,
           "preview": false,
@@ -615,10 +563,7 @@
         "pick": "reward-rivet-volley",
         "hovered": "reward-rivet-volley",
         "cardDistance": 1.3269836769842656,
-        "deck": [
-          10,
-          11
-        ],
+        "deck": [10, 11],
         "runCogs": 14
       }
     },
@@ -635,10 +580,7 @@
         "pick": "reward-skip-skip",
         "hovered": "reward-skip-skip",
         "cardDistance": 1.3269836769842656,
-        "deck": [
-          11,
-          11
-        ],
+        "deck": [11, 11],
         "runCogs": 28
       }
     },
@@ -655,10 +597,7 @@
         "pick": "reward-skip-skip",
         "hovered": "reward-skip-skip",
         "cardDistance": 1.3269836769842656,
-        "deck": [
-          11,
-          11
-        ],
+        "deck": [11, 11],
         "runCogs": 56
       }
     },
@@ -715,14 +654,8 @@
       "pass": true,
       "detail": {
         "room": 2,
-        "enemies": [
-          "cog-sentry",
-          "spring-hound"
-        ],
-        "models": [
-          true,
-          true
-        ],
+        "enemies": ["cog-sentry", "spring-hound"],
+        "models": [true, true],
         "trace": [
           {
             "enemyId": "cog-sentry",
@@ -854,10 +787,7 @@
             "at": 7.383200000047677
           }
         ],
-        "hp": [
-          78,
-          69
-        ],
+        "hp": [78, 69],
         "maxOpacity": 0.619,
         "passRenderedWhilePresenting": true,
         "note": "a real enemy blow fired it"
@@ -884,14 +814,8 @@
       "pass": true,
       "detail": {
         "degrees": 18.094130832326233,
-        "forward": [
-          -1.2246468525851679e-16,
-          1
-        ],
-        "toBoard": [
-          0.4199999999999998,
-          1.2854375005699694
-        ]
+        "forward": [-1.2246468525851679e-16, 1],
+        "toBoard": [0.4199999999999998, 1.2854375005699694]
       }
     },
     {
@@ -924,9 +848,7 @@
           "phase": "explore",
           "cogs": 0,
           "deck": 11,
-          "opened": [
-            "3/desk-drawer"
-          ],
+          "opened": ["3/desk-drawer"],
           "toast": "New card: Overwind",
           "shown": "New card: Overwind",
           "lid": 1.95,
@@ -969,9 +891,7 @@
           "phase": "explore",
           "cogs": 0,
           "deck": 11,
-          "opened": [
-            "3/desk-drawer"
-          ],
+          "opened": ["3/desk-drawer"],
           "toast": "New card: Overwind",
           "shown": "New card: Overwind",
           "lid": 1.95,
@@ -981,9 +901,7 @@
           "phase": "explore",
           "cogs": 0,
           "deck": 11,
-          "opened": [
-            "3/desk-drawer"
-          ],
+          "opened": ["3/desk-drawer"],
           "toast": "New card: Overwind",
           "shown": "New card: Overwind",
           "lid": 1.95,
@@ -995,9 +913,7 @@
       "id": "xr-treasure-saved",
       "pass": true,
       "detail": {
-        "opened": [
-          "3/desk-drawer"
-        ],
+        "opened": ["3/desk-drawer"],
         "cogs": 0,
         "deck": 11
       }
@@ -1016,9 +932,7 @@
           "phase": "explore",
           "cogs": 0,
           "deck": 11,
-          "opened": [
-            "3/desk-drawer"
-          ],
+          "opened": ["3/desk-drawer"],
           "toast": null,
           "shown": null,
           "lid": 1.95,
@@ -1039,9 +953,7 @@
           "phase": "explore",
           "cogs": 0,
           "deck": 11,
-          "opened": [
-            "3/desk-drawer"
-          ],
+          "opened": ["3/desk-drawer"],
           "toast": null,
           "shown": null,
           "lid": 1.95,
@@ -1051,9 +963,7 @@
           "phase": "explore",
           "cogs": 0,
           "deck": 11,
-          "opened": [
-            "3/desk-drawer"
-          ],
+          "opened": ["3/desk-drawer"],
           "toast": null,
           "shown": null,
           "lid": 1.95,
@@ -1114,9 +1024,7 @@
       "id": "xr-rest-hearth-spent-and-recorded",
       "pass": true,
       "detail": {
-        "used": [
-          "4/chest"
-        ],
+        "used": ["4/chest"],
         "last": {
           "room": 4,
           "socketId": "chest",
@@ -1157,9 +1065,7 @@
           "maxHp": 78,
           "cogs": 12,
           "deck": 10,
-          "used": [
-            "4/chest"
-          ],
+          "used": ["4/chest"],
           "toast": "+17 hp",
           "last": {
             "room": 4,
@@ -1213,9 +1119,7 @@
       "id": "xr-rest-saved",
       "pass": true,
       "detail": {
-        "used": [
-          "4/chest"
-        ],
+        "used": ["4/chest"],
         "hp": 78
       }
     },
@@ -1235,9 +1139,7 @@
           "maxHp": 78,
           "cogs": 12,
           "deck": 10,
-          "used": [
-            "4/chest"
-          ],
+          "used": ["4/chest"],
           "toast": null,
           "last": null,
           "spent": true,
@@ -1275,12 +1177,7 @@
         "hp": 160,
         "maxHp": 160,
         "phase": 1,
-        "moves": [
-          "tick",
-          "tock",
-          "pallet",
-          "mainspring"
-        ],
+        "moves": ["tick", "tock", "pallet", "mainspring"],
         "intent": "mainspring",
         "shownPhase": 1,
         "shownIntent": "mainspring",
@@ -1296,22 +1193,12 @@
     {
       "id": "xr-guardian-phase1-moves-without-toll-and-overwind",
       "pass": true,
-      "detail": [
-        "tick",
-        "tock",
-        "pallet",
-        "mainspring"
-      ]
+      "detail": ["tick", "tock", "pallet", "mainspring"]
     },
     {
       "id": "xr-guardian-phase1-intents-from-the-four-move-list",
       "pass": true,
-      "detail": [
-        "mainspring",
-        "tick",
-        "tick",
-        "tick"
-      ]
+      "detail": ["mainspring", "tick", "tick", "tick"]
     },
     {
       "id": "xr-guardian-phase1-clip-never-played",
@@ -1321,12 +1208,7 @@
         "hp": 160,
         "maxHp": 160,
         "phase": 1,
-        "moves": [
-          "tick",
-          "tock",
-          "pallet",
-          "mainspring"
-        ],
+        "moves": ["tick", "tock", "pallet", "mainspring"],
         "intent": "tick",
         "shownPhase": 1,
         "shownIntent": "tick",
