@@ -1,0 +1,13 @@
+{
+  "score": 67,
+  "date": "2026-11-16",
+  "method": "Author self-score from spring-hound.fidelity-compare.jpg: orthographic Blender renders of the low-poly model at the concept's side, front and back angles, framed at the concept's own metres per pixel (side 1.2 m / 855 px, front/back 1.21 m / 875 px), judged side by side and by 50/50 overlay. Supporting silhouette IoU against background-thresholded masks (difference > 22 from the corner colour, 5 px median): side 0.43, front 0.33, back 0.23. The IoU understates the match: the polished skull and gunmetal parts render near the background tone head-on and drop out of the render mask, and the painted concept's soft shading and far-side legs inflate its mask. The compare lighting is the fixed warden-matched rig and was not tuned to the score.",
+  "gaps": [
+    "Ruby jewels on the shoulder and thigh bosses are brass caps: the 4-material budget (two shared brass sets, gunmetal, hound-glow) and no vertex colours leave no red material.",
+    "Glow reads peach rather than hot orange in the Blender compare at the project's GLOW_STRENGTH 0.7 convention; the grille and side lenses are less luminous than the concept.",
+    "Front view: the skull reads narrower and much darker than the concept's broad lit face, and the eye slits are small from the front; the ears read as upturned flaps rather than folded rose ears.",
+    "Forelegs are plated cylinders with a gunmetal wrist joint and a short angled pastern; the concept's forearm plate is a more sculpted taper with engraved panels, and its far-side legs are staggered while the model's rest stance is symmetric.",
+    "Front view chest is a single smooth bulb with the grille low on the prow; the concept's cuirass carries more plate seams, rivets and engraved panel lines everywhere.",
+    "Paws are simpler than the concept's arched, individually jointed toes."
+  ]
+}

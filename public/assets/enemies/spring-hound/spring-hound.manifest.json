@@ -13,19 +13,19 @@
   "mesh": "hound-body",
   "bounds": {
     "min": [
-      -0.205,
+      -0.2104,
       0.0,
-      -0.9678
+      -0.906
     ],
     "max": [
-      0.205,
-      1.238,
-      1.0275
+      0.2104,
+      1.2302,
+      0.76
     ]
   },
   "skeleton": {
     "root": "root",
-    "bones": 30,
+    "bones": 33,
     "joints": [
       "root",
       "pelvis",
@@ -36,6 +36,8 @@
       "neck.1",
       "neck.2",
       "head",
+      "ear.L",
+      "ear.R",
       "jaw",
       "upperarm.L",
       "forearm.L",
@@ -48,6 +50,7 @@
       "tail.1",
       "tail.2",
       "tail.3",
+      "tail.4",
       "key",
       "thigh.L",
       "shin.L",
@@ -101,8 +104,8 @@
       "parent": "chest",
       "position": [
         0.0,
-        0.74,
-        -0.64
+        0.655,
+        -0.585
       ]
     },
     "socket-eye": {
@@ -111,7 +114,7 @@
       "position": [
         0.0,
         1.15,
-        -0.73
+        -0.715
       ]
     },
     "socket-weapon": {
@@ -119,8 +122,8 @@
       "parent": "jaw",
       "position": [
         0.0,
-        1.02,
-        -0.9
+        0.985,
+        -0.85
       ]
     }
   },
@@ -155,17 +158,17 @@
     }
   },
   "budget": {
-    "tris": 7344,
+    "tris": 23044,
     "materials": 4,
-    "bones": 30,
+    "bones": 33,
     "influences": 4
   },
   "cull": {
     "center": [
-      -0.256,
-      0.704,
-      0.072
+      -0.252,
+      0.688,
+      -0.042
     ],
-    "radius": 1.29
+    "radius": 1.132
   }
 }

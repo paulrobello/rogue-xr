@@ -1,14 +1,14 @@
 {
-  "glb_sha256": "2bec4f5de9f5fbe0d2937a40ffc5de58d63d2294d5650846eae05bf7ee1209d6",
-  "glb_bytes": 774580,
-  "triangles": 7344,
+  "glb_sha256": "7352854362851933552c3e05339af1b50554befcff3e8e7885d4ebab590c1930",
+  "glb_bytes": 1515432,
+  "triangles": 23044,
   "materials": [
     "brass-polished",
     "brass-aged",
     "gunmetal",
     "hound-glow"
   ],
-  "vertices": 7907,
+  "vertices": 19511,
   "joints": [
     "root",
     "pelvis",
@@ -19,6 +19,8 @@
     "neck.1",
     "neck.2",
     "head",
+    "ear.L",
+    "ear.R",
     "jaw",
     "upperarm.L",
     "forearm.L",
@@ -31,6 +33,7 @@
     "tail.1",
     "tail.2",
     "tail.3",
+    "tail.4",
     "key",
     "thigh.L",
     "shin.L",
@@ -41,51 +44,51 @@
     "hock.R",
     "hindpaw.R"
   ],
-  "bone_count": 30,
+  "bone_count": 33,
   "max_influences": 1,
   "max_weight_sum_error": 0.0,
   "unweighted_vertices": 0,
   "bounds": {
     "min": [
-      -0.205,
+      -0.2104,
       0.0,
-      -0.9678
+      -0.906
     ],
     "max": [
-      0.205,
-      1.238,
-      1.0275
+      0.2104,
+      1.2302,
+      0.76
     ]
   },
   "clips": {
     "attack": {
       "duration": 1.1,
       "start": 0.0,
-      "channels": 90,
+      "channels": 99,
       "rootAnimated": []
     },
     "death": {
       "duration": 2.0,
       "start": 0.0,
-      "channels": 90,
+      "channels": 99,
       "rootAnimated": []
     },
     "frozen": {
       "duration": 1.0,
       "start": 0.0,
-      "channels": 90,
+      "channels": 99,
       "rootAnimated": []
     },
     "hit": {
       "duration": 0.6,
       "start": 0.0,
-      "channels": 90,
+      "channels": 99,
       "rootAnimated": []
     },
     "idle": {
       "duration": 2.0,
       "start": 0.0,
-      "channels": 90,
+      "channels": 99,
       "rootAnimated": []
     }
   },
@@ -95,8 +98,8 @@
       "parent": "chest",
       "position": [
         0.0,
-        0.74,
-        -0.64
+        0.655,
+        -0.585
       ]
     },
     "socket-eye": {
@@ -105,7 +108,7 @@
       "position": [
         0.0,
         1.15,
-        -0.73
+        -0.715
       ]
     },
     "socket-weapon": {
@@ -113,8 +116,8 @@
       "parent": "jaw",
       "position": [
         0.0,
-        1.02,
-        -0.9
+        0.985,
+        -0.85
       ]
     }
   },
@@ -125,7 +128,7 @@
   "pass": true,
   "blender_reimport": {
     "armatures": 1,
-    "bones": 30,
+    "bones": 33,
     "meshes": 1,
     "actions": [
       "attack.001",

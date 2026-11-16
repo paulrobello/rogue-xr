@@ -4,7 +4,7 @@
   "route": "scripted (procedural Blender geometry, rig and keyed clips; no provider generation)",
   "generator": {
     "path": "scripts/assets/build-spring-hound.py",
-    "sha256": "a6e6dc6a2887f09b5b4627c8c44ed5610e7cf7bb0453243487204f28849df72d"
+    "sha256": "8a5d3476edf78381618874e69f0e6782813feea4fa4350e6e064632477dccb20"
   },
   "authoringAgent": {
     "harness": "claude-code (dispatched sub-agent)",
@@ -18,12 +18,12 @@
     "store": "assets-source/enemies/spring-hound/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)"
   },
   "budgets": {
-    "triangles": 7344,
-    "highTriangles": 33808,
+    "triangles": 23044,
+    "highTriangles": 82136,
     "materials": 4,
-    "bones": 30,
+    "bones": 33,
     "maxInfluences": 1,
-    "glbBytes": 774580
+    "glbBytes": 1515432
   },
   "skin": {
     "policy": "rigid: one bone per vertex at weight 1.0",
@@ -38,7 +38,7 @@
       "measured": {
         "duration": 2.0,
         "start": 0.0,
-        "channels": 90,
+        "channels": 99,
         "rootAnimated": []
       }
     },
@@ -51,7 +51,7 @@
       "measured": {
         "duration": 1.1,
         "start": 0.0,
-        "channels": 90,
+        "channels": 99,
         "rootAnimated": []
       }
     },
@@ -62,7 +62,7 @@
       "measured": {
         "duration": 0.6,
         "start": 0.0,
-        "channels": 90,
+        "channels": 99,
         "rootAnimated": []
       }
     },
@@ -76,7 +76,7 @@
       "measured": {
         "duration": 2.0,
         "start": 0.0,
-        "channels": 90,
+        "channels": 99,
         "rootAnimated": []
       }
     },
@@ -88,7 +88,7 @@
       "measured": {
         "duration": 1.0,
         "start": 0.0,
-        "channels": 90,
+        "channels": 99,
         "rootAnimated": []
       }
     }
@@ -97,45 +97,45 @@
     "idle": {
       "frames": 61,
       "min_z": -0.0,
-      "min_z_frame": 37,
-      "max_z": 1.2565,
-      "final_max_z": 1.2406,
+      "min_z_frame": 42,
+      "max_z": 1.2473,
+      "final_max_z": 1.2327,
       "final_min_z": -0.0,
       "loop_seam_m": 0.0
     },
     "attack": {
       "frames": 34,
-      "min_z": -0.0001,
-      "min_z_frame": 20,
-      "max_z": 1.238,
-      "final_max_z": 1.238,
+      "min_z": -0.013,
+      "min_z_frame": 13,
+      "max_z": 1.229,
+      "final_max_z": 1.229,
       "final_min_z": -0.0,
       "loop_seam_m": 0.0
     },
     "hit": {
       "frames": 19,
       "min_z": -0.0,
-      "min_z_frame": 14,
-      "max_z": 1.4074,
-      "final_max_z": 1.238,
+      "min_z_frame": 17,
+      "max_z": 1.3889,
+      "final_max_z": 1.229,
       "final_min_z": -0.0,
       "loop_seam_m": 0.0
     },
     "death": {
       "frames": 61,
       "min_z": 0.004,
-      "min_z_frame": 7,
-      "max_z": 1.3422,
-      "final_max_z": 0.4987,
+      "min_z_frame": 25,
+      "max_z": 1.3276,
+      "final_max_z": 0.461,
       "final_min_z": 0.004,
-      "loop_seam_m": 1.00973
+      "loop_seam_m": 1.04767
     },
     "frozen": {
       "frames": 31,
       "min_z": -0.0,
       "min_z_frame": 0,
-      "max_z": 1.1281,
-      "final_max_z": 1.1281,
+      "max_z": 1.1007,
+      "final_max_z": 1.1007,
       "final_min_z": -0.0,
       "loop_seam_m": 0.0
     }
@@ -154,8 +154,8 @@
       "parent": "chest",
       "position": [
         0.0,
-        0.74,
-        -0.64
+        0.655,
+        -0.585
       ]
     },
     "socket-eye": {
@@ -164,7 +164,7 @@
       "position": [
         0.0,
         1.15,
-        -0.73
+        -0.715
       ]
     },
     "socket-weapon": {
@@ -172,43 +172,43 @@
       "parent": "jaw",
       "position": [
         0.0,
-        1.02,
-        -0.9
+        0.985,
+        -0.85
       ]
     }
   },
   "derivedFiles": [
     {
       "path": "public/assets/enemies/spring-hound/spring-hound.glb",
-      "sha256": "2bec4f5de9f5fbe0d2937a40ffc5de58d63d2294d5650846eae05bf7ee1209d6",
-      "bytes": 774580
+      "sha256": "7352854362851933552c3e05339af1b50554befcff3e8e7885d4ebab590c1930",
+      "bytes": 1515432
     },
     {
       "path": "public/assets/enemies/spring-hound/spring-hound.manifest.json",
-      "sha256": "c832391fc9f93f28bbdbdc811d7234c7e816975f9ddeebb71cf87f0e0b2e2bf8",
-      "bytes": 2981
+      "sha256": "d4a5eb87640e7cc4e287ee6ecc9ca97d9ce71d12d5097f336cb8611b609b3ecb",
+      "bytes": 3035
     }
   ],
   "sourceFiles": [
     {
       "path": "assets-source/enemies/spring-hound/blend/spring-hound.high.blend",
-      "sha256": "af7b4f04fd7c2e988f31377d14119bee040c79c369c839cb106a194a64677ec7",
-      "bytes": 966816
+      "sha256": "b354113deba04fac56c0e6fd3922bd245e46dc2599a6b2fa6acc4b3c42f1c534",
+      "bytes": 2422987
     },
     {
       "path": "assets-source/enemies/spring-hound/blend/spring-hound.low.blend",
-      "sha256": "aafccef43c8426bc8ae19d3a56425b21dd2bd1b3bc2ac48179d226fa92fa2b91",
-      "bytes": 415387
+      "sha256": "80991ff3f76cc405d4353845bd0e9a245a32818f5ef0bc3dfb0befe51a641c1b",
+      "bytes": 873969
     },
     {
       "path": "assets-source/enemies/spring-hound/staging/report.json",
-      "sha256": "e6932e364e71910906ee4f73575a3add76f81e69037e8b4ca797ad700c8922ef",
-      "bytes": 6243
+      "sha256": "37d8bce117097c8944cf893bdbd32edac73039fef0e43f9f842b184199eb328e",
+      "bytes": 6361
     },
     {
       "path": "assets-source/enemies/spring-hound/staging/reimport.json",
-      "sha256": "fe62fa9d1f03f7e61b1cfa5675a3eab49c6dc04cc9b701b5a4ddf71903c9852d",
-      "bytes": 2389
+      "sha256": "11be1029efe7aff28298b1bf06a567686ba84a92330fd00ef79af1adca523285",
+      "bytes": 2437
     },
     {
       "path": "assets-source/enemies/spring-hound/engine_shot.py",
@@ -224,33 +224,33 @@
   "reviewEvidence": [
     {
       "path": "assets-source/enemies/spring-hound/spring-hound.review-sheet.jpg",
-      "sha256": "5f39cb936423bbad4401b5c46ab13f48ded2636473583c6c7b83d22336ad8ba3",
-      "bytes": 294033
+      "sha256": "b76084e9426d4530aac5d139e4ed19e2910df76bf86e9abc9c804b6575a7bd9c",
+      "bytes": 510624
     },
     {
       "path": "assets-source/enemies/spring-hound/staging/engine/attack.jpg",
-      "sha256": "3a3b9e1465bb52bf318c2abcf6e52452ddc5b33b41811f1847ece2a71777138d",
-      "bytes": 25947
+      "sha256": "fa7a1c55d08a101244066a13fe7addbf4c1128c9171ee3037cd88092c69f3891",
+      "bytes": 26703
     },
     {
       "path": "assets-source/enemies/spring-hound/staging/engine/death.jpg",
-      "sha256": "608f2a50c0d61ed54172e32dc7494b894917327aa3d32e257558284a2f57c248",
-      "bytes": 26388
+      "sha256": "dd0c2c32dc7bcfe57ca6fe16efac2c7dccd674ff249f3f98193d3a1a7561fbdc",
+      "bytes": 26781
     },
     {
       "path": "assets-source/enemies/spring-hound/staging/engine/frozen.jpg",
-      "sha256": "bbb5356eebdf2162ed121d8060b1bae2746929f5349dbd1070432d85c84987ff",
-      "bytes": 24140
+      "sha256": "31364d837636321f7f6bcf223ae28454c45a7d7e2e857a4f614c15f81df74778",
+      "bytes": 24241
     },
     {
       "path": "assets-source/enemies/spring-hound/staging/engine/hit.jpg",
-      "sha256": "ed3116151ab64dce6a116f80d4b0ea1a55b5e53103ade8a71e950b72da6c7de9",
-      "bytes": 24972
+      "sha256": "89dadf4e0ad0a2158fd348f0065166cfdff8386b5df514f083d1c60fd5ce7a8c",
+      "bytes": 25560
     },
     {
       "path": "assets-source/enemies/spring-hound/staging/engine/idle.jpg",
-      "sha256": "c92048a242a10f294a70791b4d954c360a811f9fa7b320f7eff2b52f2129fc87",
-      "bytes": 24823
+      "sha256": "23aa7ba017a9874540d3da1455e4eb081e41bf1315d096c87b937e38ee43bf77",
+      "bytes": 25548
     }
   ],
   "references": [
@@ -265,7 +265,7 @@
   "license": "Original work generated in Blender from a checked-in script; concept reference from Paul's paid Higgsfield plan (Terms of Use 4.4)",
   "validation": {
     "pass": true,
-    "date": "2026-11-15",
+    "date": "2026-11-16",
     "checks": [
       "presence",
       "hashes",
@@ -305,5 +305,25 @@
       "status": "unscored",
       "notes": "create-rigged-character-assets requires an independent >= 80/100 score; unscored means unaccepted"
     }
-  ]
+  ],
+  "authorSelfScore": {
+    "score": 67,
+    "scale": "0-100 visual fidelity to the concept",
+    "scorer": "author self-score (the authoring agent; not the independent score create-rigged-character-assets requires)",
+    "date": "2026-11-16",
+    "gaps": [
+      "Ruby jewels on the shoulder and thigh bosses are brass caps: the 4-material budget (two shared brass sets, gunmetal, hound-glow) and no vertex colours leave no red material.",
+      "Glow reads peach rather than hot orange in the Blender compare at the project's GLOW_STRENGTH 0.7 convention; the grille and side lenses are less luminous than the concept.",
+      "Front view: the skull reads narrower and much darker than the concept's broad lit face, and the eye slits are small from the front; the ears read as upturned flaps rather than folded rose ears.",
+      "Forelegs are plated cylinders with a gunmetal wrist joint and a short angled pastern; the concept's forearm plate is a more sculpted taper with engraved panels, and its far-side legs are staggered while the model's rest stance is symmetric.",
+      "Front view chest is a single smooth bulb with the grille low on the prow; the concept's cuirass carries more plate seams, rivets and engraved panel lines everywhere.",
+      "Paws are simpler than the concept's arched, individually jointed toes."
+    ],
+    "method": "Author self-score from spring-hound.fidelity-compare.jpg: orthographic Blender renders of the low-poly model at the concept's side, front and back angles, framed at the concept's own metres per pixel (side 1.2 m / 855 px, front/back 1.21 m / 875 px), judged side by side and by 50/50 overlay. Supporting silhouette IoU against background-thresholded masks (difference > 22 from the corner colour, 5 px median): side 0.43, front 0.33, back 0.23. The IoU understates the match: the polished skull and gunmetal parts render near the background tone head-on and drop out of the render mask, and the painted concept's soft shading and far-side legs inflate its mask. The compare lighting is the fixed warden-matched rig and was not tuned to the score.",
+    "evidence": {
+      "path": "assets-source/enemies/spring-hound/spring-hound.fidelity-compare.jpg",
+      "sha256": "7b30831c46c767096e24702f8916ae2eb5d7dc7faa4cbf0073a3c89d48388c62"
+    },
+    "independentScore": "pending"
+  }
 }

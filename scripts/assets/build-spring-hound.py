@@ -1,19 +1,30 @@
-"""P5-T3 Spring Hound: a low, long brass quadruped automaton (concept assets-source/concepts/
+"""P5-T3 Spring Hound: a greyhound-built brass automaton (concept assets-source/concepts/
 hound-sheet-1.png, notes assets-source/concepts/p5-automatons-design.md, style docs/art-bible.md),
-built procedurally as rigid plated parts, each weighted 1.0 to one bone of a 30-bone armature, with
-the five automaton clips of the Cog Sentry contract (P4-T6): idle (loop), attack (pounce and snap),
-hit, death (one-shot, ends lying on its side) and frozen (the held snarl of the time freeze).
-Exported as an image-free skinned GLB whose brass slots carry the names of the shared P4-T3
-tileable sets (`public/assets/materials/`), so the runtime binds them by name. UV0 is in tile
-units (metres / tileMeters). The manifest uses the sentry's schema plus an optional `cull` sphere
-measured over every clip frame.
+built procedurally as lofted, bevel-capped plates and swept springs, each vertex weighted 1.0 to
+one bone of a 33-bone armature, with the five automaton clips of the Cog Sentry contract (P4-T6):
+idle (loop), attack (pounce and snap), hit, death (one-shot, ends lying on its side) and frozen
+(the held snarl of the time freeze). Exported as an image-free skinned GLB whose brass slots carry
+the names of the shared P4-T3 tileable sets (`public/assets/materials/`), so the runtime binds them
+by name. UV0 is in tile units (metres / tileMeters). The manifest uses the sentry's schema plus an
+optional `cull` sphere measured over every clip frame.
+
+Proportions come from the concept's side view: 1.2 m from the paws to the ear tips over 855 px of
+the side figure, so every landmark below is a measured pixel of that view converted to metres
+(see `CX`). The body is a deep egg-shaped chest cuirass with a glowing grille, a true coiled-spring
+spine (a helix swept around the body profile, deep at the chest, tucked at the loin) between the
+cuirass and the haunches, a coiled neck, a long narrow skull with a separate hinged jaw, rose ears
+and amber eye slits, shaped thighs, gaskins and hocks, toed paws, and a segmented tail ending in a
+winding key.
 
 Blender run (build, pose checks, export, reimport gate, manifest, renders, .blend sources):
     "$BLENDER" -b --factory-startup --python-exit-code 1 -P scripts/assets/build-spring-hound.py -- \
         [--out assets-source/enemies/spring-hound/staging] [--runtime public/assets/enemies/spring-hound] \
-        [--blend-dir assets-source/enemies/spring-hound/blend] [--skip-renders]
-Review sheet (system Python with Pillow, after the Blender run and the engine shots):
+        [--blend-dir assets-source/enemies/spring-hound/blend] [--skip-renders] [--compare-only]
+Review sheet and fidelity compare (system Python with Pillow, after the Blender run, the engine
+shots and the author's staging/fidelity.json):
     python3 -I scripts/assets/build-spring-hound.py --sheet [--out ...]
+Author self-score into provenance (after `asset-check.py --assemble-enemy spring-hound`):
+    python3 -I scripts/assets/build-spring-hound.py --record-fidelity
 
 Frame: Blender is Z-up; runtime (x, y, z) = Blender (x, z, -y). The hound faces Blender +Y, which
 is runtime -Z (encounter.ts sets rotation.y = -heading). The root sits on the floor under the
@@ -60,33 +71,48 @@ FACTORS = {  # sRGB base, roughness, metallic: the GLB look, and the fallback wh
 GLOW_SRGB = (0xF0, 0x8C, 0x2C)
 GLOW_STRENGTH = 0.7
 
-# Armature: name, parent, head, tail (Blender metres). The body runs along Y, nose at +Y.
+# Concept side view (hound-sheet-1.png crop at (80, 30)): paws at y = 900 px, ear tips at 45 px.
+CX_PX = 1.2 / 855.0  # metres per concept pixel
+
+
+def CX(x: float, y: float) -> tuple[float, float]:
+    """Concept side-view pixel (crop coordinates) -> Blender (y, z) in metres."""
+    return ((x - 600.0) * CX_PX, (900.0 - y) * CX_PX)
+
+
+# Armature: name, parent, head, tail (Blender metres), fitted to the concept side view. The body
+# runs along Y, nose at +Y.
 BONES: list[tuple[str, str | None, tuple, tuple]] = [
     ("root", None, (0, 0, 0), (0, 0, 0.2)),
-    ("pelvis", "root", (0, -0.45, 0.80), (0, -0.25, 0.82)),
-    ("spine.1", "pelvis", (0, -0.25, 0.82), (0, -0.05, 0.84)),
-    ("spine.2", "spine.1", (0, -0.05, 0.84), (0, 0.15, 0.86)),
-    ("spine.3", "spine.2", (0, 0.15, 0.86), (0, 0.30, 0.88)),
-    ("chest", "spine.3", (0, 0.30, 0.88), (0, 0.50, 0.90)),
-    ("neck.1", "chest", (0, 0.47, 0.90), (0, 0.55, 1.00)),
-    ("neck.2", "neck.1", (0, 0.55, 1.00), (0, 0.62, 1.09)),
-    ("head", "neck.2", (0, 0.62, 1.09), (0, 0.92, 1.05)),
-    ("jaw", "head", (0, 0.66, 1.03), (0, 0.90, 1.00)),
-    ("tail.1", "pelvis", (0, -0.56, 0.80), (0, -0.72, 0.73)),
-    ("tail.2", "tail.1", (0, -0.72, 0.73), (0, -0.85, 0.62)),
-    ("tail.3", "tail.2", (0, -0.85, 0.62), (0, -0.94, 0.50)),
-    ("key", "tail.3", (0, -0.94, 0.50), (0, -0.99, 0.43)),
+    ("pelvis", "root", (0, -0.36, 0.80), (0, -0.20, 0.815)),
+    ("spine.1", "pelvis", (0, -0.20, 0.815), (0, -0.06, 0.81)),
+    ("spine.2", "spine.1", (0, -0.06, 0.81), (0, 0.07, 0.80)),
+    ("spine.3", "spine.2", (0, 0.07, 0.80), (0, 0.20, 0.79)),
+    ("chest", "spine.3", (0, 0.20, 0.79), (0, 0.42, 0.85)),
+    ("neck.1", "chest", (0, 0.41, 0.84), (0, 0.48, 0.955)),
+    ("neck.2", "neck.1", (0, 0.48, 0.955), (0, 0.55, 1.07)),
+    ("head", "neck.2", (0, 0.55, 1.07), (0, 0.89, 1.05)),
+    ("jaw", "head", (0, 0.62, 1.035), (0, 0.84, 0.98)),
+    ("ear.R", "head", (0.045, 0.565, 1.16), (0.12, 0.518, 1.19)),
+    ("ear.L", "head", (-0.045, 0.565, 1.16), (-0.12, 0.518, 1.19)),
+    ("tail.1", "pelvis", (0, -0.468, 0.815), (0, -0.48, 0.69)),
+    ("tail.2", "tail.1", (0, -0.48, 0.69), (0, -0.50, 0.57)),
+    ("tail.3", "tail.2", (0, -0.50, 0.57), (0, -0.54, 0.49)),
+    ("tail.4", "tail.3", (0, -0.54, 0.49), (0, -0.60, 0.455)),
+    ("key", "tail.4", (0, -0.60, 0.455), (0, -0.70, 0.45)),
 ]
+FORE_X, HIND_X = 0.125, 0.105
 for _s, _n in ((1, "R"), (-1, "L")):
+    fx, hx = _s * FORE_X, _s * HIND_X
     BONES += [
-        (f"upperarm.{_n}", "chest", (_s * 0.13, 0.40, 0.78), (_s * 0.13, 0.33, 0.55)),
-        (f"forearm.{_n}", f"upperarm.{_n}", (_s * 0.13, 0.33, 0.55), (_s * 0.13, 0.36, 0.17)),
-        (f"wrist.{_n}", f"forearm.{_n}", (_s * 0.13, 0.36, 0.17), (_s * 0.13, 0.39, 0.05)),
-        (f"forepaw.{_n}", f"wrist.{_n}", (_s * 0.13, 0.39, 0.05), (_s * 0.13, 0.47, 0.02)),
-        (f"thigh.{_n}", "pelvis", (_s * 0.12, -0.45, 0.78), (_s * 0.12, -0.33, 0.50)),
-        (f"shin.{_n}", f"thigh.{_n}", (_s * 0.12, -0.33, 0.50), (_s * 0.12, -0.50, 0.22)),
-        (f"hock.{_n}", f"shin.{_n}", (_s * 0.12, -0.50, 0.22), (_s * 0.12, -0.47, 0.05)),
-        (f"hindpaw.{_n}", f"hock.{_n}", (_s * 0.12, -0.47, 0.05), (_s * 0.12, -0.39, 0.02)),
+        (f"upperarm.{_n}", "chest", (_s * 0.13, 0.32, 0.70), (fx, 0.27, 0.49)),
+        (f"forearm.{_n}", f"upperarm.{_n}", (fx, 0.27, 0.49), (fx, 0.275, 0.14)),
+        (f"wrist.{_n}", f"forearm.{_n}", (fx, 0.275, 0.14), (fx, 0.30, 0.05)),
+        (f"forepaw.{_n}", f"wrist.{_n}", (fx, 0.30, 0.05), (fx, 0.45, 0.02)),
+        (f"thigh.{_n}", "pelvis", (hx, -0.34, 0.77), (hx, -0.36, 0.49)),
+        (f"shin.{_n}", f"thigh.{_n}", (hx, -0.36, 0.49), (hx, -0.547, 0.264)),
+        (f"hock.{_n}", f"shin.{_n}", (hx, -0.547, 0.264), (hx, -0.53, 0.06)),
+        (f"hindpaw.{_n}", f"hock.{_n}", (hx, -0.53, 0.06), (hx, -0.43, 0.02)),
     ]
 BONE_NAMES = [b[0] for b in BONES]
 PARENT = {b[0]: b[1] for b in BONES}
@@ -106,7 +132,10 @@ CLIPS = {
     "frozen": {"duration": 1.0, "loop": "repeat", "events": {}},
 }
 
-DETAIL = {"low": {"sides": 10, "sphere": (12, 6), "ring": (14, 4)}, "high": {"sides": 24, "sphere": (24, 14), "ring": (36, 8)}}
+# Loft profile points, station subdivision, small-part profile points, helix segments per turn and
+# spring wire sides.
+DETAIL = {"low": {"n": 14, "sub": 2, "small": 8, "turn": 16, "wire": 6},
+          "high": {"n": 36, "sub": 5, "small": 16, "turn": 44, "wire": 12}}
 
 
 def sha256(path: Path) -> str:
@@ -121,7 +150,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--runtime", type=Path, default=DEFAULT_RUNTIME)
     p.add_argument("--blend-dir", type=Path, default=DEFAULT_BLEND)
     p.add_argument("--skip-renders", action="store_true")
-    p.add_argument("--sheet", action="store_true", help="compose the review sheet (system Python)")
+    p.add_argument("--compare-only", action="store_true", help="model, then only the concept-angle renders (iteration)")
+    p.add_argument("--sheet", action="store_true", help="compose the review sheet and fidelity compare (system Python)")
+    p.add_argument("--record-fidelity", action="store_true", help="copy staging/fidelity.json into provenance.json (system Python)")
     return p.parse_args(argv)
 
 
@@ -131,7 +162,7 @@ def lin(c: int) -> float:
 
 
 # --------------------------------------------------------------------------------------------------
-# Geometry: closed rigid parts, each weighted to one bone
+# Geometry: closed lofted plates and swept springs, each vertex weighted to one bone
 
 
 def axis_frame(a, b):
@@ -148,6 +179,56 @@ def axis_frame(a, b):
     return m, (b - a).length
 
 
+def _cr(p0: float, p1: float, p2: float, p3: float, u: float) -> float:
+    """Catmull-Rom between p1 and p2."""
+    return 0.5 * (2 * p1 + (p2 - p0) * u + (2 * p0 - 5 * p1 + 4 * p2 - p3) * u * u + (3 * p1 - p0 - 3 * p2 + p3) * u ** 3)
+
+
+def refine(stations: list[tuple], sub: int) -> list[tuple]:
+    """Catmull-Rom resampling of loft stations (every field interpolated), `sub` per span."""
+    if sub <= 1 or len(stations) < 3:
+        return [tuple(s) for s in stations]
+    flat = [[*s[0], *s[1:]] for s in stations]
+    out = []
+    n = len(flat)
+    for i in range(n - 1):
+        p0, p1, p2, p3 = flat[max(i - 1, 0)], flat[i], flat[i + 1], flat[min(i + 2, n - 1)]
+        for k in range(sub):
+            u = k / sub
+            v = [_cr(a, b, c, d, u) for a, b, c, d in zip(p0, p1, p2, p3)]
+            out.append(((v[0], v[1], v[2]), *[max(x, 1e-4) for x in v[3:-1]], v[-1]))
+    last = flat[-1]
+    out.append(((last[0], last[1], last[2]), *last[3:]))
+    return out
+
+
+def superellipse(n: int, a: float, bt: float, bb: float, e: float) -> list[tuple[float, float]]:
+    """Closed profile: half-width a along the frame's u, bt toward +v and bb toward -v; e = 2 is an
+    ellipse, larger e squares it off into a rounded plate."""
+    out = []
+    for i in range(n):
+        th = 2 * math.pi * i / n
+        c, s = math.cos(th), math.sin(th)
+        x = a * math.copysign(abs(c) ** (2 / e), c)
+        y = (bt if s >= 0 else bb) * math.copysign(abs(s) ** (2 / e), s)
+        out.append((x, y))
+    return out
+
+
+def frame_uv(t, ref):
+    """Profile axes for tangent t: u is `ref` made perpendicular to t, v = u x t (up for a forward
+    tangent with ref +X)."""
+    from mathutils import Vector
+
+    t = Vector(t).normalized()
+    for r in (Vector(ref), Vector((0, 1, 0)), Vector((0, 0, 1))):
+        u = r - t * r.dot(t)
+        if u.length > 1e-4:
+            u.normalize()
+            return u, u.cross(t)
+    raise ValueError("degenerate loft frame")
+
+
 class Parts:
     def __init__(self, bmesh, detail: str):
         self.bmesh = bmesh
@@ -155,145 +236,359 @@ class Parts:
         self.deform = self.bm.verts.layers.deform.verify()
         self.d = DETAIL[detail]
 
-    def _tag(self, verts, faces, mat: int, bone: str, smooth: bool) -> None:
+    def _n(self, n) -> int:
+        return self.d[n] if isinstance(n, str) else (n or self.d["n"])
+
+    def _tag(self, verts, bone: str) -> None:
         gi = BONE_NAMES.index(bone)
         for v in verts:
             v[self.deform][gi] = 1.0
+
+    def surface(self, rings: list[list], bones: list[str], mat: int, smooth: bool = True, caps=(True, True), cap_depth=(0.0, 0.0)) -> None:
+        """Bridges point rings (all the same length) into a closed surface: quads between rings and
+        a bevelled cap at each end (an inset ring, then a fan), every ring's vertices on its bone."""
+        from mathutils import Vector
+
+        bm = self.bm
+        vr = [[bm.verts.new(p) for p in ring] for ring in rings]
+        for ring, bone in zip(vr, bones):
+            self._tag(ring, bone)
+        n = len(rings[0])
+        faces = [bm.faces.new((a[i], a[(i + 1) % n], b[(i + 1) % n], b[i])) for a, b in zip(vr, vr[1:]) for i in range(n)]
+        for end, (ring, pts, bone) in enumerate(((vr[0], rings[0], bones[0]), (vr[-1], rings[-1], bones[-1]))):
+            if not caps[end]:
+                continue
+            c = sum((Vector(p) for p in pts), Vector()) / n
+            nxt = rings[1] if end == 0 else rings[-2]
+            cn = sum((Vector(p) for p in nxt), Vector()) / n
+            out = c - cn
+            out = out.normalized() if out.length > 1e-9 else Vector((0, 0, 0))
+            depth = cap_depth[end]
+            inner = [bm.verts.new(c + (Vector(p) - c) * 0.62 + out * depth * 0.7) for p in pts]
+            tip = bm.verts.new(c + out * depth)
+            self._tag([*inner, tip], bone)
+            for i in range(n):
+                j = (i + 1) % n
+                faces.append(bm.faces.new((ring[i], ring[j], inner[j], inner[i])))
+                faces.append(bm.faces.new((inner[i], inner[j], tip)))
         for f in faces:
             f.material_index = mat
             f.smooth = smooth
 
-    def rings(self, profile: list[list[tuple[float, float]]], zs: list[float], m, mat: int, bone: str, smooth=False) -> None:
+    def loft(self, stations: list[tuple], mat: int, bone, ref=(1, 0, 0), n=None, sub=None, smooth=True, caps=(True, True), bevel=0.35) -> None:
+        """Lofted plate through stations (centre, a, bt, bb, e): superellipse sections across the
+        path, Catmull-Rom smoothed. `bone` is one name or a function of the station centre."""
         from mathutils import Vector
 
-        bm = self.bm
-        vr = [[bm.verts.new(m @ Vector((x, y, z))) for x, y in ring] for ring, z in zip(profile, zs)]
-        n = len(profile[0])
-        faces = [bm.faces.new((a[i], a[(i + 1) % n], b[(i + 1) % n], b[i])) for a, b in zip(vr, vr[1:]) for i in range(n)]
-        faces += [bm.faces.new(list(reversed(vr[0]))), bm.faces.new(vr[-1])]
-        self._tag([v for r in vr for v in r], faces, mat, bone, smooth)
+        st = refine(stations, self.d["sub"] if sub is None else sub)
+        n = self._n(n)
+        rings, bones = [], []
+        for i, (c, a, bt, bb, e) in enumerate(st):
+            c = Vector(c)
+            t = Vector(st[min(i + 1, len(st) - 1)][0]) - Vector(st[max(i - 1, 0)][0])
+            u, v = frame_uv(t, ref)
+            rings.append([c + u * x + v * y for x, y in superellipse(n, a, bt, bb, e)])
+            bones.append(bone(c) if callable(bone) else bone)
+        d0 = bevel * min(st[0][1], (st[0][2] + st[0][3]) / 2)
+        d1 = bevel * min(st[-1][1], (st[-1][2] + st[-1][3]) / 2)
+        self.surface(rings, bones, mat, smooth, caps, (d0, d1))
 
-    def tube(self, p0, p1, r0: float, r1: float, mat: int, bone: str, sides: int | None = None, sx=1.0, sy=1.0, smooth=False) -> None:
-        """Frustum p0->p1, elliptical section (r * sx across world X, r * sy across the other axis)."""
-        m, length = axis_frame(p0, p1)
-        n = sides or self.d["sides"]
-        ring = lambda r: [(r * sx * math.cos(2 * math.pi * i / n), r * sy * math.sin(2 * math.pi * i / n)) for i in range(n)]  # noqa: E731
-        self.rings([ring(r0), ring(r1)], [0.0, length], m, mat, bone, smooth)
-
-    def box(self, c, size, mat: int, bone: str, taper=1.0) -> None:
-        from mathutils import Matrix
-
-        hx, hy, hz = (s / 2 for s in size)
-        base = [(-hx, -hy), (hx, -hy), (hx, hy), (-hx, hy)]
-        self.rings([base, [(x * taper, y * taper) for x, y in base]], [-hz, hz], Matrix.Translation(c), mat, bone)
-
-    def ball(self, c, r: float, mat: int, bone: str, scale=(1.0, 1.0, 1.0)) -> None:
-        from mathutils import Matrix
-
-        u, v = self.d["sphere"]
-        m = Matrix.Translation(c) @ Matrix.Diagonal((r * scale[0], r * scale[1], r * scale[2], 1.0))
-        verts = self.bmesh.ops.create_uvsphere(self.bm, u_segments=u, v_segments=v, radius=1.0, matrix=m)["verts"]
-        faces = {f for x in verts for f in x.link_faces}
-        self._tag(verts, faces, mat, bone, smooth=True)
-
-    def torus(self, c, normal, a: float, b: float, t: float, mat: int, bone: str) -> None:
-        """Elliptical ring (semi-axes a across world X, b across the other axis) of tube radius t."""
+    def disc(self, c, axis, r: float, w: float, mat: int, bone: str, n=None, bev: float = 0.25) -> None:
+        """Bevelled hub or axle: a short lofted cylinder along `axis`."""
         from mathutils import Vector
 
-        n, k = self.d["ring"]
+        n = n or 12
+        c, d = Vector(c), Vector(axis).normalized()
+        h, b = w / 2, min(w / 2, r) * bev
+        st = [(c - d * h, r * (1 - bev * 0.6), r * (1 - bev * 0.6), r * (1 - bev * 0.6), 2.0),
+              (c - d * (h - b), r, r, r, 2.0), (c + d * (h - b), r, r, r, 2.0),
+              (c + d * h, r * (1 - bev * 0.6), r * (1 - bev * 0.6), r * (1 - bev * 0.6), 2.0)]
+        self.loft([(tuple(p), a, bt, bb, e) for p, a, bt, bb, e in st], mat, bone, ref=(0, 0, 1) if abs(d.z) < 0.9 else (0, 1, 0),
+                  n=n, sub=1, bevel=0.15)
+
+    def ring(self, c, normal, a: float, b: float, tr: float, ta: float, mat: int, bone: str, n=None, k: int = 6, e: float = 3.0) -> None:
+        """Closed band: an ellipse (semi-axes a across world X, b across the other axis) swept by a
+        rounded-rectangle section (tr radial, ta along the normal)."""
+        from mathutils import Vector
+
+        n = self._n(n)
         m, _ = axis_frame(c, Vector(c) + Vector(normal))
         bm = self.bm
+        sec = superellipse(k, tr, ta, ta, e)
         grid = []
         for i in range(n):
             u = 2 * math.pi * i / n
-            grid.append([bm.verts.new(m @ Vector((math.cos(u) * (a + t * math.cos(2 * math.pi * j / k)),
-                                                  math.sin(u) * (b + t * math.cos(2 * math.pi * j / k)),
-                                                  t * math.sin(2 * math.pi * j / k)))) for j in range(k)])
+            cu, su = math.cos(u), math.sin(u)
+            rad = Vector((b * cu, a * su, 0)).normalized()  # outward normal of the ellipse
+            base = Vector((a * cu, b * su, 0))
+            grid.append([bm.verts.new(m @ (base + rad * x + Vector((0, 0, y)))) for x, y in sec])
         faces = [bm.faces.new((grid[i][j], grid[(i + 1) % n][j], grid[(i + 1) % n][(j + 1) % k], grid[i][(j + 1) % k]))
                  for i in range(n) for j in range(k)]
-        self._tag([v for row in grid for v in row], faces, mat, bone, smooth=True)
+        self._tag([v for row in grid for v in row], bone)
+        for f in faces:
+            f.material_index = mat
+            f.smooth = True
+
+    def helix(self, axis: list[tuple], turns: float, wire: float, mat: int, bone, tilt: float = 0.0, phase: float = 0.0) -> None:
+        """Coil spring: a wire of radius `wire` swept along a helix wound `turns` times around an
+        axis given as stations (centre, a lateral, b vertical semi-axes); `tilt` leans each coil
+        (its top toward -tangent). `bone` maps the axis point of each wire ring to a bone."""
+        from mathutils import Vector
+
+        seg = max(8, round(turns * self.d["turn"]))
+        sides = self.d["wire"]
+        flat = [[*s[0], s[1], s[2]] for s in axis]
+        na = len(flat)
+
+        def at(s: float):
+            x = s * (na - 1)
+            i = min(int(x), na - 2)
+            u = x - i
+            p0, p1, p2, p3 = flat[max(i - 1, 0)], flat[i], flat[i + 1], flat[min(i + 2, na - 1)]
+            return [_cr(a, b, c, d, u) for a, b, c, d in zip(p0, p1, p2, p3)]
+
+        cs, ps = [], []
+        for j in range(seg + 1):
+            s = j / seg
+            v = at(s)
+            c = Vector(v[:3])
+            t = Vector(at(min(s + 1e-3, 1.0))[:3]) - Vector(at(max(s - 1e-3, 0.0))[:3])
+            u, w = frame_uv(t, (1, 0, 0))
+            phi = 2 * math.pi * turns * s + phase
+            p = c + u * v[3] * math.cos(phi) + w * v[4] * math.sin(phi) - t.normalized() * tilt * v[4] * math.sin(phi)
+            cs.append(c)
+            ps.append(p)
+        rings, bones = [], []
+        for j, (c, p) in enumerate(zip(cs, ps)):
+            t = ps[min(j + 1, seg)] - ps[max(j - 1, 0)]
+            t.normalize()
+            nrm = p - c
+            nrm = (nrm - t * nrm.dot(t)).normalized()
+            bnm = t.cross(nrm)
+            rings.append([p + (nrm * math.cos(2 * math.pi * q / sides) + bnm * math.sin(2 * math.pi * q / sides)) * wire for q in range(sides)])
+            bones.append(bone(c) if callable(bone) else bone)
+        self.surface(rings, bones, mat, True, (True, True), (wire * 0.6, wire * 0.6))
 
 
-def lerp(p, q, f: float) -> tuple:
-    return tuple(a + (b - a) * f for a, b in zip(p, q))
+def _at(stations: list[tuple], y: float) -> tuple[float, float, float, float]:
+    """(centre z, a, bt, bb) of a +Y-running loft at y, linear between stations."""
+    for (c0, *r0), (c1, *r1) in zip(stations, stations[1:]):
+        if c0[1] <= y <= c1[1]:
+            f = (y - c0[1]) / (c1[1] - c0[1])
+            return (c0[2] + (c1[2] - c0[2]) * f, *(p + (q - p) * f for p, q in zip(r0[:3], r1[:3])))
+    raise ValueError(y)
 
 
 def build_parts(P: Parts) -> None:
-    T, B = P.tube, P.ball
-    # Head: long greyhound snout in polished brass, aged lower jaw, gunmetal nose, two amber eyes.
-    B((0, 0.635, 1.115), 0.078, BP, "head", (0.82, 1.05, 0.9))
-    T((0, 0.65, 1.10), (0, 0.945, 1.055), 0.062, 0.026, BP, "head", sx=0.82, sy=0.8)
-    B((0, 0.948, 1.056), 0.022, GM, "head", (1.0, 0.9, 0.8))
+    from mathutils import Vector
+
+    L, D = P.loft, P.disc
+
+    # ---- Head: long narrow greyhound skull (polished), separate hinged jaw (aged), rose ears,
+    # amber eye slits under a brow ledge, gunmetal nose, cheek guards and hinge bolts.
+    skull = [((0, 0.495, 1.090), 0.040, 0.050, 0.050, 2.2), ((0, 0.525, 1.092), 0.060, 0.092, 0.085, 2.4),
+             ((0, 0.570, 1.090), 0.074, 0.106, 0.090, 2.5), ((0, 0.625, 1.094), 0.073, 0.098, 0.078, 2.5),
+             ((0, 0.680, 1.098), 0.064, 0.074, 0.066, 2.4), ((0, 0.735, 1.090), 0.046, 0.048, 0.054, 2.3),
+             ((0, 0.790, 1.073), 0.037, 0.036, 0.044, 2.2), ((0, 0.845, 1.058), 0.029, 0.028, 0.034, 2.1),
+             ((0, 0.880, 1.050), 0.022, 0.022, 0.026, 2.0)]
+    L(skull, BP, "head")
+    L([((0, 0.872, 1.052), 0.020, 0.018, 0.020, 2.0), ((0, 0.893, 1.049), 0.016, 0.014, 0.016, 2.0),
+       ((0, 0.903, 1.046), 0.008, 0.007, 0.008, 2.0)], GM, "head", n="small", sub=1)  # nose
+    jaw = [((0, 0.600, 1.022), 0.050, 0.020, 0.026, 2.6), ((0, 0.660, 1.012), 0.046, 0.019, 0.027, 2.6),
+           ((0, 0.720, 1.000), 0.038, 0.016, 0.022, 2.4), ((0, 0.780, 0.990), 0.030, 0.013, 0.018, 2.3),
+           ((0, 0.830, 0.982), 0.022, 0.010, 0.014, 2.2), ((0, 0.852, 0.979), 0.012, 0.007, 0.008, 2.0)]
+    L(jaw, BA, "jaw")
     for s in (1, -1):
-        P.box((s * 0.047, 0.712, 1.128), (0.014, 0.04, 0.014), GL, "head")
-        T((s * 0.04, 0.615, 1.165), (s * 0.068, 0.565, 1.235), 0.032, 0.012, BP, "head", sides=4, sy=0.35)  # ear
-    T((0, 0.66, 1.035), (0, 0.915, 1.005), 0.04, 0.018, BA, "jaw", sx=0.85, sy=0.45)
-    for k in range(4):  # gunmetal teeth along the lower jaw
-        y = 0.76 + 0.04 * k
-        for s in (1, -1):
-            P.box((s * 0.024 * (1 - 0.15 * k), y, 1.027 - 0.004 * k), (0.008, 0.008, 0.02), GM, "jaw", taper=0.4)
-    # Neck: gunmetal column wound with brass coil rings.
-    T((0, 0.46, 0.88), (0, 0.555, 1.005), 0.035, 0.032, GM, "neck.1")
-    T((0, 0.555, 1.005), (0, 0.63, 1.10), 0.032, 0.03, GM, "neck.2")
-    for bone, f0 in (("neck.1", 0.3), ("neck.1", 0.75), ("neck.2", 0.25), ("neck.2", 0.7)):
-        c = lerp(HEAD[bone], TAIL[bone], f0)
-        d = tuple(b - a for a, b in zip(HEAD[bone], TAIL[bone]))
-        P.torus(c, d, 0.062, 0.066, 0.013, BA, bone)
-    # Chest: deep polished keel with an amber core behind gunmetal grille bars, and a collar.
-    B((0, 0.38, 0.79), 0.2, BP, "chest", (0.82, 1.2, 1.0))
-    P.torus((0, 0.60, 0.74), (0, 1, 0.12), 0.062, 0.072, 0.014, BA, "chest")
-    B((0, 0.572, 0.74), 0.064, GL, "chest", (1.0, 0.45, 1.12))
-    for x in (-0.03, 0.0, 0.03):
-        P.box((x, 0.605, 0.74), (0.009, 0.012, 0.12), GM, "chest")
-    P.torus((0, 0.47, 0.90), (0, 0.8, 0.6), 0.075, 0.08, 0.016, BA, "chest")
-    # Spring spine: gunmetal rod inside rigid coil sections, three sections and ten coils.
-    for bone, coils, r0, r1 in (("spine.1", 3, 0.135, 0.15), ("spine.2", 4, 0.15, 0.165), ("spine.3", 3, 0.165, 0.175)):
-        T(HEAD[bone], TAIL[bone], 0.03, 0.03, GM, bone, sides=8)
-        for i in range(coils):
-            f = (i + 0.5) / coils
-            c = lerp(HEAD[bone], TAIL[bone], f)
-            r = r0 + (r1 - r0) * f
-            P.torus((0, c[1], c[2] - 0.35 * r), (0, 1, 0.08), 0.75 * r, r, 0.016, BA, bone)
-    # Pelvis: rounded haunch block with a gunmetal under-plate.
-    B((0, -0.43, 0.79), 0.16, BP, "pelvis", (0.95, 1.05, 0.95))
-    P.box((0, -0.40, 0.66), (0.14, 0.18, 0.05), GM, "pelvis", taper=0.8)
-    # Tail: segmented brass rods ending in an aged-brass winding key.
-    for bone in ("tail.1", "tail.2", "tail.3"):
-        T(HEAD[bone], TAIL[bone], 0.018, 0.016, GM, bone, sides=6)
-        for f in (0.2, 0.5, 0.8):
-            c = lerp(HEAD[bone], TAIL[bone], f)
-            d = tuple(b - a for a, b in zip(HEAD[bone], TAIL[bone]))
-            T(c, tuple(x + y * 0.07 for x, y in zip(c, d)), 0.027, 0.025, BA, bone, sides=8)
-    T(HEAD["key"], TAIL["key"], 0.014, 0.014, BA, "key", sides=6)
-    kc = TAIL["key"]
+        # Teeth: upper row hangs from the muzzle, lower row stands on the jaw; a fang at each end.
+        for k in range(5):
+            y = 0.705 + 0.032 * k
+            cz, a, _bt, bb = _at(skull, y)
+            L([((s * 0.55 * a, y, cz - bb + 0.006), 0.005, 0.004, 0.004, 2.0),
+               ((s * 0.55 * a, y, cz - bb - 0.014), 0.001, 0.001, 0.001, 2.0)], BP, "head", n=4, sub=1, ref=(0, 1, 0))
+            cz, a, bt, _bb = _at(jaw, y - 0.012)
+            L([((s * 0.55 * a, y - 0.012, cz + bt - 0.004), 0.004, 0.0035, 0.0035, 2.0),
+               ((s * 0.55 * a, y - 0.012, cz + bt + 0.011), 0.001, 0.001, 0.001, 2.0)], BP, "jaw", n=4, sub=1, ref=(0, 1, 0))
+        cz, a, _bt, bb = _at(skull, 0.842)
+        L([((s * 0.5 * a, 0.842, cz - bb + 0.006), 0.006, 0.006, 0.006, 2.0), ((s * 0.5 * a, 0.844, cz - bb - 0.022), 0.0012, 0.0012, 0.0012, 2.0)],
+          BP, "head", n=5, sub=1, ref=(0, 1, 0))  # upper fang
+        # Brow ledge, dark socket and amber slit, slanting down toward the nose.
+        L([((s * 0.060, 0.668, 1.158), 0.006, 0.004, 0.004, 2.0), ((s * 0.050, 0.688, 1.160), 0.010, 0.007, 0.006, 2.6),
+           ((s * 0.034, 0.716, 1.150), 0.008, 0.006, 0.005, 2.4), ((s * 0.022, 0.732, 1.140), 0.004, 0.003, 0.003, 2.0)],
+          BP, "head", n="small", sub=1)
+        L([((s * 0.060, 0.668, 1.142), 0.009, 0.015, 0.015, 2.5), ((s * 0.048, 0.694, 1.140), 0.013, 0.021, 0.021, 2.8),
+           ((s * 0.028, 0.726, 1.128), 0.008, 0.012, 0.012, 2.5)], GM, "head", n="small", sub=1)
+        L([((s * 0.063, 0.668, 1.144), 0.005, 0.005, 0.005, 2.0), ((s * 0.052, 0.694, 1.141), 0.014, 0.014, 0.014, 2.4),
+           ((s * 0.031, 0.727, 1.130), 0.004, 0.004, 0.004, 2.0)], GL, "head", n="small", sub=1)
+        # Cheek guard over the jaw hinge, and the hinge bolt.
+        L([((s * 0.069, 0.560, 1.050), 0.005, 0.020, 0.020, 3.0), ((s * 0.071, 0.600, 1.046), 0.006, 0.030, 0.030, 3.4),
+           ((s * 0.068, 0.650, 1.040), 0.005, 0.022, 0.020, 3.0), ((s * 0.062, 0.680, 1.036), 0.004, 0.010, 0.010, 2.4)],
+          BA, "head", n="small", sub=1)
+        D((s * 0.075, 0.632, 1.044), (1, 0, 0), 0.014, 0.012, GM, "head", n="small")
+        D((s * 0.082, 0.632, 1.044), (1, 0, 0), 0.008, 0.006, BP, "head", n="small")
+        # Rose ear: a thin leaf folded out and back, tip drooping.
+        ear = f"ear.{'R' if s > 0 else 'L'}"
+        L([((s * 0.045, 0.585, 1.160), 0.030, 0.007, 0.007, 2.2), ((s * 0.075, 0.570, 1.190), 0.040, 0.006, 0.006, 2.4),
+           ((s * 0.105, 0.548, 1.195), 0.040, 0.005, 0.005, 2.4), ((s * 0.130, 0.525, 1.170), 0.030, 0.004, 0.004, 2.2),
+           ((s * 0.142, 0.512, 1.132), 0.010, 0.003, 0.003, 2.0)], BP, ear, ref=(0, -0.6, 0.8), n="small")
+
+    # ---- Neck: gunmetal column wound with a six-turn coil spring, collar flange at the chest.
+    L([((0, 0.400, 0.825), 0.046, 0.046, 0.046, 2.0), ((0, 0.480, 0.955), 0.042, 0.042, 0.042, 2.0)], GM, "neck.1", n="small", sub=1)
+    L([((0, 0.475, 0.947), 0.041, 0.041, 0.041, 2.0), ((0, 0.560, 1.085), 0.036, 0.036, 0.036, 2.0)], GM, "neck.2", n="small", sub=1)
+    P.helix([((0, 0.405, 0.830), 0.090, 0.092), ((0, 0.455, 0.912), 0.082, 0.084), ((0, 0.505, 0.995), 0.073, 0.075),
+             ((0, 0.548, 1.068), 0.064, 0.066)], 6.0, 0.0155, BA, lambda c: "neck.1" if c.y < 0.48 else "neck.2")
+    P.ring((0, 0.418, 0.852), (0, 0.45, 0.89), 0.098, 0.100, 0.014, 0.012, BA, "chest")
+
+    # ---- Chest: an egg-shaped cuirass (deep keel, the widest part of the body) in three polished
+    # plates over a gunmetal core, a grille with an amber core on the prow, and a keel blade.
+    chest = [((0, 0.175, 0.800), 0.100, 0.140, 0.120, 2.1), ((0, 0.215, 0.790), 0.128, 0.180, 0.190, 2.1),
+             ((0, 0.270, 0.775), 0.145, 0.200, 0.215, 2.1), ((0, 0.340, 0.765), 0.150, 0.205, 0.220, 2.1),
+             ((0, 0.410, 0.745), 0.146, 0.170, 0.205, 2.1), ((0, 0.470, 0.720), 0.128, 0.120, 0.170, 2.1),
+             ((0, 0.515, 0.700), 0.100, 0.085, 0.120, 2.1), ((0, 0.540, 0.690), 0.070, 0.060, 0.080, 2.1)]
+    L([(c, a * 0.97, bt * 0.97, bb * 0.97, e) for c, a, bt, bb, e in chest], GM, "chest")
+    L(chest[:3] + [((0, 0.298, 0.770), 0.148, 0.203, 0.218, 2.1)], BP, "chest")
+    L([((0, 0.312, 0.768), 0.149, 0.204, 0.219, 2.1), chest[3], ((0, 0.405, 0.747), 0.146, 0.173, 0.206, 2.1)], BP, "chest")
+    L([((0, 0.419, 0.742), 0.144, 0.164, 0.200, 2.1)] + chest[5:], BP, "chest")
+    for s in (1, -1):  # side vents on the cuirass prow: the glow reads from the side as well
+        vc, vn = Vector((s * 0.104, 0.490, 0.655)), Vector((s * 0.66, 0.74, -0.08)).normalized()
+        P.ring(tuple(vc), tuple(vn), 0.040, 0.046, 0.008, 0.010, BA, "chest", k=6)
+        L([(tuple(vc - vn * 0.020), 0.044, 0.036, 0.036, 2.0), (tuple(vc + vn * 0.005), 0.042, 0.034, 0.034, 2.0),
+           (tuple(vc + vn * 0.012), 0.022, 0.018, 0.018, 2.0)], GL, "chest", sub=1, ref=(0, 0, 1))
+    gc, gn = (0, 0.536, 0.664), (0, 1.0, -0.18)
+    P.ring(gc, gn, 0.064, 0.064, 0.011, 0.016, BA, "chest", k=8)
+    gv = Vector(gn).normalized()
+    g0 = Vector(gc)
+    L([(tuple(g0 - gv * 0.030), 0.058, 0.058, 0.058, 2.0), (tuple(g0 + gv * 0.004), 0.058, 0.058, 0.058, 2.0),
+       (tuple(g0 + gv * 0.012), 0.045, 0.045, 0.045, 2.0), (tuple(g0 + gv * 0.018), 0.022, 0.022, 0.022, 2.0)], GL, "chest", sub=1)
+    for x in (-0.040, -0.020, 0.0, 0.020, 0.040):
+        h = math.sqrt(0.060 ** 2 - x * x)
+        base = g0 + gv * 0.021 + Vector((x, 0, 0))
+        L([(tuple(base - Vector((0, h * 0.18, h))), 0.0045, 0.005, 0.005, 3.0),
+           (tuple(base + Vector((0, h * 0.18, h))), 0.0045, 0.005, 0.005, 3.0)], BA, "chest", n=6, sub=1)
+    L([((0, 0.320, 0.585), 0.014, 0.034, 0.030, 2.4), ((0, 0.230, 0.580), 0.012, 0.028, 0.016, 2.4),
+       ((0, 0.130, 0.600), 0.009, 0.020, 0.010, 2.2), ((0, 0.030, 0.640), 0.002, 0.003, 0.002, 2.0)], BA, "chest", n="small")
+
+    # ---- Spring spine: one helix swept around the body profile (deep at the chest, tucked at the
+    # loin), ten turns, each coil leaning forward; a gunmetal rod through it.
+    spine_bone = lambda c: ("pelvis" if c.y < -0.19 else "spine.1" if c.y < -0.06 else "spine.2" if c.y < 0.07  # noqa: E731
+                            else "spine.3" if c.y < 0.185 else "chest")
+    P.helix([((0, -0.215, 0.862), 0.082, 0.082), ((0, -0.100, 0.850), 0.094, 0.106), ((0, 0.000, 0.834), 0.104, 0.122),
+             ((0, 0.100, 0.810), 0.112, 0.139), ((0, 0.210, 0.782), 0.118, 0.150)], 10.0, 0.019, BA, spine_bone, tilt=-0.34)
+    for y0, y1, bone in ((-0.24, -0.06, "spine.1"), (-0.06, 0.07, "spine.2"), (0.07, 0.20, "spine.3")):
+        L([((0, y0, 0.832 - 0.12 * y0), 0.028, 0.028, 0.028, 2.0), ((0, y1, 0.832 - 0.12 * y1), 0.028, 0.028, 0.028, 2.0)],
+          GM, bone, n="small", sub=1)
+
+    # ---- Pelvis: a swept rump cowl arcing from the coil top down over the haunch to the tail
+    # root (lofted along that arc, so its outer skin is the silhouette), spike guards, tail hub.
+    L([((0, -0.440, 0.660), 0.070, 0.012, 0.030, 2.2), ((0, -0.435, 0.726), 0.100, 0.020, 0.090, 2.2),
+       ((0, -0.400, 0.812), 0.118, 0.025, 0.125, 2.2), ((0, -0.340, 0.888), 0.120, 0.025, 0.125, 2.2),
+       ((0, -0.275, 0.926), 0.112, 0.025, 0.100, 2.2), ((0, -0.215, 0.938), 0.100, 0.022, 0.065, 2.2),
+       ((0, -0.188, 0.935), 0.080, 0.015, 0.045, 2.2)], BP, "pelvis")
+    D((0, -0.478, 0.812), (0, -1, 0.2), 0.030, 0.030, GM, "pelvis", n="small")
     for s in (1, -1):
-        B((s * 0.055, kc[1] - 0.02, kc[2] - 0.04), 0.05, BA, "key", (1.0, 0.35, 0.8))
-    B((0, kc[1] - 0.01, kc[2] - 0.015), 0.018, GM, "key")
+        L([((s * 0.112, -0.250, 0.770), 0.012, 0.022, 0.022, 2.2), ((s * 0.112, -0.205, 0.750), 0.008, 0.012, 0.012, 2.2),
+           ((s * 0.110, -0.165, 0.728), 0.001, 0.001, 0.001, 2.0)], GM, "pelvis", n="small", sub=1)
+
+    # ---- Tail: twelve aged-brass segments on a gunmetal core, ending in the winding key.
+    tail_pts = [(-0.468, 0.815), (-0.475, 0.750), (-0.480, 0.690), (-0.488, 0.625), (-0.500, 0.570),
+                (-0.515, 0.525), (-0.540, 0.490), (-0.570, 0.468), (-0.600, 0.455)]
+
+    def tail_bone(c) -> str:
+        z = c.z
+        return "tail.1" if z > 0.69 else "tail.2" if z > 0.57 else "tail.3" if z > 0.49 else "tail.4"
+
+    cum = [0.0]
+    for p, q in zip(tail_pts, tail_pts[1:]):
+        cum.append(cum[-1] + math.dist(p, q))
+
+    def tail_at(d: float) -> tuple[float, float, float]:
+        i = max(k for k in range(len(cum) - 1) if cum[k] <= d + 1e-12) if d < cum[-1] else len(cum) - 2
+        f = (d - cum[i]) / (cum[i + 1] - cum[i])
+        (y0, z0), (y1, z1) = tail_pts[i], tail_pts[i + 1]
+        return (0.0, y0 + (y1 - y0) * f, z0 + (z1 - z0) * f)
+
+    L([((0, y, z), 0.009, 0.009, 0.009, 2.0) for y, z in tail_pts], GM, tail_bone, n="small", sub=1)
+    nseg, total = 12, cum[-1]
+    pitch = total / nseg
+    for k in range(nseg):
+        d0, d1 = k * pitch + 0.002, (k + 1) * pitch - 0.003
+        r = 0.019 - 0.006 * k / (nseg - 1)
+        L([(tail_at(d0), r * 0.82, r * 0.82, r * 0.82, 2.0), (tail_at(d0 + 0.004), r, r, r, 2.0),
+           (tail_at(d1 - 0.004), r, r, r, 2.0), (tail_at(d1), r * 0.82, r * 0.82, r * 0.82, 2.0)],
+          BA, tail_bone(Vector(tail_at((d0 + d1) / 2))), n="small", sub=1)
+    # Winding key: collar, shaft, hub and a two-lobed bow in the sagittal plane.
+    D((0, -0.606, 0.455), (0, -1, 0.04), 0.016, 0.014, BP, "key", n="small")
+    L([((0, -0.610, 0.454), 0.008, 0.008, 0.008, 2.0), ((0, -0.672, 0.451), 0.008, 0.008, 0.008, 2.0)], BP, "key", n="small", sub=1)
+    D((0, -0.680, 0.451), (0, -1, 0.0), 0.014, 0.018, BP, "key", n="small")
+    for dz in (0.037, -0.037):
+        c = (0, -0.716, 0.451 + dz)
+        P.ring(c, (1, 0, 0), 0.028, 0.028, 0.016, 0.007, BP, "key", n="small", k=6)
+        L([((0, -0.690, 0.451 + dz * 0.25), 0.005, 0.009, 0.009, 2.6), ((0, -0.708, 0.451 + dz * 0.62), 0.005, 0.011, 0.011, 2.6)],
+          BP, "key", n="small", sub=1)
+
+    # ---- Legs.
     for s, n in ((1, "R"), (-1, "L")):
-        x = s * 0.13
-        # Foreleg: shoulder ball under a brass plate, elbow, slim forearm, wrist, pastern and paw.
-        B((x, 0.40, 0.78), 0.065, GM, f"upperarm.{n}")
-        B((s * 0.15, 0.39, 0.74), 0.09, BP, f"upperarm.{n}", (0.6, 1.0, 1.25))
-        T((x, 0.39, 0.74), (x, 0.335, 0.57), 0.06, 0.045, BP, f"upperarm.{n}", sx=0.85, sy=1.2)
-        B((x, 0.33, 0.55), 0.04, GM, f"forearm.{n}")
-        T((x, 0.333, 0.52), (x, 0.357, 0.20), 0.046, 0.032, BP, f"forearm.{n}")
-        B((x, 0.36, 0.17), 0.034, GM, f"wrist.{n}")
-        T((x, 0.362, 0.155), (x, 0.385, 0.06), 0.03, 0.027, BA, f"wrist.{n}")
-        P.box((x, 0.42, 0.02), (0.07, 0.12, 0.04), BA, f"forepaw.{n}", taper=0.85)
-        for dx in (-0.022, 0.0, 0.022):
-            B((x + dx, 0.475, 0.016), 0.016, GM, f"forepaw.{n}", (1.0, 1.3, 1.0))
-        # Hind leg: hip ball, broad brass haunch plate, stifle, shin, hock, metatarsus and paw.
-        x = s * 0.12
-        B((x, -0.45, 0.78), 0.06, GM, f"thigh.{n}")
-        B((s * 0.14, -0.41, 0.66), 0.13, BP, f"thigh.{n}", (0.5, 0.95, 1.25))
-        T((x, -0.43, 0.74), (x, -0.335, 0.52), 0.07, 0.05, BP, f"thigh.{n}", sx=0.8, sy=1.3)
-        B((x, -0.33, 0.50), 0.045, GM, f"shin.{n}")
-        T((x, -0.345, 0.475), (x, -0.485, 0.245), 0.05, 0.032, BP, f"shin.{n}")
-        B((x, -0.50, 0.22), 0.04, GM, f"hock.{n}")
-        T((x, -0.497, 0.20), (x, -0.473, 0.06), 0.03, 0.027, BA, f"hock.{n}")
-        P.box((x, -0.44, 0.02), (0.07, 0.12, 0.04), BA, f"hindpaw.{n}", taper=0.85)
-        for dx in (-0.022, 0.0, 0.022):
-            B((x + dx, -0.385, 0.016), 0.016, GM, f"hindpaw.{n}", (1.0, 1.3, 1.0))
+        fx, hx = s * FORE_X, s * HIND_X
+        # Foreleg: big oval shoulder plate with a jewel boss, elbow axle, two-plate forearm over a
+        # gunmetal core, pastern joint, pastern and a four-toed paw.
+        shoulder = [((s * 0.150, 0.325, 0.815), 0.028, 0.040, 0.040, 2.3), ((s * 0.152, 0.325, 0.790), 0.040, 0.075, 0.070, 2.4),
+                    ((s * 0.152, 0.322, 0.720), 0.046, 0.095, 0.085, 2.4), ((s * 0.150, 0.312, 0.640), 0.045, 0.085, 0.075, 2.4),
+                    ((s * 0.145, 0.300, 0.570), 0.040, 0.060, 0.055, 2.4), ((s * 0.138, 0.290, 0.515), 0.032, 0.040, 0.038, 2.3)]
+        L(shoulder, BP, f"upperarm.{n}")
+        # Gunmetal backing plate, a little larger than the shoulder plate: the dark outline around it.
+        L([(c, a * 0.6, bt * 1.14, bb * 1.16, e) for c, a, bt, bb, e in shoulder], GM, f"upperarm.{n}")
+        D((s * 0.195, 0.320, 0.700), (1, 0, 0), 0.030, 0.012, GM, f"upperarm.{n}")
+        D((s * 0.203, 0.320, 0.700), (1, 0, 0), 0.019, 0.010, BA, f"upperarm.{n}")
+        D((fx, 0.270, 0.490), (1, 0, 0), 0.036, 0.085, GM, f"forearm.{n}")
+        D((fx + s * 0.044, 0.270, 0.490), (1, 0, 0), 0.020, 0.008, BA, f"forearm.{n}", n="small")
+        fore = [((fx, 0.276, 0.475), 0.038, 0.058, 0.054, 2.6), ((fx, 0.280, 0.420), 0.040, 0.060, 0.052, 2.6),
+                ((fx, 0.280, 0.330), 0.036, 0.050, 0.042, 2.5), ((fx, 0.278, 0.240), 0.029, 0.036, 0.030, 2.4),
+                ((fx, 0.276, 0.172), 0.022, 0.024, 0.021, 2.3)]
+        L([(c, a * 0.9, bt * 0.9, bb * 0.9, e) for c, a, bt, bb, e in fore], GM, f"forearm.{n}", ref=(1, 0, 0))
+        L(fore[:2] + [((fx, 0.280, 0.352), 0.037, 0.052, 0.044, 2.5)], BP, f"forearm.{n}")
+        L([((fx, 0.280, 0.338), 0.036, 0.051, 0.043, 2.5)] + fore[3:], BP, f"forearm.{n}")
+        D((fx, 0.275, 0.142), (1, 0, 0), 0.026, 0.050, GM, f"wrist.{n}", n="small")
+        L([((fx, 0.280, 0.124), 0.020, 0.024, 0.020, 2.6), ((fx, 0.292, 0.088), 0.021, 0.024, 0.020, 2.6),
+           ((fx, 0.302, 0.056), 0.019, 0.020, 0.017, 2.6)], BA, f"wrist.{n}", n="small", sub=1)
+        paw(P, fx, 0.262, 0.425, f"forepaw.{n}")
+        # Hind leg: haunch plate in two panels over a gunmetal core with a jewel boss, stifle axle,
+        # gaskin plate with a gunmetal tendon, hock joint, metatarsus and a four-toed paw.
+        thigh = [((hx - s * 0.015, -0.335, 0.850), 0.040, 0.050, 0.050, 2.1), ((hx - s * 0.015, -0.338, 0.830), 0.052, 0.085, 0.088, 2.1),
+                 ((hx - s * 0.015, -0.340, 0.795), 0.058, 0.110, 0.112, 2.1), ((hx - s * 0.015, -0.342, 0.740), 0.056, 0.110, 0.112, 2.1),
+                 ((hx - s * 0.012, -0.345, 0.650), 0.051, 0.090, 0.090, 2.1), ((hx - s * 0.008, -0.350, 0.575), 0.044, 0.066, 0.068, 2.1),
+                 ((hx, -0.355, 0.530), 0.034, 0.045, 0.045, 2.1)]
+        L([(c, a * 0.85, bt * 1.06, bb * 1.06, e) for c, a, bt, bb, e in thigh], GM, f"thigh.{n}")
+        L(thigh[:4] + [((hx - s * 0.014, -0.343, 0.705), 0.054, 0.099, 0.100, 2.1)], BP, f"thigh.{n}")
+        L([((hx - s * 0.013, -0.344, 0.688), 0.054, 0.096, 0.097, 2.1)] + thigh[4:], BP, f"thigh.{n}")
+        D((s * 0.146, -0.335, 0.775), (1, 0, 0.0), 0.032, 0.012, GM, f"thigh.{n}")
+        D((s * 0.154, -0.335, 0.775), (1, 0, 0.0), 0.020, 0.010, BA, f"thigh.{n}")
+        D((hx, -0.360, 0.490), (1, 0, 0), 0.046, 0.088, GM, f"shin.{n}")
+        D((hx + s * 0.047, -0.360, 0.490), (1, 0, 0), 0.024, 0.008, BA, f"shin.{n}", n="small")
+        L([((hx, -0.352, 0.505), 0.042, 0.060, 0.068, 2.4), ((hx, -0.392, 0.455), 0.040, 0.054, 0.064, 2.4),
+           ((hx, -0.442, 0.395), 0.036, 0.042, 0.048, 2.4), ((hx, -0.492, 0.335), 0.030, 0.032, 0.035, 2.4),
+           ((hx, -0.530, 0.288), 0.026, 0.025, 0.026, 2.2)], BP, f"shin.{n}")
+        L([((hx, -0.420, 0.470), 0.011, 0.011, 0.011, 2.0), ((hx, -0.500, 0.380), 0.011, 0.011, 0.011, 2.0),
+           ((hx, -0.570, 0.290), 0.010, 0.010, 0.010, 2.0)], GM, f"shin.{n}", n="small", sub=1)
+        D((hx, -0.547, 0.264), (1, 0, 0), 0.029, 0.054, GM, f"hock.{n}", n="small")
+        L([((hx, -0.546, 0.252), 0.025, 0.026, 0.022, 2.6), ((hx, -0.538, 0.160), 0.024, 0.024, 0.021, 2.6),
+           ((hx, -0.532, 0.075), 0.022, 0.022, 0.020, 2.5)], BA, f"hock.{n}", n="small", sub=1)
+        L([((hx, -0.565, 0.240), 0.008, 0.008, 0.008, 2.0), ((hx, -0.556, 0.090), 0.008, 0.008, 0.008, 2.0)], GM, f"hock.{n}", n=6, sub=1)
+        paw(P, hx, -0.565, -0.470, f"hindpaw.{n}")
+
+
+def paw(P: Parts, x: float, heel: float, toe: float, bone: str) -> None:
+    """Aged-brass sole flat on the floor (z = 0) under the toes, an arched polished pad rising to the
+    heel, four knuckled polished toes with gunmetal claws."""
+    L = P.loft
+    L([((x, heel + 0.03, 0.012), 0.026, 0.014, 0.012, 2.6), ((x, heel + 0.06, 0.012), 0.036, 0.016, 0.012, 2.8),
+       ((x, toe, 0.012), 0.040, 0.012, 0.012, 2.8), ((x, toe + 0.02, 0.010), 0.034, 0.008, 0.010, 2.6)], BA, bone, n="small", sub=1)
+    L([((x, heel - 0.004, 0.052), 0.022, 0.024, 0.020, 2.4), ((x, heel + 0.03, 0.044), 0.030, 0.026, 0.022, 2.6),
+       ((x, toe - 0.035, 0.032), 0.032, 0.018, 0.012, 2.6)], BP, bone, n="small", sub=1)
+    for k, dx in enumerate((-0.030, -0.010, 0.010, 0.030)):
+        y0 = toe - 0.036 + (0.008 if k in (1, 2) else 0.0)
+        L([((x + dx, y0, 0.040), 0.012, 0.020, 0.014, 2.4), ((x + dx, y0 + 0.026, 0.050), 0.014, 0.026, 0.024, 2.6),
+           ((x + dx, y0 + 0.052, 0.034), 0.012, 0.016, 0.018, 2.4)], BP, bone, n="small", sub=1)
+        L([((x + dx, y0 + 0.058, 0.018), 0.004, 0.005, 0.004, 2.0), ((x + dx, y0 + 0.070, 0.006), 0.001, 0.001, 0.001, 2.0)],
+          GM, bone, n=5, sub=1)
 
 
 def tile_uvs(bm) -> None:
@@ -309,6 +604,12 @@ def tile_uvs(bm) -> None:
 def build_body(bpy, bmesh, scene, detail: str, arm_obj):
     P = Parts(bmesh, detail)
     build_parts(P)
+    zmin = min(v.co.z for v in P.bm.verts)
+    if abs(zmin) > 5e-4:
+        raise RuntimeError(f"{detail} mesh lowest vertex at z = {zmin:.5f}, want the paw soles on z = 0")
+    for v in P.bm.verts:  # soles land on exactly z = 0 (the rest-pose floor contract)
+        if abs(v.co.z) < 5e-4:
+            v.co.z = 0.0
     bmesh.ops.recalc_face_normals(P.bm, faces=P.bm.faces[:])
     # Fixed triangulation here: the exporter's own quad split follows float noise between runs.
     bmesh.ops.triangulate(P.bm, faces=P.bm.faces[:], quad_method="FIXED", ngon_method="EAR_CLIP")
@@ -415,7 +716,12 @@ PLANT = dict(REST_TARGET)
 
 
 def planted(**moved) -> dict:
-    return {**PLANT, **{k.replace("_", "."): v for k, v in moved.items()}}
+    """PLANT with some legs moved: leg=(dy, dz[, distal pitch]) offsets from the rest target."""
+    out = dict(PLANT)
+    for k, v in moved.items():
+        leg = k.replace("_", ".")
+        out[leg] = (REST_TARGET[leg][0] + v[0], REST_TARGET[leg][1] + v[1], *v[2:])
+    return out
 
 
 def idle_pose(t: float) -> dict:
@@ -427,42 +733,46 @@ def idle_pose(t: float) -> dict:
         "neck.1": (3.0 * math.sin(w + 0.6), 0, 0),
         "head": (2.0 * math.sin(2 * w), 0, 9.0 * math.sin(w)),
         "jaw": (-3.0 - 2.0 * (1 + math.sin(2 * w)), 0, 0),
+        "ear.R": (3.0 * (1 + math.sin(2 * w)), 0, 0), "ear.L": (3.0 * (1 + math.sin(2 * w + 1.0)), 0, 0),
         "tail.1": (0, 0, 14.0 * math.sin(w)), "tail.2": (0, 0, 14.0 * math.sin(w - 0.7)), "tail.3": (0, 0, 14.0 * math.sin(w - 1.4)),
+        "tail.4": (0, 0, 10.0 * math.sin(w - 2.1)),
         "spin": {"key": 360.0 * t / CLIPS["idle"]["duration"]},
         "ik": PLANT,
     }
 
 
-START = {"jaw": (-3, 0, 0), "ik": PLANT}
+START = {"jaw": (-3, 0, 0), "ear.R": (3, 0, 0), "ear.L": (3 + 3 * math.sin(1.0), 0, 0), "ik": PLANT}
+EARS_BACK = {"ear.R": (28, 0, 0), "ear.L": (28, 0, 0)}
 ATTACK_KEYS = [
     (0.0, START),
     (0.3, {"pelvis_loc": (0, -0.07, -0.13), "spine.1": (-3, 0, 0), "spine.2": (-2, 0, 0), "neck.1": (-16, 0, 0), "neck.2": (-6, 0, 0),
-           "head": (-4, 0, 0), "jaw": (-14, 0, 0), "tail.1": (-22, 0, 0), "tail.2": (-8, 0, 0), "ik": PLANT}),
+           "head": (-4, 0, 0), "jaw": (-14, 0, 0), **EARS_BACK, "tail.1": (-22, 0, 0), "tail.2": (-8, 0, 0), "ik": PLANT}),
     (0.42, {"pelvis_loc": (0, 0.06, -0.06), "spine.1": (-4, 0, 0), "spine.2": (-3, 0, 0), "neck.1": (-20, 0, 0), "neck.2": (-4, 0, 0),
-            "head": (6, 0, 0), "jaw": (-38, 0, 0), "tail.1": (-26, 0, 0), "tail.2": (-10, 0, 0),
-            "ik": planted(fore_R=(0.56, 0.26, -30), fore_L=(0.50, 0.22, -25))}),
+            "head": (6, 0, 0), "jaw": (-38, 0, 0), **EARS_BACK, "tail.1": (-26, 0, 0), "tail.2": (-10, 0, 0),
+            "ik": planted(fore_R=(0.20, 0.09, -30), fore_L=(0.14, 0.05, -25))}),
     (0.5, {"pelvis_loc": (0, 0.15, -0.03), "spine.1": (-5, 0, 0), "spine.2": (-4, 0, 0), "spine.3": (-2, 0, 0), "neck.1": (-22, 0, 0),
-           "head": (-6, 0, 0), "jaw": (0, 0, 0), "tail.1": (-24, 0, 0), "tail.2": (-8, 0, 0),
-           "ik": planted(fore_R=(0.66, 0.24, -20), fore_L=(0.62, 0.20, -15))}),
+           "head": (-6, 0, 0), "jaw": (0, 0, 0), **EARS_BACK, "tail.1": (-24, 0, 0), "tail.2": (-8, 0, 0),
+           "ik": planted(fore_R=(0.30, 0.07, -20), fore_L=(0.26, 0.03, -15))}),
     (0.72, {"pelvis_loc": (0, 0.12, -0.04), "spine.1": (-3, 0, 0), "spine.2": (-2, 0, 0), "neck.1": (-14, 0, 6), "head": (-6, 0, -8),
-            "jaw": (-8, 0, 0), "tail.1": (-14, 0, 0), "ik": planted(fore_R=(0.60, 0.17), fore_L=(0.56, 0.17))}),
+            "jaw": (-8, 0, 0), "ear.R": (12, 0, 0), "ear.L": (12, 0, 0), "tail.1": (-14, 0, 0),
+            "ik": planted(fore_R=(0.24, 0.0), fore_L=(0.20, 0.0))}),
     (1.1, START),
 ]
 HIT_KEYS = [
     (0.0, START),
     (0.1, {"pelvis_loc": (0, -0.07, 0.015), "spine.2": (5, 0, 0), "spine.3": (4, 0, 0), "neck.1": (20, 0, 10), "head": (10, 0, 18),
-           "jaw": (-18, 0, 0), "tail.1": (24, 0, 0), "tail.2": (12, 0, 0), "ik": PLANT}),
+           "jaw": (-18, 0, 0), "ear.R": (-10, 0, 0), "ear.L": (-14, 0, 0), "tail.1": (24, 0, 0), "tail.2": (12, 0, 0), "ik": PLANT}),
     (0.28, {"pelvis_loc": (0, -0.025, 0.005), "spine.2": (2, 0, 0), "neck.1": (7, 0, 4), "head": (3, 0, 6), "jaw": (-8, 0, 0),
             "tail.1": (10, 0, 0), "ik": PLANT}),
     (0.6, START),
 ]
 DEATH_LIE = {"pelvis_loc": (0, -0.02, -0.66), "pelvis": (0, 86, 0), "spine.1": (-3, 0, 4), "spine.2": (-2, 0, 3),
-             "neck.1": (-20, 0, -10), "neck.2": (-8, 0, -6), "head": (-6, 0, -10), "jaw": (-22, 0, 0),
+             "neck.1": (-20, 0, -10), "neck.2": (-8, 0, -6), "head": (-6, 0, -10), "jaw": (-22, 0, 0), "ear.R": (20, 0, 0), "ear.L": (20, 0, 0),
              "upperarm.R": (18, 0, 0), "forearm.R": (-28, 0, 0), "wrist.R": (20, 0, 0),
              "upperarm.L": (32, 0, 0), "forearm.L": (-46, 0, 0), "wrist.L": (24, 0, 0),
              "thigh.R": (-10, 0, 0), "shin.R": (22, 0, 0), "hock.R": (-12, 0, 0),
              "thigh.L": (6, 0, 0), "shin.L": (30, 0, 0), "hock.L": (-20, 0, 0),
-             "tail.1": (10, 0, 12), "tail.2": (8, 0, 8), "tail.3": (6, 0, 6)}
+             "tail.1": (10, 0, 12), "tail.2": (8, 0, 8), "tail.3": (6, 0, 6), "tail.4": (4, 0, 4)}
 DEATH_KEYS = [
     (0.0, START),
     (0.2, {"pelvis_loc": (0, -0.05, 0.01), "spine.2": (4, 0, 0), "neck.1": (18, 0, 6), "head": (10, 0, 12), "jaw": (-24, 0, 0),
@@ -474,8 +784,8 @@ DEATH_KEYS = [
     (2.0, DEATH_LIE),
 ]
 FROZEN_POSE = {"pelvis_loc": (0, -0.02, -0.05), "spine.1": (-2, 0, 0), "neck.1": (-12, 0, 6), "neck.2": (-4, 0, 0), "head": (-4, 0, 10),
-               "jaw": (-24, 0, 0), "tail.1": (-16, 0, 8), "tail.2": (-6, 0, 4),
-               "ik": planted(fore_R=(0.47, 0.30, -45))}
+               "jaw": (-24, 0, 0), **EARS_BACK, "tail.1": (-16, 0, 8), "tail.2": (-6, 0, 4),
+               "ik": planted(fore_R=(0.11, 0.13, -45))}
 
 
 def clip_keys(name: str) -> list[tuple[float, dict]]:
@@ -727,9 +1037,9 @@ def set_slots(obj, mats: list) -> None:
 # Sockets, export, reimport gate
 
 SOCKETS = {
-    "socket-hit": ("chest", (0, 0.64, 0.74)),  # in front of the amber core: hit sparks and aim point
-    "socket-eye": ("head", (0, 0.73, 1.15)),  # on the brow between the eyes
-    "socket-weapon": ("jaw", (0, 0.90, 1.02)),  # the snapping jaw tip
+    "socket-hit": ("chest", (0, 0.585, 0.655)),  # in front of the grille's amber core: hit sparks and aim point
+    "socket-eye": ("head", (0, 0.715, 1.150)),  # on the brow between the eyes
+    "socket-weapon": ("jaw", (0, 0.850, 0.985)),  # the snapping jaw tip
 }
 
 
@@ -764,6 +1074,7 @@ def export_glb(bpy, keep: list, active, path: Path) -> None:
         export_optimize_animation_size=False,  # `frozen` is constant and must keep its channels
         export_frame_range=False, export_anim_single_armature=True, export_reset_pose_bones=True,
         export_rest_position_armature=True, export_apply=False, export_yup=True,
+        export_vertex_color="NONE",  # no colour attributes: MATERIAL mode can write a white COLOR_0 placeholder
     )
 
 
@@ -864,6 +1175,8 @@ def gate_glb(path: Path) -> dict:
         errors.append(f"{tris} triangles over {LIMITS['tris']}")
     if sorted(mats) != sorted(MATS):
         errors.append(f"materials {mats} != {MATS}")
+    if any("COLOR_0" in p["attributes"] or "COLOR_1" in p["attributes"] for p in prims):
+        errors.append("vertex colour attribute exported (the hound uses none)")
     if g.get("images") or g.get("textures"):
         errors.append("GLB must be image-free")
     skins = g.get("skins", [])
@@ -1006,13 +1319,24 @@ VIEWS = {"front": ((0, 3.6, 0.8), (0, 0, 0.6)), "side": ((3.8, 0, 0.8), (0, 0, 0
          "back": ((0, -3.6, 0.8), (0, 0, 0.6)), "three-quarter": ((2.4, 2.7, 1.2), (0, 0, 0.6))}
 ANIM_CAMERA = ((2.6, 2.4, 1.3), (0, 0.05, 0.55), 45.0)
 ROM = {"rig-rom-stretch": {"pelvis_loc": (0, 0.06, -0.04), "neck.1": (-30, 0, 20), "head": (10, 0, 25), "jaw": (-40, 0, 0),
-                           "spine.1": (-6, 0, 0), "tail.1": (-35, 0, -20), "tail.2": (-15, 0, -20),
-                           "ik": planted(fore_R=(0.62, 0.34, -60), hind_L=(-0.62, 0.30, 40))},
+                           "spine.1": (-6, 0, 0), "tail.1": (-35, 0, -20), "tail.2": (-15, 0, -20), "ear.R": (30, 0, 0),
+                           "ik": planted(fore_R=(0.26, 0.17, -60), hind_L=(-0.12, 0.08, 40))},
        "rig-rom-crouch": {"pelvis_loc": (0, -0.04, -0.24), "spine.1": (8, 0, 0), "spine.2": (6, 0, 0), "neck.1": (-20, 0, 0),
                           "tail.1": (30, 0, 0), "ik": PLANT}}
 FRAMES = {"anim-idle": ("idle", 0.5), "anim-attack-crouch": ("attack", 0.3), "anim-attack-snap": ("attack", 0.42),
           "anim-attack-impact": ("attack", 0.5), "anim-hit": ("hit", 0.1), "anim-frozen": ("frozen", 0.0),
           "anim-death-slump": ("death", 0.75), "anim-death-end": ("death", 2.0)}
+# Concept-angle comparison: orthographic, framed like the concept crops of hound-sheet-1.png (sheet
+# pixels). Side: the camera on the hound's right (+X), as drawn (head to the right); the side crop
+# is the `CX` frame, so 1.2 m spans 855 px. Front and back: 1.21 m (ear tips) spans 875 px there.
+CONCEPT_CROPS = {"side": (80, 30, 1400, 980), "front": (1500, 30, 1900, 980), "back": (2080, 30, 2480, 980)}
+FB_PX = 1.21 / 875.0
+COMPARE = {  # camera direction from the hound, target (y, z), metres per crop pixel
+    "side": ((1, 0, 0), (CX(660, 475)[0], CX(660, 475)[1]), CX_PX),
+    "front": ((0, 1, 0), (0.0, (910 - 475) * FB_PX), FB_PX),
+    "back": ((0, -1, 0), (0.0, (910 - 475) * FB_PX), FB_PX),
+}
+COMPARE_RES = 0.75  # render pixels per crop pixel
 
 
 def setup_render(scene, w: int = 640, h: int = 640) -> None:
@@ -1111,58 +1435,175 @@ def renders(bpy, low_scene, high_scene, arm, actions: dict, out: Path) -> list[s
     return done
 
 
+
+
+def compare_renders(bpy, scene, out: Path) -> list[str]:
+    """Orthographic renders at the concept's side, front and back angles, framed like the concept
+    crops (CONCEPT_CROPS, same metres per pixel), on a grey close to the sheet's, for the
+    side-by-side fidelity check."""
+    from mathutils import Vector
+
+    rdir = out / "renders"
+    rdir.mkdir(parents=True, exist_ok=True)
+    cs = bpy.data.scenes.new(f"{PIECE}-compare")
+    for o in scene.objects:
+        if o.type in {"MESH", "ARMATURE"} and not o.name.startswith("review-"):
+            cs.collection.objects.link(o)
+    setup_render(cs)
+    world = bpy.data.worlds.new(f"{PIECE}-compare-world")
+    bg = next(n for n in world.node_tree.nodes if n.type == "BACKGROUND")
+    bg.inputs["Color"].default_value = (0.046, 0.039, 0.036, 1.0)
+    cs.world = world
+    cam = bpy.data.objects.new("compare-cam", bpy.data.cameras.new("compare-cam"))
+    cs.collection.objects.link(cam)
+    cs.camera = cam
+    cam.data.type = "ORTHO"
+    key = bpy.data.objects.new("compare-key", bpy.data.lights.new("compare-key", "AREA"))
+    fill = bpy.data.objects.new("compare-fill", bpy.data.lights.new("compare-fill", "AREA"))
+    for o, e in ((key, 520.0), (fill, 160.0)):
+        o.data.energy, o.data.size, o.data.color = e, 2.5, (1.0, 0.86, 0.66)
+        cs.collection.objects.link(o)
+    done = []
+    with bpy.context.temp_override(scene=cs, view_layer=cs.view_layers[0]):
+        if bpy.context.window is not None:
+            bpy.context.window.scene = cs
+        for view, (d, (ty, tz), mpp) in COMPARE.items():
+            x0, y0, x1, y1 = CONCEPT_CROPS[view]
+            w, h = x1 - x0, y1 - y0
+            cs.render.resolution_x, cs.render.resolution_y = round(w * COMPARE_RES), round(h * COMPARE_RES)
+            cam.data.ortho_scale = max(w, h) * mpp
+            d = Vector(d)
+            side = d.cross(Vector((0, 0, 1)))
+            target = Vector((0, ty, tz))
+            cam.location = target + d * 8.0
+            cam.rotation_euler = (-d).to_track_quat("-Z", "Y").to_euler()
+            for o, loc in ((key, target + d * 3.0 + side * 1.6 + Vector((0, 0, 1.4))), (fill, target + d * 3.0 - side * 2.0)):
+                o.location = loc
+                o.rotation_euler = (target - loc).to_track_quat("-Z", "Y").to_euler()
+            shoot(bpy, cs, rdir / f"compare-{view}.png")
+            done.append(f"compare-{view}")
+    if bpy.context.window is not None:
+        bpy.context.window.scene = scene
+    return done
+
+
 # --------------------------------------------------------------------------------------------------
-# Review sheet (system Python + Pillow)
+# Review sheet, fidelity compare and the author self-score (system Python + Pillow)
 
 ENGINE_SHOTS = ["idle", "attack", "hit", "frozen", "death"]
 APPROVAL_NOTE = ('Concept approval PENDING (Paul). Modeled under Paul\'s standing approval of 2026-11-15: "you have standing approval '
                  'for all spending / modeling / deployments needed for this project". Model, rig, animation approvals pending.')
+TITLE = f"P5-T3 Spring Hound ({PIECE}) - owner review sheet"
+COMPARE_SHEET = f"{PIECE}.fidelity-compare.jpg"
+
+
+def fidelity_note(out: Path) -> str:
+    f = out / "fidelity.json"
+    if not f.exists():
+        return "Fidelity self-assessment: not yet scored."
+    j = json.loads(f.read_text())
+    gaps = "".join(f"\n  - {g}" for g in j.get("gaps", []))
+    return f"Fidelity self-assessment (author, not an independent score): {j['score']}/100. Remaining gaps: {gaps}"
+
+
+def _sheet(rows: list[tuple[str, list[tuple[str, object, int, int]]]], title: str, note: str, width: int):
+    """Rows of (label, image or path, tile width, tile height) under a title and note lines."""
+    from PIL import Image, ImageDraw
+
+    pad, cap, head = 10, 24, 34
+    lines = note.split("\n")
+    top = 50 + 18 * len(lines)
+    height = top + sum(head + max(t[3] for t in tiles) + cap + pad for _, tiles in rows) + pad
+    sheet = Image.new("RGB", (width, height), (28, 24, 22))
+    d = ImageDraw.Draw(sheet)
+    d.text((pad, 12), title, fill=(243, 190, 101))
+    for i, line in enumerate(lines):
+        d.text((pad, 34 + 18 * i), line, fill=(222, 193, 106))
+    y = top
+    for rtitle, tiles in rows:
+        d.text((pad, y + 10), rtitle, fill=(243, 190, 101))
+        y += head
+        x = pad
+        for label, src, tw, th in tiles:
+            img = src if isinstance(src, Image.Image) else (Image.open(src).convert("RGB") if Path(src).exists() else None)
+            if img is not None:
+                img = img.copy()
+                img.thumbnail((tw, th))
+                sheet.paste(img, (x + (tw - img.width) // 2, y + cap + (th - img.height) // 2))
+            else:
+                d.text((x + 8, y + cap + 8), f"missing: {Path(src).name}", fill=(200, 80, 80))
+            d.text((x, y + 4), label, fill=(222, 193, 106))
+            x += tw + pad
+        y += max(t[3] for t in tiles) + cap + pad
+    return sheet
+
+
+def compose_compare(out: Path) -> Path:
+    """Each concept view crop beside the textured model at the same angle and framing."""
+    from PIL import Image
+
+    concept = Image.open(CONCEPT).convert("RGB")
+    r = out / "renders"
+    sw, sh, fw, fh = 900, 648, 300, 712
+    rows = [
+        ("FIDELITY - concept side view beside the model (orthographic, same angle and metres per pixel)", [
+            ("concept side", concept.crop(CONCEPT_CROPS["side"]), sw, sh), ("model side", r / "compare-side.png", sw, sh)]),
+        ("FIDELITY - concept front and back beside the model (orthographic, same framing)", [
+            ("concept front", concept.crop(CONCEPT_CROPS["front"]), fw, fh), ("model front", r / "compare-front.png", fw, fh),
+            ("concept back", concept.crop(CONCEPT_CROPS["back"]), fw, fh), ("model back", r / "compare-back.png", fw, fh)]),
+    ]
+    sheet = _sheet(rows, TITLE.replace("owner review sheet", "fidelity comparison"), fidelity_note(out), 2 * sw + 3 * 10)
+    path = out.parent / COMPARE_SHEET
+    sheet.save(path, quality=88)
+    return path
 
 
 def compose_sheet(out: Path) -> Path:
-    from PIL import Image, ImageDraw
-
+    compare = compose_compare(out)
     r = out / "renders"
     eng = out / "engine"
-    sections = [
-        ("REFERENCE - hound-sheet-1.png (concept; owner approval PENDING)", [("concept sheet", CONCEPT)]),
+    t = 360
+    rows = [
+        ("REFERENCE - hound-sheet-1.png (concept; owner approval PENDING)", [("concept sheet", CONCEPT, 5 * t + 40, 2 * t)]),
+        ("FIDELITY - concept views beside the model at the same angle and framing", [(COMPARE_SHEET, compare, 5 * t + 40, 2 * t)]),
         ("MODEL - textured Blender renders (shared brass sets), approval PENDING", [
-            ("low front", r / "model-low-front.png"), ("low side", r / "model-low-side.png"), ("low back", r / "model-low-back.png"),
-            ("low 3/4", r / "model-low-three-quarter.png"), ("high source 3/4", r / "model-high-three-quarter.png")]),
+            ("low front", r / "model-low-front.png", t, t), ("low side", r / "model-low-side.png", t, t),
+            ("low back", r / "model-low-back.png", t, t), ("low 3/4", r / "model-low-three-quarter.png", t, t),
+            ("high source 3/4", r / "model-high-three-quarter.png", t, t)]),
         (f"RIG - approval PENDING: {len(BONES)} bones, rigid 1-bone skinning, planar leg solve", [
-            ("range of motion: stretch", r / "rig-rom-stretch.png"), ("range of motion: crouch", r / "rig-rom-crouch.png"),
-            ("attack crouch 0.3 s", r / "anim-attack-crouch.png"), ("attack jaw open 0.42 s", r / "anim-attack-snap.png"),
-            ("death slump 0.75 s", r / "anim-death-slump.png")]),
+            ("range of motion: stretch", r / "rig-rom-stretch.png", t, t), ("range of motion: crouch", r / "rig-rom-crouch.png", t, t),
+            ("attack crouch 0.3 s", r / "anim-attack-crouch.png", t, t), ("attack jaw open 0.42 s", r / "anim-attack-snap.png", t, t),
+            ("death slump 0.75 s", r / "anim-death-slump.png", t, t)]),
         ("ANIMATION - Blender frames, approval PENDING", [
-            ("idle 0.5 s", r / "anim-idle.png"), ("attack impact 0.5 s", r / "anim-attack-impact.png"), ("hit 0.1 s", r / "anim-hit.png"),
-            ("frozen (held)", r / "anim-frozen.png"), ("death end 2.0 s", r / "anim-death-end.png")]),
+            ("idle 0.5 s", r / "anim-idle.png", t, t), ("attack impact 0.5 s", r / "anim-attack-impact.png", t, t),
+            ("hit 0.1 s", r / "anim-hit.png", t, t), ("frozen (held)", r / "anim-frozen.png", t, t),
+            ("death end 2.0 s", r / "anim-death-end.png", t, t)]),
         ("IN ENGINE - three.js 0.186.1, headless Chromium on the GPU, seated player 2.6 m away", [
-            (name, eng / f"{name}.jpg") for name in ENGINE_SHOTS]),
+            (name, eng / f"{name}.jpg", t, t) for name in ENGINE_SHOTS]),
     ]
-    tw, th, pad, cap, head = 360, 360, 10, 24, 34
-    cols = 5
-    sheet = Image.new("RGB", (cols * (tw + pad) + pad, 70 + len(sections) * (head + th + cap + pad) + pad), (28, 24, 22))
-    d = ImageDraw.Draw(sheet)
-    d.text((pad, 12), f"P5-T3 Spring Hound ({PIECE}) - owner review sheet", fill=(243, 190, 101))
-    d.text((pad, 34), APPROVAL_NOTE, fill=(222, 193, 106))
-    y = 70
-    for title, tiles in sections:
-        d.text((pad, y + 10), title, fill=(243, 190, 101))
-        y += head
-        for k, (label, path) in enumerate(tiles):
-            x = pad + k * (tw + pad)
-            w = tw if path != CONCEPT else cols * (tw + pad) - pad
-            if path.exists():
-                img = Image.open(path).convert("RGB")
-                img.thumbnail((w, th))
-                sheet.paste(img, (x + (w - img.width) // 2, y + cap + (th - img.height) // 2))
-            else:
-                d.text((x + 8, y + cap + 8), f"missing: {path.name}", fill=(200, 80, 80))
-            d.text((x, y + 4), label, fill=(222, 193, 106))
-        y += th + cap + pad
+    sheet = _sheet(rows, TITLE, APPROVAL_NOTE + "\n" + fidelity_note(out), 5 * (t + 10) + 10)
     path = out.parent / f"{PIECE}.review-sheet.jpg"
     sheet.save(path, quality=86)
     return path
+
+
+def record_fidelity(out: Path) -> Path:
+    """Adds the author's self-score (staging/fidelity.json) to provenance.json as `authorSelfScore`,
+    bound to the compare image's bytes. Run after `asset-check.py --assemble-enemy`, which rebuilds
+    provenance from scratch. The independent score stays a separate, pending approval entry."""
+    prov_path = out.parent / "provenance.json"
+    prov = json.loads(prov_path.read_text())
+    fid = json.loads((out / "fidelity.json").read_text())
+    compare = out.parent / COMPARE_SHEET
+    prov["authorSelfScore"] = {
+        "score": fid["score"], "scale": "0-100 visual fidelity to the concept",
+        "scorer": "author self-score (the authoring agent; not the independent score create-rigged-character-assets requires)",
+        "date": fid.get("date"), "gaps": fid.get("gaps", []), "method": fid.get("method"),
+        "evidence": {"path": str(compare.relative_to(REPO)), "sha256": sha256(compare)},
+        "independentScore": "pending",
+    }
+    prov_path.write_text(json.dumps(prov, indent=2) + "\n")
+    return prov_path
 
 
 # --------------------------------------------------------------------------------------------------
@@ -1194,6 +1635,14 @@ def main_blender(args: argparse.Namespace) -> None:
         bpy.context.window.scene = low_scene
     arm = build_armature(bpy, low_scene, PIECE)
     body = build_body(bpy, bmesh, low_scene, "low", arm)
+    rest = resolve({"ik": PLANT})
+    if any(abs(a) > 1e-6 for v in rest.values() for a in v):
+        raise RuntimeError(f"leg solve does not reproduce the rest pose: {rest}")
+    if args.compare_only:
+        set_slots(body, source_materials(bpy))
+        print(f"[{PIECE}] tris low={sum(len(p.vertices) - 2 for p in body.data.polygons)}")
+        compare_renders(bpy, low_scene, out)
+        return
     tris_low = sum(len(p.vertices) - 2 for p in body.data.polygons)
     tris_high = sum(len(p.vertices) - 2 for p in body_high.data.polygons)
     print(f"[{PIECE}] tris low={tris_low} high={tris_high}")
@@ -1258,7 +1707,7 @@ def main_blender(args: argparse.Namespace) -> None:
 
     if not args.skip_renders:
         t0 = time.monotonic()
-        report["renders"] = renders(bpy, low_scene, high_scene, arm, actions, out)
+        report["renders"] = renders(bpy, low_scene, high_scene, arm, actions, out) + compare_renders(bpy, low_scene, out)
         report["render_seconds"] = round(time.monotonic() - t0, 1)
 
     report["files"] = {
@@ -1276,5 +1725,7 @@ if __name__ == "__main__":
     ARGS = parse_args()
     if ARGS.sheet:
         print(compose_sheet(ARGS.out.resolve()))
+    elif ARGS.record_fidelity:
+        print(record_fidelity(ARGS.out.resolve()))
     else:
         main_blender(ARGS)
