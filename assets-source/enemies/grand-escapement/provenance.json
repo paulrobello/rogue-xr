@@ -4,7 +4,7 @@
   "route": "scripted (procedural Blender geometry, rig and keyed clips; no provider generation)",
   "generator": {
     "path": "scripts/assets/build-grand-escapement.py",
-    "sha256": "bfc21d244d4d5071595b955cfa6c0fd17f2a5395d2c74fe6ec5052c9c0c5b70b"
+    "sha256": "f66c5123b8dfe6931c5fc8d98f80bebf7d68d59178a540897dacc2331c8092a2"
   },
   "authoringAgent": {
     "harness": "claude-code (dispatched sub-agent)",
@@ -18,12 +18,12 @@
     "store": "assets-source/enemies/grand-escapement/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)"
   },
   "budgets": {
-    "triangles": 23984,
-    "highTriangles": 51582,
+    "triangles": 37296,
+    "highTriangles": 74262,
     "materials": 4,
-    "bones": 40,
+    "bones": 38,
     "maxInfluences": 1,
-    "glbBytes": 2332304
+    "glbBytes": 3545328
   },
   "skin": {
     "policy": "rigid: one bone per vertex at weight 1.0",
@@ -38,7 +38,7 @@
       "measured": {
         "duration": 6.0,
         "start": 0.0,
-        "channels": 120,
+        "channels": 114,
         "rootAnimated": []
       }
     },
@@ -51,7 +51,7 @@
       "measured": {
         "duration": 1.6,
         "start": 0.0,
-        "channels": 120,
+        "channels": 114,
         "rootAnimated": []
       }
     },
@@ -62,7 +62,7 @@
       "measured": {
         "duration": 0.7,
         "start": 0.0,
-        "channels": 120,
+        "channels": 114,
         "rootAnimated": []
       }
     },
@@ -76,7 +76,7 @@
       "measured": {
         "duration": 2.8,
         "start": 0.0,
-        "channels": 120,
+        "channels": 114,
         "rootAnimated": []
       }
     },
@@ -88,7 +88,7 @@
       "measured": {
         "duration": 1.0,
         "start": 0.0,
-        "channels": 120,
+        "channels": 114,
         "rootAnimated": []
       }
     },
@@ -101,7 +101,7 @@
       "measured": {
         "duration": 3.0,
         "start": 0.0,
-        "channels": 120,
+        "channels": 114,
         "rootAnimated": []
       }
     }
@@ -110,56 +110,56 @@
     "idle": {
       "frames": 181,
       "min_z": 0.0001,
-      "min_z_frame": 55,
-      "max_z": 3.2097,
-      "final_max_z": 3.202,
+      "min_z_frame": 60,
+      "max_z": 3.2215,
+      "final_max_z": 3.2138,
       "final_min_z": 0.0001,
       "loop_seam_m": 0.0
     },
     "attack": {
       "frames": 49,
       "min_z": 0.0001,
-      "min_z_frame": 17,
-      "max_z": 3.202,
-      "final_max_z": 3.202,
+      "min_z_frame": 13,
+      "max_z": 3.214,
+      "final_max_z": 3.214,
       "final_min_z": 0.0001,
       "loop_seam_m": 0.0
     },
     "hit": {
       "frames": 22,
       "min_z": 0.0001,
-      "min_z_frame": 13,
-      "max_z": 3.202,
-      "final_max_z": 3.202,
+      "min_z_frame": 9,
+      "max_z": 3.214,
+      "final_max_z": 3.214,
       "final_min_z": 0.0001,
       "loop_seam_m": 0.0
     },
     "death": {
       "frames": 85,
       "min_z": 0.004,
-      "min_z_frame": 4,
-      "max_z": 3.2059,
-      "final_max_z": 0.8172,
+      "min_z_frame": 40,
+      "max_z": 3.2179,
+      "final_max_z": 1.1952,
       "final_min_z": 0.004,
-      "loop_seam_m": 2.73981
+      "loop_seam_m": 2.81995
     },
     "frozen": {
       "frames": 31,
       "min_z": 0.0001,
       "min_z_frame": 0,
-      "max_z": 3.1449,
-      "final_max_z": 3.1449,
+      "max_z": 3.1506,
+      "final_max_z": 3.1506,
       "final_min_z": 0.0001,
       "loop_seam_m": 0.0
     },
     "phase-change": {
       "frames": 91,
       "min_z": 0.0001,
-      "min_z_frame": 10,
-      "max_z": 3.202,
-      "final_max_z": 3.177,
+      "min_z_frame": 83,
+      "max_z": 3.214,
+      "final_max_z": 3.189,
       "final_min_z": 0.0001,
-      "loop_seam_m": 0.58382
+      "loop_seam_m": 0.63598
     }
   },
   "rootMotion": "code-owned: the root joint is never animated and every clip plays in place",
@@ -176,8 +176,8 @@
       "parent": "chest",
       "position": [
         0.0,
-        1.9,
-        -0.3
+        2.0,
+        -0.38
       ]
     },
     "socket-eye": {
@@ -185,16 +185,16 @@
       "parent": "head",
       "position": [
         0.0,
-        2.94,
-        -0.13
+        2.81,
+        -0.22
       ]
     },
     "socket-weapon": {
       "bone": "claw.R",
       "parent": "claw.R",
       "position": [
-        1.095,
-        0.62,
+        1.456,
+        0.54,
         0.0
       ]
     }
@@ -202,35 +202,35 @@
   "derivedFiles": [
     {
       "path": "public/assets/enemies/grand-escapement/grand-escapement.glb",
-      "sha256": "1a34981e3937071c33cd72b1ff424d2db41d0417df1fde14add432c11c564e5e",
-      "bytes": 2332304
+      "sha256": "a10026672250663c8c340a3623d911e696a28291fa45c0baabf685c6781a22cb",
+      "bytes": 3545328
     },
     {
       "path": "public/assets/enemies/grand-escapement/grand-escapement.manifest.json",
-      "sha256": "c831267e3fb080776a29efac0eec23853a03b24ce9019ee340a61a17a27e001d",
-      "bytes": 3301
+      "sha256": "d0975847a3dbd83913b7ca844d9f6d0d9880e62bfdefca1ae162f352f2c23c8a",
+      "bytes": 3253
     }
   ],
   "sourceFiles": [
     {
       "path": "assets-source/enemies/grand-escapement/blend/grand-escapement.high.blend",
-      "sha256": "0ad7cf4a33c36f83c4d95bea99559452e7856e1257b6a0d4ec6e7b95368b9df4",
-      "bytes": 1514665
+      "sha256": "275f32a694a74828315de4d23ad88d7234bbe900c7d5d555412f3e9c32eec35c",
+      "bytes": 2204501
     },
     {
       "path": "assets-source/enemies/grand-escapement/blend/grand-escapement.low.blend",
-      "sha256": "f9f889149968499a995d0321a9d9162907649d978b6cbebcff151097ba0c180c",
-      "bytes": 1122710
+      "sha256": "5723b52c819d785e5836d1a4b3c8b73b390149067f9964ed599f82f5134a8215",
+      "bytes": 1523422
     },
     {
       "path": "assets-source/enemies/grand-escapement/staging/report.json",
-      "sha256": "50182797f3479a816c97ac591fc9a110be0ffb44c5d5095b23e206b962878c9c",
-      "bytes": 6475
+      "sha256": "964431c7b5ff61fd20c7a29f5f685b856a35b14ab3fc3be9e8ec55dd5fb79e60",
+      "bytes": 6808
     },
     {
       "path": "assets-source/enemies/grand-escapement/staging/reimport.json",
-      "sha256": "39700d41d1b4b4388bd10e19552276fb13554b0afb5a32d3a353aa9cc98eb27e",
-      "bytes": 2718
+      "sha256": "33b81bf6fe775f8105c77bef36adb96adcf9c70f1f6ae997af38f1e7e25fff1a",
+      "bytes": 2703
     },
     {
       "path": "assets-source/enemies/grand-escapement/engine_shot.py",
@@ -246,43 +246,43 @@
   "reviewEvidence": [
     {
       "path": "assets-source/enemies/grand-escapement/grand-escapement.review-sheet.jpg",
-      "sha256": "d4af3abcf14994b065d9249fc6ef4df07a9fb10d540b520613822877d8c1271c",
-      "bytes": 517655
+      "sha256": "f84bd062cac54be69ec0bc0cb17d4940dae2d4d9bc2300828c55dddb3a4e9b10",
+      "bytes": 581122
     },
     {
       "path": "assets-source/enemies/grand-escapement/staging/engine/attack.jpg",
-      "sha256": "76b77f747b50c4cfc655fa325026c9ae83c18bb3e28bbc10b5326f2dd32fde91",
-      "bytes": 62597
+      "sha256": "a752e5dc32faaff3149597b66bf4a252f2fbc477be5403ae71727fa49cc74ae0",
+      "bytes": 74163
     },
     {
       "path": "assets-source/enemies/grand-escapement/staging/engine/death.jpg",
-      "sha256": "70d73f9f336e2d3b477c4bc5e725eeda14b5afc0b15c4c5d5e3411404b53352b",
-      "bytes": 31826
+      "sha256": "2972db4d7ef0f55ed80b6b902ac5b577907671f60568b659213ea200524cb9f4",
+      "bytes": 30968
     },
     {
       "path": "assets-source/enemies/grand-escapement/staging/engine/frozen.jpg",
-      "sha256": "54fba31fcf7b217a7273bd81128c3e4cd2bc4b4b55ba76ab03b5ad6c8f6d0a1e",
-      "bytes": 54923
+      "sha256": "9903f80e11bc087b77241f2fc601541dbf16819dfa03f24a9553d09b2eee7064",
+      "bytes": 65291
     },
     {
       "path": "assets-source/enemies/grand-escapement/staging/engine/hit.jpg",
-      "sha256": "5e625074a00132153e86e2bc0b6b51e1a491c4fce6c7eb17890201956cfca889",
-      "bytes": 48219
+      "sha256": "28f79e33f4a386f77d555fac7e9de81f802675a1aead15ac4946364c851abd0f",
+      "bytes": 61256
     },
     {
       "path": "assets-source/enemies/grand-escapement/staging/engine/idle.jpg",
-      "sha256": "b064c52c53c5a385e9fdf42c52692abbfde2acb653d65d9b7568ad3cba1a665e",
-      "bytes": 50582
+      "sha256": "23eb251591f6a2a51ee0fb87b3963ef268e626d6419894db48d00dde27e69ef4",
+      "bytes": 63569
     },
     {
       "path": "assets-source/enemies/grand-escapement/staging/engine/phase-change-end.jpg",
-      "sha256": "a84e007be7c8fea4cc6389c8f0a09c3ac05f40d4671e100677c4d8b2ee0f734f",
-      "bytes": 56552
+      "sha256": "429af1bbfc49c6c03d9bf1df816c6bd5ba6ed4a4b1a3b84fef15bb67cbd75980",
+      "bytes": 65848
     },
     {
       "path": "assets-source/enemies/grand-escapement/staging/engine/phase-change-mid.jpg",
-      "sha256": "a44ac24007fe35e7345eb950069ef80a50b92efad8590e84d08b2a04d67ccf8e",
-      "bytes": 56824
+      "sha256": "bf4a007a53b742400394a32678902717d807081c0cec33e9146fbe80dad77543",
+      "bytes": 64392
     }
   ],
   "references": [
@@ -293,11 +293,11 @@
       "note": "P5-T4 concept sheet (Higgsfield nano_banana_pro); owner approval pending (assets-source/concepts/p5-automatons-design.md)"
     }
   ],
-  "materialsUsed": "approved P4-T3 brass-polished and walnut sets bound by slot name at runtime; gunmetal and escapement-glow are factor-only",
+  "materialsUsed": "approved P4-T3 brass-polished set bound by slot name at runtime; escapement-case (mahogany, dark iron, sapphire and ember from COLOR_0), escapement-glass (alpha-blended) and escapement-glow are factor-only",
   "license": "Original work generated in Blender from a checked-in script; concept reference from Paul's paid Higgsfield plan (Terms of Use 4.4)",
   "validation": {
     "pass": true,
-    "date": "2026-11-15",
+    "date": "2026-11-16",
     "checks": [
       "presence",
       "hashes",
@@ -337,5 +337,25 @@
       "status": "unscored",
       "notes": "create-rigged-character-assets requires an independent >= 80/100 score; unscored means unaccepted"
     }
-  ]
+  ],
+  "authorSelfScore": {
+    "score": 78,
+    "scale": "0-100 visual fidelity to the concept",
+    "scorer": "author self-score (the authoring agent; not the independent score create-rigged-character-assets requires)",
+    "date": "2026-11-16",
+    "gaps": [
+      "The case is still lighter than the sheet's near-black mahogany (about sRGB 99, 60, 43 against 66, 38, 29 on the back panels), because the dielectric wood's specular adds grey under the shared light rig.",
+      "The glazed doors read as an even amber pane over a faint glowing disc; the sheet's frosted glass has a bright orange core glow. The interior glow stays peach at the project's GLOW_STRENGTH 0.7 convention for F08C2C, and the phase-2 corona reads as glowing gear teeth without bloom, short of the sheet's blazing escapement.",
+      "Limb armour (layered pauldrons, gunmetal upper arms with brass strips, squared vambraces, narrow thigh plates, greaves, knee bosses, sabatons with lames) carries gunmetal edge piping, but at the compare's scale the plates read smooth; the brass is uniform polished, without the sheet's engraving.",
+      "From the side the head reads as a smooth helm with no visible face-plate profile or eye glow; the arms hang in the frontal plane, so the anchors sit edge-on behind the legs where the sheet shows them angled forward.",
+      "The sabatons are smaller and darker from the front than the sheet's broad brass sabatons.",
+      "Phase change: the side plates stay shut until 0.85 s and spring open by 1.0 s; during those 0.15 s they sweep through the upper arms before settling behind them. The end pose is clear."
+    ],
+    "method": "Author self-score from grand-escapement.fidelity-compare.jpg: orthographic EEVEE renders (AgX, the fixed shared light rig, not tuned to the score) of the low-poly model at the concept sheet's front, side and back angles, framed at the sheet's own scale (3.2 m over 808 sheet pixels), judged side by side and in zoomed crops of the head and bell, pediment, glazed doors, pauldrons, arms and anchors, legs and sabatons, plus the seven in-engine clip shots in staging/engine (three.js 0.186.1, ANGLE Metal on Apple M4). Case width and depth, pediment and roof heights, door and apron heights, head and bell sizes, hip, knee and ankle positions, the head's forward offset (side view: head bounding-box centre 0.067 m ahead of the case centre on the sheet, about 0.06 m on the model), and anchor spans were measured on the sheet's front and side views at the same framing. The case follows the sheet's squat cabinet rather than the design notes' longcase, because the sheet is the concept under review. Case colour was matched by sampling: the sheet's back panels read about sRGB (66, 38, 29); the model's back panels read about (135, 88, 65) before this pass and about (99, 60, 43) after it (darker, more saturated mahogany albedo and wood roughness 0.85, checked in both the Blender compare and the engine shots).",
+    "evidence": {
+      "path": "assets-source/enemies/grand-escapement/grand-escapement.fidelity-compare.jpg",
+      "sha256": "8673cd12d331b49bfb75447cc4081c601a10f54c4f522fff89661c5da318e395"
+    },
+    "independentScore": "pending"
+  }
 }

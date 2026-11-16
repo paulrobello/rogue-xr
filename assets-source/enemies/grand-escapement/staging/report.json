@@ -2,7 +2,7 @@
   "piece": "grand-escapement",
   "blender": "5.2.2 LTS",
   "generator": "scripts/assets/build-grand-escapement.py",
-  "generator_sha256": "9c817f22fa3c0784bdce75f9c9310a6e53f8004d18ce0424db78c68b75783fad",
+  "generator_sha256": "f66c5123b8dfe6931c5fc8d98f80bebf7d68d59178a540897dacc2331c8092a2",
   "concept": {
     "file": "assets-source/concepts/escapement-sheet-1.png",
     "sha256": "42f8031f0391d392cbafd30756f7c69fde1a3c0c216f37aef3fc7060c8a61b9f",
@@ -13,100 +13,102 @@
       "basecolor": "e06711b70706c57713bad023bfd9690715a67ae7b85fcc3041d596f7b0630e15",
       "normal": "48e62a85458bfc64ffc095f4f6a44c69b0058b90e01a664a3f3682a0222bfb3c",
       "orm": "ac621605925e523ca9b25bd18bbfe4bdab575bb3a9876a5390adc5a29c559e9a"
-    },
-    "walnut": {
-      "basecolor": "c2c1d72ba308c02f6304ee389a86d6663199d01a352160c347801cefd4042a0b",
-      "normal": "3ee262cb20e41fe1f8b6dac8528f0b3f51e6e129cc9542f99d81c21242046558",
-      "orm": "6de73e58bc870595d74968b44e4f94b153c2dfc529ae6cb5c9e2beda5c24846d"
     }
   },
   "triangles": {
-    "low": 23984,
-    "high": 51582
+    "low": 37296,
+    "high": 74262
   },
-  "bones": 40,
+  "bones": 38,
   "authoringAgent": "Claude Code subagent (claude-opus-5-5), dispatched by the rogue-xr primary session",
   "ground_clamp_death_max_lift_m": [
-    0.327,
+    0.2743,
     0.0
   ],
   "pose_checks": {
     "idle": {
       "frames": 181,
       "min_z": 0.0001,
-      "min_z_frame": 55,
-      "max_z": 3.2097,
-      "final_max_z": 3.202,
+      "min_z_frame": 60,
+      "max_z": 3.2215,
+      "final_max_z": 3.2138,
       "final_min_z": 0.0001,
       "loop_seam_m": 0.0
     },
     "attack": {
       "frames": 49,
       "min_z": 0.0001,
-      "min_z_frame": 17,
-      "max_z": 3.202,
-      "final_max_z": 3.202,
+      "min_z_frame": 13,
+      "max_z": 3.214,
+      "final_max_z": 3.214,
       "final_min_z": 0.0001,
       "loop_seam_m": 0.0
     },
     "hit": {
       "frames": 22,
       "min_z": 0.0001,
-      "min_z_frame": 13,
-      "max_z": 3.202,
-      "final_max_z": 3.202,
+      "min_z_frame": 9,
+      "max_z": 3.214,
+      "final_max_z": 3.214,
       "final_min_z": 0.0001,
       "loop_seam_m": 0.0
     },
     "death": {
       "frames": 85,
       "min_z": 0.004,
-      "min_z_frame": 4,
-      "max_z": 3.2059,
-      "final_max_z": 0.8172,
+      "min_z_frame": 40,
+      "max_z": 3.2179,
+      "final_max_z": 1.1952,
       "final_min_z": 0.004,
-      "loop_seam_m": 2.73981
+      "loop_seam_m": 2.81995
     },
     "frozen": {
       "frames": 31,
       "min_z": 0.0001,
       "min_z_frame": 0,
-      "max_z": 3.1449,
-      "final_max_z": 3.1449,
+      "max_z": 3.1506,
+      "final_max_z": 3.1506,
       "final_min_z": 0.0001,
       "loop_seam_m": 0.0
     },
     "phase-change": {
       "frames": 91,
       "min_z": 0.0001,
-      "min_z_frame": 10,
-      "max_z": 3.202,
-      "final_max_z": 3.177,
+      "min_z_frame": 83,
+      "max_z": 3.214,
+      "final_max_z": 3.189,
       "final_min_z": 0.0001,
-      "loop_seam_m": 0.58382
+      "loop_seam_m": 0.63598
     }
   },
   "cull": {
     "center": [
       0.0,
-      1.605,
-      -0.154
+      1.611,
+      -0.111
     ],
-    "radius": 2.416,
-    "maxDistanceFromSentryCullCentre": 2.454
+    "radius": 2.816,
+    "maxDistanceFromSentryCullCentre": 2.844
   },
   "canonicalized_primitives": 4,
+  "canonicalized_normals": {
+    "vertices": 41853,
+    "fans": 35535,
+    "zero_area_triangles": 288,
+    "max_dev_deg": 29.9,
+    "over_1deg": 20
+  },
   "reimport": {
-    "glb_sha256": "1a34981e3937071c33cd72b1ff424d2db41d0417df1fde14add432c11c564e5e",
-    "glb_bytes": 2332304,
-    "triangles": 23984,
+    "glb_sha256": "a10026672250663c8c340a3623d911e696a28291fa45c0baabf685c6781a22cb",
+    "glb_bytes": 3545328,
+    "triangles": 37296,
     "materials": [
       "brass-polished",
-      "walnut",
-      "gunmetal",
+      "escapement-case",
+      "escapement-glass",
       "escapement-glow"
     ],
-    "vertices": 26061,
+    "vertices": 41853,
     "joints": [
       "root",
       "pelvis",
@@ -127,8 +129,6 @@
       "fluke.in.R",
       "fluke.out.R",
       "corona",
-      "dial.hour",
-      "dial.minute",
       "door.L",
       "door.R",
       "key",
@@ -149,57 +149,57 @@
       "shin.R",
       "foot.R"
     ],
-    "bone_count": 40,
+    "bone_count": 38,
     "max_influences": 1,
     "max_weight_sum_error": 0.0,
     "unweighted_vertices": 0,
     "bounds": {
       "min": [
-        -1.306,
+        -1.7682,
         0.0001,
-        -0.27
+        -0.362
       ],
       "max": [
-        1.306,
-        3.202,
-        0.292
+        1.7682,
+        3.214,
+        0.599
       ]
     },
     "clips": {
       "attack": {
         "duration": 1.6,
         "start": 0.0,
-        "channels": 120,
+        "channels": 114,
         "rootAnimated": []
       },
       "death": {
         "duration": 2.8,
         "start": 0.0,
-        "channels": 120,
+        "channels": 114,
         "rootAnimated": []
       },
       "frozen": {
         "duration": 1.0,
         "start": 0.0,
-        "channels": 120,
+        "channels": 114,
         "rootAnimated": []
       },
       "hit": {
         "duration": 0.7,
         "start": 0.0,
-        "channels": 120,
+        "channels": 114,
         "rootAnimated": []
       },
       "idle": {
         "duration": 6.0,
         "start": 0.0,
-        "channels": 120,
+        "channels": 114,
         "rootAnimated": []
       },
       "phase-change": {
         "duration": 3.0,
         "start": 0.0,
-        "channels": 120,
+        "channels": 114,
         "rootAnimated": []
       }
     },
@@ -209,8 +209,8 @@
         "parent": "chest",
         "position": [
           0.0,
-          1.9,
-          -0.3
+          2.0,
+          -0.38
         ]
       },
       "socket-eye": {
@@ -218,16 +218,16 @@
         "parent": "head",
         "position": [
           0.0,
-          2.94,
-          -0.13
+          2.81,
+          -0.22
         ]
       },
       "socket-weapon": {
         "bone": "claw.R",
         "parent": "claw.R",
         "position": [
-          1.095,
-          0.62,
+          1.456,
+          0.54,
           0.0
         ]
       }
@@ -239,7 +239,7 @@
     "pass": true,
     "blender_reimport": {
       "armatures": 1,
-      "bones": 40,
+      "bones": 38,
       "meshes": 1,
       "actions": [
         "attack.001",
@@ -258,12 +258,34 @@
       ]
     }
   },
+  "renders": [
+    "model-low-front",
+    "model-low-side",
+    "model-low-back",
+    "model-low-three-quarter",
+    "model-high-three-quarter",
+    "rig-rom-reach",
+    "rig-rom-crouch",
+    "anim-idle",
+    "anim-attack-raise",
+    "anim-attack-clamp",
+    "anim-hit",
+    "anim-frozen",
+    "anim-death-kneel",
+    "anim-death-end",
+    "anim-phase-mid",
+    "anim-phase-end",
+    "compare-front",
+    "compare-side",
+    "compare-back"
+  ],
+  "render_seconds": 6.7,
   "files": {
-    "assets-source/enemies/grand-escapement/blend/grand-escapement.high.blend": "0ad7cf4a33c36f83c4d95bea99559452e7856e1257b6a0d4ec6e7b95368b9df4",
-    "assets-source/enemies/grand-escapement/blend/grand-escapement.low.blend": "f9f889149968499a995d0321a9d9162907649d978b6cbebcff151097ba0c180c",
-    "assets-source/enemies/grand-escapement/staging/reimport.json": "39700d41d1b4b4388bd10e19552276fb13554b0afb5a32d3a353aa9cc98eb27e",
-    "public/assets/enemies/grand-escapement/grand-escapement.glb": "1a34981e3937071c33cd72b1ff424d2db41d0417df1fde14add432c11c564e5e",
-    "public/assets/enemies/grand-escapement/grand-escapement.manifest.json": "c831267e3fb080776a29efac0eec23853a03b24ce9019ee340a61a17a27e001d"
+    "assets-source/enemies/grand-escapement/blend/grand-escapement.high.blend": "275f32a694a74828315de4d23ad88d7234bbe900c7d5d555412f3e9c32eec35c",
+    "assets-source/enemies/grand-escapement/blend/grand-escapement.low.blend": "5723b52c819d785e5836d1a4b3c8b73b390149067f9964ed599f82f5134a8215",
+    "assets-source/enemies/grand-escapement/staging/reimport.json": "33b81bf6fe775f8105c77bef36adb96adcf9c70f1f6ae997af38f1e7e25fff1a",
+    "public/assets/enemies/grand-escapement/grand-escapement.glb": "a10026672250663c8c340a3623d911e696a28291fa45c0baabf685c6781a22cb",
+    "public/assets/enemies/grand-escapement/grand-escapement.manifest.json": "d0975847a3dbd83913b7ca844d9f6d0d9880e62bfdefca1ae162f352f2c23c8a"
   },
-  "total_seconds": 7.2
+  "total_seconds": 14.5
 }

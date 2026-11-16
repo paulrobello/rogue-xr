@@ -1,28 +1,37 @@
-"""P5-T4 Grand Escapement: the floor guardian, a 3.2 m automaton whose torso is a tall walnut
-longcase clock (plinth with a bracket-foot apron, a trunk with glazed double doors over the
-pendulum and the escapement wheel, a hood with the dial face between turned brass columns, a
-broken-arch pediment) on long armoured brass legs, with long arms ending in anchor-shaped pallet
-claws and a bell crown (concept assets-source/concepts/escapement-sheet-1.png, notes
-assets-source/concepts/p5-automatons-design.md, style docs/art-bible.md; the sheet drifted to a
-squat cabinet, so the case follows the notes: taller and narrower). Built procedurally from shaped
-parts (bevelled boxes and mouldings, lofted superellipse limbs, lathed shells and columns, swept
-bands and fluke arcs, extruded outlines for the wheel, hands, pediment, key and arrowheads), each
-weighted 1.0 to one bone of a 40-bone armature. Clips: the five automaton clips of the Cog Sentry
-contract (P4-T6) plus `phase-change` (one-shot, ends held open): the glazed doors and the side
-case plates spring open on their hinge bones, the glowing corona slides out from behind the back
-board round the escapement wheel, the wheel and the dial hands race and the key spins. Every part
-that opens is a rigid bone already present, closed, in phase 1; every other clip keys it closed.
-Exported as an image-free skinned GLB whose set-bound slots carry the names of the shared P4-T3
-sets (`public/assets/materials/`: brass-polished and walnut), so the runtime binds them by name.
-UV0 is in tile units (metres / tileMeters). The manifest uses the sentry's schema plus an optional
-`cull` sphere measured over every clip frame.
+"""P5-T4 Grand Escapement: the floor guardian, a 3.2 m automaton whose torso is a squat mahogany
+clock cabinet (a moulded base over a scalloped apron, glazed double doors over the pendulum and
+the escapement wheel, a cornice and a broken swan-neck pediment with brass scrolls) on long
+armoured brass legs, with gunmetal-and-brass arms ending in anchor-shaped pallet claws, a helmed
+head rising through the pediment's gap and a bell crown (concept
+assets-source/concepts/escapement-sheet-1.png, notes assets-source/concepts/p5-automatons-design.md,
+style docs/art-bible.md; the case follows the sheet's squat cabinet, which overrides the notes'
+longcase). Built procedurally from shaped parts (bevelled boxes and mouldings, lofted superellipse
+limbs, lathed and closed shells for pauldrons, cops and the bell, crowned wrapped plates, swept
+bands, ridges and fluke arcs, extruded outlines for the apron, pediment, wheel, key and arrowheads),
+each weighted 1.0 to one bone of a 38-bone armature. Clips: the five automaton clips of the Cog
+Sentry contract (P4-T6) plus `phase-change` (one-shot, ends held open): the glazed doors and the
+side case plates spring open on their hinge bones, the two-tone corona slides out from behind the
+back board round the escapement wheel, the wheel races and the key spins. Every part that opens is
+a rigid bone already present, closed, in phase 1; every other clip keys it closed.
+
+Materials (4 slots): `brass-polished` carries the shared P4-T3 set's name, so the runtime binds it
+by name (UV0 is in tile units, metres / tileMeters). `escapement-case` is factor-only and white:
+its hue comes from the COLOR_0 vertex colours (mahogany, darker mahogany, dark iron, sapphire inlays
+and the non-emissive ember surrounds), so one slot carries every non-brass opaque surface.
+`escapement-glass` is factor-only and alpha-blended (the door glazing, so the pendulum tells stay
+readable), and `escapement-glow` is the emissive slot at the project glow convention. The export is
+image-free. After export the GLB's triangle order and NORMALs are canonicalized (sort_triangles,
+canonicalize_normals) because the exporter's are run-dependent, so rebuilds are byte-identical. The
+manifest uses the sentry's schema plus an optional `cull` sphere measured over every clip frame.
 
 Blender run (build, pose checks, export, reimport gate, manifest, renders, .blend sources):
     "$BLENDER" -b --factory-startup --python-exit-code 1 -P scripts/assets/build-grand-escapement.py -- \
         [--out assets-source/enemies/grand-escapement/staging] [--runtime public/assets/enemies/grand-escapement] \
         [--blend-dir assets-source/enemies/grand-escapement/blend] [--skip-renders] [--compare-only]
-Review sheet (system Python with Pillow, after the Blender run and the engine shots):
+Review sheet, then the author fidelity record (system Python with Pillow, after the Blender run, the
+engine shots and the hand-written staging/fidelity.json):
     python3 -I scripts/assets/build-grand-escapement.py --sheet [--out ...]
+    python3 -I scripts/assets/build-grand-escapement.py --record-fidelity [--out ...]
 
 Frame: Blender is Z-up; runtime (x, y, z) = Blender (x, z, -y). The guardian faces Blender +Y,
 which is runtime -Z (encounter.ts sets rotation.y = -heading). The root sits at the feet (runtime
@@ -54,87 +63,102 @@ CONCEPT = REPO / "assets-source/concepts/escapement-sheet-1.png"
 CONCEPT_CROPS = {"front": (140, 20, 1060, 850), "side": (1130, 20, 1630, 850), "back": (1762, 20, 2682, 850)}
 FPS = 30
 HEIGHT_RANGE = (3.1, 3.3)  # metres to the bell finial, rest pose (design notes: about 3.2 m)
-DEATH_MAX_Z = 1.2  # lying prone: the case is 0.45 m deep, the anchors and pauldrons stand proud
+DEATH_MAX_Z = 1.2  # lying prone: the case is 0.6 m deep, the anchors and pauldrons stand proud
 
 LIMITS = {"tris": 40_000, "materials": 4, "bones": 60, "influences": 4}
 GLOW = "escapement-glow"
-MATS = ["brass-polished", "walnut", "gunmetal", GLOW]
-BP, WN, GM, GL = range(4)
-JW = GM  # no jewel slot on the guardian (4-material cap): the inlays are gunmetal
-SETS = {"brass-polished": 0.35, "walnut": 1.0}  # shared set -> normal scale (as on the combat table)
-TILE_METERS = 0.5  # both sets tile at 0.5 m (public/assets/materials/materials.json)
-FACTORS = {  # sRGB base, roughness, metallic: the GLB look, and the fallback when the sets fail
+CASE = "escapement-case"  # factor-only, hue from COLOR_0: mahogany, dark iron, sapphire inlays, ember surrounds
+GLASS = "escapement-glass"  # factor-only, alpha-blended glazing
+MATS = ["brass-polished", CASE, GLASS, GLOW]
+BP, CS, GS, GL = range(4)
+# Case-slot shades: Parts._tag maps these pseudo-slots to CS and writes the hue into COLOR_0.
+WN, WD, GM, JW, EM = 10, 11, 12, 13, 14
+SHADES = {WN: (0x36, 0x14, 0x05), WD: (0x26, 0x0C, 0x03), GM: (0x16, 0x14, 0x14), JW: (0x46, 0x2E, 0x96), EM: (0xD0, 0x62, 0x14)}
+SETS = {"brass-polished": 0.35}  # shared set -> normal scale (as on the combat table)
+TILE_METERS = 0.5  # the brass set tiles at 0.5 m (public/assets/materials/materials.json)
+FACTORS = {  # sRGB base, roughness, metallic: the GLB look, and the fallback when the set fails
     "brass-polished": ((0xDE, 0xC1, 0x6A), 0.3, 1.0),
-    "walnut": ((0x58, 0x3C, 0x26), 0.6, 0.0),
-    "gunmetal": ((0x2E, 0x2A, 0x2A), 0.5, 0.85),
-    GLOW: ((0x6A, 0x34, 0x0C), 0.4, 0.0),
+    CASE: ((0xFF, 0xFF, 0xFF), 0.85, 0.0),  # hue from COLOR_0; rough, so env specular stays off the dark wood
+    GLASS: ((0xB4, 0x72, 0x34), 0.25, 0.0),  # amber: the glazing reads lit from inside, as on the sheet
+    # Emission stays at the project convention (GLOW_SRGB at GLOW_STRENGTH 0.7); a dark, fairly rough
+    # base keeps the lit surface from adding white and washing the orange to peach under AgX.
+    GLOW: ((0x3A, 0x14, 0x04), 0.5, 0.0),
 }
+GLASS_ALPHA = 0.36
 GLOW_SRGB = (0xF0, 0x8C, 0x2C)
 GLOW_STRENGTH = 0.7
-JEWEL = None
 
 
 def _add(a, b, k=1.0):
     return tuple(x + k * y for x, y in zip(a, b))
 
 
-# Case layout (Blender metres): plinth, trunk with doors, waist moulding, hood with dial, pediment.
-PLINTH = (1.08, 1.36)
-TRUNK = (1.36, 2.22)
-HOOD = (2.24, 2.70)
-CASE_W, CASE_D = 0.52, 0.34  # trunk outer width and depth
-WHEEL_C = (0.0, -0.072, 1.97)
-PALLET_C = (0.0, -0.03, 2.11)
-BOB_Z = 1.56
-DIAL_C = (0.0, 0.205, 2.46)
-KEY_C = (0.0, -0.17, 1.98)
-DOOR_Z = (1.43, 2.15)
-SH = (0.35, 0.0, 2.17)
-EL = (0.62, 0.0, 1.66)
-WR = (0.86, 0.0, 1.12)
-ANCHOR_LEN = 0.52
+def _unit(v) -> tuple:
+    n = math.sqrt(sum(c * c for c in v))
+    return tuple(c / n for c in v)
 
-# Armature: name, parent, head, tail (Blender metres). R is Blender +X. Door, plate, wheel, dial,
-# key bones sit on their hinge or axle and point along it, so a roll about the bone's own axis
-# ("spin" in the poses) swings or turns the part.
+
+# Case layout (Blender metres), measured on the concept's front and side views at the compare
+# framing (3.96 mm per sheet pixel): a squat cabinet 0.86 m wide and 0.6 m deep on a moulded base
+# and scalloped apron, glazed double doors, a cornice and a broken swan-neck pediment with the
+# helmed head rising through its gap.
+W, D = 0.43, 0.30  # cabinet body half-width and half-depth
+APRON = (1.33, 1.47)
+BASE = (1.47, 1.56)
+CAB = (1.56, 2.46)
+CORNICE = (2.46, 2.53)
+DOOR_Z = (1.63, 2.39)
+DOOR_X = 0.335  # hinge (outer edge) of each door
+WHEEL_C = (0.0, -0.07, 2.14)
+PALLET_C = (0.0, -0.02, 2.33)
+BOB_Z = 1.80
+KEY_C = (0.0, -D - 0.01, 2.06)
+HEAD_Y = 0.05  # head bbox centre ~0.07 m forward of the case centre, as measured on the concept side view
+SH = (0.57, 0.0, 2.20)
+EL = (0.79, 0.0, 1.76)
+WR = (1.20, 0.0, 1.17)
+ARM_U = _unit((WR[0] - EL[0], 0.0, WR[2] - EL[2]))  # forearm direction (right side)
+CLAW_U = _unit((0.377, 0.0, -0.926))  # the anchors hang steeper than the forearms (concept front)
+ANCHOR_LEN = 0.62
+CROWN = (WR[0] + CLAW_U[0] * (ANCHOR_LEN + 0.06), 0.0, WR[2] + CLAW_U[2] * (ANCHOR_LEN + 0.06))
+HIP, KNEE, ANKLE = (0.29, -0.09, 1.36), (0.37, -0.07, 0.89), (0.44, -0.1, 0.20)
+
+# Armature: name, parent, head, tail (Blender metres). R is Blender +X. Door, plate, wheel and key
+# bones sit on their hinge or axle and point along it, so a roll about the bone's own axis ("spin"
+# in the poses) swings or turns the part.
 BONES: list[tuple[str, str | None, tuple, tuple]] = [
     ("root", None, (0, 0, 0), (0, 0, 0.2)),
-    ("pelvis", "root", (0, 0, 1.20), (0, 0, 1.36)),
-    ("spine", "pelvis", (0, 0, 1.36), (0, 0, 1.70)),
-    ("chest", "spine", (0, 0, 1.70), (0, 0, 2.70)),
-    ("neck", "chest", (0, -0.02, 2.70), (0, -0.02, 2.86)),
-    ("head", "neck", (0, -0.02, 2.86), (0, -0.02, 3.08)),
-    ("bell", "head", (0, -0.02, 3.08), (0, -0.02, 3.18)),
-    ("clapper", "bell", (0, -0.02, 3.15), (0, -0.02, 3.08)),
-    ("door.R", "chest", (0.232, 0.17, DOOR_Z[0]), (0.232, 0.17, DOOR_Z[1])),
-    ("door.L", "chest", (-0.232, 0.17, DOOR_Z[0]), (-0.232, 0.17, DOOR_Z[1])),
-    ("plate.R", "chest", (0.262, -0.158, 1.40), (0.262, -0.158, 2.18)),
-    ("plate.L", "chest", (-0.262, -0.158, 1.40), (-0.262, -0.158, 2.18)),
+    ("pelvis", "root", (0, 0, 1.30), (0, 0, 1.45)),
+    ("spine", "pelvis", (0, 0, 1.45), (0, 0, 1.70)),
+    ("chest", "spine", (0, 0, 1.70), (0, 0, 2.48)),
+    ("neck", "chest", (0, HEAD_Y - 0.02, 2.48), (0, HEAD_Y, 2.60)),
+    ("head", "neck", (0, HEAD_Y, 2.60), (0, HEAD_Y, 3.0)),
+    ("bell", "head", (0, HEAD_Y - 0.01, 3.02), (0, HEAD_Y - 0.01, 3.15)),
+    ("clapper", "bell", (0, HEAD_Y - 0.01, 3.15), (0, HEAD_Y - 0.01, 3.07)),
+    ("door.R", "chest", (DOOR_X, D - 0.01, DOOR_Z[0]), (DOOR_X, D - 0.01, DOOR_Z[1])),
+    ("door.L", "chest", (-DOOR_X, D - 0.01, DOOR_Z[0]), (-DOOR_X, D - 0.01, DOOR_Z[1])),
+    ("plate.R", "chest", (W + 0.004, -D + 0.02, CAB[0] + 0.04), (W + 0.004, -D + 0.02, CAB[1] - 0.04)),
+    ("plate.L", "chest", (-W - 0.004, -D + 0.02, CAB[0] + 0.04), (-W - 0.004, -D + 0.02, CAB[1] - 0.04)),
     ("pallet", "chest", PALLET_C, _add(PALLET_C, (0, 0, -0.12))),
-    ("pendulum", "pallet", PALLET_C, (0, -0.03, BOB_Z + 0.08)),
-    ("bob", "pendulum", (0, -0.03, BOB_Z + 0.08), (0, -0.03, BOB_Z - 0.08)),
+    ("pendulum", "pallet", PALLET_C, (0, PALLET_C[1], BOB_Z + 0.1)),
+    ("bob", "pendulum", (0, PALLET_C[1], BOB_Z + 0.1), (0, PALLET_C[1], BOB_Z - 0.1)),
     ("wheel", "chest", WHEEL_C, _add(WHEEL_C, (0, 0.1, 0))),
-    ("corona", "chest", _add(WHEEL_C, (0, -0.064, 0)), _add(WHEEL_C, (0, 0.04, 0))),
-    ("dial.hour", "chest", DIAL_C, _add(DIAL_C, (0, 0.1, 0))),
-    ("dial.minute", "chest", DIAL_C, _add(DIAL_C, (0, 0.12, 0))),
+    ("corona", "chest", _add(WHEEL_C, (0, -0.12, 0)), _add(WHEEL_C, (0, -0.02, 0))),
     ("key", "chest", KEY_C, _add(KEY_C, (0, -0.12, 0))),
 ]
 for _s, _n in ((1, "R"), (-1, "L")):
-    _d = tuple((w - e) for w, e in zip(WR, EL))
-    _dl = math.hypot(_d[0], _d[2])
-    _u = (_d[0] / _dl, 0.0, _d[2] / _dl)
-    _crown = (_s * (WR[0] + _u[0] * (ANCHOR_LEN + 0.06)), 0.0, WR[2] + _u[2] * (ANCHOR_LEN + 0.06))
+    _crown = (_s * CROWN[0], 0.0, CROWN[2])
     BONES += [
-        (f"clavicle.{_n}", "chest", (_s * 0.08, 0, 2.18), (_s * 0.30, 0, 2.18)),
+        (f"clavicle.{_n}", "chest", (_s * 0.10, 0, 2.24), (_s * 0.50, 0, 2.22)),
         (f"upperarm.{_n}", f"clavicle.{_n}", (_s * SH[0], 0, SH[2]), (_s * EL[0], 0, EL[2])),
         (f"forearm.{_n}", f"upperarm.{_n}", (_s * EL[0], 0, EL[2]), (_s * WR[0], 0, WR[2])),
-        (f"hand.{_n}", f"forearm.{_n}", (_s * WR[0], 0, WR[2]), (_s * (WR[0] + _u[0] * 0.08), 0.0, WR[2] + _u[2] * 0.08)),
-        (f"claw.{_n}", f"hand.{_n}", (_s * (WR[0] + _u[0] * 0.06), 0.0, WR[2] + _u[2] * 0.06), _crown),
-        (f"fluke.in.{_n}", f"claw.{_n}", _crown, _add(_crown, (-_s * 0.12, 0, 0.06))),
-        (f"fluke.out.{_n}", f"claw.{_n}", _crown, _add(_crown, (_s * 0.12, 0, 0.06))),
-        (f"thigh.{_n}", "pelvis", (_s * 0.15, 0, 1.20), (_s * 0.17, 0.02, 0.66)),
-        (f"shin.{_n}", f"thigh.{_n}", (_s * 0.17, 0.02, 0.66), (_s * 0.17, -0.01, 0.13)),
-        (f"foot.{_n}", f"shin.{_n}", (_s * 0.17, -0.01, 0.13), (_s * 0.17, 0.21, 0.03)),
+        (f"hand.{_n}", f"forearm.{_n}", (_s * WR[0], 0, WR[2]), (_s * (WR[0] + ARM_U[0] * 0.1), 0.0, WR[2] + ARM_U[2] * 0.1)),
+        (f"claw.{_n}", f"hand.{_n}", (_s * (WR[0] + CLAW_U[0] * 0.06), 0.0, WR[2] + CLAW_U[2] * 0.06), _crown),
+        (f"fluke.in.{_n}", f"claw.{_n}", _crown, _add(_crown, (-_s * 0.14, 0, 0.07))),
+        (f"fluke.out.{_n}", f"claw.{_n}", _crown, _add(_crown, (_s * 0.14, 0, 0.07))),
+        (f"thigh.{_n}", "pelvis", (_s * HIP[0], HIP[1], HIP[2]), (_s * KNEE[0], KNEE[1], KNEE[2])),
+        (f"shin.{_n}", f"thigh.{_n}", (_s * KNEE[0], KNEE[1], KNEE[2]), (_s * ANKLE[0], ANKLE[1], ANKLE[2])),
+        (f"foot.{_n}", f"shin.{_n}", (_s * ANKLE[0], ANKLE[1], ANKLE[2]), (_s * ANKLE[0], ANKLE[1] + 0.25, 0.03)),
     ]
 BONE_NAMES = [b[0] for b in BONES]
 PARENT = {b[0]: b[1] for b in BONES}
@@ -174,6 +198,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--skip-renders", action="store_true")
     p.add_argument("--compare-only", action="store_true", help="model, then only the concept-angle renders (iteration)")
     p.add_argument("--sheet", action="store_true", help="compose the review sheet (system Python)")
+    p.add_argument("--record-fidelity", action="store_true", help="copy staging/fidelity.json into provenance.json (system Python)")
     return p.parse_args(argv)
 
 
@@ -229,6 +254,8 @@ class Parts:
         return max(3, int(round(base * self.k)))
 
     def _tag(self, verts, faces, mat: int, bone: str, color=None) -> None:
+        # A case-slot shade stays a pseudo material index here (bevels copy the index onto the faces
+        # they create); build_body turns it into the COLOR_0 hue on the CS slot.
         gi = BONE_NAMES.index(bone)
         for v in verts:
             v[self.deform][gi] = 1.0
@@ -329,11 +356,24 @@ class Parts:
                  for i in range(n) for j in range(k)]
         self._tag([v for row in grid for v in row], faces, mat, bone, color)
 
+    def seam(self, p0, p1, radius, a: float, v0: float, v1: float, mat: int, bone: str, w: float = 0.016, n: int = 6) -> None:
+        """Piping along a wrapped plate's edge: same axis, angle and radius conventions as wrap(),
+        sunk so it covers the plate's edge face and stands just proud of its outer surface."""
+        from mathutils import Vector
+
+        m, length = axis_frame(p0, p1)
+        aa = math.pi - a if (m.to_3x3() @ Vector((0, 1, 0))).y < -1e-6 else a
+        f = lambda g, x: g(x) if callable(g) else g  # noqa: E731
+        pts = [m @ Vector(((f(radius, v) - 0.003) * math.sin(aa), (f(radius, v) - 0.003) * math.cos(aa), v * length))
+               for v in [v0 + (v1 - v0) * k / n for k in range(n + 1)]]
+        self.sweep(pts, chamfer_rect(w, w), mat, bone, hint=tuple(m.to_3x3() @ Vector((math.sin(aa), math.cos(aa), 0.0))))
+
     def wrap(self, p0, p1, radius, a0, a1, t: float, mat: int, bone: str, v0=0.0, v1=1.0, nu: int | None = None,
-             nv: int = 4, sx=1.0, sy=1.0, bevel=0.004, p: float = 2.0, color=None) -> None:
+             nv: int = 4, sx=1.0, sy=1.0, bevel=0.004, p: float = 2.0, color=None, crown: float = 0.0) -> None:
         """Bevelled plate of thickness t wrapped round the axis p0->p1: angle (radians from local +Y
         toward local +X) from a0 to a1 and axial fraction from v0 to v1. radius(v), a0(v), a1(v),
-        v0(u), v1(u) may be callables, which shapes tapered, pointed and cut-out plates."""
+        v0(u), v1(u) may be callables, which shapes tapered, pointed and cut-out plates. `crown`
+        bulges the plate's middle outward, so each plate carries its own highlight."""
         from mathutils import Vector
 
         m, length = axis_frame(p0, p1)
@@ -346,7 +386,7 @@ class Parts:
             vv = f(v0, u) + (f(v1, u) - f(v0, u)) * v
             a = f(a0, vv) + (f(a1, vv) - f(a0, vv)) * u
             a = math.pi - a if flip else a
-            r = f(radius, vv) + off
+            r = f(radius, vv) + off + crown * math.sin(math.pi * u)
             s, c = math.sin(a), math.cos(a)
             return m @ Vector((r * sx * math.copysign(abs(s) ** (2 / p), s), r * f(sy, vv) * math.copysign(abs(c) ** (2 / p), c), vv * length))
 
@@ -470,247 +510,321 @@ def xz_frame(y: float, flip: bool = False):
     return m
 
 
+def yz_frame(x: float):
+    """4x4 mapping an outline's local (x, y) to world (y, z) on the plane at x (normal +X)."""
+    from mathutils import Matrix
+
+    return Matrix(((0, 0, 1, x), (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 0, 1)))
+
+
+def scallop(half: float, foot: float, depth: float, rise: float) -> list:
+    """Apron outline hanging from y = 0: bracket feet at both ends, an arch rising between them."""
+    out = [(-half - foot, 0.0), (half + foot, 0.0), (half + foot, -depth + 0.02), (half, -depth)]
+    out += [(half - 2 * half * f, -depth + rise * math.sin(math.pi * f) ** 0.7) for f in [k / 12 for k in range(13)]]
+    return out + [(-half, -depth), (-half - foot, -depth + 0.02)]
+
+
 def build_parts(P: Parts) -> None:
     from mathutils import Euler, Matrix, Vector
 
     up, fwd = (0, 0, 1), (0, 1, 0)
-    W, D = CASE_W / 2, CASE_D / 2
+    face = Euler((-math.pi / 2, 0, 0)).to_matrix().to_4x4()  # outline XY -> world XZ, facing +Y
 
-    # --- Plinth (spine): bevelled walnut base, brass-edged mouldings, a bracket-foot apron.
-    box(P, (-W - 0.05, -D - 0.04, PLINTH[0] + 0.05), (W + 0.05, D + 0.04, PLINTH[1] - 0.04), WN, "spine", 0.01)
-    box(P, (-W - 0.07, -D - 0.06, PLINTH[1] - 0.045), (W + 0.07, D + 0.06, PLINTH[1] - 0.01), WN, "spine", 0.008)
-    box(P, (-W - 0.035, -D - 0.025, PLINTH[1] - 0.012), (W + 0.035, D + 0.025, PLINTH[1] + 0.012), BP, "spine", 0.004)
-    for y, flip in ((D + 0.05, False), (-D - 0.05, True)):
-        apron = [(-W - 0.06, 0.0), (W + 0.06, 0.0), (W + 0.06, -0.10), (W + 0.02, -0.125)]
-        apron += [(W - 2 * W * f, -0.125 + 0.075 * math.sin(math.pi * f) ** 0.7) for f in [k / 10 for k in range(11)]]
-        apron += [(-W - 0.02, -0.125), (-W - 0.06, -0.10)]
-        m = Matrix.Translation((0, 0, PLINTH[0] + 0.07)) @ xz_frame(y, flip)
-        P.extrude(apron, m, 0.03, WN, "spine", bevel=0.004)
-    for x in (-1, 1):  # brass escutcheon-style corner plates on the plinth front
-        box(P, (x * (W + 0.02) - 0.03, D + 0.04, PLINTH[0] + 0.12), (x * (W + 0.02) + 0.03, D + 0.052, PLINTH[1] - 0.07), BP, "spine", 0.003)
-    box(P, (-0.14, D + 0.04, PLINTH[0] + 0.12), (0.14, D + 0.05, PLINTH[1] - 0.07), WN, "spine", 0.004)
-    P.sweep([(-0.14, D + 0.052, PLINTH[0] + 0.12), (0.14, D + 0.052, PLINTH[0] + 0.12), (0.14, D + 0.052, PLINTH[1] - 0.07),
-             (-0.14, D + 0.052, PLINTH[1] - 0.07), (-0.14, D + 0.052, PLINTH[0] + 0.115)], chamfer_rect(0.012, 0.01), BP, "spine", hint=(0, 1, 0))
+    # --- Base (spine): scalloped apron boards, the moulded base with its brass strip.
+    box(P, (-W + 0.01, -D + 0.01, APRON[1] - 0.035), (W - 0.01, D - 0.01, BASE[0] + 0.01), WD, "spine", 0.006)
+    for y, flip in ((D + 0.035, False), (-D - 0.035, True)):
+        P.extrude(scallop(W, 0.04, APRON[1] - APRON[0], 0.1), Matrix.Translation((0, 0, APRON[1])) @ xz_frame(y, flip), 0.04, WN, "spine", bevel=0.005)
+    for x in (W + 0.035, -W - 0.035):
+        P.extrude(scallop(D - 0.01, 0.04, APRON[1] - APRON[0], 0.06), Matrix.Translation((0, 0, APRON[1])) @ yz_frame(x), 0.04, WN, "spine", bevel=0.005)
+    box(P, (-W - 0.07, -D - 0.06, BASE[0]), (W + 0.07, D + 0.06, BASE[1] - 0.03), WN, "spine", 0.014)
+    box(P, (-W - 0.05, -D - 0.04, BASE[1] - 0.034), (W + 0.05, D + 0.04, BASE[1] + 0.004), WN, "spine", 0.008)
+    box(P, (-W - 0.072, -D - 0.062, BASE[0] + 0.035), (W + 0.072, D + 0.062, BASE[0] + 0.05), BP, "spine", 0.004)
 
-    # --- Trunk (chest): back wall, interior back board, front stiles and rails, mouldings.
-    box(P, (-W + 0.026, -D, TRUNK[0]), (W - 0.026, -D + 0.025, TRUNK[1]), WN, "chest", 0.004)
-    box(P, (-W + 0.03, -0.128, TRUNK[0] + 0.04), (W - 0.03, -0.112, TRUNK[1] - 0.04), WN, "chest", 0.0)
+    # --- Cabinet body (chest): back wall, back board, front frame round the doors, corner columns.
+    box(P, (-W + 0.02, -D, CAB[0]), (W - 0.02, -D + 0.026, CAB[1]), WN, "chest", 0.004)
+    box(P, (-W + 0.03, -0.165, CAB[0] + 0.03), (W - 0.03, -0.15, CAB[1] - 0.03), WD, "chest", 0.0)
     for x in (-1, 1):
-        box(P, (min(x * W, x * (W - 0.032)), D - 0.03, TRUNK[0]), (max(x * W, x * (W - 0.032)), D, TRUNK[1]), WN, "chest", 0.004)
-    box(P, (-W, D - 0.03, TRUNK[0]), (W, D, DOOR_Z[0] - 0.005), WN, "chest", 0.004)
-    box(P, (-W, D - 0.03, DOOR_Z[1] + 0.005), (W, D, TRUNK[1]), WN, "chest", 0.004)
-    box(P, (-W - 0.035, -D - 0.035, TRUNK[1] - 0.005), (W + 0.035, D + 0.035, HOOD[0] + 0.005), WN, "chest", 0.008)
-    box(P, (-W - 0.02, -D - 0.02, TRUNK[1] - 0.018), (W + 0.02, D + 0.02, TRUNK[1] - 0.004), BP, "chest", 0.003)
-    # Back panel frame and a brass pull, as on the concept's back view.
-    P.sweep([(-0.17, -D - 0.006, 1.50), (0.17, -D - 0.006, 1.50), (0.17, -D - 0.006, 2.10), (-0.17, -D - 0.006, 2.10), (-0.17, -D - 0.006, 1.495)],
-            chamfer_rect(0.012, 0.01), BP, "chest", hint=(0, -1, 0))
-    # Furnace: the soft amber disc behind the wheel (phase 1 glow through the glazing).
-    P.lathe(_add(WHEEL_C, (0, -0.036, 0)), fwd, [(0.0, 0.0), (0.12, 0.0), (0.12, 0.004), (0.0, 0.006)], GL, "chest", sides=P.n(28))
-    # Two fixed train gears glimpsed behind the wheel.
-    m = Matrix.Translation(_add(WHEEL_C, (0.09, -0.024, -0.13))) @ Euler((math.pi / 2, 0, 0)).to_matrix().to_4x4()
-    P.annulus(gear_outline(0.075, 0.088, 18), circle(0.03, 90), m, 0.01, BP, "chest")
-    m = Matrix.Translation(_add(WHEEL_C, (-0.10, -0.024, -0.17))) @ Euler((math.pi / 2, 0, 0)).to_matrix().to_4x4()
-    P.annulus(gear_outline(0.055, 0.066, 14), circle(0.02, 70), m, 0.01, BP, "chest")
-
-    # --- Escape wheel (wheel bone): hooked teeth, five spokes, hub.
-    m = Matrix.Translation(WHEEL_C) @ Euler((-math.pi / 2, 0, 0)).to_matrix().to_4x4()
-    P.annulus(gear_outline(0.088, 0.112, 15, hook=0.12), circle(0.074, 75), m, 0.012, BP, "wheel")
-    for k in range(5):  # flat spokes as rotated copies of one outline, so the wheel stays 72-degree symmetric
-        a = 2 * math.pi * k / 5 + math.pi / 2
-        spoke = [(0.012, -0.007), (0.078, -0.006), (0.078, 0.006), (0.012, 0.007)]
-        P.extrude([(x * math.cos(a) - y * math.sin(a), x * math.sin(a) + y * math.cos(a)) for x, y in spoke], m, 0.01, BP, "wheel", bevel=0.0)
-    P.lathe(_add(WHEEL_C, (0, -0.012, 0)), fwd, [(0.0, 0.0), (0.024, 0.0), (0.024, 0.024), (0.012, 0.03), (0.0, 0.03)], BP, "wheel", sides=10)  # 10 sides: symmetric under the 72 degree idle step
-    # Corona: a flame-toothed glow ring parked between the back wall and the back board.
-    m = Matrix.Translation(_add(WHEEL_C, (0, -0.064, 0))) @ Euler((-math.pi / 2, 0, 0)).to_matrix().to_4x4()
-    P.annulus(gear_outline(0.15, 0.2, 12, hook=0.15), circle(0.118, 60), m, 0.008, GL, "corona")
-
-    # --- Pallet anchor, pendulum rod and bob.
-    pc = Vector(PALLET_C)
-    arm_pts = lambda s: [pc + Vector((s * 0.02, 0.0, -0.01)), pc + Vector((s * 0.07, 0.0, -0.035)), pc + Vector((s * 0.095, 0.0, -0.075)),  # noqa: E731
-                         pc + Vector((s * 0.09, 0.0, -0.11))]
+        box(P, (min(x * DOOR_X, x * W), D - 0.036, CAB[0]), (max(x * DOOR_X, x * W), D, CAB[1]), WN, "chest", 0.005)
+        P.lathe((x * (W - 0.004), D + 0.002, CAB[0] + 0.01), up, [(0.0, 0.0), (0.024, 0.0), (0.024, 0.03), (0.017, 0.045), (0.015, 0.4),
+                                                                  (0.019, 0.45), (0.015, 0.5), (0.017, 0.84), (0.024, 0.855), (0.024, 0.88), (0.0, 0.88)],
+                BP, "chest", sides=10)
+    box(P, (-DOOR_X, D - 0.036, CAB[0]), (DOOR_X, D, DOOR_Z[0] - 0.004), WN, "chest", 0.005)
+    box(P, (-DOOR_X, D - 0.036, DOOR_Z[1] + 0.004), (DOOR_X, D, CAB[1]), WN, "chest", 0.005)
+    yb = D + 0.004
+    P.sweep([(-DOOR_X - 0.01, yb, DOOR_Z[0] - 0.01), (DOOR_X + 0.01, yb, DOOR_Z[0] - 0.01), (DOOR_X + 0.01, yb, DOOR_Z[1] + 0.01),
+             (-DOOR_X - 0.01, yb, DOOR_Z[1] + 0.01), (-DOOR_X - 0.01, yb, DOOR_Z[0] - 0.014)], chamfer_rect(0.016, 0.012), BP, "chest", hint=(0, 1, 0))
+    # Cornice, the roof rising toward the back, and the broken swan-neck pediment round the neck.
+    box(P, (-W - 0.055, -D - 0.045, CORNICE[0]), (W + 0.055, D + 0.05, CORNICE[1]), WN, "chest", 0.014)
+    box(P, (-W - 0.032, -D - 0.026, CORNICE[0] - 0.016), (W + 0.032, D + 0.032, CORNICE[0] + 0.002), BP, "chest", 0.004)
+    roof = [(D + 0.02, 0.0), (-D - 0.03, 0.0), (-D - 0.03, 0.08), (-D + 0.06, 0.1), (D - 0.08, 0.025)]
+    P.extrude(roof, Matrix.Translation((0, 0, CORNICE[1])) @ yz_frame(0.0), 2 * (W + 0.03), WN, "chest", bevel=0.01)
     for s in (1, -1):
-        P.sweep(arm_pts(s), chamfer_rect(0.016, 0.014), BP, "pallet", hint=(0, 1, 0))
-    P.lathe(pc + Vector((0, -0.01, 0)), fwd, [(0.0, 0.0), (0.022, 0.0), (0.022, 0.03), (0.0, 0.03)], GM, "pallet", sides=12)
-    P.tube((0, -0.03, PALLET_C[2] - 0.01), (0, -0.03, BOB_Z + 0.07), 0.007, 0.007, BP, "pendulum", sides=8)
-    P.lathe((0, -0.05, BOB_Z), fwd, [(0.0, 0.0), (0.075, 0.0), (0.085, 0.012), (0.075, 0.03), (0.0, 0.034)], BP, "bob", sides=P.n(28))
-    P.lathe((0, -0.02, BOB_Z), fwd, [(0.0, 0.0), (0.045, 0.0), (0.04, 0.008), (0.0, 0.012)], GL, "bob", sides=P.n(20))
-
-    # --- Glazed doors (door bones on their outer hinge): walnut frames, brass beads and bars, knobs.
-    for s, n_ in ((1, "R"), (-1, "L")):
-        x0, x1 = s * 0.006, s * 0.232
-        lo_x, hi_x = min(x0, x1), max(x0, x1)
-        y0, y1 = D - 0.028, D - 0.006
-        z0, z1 = DOOR_Z
-        bone = f"door.{n_}"
-        box(P, (lo_x, y0, z0), (lo_x + 0.03, y1, z1), WN, bone, 0.004)
-        box(P, (hi_x - 0.03, y0, z0), (hi_x, y1, z1), WN, bone, 0.004)
-        box(P, (lo_x + 0.03, y0, z0), (hi_x - 0.03, y1, z0 + 0.045), WN, bone, 0.004)
-        box(P, (lo_x + 0.03, y0, z1 - 0.06), (hi_x - 0.03, y1, z1), WN, bone, 0.004)
-        xa, xb, za, zb = lo_x + 0.03, hi_x - 0.03, z0 + 0.045, z1 - 0.06
-        P.sweep([(xa, y1 + 0.002, za), (xb, y1 + 0.002, za), (xb, y1 + 0.002, zb), (xa, y1 + 0.002, zb), (xa, y1 + 0.002, za - 0.004)],
-                chamfer_rect(0.01, 0.008), BP, bone, hint=(0, 1, 0))
-        for z in (za + (zb - za) * 0.62,):  # glazing bar
-            box(P, (xa, y0 + 0.008, z - 0.006), (xb, y0 + 0.016, z + 0.006), BP, bone, 0.002)
-        knob_x = s * 0.03
-        P.lathe((knob_x, y1, 1.80), fwd, [(0.0, 0.0), (0.008, 0.0), (0.006, 0.015), (0.016, 0.025), (0.012, 0.036), (0.0, 0.038)], BP, bone, sides=10)
-        for z in (z0 + 0.08, z1 - 0.1):  # hinge knuckles
-            P.lathe((s * 0.236, D - 0.004, z), up, [(0.0, 0.0), (0.009, 0.0), (0.009, 0.05), (0.0, 0.05)], BP, bone, sides=8)
-
-    # --- Side case plates (plate bones on the rear hinge): walnut panels with brass frames.
-    for s, n_ in ((1, "R"), (-1, "L")):
-        bone = f"plate.{n_}"
-        xo = s * W
-        box(P, (min(xo, xo - s * 0.024), -D + 0.012, TRUNK[0] + 0.02), (max(xo, xo - s * 0.024), D - 0.032, TRUNK[1] - 0.02), WN, bone, 0.004)
-        xf = xo + s * 0.004
-        P.sweep([(xf, -D + 0.05, 1.47), (xf, D - 0.07, 1.47), (xf, D - 0.07, 2.12), (xf, -D + 0.05, 2.12), (xf, -D + 0.05, 1.466)],
-                chamfer_rect(0.01, 0.01), BP, bone, hint=(1, 0, 0))
-        P.lathe((xo + s * 0.006, 0.0, 1.80), (s, 0, 0), [(0.0, 0.0), (0.035, 0.0), (0.035, 0.008), (0.0, 0.01)], GM, bone, sides=12)  # inlay
-        for z in (1.46, 2.14):
-            P.lathe((xo, -D + 0.01, z - 0.03), up, [(0.0, 0.0), (0.009, 0.0), (0.009, 0.06), (0.0, 0.06)], BP, bone, sides=8)
-
-    # --- Hood: walnut box, turned brass columns, dial, cornice, broken-arch pediment.
-    HW, HD = W + 0.03, D + 0.03
-    box(P, (-HW, -HD, HOOD[0]), (HW, HD, HOOD[1]), WN, "chest", 0.008)
-    for x in (-1, 1):
-        cx = x * (HW - 0.005)
-        P.lathe((cx, HD + 0.006, HOOD[0] + 0.01), up, [(0.0, 0.0), (0.028, 0.0), (0.028, 0.03), (0.02, 0.04), (0.018, 0.2), (0.021, 0.3),
-                                                      (0.018, 0.4), (0.026, 0.41), (0.028, 0.44), (0.0, 0.44)], BP, "chest", sides=12)
-    P.lathe(_add(DIAL_C, (0, -0.012, 0)), fwd, [(0.0, 0.0), (0.18, 0.0), (0.18, 0.012), (0.0, 0.012)], GM, "chest", sides=P.n(40))
-    P.band(_add(DIAL_C, (0, 0.002, 0)), fwd, 0.18, 0.026, 0.02, BP, "chest", n=P.n(48))
-    P.band(_add(DIAL_C, (0, 0.002, 0)), fwd, 0.105, 0.012, 0.01, BP, "chest", n=P.n(36))
-    for k in range(12):
-        a = 2 * math.pi * k / 12
-        L = 0.032 if k % 3 == 0 else 0.02
-        c = _add(DIAL_C, (0.14 * math.sin(a), 0.004, 0.14 * math.cos(a)))
-        P.bbox(c, (0.008 if k % 3 else 0.012, 0.006, L), BP, "chest", rot=Euler((0, a, 0)).to_matrix(), bevel=0.0)
-    for x in (-1, 1):  # spandrel ornaments in the dial's upper corners
-        P.lathe((x * 0.20, HD, HOOD[1] - 0.045), fwd, [(0.0, 0.0), (0.022, 0.0), (0.016, 0.012), (0.0, 0.016)], BP, "chest", sides=10)
-    box(P, (-HW - 0.05, -HD - 0.05, HOOD[1] - 0.005), (HW + 0.05, HD + 0.05, HOOD[1] + 0.035), WN, "chest", 0.01)
-    box(P, (-HW - 0.035, -HD - 0.035, HOOD[1] - 0.02), (HW + 0.035, HD + 0.035, HOOD[1] - 0.004), BP, "chest", 0.003)
-    for s in (1, -1):  # broken swan-neck arch halves
-        arc = [(s * (HW + 0.04), 0.0), (s * 0.075, 0.0), (s * 0.075, 0.06)] + [(s * (0.075 + 0.23 * (1 - math.cos(t))), 0.06 + 0.045 * math.cos(t) - 0.035 * (1 - math.cos(t)))
-                                                                           for t in [math.radians(d) for d in range(15, 91, 15)]] + [(s * (HW + 0.04), 0.03)]
+        # swan neck: a dark tympanum under a brass moulding that rises in an S from the raised outer
+        # end to the scroll beside the head
+        top = [(s * (W + 0.05 - (W - 0.115) * u), 0.05 + 0.13 * (3 * u * u - 2 * u ** 3)) for u in [k / 10 for k in range(11)]]
+        arc = [(s * (W + 0.05), 0.0), (s * 0.165, 0.0)] + top[::-1]
         if s < 0:
             arc = arc[::-1]
-        m = Matrix.Translation((0, 0, HOOD[1] + 0.035)) @ xz_frame(HD + 0.03)
-        P.extrude(arc, m, 0.035, WN, "chest", bevel=0.005)
-        P.ball((s * 0.09, HD + 0.03, HOOD[1] + 0.135), 0.02, BP, "chest")
-    P.lathe((0, HD + 0.02, HOOD[1] + 0.035), up, [(0.0, 0.0), (0.03, 0.0), (0.02, 0.03), (0.026, 0.05), (0.0, 0.09)], BP, "chest", sides=10)
+        P.extrude(arc, Matrix.Translation((0, 0, CORNICE[1])) @ xz_frame(D + 0.03), 0.04, WD, "chest", bevel=0.006)
+        P.sweep([(x, D + 0.032, CORNICE[1] + z + 0.012) for x, z in top], chamfer_rect(0.05, 0.03), BP, "chest", hint=(0, 1, 0))
+        sc = (s * 0.172, D + 0.045, CORNICE[1] + 0.19)
+        P.band(sc, (0, 1, 0), 0.026, 0.014, 0.034, BP, "chest", n=P.n(12))
+        P.ball(sc, 0.019, BP, "chest", (1.0, 0.7, 1.0))
+    # Back: a brass-framed panel and the winding key's boss.
+    yk = -D - 0.006
+    P.sweep([(-0.3, yk, 1.70), (0.3, yk, 1.70), (0.3, yk, 2.34), (-0.3, yk, 2.34), (-0.3, yk, 1.696)], chamfer_rect(0.016, 0.012), BP, "chest", hint=(0, -1, 0))
+    P.lathe(KEY_C, (0, -1, 0), [(0.0, 0.0), (0.06, 0.0), (0.06, 0.012), (0.045, 0.024), (0.0, 0.026)], BP, "chest", sides=14)
 
-    # --- Dial hands (spade tips), on their own bones.
-    for bone, L, wdt, yoff, ang in (("dial.hour", 0.09, 0.016, 0.006, -60.0), ("dial.minute", 0.135, 0.011, 0.012, 60.0)):
-        hand = [(-wdt / 2, -0.02), (wdt / 2, -0.02), (wdt / 2, L * 0.7), (wdt * 1.6, L * 0.8), (0.0, L), (-wdt * 1.6, L * 0.8), (-wdt / 2, L * 0.7)]
-        a = math.radians(ang)
-        hand = [(x * math.cos(a) + y * math.sin(a), -x * math.sin(a) + y * math.cos(a)) for x, y in hand]
-        P.extrude(hand, xz_frame(DIAL_C[1] + yoff) @ Matrix.Translation((0, DIAL_C[2], 0)), 0.004, BP, bone, bevel=0.0)
-    P.lathe(_add(DIAL_C, (0, 0.012, 0)), fwd, [(0.0, 0.0), (0.016, 0.0), (0.012, 0.01), (0.0, 0.012)], BP, "dial.minute", sides=10)
+    # --- Interior: the furnace disc and its ember surround on the back board, two train gears.
+    fy = -0.149
+    P.lathe((WHEEL_C[0], fy, WHEEL_C[2]), fwd, [(0.0, 0.0), (0.2, 0.0), (0.2, 0.004), (0.0, 0.006)], GL, "chest", sides=P.n(32))
+    P.band((WHEEL_C[0], fy + 0.004, WHEEL_C[2]), fwd, 0.215, 0.05, 0.01, EM, "chest", n=P.n(36))
+    for c, r0, r1, n_ in (((0.17, -0.12, WHEEL_C[2] - 0.24), 0.085, 0.1, 18), ((-0.17, -0.12, WHEEL_C[2] - 0.30), 0.065, 0.078, 14)):
+        P.annulus(gear_outline(r0, r1, n_), circle(0.03, n_ * 5), Matrix.Translation(c) @ face, 0.012, BP, "chest")
 
-    # --- Winding key on the back (key bone, turning on its arbor).
-    P.tube(KEY_C, _add(KEY_C, (0, -0.07, 0)), 0.014, 0.014, BP, "key", sides=10)
-    P.lathe(_add(KEY_C, (0, 0.006, 0)), (0, -1, 0), [(0.0, 0.0), (0.03, 0.0), (0.03, 0.012), (0.0, 0.012)], BP, "key", sides=12)
-    bow = [(0.085 * math.cos(math.radians(t)), 0.1 + 0.035 * math.sin(math.radians(t)) * (0.45 + 0.55 * abs(math.cos(math.radians(t)))))
-           for t in range(0, 360, 20)]
-    m = Matrix(((0, 0, 1, KEY_C[0]), (0, -1, 0, KEY_C[1]), (1, 0, 0, KEY_C[2]), (0, 0, 0, 1)))  # bow in the YZ plane, behind the arbor
-    P.extrude(bow, m, 0.016, BP, "key", bevel=0.003)
+    # --- Escape wheel (wheel bone): hooked teeth, five spokes, hub.
+    m = Matrix.Translation(WHEEL_C) @ face
+    P.annulus(gear_outline(0.13, 0.165, 15, hook=0.12), circle(0.11, 75), m, 0.014, GL, "wheel")  # the escape wheel glows: soft amber through the glazing, blazing once open
+    for k in range(5):  # flat spokes as rotated copies of one outline, so the wheel stays 72-degree symmetric
+        a = 2 * math.pi * k / 5 + math.pi / 2
+        spoke = [(0.016, -0.009), (0.115, -0.008), (0.115, 0.008), (0.016, 0.009)]
+        P.extrude([(x * math.cos(a) - y * math.sin(a), x * math.sin(a) + y * math.cos(a)) for x, y in spoke], m, 0.012, BP, "wheel", bevel=0.0)
+    P.lathe(_add(WHEEL_C, (0, -0.014, 0)), fwd, [(0.0, 0.0), (0.032, 0.0), (0.032, 0.028), (0.016, 0.036), (0.0, 0.036)], BP, "wheel", sides=10)  # 10 sides: symmetric under the 72 degree idle step
+    # Corona: a flame-toothed glow ring parked between the back wall and the back board.
+    P.annulus(gear_outline(0.215, 0.34, 12, hook=0.15), circle(0.17, 60), Matrix.Translation(HEAD["corona"]) @ face, 0.01, GL, "corona")
+    # ember flame tips between the glowing ones, a step behind: saturation without raising the glow
+    m = Matrix.Translation(_add(HEAD["corona"], (0, -0.012, 0))) @ face @ Euler((0, 0, math.pi / 12)).to_matrix().to_4x4()
+    P.annulus(gear_outline(0.25, 0.37, 12, hook=0.15), circle(0.2, 60), m, 0.008, EM, "corona")
 
-    # --- Neck and head: ribbed column, narrow helmet with crest and amber eyes; bell crown.
-    P.tube((0, -0.02, 2.68), (0, -0.02, 2.88), 0.05, 0.046, GM, "neck")
-    for z in (2.76, 2.80, 2.84):
-        P.sweep_ring((0, -0.02, z), up, 0.054, 0.054, chamfer_rect(0.014, 0.014), GM, "neck", n=P.n(18))
-    hs = [(0.0, 0.045, 0.055, 2.2), (0.08, 0.068, 0.08, 2.2), (0.3, 0.088, 0.1, 2.5), (0.55, 0.094, 0.108, 2.6),
-          (0.78, 0.088, 0.1, 2.4), (0.93, 0.06, 0.07, 2.2), (1.0, 0.03, 0.034, 2.0)]
-    P.loft((0, -0.015, 2.85), (0, -0.015, 3.08), [(f, rx, ry, pw, 0, 0) for f, rx, ry, pw in hs], BP, "head")
-    P.sweep([(0, -0.015 + 0.112 * math.cos(a), 2.95 + 0.13 * math.sin(a)) for a in [math.radians(d) for d in range(20, 161, 20)]],
-            chamfer_rect(0.012, 0.02), BP, "head", hint=(1, 0, 0))
-    P.wrap((0, -0.015, 2.955), (0, -0.015, 2.985), lambda v: 0.118, -1.1, 1.1, 0.014, GM, "head", sx=0.82, nu=P.n(12), nv=2)
+    # --- Pallet anchor, pendulum rod and glowing bob.
+    pc = Vector(PALLET_C)
     for s in (1, -1):
-        P.ball((s * 0.04, 0.095, 2.94), 0.018, GL, "head", (1.4, 0.55, 0.8))
-        P.lathe((s * 0.085, -0.015, 2.94), (s, 0, 0), [(0.0, 0.0), (0.036, 0.0), (0.036, 0.016), (0.026, 0.024), (0.0, 0.024)], BP, "head")
-    P.lathe((0, -0.02, 3.065), up, [(0.0, 0.0), (0.02, 0.0), (0.012, 0.03), (0.0, 0.032)], BP, "head", sides=10)
-    P.shell((0, -0.02, 3.09), up, [(0.0, 0.085), (0.02, 0.083), (0.032, 0.07), (0.038, 0.045), (0.048, 0.015), (0.06, 0.0), (0.052, -0.002),
-                                   (0.04, 0.012), (0.03, 0.04), (0.024, 0.065), (0.0, 0.072)], BP, "bell", sides=P.n(20))
-    P.lathe((0, -0.02, 3.17), up, [(0.0, 0.0), (0.006, 0.0), (0.006, 0.012), (0.012, 0.02), (0.0, 0.032)], BP, "bell", sides=8)
-    P.tube((0, -0.02, 3.15), (0, -0.02, 3.10), 0.004, 0.004, GM, "clapper", sides=6)
-    P.ball((0, -0.02, 3.095), 0.013, GM, "clapper")
+        P.sweep([pc + Vector((s * 0.03, 0.0, -0.015)), pc + Vector((s * 0.1, 0.0, -0.05)), pc + Vector((s * 0.14, 0.0, -0.11)),
+                 pc + Vector((s * 0.13, 0.0, -0.165))], chamfer_rect(0.022, 0.018), BP, "pallet", hint=(0, 1, 0))
+    P.lathe(pc + Vector((0, -0.014, 0)), fwd, [(0.0, 0.0), (0.03, 0.0), (0.03, 0.036), (0.0, 0.036)], GM, "pallet", sides=12)
+    P.tube((0, pc.y, PALLET_C[2] - 0.02), (0, pc.y, BOB_Z + 0.09), 0.009, 0.009, BP, "pendulum", sides=8)
+    P.lathe((0, pc.y - 0.022, BOB_Z), fwd, [(0.0, 0.0), (0.09, 0.0), (0.1, 0.014), (0.09, 0.034), (0.0, 0.038)], BP, "bob", sides=P.n(28))
+    P.lathe((0, pc.y + 0.014, BOB_Z), fwd, [(0.0, 0.0), (0.058, 0.0), (0.05, 0.01), (0.0, 0.014)], GL, "bob", sides=P.n(20))
 
-    # --- Arms: domed pauldrons with inlays, gunmetal upper arm, brass vambrace, fist.
+    # --- Glazed doors (door bones on their outer hinge): brass frames round glass, knobs, knuckles.
+    for s, n_ in ((1, "R"), (-1, "L")):
+        lo_x, hi_x = (0.004, DOOR_X) if s > 0 else (-DOOR_X, -0.004)
+        y0, y1 = D - 0.034, D - 0.008
+        z0, z1 = DOOR_Z
+        bone = f"door.{n_}"
+        fw = 0.036
+        box(P, (lo_x, y0, z0), (lo_x + fw, y1, z1), BP, bone, 0.005)
+        box(P, (hi_x - fw, y0, z0), (hi_x, y1, z1), BP, bone, 0.005)
+        box(P, (lo_x + fw, y0, z0), (hi_x - fw, y1, z0 + fw), BP, bone, 0.005)
+        box(P, (lo_x + fw, y0, z1 - fw), (hi_x - fw, y1, z1), BP, bone, 0.005)
+        xa, xb, za, zb = lo_x + fw, hi_x - fw, z0 + fw, z1 - fw
+        P.sweep([(xa, y1 + 0.002, za), (xb, y1 + 0.002, za), (xb, y1 + 0.002, zb), (xa, y1 + 0.002, zb), (xa, y1 + 0.002, za - 0.004)],
+                chamfer_rect(0.012, 0.008), GM, bone, hint=(0, 1, 0))
+        box(P, (xa - 0.004, y0 + 0.008, za - 0.004), (xb + 0.004, y0 + 0.014, zb + 0.004), GS, bone, 0.0)
+        knob_x = s * 0.034
+        for z in (2.01, 2.07):
+            P.lathe((knob_x, y1, z), fwd, [(0.0, 0.0), (0.009, 0.0), (0.007, 0.016), (0.017, 0.026), (0.013, 0.038), (0.0, 0.04)], BP, bone, sides=10)
+        for z in (z0 + 0.1, z1 - 0.12):  # hinge knuckles
+            P.lathe((s * (DOOR_X + 0.004), D - 0.006, z), up, [(0.0, 0.0), (0.011, 0.0), (0.011, 0.06), (0.0, 0.06)], BP, bone, sides=8)
+
+    # --- Side case plates (plate bones on the rear hinge): mahogany panels, brass frames, sapphire inlays.
+    for s, n_ in ((1, "R"), (-1, "L")):
+        bone = f"plate.{n_}"
+        xo = s * (W + 0.004)
+        box(P, (min(xo, xo - s * 0.026), -D + 0.02, CAB[0] + 0.03), (max(xo, xo - s * 0.026), D - 0.04, CAB[1] - 0.03), WN, bone, 0.005)
+        for xf, sd in ((xo + s * 0.005, s), (xo - s * 0.031, -s)):  # brass frame on both faces: the inner one shows once open
+            P.sweep([(xf, -D + 0.07, 1.68), (xf, D - 0.09, 1.68), (xf, D - 0.09, 2.34), (xf, -D + 0.07, 2.34), (xf, -D + 0.07, 1.676)],
+                    chamfer_rect(0.014, 0.012), BP, bone, hint=(sd, 0, 0))
+        box(P, (min(xo - s * 0.026, xo - s * 0.03), -D + 0.08, 1.69), (max(xo - s * 0.026, xo - s * 0.03), D - 0.1, 2.33), WD, bone, 0.0)
+        P.lathe((xo + s * 0.006, -0.01, 2.01), (s, 0, 0), [(0.0, 0.0), (0.06, 0.0), (0.06, 0.008), (0.0, 0.01)], WD, bone, sides=14)
+        P.band((xo + s * 0.012, -0.01, 2.01), (s, 0, 0), 0.05, 0.016, 0.012, BP, bone, n=P.n(20))
+        P.lathe((xo + s * 0.01, -0.01, 2.01), (s, 0, 0), [(0.0, 0.0), (0.034, 0.0), (0.026, 0.016), (0.0, 0.022)], JW, bone, sides=12)
+        for z in (CAB[0] + 0.1, CAB[1] - 0.16):
+            P.lathe((xo, -D + 0.012, z), up, [(0.0, 0.0), (0.011, 0.0), (0.011, 0.07), (0.0, 0.07)], BP, bone, sides=8)
+
+    # --- Winding key on the back (key bone, turning on its arbor): shank, collar, two-lobed bow.
+    kb = _add(KEY_C, (0, -0.2, 0))
+    P.tube(_add(KEY_C, (0, -0.02, 0)), _add(kb, (0, 0.03, 0)), 0.022, 0.022, BP, "key", sides=10)
+    P.lathe(_add(KEY_C, (0, -0.06, 0)), (0, -1, 0), [(0.0, 0.0), (0.04, 0.0), (0.04, 0.02), (0.0, 0.02)], BP, "key", sides=12)
+    for dz in (0.085, -0.085):
+        P.band(_add(kb, (0, -0.02, dz)), (1, 0, 0), 0.052, 0.034, 0.026, BP, "key", n=P.n(18), rb=0.06)
+    P.bbox(_add(kb, (0, -0.02, 0)), (0.026, 0.05, 0.08), BP, "key", bevel=0.004)
+
+    # --- Neck and head: ribbed column, a domed helm with a dark visor band, round glowing eyes, a nose
+    # ridge, ear bosses and a crest; the bell crown on top.
+    hy = HEAD_Y
+    P.tube((0, hy - 0.02, 2.44), (0, hy, 2.64), 0.07, 0.064, GM, "neck")
+    for z in (2.56, 2.6):
+        P.sweep_ring((0, hy - 0.01, z), up, 0.072, 0.072, chamfer_rect(0.016, 0.016), GM, "neck", n=P.n(18))
+    # broad at the temples, narrowing to a short chin plate
+    hs = [(0.0, 0.06, 0.075, 2.2), (0.12, 0.085, 0.11, 2.3), (0.3, 0.12, 0.14, 2.4), (0.5, 0.148, 0.155, 2.6),
+          (0.68, 0.156, 0.158, 2.6), (0.84, 0.152, 0.15, 2.6), (0.94, 0.134, 0.13, 2.4), (1.0, 0.075, 0.072, 2.0)]
+    P.loft((0, hy, 2.64), (0, hy, 3.0), [(f, rx, ry, pw, 0, 0) for f, rx, ry, pw in hs], BP, "head")
+    P.sweep([(0, hy + 0.166 * math.cos(a), 2.79 + 0.23 * math.sin(a)) for a in [math.radians(d) for d in range(10, 171, 16)]],
+            chamfer_rect(0.018, 0.03), BP, "head", hint=(1, 0, 0))
+    for s in (1, -1):  # dark eye sockets behind round glowing eyes
+        P.ball((s * 0.056, hy + 0.146, 2.80), 0.05, GM, "head", (1.0, 0.42, 0.82))
+        P.ball((s * 0.054, hy + 0.158, 2.80), 0.03, GL, "head", (1.0, 0.5, 1.0))
+        P.lathe((s * 0.148, hy, 2.79), (s, 0, 0), [(0.0, 0.0), (0.05, 0.0), (0.05, 0.02), (0.036, 0.03), (0.0, 0.03)], BP, "head")
+    P.bbox((0, hy + 0.15, 2.745), (0.034, 0.03, 0.075), BP, "head", bevel=0.006)
+    # brow plate: a crowned band over the eyes, dipping to a point above the nose ridge
+    P.wrap((0, hy, 2.83), (0, hy, 2.875), lambda v: 0.156, -0.95, 0.95, 0.016, BP, "head", sx=0.93, nu=P.n(12), nv=2, crown=0.008,
+           v0=lambda u: -0.9 * max(0.0, 1 - abs(2 * u - 1) * 3), v1=1.0)
+    for sd in (1, -1):  # cheek seams from the outer eye to the jaw corner
+        P.sweep([(sd * 0.1, hy + 0.125, 2.79), (sd * 0.09, hy + 0.13, 2.73), (sd * 0.07, hy + 0.11, 2.68)], chamfer_rect(0.012, 0.01), GM, "head",
+                hint=(sd, 0.6, 0))
+    P.bbox((0, hy + 0.118, 2.685), (0.08, 0.03, 0.012), GM, "head", bevel=0.0)
+    P.lathe((0, hy - 0.01, 2.99), up, [(0.0, 0.0), (0.03, 0.0), (0.03, 0.012), (0.016, 0.022), (0.016, 0.07), (0.0, 0.072)], GM, "head", sides=10)
+    k = 1.9
+    bell = [(0.0, 0.085), (0.025, 0.084), (0.036, 0.076), (0.04, 0.06), (0.042, 0.04), (0.048, 0.02), (0.058, 0.008), (0.064, 0.0),
+            (0.062, -0.004), (0.054, -0.002), (0.044, 0.014), (0.036, 0.04), (0.032, 0.065), (0.0, 0.074)]
+    P.shell((0, hy - 0.01, 3.02), up, [(r * k, z * k) for r, z in bell], BP, "bell", sides=P.n(20))
+    P.lathe((0, hy - 0.01, 3.178), up, [(0.0, 0.0), (0.012, 0.0), (0.012, 0.012), (0.02, 0.022), (0.0, 0.036)], BP, "bell", sides=8)
+    P.tube((0, hy - 0.01, 3.15), (0, hy - 0.01, 3.07), 0.007, 0.007, GM, "clapper", sides=6)
+    P.ball((0, hy - 0.01, 3.06), 0.026, GM, "clapper")
+
+    # --- Arms: layered pauldrons with sapphire inlays, gunmetal upper arm, heavy brass vambrace, fist.
     for s, n_ in ((1, "R"), (-1, "L")):
         sh, el, wr = (s * SH[0], 0.0, SH[2]), (s * EL[0], 0.0, EL[2]), (s * WR[0], 0.0, WR[2])
-        cap = _add(sh, (s * 0.0, 0, 0.03))
-        ax = (s * 0.5, 0.0, 0.87)
-        P.shell(cap, ax, [(0.0, 0.13), (0.09, 0.12), (0.155, 0.075), (0.18, 0.0), (0.18, -0.05), (0.165, -0.05), (0.163, 0.0), (0.14, 0.065),
-                          (0.08, 0.105), (0.0, 0.115)], BP, f"upperarm.{n_}", sy=1.0)
-        P.sweep_ring(_add(cap, (s * 0.01, 0, 0.0)), ax, 0.178, 0.178, chamfer_rect(0.012, 0.02), GM, f"upperarm.{n_}", n=P.n(28))
-        gem = _add(cap, (s * 0.165, 0.0, 0.085))
-        P.lathe(gem, ax, [(0.0, 0.0), (0.04, 0.0), (0.03, 0.02), (0.0, 0.026)], GM, f"upperarm.{n_}", sides=12)
-        P.ball(sh, 0.065, GM, f"upperarm.{n_}")
-        P.loft(sh, el, [(0.05, 0.058, 0.06, 2.0, 0, 0), (0.95, 0.05, 0.052, 2.0, 0, 0)], GM, f"upperarm.{n_}")
-        for f in (0.35, 0.6, 0.85):
-            P.sweep_ring(lerp(sh, el, f), (s * (EL[0] - SH[0]), 0, EL[2] - SH[2]), 0.056, 0.058, chamfer_rect(0.012, 0.014), GM, f"upperarm.{n_}", n=P.n(16))
-        P.ball(el, 0.062, GM, f"forearm.{n_}")
-        P.lathe(_add(el, (s * 0.0, 0.055, 0)), fwd, [(0.0, 0.0), (0.03, 0.0), (0.03, 0.012), (0.0, 0.018)], GM, f"forearm.{n_}", sides=12)
-        P.loft(el, wr, [(0.06, 0.06, 0.06, 2.3, 0, 0), (0.25, 0.082, 0.078, 2.6, 0, 0), (0.75, 0.07, 0.066, 2.6, 0, 0), (0.94, 0.05, 0.048, 2.2, 0, 0),
-                        (1.0, 0.04, 0.04, 2.0, 0, 0)], BP, f"forearm.{n_}")
-        for f in (0.15, 0.68):
-            P.sweep_ring(lerp(el, wr, f), (s * (WR[0] - EL[0]), 0, WR[2] - EL[2]), 0.08 - 0.012 * f, 0.077 - 0.012 * f, chamfer_rect(0.01, 0.014), GM,
-                         f"forearm.{n_}", n=P.n(18))
-        d = Vector((s * (WR[0] - EL[0]), 0, WR[2] - EL[2])).normalized()
-        fist = Vector(wr) + d * 0.06
-        P.ball(Vector(wr), 0.036, GM, f"hand.{n_}")
-        P.ball(fist, 0.058, BP, f"hand.{n_}", (1.0, 0.9, 1.1))
+        ua = f"upperarm.{n_}"
+        # a broad hood hugging the cabinet's upper corner, flaring at the rim, with a lame inside it
+        cap = Vector(_add(sh, (-s * 0.01, 0, 0.08)))
+        ax = Vector((s * 0.55, 0.0, 0.835)).normalized()
+        hood = [(0.0, 0.15), (0.1, 0.14), (0.17, 0.105), (0.208, 0.035), (0.215, -0.09), (0.236, -0.135), (0.22, -0.138),
+                (0.198, -0.095), (0.192, 0.03), (0.155, 0.092), (0.09, 0.126), (0.0, 0.136)]
+        P.shell(cap, ax, [(0.93 * r, 0.84 * z) for r, z in hood], BP, ua, sy=1.02)  # broader and lower than a dome, as on the sheet
+        lame = [(0.17, 0.0), (0.198, -0.02), (0.205, -0.07), (0.19, -0.07), (0.185, -0.02), (0.16, 0.0)]
+        P.shell(cap - ax * 0.14, ax, [(0.93 * r, z) for r, z in lame], BP, ua, sy=1.02)
+        P.sweep_ring(cap - ax * 0.113, ax, 0.219, 0.219, chamfer_rect(0.012, 0.018), BP, ua, n=P.n(28))
+        # two flared lames stepping out below the hood's rim: the sheet's layered pauldron
+        flare = [(-0.008, 0.024), (0.004, 0.024), (0.024, -0.024), (0.01, -0.028)]
+        for k_, (off, r) in enumerate(((0.148, 0.212), (0.194, 0.222))):
+            P.sweep_ring(cap - ax * off, ax, r, r, flare, BP, ua, n=P.n(28))
+            P.sweep_ring(cap - ax * (off + 0.024), ax, r + 0.012, r + 0.012, chamfer_rect(0.008, 0.006), GM, ua, n=P.n(28))
+        gem = _add(cap, (-s * 0.07, 0.19, 0.0))
+        P.band(gem, (-s * 0.35, 0.94, 0.0), 0.036, 0.016, 0.014, BP, ua, n=P.n(16))
+        P.lathe(gem, (-s * 0.35, 0.94, 0.0), [(0.0, 0.0), (0.034, 0.0), (0.026, 0.016), (0.0, 0.022)], JW, ua, sides=12)
+        P.ball(sh, 0.096, GM, ua)
+        P.loft(sh, el, [(0.05, 0.094, 0.09, 2.5, 0, 0), (0.5, 0.09, 0.086, 2.6, 0, 0), (0.95, 0.076, 0.074, 2.3, 0, 0)], GM, ua)
+        for f in (0.38, 0.58, 0.78):
+            r = 0.094 - 0.018 * f
+            P.sweep_ring(lerp(sh, el, f), (s * (EL[0] - SH[0]), 0, EL[2] - SH[2]), r, r + 0.002, chamfer_rect(0.014, 0.016), GM, ua, n=P.n(16))
+        # a crowned brass strip down the upper arm's front plate catches the key light
+        P.wrap(sh, el, lambda v: 0.094 - 0.016 * v, -0.2, 0.2, 0.01, BP, ua, v0=0.3, v1=0.9, nu=P.n(5), nv=2, crown=0.006)
+        fa = f"forearm.{n_}"
+        P.ball(el, 0.088, GM, fa)
+        d = Vector((s * ARM_U[0], 0, ARM_U[2]))
+        P.band(Vector(el) + d * 0.02, d, 0.082, 0.02, 0.03, BP, fa, n=P.n(18))
+        P.loft(el, wr, [(0.1, 0.084, 0.084, 2.3, 0, 0), (0.19, 0.122, 0.112, 3.0, 0, 0), (0.45, 0.104, 0.096, 3.0, 0, 0), (0.8, 0.08, 0.075, 2.8, 0, 0),
+                        (0.94, 0.064, 0.06, 2.4, 0, 0), (0.96, 0.05, 0.05, 2.0, 0, 0)], BP, fa)
+        # elbow cop flaring behind the joint, and a raised ridge down the vambrace's front face
+        P.shell(_add(el, (0, -0.05, 0.0)), (0, -1, 0), [(0.0, 0.05), (0.055, 0.042), (0.088, 0.0), (0.08, -0.006), (0.05, 0.028), (0.0, 0.034)],
+                BP, fa, sx=1.0, sy=1.2)
+        P.sweep([Vector(lerp(el, wr, f)) + Vector((0, 0.104 - 0.03 * f, 0)) for f in (0.2, 0.45, 0.7, 0.88)], chamfer_rect(0.016, 0.018), BP, fa, hint=(0, 1, 0))
+        for f in (0.12, 0.8):
+            P.sweep_ring(lerp(el, wr, f), d, 0.11 - 0.025 * f, 0.104 - 0.025 * f, chamfer_rect(0.012, 0.016), GM, fa, n=P.n(18))
+        # a crowned plate down the outer face catches the key light
+        P.wrap(el, wr, lambda v: 0.112 - 0.03 * v, (lambda v: 1.15) if s > 0 else (lambda v: -2.15), (lambda v: 2.15) if s > 0 else (lambda v: -1.15),
+               0.014, BP, fa, v0=0.2, v1=0.78, nu=P.n(8), nv=3, crown=0.01)
+        for a in ((1.15, 2.15) if s > 0 else (-2.15, -1.15)):
+            P.seam(el, wr, lambda v: 0.112 - 0.03 * v, a, 0.2, 0.78, GM, fa)
+        gem2 = Vector(lerp(el, wr, 0.2)) + Vector((0, -0.112, 0))
+        P.band(gem2, (0, -1, 0), 0.064, 0.02, 0.016, BP, fa, n=P.n(18))
+        P.lathe(gem2, (0, -1, 0), [(0.0, 0.0), (0.06, 0.0), (0.045, 0.022), (0.0, 0.032)], JW, fa, sides=14)
+        hd = f"hand.{n_}"
+        fist = Vector(wr) + d * 0.075
+        P.ball(Vector(wr), 0.048, GM, hd)
+        P.ball(fist, 0.074, BP, hd, (1.0, 0.95, 1.12))
         for k in range(4):  # knuckle row wrapped round the shank
-            c = fist + Vector((0, 0.045, 0)) + d * (0.035 * (k - 1.5))
-            P.ball(c, 0.017, GM, f"hand.{n_}")
+            P.ball(fist + Vector((0, 0.056, 0)) + d * (0.04 * (k - 1.5)), 0.024, BP, hd, (1.0, 1.25, 0.9))
+        P.ball(fist + Vector((0, 0.03, 0)) - d * 0.05 + Vector((-s * 0.04, 0, 0.0)), 0.026, BP, hd)
 
-        # Anchor claw: shank with a stock, crown, two curved flukes with barbed arrowheads.
-        top = Vector(wr) + d * 0.02
+        # Anchor claw: ring, shank with a stock, crown, two heavy curved flukes with barbed arrowheads.
+        cl = f"claw.{n_}"
+        da = Vector((s * CLAW_U[0], 0, CLAW_U[2]))
+        top = Vector(wr) + da * 0.03
         crown = Vector(HEAD[f"fluke.in.{n_}"])
-        P.loft(top, crown, [(0.0, 0.026, 0.026, 2.0, 0, 0), (0.85, 0.032, 0.026, 2.4, 0, 0), (1.0, 0.04, 0.03, 2.4, 0, 0)], BP, f"claw.{n_}")
-        stock = top + d * 0.13
-        perp = Vector((-d.z, 0, d.x))
-        P.tube(stock - perp * 0.11, stock + perp * 0.11, 0.016, 0.016, BP, f"claw.{n_}", sides=8)
-        for e in (-1, 1):
-            P.ball(stock + perp * e * 0.115, 0.024, BP, f"claw.{n_}")
-        P.lathe(top - d * 0.025, -d, [(0.0, 0.0), (0.03, 0.0), (0.03, 0.01), (0.022, 0.014), (0.0, 0.014)], BP, f"claw.{n_}", sides=10)
-        P.ball(crown, 0.045, BP, f"claw.{n_}")
-        R = 0.25
+        P.band(top - da * 0.03, (0, 1, 0), 0.05, 0.018, 0.02, BP, cl, n=P.n(16))
+        P.loft(top, crown, [(0.0, 0.04, 0.038, 2.0, 0, 0), (0.5, 0.046, 0.036, 2.4, 0, 0), (0.86, 0.056, 0.04, 2.4, 0, 0), (1.0, 0.066, 0.044, 2.4, 0, 0)], BP, cl)
+        perp = Vector((-da.z, 0, da.x))
+        P.band(top + da * 0.12, da, 0.05, 0.02, 0.03, BP, cl, n=P.n(14))  # collar (the concept has no stock bar)
+        P.ball(crown, 0.05, BP, cl)
+        # pointed crown below the arms
+        mk = Matrix((perp, da, Vector((0, 1, 0)))).transposed().to_4x4()
+        mk.translation = crown
+        P.extrude([(-0.1, -0.02), (0.0, 0.15), (0.1, -0.02), (0.0, -0.07)], mk, 0.075, BP, cl, bevel=0.014)
         for side, bone in ((-1, f"fluke.in.{n_}"), (1, f"fluke.out.{n_}")):
             sd = perp * (side * s)
-            pts = [crown + sd * (R * math.sin(t)) - d * (R * (1 - math.cos(t))) for t in [math.radians(a) for a in range(0, 76, 15)]]
-            P.sweep(pts, chamfer_rect(0.036, 0.045), BP, bone, hint=(0, 1, 0), scales=[1.0, 0.95, 0.9, 0.85, 0.8, 0.75])
+            # the sheet's arms: a shallow, nearly straight V from the crown that hooks up at the tips
+            pts = [crown + sd * (0.34 * t) - da * (0.09 * t + 0.14 * t ** 3) for t in [k / 6 for k in range(7)]]
+            # ridged section: each face splits into two slopes, so the key light cannot flood a flat fluke cream
+            w, h, c = 0.07, 0.1, 0.022  # w along the hint (depth, ridged), h across in the anchor's plane
+            ridged = [(-w / 2, 0.0), (-w / 2 + c, -h / 2), (w / 2 - c, -h / 2), (w / 2, 0.0), (w / 2 - c, h / 2), (-w / 2 + c, h / 2)]
+            P.sweep(pts, ridged, BP, bone, hint=(0, 1, 0), scales=[1.0, 0.92, 0.84, 0.77, 0.7, 0.64, 0.6])
             tip = pts[-1]
             tang = (pts[-1] - pts[-2]).normalized()
             nrm = Vector((-tang.z, 0, tang.x))
             m = Matrix((tang, nrm, Vector((0, 1, 0)))).transposed().to_4x4()
             m.translation = tip
-            P.extrude([(-0.015, -0.018), (0.0, -0.065), (0.11, 0.0), (0.0, 0.065), (-0.015, 0.018)], m, 0.026, BP, bone, bevel=0.004)
+            # barbed arrowhead lofted on a diamond section: a ridge down its face, edges in the anchor's plane
+            span, thick = 0.085, 0.03
+            rx, ry = (span, thick) if abs(tang.x) < 0.9 else (thick, span)
+            P.loft(tip - tang * 0.03, tip + tang * 0.17, [(0.0, rx * 0.4, ry * 0.7, 1.3, 0, 0), (0.18, rx, ry, 1.3, 0, 0), (0.32, rx * 0.72, ry * 0.9, 1.3, 0, 0),
+                                                          (1.0, 0.004, 0.004, 1.3, 0, 0)], BP, bone)
 
-    # --- Pelvis and legs: gunmetal hip block, brass codpiece plate, armoured legs.
-    zs = [1.02, 1.12, 1.22, 1.30]
-    P.rings([sect(0.17, 0.12, P.n(20), 2.3), sect(0.2, 0.135, P.n(20), 2.3), sect(0.2, 0.14, P.n(20), 2.3), sect(0.18, 0.13, P.n(20), 2.3)], zs,
+    # --- Pelvis and legs: a dark hip block tucked up behind the apron (only the thigh tops and dark gaps
+    # show under the arch, as on the concept), sapphire hip jewels, armoured legs.
+    zs = [1.365, 1.385, 1.415, 1.45]
+    # the cabinet's bottom board, so the underside reads as dark wood under the apron, not the hip block
+    box(P, (-W + 0.03, -D + 0.03, 1.345), (W - 0.03, D - 0.03, 1.362), WD, "spine", 0.0)
+    P.rings([sect(0.2, 0.12, P.n(20), 2.3), sect(0.27, 0.15, P.n(20), 2.4), sect(0.3, 0.165, P.n(20), 2.4), sect(0.27, 0.16, P.n(20), 2.3)], zs,
             Matrix.Identity(4), GM, "pelvis")
-    P.wrap((0, 0, 1.24), (0, 0, 1.0), lambda v: 0.15 - 0.03 * v, -0.5, 0.5, 0.016, BP, "pelvis", sx=1.1, nu=P.n(8), nv=3)
     for s, n_ in ((1, "R"), (-1, "L")):
-        hip, knee, ank = (s * 0.15, 0, 1.20), (s * 0.17, 0.02, 0.66), (s * 0.17, -0.01, 0.13)
-        P.ball(hip, 0.085, GM, f"thigh.{n_}")
-        P.loft(hip, knee, [(0.0, 0.088, 0.09, 2.0, 0, 0), (0.5, 0.084, 0.086, 2.0, 0, 0), (1.0, 0.066, 0.068, 2.0, 0, 0)], GM, f"thigh.{n_}")
-        P.wrap(hip, knee, lambda v: 0.104 - 0.022 * v, -1.3, 1.3, 0.016, BP, f"thigh.{n_}", v0=0.12, v1=0.86, nu=P.n(8), nv=3)
-        P.wrap(hip, knee, lambda v: 0.104 - 0.022 * v, math.pi - 0.9, math.pi + 0.9, 0.014, BP, f"thigh.{n_}", v0=0.2, v1=0.8, nu=P.n(6), nv=2)
-        P.ball(knee, 0.07, GM, f"shin.{n_}")
-        P.shell(_add(knee, (0, 0.055, 0.0)), (0, 1, 0), [(0.0, 0.042), (0.048, 0.036), (0.076, 0.0), (0.07, -0.005), (0.042, 0.024), (0.0, 0.03)],
-                BP, f"shin.{n_}", sy=1.3)
-        P.loft(knee, ank, [(0.08, 0.07, 0.072, 2.0, 0, 0.0), (0.25, 0.088, 0.096, 2.7, 0, -0.016), (0.55, 0.08, 0.088, 2.7, 0, -0.014),
-                           (0.88, 0.058, 0.062, 2.4, 0, -0.006), (1.0, 0.048, 0.05, 2.0, 0, 0)], BP, f"shin.{n_}")
-        P.sweep([_add(lerp(knee, ank, f), (0, 0.104 - 0.042 * f, 0)) for f in (0.14, 0.4, 0.7, 0.93)], chamfer_rect(0.014, 0.012), BP,
-                f"shin.{n_}", hint=(0, 1, 0))
-        P.ball(ank, 0.045, GM, f"foot.{n_}")
-        m, _ = axis_frame((s * 0.17, -0.10, 0.0), (s * 0.17, 0.27, 0.0))
-        secs = [(0.0, 0.055, 0.038, 2.4, 0, -0.038), (0.12, 0.064, 0.06, 2.6, 0, -0.06), (0.45, 0.066, 0.055, 2.8, 0, -0.055),
-                (0.75, 0.06, 0.034, 2.8, 0, -0.034), (1.0, 0.034, 0.014, 2.4, 0, -0.014)]
-        P.rings([sect(rx, ry, P.n(16), pw, cx, cy) for _, rx, ry, pw, cx, cy in secs], [f * 0.37 for f, *_ in secs], m, BP, f"foot.{n_}")
-        P.wrap((s * 0.17, -0.10, 0.05), (s * 0.17, 0.22, 0.05), 0.066, math.pi - 1.3, math.pi + 1.3, 0.01, BP, f"foot.{n_}", v0=0.5, v1=0.82,
-               nu=P.n(8), nv=2)
-        P.lathe((s * 0.17, -0.04, 0.075), (0, -1, 0), [(0.0, 0.0), (0.055, 0.0), (0.05, 0.045), (0.0, 0.055)], GM, f"foot.{n_}", sx=1.1)
+        hip, knee, ank = (s * HIP[0], HIP[1], HIP[2]), (s * KNEE[0], KNEE[1], KNEE[2]), (s * ANKLE[0], ANKLE[1], ANKLE[2])
+        th, sn, ft = f"thigh.{n_}", f"shin.{n_}", f"foot.{n_}"
+        P.ball(hip, 0.11, GM, th)
+        hj = _add(hip, (s * 0.1, 0.02, 0.0))
+        P.band(hj, (s, 0, 0), 0.036, 0.016, 0.014, BP, th, n=P.n(16))
+        P.lathe(hj, (s, 0, 0), [(0.0, 0.0), (0.034, 0.0), (0.026, 0.016), (0.0, 0.022)], JW, th, sides=12)
+        tr = lambda v: 0.17 - 0.06 * v  # noqa: E731
+        P.loft(hip, knee, [(0.0, 0.13, 0.13, 2.0, 0, 0), (0.1, 0.174, 0.158, 2.4, 0, 0), (0.5, 0.15, 0.14, 2.4, 0, 0), (0.82, 0.106, 0.104, 2.2, 0, 0),
+                           (0.86, 0.086, 0.086, 2.0, 0, 0)], BP, th)
+        P.sweep([_add(lerp(hip, knee, f), (0, 0.166 - 0.065 * f, 0)) for f in (0.18, 0.42, 0.66, 0.8)], chamfer_rect(0.018, 0.018), BP, th, hint=(0, 1, 0))
+        # narrow crowned plates, so their stepped edges read as armour seams from the front and back
+        P.wrap(hip, knee, lambda v: tr(v) + 0.006, -0.62, 0.62, 0.024, BP, th, v0=0.14, v1=0.84, nu=P.n(7), nv=3, crown=0.012)
+        P.wrap(hip, knee, lambda v: tr(v) + 0.004, math.pi - 0.62, math.pi + 0.62, 0.02, BP, th, v0=0.2, v1=0.8, nu=P.n(7), nv=3, crown=0.01)
+        for a in (-0.62, 0.62):
+            P.seam(hip, knee, lambda v: tr(v) + 0.006, a, 0.14, 0.84, GM, th)
+            P.seam(hip, knee, lambda v: tr(v) + 0.004, math.pi + a, 0.2, 0.8, GM, th)
+        P.sweep_ring(lerp(hip, knee, 0.1), (s * (KNEE[0] - HIP[0]), KNEE[1] - HIP[1], KNEE[2] - HIP[2]), 0.145, 0.143, chamfer_rect(0.012, 0.016), GM, th, n=P.n(20))
+        P.ball(knee, 0.1, GM, sn)
+        P.shell(_add(knee, (0, 0.07, 0.0)), (0, 1, 0), [(0.0, 0.055), (0.062, 0.047), (0.099, 0.0), (0.091, -0.007), (0.055, 0.031), (0.0, 0.039)],
+                BP, sn, sy=1.3)
+        kb = _add(knee, (s * 0.098, 0.0, 0.0))
+        P.band(kb, (s, 0, 0), 0.04, 0.016, 0.02, BP, sn, n=P.n(14))
+        P.lathe(kb, (s, 0, 0), [(0.0, 0.0), (0.036, 0.0), (0.03, 0.014), (0.0, 0.02)], GM, sn, sides=12)
+        P.loft(knee, ank, [(0.13, 0.09, 0.09, 2.0, 0, 0.0), (0.24, 0.136, 0.14, 2.7, 0, -0.02), (0.55, 0.12, 0.126, 2.7, 0, -0.018),
+                           (0.8, 0.084, 0.088, 2.4, 0, -0.008), (0.9, 0.082, 0.088, 2.4, 0, -0.004),
+                           (0.97, 0.094, 0.1, 2.6, 0, 0.0), (1.0, 0.09, 0.096, 2.6, 0, 0.0)], BP, sn)
+        P.sweep_ring(lerp(knee, ank, 0.16), (s * (ANKLE[0] - KNEE[0]), ANKLE[1] - KNEE[1], ANKLE[2] - KNEE[2]), 0.112, 0.124, chamfer_rect(0.012, 0.016), GM, sn, n=P.n(20))
+        P.sweep([_add(lerp(knee, ank, f), (0, 0.13 - 0.05 * f, 0)) for f in (0.2, 0.45, 0.7, 0.92)], chamfer_rect(0.018, 0.016), BP, sn, hint=(0, 1, 0))
+        gr = lambda v: 0.138 - 0.058 * v  # noqa: E731
+        for a0, a1 in ((0.25, 1.35), (-1.35, -0.25)):  # crowned greave plates either side of the ridge
+            P.wrap(knee, ank, gr, a0, a1, 0.012, BP, sn, v0=0.22, v1=0.82, nu=P.n(6), nv=3, crown=0.01)
+            for a in (a0, a1):
+                P.seam(knee, ank, gr, a, 0.22, 0.82, GM, sn)
+        P.ball(ank, 0.062, GM, ft)
+        # broad flat-soled sabaton, toe turned out, with gunmetal lame seams across the instep
+        m, _ = axis_frame((s * ANKLE[0], ANKLE[1] - 0.12, 0.0), (s * (ANKLE[0] + 0.06), ANKLE[1] + 0.33, 0.0))
+        secs = [(0.0, 0.086, 0.074, 3.0, 0, -0.074), (0.12, 0.115, 0.104, 3.4, 0, -0.104), (0.45, 0.126, 0.092, 3.6, 0, -0.092),
+                (0.75, 0.117, 0.058, 3.4, 0, -0.058), (1.0, 0.067, 0.023, 2.8, 0, -0.023)]  # broad, tall instep, tapered toe
+        P.rings([sect(rx, ry, P.n(16), pw, cx, cy) for _, rx, ry, pw, cx, cy in secs], [f * 0.452 for f, *_ in secs], m, BP, ft)
+        for f, rx, ry in ((0.56, 0.123, 0.081), (0.7, 0.118, 0.064), (0.84, 0.097, 0.044)):
+            z0 = f * 0.452
+            P.rings([sect(rx + 0.002, ry + 0.002, P.n(16), 3.4, 0, -ry - 0.002)] * 2, [z0 - 0.003, z0 + 0.003], m, GM, ft)
+        P.wrap((s * ANKLE[0], ANKLE[1] - 0.12, 0.09), (s * ANKLE[0], ANKLE[1] + 0.28, 0.09), 0.099, math.pi - 1.3, math.pi + 1.3, 0.012, BP, ft, v0=0.5, v1=0.82,
+               nu=P.n(8), nv=2, crown=0.008)
+        P.lathe((s * ANKLE[0], ANKLE[1] - 0.05, 0.1), (0, -1, 0), [(0.0, 0.0), (0.07, 0.0), (0.064, 0.055), (0.0, 0.068)], BP, ft, sx=1.1)
 
 
 def tile_uvs(bm) -> None:
@@ -735,6 +849,12 @@ def build_body(bpy, bmesh, scene, detail: str, arm_obj):
             if f.is_valid:
                 for loop in f.loops:
                     loop[col] = (*rgb, 1.0)
+    shade = {k: (*(lin(c) for c in v), 1.0) for k, v in SHADES.items()}
+    for f in P.bm.faces:
+        if f.material_index in shade:
+            for loop in f.loops:
+                loop[col] = shade[f.material_index]
+            f.material_index = CS
     bmesh.ops.recalc_face_normals(P.bm, faces=P.bm.faces[:])
     # Fixed triangulation here: the exporter's own quad split follows float noise between runs.
     bmesh.ops.triangulate(P.bm, faces=P.bm.faces[:], quad_method="FIXED", ngon_method="EAR_CLIP")
@@ -888,7 +1008,7 @@ CLAMP = {"pelvis_loc": (0, 0.07, -0.07), "spine": (-8, 0, 0), "chest": (-10, 0, 
          "upperarm.R": (42, 8, 0), "upperarm.L": (42, -8, 0), "forearm.R": (8, 0, 0), "forearm.L": (8, 0, 0),
          "fluke.in.R": (0, -18, 0), "fluke.out.R": (0, 18, 0), "fluke.in.L": (0, 18, 0), "fluke.out.L": (0, -18, 0),
          "pendulum": (0, -22, 0), "pallet": (0, 7, 0), "clapper": (14, 0, 0), "spin": {"wheel": -24, "door.R": -4, "door.L": 4},
-         "ik": planted(leg_R=(0.12, 0.13))}
+         "ik": planted(leg_R=(ANKLE[1] + 0.15, ANKLE[2]))}
 ATTACK_KEYS = [
     (0.0, START),
     (0.5, RAISE),
@@ -926,30 +1046,37 @@ DEATH_KEYS = [
 FROZEN_POSE = {"pelvis_loc": (0, 0.03, -0.05), "spine": (-3, 0, -5), "chest": (-4, 0, -6), "head": (4, 0, 10),
                "upperarm.R": (62, -6, 0), "forearm.R": (30, 0, 0), "upperarm.L": (14, 12, 0), "forearm.L": (20, 0, 0),
                "fluke.in.R": (0, 20, 0), "fluke.out.R": (0, -20, 0), "pendulum": (0, 14, 0), "pallet": (0, -4, 0),
-               "spin": {"wheel": -12}, "ik": planted(leg_R=(0.12, 0.13))}
-OPEN = {"door.R": -105.0, "door.L": 105.0, "plate.R": -70.0, "plate.L": 70.0}
+               "spin": {"wheel": -12}, "ik": planted(leg_R=(ANKLE[1] + 0.15, ANKLE[2]))}
+# The side plates open past 75 deg so their free edges end behind the upper arms and pauldrons.
+OPEN = {"door.R": -105.0, "door.L": 105.0, "plate.R": -80.0, "plate.L": 80.0}
 PHASE_KEYS = [
     (0.0, START),
     (0.6, {"pelvis_loc": (0, -0.02, -0.07), "spine": (4, 0, 0), "chest": (7, 0, 0), "head": (12, 0, 0),
            "upperarm.R": (-6, -22, 0), "upperarm.L": (-6, 22, 0), "forearm.R": (18, 0, 0), "forearm.L": (18, 0, 0),
            "pendulum": (0, 28, 0), "pallet": (0, -8, 0), "clapper": (18, 0, 0),
-           "spin": {"wheel": -90, "dial.minute": -180, "dial.hour": -15, "key": 180, "door.R": -6, "door.L": 6}, "ik": PLANT}),
+           "spin": {"wheel": -90, "key": 180, "door.R": -6, "door.L": 6}, "ik": PLANT}),
+    # the side plates stay shut until here and spring open in 0.15 s, so their sweep past the upper
+    # arms lasts a few frames
+    (0.85, {"pelvis_loc": (0, -0.01, -0.05), "spine": (0.5, 0, 0), "chest": (1.5, 0, 0), "head": (3, 0, 0),
+            "upperarm.R": (1, -29, 0), "upperarm.L": (1, 29, 0), "forearm.R": (21, 0, 0), "forearm.L": (21, 0, 0),
+            "pendulum": (0, -4, 0), "pallet": (0, 1, 0), "clapper": (-2, 0, 0),
+            "spin": {"wheel": -200, "key": 380, "door.R": -66, "door.L": 66}, "ik": PLANT}),
     (1.0, {"pelvis_loc": (0, 0.0, -0.03), "spine": (-3, 0, 0), "chest": (-4, 0, 0), "head": (-6, 0, 0),
            "upperarm.R": (6, -34, 0), "upperarm.L": (6, 34, 0), "forearm.R": (24, 0, 0), "forearm.L": (24, 0, 0),
            "fluke.in.R": (0, 20, 0), "fluke.out.R": (0, -20, 0), "fluke.in.L": (0, -20, 0), "fluke.out.L": (0, 20, 0),
            "pendulum": (0, -30, 0), "pallet": (0, 9, 0), "clapper": (-20, 0, 0), "loc": {"corona": (0, 0.06, 0)},
-           "spin": {"wheel": -300, "dial.minute": -540, "dial.hour": -45, "key": 540, **OPEN}, "ik": PLANT}),
+           "spin": {"wheel": -300, "key": 540, **OPEN}, "ik": PLANT}),
     (1.25, {"pelvis_loc": (0, 0.0, -0.04), "chest": (-2, 0, 0), "upperarm.R": (4, -30, 0), "upperarm.L": (4, 30, 0),
             "forearm.R": (20, 0, 0), "forearm.L": (20, 0, 0), "pendulum": (0, 26, 0), "clapper": (16, 0, 0), "loc": {"corona": (0, 0.078, 0)},
-            "spin": {"wheel": -420, "dial.minute": -720, "dial.hour": -60, "key": 720, "door.R": -116, "door.L": 116, "plate.R": -78, "plate.L": 78},
+            "spin": {"wheel": -420, "key": 720, "door.R": -116, "door.L": 116, "plate.R": -86, "plate.L": 86},
             "ik": PLANT}),
     (1.7, {"pelvis_loc": (0, 0.0, -0.03), "upperarm.R": (2, -26, 0), "upperarm.L": (2, 26, 0), "forearm.R": (16, 0, 0), "forearm.L": (16, 0, 0),
            "pendulum": (0, -18, 0), "loc": {"corona": (0, 0.075, 0)},
-           "spin": {"wheel": -560, "dial.minute": -900, "dial.hour": -75, "key": 900, **OPEN}, "ik": PLANT}),
+           "spin": {"wheel": -560, "key": 900, **OPEN}, "ik": PLANT}),
     (3.0, {"pelvis_loc": (0, 0.0, -0.025), "upperarm.R": (0, -24, 0), "upperarm.L": (0, 24, 0), "forearm.R": (14, 0, 0), "forearm.L": (14, 0, 0),
            "fluke.in.R": (0, 12, 0), "fluke.out.R": (0, -12, 0), "fluke.in.L": (0, -12, 0), "fluke.out.L": (0, 12, 0),
            "pendulum": (0, 0, 0), "loc": {"corona": (0, 0.075, 0)},
-           "spin": {"wheel": -720, "dial.minute": -1080, "dial.hour": -90, "key": 1080, **OPEN}, "ik": PLANT}),
+           "spin": {"wheel": -720, "key": 1080, **OPEN}, "ik": PLANT}),
 ]
 
 
@@ -1006,7 +1133,7 @@ def sampled(name: str) -> list[tuple[int, dict]]:
 
 def apply_pose(arm_obj, pose: dict, frame: int | None) -> None:
     """Armature-axis rotations at each bone head, then `spin` (degrees) about the bone's own axis:
-    door and plate hinges, the wheel, dial and key arbors."""
+    door and plate hinges, the wheel and the key arbor."""
     from mathutils import Euler, Quaternion, Vector
 
     res = resolve(pose)
@@ -1153,7 +1280,13 @@ def _principled(mat, name: str):
     if name == GLOW:
         bsdf.inputs["Emission Color"].default_value = (*(lin(c) for c in GLOW_SRGB), 1.0)
         bsdf.inputs["Emission Strength"].default_value = GLOW_STRENGTH
-    if name == JEWEL:  # ruby, sapphire and emerald from the corner colours (exported as COLOR_0)
+    if name == GLASS:
+        bsdf.inputs["Alpha"].default_value = GLASS_ALPHA
+        try:
+            mat.surface_render_method = "BLENDED"
+        except (AttributeError, TypeError):
+            mat.blend_method = "BLEND"
+    if name == CASE:  # mahogany, dark iron, sapphire and ember from the corner colours (exported as COLOR_0)
         attr = mat.node_tree.nodes.new("ShaderNodeVertexColor")
         attr.layer_name = "jewel"
         mat.node_tree.links.new(attr.outputs["Color"], bsdf.inputs["Base Color"])
@@ -1217,9 +1350,9 @@ def set_slots(obj, mats: list) -> None:
 # Sockets, export, reimport gate
 
 SOCKETS = {
-    "socket-hit": ("chest", (0, 0.30, 1.90)),  # in front of the glazed doors: hit sparks and aim point
-    "socket-eye": ("head", (0, 0.13, 2.94)),  # between the eyes
-    "socket-weapon": ("claw.R", (1.095, 0.0, 0.62)),  # the right anchor's crown
+    "socket-hit": ("chest", (0, D + 0.08, 2.0)),  # in front of the glazed doors: hit sparks and aim point
+    "socket-eye": ("head", (0, HEAD_Y + 0.17, 2.81)),  # between the eyes
+    "socket-weapon": ("claw.R", (round(CROWN[0], 3), 0.0, round(CROWN[2], 3))),  # the right anchor's crown
 }
 
 
@@ -1248,7 +1381,8 @@ def export_glb(bpy, keep: list, active, path: Path) -> None:
     bpy.ops.export_scene.gltf(
         filepath=str(path), export_format="GLB", use_selection=True, use_active_scene=True,
         export_texcoords=True, export_normals=True, export_tangents=False,  # three derives tangents
-        export_vertex_color="NONE",  # no jewel slot on the guardian
+        # ACTIVE, not MATERIAL: Blender 5.2 MATERIAL mode can write a white COLOR_0 placeholder.
+        export_vertex_color="ACTIVE",  # COLOR_0 for the case slot (white on every other corner)
         export_materials="EXPORT", export_image_format="NONE", export_cameras=False, export_lights=False,
         export_skins=True, export_all_influences=False, export_def_bones=False,
         export_animations=True, export_animation_mode="ACTIONS", export_force_sampling=True,
@@ -1310,6 +1444,73 @@ def sort_triangles(path: Path) -> int:
             n += 1
     path.write_bytes(bytes(data))
     return n
+
+
+def canonicalize_normals(path: Path) -> dict:
+    """Recomputes every NORMAL from the (byte-stable) positions and sorted triangles. The exporter's
+    corner normals carry run-dependent float noise (up to ~3e-5 measured), so they are only used to
+    tell fans apart: corners at one position on one bone (each part is rigid on a single bone) whose
+    exported normals agree within ~0.3 degrees form one fan (a smooth vertex split by a UV or material
+    seam), and each fan gets the angle-weighted mean of its triangles' face normals, Blender's smooth
+    rule. Zero-area triangles (collinear points on extruded outlines) get no weight here; the
+    exporter's normals give their 180-degree corner full weight, so the few fans that hold one move
+    (the stats record how many and how far)."""
+    import numpy as np
+
+    data = bytearray(path.read_bytes())
+    gltf, acc, (bin_off, _blen) = parse_glb(bytes(data))
+    stats = {"vertices": 0, "fans": 0, "zero_area_triangles": 0, "max_dev_deg": 0.0, "over_1deg": 0}
+    for mesh in gltf["meshes"]:
+        prims = mesh["primitives"]
+        pos = [acc(pr["attributes"]["POSITION"]).astype(np.float32) for pr in prims]
+        nrm = [acc(pr["attributes"]["NORMAL"]).astype(np.float64) for pr in prims]
+        base = np.cumsum([0] + [len(x) for x in pos])
+        P, N = np.concatenate(pos), np.concatenate(nrm)
+        J = np.concatenate([acc(pr["attributes"]["JOINTS_0"])[:, 0].astype(np.uint32) for pr in prims])
+        T = np.concatenate([acc(pr["indices"]).astype(np.int64).reshape(-1, 3) + base[i] for i, pr in enumerate(prims)])
+        key = np.concatenate([np.ascontiguousarray(P).view(np.uint8).reshape(-1, 12), J.view(np.uint8).reshape(-1, 4)], axis=1)
+        _u, gid = np.unique(np.ascontiguousarray(key).view(np.dtype((np.void, 16)))[:, 0], return_inverse=True)
+        fan = np.empty(len(P), dtype=np.int64)
+        reps: dict[int, list[tuple[int, np.ndarray]]] = {}
+        nf = 0
+        for v in range(len(P)):  # index order: deterministic; the noise (~3e-5) sits far inside the 0.99999 cut
+            for f_, rn in reps.setdefault(int(gid[v]), []):
+                if float(rn @ N[v]) > 0.99999:
+                    fan[v] = f_
+                    break
+            else:
+                reps[int(gid[v])].append((nf, N[v]))
+                fan[v] = nf
+                nf += 1
+        Pd = P.astype(np.float64)
+        p0, p1, p2 = Pd[T[:, 0]], Pd[T[:, 1]], Pd[T[:, 2]]
+        fn = np.cross(p1 - p0, p2 - p0)
+        ln = np.linalg.norm(fn, axis=1)
+        fn = np.where(ln[:, None] > 0, fn / np.maximum(ln, 1e-300)[:, None], 0.0)
+        sums = np.zeros((nf, 3))
+        for k, (a_, b_, c_) in enumerate(((p0, p1, p2), (p1, p2, p0), (p2, p0, p1))):
+            e1, e2 = b_ - a_, c_ - a_
+            ang = np.arctan2(np.linalg.norm(np.cross(e1, e2), axis=1), np.einsum("ij,ij->i", e1, e2))
+            np.add.at(sums, fan[T[:, k]], fn * ang[:, None])
+        sl = np.linalg.norm(sums, axis=1)
+        out = np.where((sl > 1e-12)[:, None], sums / np.maximum(sl, 1e-300)[:, None], 0.0)[fan]
+        keep = ~(sl > 1e-12)[fan]
+        out[keep] = N[keep]
+        dev = np.degrees(np.arccos(np.clip(np.einsum("ij,ij->i", out, N), -1.0, 1.0)))
+        stats["vertices"] += len(P)
+        stats["fans"] += nf
+        stats["zero_area_triangles"] += int((ln == 0).sum())
+        stats["max_dev_deg"] = max(stats["max_dev_deg"], round(float(dev.max()), 1))
+        stats["over_1deg"] += int((dev > 1.0).sum())
+        for i, pr in enumerate(prims):
+            a = gltf["accessors"][pr["attributes"]["NORMAL"]]
+            view = gltf["bufferViews"][a["bufferView"]]
+            start = bin_off + view.get("byteOffset", 0) + a.get("byteOffset", 0)
+            if view.get("byteStride", 12) != 12 or a["componentType"] != 5126:
+                raise ValueError("NORMAL accessor is not tightly packed float32")
+            data[start : start + a["count"] * 12] = out[base[i] : base[i + 1]].astype(np.float32).tobytes()
+    path.write_bytes(bytes(data))
+    return stats
 
 
 def trs(node):
@@ -1726,9 +1927,9 @@ def compose_sheet(out: Path) -> Path:
                     note, tw=300, th=420)
     compare.save(out.parent / f"{PIECE}.fidelity-compare.jpg", quality=88)
     sections = [
-        ("REFERENCE - escapement-sheet-1.png (concept; owner approval PENDING; the case follows the design notes: taller and narrower than the sheet)", [("concept sheet", CONCEPT)]),
+        ("REFERENCE - escapement-sheet-1.png (concept; owner approval PENDING; the case follows the sheet's squat cabinet, not the notes' longcase)", [("concept sheet", CONCEPT)]),
         ("FIDELITY - concept view beside the model at the same angle (orthographic, same framing)", pairs),
-        ("MODEL - textured Blender renders (shared brass-polished and walnut sets; gunmetal and glow are factor-only), approval PENDING", [
+        ("MODEL - textured Blender renders (shared brass-polished set; case colours from COLOR_0, glass and glow factor-only), approval PENDING", [
             ("low front", r / "model-low-front.png"), ("low side", r / "model-low-side.png"), ("low back", r / "model-low-back.png"),
             ("low 3/4", r / "model-low-three-quarter.png"), ("high source 3/4", r / "model-high-three-quarter.png")]),
         (f"RIG - approval PENDING: {len(BONES)} bones, rigid 1-bone skinning, planar leg solve, door/plate hinge bones closed in phase 1", [
@@ -1746,6 +1947,25 @@ def compose_sheet(out: Path) -> Path:
     path = out.parent / f"{PIECE}.review-sheet.jpg"
     sheet.save(path, quality=86)
     return path
+
+
+def record_fidelity(out: Path) -> Path:
+    """Adds the author's self-score (staging/fidelity.json) to provenance.json as `authorSelfScore`,
+    bound to the compare image's bytes. Run after `asset-check.py --assemble-enemy`, which rebuilds
+    provenance from scratch. The independent score stays a separate, pending approval entry."""
+    prov_path = out.parent / "provenance.json"
+    prov = json.loads(prov_path.read_text())
+    fid = json.loads((out / "fidelity.json").read_text())
+    compare = out.parent / f"{PIECE}.fidelity-compare.jpg"
+    prov["authorSelfScore"] = {
+        "score": fid["score"], "scale": "0-100 visual fidelity to the concept",
+        "scorer": "author self-score (the authoring agent; not the independent score create-rigged-character-assets requires)",
+        "date": fid.get("date"), "gaps": fid.get("gaps", []), "method": fid.get("method"),
+        "evidence": {"path": str(compare.relative_to(REPO)), "sha256": sha256(compare)},
+        "independentScore": "pending",
+    }
+    prov_path.write_text(json.dumps(prov, indent=2) + "\n")
+    return prov_path
 
 
 # --------------------------------------------------------------------------------------------------
@@ -1825,6 +2045,7 @@ def main_blender(args: argparse.Namespace) -> None:
     glb = runtime / f"{PIECE}.glb"
     export_glb(bpy, [arm, body, *sockets.values()], arm, glb)
     report["canonicalized_primitives"] = sort_triangles(glb)
+    report["canonicalized_normals"] = canonicalize_normals(glb)
     gate = gate_glb(glb)
     gate["errors"] += pose_errors
     br = blender_reimport(bpy, glb)
@@ -1864,5 +2085,7 @@ if __name__ == "__main__":
     ARGS = parse_args()
     if ARGS.sheet:
         print(compose_sheet(ARGS.out.resolve()))
+    elif ARGS.record_fidelity:
+        print(record_fidelity(ARGS.out.resolve()))
     else:
         main_blender(ARGS)

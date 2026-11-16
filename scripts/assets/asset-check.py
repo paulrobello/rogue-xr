@@ -312,7 +312,8 @@ ENEMY_META = {
                       "materials_used": "approved P4-T3 brass-polished set bound by slot name at runtime; gunmetal, warden-glow and warden-jewel "
                                         "(ruby, sapphire and emerald from COLOR_0) are factor-only"},
     GUARDIAN: {**_P5_META, "reference_note": _P5_META["reference_note"].replace("P5-T3", "P5-T4"),
-               "materials_used": "approved P4-T3 brass-polished and walnut sets bound by slot name at runtime; gunmetal and escapement-glow are factor-only"},
+               "materials_used": "approved P4-T3 brass-polished set bound by slot name at runtime; escapement-case (mahogany, dark iron, "
+                                 "sapphire and ember from COLOR_0), escapement-glass (alpha-blended) and escapement-glow are factor-only"},
 }
 
 

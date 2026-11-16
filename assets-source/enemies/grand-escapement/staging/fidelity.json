@@ -1,14 +1,13 @@
 {
-  "score": 64,
-  "scorer": "author self-assessment (not the independent score the gate requires)",
+  "score": 78,
+  "date": "2026-11-16",
+  "method": "Author self-score from grand-escapement.fidelity-compare.jpg: orthographic EEVEE renders (AgX, the fixed shared light rig, not tuned to the score) of the low-poly model at the concept sheet's front, side and back angles, framed at the sheet's own scale (3.2 m over 808 sheet pixels), judged side by side and in zoomed crops of the head and bell, pediment, glazed doors, pauldrons, arms and anchors, legs and sabatons, plus the seven in-engine clip shots in staging/engine (three.js 0.186.1, ANGLE Metal on Apple M4). Case width and depth, pediment and roof heights, door and apron heights, head and bell sizes, hip, knee and ankle positions, the head's forward offset (side view: head bounding-box centre 0.067 m ahead of the case centre on the sheet, about 0.06 m on the model), and anchor spans were measured on the sheet's front and side views at the same framing. The case follows the sheet's squat cabinet rather than the design notes' longcase, because the sheet is the concept under review. Case colour was matched by sampling: the sheet's back panels read about sRGB (66, 38, 29); the model's back panels read about (135, 88, 65) before this pass and about (99, 60, 43) after it (darker, more saturated mahogany albedo and wood roughness 0.85, checked in both the Blender compare and the engine shots).",
   "gaps": [
-    "case is taller and narrower than the sheet's squat cabinet (deliberate, per the design notes), so the front silhouette differs",
-    "walnut reads pale and pink in the ortho compare light; the sheet's case is dark mahogany",
-    "the sheet's glowing glazed doors read as open brass-barred frames (no glass material under the 4-material cap)",
-    "the sheet's front shows the head above the cabinet; the model carries the dial on a hood (from the notes), so the head reads smaller behind the pediment",
-    "legs are slimmer and plainer than the sheet's armoured greaves and knee cops",
-    "anchors are thinner and flatter than the sheet's heavy cast anchors",
-    "back inlays are gunmetal, not the sheet's jewelled panels (4-material cap)",
-    "phase 2: the doors and plates spring open and the wheel races, but the corona does not read as the sheet's blazing escapement (glow strength 0.7, no bloom)"
+    "The case is still lighter than the sheet's near-black mahogany (about sRGB 99, 60, 43 against 66, 38, 29 on the back panels), because the dielectric wood's specular adds grey under the shared light rig.",
+    "The glazed doors read as an even amber pane over a faint glowing disc; the sheet's frosted glass has a bright orange core glow. The interior glow stays peach at the project's GLOW_STRENGTH 0.7 convention for F08C2C, and the phase-2 corona reads as glowing gear teeth without bloom, short of the sheet's blazing escapement.",
+    "Limb armour (layered pauldrons, gunmetal upper arms with brass strips, squared vambraces, narrow thigh plates, greaves, knee bosses, sabatons with lames) carries gunmetal edge piping, but at the compare's scale the plates read smooth; the brass is uniform polished, without the sheet's engraving.",
+    "From the side the head reads as a smooth helm with no visible face-plate profile or eye glow; the arms hang in the frontal plane, so the anchors sit edge-on behind the legs where the sheet shows them angled forward.",
+    "The sabatons are smaller and darker from the front than the sheet's broad brass sabatons.",
+    "Phase change: the side plates stay shut until 0.85 s and spring open by 1.0 s; during those 0.15 s they sweep through the upper arms before settling behind them. The end pose is clear."
   ]
 }

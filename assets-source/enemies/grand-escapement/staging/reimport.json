@@ -1,14 +1,14 @@
 {
-  "glb_sha256": "1a34981e3937071c33cd72b1ff424d2db41d0417df1fde14add432c11c564e5e",
-  "glb_bytes": 2332304,
-  "triangles": 23984,
+  "glb_sha256": "a10026672250663c8c340a3623d911e696a28291fa45c0baabf685c6781a22cb",
+  "glb_bytes": 3545328,
+  "triangles": 37296,
   "materials": [
     "brass-polished",
-    "walnut",
-    "gunmetal",
+    "escapement-case",
+    "escapement-glass",
     "escapement-glow"
   ],
-  "vertices": 26061,
+  "vertices": 41853,
   "joints": [
     "root",
     "pelvis",
@@ -29,8 +29,6 @@
     "fluke.in.R",
     "fluke.out.R",
     "corona",
-    "dial.hour",
-    "dial.minute",
     "door.L",
     "door.R",
     "key",
@@ -51,57 +49,57 @@
     "shin.R",
     "foot.R"
   ],
-  "bone_count": 40,
+  "bone_count": 38,
   "max_influences": 1,
   "max_weight_sum_error": 0.0,
   "unweighted_vertices": 0,
   "bounds": {
     "min": [
-      -1.306,
+      -1.7682,
       0.0001,
-      -0.27
+      -0.362
     ],
     "max": [
-      1.306,
-      3.202,
-      0.292
+      1.7682,
+      3.214,
+      0.599
     ]
   },
   "clips": {
     "attack": {
       "duration": 1.6,
       "start": 0.0,
-      "channels": 120,
+      "channels": 114,
       "rootAnimated": []
     },
     "death": {
       "duration": 2.8,
       "start": 0.0,
-      "channels": 120,
+      "channels": 114,
       "rootAnimated": []
     },
     "frozen": {
       "duration": 1.0,
       "start": 0.0,
-      "channels": 120,
+      "channels": 114,
       "rootAnimated": []
     },
     "hit": {
       "duration": 0.7,
       "start": 0.0,
-      "channels": 120,
+      "channels": 114,
       "rootAnimated": []
     },
     "idle": {
       "duration": 6.0,
       "start": 0.0,
-      "channels": 120,
+      "channels": 114,
       "rootAnimated": []
     },
     "phase-change": {
       "duration": 3.0,
       "start": 0.0,
-      "channels": 120,
+      "channels": 114,
       "rootAnimated": []
     }
   },
@@ -111,8 +109,8 @@
       "parent": "chest",
       "position": [
         0.0,
-        1.9,
-        -0.3
+        2.0,
+        -0.38
       ]
     },
     "socket-eye": {
@@ -120,16 +118,16 @@
       "parent": "head",
       "position": [
         0.0,
-        2.94,
-        -0.13
+        2.81,
+        -0.22
       ]
     },
     "socket-weapon": {
       "bone": "claw.R",
       "parent": "claw.R",
       "position": [
-        1.095,
-        0.62,
+        1.456,
+        0.54,
         0.0
       ]
     }
@@ -141,7 +139,7 @@
   "pass": true,
   "blender_reimport": {
     "armatures": 1,
-    "bones": 40,
+    "bones": 38,
     "meshes": 1,
     "actions": [
       "attack.001",
