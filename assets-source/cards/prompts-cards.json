@@ -1,0 +1,210 @@
+{
+  "model": "nano_banana_pro",
+  "resolution": "2k",
+  "styleRefs": [
+    "assets-source/style/locked/L-board-1.png",
+    "assets-source/style/locked/L-cards.png",
+    "assets-source/cards/attack-strike/frame-source.png"
+  ],
+  "families": {
+    "attack": {
+      "jewel": "ruby",
+      "glow": "hot ruby-red and orange",
+      "key": "green",
+      "keyHex": "#00ff00"
+    },
+    "skill": {
+      "jewel": "sapphire",
+      "glow": "cool sapphire-blue",
+      "key": "green",
+      "keyHex": "#00ff00"
+    },
+    "sigil": {
+      "jewel": "emerald",
+      "glow": "deep emerald-green (not teal)",
+      "key": "magenta",
+      "keyHex": "#ff00ff"
+    }
+  },
+  "keyPrefix": "Use the first reference image for palette, rendering and lighting, and the second and third only for the brushwork of the round painted card illustrations. Square painted illustration for the circular window of a fantasy game card; it will be cropped to a circle, so keep the subject centred inside the middle 70 percent. Three clear depth planes: a deep backdrop, one mid element, and the subject in front.",
+  "keySuffix": "One centred subject, lit by its own glow, with the rest falling into warm dark shadow. Painterly semi-realism with visible oil-painting brushwork, polished brass and dark gunmetal, matching the reference card illustrations in style. Original design. No text, no letters, no numbers, no runes that read as writing, no frame, no border, no card, no vignette, no watermark.",
+  "layerPrefix": "Use the second reference image as the illustration to decompose and the first only for palette and brushwork.",
+  "layerSuffix": "Same design, colours, brushwork and lighting as the second reference. Painterly semi-realism with visible oil-painting brushwork. No text, no letters, no numbers, no frame, no border, no vignette.",
+  "cards": [
+    {
+      "id": "cog-toss",
+      "type": "attack",
+      "key": "Backdrop: a dark wall of large interlocking brass gears glowing ruby-orange at the centre. Mid element: a ring of hot ruby-orange sparks and a motion arc swirling behind the subject. Subject: a sharp-toothed brass cog spinning through the air toward the viewer, its teeth glowing red-hot, with a small brass six-sided die showing only round amber pips tumbling just beside it.",
+      "back": "a wall of large interlocking brass gears receding into warm ruby-red darkness, glowing ruby-orange light from the centre. No cog in flight, no die, no sparks",
+      "mid": "the swirling ring of hot ruby-orange sparks and motion arc, centred",
+      "front": "the spinning red-hot brass cog together with the small brass die showing only round pips, centred",
+      "regen": {
+        "back": "Edit the second reference illustration: erase the spinning cog, the die and the ring of sparks completely and repaint that area as more of the dark wall of interlocking brass gears with a soft ruby-orange glow at the centre, so only the backdrop remains, as a full square painting. The result must contain no the spinning cog, the die and the ring of sparks.",
+        "front": "Recreate only the spinning red-hot brass cog and the small brass die showing only round pips from the second reference illustration, isolated on a flat pure green background (#00ff00). It must not contain the swirling ring of sparks, any motion arc or any background."
+      }
+    },
+    {
+      "id": "ratchet-flurry",
+      "type": "attack",
+      "key": "Backdrop: a dim brass ratchet mechanism with a huge toothed pawl wheel in ruby-red gloom. Mid element: three crossing ruby-red slash arcs of light. Subject: a slender brass automaton forearm ending in a curved ratchet blade with a toothed wheel at the wrist, caught mid-swing from the lower right toward the upper left, the blade edge glowing hot.",
+      "back": "a dim brass ratchet mechanism with a huge toothed pawl wheel in ruby-red gloom, warm glow at the centre. No arm, no blade, no slash arcs",
+      "mid": "the three crossing ruby-red slash arcs of light, centred",
+      "front": "the brass automaton forearm with the curved glowing ratchet blade and toothed wrist wheel, swinging from the lower right toward the upper left",
+      "regen": {
+        "mid": "Recreate only the three crossing ruby-red slash arcs of light from the second reference illustration, isolated on a flat pure green background (#00ff00). It must not contain any blade, arm, gear or metal object.",
+        "front": "Recreate only the brass automaton forearm with the curved glowing ratchet blade and the small toothed wheel at its wrist from the second reference illustration, isolated on a flat pure green background (#00ff00). It must not contain the slash arcs, a large gear behind it or any background."
+      }
+    },
+    {
+      "id": "rivet-volley",
+      "type": "attack",
+      "key": "Backdrop: riveted brass hull plates and copper pipes in ruby-red darkness. Mid element: a fan of glowing red-hot rivets flying outward toward the viewer with short fiery trails. Subject: the flared muzzle of a brass rivet cannon with a ring of barrels, aimed at the viewer, ruby-orange fire at its mouth.",
+      "back": "riveted brass hull plates and copper pipes receding into ruby-red darkness, warm glow at the centre. No cannon, no flying rivets",
+      "mid": "the fan of glowing red-hot rivets with short fiery trails flying outward, centred",
+      "front": "the flared brass rivet cannon muzzle with its ring of barrels and the fire at its mouth, aimed at the viewer",
+      "regen": {
+        "mid": "Recreate only the fan of glowing red-hot rivets with short fiery trails from the second reference illustration, isolated on a flat pure green background (#00ff00). It must not contain the cannon, hull plates, pipes or any background.",
+        "front": "Recreate only the brass rivet cannon with its ring of barrels and the fire at its mouth from the second reference illustration, isolated on a flat pure green background (#00ff00). It must not contain flying rivets, hull plates, pipes, floor or any background."
+      }
+    },
+    {
+      "id": "escapement-hammer",
+      "type": "attack",
+      "key": "Backdrop: the dark interior of a great clock movement with a huge brass escape wheel, lit ruby-red from below. Mid element: a shattering burst of ruby light and cracked brass shards at the point of impact. Subject: a massive brass war hammer whose head is shaped like a clock escapement anchor, striking down from the upper left.",
+      "back": "the dark interior of a great clock movement with a huge brass escape wheel lit ruby-red from below. No hammer, no impact burst",
+      "mid": "the shattering burst of ruby light with cracked brass shards, centred",
+      "front": "the massive brass war hammer with the escapement-anchor head, striking down from the upper left",
+      "regen": {
+        "back": "Edit the second reference illustration: erase the hammer, the impact burst and the flying shards completely and repaint that area as more of the dark clock movement and the huge brass escape wheel lit ruby-red from below, so only the backdrop remains, as a full square painting. The result must contain no the hammer, the impact burst and the flying shards."
+      }
+    },
+    {
+      "id": "defend",
+      "type": "skill",
+      "key": "Backdrop: a deep blue-shadowed wall of brass panels and gears with a soft sapphire glow at the centre. Mid element: a translucent dome of sapphire ward light. Subject: an ornate round polished brass shield with a faceted sapphire boss at its centre, raised and facing the viewer, glowing sapphire-blue.",
+      "back": "a deep blue-shadowed wall of brass panels and gears with a soft sapphire glow at the centre. No shield, no ward dome",
+      "mid": "the translucent dome of sapphire ward light, centred",
+      "front": "the ornate round polished brass shield with the faceted sapphire boss, facing the viewer",
+      "regen": {
+        "mid": "Recreate only the translucent dome of sapphire ward light, empty and see-through in the middle from the second reference illustration, isolated on a flat pure green background (#00ff00). It must not contain the shield or any metal object."
+      }
+    },
+    {
+      "id": "lucky-rivets",
+      "type": "skill",
+      "key": "Backdrop: a walnut workbench scattered with brass rivets and tools in warm dark, with sapphire light at the centre. Mid element: a small ring of overlapping brass rivet plates forming a protective disc, glowing sapphire. Subject: an open slender brass automaton hand, palm up, with three gleaming brass rivets and a small brass six-sided die showing only round sapphire pips floating above it.",
+      "back": "a walnut workbench scattered with brass rivets and tools in warm dark, sapphire light at the centre. No hand, no die, no plate disc",
+      "mid": "the ring of overlapping brass rivet plates forming a protective disc, glowing sapphire, centred",
+      "front": "the open slender brass automaton hand with the three floating rivets and the small brass die showing only round pips",
+      "regen": {
+        "back": "Edit the second reference illustration: erase the hand, the die, the floating rivets and the ring of rivet plates completely and repaint that area as more of the walnut workbench scattered with small brass rivets and tools, with a soft sapphire light at the centre, so only the backdrop remains, as a full square painting. The result must contain no the hand, the die, the floating rivets and the ring of rivet plates.",
+        "mid": "Recreate only the ring of overlapping brass rivet plates glowing sapphire, empty in the middle from the second reference illustration, isolated on a flat pure green background (#00ff00). It must not contain the hand, the die, the floating rivets or the workbench."
+      }
+    },
+    {
+      "id": "release-valve",
+      "type": "skill",
+      "key": "Backdrop: a tangle of brass steam pipes and pressure gauges with blank dials in blue-shadowed dark. Mid element: a billowing jet of white steam lit sapphire-blue from within. Subject: a large brass valve handwheel on a pipe junction, turning open, with a sapphire gem at its hub.",
+      "back": "a tangle of brass steam pipes and pressure gauges with blank dials in blue-shadowed dark. No handwheel, no steam jet",
+      "mid": "the billowing jet of white steam lit sapphire-blue from within, centred",
+      "front": "the large brass valve handwheel on its pipe junction with the sapphire gem hub",
+      "regen": {
+        "front": "Recreate only the brass valve handwheel with its sapphire hub and the short pipe stem directly below it from the second reference illustration, isolated on a flat pure green background (#00ff00). It must not contain other pipes, gauges, gears, steam or any background."
+      }
+    },
+    {
+      "id": "overwind",
+      "type": "skill",
+      "key": "Backdrop: the coiled steel mainspring of a giant clockwork drum in blue-shadowed dark. Mid element: a crackling spiral of sapphire energy coiling outward. Subject: a large ornate brass wind-up key, turning, crackling with sapphire light.",
+      "back": "the coiled steel mainspring of a giant clockwork drum in blue-shadowed dark, soft sapphire glow at the centre. No key, no energy spiral",
+      "mid": "the crackling spiral of sapphire energy coiling outward, centred",
+      "front": "the large ornate brass wind-up key, turning",
+      "regen": {
+        "mid": "Recreate only the crackling spiral of sapphire lightning energy from the second reference illustration, isolated on a flat pure green background (#00ff00). It must not contain the key, the steel spring or any metal object.",
+        "front": "Recreate only the ornate brass wind-up key from the second reference illustration, isolated on a flat pure green background (#00ff00). It must not contain sapphire energy, the steel spring, a disc behind it or any background."
+      }
+    },
+    {
+      "id": "spanner-jam",
+      "type": "skill",
+      "key": "Backdrop: a field of large meshing brass gears in blue-shadowed dark. Mid element: a spray of sapphire sparks and grinding light. Subject: a heavy brass spanner wrench wedged diagonally between two gear teeth, jamming them, with sapphire sparks where it bites.",
+      "back": "a field of large meshing brass gears in blue-shadowed dark, soft sapphire glow at the centre. No spanner, no sparks",
+      "mid": "the spray of sapphire sparks and grinding light, centred",
+      "front": "the heavy brass spanner wrench, lying diagonally, with the two gear teeth it jams",
+      "regen": {
+        "front": "Recreate only the heavy brass spanner wrench lying diagonally, with small sapphire sparks at its jaw from the second reference illustration, isolated on a flat pure green background (#00ff00). It must not contain gears, gear teeth or any background."
+      }
+    },
+    {
+      "id": "cogstorm",
+      "type": "sigil",
+      "key": "Backdrop: a dark vortex of swirling night air with emerald light at its eye. Mid element: a whirlwind ring of small spinning brass cogs. Subject: a glowing emerald sigil traced as one continuous hand-drawn line of light in the shape of a simple gear, floating at the centre.",
+      "back": "a dark vortex of swirling night air with emerald light at its eye. No cogs, no sigil",
+      "mid": "the whirlwind ring of small spinning brass cogs, centred",
+      "front": "the glowing emerald gear-shaped sigil, one continuous hand-drawn line of light, centred",
+      "regen": {
+        "mid": "Recreate only the ring of small spinning brass cogs, arranged as a loose circle and empty in the middle from the second reference illustration, isolated on a flat pure magenta background (#ff00ff). It must not contain the vortex, the glowing sigil, large gears or any background.",
+        "front": "Recreate only the glowing emerald gear-shaped sigil, one continuous hand-drawn line of light, centred from the second reference illustration, isolated on a flat pure magenta background (#ff00ff). It must not contain brass cogs, gears, the vortex or any background."
+      }
+    },
+    {
+      "id": "furnace-brand",
+      "type": "sigil",
+      "key": "Backdrop: the open mouth of a brass furnace with a deep emerald fire inside. Mid element: tongues of emerald arcane flame and drifting embers. Subject: a glowing emerald sigil traced as one continuous hand-drawn line of light in the shape of a simple flame, burning above a small brass six-sided die showing only round pips.",
+      "back": "the open mouth of a brass furnace with a deep emerald fire inside, warm brass glow around it. No sigil, no die, no loose flames",
+      "mid": "the tongues of emerald arcane flame and drifting embers, centred",
+      "front": "the glowing emerald flame-shaped sigil, one continuous hand-drawn line of light, with the small brass die showing only round pips below it",
+      "regen": {
+        "mid": "Recreate only the loose tongues of emerald arcane flame and drifting embers, arranged around an empty centre from the second reference illustration, isolated on a flat pure magenta background (#ff00ff). It must not contain the furnace, any brass object, the sigil, the die or any background.",
+        "front": "Recreate only the glowing emerald flame-shaped sigil, one continuous hand-drawn line of light, with the small brass die showing only round pips just below it from the second reference illustration, isolated on a flat pure magenta background (#ff00ff). It must not contain the furnace, loose flames or any background."
+      }
+    },
+    {
+      "id": "warding-glyph",
+      "type": "sigil",
+      "key": "Backdrop: a round brass ward plate engraved with concentric rings, in dark shadow with emerald light at its centre. Mid element: a shimmering emerald hexagonal barrier of light. Subject: a glowing emerald sigil traced as one continuous hand-drawn line of light in the shape of a circle enclosing a triangle, floating at the centre.",
+      "back": "a round brass ward plate engraved with plain concentric rings, in dark shadow with emerald light at its centre. No barrier, no sigil",
+      "mid": "the shimmering emerald hexagonal barrier of light, centred",
+      "front": "the glowing emerald sigil of a circle enclosing a triangle, one continuous hand-drawn line of light, centred",
+      "regen": {
+        "mid": "Recreate only the shimmering emerald hexagonal barrier of light, empty and see-through in the middle from the second reference illustration, isolated on a flat pure magenta background (#ff00ff). It must not contain the circle-and-triangle sigil, the brass plate or any background.",
+        "front": "Recreate only the glowing emerald sigil of a circle enclosing a triangle, one continuous hand-drawn line of light, centred from the second reference illustration, isolated on a flat pure magenta background (#ff00ff). It must not contain the hexagon, the brass plate, a disc or any background."
+      }
+    },
+    {
+      "id": "arc-bolt",
+      "type": "sigil",
+      "key": "Backdrop: two tall brass tesla coil prongs in a dark tower chamber with emerald light between them. Mid element: branching emerald electric arcs. Subject: a glowing emerald sigil traced as one continuous hand-drawn line of light in the shape of a zigzag lightning bolt, striking at the centre.",
+      "back": "two tall brass tesla coil prongs in a dark tower chamber with emerald light between them. No arcs, no sigil",
+      "mid": "the branching emerald electric arcs, centred",
+      "front": "the glowing emerald zigzag lightning-bolt sigil, one continuous hand-drawn line of light, centred",
+      "regen": {
+        "mid": "Recreate only the branching emerald electric arcs, spreading from the centre from the second reference illustration, isolated on a flat pure magenta background (#ff00ff). It must not contain the coils, the bolt sigil, any brass object or any background.",
+        "front": "Recreate only the glowing emerald zigzag lightning-bolt sigil, one continuous hand-drawn line of light, centred from the second reference illustration, isolated on a flat pure magenta background (#ff00ff). It must not contain the coils, the branching arcs, the room or any background."
+      }
+    },
+    {
+      "id": "time-spiral",
+      "type": "sigil",
+      "key": "Backdrop: a huge blank brass clock dial with plain tick marks and no numerals, in dark shadow with emerald light at its centre. Mid element: brass clock hands and small gears swirling inward. Subject: a glowing emerald sigil traced as one continuous hand-drawn line of light in the shape of a spiral, at the centre.",
+      "back": "a huge blank brass clock dial with plain tick marks and no numerals, in dark shadow with emerald light at its centre. No clock hands, no sigil",
+      "mid": "the brass clock hands and small gears swirling inward, centred",
+      "front": "the glowing emerald spiral sigil, one continuous hand-drawn line of light, centred",
+      "regen": {
+        "mid": "Recreate only the two brass clock hands and the few small brass gears swirling around an empty centre from the second reference illustration, isolated on a flat pure magenta background (#ff00ff). It must not contain the spiral sigil, the clock dial or any background."
+      }
+    }
+  ],
+  "frames": {
+    "attack": "Use the first reference image for palette and rendering and the second and third for the card frame design; the third shows the exact attack frame to reproduce. A single empty tall portrait game card frame, seen perfectly flat and front-on, filling the entire image edge to edge with no table, no background, no perspective and no shadow. Ornate polished brass frame with flowing brass linework over a deep ruby-red enamel field, a faceted ruby gem medallion in each upper corner, one large perfectly circular illustration window in the upper two thirds filled with flat pure green (#00ff00) and nothing else, and a blank aged parchment panel in the lower third. Painterly semi-realism with visible oil-painting brushwork. No illustration, no text, no letters, no numbers, no watermark.",
+    "recolour": "Reproduce the third reference image exactly: the same card frame, same brass linework, same shapes, same proportions and the same flat pure green (#00ff00) circular window in the same place, filling the image edge to edge, perfectly flat and front-on. Change only the colours: the ruby-red enamel field becomes {field}, and both ruby gem medallions become faceted {gem} gems. Keep the brass and the blank parchment panel unchanged. No illustration, no text, no letters, no numbers, no watermark.",
+    "skill": {
+      "field": "deep sapphire-blue enamel",
+      "gem": "sapphire"
+    },
+    "sigil": {
+      "field": "deep emerald-green enamel (a true green, not teal)",
+      "gem": "emerald"
+    }
+  }
+}
