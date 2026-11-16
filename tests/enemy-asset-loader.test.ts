@@ -9,6 +9,7 @@ import {
   loadEnemyAssets,
   parseEnemyAsset,
   parseEnemyManifest,
+  rimeColor,
 } from '../src/enemies/enemy-asset.ts';
 import type { PbrSet } from '../src/world/materials.ts';
 
@@ -221,6 +222,57 @@ describe('per-slot tint on the shared brass sets', () => {
     expectColour(slotColour(plain.template, 'brass-polished'), SHARED);
     tinted.dispose();
     plain.dispose();
+  });
+
+  it('tints a factor-only slot on a clone of the GLB material, leaving the source untouched', async () => {
+    const raw = JSON.parse(sentryManifest);
+    raw.materialSlots.gunmetal.tint = [0.5, 0.25, 1];
+    const tinted = await parseEnemyAsset(bytes(), parseEnemyManifest(raw, 'cog-sentry'), null);
+    const plain = await parseEnemyAsset(bytes(), sentryWith(), null);
+    const base = slotColour(plain.template, 'gunmetal');
+    expect(base.r + base.g + base.b).toBeGreaterThan(0);
+    const want = base.clone().multiply(linear(0.5, 0.25, 1));
+    expectColour(slotColour(tinted.template, 'gunmetal'), want);
+    // A second parse of the same bytes gets the untinted factor: nothing shared was mutated.
+    const again = await parseEnemyAsset(bytes(), sentryWith(), null);
+    expectColour(slotColour(again.template, 'gunmetal'), base);
+    const actor = tinted.spawn();
+    expectColour(slotColour(actor.object, 'gunmetal'), want);
+    actor.dispose();
+    for (const a of [tinted, plain, again]) a.dispose();
+  });
+
+  it('rimes at the material luminance: dark stays dark, bright cools without lifting', () => {
+    const lum = (c: THREE.Color) => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+    const gunmetal = linear(0.0273, 0.0232, 0.0232);
+    const dark = rimeColor(gunmetal);
+    expect(lum(dark)).toBeCloseTo(lum(gunmetal), 6);
+    expect(Math.max(dark.r, dark.g, dark.b)).toBeLessThan(0.04);
+    for (const bright of [linear(1, 1, 1), linear(0.8, 0.55, 0.75), linear(0.73, 0.53, 0.14)]) {
+      const cold = rimeColor(bright);
+      expect(lum(cold)).toBeCloseTo(lum(bright), 6);
+      // Frost-cooled: blue gains on red by at least 40 % (in-room B/R +0.09..+0.18 on warm metal).
+      expect(cold.b / cold.r).toBeGreaterThan((bright.b / bright.r) * 1.4);
+    }
+    // Brass (the GLB fallback factor) cools toward red-grey and blue, never up toward yellow.
+    const brass = linear(0.73, 0.53, 0.14);
+    const hue = (c: THREE.Color) => c.getHSL({ h: 0, s: 0, l: 0 }, THREE.LinearSRGBColorSpace).h;
+    expect(hue(rimeColor(brass))).toBeLessThan(hue(brass));
+  });
+
+  it('freeze rimes a clone of the bound colour and thaw restores it exactly', async () => {
+    const asset = await parseEnemyAsset(bytes(), sentryWith([0.8, 0.55, 0.75]), fakeSet());
+    const actor = asset.spawn();
+    const base = slotColour(actor.object, 'brass-polished').clone();
+    const gm = slotColour(actor.object, 'gunmetal').clone();
+    actor.freeze();
+    expectColour(slotColour(actor.object, 'brass-polished'), rimeColor(base));
+    expectColour(slotColour(actor.object, 'gunmetal'), rimeColor(gm));
+    actor.unfreeze();
+    expect(slotColour(actor.object, 'brass-polished').equals(base)).toBe(true);
+    expect(slotColour(actor.object, 'gunmetal').equals(gm)).toBe(true);
+    actor.dispose();
+    asset.dispose();
   });
 
   it('rejects a tint that is not three numbers in 0..1', () => {

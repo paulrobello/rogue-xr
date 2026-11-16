@@ -53,9 +53,9 @@ export interface EnemyMaterialSlot {
   tileMeters?: number;
   normalScale?: number;
   /**
-   * Linear-RGB multiplier (each component 0..1) on the bound clone of the shared set's `color`, so
-   * one enemy can pull the shared brass toward its concept without touching the set other enemies
-   * and the rooms share. Absent: the set's colour unchanged.
+   * Linear-RGB multiplier (each component 0..1) on a bound clone's `color`: the shared set's
+   * material for a set slot, the GLB's own factor material for a factor-only slot. The shared set
+   * and the GLB source are never mutated. Absent: the colour unchanged.
    */
   tint?: [number, number, number];
 }
@@ -135,9 +135,31 @@ function cullSphere(manifest: EnemyManifest): THREE.Sphere {
   return new THREE.Sphere(new THREE.Vector3(0, maxY / 2, 0), reach * 1.15);
 }
 
-/** Pale rime tint the plates take on while frozen, and how far toward it they move. */
-const RIME = new THREE.Color('#cfd8dc');
+/**
+ * Ice hue the plates take on while frozen, and how far toward it they move. Each material moves
+ * toward the rime hue at its own luminance, so a frozen plate cools without lifting: a fixed pale
+ * target would turn dark gunmetal silver. The hue is a strong ice blue: a near-grey rime lifts green
+ * at fixed luminance and pushes brass toward yellow.
+ */
+const RIME = new THREE.Color('#aab7ff');
 const RIME_MIX = 0.22;
+const LUMA = [0.2126, 0.7152, 0.0722] as const;
+const luma = (c: THREE.Color): number => c.r * LUMA[0] + c.g * LUMA[1] + c.b * LUMA[2];
+/** The rime hue at unit luminance, its chroma (distance from grey) scaled by RIME_CHROMA. */
+const RIME_CHROMA = 2.3;
+const RIME_UNIT = new THREE.Color().setRGB(
+  ...(RIME.toArray().map((c) => 1 + RIME_CHROMA * (c / luma(RIME) - 1)) as [
+    number,
+    number,
+    number,
+  ]),
+  THREE.LinearSRGBColorSpace,
+);
+
+/** The frozen colour of `base`: a {@link RIME_MIX} step toward the rime hue at `base`'s own luminance. */
+export function rimeColor(base: THREE.Color, out = new THREE.Color()): THREE.Color {
+  return out.copy(base).lerp(RIME_UNIT.clone().multiplyScalar(luma(base)), RIME_MIX);
+}
 const RIME_GLOW = 0.3;
 const HIT_FLASH = 2.5;
 const FLASH_DECAY = 6;
@@ -237,14 +259,20 @@ export async function parseEnemyAsset(
     if (cached) return cached;
     const slot = manifest.materialSlots[source.name];
     const shared = slot?.set ? set?.materials.get(slot.set) : undefined;
+    const tint = slot?.tint
+      ? new THREE.Color().setRGB(...slot.tint, THREE.LinearSRGBColorSpace)
+      : null;
     let material: THREE.Material = source;
     if (shared) {
       const clone = shared.clone();
       const s = slot?.normalScale ?? 1;
       clone.normalScale.set(s, s);
-      if (slot?.tint)
-        clone.color.multiply(new THREE.Color().setRGB(...slot.tint, THREE.LinearSRGBColorSpace));
+      if (tint) clone.color.multiply(tint);
       clone.name = source.name;
+      material = clone;
+    } else if (tint && source instanceof THREE.MeshStandardMaterial) {
+      const clone = source.clone();
+      clone.color.multiply(tint);
       material = clone;
     }
     bound.set(source, material);
@@ -678,8 +706,8 @@ export class EnemyActor {
     this.frozenFlag = on;
     for (const m of this.materials) {
       if (m.glow) continue;
-      m.material.color.copy(m.color);
-      if (on) m.material.color.lerp(RIME, RIME_MIX);
+      if (on) rimeColor(m.color, m.material.color);
+      else m.material.color.copy(m.color);
     }
     this.applyGlow();
   }

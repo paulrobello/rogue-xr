@@ -63,6 +63,10 @@ export async function mountAutomatonProof(id: string, width: number, height: num
         clone.color.multiply(new THREE.Color().setRGB(...slot.tint, THREE.LinearSRGBColorSpace));
       clone.name = source.name;
       material = clone;
+    } else if (slot?.tint && source instanceof THREE.MeshStandardMaterial) {
+      const clone = source.clone();
+      clone.color.multiply(new THREE.Color().setRGB(...slot.tint, THREE.LinearSRGBColorSpace));
+      material = clone;
     }
     bound.set(source, material);
     return material;

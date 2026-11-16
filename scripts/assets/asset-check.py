@@ -313,7 +313,7 @@ ENEMY_META = {
     "bellows-golem": {**_P5_META, "materials_used": "approved P4-T3 brass-polished set bound by slot name at runtime; golem-case (walnut, pleats from COLOR_0), golem-metal (gunmetal and emerald from COLOR_0) and golem-glow are factor-only"},
     "orrery-warden": {**_P5_META, "reference_note": _P5_META["reference_note"].replace("P5-T3", "P5-T4"),
                       "materials_used": "approved P4-T3 brass-polished set bound by slot name at runtime and tinted by the manifest slot tint "
-                                        "[0.33, 0.3, 0.3] (linear multiplier); gunmetal, warden-glow and warden-jewel "
+                                        "[0.8, 0.55, 0.75] (linear multiplier); gunmetal, warden-glow and warden-jewel "
                                         "(ruby, sapphire and emerald from COLOR_0) are factor-only"},
     GUARDIAN: {**_P5_META, "reference_note": _P5_META["reference_note"].replace("P5-T3", "P5-T4"),
                "materials_used": "approved P4-T3 brass-polished set bound by slot name at runtime; escapement-case (mahogany, dark iron, "

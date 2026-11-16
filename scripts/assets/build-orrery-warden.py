@@ -75,7 +75,7 @@ BP, GM, GL, JW = range(4)
 SETS = {BRASS: 0.35}  # shared set -> normal scale (as on the combat table)
 # Linear-RGB multiplier on the bound shared set's colour (manifest slot `tint`, enemy-asset.ts bind()):
 # pulls the shared light brass toward the concept's dark bronze; measured on the engine glow-close shot.
-TINTS = {BRASS: [0.33, 0.3, 0.3]}
+TINTS = {BRASS: [0.8, 0.55, 0.75]}
 TILE_METERS = 0.5  # the brass set tiles at 0.5 m (public/assets/materials/materials.json)
 FACTORS = {  # sRGB base, roughness, metallic: the GLB look, and the fallback when the set fails
     BRASS: ((0xDE, 0xC1, 0x6A), 0.3, 1.0),
