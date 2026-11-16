@@ -35,6 +35,7 @@ import {
 import { loadRunSnapshot, loadWorkshop, type RunSnapshot } from './persist/saves.ts';
 import type { RewardTier } from './rules/run.ts';
 import { createWorkshop } from './rules/workshop.ts';
+import { mountUpdateNotice } from './update/index.ts';
 import { type FloorView, mountFloorView, seedFromQuery } from './world/floor-view.ts';
 import { createKtx2Loader } from './world/ktx2.ts';
 import { mountLightmapProof } from './world/lightmap-proof.ts';
@@ -174,6 +175,7 @@ actions.on('recenter', () => {
   recenterPending = true;
 });
 const perf = mountPerf(renderer, scene, rig, { camera });
+mountUpdateNotice({ scene, renderer, xr, search: location.search });
 
 // Audio: one director for the floor, resumed by the first gesture or the XR session start.
 const audio = floor ? new AudioDirector({ camera }) : null;

@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -9,8 +10,22 @@ const version = (
   }
 ).version;
 
+/** The commit being built: CI's `GITHUB_SHA`, else the checkout's HEAD, else `unknown`. */
+function buildCommit(): string {
+  if (process.env.GITHUB_SHA) return process.env.GITHUB_SHA;
+  try {
+    return execFileSync('git', ['rev-parse', 'HEAD'], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+  } catch {
+    return 'unknown';
+  }
+}
+
 // Emits version.json and stamps index.html with a content fingerprint so a running client can
-// detect a newer deploy and offer a reload.
+// detect a newer deploy and offer a reload. Only `buildId` is compared; `commit` and `builtAt`
+// are informational and keep the file readable when debugging a deploy.
 function buildVersionPlugin(): Plugin {
   return {
     name: 'rogue-xr-build-version',
@@ -42,7 +57,12 @@ function buildVersionPlugin(): Plugin {
       this.emitFile({
         type: 'asset',
         fileName: 'version.json',
-        source: JSON.stringify({ buildId, version }),
+        source: JSON.stringify({
+          buildId,
+          version,
+          commit: buildCommit(),
+          builtAt: new Date().toISOString(),
+        }),
       });
     },
   };
