@@ -18,7 +18,7 @@ fmt:
 typecheck:
 	bun run typecheck
 checkall: lint typecheck test build
-checkall-ci: checkall
+checkall-ci: checkall asset-check
 	gitleaks dir . --redact --no-banner
 
 # Room asset gate: presence, hashes against provenance and PRD budgets (no Blender needed).
