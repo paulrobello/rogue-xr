@@ -36,6 +36,17 @@ export interface FloorView {
   readonly realTable: boolean;
   /** The table's dice-tray and sigil-plate sockets (the greybox has no plate socket). */
   tableSockets(): { diceTray: THREE.Object3D | null; sigilPlate: THREE.Object3D | null };
+  /**
+   * While true, `update` still runs the encounter (so a finished fight folds away) but never starts a
+   * new one. The game flow sets it outside exploration, so a lost fight cannot re-trigger.
+   */
+  suspendTriggers: boolean;
+  /** Removes `room`'s automatons so its encounter never fires again (resuming a saved run). */
+  markCleared(room: number): void;
+  /** A standing point about 1 m inside `room` from its first door, or null for an unknown room. */
+  standPoint(room: number): THREE.Vector3 | null;
+  /** Removes the floor, its lights and the table from the scene and frees their GPU resources. */
+  dispose(): void;
 }
 
 /** Greybox exploration view: the generated floor, flat greybox lighting, the rig at the entry. */
@@ -45,10 +56,12 @@ export function mountFloorView(scene: THREE.Scene, rig: THREE.Object3D, seed: st
   // Greybox lighting is two global lights; per-room sockets get real lights with the lightmaps (P4-T7).
   const sun = new THREE.DirectionalLight(PALETTE.candle, 1.4);
   sun.position.set(6, 12, 4);
-  scene.add(sun, new THREE.HemisphereLight(PALETTE.candle, PALETTE.void, 0.8));
+  const sky = new THREE.HemisphereLight(PALETTE.candle, PALETTE.void, 0.8);
+  scene.add(sun, sky);
   rig.position.copy(world.spawnPoint());
 
   let locked = false;
+  let suspended = false;
   // The director keeps this host for its life; the greybox or the real asset hangs under it.
   const tableHost = new THREE.Group();
   tableHost.name = 'combat-table-host';
@@ -68,6 +81,39 @@ export function mountFloorView(scene: THREE.Scene, rig: THREE.Object3D, seed: st
     world,
     seed,
     encounter,
+    get suspendTriggers() {
+      return suspended;
+    },
+    set suspendTriggers(value) {
+      suspended = value;
+    },
+    markCleared(room) {
+      for (const body of world.enemies.get(room) ?? []) body.removeFromParent();
+    },
+    standPoint(room) {
+      const r = world.rooms[room];
+      if (!r) return null;
+      const { min, max } = r.footprint;
+      const cx = (min[0] + max[0]) / 2;
+      const cz = (min[1] + max[1]) / 2;
+      const door = r.doors[0]?.world;
+      if (!door) return new THREE.Vector3(cx, 0, cz);
+      const dx = cx - door[0];
+      const dz = cz - door[1];
+      const len = Math.hypot(dx, dz) || 1;
+      return new THREE.Vector3(door[0] + dx / len, 0, door[1] + dz / len);
+    },
+    dispose() {
+      encounter.dispose();
+      if (greybox) disposeTable(greybox);
+      greybox = null;
+      tableHost.removeFromParent();
+      sun.removeFromParent();
+      sky.removeFromParent();
+      sun.dispose();
+      sky.dispose();
+      world.dispose();
+    },
     get locked() {
       return locked;
     },
@@ -104,6 +150,7 @@ export function mountFloorView(scene: THREE.Scene, rig: THREE.Object3D, seed: st
       // The fight owns the room until it ends, so streaming holds still meanwhile.
       if (encounter.phase !== 'idle') return;
       world.update(at.x, at.z);
+      if (suspended) return;
       const hit = encounter.checkTrigger({ x: at.x, z: at.z });
       if (!hit) return;
       const began = encounter.begin(hit.room, {

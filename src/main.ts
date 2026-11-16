@@ -1,5 +1,7 @@
+import { createPointer } from '@par/xr-workspace';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { type AudioState, audioStateFor } from './audio/cues.ts';
 import { AudioDirector } from './audio/index.ts';
 import { mountCardProof } from './cards/card-proof.ts';
 import { CombatHook, type CombatPick, type XrHands } from './combat/combat-session.ts';
@@ -10,12 +12,27 @@ import {
   TABLE_ASSET_BASE,
 } from './combat/table-asset-proof.ts';
 import { mountCombatDebugView } from './combat-view/index.ts';
+import { STARTER_DECK } from './content/cards.ts';
+import { REWARD_POOL } from './content/rewards.ts';
 import { ActionBus } from './core/actions.ts';
+import { randomSeed } from './core/rng.ts';
 import { createDesktopControls } from './desktop/controls.ts';
-import { mountSeedTitle } from './desktop/seed-title.ts';
 import { Walker } from './desktop/walker.ts';
+import { type FlowPhase, RunFlow } from './flow/flow.ts';
+import { FlowUi } from './flow/panels.ts';
+import { bindFlowPersistence } from './flow/persist.ts';
 import { PALETTE } from './palette.ts';
 import { mountPerf } from './perf/index.ts';
+import {
+  DEFAULT_SETTINGS,
+  loadSettings,
+  openDb,
+  type Settings,
+  saveSettings,
+} from './persist/db.ts';
+import { loadRunSnapshot, loadWorkshop, type RunSnapshot } from './persist/saves.ts';
+import type { RewardTier } from './rules/run.ts';
+import { createWorkshop } from './rules/workshop.ts';
 import { type FloorView, mountFloorView, seedFromQuery } from './world/floor-view.ts';
 import { mountLightmapProof } from './world/lightmap-proof.ts';
 import { mountMaterialProof } from './world/material-proof.ts';
@@ -73,9 +90,23 @@ if (view === 'lightmap-proof') {
   await mountRoomAssetProof(scene, rig, camera, renderer);
 } else if (view === 'combat') {
   mountCombatDebugView(scene, rig, camera, renderer, { search: location.search });
-} else {
-  floor = mountFloorView(scene, rig, seedFromQuery(location.search));
 }
+
+// The game loop (title, run, death or victory, title) for the floor view. `?seed=` starts that run
+// straight away, so seed links and scripted checks land on the floor; `?title` shows the title instead.
+const playMode = !proofView;
+const db = playMode ? await openDb() : null;
+const workshop = db ? await loadWorkshop(db).catch(() => createWorkshop()) : createWorkshop();
+let storedSnapshot: RunSnapshot | null = db ? await loadRunSnapshot(db).catch(() => null) : null;
+let settings: Settings | null = db ? await loadSettings(db) : null;
+const flow = new RunFlow({ workshop, starterDeck: STARTER_DECK, rewardPool: REWARD_POOL });
+const directSeed = params.has('seed') && !params.has('title');
+const bootSeed = params.has('seed')
+  ? seedFromQuery(location.search)
+  : (storedSnapshot?.run.seed ?? randomSeed());
+if (!proofView) floor = mountFloorView(scene, rig, bootSeed);
+/** True once a run has played on the mounted floor, so the next run needs a fresh one. */
+let floorUsed = false;
 
 // Debug readout: seed, current room, the last frame's draw calls (Quest budget: under 200) and,
 // in a fight, the combat stage and log.
@@ -121,46 +152,223 @@ actions.on('recenter', () => {
   recenterPending = true;
 });
 const perf = mountPerf(renderer, scene, rig, { camera });
-if (floor) mountSeedTitle(app, floor.seed, actions);
 
 // Audio: one director for the floor, resumed by the first gesture or the XR session start.
 const audio = floor ? new AudioDirector({ camera }) : null;
 if (audio) {
   scene.add(audio.root);
+  if (settings) {
+    audio.setVolumes({
+      master: settings.masterVolume,
+      music: settings.musicVolume,
+      sfx: settings.sfxVolume,
+    });
+  }
   void audio.load();
   audio.unlockOnGesture(window);
   audio.unlockOnXrSession(renderer.xr);
 }
 
-// Real combat on the floor: a session opens when an encounter goes active.
-const cheat = params.get('cheat');
-const combat = floor
-  ? new CombatHook({
-      floor,
-      camera,
-      actions,
-      ...(audio ? { audio } : {}),
-      ...(cheat === 'win' ? { options: { enemyHp: 1 } } : {}),
-      ...(cheat === 'lose' ? { options: { playerHp: 1 } } : {}),
-    })
-  : null;
+// Real combat on the floor: a session opens when an encounter goes active. Each fight takes the
+// run's deck and hit points; `?cheat=win|lose` (or `__flow.setCheat` under `?debug`) rigs it.
+let cheat = params.get('cheat');
+/** Combat's player max hp is fixed in the controller, so a run's hp is capped to it. */
+const COMBAT_MAX_HP = 70;
+const fightOptions = () => {
+  const run = flow.run;
+  return {
+    ...(run ? { deck: run.deck, playerHp: Math.max(1, Math.min(COMBAT_MAX_HP, run.hp)) } : {}),
+    ...(cheat === 'win' ? { enemyHp: 1 } : {}),
+    ...(cheat === 'lose' ? { playerHp: 1 } : {}),
+  };
+};
+const fightTier = (target: FloorView, room: number): RewardTier =>
+  room === target.world.plan.guardianRoom
+    ? 'guardian'
+    : (target.world.plan.rooms[room]?.encounter?.tier ?? 'regular');
+const makeCombat = (target: FloorView): CombatHook => {
+  const hook: CombatHook = new CombatHook({
+    floor: target,
+    camera,
+    actions,
+    ...(audio ? { audio } : {}),
+    fightOptions,
+    onEnd: ({ room, outcome, playerHp }) =>
+      flow.fightEnded({
+        room,
+        outcome,
+        tier: fightTier(target, room),
+        ...(playerHp === null ? {} : { playerHp }),
+      }),
+  });
+  return hook;
+};
+let combat = floor ? makeCombat(floor) : null;
+/** Ends the running fight outside the session (debug keys): same path as a decided fight. */
+const endFight = (outcome: 'win' | 'flee'): void => {
+  const target = floor;
+  if (!target || target.encounter.phase === 'idle') return;
+  const room = target.encounter.activeRoom;
+  target.encounter.end(outcome);
+  flow.fightEnded({ room, outcome, tier: fightTier(target, room) });
+};
 
 // The P4-T5 table asset replaces the greybox once it loads; the greybox stays on any failure.
-if (floor) {
-  const target = floor;
-  void (async () => {
-    const manifest = parseTableAssetManifest(
-      await (await fetch(`${TABLE_ASSET_BASE}/combat-table.manifest.json`)).json(),
-    );
-    const gltf = await new GLTFLoader().loadAsync(`${TABLE_ASSET_BASE}/${manifest.glb}`);
-    await bindTableMaterials(gltf.scene, manifest, renderer).catch((error: unknown) =>
-      console.warn('combat table materials fell back to factors', error),
-    );
-    target.useTableAsset(gltf.scene, manifest.authoredTopHeight);
-  })().catch((error: unknown) =>
-    console.warn('combat table asset unavailable, greybox kept', error),
+// Every rebuilt floor gets a clone of the same loaded asset.
+const tableAsset: Promise<{ scene: THREE.Object3D; top: number } | null> = floor
+  ? (async () => {
+      const manifest = parseTableAssetManifest(
+        await (await fetch(`${TABLE_ASSET_BASE}/combat-table.manifest.json`)).json(),
+      );
+      const gltf = await new GLTFLoader().loadAsync(`${TABLE_ASSET_BASE}/${manifest.glb}`);
+      await bindTableMaterials(gltf.scene, manifest, renderer).catch((error: unknown) =>
+        console.warn('combat table materials fell back to factors', error),
+      );
+      return { scene: gltf.scene, top: manifest.authoredTopHeight };
+    })().catch((error: unknown) => {
+      console.warn('combat table asset unavailable, greybox kept', error);
+      return null;
+    })
+  : Promise.resolve(null);
+let tableUses = 0;
+const fitTable = (target: FloorView): void => {
+  void tableAsset.then((asset) => {
+    if (!asset || target !== floor) return;
+    target.useTableAsset(tableUses++ === 0 ? asset.scene : asset.scene.clone(true), asset.top);
+  });
+};
+if (floor) fitTable(floor);
+
+// Flow glue: persistence, the in-scene boards, starting and resuming runs on a fresh floor.
+const persistence = db
+  ? bindFlowPersistence(flow, db, () => floor?.world.current ?? flow.room)
+  : null;
+flow.onChange((event) => {
+  if (event.type !== 'phase') return;
+  if (event.to === 'explore' || event.to === 'reward') {
+    storedSnapshot = flow.snapshot(Date.now(), floor?.world.current ?? flow.room);
+  } else if (event.to === 'death' || event.to === 'victory') {
+    storedSnapshot = null;
+  }
+});
+/** Puts a pristine floor for `seed` under the player, rebuilding in place (no reload, XR stays up). */
+const freshFloor = (seed: string): FloorView => {
+  if (floor && floor.seed === seed && !floorUsed) return floor;
+  combat?.dispose();
+  floor?.dispose();
+  floor = mountFloorView(scene, rig, seed);
+  combat = makeCombat(floor);
+  fitTable(floor);
+  return floor;
+};
+const startRun = (seed: string): void => {
+  if (flow.phase !== 'title') return;
+  const target = freshFloor(seed);
+  rig.position.copy(target.world.spawnPoint());
+  walker.yaw = 0;
+  floorUsed = true;
+  flow.newRun(target.seed);
+};
+const continueRun = (): void => {
+  const snap = storedSnapshot;
+  if (!snap || flow.phase !== 'title') return;
+  const target = freshFloor(snap.floorSeed);
+  for (const room of snap.clearedEncounters) target.markCleared(Number(room));
+  const at = target.standPoint(snap.roomIndex) ?? target.world.spawnPoint();
+  rig.position.set(at.x, 0, at.z);
+  target.world.update(at.x, at.z);
+  floorUsed = true;
+  flow.continueRun(snap);
+};
+const ui = floor
+  ? new FlowUi({
+      flow,
+      keyArt: { url: '/assets/ui/title-2048.jpg', titleSafe: { x: 0.03, y: 0.3, w: 0.27, h: 0.4 } },
+      seed: bootSeed,
+      snapshot: () => storedSnapshot,
+      settings: () => settings ?? { ...DEFAULT_SETTINGS },
+      onNewRun: startRun,
+      onContinue: continueRun,
+      onSettings: (next) => {
+        settings = next;
+        audio?.setVolumes({
+          master: next.masterVolume,
+          music: next.musicVolume,
+          sfx: next.sfxVolume,
+        });
+        if (db) void saveSettings(db, next);
+      },
+    })
+  : null;
+// The boards draw in their own pass over a cleared depth buffer, so the automatons and walls of the
+// fight that just ended never hide the reward or summary in front of the player.
+const uiScene = new THREE.Scene();
+if (ui) uiScene.add(ui.root);
+if (ui && directSeed) startRun(bootSeed);
+actions.on('select', ({ controlId }) => {
+  ui?.activate(controlId);
+});
+const uiPointer = createPointer({ far: 6 });
+const pickUi = (origin: THREE.Vector3, direction: THREE.Vector3): string | null => {
+  if (!ui?.visible) return null;
+  const hit = uiPointer.cast(origin, direction, ui.targets());
+  return hit ? ui.controlAt(hit.object) : null;
+};
+const mouseRay = (event: PointerEvent): THREE.Ray => {
+  const rect = renderer.domElement.getBoundingClientRect();
+  const ndc = new THREE.Vector2(
+    ((event.clientX - rect.left) / rect.width) * 2 - 1,
+    -((event.clientY - rect.top) / rect.height) * 2 + 1,
   );
-}
+  camera.updateMatrixWorld(true);
+  const caster = new THREE.Raycaster();
+  caster.setFromCamera(ndc, camera);
+  return caster.ray;
+};
+// Board presses are claimed in the capture phase, so they never start drag-to-look.
+window.addEventListener(
+  'pointerdown',
+  (event) => {
+    if (!ui?.visible || xr.presenting || event.button !== 0) return;
+    if (event.target !== renderer.domElement) return;
+    const ray = mouseRay(event);
+    const id = pickUi(ray.origin, ray.direction);
+    event.stopPropagation();
+    if (id) actions.emit({ type: 'select', controlId: id });
+  },
+  { capture: true },
+);
+window.addEventListener('pointermove', (event) => {
+  if (!ui?.visible || xr.presenting || event.target !== renderer.domElement) return;
+  const ray = mouseRay(event);
+  ui.hover(pickUi(ray.origin, ray.direction));
+});
+// Keyboard on the boards: type a seed, arrows move focus, Enter activates, Escape backs out.
+let focusIndex = -1;
+window.addEventListener('keydown', (event) => {
+  if (!ui?.visible || xr.presenting) return;
+  if (ui.typeKey(event.key)) {
+    event.preventDefault();
+    return;
+  }
+  const ids = ui.controlIds();
+  if (ids.length === 0) return;
+  if (['ArrowDown', 'ArrowRight', 'Tab'].includes(event.key)) {
+    focusIndex = (focusIndex + 1) % ids.length;
+  } else if (['ArrowUp', 'ArrowLeft'].includes(event.key)) {
+    focusIndex = (focusIndex - 1 + ids.length) % ids.length;
+  } else if (event.key === 'Enter' && focusIndex >= 0 && ids[focusIndex]) {
+    actions.emit({ type: 'select', controlId: ids[focusIndex] as string });
+    focusIndex = -1;
+    event.preventDefault();
+    return;
+  } else if (event.key === 'Escape') {
+    flow.toTitle();
+    return;
+  } else return;
+  event.preventDefault();
+  ui.hover(ids[focusIndex] ?? null);
+});
 
 // Desktop combat verbs: the mouse becomes combat-pointer actions. Presses that land on a combat
 // control are claimed in the capture phase so they never start drag-to-look.
@@ -216,8 +424,8 @@ window.addEventListener('keydown', (event) => {
   else if (event.code === 'KeyT' || event.code === 'Space') actions.emit({ type: 'throw-dice' });
   else if (event.code === 'Escape') actions.emit({ type: 'combat-cancel' });
   // Debug resolutions, kept from the greybox phase.
-  else if (event.code === 'KeyK') floor.encounter.end('win');
-  else if (event.code === 'KeyF') floor.encounter.end('flee');
+  else if (event.code === 'KeyK') endFight('win');
+  else if (event.code === 'KeyF') endFight('flee');
 });
 
 // XR combat verbs: main hand (right) squeeze grabs and flings, trigger draws, throws and presses.
@@ -241,6 +449,12 @@ for (const index of [0, 1]) {
       });
     });
   };
+  controller.addEventListener('select', () => {
+    if (!ui?.visible) return;
+    const hit = uiPointer.castFrom(controller, ui.targets());
+    const id = hit ? ui.controlAt(hit.object) : null;
+    if (id) actions.emit({ type: 'select', controlId: id });
+  });
   bind('squeezestart', 'squeeze', true);
   bind('squeezeend', 'squeeze', false);
   bind('selectstart', 'trigger', true);
@@ -253,7 +467,6 @@ const xrHands = (): XrHands => {
 
 // Scripted-check handle: `?debug` exposes the session and a projection for pointer automation.
 if (floor && params.has('debug')) {
-  const target = floor;
   const screenOf = (kind: CombatPick, key?: number | string, u?: number, v?: number) => {
     const point = combat?.session?.worldOf(kind, key, u, v);
     if (!point) return null;
@@ -266,10 +479,13 @@ if (floor && params.has('debug')) {
     };
   };
   /** Moves the rig 1 m south of the first live automaton, facing north at it, to start that fight. */
-  const teleportToEncounter = (): number | null => {
+  const teleportToEncounter = (opts: { guardian?: boolean } = {}): number | null => {
+    const target = floor;
+    if (!target) return null;
     for (const [room, bodies] of target.world.enemies) {
       const body = bodies.find((b) => b.parent !== null);
       if (!body || target.encounter.isCleared(room)) continue;
+      if ((room === target.world.plan.guardianRoom) !== (opts.guardian ?? false)) continue;
       const at = body.getWorldPosition(new THREE.Vector3());
       rig.position.set(at.x, 0, at.z + 1);
       walker.yaw = 0;
@@ -285,19 +501,39 @@ if (floor && params.has('debug')) {
       get banner() {
         return combat?.banner ?? '';
       },
-      floor: target,
+      get floor() {
+        return floor;
+      },
       camera,
       screenOf,
       teleportToEncounter,
+    },
+    __flow: {
+      flow,
+      ui,
+      setCheat(next: 'win' | 'lose' | null) {
+        cheat = next;
+      },
+      /** Screen point of a board control, for pointer automation. */
+      screenOfControl(controlId: string) {
+        const node = ui?.root.getObjectByName(controlId);
+        if (!node) return null;
+        const p = node.getWorldPosition(new THREE.Vector3());
+        camera.updateMatrixWorld(true);
+        p.project(camera);
+        const rect = renderer.domElement.getBoundingClientRect();
+        return {
+          x: rect.left + ((p.x + 1) / 2) * rect.width,
+          y: rect.top + ((1 - p.y) / 2) * rect.height,
+        };
+      },
+      flushed: () => persistence?.flushed() ?? Promise.resolve(),
     },
   });
 }
 
 actions.on('new-run', ({ seed }) => {
-  const url = new URL(location.href);
-  if (seed) url.searchParams.set('seed', seed);
-  else url.searchParams.delete('seed');
-  location.assign(url);
+  if (flow.phase === 'title') startRun(seed ?? ui?.seed ?? randomSeed());
 });
 
 const enterButton = document.createElement('button');
@@ -339,6 +575,15 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
+/** The audio state for the flow: a running encounter wins inside a run, the screens map directly. */
+const audioFor = (phase: FlowPhase, encounter: FloorView['encounter']['phase']): AudioState => {
+  if (phase === 'death') return 'defeat';
+  if (phase === 'victory') return 'victory';
+  if (phase === 'settings') return 'title';
+  if (phase === 'combat') return audioStateFor('combat', encounter);
+  return audioStateFor(phase, encounter);
+};
+
 const timer = new THREE.Timer();
 renderer.setAnimationLoop((time, frame) => {
   perf.frame(null, time);
@@ -352,7 +597,7 @@ renderer.setAnimationLoop((time, frame) => {
       recenterPending = false;
     }
     const { left, right } = xr.sticks();
-    if (!floor?.locked) {
+    if (!floor?.locked && !ui?.visible) {
       locomotion.update(deltaSeconds, {
         moveX: left[0],
         moveY: left[1],
@@ -362,17 +607,36 @@ renderer.setAnimationLoop((time, frame) => {
     }
   } else {
     desktop.update();
-    walker.enabled = !floor?.locked;
+    walker.enabled = !floor?.locked && !ui?.visible;
     walker.update(deltaSeconds);
   }
   cardProof?.update(time / 1000, xr.presenting);
+  if (floor) floor.suspendTriggers = flow.phase !== 'explore';
   floor?.update(camera, deltaSeconds);
+  if (floor && flow.inRun) {
+    flow.enterRoom(floor.world.current);
+    if (floor.encounter.phase !== 'idle' && flow.phase === 'explore') {
+      flow.fightStarted(floor.encounter.activeRoom);
+    }
+  }
   combat?.update(deltaSeconds, xr.presenting ? xrHands() : null);
+  ui?.sync(camera);
+  if (ui?.visible && xr.presenting) {
+    const ray = xr.rays()[MAIN_HAND];
+    const hit = ray ? uiPointer.castFrom(ray, ui.targets()) : null;
+    ui.hover(hit ? ui.controlAt(hit.object) : null);
+  }
   if (floor && audio) {
-    audio.syncGame(floor.encounter.phase === 'idle' ? 'explore' : 'combat', floor.encounter.phase);
+    audio.setState(audioFor(flow.phase, floor.encounter.phase));
     audio.update(deltaSeconds);
   }
   renderer.render(scene, camera);
+  if (ui?.visible) {
+    renderer.autoClear = false;
+    renderer.clearDepth();
+    renderer.render(uiScene, camera);
+    renderer.autoClear = true;
+  }
   if (floor && !xr.presenting) {
     const room = floor.world.plan.rooms[floor.world.current];
     const fight = floor.encounter.phase === 'idle' ? '' : ` · encounter ${floor.encounter.phase}`;

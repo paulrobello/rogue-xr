@@ -1,59 +1,17 @@
-import type { ActionBus } from '../core/actions.ts';
-import { formatSeed, isValidSeed, normalizeSeed } from '../core/rng.ts';
-import { PALETTE } from '../palette.ts';
+import { SEED_LENGTH } from '../core/rng.ts';
 
-/** Debug title strip: shows the run seed and starts a new run from a typed or random seed. */
-export function mountSeedTitle(parent: HTMLElement, seed: string, actions: ActionBus): HTMLElement {
-  const root = document.createElement('form');
-  root.id = 'seed-title';
-  Object.assign(root.style, {
-    position: 'fixed',
-    top: '12px',
-    right: '12px',
-    display: 'flex',
-    gap: '6px',
-    alignItems: 'center',
-    font: '500 13px ui-monospace, monospace',
-    color: PALETTE.candle,
-  });
-  const label = document.createElement('span');
-  label.textContent = `run ${formatSeed(seed)}`;
-  const input = document.createElement('input');
-  input.name = 'seed';
-  input.placeholder = 'XXXX-XXXX';
-  input.maxLength = 9;
-  input.size = 10;
-  input.autocomplete = 'off';
-  input.spellcheck = false;
-  const go = document.createElement('button');
-  go.type = 'submit';
-  go.textContent = 'Go';
-  const random = document.createElement('button');
-  random.type = 'button';
-  random.textContent = 'New random seed';
-  for (const el of [input, go, random]) {
-    Object.assign(el.style, {
-      font: 'inherit',
-      color: PALETTE.void,
-      background: PALETTE.brass,
-      border: 'none',
-      borderRadius: '4px',
-      padding: '4px 8px',
-    });
-  }
-  root.append(label, input, go, random);
+/**
+ * Seed entry for the in-scene title (the DOM seed strip it replaced lived here). The keypad shows
+ * `SEED_ALPHABET`; desktop typing goes through `appendSeedChar`, which applies the same Crockford
+ * folding as `normalizeSeed` (I and L read as 1, O as 0).
+ */
+export const SEED_ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+export { SEED_LENGTH };
 
-  root.addEventListener('submit', (event) => {
-    event.preventDefault();
-    if (!isValidSeed(input.value)) {
-      input.setCustomValidity('8 characters: 0-9 and A-Z without I, L, O, U');
-      input.reportValidity();
-      return;
-    }
-    actions.emit({ type: 'new-run', seed: normalizeSeed(input.value) });
-  });
-  input.addEventListener('input', () => input.setCustomValidity(''));
-  random.addEventListener('click', () => actions.emit({ type: 'new-run' }));
-  parent.append(root);
-  return root;
+/** `draft` with `key` appended, or null when the key is not a seed character or the draft is full. */
+export function appendSeedChar(draft: string, key: string): string | null {
+  if (key.length !== 1 || draft.length >= SEED_LENGTH) return null;
+  const upper = key.toUpperCase();
+  const ch = upper === 'I' || upper === 'L' ? '1' : upper === 'O' ? '0' : upper;
+  return SEED_ALPHABET.includes(ch) ? draft + ch : null;
 }

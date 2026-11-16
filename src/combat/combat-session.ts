@@ -847,10 +847,14 @@ export interface CombatHookDeps {
   actions: ActionBus;
   audio?: CombatAudio;
   options?: CombatSessionDeps['options'];
+  /** Per-fight options read when each session opens (the run's deck and hp); wins over `options`. */
+  fightOptions?: () => CombatSessionDeps['options'];
   syncLabels?: boolean;
   dice?: Partial<DiceWorldOptions>;
   /** Called with each new session, e.g. for a debug handle. */
   onSession?: (session: CombatSession | null) => void;
+  /** Called once a fight is decided and its banner has held, with the player's remaining hp. */
+  onEnd?: (end: { room: number; outcome: 'win' | 'defeat'; playerHp: number | null }) => void;
 }
 
 /**
@@ -904,6 +908,7 @@ export class CombatHook {
     const tier = floor.world.plan.rooms[room]?.encounter?.tier;
     if (!pose || !tier) return;
     const bodies = (floor.world.enemies.get(room) ?? []).filter((b) => b.parent !== null);
+    const options = this.deps.fightOptions?.() ?? this.deps.options;
     const promise = CombatSession.create({
       seed: floor.seed,
       room,
@@ -914,9 +919,13 @@ export class CombatHook {
       camera: this.deps.camera,
       sockets: floor.tableSockets(),
       actions: this.deps.actions,
-      end: (outcome) => floor.encounter.end(outcome),
+      end: (outcome) => {
+        const playerHp = this.session?.controller.state.player.hp ?? null;
+        floor.encounter.end(outcome);
+        this.deps.onEnd?.({ room, outcome, playerHp });
+      },
       ...(this.deps.audio ? { audio: this.deps.audio } : {}),
-      ...(this.deps.options ? { options: this.deps.options } : {}),
+      ...(options ? { options } : {}),
       ...(this.deps.syncLabels === undefined ? {} : { syncLabels: this.deps.syncLabels }),
       ...(this.deps.dice ? { dice: this.deps.dice } : {}),
     });
