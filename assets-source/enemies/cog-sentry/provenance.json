@@ -1,0 +1,295 @@
+{
+  "pieceId": "cog-sentry",
+  "version": 1,
+  "route": "scripted (procedural Blender geometry, rig and keyed clips; no provider generation)",
+  "generator": {
+    "path": "scripts/assets/build-cog-sentry.py",
+    "sha256": "9f045c4e6314b29a4bb82572fa040a0a0f9f68079b311b630d76fd0e1918d0a6"
+  },
+  "authoringAgent": {
+    "harness": "claude-code (dispatched sub-agent)",
+    "model": "claude-opus-5-5"
+  },
+  "blender": "5.2.2 LTS",
+  "toolVersions": {
+    "gltfExporter": "Blender 5.2.2 bundled io_scene_gltf2"
+  },
+  "blendFiles": {
+    "store": "assets-source/enemies/cog-sentry/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)"
+  },
+  "budgets": {
+    "triangles": 2992,
+    "highTriangles": 11888,
+    "materials": 4,
+    "bones": 21,
+    "maxInfluences": 1,
+    "glbBytes": 448820
+  },
+  "skin": {
+    "policy": "rigid: one bone per vertex at weight 1.0",
+    "maxWeightSumError": 0.0,
+    "unweightedVertices": 0
+  },
+  "clips": {
+    "idle": {
+      "duration": 2.0,
+      "loop": "repeat",
+      "events": {},
+      "measured": {
+        "duration": 2.0,
+        "start": 0.0,
+        "channels": 63,
+        "rootAnimated": []
+      }
+    },
+    "attack": {
+      "duration": 1.2,
+      "loop": "once",
+      "events": {
+        "impact": 0.55
+      },
+      "measured": {
+        "duration": 1.2,
+        "start": 0.0,
+        "channels": 63,
+        "rootAnimated": []
+      }
+    },
+    "hit": {
+      "duration": 0.6,
+      "loop": "once",
+      "events": {},
+      "measured": {
+        "duration": 0.6,
+        "start": 0.0,
+        "channels": 63,
+        "rootAnimated": []
+      }
+    },
+    "death": {
+      "duration": 2.0,
+      "loop": "once",
+      "events": {
+        "down": 1.5
+      },
+      "endsOnFloor": true,
+      "measured": {
+        "duration": 2.0,
+        "start": 0.0,
+        "channels": 63,
+        "rootAnimated": []
+      }
+    },
+    "frozen": {
+      "duration": 1.0,
+      "loop": "repeat",
+      "events": {},
+      "held": true,
+      "measured": {
+        "duration": 1.0,
+        "start": 0.0,
+        "channels": 63,
+        "rootAnimated": []
+      }
+    }
+  },
+  "poseChecks": {
+    "idle": {
+      "frames": 61,
+      "min_z": 0.0001,
+      "min_z_frame": 0,
+      "final_max_z": 1.9612,
+      "final_min_z": 0.0001,
+      "loop_seam_m": 0.0
+    },
+    "attack": {
+      "frames": 37,
+      "min_z": -0.0175,
+      "min_z_frame": 29,
+      "final_max_z": 1.9612,
+      "final_min_z": 0.0001,
+      "loop_seam_m": 0.0
+    },
+    "hit": {
+      "frames": 19,
+      "min_z": -0.0051,
+      "min_z_frame": 2,
+      "final_max_z": 1.9612,
+      "final_min_z": 0.0001,
+      "loop_seam_m": 0.0
+    },
+    "death": {
+      "frames": 61,
+      "min_z": 0.004,
+      "min_z_frame": 20,
+      "final_max_z": 0.4512,
+      "final_min_z": 0.004,
+      "loop_seam_m": 1.66497
+    },
+    "frozen": {
+      "frames": 31,
+      "min_z": -0.0,
+      "min_z_frame": 0,
+      "final_max_z": 1.9135,
+      "final_min_z": -0.0,
+      "loop_seam_m": 0.0
+    }
+  },
+  "rootMotion": "code-owned: the root joint is never animated and every clip plays in place",
+  "frame": {
+    "units": "m",
+    "up": "+Y",
+    "forward": "-Z",
+    "origin": "feet centre on the floor (y = 0)",
+    "note": "encounter.ts rotation.y = -heading turns local -Z onto the heading"
+  },
+  "sockets": {
+    "socket-hit": {
+      "bone": "chest",
+      "parent": "chest",
+      "position": [
+        0.0,
+        1.43,
+        -0.15
+      ]
+    },
+    "socket-eye": {
+      "bone": "head",
+      "parent": "head",
+      "position": [
+        0.0,
+        1.835,
+        -0.11
+      ]
+    },
+    "socket-weapon": {
+      "bone": "hand.R",
+      "parent": "hand.R",
+      "position": [
+        0.3,
+        0.78,
+        -0.03
+      ]
+    }
+  },
+  "derivedFiles": [
+    {
+      "path": "public/assets/enemies/cog-sentry/cog-sentry.glb",
+      "sha256": "b9c03a1919acbcd9b13c62749e093c5ab2c6f3414b7a484de6efd77b36db4b84",
+      "bytes": 448820
+    },
+    {
+      "path": "public/assets/enemies/cog-sentry/cog-sentry.manifest.json",
+      "sha256": "5ca04de1b99d1ecffbfbcc67de797c64fe8c5565b70abd06194d7e0edc8b7d0e",
+      "bytes": 2732
+    }
+  ],
+  "sourceFiles": [
+    {
+      "path": "assets-source/enemies/cog-sentry/blend/cog-sentry.high.blend",
+      "sha256": "d0f325127e2dfb77e5ca4e7adf8670d9c40250a2af0084ba0541d7f1850d3a92",
+      "bytes": 394233
+    },
+    {
+      "path": "assets-source/enemies/cog-sentry/blend/cog-sentry.low.blend",
+      "sha256": "e96aa3be06f9d536790c20c8a017487610e94abab1ca66703a3282468acb3543",
+      "bytes": 196965
+    },
+    {
+      "path": "assets-source/enemies/cog-sentry/staging/report.json",
+      "sha256": "4d3b9b56f43c71120d830c7e4d657ff1fbf1844a743c03ea7ed3dd5d744f58c0",
+      "bytes": 5787
+    },
+    {
+      "path": "assets-source/enemies/cog-sentry/staging/reimport.json",
+      "sha256": "efd6dce224a37dc296f42beae4d5a4b83775bb8a605a4f0945297f9fff3ceaea",
+      "bytes": 2275
+    }
+  ],
+  "reviewEvidence": [
+    {
+      "path": "assets-source/enemies/cog-sentry/cog-sentry.review-sheet.jpg",
+      "sha256": "ab0ea49c52937fba920c58fb2b547baec106405fc8292b05a9241f076f79cb78",
+      "bytes": 244740
+    },
+    {
+      "path": "docs/verification/p4-sentry-attack.jpg",
+      "sha256": "1ed1b83ab5658f764a750c916ef22e95aeeca5928eda0b9f72727525489fc3e4",
+      "bytes": 30539
+    },
+    {
+      "path": "docs/verification/p4-sentry-death.jpg",
+      "sha256": "9edbc99d8dacca74ebd1c693f58930776795aecbc27e66d8994ff455dc65cac0",
+      "bytes": 21734
+    },
+    {
+      "path": "docs/verification/p4-sentry-frozen.jpg",
+      "sha256": "d2482e7705d2e732db7b7a0d82875816d68d6705a29fe7986fb8523bb9d6cad1",
+      "bytes": 24840
+    },
+    {
+      "path": "docs/verification/p4-sentry-hit.jpg",
+      "sha256": "7f304130964bc134a73cde7314e150471f898a9bc4cbb8a66b34a9e3d9e64040",
+      "bytes": 29456
+    },
+    {
+      "path": "docs/verification/p4-sentry-idle.jpg",
+      "sha256": "8ecb954c4643c76e13bfc1a4a1e130f0ee566929cd3c41ac48ec8ab5f8f8e4b6",
+      "bytes": 29051
+    }
+  ],
+  "references": [
+    {
+      "path": "assets-source/concepts/sentry-sheet-1.png",
+      "sha256": "c5373556e0cc0765f71a74d08d4f3e50c473917ad23bdf5e605218d737404e34",
+      "provider": "higgsfield",
+      "note": "P4-T2 concept sheet picked for the Cog Sentry (docs/art-bible.md)"
+    }
+  ],
+  "materialsUsed": "approved P4-T3 brass-polished and brass-aged sets bound by slot name at runtime; gunmetal and sentry-glow are factor-only",
+  "license": "Original work generated in Blender from a checked-in script; concept reference from Paul's paid Higgsfield plan (Terms of Use 4.4)",
+  "validation": {
+    "pass": true,
+    "date": "2026-11-15",
+    "checks": [
+      "presence",
+      "hashes",
+      "glb budgets (tris, materials, bones)",
+      "one skin, one weight set",
+      "image-free glb",
+      "clip set",
+      "manifest consistency",
+      "reimport gate (weights, influences, clips, root motion, bounds, sockets)",
+      "evaluated pose checks (floor, death on the floor, loop seams)"
+    ]
+  },
+  "approvals": [
+    {
+      "who": "Paul",
+      "when": "2026-11-15",
+      "gate": "concept",
+      "status": "approved",
+      "evidence": "docs/art-bible.md: sentry-sheet-1.png picked for the Cog Sentry"
+    },
+    {
+      "gate": "model",
+      "status": "pending",
+      "notes": "assets-source/enemies/cog-sentry/cog-sentry.review-sheet.jpg, MODEL section"
+    },
+    {
+      "gate": "rig",
+      "status": "pending",
+      "notes": "review sheet RIG section"
+    },
+    {
+      "gate": "animation",
+      "status": "pending",
+      "notes": "review sheet ANIMATION sections (Blender frames and engine stills)"
+    },
+    {
+      "gate": "independent visual score",
+      "status": "unscored",
+      "notes": "create-rigged-character-assets requires an independent >= 80/100 score; unscored means unaccepted"
+    }
+  ]
+}

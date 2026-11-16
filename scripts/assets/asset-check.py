@@ -1,5 +1,6 @@
-"""Room asset gate (`make asset-check`): presence, hashes against provenance, and PRD budgets for
-every runtime room template under public/assets/rooms/<template>/. Standard library only and reads
+"""Asset gate (`make asset-check`): presence, hashes against provenance, and PRD budgets for
+every runtime room template under public/assets/rooms/<template>/ and every rigged enemy under
+public/assets/enemies/<id>/ (`--assemble-enemy <id>` writes an enemy's provenance, then checks). Standard library only and reads
 committed files, so it runs without Blender.
 
     python3 -I scripts/assets/asset-check.py                      # check every room
@@ -209,6 +210,166 @@ def check_room(template: str, errors: list[str], warnings: list[str]) -> dict:
     return summary
 
 
+# Rigged enemies (P4-T6): public/assets/enemies/<id>/ holds exactly the GLB and its manifest.
+ENEMY_RUNTIME = ROOT / "public/assets/enemies"
+ENEMY_SOURCES = ROOT / "assets-source/enemies"
+ENEMY_LIMITS = {"tris": 25_000, "materials": 4, "bones": 40, "influences": 4}
+ENEMY_CLIPS = {"idle", "attack", "hit", "death", "frozen"}
+ENEMY_GENERATORS = {"cog-sentry": "scripts/assets/build-cog-sentry.py"}
+ENEMY_REFERENCES = {"cog-sentry": ["assets-source/concepts/sentry-sheet-1.png"]}
+
+
+def check_enemy(enemy: str, errors: list[str], warnings: list[str]) -> dict:
+    rt = ENEMY_RUNTIME / enemy
+    src = ENEMY_SOURCES / enemy
+    err = lambda msg: errors.append(f"enemies/{enemy}: {msg}")  # noqa: E731
+    summary: dict = {"enemy": enemy}
+    files = {f"{enemy}.glb", f"{enemy}.manifest.json"}
+    for name in sorted(files):
+        if not (rt / name).exists():
+            err(f"missing runtime file {name}")
+    extra = sorted(p.name for p in rt.iterdir() if p.name not in files)
+    if extra:
+        err(f"unlisted runtime files {extra}")
+    if any(not (rt / n).exists() for n in files):
+        return summary
+    m = json.loads((rt / f"{enemy}.manifest.json").read_text())
+    if m.get("id") != enemy or m.get("glb") != f"{enemy}.glb":
+        err("manifest id/glb do not match the directory")
+    g = glb_json(rt / f"{enemy}.glb")
+    glb = glb_stats(rt / f"{enemy}.glb")
+    skins = g.get("skins", [])
+    bones = len(skins[0]["joints"]) if len(skins) == 1 else -1
+    clips = {a.get("name") for a in g.get("animations", [])}
+    attrs = [prim["attributes"] for mesh in g.get("meshes", []) for prim in mesh["primitives"]]
+    summary.update({"glb": glb, "bones": bones, "clips": sorted(clips)})
+    if glb["triangles"] > ENEMY_LIMITS["tris"]:
+        err(f"{glb['triangles']} triangles over {ENEMY_LIMITS['tris']}")
+    if len(glb["materials"]) > ENEMY_LIMITS["materials"]:
+        err(f"{len(glb['materials'])} materials over {ENEMY_LIMITS['materials']}")
+    if not 0 < bones <= ENEMY_LIMITS["bones"]:
+        err(f"skeleton must be one skin with 1-{ENEMY_LIMITS['bones']} joints (got {bones})")
+    if glb["images"] or glb["textures"]:
+        err("GLB must be image-free (brass slots bind the shared P4-T3 sets by name)")
+    if any("JOINTS_0" not in a or "WEIGHTS_0" not in a for a in attrs) or any("WEIGHTS_1" in a for a in attrs):
+        err("every primitive needs exactly one JOINTS_0/WEIGHTS_0 set (<= 4 influences)")
+    if clips != ENEMY_CLIPS or set(m.get("clips", {})) != ENEMY_CLIPS:
+        err(f"clips {sorted(clips)} / manifest {sorted(m.get('clips', {}))} != {sorted(ENEMY_CLIPS)}")
+    budget = m.get("budget", {})
+    if budget.get("tris") != glb["triangles"] or budget.get("bones") != bones or budget.get("materials") != len(glb["materials"]):
+        err(f"manifest budget {budget} != measured tris {glb['triangles']}, bones {bones}, materials {len(glb['materials'])}")
+    unknown = [n for n in glb["materials"] if n not in m.get("materialSlots", {})]
+    if unknown:
+        err(f"GLB material slots missing from the manifest: {unknown}")
+    if abs(m.get("bounds", {}).get("min", [0, 1, 0])[1]) > 1e-3:
+        err("rest pose must stand on y = 0")
+
+    prov_path = src / "provenance.json"
+    if not prov_path.exists():
+        err("provenance.json missing (run --assemble-enemy)")
+        return summary
+    prov = json.loads(prov_path.read_text())
+    if not prov.get("validation", {}).get("pass"):
+        err("provenance validation.pass is not true")
+    recorded = {d["path"]: d["sha256"] for d in prov.get("derivedFiles", []) + prov.get("sourceFiles", [])}
+    for name in sorted(files):
+        rel = f"public/assets/enemies/{enemy}/{name}"
+        if rel not in recorded:
+            err(f"{rel} not recorded in provenance")
+        elif recorded[rel] != sha256(rt / name):
+            err(f"{rel} hash differs from provenance")
+    for d in prov.get("sourceFiles", []):
+        path = ROOT / d["path"]
+        if not path.exists() or sha256(path) != d["sha256"]:
+            err(f"source {d['path']} missing or changed since provenance")
+    gen = prov.get("generator", {})
+    if not (ROOT / gen.get("path", "")).exists():
+        err(f"generator {gen.get('path')} missing")
+    elif sha256(ROOT / gen["path"]) != gen.get("sha256"):
+        warnings.append(f"enemies/{enemy}: {gen['path']} changed since the build (stale; rebuild before re-review)")
+    for ref in prov.get("references", []):
+        path = ROOT / ref["path"]
+        if not path.exists() or sha256(path) != ref["sha256"]:
+            err(f"reference {ref['path']} missing or changed")
+    for ev in prov.get("reviewEvidence", []):
+        path = ROOT / ev["path"]
+        if not path.exists() or sha256(path) != ev["sha256"]:
+            err(f"review evidence {ev['path']} missing or changed since provenance (re-review needed)")
+    reimport = src / "staging/reimport.json"
+    if not reimport.exists():
+        err("staging/reimport.json missing")
+    else:
+        r = json.loads(reimport.read_text())
+        if not r.get("pass") or r.get("glb_sha256") != sha256(rt / f"{enemy}.glb"):
+            err("reimport gate did not pass for the shipped GLB")
+        elif r.get("max_influences", 9) > ENEMY_LIMITS["influences"] or r.get("unweighted_vertices", 1) or r.get("max_weight_sum_error", 1) > 2e-3:
+            err("reimport skin checks failed")
+    return summary
+
+
+def assemble_enemy(enemy: str) -> None:
+    src = ENEMY_SOURCES / enemy
+    rt = ENEMY_RUNTIME / enemy
+    report = json.loads((src / "staging/report.json").read_text())
+    reimport = json.loads((src / "staging/reimport.json").read_text())
+    manifest = json.loads((rt / f"{enemy}.manifest.json").read_text())
+    gen = ENEMY_GENERATORS[enemy]
+    entry = lambda p: {"path": str(p.relative_to(ROOT)), "sha256": sha256(p), "bytes": p.stat().st_size}  # noqa: E731
+    sources = [entry(p) for p in sorted((src / "blend").iterdir()) if p.suffix == ".blend"]
+    sources += [entry(src / "staging/report.json"), entry(src / "staging/reimport.json")]
+    prov = {
+        "pieceId": enemy,
+        "version": 1,
+        "route": "scripted (procedural Blender geometry, rig and keyed clips; no provider generation)",
+        "generator": {"path": gen, "sha256": sha256(ROOT / gen)},
+        "authoringAgent": {"harness": "claude-code (dispatched sub-agent)", "model": "claude-opus-5-5"},
+        "blender": report["blender"],
+        "toolVersions": {"gltfExporter": "Blender 5.2.2 bundled io_scene_gltf2"},
+        "blendFiles": {"store": f"assets-source/enemies/{enemy}/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)"},
+        "budgets": {"triangles": reimport["triangles"], "highTriangles": report["triangles"]["high"], "materials": len(reimport["materials"]),
+                    "bones": reimport["bone_count"], "maxInfluences": reimport["max_influences"], "glbBytes": reimport["glb_bytes"]},
+        "skin": {"policy": "rigid: one bone per vertex at weight 1.0", "maxWeightSumError": reimport["max_weight_sum_error"],
+                 "unweightedVertices": reimport["unweighted_vertices"]},
+        "clips": {k: {**v, "measured": reimport["clips"][k]} for k, v in manifest["clips"].items()},
+        "poseChecks": report.get("pose_checks"),
+        "rootMotion": manifest["rootMotion"],
+        "frame": manifest["frame"],
+        "sockets": manifest["sockets"],
+        "derivedFiles": [entry(p) for p in sorted(rt.iterdir())],
+        "sourceFiles": sources,
+        # What Paul reviews for the model, rig and animation gates, bound to the bytes shown.
+        "reviewEvidence": [entry(src / f"{enemy}.review-sheet.jpg")]
+        + [entry(p) for p in sorted((ROOT / "docs/verification").glob(f"p4-{enemy.split('-')[-1]}-*.jpg"))],
+        "references": [{"path": r, "sha256": sha256(ROOT / r), "provider": "higgsfield", "note": "P4-T2 concept sheet picked for the Cog Sentry (docs/art-bible.md)"}
+                       for r in ENEMY_REFERENCES[enemy]],
+        "materialsUsed": "approved P4-T3 brass-polished and brass-aged sets bound by slot name at runtime; gunmetal and sentry-glow are factor-only",
+        "license": "Original work generated in Blender from a checked-in script; concept reference from Paul's paid Higgsfield plan (Terms of Use 4.4)",
+        "validation": {"pass": False, "date": datetime.date.today().isoformat(), "checks": []},
+        "approvals": [
+            {"who": "Paul", "when": "2026-11-15", "gate": "concept", "status": "approved", "evidence": "docs/art-bible.md: sentry-sheet-1.png picked for the Cog Sentry"},
+            {"gate": "model", "status": "pending", "notes": f"assets-source/enemies/{enemy}/cog-sentry.review-sheet.jpg, MODEL section"},
+            {"gate": "rig", "status": "pending", "notes": "review sheet RIG section"},
+            {"gate": "animation", "status": "pending", "notes": "review sheet ANIMATION sections (Blender frames and engine stills)"},
+            {"gate": "independent visual score", "status": "unscored", "notes": "create-rigged-character-assets requires an independent >= 80/100 score; unscored means unaccepted"},
+        ],
+    }
+    prov_path = src / "provenance.json"
+    prov_path.write_text(json.dumps(prov, indent=2) + "\n")
+    errors: list[str] = []
+    warnings: list[str] = []
+    check_enemy(enemy, errors, warnings)
+    remaining = [e for e in errors if "validation.pass" not in e]
+    if remaining:
+        prov_path.unlink()
+        raise SystemExit("assemble refused, gate errors:\n" + "\n".join(remaining))
+    prov["validation"] = {"pass": True, "date": datetime.date.today().isoformat(),
+                          "checks": ["presence", "hashes", "glb budgets (tris, materials, bones)", "one skin, one weight set", "image-free glb",
+                                     "clip set", "manifest consistency", "reimport gate (weights, influences, clips, root motion, bounds, sockets)",
+                                     "evaluated pose checks (floor, death on the floor, loop seams)"]}
+    prov_path.write_text(json.dumps(prov, indent=2) + "\n")
+    print(f"wrote {prov_path.relative_to(ROOT)}")
+
+
 def assemble(template: str) -> None:
     src = SOURCES / template
     rt = RUNTIME / template
@@ -277,19 +438,27 @@ def assemble(template: str) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--assemble", metavar="TEMPLATE")
+    parser.add_argument("--assemble-enemy", metavar="ENEMY")
     args = parser.parse_args()
     if args.assemble:
         assemble(args.assemble)
-    if not RUNTIME.exists():
-        print("asset-check: no runtime rooms")
-        return 0
+    if args.assemble_enemy:
+        assemble_enemy(args.assemble_enemy)
     errors: list[str] = []
     warnings: list[str] = []
-    for room in sorted(p.name for p in RUNTIME.iterdir() if p.is_dir()):
+    rooms = sorted(p.name for p in RUNTIME.iterdir() if p.is_dir()) if RUNTIME.exists() else []
+    if not rooms:
+        print("asset-check: no runtime rooms")
+    for room in rooms:
         s = check_room(room, errors, warnings)
         glb = s.get("glb", {})
         sizes = ", ".join(f"{k} {v['width']}px" for k, v in s.get("maps", {}).items())
         print(f"asset-check {room}: {glb.get('triangles')} tris, {len(glb.get('materials', []))} materials; {sizes}")
+    enemies = sorted(p.name for p in ENEMY_RUNTIME.iterdir() if p.is_dir()) if ENEMY_RUNTIME.exists() else []
+    for enemy in enemies:
+        s = check_enemy(enemy, errors, warnings)
+        glb = s.get("glb", {})
+        print(f"asset-check enemies/{enemy}: {glb.get('triangles')} tris, {len(glb.get('materials', []))} materials, {s.get('bones')} bones, clips {s.get('clips')}")
     for w in warnings:
         print(f"WARN {w}")
     for e in errors:

@@ -1,0 +1,154 @@
+{
+  "id": "cog-sentry",
+  "version": 1,
+  "glb": "cog-sentry.glb",
+  "frame": {
+    "units": "m",
+    "up": "+Y",
+    "forward": "-Z",
+    "origin": "feet centre on the floor (y = 0)",
+    "note": "encounter.ts rotation.y = -heading turns local -Z onto the heading"
+  },
+  "root": "cog-sentry",
+  "mesh": "sentry-body",
+  "bounds": {
+    "min": [
+      -0.358,
+      0.0,
+      -0.18
+    ],
+    "max": [
+      0.358,
+      1.9612,
+      0.165
+    ]
+  },
+  "skeleton": {
+    "root": "root",
+    "bones": 21,
+    "joints": [
+      "root",
+      "hips",
+      "spine",
+      "chest",
+      "clavicle.L",
+      "upperarm.L",
+      "forearm.L",
+      "hand.L",
+      "clavicle.R",
+      "upperarm.R",
+      "forearm.R",
+      "hand.R",
+      "cog",
+      "neck",
+      "head",
+      "thigh.L",
+      "shin.L",
+      "foot.L",
+      "thigh.R",
+      "shin.R",
+      "foot.R"
+    ],
+    "maxInfluences": 1,
+    "skinning": "rigid: every vertex weighted 1.0 to one bone"
+  },
+  "rootMotion": "code-owned: the root joint is never animated and every clip plays in place",
+  "clips": {
+    "idle": {
+      "duration": 2.0,
+      "loop": "repeat",
+      "events": {}
+    },
+    "attack": {
+      "duration": 1.2,
+      "loop": "once",
+      "events": {
+        "impact": 0.55
+      }
+    },
+    "hit": {
+      "duration": 0.6,
+      "loop": "once",
+      "events": {}
+    },
+    "death": {
+      "duration": 2.0,
+      "loop": "once",
+      "events": {
+        "down": 1.5
+      },
+      "endsOnFloor": true
+    },
+    "frozen": {
+      "duration": 1.0,
+      "loop": "repeat",
+      "events": {},
+      "held": true
+    }
+  },
+  "sockets": {
+    "socket-hit": {
+      "bone": "chest",
+      "parent": "chest",
+      "position": [
+        0.0,
+        1.43,
+        -0.15
+      ]
+    },
+    "socket-eye": {
+      "bone": "head",
+      "parent": "head",
+      "position": [
+        0.0,
+        1.835,
+        -0.11
+      ]
+    },
+    "socket-weapon": {
+      "bone": "hand.R",
+      "parent": "hand.R",
+      "position": [
+        0.3,
+        0.78,
+        -0.03
+      ]
+    }
+  },
+  "emissive": {
+    "material": "sentry-glow",
+    "color": "#F08C2C",
+    "intensity": 0.7,
+    "nodes": [
+      "socket-eye",
+      "socket-hit"
+    ]
+  },
+  "materialSlots": {
+    "brass-polished": {
+      "set": "brass-polished",
+      "tileMeters": 0.5,
+      "normalScale": 0.35
+    },
+    "brass-aged": {
+      "set": "brass-aged",
+      "tileMeters": 0.5,
+      "normalScale": 0.35
+    },
+    "gunmetal": {
+      "set": null,
+      "factorOnly": true
+    },
+    "sentry-glow": {
+      "set": null,
+      "factorOnly": true,
+      "emissive": true
+    }
+  },
+  "budget": {
+    "tris": 2992,
+    "materials": 4,
+    "bones": 21,
+    "influences": 4
+  }
+}

@@ -1,0 +1,137 @@
+{
+  "glb_sha256": "b9c03a1919acbcd9b13c62749e093c5ab2c6f3414b7a484de6efd77b36db4b84",
+  "glb_bytes": 448820,
+  "triangles": 2992,
+  "materials": [
+    "brass-polished",
+    "brass-aged",
+    "gunmetal",
+    "sentry-glow"
+  ],
+  "vertices": 3724,
+  "joints": [
+    "root",
+    "hips",
+    "spine",
+    "chest",
+    "clavicle.L",
+    "upperarm.L",
+    "forearm.L",
+    "hand.L",
+    "clavicle.R",
+    "upperarm.R",
+    "forearm.R",
+    "hand.R",
+    "cog",
+    "neck",
+    "head",
+    "thigh.L",
+    "shin.L",
+    "foot.L",
+    "thigh.R",
+    "shin.R",
+    "foot.R"
+  ],
+  "bone_count": 21,
+  "max_influences": 1,
+  "max_weight_sum_error": 0.0,
+  "unweighted_vertices": 0,
+  "bounds": {
+    "min": [
+      -0.358,
+      0.0,
+      -0.18
+    ],
+    "max": [
+      0.358,
+      1.9612,
+      0.165
+    ]
+  },
+  "clips": {
+    "attack": {
+      "duration": 1.2,
+      "start": 0.0,
+      "channels": 63,
+      "rootAnimated": []
+    },
+    "death": {
+      "duration": 2.0,
+      "start": 0.0,
+      "channels": 63,
+      "rootAnimated": []
+    },
+    "frozen": {
+      "duration": 1.0,
+      "start": 0.0,
+      "channels": 63,
+      "rootAnimated": []
+    },
+    "hit": {
+      "duration": 0.6,
+      "start": 0.0,
+      "channels": 63,
+      "rootAnimated": []
+    },
+    "idle": {
+      "duration": 2.0,
+      "start": 0.0,
+      "channels": 63,
+      "rootAnimated": []
+    }
+  },
+  "sockets": {
+    "socket-hit": {
+      "bone": "chest",
+      "parent": "chest",
+      "position": [
+        0.0,
+        1.43,
+        -0.15
+      ]
+    },
+    "socket-eye": {
+      "bone": "head",
+      "parent": "head",
+      "position": [
+        0.0,
+        1.835,
+        -0.11
+      ]
+    },
+    "socket-weapon": {
+      "bone": "hand.R",
+      "parent": "hand.R",
+      "position": [
+        0.3,
+        0.78,
+        -0.03
+      ]
+    }
+  },
+  "scene_roots": [
+    "cog-sentry"
+  ],
+  "errors": [],
+  "pass": true,
+  "blender_reimport": {
+    "armatures": 1,
+    "bones": 21,
+    "meshes": 2,
+    "actions": [
+      "attack.001",
+      "death.001",
+      "frozen.001",
+      "hit.001",
+      "idle.001"
+    ],
+    "objects": [
+      "Icosphere",
+      "cog-sentry.001",
+      "sentry-body.001",
+      "socket-eye.001",
+      "socket-hit.001",
+      "socket-weapon.001"
+    ]
+  }
+}

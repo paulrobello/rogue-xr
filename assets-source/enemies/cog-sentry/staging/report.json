@@ -1,0 +1,238 @@
+{
+  "piece": "cog-sentry",
+  "blender": "5.2.2 LTS",
+  "generator": "scripts/assets/build-cog-sentry.py",
+  "generator_sha256": "9f045c4e6314b29a4bb82572fa040a0a0f9f68079b311b630d76fd0e1918d0a6",
+  "concept": {
+    "file": "assets-source/concepts/sentry-sheet-1.png",
+    "sha256": "c5373556e0cc0765f71a74d08d4f3e50c473917ad23bdf5e605218d737404e34",
+    "picked_by": "Paul, 2026-11-15 (docs/art-bible.md)"
+  },
+  "source_materials": {
+    "brass-polished": {
+      "basecolor": "e06711b70706c57713bad023bfd9690715a67ae7b85fcc3041d596f7b0630e15",
+      "normal": "48e62a85458bfc64ffc095f4f6a44c69b0058b90e01a664a3f3682a0222bfb3c",
+      "orm": "ac621605925e523ca9b25bd18bbfe4bdab575bb3a9876a5390adc5a29c559e9a"
+    },
+    "brass-aged": {
+      "basecolor": "f731331533f5e9293ab3172f052aef3f3984924012dfe3c44540756af17b4316",
+      "normal": "752f6211fca91fa4e2beb4e43c11ba097d2da7139268fdf33fb5b2ee26bfbe3a",
+      "orm": "dab4896ed62310c39b975954f70cddf116f86518842eb7d84b0fde14dc7adbeb"
+    }
+  },
+  "triangles": {
+    "low": 2992,
+    "high": 11888
+  },
+  "bones": 21,
+  "authoringAgent": "Claude Code subagent (claude-opus-5-5), dispatched by the rogue-xr primary session",
+  "ground_clamp_death_max_lift_m": [
+    0.1331,
+    0.0022
+  ],
+  "pose_checks": {
+    "idle": {
+      "frames": 61,
+      "min_z": 0.0001,
+      "min_z_frame": 0,
+      "final_max_z": 1.9612,
+      "final_min_z": 0.0001,
+      "loop_seam_m": 0.0
+    },
+    "attack": {
+      "frames": 37,
+      "min_z": -0.0175,
+      "min_z_frame": 29,
+      "final_max_z": 1.9612,
+      "final_min_z": 0.0001,
+      "loop_seam_m": 0.0
+    },
+    "hit": {
+      "frames": 19,
+      "min_z": -0.0051,
+      "min_z_frame": 2,
+      "final_max_z": 1.9612,
+      "final_min_z": 0.0001,
+      "loop_seam_m": 0.0
+    },
+    "death": {
+      "frames": 61,
+      "min_z": 0.004,
+      "min_z_frame": 20,
+      "final_max_z": 0.4512,
+      "final_min_z": 0.004,
+      "loop_seam_m": 1.66497
+    },
+    "frozen": {
+      "frames": 31,
+      "min_z": -0.0,
+      "min_z_frame": 0,
+      "final_max_z": 1.9135,
+      "final_min_z": -0.0,
+      "loop_seam_m": 0.0
+    }
+  },
+  "canonicalized_primitives": 4,
+  "reimport": {
+    "glb_sha256": "b9c03a1919acbcd9b13c62749e093c5ab2c6f3414b7a484de6efd77b36db4b84",
+    "glb_bytes": 448820,
+    "triangles": 2992,
+    "materials": [
+      "brass-polished",
+      "brass-aged",
+      "gunmetal",
+      "sentry-glow"
+    ],
+    "vertices": 3724,
+    "joints": [
+      "root",
+      "hips",
+      "spine",
+      "chest",
+      "clavicle.L",
+      "upperarm.L",
+      "forearm.L",
+      "hand.L",
+      "clavicle.R",
+      "upperarm.R",
+      "forearm.R",
+      "hand.R",
+      "cog",
+      "neck",
+      "head",
+      "thigh.L",
+      "shin.L",
+      "foot.L",
+      "thigh.R",
+      "shin.R",
+      "foot.R"
+    ],
+    "bone_count": 21,
+    "max_influences": 1,
+    "max_weight_sum_error": 0.0,
+    "unweighted_vertices": 0,
+    "bounds": {
+      "min": [
+        -0.358,
+        0.0,
+        -0.18
+      ],
+      "max": [
+        0.358,
+        1.9612,
+        0.165
+      ]
+    },
+    "clips": {
+      "attack": {
+        "duration": 1.2,
+        "start": 0.0,
+        "channels": 63,
+        "rootAnimated": []
+      },
+      "death": {
+        "duration": 2.0,
+        "start": 0.0,
+        "channels": 63,
+        "rootAnimated": []
+      },
+      "frozen": {
+        "duration": 1.0,
+        "start": 0.0,
+        "channels": 63,
+        "rootAnimated": []
+      },
+      "hit": {
+        "duration": 0.6,
+        "start": 0.0,
+        "channels": 63,
+        "rootAnimated": []
+      },
+      "idle": {
+        "duration": 2.0,
+        "start": 0.0,
+        "channels": 63,
+        "rootAnimated": []
+      }
+    },
+    "sockets": {
+      "socket-hit": {
+        "bone": "chest",
+        "parent": "chest",
+        "position": [
+          0.0,
+          1.43,
+          -0.15
+        ]
+      },
+      "socket-eye": {
+        "bone": "head",
+        "parent": "head",
+        "position": [
+          0.0,
+          1.835,
+          -0.11
+        ]
+      },
+      "socket-weapon": {
+        "bone": "hand.R",
+        "parent": "hand.R",
+        "position": [
+          0.3,
+          0.78,
+          -0.03
+        ]
+      }
+    },
+    "scene_roots": [
+      "cog-sentry"
+    ],
+    "errors": [],
+    "pass": true,
+    "blender_reimport": {
+      "armatures": 1,
+      "bones": 21,
+      "meshes": 2,
+      "actions": [
+        "attack.001",
+        "death.001",
+        "frozen.001",
+        "hit.001",
+        "idle.001"
+      ],
+      "objects": [
+        "Icosphere",
+        "cog-sentry.001",
+        "sentry-body.001",
+        "socket-eye.001",
+        "socket-hit.001",
+        "socket-weapon.001"
+      ]
+    }
+  },
+  "renders": [
+    "model-low-front",
+    "model-low-side",
+    "model-low-back",
+    "model-low-three-quarter",
+    "model-high-three-quarter",
+    "rig-rom-reach",
+    "rig-rom-crouch",
+    "anim-idle",
+    "anim-attack-windup",
+    "anim-attack-strike",
+    "anim-hit",
+    "anim-frozen",
+    "anim-death-kneel",
+    "anim-death-end"
+  ],
+  "render_seconds": 2.1,
+  "files": {
+    "assets-source/enemies/cog-sentry/blend/cog-sentry.high.blend": "d0f325127e2dfb77e5ca4e7adf8670d9c40250a2af0084ba0541d7f1850d3a92",
+    "assets-source/enemies/cog-sentry/blend/cog-sentry.low.blend": "e96aa3be06f9d536790c20c8a017487610e94abab1ca66703a3282468acb3543",
+    "assets-source/enemies/cog-sentry/staging/reimport.json": "efd6dce224a37dc296f42beae4d5a4b83775bb8a605a4f0945297f9fff3ceaea",
+    "public/assets/enemies/cog-sentry/cog-sentry.glb": "b9c03a1919acbcd9b13c62749e093c5ab2c6f3414b7a484de6efd77b36db4b84",
+    "public/assets/enemies/cog-sentry/cog-sentry.manifest.json": "5ca04de1b99d1ecffbfbcc67de797c64fe8c5565b70abd06194d7e0edc8b7d0e"
+  },
+  "total_seconds": 3.1
+}
