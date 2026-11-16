@@ -385,7 +385,7 @@
     },
     {
       "gate": "independent visual score",
-      "status": "unscored",
+      "status": "below bar: 61/100 (bar 80), scored 2026-11-16",
       "notes": "blender-kit-pieces requires an independent >= 80/100 score; unscored means unaccepted"
     }
   ],
@@ -489,5 +489,51 @@
       "path": "docs/verification/p5-rooms-gear-shaft-seam-north.jpg",
       "sha256": "177eea1e54742530700edc9119e57c3f6ea1f9a065ee847e208f2a5cd7d1d23e"
     }
-  ]
+  ],
+  "independentScore": {
+    "score": 61,
+    "scale": "0-100 visual fidelity to the art bible and study-kit language",
+    "scorer": "independent reviewer agent (separate from the authoring agent; did not build the asset)",
+    "date": "2026-11-16",
+    "acceptanceBar": 80,
+    "clearsBar": false,
+    "rubric": [
+      {
+        "criterion": "form, layout and proportions",
+        "points": 18,
+        "max": 30,
+        "note": "8x12x5 m box with a central stone furnace plinth and a brass shaft. At 5 m it is only 1 m taller than the hall. The ceiling is a flat plank lid and the shaft ends in a disc under it, with no opening above or pit below. room-sheet-2 sets the kit's vertical language (galleries, spiral stair, stacked gears), and this room has none of it."
+      },
+      {
+        "criterion": "signature features: vertical machinery",
+        "points": 14,
+        "max": 25,
+        "note": "One spoked crown gear at 3.6 m that spins (rigid node, 0.35 rad/s, baked shadow-free, verified at 37 degrees) and a furnace grate. No meshing gear train, chain, counterweight, catwalk or shaft void. The study's own stacked-gear column (room-sheet-1) reads as more machine than this machinery room."
+      },
+      {
+        "criterion": "surface detail and material read",
+        "points": 12,
+        "max": 20,
+        "note": "61.3 px/m, clean UV1, and the rotating ring bakes evenly (sector min/max 0.965). The furnace opening reads as a white light box: mean RGB 174,159,141, p95 L=239. Brass on the gear and shaft carries noisy scratch texture that leans photoreal, which the bible excludes. Grey streak on the ceiling-beam side faces measures L=43 against 28 on the adjacent walnut. Kit-wide lightmap-only deduction applied."
+      },
+      {
+        "criterion": "colour, value and lighting mood",
+        "points": 9,
+        "max": 15,
+        "note": "The furnace does throw a warm floor pool, the best pool of the four rooms (floor L p5 11 to p95 122). But the glow colour misses candle amber #F3BE65 (R-B 142): the grate measures R-B 33, nearly neutral. Crown gear reads dark (mean L=46). Kit-wide runtime flattening deduction applied."
+      },
+      {
+        "criterion": "readability and comfort at seated VR distance",
+        "points": 8,
+        "max": 10,
+        "note": "One big central silhouette and the ring is overhead, out of the near field. The 1.x m plinth sits between the south door and the enemy sockets at z -3 to -3.5, so it may partly occlude them from a seated view."
+      }
+    ],
+    "topFixes": [
+      "Make it a shaft: open the ceiling to a dark void or a gallery ring above, and/or a grated pit below, and add a second and third gear meshing up the shaft (room-sheet-1/2 stacked-gear language).",
+      "Recolour the furnace emission and bake to candle amber (target R-B above 100) with a visible coal/flame layer behind the bars, in place of the white panel.",
+      "Calm the brass scratch noise to painterly value variation, and fix the grey beam side faces."
+    ],
+    "method": "Looked at (2026-11-16): docs/art-bible.md; PRD.md lightmap contract (lines 87-95); assets-source/concepts/room-sheet-1.png, room-sheet-2.png; study benchmark assets-source/rooms/study/staging/review-sheet.jpg + provenance.json + engine-compare.json; docs/verification/p5-int-study.jpg; assets-source/rooms/gear-shaft/provenance.json, staging/review-sheet.jpg, staging/engine-compare.json, staging/gear-shaft.lightmap.png (texel stats), docs/verification/p5-rooms-gear-shaft-*.jpg and p5-int-gear-shaft*.jpg; Pillow crops and region means under /tmp/rxr-score/rooms/."
+  }
 }

@@ -384,7 +384,7 @@
     },
     {
       "gate": "independent visual score",
-      "status": "unscored",
+      "status": "below bar: 63/100 (bar 80), scored 2026-11-16",
       "notes": "blender-kit-pieces requires an independent >= 80/100 score; unscored means unaccepted"
     }
   ],
@@ -417,5 +417,51 @@
       "path": "docs/verification/p5-rooms-guardian-vault-seam-south.jpg",
       "sha256": "b73232ed2bed9f755a83899b1b25f1c591a5272765c48f4ce9ead1cf4ff146f1"
     }
-  ]
+  ],
+  "independentScore": {
+    "score": 63,
+    "scale": "0-100 visual fidelity to the art bible and study-kit language",
+    "scorer": "independent reviewer agent (separate from the authoring agent; did not build the asset)",
+    "date": "2026-11-16",
+    "acceptanceBar": 80,
+    "clearsBar": false,
+    "rubric": [
+      {
+        "criterion": "form, layout and proportions",
+        "points": 19,
+        "max": 30,
+        "note": "12x12x6 m hall with four stone pillars, three lancets and a beamed ceiling. It is the largest box but has no architectural focus: no dais, apse, raised floor, steps or vaulted ceiling. Lancet glass is pointed but sits in rectangular walnut frames, which leaves wallpaper spandrels inside the frame."
+      },
+      {
+        "criterion": "signature features: boss arena",
+        "points": 14,
+        "max": 25,
+        "note": "Arena cues are a brass ring inlay, two aisle lines, four pillar braziers, a gear medallion and wall gears. The guardian socket at z=-3 and the reward socket at z=-5 have no plinth, altar or alcove. Read cold, it is a bigger hall, not a boss room."
+      },
+      {
+        "criterion": "surface detail and material read",
+        "points": 12,
+        "max": 20,
+        "note": "Lowest density of the four at 45.3 px/m (min 38.1), 32% below the study's 66.3. Within the PRD contract (no px/m floor) but visibly softer. Brazier flames are white spikes. The centre lancet washes out from the reward eye-point: RGB 127,121,119 against 88,74,75 on the left lancet. Wall gears drop to an olive-dark L=40 and lose their brass read. Kit-wide lightmap-only deduction applied."
+      },
+      {
+        "criterion": "colour, value and lighting mood",
+        "points": 10,
+        "max": 15,
+        "note": "Warm, with stained-glass patches on the floor (good). Braziers make no floor pool in engine: floor at the brazier foot L=81 against the open floor at 82-85. Brazier flame RGB 197,162,128 (R-B 69) is short of candle amber's R-B 142. Kit-wide runtime flattening deduction applied."
+      },
+      {
+        "criterion": "readability and comfort at seated VR distance",
+        "points": 8,
+        "max": 10,
+        "note": "Open, uncluttered floor, a clear sightline to the guardian at 3 m, and lancets as the far focal point. Large scale is comfortable seated."
+      }
+    ],
+    "topFixes": [
+      "Give the arena a focal structure: a raised dais or apse at the north end carrying the guardian and reward sockets, with steps and a brass-edged plinth for the reward.",
+      "Raise the lightmap to about 65 px/m (2048 with tighter UV1 packing or split atlases), and make the braziers bake real amber pools with flame geometry in place of white spikes.",
+      "Fix lancet framing (pointed frames to match the glass) and check the centre lancet's probe/specular wash-out; lift the wall-gear brass albedo so it reads as brass."
+    ],
+    "method": "Looked at (2026-11-16): docs/art-bible.md; PRD.md lightmap contract (lines 87-95); assets-source/concepts/room-sheet-1.png, room-sheet-2.png; study benchmark assets-source/rooms/study/staging/review-sheet.jpg + provenance.json + engine-compare.json; docs/verification/p5-int-study.jpg; assets-source/rooms/guardian-vault/provenance.json, staging/review-sheet.jpg, staging/engine-compare.json, staging/guardian-vault.lightmap.png (texel stats), docs/verification/p5-rooms-guardian-vault-*.jpg and p5-int-guardian-vault*.jpg; Pillow crops and region means under /tmp/rxr-score/rooms/."
+  }
 }

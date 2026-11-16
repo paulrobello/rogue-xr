@@ -400,7 +400,7 @@
     },
     {
       "gate": "independent visual score",
-      "status": "unscored",
+      "status": "below bar: 68/100 (bar 80), scored 2026-11-16",
       "notes": "blender-kit-pieces requires an independent >= 80/100 score; unscored means unaccepted"
     }
   ],
@@ -437,5 +437,51 @@
       "path": "docs/verification/p5-rooms-hall-seam-west-turned.jpg",
       "sha256": "6e03a9cac05a0f7831acf5fad39f6a85c814f94bb295c554d14ac80969c05124"
     }
-  ]
+  ],
+  "independentScore": {
+    "score": 68,
+    "scale": "0-100 visual fidelity to the art bible and study-kit language",
+    "scorer": "independent reviewer agent (separate from the authoring agent; did not build the asset)",
+    "date": "2026-11-16",
+    "acceptanceBar": 80,
+    "clearsBar": false,
+    "rubric": [
+      {
+        "criterion": "form, layout and proportions",
+        "points": 21,
+        "max": 30,
+        "note": "10x10x4 m box with coffered beam ceiling, walnut wainscot and four offset 1.6 m doors; proportions sit right for a seated 1.6 m probe. It is a plain rectangle with no alcove, niche, arch or hearth recess. The study benchmark is also a box but fills its walls with bookcases, while the hall walls are bare wallpaper above the wainscot."
+      },
+      {
+        "criterion": "signature features: gathering space",
+        "points": 15,
+        "max": 25,
+        "note": "Gear chandelier, brass compass floor inlay, two benches, one stained-glass lancet and two floor candelabra. That is thin for a gathering space. The template has no hearth, table or rug (hearth and rug are runtime dressing), so the floor area reads empty in p5-rooms-hall-hero.jpg."
+      },
+      {
+        "criterion": "surface detail and material read",
+        "points": 14,
+        "max": 20,
+        "note": "Lightmap is clean: 68.6 px/m mean against the study's 66.3, coverage 0.742, no visible seams at the north/west door joins (seam-north, seam-west-turned). Kit-wide deduction: lightmap-only over shared tiling sets, where the study ships baked basecolor/normal/ORM from a 124,581-tri high-poly (hall high is 25,115). Walls are one repeating damask with no breakup."
+      },
+      {
+        "criterion": "colour, value and lighting mood",
+        "points": 10,
+        "max": 15,
+        "note": "Palette is on-bible: warm floor RGB 93,71,56, walnut ceiling 84,38,20, stained-glass patch on the floor. Kit/runtime deduction shared with the study (engine/diffuse frame ratio 1.90 vs study 1.89): in engine the floor shows no pools, foreground L=76 against back-floor L=77. The lightmap itself is also flatter than the study (p90/p10 texel ratio 3.96 vs 7.0)."
+      },
+      {
+        "criterion": "readability and comfort at seated VR distance",
+        "points": 8,
+        "max": 10,
+        "note": "Large clean forms, a clear enemy lane at 2-2.5 m, and a chandelier above head height. The gilt damask is high-contrast near the sconces (L p5 39 to p95 149), which is busy at the periphery."
+      }
+    ],
+    "topFixes": [
+      "Add a role anchor to the template: a fireplace recess or long table zone with its own baked warm pool, so the gathering read does not depend on runtime dressing.",
+      "Break up the wall plane with bookcase or panelled bays and one niche per wall, so it matches the study's dense walls; the wallpaper should cover far less area.",
+      "Restore floor value falloff: the bake p90/p10 is 3.96 against the study's 7.0, so tighten sconce falloff and darken the corners, then fix the kit-wide engine exposure/env flattening."
+    ],
+    "method": "Looked at (2026-11-16): docs/art-bible.md; PRD.md lightmap contract (lines 87-95); assets-source/concepts/room-sheet-1.png, room-sheet-2.png; study benchmark assets-source/rooms/study/staging/review-sheet.jpg + provenance.json + engine-compare.json; docs/verification/p5-int-study.jpg; assets-source/rooms/hall/provenance.json, staging/review-sheet.jpg, staging/engine-compare.json, staging/hall.lightmap.png (texel stats), docs/verification/p5-rooms-hall-*.jpg and p5-int-hall*.jpg; Pillow crops and region means under /tmp/rxr-score/rooms/."
+  }
 }
