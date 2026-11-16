@@ -31,7 +31,7 @@ node scripts/xr-emu/walk.mjs --notice http://localhost:4262
 Screenshots land in `docs/verification/xr-emu-*.jpg` with a JSON report
 (`xr-emu-report.json`, `xr-emu-report-notice.json`). The exit code is 1 when any check fails
 (`make` reports 2). As of 2026-11-16 the walk passes every check (52, which includes the 11 treasure and resume checks;
-`xr-sigil-stage` failed intermittently in earlier runs, see `docs/playtesting.md`) and `--notice` last passed its 5 on 2026-11-15; XO1 to XO4 in `docs/playtesting.md` record the fixes. The two console 404s in the
+`xr-sigil-stage` failed intermittently until the walk waited for XR frames after pose writes, see `docs/playtesting.md`) and `--notice` last passed its 5 on 2026-11-15; XO1 to XO4 in `docs/playtesting.md` record the fixes. The two console 404s in the
 notice run are the music tracks that are not produced yet.
 
 ## How it works
@@ -63,3 +63,9 @@ notice run are the music tracks that are not produced yet.
   trail-coloured pixels that appear between two screenshots taken at the same controller pose, so
   it fails unless the trail is in the rendered XR frame; `xr-sigil-cast` fails on Too short or
   Fizzle.
+- A pose written with `setHead`, `aimAt` or `placeAt` reaches three.js (camera, grips, rays) and
+  the app's hover only in the next XR frame, and the camera's world position moves with the head's
+  pitch. So the walk awaits `__xrEmu.frames()` after a pose write before it reads anything derived
+  from it (`headPoint`, a card's slot on the fan), and squeezes a card only once
+  `fan.hovered` is that card. Reading straight after the write made `xr-sigil-stage` grab the
+  neighbouring Strike whenever a frame landed between two reads (see `docs/playtesting.md`).

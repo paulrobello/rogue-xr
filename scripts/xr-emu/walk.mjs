@@ -778,26 +778,25 @@ try {
 
   /** Head-relative world point: `offset` metres in the rig's frame from the XR camera. */
   function headPoint(offset) {
-    return ev((o) => {
-      const { rig, camera } = window.__xrEmu.ctx();
-      camera.updateWorldMatrix(true, false);
-      const head = camera.getWorldPosition(camera.position.clone());
-      const turn = rig.getWorldQuaternion(rig.quaternion.clone());
-      const p = head.add(
-        camera.position
-          .clone()
-          .set(...o)
-          .applyQuaternion(turn),
-      );
-      return { x: p.x, y: p.y, z: p.z };
-    }, offset);
+    return ev((o) => window.__xrEmu.headPoint(o), offset);
   }
 
-  /** Holds the off hand up to read the fan: the ray points away from the eyes, forward and low. */
+  /** Waits `n` XR frames, so poses just written are applied before world state is read. */
+  function frames(n = 2) {
+    return ev((count) => window.__xrEmu.frames(count), n);
+  }
+
+  /**
+   * Holds the off hand up to read the fan: the ray points away from the eyes, forward and low.
+   * Waits a frame first so a `setHead` just before has moved the camera both reads come from, and
+   * after, so the grip and the fan on it are at the new pose when the caller reads them.
+   */
   async function holdFan() {
+    await frames();
     const from = await headPoint([-0.1, -0.22, -0.3]);
     const aim = await headPoint([-0.25, -0.45, -1.0]);
     await ev(({ from, aim }) => window.__xrEmu.placeAt('left', from, aim), { from, aim });
+    await frames();
   }
 
   /** Trail-coloured pixels (the additive near-white #fff0b8) present in `after` but not in `before`. */
@@ -888,7 +887,14 @@ try {
       from: mainFrom,
       at: pick.at,
     });
-    await settle(300);
+    await frames();
+    // Squeeze only once the ray rests on the sigil card: a squeeze grabs whichever card is hovered.
+    await waitFor(
+      'sigil-card-hovered',
+      (index) => window.__combat.session.fan.hovered === index,
+      pick.index,
+      3000,
+    );
     const hoveredCard = await ev(() => window.__combat.session.fan.hovered);
     await ev(() => window.__xrEmu.device.controllers.right.updateButtonValue('squeeze', 1));
     await settle(300);
@@ -922,6 +928,7 @@ try {
     });
     record('xr-sigil-stage', staged.stage === 'sigil' && staged.plate === 'ready', {
       card: pick.id,
+      index: pick.index,
       hoveredCard,
       ...staged,
     });

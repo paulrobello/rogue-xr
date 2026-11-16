@@ -169,6 +169,43 @@
     return { x: p.x, y: p.y, z: p.z };
   };
 
+  /**
+   * Resolves after `n` XR frames. A pose written through `setHead`, `aimAt` or `placeAt` reaches
+   * three.js (camera, grips, rays) and the app's per-frame update only in the next frame, so read
+   * world state derived from those poses after this, never straight after the write.
+   */
+  probe.frames = (n = 2) =>
+    new Promise((done) => {
+      const session = probe.session?.session;
+      if (!session || probe.session.ended) {
+        done(0);
+        return;
+      }
+      let left = n;
+      const step = () => {
+        left -= 1;
+        if (left <= 0) done(n);
+        else session.requestAnimationFrame(step);
+      };
+      session.requestAnimationFrame(step);
+    });
+
+  /**
+   * World point `offset` metres from the XR camera, in the rig's frame (the rig's heading, not the
+   * head's). The camera's world position follows the head's orientation (three.js moves the union
+   * camera back along its view axis), so it is only current one frame after a `setHead`.
+   */
+  probe.headPoint = (offset) => {
+    const { rig, camera } = probe.ctx();
+    camera.updateWorldMatrix(true, false);
+    const head = camera.getWorldPosition(camera.position.clone());
+    const turn = rig.getWorldQuaternion(rig.quaternion.clone());
+    const p = head.add(
+      camera.position.clone().set(offset[0], offset[1], offset[2]).applyQuaternion(turn),
+    );
+    return { x: p.x, y: p.y, z: p.z };
+  };
+
   /** The head (XR camera) in world space and its distance to a world point. */
   probe.headTo = (point) => {
     const { camera } = probe.ctx();
