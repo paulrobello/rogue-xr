@@ -53,6 +53,22 @@ TITLE_SAFE = {"x": 0.03, "y": 0.3, "w": 0.27, "h": 0.4}
 # Share of a mark's soft glow that also emits on the glow pages, so the halo glows a little.
 GLOW_HALO = 0.35
 
+# d6 walnut grade (art bible oiled walnut #583C26): the painted panel reads too red and dark.
+# Panel: rounded rect in 256 px slot pixels (x0, y0, x1, y1), measured inside the brass bevel;
+# the corner radius clears the bevel's chamfered corners. The mask starts WALNUT_INSET px inside
+# the panel edge, ramps up over WALNUT_FEATHER px, and fades out between the two Rec.601
+# luminances of WALNUT_LUM_GATE so no brass pixel is graded.
+WALNUT_TARGET = (0x58, 0x3C, 0x26)
+WALNUT_PANEL_PX = (26, 28, 204, 229)
+WALNUT_CORNER_PX = 10
+WALNUT_INSET_PX = 2
+WALNUT_FEATHER_PX = 3
+WALNUT_LUM_GATE = (72, 96)
+# Linear-light grade: luminance x WALNUT_LUM_GAIN (keeps grain contrast exactly), chromaticity
+# moved WALNUT_HUE_MIX of the way to the target's (keeps some of the painted streak colour).
+WALNUT_LUM_GAIN = 1.46
+WALNUT_HUE_MIX = 0.75
+
 # Pip centres in a unit d6 face (origin top-left), per value.
 PIPS = {
     1: [(0.5, 0.5)],
@@ -230,11 +246,51 @@ def lit_mark(base: np.ndarray, draw_fn, scale: int) -> tuple[np.ndarray, np.ndar
     return res, lit
 
 
+def srgb_to_linear(c: np.ndarray) -> np.ndarray:
+    c = c / 255
+    return np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
+
+
+def linear_to_srgb(c: np.ndarray) -> np.ndarray:
+    c = np.clip(c, 0, 1)
+    return 255 * np.where(c <= 0.0031308, c * 12.92, 1.055 * c ** (1 / 2.4) - 0.055)
+
+
+def walnut_mask(plate: np.ndarray) -> np.ndarray:
+    """Soft 0..1 mask of the d6 plate's walnut panel (rounded-rect geometry times a luminance gate)."""
+    h, w = plate.shape[:2]
+    x0, y0, x1, y1 = WALNUT_PANEL_PX
+    r = WALNUT_CORNER_PX
+    ys, xs = np.mgrid[0:h, 0:w] + 0.5
+    qx = np.abs(xs - (x0 + x1) / 2) - ((x1 - x0) / 2 - r)
+    qy = np.abs(ys - (y0 + y1) / 2) - ((y1 - y0) / 2 - r)
+    inside = r - np.hypot(np.maximum(qx, 0), np.maximum(qy, 0)) - np.minimum(np.maximum(qx, qy), 0)
+    geo = np.clip((inside - WALNUT_INSET_PX) / WALNUT_FEATHER_PX, 0, 1)
+    lum = plate.astype(np.float64) @ np.array([0.299, 0.587, 0.114])
+    lo, hi = WALNUT_LUM_GATE
+    t = np.clip((hi - lum) / (hi - lo), 0, 1)
+    return geo * t * t * (3 - 2 * t)
+
+
+def grade_walnut(plate: np.ndarray) -> np.ndarray:
+    """Moves the d6 walnut panel toward WALNUT_TARGET; brass rim and bevel are left as painted."""
+    lin = srgb_to_linear(plate.astype(np.float64))
+    weights = np.array([0.2126, 0.7152, 0.0722])
+    lum = np.maximum(lin @ weights, 1e-6)[..., None]
+    target = srgb_to_linear(np.array(WALNUT_TARGET, np.float64))
+    chroma = lin / lum
+    chroma += WALNUT_HUE_MIX * (target / (target @ weights) - chroma)
+    graded = linear_to_srgb(lum * WALNUT_LUM_GAIN * chroma)
+    mask = walnut_mask(plate)[..., None]
+    out = plate * (1 - mask) + graded * mask
+    return np.clip(np.rint(out), 0, 255).astype(np.uint8)
+
+
 def build_dice() -> tuple[Image.Image, Image.Image, Image.Image, Image.Image, dict, dict]:
     sheet = np.asarray(Image.open(SRC / "raw/dice-plates.png").convert("RGB"))
     (ax0, ay0, ax1, ay1), (bx0, by0, bx1, by1) = plate_boxes(sheet)
     d6_plate = Image.fromarray(sheet[ay0:ay1, ax0:ax1]).resize((DIE_SLOT, DIE_SLOT), Image.Resampling.LANCZOS)
-    d6_base = np.dstack([np.asarray(d6_plate), np.full((DIE_SLOT, DIE_SLOT), 255, np.uint8)])
+    d6_base = np.dstack([grade_walnut(np.asarray(d6_plate)), np.full((DIE_SLOT, DIE_SLOT), 255, np.uint8)])
 
     # Equilateral triangle, apex up, inscribed in the slot with an 8 px margin.
     side = DIE_SLOT - 16
@@ -517,6 +573,17 @@ def main() -> None:
         "font": {"file": rel(FONT), "sha256": sha256(FONT), "license": "SIL OFL 1.1"},
         "iconCrops": crops,
         "dicePlateRects": dice_src,
+        "d6WalnutGrade": {
+            "target": "#{:02X}{:02X}{:02X}".format(*WALNUT_TARGET),
+            "panelPx": list(WALNUT_PANEL_PX),
+            "cornerPx": WALNUT_CORNER_PX,
+            "insetPx": WALNUT_INSET_PX,
+            "featherPx": WALNUT_FEATHER_PX,
+            "lumGate": list(WALNUT_LUM_GATE),
+            "lumGain": WALNUT_LUM_GAIN,
+            "hueMix": WALNUT_HUE_MIX,
+            "method": "linear-light luminance x lumGain, chromaticity moved hueMix toward target, masked to the walnut panel before the pips are composited",
+        },
         "diceGlowPages": f"dice-d6-glow and dice-d8-glow: the pip/numeral amber fill times (core + {GLOW_HALO} x soft glow), black elsewhere; same slots as the colour pages",
         "files": [{"file": rel(p), "bytes": p.stat().st_size, "sha256": sha256(p)} for p in outputs],
     }

@@ -286,6 +286,25 @@
         "h": 1159
       }
     },
+    "d6WalnutGrade": {
+      "target": "#583C26",
+      "panelPx": [
+        26,
+        28,
+        204,
+        229
+      ],
+      "cornerPx": 10,
+      "insetPx": 2,
+      "featherPx": 3,
+      "lumGate": [
+        72,
+        96
+      ],
+      "lumGain": 1.46,
+      "hueMix": 0.75,
+      "method": "linear-light luminance x lumGain, chromaticity moved hueMix toward target, masked to the walnut panel before the pips are composited"
+    },
     "diceGlowPages": "dice-d6-glow and dice-d8-glow: the pip/numeral amber fill times (core + 0.35 x soft glow), black elsewhere; same slots as the colour pages",
     "files": [
       {
@@ -300,13 +319,13 @@
       },
       {
         "file": "public/assets/ui/dice-d6.ktx2",
-        "bytes": 124804,
-        "sha256": "db13abd5a165cf04d255901f16e8793218837d2131c5d72a03f69452ee61eb1d"
+        "bytes": 124533,
+        "sha256": "4eb835fd4824760c5c8c77dab8b93bad3d21353ca78f4d0ec338a4186a52caf6"
       },
       {
         "file": "public/assets/ui/dice-d6.png",
-        "bytes": 264304,
-        "sha256": "55271faab542335a8232b6b711b0efff03848178a48ef8baa0733a6d682adea4"
+        "bytes": 254911,
+        "sha256": "a60a4b6b28aac8b30588c7535d61369804292e90b739d20bcd580400b3d8f576"
       },
       {
         "file": "public/assets/ui/dice-d8-glow.ktx2",
