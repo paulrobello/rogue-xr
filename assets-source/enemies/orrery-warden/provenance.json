@@ -258,7 +258,7 @@
       "path": "assets-source/concepts/warden-sheet-1.png",
       "sha256": "c07d34ae5d7412f26c561508bc5a80f14de584ffebbcff31272cc356b07ec5c7",
       "provider": "higgsfield",
-      "note": "P5-T4 concept sheet (Higgsfield nano_banana_pro); owner approval pending (assets-source/concepts/p5-automatons-design.md)"
+      "note": "P5-T4 concept sheet (Higgsfield nano_banana_pro); concept approved by Paul 2026-11-16 (D8)"
     }
   ],
   "materialsUsed": "approved P4-T3 brass-polished set bound by slot name at runtime; gunmetal, warden-glow and warden-jewel (ruby, sapphire and emerald from COLOR_0) are factor-only",
@@ -280,10 +280,11 @@
   },
   "approvals": [
     {
+      "who": "Paul",
+      "when": "2026-11-16",
       "gate": "concept",
-      "status": "pending",
-      "notes": "assets-source/concepts/p5-automatons-design.md, Decisions for Paul 1",
-      "modelingProceededUnder": "Paul, 2026-11-15, in the rogue-xr session: \"you have standing approval for all spending / modeling / deployments needed for this project\". Modeling proceeded under it; it is not a concept, creative or owner approval of this asset."
+      "status": "approved",
+      "evidence": "Paul, 2026-11-16, in the rogue-xr session: \"D8 concepts look good amend the requirements to allow them\""
     },
     {
       "gate": "model",

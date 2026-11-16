@@ -368,9 +368,11 @@
   },
   "approvals": [
     {
+      "who": "Paul",
+      "when": "2026-11-16",
       "gate": "concept",
-      "status": "pending",
-      "notes": "no template-specific concept sheet; built in the approved study kit language (art bible). Owner decides whether one is needed"
+      "status": "approved",
+      "evidence": "Paul, 2026-11-16, in the rogue-xr session: \"yes to all Quick picks\" (D10: accept the rooms as built in the study-kit language, no new room concept sheets)"
     },
     {
       "gate": "technical",
@@ -378,9 +380,11 @@
       "notes": "validate-generated-assets verdict is reported to the orchestrator, not self-recorded"
     },
     {
+      "who": "Paul",
+      "when": "2026-11-16",
       "gate": "creative",
-      "status": "pending",
-      "notes": "review sheet assets-source/rooms/hall/staging/review-sheet.jpg"
+      "status": "approved",
+      "evidence": "Paul, 2026-11-16, in the rogue-xr session: \"the rest room is approved except the contents of the hearth look very flat add more detail\" (the rest room is the hall template; the hearth is src/world/hearth.ts)"
     },
     {
       "gate": "rights",
@@ -388,9 +392,11 @@
       "notes": "original procedural geometry; shared P4-T3 sets carry their own provenance"
     },
     {
+      "who": "Paul",
+      "when": "2026-11-16",
       "gate": "owner",
-      "status": "pending",
-      "notes": "in-engine look approval (docs/blender-kit-project.md ruling 3)"
+      "status": "approved",
+      "evidence": "Paul, 2026-11-16, in the rogue-xr session: \"the rest room is approved except the contents of the hearth look very flat add more detail\" (the rest room is the hall template; the hearth is src/world/hearth.ts)"
     },
     {
       "gate": "independent visual score",

@@ -297,9 +297,11 @@
   },
   "approvals": [
     {
+      "who": "Paul",
+      "when": "2026-11-16",
       "gate": "concept",
-      "status": "pending",
-      "notes": "no template-specific concept sheet; built in the approved study kit language (art bible). Owner decides whether one is needed"
+      "status": "approved",
+      "evidence": "Paul, 2026-11-16, in the rogue-xr session: \"yes to all Quick picks\" (D10: accept the rooms as built in the study-kit language, no new room concept sheets)"
     },
     {
       "gate": "technical",

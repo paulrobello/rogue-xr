@@ -34,5 +34,5 @@ SFX -16 LUFS integrated and music -18 LUFS, true peak at most -1.0 dBTP, toleran
 | --- | --- |
 | Technical | SFX pass: full decode in Node and in Chromium 156 with exact frame counts, loop and mono checks, deterministic rebuild, hashes reconciled. Loudness deviations above are open. Music: no source, so nothing to check. |
 | Creative | Pending. No cue has been auditioned by a person or in the live mix. |
-| Rights | Pending. The API reports the Starter plan on 2026-11-16. Provider terms evidence is not attached, and a plan alone is not proof. |
+| Rights | Cleared 2026-11-16 (D13): Paul confirms all his plans are paid with commercial use. The API reported the Starter plan the same day. |
 | Owner | Pending. Nothing here records Paul's approval. |

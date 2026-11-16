@@ -56,3 +56,12 @@ description) are recorded per frame in `card-atlas.json`; the frames carry no te
 Generated on Paul's paid Higgsfield plan. Higgsfield Terms of Use §4.4 (checked 2026-11-15): no
 ownership claim on inputs or outputs and no restriction on commercial use on any plan. The only
 reference inputs are this project's own Higgsfield style boards and card art.
+
+## Storage
+
+The raw provider downloads in the per-card folders (composites, layers, cutouts, 127 files,
+825 MB) are not in git. Per Paul's decision D21 (2026-11-16) they live on parnas1, in the `homes`
+share under `game-data/rogue-xr/`, at the same relative paths as here (macOS mount:
+`/Volumes/homes/game-data/rogue-xr/assets-source/cards/`). `raw-store.json` lists every file with
+its sha256 and size; each hash also appears in `provenance.json`. To restore them, copy that folder
+back over this one and check the hashes against `raw-store.json`.

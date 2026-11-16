@@ -1,0 +1,646 @@
+{
+  "store": "parnas1 SMB share \"homes\", folder game-data/rogue-xr (macOS mount: /Volumes/homes/game-data/rogue-xr)",
+  "layout": "same relative paths as in this repo",
+  "decision": "D21, Paul 2026-11-16: store the raw data on parnas1 in /Volumes/homes/game-data/rogue-xr",
+  "files": [
+    {
+      "path": "assets-source/cards/arc-bolt/arc-bolt-back.png",
+      "sha256": "c2e158f33554bb11d247c5ce22ff14e8e14b1942d91f98b737d21fcca62d74a2",
+      "bytes": 8190972
+    },
+    {
+      "path": "assets-source/cards/arc-bolt/arc-bolt-front-r1.cutout.png",
+      "sha256": "b2384ca5d77bbcc362a07d5ee12e21bcafb07e5969d5757720120b3ac330d8b4",
+      "bytes": 5211619
+    },
+    {
+      "path": "assets-source/cards/arc-bolt/arc-bolt-front-r1.png",
+      "sha256": "82ec877e041d816c02da1beed823faa6377085a3f672592cda3c4743a83b1aa0",
+      "bytes": 4654029
+    },
+    {
+      "path": "assets-source/cards/arc-bolt/arc-bolt-front.png",
+      "sha256": "42a2e213cf61d59aa91bed2161709b47e259bc9d4fac454a340c2618c3595a16",
+      "bytes": 6302759
+    },
+    {
+      "path": "assets-source/cards/arc-bolt/arc-bolt-key-a.png",
+      "sha256": "b447fab522d96687d5aac48d74490b4edd2bb604290ec6e60570d5a07e16caf2",
+      "bytes": 8618486
+    },
+    {
+      "path": "assets-source/cards/arc-bolt/arc-bolt-key-b.png",
+      "sha256": "6496ae9d832ebf9bc2c705b4c7404075581d9b5990379d9029b62be1608cfff6",
+      "bytes": 7331401
+    },
+    {
+      "path": "assets-source/cards/arc-bolt/arc-bolt-mid-r1.cutout.png",
+      "sha256": "502e628d348045cd9e489b240f74e51d163e705845b973181893be62c9f1912e",
+      "bytes": 5601951
+    },
+    {
+      "path": "assets-source/cards/arc-bolt/arc-bolt-mid-r1.png",
+      "sha256": "f1e15731cff1239e420a06e5667adb185c3bf789073c048380b9868c5f5fe192",
+      "bytes": 5123268
+    },
+    {
+      "path": "assets-source/cards/arc-bolt/arc-bolt-mid.png",
+      "sha256": "82e38bbac65b19b6fe8ad4b2cf46cc5714647d2af5d6d688621b33576f6f4ae3",
+      "bytes": 5302077
+    },
+    {
+      "path": "assets-source/cards/cog-toss/cog-toss-back-r1.png",
+      "sha256": "303be38d392255aa0b2d521a613a1c2ba85e19bbce6b20a2ede583ad96a24d8b",
+      "bytes": 7355789
+    },
+    {
+      "path": "assets-source/cards/cog-toss/cog-toss-back.png",
+      "sha256": "1794c7d041411bd0db855efd99536ed39c30e056709de7aeea14d31cac21ea45",
+      "bytes": 7810590
+    },
+    {
+      "path": "assets-source/cards/cog-toss/cog-toss-front-r1.cutout.png",
+      "sha256": "dbb680de71b5520695a82939f081de058b36da0f7f2c8a0f27b2426528c5813e",
+      "bytes": 5904127
+    },
+    {
+      "path": "assets-source/cards/cog-toss/cog-toss-front-r1.png",
+      "sha256": "1b433b7665b1746a2a6a73233d8fb85d23c8de5045880b72e1adc762c2de1c3e",
+      "bytes": 4595998
+    },
+    {
+      "path": "assets-source/cards/cog-toss/cog-toss-front.png",
+      "sha256": "09ee8c0839b4a75191ce003d5289b1261a52c0b4b3f8660b1f43b6e0915aaa3e",
+      "bytes": 5749969
+    },
+    {
+      "path": "assets-source/cards/cog-toss/cog-toss-key-a.png",
+      "sha256": "9ebc9cbfebfbf2fc549fed686c4872e67c55e48b1b0bd15ed62928d587443199",
+      "bytes": 7486509
+    },
+    {
+      "path": "assets-source/cards/cog-toss/cog-toss-key-b.png",
+      "sha256": "0ad3568e83c9adcda0051ff466b78a8947af0991dc3fe5ef59c13450fd14e758",
+      "bytes": 7690308
+    },
+    {
+      "path": "assets-source/cards/cog-toss/cog-toss-mid.cutout.png",
+      "sha256": "cf250a57e8307e01252f74213e6391d78660f91924809992c27c9d49f0c2b9dc",
+      "bytes": 5116848
+    },
+    {
+      "path": "assets-source/cards/cog-toss/cog-toss-mid.png",
+      "sha256": "852a0aeb35bdc4cbeb25cc1dd5a1fd698706d7969dc31a376794ee0b28c9ce21",
+      "bytes": 4754965
+    },
+    {
+      "path": "assets-source/cards/cogstorm/cogstorm-back.png",
+      "sha256": "cc4de0a8a62492a62be7d93392bf9fb8718473b699080d87131715df8ee647af",
+      "bytes": 7501374
+    },
+    {
+      "path": "assets-source/cards/cogstorm/cogstorm-front-r1.cutout.png",
+      "sha256": "a6e40d2bcef93831029be6e9f3e2e5859e6d4efc6fec675b5a27e3114b402cb7",
+      "bytes": 6488346
+    },
+    {
+      "path": "assets-source/cards/cogstorm/cogstorm-front-r1.png",
+      "sha256": "6e0902a68fc337c6fd0f62a27d0d770735e847a25ed321f2968a3a6709dc3767",
+      "bytes": 6852414
+    },
+    {
+      "path": "assets-source/cards/cogstorm/cogstorm-front.png",
+      "sha256": "6c5640ebe38c4dfab14489a8089c24220085f3e84423ad315618c8f8709c0e74",
+      "bytes": 8335881
+    },
+    {
+      "path": "assets-source/cards/cogstorm/cogstorm-key-a.png",
+      "sha256": "9e84e7c68507fd00b40ee08288482a0c16dd32deabec934cbe39a278dd125f1d",
+      "bytes": 8447396
+    },
+    {
+      "path": "assets-source/cards/cogstorm/cogstorm-key-b.png",
+      "sha256": "2b946786e867172af2ac5f7908aba486ee1bac00086570efab59e77526096803",
+      "bytes": 6847733
+    },
+    {
+      "path": "assets-source/cards/cogstorm/cogstorm-mid-r1.cutout.png",
+      "sha256": "37764fd5840ebc819a3af38502cc213f8111841d6006ca889e2b877d185e33a2",
+      "bytes": 6511618
+    },
+    {
+      "path": "assets-source/cards/cogstorm/cogstorm-mid-r1.png",
+      "sha256": "4cee9595139a1d9a7b6afc7a2d054df594ca0bc8f628e8d0ecdb1fcbecb43635",
+      "bytes": 5443336
+    },
+    {
+      "path": "assets-source/cards/cogstorm/cogstorm-mid.png",
+      "sha256": "bba40f2d7c1272b254a04f47bad78f3c20cb7d68739493723dff456c786c4466",
+      "bytes": 7607003
+    },
+    {
+      "path": "assets-source/cards/defend/defend-back.png",
+      "sha256": "c0deaad42c4845761bfba81714a62909f7015644b55e382aa7ef34273c488605",
+      "bytes": 7695420
+    },
+    {
+      "path": "assets-source/cards/defend/defend-front.cutout.png",
+      "sha256": "d21d811d7d81abf0b350c160e892843667675e0fb7bf143f46cae0a787402139",
+      "bytes": 6309740
+    },
+    {
+      "path": "assets-source/cards/defend/defend-front.png",
+      "sha256": "fdc3bdb905a6e5a5384c5871c1d220f90064d04383e4578b7ff72ac012a154a1",
+      "bytes": 6587816
+    },
+    {
+      "path": "assets-source/cards/defend/defend-key-a.png",
+      "sha256": "15f6bbca2c64b07b95621066e0703bdb217e7a3aa1d9a0e18236d0d08b13774e",
+      "bytes": 7183041
+    },
+    {
+      "path": "assets-source/cards/defend/defend-key-b.png",
+      "sha256": "fd26c2762202dd40da1031bf18d0d70f0f1e0e0dfe98b9dcdb76a5e6cf03fce8",
+      "bytes": 9096238
+    },
+    {
+      "path": "assets-source/cards/defend/defend-mid-r1.cutout.png",
+      "sha256": "c718ff5954a3d0960b626d6ab25e39af3d93639e72be6280dc3f239424956a61",
+      "bytes": 6021388
+    },
+    {
+      "path": "assets-source/cards/defend/defend-mid-r1.png",
+      "sha256": "5791068e229d0fe032bbaf4f4b343b8d95b220a25dd46fbc6ee0bee8741fcf82",
+      "bytes": 7433556
+    },
+    {
+      "path": "assets-source/cards/defend/defend-mid.png",
+      "sha256": "eb03380a2984ce4c3f66aa57112dac39e9961842284e9fe734aba3345e7c2abc",
+      "bytes": 7481145
+    },
+    {
+      "path": "assets-source/cards/escapement-hammer/escapement-hammer-back-r1.png",
+      "sha256": "d1b2e47c916dff8a2511d5bc6f2076a9d9e8cf44c38a5b79e7344c211aeb6291",
+      "bytes": 7732121
+    },
+    {
+      "path": "assets-source/cards/escapement-hammer/escapement-hammer-back.png",
+      "sha256": "b0ad1c376778d104aed538f1fa1dbd90fd3e83a9a005ec5eb7bb17ed829b157e",
+      "bytes": 7838178
+    },
+    {
+      "path": "assets-source/cards/escapement-hammer/escapement-hammer-front.cutout.png",
+      "sha256": "74c69239eb6dd6c42a1140a52127c21ab9caa708815ddb8998707c3f6f299e1e",
+      "bytes": 5078095
+    },
+    {
+      "path": "assets-source/cards/escapement-hammer/escapement-hammer-front.png",
+      "sha256": "f162e13df1b33691f2661f0a05d739ffc6e669887bfb39c85b0e527cfd0eff31",
+      "bytes": 4383737
+    },
+    {
+      "path": "assets-source/cards/escapement-hammer/escapement-hammer-key-a.png",
+      "sha256": "b3025ab28edc76baa8cb9794bb8107bedfc07b815a95ff2cb83cbfbcfc67dbe6",
+      "bytes": 6890788
+    },
+    {
+      "path": "assets-source/cards/escapement-hammer/escapement-hammer-key-b.png",
+      "sha256": "167711e66cc2d72307a9b4f0a6e0d0686ea9d58d92a77cc25181352a54d663b5",
+      "bytes": 7978765
+    },
+    {
+      "path": "assets-source/cards/escapement-hammer/escapement-hammer-mid.cutout.png",
+      "sha256": "021de6bd1a35615d8fcf47b720da26b5c94085134a3ffa31a5a7d5fea4b5a202",
+      "bytes": 6171087
+    },
+    {
+      "path": "assets-source/cards/escapement-hammer/escapement-hammer-mid.png",
+      "sha256": "4b60eafa07062fc7ac7591a4c3c7072d44062efd76ecf2134db1628815bb7de1",
+      "bytes": 4825731
+    },
+    {
+      "path": "assets-source/cards/frames/attack/frame-attack-a.png",
+      "sha256": "6d2d3f884752e81146d84af14c7b13b3b46be65eaf78a556839413256abdd576",
+      "bytes": 6289995
+    },
+    {
+      "path": "assets-source/cards/frames/attack/frame-attack-b.png",
+      "sha256": "5c309c64ce1bd4b65b56fab554ed9f2ac55c897cd2deb477a0fc26dfb6222a5f",
+      "bytes": 7052101
+    },
+    {
+      "path": "assets-source/cards/frames/sigil/frame-sigil-a.png",
+      "sha256": "e65c4c67420b3c85e4959b94bc5865a7f0bb8dd4cd168f7638716139f818da10",
+      "bytes": 4819235
+    },
+    {
+      "path": "assets-source/cards/frames/sigil/frame-sigil-b.png",
+      "sha256": "67466edc2860faf42e69142f67af0e1f049804cb4472d23c42203d1f2bce028e",
+      "bytes": 6267312
+    },
+    {
+      "path": "assets-source/cards/frames/skill/frame-skill-a.png",
+      "sha256": "1ed60518352d70bd0ba4413d006998d4f1a028fc6a04800a2757abd8ab06da61",
+      "bytes": 6253664
+    },
+    {
+      "path": "assets-source/cards/frames/skill/frame-skill-b.png",
+      "sha256": "6472564c62c3f644cb9d0220ec8f097ff0bb8ba1300084d0239a036acf24c1a9",
+      "bytes": 6230357
+    },
+    {
+      "path": "assets-source/cards/furnace-brand/furnace-brand-back.png",
+      "sha256": "73116bd8c1ca775f629bb7ff79735be15a85f64066fc29ed8fbaa5299f3a1c2e",
+      "bytes": 6535004
+    },
+    {
+      "path": "assets-source/cards/furnace-brand/furnace-brand-front-r1.cutout.png",
+      "sha256": "de308792fbc6487b2fd3158ec61ed17027916d763f318637ea70de24439e85cb",
+      "bytes": 6534964
+    },
+    {
+      "path": "assets-source/cards/furnace-brand/furnace-brand-front-r1.png",
+      "sha256": "52ab3a8b72973dbbf8e820ee2954bc8bebd2678c46beca0e4e5820761daafffb",
+      "bytes": 7318369
+    },
+    {
+      "path": "assets-source/cards/furnace-brand/furnace-brand-front.png",
+      "sha256": "bdd0e786f2862b4a01fdc45d766aa9c1472ddbe34a5f9185f00f09a584fb6cef",
+      "bytes": 7518431
+    },
+    {
+      "path": "assets-source/cards/furnace-brand/furnace-brand-key-a.png",
+      "sha256": "3b3a41c3911b98c2c6da2bf2df3a452f8a99a25b0c4a34deaf6721ae1adbb6b4",
+      "bytes": 7142629
+    },
+    {
+      "path": "assets-source/cards/furnace-brand/furnace-brand-key-b.png",
+      "sha256": "6aeba3f0c0b0ff0132057c7e061a0a0ac0affcb07294e8e6d1d5f8eab95f405e",
+      "bytes": 8578949
+    },
+    {
+      "path": "assets-source/cards/furnace-brand/furnace-brand-mid-r1.cutout.png",
+      "sha256": "1de85e36cf9da8005fd06645aaad691d96f67a6b1a08b48df2bbd972d2134eff",
+      "bytes": 6202996
+    },
+    {
+      "path": "assets-source/cards/furnace-brand/furnace-brand-mid-r1.png",
+      "sha256": "6cf6c241b7ba3ed51989afb030bb85038158cbd73b80566d0bab23b1a9b85d0f",
+      "bytes": 6362733
+    },
+    {
+      "path": "assets-source/cards/furnace-brand/furnace-brand-mid.png",
+      "sha256": "ce2b732b10ce877397784b5a5b2c4baacb4331a9958ecf64466af250a0f01f30",
+      "bytes": 7275150
+    },
+    {
+      "path": "assets-source/cards/lucky-rivets/lucky-rivets-back-r1.png",
+      "sha256": "83c80c6686b3b93a1b98575fae8d21d7bdfb954b1312e151fa42501c1e26ea02",
+      "bytes": 4891368
+    },
+    {
+      "path": "assets-source/cards/lucky-rivets/lucky-rivets-back.png",
+      "sha256": "81e955546a082b029ead36b70bd22e5be18e4d492a55dbf6c4f93c2a231f2256",
+      "bytes": 7547828
+    },
+    {
+      "path": "assets-source/cards/lucky-rivets/lucky-rivets-front.cutout.png",
+      "sha256": "33f9ee14640d95984234d5f94e35ce0758548cca0a145ede19f650c974bd5770",
+      "bytes": 4568237
+    },
+    {
+      "path": "assets-source/cards/lucky-rivets/lucky-rivets-front.png",
+      "sha256": "0af89421e64d8b0fd4a2f07b423d8bec36c015c39a14f42d3d45c72a00419ad0",
+      "bytes": 3343734
+    },
+    {
+      "path": "assets-source/cards/lucky-rivets/lucky-rivets-key-a.png",
+      "sha256": "d3e5a7e40456c742ffb4449ed5b14ae28abe9c71bb74370c74f199995cbee5b4",
+      "bytes": 5513720
+    },
+    {
+      "path": "assets-source/cards/lucky-rivets/lucky-rivets-key-b.png",
+      "sha256": "608a94686f34e1eb55ea131a0dbba4849d7543d00af8d4187ca5bea7779cd1e2",
+      "bytes": 5970736
+    },
+    {
+      "path": "assets-source/cards/lucky-rivets/lucky-rivets-mid-r1.cutout.png",
+      "sha256": "17a0b3b4d832f4f86ca19b76e12852490d9229dff00ff2d091bc9048bd0419f1",
+      "bytes": 5760229
+    },
+    {
+      "path": "assets-source/cards/lucky-rivets/lucky-rivets-mid-r1.png",
+      "sha256": "1e9b76d6dba2dfe73cb79cb1bec6597ebd5f0ff00a52fb1f2c6e131ee7c02bf8",
+      "bytes": 6075674
+    },
+    {
+      "path": "assets-source/cards/lucky-rivets/lucky-rivets-mid.png",
+      "sha256": "750fdf463bea4097d95be2187afed0b9870ae7a1351c03ef907f4f9a6a7ed4ec",
+      "bytes": 5474817
+    },
+    {
+      "path": "assets-source/cards/overwind/overwind-back.png",
+      "sha256": "2bc381252459f2d827eb28baa0e412922a850eade7e54c08cd95d23ec3bb7fba",
+      "bytes": 7744657
+    },
+    {
+      "path": "assets-source/cards/overwind/overwind-front-r1.cutout.png",
+      "sha256": "c51957123a959c352c593ab8511bea96ef54c8f4284373a58a649cef693bdbec",
+      "bytes": 6431585
+    },
+    {
+      "path": "assets-source/cards/overwind/overwind-front-r1.png",
+      "sha256": "f84f30a6b10d3fcbc3706d45aec801e0e2eeb223cca661b5de1f39b75af2df32",
+      "bytes": 6847131
+    },
+    {
+      "path": "assets-source/cards/overwind/overwind-front.png",
+      "sha256": "80ab8a769895b317bee06ad0cdf070c0fed36bc5e668d15d440cc9fb81d46bcf",
+      "bytes": 8038136
+    },
+    {
+      "path": "assets-source/cards/overwind/overwind-key-a.png",
+      "sha256": "f9396a74d766657a97c8b54af4c1daac14a27ef696eac79222158048c13e2fe7",
+      "bytes": 8511026
+    },
+    {
+      "path": "assets-source/cards/overwind/overwind-key-b.png",
+      "sha256": "d235ace0f353b862b012c94204cd54f9102bbbb2cb6a3a5a56bcb7c522569b70",
+      "bytes": 7448295
+    },
+    {
+      "path": "assets-source/cards/overwind/overwind-mid-r1.cutout.png",
+      "sha256": "dca89177426c358a297d0a2afeef8ecac0a1b75afc1d96f0a79206f97a32851e",
+      "bytes": 6687345
+    },
+    {
+      "path": "assets-source/cards/overwind/overwind-mid-r1.png",
+      "sha256": "943dda9ffaa04c49ed064ffa06e7a44563883d1c1addc1dc2751b3c1ee9d28d9",
+      "bytes": 8103472
+    },
+    {
+      "path": "assets-source/cards/overwind/overwind-mid.png",
+      "sha256": "585c5ed1f513400e8858cb45d79d7e69291c067e28a90f04ec13993929f1f1a7",
+      "bytes": 8257440
+    },
+    {
+      "path": "assets-source/cards/ratchet-flurry/ratchet-flurry-back.png",
+      "sha256": "f6ce0ca1621196cdbf7ff639b878aae43146b537c6bff8be5dc66b5c6e3d1006",
+      "bytes": 7076648
+    },
+    {
+      "path": "assets-source/cards/ratchet-flurry/ratchet-flurry-front-r1.cutout.png",
+      "sha256": "6fcdb562d176797f7c3528ed90e95f7ceede0b7ec44665c73edcaadc9e296562",
+      "bytes": 5529830
+    },
+    {
+      "path": "assets-source/cards/ratchet-flurry/ratchet-flurry-front-r1.png",
+      "sha256": "d83a23eb62d6c788093ae21673800245f21a780aa12c0ac55090dc3e24654e6c",
+      "bytes": 5004804
+    },
+    {
+      "path": "assets-source/cards/ratchet-flurry/ratchet-flurry-front.png",
+      "sha256": "23133e0d0ba635ca70cfd758a74ca85f0b1b01db36d6a047bda846d8bc24c409",
+      "bytes": 5980025
+    },
+    {
+      "path": "assets-source/cards/ratchet-flurry/ratchet-flurry-key-a.png",
+      "sha256": "304952159b93cceba835cde397e165f5b4c4901469f1c2427b6d4d3586d2ec5f",
+      "bytes": 5898171
+    },
+    {
+      "path": "assets-source/cards/ratchet-flurry/ratchet-flurry-key-b.png",
+      "sha256": "b661233001e6067735b7f558834a1476aa06d46c9b70622fb5fe8e5fcb674072",
+      "bytes": 7616566
+    },
+    {
+      "path": "assets-source/cards/ratchet-flurry/ratchet-flurry-mid-r1.cutout.png",
+      "sha256": "eaf9f603715ae3b39ce311f0a031b759320bb0171f0a1d4e4c6eb5a898b56fde",
+      "bytes": 4311624
+    },
+    {
+      "path": "assets-source/cards/ratchet-flurry/ratchet-flurry-mid-r1.png",
+      "sha256": "58f0fe2001e8488fe5b915f254e232a4226ba515fdf4278d21b5d45226a14564",
+      "bytes": 4057010
+    },
+    {
+      "path": "assets-source/cards/ratchet-flurry/ratchet-flurry-mid.png",
+      "sha256": "5c2bef878a17ce3398c8913c4b75d249baeef05f9c7add3058ab6a3ae925676c",
+      "bytes": 4969632
+    },
+    {
+      "path": "assets-source/cards/release-valve/release-valve-back.png",
+      "sha256": "133c8cbbd407349bb182c8d0557ec68fd21915f0ed57ad8692b8a2f67a3cbcb4",
+      "bytes": 7435994
+    },
+    {
+      "path": "assets-source/cards/release-valve/release-valve-front-r1.cutout.png",
+      "sha256": "0e7ea245cc390f4fcb6a1718e684d97c7c7601f99f7a54fc6cf9748748fdc391",
+      "bytes": 5959015
+    },
+    {
+      "path": "assets-source/cards/release-valve/release-valve-front-r1.png",
+      "sha256": "1e78fd27829a9239e96c7ab6fd5ea5ec2a73b18ca5082b2aeaab8a8abb6b5d37",
+      "bytes": 5698929
+    },
+    {
+      "path": "assets-source/cards/release-valve/release-valve-front.png",
+      "sha256": "3354cc322a63b4fb69c2102b29a059205cfae25db092280a30dd931dea785de3",
+      "bytes": 5949277
+    },
+    {
+      "path": "assets-source/cards/release-valve/release-valve-key-a.png",
+      "sha256": "55a18a08e2d0e05b4f99b41754ee67606e64f28ab574391669ef9c971357ad68",
+      "bytes": 7384568
+    },
+    {
+      "path": "assets-source/cards/release-valve/release-valve-key-b.png",
+      "sha256": "7f9f5e004d35a2817b51361892593ede4840eb6e0cf6282f07e11abe3a1b09de",
+      "bytes": 4734504
+    },
+    {
+      "path": "assets-source/cards/release-valve/release-valve-mid.cutout.png",
+      "sha256": "62eacc23058b970a3c91e61e1e171e8ebcc68d7b124c0e35d12236043adbd277",
+      "bytes": 5657961
+    },
+    {
+      "path": "assets-source/cards/release-valve/release-valve-mid.png",
+      "sha256": "abdeb15b32ff214c40c500abadbc06dec8e5aa9324ed8a4b2f20e2256ca79fa0",
+      "bytes": 5634877
+    },
+    {
+      "path": "assets-source/cards/rivet-volley/rivet-volley-back.png",
+      "sha256": "ad7930b06820e0b735a89c7c0a7247fbf3b96759747741fe4ce79207ae089b27",
+      "bytes": 7362567
+    },
+    {
+      "path": "assets-source/cards/rivet-volley/rivet-volley-front-r1.png",
+      "sha256": "7e8c49c3cde9f7679a839acaae3b993d79aec8350944b19255e147683f9673e9",
+      "bytes": 6849585
+    },
+    {
+      "path": "assets-source/cards/rivet-volley/rivet-volley-front.png",
+      "sha256": "dc1c178588c43a3be1436d309a5416bd6c6d4acda65dc4ddbbe9f9a3df16aea0",
+      "bytes": 5658418
+    },
+    {
+      "path": "assets-source/cards/rivet-volley/rivet-volley-key-a.png",
+      "sha256": "2e13c9cea9e8f4ab8e0483c0c686133b6068c546506e0abdc7fdeeac01b8beae",
+      "bytes": 7476569
+    },
+    {
+      "path": "assets-source/cards/rivet-volley/rivet-volley-key-b.png",
+      "sha256": "0dcda404d658eb3ccc282c1b0fd5d852facc26bb98e0ec8a95b2156f2a9e058c",
+      "bytes": 7936422
+    },
+    {
+      "path": "assets-source/cards/rivet-volley/rivet-volley-mid-r1.cutout.png",
+      "sha256": "99851b0e5918274481ceab8ce54d5618d25f3d6378dea6e471139d345b2eab07",
+      "bytes": 5183966
+    },
+    {
+      "path": "assets-source/cards/rivet-volley/rivet-volley-mid-r1.png",
+      "sha256": "a6e00c3546256e745140ebee1ba082e0a0a04f1d1020b98c067edbdec88bdc57",
+      "bytes": 4353361
+    },
+    {
+      "path": "assets-source/cards/rivet-volley/rivet-volley-mid.cutout.png",
+      "sha256": "fe9c78b1532bea9684a6754fb3f2875b73feb9da68c7c05b0cdc16d574936b12",
+      "bytes": 6313767
+    },
+    {
+      "path": "assets-source/cards/rivet-volley/rivet-volley-mid.png",
+      "sha256": "0577f25b55fde48d4bf5c0c4750f4b0d5270331fd2f69a6d2be9f1628cd096e4",
+      "bytes": 7058463
+    },
+    {
+      "path": "assets-source/cards/spanner-jam/spanner-jam-back.png",
+      "sha256": "5a9fce8f5a4b8e236d618ca6815c0dacc1190ac28fd8bdae9374e1b75f6a8006",
+      "bytes": 8175578
+    },
+    {
+      "path": "assets-source/cards/spanner-jam/spanner-jam-front-r1.cutout.png",
+      "sha256": "6781353a739f01d58a1d2ccb9ab9211e02921e9d8297220c13f06a0bcade2397",
+      "bytes": 7132519
+    },
+    {
+      "path": "assets-source/cards/spanner-jam/spanner-jam-front-r1.png",
+      "sha256": "6309da0b687f3e2157d0260fb5ec018319809c63074b86f066df1ef7357069c9",
+      "bytes": 7649847
+    },
+    {
+      "path": "assets-source/cards/spanner-jam/spanner-jam-front.png",
+      "sha256": "72d72c903b03f25724f4a6fb4e0c5f20c2c3ec99014bdb8c79b5616d9c3f6c6a",
+      "bytes": 5727573
+    },
+    {
+      "path": "assets-source/cards/spanner-jam/spanner-jam-key-a.png",
+      "sha256": "9f8defbfddc424e5a324cdf01c86106d4793d5e2eda275a2bab2377c4fbe8660",
+      "bytes": 8709880
+    },
+    {
+      "path": "assets-source/cards/spanner-jam/spanner-jam-key-b.png",
+      "sha256": "0af2a1f1ec55abbca6085d1db8428420f4234b2c85139532fc0d4589bc63f9f5",
+      "bytes": 6836718
+    },
+    {
+      "path": "assets-source/cards/spanner-jam/spanner-jam-mid.cutout.png",
+      "sha256": "c2d194d2313fd1eb3145058849fb4831ab468b0e5cbcb61fc5163fa24381763d",
+      "bytes": 5777786
+    },
+    {
+      "path": "assets-source/cards/spanner-jam/spanner-jam-mid.png",
+      "sha256": "09a71b1690310b7ae7d2a14ee67fea0b90950fbc5cef11af3b4c4b7e0291addc",
+      "bytes": 5129582
+    },
+    {
+      "path": "assets-source/cards/time-spiral/time-spiral-back.png",
+      "sha256": "e80c0f26ecccfb0bedaf696f75f974c0cae126e49dd777694546bdd96739a67a",
+      "bytes": 8519682
+    },
+    {
+      "path": "assets-source/cards/time-spiral/time-spiral-front.cutout.png",
+      "sha256": "c36199d454bf41c7f2b5faf68035bc7a2dd9cb7ecd65be208eae5a80cf3d3393",
+      "bytes": 6200074
+    },
+    {
+      "path": "assets-source/cards/time-spiral/time-spiral-front.png",
+      "sha256": "2f60ad61bdc9c51bf0d5587f63df328a4ae7fb2d85697524bf17c3e9c57f53b1",
+      "bytes": 5989830
+    },
+    {
+      "path": "assets-source/cards/time-spiral/time-spiral-key-a.png",
+      "sha256": "9749080dfdb7a68eb64d143d9f5a962d11c3b2faa73e80021ed50c235704cdc8",
+      "bytes": 8496361
+    },
+    {
+      "path": "assets-source/cards/time-spiral/time-spiral-key-b.png",
+      "sha256": "721d911b1314264d262bd6adaf87c0fc798217a028bc555a9b436aa46dfb928c",
+      "bytes": 7671451
+    },
+    {
+      "path": "assets-source/cards/time-spiral/time-spiral-mid-r1.cutout.png",
+      "sha256": "a5c3a2456df341e807dadd6f0c0850e75ed3ab4d0b1847099fa6cde7321dbd2b",
+      "bytes": 4594933
+    },
+    {
+      "path": "assets-source/cards/time-spiral/time-spiral-mid-r1.png",
+      "sha256": "be7062808af8d51f7b0b705d2c2b0a99c7f1fa5fd041190059965ff8cb2bd4c8",
+      "bytes": 3666304
+    },
+    {
+      "path": "assets-source/cards/time-spiral/time-spiral-mid.png",
+      "sha256": "6c9e168d3fa7540771bb3466afc8aefa08720d6053e27a73739fef687594cae1",
+      "bytes": 7517701
+    },
+    {
+      "path": "assets-source/cards/warding-glyph/warding-glyph-back.png",
+      "sha256": "4690daa73ddaa105b590e24fcb39eee17a097774078a0e20083099273a7a68ed",
+      "bytes": 6639173
+    },
+    {
+      "path": "assets-source/cards/warding-glyph/warding-glyph-front-r1.cutout.png",
+      "sha256": "9d23dd607375142e7e7ee6adeddb56d1fcba2496eef219db80106d9bc995dabf",
+      "bytes": 5649594
+    },
+    {
+      "path": "assets-source/cards/warding-glyph/warding-glyph-front-r1.png",
+      "sha256": "5a094d980fd62ee4639f3d7b0cbfd1022af2cda2f5283daad6a80fd950d57230",
+      "bytes": 5872803
+    },
+    {
+      "path": "assets-source/cards/warding-glyph/warding-glyph-front.png",
+      "sha256": "94aefdae4bad4dc6893492b60bcf8182fd97eae1296f2b6be038210b9e3fbb52",
+      "bytes": 4843654
+    },
+    {
+      "path": "assets-source/cards/warding-glyph/warding-glyph-key-a.png",
+      "sha256": "f8b332ff98c776628a116b5e301fcf733ed8c89317ea221e637ad6c1d43d57a0",
+      "bytes": 7341679
+    },
+    {
+      "path": "assets-source/cards/warding-glyph/warding-glyph-key-b.png",
+      "sha256": "ff50480f14191f697467bdcbbf8d9a3589b1dce0fdf903b08583343124d7cafd",
+      "bytes": 7754210
+    },
+    {
+      "path": "assets-source/cards/warding-glyph/warding-glyph-mid-r1.cutout.png",
+      "sha256": "37f9e11d810869c81dbbbb616614d816993bd7cc7eceddcb6bfd7053d5da3caf",
+      "bytes": 5439811
+    },
+    {
+      "path": "assets-source/cards/warding-glyph/warding-glyph-mid-r1.png",
+      "sha256": "4a30142eb39fb9dc2c978d056a27a85ddf10e542185d0dea1730a22322e3bd93",
+      "bytes": 6315549
+    },
+    {
+      "path": "assets-source/cards/warding-glyph/warding-glyph-mid.png",
+      "sha256": "b58f82d7e0899be8715e9a26baaba41981a0536cda765a22221a8abb703c999f",
+      "bytes": 6774873
+    }
+  ],
+  "count": 127,
+  "bytes": 824660649,
+  "copiedAt": "2026-11-16",
+  "verify": "sha256 of every file on the share matched the local file on 2026-11-16; every hash also appears in assets-source/cards/provenance.json"
+}

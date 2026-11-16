@@ -290,7 +290,7 @@
       "path": "assets-source/concepts/escapement-sheet-1.png",
       "sha256": "42f8031f0391d392cbafd30756f7c69fde1a3c0c216f37aef3fc7060c8a61b9f",
       "provider": "higgsfield",
-      "note": "P5-T4 concept sheet (Higgsfield nano_banana_pro); owner approval pending (assets-source/concepts/p5-automatons-design.md)"
+      "note": "P5-T4 concept sheet (Higgsfield nano_banana_pro); concept approved by Paul 2026-11-16 (D8)"
     }
   ],
   "materialsUsed": "approved P4-T3 brass-polished set bound by slot name at runtime; escapement-case (mahogany, dark iron, sapphire and ember from COLOR_0), escapement-glass (alpha-blended) and escapement-glow are factor-only",
@@ -312,10 +312,11 @@
   },
   "approvals": [
     {
+      "who": "Paul",
+      "when": "2026-11-16",
       "gate": "concept",
-      "status": "pending",
-      "notes": "assets-source/concepts/p5-automatons-design.md, Decisions for Paul 1",
-      "modelingProceededUnder": "Paul, 2026-11-15, in the rogue-xr session: \"you have standing approval for all spending / modeling / deployments needed for this project\". Modeling proceeded under it; it is not a concept, creative or owner approval of this asset."
+      "status": "approved",
+      "evidence": "Paul, 2026-11-16, in the rogue-xr session: \"D8 concepts look good amend the requirements to allow them\""
     },
     {
       "gate": "model",

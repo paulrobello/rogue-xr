@@ -54,7 +54,10 @@ card families, never as large wall or floor areas. No teal and no cool ambient f
 
 ## Automatons
 
-- Slender, man-sized humanoids with long limbs and a narrow head with two amber eye slits.
+- Slender, man-sized humanoids with long limbs and a narrow head with two amber eye slits by
+  default. Roster exceptions, approved by Paul on 2026-11-16 (D8): the four-legged Spring Hound,
+  the squat Bellows Golem (round eye lights), the tall Orrery Warden and the clock-case Grand
+  Escapement guardian. Their concept sheets are in `assets-source/concepts/`.
 - Polished brass plates over dark gunmetal joints. The plates stay as separate readable shapes so a
   low-poly model can carry them.
 - One amber core in the chest is the focal point and the hit-reaction light.

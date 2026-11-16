@@ -21,3 +21,5 @@ assets-source/rooms/*/staging/*.png
 *.blend1
 # Per-run Blender logs carry absolute paths
 assets-source/**/staging/build.log
+# Raw card provider downloads live on parnas1 (D21); hashes in assets-source/cards/raw-store.json
+assets-source/cards/*/**/*.png

@@ -20,13 +20,14 @@
       "../concepts/sentry-sheet-1.png": "c5373556e0cc0765f71a74d08d4f3e50c473917ad23bdf5e605218d737404e34"
     },
     "credits": 2,
-    "status": "candidate",
+    "status": "selected",
     "rejectReason": null,
     "approval": {
-      "concept": "pending",
+      "concept": "approved",
       "creative": "pending",
       "rights": "pending",
-      "owner": "pending"
+      "owner": "pending",
+      "conceptEvidence": "Paul, 2026-11-16, in the rogue-xr session: \"D8 concepts look good amend the requirements to allow them\""
     },
     "inspection": "Inspected at native 2752x1536 (views and every pose panel cropped at full resolution): correct four-legged subject, coiled spring spine, amber slit eyes, chest core grille, ruby inlays, tail winding key; three intent poses (snap, pounce, coil) read clearly. No text. No defects found."
   },
@@ -51,13 +52,14 @@
       "../concepts/sentry-sheet-1.png": "c5373556e0cc0765f71a74d08d4f3e50c473917ad23bdf5e605218d737404e34"
     },
     "credits": 2,
-    "status": "candidate",
+    "status": "selected",
     "rejectReason": null,
     "approval": {
-      "concept": "pending",
+      "concept": "approved",
       "creative": "pending",
       "rights": "pending",
-      "owner": "pending"
+      "owner": "pending",
+      "conceptEvidence": "Paul, 2026-11-16, in the rogue-xr session: \"D8 concepts look good amend the requirements to allow them\""
     },
     "inspection": "Inspected at native 2752x1536 (views and every pose panel cropped at full resolution): correct squat broad subject with walnut bellows barrel, chest grille core, shoulder chimneys, emerald inlays, three intent poses (slam, vent, guard). Deviations: eyes are two round amber lights rather than slits; faint glow wisps above the chimney mouths in the views and a flame plume above one chimney in the vent pose (model as emissive mouth only). No text."
   },
@@ -82,13 +84,14 @@
       "../concepts/sentry-sheet-1.png": "c5373556e0cc0765f71a74d08d4f3e50c473917ad23bdf5e605218d737404e34"
     },
     "credits": 2,
-    "status": "candidate",
+    "status": "selected",
     "rejectReason": null,
     "approval": {
-      "concept": "pending",
+      "concept": "approved",
       "creative": "pending",
       "rights": "pending",
-      "owner": "pending"
+      "owner": "pending",
+      "conceptEvidence": "Paul, 2026-11-16, in the rogue-xr session: \"D8 concepts look good amend the requirements to allow them\""
     },
     "inspection": "Inspected at native 2752x1536 (views and every pose panel cropped at full resolution): correct tall humanoid with armillary rings and ruby/sapphire/emerald planets, sun-disc chest core, plate skirt; three intent poses (planet sweep, eclipse disc over core, sun raised). Artifact outside the subject panels: a stray partial copy of the Cog Sentry with a spear (leaked from the third reference) fades out below the front view, outside the panels. Kept, not retried: the subject itself is correct and the retry rule covers wrong subject, text garbage and broken anatomy only."
   },
@@ -113,13 +116,14 @@
       "../concepts/sentry-sheet-1.png": "c5373556e0cc0765f71a74d08d4f3e50c473917ad23bdf5e605218d737404e34"
     },
     "credits": 2,
-    "status": "candidate",
+    "status": "selected",
     "rejectReason": null,
     "approval": {
-      "concept": "pending",
+      "concept": "approved",
       "creative": "pending",
       "rights": "pending",
-      "owner": "pending"
+      "owner": "pending",
+      "conceptEvidence": "Paul, 2026-11-16, in the rogue-xr session: \"D8 concepts look good amend the requirements to allow them\""
     },
     "inspection": "Inspected at native 2752x1536 (views and every pose panel cropped at full resolution): correct subject, walnut clock-case torso with glass doors, bell crown, anchor pallet claws, winding key, sapphire inlays. Phase one front/side/back, phase two open case with blazing escapement and pendulum, mid-transition, and escapement close-up. Panel numerals 1-3 are rendered cleanly. Minor: the case reads as a squat cabinet rather than a tall longcase; the side view holds the anchor claw like a spear; the phase-two panel crops at the knees."
   }

@@ -52,23 +52,26 @@ REFERENCE_NOTES = {
     "guardian-vault": "kit language only (approved art bible board, L-study and the study's room-sheet-1); no guardian-vault concept sheet exists",
 }
 _KIT_GATES = [
-    {"gate": "concept", "status": "pending", "notes": "no template-specific concept sheet; built in the approved study kit language (art bible). Owner decides whether one is needed"},
+    {"who": "Paul", "when": "2026-11-16", "gate": "concept", "status": "approved", "evidence": "Paul, 2026-11-16, in the rogue-xr session: \"yes to all Quick picks\" (D10: accept the rooms as built in the study-kit language, no new room concept sheets)"},
     {"gate": "technical", "status": "pending", "notes": "validate-generated-assets verdict is reported to the orchestrator, not self-recorded"},
     {"gate": "creative", "status": "pending", "notes": "review sheet assets-source/rooms/{t}/staging/review-sheet.jpg"},
     {"gate": "rights", "status": "pending", "notes": "original procedural geometry; shared P4-T3 sets carry their own provenance"},
     {"gate": "owner", "status": "pending", "notes": "in-engine look approval (docs/blender-kit-project.md ruling 3)"},
     {"gate": "independent visual score", "status": "unscored", "notes": "blender-kit-pieces requires an independent >= 80/100 score; unscored means unaccepted"},
 ]
+_REST_ROOM = "Paul, 2026-11-16, in the rogue-xr session: \"the rest room is approved except the contents of the hearth look very flat add more detail\" (the rest room is the hall template; the hearth is src/world/hearth.ts)"
 APPROVALS = {
     "study": [
         {"who": "Paul", "when": "2026-11-15", "gate": "concept", "status": "approved", "evidence": "docs/art-bible.md: room-sheet-1.png picked for the hero study"},
         {"gate": "creative", "status": "pending", "notes": "review sheet assets-source/rooms/study/staging/review-sheet.jpg"},
         {"gate": "owner", "status": "pending", "notes": "in-engine look approval (P4-T10)"},
     ],
-    "hall": [{**g, "notes": g["notes"].format(t="hall")} for g in _KIT_GATES],
-    "corridor": [{**g, "notes": g["notes"].format(t="corridor")} for g in _KIT_GATES],
-    "gear-shaft": [{**g, "notes": g["notes"].format(t="gear-shaft")} for g in _KIT_GATES],
-    "guardian-vault": [{**g, "notes": g["notes"].format(t="guardian-vault")} for g in _KIT_GATES],
+    "hall": [{"who": "Paul", "when": "2026-11-16", "gate": g["gate"], "status": "approved", "evidence": _REST_ROOM}
+             if g["gate"] in ("creative", "owner") else {**g, "notes": g["notes"].format(t="hall")} if "notes" in g else g
+             for g in _KIT_GATES],
+    "corridor": [{**g, "notes": g["notes"].format(t="corridor")} if "notes" in g else g for g in _KIT_GATES],
+    "gear-shaft": [{**g, "notes": g["notes"].format(t="gear-shaft")} if "notes" in g else g for g in _KIT_GATES],
+    "guardian-vault": [{**g, "notes": g["notes"].format(t="guardian-vault")} if "notes" in g else g for g in _KIT_GATES],
 }
 BLEND_STORE_NOTE = {"study": "PRD project file section 1.5"}
 # Templates that must ship named rigid animated nodes (manifest rigidNodes).
@@ -293,10 +296,10 @@ ENEMY_REFERENCES = {"cog-sentry": ["assets-source/concepts/sentry-sheet-1.png"],
 _STANDING = ("Paul, 2026-11-15, in the rogue-xr session: \"you have standing approval for all spending / modeling / deployments needed "
              "for this project\". Modeling proceeded under it; it is not a concept, creative or owner approval of this asset.")
 _P5_META = {
-    "reference_note": "P5-T3 concept sheet (Higgsfield nano_banana_pro); owner approval pending (assets-source/concepts/p5-automatons-design.md)",
+    "reference_note": "P5-T3 concept sheet (Higgsfield nano_banana_pro); concept approved by Paul 2026-11-16 (D8)",
     "evidence_glob": ("assets-source/enemies/{enemy}/staging/engine", "*.jpg"),
-    "concept": {"gate": "concept", "status": "pending", "notes": "assets-source/concepts/p5-automatons-design.md, Decisions for Paul 1",
-                "modelingProceededUnder": _STANDING},
+    "concept": {"who": "Paul", "when": "2026-11-16", "gate": "concept", "status": "approved",
+                "evidence": "Paul, 2026-11-16, in the rogue-xr session: \"D8 concepts look good amend the requirements to allow them\""},
 }
 # Per-enemy provenance fields that differ by asset (the sentry entry reproduces its P4-T6 record).
 ENEMY_META = {

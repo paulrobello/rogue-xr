@@ -258,7 +258,7 @@
       "path": "assets-source/concepts/golem-sheet-1.png",
       "sha256": "8c5bafcf4a25372cab90935515ca4372933bb5c83d61213a528958a1ec29352b",
       "provider": "higgsfield",
-      "note": "P5-T3 concept sheet (Higgsfield nano_banana_pro); owner approval pending (assets-source/concepts/p5-automatons-design.md)"
+      "note": "P5-T3 concept sheet (Higgsfield nano_banana_pro); concept approved by Paul 2026-11-16 (D8)"
     }
   ],
   "materialsUsed": "approved P4-T3 brass-polished set bound by slot name at runtime; golem-case (walnut, pleats from COLOR_0), golem-metal (gunmetal and emerald from COLOR_0) and golem-glow are factor-only",
@@ -280,10 +280,11 @@
   },
   "approvals": [
     {
+      "who": "Paul",
+      "when": "2026-11-16",
       "gate": "concept",
-      "status": "pending",
-      "notes": "assets-source/concepts/p5-automatons-design.md, Decisions for Paul 1",
-      "modelingProceededUnder": "Paul, 2026-11-15, in the rogue-xr session: \"you have standing approval for all spending / modeling / deployments needed for this project\". Modeling proceeded under it; it is not a concept, creative or owner approval of this asset."
+      "status": "approved",
+      "evidence": "Paul, 2026-11-16, in the rogue-xr session: \"D8 concepts look good amend the requirements to allow them\""
     },
     {
       "gate": "model",
