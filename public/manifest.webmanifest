@@ -1,0 +1,26 @@
+{
+  "id": "/",
+  "name": "Clockwork Spire",
+  "short_name": "Spire",
+  "description": "A seated VR roguelike deckbuilder for Meta Quest 3. Climb a clockwork tower, roll brass dice, trace sigils in the air and outplay its automatons.",
+  "lang": "en",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "background_color": "#120c07",
+  "theme_color": "#120c07",
+  "categories": ["games"],
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "asset": "Launch kit: brand mark, favicons, PWA icons, social share image",
+  "brief": "docs/art-bible.md (Gilded Lamplight palette; UI icons are brass line art on warm black)",
+  "rights": {
+    "mark": "Hand-built SVG authored for this project (assets-source/brand/mark.svg and mark-16.svg). No generation, no third-party artwork.",
+    "shareImageArt": "public/assets/ui/title-2048.jpg, project-owned Higgsfield key art; provenance in assets-source/ui/provenance.json (key-art)",
+    "font": "Noto Sans Regular, public/fonts/NotoSans-Regular.ttf, SIL Open Font License 1.1",
+    "attribution": "none required"
+  },
+  "spend": { "generations": 0, "credits": 0 },
+  "sources": [
+    {
+      "file": "assets-source/brand/mark.svg",
+      "sha256": "3f89d8d7ff6d29955fcb678c8bf79d4374442c8aa923742bea5f456c8863e909"
+    },
+    {
+      "file": "assets-source/brand/mark-16.svg",
+      "sha256": "c53985e90ffad0f5c38a09f2e27e0ad97411e8dbc42f7b41a20faac9daf357f7"
+    },
+    {
+      "file": "public/assets/ui/title-2048.jpg",
+      "sha256": "346be7b9c5050cbb7199f30d65da34126028dea47bf912382099a0abcce4ea21"
+    },
+    {
+      "file": "public/fonts/NotoSans-Regular.ttf",
+      "sha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5"
+    }
+  ],
+  "derivation": {
+    "icons": "python3 -I scripts/assets/gen-icons.py (rsvg-convert + Pillow); writes public/favicon.*, favicon-96x96.png, apple-touch-icon.png, icons/*.png and docs/verification/launch-favicon-16-32.png, launch-icons.png. Deterministic: two runs byte-identical.",
+    "shareImage": "uv run scripts/assets/og/render-og.py (Playwright 1.65.2 headless Chromium screenshots scripts/assets/og/og.html at 1200x630 DPR 1, Pillow 256-colour quantize); writes public/og-image.png and docs/verification/launch-og-image.png. Two runs byte-identical on the authoring host."
+  },
+  "approvals": {
+    "technical": "pending validate-generated-assets review by the orchestrating session",
+    "creative": "pending Paul",
+    "owner": "pending Paul"
+  }
+}
