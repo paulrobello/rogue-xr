@@ -7,7 +7,9 @@
 // A run clears the non-elite fights in the side wings first, then takes the route to the
 // guardian, opening any treasure coffer a cleared way offers (a mouse click on its lid, checked against
 // the panel it shows) just before the guardian; an elite is fought only when it stands on that route
-// (see the policy block below).
+// (see the policy block below). A rest-room hearth is used (a mouse click on its bowl) over a cleared
+// route when the bot is hurt, and any left over just before the guardian; the hp it gives is checked
+// against the rule. The guardian fight is watched frame by frame for its phase 2 (see watchGuardian).
 //
 //   node scripts/full-run/run.mjs [--base http://localhost:4260] [--out /tmp/full-run]
 //        [--seeds SPIRE001,SPIRE002] [--death SPIRE001] [--headed]
@@ -24,7 +26,11 @@ const { values: opts } = parseArgs({
   options: {
     base: { type: 'string', default: 'http://localhost:4260' },
     out: { type: 'string', default: '/tmp/full-run' },
-    seeds: { type: 'string', default: 'SPIRE001,SPIRE002,SPIRE003,SPIRE004,SPIRE010,SPIRE034' },
+    seeds: {
+      type: 'string',
+      default:
+        'SPIRE001,SPIRE002,SPIRE003,SPIRE004,SPIRE010,SPIRE034,SPIRE021,SPIRE024,SPIRE065,SPIRE086',
+    },
     death: { type: 'string', default: 'SPIRE001' },
     headed: { type: 'boolean', default: false },
     'max-turns': { type: 'string', default: '45' },
@@ -57,6 +63,10 @@ const POLICY = {
   dupPenalty: 1,
   optional: 'regular',
 };
+/** The bot walks to a hearth early when it is missing at least this much hp; the last one is always used. */
+const HEARTH_MIN_MISSING = 10;
+/** Length of the guardian's phase-change clip in seconds (its manifest). */
+const PHASE_CLIP_SECONDS = 3.0;
 const DIE_MEAN = { 'brass-d6': 3.5, 'glass-d8': 4.5 };
 
 const stackOf = (st, id) => st?.[id] || 0;
@@ -345,6 +355,13 @@ const summary = reports.map((r) => ({
   consoleWarnings: r.console.warnings.length,
   failedRequests: r.network.failed.length,
   music404: r.network.music.length,
+  hpEnd: r.hpCurve.at(-1)?.hp ?? null,
+  hearthsUsed: r.hearth.filter((h) => h.gained !== undefined).length,
+  hearthGained: r.hearth.reduce((n, h) => n + (h.gained ?? 0), 0),
+  hearthSkipped: r.hearth.filter((h) => h.skipped).length,
+  phaseHp: r.guardianPhase?.hpAtChange ?? null,
+  phaseTurn: r.guardianPhase?.turnAtChange ?? null,
+  phase2Moves: r.guardianPhase?.phase2MovesSeen?.join('+') ?? null,
 }));
 writeFileSync(join(opts.out, 'summary.json'), JSON.stringify(summary, null, 2));
 console.table(summary);
@@ -366,6 +383,8 @@ async function runSeed(seed, mode) {
     fights: [],
     rewards: [],
     treasure: [],
+    hearth: [],
+    guardianPhase: null,
     hpCurve: [],
     cogsEarned: 0,
     summary: null,
@@ -508,8 +527,10 @@ async function runSeed(seed, mode) {
     // meet); at this point only the guardian's own purse, a flat 60, is left to draw.
     const targets = [...side, ...route];
     for (const [i, target] of targets.entries()) {
-      if (i === targets.length - 1 && target.tier === 'guardian' && mode !== 'death')
-        await treasure();
+      const lastStop = i === targets.length - 1 && target.tier === 'guardian' && mode !== 'death';
+      // A hearth burns no random draw, so a hurt bot can use one early without shifting any offer.
+      if (mode !== 'death') await hearths(lastStop);
+      if (lastStop) await treasure();
       if ((await approachAndFight(target)) === 'stop') break;
     }
     const end = await phase();
@@ -824,6 +845,152 @@ async function runSeed(seed, mode) {
       fail('coffer-not-recorded', { openedLoot: after.run.openedLoot });
   }
 
+  /**
+   * Visits the floor's unused hearths over cleared routes. Early (before a fight) only when the bot
+   * is missing `HEARTH_MIN_MISSING` hp or more, and every remaining one at the last stop before the guardian.
+   */
+  async function hearths(lastStop) {
+    const list = await ev(() => window.__fr.hearths());
+    for (const hearth of list) {
+      if (hearth.used) continue;
+      const run = await ev(() => window.__flow.flow.run);
+      if (!lastStop && run.maxHp - run.hp < HEARTH_MIN_MISSING) continue;
+      const clear = await ev((room) => window.__fr.routeIsClear(room), hearth.room);
+      let record = report.hearth.find((h) => h.name === hearth.name);
+      if (!record) {
+        record = { room: hearth.room, socketId: hearth.socketId, name: hearth.name };
+        report.hearth.push(record);
+      }
+      if (!clear) {
+        record.skipped = 'an uncleared encounter stands on the way';
+        continue;
+      }
+      delete record.skipped;
+      await useHearth(hearth, record);
+    }
+  }
+
+  /** Walks up to a hearth, clicks its bowl and checks what it gives, once and only once. */
+  async function useHearth(hearth, record) {
+    let arrived = false;
+    for (let attempt = 0; attempt < 4 && !arrived; attempt++) {
+      const plan = await ev((name) => window.__fr.pathToHearth(name), hearth.name);
+      if (!plan) {
+        fail('no-path-to-hearth', { room: hearth.room });
+        record.skipped = 'no path';
+        return;
+      }
+      const result = await walk(plan.points);
+      if (result === 'fight') {
+        fail('fight-on-the-way-to-hearth', { room: hearth.room });
+        return;
+      }
+      if (result === 'arrived') arrived = true;
+      else {
+        await hold(new Set(['KeyS']));
+        await wait(400);
+        await hold(new Set());
+      }
+    }
+    if (!arrived) {
+      fail('could-not-reach-hearth', { room: hearth.room });
+      return;
+    }
+    await turnTo(await ev((name) => window.__fr.bearingTo(name), hearth.name));
+    await wait(500);
+    const room = await ev(() => window.__combat.floor.world.current);
+    if (room !== hearth.room) fail('hearth-room-not-current', { room, want: hearth.room });
+    const before = await ev((name) => window.__fr.hearthState(name), hearth.name);
+    await shot(`rest-lit-r${hearth.room}`);
+    if (before.used) fail('hearth-used-before-click', { room: hearth.room });
+    if (before.glow < 0.9) fail('hearth-coals-not-lit', { glow: before.glow });
+    const point = await ev((name) => window.__combat.screenOfCoffer(name, 0.6), hearth.name);
+    const onScreen =
+      point && point.x > 0 && point.y > 0 && point.x < VIEWPORT.width && point.y < VIEWPORT.height;
+    if (!onScreen) {
+      fail('hearth-not-on-screen', { room: hearth.room, point });
+      return;
+    }
+    await page.mouse.move(point.x, point.y, { steps: 4 });
+    await wait(120);
+    await page.mouse.click(point.x, point.y);
+    const used = await until(
+      'hearth-used',
+      (name) => window.__fr.hearthState(name).used,
+      hearth.name,
+      5000,
+    );
+    if (!used) return;
+    await wait(2000);
+    const after = await ev((name) => window.__fr.hearthState(name), hearth.name);
+    await shot(`rest-used-r${hearth.room}`);
+    const rule = await ev(() => window.__fr.hearthRule());
+    const missing = before.run.maxHp - before.run.hp;
+    const want = Math.min(missing, Math.floor(before.run.maxHp * rule.fraction));
+    Object.assign(record, {
+      hpBefore: before.run.hp,
+      hpAfter: after.run.hp,
+      maxHp: before.run.maxHp,
+      missing,
+      want,
+      shown: after.toast,
+      gained: after.run.hp - before.run.hp,
+      glowBefore: before.glow,
+      glowAfter: after.glow,
+    });
+    checkHearth(hearth, before, after, want);
+    // A second click on the spent hearth changes nothing.
+    await page.mouse.move(point.x, point.y, { steps: 2 });
+    await page.mouse.click(point.x, point.y);
+    await wait(500);
+    const again = await ev((name) => window.__fr.hearthState(name), hearth.name);
+    if (JSON.stringify(again.run) !== JSON.stringify(after.run))
+      fail('hearth-healed-twice', { room: hearth.room, after: after.run, again: again.run });
+    // The use is on disk: the saved snapshot holds the used key and the hp as shown.
+    await ev(() => window.__flow.flushed());
+    const saved = await ev(async () => {
+      const { openDb } = await import('/src/persist/db.ts');
+      const { loadRunSnapshot } = await import('/src/persist/saves.ts');
+      const snap = await loadRunSnapshot(await openDb());
+      return snap ? { usedHearths: snap.run.usedHearths ?? [], hp: snap.run.hp } : null;
+    });
+    record.saved = saved;
+    const key = `${hearth.room}/${hearth.socketId}`;
+    if (!(saved?.usedHearths.includes(key) && saved.hp === after.run.hp))
+      fail('hearth-not-saved', { saved, key, run: after.run });
+    await runHp(`hearth r${hearth.room}`);
+    await wait(900);
+    await turnTo(0);
+  }
+
+  /** The heal must be the one shown, equal to the rule, and change only hp and the used list. */
+  function checkHearth(hearth, before, after, want) {
+    const text = after.toast?.text ?? null;
+    if (!text) return fail('hearth-no-toast', { room: hearth.room });
+    if (!after.toast.drawn.includes(text)) fail('hearth-toast-not-drawn', after.toast);
+    const n = /^\+(\d+) hp$/.exec(text)?.[1];
+    if (n === undefined) return fail('hearth-toast-unreadable', { text });
+    const gained = after.run.hp - before.run.hp;
+    if (gained !== Number(n)) fail('hearth-hp-differs-from-panel', { text, gained });
+    if (gained !== want) fail('hearth-hp-differs-from-rule', { gained, want });
+    if (after.run.hp > after.run.maxHp) fail('hearth-over-max-hp', { hp: after.run.hp });
+    if (after.last?.room !== hearth.room || after.last?.socketId !== hearth.socketId)
+      fail('hearth-wrong-use', { last: after.last });
+    if (after.last?.healed !== gained || after.last?.hp !== after.run.hp)
+      fail('hearth-last-differs', { last: after.last, gained });
+    if (after.run.cogs !== before.run.cogs) fail('hearth-changed-cogs', {});
+    if (after.run.deck.join() !== before.run.deck.join()) fail('hearth-changed-deck', {});
+    if (JSON.stringify(after.run.openedLoot) !== JSON.stringify(before.run.openedLoot))
+      fail('hearth-changed-loot-record', {});
+    for (const stream of ['floor', 'deck', 'dice', 'loot', 'ai'])
+      if (JSON.stringify(after.run.rng[stream]) !== JSON.stringify(before.run.rng[stream]))
+        fail('hearth-advanced-a-stream', { stream });
+    if (!after.run.usedHearths.includes(`${hearth.room}/${hearth.socketId}`))
+      fail('hearth-not-recorded', { usedHearths: after.run.usedHearths });
+    if (!after.used) fail('hearth-not-spent', {});
+    if (!(after.glow < 0.3)) fail('hearth-coals-not-dimmed', { glow: after.glow });
+  }
+
   async function reward(room) {
     await wait(700);
     const offer = await ev(() => window.__flow.flow.offer);
@@ -912,6 +1079,23 @@ async function runSeed(seed, mode) {
     const hud = await ev(() => window.__fr.hudInView());
     if (hud.outside.length) fail('hud-out-of-view', { room, outside: hud.outside });
     let shotMid = false;
+    const guardian = target.tier === 'guardian' && mode !== 'death';
+    if (guardian) await ev(() => window.__fr.watchGuardian());
+    const caseShots = new Set();
+    /** Screenshots of the case opening and open, taken the first time each is seen. */
+    const phaseShots = async () => {
+      if (!guardian) return;
+      const p = await ev(() => window.__fr.guardianNow());
+      if (p?.opening && !caseShots.has('mid')) {
+        caseShots.add('mid');
+        await wait(1600);
+        await shot('guardian-phase-opening');
+      } else if (p?.open && !caseShots.has('open')) {
+        caseShots.add('open');
+        await wait(400);
+        await shot('guardian-phase-open');
+      }
+    };
     for (let turn = 0; turn < MAX_TURNS; turn++) {
       const failed = new Set();
       for (let plays = 0; plays < 20; plays++) {
@@ -935,14 +1119,22 @@ async function runSeed(seed, mode) {
           shotMid = true;
           await shot(`fight-r${room}-play`);
         }
+        await phaseShots();
       }
       s = await ev(() => window.__fr.snap());
       if (s.outcome) break;
       await endTurn(s.turn);
+      await phaseShots();
       s = await ev(() => window.__fr.snap());
       if (s.outcome) break;
     }
     s = await ev(() => window.__fr.snap());
+    if (guardian) {
+      await wait(500);
+      await phaseShots();
+      const log = await ev(() => window.__fr.stopGuardian());
+      record.guardianPhase = report.guardianPhase = await checkGuardianPhase(log, s.outcome);
+    }
     record.turns = s.turn;
     record.outcome = s.outcome;
     record.hpEnd = s.player.hp;
@@ -965,6 +1157,95 @@ async function runSeed(seed, mode) {
         fail('run-hp-desync', { room, runHp: run.hp, fightHp: s.player.hp });
     }
     return s.outcome;
+  }
+
+  /**
+   * Checks the guardian's second phase against the frame log of its fight: rules phase and hp, the
+   * shown intent, and the actor's clip state. Returns the facts it found.
+   */
+  async function checkGuardianPhase(log, outcome) {
+    const rule = await ev(() => window.__fr.guardianRule());
+    const only2 = new Set(rule.phaseTwoOnly);
+    const all6 = new Set(rule.phaseTwo);
+    const facts = {
+      frames: log.length,
+      threshold: rule.threshold,
+      outcome,
+      hpAtChange: null,
+      hpBeforeChange: null,
+      turnAtChange: null,
+      phase2MovesSeen: [],
+      movesBefore: [],
+      movesAfter: [],
+      clipStates: [...new Set(log.map((r) => r.actor))],
+      phaseChanges: log.at(-1)?.changes ?? null,
+    };
+    if (!log.length) {
+      fail('guardian-phase-no-frames', {});
+      return facts;
+    }
+    const first = log.findIndex((r) => r.phase === 2);
+    const pre = first < 0 ? log : log.slice(0, first);
+    for (const r of pre) {
+      if (r.hp > 0 && r.hp <= rule.threshold) fail('guardian-phase-1-at-or-below-threshold', r);
+      if (r.phase !== 1) fail('guardian-phase-not-1-before-change', r);
+      if (r.changes !== 0 || r.actor === 'phase-change' || r.opening || r.open)
+        fail('guardian-case-moved-before-change', r);
+      for (const m of [r.intent, r.move]) {
+        if (m && only2.has(m)) fail('guardian-phase-2-move-in-phase-1', { move: m, row: r });
+        if (m && !facts.movesBefore.includes(m)) facts.movesBefore.push(m);
+      }
+    }
+    if (first < 0) {
+      // Never reached the threshold: only a kill from above it, or a lost fight, may end that way.
+      facts.note = 'the guardian never fell to the threshold';
+      if (outcome === 'won' && log.at(-1).hp > 0) fail('guardian-won-without-phase-change', {});
+      return facts;
+    }
+    const row = log[first];
+    facts.hpAtChange = row.hp;
+    facts.hpBeforeChange = log[first - 1]?.hp ?? null;
+    facts.turnAtChange = row.turn;
+    if (row.hp > rule.threshold) fail('guardian-phase-hp-above-threshold', { row });
+    if (facts.hpBeforeChange !== null && facts.hpBeforeChange <= rule.threshold)
+      fail('guardian-phase-late', { before: log[first - 1], row });
+    // The intent on screen when the change lands stays until the enemy acts; the next comes from phase 2.
+    for (const r of log.slice(first)) {
+      if (r.enemyPhase) break;
+      for (const m of [r.intent, r.move])
+        if (m && only2.has(m)) fail('guardian-intent-swapped-at-change', { move: m, row: r });
+    }
+    const after = log.slice(first).filter((r) => r.turn > row.turn);
+    for (const r of after) {
+      for (const m of [r.intent, r.move]) {
+        if (!m) continue;
+        if (!all6.has(m)) fail('guardian-intent-outside-phase-2-list', { move: m });
+        if (!facts.movesAfter.includes(m)) facts.movesAfter.push(m);
+        if (only2.has(m) && !facts.phase2MovesSeen.includes(m)) facts.phase2MovesSeen.push(m);
+      }
+    }
+    // The clip: exactly one start, seen playing, the case open at the end and never shut again.
+    const last = log.at(-1);
+    if (last.changes !== 1) fail('guardian-phase-clip-count', { changes: last.changes });
+    if (!log.some((r) => r.actor === 'phase-change' && r.opening))
+      fail('guardian-phase-clip-not-played', { states: facts.clipStates });
+    // A fight can end inside the 3 s clip (the player falls in the turn after the change): then the
+    // case must still be opening, never shut.
+    const sinceChange = last.t - row.t;
+    facts.secondsFromChangeToEnd = Math.round(sinceChange * 100) / 100;
+    if (!last.open && !(last.opening && sinceChange < PHASE_CLIP_SECONDS + 0.3))
+      fail('guardian-case-not-open-at-end', { last, sinceChange });
+    const opened = log.findIndex((r) => r.open);
+    if (opened >= 0) {
+      facts.secondsToOpen = Math.round((log[opened].t - row.t) * 100) / 100;
+      for (const r of log.slice(opened))
+        if (!r.open) fail('guardian-case-closed-again', { row: r });
+    }
+    for (const r of log) if (r.changes > 1) fail('guardian-phase-clip-twice', { row: r });
+    console.log(
+      `  guardian phase 2 at hp ${row.hp} (turn ${row.turn}), moves after: ${facts.movesAfter.join(',')}`,
+    );
+    return facts;
   }
 
   async function play(card, record) {
@@ -1163,6 +1444,117 @@ async function installHelpers() {
         if (plan.rooms[r].encounter && !c.floor.encounter.isCleared(r)) return false;
       }
       return true;
+    },
+    /** Every hearth on the floor: its plan, name and whether it is spent. */
+    hearths() {
+      return c.floor.hearth.hearths.map((h) => ({
+        room: h.room,
+        socketId: h.socketId,
+        name: h.object.name,
+        used: h.used,
+      }));
+    },
+    /** A* path to a standing point 3 m from the hearth, toward its room's centre. */
+    pathToHearth(name) {
+      const h = c.floor.hearth.hearths.find((k) => k.object.name === name);
+      const at = h && c.floor.hearth.approachPoint(h.room, h.socketId, 3);
+      return at ? fr.pathTo(at) : null;
+    },
+    /** The run, the hearth's coals and its panel as the player sees them right now. */
+    hearthState(name) {
+      const flow = window.__flow.flow;
+      const run = flow.run;
+      const h = c.floor.hearth.hearths.find((k) => k.object.name === name);
+      const toast = c.floor.hearth.toast;
+      const color = h.object.getObjectByName('hearth-coals').material.color;
+      return {
+        used: h.used,
+        glow: color.r + color.g + color.b,
+        run: {
+          cogs: run.cogs,
+          hp: run.hp,
+          maxHp: run.maxHp,
+          deck: [...run.deck],
+          rng: JSON.parse(JSON.stringify(run.rng)),
+          openedLoot: [...(run.openedLoot ?? [])],
+          usedHearths: [...(run.usedHearths ?? [])],
+        },
+        last: flow.lastHearth ? JSON.parse(JSON.stringify(flow.lastHearth)) : null,
+        toast: toast ? { text: toast.text, drawn: [...(toast.canvas.__texts ?? [])] } : null,
+      };
+    },
+    /** The hearth rule's own constant, read from the game. */
+    async hearthRule() {
+      const { HEARTH_HEAL_FRACTION } = await import('/src/rules/run.ts');
+      return { fraction: HEARTH_HEAL_FRACTION };
+    },
+    /** The guardian rule's own numbers, read from the game. */
+    async guardianRule() {
+      const { ENEMIES, GUARDIAN_PHASE_TWO_HP_FRACTION } = await import('/src/content/enemies.ts');
+      const g = ENEMIES['grand-escapement'];
+      const one = g.moves.map((m) => m.id);
+      const two = g.phaseTwo.moves.map((m) => m.id);
+      return {
+        threshold: g.hp * GUARDIAN_PHASE_TWO_HP_FRACTION,
+        phaseOne: one,
+        phaseTwo: two,
+        phaseTwoOnly: two.filter((id) => !one.includes(id)),
+      };
+    },
+    /** The guardian's rules hp and phase, its shown move and its actor's clip state, right now. */
+    guardianNow() {
+      const s = c.session;
+      const st = s?.controller.state;
+      const e = st?.enemies.find((x) => x.id === 'grand-escapement');
+      if (!s || !e) return null;
+      const ent = s.enemies.find((x) => x.id === 'grand-escapement');
+      const actor = ent ? c.floor.actorOf(ent.body) : null;
+      const texts = s.labels.find((l) => l.id === e.id)?.label.canvas.__texts ?? [];
+      const move = texts.map((t) => /move: (\S+)/.exec(t)?.[1]).find(Boolean) ?? null;
+      return {
+        t: performance.now() / 1000,
+        turn: st.turn,
+        hp: e.hp,
+        maxHp: e.maxHp,
+        phase: e.phase ?? null,
+        intent: e.intent?.id ?? null,
+        move,
+        enemyPhase: s.enemyPhase,
+        actor: actor?.state ?? null,
+        opening: actor?.caseOpening ?? false,
+        open: actor?.caseOpen ?? false,
+        changes: actor?.phaseChanges ?? 0,
+      };
+    },
+    /** Starts logging the guardian every animation frame, keeping only the frames where something changed. */
+    watchGuardian() {
+      const log = [];
+      let running = true;
+      let lastKey = '';
+      const tick = () => {
+        if (!running) return;
+        const row = fr.guardianNow();
+        if (row) {
+          const { t: _t, ...rest } = row;
+          const key = JSON.stringify(rest);
+          if (key !== lastKey) {
+            lastKey = key;
+            log.push(row);
+          }
+        }
+        requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+      fr.guardianWatch = {
+        log,
+        stop() {
+          running = false;
+        },
+      };
+    },
+    stopGuardian() {
+      fr.guardianWatch?.stop();
+      return fr.guardianWatch?.log ?? [];
     },
     /** A* path to a standing point 2 m from the coffer, toward its room's centre. */
     pathToCoffer(name) {

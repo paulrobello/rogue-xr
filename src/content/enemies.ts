@@ -43,6 +43,28 @@ const move = (
   effects: Effect[],
 ): EnemyMove => ({ id, intent, weight, effects });
 
+/**
+ * Guardian phase 2 (default pending the owner, per assets-source/concepts/p5-automatons-design.md):
+ * the case starts closed with the first four moves. When its hp first falls to this fraction of max
+ * or below, its case opens and every intent picked from then on draws from all six, adding `overwind`
+ * and `toll`. One constant: change the number to move the threshold, or drop `phaseTwo` from the
+ * guardian entry (and give it the full list) to remove the rule.
+ */
+export const GUARDIAN_PHASE_TWO_HP_FRACTION = 0.5;
+
+const GUARDIAN_PHASE_ONE: EnemyMove[] = [
+  move('tick', 'attack', 3, [hit(8, 2)]),
+  move('tock', 'defend', 2, [block(16), hit(7)]),
+  move('pallet', 'attack-debuff', 2, [hit(13), onPlayer('weak', 2)]),
+  move('mainspring', 'buff', 1, [windUp(2), block(8)]),
+];
+
+const GUARDIAN_PHASE_TWO: EnemyMove[] = [
+  ...GUARDIAN_PHASE_ONE,
+  move('overwind', 'debuff', 1, [onPlayer('overheat', 3), onPlayer('vulnerable', 2)]),
+  move('toll', 'attack', 1, [hit(26)]),
+];
+
 export const ENEMIES: Readonly<Record<EnemyKind, EnemySetup>> = {
   'cog-sentry': {
     id: 'cog-sentry',
@@ -89,14 +111,8 @@ export const ENEMIES: Readonly<Record<EnemyKind, EnemySetup>> = {
     id: 'grand-escapement',
     name: 'Grand Escapement',
     hp: 160,
-    moves: [
-      move('tick', 'attack', 3, [hit(8, 2)]),
-      move('tock', 'defend', 2, [block(16), hit(7)]),
-      move('pallet', 'attack-debuff', 2, [hit(13), onPlayer('weak', 2)]),
-      move('mainspring', 'buff', 1, [windUp(2), block(8)]),
-      move('overwind', 'debuff', 1, [onPlayer('overheat', 3), onPlayer('vulnerable', 2)]),
-      move('toll', 'attack', 1, [hit(26)]),
-    ],
+    moves: GUARDIAN_PHASE_ONE,
+    phaseTwo: { hpFraction: GUARDIAN_PHASE_TWO_HP_FRACTION, moves: GUARDIAN_PHASE_TWO },
   },
 };
 

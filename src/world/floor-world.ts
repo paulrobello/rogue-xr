@@ -10,6 +10,7 @@ import {
 import { type FloorPlan, type WorldRoom, worldRooms } from '../floor/generate.ts';
 import { PALETTE } from '../palette.ts';
 import { buildGreyboxRoom, createGreyboxMaterials, type GreyboxMaterials } from './greybox.ts';
+import { type Hearth, HearthKit, type HearthMaterials, hearthSocket } from './hearth.ts';
 import { type Coffer, CofferKit, type LootMaterials, surfaceHeightAt } from './loot.ts';
 
 /** Rooms joined to `room` by a door. */
@@ -70,6 +71,10 @@ export interface FloorWorld {
   readonly coffers: readonly Coffer[];
   /** Re-dresses every coffer in `materials` (owned by the caller); they start in flat placeholders. */
   dressCoffers(materials: LootMaterials): void;
+  /** The rest-room hearths on this floor, one per rest room. */
+  readonly hearths: readonly Hearth[];
+  /** Re-dresses every hearth's brass in `materials` (owned by the caller). */
+  dressHearths(materials: HearthMaterials): void;
   /** The closed-door leaves in every sealed doorway. */
   readonly sealedDoors: readonly THREE.Mesh[];
   /**
@@ -109,6 +114,7 @@ function buildRoom(
   materials: GreyboxMaterials,
   enemyMaterial: THREE.Material,
   kit: CofferKit,
+  hearthKit: HearthKit,
 ) {
   const placed = plan.rooms[index];
   if (!placed) throw new Error(`room ${index} missing`);
@@ -142,7 +148,18 @@ function buildRoom(
       coffers.push(coffer);
     }
   }
-  return { group, enemies, coffers };
+  // A rest room stands one hearth at its socket; the greybox marker there gives way to it.
+  const hearths: Hearth[] = [];
+  if (placed.role === 'rest') {
+    const s = hearthSocket(t);
+    if (s) {
+      const hearth = hearthKit.build(index, s);
+      group.add(hearth.object);
+      group.getObjectByName(`socket-${s.id}`)?.removeFromParent();
+      hearths.push(hearth);
+    }
+  }
+  return { group, enemies, coffers, hearths };
 }
 
 /** Builds the greybox world for a floor plan: every room, sealed door caps, enemy placeholders. */
@@ -159,6 +176,8 @@ export function buildFloorWorld(
   const capMaterial = new THREE.MeshStandardMaterial({ color: PALETTE.walnut, roughness: 0.8 });
   const kit = new CofferKit();
   const coffers: Coffer[] = [];
+  const hearthKit = new HearthKit();
+  const hearths: Hearth[] = [];
   const rooms = worldRooms(plan, templates);
   const group = new THREE.Group();
   group.name = `floor-${plan.seed}`;
@@ -166,8 +185,9 @@ export function buildFloorWorld(
   const enemies = new Map<number, THREE.Object3D[]>();
   plan.rooms.forEach((r, index) => {
     const t = templates.find((c) => c.id === r.templateId) as RoomTemplate;
-    const built = buildRoom(t, plan, index, materials, enemyMaterial, kit);
+    const built = buildRoom(t, plan, index, materials, enemyMaterial, kit, hearthKit);
     coffers.push(...built.coffers);
+    hearths.push(...built.hearths);
     roomGroups.push(built.group);
     enemies.set(index, built.enemies);
     group.add(built.group);
@@ -279,6 +299,10 @@ export function buildFloorWorld(
     dressCoffers(loot) {
       kit.dress(loot);
     },
+    hearths,
+    dressHearths(materials) {
+      hearthKit.dress(materials);
+    },
     dressSealedDoors(material, tileMeters) {
       const uv = capGeometry.getAttribute('uv') as THREE.BufferAttribute;
       for (let i = 0; i < capUvMeters.length; i++) uv.array[i] = (capUvMeters[i] ?? 0) / tileMeters;
@@ -300,6 +324,7 @@ export function buildFloorWorld(
       capGeometry.dispose();
       fillGeometry.dispose();
       kit.dispose();
+      hearthKit.dispose();
     },
   };
   function applyVisibility() {

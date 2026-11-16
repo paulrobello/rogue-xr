@@ -46,6 +46,7 @@ import { parseLootKey, type RewardTier } from './rules/run.ts';
 import { createWorkshop } from './rules/workshop.ts';
 import { mountUpdateNotice } from './update/index.ts';
 import { type FloorView, mountFloorView, seedFromQuery } from './world/floor-view.ts';
+import type { HearthPick } from './world/hearth.ts';
 import { dressHeroRooms, fetchHeroRooms, loadHeroAssets } from './world/hero-rooms.ts';
 import { createKtx2Loader } from './world/ktx2.ts';
 import { mountLightmapProof } from './world/lightmap-proof.ts';
@@ -425,7 +426,10 @@ const dressFloor = async (target: FloorView): Promise<void> => {
   if (target === floor) {
     dressHeroRooms(target, rooms);
     if (door) target.world.dressSealedDoors(door.material, door.tileMeters);
-    if (coffers) target.loot.dress(coffers);
+    if (coffers) {
+      target.loot.dress(coffers);
+      target.hearth.dress({ brass: coffers.brass });
+    }
   }
   await Promise.all(dressed);
 };
@@ -473,6 +477,18 @@ flow.onChange((event) => {
     }
     return;
   }
+  if (event.type === 'hearth') {
+    storedSnapshot = flow.snapshot(Date.now(), floor?.world.current ?? flow.room);
+    if (floor?.hearth.use(event.room, event.socketId, event.healed)) {
+      const lit = floor.hearth.hearths.find(
+        (h) => h.room === event.room && h.socketId === event.socketId,
+      );
+      const at = lit?.object.getWorldPosition(new THREE.Vector3());
+      audio?.playSfx('steam-vent', at);
+      audio?.playSfx('cog-pickup', at);
+    }
+    return;
+  }
   if (event.type !== 'phase') return;
   if (event.to === 'explore' || event.to === 'reward') {
     storedSnapshot = flow.snapshot(Date.now(), floor?.world.current ?? flow.room);
@@ -509,6 +525,10 @@ const continueRun = (): void => {
   for (const key of snap.run.openedLoot ?? []) {
     const opened = parseLootKey(key);
     if (opened) target.loot.markOpened(opened.room, opened.socketId);
+  }
+  for (const key of snap.run.usedHearths ?? []) {
+    const used = parseLootKey(key);
+    if (used) target.hearth.markUsed(used.room, used.socketId);
   }
   const at = target.standPoint(snap.roomIndex) ?? target.world.spawnPoint();
   rig.position.set(at.x, rig.position.y, at.z);
@@ -586,6 +606,21 @@ const canOpenLoot = (): boolean =>
   !!floor && flow.phase === 'explore' && floor.encounter.phase === 'idle' && !ui?.visible;
 const openCoffer = (pick: LootPick | null): boolean =>
   !!pick && canOpenLoot() && flow.openLoot(pick.room, pick.socketId, pick.kind) !== null;
+const useHearth = (pick: HearthPick | null): boolean =>
+  !!pick && canOpenLoot() && flow.useHearth(pick.room, pick.socketId) !== null;
+/** Opens the coffer or uses the hearth a ray reaches in the current room (a room holds only one kind). */
+const activatePickup = (origin: THREE.Vector3, direction: THREE.Vector3): boolean =>
+  !!floor &&
+  (openCoffer(floor.loot.pick(origin, direction)) ||
+    useHearth(floor.hearth.pick(origin, direction)));
+/** How far a ray reaches a coffer or hearth it can act on, or null. */
+const pickupDistance = (origin: THREE.Vector3, direction: THREE.Vector3): number | null => {
+  if (!floor) return null;
+  const near = [floor.loot.pick(origin, direction), floor.hearth.pick(origin, direction)].filter(
+    (pick) => pick !== null,
+  );
+  return near.length === 0 ? null : Math.min(...near.map((pick) => pick.distance));
+};
 /** Ray origin and direction of an XR controller (its -Z axis, the beam the laser draws). */
 const controllerRay = (
   controller: THREE.Object3D,
@@ -602,7 +637,7 @@ window.addEventListener(
     if (xr.presenting || event.button !== 0 || event.target !== renderer.domElement) return;
     if (!floor || !canOpenLoot()) return;
     const { origin, direction } = mouseRay(event);
-    if (openCoffer(floor.loot.pick(origin, direction))) event.stopPropagation();
+    if (activatePickup(origin, direction)) event.stopPropagation();
   },
   { capture: true },
 );
@@ -611,7 +646,7 @@ window.addEventListener('pointermove', (event) => {
   let over = false;
   if (floor && canOpenLoot()) {
     const { origin, direction } = mouseRay(event);
-    over = floor.loot.pick(origin, direction) !== null;
+    over = pickupDistance(origin, direction) !== null;
   }
   renderer.domElement.style.cursor = over ? 'pointer' : '';
 });
@@ -725,7 +760,7 @@ for (const index of [0, 1]) {
     if (!ui?.visible) {
       if (floor && canOpenLoot() && xr.presenting) {
         const { origin, direction } = controllerRay(controller);
-        openCoffer(floor.loot.pick(origin, direction));
+        activatePickup(origin, direction);
       }
       return;
     }
@@ -793,12 +828,27 @@ if (floor && params.has('debug')) {
     const yaw = (Math.atan2(there.x - at.x, -(there.z - at.z)) * 180) / Math.PI;
     return { x: at.x, z: at.z, yaw, coffer: coffer.object.name };
   };
-  /** Screen point of a coffer's lid, for pointer automation, or null when it is behind the view. */
-  const screenOfCoffer = (name: string) => {
+  /** Where a scripted approach stands facing the first unused hearth (or `room`'s), or null. */
+  const hearthStand = (
+    room?: number,
+  ): { x: number; z: number; yaw: number; hearth: string } | null => {
+    const target = floor;
+    if (!target) return null;
+    const lit = target.hearth.hearths.find(
+      (h) => !h.used && (room === undefined || h.room === room),
+    );
+    const at = lit ? target.hearth.approachPoint(lit.room, lit.socketId) : null;
+    if (!lit || !at) return null;
+    const there = lit.object.getWorldPosition(new THREE.Vector3());
+    const yaw = (Math.atan2(there.x - at.x, -(there.z - at.z)) * 180) / Math.PI;
+    return { x: at.x, z: at.z, yaw, hearth: lit.object.name };
+  };
+  /** Screen point `lift` m above a coffer's or hearth's base, for pointer automation, or null when it is behind the view. */
+  const screenOfCoffer = (name: string, lift = 0.3) => {
     const node = floor?.world.group.getObjectByName(name);
     if (!node) return null;
     const p = node.getWorldPosition(new THREE.Vector3());
-    p.y += 0.3;
+    p.y += lift;
     camera.updateMatrixWorld(true);
     p.project(camera);
     if (p.z > 1) return null;
@@ -819,6 +869,14 @@ if (floor && params.has('debug')) {
         return stand.coffer;
       },
       screenOfCoffer,
+      /** Moves the rig to a spot facing the first unused hearth (or `room`'s). Returns its node name, or null. */
+      teleportToHearth(room?: number) {
+        const stand = hearthStand(room);
+        if (!stand) return null;
+        rig.position.set(stand.x, rig.position.y, stand.z);
+        walker.yaw = stand.yaw;
+        return stand.hearth;
+      },
       get session() {
         return combat?.session ?? null;
       },
@@ -1016,8 +1074,8 @@ renderer.setAnimationLoop((time, frame) => {
       const source = xr.rays()[side];
       if (!source) continue;
       const { origin, direction } = controllerRay(source);
-      const pick = floor.loot.pick(origin, direction);
-      if (pick) laserHits[side] = pick.distance;
+      const distance = pickupDistance(origin, direction);
+      if (distance !== null) laserHits[side] = distance;
     }
   }
   if (floor && audio) {

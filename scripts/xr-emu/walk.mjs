@@ -29,6 +29,10 @@ const { values: opts } = parseArgs({
     recenter: { type: 'boolean', default: false },
     // Only the treasure check: open a coffer with the controller ray and trigger.
     treasure: { type: 'boolean', default: false },
+    // Only the rest-room check: use a hearth with the controller ray and trigger.
+    rest: { type: 'boolean', default: false },
+    // Only the guardian phase check: fight the Grand Escapement until its case opens.
+    guardian: { type: 'boolean', default: false },
     // Only the comfort checks: the Settings toggles, New Run, then locomotion (move, turn, vignette, teleport).
     loco: { type: 'boolean', default: false },
   },
@@ -44,6 +48,12 @@ const SEATED_HEAD_Y = 1.2;
 const TURN_SEED = 'SPIRE002';
 /** Seed with a treasure room holding a card coffer (room 3, found with `generateFloor`). */
 const TREASURE_SEED = 'SPIRE001';
+/** Seed whose floor has one rest room (room 4, a hall), found with `generateFloor`. */
+const REST_SEED = 'SPIRE007';
+/** Share of max hp a hearth restores (HEARTH_HEAL_FRACTION in src/rules/run.ts). */
+const HEARTH_FRACTION = 0.3;
+/** Seed for the guardian fight (any floor has one vault). */
+const GUARDIAN_SEED = 'SPIRE004';
 const MAIN = 'right';
 const OFF = 'left';
 /** Controller offsets from the head, in tracking space: hands low and forward, as when seated. */
@@ -173,6 +183,10 @@ try {
     await recenterCheck();
   } else if (opts.treasure) {
     await treasureCheck();
+  } else if (opts.rest) {
+    await restCheck();
+  } else if (opts.guardian) {
+    await guardianPhaseCheck();
   } else if (opts.loco) {
     await walk();
   } else {
@@ -180,6 +194,8 @@ try {
     await enemyTurnCheck();
     await recenterCheck();
     await treasureCheck();
+    await restCheck();
+    await guardianPhaseCheck();
   }
 
   /**
@@ -367,6 +383,389 @@ try {
         repulled.toast === null,
       { resumed, repulled },
     );
+    await ev(() => window.__xrEmu.ctx().renderer.xr.getSession()?.end());
+    await settle(400);
+  }
+
+  /**
+   * P6 rest room: a seated player takes real damage in a real fight, walks to the rest room's hearth,
+   * aims the main-hand ray at it and pulls the trigger. It heals once by exactly what the panel shows
+   * (30 percent of max hp rounded down, capped at the missing hp), dims, saves, and does nothing on a
+   * second pull or after a resume.
+   */
+  async function restCheck() {
+    const base = opts.base.replace(/\/$/, '');
+    await page.goto(`${base}/?seed=${REST_SEED}&debug`);
+    await waitFor(
+      'rest-app',
+      () => window.__combat?.floor && window.__xrEmu.ctx().renderer,
+      undefined,
+      60000,
+    );
+    await ev(() => window.__combat.heroReady);
+    await settle(1500);
+    await enterVr();
+
+    // Lose hp the way a player does: a fight where the enemy's turns land, then a debug win (K) and
+    // the reward skipped with the ray. The hp the fight ends with is what the run keeps.
+    await ev(() => window.__flow.setCheat('win'));
+    await ev(() => window.__combat.teleportToEncounter());
+    await waitFor(
+      'rest-fight-active',
+      () => window.__combat.floor.encounter.phase === 'active' && window.__combat.session !== null,
+      undefined,
+      30000,
+    );
+    await settle(1500);
+    for (let turn = 0; turn < 4; turn += 1) {
+      const hp = await ev(() => window.__combat.session.controller.state.player.hp);
+      if (hp <= 50) break;
+      await page.keyboard.press('KeyE');
+      await settle(300);
+      await enemyPhaseOver(`rest-turn-${turn}`);
+      await settle(1500);
+    }
+    // The debug K key ends a fight without carrying its hp into the run, so the cheat-1-hp automaton
+    // is killed with a played card through the controller (the path a desktop click takes) and the
+    // fight ends the way a won one does, keeping the player's hp.
+    const killed = await ev(() => {
+      const c = window.__combat.session.controller;
+      const card = c.state.piles.hand.find(
+        (h) => h.def.target === 'enemy' && h.def.cost <= c.state.player.steam,
+      );
+      const enemy = c.state.enemies.find((e) => e.hp > 0);
+      if (!card || !enemy) return { ok: false, reason: 'no attack card or target' };
+      return c.select(card.uid).ok ? c.target(enemy.id) : { ok: false, reason: 'select failed' };
+    });
+    record('xr-rest-fight-won-by-a-played-card', killed.ok === true, killed);
+    await waitFor('rest-reward', () => window.__flow.flow.phase === 'reward', undefined, 30000);
+    await settle(800);
+    await press('reward-skip-skip');
+    await waitFor('rest-explore', () => window.__flow.flow.phase === 'explore');
+    const wounded = await ev(() => ({
+      hp: window.__flow.flow.run.hp,
+      maxHp: window.__flow.flow.run.maxHp,
+    }));
+    record('xr-rest-wounded-by-a-real-fight', wounded.hp < wounded.maxHp, wounded);
+
+    const name = await ev(() => window.__combat.teleportToHearth());
+    record('xr-rest-teleport', typeof name === 'string' && name.startsWith('hearth-'), { name });
+    if (!name) return;
+    await settle(1200);
+    await ev((hearth) => {
+      const probe = window.__xrEmu;
+      const { rig } = probe.ctx();
+      const at = probe.worldOf(hearth, [0, 0.6, 0]);
+      const { head } = probe.headTo(at);
+      const dx = at.x - head.x;
+      const dz = at.z - head.z;
+      const yaw = Math.atan2(-dx, -dz) - rig.rotation.y;
+      probe.setHead(1.2, Math.atan2(at.y - head.y, Math.hypot(dx, dz)), yaw);
+    }, name);
+    await settle(500);
+
+    const state = () =>
+      ev(
+        ({ hearth }) => {
+          const flow = window.__flow.flow;
+          const floor = window.__combat.floor;
+          const run = flow.run;
+          const lit = floor.hearth.hearths.find((h) => h.object.name === hearth);
+          const coals = lit?.object.getObjectByName('hearth-coals')?.material.color;
+          let nodes = 0;
+          floor.world.group.traverse(() => {
+            nodes += 1;
+          });
+          return {
+            phase: flow.phase,
+            hp: run.hp,
+            maxHp: run.maxHp,
+            cogs: run.cogs,
+            deck: run.deck.length,
+            used: run.usedHearths ?? [],
+            toast: floor.hearth.toast?.text ?? null,
+            last: flow.lastHearth,
+            spent: lit?.used ?? null,
+            coals: coals ? coals.r + coals.g + coals.b : null,
+            nodes,
+            board: window.__flow.ui.visible,
+          };
+        },
+        { hearth: name },
+      );
+    /** The game's own pick along each controller's -Z beam (what the laser ends on): the hearths it reaches. */
+    const beam = () =>
+      ev(() => {
+        const { renderer } = window.__xrEmu.ctx();
+        const floor = window.__combat.floor;
+        const hits = [];
+        for (const index of [0, 1]) {
+          const controller = renderer.xr.getController(index);
+          controller.updateWorldMatrix(true, false);
+          const e = controller.matrixWorld.elements;
+          const origin = controller.position.clone().set(e[12], e[13], e[14]);
+          const direction = controller.position.clone().set(-e[8], -e[9], -e[10]).normalize();
+          const hit = floor.hearth.pick(origin, direction);
+          if (hit) hits.push({ index, distance: hit.distance, room: hit.room });
+        }
+        return hits;
+      });
+
+    const before = await state();
+    await settle(600);
+    const lit = await state();
+    const target = await ev((hearth) => window.__xrEmu.worldOf(hearth, [0, 0.6, 0]), name);
+    await shot('19-rest-hearth-lit');
+    await aim(MAIN, target);
+    await settle(300);
+    const aimed = await beam();
+    record(
+      'xr-rest-beam-ends-on-hearth',
+      aimed.length === 1 && aimed[0].distance > 1 && aimed[0].distance < 4,
+      aimed,
+    );
+    await pullTrigger(MAIN);
+    await settle(900);
+    const after = await state();
+    await shot('19-rest-hearth-used');
+    const missing = before.maxHp - before.hp;
+    const want = Math.min(missing, Math.floor(before.maxHp * HEARTH_FRACTION));
+    const gained = after.hp - before.hp;
+    record(
+      'xr-rest-trigger-heals-what-the-panel-shows',
+      after.toast === `+${gained} hp` && after.last?.healed === gained && gained === want,
+      { before: before.hp, after: after.hp, maxHp: before.maxHp, want, toast: after.toast },
+    );
+    record(
+      'xr-rest-hearth-spent-and-recorded',
+      after.spent === true &&
+        before.spent === false &&
+        after.used.length === 1 &&
+        after.used[0] === `${after.last?.room}/chest` &&
+        before.used.length === 0,
+      { used: after.used, last: after.last },
+    );
+    record(
+      'xr-rest-coals-dim',
+      lit.coals !== null && after.coals !== null && after.coals < lit.coals * 0.3,
+      { lit: lit.coals, spent: after.coals },
+    );
+    record(
+      'xr-rest-changes-only-hp',
+      after.cogs === before.cogs && after.deck === before.deck && after.phase === 'explore',
+      { before, after },
+    );
+    record('xr-rest-no-board-lock', after.phase === 'explore' && after.board === false, {
+      phase: after.phase,
+      board: after.board,
+    });
+    const inView = await ev(() => {
+      const { renderer, camera } = window.__xrEmu.ctx();
+      const eye = renderer.xr.getCamera().cameras?.[0] ?? camera;
+      const panel = window.__combat.floor.world.group.getObjectByName('loot-toast-root');
+      if (!panel) return null;
+      const p = panel.getWorldPosition(panel.position.clone()).project(eye);
+      return { x: p.x, y: p.y, z: p.z };
+    });
+    record(
+      'xr-rest-panel-in-view',
+      inView !== null && Math.abs(inView.x) < 1 && Math.abs(inView.y) < 1 && inView.z < 1,
+      inView,
+    );
+    await aim(MAIN, target);
+    await settle(300);
+    const beamAfter = await beam();
+    await pullTrigger(MAIN);
+    await settle(400);
+    const again = await state();
+    record(
+      'xr-rest-second-pull-heals-nothing',
+      beamAfter.length === 0 &&
+        again.hp === after.hp &&
+        again.used.length === 1 &&
+        again.last?.healed === after.last?.healed,
+      { after: after.hp, again: again.hp, beamAfter },
+    );
+    // The panel expires and takes its nodes with it: the hearth leaves the scene as it found it.
+    await waitFor(
+      'rest-panel-gone',
+      () => window.__combat.floor.hearth.toast === null,
+      undefined,
+      8000,
+    );
+    const settled = await state();
+    record(
+      'xr-rest-no-stale-panel-or-nodes',
+      settled.toast === null && settled.nodes === before.nodes,
+      { before: before.nodes, settled: settled.nodes, toast: settled.toast },
+    );
+    await ev(() => window.__flow.flushed());
+    const saved = await ev(async () => {
+      const { openDb } = await import('/src/persist/db.ts');
+      const { loadRunSnapshot } = await import('/src/persist/saves.ts');
+      const snap = await loadRunSnapshot(await openDb());
+      return snap ? { used: snap.run.usedHearths ?? [], hp: snap.run.hp } : null;
+    });
+    record(
+      'xr-rest-saved',
+      saved !== null && saved.used.length === 1 && saved.hp === again.hp,
+      saved,
+    );
+
+    // Resume: reload to the title, Continue with the ray. The hearth is spent at once, nothing is
+    // healed again, and the ray and trigger no longer use it.
+    await page.goto(`${base}/?title&debug`);
+    await waitFor(
+      'rest-reload',
+      () => window.__flow?.ui && window.__xrEmu.ctx().renderer,
+      undefined,
+      60000,
+    );
+    await ev(() => window.__combat.heroReady);
+    await settle(1500);
+    await enterVr();
+    const hasContinue = await ev(() => window.__xrEmu.worldOf('title-continue') !== null);
+    if (hasContinue) await press('title-continue');
+    await settle(1000);
+    const resumed = await state();
+    await shot('20-rest-resumed');
+    record(
+      'xr-rest-resume-shows-hearth-spent',
+      hasContinue &&
+        resumed.phase === 'explore' &&
+        resumed.hp === again.hp &&
+        resumed.used.length === 1 &&
+        resumed.spent === true &&
+        resumed.toast === null &&
+        resumed.coals !== null &&
+        resumed.coals < lit.coals * 0.3,
+      { hasContinue, resumed },
+    );
+    await aim(MAIN, target);
+    await pullTrigger(MAIN);
+    await settle(400);
+    const repulled = await state();
+    record(
+      'xr-rest-resume-cannot-reuse',
+      repulled.hp === resumed.hp && repulled.used.length === 1 && repulled.toast === null,
+      { resumed: resumed.hp, repulled: repulled.hp },
+    );
+    await ev(() => window.__xrEmu.ctx().renderer.xr.getSession()?.end());
+    await settle(400);
+  }
+
+  /**
+   * P6 guardian phase 2 in XR. The phase flip needs the guardian at 80 hp or less. The starter deck
+   * cannot get there legitimately: a greedy player (every attack, then block, sigils skipped) is dead
+   * by turn 6 to 8 with the guardian still at 97 to 103 hp on four seeds (simulated with
+   * CombatController over four seeds), and the debug cheats only lower hp to 1. So the flip
+   * itself is proven by tests/guardian-phase.test.ts (rules) and tests/guardian-case.test.ts (the real
+   * GLB: clip plays once, hinge bones held open under every other clip). What the emulated session
+   * adds, and what this checks, is the phase-1 half of the real fight: the guardian model carries its
+   * phase-change clip, stands with its case closed, never plays the clip, and shows only the four
+   * phase-1 moves as intents over real enemy turns.
+   */
+  async function guardianPhaseCheck() {
+    const base = opts.base.replace(/\/$/, '');
+    await page.goto(`${base}/?seed=${GUARDIAN_SEED}&debug`);
+    await waitFor(
+      'guardian-app',
+      () => window.__combat?.floor && window.__xrEmu.ctx().renderer,
+      undefined,
+      60000,
+    );
+    await ev(() => window.__combat.heroReady);
+    await settle(1500);
+    await enterVr();
+    const room = await ev(() => window.__combat.teleportToEncounter({ guardian: true }));
+    record('xr-guardian-teleport', typeof room === 'number', { room });
+    if (room === null) return;
+    await waitFor(
+      'guardian-fight-active',
+      () => window.__combat.floor.encounter.phase === 'active' && window.__combat.session !== null,
+      undefined,
+      30000,
+    );
+    await waitFor(
+      'guardian-model',
+      () => {
+        const s = window.__combat.session;
+        return s && s.enemies.length === 1 && window.__combat.floor.actorOf(s.enemies[0].body);
+      },
+      undefined,
+      30000,
+    );
+    await settle(1800);
+    await ev(() => window.__xrEmu.setHead(1.2, -0.1));
+    await settle(400);
+    const read = () =>
+      ev(() => {
+        const s = window.__combat.session;
+        const enemy = s.controller.state.enemies[0];
+        const actor = window.__combat.floor.actorOf(s.enemies[0].body);
+        return {
+          id: enemy.id,
+          hp: enemy.hp,
+          maxHp: enemy.maxHp,
+          phase: enemy.phase,
+          moves: enemy.moves.map((m) => m.id),
+          intent: enemy.intent?.id ?? null,
+          shownPhase: s.view.enemies[0]?.phase ?? null,
+          shownIntent: s.view.enemies[0]?.intent?.id ?? null,
+          playerHp: s.controller.state.player.hp,
+          model: actor !== null,
+          clip: actor?.asset.phaseClip?.name ?? null,
+          caseOpen: actor?.caseOpen ?? null,
+          caseOpening: actor?.caseOpening ?? null,
+          phaseChanges: actor?.phaseChanges ?? null,
+          state: actor?.state ?? null,
+        };
+      });
+    const first = await read();
+    await shot('21-guardian-phase1');
+    record(
+      'xr-guardian-phase1-case-closed',
+      first.id === 'grand-escapement' &&
+        first.model &&
+        first.clip === 'phase-change' &&
+        first.phase === 1 &&
+        first.shownPhase === 1 &&
+        first.caseOpen === false &&
+        first.caseOpening === false &&
+        first.phaseChanges === 0 &&
+        first.hp === first.maxHp,
+      first,
+    );
+    record(
+      'xr-guardian-phase1-moves-without-toll-and-overwind',
+      JSON.stringify(first.moves) === JSON.stringify(['tick', 'tock', 'pallet', 'mainspring']),
+      first.moves,
+    );
+    const shown = [first.shownIntent];
+    for (let turn = 0; turn < 3; turn += 1) {
+      const now = await read();
+      if (now.playerHp <= 20) break;
+      await page.keyboard.press('KeyE');
+      await settle(300);
+      await enemyPhaseOver(`guardian-turn-${turn}`, 30000);
+      await settle(1200);
+      shown.push((await read()).shownIntent);
+    }
+    const last = await read();
+    const phase1 = ['tick', 'tock', 'pallet', 'mainspring'];
+    record(
+      'xr-guardian-phase1-intents-from-the-four-move-list',
+      shown.length >= 2 && shown.every((id) => phase1.includes(id)),
+      shown,
+    );
+    record(
+      'xr-guardian-phase1-clip-never-played',
+      last.phaseChanges === 0 && last.caseOpen === false && last.state !== 'phase-change',
+      last,
+    );
+    await shot('21-guardian-phase1-after-turns');
+    await page.keyboard.press('KeyK');
+    await settle(800);
     await ev(() => window.__xrEmu.ctx().renderer.xr.getSession()?.end());
     await settle(400);
   }

@@ -147,6 +147,8 @@ export function sfxForCombatEvent(event: CombatEvent): SfxId | null {
       return 'block-ward';
     case 'steam-changed':
       return event.to < event.from ? 'steam-vent' : null;
+    case 'enemy-phase':
+      return 'door-open';
     case 'enemy-died':
       return 'automaton-death';
     default:

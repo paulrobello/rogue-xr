@@ -10,6 +10,13 @@ import { PALETTE } from '../palette.ts';
 import type { TreasureLoot } from '../rules/run.ts';
 import { yawFromMatrix } from '../xr/locomotion.ts';
 import { buildFloorWorld, type FloorWorld } from './floor-world.ts';
+import {
+  type Hearth,
+  type HearthMaterials,
+  type HearthPick,
+  hearthLines,
+  pickHearth,
+} from './hearth.ts';
 import { type Coffer, type LootMaterials, type LootPick, LootToast, pickCoffer } from './loot.ts';
 import { type RigidNode, rigidAngle } from './study-room.ts';
 
@@ -25,6 +32,8 @@ export function seedFromQuery(search: string): string {
 export const LOOT_REACH = 4;
 /** Height above a coffer's base where its toast hangs, in metres. */
 const TOAST_LIFT = 0.95;
+/** Height above a hearth's base where its panel hangs, in metres (over the bowl). */
+const HEARTH_TOAST_LIFT = 1.25;
 
 /** The treasure coffers of a floor: picking, opening and the found-item panel. */
 export interface FloorLoot {
@@ -43,9 +52,27 @@ export interface FloorLoot {
   approachPoint(room: number, socketId: string, distance?: number): THREE.Vector3 | null;
 }
 
+/** The rest-room hearths of a floor: picking, using and the hp panel. */
+export interface FloorHearths {
+  readonly hearths: readonly Hearth[];
+  /** The nearest unused hearth in the current room a ray reaches, or null. */
+  pick(origin: THREE.Vector3, direction: THREE.Vector3, maxDistance?: number): HearthPick | null;
+  /** Dims the hearth's coals and shows '+healed hp' on a panel over it. Returns false for an unknown hearth. */
+  use(room: number, socketId: string, healed: number): boolean;
+  /** Shows a hearth already spent, with no panel (resuming a saved run). */
+  markUsed(room: number, socketId: string): void;
+  /** Dresses the hearths' brass (the flat placeholder stays on a failure). */
+  dress(materials: HearthMaterials): void;
+  /** The panel on screen (shared with the coffers: one at a time) and the canvas it is drawn on. */
+  readonly toast: { readonly text: string; readonly canvas: HTMLCanvasElement } | null;
+  /** A floor point `distance` m from the hearth toward its room's centre, for scripted approaches. */
+  approachPoint(room: number, socketId: string, distance?: number): THREE.Vector3 | null;
+}
+
 export interface FloorView {
   world: FloorWorld;
   loot: FloorLoot;
+  hearth: FloorHearths;
   seed: string;
   encounter: EncounterDirector;
   /** True while an encounter holds the player in place. */
@@ -245,9 +272,51 @@ export function mountFloorView(
       return new THREE.Vector3(base.x, 0, base.z).addScaledVector(toCentre.normalize(), distance);
     },
   };
+  const hearthOf = (room: number, socketId: string): Hearth | undefined =>
+    world.hearths.find((h) => h.room === room && h.socketId === socketId);
+  const hearth: FloorHearths = {
+    hearths: world.hearths,
+    pick(origin, direction, maxDistance = LOOT_REACH) {
+      const here = world.hearths.filter((h) => h.room === world.current);
+      return pickHearth(here, origin, direction, maxDistance);
+    },
+    use(room, socketId, healed) {
+      const found = hearthOf(room, socketId);
+      if (!found) return false;
+      found.use(true);
+      dropToast();
+      const at = found.object.getWorldPosition(new THREE.Vector3());
+      toast = new LootToast(hearthLines(healed), at.setY(at.y + HEARTH_TOAST_LIFT));
+      world.group.add(toast.root);
+      return true;
+    },
+    markUsed(room, socketId) {
+      hearthOf(room, socketId)?.use(false);
+    },
+    dress(materials) {
+      world.dressHearths(materials);
+    },
+    get toast() {
+      return toast ? { text: toast.text, canvas: toast.canvas } : null;
+    },
+    approachPoint(room, socketId, distance = 2.2) {
+      const found = hearthOf(room, socketId);
+      const footprint = world.rooms[room]?.footprint;
+      if (!found || !footprint) return null;
+      const base = found.object.getWorldPosition(new THREE.Vector3());
+      const toCentre = new THREE.Vector3(
+        (footprint.min[0] + footprint.max[0]) / 2 - base.x,
+        0,
+        (footprint.min[1] + footprint.max[1]) / 2 - base.z,
+      );
+      if (toCentre.lengthSq() < 1e-6) toCentre.set(0, 0, 1);
+      return new THREE.Vector3(base.x, 0, base.z).addScaledVector(toCentre.normalize(), distance);
+    },
+  };
   return {
     world,
     loot,
+    hearth,
     seed,
     encounter,
     get suspendTriggers() {
@@ -355,6 +424,7 @@ export function mountFloorView(
     update(head, dt) {
       spin(dt);
       for (const coffer of world.coffers) coffer.update(dt);
+      for (const lit of world.hearths) lit.update(dt);
       if (toast) {
         head.getWorldPosition(at);
         if (!toast.update(dt, at)) dropToast();

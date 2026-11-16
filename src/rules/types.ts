@@ -89,10 +89,25 @@ export interface PlayerState extends Fighter {
   readonly steam: number;
 }
 
+/**
+ * A second phase: once the enemy's hp first falls to `hpFraction` of its max or below, its move list
+ * becomes `moves` for every intent picked from then on. Decided by hp alone, so it draws no random
+ * number and the intent already shown stays as it is.
+ */
+export interface EnemyPhaseTwo {
+  readonly hpFraction: number;
+  readonly moves: readonly EnemyMove[];
+}
+
 export interface EnemyState extends Fighter {
   readonly id: string;
   readonly name: string;
+  /** The move list in force: the setup's `moves`, replaced by `phaseTwo.moves` once phase 2 begins. */
   readonly moves: readonly EnemyMove[];
+  /** Carried from the setup; absent for an enemy with one phase. */
+  readonly phaseTwo?: EnemyPhaseTwo;
+  /** Present only with `phaseTwo`: 1 until the hp threshold is crossed, then 2. */
+  readonly phase?: 1 | 2;
   /** The visible next intent; `null` once the enemy is dead. */
   readonly intent: EnemyMove | null;
 }
@@ -130,7 +145,9 @@ export interface EnemySetup {
   readonly name: string;
   readonly hp: number;
   readonly maxHp?: number;
+  /** The phase-1 move list when `phaseTwo` is set. */
   readonly moves: readonly EnemyMove[];
+  readonly phaseTwo?: EnemyPhaseTwo;
   readonly statuses?: Statuses;
 }
 
@@ -216,6 +233,7 @@ export type CombatEvent =
       readonly intent: IntentKind;
     }
   | { readonly type: 'enemy-acted'; readonly enemyId: string; readonly moveId: string }
+  | { readonly type: 'enemy-phase'; readonly enemyId: string; readonly phase: 2 }
   | { readonly type: 'enemy-died'; readonly enemyId: string }
   | { readonly type: 'combat-won' }
   | { readonly type: 'combat-lost' };

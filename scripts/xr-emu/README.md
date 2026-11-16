@@ -18,6 +18,8 @@ node scripts/xr-emu/walk.mjs --focus          # New Run, one fight: only the fan
 node scripts/xr-emu/walk.mjs --turns          # a two-automaton fight (SPIRE002): only the enemy-phase and hit-flash checks
 node scripts/xr-emu/walk.mjs --recenter       # Enter VR facing away from the title: only the board re-placement check (XO5)
 node scripts/xr-emu/walk.mjs --treasure       # SPIRE001: open the treasure room's coffer with the main-hand ray and trigger
+node scripts/xr-emu/walk.mjs --rest           # SPIRE007: lose hp in a real fight, then use the rest room's hearth with the main-hand ray and trigger
+node scripts/xr-emu/walk.mjs --guardian       # SPIRE004: the Grand Escapement's phase-1 half (case closed, four moves, clip never played)
 node scripts/xr-emu/walk.mjs --loco           # Settings comfort toggles, New Run, then smooth move, snap turn, the comfort vignette and teleport
 ```
 
@@ -31,7 +33,7 @@ node scripts/xr-emu/walk.mjs --notice http://localhost:4262
 
 Screenshots land in `docs/verification/xr-emu-*.jpg` with a JSON report
 (`xr-emu-report.json`, `xr-emu-report-notice.json`). The exit code is 1 when any check fails
-(`make` reports 2). As of 2026-11-16 the walk passes every check (59, which includes the 11 treasure and resume checks and the 9 comfort checks, 8 of which `--loco` runs on its own;
+(`make` reports 2). As of 2026-11-16 the walk passes every check (82, which includes the 11 treasure and resume checks, the 17 rest checks, the 6 guardian checks and the 9 comfort checks, 8 of which `--loco` runs on its own;
 `xr-sigil-stage` failed intermittently until the walk waited for XR frames after pose writes, see `docs/playtesting.md`) and `--notice` last passed its 5 on 2026-11-15; XO1 to XO4 in `docs/playtesting.md` record the fixes. The two console 404s in the
 notice run are the music tracks that are not produced yet.
 
@@ -74,6 +76,31 @@ notice run are the music tracks that are not produced yet.
   nothing. The 2.2 m approach is the
   only teleport: the ray, the pick and the opening are the game's own paths. Pick a seed for it with
   `generateFloor(seed).rooms.filter((r) => r.role === 'treasure')`.
+- The rest check (`restCheck`, 17 checks) starts SPIRE007 (room 4 is a hall rest room). It first loses hp the
+  way a player does: the first encounter is entered with the `?debug` cheat that leaves the automaton 1 hp,
+  `E` ends turns until the enemy's blows have taken the player to 50 hp or less, then a played card kills
+  the automaton through the controller (`select` and `target`, the path a desktop click takes) so the fight
+  ends as a won one and keeps the player's hp (the debug `K` key does not carry hp into the run), and the
+  reward is skipped with the ray. `__combat.teleportToHearth()` then stands the seated rig 2.2 m from the
+  hearth. The checks: the beam of the main-hand controller reaches the hearth (the game's own pick along the
+  controller's -Z axis, the thing the laser ends on); the trigger heals by exactly the `+N hp` on the panel,
+  with N equal to the lesser of the missing hp and 30 percent of max hp rounded down; the hearth is spent
+  and recorded as `<room>/chest` in `usedHearths`; the coals dim; only hp changed (cogs, deck, phase); no
+  board locked locomotion; the panel is inside the left eye's view; a second pull heals nothing and the beam
+  no longer reaches it; once the panel expires the floor's node count is what it was before (no stale panel);
+  the saved snapshot holds the key and the new hp; and after a reload and Continue the hearth is spent at
+  once, no panel shows, and a trigger pull heals nothing. The run on 2026-11-16 lost 12 hp, so it also
+  exercised the cap (+12, not +18).
+- The guardian check (`guardianPhaseCheck`, 6 checks) fights the Grand Escapement in a real XR session and reads
+  its phase-1 half: the model carries the `phase-change` clip, the case is closed, the phase is 1 in the rules
+  and in the shown state, the move list is the four phase-1 moves without toll and overwind, the intents shown
+  over three real enemy turns come from those four, and the clip never plays. **The phase flip itself is not
+  walked.** It needs the guardian at 80 hp or less, and the starter deck cannot get there with legitimate play:
+  a greedy player (every attack, then block, sigil cards skipped) simulated through `CombatController` on four
+  seeds is dead on turn 6 to 8 with the guardian still at 97 to 103 hp, and the debug cheats only set an
+  enemy's hp to 1. Faking the hp would be a rules hack, so the flip is covered by `tests/guardian-phase.test.ts`
+  (threshold, move lists, determinism) and `tests/guardian-case.test.ts` (the real GLB: the clip plays once and
+  the hinge bones stay open under idle, attack, hit, frozen and death).
 - In the first fight the walk holds the off hand up to read the fan (`12-fan-held`), stages a
   sigil card with a main-hand squeeze released over the table, and traces the card's template by
   holding the trigger and sweeping the main-hand ray across the plate. `xr-sigil-trail` counts

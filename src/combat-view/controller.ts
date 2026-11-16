@@ -161,6 +161,8 @@ export function describeEvent(event: CombatEvent, state: CombatState): string | 
       return `${name(event.target)}: +${event.stacks} ${event.status} (${event.total})`;
     case 'enemy-acted':
       return `${name(event.enemyId)} used ${event.moveId}`;
+    case 'enemy-phase':
+      return `${name(event.enemyId)} opens its case: phase ${event.phase}`;
     case 'enemy-died':
       return `${name(event.enemyId)} is destroyed`;
     case 'reshuffled':

@@ -39,6 +39,7 @@ export function eventOwner(event: CombatEvent): string | null {
   switch (event.type) {
     case 'enemy-acted':
     case 'enemy-intent':
+    case 'enemy-phase':
     case 'enemy-died':
       return event.enemyId;
     case 'block-gained':
@@ -171,6 +172,13 @@ export function foldEvents(state: CombatState, events: readonly CombatEvent[]): 
         enemies = enemies.map((e) =>
           e.id === event.enemyId
             ? { ...e, intent: e.moves.find((m) => m.id === event.moveId) ?? null }
+            : e,
+        );
+        break;
+      case 'enemy-phase':
+        enemies = enemies.map((e) =>
+          e.id === event.enemyId && e.phaseTwo
+            ? { ...e, phase: event.phase, moves: e.phaseTwo.moves }
             : e,
         );
         break;

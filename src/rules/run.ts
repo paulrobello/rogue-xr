@@ -22,6 +22,8 @@ export interface RunState {
   readonly rewardChoices?: number;
   /** Keys (`lootKey`) of the treasure pickups already opened this run. Absent means none. */
   readonly openedLoot?: readonly string[];
+  /** Keys (`lootKey`) of the rest-room hearths already used this run. Absent means none. */
+  readonly usedHearths?: readonly string[];
 }
 
 /** Mirrors `EncounterTier` in `floor/generate.ts`; rules may not import from `floor/`. */
@@ -226,4 +228,33 @@ export function openTreasure(
   if (opened.includes(key)) return null;
   const result = treasureLoot(run, kind, pool);
   return { run: { ...result.run, openedLoot: [...opened, key] }, loot: result.loot };
+}
+
+/**
+ * Share of max hp a rest-room hearth restores. Rest-room rule (default pending the owner): one
+ * constant, so changing the number is a one-line edit and `0` turns the heal off.
+ */
+export const HEARTH_HEAL_FRACTION = 0.3;
+
+/** Hp a hearth restores to `run` now: `HEARTH_HEAL_FRACTION` of max hp rounded down, capped at the missing hp. */
+export function hearthHeal(run: Pick<RunState, 'hp' | 'maxHp'>): number {
+  return Math.max(0, Math.min(run.maxHp - run.hp, Math.floor(run.maxHp * HEARTH_HEAL_FRACTION)));
+}
+
+export interface HearthResult {
+  readonly run: RunState;
+  /** Hp actually restored, the number the in-scene panel shows. */
+  readonly healed: number;
+}
+
+/**
+ * Uses the hearth `key` (see `lootKey`) once. Returns null, touching nothing, when the run already
+ * used it. Otherwise heals by `hearthHeal` and records the key. No random draw: every stream is
+ * left as it was.
+ */
+export function useHearth(run: RunState, key: string): HearthResult | null {
+  const used = run.usedHearths ?? [];
+  if (used.includes(key)) return null;
+  const healed = hearthHeal(run);
+  return { run: { ...run, hp: run.hp + healed, usedHearths: [...used, key] }, healed };
 }

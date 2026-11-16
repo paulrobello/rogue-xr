@@ -13,6 +13,7 @@ import {
   SKIP_REWARD,
   type TreasureKind,
   type TreasureLoot,
+  useHearth,
 } from '../rules/run.ts';
 import {
   bankRunCogs,
@@ -79,10 +80,21 @@ export interface OpenedLoot {
   readonly loot: TreasureLoot;
 }
 
+/** A rest-room hearth used while exploring, already applied to the run. */
+export interface UsedHearth {
+  readonly room: number;
+  readonly socketId: string;
+  /** Hp actually restored, the figure the in-scene panel shows. */
+  readonly healed: number;
+  /** The run's hp after the heal. */
+  readonly hp: number;
+}
+
 export type FlowEvent =
   | { readonly type: 'phase'; readonly from: FlowPhase; readonly to: FlowPhase }
   | { readonly type: 'workshop' }
-  | ({ readonly type: 'loot' } & OpenedLoot);
+  | ({ readonly type: 'loot' } & OpenedLoot)
+  | ({ readonly type: 'hearth' } & UsedHearth);
 
 export interface FlowOptions {
   workshop: WorkshopState;
@@ -103,6 +115,7 @@ export class RunFlow {
   private offerValue: RewardOffer | null = null;
   private summaryValue: RunSummary | null = null;
   private lootValue: OpenedLoot | null = null;
+  private hearthValue: UsedHearth | null = null;
   private readonly clearedRooms: number[] = [];
   private readonly reached = new Set<number>();
   private roomValue = 0;
@@ -134,6 +147,14 @@ export class RunFlow {
   /** The treasure pickup opened last in this run, or null before the first one. */
   get lastLoot(): OpenedLoot | null {
     return this.lootValue;
+  }
+  /** The hearth used last in this run, or null before the first one. */
+  get lastHearth(): UsedHearth | null {
+    return this.hearthValue;
+  }
+  /** Whether the run already used the hearth at `socketId` in `room`. */
+  isHearthUsed(room: number, socketId: string): boolean {
+    return this.runValue?.usedHearths?.includes(lootKey(room, socketId)) ?? false;
   }
   /** Whether the run already opened the pickup at `socketId` in `room`. */
   isLootOpened(room: number, socketId: string): boolean {
@@ -273,6 +294,22 @@ export class RunFlow {
     return result.loot;
   }
 
+  /**
+   * Uses a rest-room hearth while exploring: heals the run by `hearthHeal` and records the hearth, so
+   * it can never be used twice (a resumed run keeps it recorded). Returns what was used, or null
+   * (changing nothing) outside `explore` or when it was already used.
+   */
+  useHearth(room: number, socketId: string): UsedHearth | null {
+    const run = this.runValue;
+    if (this.phaseValue !== 'explore' || !run) return null;
+    const result = useHearth(run, lootKey(room, socketId));
+    if (!result) return null;
+    this.runValue = result.run;
+    this.hearthValue = { room, socketId, healed: result.healed, hp: result.run.hp };
+    this.emit({ type: 'hearth', ...this.hearthValue });
+    return this.hearthValue;
+  }
+
   /** Claims the reward on screen: its cogs always, plus the chosen card unless `'skip'`. */
   pickReward(choice: RewardChoice): boolean {
     const run = this.runValue;
@@ -313,6 +350,7 @@ export class RunFlow {
     this.offerValue = null;
     this.summaryValue = null;
     this.lootValue = null;
+    this.hearthValue = null;
     this.clearedRooms.length = 0;
     this.clearedRooms.push(...cleared);
     this.reached.clear();

@@ -1408,6 +1408,7 @@ export class CombatSession {
     }
     const hits = new Set<SentryActor>();
     const deaths = new Set<SentryActor>();
+    const phases = new Set<SentryActor>();
     for (const event of events) {
       if (event.type === 'damage-dealt' && event.target === PLAYER_ID) {
         // A fully blocked blow rings the ward (in showPlayerHit) instead of the clank.
@@ -1419,6 +1420,7 @@ export class CombatSession {
       const actor = enemyId ? this.actors.get(enemyId) : undefined;
       if (actor && event.type === 'damage-dealt' && event.amount > 0) hits.add(actor);
       if (actor && event.type === 'enemy-died') deaths.add(actor);
+      if (actor && event.type === 'enemy-phase') phases.add(actor);
       const at = enemyId && enemyId !== PLAYER_ID ? this.aimOfId(enemyId) : null;
       this.deps.audio?.playCombatEvent(event, at ?? undefined);
     }
@@ -1430,6 +1432,8 @@ export class CombatSession {
       void actor.die();
     }
     for (const actor of hits) actor.hit();
+    // After the hit reaction, so the opening case takes over the pose from the blow that caused it.
+    for (const actor of phases) actor.openCase();
     const hit = playerHit(events);
     if (hit) this.showPlayerHit(hit);
     this.showBodies();

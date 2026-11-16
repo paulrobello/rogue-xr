@@ -20,6 +20,11 @@ import {
 } from '../src/rules/index.ts';
 
 const ROSTER = Object.values(ENEMIES);
+/** Every move an enemy can ever pick: its phase-1 list plus the extra moves of its phase 2. */
+const allMoves = (enemy: EnemySetup): EnemySetup['moves'] => [
+  ...enemy.moves,
+  ...(enemy.phaseTwo?.moves ?? []).filter((m) => !enemy.moves.some((p) => p.id === m.id)),
+];
 const TIERS: EncounterTier[] = ['regular', 'elite', 'guardian'];
 
 function begin(enemies: EnemySetup[], seed: string, hp = 70): CombatState {
@@ -89,7 +94,7 @@ describe('roster', () => {
 
   it('applies Weak and Vulnerable to the player with at least 2 stacks', () => {
     for (const enemy of ROSTER) {
-      for (const move of enemy.moves) {
+      for (const move of allMoves(enemy)) {
         for (const effect of move.effects) {
           if (effect.type !== 'apply-status') continue;
           if (effect.status === 'weak' || effect.status === 'vulnerable') {
@@ -111,7 +116,7 @@ describe('roster', () => {
 
 describe('every move resolves through the engine', () => {
   for (const enemy of ROSTER) {
-    for (const move of enemy.moves) {
+    for (const move of allMoves(enemy)) {
       it(`${enemy.id}/${move.id}`, () => {
         const only: EnemySetup = { ...enemy, moves: [move] };
         const { state, events } = passRounds(begin([only], 'SP1RE000'), 2);

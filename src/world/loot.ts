@@ -255,8 +255,14 @@ export function pickCoffer(
   return best;
 }
 
+/** The two lines the in-scene panel shows. The first is what was found or gained. */
+export interface ToastLines {
+  readonly text: string;
+  readonly caption: string;
+}
+
 /** The two lines the toast shows for a pickup. The first is what was found. */
-export function lootLines(loot: TreasureLoot): { text: string; caption: string } {
+export function lootLines(loot: TreasureLoot): ToastLines {
   return loot.kind === 'cogs'
     ? { text: `+${loot.cogs} cogs`, caption: 'Added to your purse' }
     : { text: `New card: ${getCard(loot.card).name}`, caption: 'Added to your deck' };
@@ -268,7 +274,7 @@ const TOAST_LIFE = 4.2;
 const TOAST_FADE = 0.7;
 const TOAST_RISE = 0.12;
 
-/** An in-scene panel over the opened coffer that shows what was found, faces the head and fades out. */
+/** An in-scene panel over an opened coffer or a used hearth: shows the result, faces the head and fades out. */
 export class LootToast {
   readonly root = new THREE.Group();
   readonly text: string;
@@ -276,8 +282,8 @@ export class LootToast {
   private readonly base = new THREE.Vector3();
   private age = 0;
 
-  constructor(loot: TreasureLoot, at: THREE.Vector3) {
-    const { text, caption } = lootLines(loot);
+  constructor(found: TreasureLoot | ToastLines, at: THREE.Vector3) {
+    const { text, caption } = 'caption' in found ? found : lootLines(found);
     this.text = text;
     this.label = new CanvasLabel(TOAST_PX.w, TOAST_PX.h, TOAST_WIDTH);
     this.label.draw((ctx, w, h) => {

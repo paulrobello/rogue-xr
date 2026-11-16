@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
+import { ENEMIES, type EnemyKind } from '../content/enemies.ts';
 import { loadPbrSet, type PbrSet } from '../world/materials.ts';
 
 /**
@@ -12,6 +13,25 @@ import { loadPbrSet, type PbrSet } from '../world/materials.ts';
 export const ENEMY_ASSET_ROOT = '/assets/enemies';
 export const ENEMY_CLIPS = ['idle', 'attack', 'hit', 'death', 'frozen'] as const;
 export type EnemyClip = (typeof ENEMY_CLIPS)[number];
+/**
+ * The one-shot clip an enemy with a rules phase 2 plays when it begins (the guardian's case
+ * opens). Loaded only for an enemy whose content defines `phaseTwo`, so no other model carries it.
+ */
+export const PHASE_CLIP = 'phase-change';
+export type ActorClip = EnemyClip | typeof PHASE_CLIP;
+/**
+ * Bones the phase-change clip leaves open (the guardian's doors and side plates). Every clip keys
+ * every bone, so after the change the actor re-applies the clip's final pose to these each frame
+ * and the case stays open under idle, attack, hit, frozen and death.
+ */
+export const PHASE_HELD_BONES: readonly string[] = ['door.L', 'door.R', 'plate.L', 'plate.R'];
+
+/** Whether the rules give `id` a phase 2, and so whether its model must carry the phase-change clip. */
+export function hasPhaseClip(id: string): boolean {
+  return (
+    (ENEMIES as Record<string, (typeof ENEMIES)[EnemyKind] | undefined>)[id]?.phaseTwo !== undefined
+  );
+}
 export const ENEMY_SOCKETS = ['socket-hit', 'socket-eye', 'socket-weapon'] as const;
 export type EnemySocket = (typeof ENEMY_SOCKETS)[number];
 /** Sockets the runtime reads (combat-session aims hit sparks at `socket-hit`). */
@@ -125,6 +145,8 @@ export class EnemyAsset {
     readonly template: THREE.Object3D,
     readonly clips: ReadonlyMap<EnemyClip, THREE.AnimationClip>,
     private readonly owned: Owned,
+    /** The phase-change clip: set for an enemy with a rules phase 2, null for every other model. */
+    readonly phaseClip: THREE.AnimationClip | null = null,
   ) {}
 
   get id(): string {
@@ -180,6 +202,11 @@ export async function parseEnemyAsset(
     if (!clip) throw new Error(`${who} glb: clip ${name} missing`);
     clips.set(name, clip);
   }
+  let phaseClip: THREE.AnimationClip | null = null;
+  if (hasPhaseClip(who)) {
+    phaseClip = gltf.animations.find((a) => a.name === PHASE_CLIP) ?? null;
+    if (!phaseClip) throw new Error(`${who} glb: clip ${PHASE_CLIP} missing`);
+  }
   if (!gltf.scene.getObjectByName(manifest.root)) throw new Error(`${who} glb: root node missing`);
   for (const socket of ENEMY_SOCKETS) {
     if (!manifest.sockets[socket]) continue;
@@ -210,10 +237,13 @@ export async function parseEnemyAsset(
     o.material = Array.isArray(o.material) ? o.material.map(bind) : bind(o.material);
   });
   const materials = new Set<THREE.Material>([...bound.keys(), ...bound.values()]);
-  return new EnemyAsset(manifest, gltf.scene, clips, {
-    materials: [...materials],
-    geometries: [...geometries],
-  });
+  return new EnemyAsset(
+    manifest,
+    gltf.scene,
+    clips,
+    { materials: [...materials], geometries: [...geometries] },
+    phaseClip,
+  );
 }
 
 export interface EnemyLoadOptions {
@@ -325,12 +355,18 @@ export class EnemyActor {
   readonly object: THREE.Object3D;
   readonly mixer: THREE.AnimationMixer;
   /** Called when a clip passes one of its manifest events, such as the attack's `impact`. */
-  onEvent: ((event: string, clip: EnemyClip) => void) | null = null;
+  onEvent: ((event: string, clip: ActorClip) => void) | null = null;
   readonly asset: EnemyAsset;
-  private readonly actions = new Map<EnemyClip, THREE.AnimationAction>();
-  private readonly fades = new Map<EnemyClip, Fade>();
+  private readonly actions = new Map<ActorClip, THREE.AnimationAction>();
+  private readonly fades = new Map<ActorClip, Fade>();
   private readonly materials: MaterialState[] = [];
-  private currentClip: EnemyClip | null = null;
+  private currentClip: ActorClip | null = null;
+  /** The case's state: closed until the phase-change clip plays, `changing` while it runs, then open. */
+  private casePhase: 'closed' | 'changing' | 'open' = 'closed';
+  private phaseChangeCount = 0;
+  /** An attack asked for while the case was opening; it plays when the opening ends. */
+  private deferredAttack = false;
+  private readonly heldBones: { bone: THREE.Object3D; pose: THREE.Quaternion }[] = [];
   private frozenFlag = false;
   private deadFlag = false;
   private disposedFlag = false;
@@ -340,6 +376,11 @@ export class EnemyActor {
     const clip = this.clipOf(e.action);
     if (clip === 'death') {
       this.death?.resolve();
+    } else if (clip === PHASE_CLIP && clip === this.currentClip && !this.deadFlag) {
+      this.casePhase = 'open';
+      const attack = this.deferredAttack;
+      this.deferredAttack = false;
+      this.play(attack ? 'attack' : this.frozenFlag ? 'frozen' : 'idle', { fade: 0.25 });
     } else if (
       (clip === 'attack' || clip === 'hit') &&
       clip === this.currentClip &&
@@ -382,6 +423,14 @@ export class EnemyActor {
       action.clampWhenFinished = once;
       this.actions.set(name, action);
     }
+    const phase = asset.phaseClip;
+    if (phase) {
+      const action = this.mixer.clipAction(phase);
+      action.setLoop(THREE.LoopOnce, Infinity);
+      action.clampWhenFinished = true;
+      this.actions.set(PHASE_CLIP, action);
+      this.captureHeldPose(phase);
+    }
     this.mixer.addEventListener('finished', this.onFinished);
     this.play('idle', { fade: 0 });
   }
@@ -390,8 +439,20 @@ export class EnemyActor {
   get kind(): string {
     return this.asset.manifest.id;
   }
-  get state(): EnemyClip | null {
+  get state(): ActorClip | null {
     return this.currentClip;
+  }
+  /** True once the phase-change clip has finished (or the actor died mid-change): the case stays open. */
+  get caseOpen(): boolean {
+    return this.casePhase === 'open';
+  }
+  /** True while the phase-change clip is playing. */
+  get caseOpening(): boolean {
+    return this.casePhase === 'changing';
+  }
+  /** How many times the phase-change clip has been started on this actor since its last reset. */
+  get phaseChanges(): number {
+    return this.phaseChangeCount;
   }
   get frozen(): boolean {
     return this.frozenFlag;
@@ -403,7 +464,7 @@ export class EnemyActor {
     return this.disposedFlag;
   }
 
-  action(clip: EnemyClip): THREE.AnimationAction {
+  action(clip: ActorClip): THREE.AnimationAction {
     const action = this.actions.get(clip);
     if (!action) throw new Error(`${this.kind} clip ${clip} missing`);
     return action;
@@ -414,7 +475,7 @@ export class EnemyActor {
   }
 
   /** Starts `clip`, cross-fading every other running clip out from its current weight. */
-  play(clip: EnemyClip, options: EnemyPlayOptions = {}): THREE.AnimationAction {
+  play(clip: ActorClip, options: EnemyPlayOptions = {}): THREE.AnimationAction {
     const next = this.action(clip);
     if (this.disposedFlag) return next;
     const fade = Math.max(0, options.fade ?? 0.2);
@@ -440,19 +501,35 @@ export class EnemyActor {
   }
 
   attack(): void {
-    if (!this.deadFlag) this.play('attack', { fade: 0.15 });
+    if (this.deadFlag) return;
+    // The case finishes opening first; the swing follows it.
+    if (this.casePhase === 'changing') this.deferredAttack = true;
+    else this.play('attack', { fade: 0.15 });
   }
 
-  /** Hit reaction: interrupts anything but death, flashes the emissive core. */
+  /** Hit reaction: interrupts anything but death, flashes the emissive core. The case opening is never cut short. */
   hit(): void {
     if (this.deadFlag) return;
-    this.play('hit', { fade: 0.06 });
+    if (this.casePhase !== 'changing') this.play('hit', { fade: 0.06 });
     this.flash = 1;
+  }
+
+  /**
+   * Starts phase 2: plays the phase-change clip once, after which the case stays open. Does nothing
+   * for a model without the clip, a dead actor, or a case already opening or open.
+   */
+  openCase(): void {
+    if (!this.asset.phaseClip || this.deadFlag || this.casePhase !== 'closed') return;
+    if (this.frozenFlag) this.setRime(false);
+    this.casePhase = 'changing';
+    this.phaseChangeCount += 1;
+    this.play(PHASE_CLIP, { fade: 0.2 });
   }
 
   /** The time-freeze pose: blends into the held `frozen` clip and rimes the plates. */
   freeze(): void {
     if (this.deadFlag || this.frozenFlag) return;
+    if (this.casePhase === 'changing') this.casePhase = 'open';
     this.play('frozen', { fade: 0.35 });
     this.setRime(true);
   }
@@ -472,6 +549,7 @@ export class EnemyActor {
     });
     this.death = { promise, resolve };
     if (this.frozenFlag) this.setRime(false);
+    if (this.casePhase === 'changing') this.casePhase = 'open';
     this.deadFlag = true;
     this.play('death', { fade: 0.15 });
     return promise;
@@ -493,8 +571,9 @@ export class EnemyActor {
     const current = this.currentClip ? this.action(this.currentClip) : null;
     const before = current ? current.time : 0;
     this.mixer.update(dt);
+    this.holdCaseOpen();
     if (current && this.currentClip && this.onEvent) {
-      const events = this.asset.manifest.clips[this.currentClip].events;
+      const events = this.eventsOf(this.currentClip);
       for (const [event, at] of Object.entries(events)) {
         if (before < at && current.time >= at) this.onEvent(event, this.currentClip);
       }
@@ -513,6 +592,9 @@ export class EnemyActor {
     this.death?.resolve();
     this.death = null;
     this.deadFlag = false;
+    this.casePhase = 'closed';
+    this.phaseChangeCount = 0;
+    this.deferredAttack = false;
     this.flash = 0;
     this.setRime(false);
     this.applyGlow();
@@ -540,7 +622,31 @@ export class EnemyActor {
     this.asset.retire(this);
   }
 
-  private clipOf(action: THREE.AnimationAction): EnemyClip | null {
+  private eventsOf(clip: ActorClip): Record<string, number> {
+    const specs = this.asset.manifest.clips as Partial<Record<ActorClip, EnemyClipSpec>>;
+    return specs[clip]?.events ?? {};
+  }
+
+  /** Reads each held bone's rotation at the phase-change clip's last keyframe. */
+  private captureHeldPose(phase: THREE.AnimationClip): void {
+    for (const name of PHASE_HELD_BONES) {
+      const bone =
+        this.object.getObjectByName(THREE.PropertyBinding.sanitizeNodeName(name)) ??
+        this.object.getObjectByName(name);
+      const track = bone && phase.tracks.find((t) => t.name === `${bone.name}.quaternion`);
+      if (!bone || !track || track.values.length < 4) continue;
+      const pose = new THREE.Quaternion().fromArray(track.values, track.values.length - 4);
+      this.heldBones.push({ bone, pose: pose.normalize() });
+    }
+  }
+
+  /** After the mixer, keeps the case's hinge bones in the phase-change pose (see `PHASE_HELD_BONES`). */
+  private holdCaseOpen(): void {
+    if (this.casePhase !== 'open') return;
+    for (const { bone, pose } of this.heldBones) bone.quaternion.copy(pose);
+  }
+
+  private clipOf(action: THREE.AnimationAction): ActorClip | null {
     for (const [name, a] of this.actions) if (a === action) return name;
     return null;
   }

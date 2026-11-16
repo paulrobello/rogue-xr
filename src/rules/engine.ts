@@ -179,7 +179,11 @@ function validateSetup(action: StartCombat): string | null {
     if (enemy.hp <= 0 || enemy.hp > (enemy.maxHp ?? enemy.hp))
       return `Enemy ${enemy.id} has bad hp`;
     if (enemy.moves.length === 0) return `Enemy ${enemy.id} has no moves`;
-    for (const move of enemy.moves) {
+    const { phaseTwo } = enemy;
+    if (phaseTwo && !(phaseTwo.hpFraction > 0 && phaseTwo.hpFraction < 1))
+      return `Enemy ${enemy.id} needs a phase-2 threshold between 0 and 1`;
+    if (phaseTwo && phaseTwo.moves.length === 0) return `Enemy ${enemy.id} has no phase-2 moves`;
+    for (const move of [...enemy.moves, ...(phaseTwo?.moves ?? [])]) {
       const problem = validateMove(enemy.id, move);
       if (problem) return problem;
     }
@@ -237,6 +241,7 @@ function setupWork(action: StartCombat): Work {
       block: 0,
       statuses: cleanStatuses(e.statuses),
       moves: e.moves,
+      ...(e.phaseTwo ? { phaseTwo: e.phaseTwo, phase: 1 as const } : {}),
       intent: null,
     })),
     draw: [],
@@ -307,9 +312,26 @@ function isOver(w: Work): boolean {
   return w.outcome !== null;
 }
 
+/**
+ * Moves an enemy into phase 2 the first time its hp is at or below its threshold. Swaps the move list
+ * only: the intent already chosen stands, and the next pick (after the enemy acts) draws from phase 2.
+ */
+function checkPhase(w: Work, id: ActorId): void {
+  const enemy = w.enemies.find((e) => e.id === id);
+  if (!enemy?.phaseTwo || enemy.phase !== 1 || !isAlive(enemy)) return;
+  if (enemy.hp > enemy.maxHp * enemy.phaseTwo.hpFraction) return;
+  w.enemies = w.enemies.map((e) =>
+    e.id === id ? { ...e, phase: 2 as const, moves: enemy.phaseTwo?.moves ?? e.moves } : e,
+  );
+  w.events.push({ type: 'enemy-phase', enemyId: id, phase: 2 });
+}
+
 /** Records a death and settles the outcome. */
 function checkDeath(w: Work, id: ActorId): void {
-  if (isAlive(fighter(w, id))) return;
+  if (isAlive(fighter(w, id))) {
+    if (id !== PLAYER_ID) checkPhase(w, id);
+    return;
+  }
   if (id === PLAYER_ID) {
     finish(w, 'lost');
     return;

@@ -137,8 +137,10 @@ function validateRunState(raw: unknown, path: string): RunState {
     r.bonusDice === undefined ? undefined : int(r.bonusDice, `${path}.bonusDice`, 0);
   const rewardChoices =
     r.rewardChoices === undefined ? undefined : int(r.rewardChoices, `${path}.rewardChoices`, 1);
-  // Added after version 1 shipped: absent in older saves, which then simply have nothing opened.
+  // Added after version 1 shipped: absent in older saves, which then simply have nothing opened or used.
   const openedLoot = r.openedLoot === undefined ? [] : strings(r.openedLoot, `${path}.openedLoot`);
+  const usedHearths =
+    r.usedHearths === undefined ? [] : strings(r.usedHearths, `${path}.usedHearths`);
   return {
     seed,
     rng,
@@ -149,6 +151,7 @@ function validateRunState(raw: unknown, path: string): RunState {
     ...(bonusDice === undefined ? {} : { bonusDice }),
     ...(rewardChoices === undefined ? {} : { rewardChoices }),
     ...(openedLoot.length === 0 ? {} : { openedLoot }),
+    ...(usedHearths.length === 0 ? {} : { usedHearths }),
   };
 }
 

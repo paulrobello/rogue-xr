@@ -23,6 +23,9 @@ export {
   chooseReward,
   createRun,
   DEFAULT_MAX_HP,
+  HEARTH_HEAL_FRACTION,
+  type HearthResult,
+  hearthHeal,
   lootKey,
   openTreasure,
   parseLootKey,
@@ -41,6 +44,7 @@ export {
   type TreasureLoot,
   type TreasureLootResult,
   treasureLoot,
+  useHearth,
 } from './run.ts';
 export {
   clampMultiplier,
