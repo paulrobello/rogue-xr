@@ -1,14 +1,14 @@
 {
-  "glb_sha256": "e33d829f3482c4ba2581d72ca7fc4916975da7d60503c6512c2a076693c26a59",
-  "glb_bytes": 2592392,
-  "triangles": 24794,
+  "glb_sha256": "808229372eda4bf5cba2961775af244ad72094d56b71642b6b737fed28162cf4",
+  "glb_bytes": 2616300,
+  "triangles": 24730,
   "materials": [
     "brass-polished",
     "gunmetal",
     "warden-glow",
     "warden-jewel"
   ],
-  "vertices": 28312,
+  "vertices": 28717,
   "joints": [
     "root",
     "pelvis",
@@ -48,14 +48,14 @@
   "unweighted_vertices": 0,
   "bounds": {
     "min": [
-      -0.978,
+      -0.9112,
       0.0,
-      -0.4765
+      -0.4774
     ],
     "max": [
-      0.978,
+      0.9112,
       2.6406,
-      0.9165
+      0.9174
     ]
   },
   "clips": {

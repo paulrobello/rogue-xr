@@ -4,9 +4,12 @@ planets, and a long plated skirt (concept assets-source/concepts/warden-sheet-1.
 assets-source/concepts/p5-automatons-design.md, style docs/art-bible.md). Built procedurally from
 shaped parts (lofted superellipse sections, crowned bevelled wrap-around plates, lathed shells,
 swept bands, extruded outlines), each weighted 1.0 to one bone of a 31-bone armature: a rounded
-layered cuirass and sloped gorget round a domed sun core, a skirt of separate tassets with engraved
-gunmetal borders, brass greave shields, articulated hands, halo rings riding in bearing collars on a back strut (no mast), and an orbit
-band that slides through a strut clip. Proportions are measured on the concept front view at the
+layered, engraved and riveted cuirass and sloped gorget round a keyhole sun core whose glow runs
+down the abdomen, a masked head (raised brow plate, dark cheek recesses), a skirt of separate tassets
+with engraved gunmetal borders, slim segmented greaves over layered pointed sabatons, sculpted
+gauntlets with segmented fingers, halo rings riding in bearing collars on a back strut (no mast),
+and an orbit band that slides through a strut clip. Engraving is geometry (inset gunmetal strips,
+rivet heads): the GLB is image-free and the brass slot takes the shared set's own normal map. Proportions are measured on the concept front view at the
 compare framing (2.66 mm per sheet pixel). The five automaton clips follow the Cog Sentry
 contract (P4-T6): idle (loop: the rings and the orbit turn one
 full revolution per 12 s loop on their own bones), attack (transit: the orbit whips the planets
@@ -43,6 +46,7 @@ import json
 import math
 import re
 import struct
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -65,12 +69,13 @@ DEATH_MAX_Z = 0.85  # lying prone with the rings and orbit folded flat over the 
 LIMITS = {"tris": 25_000, "materials": 4, "bones": 40, "influences": 4}
 GLOW = "warden-glow"
 JEWEL = "warden-jewel"
-MATS = ["brass-polished", "gunmetal", GLOW, JEWEL]
+BRASS = "brass-polished"  # the shared P4-T3 set the brass slot is named after (brass-aged rendered paler: same albedo, rougher)
+MATS = [BRASS, "gunmetal", GLOW, JEWEL]
 BP, GM, GL, JW = range(4)
-SETS = {"brass-polished": 0.35}  # shared set -> normal scale (as on the combat table)
+SETS = {BRASS: 0.35}  # shared set -> normal scale (as on the combat table)
 TILE_METERS = 0.5  # the brass set tiles at 0.5 m (public/assets/materials/materials.json)
 FACTORS = {  # sRGB base, roughness, metallic: the GLB look, and the fallback when the set fails
-    "brass-polished": ((0xDE, 0xC1, 0x6A), 0.3, 1.0),
+    BRASS: ((0xDE, 0xC1, 0x6A), 0.3, 1.0),
     "gunmetal": ((0x2E, 0x2A, 0x2A), 0.5, 0.85),
     # Emission stays at the project convention (GLOW_SRGB at GLOW_STRENGTH 0.7). A dark, fairly rough base
     # keeps the lit lens from adding white and washing the orange to peach under AgX.
@@ -245,6 +250,25 @@ def chamfer_rect(w: float, h: float, c: float | None = None) -> list:
     return [(-x + c, -y), (x - c, -y), (x, -y + c), (x, y - c), (x - c, y), (-x + c, y), (-x, y - c), (-x, -y + c)]
 
 
+def rect4(w: float, h: float) -> list:
+    """Plain rectangle section: thin bands and ribs, where a chamfer is below a pixel at play distance."""
+    x, y = w / 2, h / 2
+    return [(-x, -y), (x, -y), (x, y), (-x, y)]
+
+
+def surf_pt(p0, p1, rx, ry, a: float, v: float, p: float = 2.0, off: float = 0.0):
+    """Point on the superellipse cylinder round p0->p1 (wrap's convention: angle a from the front),
+    `off` metres out along the radius: where a rivet sits on a plate."""
+    from mathutils import Vector
+
+    m, length = axis_frame(p0, p1)
+    if (m.to_3x3() @ Vector((0, 1, 0))).y < -1e-6:
+        a = math.pi - a
+    s, c = math.sin(a), math.cos(a)
+    k = 1.0 + off / max(rx, ry)
+    return m @ Vector((rx * k * math.copysign(abs(s) ** (2 / p), s), ry * k * math.copysign(abs(c) ** (2 / p), c), v * length))
+
+
 class Parts:
     def __init__(self, bmesh, detail: str):
         self.bmesh = bmesh
@@ -339,9 +363,13 @@ class Parts:
             faces += [bm.faces.new(grid[0]), bm.faces.new(list(reversed(grid[-1])))]
         self._tag([v for row in grid for v in row], faces, mat, bone, color)
 
+    def rivet(self, c, bone: str, r: float = 0.0075) -> None:
+        """Dark rivet head: a squat 5-sided dome (20 tris)."""
+        self.ball(c, r, GM, bone, segs=(5, 3))
+
     def band(self, c, normal, r: float, w: float, t: float, mat: int, bone: str, n: int | None = None, rb: float | None = None) -> None:
-        """Flat ring band of radial width w and axial thickness t with chamfered edges."""
-        self.sweep_ring(c, normal, r, r if rb is None else rb, chamfer_rect(w, t), mat, bone, n)
+        """Flat ring band of radial width w and axial thickness t."""
+        self.sweep_ring(c, normal, r, r if rb is None else rb, rect4(w, t), mat, bone, n)
 
     def shell(self, c, axis, prof: list, mat: int, bone: str, sides: int | None = None, sx=1.0, sy=1.0, color=None) -> None:
         """Closed lathed shell from a closed (r, z) outline: pauldrons, cups, bezels, bells."""
@@ -518,13 +546,29 @@ def build_parts(P: Parts) -> None:
     I4 = Matrix.Identity(4)
     jewel = {k: tuple(lin(c) for c in v) for k, v in JEWELS.items()}
 
-    # --- Head: a narrow helmet tapering to the jaw, brow-panel seams, round glowing eyes in dark sockets, cheek seams,
-    # a mouth slit over a chin plate, and ear discs.
+    # --- Head: a narrow helmet tapering to the jaw, a raised brow plate narrowing to the crown, round glowing eyes in
+    # dark sockets, dark cheek recesses either side of the faceplate, a mouth slit over a chin plate, and ear discs.
     hs = [(0.0, 0.036, 0.050, 2.2), (0.06, 0.058, 0.080, 2.2), (0.22, 0.086, 0.106, 2.4), (0.45, 0.106, 0.120, 2.6),
           (0.68, 0.104, 0.114, 2.5), (0.85, 0.088, 0.096, 2.3), (0.96, 0.054, 0.062, 2.1), (1.0, 0.012, 0.014, 2.0)]
-    P.loft((0, 0.005, 2.09), (0, 0.005, 2.415), [(f, rx * 1.1, ry * 1.08, pw, 0, 0) for f, rx, ry, pw in hs], BP, "head")
-    for s in (1, -1):  # brow panel: seams narrowing from above the eyes to the crown
-        P.sweep([(s * 0.062, 0.117, 2.30), (s * 0.03, 0.097, 2.38)], chamfer_rect(0.009, 0.009), GM, "head", hint=(0, 1, 0))
+    h0, h1 = (0, 0.005, 2.09), (0, 0.005, 2.415)
+    P.loft(h0, h1, [(f, rx * 1.1, ry * 1.08, pw, 0, 0) for f, rx, ry, pw in hs], BP, "head")
+
+    def head_r(v: float) -> tuple[float, float]:
+        for (f0, a0, b0, _), (f1, a1, b1, _) in zip(hs, hs[1:]):
+            if v <= f1:
+                u = max(0.0, (v - f0) / (f1 - f0))
+                return (a0 + (a1 - a0) * u) * 1.1, (b0 + (b1 - b0) * u) * 1.08
+        return hs[-1][1] * 1.1, hs[-1][2] * 1.08
+
+    hsy = lambda v: head_r(v)[1] / head_r(v)[0]  # noqa: E731
+    brow = lambda v: 0.66 - 1.7 * max(0.0, v - 0.62)  # noqa: E731
+    P.wrap(h0, h1, lambda v: head_r(v)[0] + 0.004, lambda v: -brow(v), brow, 0.016, BP, "head", v0=0.585, v1=0.88, sy=hsy, p=2.5,
+           nu=P.n(10), nv=P.n(6), bevel=0.003, crown=0.009)
+    for s in (1, -1):  # cheek recesses: dark panels between the faceplate edge and the helm sides
+        a_in, a_out = 0.5, 1.25
+        a0, a1 = (a_in, a_out) if s > 0 else (-a_out, -a_in)
+        P.wrap(h0, h1, lambda v: head_r(v)[0] + 0.002, a0, a1, 0.008, GM, "head", v0=0.16,
+               v1=(lambda u: 0.43 - 0.1 * u) if s > 0 else (lambda u: 0.33 + 0.1 * u), sy=hsy, p=2.5, nu=P.n(6), nv=3, bevel=0.0)
     for s in (1, -1):  # dark eye sockets behind the glowing eyes
         P.ball((s * 0.05, 0.127, 2.252), 0.031, GM, "head", (1.08, 0.5, 1.0), segs=(10, 6))
     for s in (1, -1):
@@ -534,19 +578,19 @@ def build_parts(P: Parts) -> None:
     P.wrap((0, 0.0, 2.112), (0, 0.0, 2.178), lambda v: 0.104 + 0.028 * v, -0.62, 0.62, 0.02, BP, "head", sx=0.9, nu=P.n(8), nv=2)
     P.bbox((0, 0.122, 2.188), (0.08, 0.02, 0.016), GM, "head", bevel=0.0)  # mouth slit over the chin plate
     for s in (1, -1):  # cheek seams: the mask narrows from the outer eye to the chin corners
-        P.sweep([(s * 0.094, 0.098, 2.232), (s * 0.05, 0.118, 2.152)], chamfer_rect(0.012, 0.012), GM, "head", hint=(0, 1, 0))
+        P.sweep([(s * 0.094, 0.098, 2.232), (s * 0.05, 0.118, 2.152)], rect4(0.012, 0.012), GM, "head", hint=(0, 1, 0))
 
     # --- Neck: ribbed gunmetal column.
     P.tube((0, 0, 1.95), (0, 0, 2.13), 0.048, 0.044, GM, "neck")
-    for z in (2.0, 2.04, 2.08):
-        P.sweep_ring((0, 0, z), up, 0.052, 0.052, chamfer_rect(0.014, 0.014), GM, "neck", n=P.n(18))
+    for z in (2.02, 2.07):
+        P.sweep_ring((0, 0, z), up, 0.052, 0.052, rect4(0.014, 0.014), GM, "neck", n=P.n(18))
 
     # --- Chest: a rounded, layered cuirass. Gunmetal core under two crowned pectoral plates that
     # part round the sun core, a V-cut rib plate below them, side and back plates, and the core
     # itself: a raised brass bezel round a domed glowing lens with a glowing keyhole beneath.
     tr = lambda z, k=0.0: (torso_r(z)[0] + k, torso_r(z)[1] + k)  # noqa: E731
     zs = [1.58, 1.64, 1.72, 1.80, 1.88, 1.94, 1.985, 2.015]
-    P.rings([sect(*torso_r(z), P.n(26), 2.0) for z in zs], zs, I4, GM, "chest")
+    P.rings([sect(*torso_r(z), P.n(20), 2.0) for z in zs], zs, I4, GM, "chest")
     cz = CORE[2]
     cut = lambda vv: 0.08 + 0.38 * math.exp(-(((1.70 + 0.30 * vv) - cz) / 0.08) ** 2)  # noqa: E731
     pr = lambda vv: tr(1.70 + 0.30 * vv, 0.02)  # noqa: E731
@@ -568,6 +612,27 @@ def build_parts(P: Parts) -> None:
         rr = lambda vv: tr(1.62 + 0.15 * vv, 0.01)  # noqa: E731
         P.wrap((0, 0, 1.62), (0, 0, 1.77), lambda vv: rr(vv)[0], lo, hi, 0.018, BP, "chest", v0=rv0, v1=1.0,
                sy=lambda vv: rr(vv)[1] / rr(vv)[0], nu=P.n(12), nv=P.n(4), bevel=0.005, crown=0.008)
+    pc = 0.014  # pectoral crown
+    for s in (1, -1):  # engraved panel lines and rivets on the pectorals
+        a0, a1 = (0.93, 1.72) if s > 0 else (-1.72, -0.93)
+        w = a1 - a0
+        ov0 = (lambda u: 0.18 + 0.16 * u) if s > 0 else (lambda u: 0.18 + 0.16 * (1 - u))
+        uc = 0.1 if s > 0 else 0.9  # inner edge, toward the core
+        P.wrap((0, 0, 1.70), (0, 0, 2.0), lambda vv, k=uc: pr(vv)[0] + pc * math.sin(math.pi * k) + 0.003, a0 + w * uc - 0.022, a0 + w * uc + 0.022,
+               0.006, GM, "chest", v0=ov0(uc) + 0.07, v1=0.93, sy=lambda vv: pr(vv)[1] / pr(vv)[0], nu=1, nv=4, bevel=0.0)
+        P.wrap((0, 0, 1.70), (0, 0, 2.0), lambda vv: pr(vv)[0] + 0.003, a0 + w * 0.1, a0 + w * 0.92, 0.006, GM, "chest",
+               v0=lambda u, f=ov0: f(0.1 + 0.82 * u) + 0.05, v1=lambda u, f=ov0: f(0.1 + 0.82 * u) + 0.068,
+               sy=lambda vv: pr(vv)[1] / pr(vv)[0], nu=6, nv=1, bevel=0.0, crown=pc * 0.95)
+        # inner (raised) panel: a line along its outer edge, following the core cut
+        ia = (lambda vv: cut(vv) + (0.86 - cut(vv)) * 0.88) if s > 0 else (lambda vv: -(cut(vv) + (0.86 - cut(vv)) * 0.88))
+        P.wrap((0, 0, 1.70), (0, 0, 2.0), lambda vv: pr(vv)[0] + 0.008 + pc * math.sin(math.pi * 0.88) + 0.003,
+               lambda vv, f=ia: f(vv) - 0.02, lambda vv, f=ia: f(vv) + 0.02, 0.006, GM, "chest", v0=0.22, v1=0.93,
+               sy=lambda vv: pr(vv)[1] / pr(vv)[0], nu=1, nv=4, bevel=0.0)
+        for ur, vr in ((0.3, 0.9), (0.75, 0.9), (0.85, 0.5)):
+            u_ = ur if s > 0 else 1 - ur
+            e = pc * math.sin(math.pi * u_)
+            rx, ry = pr(vr)
+            P.rivet(surf_pt((0, 0, 1.70), (0, 0, 2.0), rx + e, (rx + e) * ry / rx, a0 + w * u_, vr, 2.0, 0.002), "chest")
     for s in (1, -1):  # back plates either side of the spine channel
         lo, hi = (math.pi + 0.08, math.pi + 1.48) if s > 0 else (math.pi - 1.48, math.pi - 0.08)
         br = lambda vv: tr(1.62 + 0.34 * vv, 0.02)  # noqa: E731
@@ -576,20 +641,19 @@ def build_parts(P: Parts) -> None:
     # sun core
     P.shell(CORE, fwd, [(0.0, 0.0), (0.108, 0.0), (0.108, 0.016), (0.098, 0.032), (0.088, 0.028), (0.084, 0.012), (0.0, 0.012)],
             BP, "chest", sides=P.n(32))
-    P.sweep_ring(_add(CORE, (0, 0.016, 0)), fwd, 0.077, 0.077, chamfer_rect(0.012, 0.012), GL, "chest", n=P.n(32))
+    P.sweep_ring(_add(CORE, (0, 0.016, 0)), fwd, 0.077, 0.077, rect4(0.012, 0.012), GL, "chest", n=P.n(32))
     # ember-orange jewel surround: saturation round the lens without raising emission past the convention
     P.lathe(_add(CORE, (0, 0.010, 0)), fwd, [(0.0, 0.0), (0.071, 0.0), (0.071, 0.008), (0.0, 0.008)], JW, "chest", sides=P.n(30),
             color=tuple(lin(c) for c in (0xC8, 0x4A, 0x0E)))
     P.lathe(_add(CORE, (0, 0.012, 0)), fwd, [(0.0, 0.0), (0.068, 0.0), (0.066, 0.01), (0.054, 0.021), (0.033, 0.029), (0.0, 0.032)],
             GL, "chest", sides=P.n(30))
-    for k in range(8):  # sun rays round the bezel
-        a = 2 * math.pi * k / 8 + math.pi / 8
-        P.bbox((0.118 * math.cos(a), CORE[1] + 0.004, cz + 0.118 * math.sin(a)), (0.03, 0.012, 0.013), BP, "chest",
-               rot=Euler((0, -a, 0)).to_matrix(), bevel=0.0)
-    P.bbox((0, 0.175, 1.70), (0.03, 0.02, 0.12), GL, "chest", bevel=0.0)  # keyhole
-    for s in (1, -1):
-        P.bbox((s * 0.026, 0.18, 1.695), (0.014, 0.026, 0.13), BP, "chest", bevel=0.004)
-    P.sweep_ring((0, 0, 1.995), up, 0.185, 0.128, chamfer_rect(0.032, 0.026), BP, "chest", n=P.n(32))
+    # keyhole: a glowing slot runs from the lens down the sternum in a raised brass frame
+    kz = [1.748, 1.718, 1.688, 1.658, 1.632, 1.614]
+    kw = [0.024, 0.021, 0.019, 0.017, 0.014, 0.006]
+    ky = [torso_r(z)[1] + 0.035 for z in kz]
+    P.rings([sect(w_ + 0.015, 0.02, P.n(14), 4.0, 0, y_) for w_, y_ in zip(kw, ky)], kz, I4, BP, "chest")
+    P.rings([sect(w_, 0.008, P.n(14), 4.0, 0, y_ + 0.014) for w_, y_ in zip(kw, ky)], kz, I4, GL, "chest")
+    P.sweep_ring((0, 0, 1.995), up, 0.185, 0.128, rect4(0.032, 0.026), BP, "chest", n=P.n(32))
     # sloped gorget: the cuirass rises from the shoulders to the neck instead of ending in a flat shelf
     P.shell((0, 0, 1.99), up, [(0.066, 0.1), (0.092, 0.07), (0.13, 0.03), (0.178, 0.0), (0.17, -0.012), (0.12, 0.018), (0.08, 0.06), (0.058, 0.09)],
             BP, "chest", sides=P.n(20), sx=1.0, sy=0.72)
@@ -604,9 +668,9 @@ def build_parts(P: Parts) -> None:
     P.tube(pv, (-0.135, pv[1], 1.902), 0.008, 0.008, BP, "eclipse", sides=8)
     P.lathe(_add(pv, (0, -0.008, 0)), fwd, [(0.0, 0.0), (0.018, 0.0), (0.018, 0.016), (0.0, 0.016)], BP, "eclipse", sides=12)
     P.lathe(disc, fwd, [(0.0, -0.006), (0.062, -0.006), (0.062, 0.006), (0.0, 0.006)], GM, "eclipse", sides=P.n(24))  # the dark moon face
-    P.sweep_ring(_add(disc, (0, 0.007, 0)), fwd, 0.04, 0.04, chamfer_rect(0.006, 0.006), BP, "eclipse", n=P.n(20))
+    P.sweep_ring(_add(disc, (0, 0.007, 0)), fwd, 0.04, 0.04, rect4(0.006, 0.006), BP, "eclipse", n=P.n(20))
     P.lathe(_add(disc, (0, -0.007, 0)), (0, -1, 0), [(0.0, 0.0), (0.05, 0.0), (0.05, 0.004), (0.0, 0.004)], GM, "eclipse", sides=P.n(20))
-    P.sweep_ring(disc, fwd, 0.062, 0.062, chamfer_rect(0.008, 0.014), BP, "eclipse", n=P.n(24))
+    P.sweep_ring(disc, fwd, 0.062, 0.062, rect4(0.008, 0.014), BP, "eclipse", n=P.n(24))
 
     # --- Armillary mount: a strut from the back gear to a bearing bar whose collars carry both halo
     # rings at their lowest points (the rings turn through them), and a second strut from the upper
@@ -631,7 +695,9 @@ def build_parts(P: Parts) -> None:
     zs = [1.46, 1.53, 1.60, 1.66]
     P.rings([sect(0.125, 0.098, P.n(20), 2.2) for _ in zs], zs, I4, GM, "spine")
     for z in (1.51, 1.56, 1.61):
-        P.sweep_ring((0, 0, z), up, 0.134, 0.106, chamfer_rect(0.016, 0.02), GM, "spine", n=P.n(24))
+        P.sweep_ring((0, 0, z), up, 0.134, 0.106, rect4(0.016, 0.02), GM, "spine", n=P.n(24))
+    az = [1.64, 1.60, 1.55, 1.50, 1.47]
+    P.rings([sect(w_, 0.007, P.n(10), 4.0, 0, 0.12) for w_ in (0.011, 0.012, 0.011, 0.009, 0.004)], az, I4, GL, "spine")
     for s in (1, -1):
         P.bbox((s * 0.098, 0.07, 1.57), (0.016, 0.03, 0.15), GL, "spine", bevel=0.0, rot=Euler((0, 0, s * 0.5)).to_matrix())
 
@@ -643,7 +709,7 @@ def build_parts(P: Parts) -> None:
         P.wrap((0, 0, 1.49), (0, 0, depth), lambda v: skirt_r(0.41 * v) * 0.96 + 0.10, mid - 0.34, mid + 0.34, 0.02, BP, "pelvis",
                v1=lambda u: 1.0 - 0.72 * abs(2 * u - 1), sy=0.80, nu=P.n(10), nv=P.n(6), bevel=0.006, crown=0.018)
     P.wrap((0, 0, 1.47), (0, 0, 0.62), lambda v: skirt_r(v) * 0.86, -math.pi, math.pi, 0.01, GM, "pelvis", sy=0.8,
-           nu=P.n(20), nv=P.n(5), bevel=0.0)  # dark under-skirt: shows in the gaps between the plates
+           nu=P.n(14), nv=P.n(5), bevel=0.0)  # dark under-skirt: shows in the gaps between the plates
 
     # --- Skirt: separate tassets with pointed hems, alternating in and out so each edge overlaps
     # its neighbour with a shadow line, and each plate crowned so it takes its own highlight.
@@ -682,11 +748,17 @@ def build_parts(P: Parts) -> None:
                           (0.152 * k, 0.0), (0.125 * k, 0.06 * k), (0.07 * k, 0.09 * k), (0.0, 0.098 * k)], BP, f"upperarm.{n_}", sx=1.0, sy=1.08)
         P.shell(lerp(sh, el, 0.2), _add(sh, el, -1.0), [(0.0, 0.05), (0.07, 0.045), (0.11, 0.0), (0.112, -0.06), (0.098, -0.06),
                                                      (0.096, 0.0), (0.06, 0.03), (0.0, 0.036)], BP, f"upperarm.{n_}", sx=1.0, sy=1.05)
-        P.sweep_ring(_add(cap, (s * 0.015, 0, 0.0)), ax, 0.172 * k, 0.18 * k, chamfer_rect(0.012, 0.018), GM, f"upperarm.{n_}", n=P.n(28))
+        P.sweep_ring(_add(cap, (s * 0.015, 0, 0.0)), ax, 0.172 * k, 0.18 * k, rect4(0.012, 0.018), GM, f"upperarm.{n_}", n=P.n(28))
+        axn = Vector(ax).normalized()
+        P.sweep_ring(Vector(cap) + axn * 0.062, ax, 0.1475, 0.1475 * 1.08, rect4(0.006, 0.008), GM, f"upperarm.{n_}", n=P.n(28))
+        pm, _ = axis_frame(cap, Vector(cap) + Vector(ax))
+        for ang in (55.0, 90.0, 125.0):
+            a = math.radians(ang)
+            P.rivet(pm @ Vector((0.164 * math.cos(a), 0.164 * 1.08 * math.sin(a), 0.03)), f"upperarm.{n_}")
         gem = _add(cap, (s * 0.07, 0.17, 0.03))
         P.ball(gem, 0.026, JW, f"upperarm.{n_}", color=jewel["ruby" if s > 0 else "emerald"])
         P.lathe(_add(gem, (0, -0.012, 0)), (0, 1, 0), [(0.0, -0.004), (0.036, -0.004), (0.036, 0.008), (0.0, 0.008)], BP, f"upperarm.{n_}", sides=12)
-        P.ball(sh, 0.066, GM, f"upperarm.{n_}")
+        P.ball(sh, 0.066, GM, f"upperarm.{n_}", segs=(8, 4))  # mostly inside the pauldron
         P.loft(sh, el, [(0.05, 0.064, 0.066, 2.0, 0, 0), (0.95, 0.052, 0.054, 2.0, 0, 0)], GM, f"upperarm.{n_}")
         P.wrap(sh, el, lambda v: 0.078 - 0.012 * v, -0.4 if s > 0 else -2.4, 2.4 if s > 0 else 0.4, 0.016, BP, f"upperarm.{n_}",
                v0=0.25, v1=0.9, nu=P.n(8), nv=3, crown=0.006)
@@ -694,78 +766,137 @@ def build_parts(P: Parts) -> None:
         P.loft(el, wr, [(0.06, 0.06, 0.06, 2.3, 0, 0), (0.24, 0.078, 0.074, 2.6, 0, 0), (0.68, 0.07, 0.066, 2.6, 0, 0), (0.92, 0.05, 0.048, 2.2, 0, 0),
                         (1.0, 0.04, 0.04, 2.0, 0, 0)], BP, f"forearm.{n_}")
         for f in (0.12, 0.62):
-            P.sweep_ring(lerp(el, wr, f), (s * (WR[0] - EL[0]), 0, WR[2] - EL[2]), 0.074 - 0.014 * f, 0.07 - 0.014 * f, chamfer_rect(0.01, 0.016), GM,
+            P.sweep_ring(lerp(el, wr, f), (s * (WR[0] - EL[0]), 0, WR[2] - EL[2]), 0.074 - 0.014 * f, 0.07 - 0.014 * f, rect4(0.01, 0.016), GM,
                          f"forearm.{n_}", n=P.n(18))
-        # Hand: bevelled palm and back plate, knuckle bar, four three-segment fingers on ball
-        # knuckles, splayed and curling toward the palm, and a two-segment opposed thumb.
+        vb = [(0.06, 0.06, 0.06), (0.24, 0.078, 0.074), (0.68, 0.07, 0.066), (0.92, 0.05, 0.048), (1.0, 0.04, 0.04)]
+        vb_r = lambda v: next((a0 + (a1 - a0) * (v - f0) / (f1 - f0), b0 + (b1 - b0) * (v - f0) / (f1 - f0))  # noqa: E731
+                              for (f0, a0, b0), (f1, a1, b1) in zip(vb, vb[1:]) if v <= f1)
+        for a in (-0.42, 0.42):  # a front panel framed by two engraved lines, riveted at both ends
+            P.wrap(el, wr, lambda v: vb_r(v)[0] + 0.003, a - 0.035, a + 0.035, 0.006, GM, f"forearm.{n_}", v0=0.2, v1=0.56, nu=1, nv=4,
+                   p=2.6, sy=lambda v: vb_r(v)[1] / vb_r(v)[0], bevel=0.0)
+            for vr in (0.22, 0.54):
+                ar = a * 0.55
+                P.rivet(surf_pt(el, wr, *vb_r(vr), ar, vr, 2.6, 0.002), f"forearm.{n_}")
+        # Gauntlet: a sculpted palm lofted from the wrist to the knuckles (no box), a crowned back plate,
+        # a knuckle bar, four long three-segment fingers with dark joints curling toward the palm, and
+        # a two-segment thumb. The palm faces in and back, so the front view sees the plated back.
+        hb = f"hand.{n_}"
         d = Vector((s * 0.08, 0.02, -0.14)).normalized()
-        side = Vector((0, 1, 0)).cross(d).normalized() if s > 0 else d.cross(Vector((0, 1, 0))).normalized()
-        hs = 1.2  # the concept's gauntlets are broad: scale the whole hand about the wrist
-        palm = Vector(wr) + d * 0.058 * hs
-        rot = Matrix((side, Vector((0, 1, 0)), d)).transposed()
-        P.bbox(palm, (0.112 * hs, 0.05 * hs, 0.105 * hs), BP, f"hand.{n_}", rot=rot, bevel=0.01)
-        P.ball(Vector(wr), 0.038 * hs, GM, f"hand.{n_}")
-        kb = palm + d * 0.056 * hs
-        P.tube(kb - side * 0.056 * hs, kb + side * 0.056 * hs, 0.019 * hs, 0.019 * hs, GM, f"hand.{n_}", sides=8)
-        curl = Vector((0, 1, 0))
+        pn = Vector((-s * 1.0, -0.35, 0.0))
+        pn = (pn - d * pn.dot(d)).normalized()  # palm normal
+        wv = d.cross(pn).normalized()  # across the knuckles; thumb on the +wv (forward) side
+        if wv.y < 0:
+            wv = -wv
+        hs = 1.15
+        wrv = Vector(wr)
+        hm = Matrix((wv, pn, d)).transposed().to_4x4()
+        hm.translation = wrv
+        P.ball(wrv, 0.033 * hs, GM, hb, segs=(8, 5))
+        pal = [(0.01, 0.03, 0.024, 2.3), (0.3, 0.045, 0.026, 2.6), (0.7, 0.053, 0.024, 2.8), (1.0, 0.05, 0.018, 2.6)]
+        pl = 0.105 * hs
+        P.rings([sect(rx * hs, ry * hs, P.n(14), pw) for _, rx, ry, pw in pal], [f * pl for f, *_ in pal], hm, BP, hb)
+        bk = [(0.12, 0.034, 0.012), (0.5, 0.046, 0.016), (0.92, 0.046, 0.012)]  # back plate, proud of the palm's back
+        P.rings([sect(rx * hs, ry * hs, P.n(12), 2.2, 0, -0.016 * hs) for _, rx, ry in bk], [f * pl for f, *_ in bk], hm, BP, hb)
+        kb = wrv + d * (pl + 0.004)
+        P.tube(kb - wv * 0.05 * hs, kb + wv * 0.05 * hs, 0.016 * hs, 0.016 * hs, GM, hb, sides=8)
         for i in range(4):
-            j = i - 1.5
-            base = kb + side * (0.031 * hs * j)
-            seg = (d + side * (0.05 * j)).normalized()
-            p0 = base
-            for g, (ln, r0, r1, bend) in enumerate(((0.05, 0.0165, 0.015, 0.3), (0.038, 0.015, 0.013, 0.5), (0.03, 0.013, 0.01, 0.55))):
-                seg = (seg + curl * bend).normalized()
-                p1 = p0 + seg * (ln - 0.004 * abs(j)) * hs
-                if g < 2:
-                    P.ball(p0, (r0 + 0.003) * hs, GM, f"hand.{n_}", segs=(6, 4))
-                P.tube(p0, p1, r0 * hs, r1 * hs, BP, f"hand.{n_}", sides=6)
+            j = 1.5 - i  # index finger (+wv) to little finger
+            p0 = kb + wv * (0.029 * hs * j)
+            seg = (d + wv * (0.035 * j)).normalized()
+            for g, (ln, r0, r1, bend) in enumerate(((0.052, 0.0155, 0.0145, 0.22), (0.04, 0.0145, 0.0125, 0.42), (0.032, 0.0125, 0.0095, 0.5))):
+                seg = (seg + pn * bend).normalized()
+                p1 = p0 + seg * (ln - 0.005 * abs(j)) * hs
+                P.ball(p0, (r0 + 0.0025) * hs, GM, hb, segs=(6, 3))
+                P.tube(p0, p1, r0 * hs, r1 * hs, BP, hb, sides=6)
                 p0 = p1
-        tb0 = palm + (Vector((0, 0.02, 0)) - side * 0.05 + d * 0.01) * hs
-        tdir = (d * 0.4 + Vector((0, 0.8, 0)) - side * 0.35).normalized()
-        P.ball(tb0, 0.016 * hs, GM, f"hand.{n_}", segs=(6, 4))
-        tm = tb0 + tdir * 0.045 * hs
-        P.tube(tb0, tm, 0.015 * hs, 0.013 * hs, BP, f"hand.{n_}", sides=6)
-        P.tube(tm, tm + (tdir + d * 0.6).normalized() * 0.035 * hs, 0.013 * hs, 0.009 * hs, BP, f"hand.{n_}", sides=6)
+        tb0 = wrv + (d * 0.04 + wv * 0.038 + pn * 0.012) * hs
+        tdir = (d * 0.55 + wv * 0.55 + pn * 0.45).normalized()
+        P.ball(tb0, 0.017 * hs, GM, hb, segs=(6, 3))
+        tm = tb0 + tdir * 0.048 * hs
+        P.tube(tb0, tm, 0.016 * hs, 0.014 * hs, BP, hb, sides=6)
+        P.ball(tm, 0.016 * hs, GM, hb, segs=(6, 3))
+        P.tube(tm, tm + (tdir + d * 0.5 + pn * 0.3).normalized() * 0.038 * hs, 0.014 * hs, 0.01 * hs, BP, hb, sides=6)
 
-    # --- Legs: armoured: gunmetal hip and thigh under a brass plate, a winged knee cop, a broad
-    # brass greave shield over a gunmetal calf, and a broad sabaton with ankle cops.
+    # --- Legs: gunmetal hip and thigh under a brass plate, a knee cop, and the concept's slim lower
+    # leg: a tapered gunmetal calf under two overlapping brass greave lames (front ridge, engraved
+    # side lines, rivets), an ankle joint with cops, and a layered pointed sabaton on a dark sole.
+    calf = [(0.0, 0.058, 0.062), (0.12, 0.066, 0.07), (0.3, 0.07, 0.076), (0.6, 0.06, 0.064), (0.85, 0.048, 0.05), (1.0, 0.042, 0.044)]
+
+    def calf_r(v: float) -> tuple[float, float]:
+        for (f0, a0, b0), (f1, a1, b1) in zip(calf, calf[1:]):
+            if v <= f1:
+                u = max(0.0, (v - f0) / (f1 - f0))
+                return a0 + (a1 - a0) * u, b0 + (b1 - b0) * u
+        return calf[-1][1], calf[-1][2]
+
+    foot = [(0.0, 0.040, 0.030), (0.06, 0.050, 0.046), (0.25, 0.056, 0.054), (0.45, 0.056, 0.046), (0.65, 0.052, 0.034),
+            (0.82, 0.041, 0.024), (0.94, 0.024, 0.016), (1.0, 0.006, 0.010)]
+
+    def foot_r(f: float) -> tuple[float, float]:
+        for (f0, a0, b0), (f1, a1, b1) in zip(foot, foot[1:]):
+            if f <= f1:
+                u = max(0.0, (f - f0) / (f1 - f0))
+                return a0 + (a1 - a0) * u, b0 + (b1 - b0) * u
+        return foot[-1][1], foot[-1][2]
+
     for s, n_ in ((1, "R"), (-1, "L")):
         hip, knee, ank = HEAD[f"thigh.{n_}"], HEAD[f"shin.{n_}"], HEAD[f"foot.{n_}"]
         P.ball(hip, 0.085, GM, f"thigh.{n_}")
-        P.loft(hip, knee, [(0.0, 0.10, 0.10, 2.0, 0, 0), (0.5, 0.096, 0.096, 2.0, 0, 0), (1.0, 0.076, 0.078, 2.0, 0, 0)], GM, f"thigh.{n_}")
-        P.wrap(hip, knee, lambda v: 0.112 - 0.022 * v, -1.3, 1.3, 0.016, BP, f"thigh.{n_}", v0=0.3, v1=0.9, nu=P.n(8), nv=3, crown=0.008)
-        P.ball(knee, 0.074, GM, f"shin.{n_}")
-        P.shell(_add(knee, (0, 0.058, 0.0)), (0, 1, 0), [(0.0, 0.046), (0.05, 0.04), (0.085, 0.0), (0.078, -0.006), (0.046, 0.026), (0.0, 0.032)],
-                BP, f"shin.{n_}", sy=1.3)
-        P.loft(knee, ank, [(0.08, 0.08, 0.082, 2.0, 0, 0.0), (0.25, 0.104, 0.11, 2.7, 0, -0.016), (0.55, 0.098, 0.1, 2.7, 0, -0.014),
-                           (0.86, 0.07, 0.072, 2.4, 0, -0.006), (1.0, 0.056, 0.058, 2.0, 0, 0)], GM, f"shin.{n_}")
-        # brass greave shield over the gunmetal calf, crowned so it takes its own highlight
-        gr = [(0.08, 0.08), (0.25, 0.104), (0.55, 0.098), (0.86, 0.07), (1.0, 0.056)]
-        g_r = lambda v: 0.013 + next(r0 + (r1 - r0) * (v - f0) / (f1 - f0) for (f0, r0), (f1, r1) in zip(gr, gr[1:]) if v <= f1)  # noqa: E731
-        P.wrap(knee, ank, g_r, -2.95, 2.95, 0.014, BP, f"shin.{n_}", v0=0.1, v1=0.95, nu=P.n(10), nv=4, p=2.7, sy=1.16, bevel=0.0, crown=0.012)
-        P.sweep_ring(lerp(knee, ank, 0.6), _add(knee, ank, -1.0), 0.136, 0.138, chamfer_rect(0.014, 0.022), GM, f"shin.{n_}", n=P.n(18))
-        P.ball(ank, 0.048, GM, f"foot.{n_}")
-        m, _ = axis_frame((ank[0], -0.10, 0.0), (ank[0], 0.27, 0.0))
-        secs = [(0.0, 0.058, 0.04, 2.4, 0, -0.04), (0.12, 0.068, 0.062, 2.6, 0, -0.062), (0.45, 0.072, 0.056, 2.8, 0, -0.056),
-                (0.75, 0.066, 0.034, 2.8, 0, -0.034), (1.0, 0.036, 0.014, 2.4, 0, -0.014)]
-        P.rings([sect(rx * 1.2, ry, P.n(16), pw, cx, cy) for _, rx, ry, pw, cx, cy in secs], [f * 0.37 for f, *_ in secs], m, BP, f"foot.{n_}")
-        for side in (1, -1):  # ankle cops: brass discs either side of the ankle joint
-            P.lathe(_add(ank, (side * 0.05, 0, 0)), (side, 0, 0), [(0.0, 0.0), (0.054, 0.0), (0.054, 0.01), (0.04, 0.022), (0.0, 0.025)], BP,
-                    f"foot.{n_}", sides=10)
-        P.wrap((ank[0], -0.10, 0.05), (ank[0], 0.22, 0.05), 0.072, math.pi - 1.3, math.pi + 1.3, 0.012, BP, f"foot.{n_}", v0=0.55, v1=0.85, sx=1.0, sy=1.05,
-               nu=P.n(8), nv=2)
-        P.lathe((ank[0], -0.04, 0.075), (0, -1, 0), [(0.0, 0.0), (0.058, 0.0), (0.052, 0.045), (0.0, 0.055)], GM, f"foot.{n_}", sx=1.1)
+        P.loft(hip, knee, [(0.0, 0.10, 0.10, 2.0, 0, 0), (0.5, 0.09, 0.09, 2.0, 0, 0), (1.0, 0.07, 0.072, 2.0, 0, 0)], GM, f"thigh.{n_}")
+        P.wrap(hip, knee, lambda v: 0.104 - 0.024 * v, -1.3, 1.3, 0.016, BP, f"thigh.{n_}", v0=0.3, v1=0.9, nu=P.n(8), nv=3, bevel=0.0, crown=0.008)  # under the skirt in every standing view
+        shin = f"shin.{n_}"
+        P.ball(knee, 0.064, GM, shin)
+        P.shell(_add(knee, (0, 0.05, 0.0)), (0, 1, 0), [(0.0, 0.044), (0.045, 0.038), (0.075, 0.0), (0.068, -0.006), (0.04, 0.024), (0.0, 0.03)],
+                BP, shin, sy=1.3)
+        P.loft(knee, ank, [(f, rx, ry, 2.2, 0, 0.004 if 0.1 < f < 0.7 else 0.0) for f, rx, ry in calf], GM, shin)
+        # two greave lames: the upper one rises to a point under the knee and flares over the lower
+        lift, crn = 0.011, 0.01
+        lames = ((lambda u: 0.05 + 0.07 * abs(2 * u - 1), 0.53, 2.3, lambda v: smooth_step((v - 0.42) / 0.11) * 0.007, P.n(7)),
+                 (0.50, lambda u: 0.91 - 0.03 * abs(2 * u - 1), 2.15, lambda v: 0.0, P.n(5)))
+        for li, (v0, v1, half, flare, nv) in enumerate(lames):
+            rad = lambda v, fl=flare: calf_r(v)[0] + lift + fl(v)  # noqa: E731
+            sy = lambda v, fl=flare: (calf_r(v)[1] + lift + fl(v)) / (calf_r(v)[0] + lift + fl(v))  # noqa: E731
+            P.wrap(knee, ank, rad, -half, half, 0.012, BP, shin, v0=v0, v1=v1, nu=P.n(14), nv=nv, p=2.2, sy=sy, bevel=0.004, crown=crn)
+            va, vb = ((0.12, 0.47), (0.56, 0.86))[li]
+            for uc in (0.3, 0.7):  # engraved lines framing the front face, rivets outboard of them
+                a = -half + 2 * half * uc
+                g_r = lambda v, fl=flare, k=uc: calf_r(v)[0] + lift + fl(v) + crn * math.sin(math.pi * k) + 0.003  # noqa: E731
+                P.wrap(knee, ank, g_r, a - 0.035, a + 0.035, 0.006, GM, shin, v0=va, v1=vb, nu=1, nv=4, p=2.2, sy=sy, bevel=0.0)
+                ar = a + (-0.12 if uc < 0.5 else 0.12)
+                for vr in (va + 0.05, vb - 0.05):
+                    rx, ry = calf_r(vr)
+                    e = lift + flare(vr) + crn * math.sin(math.pi * (ar + half) / (2 * half))
+                    P.rivet(surf_pt(knee, ank, rx + e, ry + e, ar, vr, 2.2, 0.002), shin)
+        ridge = lambda v: calf_r(v)[0] + lift + crn + 0.004 + lames[0][3](v)  # noqa: E731
+        P.wrap(knee, ank, ridge, -0.055, 0.055, 0.012, BP, shin, v0=0.07, v1=0.88, nu=2, nv=P.n(8), p=2.2,
+               sy=lambda v: calf_r(v)[1] / calf_r(v)[0], bevel=0.003)
+        # ankle joint and cops
+        foot_b = f"foot.{n_}"
+        P.ball(ank, 0.04, GM, foot_b)
+        for side in (1, -1):
+            P.lathe(_add(ank, (side * 0.044, 0, 0)), (side, 0, 0), [(0.0, 0.0), (0.04, 0.0), (0.04, 0.008), (0.03, 0.018), (0.0, 0.02)], BP,
+                    foot_b, sides=10)
+        # sabaton: brass shell to a pointed toe, three overlapping lames over the instep, heel cup, dark sole
+        fy0, fy1 = -0.10, 0.29
+        m, flen = axis_frame((ank[0], fy0, 0.0), (ank[0], fy1, 0.0))
+        nf = P.n(16)
+        P.rings([sect(rx, ry, nf, 2.6, 0, -ry) for _, rx, ry in foot], [f * flen for f, *_ in foot], m, BP, foot_b)
+        sole = [0.0, 0.06, 0.45, 0.82, 1.0]
+        P.rings([sect(foot_r(f)[0] + 0.003, 0.007, nf, 3.0, 0, -0.007) for f in sole], [f * flen for f in sole], m, GM, foot_b)
+        for fa, fb, inf in ((0.0, 0.17, 0.008), (0.36, 0.55, 0.011), (0.52, 0.71, 0.008), (0.68, 0.86, 0.005)):
+            fs = (fa, (fa + fb) / 2, fb)
+            P.rings([sect(foot_r(f)[0] + inf, foot_r(f)[1] + inf, nf, 2.6, 0, -(foot_r(f)[1] + inf)) for f in fs], [f * flen for f in fs], m, BP, foot_b)
 
-    # --- Armillary: two halo bands (grooved faces, raised lips) with node bosses so the turn reads.
+    # --- Armillary: two halo bands (the outer with grooved faces and raised lips, the inner chamfered) with node bosses so the turn reads.
     band = [(-0.026, -0.008), (-0.02, -0.013), (-0.006, -0.009), (0.006, -0.009), (0.02, -0.013), (0.026, -0.008),
             (0.026, 0.008), (0.02, 0.013), (0.006, 0.009), (-0.006, 0.009), (-0.02, 0.013), (-0.026, 0.008)]
     for r, bone, normal, nodes, segs in ((RING_OUTER_R, "ring.outer", RING_OUTER_N, 8, 72), (RING_INNER_R, "ring.inner", RING_INNER_N, 6, 56)):
-        P.sweep_ring(RING_C, normal, r, r, band, BP, bone, n=P.n(segs))
+        P.sweep_ring(RING_C, normal, r, r, band if bone == "ring.outer" else chamfer_rect(0.052, 0.026, 0.006), BP, bone, n=P.n(segs))
         mm, _ = axis_frame(RING_C, _add(RING_C, normal))
         for k in range(nodes):
             a = 2 * math.pi * k / nodes + math.pi / nodes
             c = mm @ Vector((r * math.cos(a), r * math.sin(a), 0.0))
-            P.lathe(c - Vector(normal) * 0.02, normal, [(0.0, 0.0), (0.02, 0.0), (0.024, 0.02), (0.02, 0.04), (0.0, 0.04)], BP, bone, sides=6)
+            P.lathe(c - Vector(normal) * 0.02, normal, [(0.0, 0.0), (0.024, 0.008), (0.022, 0.034), (0.0, 0.04)], BP, bone, sides=6)
 
     # --- Orbit band with the three jewel planets riding on it (brass collars and cap pins).
     P.band(ORBIT_C, ORBIT_N, ORBIT_R, 0.028, 0.013, BP, "orbit", n=P.n(64))
@@ -773,7 +904,7 @@ def build_parts(P: Parts) -> None:
         c = orbit_point(deg)
         r = {"ruby": 0.062, "sapphire": 0.054, "emerald": 0.058}[name]
         P.ball(c, r, JW, f"planet.{name}", color=jewel[name], segs=(P.n(14), P.n(8)))
-        P.sweep_ring(c, ORBIT_N, r * 0.98, r * 0.98, chamfer_rect(0.008, 0.012), BP, f"planet.{name}", n=P.n(20))
+        P.sweep_ring(c, ORBIT_N, r * 0.98, r * 0.98, rect4(0.008, 0.012), BP, f"planet.{name}", n=P.n(20))
         P.lathe(_add(c, ORBIT_N, r * 0.9), ORBIT_N, [(0.0, 0.0), (0.008, 0.0), (0.005, 0.02), (0.0, 0.024)], BP, f"planet.{name}", sides=8)
 
 
@@ -1692,7 +1823,7 @@ def renders(bpy, low_scene, high_scene, arm, actions: dict, out: Path) -> list[s
 # --------------------------------------------------------------------------------------------------
 # Review sheet (system Python + Pillow)
 
-ENGINE_SHOTS = ["idle", "attack", "hit", "frozen", "death"]
+ENGINE_SHOTS = ["idle", "attack", "hit", "frozen", "death", "glow-close"]  # glow-close: idle at the 50 degree lens of the p6-glow stills
 APPROVAL_NOTE = ('Concept approval PENDING (Paul). Modeled under Paul\'s standing approval of 2026-11-15: "you have standing approval '
                  'for all spending / modeling / deployments needed for this project". Model, rig, animation approvals pending.')
 TITLE = f"P5-T4 Orrery Warden ({PIECE}) - owner review sheet"
@@ -1770,7 +1901,7 @@ def compose_sheet(out: Path) -> Path:
         ("ANIMATION - Blender frames, approval PENDING (idle turns rings and orbit one revolution per 12 s loop)", [
             ("idle 3.0 s", r / "anim-idle.png"), ("attack (impact) 0.8 s", r / "anim-attack-thrust.png"), ("hit 0.12 s", r / "anim-hit.png"),
             ("frozen (held)", r / "anim-frozen.png"), ("death end 2.6 s", r / "anim-death-end.png")]),
-        ("IN ENGINE - three.js 0.186.1, headless Chromium on the GPU, seated player 2.6 m away", [
+        ("IN ENGINE - three.js 0.186.1, headless Chromium on the GPU, seated player 2.6 m away, runtime D11 glow", [
             (name, eng / f"{name}.jpg") for name in ENGINE_SHOTS]),
     ]
     sheet = _grid(sections, 6, TITLE, APPROVAL_NOTE + "\n" + note)
@@ -1782,19 +1913,27 @@ def compose_sheet(out: Path) -> Path:
 def record_fidelity(out: Path) -> Path:
     """Adds the author's self-score (staging/fidelity.json) to provenance.json as `authorSelfScore`,
     bound to the compare image's bytes. Run after `asset-check.py --assemble-enemy`, which rebuilds
-    provenance from scratch. The independent score stays a separate, pending approval entry."""
+    provenance from scratch and so drops the reviewer's `independentScore`: that block is copied back
+    unchanged from the committed provenance (it scored the previous build; a re-score is pending)."""
     prov_path = out.parent / "provenance.json"
     prov = json.loads(prov_path.read_text())
     fid = json.loads((out / "fidelity.json").read_text())
     compare = out.parent / f"{PIECE}.fidelity-compare.jpg"
+    rel = str(prov_path.relative_to(REPO))
+    head = json.loads(subprocess.run(["git", "-C", str(REPO), "show", f"HEAD:{rel}"], check=True, capture_output=True, text=True).stdout)
+    independent = head.get("independentScore", prov.get("independentScore"))
     prov["authorSelfScore"] = {
         "score": fid["score"], "scale": "0-100 visual fidelity to the concept",
         "scorer": "author self-score (the authoring agent; not the independent score create-rigged-character-assets requires)",
         "date": fid.get("date"), "gaps": fid.get("gaps", []), "method": fid.get("method"),
         "evidence": {"path": str(compare.relative_to(REPO)), "sha256": sha256(compare)},
-        "independentScore": "pending",
+        "independentScoreNote": "the recorded independentScore scored the previous build; an independent re-score of this build is pending",
     }
+    if independent is not None:
+        prov["independentScore"] = independent
     prov_path.write_text(json.dumps(prov, indent=2) + "\n")
+    if independent is not None and json.loads(prov_path.read_text())["independentScore"] != head.get("independentScore", independent):
+        raise SystemExit("independentScore differs from the committed provenance")
     return prov_path
 
 

@@ -2,7 +2,7 @@
   "piece": "orrery-warden",
   "blender": "5.2.2 LTS",
   "generator": "scripts/assets/build-orrery-warden.py",
-  "generator_sha256": "ed89c907dd2ff2d2e788a1366265d0fb19396ccb8a0cef312603a2a089429836",
+  "generator_sha256": "6bace876133a1abf8e79adfb486c2dad85e704743d999326e432c1aaabd5ff2f",
   "concept": {
     "file": "assets-source/concepts/warden-sheet-1.png",
     "sha256": "c07d34ae5d7412f26c561508bc5a80f14de584ffebbcff31272cc356b07ec5c7",
@@ -16,13 +16,13 @@
     }
   },
   "triangles": {
-    "low": 24794,
-    "high": 74430
+    "low": 24730,
+    "high": 73114
   },
   "bones": 31,
   "authoringAgent": "Claude Code subagent (claude-opus-5-5), dispatched by the rogue-xr primary session",
   "ground_clamp_death_max_lift_m": [
-    0.276,
+    0.2792,
     0.0
   ],
   "pose_checks": {
@@ -57,10 +57,10 @@
       "frames": 79,
       "min_z": 0.004,
       "min_z_frame": 11,
-      "max_z": 2.719,
-      "final_max_z": 0.8215,
+      "max_z": 2.7199,
+      "final_max_z": 0.8108,
       "final_min_z": 0.004,
-      "loop_seam_m": 2.2217
+      "loop_seam_m": 2.22596
     },
     "frozen": {
       "frames": 31,
@@ -74,25 +74,25 @@
   },
   "cull": {
     "center": [
-      0.005,
-      1.359,
+      0.033,
+      1.36,
       -0.272
     ],
-    "radius": 1.954,
-    "maxDistanceFromSentryCullCentre": 1.789
+    "radius": 1.95,
+    "maxDistanceFromSentryCullCentre": 1.791
   },
   "canonicalized_primitives": 4,
   "reimport": {
-    "glb_sha256": "e33d829f3482c4ba2581d72ca7fc4916975da7d60503c6512c2a076693c26a59",
-    "glb_bytes": 2592392,
-    "triangles": 24794,
+    "glb_sha256": "808229372eda4bf5cba2961775af244ad72094d56b71642b6b737fed28162cf4",
+    "glb_bytes": 2616300,
+    "triangles": 24730,
     "materials": [
       "brass-polished",
       "gunmetal",
       "warden-glow",
       "warden-jewel"
     ],
-    "vertices": 28312,
+    "vertices": 28717,
     "joints": [
       "root",
       "pelvis",
@@ -132,14 +132,14 @@
     "unweighted_vertices": 0,
     "bounds": {
       "min": [
-        -0.978,
+        -0.9112,
         0.0,
-        -0.4765
+        -0.4774
       ],
       "max": [
-        0.978,
+        0.9112,
         2.6406,
-        0.9165
+        0.9174
       ]
     },
     "clips": {
@@ -247,13 +247,13 @@
     "compare-side",
     "compare-back"
   ],
-  "render_seconds": 2.8,
+  "render_seconds": 2.3,
   "files": {
-    "assets-source/enemies/orrery-warden/blend/orrery-warden.high.blend": "1698d04e72f740179bb9cd85d9e95c8cbc080ebaad8ba5f7176c1ae836a5bd0b",
-    "assets-source/enemies/orrery-warden/blend/orrery-warden.low.blend": "9873f00f6617dca2740f35060e616c2acd88f04c0cb6230699aa8a8b24ca0a87",
-    "assets-source/enemies/orrery-warden/staging/reimport.json": "0da6c7c8c37143e4c1bef810320c840da424349101cf91d369aee63e3a6b4026",
-    "public/assets/enemies/orrery-warden/orrery-warden.glb": "e33d829f3482c4ba2581d72ca7fc4916975da7d60503c6512c2a076693c26a59",
-    "public/assets/enemies/orrery-warden/orrery-warden.manifest.json": "ac2badd90e78e990eb0c6c9dce30b3d0f4a62a69a39aa7bc9c6be7a430815b68"
+    "assets-source/enemies/orrery-warden/blend/orrery-warden.high.blend": "a46b8ef90c285c891c513bc69b03a1bbdee01cdb07b0974c1d876adcb939c3a2",
+    "assets-source/enemies/orrery-warden/blend/orrery-warden.low.blend": "b03c80571e2a4dffb60f7d6ac8a124f6ef3c22bdfc6eb80df48488d216df2ec7",
+    "assets-source/enemies/orrery-warden/staging/reimport.json": "7c9ecee169a708e814158036bbdd2139c3cb6b551da4c9b2cd0069c5396433ea",
+    "public/assets/enemies/orrery-warden/orrery-warden.glb": "808229372eda4bf5cba2961775af244ad72094d56b71642b6b737fed28162cf4",
+    "public/assets/enemies/orrery-warden/orrery-warden.manifest.json": "f7e2ac9f761a0768e27c5f267f661ce30eb9bad636c1cd00df130006abe7a555"
   },
-  "total_seconds": 9.6
+  "total_seconds": 11.2
 }
