@@ -13,3 +13,5 @@ __pycache__/
 # Reproduced byte for byte by scripts/assets/build_materials.py
 assets-source/materials/derived/*.png
 assets-source/materials/checks/
+# Reproduced byte for byte by scripts/assets/build_audio.py
+assets-source/audio/derived/*.wav

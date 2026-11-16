@@ -1,0 +1,1105 @@
+{
+  "tools": {
+    "ffmpeg": "ffmpeg version 9.0.2 Copyright (c) 2000-2026 the FFmpeg developers",
+    "libopus_encoder": true,
+    "numpy": "2.4.4",
+    "python": "3.14.10"
+  },
+  "targets": {
+    "sfx_lufs": -16.0,
+    "music_lufs": -18.0,
+    "true_peak_dbtp_max": -1.0,
+    "loudness_tolerance_lu": 1.0,
+    "sample_rate": 48000,
+    "container": "ogg",
+    "codec": "opus"
+  },
+  "sfx": {
+    "card-draw": {
+      "intermediate_wav": "assets-source/audio/derived/card-draw.wav",
+      "intermediate_sha256": "2e0ab9357ed1cbb15222f387fff1e27e23297505abaa15ef76672eff3c39ee32",
+      "pre_gain": {
+        "integrated_lufs": -30.6,
+        "true_peak_dbtp": -6.0,
+        "momentary_max_lufs": -28.1
+      },
+      "gain_db": 4.55,
+      "encode_attempts": 2,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -26.0,
+        "true_peak_dbtp": -1.0,
+        "momentary_max_lufs": -23.6
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -10.0,
+      "loudness_status": "deviation",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": true,
+      "decoded_frames": 28411,
+      "decoded_duration_s": 0.5919,
+      "decoded_pcm_sha256": "3b0ba14095f724dc4f91417d10405ec3e6b02ef0abcac368cf8d3e1220024a72",
+      "id": "card-draw",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/raw/card-draw.mp3",
+      "source_sha256": "0c0888d5fdd0b44b4010875206f3e94608a4a55222abae7ad2173fb272032065",
+      "source_probe": {
+        "codec": "mp3",
+        "sample_rate": 44100,
+        "channels": 2,
+        "duration_s": 0.6802
+      },
+      "trim": {
+        "trimmed_head_ms": 0.0,
+        "trimmed_tail_ms": 88.4
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/card-draw.ogg",
+      "runtime_sha256": "85cec131ac7592d747fde4be4286d9166d627a465beaa761c6384831bf87c5e5",
+      "runtime_bytes": 5614,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.5984
+      }
+    },
+    "card-fling": {
+      "intermediate_wav": "assets-source/audio/derived/card-fling.wav",
+      "intermediate_sha256": "fd93ad2bd4be223f4bd483e78c9df8538086bbe5409c0b475695d1c22e874fb0",
+      "pre_gain": {
+        "integrated_lufs": -26.9,
+        "true_peak_dbtp": -10.7,
+        "momentary_max_lufs": -25.8
+      },
+      "gain_db": 8.75,
+      "encode_attempts": 2,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -18.2,
+        "true_peak_dbtp": -1.1,
+        "momentary_max_lufs": -17.0
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -2.2,
+      "loudness_status": "deviation",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": true,
+      "decoded_frames": 29994,
+      "decoded_duration_s": 0.6249,
+      "decoded_pcm_sha256": "cbd826913bb04514c2e7b5d064c60272cf3cf23e69ba4df9072456beff17b443",
+      "id": "card-fling",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/raw/card-fling.mp3",
+      "source_sha256": "8407c82a4774aa75dc05d6960ab3c48411df116a31f8554ae769745d87dcfae4",
+      "source_probe": {
+        "codec": "mp3",
+        "sample_rate": 44100,
+        "channels": 2,
+        "duration_s": 0.88
+      },
+      "trim": {
+        "trimmed_head_ms": 0.0,
+        "trimmed_tail_ms": 255.1
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/card-fling.ogg",
+      "runtime_sha256": "fa1329f523185f8a002373d99155d017239f2426b0757c94b9b5fd6cad769416",
+      "runtime_bytes": 5100,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.6314
+      }
+    },
+    "card-impact": {
+      "intermediate_wav": "assets-source/audio/derived/card-impact.wav",
+      "intermediate_sha256": "26968c81a205bc10c19d20f9962bee37904bfade265eba782f52eb60a0aec121",
+      "pre_gain": {
+        "integrated_lufs": -25.2,
+        "true_peak_dbtp": -0.4,
+        "momentary_max_lufs": -25.2
+      },
+      "gain_db": -0.85,
+      "encode_attempts": 2,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -26.1,
+        "true_peak_dbtp": -1.1,
+        "momentary_max_lufs": -26.1
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -10.1,
+      "loudness_status": "deviation",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": true,
+      "decoded_frames": 7413,
+      "decoded_duration_s": 0.1544,
+      "decoded_pcm_sha256": "24d02a733fc8aa801a8eff50b5891eb65edce28f1051c7053c6e9fd24e16eabd",
+      "id": "card-impact",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/raw/card-impact.mp3",
+      "source_sha256": "a623523d3f4b7d4cdd61285e1ea6e0bd9cce8c91139ae43d91f3d3c9afb91adb",
+      "source_probe": {
+        "codec": "mp3",
+        "sample_rate": 44100,
+        "channels": 2,
+        "duration_s": 0.8
+      },
+      "trim": {
+        "trimmed_head_ms": 0.0,
+        "trimmed_tail_ms": 645.6
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 15 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/card-impact.ogg",
+      "runtime_sha256": "c9c1d030027a41ad23841f03b220a75673394f650c97ac7bd6dcebf3b8c6d344",
+      "runtime_bytes": 2118,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.1609
+      }
+    },
+    "dice-roll": {
+      "intermediate_wav": "assets-source/audio/derived/dice-roll.wav",
+      "intermediate_sha256": "8db0239b6a173d163762b827587f75a617d2692c040dff9481e8f26480b9d7bc",
+      "pre_gain": {
+        "integrated_lufs": -23.8,
+        "true_peak_dbtp": -0.5,
+        "momentary_max_lufs": -21.4
+      },
+      "gain_db": -0.5,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -24.3,
+        "true_peak_dbtp": -1.1,
+        "momentary_max_lufs": -21.9
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -8.3,
+      "loudness_status": "deviation",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 69163,
+      "decoded_duration_s": 1.4409,
+      "decoded_pcm_sha256": "0ae6e35c27bd0a110438d0aecee644d2ad0b5e1cd211d0f27f6aed62afbb5f95",
+      "id": "dice-roll",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/raw/dice-roll.mp3",
+      "source_sha256": "c72ebf501825d17715804c72bcec3e779495b0822753f47095747a8eae7cb0c7",
+      "source_probe": {
+        "codec": "mp3",
+        "sample_rate": 44100,
+        "channels": 2,
+        "duration_s": 1.6
+      },
+      "trim": {
+        "trimmed_head_ms": 0.0,
+        "trimmed_tail_ms": 159.1
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/dice-roll.ogg",
+      "runtime_sha256": "7e53b53e2b2b37bc236d79803d26d2820674b191ec1c3fad4d147838e74c392b",
+      "runtime_bytes": 17657,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.4474
+      }
+    },
+    "dice-settle": {
+      "intermediate_wav": "assets-source/audio/derived/dice-settle.wav",
+      "intermediate_sha256": "488e30c9107b15402e11ff067db6c86390cf6791a3f59c7d53250a86a25d9301",
+      "pre_gain": {
+        "integrated_lufs": -24.8,
+        "true_peak_dbtp": -0.2,
+        "momentary_max_lufs": -22.7
+      },
+      "gain_db": -0.8,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -25.6,
+        "true_peak_dbtp": -1.0,
+        "momentary_max_lufs": -23.6
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -9.6,
+      "loudness_status": "deviation",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": true,
+      "decoded_frames": 36591,
+      "decoded_duration_s": 0.7623,
+      "decoded_pcm_sha256": "291c732c280c0f491155f657951216596844c4dab54b3deb8749ec0ee384dac3",
+      "id": "dice-settle",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/raw/dice-settle.mp3",
+      "source_sha256": "9ccf18f77db77dabde1e33aa12b5d1e928200d64bee9b1a992a6f3c84c45266b",
+      "source_probe": {
+        "codec": "mp3",
+        "sample_rate": 44100,
+        "channels": 2,
+        "duration_s": 0.88
+      },
+      "trim": {
+        "trimmed_head_ms": 31.0,
+        "trimmed_tail_ms": 86.7
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/dice-settle.ogg",
+      "runtime_sha256": "8d715eb3d67357166748727b238417c8af2fc8fc0a1180887f9f48bbce8c77b7",
+      "runtime_bytes": 10183,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.7688
+      }
+    },
+    "sigil-trace": {
+      "intermediate_wav": "assets-source/audio/derived/sigil-trace.wav",
+      "intermediate_sha256": "4ee757f47897de1740db3199c35d13cdb35b16ec005c89d4cc5214f378a6add9",
+      "pre_gain": {
+        "integrated_lufs": -13.7,
+        "true_peak_dbtp": -5.8,
+        "momentary_max_lufs": -12.0
+      },
+      "gain_db": -2.3,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -16.0,
+        "true_peak_dbtp": -8.1,
+        "momentary_max_lufs": -14.3
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": 0.0,
+      "loudness_status": "met",
+      "limited_by_true_peak": false,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 144000,
+      "decoded_duration_s": 3.0,
+      "decoded_pcm_sha256": "dd660cd7f2540d8b6b8a35ece63addcdccce446f99b9f28716c53b6e54e2d78f",
+      "loop": {
+        "source": {
+          "wrap_step": 0.018183,
+          "p999_step": 0.022667,
+          "seam_ratio": 0.802,
+          "head_tail_level_diff_db": 0.27,
+          "interior_dropout_windows": 0,
+          "pass": true
+        },
+        "runtime": {
+          "wrap_step": 0.017787,
+          "p999_step": 0.017392,
+          "seam_ratio": 1.023,
+          "head_tail_level_diff_db": 0.27,
+          "interior_dropout_windows": 0,
+          "pass": true
+        }
+      },
+      "id": "sigil-trace",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/raw/sigil-trace.mp3",
+      "source_sha256": "b77d2d6bcc011d9dc118924c4aba4cbd89a794dc3089e7179b8d1b8366ccb5f1",
+      "source_probe": {
+        "codec": "mp3",
+        "sample_rate": 44100,
+        "channels": 2,
+        "duration_s": 3.0
+      },
+      "trim": {
+        "trimmed_head_ms": 0.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "loop kept native: source wrap passed",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/sigil-trace.ogg",
+      "runtime_sha256": "6ae5960f1665dc00744e3d645bc904ebd583e635924465c4fe2e3892cdced00a",
+      "runtime_bytes": 24856,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 3.0065
+      }
+    },
+    "sigil-cast": {
+      "intermediate_wav": "assets-source/audio/derived/sigil-cast.wav",
+      "intermediate_sha256": "cdcd646cb99151f5b8fe3f17284149db36ce15aefd2b2a4a9d65fb89f230a101",
+      "pre_gain": {
+        "integrated_lufs": -20.4,
+        "true_peak_dbtp": -7.3,
+        "momentary_max_lufs": -17.4
+      },
+      "gain_db": 4.4,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -16.0,
+        "true_peak_dbtp": -2.7,
+        "momentary_max_lufs": -13.0
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": 0.0,
+      "loudness_status": "met",
+      "limited_by_true_peak": false,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 71040,
+      "decoded_duration_s": 1.48,
+      "decoded_pcm_sha256": "0bcb45089dcb6dabb6728643650f566797a82c9abe4a4ad0186c9ea251ea8a1b",
+      "id": "sigil-cast",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/raw/sigil-cast.mp3",
+      "source_sha256": "a21b78dd07aaafa4bdc2972a1d63ba673fed164eb118f2d9f4a82aa1b2c1cc40",
+      "source_probe": {
+        "codec": "mp3",
+        "sample_rate": 44100,
+        "channels": 2,
+        "duration_s": 1.48
+      },
+      "trim": {
+        "trimmed_head_ms": 0.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/sigil-cast.ogg",
+      "runtime_sha256": "55c42063d4300ef18f4d0395aad0c2c31b64b7203259abe95ab21df5f8aa4cb2",
+      "runtime_bytes": 14754,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.4865
+      }
+    },
+    "sigil-fizzle": {
+      "intermediate_wav": "assets-source/audio/derived/sigil-fizzle.wav",
+      "intermediate_sha256": "a64291e5be28404054cd99bbba5768edb72b279457c1baefb16d1b111ca1c467",
+      "pre_gain": {
+        "integrated_lufs": -26.4,
+        "true_peak_dbtp": -4.2,
+        "momentary_max_lufs": -22.3
+      },
+      "gain_db": 3.2,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -23.2,
+        "true_peak_dbtp": -1.0,
+        "momentary_max_lufs": -19.1
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -7.2,
+      "loudness_status": "deviation",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 48000,
+      "decoded_duration_s": 1.0,
+      "decoded_pcm_sha256": "162532be9e6448df3abd69d5eafccd1fee65bf68ed8452c5882292aea7afd473",
+      "id": "sigil-fizzle",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/raw/sigil-fizzle.mp3",
+      "source_sha256": "c00b416230a22c9696407609dde17817a0f997d78ffb56a5f7427ca36929795f",
+      "source_probe": {
+        "codec": "mp3",
+        "sample_rate": 44100,
+        "channels": 2,
+        "duration_s": 1.0
+      },
+      "trim": {
+        "trimmed_head_ms": 0.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/sigil-fizzle.ogg",
+      "runtime_sha256": "81105c89c8ffa3e7af5291013e00a61e7f6deaea2364e7d9ee7ec0e042378ae2",
+      "runtime_bytes": 10397,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.0065
+      }
+    },
+    "steam-vent": {
+      "intermediate_wav": "assets-source/audio/derived/steam-vent.wav",
+      "intermediate_sha256": "3a6bbea55865074f1795e5047ffa6f55a107a19a16ef86af59b54bc2905009eb",
+      "pre_gain": {
+        "integrated_lufs": -13.1,
+        "true_peak_dbtp": -0.6,
+        "momentary_max_lufs": -10.1
+      },
+      "gain_db": -2.9,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -16.0,
+        "true_peak_dbtp": -3.5,
+        "momentary_max_lufs": -13.0
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": 0.0,
+      "loudness_status": "met",
+      "limited_by_true_peak": false,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 84480,
+      "decoded_duration_s": 1.76,
+      "decoded_pcm_sha256": "d6c71c445cbdfdc0d7155b341fffdf7c7175130c41b96dc6708301d70109d894",
+      "id": "steam-vent",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/raw/steam-vent.mp3",
+      "source_sha256": "3f65a8f1ff61a1874953b2d93475abecd5d1170ec17ddc2757d695fa6528b045",
+      "source_probe": {
+        "codec": "mp3",
+        "sample_rate": 44100,
+        "channels": 2,
+        "duration_s": 1.76
+      },
+      "trim": {
+        "trimmed_head_ms": 0.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/steam-vent.ogg",
+      "runtime_sha256": "f622c761a612d005b2aa07e1f5e1b41a769f48edbbeed2e25a450c65fef6639b",
+      "runtime_bytes": 12405,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.7665
+      }
+    },
+    "gear-clank": {
+      "intermediate_wav": "assets-source/audio/derived/gear-clank.wav",
+      "intermediate_sha256": "5d8b2397b689adf004a28afb2b49d8dbc3d6806cda588745fbf63373733f7740",
+      "pre_gain": {
+        "integrated_lufs": -23.7,
+        "true_peak_dbtp": 0.4,
+        "momentary_max_lufs": -21.2
+      },
+      "gain_db": -1.4,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -25.1,
+        "true_peak_dbtp": -1.0,
+        "momentary_max_lufs": -22.6
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -9.1,
+      "loudness_status": "deviation",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": true,
+      "decoded_frames": 42240,
+      "decoded_duration_s": 0.88,
+      "decoded_pcm_sha256": "69c63f4ea54df403ff400a1d1dea8187f0e3415062d16991a25d24bc66f78266",
+      "id": "gear-clank",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/raw/gear-clank.mp3",
+      "source_sha256": "8c70da20d14ca3e42a8124a52769229e53a3edd6a776ab26698f2c0ffa73472b",
+      "source_probe": {
+        "codec": "mp3",
+        "sample_rate": 44100,
+        "channels": 2,
+        "duration_s": 0.88
+      },
+      "trim": {
+        "trimmed_head_ms": 0.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/gear-clank.ogg",
+      "runtime_sha256": "6489d1f11206d316f11a969b7d1526df82f91fd9669241fc356fa278aa59a4de",
+      "runtime_bytes": 9988,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.8865
+      }
+    },
+    "door-open": {
+      "intermediate_wav": "assets-source/audio/derived/door-open.wav",
+      "intermediate_sha256": "f57bbe927607baef4ecbf20f05f1558f3383ccc0f187218acfa39f7eae79e289",
+      "pre_gain": {
+        "integrated_lufs": -28.1,
+        "true_peak_dbtp": -6.4,
+        "momentary_max_lufs": -25.2
+      },
+      "gain_db": 5.4,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -22.8,
+        "true_peak_dbtp": -1.2,
+        "momentary_max_lufs": -19.9
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -6.8,
+      "loudness_status": "deviation",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 107046,
+      "decoded_duration_s": 2.2301,
+      "decoded_pcm_sha256": "195e414510dfc04a69ed22fbfc838d396f9b6fc233c1e1cd6e3ebb5e063aa07d",
+      "id": "door-open",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/raw/door-open.mp3",
+      "source_sha256": "447d7439fd5ee640af8b080a708fbb848d269423bee1dd8c9417c378f5876e56",
+      "source_probe": {
+        "codec": "mp3",
+        "sample_rate": 44100,
+        "channels": 2,
+        "duration_s": 2.48
+      },
+      "trim": {
+        "trimmed_head_ms": 0.0,
+        "trimmed_tail_ms": 249.9
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/door-open.ogg",
+      "runtime_sha256": "e53c2ad9fa6ea6c4172f88a036316d749eab482ece406b9afa31607fee9b1e13",
+      "runtime_bytes": 15702,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 2.2366
+      }
+    },
+    "ui-tick": {
+      "intermediate_wav": "assets-source/audio/derived/ui-tick.wav",
+      "intermediate_sha256": "3bf951d76d8eb79c2d106bad0667c18b5da3f6a90c9fd17c8929ea7dd8e08d3e",
+      "pre_gain": {
+        "integrated_lufs": -23.8,
+        "true_peak_dbtp": -4.1,
+        "momentary_max_lufs": -22.7
+      },
+      "gain_db": 3.1,
+      "encode_attempts": 1,
+      "opus_kbps": 96,
+      "measured": {
+        "integrated_lufs": -20.7,
+        "true_peak_dbtp": -1.3,
+        "momentary_max_lufs": -19.6
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -4.7,
+      "loudness_status": "deviation",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": true,
+      "decoded_frames": 23040,
+      "decoded_duration_s": 0.48,
+      "decoded_pcm_sha256": "ba4c6813318929a6b5107663cb3f751b40aa60505c53c88c964c0dfd341ca909",
+      "id": "ui-tick",
+      "class": "ui",
+      "source_file": "assets-source/audio/sfx/raw/ui-tick.mp3",
+      "source_sha256": "8032f5c70620ba6f231cf80b2fb75bd7843beb7709fad2b38b3b6465d9c2b62a",
+      "source_probe": {
+        "codec": "mp3",
+        "sample_rate": 44100,
+        "channels": 2,
+        "duration_s": 0.48
+      },
+      "trim": {
+        "trimmed_head_ms": 0.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/ui-tick.ogg",
+      "runtime_sha256": "cbe00392f30613418a92cd01dbdeacb3c5c6d79648febb64c32de87235aedc12",
+      "runtime_bytes": 6765,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 2,
+        "duration_s": 0.4865
+      }
+    },
+    "automaton-hit": {
+      "intermediate_wav": "assets-source/audio/derived/automaton-hit.wav",
+      "intermediate_sha256": "8ca9c1f2dc7343d20aaa6cad7cd14047af46c4fe956cab08d92d7526655a4b9a",
+      "pre_gain": {
+        "integrated_lufs": -13.6,
+        "true_peak_dbtp": 0.3,
+        "momentary_max_lufs": -11.8
+      },
+      "gain_db": -2.4,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -16.0,
+        "true_peak_dbtp": -1.9,
+        "momentary_max_lufs": -14.2
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": 0.0,
+      "loudness_status": "met",
+      "limited_by_true_peak": false,
+      "short_clip_lufs_unreliable": true,
+      "decoded_frames": 38400,
+      "decoded_duration_s": 0.8,
+      "decoded_pcm_sha256": "8f7cb783ce86c2fde38aad7d2d15dacb68b0ac69a36ec7b3be1745b07b748a30",
+      "id": "automaton-hit",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/raw/automaton-hit.mp3",
+      "source_sha256": "be47711a7dae7e0a4f5988bca0ee8b67cfe23aa732968efe13cb2bddfacd0fd8",
+      "source_probe": {
+        "codec": "mp3",
+        "sample_rate": 44100,
+        "channels": 2,
+        "duration_s": 0.8
+      },
+      "trim": {
+        "trimmed_head_ms": 0.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/automaton-hit.ogg",
+      "runtime_sha256": "ada0feb6eb78ff2f5d1ac44a12cd9cd27a75074bfc9fa2db138552acdfad4428",
+      "runtime_bytes": 7856,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.8065
+      }
+    },
+    "automaton-death": {
+      "intermediate_wav": "assets-source/audio/derived/automaton-death.wav",
+      "intermediate_sha256": "30614ad489e3b6f27b3d819214438d7bd5d6cabb837bb8b523dfccaa6ee96e99",
+      "pre_gain": {
+        "integrated_lufs": -16.9,
+        "true_peak_dbtp": 0.6,
+        "momentary_max_lufs": -14.0
+      },
+      "gain_db": -1.95,
+      "encode_attempts": 2,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -18.8,
+        "true_peak_dbtp": -1.1,
+        "momentary_max_lufs": -16.0
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -2.8,
+      "loudness_status": "deviation",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 119040,
+      "decoded_duration_s": 2.48,
+      "decoded_pcm_sha256": "ed8a86d72470f512bc9dfc7b2edc023675ec3e8c5ffe0e08cd4fdaa8c15a6350",
+      "id": "automaton-death",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/raw/automaton-death.mp3",
+      "source_sha256": "67f4cfbb1890ffd3a7bb05653c676602c994743adfc37d08145d9f8d7b8ddf16",
+      "source_probe": {
+        "codec": "mp3",
+        "sample_rate": 44100,
+        "channels": 2,
+        "duration_s": 2.48
+      },
+      "trim": {
+        "trimmed_head_ms": 0.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/automaton-death.ogg",
+      "runtime_sha256": "68f7757e3d6abe9e736440ad7a076f656963f10542742eac7de5524869087388",
+      "runtime_bytes": 21047,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 2.4865
+      }
+    },
+    "table-unfold": {
+      "intermediate_wav": "assets-source/audio/derived/table-unfold.wav",
+      "intermediate_sha256": "046449f01fd761761b94474df6e794ae80bba30b2226c38426bd5229e821fae4",
+      "pre_gain": {
+        "integrated_lufs": -24.1,
+        "true_peak_dbtp": -0.1,
+        "momentary_max_lufs": -22.6
+      },
+      "gain_db": -0.9,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -25.0,
+        "true_peak_dbtp": -1.0,
+        "momentary_max_lufs": -23.5
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -9.0,
+      "loudness_status": "deviation",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 77334,
+      "decoded_duration_s": 1.6111,
+      "decoded_pcm_sha256": "7ec99e3fe875d845fd3ed0ada9af004d74c35123da45cb011396f6f5a7c439e2",
+      "id": "table-unfold",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/raw/table-unfold.mp3",
+      "source_sha256": "7738ea3b8b7ebfcb4c0ad8879acda9d30676f785fa01d08cdb1a8ba2c95a700a",
+      "source_probe": {
+        "codec": "mp3",
+        "sample_rate": 44100,
+        "channels": 2,
+        "duration_s": 2.0
+      },
+      "trim": {
+        "trimmed_head_ms": 7.0,
+        "trimmed_tail_ms": 381.9
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/table-unfold.ogg",
+      "runtime_sha256": "c8e2812f644ac9ad434edb6c5df66bf6ee4f697794f0c71af41ac8b109a352f7",
+      "runtime_bytes": 15662,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.6176
+      }
+    },
+    "reward-chime": {
+      "intermediate_wav": "assets-source/audio/derived/reward-chime.wav",
+      "intermediate_sha256": "f23a3d9d2f405d6c0b16e1537ebfc3d63e3d821366ee02082dc8e2335bcb2cbd",
+      "pre_gain": {
+        "integrated_lufs": -33.3,
+        "true_peak_dbtp": -20.4,
+        "momentary_max_lufs": -28.5
+      },
+      "gain_db": 17.3,
+      "encode_attempts": 1,
+      "opus_kbps": 96,
+      "measured": {
+        "integrated_lufs": -16.0,
+        "true_peak_dbtp": -2.9,
+        "momentary_max_lufs": -11.1
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": 0.0,
+      "loudness_status": "met",
+      "limited_by_true_peak": false,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 71040,
+      "decoded_duration_s": 1.48,
+      "decoded_pcm_sha256": "4cfcd2ca4bd2fec3c93f5524b52a9fd56a0b4699e34bdc8a4ba1bb6e43f8210f",
+      "id": "reward-chime",
+      "class": "ui",
+      "source_file": "assets-source/audio/sfx/raw/reward-chime.mp3",
+      "source_sha256": "121717108526973d8685cd8ce829858ada323579ac90ebb618ef2b8c5f1bf3c8",
+      "source_probe": {
+        "codec": "mp3",
+        "sample_rate": 44100,
+        "channels": 2,
+        "duration_s": 1.48
+      },
+      "trim": {
+        "trimmed_head_ms": 0.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/reward-chime.ogg",
+      "runtime_sha256": "bb675ee880ee96d71ac7ba8f26d8444e17ebf4d3696b7995bbf490acf49ab137",
+      "runtime_bytes": 21256,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 2,
+        "duration_s": 1.4865
+      }
+    },
+    "defeat-sting": {
+      "intermediate_wav": "assets-source/audio/derived/defeat-sting.wav",
+      "intermediate_sha256": "2eaecb153ec3828a23b790ad5a3923fe2d0de5d1d30879ec03c766e899a2995f",
+      "pre_gain": {
+        "integrated_lufs": -6.5,
+        "true_peak_dbtp": -0.4,
+        "momentary_max_lufs": -4.1
+      },
+      "gain_db": -9.5,
+      "encode_attempts": 1,
+      "opus_kbps": 96,
+      "measured": {
+        "integrated_lufs": -16.0,
+        "true_peak_dbtp": -9.1,
+        "momentary_max_lufs": -13.5
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": 0.0,
+      "loudness_status": "met",
+      "limited_by_true_peak": false,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 144000,
+      "decoded_duration_s": 3.0,
+      "decoded_pcm_sha256": "d28e4d857e4183d445c2cfa745c2fc3d270e915911ed53f7ae073cb38a705835",
+      "id": "defeat-sting",
+      "class": "ui",
+      "source_file": "assets-source/audio/sfx/raw/defeat-sting.mp3",
+      "source_sha256": "1bf9a307a601505428ae8b44b020f27ae8a292f5e72879cc86d6fcb495c4b754",
+      "source_probe": {
+        "codec": "mp3",
+        "sample_rate": 44100,
+        "channels": 2,
+        "duration_s": 3.0
+      },
+      "trim": {
+        "trimmed_head_ms": 0.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/defeat-sting.ogg",
+      "runtime_sha256": "fc698bfa54de9cd29dd63241c3b69b291055996a3f73635202b30491a9199723",
+      "runtime_bytes": 29319,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 2,
+        "duration_s": 3.0065
+      }
+    },
+    "victory-sting": {
+      "intermediate_wav": "assets-source/audio/derived/victory-sting.wav",
+      "intermediate_sha256": "075fea6a29f4a1cbe3df99d29094215d3f7b30a64f93dfed698d916e7aacf473",
+      "pre_gain": {
+        "integrated_lufs": -7.8,
+        "true_peak_dbtp": -0.5,
+        "momentary_max_lufs": -6.8
+      },
+      "gain_db": -8.2,
+      "encode_attempts": 1,
+      "opus_kbps": 96,
+      "measured": {
+        "integrated_lufs": -16.0,
+        "true_peak_dbtp": -8.2,
+        "momentary_max_lufs": -14.9
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": 0.0,
+      "loudness_status": "met",
+      "limited_by_true_peak": false,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 144000,
+      "decoded_duration_s": 3.0,
+      "decoded_pcm_sha256": "92c76946a0c6b8d323033e2af2b26d456f24629d8de94e4c4e8a23256980b295",
+      "id": "victory-sting",
+      "class": "ui",
+      "source_file": "assets-source/audio/sfx/raw/victory-sting.mp3",
+      "source_sha256": "5d9f74dfbf830841b56e4a64241c17f9435f36afc18f059c60ebb0335f9d50df",
+      "source_probe": {
+        "codec": "mp3",
+        "sample_rate": 44100,
+        "channels": 2,
+        "duration_s": 3.0
+      },
+      "trim": {
+        "trimmed_head_ms": 0.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "side channel x0.7 (mono cancellation 2.4 dB before, 1.3 dB after)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/victory-sting.ogg",
+      "runtime_sha256": "16d0d2b51488e812cfcb6eb1c5ac3ff7a0a561da5ba5209b02b21d45438a4d49",
+      "runtime_bytes": 44337,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 2,
+        "duration_s": 3.0065
+      }
+    },
+    "cog-pickup": {
+      "intermediate_wav": "assets-source/audio/derived/cog-pickup.wav",
+      "intermediate_sha256": "35a5a4a5228b99a839bec4ae3bd39f8eb575d6fd37d821cceede2ee12efd73b5",
+      "pre_gain": {
+        "integrated_lufs": -35.6,
+        "true_peak_dbtp": -18.1,
+        "momentary_max_lufs": -35.6
+      },
+      "gain_db": 16.75,
+      "encode_attempts": 2,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -18.8,
+        "true_peak_dbtp": -1.1,
+        "momentary_max_lufs": -18.8
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -2.8,
+      "loudness_status": "deviation",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": true,
+      "decoded_frames": 28800,
+      "decoded_duration_s": 0.6,
+      "decoded_pcm_sha256": "0e64c6d9c026ff0f9cdebdf39ae6a9b8e08e61bda2155903bf32c1e7cf3abbfc",
+      "id": "cog-pickup",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/raw/cog-pickup.mp3",
+      "source_sha256": "f2afb2d0a6a2411dd6779a9473388084cfa1360a1a44f686b9d3b0d18be760da",
+      "source_probe": {
+        "codec": "mp3",
+        "sample_rate": 44100,
+        "channels": 2,
+        "duration_s": 0.6
+      },
+      "trim": {
+        "trimmed_head_ms": 0.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/cog-pickup.ogg",
+      "runtime_sha256": "381e1478b83f3da49aea3fe718db6a66afe62553d1caf366a575e7a031b3aa8c",
+      "runtime_bytes": 5725,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.6065
+      }
+    },
+    "block-ward": {
+      "intermediate_wav": "assets-source/audio/derived/block-ward.wav",
+      "intermediate_sha256": "5dfd17151530239e197d9fa7ea6f6829d6054d663dfdb9f4d94ff11dc06fc057",
+      "pre_gain": {
+        "integrated_lufs": -18.1,
+        "true_peak_dbtp": -4.1,
+        "momentary_max_lufs": -13.0
+      },
+      "gain_db": 2.1,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -15.9,
+        "true_peak_dbtp": -2.2,
+        "momentary_max_lufs": -10.9
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": 0.1,
+      "loudness_status": "met",
+      "limited_by_true_peak": false,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 48000,
+      "decoded_duration_s": 1.0,
+      "decoded_pcm_sha256": "e2b390db5f48726486461691a3c3cfa73218aa2a25185dd56c397d762e438b82",
+      "id": "block-ward",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/raw/block-ward.mp3",
+      "source_sha256": "787eef4d11fca5f5c9644bd49308eaf731ce967c49f8e30b602ab0af7974b8cb",
+      "source_probe": {
+        "codec": "mp3",
+        "sample_rate": 44100,
+        "channels": 2,
+        "duration_s": 1.0
+      },
+      "trim": {
+        "trimmed_head_ms": 0.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/block-ward.ogg",
+      "runtime_sha256": "8693ed1d5eb791ec096fb3bcb0a9e57fc2d14abb86e165bedb6167b0ce1f91dc",
+      "runtime_bytes": 8760,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.0065
+      }
+    }
+  },
+  "music": {},
+  "music_status": "absent: runtime plays silence",
+  "external_checks": {
+    "check-audio-loops": {
+      "exit": 0,
+      "stdout": "/Users/probello/Repos/rogue-xr-p0/public/assets/audio/sfx/sigil-trace.ogg wrap    521 / p99.9    620   head  -13.7 dB   tail  -14.0 dB   min  -26.0 dB   ok\n\nPASS: 1 file(s) wrap cleanly with no interior dropout"
+    },
+    "check-mono-compatibility": {
+      "exit": 0,
+      "stdout": "self-test: identical-channel control -0.01 dB, mono control +0.00 dB (ok)\n\nCUE                                       stereo      fold  cancellation\nui-tick.ogg                             -19.6 LU  -22.6 LU       -0.0 dB  ok\nreward-chime.ogg                        -16.0 LU  -19.0 LU       -0.0 dB  ok\ndefeat-sting.ogg                        -16.0 LU  -19.0 LU       -0.0 dB  ok\nvictory-sting.ogg                       -16.0 LU  -20.4 LU        1.4 dB  ok\n\nCancellation at or above 2.0 dB means the cue thins out on a single speaker."
+    }
+  }
+}
