@@ -1,0 +1,172 @@
+{
+  "id": "orrery-warden",
+  "version": 1,
+  "glb": "orrery-warden.glb",
+  "frame": {
+    "units": "m",
+    "up": "+Y",
+    "forward": "-Z",
+    "origin": "feet centre on the floor (y = 0)",
+    "note": "encounter.ts rotation.y = -heading turns local -Z onto the heading"
+  },
+  "root": "orrery-warden",
+  "mesh": "warden-body",
+  "bounds": {
+    "min": [
+      -0.9017,
+      0.0,
+      -0.5716
+    ],
+    "max": [
+      0.9017,
+      2.6209,
+      0.651
+    ]
+  },
+  "skeleton": {
+    "root": "root",
+    "bones": 32,
+    "joints": [
+      "root",
+      "pelvis",
+      "skirt.BL",
+      "skirt.BR",
+      "skirt.FL",
+      "skirt.FR",
+      "spine",
+      "chest",
+      "clavicle.L",
+      "upperarm.L",
+      "forearm.L",
+      "hand.L",
+      "clavicle.R",
+      "upperarm.R",
+      "forearm.R",
+      "hand.R",
+      "eclipse",
+      "mast",
+      "ring.inner",
+      "ring.outer",
+      "neck",
+      "head",
+      "orbit",
+      "planet.emerald",
+      "planet.ruby",
+      "planet.sapphire",
+      "thigh.L",
+      "shin.L",
+      "foot.L",
+      "thigh.R",
+      "shin.R",
+      "foot.R"
+    ],
+    "maxInfluences": 1,
+    "skinning": "rigid: every vertex weighted 1.0 to one bone"
+  },
+  "rootMotion": "code-owned: the root joint is never animated and every clip plays in place",
+  "clips": {
+    "idle": {
+      "duration": 12.0,
+      "loop": "repeat",
+      "events": {}
+    },
+    "attack": {
+      "duration": 1.6,
+      "loop": "once",
+      "events": {
+        "impact": 0.8
+      }
+    },
+    "hit": {
+      "duration": 0.7,
+      "loop": "once",
+      "events": {}
+    },
+    "death": {
+      "duration": 2.6,
+      "loop": "once",
+      "events": {
+        "down": 1.9
+      },
+      "endsOnFloor": true
+    },
+    "frozen": {
+      "duration": 1.0,
+      "loop": "repeat",
+      "events": {},
+      "held": true
+    }
+  },
+  "sockets": {
+    "socket-hit": {
+      "bone": "chest",
+      "parent": "chest",
+      "position": [
+        0.0,
+        1.8,
+        -0.24
+      ]
+    },
+    "socket-eye": {
+      "bone": "head",
+      "parent": "head",
+      "position": [
+        0.0,
+        2.255,
+        -0.14
+      ]
+    },
+    "socket-weapon": {
+      "bone": "hand.R",
+      "parent": "hand.R",
+      "position": [
+        0.85,
+        1.04,
+        -0.04
+      ]
+    }
+  },
+  "emissive": {
+    "material": "warden-glow",
+    "color": "#F08C2C",
+    "intensity": 0.7,
+    "nodes": [
+      "socket-eye",
+      "socket-hit"
+    ]
+  },
+  "materialSlots": {
+    "brass-polished": {
+      "set": "brass-polished",
+      "tileMeters": 0.5,
+      "normalScale": 0.35
+    },
+    "gunmetal": {
+      "set": null,
+      "factorOnly": true
+    },
+    "warden-glow": {
+      "set": null,
+      "factorOnly": true,
+      "emissive": true
+    },
+    "warden-jewel": {
+      "set": null,
+      "factorOnly": true
+    }
+  },
+  "budget": {
+    "tris": 23822,
+    "materials": 4,
+    "bones": 32,
+    "influences": 4
+  },
+  "cull": {
+    "center": [
+      0.014,
+      1.313,
+      -0.204
+    ],
+    "radius": 1.866
+  }
+}

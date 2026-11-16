@@ -1,0 +1,240 @@
+{
+  "piece": "orrery-warden",
+  "blender": "5.2.2 LTS",
+  "generator": "scripts/assets/build-orrery-warden.py",
+  "generator_sha256": "8ea6bab94a18a70bb1cba94c0b4fbc44e1445f3dd0ac5ee5c32207173aa508a8",
+  "concept": {
+    "file": "assets-source/concepts/warden-sheet-1.png",
+    "sha256": "c07d34ae5d7412f26c561508bc5a80f14de584ffebbcff31272cc356b07ec5c7",
+    "status": "owner approval pending; modeled under Paul's standing approval of 2026-11-15"
+  },
+  "source_materials": {
+    "brass-polished": {
+      "basecolor": "e06711b70706c57713bad023bfd9690715a67ae7b85fcc3041d596f7b0630e15",
+      "normal": "48e62a85458bfc64ffc095f4f6a44c69b0058b90e01a664a3f3682a0222bfb3c",
+      "orm": "ac621605925e523ca9b25bd18bbfe4bdab575bb3a9876a5390adc5a29c559e9a"
+    }
+  },
+  "triangles": {
+    "low": 23822,
+    "high": 72514
+  },
+  "bones": 32,
+  "authoringAgent": "Claude Code subagent (claude-opus-5-5), dispatched by the rogue-xr primary session",
+  "ground_clamp_death_max_lift_m": [
+    0.2727,
+    0.0
+  ],
+  "pose_checks": {
+    "idle": {
+      "frames": 361,
+      "min_z": -0.0,
+      "min_z_frame": 64,
+      "max_z": 2.6251,
+      "final_max_z": 2.6209,
+      "final_min_z": -0.0,
+      "loop_seam_m": 0.0
+    },
+    "attack": {
+      "frames": 49,
+      "min_z": -0.0,
+      "min_z_frame": 43,
+      "max_z": 2.6214,
+      "final_max_z": 2.6209,
+      "final_min_z": -0.0,
+      "loop_seam_m": 0.0
+    },
+    "hit": {
+      "frames": 22,
+      "min_z": -0.0,
+      "min_z_frame": 4,
+      "max_z": 2.6209,
+      "final_max_z": 2.6209,
+      "final_min_z": -0.0,
+      "loop_seam_m": 0.0
+    },
+    "death": {
+      "frames": 79,
+      "min_z": 0.004,
+      "min_z_frame": 54,
+      "max_z": 2.6249,
+      "final_max_z": 0.8079,
+      "final_min_z": 0.004,
+      "loop_seam_m": 2.2308
+    },
+    "frozen": {
+      "frames": 31,
+      "min_z": -0.0,
+      "min_z_frame": 0,
+      "max_z": 2.6066,
+      "final_max_z": 2.6066,
+      "final_min_z": -0.0,
+      "loop_seam_m": 0.0
+    }
+  },
+  "cull": {
+    "center": [
+      0.014,
+      1.313,
+      -0.204
+    ],
+    "radius": 1.866,
+    "maxDistanceFromSentryCullCentre": 1.643
+  },
+  "canonicalized_primitives": 4,
+  "reimport": {
+    "glb_sha256": "48b38b8cb4e30c60c6b2055b7329ec9c5ebb0ae9972ef467eb9284547e2d7c4d",
+    "glb_bytes": 2502184,
+    "triangles": 23822,
+    "materials": [
+      "brass-polished",
+      "gunmetal",
+      "warden-glow",
+      "warden-jewel"
+    ],
+    "vertices": 26477,
+    "joints": [
+      "root",
+      "pelvis",
+      "skirt.BL",
+      "skirt.BR",
+      "skirt.FL",
+      "skirt.FR",
+      "spine",
+      "chest",
+      "clavicle.L",
+      "upperarm.L",
+      "forearm.L",
+      "hand.L",
+      "clavicle.R",
+      "upperarm.R",
+      "forearm.R",
+      "hand.R",
+      "eclipse",
+      "mast",
+      "ring.inner",
+      "ring.outer",
+      "neck",
+      "head",
+      "orbit",
+      "planet.emerald",
+      "planet.ruby",
+      "planet.sapphire",
+      "thigh.L",
+      "shin.L",
+      "foot.L",
+      "thigh.R",
+      "shin.R",
+      "foot.R"
+    ],
+    "bone_count": 32,
+    "max_influences": 1,
+    "max_weight_sum_error": 0.0,
+    "unweighted_vertices": 0,
+    "bounds": {
+      "min": [
+        -0.9017,
+        0.0,
+        -0.5716
+      ],
+      "max": [
+        0.9017,
+        2.6209,
+        0.651
+      ]
+    },
+    "clips": {
+      "attack": {
+        "duration": 1.6,
+        "start": 0.0,
+        "channels": 96,
+        "rootAnimated": []
+      },
+      "death": {
+        "duration": 2.6,
+        "start": 0.0,
+        "channels": 96,
+        "rootAnimated": []
+      },
+      "frozen": {
+        "duration": 1.0,
+        "start": 0.0,
+        "channels": 96,
+        "rootAnimated": []
+      },
+      "hit": {
+        "duration": 0.7,
+        "start": 0.0,
+        "channels": 96,
+        "rootAnimated": []
+      },
+      "idle": {
+        "duration": 12.0,
+        "start": 0.0,
+        "channels": 96,
+        "rootAnimated": []
+      }
+    },
+    "sockets": {
+      "socket-hit": {
+        "bone": "chest",
+        "parent": "chest",
+        "position": [
+          0.0,
+          1.8,
+          -0.24
+        ]
+      },
+      "socket-eye": {
+        "bone": "head",
+        "parent": "head",
+        "position": [
+          0.0,
+          2.255,
+          -0.14
+        ]
+      },
+      "socket-weapon": {
+        "bone": "hand.R",
+        "parent": "hand.R",
+        "position": [
+          0.85,
+          1.04,
+          -0.04
+        ]
+      }
+    },
+    "scene_roots": [
+      "orrery-warden"
+    ],
+    "errors": [],
+    "pass": true,
+    "blender_reimport": {
+      "armatures": 1,
+      "bones": 32,
+      "meshes": 1,
+      "actions": [
+        "attack.001",
+        "death.001",
+        "frozen.001",
+        "hit.001",
+        "idle.001"
+      ],
+      "objects": [
+        "orrery-warden.001",
+        "socket-eye.001",
+        "socket-hit.001",
+        "socket-weapon.001",
+        "warden-body.001"
+      ]
+    }
+  },
+  "files": {
+    "assets-source/enemies/orrery-warden/blend/orrery-warden.high.blend": "50e4b728e8a2c3f664c1b003395e00b0825047f5ea80c4308240f75c43dfe91a",
+    "assets-source/enemies/orrery-warden/blend/orrery-warden.low.blend": "757ebc19d43ab081162aace5afd2ca8a59357e1d8704478f10c380bd3b462012",
+    "assets-source/enemies/orrery-warden/staging/reimport.json": "fa8afe56fbbe1e4851b79b3a1a21bd492bba64348af7f5478ff41c4dae5d2eb6",
+    "public/assets/enemies/orrery-warden/orrery-warden.glb": "48b38b8cb4e30c60c6b2055b7329ec9c5ebb0ae9972ef467eb9284547e2d7c4d",
+    "public/assets/enemies/orrery-warden/orrery-warden.manifest.json": "2bb0a402bd72fe5f19a6f04182fb17f37438a16f002e60c08efa6784861072f0"
+  },
+  "total_seconds": 6.4
+}

@@ -1,0 +1,147 @@
+{
+  "glb_sha256": "48b38b8cb4e30c60c6b2055b7329ec9c5ebb0ae9972ef467eb9284547e2d7c4d",
+  "glb_bytes": 2502184,
+  "triangles": 23822,
+  "materials": [
+    "brass-polished",
+    "gunmetal",
+    "warden-glow",
+    "warden-jewel"
+  ],
+  "vertices": 26477,
+  "joints": [
+    "root",
+    "pelvis",
+    "skirt.BL",
+    "skirt.BR",
+    "skirt.FL",
+    "skirt.FR",
+    "spine",
+    "chest",
+    "clavicle.L",
+    "upperarm.L",
+    "forearm.L",
+    "hand.L",
+    "clavicle.R",
+    "upperarm.R",
+    "forearm.R",
+    "hand.R",
+    "eclipse",
+    "mast",
+    "ring.inner",
+    "ring.outer",
+    "neck",
+    "head",
+    "orbit",
+    "planet.emerald",
+    "planet.ruby",
+    "planet.sapphire",
+    "thigh.L",
+    "shin.L",
+    "foot.L",
+    "thigh.R",
+    "shin.R",
+    "foot.R"
+  ],
+  "bone_count": 32,
+  "max_influences": 1,
+  "max_weight_sum_error": 0.0,
+  "unweighted_vertices": 0,
+  "bounds": {
+    "min": [
+      -0.9017,
+      0.0,
+      -0.5716
+    ],
+    "max": [
+      0.9017,
+      2.6209,
+      0.651
+    ]
+  },
+  "clips": {
+    "attack": {
+      "duration": 1.6,
+      "start": 0.0,
+      "channels": 96,
+      "rootAnimated": []
+    },
+    "death": {
+      "duration": 2.6,
+      "start": 0.0,
+      "channels": 96,
+      "rootAnimated": []
+    },
+    "frozen": {
+      "duration": 1.0,
+      "start": 0.0,
+      "channels": 96,
+      "rootAnimated": []
+    },
+    "hit": {
+      "duration": 0.7,
+      "start": 0.0,
+      "channels": 96,
+      "rootAnimated": []
+    },
+    "idle": {
+      "duration": 12.0,
+      "start": 0.0,
+      "channels": 96,
+      "rootAnimated": []
+    }
+  },
+  "sockets": {
+    "socket-hit": {
+      "bone": "chest",
+      "parent": "chest",
+      "position": [
+        0.0,
+        1.8,
+        -0.24
+      ]
+    },
+    "socket-eye": {
+      "bone": "head",
+      "parent": "head",
+      "position": [
+        0.0,
+        2.255,
+        -0.14
+      ]
+    },
+    "socket-weapon": {
+      "bone": "hand.R",
+      "parent": "hand.R",
+      "position": [
+        0.85,
+        1.04,
+        -0.04
+      ]
+    }
+  },
+  "scene_roots": [
+    "orrery-warden"
+  ],
+  "errors": [],
+  "pass": true,
+  "blender_reimport": {
+    "armatures": 1,
+    "bones": 32,
+    "meshes": 1,
+    "actions": [
+      "attack.001",
+      "death.001",
+      "frozen.001",
+      "hit.001",
+      "idle.001"
+    ],
+    "objects": [
+      "orrery-warden.001",
+      "socket-eye.001",
+      "socket-hit.001",
+      "socket-weapon.001",
+      "warden-body.001"
+    ]
+  }
+}

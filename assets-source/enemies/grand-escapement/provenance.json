@@ -1,0 +1,341 @@
+{
+  "pieceId": "grand-escapement",
+  "version": 1,
+  "route": "scripted (procedural Blender geometry, rig and keyed clips; no provider generation)",
+  "generator": {
+    "path": "scripts/assets/build-grand-escapement.py",
+    "sha256": "bfc21d244d4d5071595b955cfa6c0fd17f2a5395d2c74fe6ec5052c9c0c5b70b"
+  },
+  "authoringAgent": {
+    "harness": "claude-code (dispatched sub-agent)",
+    "model": "claude-opus-5-5"
+  },
+  "blender": "5.2.2 LTS",
+  "toolVersions": {
+    "gltfExporter": "Blender 5.2.2 bundled io_scene_gltf2"
+  },
+  "blendFiles": {
+    "store": "assets-source/enemies/grand-escapement/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)"
+  },
+  "budgets": {
+    "triangles": 23984,
+    "highTriangles": 51582,
+    "materials": 4,
+    "bones": 40,
+    "maxInfluences": 1,
+    "glbBytes": 2332304
+  },
+  "skin": {
+    "policy": "rigid: one bone per vertex at weight 1.0",
+    "maxWeightSumError": 0.0,
+    "unweightedVertices": 0
+  },
+  "clips": {
+    "idle": {
+      "duration": 6.0,
+      "loop": "repeat",
+      "events": {},
+      "measured": {
+        "duration": 6.0,
+        "start": 0.0,
+        "channels": 120,
+        "rootAnimated": []
+      }
+    },
+    "attack": {
+      "duration": 1.6,
+      "loop": "once",
+      "events": {
+        "impact": 0.85
+      },
+      "measured": {
+        "duration": 1.6,
+        "start": 0.0,
+        "channels": 120,
+        "rootAnimated": []
+      }
+    },
+    "hit": {
+      "duration": 0.7,
+      "loop": "once",
+      "events": {},
+      "measured": {
+        "duration": 0.7,
+        "start": 0.0,
+        "channels": 120,
+        "rootAnimated": []
+      }
+    },
+    "death": {
+      "duration": 2.8,
+      "loop": "once",
+      "events": {
+        "down": 2.0
+      },
+      "endsOnFloor": true,
+      "measured": {
+        "duration": 2.8,
+        "start": 0.0,
+        "channels": 120,
+        "rootAnimated": []
+      }
+    },
+    "frozen": {
+      "duration": 1.0,
+      "loop": "repeat",
+      "events": {},
+      "held": true,
+      "measured": {
+        "duration": 1.0,
+        "start": 0.0,
+        "channels": 120,
+        "rootAnimated": []
+      }
+    },
+    "phase-change": {
+      "duration": 3.0,
+      "loop": "once",
+      "events": {
+        "open": 1.0
+      },
+      "measured": {
+        "duration": 3.0,
+        "start": 0.0,
+        "channels": 120,
+        "rootAnimated": []
+      }
+    }
+  },
+  "poseChecks": {
+    "idle": {
+      "frames": 181,
+      "min_z": 0.0001,
+      "min_z_frame": 55,
+      "max_z": 3.2097,
+      "final_max_z": 3.202,
+      "final_min_z": 0.0001,
+      "loop_seam_m": 0.0
+    },
+    "attack": {
+      "frames": 49,
+      "min_z": 0.0001,
+      "min_z_frame": 17,
+      "max_z": 3.202,
+      "final_max_z": 3.202,
+      "final_min_z": 0.0001,
+      "loop_seam_m": 0.0
+    },
+    "hit": {
+      "frames": 22,
+      "min_z": 0.0001,
+      "min_z_frame": 13,
+      "max_z": 3.202,
+      "final_max_z": 3.202,
+      "final_min_z": 0.0001,
+      "loop_seam_m": 0.0
+    },
+    "death": {
+      "frames": 85,
+      "min_z": 0.004,
+      "min_z_frame": 4,
+      "max_z": 3.2059,
+      "final_max_z": 0.8172,
+      "final_min_z": 0.004,
+      "loop_seam_m": 2.73981
+    },
+    "frozen": {
+      "frames": 31,
+      "min_z": 0.0001,
+      "min_z_frame": 0,
+      "max_z": 3.1449,
+      "final_max_z": 3.1449,
+      "final_min_z": 0.0001,
+      "loop_seam_m": 0.0
+    },
+    "phase-change": {
+      "frames": 91,
+      "min_z": 0.0001,
+      "min_z_frame": 10,
+      "max_z": 3.202,
+      "final_max_z": 3.177,
+      "final_min_z": 0.0001,
+      "loop_seam_m": 0.58382
+    }
+  },
+  "rootMotion": "code-owned: the root joint is never animated and every clip plays in place",
+  "frame": {
+    "units": "m",
+    "up": "+Y",
+    "forward": "-Z",
+    "origin": "feet centre on the floor (y = 0)",
+    "note": "encounter.ts rotation.y = -heading turns local -Z onto the heading"
+  },
+  "sockets": {
+    "socket-hit": {
+      "bone": "chest",
+      "parent": "chest",
+      "position": [
+        0.0,
+        1.9,
+        -0.3
+      ]
+    },
+    "socket-eye": {
+      "bone": "head",
+      "parent": "head",
+      "position": [
+        0.0,
+        2.94,
+        -0.13
+      ]
+    },
+    "socket-weapon": {
+      "bone": "claw.R",
+      "parent": "claw.R",
+      "position": [
+        1.095,
+        0.62,
+        0.0
+      ]
+    }
+  },
+  "derivedFiles": [
+    {
+      "path": "public/assets/enemies/grand-escapement/grand-escapement.glb",
+      "sha256": "1a34981e3937071c33cd72b1ff424d2db41d0417df1fde14add432c11c564e5e",
+      "bytes": 2332304
+    },
+    {
+      "path": "public/assets/enemies/grand-escapement/grand-escapement.manifest.json",
+      "sha256": "c831267e3fb080776a29efac0eec23853a03b24ce9019ee340a61a17a27e001d",
+      "bytes": 3301
+    }
+  ],
+  "sourceFiles": [
+    {
+      "path": "assets-source/enemies/grand-escapement/blend/grand-escapement.high.blend",
+      "sha256": "0ad7cf4a33c36f83c4d95bea99559452e7856e1257b6a0d4ec6e7b95368b9df4",
+      "bytes": 1514665
+    },
+    {
+      "path": "assets-source/enemies/grand-escapement/blend/grand-escapement.low.blend",
+      "sha256": "f9f889149968499a995d0321a9d9162907649d978b6cbebcff151097ba0c180c",
+      "bytes": 1122710
+    },
+    {
+      "path": "assets-source/enemies/grand-escapement/staging/report.json",
+      "sha256": "50182797f3479a816c97ac591fc9a110be0ffb44c5d5095b23e206b962878c9c",
+      "bytes": 6475
+    },
+    {
+      "path": "assets-source/enemies/grand-escapement/staging/reimport.json",
+      "sha256": "39700d41d1b4b4388bd10e19552276fb13554b0afb5a32d3a353aa9cc98eb27e",
+      "bytes": 2718
+    },
+    {
+      "path": "assets-source/enemies/grand-escapement/engine_shot.py",
+      "sha256": "f32c5034e45490872261e0f651c176ff75c1627ab7bf364312e952114b959c72",
+      "bytes": 4394
+    },
+    {
+      "path": "assets-source/enemies/grand-escapement/engine-proof.ts",
+      "sha256": "0ef5cd4607e02b023d6d1ec7d4fe30250061a3d65ed412fac84ddd9a57a806e7",
+      "bytes": 5016
+    }
+  ],
+  "reviewEvidence": [
+    {
+      "path": "assets-source/enemies/grand-escapement/grand-escapement.review-sheet.jpg",
+      "sha256": "d4af3abcf14994b065d9249fc6ef4df07a9fb10d540b520613822877d8c1271c",
+      "bytes": 517655
+    },
+    {
+      "path": "assets-source/enemies/grand-escapement/staging/engine/attack.jpg",
+      "sha256": "76b77f747b50c4cfc655fa325026c9ae83c18bb3e28bbc10b5326f2dd32fde91",
+      "bytes": 62597
+    },
+    {
+      "path": "assets-source/enemies/grand-escapement/staging/engine/death.jpg",
+      "sha256": "70d73f9f336e2d3b477c4bc5e725eeda14b5afc0b15c4c5d5e3411404b53352b",
+      "bytes": 31826
+    },
+    {
+      "path": "assets-source/enemies/grand-escapement/staging/engine/frozen.jpg",
+      "sha256": "54fba31fcf7b217a7273bd81128c3e4cd2bc4b4b55ba76ab03b5ad6c8f6d0a1e",
+      "bytes": 54923
+    },
+    {
+      "path": "assets-source/enemies/grand-escapement/staging/engine/hit.jpg",
+      "sha256": "5e625074a00132153e86e2bc0b6b51e1a491c4fce6c7eb17890201956cfca889",
+      "bytes": 48219
+    },
+    {
+      "path": "assets-source/enemies/grand-escapement/staging/engine/idle.jpg",
+      "sha256": "b064c52c53c5a385e9fdf42c52692abbfde2acb653d65d9b7568ad3cba1a665e",
+      "bytes": 50582
+    },
+    {
+      "path": "assets-source/enemies/grand-escapement/staging/engine/phase-change-end.jpg",
+      "sha256": "a84e007be7c8fea4cc6389c8f0a09c3ac05f40d4671e100677c4d8b2ee0f734f",
+      "bytes": 56552
+    },
+    {
+      "path": "assets-source/enemies/grand-escapement/staging/engine/phase-change-mid.jpg",
+      "sha256": "a44ac24007fe35e7345eb950069ef80a50b92efad8590e84d08b2a04d67ccf8e",
+      "bytes": 56824
+    }
+  ],
+  "references": [
+    {
+      "path": "assets-source/concepts/escapement-sheet-1.png",
+      "sha256": "42f8031f0391d392cbafd30756f7c69fde1a3c0c216f37aef3fc7060c8a61b9f",
+      "provider": "higgsfield",
+      "note": "P5-T4 concept sheet (Higgsfield nano_banana_pro); owner approval pending (assets-source/concepts/p5-automatons-design.md)"
+    }
+  ],
+  "materialsUsed": "approved P4-T3 brass-polished and walnut sets bound by slot name at runtime; gunmetal and escapement-glow are factor-only",
+  "license": "Original work generated in Blender from a checked-in script; concept reference from Paul's paid Higgsfield plan (Terms of Use 4.4)",
+  "validation": {
+    "pass": true,
+    "date": "2026-11-15",
+    "checks": [
+      "presence",
+      "hashes",
+      "glb budgets (tris, materials, bones)",
+      "one skin, one weight set",
+      "image-free glb",
+      "clip set",
+      "manifest consistency",
+      "reimport gate (weights, influences, clips, root motion, bounds, sockets)",
+      "evaluated pose checks (floor, death on the floor, loop seams)"
+    ]
+  },
+  "approvals": [
+    {
+      "gate": "concept",
+      "status": "pending",
+      "notes": "assets-source/concepts/p5-automatons-design.md, Decisions for Paul 1",
+      "modelingProceededUnder": "Paul, 2026-11-15, in the rogue-xr session: \"you have standing approval for all spending / modeling / deployments needed for this project\". Modeling proceeded under it; it is not a concept, creative or owner approval of this asset."
+    },
+    {
+      "gate": "model",
+      "status": "pending",
+      "notes": "assets-source/enemies/grand-escapement/grand-escapement.review-sheet.jpg, MODEL section"
+    },
+    {
+      "gate": "rig",
+      "status": "pending",
+      "notes": "review sheet RIG section"
+    },
+    {
+      "gate": "animation",
+      "status": "pending",
+      "notes": "review sheet ANIMATION sections (Blender frames and engine stills)"
+    },
+    {
+      "gate": "independent visual score",
+      "status": "unscored",
+      "notes": "create-rigged-character-assets requires an independent >= 80/100 score; unscored means unaccepted"
+    }
+  ]
+}

@@ -1,0 +1,188 @@
+{
+  "id": "grand-escapement",
+  "version": 1,
+  "glb": "grand-escapement.glb",
+  "frame": {
+    "units": "m",
+    "up": "+Y",
+    "forward": "-Z",
+    "origin": "feet centre on the floor (y = 0)",
+    "note": "encounter.ts rotation.y = -heading turns local -Z onto the heading"
+  },
+  "root": "grand-escapement",
+  "mesh": "escapement-body",
+  "bounds": {
+    "min": [
+      -1.306,
+      0.0001,
+      -0.27
+    ],
+    "max": [
+      1.306,
+      3.202,
+      0.292
+    ]
+  },
+  "skeleton": {
+    "root": "root",
+    "bones": 40,
+    "joints": [
+      "root",
+      "pelvis",
+      "spine",
+      "chest",
+      "clavicle.L",
+      "upperarm.L",
+      "forearm.L",
+      "hand.L",
+      "claw.L",
+      "fluke.in.L",
+      "fluke.out.L",
+      "clavicle.R",
+      "upperarm.R",
+      "forearm.R",
+      "hand.R",
+      "claw.R",
+      "fluke.in.R",
+      "fluke.out.R",
+      "corona",
+      "dial.hour",
+      "dial.minute",
+      "door.L",
+      "door.R",
+      "key",
+      "neck",
+      "head",
+      "bell",
+      "clapper",
+      "pallet",
+      "pendulum",
+      "bob",
+      "plate.L",
+      "plate.R",
+      "wheel",
+      "thigh.L",
+      "shin.L",
+      "foot.L",
+      "thigh.R",
+      "shin.R",
+      "foot.R"
+    ],
+    "maxInfluences": 1,
+    "skinning": "rigid: every vertex weighted 1.0 to one bone"
+  },
+  "rootMotion": "code-owned: the root joint is never animated and every clip plays in place",
+  "clips": {
+    "idle": {
+      "duration": 6.0,
+      "loop": "repeat",
+      "events": {}
+    },
+    "attack": {
+      "duration": 1.6,
+      "loop": "once",
+      "events": {
+        "impact": 0.85
+      }
+    },
+    "hit": {
+      "duration": 0.7,
+      "loop": "once",
+      "events": {}
+    },
+    "death": {
+      "duration": 2.8,
+      "loop": "once",
+      "events": {
+        "down": 2.0
+      },
+      "endsOnFloor": true
+    },
+    "frozen": {
+      "duration": 1.0,
+      "loop": "repeat",
+      "events": {},
+      "held": true
+    },
+    "phase-change": {
+      "duration": 3.0,
+      "loop": "once",
+      "events": {
+        "open": 1.0
+      }
+    }
+  },
+  "sockets": {
+    "socket-hit": {
+      "bone": "chest",
+      "parent": "chest",
+      "position": [
+        0.0,
+        1.9,
+        -0.3
+      ]
+    },
+    "socket-eye": {
+      "bone": "head",
+      "parent": "head",
+      "position": [
+        0.0,
+        2.94,
+        -0.13
+      ]
+    },
+    "socket-weapon": {
+      "bone": "claw.R",
+      "parent": "claw.R",
+      "position": [
+        1.095,
+        0.62,
+        0.0
+      ]
+    }
+  },
+  "emissive": {
+    "material": "escapement-glow",
+    "color": "#F08C2C",
+    "intensity": 0.7,
+    "nodes": [
+      "socket-eye",
+      "socket-hit"
+    ]
+  },
+  "materialSlots": {
+    "brass-polished": {
+      "set": "brass-polished",
+      "tileMeters": 0.5,
+      "normalScale": 0.35
+    },
+    "walnut": {
+      "set": "walnut",
+      "tileMeters": 0.5,
+      "normalScale": 1.0
+    },
+    "gunmetal": {
+      "set": null,
+      "factorOnly": true
+    },
+    "escapement-glow": {
+      "set": null,
+      "factorOnly": true,
+      "emissive": true
+    }
+  },
+  "budget": {
+    "tris": 23984,
+    "materials": 4,
+    "bones": 40,
+    "influences": 4
+  },
+  "cull": {
+    "center": [
+      0.0,
+      1.605,
+      -0.154
+    ],
+    "radius": 2.416
+  }
+}

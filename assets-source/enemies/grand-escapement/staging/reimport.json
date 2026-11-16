@@ -1,0 +1,162 @@
+{
+  "glb_sha256": "1a34981e3937071c33cd72b1ff424d2db41d0417df1fde14add432c11c564e5e",
+  "glb_bytes": 2332304,
+  "triangles": 23984,
+  "materials": [
+    "brass-polished",
+    "walnut",
+    "gunmetal",
+    "escapement-glow"
+  ],
+  "vertices": 26061,
+  "joints": [
+    "root",
+    "pelvis",
+    "spine",
+    "chest",
+    "clavicle.L",
+    "upperarm.L",
+    "forearm.L",
+    "hand.L",
+    "claw.L",
+    "fluke.in.L",
+    "fluke.out.L",
+    "clavicle.R",
+    "upperarm.R",
+    "forearm.R",
+    "hand.R",
+    "claw.R",
+    "fluke.in.R",
+    "fluke.out.R",
+    "corona",
+    "dial.hour",
+    "dial.minute",
+    "door.L",
+    "door.R",
+    "key",
+    "neck",
+    "head",
+    "bell",
+    "clapper",
+    "pallet",
+    "pendulum",
+    "bob",
+    "plate.L",
+    "plate.R",
+    "wheel",
+    "thigh.L",
+    "shin.L",
+    "foot.L",
+    "thigh.R",
+    "shin.R",
+    "foot.R"
+  ],
+  "bone_count": 40,
+  "max_influences": 1,
+  "max_weight_sum_error": 0.0,
+  "unweighted_vertices": 0,
+  "bounds": {
+    "min": [
+      -1.306,
+      0.0001,
+      -0.27
+    ],
+    "max": [
+      1.306,
+      3.202,
+      0.292
+    ]
+  },
+  "clips": {
+    "attack": {
+      "duration": 1.6,
+      "start": 0.0,
+      "channels": 120,
+      "rootAnimated": []
+    },
+    "death": {
+      "duration": 2.8,
+      "start": 0.0,
+      "channels": 120,
+      "rootAnimated": []
+    },
+    "frozen": {
+      "duration": 1.0,
+      "start": 0.0,
+      "channels": 120,
+      "rootAnimated": []
+    },
+    "hit": {
+      "duration": 0.7,
+      "start": 0.0,
+      "channels": 120,
+      "rootAnimated": []
+    },
+    "idle": {
+      "duration": 6.0,
+      "start": 0.0,
+      "channels": 120,
+      "rootAnimated": []
+    },
+    "phase-change": {
+      "duration": 3.0,
+      "start": 0.0,
+      "channels": 120,
+      "rootAnimated": []
+    }
+  },
+  "sockets": {
+    "socket-hit": {
+      "bone": "chest",
+      "parent": "chest",
+      "position": [
+        0.0,
+        1.9,
+        -0.3
+      ]
+    },
+    "socket-eye": {
+      "bone": "head",
+      "parent": "head",
+      "position": [
+        0.0,
+        2.94,
+        -0.13
+      ]
+    },
+    "socket-weapon": {
+      "bone": "claw.R",
+      "parent": "claw.R",
+      "position": [
+        1.095,
+        0.62,
+        0.0
+      ]
+    }
+  },
+  "scene_roots": [
+    "grand-escapement"
+  ],
+  "errors": [],
+  "pass": true,
+  "blender_reimport": {
+    "armatures": 1,
+    "bones": 40,
+    "meshes": 1,
+    "actions": [
+      "attack.001",
+      "death.001",
+      "frozen.001",
+      "hit.001",
+      "idle.001",
+      "phase-change.001"
+    ],
+    "objects": [
+      "escapement-body.001",
+      "grand-escapement.001",
+      "socket-eye.001",
+      "socket-hit.001",
+      "socket-weapon.001"
+    ]
+  }
+}

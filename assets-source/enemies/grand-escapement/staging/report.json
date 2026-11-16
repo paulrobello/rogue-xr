@@ -1,0 +1,269 @@
+{
+  "piece": "grand-escapement",
+  "blender": "5.2.2 LTS",
+  "generator": "scripts/assets/build-grand-escapement.py",
+  "generator_sha256": "9c817f22fa3c0784bdce75f9c9310a6e53f8004d18ce0424db78c68b75783fad",
+  "concept": {
+    "file": "assets-source/concepts/escapement-sheet-1.png",
+    "sha256": "42f8031f0391d392cbafd30756f7c69fde1a3c0c216f37aef3fc7060c8a61b9f",
+    "status": "owner approval pending; modeled under Paul's standing approval of 2026-11-15"
+  },
+  "source_materials": {
+    "brass-polished": {
+      "basecolor": "e06711b70706c57713bad023bfd9690715a67ae7b85fcc3041d596f7b0630e15",
+      "normal": "48e62a85458bfc64ffc095f4f6a44c69b0058b90e01a664a3f3682a0222bfb3c",
+      "orm": "ac621605925e523ca9b25bd18bbfe4bdab575bb3a9876a5390adc5a29c559e9a"
+    },
+    "walnut": {
+      "basecolor": "c2c1d72ba308c02f6304ee389a86d6663199d01a352160c347801cefd4042a0b",
+      "normal": "3ee262cb20e41fe1f8b6dac8528f0b3f51e6e129cc9542f99d81c21242046558",
+      "orm": "6de73e58bc870595d74968b44e4f94b153c2dfc529ae6cb5c9e2beda5c24846d"
+    }
+  },
+  "triangles": {
+    "low": 23984,
+    "high": 51582
+  },
+  "bones": 40,
+  "authoringAgent": "Claude Code subagent (claude-opus-5-5), dispatched by the rogue-xr primary session",
+  "ground_clamp_death_max_lift_m": [
+    0.327,
+    0.0
+  ],
+  "pose_checks": {
+    "idle": {
+      "frames": 181,
+      "min_z": 0.0001,
+      "min_z_frame": 55,
+      "max_z": 3.2097,
+      "final_max_z": 3.202,
+      "final_min_z": 0.0001,
+      "loop_seam_m": 0.0
+    },
+    "attack": {
+      "frames": 49,
+      "min_z": 0.0001,
+      "min_z_frame": 17,
+      "max_z": 3.202,
+      "final_max_z": 3.202,
+      "final_min_z": 0.0001,
+      "loop_seam_m": 0.0
+    },
+    "hit": {
+      "frames": 22,
+      "min_z": 0.0001,
+      "min_z_frame": 13,
+      "max_z": 3.202,
+      "final_max_z": 3.202,
+      "final_min_z": 0.0001,
+      "loop_seam_m": 0.0
+    },
+    "death": {
+      "frames": 85,
+      "min_z": 0.004,
+      "min_z_frame": 4,
+      "max_z": 3.2059,
+      "final_max_z": 0.8172,
+      "final_min_z": 0.004,
+      "loop_seam_m": 2.73981
+    },
+    "frozen": {
+      "frames": 31,
+      "min_z": 0.0001,
+      "min_z_frame": 0,
+      "max_z": 3.1449,
+      "final_max_z": 3.1449,
+      "final_min_z": 0.0001,
+      "loop_seam_m": 0.0
+    },
+    "phase-change": {
+      "frames": 91,
+      "min_z": 0.0001,
+      "min_z_frame": 10,
+      "max_z": 3.202,
+      "final_max_z": 3.177,
+      "final_min_z": 0.0001,
+      "loop_seam_m": 0.58382
+    }
+  },
+  "cull": {
+    "center": [
+      0.0,
+      1.605,
+      -0.154
+    ],
+    "radius": 2.416,
+    "maxDistanceFromSentryCullCentre": 2.454
+  },
+  "canonicalized_primitives": 4,
+  "reimport": {
+    "glb_sha256": "1a34981e3937071c33cd72b1ff424d2db41d0417df1fde14add432c11c564e5e",
+    "glb_bytes": 2332304,
+    "triangles": 23984,
+    "materials": [
+      "brass-polished",
+      "walnut",
+      "gunmetal",
+      "escapement-glow"
+    ],
+    "vertices": 26061,
+    "joints": [
+      "root",
+      "pelvis",
+      "spine",
+      "chest",
+      "clavicle.L",
+      "upperarm.L",
+      "forearm.L",
+      "hand.L",
+      "claw.L",
+      "fluke.in.L",
+      "fluke.out.L",
+      "clavicle.R",
+      "upperarm.R",
+      "forearm.R",
+      "hand.R",
+      "claw.R",
+      "fluke.in.R",
+      "fluke.out.R",
+      "corona",
+      "dial.hour",
+      "dial.minute",
+      "door.L",
+      "door.R",
+      "key",
+      "neck",
+      "head",
+      "bell",
+      "clapper",
+      "pallet",
+      "pendulum",
+      "bob",
+      "plate.L",
+      "plate.R",
+      "wheel",
+      "thigh.L",
+      "shin.L",
+      "foot.L",
+      "thigh.R",
+      "shin.R",
+      "foot.R"
+    ],
+    "bone_count": 40,
+    "max_influences": 1,
+    "max_weight_sum_error": 0.0,
+    "unweighted_vertices": 0,
+    "bounds": {
+      "min": [
+        -1.306,
+        0.0001,
+        -0.27
+      ],
+      "max": [
+        1.306,
+        3.202,
+        0.292
+      ]
+    },
+    "clips": {
+      "attack": {
+        "duration": 1.6,
+        "start": 0.0,
+        "channels": 120,
+        "rootAnimated": []
+      },
+      "death": {
+        "duration": 2.8,
+        "start": 0.0,
+        "channels": 120,
+        "rootAnimated": []
+      },
+      "frozen": {
+        "duration": 1.0,
+        "start": 0.0,
+        "channels": 120,
+        "rootAnimated": []
+      },
+      "hit": {
+        "duration": 0.7,
+        "start": 0.0,
+        "channels": 120,
+        "rootAnimated": []
+      },
+      "idle": {
+        "duration": 6.0,
+        "start": 0.0,
+        "channels": 120,
+        "rootAnimated": []
+      },
+      "phase-change": {
+        "duration": 3.0,
+        "start": 0.0,
+        "channels": 120,
+        "rootAnimated": []
+      }
+    },
+    "sockets": {
+      "socket-hit": {
+        "bone": "chest",
+        "parent": "chest",
+        "position": [
+          0.0,
+          1.9,
+          -0.3
+        ]
+      },
+      "socket-eye": {
+        "bone": "head",
+        "parent": "head",
+        "position": [
+          0.0,
+          2.94,
+          -0.13
+        ]
+      },
+      "socket-weapon": {
+        "bone": "claw.R",
+        "parent": "claw.R",
+        "position": [
+          1.095,
+          0.62,
+          0.0
+        ]
+      }
+    },
+    "scene_roots": [
+      "grand-escapement"
+    ],
+    "errors": [],
+    "pass": true,
+    "blender_reimport": {
+      "armatures": 1,
+      "bones": 40,
+      "meshes": 1,
+      "actions": [
+        "attack.001",
+        "death.001",
+        "frozen.001",
+        "hit.001",
+        "idle.001",
+        "phase-change.001"
+      ],
+      "objects": [
+        "escapement-body.001",
+        "grand-escapement.001",
+        "socket-eye.001",
+        "socket-hit.001",
+        "socket-weapon.001"
+      ]
+    }
+  },
+  "files": {
+    "assets-source/enemies/grand-escapement/blend/grand-escapement.high.blend": "0ad7cf4a33c36f83c4d95bea99559452e7856e1257b6a0d4ec6e7b95368b9df4",
+    "assets-source/enemies/grand-escapement/blend/grand-escapement.low.blend": "f9f889149968499a995d0321a9d9162907649d978b6cbebcff151097ba0c180c",
+    "assets-source/enemies/grand-escapement/staging/reimport.json": "39700d41d1b4b4388bd10e19552276fb13554b0afb5a32d3a353aa9cc98eb27e",
+    "public/assets/enemies/grand-escapement/grand-escapement.glb": "1a34981e3937071c33cd72b1ff424d2db41d0417df1fde14add432c11c564e5e",
+    "public/assets/enemies/grand-escapement/grand-escapement.manifest.json": "c831267e3fb080776a29efac0eec23853a03b24ce9019ee340a61a17a27e001d"
+  },
+  "total_seconds": 7.2
+}

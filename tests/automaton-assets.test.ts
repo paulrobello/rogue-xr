@@ -3,9 +3,20 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { ENEMY_CLIPS, parseEnemyManifest } from '../src/enemies/enemy-asset.ts';
 
-/** P5-T3 automatons (scripts/assets/build-spring-hound.py, build-bellows-golem.py). */
-const IDS = ['spring-hound', 'bellows-golem'] as const;
+/**
+ * P5-T3 automatons (scripts/assets/build-spring-hound.py, build-bellows-golem.py) and P5-T4
+ * (build-orrery-warden.py, build-grand-escapement.py).
+ */
+const IDS = ['spring-hound', 'bellows-golem', 'orrery-warden', 'grand-escapement'] as const;
 const REQUIRED_CLIPS = ['idle', 'attack', 'hit', 'death', 'frozen'];
+/** The floor guardian adds a one-shot `phase-change` clip and gets the larger guardian budget. */
+const GUARDIAN = 'grand-escapement';
+const clipsOf = (id: string): string[] =>
+  id === GUARDIAN ? [...REQUIRED_CLIPS, 'phase-change'] : REQUIRED_CLIPS;
+const budgetOf = (id: string) =>
+  id === GUARDIAN
+    ? { tris: 40_000, materials: 4, bones: 60 }
+    : { tris: 25_000, materials: 4, bones: 40 };
 const SOCKETS = ['socket-hit', 'socket-eye', 'socket-weapon'];
 
 const read = (id: string): Record<string, unknown> =>
@@ -47,10 +58,10 @@ describe.each(IDS)('%s manifest', (id) => {
     expect(extra).toEqual(['cull.center', 'cull.radius']);
   });
 
-  it('lists the five required clips with the sentry loop modes and event names', () => {
+  it('lists the required clips with the sentry loop modes and event names', () => {
     const m = parseEnemyManifest(raw, id);
     const sentryClips = parseEnemyManifest(sentry, 'cog-sentry').clips;
-    expect(Object.keys(m.clips).sort()).toEqual([...REQUIRED_CLIPS].sort());
+    expect(Object.keys(m.clips).sort()).toEqual([...clipsOf(id)].sort());
     expect([...ENEMY_CLIPS].sort()).toEqual([...REQUIRED_CLIPS].sort());
     for (const clip of ENEMY_CLIPS) {
       expect(m.clips[clip].duration).toBeGreaterThan(0);
@@ -59,13 +70,23 @@ describe.each(IDS)('%s manifest', (id) => {
     }
     expect(m.clips.frozen.held).toBe(true);
     expect(m.clips.death.endsOnFloor).toBe(true);
+    if (id === GUARDIAN) {
+      // EnemyClip covers only the five shared clips, so read the guardian's extra clip from the raw JSON.
+      const phase = (
+        raw.clips as Record<string, { duration: number; loop: string; events: object }>
+      )['phase-change'];
+      expect(phase?.duration).toBeGreaterThan(0);
+      expect(phase?.loop).toBe('once');
+      expect(Object.keys(phase?.events ?? {})).toEqual(['open']);
+    }
   });
 
-  it('keeps the P4-T6 budgets and the shared sockets', () => {
+  it('keeps its budget and the shared sockets', () => {
     const m = parseEnemyManifest(raw, id);
-    expect(m.budget.tris).toBeLessThanOrEqual(25_000);
-    expect(m.budget.materials).toBeLessThanOrEqual(4);
-    expect(m.budget.bones).toBeLessThanOrEqual(40);
+    const budget = budgetOf(id);
+    expect(m.budget.tris).toBeLessThanOrEqual(budget.tris);
+    expect(m.budget.materials).toBeLessThanOrEqual(budget.materials);
+    expect(m.budget.bones).toBeLessThanOrEqual(budget.bones);
     expect(m.skeleton.bones).toBe(m.budget.bones);
     expect(m.skeleton.maxInfluences).toBeLessThanOrEqual(4);
     expect(Object.keys(m.sockets).sort()).toEqual([...SOCKETS].sort());

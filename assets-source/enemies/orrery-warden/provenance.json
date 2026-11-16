@@ -1,0 +1,309 @@
+{
+  "pieceId": "orrery-warden",
+  "version": 1,
+  "route": "scripted (procedural Blender geometry, rig and keyed clips; no provider generation)",
+  "generator": {
+    "path": "scripts/assets/build-orrery-warden.py",
+    "sha256": "8ea6bab94a18a70bb1cba94c0b4fbc44e1445f3dd0ac5ee5c32207173aa508a8"
+  },
+  "authoringAgent": {
+    "harness": "claude-code (dispatched sub-agent)",
+    "model": "claude-opus-5-5"
+  },
+  "blender": "5.2.2 LTS",
+  "toolVersions": {
+    "gltfExporter": "Blender 5.2.2 bundled io_scene_gltf2"
+  },
+  "blendFiles": {
+    "store": "assets-source/enemies/orrery-warden/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)"
+  },
+  "budgets": {
+    "triangles": 23822,
+    "highTriangles": 72514,
+    "materials": 4,
+    "bones": 32,
+    "maxInfluences": 1,
+    "glbBytes": 2502184
+  },
+  "skin": {
+    "policy": "rigid: one bone per vertex at weight 1.0",
+    "maxWeightSumError": 0.0,
+    "unweightedVertices": 0
+  },
+  "clips": {
+    "idle": {
+      "duration": 12.0,
+      "loop": "repeat",
+      "events": {},
+      "measured": {
+        "duration": 12.0,
+        "start": 0.0,
+        "channels": 96,
+        "rootAnimated": []
+      }
+    },
+    "attack": {
+      "duration": 1.6,
+      "loop": "once",
+      "events": {
+        "impact": 0.8
+      },
+      "measured": {
+        "duration": 1.6,
+        "start": 0.0,
+        "channels": 96,
+        "rootAnimated": []
+      }
+    },
+    "hit": {
+      "duration": 0.7,
+      "loop": "once",
+      "events": {},
+      "measured": {
+        "duration": 0.7,
+        "start": 0.0,
+        "channels": 96,
+        "rootAnimated": []
+      }
+    },
+    "death": {
+      "duration": 2.6,
+      "loop": "once",
+      "events": {
+        "down": 1.9
+      },
+      "endsOnFloor": true,
+      "measured": {
+        "duration": 2.6,
+        "start": 0.0,
+        "channels": 96,
+        "rootAnimated": []
+      }
+    },
+    "frozen": {
+      "duration": 1.0,
+      "loop": "repeat",
+      "events": {},
+      "held": true,
+      "measured": {
+        "duration": 1.0,
+        "start": 0.0,
+        "channels": 96,
+        "rootAnimated": []
+      }
+    }
+  },
+  "poseChecks": {
+    "idle": {
+      "frames": 361,
+      "min_z": -0.0,
+      "min_z_frame": 64,
+      "max_z": 2.6251,
+      "final_max_z": 2.6209,
+      "final_min_z": -0.0,
+      "loop_seam_m": 0.0
+    },
+    "attack": {
+      "frames": 49,
+      "min_z": -0.0,
+      "min_z_frame": 43,
+      "max_z": 2.6214,
+      "final_max_z": 2.6209,
+      "final_min_z": -0.0,
+      "loop_seam_m": 0.0
+    },
+    "hit": {
+      "frames": 22,
+      "min_z": -0.0,
+      "min_z_frame": 4,
+      "max_z": 2.6209,
+      "final_max_z": 2.6209,
+      "final_min_z": -0.0,
+      "loop_seam_m": 0.0
+    },
+    "death": {
+      "frames": 79,
+      "min_z": 0.004,
+      "min_z_frame": 54,
+      "max_z": 2.6249,
+      "final_max_z": 0.8079,
+      "final_min_z": 0.004,
+      "loop_seam_m": 2.2308
+    },
+    "frozen": {
+      "frames": 31,
+      "min_z": -0.0,
+      "min_z_frame": 0,
+      "max_z": 2.6066,
+      "final_max_z": 2.6066,
+      "final_min_z": -0.0,
+      "loop_seam_m": 0.0
+    }
+  },
+  "rootMotion": "code-owned: the root joint is never animated and every clip plays in place",
+  "frame": {
+    "units": "m",
+    "up": "+Y",
+    "forward": "-Z",
+    "origin": "feet centre on the floor (y = 0)",
+    "note": "encounter.ts rotation.y = -heading turns local -Z onto the heading"
+  },
+  "sockets": {
+    "socket-hit": {
+      "bone": "chest",
+      "parent": "chest",
+      "position": [
+        0.0,
+        1.8,
+        -0.24
+      ]
+    },
+    "socket-eye": {
+      "bone": "head",
+      "parent": "head",
+      "position": [
+        0.0,
+        2.255,
+        -0.14
+      ]
+    },
+    "socket-weapon": {
+      "bone": "hand.R",
+      "parent": "hand.R",
+      "position": [
+        0.85,
+        1.04,
+        -0.04
+      ]
+    }
+  },
+  "derivedFiles": [
+    {
+      "path": "public/assets/enemies/orrery-warden/orrery-warden.glb",
+      "sha256": "48b38b8cb4e30c60c6b2055b7329ec9c5ebb0ae9972ef467eb9284547e2d7c4d",
+      "bytes": 2502184
+    },
+    {
+      "path": "public/assets/enemies/orrery-warden/orrery-warden.manifest.json",
+      "sha256": "2bb0a402bd72fe5f19a6f04182fb17f37438a16f002e60c08efa6784861072f0",
+      "bytes": 3030
+    }
+  ],
+  "sourceFiles": [
+    {
+      "path": "assets-source/enemies/orrery-warden/blend/orrery-warden.high.blend",
+      "sha256": "50e4b728e8a2c3f664c1b003395e00b0825047f5ea80c4308240f75c43dfe91a",
+      "bytes": 2195463
+    },
+    {
+      "path": "assets-source/enemies/orrery-warden/blend/orrery-warden.low.blend",
+      "sha256": "757ebc19d43ab081162aace5afd2ca8a59357e1d8704478f10c380bd3b462012",
+      "bytes": 1272739
+    },
+    {
+      "path": "assets-source/enemies/orrery-warden/staging/report.json",
+      "sha256": "5b538e0c87da4e421c171cea213b8651520d24071cd96add8c257b517fa3616d",
+      "bytes": 5669
+    },
+    {
+      "path": "assets-source/enemies/orrery-warden/staging/reimport.json",
+      "sha256": "fa8afe56fbbe1e4851b79b3a1a21bd492bba64348af7f5478ff41c4dae5d2eb6",
+      "bytes": 2467
+    },
+    {
+      "path": "assets-source/enemies/orrery-warden/engine_shot.py",
+      "sha256": "f32c5034e45490872261e0f651c176ff75c1627ab7bf364312e952114b959c72",
+      "bytes": 4394
+    },
+    {
+      "path": "assets-source/enemies/orrery-warden/engine-proof.ts",
+      "sha256": "0ef5cd4607e02b023d6d1ec7d4fe30250061a3d65ed412fac84ddd9a57a806e7",
+      "bytes": 5016
+    }
+  ],
+  "reviewEvidence": [
+    {
+      "path": "assets-source/enemies/orrery-warden/orrery-warden.review-sheet.jpg",
+      "sha256": "a0ae43031e5a49e9d10af74a81f18130380643dda90a80bd68d76048c7f52f14",
+      "bytes": 454549
+    },
+    {
+      "path": "assets-source/enemies/orrery-warden/staging/engine/attack.jpg",
+      "sha256": "300f822b91dad49cc8d14e1c952d17012807999cae3d7064c79e8871b99045e2",
+      "bytes": 51243
+    },
+    {
+      "path": "assets-source/enemies/orrery-warden/staging/engine/death.jpg",
+      "sha256": "6333f4b563572b4447741cd51b57edffede1c62ea0fd938c4d622df6db573712",
+      "bytes": 36364
+    },
+    {
+      "path": "assets-source/enemies/orrery-warden/staging/engine/frozen.jpg",
+      "sha256": "3af77e4453372d1d89ec977aa781fc35ef40a4247bbe3bb3550091ba38698e63",
+      "bytes": 51075
+    },
+    {
+      "path": "assets-source/enemies/orrery-warden/staging/engine/hit.jpg",
+      "sha256": "a716f59552ff29242c3527fa6ffab5aa81e7880ec9b7d7480bc597ed4384393a",
+      "bytes": 46614
+    },
+    {
+      "path": "assets-source/enemies/orrery-warden/staging/engine/idle.jpg",
+      "sha256": "f9dcb95a609d726b4839da9f21d1507534144330c192baf1139ffdf66ffd9770",
+      "bytes": 51662
+    }
+  ],
+  "references": [
+    {
+      "path": "assets-source/concepts/warden-sheet-1.png",
+      "sha256": "c07d34ae5d7412f26c561508bc5a80f14de584ffebbcff31272cc356b07ec5c7",
+      "provider": "higgsfield",
+      "note": "P5-T4 concept sheet (Higgsfield nano_banana_pro); owner approval pending (assets-source/concepts/p5-automatons-design.md)"
+    }
+  ],
+  "materialsUsed": "approved P4-T3 brass-polished set bound by slot name at runtime; gunmetal, warden-glow and warden-jewel (ruby, sapphire and emerald from COLOR_0) are factor-only",
+  "license": "Original work generated in Blender from a checked-in script; concept reference from Paul's paid Higgsfield plan (Terms of Use 4.4)",
+  "validation": {
+    "pass": true,
+    "date": "2026-11-15",
+    "checks": [
+      "presence",
+      "hashes",
+      "glb budgets (tris, materials, bones)",
+      "one skin, one weight set",
+      "image-free glb",
+      "clip set",
+      "manifest consistency",
+      "reimport gate (weights, influences, clips, root motion, bounds, sockets)",
+      "evaluated pose checks (floor, death on the floor, loop seams)"
+    ]
+  },
+  "approvals": [
+    {
+      "gate": "concept",
+      "status": "pending",
+      "notes": "assets-source/concepts/p5-automatons-design.md, Decisions for Paul 1",
+      "modelingProceededUnder": "Paul, 2026-11-15, in the rogue-xr session: \"you have standing approval for all spending / modeling / deployments needed for this project\". Modeling proceeded under it; it is not a concept, creative or owner approval of this asset."
+    },
+    {
+      "gate": "model",
+      "status": "pending",
+      "notes": "assets-source/enemies/orrery-warden/orrery-warden.review-sheet.jpg, MODEL section"
+    },
+    {
+      "gate": "rig",
+      "status": "pending",
+      "notes": "review sheet RIG section"
+    },
+    {
+      "gate": "animation",
+      "status": "pending",
+      "notes": "review sheet ANIMATION sections (Blender frames and engine stills)"
+    },
+    {
+      "gate": "independent visual score",
+      "status": "unscored",
+      "notes": "create-rigged-character-assets requires an independent >= 80/100 score; unscored means unaccepted"
+    }
+  ]
+}

@@ -281,10 +281,15 @@ ENEMY_RUNTIME = ROOT / "public/assets/enemies"
 ENEMY_SOURCES = ROOT / "assets-source/enemies"
 ENEMY_LIMITS = {"tris": 25_000, "materials": 4, "bones": 40, "influences": 4}
 ENEMY_CLIPS = {"idle", "attack", "hit", "death", "frozen"}
+# The floor guardian (P5-T4) gets a larger budget and a one-shot `phase-change` clip on top of the five.
+GUARDIAN = "grand-escapement"
+GUARDIAN_LIMITS = {**ENEMY_LIMITS, "tris": 40_000, "bones": 60}
 ENEMY_GENERATORS = {"cog-sentry": "scripts/assets/build-cog-sentry.py", "spring-hound": "scripts/assets/build-spring-hound.py",
-                     "bellows-golem": "scripts/assets/build-bellows-golem.py"}
+                     "bellows-golem": "scripts/assets/build-bellows-golem.py", "orrery-warden": "scripts/assets/build-orrery-warden.py",
+                     GUARDIAN: "scripts/assets/build-grand-escapement.py"}
 ENEMY_REFERENCES = {"cog-sentry": ["assets-source/concepts/sentry-sheet-1.png"], "spring-hound": ["assets-source/concepts/hound-sheet-1.png"],
-                    "bellows-golem": ["assets-source/concepts/golem-sheet-1.png"]}
+                    "bellows-golem": ["assets-source/concepts/golem-sheet-1.png"], "orrery-warden": ["assets-source/concepts/warden-sheet-1.png"],
+                    GUARDIAN: ["assets-source/concepts/escapement-sheet-1.png"]}
 _STANDING = ("Paul, 2026-11-15, in the rogue-xr session: \"you have standing approval for all spending / modeling / deployments needed "
              "for this project\". Modeling proceeded under it; it is not a concept, creative or owner approval of this asset.")
 _P5_META = {
@@ -303,7 +308,17 @@ ENEMY_META = {
     },
     "spring-hound": {**_P5_META, "materials_used": "approved P4-T3 brass-polished and brass-aged sets bound by slot name at runtime; gunmetal and hound-glow are factor-only"},
     "bellows-golem": {**_P5_META, "materials_used": "approved P4-T3 brass-polished and walnut sets bound by slot name at runtime; gunmetal and golem-glow are factor-only"},
+    "orrery-warden": {**_P5_META, "reference_note": _P5_META["reference_note"].replace("P5-T3", "P5-T4"),
+                      "materials_used": "approved P4-T3 brass-polished set bound by slot name at runtime; gunmetal, warden-glow and warden-jewel "
+                                        "(ruby, sapphire and emerald from COLOR_0) are factor-only"},
+    GUARDIAN: {**_P5_META, "reference_note": _P5_META["reference_note"].replace("P5-T3", "P5-T4"),
+               "materials_used": "approved P4-T3 brass-polished and walnut sets bound by slot name at runtime; gunmetal and escapement-glow are factor-only"},
 }
+
+
+def enemy_limits(enemy: str) -> tuple[dict, set[str]]:
+    """Budget and exact clip set for one enemy."""
+    return (GUARDIAN_LIMITS, ENEMY_CLIPS | {"phase-change"}) if enemy == GUARDIAN else (ENEMY_LIMITS, ENEMY_CLIPS)
 
 
 def check_enemy(enemy: str, errors: list[str], warnings: list[str]) -> dict:
@@ -311,6 +326,7 @@ def check_enemy(enemy: str, errors: list[str], warnings: list[str]) -> dict:
     src = ENEMY_SOURCES / enemy
     err = lambda msg: errors.append(f"enemies/{enemy}: {msg}")  # noqa: E731
     summary: dict = {"enemy": enemy}
+    limits, want_clips = enemy_limits(enemy)
     files = {f"{enemy}.glb", f"{enemy}.manifest.json"}
     for name in sorted(files):
         if not (rt / name).exists():
@@ -330,18 +346,18 @@ def check_enemy(enemy: str, errors: list[str], warnings: list[str]) -> dict:
     clips = {a.get("name") for a in g.get("animations", [])}
     attrs = [prim["attributes"] for mesh in g.get("meshes", []) for prim in mesh["primitives"]]
     summary.update({"glb": glb, "bones": bones, "clips": sorted(clips)})
-    if glb["triangles"] > ENEMY_LIMITS["tris"]:
-        err(f"{glb['triangles']} triangles over {ENEMY_LIMITS['tris']}")
-    if len(glb["materials"]) > ENEMY_LIMITS["materials"]:
-        err(f"{len(glb['materials'])} materials over {ENEMY_LIMITS['materials']}")
-    if not 0 < bones <= ENEMY_LIMITS["bones"]:
-        err(f"skeleton must be one skin with 1-{ENEMY_LIMITS['bones']} joints (got {bones})")
+    if glb["triangles"] > limits["tris"]:
+        err(f"{glb['triangles']} triangles over {limits['tris']}")
+    if len(glb["materials"]) > limits["materials"]:
+        err(f"{len(glb['materials'])} materials over {limits['materials']}")
+    if not 0 < bones <= limits["bones"]:
+        err(f"skeleton must be one skin with 1-{limits['bones']} joints (got {bones})")
     if glb["images"] or glb["textures"]:
         err("GLB must be image-free (brass slots bind the shared P4-T3 sets by name)")
     if any("JOINTS_0" not in a or "WEIGHTS_0" not in a for a in attrs) or any("WEIGHTS_1" in a for a in attrs):
         err("every primitive needs exactly one JOINTS_0/WEIGHTS_0 set (<= 4 influences)")
-    if clips != ENEMY_CLIPS or set(m.get("clips", {})) != ENEMY_CLIPS:
-        err(f"clips {sorted(clips)} / manifest {sorted(m.get('clips', {}))} != {sorted(ENEMY_CLIPS)}")
+    if clips != want_clips or set(m.get("clips", {})) != want_clips:
+        err(f"clips {sorted(clips)} / manifest {sorted(m.get('clips', {}))} != {sorted(want_clips)}")
     budget = m.get("budget", {})
     if budget.get("tris") != glb["triangles"] or budget.get("bones") != bones or budget.get("materials") != len(glb["materials"]):
         err(f"manifest budget {budget} != measured tris {glb['triangles']}, bones {bones}, materials {len(glb['materials'])}")
@@ -389,7 +405,7 @@ def check_enemy(enemy: str, errors: list[str], warnings: list[str]) -> dict:
         r = json.loads(reimport.read_text())
         if not r.get("pass") or r.get("glb_sha256") != sha256(rt / f"{enemy}.glb"):
             err("reimport gate did not pass for the shipped GLB")
-        elif r.get("max_influences", 9) > ENEMY_LIMITS["influences"] or r.get("unweighted_vertices", 1) or r.get("max_weight_sum_error", 1) > 2e-3:
+        elif r.get("max_influences", 9) > limits["influences"] or r.get("unweighted_vertices", 1) or r.get("max_weight_sum_error", 1) > 2e-3:
             err("reimport skin checks failed")
     return summary
 
