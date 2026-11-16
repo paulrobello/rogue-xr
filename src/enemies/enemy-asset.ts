@@ -52,6 +52,12 @@ export interface EnemyMaterialSlot {
   emissive?: boolean;
   tileMeters?: number;
   normalScale?: number;
+  /**
+   * Linear-RGB multiplier (each component 0..1) on the bound clone of the shared set's `color`, so
+   * one enemy can pull the shared brass toward its concept without touching the set other enemies
+   * and the rooms share. Absent: the set's colour unchanged.
+   */
+  tint?: [number, number, number];
 }
 
 export interface EnemyManifest {
@@ -97,6 +103,16 @@ export function parseEnemyManifest(raw: unknown, id?: string): EnemyManifest {
   }
   if (!m.materialSlots || !m.emissive?.material)
     throw new Error(`${who} manifest: materialSlots or emissive missing`);
+  for (const [name, slot] of Object.entries(m.materialSlots)) {
+    const tint: unknown = slot?.tint;
+    if (tint === undefined) continue;
+    if (
+      !Array.isArray(tint) ||
+      tint.length !== 3 ||
+      !tint.every((c) => typeof c === 'number' && c >= 0 && c <= 1)
+    )
+      throw new Error(`${who} manifest: slot ${name} tint must be three numbers in 0..1`);
+  }
   return m as EnemyManifest;
 }
 
@@ -226,6 +242,8 @@ export async function parseEnemyAsset(
       const clone = shared.clone();
       const s = slot?.normalScale ?? 1;
       clone.normalScale.set(s, s);
+      if (slot?.tint)
+        clone.color.multiply(new THREE.Color().setRGB(...slot.tint, THREE.LinearSRGBColorSpace));
       clone.name = source.name;
       material = clone;
     }

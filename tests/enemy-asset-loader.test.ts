@@ -1,7 +1,16 @@
 // @vitest-environment node
 import { readFileSync } from 'node:fs';
+import * as THREE from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { EnemyAssetMissing, loadEnemyAsset, loadEnemyAssets } from '../src/enemies/enemy-asset.ts';
+import {
+  EnemyAssetMissing,
+  type EnemyManifest,
+  loadEnemyAsset,
+  loadEnemyAssets,
+  parseEnemyAsset,
+  parseEnemyManifest,
+} from '../src/enemies/enemy-asset.ts';
+import type { PbrSet } from '../src/world/materials.ts';
 
 const base = new URL('../public/assets/enemies/cog-sentry/', import.meta.url);
 const sentryManifest = readFileSync(new URL('cog-sentry.manifest.json', base), 'utf8');
@@ -143,5 +152,83 @@ describe('per-enemy model loader', () => {
     // Each manifest is requested exactly once, the duplicate id included.
     expect(requests.filter((r) => r.endsWith('cog-sentry.manifest.json'))).toHaveLength(1);
     loaded.get('cog-sentry')?.dispose();
+  });
+});
+
+describe('per-slot tint on the shared brass sets', () => {
+  const linear = (r: number, g: number, b: number) =>
+    new THREE.Color().setRGB(r, g, b, THREE.LinearSRGBColorSpace);
+  /** A non-white shared colour, so a multiply cannot pass as an assignment. */
+  const SHARED = linear(0.8, 0.6, 0.4);
+  const fakeSet = (): PbrSet => ({
+    manifest: {},
+    materials: new Map(
+      ['brass-polished', 'brass-aged'].map((name) => [
+        name,
+        new THREE.MeshStandardMaterial({ name, color: SHARED.clone() }),
+      ]),
+    ),
+  });
+  const sentryWith = (tint?: [number, number, number]): EnemyManifest => {
+    const raw = JSON.parse(sentryManifest);
+    if (tint) raw.materialSlots['brass-polished'].tint = tint;
+    return parseEnemyManifest(raw, 'cog-sentry');
+  };
+  const bytes = () =>
+    sentryGlb.buffer.slice(
+      sentryGlb.byteOffset,
+      sentryGlb.byteOffset + sentryGlb.byteLength,
+    ) as ArrayBuffer;
+  const slotColour = (root: THREE.Object3D, name: string): THREE.Color => {
+    let found: THREE.Color | undefined;
+    root.traverse((o) => {
+      if (o instanceof THREE.Mesh && !Array.isArray(o.material) && o.material.name === name)
+        found = (o.material as THREE.MeshStandardMaterial).color;
+    });
+    if (!found) throw new Error(`no ${name} material`);
+    return found;
+  };
+  const expectColour = (got: THREE.Color, want: THREE.Color) => {
+    expect(got.r).toBeCloseTo(want.r, 6);
+    expect(got.g).toBeCloseTo(want.g, 6);
+    expect(got.b).toBeCloseTo(want.b, 6);
+  };
+
+  it('leaves the bound clone at the shared colour when the slot has no tint', async () => {
+    const set = fakeSet();
+    const asset = await parseEnemyAsset(bytes(), sentryWith(), set);
+    const bound = slotColour(asset.template, 'brass-polished');
+    expectColour(bound, SHARED);
+    expect(bound).not.toBe(set.materials.get('brass-polished')?.color);
+    asset.dispose();
+  });
+
+  it('multiplies the clone colour by the tint, on that slot only, and actors keep it', async () => {
+    const asset = await parseEnemyAsset(bytes(), sentryWith([0.5, 0.25, 1]), fakeSet());
+    expectColour(slotColour(asset.template, 'brass-polished'), linear(0.4, 0.15, 0.4));
+    expectColour(slotColour(asset.template, 'brass-aged'), SHARED);
+    const actor = asset.spawn();
+    expectColour(slotColour(actor.object, 'brass-polished'), linear(0.4, 0.15, 0.4));
+    actor.dispose();
+    asset.dispose();
+  });
+
+  it('never mutates the shared material that other enemies and the rooms bind', async () => {
+    const set = fakeSet();
+    const tinted = await parseEnemyAsset(bytes(), sentryWith([0.28, 0.25, 0.3]), set);
+    const plain = await parseEnemyAsset(bytes(), sentryWith(), set);
+    for (const material of set.materials.values()) expectColour(material.color, SHARED);
+    expectColour(slotColour(plain.template, 'brass-polished'), SHARED);
+    tinted.dispose();
+    plain.dispose();
+  });
+
+  it('rejects a tint that is not three numbers in 0..1', () => {
+    for (const bad of [[1.2, 0, 0], [0.5, 0.5], ['0.5', 0, 0], [-0.1, 0, 0], 0.5]) {
+      const raw = JSON.parse(sentryManifest);
+      raw.materialSlots['brass-polished'].tint = bad;
+      expect(() => parseEnemyManifest(raw, 'cog-sentry')).toThrow(/tint/);
+    }
+    expect(sentryWith([0, 1, 0.3]).materialSlots['brass-polished']?.tint).toEqual([0, 1, 0.3]);
   });
 });

@@ -59,6 +59,8 @@ export async function mountAutomatonProof(id: string, width: number, height: num
     if (shared) {
       const clone = shared.clone();
       clone.normalScale.set(slot.normalScale ?? 1, slot.normalScale ?? 1);
+      if (slot.tint)
+        clone.color.multiply(new THREE.Color().setRGB(...slot.tint, THREE.LinearSRGBColorSpace));
       clone.name = source.name;
       material = clone;
     }

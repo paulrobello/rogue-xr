@@ -312,7 +312,8 @@ ENEMY_META = {
     "spring-hound": {**_P5_META, "materials_used": "approved P4-T3 brass-polished and brass-aged sets bound by slot name at runtime; gunmetal and hound-glow are factor-only"},
     "bellows-golem": {**_P5_META, "materials_used": "approved P4-T3 brass-polished set bound by slot name at runtime; golem-case (walnut, pleats from COLOR_0), golem-metal (gunmetal and emerald from COLOR_0) and golem-glow are factor-only"},
     "orrery-warden": {**_P5_META, "reference_note": _P5_META["reference_note"].replace("P5-T3", "P5-T4"),
-                      "materials_used": "approved P4-T3 brass-polished set bound by slot name at runtime; gunmetal, warden-glow and warden-jewel "
+                      "materials_used": "approved P4-T3 brass-polished set bound by slot name at runtime and tinted by the manifest slot tint "
+                                        "[0.33, 0.3, 0.3] (linear multiplier); gunmetal, warden-glow and warden-jewel "
                                         "(ruby, sapphire and emerald from COLOR_0) are factor-only"},
     GUARDIAN: {**_P5_META, "reference_note": _P5_META["reference_note"].replace("P5-T3", "P5-T4"),
                "materials_used": "approved P4-T3 brass-polished set bound by slot name at runtime; escapement-case (mahogany, dark iron, "
@@ -368,6 +369,11 @@ def check_enemy(enemy: str, errors: list[str], warnings: list[str]) -> dict:
     unknown = [n for n in glb["materials"] if n not in m.get("materialSlots", {})]
     if unknown:
         err(f"GLB material slots missing from the manifest: {unknown}")
+    for name, slot in m.get("materialSlots", {}).items():  # optional tint: linear multiplier on the shared set's colour
+        tint = slot.get("tint")
+        if tint is not None and not (isinstance(tint, list) and len(tint) == 3
+                                     and all(isinstance(c, (int, float)) and not isinstance(c, bool) and 0 <= c <= 1 for c in tint)):
+            err(f"material slot {name} tint must be three numbers in 0..1 (got {tint!r})")
     if abs(m.get("bounds", {}).get("min", [0, 1, 0])[1]) > 1e-3:
         err("rest pose must stand on y = 0")
 

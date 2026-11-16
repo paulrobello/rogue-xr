@@ -73,6 +73,9 @@ BRASS = "brass-polished"  # the shared P4-T3 set the brass slot is named after (
 MATS = [BRASS, "gunmetal", GLOW, JEWEL]
 BP, GM, GL, JW = range(4)
 SETS = {BRASS: 0.35}  # shared set -> normal scale (as on the combat table)
+# Linear-RGB multiplier on the bound shared set's colour (manifest slot `tint`, enemy-asset.ts bind()):
+# pulls the shared light brass toward the concept's dark bronze; measured on the engine glow-close shot.
+TINTS = {BRASS: [0.33, 0.3, 0.3]}
 TILE_METERS = 0.5  # the brass set tiles at 0.5 m (public/assets/materials/materials.json)
 FACTORS = {  # sRGB base, roughness, metallic: the GLB look, and the fallback when the set fails
     BRASS: ((0xDE, 0xC1, 0x6A), 0.3, 1.0),
@@ -1650,7 +1653,8 @@ def build_manifest(gate: dict, cull: dict) -> dict:
         "sockets": gate["sockets"],
         "emissive": {"material": GLOW, "color": "#{:02X}{:02X}{:02X}".format(*GLOW_SRGB), "intensity": GLOW_STRENGTH,
                      "nodes": ["socket-eye", "socket-hit"]},
-        "materialSlots": {name: ({"set": name, "tileMeters": TILE_METERS, "normalScale": SETS[name]} if name in SETS
+        "materialSlots": {name: ({"set": name, "tileMeters": TILE_METERS, "normalScale": SETS[name],
+                                  **({"tint": TINTS[name]} if name in TINTS else {})} if name in SETS
                                  else {"set": None, "factorOnly": True, **({"emissive": True} if name == GLOW else {})}) for name in MATS},
         "budget": {"tris": gate["triangles"], "materials": len(gate["materials"]), "bones": gate["bone_count"], "influences": LIMITS["influences"]},
         "cull": {"center": cull["center"], "radius": cull["radius"]},

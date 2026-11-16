@@ -4,7 +4,7 @@
   "route": "scripted (procedural Blender geometry, rig and keyed clips; no provider generation)",
   "generator": {
     "path": "scripts/assets/build-orrery-warden.py",
-    "sha256": "6bace876133a1abf8e79adfb486c2dad85e704743d999326e432c1aaabd5ff2f"
+    "sha256": "62d4d51b2a8ded17651ae24d3f667ac28c6e85c067ea84a64e4ee3c2227c9d4a"
   },
   "authoringAgent": {
     "harness": "claude-code (dispatched sub-agent)",
@@ -185,8 +185,8 @@
     },
     {
       "path": "public/assets/enemies/orrery-warden/orrery-warden.manifest.json",
-      "sha256": "f7e2ac9f761a0768e27c5f267f661ce30eb9bad636c1cd00df130006abe7a555",
-      "bytes": 3016
+      "sha256": "4b300eead7d4ae11ff55082e2bb03398c5c830e6d18db94c509b6c1f924dbd50",
+      "bytes": 3080
     }
   ],
   "sourceFiles": [
@@ -217,8 +217,8 @@
     },
     {
       "path": "assets-source/enemies/orrery-warden/engine-proof.ts",
-      "sha256": "f92c2091f9d8be6e855770ab41ae60d887e8c73f959d037da078af2ea7efb35e",
-      "bytes": 5828
+      "sha256": "237b3844127244eef6f50493af9ea89db6d802c9d0fdbdf496b7353a9c294c58",
+      "bytes": 5947
     }
   ],
   "reviewEvidence": [
@@ -229,33 +229,33 @@
     },
     {
       "path": "assets-source/enemies/orrery-warden/staging/engine/attack.jpg",
-      "sha256": "4a0e9736133a9c6bc9628e84bee4f57d4d963828edc92633b2275a7cf6ea4ff6",
-      "bytes": 59444
+      "sha256": "341a09b687eb791d4b7934e1faf083b35a542fbb41a7cd8220d8115f111de06a",
+      "bytes": 55004
     },
     {
       "path": "assets-source/enemies/orrery-warden/staging/engine/death.jpg",
-      "sha256": "1c5543d3de996a5d7039ff6dc1bcad136e56ee8cf39c9d9934d8b2d6489c1ad2",
-      "bytes": 43556
+      "sha256": "73685489ef59946033087805dcb85085f564e875422f6b7e75e4058221422a37",
+      "bytes": 44121
     },
     {
       "path": "assets-source/enemies/orrery-warden/staging/engine/frozen.jpg",
-      "sha256": "e48ed475e771aab7ce92702e5b7c152e36e926df48c436505aa4b7b246e09473",
-      "bytes": 57651
+      "sha256": "c371ce498049b3fe57965a8ab90949aee537ef31e392ae9fcc507f2bc0c148f6",
+      "bytes": 53218
     },
     {
       "path": "assets-source/enemies/orrery-warden/staging/engine/glow-close.jpg",
-      "sha256": "10a814906286d3a086de6a2e2ff77a34321b8990dd43cbd327c96a3d9217c343",
-      "bytes": 66981
+      "sha256": "63acf4eb6f5102e49180b097577fbe6483aa52cbdeab852cd8058c90349e13b1",
+      "bytes": 62035
     },
     {
       "path": "assets-source/enemies/orrery-warden/staging/engine/hit.jpg",
-      "sha256": "2d634390fe9df2a7b9a7a1bf0e755ff59a8fe5fe5466e156e4ec5b653e8d0ed2",
-      "bytes": 54732
+      "sha256": "96065a1bb9053015dd528ec6189ee976b1135f75ba2055a747b2a95e5f3dd0fc",
+      "bytes": 51012
     },
     {
       "path": "assets-source/enemies/orrery-warden/staging/engine/idle.jpg",
-      "sha256": "45c94d790357e1f95a8e58f942b2fd4f4fcb6c29a90c9e2c629594f18ea68dde",
-      "bytes": 57504
+      "sha256": "2c5a9b2a39dd9255e868513964b723474872cb21289ffe4abd1e8ce0af6d1b90",
+      "bytes": 53428
     }
   ],
   "references": [
@@ -266,7 +266,7 @@
       "note": "P5-T4 concept sheet (Higgsfield nano_banana_pro); concept approved by Paul 2026-11-16 (D8)"
     }
   ],
-  "materialsUsed": "approved P4-T3 brass-polished set bound by slot name at runtime; gunmetal, warden-glow and warden-jewel (ruby, sapphire and emerald from COLOR_0) are factor-only",
+  "materialsUsed": "approved P4-T3 brass-polished set bound by slot name at runtime and tinted by the manifest slot tint [0.33, 0.3, 0.3] (linear multiplier); gunmetal, warden-glow and warden-jewel (ruby, sapphire and emerald from COLOR_0) are factor-only",
   "license": "Original work generated in Blender from a checked-in script; concept reference from Paul's paid Higgsfield plan (Terms of Use 4.4)",
   "validation": {
     "pass": true,
