@@ -1,4 +1,13 @@
 export {
+  type DiceRoll,
+  type DiceRollResult,
+  type DieDef,
+  type RngRollResult,
+  rollDice,
+  rollDie,
+  validateDie,
+} from './dice.ts';
+export {
   apply,
   createIdleState,
   intentDamage,
@@ -9,6 +18,14 @@ export {
   usesDice,
   validate,
 } from './engine.ts';
+export {
+  clampMultiplier,
+  playCardWithSigil,
+  SIGIL_MAX_MULTIPLIER,
+  SIGIL_MIN_MULTIPLIER,
+  scaleAmount,
+  scaleEffects,
+} from './sigil.ts';
 export {
   absorb,
   attackDamage,
