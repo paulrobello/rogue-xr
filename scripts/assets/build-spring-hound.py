@@ -63,8 +63,19 @@ BP, BA, GM, GL = range(4)
 RB = 20  # pseudo slot: build_body maps it to GM and writes the ruby into COLOR_0
 RUBY_SRGB = (0xA0, 0x00, 0x48)  # deep crimson: the warm key lights shift it orange, and 0xB8005C read pink (engine S 0.63)
 GM_SRGB = (0x2E, 0x2A, 0x2A)  # gunmetal, carried by COLOR_0 on the white gunmetal slot
-SETS = {"brass-polished": 0.18, "brass-aged": 0.18}  # shared set -> normal scale on this model (0.35 read as crumpled foil)
-TINTS = {"brass-polished": [1.0, 0.86, 0.90], "brass-aged": [1.0, 0.86, 0.90]}  # runtime set tint toward the concept's hue
+SETS = {"brass-polished": 0.10, "brass-aged": 0.10}  # shared set -> normal scale on this model (0.35 read as crumpled foil,
+# 0.18 as directional striations: wood grain on the chest and twisted rope on the neck coils up close)
+# The sets' only strong variance is the ORM red channel (AO std 39 of 255), which the runtime binds as aoMap
+# and which scales nearly all of a metal's light. Tiled at 0.5 m it put one AO blotch on each small face: the
+# wood grain on the chest, spine and neck coils at glow-close, unchanged with normalScale 0. Every brass face
+# therefore samples one texel of its set (a constant UV, so the normal map also drops out: zero UV
+# derivatives). Each texel has AO 255 over at least 7 x 7 px at both PNG row orientations (three flips the
+# rows; EEVEE does not read AO). False restores the 0.5 m tiling.
+FLAT_BRASS = True
+FLAT_BRASS_UV = {BP: (566.5 / 1024, 198.5 / 1024), BA: (933.5 / 1024, 809.5 / 1024)}
+# Runtime set tint (linear multiplier) toward the concept's hue, [1.0, 0.86, 0.90], times 0.87, which stands
+# in for the tiled AO's mean (0.865 and 0.875) that the flat texel no longer applies.
+TINTS = {"brass-polished": [0.87, 0.75, 0.78], "brass-aged": [0.87, 0.75, 0.78]}
 TILE_METERS = 0.5  # both brass sets tile at 0.5 m (public/assets/materials/materials.json)
 FACTORS = {  # sRGB base, roughness, metallic: the GLB look, and the fallback when the sets fail
     "brass-polished": ((0xDE, 0xC1, 0x6A), 0.3, 1.0),
@@ -74,6 +85,10 @@ FACTORS = {  # sRGB base, roughness, metallic: the GLB look, and the fallback wh
     "gunmetal": ((0xFF, 0xFF, 0xFF), 0.25, 0.8),
     GLOW: ((0x6A, 0x34, 0x0C), 0.4, 0.0),
 }
+MUZZLE_TAPER = 0.30  # top of the muzzle section narrowed by this fraction (flat-topped wedge head-on)
+SHOULDER_IN = 0.026  # shoulder plates and rubies moved toward the body (head-on width)
+JAW_CLOSE = 3.5  # degrees the jaw mesh is rotated up about the jaw bone's head (closed snarl at rest)
+RUBY_YAW = 20.0  # degrees the shoulder jewel and ruby turn toward +Y (the seat) about a vertical axis
 GLOW_SRGB = (0xF0, 0x8C, 0x2C)
 GLOW_STRENGTH = 0.7
 
@@ -288,9 +303,12 @@ class Parts:
             f.material_index = mat
             f.smooth = smooth
 
-    def loft(self, stations: list[tuple], mat: int, bone, ref=(1, 0, 0), n=None, sub=None, smooth=True, caps=(True, True), bevel=0.35) -> None:
+    def loft(self, stations: list[tuple], mat: int, bone, ref=(1, 0, 0), n=None, sub=None, smooth=True, caps=(True, True), bevel=0.35,
+             taper=None) -> None:
         """Lofted plate through stations (centre, a, bt, bb, e): superellipse sections across the
-        path, Catmull-Rom smoothed. `bone` is one name or a function of the station centre."""
+        path, Catmull-Rom smoothed. `bone` is one name or a function of the station centre. `taper`
+        (a number or a function of the station centre) narrows the +v half toward its top edge by
+        that fraction, turning the section into a rounded trapezoid."""
         from mathutils import Vector
 
         st = refine(stations, self.d["sub"] if sub is None else sub)
@@ -300,7 +318,8 @@ class Parts:
             c = Vector(c)
             t = Vector(st[min(i + 1, len(st) - 1)][0]) - Vector(st[max(i - 1, 0)][0])
             u, v = frame_uv(t, ref)
-            rings.append([c + u * x + v * y for x, y in superellipse(n, a, bt, bb, e)])
+            k = taper(c) if callable(taper) else (taper or 0.0)
+            rings.append([c + u * (x * (1 - k * max(y, 0.0) / bt)) + v * y for x, y in superellipse(n, a, bt, bb, e)])
             bones.append(bone(c) if callable(bone) else bone)
         d0 = bevel * min(st[0][1], (st[0][2] + st[0][3]) / 2)
         d1 = bevel * min(st[-1][1], (st[-1][2] + st[-1][3]) / 2)
@@ -422,8 +441,11 @@ def build_parts(P: Parts) -> None:
     L, D = P.loft, P.disc
 
     def line(pts: list, bone: str, ref=(1, 0, 0)) -> None:
-        """Engraved panel line: a thin gunmetal strip through `pts`, 7 mm along `ref` and 5 mm across."""
-        L([(tuple(p), 0.0035, 0.0025, 0.0025, 2.0) for p in pts], GM, bone, n=4, sub=1, caps=(False, False), ref=ref)
+        """Bevelled plate edge through `pts` (points 1.5 mm proud of the plate): a 13 mm aged-brass bead
+        with a flat top and sloped sides along `ref`, split by a gunmetal hairline about 2 mm wide that
+        stands 1 mm above it (core half-width 3 mm: at 2.2 mm the hairline vanished at play distance) (both symmetric, since `ref` decides which side is out). Pass 2's 7 mm all-gunmetal strip read as a black slit."""
+        L([(tuple(p), 0.0065, 0.0028, 0.0028, 2.0) for p in pts], BA, bone, n=6, sub=1, caps=(False, False), ref=ref)
+        L([(tuple(p), 0.0030, 0.0036, 0.0036, 2.0) for p in pts], GM, bone, n=4, sub=1, caps=(False, False), ref=ref)
 
     def rivets(c, normal, a: float, b: float, off: float, count: int, bone: str) -> None:
         """Domed rivets round the front face (`off` along the normal) of a `P.ring` band."""
@@ -437,35 +459,50 @@ def build_parts(P: Parts) -> None:
 
     # ---- Head: greyhound skull with a stop and a separate hinged jaw, on the body's polished brass, rose ears,
     # amber eye slits under a brow ledge, gunmetal nose, cheek guards and hinge bolts.
+    # Cranium 10 percent narrower than pass 2 (a 0.076/0.078 -> 0.068/0.070) so head-on the brow and eyes
+    # are the widest part, as in the concept front (a narrow wedge under the eyes, no dome behind them).
     skull = [((0, 0.495, 1.090), 0.040, 0.050, 0.050, 2.2), ((0, 0.525, 1.092), 0.060, 0.092, 0.085, 2.4),
-             ((0, 0.570, 1.090), 0.076, 0.110, 0.090, 2.5), ((0, 0.625, 1.096), 0.078, 0.112, 0.080, 2.5),
-             ((0, 0.680, 1.100), 0.070, 0.095, 0.068, 2.4), ((0, 0.735, 1.093), 0.052, 0.073, 0.058, 2.3),
+             ((0, 0.570, 1.090), 0.068, 0.110, 0.090, 2.5), ((0, 0.625, 1.096), 0.070, 0.112, 0.080, 2.5),
+             ((0, 0.680, 1.100), 0.090, 0.095, 0.068, 2.4), ((0, 0.735, 1.093), 0.052, 0.073, 0.058, 2.3),
              # Stop: the brow drops 34 mm between y 0.752 and 0.772 (concept 1.156 -> 1.119), then a deep
              # muzzle whose underside closes onto the jaw (concept mouth line 1.016 at y 0.79, 1.006 at 0.84).
-             ((0, 0.752, 1.090), 0.048, 0.062, 0.059, 2.3), ((0, 0.772, 1.072), 0.043, 0.046, 0.050, 2.3),
-             ((0, 0.800, 1.058), 0.038, 0.042, 0.044, 2.2), ((0, 0.845, 1.042), 0.029, 0.033, 0.036, 2.1),
-             ((0, 0.875, 1.038), 0.021, 0.020, 0.022, 2.0)]
-    L(skull, BP, "head")
-    L([((0, 0.866, 1.040), 0.020, 0.018, 0.020, 2.0), ((0, 0.887, 1.037), 0.016, 0.014, 0.016, 2.0),
-       ((0, 0.897, 1.034), 0.008, 0.007, 0.008, 2.0)], GM, "head", n="small", sub=1)  # nose
-    jaw = [((0, 0.600, 1.018), 0.044, 0.022, 0.034, 2.4), ((0, 0.660, 1.008), 0.040, 0.021, 0.032, 2.4),
-           ((0, 0.720, 0.998), 0.033, 0.018, 0.027, 2.3), ((0, 0.780, 0.989), 0.026, 0.015, 0.021, 2.2),
-           ((0, 0.830, 0.982), 0.019, 0.011, 0.015, 2.1), ((0, 0.852, 0.979), 0.010, 0.007, 0.008, 2.0)]
+             # Muzzle sections are flat-sided (e 3.2 to 3.5) and tapered at the top (MUZZLE_TAPER): at y 0.80 a
+             # flat nasal bridge 24 to 31 mm wide over an 80 mm lip line, so head-on it reads as a wedge.
+             ((0, 0.752, 1.090), 0.048, 0.062, 0.059, 2.3), ((0, 0.772, 1.072), 0.045, 0.046, 0.050, 3.5),
+             ((0, 0.800, 1.058), 0.040, 0.042, 0.044, 3.5), ((0, 0.845, 1.042), 0.030, 0.033, 0.036, 3.2),
+             ((0, 0.875, 1.038), 0.021, 0.020, 0.022, 2.4)]
+    L(skull, BP, "head", taper=lambda c: min(MUZZLE_TAPER, max(0.0, (c.y - 0.752) * 8.0)))
+    L([((0, 0.866, 1.040), 0.018, 0.014, 0.018, 2.4), ((0, 0.887, 1.037), 0.015, 0.012, 0.015, 2.4),
+       ((0, 0.897, 1.034), 0.008, 0.006, 0.008, 2.0)], GM, "head", n="small", sub=1)  # nose, flatter on top
+    # Jaw closed to a snarl: the pass-2 jaw rotated JAW_CLOSE degrees up about the jaw bone's head, so the
+    # rest gap under the muzzle is about 3 mm at y 0.80 (was 15 mm) and the idle clip opens it only 1.5
+    # to 6 mm more (idle jaw -0.5 to -2 degrees).
+    jaw0 = [((0, 0.600, 1.018), 0.044, 0.022, 0.034, 2.4), ((0, 0.660, 1.008), 0.040, 0.021, 0.032, 2.4),
+            ((0, 0.720, 0.998), 0.033, 0.018, 0.027, 2.6), ((0, 0.780, 0.989), 0.026, 0.015, 0.021, 2.6),
+            ((0, 0.830, 0.982), 0.019, 0.011, 0.015, 2.4), ((0, 0.852, 0.979), 0.010, 0.007, 0.008, 2.0)]
+    hinge = HEAD["jaw"][1:]
+    jaw = []
+    for (_x, y, z), a, bt, bb, e in jaw0:
+        ry, rz = _rot2(math.radians(JAW_CLOSE), (y - hinge[0], z - hinge[1]))
+        jaw.append(((0, hinge[0] + ry, hinge[1] + rz), a, bt, bb, e))
     L(jaw, BP, "jaw")
     for s in (1, -1):
-        # Teeth: a few large ones at the front only (concept), three upper and two lower, and a fang.
+        # Teeth: a few at the front only (concept), the upper three and the fang hanging just outside the
+        # closed jaw's sides (a snarl along the lip line), two short lower ones inside the mouth.
         for y in (0.790, 0.810, 0.830):
             cz, a, _bt, bb = _at(skull, y)
-            L([((s * 0.55 * a, y, cz - bb + 0.006), 0.0065, 0.005, 0.005, 2.0),
-               ((s * 0.55 * a, y, cz - bb - 0.013), 0.0012, 0.0012, 0.0012, 2.0)], BP, "head", n=4, sub=1, ref=(0, 1, 0),
+            x = _at(jaw, y)[1] + 0.0035
+            L([((s * x, y, cz - bb + 0.010), 0.0055, 0.0045, 0.0045, 2.0),
+               ((s * x, y, cz - bb - 0.010), 0.0012, 0.0012, 0.0012, 2.0)], BP, "head", n=4, sub=1, ref=(0, 1, 0),
               caps=(False, False))
         for y in (0.800, 0.820):
             cz, a, bt, _bb = _at(jaw, y)
-            L([((s * 0.55 * a, y, cz + bt - 0.004), 0.006, 0.0045, 0.0045, 2.0),
-               ((s * 0.55 * a, y, cz + bt + 0.012), 0.0012, 0.0012, 0.0012, 2.0)], BP, "jaw", n=4, sub=1, ref=(0, 1, 0),
+            L([((s * 0.55 * a, y, cz + bt - 0.004), 0.005, 0.004, 0.004, 2.0),
+               ((s * 0.55 * a, y, cz + bt + 0.007), 0.0012, 0.0012, 0.0012, 2.0)], BP, "jaw", n=4, sub=1, ref=(0, 1, 0),
               caps=(False, False))
         cz, a, _bt, bb = _at(skull, 0.848)
-        L([((s * 0.5 * a, 0.848, cz - bb + 0.006), 0.007, 0.007, 0.007, 2.0), ((s * 0.5 * a, 0.850, cz - bb - 0.020), 0.0014, 0.0014, 0.0014, 2.0)],
+        x = _at(jaw, 0.848)[1] + 0.005
+        L([((s * x, 0.848, cz - bb + 0.010), 0.006, 0.006, 0.006, 2.0), ((s * x, 0.850, cz - bb - 0.016), 0.0014, 0.0014, 0.0014, 2.0)],
           BP, "head", n=5, sub=1, ref=(0, 1, 0), caps=(False, False))  # upper fang
         # Amber eye at the stop: a long almond (54 mm by 32 mm) standing 17 mm proud of the skull,
         # so head-on it shows past the muzzle. The dark socket sits lower than the glow (4 mm proud)
@@ -478,22 +515,23 @@ def build_parts(P: Parts) -> None:
         L([((s * (skull_x(skull, y, z + 0.019) + 0.002), y, z + 0.019), a, b, b, 2.2)
            for (y, z, _a, _h), (a, b) in zip(eye[:3], ((0.006, 0.004), (0.009, 0.006), (0.003, 0.003)))], BP, "head", n="small", sub=1)
         # Cheek guard over the jaw hinge, and the hinge bolt.
-        L([((s * 0.072, 0.560, 1.050), 0.005, 0.020, 0.020, 3.0), ((s * 0.074, 0.600, 1.046), 0.006, 0.030, 0.030, 3.4),
-           ((s * 0.071, 0.650, 1.040), 0.005, 0.022, 0.020, 3.0), ((s * 0.065, 0.680, 1.036), 0.004, 0.010, 0.010, 2.4)],
+        # Both moved in with the narrower cranium (skull side 6 to 7 mm further in at y 0.56 to 0.65).
+        L([((s * 0.066, 0.560, 1.050), 0.005, 0.020, 0.020, 3.0), ((s * 0.067, 0.600, 1.046), 0.006, 0.030, 0.030, 3.4),
+           ((s * 0.067, 0.650, 1.040), 0.005, 0.022, 0.020, 3.0), ((s * 0.065, 0.680, 1.036), 0.004, 0.010, 0.010, 2.4)],
           BA, "head", n="small", sub=1)
-        D((s * 0.078, 0.632, 1.044), (1, 0, 0), 0.014, 0.012, GM, "head", n="small")
-        D((s * 0.085, 0.632, 1.044), (1, 0, 0), 0.008, 0.006, BP, "head", n="small")
+        D((s * 0.066, 0.632, 1.044), (1, 0, 0), 0.014, 0.012, GM, "head", n="small")
+        D((s * 0.073, 0.632, 1.044), (1, 0, 0), 0.008, 0.006, BP, "head", n="small")
         # Rose ear: a thin leaf folded back over the occiput like a roof tile, tip drooping.
         ear = f"ear.{'R' if s > 0 else 'L'}"
-        L([((s * 0.050, 0.592, 1.152), 0.024, 0.006, 0.006, 2.2), ((s * 0.066, 0.566, 1.182), 0.030, 0.006, 0.006, 2.4),
+        L([((s * 0.046, 0.592, 1.152), 0.024, 0.006, 0.006, 2.2), ((s * 0.066, 0.566, 1.182), 0.030, 0.006, 0.006, 2.4),
            ((s * 0.084, 0.538, 1.188), 0.028, 0.005, 0.005, 2.4), ((s * 0.102, 0.512, 1.170), 0.018, 0.004, 0.004, 2.2),
            ((s * 0.110, 0.498, 1.140), 0.007, 0.003, 0.003, 2.0)], BP, ear, ref=(s * 0.55, 0.0, 0.83), n="small")
 
     # ---- Neck: gunmetal column wound with a six-turn coil spring, collar flange at the chest.
     L([((0, 0.400, 0.825), 0.046, 0.046, 0.046, 2.0), ((0, 0.480, 0.955), 0.042, 0.042, 0.042, 2.0)], GM, "neck.1", n="small", sub=1)
     L([((0, 0.475, 0.947), 0.041, 0.041, 0.041, 2.0), ((0, 0.560, 1.085), 0.036, 0.036, 0.036, 2.0)], GM, "neck.2", n="small", sub=1)
-    P.helix([((0, 0.405, 0.830), 0.090, 0.092), ((0, 0.455, 0.912), 0.082, 0.084), ((0, 0.505, 0.995), 0.073, 0.075),
-             ((0, 0.548, 1.068), 0.064, 0.066)], 6.0, 0.0155, BA, lambda c: "neck.1" if c.y < 0.48 else "neck.2")
+    P.helix([((0, 0.405, 0.830), 0.090, 0.092), ((0, 0.455, 0.912), 0.082, 0.084), ((0, 0.505, 0.995), 0.064, 0.066),
+             ((0, 0.548, 1.068), 0.056, 0.058)], 6.0, 0.0155, BA, lambda c: "neck.1" if c.y < 0.48 else "neck.2")
     P.ring((0, 0.418, 0.852), (0, 0.45, 0.89), 0.098, 0.100, 0.014, 0.012, BA, "chest")
     rivets((0, 0.418, 0.852), (0, 0.45, 0.89), 0.112, 0.114, 0.004, 8, "chest")  # outer edge, clear of the neck coil
 
@@ -549,7 +587,11 @@ def build_parts(P: Parts) -> None:
         return tuple(loc + nrm * lift)
 
     def seam(p0: tuple[float, float], p1: tuple[float, float], k: int) -> None:
-        line([prow(p0[0] + (p1[0] - p0[0]) * i / (k - 1), p0[1] + (p1[1] - p0[1]) * i / (k - 1)) for i in range(k)], "chest")
+        # Bead width axis across the seam in the plate's tangent plane (surface normal x seam direction),
+        # so a diagonal seam on the curving prow lies flat instead of standing on one edge.
+        pts = [prow(p0[0] + (p1[0] - p0[0]) * i / (k - 1), p0[1] + (p1[1] - p0[1]) * i / (k - 1)) for i in range(k)]
+        _loc, nrm, _i, _d = prow_bvh.ray_cast(Vector(((p0[0] + p1[0]) / 2, 2.0, (p0[1] + p1[1]) / 2)), Vector((0, -1, 0)))
+        line(pts, "chest", ref=tuple(nrm.normalized().cross(Vector(pts[-1]) - Vector(pts[0])).normalized()))
 
     seam((0.0, 0.802), (0.0, 0.722), 5)  # collar to grille top
     for s in (1, -1):
@@ -557,23 +599,29 @@ def build_parts(P: Parts) -> None:
         # Grille ring down-outward. The concept runs on to (0.111, 0.553), but this cuirass turns under
         # below z 0.61, so the seam starts higher and stops where the plate turns under.
         seam((s * 0.062, 0.632), (s * 0.084, 0.612), 5)
-    L([((0, 0.320, 0.585), 0.014, 0.034, 0.030, 2.4), ((0, 0.230, 0.575), 0.012, 0.030, 0.030, 2.4),
-       ((0, 0.130, 0.590), 0.010, 0.024, 0.030, 2.2), ((0, 0.010, 0.632), 0.002, 0.004, 0.003, 2.0)], BA, "chest", n="small")
+    # Keel: a curved blade under the chest, cut back 4 cm (tip y 0.010 -> 0.050) and ending blunt rather
+    # than in a needle, so it no longer juts out as a spike.
+    L([((0, 0.320, 0.585), 0.014, 0.034, 0.030, 2.4), ((0, 0.230, 0.576), 0.012, 0.030, 0.030, 2.4),
+       ((0, 0.130, 0.592), 0.009, 0.024, 0.026, 2.4), ((0, 0.050, 0.628), 0.005, 0.012, 0.008, 2.2)], BA, "chest", n="small")
 
     # ---- Spring spine: one helix swept around the body profile (deep at the chest, tucked at the
     # loin), ten turns, each coil leaning forward; a gunmetal rod through it.
     spine_bone = lambda c: ("pelvis" if c.y < -0.19 else "spine.1" if c.y < -0.06 else "spine.2" if c.y < 0.07  # noqa: E731
                             else "spine.3" if c.y < 0.185 else "chest")
-    P.helix([((0, -0.215, 0.862), 0.082, 0.082), ((0, -0.100, 0.874), 0.094, 0.074), ((0, 0.000, 0.861), 0.104, 0.092),
-             ((0, 0.100, 0.810), 0.112, 0.139), ((0, 0.210, 0.782), 0.118, 0.150)], 10.0, 0.019, BA, spine_bone, tilt=-0.34)
-    rod = [(-0.24, 0.862), (-0.06, 0.870), (0.07, 0.850), (0.20, 0.787)]  # (y, z): stays inside the tucked coil
+    # Roach: the loin coils sit 16 and 14 mm higher than pass 2 (concept topline 0.975 at y -0.06 against
+    # 0.950 over the croup at y -0.26 and 0.942 at the withers; pass 2 ran level at about 0.95 to 0.96).
+    P.helix([((0, -0.215, 0.862), 0.082, 0.082), ((0, -0.100, 0.890), 0.094, 0.074), ((0, 0.000, 0.875), 0.104, 0.092),
+             ((0, 0.100, 0.814), 0.112, 0.139), ((0, 0.210, 0.782), 0.118, 0.150)], 10.0, 0.019, BA, spine_bone, tilt=-0.34)
+    rod = [(-0.24, 0.862), (-0.06, 0.882), (0.07, 0.858), (0.20, 0.787)]  # (y, z): stays inside the tucked coil
     for (y0, z0), (y1, z1), bone in zip(rod, rod[1:], ("spine.1", "spine.2", "spine.3")):
         L([((0, y0, z0), 0.028, 0.028, 0.028, 2.0), ((0, y1, z1), 0.028, 0.028, 0.028, 2.0)], GM, bone, n="small", sub=1)
 
     # ---- Pelvis: a swept rump cowl arcing from the coil top down over the haunch to the tail
     # root (lofted along that arc, so its outer skin is the silhouette), spike guards, tail hub.
-    L([((0, -0.440, 0.660), 0.070, 0.012, 0.030, 2.2), ((0, -0.435, 0.726), 0.100, 0.020, 0.090, 2.2),
-       ((0, -0.400, 0.812), 0.118, 0.025, 0.125, 2.2), ((0, -0.340, 0.888), 0.120, 0.025, 0.125, 2.2),
+    # The rear end stops higher and turns forward into the thigh line (was a vertical wall at y -0.455
+    # from z 0.66 to 0.73), and the croup is 6 to 8 mm narrower: a smaller, rounder rump.
+    L([((0, -0.410, 0.700), 0.060, 0.012, 0.030, 2.2), ((0, -0.436, 0.756), 0.092, 0.020, 0.085, 2.2),
+       ((0, -0.404, 0.818), 0.110, 0.025, 0.120, 2.2), ((0, -0.340, 0.888), 0.114, 0.025, 0.125, 2.2),
        ((0, -0.275, 0.926), 0.112, 0.025, 0.100, 2.2), ((0, -0.215, 0.938), 0.100, 0.022, 0.065, 2.2),
        ((0, -0.188, 0.935), 0.080, 0.015, 0.045, 2.2)], BP, "pelvis")
     D((0, -0.478, 0.812), (0, -1, 0.2), 0.030, 0.030, GM, "pelvis", n="small")
@@ -608,32 +656,45 @@ def build_parts(P: Parts) -> None:
         L([(tail_at(d0), r * 0.9, r * 0.9, r * 0.9, 2.0), (tail_at(d0 + 0.003), r, r, r, 2.0),
            (tail_at(d1 - 0.003), r, r, r, 2.0), (tail_at(d1), r * 0.9, r * 0.9, r * 0.9, 2.0)],
           BA, tail_bone(Vector(tail_at((d0 + d1) / 2))), n="small", sub=1)
-    # Winding key: collar, a thick shaft, hub and one flat butterfly bow in the sagittal plane, centred
-    # on the key bone's axis (z 0.449 at y -0.716) so the wind-up spin does not wobble: two round
-    # lobes (56 mm across, 24 mm holes, 105 mm apart as in the concept) joined by a flat waist.
+    # Winding key: collar, a thick shaft, hub and one solid flat butterfly plate in the sagittal plane,
+    # centred on the key bone's axis (z 0.449 at y -0.716) so the wind-up spin does not wobble. Concept
+    # (side view, Pillow crop): lobes 56 mm across, holes about 24 mm reading small against a solid
+    # plate, hole centres 103 mm apart, waist about 48 mm wide. Pass 2's round-section rings read as
+    # wire, so each lobe is now a flat-faced band (e 4 section, 10.5 mm radial, 10 mm thick) round a
+    # 14 mm hole, and a 50 mm-wide waist plate 0.8 mm prouder than the lobes fills the space between.
+    # The shaft is a 26 mm barrel (concept about 28 mm; pass 2's 20 mm rod read as wire).
     D((0, -0.606, 0.455), (0, -1, 0.04), 0.016, 0.014, BP, "key", n="small")
-    L([((0, -0.610, 0.454), 0.010, 0.010, 0.010, 2.0), ((0, -0.704, 0.450), 0.010, 0.010, 0.010, 2.0)], BP, "key", n="small", sub=1)
-    D((0, -0.680, 0.451), (0, -1, 0.0), 0.014, 0.018, BP, "key", n="small")
-    for dz in (0.0525, -0.0525):
-        P.ring((0, -0.716, 0.449 + dz), (1, 0, 0), 0.020, 0.020, 0.0085, 0.006, BP, "key", n=12, k=6)
-    L([((0, -0.716, 0.449 - 0.034), 0.021, 0.006, 0.006, 3.0), ((0, -0.716, 0.449), 0.015, 0.006, 0.006, 3.0),
-       ((0, -0.716, 0.449 + 0.034), 0.021, 0.006, 0.006, 3.0)], BP, "key", n="small", sub=1, ref=(0, 1, 0))
+    L([((0, -0.610, 0.454), 0.013, 0.013, 0.013, 2.0), ((0, -0.704, 0.450), 0.013, 0.013, 0.013, 2.0)], BP, "key", n="small", sub=1)
+    D((0, -0.680, 0.451), (0, -1, 0.0), 0.017, 0.018, BP, "key", n="small")
+    for dz in (0.0515, -0.0515):
+        P.ring((0, -0.716, 0.449 + dz), (1, 0, 0), 0.0175, 0.0175, 0.0105, 0.005, BP, "key", n=12, k=6, e=4.0)
+    L([((0, -0.716, 0.449 - 0.043), 0.025, 0.0058, 0.0058, 4.0), ((0, -0.716, 0.449 - 0.022), 0.024, 0.0058, 0.0058, 4.0),
+       ((0, -0.716, 0.449), 0.023, 0.0058, 0.0058, 4.0), ((0, -0.716, 0.449 + 0.022), 0.024, 0.0058, 0.0058, 4.0),
+       ((0, -0.716, 0.449 + 0.043), 0.025, 0.0058, 0.0058, 4.0)], BP, "key", n="small", sub=1, ref=(0, 1, 0), bevel=0.15)
 
     # ---- Legs.
     for s, n in ((1, "R"), (-1, "L")):
         fx, hx = s * FORE_X, s * HIND_X
         # Foreleg: big oval shoulder plate with a jewel boss, elbow axle, two-plate forearm over a
         # gunmetal core, pastern joint, pastern and a four-toed paw.
-        shoulder = [((s * 0.150, 0.325, 0.815), 0.028, 0.040, 0.040, 2.3), ((s * 0.152, 0.325, 0.790), 0.040, 0.075, 0.070, 2.4),
-                    ((s * 0.152, 0.322, 0.720), 0.046, 0.095, 0.085, 2.4), ((s * 0.150, 0.312, 0.640), 0.045, 0.085, 0.075, 2.4),
-                    ((s * 0.145, 0.300, 0.570), 0.040, 0.060, 0.055, 2.4), ((s * 0.138, 0.290, 0.515), 0.032, 0.040, 0.038, 2.3)]
+        # Shoulder plates SHOULDER_IN closer to the body than pass 2: head-on width over the rubies 0.430 m
+        # -> about 0.394 m (concept front 0.391 m at z 0.70).
+        shoulder = [((s * (x - SHOULDER_IN), y, z), a, bt, bb, e) for (x, y, z), a, bt, bb, e in (
+            ((0.150, 0.325, 0.815), 0.028, 0.040, 0.040, 2.3), ((0.152, 0.325, 0.790), 0.040, 0.075, 0.070, 2.4),
+            ((0.152, 0.322, 0.720), 0.046, 0.095, 0.085, 2.4), ((0.150, 0.312, 0.640), 0.045, 0.085, 0.075, 2.4),
+            ((0.145, 0.300, 0.570), 0.040, 0.060, 0.055, 2.4), ((0.138, 0.290, 0.515), 0.032, 0.040, 0.038, 2.3))]
         L(shoulder, BP, f"upperarm.{n}")
         # Gunmetal backing plate, a thin lip larger than the shoulder plate: the dark outline around it.
         L([(c, a * 0.5, bt * 1.05, bb * 1.06, e) for c, a, bt, bb, e in shoulder], GM, f"upperarm.{n}")
-        D((s * 0.195, 0.320, 0.700), (1, 0, 0), 0.030, 0.012, GM, f"upperarm.{n}")
-        ruby(P, s, s * 0.200, 0.320, 0.700, f"upperarm.{n}")
+        # Jewel and ruby turned RUBY_YAW toward +Y (the seat) about a vertical axis through the plate face
+        # at x 0.199 - SHOULDER_IN: seen edge-on the dome washed out (engine per-pixel S 0.69). The socket
+        # disc is 30 mm thick (was 12) so its back edge stays buried in the plate after the turn.
+        jy = math.radians(RUBY_YAW)
+        jd, jc = Vector((s * math.cos(jy), math.sin(jy), 0.0)), Vector((s * (0.199 - SHOULDER_IN), 0.320, 0.700))
+        D(tuple(jc - jd * 0.009), tuple(jd), 0.036, 0.030, GM, f"upperarm.{n}")
+        ruby(P, s, *(jc + jd * 0.005), f"upperarm.{n}", yaw=RUBY_YAW)
         # Shoulder line from under the ruby down to the elbow, on the plate's outer face.
-        line([(s * 0.199, 0.326, 0.668)] + [(c[0] + s * (a * (1 - 0.4 ** e) ** (1 / e) + 0.0015), c[1] + 0.4 * bt, c[2])
+        line([(s * (0.199 - SHOULDER_IN), 0.326, 0.662)] +[(c[0] + s * (a * (1 - 0.4 ** e) ** (1 / e) + 0.0015), c[1] + 0.4 * bt, c[2])
                                             for c, a, bt, _bb, e in shoulder[3:6]], f"upperarm.{n}", ref=(0, 1, 0))
         D((fx, 0.270, 0.490), (1, 0, 0), 0.036, 0.085, GM, f"forearm.{n}")
         D((fx + s * 0.044, 0.270, 0.490), (1, 0, 0), 0.020, 0.008, BA, f"forearm.{n}", n="small")
@@ -661,7 +722,7 @@ def build_parts(P: Parts) -> None:
         # Haunch line from under the ruby down the back of the thigh, on the plate's outer face.
         line([(s * 0.150, -0.340, 0.745)] + [(c[0] + s * (a * (1 - 0.3 ** e) ** (1 / e) + 0.0015), c[1] - 0.3 * bb, c[2])
                                              for c, a, _bt, bb, e in thigh[4:7]], f"thigh.{n}", ref=(0, 1, 0))
-        D((s * 0.146, -0.335, 0.775), (1, 0, 0.0), 0.032, 0.012, GM, f"thigh.{n}")
+        D((s * 0.146, -0.335, 0.775), (1, 0, 0.0), 0.037, 0.012, GM, f"thigh.{n}")
         ruby(P, s, s * 0.151, -0.335, 0.775, f"thigh.{n}")
         D((hx, -0.360, 0.490), (1, 0, 0), 0.046, 0.088, GM, f"shin.{n}")
         D((hx + s * 0.047, -0.360, 0.490), (1, 0, 0), 0.024, 0.008, BA, f"shin.{n}", n="small")
@@ -681,12 +742,22 @@ def build_parts(P: Parts) -> None:
         paw(P, hx, -0.565, -0.470, f"hindpaw.{n}")
 
 
-def ruby(P: Parts, s: int, x: float, y: float, z: float, bone: str) -> None:
+def ruby(P: Parts, s: int, x: float, y: float, z: float, bone: str, yaw: float = 0.0) -> None:
     """Ruby boss on a gunmetal socket disc whose outer face is at x + s * 0.001: a polished bezel and
-    a domed ruby (COLOR_0 on the gunmetal slot) stepping out along +-X."""
-    P.ring((x + s * 0.004, y, z), (s, 0, 0), 0.027, 0.027, 0.006, 0.005, BP, bone, n="small", k=4)
-    P.loft([((x, y, z), 0.023, 0.023, 0.023, 2.0), ((x + s * 0.006, y, z), 0.020, 0.020, 0.020, 2.0),
-            ((x + s * 0.012, y, z), 0.011, 0.011, 0.011, 2.0)], RB, bone, n=10, sub=1, caps=(False, True), ref=(0, 1, 0))
+    a tall domed cabochon (COLOR_0 on the gunmetal slot) stepping out along +-X, turned `yaw` degrees
+    toward +Y about a vertical axis through (x, y, z). 56 mm across (concept red area 54 mm, pass 2
+    41 mm) and 18 mm high, so from the near-head-on seat more of the dome faces the camera instead of
+    grazing it (grazing Fresnel is what washed the engine ruby to S 0.6)."""
+    a = math.radians(yaw)
+    d = (s * math.cos(a), math.sin(a), 0.0)
+
+    def at(k: float) -> tuple[float, float, float]:
+        return (x + d[0] * k, y + d[1] * k, z)
+
+    P.ring(at(0.004), d, 0.032, 0.032, 0.006, 0.005, BP, bone, n="small", k=4)
+    P.loft([(at(0.0), 0.028, 0.028, 0.028, 2.0), (at(0.007), 0.026, 0.026, 0.026, 2.0),
+            (at(0.013), 0.019, 0.019, 0.019, 2.0), (at(0.017), 0.009, 0.009, 0.009, 2.0)],
+           RB, bone, n=10, sub=1, caps=(False, True), ref=(0, 0, 1) if yaw else (0, 1, 0))
 
 
 def paw(P: Parts, x: float, heel: float, toe: float, bone: str) -> None:
@@ -706,9 +777,13 @@ def paw(P: Parts, x: float, heel: float, toe: float, bone: str) -> None:
 
 
 def tile_uvs(bm) -> None:
-    """UV0 in tile units: each face projected on the plane of its dominant normal axis."""
+    """UV0 in tile units: each face projected on the plane of its dominant normal axis (brass: FLAT_BRASS_UV)."""
     layer = bm.loops.layers.uv.new("tile")
     for f in bm.faces:
+        if FLAT_BRASS and f.material_index in FLAT_BRASS_UV:
+            for loop in f.loops:
+                loop[layer].uv = FLAT_BRASS_UV[f.material_index]
+            continue
         ax = max(range(3), key=lambda i: abs(f.normal[i]))
         u_i, v_i = ((1, 2), (0, 2), (0, 1))[ax]
         for loop in f.loops:
@@ -856,7 +931,7 @@ def idle_pose(t: float) -> dict:
         "spine.1": (1.2 * b, 0, 0), "spine.2": (-0.6 * b, 0, 0), "spine.3": (-0.6 * b, 0, 0),
         "neck.1": (3.0 * math.sin(w + 0.6), 0, 0),
         "head": (2.0 * math.sin(2 * w), 0, 9.0 * math.sin(w)),
-        "jaw": (-3.0 - 2.0 * (1 + math.sin(2 * w)), 0, 0),
+        "jaw": (-0.5 - 0.75 * (1 + math.sin(2 * w)), 0, 0),  # a near-closed snarl (was -3 to -7: an open bar)
         "ear.R": (3.0 * (1 + math.sin(2 * w)), 0, 0), "ear.L": (3.0 * (1 + math.sin(2 * w + 1.0)), 0, 0),
         "tail.1": (0, 0, 14.0 * math.sin(w)), "tail.2": (0, 0, 14.0 * math.sin(w - 0.7)), "tail.3": (0, 0, 14.0 * math.sin(w - 1.4)),
         "tail.4": (0, 0, 10.0 * math.sin(w - 2.1)),
@@ -865,7 +940,7 @@ def idle_pose(t: float) -> dict:
     }
 
 
-START = {"jaw": (-3, 0, 0), "ear.R": (3, 0, 0), "ear.L": (3 + 3 * math.sin(1.0), 0, 0), "ik": PLANT}
+START = {"jaw": (-1, 0, 0),"ear.R": (3, 0, 0), "ear.L": (3 + 3 * math.sin(1.0), 0, 0), "ik": PLANT}
 EARS_BACK = {"ear.R": (28, 0, 0), "ear.L": (28, 0, 0)}
 ATTACK_KEYS = [
     (0.0, START),
