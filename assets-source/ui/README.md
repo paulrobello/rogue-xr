@@ -40,6 +40,11 @@ rights, spend, output hashes and approval state are in [provenance.json](provena
   triangle, apex up; its corners in slot-relative 0..1 coordinates (y down) are in the manifest
   (`dice.glass-d8.triangle`: apex, bottom right, bottom left), the numeral sits on the centroid,
   and 6 is underlined.
+- **Dice glow** `dice-d6-glow.png` and `dice-d8-glow.png` (+ KTX2), named by `dice.<id>.glowPage`:
+  the emissive masks for the dice pages, same size and slots, so the face UVs fit both. RGB is the
+  pip or numeral's amber fill times its core plus 0.35 of its soft glow, black elsewhere, alpha 255.
+  `src/dice` binds the colour page as `map` and the glow page as `emissiveMap`
+  (`DICE_GLOW_INTENSITY`), so only the marks emit; without a glow page the faces do not emit.
 - **Glyphs** `glyphs.png` (+ KTX2), 1024x512 RGBA, 256 px slots in `SIGIL_IDS` order, drawn from the
   template strokes (+y up flipped to image space) as an amber line with a soft glow on transparent.
 - **Title key art** `title-2048.jpg` (2048x1152) and `title-1024.jpg` (1024x576), quality 88, centre

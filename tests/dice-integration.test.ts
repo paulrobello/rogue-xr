@@ -5,6 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { Stream } from '../src/core/rng.ts';
 import {
   DICE_ASSET_IDS,
+  DICE_GLOW_INTENSITY,
   type DiceAsset,
   type DiceManifest,
   parseDice,
@@ -94,7 +95,24 @@ describe('dice presenter with the authored models', () => {
     }
   });
 
-  it('binds the atlas pages to the face materials when the faces arrive', async () => {
+  it('binds the colour pages as maps and the glow pages as emissive maps', async () => {
+    const presenter = await DicePresenter.create(stream(), { ...TRAY, models: asset });
+    const page = pages();
+    const glow = { d6: new THREE.Texture(), d8: new THREE.Texture() };
+    presenter.applyFaces({ ...page, d6Glow: glow.d6, d8Glow: glow.d8 });
+    for (const kind of KINDS) {
+      const face = (asset.spawn(kind).material as THREE.MeshStandardMaterial[]).find((m) =>
+        m.name.endsWith('-face'),
+      );
+      expect(face?.map).toBe(page[kind]);
+      expect(face?.emissiveMap).toBe(glow[kind]);
+      expect(face?.emissiveIntensity).toBe(DICE_GLOW_INTENSITY);
+    }
+    presenter.dispose();
+    asset.bindFaceMaps({ d6: null, d8: null });
+  });
+
+  it('leaves the faces unlit when the glow pages are absent', async () => {
     const presenter = await DicePresenter.create(stream(), { ...TRAY, models: asset });
     const page = pages();
     presenter.applyFaces(page);
@@ -103,10 +121,35 @@ describe('dice presenter with the authored models', () => {
         m.name.endsWith('-face'),
       );
       expect(face?.map).toBe(page[kind]);
-      expect(face?.emissiveMap).toBe(page[kind]);
+      expect(face?.emissiveMap).toBeNull();
+      expect(face?.emissiveIntensity).toBe(0);
     }
     presenter.dispose();
     asset.bindFaceMaps({ d6: null, d8: null });
+  });
+
+  it('gives the greybox dice the glow page as emissive map, or none without it', async () => {
+    const presenter = await DicePresenter.create(stream(), { ...TRAY });
+    const greybox = (kind: DieKind) =>
+      presenter.mesh(presenter.throw(kind, 0, 1))?.material as THREE.MeshStandardMaterial;
+    const page = pages();
+    const glow = { d6: new THREE.Texture(), d8: new THREE.Texture() };
+    presenter.applyFaces({ ...page, d6Glow: glow.d6, d8Glow: glow.d8 });
+    for (const kind of KINDS) {
+      const m = greybox(kind);
+      expect(m.map).toBe(page[kind]);
+      expect(m.emissiveMap).toBe(glow[kind]);
+      expect(m.emissive.getHex()).toBe(0xffffff);
+      expect(m.emissiveIntensity).toBe(DICE_GLOW_INTENSITY);
+    }
+    presenter.applyFaces(page);
+    for (const kind of KINDS) {
+      const m = greybox(kind);
+      expect(m.emissiveMap).not.toBe(page[kind]);
+      expect(m.emissiveMap).not.toBeNull();
+      expect(m.emissive.getHex()).toBe(0x000000);
+    }
+    presenter.dispose();
   });
 
   it('lands every throw on the RNG face with the model mesh', async () => {

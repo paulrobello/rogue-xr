@@ -6,6 +6,8 @@ Deterministic: the same sources produce byte-identical PNG/JPG outputs. Writes
   public/assets/ui/icons.png          16 icons, 128 px slots (112 px medallion + 8 px padding), 512x512
   public/assets/ui/dice-d6.png        brass d6 faces, 256 px slots, 1024x512 (faces 0-5)
   public/assets/ui/dice-d8.png        glass d8 faces, 256 px slots, 1024x512 (faces 0-7)
+  public/assets/ui/dice-d6-glow.png   emissive masks for the d6 page: amber pips on black, same slots
+  public/assets/ui/dice-d8-glow.png   emissive masks for the d8 page: amber numerals on black, same slots
   public/assets/ui/glyphs.png         5 sigil glyphs drawn from src/sigil/templates.ts, 256 px slots, 1024x512
   public/assets/ui/title-2048.jpg     title key art backdrop 2048x1152, and title-1024.jpg 1024x576
   public/assets/ui/*.ktx2             UASTC + Zstandard, mipmapped, bottom-left origin (when ktx exists)
@@ -47,6 +49,9 @@ BRASS = (0xDE, 0xC1, 0x6A)
 
 # Fraction of the title image kept clear for the runtime title (origin top-left): the dark left wall.
 TITLE_SAFE = {"x": 0.03, "y": 0.3, "w": 0.27, "h": 0.4}
+
+# Share of a mark's soft glow that also emits on the glow pages, so the halo glows a little.
+GLOW_HALO = 0.35
 
 # Pip centres in a unit d6 face (origin top-left), per value.
 PIPS = {
@@ -191,8 +196,12 @@ def glow_layer(size: tuple[int, int], draw_fn, blur: float) -> np.ndarray:
     return np.asarray(mask.filter(ImageFilter.GaussianBlur(blur)), dtype=np.float64) / 255
 
 
-def lit_mark(base: np.ndarray, draw_fn, scale: int) -> np.ndarray:
-    """Composites an amber glowing mark (pip or numeral) drawn by `draw_fn` at `scale`x onto `base`."""
+def lit_mark(base: np.ndarray, draw_fn, scale: int) -> tuple[np.ndarray, np.ndarray]:
+    """Composites an amber glowing mark (pip or numeral) drawn by `draw_fn` at `scale`x onto `base`.
+
+    Also returns the face's emissive glow tile: the same amber fill over the mark core plus
+    `GLOW_HALO` of its soft glow, black elsewhere, alpha 255.
+    """
     h, w = base.shape[:2]
     big = (w * scale, h * scale)
     core = Image.new("L", big, 0)
@@ -215,10 +224,13 @@ def lit_mark(base: np.ndarray, draw_fn, scale: int) -> np.ndarray:
     out = out * (1 - core_small[..., None]) + fill * core_small[..., None]
     res = base.copy()
     res[..., :3] = np.clip(np.rint(out), 0, 255).astype(np.uint8)
-    return res
+    emit = np.clip(core_small + GLOW_HALO * glow, 0, 1)
+    lit = np.full((h, w, 4), 255, np.uint8)
+    lit[..., :3] = np.clip(np.rint(fill * emit[..., None]), 0, 255).astype(np.uint8)
+    return res, lit
 
 
-def build_dice() -> tuple[Image.Image, Image.Image, dict, dict]:
+def build_dice() -> tuple[Image.Image, Image.Image, Image.Image, Image.Image, dict, dict]:
     sheet = np.asarray(Image.open(SRC / "raw/dice-plates.png").convert("RGB"))
     (ax0, ay0, ax1, ay1), (bx0, by0, bx1, by1) = plate_boxes(sheet)
     d6_plate = Image.fromarray(sheet[ay0:ay1, ax0:ax1]).resize((DIE_SLOT, DIE_SLOT), Image.Resampling.LANCZOS)
@@ -244,6 +256,10 @@ def build_dice() -> tuple[Image.Image, Image.Image, dict, dict]:
     font = ImageFont.truetype(str(FONT), 92 * scale)
     d6_page = np.zeros((DIE_SLOT * 2, DIE_SLOT * 4, 4), np.uint8)
     d8_page = np.zeros((DIE_SLOT * 2, DIE_SLOT * 4, 4), np.uint8)
+    d6_glow = np.zeros((DIE_SLOT * 2, DIE_SLOT * 4, 4), np.uint8)
+    d8_glow = np.zeros((DIE_SLOT * 2, DIE_SLOT * 4, 4), np.uint8)
+    d6_glow[..., 3] = 255
+    d8_glow[..., 3] = 255
     d6_faces, d8_faces = [], []
     for index, value in enumerate(D6_VALUES):
 
@@ -253,9 +269,10 @@ def build_dice() -> tuple[Image.Image, Image.Image, dict, dict]:
                 x, y = u * DIE_SLOT * scale, v * DIE_SLOT * scale
                 d.ellipse((x - r, y - r, x + r, y + r), fill=255)
 
-        face = lit_mark(d6_base, pips, scale)
+        face, lit = lit_mark(d6_base, pips, scale)
         px, py = (index % 4) * DIE_SLOT, (index // 4) * DIE_SLOT
         d6_page[py : py + DIE_SLOT, px : px + DIE_SLOT] = face
+        d6_glow[py : py + DIE_SLOT, px : px + DIE_SLOT] = lit
         d6_faces.append({"index": index, "value": value, **entry("dice-d6", px, py, DIE_SLOT, DIE_SLOT, 1024, 512)})
     for index, value in enumerate(D8_VALUES):
 
@@ -266,14 +283,15 @@ def build_dice() -> tuple[Image.Image, Image.Image, dict, dict]:
                 y = cy + 46 * scale
                 d.rectangle((cx - 20 * scale, y, cx + 20 * scale, y + 7 * scale), fill=255)
 
-        face = lit_mark(d8_base, numeral, scale)
+        face, lit = lit_mark(d8_base, numeral, scale)
         px, py = (index % 4) * DIE_SLOT, (index // 4) * DIE_SLOT
         d8_page[py : py + DIE_SLOT, px : px + DIE_SLOT] = face
+        d8_glow[py : py + DIE_SLOT, px : px + DIE_SLOT] = lit
         d8_faces.append({"index": index, "value": value, **entry("dice-d8", px, py, DIE_SLOT, DIE_SLOT, 1024, 512)})
     triangle = [[round(x / DIE_SLOT, 6), round(y / DIE_SLOT, 6)] for x, y in tri]
     dice = {
-        "brass-d6": {"kind": "d6", "shape": "square", "triangle": None, "faces": d6_faces},
-        "glass-d8": {"kind": "d8", "shape": "triangle", "triangle": triangle, "faces": d8_faces},
+        "brass-d6": {"kind": "d6", "shape": "square", "triangle": None, "faces": d6_faces, "glowPage": "dice-d6-glow"},
+        "glass-d8": {"kind": "d8", "shape": "triangle", "triangle": triangle, "faces": d8_faces, "glowPage": "dice-d8-glow"},
     }
     sources = {
         "d6PlateRect": {"x": ax0, "y": ay0, "w": ax1 - ax0, "h": ay1 - ay0},
@@ -282,6 +300,8 @@ def build_dice() -> tuple[Image.Image, Image.Image, dict, dict]:
     return (
         Image.fromarray(dilate_rgb(d6_page), "RGBA"),
         Image.fromarray(dilate_rgb(d8_page), "RGBA"),
+        Image.fromarray(d6_glow, "RGBA"),
+        Image.fromarray(d8_glow, "RGBA"),
         dice,
         sources,
     )
@@ -449,11 +469,18 @@ def main() -> None:
     DOCS.mkdir(parents=True, exist_ok=True)
 
     icons_page, icons, crops = build_icons()
-    d6_page, d8_page, dice, dice_src = build_dice()
+    d6_page, d8_page, d6_glow, d8_glow, dice, dice_src = build_dice()
     glyph_page, glyphs = build_glyphs()
     key_variants = build_key_art()
 
-    pages_img = {"icons": icons_page, "dice-d6": d6_page, "dice-d8": d8_page, "glyphs": glyph_page}
+    pages_img = {
+        "icons": icons_page,
+        "dice-d6": d6_page,
+        "dice-d8": d8_page,
+        "glyphs": glyph_page,
+        "dice-d6-glow": d6_glow,
+        "dice-d8-glow": d8_glow,
+    }
     ktx_available = not args.no_ktx and args.ktx.exists()
     pages = {}
     for name, image in pages_img.items():
@@ -490,6 +517,7 @@ def main() -> None:
         "font": {"file": rel(FONT), "sha256": sha256(FONT), "license": "SIL OFL 1.1"},
         "iconCrops": crops,
         "dicePlateRects": dice_src,
+        "diceGlowPages": f"dice-d6-glow and dice-d8-glow: the pip/numeral amber fill times (core + {GLOW_HALO} x soft glow), black elsewhere; same slots as the colour pages",
         "files": [{"file": rel(p), "bytes": p.stat().st_size, "sha256": sha256(p)} for p in outputs],
     }
     prov_path.write_text(json.dumps(prov, indent=2) + "\n")

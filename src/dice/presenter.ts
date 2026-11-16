@@ -10,7 +10,7 @@ import {
   UI_ATLAS_BASE,
   type UiAtlasManifest,
 } from '../ui/icon-atlas.ts';
-import type { DiceAsset } from './dice-asset.ts';
+import { DICE_GLOW_INTENSITY, type DiceAsset } from './dice-asset.ts';
 import { D6_HALF_EXTENT, D8_CIRCUMRADIUS, type DieKind, faceNormals } from './faces.ts';
 import { DiceWorld, type DiceWorldOptions } from './world.ts';
 
@@ -151,16 +151,27 @@ export function atlasFaceFor(manifest: UiAtlasManifest, kind: DieKind, faceIndex
   return dieFace(manifest, DIE_ATLAS_ID[kind], faceIndex);
 }
 
-let diePages: Promise<{ manifest: UiAtlasManifest; d6: THREE.Texture; d8: THREE.Texture }> | null =
-  null;
+/** The dice colour pages and their optional glow (emissive mask) pages. */
+export interface DiePages {
+  manifest: UiAtlasManifest;
+  d6: THREE.Texture;
+  d8: THREE.Texture;
+  d6Glow?: THREE.Texture | null;
+  d8Glow?: THREE.Texture | null;
+}
 
-/** Loads the UI atlas manifest and both dice pages once (KTX2), shared by every presenter. */
+let diePages: Promise<DiePages> | null = null;
+
+/**
+ * Loads the UI atlas manifest and both dice pages once (KTX2), shared by every presenter. A glow
+ * page that is missing or fails to load leaves its die unlit rather than dropping the faces.
+ */
 function loadDiePages(renderer: THREE.WebGLRenderer) {
   if (!diePages) {
     diePages = (async () => {
       const manifest = await loadUiAtlas();
       const loader = sharedKtx2Loader(renderer);
-      const page = async (name: 'dice-d6' | 'dice-d8') => {
+      const page = async (name: string) => {
         const entry = manifest.pages[name];
         if (!entry?.ktx2) throw new Error(`UI atlas page ${name} has no KTX2`);
         const texture = await loader.loadAsync(`${UI_ATLAS_BASE}/${entry.ktx2}`);
@@ -169,8 +180,21 @@ function loadDiePages(renderer: THREE.WebGLRenderer) {
         texture.minFilter = THREE.LinearMipmapLinearFilter;
         return texture;
       };
-      const [d6, d8] = await Promise.all([page('dice-d6'), page('dice-d8')]);
-      return { manifest, d6, d8 };
+      const glow = (set: DieFaceSet | undefined) => {
+        const name = set?.glowPage;
+        if (!name) return Promise.resolve(null);
+        return page(name).catch((error: unknown) => {
+          console.warn(`dice glow page ${name} failed to load`, error);
+          return null;
+        });
+      };
+      const [d6, d8, d6Glow, d8Glow] = await Promise.all([
+        page('dice-d6'),
+        page('dice-d8'),
+        glow(manifest.dice['brass-d6']),
+        glow(manifest.dice['glass-d8']),
+      ]);
+      return { manifest, d6, d8, d6Glow, d8Glow };
     })();
     diePages.catch(() => {
       diePages = null;
@@ -238,6 +262,7 @@ export class DicePresenter {
   private readonly geometries: THREE.BufferGeometry[] = [];
   private readonly materials: THREE.Material[] = [];
   private readonly textures: THREE.Texture[] = [];
+  private readonly blank: THREE.Texture;
   private readonly d6Material: THREE.MeshStandardMaterial;
   private readonly d8Material: THREE.MeshStandardMaterial;
   private facesRequested = false;
@@ -264,6 +289,7 @@ export class DicePresenter {
     this.d8Geometry = buildD8Geometry();
     this.geometries.push(this.d6Geometry, this.d8Geometry);
     const blank = whitePixel();
+    this.blank = blank;
     this.textures.push(blank);
     this.d6Material = new THREE.MeshStandardMaterial({
       color: PALETTE.brass,
@@ -428,9 +454,13 @@ export class DicePresenter {
     this.root.removeFromParent();
   }
 
-  /** Maps the atlas dice faces onto both geometries and swaps the pages in. */
-  applyFaces(pages: { manifest: UiAtlasManifest; d6: THREE.Texture; d8: THREE.Texture }): void {
-    this.options.models?.bindFaceMaps({ d6: pages.d6, d8: pages.d8 });
+  /**
+   * Maps the atlas dice faces onto both geometries and swaps the pages in: the colour pages as
+   * `map`, the glow pages (when present) as `emissiveMap`, so only pips and numerals emit.
+   */
+  applyFaces(pages: DiePages): void {
+    const glow = { d6: pages.d6Glow ?? null, d8: pages.d8Glow ?? null };
+    this.options.models?.bindFaceMaps({ d6: pages.d6, d8: pages.d8 }, glow);
     const d6Uv = this.d6Geometry.getAttribute('uv') as THREE.BufferAttribute;
     d6Uv.set(d6FaceUvs(pages.manifest.dice['brass-d6'], d6Uv.array));
     d6Uv.needsUpdate = true;
@@ -439,13 +469,15 @@ export class DicePresenter {
       d8FaceUvs(pages.manifest.dice['glass-d8'], this.d8Geometry.getAttribute('position').array),
     );
     d8Uv.needsUpdate = true;
-    for (const [material, page, glow] of [
-      [this.d6Material, pages.d6, '#3a2a12'],
-      [this.d8Material, pages.d8, '#5a4a30'],
+    for (const [material, page, lit] of [
+      [this.d6Material, pages.d6, glow.d6],
+      [this.d8Material, pages.d8, glow.d8],
     ] as const) {
       material.map = page;
-      material.emissiveMap = page;
-      material.emissive.set(glow);
+      // Without a glow page the blank map stays bound (emissive black), so nothing recompiles.
+      material.emissiveMap = lit ?? this.blank;
+      material.emissive.set(lit ? '#ffffff' : '#000000');
+      material.emissiveIntensity = lit ? DICE_GLOW_INTENSITY : 1;
       material.color.set('#ffffff');
     }
   }

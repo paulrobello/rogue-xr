@@ -85,6 +85,8 @@ export interface DieFaceSet {
   /** For triangle faces: the triangle's corners inside the slot, in slot-relative 0..1 coordinates (y down). */
   readonly triangle: readonly (readonly [number, number])[] | null;
   readonly faces: readonly DieFaceEntry[];
+  /** Emissive mask page with the same slots as the faces' page: amber marks on black. */
+  readonly glowPage?: string;
 }
 
 export interface KeyArtVariant {

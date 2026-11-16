@@ -12,7 +12,8 @@ import type { Vec3 } from './quat.ts';
  * image-free GLB in the `src/dice/faces.ts` die-local frame (origin at the centre, +Y up), so a
  * spawned mesh takes the physics pose directly, exactly as `DicePresenter`'s greybox mesh does.
  * Face UVs point into the shared UI atlas page named by the manifest (`dice-d6`, `dice-d8`); the
- * caller binds that page with `bindFaceMaps`, and the asset never disposes it.
+ * caller binds that page, and its glow page (`dice-d6-glow`, `dice-d8-glow`, same slots), with
+ * `bindFaceMaps`, and the asset never disposes them.
  */
 export const DICE_ASSET_BASE = '/assets/dice';
 export const DICE_ASSET_IDS = { d6: 'brass-d6', d8: 'glass-d8' } as const satisfies Record<
@@ -20,6 +21,14 @@ export const DICE_ASSET_IDS = { d6: 'brass-d6', d8: 'glass-d8' } as const satisf
   DieId
 >;
 const KINDS: readonly DieKind[] = ['d6', 'd8'];
+/**
+ * Emissive intensity of a face slot while a glow page is bound. The glow page is black except the
+ * amber pips and numerals, so only they emit: 1.8 times the mark's decoded amber, about 2.8 times
+ * the lit mark's luminance at unit illuminance before AgX. The manifest's per-slot
+ * `emissiveIntensity` (0.35 d6, 0.7 d8, from scripts/assets/build-dice.py) was tuned for the whole
+ * colour page as the emissive map and is too dim for a mask, so the runtime uses this instead.
+ */
+export const DICE_GLOW_INTENSITY = 1.8;
 /** Factor colour of each face slot until its atlas page is bound (art-bible walnut and sapphire). */
 const FACE_FALLBACK: Readonly<Record<DieKind, string>> = { d6: '#583c26', d8: '#2d4a93' };
 
@@ -173,20 +182,27 @@ export class DiceAsset {
     }
   }
 
-  /** Binds the UI atlas pages (`dice-d6`, `dice-d8`) to the face slots. Pass null to unbind. */
-  bindFaceMaps(maps: Partial<Record<DieKind, THREE.Texture | null>>): void {
+  /**
+   * Binds the UI atlas colour pages (`dice-d6`, `dice-d8`) to the face slots' `map` and their glow
+   * pages (`dice-d6-glow`, `dice-d8-glow`) to `emissiveMap`, at `DICE_GLOW_INTENSITY`. A kind with
+   * a colour page but no glow page gets no emission. Pass null to unbind.
+   */
+  bindFaceMaps(
+    maps: Partial<Record<DieKind, THREE.Texture | null>>,
+    glow: Partial<Record<DieKind, THREE.Texture | null>> = {},
+  ): void {
     for (const kind of KINDS) {
       if (!(kind in maps) || this.disposed) continue;
       const die = this.dice.get(kind);
       if (!die) continue;
-      const slot = Object.values(die.manifest.materialSlots).find((s) => s.role === 'face');
       const map = maps[kind] ?? null;
+      const lit = map ? (glow[kind] ?? null) : null;
       const face = die.face;
       face.map = map;
-      face.emissiveMap = map;
+      face.emissiveMap = lit;
       face.color.set(map ? '#ffffff' : FACE_FALLBACK[kind]);
-      face.emissive.set(map ? '#ffffff' : '#000000');
-      face.emissiveIntensity = map ? (slot?.emissiveIntensity ?? 0) : 0;
+      face.emissive.set(lit ? '#ffffff' : '#000000');
+      face.emissiveIntensity = lit ? DICE_GLOW_INTENSITY : 0;
       face.needsUpdate = true;
     }
   }

@@ -25,6 +25,18 @@
       "ktx2": "glyphs.ktx2",
       "width": 1024,
       "height": 512
+    },
+    "dice-d6-glow": {
+      "png": "dice-d6-glow.png",
+      "ktx2": "dice-d6-glow.ktx2",
+      "width": 1024,
+      "height": 512
+    },
+    "dice-d8-glow": {
+      "png": "dice-d8-glow.png",
+      "ktx2": "dice-d8-glow.ktx2",
+      "width": 1024,
+      "height": 512
     }
   },
   "icons": {
@@ -377,7 +389,8 @@
             "v1": 0.5
           }
         }
-      ]
+      ],
+      "glowPage": "dice-d6-glow"
     },
     "glass-d8": {
       "kind": "d8",
@@ -533,7 +546,8 @@
             "v1": 0.5
           }
         }
-      ]
+      ],
+      "glowPage": "dice-d8-glow"
     }
   },
   "glyphs": {

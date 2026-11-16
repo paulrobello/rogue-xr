@@ -31,12 +31,15 @@ function pngSize(file: string): { width: number; height: number } {
   return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
 }
 
+/** Entries on `page`; a dice glow page shares its colour page's face slots. */
 function entriesOnPage(page: string): AtlasEntry[] {
   const all: AtlasEntry[] = [
     ...Object.values(manifest.icons),
     ...Object.values(manifest.glyphs),
     ...Object.values(manifest.dice).flatMap((set) => set.faces),
   ];
+  const glowOf = Object.values(manifest.dice).find((set) => set.glowPage === page);
+  if (glowOf) return [...glowOf.faces];
   return all.filter((e) => e.page === page);
 }
 
@@ -105,6 +108,32 @@ describe('UI atlas manifest', () => {
         );
         expect((set.faces[i]?.value ?? 0) + (set.faces[n - 1 - i]?.value ?? 0)).toBe(n + 1);
       }
+    }
+  });
+
+  it('lists a glow page per die with the same size and slots as its colour page', () => {
+    expect(Object.keys(manifest.pages).sort()).toEqual(
+      ['dice-d6', 'dice-d6-glow', 'dice-d8', 'dice-d8-glow', 'glyphs', 'icons'].sort(),
+    );
+    for (const [die, colour, glow] of [
+      ['brass-d6', 'dice-d6', 'dice-d6-glow'],
+      ['glass-d8', 'dice-d8', 'dice-d8-glow'],
+    ] as const) {
+      const set = manifest.dice[die];
+      expect(set.glowPage).toBe(glow);
+      const c = manifest.pages[colour];
+      const g = manifest.pages[glow];
+      expect(g).toBeDefined();
+      expect(g?.png).toBe(`${glow}.png`);
+      expect(g?.ktx2).toBe(`${glow}.ktx2`);
+      expect({ width: g?.width, height: g?.height }).toEqual({
+        width: c?.width,
+        height: c?.height,
+      });
+      expect(pngSize(g?.png ?? '')).toEqual(pngSize(c?.png ?? ''));
+      // Every face slot is on the colour page, so its uv addresses the same texel rect on both.
+      for (const face of set.faces) expect(face.page).toBe(colour);
+      expect(entriesOnPage(glow).map((e) => e.px)).toEqual(entriesOnPage(colour).map((e) => e.px));
     }
   });
 

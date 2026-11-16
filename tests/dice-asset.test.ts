@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { DICE } from '../src/content/dice.ts';
 import {
   DICE_ASSET_IDS,
+  DICE_GLOW_INTENSITY,
   type DiceAsset,
   type DiceManifest,
   parseDice,
@@ -223,6 +224,58 @@ describe('dice asset lifecycle', () => {
     asset.bindFaceMaps({ d6: null });
     expect(d6.some((m) => m.map)).toBe(false);
     page.dispose();
+  });
+
+  it('binds the glow page as the emissive map and the colour page as the map', async () => {
+    asset = await parseDice(glbs(), manifests());
+    const colour = { d6: new THREE.Texture(), d8: new THREE.Texture() };
+    const glow = { d6: new THREE.Texture(), d8: new THREE.Texture() };
+    asset.bindFaceMaps(colour, glow);
+    for (const kind of KINDS) {
+      const mats = asset.spawn(kind).material as THREE.MeshStandardMaterial[];
+      const face = mats.find((m) => m.name.endsWith('-face'));
+      expect(face?.map).toBe(colour[kind]);
+      expect(face?.emissiveMap).toBe(glow[kind]);
+      expect(face?.emissive.getHex()).toBe(0xffffff);
+      expect(face?.emissiveIntensity).toBe(DICE_GLOW_INTENSITY);
+      expect(DICE_GLOW_INTENSITY).toBeGreaterThanOrEqual(1.5);
+      expect(DICE_GLOW_INTENSITY).toBeLessThanOrEqual(2);
+      // The body never samples either page.
+      for (const m of mats.filter((m) => m !== face)) {
+        expect(m.map).not.toBe(colour[kind]);
+        expect(m.emissiveMap).not.toBe(glow[kind]);
+      }
+    }
+    asset.bindFaceMaps({ d6: null, d8: null }, glow);
+    for (const kind of KINDS) {
+      const face = (asset.spawn(kind).material as THREE.MeshStandardMaterial[]).find((m) =>
+        m.name.endsWith('-face'),
+      );
+      expect(face?.map).toBeNull();
+      expect(face?.emissiveMap).toBeNull();
+      expect(face?.emissiveIntensity).toBe(0);
+    }
+  });
+
+  it('emits nothing when a colour page is bound without a glow page', async () => {
+    const local = await parseDice(glbs(), manifests());
+    asset = local;
+    const colour = new THREE.Texture();
+    const glow = new THREE.Texture();
+    local.bindFaceMaps({ d6: colour, d8: colour }, { d8: glow });
+    const faceOf = (kind: DieKind) =>
+      (local.spawn(kind).material as THREE.MeshStandardMaterial[]).find((m) =>
+        m.name.endsWith('-face'),
+      );
+    const d6 = faceOf('d6');
+    expect(d6?.map).toBe(colour);
+    expect(d6?.emissiveMap).toBeNull();
+    expect(d6?.emissive.getHex()).toBe(0x000000);
+    expect(d6?.emissiveIntensity).toBe(0);
+    expect(faceOf('d8')?.emissiveMap).toBe(glow);
+    local.bindFaceMaps({ d6: colour, d8: colour });
+    expect(faceOf('d8')?.emissiveMap).toBeNull();
+    expect(faceOf('d8')?.emissiveIntensity).toBe(0);
   });
 
   it('dispose releases geometry and materials but not bound textures, then refuses spawn', async () => {
