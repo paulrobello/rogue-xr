@@ -754,10 +754,12 @@ renderer.setAnimationLoop((time, frame) => {
   }
   combat?.update(deltaSeconds, xr.presenting ? xrHands() : null);
   ui?.sync(camera);
+  const laserHits = { left: null as number | null, right: null as number | null };
   if (ui?.visible && xr.presenting) {
     const ray = xr.rays()[MAIN_HAND];
     const hit = ray ? uiPointer.castFrom(ray, ui.targets()) : null;
     ui.hover(hit ? ui.controlAt(hit.object) : null);
+    laserHits[MAIN_HAND] = hit ? hit.distance : null;
   }
   if (floor && audio) {
     audio.setState(audioFor(flow.phase, floor.encounter.phase));
@@ -770,6 +772,11 @@ renderer.setAnimationLoop((time, frame) => {
     renderer.autoClear = false;
     renderer.clearDepth();
     renderer.render(uiScene, camera);
+    renderer.autoClear = true;
+  }
+  if (xr.presenting) {
+    renderer.autoClear = false;
+    renderer.render(xr.updateLasers(laserHits), camera);
     renderer.autoClear = true;
   }
   if (floor && !xr.presenting) {

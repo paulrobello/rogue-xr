@@ -1,7 +1,8 @@
 import { createStandardHand, createXrSession, type XrSessionOptions } from '@par/xr-workspace';
-import type * as THREE from 'three';
+import * as THREE from 'three';
 import type { ActionBus } from '../core/actions.ts';
 import { WORKSPACE_COLORS } from '../palette.ts';
+import { createLaser } from './laser.ts';
 import { readThumbstick, type Vec2 } from './locomotion.ts';
 
 /** Seated play: local-floor keeps the floor plane; medium foveation per the Quest 3 guide. */
@@ -15,6 +16,7 @@ type Side = 'left' | 'right';
 interface TrackedSource {
   update(deltaSeconds: number): void;
   hide(): void;
+  aim(hit: number | null, visible: boolean): void;
   readonly input: XRInputSource | null;
   readonly grip: THREE.Object3D;
   /** The WebXR target-ray space: its -Z axis is where the controller points. */
@@ -44,6 +46,12 @@ export interface XrRig {
   grips(): HandPair<THREE.Object3D>;
   /** Controller target-ray objects (pointing, -Z) by handedness. */
   rays(): HandPair<THREE.Object3D>;
+  /**
+   * Aims each controller's pointer beam (hidden for tracked hands and outside XR) and returns the
+   * scene holding the beams, for a pass drawn after the menu boards. A hit distance ends that
+   * hand's beam on what it points at; null draws the idle length.
+   */
+  updateLasers(hits: HandPair<number>): THREE.Scene;
   dispose(): void;
 }
 
@@ -60,6 +68,7 @@ export function createXrRig(
 ): XrRig {
   renderer.xr.enabled = true;
 
+  const laserScene = new THREE.Scene();
   const sources: TrackedSource[] = [0, 1].map((index) => {
     const controller = renderer.xr.getController(index);
     const grip = renderer.xr.getControllerGrip(index);
@@ -68,6 +77,7 @@ export function createXrRig(
       handColor: WORKSPACE_COLORS.handColor,
       armColor: WORKSPACE_COLORS.armColor,
     });
+    const laser = createLaser(laserScene);
     let input: XRInputSource | null = null;
     controller.addEventListener('connected', (event) => {
       input = (event as unknown as { data: XRInputSource }).data;
@@ -91,6 +101,10 @@ export function createXrRig(
       },
       hide() {
         visual.hide();
+        laser.follow(controller, null, false);
+      },
+      aim(hit: number | null, visible: boolean) {
+        laser.follow(controller, hit, visible);
       },
       get input() {
         return input;
@@ -133,6 +147,16 @@ export function createXrRig(
     },
     grips: () => byHand(sources, (source) => source.grip),
     rays: () => byHand(sources, (source) => source.ray),
+    updateLasers(hits) {
+      for (const source of sources) {
+        const side = source.input?.handedness;
+        const isController = !!source.input && !source.input.hand;
+        if (side === 'left' || side === 'right') {
+          source.aim(hits[side], session.presenting && isController);
+        } else source.aim(null, false);
+      }
+      return laserScene;
+    },
     dispose: () => session.dispose(),
   };
 }
