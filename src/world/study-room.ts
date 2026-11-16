@@ -4,8 +4,10 @@ import { GREYBOX_TEMPLATES, parseRoomTemplate, type RoomTemplate } from '../cont
 import { loadRoomLightmap, parseTemplateManifest, type TemplateManifest } from './lightmap.ts';
 import { type CompressedTextureLoader, configurePbrTexture, type PbrSet } from './materials.ts';
 
-/** The baked hero study (P4-T4): `study.glb`, its lightmap and its manifest. */
-export const STUDY_BASE = '/assets/rooms/study';
+/** The baked hero rooms (P4-T4, P5-T1, P5-T2): each is `<id>.glb`, its lightmap and its manifest. */
+export const HERO_ROOMS = ['study', 'hall', 'corridor', 'gear-shaft', 'guardian-vault'] as const;
+/** Where a baked room's files live. */
+export const roomBase = (id: string): string => `/assets/rooms/${id}`;
 /** Environment reflection strength on the study's surfaces, as calibrated in `?view=room-asset-proof`. */
 const STUDY_ENV_INTENSITY = 0.12;
 
@@ -14,11 +16,48 @@ type SlotEntry =
   | { maps: { basecolor: string; normal: string; orm: string }; uv: 0 }
   | { color: string; roughness?: number; emissive?: string; emissiveIntensity?: number };
 
+/** A model node the runtime turns at a constant rate about `axis` (room-local), unrotated at rest. */
+export interface RigidNode {
+  node: string;
+  axis: [number, number, number];
+  radPerSec: number;
+}
+
 export interface StudyManifest {
   manifest: TemplateManifest;
   template: RoomTemplate;
   materials: Record<string, SlotEntry>;
   glassEmissiveIntensity: number;
+  rigidNodes: RigidNode[];
+}
+
+function parseRigidNodes(raw: unknown): RigidNode[] {
+  if (raw === undefined) return [];
+  if (!Array.isArray(raw)) throw new Error('room manifest: rigidNodes must be an array');
+  return raw.map((entry: Partial<RigidNode>, i) => {
+    const axis = entry.axis;
+    const ok =
+      typeof entry.node === 'string' &&
+      typeof entry.radPerSec === 'number' &&
+      Number.isFinite(entry.radPerSec) &&
+      Array.isArray(axis) &&
+      axis.length === 3 &&
+      axis.every((v) => typeof v === 'number') &&
+      Math.hypot(...axis) > 0;
+    if (!ok) throw new Error(`room manifest: rigidNodes[${i}] needs node, axis and radPerSec`);
+    return {
+      node: entry.node as string,
+      axis: axis as RigidNode['axis'],
+      radPerSec: entry.radPerSec as number,
+    };
+  });
+}
+
+/** A rigid node's angle `seconds` into its spin, wrapped to [0, 2π) so long sessions keep precision. */
+export function rigidAngle(radPerSec: number, seconds: number): number {
+  const turn = Math.PI * 2;
+  const a = (radPerSec * seconds) % turn;
+  return a < 0 ? a + turn : a;
 }
 
 /** Parses the study manifest: lightmap contract, room template and material slots. */
@@ -31,12 +70,17 @@ export function parseStudyManifest(raw: unknown): StudyManifest {
     template: parseRoomTemplate(raw),
     materials: r.materials,
     glassEmissiveIntensity: r.glassEmissiveIntensity ?? 1,
+    rigidNodes: parseRigidNodes((raw as { rigidNodes?: unknown }).rigidNodes),
   };
 }
 
-export async function fetchStudyManifest(base = STUDY_BASE): Promise<StudyManifest> {
-  const response = await fetch(`${base}/study.manifest.json`);
-  if (!response.ok) throw new Error(`study manifest: HTTP ${response.status}`);
+/** Fetches and parses a baked room's manifest, `<base>/<id>.manifest.json`. */
+export async function fetchStudyManifest(
+  id = 'study',
+  base = roomBase(id),
+): Promise<StudyManifest> {
+  const response = await fetch(`${base}/${id}.manifest.json`);
+  if (!response.ok) throw new Error(`${id} manifest: HTTP ${response.status}`);
   return parseStudyManifest(await response.json());
 }
 
@@ -69,6 +113,17 @@ export function heroTemplates(
     return base;
   }
   return base.map((t) => (t.id === study.id ? study : t));
+}
+
+/** `heroTemplates` for every baked room that loaded; a null (failed) entry keeps its greybox. */
+export function heroRoomTemplates(
+  heroes: readonly (RoomTemplate | null)[],
+  base: readonly RoomTemplate[] = GREYBOX_TEMPLATES,
+): readonly RoomTemplate[] {
+  return heroes.reduce<readonly RoomTemplate[]>(
+    (templates, t) => heroTemplates(t, templates),
+    base,
+  );
 }
 
 /**
@@ -113,18 +168,19 @@ export async function loadStudyAsset(options: {
   base?: string;
 }): Promise<StudyAsset> {
   const { study, set, ktx2 } = options;
-  const base = options.base ?? STUDY_BASE;
+  const id = study.manifest.template;
+  const base = options.base ?? roomBase(id);
   const gltf = await new GLTFLoader().loadAsync(`${base}/${study.manifest.glb}`);
   const owned: THREE.Texture[] = [];
   const slots = new Map<string, THREE.MeshStandardMaterial>();
   for (const [name, entry] of Object.entries(study.materials)) {
-    slots.set(name, await slotMaterial(name, entry, set, ktx2, base, study, owned));
+    slots.set(name, await slotMaterial(name, entry, set, ktx2, base, study, owned, id));
   }
   gltf.scene.traverse((node) => {
     const mesh = node as THREE.Mesh;
     if (!mesh.isMesh) return;
     const material = slots.get((mesh.material as THREE.Material).name);
-    if (!material) throw new Error(`study: GLB slot ${(mesh.material as THREE.Material).name}`);
+    if (!material) throw new Error(`${id}: GLB slot ${(mesh.material as THREE.Material).name}`);
     mesh.material = material;
   });
   const lightmap = await loadRoomLightmap(study.manifest, base, ktx2, gltf.scene);
@@ -171,10 +227,11 @@ async function slotMaterial(
   base: string,
   study: StudyManifest,
   owned: THREE.Texture[],
+  id: string,
 ): Promise<THREE.MeshStandardMaterial> {
   if ('pbr' in entry) {
     const shared = set.materials.get(entry.pbr);
-    if (!shared) throw new Error(`study: ${name} wants unknown material ${entry.pbr}`);
+    if (!shared) throw new Error(`${id}: ${name} wants unknown material ${entry.pbr}`);
     const material = shared.clone();
     material.name = name;
     if (material.emissiveMap) material.emissiveIntensity = study.glassEmissiveIntensity;

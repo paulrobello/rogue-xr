@@ -38,6 +38,7 @@ import type { RewardTier } from './rules/run.ts';
 import { createWorkshop } from './rules/workshop.ts';
 import { mountUpdateNotice } from './update/index.ts';
 import { type FloorView, mountFloorView, seedFromQuery } from './world/floor-view.ts';
+import { dressHeroRooms, fetchHeroRooms, loadHeroAssets } from './world/hero-rooms.ts';
 import { createKtx2Loader } from './world/ktx2.ts';
 import { mountLightmapProof } from './world/lightmap-proof.ts';
 import { mountMaterialProof } from './world/material-proof.ts';
@@ -45,7 +46,7 @@ import { loadPbrSet } from './world/materials.ts';
 import { mountRoomAssetProof } from './world/room-asset-proof.ts';
 import {
   fetchStudyManifest,
-  heroTemplates,
+  HERO_ROOMS,
   loadStudyAsset,
   type StudyAsset,
 } from './world/study-room.ts';
@@ -117,15 +118,13 @@ const directSeed = params.has('seed') && !params.has('title');
 const bootSeed = params.has('seed')
   ? seedFromQuery(location.search)
   : (storedSnapshot?.run.seed ?? randomSeed());
-// The baked study's manifest carries its desk and shelf colliders, so the world is built from it
-// before the first floor; its model, the sentry and the table load afterwards (P4-T9).
-const studyManifest = proofView
-  ? null
-  : await fetchStudyManifest().catch((error: unknown) => {
-      console.warn('study manifest unavailable, greybox study kept', error);
-      return null;
-    });
-const worldTemplates = heroTemplates(studyManifest?.template ?? null);
+// The baked rooms' manifests carry their extra colliders (the study's desk and shelves, the
+// gear-shaft's drive), so the world is built from them before the first floor; their models, the
+// sentry and the table load afterwards (P4-T9, P5-T12). Each room falls back to its greybox alone.
+const heroRooms = proofView
+  ? { manifests: [], templates: undefined }
+  : await fetchHeroRooms(HERO_ROOMS, (id) => fetchStudyManifest(id));
+const worldTemplates = heroRooms.templates;
 const mountFloor = (seed: string): FloorView =>
   mountFloorView(scene, rig, seed, { templates: worldTemplates });
 if (!proofView) floor = mountFloor(bootSeed);
@@ -306,17 +305,35 @@ const heroSet = floor
       return { ktx2, set };
     })()
   : null;
-const studyAsset: Promise<StudyAsset | null> =
-  heroSet && studyManifest
-    ? heroSet
-        .then(({ ktx2, set }) =>
-          loadStudyAsset({ study: studyManifest, set, ktx2, envMap: heroEnv }),
-        )
-        .catch((error: unknown) => {
-          console.warn('study asset unavailable, greybox study kept', error);
-          return null;
-        })
-    : Promise.resolve(null);
+const roomAssets: Promise<StudyAsset[]> = heroSet
+  ? heroSet
+      .then(({ ktx2, set }) =>
+        loadHeroAssets(heroRooms.manifests, (study) =>
+          loadStudyAsset({ study, set, ktx2, envMap: heroEnv }),
+        ),
+      )
+      .catch((error: unknown) => {
+        console.warn('hero material set unavailable, greybox rooms kept', error);
+        return [];
+      })
+  : Promise.resolve([]);
+// Sealed doorways close with a walnut leaf from the same set, reflecting like the room surfaces.
+const sealedDoorMaterial: Promise<{ material: THREE.Material; tileMeters: number } | null> = heroSet
+  ? heroSet
+      .then(({ set }) => {
+        const walnut = set.materials.get('walnut');
+        const tileMeters = set.manifest.walnut?.tileMeters;
+        if (!walnut || !tileMeters) return null;
+        const material = walnut.clone();
+        material.name = 'sealed-door';
+        if (heroEnv) {
+          material.envMap = heroEnv;
+          material.envMapIntensity = 0.12;
+        }
+        return { material, tileMeters };
+      })
+      .catch(() => null)
+  : Promise.resolve(null);
 const sentryAsset: Promise<SentryAsset | null> = heroSet
   ? heroSet
       .then(({ set }) => loadSentry({ materials: set }))
@@ -327,9 +344,10 @@ const sentryAsset: Promise<SentryAsset | null> = heroSet
   : Promise.resolve(null);
 const prepareSentry = (actor: SentryActor): void => reflect(actor.object, 0.45);
 const dressFloor = async (target: FloorView): Promise<void> => {
-  const [study, sentry] = await Promise.all([studyAsset, sentryAsset]);
+  const [rooms, sentry, door] = await Promise.all([roomAssets, sentryAsset, sealedDoorMaterial]);
   if (target !== floor) return;
-  if (study) target.useRoomAsset('study', study.instantiate);
+  dressHeroRooms(target, rooms);
+  if (door) target.world.dressSealedDoors(door.material, door.tileMeters);
   if (sentry) target.useSentryAsset(sentry, prepareSentry);
 };
 /** Resolves once the boot floor wears its hero assets and their programs are compiled. */
@@ -338,10 +356,10 @@ const heroReady: Promise<void> = floor
       const target = floor;
       await dressFloor(target);
       void heroSet?.then(({ ktx2 }) => ktx2.dispose());
-      const [study, sentry] = await Promise.all([studyAsset, sentryAsset]);
-      const variants: THREE.Object3D[] = [];
-      const studyVariant = study?.instantiate() ?? null;
-      if (studyVariant) variants.push(studyVariant);
+      const [rooms, sentry] = await Promise.all([roomAssets, sentryAsset]);
+      // One instance per baked room, so every room's programs (the corridor's cloth and lamp glass,
+      // the vault's braziers) link behind the veil even when this floor never places that room.
+      const variants: THREE.Object3D[] = rooms.map((room) => room.instantiate());
       const actor = sentry?.spawn() ?? null;
       if (actor) {
         prepareSentry(actor);
@@ -350,7 +368,8 @@ const heroReady: Promise<void> = floor
       const table = await tableAsset;
       if (table) variants.push(table.scene);
       try {
-        await runVeil(renderer, scene, camera, study?.textures ?? [], { variants });
+        const textures = new Set(rooms.flatMap((room) => room.textures));
+        await runVeil(renderer, scene, camera, [...textures], { variants });
       } finally {
         actor?.dispose();
       }

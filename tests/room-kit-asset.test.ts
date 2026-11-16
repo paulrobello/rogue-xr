@@ -10,7 +10,7 @@ import {
 } from '../src/content/rooms.ts';
 import { DEFAULT_FLOOR_PARAMS, generateFloor, worldRooms } from '../src/floor/generate.ts';
 import { parseTemplateManifest, selectLightmapFile } from '../src/world/lightmap.ts';
-import { heroTemplates, parseStudyManifest } from '../src/world/study-room.ts';
+import { HERO_ROOMS, heroRoomTemplates, parseStudyManifest } from '../src/world/study-room.ts';
 
 /** P5-T1 and P5-T2 kit rooms: baked templates that must stand in for their greybox twins unchanged. */
 const KIT = ['hall', 'corridor', 'gear-shaft', 'guardian-vault'] as const;
@@ -176,10 +176,12 @@ describe('kit rooms in floor generation (1,000-seed property run)', () => {
   const baked = Object.fromEntries(
     BAKED.map((id) => [id, parseRoomTemplate(rawManifest(id))]),
   ) as Record<(typeof BAKED)[number], RoomTemplate>;
-  const kit = BAKED.reduce<readonly RoomTemplate[]>(
-    (templates, id) => heroTemplates(baked[id], templates),
-    heroTemplates(null),
-  );
+  // The exact set main.ts builds the world from (fetchHeroRooms reduces the same way).
+  const kit = heroRoomTemplates(HERO_ROOMS.map((id) => baked[id]));
+
+  it('covers every baked room the game loads', () => {
+    expect([...HERO_ROOMS].sort()).toEqual([...BAKED].sort());
+  });
 
   it('swaps every baked template in (not silently kept greybox)', () => {
     for (const id of BAKED) expect(kit.find((t) => t.id === id)).toBe(baked[id]);

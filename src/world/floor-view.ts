@@ -9,6 +9,7 @@ import { generateFloor } from '../floor/generate.ts';
 import { PALETTE } from '../palette.ts';
 import { yawFromMatrix } from '../xr/locomotion.ts';
 import { buildFloorWorld, type FloorWorld } from './floor-world.ts';
+import { type RigidNode, rigidAngle } from './study-room.ts';
 
 /** The run seed from `?seed=`, or a fresh random one when it is missing or malformed. */
 export function seedFromQuery(search: string): string {
@@ -41,9 +42,16 @@ export interface FloorView {
   tableSockets(): { diceTray: THREE.Object3D | null; sigilPlate: THREE.Object3D | null };
   /**
    * Dresses every room built from `templateId` with `instantiate()`'s baked model in place of its
-   * greybox. Rooms keep the greybox when this is never called (the asset failed to load).
+   * greybox. Rooms keep the greybox when this is never called (the asset failed to load). Each
+   * instance's `rigidNodes` turn from then on while their room is shown, until `dispose`.
    */
-  useRoomAsset(templateId: string, instantiate: () => THREE.Object3D): number;
+  useRoomAsset(
+    templateId: string,
+    instantiate: () => THREE.Object3D,
+    rigidNodes?: readonly RigidNode[],
+  ): number;
+  /** Rigid nodes (the gear-shaft crown gear) this floor turns each frame. */
+  readonly spinnerCount: number;
   /**
    * Swaps every Cog Sentry placeholder for a spawned actor, as soon as no fight is running. Bodies
    * already removed (cleared rooms) are skipped. `prepare` runs on each new actor before it is
@@ -139,6 +147,21 @@ export function mountFloorView(
       }
     }
   };
+  interface Spinner {
+    node: THREE.Object3D;
+    axis: THREE.Vector3;
+    radPerSec: number;
+    room: THREE.Object3D;
+  }
+  const spinners: Spinner[] = [];
+  let clock = 0;
+  const spin = (dt: number): void => {
+    clock += dt;
+    for (const s of spinners) {
+      if (s.room.visible)
+        s.node.quaternion.setFromAxisAngle(s.axis, rigidAngle(s.radPerSec, clock));
+    }
+  };
   const disposeActor = (actor: SentryActor): void => {
     actors.delete(actor.object);
     actor.dispose();
@@ -179,16 +202,31 @@ export function mountFloorView(
       sentry = { asset, prepare };
       dressSentries();
     },
-    useRoomAsset(templateId, instantiate) {
+    useRoomAsset(templateId, instantiate, rigidNodes = []) {
       let dressed = 0;
       world.plan.rooms.forEach((room, index) => {
         if (room.templateId !== templateId) return;
-        world.dressRoom(index, instantiate());
+        const model = instantiate();
+        world.dressRoom(index, model);
+        const group = world.roomGroups[index];
+        for (const rigid of rigidNodes) {
+          const node = model.getObjectByName(rigid.node);
+          if (!node || !group) {
+            console.warn(`${templateId}: rigid node ${rigid.node} missing; it stays still`);
+            continue;
+          }
+          const axis = new THREE.Vector3(...rigid.axis).normalize();
+          spinners.push({ node, axis, radPerSec: rigid.radPerSec, room: group });
+        }
         dressed++;
       });
       return dressed;
     },
+    get spinnerCount() {
+      return spinners.length;
+    },
     dispose() {
+      spinners.length = 0;
       for (const actor of [...actors.values()]) disposeActor(actor);
       sentry = null;
       encounter.dispose();
@@ -232,6 +270,7 @@ export function mountFloorView(
       };
     },
     update(head, dt) {
+      spin(dt);
       encounter.update(dt);
       dressSentries();
       // Clips run on real seconds; the freeze is a pose, not a slowed clock.

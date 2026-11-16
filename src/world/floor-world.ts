@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {
   type Box,
   DOOR_WIDTH,
+  type Facing,
   GREYBOX_TEMPLATES,
   type Rect,
   type RoomTemplate,
@@ -64,11 +65,34 @@ export interface FloorWorld {
    * markers. The automatons and sealed-door caps stay. `model` is room-local.
    */
   dressRoom(room: number, model: THREE.Object3D): void;
+  /** The closed-door leaves in every sealed doorway. */
+  readonly sealedDoors: readonly THREE.Mesh[];
+  /**
+   * Gives every sealed door leaf `material` (owned by the caller), its UVs scaled so one texture
+   * tile covers `tileMeters`. Leaves keep their flat greybox colour until this is called.
+   */
+  dressSealedDoors(material: THREE.Material, tileMeters: number): void;
   dispose(): void;
 }
 
-/** Greybox children a baked room model replaces: the floor, collider walls and socket markers. */
-const GREYBOX_PART = /^(floor|collider-\d+|socket-.+|light-.+)$/;
+/**
+ * Greybox children a baked room model replaces: the floor, collider walls, socket markers and the
+ * wall fill above sealed doorways (the baked shell has its own wall above the lintel).
+ */
+const GREYBOX_PART = /^(floor|collider-\d+|socket-.+|light-.+|lintel-fill-.+)$/;
+
+/** Lintel height of every doorway: baked rooms frame a 1.6 x 2.4 m opening. */
+export const DOOR_HEIGHT = 2.4;
+/** Greybox wall height and thickness (`perimeterColliders` leaves door gaps the full height). */
+const WALL_HEIGHT = 4;
+const WALL_THICKNESS = 0.2;
+/** Yaw that turns a sealed door's local +z (into the room) to face the room, per wall. */
+const INTO_ROOM_YAW: Record<Facing, number> = {
+  N: 0,
+  S: Math.PI,
+  W: Math.PI / 2,
+  E: -Math.PI / 2,
+};
 
 const enemyGeometry = new THREE.CapsuleGeometry(0.35, 1.2, 4, 12);
 const guardianGeometry = new THREE.CapsuleGeometry(0.6, 1.8, 4, 12);
@@ -113,7 +137,7 @@ export function buildFloorWorld(
     metalness: 0.5,
     roughness: 0.45,
   });
-  const capMaterial = new THREE.MeshStandardMaterial({ color: PALETTE.warmBlack, roughness: 0.9 });
+  const capMaterial = new THREE.MeshStandardMaterial({ color: PALETTE.walnut, roughness: 0.8 });
   const rooms = worldRooms(plan, templates);
   const group = new THREE.Group();
   group.name = `floor-${plan.seed}`;
@@ -135,22 +159,44 @@ export function buildFloorWorld(
       max: [c.max[0] + ox, c.max[1], c.max[2] + oz],
     }));
   });
-  const capGeometry = new THREE.BoxGeometry(DOOR_WIDTH, 4, 0.2);
+  // A sealed doorway reads as a closed door: a one-sided leaf filling exactly the 1.6 x 2.4 m
+  // opening on the wall line, facing into the room, so it sits flush at the back of the baked
+  // reveal and never pokes into a room behind the wall. Greybox walls leave the gap open to 4 m,
+  // so a fill above the lintel (removed when the room is dressed) closes it to the inner face.
+  const capGeometry = new THREE.PlaneGeometry(DOOR_WIDTH, DOOR_HEIGHT);
+  capGeometry.translate(0, DOOR_HEIGHT / 2, 0);
+  const capUvMeters = Float32Array.from(capGeometry.getAttribute('uv').array, (v, i) =>
+    i % 2 === 0 ? v * DOOR_WIDTH : v * DOOR_HEIGHT,
+  );
+  const fillDepth = WALL_THICKNESS / 2;
+  const fillGeometry = new THREE.BoxGeometry(DOOR_WIDTH, WALL_HEIGHT - DOOR_HEIGHT, fillDepth);
+  fillGeometry.translate(0, (WALL_HEIGHT + DOOR_HEIGHT) / 2, fillDepth / 2);
+  const sealedDoors: THREE.Mesh[] = [];
   for (const s of plan.sealed) {
     const door = rooms[s.room]?.doors.find((d) => d.id === s.door);
-    if (!door) continue;
+    const roomGroup = roomGroups[s.room];
+    if (!door || !roomGroup) continue;
+    const yaw = INTO_ROOM_YAW[door.facing];
     const cap = new THREE.Mesh(capGeometry, capMaterial);
     cap.name = `sealed-${s.room}-${s.door}`;
-    cap.position.set(door.world[0], 2, door.world[1]);
+    cap.position.set(door.world[0], 0, door.world[1]);
+    cap.rotation.y = yaw;
+    cap.userData.room = s.room;
+    roomGroup.attach(cap);
+    sealedDoors.push(cap);
+    const fill = new THREE.Mesh(fillGeometry, materials.wall);
+    fill.name = `lintel-fill-${s.room}-${s.door}`;
+    fill.position.copy(cap.position);
+    fill.quaternion.copy(cap.quaternion);
+    roomGroup.add(fill);
     const ew = door.facing === 'E' || door.facing === 'W';
-    if (ew) cap.rotation.y = Math.PI / 2;
-    const [hx, hz] = ew ? [0.1, DOOR_WIDTH / 2] : [DOOR_WIDTH / 2, 0.1];
+    const [hx, hz] = ew
+      ? [WALL_THICKNESS / 2, DOOR_WIDTH / 2]
+      : [DOOR_WIDTH / 2, WALL_THICKNESS / 2];
     colliders[s.room]?.push({
       min: [door.world[0] - hx, 0, door.world[1] - hz],
-      max: [door.world[0] + hx, 4, door.world[1] + hz],
+      max: [door.world[0] + hx, WALL_HEIGHT, door.world[1] + hz],
     });
-    cap.userData.room = s.room;
-    roomGroups[s.room]?.attach(cap);
   }
 
   const world: FloorWorld = {
@@ -206,6 +252,13 @@ export function buildFloorWorld(
       list[index] = next;
       return true;
     },
+    sealedDoors,
+    dressSealedDoors(material, tileMeters) {
+      const uv = capGeometry.getAttribute('uv') as THREE.BufferAttribute;
+      for (let i = 0; i < capUvMeters.length; i++) uv.array[i] = (capUvMeters[i] ?? 0) / tileMeters;
+      uv.needsUpdate = true;
+      for (const cap of sealedDoors) cap.material = material;
+    },
     dressRoom(room, model) {
       const g = roomGroups[room];
       if (!g) return;
@@ -219,6 +272,7 @@ export function buildFloorWorld(
       group.removeFromParent();
       for (const m of [...Object.values(materials), enemyMaterial, capMaterial]) m.dispose();
       capGeometry.dispose();
+      fillGeometry.dispose();
     },
   };
   function applyVisibility() {
