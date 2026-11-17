@@ -1,6 +1,14 @@
 import * as THREE from 'three';
 import type { SfxId } from '../audio/cues.ts';
 import { CanvasLabel, roundRect, wrapText } from '../combat-view/canvas-label.ts';
+import { CastFx } from '../combat-view/cast-fx.ts';
+import { CastReveal } from '../combat-view/cast-reveal.ts';
+import {
+  type CastFxStep,
+  castFxSteps,
+  castLandSeconds,
+  REVEAL_EFFECT_AT,
+} from '../combat-view/cast-timing.ts';
 import {
   CombatController,
   type CombatOptions,
@@ -91,6 +99,13 @@ export const WIN_HOLD_SECONDS = 1.2;
 /** Seconds the defeat banner holds before the automatons go home. */
 export const DEFEAT_HOLD_SECONDS = 1.6;
 const PLATE_DONE_SECONDS = 1.6;
+/** The cast card reveal: frame height over width, its share of the plate, and its lift off it. */
+const REVEAL_ASPECT = 1.51;
+const REVEAL_FILL = 0.8;
+const REVEAL_LIFT = 0.03;
+/** The ward shield forms this far from the eye toward the plate, and this far below that line. */
+const SHIELD_REACH = 0.42;
+const SHIELD_DROP = 0.04;
 /** A sigil casts once the pen has been lifted this long, so multi-stroke glyphs (gear) can be drawn. */
 export const SIGIL_CAST_SECONDS = 0.6;
 /** The desktop drag plane sits this far above the table top, so a dragged card skims it. */
@@ -315,6 +330,8 @@ interface Launch {
   readonly at: number;
   readonly power: number;
   readonly kind: BoltKind;
+  /** Show the cast card's art over the plate first; the effect leaves it at `at`. */
+  readonly reveal?: boolean;
 }
 
 /**
@@ -493,6 +510,9 @@ export class CombatSession {
   private deathWait = -1;
   /** Spell bolts and impact bursts. */
   private readonly fx: SpellFx;
+  /** The non-attack effect FX (shield, steam, motes, draw shimmer) and the cast card reveal. */
+  private readonly effectFx: CastFx;
+  private readonly revealCard: CastReveal;
   private launch: Launch | null = null;
   private flight: Flight | null = null;
   private readonly knocks: Knock[] = Array.from({ length: KNOCK_SLOTS }, () => ({
@@ -707,6 +727,10 @@ export class CombatSession {
     deps.root.add(this.plate);
     this.fx = new SpellFx({ reducedMotion: deps.reducedMotion ?? false });
     this.group.add(this.fx);
+    this.effectFx = new CastFx({ reducedMotion: deps.reducedMotion ?? false });
+    this.group.add(this.effectFx);
+    this.revealCard = new CastReveal({ reducedMotion: deps.reducedMotion ?? false });
+    this.group.add(this.revealCard);
 
     this.handAnchor.name = 'desktop-hand';
     this.handAnchor.position.set(...HAND_HOME.position);
@@ -788,7 +812,10 @@ export class CombatSession {
     return this.shown ?? this.held?.state ?? this.flight?.state ?? this.controller.state;
   }
 
-  /** True while a player attack's bolt is on its way: its effects show when it lands. */
+  /**
+   * True while a play's effects are on their way (an attack's bolt, or a block, steam, status or
+   * draw FX): they show when it lands.
+   */
   get attackInFlight(): boolean {
     return this.flight !== null;
   }
@@ -796,6 +823,16 @@ export class CombatSession {
   /** The spell bolts and impact bursts, for checks. */
   get spellFx(): SpellFx {
     return this.fx;
+  }
+
+  /** The non-attack effect FX, for checks. */
+  get castFx(): CastFx {
+    return this.effectFx;
+  }
+
+  /** The cast card's art over the plate, for checks. */
+  get castReveal(): CastReveal {
+    return this.revealCard;
   }
 
   /** The combat log as far as the view has shown it: an enemy's lines appear when it acts. */
@@ -1173,6 +1210,8 @@ export class CombatSession {
     this.stepHeld(dt);
     // Bolts step before the flight check, so a bolt reaches its target on the frame it lands.
     this.fx.update(dt);
+    this.effectFx.update(dt);
+    this.revealCard.update(dt);
     this.stepFlight();
     this.stepKnocks(dt);
     this.plate.update(dt);
@@ -1221,6 +1260,8 @@ export class CombatSession {
     this.launch = null;
     this.settleKnocks();
     this.fx.dispose();
+    this.effectFx.dispose();
+    this.revealCard.dispose();
     this.numbers.dispose();
     for (const off of this.disposers.splice(0)) off();
     this.fan.dispose();
@@ -1549,9 +1590,10 @@ export class CombatSession {
     const sigil = this.launch?.kind === 'sigil' ? this.launch : null;
     this.launch = {
       from: sigil?.from ?? this.dice.root.getWorldPosition(new THREE.Vector3()),
-      at: this.clock,
+      at: this.clock + (sigil ? REVEAL_EFFECT_AT : 0),
       power: sigil?.power ?? CARD_POWER,
       kind: sigil ? 'sigil' : 'card',
+      reveal: sigil !== null,
     };
     if (!this.startFlight(held.state, held.events, held.logLength)) this.present(held.events);
     this.launch = null;
@@ -1593,13 +1635,15 @@ export class CombatSession {
       this.message = 'Trace too short, draw the glyph';
       return;
     }
-    // The spell leaves the plate centre as the cast glyph collapses into it.
+    // The card's art blooms from the plate centre as the cast glyph collapses into it, and the
+    // spell leaves it as the card burns away.
     const c = this.platePose.center;
     this.launch = {
       from: new THREE.Vector3(c.x, c.y, c.z),
-      at: this.clock + GLYPH_LAUNCH_SECONDS,
+      at: this.clock + GLYPH_LAUNCH_SECONDS + REVEAL_EFFECT_AT,
       power: castPower(result.multiplier),
       kind: 'sigil',
+      reveal: true,
     };
     const played = this.controller.submitSigil(this.plate.strokes);
     this.plateDone = 0;
@@ -1934,8 +1978,10 @@ export class CombatSession {
   }
 
   /**
-   * Holds a play's effects while its bolt flies, when the play hits an enemy. `state` and
-   * `logLength` are the view from before the play. Returns false (nothing held) otherwise.
+   * Holds a play's effects while its FX play: an attack's bolt until it lands on the enemy, a
+   * block, steam, status or draw FX until it lands on its target. A sigil cast shows its card's
+   * art over the plate first. `state` and `logLength` are the view from before the play. Returns
+   * false (nothing held) for a play with no such FX. The rules have already resolved it.
    */
   private startFlight(state: CombatState, events: CombatEvent[], logLength: number): boolean {
     const ids: string[] = [];
@@ -1948,17 +1994,23 @@ export class CombatSession {
       )
         ids.push(e.target);
     }
-    if (ids.length === 0) return false;
     const launch = this.launch;
+    const played = events.find((e) => e.type === 'card-played');
+    const card = played?.type === 'card-played' ? getCard(played.cardId) : null;
+    // Only a play the player made (with a launch point) gets effect FX besides the bolt.
+    const steps = card && launch ? castFxSteps(card) : [];
     const from = launch?.from ?? this.fan.root.getWorldPosition(new THREE.Vector3());
     const targets = ids.flatMap((id) => {
       const at = this.aimOfId(id);
       return at ? [{ id, at }] : [];
     });
-    if (targets.length === 0) return false;
+    const land = castLandSeconds(steps);
+    if (targets.length === 0 && land <= 0) return false;
     let seconds = 0;
     for (const t of targets) seconds = Math.max(seconds, flightSeconds(t.at.distanceTo(from)));
     const delay = launch ? Math.max(0, launch.at - this.clock) : 0;
+    if (launch?.reveal && card) this.showReveal(card.id, Math.max(0, delay - REVEAL_EFFECT_AT));
+    this.playEffectFx(steps, events, from, targets, delay, seconds, played);
     // The card's fling sounds with the play; everything else waits for contact.
     for (const e of events) if (e.type === 'card-played') this.deps.audio?.playCombatEvent(e);
     this.flight = {
@@ -1972,11 +2024,83 @@ export class CombatSession {
       targets,
       delay,
       seconds,
-      contact: delay + seconds,
+      contact: delay + (targets.length > 0 ? seconds : land),
       start: this.clock,
       launched: false,
     };
     return true;
+  }
+
+  /** Shows the cast card `cardId` over the plate, `delay` seconds from now. */
+  private showReveal(cardId: string, delay: number): void {
+    const p = this.platePose;
+    const width = Math.min(2 * p.halfWidth, (2 * p.halfHeight) / REVEAL_ASPECT) * REVEAL_FILL;
+    const centre = {
+      x: p.center.x + p.normal.x * REVEAL_LIFT,
+      y: p.center.y + p.normal.y * REVEAL_LIFT,
+      z: p.center.z + p.normal.z * REVEAL_LIFT,
+    };
+    // The card's face points along the plate normal, toward the player.
+    const right = {
+      x: p.up.y * p.normal.z - p.up.z * p.normal.y,
+      y: p.up.z * p.normal.x - p.up.x * p.normal.z,
+      z: p.up.x * p.normal.y - p.up.y * p.normal.x,
+    };
+    this.revealCard.show(cardId, centre, right, p.up, width, delay);
+  }
+
+  /**
+   * Starts a play's FX other than the bolt, each at its step time after the effect leaves `from`
+   * (`delay` from now): the ward shield in front of the player, steam from where the spell left,
+   * status motes to their targets (riding with the bolt on an attack), the shimmer to the hand.
+   */
+  private playEffectFx(
+    steps: readonly CastFxStep[],
+    events: readonly CombatEvent[],
+    from: THREE.Vector3,
+    targets: readonly { id: string; at: THREE.Vector3 }[],
+    delay: number,
+    seconds: number,
+    played: CombatEvent | undefined,
+  ): void {
+    if (steps.length === 0) return;
+    const eye = this.deps.camera.getWorldPosition(new THREE.Vector3());
+    const c = this.platePose.center;
+    const ward = eye.clone().lerp(new THREE.Vector3(c.x, c.y, c.z), SHIELD_REACH);
+    ward.y -= SHIELD_DROP;
+    const strikes = steps.some((s) => s.kind === 'bolt');
+    let block = 0;
+    for (const e of events)
+      if (e.type === 'block-gained' && e.target === PLAYER_ID) block += e.amount;
+    for (const step of steps) {
+      const at = delay + step.at;
+      if (step.kind === 'shield') {
+        this.effectFx.shield(ward, eye.clone().sub(ward), block || step.amount, at);
+      } else if (step.kind === 'steam') {
+        this.effectFx.steam(from, step.amount, at);
+      } else if (step.kind === 'draw') {
+        this.effectFx.draw(from, this.fan.root.getWorldPosition(new THREE.Vector3()), at);
+      } else if (step.kind === 'motes' && step.status) {
+        if (step.toward === 'player') {
+          this.effectFx.motes(from, ward, step.status, at);
+          continue;
+        }
+        if (strikes) {
+          for (const t of targets) this.effectFx.motes(from, t.at, step.status, at, seconds);
+          continue;
+        }
+        const ids = new Set<string>();
+        for (const e of events)
+          if (e.type === 'status-applied' && e.target !== PLAYER_ID && e.status === step.status)
+            ids.add(e.target);
+        if (ids.size === 0 && played?.type === 'card-played' && played.target)
+          ids.add(played.target);
+        for (const id of ids) {
+          const aim = this.aimOfId(id);
+          if (aim) this.effectFx.motes(from, aim, step.status, at);
+        }
+      }
+    }
   }
 
   /** Steps the attack in flight: sends the bolts after the launch delay, lands them at contact. */

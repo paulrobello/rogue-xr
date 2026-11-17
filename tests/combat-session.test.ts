@@ -12,6 +12,7 @@ import {
   SIGIL_CAST_SECONDS,
   untargetedHint,
 } from '../src/combat/combat-session.ts';
+import { REVEAL_EFFECT_AT, SHIELD_FORM_SECONDS } from '../src/combat-view/cast-timing.ts';
 import { CombatController } from '../src/combat-view/controller.ts';
 import { type PlayerHit, playerHit, segmentEvents } from '../src/combat-view/enemy-turn.ts';
 import { HIT_NUMBER_SLOTS } from '../src/combat-view/hit-numbers.ts';
@@ -693,6 +694,7 @@ describe('combat session', () => {
     expect(session.controller.stage).toBe('idle');
     expect(session.plate.casting).toBe(true);
     expect(session.attackInFlight).toBe(true);
+    expect(session.castReveal.cardId).toBe('cogstorm');
     expect(session.view.enemies.map((e) => e.hp)).toEqual(before);
     let most = 0;
     let t = 0;
@@ -700,8 +702,11 @@ describe('combat session', () => {
       rig.step();
       t += DT;
       most = Math.max(most, session.spellFx.flying);
-      // Nothing leaves the plate before the glyph collapses.
-      if (session.plate.casting && session.plate.castAge < GLYPH_LAUNCH_SECONDS - DT)
+      // Nothing leaves the plate before the glyph collapses and the card has shown.
+      if (
+        session.plate.casting &&
+        session.plate.castAge < GLYPH_LAUNCH_SECONDS + REVEAL_EFFECT_AT - DT
+      )
         expect(session.spellFx.flying).toBe(0);
     }
     expect(session.attackInFlight).toBe(false);
@@ -710,6 +715,93 @@ describe('combat session', () => {
       session.controller.state.enemies.map((e) => e.hp),
     );
     expect(session.spellFx.flashing).toBe(Math.min(4, living));
+    rig.hook.dispose();
+  }, 60_000);
+
+  // Quest 3 playtest 2026-11-17: after a completed sigil's flash the card's art shows over the
+  // plate for a moment, then its effect plays; a block card forms a ward shield in front of the
+  // player, and the block readout changes when the shield has formed.
+  it('reveals a cast sigil card over the plate, then forms the ward shield and shows the block', async () => {
+    const rig = await openFight('SPIRE002', { deck: Array(10).fill('warding-glyph') });
+    const { session } = rig;
+    const before = session.view.player.block;
+    const uid = session.controller.state.piles.hand[0]?.uid as number;
+    drag(rig, session, uid, at(session, 'table'));
+    drawSigil(rig, session);
+    expect(session.controller.state.player.block).toBeGreaterThan(before);
+    expect(session.attackInFlight).toBe(true);
+    expect(session.castReveal.cardId).toBe('warding-glyph');
+    expect(session.view.player.block).toBe(before);
+    // The card's face (+Z, front side) points at the player's eye.
+    const face = new THREE.Vector3(0, 0, 1).applyQuaternion(
+      session.castReveal.getWorldQuaternion(new THREE.Quaternion()),
+    );
+    const toEye = rig.camera
+      .getWorldPosition(new THREE.Vector3())
+      .sub(session.castReveal.getWorldPosition(new THREE.Vector3()));
+    expect(face.dot(toEye)).toBeGreaterThan(0);
+    const castAt = session.time - session.plate.castAge;
+    let revealedAt = -1;
+    let shieldAt = -1;
+    let shownAt = -1;
+    for (let i = 0; i < 180; i++) {
+      rig.step();
+      const t = session.time - castAt;
+      if (revealedAt < 0 && session.castReveal.visible) revealedAt = t;
+      const lit = session.castFx.buffers[1]?.some((v) => v > 0) ?? false;
+      if (shieldAt < 0 && lit) shieldAt = t;
+      if (shownAt < 0 && session.view.player.block > before) shownAt = t;
+    }
+    // Glyph collapse, then the card, then the shield, then the readout once the shield has formed.
+    expect(revealedAt).toBeGreaterThan(GLYPH_LAUNCH_SECONDS - 2 * DT);
+    expect(revealedAt).toBeLessThan(GLYPH_LAUNCH_SECONDS + 3 * DT);
+    expect(shieldAt).toBeGreaterThan(GLYPH_LAUNCH_SECONDS + REVEAL_EFFECT_AT - 2 * DT);
+    expect(shownAt).toBeGreaterThan(
+      GLYPH_LAUNCH_SECONDS + REVEAL_EFFECT_AT + SHIELD_FORM_SECONDS - 3 * DT,
+    );
+    expect(shownAt).toBeLessThan(
+      GLYPH_LAUNCH_SECONDS + REVEAL_EFFECT_AT + SHIELD_FORM_SECONDS + 4 * DT,
+    );
+    expect(session.view.player.block).toBe(session.controller.state.player.block);
+    expect(session.castReveal.visible).toBe(false);
+    rig.step(2);
+    expect(session.castFx.active).toBe(false);
+    rig.hook.dispose();
+  }, 60_000);
+
+  it('plays the shield for a defend card dropped on the table, with no card reveal', async () => {
+    const rig = await openFight('SPIRE002', { deck: Array(10).fill('defend') });
+    const { session } = rig;
+    const before = session.view.player.block;
+    const uid = session.controller.state.piles.hand[0]?.uid as number;
+    drag(rig, session, uid, at(session, 'table'));
+    expect(session.controller.state.player.block).toBeGreaterThan(before);
+    expect(session.castFx.shielding).toBe(true);
+    expect(session.castReveal.active).toBe(false);
+    let t = 0;
+    while (session.attackInFlight && t < 1) {
+      rig.step();
+      t += DT;
+    }
+    expect(t).toBeLessThanOrEqual(CARD_LAUNCH_DELAY + SHIELD_FORM_SECONDS + 3 * DT);
+    expect(session.view.player.block).toBe(session.controller.state.player.block);
+    rig.hook.dispose();
+  }, 60_000);
+
+  it('puffs steam and sends the draw shimmer to the hand for a steam card', async () => {
+    const rig = await openFight('SPIRE002', { deck: Array(10).fill('release-valve') });
+    const { session } = rig;
+    const before = session.view.player.steam;
+    const uid = session.controller.state.piles.hand[0]?.uid as number;
+    drag(rig, session, uid, at(session, 'table'));
+    expect(session.attackInFlight).toBe(true);
+    expect(session.castFx.puffs).toBeGreaterThan(0);
+    expect(session.castFx.streams).toBe(1);
+    // The play's steam cost and gain show together when the puff lands.
+    expect(session.view.player.steam).toBe(before);
+    for (let i = 0; i < 60 && session.attackInFlight; i++) rig.step();
+    expect(session.attackInFlight).toBe(false);
+    expect(session.view.player.steam).toBe(session.controller.state.player.steam);
     rig.hook.dispose();
   }, 60_000);
 
