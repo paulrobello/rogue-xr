@@ -150,6 +150,9 @@ export function roomLightsFragmentBegin(
  * Directional (and sun) lights are skipped entirely: an interior room has no distant light, so the
  * greybox sun's specular is a sheen from nowhere in the bake. Point and spot lights (room sockets,
  * the hand lantern) keep their specular; the probe's specular carries brass and wet-stone gloss.
+ * A metal has no diffuse lobe, so the lightmap would never reach it and it would show only the
+ * neutral probe; metals instead reflect the baked light as a uniform environment of radiance E/π,
+ * weighted by metalness. The bake holds that irradiance because it zeroes Metallic while baking.
  */
 export function bakedRoomMaterial<T extends THREE.MeshStandardMaterial>(material: T): T {
   material.onBeforeCompile = (shader) => {
@@ -157,7 +160,14 @@ export function bakedRoomMaterial<T extends THREE.MeshStandardMaterial>(material
       .replace('#include <lights_fragment_begin>', () => roomLightsFragmentBegin())
       .replace(
         '#include <lights_fragment_maps>',
-        'irradiance = vec3( 0.0 );\n#include <lights_fragment_maps>\niblIrradiance = vec3( 0.0 );',
+        [
+          'irradiance = vec3( 0.0 );',
+          '#include <lights_fragment_maps>',
+          'iblIrradiance = vec3( 0.0 );',
+          '#if defined( USE_LIGHTMAP ) && defined( RE_IndirectSpecular )',
+          'radiance += metalnessFactor * lightMapIrradiance * RECIPROCAL_PI;',
+          '#endif',
+        ].join('\n'),
       )
       .replace(
         '#include <lights_fragment_end>',

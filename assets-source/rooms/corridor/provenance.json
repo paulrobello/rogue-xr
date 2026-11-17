@@ -209,7 +209,7 @@
     "corridor.lightmap.ktx2": "73f98c1d42f71ca505710d1b46f7c6699d7ec802242566bcdd707359594b9af1",
     "corridor.lightmap.png": "0867bfbb907a47dda6344348ac42841fc069cd94b117fd2b6fb92cb43a0d83d3",
     "corridor.manifest.json": "33c12e0cf034f2235a3b969c783e16cae6d2ad753c64511589e023c71187b2db",
-    "engine-compare.json": "212dcce491a03b8d14696988d6835815b52cb0bd990e472a0a8b16fe14967934",
+    "engine-compare.json": "af005ef80a22c520467dd478fcfb112ce004019735b2f47475bf9296425504d0",
     "uv1-report.json": "f2d70682244a58945f8e9a0a6b4500d2ccdc86352e148b47e60819a89ce9e263"
   },
   "references": [
@@ -323,27 +323,27 @@
   "reviewEvidence": [
     {
       "path": "assets-source/rooms/corridor/staging/review-sheet.jpg",
-      "sha256": "e7f51c1dde8dc96e0e3527b9fecfe7629feac9a9020e5b4cbe0710c9a3ca6653"
+      "sha256": "c054e9eb463326dfb3087210999e697066634fc41701c563833ea47d248c97e7"
     },
     {
       "path": "docs/verification/p5-rooms-corridor-floor-sealed-north.jpg",
-      "sha256": "cba137501a37d32b3007140c5b7000dadc326befd06d614a30989d7473509d34"
+      "sha256": "395d397abd2f6c9ae4a6ad99387ce9b5b2f8060307f727b1dcdca844bb3d6ec0"
     },
     {
       "path": "docs/verification/p5-rooms-corridor-hero.diffuse.jpg",
-      "sha256": "52b0419a4e8a931cf2c56ede1029ec34e179cee9f5fe4745594ca9a393546a4e"
+      "sha256": "229782150e69610455a33a80cc718e1151881733ab704903cc01d520458062be"
     },
     {
       "path": "docs/verification/p5-rooms-corridor-hero.jpg",
-      "sha256": "0d9c7b6db837ece3e995f1fc9abd9b2ddb9e31ca494e32af9e8e17202461b7e5"
+      "sha256": "46c9926d6197605bb712fa964388e53ad564f8d7678de2bbd49018bb4ecd9a8a"
     },
     {
       "path": "docs/verification/p5-rooms-corridor-lamp.jpg",
-      "sha256": "d21b220a757556b1d178963da9985b713bd56dcaba6f50417eb906f28eecdd09"
+      "sha256": "b6592ed5b31c750f1ad64186f4fee47c7ff85589d8dd40b60af0d492993705b4"
     },
     {
       "path": "docs/verification/p5-rooms-corridor-seam-from-corridor.jpg",
-      "sha256": "9d2cb3967084765352514ca39c9ce67bf557b5108508b7912841b3e5f2cb1275"
+      "sha256": "f48e08a6caa6ef0fbe57d86031cff249a7a0f37cabefbe0b73c7c43eb805d8bf"
     }
   ],
   "independentScore": {

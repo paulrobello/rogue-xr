@@ -407,19 +407,19 @@
   "reviewEvidence": [
     {
       "path": "assets-source/rooms/hall/staging/review-sheet.jpg",
-      "sha256": "cd8d97af42e9d6925b19a55a43baf300b5c1521875122dd66c73bc61a4aff96e"
+      "sha256": "602d8c33b37acb51f006c4a6cb59370473893cf4df7d007399eb199f09125619"
     },
     {
       "path": "docs/verification/p5-rooms-hall-bench.jpg",
-      "sha256": "c41be19a74165bed3b207df93ceac9dea7c08d34af8713a27d2816ca5e232953"
+      "sha256": "eb69d544d2b0297bf53fef34362c83c010f44cd3f8bbe404fdc4aa6ca39d7d7a"
     },
     {
       "path": "docs/verification/p5-rooms-hall-floor-sealed-west-close.jpg",
-      "sha256": "b3f9eac6d9a9b720a0ac66253dae522ad81f85db647ea38bfb82d57ae0511cf7"
+      "sha256": "385d609813395bd6f4181ba4bd5916795b2819eeeffd3e1f2ff545ad6b55216c"
     },
     {
       "path": "docs/verification/p5-rooms-hall-floor-sealed-west.jpg",
-      "sha256": "1ff1bbcd710b05d9c9533296f6fa426b9fd11d2eb0b76b57ba9e34546c0a5602"
+      "sha256": "9e8d9c087dc7a1f20fb6ad9937c7660f6f5a7f7b6c04f84e20a0bbd858fb1df8"
     },
     {
       "path": "docs/verification/p5-rooms-hall-hero.diffuse.jpg",
@@ -427,15 +427,15 @@
     },
     {
       "path": "docs/verification/p5-rooms-hall-hero.jpg",
-      "sha256": "50034c8a5d2790227b43f1981fa8b08fddd919117c71da7e9f39f5bda71b46d1"
+      "sha256": "90765cbdab51ad831181322adb50be18f087c94f5eb1c462846d95a72cc38d39"
     },
     {
       "path": "docs/verification/p5-rooms-hall-seam-north.jpg",
-      "sha256": "c28ec63a79d29d779735d1486ff72de96d19989abe0db4b8e4752af5a19878b8"
+      "sha256": "38876c050f40d944f8f545b8d9549c7f1a98e2c8ae40f9f324a4ff3bd21071d0"
     },
     {
       "path": "docs/verification/p5-rooms-hall-seam-west-turned.jpg",
-      "sha256": "fcbc90419cf7bb6ad36f8ccbcd0074c5020b1a39477185904d7ca47233041ca4"
+      "sha256": "62ff224902fca2e354c2267f6fb64ac7dddd20d1cd4fe299237007a0537a6997"
     }
   ],
   "independentScore": {

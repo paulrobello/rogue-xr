@@ -10,10 +10,10 @@
     }
   },
   "frame_means_255": {
-    "engine.floor-sealed-north.png": 34.4,
+    "engine.floor-sealed-north.png": 35.4,
     "engine.hero.diffuse.png": 32.9,
-    "engine.hero.png": 37.3,
-    "engine.lamp.png": 40.3,
-    "engine.seam-from-corridor.png": 39.6
+    "engine.hero.png": 37.6,
+    "engine.lamp.png": 40.9,
+    "engine.seam-from-corridor.png": 40.3
   }
 }

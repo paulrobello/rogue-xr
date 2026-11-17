@@ -36,6 +36,24 @@ describe('bakedRoomMaterial (lightmap contract)', () => {
     expect(src.indexOf('reflectedLight.directDiffuse = vec3( 0.0 );')).toBeGreaterThan(end);
   });
 
+  it('lets metals reflect the lightmap, weighted by metalness, without a second diffuse path', () => {
+    const src = patchedFragment();
+    const maps = src.indexOf('#include <lights_fragment_maps>');
+    const ibl = src.indexOf('\niblIrradiance = vec3( 0.0 );', maps);
+    const metal = src.indexOf(
+      'radiance += metalnessFactor * lightMapIrradiance * RECIPROCAL_PI;',
+      maps,
+    );
+    expect(metal).toBeGreaterThan(ibl);
+    expect(metal).toBeLessThan(src.indexOf('#include <lights_fragment_end>'));
+    // Guarded: lightMapIrradiance only exists when the slot has a lightmap.
+    expect(
+      src.lastIndexOf('#if defined( USE_LIGHTMAP ) && defined( RE_IndirectSpecular )', metal),
+    ).toBeGreaterThan(ibl);
+    // The lightmap never enters iblIrradiance, which RE_IndirectSpecular spends as diffuse.
+    expect(src).not.toMatch(/iblIrradiance\s*\+=\s*lightMap/);
+  });
+
   it('keeps the probe specular: iblRadiance is untouched', () => {
     expect(patchedFragment()).not.toMatch(/iblRadiance\s*=\s*vec3\(\s*0\.0\s*\)/);
   });

@@ -10,11 +10,11 @@
     }
   },
   "frame_means_255": {
-    "engine.brazier.png": 37.9,
+    "engine.brazier.png": 38.6,
     "engine.hero.diffuse.png": 30.3,
-    "engine.hero.png": 34.2,
-    "engine.reward-eye.png": 44.6,
-    "engine.seam-from-corridor.png": 36.8,
-    "engine.seam-south.png": 34.2
+    "engine.hero.png": 34.9,
+    "engine.reward-eye.png": 46.5,
+    "engine.seam-from-corridor.png": 37.3,
+    "engine.seam-south.png": 35.3
   }
 }

@@ -285,7 +285,7 @@
     }
   ],
   "stagingFiles": {
-    "engine-compare.json": "ac4c182baddaeaa0a7579d90aa7540b7bfca98b4c2f54d98c779a1bc22e94220",
+    "engine-compare.json": "11e0803de09b5f2f780f058ecc92d1531b407438556ba5bcbde0caedf8b6c06c",
     "gear-shaft.glb": "5ea4b012ed76e23c501b1f3bfc2f0aba71108762acae68d4c873f82b7d6690a4",
     "gear-shaft.lightmap.ktx2": "f1e45f105edd5296aba987e305bbd22deef35f733efbaf805ddc6f87552bc87e",
     "gear-shaft.lightmap.png": "3cefc3d7be9f69513483251b101215971da206562f6502246a419f38ebe02304",
@@ -471,11 +471,11 @@
   "reviewEvidence": [
     {
       "path": "assets-source/rooms/gear-shaft/staging/review-sheet.jpg",
-      "sha256": "53ef97efb75bb72d990e2fe2a0a8ecbffaf2111df03320ef9f0073642581ada9"
+      "sha256": "f760818c09f0ee6534e444058863a0f32f2da873246ff18be9b86f85a4553622"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-hero-gear-turned.jpg",
-      "sha256": "59eae436b0c032996334c809a0cd52cea9391d9538df2117f2cd9a9142b9dd91"
+      "sha256": "042b2fab72b6637ee296f533a5f24d174c3708e2a0605da51d97b31077cc3de7"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-hero.diffuse-gear-turned.jpg",
@@ -487,23 +487,23 @@
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-hero.jpg",
-      "sha256": "16acf4ef7e9fd2ca822716711f9de11642c8d7e167fea7e3f0aff14ea77a163f"
+      "sha256": "5ef50a951e73ee9d43d42d4bbfb3f496a194d750d5c728f41d0ae94a3cc704bc"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-ring-gear-turned.jpg",
-      "sha256": "ad1bc6dba2c564ef417b18c7fb2241a30e9b20e38f90322c34c1ba0c2ab83c15"
+      "sha256": "9938edaae055bd431044e85e947f73a939aa6afd60324236084bde332f38fd5a"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-ring.jpg",
-      "sha256": "65ea85b05b6483b53b06ae09ce59b09110241db9c15214f3ca540ec08b57dfd1"
+      "sha256": "118cdea9b611195bfeddcf766d9beda2cb6f7f1fe96e2665a9dbbcb45e25b2fe"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-seam-north.jpg",
-      "sha256": "d849e9145652c46cb0ca692117c99cb6463bae967ea796a6fb905b0ba773afc8"
+      "sha256": "404c40a713e3fa5f52b1ed992db61c7ab126e58805f7b9e2931b507581f5db0c"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-void.jpg",
-      "sha256": "aad74286887235f67340e440b0e0a7ef176961fcac01528c2e64c4c9883bd6ec"
+      "sha256": "a4b464644434ef2705dfde67c18101df4620e73dfbe4ceeeb76cccd408e49792"
     }
   ],
   "independentScore": {

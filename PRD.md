@@ -91,7 +91,7 @@ The house Blender export guide has no lightmap section, so this project defines 
 - Every room template has a second UV set (glTF `TEXCOORD_1`) for lightmaps. It has no overlaps and at least 4 px of padding at its bake resolution.
 - Cycles bakes combined diffuse direct and indirect light at 1024 or 2048 px per template. The bake is shipped as `<template>.lightmap.ktx2` beside `<template>.glb`, and is never embedded as an inferred material role.
 - The loader binds it by exact filename to `material.lightMap` with `texture.channel = 1`, with intensity set from the template manifest.
-- Dynamic lights affect only the dynamic objects (automatons, cards, dice, hands) plus a specular term on the room. Baked direct light is not double-counted.
+- Dynamic lights affect only the dynamic objects (automatons, cards, dice, hands) plus a specular term on the room. Baked direct light is not double-counted. Metallic room surfaces, which have no diffuse term, reflect the baked irradiance as specular (weighted by metalness); the bake zeroes Metallic so the lightmap holds that irradiance.
 - The template manifest lists, for each template: its doors (position, facing, width), its enemy and loot sockets, its dressing sockets, its light sockets, its probe and its budget figures.
 
 ### Quest 3 budgets (slice)

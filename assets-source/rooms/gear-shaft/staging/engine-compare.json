@@ -10,13 +10,13 @@
     }
   },
   "frame_means_255": {
-    "engine.hero-gear-turned.png": 35.2,
+    "engine.hero-gear-turned.png": 39.6,
     "engine.hero.diffuse-gear-turned.png": 33.3,
     "engine.hero.diffuse.png": 33.3,
-    "engine.hero.png": 35.1,
-    "engine.ring-gear-turned.png": 30.3,
-    "engine.ring.png": 30.3,
-    "engine.seam-north.png": 36.1,
-    "engine.void.png": 27.6
+    "engine.hero.png": 39.6,
+    "engine.ring-gear-turned.png": 34.8,
+    "engine.ring.png": 34.9,
+    "engine.seam-north.png": 37.4,
+    "engine.void.png": 30.4
   }
 }

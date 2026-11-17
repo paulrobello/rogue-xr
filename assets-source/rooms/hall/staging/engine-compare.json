@@ -10,12 +10,12 @@
     }
   },
   "frame_means_255": {
-    "engine.bench.png": 30.3,
-    "engine.floor-sealed-west-close.png": 21.2,
-    "engine.floor-sealed-west.png": 22.1,
+    "engine.bench.png": 31.3,
+    "engine.floor-sealed-west-close.png": 22.8,
+    "engine.floor-sealed-west.png": 22.6,
     "engine.hero.diffuse.png": 26.0,
-    "engine.hero.png": 29.2,
-    "engine.seam-north.png": 33.0,
-    "engine.seam-west-turned.png": 26.9
+    "engine.hero.png": 30.2,
+    "engine.seam-north.png": 33.6,
+    "engine.seam-west-turned.png": 27.8
   }
 }
