@@ -315,3 +315,31 @@ Paul's first playtest in the headset, on the deployed build. His notes, with the
 ### Recording fling traces in the headset (P3-T3)
 
 P3-T3's aim cone and velocity fit are tested on synthetic traces only. To close it with real flicks, open the game with `?debug` (for example `https://spire.pardev.net/?debug`), play a fight and fling cards at enemies, noting which enemy each throw was meant for. Every card release is kept as a trace: the grip samples the velocity fit used, the targets on offer and the decision. After leaving VR, the "Download N fling traces" button at the bottom right saves them as one JSON file (the last 40 releases of the page session). Copy the file into `tests/fixtures/fling/recorded/` and set each trace's `intended` to the enemy id that was meant. `tests/fling.test.ts` then replays every recorded trace to its recorded decision and checks each reviewed one lands on the intended enemy.
+
+## Frame instrumentation: the FPS counter and `?perf` windows
+
+Two tools find slowdowns in the headset. The FPS counter is a small gauge (fps and the longest recent frame against the 72 Hz budget) that floats in front of the view on the desktop and sits above the left wrist in XR. A settings row switches it on and off at runtime (`perf.setFpsCounter(on)`), with no URL flag. The frame recorder runs while the counter is on, or from boot with `?perf` (any value but `0`; `?perf=1` also mounts the debug panel). Off, a frame costs a null check.
+
+The recorder (`src/perf/recorder.ts`) keeps every frame interval in a 131,072-entry ring and cuts the session into windows. A mark closes the open window and opens the next. Each window drops its first second (the settle after a mark, so a load hitch or a camera cut does not count), then closes into a summary: `frames`, `meanMs`, `p50Ms`, `p95Ms`, `p99Ms` (nearest rank), `maxMs` (the longest frame), `fps`, `overBudgetPct` (frames slower than 1.5x the budget, a missed vsync) and `over2xBudgetPct` (slower than 2.5x, two missed vsyncs), plus `targetHz`, `budgetMs`, `foveation`, `scale` and `presenting`. A window closed inside its settle, or empty, is not kept. A frame gap over 5 s (system menu, hidden tab) is not counted as a frame. Summaries persist to `localStorage` key `rogue-xr.perf.v1` on each close (at most 200 windows and 400,000 characters, oldest dropped first). Desktop windows have no `targetHz`, so no budget shares.
+
+A summary's `label` is why its window opened and `closedBy` is why it ended. The game marks these automatically:
+
+| Label | Opens when |
+| --- | --- |
+| `boot` | the first window |
+| `xr-start`, `xr-end` | the XR session starts or ends |
+| `room <index> <template>` | the player enters a room |
+| `phase combat` | a fight starts |
+| `phase explore` | back to exploring (a fight ended, or fled) |
+| `phase reward` | the reward board opens |
+| `chest-opened`, `chest-claimed` | a coffer opens, or its card is claimed |
+| `cast` | a sigil cast starts, until `play` 3 s later (a short window around the cast and its FX) |
+| `dice-throw`, `dice-settled` | a die is thrown, and when it settles (the `dice-throw` window ends at the settle) |
+| `foveation <level>`, `scale <factor>` | foveation or framebuffer scale changes |
+| `pagehide` | the page unloads, so the open window persists |
+| `recorder-off` | the counter went off with no `?perf` |
+| anything else | `__spirePerfMark('label')` from the console or a CDP call |
+
+Reading the windows from the Quest: play with the counter on (or open `https://spire.pardev.net/?perf`), then connect over USB with developer mode on and `adb devices` showing the headset. Open `chrome://inspect#devices` in desktop Chrome, inspect the Quest Browser tab, and in its console run `__spireDiag().perf.windows` once (a single read; polling it every frame would itself cost frame time). `__spireDiag().perf.current` is the open window as if it closed now, and `__spirePerfMark('before-fight')` cuts a window by hand. With the counter off and `?perf` absent the same call still returns the windows stored by an earlier session. `__spirePerfClear()` empties them. Without DevTools, the same JSON is under the `rogue-xr.perf.v1` key in the page's `localStorage`.
+
+Reading a window: compare `p95Ms` and `maxMs` against `budgetMs` (13.9 ms at 72 Hz). `over2xBudgetPct` above a few percent in a `room`, `cast` or `dice-throw` window names the moment to look at. Compare windows only at the same `foveation` and `scale`. Desktop frame numbers only rank variants. Only a headset window closes a budget criterion.
