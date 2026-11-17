@@ -7,18 +7,24 @@ import {
   dieRadius,
   dieVertices,
   faceNormals,
+  numberingOffset,
   planCorrection,
   upFace,
 } from './faces.ts';
-import { type Pose, QUAT_IDENTITY, type Quat, type Vec3 } from './quat.ts';
+import { type Pose, QUAT_IDENTITY, type Quat, quatMul, type Vec3 } from './quat.ts';
 
 /** Fixed simulation step. The renderer's frame rate never changes it. */
 export const FIXED_STEP = 1 / 120;
-/** The seeded-face correction lasts this many simulated seconds (D1: about 100 ms). */
+/** The fallback seeded-face correction lasts this many simulated seconds (D1: about 100 ms). */
 export const CORRECTION_SECONDS = 0.1;
 export const CORRECTION_STEPS = Math.round(CORRECTION_SECONDS / FIXED_STEP);
 /** Caps catch-up work after a long frame so the physics never spirals. */
 export const MAX_SUBSTEPS = 10;
+/**
+ * The throw's look-ahead simulates at most this many fixed steps (10 s). Past it the die keeps its
+ * plain numbering and the fallback settle correction turns the seeded face up.
+ */
+export const LOOKAHEAD_MAX_STEPS = 1200;
 
 /** Settled means both speeds stay under these for `SETTLE_STEPS` consecutive fixed steps. */
 export const SETTLE_LINEAR_SPEED = 0.05;
@@ -64,13 +70,21 @@ export interface SettledEvent {
   kind: DieKind;
   /** The face index showing up in the final pose. Always the throw's `targetFace`. */
   face: number;
+  /** Rendered pose: the body's pose with the die's numbering offset applied. */
   pose: Pose;
-  /** Simulated time from the throw until settle (or the forced correction) began. */
+  /** Simulated time from the throw until the die came to rest (or the forced correction began). */
   rollMs: number;
-  /** Simulated time the correction took. */
+  /** Simulated time the correction took; 0 when the die rested on its predicted face. */
   correctionMs: number;
   /** True when the die never came to rest or left the tray, so a guard started the correction. */
   forced: boolean;
+  /** True when the throw's look-ahead found the landing face and numbered the die for it. */
+  predicted: boolean;
+  /**
+   * True when the die came to rest on a different face than its numbering expected, so the settle
+   * correction had to tip the seeded face up.
+   */
+  fallback: boolean;
 }
 
 export type SettledListener = (event: SettledEvent) => void;
@@ -86,7 +100,16 @@ interface DieEntry {
   forced: boolean;
   correctionStep: number;
   plan: CorrectionPlan | null;
+  /** Rendered orientation is `body * offset`, a rotation of the solid onto itself. */
+  offset: Quat;
+  /** Body face that carries `targetFace`'s label: the one the settle correction turns up. */
+  bodyFace: number;
+  predicted: boolean;
+  fallback: boolean;
 }
+
+/** Why a rolling die stops rolling this step, or null while it rolls on. */
+type SettleCause = 'settled' | 'forced' | null;
 
 let rapierReady: Promise<void> | null = null;
 
@@ -99,9 +122,13 @@ function initRapier(): Promise<void> {
 /**
  * Rapier world holding a table surface (top at y = 0), a four-wall tray and the dice thrown into it.
  * Coordinates are tray-local metres with +Y up, so the caller places the group on the combat table.
- * The engine decides each die's result before the throw (D1); physics only presents it: once a die
- * comes to rest it is tipped about its lowest contact point so `targetFace` is up, eased over
- * `CORRECTION_SECONDS` of simulated time.
+ * The engine decides each die's result before the throw (D1); physics only presents it. At the
+ * throw a look-ahead runs the same fixed steps on a snapshot of this world to find the body face
+ * the die will come to rest on, and the die is numbered (`DieEntry.offset`) so that face carries
+ * `targetFace`'s label; the live die then lands on the seeded number by itself and is left where it
+ * rests. Only when it lands off the prediction (another die knocked it) or a guard fires (it never
+ * stops, or leaves the tray) is it tipped about its lowest contact point so `targetFace` is up,
+ * eased over `CORRECTION_SECONDS` of simulated time.
  */
 export class DiceWorld {
   private readonly world: RAPIER.World;
@@ -111,8 +138,13 @@ export class DiceWorld {
   private accumulator = 0;
   private stepCount = 0;
 
-  private constructor(options: DiceWorldOptions) {
+  /** `restored` is a snapshot copy of another world, tray included: the throw's look-ahead. */
+  private constructor(options: DiceWorldOptions, restored?: RAPIER.World) {
     this.options = options;
+    if (restored) {
+      this.world = restored;
+      return;
+    }
     this.world = new RAPIER.World({ x: 0, y: -9.81, z: 0 });
     this.world.timestep = FIXED_STEP;
     // Dice are centimetres across; scale Rapier's contact tolerances down from their 1 m defaults.
@@ -143,7 +175,8 @@ export class DiceWorld {
 
   /**
    * Releases a die from the hand. `targetFace` is the face index the engine rolled (`DiceRoll.face`).
-   * Throwing an id that is already in the world replaces that die.
+   * Throwing an id that is already in the world replaces that die. The look-ahead runs here, so the
+   * die is numbered for its landing before the first live step.
    */
   throwDie(
     id: string,
@@ -184,7 +217,7 @@ export class DiceWorld {
           );
     if (shape === null) throw new Error(`Could not build a ${kind} collider`);
     this.world.createCollider(shape.setFriction(0.6).setRestitution(0.35).setDensity(1000), body);
-    this.dice.set(id, {
+    const die: DieEntry = {
       id,
       kind,
       targetFace,
@@ -195,7 +228,46 @@ export class DiceWorld {
       forced: false,
       correctionStep: 0,
       plan: null,
-    });
+      offset: QUAT_IDENTITY,
+      bodyFace: targetFace,
+      predicted: false,
+      fallback: false,
+    };
+    this.dice.set(id, die);
+    const landing = this.lookAhead(die);
+    if (landing !== null) {
+      die.offset = numberingOffset(kind, targetFace, landing);
+      die.bodyFace = landing;
+      die.predicted = true;
+    }
+  }
+
+  /**
+   * Runs this world forward on a snapshot copy until `die` stops rolling and returns the body face
+   * then up, or null when only a guard would stop it or it is still rolling after
+   * `LOOKAHEAD_MAX_STEPS`. The copy steps exactly as this world will: same state, same fixed step,
+   * the same settle rule, and the other dice's corrections replayed.
+   */
+  private lookAhead(die: DieEntry): number | null {
+    const scratch = new DiceWorld(
+      this.options,
+      RAPIER.World.restoreSnapshot(this.world.takeSnapshot()),
+    );
+    try {
+      for (const entry of this.dice.values()) {
+        scratch.dice.set(entry.id, {
+          ...entry,
+          body: scratch.world.getRigidBody(entry.body.handle),
+        });
+      }
+      const ghost = scratch.dice.get(die.id) as DieEntry;
+      for (let n = 0; n < LOOKAHEAD_MAX_STEPS && ghost.phase === 'rolling'; n++)
+        scratch.fixedStep();
+      if (ghost.phase === 'rolling' || ghost.forced) return null;
+      return upFace(ghost.body.rotation(), faceNormals(die.kind));
+    } finally {
+      scratch.dispose();
+    }
   }
 
   removeDie(id: string): void {
@@ -205,7 +277,10 @@ export class DiceWorld {
     this.dice.delete(id);
   }
 
-  /** The die's pose as of the last fixed step, for the renderer to copy onto its mesh. */
+  /**
+   * The die's rendered pose as of the last fixed step, for the renderer to copy onto its mesh: the
+   * body's pose with the numbering offset applied, so face `i` of the mesh shows label `i`.
+   */
   pose(id: string): DiePose | undefined {
     const die = this.dice.get(id);
     if (die === undefined) return undefined;
@@ -214,7 +289,7 @@ export class DiceWorld {
     return {
       phase: die.phase,
       position: { x: t.x, y: t.y, z: t.z },
-      quaternion: { x: r.x, y: r.y, z: r.z, w: r.w },
+      quaternion: quatMul({ x: r.x, y: r.y, z: r.z, w: r.w }, die.offset),
     };
   }
 
@@ -279,6 +354,12 @@ export class DiceWorld {
   }
 
   private advanceRolling(die: DieEntry): void {
+    const cause = this.settleCause(die);
+    if (cause !== null) this.beginCorrection(die, cause === 'forced');
+  }
+
+  /** Counts one rolling step and decides whether the die stops rolling. */
+  private settleCause(die: DieEntry): SettleCause {
     die.rollSteps++;
     const v = die.body.linvel();
     const w = die.body.angvel();
@@ -286,37 +367,53 @@ export class DiceWorld {
       Math.hypot(v.x, v.y, v.z) < SETTLE_LINEAR_SPEED &&
       Math.hypot(w.x, w.y, w.z) < SETTLE_ANGULAR_SPEED;
     die.calmSteps = calm ? die.calmSteps + 1 : 0;
+    if (die.calmSteps >= SETTLE_STEPS) return 'settled';
     // A die that cleared the walls falls past the table edge; rescue it at once instead of after the timeout.
     const escaped = die.body.translation().y < -ESCAPE_DEPTH;
     const timedOut = die.rollSteps * FIXED_STEP >= this.options.maxRollSeconds;
-    if (die.calmSteps >= SETTLE_STEPS || timedOut || escaped)
-      this.beginCorrection(die, die.calmSteps < SETTLE_STEPS);
+    return timedOut || escaped ? 'forced' : null;
   }
 
+  /**
+   * Freezes the stopped die. A die resting with `bodyFace` up (the predicted landing) stays exactly
+   * where physics left it, even cocked against a wall. Otherwise (a guard fired, or it landed off
+   * the prediction) it is tipped about its lowest contact point so `bodyFace` is up.
+   */
   private beginCorrection(die: DieEntry, forced: boolean): void {
     const t = die.body.translation();
     const r = die.body.rotation();
-    const { halfX, halfZ } = this.options;
-    die.plan = planCorrection(
-      { position: { x: t.x, y: t.y, z: t.z }, quaternion: { x: r.x, y: r.y, z: r.z, w: r.w } },
-      die.kind,
-      die.targetFace,
-      0,
-      { halfX, halfZ },
-    );
+    const rest: Pose = {
+      position: { x: t.x, y: t.y, z: t.z },
+      quaternion: { x: r.x, y: r.y, z: r.z, w: r.w },
+    };
     die.forced = forced;
-    die.phase = 'correcting';
-    die.correctionStep = 0;
+    die.fallback = upFace(rest.quaternion, faceNormals(die.kind)) !== die.bodyFace;
     die.body.setLinvel({ x: 0, y: 0, z: 0 }, false);
     die.body.setAngvel({ x: 0, y: 0, z: 0 }, false);
     die.body.setBodyType(RAPIER.RigidBodyType.KinematicPositionBased, false);
+    // A kinematic body otherwise moves to the target the last dynamic step predicted.
+    die.body.setNextKinematicTranslation(rest.position);
+    die.body.setNextKinematicRotation(rest.quaternion);
+    if (!forced && !die.fallback) {
+      this.finish(die, rest);
+      return;
+    }
+    const { halfX, halfZ } = this.options;
+    die.plan = planCorrection(rest, die.kind, die.bodyFace, 0, { halfX, halfZ });
+    die.phase = 'correcting';
+    die.correctionStep = 0;
   }
 
   private advanceCorrecting(die: DieEntry): void {
     die.correctionStep++;
     if (die.correctionStep < CORRECTION_STEPS || die.plan === null) return;
+    this.finish(die, correctionPoseAt(die.plan, 1));
+  }
+
+  /** Marks the die done at body pose `end` and reports its rendered pose to the listeners. */
+  private finish(die: DieEntry, end: Pose): void {
     die.phase = 'done';
-    const pose = correctionPoseAt(die.plan, 1);
+    const pose: Pose = { position: end.position, quaternion: quatMul(end.quaternion, die.offset) };
     const event: SettledEvent = {
       id: die.id,
       kind: die.kind,
@@ -325,6 +422,8 @@ export class DiceWorld {
       rollMs: die.rollSteps * FIXED_STEP * 1000,
       correctionMs: die.correctionStep * FIXED_STEP * 1000,
       forced: die.forced,
+      predicted: die.predicted,
+      fallback: die.fallback,
     };
     for (const listener of [...this.listeners]) listener(event);
   }

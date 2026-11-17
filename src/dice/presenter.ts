@@ -23,6 +23,8 @@ export interface PresentedRoll {
   /** The value printed on that face. */
   readonly value: number;
   readonly forced: boolean;
+  /** True when the die landed off its look-ahead and the settle correction turned the face. */
+  readonly fallback: boolean;
 }
 
 export type PresentedListener = (roll: PresentedRoll) => void;
@@ -270,8 +272,8 @@ interface Entry {
 
 /**
  * Renders the physical dice in the tray. The rules have already rolled (D1); `throw` only presents
- * that face: a seeded impulse from `stream` (never `Math.random`) throws the die into a `DiceWorld`
- * and the world's face correction makes it land on the engine's face. `root` is tray-local metres
+ * that face: a seeded impulse from `stream` (never `Math.random`) throws the die into a `DiceWorld`,
+ * which numbers the die at the throw so the face it comes to rest on shows the engine's face. `root` is tray-local metres
  * with the tray floor at y = 0 and -Z toward the enemies; the caller places it on the table.
  */
 export class DicePresenter {
@@ -376,6 +378,7 @@ export class DicePresenter {
         face: event.face,
         value: entry.value,
         forced: event.forced,
+        fallback: event.fallback,
       };
       for (const listener of [...this.listeners]) listener(roll);
     });

@@ -1,6 +1,8 @@
 import {
   type Pose,
+  QUAT_IDENTITY,
   type Quat,
+  quatAngle,
   quatConjugate,
   quatFromUnitVectors,
   quatMul,
@@ -67,6 +69,87 @@ export function dieVertices(kind: DieKind): readonly Vec3[] {
 /** Radius of the sphere around the die's centre that holds every vertex, whatever its orientation. */
 export function dieRadius(kind: DieKind): number {
   return Math.max(...dieVertices(kind).map((v) => Math.hypot(v.x, v.y, v.z)));
+}
+
+/** Proper rotation matrix (row-major, `v' = M v`) to a unit quaternion. */
+function quatFromMatrix(m: readonly (readonly number[])[]): Quat {
+  const [[m00, m01, m02], [m10, m11, m12], [m20, m21, m22]] = m as [
+    [number, number, number],
+    [number, number, number],
+    [number, number, number],
+  ];
+  const trace = m00 + m11 + m22;
+  if (trace > 0) {
+    const s = 2 * Math.sqrt(trace + 1);
+    return { x: (m21 - m12) / s, y: (m02 - m20) / s, z: (m10 - m01) / s, w: s / 4 };
+  }
+  if (m00 > m11 && m00 > m22) {
+    const s = 2 * Math.sqrt(1 + m00 - m11 - m22);
+    return { x: s / 4, y: (m01 + m10) / s, z: (m02 + m20) / s, w: (m21 - m12) / s };
+  }
+  if (m11 > m22) {
+    const s = 2 * Math.sqrt(1 + m11 - m00 - m22);
+    return { x: (m01 + m10) / s, y: s / 4, z: (m12 + m21) / s, w: (m02 - m20) / s };
+  }
+  const s = 2 * Math.sqrt(1 + m22 - m00 - m11);
+  return { x: (m02 + m20) / s, y: (m12 + m21) / s, z: s / 4, w: (m10 - m01) / s };
+}
+
+/**
+ * The 24 proper rotations that map the cube onto itself, which are also the octahedron's (the
+ * signed permutation matrices of determinant +1), ordered by angle from the identity. Each one
+ * carries the die's hull, face normals and opposite-face pairs onto themselves without mirroring.
+ */
+export const SOLID_ROTATIONS: readonly Quat[] = (() => {
+  const perms = [
+    [0, 1, 2],
+    [0, 2, 1],
+    [1, 0, 2],
+    [1, 2, 0],
+    [2, 0, 1],
+    [2, 1, 0],
+  ] as const;
+  const rotations: Quat[] = [];
+  for (const perm of perms) {
+    for (let signs = 0; signs < 8; signs++) {
+      const m = [0, 1, 2].map((r) =>
+        [0, 1, 2].map((c) => (perm[r] === c ? (signs & (1 << r) ? -1 : 1) : 0)),
+      ) as [number, number, number][];
+      const [a, b, c] = m as [
+        [number, number, number],
+        [number, number, number],
+        [number, number, number],
+      ];
+      const det =
+        a[0] * (b[1] * c[2] - b[2] * c[1]) -
+        a[1] * (b[0] * c[2] - b[2] * c[0]) +
+        a[2] * (b[0] * c[1] - b[1] * c[0]);
+      if (det !== 1) continue;
+      rotations.push(quatFromMatrix(m));
+    }
+  }
+  return rotations
+    .map((q, i) => ({ q, i, angle: quatAngle(QUAT_IDENTITY, q) }))
+    .sort((a, b) => a.angle - b.angle || a.i - b.i)
+    .map((entry) => entry.q);
+})();
+
+/**
+ * The die's numbering offset: the solid rotation `S` that puts `targetFace`'s label on body face
+ * `landingFace` (`S * n[targetFace] = n[landingFace]`). The rendered orientation is `body * S`, so a
+ * body that comes to rest with `landingFace` up shows `targetFace`. The smallest such rotation wins.
+ */
+export function numberingOffset(kind: DieKind, targetFace: number, landingFace: number): Quat {
+  const normals = faceNormals(kind);
+  const from = normals[targetFace];
+  const to = normals[landingFace];
+  if (from === undefined || to === undefined)
+    throw new RangeError(`No face ${targetFace} or ${landingFace} on a ${kind}`);
+  for (const rotation of SOLID_ROTATIONS) {
+    const n = rotateVec(rotation, from);
+    if (n.x * to.x + n.y * to.y + n.z * to.z > 0.999) return rotation;
+  }
+  throw new Error(`No ${kind} rotation takes face ${targetFace} to face ${landingFace}`);
 }
 
 /** Index of the face whose world-space normal points closest to +Y. */

@@ -66,14 +66,14 @@ The first deliverable is a **vertical slice**: one floor at final visual quality
 | `xr/` | Session, locomotion (smooth, snap turn, vignette, teleport toggle, seated height calibration), combat table, card fan, card fling with aim assist, dice presentation, sigil capture. |
 | `desktop/` | Mouse/keyboard presentation of every action. |
 | `sigil/` | $P point-cloud recognizer, templates, score → power-multiplier mapping. Pure. |
-| `dice/` | Rapier world for dice, settle detection, seeded-face correction. |
+| `dice/` | Rapier world for dice, settle detection, throw-time look-ahead that numbers the die so it lands on the seeded face (settle correction as fallback). |
 | `persist/` | IndexedDB saves (workshop progress, settings, in-progress run snapshot), JSON export/import. |
 | `audio/` | Music state cues and SFX playback. |
 | `ui/` | In-scene menus built on `@par/xr-workspace` panels; title screen, seed entry, reward and workshop screens. |
 
 ### Key design decisions (settled in the 2026-11-15 interview)
 
-- **D1 — Dice are physical, results are seeded.** The `dice` RNG stream decides each roll's result. The die is thrown and simulated fully in Rapier. When it settles, it is rotated about its contact point so that the seeded face is the one showing. The correction eases in over about 100 ms and is applied while the die is still settling. Replays and tests are deterministic.
+- **D1 — Dice are physical, results are seeded.** The `dice` RNG stream decides each roll's result. The die is thrown and simulated fully in Rapier. At the moment of release, a look-ahead runs the same throw to rest on a snapshot of the dice world (same fixed step and settle rule) and reads which face of the body lands up. The die is then numbered for that landing: its faces are relabelled by a rotation of the solid onto itself (a cube or octahedron symmetry), so the face that will land up carries the seeded number. The live die lands on the seeded number by itself and is left where it comes to rest, with no turn after it settles. A settle correction is kept as a fallback for a die that lands off its prediction (another die knocked it) or that a guard stops (it never comes to rest, or it leaves the tray). The fallback turns the die about its contact point to show the seeded face, easing in over about 100 ms. Replays and tests are deterministic.
 - **D2 — Procedural floors from authored, baked room templates.** Blender produces 8 to 12 room templates for the full game (4 to 5 for the slice). Each template is fully lightmapped and baked. Procgen builds the branching-wing graph, chooses templates and their door orientation, and varies dressing, loot and enemies. Each room has at most 4 dynamic lights (candles, a hand-held lantern) and one baked environment probe.
 - **D3 — Familiar rules, novel verbs.** 3 steam per turn, a hand of 5, visible enemy intents, standard block and damage. The novelty lives in how cards, dice and sigils are performed.
 - **D4 — Full-scale foes.** Automatons stand at full scale 2 to 3 m beyond a waist-high brass table that unfolds at the seat. The table holds the draw and discard piles, the dice tray and the sigil plate.
@@ -237,7 +237,7 @@ The full spire (number of floors and acts), hand tracking, custom mage gloves, a
 - **R1 — Quest frame budget.** Baked rooms plus skinned automatons plus transparent cards may exceed 13.9 ms. Mitigated by putting the P4 proof before content breadth, and by per-asset budgets.
 - **R2 — Lightmaps on rotated templates.** Rotating a template when it is placed must not break baked light directions. Mitigated by baking world-independent lighting inside each template and restricting rotations to the door orientations the manifest permits.
 - **R3 — Card fling feel.** Controller throw velocity is noisy. Mitigated by the aim-assist cone, the point-and-trigger fallback, and tunable thresholds.
-- **R4 — Dice correction visibility.** If the seeded-face correction is visible it breaks trust. Mitigated by correcting during the settling phase with an ease, and verified on the headset.
+- **R4 — Dice correction visibility.** If the seeded-face correction is visible it breaks trust. Mitigated since 2026-11-17 by numbering the die at the throw from a physics look-ahead, so it settles naturally on the seeded face; the eased settle correction remains only as a counted fallback. Headset check of the new presentation pending.
 - **R5 — Sigil drawing with controllers.** Tracing in the air may be imprecise when seated. Mitigated by the forgiving score floor (0.5), large plate, and per-sigil tolerance tuning.
 - **R6 — Art consistency across Higgsfield generations.** Mitigated by D8 (one style board) and owner review of the style board before any batch.
 - **R7 — Sibling-repo dependency.** `@par/xr-workspace` is consumed via `file:../mux-xr`. CI must check it out at a pinned SHA, and a breaking toolkit change can stall this project. Mitigated by pinning the SHA and bumping it deliberately.

@@ -32,6 +32,8 @@ import {
 } from '../src/dice/world.ts';
 
 const KINDS: readonly DieKind[] = ['d6', 'd8'];
+/** A die left where physics stopped it sits within Rapier's contact slop of the floor, metres. */
+const REST_SLOP = 5e-4;
 const UP: Vec3 = { x: 0, y: 1, z: 0 };
 const dot = (a: Vec3, b: Vec3): number => a.x * b.x + a.y * b.y + a.z * b.z;
 
@@ -208,7 +210,7 @@ describe('planCorrection', () => {
 });
 
 describe('DiceWorld', () => {
-  it('lands 500 seeded throws on the RNG face with a correction of at most 100 ms', async () => {
+  it('lands 500 seeded throws on the RNG face, resting on the table with no fallback', async () => {
     const world = await DiceWorld.create();
     const stream = Stream.fromKey('dice-physics-500');
     const events: SettledEvent[] = [];
@@ -220,6 +222,8 @@ describe('DiceWorld', () => {
     let totalRollMs = 0;
     let faceMismatches = 0;
     let outOfTray = 0;
+    let fallbacks = 0;
+    let worstSink = 0;
 
     for (let n = 0; n < 500; n++) {
       const kind = KINDS[n % 2] as DieKind;
@@ -233,16 +237,15 @@ describe('DiceWorld', () => {
       if (event.face !== t.face || upFace(pose?.quaternion as Quat, faceNormals(kind)) !== t.face)
         faceMismatches++;
       if (event.forced) forced++;
+      if (event.fallback) fallbacks++;
       worstCorrectionMs = Math.max(worstCorrectionMs, event.correctionMs);
       worstRollMs = Math.max(worstRollMs, event.rollMs);
       totalRollMs += event.rollMs;
       const p = event.pose.position;
       const limit = DEFAULT_OPTIONS.halfX;
-      if (
-        Math.abs(p.x) > limit ||
-        Math.abs(p.z) > limit ||
-        Math.abs(p.y - lowestRestHeight(kind, event)) > 1e-6
-      ) {
+      const sink = Math.abs(p.y - lowestRestHeight(kind, event));
+      worstSink = Math.max(worstSink, sink);
+      if (Math.abs(p.x) > limit || Math.abs(p.z) > limit || sink > REST_SLOP) {
         outOfTray++;
       }
     }
@@ -250,13 +253,15 @@ describe('DiceWorld', () => {
     const elapsed = performance.now() - started;
     console.log(
       `dice-physics: 500/500 throws, ${elapsed.toFixed(0)} ms wall, roll mean ${(totalRollMs / 500).toFixed(0)} ms ` +
-        `max ${worstRollMs.toFixed(0)} ms, worst correction ${worstCorrectionMs.toFixed(2)} ms, forced ${forced}`,
+        `max ${worstRollMs.toFixed(0)} ms, worst correction ${worstCorrectionMs.toFixed(2)} ms, forced ${forced}, ` +
+        `fallbacks ${fallbacks}, worst floor contact ${(worstSink * 1000).toFixed(3)} mm`,
     );
     world.dispose();
 
     expect(faceMismatches).toBe(0);
     expect(outOfTray).toBe(0);
     expect(forced).toBe(0);
+    expect(fallbacks).toBe(0);
     expect(worstCorrectionMs).toBeLessThanOrEqual(100 + FIXED_STEP * 1000);
     expect(CORRECTION_STEPS * FIXED_STEP).toBeCloseTo(0.1, 12);
   });

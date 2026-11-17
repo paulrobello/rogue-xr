@@ -11,8 +11,11 @@ import { AUTHORED_TRAY_HALF, DiceWorld, type SettledEvent } from '../src/dice/wo
 /** What `CombatSession` passed the dice world before the fix (its `TRAY_HALF_X` / `TRAY_HALF_Z`). */
 const OLD_COLLIDER = { halfX: 0.2, halfZ: 0.11 };
 const KINDS: readonly DieKind[] = ['d6', 'd8'];
-/** Slack for float noise, metres. */
-const TOLERANCE = 1e-4;
+/**
+ * Slack, metres: a die left resting against the wall where physics stopped it sits inside Rapier's
+ * contact slop of it (measured worst 0.3 mm).
+ */
+const TOLERANCE = 5e-4;
 
 interface TableManifest {
   tray?: unknown;
