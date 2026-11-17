@@ -21,6 +21,12 @@ export const PERF_PAUSE_MS = 5000;
 export const PERF_STORAGE_NAME = 'rogue-xr.perf.v1';
 /** The stored list never passes this many characters of JSON: the oldest windows go first. */
 export const PERF_STORAGE_MAX_CHARS = 400_000;
+/** Hitches kept in memory and in storage: the newest win. */
+export const PERF_MAX_HITCHES = 500;
+/** A frame is a hitch past this multiple of the budget (or of 60 Hz without one): a missed vsync. */
+export const PERF_HITCH_FACTOR = 1.5;
+/** Budget used for hitches when the app has no XR target rate. */
+export const PERF_DEFAULT_BUDGET_MS = 1000 / 60;
 
 /** What the app reports about itself around a window. */
 export interface PerfContext {
@@ -64,6 +70,22 @@ export interface PerfSummary {
   readonly truncated: boolean;
 }
 
+/**
+ * One slow frame, kept even inside a window's settle or on the first frame after a mark, where
+ * the window statistics never see it: a mark at a throw or a cast lands in the same frame as the
+ * work it labels.
+ */
+export interface PerfHitch {
+  /** The open window's label when the slow frame ended. */
+  readonly label: string;
+  /** The frame interval. */
+  readonly ms: number;
+  /** Time from the mark to the end of the slow frame. */
+  readonly sinceMarkMs: number;
+  readonly wallMs: number;
+  readonly presenting: boolean;
+}
+
 export interface PerfStorage {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
@@ -91,9 +113,11 @@ export interface PerfRecorder {
   /** Closes the open window into a summary and opens the next, labelled `label`. */
   mark(label?: string): void;
   windows(): PerfSummary[];
+  /** Slow frames, oldest first, including the ones the windows leave out. */
+  hitches(): PerfHitch[];
   /** The open window as it would close now. */
   current(): PerfSummary;
-  /** Empties the list, in memory and in storage. The open window keeps running. */
+  /** Empties the windows and hitches, in memory and in storage. The open window keeps running. */
   clear(): void;
 }
 
@@ -119,13 +143,42 @@ export function readStoredWindows(storage: PerfStorage | null): PerfSummary[] {
   }
 }
 
-/** The JSON stored for `windows`, dropping the oldest until it fits `maxChars`. */
-export function storedJson(windows: readonly PerfSummary[], maxChars: number): string {
+/** The hitches stored under `PERF_STORAGE_NAME`, or an empty list. */
+export function readStoredHitches(storage: PerfStorage | null): PerfHitch[] {
+  if (!storage) return [];
+  try {
+    const raw = storage.getItem(PERF_STORAGE_NAME);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as { version?: unknown; hitches?: unknown } | null;
+    if (parsed?.version !== 1 || !Array.isArray(parsed.hitches)) return [];
+    return parsed.hitches as PerfHitch[];
+  } catch {
+    return [];
+  }
+}
+
+/** The JSON stored for `windows` and `hitches`, dropping the oldest until it fits `maxChars`. */
+export function storedJson(
+  windows: readonly PerfSummary[],
+  maxChars: number,
+  hitches: readonly PerfHitch[] = [],
+): string {
   let start = 0;
-  let json = JSON.stringify({ version: 1, windows });
-  while (json.length > maxChars && start < windows.length) {
-    start += Math.max(1, Math.ceil((windows.length - start) / 10));
-    json = JSON.stringify({ version: 1, windows: windows.slice(start) });
+  let hitchStart = 0;
+  const encode = (): string =>
+    hitches.length > 0
+      ? JSON.stringify({
+          version: 1,
+          windows: windows.slice(start),
+          hitches: hitches.slice(hitchStart),
+        })
+      : JSON.stringify({ version: 1, windows: windows.slice(start) });
+  let json = encode();
+  while (json.length > maxChars && (start < windows.length || hitchStart < hitches.length)) {
+    if (start < windows.length) start += Math.max(1, Math.ceil((windows.length - start) / 10));
+    if (hitchStart < hitches.length)
+      hitchStart += Math.max(1, Math.ceil((hitches.length - hitchStart) / 10));
+    json = encode();
   }
   return json;
 }
@@ -140,6 +193,13 @@ export function createPerfRecorder(options: PerfRecorderOptions): PerfRecorder {
   const ring = new Float32Array(ringFrames);
   const scratch = new Float32Array(ringFrames);
   const windows: PerfSummary[] = readStoredWindows(storage).slice(-maxWindows);
+  const hitches: PerfHitch[] = readStoredHitches(storage).slice(-PERF_MAX_HITCHES);
+  /** Frame time of the last mark's first frame, for `sinceMarkMs`. */
+  let markTime: number | null = null;
+  /** The hitch threshold, refreshed from the context on each mark. */
+  let hitchMs = hitchThreshold();
+  /** Hitches recorded since the last write to storage. */
+  let unsavedHitches = 0;
 
   /** Frames ever written to the ring. */
   let written = 0;
@@ -153,9 +213,29 @@ export function createPerfRecorder(options: PerfRecorderOptions): PerfRecorder {
   let countFrom = -1;
   let presentingFrames = 0;
 
+  function hitchThreshold(): number {
+    const hz = options.context(false).targetHz;
+    return PERF_HITCH_FACTOR * (hz && hz > 0 ? 1000 / hz : PERF_DEFAULT_BUDGET_MS);
+  }
+
   function frame(timeMs: number, presenting: boolean): void {
     const previous = lastTime;
     lastTime = timeMs;
+    if (previous !== null && timeMs > previous) {
+      const dt = timeMs - previous;
+      if (dt > hitchMs && dt <= PERF_PAUSE_MS) {
+        hitches.push({
+          label,
+          ms: dt,
+          sinceMarkMs: markTime === null ? dt : timeMs - markTime,
+          wallMs: wallNow(),
+          presenting,
+        });
+        if (hitches.length > PERF_MAX_HITCHES) hitches.splice(0, hitches.length - PERF_MAX_HITCHES);
+        unsavedHitches += 1;
+      }
+    }
+    if (markTime === null) markTime = previous ?? timeMs;
     if (openTime === null) {
       openTime = timeMs;
       startMs = now();
@@ -221,9 +301,10 @@ export function createPerfRecorder(options: PerfRecorderOptions): PerfRecorder {
   }
 
   function persist(): void {
+    unsavedHitches = 0;
     if (!storage) return;
     try {
-      storage.setItem(PERF_STORAGE_NAME, storedJson(windows, PERF_STORAGE_MAX_CHARS));
+      storage.setItem(PERF_STORAGE_NAME, storedJson(windows, PERF_STORAGE_MAX_CHARS, hitches));
     } catch {
       // Quota or storage off: the in-memory list still holds the windows.
     }
@@ -239,17 +320,23 @@ export function createPerfRecorder(options: PerfRecorderOptions): PerfRecorder {
           windows.push(summary);
           if (windows.length > maxWindows) windows.splice(0, windows.length - maxWindows);
           persist();
+        } else if (unsavedHitches > 0) {
+          persist();
         }
       }
       label = next;
+      markTime = null;
+      hitchMs = hitchThreshold();
       openTime = null;
       countFrom = -1;
       presentingFrames = 0;
     },
     windows: () => [...windows],
+    hitches: () => [...hitches],
     current: () => summarise(null),
     clear() {
       windows.length = 0;
+      hitches.length = 0;
       if (!storage) return;
       try {
         storage.removeItem(PERF_STORAGE_NAME);

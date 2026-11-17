@@ -8,6 +8,7 @@ import {
   createPerfRecorder,
   type PerfRecorder,
   type PerfStorage,
+  readStoredHitches,
   readStoredWindows,
 } from './recorder.ts';
 import {
@@ -160,6 +161,7 @@ export function mountPerf(
   registerDiag('perf', () => ({
     recording: recorder !== null,
     windows: recorder ? recorder.windows() : readStoredWindows(perfStorage),
+    hitches: recorder ? recorder.hitches() : readStoredHitches(perfStorage),
     current: recorder ? recorder.current() : null,
   }));
 

@@ -8,6 +8,7 @@ import {
 } from '../src/perf/marks.ts';
 import {
   createPerfRecorder,
+  PERF_MAX_HITCHES,
   PERF_MAX_WINDOWS,
   PERF_PAUSE_MS,
   PERF_STORAGE_MAX_CHARS,
@@ -16,6 +17,7 @@ import {
   type PerfStorage,
   type PerfSummary,
   percentileSorted,
+  readStoredHitches,
   readStoredWindows,
   storedJson,
 } from '../src/perf/recorder.ts';
@@ -345,5 +347,73 @@ describe('perfMark', () => {
     world.current = 1;
     perfRoom(world);
     expect(mark.mock.calls.map((c) => c[0])).toEqual(['room 2 study', 'room 1 b']);
+  });
+});
+
+describe('hitches', () => {
+  it('logs the slow first frame after a mark, which the window drops, with its label', () => {
+    const rec = make();
+    let t = feed(rec, 0, Array(100).fill(HZ72));
+    rec.mark('dice-throw');
+    // The throw's work makes the next interval slow: the first frame of the new window.
+    t = feed(rec, t + 30, Array(10).fill(HZ72));
+    rec.mark('dice-settled');
+    const hitches = rec.hitches();
+    expect(hitches).toHaveLength(1);
+    expect(hitches[0]?.label).toBe('dice-throw');
+    expect(hitches[0]?.ms).toBeCloseTo(30, 5);
+    expect(hitches[0]?.sinceMarkMs).toBeCloseTo(30, 5);
+    expect(hitches[0]?.presenting).toBe(true);
+    // The dice-throw window closed inside its settle, so only the boot window was kept.
+    expect(rec.windows().map((w) => w.label)).toEqual(['boot']);
+    expect(t).toBeGreaterThan(0);
+  });
+
+  it('logs frames inside a settle and later in a window, but not normal frames or pauses', () => {
+    const rec = make();
+    feed(rec, 0, [HZ72, 25, HZ72, HZ72, PERF_PAUSE_MS + 1, HZ72, 40, HZ72]);
+    expect(rec.hitches().map((h) => Math.round(h.ms))).toEqual([25, 40]);
+    expect(rec.hitches()[1]?.sinceMarkMs).toBeCloseTo(HZ72 * 4 + 25 + PERF_PAUSE_MS + 1 + 40, 5);
+  });
+
+  it('uses 1.5x 60 Hz without an XR target rate', () => {
+    const rec = make({}, null);
+    feed(rec, 0, [24, 26]);
+    expect(rec.hitches().map((h) => h.ms)).toEqual([26]);
+  });
+
+  it('keeps the newest PERF_MAX_HITCHES', () => {
+    const rec = make();
+    feed(rec, 0, Array(PERF_MAX_HITCHES + 5).fill(30));
+    expect(rec.hitches()).toHaveLength(PERF_MAX_HITCHES);
+  });
+
+  it('persists on a mark even when the window is dropped, reloads and clears', () => {
+    const storage = memoryStorage();
+    const rec = make({ storage });
+    const t = feed(rec, 0, [HZ72, 30]);
+    rec.mark('cast');
+    expect(rec.windows()).toHaveLength(0);
+    expect(readStoredHitches(storage)).toHaveLength(1);
+    const again = make({ storage });
+    expect(again.hitches()).toHaveLength(1);
+    again.clear();
+    expect(again.hitches()).toHaveLength(0);
+    expect(readStoredHitches(storage)).toEqual([]);
+    expect(t).toBeGreaterThan(0);
+  });
+
+  it('drops the oldest hitches with the windows to fit the size bound', () => {
+    const hitches = Array.from({ length: 50 }, (_, i) => ({
+      label: `h${i}`,
+      ms: 30,
+      sinceMarkMs: 30,
+      wallMs: 0,
+      presenting: true,
+    }));
+    const json = storedJson([], 1000, hitches);
+    expect(json.length).toBeLessThanOrEqual(1000);
+    const kept = (JSON.parse(json) as { hitches: { label: string }[] }).hitches;
+    expect(kept.at(-1)?.label).toBe('h49');
   });
 });
