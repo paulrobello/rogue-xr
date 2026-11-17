@@ -24,7 +24,12 @@ import {
   type TurnSegment,
 } from '../combat-view/enemy-turn.ts';
 import { HIT_RED } from '../combat-view/hit-feedback.ts';
-import { HIT_NUMBER_SECONDS, HitNumbers } from '../combat-view/hit-numbers.ts';
+import {
+  HIT_NUMBER_RISE,
+  HIT_NUMBER_SECONDS,
+  HIT_NUMBER_WIDTH,
+  HitNumbers,
+} from '../combat-view/hit-numbers.ts';
 import {
   CARD_LAUNCH_DELAY,
   CARD_POWER,
@@ -41,6 +46,7 @@ import {
   statusAtUv,
   statusExplanation,
 } from '../combat-view/status-info.ts';
+import { dropToFitView, fitsView } from '../combat-view/view-fit.ts';
 import { getCard } from '../content/cards.ts';
 import { dieById } from '../content/dice.ts';
 import { type EncounterTier, encounterSetups } from '../content/enemies.ts';
@@ -121,6 +127,8 @@ export const DESKTOP_DICE_HINT = 'Click the glowing die to throw it (or press T)
 const HINT_WIDTH = 0.46;
 /** The status tooltip: its width, metres, and how far it floats above and in front of the badge. */
 const TIP_WIDTH = 0.42;
+/** Half the tooltip's height at scale 1 (its canvas is 640 x 240). */
+const TIP_HALF_HEIGHT = (TIP_WIDTH * 240) / 640 / 2;
 const STATUS_TIP_OFFSET = { up: 0.14, toward: 0.04 } as const;
 /** Nearer than this, metres, the tooltip keeps its size; farther, it grows in proportion. */
 const STATUS_TIP_NEAR = 0.9;
@@ -187,6 +195,10 @@ const PLAYER_NUMBER_SCALE = 0.75;
  */
 const ENEMY_NUMBER_OUT = 0.35;
 const ENEMY_NUMBER_UP = 0.18;
+/** From an enemy number's start to the top of its label at the peak of its rise (labels are 2:1). */
+const ENEMY_NUMBER_HEADROOM = HIT_NUMBER_RISE + HIT_NUMBER_WIDTH / 4;
+/** An enemy number is lowered at most this far to stay inside the top of the view. */
+const ENEMY_NUMBER_MAX_DROP = 0.4;
 const NUMBER_STEP = { side: 0.16, up: 0.07 } as const;
 /** Kept entries of the turn trace and hit log. */
 const TRACE_CAP = 60;
@@ -1491,14 +1503,19 @@ export class CombatSession {
         wrapText(ctx, text, 24, 96, w - 48, 36);
       });
     }
-    // Above the badge, nudged toward the viewer, turned to face them, and grown with distance so it
-    // reads as it would at `STATUS_TIP_NEAR` (enemy readouts stand 2 to 3 m away).
+    // Above the badge (below it when that would leave the top of the view), nudged toward the
+    // viewer, turned to face them, and grown with distance so it reads as it would at
+    // `STATUS_TIP_NEAR` (enemy readouts stand 2 to 3 m away).
     const eye = this.deps.camera.getWorldPosition(this.eye);
     const grow = Math.max(1, eye.distanceTo(found.hit.point) / STATUS_TIP_NEAR);
     tip.mesh.scale.setScalar(grow);
     const at = tip.mesh.position.copy(found.hit.point);
     at.addScaledVector(eye.sub(found.hit.point).normalize(), STATUS_TIP_OFFSET.toward * grow);
-    at.y += STATUS_TIP_OFFSET.up * grow;
+    const above = at.y + STATUS_TIP_OFFSET.up * grow;
+    at.y = above;
+    if (!fitsView(at, TIP_HALF_HEIGHT * grow, this.deps.camera)) {
+      at.y = above - 2 * STATUS_TIP_OFFSET.up * grow;
+    }
     this.deps.camera.getWorldQuaternion(tip.mesh.quaternion);
     tip.mesh.visible = true;
   }
@@ -2224,6 +2241,7 @@ export class CombatSession {
       aim.x -= toward.z * side;
       aim.y += ENEMY_NUMBER_UP + n * NUMBER_STEP.up;
       aim.z += toward.x * side;
+      aim.y -= dropToFitView(aim, ENEMY_NUMBER_HEADROOM, this.deps.camera, ENEMY_NUMBER_MAX_DROP);
       this.numbers.spawn(aim, event);
     }
   }
