@@ -269,12 +269,12 @@
     },
     {
       "gate": "independent visual score",
-      "status": "below bar: 73/100 (bar 80), scored 2026-11-16",
+      "status": "below bar: 76/100 (bar 80), scored 2026-11-16",
       "notes": "blender-kit-pieces requires an independent >= 80/100 score; unscored means unaccepted"
     }
   ],
   "independentScore": {
-    "score": 73,
+    "score": 76,
     "scale": "0-100 visual fidelity to the art direction",
     "scorer": "independent reviewer agent (separate from the authoring agent; did not build the asset)",
     "date": "2026-11-16",
@@ -283,41 +283,41 @@
     "rubric": [
       {
         "criterion": "silhouette and form",
-        "points": 25,
+        "points": 26,
         "max": 30,
-        "note": "Unchanged since the last score (25). This is still a rounded brass cube with a raised frame around inset walnut faces, and it matches the proportions of L-board-1 panel 4. Points are lost because the reference sets its faces in a recessed, dark-bevelled well. Here the frame steps straight down to walnut: a scan at y=300 across the right die's top-face inner edge (x 512 to 538) falls from relL 0.200 to 0.065 over about 10 px with no dark lip, so the faces read nearly flush."
+        "note": "Up 1 from 25. The rounded brass cube with a raised frame still matches the proportions of L-board-1 panel 4, and the faces now sit in a visible well. On the right die in p5-dice-brass-d6.jpg a scan at y=300 drops from relL 0.155 on the frame to 0.052 within 3 px (x 521 to 524) into a shadowed wall before reaching walnut, where the last score saw a nearly flush step over 10 px. The new front brass lip carries a rolled highlight that peaks at relL 0.74 (x=600, y 384 to 391). Points are still lost because the lit inner wall reads pale instead of as panel 4's dark bevel. At x=620, y 251 to 260 the back wall is a grey-mauve band (#847069, S 0.20, relL about 0.17), and the same low-saturation band appears on 4 of the 6 lineup dice (105 to 257 px each, median #76655B to #8E7568). The pips are meant to be recessed cups but do not read as cups at this framing, as the signature note measures."
       },
       {
         "criterion": "signature features",
-        "points": 18,
+        "points": 19,
         "max": 25,
-        "note": "Up 2 from 16. Commit e2a9530 makes the pips emissive. The brightest 1% of pip pixels now reach #FEEAC7 (relL 0.84), and the pips are the brightest element on both dice. They glow cream-peach rather than candle amber: the median is #CFB795 (H35, S 0.28), and saturation tops out at 0.40 across all pip pixels. The reference pip cores measure #FFD848 (S 0.72). The pips are still flat discs with a tan ring (#958255), not recessed cups. A ring sampled just outside the centre pip (relL 0.098) sits inside the walnut's own grain range (0.054 to 0.096), so the glow does not spill onto the face the way panel 4 does. The brass body, walnut faces and correct pip layout are all present."
+        "note": "Up 1 from 18. The new glow spill is real and measurable. Around the right die's centre pip (centroid 606,307, 35 x 24 px) the ring just outside the disc (normalised radius 1.05 to 1.2) measures #825B39, relL 0.125, and the next ring (1.2 to 1.4) 0.102, against walnut at p50 0.066 and p90 0.090. The spill is warm (S 0.56), so the pips now light the face as in panel 4, which they did not at the last score (0.098, inside the grain range). The pip cups do not read. Across the disc edge (radius 0.95 to 1.05) the minimum relL is 0.127 and the median 0.49, so there is no dark rim and each pip is still a flat lit disc. The pip colour remains cream rather than candle amber. The median pip is #E5C59B (H34, S 0.32), the core #E7CCA9 (S 0.27) and the brightest 1% #EED3A9 (S 0.29), up only slightly from S 0.28 and against #F3BE65 (S 0.58) and the reference core #FFD848 (S 0.72). Pip saturation never exceeds 0.46 on any face. Brass body, walnut faces, the new brass lip and the correct pip layouts are all present."
       },
       {
         "criterion": "surface detail and material read",
         "points": 12,
         "max": 20,
-        "note": "Unchanged (12). The walnut atlas grain is painterly and strong. The brass is still uniform, with no edge wear and no value breakup. Under a hue mask (H38 to 60), brass relL runs p10 0.143, p50 0.167 and p90 0.240, a narrow band. The only real highlight is the rounded top-front lip (#8B794B to #B39F71). On the right die in p5-dice-brass-d6.jpg it reads as smooth olive-gold plastic."
+        "note": "Unchanged at 12. The walnut grain is still painterly and strong. The brass is still uniform, with no edge wear, cavity darkening or value breakup. Under the previous score's hue mask (H38 to 60, S above 0.3) right-die brass relL runs p10 0.117, p50 0.153, p90 0.235 and the left die 0.107, 0.123 and 0.182, which is the same narrow band as before (0.143 to 0.240). Only the top 1% got brighter (p99 0.68), from the new rolled front lip. A stricter S above 0.45 mask gives the same picture (p10 0.117, p90 0.202). The new pale grey-mauve inner wall reads as a separate grey material rather than brass or shadowed wood, which slightly weakens the material read of the well."
       },
       {
         "criterion": "colour and value",
         "points": 10,
         "max": 15,
-        "note": "Up 1 from 9. Commit 02e65a1 lands the walnut: top-face walnut is #5E3F2D (H22, S 0.52) and front-face walnut #573826. Across the six lineup dice it measures #5B3D2C to #60412E, against the bible's #583C26 (H26, S 0.57). Before the change it was hue 15 to 21. The brass is still dull and olive. The hue-masked median is #826F48 (H40, S 0.45, V 0.51) and the top 5% is #B39F71 (S 0.37), against palette #DEC16A (V 0.87) and the reference's lit brass #EEB249 (S 0.69). The pip hue is right (H35 against candle amber H37), but saturation is about half (S 0.28 against 0.58). The value structure (light frame, dark face, bright pips) is correct."
+        "note": "Unchanged at 10. The walnut is on target: top faces #61412E and #5F402E, front faces #5A3A28 and #593A27, and the six lineup dice #5B3D2B to #6B4A32, against the bible's #583C26. The brass moved sideways rather than toward the palette. The hue-masked median is #85692E (H41, S 0.65, V 0.52), more saturated than the last score's #826F48 (S 0.45) but no brighter, against polished brass #DEC16A (H45, S 0.52, V 0.87) and the reference's lit brass #EEB249. It reads as mustard-olive rather than polished brass. The pip hue is right (H34 against candle amber H37) but saturation is about half (S 0.32 against 0.58). The grey-mauve wall (S 0.20) is an off-palette note. The value structure of light frame, dark face and bright pips is correct."
       },
       {
         "criterion": "readability at play distance",
-        "points": 8,
+        "points": 9,
         "max": 10,
-        "note": "Down 1 from 9. Pip-to-walnut contrast measures 4.9:1 on the right die's top face and 5.5:1 on its front face, and 4.6 to 4.9:1 on the six lineup dice. The last score had 6.3:1, but from an in-game tray shot under different light, so the delta is approximate. Part of the drop comes from the requested walnut grade, which lifted walnut to relL 0.06. The pips stay countable: the centre pip spans 35 px at this framing, and the emissive keeps them lit in dim light. This is still below the reference's roughly 10:1 (pip #FFD848 on face #3D2212), and the evidence is desktop only."
+        "note": "Up 1 from 8. Pip-to-walnut contrast (median pip against median walnut, WCAG) measures 5.55:1 and 6.11:1 on the right die's top and front faces and 5.66:1 and 6.15:1 on the left die, up from 4.9 to 5.5:1. The six lineup dice measure 4.75 to 5.90:1, up from 4.6 to 4.9:1, and all clear 4.5:1. The pips are countable at a glance at both framings (the centre pip spans 35 px in the closeup), and the new halo helps them read in dim light. This is still below the reference's roughly 10:1, and the evidence is desktop only."
       }
     ],
     "topFixes": [
-      "Change the pip emissive colour and map from cream to saturated candle amber: a core near #FFD848 or #F3BE65 with S of at least 0.6. If tone mapping still washes it out, lower emissiveIntensity from 1.8 to about 1.0 to 1.2, or add selective bloom. More intensity on the current cream map only pushes it toward white (the brightest 1% is already #FEEAC7 at S 0.22).",
-      "Recess each pip into a shallow cup with a dark warm-black (#231D1A) rim so it reads as a lit well, as in panel 4, and add a soft amber glow ring baked into the walnut atlas around each pip (currently no measurable spill: 0.098 against grain 0.054 to 0.096).",
-      "Give the brass body value and wear: use the approved polished-brass texture set, or add edge-wear and cavity-darkening masks so brass relL spans about 0.08 to 0.5, not 0.14 to 0.24. Lift the lit midtone toward #DEC16A (from #826F48) so it reads as polished brass, not olive plastic.",
-      "Add a dark bevelled lip (about 2 to 3 mm, near #231D1A) where the frame steps down to the walnut so the faces sit in a recessed well instead of reading flush."
+      "Change the pip emissive colour and map from cream to saturated candle amber. The pip core is still #E7CCA9 (S 0.27) and the median #E5C59B (S 0.32). Target a core near #F3BE65 to #FFD848 with S of at least 0.55 after tone mapping, keeping the new halo. If the tone mapper desaturates it, raise the map saturation rather than the intensity.",
+      "Darken the inner well walls from the current pale grey-mauve (#847069, S 0.20, relL about 0.17, on 4 of 6 lineup dice) to dark brass or warm black near #231D1A, so the recess reads as panel 4's dark bevelled lip instead of a grey inset.",
+      "Give the brass value range and polish. Hue-masked relL still spans only about 0.12 to 0.24 with a mustard-olive median #85692E (V 0.52). Lift the lit midtone toward #DEC16A, add edge wear and cavity darkening so relL spans about 0.08 to 0.5, and check whether the environment or probe lighting, not the material, is what keeps it dull in the engine.",
+      "Make the pip cups read. Across the disc edge the minimum relL is 0.127 with no dark rim. Add a thin dark rim or an inner shadow ring (relL under 0.05) at the cup lip, or deepen the cup so the occlusion is visible at play distance."
     ],
-    "method": "Independent reviewer (did not build the asset). I read the dice and palette sections of docs/art-bible.md and the previous independentScore in assets-source/dice/brass-d6/provenance.json, and did not open any author self-score or fidelity file. Primary evidence was the in-engine renders of the shipped HEAD in /tmp/rxr-prev/dice-shipped-shots/: p5-dice-brass-d6.jpg and p5-dice-brass-d6-lineup.jpg, both 960x640. The reference was L-board-1.png panel 4, cropped at (60,956)-(750,1490). Measurements used Pillow under python3 -I: median sRGB in fixed crop boxes, with pips segmented at relL above 0.45, walnut at relL below 0.08 and brass by hue mask (H38 to 60, S above 0.3). Contrast ratios are WCAG (relL+0.05)/(relL+0.05), and I sampled the frame-to-face transition and the area around one pip. Floor-contaminated rectangles were discarded. The deltas against the last score (71) are approximate, because that score's contrast figures came from in-game tray shots with a darker floor and different light. All evidence is desktop (Apple M4, ANGLE Metal) with no headset capture. Date 2026-11-16."
+    "method": "Independent reviewer (did not build the asset). I read the dice and palette sections of docs/art-bible.md and the previous independentScore in assets-source/dice/brass-d6/provenance.json, and I did not open any author status or self-score file in /tmp. Primary evidence was the in-engine stills of commit 68eca00 through the runtime loader (Apple M4, ANGLE Metal): docs/verification/p5-dice-brass-d6.jpg and p5-dice-brass-d6-lineup.jpg, both 960x640, cropped and upscaled 2x to 4x for inspection. The Blender review sheet assets-source/dice/dice.review-sheet.jpg was viewed for context only. The reference was L-board-1.png panel 4, cropped at (60,956)-(750,1490). Measurements used Pillow and NumPy under python3 -I: median sRGB in fixed crop boxes, hue-masked brass (H38 to 60, S above 0.3, cross-checked at S above 0.45), pixel scans across frames, rails and walls, and ring or distance profiles around pips and numerals. Pips were segmented at relL above 0.45, walnut at relL below 0.10 with H8 to 35 and S above 0.35, and the glow halo was measured in elliptical rings normalised to the centre pip's half-widths. Contrast ratios are WCAG (L1+0.05)/(L2+0.05) on relative luminance. The deltas against the previous score are approximate, because these stills now bind the glow pages as the runtime does and the earlier stills showed less emission. All evidence is desktop only, with no headset capture. Date 2026-11-16."
   }
 }
