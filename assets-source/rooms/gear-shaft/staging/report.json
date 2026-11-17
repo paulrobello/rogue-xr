@@ -1,85 +1,85 @@
 {
   "piece": "gear-shaft",
   "blender": "5.3.0",
-  "host_load_start": 2.95,
+  "host_load_start": 2.28,
   "lightmap_size": 2048,
   "samples": 256,
   "generator": "scripts/assets/build-room-kit.py",
   "helper": "scripts/assets/room_kit.py (reuses build-room-study.py functions)",
-  "lengthwise_grain_high": 92,
+  "lengthwise_grain_high": 114,
   "high": {
-    "triangles": 65284,
-    "slots": 10
+    "triangles": 50704,
+    "slots": 12
   },
-  "lengthwise_grain_low": 92,
+  "lengthwise_grain_low": 114,
   "low": {
-    "triangles": 9804,
-    "vertices": 6724,
-    "materials": 10,
+    "triangles": 7832,
+    "vertices": 5652,
+    "materials": 12,
     "lightmap_density": {
-      "mean_px_per_m": 45.83,
-      "min_px_per_m": 38.88,
-      "max_px_per_m": 46.26
+      "mean_px_per_m": 47.43,
+      "min_px_per_m": 40.13,
+      "max_px_per_m": 47.73
     },
     "lightmap_density_by_slot": {
       "brass-aged": {
-        "area_m2": 46.79,
-        "median_px_per_m": 46.3,
-        "min_px_per_m": 38.9
+        "area_m2": 19.97,
+        "median_px_per_m": 47.7,
+        "min_px_per_m": 44.4
       },
       "brass-polished": {
-        "area_m2": 16.87,
-        "median_px_per_m": 45.4,
-        "min_px_per_m": 38.9
+        "area_m2": 3.94,
+        "median_px_per_m": 47.7,
+        "min_px_per_m": 42.9
+      },
+      "bronze": {
+        "area_m2": 37.49,
+        "median_px_per_m": 47.7,
+        "min_px_per_m": 40.1
       },
       "coals": {
         "area_m2": 6.93,
-        "median_px_per_m": 46.3,
-        "min_px_per_m": 45.4
+        "median_px_per_m": 47.7,
+        "min_px_per_m": 47.4
       },
       "flame": {
         "area_m2": 0.74,
-        "median_px_per_m": 45.8,
+        "median_px_per_m": 47.7,
         "min_px_per_m": 43.1
-      },
-      "gilt": {
-        "area_m2": 11.01,
-        "median_px_per_m": 46.2,
-        "min_px_per_m": 38.9
       },
       "lamp-glass": {
         "area_m2": 0.62,
-        "median_px_per_m": 44.5,
-        "min_px_per_m": 43.0
+        "median_px_per_m": 46.1,
+        "min_px_per_m": 44.4
       },
       "stone-floor": {
         "area_m2": 162.4,
-        "median_px_per_m": 46.3,
-        "min_px_per_m": 45.4
+        "median_px_per_m": 47.7,
+        "min_px_per_m": 47.4
       },
       "wallpaper": {
         "area_m2": 153.28,
-        "median_px_per_m": 45.8,
-        "min_px_per_m": 45.4
+        "median_px_per_m": 47.7,
+        "min_px_per_m": 47.4
       },
       "walnut": {
-        "area_m2": 178.54,
-        "median_px_per_m": 46.3,
-        "min_px_per_m": 40.5
+        "area_m2": 183.89,
+        "median_px_per_m": 47.7,
+        "min_px_per_m": 41.8
       },
       "wax": {
         "area_m2": 0.12,
-        "median_px_per_m": 44.5,
-        "min_px_per_m": 41.6
+        "median_px_per_m": 46.0,
+        "min_px_per_m": 42.9
       }
     },
     "rigid_nodes": {
       "gear-shaft_gear_ring": {
-        "triangles": 2392,
+        "triangles": 4456,
         "lightmap_density": {
-          "mean_px_per_m": 45.14,
-          "min_px_per_m": 39.07,
-          "max_px_per_m": 46.25
+          "mean_px_per_m": 46.55,
+          "min_px_per_m": 39.98,
+          "max_px_per_m": 47.73
         },
         "location_blender": [
           0.0,
@@ -89,8 +89,8 @@
       }
     }
   },
-  "canonicalized_primitives": 12,
-  "glb_bytes": 649072,
+  "canonicalized_primitives": 13,
+  "glb_bytes": 612996,
   "bake_glass_transmit": [
     1.0,
     0.93,
@@ -98,10 +98,10 @@
   ],
   "device": "GPU:METAL (Apple M4 (GPU - 10 cores))",
   "lightmap_bake": {
-    "seconds": 40.61,
+    "seconds": 42.06,
     "host_load": [
-      2.95,
-      1.98
+      2.26,
+      1.86
     ],
     "timing_valid": true,
     "diffuse_bounces": 2
@@ -110,16 +110,16 @@
     "gear-shaft_gear_ring": {
       "azimuth": {
         "sector_means": [
-          0.09519,
-          0.09154,
-          0.09173,
-          0.09141,
-          0.09075,
-          0.09035,
-          0.09208,
-          0.09413
+          0.0931,
+          0.09069,
+          0.09014,
+          0.09183,
+          0.09107,
+          0.0901,
+          0.09106,
+          0.09356
         ],
-        "min_over_max": 0.949,
+        "min_over_max": 0.963,
         "sectors": 8
       },
       "casts_baked_shadow": false
@@ -127,14 +127,14 @@
   },
   "denoise": "compositor OIDN, HDR, accurate prefilter, high quality",
   "lightmap": {
-    "coverage": 0.6654,
-    "scale": 5.155224,
-    "clipped_fraction": 0.01,
-    "mean_irradiance": 0.416952,
+    "coverage": 0.6734,
+    "scale": 5.250408,
+    "clipped_fraction": 0.00996,
+    "mean_irradiance": 0.422695,
     "p05_irradiance": 0.0,
     "percentile": 99.0,
     "encoded_p05_255": 0,
-    "encoded_median_255": 43
+    "encoded_median_255": 45
   },
   "ktx2": {
     "tool": "ktx version: v4.4.2",
@@ -164,12 +164,12 @@
   ],
   "blend": {
     "gear-shaft_high.blend": {
-      "sha256": "eff138857734f402e2be66a6f3fc1fb41057988c02a7d745343b95a70e2a8488",
-      "bytes": 1772901
+      "sha256": "3674a2922bb1c0577d7c1153c1af746ea316b223b2ac2c17803f8fbc7c99b694",
+      "bytes": 1305424
     },
     "gear-shaft_low.blend": {
-      "sha256": "99f5ea319c67688ffcd9e028abfb62f0fdda6ad85fbfeb6da8da7cd7535209b6",
-      "bytes": 442302
+      "sha256": "a9f37928ac943fc8f32afbcba520752a82be8650a284e5b345305260aaa212c3",
+      "bytes": 364167
     }
   },
   "colliders_added": [
@@ -324,8 +324,8 @@
     {
       "name": "gallery_0",
       "blender": [
-        1.88,
-        1.88,
+        1.53,
+        1.53,
         7.19
       ],
       "watts": 12.0
@@ -333,8 +333,8 @@
     {
       "name": "gallery_1",
       "blender": [
-        -1.88,
-        1.88,
+        -1.53,
+        1.53,
         7.19
       ],
       "watts": 12.0
@@ -342,8 +342,8 @@
     {
       "name": "gallery_2",
       "blender": [
-        -1.88,
-        -1.88,
+        -1.53,
+        -1.53,
         7.19
       ],
       "watts": 12.0
@@ -351,8 +351,8 @@
     {
       "name": "gallery_3",
       "blender": [
-        1.88,
-        -1.88,
+        1.53,
+        -1.53,
         7.19
       ],
       "watts": 12.0
@@ -404,13 +404,13 @@
       "vfov": 70.0
     }
   },
-  "host_load_end": 1.99,
+  "host_load_end": 2.16,
   "files": {
-    "engine-compare.json": "78102617931fc2ce4a86b176e2bb63d2265802056d8d5f3349f46a4c50eb11fe",
-    "gear-shaft.glb": "62a72d2bd7c5c8fcfdccca857e39c4dc5127121086205ff9ea2c6456dccdfb0d",
-    "gear-shaft.lightmap.ktx2": "a3c03e9a201310b2bb782ff0cc1a6e1b01b178c3be251cec875fdedff07bf185",
-    "gear-shaft.lightmap.png": "6d08cedd326eb3e422cefa6ea4622bfc5c0083dc7a5bcf5ded93c33bf06d3916",
-    "gear-shaft.manifest.json": "0da1b107e2add321bcf5c5cbae5bfbe2fece61a1cfbaddadf17b196f28ee0f6f",
-    "uv1-report.json": "3f9d22985c37e4c5d17c3b12c1e2c128d01a2d58421b9a6be8592bb8553991b0"
+    "engine-compare.json": "390e7c37fe0d13a024e171af54b88490cf07e84388282e6c64c78c00a50e2602",
+    "gear-shaft.glb": "760f94a64a9794371d987f8f96d9fae035f9c88c50f5d17edee71a5686f9bac1",
+    "gear-shaft.lightmap.ktx2": "07ec101007dc0d46ca9910faa5738a13993b7dc931a866c35e5dab8253db4991",
+    "gear-shaft.lightmap.png": "6973e40fd74ffb294740d2f83be1111040650bde0996a984336b5ad10faa35af",
+    "gear-shaft.manifest.json": "6b2d595bbff6d4bd2e2c05a4f4a1db00c16241a6fae808d5cad8a636d3ebc99b",
+    "uv1-report.json": "bc30bf0930c59fb0422da80dd4cb6042e04aaaa69e43f92e273f1e2d4c978f17"
   }
 }

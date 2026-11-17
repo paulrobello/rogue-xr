@@ -4,12 +4,12 @@
   "route": "scripted",
   "generator": {
     "path": "scripts/assets/build-room-kit.py",
-    "sha256": "594da634cf56dfef73aeb4d5dd3d98828dff3886df5f6bbd2836b8124be090c0"
+    "sha256": "037cd14f169ff58c9704b4e8204dc3286655c7d7695c5b0dfb16923fd2212ddb"
   },
   "generatorDeps": [
     {
       "path": "scripts/assets/room_kit.py",
-      "sha256": "ad29e296bfffd3180b91fd9ec089d41c605505eb9f853bf49d24230ec010dd1e"
+      "sha256": "577c7cba3babdf3d77bc54b353e8a93eba6f23c060a6404c4d9c7235f731bb2d"
     },
     {
       "path": "scripts/assets/build-room-study.py",
@@ -37,30 +37,30 @@
     "store": "assets-source/rooms/guardian-vault/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)",
     "files": {
       "guardian-vault_high.blend": {
-        "sha256": "5dbffde08e62af03834ca784d61526a4c05e6a81d5cbedde296d9c23c4ff2036",
-        "bytes": 1943466
+        "sha256": "caf1db5b700593ccf76ac23ad227fb0cf84a83ab5fe98e1eea4881860cf6d6d4",
+        "bytes": 1988895
       },
       "guardian-vault_low.blend": {
-        "sha256": "64e633184b0bf9220c4eb8879245683a36bb8a54f7160c515d75d274a8b8f959",
-        "bytes": 539000
+        "sha256": "b15581b1b568eb1500a438c51ab85225c10e2269e7dca060da5c8b62942362bc",
+        "bytes": 550954
       }
     }
   },
   "bake": {
     "device": "GPU:METAL (Apple M4 (GPU - 10 cores))",
     "lightmap": {
-      "coverage": 0.657,
-      "scale": 4.884269,
-      "clipped_fraction": 0.00994,
-      "mean_irradiance": 0.803731,
+      "coverage": 0.6615,
+      "scale": 4.869102,
+      "clipped_fraction": 0.00992,
+      "mean_irradiance": 0.812968,
       "p05_irradiance": 0.0,
       "percentile": 99.0,
       "encoded_p05_255": 0,
       "encoded_median_255": 60,
-      "seconds": 38.54,
+      "seconds": 38.81,
       "host_load": [
-        1.92,
-        1.43
+        2.74,
+        2.01
       ],
       "timing_valid": true,
       "diffuse_bounces": 2,
@@ -79,7 +79,7 @@
     }
   },
   "budgets": {
-    "triangles": 11969,
+    "triangles": 12257,
     "materials": 10,
     "texturePx": {
       "guardian-vault.lightmap.ktx2": {
@@ -87,30 +87,30 @@
         "height": 2048
       }
     },
-    "highTriangles": 63804,
-    "glbBytes": 891148
+    "highTriangles": 65192,
+    "glbBytes": 909196
   },
   "texelDensityPxPerM": {
     "lightmap": {
-      "mean_px_per_m": 39.61,
-      "min_px_per_m": 32.61,
-      "max_px_per_m": 39.82
+      "mean_px_per_m": 39.54,
+      "min_px_per_m": 32.56,
+      "max_px_per_m": 39.75
     },
     "lightmapBySlot": {
       "brass-aged": {
         "area_m2": 42.44,
-        "median_px_per_m": 39.8,
+        "median_px_per_m": 39.7,
         "min_px_per_m": 32.6
       },
       "brass-polished": {
-        "area_m2": 22.14,
-        "median_px_per_m": 39.8,
+        "area_m2": 21.11,
+        "median_px_per_m": 39.7,
         "min_px_per_m": 32.9
       },
       "coals": {
         "area_m2": 4.15,
-        "median_px_per_m": 39.8,
-        "min_px_per_m": 39.8
+        "median_px_per_m": 39.7,
+        "min_px_per_m": 39.7
       },
       "flame": {
         "area_m2": 4.53,
@@ -119,8 +119,8 @@
       },
       "gilt": {
         "area_m2": 5.87,
-        "median_px_per_m": 39.8,
-        "min_px_per_m": 33.5
+        "median_px_per_m": 39.7,
+        "min_px_per_m": 33.4
       },
       "stained-glass": {
         "area_m2": 6.84,
@@ -129,22 +129,22 @@
       },
       "stone-floor": {
         "area_m2": 261.6,
-        "median_px_per_m": 39.8,
-        "min_px_per_m": 34.2
+        "median_px_per_m": 39.7,
+        "min_px_per_m": 34.1
       },
       "wallpaper": {
         "area_m2": 227.68,
-        "median_px_per_m": 39.8,
+        "median_px_per_m": 39.7,
         "min_px_per_m": 39.6
       },
       "walnut": {
-        "area_m2": 325.61,
-        "median_px_per_m": 39.8,
+        "area_m2": 329.45,
+        "median_px_per_m": 39.7,
         "min_px_per_m": 33.5
       },
       "wax": {
         "area_m2": 0.21,
-        "median_px_per_m": 38.3,
+        "median_px_per_m": 38.2,
         "min_px_per_m": 33.9
       }
     }
@@ -270,27 +270,27 @@
   "derivedFiles": [
     {
       "path": "public/assets/rooms/guardian-vault/guardian-vault.glb",
-      "sha256": "3421d6540ba034c82b79cb7195fa81a8d950df5f02a25874e7655821edc0c62f",
-      "bytes": 891148
+      "sha256": "64ac0227fe42b2f91efe219b5eff44321c34fee58d260a7bc56d4cec864f5a2a",
+      "bytes": 909196
     },
     {
       "path": "public/assets/rooms/guardian-vault/guardian-vault.lightmap.ktx2",
-      "sha256": "7a271cb9dd4d85c6399b709083bd1d83e29d310166468d9b7688edcfbf41548f",
-      "bytes": 2834935
+      "sha256": "289efe829c49fe3427ead0a09d959dd059e3ff26bcd290fbf0d6d3d1e95f1c3b",
+      "bytes": 2851683
     },
     {
       "path": "public/assets/rooms/guardian-vault/guardian-vault.manifest.json",
-      "sha256": "5ba517a46aaea609951e35b07957ae55e041f3dcf7161bf43fdac24bbe1697b2",
-      "bytes": 5329
+      "sha256": "5e66fc1a0b11d689075e4801bb5fb061de51e89758be928470ecf1bd4bc7fa23",
+      "bytes": 5328
     }
   ],
   "stagingFiles": {
-    "engine-compare.json": "5bce2aca1b244bd23b33339df4360fe11de84aa18f1031626c0c295d7cb12bc6",
-    "guardian-vault.glb": "3421d6540ba034c82b79cb7195fa81a8d950df5f02a25874e7655821edc0c62f",
-    "guardian-vault.lightmap.ktx2": "7a271cb9dd4d85c6399b709083bd1d83e29d310166468d9b7688edcfbf41548f",
-    "guardian-vault.lightmap.png": "9db9e7c9da991b9ed1cb8f0d50dea8b67652f882f5a1492c5ea2dac6aa268059",
-    "guardian-vault.manifest.json": "5ba517a46aaea609951e35b07957ae55e041f3dcf7161bf43fdac24bbe1697b2",
-    "uv1-report.json": "746751012ca7bb812058752c65bbd8a3838eb005dbe1a4da762bcf2d1876d6ba"
+    "engine-compare.json": "054e899615e002f238273df5ce50c6cc77772b9a1db20e23a808761df854ef0b",
+    "guardian-vault.glb": "64ac0227fe42b2f91efe219b5eff44321c34fee58d260a7bc56d4cec864f5a2a",
+    "guardian-vault.lightmap.ktx2": "289efe829c49fe3427ead0a09d959dd059e3ff26bcd290fbf0d6d3d1e95f1c3b",
+    "guardian-vault.lightmap.png": "6764348fe11de299a2b397a5b0db5a21073db22256da2694c616bae747d9c69a",
+    "guardian-vault.manifest.json": "5e66fc1a0b11d689075e4801bb5fb061de51e89758be928470ecf1bd4bc7fa23",
+    "uv1-report.json": "bd3484b7df237c59894c3139fe48599990238ff4474b165a72ab3bfaf3be3a47"
   },
   "references": [
     {
@@ -315,7 +315,7 @@
   "materialsUsed": "approved P4-T3 set (public/assets/materials), bound by slot name; not regenerated",
   "license": "Original work generated in Blender from a checked-in script; concept references from Paul's paid Higgsfield plan (Terms of Use 4.4)",
   "reimport": {
-    "triangles": 11969,
+    "triangles": 12257,
     "material_count": 10,
     "uv_layers": [
       [
@@ -403,31 +403,31 @@
   "reviewEvidence": [
     {
       "path": "assets-source/rooms/guardian-vault/staging/review-sheet.jpg",
-      "sha256": "4a455941785f97a16e0eac883935bc9a00a97f4205e5ce759796ce23744814ed"
+      "sha256": "d601fd789c88e8c946fcc94829d383d20ab590213fb9da39556f48360664472a"
     },
     {
       "path": "docs/verification/p5-rooms-guardian-vault-brazier.jpg",
-      "sha256": "47961106016805961bf1c9071909caf659218a7a58cc5df7a539ca9606f8e97c"
+      "sha256": "4c422226988dd7a6438060fc378276f39a58ca42f892cb4792f0727b9853aecf"
     },
     {
       "path": "docs/verification/p5-rooms-guardian-vault-hero.diffuse.jpg",
-      "sha256": "b37cf7b8080739a729a6519c0414c0b2f619747b41455fb56c216432123432c1"
+      "sha256": "f4ef96ceb9dc5eec3ca1dada76dddfa4e78bb3d7272fd0b0dbabdd6324c22d09"
     },
     {
       "path": "docs/verification/p5-rooms-guardian-vault-hero.jpg",
-      "sha256": "c90c5f401fe4d8ebb63c9c37a31ae333a0a87b247f89d9d6062a9465f5db80ae"
+      "sha256": "d07cc74b33cc057c677858242efb95caee0fd202cbbf108534d28e35893f9009"
     },
     {
       "path": "docs/verification/p5-rooms-guardian-vault-reward-eye.jpg",
-      "sha256": "f59118f2656b25aca816e6e8f4311a49642162d38f6afd9192adc8180d61d8d2"
+      "sha256": "ed848422c8cb7ef23302f4ac7a82aeba9d90036d54d9a2d2c36b52c3a5f01c5f"
     },
     {
       "path": "docs/verification/p5-rooms-guardian-vault-seam-from-corridor.jpg",
-      "sha256": "5438763bc0f2bb1f5ef7d73e6387eea5f8ac9fa1bd0d9b01355a13213f421b74"
+      "sha256": "cae71ed8e3cf627c0132479b56b168268ce94744347476211acaf99ba6c7a08c"
     },
     {
       "path": "docs/verification/p5-rooms-guardian-vault-seam-south.jpg",
-      "sha256": "fb42c6f7f4abb5fa336ffada6bd9ac69ae487a515e5577767ebae33465d0c3ee"
+      "sha256": "39931e4978bc82757c4fe413e82382a1e25b52f6fbb2c534ebfdf877abec8685"
     }
   ],
   "independentScore": {
@@ -586,7 +586,12 @@
       },
       {
         "id": "D2",
-        "decision": "Accept the vault's ~43 px/m lightmap mean (built 42.63) without zone weighting; one 2048 map cannot reach 65 px/m at uniform density."
+        "decision": "Accept the vault's ~43 px/m lightmap mean (built 42.63) without zone weighting; one 2048 map cannot reach 65 px/m at uniform density.",
+        "revised": {
+          "by": "rebake-3 sub-agent of the 2026-11-17 orchestrator (build decisions, not owner approvals; Paul's review is still pending)",
+          "date": "2026-11-17",
+          "decision": "Accept the built 39.54 px/m lightmap mean (min 32.56) without zone weighting. Rework 2's diaphragm arches and sconces and rework 3's apse ribs add area to the one 2048 map, so the uniform density fell below the ~43 recorded here; weighting the apse and ring up would lower the walls and ceiling, which the review did not ask for."
+        }
       },
       {
         "id": "D3",
@@ -609,7 +614,8 @@
     ],
     "notes": [
       "Coals and P5-T2 fire flames carry a dark albedo with strong emission (colour x 0.25, Blender strength and runtime emissiveIntensity x 4: coals 12.0 / 5.6, flame 24.0 / 5.6), so the emitted light is unchanged and the lightmap term on them is a quarter. Measured on the first 2026-11-17 bake: engine firebox R-B 101 -> 108, pit 112 -> 112.",
-      "Rework 2 (2026-11-17): bake with 2 diffuse bounces, candles at (1.0, 0.80, 0.60), four 80 W candle sconces on the side walls, three walnut diaphragm arches replace the east-west beams, the apse oculus gear moved to brass-polished."
+      "Rework 2 (2026-11-17): bake with 2 diffuse bounces, candles at (1.0, 0.80, 0.60), four 80 W candle sconces on the side walls, three walnut diaphragm arches replace the east-west beams, the apse oculus gear moved to brass-polished.",
+      "Rework 3 (2026-11-17): walnut ribs under the apse barrel at y 5.05 and 5.6 (Blender) carry the diaphragm arches into the apse; the centre lancet's mullion is walnut (the brass-polished bar read luma 131.8 against the glass at 69)."
     ]
   }
 }

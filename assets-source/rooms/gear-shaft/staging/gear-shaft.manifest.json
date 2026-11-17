@@ -5,8 +5,8 @@
     "file": "gear-shaft.lightmap.ktx2",
     "uv": 1,
     "encoding": "srgb-scaled",
-    "scale": 5.155223846435547,
-    "intensity": 16.195613
+    "scale": 5.250407695770264,
+    "intensity": 16.494642
   },
   "id": "gear-shaft",
   "kinds": [
@@ -280,8 +280,8 @@
     }
   ],
   "budget": {
-    "tris": 9804,
-    "materials": 10,
+    "tris": 7832,
+    "materials": 12,
     "texturePx": 2048
   },
   "materials": {
@@ -327,6 +327,14 @@
     "gear-shaft_gilt": {
       "color": "#dad761",
       "roughness": 0.42
+    },
+    "gear-shaft_gilt-worn": {
+      "color": "#ceca86",
+      "roughness": 0.5
+    },
+    "gear-shaft_bronze": {
+      "color": "#bca86f",
+      "roughness": 0.5
     }
   },
   "glassEmissiveIntensity": 0.8,

@@ -5,8 +5,8 @@
     "file": "corridor.lightmap.ktx2",
     "uv": 1,
     "encoding": "srgb-scaled",
-    "scale": 4.0294294357299805,
-    "intensity": 12.658826
+    "scale": 3.958608865737915,
+    "intensity": 12.436337
   },
   "id": "corridor",
   "kinds": [
@@ -194,9 +194,9 @@
       "roughness": 0.85
     },
     "corridor_lamp-glass": {
-      "color": "#ffda99",
-      "emissive": "#ffda99",
-      "emissiveIntensity": 1.5
+      "color": "#6c5530",
+      "emissive": "#6c5530",
+      "emissiveIntensity": 7.0
     }
   },
   "glassEmissiveIntensity": 0.8

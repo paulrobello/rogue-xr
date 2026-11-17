@@ -1,11 +1,11 @@
 {
   "glb": "gear-shaft.glb",
-  "glb_sha256": "62a72d2bd7c5c8fcfdccca857e39c4dc5127121086205ff9ea2c6456dccdfb0d",
+  "glb_sha256": "760f94a64a9794371d987f8f96d9fae035f9c88c50f5d17edee71a5686f9bac1",
   "size": 2048,
-  "islands": 1812,
-  "coverage": 0.2976,
+  "islands": 1568,
+  "coverage": 0.3173,
   "overlap_px": 0,
-  "texels_claimed_twice": 1554,
+  "texels_claimed_twice": 1602,
   "claims_per_covered_texel": 1.0012,
-  "min_gap_px": 19
+  "min_gap_px": 20
 }

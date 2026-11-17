@@ -5,8 +5,8 @@
     "file": "guardian-vault.lightmap.ktx2",
     "uv": 1,
     "encoding": "srgb-scaled",
-    "scale": 4.8842692375183105,
-    "intensity": 15.344384
+    "scale": 4.869102478027344,
+    "intensity": 15.296737
   },
   "id": "guardian-vault",
   "kinds": [
@@ -350,7 +350,7 @@
     }
   ],
   "budget": {
-    "tris": 11969,
+    "tris": 12257,
     "materials": 10,
     "texturePx": 2048
   },

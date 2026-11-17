@@ -738,7 +738,8 @@ def gear_ring(name: str, pivot_z: float, high: bool, r_tip: float, teeth: int, t
     return obj
 
 
-def furnace_shaft(b, high: bool, height: float, shaft_r: float) -> list:
+def furnace_shaft(b, high: bool, height: float, shaft_r: float, shaft_slot: str = "brass-polished", trim: str = "brass-aged",
+                  bands: tuple = (2.2, 2.9, 4.4, 7.4)) -> list:
     """Masonry firebox inside the greybox's 2.4 m shaft collider with a grate on each face over a bed of
     coals and a row of flame cards, and the polished drive shaft rising from it to a boss at `height`
     (the top of the shaft void). Returns four bake-light points in open air outside the grates: 4-fold
@@ -746,8 +747,8 @@ def furnace_shaft(b, high: bool, height: float, shaft_r: float) -> list:
     h = 1.1
     seg = 48 if high else 20
     fz = 1.3
-    b.box(-h - 0.05, h + 0.05, -h - 0.05, h + 0.05, 0.0, 0.16, "brass-aged", drop="b")  # plinth
-    b.box(-h - 0.05, h + 0.05, -h - 0.05, h + 0.05, fz - 0.12, fz, "brass-aged", drop="")  # cap band
+    b.box(-h - 0.05, h + 0.05, -h - 0.05, h + 0.05, 0.0, 0.16, trim, drop="b")  # plinth
+    b.box(-h - 0.05, h + 0.05, -h - 0.05, h + 0.05, fz - 0.12, fz, trim, drop="")  # cap band
     lights = []
     for k in range(4):
         b.xf = Matrix.Rotation(math.pi / 2 * k, 4, "Z")
@@ -773,10 +774,10 @@ def furnace_shaft(b, high: bool, height: float, shaft_r: float) -> list:
         b.box(h - 0.02, h + 0.04, -0.52, 0.52, 0.8, 0.87, "brass-polished", drop="")  # lintel
         lights.append(b.xf @ Vector((h + 0.45, 0.0, 0.55)))
         b.xf = Matrix.Identity(4)
-    b.annulus(0, 0, shaft_r, 0.75, fz, fz + 0.12, seg, "brass-aged", sides="to")  # collar
-    b.cylinder(0, 0, shaft_r, fz + 0.12, height, seg, "brass-polished", caps="")
-    for z in (2.2, 2.9, 4.4, 7.4):
-        b.annulus(0, 0, shaft_r, shaft_r + 0.06, z - 0.04, z + 0.04, seg, "brass-aged", sides="tbo")
+    b.annulus(0, 0, shaft_r, 0.75, fz, fz + 0.12, seg, trim, sides="to")  # collar
+    b.cylinder(0, 0, shaft_r, fz + 0.12, height, seg, shaft_slot, caps="")
+    for z in bands:
+        b.annulus(0, 0, shaft_r, shaft_r + 0.06, z - 0.04, z + 0.04, seg, trim, sides="tbo")
     # No ceiling boss: the shaft runs on up out of the open well into the dark (rework 2).
     return lights
 
@@ -865,7 +866,7 @@ def flame_tongue(b, cx: float, cy: float, z: float, h: float, r: float, seg: int
         b.face([(ax, ay, zr), (bx_, by_, zr), (cx, cy, z + h)], (mx, my, 0.3), "flame")
 
 
-def furnace_pit(b, high: bool) -> dict:
+def furnace_pit(b, high: bool, trim: str = "brass-aged") -> dict:
     """Grated coal pit around the furnace plinth behind a 0.31 m stone kerb with a brass cap. The floor
     stays at z = 0, so the kerb gives the pit its depth: coals glow 6 cm under brass bars. Returns the
     kerb's runtime collider (clear of the enemy sockets and door aprons)."""
@@ -875,10 +876,10 @@ def furnace_pit(b, high: bool) -> dict:
     for s in (-1, 1):
         y0, y1 = sorted((s * k0, s * k1))
         b.box(-k1, k1, y0, y1, 0.0, kz, "stone-floor", drop="bt")
-        b.box(-k1 - 0.02, k1 + 0.02, y0 - 0.02, y1 + 0.02, kz, kz + 0.03, "brass-aged", drop="b")
+        b.box(-k1 - 0.02, k1 + 0.02, y0 - 0.02, y1 + 0.02, kz, kz + 0.03, trim, drop="b")
         x0, x1 = sorted((s * k0, s * k1))
         b.box(x0, x1, -k0, k0, 0.0, kz, "stone-floor", drop="btyY")
-        b.box(x0 - 0.02, x1 + 0.02, -k0 + 0.02, k0 - 0.02, kz, kz + 0.03, "brass-aged", drop="byY")
+        b.box(x0 - 0.02, x1 + 0.02, -k0 + 0.02, k0 - 0.02, kz, kz + 0.03, trim, drop="byY")
         # Bars bridge plinth and kerb (ends buried). The low build keeps only their tops: 3 cm sides seen
         # from a seated eye barely show, and each is a lightmap island with its own gutter.
         yb0, yb1 = sorted((s * p, s * k0))
@@ -892,7 +893,7 @@ def furnace_pit(b, high: bool) -> dict:
     return S.runtime_box(Vector((-k1 - 0.02, -k1 - 0.02, 0)), Vector((k1 + 0.02, k1 + 0.02, 0)), kz + 0.03)
 
 
-def shaft_well(b, z0: float, z1: float, h: float, zg: float, high: bool) -> list:
+def shaft_well(b, z0: float, z1: float, h: float, zg: float, high: bool, candle_in: float | None = None) -> list:
     """The shaft void over the ceiling hole (half size h): masonry well walls from the ceiling at z0 to a
     walnut lid at z1, a brass lip round the mouth, and a walnut gallery ring at zg with a brass rail and
     a candle in each corner. Everything is 4-fold symmetric about the shaft axis, so the turning crown
@@ -912,9 +913,13 @@ def shaft_well(b, z0: float, z1: float, h: float, zg: float, high: bool) -> list
         b.xf = Matrix.Identity(4)
     # No lid (rework 2): the well stays open at z1, so it falls away into the dark above the gallery.
     flames = []
-    c = h - 0.22
+    c = h - 0.22 if candle_in is None else candle_in
     for sx, sy in ((1, 1), (-1, 1), (-1, -1), (1, -1)):
         flames.append(hurricane_candle(b, sx * c, sy * c, zg, high))
+        if candle_in is not None:  # inboard of the ledge (which hides a ledge candle from the floor): a bracket to each rail
+            g = h - 0.45
+            b.box(min(sx * c, sx * g), max(sx * c, sx * g), sy * c - 0.015, sy * c + 0.015, zg - 0.03, zg, "brass-aged", drop="")
+            b.box(sx * c - 0.015, sx * c + 0.015, min(sy * c, sy * g), max(sy * c, sy * g), zg - 0.03, zg, "brass-aged", drop="")
     return flames
 
 
@@ -943,7 +948,7 @@ def gear_train(b, high: bool, z_lo: float, z_hi: float, shaft_r: float) -> None:
         b.xf = Matrix.Identity(4)
 
 
-def lancet_frame(b, room: Room, a: float, high: bool) -> None:
+def lancet_frame(b, room: Room, a: float, high: bool, mullion: str = "brass-polished") -> None:
     """The study's lancet (S.WIN: glass, wallpaper spandrels, deep sill, brass mullion) in the north
     wall at wall-local a, with a pointed walnut frame that follows the arch: jambs to the springing line
     and an arch band of the same 0.12 m width round the point, so no rectangle frames the glass."""
@@ -971,7 +976,7 @@ def lancet_frame(b, room: Room, a: float, high: bool) -> None:
             b.face([(ia, 0, iz), (ib, 0, jz), (ib, d, jz), (ia, d, iz)], (-mx, 0, -mz), "walnut")  # soffit
             b.face([(oa, 0, oz), (ob, 0, pz), (ob, d, pz), (oa, d, oz)], (mx, 0, mz), "walnut")  # extrados
     b.box(x0 - f - 0.05, x1 + f + 0.05, 0, 0.26, sill - 0.1, sill, "walnut", drop="y")
-    b.box(-0.02, 0.02, 0.012, 0.05, sill, apex - 0.15, "brass-polished", drop="bt")
+    b.box(-0.02, 0.02, 0.012, 0.05, sill, apex - 0.15, mullion, drop="bt")
     b.xf = Matrix.Identity(4)
 
 
@@ -1191,3 +1196,78 @@ def bake_transmitting_glass_tint(slot: str, tint: tuple) -> None:
     bake_transmitting_glass(slot)
     transp = next(n for n in S.material(slot).node_tree.nodes if n.type == "BSDF_TRANSPARENT")
     transp.inputs["Color"].default_value = (*tint, 1.0)
+
+
+# ---------------------------------------------------------------------------------------------
+# Rework 3 (2026-11-17): new helpers only; the study and hall geometry never call these.
+# ---------------------------------------------------------------------------------------------
+
+
+def gear_ring_stack(name: str, pivot_z: float, high: bool, r_tip: float, teeth: int, thick: float, hub_r: float, coaxial: list):
+    """gear_ring plus further gears keyed to the same drive shaft, in the same Builder (one rigid node,
+    one rate): each of `coaxial` is (z relative to the pivot, tip radius, teeth, phase frac, at degrees,
+    thickness)."""
+    b = S.Builder(name)
+    S.SHAFT_R = hub_r
+    b.gear(0.0, r_tip, teeth, thick, "gilt", high)
+    seg = 64 if high else 32
+    rim_in = r_tip - min(0.08, r_tip * 0.12) - min(0.08, r_tip * 0.13)
+    b.annulus(0, 0, rim_in - 0.09, rim_in, -thick / 2 + 0.015, thick / 2 - 0.015, seg, "brass-polished", sides="tbi")  # inner bead
+    b.annulus(0, 0, hub_r, hub_r + 0.16, thick / 2 + 0.02, thick / 2 + 0.07, seg // 2, "brass-polished", sides="tbo")  # hub collars
+    b.annulus(0, 0, hub_r, hub_r + 0.16, -thick / 2 - 0.07, -thick / 2 - 0.02, seg // 2, "brass-polished", sides="tbo")
+    for s_ in range(6):  # heavy spokes between the gear's own light ones
+        b.xf = Matrix.Rotation(2 * math.pi * s_ / 6, 4, "Z")
+        b.box(hub_r + 0.12, rim_in - 0.08, -0.045, 0.045, -thick / 2 + 0.01, thick / 2 - 0.01, "gilt", drop="xX")
+        b.xf = Matrix.Identity(4)
+    S.SHAFT_R = hub_r - 0.06
+    for dz, r, n, frac, at, th in coaxial:
+        b.xf = Matrix.Rotation(math.radians(at) - 2 * math.pi * frac / n, 4, "Z")
+        b.gear(dz, r, n, th, "gilt", high)
+        b.xf = Matrix.Identity(4)
+    obj = b.finish()
+    obj.location = (0.0, 0.0, pivot_z)
+    return obj
+
+
+def bearing_bridge(b, h: float, z_top: float, shaft_r: float, w: float = 0.08, depth: float = 0.16) -> None:
+    """A walnut cross-beam pair across the top of the shaft well with a bearing block on the axis, so the
+    drive shaft runs up into a bearing instead of ending in the air (4-fold symmetric about the axis)."""
+    b.box(-h, h, -w, w, z_top - depth, z_top, "walnut", drop="xXt")
+    b.box(-w, w, -h, -w, z_top - depth, z_top, "walnut", drop="yt")
+    b.box(-w, w, w, h, z_top - depth, z_top, "walnut", drop="Yt")
+    r = shaft_r + 0.1
+    b.box(-r, r, -r, r, z_top - depth - 0.22, z_top - depth, "walnut", drop="t")
+
+
+def apse_ribs(b, room: Room, ys: tuple, high: bool, w: float = 0.06, d: float = 0.09, slot: str = "walnut") -> None:
+    """Walnut ribs under the apse's pointed barrel soffit at each y in `ys` (Blender), carrying the
+    nave's diaphragm arches into the apse: an intrados band `d` below the soffit and its two cheeks,
+    from the impost on each side up to the point."""
+    p0, zs = APSE["p0"], APSE["spring"]
+    seg = 24 if high else 12
+    t_end = math.acos(0.5)
+    rad = 2 * p0
+    for yc in ys:
+        for s in (-1, 1):
+            cx = -s * p0  # arc centre of this side
+            pts = [(-s * (p0 - rad * math.cos(t_end * i / seg)), zs + rad * math.sin(t_end * i / seg)) for i in range(seg + 1)]
+            inner = [(cx + (x - cx) * (rad - d) / rad, zs + (z - zs) * (rad - d) / rad) for x, z in pts]
+            for i in range(seg):
+                (xa, za), (xb, zb) = inner[i], inner[i + 1]
+                (oa, pa), (ob, pb) = pts[i], pts[i + 1]
+                mx, mz = (xa + xb) / 2 - cx, (za + zb) / 2 - zs
+                b.face([(xa, yc - w, za), (xb, yc - w, zb), (xb, yc + w, zb), (xa, yc + w, za)], (-mx, 0, -mz), slot)
+                b.face([(xa, yc - w, za), (xb, yc - w, zb), (ob, yc - w, pb), (oa, yc - w, pa)], (0, -1, 0), slot)
+                b.face([(xa, yc + w, za), (xb, yc + w, zb), (ob, yc + w, pb), (oa, yc + w, pa)], (0, 1, 0), slot)
+
+
+def wear_gilt(obj, slot: str = "gilt", worn: str = "gilt-worn", max_nz: float = 0.5) -> int:
+    """Worn edges on horizontal gears: gilt faces that are not gear faces (tooth flanks and tips, rim
+    and hub edges, spoke sides: |normal z| < max_nz) move to the paler `worn` slot. Returns the count."""
+    gi, wi = S.SLOTS.index(slot), S.SLOTS.index(worn)
+    n = 0
+    for poly in obj.data.polygons:
+        if poly.material_index == gi and abs(poly.normal.z) < max_nz:
+            poly.material_index = wi
+            n += 1
+    return n

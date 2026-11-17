@@ -407,35 +407,35 @@
   "reviewEvidence": [
     {
       "path": "assets-source/rooms/hall/staging/review-sheet.jpg",
-      "sha256": "860bb79e0bda2e4fb6ccba858f1edbf816fba55b8ffbc35448552019979b65b4"
+      "sha256": "d52d4e1eff8a467e78308670e82d4af44dfb71c55c34c18967ebf7d0a688de95"
     },
     {
       "path": "docs/verification/p5-rooms-hall-bench.jpg",
-      "sha256": "e002dbd492b3cc3316a5b81affbd24e940ebf24ddff0ff23a3b116a8ac233505"
+      "sha256": "079db4433449e0f5fe94f64f484573c6a134506298089c1138aabee1212ac27e"
     },
     {
       "path": "docs/verification/p5-rooms-hall-floor-sealed-west-close.jpg",
-      "sha256": "91d1d6d2195166756122727c08d2fe72e1cbf4b11f39e7a1ddba68892a55fd35"
+      "sha256": "c2188365c27e1ece46049a007d26ce6a8f84905a3c51280244b0573fcef9c0b3"
     },
     {
       "path": "docs/verification/p5-rooms-hall-floor-sealed-west.jpg",
-      "sha256": "7f3c1278e560a87ec190c0404b96bc50313700015df43ff696d7795b4103ebb4"
+      "sha256": "e464327394b29cd3bc0ecb133a6f7b2ecd94c594ec13bc2f9759fd3e784ead44"
     },
     {
       "path": "docs/verification/p5-rooms-hall-hero.diffuse.jpg",
-      "sha256": "3b3bc42a3b0c9d5b48828bc93a3568249326e6a4cc42a250fcf849e070502186"
+      "sha256": "47e49f929e24d51657ca56e022e096db8ea423edc17ad72f81b5990225e0b145"
     },
     {
       "path": "docs/verification/p5-rooms-hall-hero.jpg",
-      "sha256": "75fd8971dc17670812e2740694b040987579daaa4b4e45615726d7713f225178"
+      "sha256": "5cea933509b115980fdf2f0c0399b35ba0e4b8a5b013646222fca7352bfd8cac"
     },
     {
       "path": "docs/verification/p5-rooms-hall-seam-north.jpg",
-      "sha256": "f14a0541cad1cfd03700a206ee4f41a454f4cd1076d0cfad565e631d7520cb02"
+      "sha256": "00ea09449e5559aa3c0571b6fc1da759a4b412a3c6a3c18019175b9749798324"
     },
     {
       "path": "docs/verification/p5-rooms-hall-seam-west-turned.jpg",
-      "sha256": "d9d04521df51582f08eee0811b4405e04625430d8d9846115c5185a545b881d9"
+      "sha256": "74c4f43ef1e2bdc7c587263e26f62c7a61c4f27c5d0556d83fa6d763db1a3bc9"
     }
   ],
   "independentScore": {

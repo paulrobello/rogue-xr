@@ -1,11 +1,11 @@
 {
   "lightmap_vs_cycles_diffuse": {
-    "frame_ratio": 0.913,
-    "rmse_srgb": 0.0302,
+    "frame_ratio": 0.912,
+    "rmse_srgb": 0.0304,
     "bands": {
       "ceiling": 0.875,
-      "upper walls": 0.879,
-      "lower walls": 0.966,
+      "upper walls": 0.877,
+      "lower walls": 0.965,
       "floor near": 0.95
     }
   },

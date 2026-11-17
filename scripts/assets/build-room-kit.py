@@ -106,6 +106,13 @@ ROOMS = {
         # Cycles diffuse bounces for the bake (factory default 4). In a 2 m walnut-and-wallpaper tube
         # every bounce multiplies the light by a red albedo, so the frame read as a red monochrome.
         "diffuse_bounces": 1,
+        # Rework 3: the glass glows candle amber (1.0, 0.6, 0.2). Same dark-albedo split as the coals
+        # (colour x 0.15, Blender strength 2 / 0.15, so the emitted light is unchanged): at the shared
+        # amber-white glass its lit term washed it to cream (245,240,177, s 0.28). Runtime 7.0 is capped
+        # to 1/0.15 (the untoned cap), so the glass shows the full amber. At x 0.25 the lit term still
+        # lifted it to h49.
+        "const": {"lamp-glass": ((0.15, 0.09, 0.03), 0.3, 0.0, 13.3)},
+        "emissive": {"lamp-glass": 7.0},
         # Lantern light leaves through clear glass: through the amber lamp-glass colour (1.0, 0.70, 0.32)
         # it reached the walls as (1.0, 0.55, 0.18) and the frame measured saturation 0.84 at best.
         "glass_transmit": (1.0, 1.0, 1.0),
@@ -116,10 +123,18 @@ ROOMS = {
         "height": 8.0,
         "ceiling": 5.0,
         "lightmap": 2048,
-        "slots": ["stone-floor", "wallpaper", "walnut", "brass-aged", "brass-polished", "wax", "flame", "lamp-glass", "coals", "gilt"],
+        "slots": ["stone-floor", "wallpaper", "walnut", "brass-aged", "brass-polished", "wax", "flame", "lamp-glass", "coals", "gilt",
+                  "gilt-worn", "bronze"],
+        # Rework 3. Gilt in two values: gear faces keep the kit gilt; tooth flanks, rims and spoke sides a
+        # darker, less saturated worn gilt (the review: L* std 4.1-5.1 against the study's 8.8, saturation
+        # 0.62-0.66 against 0.50). Paler edges (0.86, 0.82, 0.36) still lit darker than the faces (they
+        # face sideways) and reached only L* std 5.3-6.0.
+        # Bronze: a lightmap-lit dielectric for the drive shaft, its bands and the furnace and kerb trim.
+        # On the metallic brass sets they read as crumpled foil (shaft luma std 35.4, p95 152).
+        "const": {**FIRE_FLAME["const"], "gilt-worn": ((0.62, 0.59, 0.24), 0.5, 0.0, 0.0),
+                  "bronze": ((0.50, 0.39, 0.16), 0.5, 0.0, 0.0)},
         # Brass scratches at 2.5x the kit scale: fewer, broader marks (the review: "calm the noise").
         "tile": {"brass-aged": 1.25, "brass-polished": 1.25},
-        **FIRE_FLAME,
         # The pit's runtime glow: at 5.6 its red channel clipped on top of the lit term, a flat slab;
         # lower, the baked gradient from the furnace grates to the kerb shows.
         "emissive": {**FIRE_FLAME["emissive"], "coals": 1.5},
@@ -174,22 +189,25 @@ CORRIDOR = {
     # L* 5.9 against the study's 17.8. The encode normalises the map, so one factor on both keeps the
     # pool/gap contrast and the clipped share and raises only the lightmap intensity. With one bounce and
     # clear glass, 44 / 104 put the hero at L* 18.5 (over the 15-18 band) and 40 / 95 at L* 17.4 with
-    # 15.4% of the frame under L* 5 (over 15%).
-    "lantern_w": (42.0, 99.0),
+    # 15.4% of the frame under L* 5 (over 15%). Rework 3's amber glass and walnut capitals return less
+    # light: at 42 / 99 the hero sat at L* 17.3 with 15.6% under L* 5.
+    "lantern_w": (43.5, 102.5),
     # Lantern bake colour: near white. The walnut and red wallpaper supply the warmth; at the kit's
     # candle colour the frame saturation stayed above 0.72 whatever the bounces or the glass.
     "lantern_color": (1.0, 0.92, 0.82),
 }
 # A lantern's bake light: a point for the glow on the walls near it, and a downward spot standing in
 # for the brass cap that throws its light down through the glass floor, so each lantern bakes its
-# own pool. Point lights 2.2 m up and 3 m apart light a 2 m corridor floor almost evenly.
+# own pool. Point lights 2.2 m up and 3 m apart light a 2 m corridor floor almost evenly. Softer
+# pools (blend 0.8, or a 0.08 m source radius on the point, the spot or both) each put 17-18 % of the
+# hero under L* 5 and dropped the floor pool/gap at row 585 / 510 below 1.8, so the edges stay hard.
 LANTERN_POOL = {"type": "SPOT", "spot_size": math.radians(70.0), "spot_blend": 0.35}
 VAULT_WINDOWS = [{"wall": "N", "a": a, "half_w": 0.55, "sill": 1.7, "spring": 3.1} for a in (-2.6, 0.0, 2.6)]
 VAULT_SCONCES = [("E", -2.2), ("E", 2.2), ("W", -2.2), ("W", 2.2)]
 VAULT_SCONCE_W = 80.0
 # Gear-shaft void: ceiling hole half size (the crown gear's tip radius is 2.0), gallery ring height,
 # and the two levels of the static gear train.
-GEAR_SHAFT = {"hole": 2.1, "gallery_z": 7.0, "train_z": (5.55, 6.15)}
+GEAR_SHAFT = {"hole": 2.1, "gallery_z": 7.0, "train_z": (5.55, 6.15), "candle_in": 1.53}
 
 
 def parse_args() -> argparse.Namespace:
@@ -284,7 +302,7 @@ def build_corridor(b, room: kit.Room, high: bool) -> tuple[list, list]:
             # lightmap and the dim probe. Brass stays on the plinth and capital.
             b.box(a - 0.09, a + 0.09, 0, 0.06, 0.18, T - 0.32, "walnut", drop="ybt")
             b.box(a - 0.12, a + 0.12, 0, 0.08, 0, 0.18, "brass-aged", drop="yb")  # plinth
-            b.box(a - 0.12, a + 0.12, 0, 0.08, T - 0.32, T - 0.24, "brass-aged", drop="y")  # capital
+            b.box(a - 0.12, a + 0.12, 0, 0.08, T - 0.32, T - 0.24, "walnut", drop="y")  # capital (walnut: brass read cream)
             b.xf = Matrix.Identity(4)
     for wall in "WE":
         b.xf = room.frame(wall)
@@ -320,11 +338,14 @@ def build_gear_shaft(b, room: kit.Room, high: bool) -> tuple[list, list]:
     kit.cove_cornice(b, room, top=C)
     for c in (-3.5, 3.5):  # walnut beams across the chamber, clear of the shaft hole
         b.box(-room.hx, room.hx, c - 0.14, c + 0.14, C - 0.3, C, "walnut", drop="txX")
-    furnace = kit.furnace_shaft(b, high, room.height, GEAR_RING["shaft_r"])
+    # Rework 3: the shaft runs up into a bearing bridge at the top of the well (no free end), on bronze.
+    furnace = kit.furnace_shaft(b, high, room.height - 0.38, GEAR_RING["shaft_r"], shaft_slot="bronze", trim="bronze", bands=(2.2, 2.9, 4.4))
     colliders = [kit.crate(b, 3.0, -4.5, 0.8)]  # crate socket (runtime 3, 4.5)
-    colliders.append(kit.furnace_pit(b, high))
-    gallery = kit.shaft_well(b, C, room.height, H, GEAR_SHAFT["gallery_z"], high)
-    kit.gear_train(b, high, *GEAR_SHAFT["train_z"], GEAR_RING["shaft_r"])
+    colliders.append(kit.furnace_pit(b, high, trim="bronze"))
+    # Candles inboard of the gallery ledge, so the void camera sees one lit (on the ledge they were hidden).
+    gallery = kit.shaft_well(b, C, room.height, H, GEAR_SHAFT["gallery_z"], high, candle_in=GEAR_SHAFT["candle_in"])
+    kit.bearing_bridge(b, H, room.height, GEAR_RING["shaft_r"])
+    # The upper gears ride the crown gear's node (rigid_parts): one drive shaft, one rate.
     lamps = [kit.lantern(b, 3.6, 5.6, 2.4, room.hx, high), kit.lantern(b, -3.6, -5.6, 2.4, -room.hx, high)]  # lamp-n, lamp-s
     S.SCONCES = [("E", 3.0), ("E", -3.0), ("W", 3.6), ("W", -3.8)]
     sconces = S.build_sconces(b, high)
@@ -347,7 +368,7 @@ def build_guardian_vault(b, room: kit.Room, high: bool) -> tuple[list, list]:
     kit.cove_cornice(b, room, {"N": [(-room.hx, -p1), (p1, room.hx)]})  # the apse sides close the cove ends
     for w in VAULT_WINDOWS:
         S.WIN = {"x0": -w["half_w"], "x1": w["half_w"], "sill": w["sill"], "spring": w["spring"], "apex": lancet_opening(w)[3]}
-        kit.lancet_frame(b, room, w["a"], high)
+        kit.lancet_frame(b, room, w["a"], high, mullion="walnut")  # rework 3: the brass mullion read 131.8 against glass 69
     T = room.height
     # Three walnut diaphragm arches span east-west (springing over the wall gears and the pillars), so
     # the flat deck reads as a vaulted hall; the two north-south beams stay.
@@ -364,6 +385,7 @@ def build_guardian_vault(b, room: kit.Room, high: bool) -> tuple[list, list]:
         b.box(x - 0.03, x + 0.03, -room.hy + 0.06, 0.95, 0.0, 0.005, "brass-aged", drop="bxXyY")
     lights = [(f"chandelier_{i}", p, 14.0) for i, p in enumerate(kit.chandelier(b, room, high, 4.3))]
     colliders, apse_lights = kit.apse(b, room, high)
+    kit.apse_ribs(b, room, (5.05, 5.6), high)  # rework 3: the diaphragm arches carried into the apse barrel
     lights += apse_lights
     for name, (x, z) in zip(("nw", "ne", "sw", "se"), ((-4, -4), (4, -4), (-4, 4), (4, 4))):  # runtime pillar sockets
         pts, box = kit.pillar(b, float(x), float(-z), T)
@@ -384,14 +406,24 @@ def rigid_parts(room: kit.Room, high: bool) -> list:
     if room.piece != "gear-shaft":
         return []
     g = GEAR_RING
-    return [kit.gear_ring(f"{g['node']}_high" if high else g["node"], g["pivot_z"], high, g["r_tip"], g["teeth"], g["thick"], g["hub_r"])]
+    # Rework 3: the two drive-shaft gears of the old static train (5.55 m and 6.15 m) join the crown
+    # gear's node, so everything on the drive shaft turns at one rate. The secondary shaft's gears are
+    # gone: a meshing partner must counter-rotate, and asset-check and the vitest suite allow only the one
+    # rigid node, with a positive rate about +Y.
+    coaxial = [(z - g["pivot_z"], r, n, frac, 45.0, 0.08)
+               for z, r, n, frac in ((GEAR_SHAFT["train_z"][0], 0.95, 32, 0.34), (GEAR_SHAFT["train_z"][1], 0.65, 22, 0.84))]
+    return [kit.gear_ring_stack(f"{g['node']}_high" if high else g["node"], g["pivot_z"], high, g["r_tip"], g["teeth"], g["thick"], g["hub_r"], coaxial)]
 
 
 def build(room: kit.Room, high: bool):
     b = S.Builder(f"{room.piece}_high" if high else room.piece)
     colliders, lights = BUILDERS[room.piece](b, room, high)
     obj = b.finish()
-    return obj, colliders, lights, rigid_parts(room, high)
+    rigid = rigid_parts(room, high)
+    if "gilt-worn" in ROOMS[room.piece]["slots"]:
+        for o in (obj, *rigid):
+            kit.wear_gilt(o)
+    return obj, colliders, lights, rigid
 
 
 def build_lights(room: kit.Room, lights: list) -> None:

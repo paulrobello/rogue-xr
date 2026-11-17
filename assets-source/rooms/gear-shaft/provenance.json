@@ -4,12 +4,12 @@
   "route": "scripted",
   "generator": {
     "path": "scripts/assets/build-room-kit.py",
-    "sha256": "594da634cf56dfef73aeb4d5dd3d98828dff3886df5f6bbd2836b8124be090c0"
+    "sha256": "037cd14f169ff58c9704b4e8204dc3286655c7d7695c5b0dfb16923fd2212ddb"
   },
   "generatorDeps": [
     {
       "path": "scripts/assets/room_kit.py",
-      "sha256": "ad29e296bfffd3180b91fd9ec089d41c605505eb9f853bf49d24230ec010dd1e"
+      "sha256": "577c7cba3babdf3d77bc54b353e8a93eba6f23c060a6404c4d9c7235f731bb2d"
     },
     {
       "path": "scripts/assets/build-room-study.py",
@@ -37,30 +37,30 @@
     "store": "assets-source/rooms/gear-shaft/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)",
     "files": {
       "gear-shaft_high.blend": {
-        "sha256": "eff138857734f402e2be66a6f3fc1fb41057988c02a7d745343b95a70e2a8488",
-        "bytes": 1772901
+        "sha256": "3674a2922bb1c0577d7c1153c1af746ea316b223b2ac2c17803f8fbc7c99b694",
+        "bytes": 1305424
       },
       "gear-shaft_low.blend": {
-        "sha256": "99f5ea319c67688ffcd9e028abfb62f0fdda6ad85fbfeb6da8da7cd7535209b6",
-        "bytes": 442302
+        "sha256": "a9f37928ac943fc8f32afbcba520752a82be8650a284e5b345305260aaa212c3",
+        "bytes": 364167
       }
     }
   },
   "bake": {
     "device": "GPU:METAL (Apple M4 (GPU - 10 cores))",
     "lightmap": {
-      "coverage": 0.6654,
-      "scale": 5.155224,
-      "clipped_fraction": 0.01,
-      "mean_irradiance": 0.416952,
+      "coverage": 0.6734,
+      "scale": 5.250408,
+      "clipped_fraction": 0.00996,
+      "mean_irradiance": 0.422695,
       "p05_irradiance": 0.0,
       "percentile": 99.0,
       "encoded_p05_255": 0,
-      "encoded_median_255": 43,
-      "seconds": 40.61,
+      "encoded_median_255": 45,
+      "seconds": 42.06,
       "host_load": [
-        2.95,
-        1.98
+        2.26,
+        1.86
       ],
       "timing_valid": true,
       "diffuse_bounces": 2,
@@ -79,73 +79,73 @@
     }
   },
   "budgets": {
-    "triangles": 9804,
-    "materials": 10,
+    "triangles": 7832,
+    "materials": 12,
     "texturePx": {
       "gear-shaft.lightmap.ktx2": {
         "width": 2048,
         "height": 2048
       }
     },
-    "highTriangles": 65284,
-    "glbBytes": 649072
+    "highTriangles": 50704,
+    "glbBytes": 612996
   },
   "texelDensityPxPerM": {
     "lightmap": {
-      "mean_px_per_m": 45.83,
-      "min_px_per_m": 38.88,
-      "max_px_per_m": 46.26
+      "mean_px_per_m": 47.43,
+      "min_px_per_m": 40.13,
+      "max_px_per_m": 47.73
     },
     "lightmapBySlot": {
       "brass-aged": {
-        "area_m2": 46.79,
-        "median_px_per_m": 46.3,
-        "min_px_per_m": 38.9
+        "area_m2": 19.97,
+        "median_px_per_m": 47.7,
+        "min_px_per_m": 44.4
       },
       "brass-polished": {
-        "area_m2": 16.87,
-        "median_px_per_m": 45.4,
-        "min_px_per_m": 38.9
+        "area_m2": 3.94,
+        "median_px_per_m": 47.7,
+        "min_px_per_m": 42.9
+      },
+      "bronze": {
+        "area_m2": 37.49,
+        "median_px_per_m": 47.7,
+        "min_px_per_m": 40.1
       },
       "coals": {
         "area_m2": 6.93,
-        "median_px_per_m": 46.3,
-        "min_px_per_m": 45.4
+        "median_px_per_m": 47.7,
+        "min_px_per_m": 47.4
       },
       "flame": {
         "area_m2": 0.74,
-        "median_px_per_m": 45.8,
+        "median_px_per_m": 47.7,
         "min_px_per_m": 43.1
-      },
-      "gilt": {
-        "area_m2": 11.01,
-        "median_px_per_m": 46.2,
-        "min_px_per_m": 38.9
       },
       "lamp-glass": {
         "area_m2": 0.62,
-        "median_px_per_m": 44.5,
-        "min_px_per_m": 43.0
+        "median_px_per_m": 46.1,
+        "min_px_per_m": 44.4
       },
       "stone-floor": {
         "area_m2": 162.4,
-        "median_px_per_m": 46.3,
-        "min_px_per_m": 45.4
+        "median_px_per_m": 47.7,
+        "min_px_per_m": 47.4
       },
       "wallpaper": {
         "area_m2": 153.28,
-        "median_px_per_m": 45.8,
-        "min_px_per_m": 45.4
+        "median_px_per_m": 47.7,
+        "min_px_per_m": 47.4
       },
       "walnut": {
-        "area_m2": 178.54,
-        "median_px_per_m": 46.3,
-        "min_px_per_m": 40.5
+        "area_m2": 183.89,
+        "median_px_per_m": 47.7,
+        "min_px_per_m": 41.8
       },
       "wax": {
         "area_m2": 0.12,
-        "median_px_per_m": 44.5,
-        "min_px_per_m": 41.6
+        "median_px_per_m": 46.0,
+        "min_px_per_m": 42.9
       }
     }
   },
@@ -271,27 +271,27 @@
   "derivedFiles": [
     {
       "path": "public/assets/rooms/gear-shaft/gear-shaft.glb",
-      "sha256": "62a72d2bd7c5c8fcfdccca857e39c4dc5127121086205ff9ea2c6456dccdfb0d",
-      "bytes": 649072
+      "sha256": "760f94a64a9794371d987f8f96d9fae035f9c88c50f5d17edee71a5686f9bac1",
+      "bytes": 612996
     },
     {
       "path": "public/assets/rooms/gear-shaft/gear-shaft.lightmap.ktx2",
-      "sha256": "a3c03e9a201310b2bb782ff0cc1a6e1b01b178c3be251cec875fdedff07bf185",
-      "bytes": 2845287
+      "sha256": "07ec101007dc0d46ca9910faa5738a13993b7dc931a866c35e5dab8253db4991",
+      "bytes": 2827574
     },
     {
       "path": "public/assets/rooms/gear-shaft/gear-shaft.manifest.json",
-      "sha256": "0da1b107e2add321bcf5c5cbae5bfbe2fece61a1cfbaddadf17b196f28ee0f6f",
-      "bytes": 4903
+      "sha256": "6b2d595bbff6d4bd2e2c05a4f4a1db00c16241a6fae808d5cad8a636d3ebc99b",
+      "bytes": 5072
     }
   ],
   "stagingFiles": {
-    "engine-compare.json": "78102617931fc2ce4a86b176e2bb63d2265802056d8d5f3349f46a4c50eb11fe",
-    "gear-shaft.glb": "62a72d2bd7c5c8fcfdccca857e39c4dc5127121086205ff9ea2c6456dccdfb0d",
-    "gear-shaft.lightmap.ktx2": "a3c03e9a201310b2bb782ff0cc1a6e1b01b178c3be251cec875fdedff07bf185",
-    "gear-shaft.lightmap.png": "6d08cedd326eb3e422cefa6ea4622bfc5c0083dc7a5bcf5ded93c33bf06d3916",
-    "gear-shaft.manifest.json": "0da1b107e2add321bcf5c5cbae5bfbe2fece61a1cfbaddadf17b196f28ee0f6f",
-    "uv1-report.json": "3f9d22985c37e4c5d17c3b12c1e2c128d01a2d58421b9a6be8592bb8553991b0"
+    "engine-compare.json": "390e7c37fe0d13a024e171af54b88490cf07e84388282e6c64c78c00a50e2602",
+    "gear-shaft.glb": "760f94a64a9794371d987f8f96d9fae035f9c88c50f5d17edee71a5686f9bac1",
+    "gear-shaft.lightmap.ktx2": "07ec101007dc0d46ca9910faa5738a13993b7dc931a866c35e5dab8253db4991",
+    "gear-shaft.lightmap.png": "6973e40fd74ffb294740d2f83be1111040650bde0996a984336b5ad10faa35af",
+    "gear-shaft.manifest.json": "6b2d595bbff6d4bd2e2c05a4f4a1db00c16241a6fae808d5cad8a636d3ebc99b",
+    "uv1-report.json": "bc30bf0930c59fb0422da80dd4cb6042e04aaaa69e43f92e273f1e2d4c978f17"
   },
   "references": [
     {
@@ -316,8 +316,8 @@
   "materialsUsed": "approved P4-T3 set (public/assets/materials), bound by slot name; not regenerated",
   "license": "Original work generated in Blender from a checked-in script; concept references from Paul's paid Higgsfield plan (Terms of Use 4.4)",
   "reimport": {
-    "triangles": 9804,
-    "material_count": 10,
+    "triangles": 7832,
+    "material_count": 12,
     "uv_layers": [
       [
         "UVMap",
@@ -422,11 +422,11 @@
     ],
     "lowPoly": {
       "gear-shaft_gear_ring": {
-        "triangles": 2392,
+        "triangles": 4456,
         "lightmap_density": {
-          "mean_px_per_m": 45.14,
-          "min_px_per_m": 39.07,
-          "max_px_per_m": 46.25
+          "mean_px_per_m": 46.55,
+          "min_px_per_m": 39.98,
+          "max_px_per_m": 47.73
         },
         "location_blender": [
           0.0,
@@ -439,16 +439,16 @@
       "gear-shaft_gear_ring": {
         "azimuth": {
           "sector_means": [
-            0.09519,
-            0.09154,
-            0.09173,
-            0.09141,
-            0.09075,
-            0.09035,
-            0.09208,
-            0.09413
+            0.0931,
+            0.09069,
+            0.09014,
+            0.09183,
+            0.09107,
+            0.0901,
+            0.09106,
+            0.09356
           ],
-          "min_over_max": 0.949,
+          "min_over_max": 0.963,
           "sectors": 8
         },
         "casts_baked_shadow": false
@@ -464,7 +464,7 @@
         ],
         "rotation_angle": 0.0,
         "parent": null,
-        "triangles": 2392
+        "triangles": 4456
       }
     },
     "shadowPolicy": "baked with the node invisible to shadow rays (Cycles visible_shadow off), so no static surface holds its shadow"
@@ -472,39 +472,39 @@
   "reviewEvidence": [
     {
       "path": "assets-source/rooms/gear-shaft/staging/review-sheet.jpg",
-      "sha256": "d9d0e793b8128d583c295933ab44636d6c599f94d840561924b8753c46da15ad"
+      "sha256": "54d463a5220d55ed11fc3c020374dbbb56ec902e403b046c3b90629862db448c"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-hero-gear-turned.jpg",
-      "sha256": "7e6e83af7f3ad0b3729fa32a562cf8a9409a4986fde88f9248228f9b07c75fbe"
+      "sha256": "0fd191f0b16566be14bbe8032e5c380410cb43216a1a1c5538810fecf3ccba2b"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-hero.diffuse-gear-turned.jpg",
-      "sha256": "e674c70fdddc8c635aba9aaf687a9e14f64fa47ad7a2a109755b3459412dc753"
+      "sha256": "573514fb38a67aa3239509faf88969eb739b9a2d8f9164f05b409d43c3a38689"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-hero.diffuse.jpg",
-      "sha256": "20bdbbcc67ef78df69e9d3517fab02fed595e0d2052d00baabc1040d9b756816"
+      "sha256": "5bdb7805738d4f4a6e80a1dce46cb2a9a9b99f4592f82b7607c5b94085ffd0b6"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-hero.jpg",
-      "sha256": "b89961f3ca84ed4a8f0eaa9cedebe2e3231fc5168c2461027a509a9959124fc9"
+      "sha256": "4613b4f72d75343b5fac51ba14b37115a63fe5f5bc1349aca23807de1fd6dafc"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-ring-gear-turned.jpg",
-      "sha256": "b28e5373b3046c57b9c9921465ee8793780e7a505172ed6a1a2ed2804ce1c03e"
+      "sha256": "48aa92970af69cc875988061ee63de83aaaa112d4850915fba1660cc5b6257a2"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-ring.jpg",
-      "sha256": "5a4d1b1c31484107223c54f2e3e7821178385dd6492ef0de66fb777b39cc63d2"
+      "sha256": "a1978b9bd38b6be48648c8b61b77a7375cf76571f884aa2283b82efed1092b5b"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-seam-north.jpg",
-      "sha256": "2b90c6fc6493e79caca97adeb8d988430b2f86aa4a082c7315e676a0d63e3041"
+      "sha256": "47e0f67e2802c073f53c3e0e95f88ea5718306b7a08d65a0bfd450900e215e4e"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-void.jpg",
-      "sha256": "2e61c210d21bf777bfa82d3ab34f78e40a36a1525f5ba53e6c5a5c5e8dcb4a78"
+      "sha256": "3079ae716e933d98ca343d81c98ba519b89c4e7e840aaaa934d2eea2ecd42a33"
     }
   ],
   "independentScore": {
@@ -652,11 +652,21 @@
       },
       {
         "id": "D4",
-        "decision": "Static gear train above the ceiling hole; only the crown gear is a rigid spinning node."
+        "decision": "Static gear train above the ceiling hole; only the crown gear is a rigid spinning node.",
+        "revised": {
+          "by": "rebake-3 sub-agent of the 2026-11-17 orchestrator (build decisions, not owner approvals; Paul's review is still pending)",
+          "date": "2026-11-17",
+          "decision": "The two drive-shaft gears of the old static train (5.55 m and 6.15 m) are now part of the crown gear's rigid node and turn with it at its rate, so everything on the drive shaft turns together. The secondary shaft, its two gears and its wall arms are removed. A working train needs counter-rotating partners: a second rigid node with a negative rate, which scripts/assets/asset-check.py (RIGID_REQUIRED = {gear-shaft_gear_ring}, positive radPerSec, axis [0, 1, 0]) and tests/room-kit-asset.test.ts (rigidNodes length 1) do not allow; stopping the crown gear fails the same checks."
+        }
       },
       {
         "id": "D5",
-        "decision": "Accept the gear-shaft density drop (61.3 to 46.0 px/m built) from the void, pit and gear train."
+        "decision": "Accept the gear-shaft density drop (61.3 to 46.0 px/m built) from the void, pit and gear train.",
+        "revised": {
+          "by": "rebake-3 sub-agent of the 2026-11-17 orchestrator (build decisions, not owner approvals; Paul's review is still pending)",
+          "date": "2026-11-17",
+          "decision": "Accept the built 47.43 px/m lightmap mean (min 40.13) from the void, pit and gear stack."
+        }
       },
       {
         "id": "D6",
@@ -670,7 +680,8 @@
     ],
     "notes": [
       "Coals and P5-T2 fire flames carry a dark albedo with strong emission (colour x 0.25, Blender strength and runtime emissiveIntensity x 4: coals 12.0 / 5.6, flame 24.0 / 5.6), so the emitted light is unchanged and the lightmap term on them is a quarter. Measured on the first 2026-11-17 bake: engine firebox R-B 101 -> 108, pit 112 -> 112.",
-      "Rework 2 (2026-11-17): bake with 2 diffuse bounces (was the Cycles default 4), candles at (1.0, 0.80, 0.60), lantern light through a pale glass (1.0, 0.93, 0.82) instead of the amber lamp-glass colour, coals runtime emissiveIntensity 5.6 -> 1.5 so the pit shows its baked gradient. Measured gates are in the rebake-2 report; frame saturation stays above 0.72 (walnut and wallpaper albedo under amber fire)."
+      "Rework 2 (2026-11-17): bake with 2 diffuse bounces (was the Cycles default 4), candles at (1.0, 0.80, 0.60), lantern light through a pale glass (1.0, 0.93, 0.82) instead of the amber lamp-glass colour, coals runtime emissiveIntensity 5.6 -> 1.5 so the pit shows its baked gradient. Measured gates are in the rebake-2 report; frame saturation stays above 0.72 (walnut and wallpaper albedo under amber fire).",
+      "Rework 3 (2026-11-17): the drive shaft, its bands, the furnace plinth, cap band and collar and the pit kerb caps moved from the metallic brass sets to a lightmap-lit dielectric `bronze` CONST slot (0.50, 0.39, 0.16): on the brass sets the shaft read as crumpled foil (engine luma std 35.3, p95 153.7 on the shaft). The gilt is two CONST values: gear faces keep the kit gilt (0.70, 0.68, 0.12) and tooth flanks, rims and spoke sides take a darker, less saturated `gilt-worn` (0.62, 0.59, 0.24) (D3's dielectric gilt, extended). The shaft now ends in a walnut bearing bridge across the top of the well, the 7.4 m band is gone, and the four gallery candles stand inboard of the ledge on brass brackets, where the void camera sees them."
     ]
   }
 }
