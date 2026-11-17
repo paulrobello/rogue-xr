@@ -35,6 +35,58 @@ export interface CombatDebugView {
   dispose(): void;
 }
 
+/** A world point: `THREE.Vector3` fits. */
+export interface ReadoutPoint {
+  readonly x: number;
+  readonly y: number;
+  readonly z: number;
+}
+
+/** Clear space between an automaton's silhouette and the bottom edge of its readout, metres. */
+export const READOUT_MARGIN = 0.08;
+
+export interface ReadoutFit {
+  /** Clear space above the silhouette, metres (default `READOUT_MARGIN`). */
+  margin?: number;
+  /** How far the body may move toward the eye while the readout stays put (a lunge), metres. */
+  reach?: number;
+}
+
+/**
+ * World height of a readout's centre so its bottom edge clears an automaton seen from `eye`. The
+ * readout is a vertical plane through `at` facing the eye; `box` is the automaton's world bounds,
+ * measured from the loaded model. A head standing nearer the eye than the readout plane projects
+ * higher on it than its own top (the seated eye looks up at a tall guardian), so the bottom edge
+ * clears the higher of the box top and every top corner's projection, plus `margin`.
+ */
+export function readoutCentreY(
+  eye: ReadoutPoint,
+  at: ReadoutPoint,
+  box: { readonly min: ReadoutPoint; readonly max: ReadoutPoint },
+  labelHeight: number,
+  fit: ReadoutFit = {},
+): number {
+  const margin = fit.margin ?? READOUT_MARGIN;
+  const reach = Math.max(0, fit.reach ?? 0);
+  const top = box.max.y;
+  let dx = at.x - eye.x;
+  let dz = at.z - eye.z;
+  const planeDepth = Math.hypot(dx, dz);
+  let silhouette = top;
+  if (planeDepth > 1e-6) {
+    dx /= planeDepth;
+    dz /= planeDepth;
+    for (const x of [box.min.x, box.max.x]) {
+      for (const z of [box.min.z, box.max.z]) {
+        const depth = (x - eye.x) * dx + (z - eye.z) * dz - reach;
+        if (depth <= 1e-6 || depth >= planeDepth) continue;
+        silhouette = Math.max(silhouette, eye.y + ((top - eye.y) * planeDepth) / depth);
+      }
+    }
+  }
+  return silhouette + margin + labelHeight / 2;
+}
+
 type PickKind = 'card' | 'enemy' | 'end-turn' | 'plate' | 'table';
 interface PickData {
   readonly kind: PickKind;
@@ -585,7 +637,15 @@ export function mountCombatDebugView(
       body.position.set(x, 0.9 * baseScale, ENEMY_Z);
       body.userData = { kind: 'enemy', id: enemy.id } satisfies PickData;
       const label = new CanvasLabel(512, 220, 1.3);
-      label.mesh.position.set(x, 1.55 * baseScale + 0.55, ENEMY_Z + 0.2);
+      const labelAt = new THREE.Vector3(x, 0, ENEMY_Z + 0.2);
+      body.updateMatrixWorld(true);
+      const bounds = new THREE.Box3().setFromObject(body);
+      const labelHeight = label.mesh.geometry.parameters.height;
+      label.mesh.position.set(
+        x,
+        readoutCentreY(new THREE.Vector3(0, EYE_HEIGHT, 0), labelAt, bounds, labelHeight),
+        labelAt.z,
+      );
       label.mesh.userData = { kind: 'enemy', id: enemy.id } satisfies PickData;
       enemyGroup.add(body, label.mesh);
       return { id: enemy.id, body, label, baseScale };

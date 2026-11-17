@@ -1,7 +1,12 @@
 import * as THREE from 'three';
 import { describe, expect, it, vi } from 'vitest';
 import { EncounterDirector } from '../src/combat/encounter.ts';
-import { headingDelta, headingTo, TABLE_HALF_WIDTH } from '../src/combat/placement.ts';
+import {
+  DEFAULT_TABLE_DISTANCE,
+  headingDelta,
+  headingTo,
+  TABLE_HALF_WIDTH,
+} from '../src/combat/placement.ts';
 import { TABLE_NODES } from '../src/combat/table-greybox.ts';
 import { generateFloor } from '../src/floor/generate.ts';
 import { buildFloorWorld, type FloorWorld } from '../src/world/floor-world.ts';
@@ -116,7 +121,9 @@ describe('EncounterDirector begin and end', () => {
     expect(director.table.position.x).toBeCloseTo(pose.x);
     expect(director.table.position.z).toBeCloseTo(pose.z);
     expect(pose.height).toBeCloseTo(0.85);
-    expect(Math.hypot(pose.x - player.x, pose.z - player.z)).toBeLessThanOrEqual(0.85 + 1e-9);
+    expect(Math.hypot(pose.x - player.x, pose.z - player.z)).toBeLessThanOrEqual(
+      DEFAULT_TABLE_DISTANCE + 1e-9,
+    );
     expect(headingDelta(pose.yaw, headingTo([player.x, player.z], [pose.x, pose.z]))).toBeLessThan(
       1e-6,
     );

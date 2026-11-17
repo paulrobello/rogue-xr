@@ -1191,7 +1191,12 @@ renderer.setAnimationLoop((time, frame) => {
   }
   // Comfort vignette, then the red hit flash on top of it, so the two stack.
   comfortVignette.update(
-    xr.presenting ? locomotion.vignetteStrength : 0,
+    xr.presenting
+      ? Math.max(
+          locomotion.vignetteStrength,
+          locomotion.settings.vignette ? (floor?.turnVignette ?? 0) : 0,
+        )
+      : 0,
     camera,
     xr.presenting ? projectionTan(renderer.xr.getCamera().projectionMatrix) : viewTan(camera),
     xr.presenting,

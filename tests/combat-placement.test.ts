@@ -1,16 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import {
+  COMFORT_TABLE_DISTANCE,
   type CombatRoom,
   combatRoom,
+  DEFAULT_TABLE_DISTANCE,
   forwardOf,
   headingDelta,
   headingTo,
   MAX_TABLE_HEIGHT,
+  MIN_TABLE_DISTANCE,
   MIN_TABLE_HEIGHT,
   placeEnemies,
   placeTable,
   planEncounter,
   rightOf,
+  rigTurnAboutHead,
   TABLE_HALF_DEPTH,
   TABLE_HALF_WIDTH,
   type TablePose,
@@ -130,16 +134,16 @@ describe('tableHeightFor', () => {
 });
 
 describe('placeTable', () => {
-  it('puts the table 0.85 m straight ahead at waist height in open space', () => {
+  it('puts the table 1.2 m straight ahead at waist height in open space', () => {
     const r = placeTable({ x: 0, z: 0, yaw: 90, eyeHeight: 1.5 }, hall());
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.pose.x).toBeCloseTo(0.85);
+    expect(r.pose.x).toBeCloseTo(1.2);
     expect(r.pose.z).toBeCloseTo(0);
     expect(r.pose.yaw).toBeCloseTo(90);
     expect(r.pose.height).toBeCloseTo(0.75);
     expect(r.offsetDeg).toBe(0);
-    expect(r.distance).toBeCloseTo(0.85);
+    expect(r.distance).toBeCloseTo(1.2);
   });
 
   it('falls back to a shorter distance, then a rotated heading, beside a wall', () => {
@@ -148,7 +152,7 @@ describe('placeTable', () => {
     const wall = placeTable({ x: 0, z: -4.0, yaw: 0 }, room);
     expect(wall.ok).toBe(true);
     if (wall.ok) {
-      expect(wall.offsetDeg === 0 && wall.distance === 0.85).toBe(false);
+      expect(wall.offsetDeg === 0 && wall.distance === DEFAULT_TABLE_DISTANCE).toBe(false);
       expect(tableIsClear(room, wall.pose)).toBe(true);
     }
     // Pressed against the wall: the table must turn away.
@@ -166,7 +170,7 @@ describe('placeTable', () => {
     expect(r.ok).toBe(true);
     if (!r.ok) return;
     expect(tableIsClear(room, r.pose)).toBe(true);
-    expect(r.offsetDeg === 0 && r.distance === 0.85).toBe(false);
+    expect(r.offsetDeg === 0 && r.distance === DEFAULT_TABLE_DISTANCE).toBe(false);
   });
 
   it('reports failure instead of placing a table where it cannot fit', () => {
@@ -177,8 +181,9 @@ describe('placeTable', () => {
     expect(tableCandidates({ x: 0, z: 0, yaw: 0 }, corridor)).toHaveLength(0);
   });
 
-  it('faces the player, sits 0.65 to 0.85 m away at waist height and is clear on every generated floor', () => {
+  it('faces the player, sits 0.5 to 1.2 m away (1.0 m or more almost always) at waist height and is clear on every generated floor', () => {
     let placed = 0;
+    let comfortable = 0;
     let central = 0;
     let centralOk = 0;
     for (const seed of SEEDS) {
@@ -196,8 +201,9 @@ describe('placeTable', () => {
             placed++;
             const dx = r.pose.x - x;
             const dz = r.pose.z - z;
-            expect(Math.hypot(dx, dz)).toBeGreaterThanOrEqual(0.65 - 1e-9);
-            expect(Math.hypot(dx, dz)).toBeLessThanOrEqual(0.85 + 1e-9);
+            expect(Math.hypot(dx, dz)).toBeGreaterThanOrEqual(MIN_TABLE_DISTANCE - 1e-9);
+            expect(Math.hypot(dx, dz)).toBeLessThanOrEqual(DEFAULT_TABLE_DISTANCE + 1e-9);
+            if (Math.hypot(dx, dz) >= COMFORT_TABLE_DISTANCE - 1e-9) comfortable++;
             // Faces the player: its forward axis points from the player to the table centre.
             expect(headingDelta(r.pose.yaw, headingTo([x, z], [r.pose.x, r.pose.z]))).toBeLessThan(
               1e-6,
@@ -210,6 +216,8 @@ describe('placeTable', () => {
       }
     }
     expect(placed).toBeGreaterThan(500);
+    // Only seats boxed in on every heading fall back closer than the comfortable 1.0 m.
+    expect(comfortable / placed).toBeGreaterThan(0.99);
     expect(central).toBeGreaterThan(0);
     expect(centralOk).toBe(central);
     // A census over every generated floor: the two-distance search runs past 5 s on CI runners.
@@ -346,5 +354,38 @@ describe('planEncounter on generated floors', () => {
     if (!r.ok) return;
     expect(Math.abs(r.table.offsetDeg)).toBeGreaterThan(0);
     for (const e of r.enemies) expect(inWalkable(room, e.x, e.z)).toBe(true);
+  });
+});
+
+describe('rigTurnAboutHead', () => {
+  it('is the identity for a zero offset', () => {
+    const t = rigTurnAboutHead([1.5, -2], [1.8, -2.3], 0);
+    expect(t.x).toBeCloseTo(1.5, 12);
+    expect(t.z).toBeCloseTo(-2, 12);
+    expect(t.rotationY).toBeCloseTo(0, 12);
+  });
+
+  it('keeps the head in place and turns its heading by the offset, clockwise seen from above', () => {
+    // Head 0.3 m right of and 0.2 m ahead of the rig origin, rig heading 0 (north, -Z).
+    const rig: [number, number] = [2, 5];
+    const head: [number, number] = [2.3, 4.8];
+    const local: [number, number] = [head[0] - rig[0], head[1] - rig[1]];
+    for (const offset of [15, -15, 90, -135, 180]) {
+      const t = rigTurnAboutHead(rig, head, offset);
+      // three.js rotation.y turns counter-clockwise seen from above, so a heading gain of `offset`
+      // is a rotation.y change of -offset; the head's rig-local offset turns with it.
+      const c = Math.cos(t.rotationY);
+      const s = Math.sin(t.rotationY);
+      expect(t.x + local[0] * c + local[1] * s).toBeCloseTo(head[0], 9);
+      expect(t.z - local[0] * s + local[1] * c).toBeCloseTo(head[1], 9);
+      expect(t.rotationY).toBeCloseTo((-offset * Math.PI) / 180, 12);
+    }
+  });
+
+  it('brings a table placed 90 degrees to the right to straight ahead', () => {
+    const t = rigTurnAboutHead([0, 0], [0, 0], 90);
+    const [fx, fz] = forwardOf(90);
+    expect(-Math.sin(t.rotationY)).toBeCloseTo(fx, 9);
+    expect(-Math.cos(t.rotationY)).toBeCloseTo(fz, 9);
   });
 });

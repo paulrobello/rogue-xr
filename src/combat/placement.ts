@@ -24,6 +24,7 @@
  */
 import type { Box, Rect } from '../content/rooms.ts';
 import type { WorldRoom } from '../floor/generate.ts';
+import { rotateAboutPivot } from '../xr/locomotion.ts';
 
 const DEG = Math.PI / 180;
 const EPS = 1e-9;
@@ -74,13 +75,22 @@ export const TABLE_HALF_DEPTH = 0.4;
 
 /**
  * Player-to-table-centre distance on the floor plane, metres: the ideal, the closest comfortable
- * fallback, and the last resort for a cramped room. At 0.85 m the near edge sits 0.45 m ahead of
- * the head (0.25 m at 0.65 m), clear of a seated chest, and the drop zone (footprint plus 0.1 m)
- * starts 0.35 m ahead, inside an easy reach. The 2026-11-16 Quest playtest found the old 0.65 m
- * table (0.5 m fallback) too close: its near edge was 0.25 m (0.1 m) from the head.
+ * fallback, and the last resort for a cramped room. The table top sits `WAIST_DROP` (0.75 m) below
+ * the eye, so the view down to a point `d` ahead is atan(0.75 / d) below level.
+ *
+ * The near edge (0.4 m before the centre) at no more than 45 degrees needs d >= 1.15 m. At 1.2 m
+ * the centre is 32 degrees down, the near edge 43, the table asset's dice tray (0.18 m toward the
+ * seat) 36 and the buttons (0.28 m toward the seat, 0.55 m aside) 34; the spare 5 cm absorbs a head
+ * leaning in to look down. At the 1.0 m comfortable fallback the centre is 37 degrees down and the
+ * near edge 51; only a cramped room, below that, trades more angle for fit. The second 2026-11-16
+ * Quest playtest found the 0.85 m table (centre 41, near edge 59, tray 48 degrees) still too steep.
+ *
+ * Every control reached through the table works by controller ray (buttons, tray, sigil plate) or
+ * by a flick across it; only a slow card drop needs a hand over the footprint, whose 0.1 m drop
+ * margin now starts 0.7 m ahead of the eye, at or past a seated arm's reach.
  */
-export const DEFAULT_TABLE_DISTANCE = 0.85;
-export const COMFORT_TABLE_DISTANCE = 0.65;
+export const DEFAULT_TABLE_DISTANCE = 1.2;
+export const COMFORT_TABLE_DISTANCE = 1.0;
 export const MIN_TABLE_DISTANCE = 0.5;
 
 export const DEFAULT_EYE_HEIGHT = 1.6;
@@ -374,6 +384,24 @@ export function placeEnemies(
     return { ok: true, placements: placements as EnemyPlacement[], failed: [] };
   }
   return { ok: false, placements, failed };
+}
+
+/** A rig move on the floor plane: the new rig position and the change to its `rotation.y`, radians. */
+export interface RigTurn {
+  x: number;
+  z: number;
+  rotationY: number;
+}
+
+/**
+ * The snap that turns a seated view `degrees` clockwise (seen from above) about the head, the way
+ * `Locomotion` snap-turns: the head stays where it is and its heading gains `degrees`. Turning by a
+ * table placement's `offsetDeg` leaves the player facing the table. The rig must have no parent
+ * transform.
+ */
+export function rigTurnAboutHead(rig: Vec2, head: Vec2, degrees: number): RigTurn {
+  const [x, z] = rotateAboutPivot(rig, head, degrees);
+  return { x, z, rotationY: -degrees * DEG };
 }
 
 /**

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { EncounterDirector } from '../combat/encounter.ts';
 import { chooseEncounter } from '../combat/encounter-choice.ts';
+import { rigTurnAboutHead } from '../combat/placement.ts';
 import { buildTableGreybox, disposeTable, TABLE_NODES } from '../combat/table-greybox.ts';
 import type { RoomTemplate } from '../content/rooms.ts';
 import { isValidSeed, normalizeSeed, randomSeed, Stream } from '../core/rng.ts';
@@ -9,7 +10,7 @@ import type { EnemyActor, EnemyAsset } from '../enemies/enemy-asset.ts';
 import { generateFloor } from '../floor/generate.ts';
 import { PALETTE } from '../palette.ts';
 import type { TreasureLoot } from '../rules/run.ts';
-import { yawFromMatrix } from '../xr/locomotion.ts';
+import { DEFAULT_VIGNETTE, vignetteStep, yawFromMatrix } from '../xr/locomotion.ts';
 import { buildFloorWorld, type FloorWorld } from './floor-world.ts';
 import {
   type Hearth,
@@ -79,8 +80,14 @@ export interface FloorView {
   /** True while an encounter holds the player in place. */
   readonly locked: boolean;
   /**
+   * Comfort vignette strength (0 to `DEFAULT_VIGNETTE.maxStrength`) from the snap that turned the
+   * rig to face a fight's table; it fades on the locomotion release ramp. 0 when nothing turned.
+   */
+  readonly turnVignette: number;
+  /**
    * Streams rooms around the head and triggers encounters. `head` is the camera; call once per
-   * frame before rendering.
+   * frame before rendering. A fight whose table had to turn off the head's heading snaps the rig
+   * about the head by that turn as the fight starts, so the player faces the table.
    */
   update(head: THREE.Object3D, dt: number): void;
   /**
@@ -172,6 +179,7 @@ export function mountFloorView(
 
   let locked = false;
   let suspended = false;
+  let turnVignette = 0;
   // The director keeps this host for its life; the greybox or the real asset hangs under it.
   const tableHost = new THREE.Group();
   tableHost.name = 'combat-table-host';
@@ -405,6 +413,9 @@ export function mountFloorView(
     get locked() {
       return locked;
     },
+    get turnVignette() {
+      return turnVignette;
+    },
     get realTable() {
       return fit !== null;
     },
@@ -433,6 +444,7 @@ export function mountFloorView(
       };
     },
     update(head, dt) {
+      turnVignette = vignetteStep(turnVignette, 0, dt, DEFAULT_VIGNETTE);
       spin(dt);
       for (const coffer of world.coffers) coffer.update(dt);
       for (const lit of world.hearths) lit.update(dt);
@@ -442,6 +454,7 @@ export function mountFloorView(
       }
       encounter.update(dt);
       dressEnemies();
+      head.getWorldPosition(at);
       // Clips run on real seconds; the freeze is a pose, not a slowed clock.
       for (const actor of [...actors.values()]) {
         if (!actor.object.parent) {
@@ -451,7 +464,7 @@ export function mountFloorView(
         if (encounter.frozen) {
           if (!actor.frozen && !actor.dead && actor.state === 'idle') actor.freeze();
         } else if (actor.frozen) actor.unfreeze();
-        actor.update(dt);
+        actor.update(dt, at);
         if (actor.dead && !shattered.has(actor) && !actor.action('death').isRunning()) {
           shattered.add(actor);
           debris.shatterActor(actor, Stream.fromKey(`${world.plan.seed}:shatter:${shatters++}`));
@@ -471,7 +484,21 @@ export function mountFloorView(
         yaw: yawFromMatrix(head.matrixWorld.elements),
         eyeHeight: at.y,
       });
-      if (began.ok && fit) fit.scale.set(1, began.table.pose.height / authoredTop, 1);
+      if (!began.ok) return;
+      if (fit) fit.scale.set(1, began.table.pose.height / authoredTop, 1);
+      // Snapped during the freeze while the table is still folded (invisible), behind the vignette.
+      if (began.table.offsetDeg !== 0) {
+        const turn = rigTurnAboutHead(
+          [rig.position.x, rig.position.z],
+          [at.x, at.z],
+          began.table.offsetDeg,
+        );
+        rig.position.x = turn.x;
+        rig.position.z = turn.z;
+        rig.rotation.y += turn.rotationY;
+        rig.updateMatrixWorld(true);
+        turnVignette = DEFAULT_VIGNETTE.maxStrength;
+      }
     },
   };
 }
