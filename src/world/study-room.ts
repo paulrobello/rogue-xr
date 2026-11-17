@@ -210,6 +210,14 @@ export function untonedEmitterIntensity(material: THREE.MeshStandardMaterial): n
   return peak > 0 ? Math.min(material.emissiveIntensity, 1 / peak) : material.emissiveIntensity;
 }
 
+/**
+ * A flame card is pure emission. Its lit term (albedo x lightmap) adds to the capped emission and
+ * clips past 1.0 again beside the bake lights, which turned the vault's fire lemon (h46.5 vs 32.9).
+ */
+export function flameSlot(name: string): boolean {
+  return name.endsWith('_flame');
+}
+
 export interface StudyAsset {
   readonly manifest: StudyManifest;
   /** Every texture the instances read, for the load veil's spread uploads. */
@@ -252,8 +260,9 @@ export async function loadStudyAsset(options: {
   });
   const lightmap = await loadRoomLightmap(study.manifest, base, ktx2, gltf.scene);
   owned.push(lightmap.texture);
-  for (const material of slots.values()) {
+  for (const [name, material] of slots) {
     bakedRoomMaterial(material);
+    if (flameSlot(name)) material.color.setRGB(0, 0, 0);
     const slot = emitterSlot(material);
     material.toneMapped = slot.toneMapped;
     if (!slot.toneMapped) material.emissiveIntensity = untonedEmitterIntensity(material);

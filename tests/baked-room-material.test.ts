@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   bakedRoomMaterial,
   emitterSlot,
+  flameSlot,
   roomLightsFragmentBegin,
   untonedEmitterIntensity,
 } from '../src/world/study-room.ts';
@@ -94,6 +95,15 @@ describe('untonedEmitterIntensity (hue-preserving emitter peak)', () => {
     expect(untonedEmitterIntensity(dim)).toBe(1.5);
     const off = new THREE.MeshStandardMaterial({ emissive: 0x000000, emissiveIntensity: 3 });
     expect(untonedEmitterIntensity(off)).toBe(3);
+  });
+});
+
+describe('flameSlot', () => {
+  it('matches only flame cards, not coals or lamp glass', () => {
+    expect(flameSlot('guardian-vault_flame')).toBe(true);
+    expect(flameSlot('study_flame')).toBe(true);
+    expect(flameSlot('guardian-vault_coals')).toBe(false);
+    expect(flameSlot('corridor_lamp-glass')).toBe(false);
   });
 });
 
