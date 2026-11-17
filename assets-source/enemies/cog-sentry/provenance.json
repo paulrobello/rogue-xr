@@ -288,12 +288,12 @@
     },
     {
       "gate": "independent visual score",
-      "status": "below bar: 48/100 (bar 80), scored 2026-11-16",
+      "status": "below bar: 69/100 (bar 80), scored 2026-11-16",
       "notes": "create-rigged-character-assets requires an independent >= 80/100 score; unscored means unaccepted"
     }
   ],
   "independentScore": {
-    "score": 48,
+    "score": 69,
     "scale": "0-100 visual fidelity to the concept",
     "scorer": "independent reviewer agent (separate from the authoring agent; did not build the asset)",
     "date": "2026-11-16",
@@ -302,40 +302,42 @@
     "rubric": [
       {
         "criterion": "silhouette and proportions",
-        "points": 13,
+        "points": 19,
         "max": 30,
-        "note": "Overall proportions match the sheet-1 front view (head/height 0.13 on both; shoulder/height 0.33 concept vs 0.36 model; hip/height 0.21 vs 0.20; hands end at 0.67 vs 0.64). The shape language does not: the concept is curved, overlapping armour, the model is primitives (box torso tapering to a trapezoid, hemisphere-on-ball pauldrons, square box thighs, straight box shanks with no calf swell or knee cop). Waist/shoulder is 0.40 against the concept's pinched 0.32, so the hourglass is lost. Hands are stick tips about 0.014 of height wide against about 0.05 for the fingered gauntlets; feet are short blocks, not long sabatons. The side view is a flat column with none of the concept's chest depth. It reads as a wooden mannequin, not an armoured automaton."
+        "note": "Up from 13. Front review render model-low-front.png (figure H 428 px, y115-543): head width 0.107 of height (concept 0.10), pauldron span 0.33 (concept 0.31), gunmetal waist 48 px so waist/shoulder 0.34 against the concept's ~0.32 (was 0.40), hands end at 0.61 of height (concept 0.62), hands now fingered at about 0.03 of height wide (was 0.014, concept 0.039), and long pointed sabatons replace the block feet. The side view now has a domed chest with real depth instead of a flat column. Still primitive in shape language: pauldrons are near-spheres and the cuirass is an egg dome, not the concept's angular layered pectoral plates; thighs are straight-sided cylinders with flat fronts, shins plain tapered cylinders with no calf swell, and the forearm bracers sit as two offset slabs. A visible break opens between thigh plate and knee in every standing pose: background shows through at y385-395 of 428 in the Blender front (2.3% of height) and y437-452 of 585 in engine idle.jpg (2.6%), and in p4-sentry-attack.jpg the knees read as detached from the thighs."
       },
       {
         "criterion": "signature features",
-        "points": 13,
+        "points": 19,
         "max": 25,
-        "note": "Credits: the hexagonal chest core in a pale bezel (lit amber in the glow build, p95 (249,218,94)), the back gear medallion, the capsule head with two horizontal amber eye slits (art-bible default), and the ringed abdomen standing in for the ribbed midriff. Misses: no jewel inlays (0 emerald/sapphire/ruby pixels on every model render, against 1230 and 1309 jewel pixels on the concept's side and back views); no lit amber channel down the abdomen; the head lacks the concept's mask silhouette (brow, cheek planes, jaw, exposed gunmetal neck pistons)."
+        "note": "Up from 13. Present now: hex core in a pale bezel with a second small hex below it (glow-close.jpg x420-480, y328-399, median (247,187,76)); a lit amber channel as three pips down the ribbed gunmetal waist (x462-471, y438-491, median (245,191,74)); two horizontal amber eye slits under a brow bar (median (240,174,78)); exposed neck pistons (three rods in model-low-side.png); back gear medallion; faceted multi-colour jewel inlays on the upper arm and outer thigh. Jewels are small: 117 jewel pixels on the side render and 165 on the back, against 1800 and 2475 on the concept views, which is about 29-30% of the concept's area once scaled for figure height (428/905 px, area factor 0.22). Was 0. The head is a round helmet dome with a visor bar and a separate chin block, not the concept's narrow tapered faceless mask with brow and cheek planes. Core centre not white-hot (open item, noted not scored)."
       },
       {
         "criterion": "surface detail and material read",
-        "points": 8,
+        "points": 13,
         "max": 20,
-        "note": "No plate seams, panel lines, bevels or overlapping plate edges, the concept's main surface language. The tiling brass reads as wood on flat box faces (streaky grain, blotchy cream patches on the crotch plate, chest and face plate). Lit faces turn flat cream: model-low-front body p90 (202,173,143) against the concept's warm gold p90 (192,153,101); shin faces flash near-white in the attack and hit stills. Gunmetal ball joints are correctly dark but bare spheres, not ribbed cylinder knees and elbows. Pauldrons are the only surfaces that read as polished metal."
+        "note": "Up from 8. The wood-grain tileable is gone: brass is smooth polished metal with clean highlights, and lit faces no longer go cream (engine idle warm-metal p90 (214,173,119) against concept (203,163,102); the previous build was (202,173,143)). The chest carries a vertical keel seam, a horizontal belly band and plate breaks, and the waist is ribbed gunmetal. Elsewhere the surface is bare: thighs, shins, upper arms and forearms are unseamed cylinders with no panel lines, edge bevels or overlapping plate lips, which are the concept's main surface language, and the knees are plain dark discs rather than ribbed joint cylinders under a knee cop."
       },
       {
         "criterion": "colour and value",
-        "points": 9,
+        "points": 11,
         "max": 15,
-        "note": "Warm-metal median: concept front body (91,66,49), hue 24, L 0.27, S 0.30; engine glow build upper body (94,70,36), hue 35, L 0.25, S 0.45. Value matches but the hue is 11 degrees yellower and more saturated (olive-ochre rather than warm bronze). In-room legs (103,80,56) are close to the concept. The core peaks warm yellow p95 (249,218,94) where the concept core is white-hot p95 (254,249,166). Eyes match well (concept p90 (249,209,108), model (235,206,129)). No jewel accent colour anywhere."
+        "note": "Up from 9. Warm-metal median, engine idle upper body (96,64,33), hue 30, L 0.25, S 0.49 (glow-close (93,62,31), same hue); concept front body (91,64,46), hue 24, L 0.27, S 0.33. Value matches and the hue gap closed from 11 to 6 degrees, but saturation is still 0.16 high (was 0.12 high), so the brass leans orange-ochre rather than the concept's dusty bronze. Highlight p90 now matches (214,173,119) vs (203,163,102). Eyes median (240,174,78), p95 (251,214,94) against concept eyes p90 (249,209,108): close. Core p95 (252,223,84) against the concept's white-hot p95 (254,249,162): open owner item. Jewel accent colour now exists (emerald, sapphire and ruby pixels in the side and back renders), though none read in the front-facing engine shots."
       },
       {
         "criterion": "readability at play distance",
-        "points": 5,
+        "points": 7,
         "max": 10,
-        "note": "At 2-4 m the tall thin figure separates clearly from the low Spring Hound and the amber eyes and core give a focal point. Against that, the box-and-ball construction reads as a mannequin or toy, pale faces flash in motion, and the thin limbs and tiny hands read as wire against the bookcases. In every xr-emu-15 frame the enemy HUD panel covers the torso and core; counted as a panel-placement issue, not a model fault."
+        "note": "Up from 5. In idle.jpg and glow-close.jpg the lit hex core, eye slits and waist pips give three stacked amber focal points on a figure that separates cleanly from the dark wall, and the gunmetal waist pinch reads as a humanoid hourglass. Against that, the thigh-knee gap shows floor through the legs at 2-4 m so the lower legs look detached, and the spherical pauldrons and dome chest read as a toy robot more than the concept's armoured knight-automaton."
       }
     ],
     "topFixes": [
-      "Remodel the armour as curved, overlapping plates instead of primitives: a cuirass with a pinched gunmetal waist (waist/shoulder near 0.32, now 0.40), layered curved pauldrons, tapered cuisses wrapping the hips, greaves that swell at the calf with knee cops over ribbed cylinder knees, fingered gauntlets about 0.05 of height wide, long pointed sabatons, and chest depth in the side view.",
-      "Add the missing signature parts: faceted jewel inlays on the outer thighs and upper arms as on sheet-1, the lit amber channel down the abdomen, and a masked head with brow, cheek planes and jaw over exposed neck pistons.",
-      "Fix the brass and the core: replace the wood-grain-looking tileable on flat faces, stop lit faces going cream (p90 (202,173,143) vs concept (192,153,101)), pull hue from 35 toward 24, and push the core centre toward white-hot (about (255,250,204)). Separately, move the enemy HUD panel off the Sentry's torso in the seated view."
+      "Close the thigh-to-knee break: extend the thigh plates (cuisses) down over a ribbed gunmetal knee cylinder and add a brass knee cop so no background shows between thigh and shin in any standing or attack pose (now a 2.3-2.6% of height gap in model-low-front and engine idle).",
+      "Reshape the round primitives into the concept's angular plate shapes: flatten and layer the pauldrons into two or three overlapping curved shells with a lip instead of spheres, and break the egg-dome cuirass into faceted left and right pectoral plates with a sternum ridge around the hex core.",
+      "Give the limbs shape and seams: taper the thighs from a wide hip to the knee with a bevelled front ridge, swell the greaves at the calf, and add panel lines and overlapping plate edges on thighs, shins, upper arms and the forearm bracers (which should wrap the forearm as one tapered shell, not two offset slabs).",
+      "Rebuild the head as the concept's narrow faceless mask: taller than wide, tapering to a pointed chin, with brow and cheek planes, the eye slits cut into the mask itself, and the round helmet dome, visor bar and separate chin block removed.",
+      "Enlarge the jewel inlays about 3x in area (now about 30% of the concept's scaled jewel area) and add the faceted cut so they read on the outer thighs and upper arms at play distance; pull brass saturation from 0.49 toward 0.33 at the same value to reach the concept's dusty bronze (hue 30 to 24)."
     ],
-    "method": "Independent reviewer (did not build the model) on 2026-11-16. Shape: assets-source/enemies/cog-sentry/staging/renders/model-low-{front,side,back}.png, model-high-three-quarter.png and cog-sentry.review-sheet.jpg, generated from public/assets/enemies/cog-sentry/cog-sentry.glb whose sha256 matches provenance. Concept: assets-source/concepts/sentry-sheet-1.png (approved), sentry-sheet-2.png secondary. Colour and glow: docs/verification/p6-glow-cog-sentry.jpg and xr-emu-15-enemy-turn-00..10.jpg; p4-sentry-*.jpg (pre-glow) for shape and pose only. Pillow and NumPy medians, HLS, percentile means over a warm-metal mask; HSV masks for jewels and glow. Strictness calibrated against orrery-warden (82) and bellows-golem (73); author self-score ignored."
+    "method": "Independent reviewer (did not build the asset) on 2026-11-16, scoring commit 0282e6b against the approved assets-source/concepts/sentry-sheet-1.png. Shape from the Blender review renders (model-low-front/side/back, model-high-three-quarter, cog-sentry.review-sheet.jpg); colour and glow from the in-engine shots staging/engine/{idle,glow-close,attack,hit,frozen,death}.jpg and docs/verification/p4-sentry-*.jpg. Stale p6-glow and xr-emu-15 images and author status files were not used. Proportions were read from 10 px gridded 2x crops of the front render and 20 px gridded crops of the concept front, normalised to figure height. Colours are Pillow/NumPy medians and top-percentile means over an HSV warm-metal mask (hue 15-55, S>0.3, V>0.12); glow over HSV masks (V>0.8, S>0.45, hue 25-60) inside tight core, eye and waist boxes; jewel pixels counted by HSV hue bands (S>0.4, V>0.25) and scaled by squared figure-height ratio. The previous independent score of 48 in provenance.json was used only to report deltas. The white-hot core centre is an open owner item and was noted but not scored down."
   }
 }
