@@ -6,6 +6,7 @@ import {
   difficultyMaxHp,
   runDifficulty,
 } from '../rules/difficulty.ts';
+import { canFlee } from '../rules/flee.ts';
 import {
   chooseReward,
   claimTreasure,
@@ -50,8 +51,8 @@ export const FLOW_TRANSITIONS: Readonly<Record<FlowPhase, readonly FlowPhase[]>>
   title: ['explore', 'reward', 'workshop', 'settings'],
   workshop: ['title'],
   settings: ['title'],
-  explore: ['combat'],
-  combat: ['explore', 'reward', 'death', 'victory'],
+  explore: ['combat', 'title'],
+  combat: ['explore', 'reward', 'death', 'victory', 'title'],
   reward: ['explore'],
   death: ['title'],
   victory: ['title'],
@@ -282,13 +283,15 @@ export class RunFlow {
 
   /**
    * A fight ended. A win clears the room and opens the reward, or ends the run in victory when the
-   * guardian fell; a defeat ends the run in death; fleeing returns to exploring. Only acts in
-   * `combat`, so a second end call for the same fight is a no-op.
+   * guardian fell; a defeat ends the run in death; fleeing returns to exploring with the room still
+   * uncleared and no reward, and is refused (changing nothing) for an elite or guardian fight
+   * (`canFlee`). Only acts in `combat`, so a second end call for the same fight is a no-op.
    */
   fightEnded(result: FightResult): boolean {
     const run = this.runValue;
     if (this.phaseValue !== 'combat' || !run) return false;
     if (result.outcome === 'flee') {
+      if (!canFlee(result.tier)) return false;
       this.runValue = this.withHp(run, result.playerHp);
       return this.go('explore');
     }
@@ -356,6 +359,21 @@ export class RunFlow {
     this.hearthValue = { room, socketId, healed: result.healed, hp: result.run.hp };
     this.emit({ type: 'hearth', ...this.hearthValue });
     return this.hearthValue;
+  }
+
+  /**
+   * Gives up the run from explore or combat and returns to the title. The purse is banked as a
+   * defeat banks it, and the run is dropped, so its snapshot is cleared and Continue cannot bring it
+   * back. Returns false (changing nothing) in any other phase.
+   */
+  abandonRun(): boolean {
+    const run = this.runValue;
+    if (!run || (this.phaseValue !== 'explore' && this.phaseValue !== 'combat')) return false;
+    this.workshopValue = bankRunCogs(this.workshopValue, run);
+    this.runValue = null;
+    this.offerValue = null;
+    this.summaryValue = null;
+    return this.go('title');
   }
 
   /** Claims the reward on screen: its cogs always, plus the chosen card unless `'skip'`. */

@@ -47,6 +47,8 @@ export interface XrRig {
   readonly presenting: boolean;
   update(deltaSeconds: number, frame?: XRFrame): void;
   sticks(): XrSticks;
+  /** Whether gamepad button `index` of the `side` controller is down (false while untracked). */
+  buttonPressed(side: Side, index: number): boolean;
   /** Controller grip objects by handedness, null while that hand is not tracked. */
   grips(): HandPair<THREE.Object3D>;
   /** Controller target-ray objects (pointing, -Z) by handedness. */
@@ -159,6 +161,10 @@ export function createXrRig(
         if (axes && (side === 'left' || side === 'right')) out[side] = readThumbstick(axes);
       }
       return out;
+    },
+    buttonPressed(side, index) {
+      const source = sources.find((s) => s.input?.handedness === side);
+      return Boolean(source?.input?.gamepad?.buttons[index]?.pressed);
     },
     grips: () => byHand(sources, (source) => source.grip),
     rays: () => byHand(sources, (source) => source.ray),

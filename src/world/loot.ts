@@ -4,6 +4,7 @@ import { CanvasLabel } from '../combat-view/canvas-label.ts';
 import { getCard } from '../content/cards.ts';
 import type { Box, Socket } from '../content/rooms.ts';
 import type { LootKind } from '../floor/generate.ts';
+import { CARD_FLIGHT_SECONDS, flightGoal, flightPose, flightScale } from '../flow/card-flight.ts';
 import { PALETTE } from '../palette.ts';
 import { lootKey, type TreasureLoot } from '../rules/run.ts';
 
@@ -40,9 +41,6 @@ const CARD_BOB_RATE = 2.4;
 /** Slow sway about the facing direction, radians, and how fast the card turns to the viewer (1/s). */
 const CARD_SWAY = 0.12;
 const CARD_TURN_RATE = 3;
-/** Claimed: the card flies to the viewer in this many seconds, shrinking to this fraction. */
-const CARD_CLAIM_TIME = 0.4;
-const CARD_END_SCALE = 0.06;
 /** Halo size over the card size, and the hit quad's margin around the card. */
 const HALO_SCALE = 2.1;
 const HIT_SCALE = 1.5;
@@ -121,7 +119,6 @@ export interface Coffer {
 }
 
 const easeOut = (t: number): number => 1 - (1 - t) ** 3;
-const easeInOut = (t: number): number => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
 
 /** Writes a `color` attribute: the candle colour scaled by `glow(position)`, clamped to [0, 1]. */
 function glowing<T extends THREE.BufferGeometry>(
@@ -626,17 +623,12 @@ export class CofferKit {
           root.position.y = hoverY + CARD_BOB * Math.sin(clock * CARD_BOB_RATE);
           turnToViewer(clock, dt);
         } else if (state === 'flying') {
-          t = Math.min(1, t + dt / CARD_CLAIM_TIME);
+          t = Math.min(1, t + dt / CARD_FLIGHT_SECONDS);
           const at = viewerLocal(flyTo);
-          if (at) {
-            goal.copy(at).sub(from);
-            const length = goal.length();
-            goal.multiplyScalar(length > standoff ? (length - standoff) / length : 0).add(from);
-            if (standoff > 0) goal.y -= 0.1;
-          } else goal.copy(from);
-          const k = easeInOut(t);
-          root.position.lerpVectors(from, goal, k);
-          root.scale.setScalar(1 + (CARD_END_SCALE - 1) * k);
+          if (at) flightGoal(from, at, standoff, goal);
+          else goal.copy(from);
+          const k = flightPose(from, goal, t, root.position);
+          root.scale.setScalar(flightScale(k));
           haloMaterial.opacity = 1 - k;
           if (t >= 1) release();
         }

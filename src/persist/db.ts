@@ -44,6 +44,8 @@ export interface Settings {
   tableDistance: number;
   /** Fixed-foveation level applied in XR. */
   foveation: FoveationChoice;
+  /** Shows the frame-rate counter. */
+  fpsCounter: boolean;
 }
 
 export const DEFAULT_SETTINGS: Readonly<Settings> = Object.freeze({
@@ -59,6 +61,7 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = Object.freeze({
   difficulty: DEFAULT_DIFFICULTY,
   tableDistance: DEFAULT_TABLE_DISTANCE,
   foveation: DEFAULT_FOVEATION,
+  fpsCounter: false,
 });
 
 export const STORE_SETTINGS = 'settings';
@@ -109,7 +112,8 @@ const pickNum = (v: unknown, fallback: number, min: number, max: number): number
 
 /**
  * Repairs arbitrary stored data into a complete Settings; never throws. Saves from before a field
- * existed (no `tableDistance`, no `foveation`) take its default, so no store migration is needed.
+ * existed (no `tableDistance`, no `foveation`, no `fpsCounter`) take its default, so no store
+ * migration is needed.
  */
 export function validateSettings(raw: unknown): Settings {
   const d = DEFAULT_SETTINGS;
@@ -127,6 +131,7 @@ export function validateSettings(raw: unknown): Settings {
     difficulty: isDifficulty(r.difficulty) ? r.difficulty : d.difficulty,
     tableDistance: tableDistanceChoice(r.tableDistance) ?? d.tableDistance,
     foveation: isFoveationChoice(r.foveation) ? r.foveation : d.foveation,
+    fpsCounter: pickBool(r.fpsCounter, d.fpsCounter),
   };
 }
 

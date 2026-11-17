@@ -62,9 +62,11 @@ import { CardFan } from '../hand/card-fan.ts';
 import { DEFAULT_FAN, GRIP_FAN_ORIGIN } from '../hand/fan-layout.ts';
 import { FlingController, type FlingTargetSite, rayFromObject } from '../hand/fling.ts';
 import { PALETTE } from '../palette.ts';
+import { perfMark, perfWindow } from '../perf/marks.ts';
 import {
   type CombatEvent,
   type CombatState,
+  canFlee,
   type Difficulty,
   intentDamage,
   PLAYER_ID,
@@ -123,6 +125,12 @@ export const XR_SIGIL_HINT = 'Hold the trigger and point at the plate to trace t
 /** The table hint while a rolled die waits for its throw, in XR and on the desktop. */
 export const XR_DICE_HINT = 'Grab the glowing die and let go to throw it';
 export const DESKTOP_DICE_HINT = 'Click the glowing die to throw it (or press T)';
+/** Why an elite or guardian fight shows no Flee control and refuses one. */
+export const FLEE_REFUSED = 'There is no escaping this fight';
+/** Why a flee is refused while the enemies act or a play's effects are still landing. */
+export const FLEE_WAIT = 'Wait for your turn to flee';
+/** Flee sits this far inward of End Turn along the table edge, centre to centre, metres. */
+const FLEE_GAP = 0.26;
 /** Width of the table hint label, metres; it hangs this high over the dice tray. */
 const HINT_WIDTH = 0.46;
 /** The status tooltip: its width, metres, and how far it floats above and in front of the badge. */
@@ -274,8 +282,11 @@ export interface CombatSessionDeps {
   camera: THREE.Camera;
   sockets: { diceTray: THREE.Object3D | null; sigilPlate: THREE.Object3D | null };
   actions: ActionBus;
-  /** Called once the fight is decided and its banner has held. */
-  end: (outcome: 'win' | 'defeat') => void;
+  /**
+   * Called once the fight is decided and its banner has held, or at once when the player flees
+   * (a regular fight only, from their own input window).
+   */
+  end: (outcome: 'win' | 'defeat' | 'flee') => void;
   audio?: CombatAudio;
   /**
    * The run's deck, hp, max hp and bonus dice, plus debug cheats, passed to the controller, and the
@@ -382,7 +393,7 @@ interface Knock {
 const KNOCK_SLOTS = 4;
 
 /** What a combat pickable is, for scripted pointer tests and the debug hook. */
-export type CombatPick = 'card' | 'enemy' | 'end-turn' | 'dice' | 'plate' | 'table';
+export type CombatPick = 'card' | 'enemy' | 'end-turn' | 'flee' | 'dice' | 'plate' | 'table';
 
 /**
  * One fight on the exploration floor, alive while the encounter is `active`. It owns the
@@ -420,6 +431,9 @@ export class CombatSession {
   private readonly bodies: THREE.Object3D[];
   private readonly hidden: THREE.Object3D[] = [];
   private readonly endButton: THREE.Mesh;
+  /** The Flee control beside End Turn, only in a fight `canFlee` allows. */
+  private readonly fleeButton: THREE.Mesh | null;
+  private readonly fleeLabel: CanvasLabel | null;
   private readonly trayHit: THREE.Mesh;
   private readonly labels: { id: string; label: CanvasLabel }[] = [];
   private readonly status: CanvasLabel | null;
@@ -493,6 +507,7 @@ export class CombatSession {
   private endTimer = -1;
   private ended = false;
   private disposed = false;
+  private pausedValue = false;
   private xr: XrHands | null = null;
   private dirty = true;
   /** Animated actors by rules enemy id. */
@@ -634,6 +649,23 @@ export class CombatSession {
     };
     this.endLabel = buttonLabel(this.endButton, 'END TURN');
     this.endText = 'END TURN';
+    // A child of End Turn, inward along the table edge, so the desktop HUD fit moves the pair as one.
+    this.fleeButton = canFlee(deps.tier)
+      ? new THREE.Mesh(
+          new THREE.BoxGeometry(0.2, 0.03, 0.09),
+          new THREE.MeshStandardMaterial({
+            color: PALETTE.walnut,
+            roughness: 0.5,
+            metalness: 0.4,
+          }),
+        )
+      : null;
+    if (this.fleeButton) {
+      this.fleeButton.name = 'flee';
+      this.fleeButton.position.set(-FLEE_GAP, 0, 0);
+      this.endButton.add(this.fleeButton);
+    }
+    this.fleeLabel = this.fleeButton ? buttonLabel(this.fleeButton, 'FLEE') : null;
     this.dropZone = new THREE.Mesh(
       new THREE.PlaneGeometry(TABLE_HALF_WIDTH * 2, TABLE_HALF_DEPTH * 2),
       new THREE.MeshBasicMaterial({
@@ -772,6 +804,7 @@ export class CombatSession {
         else this.dirty = true;
       }),
       dice.onSettled((roll) => {
+        perfMark('dice-settled');
         this.rolls.push(roll);
         this.releaseHeld();
         this.message = `Rolled ${roll.value}`;
@@ -810,6 +843,55 @@ export class CombatSession {
     if (this.shown) return 'enemy';
     if (this.pendingThrow || this.held) return 'dice';
     return this.controller.stage;
+  }
+
+  /** True when this fight offers the Flee control (a regular fight). */
+  get fleeable(): boolean {
+    return this.fleeButton !== null;
+  }
+
+  /**
+   * While true the fight stands still (the in-run menu is up): `update` advances nothing, so every
+   * timer, the enemy turn and the dice hold, and combat input is ignored. A card held at the pause
+   * stays held (letting go meanwhile is ignored too) and is let go by the next release after it.
+   */
+  get paused(): boolean {
+    return this.pausedValue;
+  }
+  set paused(value: boolean) {
+    this.pausedValue = value;
+  }
+
+  /**
+   * Flees the fight: ends it at once through `end('flee')`, keeping the player's hp; an automaton
+   * already killed is taken off the floor. Refused (false, with a message) in an elite or guardian
+   * fight, while the enemies act, a card is held or a play's effects (or a death) are still
+   * playing, while a die waits, and once the fight is decided. A refused flee is not queued.
+   */
+  flee(): boolean {
+    if (this.disposed || this.pausedValue || this.ended || this.controller.outcome !== null)
+      return false;
+    if (!this.fleeButton) {
+      this.message = FLEE_REFUSED;
+      return false;
+    }
+    if (this.busy() || this.diceFirst()) return false;
+    const dying = [...this.dying].some((a) => !a.disposed && a.action('death').isRunning());
+    if (this.flight || this.launch || this.castTimer > 0 || this.holding !== null || dying) {
+      this.message = FLEE_WAIT;
+      return false;
+    }
+    this.cancel();
+    // An automaton killed before the flee stays dead, as a win would leave it; the rest go home.
+    for (const { id, body } of this.enemies) {
+      const enemy = this.controller.state.enemies.find((e) => e.id === id);
+      if (enemy && enemy.hp <= 0) body.removeFromParent();
+    }
+    this.ended = true;
+    this.sfx('ui-tick');
+    perfMark('flee');
+    this.deps.end('flee');
+    return true;
   }
 
   /** True while the enemy phase plays one enemy at a time; the player cannot act meanwhile. */
@@ -902,6 +984,8 @@ export class CombatSession {
       }
       case 'end-turn':
         return this.endButton.getWorldPosition(new THREE.Vector3());
+      case 'flee':
+        return this.fleeButton?.getWorldPosition(new THREE.Vector3()) ?? null;
       case 'dice':
         return (this.dice.waiting ?? this.trayHit).getWorldPosition(new THREE.Vector3());
       case 'plate': {
@@ -937,6 +1021,7 @@ export class CombatSession {
       { name: 'tray', points: worldCorners(this.trayHit) },
       { name: 'plate', points: this.plateCorners() },
     ];
+    if (this.fleeButton) out.push({ name: 'flee', points: worldCorners(this.fleeButton) });
     if (this.status) out.push({ name: 'status', points: worldCorners(this.status.mesh) });
     for (const { id, label } of this.labels)
       out.push({ name: `readout:${id}`, points: worldCorners(label.mesh) });
@@ -1177,14 +1262,14 @@ export class CombatSession {
 
   /** True when a pointer press along this ray would land on a combat control (the desktop bridge claims it). */
   claims(origin: Vec3T, direction: Vec3T): boolean {
-    if (this.disposed || this.controller.outcome !== null) return false;
+    if (this.disposed || this.pausedValue || this.controller.outcome !== null) return false;
     const ray = new THREE.Ray(new THREE.Vector3(...origin), new THREE.Vector3(...direction));
     return this.hitAt(ray) !== null;
   }
 
   /** Per-frame step. `xr` is the tracked hands while presenting, null on the desktop. */
   update(dt: number, xr: XrHands | null = null): void {
-    if (this.disposed) return;
+    if (this.disposed || this.pausedValue) return;
     this.clock += dt;
     this.setXr(xr);
     // Before sync, so the frame the enemy phase ends also deals the new hand.
@@ -1288,9 +1373,11 @@ export class CombatSession {
     for (const { label } of this.labels) label.dispose();
     this.status?.dispose();
     this.endLabel?.dispose();
+    this.fleeLabel?.dispose();
     this.hintLabel?.dispose();
     this.tip?.dispose();
-    for (const mesh of [this.endButton, this.trayHit, this.dropZone]) {
+    for (const mesh of [this.endButton, this.fleeButton, this.trayHit, this.dropZone]) {
+      if (!mesh) continue;
       mesh.geometry.dispose();
       (mesh.material as THREE.Material).dispose();
     }
@@ -1302,7 +1389,7 @@ export class CombatSession {
   // ---- input -----------------------------------------------------------------------------------
 
   private pointer(action: Extract<GameAction, { type: 'combat-pointer' }>): void {
-    if (this.xr || this.disposed) return;
+    if (this.xr || this.disposed || this.pausedValue) return;
     this.lastRay = { origin: action.origin, direction: action.direction };
     this.lastNdc = action.ndc ?? null;
     const ray = new THREE.Ray(
@@ -1330,6 +1417,7 @@ export class CombatSession {
       this.drawing = 'mouse';
       this.feedMouse(ray);
     } else if (hit === 'end-turn') this.endTurn();
+    else if (hit === 'flee') this.flee();
     else if (typeof hit === 'number') {
       this.placeMouseGrip(ray);
       this.grab(hit, 'mouse');
@@ -1338,7 +1426,7 @@ export class CombatSession {
 
   private hand(action: Extract<GameAction, { type: 'combat-hand' }>): void {
     const xr = this.xr;
-    if (!xr || action.hand !== 'main' || this.disposed) return;
+    if (!xr || action.hand !== 'main' || this.disposed || this.pausedValue) return;
     if (action.pressed && this.busy()) return;
     if (action.control === 'squeeze') {
       // A rolled die is grabbed by the main hand and thrown as it is let go, even once the rules
@@ -1390,6 +1478,7 @@ export class CombatSession {
         new THREE.Ray(new THREE.Vector3(...r.origin), new THREE.Vector3(...r.direction)),
       );
       if (hit === 'end-turn') this.endTurn();
+      else if (hit === 'flee') this.flee();
       else if (hit === 'tray') this.throwDice();
     }
   }
@@ -1424,7 +1513,8 @@ export class CombatSession {
   }
 
   private endTurn(): void {
-    if (this.disposed || this.controller.outcome !== null || this.busy()) return;
+    if (this.disposed || this.pausedValue || this.controller.outcome !== null || this.busy())
+      return;
     if (this.diceFirst()) return;
     this.fling.abortStaged();
     this.plate.hide();
@@ -1434,7 +1524,7 @@ export class CombatSession {
   }
 
   private throwDice(): void {
-    if (this.disposed || this.busy()) return;
+    if (this.disposed || this.pausedValue || this.busy()) return;
     const pending = this.pendingThrow;
     if (!pending) {
       this.message = 'No dice to throw';
@@ -1444,6 +1534,7 @@ export class CombatSession {
     this.holdingDie = false;
     if (this.held) this.held.waiting = 0;
     this.dice.throw(pending.kind, pending.face, pending.value);
+    perfMark('dice-throw');
     this.sfx('dice-roll', this.dice.root.position);
     this.message = '';
     this.paint();
@@ -1697,7 +1788,7 @@ export class CombatSession {
     this.mouseGrip.updateMatrixWorld(true);
   }
 
-  private hitAt(ray: THREE.Ray): 'tray' | 'plate' | 'end-turn' | number | null {
+  private hitAt(ray: THREE.Ray): 'tray' | 'plate' | 'end-turn' | 'flee' | number | null {
     this.raycaster.ray.copy(ray);
     this.group.updateWorldMatrix(true, true);
     if (this.pendingThrow) {
@@ -1719,6 +1810,8 @@ export class CombatSession {
         return 'plate';
     }
     if (this.raycaster.intersectObject(this.endButton, false).length > 0) return 'end-turn';
+    if (this.fleeButton && this.raycaster.intersectObject(this.fleeButton, false).length > 0)
+      return 'flee';
     const card = this.fan.pointerHover(ray);
     return card;
   }
@@ -2031,6 +2124,7 @@ export class CombatSession {
     const delay = launch ? Math.max(0, launch.at - this.clock) : 0;
     if (launch?.reveal && card) this.showReveal(card.id, Math.max(0, delay - REVEAL_EFFECT_AT));
     this.playEffectFx(steps, events, from, targets, delay, seconds, played);
+    if (steps.length > 0 || targets.length > 0) perfWindow('cast');
     // The card's fling sounds with the play; everything else waits for contact.
     for (const e of events) if (e.type === 'card-played') this.deps.audio?.playCombatEvent(e);
     this.flight = {
@@ -2344,6 +2438,10 @@ export class CombatSession {
     (this.endButton.material as THREE.MeshStandardMaterial).color.set(
       waiting ? PALETTE.warmBlack : PALETTE.walnut,
     );
+    if (this.fleeButton)
+      (this.fleeButton.material as THREE.MeshStandardMaterial).color.set(
+        waiting ? PALETTE.warmBlack : PALETTE.walnut,
+      );
     const endText = waiting ? 'ENEMY TURN' : 'END TURN';
     if (this.endLabel && endText !== this.endText) {
       this.endText = endText;
@@ -2484,8 +2582,15 @@ export interface CombatHookDeps {
   onPlayerHit?: (hit: PlayerHit) => void;
   /** Passed to each session: softer spell effects (the OS reduced-motion preference). */
   reducedMotion?: boolean;
-  /** Called once a fight is decided and its banner has held, with the player's remaining hp. */
-  onEnd?: (end: { room: number; outcome: 'win' | 'defeat'; playerHp: number | null }) => void;
+  /**
+   * Called once a fight is decided and its banner has held, or as the player flees, with the
+   * player's remaining hp.
+   */
+  onEnd?: (end: {
+    room: number;
+    outcome: 'win' | 'defeat' | 'flee';
+    playerHp: number | null;
+  }) => void;
 }
 
 /**
@@ -2502,6 +2607,8 @@ export class CombatHook {
   private disposed = false;
   /** True once the open fight's `onEnd` fired; cleared when the next fight opens. */
   private handedOver = false;
+  /** Holds the open fight still (and every fight that opens meanwhile); see `CombatSession.paused`. */
+  paused = false;
 
   constructor(deps: CombatHookDeps) {
     this.deps = deps;
@@ -2519,6 +2626,7 @@ export class CombatHook {
     const active = encounter.phase === 'active';
     if (this.session && (!active || encounter.activeRoom !== this.session.room)) this.close();
     if (active && !this.session && !this.pending) this.open();
+    if (this.session) this.session.paused = this.paused;
     this.session?.update(dt, xr);
     if (this.handedOver) {
       this.banner = '';

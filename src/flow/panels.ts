@@ -24,6 +24,7 @@ import {
 } from '../rules/difficulty.ts';
 import { SKIP_REWARD } from '../rules/run.ts';
 import { maxTier, nextCost, UPGRADE_IDS, UPGRADES, type UpgradeId } from '../rules/workshop.ts';
+import { CARD_FLIGHT_SECONDS, flightGoal, flightPose, flightScale } from './card-flight.ts';
 import type { FlowPhase, RunFlow } from './flow.ts';
 import { RewardCardFaces, type RewardCardFacesOptions } from './reward-cards.ts';
 
@@ -46,7 +47,23 @@ export interface FlowUiDeps {
   onSettings: (next: Settings) => void;
   /** How the reward board draws its card faces. Default: the shared hand atlas, typeset. */
   rewardCards?: RewardCardFacesOptions;
+  /**
+   * Where a picked reward card flies, read at the pick: the claiming hand (standoff 0) or the head
+   * (a standoff in front of it). Absent or null: the card is taken without a flight.
+   */
+  flyTarget?: () => FlyTarget | null;
 }
+
+/** What a picked reward card flies to: `object`'s world position, stopping `standoff` metres short. */
+export interface FlyTarget {
+  readonly object: THREE.Object3D;
+  readonly standoff: number;
+}
+
+/** The in-run menu: closed, its main board, or the abandon confirmation. */
+export type MenuView = 'closed' | 'main' | 'confirm';
+/** Phases the in-run menu opens over. */
+const MENU_PHASES: readonly FlowPhase[] = ['explore', 'combat'];
 
 /** Card family colours (art bible): the jewel tone fills the frame field. */
 const FAMILY: Readonly<Record<string, string>> = {
@@ -80,6 +97,15 @@ const ART_DISTANCE = 2.7;
 const ART_WIDTH = 3.4;
 
 type Subview = 'main' | 'seed';
+
+/** A reward card on its way to the player; the pick is applied when it lands. */
+interface RewardFlight {
+  readonly card: string;
+  readonly face: RewardCardFaces;
+  readonly from: THREE.Vector3;
+  readonly target: FlyTarget;
+  t: number;
+}
 
 interface Board {
   readonly name: string;
@@ -257,6 +283,8 @@ export class FlowUi {
   private seedValue: string;
   private seedDraft = '';
   private shownFor: FlowPhase | null = null;
+  private menu: MenuView = 'closed';
+  private flight: RewardFlight | null = null;
   private artTexture: THREE.Texture | null = null;
   private readonly stopAbove: () => void;
 
@@ -276,6 +304,65 @@ export class FlowUi {
   /** True while a board is up; exploration input should stay locked. */
   get visible(): boolean {
     return this.root.visible;
+  }
+
+  /** Which in-run menu board is up, or `'closed'`. */
+  get menuView(): MenuView {
+    return this.menu;
+  }
+
+  /** True while the in-run menu is up: exploration and the fight pause. */
+  get menuOpen(): boolean {
+    return this.menu !== 'closed';
+  }
+
+  /** True while a picked reward card is flying to the player (the pick lands when it arrives). */
+  get claiming(): boolean {
+    return this.flight !== null;
+  }
+
+  /**
+   * Opens the in-run menu in front of `head` while exploring or fighting. Returns false, changing
+   * nothing, in any other phase or when it is already open.
+   */
+  openMenu(head: THREE.Object3D): boolean {
+    if (this.menu !== 'closed' || !MENU_PHASES.includes(this.deps.flow.phase)) return false;
+    this.menu = 'main';
+    this.rebuild();
+    this.place(head, true);
+    return true;
+  }
+
+  /** Closes the in-run menu (Resume). Returns false when it was not open. */
+  closeMenu(): boolean {
+    if (this.menu === 'closed') return false;
+    this.menu = 'closed';
+    this.rebuild();
+    return true;
+  }
+
+  /** Opens the in-run menu, or closes it when it is open. Returns whether anything changed. */
+  toggleMenu(head: THREE.Object3D): boolean {
+    return this.menuOpen ? this.closeMenu() : this.openMenu(head);
+  }
+
+  /**
+   * Plays the picked reward card's flight by `dt` seconds; when it lands the pick is applied (once)
+   * and the board closes. Call every frame.
+   */
+  update(dt: number): void {
+    const flight = this.flight;
+    if (!flight) return;
+    this.rewardFaces?.update(dt);
+    flight.t = Math.min(1, flight.t + Math.max(0, dt) / CARD_FLIGHT_SECONDS);
+    this.root.updateWorldMatrix(true, false);
+    const to = this.root.worldToLocal(flight.target.object.getWorldPosition(new THREE.Vector3()));
+    const goal = flightGoal(flight.from, to, flight.target.standoff, new THREE.Vector3());
+    const k = flightPose(flight.from, goal, flight.t, flight.face.root.position);
+    flight.face.root.scale.setScalar(flightScale(k));
+    if (flight.t < 1) return;
+    this.endFlight();
+    this.deps.flow.pickReward(flight.card);
   }
 
   /** The seed being typed on the keypad or the keyboard, or null when not entering one. */
@@ -310,6 +397,8 @@ export class FlowUi {
   }
 
   activate(controlId: string): boolean {
+    // A flying reward card owns the board until it lands.
+    if (this.flight) return false;
     const target = this.boardOf(controlId);
     return target ? target.board.panel.activate(target.cell) : false;
   }
@@ -342,6 +431,8 @@ export class FlowUi {
     if (phase === this.shownFor) return;
     this.shownFor = phase;
     if (phase !== 'title') this.subview = 'main';
+    this.menu = 'closed';
+    this.endFlight();
     this.rebuild();
     if (this.root.visible) this.place(head);
   }
@@ -365,21 +456,28 @@ export class FlowUi {
   }
 
   dispose(): void {
+    this.endFlight();
     this.clear();
     this.stopAbove();
     this.artTexture?.dispose();
     this.root.removeFromParent();
   }
 
-  private place(head: THREE.Object3D): void {
+  /**
+   * Puts the boards in front of `head`, turned to its heading. `tilt` also follows its pitch: the
+   * in-run menu opens wherever the player looks, and a fight pitches the desktop view down far
+   * enough to cut a level board off.
+   */
+  private place(head: THREE.Object3D, tilt = false): void {
     head.updateMatrixWorld(true);
     const eye = head.getWorldPosition(new THREE.Vector3());
     const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(
       head.getWorldQuaternion(new THREE.Quaternion()),
     );
     const yaw = Math.atan2(-forward.x, -forward.z);
+    const pitch = tilt ? Math.asin(Math.max(-1, Math.min(1, forward.y))) : 0;
     this.root.position.set(eye.x, eye.y, eye.z);
-    this.root.rotation.set(0, yaw, 0);
+    this.root.rotation.set(pitch, yaw, 0, 'YXZ');
   }
 
   private clear(): void {
@@ -421,7 +519,8 @@ export class FlowUi {
       death: () => this.buildSummary(),
       victory: () => this.buildSummary(),
     };
-    const build = builders[phase];
+    const menu = this.menu !== 'closed' && MENU_PHASES.includes(phase);
+    const build = menu ? () => this.buildMenu() : builders[phase];
     this.root.visible = build !== undefined;
     build?.();
   }
@@ -713,11 +812,6 @@ export class FlowUi {
         },
       },
     ];
-    // A row of choices: the chosen one is drawn selected; picking another saves it.
-    const choose = (change: Partial<Settings>): void => {
-      this.deps.onSettings({ ...this.deps.settings(), ...change });
-      this.refresh();
-    };
     this.board(
       'settings',
       [
@@ -732,31 +826,124 @@ export class FlowUi {
           ...cur,
           teleportEnabled: !cur.teleportEnabled,
         })),
-        [
-          { id: 'tableDistance-label', label: 'Table distance', weight: 2 },
-          ...TABLE_DISTANCE_CHOICES.map((d) => ({
-            id: tableDistanceCell(d),
-            label: `${d.toFixed(1)} m`,
-            onSelect: () => choose({ tableDistance: d }),
-          })),
-        ],
-        [
-          { id: 'foveation-label', label: 'Foveation', weight: 2 },
-          ...FOVEATION_CHOICES.map((level) => ({
-            id: `foveation-${level}`,
-            label: FOVEATION_LABEL[level],
-            onSelect: () => choose({ foveation: level }),
-          })),
-        ],
+        ...this.choiceRows(),
         { id: 'back', label: 'Back to title', onSelect: () => this.deps.flow.toTitle() },
       ],
       { x: 0, y: 0.26, z: -BOARD_DISTANCE },
-      {
-        width: 0.8,
-        heading: 'Settings',
-        selected: [tableDistanceCell(s.tableDistance), `foveation-${s.foveation}`],
-      },
+      { width: 0.8, heading: 'Settings', selected: this.choiceSelected() },
     );
+  }
+
+  /**
+   * The rows of choices the settings and the in-run menu share: table distance, foveation and the
+   * frame-rate counter. The chosen one is drawn selected; picking another saves it at once.
+   */
+  private choiceRows(): MenuRow[] {
+    const choose = (change: Partial<Settings>): void => {
+      this.deps.onSettings({ ...this.deps.settings(), ...change });
+      this.refresh();
+    };
+    return [
+      [
+        { id: 'tableDistance-label', label: 'Table distance', weight: 2 },
+        ...TABLE_DISTANCE_CHOICES.map((d) => ({
+          id: tableDistanceCell(d),
+          label: `${d.toFixed(1)} m`,
+          onSelect: () => choose({ tableDistance: d }),
+        })),
+      ],
+      [
+        { id: 'foveation-label', label: 'Foveation', weight: 2 },
+        ...FOVEATION_CHOICES.map((level) => ({
+          id: `foveation-${level}`,
+          label: FOVEATION_LABEL[level],
+          onSelect: () => choose({ foveation: level }),
+        })),
+      ],
+      [
+        { id: 'fpsCounter-label', label: 'FPS counter', weight: 2 },
+        { id: 'fpsCounter-off', label: 'Off', onSelect: () => choose({ fpsCounter: false }) },
+        { id: 'fpsCounter-on', label: 'On', onSelect: () => choose({ fpsCounter: true }) },
+      ],
+    ];
+  }
+
+  /** Cells `choiceRows` draws as chosen. */
+  private choiceSelected(): string[] {
+    const s = this.deps.settings();
+    return [
+      tableDistanceCell(s.tableDistance),
+      `foveation-${s.foveation}`,
+      `fpsCounter-${s.fpsCounter ? 'on' : 'off'}`,
+    ];
+  }
+
+  /** The in-run menu: Resume, the shared choices and Abandon run, or the abandon confirmation. */
+  private buildMenu(): void {
+    if (this.menu === 'confirm') {
+      this.board(
+        'menu-confirm',
+        [
+          [
+            { id: 'yes', label: 'Yes, abandon', onSelect: () => this.deps.flow.abandonRun() },
+            { id: 'no', label: 'No', onSelect: () => this.setMenu('main') },
+          ],
+        ],
+        { x: 0, y: 0.2, z: -BOARD_DISTANCE },
+        { width: 0.6, heading: 'Abandon this run?' },
+      );
+      return;
+    }
+    this.board(
+      'menu',
+      [
+        { id: 'resume', label: 'Resume', onSelect: () => this.closeMenu() },
+        ...this.choiceRows(),
+        { id: 'abandon', label: 'Abandon run', onSelect: () => this.setMenu('confirm') },
+      ],
+      { x: 0, y: 0.22, z: -BOARD_DISTANCE },
+      { width: 0.8, heading: 'Paused', selected: this.choiceSelected() },
+    );
+  }
+
+  private setMenu(view: MenuView): void {
+    this.menu = view;
+    this.refresh();
+  }
+
+  /** Drops a reward flight without applying its pick (the board went away under it). */
+  private endFlight(): void {
+    if (!this.flight) return;
+    this.flight.face.dispose();
+    this.flight = null;
+  }
+
+  /**
+   * Takes reward card `slot.id`: it leaves the board and a copy flies from its slot to the fly
+   * target, shrinking, while the other cards drop away; `update` applies the pick when it lands.
+   * Without a target the pick applies at once.
+   */
+  private pickRewardCard(slot: { id: string; x: number; y: number; width: number }): void {
+    const { flow } = this.deps;
+    const target = this.deps.flyTarget?.() ?? null;
+    if (!target || !this.rewardFaces?.claim(slot.id)) {
+      flow.pickReward(slot.id);
+      return;
+    }
+    const face = new RewardCardFaces(
+      [{ id: slot.id, x: 0, y: 0, width: slot.width, height: slot.width * HOLO_CARD_ASPECT }],
+      rewardCardTexture,
+      this.deps.rewardCards,
+    );
+    face.root.name = 'reward-flight';
+    const cards = this.boards.find((b) => b.name === 'reward')?.panel.root;
+    this.root.updateWorldMatrix(true, true);
+    const at = cards
+      ? this.root.worldToLocal(cards.localToWorld(new THREE.Vector3(slot.x, slot.y, 0.01)))
+      : new THREE.Vector3();
+    face.root.position.copy(at);
+    this.root.add(face.root);
+    this.flight = { card: slot.id, face, from: at.clone(), target, t: 0 };
   }
 
   private buildReward(): void {
@@ -779,7 +966,11 @@ export class FlowUi {
           id,
           label: '',
           backplate: false,
-          onSelect: () => flow.pickReward(id),
+          onSelect: () => {
+            const slot = slots.find((sl) => sl.id === id);
+            if (slot) this.pickRewardCard(slot);
+            else flow.pickReward(id);
+          },
         })),
       ],
       width,

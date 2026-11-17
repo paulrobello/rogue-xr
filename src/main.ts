@@ -29,6 +29,7 @@ import { fitCombatFraming } from './desktop/combat-framing.ts';
 import { combatPitch, createDesktopControls } from './desktop/controls.ts';
 import { Walker } from './desktop/walker.ts';
 import { type EnemyActor, type EnemyAsset, tryLoadEnemyAsset } from './enemies/enemy-asset.ts';
+import { fleeStandPoint } from './flow/flee.ts';
 import { RunFlow } from './flow/flow.ts';
 import { FlowUi, rewardCardTexture } from './flow/panels.ts';
 import { bindFlowPersistence } from './flow/persist.ts';
@@ -36,7 +37,7 @@ import { RewardCardFaces } from './flow/reward-cards.ts';
 import { HOLO_CARD_ASPECT } from './hand/fan-layout.ts';
 import { flingTraceLog } from './hand/fling-trace.ts';
 import { PALETTE } from './palette.ts';
-import { foveationValue, mountPerf } from './perf/index.ts';
+import { foveationValue, mountPerf, perfMark, perfRoom } from './perf/index.ts';
 import {
   DEFAULT_SETTINGS,
   loadSettings,
@@ -79,6 +80,7 @@ import { runVeil } from './world/veil.ts';
 import { ComfortVignette } from './xr/comfort-vignette.ts';
 import { Locomotion, locomotionSettingsFrom } from './xr/locomotion.ts';
 import { LocomotionDrive } from './xr/locomotion-drive.ts';
+import { ButtonEdge, MENU_BUTTON } from './xr/menu-button.ts';
 import { createXrRig } from './xr/session.ts';
 import { TeleportView } from './xr/teleport-view.ts';
 
@@ -231,6 +233,7 @@ const perf = mountPerf(renderer, scene, rig, {
   camera,
   foveation: foveationValue((settings ?? DEFAULT_SETTINGS).foveation),
 });
+perf.setFpsCounter((settings ?? DEFAULT_SETTINGS).fpsCounter);
 // The in-scene notice gets its own pass after the boards, which clear depth and would cover it.
 const noticeScene = new THREE.Scene();
 mountUpdateNotice({ scene: noticeScene, renderer, xr, search: location.search });
@@ -311,13 +314,13 @@ const makeCombat = (target: FloorView): CombatHook => {
   return hook;
 };
 let combat = floor ? makeCombat(floor) : null;
-/** Ends the running fight outside the session (debug keys): same path as a decided fight. */
-const endFight = (outcome: 'win' | 'flee'): void => {
+/** Wins the running fight outside the session (debug key): same path as a decided fight. */
+const winFight = (): void => {
   const target = floor;
   if (!target || target.encounter.phase === 'idle') return;
   const room = target.encounter.activeRoom;
-  target.encounter.end(outcome);
-  flow.fightEnded({ room, outcome, tier: fightTier(target, room) });
+  target.encounter.end('win');
+  flow.fightEnded({ room, outcome: 'win', tier: fightTier(target, room) });
 };
 
 // Hero assets reflect a dim neutral room until the baked probes ship, as their proof views do.
@@ -516,6 +519,7 @@ const cofferAt = (target: FloorView, room: number, socketId: string): Coffer | u
 let claimHand: THREE.Object3D | null = null;
 flow.onChange((event) => {
   if (event.type === 'loot') {
+    perfMark(`chest-${event.stage}`);
     storedSnapshot = flow.snapshot(Date.now(), floor?.world.current ?? flow.room);
     const coffer = floor ? cofferAt(floor, event.room, event.socketId) : undefined;
     const at = coffer?.object.getWorldPosition(new THREE.Vector3());
@@ -549,14 +553,39 @@ flow.onChange((event) => {
     return;
   }
   if (event.type !== 'phase') return;
+  perfMark(`phase ${event.to}`);
+  // Only a flee goes from a fight straight back to exploring: the player steps back to the doorway
+  // they came in by, before the snapshot below records the room.
+  if (event.from === 'combat' && event.to === 'explore') standAtEntry(flow.room);
+  const abandoned = event.to === 'title' && (event.from === 'explore' || event.from === 'combat');
   if (event.to === 'explore' || event.to === 'reward') {
     storedSnapshot = flow.snapshot(Date.now(), floor?.world.current ?? flow.room);
-  } else if (event.to === 'death' || event.to === 'victory') {
+  } else if (event.to === 'death' || event.to === 'victory' || abandoned) {
     storedSnapshot = null;
   }
-  if (event.to === 'title' && (event.from === 'death' || event.from === 'victory'))
+  if (event.to === 'title' && (event.from === 'death' || event.from === 'victory' || abandoned))
     titleReset = true;
 });
+/**
+ * Moves the player to just inside `room`'s entry doorway (x/z only: in XR the rig's y holds the
+ * seated lift), keeping the head where the rig puts it, and faces the desktop view into the room.
+ */
+function standAtEntry(room: number): void {
+  const target = floor;
+  const at = target && fleeStandPoint(target.world.plan, target.world.rooms, room);
+  if (!target || !at) return;
+  rig.updateMatrixWorld(true);
+  const head = camera.getWorldPosition(new THREE.Vector3());
+  rig.position.x += at.x - head.x;
+  rig.position.z += at.z - head.z;
+  const r = target.world.rooms[room];
+  if (r && !xr.presenting) {
+    const cx = (r.footprint.min[0] + r.footprint.max[0]) / 2;
+    const cz = (r.footprint.min[1] + r.footprint.max[1]) / 2;
+    walker.yaw = (Math.atan2(cx - at.x, -(cz - at.z)) * 180) / Math.PI;
+  }
+  rig.updateMatrixWorld(true);
+}
 /** Puts a pristine floor for `seed` under the player, rebuilding in place (no reload, XR stays up). */
 const freshFloor = (seed: string): FloorView => {
   if (floor && floor.seed === seed && !floorUsed) return floor;
@@ -611,6 +640,9 @@ const ui = floor
       settings: () => settings ?? { ...DEFAULT_SETTINGS },
       onNewRun: startRun,
       onContinue: continueRun,
+      // A picked reward card flies to the hand whose ray picked it, else to just before the head.
+      flyTarget: () =>
+        rewardHand ? { object: rewardHand, standoff: 0 } : { object: camera, standoff: 0.3 },
       onSettings: (next) => {
         settings = next;
         audio?.setVolumes({
@@ -622,6 +654,7 @@ const ui = floor
         if (floor) floor.encounter.tableDistance = next.tableDistance;
         xr.setFoveation(next.foveation);
         perf.setFoveation(foveationValue(next.foveation));
+        perf.setFpsCounter(next.fpsCounter);
         if (db) void saveSettings(db, next);
       },
     })
@@ -629,6 +662,23 @@ const ui = floor
 // The boards draw in their own pass over a cleared depth buffer, so the automatons and walls of the
 // fight that just ended never hide the reward or summary in front of the player.
 const uiScene = new THREE.Scene();
+/** The grip of the controller whose ray picked a board control, while that pick is handled. */
+let rewardHand: THREE.Object3D | null = null;
+/**
+ * Opens the in-run menu over exploring or a fight, or closes it. Opening it mid-fight first drops
+ * a staged card or a stroke (Escape's old job in a fight). Returns whether anything changed.
+ */
+const toggleMenu = (): boolean => {
+  if (!ui) return false;
+  if (!ui.menuOpen && flow.phase === 'combat') actions.emit({ type: 'combat-cancel' });
+  return ui.toggleMenu(camera);
+};
+const menuEdge = new ButtonEdge();
+// Escape toggles the in-run menu; the boards' own Escape (back to the title) is handled below.
+window.addEventListener('keydown', (event) => {
+  if (event.key !== 'Escape' || event.repeat || xr.presenting) return;
+  if (toggleMenu()) event.preventDefault();
+});
 if (ui) uiScene.add(ui.root);
 if (ui && directSeed) startRun(bootSeed, settings?.difficulty ?? DEFAULT_DIFFICULTY);
 actions.on('select', ({ controlId }) => {
@@ -771,7 +821,7 @@ const pointerRaycaster = new THREE.Raycaster();
 let pointerCaptured = false;
 const emitPointer = (event: PointerEvent, phase: 'down' | 'move' | 'up'): boolean => {
   const session = combat?.session;
-  if (!session || xr.presenting) return false;
+  if (!session || xr.presenting || ui?.menuOpen) return false;
   const rect = renderer.domElement.getBoundingClientRect();
   pointerNdc.set(
     ((event.clientX - rect.left) / rect.width) * 2 - 1,
@@ -813,13 +863,13 @@ const pointerUp = (event: PointerEvent): void => {
 window.addEventListener('pointerup', pointerUp);
 window.addEventListener('pointercancel', pointerUp);
 window.addEventListener('keydown', (event) => {
-  if (floor?.encounter.phase !== 'active' || event.repeat) return;
+  if (floor?.encounter.phase !== 'active' || event.repeat || ui?.menuOpen) return;
   if (event.code === 'KeyE') actions.emit({ type: 'end-turn' });
   else if (event.code === 'KeyT' || event.code === 'Space') actions.emit({ type: 'throw-dice' });
-  else if (event.code === 'Escape') actions.emit({ type: 'combat-cancel' });
-  // Debug resolutions, kept from the greybox phase.
-  else if (event.code === 'KeyK') endFight('win');
-  else if (event.code === 'KeyF') endFight('flee');
+  // F flees through the session, so an elite or guardian fight refuses it as the button would.
+  else if (event.code === 'KeyF') combat?.session?.flee();
+  // Debug resolution, kept from the greybox phase.
+  else if (event.code === 'KeyK') winFight();
 });
 
 // XR combat verbs: main hand (right) squeeze grabs and flings, trigger draws, throws and presses.
@@ -853,7 +903,10 @@ for (const index of [0, 1]) {
     }
     const hit = uiPointer.castFrom(controller, ui.targets());
     const id = hit ? ui.controlAt(hit.object) : null;
-    if (id) actions.emit({ type: 'select', controlId: id });
+    if (!id) return;
+    rewardHand = renderer.xr.getControllerGrip(index);
+    actions.emit({ type: 'select', controlId: id });
+    rewardHand = null;
   });
   // Exploring, a squeeze with the hand at the card waiting over an open coffer grabs it.
   controller.addEventListener('squeezestart', (event) => {
@@ -886,7 +939,7 @@ if (floor && params.has('debug')) {
   /**
    * Moves the rig 1 m south of the first live automaton, facing north at it, to start that fight.
    * A room number picks that room's fight (guardian included); otherwise the first uncleared
-   * regular room, or the guardian's with `{ guardian: true }`.
+   * room that is not the guardian's (regular or elite), or the guardian's with `{ guardian: true }`.
    */
   const teleportToEncounter = (opts: { guardian?: boolean } | number = {}): number | null => {
     const target = floor;
@@ -1151,6 +1204,7 @@ renderer.setAnimationLoop((time, frame) => {
       // behind a player who entered facing elsewhere.
       ui?.recenter(camera);
     }
+    if (menuEdge.step(xr.buttonPressed(MENU_BUTTON.side, MENU_BUTTON.index))) toggleMenu();
     const { left, right } = xr.sticks();
     const aimSource = xr.rays().right;
     const aimRay = aimSource ? controllerRay(aimSource) : null;
@@ -1216,19 +1270,24 @@ renderer.setAnimationLoop((time, frame) => {
     rig.updateMatrixWorld(true);
     ui?.recenter(camera);
   }
-  if (floor) floor.suspendTriggers = flow.phase !== 'explore';
-  floor?.update(camera, deltaSeconds);
+  // The in-run menu pauses the floor and the fight: no triggers, no encounter clock, no session.
+  const paused = ui?.menuOpen ?? false;
+  if (floor) floor.suspendTriggers = flow.phase !== 'explore' || paused;
+  floor?.update(camera, paused ? 0 : deltaSeconds);
   if (floor && flow.inRun) {
     flow.enterRoom(floor.world.current);
+    perfRoom(floor.world);
     if (floor.encounter.phase !== 'idle' && flow.phase === 'explore') {
       flow.fightStarted(floor.encounter.activeRoom);
     }
   }
+  if (combat) combat.paused = paused;
   combat?.update(deltaSeconds, xr.presenting ? xrHands() : null);
   // The XR layout is the 3D table's; only the desktop view slides the HUD into frame.
   if (xr.presenting) combat?.session?.resetHud();
   else combat?.session?.fitHudToView(camera);
   ui?.sync(camera);
+  ui?.update(deltaSeconds);
   const laserHits = { left: null as number | null, right: null as number | null };
   // The beam ends on the status badge whose explanation it is showing.
   const statusAt = xr.presenting ? combat?.session?.statusHover?.distance : undefined;
@@ -1308,7 +1367,7 @@ renderer.setAnimationLoop((time, frame) => {
     const fight = floor.encounter.phase === 'idle' ? '' : ` · encounter ${floor.encounter.phase}`;
     const session = combat?.session;
     const combatLines = session
-      ? `\n${session.hudText()}\n${session.log.slice(-4).join('\n')}\nDrag a card at an enemy or onto the table · draw on the plate · T throw dice · E end turn · Esc cancel`
+      ? `\n${session.hudText()}\n${session.log.slice(-4).join('\n')}\nDrag a card at an enemy or onto the table · draw on the plate · T throw dice · E end turn · F flee · Esc menu`
       : '';
     syncTraceButton(renderer.xr.isPresenting);
     hud.textContent = `seed ${floor.seed} · room ${floor.world.current} ${room?.templateId} (${room?.role}) · calls ${renderer.info.render.calls}${fight}${audio ? `\n${audio.statusLine}` : ''}${combatLines}`;

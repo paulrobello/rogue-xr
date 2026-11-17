@@ -15,6 +15,7 @@ import {
 import { getCard, type SliceCard } from '../content/cards.ts';
 import { PALETTE } from '../palette.ts';
 import { onFirstRender, sharedKtx2Loader } from '../ui/first-render.ts';
+import { CARD_FLIGHT_SECONDS } from './card-flight.ts';
 
 /** One offered card: its id and where its menu cell sits, cell-local metres. */
 export interface RewardCardSlot {
@@ -96,6 +97,8 @@ export const REWARD_HOVER_LIFT = 0.012;
 export const REWARD_HOVER_GROW = 0.05;
 /** Candle frame around the hovered card, as a fraction of its width. */
 const HALO_BORDER = 0.035;
+/** Once a card is claimed, the others drop this far and shrink away over `CARD_FLIGHT_SECONDS`. */
+const LEAVE_DROP = 0.12;
 
 const TYPE_COLOR: Record<SliceCard['type'], string> = {
   attack: PALETTE.ruby,
@@ -133,6 +136,8 @@ export class RewardCardFaces {
   private art: CardFaceArt | null = null;
   private text: TextLayout | null = null;
   private hoveredIndex: number | null = null;
+  /** The claimed card and the others' drop-away progress (0..1), once `claim` ran. */
+  private leaving: { index: number; t: number } | null = null;
   private disposed = false;
 
   constructor(
@@ -232,10 +237,37 @@ export class RewardCardFaces {
     this.write();
   }
 
+  /** The card `claim` took, or null. */
+  get claimed(): string | null {
+    return this.leaving ? (this.slots[this.leaving.index]?.id ?? null) : null;
+  }
+
+  /**
+   * Takes card `id` off the board (its flying copy is drawn elsewhere) and starts the others
+   * dropping away; `update` plays it. Returns false for an unknown card or a second claim.
+   */
+  claim(id: string): boolean {
+    const index = this.slots.findIndex((s) => s.id === id);
+    if (index < 0 || this.leaving) return false;
+    if (this.hoveredIndex !== null) this.paintFallback(this.hoveredIndex, false);
+    this.hoveredIndex = null;
+    this.leaving = { index, t: 0 };
+    this.write();
+    return true;
+  }
+
+  /** Advances the drop-away after a `claim` by `dt` seconds. */
+  update(dt: number): void {
+    const leave = this.leaving;
+    if (!leave || leave.t >= 1 || !(dt > 0)) return;
+    leave.t = Math.min(1, leave.t + dt / CARD_FLIGHT_SECONDS);
+    this.write();
+  }
+
   /** Lifts, grows and frames the card `id` (or drops the highlight with `on` false). */
   hover(id: string, on: boolean): void {
     const index = this.slots.findIndex((s) => s.id === id);
-    if (index < 0) return;
+    if (index < 0 || this.leaving) return;
     if (on) {
       if (this.hoveredIndex !== null && this.hoveredIndex !== index)
         this.paintFallback(this.hoveredIndex, false);
@@ -334,14 +366,24 @@ export class RewardCardFaces {
   /** Instance, gem, label and halo matrices from the slots and the hover. */
   private write(): void {
     const layout = this.text;
+    const leave = this.leaving;
     this.slots.forEach((slot, i) => {
       const on = i === this.hoveredIndex;
-      const s = on ? 1 + REWARD_HOVER_GROW : 1;
+      // The claimed card leaves the board at once; the others drop and shrink as the flight plays.
+      const gone = leave ? (i === leave.index ? 1 : leave.t) : 0;
+      const s = (on ? 1 + REWARD_HOVER_GROW : 1) * (1 - gone);
+      const y = slot.y - (leave && i !== leave.index ? LEAVE_DROP * gone : 0);
+      const fallback = this.fallbacks[i];
+      if (fallback) {
+        fallback.position.y = y;
+        fallback.scale.setScalar(Math.max(1e-3, 1 - gone));
+        fallback.visible = !this.art && gone < 1;
+      }
       const lift = on ? REWARD_HOVER_LIFT : 0;
       const w = slot.width * s;
       const h = slot.height * s;
       const z = FACE_Z + lift;
-      tmpMatrix.compose(tmpPosition.set(slot.x, slot.y, z), IDENTITY, tmpScale.set(w, h, 1));
+      tmpMatrix.compose(tmpPosition.set(slot.x, y, z), IDENTITY, tmpScale.set(w, h, 1));
       this.body.setMatrixAt(i, tmpMatrix);
       if (on) {
         const border = HALO_BORDER * slot.width * 2;
@@ -351,7 +393,7 @@ export class RewardCardFaces {
       if (!layout) return;
       const at = (u: number, v: number, dz: number, size: number, out: THREE.Matrix4): void => {
         out.compose(
-          tmpPosition.set(slot.x + u * w, slot.y + v * h, z + dz),
+          tmpPosition.set(slot.x + u * w, y + v * h, z + dz),
           IDENTITY,
           tmpScale.setScalar(size),
         );

@@ -30,6 +30,7 @@ export {
   usesDice,
   validate,
 } from './engine.ts';
+export { canFlee } from './flee.ts';
 export {
   type ClaimResult,
   type CogRange,
