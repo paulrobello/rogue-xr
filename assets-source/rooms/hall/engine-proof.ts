@@ -54,6 +54,8 @@ export interface Shot {
     envIntensity?: number;
     /** Multiplies every room material's lightMapIntensity (the manifest value). */
     lightmapGain?: number;
+    /** Overrides aoMapIntensity on room materials that have an ORM aoMap (0: no AO on the lightmap). */
+    aoIntensity?: number;
     /** floor-view.ts greybox lights: DirectionalLight(candle, 1.4) at (6, 12, 4) and HemisphereLight(candle, void, 0.8). */
     gameLights?: boolean;
     /** room-lights.ts: each room's socket lights and the hand lantern 0.35 m below, 0.4 m ahead of the eye. */
@@ -165,6 +167,7 @@ export async function mountKitProof(w: number, h: number, shot: Shot) {
         seen.add(m);
         if (light.envIntensity !== undefined && m.envMap) m.envMapIntensity = light.envIntensity;
         if (light.lightmapGain !== undefined) m.lightMapIntensity *= light.lightmapGain;
+        if (light.aoIntensity !== undefined && m.aoMap) m.aoMapIntensity = light.aoIntensity;
         if (light.envDiffuse === false) {
           const baked = m.onBeforeCompile;
           m.onBeforeCompile = (shader, r) => {

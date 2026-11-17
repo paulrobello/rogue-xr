@@ -117,9 +117,16 @@ VARIANTS: dict[str, dict] = {
     "game": {"gameLights": True},
     "game-dynamic": {"gameLights": True, "dynamicLights": True},
     "fix-game-dynamic": {"envDiffuse": False, "gameLights": True, "dynamicLights": True},
+    "no-ao": {"aoIntensity": 0},
+    "lm-agx-no-ao": {"envOff": True, "aoIntensity": 0},
 }
 VARIANT_CAMERAS = {"hall": ["hero", "bench"], "corridor": ["hero", "lamp"], "guardian-vault": ["hero", "brazier"],
                    "gear-shaft": ["hero"], "study": ["hero", "desk"]}
+# The study (P4-T4) predates cameras_runtime in staging/report.json: its Blender review cameras from
+# scripts/assets/build-room-study.py CAMERAS, as runtime (x, y, z) = Blender (x, z, -y), the same
+# values src/world/room-asset-proof.ts shoots for engine.hero.png and engine.desk.png.
+FALLBACK_CAMERAS = {"study": {"hero": {"eye": [1.6, 1.6, 3.2], "look": [-0.4, 2.2, -4.0], "vfov": 70.0},
+                              "desk": {"eye": [-2.8, 1.6, -0.6], "look": [2.4, 0.9, 2.4], "vfov": 70.0}}}
 
 
 def variant_shots() -> list[tuple[str, str, dict]]:
@@ -128,7 +135,7 @@ def variant_shots() -> list[tuple[str, str, dict]]:
         report = ROOMS / room / "staging/report.json"
         if not report.exists():
             continue
-        cams = json.loads(report.read_text()).get("cameras_runtime", {})
+        cams = json.loads(report.read_text()).get("cameras_runtime") or FALLBACK_CAMERAS.get(room, {})
         alone = [{"id": room, "position": [0, 0], "turns": 0}]
         for cam_name in names:
             cam = cams.get(cam_name)
@@ -137,6 +144,9 @@ def variant_shots() -> list[tuple[str, str, dict]]:
             for variant, light in VARIANTS.items():
                 shot = {"rooms": alone, "eye": cam["eye"], "look": cam["look"], "vfov": cam["vfov"], "diffuse": False, "light": light}
                 out.append((room, f"{cam_name}.{variant}", shot))
+            if cam_name == "hero":
+                # Lightmap only, as the pinned engine.hero.diffuse.png: checks camera, placement and binding.
+                out.append((room, "hero.diffuse", {"rooms": alone, "eye": cam["eye"], "look": cam["look"], "vfov": cam["vfov"], "diffuse": True}))
     return out
 
 

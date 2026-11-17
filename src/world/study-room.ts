@@ -126,15 +126,35 @@ export function heroRoomTemplates(
   );
 }
 
+/** The distant-light loops of three's lights_fragment_begin, which baked rooms compile out. */
+const DISTANT_LIGHT_LOOPS = [
+  '#if ( NUM_DIR_LIGHTS > 0 ) && defined( RE_Direct )',
+  '#if ( NUM_SUN_LIGHTS > 0 ) && defined( RE_Direct )',
+] as const;
+
+/** three's lights_fragment_begin with the directional and sun light loops disabled. */
+export function roomLightsFragmentBegin(
+  chunk: string = THREE.ShaderChunk.lights_fragment_begin,
+): string {
+  return DISTANT_LIGHT_LOOPS.reduce((src, loop) => {
+    if (!src.includes(loop)) throw new Error(`bakedRoomMaterial: three chunk lacks "${loop}"`);
+    return src.replace(loop, '#if 0');
+  }, chunk);
+}
+
 /**
  * Lightmap contract (PRD): the bake already holds diffuse direct and indirect light, so the room's
  * surfaces take only the specular part of the dynamic lights and of the environment probe, and no
  * ambient, hemisphere or probe diffuse fill. three adds the probe's diffuse from `iblIrradiance`
  * (summed in lights_fragment_maps, spent in RE_IndirectSpecular), not from `irradiance`.
+ * Directional (and sun) lights are skipped entirely: an interior room has no distant light, so the
+ * greybox sun's specular is a sheen from nowhere in the bake. Point and spot lights (room sockets,
+ * the hand lantern) keep their specular; the probe's specular carries brass and wet-stone gloss.
  */
 export function bakedRoomMaterial<T extends THREE.MeshStandardMaterial>(material: T): T {
   material.onBeforeCompile = (shader) => {
     shader.fragmentShader = shader.fragmentShader
+      .replace('#include <lights_fragment_begin>', () => roomLightsFragmentBegin())
       .replace(
         '#include <lights_fragment_maps>',
         'irradiance = vec3( 0.0 );\n#include <lights_fragment_maps>\niblIrradiance = vec3( 0.0 );',
