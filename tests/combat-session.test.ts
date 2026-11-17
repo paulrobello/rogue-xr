@@ -748,7 +748,7 @@ describe('combat session', () => {
       rig.step();
       const t = session.time - castAt;
       if (revealedAt < 0 && session.castReveal.visible) revealedAt = t;
-      const lit = session.castFx.buffers[1]?.some((v) => v > 0) ?? false;
+      const lit = session.castFx.lit;
       if (shieldAt < 0 && lit) shieldAt = t;
       if (shownAt < 0 && session.view.player.block > before) shownAt = t;
     }

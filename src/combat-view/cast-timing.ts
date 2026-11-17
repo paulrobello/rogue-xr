@@ -43,16 +43,18 @@ export const SHIELD_FADE_SECONDS = 0.34;
 export const SHIELD_SECONDS = SHIELD_FORM_SECONDS + SHIELD_HOLD_SECONDS + SHIELD_FADE_SECONDS;
 /** Turns the rune ring makes while it forms, at full motion. */
 export const SHIELD_SPIN_TURNS = 0.6;
+/** The bright pulse when the rune rings lock, seconds after the shield has formed. */
+export const SHIELD_PULSE_SECONDS = 0.22;
 /** Reduced motion: the shield fades in place over this fraction of the timeline. */
 export const REDUCED_SHIELD_SCALE = 0.7;
 
-/** A steam puff rises and thins out over this long. */
-export const STEAM_SECONDS = 1.1;
+/** A steam puff rises, billows and thins out over this long. */
+export const STEAM_SECONDS = 1.2;
 /** Puffs per steam gained, and the most per cast. */
 export const STEAM_PUFFS_PER = 5;
 export const STEAM_PUFFS_MAX = 12;
 /** Rise of a puff over its life, metres (reduced motion: a third). */
-export const STEAM_RISE = 0.22;
+export const STEAM_RISE = 0.34;
 
 /** Motes travel to their target over this long when no bolt carries them. */
 export const MOTE_SECONDS = 0.38;
@@ -144,45 +146,61 @@ export function castLandSeconds(steps: readonly CastFxStep[]): number {
 export interface RevealFrame {
   /** Burn front for the card face shader: 1 is all burnt, 0 is whole. */
   burn: number;
-  /** Amber flare over the face, 0..1. */
+  /** Amber flare tinting the face, 0..1: kept faint so the art always reads. */
   flare: number;
+  /** White-gold flash glowing around and behind the card, 0..1. */
+  halo: number;
   /** Size multiplier. */
   scale: number;
   /** False before the reveal starts and once it is over. */
   visible: boolean;
 }
 
-export const newRevealFrame = (): RevealFrame => ({ burn: 1, flare: 0, scale: 1, visible: false });
+export const newRevealFrame = (): RevealFrame => ({
+  burn: 1,
+  flare: 0,
+  halo: 0,
+  scale: 1,
+  visible: false,
+});
+
+/** Peak face tint of the reveal: low, so the flash never washes out the card art. */
+export const REVEAL_FACE_FLARE = 0.12;
 
 /**
  * The reveal `t` seconds after it starts: the card grows out of the glyph from its centre with a
- * flare, holds, then burns away from its edges. Reduced motion keeps the full size and a softer
- * flare.
+ * white-gold flash behind it, holds, then burns away from its edges with a short second flash. The
+ * face itself only takes a faint tint as it appears, so the art stays visible throughout. Reduced
+ * motion keeps the full size and a softer flash.
  */
 export function revealFrame(t: number, reducedMotion: boolean, out: RevealFrame): RevealFrame {
   out.visible = t >= 0 && t < REVEAL_SECONDS;
   if (!out.visible) {
     out.burn = 1;
     out.flare = 0;
+    out.halo = 0;
     out.scale = 1;
     return out;
   }
-  const flarePeak = reducedMotion ? 0.4 : 1;
+  const peak = reducedMotion ? 0.4 : 1;
   if (t < REVEAL_IN_SECONDS) {
     const k = t / REVEAL_IN_SECONDS;
     const e = 1 - (1 - k) ** 3;
     out.burn = 1 - e;
-    out.flare = flarePeak * (1 - 0.6 * k);
+    out.flare = peak * REVEAL_FACE_FLARE * (1 - k);
+    out.halo = peak * (1 - 0.7 * k);
     out.scale = reducedMotion ? 1 : REVEAL_START_SCALE + (1 - REVEAL_START_SCALE) * e;
   } else if (t < REVEAL_EFFECT_AT) {
     const k = (t - REVEAL_IN_SECONDS) / REVEAL_HOLD_SECONDS;
     out.burn = 0;
-    out.flare = flarePeak * 0.4 * (1 - k);
+    out.flare = 0;
+    out.halo = peak * 0.3 * (1 - k);
     out.scale = 1;
   } else {
     const k = clamp01((t - REVEAL_EFFECT_AT) / REVEAL_OUT_SECONDS);
     out.burn = k * k * (3 - 2 * k);
-    out.flare = flarePeak * 0.7 * Math.sin(Math.PI * k);
+    out.flare = 0;
+    out.halo = peak * 0.55 * Math.sin(Math.PI * Math.min(1, 2 * k)) * (1 - k);
     out.scale = 1;
   }
   return out;
@@ -195,20 +213,33 @@ export interface ShieldFrame {
   spin: number;
   /** Brightness 0..1 before the block gain. */
   level: number;
+  /** How far the rune rings have swirled in and closed, 0..1 (1: locked). */
+  lock: number;
+  /** The flash as the rings lock, 0..1. */
+  pulse: number;
 }
 
-export const newShieldFrame = (): ShieldFrame => ({ radius: 1, spin: 0, level: 0 });
+export const newShieldFrame = (): ShieldFrame => ({
+  radius: 1,
+  spin: 0,
+  level: 0,
+  lock: 1,
+  pulse: 0,
+});
 
 /**
- * The shield `t` seconds after it starts: the rune ring spins in from small and settles, holds with
- * a slow drift, then fades. Reduced motion: no spin or growth, a shorter fade in and out.
+ * The shield `t` seconds after it starts: the rune rings swirl in from small and lock with a bright
+ * pulse, the ward holds with a slow drift, then fades. Reduced motion: no swirl, growth or pulse, a
+ * shorter fade in and out.
  */
 export function shieldFrame(t: number, reducedMotion: boolean, out: ShieldFrame): ShieldFrame {
   const total = reducedMotion ? SHIELD_SECONDS * REDUCED_SHIELD_SCALE : SHIELD_SECONDS;
+  out.pulse = 0;
   if (t < 0 || t >= total) {
     out.radius = 1;
     out.spin = 0;
     out.level = 0;
+    out.lock = 1;
     return out;
   }
   if (reducedMotion) {
@@ -216,12 +247,17 @@ export function shieldFrame(t: number, reducedMotion: boolean, out: ShieldFrame)
     const fade = SHIELD_FADE_SECONDS * REDUCED_SHIELD_SCALE;
     out.radius = 1;
     out.spin = 0;
+    out.lock = 1;
     out.level = t < form ? t / form : t > total - fade ? (total - t) / fade : 1;
     return out;
   }
   const k = clamp01(t / SHIELD_FORM_SECONDS);
   const settle = 1 - (1 - k) ** 3;
-  out.radius = 0.35 + 0.65 * settle;
+  out.lock = settle;
+  const since = t - SHIELD_FORM_SECONDS;
+  if (since >= 0 && since < SHIELD_PULSE_SECONDS)
+    out.pulse = (1 - since / SHIELD_PULSE_SECONDS) ** 2;
+  out.radius = 0.6 + 0.4 * settle;
   out.spin = 2 * Math.PI * SHIELD_SPIN_TURNS * settle + 0.4 * Math.max(0, t - SHIELD_FORM_SECONDS);
   const fadeAt = SHIELD_FORM_SECONDS + SHIELD_HOLD_SECONDS;
   out.level =
@@ -251,5 +287,5 @@ export function puffLevel(u: number): number {
 
 /** A puff's size multiplier at life fraction `u`: it billows out as it rises. */
 export function puffSize(u: number): number {
-  return 1 + 2.2 * clamp01(u) ** 0.6;
+  return 1 + 2 * clamp01(u) ** 0.5;
 }

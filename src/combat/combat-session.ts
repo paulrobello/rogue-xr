@@ -729,7 +729,10 @@ export class CombatSession {
     this.group.add(this.fx);
     this.effectFx = new CastFx({ reducedMotion: deps.reducedMotion ?? false });
     this.group.add(this.effectFx);
-    this.revealCard = new CastReveal({ reducedMotion: deps.reducedMotion ?? false });
+    this.revealCard = new CastReveal({
+      reducedMotion: deps.reducedMotion ?? false,
+      syncLabels: deps.syncLabels ?? true,
+    });
     this.group.add(this.revealCard);
 
     this.handAnchor.name = 'desktop-hand';

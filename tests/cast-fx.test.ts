@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import {
   CAST_FX_POINTS,
@@ -15,13 +16,17 @@ import {
   newRevealFrame,
   newShieldFrame,
   REVEAL_EFFECT_AT,
+  REVEAL_FACE_FLARE,
   REVEAL_IN_SECONDS,
   REVEAL_SECONDS,
   REVEAL_START_SCALE,
   revealFrame,
   SHIELD_FORM_SECONDS,
+  SHIELD_PULSE_SECONDS,
   SHIELD_SECONDS,
   STEAM_PUFFS_MAX,
+  STEAM_RISE,
+  STEAM_SECONDS,
   shieldFrame,
   shieldGain,
   steamPuffs,
@@ -47,7 +52,7 @@ describe('cast reveal timeline', () => {
     expect(f.visible).toBe(true);
     expect(f.burn).toBeCloseTo(1);
     expect(f.scale).toBeCloseTo(REVEAL_START_SCALE);
-    expect(f.flare).toBeGreaterThan(0.9);
+    expect(f.halo).toBeGreaterThan(0.9);
     revealFrame(REVEAL_IN_SECONDS + 0.05, false, f);
     expect(f.burn).toBe(0);
     expect(f.scale).toBe(1);
@@ -77,11 +82,27 @@ describe('cast reveal timeline', () => {
     }
   });
 
-  it('keeps full size and a softer flare under reduced motion', () => {
+  it('keeps the art clear: the flash glows behind the card, the face tint stays faint', () => {
     const f = newRevealFrame();
-    const full = revealFrame(0.01, false, newRevealFrame()).flare;
+    for (let t = 0; t < REVEAL_SECONDS; t += DT / 4) {
+      revealFrame(t, false, f);
+      expect(f.flare).toBeLessThanOrEqual(REVEAL_FACE_FLARE);
+      // No tint at all once the card is whole, through the hold and the burn.
+      if (t >= REVEAL_IN_SECONDS) expect(f.flare).toBe(0);
+    }
+    // A second, shorter flash as the burn starts, below the opening one.
+    let burnPeak = 0;
+    for (let t = REVEAL_EFFECT_AT; t < REVEAL_SECONDS; t += DT / 4)
+      burnPeak = Math.max(burnPeak, revealFrame(t, false, f).halo);
+    expect(burnPeak).toBeGreaterThan(0.2);
+    expect(burnPeak).toBeLessThan(revealFrame(0, false, f).halo);
+  });
+
+  it('keeps full size and a softer flash under reduced motion', () => {
+    const f = newRevealFrame();
+    const full = revealFrame(0.01, false, newRevealFrame()).halo;
     for (let t = 0; t < REVEAL_SECONDS; t += DT) expect(revealFrame(t, true, f).scale).toBe(1);
-    expect(revealFrame(0.01, true, f).flare).toBeLessThan(full);
+    expect(revealFrame(0.01, true, f).halo).toBeLessThan(full);
   });
 
   it('fits a sigil cast, reveal and the longest bolt inside the plate hold', () => {
@@ -152,11 +173,21 @@ describe('defense FX timing', () => {
   it('spins the shield in, settles it, then fades it', () => {
     const f = newShieldFrame();
     shieldFrame(0.02, false, f);
-    expect(f.radius).toBeLessThan(0.6);
+    expect(f.radius).toBeLessThan(0.75);
+    expect(f.lock).toBeLessThan(0.2);
+    expect(f.pulse).toBe(0);
     const early = f.spin;
     shieldFrame(SHIELD_FORM_SECONDS, false, f);
     expect(f.radius).toBeCloseTo(1);
     expect(f.level).toBeCloseTo(1);
+    expect(f.lock).toBeCloseTo(1);
+    // The rings lock with a bright pulse that dies away.
+    expect(f.pulse).toBeCloseTo(1);
+    expect(
+      shieldFrame(SHIELD_FORM_SECONDS + SHIELD_PULSE_SECONDS / 2, false, f).pulse,
+    ).toBeLessThan(0.5);
+    expect(shieldFrame(SHIELD_FORM_SECONDS + SHIELD_PULSE_SECONDS, false, f).pulse).toBeCloseTo(0);
+    shieldFrame(SHIELD_FORM_SECONDS, false, f);
     expect(f.spin).toBeGreaterThan(early);
     expect(shieldFrame(SHIELD_SECONDS - 0.01, false, f).level).toBeLessThan(0.1);
     expect(shieldFrame(SHIELD_SECONDS, false, f).level).toBe(0);
@@ -168,6 +199,8 @@ describe('defense FX timing', () => {
       shieldFrame(t, true, f);
       expect(f.spin).toBe(0);
       expect(f.radius).toBe(1);
+      expect(f.lock).toBe(1);
+      expect(f.pulse).toBe(0);
     }
     expect(shieldFrame(SHIELD_SECONDS * 0.9, true, f).level).toBe(0);
   });
@@ -194,13 +227,71 @@ describe('CastFx', () => {
       for (let t = 0; t < seconds - 1e-9; t += DT) fx.update(DT);
     };
     run(0.1);
-    const lit = () => fx.buffers[1]?.some((v) => v > 0) ?? false;
-    expect(lit()).toBe(false);
+    expect(fx.lit).toBe(false);
+    expect(fx.shieldDrawn).toBe(0);
     run(0.2);
-    expect(lit()).toBe(true);
+    expect(fx.lit).toBe(true);
+    expect(fx.shieldDrawn).toBeGreaterThan(0);
+    // One disc mesh for the shield, the same object every time.
+    const disc = fx.getObjectByName('cast-fx-shield');
+    expect(disc?.visible).toBe(true);
     for (let t = 0; t < SHIELD_SECONDS + 0.2; t += DT) fx.update(DT);
     expect(fx.shielding).toBe(false);
     expect(fx.active).toBe(false);
+    expect(fx.shieldDrawn).toBe(0);
+    expect(disc?.visible).toBe(false);
+    fx.shield(at, toward, 3);
+    fx.update(DT);
+    expect(fx.getObjectByName('cast-fx-shield')).toBe(disc);
+    fx.dispose();
+  });
+
+  it('fades the shield in place under reduced motion, with no swirl', () => {
+    const fx = new CastFx({ reducedMotion: true });
+    fx.shield(at, toward, 8);
+    const disc = fx.getObjectByName('cast-fx-shield') as THREE.Mesh;
+    const size = () => disc.scale.x;
+    fx.update(DT);
+    const first = size();
+    for (let t = 0; t < 0.3; t += DT) {
+      fx.update(DT);
+      expect(size()).toBeCloseTo(first);
+    }
+    expect(fx.shieldDrawn).toBeGreaterThan(0);
+    fx.dispose();
+  });
+
+  it('draws steam as alpha-blended puffs that rise ~0.3 m, billow and thin out', () => {
+    const fx = new CastFx();
+    const puffs = fx.getObjectByName('cast-fx-steam') as THREE.Mesh<
+      THREE.BufferGeometry,
+      THREE.ShaderMaterial
+    >;
+    expect(puffs.material.blending).toBe(THREE.NormalBlending);
+    expect(puffs.material.depthWrite).toBe(false);
+    fx.steam(at, 1);
+    const [, , , data, look] = fx.buffers as Float32Array[];
+    let top = 0;
+    let biggest = 0;
+    let firstSize = 0;
+    const rots = new Set<number>();
+    for (let t = 0; t < STEAM_SECONDS + 0.3; t += DT) {
+      fx.update(DT);
+      for (let p = 0; p < STEAM_CAPACITY; p++) {
+        if ((look?.[p * 2] as number) <= 0) continue;
+        const size = data?.[p * 4 + 3] as number;
+        if (firstSize === 0) firstSize = size;
+        top = Math.max(top, (data?.[p * 4 + 1] as number) - at.y);
+        biggest = Math.max(biggest, size);
+        rots.add(Math.round((look?.[p * 2 + 1] as number) * 100));
+      }
+    }
+    expect(top).toBeGreaterThan(0.25);
+    expect(top).toBeLessThan(STEAM_RISE * 1.3);
+    expect(biggest).toBeGreaterThan(2 * firstSize);
+    expect(rots.size).toBeGreaterThan(steamPuffs(1));
+    expect(fx.puffs).toBe(0);
+    expect(puffs.visible).toBe(false);
     fx.dispose();
   });
 
@@ -211,12 +302,14 @@ describe('CastFx', () => {
     fx.draw(at, { x: 0, y: 0.9, z: 0 });
     expect(fx.puffs).toBe(steamPuffs(2));
     expect(fx.streams).toBe(2);
-    const pos = fx.buffers[0] as Float32Array;
+    const puff = fx.buffers[3] as Float32Array;
+    const look = fx.buffers[4] as Float32Array;
     for (let t = 0; t < 0.3; t += DT) fx.update(DT);
     let rose = 0;
-    for (let i = 0; i < CAST_FX_POINTS; i++)
-      rose = Math.max(rose, (pos[i * 3 + 1] as number) - at.y);
+    for (let p = 0; p < STEAM_CAPACITY; p++)
+      if ((look[p * 2] as number) > 0) rose = Math.max(rose, (puff[p * 4 + 1] as number) - at.y);
     expect(rose).toBeGreaterThan(0.02);
+    expect(fx.buffers[1]?.some((v) => v > 0)).toBe(true);
     for (let t = 0; t < 2; t += DT) fx.update(DT);
     expect(fx.active).toBe(false);
     expect(fx.puffs).toBe(0);
@@ -251,13 +344,24 @@ describe('CastFx', () => {
     for (let t = 0; t < 0.2; t += DT) fx.update(DT);
     const pos = fx.buffers[0] as Float32Array;
     const col = fx.buffers[1] as Float32Array;
-    let topSteam = 0;
+    let motes = 0;
     for (let i = 0; i < CAST_FX_POINTS; i++) {
       if ((col[i * 3] as number) <= 0) continue;
-      const x = pos[i * 3] as number;
-      if (Math.abs(x - to.x) < 0.05) expect(pos[i * 3 + 1]).toBeCloseTo(to.y, 1);
-      else topSteam = Math.max(topSteam, (pos[i * 3 + 1] as number) - at.y);
+      motes++;
+      expect(pos[i * 3]).toBeCloseTo(to.x, 1);
+      expect(pos[i * 3 + 1]).toBeCloseTo(to.y, 1);
     }
+    expect(motes).toBeGreaterThan(0);
+    const puff = fx.buffers[3] as Float32Array;
+    const look = fx.buffers[4] as Float32Array;
+    let topSteam = 0;
+    let puffs = 0;
+    for (let p = 0; p < STEAM_CAPACITY; p++) {
+      if ((look[p * 2] as number) <= 0) continue;
+      puffs++;
+      topSteam = Math.max(topSteam, (puff[p * 4 + 1] as number) - at.y);
+    }
+    expect(puffs).toBeGreaterThan(0);
     expect(topSteam).toBeLessThan(0.1);
     fx.dispose();
   });
@@ -265,7 +369,7 @@ describe('CastFx', () => {
 
 describe('CastReveal', () => {
   it('shows the card after its delay for the reveal, then hides, in one draw', () => {
-    const reveal = new CastReveal();
+    const reveal = new CastReveal({ syncLabels: false });
     const right = { x: 1, y: 0, z: 0 };
     const up = { x: 0, y: 1, z: 0 };
     reveal.show('warding-glyph', { x: 0, y: 1, z: -0.6 }, right, up, 0.1, GLYPH_LAUNCH_SECONDS);
@@ -273,7 +377,8 @@ describe('CastReveal', () => {
     expect(reveal.visible).toBe(false);
     reveal.update(GLYPH_LAUNCH_SECONDS + 0.01);
     expect(reveal.visible).toBe(true);
-    expect(reveal.children).toHaveLength(1);
+    // The card, the flash glowing behind it, and the name and cost labels: allocated once.
+    expect(reveal.children).toHaveLength(3);
     for (let t = 0; t < REVEAL_SECONDS; t += DT) reveal.update(DT);
     expect(reveal.visible).toBe(false);
     expect(reveal.active).toBe(false);

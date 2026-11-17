@@ -19,42 +19,41 @@ import {
   steamPuffs,
 } from './cast-timing.ts';
 import { boltPoint, type Point3 } from './impact-timing.ts';
+import { SteamPuffs } from './steam-puffs.ts';
+import { WardShield } from './ward-shield.ts';
 
-/** Rune points on the shield's outer ring, and hex points on its inner ring. */
-export const SHIELD_RING_POINTS = 30;
-export const SHIELD_HEX_POINTS = 6;
-const SHIELD_POINTS = SHIELD_RING_POINTS + SHIELD_HEX_POINTS + 1;
 /** Steam puffs alive at once (a ring: the oldest is reused). */
 export const STEAM_CAPACITY = 24;
 /** Mote and draw streams at once (a ring), and the points in each. */
 export const STREAM_CAPACITY = 6;
 export const STREAM_POINTS = 8;
-const FIRST_STEAM = SHIELD_POINTS;
-const FIRST_STREAM = FIRST_STEAM + STEAM_CAPACITY;
-/** Every point the one draw holds. */
-export const CAST_FX_POINTS = FIRST_STREAM + STREAM_CAPACITY * STREAM_POINTS;
+/** Every point the mote and shimmer draw holds. */
+export const CAST_FX_POINTS = STREAM_CAPACITY * STREAM_POINTS;
 
-/** Shield ring radius at full size, metres. */
+/** Shield disc radius at full size, metres. */
 export const SHIELD_RADIUS = 0.11;
 /** Base sprite size, metres at one metre (attenuated with distance). */
 const POINT_SIZE = 0.02;
-const RING_SCALE = 1.3;
-const HEX_SCALE = 2.4;
-const CORE_SCALE = 9;
-const PUFF_SCALE = 3.2;
 const STREAM_SCALE = 1.6;
 /** Puffs leave within this radius of the vent, metres. */
-const PUFF_SPREAD = 0.05;
+const PUFF_SPREAD = 0.06;
+/** A puff's size across as it leaves the vent, metres (it billows to three times this). */
+export const PUFF_SIZE = 0.08;
+/** Peak opacity of one puff. */
+const PUFF_OPACITY = 0.85;
+/** Puffs leave this far above the vent, metres, so the table does not swallow their lower half. */
+const PUFF_LIFT = 0.03;
+/** Most a puff turns over its life, radians. */
+const PUFF_TURN = 0.9;
 /** Stream points trail their head by this path fraction each. */
 const STREAM_LAG = 0.07;
 /** A stream glows at its target this long after arriving. */
 const STREAM_LINGER = 0.18;
 const STEP_MAX = 1 / 30;
 
-const AMBER = linearRgb(PALETTE.candle);
 const BRASS = linearRgb(PALETTE.brass);
-/** Steam: a warm grey-white, dimmer than the sparks so additive puffs read soft. */
-const STEAM = mixRgb(linearRgb(PALETTE.parchment), [0.55, 0.55, 0.55], 0.5);
+/** Steam: a grey-white with the faintest warmth, alpha blended over the scene. */
+const STEAM = mixRgb(linearRgb(PALETTE.parchment), [0.72, 0.72, 0.72], 0.8);
 const STATUS_RGB: Record<StatusId, LinearRgb> = {
   weak: boost(linearRgb(PALETTE.sapphire), 2.4),
   vulnerable: boost(linearRgb(PALETTE.ruby), 2.6),
@@ -76,12 +75,13 @@ const at3: Point3 = { x: 0, y: 0, z: 0 };
 const streamRgb: [number, number, number] = [0, 0, 0];
 
 /**
- * The non-attack effect FX of a cast, in world space (add to an untransformed root): a brass rune
- * shield that spins in front of the player and settles (block), soft steam puffs that rise and thin
- * out (steam), coloured mote streams to a status's target, and a brass shimmer to the hand (draw).
- * One additive `THREE.Points` draw holds all of it; every buffer is allocated up front and each
- * kind is a fixed ring of slots. Every start takes a `delay` so a cast can be queued at once.
- * Puff jitter comes from its own keyed visual stream, never a run stream.
+ * The non-attack effect FX of a cast, in world space (add to an untransformed root): a glowing
+ * rune-ring ward disc that swirls in front of the player and locks (block, `WardShield`), grey-white
+ * steam puffs that burst, rise and thin out (steam, `SteamPuffs`), coloured mote streams to a
+ * status's target, and a brass shimmer to the hand (draw, one additive `THREE.Points`). Three
+ * draws, every buffer allocated up front, each kind a fixed ring of slots. Every start takes a
+ * `delay` so a cast can be queued at once. Puff jitter comes from its own keyed visual stream,
+ * never a run stream.
  */
 export class CastFx extends THREE.Group {
   readonly reducedMotion: boolean;
@@ -95,16 +95,17 @@ export class CastFx extends THREE.Group {
   private readonly positionAttr: THREE.BufferAttribute;
   private readonly colorAttr: THREE.BufferAttribute;
   private readonly scaleAttr: THREE.BufferAttribute;
-  /** Shield: centre, right and up axes (xyz each), age, gain. */
-  private readonly shieldBasis = new Float32Array(9);
+  private readonly ward = new WardShield();
   private shieldAge = SHIELD_SECONDS;
   private shieldLevel = 0;
   private readonly shieldNow = newShieldFrame();
-  /** Puffs: origin xyz, drift xyz, age (negative while delayed), size. */
+  private readonly steamDraw = new SteamPuffs(STEAM_CAPACITY, new THREE.Color(...STEAM));
+  /** Puffs: origin xyz, drift xyz, age (negative while delayed), size, rotation and turn. */
   private readonly puffAt = new Float32Array(STEAM_CAPACITY * 3);
   private readonly puffDrift = new Float32Array(STEAM_CAPACITY * 3);
   private readonly puffAge = new Float32Array(STEAM_CAPACITY).fill(STEAM_SECONDS);
   private readonly puffScale = new Float32Array(STEAM_CAPACITY);
+  private readonly puffSpin = new Float32Array(STEAM_CAPACITY * 2);
   private puffNext = 0;
   /** Streams: from xyz, to xyz, age (negative while delayed), travel seconds, colour, shimmer. */
   private readonly streamEnds = new Float32Array(STREAM_CAPACITY * 6);
@@ -146,7 +147,7 @@ export class CastFx extends THREE.Group {
     this.points.frustumCulled = false;
     this.points.renderOrder = 2;
     this.points.visible = false;
-    this.add(this.points);
+    this.add(this.points, this.ward, this.steamDraw);
   }
 
   /** True while anything is drawn or waiting to start. */
@@ -173,9 +174,29 @@ export class CastFx extends THREE.Group {
     return n;
   }
 
-  /** Every buffer the draw uses, for pooling checks. */
+  /** Brightness the ward shield draws at now (0: not drawn). */
+  get shieldDrawn(): number {
+    return this.ward.visible ? this.ward.level : 0;
+  }
+
+  /** True while any FX is drawn this frame (the shield, a puff, a mote). */
+  get lit(): boolean {
+    return (
+      this.shieldDrawn > 0 ||
+      this.steamDraw.lookData.some((v, i) => i % 2 === 0 && v > 0) ||
+      this.colors.some((v) => v > 0)
+    );
+  }
+
+  /** Every buffer the draws use, for pooling checks: stream points, then steam puffs. */
   get buffers(): readonly Float32Array[] {
-    return [this.positions, this.colors, this.scales];
+    return [
+      this.positions,
+      this.colors,
+      this.scales,
+      this.steamDraw.puffData,
+      this.steamDraw.lookData,
+    ];
   }
 
   /**
@@ -188,16 +209,7 @@ export class CastFx extends THREE.Group {
     if (right.lengthSq() < 1e-8) right.set(1, 0, 0);
     right.normalize();
     const up = n.clone().cross(right).normalize();
-    const b = this.shieldBasis;
-    b[0] = centre.x;
-    b[1] = centre.y;
-    b[2] = centre.z;
-    b[3] = right.x;
-    b[4] = right.y;
-    b[5] = right.z;
-    b[6] = up.x;
-    b[7] = up.y;
-    b[8] = up.z;
+    this.ward.place(new THREE.Vector3(centre.x, centre.y, centre.z), right, up);
     this.shieldAge = -Math.max(0, delay);
     this.shieldLevel = shieldGain(block);
     this.wake();
@@ -213,14 +225,16 @@ export class CastFx extends THREE.Group {
       const a = s.next() * Math.PI * 2;
       const r = PUFF_SPREAD * Math.sqrt(s.next());
       this.puffAt[p * 3] = at.x + r * Math.cos(a);
-      this.puffAt[p * 3 + 1] = at.y;
+      this.puffAt[p * 3 + 1] = at.y + PUFF_LIFT;
       this.puffAt[p * 3 + 2] = at.z + r * Math.sin(a);
-      this.puffDrift[p * 3] = Math.cos(a) * (0.04 + 0.05 * s.next());
-      this.puffDrift[p * 3 + 1] = (0.75 + 0.5 * s.next()) * (this.reducedMotion ? 1 / 3 : 1);
-      this.puffDrift[p * 3 + 2] = Math.sin(a) * (0.04 + 0.05 * s.next());
+      this.puffDrift[p * 3] = Math.cos(a) * (0.05 + 0.07 * s.next());
+      this.puffDrift[p * 3 + 1] = (0.8 + 0.4 * s.next()) * (this.reducedMotion ? 1 / 3 : 1);
+      this.puffDrift[p * 3 + 2] = Math.sin(a) * (0.05 + 0.07 * s.next());
       // Puffs leave in a short ragged burst rather than all at once.
-      this.puffAge[p] = -Math.max(0, delay) - 0.18 * s.next();
-      this.puffScale[p] = 0.75 + 0.5 * s.next();
+      this.puffAge[p] = -Math.max(0, delay) - 0.22 * s.next();
+      this.puffScale[p] = 0.7 + 0.6 * s.next();
+      this.puffSpin[p * 2] = s.next() * Math.PI * 2;
+      this.puffSpin[p * 2 + 1] = this.reducedMotion ? 0 : (s.next() * 2 - 1) * PUFF_TURN;
     }
     this.wake();
   }
@@ -257,12 +271,17 @@ export class CastFx extends THREE.Group {
     this.idle = true;
     this.points.visible = false;
     this.colorAttr.needsUpdate = true;
+    this.ward.apply(shieldFrame(-1, this.reducedMotion, this.shieldNow), SHIELD_RADIUS, 0);
+    for (let p = 0; p < STEAM_CAPACITY; p++) this.steamDraw.hide(p);
+    this.steamDraw.commit(false);
   }
 
   dispose(): void {
     this.points.geometry.dispose();
     this.material.dispose();
     this.texture.dispose();
+    this.ward.dispose();
+    this.steamDraw.dispose();
   }
 
   private wake(): void {
@@ -322,48 +341,22 @@ export class CastFx extends THREE.Group {
   private stepShield(h: number): boolean {
     const total = this.shieldSeconds();
     if (this.shieldAge >= total) {
-      for (let i = 0; i < SHIELD_POINTS; i++) this.dark(i);
+      if (this.ward.visible) this.ward.apply(shieldFrame(-1, false, this.shieldNow), 0, 0);
       return false;
     }
     this.shieldAge += h;
     const f = shieldFrame(this.shieldAge, this.reducedMotion, this.shieldNow);
-    const b = this.shieldBasis;
-    const level = f.level * this.shieldLevel;
-    const r = SHIELD_RADIUS * f.radius;
-    for (let i = 0; i < SHIELD_RING_POINTS + SHIELD_HEX_POINTS; i++) {
-      const hex = i >= SHIELD_RING_POINTS;
-      const j = hex ? i - SHIELD_RING_POINTS : i;
-      const count = hex ? SHIELD_HEX_POINTS : SHIELD_RING_POINTS;
-      // The hex ring turns against the rune ring, so the ward reads as two interlocked wheels.
-      const a = (2 * Math.PI * j) / count + (hex ? -1.5 * f.spin : f.spin);
-      const rr = hex ? r * 0.62 : r;
-      const c = Math.cos(a) * rr;
-      const s = Math.sin(a) * rr;
-      // Runes: every third point is a brighter glyph mark.
-      const k = hex ? 1 : j % 3 === 0 ? 1 : 0.55;
-      this.put(
-        i,
-        (b[0] as number) + (b[3] as number) * c + (b[6] as number) * s,
-        (b[1] as number) + (b[4] as number) * c + (b[7] as number) * s,
-        (b[2] as number) + (b[5] as number) * c + (b[8] as number) * s,
-        hex ? BRASS : AMBER,
-        level * k,
-      );
-      this.scales[i] = hex ? HEX_SCALE : RING_SCALE;
-    }
-    const core = SHIELD_POINTS - 1;
-    this.put(core, b[0] as number, b[1] as number, b[2] as number, AMBER, 0.28 * level);
-    this.scales[core] = CORE_SCALE * f.radius;
+    this.ward.apply(f, SHIELD_RADIUS, this.shieldLevel);
     return true;
   }
 
   private stepPuffs(h: number): boolean {
     let lit = false;
+    const draw = this.steamDraw;
     for (let p = 0; p < STEAM_CAPACITY; p++) {
-      const slot = FIRST_STEAM + p;
       const age = this.puffAge[p] as number;
       if (age >= STEAM_SECONDS) {
-        this.dark(slot);
+        draw.hide(p);
         continue;
       }
       lit = true;
@@ -371,29 +364,30 @@ export class CastFx extends THREE.Group {
       this.puffAge[p] = next;
       const u = next / STEAM_SECONDS;
       if (u <= 0) {
-        this.dark(slot);
+        draw.hide(p);
         continue;
       }
       // The rise slows as the puff spreads.
       const rise = STEAM_RISE * (1 - (1 - Math.min(1, u)) ** 2);
       const d = this.puffDrift;
-      this.put(
-        slot,
+      draw.puff(
+        p,
         (this.puffAt[p * 3] as number) + (d[p * 3] as number) * u,
         (this.puffAt[p * 3 + 1] as number) + rise * (d[p * 3 + 1] as number),
         (this.puffAt[p * 3 + 2] as number) + (d[p * 3 + 2] as number) * u,
-        STEAM,
-        0.55 * puffLevel(u),
+        PUFF_SIZE * (this.puffScale[p] as number) * puffSize(u),
+        PUFF_OPACITY * puffLevel(u),
+        (this.puffSpin[p * 2] as number) + (this.puffSpin[p * 2 + 1] as number) * u,
       );
-      this.scales[slot] = PUFF_SCALE * (this.puffScale[p] as number) * puffSize(u);
     }
+    draw.commit(lit);
     return lit;
   }
 
   private stepStreams(h: number): boolean {
     let lit = false;
     for (let i = 0; i < STREAM_CAPACITY; i++) {
-      const base = FIRST_STREAM + i * STREAM_POINTS;
+      const base = i * STREAM_POINTS;
       if (!this.streamLive(i)) {
         for (let n = 0; n < STREAM_POINTS; n++) this.dark(base + n);
         continue;
