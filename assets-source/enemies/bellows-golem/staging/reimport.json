@@ -1,14 +1,14 @@
 {
-  "glb_sha256": "369b5374a4eb257d5a1b793c45acafb7a041c6bb7cb40d8ccdc0189f658d0f9c",
-  "glb_bytes": 1696220,
-  "triangles": 22084,
+  "glb_sha256": "32830c78c9c1239dfa8d5c44c3bcbb7ae8cb1fa7f38f4f6c9e6a2d17c9d3fded",
+  "glb_bytes": 1865644,
+  "triangles": 24340,
   "materials": [
     "brass-polished",
     "golem-case",
     "golem-metal",
     "golem-glow"
   ],
-  "vertices": 21426,
+  "vertices": 24024,
   "joints": [
     "root",
     "pelvis",
@@ -39,14 +39,14 @@
   "unweighted_vertices": 0,
   "bounds": {
     "min": [
-      -1.2,
+      -1.193,
       0.0,
-      -0.6061
+      -0.6188
     ],
     "max": [
-      1.2,
+      1.195,
       2.1382,
-      0.5608
+      0.5611
     ]
   },
   "clips": {
