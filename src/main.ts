@@ -28,6 +28,7 @@ import { randomSeed } from './core/rng.ts';
 import { fitCombatFraming } from './desktop/combat-framing.ts';
 import { combatPitch, createDesktopControls } from './desktop/controls.ts';
 import { Walker } from './desktop/walker.ts';
+import { DiceWorld } from './dice/world.ts';
 import { type EnemyActor, type EnemyAsset, tryLoadEnemyAsset } from './enemies/enemy-asset.ts';
 import { fleeStandPoint } from './flow/flee.ts';
 import { RunFlow } from './flow/flow.ts';
@@ -489,6 +490,7 @@ const heroReady: Promise<void> = floor
       }
       const table = await tableAsset;
       if (table) variants.push(table.scene);
+      await DiceWorld.warmUp();
       try {
         const textures = new Set(rooms.flatMap((room) => room.textures));
         await runVeil(renderer, scene, camera, [...textures], { variants });

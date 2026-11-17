@@ -339,3 +339,23 @@ describe('presenter throws', () => {
     expect(again.poses).toEqual(first.poses);
   }, 120_000);
 });
+
+describe('warm-up', () => {
+  it('settles a throwaway d6 and d8 and leaves later throws unchanged', async () => {
+    await DiceWorld.warmUp();
+    const world = await DiceWorld.create();
+    const settled: number[] = [];
+    world.onSettled((event) => settled.push(event.face));
+    world.throwDie(
+      'a',
+      'd6',
+      { x: 0, y: 0.1, z: 0 },
+      { x: 0.3, y: 0, z: 0 },
+      { x: 5, y: 2, z: -3 },
+      2,
+    );
+    for (let n = 0; n < 2000 && !world.allDone; n++) world.step(1 / 72);
+    expect(settled).toEqual([2]);
+    world.dispose();
+  });
+});

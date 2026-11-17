@@ -157,6 +157,37 @@ export class DiceWorld {
     return new DiceWorld({ ...DEFAULT_OPTIONS, ...options });
   }
 
+  /**
+   * Throws a d6 and a d8 in a throwaway world and lets them settle, so the first throw of a fight
+   * does not pay for Rapier's first snapshot, restore and contact paths (209 ms once on a slow
+   * core against 7 ms later). Call it behind a loading screen; it draws on no random stream.
+   */
+  static async warmUp(): Promise<void> {
+    const world = await DiceWorld.create();
+    try {
+      const spin = { x: 9, y: 4, z: -6 };
+      world.throwDie(
+        'warm-d6',
+        'd6',
+        { x: -0.05, y: 0.1, z: 0 },
+        { x: 0.4, y: 0, z: 0.1 },
+        spin,
+        0,
+      );
+      world.throwDie(
+        'warm-d8',
+        'd8',
+        { x: 0.05, y: 0.1, z: 0 },
+        { x: -0.4, y: 0, z: -0.1 },
+        spin,
+        0,
+      );
+      for (let n = 0; n < LOOKAHEAD_MAX_STEPS && !world.allDone; n++) world.fixedStep();
+    } finally {
+      world.dispose();
+    }
+  }
+
   /** Total fixed steps simulated so far. */
   get steps(): number {
     return this.stepCount;
