@@ -1,19 +1,19 @@
 {
   "lightmap_vs_cycles_diffuse": {
-    "frame_ratio": 0.903,
-    "rmse_srgb": 0.0429,
+    "frame_ratio": 0.908,
+    "rmse_srgb": 0.0415,
     "bands": {
-      "ceiling": 0.887,
-      "upper walls": 0.913,
-      "lower walls": 0.876,
+      "ceiling": 0.889,
+      "upper walls": 0.914,
+      "lower walls": 0.888,
       "floor near": 0.937
     }
   },
   "frame_means_255": {
     "engine.brazier.png": 57.4,
-    "engine.hero.diffuse.png": 46.5,
+    "engine.hero.diffuse.png": 46.6,
     "engine.hero.png": 54.0,
-    "engine.reward-eye.png": 59.4,
+    "engine.reward-eye.png": 59.5,
     "engine.seam-from-corridor.png": 41.6,
     "engine.seam-south.png": 46.5
   }

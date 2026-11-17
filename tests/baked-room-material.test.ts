@@ -5,6 +5,7 @@ import {
   bakedRoomMaterial,
   emitterSlot,
   roomLightsFragmentBegin,
+  untonedEmitterIntensity,
 } from '../src/world/study-room.ts';
 
 /** Runs the material's patch over three's real MeshStandardMaterial fragment shader. */
@@ -75,6 +76,24 @@ describe('bakedRoomMaterial (lightmap contract)', () => {
     expect(() =>
       roomLightsFragmentBegin('#if ( NUM_POINT_LIGHTS > 0 ) && defined( RE_Direct )'),
     ).toThrow(/NUM_DIR_LIGHTS/);
+  });
+});
+
+describe('untonedEmitterIntensity (hue-preserving emitter peak)', () => {
+  it('caps the intensity so the strongest linear channel lands at 1.0', () => {
+    const fire = new THREE.MeshStandardMaterial({ emissive: '#896335', emissiveIntensity: 5.6 });
+    const capped = untonedEmitterIntensity(fire);
+    const out = fire.emissive.clone().multiplyScalar(capped);
+    expect(Math.max(out.r, out.g, out.b)).toBeCloseTo(1, 6);
+    // Channel ratios (the hue) are the authored ones, not clipped.
+    expect(out.g / out.r).toBeCloseTo(fire.emissive.g / fire.emissive.r, 6);
+  });
+
+  it('leaves an emitter that never clips untouched', () => {
+    const dim = new THREE.MeshStandardMaterial({ emissive: '#683815', emissiveIntensity: 1.5 });
+    expect(untonedEmitterIntensity(dim)).toBe(1.5);
+    const off = new THREE.MeshStandardMaterial({ emissive: 0x000000, emissiveIntensity: 3 });
+    expect(untonedEmitterIntensity(off)).toBe(3);
   });
 });
 

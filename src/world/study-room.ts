@@ -199,6 +199,17 @@ export function emitterSlot(material: THREE.MeshStandardMaterial): {
   };
 }
 
+/**
+ * An untone-mapped emitter's output clips per channel at 1.0, which shifts its hue toward yellow
+ * and white once a second channel passes 1.0 (fire (0.25, 0.125, 0.035) x 5.6 clips to lemon).
+ * Capping the intensity so the strongest channel lands at 1.0 keeps the authored hue at the same
+ * peak brightness the clip would have shown.
+ */
+export function untonedEmitterIntensity(material: THREE.MeshStandardMaterial): number {
+  const peak = Math.max(material.emissive.r, material.emissive.g, material.emissive.b);
+  return peak > 0 ? Math.min(material.emissiveIntensity, 1 / peak) : material.emissiveIntensity;
+}
+
 export interface StudyAsset {
   readonly manifest: StudyManifest;
   /** Every texture the instances read, for the load veil's spread uploads. */
@@ -232,8 +243,11 @@ export async function loadStudyAsset(options: {
   gltf.scene.traverse((node) => {
     const mesh = node as THREE.Mesh;
     if (!mesh.isMesh) return;
-    const material = slots.get((mesh.material as THREE.Material).name);
-    if (!material) throw new Error(`${id}: GLB slot ${(mesh.material as THREE.Material).name}`);
+    const authored = mesh.material as THREE.Material;
+    const material = slots.get(authored.name);
+    if (!material) throw new Error(`${id}: GLB slot ${authored.name}`);
+    // Flame cards are authored double-sided; the slot material replaces the GLB's, so carry it over.
+    if (authored.side === THREE.DoubleSide) material.side = THREE.DoubleSide;
     mesh.material = material;
   });
   const lightmap = await loadRoomLightmap(study.manifest, base, ktx2, gltf.scene);
@@ -242,6 +256,7 @@ export async function loadStudyAsset(options: {
     bakedRoomMaterial(material);
     const slot = emitterSlot(material);
     material.toneMapped = slot.toneMapped;
+    if (!slot.toneMapped) material.emissiveIntensity = untonedEmitterIntensity(material);
     if (options.envMap) material.envMap = options.envMap;
     material.envMapIntensity = slot.reflectsProbe ? STUDY_ENV_INTENSITY : 0;
   }

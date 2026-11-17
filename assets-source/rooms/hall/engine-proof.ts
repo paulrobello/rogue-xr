@@ -121,6 +121,18 @@ export async function mountKitProof(w: number, h: number, shot: Shot) {
       world.dressRoom(index, model);
       models.push(model);
     });
+    // Sealed doorways get the game's walnut leaf (src/main.ts sealedDoorMaterial).
+    const walnut = set.materials.get('walnut');
+    const tileMeters = set.manifest.walnut?.tileMeters;
+    if (walnut && tileMeters) {
+      const leaf = walnut.clone();
+      leaf.name = 'sealed-door';
+      if (env) {
+        leaf.envMap = env;
+        leaf.envMapIntensity = 0.12;
+      }
+      world.dressSealedDoors(leaf, tileMeters);
+    }
     world.update(...shot.floor.at);
     scene.add(world.group);
     world.group.traverseVisible((node) => {

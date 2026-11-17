@@ -285,7 +285,7 @@
     }
   ],
   "stagingFiles": {
-    "engine-compare.json": "cee7bb401dc4019183329d6c6203e8f9212112a5c4c8e28f85917b1bbdbdb319",
+    "engine-compare.json": "5bce2aca1b244bd23b33339df4360fe11de84aa18f1031626c0c295d7cb12bc6",
     "guardian-vault.glb": "3421d6540ba034c82b79cb7195fa81a8d950df5f02a25874e7655821edc0c62f",
     "guardian-vault.lightmap.ktx2": "7a271cb9dd4d85c6399b709083bd1d83e29d310166468d9b7688edcfbf41548f",
     "guardian-vault.lightmap.png": "9db9e7c9da991b9ed1cb8f0d50dea8b67652f882f5a1492c5ea2dac6aa268059",
@@ -403,31 +403,31 @@
   "reviewEvidence": [
     {
       "path": "assets-source/rooms/guardian-vault/staging/review-sheet.jpg",
-      "sha256": "ab0d0a85a112f0b31cfe7d625affd05bab4fa29a0a423ad0effe339adcb201ff"
+      "sha256": "4a455941785f97a16e0eac883935bc9a00a97f4205e5ce759796ce23744814ed"
     },
     {
       "path": "docs/verification/p5-rooms-guardian-vault-brazier.jpg",
-      "sha256": "f59c736c5bf8036d52b522b033a1a651c339473ce2f03c145640400426ab2c67"
+      "sha256": "47961106016805961bf1c9071909caf659218a7a58cc5df7a539ca9606f8e97c"
     },
     {
       "path": "docs/verification/p5-rooms-guardian-vault-hero.diffuse.jpg",
-      "sha256": "ccc711080bc35d8f792f39b5c1814379905fb705c1adc652beb033a9a8dd5ef8"
+      "sha256": "b37cf7b8080739a729a6519c0414c0b2f619747b41455fb56c216432123432c1"
     },
     {
       "path": "docs/verification/p5-rooms-guardian-vault-hero.jpg",
-      "sha256": "22bc5d7916f84cd7b1835e5157ba6733641397a640e987aeae0621d64e7b0162"
+      "sha256": "c90c5f401fe4d8ebb63c9c37a31ae333a0a87b247f89d9d6062a9465f5db80ae"
     },
     {
       "path": "docs/verification/p5-rooms-guardian-vault-reward-eye.jpg",
-      "sha256": "093092abc479ba2d57e0897d1d1cbd8f0c1784de2fdf31e73fca372aaf43a105"
+      "sha256": "f59118f2656b25aca816e6e8f4311a49642162d38f6afd9192adc8180d61d8d2"
     },
     {
       "path": "docs/verification/p5-rooms-guardian-vault-seam-from-corridor.jpg",
-      "sha256": "b8b03d168a8af26e8961ba71c0c1b96e780b2274dbb2befdeea9e3e61917db3f"
+      "sha256": "5438763bc0f2bb1f5ef7d73e6387eea5f8ac9fa1bd0d9b01355a13213f421b74"
     },
     {
       "path": "docs/verification/p5-rooms-guardian-vault-seam-south.jpg",
-      "sha256": "91ac448d9e9b28a2b63ff95b411855c21dad47dd9091e26a64e16646624a9a88"
+      "sha256": "fb42c6f7f4abb5fa336ffada6bd9ac69ae487a515e5577767ebae33465d0c3ee"
     }
   ],
   "independentScore": {
