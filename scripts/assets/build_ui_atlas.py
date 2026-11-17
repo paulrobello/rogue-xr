@@ -52,6 +52,9 @@ TITLE_SAFE = {"x": 0.03, "y": 0.3, "w": 0.27, "h": 0.4}
 
 # Share of a mark's soft glow that also emits on the glow pages, so the halo glows a little.
 GLOW_HALO = 0.35
+# Glow-page fill: saturated candle amber, without the colour page's cream hot core. AgX tone mapping
+# washes a bright emitter toward white, so the emitter itself must sit well past the target hue.
+GLOW_FILL = (0xFF, 0x9A, 0x10)
 
 # d6 walnut grade (art bible oiled walnut #583C26): the painted panel reads too red and dark.
 # Panel: rounded rect in 256 px slot pixels (x0, y0, x1, y1), measured inside the brass bevel;
@@ -215,8 +218,8 @@ def glow_layer(size: tuple[int, int], draw_fn, blur: float) -> np.ndarray:
 def lit_mark(base: np.ndarray, draw_fn, scale: int) -> tuple[np.ndarray, np.ndarray]:
     """Composites an amber glowing mark (pip or numeral) drawn by `draw_fn` at `scale`x onto `base`.
 
-    Also returns the face's emissive glow tile: the same amber fill over the mark core plus
-    `GLOW_HALO` of its soft glow, black elsewhere, alpha 255.
+    Also returns the face's emissive glow tile: `GLOW_FILL` over the mark core plus `GLOW_HALO` of
+    its soft glow, black elsewhere, alpha 255.
     """
     h, w = base.shape[:2]
     big = (w * scale, h * scale)
@@ -242,7 +245,7 @@ def lit_mark(base: np.ndarray, draw_fn, scale: int) -> tuple[np.ndarray, np.ndar
     res[..., :3] = np.clip(np.rint(out), 0, 255).astype(np.uint8)
     emit = np.clip(core_small + GLOW_HALO * glow, 0, 1)
     lit = np.full((h, w, 4), 255, np.uint8)
-    lit[..., :3] = np.clip(np.rint(fill * emit[..., None]), 0, 255).astype(np.uint8)
+    lit[..., :3] = np.clip(np.rint(np.array(GLOW_FILL, np.float64) * emit[..., None]), 0, 255).astype(np.uint8)
     return res, lit
 
 
@@ -584,7 +587,7 @@ def main() -> None:
             "hueMix": WALNUT_HUE_MIX,
             "method": "linear-light luminance x lumGain, chromaticity moved hueMix toward target, masked to the walnut panel before the pips are composited",
         },
-        "diceGlowPages": f"dice-d6-glow and dice-d8-glow: the pip/numeral amber fill times (core + {GLOW_HALO} x soft glow), black elsewhere; same slots as the colour pages",
+        "diceGlowPages": "dice-d6-glow and dice-d8-glow: saturated amber #{:02X}{:02X}{:02X} times (core + {} x soft glow), black elsewhere; same slots as the colour pages".format(*GLOW_FILL, GLOW_HALO),
         "files": [{"file": rel(p), "bytes": p.stat().st_size, "sha256": sha256(p)} for p in outputs],
     }
     prov_path.write_text(json.dumps(prov, indent=2) + "\n")

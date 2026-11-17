@@ -4,12 +4,12 @@
   "route": "scripted (procedural Blender geometry; no provider generation; face art reused from the P5-T6 UI atlas)",
   "generator": {
     "path": "scripts/assets/build-dice.py",
-    "sha256": "fe24e8b7422253f50d8988078f3f1b28b988e35527d55b6da0c4cebea9c9757c"
+    "sha256": "c7cf82481eedd7b6886030fb8eca61ec695c0d3bb8b77f531e32039e25ea84de"
   },
   "generatorDeps": [
     {
       "path": "scripts/assets/build-cog-sentry.py",
-      "sha256": "9f045c4e6314b29a4bb82572fa040a0a0f9f68079b311b630d76fd0e1918d0a6",
+      "sha256": "efbb25906af6a0cbc9244d3e5573d0a85c819e8af8e7f6f75229ed43da299733",
       "use": "read_glb and canonicalize_indices"
     }
   ],
@@ -17,7 +17,7 @@
     "harness": "claude-code (dispatched sub-agent)",
     "model": "claude-opus-5-5"
   },
-  "blender": "5.2.2 LTS",
+  "blender": "5.3.0",
   "toolVersions": {
     "gltfExporter": "Blender 5.2.2 bundled io_scene_gltf2"
   },
@@ -25,16 +25,17 @@
     "store": "assets-source/dice/glass-d8/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)"
   },
   "budgets": {
-    "triangles": 200,
-    "highTriangles": 264,
+    "triangles": 296,
+    "highTriangles": 360,
     "materials": 2,
     "texturesProduced": 0,
     "texturesSampled": [
-      "ui/dice-d8 (shared UI atlas page, resident for the UI)"
+      "ui/dice-d8 (shared UI atlas page, resident for the UI)",
+      "ui/dice-d8-glow (shared UI atlas glow page, the face emissive map)"
     ],
-    "glbBytes": 14304
+    "glbBytes": 20292
   },
-  "lods": "LOD0 only: a 40 mm die stays under 700 triangles, so a LOD chain saves nothing measurable",
+  "lods": "LOD0 only: a 40 mm die stays within the 1,500-triangle dice budget (DICE_LIMITS), so a LOD chain saves nothing measurable",
   "bake": "none: face art is the shared atlas page and brass is a factor (or the shared brass-polished set), so nothing is baked",
   "collider": {
     "shape": "convexHull",
@@ -197,34 +198,34 @@
   "derivedFiles": [
     {
       "path": "public/assets/dice/glass-d8/glass-d8.glb",
-      "sha256": "b8d4e87b984c28fb0546592f7e49bc176f0d2ae463ab4b3a9d95f47f1f3e3495",
-      "bytes": 14304
+      "sha256": "4b9ba3d52bafebd9420f05c3a22219b5b3972acb876f9cdd04594b0a47713638",
+      "bytes": 20292
     },
     {
       "path": "public/assets/dice/glass-d8/glass-d8.manifest.json",
-      "sha256": "ef9d5a6b8c092147feefebc31cd866a7519e239329b2efc82a944108d77d35b2",
-      "bytes": 3807
+      "sha256": "d8aba43e79b7274dd7a6f85883ed2609c4d65724281ca116b8866c2afdf8a805",
+      "bytes": 3943
     }
   ],
   "sourceFiles": [
     {
       "path": "assets-source/dice/glass-d8/blend/glass-d8.high.blend",
-      "sha256": "0a4082dc028a65b16957fb3e1d686f203b152b781cca49cfeeca9e95fa101b71",
-      "bytes": 72986
+      "sha256": "20d7ddde9fe60d30230ffad7380af03caa6173d2d9e1f2022dce1e6a92778647",
+      "bytes": 75880
     },
     {
       "path": "assets-source/dice/glass-d8/blend/glass-d8.low.blend",
-      "sha256": "0c3d04bdd8bacad9a6c6fa98976e35ce99e9f81249d15f056eebab8e410f2516",
-      "bytes": 74306
+      "sha256": "bf3b8d7cec5d639d72607f5b2a811bd304800ce54f6e07a4341587f810bfe0a9",
+      "bytes": 77027
     },
     {
       "path": "assets-source/dice/glass-d8/staging/report.json",
-      "sha256": "ddae5deee37f9597711b3c3d64eee3663568e5128e22993755a99a5492e650c9",
-      "bytes": 2880
+      "sha256": "8bd01bed9c7db5dac5ea8a809e9278a0e79270cdaaf06d09b981f11e973a423a",
+      "bytes": 3022
     },
     {
       "path": "assets-source/dice/glass-d8/staging/reimport.json",
-      "sha256": "828d478ee9354219736441e3300b53ffb72a370d2292e11e0f799b4042f2c1a2",
+      "sha256": "92eb5166fcf240ea092bbc6ebec64e1b35eca4ed062346a31d76b1156c3e3886",
       "bytes": 1094
     }
   ],
@@ -242,18 +243,18 @@
   "reviewEvidence": [
     {
       "path": "assets-source/dice/dice.review-sheet.jpg",
-      "sha256": "a30f7bb1fadec9870aa92baa841d5de8285b8e4d75b7004add93a688f7a49b41",
-      "bytes": 250993
+      "sha256": "32acb63e171dba55e36670266835c46c43382cb762c4aef154adac9e21e7306e",
+      "bytes": 261369
     },
     {
       "path": "docs/verification/p5-dice-glass-d8-lineup.jpg",
-      "sha256": "9fd53bcc0469ffcacc6a368db6d7529dcf2b370d0826584058246fbf0eccb58f",
-      "bytes": 23944
+      "sha256": "afb4eaa2eacaa83c007a2dcd57e30647432a24077782b23d66be8969898cf4a9",
+      "bytes": 26353
     },
     {
       "path": "docs/verification/p5-dice-glass-d8.jpg",
-      "sha256": "1e385461cb95d558e6e2401dd007aac536854f40f53944f82fdbc26db484d137",
-      "bytes": 24178
+      "sha256": "966a458ba067518aa373528a71ef036980a34d3238d843d0f1c30ef35e6d4f66",
+      "bytes": 24319
     }
   ],
   "references": [
@@ -268,7 +269,7 @@
   "license": "Original work generated in Blender from a checked-in script; face art and style reference from Paul's paid Higgsfield plan (Terms of Use 4.4)",
   "validation": {
     "pass": true,
-    "date": "2026-11-15",
+    "date": "2026-11-16",
     "checks": [
       "presence",
       "hashes",

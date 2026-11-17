@@ -4,12 +4,12 @@
   "route": "scripted (procedural Blender geometry; no provider generation; face art reused from the P5-T6 UI atlas)",
   "generator": {
     "path": "scripts/assets/build-dice.py",
-    "sha256": "fe24e8b7422253f50d8988078f3f1b28b988e35527d55b6da0c4cebea9c9757c"
+    "sha256": "c7cf82481eedd7b6886030fb8eca61ec695c0d3bb8b77f531e32039e25ea84de"
   },
   "generatorDeps": [
     {
       "path": "scripts/assets/build-cog-sentry.py",
-      "sha256": "9f045c4e6314b29a4bb82572fa040a0a0f9f68079b311b630d76fd0e1918d0a6",
+      "sha256": "efbb25906af6a0cbc9244d3e5573d0a85c819e8af8e7f6f75229ed43da299733",
       "use": "read_glb and canonicalize_indices"
     }
   ],
@@ -17,7 +17,7 @@
     "harness": "claude-code (dispatched sub-agent)",
     "model": "claude-opus-5-5"
   },
-  "blender": "5.2.2 LTS",
+  "blender": "5.3.0",
   "toolVersions": {
     "gltfExporter": "Blender 5.2.2 bundled io_scene_gltf2"
   },
@@ -25,16 +25,17 @@
     "store": "assets-source/dice/brass-d6/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)"
   },
   "budgets": {
-    "triangles": 684,
-    "highTriangles": 3564,
+    "triangles": 1254,
+    "highTriangles": 4470,
     "materials": 2,
     "texturesProduced": 0,
     "texturesSampled": [
-      "ui/dice-d6 (shared UI atlas page, resident for the UI)"
+      "ui/dice-d6 (shared UI atlas page, resident for the UI)",
+      "ui/dice-d6-glow (shared UI atlas glow page, the face emissive map)"
     ],
-    "glbBytes": 23208
+    "glbBytes": 53524
   },
-  "lods": "LOD0 only: a 40 mm die stays under 700 triangles, so a LOD chain saves nothing measurable",
+  "lods": "LOD0 only: a 40 mm die stays within the 1,500-triangle dice budget (DICE_LIMITS), so a LOD chain saves nothing measurable",
   "bake": "none: face art is the shared atlas page and brass is a factor (or the shared brass-polished set), so nothing is baked",
   "collider": {
     "shape": "cuboid",
@@ -161,35 +162,35 @@
   "derivedFiles": [
     {
       "path": "public/assets/dice/brass-d6/brass-d6.glb",
-      "sha256": "a06386150610ceefcea629191853bcee75967854a7a971e38ad7a878487ab23f",
-      "bytes": 23208
+      "sha256": "1e19869279d7e586b8accd53e324f2792f29900750212c23d75f3968b7585dd0",
+      "bytes": 53524
     },
     {
       "path": "public/assets/dice/brass-d6/brass-d6.manifest.json",
-      "sha256": "5c6aa491f10f687b142d761cddc5c3877ae85089c9bd822e223ef6a37be2db8e",
-      "bytes": 2873
+      "sha256": "ade2231d957322a11d7de69b666f0fdb776d3f88d1c59486ffc9b974009432f9",
+      "bytes": 3009
     }
   ],
   "sourceFiles": [
     {
       "path": "assets-source/dice/brass-d6/blend/brass-d6.high.blend",
-      "sha256": "2edacc5a8ed8478a5483c3d5dd23575eafadeaa852dc1b4009e67049db95934f",
-      "bytes": 133994
+      "sha256": "99322165aa0d82f17964c1b700130fa847d2e131c0184400d89ef46dd7a3bf79",
+      "bytes": 155331
     },
     {
       "path": "assets-source/dice/brass-d6/blend/brass-d6.low.blend",
-      "sha256": "3d417e5d5dd4f8fae2fbc19ea64a32514661d578017e5fb44f772d56b378e4f5",
-      "bytes": 83359
+      "sha256": "6ccefc271a3224a93e06fb0f447ddaf6479ce03317b226f93fd59f881fd7b975",
+      "bytes": 96800
     },
     {
       "path": "assets-source/dice/brass-d6/staging/report.json",
-      "sha256": "9e77425a27f8943cb555a5c759ab1496d3dfb59c562396c3cf3c9d4e71573698",
-      "bytes": 2729
+      "sha256": "b482caf57556d4f2f350251ec91b947a14b5dc211bdcbc3116a76a8ac87d7f1d",
+      "bytes": 2880
     },
     {
       "path": "assets-source/dice/brass-d6/staging/reimport.json",
-      "sha256": "4417816505f200d673d833b3b6c7f905429e885c35b31835f7c16796566b6339",
-      "bytes": 956
+      "sha256": "b6a507f30864a615377e1f77195463a34bf10b7f6add90391b37b28993c73ffe",
+      "bytes": 964
     }
   ],
   "atlasInputs": [
@@ -206,18 +207,18 @@
   "reviewEvidence": [
     {
       "path": "assets-source/dice/dice.review-sheet.jpg",
-      "sha256": "a30f7bb1fadec9870aa92baa841d5de8285b8e4d75b7004add93a688f7a49b41",
-      "bytes": 250993
+      "sha256": "32acb63e171dba55e36670266835c46c43382cb762c4aef154adac9e21e7306e",
+      "bytes": 261369
     },
     {
       "path": "docs/verification/p5-dice-brass-d6-lineup.jpg",
-      "sha256": "19b60e6f5d3124b0e4d6b189a1f3520d2ad8c6bbe9665fdf10daa47669dd28ce",
-      "bytes": 37342
+      "sha256": "8146f9d30c02f636f664458edb69cb33d504fe232dcd4dc2b7322d6396474438",
+      "bytes": 39304
     },
     {
       "path": "docs/verification/p5-dice-brass-d6.jpg",
-      "sha256": "01873b1f68681f7def73e8b4cda35249323623e4a2a3b77a3e8935cc853f0eb5",
-      "bytes": 34173
+      "sha256": "74696ea5c9ee31699758a4db0121255da91c5c2b6c746194c3c126852b1eefc0",
+      "bytes": 37161
     }
   ],
   "references": [
@@ -232,7 +233,7 @@
   "license": "Original work generated in Blender from a checked-in script; face art and style reference from Paul's paid Higgsfield plan (Terms of Use 4.4)",
   "validation": {
     "pass": true,
-    "date": "2026-11-15",
+    "date": "2026-11-16",
     "checks": [
       "presence",
       "hashes",

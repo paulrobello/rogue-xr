@@ -184,19 +184,22 @@
     "glass-d8-face": {
       "role": "face",
       "atlasPage": "dice-d8",
-      "roughness": 0.12,
+      "roughness": 0.25,
       "metalness": 0.0,
-      "emissiveIntensity": 0.7,
+      "emissiveIntensity": 0.6,
       "transparent": true,
-      "opacity": 0.86
+      "opacity": 0.97,
+      "color": "#463A30",
+      "glowPage": "dice-d8-glow"
     }
   },
   "budget": {
-    "tris": 200,
+    "tris": 296,
     "materials": 2,
     "texturesProduced": 0,
     "texturesSampled": [
-      "ui/dice-d8 (shared UI atlas page, resident for the UI)"
+      "ui/dice-d8 (shared UI atlas page, resident for the UI)",
+      "ui/dice-d8-glow (shared UI atlas glow page, the face emissive map)"
     ]
   }
 }

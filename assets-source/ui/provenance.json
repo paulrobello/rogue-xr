@@ -305,17 +305,17 @@
       "hueMix": 0.75,
       "method": "linear-light luminance x lumGain, chromaticity moved hueMix toward target, masked to the walnut panel before the pips are composited"
     },
-    "diceGlowPages": "dice-d6-glow and dice-d8-glow: the pip/numeral amber fill times (core + 0.35 x soft glow), black elsewhere; same slots as the colour pages",
+    "diceGlowPages": "dice-d6-glow and dice-d8-glow: saturated amber #FF9A10 times (core + 0.35 x soft glow), black elsewhere; same slots as the colour pages",
     "files": [
       {
         "file": "public/assets/ui/dice-d6-glow.ktx2",
-        "bytes": 31284,
-        "sha256": "8f12fb90f6ec1e940226016da191ac9dd957d5ad699d3f31da3ad25438c4365a"
+        "bytes": 26441,
+        "sha256": "86e8a411c2ea5ca95dd7a1e0aeaaacd45c164c9393733ec91f86bb85611bb94f"
       },
       {
         "file": "public/assets/ui/dice-d6-glow.png",
-        "bytes": 53857,
-        "sha256": "e6fc51a8b0d7b094388942a85dde5d7e300174c06ed8829771bfd7d4b777ce06"
+        "bytes": 41215,
+        "sha256": "79fb9bec7ac796d7b56990957663e299415d1a2baf36bc7ef59f95b0f3d57858"
       },
       {
         "file": "public/assets/ui/dice-d6.ktx2",
@@ -329,13 +329,13 @@
       },
       {
         "file": "public/assets/ui/dice-d8-glow.ktx2",
-        "bytes": 39529,
-        "sha256": "20712e96d8e3c196e904626ce6efd54e139bfba83d244dd3b873a2e3f3e91229"
+        "bytes": 32702,
+        "sha256": "4dc2f57f6253bcb2cd7b10f13f0a0ed8a4656989558d492391fa09758e9276f2"
       },
       {
         "file": "public/assets/ui/dice-d8-glow.png",
-        "bytes": 51455,
-        "sha256": "95c288f0769d7706bd1999c7c8fc50006abee4c234657af229d7dbb2e31f894b"
+        "bytes": 38855,
+        "sha256": "6db435947943d7120bef79205cb822b7a65ad92354abf7b857ccd5edbe05f674"
       },
       {
         "file": "public/assets/ui/dice-d8.ktx2",

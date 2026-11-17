@@ -614,7 +614,7 @@ def assemble_dice(die: str) -> None:
         "blendFiles": {"store": f"assets-source/dice/{die}/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)"},
         "budgets": {"triangles": reimport["triangles"], "highTriangles": report["triangles"]["high"], "materials": len(reimport["materials"]),
                     "texturesProduced": 0, "texturesSampled": manifest["budget"]["texturesSampled"], "glbBytes": reimport["glb_bytes"]},
-        "lods": "LOD0 only: a 40 mm die stays under 700 triangles, so a LOD chain saves nothing measurable",
+        "lods": "LOD0 only: a 40 mm die stays within the 1,500-triangle dice budget (DICE_LIMITS), so a LOD chain saves nothing measurable",
         "bake": "none: face art is the shared atlas page and brass is a factor (or the shared brass-polished set), so nothing is baked",
         "collider": manifest["collider"],
         "frame": manifest["frame"],

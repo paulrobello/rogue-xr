@@ -1,13 +1,20 @@
 """P5-T7 dice models: the brass d6 and the glass d8 (docs/art-bible.md: brass bodies with walnut or
 enamel faces and amber pips or numerals). Both are built procedurally, with no provider generation.
 
-- brass-d6: a 40 mm cube with rounded brass edges (radius 2.5 mm) and a walnut panel inlaid 0.6 mm
-  into each face. The panel samples the shared P5-T6 UI atlas page `dice-d6` (walnut field and amber
+- brass-d6: a 40 mm cube with rounded brass edges (radius 2.5 mm). Each face has a flat brass rim,
+  a thin walnut ledge and a bevelled walnut lip down into a walnut well 1.4 mm deep (the lip samples
+  the walnut field's dark edge, so it reads as a dark well wall), and each pip sits in a conical cup
+  0.9 mm deep. The walnut samples the shared P5-T6 UI atlas page `dice-d6` (walnut field and amber
   pips); the painted brass frame of the atlas cell is left out, because the modelled brass rim is
   the frame.
-- glass-d8: an octahedron of circumradius 26 mm whose eight facets sample the atlas page `dice-d8`
-  (painted glass, brass edge and amber numeral) through a cheap faked glass: alpha-blended, no
-  transmission, emissive numerals. A brass cog and axle sit inside as the core.
+- glass-d8: an octahedron of circumradius 26 mm. Each facet is a brass rail band in the facet plane
+  and a brass chamfer down to a smoked-glass panel recessed 0.8 mm, which samples the inner part of
+  its atlas page `dice-d8` cell (glass and amber numeral, without the painted brass band). The glass
+  is nearly opaque and tinted dark by the face slot `color`, so no back-face numeral shows through.
+  A brass cog and axle sit inside as the core.
+
+Pips and numerals glow from the atlas glow pages (`dice-d6-glow`, `dice-d8-glow`), bound as the face
+slot's emissive map at the slot's `emissiveIntensity`; the manifest names the page in `glowPage`.
 
 The GLBs are image-free: face UVs point into the shared atlas cells (`public/assets/ui/ui-atlas.json`),
 and `src/dice/dice-asset.ts` binds the atlas page that the UI already keeps resident. Brass slots are
@@ -59,13 +66,38 @@ D6_NORMALS = [(0, 1, 0), (1, 0, 0), (0, 0, 1), (0, 0, -1), (-1, 0, 0), (0, -1, 0
 D8_NORMALS = [((-1 if i & 4 else 1) * INV_SQRT3, (-1 if i & 2 else 1) * INV_SQRT3, (-1 if i & 1 else 1) * INV_SQRT3) for i in range(8)]
 
 D6_BEVEL = 0.0025  # edge radius (m)
-D6_RECESS = 0.0006  # walnut panel depth below the face plane (m)
-D6_PANEL_HALF = 0.0128  # panel half-width (m): leaves a 4.7 mm brass rim inside the bevel
+D6_RECESS = 0.0014  # walnut well floor depth below the face plane (m)
+D6_PANEL_HALF = 0.0128  # walnut floor half-width (m), mapped onto D6_ART_PX
+D6_LIP_HALF = 0.0138  # half-width where the walnut lip leaves the ledge, sloping down to the floor
+# Half-width of the flat brass rim's inner edge: a 0.2 mm walnut ledge at the face plane runs from here
+# to D6_LIP_HALF, so the up face's up-facing art is the highest face art (tests/dice-asset.test.ts).
+D6_LEDGE_HALF = 0.0140
+# Beyond the floor, the ledge and lip sample a thin strip just outside the art window (atlas pixels per
+# metre times this), the walnut field's dark edge, instead of the painted frame.
+D6_LIP_UV_SCALE = 0.14
+# Pip centres in a unit d6 face (origin top-left) and the pip radius, as build_ui_atlas.py paints
+# them (PIPS, r = 0.072 slot): the cups must sit under the painted pips.
+PIPS = {
+    1: [(0.5, 0.5)],
+    2: [(0.3, 0.3), (0.7, 0.7)],
+    3: [(0.3, 0.3), (0.5, 0.5), (0.7, 0.7)],
+    4: [(0.3, 0.3), (0.7, 0.3), (0.3, 0.7), (0.7, 0.7)],
+    5: [(0.3, 0.3), (0.7, 0.3), (0.5, 0.5), (0.3, 0.7), (0.7, 0.7)],
+    6: [(0.3, 0.27), (0.7, 0.27), (0.3, 0.5), (0.7, 0.5), (0.3, 0.73), (0.7, 0.73)],
+}
+PIP_RADIUS_PX = 0.072 * 256
+# Cup rim radius in cell pixels (0.76 of the painted pip): the largest that leaves the 6-face's outer
+# rows (centre 58.9 px from the cell centre) inside the floor window (75 px). Depth below the floor.
+D6_CUP = {"rim_px": 14.0, "depth": 0.0009}
 # Walnut field of every 256 px d6 atlas cell, in cell pixels (origin top-left): a square centred on
 # the painted pips (cell centre 128, 128) and inside the painted frame's inner edge (x 24..206).
 D6_ART_PX = (53.0, 203.0)
 
 D8_CORE = {"teeth": 10, "r_root": 0.0062, "r_tip": 0.0085, "half_thick": 0.0014, "axle_r": 0.0012, "axle_half": 0.011}
+# Brass rails, as scales of each facet about its centroid: the flat rail band ends at `band`, the
+# chamfer drops `depth` to the glass panel at `panel`. The panel samples its atlas triangle scaled by
+# `art` about the centroid, inside the painted brass band (which starts about 0.82 out).
+D8_RAIL = {"band": 0.83, "panel": 0.74, "art": 0.80, "depth": 0.0008}
 
 DIE = {
     "brass-d6": {"kind": "d6", "page": "dice-d6", "values": [1, 2, 3, 4, 5, 6], "normals": D6_NORMALS,
@@ -74,14 +106,19 @@ DIE = {
                  "mats": ["brass-polished", "glass-d8-face"]},
 }
 BRASS, FACE = 0, 1
-DETAIL = {"low": {"bevel_steps": 3, "axle_sides": 8}, "high": {"bevel_steps": 8, "axle_sides": 24}}
+DETAIL = {"low": {"bevel_steps": 3, "axle_sides": 8, "pip_sides": 8}, "high": {"bevel_steps": 8, "axle_sides": 24, "pip_sides": 16}}
 
-# Runtime face-material parameters, shipped in the manifest (dice-asset.ts applies them).
+# Runtime face-material parameters, shipped in the manifest (dice-asset.ts applies them). `color`
+# multiplies the atlas page; `emissiveIntensity` applies to the `glowPage` emissive map.
 FACE_SLOTS = {
-    "brass-d6-face": {"roughness": 0.55, "metalness": 0.0, "emissiveIntensity": 0.35, "transparent": False, "opacity": 1.0},
-    "glass-d8-face": {"roughness": 0.12, "metalness": 0.0, "emissiveIntensity": 0.7, "transparent": True, "opacity": 0.86},
+    "brass-d6-face": {"roughness": 0.55, "metalness": 0.0, "emissiveIntensity": 1.0, "transparent": False, "opacity": 1.0,
+                      "color": "#FFFFFF", "glowPage": "dice-d6-glow"},
+    "glass-d8-face": {"roughness": 0.25, "metalness": 0.0, "emissiveIntensity": 0.6, "transparent": True, "opacity": 0.97,
+                      "color": "#463A30", "glowPage": "dice-d8-glow"},
 }
-BRASS_FACTORS = ((0xDE, 0xC1, 0x6A), 0.3, 1.0)  # polished brass mid tone (art bible), roughness, metallic
+# Roughness, metallic, and a base colour more saturated than the palette's polished brass #DEC16A:
+# AgX desaturates the lit metal (the env-lit #DEC16A measured S 0.29 to 0.32 in engine).
+BRASS_FACTORS = ((0xD8, 0xAC, 0x38), 0.3, 1.0)
 
 
 def sha256(path: Path) -> str:
@@ -110,6 +147,14 @@ def sentry_helpers():
 
 def srgb_to_linear(c: float) -> float:
     return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+
+
+def hex_linear(h: str) -> tuple:
+    return tuple(srgb_to_linear(int(h[i : i + 2], 16) / 255) for i in (1, 3, 5))
+
+
+def glow_page(die: str) -> str:
+    return FACE_SLOTS[DIE[die]["mats"][FACE]]["glowPage"]
 
 
 # --------------------------------------------------------------------------------------------------
@@ -190,19 +235,115 @@ def build_d6(detail: str) -> list:
         for i in range(last):
             for j in range(last):
                 if i == mid and j == mid:
-                    continue  # flat centre, built below as rim + walls + panel
+                    continue  # flat centre, built below as rim + lip + walnut well
                 quad = [point(coords[i], coords[j]), point(coords[i + 1], coords[j]),
                         point(coords[i + 1], coords[j + 1]), point(coords[i], coords[j + 1])]
                 polys.append((quad, BRASS, ("brass", None), True))
         o = [point(-c, -c), point(c, -c), point(c, c), point(-c, c)]
-        p = D6_PANEL_HALF
-        top = [point(-p, -p), point(p, -p), point(p, p), point(-p, p)]
-        low = [point(-p, -p, D6_RECESS), point(p, -p, D6_RECESS), point(p, p, D6_RECESS), point(-p, p, D6_RECESS)]
+        q, e = D6_LIP_HALF, D6_LEDGE_HALF
+        lip = [point(-q, -q), point(q, -q), point(q, q), point(-q, q)]
+        ledge = [point(-e, -e), point(e, -e), point(e, e), point(-e, e)]
+        xs, ys, cells = d6_floor_cells(face)
+        d = D6_RECESS
+        # Floor boundary from corner k to corner k + 1 (counter-clockwise from outside), through every
+        # cell-grid crossing, so the lip and the floor cells share vertices (no T-junctions).
+        sides = [[(x, ys[0]) for x in xs], [(xs[-1], y) for y in ys], [(x, ys[-1]) for x in reversed(xs)],
+                 [(xs[0], y) for y in reversed(ys)]]
         for k in range(4):
-            polys.append(([o[k], o[(k + 1) % 4], top[(k + 1) % 4], top[k]], BRASS, ("brass", None), False))
-            polys.append(([top[k], top[(k + 1) % 4], low[(k + 1) % 4], low[k]], BRASS, ("brass", None), False))
-        polys.append((low, FACE, ("panel", face), False))
+            a, b = lip[k], lip[(k + 1) % 4]
+            la, lb = ledge[k], ledge[(k + 1) % 4]
+            polys.append((facing([o[k], o[(k + 1) % 4], lb, la], n), BRASS, ("brass", None), False))
+            polys.append((facing([la, lb, b, a], n), FACE, ("panel", face), False))
+            inner = [point(u, v, d) for u, v in sides[k]]
+            fan = [[a, inner[0], inner[1]], [a, inner[1], b]] + [[b, inner[i], inner[i + 1]] for i in range(1, len(inner) - 1)]
+            polys += [(facing(t, n), FACE, ("panel", face), False) for t in fan]
+        for (u0, u1, v0, v1), pip in cells:
+            rect = [(u0, v0), (u1, v0), (u1, v1), (u0, v1)]
+            if pip is None:
+                polys.append((facing([point(u, v, d) for u, v in rect], n), FACE, ("panel", face), False))
+                continue
+            cu, cv = pip
+            rim = D6_CUP["rim_px"] * D6_PANEL_HALF / ((D6_ART_PX[1] - D6_ART_PX[0]) / 2)
+            m = DETAIL[detail]["pip_sides"]
+            ring = [(cu + rim * math.cos(2 * math.pi * k / m), cv + rim * math.sin(2 * math.pi * k / m)) for k in range(m)]
+            for tri in zipper(rect, ring, (cu, cv)):
+                polys.append((facing([point(u, v, d) for u, v in tri], n), FACE, ("panel", face), False))
+            apex = point(cu, cv, d + D6_CUP["depth"])
+            for k in range(m):
+                tri = [point(*ring[k], d), point(*ring[(k + 1) % m], d), apex]
+                polys.append((facing(tri, n), FACE, ("panel", face), False))
     return polys
+
+
+def d6_pip_uv_to_panel(ux: float, uy: float) -> tuple:
+    """Unit-face pip position (origin top-left, as build_ui_atlas.py) to panel (u right, v up), m."""
+    half_px = (D6_ART_PX[1] - D6_ART_PX[0]) / 2
+    mid = (D6_ART_PX[0] + D6_ART_PX[1]) / 2
+    return ((ux * 256 - mid) / half_px * D6_PANEL_HALF, (mid - uy * 256) / half_px * D6_PANEL_HALF)
+
+
+def d6_floor_cells(face: int):
+    """The walnut floor of d6 face `face` as a 3 x 3 grid of cells around the pip columns and rows:
+    returns the u and v grid lines and [(u0, u1, v0, v1), pip centre or None] per cell."""
+    value = DIE["brass-d6"]["values"][face]
+    rows = (0.27, 0.5, 0.73) if value == 6 else (0.3, 0.5, 0.7)
+    cu = [d6_pip_uv_to_panel(x, 0.5)[0] for x in (0.3, 0.5, 0.7)]
+    cv = sorted(d6_pip_uv_to_panel(0.5, y)[1] for y in rows)
+    p = D6_PANEL_HALF
+    xs = [-p, (cu[0] + cu[1]) / 2, (cu[1] + cu[2]) / 2, p]
+    ys = [-p, (cv[0] + cv[1]) / 2, (cv[1] + cv[2]) / 2, p]
+    pips = [d6_pip_uv_to_panel(*q) for q in PIPS[value]]
+    cells = []
+    for j in range(3):
+        for i in range(3):
+            hit = [q for q in pips if abs(q[0] - cu[i]) < 1e-9 and abs(q[1] - cv[j]) < 1e-9]
+            cells.append(((xs[i], xs[i + 1], ys[j], ys[j + 1]), hit[0] if hit else None))
+    assert sum(c[1] is not None for c in cells) == len(pips), (face, value)
+    return xs, ys, cells
+
+
+def zipper(outer: list, inner: list, centre) -> list:
+    """Triangles between two convex rings around `centre` (2D, any order): each step advances the
+    ring whose next vertex comes first by angle, so every triangle is non-degenerate."""
+    def ang(q):
+        return math.atan2(q[1] - centre[1], q[0] - centre[0]) % (2 * math.pi)
+
+    a, b = sorted(outer, key=ang), sorted(inner, key=ang)
+    ea = a + [a[0]]
+    eb = b + [b[0]]
+    angle_a = [ang(q) for q in a] + [ang(a[0]) + 2 * math.pi]
+    angle_b = [ang(q) for q in b] + [ang(b[0]) + 2 * math.pi]
+    def ccw(t) -> bool:
+        return (t[1][0] - t[0][0]) * (t[2][1] - t[0][1]) - (t[1][1] - t[0][1]) * (t[2][0] - t[0][0]) > 1e-15
+
+    i = j = 0
+    out = []
+    while i < len(a) or j < len(b):
+        step_a = [ea[i], ea[i + 1], eb[j]] if i < len(a) else None
+        step_b = [ea[i], eb[j + 1], eb[j]] if j < len(b) else None
+        # By angle first; an off-centre pip can make that triangle fold, then the other step is taken.
+        take_a = step_b is None or (step_a is not None and angle_a[i + 1] < angle_b[j + 1])
+        if take_a and step_b is not None and not ccw(step_a):
+            take_a = False
+        elif not take_a and step_a is not None and not ccw(step_b):
+            take_a = True
+        out.append(step_a if take_a else step_b)
+        if take_a:
+            i += 1
+        else:
+            j += 1
+    return out
+
+
+def facing(poly: list, n) -> list:
+    """`poly` wound counter-clockwise when seen from the `n` side (Newell normal)."""
+    nx = ny = nz = 0.0
+    for k, cur in enumerate(poly):
+        nxt = poly[(k + 1) % len(poly)]
+        nx += (cur[1] - nxt[1]) * (cur[2] + nxt[2])
+        ny += (cur[2] - nxt[2]) * (cur[0] + nxt[0])
+        nz += (cur[0] - nxt[0]) * (cur[1] + nxt[1])
+    return list(poly) if dot((nx, ny, nz), n) > 0 else list(reversed(poly))
 
 
 def d8_face_corners(face: int):
@@ -216,8 +357,28 @@ def d8_face_corners(face: int):
     return [apex, a, b]
 
 
+def d8_scaled(face: int, scale: float, depth: float = 0.0) -> list:
+    """Corners of d8 face `face` scaled about its centroid, then pushed `depth` inward."""
+    corners = d8_face_corners(face)
+    g = mul(add(add(corners[0], corners[1]), corners[2]), 1 / 3)
+    n = D8_NORMALS[face]
+    return [sub(add(g, mul(sub(p, g), scale)), mul(n, depth)) for p in corners]
+
+
+def d8_panel_corners(face: int) -> list:
+    return d8_scaled(face, D8_RAIL["panel"], D8_RAIL["depth"])
+
+
 def build_d8(detail: str) -> list:
-    polys = [(d8_face_corners(face), FACE, ("facet", face), False) for face in range(8)]
+    polys = []
+    for face in range(8):
+        n = D8_NORMALS[face]
+        outer, band, panel = d8_face_corners(face), d8_scaled(face, D8_RAIL["band"]), d8_panel_corners(face)
+        for k in range(3):
+            k1 = (k + 1) % 3
+            polys.append((facing([outer[k], outer[k1], band[k1], band[k]], n), BRASS, ("brass", None), False))
+            polys.append((facing([band[k], band[k1], panel[k1], panel[k]], n), BRASS, ("brass", None), False))
+        polys.append((panel, FACE, ("facet", face), False))
     g = D8_CORE
     # Cog in the runtime XZ plane (axis +Y), flat-shaded; caps are explicit fans, so triangulation is fixed.
     ring = []
@@ -273,8 +434,12 @@ def panel_uv(atlas: dict, die: str, face: int, pos) -> tuple:
     up = d6_up(n)
     right = cross(up, n)
     p = D6_PANEL_HALF
-    fx = (dot(pos, right) + p) / (2 * p)
-    fy = (p - dot(pos, up)) / (2 * p)  # 0 at the top edge, image rows go down
+
+    def squeeze(t: float) -> float:
+        return t if abs(t) <= p else math.copysign(p + (abs(t) - p) * D6_LIP_UV_SCALE, t)
+
+    fx = (squeeze(dot(pos, right)) + p) / (2 * p)
+    fy = (p - squeeze(dot(pos, up))) / (2 * p)  # 0 at the top edge, image rows go down
     x0, x1 = D6_ART_PX
     entry = cell(atlas, die, face)
     w, hgt = page_size(atlas, die)
@@ -284,11 +449,14 @@ def panel_uv(atlas: dict, die: str, face: int, pos) -> tuple:
 
 
 def facet_uvs(atlas: dict, die: str, face: int) -> list:
-    """Atlas triangle for d8 face `face`, in the corner order of `d8_face_corners` (apex, then the
-    bottom-left and bottom-right corners as seen from outside)."""
+    """Atlas triangle for d8 face `face`, shrunk by D8_RAIL["art"] about its centroid, in the corner
+    order of `d8_face_corners` (apex, then the bottom-left and bottom-right corners as seen from
+    outside)."""
     tri = atlas["dice"][die]["triangle"]  # [apex, bottom-right, bottom-left] in slot 0..1, y down
     uv = cell(atlas, die, face)["uv"]
-    order = [tri[0], tri[2], tri[1]]
+    gx, gy = sum(t[0] for t in tri) / 3, sum(t[1] for t in tri) / 3
+    k = D8_RAIL["art"]
+    order = [(gx + k * (t[0] - gx), gy + k * (t[1] - gy)) for t in (tri[0], tri[2], tri[1])]
     return [(uv["u0"] + tx * (uv["u1"] - uv["u0"]), uv["v1"] - ty * (uv["v1"] - uv["v0"])) for tx, ty in order]
 
 
@@ -329,7 +497,7 @@ def make_mesh(bpy, bmesh, name: str, polys: list, atlas: dict, die: str, mats: l
         tag = f[tag_layer]
         fn = to_runtime(tuple(f.normal))
         if DIE[die]["kind"] == "d8" and f.material_index == FACE:
-            corners = d8_face_corners(tag)
+            corners = d8_panel_corners(tag)
             uvs = facet_uvs(atlas, die, tag)
             for loop in f.loops:
                 p = to_runtime(tuple(loop.vert.co))
@@ -364,7 +532,7 @@ def export_materials(bpy, die: str) -> list:
             p.inputs["Metallic"].default_value = metal
         else:
             s = FACE_SLOTS[name]
-            p.inputs["Base Color"].default_value = (1.0, 1.0, 1.0, 1.0)
+            p.inputs["Base Color"].default_value = (*hex_linear(s["color"]), 1.0)
             p.inputs["Roughness"].default_value = s["roughness"]
             p.inputs["Metallic"].default_value = s["metalness"]
             if s["transparent"]:
@@ -383,7 +551,8 @@ def set_blended(m) -> None:
 
 
 def source_materials(bpy, die: str) -> list:
-    """The .blend and review-render materials: export factors plus the atlas page on the face slot."""
+    """The .blend and review-render materials: export factors plus the atlas page, tinted by the slot
+    colour, on the face slot, and the glow page as its emission (as dice-asset.ts binds them)."""
     out = []
     img = bpy.data.images.load(str(ATLAS_DIR / f"{DIE[die]['page']}.png"), check_existing=True)
     for name in DIE[die]["mats"]:
@@ -401,8 +570,15 @@ def source_materials(bpy, die: str) -> list:
             tex = nt.nodes.new("ShaderNodeTexImage")
             tex.image = img
             tex.interpolation = "Linear"
-            nt.links.new(tex.outputs["Color"], p.inputs["Base Color"])
-            nt.links.new(tex.outputs["Color"], p.inputs["Emission Color"])
+            tint = nt.nodes.new("ShaderNodeVectorMath")
+            tint.operation = "MULTIPLY"
+            nt.links.new(tex.outputs["Color"], tint.inputs[0])
+            tint.inputs[1].default_value = hex_linear(s["color"])
+            nt.links.new(tint.outputs[0], p.inputs["Base Color"])
+            glow = nt.nodes.new("ShaderNodeTexImage")
+            glow.image = bpy.data.images.load(str(ATLAS_DIR / f"{s['glowPage']}.png"), check_existing=True)
+            glow.interpolation = "Linear"
+            nt.links.new(glow.outputs["Color"], p.inputs["Emission Color"])
             p.inputs["Emission Strength"].default_value = s["emissiveIntensity"]
             p.inputs["Roughness"].default_value = s["roughness"]
             p.inputs["Metallic"].default_value = s["metalness"]
@@ -479,9 +655,8 @@ def accessor_view(gltf: dict, binary: bytearray, index: int):
 
 def exact_bevel_normals(path: Path, die: str) -> int:
     """Replaces the exporter's averaged normals on the d6 brass bevel with the analytic rounded-box
-    normal, so the bytes do not depend on Blender's smoothing. Hard-edged vertices (the panel walls,
-    whose normal is nowhere near the analytic one) keep the exporter's flat normals. Returns the
-    number of vertices rewritten."""
+    normal, so the bytes do not depend on Blender's smoothing. Hard-edged vertices (the flat rim, whose
+    normal already is the analytic one) keep the exporter's flat normals; the lip is face material. Returns the number of vertices rewritten."""
     import numpy as np
 
     if DIE[die]["kind"] != "d6":
@@ -499,7 +674,7 @@ def exact_bevel_normals(path: Path, die: str) -> int:
             off = pos - np.clip(pos, -c, c)
             length = np.linalg.norm(off, axis=1)
             analytic = off / np.where(length > 0, length, 1.0)[:, None]
-            take = (length > 1e-6) & (np.sum(analytic * nrm, axis=1) > 0.5)
+            take = (length > 1e-6) & (np.sum(analytic * nrm, axis=1) > 0.95)
             new = nrm.astype(np.float32).copy()
             new[take] = analytic[take].astype(np.float32)
             changed += int(np.count_nonzero(np.any(new != nrm, axis=1)))
@@ -635,7 +810,8 @@ def build_manifest(die: str, gate: dict, atlas: dict) -> dict:
         "faces": faces,
         "materialSlots": slots,
         "budget": {"tris": gate["triangles"], "materials": len(gate["materials"]), "texturesProduced": 0,
-                   "texturesSampled": [f"ui/{spec['page']} (shared UI atlas page, resident for the UI)"]},
+                   "texturesSampled": [f"ui/{spec['page']} (shared UI atlas page, resident for the UI)",
+                                       f"ui/{glow_page(die)} (shared UI atlas glow page, the face emissive map)"]},
     }
 
 
@@ -846,7 +1022,9 @@ def build_die(bpy, bmesh, die: str, args, atlas: dict, helpers) -> dict:
         "generator_sha256": sha256(Path(__file__).resolve()),
         "generator_deps": {"scripts/assets/build-cog-sentry.py": sha256(SENTRY_GENERATOR)},
         "atlas": {"manifest": str(ATLAS_JSON.relative_to(REPO)), "sha256": sha256(ATLAS_JSON),
-                  "page": str((ATLAS_DIR / f"{DIE[die]['page']}.png").relative_to(REPO)), "page_sha256": sha256(ATLAS_DIR / f"{DIE[die]['page']}.png")},
+                  "page": str((ATLAS_DIR / f"{DIE[die]['page']}.png").relative_to(REPO)), "page_sha256": sha256(ATLAS_DIR / f"{DIE[die]['page']}.png"),
+                  "glow_page": str((ATLAS_DIR / f"{glow_page(die)}.png").relative_to(REPO)),
+                  "glow_page_sha256": sha256(ATLAS_DIR / f"{glow_page(die)}.png")},
         "triangles": {"low": tris_low, "high": tris_high},
         "authoringAgent": "Claude Code subagent (claude-opus-5-5), dispatched by the rogue-xr primary session",
     }

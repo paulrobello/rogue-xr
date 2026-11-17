@@ -1,11 +1,12 @@
 // In-engine stills of the P5-T7 dice, loaded by assets-source/dice/engine_shot.py through the
 // running Vite dev server (it serves and transforms this file; it is outside src/, biome and tsc).
-// Uses the real runtime path: loadDice() for the GLBs and the UI atlas KTX2 pages bound with
-// bindFaceMaps(), posed with the presenter's correction (correctionRotation from identity).
+// Uses the real runtime path: loadDice() for the GLBs and the UI atlas KTX2 colour and glow pages
+// bound with bindFaceMaps() as DicePresenter.applyFaces does, posed with the presenter's correction
+// (correctionRotation from identity).
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { type DiceAsset, loadDice } from '/src/dice/dice-asset.ts';
-import { correctionRotation, D8_CIRCUMRADIUS, type DieKind } from '/src/dice/faces.ts';
+import { correctionRotation, D8_CIRCUMRADIUS, type DieKind, dieVertices } from '/src/dice/faces.ts';
 import { QUAT_IDENTITY } from '/src/dice/quat.ts';
 import { sharedKtx2Loader } from '/src/ui/first-render.ts';
 import { loadUiAtlas, UI_ATLAS_BASE } from '/src/ui/icon-atlas.ts';
@@ -44,18 +45,33 @@ export async function mountDiceProof(w: number, h: number) {
   const asset: DiceAsset = await loadDice();
   const atlas = await loadUiAtlas();
   const ktx2 = sharedKtx2Loader(renderer);
-  const page = async (name: 'dice-d6' | 'dice-d8') => {
+  const page = async (name: string) => {
     const t = await ktx2.loadAsync(`${UI_ATLAS_BASE}/${atlas.pages[name]?.ktx2}`);
     t.colorSpace = THREE.SRGBColorSpace;
     t.anisotropy = 4;
+    t.minFilter = THREE.LinearMipmapLinearFilter;
     return t;
   };
-  asset.bindFaceMaps({ d6: await page('dice-d6'), d8: await page('dice-d8') });
+  const glowPage = (id: 'brass-d6' | 'glass-d8') => {
+    const name = atlas.dice[id]?.glowPage;
+    return name ? page(name) : Promise.resolve(null);
+  };
+  asset.bindFaceMaps(
+    { d6: await page('dice-d6'), d8: await page('dice-d8') },
+    { d6: await glowPage('brass-d6'), d8: await glowPage('glass-d8') },
+  );
+  /** Sweep override of the face slot's emissiveIntensity (null keeps the manifest value). */
+  let glowOverride: number | null = null;
+  const faceMaterial = (mesh: THREE.Mesh) =>
+    (mesh.material as THREE.MeshStandardMaterial[]).find((m) => m.name.endsWith('-face')) as THREE.MeshStandardMaterial;
+  const manifestGlow = { d6: 0, d8: 0 };
+  for (const kind of ['d6', 'd8'] as const) manifestGlow[kind] = faceMaterial(asset.spawn(kind)).emissiveIntensity;
 
   const group = new THREE.Group();
   scene.add(group);
   const place = (kind: DieKind, face: number, x: number, z: number) => {
     const mesh = asset.spawn(kind);
+    faceMaterial(mesh).emissiveIntensity = glowOverride ?? manifestGlow[kind];
     const c = correctionRotation(QUAT_IDENTITY, asset.diceAssetFaces(kind), face);
     mesh.quaternion.set(c.x, c.y, c.z, c.w);
     mesh.position.set(x, REST[kind], z);
@@ -66,7 +82,64 @@ export async function mountDiceProof(w: number, h: number) {
     for (const child of [...group.children]) child.removeFromParent();
   };
 
+  const toPx = (mesh: THREE.Mesh, v: THREE.Vector3) => {
+    const p = mesh.localToWorld(v.clone()).project(camera);
+    return [((p.x + 1) / 2) * w, ((1 - p.y) / 2) * h];
+  };
+  /** Screen polygons of every placed die's faces (panel, rail band, outer facet) for measurement. */
+  const geometry = (kind: DieKind) =>
+    group.children.map((obj) => {
+      const mesh = obj as THREE.Mesh;
+      mesh.updateMatrixWorld(true);
+      const verts = dieVertices(kind).map((v) => toPx(mesh, new THREE.Vector3(v.x, v.y, v.z)));
+      const normals = asset.diceAssetFaces(kind);
+      const faces = normals.map((n, index) => {
+        const nv = new THREE.Vector3(n.x, n.y, n.z);
+        const wn = nv.clone().applyQuaternion(mesh.quaternion);
+        const centreW = mesh.localToWorld(nv.clone().multiplyScalar(0.02));
+        const visible = wn.dot(camera.position.clone().sub(centreW)) > 0;
+        let outer: THREE.Vector3[];
+        let panel: THREE.Vector3[];
+        let band: THREE.Vector3[];
+        if (kind === 'd6') {
+          const u = Math.abs(n.y) > 0.5 ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0);
+          const v = nv.clone().cross(u);
+          const sq = (half: number, depth: number) =>
+            [[1, 1], [-1, 1], [-1, -1], [1, -1]].map(([a, b]) =>
+              nv.clone().multiplyScalar(0.02 - depth).addScaledVector(u, a * half).addScaledVector(v, b * half),
+            );
+          outer = sq(0.02, 0);
+          band = sq(0.0138, 0);
+          panel = sq(0.0128, 0.0014);
+        } else {
+          const s3 = Math.sqrt(3);
+          const sx = Math.sign(n.x * s3), sy = Math.sign(n.y * s3), sz = Math.sign(n.z * s3);
+          outer = [new THREE.Vector3(sx * D8_CIRCUMRADIUS, 0, 0), new THREE.Vector3(0, sy * D8_CIRCUMRADIUS, 0), new THREE.Vector3(0, 0, sz * D8_CIRCUMRADIUS)];
+          const g = outer[0].clone().add(outer[1]).add(outer[2]).multiplyScalar(1 / 3);
+          const scaled = (k: number, depth: number) =>
+            outer.map((p) => g.clone().add(p.clone().sub(g).multiplyScalar(k)).addScaledVector(nv, -depth));
+          band = scaled(0.83, 0);
+          panel = scaled(0.74, 0.0008);
+        }
+        return {
+          index,
+          up: wn.y,
+          visible,
+          outer: outer.map((p) => toPx(mesh, p)),
+          band: band.map((p) => toPx(mesh, p)),
+          panel: panel.map((p) => toPx(mesh, p)),
+        };
+      });
+      return { verts, faces };
+    });
+
   return {
+    /** Sets the face glow for later `show` calls (null restores the manifest value). */
+    setGlow(value: number | null) {
+      glowOverride = value;
+      return { override: value, manifest: manifestGlow };
+    },
+    geometry,
     /** `hero`: face 0 up beside a second die, seated three-quarter view. `lineup`: every face up. */
     show(kind: DieKind, mode: 'hero' | 'lineup') {
       clear();

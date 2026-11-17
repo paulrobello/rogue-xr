@@ -8,6 +8,7 @@ import {
   DICE_GLOW_INTENSITY,
   type DiceAsset,
   type DiceManifest,
+  faceGlowIntensity,
   parseDice,
   parseDiceManifest,
 } from '../src/dice/dice-asset.ts';
@@ -37,6 +38,12 @@ const files = Object.fromEntries(
     return [kind, { manifest, glb }];
   }),
 ) as Record<DieKind, { manifest: DiceManifest; glb: ArrayBuffer }>;
+
+const faceSlot = (kind: DieKind) => {
+  const slot = Object.values(files[kind].manifest.materialSlots).find((s) => s.role === 'face');
+  if (!slot) throw new Error(`${kind}: no face slot`);
+  return slot;
+};
 
 const loadAsset = () =>
   parseDice(
@@ -106,7 +113,7 @@ describe('dice presenter with the authored models', () => {
       );
       expect(face?.map).toBe(page[kind]);
       expect(face?.emissiveMap).toBe(glow[kind]);
-      expect(face?.emissiveIntensity).toBe(DICE_GLOW_INTENSITY);
+      expect(face?.emissiveIntensity).toBe(faceGlowIntensity(faceSlot(kind)));
     }
     presenter.dispose();
     asset.bindFaceMaps({ d6: null, d8: null });
@@ -184,8 +191,10 @@ describe('dice presenter with the authored models', () => {
         expect(m.envMapIntensity).toBe(0.5);
       }
     }
+    // A transparent face slot (the glass d8) casts no shadow; an opaque one does.
+    for (const kind of KINDS)
+      expect(asset.spawn(kind).castShadow).toBe(!faceSlot(kind).transparent);
     expect(asset.spawn('d6').castShadow).toBe(true);
-    expect(asset.spawn('d8').castShadow).toBe(false);
     asset.setEnvironment(null, 0);
   });
 

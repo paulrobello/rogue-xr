@@ -150,17 +150,20 @@
       "atlasPage": "dice-d6",
       "roughness": 0.55,
       "metalness": 0.0,
-      "emissiveIntensity": 0.35,
+      "emissiveIntensity": 1.0,
       "transparent": false,
-      "opacity": 1.0
+      "opacity": 1.0,
+      "color": "#FFFFFF",
+      "glowPage": "dice-d6-glow"
     }
   },
   "budget": {
-    "tris": 684,
+    "tris": 1254,
     "materials": 2,
     "texturesProduced": 0,
     "texturesSampled": [
-      "ui/dice-d6 (shared UI atlas page, resident for the UI)"
+      "ui/dice-d6 (shared UI atlas page, resident for the UI)",
+      "ui/dice-d6-glow (shared UI atlas glow page, the face emissive map)"
     ]
   }
 }

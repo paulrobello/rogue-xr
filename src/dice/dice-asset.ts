@@ -22,11 +22,12 @@ export const DICE_ASSET_IDS = { d6: 'brass-d6', d8: 'glass-d8' } as const satisf
 >;
 const KINDS: readonly DieKind[] = ['d6', 'd8'];
 /**
- * Emissive intensity of a face slot while a glow page is bound. The glow page is black except the
- * amber pips and numerals, so only they emit: 1.8 times the mark's decoded amber, about 2.8 times
- * the lit mark's luminance at unit illuminance before AgX. The manifest's per-slot
- * `emissiveIntensity` (0.35 d6, 0.7 d8, from scripts/assets/build-dice.py) was tuned for the whole
- * colour page as the emissive map and is too dim for a mask, so the runtime uses this instead.
+ * Emissive intensity of a face slot while a glow page is bound, unless the slot names its glow page
+ * (`glowPage`), in which case the slot's `emissiveIntensity` was tuned for that page and wins. The
+ * glow page is black except the amber pips and numerals, so only they emit: 1.8 times the mark's
+ * decoded amber, about 2.8 times the lit mark's luminance at unit illuminance before AgX. Slots
+ * without `glowPage` (manifests before the pass-2 rebuild) carry an `emissiveIntensity` tuned for the
+ * whole colour page as the emissive map (0.35 d6, 0.7 d8), too dim for a mask, so they get this.
  */
 export const DICE_GLOW_INTENSITY = 1.8;
 /** Factor colour of each face slot until its atlas page is bound (art-bible walnut and sapphire). */
@@ -50,6 +51,17 @@ export interface DiceMaterialSlot {
   emissiveIntensity?: number;
   transparent?: boolean;
   opacity?: number;
+  /** Factor multiplied into the bound atlas page (CSS hex, sRGB); white when absent. */
+  color?: string;
+  /** Glow page this slot's `emissiveIntensity` is tuned for (`dice-d6-glow`, `dice-d8-glow`). */
+  glowPage?: string;
+}
+
+/** Emissive intensity of `slot` while a glow page is bound (see `DICE_GLOW_INTENSITY`). */
+export function faceGlowIntensity(slot: DiceMaterialSlot): number {
+  return slot.glowPage && slot.emissiveIntensity !== undefined
+    ? slot.emissiveIntensity
+    : DICE_GLOW_INTENSITY;
 }
 
 export interface DiceManifest {
@@ -89,6 +101,15 @@ export function parseDiceManifest(raw: unknown): DiceManifest {
   const slots = Object.values(m.materialSlots ?? {});
   if (slots.filter((s) => s.role === 'face').length !== 1 || slots.length > 2)
     throw new Error('dice manifest: needs one face slot and at most two slots');
+  for (const s of slots) {
+    if (s.color !== undefined && !/^#[0-9a-fA-F]{6}$/.test(s.color))
+      throw new Error(`dice manifest: slot color ${s.color} is not #rrggbb`);
+    if (
+      s.emissiveIntensity !== undefined &&
+      !(Number.isFinite(s.emissiveIntensity) && s.emissiveIntensity >= 0)
+    )
+      throw new Error('dice manifest: slot emissiveIntensity must be a non-negative number');
+  }
   return m as DiceManifest;
 }
 
@@ -122,6 +143,8 @@ interface DieResources {
   /** Per geometry group, in GLB primitive order. */
   materials: THREE.Material[];
   face: THREE.MeshStandardMaterial;
+  /** The manifest's face slot. */
+  faceSlot: DiceMaterialSlot;
   normals: readonly Vec3[];
 }
 
@@ -183,9 +206,10 @@ export class DiceAsset {
   }
 
   /**
-   * Binds the UI atlas colour pages (`dice-d6`, `dice-d8`) to the face slots' `map` and their glow
-   * pages (`dice-d6-glow`, `dice-d8-glow`) to `emissiveMap`, at `DICE_GLOW_INTENSITY`. A kind with
-   * a colour page but no glow page gets no emission. Pass null to unbind.
+   * Binds the UI atlas colour pages (`dice-d6`, `dice-d8`) to the face slots' `map`, tinted by the
+   * slot `color`, and their glow pages (`dice-d6-glow`, `dice-d8-glow`) to `emissiveMap`, at
+   * `faceGlowIntensity` of the slot. A kind with a colour page but no glow page gets no emission.
+   * Pass null to unbind.
    */
   bindFaceMaps(
     maps: Partial<Record<DieKind, THREE.Texture | null>>,
@@ -200,9 +224,9 @@ export class DiceAsset {
       const face = die.face;
       face.map = map;
       face.emissiveMap = lit;
-      face.color.set(map ? '#ffffff' : FACE_FALLBACK[kind]);
+      face.color.set(map ? (die.faceSlot.color ?? '#ffffff') : FACE_FALLBACK[kind]);
       face.emissive.set(lit ? '#ffffff' : '#000000');
-      face.emissiveIntensity = lit ? DICE_GLOW_INTENSITY : 0;
+      face.emissiveIntensity = lit ? faceGlowIntensity(die.faceSlot) : 0;
       face.needsUpdate = true;
     }
   }
@@ -255,6 +279,7 @@ async function parseDie(
   geometry.computeBoundingSphere();
 
   const faces: THREE.MeshStandardMaterial[] = [];
+  let faceSlot: DiceMaterialSlot | undefined;
   const materials = meshes.map((m) => {
     const source = m.material as THREE.MeshStandardMaterial;
     const slot = manifest.materialSlots[source.name];
@@ -263,6 +288,7 @@ async function parseDie(
       source.dispose();
       const face = faceMaterial(manifest.kind, source.name, slot);
       faces.push(face);
+      faceSlot = slot;
       return face;
     }
     const shared = slot.set ? set?.materials.get(slot.set) : undefined;
@@ -276,10 +302,10 @@ async function parseDie(
     return clone;
   });
   const face = faces[0];
-  if (faces.length !== 1 || !face)
+  if (faces.length !== 1 || !face || !faceSlot)
     throw new Error(`${manifest.id} glb: expected one face material`);
   const normals = manifest.faces.map(({ normal: [x, y, z] }) => ({ x, y, z }));
-  return { manifest, geometry, materials, face, normals };
+  return { manifest, geometry, materials, face, faceSlot, normals };
 }
 
 /** Builds the asset from GLB bytes and manifests (both dice). Rejects corrupt or mismatched bytes. */

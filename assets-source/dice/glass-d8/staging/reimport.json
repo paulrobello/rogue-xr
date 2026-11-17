@@ -1,7 +1,7 @@
 {
-  "glb_sha256": "b8d4e87b984c28fb0546592f7e49bc176f0d2ae463ab4b3a9d95f47f1f3e3495",
-  "glb_bytes": 14304,
-  "triangles": 200,
+  "glb_sha256": "4b9ba3d52bafebd9420f05c3a22219b5b3972acb876f9cdd04594b0a47713638",
+  "glb_bytes": 20292,
+  "triangles": 296,
   "materials": [
     "brass-polished",
     "glass-d8-face"
@@ -58,7 +58,7 @@
   "blender_reimport": {
     "objects": 1,
     "meshes": 1,
-    "triangles": 200,
+    "triangles": 296,
     "materials": [
       "brass-polished",
       "glass-d8-face"

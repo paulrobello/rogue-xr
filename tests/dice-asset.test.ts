@@ -8,6 +8,7 @@ import {
   DICE_GLOW_INTENSITY,
   type DiceAsset,
   type DiceManifest,
+  faceGlowIntensity,
   parseDice,
   parseDiceManifest,
 } from '../src/dice/dice-asset.ts';
@@ -64,6 +65,11 @@ const glbs = () =>
     ArrayBuffer
   >;
 const manifests = () => ({ d6: files.d6.manifest, d8: files.d8.manifest });
+const faceSlotOf = (manifest: DiceManifest) => {
+  const slot = Object.values(manifest.materialSlots).find((s) => s.role === 'face');
+  if (!slot) throw new Error(`${manifest.id}: no face slot`);
+  return slot;
+};
 
 let asset: DiceAsset | null = null;
 afterEach(() => {
@@ -237,7 +243,15 @@ describe('dice asset lifecycle', () => {
       expect(face?.map).toBe(colour[kind]);
       expect(face?.emissiveMap).toBe(glow[kind]);
       expect(face?.emissive.getHex()).toBe(0xffffff);
-      expect(face?.emissiveIntensity).toBe(DICE_GLOW_INTENSITY);
+      const slot = faceSlotOf(files[kind].manifest);
+      expect(face?.emissiveIntensity).toBe(faceGlowIntensity(slot));
+      expect(face?.color.getHexString()).toBe(
+        new THREE.Color(slot.color ?? '#ffffff').getHexString(),
+      );
+      // Swept in engine (assets-source/dice/engine_shot.py framing): below about 0.5 the d8 numeral
+      // drops under 4.5:1 against the glass; above 2 AgX washes the amber toward white.
+      expect(face?.emissiveIntensity).toBeGreaterThanOrEqual(0.5);
+      expect(face?.emissiveIntensity).toBeLessThanOrEqual(2);
       expect(DICE_GLOW_INTENSITY).toBeGreaterThanOrEqual(1.5);
       expect(DICE_GLOW_INTENSITY).toBeLessThanOrEqual(2);
       // The body never samples either page.
@@ -255,6 +269,42 @@ describe('dice asset lifecycle', () => {
       expect(face?.emissiveMap).toBeNull();
       expect(face?.emissiveIntensity).toBe(0);
     }
+  });
+
+  it('applies the face slot tint and glow intensity the manifest names (pass-2 fields)', async () => {
+    const d6 = structuredClone(files.d6.manifest);
+    const d8 = structuredClone(files.d8.manifest);
+    Object.assign(faceSlotOf(d6), {
+      color: '#fff6d1',
+      glowPage: 'dice-d6-glow',
+      emissiveIntensity: 1.6,
+    });
+    // No glowPage: the slot's intensity was tuned for a whole-page emissive map, so it is ignored.
+    Object.assign(faceSlotOf(d8), { color: '#463a30', emissiveIntensity: 0.7 });
+    delete faceSlotOf(d8).glowPage;
+    const local = await parseDice(glbs(), { d6: parseDiceManifest(d6), d8: parseDiceManifest(d8) });
+    asset = local;
+    const colour = { d6: new THREE.Texture(), d8: new THREE.Texture() };
+    const glow = { d6: new THREE.Texture(), d8: new THREE.Texture() };
+    local.bindFaceMaps(colour, glow);
+    const faceOf = (kind: DieKind) =>
+      (local.spawn(kind).material as THREE.MeshStandardMaterial[]).find((m) =>
+        m.name.endsWith('-face'),
+      );
+    expect(faceOf('d6')?.color.getHexString()).toBe(new THREE.Color('#fff6d1').getHexString());
+    expect(faceOf('d6')?.emissiveIntensity).toBe(1.6);
+    expect(faceOf('d8')?.color.getHexString()).toBe(new THREE.Color('#463a30').getHexString());
+    expect(faceOf('d8')?.emissiveIntensity).toBe(DICE_GLOW_INTENSITY);
+    // Unbound faces fall back to the art-bible factor colours, not the tint.
+    local.bindFaceMaps({ d6: null, d8: null });
+    expect(faceOf('d6')?.color.getHexString()).toBe('583c26');
+    expect(faceOf('d8')?.color.getHexString()).toBe('2d4a93');
+    expect(() =>
+      parseDiceManifest({
+        ...files.d6.manifest,
+        materialSlots: { x: { ...faceSlotOf(files.d6.manifest), color: 'amber' } },
+      }),
+    ).toThrow(/not #rrggbb/);
   });
 
   it('emits nothing when a colour page is bound without a glow page', async () => {

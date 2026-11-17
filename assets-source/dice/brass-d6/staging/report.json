@@ -1,28 +1,30 @@
 {
   "piece": "brass-d6",
-  "blender": "5.2.2 LTS",
+  "blender": "5.3.0",
   "generator": "scripts/assets/build-dice.py",
-  "generator_sha256": "fe24e8b7422253f50d8988078f3f1b28b988e35527d55b6da0c4cebea9c9757c",
+  "generator_sha256": "c7cf82481eedd7b6886030fb8eca61ec695c0d3bb8b77f531e32039e25ea84de",
   "generator_deps": {
-    "scripts/assets/build-cog-sentry.py": "9f045c4e6314b29a4bb82572fa040a0a0f9f68079b311b630d76fd0e1918d0a6"
+    "scripts/assets/build-cog-sentry.py": "efbb25906af6a0cbc9244d3e5573d0a85c819e8af8e7f6f75229ed43da299733"
   },
   "atlas": {
     "manifest": "public/assets/ui/ui-atlas.json",
-    "sha256": "210ffe63325ce8bd5fc2c5c55ed7678626cd0d6811d188b590624a90f8d88800",
+    "sha256": "b7c412942b3cd7cc5acd15a2e354b7576917494d3ad5a8391f847c8007270d38",
     "page": "public/assets/ui/dice-d6.png",
-    "page_sha256": "55271faab542335a8232b6b711b0efff03848178a48ef8baa0733a6d682adea4"
+    "page_sha256": "a60a4b6b28aac8b30588c7535d61369804292e90b739d20bcd580400b3d8f576",
+    "glow_page": "public/assets/ui/dice-d6-glow.png",
+    "glow_page_sha256": "79fb9bec7ac796d7b56990957663e299415d1a2baf36bc7ef59f95b0f3d57858"
   },
   "triangles": {
-    "low": 684,
-    "high": 3564
+    "low": 1254,
+    "high": 4470
   },
   "authoringAgent": "Claude Code subagent (claude-opus-5-5), dispatched by the rogue-xr primary session",
   "exact_bevel_normals": 376,
   "canonicalized_primitives": 2,
   "reimport": {
-    "glb_sha256": "a06386150610ceefcea629191853bcee75967854a7a971e38ad7a878487ab23f",
-    "glb_bytes": 23208,
-    "triangles": 684,
+    "glb_sha256": "1e19869279d7e586b8accd53e324f2792f29900750212c23d75f3968b7585dd0",
+    "glb_bytes": 53524,
+    "triangles": 1254,
     "materials": [
       "brass-polished",
       "brass-d6-face"
@@ -41,27 +43,27 @@
     },
     "faces": {
       "0": {
-        "triangles": 2,
+        "triangles": 36,
         "inside_cell": true
       },
       "1": {
-        "triangles": 2,
+        "triangles": 46,
         "inside_cell": true
       },
       "2": {
-        "triangles": 2,
+        "triangles": 56,
         "inside_cell": true
       },
       "3": {
-        "triangles": 2,
+        "triangles": 66,
         "inside_cell": true
       },
       "4": {
-        "triangles": 2,
+        "triangles": 76,
         "inside_cell": true
       },
       "5": {
-        "triangles": 2,
+        "triangles": 86,
         "inside_cell": true
       }
     },
@@ -71,7 +73,7 @@
     "blender_reimport": {
       "objects": 1,
       "meshes": 1,
-      "triangles": 684,
+      "triangles": 1254,
       "materials": [
         "brass-d6-face",
         "brass-polished"
@@ -84,13 +86,13 @@
     "model-high-three-quarter",
     "faces-lineup"
   ],
-  "render_seconds": 0.9,
+  "render_seconds": 1.4,
   "files": {
-    "assets-source/dice/brass-d6/blend/brass-d6.high.blend": "2edacc5a8ed8478a5483c3d5dd23575eafadeaa852dc1b4009e67049db95934f",
-    "assets-source/dice/brass-d6/blend/brass-d6.low.blend": "3d417e5d5dd4f8fae2fbc19ea64a32514661d578017e5fb44f772d56b378e4f5",
-    "assets-source/dice/brass-d6/staging/reimport.json": "4417816505f200d673d833b3b6c7f905429e885c35b31835f7c16796566b6339",
-    "public/assets/dice/brass-d6/brass-d6.glb": "a06386150610ceefcea629191853bcee75967854a7a971e38ad7a878487ab23f",
-    "public/assets/dice/brass-d6/brass-d6.manifest.json": "5c6aa491f10f687b142d761cddc5c3877ae85089c9bd822e223ef6a37be2db8e"
+    "assets-source/dice/brass-d6/blend/brass-d6.high.blend": "99322165aa0d82f17964c1b700130fa847d2e131c0184400d89ef46dd7a3bf79",
+    "assets-source/dice/brass-d6/blend/brass-d6.low.blend": "6ccefc271a3224a93e06fb0f447ddaf6479ce03317b226f93fd59f881fd7b975",
+    "assets-source/dice/brass-d6/staging/reimport.json": "b6a507f30864a615377e1f77195463a34bf10b7f6add90391b37b28993c73ffe",
+    "public/assets/dice/brass-d6/brass-d6.glb": "1e19869279d7e586b8accd53e324f2792f29900750212c23d75f3968b7585dd0",
+    "public/assets/dice/brass-d6/brass-d6.manifest.json": "ade2231d957322a11d7de69b666f0fdb776d3f88d1c59486ffc9b974009432f9"
   },
-  "total_seconds": 1.1
+  "total_seconds": 1.5
 }
