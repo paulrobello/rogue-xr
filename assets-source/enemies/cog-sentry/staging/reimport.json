@@ -1,14 +1,14 @@
 {
-  "glb_sha256": "7cadf35d5b245648d1930bb4e6972dfb51e4f329935356cc9e8259d59837589a",
-  "glb_bytes": 847052,
-  "triangles": 9368,
+  "glb_sha256": "6025f67d33f6eac7f66ac9771f83dfd505c43b97a0e7eaaea8a373e079f02811",
+  "glb_bytes": 923220,
+  "triangles": 10140,
   "materials": [
     "brass-polished",
     "brass-aged",
     "gunmetal",
     "sentry-glow"
   ],
-  "vertices": 9217,
+  "vertices": 10409,
   "joints": [
     "root",
     "hips",
@@ -38,12 +38,12 @@
   "unweighted_vertices": 0,
   "bounds": {
     "min": [
-      -0.3878,
+      -0.3674,
       0.0,
       -0.245
     ],
     "max": [
-      0.3878,
+      0.3674,
       1.9612,
       0.157
     ]
@@ -95,8 +95,8 @@
       "parent": "head",
       "position": [
         0.0,
-        1.811,
-        -0.125
+        1.824,
+        -0.118
       ]
     },
     "socket-weapon": {

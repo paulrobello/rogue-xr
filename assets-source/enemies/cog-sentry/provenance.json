@@ -4,7 +4,7 @@
   "route": "scripted (procedural Blender geometry, rig and keyed clips; no provider generation)",
   "generator": {
     "path": "scripts/assets/build-cog-sentry.py",
-    "sha256": "6ae6753374db37797862744f8087ec6228a9ac8b0920fb5f425356b0d9366d0f"
+    "sha256": "8f80d1ae8d10adeab5123ba9497e9d00a8ea4c6e5c0855c902cf65274f25bacc"
   },
   "authoringAgent": {
     "harness": "claude-code (dispatched sub-agent)",
@@ -18,12 +18,12 @@
     "store": "assets-source/enemies/cog-sentry/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)"
   },
   "budgets": {
-    "triangles": 9368,
-    "highTriangles": 24812,
+    "triangles": 10140,
+    "highTriangles": 25744,
     "materials": 4,
     "bones": 21,
     "maxInfluences": 1,
-    "glbBytes": 847052
+    "glbBytes": 923220
   },
   "skin": {
     "policy": "rigid: one bone per vertex at weight 1.0",
@@ -124,7 +124,7 @@
       "min_z_frame": 1,
       "final_max_z": 0.481,
       "final_min_z": 0.004,
-      "loop_seam_m": 1.66239
+      "loop_seam_m": 1.67267
     },
     "frozen": {
       "frames": 31,
@@ -158,8 +158,8 @@
       "parent": "head",
       "position": [
         0.0,
-        1.811,
-        -0.125
+        1.824,
+        -0.118
       ]
     },
     "socket-weapon": {
@@ -175,67 +175,67 @@
   "derivedFiles": [
     {
       "path": "public/assets/enemies/cog-sentry/cog-sentry.glb",
-      "sha256": "7cadf35d5b245648d1930bb4e6972dfb51e4f329935356cc9e8259d59837589a",
-      "bytes": 847052
+      "sha256": "6025f67d33f6eac7f66ac9771f83dfd505c43b97a0e7eaaea8a373e079f02811",
+      "bytes": 923220
     },
     {
       "path": "public/assets/enemies/cog-sentry/cog-sentry.manifest.json",
-      "sha256": "284d87b718a14444c2fde39c89c4bb4ff6be4390d632678be94127bf9f869175",
-      "bytes": 2869
+      "sha256": "8cef274313cbacde4130909a180719bad30e1f8f6b719d57bdb65b8b5d12ff68",
+      "bytes": 2874
     }
   ],
   "sourceFiles": [
     {
       "path": "assets-source/enemies/cog-sentry/blend/cog-sentry.high.blend",
-      "sha256": "64514bb3929036aa8c7bf6c42b43f57465c1074290027566356240cca2299162",
-      "bytes": 620764
+      "sha256": "b2d87f597b1e77cbd5e9e1c68c2bf80206347f7231ba6d9e78fc3e3a79a73ade",
+      "bytes": 599401
     },
     {
       "path": "assets-source/enemies/cog-sentry/blend/cog-sentry.low.blend",
-      "sha256": "8939f853f9728ab86ff1c902b16a0e8e12eda4805de6487e32666c0d7c096c62",
-      "bytes": 313007
+      "sha256": "7d6e9aced3a619ba6c29fbb9e5829bd5444521b8f8a656902d35f599a50c9e3c",
+      "bytes": 323381
     },
     {
       "path": "assets-source/enemies/cog-sentry/staging/report.json",
-      "sha256": "efc086a3670381b10e15bcf68def758376dfa9ad3d3cf0116d220a2c6eb359e4",
-      "bytes": 5787
+      "sha256": "b26f8f9e69b0f068081881ef731b634ff74cd630a732df8177e9a7b64b58f6ce",
+      "bytes": 5869
     },
     {
       "path": "assets-source/enemies/cog-sentry/staging/reimport.json",
-      "sha256": "5d37529172afcf4457b7a7959a47aee0f7ac0ccd29bf7023429082a4155cdf86",
-      "bytes": 2281
+      "sha256": "26a56e53592268f9f7b3beb704280eeaa6486e4a2ac1add3b75e99b75c326db9",
+      "bytes": 2283
     }
   ],
   "reviewEvidence": [
     {
       "path": "assets-source/enemies/cog-sentry/cog-sentry.review-sheet.jpg",
-      "sha256": "703d8b3bdc4ce3e2c7bf6970fa1388e7c38bd577c7be6cecdc4d54c1dbb9983d",
-      "bytes": 255290
+      "sha256": "7ee09017e54b3cea740ad3cb4f244539042f8634e3c4d30536438a66b73e1543",
+      "bytes": 255273
     },
     {
       "path": "docs/verification/p4-sentry-attack.jpg",
-      "sha256": "93e8fff1375d30b429bf15714f1e03dab2d8cfa1db149254bdb3a5cbabe0ccc3",
-      "bytes": 31344
+      "sha256": "d85572fb10fdd9011b6ebc211d1aae5f886f1bddbe82dda2fb88609225166ae8",
+      "bytes": 31935
     },
     {
       "path": "docs/verification/p4-sentry-death.jpg",
-      "sha256": "7af27550388e4e9059c2e9b9e124ed722659b1a5c643a492e903d46275a5cdac",
-      "bytes": 22249
+      "sha256": "82f61e8ea5279cbeee69086ef5c4dc31dbe4102d945e32f4e3a99317f7d6bcc7",
+      "bytes": 23047
     },
     {
       "path": "docs/verification/p4-sentry-frozen.jpg",
-      "sha256": "13fed2ca30a465b5a3e001cb38cb3023fcbabce4037539ef59e23d8f6fef4a70",
-      "bytes": 26121
+      "sha256": "5dab3f1ee9aad2ec29227a4614da0d82305de63f093b3191e1472339799a1c2b",
+      "bytes": 26351
     },
     {
       "path": "docs/verification/p4-sentry-hit.jpg",
-      "sha256": "3c49048ad5d348078a0b434a3f05b4325fdb395766e26042bb021dad0c81c984",
-      "bytes": 29207
+      "sha256": "ccfaee023005d3070e0cb407e15f725ae21192194f70c65248611df45536faa9",
+      "bytes": 29849
     },
     {
       "path": "docs/verification/p4-sentry-idle.jpg",
-      "sha256": "c85a04077a32222524f402a2c8be7a2b52c47b13eaa9300c280eb62d56934b75",
-      "bytes": 29667
+      "sha256": "e5363f7790bd5bc33ece21dea23fb8cdc0eb57cf2cee98752cb9c8bf80674559",
+      "bytes": 29611
     }
   ],
   "references": [

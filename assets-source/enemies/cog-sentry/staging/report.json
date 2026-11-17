@@ -2,7 +2,7 @@
   "piece": "cog-sentry",
   "blender": "5.3.0",
   "generator": "scripts/assets/build-cog-sentry.py",
-  "generator_sha256": "6ae6753374db37797862744f8087ec6228a9ac8b0920fb5f425356b0d9366d0f",
+  "generator_sha256": "8f80d1ae8d10adeab5123ba9497e9d00a8ea4c6e5c0855c902cf65274f25bacc",
   "concept": {
     "file": "assets-source/concepts/sentry-sheet-1.png",
     "sha256": "c5373556e0cc0765f71a74d08d4f3e50c473917ad23bdf5e605218d737404e34",
@@ -21,8 +21,8 @@
     }
   },
   "triangles": {
-    "low": 9368,
-    "high": 24812
+    "low": 10140,
+    "high": 25744
   },
   "bones": 21,
   "authoringAgent": "Claude Code subagent (claude-opus-5-5), dispatched by the rogue-xr primary session",
@@ -61,7 +61,7 @@
       "min_z_frame": 1,
       "final_max_z": 0.481,
       "final_min_z": 0.004,
-      "loop_seam_m": 1.66239
+      "loop_seam_m": 1.67267
     },
     "frozen": {
       "frames": 31,
@@ -73,17 +73,21 @@
     }
   },
   "canonicalized_primitives": 4,
+  "canonicalized_normals": {
+    "accessors": 4,
+    "quantum": 0.0078125
+  },
   "reimport": {
-    "glb_sha256": "7cadf35d5b245648d1930bb4e6972dfb51e4f329935356cc9e8259d59837589a",
-    "glb_bytes": 847052,
-    "triangles": 9368,
+    "glb_sha256": "6025f67d33f6eac7f66ac9771f83dfd505c43b97a0e7eaaea8a373e079f02811",
+    "glb_bytes": 923220,
+    "triangles": 10140,
     "materials": [
       "brass-polished",
       "brass-aged",
       "gunmetal",
       "sentry-glow"
     ],
-    "vertices": 9217,
+    "vertices": 10409,
     "joints": [
       "root",
       "hips",
@@ -113,12 +117,12 @@
     "unweighted_vertices": 0,
     "bounds": {
       "min": [
-        -0.3878,
+        -0.3674,
         0.0,
         -0.245
       ],
       "max": [
-        0.3878,
+        0.3674,
         1.9612,
         0.157
       ]
@@ -170,8 +174,8 @@
         "parent": "head",
         "position": [
           0.0,
-          1.811,
-          -0.125
+          1.824,
+          -0.118
         ]
       },
       "socket-weapon": {
@@ -228,11 +232,11 @@
   ],
   "render_seconds": 2.5,
   "files": {
-    "assets-source/enemies/cog-sentry/blend/cog-sentry.high.blend": "64514bb3929036aa8c7bf6c42b43f57465c1074290027566356240cca2299162",
-    "assets-source/enemies/cog-sentry/blend/cog-sentry.low.blend": "8939f853f9728ab86ff1c902b16a0e8e12eda4805de6487e32666c0d7c096c62",
-    "assets-source/enemies/cog-sentry/staging/reimport.json": "5d37529172afcf4457b7a7959a47aee0f7ac0ccd29bf7023429082a4155cdf86",
-    "public/assets/enemies/cog-sentry/cog-sentry.glb": "7cadf35d5b245648d1930bb4e6972dfb51e4f329935356cc9e8259d59837589a",
-    "public/assets/enemies/cog-sentry/cog-sentry.manifest.json": "284d87b718a14444c2fde39c89c4bb4ff6be4390d632678be94127bf9f869175"
+    "assets-source/enemies/cog-sentry/blend/cog-sentry.high.blend": "b2d87f597b1e77cbd5e9e1c68c2bf80206347f7231ba6d9e78fc3e3a79a73ade",
+    "assets-source/enemies/cog-sentry/blend/cog-sentry.low.blend": "7d6e9aced3a619ba6c29fbb9e5829bd5444521b8f8a656902d35f599a50c9e3c",
+    "assets-source/enemies/cog-sentry/staging/reimport.json": "26a56e53592268f9f7b3beb704280eeaa6486e4a2ac1add3b75e99b75c326db9",
+    "public/assets/enemies/cog-sentry/cog-sentry.glb": "6025f67d33f6eac7f66ac9771f83dfd505c43b97a0e7eaaea8a373e079f02811",
+    "public/assets/enemies/cog-sentry/cog-sentry.manifest.json": "8cef274313cbacde4130909a180719bad30e1f8f6b719d57bdb65b8b5d12ff68"
   },
-  "total_seconds": 3.6
+  "total_seconds": 3.3
 }

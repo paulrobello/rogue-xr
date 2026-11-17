@@ -56,15 +56,25 @@ NORMAL_SCALE = {"brass-polished": 0.35, "brass-aged": 0.35}  # as on the combat 
 # False restores the 0.5 m tiling (then drop TINTS too).
 FLAT_BRASS = True
 FLAT_BRASS_UV = {"brass-polished": (566.5 / 1024, 198.5 / 1024), "brass-aged": (930.5 / 1024, 477.5 / 1024)}
-# Linear multiplier on the bound set's colour (manifest slot `tint`, enemy-asset.ts bind()). The first
-# factor stands in for the tiled AO mean (0.865) the flat texel no longer applies (aged also for its brighter
-# texel, 0.85); the green and blue cuts pull the brass from hue 35 toward the concept's 24 to 30 and take
-# the cream off lit faces (first build lit p90 (202, 173, 143), concept (192, 153, 101)).
-TINTS = {"brass-polished": [0.87, 0.71, 0.74], "brass-aged": [0.74, 0.60, 0.63]}
+# Linear multiplier on the bound set's colour (manifest slot `tint`, enemy-asset.ts bind(), each channel
+# 0..1). The first factor stands in for the tiled AO mean (0.865) the flat texel no longer applies (aged also
+# for its brighter texel, 0.85). Pass 2 moves the engine median (96, 64, 33) (hue 30, HSL S 0.49) toward the
+# concept's dusty bronze (91, 64, 46) (hue 24, S 0.33) at the same value. No per-channel multiply reaches
+# both that median and the lit p90, which already matches ((214, 173, 119) against (203, 163, 102)): S 0.33
+# needs blue x1.94, which puts p90 blue near 160 (cream), and a green cut to median hue 24 drags the p90 hue
+# from 34 to 25 (concept 36). Compromise: green x0.93, blue x1.12: predicted median (96, 62, 35), hue 26,
+# S 0.46; p90 (214, 167, 125), hue 28.5. Aged takes the same per-channel ratios.
+TINTS = {"brass-polished": [0.87, 0.66, 0.829], "brass-aged": [0.74, 0.558, 0.706]}
+# The exporter's NORMAL carries float noise from Blender's corner-normal sums (pass 1: one hidden vertex
+# flipped a 4-digit rounding step in about 40% of builds). canonicalize_normals snaps every NORMAL to this
+# grid and renormalizes, so that noise cannot reach the bytes. None disables it (for A/B builds).
+NORMAL_QUANTUM = 1.0 / 128.0
 GM_SRGB = (0x2E, 0x2A, 0x2A)  # gunmetal, carried by COLOR_0 on the white gunmetal slot
 # Faceted jewel inlays (sheet-1: outer thighs, upper arms): pseudo slots mapped to the gunmetal slot, their
 # hues in COLOR_0, one per facet sector (stained-glass read: cyan, violet, magenta, emerald, sapphire, ruby).
-JEWEL_SRGB = [(0x20, 0xB0, 0xD0), (0x6A, 0x30, 0xC8), (0xC0, 0x18, 0x78), (0x10, 0xA0, 0x50), (0x20, 0x40, 0xD0), (0xC0, 0x10, 0x30)]
+# Pass 2: each hue scaled to a 0xF0 peak at the same hue and saturation; the jewels sit on the metal 0.85
+# gunmetal slot, which darkened the pass-1 stones below the reviewer's saturated-pixel floor (V > 0.25).
+JEWEL_SRGB = [(0x25, 0xCB, 0xF0), (0x7F, 0x3A, 0xF0), (0xF0, 0x1E, 0x96), (0x18, 0xF0, 0x78), (0x25, 0x4A, 0xF0), (0xF0, 0x14, 0x3C)]
 JW = 20  # pseudo material indices JW .. JW + 5
 # Factor-only GLB materials (sRGB, roughness, metallic): the fallback look when the sets fail to load.
 EXPORT_FACTORS = {
@@ -191,14 +201,28 @@ class Builder:
         self.loft([bottom, top], [-hz, hz], Matrix.Translation(c), mat, bone)
 
     def sphere(self, c, r: float, mat: int, bone: str, scale=(1.0, 1.0, 1.0)) -> None:
-        from mathutils import Matrix
-
+        """UV sphere built vertex by vertex in a fixed order (the topology of create_uvsphere, which welds its
+        seam and poles with an internal remove_doubles; its merge order is the suspected source of the
+        run-dependent loop order on the pass-1 shoulder ball)."""
         u, v = self.d["sphere"]
-        m = Matrix.Translation(c) @ Matrix.Diagonal((r * scale[0], r * scale[1], r * scale[2], 1.0))
-        res = self.bmesh.ops.create_uvsphere(self.bm, u_segments=u, v_segments=v, radius=1.0, matrix=m)
-        verts = res["verts"]
-        faces = list({f for v_ in verts for f in v_.link_faces})
-        self._finish(verts, faces, mat, bone, smooth=True)
+        sx, sy, sz = (r * k for k in scale)
+        bm = self.bm
+
+        def pt(th: float, ph: float) -> tuple:
+            return (c[0] + sx * math.sin(th) * math.cos(ph), c[1] + sy * math.sin(th) * math.sin(ph), c[2] + sz * math.cos(th))
+
+        rows = [[bm.verts.new(pt(math.pi * j / v, 2 * math.pi * i / u)) for i in range(u)] for j in range(1, v)]
+        top, bot = bm.verts.new((c[0], c[1], c[2] + sz)), bm.verts.new((c[0], c[1], c[2] - sz))
+        faces = []
+        for i in range(u):
+            k = (i + 1) % u
+            faces.append(bm.faces.new((top, rows[0][i], rows[0][k])))
+            faces.append(bm.faces.new((bot, rows[-1][k], rows[-1][i])))
+        for a, b_ in zip(rows, rows[1:]):
+            for i in range(u):
+                k = (i + 1) % u
+                faces.append(bm.faces.new((a[i], b_[i], b_[k], a[k])))
+        self._finish([x for row in rows for x in row] + [top, bot], faces, mat, bone, smooth=True)
 
     def gear(self, c, normal_axis: str, r_root: float, r_tip: float, teeth: int, depth: float, mat: int, bone: str) -> None:
         """Toothed disc; normal along Blender -Y ('-Y') or +Y."""
@@ -244,10 +268,11 @@ class Builder:
         self.rings3([[vsec(st, 2 * math.pi * i / n) for i in range(n)] for st in table], mat, bone, caps=caps)
 
     def vplate(self, table: list, z0: float, z1: float, a0, a1, off: float, t: float, mat: int, bone: str, s: int = 1,
-               nu: int | None = None, nv: int = 3, crown: float = 0.0) -> None:
-        """Curved plate of thickness t laid `off` outside a vloft table's surface, from z0 to z1 and from
-        angle a0 to a1 (degrees from the front toward the s side; callables of z for tapered or pointed
-        plates). `crown` bulges its middle so each plate carries its own highlight."""
+               nu: int | None = None, nv: int = 3, crown: float = 0.0, smooth: bool = True) -> None:
+        """Curved plate of thickness t whose outer face lies `off` outside a vloft table's surface, from z0
+        to z1 and from angle a0 to a1 (degrees from the front toward the s side; callables of z for tapered
+        or pointed plates). `crown` bulges its middle so each plate carries its own highlight; smooth=False
+        keeps every quad a flat facet (angular plates)."""
         nu = nu or self.n(8)
         f = lambda g, z: g(z) if callable(g) else g  # noqa: E731
 
@@ -267,9 +292,10 @@ class Builder:
         border = [(i, 0) for i in range(nu)] + [(nu, j) for j in range(nv)] + [(i, nv) for i in range(nu, 0, -1)] + [(0, j) for j in range(nv, 0, -1)]
         for (i0, j0), (i1, j1) in zip(border, border[1:] + border[:1]):
             faces.append(bm.faces.new((front[i1][j1], front[i0][j0], back[i0][j0], back[i1][j1])))
-        self._finish([v for g in (front, back) for row in g for v in row], faces, mat, bone, True)
+        self._finish([v for g in (front, back) for row in g for v in row], faces, mat, bone, smooth)
 
-    def dome(self, c, radii, s: int, az: tuple, el: tuple, t: float, mat: int, bone: str, nu: int | None = None, nv: int | None = None) -> None:
+    def dome(self, c, radii, s: int, az: tuple, el: tuple, t: float, mat: int, bone: str, nu: int | None = None, nv: int | None = None,
+             smooth: bool = True) -> None:
         """Ellipsoid shell of thickness t: azimuth from the outward (s * X) axis toward +Y, elevation up.
         Full azimuth wraps; elevation 90 closes on a pole. Pauldron caps and lames."""
         full = abs(az[1] - az[0]) >= 359.999
@@ -308,7 +334,7 @@ class Builder:
                     faces.append(bm.faces.new((out[i][j], out[i][j + 1], inn[i][j + 1], inn[i][j])))
                 if pole:
                     faces.append(bm.faces.new((out[i][rows - 1], tops[0], tops[1], inn[i][rows - 1])))
-        self._finish([v for g in (out, inn) for col in g for v in col] + tops, faces, mat, bone, True)
+        self._finish([v for g in (out, inn) for col in g for v in col] + tops, faces, mat, bone, smooth)
 
     def xcyl(self, c, r: float, x0: float, x1: float, mat: int, bone: str, n: int | None = None) -> None:
         """Cylinder along X (knee and elbow hinges, ear discs)."""
@@ -346,8 +372,9 @@ class Builder:
             rings.append(ring)
         self.rings3(rings, mat, bone)
 
-    def jewel(self, c, nrm, up, ru: float, rv: float, h: float, bone: str, sectors: int = 6) -> None:
-        """Faceted oval cabochon on a brass-aged bezel: each facet sector one jewel hue (COLOR_0)."""
+    def jewel(self, c, nrm, up, ru: float, rv: float, h: float, bone: str, sectors: int = 6, sink: float = 0.010) -> None:
+        """Faceted oval cabochon on a brass-aged bezel: each facet sector one jewel hue (COLOR_0). The bezel
+        starts `sink` below the centre's tangent plane, so a wide stone on a curved plate shows no gap."""
         nrm = _unit(nrm)
         u = _unit(_sub(up, _mul(nrm, _dot(up, nrm))))
         v = _cross(nrm, u)
@@ -375,7 +402,7 @@ class Builder:
         n = self.n(12)
         bez = lambda f_, lift: [_add(c, _add(_mul(nrm, lift), _add(_mul(u, ru * f_ * math.cos(2 * math.pi * i / n)),  # noqa: E731
                                                                     _mul(v, rv * f_ * math.sin(2 * math.pi * i / n))))) for i in range(n)]
-        self.rings3([bez(1.22, -0.010), bez(1.22, 0.003), bez(1.04, 0.005)], BA, bone)
+        self.rings3([bez(1.22, -sink), bez(1.22, 0.003), bez(1.04, 0.005)], BA, bone)
 
 
 def _add(a, b) -> tuple:
@@ -435,70 +462,75 @@ def vnormal(table: list, z: float, a_deg: float) -> tuple:
 # Measured on sentry-sheet-1 (Pillow grid, 1.96 m over 902 px, 2.17 mm/px; see the pass-1 notes).
 # Stations: (z, cx, cy, rx, front, back, p).
 CUIRASS = [(1.335, 0, 0, 0.120, 0.105, 0.090, 2.4), (1.38, 0, 0, 0.150, 0.130, 0.100, 2.4), (1.45, 0, 0, 0.166, 0.142, 0.110, 2.4),
-           (1.52, 0, 0, 0.170, 0.140, 0.115, 2.4), (1.58, 0, 0, 0.160, 0.122, 0.112, 2.4), (1.635, 0, 0, 0.125, 0.095, 0.098, 2.4),
-           (1.67, 0, 0, 0.075, 0.060, 0.075, 2.2)]
+           (1.52, 0, 0, 0.170, 0.140, 0.115, 2.4), (1.58, 0, 0, 0.168, 0.128, 0.114, 2.6), (1.635, 0, 0, 0.150, 0.105, 0.104, 2.8),
+           (1.67, 0, 0, 0.105, 0.070, 0.085, 2.6)]  # pass 2: a broad yoke under the pauldrons, not an egg top
 WAIST = [(1.10, 0, 0, 0.115, 0.095, 0.095, 2.2), (1.18, 0, 0, 0.100, 0.090, 0.090, 2.2), (1.27, 0, 0, 0.098, 0.090, 0.090, 2.2),
          (1.345, 0, 0, 0.110, 0.095, 0.095, 2.2)]
 PELVIS = [(0.93, 0, 0, 0.095, 0.070, 0.075, 2.3), (1.00, 0, 0, 0.135, 0.090, 0.090, 2.3), (1.08, 0, 0, 0.140, 0.095, 0.095, 2.3),
           (1.14, 0, 0, 0.120, 0.092, 0.092, 2.3)]
-CRANIUM = [(1.755, 0, -0.005, 0.070, 0.085, 0.080, 2.2), (1.80, 0, -0.003, 0.088, 0.100, 0.098, 2.2), (1.85, 0, 0, 0.095, 0.104, 0.104, 2.2),
-           (1.90, 0, 0, 0.088, 0.094, 0.096, 2.2), (1.935, 0, 0, 0.066, 0.070, 0.072, 2.0), (1.955, 0, 0, 0.036, 0.038, 0.040, 2.0),
-           (1.9612, 0, 0, 0.008, 0.008, 0.008, 2.0)]
-# Face mask: an inverted shield in front of the cranium (stations for vplate: the wrap surface).
-MASK = [(1.69, 0, 0, 0.098, 0.100, 0.060, 2.0), (1.76, 0, 0, 0.098, 0.104, 0.060, 2.0), (1.85, 0, 0, 0.100, 0.106, 0.060, 2.0)]
-MASK_HALF = [(1.700, 12.0), (1.75, 30.0), (1.80, 50.0), (1.848, 58.0)]  # (z, half-angle deg): chin 0.045 m wide, brow 0.19
+# Head (pass 2): one narrow faceless mask, taller (0.27 m) than wide (0.19 m at z 1.84), tapering to a
+# pointed chin pushed forward at z 1.69 (sheet-1 front and side views). No dome, visor bar or chin block.
+HEAD = [(1.690, 0, 0.050, 0.010, 0.012, 0.010, 2.0), (1.715, 0, 0.038, 0.032, 0.040, 0.036, 2.0), (1.75, 0, 0.022, 0.060, 0.074, 0.068, 2.2),
+        (1.79, 0, 0.008, 0.080, 0.094, 0.090, 2.2), (1.84, 0, 0, 0.095, 0.104, 0.102, 2.2), (1.89, 0, -0.004, 0.092, 0.100, 0.102, 2.2),
+        (1.925, 0, -0.006, 0.076, 0.084, 0.088, 2.1), (1.95, 0, -0.006, 0.048, 0.054, 0.058, 2.0), (1.9612, 0, -0.006, 0.010, 0.012, 0.012, 2.0)]
 ARM_FLARE = 0.028  # forearm and gauntlet offset outward from their bones (m)
 
 
-def mask_half(z: float) -> float:
-    for (za, aa), (zb, ab) in zip(MASK_HALF, MASK_HALF[1:]):
-        if z <= zb:
-            return aa + (ab - aa) * max(0.0, (z - za) / (zb - za))
-    return MASK_HALF[-1][1]
+# Knee (pass 2): the hinge, the knee cop and the facing ends of cuisse and greave are centred on the shin
+# bone's head, the knee pivot. A cylinder about the pivot's X axis looks the same at every bend, and both
+# shells end inside it (every end-ring point closer to the axis than KNEE_R), so no bend opens a gap.
+KNEE_Z, KNEE_R = 0.56, 0.066
 
 
 def leg_tables(s: int) -> tuple[list, list]:
-    cuisse = [(0.68, s * 0.120, 0, 0.066, 0.072, 0.068, 2.2), (0.80, s * 0.118, 0, 0.080, 0.088, 0.080, 2.2),
-              (0.92, s * 0.115, 0, 0.092, 0.100, 0.092, 2.2), (1.02, s * 0.115, 0, 0.098, 0.100, 0.095, 2.2)]
-    # Greave with the calf swell behind (side view: back half-depth 0.098 at z 0.42 against 0.05 at the ankle).
-    greave = [(0.13, s * 0.12, 0, 0.044, 0.035, 0.050, 2.2), (0.22, s * 0.12, 0, 0.047, 0.038, 0.062, 2.2),
-              (0.32, s * 0.12, 0, 0.056, 0.050, 0.080, 2.2), (0.42, s * 0.12, 0, 0.066, 0.068, 0.098, 2.2),
-              (0.50, s * 0.12, 0, 0.064, 0.075, 0.085, 2.2), (0.56, s * 0.12, 0, 0.058, 0.072, 0.060, 2.2)]
+    # Cuisse: tapered from a wide hip (0.20 m at z 1.02) to the knee, ending at z 0.575 inside the hinge.
+    cuisse = [(0.575, s * 0.120, 0, 0.058, 0.060, 0.056, 2.2), (0.66, s * 0.120, 0, 0.066, 0.070, 0.064, 2.2),
+              (0.80, s * 0.118, 0, 0.078, 0.086, 0.078, 2.2), (0.92, s * 0.115, 0, 0.090, 0.098, 0.090, 2.2),
+              (1.02, s * 0.115, 0, 0.098, 0.100, 0.095, 2.2)]
+    # Greave with the calf swell behind (side view: back half-depth 0.105 at z 0.42 against 0.05 at the ankle),
+    # its top ring at z 0.585 inside the hinge.
+    greave = [(0.13, s * 0.12, 0, 0.044, 0.035, 0.050, 2.2), (0.22, s * 0.12, 0, 0.047, 0.038, 0.064, 2.2),
+              (0.32, s * 0.12, 0, 0.058, 0.050, 0.088, 2.2), (0.42, s * 0.12, 0, 0.068, 0.066, 0.105, 2.2),
+              (0.50, s * 0.12, 0, 0.064, 0.072, 0.086, 2.2), (0.585, s * 0.12, 0, 0.054, 0.056, 0.054, 2.2)]
     return cuisse, greave
 
 
 def arm_tables(s: int) -> tuple[list, list]:
     ux = lambda z: s * (0.25 + 0.02 * (1.51 - z) / 0.31)  # noqa: E731  upperarm bone axis
     upper = [(1.22, ux(1.22), 0, 0.036, 0.036, 0.036, 2.0), (1.50, ux(1.50), 0, 0.038, 0.038, 0.038, 2.0)]
-    fore = [(0.92, s * 0.289, 0.019, 0.046, 0.048, 0.044, 2.3), (1.02, s * 0.282, 0.012, 0.056, 0.055, 0.050, 2.3),
-            (1.12, s * 0.276, 0.006, 0.062, 0.060, 0.055, 2.3), (1.175, s * 0.273, 0.003, 0.058, 0.056, 0.052, 2.3)]
+    # Vambrace: one shell wrapped round the forearm, tapering from the elbow flare to the wrist.
+    fore = [(0.92, s * 0.289, 0.019, 0.044, 0.046, 0.042, 2.3), (1.02, s * 0.282, 0.012, 0.052, 0.053, 0.048, 2.3),
+            (1.12, s * 0.276, 0.006, 0.060, 0.059, 0.054, 2.3), (1.175, s * 0.273, 0.003, 0.064, 0.062, 0.057, 2.3)]
     return upper, fore
 
 
 def build_parts(b: Builder) -> None:
     S = b.segment
-    # Head: a tall brass cranium (0.19 m wide, 0.21 deep) under an inverted-shield face mask with a brow
-    # band, a centre keel and a split jaw; brass-aged ear discs; amber eye slits on the mask.
-    b.vloft(CRANIUM, BP, "head", n=b.n(18))
-    b.vplate(MASK, 1.738, 1.848, lambda z: -mask_half(z), mask_half, 0.012, 0.014, BP, "head", nu=b.n(10), nv=4)
-    b.vplate(MASK, 1.826, 1.848, -58.0, 58.0, 0.020, 0.012, BA, "head", nu=b.n(10), nv=1)  # brow band
-    b.vplate(MASK, 1.738, 1.826, -3.0, 3.0, 0.017, 0.008, BA, "head", nu=1, nv=3)  # keel
-    b.vplate(MASK, 1.722, 1.746, -32.0, 32.0, 0.0, 0.014, GM, "head", nu=b.n(6), nv=1)  # mouth, behind the split
-    b.vplate(MASK, 1.695, 1.732, lambda z: -mask_half(z) - 6, lambda z: mask_half(z) + 6, 0.008, 0.014, BA, "head", nu=b.n(6), nv=2)  # jaw
+    # Head: one narrow brass mask (HEAD) with a brow ridge over the eyes, flat cheek planes from the eyes to
+    # the pointed chin and a forehead seam. The eye slits sit in dark gunmetal sockets flush on the mask, so
+    # they read as cut into it; the amber slits stay two glow islands.
+    b.vloft(HEAD, BP, "head", n=b.n(18))
+    b.vplate(HEAD, 1.842, 1.864, -62.0, 62.0, 0.006, 0.010, BP, "head", nu=b.n(10), nv=1, crown=0.004)  # brow ridge
+    b.vplate(HEAD, 1.868, 1.945, -2.5, 2.5, 0.003, 0.006, BA, "head", nu=1, nv=3, crown=0.003)  # forehead seam
     for s in (1, -1):
-        b.vplate(MASK, 1.804, 1.818, s * 12.0, s * 36.0, 0.027, 0.014, GL, "head", nu=b.n(4), nv=1)  # eye slit
-        b.xcyl((0, -0.025, 1.835), 0.038, s * 0.084, s * 0.104, BA, "head")  # ear disc
+        b.vplate(HEAD, 1.705, 1.805, lambda z, s=s: s * (4.0 + (z - 1.705) * 60.0), lambda z, s=s: s * (34.0 + (z - 1.705) * 300.0),
+                 0.004, 0.008, BP, "head", nu=2, nv=2, smooth=False)  # cheek plane
+        b.vplate(HEAD, 1.809, 1.838, s * 7.0, s * 38.0, 0.0015, 0.006, GM, "head", nu=b.n(4), nv=1)  # eye socket
+        b.vplate(HEAD, 1.815, 1.832, s * 10.0, s * 34.0, 0.004, 0.006, GL, "head", nu=b.n(4), nv=1)  # eye slit
     # Neck: gunmetal column, brass collar and four exposed pistons under the jaw.
     S((0, 0, 1.56), (0, 0, 1.745), 0.028, 0.026, GM, "neck")
     S((0, 0, 1.62), (0, 0, 1.635), 0.040, 0.040, BA, "neck")
     for x, y0, y1 in ((0.035, -0.03, -0.045), (-0.035, -0.03, -0.045), (0.045, 0.005, -0.008), (-0.045, 0.005, -0.008)):
         S((x, y0, 1.60), (x * 0.9, y1, 1.75), 0.009, 0.009, GM, "neck", sides=6)
-    # Chest: a deep cuirass (0.34 m wide, 0.25 to 0.26 deep) with overlapping pectoral plates, a sternum keel
-    # and a belly plate; the hexagonal amber core in a brass-aged bezel; back plate and cog.
+    # Chest: a deep cuirass (0.34 m wide, 0.25 to 0.26 deep) under faceted pectoral plates (two flat-shaded
+    # overlapping rows a side), brass-aged ridges framing the core and a sternum ridge above it, and a belly
+    # plate; the hexagonal amber core in a brass-aged bezel; back plate and cog.
     b.vloft(CUIRASS, BP, "chest", n=b.n(20))
     for s in (1, -1):
-        b.vplate(CUIRASS, 1.47, 1.64, 18.0 * s, 82.0 * s, 0.014, 0.012, BP, "chest", nu=b.n(7), nv=3, crown=0.006)
-    b.vplate(CUIRASS, 1.49, 1.665, -7.0, 7.0, 0.018, 0.012, BA, "chest", nu=2, nv=3)  # sternum keel
+        b.vplate(CUIRASS, 1.43, 1.545, 24.0 * s, 80.0 * s, 0.012, 0.010, BP, "chest", nu=4, nv=2, crown=0.006, smooth=False)  # lower pectoral
+        b.vplate(CUIRASS, 1.53, 1.645, 24.0 * s, 84.0 * s, 0.022, 0.010, BP, "chest", nu=4, nv=2, crown=0.008, smooth=False)  # upper pectoral
+        b.vplate(CUIRASS, 1.40, 1.635, 19.0 * s, 25.0 * s, 0.026, 0.012, BA, "chest", nu=2, nv=4, crown=0.004, smooth=False)  # core frame
+    b.vplate(CUIRASS, 1.53, 1.665, -4.0, 4.0, 0.024, 0.012, BA, "chest", nu=2, nv=3, crown=0.006, smooth=False)  # sternum ridge
     b.vplate(CUIRASS, 1.335, 1.41, -78.0, 78.0, 0.014, 0.012, BP, "chest", nu=b.n(10), nv=2, crown=0.004)  # belly plate
     front = vsurf(CUIRASS, 1.46, 0.0)[1]
     b.hexplate((0, front - 0.012, 1.46), "+Y", 0.064, 0.030, BA, "chest")
@@ -527,18 +559,25 @@ def build_parts(b: Builder) -> None:
     for s, n in ((1, "R"), (-1, "L")):
         cuisse, greave = leg_tables(s)
         upper, fore = arm_tables(s)
-        # Pauldron (clavicle): a domed cap over two lower lames, each further out (overlapping shingles).
-        # Outer edge x 0.324: shoulder span 0.65 m (concept 0.62 to 0.65).
+        # Pauldron (clavicle): three layered shells, each lower one wider and further out (overlapping
+        # shingles), flat-shaded into angular facets, each with a rolled brass-aged lip at its lower edge.
+        # The cap is low (rz 0.072) rather than a near-sphere. Outer edge x 0.319 (the cap lip): shoulder span
+        # 0.64 m (concept 0.62 to 0.65; pass 1 0.648, which the reviewer read as 0.33 of height against 0.31).
+        pc = (s * 0.230, -0.010, 1.535)
         b.sphere((s * 0.245, 0, 1.51), 0.050, GM, f"upperarm.{n}")
-        b.dome((s * 0.232, -0.012, 1.528), (0.088, 0.118, 0.108), s, (0.0, 360.0), (-22.0, 90.0), 0.012, BP, f"clavicle.{n}", nv=b.n(5))
-        b.dome((s * 0.232, -0.012, 1.528), (0.095, 0.127, 0.117), s, (-78.0, 78.0), (-40.0, -14.0), 0.010, BA, f"clavicle.{n}", nv=2)
-        b.dome((s * 0.232, -0.012, 1.528), (0.101, 0.136, 0.124), s, (-68.0, 68.0), (-55.0, -34.0), 0.010, BP, f"clavicle.{n}", nv=2)
+        b.dome(pc, (0.086, 0.112, 0.072), s, (0.0, 360.0), (-12.0, 90.0), 0.012, BP, f"clavicle.{n}", nu=b.n(10), nv=b.n(4), smooth=False)
+        b.dome(pc, (0.090, 0.118, 0.078), s, (-100.0, 100.0), (-20.0, -8.0), 0.016, BA, f"clavicle.{n}", nu=b.n(10), nv=1)  # lip
+        b.dome(pc, (0.090, 0.120, 0.086), s, (-85.0, 85.0), (-38.0, -14.0), 0.010, BP, f"clavicle.{n}", nu=b.n(8), nv=2, smooth=False)
+        b.dome(pc, (0.095, 0.125, 0.091), s, (-85.0, 85.0), (-42.0, -33.0), 0.014, BA, f"clavicle.{n}", nu=b.n(8), nv=1)  # lip
+        b.dome(pc, (0.096, 0.126, 0.098), s, (-75.0, 75.0), (-58.0, -36.0), 0.010, BP, f"clavicle.{n}", nu=b.n(8), nv=2, smooth=False)
+        b.dome(pc, (0.101, 0.131, 0.103), s, (-75.0, 75.0), (-62.0, -53.0), 0.014, BA, f"clavicle.{n}", nu=b.n(8), nv=1)  # lip
         # Upper arm: gunmetal tube, an outer brass plate and its jewel (sheet-1 back view).
         b.vloft(upper, GM, f"upperarm.{n}", n=b.n(10))
         b.vplate(upper, 1.28, 1.46, 25.0 * s, 160.0 * s, 0.016, 0.012, BP, f"upperarm.{n}", s=1, nu=b.n(7), nv=3, crown=0.004)
         c = vsurf(upper, 1.37, 130.0 * s, 0.016)  # outer-back: shows in the back and side views
-        b.jewel(c, vnormal(upper, 1.37, 130.0 * s), (0, 0, 1), 0.036, 0.026, 0.012, f"upperarm.{n}")
-        # Elbow: ribbed gunmetal hinge; forearm: brass vambrace with an outer brass-aged flare plate.
+        b.jewel(c, vnormal(upper, 1.37, 130.0 * s), (0, 0, 1), 0.048, 0.033, 0.014, f"upperarm.{n}", sink=0.022)  # 1.7x pass-1 area
+        # Elbow: ribbed gunmetal hinge; forearm: one wrapped brass vambrace with brass-aged rims at the elbow
+        # flare and the wrist and a panel band between them.
         # Forearm and gauntlet sit ARM_FLARE further out than their bones (the concept's arms flare past
         # the pauldrons), which clears the vambrace of the thigh plate and its jewel.
         v_arm = len(b.bm.verts)
@@ -547,7 +586,10 @@ def build_parts(b: Builder) -> None:
             b.xcyl((0, 0, 1.205), 0.045, s * (x - 0.004), s * (x + 0.004), GM, f"forearm.{n}")
         S((s * 0.27, 0, 1.20), (s * 0.29, 0.02, 0.90), 0.024, 0.022, GM, f"forearm.{n}", sides=b.n(8))
         b.vloft(fore, BP, f"forearm.{n}", n=b.n(14))
-        b.vplate(fore, 0.95, 1.17, 40.0 * s, 150.0 * s, 0.016, 0.012, BA, f"forearm.{n}", nu=b.n(7), nv=3, crown=0.006)
+        for z0, z1 in ((0.92, 0.938), (1.045, 1.058), (1.157, 1.175)):  # rims and the panel band
+            st = interp(fore, (z0 + z1) / 2)
+            band = (st[1], st[2], st[3] + 0.004, st[4] + 0.004, st[5] + 0.004, st[6])
+            b.vloft([(z0, *band), (z1, *band)], BA, f"forearm.{n}", n=b.n(14))
         # Gauntlet: wrist ball, cuff, palm and four two-joint fingers plus a thumb, the hand plane turned
         # 40 deg (thumb inward) so the front view reads about 0.10 m wide (concept 0.05 of height).
         b.sphere((s * 0.29, 0.02, 0.90), 0.027, GM, f"hand.{n}")
@@ -567,21 +609,32 @@ def build_parts(b: Builder) -> None:
         b.bm.verts.ensure_lookup_table()
         for v in b.bm.verts[v_arm:]:
             v.co.x += s * ARM_FLARE
-        # Leg: hip ball, tapered cuisse (0.19 to 0.13 m wide) with an outer plate wrapping the hip and the
-        # faceted thigh jewel (sheet-1 side view, z 1.0); ribbed knee hinge under a pointed knee cop; greave
-        # with the calf swell; long pointed sabaton (0.32 m) with a brass-aged toe cap.
+        # Leg: hip ball; cuisse tapered from a 0.20 m hip to the knee, faced with two overlapping front lames
+        # (the upper one's lower edge laps the lower one) each with a bevelled centre ridge, an outer plate
+        # wrapping the hip and the faceted thigh jewel (sheet-1 side view, z 1.0); the ribbed gunmetal knee
+        # hinge on the pivot axis under a brass-aged knee cop; greave with the calf swell, a front plate and
+        # its ridge; long pointed sabaton (0.32 m) with a brass-aged toe cap.
+        kc = (s * 0.12, 0, KNEE_Z)
         b.sphere((s * 0.11, 0, 1.0), 0.058, GM, f"thigh.{n}")
         b.vloft(cuisse, BP, f"thigh.{n}", n=b.n(16))
-        b.vplate(cuisse, 0.90, 1.13, 45.0 * s, 150.0 * s, 0.016, 0.012, BP, f"thigh.{n}", nu=b.n(8), nv=3, crown=0.0)
-        # Outer-back (120 deg): behind the hanging forearm in the side view and visible from the back.
-        c = vsurf(cuisse, 1.0, 120.0 * s, 0.016)
-        b.jewel(c, vnormal(cuisse, 1.0, 120.0 * s), (0, 0, 1), 0.058, 0.044, 0.018, f"thigh.{n}")
-        b.xcyl((s * 0.12, 0, 0.60), 0.055, s * 0.068, s * 0.172, GM, f"shin.{n}")
-        for x in (0.085, 0.12, 0.155):
-            b.xcyl((s * 0.12, 0, 0.60), 0.060, s * (x - 0.005), s * (x + 0.005), GM, f"shin.{n}")
+        b.vplate(cuisse, 0.655, 0.82, -50.0, 50.0, 0.012, 0.010, BP, f"thigh.{n}", nu=b.n(6), nv=3, crown=0.004)  # lower lame
+        b.vplate(cuisse, 0.80, 0.99, -42.0, 42.0, 0.022, 0.010, BP, f"thigh.{n}", nu=b.n(6), nv=3, crown=0.004)  # upper lame
+        b.vplate(cuisse, 0.665, 0.81, -8.0, 8.0, 0.016, 0.006, BP, f"thigh.{n}", nu=2, nv=3, crown=0.006, smooth=False)  # ridge
+        b.vplate(cuisse, 0.815, 0.98, -8.0, 8.0, 0.026, 0.006, BP, f"thigh.{n}", nu=2, nv=3, crown=0.006, smooth=False)  # ridge
+        b.vplate(cuisse, 0.90, 1.13, 45.0 * s, 150.0 * s, 0.018, 0.010, BP, f"thigh.{n}", nu=b.n(8), nv=3, crown=0.0)
+        # Outer-back (120 deg): behind the hanging forearm in the side view and visible from the back. Sized to
+        # the concept's outer-thigh jewel (0.14 x 0.09 m): 0.15 x 0.10, 1.5x the pass-1 stone.
+        c = vsurf(cuisse, 0.98, 120.0 * s, 0.018)
+        b.jewel(c, vnormal(cuisse, 0.98, 120.0 * s), (0, 0, 1), 0.075, 0.050, 0.022, f"thigh.{n}", sink=0.035)
+        # Knee cop on the thigh: a shell in front of the hinge whose inner face stays outside the greave's
+        # swept radius, so bending never pushes the shin through it.
+        b.dome((s * 0.12, 0, 0.585), (0.110, 0.098, 0.100), s, (45.0, 135.0), (-25.0, 62.0), 0.012, BA, f"thigh.{n}", nu=b.n(8), nv=b.n(4))
+        b.xcyl(kc, KNEE_R, s * 0.055, s * 0.185, GM, f"shin.{n}")
+        for x in (0.082, 0.12, 0.158):
+            b.xcyl(kc, KNEE_R + 0.005, s * (x - 0.006), s * (x + 0.006), GM, f"shin.{n}")
         b.vloft(greave, BP, f"shin.{n}", n=b.n(16))
-        b.vplate(greave, 0.52, 0.645, lambda z: -(55 - (z - 0.52) / 0.125 * 35), lambda z: 55 - (z - 0.52) / 0.125 * 35, 0.016, 0.012,
-                 BA, f"shin.{n}", nu=b.n(6), nv=3, crown=0.008)
+        b.vplate(greave, 0.17, 0.50, -60.0, 60.0, 0.010, 0.010, BP, f"shin.{n}", nu=b.n(6), nv=3, crown=0.004)  # front plate
+        b.vplate(greave, 0.19, 0.49, -8.0, 8.0, 0.014, 0.006, BP, f"shin.{n}", nu=2, nv=3, crown=0.006, smooth=False)  # ridge
         b.sphere((s * 0.12, 0, 0.11), 0.034, GM, f"foot.{n}")
         b.yloft([(-0.075, s * 0.12, 0.040, 0.075, 2.6), (-0.03, s * 0.12, 0.050, 0.105, 2.6), (0.03, s * 0.12, 0.052, 0.095, 2.6),
                  (0.10, s * 0.12, 0.048, 0.065, 2.6), (0.17, s * 0.12, 0.036, 0.040, 2.6), (0.215, s * 0.12, 0.018, 0.020, 2.6),
@@ -989,7 +1042,7 @@ def set_slots(obj, mats: list) -> None:
 
 SOCKETS = {
     "socket-hit": ("chest", (0, 0.19, 1.46)),  # in front of the amber core: hit sparks and aim point
-    "socket-eye": ("head", (0, 0.125, 1.811)),  # between the eye slits, in front of the mask
+    "socket-eye": ("head", (0, 0.118, 1.824)),  # between the eye slits, in front of the mask
     "socket-weapon": ("hand.R", (0.30 + ARM_FLARE, 0.03, 0.78)),  # the striking claw
 }
 
@@ -1075,6 +1128,40 @@ def canonicalize_indices(path: Path) -> int:
             touched += 1
     path.write_bytes(bytes(data))
     return touched
+
+
+def canonicalize_normals(path: Path, quantum: float | None = NORMAL_QUANTUM) -> int:
+    """Snaps every primitive's NORMAL to a `quantum` grid and renormalizes it, in place (same layout and
+    length). A run-dependent 1e-4 step in an exported normal (pass 1) lands on the same grid point except
+    near a cell boundary (offline: about 0.85 % of noisy vertices at 1/128). Not idempotent (renormalized
+    values sit off the grid): run it exactly once per export. Returns accessors touched."""
+    import numpy as np
+
+    if not quantum:
+        return 0
+    data = bytearray(path.read_bytes())
+    jlen = struct.unpack_from("<I", data, 12)[0]
+    gltf = json.loads(data[20 : 20 + jlen])
+    bin_start = 28 + jlen
+    done: set[int] = set()
+    for mesh in gltf["meshes"]:
+        for prim in mesh["primitives"]:
+            i = prim["attributes"].get("NORMAL")
+            if i is None or i in done:
+                continue
+            done.add(i)
+            acc = gltf["accessors"][i]
+            view = gltf["bufferViews"][acc["bufferView"]]
+            assert acc["componentType"] == 5126 and acc["type"] == "VEC3", "NORMAL must be float VEC3"
+            stride = view.get("byteStride", 12)
+            start = bin_start + view.get("byteOffset", 0) + acc.get("byteOffset", 0)
+            for k in range(acc["count"]):
+                o = start + k * stride
+                n = np.round(np.frombuffer(bytes(data[o : o + 12]), dtype="<f4").astype(np.float64) / quantum) * quantum
+                n /= max(float(np.linalg.norm(n)), 1e-12)
+                data[o : o + 12] = n.astype("<f4").tobytes()
+    path.write_bytes(bytes(data))
+    return len(done)
 
 
 def read_glb(path: Path):
@@ -1557,6 +1644,7 @@ def main_blender(args: argparse.Namespace) -> None:
     glb = runtime / f"{PIECE}.glb"
     export_glb(bpy, [arm, body, *sockets.values()], arm, glb)
     report["canonicalized_primitives"] = canonicalize_indices(glb)
+    report["canonicalized_normals"] = {"accessors": canonicalize_normals(glb), "quantum": NORMAL_QUANTUM}
     gate = gate_glb(glb)
     gate["errors"] += pose_errors
     gate["pass"] = not gate["errors"]
