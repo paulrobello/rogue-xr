@@ -1076,13 +1076,13 @@ renderer.setAnimationLoop((time, frame) => {
       ui?.recenter(camera);
     }
     const { left, right } = xr.sticks();
-    const aimSource = xr.rays().left;
+    const aimSource = xr.rays().right;
     const aimRay = aimSource ? controllerRay(aimSource) : null;
     drive.step({
       dt: deltaSeconds,
       left,
       right,
-      leftRay: aimRay
+      rightRay: aimRay
         ? {
             origin: [aimRay.origin.x, aimRay.origin.y, aimRay.origin.z],
             direction: [aimRay.direction.x, aimRay.direction.y, aimRay.direction.z],

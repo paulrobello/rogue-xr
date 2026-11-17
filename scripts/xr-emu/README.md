@@ -51,21 +51,21 @@ notice run are the music tracks that are not produced yet.
   `E` (end turn) for the death; the reward, death and title boards are always used with the ray.
 - The head sits at a seated 1.2 m, so the recenter's height lift is visible in the checks.
 - The locomotion checks (`locomotionCheck`, run inside the walk and alone with `--loco`) use both
-  sticks and the left controller: the right stick smooth moves, the left stick x snap turns and the left
-  stick forward aims the teleport (teleport defaults on since 8cd86ac, H6). Smooth move and snap turn come first. The comfort vignette is then read
+  sticks and the right controller: the left stick smooth moves, the right stick x snap turns and the right
+  stick forward aims the teleport (teleport defaults on since 8cd86ac, H6; F1 swapped the sticks). Smooth move and snap turn come first. The comfort vignette is then read
   three ways: `__combat.locomotion.vignetteStrength` and `__combat.comfortVignette` while the stick is held
   and after it is released, whether the comfort pass appears in `__xrEmu.passes`, and the mean luma of
   the outer frame band and the centre box at one pose with `comfortVignette.hold = 0.7` against the same
   view with it off (the hit flash is then held on top, to check the two stack). The teleport check sets
   teleport on through the app's settings path (it is already the default, and the title's Settings toggle is pressed off and on with the ray in
-  `settingsComfortCheck`, which also reads the stored profile from IndexedDB), pushes the left stick
+  `settingsComfortCheck`, which also reads the stored profile from IndexedDB), pushes the right stick
   forward and scans controller aims in 8 headings until the app itself reports an invalid landing
   (a wall, preferably), checks the arc and ring are dim red and that releasing moves nothing, then scans
   until the app reports a valid landing at least 1.5 m away, and checks the head ends within 3 cm of the
   landing the arc showed, with `rig.position.y` unchanged and a vignette pulse that fades. The aims are
   found by scanning because the room geometry is generated per seed. Every pose or axes write is followed
   by `__xrEmu.frames()` before anything is read. `locomotion-locked-in-combat` runs only in the full
-  walk, inside the first fight: with the table up, a held right stick (smooth move) and left stick forward (teleport aim) move nothing with teleport off
+  walk, inside the first fight: with the table up, a held left stick (smooth move) and right stick forward (teleport aim) move nothing with teleport off
   and on, no aim is held and the vignette stays 0.
 - The treasure check (`treasureCheck`, 11 checks) starts SPIRE001 (room 3 is a study with a card coffer),
   moves the seated rig to a spot 2.2 m from the coffer with the debug `__combat.teleportToLoot()`, turns the

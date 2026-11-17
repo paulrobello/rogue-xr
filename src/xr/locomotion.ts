@@ -487,7 +487,7 @@ export interface LocomotionSettings {
   smoothTurnRate: number;
   /** Smooth move speed at full stick, m/s. */
   moveSpeed: number;
-  /** Left stick forward aims and commits a teleport when true. Smooth move on the right stick stays on. */
+  /** Right stick forward aims and commits a teleport when true. Smooth move on the left stick stays on. */
   teleport: boolean;
   vignette: boolean;
   standingEyeHeight: number;
@@ -530,10 +530,10 @@ export interface TeleportAim {
 }
 
 export interface LocomotionInput {
-  /** Raw right stick (smooth move): x right, y forward positive (see `readThumbstick`). */
+  /** Raw left stick (smooth move): x right, y forward positive (see `readThumbstick`). */
   moveX: number;
   moveY: number;
-  /** Raw left stick x (snap or smooth turn), right positive. */
+  /** Raw right stick x (snap or smooth turn), right positive. */
   turnX: number;
   /** Non-null while the player holds the teleport aim. Releasing it commits a valid landing. */
   teleportAim: TeleportAim | null;

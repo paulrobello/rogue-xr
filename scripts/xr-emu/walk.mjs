@@ -1399,9 +1399,9 @@ try {
         return { x: rig.position.x, z: rig.position.z, yaw: (rig.rotation.y * 180) / Math.PI };
       });
     const start = await read();
-    await ev(() => window.__xrEmu.device.controllers.right.updateAxes('thumbstick', 0, -1));
+    await ev(() => window.__xrEmu.device.controllers.left.updateAxes('thumbstick', 0, -1));
     await settle(1000);
-    await ev(() => window.__xrEmu.device.controllers.right.updateAxes('thumbstick', 0, 0));
+    await ev(() => window.__xrEmu.device.controllers.left.updateAxes('thumbstick', 0, 0));
     await settle(200);
     const moved = await read();
     const distance = Math.hypot(moved.x - start.x, moved.z - start.z);
@@ -1411,9 +1411,9 @@ try {
       to: moved,
     });
     const snap = async () => {
-      await ev(() => window.__xrEmu.device.controllers.left.updateAxes('thumbstick', 1, 0));
+      await ev(() => window.__xrEmu.device.controllers.right.updateAxes('thumbstick', 1, 0));
       await settle(400);
-      await ev(() => window.__xrEmu.device.controllers.left.updateAxes('thumbstick', 0, 0));
+      await ev(() => window.__xrEmu.device.controllers.right.updateAxes('thumbstick', 0, 0));
       await settle(300);
       return (await read()).yaw;
     };
@@ -1433,7 +1433,7 @@ try {
     await teleportCheck();
   }
 
-  /** While the table is up neither smooth move (right stick) nor teleport (left stick forward) moves the rig, and no aim is held. */
+  /** While the table is up neither smooth move (left stick) nor teleport (right stick forward) moves the rig, and no aim is held. */
   async function combatLocksLocomotionCheck() {
     const read = () =>
       ev(() => {
@@ -1456,13 +1456,13 @@ try {
     const held = {};
     for (const teleport of [false, true]) {
       await setTeleport(teleport);
-      await stick('right', 0, -1);
       await stick('left', 0, -1);
+      await stick('right', 0, -1);
       await frames(3);
       await settle(400);
       held[teleport ? 'teleport' : 'smooth'] = await read();
-      await stick('right', 0, 0);
       await stick('left', 0, 0);
+      await stick('right', 0, 0);
       await frames(3);
     }
     await setTeleport(true);
@@ -1630,12 +1630,12 @@ try {
         { uuid, since },
       );
     const stillBefore = await sample();
-    await stick('right', 0, -1);
+    await stick('left', 0, -1);
     await settle(500);
     const moving = await sample();
     await settle(300);
     const movingPasses = await passesSince(moving.uuid, moving.now);
-    await stick('right', 0, 0);
+    await stick('left', 0, 0);
     await settle(1200);
     const still = await sample();
     await settle(300);
@@ -1697,7 +1697,7 @@ try {
     );
   }
 
-  /** Teleport on: aim with the left stick and controller, an invalid aim does not move, a valid release lands where the arc ended. */
+  /** Teleport on: aim with the right stick and controller, an invalid aim does not move, a valid release lands where the arc ended. */
   async function teleportCheck() {
     await ev(() => {
       const { ui } = window.__flow;
@@ -1750,7 +1750,7 @@ try {
         y: from.y + 5 * Math.sin(l),
         z: from.z - 5 * Math.cos(l) * Math.cos(y),
       };
-      await ev(({ from, target }) => window.__xrEmu.placeAt('left', from, target), {
+      await ev(({ from, target }) => window.__xrEmu.placeAt('right', from, target), {
         from,
         target,
       });
@@ -1762,7 +1762,7 @@ try {
     const before = await state();
 
     // Invalid: scan aims until the app's own validation rejects one (a wall, preferably).
-    await stick('left', 0, -1);
+    await stick('right', 0, -1);
     await frames(2);
     let invalid = null;
     for (const elev of [4, 20, 40]) {
@@ -1779,7 +1779,7 @@ try {
     if (invalid) {
       const aimed = await aimAt(invalid.yaw, invalid.elev);
       await shot('p6-teleport-invalid');
-      await stick('left', 0, 0);
+      await stick('right', 0, 0);
       await frames(3);
       invalidResult = { aimed, after: await state() };
     }
@@ -1801,7 +1801,7 @@ try {
     });
 
     // Valid: the landing the arc showed is where the head ends up, at the same seated lift.
-    await stick('left', 0, -1);
+    await stick('right', 0, -1);
     await frames(2);
     let valid = null;
     for (const elev of [20, 32, 12]) {
@@ -1825,7 +1825,7 @@ try {
       await frames(3);
       const aimed = await aimAt(valid.yaw, valid.elev);
       await shot('p6-teleport-aim');
-      await stick('left', 0, 0);
+      await stick('right', 0, 0);
       await frames(2);
       const landed = await state();
       await shot('p6-teleport-jump');

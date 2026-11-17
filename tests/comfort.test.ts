@@ -52,9 +52,9 @@ const WALL_AIM = { origin: [2, 1.4, 2] as Vec3, direction: [1, 0.1, 0] as Vec3 }
 
 const base: DriveInput = {
   dt: DT,
-  left: [0, 0],
   right: [0, 0],
-  leftRay: null,
+  left: [0, 0],
+  rightRay: null,
   locked: false,
   boardVisible: false,
 };
@@ -75,24 +75,24 @@ describe('comfort settings mapping', () => {
     expect(DEFAULT_LOCOMOTION_SETTINGS.teleport).toBe(true);
   });
 
-  it('switching the toggle at runtime turns the left stick forward into a teleport aim and leaves the right stick moving', () => {
+  it('switching the toggle at runtime turns the right stick forward into a teleport aim and leaves the left stick moving', () => {
     const { rig, head, loco, drive } = build({ teleport: false });
     rig.position.set(2, rig.position.y, 2);
     const walk = () => {
-      for (let i = 0; i < 20; i++) drive.step({ ...base, right: [0, 1] });
+      for (let i = 0; i < 20; i++) drive.step({ ...base, left: [0, 1] });
     };
     const before = headXZ(head);
     walk();
     expect(Math.hypot(headXZ(head)[0] - before[0], headXZ(head)[1] - before[1])).toBeGreaterThan(
       0.3,
     );
-    drive.step({ ...base, left: [0, 1], leftRay: GOOD_AIM });
+    drive.step({ ...base, right: [0, 1], rightRay: GOOD_AIM });
     expect(drive.isAiming).toBe(false);
     Object.assign(
       loco.settings,
       locomotionSettingsFrom({ ...DEFAULT_SETTINGS, teleportEnabled: true }),
     );
-    drive.step({ ...base, left: [0, 1], leftRay: GOOD_AIM });
+    drive.step({ ...base, right: [0, 1], rightRay: GOOD_AIM });
     expect(drive.isAiming).toBe(true);
     drive.step({ ...base });
     const parked = headXZ(head);
@@ -103,7 +103,7 @@ describe('comfort settings mapping', () => {
   });
 });
 
-describe('stick layout: left turns and teleports, right moves', () => {
+describe('stick layout: right turns and teleports, left moves', () => {
   const yawOf = (head: THREE.Object3D) => {
     head.updateWorldMatrix(true, false);
     return yawFromMatrix(head.matrixWorld.elements);
@@ -111,47 +111,47 @@ describe('stick layout: left turns and teleports, right moves', () => {
   const displacement = (head: THREE.Object3D, from: [number, number]) =>
     headXZ(head).map((v, i) => v - (from[i] as number)) as [number, number];
 
-  it('the left stick x snap turns one step per push and the right stick x does not turn', () => {
+  it('the right stick x snap turns one step per push and the left stick x does not turn', () => {
     const { rig, head, drive } = build();
     rig.position.set(2, rig.position.y, 2);
-    drive.step({ ...base, left: [1, 0] });
-    drive.step({ ...base, left: [1, 0] });
+    drive.step({ ...base, right: [1, 0] });
+    drive.step({ ...base, right: [1, 0] });
     expect(yawOf(head)).toBeCloseTo(DEFAULT_SNAP_DEGREES, 4);
     drive.step({ ...base });
-    drive.step({ ...base, left: [-1, 0] });
+    drive.step({ ...base, right: [-1, 0] });
     expect(yawOf(head)).toBeCloseTo(0, 4);
-    for (let i = 0; i < 10; i++) drive.step({ ...base, right: [1, 0] });
+    for (let i = 0; i < 10; i++) drive.step({ ...base, left: [1, 0] });
     expect(yawOf(head)).toBeCloseTo(0, 4);
   });
 
-  it('the left stick x turns smoothly when the turn mode is smooth', () => {
+  it('the right stick x turns smoothly when the turn mode is smooth', () => {
     const { rig, head, drive } = build({ turnMode: 'smooth' });
     rig.position.set(2, rig.position.y, 2);
-    for (let i = 0; i < 20; i++) drive.step({ ...base, left: [1, 0] });
+    for (let i = 0; i < 20; i++) drive.step({ ...base, right: [1, 0] });
     expect(yawOf(head)).toBeGreaterThan(10);
   });
 
-  it('the right stick strafes on x and moves forward and back on y, relative to the head', () => {
+  it('the left stick strafes on x and moves forward and back on y, relative to the head', () => {
     const { rig, head, drive } = build();
     rig.position.set(2, rig.position.y, 2);
     const start = headXZ(head);
-    for (let i = 0; i < 20; i++) drive.step({ ...base, right: [1, 0] });
+    for (let i = 0; i < 20; i++) drive.step({ ...base, left: [1, 0] });
     const strafe = displacement(head, start);
     expect(strafe[0]).toBeGreaterThan(0.3);
     expect(Math.abs(strafe[1])).toBeLessThan(1e-6);
 
     const fwdStart = headXZ(head);
-    for (let i = 0; i < 20; i++) drive.step({ ...base, right: [0, 1] });
+    for (let i = 0; i < 20; i++) drive.step({ ...base, left: [0, 1] });
     const fwd = displacement(head, fwdStart);
     expect(fwd[1]).toBeLessThan(-0.3);
     expect(Math.abs(fwd[0])).toBeLessThan(1e-6);
 
     const backStart = headXZ(head);
-    for (let i = 0; i < 20; i++) drive.step({ ...base, right: [0, -1] });
+    for (let i = 0; i < 20; i++) drive.step({ ...base, left: [0, -1] });
     expect(displacement(head, backStart)[1]).toBeGreaterThan(0.3);
   });
 
-  it('maps Quest gamepad axes by handedness: left axes turn, right axes move', () => {
+  it('maps Quest gamepad axes by handedness: right axes turn, left axes move', () => {
     // Quest reports each stick on axes 2 and 3 with up as negative; the rig reads them per hand.
     const fake = (handedness: 'left' | 'right', x: number, up: number) => ({
       handedness,
@@ -164,46 +164,46 @@ describe('stick layout: left turns and teleports, right moves', () => {
     };
     const turn = build();
     turn.rig.position.set(2, turn.rig.position.y, 2);
-    turn.drive.step({ ...base, ...sticks([fake('left', 1, 0), fake('right', 0, 0)]) });
+    turn.drive.step({ ...base, ...sticks([fake('right', 1, 0), fake('left', 0, 0)]) });
     expect(yawOf(turn.head)).toBeCloseTo(DEFAULT_SNAP_DEGREES, 4);
     expect(headXZ(turn.head)).toEqual([2, 2]);
 
     const move = build();
     move.rig.position.set(2, move.rig.position.y, 2);
     for (let i = 0; i < 20; i++) {
-      move.drive.step({ ...base, ...sticks([fake('left', 0, 0), fake('right', 0, 1)]) });
+      move.drive.step({ ...base, ...sticks([fake('right', 0, 0), fake('left', 0, 1)]) });
     }
     expect(headXZ(move.head)[1]).toBeLessThan(1.7);
     expect(yawOf(move.head)).toBeCloseTo(0, 4);
   });
 
-  it('the left stick alone never moves the head, with teleport on or off', () => {
+  it('the right stick alone never moves the head, with teleport on or off', () => {
     for (const teleport of [false, true]) {
       const { rig, head, drive } = build({ teleport });
       rig.position.set(2, rig.position.y, 2);
-      for (let i = 0; i < 20; i++) drive.step({ ...base, left: [0.4, 0.5] });
+      for (let i = 0; i < 20; i++) drive.step({ ...base, right: [0.4, 0.5] });
       expect(headXZ(head)).toEqual([2, 2]);
     }
   });
 
-  it('the right stick respects its dead zone and the left stick turn needs the snap trigger', () => {
+  it('the left stick respects its dead zone and the right stick turn needs the snap trigger', () => {
     const { rig, head, drive } = build();
     rig.position.set(2, rig.position.y, 2);
-    for (let i = 0; i < 20; i++) drive.step({ ...base, right: [0.1, 0.1], left: [0.5, 0] });
+    for (let i = 0; i < 20; i++) drive.step({ ...base, left: [0.1, 0.1], right: [0.5, 0] });
     expect(headXZ(head)).toEqual([2, 2]);
     expect(yawOf(head)).toBeCloseTo(0, 4);
   });
 
-  it('smooth move on the right stick still works while teleport is on, and a jump replaces that frame', () => {
+  it('smooth move on the left stick still works while teleport is on, and a jump replaces that frame', () => {
     const { rig, head, loco, drive } = build({ teleport: true });
     rig.position.set(2, rig.position.y, 2);
-    for (let i = 0; i < 20; i++) drive.step({ ...base, right: [0, 1] });
+    for (let i = 0; i < 20; i++) drive.step({ ...base, left: [0, 1] });
     const walked = headXZ(head);
     expect(walked[1]).toBeLessThan(1.7);
 
-    drive.step({ ...base, left: [0, 1], right: [0, 1], leftRay: GOOD_AIM });
+    drive.step({ ...base, right: [0, 1], left: [0, 1], rightRay: GOOD_AIM });
     const landing = loco.teleportPreview?.landing as Vec3;
-    drive.step({ ...base, left: [0, 0], right: [0, 1], leftRay: GOOD_AIM });
+    drive.step({ ...base, right: [0, 0], left: [0, 1], rightRay: GOOD_AIM });
     expect(headXZ(head)[0]).toBeCloseTo(landing[0], 6);
     expect(headXZ(head)[1]).toBeCloseTo(landing[2], 6);
   });
@@ -220,7 +220,7 @@ describe('comfort vignette wiring', () => {
     vignette.update(loco.vignetteStrength, camera, tan, true);
     expect(vignette.active).toBe(false);
 
-    for (let i = 0; i < 20; i++) drive.step({ ...base, right: [0, 1] });
+    for (let i = 0; i < 20; i++) drive.step({ ...base, left: [0, 1] });
     vignette.update(loco.vignetteStrength, camera, tan, true);
     expect(vignette.active).toBe(true);
     expect(vignette.strength).toBeGreaterThan(0.4);
@@ -235,10 +235,10 @@ describe('comfort vignette wiring', () => {
 
   it('smooth turning raises it too, and the vignette setting off keeps it clear', () => {
     const smooth = build({ turnMode: 'smooth' });
-    for (let i = 0; i < 20; i++) smooth.drive.step({ ...base, left: [1, 0] });
+    for (let i = 0; i < 20; i++) smooth.drive.step({ ...base, right: [1, 0] });
     expect(smooth.loco.vignetteStrength).toBeGreaterThan(0.3);
     const off = build({ turnMode: 'smooth', vignette: false });
-    for (let i = 0; i < 20; i++) off.drive.step({ ...base, left: [1, 0] });
+    for (let i = 0; i < 20; i++) off.drive.step({ ...base, right: [1, 0] });
     expect(off.loco.vignetteStrength).toBe(0);
   });
 
@@ -268,13 +268,13 @@ describe('teleport drive', () => {
     rig.position.set(2, rig.position.y, 2);
     const lift = rig.position.y;
     expect(lift).toBeGreaterThan(0.3);
-    drive.step({ ...base, left: [0, 1], leftRay: GOOD_AIM });
+    drive.step({ ...base, right: [0, 1], rightRay: GOOD_AIM });
     expect(drive.isAiming).toBe(true);
     expect(loco.teleportPreview?.valid).toBe(true);
     const landing = loco.teleportPreview?.landing as Vec3;
     // The held stick does not smooth-move.
     expect(headXZ(head)).toEqual([2, 2]);
-    drive.step({ ...base, left: [0, 0], leftRay: GOOD_AIM });
+    drive.step({ ...base, right: [0, 0], rightRay: GOOD_AIM });
     expect(drive.isAiming).toBe(false);
     expect(headXZ(head)[0]).toBeCloseTo(landing[0], 6);
     expect(headXZ(head)[1]).toBeCloseTo(landing[2], 6);
@@ -285,7 +285,7 @@ describe('teleport drive', () => {
   it('pulses the vignette on the jump and fades it', () => {
     const { rig, loco, drive } = build({ teleport: true });
     rig.position.set(2, rig.position.y, 2);
-    drive.step({ ...base, left: [0, 1], leftRay: GOOD_AIM });
+    drive.step({ ...base, right: [0, 1], rightRay: GOOD_AIM });
     expect(loco.vignetteStrength).toBe(0);
     drive.step({ ...base });
     expect(loco.vignetteStrength).toBeGreaterThan(0.6);
@@ -296,7 +296,7 @@ describe('teleport drive', () => {
   it('does not move on release of an invalid landing', () => {
     const { rig, head, loco, drive } = build({ teleport: true });
     rig.position.set(2, rig.position.y, 2);
-    drive.step({ ...base, left: [0, 1], leftRay: WALL_AIM });
+    drive.step({ ...base, right: [0, 1], rightRay: WALL_AIM });
     expect(loco.teleportPreview?.valid).toBe(false);
     expect(loco.teleportPreview?.reason).toBe('blocked');
     drive.step({ ...base });
@@ -311,16 +311,16 @@ describe('teleport drive', () => {
     rig.position.set(-1, rig.position.y, 2);
     const a = (20 * Math.PI) / 180;
     const aim = { origin: [-1, 1.4, 2] as Vec3, direction: [0, Math.sin(a), Math.cos(a)] as Vec3 };
-    drive.step({ ...base, left: [0, 1], leftRay: aim });
+    drive.step({ ...base, right: [0, 1], rightRay: aim });
     expect(loco.teleportPreview?.reason).toBe('out-of-bounds');
     drive.step({ ...base });
     expect(headXZ(head)).toEqual([-1, 2]);
   });
 
-  it('does not aim, teleport or move with the left stick forward when the toggle is off', () => {
+  it('does not aim, teleport or move with the right stick forward when the toggle is off', () => {
     const { rig, head, loco, drive } = build({ teleport: false });
     rig.position.set(2, rig.position.y, 2);
-    for (let i = 0; i < 20; i++) drive.step({ ...base, left: [0, 1], leftRay: GOOD_AIM });
+    for (let i = 0; i < 20; i++) drive.step({ ...base, right: [0, 1], rightRay: GOOD_AIM });
     expect(drive.isAiming).toBe(false);
     expect(loco.teleportPreview).toBeNull();
     expect(headXZ(head)).toEqual([2, 2]);
@@ -329,8 +329,8 @@ describe('teleport drive', () => {
   it('drops an aim when the controller is lost instead of committing it', () => {
     const { rig, head, loco, drive } = build({ teleport: true });
     rig.position.set(2, rig.position.y, 2);
-    drive.step({ ...base, left: [0, 1], leftRay: GOOD_AIM });
-    drive.step({ ...base, left: [0, 1], leftRay: null });
+    drive.step({ ...base, right: [0, 1], rightRay: GOOD_AIM });
+    drive.step({ ...base, right: [0, 1], rightRay: null });
     expect(loco.teleportPreview).toBeNull();
     drive.step({ ...base });
     expect(headXZ(head)).toEqual([2, 2]);
@@ -343,14 +343,14 @@ describe('locomotion gate', () => {
     rig.position.set(2, rig.position.y, 2);
     const yaw = rig.rotation.y;
     for (let i = 0; i < 40; i++) {
-      drive.step({ ...base, left: [0.4, 1], right: [1, 0], locked: true });
+      drive.step({ ...base, right: [0.4, 1], left: [1, 0], locked: true });
     }
     expect(headXZ(head)).toEqual([2, 2]);
     expect(rig.rotation.y).toBe(yaw);
     expect(loco.vignetteStrength).toBe(0);
     const tp = build({ teleport: true });
     tp.rig.position.set(2, tp.rig.position.y, 2);
-    tp.drive.step({ ...base, left: [0, 1], leftRay: GOOD_AIM, locked: true });
+    tp.drive.step({ ...base, right: [0, 1], rightRay: GOOD_AIM, locked: true });
     expect(tp.loco.teleportPreview).toBeNull();
     expect(tp.drive.isAiming).toBe(false);
     tp.drive.step({ ...base, locked: true });
@@ -360,9 +360,9 @@ describe('locomotion gate', () => {
   it('never commits an aim that was held when the fight started, once the controls return', () => {
     const { rig, head, loco, drive } = build({ teleport: true });
     rig.position.set(2, rig.position.y, 2);
-    drive.step({ ...base, left: [0, 1], leftRay: GOOD_AIM });
+    drive.step({ ...base, right: [0, 1], rightRay: GOOD_AIM });
     expect(loco.teleportPreview).not.toBeNull();
-    drive.step({ ...base, left: [0, 1], leftRay: GOOD_AIM, locked: true });
+    drive.step({ ...base, right: [0, 1], rightRay: GOOD_AIM, locked: true });
     drive.step({ ...base, locked: true });
     drive.step({ ...base });
     expect(headXZ(head)).toEqual([2, 2]);
@@ -371,9 +371,9 @@ describe('locomotion gate', () => {
   it('lets the vignette fade while a board holds the controls', () => {
     const { rig, loco, drive } = build();
     rig.position.set(2, rig.position.y, 2);
-    for (let i = 0; i < 20; i++) drive.step({ ...base, right: [0, 1] });
+    for (let i = 0; i < 20; i++) drive.step({ ...base, left: [0, 1] });
     expect(loco.vignetteStrength).toBeGreaterThan(0.4);
-    for (let i = 0; i < 90; i++) drive.step({ ...base, left: [0, 1], boardVisible: true });
+    for (let i = 0; i < 90; i++) drive.step({ ...base, right: [0, 1], boardVisible: true });
     expect(loco.vignetteStrength).toBe(0);
   });
 });
@@ -418,5 +418,49 @@ describe('teleport view', () => {
     expect(view.ring.visible).toBe(false);
     expect(view.visible).toBe(true);
     view.dispose();
+  });
+});
+
+describe('right stick turn and teleport aim share one stick', () => {
+  const yawOf = (head: THREE.Object3D) => {
+    head.updateWorldMatrix(true, false);
+    return yawFromMatrix(head.matrixWorld.elements);
+  };
+
+  it('aims from the right ray only: the left stick forward moves, never aims', () => {
+    const { rig, head, drive } = build({ teleport: true });
+    rig.position.set(2, rig.position.y, 2);
+    for (let i = 0; i < 20; i++) drive.step({ ...base, left: [0, 1], rightRay: GOOD_AIM });
+    expect(drive.isAiming).toBe(false);
+    expect(headXZ(head)[1]).toBeLessThan(1.7);
+  });
+
+  it('does not snap turn while the aim is held, even with sideways drift', () => {
+    const { rig, head, drive } = build({ teleport: true });
+    rig.position.set(2, rig.position.y, 2);
+    drive.step({ ...base, right: [0.9, 0.95], rightRay: GOOD_AIM });
+    drive.step({ ...base, right: [0.9, 0.8], rightRay: GOOD_AIM });
+    expect(drive.isAiming).toBe(true);
+    expect(yawOf(head)).toBeCloseTo(0, 4);
+  });
+
+  it('does not turn on a forward-dominant push below the aim trigger, and turns on a sideways one', () => {
+    const { rig, head, drive } = build({ teleport: true });
+    rig.position.set(2, rig.position.y, 2);
+    drive.step({ ...base, right: [0.65, 0.68] });
+    expect(yawOf(head)).toBeCloseTo(0, 4);
+    drive.step({ ...base });
+    drive.step({ ...base, right: [1, 0.1] });
+    expect(yawOf(head)).toBeCloseTo(DEFAULT_SNAP_DEGREES, 4);
+  });
+
+  it('with teleport off the right stick y does nothing and x still turns', () => {
+    const { rig, head, drive } = build({ teleport: false });
+    rig.position.set(2, rig.position.y, 2);
+    for (let i = 0; i < 20; i++) drive.step({ ...base, right: [0, 1], rightRay: GOOD_AIM });
+    expect(headXZ(head)).toEqual([2, 2]);
+    expect(drive.isAiming).toBe(false);
+    drive.step({ ...base, right: [-1, 0] });
+    expect(yawOf(head)).toBeCloseTo(360 - DEFAULT_SNAP_DEGREES, 4);
   });
 });
