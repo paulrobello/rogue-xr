@@ -78,6 +78,19 @@ SHADES = {WN1: (0x34, 0x1A, 0x07), WN2: (0x2E, 0x17, 0x06), WN3: (0x3A, 0x1E, 0x
           GM: (0x3A, 0x38, 0x3A), EM: (0x0C, 0x8A, 0x3E)}
 SETS = {"brass-polished": 0.06}  # shared set -> normal scale (0.35, then 0.15, still read as swirl noise at play distance)
 TILE_METERS = 0.5  # the brass set tiles at 0.5 m (public/assets/materials/materials.json)
+# The set's basecolor, roughness and metalness are flat (std under 2 of 255); its only strong variance is
+# the ORM red channel, which the runtime binds as aoMap (src/world/materials.ts) and which scales nearly all
+# of a metal's light. Tiled at 0.5 m it put one AO blotch on each small face: wood grain, olive knuckles,
+# pale cream ends and the head swirl. Every brass face therefore samples one texel (a constant UV, so the
+# normal map also drops out: zero UV derivatives). The texel is the centre of an 11 px AO-255 window at
+# runtime row 198 (three flips the PNG/KTX2 rows, so runtime row = v * 1024); EEVEE reads row 825, where AO
+# is unused. False restores the 0.5 m tiling.
+FLAT_BRASS = True
+FLAT_BRASS_UV = (566.5 / 1024, 198.5 / 1024)
+# Linear multiplier on the bound set's colour (manifest slot `tint`, enemy-asset.ts bind()). 0.87 stands in
+# for the tiled AO's mean (0.865) that the flat texel no longer applies; the green and blue cuts pull the idle
+# forearm from hue 35, S 0.51 toward the sheet's hue 30, S 0.62.
+TINTS = {"brass-polished": [0.87, 0.78, 0.62]}
 FACTORS = {  # sRGB base, roughness, metallic: the GLB look, and the fallback when the set fails
     "brass-polished": ((0xDE, 0xC1, 0x6A), 0.3, 1.0),
     CASE: ((0xFF, 0xFF, 0xFF), 0.85, 0.0),  # hue from COLOR_0: oiled walnut, rough enough to keep env specular off
@@ -670,28 +683,25 @@ def build_parts(P: Parts) -> None:
         P.lathe(E, _sub(W, E), [(0.195, 0.052), (0.195, 0.066)], GM, fa, sides=P.n(32))
         P.lathe(E, _sub(W, E), [(0.20, 0.07), (0.236, 0.074), (0.252, 0.09), (0.252, 0.15), (0.237, 0.162), (0.233, 0.36), (0.252, 0.372),
                                  (0.258, 0.45), (0.25, 0.53), (0.215, 0.55)], BP, fa, sides=P.n(36))
-        # Clenched mitt: the back of the hand, four curled fingers side by side across the front over a
-        # gunmetal core, and a thumb wrapped from the inner side across the index and middle fingers. Each
-        # finger is three separate blocks (a forward-pointing knuckle, a front segment and a tucked tip) with
-        # 2 to 2.5 cm creases at the bends, where the dark core shows as on the sheet; one smooth curled roll
-        # read as an open hand's hanging fingers from the seated view. Abutting end caps would z-fight, so
-        # the blocks never touch. Sizes from the sheet's front panel: fist about 0.47 m wide and 0.46 m tall.
+        # Closed mitt (sheet: fist about gauntlet width, 0.47 to 0.48 m, z 0 to 0.50; the reviewer asks for
+        # it wider than our 0.516 m gauntlet): one brass mass 0.54 m wide, two rows of flat-faced finger
+        # plates (knuckles tilted 35 degrees up, middle phalanges facing front) sunk 2.8 cm into it and
+        # standing 1.2 cm proud, so the 1 cm creases floor on brass (no gunmetal core), and a heavy thumb
+        # plate from the inner side folded across the index and middle plates. Bevelled plate edges carry
+        # the highlights a flat metal face cannot. Plates never touch each other (no coplanar faces).
         fx, fy = s * 0.93, FIST_Y
         P.band(W, _sub(W, E), 0.17, 0.04, 0.05, GM, hd, n=P.n(20))
-        P.loft((fx, 0.17 + fy, 0.14), (fx, 0.17 + fy, 0.51), [(0.0, 0.16, 0.12, 3.0, 0, 0), (0.12, 0.2, 0.15, 3.0, 0, 0),
-                                                              (0.82, 0.205, 0.155, 3.0, 0, 0), (1.0, 0.16, 0.12, 3.0, 0, 0)], BP, hd)
-        # On this X axis a section's rx runs along world Y (depth) and ry along world Z (height).
-        P.loft((fx - 0.175, 0.28 + fy, 0.25), (fx + 0.175, 0.28 + fy, 0.25), [(0.0, 0.06, 0.09, 2.6, 0, 0), (0.06, 0.08, 0.12, 2.6, 0, 0),
-                                                                              (0.94, 0.08, 0.12, 2.6, 0, 0), (1.0, 0.06, 0.09, 2.6, 0, 0)], GM, hd)
-        phalanges = ([(0.19, 0.41), (0.33, 0.41)], [(0.37, 0.335), (0.37, 0.205)], [(0.335, 0.135), (0.23, 0.115)])
-        # Index (inner, thumb side) to little finger (outer): the outer fingers sit a little higher and smaller.
-        for dx, dz, k in ((-0.15, 0.0, 1.0), (-0.05, -0.005, 1.03), (0.05, 0.01, 0.97), (0.15, 0.035, 0.86)):
+        # p 5 in the middle keeps the front flat out to the outer plates (front y 0.48 or more at x +-0.222).
+        P.loft((fx, 0.21 + fy, 0.075), (fx, 0.21 + fy, 0.52), [(0.0, 0.22, 0.16, 3.5, 0, 0), (0.1, 0.265, 0.195, 5.0, 0, 0),
+                                                               (0.85, 0.27, 0.20, 5.0, 0, 0), (1.0, 0.22, 0.16, 3.5, 0, 0)], BP, hd)
+        up = Matrix.Rotation(math.radians(35.0), 3, "X")
+        # Index (inner, thumb side) to little finger (outer): the little plate is narrower and higher.
+        for dx, w, dz in ((-0.17, 0.104, 0.0), (-0.057, 0.104, 0.0), (0.057, 0.104, 0.005), (0.167, 0.094, 0.015)):
             x = fx + s * dx
-            for seg in phalanges:
-                P.sweep([(x, fy + y - (1 - k) * 0.08, z + dz) for y, z in seg], sect(0.043 * k, 0.05 * k, 12, 3.0), BP, hd, hint=(1, 0, 0))
-        thumb = [(0.715, 0.24, 0.43), (0.70, 0.36, 0.40), (0.715, 0.47, 0.36), (0.77, 0.53, 0.335), (0.84, 0.545, 0.325)]
-        P.sweep([(s * x, y, z) for x, y, z in thumb], sect(0.05, 0.05, 12, 2.6), BP, hd, hint=(0, 0, 1), scales=[1.1, 1.05, 1.0, 0.93, 0.82])
-        P.ball((s * 0.84, 0.545, 0.325), 0.041, BP, hd, segs=(8, 5))
+            P.bbox((x, 0.373 + fy, 0.425 + dz), (w, 0.04, 0.12), BP, hd, rot=up, bevel=0.012)
+            P.bbox((x, 0.402 + fy, 0.235 + dz), (w, 0.04, 0.17), BP, hd, bevel=0.012)
+        thumb = [(0.285, 0.24, 0.40), (0.278, 0.36, 0.36), (0.245, 0.418, 0.325), (0.18, 0.445, 0.30), (0.02, 0.443, 0.29)]
+        P.sweep([(fx - s * x, y + fy, z) for x, y, z in thumb], chamfer_rect(0.095, 0.05, 0.012), BP, hd, hint=(0, 0, 1))
         mark(P, f"forearm, fist {n_}")
 
         # Legs: iron hip and thigh under a brass plate, a domed knee with an emerald, a brass greave
@@ -699,15 +709,23 @@ def build_parts(P: Parts) -> None:
         th, sh, ft = f"thigh.{n_}", f"shin.{n_}", f"foot.{n_}"
         H, K, A = _m(HIP, s), _m(KNEE, s), _m(ANKLE, s)
         P.ball(H, 0.125, GM, th)
-        P.lathe(H, _sub(K, H), [(0.125, 0.0), (0.135, 0.12), (0.12, math.dist(H, K))], GM, th, sides=P.n(18))
-        P.wrap(H, K, 0.165, -1.9, 1.9, 0.03, BP, th, v0=0.08, v1=0.90, nv=3, crown=0.014)
+        # Bulkier brass leg armour (sheet): the thigh plate 0.19 (was 0.165) over a 0.15 thigh, the greave 0.195
+        # (0.20 put shin.L 1 mm under the floor on the attack slam).
+        P.lathe(H, _sub(K, H), [(0.13, 0.0), (0.15, 0.12), (0.135, math.dist(H, K))], GM, th, sides=P.n(18))
+        # The plate narrows to 0.172 at its top (full 0.19 from 35% down) and carries no crown, so it clears the
+        # belt in frozen (planted thigh lifts its front under the belt, +4.8 mm) and on the attack slam.
+        P.wrap(H, K, lambda vv: 0.19 - 0.018 * max(0.0, (0.35 - vv) / 0.27), -1.9, 1.9, 0.033, BP, th, v0=0.08, v1=0.90, nv=3,
+               crown=0.0)
         P.ball(K, 0.105, GM, sh)
         P.shell((K[0], K[1] + 0.075, K[2]), (0, 1, 0), [(0.001, 0.0), (0.13, 0.0), (0.124, 0.04), (0.085, 0.078), (0.001, 0.088)], BP, sh,
                 sides=P.n(20))
+        # Emerald boss on the knee cap's front, seen from the front (sheet: six emeralds from the front).
+        P.band((K[0], K[1] + 0.155, K[2]), (0, 1, 0), 0.045, 0.014, 0.012, BP, sh, n=P.n(16))
+        P.ball((K[0], K[1] + 0.157, K[2]), 0.04, EM, sh, scale=(1.0, 0.5, 1.0), segs=(P.n(12), P.n(7)))
         P.band((K[0] - s * 0.1, K[1], K[2]), (-s, 0, 0), 0.04, 0.016, 0.022, BP, sh, n=P.n(16))
         P.ball((K[0] - s * 0.1, K[1], K[2]), 0.034, EM, sh, scale=(0.45, 1.0, 1.0))
         L2 = math.dist(K, A)
-        P.lathe(K, _sub(A, K), [(0.10, 0.05), (0.13, 0.06), (0.138, 0.09), (0.17, 0.17), (0.185, 0.18), (0.185, L2 - 0.035), (0.135, L2)], BP, sh,
+        P.lathe(K, _sub(A, K), [(0.10, 0.05), (0.13, 0.06), (0.138, 0.09), (0.18, 0.17), (0.195, 0.18), (0.195, L2 - 0.035), (0.135, L2)], BP, sh,
                 sides=P.n(24))
         P.ball(A, 0.078, GM, ft)
         P.loft((A[0], -0.14, 0.061), (A[0], 0.30, 0.061), [(0.0, 0.135, 0.06, 3.0, 0, 0), (0.1, 0.16, 0.062, 3.0, 0, 0),
@@ -718,9 +736,13 @@ def build_parts(P: Parts) -> None:
 
 
 def tile_uvs(bm) -> None:
-    """UV0 in tile units: each face projected on the plane of its dominant normal axis."""
+    """UV0 in tile units: each face projected on the plane of its dominant normal axis (brass: FLAT_BRASS_UV)."""
     layer = bm.loops.layers.uv.new("tile")
     for f in bm.faces:
+        if FLAT_BRASS and f.material_index == BP:
+            for loop in f.loops:
+                loop[layer].uv = FLAT_BRASS_UV
+            continue
         ax = max(range(3), key=lambda i: abs(f.normal[i]))
         u_i, v_i = ((1, 2), (0, 2), (0, 1))[ax]
         for loop in f.loops:
@@ -909,7 +931,8 @@ DEATH_KEYS = [
     (0.0, START),
     (0.25, HIT_KEYS[1][1]),
     (0.95, {"pelvis_loc": (0, 0.0, -0.24), "spine": (-12, 0, 0), "chest": (-8, 0, 0), "head": (-18, 0, 0),
-            "upperarm.R": (22, 0, 0), "upperarm.L": (18, 0, 0), "forearm.R": (16, 0, 0), "forearm.L": (18, 0, 0),
+            # Forearms 24/26 (were 16/18): the wider pass-3 fists otherwise reach 12 cm under the floor here.
+            "upperarm.R": (22, 0, 0), "upperarm.L": (18, 0, 0), "forearm.R": (24, 0, 0), "forearm.L": (26, 0, 0),
             "loc": {"bellows": (0, 0, -0.04)}, "ik": PLANT}),
     (1.7, DEATH_LIE),
     (1.85, {**DEATH_LIE, "pelvis_loc": (0, 0.0, -0.27), "head": (-6, 0, 20)}),
@@ -1173,7 +1196,7 @@ def set_slots(obj, mats: list) -> None:
 SOCKETS = {
     "socket-hit": ("chest", (0, 0.62, 1.43)),  # in front of the amber core: hit sparks and aim point
     "socket-eye": ("head", (0, 0.595, 1.90)),  # between the eyes, just in front of them
-    "socket-weapon": ("hand.R", (0.93, 0.51, 0.27)),  # the front centre of the striking right fist's front finger segments
+    "socket-weapon": ("hand.R", (0.93, 0.515, 0.25)),  # the front centre of the striking right fist's lower finger plates
 }
 
 
@@ -1505,7 +1528,8 @@ def build_manifest(gate: dict, cull: dict) -> dict:
         "sockets": gate["sockets"],
         "emissive": {"material": GLOW, "color": "#{:02X}{:02X}{:02X}".format(*GLOW_SRGB), "intensity": GLOW_STRENGTH,
                      "nodes": ["socket-eye", "socket-hit"]},
-        "materialSlots": {name: ({"set": name, "tileMeters": TILE_METERS, "normalScale": SETS[name]} if name in SETS
+        "materialSlots": {name: ({"set": name, "tileMeters": TILE_METERS, "normalScale": SETS[name], **({"tint": TINTS[name]} if name in TINTS else {})}
+                                 if name in SETS
                                  else {"set": None, "factorOnly": True, **({"emissive": True} if name == GLOW else {})}) for name in MATS},
         "budget": {"tris": gate["triangles"], "materials": len(gate["materials"]), "bones": gate["bone_count"], "influences": LIMITS["influences"]},
         "cull": {"center": cull["center"], "radius": cull["radius"]},

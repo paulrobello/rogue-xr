@@ -312,7 +312,9 @@ ENEMY_META = {
     "spring-hound": {**_P5_META, "materials_used": "approved P4-T3 brass-polished and brass-aged sets bound by slot name at runtime, each sampled "
                                                    "at one texel (constant UV) and tinted by its manifest slot tint [0.87, 0.75, 0.78] (linear "
                                                    "multiplier); gunmetal (gunmetal and ruby from COLOR_0) and hound-glow are factor-only"},
-    "bellows-golem": {**_P5_META, "materials_used": "approved P4-T3 brass-polished set bound by slot name at runtime; golem-case (walnut, pleats from COLOR_0), golem-metal (gunmetal and emerald from COLOR_0) and golem-glow are factor-only"},
+    "bellows-golem": {**_P5_META, "materials_used": "approved P4-T3 brass-polished set bound by slot name at runtime, sampled at one "
+                                                    "texel (constant UV) and tinted by the manifest slot tint [0.87, 0.78, 0.62] (linear "
+                                                    "multiplier); golem-case (walnut, pleats from COLOR_0), golem-metal (gunmetal and emerald from COLOR_0) and golem-glow are factor-only"},
     "orrery-warden": {**_P5_META, "reference_note": _P5_META["reference_note"].replace("P5-T3", "P5-T4"),
                       "materials_used": "approved P4-T3 brass-polished set bound by slot name at runtime and tinted by the manifest slot tint "
                                         "[0.8, 0.55, 0.75] (linear multiplier); gunmetal, warden-glow and warden-jewel "
