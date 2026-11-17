@@ -308,7 +308,7 @@
     },
     {
       "gate": "independent visual score",
-      "status": "unscored",
+      "status": "cleared: 82/100 (bar 80), scored 2026-11-16",
       "notes": "create-rigged-character-assets requires an independent >= 80/100 score; unscored means unaccepted"
     }
   ],
@@ -335,97 +335,52 @@
     "independentScore": 79
   },
   "independentScore": {
-    "score": 79,
+    "score": 82,
     "scale": "0-100 visual fidelity to the concept",
-    "scorer": "independent reviewer agent (separate from the authoring agent; did not build the model)",
+    "scorer": "independent reviewer agent (separate from the authoring agent; did not build the asset)",
     "date": "2026-11-16",
     "acceptanceBar": 80,
-    "clearsBar": false,
+    "clearsBar": true,
     "rubric": [
       {
         "criterion": "silhouette and proportions",
-        "points": 21,
+        "points": 23,
         "max": 30,
-        "note": "Up 1 from 20. Confirmed in the side compare crop (1470,270)-(1790,420): the brow now drops into a stop and the muzzle top and underside follow the concept's wedge, so the side head reads dog rather than rat. The hind leg now has the gaskin bulging forward and a sloped shin to a pointed hock (crop (930,450)-(1240,850)). Still off: head-on, which is the seat view, the muzzle is a round tube drooping from a bulbous domed cranium with an open jaw bar and a picket of spike teeth under it, confirmed at play distance in idle.jpg (upscaled crop (370,175)-(480,300)) and in glow-close.jpg; it reads anteater or rat, where the concept front is a narrow flat-topped wedge with a near-closed snarl. The chest is narrower than the last build but still wider than the concept head-on: model front silhouette 233 px against 212 at y 1270 and 205 against 178 at y 1220 of the compare (10 to 15 percent wider). The rump is a tall box, the back line runs level into it with no roach arch, the keel juts forward as a spike, and the neck still carries the head low and forward. The tail's hang is charged under signature features, not here."
+        "note": "Up 2 from 21. The front shoulder width is fixed. In the fidelity compare front panels (background-difference mask, rows every 10 px) the model is 200 px against the concept's 202 at y 1270 and 213 against 214 at y 1290, where pass 2 measured 233 against 212. The upper chest is now slightly narrow: 153 against 172 at y 1220. The side silhouette bounding box is 797x588 against 815x596 (within 2.5 percent), and the head top sits at y 22 against 23, so the head is no longer carried low. The jaw-closed claim holds in side view. In 6x crops of the compare, (1660,340)-(1780,410) against (740,340)-(860,410), the model mouth slit is about 8 to 10 px against the concept's 12 to 16 px. Still off: (1) Head-on, which is the seat view, the head is a domed cranium over a round tube muzzle, not the concept's flat-topped tapering wedge. It is 87 to 91 px wide at jaw level (y 1140-1150) against 80 to 82, and glow-close (crop (300,180)-(480,370)) still shows a row of four or five fangs over a separate jaw bar. (2) The head is about 11 percent longer: the occiput sits about 25 px further back with the same nose x (843 against 844). (3) The rump is a box with a square rear corner: the top edge 125 px in from the rear is at y 203 against the concept's 302. (4) The keel spike remains. (5) The front paws stand 157 to 158 px apart against 201 to 203 at y 1610-1620 (22 percent narrower), a fault pass 2 did not record. (6) The ears are round caps rather than folded-back flaps, and the hind paws are flat sleds."
       },
       {
         "criterion": "signature features",
         "points": 22,
         "max": 25,
-        "note": "Up 1 from 21. The eyes are fixed: idle.jpg eye glow is 169 px against the grille's 530 (ratio 0.32, mask HSV S over 0.4 and V over 0.8), against the concept front's 1284 to 3128 (ratio 0.41) with the same mask, and they read as large amber almonds at 2.6 m. The tail is now chunky segments. Grille as the single chest light, coil spine, neck coils, hinged jaw and shoulder and thigh rubies remain. Deductions: the winding key is one bow with round holes but in the side compare it still reads as two thin wire rings on a rod rather than the concept's solid flat plate with two small holes, so this is half a fix; the tail hangs straight down instead of curling up to present the key; the rubies are still small (69 red px in idle.jpg) and read dull in engine (median (87,29,35), per-pixel median HSV S 0.63) against the concept's (96,9,32), S 0.91. The open jaw is charged under silhouette, not here; these three items alone account for the 3 points off."
+        "note": "Unchanged at 22. The improvement and the new deduction offset each other. Improved: rubies are 2.5 times larger in engine, 176 red px in idle.jpg against 69 at pass 2 (mask hue over 320 or under 5, S over 0.35). Eyes stay right: idle eye glow 211 px against grille 491 px (S over 0.4, V over 0.8), ratio 0.43 against the concept's 0.41. Coil spine, neck coils, hinged jaw and joint rubies are present. Deductions: (1) The winding key is unchanged since pass 2. In the side compare hind crop (20,380)-(360,900) against (935,380)-(1275,900) it is still two wire rings on a rod, not a solid flat bow plate with two small holes. (2) The tail root now rises above the rump before hanging straight down to the key, where the concept's tail sweeps down and back from the rump. (3) Newly charged, not newly broken: the chest core is a wide, low slot. Engine grille glow bounding box w/h is 1.64 in glow-close ((355,524)-(423,565)) and 1.57 in idle, against 1.01 for the concept's round core ((1661,434)-(1736,508)). It sits at about 80 percent of chest height in idle (y 370-392 on a chest spanning about y 305-400), against about 55 percent in the concept."
       },
       {
         "criterion": "surface detail and material read",
-        "points": 14,
+        "points": 15,
         "max": 20,
-        "note": "Up 1 from 13. The crumpled-foil hammered look in Blender and the suede head in engine are gone: skull and jaw now share the polished brass of the body. Paws now show toe divisions in idle.jpg. Still off: at the glow-close range the reduced normal reads as directional striations, so the chest looks like brushed wood grain and the neck coils like twisted rope (glow-close.jpg crop (310,190)-(500,580)); at play distance this mostly fades. Panel seams are still single thin black slits on the chest rather than the concept's bevelled, layered plate edges. The chest prow still carries a pale specular hotspot (idle.jpg chest (395,305)-(485,360) 90th percentile (237,207,171)). Legs below the forearm and gaskin remain plain plated cylinders."
+        "note": "Up 1 from 14. Pass-3 claim verified on the chest: at glow-close the chest plate (365,425)-(440,480) shows only broad reflection bands and no wood-grain striation (nearest-neighbour 4x crop (340,410)-(520,520)). High-pass std (luma minus a 3 px Gaussian blur) is 9.6 there, and that includes the seam ribs. The rope look is not gone across the model, though. The spine coils at glow-close (440,300)-(600,420) still read as combed, striated strands with no dark gaps between rings, high-pass std 14.8, about 1.5 times the chest. The centre-seam claim is partial. The line is a short raised brass rib with a dark hairline beside it, about 52 px long against a chest plate about 105 px tall (y 450-502 of 415-520), so it reads as a decorative dash rather than a split between two plates. The diagonal seams are the same thin ribs, not the concept's bevelled, layered plate edges. Plates now read clean and slightly plastic, with no light wear. Legs below the forearm and gaskin are plain cylinders, and the paws are simpler than the concept's jointed toes."
       },
       {
         "criterion": "colour and value",
         "points": 13,
         "max": 15,
-        "note": "Up 1 from 12. Judged on the engine shots (see method). sRGB medians over a warm-metal mask (max channel over 35, R over B plus 12, glow excluded): engine idle head (395,185)-(450,240) (126,93,62), hue 29, V 0.49, and chest (395,305)-(485,360) (131,97,62), hue 30, V 0.51, so the head is no longer a separate pale tan; concept side head (1030,70)-(1310,230) of the full-resolution sheet (116,81,55), hue 26, V 0.45, and concept front head (121,87,63), hue 25, V 0.47. Engine brass is about 4 to 5 deg yellower and slightly lighter than the concept. Glow matches: engine grille (243,185,74), hue 40, eyes (240,165,62), hue 35, against the concept grille (249,166,35), hue 37. Faults: the rubies are still under-saturated in engine (per-pixel median HSV S 0.60 to 0.66 across idle, glow-close, attack, hit and frozen, against the concept's 0.91 measured as the S of the median colour (96,9,32)), though the Blender compare ruby (128,9,41), S 0.93, hue 344, matches the concept, so the loss is in engine lighting and pixel size; the neck coils read paler and less saturated than the plates."
+        "note": "Unchanged at 13. sRGB medians use a warm-metal mask (max channel over 35, R over B plus 12, glow excluded). The engine idle head (395,185)-(450,240) is (120,88,57), hue 29.3, V 0.47, against the concept side head (1030,70)-(1310,230) at (116,81,55), hue 25.6, V 0.45, which is close. The idle chest (395,305)-(485,360) is (138,100,64), V 0.54, and the glow-close chest is V 0.58, lighter than the concept's 0.45 but inside the art bible's polished-brass intent (#DEC16A). Brass is still about 4 degrees yellower. Glow matches: idle grille median (243,186,75) and eyes (241,171,65) against the concept grille hue 37. The rubies improved but are still short: per-pixel median S is 0.68 idle, 0.72 glow-close, 0.70 attack, 0.67 hit and 0.69 frozen (pass 2: 0.60 to 0.66), against 0.93 for the concept ruby (median (84,5,27)). At glow-close the neck and spine coils read paler and less saturated than the plates."
       },
       {
         "criterion": "readability at play distance",
         "points": 9,
         "max": 10,
-        "note": "Up 1 from 8. The face now reads at 2.6 m: two large lit amber eyes plus the chest grille give the concept's glare and focal core (idle.jpg 555 glow px in total with S over 0.6 and V over 0.85, of which the eyes are 137). The hit pose stays readable (hit.jpg 582 glow px) and the body separates from the floor through its highlights rather than its median (idle chest median V 0.51 against floor V 0.53, but chest 90th percentile (237,207,171) against floor (137,100,75)) plus the dark joint bands. Deduction: head-on, the drooping tube muzzle and hanging jaw bar make the head read as a different animal before it reads greyhound, and the rubies are a few dark pixels from the seat. frozen.jpg shows no tint shift from idle; that is the roster-wide runtime ice tint and is not charged to the hound."
+        "note": "Unchanged at 9. At 2.6 m in idle.jpg the face and core read: 591 glow px in total (S over 0.6, V over 0.85), of which the eyes are 182 and the grille 409. The rubies now show as distinct crimson dots (176 px), where pass 2 found a few dark pixels. hit.jpg and attack.jpg stay readable. The body separates from the floor through highlights and dark joint bands, not through its median (chest V 0.54 against floor V 0.55). Deduction: head-on, the long tube muzzle and the fang row still make the head read as a generic or rodent snout before it reads as a greyhound. Not charged, noted only: death.jpg is a rigid sideways topple with straight legs where the concept's death is curled up, and frozen.jpg shows no tint shift (a roster-wide runtime ice tint, not the hound's)."
       }
     ],
     "topFixes": [
-      "Rebuild the head-on read, which is the seat view: narrow the domed cranium and turn the round tube muzzle into the concept's flat-topped tapering wedge, and close the jaw to a snarl so the spike teeth stop showing as a picket under a separate jaw bar (idle.jpg and glow-close.jpg).",
-      "Fix the remaining silhouette: narrow the shoulders head-on by about 10 percent (model 233 px against the concept's 212 at y 1270 of the compare), give the back a slight roach arch into a smaller, rounder rump, cut the keel spike back, raise the head on a more upright neck, and curl the tail up to the key.",
-      "Finish the signature details: make the winding key a solid flat plate with two small holes rather than two wire rings, enlarge and brighten the rubies so they read crimson in engine (per-pixel median S 0.60 to 0.66 now, concept 0.91), and replace the thin black slit seams with bevelled plate edges while softening the striated normal that reads as wood grain and rope up close."
+      "Rebuild the head-on read, which is the seat view: flatten the domed cranium and turn the round tube muzzle into a flat-topped wedge tapering to the nose, narrow the jaw-level width about 10 percent (91 px down to the concept's 82 at y 1145 of the compare front), shorten the head about 10 percent by bringing the occiput forward, and tuck the fangs inside the lip line so no row of teeth shows head-on at rest.",
+      "Reshape the chest core into the concept's centred, near-round vertical cage: glow bounding box w/h near 1.0 (now 1.57 to 1.64), centred at about 55 percent of chest height (now about 80 percent, a low slot under the chest bulb).",
+      "Fix the tail and key: start the tail at the back of the rump instead of rising above it, sweep it down and back in an arc, and replace the two-wire-ring key with a solid flat bow plate with two small holes.",
+      "Correct the remaining body silhouette: round off the rump's square rear corner (top edge at y 203 against the concept's 302, 125 px in from the rear of the side compare), cut back the keel spike, splay the front paws to the concept stance (157 px apart against 203 at y 1615 of the compare front), and fold the ears back as flaps rather than round caps.",
+      "Clean up the spine coils at close range: remove the striated normal so each ring reads as a separate rounded coil with a dark gap (high-pass std 14.8 against the chest's 9.6 at glow-close), and extend the centre chest seam to a full-height plate split with bevelled edges.",
+      "Push ruby saturation from a per-pixel median S of about 0.70 toward the concept's 0.93 in engine, with a darker, more saturated base colour or a small emissive term."
     ],
-    "method": "Independent re-score of the uncommitted pass-2 hound on 24ead5d with the same five-criterion rubric, re-checking every point of the 74 review against the new files rather than carrying it forward, and checking each of the author's claimed changes. Shape was judged on the fidelity compare (orthographic side, front and back at the concept's metres per pixel) with Pillow crops of the side head, the hind leg and tail, and the model front, plus front-silhouette widths measured against a background-difference mask in both front panels. Material and colour were weighted on the six engine shots, because the game is seen only through the three.js renderer, and the Blender compare's dark backdrop mirrors on the polished skull (Blender front head (400,990)-(540,1110) median V 0.17, against V 0.49 for the same head in engine idle.jpg), so Blender values were used only for shape and for the ruby's own colour. Colour is sRGB medians with HSV hue, saturation and value over a warm-metal mask (max channel over 35, R over B plus 12, glow excluded), glow as HSV S over 0.6 and V over 0.85 (eye-to-grille ratios with S over 0.4 and V over 0.8, applied identically to concept and engine), rubies as hue over 320 or under 5 with S over 0.35, in the pixel boxes given in the notes, kept off the floor. Concept boxes are in full-resolution 2752x1536 pixels. The death.jpg ruby median was not used (floor and edge contamination). The art bible and the P5 design notes (narrow head, two amber eyes, one amber chest core, ruby inlays) are a secondary check. Verified author claims: the stop and deeper muzzle, fewer larger teeth, large almond eye glow, skull on polished brass, gaskin forward with an angled hock, a single key bow with round holes, chunky tail segments and darker rubies. Partly true: the chest is narrower than before but still wider than the concept, and the key still reads as wire rings. The rise from 74 comes from the eyes, the side head profile, the hock and the unified head material; it stays below the bar on the head-on muzzle and jaw read and the remaining body proportions.",
-    "evidence": [
-      {
-        "path": "assets-source/concepts/hound-sheet-1.png",
-        "sha256": "7f16cf73b18efffb7a612cc1f6a01fdadc4e20f06a0fcadb84fb94e07b50c7e6"
-      },
-      {
-        "path": "docs/art-bible.md",
-        "sha256": "11da71b45f24eeb258ef77d328ef1aa009297a9231608cb80bb429aa3ff2ad6a"
-      },
-      {
-        "path": "assets-source/concepts/p5-automatons-design.md",
-        "sha256": "36c069d9fd9e45ceb84f8ff1d26a04bd2d9dfac73ca084047d5b606ac346cc83"
-      },
-      {
-        "path": "assets-source/enemies/spring-hound/spring-hound.fidelity-compare.jpg",
-        "sha256": "f6ef98f6cb2deecda9cd6fd213b3404251bf10cb617e98ff9a988491a6657b71"
-      },
-      {
-        "path": "assets-source/enemies/spring-hound/spring-hound.review-sheet.jpg",
-        "sha256": "8647de5160dec892a381896f8ee8d3009d72a1df7d69c178916d1167436943b2"
-      },
-      {
-        "path": "assets-source/enemies/spring-hound/staging/engine/idle.jpg",
-        "sha256": "21d8ed04cd68213794aac9f9b7c79c36c0e135a036eabc25cf5a6d4fd8b58856"
-      },
-      {
-        "path": "assets-source/enemies/spring-hound/staging/engine/glow-close.jpg",
-        "sha256": "40e20e38f3bcd1c34aad3113f6df146caf9662acbf47e67a963c45f8c8362395"
-      },
-      {
-        "path": "assets-source/enemies/spring-hound/staging/engine/attack.jpg",
-        "sha256": "1a4056d6914da99ff3da1cac77235c849720e5f692fae0ce341a12dbb02c160e"
-      },
-      {
-        "path": "assets-source/enemies/spring-hound/staging/engine/hit.jpg",
-        "sha256": "6f3f227a6ff15854c84ba593b5a0a8da98bed164db7689839aaa1098f48da545"
-      },
-      {
-        "path": "assets-source/enemies/spring-hound/staging/engine/frozen.jpg",
-        "sha256": "44a2b66bf34e25c8a74c0c60a2a1405b2207625bffa1e43913bb8de30e68ec80"
-      },
-      {
-        "path": "assets-source/enemies/spring-hound/staging/engine/death.jpg",
-        "sha256": "899220c8a2c1a6041e06421bc72ebeebbcf8a2c8fbec311469c83273846681b7"
-      }
-    ],
-    "previousScore": 74,
-    "build": "the hound pass-2 commit after 24ead5d"
+    "method": "Independent pass-3 re-score using the same five-criterion rubric, re-checking each pass-2 deduction from the independentScore object in provenance.json and testing the three pass-3 claims. The author self-score and the gap list printed at the top of the fidelity-compare and review-sheet images were ignored, and no number here comes from them; authorSelfScore and staging/fidelity.json were not read. Shape: the fidelity compare (orthographic side, front and back at the concept's metres per pixel) was measured with Pillow and numpy. Side silhouette bounding boxes and top and bottom profiles every 25 px came from a background-difference mask (RGB distance over 45 from the panel-edge median). Front silhouette widths every 10 px came from the same mask (threshold 40) over concept front x 12-308 and model front x 322-618, y 990-1695. Six-times crops checked the jaw gap, and paired side-by-side crops covered the hindquarters, tail, key and forequarters. Material and colour were weighted on the six engine shots (three.js runtime, seat camera). Measures used: warm-metal sRGB medians with HSV, glow as HSV S over 0.6 and V over 0.85, eye-to-grille ratios with S over 0.4 and V over 0.8, ruby mask hue over 320 or under 5 with S over 0.35, grille shape from the glow bounding box, and surface striation as the std of luma minus a 3 px Gaussian blur, with gradient magnitudes. Concept boxes are in full-resolution 2752x1536 pixels. The review sheet and Blender renders were viewed as a secondary check on stance and the animation poses. The art bible palette (#DEC16A brass, #F3BE65 amber, #93212B ruby) was the material reference. The rise from 79 comes from the front-width fix, the closed jaw in side view, the removal of chest grain and the larger rubies. The head-on muzzle, the key, the tail, the chest-core shape and the striated coils hold it to 82."
   }
 }
