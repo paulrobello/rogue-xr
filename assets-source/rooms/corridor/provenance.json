@@ -316,7 +316,7 @@
     },
     {
       "gate": "independent visual score",
-      "status": "below bar: 68/100 (bar 80), scored 2026-11-17",
+      "status": "below bar: 74/100 (bar 80), scored 2026-11-17",
       "notes": "blender-kit-pieces requires an independent >= 80/100 score; unscored means unaccepted"
     }
   ],
@@ -347,7 +347,7 @@
     }
   ],
   "independentScore": {
-    "score": 68,
+    "score": 74,
     "scale": "0-100 visual fidelity to the art bible and study-kit language",
     "scorer": "independent reviewer agent (separate from the authoring agent; did not build the asset)",
     "date": "2026-11-17",
@@ -358,39 +358,39 @@
         "criterion": "form, layout and proportions",
         "points": 22,
         "max": 30,
-        "note": "Still the same straight 2x8 m tube (manifest footprint -1..1 x -4..4, walkable 1.2 m) with no jog, niche or arch: open from the previous review. Improved: the ceiling is now a chamfered walnut vault, the walls carry moulded picture-frame panels between pilasters, and the wallpaper motif is fixed. Measured on p5-rooms-corridor-hero.jpg, a near-wall gear (centre 1192,337, about 0.75 m from the eye) spans about 42-45 px of 1280, against the 120 px the previous review measured, so about 0.36x. New problem: each end bay has a dropped soffit box (hero x 560-720, y 183-205) that reads as a separate grey gable-shaped hood over the door, not as part of the vault."
+        "note": "Unchanged geometry: corridor.glb sha256 a47e2247... is byte-identical to the db29fbd build the previous review scored, and report.json still lists 1,912 low / 11,863 high tris. Still a straight 2x8 m tube with no jog, niche or arch. The chamfered walnut vault, moulded wall panels between pilasters and the scale-corrected wallpaper (near-wall gear at hero x 1173-1220, about 45 px of 1280, measured on an L* profile through y 337) all still hold. Still open: each end bay keeps the dropped soffit box (hero x 560-720, y 183-205) whose top face reads as a separate gable-shaped hood over the door. It is now lit and brown rather than grey (see surface), but its silhouette still breaks the vault line in the 3x crop of the hero end."
       },
       {
         "criterion": "signature features: passage",
         "points": 19,
         "max": 25,
-        "note": "Fixed: there are now three lanterns on alternating walls (lamp east at y 0, lanterns west at y -3 and +3, each with a 28 W spot pool per report.json bake_lights), and the floor has a beat. The hero centre floor strip (x 560-720) reads L* 11 near, peaks at 21 under the mid pool (rows 555-600), dips to 8.5 between pools (row 510) and rises to 16.5 under the far pool. The banner, the gilt door frames and the seam into the hall (p5-rooms-corridor-seam-from-corridor.jpg) all read. Still open: there is no runner or floor feature. New problem: both end doorways render as flat voids, RGB 0,0,0 across the whole opening in p5-rooms-corridor-floor-sealed-north.jpg (the runtime cap) and L* 3 in the hero, so the passage ends in holes, not doors. The stale p5-int-corridor-sealed.jpg (2026-11-15) showed a walnut door leaf."
+        "note": "Improved: the three lanterns at 48 W point plus 112 W spot (was 12/28 W, report.json bake_lights) now make a strong light-dark rhythm. Hero floor strip x 560-720 runs L* 35 near the far door, dips to 23.1 between pools (row 510) and peaks at 43.0 under the mid pool (row 570), against 8.5-21 before. Floor stones, banner, brass door frames and the seam view into the hall (hall interior L* 13.0 through the door in p5-rooms-corridor-seam-from-corridor.jpg) all read. Still open, now the worst thing in the room: both end doorways are black voids. Hero far door RGB 14,10,7 (L* 3.0, p10 = p90, a flat fill), lamp shot the same, and the sealed runtime cap in p5-rooms-corridor-floor-sealed-north.jpg is exactly RGB 0,0,0 across x 530-745, y 200-540. Brighter walls make the holes more conspicuous, not less. Still no runner or floor feature along the 8 m run."
       },
       {
         "criterion": "surface detail and material read",
         "points": 14,
         "max": 20,
-        "note": "Fixed: the lightmap is now 2048 px at 123.8 px/m mean (min 105.0), above the study's 66.3 and the previous 52.8. UV1 has 563 islands, 0 px overlap and a 20 px minimum gap. Fixed: the ceiling beam and cornice side faces no longer show grey streaks (lamp-shot ceiling crop). Still open, moved: the end-bay soffit underside is desaturated grey (hero region mean RGB 53,43,41, saturation 0.22, against about 0.9 for the surrounding walnut). New problem: in the lamp camera a near-camera pilaster (x 1100-1240) shows heavily stretched vertical grain and a flat orange-red side face. Wear and grain are mostly invisible because the wainscot (L* 2.2) and ceiling (L* 2.6) sit near black in the hero."
+        "note": "Fixed by the relight: wainscot grain, panel mouldings, ceiling boards and floor stone texture are now visible (ceiling centre L* 12.2, right wainscot 10.9, floor near 33.7). The lightmap stays at 123.8 px/m mean, 105.0 min, 563 UV1 islands, 0 px overlap, 20 px gap, 2.0% clipping. Gilt door frames now read as hammered brass at hue 36-37 (hero jamb RGB 119,95,58), closer to the bible's polished brass #DEC16A (hue about 44) than the old 20-22. Still open: the end-soffit top face is still a desaturated mauve band (RGB 76,48,43, saturation 0.45 against 0.93-0.95 for the walnut around it). Still open: in the lamp camera the near pilaster side face (x 1165-1215) is a flat orange smear of vertically stretched grain (RGB 108,38,16) next to a correctly grained front face. The same smear shows in Blender's lamp.lightmapped.png crop, so it is a UV0 or tiling fault in the asset, not a runtime one. New, visible now that the room is lit: the walnut does not read as the bible's oiled walnut #583C26 (hue 26, saturation 0.57). Hero walnut measures hue 5-9 at saturation 0.95-0.97 (left wainscot RGB 44,5,1, ceiling 66,13,4), a red cherry. The study's walnut in its engine hero is hue 15-18 at saturation 0.65-0.87. The two rooms share the same walnut and wallpaper slots (build-room-kit.py, where the corridor only overrides wallpaper tiling), so this is lighting, not albedo (see colour)."
       },
       {
         "criterion": "colour, value and lighting mood",
-        "points": 7,
+        "points": 11,
         "max": 15,
-        "note": "Warm and on-palette, and the pools now make light and dark beats. But the room is far too dark against the bible ('corners fall into warm dark rather than black') and the study kit. Engine hero mean L* is 5.9, with 65.5% of pixels below L* 5. The study engine hero has mean L* 17.8 with 14.3% below L* 5. The wallpaper ground is near-black crimson, RGB about 27,2,0, and the near-wall saturation is 0.86-0.90 against the study wallpaper's 0.70, so the large maroon wall area the previous review flagged is now a darker, more saturated red-black. Weighting: the darkness is mostly in the bake and the albedos, not the runtime. The Cycles diffuse reference is already dark (hero.reference-diffuse mean L* 6.2 against the study's 9.6), and the lightmap-only engine frame matches it (lightmap/Cycles frame ratio 0.86). The study's full render is 1.9x its lightmap-only frame (41.9/22.2), while the corridor's is only 1.07x (16.0/14.9), so the corridor's dark wallpaper and walnut albedos take back what AgX lifts in the study."
+        "note": "Value fixed. Engine hero mean L* 16.9 (study engine hero 17.8), 11.5% of pixels below L* 5 (study 14.3%), p90 35.0 (study 36.1). The lamp and seam shots sit at 17.9 and 17.5. Corners now fall to warm dark, as the bible asks. Still open, and now the main colour fault: the room is a saturated red monochrome. Frame mean HSV saturation is 0.88, against 0.65 for the study engine hero and 0.64 for p5-int-study.jpg. Every large surface sits between hue 5 and 23, and the wallpaper ground is RGB 56,4,1 at saturation 0.98 (study ground 35,10,8 at 0.78). The bible says saturated colour never covers large wall areas, and that walnut is #583C26. Cause, weighed from bake against runtime: the walnut and wallpaper materials are shared with the study, so this is not albedo. The corridor's Cycles diffuse reference is already saturation 0.98 at hue 14-15 on walnut, which is red interreflection inside a 2 m tube now lit at four times the energy. The runtime path then differs between rooms. The study goes from lightmap-only to full frame with walnut L* 2.7 to 16.9, saturation 0.96 to 0.65 and hue 10.6 to 17.5, so its runtime lift is large and desaturating. The corridor goes L* 10.7 to 10.9, saturation 0.97 to 0.95 and hue 13.6 to 7.4, so its runtime adds almost nothing and shifts redder. The corridor's look therefore rides almost entirely on a saturated bake, while the study's is mellowed at runtime. I weighted the engine shots. engine-compare frame_ratio 0.884 confirms value fidelity, not hue."
       },
       {
         "criterion": "readability and comfort at seated VR distance",
-        "points": 6,
+        "points": 8,
         "max": 10,
-        "note": "Improved: near-wall motifs at about 43 px and lower contrast (near-wall L* p10/p90 1.0/13.7, against 6.6/44.5 in the old build's p5-int-corridor-sealed.jpg) remove the shimmer and crowding risk the previous review raised. New problem: two thirds of the frame sits below L* 5, and on Quest 3's LCD that range black-crushes and bands, so wall panels, wainscot and ceiling will lose their form in the headset. The end doors read as black holes, not destinations. A desktop shot cannot settle the headset result."
+        "note": "Improved: the black-crush risk is mostly gone, with 11.5% of the hero below L* 5 against 65.5% before, and only 2.0% below L* 2. Panels, wainscot and ceiling now hold their form (right wainscot L* p10/p90 6.3/15.6). The motif scale stays calm at about 45 px for the near wall, and no high-contrast shimmer was seen in 2x crops. Two points off: the near-left wainscot is still L* 6.3 (target 8 or above), and the two flat black door rectangles are the brightest-contrast edges in the frame, so the eye lands on holes. A desktop shot cannot settle the headset result."
       }
     ],
     "topFixes": [
-      "Lift the corridor's value into the study's range. Raise the bake light energy, or lighten the wallpaper ground and the walnut albedo, and pull the wallpaper ground saturation from about 0.88 toward the study's 0.70. Target: engine hero mean L* 14-18, fewer than 20% of pixels below L* 5, and wainscot and ceiling at L* 8 or above.",
-      "Give both ends a real door. Render the sealed runtime cap as a lit walnut door leaf (it is pure RGB 0,0,0 today), and the open hero ends as a dim lit vestibule, not a black void.",
-      "Re-material or re-UV the end-bay soffit underside (grey, saturation 0.22) so it reads as walnut continuous with the vault. Fix the stretched grain on the pilaster side faces seen by the lamp camera. Add a floor runner or inlay so the 8 m run has a floor feature."
+      "Replace the black end doorways. Render the sealed runtime cap (RGB 0,0,0 today) as a lit walnut door leaf with brass fittings, and the open hero ends as a dimly lit vestibule or a closed door, so the passage ends in destinations, not voids.",
+      "Desaturate the corridor's light, not the shared materials. Material edits would also change the study. Cut red bounce in the 2 m tube with a less saturated lantern colour, fewer or damped indirect bounces, or lantern energy rebalanced toward the runtime fill that mellows the study. Failing that, use a corridor-only wallpaper variant with a lighter, less saturated ground. Target: frame mean saturation 0.70 or below, walnut hue 15 or above at saturation 0.85 or below, wallpaper ground saturation about 0.80, and mean L* held at 15-18.",
+      "Clean up geometry and UV leftovers: merge or re-material the end-bay soffit hood so its top face is walnut continuous with the vault (saturation 0.45 today), re-UV the pilaster side faces that stretch the grain in the lamp camera, and add a floor runner or inlay so the 8 m run has a floor feature."
     ],
-    "method": "Read docs/art-bible.md and the previous independentScore in provenance.json, and re-checked each of its points. docs/verification/p4-study-*.jpg does not exist, so the study engine, Cycles and diffuse renders in assets-source/rooms/study/staging/renders/ served as the quality reference. Viewed all five engine shots docs/verification/p5-rooms-corridor-*.jpg (dated 2026-11-17 01:24, before the 01:32 commit db29fbd) and the review sheet. Measured with Pillow and numpy (CIE L*, HSV saturation): frame-level L* statistics and the fraction below L* 5; region means for wallpaper, wainscot, ceiling, end soffit, doorways, floor and lamp pools; a floor L* profile in 15 px rows; and the motif diameter from intensity profiles through a near-wall gear, cross-checked on 2x crops (hero right wall, far door and soffit, lamp-shot ceiling, lamp-shot right edge). Compared the corridor and study Cycles diffuse, lightmapped, high/low and engine renders to separate bake problems from runtime ones. Read the lightmap PNG statistics, report.json, engine-compare.json, uv1-report.json, the manifest, and bakedRoomMaterial in src/world/study-room.ts, which confirms one material path for all rooms. Weighted the engine shots first. Provenance note: report.json's files map lists stale hashes for engine-compare.json (7de03cf7..., actual 78fdd0d5...) and uv1-report.json (591d68bb..., actual f2d70682...). The GLB, KTX2 and manifest hashes match. Read-only throughout.",
+    "method": "Read docs/art-bible.md, the previous independentScore in provenance.json (score 68, build db29fbd), and the ac21f3b commit message. Re-checked each of its points. Viewed all five corridor engine shots (hero, hero.diffuse, lamp, floor-sealed-north, seam-from-corridor, dated 2026-11-17 06:21), the review sheet, the study engine hero and p5-int-study.jpg. Measured with Pillow and numpy (CIE L*, HSV saturation and hue): frame L* mean and percentiles, the fraction below L* 5 and below L* 2, and frame saturation for the corridor and study engine, lightmap-only and Cycles diffuse frames. Took region means for the door voids, gilt jamb, end soffit top and underside, ceiling, both wainscots, both wallpapers, banner, floor and lantern glass. Took the wallpaper ground and motif split by L* percentile for the corridor and the study, a floor L* profile in 15 px rows, and a horizontal L* profile through a near-wall gear for motif size. Made 2-3x Lanczos crops of the hero end bay, hero right wall, hero floor and ceiling, and the lamp-shot right edge. Read report.json, engine-compare.json and uv1-report.json, and confirmed with sha256 that the GLB is unchanged from db29fbd, so geometry points carry over and only the bake changed. Weighted the engine shots. Blender renders and the Cycles diffuse reference were used only to confirm that the brightness and colour come from the bake and albedo, not the runtime. Read-only on the repo. Measurement scripts are in /tmp/rxr-prev/corr_v3_*.py. Added after review: compared region hue and saturation between the lightmap-only and full engine frames for both the study and the corridor, and against the corridor Cycles diffuse reference, to locate the red cast. Confirmed in scripts/assets/build-room-kit.py and room_kit.py that the corridor uses the shared walnut and wallpaper slots, with only a wallpaper tile override. Cropped the right-edge pilaster in Blender's lamp.lightmapped.png to classify the stretched grain. Previous review's stale-hash note is fixed: report.json files now match the actual sha256 of corridor.glb, the lightmap KTX2 and PNG, the manifest, engine-compare.json and uv1-report.json.",
     "evidence": [
       {
         "path": "docs/art-bible.md",
@@ -398,39 +398,39 @@
       },
       {
         "path": "docs/verification/p5-rooms-corridor-hero.jpg",
-        "sha256": "304d0e1dda8839988a1ae38fe53aedc45011172bb48519f730a94b482a8301dd"
+        "sha256": "0d9c7b6db837ece3e995f1fc9abd9b2ddb9e31ca494e32af9e8e17202461b7e5"
       },
       {
         "path": "docs/verification/p5-rooms-corridor-hero.diffuse.jpg",
-        "sha256": "4fd8001a23a7156d619597ae7fb050957b8246dde9ffd0770e71d9b1709bde77"
+        "sha256": "52b0419a4e8a931cf2c56ede1029ec34e179cee9f5fe4745594ca9a393546a4e"
       },
       {
         "path": "docs/verification/p5-rooms-corridor-lamp.jpg",
-        "sha256": "1dc05a4746eee2fd7d1ac55218b354d1fdbe54f1fbd515c5c24e29d6f9666e32"
-      },
-      {
-        "path": "docs/verification/p5-rooms-corridor-seam-from-corridor.jpg",
-        "sha256": "891f67302ece4a4f6908c227e424dd3a9d2d3333686332f79dc0666b63f5db91"
+        "sha256": "d21b220a757556b1d178963da9985b713bd56dcaba6f50417eb906f28eecdd09"
       },
       {
         "path": "docs/verification/p5-rooms-corridor-floor-sealed-north.jpg",
-        "sha256": "d4e1b9dd7ae79232267f0c0fa4a996eeff457497f501e850460dd596ad3ac8e9"
+        "sha256": "cba137501a37d32b3007140c5b7000dadc326befd06d614a30989d7473509d34"
       },
       {
-        "path": "docs/verification/p5-int-corridor-sealed.jpg",
-        "sha256": "bfd5c172b3ee6bb260c105daccbf5c775afd483525a7658d409a42c8217ff71e"
+        "path": "docs/verification/p5-rooms-corridor-seam-from-corridor.jpg",
+        "sha256": "9d2cb3967084765352514ca39c9ce67bf557b5108508b7912841b3e5f2cb1275"
+      },
+      {
+        "path": "docs/verification/p5-int-study.jpg",
+        "sha256": "6258394c368a71674c74cb5dba4d66729a12beddd65e6f8152e9b9769fad4a08"
       },
       {
         "path": "assets-source/rooms/corridor/staging/review-sheet.jpg",
-        "sha256": "58cdfb38a72dc924171163ae7178283946f865cb60a2f50bca63d5a75ec53970"
+        "sha256": "e7f51c1dde8dc96e0e3527b9fecfe7629feac9a9020e5b4cbe0710c9a3ca6653"
       },
       {
         "path": "assets-source/rooms/corridor/staging/report.json",
-        "sha256": "c19cf4362c1f3662518fb90b0325ae45c05468168ad1101ff460c94d423ef624"
+        "sha256": "196374392f2d9b6609b161837472d9fc9ccb9ee9135e8c360e4219fa83595e64"
       },
       {
         "path": "assets-source/rooms/corridor/staging/engine-compare.json",
-        "sha256": "78fdd0d561d185f2f4b2ff2fb30aae92a6e9916a269cfe4474e326f84167f6e1"
+        "sha256": "212dcce491a03b8d14696988d6835815b52cb0bd990e472a0a8b16fe14967934"
       },
       {
         "path": "assets-source/rooms/corridor/staging/uv1-report.json",
@@ -438,39 +438,19 @@
       },
       {
         "path": "assets-source/rooms/corridor/provenance.json",
-        "sha256": "c7eb856b0935988e73b17e4c4e89dddeec8c8bc468699e8e3aadac48145d5272"
-      },
-      {
-        "path": "assets-source/rooms/corridor/staging/corridor.manifest.json",
-        "sha256": "034459d6dc6b2b30d5b9b4f98ddbe95b017cfe3273171b2183bb43bdb47cd0e5"
+        "sha256": "aad769f324222a08b2e5f913b86edfc8167c57eeb4524cca6d10d56b46233802"
       },
       {
         "path": "assets-source/rooms/corridor/staging/corridor.glb",
         "sha256": "a47e2247183f21e15071aacee7c7a434e35c623b3ae5fa3e41b3bd524b41d00f"
       },
       {
-        "path": "assets-source/rooms/corridor/staging/corridor.lightmap.png",
-        "sha256": "22744fea69166b21186d71a253704c0804d25767a8e61304ae3e869888eef328"
-      },
-      {
         "path": "assets-source/rooms/corridor/staging/renders/hero.reference-diffuse.png",
-        "sha256": "75489b241c37c6ccf751b1090500988eb7b13a2a970efcb26afc0da9f1a794c0"
-      },
-      {
-        "path": "assets-source/rooms/corridor/staging/renders/hero.lightmapped.png",
-        "sha256": "3125dc830888771329e59530625221998ada3f207807e113089c5dcabd1d79d8"
-      },
-      {
-        "path": "assets-source/rooms/corridor/staging/renders/engine.hero.png",
-        "sha256": "56e91a94410a75577bb42f0597de7a1ef6a36957d84abe23c79f9c41a56dcc31"
-      },
-      {
-        "path": "assets-source/rooms/corridor/staging/renders/engine.hero.diffuse.png",
-        "sha256": "d57a3a91f3f64e622dcad03ae5bbd7abe3f106b1e6d2955d909cac6a0f6ce671"
+        "sha256": "bff8bd6c4d95fe9861a9006c4ec022c61cc75e7f300552eb23e51daf340842e3"
       },
       {
         "path": "assets-source/rooms/study/staging/renders/engine.hero.png",
-        "sha256": "56174ad55a38beb16f096d4f5cdb9a6ba2aee5d3fbf89f29d3443cadbaa81363"
+        "sha256": "b5e28637b9de5167bdc09ef559523401365ba3bfd149828ec1cc0df80a09fa32"
       },
       {
         "path": "assets-source/rooms/study/staging/renders/engine.hero.diffuse.png",
@@ -481,15 +461,19 @@
         "sha256": "93f8ebbcd3d41bcc76e63ef14af9bcbc3750a6254793b4d4c2f474b3f869f87b"
       },
       {
-        "path": "assets-source/rooms/study/staging/engine-compare.json",
-        "sha256": "63a4126625f469cc5c5896592fab1359e832b77055d79f5d0f0f51cea78e9c07"
+        "path": "assets-source/rooms/corridor/staging/renders/lamp.lightmapped.png",
+        "sha256": "d53c95494ed930de1f82133273770ea699aa1c5ae08411ce40f1256ee7901298"
       },
       {
-        "path": "src/world/study-room.ts",
-        "sha256": "45da4d9ed0e326df15f3da306634e23a9e9ddba2fc0833db26548f8c39a7deb6"
+        "path": "assets-source/rooms/corridor/staging/corridor.lightmap.png",
+        "sha256": "0867bfbb907a47dda6344348ac42841fc069cd94b117fd2b6fb92cb43a0d83d3"
+      },
+      {
+        "path": "assets-source/rooms/corridor/staging/corridor.lightmap.ktx2",
+        "sha256": "73f98c1d42f71ca505710d1b46f7c6699d7ec802242566bcdd707359594b9af1"
       }
     ],
-    "previousScore": 67,
-    "build": "db29fbd"
+    "previousScore": 68,
+    "build": "ac21f3b"
   }
 }
