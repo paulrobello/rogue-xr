@@ -1,9 +1,13 @@
+import { FOVEATION_LEVELS } from '@par/xr-workspace';
+import type * as THREE from 'three';
 import { describe, expect, it, vi } from 'vitest';
 import { FrameStats, percentileNearestRank, RateSampler } from '../src/perf/frame-stats.ts';
+import { mountPerf } from '../src/perf/index.ts';
 import {
   applySessionScale,
   assertFoveation,
   DEFAULT_XR_SCALE,
+  foveationValue,
   isXrScale,
   loadXrScale,
   saveXrScale,
@@ -255,5 +259,64 @@ describe('renderer hooks', () => {
     const idle = fakeRenderer(false);
     assertFoveation(idle);
     expect(idle.xr.setFoveation).not.toHaveBeenCalled();
+  });
+});
+
+describe('foveation setting (F4)', () => {
+  const presenting = () => ({
+    xr: {
+      isPresenting: true,
+      setFramebufferScaleFactor: vi.fn(),
+      setFoveation: vi.fn(),
+    },
+  });
+
+  it('maps off, low, medium and high to 0, 0.25, 0.5 and 1, medium being the old default', () => {
+    expect(foveationValue('off')).toBe(0);
+    expect(foveationValue('low')).toBe(0.25);
+    expect(foveationValue('medium')).toBe(0.5);
+    expect(foveationValue('high')).toBe(1);
+    expect(foveationValue('medium')).toBe(XR_FOVEATION);
+    for (const [level, value] of Object.entries(FOVEATION_LEVELS)) {
+      expect(foveationValue(level as keyof typeof FOVEATION_LEVELS)).toBe(value);
+    }
+  });
+
+  it('re-asserts the chosen level every frame without ?perf=1, and a change from the next frame', () => {
+    const renderer = presenting();
+    const perf = mountPerf(
+      renderer as unknown as THREE.WebGLRenderer,
+      {} as THREE.Scene,
+      {} as THREE.Group,
+      {
+        enabled: false,
+        camera: {} as THREE.Camera,
+        storage: memoryStorage(),
+        foveation: foveationValue('low'),
+      },
+    );
+    perf.frame(14, 1000);
+    expect(renderer.xr.setFoveation).toHaveBeenLastCalledWith(0.25);
+    perf.setFoveation(foveationValue('high'));
+    perf.frame(14, 1014);
+    expect(renderer.xr.setFoveation).toHaveBeenLastCalledWith(1);
+    perf.dispose();
+  });
+
+  it('keeps medium (0.5) when no level is given', () => {
+    const renderer = presenting();
+    const perf = mountPerf(
+      renderer as unknown as THREE.WebGLRenderer,
+      {} as THREE.Scene,
+      {} as THREE.Group,
+      {
+        enabled: false,
+        camera: {} as THREE.Camera,
+        storage: memoryStorage(),
+      },
+    );
+    perf.frame(14, 1000);
+    expect(renderer.xr.setFoveation).toHaveBeenLastCalledWith(0.5);
+    perf.dispose();
   });
 });

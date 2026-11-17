@@ -8,11 +8,13 @@ import {
   type MenuRow,
 } from '@par/xr-workspace';
 import * as THREE from 'three';
+import { TABLE_DISTANCE_CHOICES } from '../combat/placement.ts';
 import { getCard } from '../content/cards.ts';
 import { formatSeed } from '../core/rng.ts';
 import { appendSeedChar, SEED_ALPHABET, SEED_LENGTH } from '../desktop/seed-title.ts';
+import { HOLO_CARD_ASPECT } from '../hand/fan-layout.ts';
 import { PALETTE } from '../palette.ts';
-import type { Settings } from '../persist/db.ts';
+import { FOVEATION_CHOICES, type FoveationChoice, type Settings } from '../persist/db.ts';
 import type { RunSnapshot } from '../persist/saves.ts';
 import {
   DIFFICULTIES,
@@ -23,6 +25,7 @@ import {
 import { SKIP_REWARD } from '../rules/run.ts';
 import { maxTier, nextCost, UPGRADE_IDS, UPGRADES, type UpgradeId } from '../rules/workshop.ts';
 import type { FlowPhase, RunFlow } from './flow.ts';
+import { RewardCardFaces, type RewardCardFacesOptions } from './reward-cards.ts';
 
 /** Title key art and its runtime-title safe region (0..1, origin top-left), from `ui-atlas.json`. */
 export interface KeyArt {
@@ -41,6 +44,8 @@ export interface FlowUiDeps {
   onNewRun: (seed: string, difficulty: Difficulty) => void;
   onContinue: () => void;
   onSettings: (next: Settings) => void;
+  /** How the reward board draws its card faces. Default: the shared hand atlas, typeset. */
+  rewardCards?: RewardCardFacesOptions;
 }
 
 /** Card family colours (art bible): the jewel tone fills the frame field. */
@@ -59,6 +64,13 @@ const DIFFICULTY_NOTE: Readonly<Record<Difficulty, string>> = {
 /** Plate of the chosen option in a row of choices (the title's difficulty). */
 const SELECTED_FILL = PALETTE.brassDark;
 const SELECTED_EDGE = PALETTE.candle;
+/** Settings board names for the foveation levels. */
+const FOVEATION_LABEL: Readonly<Record<FoveationChoice, string>> = {
+  off: 'Off',
+  low: 'Low',
+  medium: 'Medium',
+  high: 'High',
+};
 
 const ROW = 0.07;
 const BOARD_WIDTH = 0.66;
@@ -134,14 +146,15 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, width: number): s
 }
 
 /**
- * The runtime card face for a reward choice: family-coloured field in a brass frame, name, type and
- * cost, and the rules text on parchment. Swappable for the illustrated card once the art atlas lands.
+ * The canvas fallback face for a reward choice, shown until the card atlas is loaded: family-coloured
+ * field in a brass frame, name, type and cost, and the rules text on parchment. It has the atlas
+ * card's aspect, so the swap keeps the card's size.
  */
 export function rewardCardTexture(id: string, hovered: boolean): THREE.CanvasTexture {
   const card = getCard(id);
   const canvas = document.createElement('canvas');
   canvas.width = 360;
-  canvas.height = 500;
+  canvas.height = Math.round(360 * HOLO_CARD_ASPECT);
   const ctx = canvas.getContext('2d');
   if (ctx) {
     const { width: w, height: h } = canvas;
@@ -196,6 +209,11 @@ export function rewardCardTexture(id: string, hovered: boolean): THREE.CanvasTex
   return texture;
 }
 
+/** Settings cell id of a table distance: `tableDistance-11` for 1.1 m. */
+export function tableDistanceCell(distance: number): string {
+  return `tableDistance-${Math.round(distance * 10)}`;
+}
+
 function pct(v: number): string {
   return `${Math.round(v * 100)}%`;
 }
@@ -231,7 +249,7 @@ export class FlowUi {
   private readonly deps: FlowUiDeps;
   private boards: Board[] = [];
   private extras: THREE.Object3D[] = [];
-  private cardFaces = new Map<string, { mesh: THREE.Mesh; card: string }>();
+  private rewardFaces: RewardCardFaces | null = null;
   private hoveredId: string | null = null;
   /** Control ids drawn as the chosen option. */
   private readonly selectedIds = new Set<string>();
@@ -384,10 +402,10 @@ export class FlowUi {
         (art.material as THREE.Material).dispose();
       }
     }
-    for (const { mesh } of this.cardFaces.values()) disposeMesh(mesh);
+    this.rewardFaces?.dispose();
+    this.rewardFaces = null;
     this.boards = [];
     this.extras = [];
-    this.cardFaces.clear();
     this.selectedIds.clear();
     this.hoveredId = null;
   }
@@ -497,15 +515,11 @@ export class FlowUi {
 
   private paintHover(controlId: string | null, on: boolean): void {
     if (!controlId) return;
-    const face = this.cardFaces.get(controlId);
-    if (face) {
-      const material = face.mesh.material as THREE.MeshBasicMaterial;
-      material.map?.dispose();
-      material.map = rewardCardTexture(face.card, on);
-      face.mesh.position.z = on ? 0.012 : 0.002;
+    const target = this.boardOf(controlId);
+    if (target?.board.name === 'reward' && this.rewardFaces) {
+      this.rewardFaces.hover(target.cell, on);
       return;
     }
-    const target = this.boardOf(controlId);
     const plate = target?.board.plates.get(target.cell);
     if (!plate) return;
     const material = plate.material as THREE.MeshBasicMaterial;
@@ -699,6 +713,11 @@ export class FlowUi {
         },
       },
     ];
+    // A row of choices: the chosen one is drawn selected; picking another saves it.
+    const choose = (change: Partial<Settings>): void => {
+      this.deps.onSettings({ ...this.deps.settings(), ...change });
+      this.refresh();
+    };
     this.board(
       'settings',
       [
@@ -713,10 +732,30 @@ export class FlowUi {
           ...cur,
           teleportEnabled: !cur.teleportEnabled,
         })),
+        [
+          { id: 'tableDistance-label', label: 'Table distance', weight: 2 },
+          ...TABLE_DISTANCE_CHOICES.map((d) => ({
+            id: tableDistanceCell(d),
+            label: `${d.toFixed(1)} m`,
+            onSelect: () => choose({ tableDistance: d }),
+          })),
+        ],
+        [
+          { id: 'foveation-label', label: 'Foveation', weight: 2 },
+          ...FOVEATION_CHOICES.map((level) => ({
+            id: `foveation-${level}`,
+            label: FOVEATION_LABEL[level],
+            onSelect: () => choose({ foveation: level }),
+          })),
+        ],
         { id: 'back', label: 'Back to title', onSelect: () => this.deps.flow.toTitle() },
       ],
-      { x: 0, y: 0.2, z: -BOARD_DISTANCE },
-      { width: 0.8, heading: 'Settings' },
+      { x: 0, y: 0.26, z: -BOARD_DISTANCE },
+      {
+        width: 0.8,
+        heading: 'Settings',
+        selected: [tableDistanceCell(s.tableDistance), `foveation-${s.foveation}`],
+      },
     );
   }
 
@@ -726,7 +765,7 @@ export class FlowUi {
     if (!offer) return;
     const n = offer.cards.length;
     const width = Math.min(1.25, 0.3 * n + 0.02 * (n - 1));
-    const cardHeight = ((width - 0.02 * (n - 1)) / n) * (500 / 360);
+    const cardHeight = ((width - 0.02 * (n - 1)) / n) * HOLO_CARD_ASPECT;
     const header = this.board(
       'reward-info',
       [{ id: 'cogs', label: `${offer.cogs} cogs collected · choose one card for the deck` }],
@@ -750,20 +789,14 @@ export class FlowUi {
     const group = new THREE.Group();
     group.position.set(0, 0.32 - header.panel.height - BOARD_PAD * 2 - 0.03, -BOARD_DISTANCE);
     group.add(cards.root);
-    for (const child of cards.root.children) {
-      const cell = cards.cellAt(child);
-      if (!cell) continue;
-      const { width: w, height: h } = (child as THREE.Mesh<THREE.PlaneGeometry>).geometry
-        .parameters;
-      const face = new THREE.Mesh(
-        new THREE.PlaneGeometry(w, h),
-        new THREE.MeshBasicMaterial({ map: rewardCardTexture(cell, false), toneMapped: false }),
-      );
-      face.raycast = () => undefined;
-      face.position.set(child.position.x, child.position.y, 0.002);
-      cards.root.add(face);
-      this.cardFaces.set(`reward-${cell}`, { mesh: face, card: cell });
-    }
+    const slots = cards.root.children.flatMap((child) => {
+      const id = cards.cellAt(child);
+      if (!id) return [];
+      const { width, height } = (child as THREE.Mesh<THREE.PlaneGeometry>).geometry.parameters;
+      return [{ id, x: child.position.x, y: child.position.y, width, height }];
+    });
+    this.rewardFaces = new RewardCardFaces(slots, rewardCardTexture, this.deps.rewardCards);
+    cards.root.add(this.rewardFaces.root);
     this.boards.push({ name: 'reward', panel: cards, group, plates: new Map() });
     this.root.add(group);
     this.board(

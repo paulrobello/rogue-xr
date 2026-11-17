@@ -8,6 +8,7 @@ import {
   loadXrScale,
   type ScaleStorage,
   saveXrScale,
+  XR_FOVEATION,
   type XrScale,
 } from './xr-perf.ts';
 
@@ -29,6 +30,8 @@ export interface MountPerfOptions {
   /** Where the debug panel mounts. Default: document.body. */
   panelParent?: HTMLElement;
   storage?: ScaleStorage | null;
+  /** three.js foveation (0 off, 1 maximum) re-asserted every frame. Default `XR_FOVEATION`. */
+  foveation?: number;
 }
 
 export interface PerfHandle {
@@ -39,6 +42,8 @@ export interface PerfHandle {
   frame(dtMs: number | null, now: number): void;
   /** Frame log so far, including the in-progress window. */
   log(): FrameLog;
+  /** Changes the foveation `frame` re-asserts (three.js: 0 off, 1 maximum), from the next frame. */
+  setFoveation(level: number): void;
   dispose(): void;
 }
 
@@ -48,7 +53,8 @@ export function perfEnabledFromSearch(search: string): boolean {
 
 /**
  * Wires performance instrumentation. Always: applies the stored framebuffer scale now (call
- * before Enter VR), re-asserts foveation 0.5 every frame, and aggregates 2 s frame windows. With
+ * before Enter VR), re-asserts the foveation level (`options.foveation`, then `setFoveation`)
+ * every frame, and aggregates 2 s frame windows. With
  * `?perf=1`: also mounts the wrist gauge and the desktop debug panel.
  */
 export function mountPerf(
@@ -64,6 +70,7 @@ export function mountPerf(
   const storage = options.storage;
   const loadedScale = storage === undefined ? loadXrScale() : loadXrScale(storage);
   applySessionScale(renderer, loadedScale);
+  let foveation = options.foveation ?? XR_FOVEATION;
 
   let gauge: PerfGauge | null = null;
   let panel: DebugPanel | null = null;
@@ -98,7 +105,7 @@ export function mountPerf(
 
   return {
     frame(dtMs, now) {
-      assertFoveation(renderer);
+      assertFoveation(renderer, foveation);
       const interval = dtMs ?? (lastNow === null ? null : now - lastNow);
       lastNow = now;
       lastClock = now;
@@ -113,6 +120,9 @@ export function mountPerf(
       gauge?.update(options.camera);
     },
     log: currentLog,
+    setFoveation(level) {
+      foveation = level;
+    },
     dispose() {
       gauge?.dispose();
       panel?.dispose();

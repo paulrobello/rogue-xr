@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { STARTER_DECK } from '../src/content/cards.ts';
 import { REWARD_POOL } from '../src/content/rewards.ts';
 import { RunFlow } from '../src/flow/flow.ts';
-import { FlowUi, splitControlId } from '../src/flow/panels.ts';
+import { FlowUi, splitControlId, tableDistanceCell } from '../src/flow/panels.ts';
 import { DEFAULT_SETTINGS } from '../src/persist/db.ts';
 import { createWorkshop } from '../src/rules/workshop.ts';
 
@@ -173,6 +173,62 @@ describe('FlowUi settings board comfort toggles', () => {
     expect(saved).toHaveLength(3);
     // Each flip keeps the other fields (volumes are untouched).
     expect(stored.masterVolume).toBe(DEFAULT_SETTINGS.masterVolume);
+    ui.dispose();
+  });
+});
+
+describe('FlowUi settings board table distance and foveation (F3, F4)', () => {
+  it('offers 0.9 to 1.3 m and off to high, shows the choice and saves a pick', () => {
+    const flow = new RunFlow({
+      workshop: createWorkshop(),
+      starterDeck: STARTER_DECK,
+      rewardPool: REWARD_POOL,
+    });
+    let stored = { ...DEFAULT_SETTINGS };
+    const ui = new FlowUi({
+      flow,
+      keyArt: { url: '', titleSafe: { x: 0, y: 0, w: 0.3, h: 0.4 } },
+      seed: 'BRASS042',
+      snapshot: () => null,
+      settings: () => stored,
+      onNewRun: (seed) => flow.newRun(seed),
+      onContinue: () => {},
+      onSettings: (next) => {
+        stored = next;
+      },
+    });
+    const selected = () => [...(ui as unknown as { selectedIds: Set<string> }).selectedIds];
+    const head = new THREE.Object3D();
+    flow.openSettings();
+    ui.sync(head);
+    const ids = ui.controlIds();
+    for (const cell of [
+      'tableDistance-9',
+      'tableDistance-10',
+      'tableDistance-11',
+      'tableDistance-12',
+      'tableDistance-13',
+    ]) {
+      expect(ids).toContain(`settings-${cell}`);
+    }
+    for (const level of ['off', 'low', 'medium', 'high']) {
+      expect(ids).toContain(`settings-foveation-${level}`);
+    }
+    expect(tableDistanceCell(1.1)).toBe('tableDistance-11');
+    expect(selected()).toEqual(
+      expect.arrayContaining(['settings-tableDistance-11', 'settings-foveation-medium']),
+    );
+
+    expect(ui.activate('settings-tableDistance-13')).toBe(true);
+    expect(stored.tableDistance).toBe(1.3);
+    expect(ui.activate('settings-foveation-high')).toBe(true);
+    expect(stored.foveation).toBe('high');
+    expect(stored.tableDistance).toBe(1.3);
+    expect(stored.masterVolume).toBe(DEFAULT_SETTINGS.masterVolume);
+    expect(selected()).toEqual(
+      expect.arrayContaining(['settings-tableDistance-13', 'settings-foveation-high']),
+    );
+    expect(selected()).not.toContain('settings-tableDistance-11');
     ui.dispose();
   });
 });

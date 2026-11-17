@@ -1,8 +1,32 @@
+import { DEFAULT_TABLE_DISTANCE, TABLE_DISTANCE_CHOICES } from '../combat/placement.ts';
 import { DEFAULT_DIFFICULTY, type Difficulty, isDifficulty } from '../rules/difficulty.ts';
 
 export const DB_NAME = 'rogue-xr';
 
 export type TurnMode = 'snap' | 'smooth';
+
+/**
+ * Fixed-foveation levels the settings offer, lowest first. The names match the toolkit's
+ * `FoveationLevel` (`perf/xr-perf.ts` maps them to three.js values); they are listed here so the
+ * settings store needs no toolkit import.
+ */
+export const FOVEATION_CHOICES = ['off', 'low', 'medium', 'high'] as const;
+export type FoveationChoice = (typeof FOVEATION_CHOICES)[number];
+/** The Quest 3 guide's level, what every session used before the setting existed. */
+export const DEFAULT_FOVEATION: FoveationChoice = 'medium';
+
+export function isFoveationChoice(value: unknown): value is FoveationChoice {
+  return (FOVEATION_CHOICES as readonly unknown[]).includes(value);
+}
+
+/** The listed table distance within 5 cm of `value` (the nearest), or null when none is. */
+function tableDistanceChoice(value: unknown): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+  const nearest = TABLE_DISTANCE_CHOICES.reduce((a, b) =>
+    Math.abs(b - value) < Math.abs(a - value) ? b : a,
+  );
+  return Math.abs(nearest - value) <= 0.05 ? nearest : null;
+}
 
 export interface Settings {
   turnMode: TurnMode;
@@ -16,6 +40,10 @@ export interface Settings {
   teleportEnabled: boolean;
   /** The level the title offers for the next New Run: the last one chosen. */
   difficulty: Difficulty;
+  /** Player-to-table-centre distance fights aim for, metres: one of `TABLE_DISTANCE_CHOICES`. */
+  tableDistance: number;
+  /** Fixed-foveation level applied in XR. */
+  foveation: FoveationChoice;
 }
 
 export const DEFAULT_SETTINGS: Readonly<Settings> = Object.freeze({
@@ -29,6 +57,8 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = Object.freeze({
   sfxVolume: 0.8,
   teleportEnabled: true,
   difficulty: DEFAULT_DIFFICULTY,
+  tableDistance: DEFAULT_TABLE_DISTANCE,
+  foveation: DEFAULT_FOVEATION,
 });
 
 export const STORE_SETTINGS = 'settings';
@@ -77,7 +107,10 @@ const pickBool = (v: unknown, fallback: boolean): boolean =>
 const pickNum = (v: unknown, fallback: number, min: number, max: number): number =>
   typeof v === 'number' && Number.isFinite(v) && v >= min && v <= max ? v : fallback;
 
-/** Repairs arbitrary stored data into a complete Settings; never throws. */
+/**
+ * Repairs arbitrary stored data into a complete Settings; never throws. Saves from before a field
+ * existed (no `tableDistance`, no `foveation`) take its default, so no store migration is needed.
+ */
 export function validateSettings(raw: unknown): Settings {
   const d = DEFAULT_SETTINGS;
   const r = isRecord(raw) ? raw : {};
@@ -92,6 +125,8 @@ export function validateSettings(raw: unknown): Settings {
     sfxVolume: pickNum(r.sfxVolume, d.sfxVolume, 0, 1),
     teleportEnabled: pickBool(r.teleportEnabled, d.teleportEnabled),
     difficulty: isDifficulty(r.difficulty) ? r.difficulty : d.difficulty,
+    tableDistance: tableDistanceChoice(r.tableDistance) ?? d.tableDistance,
+    foveation: isFoveationChoice(r.foveation) ? r.foveation : d.foveation,
   };
 }
 

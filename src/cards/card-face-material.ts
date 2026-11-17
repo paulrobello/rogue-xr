@@ -405,6 +405,12 @@ export function writeCardTint(
 }
 
 let shared: Promise<CardFaceArt> | null = null;
+let loaded: CardFaceArt | null = null;
+
+/** The shared card art once `requestCardFaceArt` has loaded it, else null (no load starts). */
+export function loadedCardFaceArt(): CardFaceArt | null {
+  return loaded;
+}
 
 /**
  * Loads the card atlas once per page load (KTX2 pages through `ktx2` when given, PNG otherwise) and
@@ -416,9 +422,14 @@ export function requestCardFaceArt(ktx2?: KTX2Loader | null): Promise<CardFaceAr
       const atlas = await loadCardAtlas();
       return { atlas, pages: await loadCardPages(atlas, ktx2) };
     })();
-    shared.catch(() => {
-      shared = null;
-    });
+    shared.then(
+      (art) => {
+        loaded = art;
+      },
+      () => {
+        shared = null;
+      },
+    );
   }
   return shared;
 }

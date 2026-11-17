@@ -1,4 +1,9 @@
-import { createStandardHand, createXrSession, type XrSessionOptions } from '@par/xr-workspace';
+import {
+  createStandardHand,
+  createXrSession,
+  type FoveationLevel,
+  type XrSessionOptions,
+} from '@par/xr-workspace';
 import * as THREE from 'three';
 import type { ActionBus } from '../core/actions.ts';
 import { WORKSPACE_COLORS } from '../palette.ts';
@@ -52,7 +57,14 @@ export interface XrRig {
    * hand's beam on what it points at; null draws the idle length.
    */
   updateLasers(hits: HandPair<number>): THREE.Scene;
+  /** Changes the session's foveation; applied at once while presenting and at every session start. */
+  setFoveation(level: FoveationLevel): void;
   dispose(): void;
+}
+
+export interface XrRigOptions {
+  /** Foveation the session starts with. Default `XR_SESSION_OPTIONS.foveation` (medium). */
+  foveation?: FoveationLevel;
 }
 
 /**
@@ -65,6 +77,7 @@ export function createXrRig(
   rig: THREE.Group,
   camera: THREE.Camera,
   actions: ActionBus,
+  options: XrRigOptions = {},
 ): XrRig {
   renderer.xr.enabled = true;
 
@@ -116,6 +129,7 @@ export function createXrRig(
 
   const session = createXrSession(renderer, {
     ...XR_SESSION_OPTIONS,
+    foveation: options.foveation ?? XR_SESSION_OPTIONS.foveation,
     onStart: () => actions.emit({ type: 'enter-xr' }),
     onEnd: () => {
       for (const source of sources) source.hide();
@@ -158,6 +172,7 @@ export function createXrRig(
       }
       return laserScene;
     },
+    setFoveation: (level) => session.setFoveation(level),
     dispose: () => session.dispose(),
   };
 }

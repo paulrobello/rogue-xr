@@ -1,11 +1,19 @@
+import { FOVEATION_LEVELS, type FoveationLevel } from '@par/xr-workspace';
 import type * as THREE from 'three';
 
 /** Framebuffer scales offered in the debug panel. 0.85 is the PRD starting point. */
 export const XR_SCALE_OPTIONS = [0.8, 0.85, 0.9, 1.0, 1.1, 1.2] as const;
 export type XrScale = (typeof XR_SCALE_OPTIONS)[number];
 export const DEFAULT_XR_SCALE: XrScale = 0.85;
-/** Foveation level re-asserted every frame (three.js: 0 off, 1 maximum). */
-export const XR_FOVEATION = 0.5;
+/**
+ * three.js foveation (0 off, 1 maximum) for each settings level: the toolkit's `FOVEATION_LEVELS`,
+ * off 0, low 0.25, medium 0.5, high 1.
+ */
+export function foveationValue(level: FoveationLevel): number {
+  return FOVEATION_LEVELS[level];
+}
+/** Default foveation re-asserted every frame: medium, per the Quest 3 guide. */
+export const XR_FOVEATION = foveationValue('medium');
 export const XR_SCALE_STORAGE_KEY = 'rogue-xr.xrScale';
 
 export function isXrScale(value: unknown): value is XrScale {

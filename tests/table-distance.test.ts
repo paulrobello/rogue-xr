@@ -12,6 +12,7 @@ import {
   DEFAULT_TABLE_DISTANCE,
   MIN_TABLE_DISTANCE,
   placeTable,
+  TABLE_DISTANCE_CHOICES,
   TABLE_HALF_DEPTH,
   tableHeightFor,
   WAIST_DROP,
@@ -89,6 +90,47 @@ describe('H5 table distance from the seated head', () => {
   it('still places a close table where nothing further fits, so a cramped fight still opens', () => {
     // A 2.2 m square closet around the player: only close tables fit anywhere.
     const r = placeTable({ x: 0, z: 0, yaw: 0 }, room({ min: [-1.1, -1.1], max: [1.1, 1.1] }));
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.distance).toBeLessThan(COMFORT_TABLE_DISTANCE);
+    expect(r.distance).toBeGreaterThanOrEqual(MIN_TABLE_DISTANCE - 1e-9);
+  });
+});
+
+describe('F3 adjustable table distance (playtest 2026-11-17)', () => {
+  it('offers 0.9 to 1.3 m in 0.1 m steps around the 1.1 m default', () => {
+    expect(TABLE_DISTANCE_CHOICES).toEqual([0.9, 1.0, 1.1, 1.2, 1.3]);
+    expect(TABLE_DISTANCE_CHOICES).toContain(DEFAULT_TABLE_DISTANCE);
+  });
+
+  it.each(TABLE_DISTANCE_CHOICES)('stands the chosen %s m ahead in open space', (distance) => {
+    const r = placeTable(
+      { x: 0, z: 0, yaw: 0, eyeHeight: 1.6 },
+      room({ min: [-5, -5], max: [5, 5] }),
+      { distance },
+    );
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.distance).toBeCloseTo(distance);
+    expect(r.pose.z).toBeCloseTo(-distance);
+    expect(r.offsetDeg).toBe(0);
+  });
+
+  it('pulls a 1.3 m table closer, at the same heading, when a wall cuts it off', () => {
+    // A wall 1.72 m ahead: the far edge plus margin of a 1.3 or 1.25 m table crosses it, 1.2 m fits.
+    const r = placeTable({ x: 0, z: 0, yaw: 0 }, room({ min: [-5, -1.72], max: [5, 5] }), {
+      distance: 1.3,
+    });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.offsetDeg).toBe(0);
+    expect(r.distance).toBeCloseTo(1.2);
+  });
+
+  it('still opens a cramped fight at a close table when 1.3 m is chosen', () => {
+    const r = placeTable({ x: 0, z: 0, yaw: 0 }, room({ min: [-1.1, -1.1], max: [1.1, 1.1] }), {
+      distance: 1.3,
+    });
     expect(r.ok).toBe(true);
     if (!r.ok) return;
     expect(r.distance).toBeLessThan(COMFORT_TABLE_DISTANCE);

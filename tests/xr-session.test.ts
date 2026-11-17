@@ -1,5 +1,8 @@
+import { FOVEATION_LEVELS, type FoveationLevel } from '@par/xr-workspace';
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
+import { foveationValue, XR_FOVEATION } from '../src/perf/xr-perf.ts';
+import { DEFAULT_SETTINGS, FOVEATION_CHOICES } from '../src/persist/db.ts';
 import { Locomotion } from '../src/xr/locomotion.ts';
 import { applyViewerPose, XR_SESSION_OPTIONS } from '../src/xr/session.ts';
 
@@ -7,6 +10,16 @@ describe('XR session options', () => {
   it('requests medium foveation and a floor-relative space', () => {
     expect(XR_SESSION_OPTIONS.foveation).toBe('medium');
     expect(XR_SESSION_OPTIONS.referenceSpaces[0]).toBe('local-floor');
+  });
+
+  it('starts at the same level the per-frame re-assert holds by default (F4)', () => {
+    expect(foveationValue(XR_SESSION_OPTIONS.foveation)).toBe(XR_FOVEATION);
+  });
+
+  it('stores exactly the toolkit levels, so a saved level passes straight to the session', () => {
+    const level: FoveationLevel = DEFAULT_SETTINGS.foveation;
+    expect(foveationValue(level)).toBe(0.5);
+    expect([...FOVEATION_CHOICES].sort()).toEqual(Object.keys(FOVEATION_LEVELS).sort());
   });
 });
 

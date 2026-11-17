@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { FloorPlan, WorldRoom } from '../floor/generate.ts';
 import {
   combatRoom,
+  DEFAULT_TABLE_DISTANCE,
   type EnemyPlacement,
   type PlayerPose,
   planEncounter,
@@ -54,6 +55,8 @@ export interface EncounterConfig {
   timeScaleRampSeconds?: number;
   /** Seconds after a failed placement or a finished fight before a trigger can fire again. */
   retryCooldown?: number;
+  /** Ideal player-to-table-centre distance, metres. Defaults to `DEFAULT_TABLE_DISTANCE`. */
+  tableDistance?: number;
 }
 
 export interface EncounterTrigger {
@@ -122,6 +125,11 @@ export class EncounterDirector {
   private readonly frozenTimeScale: number;
   private readonly rampSeconds: number;
   private readonly retryCooldown: number;
+  /**
+   * Ideal player-to-table-centre distance the next fight aims for, metres (the settings' table
+   * distance). Read at `begin`; a table that does not fit there falls back closer.
+   */
+  tableDistance: number;
   private readonly homes = new WeakMap<THREE.Object3D, Home>();
   private readonly cleared = new Set<number>();
   private phaseValue: EncounterPhase = 'idle';
@@ -134,6 +142,7 @@ export class EncounterDirector {
   private cooldown = 0;
   private room = -1;
   private pose: TablePose | null = null;
+  private placedDistance: number | null = null;
   /** Where the seated player was when the fight began, on the floor plane. */
   private seat: readonly [number, number] | null = null;
   private moves: Move[] = [];
@@ -150,6 +159,7 @@ export class EncounterDirector {
     this.frozenTimeScale = config.frozenTimeScale ?? 0.05;
     this.rampSeconds = config.timeScaleRampSeconds ?? 0.3;
     this.retryCooldown = config.retryCooldown ?? 1.5;
+    this.tableDistance = config.tableDistance ?? DEFAULT_TABLE_DISTANCE;
     setTableUnfold(this.table, 0);
     this.world.group.add(this.table);
   }
@@ -176,6 +186,14 @@ export class EncounterDirector {
   /** Where the table stands during combat, or null. */
   get tablePose(): TablePose | null {
     return this.pose;
+  }
+
+  /**
+   * Player-to-table-centre distance the running fight was placed at, metres, or null. Shorter than
+   * `tableDistance` when the room forced a closer table.
+   */
+  get seatDistance(): number | null {
+    return this.pose ? this.placedDistance : null;
   }
 
   isCleared(room: number): boolean {
@@ -222,6 +240,7 @@ export class EncounterDirector {
       return { ok: false, reason: `room ${room} has no enemies` };
     const guardian = enemies.some((e) => e.userData.tier === 'guardian');
     const plan = planEncounter(player, enemies.length, combatRoom(worldRoom), {
+      table: { distance: this.tableDistance },
       enemies: { radius: guardian ? GUARDIAN_RADIUS : REGULAR_RADIUS },
     });
     if (!plan.ok) {
@@ -257,6 +276,7 @@ export class EncounterDirector {
 
     this.room = room;
     this.pose = pose;
+    this.placedDistance = plan.table.distance;
     this.seat = [player.x, player.z];
     this.table.position.set(pose.x, 0, pose.z);
     this.table.rotation.y = -pose.yaw * DEG;

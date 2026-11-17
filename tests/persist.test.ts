@@ -6,6 +6,7 @@ import {
   DB_NAME,
   DB_VERSION,
   DEFAULT_SETTINGS,
+  FOVEATION_CHOICES,
   getRun,
   getWorkshop,
   loadSettings,
@@ -186,5 +187,66 @@ describe('persist db', () => {
 
   it('uses the documented database name', () => {
     expect(DB_NAME).toBe('rogue-xr');
+  });
+});
+
+describe('table distance and foveation settings (F3, F4)', () => {
+  it('default to the 1.1 m table and medium foveation', () => {
+    expect(DEFAULT_SETTINGS.tableDistance).toBe(1.1);
+    expect(DEFAULT_SETTINGS.foveation).toBe('medium');
+    expect(FOVEATION_CHOICES).toEqual(['off', 'low', 'medium', 'high']);
+  });
+
+  it('keeps every offered value and snaps float drift onto the list', () => {
+    for (const tableDistance of [0.9, 1.0, 1.1, 1.2, 1.3]) {
+      expect(validateSettings({ ...DEFAULT_SETTINGS, tableDistance }).tableDistance).toBe(
+        tableDistance,
+      );
+    }
+    expect(validateSettings({ tableDistance: 1.2000000000000002 }).tableDistance).toBe(1.2);
+    for (const foveation of FOVEATION_CHOICES) {
+      expect(validateSettings({ foveation }).foveation).toBe(foveation);
+    }
+  });
+
+  it('repairs off-list and wrongly typed values to the defaults', () => {
+    for (const tableDistance of [0.5, 1.7, Number.NaN, '1.2', null]) {
+      expect(validateSettings({ tableDistance }).tableDistance).toBe(1.1);
+    }
+    for (const foveation of ['ultra', 0.5, true, null]) {
+      expect(validateSettings({ foveation }).foveation).toBe('medium');
+    }
+  });
+
+  it('migrates a save from before the settings existed to the defaults, keeping the rest', async () => {
+    const handle = await openDb(new IDBFactory());
+    const {
+      tableDistance: _t,
+      foveation: _f,
+      ...old
+    } = {
+      ...DEFAULT_SETTINGS,
+      turnMode: 'smooth' as const,
+      masterVolume: 0.4,
+    };
+    await putRaw(handle, old);
+    expect(await loadSettings(handle)).toEqual({
+      ...DEFAULT_SETTINGS,
+      turnMode: 'smooth',
+      masterVolume: 0.4,
+    });
+    closeDb(handle);
+  });
+
+  it('persists a chosen table distance and foveation across a reopen', async () => {
+    const factory = new IDBFactory();
+    const first = await openDb(factory);
+    await saveSettings(first, { ...DEFAULT_SETTINGS, tableDistance: 1.3, foveation: 'high' });
+    closeDb(first);
+    const second = await openDb(factory);
+    const stored = await loadSettings(second);
+    expect(stored.tableDistance).toBe(1.3);
+    expect(stored.foveation).toBe('high');
+    closeDb(second);
   });
 });

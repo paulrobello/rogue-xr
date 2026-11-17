@@ -2,13 +2,15 @@ import * as THREE from 'three';
 import { describe, expect, it, vi } from 'vitest';
 import { EncounterDirector } from '../src/combat/encounter.ts';
 import {
+  combatRoom,
   DEFAULT_TABLE_DISTANCE,
   headingDelta,
   headingTo,
+  planEncounter,
   TABLE_HALF_WIDTH,
 } from '../src/combat/placement.ts';
 import { TABLE_NODES } from '../src/combat/table-greybox.ts';
-import { generateFloor } from '../src/floor/generate.ts';
+import { generateFloor, type WorldRoom } from '../src/floor/generate.ts';
 import { buildFloorWorld, type FloorWorld } from '../src/world/floor-world.ts';
 
 const SEEDS = ['SPIRE001', 'SPIRE002', 'GEARS777', 'BRASS042', 'VA1T9QZK'];
@@ -275,4 +277,59 @@ describe('EncounterDirector begin and end', () => {
       director.dispose();
     }
   });
+});
+
+describe('EncounterDirector table distance setting (F3)', () => {
+  it('defaults to 1.1 m and reports no seat distance outside a fight', () => {
+    const { world } = worldWithEncounter('SPIRE001');
+    const director = new EncounterDirector({ world, lockLocomotion: () => {} });
+    expect(director.tableDistance).toBe(DEFAULT_TABLE_DISTANCE);
+    expect(director.seatDistance).toBeNull();
+    const configured = new EncounterDirector({
+      world,
+      lockLocomotion: () => {},
+      tableDistance: 1.3,
+    });
+    expect(configured.tableDistance).toBe(1.3);
+  });
+
+  it.each([0.9, 1.3])(
+    'plans the table from the chosen %s m and reports where it stood',
+    (distance) => {
+      let placed = 0;
+      for (const seed of SEEDS) {
+        const { world, room } = worldWithEncounter(seed);
+        const director = new EncounterDirector({ world, lockLocomotion: () => {} });
+        director.tableDistance = distance;
+        const player = { ...playerNear(world, room), eyeHeight: 1.6 };
+        const enemies = (world.enemies.get(room) ?? []).length;
+        const guardian = (world.enemies.get(room) ?? []).some(
+          (e) => e.userData.tier === 'guardian',
+        );
+        const expected = planEncounter(
+          player,
+          enemies,
+          combatRoom(world.rooms[room] as WorldRoom),
+          {
+            table: { distance },
+            enemies: { radius: guardian ? 0.8 : 0.5 },
+          },
+        );
+        const r = director.begin(room, player);
+        expect(r.ok).toBe(expected.ok);
+        if (!r.ok || !expected.ok) continue;
+        placed += 1;
+        expect(r.table.distance).toBeCloseTo(expected.table.distance);
+        expect(r.table.distance).toBeLessThanOrEqual(distance + 1e-9);
+        expect(director.seatDistance).toBeCloseTo(r.table.distance);
+        const pose = director.tablePose;
+        if (!pose) throw new Error('no table pose');
+        expect(Math.hypot(pose.x - player.x, pose.z - player.z)).toBeCloseTo(r.table.distance);
+        director.end('flee');
+        run(director, 2);
+        expect(director.seatDistance).toBeNull();
+      }
+      expect(placed).toBeGreaterThan(0);
+    },
+  );
 });

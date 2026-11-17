@@ -90,6 +90,11 @@ export const TABLE_HALF_DEPTH = 0.4;
  * margin starts 0.4 m ahead of the eye, inside a seated arm's reach.
  */
 export const DEFAULT_TABLE_DISTANCE = 1.1;
+/**
+ * Table distances the settings offer, nearest first, in 0.1 m steps around the default. A farther
+ * choice still falls back toward `COMFORT_TABLE_DISTANCE` (then closer) when it does not fit.
+ */
+export const TABLE_DISTANCE_CHOICES: readonly number[] = [0.9, 1.0, 1.1, 1.2, 1.3];
 export const COMFORT_TABLE_DISTANCE = 0.95;
 export const MIN_TABLE_DISTANCE = 0.5;
 
@@ -126,8 +131,10 @@ export interface TablePlacement {
 export type PlaceTableResult = ({ ok: true } & TablePlacement) | { ok: false; reason: string };
 
 export interface EnemyOptions {
-  /** Where the player sits, so enemies face them. Defaults to behind the table on its axis. */
+  /** Where the player sits, so enemies face them. Defaults to `tableDistance` behind the table on its axis. */
   player?: Vec2;
+  /** Player-to-table-centre distance the default `player` sits at. Defaults to `DEFAULT_TABLE_DISTANCE`. */
+  tableDistance?: number;
   /** Clear radius around each enemy. */
   radius?: number;
   preferred?: number;
@@ -351,10 +358,8 @@ export function placeEnemies(
   const separation = opts.separation ?? Math.max(0.9, radius * 2);
   const [fx, fz] = forwardOf(table.yaw);
   const [ux, uz] = rightOf(table.yaw);
-  const player: Vec2 = opts.player ?? [
-    table.x - fx * DEFAULT_TABLE_DISTANCE,
-    table.z - fz * DEFAULT_TABLE_DISTANCE,
-  ];
+  const seat = opts.tableDistance ?? DEFAULT_TABLE_DISTANCE;
+  const player: Vec2 = opts.player ?? [table.x - fx * seat, table.z - fz * seat];
   const ladder = distanceLadder(preferred, min, max);
   const placements: (EnemyPlacement | null)[] = [];
   const failed: number[] = [];
