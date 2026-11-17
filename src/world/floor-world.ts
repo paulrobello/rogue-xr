@@ -10,6 +10,7 @@ import {
 import { type FloorPlan, type WorldRoom, worldRooms } from '../floor/generate.ts';
 import { nearSet, shellSet } from '../floor/visibility.ts';
 import { PALETTE } from '../palette.ts';
+import { enemyHeading, enemyLocalRotationY } from './enemy-facing.ts';
 import { buildGreyboxRoom, createGreyboxMaterials, type GreyboxMaterials } from './greybox.ts';
 import { type Hearth, HearthKit, type HearthMaterials, hearthSocket } from './hearth.ts';
 import { type Coffer, CofferKit, type LootMaterials, surfaceHeightAt } from './loot.ts';
@@ -101,6 +102,8 @@ const guardianGeometry = new THREE.CapsuleGeometry(0.6, 1.8, 4, 12);
 
 function buildRoom(
   t: RoomTemplate,
+  world: WorldRoom,
+  entryDoor: readonly [number, number] | null,
   plan: FloorPlan,
   index: number,
   materials: GreyboxMaterials,
@@ -124,6 +127,15 @@ function buildRoom(
     body.name = `enemy-${socketId}`;
     body.position.set(s.position[0], guardian ? 1.5 : 0.95, s.position[2]);
     body.userData = { room: index, tier: placed.encounter?.tier, socketId };
+    // The room group turns the unrotated socket into place, so the world point comes from the
+    // rotated template.
+    const w = world.template.enemySockets.find((socket) => socket.id === socketId) ?? s;
+    const at: [number, number] = [
+      w.position[0] + placed.position[0],
+      w.position[2] + placed.position[1],
+    ];
+    const heading = enemyHeading(at, entryDoor, world.footprint);
+    body.rotation.y = enemyLocalRotationY(heading, placed.turns);
     group.add(body);
     enemies.push(body);
   }
@@ -177,7 +189,20 @@ export function buildFloorWorld(
   const enemies = new Map<number, THREE.Object3D[]>();
   plan.rooms.forEach((r, index) => {
     const t = templates.find((c) => c.id === r.templateId) as RoomTemplate;
-    const built = buildRoom(t, plan, index, materials, enemyMaterial, kit, hearthKit);
+    const rotated = rooms[index] as WorldRoom;
+    const entry = plan.connections.find(([, own]) => own.room === index)?.[1].door;
+    const entryDoor = rotated.doors.find((d) => d.id === entry)?.world ?? null;
+    const built = buildRoom(
+      t,
+      rotated,
+      entryDoor,
+      plan,
+      index,
+      materials,
+      enemyMaterial,
+      kit,
+      hearthKit,
+    );
     coffers.push(...built.coffers);
     hearths.push(...built.hearths);
     roomGroups.push(built.group);
