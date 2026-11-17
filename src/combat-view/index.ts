@@ -87,6 +87,24 @@ export function readoutCentreY(
   return silhouette + margin + labelHeight / 2;
 }
 
+type Vec3Tuple = [number, number, number];
+
+/**
+ * The part of a model a readout must clear: its full height over the head socket's floor position.
+ * A box's top front corners stand ahead of the head on wide or deep automata (claws, plinths,
+ * rings), and projecting them from the seat floats the readout far above the head the eye sees.
+ */
+export function crownBounds(
+  bounds: { readonly min: readonly number[]; readonly max: readonly number[] },
+  head?: readonly number[],
+): { min: Vec3Tuple; max: Vec3Tuple } {
+  const [x0 = 0, y0 = 0, z0 = 0] = bounds.min;
+  const [x1 = 0, y1 = 0, z1 = 0] = bounds.max;
+  if (!head) return { min: [x0, y0, z0], max: [x1, y1, z1] };
+  const [hx = 0, , hz = 0] = head;
+  return { min: [hx, y0, hz], max: [hx, y1, hz] };
+}
+
 type PickKind = 'card' | 'enemy' | 'end-turn' | 'plate' | 'table';
 interface PickData {
   readonly kind: PickKind;

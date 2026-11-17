@@ -711,21 +711,27 @@ describe('desktop HUD fit', () => {
     return camera;
   };
   // The bug bash placements: the 0.5 m last-resort table, the 0.65 m comfortable fallback, the
-  // 0.85 m one (H5), the 1.0 m fallback and 1.2 m default after the 2026-11-16 playtest, and the guardian (taller, its readout higher), on the real table's
+  // 0.85 m one (H5), the 0.95 and 1.0 m fallbacks, the 1.1 m default and the earlier 1.2 m one
+  // after the 2026-11-16 playtests, and the guardian (taller, its readout higher), on the real table's
   // sockets and on the greybox.
   const placements = [
     { tier: 'regular', distance: 0.5, asset: true },
     { tier: 'regular', distance: 0.65, asset: true },
     { tier: 'regular', distance: 0.85, asset: true },
+    { tier: 'regular', distance: 0.95, asset: true },
     { tier: 'regular', distance: 1.0, asset: true },
+    { tier: 'regular', distance: 1.1, asset: true },
     { tier: 'regular', distance: 1.2, asset: true },
     { tier: 'guardian', distance: 0.5, asset: true },
     { tier: 'guardian', distance: 0.65, asset: true },
     { tier: 'guardian', distance: 0.85, asset: true },
+    { tier: 'guardian', distance: 0.95, asset: true },
     { tier: 'guardian', distance: 1.0, asset: true },
+    { tier: 'guardian', distance: 1.1, asset: true },
     { tier: 'guardian', distance: 1.2, asset: true },
     { tier: 'regular', distance: 0.5, asset: false },
     { tier: 'regular', distance: 0.85, asset: false },
+    { tier: 'regular', distance: 1.1, asset: false },
     { tier: 'regular', distance: 1.2, asset: false },
   ] as const;
   for (const { tier, distance, asset } of placements) {

@@ -78,19 +78,19 @@ export const TABLE_HALF_DEPTH = 0.4;
  * fallback, and the last resort for a cramped room. The table top sits `WAIST_DROP` (0.75 m) below
  * the eye, so the view down to a point `d` ahead is atan(0.75 / d) below level.
  *
- * The near edge (0.4 m before the centre) at no more than 45 degrees needs d >= 1.15 m. At 1.2 m
- * the centre is 32 degrees down, the near edge 43, the table asset's dice tray (0.18 m toward the
- * seat) 36 and the buttons (0.28 m toward the seat, 0.55 m aside) 34; the spare 5 cm absorbs a head
- * leaning in to look down. At the 1.0 m comfortable fallback the centre is 37 degrees down and the
- * near edge 51; only a cramped room, below that, trades more angle for fit. The second 2026-11-16
- * Quest playtest found the 0.85 m table (centre 41, near edge 59, tray 48 degrees) still too steep.
+ * At 1.1 m the centre is 34 degrees down, the near edge (0.4 m before the centre) 47, the table
+ * asset's dice tray (0.18 m toward the seat) 39 and the buttons (0.28 m toward the seat, 0.55 m
+ * aside) 37. At the 0.95 m comfortable fallback the centre is 38 degrees down and the near edge 54;
+ * only a cramped room, below that, trades more angle for fit. The 2026-11-16 Quest playtests found
+ * the 0.85 m table (centre 41, near edge 59, tray 48 degrees) too steep and the 1.2 m one (centre
+ * 32, near edge 43) too far.
  *
  * Every control reached through the table works by controller ray (buttons, tray, sigil plate) or
- * by a flick across it; only a slow card drop needs a hand over the footprint, whose 0.1 m drop
- * margin now starts 0.7 m ahead of the eye, at or past a seated arm's reach.
+ * by a flick across it; only a slow card drop needs a hand over the footprint, whose 0.3 m drop
+ * margin starts 0.4 m ahead of the eye, inside a seated arm's reach.
  */
-export const DEFAULT_TABLE_DISTANCE = 1.2;
-export const COMFORT_TABLE_DISTANCE = 1.0;
+export const DEFAULT_TABLE_DISTANCE = 1.1;
+export const COMFORT_TABLE_DISTANCE = 0.95;
 export const MIN_TABLE_DISTANCE = 0.5;
 
 export const DEFAULT_EYE_HEIGHT = 1.6;

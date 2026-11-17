@@ -23,7 +23,7 @@ import {
   KNOCK_SECONDS,
   knockOffset,
 } from '../combat-view/impact-timing.ts';
-import { intentChips, READOUT_MARGIN, readoutCentreY } from '../combat-view/index.ts';
+import { crownBounds, intentChips, READOUT_MARGIN, readoutCentreY } from '../combat-view/index.ts';
 import { type BoltKind, SpellFx } from '../combat-view/spell-fx.ts';
 import { getCard } from '../content/cards.ts';
 import { dieById } from '../content/dice.ts';
@@ -557,15 +557,17 @@ export class CombatSession {
       const actor = this.actors.get(id);
       let y: number;
       if (actor) {
-        // Clear of the silhouette as the seat sees it, from the manifest bounds (a skinned mesh's
-        // cached box can be from another pose); actors attack in place but brace up.
+        // Clear of the head as the seat sees it, from the manifest (a skinned mesh's cached box can
+        // be from another pose). A brace's 0.12 m rise may touch the panel's edge for its peak.
         body.updateWorldMatrix(true, false);
+        const { manifest } = actor.asset;
+        const crown = crownBounds(manifest.bounds, manifest.sockets['socket-eye']?.position);
         const bounds = new THREE.Box3(
-          new THREE.Vector3().fromArray(actor.asset.manifest.bounds.min),
-          new THREE.Vector3().fromArray(actor.asset.manifest.bounds.max),
+          new THREE.Vector3(...crown.min),
+          new THREE.Vector3(...crown.max),
         ).applyMatrix4(body.matrixWorld);
         y = readoutCentreY(eye, at, bounds, label.mesh.geometry.parameters.height, {
-          margin: READOUT_MARGIN + BRACE_METRES,
+          margin: READOUT_MARGIN,
         });
       } else {
         // A placeholder capsule: float the readout clear of its top.

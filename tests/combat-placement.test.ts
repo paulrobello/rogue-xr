@@ -134,16 +134,16 @@ describe('tableHeightFor', () => {
 });
 
 describe('placeTable', () => {
-  it('puts the table 1.2 m straight ahead at waist height in open space', () => {
+  it('puts the table 1.1 m straight ahead at waist height in open space', () => {
     const r = placeTable({ x: 0, z: 0, yaw: 90, eyeHeight: 1.5 }, hall());
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.pose.x).toBeCloseTo(1.2);
+    expect(r.pose.x).toBeCloseTo(1.1);
     expect(r.pose.z).toBeCloseTo(0);
     expect(r.pose.yaw).toBeCloseTo(90);
     expect(r.pose.height).toBeCloseTo(0.75);
     expect(r.offsetDeg).toBe(0);
-    expect(r.distance).toBeCloseTo(1.2);
+    expect(r.distance).toBeCloseTo(1.1);
   });
 
   it('falls back to a shorter distance, then a rotated heading, beside a wall', () => {
@@ -181,7 +181,7 @@ describe('placeTable', () => {
     expect(tableCandidates({ x: 0, z: 0, yaw: 0 }, corridor)).toHaveLength(0);
   });
 
-  it('faces the player, sits 0.5 to 1.2 m away (1.0 m or more almost always) at waist height and is clear on every generated floor', () => {
+  it('faces the player, sits 0.5 to 1.1 m away (0.95 m or more almost always) at waist height and is clear on every generated floor', () => {
     let placed = 0;
     let comfortable = 0;
     let central = 0;
