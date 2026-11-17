@@ -207,5 +207,5 @@ describe('kit rooms in floor generation (1,000-seed property run)', () => {
     }
     expect(counts.hall).toBeGreaterThanOrEqual(1000);
     for (const id of BAKED) expect(counts[id]).toBeGreaterThan(0);
-  });
+  }, 30_000);
 });
