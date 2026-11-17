@@ -30,7 +30,7 @@ import { combatPitch, createDesktopControls } from './desktop/controls.ts';
 import { Walker } from './desktop/walker.ts';
 import { DiceWorld } from './dice/world.ts';
 import { type EnemyActor, type EnemyAsset, tryLoadEnemyAsset } from './enemies/enemy-asset.ts';
-import { fleeStandPoint } from './flow/flee.ts';
+import { encounterStartsFight, fleeStandPoint } from './flow/flee.ts';
 import { RunFlow } from './flow/flow.ts';
 import { FlowUi, rewardCardTexture } from './flow/panels.ts';
 import { bindFlowPersistence } from './flow/persist.ts';
@@ -1279,7 +1279,7 @@ renderer.setAnimationLoop((time, frame) => {
   if (floor && flow.inRun) {
     flow.enterRoom(floor.world.current);
     perfRoom(floor.world);
-    if (floor.encounter.phase !== 'idle' && flow.phase === 'explore') {
+    if (encounterStartsFight(floor.encounter.phase, flow.phase)) {
       flow.fightStarted(floor.encounter.activeRoom);
     }
   }

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { STARTER_DECK } from '../src/content/cards.ts';
 import { REWARD_POOL } from '../src/content/rewards.ts';
-import { FLEE_INSET, fleeStandPoint } from '../src/flow/flee.ts';
+import { encounterStartsFight, FLEE_INSET, fleeStandPoint } from '../src/flow/flee.ts';
 import { type FlowEvent, RunFlow } from '../src/flow/flow.ts';
 import { bindFlowPersistence } from '../src/flow/persist.ts';
 import { openDb } from '../src/persist/db.ts';
@@ -171,5 +171,19 @@ describe('fleeStandPoint', () => {
     const view = mountFloorView(new THREE.Scene(), new THREE.Group(), SEED);
     expect(fleeStandPoint(view.world.plan, view.world.rooms, 99)).toBeNull();
     view.dispose();
+  });
+});
+
+describe('encounterStartsFight', () => {
+  it('starts a fight only while the encounter opens or is open and the flow explores', () => {
+    expect(encounterStartsFight('unfolding', 'explore')).toBe(true);
+    expect(encounterStartsFight('active', 'explore')).toBe(true);
+    expect(encounterStartsFight('idle', 'explore')).toBe(false);
+    expect(encounterStartsFight('unfolding', 'combat')).toBe(false);
+  });
+
+  it('does not restart the fight while the table folds after a flee', () => {
+    // A flee puts the flow back to explore at once; the encounter folds for a while after.
+    expect(encounterStartsFight('folding', 'explore')).toBe(false);
   });
 });

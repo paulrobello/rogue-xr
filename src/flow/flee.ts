@@ -29,3 +29,15 @@ export function fleeStandPoint(
   const step = Math.min(inset, len);
   return { x: door[0] + (dx / len) * step, z: door[1] + (dz / len) * step };
 }
+
+/**
+ * Whether the frame loop should tell the flow a fight began: the encounter is opening or open
+ * while the flow still explores. A folding encounter is a fight ending, and after a flee the flow
+ * is already back to exploring while the table folds, so it must not start the fight again.
+ */
+export function encounterStartsFight(
+  encounterPhase: 'idle' | 'unfolding' | 'active' | 'folding',
+  flowPhase: string,
+): boolean {
+  return flowPhase === 'explore' && (encounterPhase === 'unfolding' || encounterPhase === 'active');
+}
