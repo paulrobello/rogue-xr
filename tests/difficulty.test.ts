@@ -88,13 +88,14 @@ describe('difficulty multipliers', () => {
   it('Casual scales hp and damage further and raises the player max hp', () => {
     const scaled = (kind: EnemyKind, tier: (typeof TIERS)[number]) =>
       scaleEnemySetup(ENEMIES[kind], tier, 'casual');
-    expect(scaled('orrery-warden', 'elite').hp).toBe(64);
-    expect(scaled('grand-escapement', 'guardian').hp).toBe(112);
-    expect(scaled('cog-sentry', 'regular').hp).toBe(32);
-    // 8 x 0.85 = 6.8 rounds to 7; the hound's 3-damage snap stays at 3 (2.55 rounds up).
-    expect(damages(scaled('cog-sentry', 'regular'))).toEqual([7, 3]);
-    expect(damages(scaled('spring-hound', 'regular'))).toEqual([3, 8]);
-    expect(difficultyMaxHp(DEFAULT_MAX_HP, 'casual')).toBe(72);
+    expect(scaled('orrery-warden', 'elite').hp).toBe(51);
+    expect(scaled('grand-escapement', 'guardian').hp).toBe(72);
+    // 38 x 0.75 = 28.5 rounds up to 29.
+    expect(scaled('cog-sentry', 'regular').hp).toBe(29);
+    // 8 x 0.7 = 5.6 rounds to 6; the hound's 3-damage snap drops to 2 (2.1 rounds down).
+    expect(damages(scaled('cog-sentry', 'regular'))).toEqual([6, 3]);
+    expect(damages(scaled('spring-hound', 'regular'))).toEqual([2, 6]);
+    expect(difficultyMaxHp(DEFAULT_MAX_HP, 'casual')).toBe(90);
     for (const kind of KINDS) {
       const base = ENEMIES[kind];
       const c = scaled(kind, 'regular');

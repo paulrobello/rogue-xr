@@ -23,16 +23,21 @@ export interface DifficultyScale {
 }
 
 /**
- * Per-level multipliers. Hard keeps every number as written. Planning-bot win rates over SPIRE001 to
- * SPIRE400 with rest-room hearths and guardian phase 2 (2026-11-16): Hard 9.8 %, Normal 26.5 %
- * (Orrery Warden 69 hp, Grand Escapement 120 hp), Casual 76.3 % (warden 64, guardian 112, enemy
- * damage x0.85, player max hp 72).
+ * Per-level multipliers. Hard keeps every number as written. Casual is tuned for a mediocre player:
+ * win rates of the greedy, imperfect player in scripts/balance/sim.ts over SPIRE001 to SPIRE400 (full
+ * runs, fresh workshop, hearths, guardian phase 2; 2026-11-17, `bun scripts/balance/winrate.ts
+ * --miss 0,0.15`), by the multiplier the player's sigils earn on Casual (0.5 / 0.75 / 1.0):
+ * Casual 70.8 / 80.5 / 89.5 % (60.0 / 70.8 / 79.0 % when 15 % of picked cards are missed; Orrery
+ * Warden 51 hp, Grand Escapement 72 hp, enemy damage x0.7, player max hp 90). The same player wins
+ * 0 % on Normal (Orrery Warden 69 hp, Grand Escapement 120 hp) and on Hard; the old Casual (x0.85 /
+ * 0.7 / 0.7 hp, damage x0.85, max hp 72) gave it 2 / 4 / 8 %. An earlier planning bot (not in the
+ * tree) won Hard 9.8 %, Normal 26.5 %, old Casual 76.3 %.
  */
 export const DIFFICULTY_SCALE: Readonly<Record<Difficulty, DifficultyScale>> = {
   casual: {
-    enemyHp: { regular: 0.85, elite: 0.7, guardian: 0.7 },
-    enemyDamage: 0.85,
-    playerMaxHp: 1.2,
+    enemyHp: { regular: 0.75, elite: 0.55, guardian: 0.45 },
+    enemyDamage: 0.7,
+    playerMaxHp: 1.5,
   },
   normal: {
     enemyHp: { regular: 1, elite: 0.75, guardian: 0.75 },

@@ -2,9 +2,14 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
+import type { Difficulty } from '../src/rules/difficulty.ts';
 import {
+  DISTANCE_AT_ZERO,
+  DISTANCE_AT_ZERO_BY_LEVEL,
+  distanceToScore,
   FLOOR,
+  greedyCloudMatch,
   MAX,
   MIN_SCORE,
   PERFECT_SCORE,
@@ -13,9 +18,11 @@ import {
   SIGIL_IDS,
   SIGIL_TEMPLATES,
   type SigilId,
+  type SigilLevel,
   type Stroke,
   scoreAgainst,
   scoreToMultiplier,
+  toCloud,
 } from '../src/sigil/index.ts';
 
 /** Resample a stroke to `count` points along its arc length, with `warp` remapping progress (drawing speed). */
@@ -200,6 +207,78 @@ describe('scoreToMultiplier', () => {
     const increment = (MAX - FLOOR) / steps;
     for (let i = 1; i < values.length; i++) {
       expect((values[i] as number) - (values[i - 1] as number)).toBeCloseTo(increment, 12);
+    }
+  });
+});
+
+describe('difficulty levels', () => {
+  const LEVELS: readonly SigilLevel[] = ['casual', 'normal', 'hard'];
+  const traces = SIGIL_IDS.flatMap((id) =>
+    VARIANTS.map((variant) => ({ id, variant, trace: referenceTrace(id, variant) })),
+  );
+  const multiplier = (trace: Stroke[], id: SigilId, level: SigilLevel): number =>
+    scoreToMultiplier(scoreAgainst(trace, id, level));
+  const mean = (level: SigilLevel): number =>
+    traces.reduce((sum, t) => sum + multiplier(t.trace, t.id, level), 0) / traces.length;
+
+  it('the sigil level is exactly the run difficulty', () => {
+    expectTypeOf<SigilLevel>().toEqualTypeOf<Difficulty>();
+    expect(Object.keys(DISTANCE_AT_ZERO_BY_LEVEL).sort()).toEqual([...LEVELS].sort());
+  });
+
+  it('Casual is the pre-level tolerance exactly, and the default', () => {
+    expect(DISTANCE_AT_ZERO_BY_LEVEL.casual).toBe(DISTANCE_AT_ZERO);
+    expect(DISTANCE_AT_ZERO).toBe(0.25);
+    for (const { id, trace } of traces) {
+      const d = greedyCloudMatch(
+        toCloud(trace) as NonNullable<ReturnType<typeof toCloud>>,
+        toCloud(SIGIL_TEMPLATES[id].strokes) as NonNullable<ReturnType<typeof toCloud>>,
+      );
+      expect(scoreAgainst(trace, id, 'casual')).toBe(Math.min(1, Math.max(0, 1 - d / 0.25)));
+      expect(scoreAgainst(trace, id)).toBe(scoreAgainst(trace, id, 'casual'));
+    }
+    expect(distanceToScore(0.05)).toBe(distanceToScore(0.05, 'casual'));
+  });
+
+  it('Normal and Hard cast every reference trace strictly weaker than the level below', () => {
+    for (const { id, variant, trace } of traces) {
+      const [casual, normal, hard] = LEVELS.map((level) => multiplier(trace, id, level)) as [
+        number,
+        number,
+        number,
+      ];
+      expect(normal, `${id} v${variant}`).toBeLessThan(casual);
+      expect(hard, `${id} v${variant}`).toBeLessThan(normal);
+    }
+  });
+
+  it('mean reference multiplier: Casual 1.14, Normal 1.07, Hard 0.99', () => {
+    expect(mean('casual')).toBeCloseTo(1.14, 2);
+    expect(mean('normal')).toBeCloseTo(1.07, 2);
+    expect(mean('hard')).toBeCloseTo(0.99, 2);
+  });
+
+  it('every own reference trace still casts on Hard, and no wrong sigil clears MIN_SCORE on any level', () => {
+    for (const { id, variant, trace } of traces) {
+      expect(scoreAgainst(trace, id, 'hard'), `${id} v${variant}`).toBeGreaterThanOrEqual(
+        MIN_SCORE,
+      );
+      for (const level of LEVELS) {
+        for (const other of SIGIL_IDS) {
+          if (other === id) continue;
+          expect(
+            scoreAgainst(trace, other, level),
+            `${id} v${variant} vs ${other} on ${level}`,
+          ).toBeLessThan(MIN_SCORE);
+        }
+      }
+    }
+  });
+
+  it('a perfect trace earns MAX and an empty trace FLOOR on every level', () => {
+    for (const level of LEVELS) {
+      expect(multiplier([...SIGIL_TEMPLATES.gear.strokes], 'gear', level)).toBe(MAX);
+      expect(multiplier([], 'gear', level)).toBe(FLOOR);
     }
   });
 });

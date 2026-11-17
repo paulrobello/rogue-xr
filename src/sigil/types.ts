@@ -27,3 +27,9 @@ export interface Recognition extends SigilScore {
   /** Every candidate's score, best first. */
   readonly scores: readonly SigilScore[];
 }
+
+/**
+ * How strictly a trace is judged. Mirrors `Difficulty` in rules/difficulty.ts (src/sigil may not import
+ * outside itself; tests/sigil.test.ts keeps the two identical).
+ */
+export type SigilLevel = 'casual' | 'normal' | 'hard';

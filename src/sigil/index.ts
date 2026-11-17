@@ -4,6 +4,7 @@ import {
   type Recognition,
   SIGIL_IDS,
   type SigilId,
+  type SigilLevel,
   type SigilScore,
   type Stroke,
 } from './types.ts';
@@ -22,6 +23,22 @@ export * from './types.ts';
  */
 export const DISTANCE_AT_ZERO = 0.25;
 
+/** The level a caller that names none is judged at: Casual, the tolerance above. */
+export const DEFAULT_SIGIL_LEVEL: SigilLevel = 'casual';
+
+/**
+ * `DISTANCE_AT_ZERO` per level. Casual is the calibration above. Each harder level is 20 % tighter, so
+ * the same trace scores lower and casts weaker, while MIN_SCORE, PERFECT_SCORE, FLOOR and MAX stay the
+ * same on every level (the quality word and the multiplier read one score). On the reference traces in
+ * tests/sigil.test.ts (d 0.016 to 0.033) the mean multiplier is 1.14 on Casual, 1.07 on Normal and 0.99
+ * on Hard; every own trace still clears MIN_SCORE on Hard (it fizzles above d = 0.048).
+ */
+export const DISTANCE_AT_ZERO_BY_LEVEL: Readonly<Record<SigilLevel, number>> = {
+  casual: DISTANCE_AT_ZERO,
+  normal: 0.2,
+  hard: 0.16,
+};
+
 /** Below this score a trace fizzles to the FLOOR multiplier instead of failing the cast. */
 export const MIN_SCORE = 0.7;
 /** Scores at or above this count as a near-perfect trace and earn the MAX multiplier. */
@@ -35,19 +52,26 @@ const templateClouds = new Map<SigilId, Cloud>(
   SIGIL_IDS.map((id) => [id, toCloud(SIGIL_TEMPLATES[id].strokes) as Cloud]),
 );
 
-/** Map a $P distance to a 0..1 score. */
-export function distanceToScore(distance: number): number {
-  return Math.min(1, Math.max(0, 1 - distance / DISTANCE_AT_ZERO));
+/** Map a $P distance to a 0..1 score at `level` (Casual by default). */
+export function distanceToScore(distance: number, level: SigilLevel = DEFAULT_SIGIL_LEVEL): number {
+  return Math.min(1, Math.max(0, 1 - distance / DISTANCE_AT_ZERO_BY_LEVEL[level]));
 }
 
-function scoreCloud(cloud: Cloud | null, id: SigilId): number {
+function scoreCloud(cloud: Cloud | null, id: SigilId, level: SigilLevel): number {
   if (!cloud) return 0;
-  return distanceToScore(greedyCloudMatch(cloud, templateClouds.get(id) as Cloud));
+  return distanceToScore(greedyCloudMatch(cloud, templateClouds.get(id) as Cloud), level);
 }
 
-/** Score a trace against one sigil: how well the player drew the card's own sigil. 0 for an empty trace. */
-export function scoreAgainst(strokes: readonly Stroke[], sigilId: SigilId): number {
-  return scoreCloud(toCloud(strokes), sigilId);
+/**
+ * Score a trace against one sigil: how well the player drew the card's own sigil, judged at `level`
+ * (Casual by default). 0 for an empty trace.
+ */
+export function scoreAgainst(
+  strokes: readonly Stroke[],
+  sigilId: SigilId,
+  level: SigilLevel = DEFAULT_SIGIL_LEVEL,
+): number {
+  return scoreCloud(toCloud(strokes), sigilId, level);
 }
 
 /**
@@ -61,7 +85,7 @@ export function recognize(
   if (candidates.length === 0) throw new Error('recognize needs at least one candidate sigil');
   const cloud = toCloud(strokes);
   const scores: SigilScore[] = candidates
-    .map((id) => ({ id, score: scoreCloud(cloud, id) }))
+    .map((id) => ({ id, score: scoreCloud(cloud, id, DEFAULT_SIGIL_LEVEL) }))
     .sort((a, b) => b.score - a.score);
   const best = scores[0] as SigilScore;
   return { id: best.id, score: best.score, scores };
