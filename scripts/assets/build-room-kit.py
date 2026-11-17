@@ -50,9 +50,12 @@ CONST = {  # linear base colour, roughness, metallic, emission strength (study v
     # and AgX turned the grate a pale salmon (engine R-B 76). Colour x 0.25 and strength x 4 keep the
     # emitted light (bake and runtime) unchanged and cut the lit term to a quarter. Gilt: a dielectric
     # brass for big gear faces: the PBR brass sets are fully metallic, so under the lightmap they have
-    # no diffuse term and read dark (crown gear L 46, vault wall gears L 40).
+    # no diffuse term and read dark (crown gear L 46, vault wall gears L 40). Its albedo is the art
+    # bible's polished brass #DEC16A pushed to the gold end of the brass family (#DFCC59, white-light
+    # hue 52): the gears are lit almost only by FIRE, which drops the lit hue by about 20 degrees, and
+    # #DEC16A itself read copper there. A yellower albedo would stop reading as brass in white light.
     "coals": ((0.1375, 0.025, 0.00375), 0.9, 0.0, 12.0),
-    "gilt": ((0.52, 0.31, 0.10), 0.42, 0.0, 0.0),
+    "gilt": ((0.73, 0.60, 0.10), 0.42, 0.0, 0.0),
 }
 EMISSIVE_RUNTIME = {"flame": 3.0, "lamp-glass": 1.5, "coals": 5.6}
 # Fire flames in the P5-T2 rooms: the shared flame (white-hot at 3.0, R-B 39 after AgX) made the
@@ -142,6 +145,10 @@ CORRIDOR = {
     "frames": [(-3.75, -2.25), (-1.75, -0.55), (0.55, 1.75), (2.25, 3.75)],  # both side walls
     # Wall lanterns alternate sides: east at the lamp socket, west 3 m either side, outside the hero frame.
     "lanterns": [("lamp", 0.8, 0.0), ("lantern_s", -0.8, -3.0), ("lantern_n", -0.8, 3.0)],
+    # Bake energies (W) of each lantern's point and pool spot. At 12 / 28 the engine hero sat at mean
+    # L* 5.9 against the study's 17.8. The encode normalises the map, so one factor on both keeps the
+    # pool/gap contrast and the clipped share and raises only the lightmap intensity.
+    "lantern_w": (48.0, 112.0),
 }
 # A lantern's bake light: a point for the glow on the walls near it, and a downward spot standing in
 # for the brass cap that throws its light down through the glass floor, so each lantern bakes its
@@ -255,7 +262,7 @@ def build_corridor(b, room: kit.Room, high: bool) -> tuple[list, list]:
     lights = []
     for name, x, y in CORRIDOR["lanterns"]:
         flame = kit.lantern_open(b, x, y, 2.2, room.hx if x > 0 else -room.hx, high)
-        lights += [(name, flame, 12.0), (f"{name}_pool", flame - Vector((0, 0, 0.05)), 28.0, LANTERN_POOL)]
+        lights += [(name, flame, CORRIDOR["lantern_w"][0]), (f"{name}_pool", flame - Vector((0, 0, 0.05)), CORRIDOR["lantern_w"][1], LANTERN_POOL)]
     kit.banner(b, -room.hx, -room.hx + 0.04, 0.0, high)
     assert (lights[0][1] - Vector((0.8, 0.0, 2.2))).length < 0.05, lights[0]  # the lamp light socket
     return [], lights

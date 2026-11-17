@@ -4,7 +4,7 @@
   "route": "scripted",
   "generator": {
     "path": "scripts/assets/build-room-kit.py",
-    "sha256": "775b0a9b919fb005821c0805f6548cfab2cbd29e250012c0a70a9cb01d0f8da5"
+    "sha256": "4f7674c38e9322be35dc9a4988d9468c83e8981af0730fec0cadaaa347bc15b4"
   },
   "generatorDeps": [
     {
@@ -37,12 +37,12 @@
     "store": "assets-source/rooms/gear-shaft/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)",
     "files": {
       "gear-shaft_high.blend": {
-        "sha256": "05e48379ae4af75e521a8d52199fe9923f98245e22d0e9917fa12d7aae5a0509",
-        "bytes": 1588959
+        "sha256": "5c60176b79987e2ba2dd7e9de97b614927db170548201342098cb24da58354c4",
+        "bytes": 1589021
       },
       "gear-shaft_low.blend": {
-        "sha256": "c9163b1a32931f03733323c2c387154667372b19368780e9a768e4b03519a5ff",
-        "bytes": 387432
+        "sha256": "5d667f603c2c427c38cbdf96f26c2eea84965a9c66c1250407b8fbd09f139cdf",
+        "bytes": 387415
       }
     }
   },
@@ -50,17 +50,17 @@
     "device": "GPU:METAL (Apple M4 (GPU - 10 cores))",
     "lightmap": {
       "coverage": 0.6738,
-      "scale": 4.990032,
+      "scale": 4.990578,
       "clipped_fraction": 0.00998,
-      "mean_irradiance": 0.332881,
+      "mean_irradiance": 0.333572,
       "p05_irradiance": 0.0,
       "percentile": 99.0,
       "encoded_p05_255": 0,
-      "encoded_median_255": 45,
-      "seconds": 42.26,
+      "encoded_median_255": 46,
+      "seconds": 42.96,
       "host_load": [
-        1.47,
-        1.17
+        1.68,
+        1.54
       ],
       "timing_valid": true,
       "size": 2048,
@@ -270,27 +270,27 @@
   "derivedFiles": [
     {
       "path": "public/assets/rooms/gear-shaft/gear-shaft.glb",
-      "sha256": "e828d8e7323df315d1b26e6e89bfa1dba4fc42b6d3f5d7556775e6c62ce1387a",
+      "sha256": "5ea4b012ed76e23c501b1f3bfc2f0aba71108762acae68d4c873f82b7d6690a4",
       "bytes": 801608
     },
     {
       "path": "public/assets/rooms/gear-shaft/gear-shaft.lightmap.ktx2",
-      "sha256": "a7707d76ef57ba9ba09ba8301d7ba2ce1f59e76dcb3b734176010f31ec94d578",
-      "bytes": 2757188
+      "sha256": "f1e45f105edd5296aba987e305bbd22deef35f733efbaf805ddc6f87552bc87e",
+      "bytes": 2767552
     },
     {
       "path": "public/assets/rooms/gear-shaft/gear-shaft.manifest.json",
-      "sha256": "41191dd824c82228f05d21481433f68399cb855762413c3eeb0f2b4e5866fe4a",
+      "sha256": "ab950a08a9a82536e685469a180de4eace6648adf5ec5297e31e86b613947995",
       "bytes": 4903
     }
   ],
   "stagingFiles": {
-    "engine-compare.json": "ccaceb6879a41cd6170925abe492b2b066d249e261d24bd801cd141f947a3f72",
-    "gear-shaft.glb": "e828d8e7323df315d1b26e6e89bfa1dba4fc42b6d3f5d7556775e6c62ce1387a",
-    "gear-shaft.lightmap.ktx2": "a7707d76ef57ba9ba09ba8301d7ba2ce1f59e76dcb3b734176010f31ec94d578",
-    "gear-shaft.lightmap.png": "7189254859629008a362ab54018cc2561312443d8301141af3c4cbb37c32034c",
-    "gear-shaft.manifest.json": "41191dd824c82228f05d21481433f68399cb855762413c3eeb0f2b4e5866fe4a",
-    "uv1-report.json": "2a6439acd83c604fd47e3a78262219326e65b091c6affd735cdf74319f5673cd"
+    "engine-compare.json": "ac4c182baddaeaa0a7579d90aa7540b7bfca98b4c2f54d98c779a1bc22e94220",
+    "gear-shaft.glb": "5ea4b012ed76e23c501b1f3bfc2f0aba71108762acae68d4c873f82b7d6690a4",
+    "gear-shaft.lightmap.ktx2": "f1e45f105edd5296aba987e305bbd22deef35f733efbaf805ddc6f87552bc87e",
+    "gear-shaft.lightmap.png": "3cefc3d7be9f69513483251b101215971da206562f6502246a419f38ebe02304",
+    "gear-shaft.manifest.json": "ab950a08a9a82536e685469a180de4eace6648adf5ec5297e31e86b613947995",
+    "uv1-report.json": "1207756ce8acf9ce95ede8fa42a5ffbc6b8f8f7cfa1a0a92d25ccf4884649f01"
   },
   "references": [
     {
@@ -438,16 +438,16 @@
       "gear-shaft_gear_ring": {
         "azimuth": {
           "sector_means": [
-            0.07797,
-            0.07685,
-            0.07564,
-            0.07474,
-            0.07383,
-            0.0741,
-            0.07657,
-            0.07719
+            0.0818,
+            0.07991,
+            0.07884,
+            0.07849,
+            0.07708,
+            0.07671,
+            0.07947,
+            0.08079
           ],
-          "min_over_max": 0.947,
+          "min_over_max": 0.938,
           "sectors": 8
         },
         "casts_baked_shadow": false
@@ -471,39 +471,39 @@
   "reviewEvidence": [
     {
       "path": "assets-source/rooms/gear-shaft/staging/review-sheet.jpg",
-      "sha256": "b37bba2c853a0b96762b044f6036b5f26ed92ee2b43e8d939f4be317ffc0b69a"
+      "sha256": "53ef97efb75bb72d990e2fe2a0a8ecbffaf2111df03320ef9f0073642581ada9"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-hero-gear-turned.jpg",
-      "sha256": "429c20e7b3dccd561066959b00a9883593a833a6ace10cd924d62729ee4f8009"
+      "sha256": "59eae436b0c032996334c809a0cd52cea9391d9538df2117f2cd9a9142b9dd91"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-hero.diffuse-gear-turned.jpg",
-      "sha256": "4946f4094f723e00f228f03f70c2acf81a3c9df4b67eef9fe9093683ef8dc960"
+      "sha256": "96cf324fadd767ea59f9c0f5ca31183605da5ce79c0d30c19ef09be0aea0da36"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-hero.diffuse.jpg",
-      "sha256": "d3c19d2974f7c722bc81229202a0cfeb7d50c045bca4538f23d4d2fc71f198f4"
+      "sha256": "7f1887abefa962c3a697d63c207f06fbc81be2ef4f8822a574023f93ec16abbe"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-hero.jpg",
-      "sha256": "bb5a31e7d4e2482a601f329d277100577539be8fd0bcc40397ce17df68ea4e85"
+      "sha256": "16acf4ef7e9fd2ca822716711f9de11642c8d7e167fea7e3f0aff14ea77a163f"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-ring-gear-turned.jpg",
-      "sha256": "5f14d6e21f29588f545b6665d236489ef3fd1096a472abb30b18daf1eb4e0ad7"
+      "sha256": "ad1bc6dba2c564ef417b18c7fb2241a30e9b20e38f90322c34c1ba0c2ab83c15"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-ring.jpg",
-      "sha256": "2bb9b8123831c0428bf57640ea92862e10542bbf9ca3e50ac02a3f71dac843a2"
+      "sha256": "65ea85b05b6483b53b06ae09ce59b09110241db9c15214f3ca540ec08b57dfd1"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-seam-north.jpg",
-      "sha256": "18ba18191ed2cf256fbbb863c89e89e38cd1882b0264e24c043f9b112477a02e"
+      "sha256": "d849e9145652c46cb0ca692117c99cb6463bae967ea796a6fb905b0ba773afc8"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-void.jpg",
-      "sha256": "faa2d9e3250f2c3cf5075afa01cfde7d57526eaa66ee7b3295edfce30b8ccc34"
+      "sha256": "aad74286887235f67340e440b0e0a7ef176961fcac01528c2e64c4c9883bd6ec"
     }
   ],
   "independentScore": {

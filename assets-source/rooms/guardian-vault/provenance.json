@@ -4,7 +4,7 @@
   "route": "scripted",
   "generator": {
     "path": "scripts/assets/build-room-kit.py",
-    "sha256": "775b0a9b919fb005821c0805f6548cfab2cbd29e250012c0a70a9cb01d0f8da5"
+    "sha256": "4f7674c38e9322be35dc9a4988d9468c83e8981af0730fec0cadaaa347bc15b4"
   },
   "generatorDeps": [
     {
@@ -37,12 +37,12 @@
     "store": "assets-source/rooms/guardian-vault/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)",
     "files": {
       "guardian-vault_high.blend": {
-        "sha256": "6f90030f48853efe70f3a15da41df11cadd84d2c44f692cdba8fafa443688c2a",
-        "bytes": 1802662
+        "sha256": "ea84bc8c4ce59434f986d04d19b301be17a53669539d90591b9b6a14d002bf82",
+        "bytes": 1802732
       },
       "guardian-vault_low.blend": {
-        "sha256": "29e0034b2125a4c5c25b639c992cd3377ee521423527557ed13d8847514c405a",
-        "bytes": 392595
+        "sha256": "8206d9161262b1c8c8279d53e9110dc15eec713bdc12caf6b69546663d2ac1eb",
+        "bytes": 392538
       }
     }
   },
@@ -50,17 +50,17 @@
     "device": "GPU:METAL (Apple M4 (GPU - 10 cores))",
     "lightmap": {
       "coverage": 0.7042,
-      "scale": 2.76211,
-      "clipped_fraction": 0.00993,
-      "mean_irradiance": 0.248299,
+      "scale": 2.755856,
+      "clipped_fraction": 0.00998,
+      "mean_irradiance": 0.248407,
       "p05_irradiance": 0.0,
       "percentile": 99.0,
       "encoded_p05_255": 0,
       "encoded_median_255": 63,
-      "seconds": 37.51,
+      "seconds": 37.53,
       "host_load": [
-        1.72,
-        1.26
+        1.64,
+        1.32
       ],
       "timing_valid": true,
       "size": 2048,
@@ -269,27 +269,27 @@
   "derivedFiles": [
     {
       "path": "public/assets/rooms/guardian-vault/guardian-vault.glb",
-      "sha256": "38400c93070f2203d827e0a6c07faa2ef8688b747a89e2e70aefecc41b48813c",
+      "sha256": "7f1a285cfa9ec89b4bd847e9ff58a41b9117e8b66e7edc67a3c1f69defee42a1",
       "bytes": 756540
     },
     {
       "path": "public/assets/rooms/guardian-vault/guardian-vault.lightmap.ktx2",
-      "sha256": "a8baa6ee359e8f3106a14dcf72a7e0ae932d2797906364a71ba84b4b80ec4b32",
-      "bytes": 2888824
+      "sha256": "586e6b4a4d961d31b2cbead0e1dd76614cf603a9ac794ed5a8a1f261781c36e0",
+      "bytes": 2890493
     },
     {
       "path": "public/assets/rooms/guardian-vault/guardian-vault.manifest.json",
-      "sha256": "6d27fe2c6e81500a3e25b7b03b77c70dddca9bff162ef43ce0597b6df51c7824",
+      "sha256": "4e0cf1ab381534319493fa6feacfa32e44c7fca0a64af8c061b26e46bce60e2d",
       "bytes": 5327
     }
   ],
   "stagingFiles": {
-    "engine-compare.json": "82610923c712ff222e98530d82f4e59260c11e32d973f2bc999ce9ab8678a6ac",
-    "guardian-vault.glb": "38400c93070f2203d827e0a6c07faa2ef8688b747a89e2e70aefecc41b48813c",
-    "guardian-vault.lightmap.ktx2": "a8baa6ee359e8f3106a14dcf72a7e0ae932d2797906364a71ba84b4b80ec4b32",
-    "guardian-vault.lightmap.png": "ca3f83c260a8ac171c173a17aea1686fd1eabdfbb3c171909d92434a7421563a",
-    "guardian-vault.manifest.json": "6d27fe2c6e81500a3e25b7b03b77c70dddca9bff162ef43ce0597b6df51c7824",
-    "uv1-report.json": "326fa8f895dd4f77cbb54b79e0a7b524c74556bf1de231a872cf31516a15026e"
+    "engine-compare.json": "a34b493e2381d787c2a3df158305383d608e770887d0d577f25859cf1172ed81",
+    "guardian-vault.glb": "7f1a285cfa9ec89b4bd847e9ff58a41b9117e8b66e7edc67a3c1f69defee42a1",
+    "guardian-vault.lightmap.ktx2": "586e6b4a4d961d31b2cbead0e1dd76614cf603a9ac794ed5a8a1f261781c36e0",
+    "guardian-vault.lightmap.png": "dde02141a63765fb1026e75c0c063b86a1c6e614b892ce55415a399f300700ee",
+    "guardian-vault.manifest.json": "4e0cf1ab381534319493fa6feacfa32e44c7fca0a64af8c061b26e46bce60e2d",
+    "uv1-report.json": "f90b85aea4f307abf56e36a715d21801ff1a94314465a3af9965bcfbe286460e"
   },
   "references": [
     {
@@ -402,31 +402,31 @@
   "reviewEvidence": [
     {
       "path": "assets-source/rooms/guardian-vault/staging/review-sheet.jpg",
-      "sha256": "20d0173d1486a8ef8eaa9c3aa5e061f4ce6c956cfcf876a91a326d3d7a8657a1"
+      "sha256": "78406d983b3f45d2160461c2be7a01d80a341419b99718028a033a11688f9e12"
     },
     {
       "path": "docs/verification/p5-rooms-guardian-vault-brazier.jpg",
-      "sha256": "b99da09c4ffed650137ee53ef9bce55fea52582cd5cd1f81576d7c8e862e1f74"
+      "sha256": "2207835f790692d270e3ac5d77d4d4937d43d1a156f363031b1829e5e547db07"
     },
     {
       "path": "docs/verification/p5-rooms-guardian-vault-hero.diffuse.jpg",
-      "sha256": "af0492379dbb8dd431649d02092b79d53200bf17e1c62554563accc783752343"
+      "sha256": "9d9f9ea4a5f8d34af3024af987bce0a4737d4e990d72a2b7f2e4a537064d0b51"
     },
     {
       "path": "docs/verification/p5-rooms-guardian-vault-hero.jpg",
-      "sha256": "237822cb1cbe615a0f9fe68e95847def022eea057fd99bf68c7bab6ecb7ea16f"
+      "sha256": "28fef8083c3d9407f3b7ccff4daed7a15c9675ce0f69d7674aa9cea234188cd2"
     },
     {
       "path": "docs/verification/p5-rooms-guardian-vault-reward-eye.jpg",
-      "sha256": "ace0b9a8d317a0714245e80474f69e29ed0b71b6bf859bebc9fb04c23f873273"
+      "sha256": "dad16eeccc7c70ba42ac751a43d2bf724aecdf38e7568085847db354cea9eda1"
     },
     {
       "path": "docs/verification/p5-rooms-guardian-vault-seam-from-corridor.jpg",
-      "sha256": "330d308e492420f15c567f0127e94a0e93e303de620e08f22ffc0f735dbfd336"
+      "sha256": "e91a066568c4456bd6de7aa7c7c31654f10ecddf910f4e1e5416667f7b3f322e"
     },
     {
       "path": "docs/verification/p5-rooms-guardian-vault-seam-south.jpg",
-      "sha256": "368bbd6caf18adcae6c896ed2c2663769897b923b53591f3198ac633a7dcf2d2"
+      "sha256": "49ffbe350702a165b195613370cac045613021bb5077c3f91f9545fb97e9e78a"
     }
   ],
   "independentScore": {

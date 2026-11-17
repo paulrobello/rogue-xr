@@ -4,7 +4,7 @@
   "route": "scripted",
   "generator": {
     "path": "scripts/assets/build-room-kit.py",
-    "sha256": "775b0a9b919fb005821c0805f6548cfab2cbd29e250012c0a70a9cb01d0f8da5"
+    "sha256": "4f7674c38e9322be35dc9a4988d9468c83e8981af0730fec0cadaaa347bc15b4"
   },
   "generatorDeps": [
     {
@@ -37,12 +37,12 @@
     "store": "assets-source/rooms/corridor/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)",
     "files": {
       "corridor_high.blend": {
-        "sha256": "323abca8d0faed355ffd894466ddf45cadc7ec1abdb5689321886323aa3cc5cb",
-        "bytes": 359654
+        "sha256": "d7a67c6f5011bf2e94588ee1eaa35c0d7a9eba5e8f1c1891b954d618e7fe00b2",
+        "bytes": 359717
       },
       "corridor_low.blend": {
-        "sha256": "53e4c285f08129983629796680675e652dae380e75082b1301c0c4617d31e0d4",
-        "bytes": 174891
+        "sha256": "9999acd5517e3e6e7d02cacc4e8eba5b79c27b80e7d09dd212c7979e57671486",
+        "bytes": 174890
       }
     }
   },
@@ -50,17 +50,17 @@
     "device": "GPU:METAL (Apple M4 (GPU - 10 cores))",
     "lightmap": {
       "coverage": 0.7473,
-      "scale": 1.543141,
-      "clipped_fraction": 0.01997,
-      "mean_irradiance": 0.142991,
+      "scale": 5.92822,
+      "clipped_fraction": 0.01996,
+      "mean_irradiance": 0.552366,
       "p05_irradiance": 0.0,
       "percentile": 98.0,
       "encoded_p05_255": 0,
-      "encoded_median_255": 57,
-      "seconds": 42.17,
+      "encoded_median_255": 59,
+      "seconds": 32.65,
       "host_load": [
-        1.43,
-        2.11
+        1.72,
+        1.25
       ],
       "timing_valid": true,
       "size": 2048,
@@ -195,21 +195,21 @@
     },
     {
       "path": "public/assets/rooms/corridor/corridor.lightmap.ktx2",
-      "sha256": "5af49e178ab26ff77e3d14b22cd3f6257e38756c3ab364ee2045e07773460499",
-      "bytes": 2689409
+      "sha256": "73f98c1d42f71ca505710d1b46f7c6699d7ec802242566bcdd707359594b9af1",
+      "bytes": 2592485
     },
     {
       "path": "public/assets/rooms/corridor/corridor.manifest.json",
-      "sha256": "034459d6dc6b2b30d5b9b4f98ddbe95b017cfe3273171b2183bb43bdb47cd0e5",
-      "bytes": 2755
+      "sha256": "33c12e0cf034f2235a3b969c783e16cae6d2ad753c64511589e023c71187b2db",
+      "bytes": 2756
     }
   ],
   "stagingFiles": {
     "corridor.glb": "a47e2247183f21e15071aacee7c7a434e35c623b3ae5fa3e41b3bd524b41d00f",
-    "corridor.lightmap.ktx2": "5af49e178ab26ff77e3d14b22cd3f6257e38756c3ab364ee2045e07773460499",
-    "corridor.lightmap.png": "22744fea69166b21186d71a253704c0804d25767a8e61304ae3e869888eef328",
-    "corridor.manifest.json": "034459d6dc6b2b30d5b9b4f98ddbe95b017cfe3273171b2183bb43bdb47cd0e5",
-    "engine-compare.json": "78fdd0d561d185f2f4b2ff2fb30aae92a6e9916a269cfe4474e326f84167f6e1",
+    "corridor.lightmap.ktx2": "73f98c1d42f71ca505710d1b46f7c6699d7ec802242566bcdd707359594b9af1",
+    "corridor.lightmap.png": "0867bfbb907a47dda6344348ac42841fc069cd94b117fd2b6fb92cb43a0d83d3",
+    "corridor.manifest.json": "33c12e0cf034f2235a3b969c783e16cae6d2ad753c64511589e023c71187b2db",
+    "engine-compare.json": "212dcce491a03b8d14696988d6835815b52cb0bd990e472a0a8b16fe14967934",
     "uv1-report.json": "f2d70682244a58945f8e9a0a6b4500d2ccdc86352e148b47e60819a89ce9e263"
   },
   "references": [
@@ -323,27 +323,27 @@
   "reviewEvidence": [
     {
       "path": "assets-source/rooms/corridor/staging/review-sheet.jpg",
-      "sha256": "58cdfb38a72dc924171163ae7178283946f865cb60a2f50bca63d5a75ec53970"
+      "sha256": "e7f51c1dde8dc96e0e3527b9fecfe7629feac9a9020e5b4cbe0710c9a3ca6653"
     },
     {
       "path": "docs/verification/p5-rooms-corridor-floor-sealed-north.jpg",
-      "sha256": "d4e1b9dd7ae79232267f0c0fa4a996eeff457497f501e850460dd596ad3ac8e9"
+      "sha256": "cba137501a37d32b3007140c5b7000dadc326befd06d614a30989d7473509d34"
     },
     {
       "path": "docs/verification/p5-rooms-corridor-hero.diffuse.jpg",
-      "sha256": "4fd8001a23a7156d619597ae7fb050957b8246dde9ffd0770e71d9b1709bde77"
+      "sha256": "52b0419a4e8a931cf2c56ede1029ec34e179cee9f5fe4745594ca9a393546a4e"
     },
     {
       "path": "docs/verification/p5-rooms-corridor-hero.jpg",
-      "sha256": "304d0e1dda8839988a1ae38fe53aedc45011172bb48519f730a94b482a8301dd"
+      "sha256": "0d9c7b6db837ece3e995f1fc9abd9b2ddb9e31ca494e32af9e8e17202461b7e5"
     },
     {
       "path": "docs/verification/p5-rooms-corridor-lamp.jpg",
-      "sha256": "1dc05a4746eee2fd7d1ac55218b354d1fdbe54f1fbd515c5c24e29d6f9666e32"
+      "sha256": "d21b220a757556b1d178963da9985b713bd56dcaba6f50417eb906f28eecdd09"
     },
     {
       "path": "docs/verification/p5-rooms-corridor-seam-from-corridor.jpg",
-      "sha256": "891f67302ece4a4f6908c227e424dd3a9d2d3333686332f79dc0666b63f5db91"
+      "sha256": "9d2cb3967084765352514ca39c9ce67bf557b5108508b7912841b3e5f2cb1275"
     }
   ],
   "independentScore": {

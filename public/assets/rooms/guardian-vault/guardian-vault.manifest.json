@@ -5,8 +5,8 @@
     "file": "guardian-vault.lightmap.ktx2",
     "uv": 1,
     "encoding": "srgb-scaled",
-    "scale": 2.7621097564697266,
-    "intensity": 8.677424
+    "scale": 2.7558562755584717,
+    "intensity": 8.657778
   },
   "id": "guardian-vault",
   "kinds": [
@@ -394,7 +394,7 @@
       "emissiveIntensity": 5.6
     },
     "guardian-vault_gilt": {
-      "color": "#bf9759",
+      "color": "#decb59",
       "roughness": 0.42
     }
   },

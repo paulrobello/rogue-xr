@@ -1,7 +1,7 @@
 {
   "piece": "gear-shaft",
   "blender": "5.3.0",
-  "host_load_start": 1.42,
+  "host_load_start": 1.68,
   "lightmap_size": 2048,
   "samples": 256,
   "generator": "scripts/assets/build-room-kit.py",
@@ -93,10 +93,10 @@
   "glb_bytes": 801608,
   "device": "GPU:METAL (Apple M4 (GPU - 10 cores))",
   "lightmap_bake": {
-    "seconds": 42.26,
+    "seconds": 42.96,
     "host_load": [
-      1.47,
-      1.17
+      1.68,
+      1.54
     ],
     "timing_valid": true
   },
@@ -104,16 +104,16 @@
     "gear-shaft_gear_ring": {
       "azimuth": {
         "sector_means": [
-          0.07797,
-          0.07685,
-          0.07564,
-          0.07474,
-          0.07383,
-          0.0741,
-          0.07657,
-          0.07719
+          0.0818,
+          0.07991,
+          0.07884,
+          0.07849,
+          0.07708,
+          0.07671,
+          0.07947,
+          0.08079
         ],
-        "min_over_max": 0.947,
+        "min_over_max": 0.938,
         "sectors": 8
       },
       "casts_baked_shadow": false
@@ -122,13 +122,13 @@
   "denoise": "compositor OIDN, HDR, accurate prefilter, high quality",
   "lightmap": {
     "coverage": 0.6738,
-    "scale": 4.990032,
+    "scale": 4.990578,
     "clipped_fraction": 0.00998,
-    "mean_irradiance": 0.332881,
+    "mean_irradiance": 0.333572,
     "p05_irradiance": 0.0,
     "percentile": 99.0,
     "encoded_p05_255": 0,
-    "encoded_median_255": 45
+    "encoded_median_255": 46
   },
   "ktx2": {
     "tool": "ktx version: v4.4.2",
@@ -158,12 +158,12 @@
   ],
   "blend": {
     "gear-shaft_high.blend": {
-      "sha256": "05e48379ae4af75e521a8d52199fe9923f98245e22d0e9917fa12d7aae5a0509",
-      "bytes": 1588959
+      "sha256": "5c60176b79987e2ba2dd7e9de97b614927db170548201342098cb24da58354c4",
+      "bytes": 1589021
     },
     "gear-shaft_low.blend": {
-      "sha256": "c9163b1a32931f03733323c2c387154667372b19368780e9a768e4b03519a5ff",
-      "bytes": 387432
+      "sha256": "5d667f603c2c427c38cbdf96f26c2eea84965a9c66c1250407b8fbd09f139cdf",
+      "bytes": 387415
     }
   },
   "colliders_added": [
@@ -393,13 +393,13 @@
       "vfov": 70.0
     }
   },
-  "host_load_end": 1.53,
+  "host_load_end": 1.63,
   "files": {
-    "engine-compare.json": "ccaceb6879a41cd6170925abe492b2b066d249e261d24bd801cd141f947a3f72",
-    "gear-shaft.glb": "e828d8e7323df315d1b26e6e89bfa1dba4fc42b6d3f5d7556775e6c62ce1387a",
-    "gear-shaft.lightmap.ktx2": "a7707d76ef57ba9ba09ba8301d7ba2ce1f59e76dcb3b734176010f31ec94d578",
-    "gear-shaft.lightmap.png": "7189254859629008a362ab54018cc2561312443d8301141af3c4cbb37c32034c",
-    "gear-shaft.manifest.json": "41191dd824c82228f05d21481433f68399cb855762413c3eeb0f2b4e5866fe4a",
-    "uv1-report.json": "2a6439acd83c604fd47e3a78262219326e65b091c6affd735cdf74319f5673cd"
+    "engine-compare.json": "ac4c182baddaeaa0a7579d90aa7540b7bfca98b4c2f54d98c779a1bc22e94220",
+    "gear-shaft.glb": "5ea4b012ed76e23c501b1f3bfc2f0aba71108762acae68d4c873f82b7d6690a4",
+    "gear-shaft.lightmap.ktx2": "f1e45f105edd5296aba987e305bbd22deef35f733efbaf805ddc6f87552bc87e",
+    "gear-shaft.lightmap.png": "3cefc3d7be9f69513483251b101215971da206562f6502246a419f38ebe02304",
+    "gear-shaft.manifest.json": "ab950a08a9a82536e685469a180de4eace6648adf5ec5297e31e86b613947995",
+    "uv1-report.json": "1207756ce8acf9ce95ede8fa42a5ffbc6b8f8f7cfa1a0a92d25ccf4884649f01"
   }
 }

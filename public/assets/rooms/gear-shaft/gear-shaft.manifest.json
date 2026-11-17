@@ -5,8 +5,8 @@
     "file": "gear-shaft.lightmap.ktx2",
     "uv": 1,
     "encoding": "srgb-scaled",
-    "scale": 4.990032196044922,
-    "intensity": 15.676648
+    "scale": 4.990577697753906,
+    "intensity": 15.678362
   },
   "id": "gear-shaft",
   "kinds": [
@@ -325,7 +325,7 @@
       "emissiveIntensity": 5.6
     },
     "gear-shaft_gilt": {
-      "color": "#bf9759",
+      "color": "#decb59",
       "roughness": 0.42
     }
   },

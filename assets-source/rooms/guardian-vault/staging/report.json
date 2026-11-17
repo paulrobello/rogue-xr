@@ -1,7 +1,7 @@
 {
   "piece": "guardian-vault",
   "blender": "5.3.0",
-  "host_load_start": 1.72,
+  "host_load_start": 1.6,
   "lightmap_size": 2048,
   "samples": 256,
   "generator": "scripts/assets/build-room-kit.py",
@@ -78,19 +78,19 @@
   "glb_bytes": 756540,
   "device": "GPU:METAL (Apple M4 (GPU - 10 cores))",
   "lightmap_bake": {
-    "seconds": 37.51,
+    "seconds": 37.53,
     "host_load": [
-      1.72,
-      1.26
+      1.64,
+      1.32
     ],
     "timing_valid": true
   },
   "denoise": "compositor OIDN, HDR, accurate prefilter, high quality",
   "lightmap": {
     "coverage": 0.7042,
-    "scale": 2.76211,
-    "clipped_fraction": 0.00993,
-    "mean_irradiance": 0.248299,
+    "scale": 2.755856,
+    "clipped_fraction": 0.00998,
+    "mean_irradiance": 0.248407,
     "p05_irradiance": 0.0,
     "percentile": 99.0,
     "encoded_p05_255": 0,
@@ -119,12 +119,12 @@
   ],
   "blend": {
     "guardian-vault_high.blend": {
-      "sha256": "6f90030f48853efe70f3a15da41df11cadd84d2c44f692cdba8fafa443688c2a",
-      "bytes": 1802662
+      "sha256": "ea84bc8c4ce59434f986d04d19b301be17a53669539d90591b9b6a14d002bf82",
+      "bytes": 1802732
     },
     "guardian-vault_low.blend": {
-      "sha256": "29e0034b2125a4c5c25b639c992cd3377ee521423527557ed13d8847514c405a",
-      "bytes": 392595
+      "sha256": "8206d9161262b1c8c8279d53e9110dc15eec713bdc12caf6b69546663d2ac1eb",
+      "bytes": 392538
     }
   },
   "colliders_added": [
@@ -469,13 +469,13 @@
       "vfov": 70.0
     }
   },
-  "host_load_end": 2.02,
+  "host_load_end": 1.61,
   "files": {
-    "engine-compare.json": "82610923c712ff222e98530d82f4e59260c11e32d973f2bc999ce9ab8678a6ac",
-    "guardian-vault.glb": "38400c93070f2203d827e0a6c07faa2ef8688b747a89e2e70aefecc41b48813c",
-    "guardian-vault.lightmap.ktx2": "a8baa6ee359e8f3106a14dcf72a7e0ae932d2797906364a71ba84b4b80ec4b32",
-    "guardian-vault.lightmap.png": "ca3f83c260a8ac171c173a17aea1686fd1eabdfbb3c171909d92434a7421563a",
-    "guardian-vault.manifest.json": "6d27fe2c6e81500a3e25b7b03b77c70dddca9bff162ef43ce0597b6df51c7824",
-    "uv1-report.json": "326fa8f895dd4f77cbb54b79e0a7b524c74556bf1de231a872cf31516a15026e"
+    "engine-compare.json": "a34b493e2381d787c2a3df158305383d608e770887d0d577f25859cf1172ed81",
+    "guardian-vault.glb": "7f1a285cfa9ec89b4bd847e9ff58a41b9117e8b66e7edc67a3c1f69defee42a1",
+    "guardian-vault.lightmap.ktx2": "586e6b4a4d961d31b2cbead0e1dd76614cf603a9ac794ed5a8a1f261781c36e0",
+    "guardian-vault.lightmap.png": "dde02141a63765fb1026e75c0c063b86a1c6e614b892ce55415a399f300700ee",
+    "guardian-vault.manifest.json": "4e0cf1ab381534319493fa6feacfa32e44c7fca0a64af8c061b26e46bce60e2d",
+    "uv1-report.json": "f90b85aea4f307abf56e36a715d21801ff1a94314465a3af9965bcfbe286460e"
   }
 }

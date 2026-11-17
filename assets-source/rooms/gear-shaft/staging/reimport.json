@@ -1,6 +1,6 @@
 {
   "glb": "gear-shaft.glb",
-  "glb_sha256": "e828d8e7323df315d1b26e6e89bfa1dba4fc42b6d3f5d7556775e6c62ce1387a",
+  "glb_sha256": "5ea4b012ed76e23c501b1f3bfc2f0aba71108762acae68d4c873f82b7d6690a4",
   "blender": "5.3.0",
   "meshes": [
     "gear-shaft",
