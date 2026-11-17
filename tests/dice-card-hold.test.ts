@@ -10,8 +10,10 @@ import {
   CombatHook,
   type CombatPick,
   type CombatSession,
+  DESKTOP_DICE_HINT,
   DICE_AUTO_THROW_SECONDS,
   DICE_SETTLE_FALLBACK_SECONDS,
+  XR_DICE_HINT,
 } from '../src/combat/combat-session.ts';
 import { ActionBus } from '../src/core/actions.ts';
 import { mountFloorView } from '../src/world/floor-view.ts';
@@ -198,8 +200,8 @@ describe('H2 a dice card waits for its die', () => {
     expect(end).not.toHaveBeenCalled();
     expect(session.view.enemies.some((e) => e.hp > 0)).toBe(true);
     // The mouse can still throw once the rules have decided the fight.
-    pointerAt(rig, at(session, 'throw'), 'down');
-    pointerAt(rig, at(session, 'throw'), 'up');
+    pointerAt(rig, at(session, 'dice'), 'down');
+    pointerAt(rig, at(session, 'dice'), 'up');
     expect(session.awaitingThrow).toBe(false);
     for (let i = 0; i < 600 && session.awaitingDice; i++) rig.step();
     // The killing bolt is still flying: the banner waits for it to land.
@@ -210,6 +212,89 @@ describe('H2 a dice card waits for its die', () => {
     rig.step(6);
     expect(end).toHaveBeenCalledWith('win');
     vi.restoreAllMocks();
+    rig.hook.dispose();
+  }, 60_000);
+});
+
+/**
+ * F11 (Quest 3 playtest 2026-11-17): "the throw button should not be needed the dice should light up /
+ * pulse to indicate that it needs to be thrown". There is no THROW button: a rolled die waits in the
+ * tray, pulsing, with a table hint; the mouse clicks it, the XR main hand grabs it and lets go.
+ */
+describe('F11 the rolled die pulses in the tray until it is thrown', () => {
+  it('shows a pulsing die and a hint while a throw is due, and a click on the die throws it', async () => {
+    const rig = await openFight({ deck: Array(10).fill('cog-toss') });
+    const { session } = rig;
+    expect(session.dice.waiting).toBeNull();
+    expect(session.hint).toBe('');
+    expect(rig.view.world.group.getObjectByName('throw-dice')).toBeUndefined();
+    flingFirstCard(rig);
+    expect(session.awaitingThrow).toBe(true);
+    expect(session.dice.waiting).not.toBeNull();
+    expect(session.hint).toBe(DESKTOP_DICE_HINT);
+    const pulse: number[] = [];
+    for (let i = 0; i < 90; i++) {
+      rig.step();
+      pulse.push(session.dice.pulse);
+    }
+    // It swells and fades: the halo runs from dim to full over each 1.1 s pulse.
+    expect(Math.min(...pulse)).toBeLessThan(0.4);
+    expect(Math.max(...pulse)).toBeGreaterThan(0.9);
+
+    pointerAt(rig, at(session, 'dice'), 'down');
+    pointerAt(rig, at(session, 'dice'), 'up');
+    rig.step();
+    expect(session.awaitingThrow).toBe(false);
+    expect(session.dice.waiting).toBeNull();
+    expect(session.dice.pulse).toBe(0);
+    expect(session.hint).toBe('');
+    for (let i = 0; i < 600 && session.awaitingDice; i++) rig.step();
+    expect(session.rolls[0]?.value).toBe(session.controller.lastDice?.value);
+    rig.hook.dispose();
+  }, 60_000);
+
+  it('throws in XR when the main hand grabs the die and lets go over the tray', async () => {
+    const rig = await openFight({ deck: Array(10).fill('cog-toss') });
+    const { session, camera } = rig;
+    flingFirstCard(rig);
+    expect(session.awaitingThrow).toBe(true);
+    const scene = camera.parent as THREE.Scene;
+    const head = camera.getWorldPosition(new THREE.Vector3());
+    const main = new THREE.Group();
+    const mainRay = new THREE.Group();
+    const off = new THREE.Group();
+    off.position.copy(head).add(new THREE.Vector3(-0.18, -0.3, -0.3));
+    main.position.copy(head).add(new THREE.Vector3(0.18, -0.3, -0.3));
+    scene.add(main, mainRay, off);
+    const xr = { main, mainRay, off };
+    const step = (seconds = 1 / 60) => {
+      for (let t = 0; t < seconds - 1e-9; t += 1 / 60) {
+        camera.updateMatrixWorld(true);
+        rig.view.update(camera, 1 / 60);
+        rig.hook.update(1 / 60, xr);
+      }
+    };
+    const hand = (control: 'squeeze' | 'trigger', pressed: boolean) =>
+      rig.actions.emit({ type: 'combat-hand', hand: 'main', control, pressed });
+    step();
+    expect(session.hint).toBe(XR_DICE_HINT);
+    hand('squeeze', true);
+    step();
+    // The die follows the hand while it is held.
+    const die = session.dice.waiting as THREE.Object3D;
+    const tray = at(session, 'dice');
+    main.position.copy(tray).add(new THREE.Vector3(0.02, 0.12, 0));
+    main.updateMatrixWorld(true);
+    step();
+    expect(die.getWorldPosition(new THREE.Vector3()).distanceTo(main.position)).toBeLessThan(1e-6);
+    expect(session.awaitingThrow).toBe(true);
+    hand('squeeze', false);
+    step();
+    expect(session.awaitingThrow).toBe(false);
+    expect(session.dice.waiting).toBeNull();
+    for (let i = 0; i < 600 && session.awaitingDice; i++) step();
+    expect(session.rolls).toHaveLength(1);
+    expect(session.rolls[0]?.value).toBe(session.controller.lastDice?.value);
     rig.hook.dispose();
   }, 60_000);
 });

@@ -4,6 +4,7 @@ import {
   type Point,
   recognize,
   type SigilId,
+  type SigilLevel,
   type Stroke,
   scoreAgainst,
   scoreToMultiplier,
@@ -383,10 +384,15 @@ export interface TraceResult {
 /**
  * Scores a trace against the card's sigil. THE scoring path: the XR plate, the desktop mouse and the
  * combat view all end here, delegating to `scoreAgainst` and `scoreToMultiplier` in src/sigil.
+ * The trace is judged at the run's level, Casual by default.
  */
-export function scoreTrace(strokes: readonly Stroke[], sigilId: SigilId): TraceResult {
+export function scoreTrace(
+  strokes: readonly Stroke[],
+  sigilId: SigilId,
+  level: SigilLevel = 'casual',
+): TraceResult {
   const points = strokes.reduce((sum, stroke) => sum + stroke.length, 0);
-  const score = scoreAgainst(strokes, sigilId);
+  const score = scoreAgainst(strokes, sigilId, level);
   return {
     sigilId,
     score,

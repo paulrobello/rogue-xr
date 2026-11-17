@@ -179,6 +179,26 @@ describe('dice presenter with the authored models', () => {
     presenter.dispose();
   });
 
+  // F11: a die grabbed from the tray starts its throw where the hand let go, from the same seeded
+  // draws, so a run replays whatever the hand did.
+  it('throws a held waiting die from the hand, landing on the RNG face with the same draws', async () => {
+    const plain = Stream.fromKey('TEST0001:dice-throw');
+    const handled = Stream.fromKey('TEST0001:dice-throw');
+    const a = await DicePresenter.create(plain, { ...TRAY, models: asset });
+    const b = await DicePresenter.create(handled, { ...TRAY, models: asset });
+    b.showWaiting('d8');
+    expect(b.waiting).not.toBeNull();
+    b.holdWaiting(new THREE.Vector3(0.5, 0.4, -0.5));
+    const first = rollToRest(a, 'd8', 6);
+    const held = rollToRest(b, 'd8', 6);
+    expect(b.waiting).toBeNull();
+    expect(held.settled).toBe(6);
+    expect(first.settled).toBe(6);
+    expect(handled.next()).toBe(plain.next());
+    a.dispose();
+    b.dispose();
+  });
+
   it('leaves the injected asset usable after the presenter is disposed', async () => {
     const presenter = await DicePresenter.create(stream(), { ...TRAY, models: asset });
     presenter.throw('d6', 1, 2);

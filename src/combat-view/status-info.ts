@@ -1,0 +1,155 @@
+import { PALETTE } from '../palette.ts';
+import { DECAYS_AT_TURN_END, VULNERABLE_MULTIPLIER, WEAK_MULTIPLIER } from '../rules/statuses.ts';
+import type { StatusId } from '../rules/types.ts';
+import { STATUS_ICON } from '../ui/icon-atlas.ts';
+import { drawIconRow, type IconChip, type IconSheet } from '../ui/icon-sheet.ts';
+
+/** Display name of each status. Exhaustive: a new status fails the type check until it has one. */
+export const STATUS_NAME: Readonly<Record<StatusId, string>> = {
+  weak: 'Weak',
+  vulnerable: 'Vulnerable',
+  overheat: 'Overheat',
+  'wound-up': 'Wound-up',
+};
+
+const percent = (multiplier: number): number => Math.round(Math.abs(1 - multiplier) * 100);
+
+/**
+ * A plain-language explanation of status `id` at `stacks` stacks on the player (`you`) or an enemy
+ * (`it`), for the pointer tooltip. The numbers come from the rules (`src/rules/statuses.ts`), so a
+ * rules change shows here.
+ */
+export function statusExplanation(id: StatusId, stacks: number, who: 'you' | 'it' = 'it'): string {
+  const you = who === 'you';
+  const their = you ? 'your' : 'its';
+  const what: Record<StatusId, string> = {
+    weak: `${you ? 'Your' : 'Its'} attacks deal ${percent(WEAK_MULTIPLIER)}% less damage.`,
+    vulnerable: `Attacks against ${you ? 'you' : 'it'} deal ${percent(VULNERABLE_MULTIPLIER)}% more damage.`,
+    overheat: `${you ? 'You lose' : 'It loses'} ${stacks} HP at the start of ${their} turn, ignoring block, then 1 stack.`,
+    'wound-up': `Each of ${their} attack hits deals ${stacks} more damage.`,
+  };
+  const wears = DECAYS_AT_TURN_END.includes(id)
+    ? ` Loses 1 stack at the end of ${their} turn.`
+    : id === 'wound-up'
+      ? ' Lasts the whole fight.'
+      : '';
+  return `${what[id]}${wears}`;
+}
+
+/** A status chip's rectangle on its label canvas, canvas pixels (origin top-left, y down). */
+export interface StatusRegion {
+  readonly id: StatusId;
+  readonly stacks: number;
+  readonly x0: number;
+  readonly x1: number;
+  readonly y0: number;
+  readonly y1: number;
+}
+
+/** The statuses with stacks above zero, in rules order. */
+export function activeStatuses(
+  statuses: Readonly<Partial<Record<StatusId, number>>>,
+): [StatusId, number][] {
+  return (Object.keys(STATUS_NAME) as StatusId[]).flatMap((id) => {
+    const n = statuses[id] ?? 0;
+    return n > 0 ? [[id, n] as [StatusId, number]] : [];
+  });
+}
+
+/**
+ * Draws `lead` chips (hp, block, steam) then one badge per status (icon and stack count on a dark
+ * plate with a brass rim) on one line centred at `centreY`, from `x` (or centred on `x`). A row
+ * wider than `maxWidth` is drawn smaller, font included, so it fits. Returns where each status badge
+ * was drawn, for the pointer tooltip. Uses the current font and fill.
+ */
+export function drawChipsWithStatuses(
+  ctx: CanvasRenderingContext2D,
+  icons: IconSheet | null,
+  lead: readonly IconChip[],
+  statuses: Readonly<Partial<Record<StatusId, number>>>,
+  x: number,
+  centreY: number,
+  size: number,
+  align: 'left' | 'center' = 'left',
+  maxWidth = Number.POSITIVE_INFINITY,
+): StatusRegion[] {
+  const full = rowWidth(ctx, icons, lead, statuses, size);
+  if (full > maxWidth) {
+    const k = maxWidth / full;
+    size *= k;
+    ctx.font = ctx.font.replace(/(\d+(?:\.\d+)?)px/, (_, px: string) => `${Number(px) * k}px`);
+  }
+  const gap = size * 0.15;
+  const chipGap = size * 0.4;
+  const pad = size * 0.12;
+  const iconLead = icons ? size + gap : 0;
+  const text = (chip: IconChip) => (icons ? chip.text : `${chip.fallback} ${chip.text}`.trim());
+  const status = activeStatuses(statuses).map(([id, n]) => ({
+    id,
+    n,
+    chip: { icon: STATUS_ICON[id], text: String(n), fallback: STATUS_NAME[id] } as IconChip,
+  }));
+  const widths = [
+    ...lead.map((chip) => iconLead + ctx.measureText(text(chip)).width),
+    ...status.map(({ chip }) => iconLead + ctx.measureText(text(chip)).width + 2 * pad),
+  ];
+  const total = widths.reduce((sum, w) => sum + w, 0) + chipGap * Math.max(0, widths.length - 1);
+  let at = align === 'center' ? x - total / 2 : x;
+  lead.forEach((chip, i) => {
+    drawIconRow(ctx, icons, [chip], at, centreY, size);
+    at += (widths[i] as number) + chipGap;
+  });
+  const regions: StatusRegion[] = [];
+  const fill = ctx.fillStyle;
+  status.forEach(({ id, n, chip }, i) => {
+    const w = widths[lead.length + i] as number;
+    const half = size / 2 + pad;
+    ctx.fillStyle = 'rgba(40,26,14,0.95)';
+    ctx.strokeStyle = PALETTE.brass;
+    ctx.lineWidth = Math.max(2, size * 0.05);
+    ctx.beginPath();
+    ctx.rect(at, centreY - half, w, 2 * half);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = fill;
+    drawIconRow(ctx, icons, [chip], at + pad, centreY, size);
+    regions.push({ id, stacks: n, x0: at, x1: at + w, y0: centreY - half, y1: centreY + half });
+    at += w + chipGap;
+  });
+  return regions;
+}
+
+/** Width the row would take at `size`, in the current font. */
+function rowWidth(
+  ctx: CanvasRenderingContext2D,
+  icons: IconSheet | null,
+  lead: readonly IconChip[],
+  statuses: Readonly<Partial<Record<StatusId, number>>>,
+  size: number,
+): number {
+  const iconLead = icons ? size * 1.15 : 0;
+  const text = (chip: IconChip) => (icons ? chip.text : `${chip.fallback} ${chip.text}`.trim());
+  const chips = [
+    ...lead.map((chip) => iconLead + ctx.measureText(text(chip)).width),
+    ...activeStatuses(statuses).map(
+      ([id, n]) =>
+        iconLead +
+        ctx.measureText(icons ? String(n) : `${STATUS_NAME[id]} ${n}`).width +
+        size * 0.24,
+    ),
+  ];
+  return chips.reduce((sum, w) => sum + w, 0) + size * 0.4 * Math.max(0, chips.length - 1);
+}
+
+/** The status region under texture coordinate (`u`, `v`) of a `width` by `height` canvas, or null. */
+export function statusAtUv(
+  regions: readonly StatusRegion[],
+  u: number,
+  v: number,
+  width: number,
+  height: number,
+): StatusRegion | null {
+  const px = u * width;
+  const py = (1 - v) * height;
+  return regions.find((r) => px >= r.x0 && px <= r.x1 && py >= r.y0 && py <= r.y1) ?? null;
+}

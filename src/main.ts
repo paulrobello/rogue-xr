@@ -34,7 +34,7 @@ import { FlowUi } from './flow/panels.ts';
 import { bindFlowPersistence } from './flow/persist.ts';
 import { flingTraceLog } from './hand/fling-trace.ts';
 import { PALETTE } from './palette.ts';
-import { mountPerf } from './perf/index.ts';
+import { foveationValue, mountPerf } from './perf/index.ts';
 import {
   DEFAULT_SETTINGS,
   loadSettings,
@@ -151,8 +151,11 @@ const heroRooms = proofView
   ? { manifests: [], templates: undefined }
   : await fetchHeroRooms(HERO_ROOMS, (id) => fetchStudyManifest(id));
 const worldTemplates = heroRooms.templates;
-const mountFloor = (seed: string): FloorView =>
-  mountFloorView(scene, rig, seed, { templates: worldTemplates });
+const mountFloor = (seed: string): FloorView => {
+  const view = mountFloorView(scene, rig, seed, { templates: worldTemplates });
+  view.encounter.tableDistance = (settings ?? DEFAULT_SETTINGS).tableDistance;
+  return view;
+};
 if (!proofView) floor = mountFloor(bootSeed);
 /** True once a run has played on the mounted floor, so the next run needs a fresh one. */
 let floorUsed = false;
@@ -194,7 +197,9 @@ Object.assign(banner.style, {
 if (floor) app.append(banner);
 
 const actions = new ActionBus();
-const xr = createXrRig(renderer, scene, rig, camera, actions);
+const xr = createXrRig(renderer, scene, rig, camera, actions, {
+  foveation: (settings ?? DEFAULT_SETTINGS).foveation,
+});
 const desktop = createDesktopControls(camera, renderer.domElement, actions);
 const walker = new Walker(rig, actions, () => floor?.world.nearbyColliders() ?? []);
 const locomotion = new Locomotion(
@@ -214,7 +219,10 @@ let recenterPending = false;
 actions.on('recenter', () => {
   recenterPending = true;
 });
-const perf = mountPerf(renderer, scene, rig, { camera });
+const perf = mountPerf(renderer, scene, rig, {
+  camera,
+  foveation: foveationValue((settings ?? DEFAULT_SETTINGS).foveation),
+});
 // The in-scene notice gets its own pass after the boards, which clear depth and would cover it.
 const noticeScene = new THREE.Scene();
 mountUpdateNotice({ scene: noticeScene, renderer, xr, search: location.search });
@@ -574,6 +582,9 @@ const ui = floor
           sfx: next.sfxVolume,
         });
         Object.assign(locomotion.settings, locomotionSettingsFrom(next));
+        if (floor) floor.encounter.tableDistance = next.tableDistance;
+        xr.setFoveation(next.foveation);
+        perf.setFoveation(foveationValue(next.foveation));
         if (db) void saveSettings(db, next);
       },
     })
@@ -1154,6 +1165,9 @@ renderer.setAnimationLoop((time, frame) => {
   else combat?.session?.fitHudToView(camera);
   ui?.sync(camera);
   const laserHits = { left: null as number | null, right: null as number | null };
+  // The beam ends on the status badge whose explanation it is showing.
+  const statusAt = xr.presenting ? combat?.session?.statusHover?.distance : undefined;
+  if (statusAt !== undefined) laserHits[MAIN_HAND] = statusAt;
   if (ui?.visible && xr.presenting) {
     const ray = xr.rays()[MAIN_HAND];
     const hit = ray ? uiPointer.castFrom(ray, ui.targets()) : null;

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { SfxId } from '../audio/cues.ts';
-import { CanvasLabel, roundRect } from '../combat-view/canvas-label.ts';
+import { CanvasLabel, roundRect, wrapText } from '../combat-view/canvas-label.ts';
 import {
   CombatController,
   type CombatOptions,
@@ -16,6 +16,7 @@ import {
   type TurnSegment,
 } from '../combat-view/enemy-turn.ts';
 import { HIT_RED } from '../combat-view/hit-feedback.ts';
+import { HIT_NUMBER_SECONDS, HitNumbers } from '../combat-view/hit-numbers.ts';
 import {
   CARD_LAUNCH_DELAY,
   CARD_POWER,
@@ -25,6 +26,13 @@ import {
 } from '../combat-view/impact-timing.ts';
 import { crownBounds, intentChips, READOUT_MARGIN, readoutCentreY } from '../combat-view/index.ts';
 import { type BoltKind, SpellFx } from '../combat-view/spell-fx.ts';
+import {
+  drawChipsWithStatuses,
+  STATUS_NAME,
+  type StatusRegion,
+  statusAtUv,
+  statusExplanation,
+} from '../combat-view/status-info.ts';
 import { getCard } from '../content/cards.ts';
 import { dieById } from '../content/dice.ts';
 import { type EncounterTier, encounterSetups } from '../content/enemies.ts';
@@ -46,6 +54,7 @@ import {
   type Difficulty,
   intentDamage,
   PLAYER_ID,
+  type StatusId,
 } from '../rules/index.ts';
 import {
   castPower,
@@ -57,7 +66,7 @@ import {
   rayToPlate,
   SigilPlate,
 } from '../sigil-plate/index.ts';
-import { type IconId, STATUS_ICON } from '../ui/icon-atlas.ts';
+import type { IconId } from '../ui/icon-atlas.ts';
 import {
   drawIconRow,
   type IconSheet,
@@ -66,8 +75,14 @@ import {
 } from '../ui/icon-sheet.ts';
 import type { EncounterDirector } from './encounter.ts';
 import { chooseEncounter, enemyKindOf, fightSeed } from './encounter-choice.ts';
-import { DEFAULT_TABLE_DISTANCE, type TablePose } from './placement.ts';
+import {
+  DEFAULT_TABLE_DISTANCE,
+  TABLE_HALF_DEPTH,
+  TABLE_HALF_WIDTH,
+  type TablePose,
+} from './placement.ts';
 
+export { HIT_NUMBER_SECONDS } from '../combat-view/hit-numbers.ts';
 export { chooseEncounter, fightSeed } from './encounter-choice.ts';
 
 const DEG = Math.PI / 180;
@@ -84,6 +99,19 @@ const DRAG_REACH = 3;
 const TIP_OFFSET = 0.06;
 /** How to trace a glyph with controllers, shown above the plate and as the staged-card message. */
 export const XR_SIGIL_HINT = 'Hold the trigger and point at the plate to trace the glyph';
+/** The table hint while a rolled die waits for its throw, in XR and on the desktop. */
+export const XR_DICE_HINT = 'Grab the glowing die and let go to throw it';
+export const DESKTOP_DICE_HINT = 'Click the glowing die to throw it (or press T)';
+/** Width of the table hint label, metres; it hangs this high over the dice tray. */
+const HINT_WIDTH = 0.46;
+/** The status tooltip: its width, metres, and how far it floats above and in front of the badge. */
+const TIP_WIDTH = 0.42;
+const STATUS_TIP_OFFSET = { up: 0.14, toward: 0.04 } as const;
+/** Nearer than this, metres, the tooltip keeps its size; farther, it grows in proportion. */
+const STATUS_TIP_NEAR = 0.9;
+const HINT_LIFT = 0.17;
+/** The table top glows (this opacity range, pulsing at this period) while an untargeted card is held. */
+const DROP_GLOW = { min: 0.05, max: 0.16, seconds: 1.1 } as const;
 const TRAY_HALF_X = 0.2;
 const TRAY_HALF_Z = 0.11;
 const ENEMY_RADIUS = 0.5;
@@ -95,9 +123,9 @@ const HUD_GAP = 0.04;
 const DESKTOP_STATUS_SCALE = 0.8;
 /**
  * XR layout of the player's status panel, table metres (right, toward the enemies, above the top):
- * up and left of the sigil plate, turned to face a seat `STATUS_FACE_SEAT` behind the table centre
- * (the default table distance), so a seated player sees all of it from the forward pose at the 0.5
- * to 1.2 m placements.
+ * up and left of the sigil plate, turned to face the seat `seatDistance` behind the table centre
+ * (`STATUS_FACE_SEAT`, the default table distance, when not given), so a seated player sees all of
+ * it from the forward pose at the 0.5 to 1.3 m placements.
  */
 const STATUS_WIDTH = 0.38;
 const STATUS_AT = { right: -0.38, forward: 0.32, lift: 0.68 } as const;
@@ -134,9 +162,17 @@ export const LEAD_ONLY_SECONDS = 0.6;
 const IMPACT_GRACE_SECONDS = 0.4;
 /** Longest an actor's attack may run past its clip before its turn resolves anyway. */
 const CLIP_GRACE_SECONDS = 0.5;
-/** The floating damage number rises and fades, and the HP readout's red tint fades, over this long. */
-export const HIT_NUMBER_SECONDS = 1.1;
-const HIT_NUMBER_RISE = 0.08;
+/** Player numbers start this far above the status panel's top edge, panel metres. */
+const PLAYER_NUMBER_LIFT = 0.08;
+/** Player numbers are drawn this fraction of `HIT_NUMBER_WIDTH`, the size they had on the panel. */
+const PLAYER_NUMBER_SCALE = 0.75;
+/**
+ * An enemy's number starts this far from its hit socket toward the camera and up, so it floats in
+ * front of the body; numbers of one batch (a multi-hit card) step sideways and up by `NUMBER_STEP`.
+ */
+const ENEMY_NUMBER_OUT = 0.35;
+const ENEMY_NUMBER_UP = 0.18;
+const NUMBER_STEP = { side: 0.16, up: 0.07 } as const;
 /** Kept entries of the turn trace and hit log. */
 const TRACE_CAP = 60;
 
@@ -201,6 +237,8 @@ export interface CombatSessionDeps {
   room: number;
   tier: EncounterTier;
   tablePose: TablePose;
+  /** Player-to-table-centre distance the table was placed at, metres. Default STATUS_FACE_SEAT. */
+  seatDistance?: number;
   /** The room's automaton stand-ins, already moved to their combat places. */
   bodies: readonly THREE.Object3D[];
   /** Untransformed world root; every combat visual is added here in world coordinates. */
@@ -315,13 +353,14 @@ interface Knock {
 const KNOCK_SLOTS = 4;
 
 /** What a combat pickable is, for scripted pointer tests and the debug hook. */
-export type CombatPick = 'card' | 'enemy' | 'end-turn' | 'throw' | 'plate' | 'table';
+export type CombatPick = 'card' | 'enemy' | 'end-turn' | 'dice' | 'plate' | 'table';
 
 /**
  * One fight on the exploration floor, alive while the encounter is `active`. It owns the
  * `CombatController` for the room's encounter and every combat visual: the card fan (camera strip on
- * the desktop, off-hand grip in XR), the fling, the dice in the tray, the sigil plate, End Turn and
- * Throw controls and the enemy readouts. Input arrives only through the action bus.
+ * the desktop, off-hand grip in XR), the fling, the dice in the tray (a rolled die waits there,
+ * pulsing, until it is grabbed and let go, or clicked), the sigil plate, End Turn, the table hint and
+ * the enemy readouts. Input arrives only through the action bus.
  */
 export class CombatSession {
   readonly controller: CombatController;
@@ -352,12 +391,16 @@ export class CombatSession {
   private readonly bodies: THREE.Object3D[];
   private readonly hidden: THREE.Object3D[] = [];
   private readonly endButton: THREE.Mesh;
-  private readonly throwButton: THREE.Mesh;
   private readonly trayHit: THREE.Mesh;
   private readonly labels: { id: string; label: CanvasLabel }[] = [];
   private readonly status: CanvasLabel | null;
   private readonly endLabel: CanvasLabel | null;
-  private readonly throwLabel: CanvasLabel | null;
+  /** The table hint over the dice tray: how to throw the die, or how to play the held card. */
+  private readonly hintLabel: CanvasLabel | null;
+  /** The table hint's text, '' when hidden. */
+  hint = '';
+  /** The table top's glow while an untargeted card is held: where letting go plays it. */
+  readonly dropZone: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
   private readonly disposers: (() => void)[] = [];
   /** Objects the desktop view may slide to keep them on screen, with their XR layout positions. */
   private readonly anchors: {
@@ -371,6 +414,31 @@ export class CombatSession {
   }[] = [];
   private hudMoved = false;
   private readonly raycaster = new THREE.Raycaster();
+  private readonly handPoint = new THREE.Vector3();
+  private readonly numberAt = new THREE.Vector3();
+  /** Where each label drew its status badges, rebuilt with every paint, for the pointer tooltip. */
+  private readonly statusHits: {
+    label: CanvasLabel;
+    owner: string;
+    who: 'you' | 'it';
+    regions: StatusRegion[];
+  }[] = [];
+  /** The tooltip naming and explaining the status the pointer is on. */
+  private readonly tip: CanvasLabel | null;
+  private tipKey = '';
+  /**
+   * The status the laser (XR) or mouse (desktop) is on: whose, which, its explanation, and the
+   * ray distance to it (the beam ends there). Null when none.
+   */
+  statusHover: {
+    owner: string;
+    id: StatusId;
+    stacks: number;
+    name: string;
+    text: string;
+    distance: number;
+  } | null = null;
+  private readonly eye = new THREE.Vector3();
   private platePose: PlatePose;
   private handKey = '';
   private lastDice: CombatController['lastDice'] = null;
@@ -388,6 +456,8 @@ export class CombatSession {
   private lastRay: AimRay | null = null;
   private lastNdc: readonly [number, number] | null = null;
   private holding: 'mouse' | 'xr' | null = null;
+  /** True while the XR main hand holds the waiting die (squeeze held); letting go throws it. */
+  private holdingDie = false;
   private drawing: 'mouse' | 'xr' | null = null;
   private plateDone = 0;
   private castTimer = -1;
@@ -410,8 +480,8 @@ export class CombatSession {
   private beat: BeatRun | null = null;
   private gap = 0;
   private clock = 0;
-  private readonly hitNumber: CanvasLabel | null;
-  private hitNumberAge = Infinity;
+  /** Floating damage numbers over enemies and the player's status panel, pooled. */
+  readonly numbers = new HitNumbers();
   /** While the enemy phase plays: the log before it, and the lines of what has been shown since. */
   private logBase: readonly string[] = [];
   private readonly logShown: string[] = [];
@@ -449,9 +519,11 @@ export class CombatSession {
     const { difficulty, ...controllerOptions } = deps.options ?? {};
     this.controller = new CombatController({
       ...controllerOptions,
+      ...(difficulty === undefined ? {} : { difficulty }),
       seed: fightSeed(deps.seed, deps.room),
       setups: encounterSetups(encounter, difficulty),
     });
+    this.plate.level = difficulty ?? 'casual';
     this.lastShown = this.controller.state;
     this.enemyIds = this.controller.state.enemies.map((e) => e.id);
     // A body the floor tagged with an enemy kind wears that kind's model, so it plays that enemy;
@@ -519,7 +591,6 @@ export class CombatSession {
       return mesh;
     };
     this.endButton = button('end-turn', PALETTE.walnut, onTable(0.55, -0.28, 0.02));
-    this.throwButton = button('throw-dice', PALETTE.brassDark, onTable(-0.55, -0.28, 0.02));
     const buttonLabel = (mesh: THREE.Mesh, text: string): CanvasLabel | null => {
       const label = safeLabel(256, 96, 0.2);
       if (!label) return null;
@@ -531,23 +602,52 @@ export class CombatSession {
     };
     this.endLabel = buttonLabel(this.endButton, 'END TURN');
     this.endText = 'END TURN';
-    this.throwLabel = buttonLabel(this.throwButton, 'THROW');
+    this.dropZone = new THREE.Mesh(
+      new THREE.PlaneGeometry(TABLE_HALF_WIDTH * 2, TABLE_HALF_DEPTH * 2),
+      new THREE.MeshBasicMaterial({
+        color: PALETTE.candle,
+        transparent: true,
+        opacity: DROP_GLOW.min,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        toneMapped: false,
+      }),
+    );
+    this.dropZone.name = 'table-drop-zone';
+    this.dropZone.position.copy(onTable(0, 0, 0.004));
+    this.dropZone.rotation.set(-Math.PI / 2, 0, yawRad, 'YXZ');
+    this.dropZone.visible = false;
+    this.group.add(this.dropZone);
+    this.tip = safeLabel(640, 240, TIP_WIDTH);
+    if (this.tip) {
+      this.tip.mesh.name = 'status-tip';
+      this.tip.mesh.visible = false;
+      this.tip.mesh.renderOrder = 4;
+      this.tip.mesh.material.depthTest = false;
+      this.group.add(this.tip.mesh);
+    }
+    this.hintLabel = safeLabel(768, 192, HINT_WIDTH);
+    if (this.hintLabel) {
+      const mesh = this.hintLabel.mesh;
+      mesh.name = 'table-hint';
+      mesh.visible = false;
+      mesh.renderOrder = 2;
+      mesh.position.copy(dice.root.position);
+      mesh.position.y += HINT_LIFT;
+      // Faces the seat, leaning back so it reads from above the table.
+      mesh.rotation.set(-0.35, yawRad, 0, 'YXZ');
+      this.group.add(mesh);
+    }
 
     this.status = safeLabel(512, 320, STATUS_WIDTH);
     if (this.status) {
       this.status.mesh.position.copy(onTable(STATUS_AT.right, STATUS_AT.forward, STATUS_AT.lift));
       this.status.mesh.rotation.y =
-        yawRad + Math.atan2(-STATUS_AT.right, STATUS_AT.forward + STATUS_FACE_SEAT);
+        yawRad +
+        Math.atan2(-STATUS_AT.right, STATUS_AT.forward + (deps.seatDistance ?? STATUS_FACE_SEAT));
       this.group.add(this.status.mesh);
     }
-    // The floating damage number rides on the status panel, so it follows the desktop HUD fit.
-    this.hitNumber = this.status ? safeLabel(384, 192, 0.3) : null;
-    if (this.status && this.hitNumber) {
-      this.hitNumber.mesh.name = 'hit-number';
-      this.hitNumber.mesh.visible = false;
-      this.hitNumber.mesh.renderOrder = 1;
-      this.status.mesh.add(this.hitNumber.mesh);
-    }
+    this.group.add(this.numbers);
     const eye = deps.camera.getWorldPosition(new THREE.Vector3());
     this.enemyIds.forEach((id, i) => {
       const body = this.bodies[i];
@@ -589,7 +689,6 @@ export class CombatSession {
         kind,
       });
     anchor(this.endButton, 'button');
-    anchor(this.throwButton, 'button');
     for (const { label } of this.labels) anchor(label.mesh, 'readout');
     // The status panel goes last so it can step clear of the readouts.
     if (this.status) anchor(this.status.mesh, 'status', DESKTOP_STATUS_SCALE);
@@ -751,8 +850,8 @@ export class CombatSession {
       }
       case 'end-turn':
         return this.endButton.getWorldPosition(new THREE.Vector3());
-      case 'throw':
-        return this.throwButton.getWorldPosition(new THREE.Vector3());
+      case 'dice':
+        return (this.dice.waiting ?? this.trayHit).getWorldPosition(new THREE.Vector3());
       case 'plate': {
         const p = this.platePose;
         const x = (u - 0.5) * 2 * p.halfWidth;
@@ -776,14 +875,13 @@ export class CombatSession {
   }
 
   /**
-   * World-space corners of every HUD element a desktop player must be able to see: End Turn,
-   * Throw, the dice tray, the sigil plate, the status panel and each automaton's readout.
+   * World-space corners of every HUD element a desktop player must be able to see: End Turn, the
+   * dice tray, the sigil plate, the status panel and each automaton's readout.
    */
   hudPoints(): { name: string; points: THREE.Vector3[] }[] {
     this.deps.root.updateWorldMatrix(true, true);
     const out: { name: string; points: THREE.Vector3[] }[] = [
       { name: 'end-turn', points: worldCorners(this.endButton) },
-      { name: 'throw', points: worldCorners(this.throwButton) },
       { name: 'tray', points: worldCorners(this.trayHit) },
       { name: 'plate', points: this.plateCorners() },
     ];
@@ -1043,11 +1141,19 @@ export class CombatSession {
     this.stepHitFeedback(dt);
     if (this.xr && this.holding === null && this.xr.mainRay) {
       const r = rayFromObject(this.xr.mainRay);
-      this.fan.pointerHover(
-        new THREE.Ray(new THREE.Vector3(...r.origin), new THREE.Vector3(...r.direction)),
-      );
-    }
+      const ray = new THREE.Ray(new THREE.Vector3(...r.origin), new THREE.Vector3(...r.direction));
+      this.fan.pointerHover(ray);
+      this.pointStatus(this.drawing || this.holdingDie ? null : ray);
+    } else if (this.xr) this.pointStatus(null);
     this.plate.setHint(this.xr ? XR_SIGIL_HINT : '');
+    this.stepHeldDie();
+    this.showHint(this.tableHint());
+    const dropping = this.holding !== null && this.fling.holding?.card.target === 'none';
+    this.dropZone.visible = dropping;
+    if (dropping) {
+      const wave = 0.5 - 0.5 * Math.cos((2 * Math.PI * this.clock) / DROP_GLOW.seconds);
+      this.dropZone.material.opacity = DROP_GLOW.min + (DROP_GLOW.max - DROP_GLOW.min) * wave;
+    }
     if (this.drawing === 'xr' && this.xr?.main) {
       const tip = this.tipOf(this.xr.main);
       const ray = this.xr.mainRay ? rayFromObject(this.xr.mainRay) : null;
@@ -1115,7 +1221,7 @@ export class CombatSession {
     this.launch = null;
     this.settleKnocks();
     this.fx.dispose();
-    this.hitNumber?.dispose();
+    this.numbers.dispose();
     for (const off of this.disposers.splice(0)) off();
     this.fan.dispose();
     this.fan.detach();
@@ -1126,8 +1232,9 @@ export class CombatSession {
     for (const { label } of this.labels) label.dispose();
     this.status?.dispose();
     this.endLabel?.dispose();
-    this.throwLabel?.dispose();
-    for (const mesh of [this.endButton, this.throwButton, this.trayHit]) {
+    this.hintLabel?.dispose();
+    this.tip?.dispose();
+    for (const mesh of [this.endButton, this.trayHit, this.dropZone]) {
       mesh.geometry.dispose();
       (mesh.material as THREE.Material).dispose();
     }
@@ -1150,6 +1257,7 @@ export class CombatSession {
       if (this.drawing === 'mouse') this.feedMouse(ray);
       else if (this.holding === 'mouse') this.placeMouseGrip(ray);
       else this.fan.pointerHover(ray);
+      this.pointStatus(this.drawing || this.holding ? null : ray);
       return;
     }
     if (action.phase === 'up') {
@@ -1159,7 +1267,7 @@ export class CombatSession {
     }
     if ((this.controller.outcome !== null && !this.pendingThrow) || this.busy()) return;
     const hit = this.hitAt(ray);
-    if (hit === 'throw' || hit === 'tray') this.throwDice();
+    if (hit === 'tray') this.throwDice();
     else if (hit === 'plate') {
       this.plate.beginStroke();
       this.castTimer = -1;
@@ -1177,6 +1285,17 @@ export class CombatSession {
     if (!xr || action.hand !== 'main' || this.disposed) return;
     if (action.pressed && this.busy()) return;
     if (action.control === 'squeeze') {
+      // A rolled die is grabbed by the main hand and thrown as it is let go, even once the rules
+      // have decided the fight (a killing dice card waits for its die).
+      if (action.pressed && this.pendingThrow && this.holding === null) {
+        this.holdingDie = true;
+        return;
+      }
+      if (!action.pressed && this.holdingDie) {
+        this.holdingDie = false;
+        this.throwDice();
+        return;
+      }
       if (action.pressed) {
         const index = this.fan.hovered;
         if (index !== null && this.controller.outcome === null) this.grab(index, 'xr');
@@ -1198,30 +1317,43 @@ export class CombatSession {
       this.drawing = 'xr';
       return;
     }
+    // F8: the trigger plays an untargeted card (block, a sweep, a sigil card) on the table, held or
+    // pointed at in the fan, so nobody has to find the drop gesture.
+    if (this.holding === 'xr') {
+      if (this.fling.holding?.card.target === 'none') this.release(null, true);
+      return;
+    }
+    const hovered = this.fan.hovered;
+    if (hovered !== null && this.handCard(hovered)?.target === 'none') {
+      if (this.grab(hovered, 'xr')) this.release(null, true);
+      return;
+    }
     if (xr.mainRay) {
       const r = rayFromObject(xr.mainRay);
       const hit = this.hitAt(
         new THREE.Ray(new THREE.Vector3(...r.origin), new THREE.Vector3(...r.direction)),
       );
       if (hit === 'end-turn') this.endTurn();
-      else if (hit === 'throw' || hit === 'tray') this.throwDice();
+      else if (hit === 'tray') this.throwDice();
     }
   }
 
-  private grab(index: number, by: 'mouse' | 'xr'): void {
-    if (this.busy() || this.diceFirst()) return;
-    if (this.fling.grab(index)) {
-      this.holding = by;
-      this.message = '';
-      this.sfx('card-draw', this.fan.root.getWorldPosition(new THREE.Vector3()));
-    }
+  /** Picks up fan card `index`; false when it could not be grabbed. */
+  private grab(index: number, by: 'mouse' | 'xr'): boolean {
+    if (this.busy() || this.diceFirst()) return false;
+    if (!this.fling.grab(index)) return false;
+    this.holding = by;
+    this.message = '';
+    this.sfx('card-draw', this.fan.root.getWorldPosition(new THREE.Vector3()));
+    return true;
   }
 
-  private release(ray: THREE.Ray | null): void {
+  /** Lets go of the held card; `onTable` plays an untargeted card wherever it is (the trigger). */
+  private release(ray: THREE.Ray | null, onTable = false): void {
     if (ray) this.placeMouseGrip(ray);
     const grip = this.holding === 'xr' ? this.xr?.main : this.mouseGrip;
     this.holding = null;
-    const decision = this.fling.release();
+    const decision = this.fling.release(onTable);
     if (decision?.outcome === 'played' && grip) {
       this.launch = {
         from: grip.getWorldPosition(new THREE.Vector3()),
@@ -1253,11 +1385,136 @@ export class CombatSession {
       return;
     }
     this.pendingThrow = null;
+    this.holdingDie = false;
     if (this.held) this.held.waiting = 0;
     this.dice.throw(pending.kind, pending.face, pending.value);
     this.sfx('dice-roll', this.dice.root.position);
     this.message = '';
     this.paint();
+  }
+
+  /**
+   * F6: finds the status badge `ray` points at on an enemy readout or the status panel, and shows
+   * its name and explanation in the tooltip above it (hidden for null or a miss).
+   */
+  private pointStatus(ray: THREE.Ray | null): void {
+    let found: {
+      hit: THREE.Intersection;
+      owner: string;
+      who: 'you' | 'it';
+      region: StatusRegion;
+    } | null = null;
+    if (ray && !this.disposed) {
+      this.raycaster.ray.copy(ray);
+      for (const { label, owner, who, regions } of this.statusHits) {
+        if (regions.length === 0 || !label.mesh.visible) continue;
+        label.mesh.updateWorldMatrix(true, false);
+        const hit = this.raycaster.intersectObject(label.mesh, false)[0];
+        if (!hit?.uv || (found && found.hit.distance <= hit.distance)) continue;
+        const region = statusAtUv(regions, hit.uv.x, hit.uv.y, label.pxWidth, label.pxHeight);
+        if (region) found = { hit, owner, who, region };
+      }
+    }
+    if (!found) {
+      this.statusHover = null;
+      this.tipKey = '';
+      if (this.tip) this.tip.mesh.visible = false;
+      return;
+    }
+    const { id, stacks } = found.region;
+    const name = STATUS_NAME[id];
+    const text = statusExplanation(id, stacks, found.who);
+    this.statusHover = { owner: found.owner, id, stacks, name, text, distance: found.hit.distance };
+    const tip = this.tip;
+    if (!tip) return;
+    const key = `${found.owner}:${id}:${stacks}`;
+    if (key !== this.tipKey) {
+      this.tipKey = key;
+      tip.draw((ctx, w, h) => {
+        ctx.fillStyle = 'rgba(18,12,7,0.92)';
+        roundRect(ctx, 4, 4, w - 8, h - 8, 16);
+        ctx.fill();
+        ctx.strokeStyle = PALETTE.brass;
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = PALETTE.candle;
+        ctx.font = 'bold 40px system-ui, sans-serif';
+        ctx.fillText(`${name} ${stacks}`, 24, 44);
+        ctx.fillStyle = PALETTE.parchment;
+        ctx.font = '500 30px system-ui, sans-serif';
+        wrapText(ctx, text, 24, 96, w - 48, 36);
+      });
+    }
+    // Above the badge, nudged toward the viewer, turned to face them, and grown with distance so it
+    // reads as it would at `STATUS_TIP_NEAR` (enemy readouts stand 2 to 3 m away).
+    const eye = this.deps.camera.getWorldPosition(this.eye);
+    const grow = Math.max(1, eye.distanceTo(found.hit.point) / STATUS_TIP_NEAR);
+    tip.mesh.scale.setScalar(grow);
+    const at = tip.mesh.position.copy(found.hit.point);
+    at.addScaledVector(eye.sub(found.hit.point).normalize(), STATUS_TIP_OFFSET.toward * grow);
+    at.y += STATUS_TIP_OFFSET.up * grow;
+    this.deps.camera.getWorldQuaternion(tip.mesh.quaternion);
+    tip.mesh.visible = true;
+  }
+
+  /** The waiting die follows the XR main hand while it is held; it drops back if the hand is lost. */
+  private stepHeldDie(): void {
+    if (!this.holdingDie) return;
+    const main = this.xr?.main;
+    if (!this.pendingThrow || !main) {
+      this.holdingDie = false;
+      this.dice.holdWaiting(null);
+      return;
+    }
+    main.updateWorldMatrix(true, false);
+    this.dice.root.updateWorldMatrix(true, false);
+    this.dice.holdWaiting(this.dice.root.worldToLocal(main.getWorldPosition(this.handPoint)));
+  }
+
+  /** The card definition at fan slot `index` (the fan shows the hand in order). */
+  private handCard(index: number): ReturnType<typeof getCard> | null {
+    const card = this.shown ? undefined : this.controller.state.piles.hand[index];
+    return card ? getCard(card.def.id) : null;
+  }
+
+  /**
+   * What the table hint says now: how to throw the waiting die, or how to play an untargeted card
+   * held (or, in XR, pointed at in the fan), or ''.
+   */
+  private tableHint(): string {
+    if (this.pendingThrow) return this.xr ? XR_DICE_HINT : DESKTOP_DICE_HINT;
+    const held = this.holding ? this.fling.holding?.card : undefined;
+    if (held?.target === 'none') return untargetedHint(held.name, this.xr ? 'held-xr' : 'held');
+    if (this.xr && this.holding === null && this.controller.stage === 'idle') {
+      const hovered = this.fan.hovered;
+      const card = hovered === null ? null : this.handCard(hovered);
+      if (card?.target === 'none') return untargetedHint(card.name, 'pointed-xr');
+    }
+    return '';
+  }
+
+  /** Shows `text` on the table hint label (hidden for ''), redrawing only when it changes. */
+  private showHint(text: string): void {
+    if (text === this.hint) return;
+    this.hint = text;
+    const label = this.hintLabel;
+    if (!label) return;
+    label.mesh.visible = text !== '';
+    if (text === '') return;
+    label.draw((ctx, w, h) => {
+      ctx.fillStyle = 'rgba(18,12,7,0.82)';
+      roundRect(ctx, 4, 4, w - 8, h - 8, 18);
+      ctx.fill();
+      ctx.fillStyle = PALETTE.candle;
+      ctx.font = 'bold 44px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      // One line when it fits, else two, centred.
+      const lines = ctx.measureText(text).width > w - 40 ? 2 : 1;
+      wrapText(ctx, text, w / 2, h / 2 - ((lines - 1) * 52) / 2, w - 40, 52);
+    });
   }
 
   /** True (with a HUD prompt) from a dice card's roll until its die settles: the next verb waits. */
@@ -1376,11 +1633,12 @@ export class CombatSession {
     this.mouseGrip.updateMatrixWorld(true);
   }
 
-  private hitAt(ray: THREE.Ray): 'throw' | 'tray' | 'plate' | 'end-turn' | number | null {
+  private hitAt(ray: THREE.Ray): 'tray' | 'plate' | 'end-turn' | number | null {
     this.raycaster.ray.copy(ray);
     this.group.updateWorldMatrix(true, true);
     if (this.pendingThrow) {
-      if (this.raycaster.intersectObject(this.throwButton, false).length > 0) return 'throw';
+      const die = this.dice.waiting;
+      if (die && this.raycaster.intersectObject(die, true).length > 0) return 'tray';
       if (this.raycaster.intersectObject(this.trayHit, false).length > 0) return 'tray';
     }
     if (this.plateLive()) {
@@ -1397,7 +1655,6 @@ export class CombatSession {
         return 'plate';
     }
     if (this.raycaster.intersectObject(this.endButton, false).length > 0) return 'end-turn';
-    if (this.raycaster.intersectObject(this.throwButton, false).length > 0) return 'throw';
     const card = this.fan.pointerHover(ray);
     return card;
   }
@@ -1474,6 +1731,7 @@ export class CombatSession {
           face: die.faces.indexOf(roll.value),
           value: roll.value,
         };
+        this.dice.showWaiting(this.pendingThrow.kind);
         this.message = `Throw the ${die.name}`;
       }
     }
@@ -1669,6 +1927,7 @@ export class CombatSession {
     for (const actor of hits) actor.hit();
     // After the hit reaction, so the opening case takes over the pose from the blow that caused it.
     for (const actor of phases) actor.openCase();
+    this.showEnemyNumbers(events);
     const hit = playerHit(events);
     if (hit) this.showPlayerHit(hit);
     this.showBodies();
@@ -1802,41 +2061,49 @@ export class CombatSession {
     if (this.hitLog.length > TRACE_CAP) this.hitLog.shift();
     if (hit.blocked > 0) this.sfx('block-ward');
     if (hit.hpLost > 0) this.hpPulse = 1;
-    this.hitNumberAge = 0;
-    this.hitNumber?.draw((ctx, w, h) => {
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.lineWidth = 10;
-      ctx.strokeStyle = 'rgba(18,12,7,0.9)';
-      const line = (text: string, color: string, y: number, size: number) => {
-        ctx.font = `bold ${size}px system-ui, sans-serif`;
-        ctx.strokeText(text, w / 2, y);
-        ctx.fillStyle = color;
-        ctx.fillText(text, w / 2, y);
-      };
-      if (hit.kind === 'blocked') line(`Blocked ${hit.blocked}`, PALETTE.brass, h / 2, 64);
-      else if (hit.kind === 'hit') line(`-${hit.hpLost}`, HIT_RED, h / 2, 110);
-      else {
-        line(`-${hit.hpLost}`, HIT_RED, h * 0.36, 96);
-        line(`Blocked ${hit.blocked}`, PALETTE.brass, h * 0.8, 48);
-      }
-    });
+    // The player's number rises from the top of the status panel, wherever the desktop fit put it;
+    // without a panel, from just below the line of sight.
+    const at = this.numberAt;
+    if (this.status) {
+      const half = this.status.mesh.geometry.parameters.height / 2;
+      this.status.mesh.updateWorldMatrix(true, false);
+      this.status.mesh.localToWorld(at.set(0, half + PLAYER_NUMBER_LIFT, 0.005));
+    } else {
+      this.deps.camera.updateWorldMatrix(true, false);
+      this.deps.camera.localToWorld(at.set(0, -0.15, -0.7));
+    }
+    this.numbers.spawn(at, hit, PLAYER_NUMBER_SCALE);
     this.deps.onPlayerHit?.(hit);
   }
 
-  /** Steps the floating number and the HP readout's red tint. */
-  private stepHitFeedback(dt: number): void {
-    const number = this.hitNumber?.mesh;
-    if (number && this.status) {
-      this.hitNumberAge += dt;
-      const k = this.hitNumberAge / HIT_NUMBER_SECONDS;
-      number.visible = k < 1;
-      if (number.visible) {
-        const half = this.status.mesh.geometry.parameters.height / 2;
-        number.position.set(0, half + 0.08 + HIT_NUMBER_RISE * k, 0.005);
-        number.material.opacity = 1 - k * k;
-      }
+  /**
+   * Floats each enemy's damage up from in front of it: one number per hit, a batch's numbers
+   * (a multi-hit card) stepped sideways and up so they do not cover each other.
+   */
+  private showEnemyNumbers(events: readonly CombatEvent[]): void {
+    const counts = new Map<string, number>();
+    const eye = this.deps.camera.getWorldPosition(this.eye);
+    for (const event of events) {
+      if (event.type !== 'damage-dealt' || event.target === PLAYER_ID) continue;
+      const aim = this.aimOfId(event.target);
+      if (!aim) continue;
+      const n = counts.get(event.target) ?? 0;
+      counts.set(event.target, n + 1);
+      const toward = this.numberAt.copy(eye).sub(aim).setY(0);
+      if (toward.lengthSq() < 1e-8) toward.set(0, 0, 1);
+      toward.normalize();
+      const side = n === 0 ? 0 : (n % 2 === 1 ? 1 : -1) * Math.ceil(n / 2) * NUMBER_STEP.side;
+      aim.addScaledVector(toward, ENEMY_NUMBER_OUT);
+      aim.x -= toward.z * side;
+      aim.y += ENEMY_NUMBER_UP + n * NUMBER_STEP.up;
+      aim.z += toward.x * side;
+      this.numbers.spawn(aim, event);
     }
+  }
+
+  /** Steps the floating numbers and the HP readout's red tint. */
+  private stepHitFeedback(dt: number): void {
+    this.numbers.update(dt, this.deps.camera);
     if (this.hpPulse > 0) {
       this.hpPulse = Math.max(0, this.hpPulse - dt / HIT_NUMBER_SECONDS);
       const p = this.hpPulse;
@@ -1852,14 +2119,11 @@ export class CombatSession {
   private paint(): void {
     const state = this.view;
     const icons: IconSheet | null = iconSheet();
-    const statusChips = (statuses: Readonly<Partial<Record<keyof typeof STATUS_ICON, number>>>) =>
-      (Object.entries(statuses) as [keyof typeof STATUS_ICON, number | undefined][])
-        .filter(([, n]) => (n ?? 0) > 0)
-        .map(([status, n]) => ({ icon: STATUS_ICON[status], text: String(n), fallback: status }));
     const vitals = (hp: number, maxHp: number, block: number) => [
       { icon: 'hp' as IconId, text: `${hp}/${maxHp}`, fallback: 'HP' },
       ...(block ? [{ icon: 'block' as IconId, text: String(block), fallback: 'Block' }] : []),
     ];
+    this.statusHits.length = 0;
     for (const { id, label } of this.labels) {
       const enemy = state.enemies.find((e) => e.id === id);
       if (!enemy) continue;
@@ -1874,28 +2138,24 @@ export class CombatSession {
         ctx.textBaseline = 'middle';
         ctx.fillText(enemy.name, w / 2, 38);
         ctx.font = 'bold 44px system-ui, sans-serif';
-        drawIconRow(
+        // Vitals, then the enemy's statuses as badges the laser can point at.
+        const regions = drawChipsWithStatuses(
           ctx,
           icons,
           vitals(enemy.hp, enemy.maxHp, enemy.block),
+          enemy.statuses,
           w / 2,
           104,
           64,
           'center',
+          w - 24,
         );
-        // One icon chip per intent part (attack 4, block 7), then the enemy's statuses.
+        this.statusHits.push({ label, owner: enemy.name, who: 'it', regions });
+        // One icon chip per intent part (attack 4, block 7).
         const intent = intentChips(enemy, intentDamage(state, enemy.id));
         ctx.fillStyle = PALETTE.candle;
         ctx.font = 'bold 50px system-ui, sans-serif';
-        drawIconRow(
-          ctx,
-          icons,
-          [...intent, ...statusChips(enemy.statuses)],
-          w / 2,
-          200,
-          92,
-          'center',
-        );
+        drawIconRow(ctx, icons, intent, w / 2, 200, 92, 'center');
       });
     }
     this.status?.draw((ctx, w, h) => {
@@ -1913,14 +2173,19 @@ export class CombatSession {
       const p = state.player;
       drawIconRow(ctx, icons, vitals(p.hp, p.maxHp, p.block), 24, 50, 60);
       ctx.fillStyle = PALETTE.parchment;
-      drawIconRow(
+      const regions = drawChipsWithStatuses(
         ctx,
         icons,
-        [{ icon: 'steam', text: String(p.steam), fallback: 'Steam' }, ...statusChips(p.statuses)],
+        [{ icon: 'steam', text: String(p.steam), fallback: 'Steam' }],
+        p.statuses,
         24,
         122,
         60,
+        'left',
+        w - 48,
       );
+      if (this.status)
+        this.statusHits.push({ label: this.status, owner: 'You', who: 'you', regions });
       ctx.fillStyle = PALETTE.candle;
       ctx.font = '600 30px system-ui, sans-serif';
       ctx.textBaseline = 'middle';
@@ -1929,9 +2194,6 @@ export class CombatSession {
       const last = this.rolls[this.rolls.length - 1];
       if (last) ctx.fillText(`Last roll ${last.value}`, 24, 284);
     });
-    (this.throwButton.material as THREE.MeshStandardMaterial).emissive.set(
-      this.pendingThrow ? PALETTE.brass : '#000000',
-    );
     // End Turn reads as disabled while the enemies act.
     const waiting = this.shown !== null;
     (this.endButton.material as THREE.MeshStandardMaterial).color.set(
@@ -1996,6 +2258,16 @@ export class CombatSession {
   }
 }
 
+/**
+ * The table hint for an untargeted card (block, a sweep, a sigil card): held with the mouse, held in
+ * the XR main hand, or pointed at in the XR fan.
+ */
+export function untargetedHint(name: string, how: 'held' | 'held-xr' | 'pointed-xr'): string {
+  if (how === 'held') return `Release over the table to play ${name}`;
+  if (how === 'held-xr') return `Let go over the table, or pull the trigger, to play ${name}`;
+  return `Pull the trigger to play ${name}`;
+}
+
 function drawButtonText(label: CanvasLabel, text: string, color: string = PALETTE.parchment): void {
   label.draw((ctx, w, h) => {
     ctx.fillStyle = color;
@@ -2034,7 +2306,9 @@ function sharedDiceModels(): Promise<DiceAsset | null> {
 
 export interface CombatHookFloor {
   seed: string;
-  encounter: Pick<EncounterDirector, 'phase' | 'activeRoom' | 'tablePose' | 'end'>;
+  encounter: Pick<EncounterDirector, 'phase' | 'activeRoom' | 'tablePose' | 'end'> & {
+    readonly seatDistance?: number | null;
+  };
   world: {
     plan: { rooms: readonly ({ encounter: { tier: EncounterTier } | null } | undefined)[] };
     enemies: ReadonlyMap<number, readonly THREE.Object3D[]>;
@@ -2126,6 +2400,7 @@ export class CombatHook {
     if (!pose || !tier) return;
     const bodies = (floor.world.enemies.get(room) ?? []).filter((b) => b.parent !== null);
     const options = this.deps.fightOptions?.() ?? this.deps.options;
+    const seat = floor.encounter.seatDistance;
     this.handedOver = false;
     const models =
       this.deps.models === undefined ? sharedDiceModels() : Promise.resolve(this.deps.models);
@@ -2135,6 +2410,7 @@ export class CombatHook {
         room,
         tier,
         tablePose: pose,
+        ...(seat == null ? {} : { seatDistance: seat }),
         bodies,
         root: floor.world.group,
         camera: this.deps.camera,

@@ -9,6 +9,7 @@ import {
   pickEncounter,
 } from '../content/enemies.ts';
 import { isValidSeed, normalizeSeed, RunRng } from '../core/rng.ts';
+import type { Difficulty } from '../rules/difficulty.ts';
 import {
   type Action,
   apply,
@@ -59,6 +60,8 @@ export interface CombatOptions {
    * times from the dice stream and keeps the highest result. 0 rolls exactly as before.
    */
   readonly bonusDice?: number;
+  /** The run's level: how strictly sigil traces are judged. Absent: Casual tolerance. */
+  readonly difficulty?: Difficulty;
 }
 
 /** What the view can ask the controller to do next: `target` an enemy, `table` click, or draw a `sigil`. */
@@ -304,7 +307,7 @@ export class CombatController {
     if (sigil === null || this.pending === null) {
       return this.invalid('Select a sigil card first', subject);
     }
-    const trace = scoreTrace(strokes, sigil);
+    const trace = scoreTrace(strokes, sigil, this.options.difficulty);
     if (!trace.castable) return this.invalid('Trace too short, draw the glyph', subject);
     const result: SigilResult = {
       sigil,

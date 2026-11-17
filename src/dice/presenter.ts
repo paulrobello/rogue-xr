@@ -70,6 +70,17 @@ function roomProbe(renderer: THREE.WebGLRenderer): THREE.Texture {
 /** BoxGeometry material groups are +X, -X, +Y, -Y, +Z, -Z; this is the D6 face index on each. */
 const BOX_GROUP_FACE = [1, 4, 0, 5, 2, 3] as const;
 const RESULT_LIFT = 0.07;
+/** A die waiting to be thrown hovers this high over the tray floor, tray metres. */
+export const WAITING_LIFT = 0.05;
+/** The waiting die's pulse: one swell of its halo and scale every this many seconds. */
+export const WAITING_PULSE_SECONDS = 1.1;
+const WAITING_SPIN = 0.9;
+const WAITING_SWELL = 0.14;
+const HALO_INNER = 0.035;
+const HALO_OUTER = 0.06;
+/** A die thrown from the hand starts inside this fraction of the tray, and this high at most. */
+const HAND_START_INSET = 0.8;
+const HAND_START_TOP = 0.25;
 
 function canvas2d(size: number): CanvasRenderingContext2D | null {
   if (typeof document === 'undefined') return null;
@@ -239,6 +250,16 @@ function buildD8Geometry(): THREE.BufferGeometry {
   return geometry;
 }
 
+/** The die that sits in the tray waiting for the player, before its throw. */
+interface Waiting {
+  readonly mesh: THREE.Mesh;
+  readonly kind: DieKind;
+  /** Seconds since it appeared, the pulse clock. */
+  age: number;
+  /** Tray-local point the hand holds it at, or null while it rests in the tray. */
+  held: THREE.Vector3 | null;
+}
+
 interface Entry {
   mesh: THREE.Mesh;
   kind: DieKind;
@@ -270,6 +291,8 @@ export class DicePresenter {
   private readonly d6Geometry: THREE.BufferGeometry;
   private readonly d8Geometry: THREE.BufferGeometry;
   private readonly offSettled: () => void;
+  private readonly halo: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>;
+  private waitingDie: Waiting | null = null;
   private count = 0;
   private disposed = false;
 
@@ -310,6 +333,25 @@ export class DicePresenter {
       flatShading: true,
     });
     this.materials.push(this.d6Material, this.d8Material);
+    // The waiting die's pulsing ring, drawn flat on the tray floor; its own resources, so the
+    // shared dice materials never change.
+    const haloGeometry = new THREE.RingGeometry(HALO_INNER, HALO_OUTER, 40);
+    haloGeometry.rotateX(-Math.PI / 2);
+    const haloMaterial = new THREE.MeshBasicMaterial({
+      color: PALETTE.candle,
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      toneMapped: false,
+    });
+    this.halo = new THREE.Mesh(haloGeometry, haloMaterial);
+    this.halo.name = 'dice-waiting-halo';
+    this.halo.position.y = 0.002;
+    this.halo.visible = false;
+    this.root.add(this.halo);
+    this.geometries.push(haloGeometry);
+    this.materials.push(haloMaterial);
     const env = options.envMap;
     if (env) {
       for (const material of [this.d6Material, this.d8Material]) {
@@ -367,8 +409,50 @@ export class DicePresenter {
     return this.dice.get(id)?.mesh;
   }
 
-  /** Clears the tray of previous dice. */
+  /** The die waiting to be thrown, or null. */
+  get waiting(): THREE.Object3D | null {
+    return this.waitingDie?.mesh ?? null;
+  }
+
+  /** The waiting die's pulse, 0 to 1 (0 when none waits): its halo opacity, for checks. */
+  get pulse(): number {
+    return this.waitingDie ? this.halo.material.opacity : 0;
+  }
+
+  /**
+   * Clears the tray and sets a die of `kind` hovering in it, pulsing, until `throw` (or `clear`):
+   * the cue that the player must throw it.
+   */
+  showWaiting(kind: DieKind): void {
+    if (this.disposed) return;
+    this.clear();
+    const mesh = this.spawnMesh(kind, 'die-waiting');
+    mesh.position.set(0, WAITING_LIFT, 0);
+    this.root.add(mesh);
+    this.waitingDie = { mesh, kind, age: 0, held: null };
+    this.halo.visible = true;
+    this.stepWaiting(0);
+  }
+
+  /**
+   * Holds the waiting die at tray-local `point` (the main hand), or back in the tray for null. A
+   * throw then starts from where the hand let go.
+   */
+  holdWaiting(point: THREE.Vector3 | null): void {
+    const waiting = this.waitingDie;
+    if (!waiting) return;
+    waiting.held = point ? (waiting.held ?? new THREE.Vector3()).copy(point) : null;
+    this.stepWaiting(0);
+  }
+
+  /** Clears the tray of previous dice and any waiting die. */
   clear(): void {
+    if (this.waitingDie) {
+      this.waitingDie.mesh.removeFromParent();
+      this.waitingDie = null;
+      this.halo.visible = false;
+      this.halo.material.opacity = 0;
+    }
     for (const [id, entry] of this.dice) {
       this.world.removeDie(id);
       entry.mesh.removeFromParent();
@@ -379,10 +463,13 @@ export class DicePresenter {
 
   /**
    * Throws a die that will land on `face` (showing `value`), with a randomized seeded impulse from
-   * the player's side of the tray toward the far wall. Returns the die id.
+   * the player's side of the tray toward the far wall. A die held in the hand (`holdWaiting`) starts
+   * from there instead, kept inside the tray; the seeded draws are the same either way, so a run
+   * replays whatever the hand did. Returns the die id.
    */
   throw(kind: DieKind, face: number, value: number): string {
     if (this.disposed) throw new Error('DicePresenter is disposed');
+    const held = this.waitingDie?.held?.clone() ?? null;
     this.clear();
     const s = this.stream;
     const span = (k: number) => (s.next() * 2 - 1) * k;
@@ -391,27 +478,14 @@ export class DicePresenter {
     const position = { x: span(halfX * 0.5), y: 0.1 + s.next() * 0.04, z: halfZ * 0.55 };
     const linvel = { x: span(0.25), y: -0.1 - s.next() * 0.2, z: -(0.5 + s.next() * 0.5) };
     const angvel = { x: span(18), y: span(18), z: span(18) };
-    this.world.throwDie(id, kind, position, linvel, angvel, face);
-    const mesh =
-      this.options.models?.spawn(kind) ??
-      (kind === 'd6'
-        ? new THREE.Mesh(this.d6Geometry, this.d6Material)
-        : new THREE.Mesh(this.d8Geometry, this.d8Material));
-    mesh.name = id;
-    if (!this.facesRequested) {
-      this.facesRequested = true;
-      onFirstRender(mesh, (renderer) => {
-        if (!this.options.envMap)
-          this.options.models?.setEnvironment(roomProbe(renderer), DICE_ENV_INTENSITY);
-        loadDiePages(renderer).then(
-          (pages) => {
-            if (!this.disposed) this.applyFaces(pages);
-          },
-          (error: unknown) => console.warn('dice face atlas failed to load', error),
-        );
-      });
+    if (held) {
+      const clamp = (v: number, k: number) => Math.min(k, Math.max(-k, v));
+      position.x = clamp(held.x, halfX * HAND_START_INSET);
+      position.y = Math.min(HAND_START_TOP, Math.max(position.y, held.y));
+      position.z = clamp(held.z, halfZ * HAND_START_INSET);
     }
-    if (!this.options.models) mesh.castShadow = true;
+    this.world.throwDie(id, kind, position, linvel, angvel, face);
+    const mesh = this.spawnMesh(kind, id);
     this.root.add(mesh);
     this.dice.set(id, { mesh, kind, face, value, label: null });
     this.copyPose(id);
@@ -437,7 +511,9 @@ export class DicePresenter {
 
   /** Steps the physics by one rendered frame and copies the poses onto the meshes. */
   update(dt: number): void {
-    if (this.disposed || this.dice.size === 0) return;
+    if (this.disposed) return;
+    if (this.waitingDie) this.stepWaiting(dt);
+    if (this.dice.size === 0) return;
     this.world.step(dt);
     for (const id of this.dice.keys()) this.copyPose(id);
   }
@@ -481,6 +557,46 @@ export class DicePresenter {
       material.emissiveIntensity = lit ? DICE_GLOW_INTENSITY : 1;
       material.color.set('#ffffff');
     }
+  }
+
+  private spawnMesh(kind: DieKind, name: string): THREE.Mesh {
+    const mesh =
+      this.options.models?.spawn(kind) ??
+      (kind === 'd6'
+        ? new THREE.Mesh(this.d6Geometry, this.d6Material)
+        : new THREE.Mesh(this.d8Geometry, this.d8Material));
+    mesh.name = name;
+    if (!this.facesRequested) {
+      this.facesRequested = true;
+      onFirstRender(mesh, (renderer) => {
+        if (!this.options.envMap)
+          this.options.models?.setEnvironment(roomProbe(renderer), DICE_ENV_INTENSITY);
+        loadDiePages(renderer).then(
+          (pages) => {
+            if (!this.disposed) this.applyFaces(pages);
+          },
+          (error: unknown) => console.warn('dice face atlas failed to load', error),
+        );
+      });
+    }
+    if (!this.options.models) mesh.castShadow = true;
+    return mesh;
+  }
+
+  /** Spins and swells the waiting die and pulses its halo; a held die follows the hand. */
+  private stepWaiting(dt: number): void {
+    const waiting = this.waitingDie;
+    if (!waiting) return;
+    waiting.age += dt;
+    const wave = 0.5 - 0.5 * Math.cos((2 * Math.PI * waiting.age) / WAITING_PULSE_SECONDS);
+    const { mesh } = waiting;
+    if (waiting.held) mesh.position.copy(waiting.held);
+    else mesh.position.set(0, WAITING_LIFT + 0.01 * wave, 0);
+    mesh.rotation.set(0.5, waiting.age * WAITING_SPIN, 0.3);
+    mesh.scale.setScalar(1 + WAITING_SWELL * wave);
+    this.halo.position.x = waiting.held ? waiting.held.x : 0;
+    this.halo.position.z = waiting.held ? waiting.held.z : 0;
+    this.halo.material.opacity = 0.25 + 0.75 * wave;
   }
 
   private copyPose(id: string): void {

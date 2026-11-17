@@ -194,6 +194,24 @@ describe('CombatController input', () => {
     expect(c.stage).toBe('idle');
   });
 
+  it('judges the same sloppy trace more strictly at the hard level (F9)', () => {
+    const sloppy = SIGIL_TEMPLATES.bolt.strokes.map((stroke) =>
+      stroke.map((p, i) => ({ x: p.x + (i % 2 ? 0.07 : -0.05), y: p.y + (i % 3 ? 0.04 : -0.06) })),
+    );
+    const cast = (difficulty?: 'hard') => {
+      const c = new CombatController({
+        seed: 'TEST0001',
+        deck: Array(5).fill('arc-bolt'),
+        ...(difficulty ? { difficulty } : {}),
+      });
+      c.select((c.state.piles.hand[0] as { uid: number }).uid);
+      c.target('cog-sentry');
+      expect(c.submitSigil(sloppy).ok).toBe(true);
+      return c.lastSigil?.multiplier ?? Number.NaN;
+    };
+    expect(cast('hard')).toBeLessThan(cast());
+  });
+
   it('fizzles a wrong trace to half power but still plays the card', () => {
     const c = new CombatController({ seed: 'TEST0001', deck: Array(5).fill('warding-glyph') });
     c.select((c.state.piles.hand[0] as { uid: number }).uid);

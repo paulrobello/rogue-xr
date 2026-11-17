@@ -1,7 +1,13 @@
 import * as THREE from 'three';
 import { GLOW_HOT } from '../enemies/glow.ts';
 import { PALETTE } from '../palette.ts';
-import { type Point, SIGIL_IDS, SIGIL_TEMPLATES, type SigilId } from '../sigil/index.ts';
+import {
+  type Point,
+  SIGIL_IDS,
+  SIGIL_TEMPLATES,
+  type SigilId,
+  type SigilLevel,
+} from '../sigil/index.ts';
 import { CastGlyph } from './cast-glyph.ts';
 import { castPower } from './glyph-timing.ts';
 import {
@@ -129,6 +135,8 @@ export class SigilPlate extends THREE.Group {
   private readonly gravityTurn = new THREE.Quaternion();
   private readonly gravity = new THREE.Vector3();
   private plateSigil: SigilId | null = null;
+  /** The run's level: how strictly finish judges the trace. */
+  level: SigilLevel = 'casual';
   private platePose: PlatePose | null = null;
   private currentPhase: PlatePhase = 'hidden';
   private time = 0;
@@ -397,7 +405,7 @@ export class SigilPlate extends THREE.Group {
     if (this.currentPhase !== 'ready' && this.currentPhase !== 'drawing') return null;
     const sigilId = this.plateSigil as SigilId;
     this.builder.endStroke();
-    const result = scoreTrace(this.builder.strokes, sigilId);
+    const result = scoreTrace(this.builder.strokes, sigilId, this.level);
     this.sparks.clearContact();
     if (!result.castable) {
       this.resetTrail();

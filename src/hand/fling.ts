@@ -58,8 +58,11 @@ export interface FlingOptions {
   tuning?: Partial<FlingTuning>;
 }
 
-/** How a release was resolved: a flick at a target, a point at a target, or a drop on the table. */
-export type FlingVia = 'flick' | 'point' | 'drop' | 'none';
+/**
+ * How a release was resolved: a flick at a target, a point at a target, a drop on the table, or a
+ * press (an untargeted card played by the trigger, wherever the hand is).
+ */
+export type FlingVia = 'flick' | 'point' | 'drop' | 'press' | 'none';
 
 export interface FlingDecision {
   /** `staged`: the controller now waits for the sigil plate, and the card stays out of the fan. */
@@ -99,8 +102,9 @@ export function rayFromObject(object: THREE.Object3D): AimRay {
  * - `update(dt)` samples the main grip into the velocity window while a card is held.
  * - `release()` resolves the throw. A targeted card plays at the flick's aim-assisted target, else at
  *   the target the main-hand ray points at, else springs back. An untargeted card plays when
- *   released over the table or flicked across it, else springs back. A card the rules refuse springs
- *   back and the selection is cancelled.
+ *   released over the table or flicked across it, else springs back. `release(true)` plays an
+ *   untargeted card on the table wherever the hand is (the trigger press). A card the rules refuse
+ *   springs back and the selection is cancelled.
  *
  * A played or staged card burns away (`CardFan.playOut`) from where it was let go, drifting toward
  * its target; its fan slot stays hidden until the caller re-sets the hand. A `staged` sigil card
@@ -197,8 +201,12 @@ export class FlingController {
     if (this.held && this.mainGrip) this.sample(this.mainGrip);
   }
 
-  /** Lets go of the held card and resolves the throw. Null when nothing is held. */
-  release(): FlingDecision | null {
+  /**
+   * Lets go of the held card and resolves the throw. `onTable` plays an untargeted card as if it
+   * were dropped on the table, wherever it is let go; a targeted card ignores it. Null when nothing
+   * is held.
+   */
+  release(onTable = false): FlingDecision | null {
     const held = this.held;
     if (!held) return null;
     this.held = null;
@@ -206,7 +214,7 @@ export class FlingController {
     if (!released) return null;
     // Snapshot before resolving: a played card changes the rules' state the targets are read from.
     const trace = flingTraceLog.enabled ? this.snapshot(released) : null;
-    const decision = this.resolve(held, released);
+    const decision = this.resolve(held, released, onTable);
     if (trace) {
       flingTraceLog.add({
         ...trace,
@@ -248,7 +256,7 @@ export class FlingController {
     };
   }
 
-  private resolve(held: GrabbedCard, released: ReleasedCard): FlingDecision {
+  private resolve(held: GrabbedCard, released: ReleasedCard, onTable: boolean): FlingDecision {
     const velocity = releaseVelocity(this.window, this.tuning);
     const speed = velocity ? speedOf(velocity) : 0;
     const flick = velocity !== null && speed >= this.tuning.minSpeed;
@@ -292,7 +300,8 @@ export class FlingController {
     const extents = table?.halfExtents ?? DEFAULT_TABLE_HALF_EXTENTS;
     const overTable =
       table !== null &&
-      (isOverTable(origin, table.pose, extents, { margin: 0.3 }) ||
+      (onTable ||
+        isOverTable(origin, table.pose, extents, { margin: 0.3 }) ||
         (flick && throwCrossesTable(origin, velocity, table.pose, extents)));
     if (!overTable) return springBack('none', 'Drop the card on the table');
     // A sigil card is already waiting on the plate; `table()` would refuse it.
@@ -300,7 +309,7 @@ export class FlingController {
       const result = this.combat.table();
       if (!result.ok) return springBack('drop', result.reason);
     }
-    return this.settle(held, flick ? 'flick' : 'drop', null, speed, null, null);
+    return this.settle(held, onTable ? 'press' : flick ? 'flick' : 'drop', null, speed, null, null);
   }
 
   /** Abandons a staged sigil cast: cancels the selection and springs the card back to the fan. */

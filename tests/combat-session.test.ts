@@ -8,10 +8,13 @@ import {
   chooseEncounter,
   ENEMY_GAP_SECONDS,
   fightSeed,
+  HIT_NUMBER_SECONDS,
   SIGIL_CAST_SECONDS,
+  untargetedHint,
 } from '../src/combat/combat-session.ts';
 import { CombatController } from '../src/combat-view/controller.ts';
 import { type PlayerHit, playerHit, segmentEvents } from '../src/combat-view/enemy-turn.ts';
+import { HIT_NUMBER_SLOTS } from '../src/combat-view/hit-numbers.ts';
 import {
   CARD_LAUNCH_DELAY,
   FLIGHT_MAX_SECONDS,
@@ -241,8 +244,8 @@ async function playFight(rig: Rig & { session: CombatSession }): Promise<FightLo
     waitEnemyPhase(rig, session);
     if (session.awaitingThrow) {
       const roll = session.controller.lastDice;
-      pointerAt(rig, at(session, 'throw'), 'down');
-      pointerAt(rig, at(session, 'throw'), 'up');
+      pointerAt(rig, at(session, 'dice'), 'down');
+      pointerAt(rig, at(session, 'dice'), 'up');
       const before = session.rolls.length;
       for (let i = 0; i < 600 && session.rolls.length === before; i++) rig.step();
       const shown = session.rolls[session.rolls.length - 1];
@@ -386,6 +389,99 @@ describe('combat session', () => {
     drawSigil(rig, session);
     expect(session.controller.stage).toBe('idle');
     expect(session.controller.state.player.block).toBeGreaterThan(blockAfterFirst);
+  }, 60_000);
+
+  // F8 (Quest 3 playtest 2026-11-17): "defense cards seem like they need to be thrown down with a
+  // gesture which is not obvious". The trigger plays an untargeted card, pointed at in the fan or held,
+  // and the table says so (and glows while one is held).
+  it('plays a block card in XR with the trigger, pointed at or held, with a table hint', async () => {
+    const rig = await openFight('SPIRE002', { deck: Array(10).fill('defend') });
+    const { session, camera } = rig;
+    const scene = camera.parent as THREE.Scene;
+    const head = camera.getWorldPosition(new THREE.Vector3());
+    const main = new THREE.Group();
+    const mainRay = new THREE.Group();
+    const off = new THREE.Group();
+    off.position.copy(head).add(new THREE.Vector3(-0.18, -0.3, -0.3));
+    scene.add(main, mainRay, off);
+    const xr = { main, mainRay, off };
+    const pose = (from: THREE.Vector3, target: THREE.Vector3) => {
+      for (const o of [main, mainRay]) {
+        o.position.copy(from);
+        o.lookAt(target);
+        o.rotateY(Math.PI);
+        o.updateMatrixWorld(true);
+      }
+    };
+    const step = (seconds = DT) => {
+      for (let t = 0; t < seconds - 1e-9; t += DT) {
+        camera.updateMatrixWorld(true);
+        rig.view.update(camera, DT);
+        rig.hook.update(DT, xr);
+      }
+    };
+    const hand = (control: 'squeeze' | 'trigger', pressed: boolean) =>
+      rig.actions.emit({ type: 'combat-hand', hand: 'main', control, pressed });
+    const name = getCard('defend').name;
+    const rest = head.clone().add(new THREE.Vector3(0.18, -0.3, -0.3));
+    step();
+    const handSize = session.controller.state.piles.hand.length;
+
+    // Pointed at in the fan: the hint says pull the trigger, and the trigger plays it.
+    pose(rest, at(session, 'card', session.controller.state.piles.hand[0]?.uid as number));
+    step();
+    expect(session.fan.hovered).toBe(0);
+    expect(session.hint).toBe(untargetedHint(name, 'pointed-xr'));
+    hand('trigger', true);
+    hand('trigger', false);
+    step(0.5);
+    expect(session.fling.lastDecision).toMatchObject({ outcome: 'played', via: 'press' });
+    expect(session.controller.state.piles.hand).toHaveLength(handSize - 1);
+    const block = session.controller.state.player.block;
+    expect(block).toBeGreaterThan(0);
+
+    // Held in the main hand: the hint says let go over the table or pull the trigger, the table
+    // glows, and the trigger plays it from wherever the hand is.
+    pose(rest, at(session, 'card', session.controller.state.piles.hand[0]?.uid as number));
+    step();
+    hand('squeeze', true);
+    step();
+    expect(session.hint).toBe(untargetedHint(name, 'held-xr'));
+    expect(session.dropZone.visible).toBe(true);
+    hand('trigger', true);
+    step();
+    expect(session.fling.lastDecision).toMatchObject({ outcome: 'played', via: 'press' });
+    expect(session.controller.state.player.block).toBeGreaterThan(block);
+    expect(session.dropZone.visible).toBe(false);
+    hand('trigger', false);
+    hand('squeeze', false);
+    step();
+    expect(session.controller.state.piles.hand).toHaveLength(handSize - 2);
+    rig.hook.dispose();
+  }, 60_000);
+
+  it('tells a desktop player holding a block card to release it over the table, which plays it', async () => {
+    const rig = await openFight('SPIRE002', { deck: Array(10).fill('defend') });
+    const { session } = rig;
+    const card = session.controller.state.piles.hand[0];
+    if (!card) throw new Error('no card');
+    const from = at(session, 'card', card.uid);
+    pointerAt(rig, from, 'down');
+    rig.step();
+    expect(session.hint).toBe(untargetedHint(getCard('defend').name, 'held'));
+    expect(session.dropZone.visible).toBe(true);
+    const table = at(session, 'table');
+    for (let i = 1; i <= 6; i++) {
+      pointerAt(rig, from.clone().lerp(table, i / 6), 'move');
+      rig.step();
+    }
+    pointerAt(rig, table, 'up');
+    rig.step();
+    expect(session.fling.lastDecision).toMatchObject({ outcome: 'played', targetId: null });
+    expect(session.controller.state.player.block).toBeGreaterThan(0);
+    expect(session.hint).toBe('');
+    expect(session.dropZone.visible).toBe(false);
+    rig.hook.dispose();
   }, 60_000);
 
   // Quest 3 report 2026-11-15: tracing on the plate with a controller drew nothing and the cast
@@ -538,6 +634,53 @@ describe('combat session', () => {
     rig.hook.dispose();
   }, 60_000);
 
+  // F5 (Quest 3 playtest 2026-11-17): "have red numbers float up and fade away to show the damage
+  // done". Each hit on an enemy floats its number up from in front of the body at contact, the
+  // player's from the status panel, out of one fixed pool.
+  it('floats a damage number from the enemy at contact and from the player when hit, pooled', async () => {
+    const rig = await openFight('SPIRE002', { deck: Array(10).fill('strike') });
+    const { session } = rig;
+    const enemy = session.enemies[0];
+    if (!enemy) throw new Error('no enemy');
+    const children = session.numbers.children.length;
+    expect(session.numbers.slots).toHaveLength(HIT_NUMBER_SLOTS);
+    const before = session.view.enemies.find((e) => e.id === enemy.id)?.hp ?? 0;
+    const uid = session.controller.state.piles.hand[0]?.uid as number;
+    drag(rig, session, uid, at(session, 'enemy', enemy.id));
+    // Nothing floats while the bolt flies; the number shows with the HP change.
+    expect(session.numbers.active).toHaveLength(0);
+    for (let i = 0; i < 120 && session.attackInFlight; i++) rig.step();
+    const after = session.view.enemies.find((e) => e.id === enemy.id)?.hp ?? 0;
+    const [number] = session.numbers.active;
+    expect(number?.amount.hpLost).toBe(before - after);
+    const aim = at(session, 'enemy', enemy.id);
+    // In front of the body, toward the seat, and above the hit point.
+    const eye = rig.camera.getWorldPosition(new THREE.Vector3());
+    expect(number?.start.distanceTo(aim)).toBeLessThan(0.6);
+    expect(number?.start.y).toBeGreaterThan(aim.y);
+    expect(number?.start.distanceTo(eye)).toBeLessThan(aim.distanceTo(eye));
+    rig.step(HIT_NUMBER_SECONDS + 0.05);
+    expect(session.numbers.active).toHaveLength(0);
+
+    // The enemy turn: whatever lands on the player floats from the status panel.
+    let seen = 0;
+    for (let turn = 0; turn < 4 && session.hitLog.length === 0; turn++) {
+      rig.actions.emit({ type: 'end-turn' });
+      rig.step();
+      for (let i = 0; i < 900 && session.enemyPhase; i++) {
+        rig.step();
+        seen = Math.max(seen, session.numbers.active.length);
+      }
+    }
+    expect(session.hitLog.length).toBeGreaterThan(0);
+    expect(seen).toBeGreaterThan(0);
+    // The pool never grows.
+    expect(session.numbers.children.length).toBe(children);
+    expect(session.numbers.slots).toHaveLength(HIT_NUMBER_SLOTS);
+    rig.hook.dispose();
+    expect(session.numbers.parent).toBeNull();
+  }, 60_000);
+
   it('casts a damage sigil as its glyph collapses, one bolt to every enemy, landing together', async () => {
     const rig = await openFight('SPIRE002', { deck: Array(10).fill('cogstorm') });
     const { session } = rig;
@@ -633,12 +776,12 @@ describe('desktop HUD fit', () => {
       return (x[0] ?? 0) < -1 || (x[1] ?? 0) > 1 || (y[0] ?? 0) < -1 || (y[1] ?? 0) > 1;
     });
     // Without the fit the close fallback table cuts the HUD off, which is the reported bug.
-    expect(outside.map((e) => e.name)).toEqual(expect.arrayContaining(['end-turn', 'throw']));
+    expect(outside.map((e) => e.name)).toEqual(expect.arrayContaining(['end-turn']));
 
     rig.session.fitHudToView(camera);
     const names = hud(rig.session).map((e) => e.name);
     // The panel and readouts are canvas labels, which the test environment cannot make; the browser check covers them.
-    expect(names).toEqual(expect.arrayContaining(['end-turn', 'throw']));
+    expect(names).toEqual(expect.arrayContaining(['end-turn']));
     for (const { name, points } of hud(rig.session)) {
       const { x, y } = ndcOf(camera, points);
       expect(x[0], `${name} left`).toBeGreaterThanOrEqual(-1);

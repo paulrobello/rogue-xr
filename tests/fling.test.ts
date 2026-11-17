@@ -559,6 +559,35 @@ describe('FlingController: untargeted cards', () => {
     expect(r.fling.release()?.outcome).toBe('sprung-back');
   });
 
+  // F8 (Quest 3 playtest 2026-11-17): "defense cards seem like they need to be thrown down with a
+  // gesture which is not obvious". The trigger plays an untargeted card wherever the hand is.
+  it('plays an untargeted card pressed with the trigger away from the table', () => {
+    const r = rig({ table: { x: 4, z: -4, yaw: 0, height: 0.8 } });
+    const handBefore = r.combat.state.piles.hand.length;
+    r.replay(DROP, 'defend');
+    const decision = r.fling.release(true);
+    expect(decision).toMatchObject({ outcome: 'played', via: 'press', targetId: null });
+    expect(r.combat.state.piles.hand).toHaveLength(handBefore - 1);
+    expect(r.combat.state.player.block).toBeGreaterThan(0);
+    expect(r.returned()).toBe(0);
+  });
+
+  it('still needs a table for a pressed card, and a target for a pressed attack', () => {
+    const none = rig({ table: null });
+    none.replay(DROP, 'defend');
+    expect(none.fling.release(true)?.outcome).toBe('sprung-back');
+    const attack = rig({ table: { x: 4, z: -4, yaw: 0, height: 0.8 } });
+    attack.replay(DROP, 'strike');
+    expect(attack.fling.release(true)).toMatchObject({ outcome: 'sprung-back', via: 'none' });
+  });
+
+  it('stages an untargeted sigil card pressed with the trigger', () => {
+    const r = rig({ table: { x: 4, z: -4, yaw: 0, height: 0.8 } });
+    r.replay(DROP, 'warding-glyph');
+    expect(r.fling.release(true)).toMatchObject({ outcome: 'staged', via: 'press' });
+    expect(r.fling.stage).toBe('sigil');
+  });
+
   it('plays an untargeted card flicked across the table', () => {
     const r = rig({ table: { x: 0.3, z: -1.6, yaw: 0, height: 0.8 } });
     r.replay(FLICKS[1] as Trace, 'defend');
