@@ -284,12 +284,12 @@
     }
   ],
   "stagingFiles": {
-    "engine-compare.json": "4f9d627263a807432913399c0d270402baef1b1627a712520df00e20c23403e5",
+    "engine-compare.json": "82610923c712ff222e98530d82f4e59260c11e32d973f2bc999ce9ab8678a6ac",
     "guardian-vault.glb": "38400c93070f2203d827e0a6c07faa2ef8688b747a89e2e70aefecc41b48813c",
     "guardian-vault.lightmap.ktx2": "a8baa6ee359e8f3106a14dcf72a7e0ae932d2797906364a71ba84b4b80ec4b32",
     "guardian-vault.lightmap.png": "ca3f83c260a8ac171c173a17aea1686fd1eabdfbb3c171909d92434a7421563a",
     "guardian-vault.manifest.json": "6d27fe2c6e81500a3e25b7b03b77c70dddca9bff162ef43ce0597b6df51c7824",
-    "uv1-report.json": "0592795e550cd3038bd4e0991afd22407f44f6953f9a3884cf43f4303dbfb906"
+    "uv1-report.json": "326fa8f895dd4f77cbb54b79e0a7b524c74556bf1de231a872cf31516a15026e"
   },
   "references": [
     {
@@ -395,7 +395,7 @@
     },
     {
       "gate": "independent visual score",
-      "status": "below bar: 63/100 (bar 80), scored 2026-11-16",
+      "status": "below bar: 73/100 (bar 80), scored 2026-11-17",
       "notes": "blender-kit-pieces requires an independent >= 80/100 score; unscored means unaccepted"
     }
   ],
@@ -430,50 +430,126 @@
     }
   ],
   "independentScore": {
-    "score": 63,
+    "score": 73,
     "scale": "0-100 visual fidelity to the art bible and study-kit language",
     "scorer": "independent reviewer agent (separate from the authoring agent; did not build the asset)",
-    "date": "2026-11-16",
+    "date": "2026-11-17",
     "acceptanceBar": 80,
     "clearsBar": false,
     "rubric": [
       {
         "criterion": "form, layout and proportions",
-        "points": 19,
+        "points": 23,
         "max": 30,
-        "note": "12x12x6 m hall with four stone pillars, three lancets and a beamed ceiling. It is the largest box but has no architectural focus: no dais, apse, raised floor, steps or vaulted ceiling. Lancet glass is pointed but sits in rectangular walnut frames, which leaves wallpaper spandrels inside the frame."
+        "note": "Fixed: a north apse now exists, a stone-faced bay with a pointed arch, a gear oculus, the centre lancet and a two-step altar carrying the reward. All three lancets now sit in pointed walnut frames, so the spandrel gap is gone. A bronze gear-wheel chandelier hangs on the room axis. Still open: the ceiling is the same flat plank deck with two beams, with no vault, rib or height change over the apse, so the 12x12x6 m volume still reads as a box. The apse is a shallow rectangular stone slab with a pointed opening (hero shot x 548-727), not a recessed space. The guardian stands on open floor, with no dais (deferred under build decision D1)."
       },
       {
         "criterion": "signature features: boss arena",
-        "points": 14,
+        "points": 19,
         "max": 25,
-        "note": "Arena cues are a brass ring inlay, two aisle lines, four pillar braziers, a gear medallion and wall gears. The guardian socket at z=-3 and the reward socket at z=-5 have no plinth, altar or alcove. Read cold, it is a bigger hall, not a boss room."
+        "note": "Fixed: the axis now ends in a focal shrine. Aisle lines, the brass ring, two brazier pillars and the chandelier all lead the eye to the altar, and the reward sits on a stepped plinth with two candles. Still open: the guardian socket at z=-3 is flat floor inside a thin ring inlay, about one line-width at hero distance. Nothing raises, frames or encloses the fight itself. The altar is modest, about 1.4 m tall (collider max y 1.36). Read cold, the room is now a chapel with a shrine, but not yet a boss arena."
       },
       {
         "criterion": "surface detail and material read",
         "points": 12,
         "max": 20,
-        "note": "Lowest density of the four at 45.3 px/m (min 38.1), 32% below the study's 66.3. Within the PRD contract (no px/m floor) but visibly softer. Brazier flames are white spikes. The centre lancet washes out from the reward eye-point: RGB 127,121,119 against 88,74,75 on the left lancet. Wall gears drop to an olive-dark L=40 and lose their brass read. Kit-wide lightmap-only deduction applied."
+        "note": "Lightmap density fell to 42.6 px/m mean and 36.0 px/m minimum, down from 45.3 and 38.1, and 36% below the study's 66.3 (accepted under D2). Brazier flames are still faceted pyramid shards. At the reward eye-point they read as pale peach crystals, RGB 192,135,95. Wall gears are rust-copper, not brass: engine RGB 64,25,10 (G/R 0.39) against polished brass #DEC16A (G/R 0.87), and the lightmap-only Blender render shows the same 64,27,6, so this is the albedo, not the runtime. The apse oculus gear reads grey steel, and the gilt bands read olive-flat. The centre-lancet wash is still open at the reward eye-point: luma 115 against 68 on the side lancets (previously 127,121,119 against 88,74,75). Pillar stone, wallpaper damask and the floor pattern are crisp and in kit language."
       },
       {
         "criterion": "colour, value and lighting mood",
-        "points": 10,
+        "points": 11,
         "max": 15,
-        "note": "Warm, with stained-glass patches on the floor (good). Braziers make no floor pool in engine: floor at the brazier foot L=81 against the open floor at 82-85. Brazier flame RGB 197,162,128 (R-B 69) is short of candle amber's R-B 142. Kit-wide runtime flattening deduction applied."
+        "note": "Fixed: the braziers now bake real pools. The floor at the brazier foot has luma 51 against open floor at 38-43 in the hero shot, and 61 against 39 from the brazier camera (+56%), with a warm glow column up each pillar (luma 72-78 against 37-39 above). Stained-glass patches land on the floor. Corners are warm dark (45,11,5), not black. Still open: flame colour. R-B is 95 in engine against 142 for candle amber, up from 69. The bake and lightmap-only engine frames have 151-161, so the runtime full-material path desaturates the flames. New: the room is much darker than the study, with mean frame luma 35.9 against 57.7 and wallpaper luma 18 against 62. The walls fall to maroon-black outside the pools, and there is no wall-mounted light source."
       },
       {
         "criterion": "readability and comfort at seated VR distance",
         "points": 8,
         "max": 10,
-        "note": "Open, uncluttered floor, a clear sightline to the guardian at 3 m, and lancets as the far focal point. Large scale is comfortable seated."
+        "note": "The open floor and the single strong axis to the altar make the guardian and reward positions obvious, and the large scale is comfortable seated. Deductions: the flame shards sit at about eye height beside the reward eye-point as bright pale wedges (luma 144). The very dark side walls (luma 18) flatten the room's width at a glance."
       }
     ],
     "topFixes": [
-      "Give the arena a focal structure: a raised dais or apse at the north end carrying the guardian and reward sockets, with steps and a brass-edged plinth for the reward.",
-      "Raise the lightmap to about 65 px/m (2048 with tighter UV1 packing or split atlases), and make the braziers bake real amber pools with flame geometry in place of white spikes.",
-      "Fix lancet framing (pointed frames to match the glass) and check the centre lancet's probe/specular wash-out; lift the wall-gear brass albedo so it reads as brass."
+      "Fix the two runtime regressions that the bake does not have. First, flames: the bake and lightmap-only frames have R-B 151-161, the full engine frame 95, so keep the emissive flame and glass out of the AgX/probe path that desaturates them, and replace the faceted pyramid flames with soft flame cards or tapered tongues. Second, the centre lancet: bake luma 72, level with the sides at 70-72, but 89 against 73 in the engine hero shot and 115 against 68 at the reward eye. Remove the probe or specular wash, likely including the bright gilt mullion at luma 129.",
+      "Make the brass read as brass. Bring the wall gears (albedo about 64,27,6, G/R 0.39), the apse oculus gear (grey) and the gilt bands (olive-flat) to the polished-brass palette #DEC16A, using a metallic or probe highlight as the art bible prescribes for polished brass.",
+      "Turn the shrine into an arena and lift the value. Raise a stepped dais under the guardian socket (this needs the src/content/rooms.ts socket change that D1 left to Paul). Add a vault or ribbed arches over the apse instead of the flat plank deck. Add baked wall sconces or a second light ring so the side walls rise from luma 18 toward the study's 60 range while the brazier pools stay dominant."
     ],
-    "method": "Looked at (2026-11-16): docs/art-bible.md; PRD.md lightmap contract (lines 87-95); assets-source/concepts/room-sheet-1.png, room-sheet-2.png; study benchmark assets-source/rooms/study/staging/review-sheet.jpg + provenance.json + engine-compare.json; docs/verification/p5-int-study.jpg; assets-source/rooms/guardian-vault/provenance.json, staging/review-sheet.jpg, staging/engine-compare.json, staging/guardian-vault.lightmap.png (texel stats), docs/verification/p5-rooms-guardian-vault-*.jpg and p5-int-guardian-vault*.jpg; Pillow crops and region means under /tmp/rxr-score/rooms/."
+    "method": "Judged the engine shots first: all six docs/verification/p5-rooms-guardian-vault-*.jpg, viewed in full, with Pillow crops zoomed 2-4x of the flames, altar, apse, lancets, chandelier, wall gears and pillar caps. Region means were measured as sRGB RGB and Rec.709 luma (0-255), plus R-B warmth. Compared against the study kit's engine frame p5-int-study.jpg and the study review sheet and density (66.28 px/m mean). Used the Blender renders (hero.lightmapped.png, hero.reference-diffuse.png) and the engine lightmap-only frame (engine.hero.diffuse.png) at identical pixel regions to separate bake from runtime. Flame whitening and centre-lancet wash appear only in the full-material engine frame, so they are runtime. Rust-coloured wall gears and darkness appear in the bake too, so they are source and lighting. The score weights the engine frames. Read the art bible, report.json (density, bake), engine-compare.json (frame ratio 0.916, RMSE 0.0376), uv1-report.json (coverage 0.373, 0 px overlap, min gap 15 px) and provenance.json (previous independentScore, build decisions D1-D6). Side finding, not scored: provenance.json stagingFiles hashes for engine-compare.json (4f9d6272...) and uv1-report.json (0592795e...) do not match the files on disk (82610923..., 326fa8f8...). The glb, lightmap PNG and KTX2, and manifest hashes match.",
+    "evidence": [
+      {
+        "path": "docs/art-bible.md",
+        "sha256": "11da71b45f24eeb258ef77d328ef1aa009297a9231608cb80bb429aa3ff2ad6a"
+      },
+      {
+        "path": "docs/verification/p5-rooms-guardian-vault-brazier.jpg",
+        "sha256": "b99da09c4ffed650137ee53ef9bce55fea52582cd5cd1f81576d7c8e862e1f74"
+      },
+      {
+        "path": "docs/verification/p5-rooms-guardian-vault-hero.diffuse.jpg",
+        "sha256": "af0492379dbb8dd431649d02092b79d53200bf17e1c62554563accc783752343"
+      },
+      {
+        "path": "docs/verification/p5-rooms-guardian-vault-hero.jpg",
+        "sha256": "237822cb1cbe615a0f9fe68e95847def022eea057fd99bf68c7bab6ecb7ea16f"
+      },
+      {
+        "path": "docs/verification/p5-rooms-guardian-vault-reward-eye.jpg",
+        "sha256": "ace0b9a8d317a0714245e80474f69e29ed0b71b6bf859bebc9fb04c23f873273"
+      },
+      {
+        "path": "docs/verification/p5-rooms-guardian-vault-seam-from-corridor.jpg",
+        "sha256": "330d308e492420f15c567f0127e94a0e93e303de620e08f22ffc0f735dbfd336"
+      },
+      {
+        "path": "docs/verification/p5-rooms-guardian-vault-seam-south.jpg",
+        "sha256": "368bbd6caf18adcae6c896ed2c2663769897b923b53591f3198ac633a7dcf2d2"
+      },
+      {
+        "path": "docs/verification/p5-int-study.jpg",
+        "sha256": "6258394c368a71674c74cb5dba4d66729a12beddd65e6f8152e9b9769fad4a08"
+      },
+      {
+        "path": "assets-source/rooms/study/staging/review-sheet.jpg",
+        "sha256": "a7ec0c1dbc184fe7edeb22e84b3ba37a9ef1b99be95b35a6cd21b440d3b5a440"
+      },
+      {
+        "path": "assets-source/rooms/guardian-vault/staging/review-sheet.jpg",
+        "sha256": "20d0173d1486a8ef8eaa9c3aa5e061f4ce6c956cfcf876a91a326d3d7a8657a1"
+      },
+      {
+        "path": "assets-source/rooms/guardian-vault/staging/renders/hero.lightmapped.png",
+        "sha256": "f7f253af71fc47ab79b90864db3094e7d3353279cfead55c11bcc27e332aa2d0"
+      },
+      {
+        "path": "assets-source/rooms/guardian-vault/staging/renders/hero.reference-diffuse.png",
+        "sha256": "3fdc0f61e2edd1dedf0bd98fe3f6114a0709882fc147f18457dcec886d3c7208"
+      },
+      {
+        "path": "assets-source/rooms/guardian-vault/staging/renders/engine.hero.png",
+        "sha256": "7ddd5412b4bd5fc86c3d3f2a48d34106d7c5487e4a358184108444668297df69"
+      },
+      {
+        "path": "assets-source/rooms/guardian-vault/staging/renders/engine.hero.diffuse.png",
+        "sha256": "04fc1f1ce41ec281b3902f586c922cff4aaf5bd3671845d65212c31f5a87cb73"
+      },
+      {
+        "path": "assets-source/rooms/guardian-vault/staging/report.json",
+        "sha256": "3474c088c29958dbe20c49d83a5f382fbf27428f760d018d06a694fcf1546dd1"
+      },
+      {
+        "path": "assets-source/rooms/guardian-vault/staging/engine-compare.json",
+        "sha256": "82610923c712ff222e98530d82f4e59260c11e32d973f2bc999ce9ab8678a6ac"
+      },
+      {
+        "path": "assets-source/rooms/guardian-vault/staging/uv1-report.json",
+        "sha256": "326fa8f895dd4f77cbb54b79e0a7b524c74556bf1de231a872cf31516a15026e"
+      },
+      {
+        "path": "assets-source/rooms/guardian-vault/provenance.json",
+        "sha256": "1efe7e7b84ee1a9687a2cbcba903666e5837a2d8234df1e81c9d39011b3d3442"
+      }
+    ],
+    "previousScore": 63,
+    "build": "db29fbd"
   },
   "buildDecisions": {
     "by": "orchestrator of the 2026-11-17 re-bake (build decisions, not owner approvals; Paul's review is still pending)",

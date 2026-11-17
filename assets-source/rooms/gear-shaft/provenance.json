@@ -285,12 +285,12 @@
     }
   ],
   "stagingFiles": {
-    "engine-compare.json": "100c381f07226adf22be9b7832650ccfdcdb35d626d5f912482d885ab5094787",
+    "engine-compare.json": "ccaceb6879a41cd6170925abe492b2b066d249e261d24bd801cd141f947a3f72",
     "gear-shaft.glb": "e828d8e7323df315d1b26e6e89bfa1dba4fc42b6d3f5d7556775e6c62ce1387a",
     "gear-shaft.lightmap.ktx2": "a7707d76ef57ba9ba09ba8301d7ba2ce1f59e76dcb3b734176010f31ec94d578",
     "gear-shaft.lightmap.png": "7189254859629008a362ab54018cc2561312443d8301141af3c4cbb37c32034c",
     "gear-shaft.manifest.json": "41191dd824c82228f05d21481433f68399cb855762413c3eeb0f2b4e5866fe4a",
-    "uv1-report.json": "269b7404dbeffeb5608569b3e6ca828bd56dc02bb3c1131fb3d9a247713a3ef8"
+    "uv1-report.json": "2a6439acd83c604fd47e3a78262219326e65b091c6affd735cdf74319f5673cd"
   },
   "references": [
     {
@@ -397,7 +397,7 @@
     },
     {
       "gate": "independent visual score",
-      "status": "below bar: 61/100 (bar 80), scored 2026-11-16",
+      "status": "below bar: 69/100 (bar 80), scored 2026-11-17",
       "notes": "blender-kit-pieces requires an independent >= 80/100 score; unscored means unaccepted"
     }
   ],
@@ -507,50 +507,138 @@
     }
   ],
   "independentScore": {
-    "score": 61,
+    "score": 69,
     "scale": "0-100 visual fidelity to the art bible and study-kit language",
     "scorer": "independent reviewer agent (separate from the authoring agent; did not build the asset)",
-    "date": "2026-11-16",
+    "date": "2026-11-17",
     "acceptanceBar": 80,
     "clearsBar": false,
     "rubric": [
       {
         "criterion": "form, layout and proportions",
-        "points": 18,
+        "points": 23,
         "max": 30,
-        "note": "8x12x5 m box with a central stone furnace plinth and a brass shaft. At 5 m it is only 1 m taller than the hall. The ceiling is a flat plank lid and the shaft ends in a disc under it, with no opening above or pit below. room-sheet-2 sets the kit's vertical language (galleries, spiral stair, stacked gears), and this room has none of it."
+        "note": "FIXED: the flat plank lid is gone. A 4.2 m square hole (half-size 2.1) in the 5 m chamber ceiling opens a stone-lined well to 8 m with a railed gallery ring at 7 m (build-room-kit.py GEAR_SHAFT), and a glowing trench pit now rings the plinth below floor level, so the room finally has a vertical axis in every engine shot (hero, ring, void). STILL OPEN: the chamber is the same 8x12x5 m box with the furnace plinth dead centre. The crown gear's 2.0 m tip radius almost fills the 2.1 m hole, so from the seated hero and ring cameras it plugs the well and only slivers of the upper shaft show. The well is lidded: p5-rooms-gear-shaft-void.jpg shows the drive shaft ending in a cap disc under a plank ceiling at 8 m, so the shaft still terminates in the room rather than reading as climbing out of view. There are still no galleries, stair or stacked levels at chamber height (room-sheet-2 language)."
       },
       {
         "criterion": "signature features: vertical machinery",
-        "points": 14,
+        "points": 19,
         "max": 25,
-        "note": "One spoked crown gear at 3.6 m that spins (rigid node, 0.35 rad/s, baked shadow-free, verified at 37 degrees) and a furnace grate. No meshing gear train, chain, counterweight, catwalk or shaft void. The study's own stacked-gear column (room-sheet-1) reads as more machine than this machinery room."
+        "note": "FIXED: the build now has a three-gear train. The spinning crown gear at 3.6 m is joined by a second gear on the shaft and a meshing side gear at 5.55 to 6.15 m, plus the gallery and pit, and the gears.png crop of hero.jpg shows them stacked up the shaft. The crown gear's rim is brighter than before (engine hero rim mean L 55, previously 46), and its baked azimuth stays even (sector min/max 0.947, previously 0.965). STILL OPEN or NEW: the train is static by design (provenance D4) while the crown spins at 0.35 rad/s around the drive shaft. The shaft's own upper gear and its meshing partner stay frozen, so the drive reads as disconnected: the one moving part turns on a shaft whose other gears never move. There is no chain, counterweight, catwalk-level motion or piston, and the gallery's four 6 W candles do not read as distinct glows in any engine frame. The study's three-gear column is now matched rather than exceeded."
       },
       {
         "criterion": "surface detail and material read",
         "points": 12,
         "max": 20,
-        "note": "61.3 px/m, clean UV1, and the rotating ring bakes evenly (sector min/max 0.965). The furnace opening reads as a white light box: mean RGB 174,159,141, p95 L=239. Brass on the gear and shaft carries noisy scratch texture that leans photoreal, which the bible excludes. Grey streak on the ceiling-beam side faces measures L=43 against 28 on the adjacent walnut. Kit-wide lightmap-only deduction applied."
+        "note": "Gears: the new dielectric `gilt` constant slot (provenance D3) renders flat and untextured, in salmon/terracotta, not polished brass. In engine its bright pixels measure hue 23-24 (ring.jpg mean 131,72,36, sat 0.73) against #DEC16A brass at hue 45, while Blender void.high.png shows the same gear in a yellow-gold. Brass shaft and plinth cap still have the crumpled-foil scratch noise, slightly worse than the kit, and this point is still open from the last review. Like-for-like engine hero shots measure gear-shaft shaft luminance std 41.5, p95 148, against study renders/engine.hero.png at std 31.5, p95 108. The grain leans toward the photoreal detail the bible excludes. The seven brass-polished grate bars render near-black in engine but tan in the lightmap-only frame. That is a hint that polished brass gets little from its probe here, not a measured fault. The flames are flat triangular cards behind the bars, and in engine they read as cut-out paper (furnace.png crop). The grey ceiling-beam side face improved: in ring.jpg it measures L 25, hue 7 against L 15, hue 6 on the planks, previously L 43 against 28, and still shows as a lighter slab. Lightmap density fell from 61.3 to 46.0 px/m (accepted in D5). The UV1 report shows no overlap and a 20 px minimum gap. Wallpaper, wainscot and floor tiles stay consistent with the study kit."
       },
       {
         "criterion": "colour, value and lighting mood",
-        "points": 9,
+        "points": 8,
         "max": 15,
-        "note": "The furnace does throw a warm floor pool, the best pool of the four rooms (floor L p5 11 to p95 122). But the glow colour misses candle amber #F3BE65 (R-B 142): the grate measures R-B 33, nearly neutral. Crown gear reads dark (mean L=46). Kit-wide runtime flattening deduction applied."
+        "note": "Partly fixed: the firebox opening meets the previous R-B target at 104 (hero.jpg brightest 40%, 226,161,122) and the pit trench at 109, but the hue is salmon-peach (about 22 degrees, sat 0.46), not candle amber #F3BE65 (38 degrees, sat 0.58). The lightmap-only frame of the same box is amber, 254,181,72 (R-B 182), so the runtime material or tone mapping is washing the fire out. That is a runtime fault, not a bake one. NEW: the room reads oxblood rather than walnut and amber. This is measured like-for-like against the study's own room-harness shot, assets-source/rooms/study/staging/renders/engine.hero.png, at the same 1280x720 and AgX: (1) the full frame is hue 16, sat 0.77, L 34 here against hue 21, sat 0.58, L 42 in the study; (2) the ceiling planks are hue 6-7, sat 0.93-0.95, L 15-17 here against hue 20, sat 0.80, L 29; (3) the right-wall wallpaper is hue 12, sat 0.87, L 27 against hue 18, sat 0.74, L 35; (4) the open floor is hue 13, sat 0.83, L 30 against hue 26, sat 0.39, L 69. The stone floor loses its grey-beige read entirely. The furnace still throws a pool: the floor beside the left trench measures L p95 149 (this region includes the trench lip, so it is not directly comparable to the previous review's 122), but the open floor away from it is dark. Corners stay warm-dark (p5 L 11), not black. The previous review's kit-wide runtime-flattening deduction is not applied separately: these measured numbers stand in for it."
       },
       {
         "criterion": "readability and comfort at seated VR distance",
-        "points": 8,
+        "points": 7,
         "max": 10,
-        "note": "One big central silhouette and the ring is overhead, out of the near field. The 1.x m plinth sits between the south door and the enemy sockets at z -3 to -3.5, so it may partly occlude them from a seated view."
+        "note": "One strong central silhouette, with the moving crown gear 3.6 m overhead and outside the near field. Combat placement is dynamic and avoids colliders (src/combat/placement.ts), so the old socket-occlusion concern is smaller, but the 2.3 m plinth (1.3 m cap, collar to 1.42 m; room_kit.py furnace_shaft) and the 3.64 m kerb collider still split the 8 m-wide room into roughly 2.2 m lanes. The open floor is dark (L 30 against 69 in the study's engine.hero.png) and walls are L 27 against 35, which costs silhouette contrast for brass automatons standing on the floor in front of oxblood walls. The pale peach plinth face (L 82) is the brightest large surface and pulls the eye to the furnace, not to the enemies."
       }
     ],
     "topFixes": [
-      "Make it a shaft: open the ceiling to a dark void or a gallery ring above, and/or a grated pit below, and add a second and third gear meshing up the shaft (room-sheet-1/2 stacked-gear language).",
-      "Recolour the furnace emission and bake to candle amber (target R-B above 100) with a visible coal/flame layer behind the bars, in place of the white panel.",
-      "Calm the brass scratch noise to painterly value variation, and fix the grey beam side faces."
+      "Restore the colour mood at runtime. Make the fire emission read amber in engine (match the lightmap-only 254,181,72, target hue above 35 degrees, not salmon), and pull the red saturation out of wallpaper and ceiling so the room sits at the study's walnut/amber values (the study harness frame is hue 21, sat 0.58, L 42, ceiling hue 20, and open floor L 69, hue 26), so the stone floor reads grey-beige again.",
+      "Replace the flat salmon `gilt` constant on the gears with the kit's brass treatment (hue near 45, painterly value variation, worn edges), calm the crumpled-foil noise on shaft, cap and door frames (target engine luminance std under 20), and give the flames painted gradients in place of flat triangle cards.",
+      "Make the shaft read as endless and working: shrink the crown gear or widen the hole so the well is visible from seated cameras, let the upper void fall to darkness instead of a plank lid with a cap disc, light the gallery candles visibly, and either drive the meshing train at the correct ratios or stop the crown gear so the machine is mechanically coherent."
     ],
-    "method": "Looked at (2026-11-16): docs/art-bible.md; PRD.md lightmap contract (lines 87-95); assets-source/concepts/room-sheet-1.png, room-sheet-2.png; study benchmark assets-source/rooms/study/staging/review-sheet.jpg + provenance.json + engine-compare.json; docs/verification/p5-int-study.jpg; assets-source/rooms/gear-shaft/provenance.json, staging/review-sheet.jpg, staging/engine-compare.json, staging/gear-shaft.lightmap.png (texel stats), docs/verification/p5-rooms-gear-shaft-*.jpg and p5-int-gear-shaft*.jpg; Pillow crops and region means under /tmp/rxr-score/rooms/."
+    "method": "Read docs/art-bible.md and the previous independentScore in provenance.json (61, 2026-11-16), and re-checked each of its points. Looked at all eight docs/verification/p5-rooms-gear-shaft-*.jpg engine shots (weighted first), review-sheet.jpg (Blender high/low EEVEE, Cycles diffuse, lightmap-only, engine) and renders/void.high.png to separate bake from runtime, plus the study's room-harness engine shots assets-source/rooms/study/staging/renders/engine.hero.png and engine.desk.png as the like-for-like kit benchmark (same 1280x720 harness). p5-int-study.jpg is the full-game pipeline and was only viewed, not used for numbers. docs/verification/p5-int-gear-shaft.jpg is dated 2026-11-15, shows the pre-db29fbd flat-ceiling build, and was not scored. No p4-study-*.jpg files exist in docs/verification. Pillow region means, percentiles, luminance std and HSV on the firebox, pit trench, gear rims (masked sat>0.3, v>0.45), shaft brass, floor, wallpaper, ceiling planks, beam side face and upper-shaft stone, comparing engine against lightmap-only frames. Side-by-side 2-3x zoom crops of the furnace and gear train are under /tmp/rxr-score-gs2/. Geometry is from scripts/assets/build-room-kit.py (GEAR_SHAFT hole 2.1, gallery_z 7.0, train_z 5.55-6.15) and room_kit.py furnace_shaft (plinth half 1.15, cap 1.3, collar 1.42, flame cards are four triangles per face), with numbers from report.json, engine-compare.json (frame_ratio 0.864, rmse 0.026), uv1-report.json and manifest.json. Side note: report.json files{} records engine-compare.json as 100c381f... and uv1-report.json as 269b7404..., but the files on disk hash ccaceb68... and 2a6439ac..., so the recorded hashes are stale.",
+    "evidence": [
+      {
+        "path": "docs/art-bible.md",
+        "sha256": "11da71b45f24eeb258ef77d328ef1aa009297a9231608cb80bb429aa3ff2ad6a"
+      },
+      {
+        "path": "docs/verification/p5-rooms-gear-shaft-hero-gear-turned.jpg",
+        "sha256": "429c20e7b3dccd561066959b00a9883593a833a6ace10cd924d62729ee4f8009"
+      },
+      {
+        "path": "docs/verification/p5-rooms-gear-shaft-hero.diffuse-gear-turned.jpg",
+        "sha256": "4946f4094f723e00f228f03f70c2acf81a3c9df4b67eef9fe9093683ef8dc960"
+      },
+      {
+        "path": "docs/verification/p5-rooms-gear-shaft-hero.diffuse.jpg",
+        "sha256": "d3c19d2974f7c722bc81229202a0cfeb7d50c045bca4538f23d4d2fc71f198f4"
+      },
+      {
+        "path": "docs/verification/p5-rooms-gear-shaft-hero.jpg",
+        "sha256": "bb5a31e7d4e2482a601f329d277100577539be8fd0bcc40397ce17df68ea4e85"
+      },
+      {
+        "path": "docs/verification/p5-rooms-gear-shaft-ring-gear-turned.jpg",
+        "sha256": "5f14d6e21f29588f545b6665d236489ef3fd1096a472abb30b18daf1eb4e0ad7"
+      },
+      {
+        "path": "docs/verification/p5-rooms-gear-shaft-ring.jpg",
+        "sha256": "2bb9b8123831c0428bf57640ea92862e10542bbf9ca3e50ac02a3f71dac843a2"
+      },
+      {
+        "path": "docs/verification/p5-rooms-gear-shaft-seam-north.jpg",
+        "sha256": "18ba18191ed2cf256fbbb863c89e89e38cd1882b0264e24c043f9b112477a02e"
+      },
+      {
+        "path": "docs/verification/p5-rooms-gear-shaft-void.jpg",
+        "sha256": "faa2d9e3250f2c3cf5075afa01cfde7d57526eaa66ee7b3295edfce30b8ccc34"
+      },
+      {
+        "path": "docs/verification/p5-int-study.jpg",
+        "sha256": "6258394c368a71674c74cb5dba4d66729a12beddd65e6f8152e9b9769fad4a08"
+      },
+      {
+        "path": "docs/verification/p5-int-gear-shaft.jpg",
+        "sha256": "8a3ff056b68918495674721bad12108c84862ee71f799eb791cdeb4e3a87dda9"
+      },
+      {
+        "path": "assets-source/rooms/gear-shaft/staging/review-sheet.jpg",
+        "sha256": "b37bba2c853a0b96762b044f6036b5f26ed92ee2b43e8d939f4be317ffc0b69a"
+      },
+      {
+        "path": "assets-source/rooms/gear-shaft/staging/renders/void.high.png",
+        "sha256": "a585b5559facf5733fcd9b521383d067befe1deb4df93d6389faab6d685e953d"
+      },
+      {
+        "path": "assets-source/rooms/gear-shaft/staging/report.json",
+        "sha256": "921fa554efa81ac0599560ae7e064f124c0d816f75e72b87a296dddaa87f182f"
+      },
+      {
+        "path": "assets-source/rooms/gear-shaft/staging/engine-compare.json",
+        "sha256": "ccaceb6879a41cd6170925abe492b2b066d249e261d24bd801cd141f947a3f72"
+      },
+      {
+        "path": "assets-source/rooms/gear-shaft/staging/uv1-report.json",
+        "sha256": "2a6439acd83c604fd47e3a78262219326e65b091c6affd735cdf74319f5673cd"
+      },
+      {
+        "path": "assets-source/rooms/gear-shaft/staging/gear-shaft.manifest.json",
+        "sha256": "41191dd824c82228f05d21481433f68399cb855762413c3eeb0f2b4e5866fe4a"
+      },
+      {
+        "path": "assets-source/rooms/gear-shaft/provenance.json",
+        "sha256": "eb1e267d1d14034b04d156c10efb2290177fb3c71eeaa732e850c7e1d80c8bcb"
+      },
+      {
+        "path": "scripts/assets/build-room-kit.py",
+        "sha256": "775b0a9b919fb005821c0805f6548cfab2cbd29e250012c0a70a9cb01d0f8da5"
+      },
+      {
+        "path": "assets-source/rooms/study/staging/renders/engine.hero.png",
+        "sha256": "56174ad55a38beb16f096d4f5cdb9a6ba2aee5d3fbf89f29d3443cadbaa81363"
+      },
+      {
+        "path": "assets-source/rooms/study/staging/renders/engine.desk.png",
+        "sha256": "06a74f35998b2ef8b80e1f3ef3ccdbf9e376ec562d0d0cdf5d9fe14079a6ebe4"
+      }
+    ],
+    "previousScore": 61,
+    "build": "db29fbd"
   },
   "buildDecisions": {
     "by": "orchestrator of the 2026-11-17 re-bake (build decisions, not owner approvals; Paul's review is still pending)",
