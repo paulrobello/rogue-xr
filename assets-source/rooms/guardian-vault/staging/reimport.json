@@ -1,11 +1,11 @@
 {
   "glb": "guardian-vault.glb",
-  "glb_sha256": "7f1a285cfa9ec89b4bd847e9ff58a41b9117e8b66e7edc67a3c1f69defee42a1",
+  "glb_sha256": "3421d6540ba034c82b79cb7195fa81a8d950df5f02a25874e7655821edc0c62f",
   "blender": "5.3.0",
   "meshes": [
     "guardian-vault"
   ],
-  "triangles": 8757,
+  "triangles": 11969,
   "materials": [
     "guardian-vault_brass-aged",
     "guardian-vault_brass-polished",

@@ -407,7 +407,7 @@
   "reviewEvidence": [
     {
       "path": "assets-source/rooms/hall/staging/review-sheet.jpg",
-      "sha256": "602d8c33b37acb51f006c4a6cb59370473893cf4df7d007399eb199f09125619"
+      "sha256": "50c3f0fa3fecc6d9f1ac21a396df77ac9499e2abf4f781f7a2fc03214c57be01"
     },
     {
       "path": "docs/verification/p5-rooms-hall-bench.jpg",
@@ -415,7 +415,7 @@
     },
     {
       "path": "docs/verification/p5-rooms-hall-floor-sealed-west-close.jpg",
-      "sha256": "385d609813395bd6f4181ba4bd5916795b2819eeeffd3e1f2ff545ad6b55216c"
+      "sha256": "36c3aad2d4f72cf936e5b6097d4f887feccc9327d59abc04814f07924e99de21"
     },
     {
       "path": "docs/verification/p5-rooms-hall-floor-sealed-west.jpg",
@@ -431,11 +431,11 @@
     },
     {
       "path": "docs/verification/p5-rooms-hall-seam-north.jpg",
-      "sha256": "38876c050f40d944f8f545b8d9549c7f1a98e2c8ae40f9f324a4ff3bd21071d0"
+      "sha256": "3838c1f3d5d3fbf1963b8bcc47e8f30977ca8ba0eba25b30fff161dc9a95aa9a"
     },
     {
       "path": "docs/verification/p5-rooms-hall-seam-west-turned.jpg",
-      "sha256": "62ff224902fca2e354c2267f6fb64ac7dddd20d1cd4fe299237007a0537a6997"
+      "sha256": "c2e2832a1dd5eab05ecbd845848122988df864a25d65af8809e047882e9f22f8"
     }
   ],
   "independentScore": {

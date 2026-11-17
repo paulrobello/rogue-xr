@@ -1,11 +1,11 @@
 {
   "glb": "corridor.glb",
-  "glb_sha256": "a47e2247183f21e15071aacee7c7a434e35c623b3ae5fa3e41b3bd524b41d00f",
+  "glb_sha256": "3d9de8242d34760159b91164fe3a88f91216b4af53dda1f457a0669eb7485526",
   "blender": "5.3.0",
   "meshes": [
     "corridor"
   ],
-  "triangles": 1912,
+  "triangles": 1946,
   "materials": [
     "corridor_brass-aged",
     "corridor_brass-polished",

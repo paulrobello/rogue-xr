@@ -11,13 +11,13 @@
     }
   },
   "ktx2_vs_png": {
-    "mean_abs_diff_255": 1.02,
-    "vs_flipped_png_255": 32.97
+    "mean_abs_diff_255": 18.52,
+    "vs_flipped_png_255": 29.32
   },
   "frame_means_255": {
-    "engine.desk.png": 46.6,
+    "engine.desk.png": 34.3,
     "engine.hero.diffuse.png": 22.2,
-    "engine.hero.png": 41.9,
+    "engine.hero.png": 28.1,
     "engine.hero.png-maps.png": 42.2
   }
 }

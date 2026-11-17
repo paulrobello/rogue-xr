@@ -48,22 +48,30 @@ CONST = {  # linear base colour, roughness, metallic, emission strength (study v
     # P5-T2 rework. Coals: deep ember red, a dark albedo with strong emission. The coals sit beside
     # the fire bake lights, so their lightmap term is large: at albedo 0.55 it alone pushed red past 1.0
     # and AgX turned the grate a pale salmon (engine R-B 76). Colour x 0.25 and strength x 4 keep the
-    # emitted light (bake and runtime) unchanged and cut the lit term to a quarter. Gilt: a dielectric
-    # brass for big gear faces: the PBR brass sets are fully metallic, so under the lightmap they have
-    # no diffuse term and read dark (crown gear L 46, vault wall gears L 40). Its albedo is the art
-    # bible's polished brass #DEC16A pushed to the gold end of the brass family (#DFCC59, white-light
-    # hue 52): the gears are lit almost only by FIRE, which drops the lit hue by about 20 degrees, and
-    # #DEC16A itself read copper there. A yellower albedo would stop reading as brass in white light.
-    "coals": ((0.1375, 0.025, 0.00375), 0.9, 0.0, 12.0),
-    "gilt": ((0.73, 0.60, 0.10), 0.42, 0.0, 0.0),
+    # emitted light (bake and runtime) unchanged and cut the lit term to a quarter. Their emission is
+    # ember orange (1.0, 0.29, 0.055), not the earlier blood red (1.0, 0.18, 0.027): the pit is a large
+    # emitter and its red bounce turned the gear shaft oxblood. Gilt: a dielectric brass for big gear
+    # faces (D3, kept): bound to the kit's metallic brass-polished set instead, the gears measured hue 28
+    # (gear shaft) and 27 (vault) and 1.9x their lightmap-only luma, against 36 and 40 for this constant.
+    # Its albedo is the gold end of the brass family; the gears are only ever seen under warm light,
+    # which drops the lit hue by about 20 degrees.
+    "coals": ((0.1375, 0.04, 0.0075), 0.9, 0.0, 12.0),
+    "gilt": ((0.70, 0.68, 0.12), 0.42, 0.0, 0.0),
 }
 EMISSIVE_RUNTIME = {"flame": 3.0, "lamp-glass": 1.5, "coals": 5.6}
 # Fire flames in the P5-T2 rooms: the shared flame (white-hot at 3.0, R-B 39 after AgX) made the
-# furnace a white light box and the braziers white spikes. Same dark-albedo split as the coals: the
-# emitted colour is (1.0, 0.33, 0.06) at Blender strength 6 and runtime intensity 1.4.
-FIRE_FLAME = {"const": {"flame": ((0.25, 0.0825, 0.015), 0.5, 0.0, 24.0)}, "emissive": {"flame": 5.6}}
-# Bake-light colour of fire (furnace, braziers): deeper than the candle colour build_lights defaults to.
-FIRE = {"type": "POINT", "color": (1.0, 0.46, 0.16)}
+# furnace a white light box and the braziers white spikes. Same dark-albedo split as the coals. D6,
+# revised: the emitted colour is (1.0, 0.5, 0.14), between the old deep fire (1.0, 0.33, 0.06) and the
+# study candle (1.0, 0.62, 0.22), at Blender strength 6 and runtime intensity 1.4 (unclipped red, so
+# the flame stays a deeper, more saturated amber than the pale candle flame).
+FIRE_FLAME = {"const": {"flame": ((0.25, 0.125, 0.035), 0.5, 0.0, 24.0)}, "emissive": {"flame": 5.6}}
+# Bake-light colour of fire (furnace, braziers), D6 revised: the candle amber (1.0, 0.58, 0.26). The
+# old (1.0, 0.46, 0.16) put the gilt at hue 27 and the gear shaft at frame saturation 0.82. Fire stays
+# hotter than the candles: the P5-T2 rooms bake their candles paler (`candle_color`).
+FIRE = {"type": "POINT", "color": (1.0, 0.58, 0.26)}
+# P5-T2 candle and lantern bake colour, paler than the kit default (1.0, 0.58, 0.26): walnut and red
+# wallpaper re-saturate whatever light they bounce, and the fire carries the room's amber.
+PALE_CANDLE = (1.0, 0.80, 0.60)
 # Encode percentile per room: candle flames sit centimetres from wax and brass, and those texels are a
 # larger share of a small room's map. Above it they clip; the report records the clipped fraction.
 WINDOW = {"wall": "N", "a": 2.6, "half_w": 0.6, "sill": 1.4, "spring": 2.55}
@@ -95,6 +103,12 @@ ROOMS = {
         },
         "stile_step": 0.8,
         "percentile": 98.0,
+        # Cycles diffuse bounces for the bake (factory default 4). In a 2 m walnut-and-wallpaper tube
+        # every bounce multiplies the light by a red albedo, so the frame read as a red monochrome.
+        "diffuse_bounces": 1,
+        # Lantern light leaves through clear glass: through the amber lamp-glass colour (1.0, 0.70, 0.32)
+        # it reached the walls as (1.0, 0.55, 0.18) and the frame measured saturation 0.84 at best.
+        "glass_transmit": (1.0, 1.0, 1.0),
     },
     # P5-T2. The chamber ceiling is at 5 m; `height` bounds the shaft void that rises from a hole over
     # the drive shaft to 8 m (a well with a gallery ring and a gear train).
@@ -106,6 +120,15 @@ ROOMS = {
         # Brass scratches at 2.5x the kit scale: fewer, broader marks (the review: "calm the noise").
         "tile": {"brass-aged": 1.25, "brass-polished": 1.25},
         **FIRE_FLAME,
+        # The pit's runtime glow: at 5.6 its red channel clipped on top of the lit term, a flat slab;
+        # lower, the baked gradient from the furnace grates to the kerb shows.
+        "emissive": {**FIRE_FLAME["emissive"], "coals": 1.5},
+        # Bake: two diffuse bounces (factory 4: each bounce off walnut and wallpaper reddens the light;
+        # the ceiling, lit only by bounce, read hue 7.5), pale candles, and lantern light passing a pale
+        # glass instead of the amber lamp-glass colour.
+        "diffuse_bounces": 2,
+        "candle_color": PALE_CANDLE,
+        "glass_transmit": (1.0, 0.93, 0.82),
         "cameras": {
             "hero": {"loc": (-1.0, -5.0, 1.6), "look": (0.4, 3.0, 3.3), "vfov": 70.0},
             "ring": {"loc": (2.6, 2.4, 1.6), "look": (-0.6, -0.8, 3.5), "vfov": 70.0},
@@ -119,6 +142,8 @@ ROOMS = {
         "lightmap": 2048,
         "slots": ["stone-floor", "wallpaper", "walnut", "brass-aged", "brass-polished", "stained-glass", "wax", "flame", "coals", "gilt"],
         **FIRE_FLAME,
+        "diffuse_bounces": 2,
+        "candle_color": PALE_CANDLE,
         "cameras": {
             "hero": {"loc": (1.0, -5.2, 1.6), "look": (0.0, 5.5, 2.7), "vfov": 70.0},
             "brazier": {"loc": (-1.5, -2.5, 1.6), "look": (4.0, 4.0, 1.8), "vfov": 70.0},
@@ -147,14 +172,21 @@ CORRIDOR = {
     "lanterns": [("lamp", 0.8, 0.0), ("lantern_s", -0.8, -3.0), ("lantern_n", -0.8, 3.0)],
     # Bake energies (W) of each lantern's point and pool spot. At 12 / 28 the engine hero sat at mean
     # L* 5.9 against the study's 17.8. The encode normalises the map, so one factor on both keeps the
-    # pool/gap contrast and the clipped share and raises only the lightmap intensity.
-    "lantern_w": (48.0, 112.0),
+    # pool/gap contrast and the clipped share and raises only the lightmap intensity. With one bounce and
+    # clear glass, 44 / 104 put the hero at L* 18.5 (over the 15-18 band) and 40 / 95 at L* 17.4 with
+    # 15.4% of the frame under L* 5 (over 15%).
+    "lantern_w": (42.0, 99.0),
+    # Lantern bake colour: near white. The walnut and red wallpaper supply the warmth; at the kit's
+    # candle colour the frame saturation stayed above 0.72 whatever the bounces or the glass.
+    "lantern_color": (1.0, 0.92, 0.82),
 }
 # A lantern's bake light: a point for the glow on the walls near it, and a downward spot standing in
 # for the brass cap that throws its light down through the glass floor, so each lantern bakes its
 # own pool. Point lights 2.2 m up and 3 m apart light a 2 m corridor floor almost evenly.
 LANTERN_POOL = {"type": "SPOT", "spot_size": math.radians(70.0), "spot_blend": 0.35}
 VAULT_WINDOWS = [{"wall": "N", "a": a, "half_w": 0.55, "sill": 1.7, "spring": 3.1} for a in (-2.6, 0.0, 2.6)]
+VAULT_SCONCES = [("E", -2.2), ("E", 2.2), ("W", -2.2), ("W", 2.2)]
+VAULT_SCONCE_W = 80.0
 # Gear-shaft void: ceiling hole half size (the crown gear's tip radius is 2.0), gallery ring height,
 # and the two levels of the static gear train.
 GEAR_SHAFT = {"hole": 2.1, "gallery_z": 7.0, "train_z": (5.55, 6.15)}
@@ -244,8 +276,8 @@ def build_corridor(b, room: kit.Room, high: bool) -> tuple[list, list]:
     kit.build_shell(b, room, {}, ROOMS["corridor"]["stile_step"], cornice=False, wainscot=CORRIDOR["wainscot"])
     kit.cove_cornice(b, room)
     T = room.height
-    for y in (-2.0, 2.0):  # brass pilaster ribs and a walnut beam
-        b.box(-room.hx, room.hx, y - 0.11, y + 0.11, T - 0.24, T, "walnut", drop="txX")
+    for y in (-2.0, 2.0):  # walnut pilasters and a walnut rib that follows the vault
+        kit.corridor_rib(b, room, y)
         for wall, a in (("W", y), ("E", -y)):
             b.xf = room.frame(wall)
             # Walnut shaft: a metal has no diffuse lobe, so a tall brass strip reads dark under the
@@ -260,10 +292,14 @@ def build_corridor(b, room: kit.Room, high: bool) -> tuple[list, list]:
             kit.moulding_frame(b, a0, a1, CORRIDOR["wainscot"] + 0.2, T - 0.45)
         b.xf = Matrix.Identity(4)
     lights = []
+    color = {"color": CORRIDOR["lantern_color"]}
     for name, x, y in CORRIDOR["lanterns"]:
         flame = kit.lantern_open(b, x, y, 2.2, room.hx if x > 0 else -room.hx, high)
-        lights += [(name, flame, CORRIDOR["lantern_w"][0]), (f"{name}_pool", flame - Vector((0, 0, 0.05)), CORRIDOR["lantern_w"][1], LANTERN_POOL)]
+        lights += [(name, flame, CORRIDOR["lantern_w"][0], color),
+                   (f"{name}_pool", flame - Vector((0, 0, 0.05)), CORRIDOR["lantern_w"][1], {**LANTERN_POOL, **color})]
     kit.banner(b, -room.hx, -room.hx + 0.04, 0.0, high)
+    # Brass inlay along the 8 m run: two lines and a cross band at each pilaster pair and the lamp.
+    kit.floor_inlay(b, room.hy - 0.08, (-0.5, 0.5), (-2.0, 0.0, 2.0))
     assert (lights[0][1] - Vector((0.8, 0.0, 2.2))).length < 0.05, lights[0]  # the lamp light socket
     return [], lights
 
@@ -295,7 +331,8 @@ def build_gear_shaft(b, room: kit.Room, high: bool) -> tuple[list, list]:
     lights = [(f"furnace_{i}", p, 40.0, FIRE) for i, p in enumerate(furnace)]
     lights += [(n, p, 40.0) for n, p in zip(("lamp_n", "lamp_s"), lamps)]
     lights += [(f"sconce_{i}", p, 18.0) for i, p in enumerate(sconces)]
-    lights += [(f"gallery_{i}", p, 6.0) for i, p in enumerate(gallery)]  # 4-fold symmetric about the ring axis
+    # Hurricane candles: 4-fold symmetric about the ring axis. 12 W (was 6) so the gallery reads as lit.
+    lights += [(f"gallery_{i}", p, 12.0) for i, p in enumerate(gallery)]
     return colliders, lights
 
 
@@ -312,11 +349,14 @@ def build_guardian_vault(b, room: kit.Room, high: bool) -> tuple[list, list]:
         S.WIN = {"x0": -w["half_w"], "x1": w["half_w"], "sill": w["sill"], "spring": w["spring"], "apex": lancet_opening(w)[3]}
         kit.lancet_frame(b, room, w["a"], high)
     T = room.height
+    # Three walnut diaphragm arches span east-west (springing over the wall gears and the pillars), so
+    # the flat deck reads as a vaulted hall; the two north-south beams stay.
+    for c in (-4.0, 0.0, 4.0):
+        kit.diaphragm_arch(b, "x", c, room.hx, 4.55, T - 0.3, T, 0.16, high)
     for c in (-4.0, 4.0):
-        b.box(-room.hx, room.hx, c - 0.16, c + 0.16, T - 0.32, T, "walnut", drop="txX")
         b.box(c - 0.16, c + 0.16, -room.hy, room.hy, T - 0.28, T, "walnut", drop="tyY")
-    # Gilt wall gears; the north one sits inside the apse arch, over the centre lancet.
-    kit.wall_gear(b, room, "N", 0.0, 4.8, 0.6, 24, high, slot="gilt")
+    # Gilt wall gears; the apse oculus gear over the centre lancet is polished brass (the kit's metal).
+    kit.wall_gear(b, room, "N", 0.0, 4.8, 0.6, 24, high, slot="brass-polished")
     kit.wall_gear(b, room, "W", 0.0, 3.4, 1.0, 32, high, slot="gilt")
     kit.wall_gear(b, room, "E", 0.0, 3.4, 1.0, 32, high, slot="gilt")
     kit.arena_circle(b, 0.0, 3.0, high)  # guardian socket (runtime 0, -3)
@@ -329,6 +369,10 @@ def build_guardian_vault(b, room: kit.Room, high: bool) -> tuple[list, list]:
         pts, box = kit.pillar(b, float(x), float(-z), T)
         colliders.append(box)
         lights += [(f"brazier_{name}_in", pts[0], 30.0, FIRE), (f"brazier_{name}_out", pts[1], 15.0, FIRE)]
+    # Candle sconces on the side walls, between the wall gear and the pillars: the side wallpaper read
+    # luma 30-40 against the study's 52-78. Inside the walkable inset, so no colliders.
+    S.SCONCES = VAULT_SCONCES
+    lights += [(f"sconce_{i}", p, VAULT_SCONCE_W) for i, p in enumerate(S.build_sconces(b, high))]
     return colliders, lights
 
 
@@ -362,7 +406,7 @@ def build_lights(room: kit.Room, lights: list) -> None:
         data = bpy.data.lights.new(f"{room.piece}_{name}", o.get("type", "POINT"))
         data.energy = energy
         data.shadow_soft_size = 0.02
-        data.color = o.get("color", (1.0, 0.58, 0.26))
+        data.color = o.get("color", ROOMS[room.piece].get("candle_color", (1.0, 0.58, 0.26)))
         if "spot_size" in o:  # a SPOT points down -Z unrotated
             data.spot_size = o["spot_size"]
             data.spot_blend = o["spot_blend"]
@@ -519,6 +563,20 @@ def reimport(room: kit.Room) -> None:
 # ---------------------------------------------------------------------------------------------
 
 
+def uv0(obj, report: dict, build_name: str) -> None:
+    """UV0: the study's tiled projection, lengthwise walnut grain on mouldings and beams (P5 rework),
+    the gilt slot projected like a tiled slot (so it can be bound to a PBR brass set at runtime), and
+    the corridor's narrow walnut sides moved inside a plank (rework 2)."""
+    S.uv0_tiled(obj)
+    key = f"lengthwise_grain_{build_name}"
+    report[key] = report.get(key, 0) + kit.lengthwise_grain(obj)
+    if "gilt" in S.SLOTS:
+        kit.tiled_uv_slot(obj, "gilt", TILE["brass-polished"])
+    if S.PIECE == "corridor":
+        key = f"narrow_side_uv_{build_name}"
+        report[key] = report.get(key, 0) + kit.narrow_side_uv(obj, tile=TILE["walnut"])
+
+
 def export(low, path: Path, rigid: list) -> int:
     if rigid:
         kit.export_glb_multi([low, *rigid], path)
@@ -547,11 +605,8 @@ def main() -> None:
                     "generator": "scripts/assets/build-room-kit.py", "helper": "scripts/assets/room_kit.py (reuses build-room-study.py functions)"}
 
     high, _, _, high_rigid = build(room, True)
-    grain = P in ("hall", "corridor", "gear-shaft", "guardian-vault")  # P5 rework: lengthwise walnut grain on mouldings and beams
     for obj in (high, *high_rigid):
-        S.uv0_tiled(obj)
-        if grain:
-            report["lengthwise_grain_high"] = report.get("lengthwise_grain_high", 0) + kit.lengthwise_grain(obj)
+        uv0(obj, report, "high")
         S.apply_bevel(obj)
     report["high"] = {"triangles": sum(S.count_tris(o) for o in (high, *high_rigid)), "slots": len(S.SLOTS)}
     high_all = [high, *high_rigid]
@@ -562,9 +617,7 @@ def main() -> None:
     build_lights(room, lights)
     cams = {name: S.make_camera(name) for name in cfg["cameras"]}
     for obj in low_all:
-        S.uv0_tiled(obj)
-        if grain:
-            report["lengthwise_grain_low"] = report.get("lengthwise_grain_low", 0) + kit.lengthwise_grain(obj)
+        uv0(obj, report, "low")
     bpy.context.view_layer.update()
     if not args.glb_out:
         S.set_visible(low_all, False)
@@ -598,11 +651,16 @@ def main() -> None:
         return
 
     S.set_visible(high_all, False)
-    if "lamp-glass" in S.SLOTS:  # after export, so the GLB's material factors do not depend on it
+    if "lamp-glass" in S.SLOTS and "glass_transmit" in cfg:  # after export, so the GLB's material factors do not depend on it
+        kit.bake_transmitting_glass_tint("lamp-glass", cfg["glass_transmit"])
+        report["bake_glass_transmit"] = list(cfg["glass_transmit"])
+    elif "lamp-glass" in S.SLOTS:
         kit.bake_transmitting_glass("lamp-glass")
     lightmap = None
     if not args.skip_bake:
         report["device"] = lm.select_device(args.device)
+        if "diffuse_bounces" in cfg:
+            scene.cycles.diffuse_bounces = cfg["diffuse_bounces"]
         S.set_metal_links(False)
         load0 = S.load_avg()
         if rigid:
@@ -610,7 +668,8 @@ def main() -> None:
         else:
             raw, seconds = lm.bake_irradiance(low, size, args.samples)
         S.set_metal_links(True)
-        report["lightmap_bake"] = {"seconds": round(seconds, 2), "host_load": [load0, S.load_avg()], "timing_valid": max(load0, S.load_avg()) <= 15}
+        report["lightmap_bake"] = {"seconds": round(seconds, 2), "host_load": [load0, S.load_avg()], "timing_valid": max(load0, S.load_avg()) <= 15,
+                                   "diffuse_bounces": scene.cycles.diffuse_bounces}
         lm.save_exr(raw, S.SCRATCH / f"{P}.lightmap.raw.exr")
         image = lm.denoise_image(raw, S.SCRATCH)
         if rigid:
@@ -680,6 +739,8 @@ def main() -> None:
     report["blend"] = {p.name: {"sha256": S.sha256(p), "bytes": p.stat().st_size} for p in sorted(S.BLEND_DIR.glob("*.blend"))}
     report["colliders_added"] = colliders
     report["bake_lights"] = [{"name": n, "blender": [round(v, 4) for v in p], "watts": w, **({"light": o[0]} if o else {})} for n, p, w, *o in lights]
+    if "candle_color" in cfg:  # the colour of every bake light above without its own
+        report["bake_candle_color"] = list(cfg["candle_color"])
     report["cameras_runtime"] = {k: {"eye": [v["loc"][0], v["loc"][2], -v["loc"][1]], "look": [v["look"][0], v["look"][2], -v["look"][1]], "vfov": v["vfov"]}
                                  for k, v in cfg["cameras"].items()}
     report["host_load_end"] = S.load_avg()

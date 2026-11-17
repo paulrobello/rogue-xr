@@ -1,11 +1,11 @@
 {
   "glb": "guardian-vault.glb",
-  "glb_sha256": "7f1a285cfa9ec89b4bd847e9ff58a41b9117e8b66e7edc67a3c1f69defee42a1",
+  "glb_sha256": "3421d6540ba034c82b79cb7195fa81a8d950df5f02a25874e7655821edc0c62f",
   "size": 2048,
-  "islands": 1587,
-  "coverage": 0.3731,
+  "islands": 1618,
+  "coverage": 0.3368,
   "overlap_px": 0,
-  "texels_claimed_twice": 412,
+  "texels_claimed_twice": 384,
   "claims_per_covered_texel": 1.0003,
-  "min_gap_px": 15
+  "min_gap_px": 16
 }

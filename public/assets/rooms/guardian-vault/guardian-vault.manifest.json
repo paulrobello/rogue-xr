@@ -5,8 +5,8 @@
     "file": "guardian-vault.lightmap.ktx2",
     "uv": 1,
     "encoding": "srgb-scaled",
-    "scale": 2.7558562755584717,
-    "intensity": 8.657778
+    "scale": 4.8842692375183105,
+    "intensity": 15.344384
   },
   "id": "guardian-vault",
   "kinds": [
@@ -350,7 +350,7 @@
     }
   ],
   "budget": {
-    "tris": 8757,
+    "tris": 11969,
     "materials": 10,
     "texturePx": 2048
   },
@@ -384,17 +384,17 @@
       "roughness": 0.55
     },
     "guardian-vault_flame": {
-      "color": "#895121",
-      "emissive": "#895121",
+      "color": "#896335",
+      "emissive": "#896335",
       "emissiveIntensity": 5.6
     },
     "guardian-vault_coals": {
-      "color": "#682c0c",
-      "emissive": "#682c0c",
+      "color": "#683815",
+      "emissive": "#683815",
       "emissiveIntensity": 5.6
     },
     "guardian-vault_gilt": {
-      "color": "#decb59",
+      "color": "#dad761",
       "roughness": 0.42
     }
   },

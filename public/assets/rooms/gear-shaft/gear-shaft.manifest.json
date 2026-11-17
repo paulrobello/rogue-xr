@@ -5,8 +5,8 @@
     "file": "gear-shaft.lightmap.ktx2",
     "uv": 1,
     "encoding": "srgb-scaled",
-    "scale": 4.990577697753906,
-    "intensity": 15.678362
+    "scale": 5.155223846435547,
+    "intensity": 16.195613
   },
   "id": "gear-shaft",
   "kinds": [
@@ -280,7 +280,7 @@
     }
   ],
   "budget": {
-    "tris": 9286,
+    "tris": 9804,
     "materials": 10,
     "texturePx": 2048
   },
@@ -310,8 +310,8 @@
       "roughness": 0.55
     },
     "gear-shaft_flame": {
-      "color": "#895121",
-      "emissive": "#895121",
+      "color": "#896335",
+      "emissive": "#896335",
       "emissiveIntensity": 5.6
     },
     "gear-shaft_lamp-glass": {
@@ -320,12 +320,12 @@
       "emissiveIntensity": 1.5
     },
     "gear-shaft_coals": {
-      "color": "#682c0c",
-      "emissive": "#682c0c",
-      "emissiveIntensity": 5.6
+      "color": "#683815",
+      "emissive": "#683815",
+      "emissiveIntensity": 1.5
     },
     "gear-shaft_gilt": {
-      "color": "#decb59",
+      "color": "#dad761",
       "roughness": 0.42
     }
   },

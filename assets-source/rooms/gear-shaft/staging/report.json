@@ -1,74 +1,74 @@
 {
   "piece": "gear-shaft",
   "blender": "5.3.0",
-  "host_load_start": 1.68,
+  "host_load_start": 2.95,
   "lightmap_size": 2048,
   "samples": 256,
   "generator": "scripts/assets/build-room-kit.py",
   "helper": "scripts/assets/room_kit.py (reuses build-room-study.py functions)",
   "lengthwise_grain_high": 92,
   "high": {
-    "triangles": 64650,
+    "triangles": 65284,
     "slots": 10
   },
   "lengthwise_grain_low": 92,
   "low": {
-    "triangles": 9286,
-    "vertices": 6220,
+    "triangles": 9804,
+    "vertices": 6724,
     "materials": 10,
     "lightmap_density": {
-      "mean_px_per_m": 46.01,
-      "min_px_per_m": 38.92,
-      "max_px_per_m": 46.28
+      "mean_px_per_m": 45.83,
+      "min_px_per_m": 38.88,
+      "max_px_per_m": 46.26
     },
     "lightmap_density_by_slot": {
       "brass-aged": {
-        "area_m2": 49.43,
+        "area_m2": 46.79,
         "median_px_per_m": 46.3,
         "min_px_per_m": 38.9
       },
       "brass-polished": {
-        "area_m2": 16.82,
-        "median_px_per_m": 46.0,
+        "area_m2": 16.87,
+        "median_px_per_m": 45.4,
         "min_px_per_m": 38.9
       },
       "coals": {
         "area_m2": 6.93,
         "median_px_per_m": 46.3,
-        "min_px_per_m": 46.3
+        "min_px_per_m": 45.4
       },
       "flame": {
-        "area_m2": 0.51,
-        "median_px_per_m": 46.3,
-        "min_px_per_m": 46.3
+        "area_m2": 0.74,
+        "median_px_per_m": 45.8,
+        "min_px_per_m": 43.1
       },
       "gilt": {
         "area_m2": 11.01,
-        "median_px_per_m": 46.3,
+        "median_px_per_m": 46.2,
         "min_px_per_m": 38.9
       },
       "lamp-glass": {
-        "area_m2": 0.27,
-        "median_px_per_m": 43.1,
+        "area_m2": 0.62,
+        "median_px_per_m": 44.5,
         "min_px_per_m": 43.0
       },
       "stone-floor": {
         "area_m2": 162.4,
         "median_px_per_m": 46.3,
-        "min_px_per_m": 46.3
+        "min_px_per_m": 45.4
       },
       "wallpaper": {
         "area_m2": 153.28,
-        "median_px_per_m": 46.3,
-        "min_px_per_m": 46.3
+        "median_px_per_m": 45.8,
+        "min_px_per_m": 45.4
       },
       "walnut": {
-        "area_m2": 196.18,
+        "area_m2": 178.54,
         "median_px_per_m": 46.3,
-        "min_px_per_m": 40.6
+        "min_px_per_m": 40.5
       },
       "wax": {
-        "area_m2": 0.13,
+        "area_m2": 0.12,
         "median_px_per_m": 44.5,
         "min_px_per_m": 41.6
       }
@@ -77,9 +77,9 @@
       "gear-shaft_gear_ring": {
         "triangles": 2392,
         "lightmap_density": {
-          "mean_px_per_m": 45.16,
-          "min_px_per_m": 39.09,
-          "max_px_per_m": 46.28
+          "mean_px_per_m": 45.14,
+          "min_px_per_m": 39.07,
+          "max_px_per_m": 46.25
         },
         "location_blender": [
           0.0,
@@ -90,30 +90,36 @@
     }
   },
   "canonicalized_primitives": 12,
-  "glb_bytes": 801608,
+  "glb_bytes": 649072,
+  "bake_glass_transmit": [
+    1.0,
+    0.93,
+    0.82
+  ],
   "device": "GPU:METAL (Apple M4 (GPU - 10 cores))",
   "lightmap_bake": {
-    "seconds": 42.96,
+    "seconds": 40.61,
     "host_load": [
-      1.68,
-      1.54
+      2.95,
+      1.98
     ],
-    "timing_valid": true
+    "timing_valid": true,
+    "diffuse_bounces": 2
   },
   "rigid_lightmap": {
     "gear-shaft_gear_ring": {
       "azimuth": {
         "sector_means": [
-          0.0818,
-          0.07991,
-          0.07884,
-          0.07849,
-          0.07708,
-          0.07671,
-          0.07947,
-          0.08079
+          0.09519,
+          0.09154,
+          0.09173,
+          0.09141,
+          0.09075,
+          0.09035,
+          0.09208,
+          0.09413
         ],
-        "min_over_max": 0.938,
+        "min_over_max": 0.949,
         "sectors": 8
       },
       "casts_baked_shadow": false
@@ -121,14 +127,14 @@
   },
   "denoise": "compositor OIDN, HDR, accurate prefilter, high quality",
   "lightmap": {
-    "coverage": 0.6738,
-    "scale": 4.990578,
-    "clipped_fraction": 0.00998,
-    "mean_irradiance": 0.333572,
+    "coverage": 0.6654,
+    "scale": 5.155224,
+    "clipped_fraction": 0.01,
+    "mean_irradiance": 0.416952,
     "p05_irradiance": 0.0,
     "percentile": 99.0,
     "encoded_p05_255": 0,
-    "encoded_median_255": 46
+    "encoded_median_255": 43
   },
   "ktx2": {
     "tool": "ktx version: v4.4.2",
@@ -158,12 +164,12 @@
   ],
   "blend": {
     "gear-shaft_high.blend": {
-      "sha256": "5c60176b79987e2ba2dd7e9de97b614927db170548201342098cb24da58354c4",
-      "bytes": 1589021
+      "sha256": "eff138857734f402e2be66a6f3fc1fb41057988c02a7d745343b95a70e2a8488",
+      "bytes": 1772901
     },
     "gear-shaft_low.blend": {
-      "sha256": "5d667f603c2c427c38cbdf96f26c2eea84965a9c66c1250407b8fbd09f139cdf",
-      "bytes": 387415
+      "sha256": "99f5ea319c67688ffcd9e028abfb62f0fdda6ad85fbfeb6da8da7cd7535209b6",
+      "bytes": 442302
     }
   },
   "colliders_added": [
@@ -205,8 +211,8 @@
         "type": "POINT",
         "color": [
           1.0,
-          0.46,
-          0.16
+          0.58,
+          0.26
         ]
       }
     },
@@ -222,8 +228,8 @@
         "type": "POINT",
         "color": [
           1.0,
-          0.46,
-          0.16
+          0.58,
+          0.26
         ]
       }
     },
@@ -239,8 +245,8 @@
         "type": "POINT",
         "color": [
           1.0,
-          0.46,
-          0.16
+          0.58,
+          0.26
         ]
       }
     },
@@ -256,8 +262,8 @@
         "type": "POINT",
         "color": [
           1.0,
-          0.46,
-          0.16
+          0.58,
+          0.26
         ]
       }
     },
@@ -320,37 +326,42 @@
       "blender": [
         1.88,
         1.88,
-        7.215
+        7.19
       ],
-      "watts": 6.0
+      "watts": 12.0
     },
     {
       "name": "gallery_1",
       "blender": [
         -1.88,
         1.88,
-        7.215
+        7.19
       ],
-      "watts": 6.0
+      "watts": 12.0
     },
     {
       "name": "gallery_2",
       "blender": [
         -1.88,
         -1.88,
-        7.215
+        7.19
       ],
-      "watts": 6.0
+      "watts": 12.0
     },
     {
       "name": "gallery_3",
       "blender": [
         1.88,
         -1.88,
-        7.215
+        7.19
       ],
-      "watts": 6.0
+      "watts": 12.0
     }
+  ],
+  "bake_candle_color": [
+    1.0,
+    0.8,
+    0.6
   ],
   "cameras_runtime": {
     "hero": {
@@ -393,13 +404,13 @@
       "vfov": 70.0
     }
   },
-  "host_load_end": 1.63,
+  "host_load_end": 1.99,
   "files": {
-    "engine-compare.json": "11e0803de09b5f2f780f058ecc92d1531b407438556ba5bcbde0caedf8b6c06c",
-    "gear-shaft.glb": "5ea4b012ed76e23c501b1f3bfc2f0aba71108762acae68d4c873f82b7d6690a4",
-    "gear-shaft.lightmap.ktx2": "f1e45f105edd5296aba987e305bbd22deef35f733efbaf805ddc6f87552bc87e",
-    "gear-shaft.lightmap.png": "3cefc3d7be9f69513483251b101215971da206562f6502246a419f38ebe02304",
-    "gear-shaft.manifest.json": "ab950a08a9a82536e685469a180de4eace6648adf5ec5297e31e86b613947995",
-    "uv1-report.json": "1207756ce8acf9ce95ede8fa42a5ffbc6b8f8f7cfa1a0a92d25ccf4884649f01"
+    "engine-compare.json": "84dd58eec0094674f5ee1f2bc3a3666c9572215c37c9c92395621c4391766c89",
+    "gear-shaft.glb": "62a72d2bd7c5c8fcfdccca857e39c4dc5127121086205ff9ea2c6456dccdfb0d",
+    "gear-shaft.lightmap.ktx2": "a3c03e9a201310b2bb782ff0cc1a6e1b01b178c3be251cec875fdedff07bf185",
+    "gear-shaft.lightmap.png": "6d08cedd326eb3e422cefa6ea4622bfc5c0083dc7a5bcf5ded93c33bf06d3916",
+    "gear-shaft.manifest.json": "0da1b107e2add321bcf5c5cbae5bfbe2fece61a1cfbaddadf17b196f28ee0f6f",
+    "uv1-report.json": "3f9d22985c37e4c5d17c3b12c1e2c128d01a2d58421b9a6be8592bb8553991b0"
   }
 }

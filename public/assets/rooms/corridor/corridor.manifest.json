@@ -5,8 +5,8 @@
     "file": "corridor.lightmap.ktx2",
     "uv": 1,
     "encoding": "srgb-scaled",
-    "scale": 5.928220272064209,
-    "intensity": 18.624053
+    "scale": 4.0294294357299805,
+    "intensity": 12.658826
   },
   "id": "corridor",
   "kinds": [
@@ -164,7 +164,7 @@
     }
   ],
   "budget": {
-    "tris": 1912,
+    "tris": 1946,
     "materials": 7,
     "texturePx": 2048
   },

@@ -759,7 +759,10 @@ def furnace_shaft(b, high: bool, height: float, shaft_r: float) -> list:
         d = h - 0.1  # ember panel depth
         b.face([(d, -0.45, 0.25), (d, 0.45, 0.25), (d, 0.45, 0.8), (d, -0.45, 0.8)], (1, 0, 0), "coals")
         for y, fh in ((-0.3, 0.3), (-0.1, 0.42), (0.1, 0.38), (0.3, 0.28)):  # flames in front of the coals
-            b.face([(h - 0.06, y - 0.09, 0.27), (h - 0.06, y + 0.09, 0.27), (h - 0.06, y, 0.27 + fh)], (1, 0, 0), "flame")
+            saved = b.xf
+            b.xf = saved @ Matrix.Translation((h - 0.06, y, 0.0)) @ Matrix.Rotation(math.pi / 2, 4, "Z")
+            soft_flame(b, 0.0, 0.0, 0.27, fh, 0.1, cards=1)  # one card in the grate plane, seen from the front
+            b.xf = saved
         b.face([(d, -0.45, 0.25), (h, -0.45, 0.25), (h, 0.45, 0.25), (d, 0.45, 0.25)], (0, 0, 1), "stone-floor")
         b.face([(d, -0.45, 0.8), (h, -0.45, 0.8), (h, 0.45, 0.8), (d, 0.45, 0.8)], (0, 0, -1), "stone-floor")
         b.face([(d, -0.45, 0.25), (h, -0.45, 0.25), (h, -0.45, 0.8), (d, -0.45, 0.8)], (0, 1, 0), "stone-floor")
@@ -774,7 +777,7 @@ def furnace_shaft(b, high: bool, height: float, shaft_r: float) -> list:
     b.cylinder(0, 0, shaft_r, fz + 0.12, height, seg, "brass-polished", caps="")
     for z in (2.2, 2.9, 4.4, 7.4):
         b.annulus(0, 0, shaft_r, shaft_r + 0.06, z - 0.04, z + 0.04, seg, "brass-aged", sides="tbo")
-    b.annulus(0, 0, shaft_r, 0.85, height - 0.14, height, seg, "brass-aged", sides="bo")  # ceiling boss
+    # No ceiling boss: the shaft runs on up out of the open well into the dark (rework 2).
     return lights
 
 
@@ -812,7 +815,7 @@ def pillar(b, cx: float, cy: float, height: float) -> tuple[list, dict]:
         b.xf = Matrix.Translation((cx, cy, 0)) @ Matrix.Rotation(math.pi / 2 * k, 4, "Z")
         b.face([(0.42, -0.42, z1 + 0.012), (ro, -ro, z1 + 0.012), (ro, ro, z1 + 0.012), (0.42, 0.42, z1 + 0.012)], (0, 0, 1), "coals")
         for t, fh, fr in ((-0.33, 0.24, 0.05), (-0.11, 0.34, 0.065), (0.11, 0.3, 0.06), (0.33, 0.22, 0.05)):
-            flame_tongue(b, 0.54, t, z1 + 0.012, fh, fr)
+            soft_flame(b, 0.54, t, z1 + 0.012, fh, fr * 1.15, cards=3, yaw=t)
         b.xf = Matrix.Identity(4)
     for sx in (-1, 1):  # bracket feet down the pillar corners
         for sy in (-1, 1):
@@ -907,12 +910,11 @@ def shaft_well(b, z0: float, z1: float, h: float, zg: float, high: bool) -> list
             y = -g + 2 * g * i / 6
             b.box(g - 0.02, g + 0.02, y - 0.02, y + 0.02, zg, zg + 0.86, "brass-aged", drop="btX")
         b.xf = Matrix.Identity(4)
-    b.face([(-h, -h, z1), (h, -h, z1), (h, h, z1), (-h, h, z1)], (0, 0, -1), "walnut")  # lid
+    # No lid (rework 2): the well stays open at z1, so it falls away into the dark above the gallery.
     flames = []
     c = h - 0.22
     for sx, sy in ((1, 1), (-1, 1), (-1, -1), (1, -1)):
-        b.cylinder(sx * c, sy * c, 0.05, zg, zg + 0.02, 16 if high else 8, "brass-polished", caps="t")
-        flames.append(candle(b, sx * c, sy * c, zg + 0.02, 0.16, high))
+        flames.append(hurricane_candle(b, sx * c, sy * c, zg, high))
     return flames
 
 
@@ -1032,3 +1034,160 @@ def apse(b, room: Room, high: bool) -> tuple[list, list]:
                  S.runtime_box(Vector((p0 - 0.03, y0 - 0.04, 0)), Vector((p1 + 0.03, y1, 0)), T),
                  S.runtime_box(Vector((-0.93, 5.45, 0)), Vector((0.93, y1, 0)), 1.36)]
     return colliders, lights
+
+
+# ---------------------------------------------------------------------------------------------
+# Rework 2 (2026-11-17): new helpers only; the study and hall geometry never call these.
+# ---------------------------------------------------------------------------------------------
+
+
+def soft_flame(b, cx: float, cy: float, z: float, h: float, r: float, cards: int = 3, yaw: float = 0.0, slot: str = "flame") -> None:
+    """Rounded teardrop flame of `cards` crossed vertical cards through (cx, cy), at even angles from
+    `yaw`: round at the base, widest at 0.3 h, a curved taper to the tip, so the silhouette has no
+    straight facets. Each card is a strip of convex trapezoids (bmesh triangulates them safely)."""
+    ts = (0.0, 0.04, 0.12, 0.22, 0.32, 0.44, 0.56, 0.68, 0.8, 0.91, 1.0)
+    raw = [math.sqrt(t) * (1.0 - t) ** 1.2 for t in ts]
+    peak = max(raw)
+    prof = [(z + t * h, r * w / peak) for t, w in zip(ts, raw)]
+    for k in range(cards):
+        a = yaw + math.pi * k / cards
+        c, s = math.cos(a), math.sin(a)
+        n = (-s, c, 0)
+        for (za, wa), (zb, wb) in zip(prof, prof[1:]):
+            pa0, pa1 = (cx - wa * c, cy - wa * s, za), (cx + wa * c, cy + wa * s, za)
+            pb0, pb1 = (cx - wb * c, cy - wb * s, zb), (cx + wb * c, cy + wb * s, zb)
+            if wa < 1e-6:
+                b.face([(cx, cy, za), pb1, pb0], n, slot)
+            elif wb < 1e-6:
+                b.face([pa0, pa1, (cx, cy, zb)], n, slot)
+            else:
+                b.face([pa0, pa1, pb1, pb0], n, slot)
+
+
+def hurricane_candle(b, cx: float, cy: float, z: float, high: bool) -> Vector:
+    """Gallery candle under an amber glass chimney, so it reads as a glow from the floor 5 m below:
+    brass cup, wax candle, a soft flame and an open-topped lamp-glass chimney. Returns the flame point."""
+    seg = 16 if high else 8
+    b.cylinder(cx, cy, 0.07, z, z + 0.03, seg, "brass-polished", caps="t")
+    b.cylinder(cx, cy, 0.022, z + 0.03, z + 0.15, seg, "wax", caps="t")
+    soft_flame(b, cx, cy, z + 0.155, 0.09, 0.022, cards=2, yaw=math.pi / 4)
+    b.cylinder(cx, cy, 0.06, z + 0.03, z + 0.27, seg, "lamp-glass", caps="")
+    b.annulus(cx, cy, 0.06, 0.072, z + 0.27, z + 0.29, seg, "brass-aged", sides="to")
+    return b.xf @ Vector((cx, cy, z + 0.19))
+
+
+def tiled_uv_slot(obj, slot: str, tile: float) -> None:
+    """S.uv0_tiled's projection for one constant slot (UV0 in tile units, v negated), so a constant
+    slot can be bound to a shared PBR set at runtime without a rebuild."""
+    mesh = obj.data
+    uv = mesh.uv_layers["UVMap"]
+    index = S.SLOTS.index(slot)
+    for poly in mesh.polygons:
+        if poly.material_index != index:
+            continue
+        n = poly.normal
+        ax = max(range(3), key=lambda i: abs(n[i]))
+        for li in poly.loop_indices:
+            p = mesh.vertices[mesh.loops[li].vertex_index].co
+            if ax == 2:
+                u, v = (p.x, p.y) if n.z > 0 else (p.x, -p.y)
+            elif ax == 0:
+                u, v = (p.y if n.x > 0 else -p.y), p.z
+            else:
+                u, v = (-p.x if n.y > 0 else p.x), p.z
+            uv.data[li].uv = (u / tile, -v / tile)
+
+
+def narrow_side_uv(obj, slot: str = "walnut", tile: float = 0.5, max_across: float = 0.08, min_tall: float = 0.8) -> int:
+    """Re-maps UV0 on the narrow, tall vertical faces of a tiled slot (pilaster and stile sides). The
+    planar projection gives a 6 cm side about a tenth of a tile, which can land on the light plank edge
+    and seam of the walnut map and read as a flat orange smear; this puts it inside a plank, at twice the
+    horizontal density, keeping v (the grain) on z. Returns the number of faces re-mapped."""
+    mesh = obj.data
+    uv = mesh.uv_layers["UVMap"].data
+    index = S.SLOTS.index(slot)
+    done = 0
+    for poly in mesh.polygons:
+        if poly.material_index != index or abs(poly.normal.z) > 0.1:
+            continue
+        pts = [mesh.vertices[mesh.loops[li].vertex_index].co for li in poly.loop_indices]
+        ax = 0 if abs(poly.normal.x) > abs(poly.normal.y) else 1
+        h_axis = 1 - ax
+        lo = min(p[h_axis] for p in pts)
+        across = max(p[h_axis] for p in pts) - lo
+        tall = max(p.z for p in pts) - min(p.z for p in pts)
+        if across > max_across or tall < min_tall:
+            continue
+        for li in poly.loop_indices:
+            p = mesh.vertices[mesh.loops[li].vertex_index].co
+            uv[li].uv = (0.14 + 2.0 * (p[h_axis] - lo) / tile, -p.z / tile)
+        done += 1
+    return done
+
+
+def corridor_rib(b, room: Room, y: float, w: float = 0.11, drop: float = 0.1) -> None:
+    """Walnut rib across the corridor at Blender y that follows the cove-and-ceiling vault (replaces the
+    dropped box beam, whose square end read as a separate hood over the door): it springs from the
+    pilaster capitals at the cove and runs `drop` below the flat ceiling, so its underside continues the
+    vault's walnut. `w` is its half width along y."""
+    T, hx = room.height, room.hx
+    cove_d, cove_h = 0.36, 0.3
+    xa = hx - 0.08  # capital front
+    za = T - cove_h + (hx - xa) * cove_h / cove_d  # on the cove surface there
+    xb = hx - cove_d - 0.09
+    zb = T - drop
+    x_top = hx - cove_d  # cove meets the ceiling
+    y0, y1 = y - w, y + w
+    for s in (-1, 1):
+        A, B = (s * xa, za), (s * xb, zb)
+        # Underside of the sloped run, then the side faces up to the vault surface.
+        b.face([(A[0], y0, A[1]), (B[0], y0, B[1]), (B[0], y1, B[1]), (A[0], y1, A[1])], (-s * (zb - za), 0, -(xa - xb)), "walnut")
+        for yy, ny in ((y0, -1), (y1, 1)):
+            b.face([(A[0], yy, A[1]), (B[0], yy, B[1]), (B[0], yy, T), (s * x_top, yy, T)], (0, ny, 0), "walnut")
+    b.face([(-xb, y0, zb), (xb, y0, zb), (xb, y1, zb), (-xb, y1, zb)], (0, 0, -1), "walnut")
+    for yy, ny in ((y0, -1), (y1, 1)):
+        b.face([(-xb, yy, zb), (xb, yy, zb), (xb, yy, T), (-xb, yy, T)], (0, ny, 0), "walnut")
+
+
+def floor_inlay(b, half_y: float, xs: tuple, bands: tuple, w: float = 0.03) -> None:
+    """Brass-aged inlay lines in the floor (top faces only, 5 mm proud): runs along y at each x in `xs`
+    and cross bands at each y in `bands` between the outer runs."""
+    for x in xs:
+        b.box(x - w / 2, x + w / 2, -half_y, half_y, 0.0, 0.005, "brass-aged", drop="bxXyY")
+    x0, x1 = min(xs) + w / 2, max(xs) - w / 2
+    for y in bands:
+        b.box(x0, x1, y - w / 2, y + w / 2, 0.0, 0.005, "brass-aged", drop="bxXyY")
+
+
+def diaphragm_arch(b, axis: str, c: float, half: float, z_spring: float, z_crown: float, top: float, w: float, high: bool,
+                   slot: str = "walnut") -> None:
+    """Walnut diaphragm arch across the room: a segmental intrados from wall to wall (springing at
+    `z_spring`, crown at `z_crown`) with solid spandrels up to the ceiling at `top`. axis 'x' spans x at
+    y = c; axis 'y' spans y at x = c. `w` is the half thickness."""
+    rise = z_crown - z_spring
+    rho = (half * half + rise * rise) / (2 * rise)
+    zc = z_crown - rho
+    n = 24 if high else 14
+    us = [-half + 2 * half * i / n for i in range(n + 1)]
+    zs = [zc + math.sqrt(max(rho * rho - u * u, 0.0)) for u in us]
+
+    def P(u: float, v: float, z: float) -> tuple:
+        return (u, c + v, z) if axis == "x" else (c + v, u, z)
+
+    def N(nu: float, nv: float, nz: float) -> tuple:
+        return (nu, nv, nz) if axis == "x" else (nv, nu, nz)
+
+    for i in range(n):
+        ua, ub, za, zb = us[i], us[i + 1], zs[i], zs[i + 1]
+        um, zm = (ua + ub) / 2, (za + zb) / 2
+        b.face([P(ua, -w, za), P(ub, -w, zb), P(ub, w, zb), P(ua, w, za)], N(-um, 0, -(zm - zc)), slot)
+        for v, nv in ((-w, -1), (w, 1)):
+            b.face([P(ua, v, za), P(ub, v, zb), P(ub, v, top), P(ua, v, top)], N(0, nv, 0), slot)
+
+
+def bake_transmitting_glass_tint(slot: str, tint: tuple) -> None:
+    """bake_transmitting_glass with the transmitted colour given explicitly: a lantern's light reaches
+    the room through `tint`, not through the glass's amber base colour (rework 2)."""
+    bake_transmitting_glass(slot)
+    transp = next(n for n in S.material(slot).node_tree.nodes if n.type == "BSDF_TRANSPARENT")
+    transp.inputs["Color"].default_value = (*tint, 1.0)

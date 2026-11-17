@@ -1,85 +1,93 @@
 {
   "piece": "corridor",
   "blender": "5.3.0",
-  "host_load_start": 1.79,
+  "host_load_start": 2.43,
   "lightmap_size": 2048,
   "samples": 256,
   "generator": "scripts/assets/build-room-kit.py",
   "helper": "scripts/assets/room_kit.py (reuses build-room-study.py functions)",
   "lengthwise_grain_high": 80,
+  "narrow_side_uv_high": 232,
   "high": {
-    "triangles": 11863,
+    "triangles": 11939,
     "slots": 7
   },
   "lengthwise_grain_low": 80,
+  "narrow_side_uv_low": 232,
   "low": {
-    "triangles": 1912,
-    "vertices": 1442,
+    "triangles": 1946,
+    "vertices": 1478,
     "materials": 7,
     "lightmap_density": {
-      "mean_px_per_m": 123.8,
-      "min_px_per_m": 105.03,
-      "max_px_per_m": 124.91
+      "mean_px_per_m": 124.54,
+      "min_px_per_m": 105.67,
+      "max_px_per_m": 125.67
     },
     "lightmap_density_by_slot": {
       "brass-aged": {
-        "area_m2": 5.18,
-        "median_px_per_m": 124.9,
-        "min_px_per_m": 105.0
+        "area_m2": 5.74,
+        "median_px_per_m": 125.7,
+        "min_px_per_m": 105.7
       },
       "brass-polished": {
         "area_m2": 0.44,
-        "median_px_per_m": 124.9,
-        "min_px_per_m": 105.4
+        "median_px_per_m": 125.7,
+        "min_px_per_m": 106.1
       },
       "cloth": {
         "area_m2": 2.03,
-        "median_px_per_m": 124.9,
-        "min_px_per_m": 124.9
+        "median_px_per_m": 125.7,
+        "min_px_per_m": 125.7
       },
       "lamp-glass": {
         "area_m2": 0.46,
-        "median_px_per_m": 116.2,
-        "min_px_per_m": 116.2
+        "median_px_per_m": 116.9,
+        "min_px_per_m": 116.9
       },
       "stone-floor": {
         "area_m2": 16.0,
-        "median_px_per_m": 124.9,
-        "min_px_per_m": 124.9
+        "median_px_per_m": 125.7,
+        "min_px_per_m": 125.7
       },
       "wallpaper": {
         "area_m2": 40.16,
-        "median_px_per_m": 124.9,
-        "min_px_per_m": 124.9
+        "median_px_per_m": 125.7,
+        "min_px_per_m": 125.7
       },
       "walnut": {
-        "area_m2": 61.75,
-        "median_px_per_m": 124.9,
-        "min_px_per_m": 109.1
+        "area_m2": 60.45,
+        "median_px_per_m": 125.7,
+        "min_px_per_m": 109.7
       }
     }
   },
   "canonicalized_primitives": 7,
-  "glb_bytes": 144132,
+  "glb_bytes": 149620,
+  "bake_glass_transmit": [
+    1.0,
+    1.0,
+    1.0
+  ],
   "device": "GPU:METAL (Apple M4 (GPU - 10 cores))",
   "lightmap_bake": {
-    "seconds": 32.65,
+    "seconds": 27.08,
     "host_load": [
-      1.72,
-      1.25
+      2.4,
+      1.79
     ],
-    "timing_valid": true
+    "timing_valid": true,
+    "diffuse_bounces": 1
   },
   "denoise": "compositor OIDN, HDR, accurate prefilter, high quality",
   "lightmap": {
-    "coverage": 0.7473,
-    "scale": 5.92822,
-    "clipped_fraction": 0.01996,
-    "mean_irradiance": 0.552366,
+    "coverage": 0.7595,
+    "scale": 4.029429,
+    "clipped_fraction": 0.01999,
+    "mean_irradiance": 0.715891,
     "p05_irradiance": 0.0,
     "percentile": 98.0,
     "encoded_p05_255": 0,
-    "encoded_median_255": 59
+    "encoded_median_255": 62
   },
   "ktx2": {
     "tool": "ktx version: v4.4.2",
@@ -103,12 +111,12 @@
   ],
   "blend": {
     "corridor_high.blend": {
-      "sha256": "d7a67c6f5011bf2e94588ee1eaa35c0d7a9eba5e8f1c1891b954d618e7fe00b2",
-      "bytes": 359717
+      "sha256": "16fa49d705cee988d7d899f93b3b5d063c5c214b8ce515a2e287eb77a625da49",
+      "bytes": 361884
     },
     "corridor_low.blend": {
-      "sha256": "9999acd5517e3e6e7d02cacc4e8eba5b79c27b80e7d09dd212c7979e57671486",
-      "bytes": 174890
+      "sha256": "859b8077537aec95a8eeecb2fd4b5fae4cc220147d4c9f678a8f0d6b0107ca82",
+      "bytes": 175829
     }
   },
   "colliders_added": [],
@@ -120,7 +128,14 @@
         0.0,
         2.2
       ],
-      "watts": 48.0
+      "watts": 42.0,
+      "light": {
+        "color": [
+          1.0,
+          0.92,
+          0.82
+        ]
+      }
     },
     {
       "name": "lamp_pool",
@@ -129,11 +144,16 @@
         0.0,
         2.15
       ],
-      "watts": 112.0,
+      "watts": 99.0,
       "light": {
         "type": "SPOT",
         "spot_size": 1.2217304763960306,
-        "spot_blend": 0.35
+        "spot_blend": 0.35,
+        "color": [
+          1.0,
+          0.92,
+          0.82
+        ]
       }
     },
     {
@@ -143,7 +163,14 @@
         -3.0,
         2.2
       ],
-      "watts": 48.0
+      "watts": 42.0,
+      "light": {
+        "color": [
+          1.0,
+          0.92,
+          0.82
+        ]
+      }
     },
     {
       "name": "lantern_s_pool",
@@ -152,11 +179,16 @@
         -3.0,
         2.15
       ],
-      "watts": 112.0,
+      "watts": 99.0,
       "light": {
         "type": "SPOT",
         "spot_size": 1.2217304763960306,
-        "spot_blend": 0.35
+        "spot_blend": 0.35,
+        "color": [
+          1.0,
+          0.92,
+          0.82
+        ]
       }
     },
     {
@@ -166,7 +198,14 @@
         3.0,
         2.2
       ],
-      "watts": 48.0
+      "watts": 42.0,
+      "light": {
+        "color": [
+          1.0,
+          0.92,
+          0.82
+        ]
+      }
     },
     {
       "name": "lantern_n_pool",
@@ -175,11 +214,16 @@
         3.0,
         2.15
       ],
-      "watts": 112.0,
+      "watts": 99.0,
       "light": {
         "type": "SPOT",
         "spot_size": 1.2217304763960306,
-        "spot_blend": 0.35
+        "spot_blend": 0.35,
+        "color": [
+          1.0,
+          0.92,
+          0.82
+        ]
       }
     }
   ],
@@ -211,13 +255,13 @@
       "vfov": 70.0
     }
   },
-  "host_load_end": 1.39,
+  "host_load_end": 1.91,
   "files": {
-    "corridor.glb": "a47e2247183f21e15071aacee7c7a434e35c623b3ae5fa3e41b3bd524b41d00f",
-    "corridor.lightmap.ktx2": "73f98c1d42f71ca505710d1b46f7c6699d7ec802242566bcdd707359594b9af1",
-    "corridor.lightmap.png": "0867bfbb907a47dda6344348ac42841fc069cd94b117fd2b6fb92cb43a0d83d3",
-    "corridor.manifest.json": "33c12e0cf034f2235a3b969c783e16cae6d2ad753c64511589e023c71187b2db",
-    "engine-compare.json": "af005ef80a22c520467dd478fcfb112ce004019735b2f47475bf9296425504d0",
-    "uv1-report.json": "f2d70682244a58945f8e9a0a6b4500d2ccdc86352e148b47e60819a89ce9e263"
+    "corridor.glb": "3d9de8242d34760159b91164fe3a88f91216b4af53dda1f457a0669eb7485526",
+    "corridor.lightmap.ktx2": "dec6f9c88daf78aadec81a6c229e91e9963ab5e2f4c985b215203cf0b8b18e69",
+    "corridor.lightmap.png": "15e6c70634b43d8422c1b7db056712d518c8ba71b69a115da9b661baac64527e",
+    "corridor.manifest.json": "624e6f166d216d3a761fe943d0f78338d1aad42bae7bd6f6cd87b805c292850a",
+    "engine-compare.json": "ecb96bc2d16060d34220196ae1e100a2cec055ddf28cb87a23ae2a175f8ed52a",
+    "uv1-report.json": "973478e32848bcaadab9be23c12bd090c22c395f6d932bd367e17c1743ac6a29"
   }
 }

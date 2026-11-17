@@ -5,6 +5,7 @@ import { parseRoomTemplate } from '../content/rooms.ts';
 import { createKtx2Loader } from './ktx2.ts';
 import { createBitmapTextureLoader, loadRoomLightmap, parseTemplateManifest } from './lightmap.ts';
 import { configurePbrTexture, loadPbrSet } from './materials.ts';
+import { loadStudyAsset, parseStudyManifest } from './study-room.ts';
 
 const BASE = '/assets/rooms/study';
 /** Dev-only: the PNG twins of the shipped KTX2 maps, kept beside the generator's staging output. */
@@ -28,9 +29,10 @@ interface StudyManifest {
 
 /**
  * `?view=room-asset-proof`: the baked hero study (P4-T4) with the approved P4-T3 materials bound
- * by slot name and its lightmap on UV1. `&cam=hero|desk` matches the Blender review cameras,
- * `&tex=ktx2|png` picks the shipped KTX2 maps or their staged PNG twins, `&tone=none` turns tone
- * mapping off and `&diffuse=1` zeroes metalness, which together match the Cycles diffuse reference.
+ * by slot name and its lightmap on UV1. `&cam=hero|desk` matches the Blender review cameras.
+ * The default (`&tex=ktx2`) loads the study through `loadStudyAsset`, exactly as the game does.
+ * `&tex=png` (the staged PNG twins), `&tone=none` and `&diffuse=1` (metalness zeroed) keep the
+ * plain lightmap binding, which together match the Cycles diffuse reference.
  */
 export async function mountRoomAssetProof(
   scene: THREE.Scene,
@@ -50,6 +52,22 @@ export async function mountRoomAssetProof(
   const study = raw as StudyManifest;
 
   const ktx2 = createKtx2Loader(renderer);
+  if (!usePng && !diffuseOnly) {
+    // The shipped look goes through the game's own loader, so runtime material changes show here.
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    const envMap = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    pmrem.dispose();
+    const set = await loadPbrSet('/assets/materials', {
+      anisotropy: renderer.capabilities.getMaxAnisotropy(),
+      ktx2,
+    });
+    const asset = await loadStudyAsset({ study: parseStudyManifest(raw), set, ktx2, envMap });
+    ktx2.dispose();
+    const model = asset.instantiate();
+    model.name = manifest.template;
+    scene.add(model);
+    return frameProof(model, params, rig, camera);
+  }
   const [gltf, pbr] = await Promise.all([
     new GLTFLoader().loadAsync(`${BASE}/${manifest.glb}`),
     loadPbrSet('/assets/materials', {
@@ -99,6 +117,15 @@ export async function mountRoomAssetProof(
     pmrem.dispose();
   }
 
+  return frameProof(gltf.scene, params, rig, camera);
+}
+
+function frameProof(
+  model: THREE.Object3D,
+  params: URLSearchParams,
+  rig: THREE.Group,
+  camera: THREE.PerspectiveCamera,
+): THREE.Object3D {
   const view = CAMERAS[(params.get('cam') ?? 'hero') as keyof typeof CAMERAS] ?? CAMERAS.hero;
   rig.position.set(view.eye[0], 0, view.eye[2]);
   camera.position.set(0, view.eye[1], 0);
@@ -107,7 +134,7 @@ export async function mountRoomAssetProof(
   rig.updateMatrixWorld(true);
   camera.lookAt(view.look[0], view.look[1], view.look[2]);
   (window as unknown as { __roomAssetProofReady: boolean }).__roomAssetProofReady = true;
-  return gltf.scene;
+  return model;
 }
 
 /**

@@ -1,12 +1,12 @@
 {
   "glb": "gear-shaft.glb",
-  "glb_sha256": "5ea4b012ed76e23c501b1f3bfc2f0aba71108762acae68d4c873f82b7d6690a4",
+  "glb_sha256": "62a72d2bd7c5c8fcfdccca857e39c4dc5127121086205ff9ea2c6456dccdfb0d",
   "blender": "5.3.0",
   "meshes": [
     "gear-shaft",
     "gear-shaft_gear_ring"
   ],
-  "triangles": 9286,
+  "triangles": 9804,
   "materials": [
     "gear-shaft_brass-aged",
     "gear-shaft_brass-polished",
