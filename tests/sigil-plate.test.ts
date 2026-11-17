@@ -15,6 +15,9 @@ import {
 } from '../src/sigil/index.ts';
 import {
   CLEAN_SCORE,
+  GLYPH_DRAW_SECONDS,
+  GLYPH_END_SECONDS,
+  GLYPH_FLARE_PEAK,
   MAX_PLATE_DEPTH,
   MAX_TRACE_POINTS,
   MIN_CAST_POINTS,
@@ -494,5 +497,86 @@ describe('SigilPlate', () => {
     }
     expect(opacities.size).toBeGreaterThan(1);
     expect(plate.scale.x).toBeCloseTo(1);
+  });
+});
+
+describe('cast glyph', () => {
+  const glyphOf = (plate: SigilPlate) =>
+    plate.getObjectByName('sigil-cast-glyph') as THREE.Mesh<THREE.BufferGeometry, THREE.Material>;
+  const trailOf = (plate: SigilPlate) =>
+    plate.getObjectByName('sigil-plate-trail') as THREE.Mesh<
+      THREE.BufferGeometry,
+      THREE.MeshBasicMaterial
+    >;
+  const run = (plate: SigilPlate, seconds: number) => {
+    for (let t = 0; t < seconds - 1e-9; t += 1 / 72) plate.update(1 / 72);
+  };
+
+  it('replaces the finished trace with the clean glyph, which draws itself in, then collapses', () => {
+    const pose = posedPlate(0);
+    for (const id of SIGIL_IDS) {
+      const plate = new SigilPlate();
+      plate.show(id, pose);
+      run(plate, 0.3);
+      drawOnPlate(plate, pose, id);
+      expect(plate.casting).toBe(false);
+      expect(plate.finish()).not.toBeNull();
+      // The strokes stay for the caller's scoring.
+      expect(plate.strokes.length).toBeGreaterThan(0);
+      expect(plate.casting).toBe(true);
+      const glyph = glyphOf(plate);
+      expect(glyph.visible).toBe(true);
+      run(plate, GLYPH_DRAW_SECONDS / 2);
+      const half = glyph.geometry.drawRange.count;
+      expect(half, id).toBeGreaterThan(0);
+      run(plate, GLYPH_DRAW_SECONDS / 2 + 0.02);
+      expect(glyph.geometry.drawRange.count, id).toBeGreaterThan(half);
+      // The raw stroke has faded out under the glyph.
+      expect(trailOf(plate).visible).toBe(false);
+      run(plate, GLYPH_FLARE_PEAK - GLYPH_DRAW_SECONDS);
+      expect(plate.castFlare, id).toBeGreaterThan(0.5);
+      run(plate, GLYPH_END_SECONDS);
+      expect(plate.casting).toBe(false);
+      expect(glyph.visible).toBe(false);
+      expect(trailOf(plate).visible).toBe(false);
+      // A new show brings the trail back for the next trace.
+      plate.show(id, pose);
+      expect(trailOf(plate).visible).toBe(true);
+      expect(trailOf(plate).material.opacity).toBe(1);
+      plate.dispose();
+    }
+  });
+
+  it('keeps the glyph centred and unturned under reduced motion', () => {
+    const pose = posedPlate(0);
+    const plate = new SigilPlate();
+    plate.reducedMotion = true;
+    plate.show('spiral', pose);
+    drawOnPlate(plate, pose, 'spiral');
+    plate.finish();
+    const glyph = glyphOf(plate);
+    for (let t = 0; t < GLYPH_END_SECONDS; t += 1 / 72) {
+      plate.update(1 / 72);
+      expect(glyph.rotation.z).toBe(0);
+      expect(glyph.scale.x).toBeLessThanOrEqual(1);
+    }
+    plate.dispose();
+  });
+
+  it('stops the glyph when the plate hides, and a stray tap never starts one', () => {
+    const pose = posedPlate(0);
+    const plate = new SigilPlate();
+    plate.show('bolt', pose);
+    drawOnPlate(plate, pose, 'bolt');
+    plate.finish();
+    expect(plate.casting).toBe(true);
+    plate.hide();
+    expect(plate.casting).toBe(false);
+    plate.show('bolt', pose);
+    plate.beginStroke();
+    plate.addTip(worldPoint(pose, 0, 0));
+    expect(plate.finish()).toBeNull();
+    expect(plate.casting).toBe(false);
+    plate.dispose();
   });
 });

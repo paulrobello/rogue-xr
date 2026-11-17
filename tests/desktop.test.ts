@@ -182,7 +182,7 @@ describe('desktop combat framing', () => {
 
   // The bug bash found fights opening with the table below the view (seed SPIRE001, room 2: the
   // table fell back to 0.5 m), so the sigil plate and dice tray could not be seen or drawn on.
-  for (const distance of [0.5, 0.65]) {
+  for (const distance of [0.5, 0.65, 1.0, 1.2]) {
     it(`frames the table centre and the automaton line with the table ${distance} m ahead`, () => {
       const { camera, controls } = setup();
       const top = DEFAULT_EYE_HEIGHT - WAIST_DROP;
@@ -250,7 +250,7 @@ describe('desktop combat framing fit', () => {
   });
 
   for (const heading of [0, 90, 215]) {
-    for (const distance of [0.5, 0.55, 0.65, 0.8]) {
+    for (const distance of [0.5, 0.55, 0.65, 0.8, 1.0, 1.2]) {
       for (const aspect of [1.6, 16 / 9, 4 / 3]) {
         it(`keeps the tray, plate and automatons inside the view (table ${distance} m, heading ${heading}, aspect ${aspect.toFixed(2)})`, () => {
           const { must, want } = scene(distance, heading);

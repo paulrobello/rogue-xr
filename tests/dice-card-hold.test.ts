@@ -93,6 +93,12 @@ function flingFirstCard(rig: Rig): void {
 
 const enemyHp = (state: CombatSession['view']) => state.enemies.map((e) => e.hp);
 
+/** Steps until the attack's bolt (sent once the die settles) has landed on the enemy. */
+function waitFlight(rig: Rig): void {
+  for (let i = 0; i < 120 && rig.session.attackInFlight; i++) rig.step();
+  expect(rig.session.attackInFlight).toBe(false);
+}
+
 describe('H2 a dice card waits for its die', () => {
   it('shows nothing of the card until the player throws and the die settles', async () => {
     const rig = await openFight({ deck: Array(10).fill('cog-toss') });
@@ -132,6 +138,10 @@ describe('H2 a dice card waits for its die', () => {
     rig.step();
     expect(session.awaitingDice).toBe(false);
     expect(session.stage).toBe('idle');
+    // The settled die sends the attack's bolt; its damage shows when the bolt lands.
+    expect(session.attackInFlight).toBe(true);
+    expect(enemyHp(session.view)).toEqual(before);
+    waitFlight(rig);
     expect(enemyHp(session.view)).toEqual(enemyHp(session.controller.state));
     expect(session.log.length).toBeGreaterThan(logBefore);
     rig.hook.dispose();
@@ -148,6 +158,7 @@ describe('H2 a dice card waits for its die', () => {
     expect(session.awaitingThrow).toBe(false);
     for (let i = 0; i < 600 && session.awaitingDice; i++) rig.step();
     expect(session.rolls).toHaveLength(1);
+    waitFlight(rig);
     expect(enemyHp(session.view)).toEqual(enemyHp(session.controller.state));
     rig.hook.dispose();
   }, 60_000);
@@ -163,6 +174,7 @@ describe('H2 a dice card waits for its die', () => {
     expect(session.awaitingDice).toBe(true);
     rig.step(1);
     expect(session.awaitingDice).toBe(false);
+    waitFlight(rig);
     expect(enemyHp(session.view)).toEqual(enemyHp(session.controller.state));
     vi.restoreAllMocks();
     rig.hook.dispose();
@@ -190,6 +202,9 @@ describe('H2 a dice card waits for its die', () => {
     pointerAt(rig, at(session, 'throw'), 'up');
     expect(session.awaitingThrow).toBe(false);
     for (let i = 0; i < 600 && session.awaitingDice; i++) rig.step();
+    // The killing bolt is still flying: the banner waits for it to land.
+    expect(rig.hook.banner).toBe('');
+    waitFlight(rig);
     rig.step(0.2);
     expect(rig.hook.banner).toBe('VICTORY');
     rig.step(6);

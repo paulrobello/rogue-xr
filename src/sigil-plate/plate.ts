@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { GLOW_HOT } from '../enemies/glow.ts';
 import { PALETTE } from '../palette.ts';
 import { type Point, SIGIL_IDS, SIGIL_TEMPLATES, type SigilId } from '../sigil/index.ts';
+import { CastGlyph } from './cast-glyph.ts';
+import { castPower } from './glyph-timing.ts';
 import {
   formatMultiplier,
   MAX_TRACE_POINTS,
@@ -123,6 +125,7 @@ export class SigilPlate extends THREE.Group {
   private trailSegments = 0;
   private readonly trailHeat = new TrailHeat(MAX_TRACE_POINTS);
   private readonly sparks = new SigilSparks();
+  private readonly glyph = new CastGlyph();
   private readonly gravityTurn = new THREE.Quaternion();
   private readonly gravity = new THREE.Vector3();
   private plateSigil: SigilId | null = null;
@@ -132,6 +135,8 @@ export class SigilPlate extends THREE.Group {
   private appear = 0;
   private labelAge = Number.POSITIVE_INFINITY;
   private text = '';
+  /** Softens the cast glyph (no spin, swell or pulse). Set by the owner from the OS preference. */
+  reducedMotion = false;
 
   constructor() {
     super();
@@ -192,6 +197,7 @@ export class SigilPlate extends THREE.Group {
     this.trail.frustumCulled = false;
     this.trail.renderOrder = GLOW_RENDER_ORDER;
     this.add(this.trail);
+    this.add(this.glyph);
     this.add(this.sparks);
 
     this.labelCanvas = typeof document === 'undefined' ? null : document.createElement('canvas');
@@ -256,6 +262,21 @@ export class SigilPlate extends THREE.Group {
 
   get pointCount(): number {
     return this.builder.pointCount;
+  }
+
+  /** True while the clean glyph of a finished cast is playing. */
+  get casting(): boolean {
+    return this.glyph.active;
+  }
+
+  /** Seconds since the cast glyph started (0 when none is playing). */
+  get castAge(): number {
+    return this.glyph.age;
+  }
+
+  /** The cast glyph's current flare, 0..1. */
+  get castFlare(): number {
+    return this.glyph.active ? this.glyph.frame.flare : 0;
   }
 
   /** How-to-draw line shown above the plate while it waits for a trace. */
@@ -389,6 +410,14 @@ export class SigilPlate extends THREE.Group {
       result.quality,
       QUALITY_COLOR[result.quality],
     );
+    // The raw stroke gives way to the clean glyph of the sigil; the strokes stay for the caller.
+    const pose = this.platePose as PlatePose;
+    this.glyph.start(
+      sigilId,
+      Math.min(pose.halfWidth, pose.halfHeight) * 2 * GLYPH_FILL,
+      castPower(result.multiplier),
+      this.reducedMotion,
+    );
     this.currentPhase = 'done';
     return result;
   }
@@ -403,9 +432,16 @@ export class SigilPlate extends THREE.Group {
     }
     const pulse = 0.5 + 0.5 * Math.sin(this.time * Math.PI * 2 * PULSE_HZ);
     const drawing = this.currentPhase === 'drawing' ? 0.12 : 0;
-    this.faceMaterial.opacity = 0.26 + 0.12 * pulse + drawing;
-    this.rimMaterial.opacity = 0.6 + 0.4 * pulse;
-    this.guideMaterial.opacity = 0.2 + 0.14 * pulse;
+    this.glyph.update(dt);
+    const cast = this.glyph.active ? this.glyph.frame : null;
+    const flare = cast ? cast.flare : 0;
+    this.faceMaterial.opacity = 0.26 + 0.12 * pulse + drawing + 0.3 * flare;
+    this.rimMaterial.opacity = Math.min(1, 0.6 + 0.4 * pulse + flare);
+    // The guide and the raw stroke fade out under the cast glyph and stay out until the next show.
+    const under = cast ? cast.trail : this.currentPhase === 'done' ? 0 : 1;
+    this.guideMaterial.opacity = (0.2 + 0.14 * pulse) * under;
+    this.trailMaterial.opacity = under;
+    this.trail.visible = under > 0;
     this.stepTrace(dt);
 
     const waiting = this.currentPhase === 'ready' || this.currentPhase === 'drawing';
@@ -425,6 +461,7 @@ export class SigilPlate extends THREE.Group {
 
   dispose(): void {
     this.sparks.dispose();
+    this.glyph.dispose();
     for (const child of [this.face, this.rim, this.guide, this.trail, this.label, this.hint]) {
       child.geometry.dispose();
     }
@@ -500,6 +537,9 @@ export class SigilPlate extends THREE.Group {
   }
 
   private resetTrail(): void {
+    this.glyph.stop();
+    this.trail.visible = true;
+    this.trailMaterial.opacity = 1;
     this.builder.clear();
     this.trailSegments = 0;
     this.trailHeat.clear();

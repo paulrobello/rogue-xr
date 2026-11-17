@@ -16,7 +16,15 @@ import {
   type TurnSegment,
 } from '../combat-view/enemy-turn.ts';
 import { HIT_RED } from '../combat-view/hit-feedback.ts';
-import { intentChips } from '../combat-view/index.ts';
+import {
+  CARD_LAUNCH_DELAY,
+  CARD_POWER,
+  flightSeconds,
+  KNOCK_SECONDS,
+  knockOffset,
+} from '../combat-view/impact-timing.ts';
+import { intentChips, READOUT_MARGIN, readoutCentreY } from '../combat-view/index.ts';
+import { type BoltKind, SpellFx } from '../combat-view/spell-fx.ts';
 import { getCard } from '../content/cards.ts';
 import { dieById } from '../content/dice.ts';
 import { type EncounterTier, encounterSetups } from '../content/enemies.ts';
@@ -40,6 +48,8 @@ import {
   PLAYER_ID,
 } from '../rules/index.ts';
 import {
+  castPower,
+  GLYPH_LAUNCH_SECONDS,
   type PlatePose,
   plateLabelCorners,
   platePoseAboveTable,
@@ -87,7 +97,7 @@ const DESKTOP_STATUS_SCALE = 0.8;
  * XR layout of the player's status panel, table metres (right, toward the enemies, above the top):
  * up and left of the sigil plate, turned to face a seat `STATUS_FACE_SEAT` behind the table centre
  * (the default table distance), so a seated player sees all of it from the forward pose at the 0.5
- * to 0.85 m placements.
+ * to 1.2 m placements.
  */
 const STATUS_WIDTH = 0.38;
 const STATUS_AT = { right: -0.38, forward: 0.32, lift: 0.68 } as const;
@@ -220,6 +230,8 @@ export interface CombatSessionDeps {
   models?: DiceAsset | null;
   /** The room reflection probe the dice reflect (see `DicePresenterOptions.envMap`). */
   diceEnv?: THREE.Texture | null;
+  /** Softens the cast glyph and the impact flash and drops the knock-back (the OS preference). */
+  reducedMotion?: boolean;
 }
 
 export type SessionStage = Stage | 'dice' | 'enemy';
@@ -257,6 +269,50 @@ interface BeatRun {
   /** The actor's clip passed its `impact` event. */
   cue: boolean;
 }
+
+/** Where the next attack's bolt leaves from, set by the verb that played it. */
+interface Launch {
+  readonly from: THREE.Vector3;
+  /** Session clock time the bolt leaves. */
+  readonly at: number;
+  readonly power: number;
+  readonly kind: BoltKind;
+}
+
+/**
+ * A player attack in flight: its effects, and the view from before it, held until the bolt lands
+ * on the enemy (the HP change, hit clip, death and sounds show at contact).
+ */
+interface Flight {
+  readonly state: CombatState;
+  /** The rules state right after the play: the fold start once it lands. */
+  readonly after: CombatState;
+  readonly events: CombatEvent[];
+  readonly logLength: number;
+  readonly from: THREE.Vector3;
+  readonly power: number;
+  readonly kind: BoltKind;
+  readonly targets: { readonly id: string; readonly at: THREE.Vector3 }[];
+  /** Seconds from the play until the bolt leaves, the bolt's flight time, and the contact time. */
+  readonly delay: number;
+  readonly seconds: number;
+  readonly contact: number;
+  /** Session clock time of the play; the flight's times count from here. */
+  readonly start: number;
+  launched: boolean;
+}
+
+/** A body pushed back by an impact, eased home on the knock curve. */
+interface Knock {
+  body: THREE.Object3D | null;
+  readonly home: THREE.Vector3;
+  /** Parent-local displacement of one metre of push. */
+  readonly away: THREE.Vector3;
+  power: number;
+  t: number;
+}
+
+const KNOCK_SLOTS = 4;
 
 /** What a combat pickable is, for scripted pointer tests and the debug hook. */
 export type CombatPick = 'card' | 'enemy' | 'end-turn' | 'throw' | 'plate' | 'table';
@@ -365,6 +421,17 @@ export class CombatSession {
   /** Actors playing their death clip; checked each frame, since `die()`'s promise settles a task late. */
   private readonly dying = new Set<SentryActor>();
   private deathWait = -1;
+  /** Spell bolts and impact bursts. */
+  private readonly fx: SpellFx;
+  private launch: Launch | null = null;
+  private flight: Flight | null = null;
+  private readonly knocks: Knock[] = Array.from({ length: KNOCK_SLOTS }, () => ({
+    body: null,
+    home: new THREE.Vector3(),
+    away: new THREE.Vector3(),
+    power: 0,
+    t: 0,
+  }));
 
   private constructor(deps: CombatSessionDeps, dice: DicePresenter) {
     this.deps = deps;
@@ -481,19 +548,32 @@ export class CombatSession {
       this.hitNumber.mesh.renderOrder = 1;
       this.status.mesh.add(this.hitNumber.mesh);
     }
+    const eye = deps.camera.getWorldPosition(new THREE.Vector3());
     this.enemyIds.forEach((id, i) => {
       const body = this.bodies[i];
       const label = safeLabel(640, 260, 0.85);
       if (!body || !label) return;
       const at = body.getWorldPosition(new THREE.Vector3());
-      // Float the readout clear of the automaton's top so the body never hides it.
-      const top = new THREE.Box3().setFromObject(body).max.y;
-      const lift = Number.isFinite(top) ? top - at.y + 0.22 : 0.75;
-      label.mesh.position.set(
-        at.x,
-        at.y + Math.max(lift, body.userData.tier === 'guardian' ? 1.3 : 0.75),
-        at.z,
-      );
+      const actor = this.actors.get(id);
+      let y: number;
+      if (actor) {
+        // Clear of the silhouette as the seat sees it, from the manifest bounds (a skinned mesh's
+        // cached box can be from another pose); actors attack in place but brace up.
+        body.updateWorldMatrix(true, false);
+        const bounds = new THREE.Box3(
+          new THREE.Vector3().fromArray(actor.asset.manifest.bounds.min),
+          new THREE.Vector3().fromArray(actor.asset.manifest.bounds.max),
+        ).applyMatrix4(body.matrixWorld);
+        y = readoutCentreY(eye, at, bounds, label.mesh.geometry.parameters.height, {
+          margin: READOUT_MARGIN + BRACE_METRES,
+        });
+      } else {
+        // A placeholder capsule: float the readout clear of its top.
+        const top = new THREE.Box3().setFromObject(body).max.y;
+        const lift = Number.isFinite(top) ? top - at.y + 0.22 : 0.75;
+        y = at.y + Math.max(lift, body.userData.tier === 'guardian' ? 1.3 : 0.75);
+      }
+      label.mesh.position.set(at.x, y, at.z);
       label.mesh.rotation.y = yawRad;
       this.group.add(label.mesh);
       this.labels.push({ id, label });
@@ -522,7 +602,10 @@ export class CombatSession {
       ? platePoseFromNode(deps.sockets.sigilPlate)
       : platePoseAboveTable(this.pose);
     this.plate.hide();
+    this.plate.reducedMotion = deps.reducedMotion ?? false;
     deps.root.add(this.plate);
+    this.fx = new SpellFx({ reducedMotion: deps.reducedMotion ?? false });
+    this.group.add(this.fx);
 
     this.handAnchor.name = 'desktop-hand';
     this.handAnchor.position.set(...HAND_HOME.position);
@@ -601,13 +684,24 @@ export class CombatSession {
 
   /** The state the view shows: the enemy phase's partial replay while it plays, else the rules state. */
   get view(): CombatState {
-    return this.shown ?? this.held?.state ?? this.controller.state;
+    return this.shown ?? this.held?.state ?? this.flight?.state ?? this.controller.state;
+  }
+
+  /** True while a player attack's bolt is on its way: its effects show when it lands. */
+  get attackInFlight(): boolean {
+    return this.flight !== null;
+  }
+
+  /** The spell bolts and impact bursts, for checks. */
+  get spellFx(): SpellFx {
+    return this.fx;
   }
 
   /** The combat log as far as the view has shown it: an enemy's lines appear when it acts. */
   get log(): readonly string[] {
     if (this.shown) return [...this.logBase, ...this.logShown];
-    return this.held ? this.controller.log.slice(0, this.held.logLength) : this.controller.log;
+    if (this.held) return this.controller.log.slice(0, this.held.logLength);
+    return this.flight ? this.controller.log.slice(0, this.flight.logLength) : this.controller.log;
   }
 
   get awaitingThrow(): boolean {
@@ -969,6 +1063,10 @@ export class CombatSession {
     this.fan.update(dt);
     this.dice.update(dt);
     this.stepHeld(dt);
+    // Bolts step before the flight check, so a bolt reaches its target on the frame it lands.
+    this.fx.update(dt);
+    this.stepFlight();
+    this.stepKnocks(dt);
     this.plate.update(dt);
     if (this.plate.phase === 'done') {
       this.plateDone += dt;
@@ -980,7 +1078,7 @@ export class CombatSession {
     }
     if (this.deathWait > 0) this.deathWait -= dt;
     // A fight decided mid-phase (the killing blow) shows its banner once that blow has played.
-    const outcome = this.shown || this.held ? null : this.controller.outcome;
+    const outcome = this.shown || this.held || this.flight ? null : this.controller.outcome;
     if (outcome !== null && !this.ended) {
       if (this.endTimer < 0) {
         this.endTimer = outcome === 'won' ? WIN_HOLD_SECONDS : DEFEAT_HOLD_SECONDS;
@@ -1011,6 +1109,10 @@ export class CombatSession {
     this.queue.length = 0;
     this.shown = null;
     this.held = null;
+    this.flight = null;
+    this.launch = null;
+    this.settleKnocks();
+    this.fx.dispose();
     this.hitNumber?.dispose();
     for (const off of this.disposers.splice(0)) off();
     this.fan.dispose();
@@ -1115,8 +1217,17 @@ export class CombatSession {
 
   private release(ray: THREE.Ray | null): void {
     if (ray) this.placeMouseGrip(ray);
+    const grip = this.holding === 'xr' ? this.xr?.main : this.mouseGrip;
     this.holding = null;
     const decision = this.fling.release();
+    if (decision?.outcome === 'played' && grip) {
+      this.launch = {
+        from: grip.getWorldPosition(new THREE.Vector3()),
+        at: this.clock + CARD_LAUNCH_DELAY,
+        power: CARD_POWER,
+        kind: 'card',
+      };
+    }
     if (decision?.outcome === 'sprung-back' && decision.reason) this.message = decision.reason;
     if (decision?.outcome === 'staged')
       this.message = this.xr ? XR_SIGIL_HINT : 'Draw the sigil on the plate';
@@ -1175,8 +1286,17 @@ export class CombatSession {
     const held = this.held;
     if (!held || this.pendingThrow) return;
     this.held = null;
+    // A dice attack flies once its die settles: from the plate for a sigil, else from the tray.
+    const sigil = this.launch?.kind === 'sigil' ? this.launch : null;
+    this.launch = {
+      from: sigil?.from ?? this.dice.root.getWorldPosition(new THREE.Vector3()),
+      at: this.clock,
+      power: sigil?.power ?? CARD_POWER,
+      kind: sigil ? 'sigil' : 'card',
+    };
+    if (!this.startFlight(held.state, held.events, held.logLength)) this.present(held.events);
+    this.launch = null;
     this.lastShown = this.controller.state;
-    this.present(held.events);
     this.dirty = true;
   }
 
@@ -1214,6 +1334,14 @@ export class CombatSession {
       this.message = 'Trace too short, draw the glyph';
       return;
     }
+    // The spell leaves the plate centre as the cast glyph collapses into it.
+    const c = this.platePose.center;
+    this.launch = {
+      from: new THREE.Vector3(c.x, c.y, c.z),
+      at: this.clock + GLYPH_LAUNCH_SECONDS,
+      power: castPower(result.multiplier),
+      kind: 'sigil',
+    };
     const played = this.controller.submitSigil(this.plate.strokes);
     this.plateDone = 0;
     this.sfx(
@@ -1284,6 +1412,8 @@ export class CombatSession {
   private sync(): void {
     this.dirty = false;
     const events = this.controller.drainEvents();
+    // Anything new lands the bolt in flight first, so its effects keep their rules order.
+    if (this.flight && events.length > 0) this.landFlight();
     const segments = segmentEvents(events);
     const rolled = this.controller.lastDice !== this.lastDice ? this.controller.lastDice : null;
     if (this.shown || segments.some((seg) => seg.kind === 'enemy')) {
@@ -1311,9 +1441,15 @@ export class CombatSession {
         waiting: 0,
       };
     } else {
-      for (const seg of segments) if (seg.kind === 'instant') this.present(seg.events);
-      this.lastShown = this.controller.state;
+      const instant = segments.flatMap((seg) => (seg.kind === 'instant' ? seg.events : []));
+      const state = this.controller.state;
+      const fresh = events.filter((e) => describeEvent(e, state) !== null).length;
+      const logLength = Math.max(0, this.controller.log.length - fresh);
+      if (!this.startFlight(this.lastShown, instant, logLength)) this.present(instant);
+      this.lastShown = state;
     }
+    // A launch waits for its play only while the play's die rolls.
+    if (!this.held) this.launch = null;
     const state = this.controller.state;
     // The new hand is dealt once the enemies are done; the fan stays empty meanwhile.
     const hand = this.shown ? [] : state.piles.hand;
@@ -1392,6 +1528,7 @@ export class CombatSession {
   }
 
   private startBeat(seg: EnemyBeat): BeatRun {
+    this.settleKnocks();
     const id = seg.enemyId;
     this.present(seg.lead);
     const actor = this.actors.get(id) ?? null;
@@ -1533,6 +1670,128 @@ export class CombatSession {
     const hit = playerHit(events);
     if (hit) this.showPlayerHit(hit);
     this.showBodies();
+  }
+
+  /**
+   * Holds a play's effects while its bolt flies, when the play hits an enemy. `state` and
+   * `logLength` are the view from before the play. Returns false (nothing held) otherwise.
+   */
+  private startFlight(state: CombatState, events: CombatEvent[], logLength: number): boolean {
+    const ids: string[] = [];
+    for (const e of events) {
+      if (
+        e.type === 'damage-dealt' &&
+        e.source === PLAYER_ID &&
+        e.target !== PLAYER_ID &&
+        !ids.includes(e.target)
+      )
+        ids.push(e.target);
+    }
+    if (ids.length === 0) return false;
+    const launch = this.launch;
+    const from = launch?.from ?? this.fan.root.getWorldPosition(new THREE.Vector3());
+    const targets = ids.flatMap((id) => {
+      const at = this.aimOfId(id);
+      return at ? [{ id, at }] : [];
+    });
+    if (targets.length === 0) return false;
+    let seconds = 0;
+    for (const t of targets) seconds = Math.max(seconds, flightSeconds(t.at.distanceTo(from)));
+    const delay = launch ? Math.max(0, launch.at - this.clock) : 0;
+    // The card's fling sounds with the play; everything else waits for contact.
+    for (const e of events) if (e.type === 'card-played') this.deps.audio?.playCombatEvent(e);
+    this.flight = {
+      state,
+      after: this.controller.state,
+      events: events.filter((e) => e.type !== 'card-played'),
+      logLength,
+      from,
+      power: launch?.power ?? CARD_POWER,
+      kind: launch?.kind ?? 'card',
+      targets,
+      delay,
+      seconds,
+      contact: delay + seconds,
+      start: this.clock,
+      launched: false,
+    };
+    return true;
+  }
+
+  /** Steps the attack in flight: sends the bolts after the launch delay, lands them at contact. */
+  private stepFlight(): void {
+    const f = this.flight;
+    if (!f) return;
+    const t = this.clock - f.start;
+    if (!f.launched && t >= f.delay - 1e-9) {
+      f.launched = true;
+      for (const target of f.targets)
+        this.fx.launch(f.from, target.at, f.seconds, f.power, f.kind, t - f.delay);
+    }
+    if (t >= f.contact - 1e-9) {
+      this.landFlight();
+      this.paint();
+    }
+  }
+
+  /** The bolts land: impact bursts, knock-back, then the held effects (HP, hit clips, sounds). */
+  private landFlight(): void {
+    const f = this.flight;
+    if (!f) return;
+    this.flight = null;
+    this.lastShown = f.after;
+    for (const target of f.targets) {
+      this.fx.impact(target.at, f.from, f.power);
+      this.knock(target.id, f.from, f.power);
+    }
+    this.present(f.events);
+  }
+
+  /** Pushes enemy `id`'s body away from `from`; it eases back home on the knock curve. */
+  private knock(id: string, from: THREE.Vector3, power: number): void {
+    if (this.deps.reducedMotion) return;
+    const body = this.enemies.find((e) => e.id === id)?.body;
+    const parent = body?.parent;
+    if (!body || !parent) return;
+    let slot = this.knocks.find((k) => k.body === body);
+    if (!slot) {
+      slot = this.knocks.find((k) => k.body === null);
+      if (!slot) return;
+      slot.home.copy(body.position);
+    }
+    slot.body = body;
+    slot.power = power;
+    slot.t = 0;
+    body.updateWorldMatrix(true, false);
+    const world = body.getWorldPosition(new THREE.Vector3());
+    const dir = new THREE.Vector3(world.x - from.x, 0, world.z - from.z);
+    if (dir.lengthSq() < 1e-8)
+      dir.set(Math.sin(this.pose.yaw * DEG), 0, -Math.cos(this.pose.yaw * DEG));
+    dir.normalize();
+    slot.away.copy(parent.worldToLocal(world.clone().add(dir))).sub(parent.worldToLocal(world));
+  }
+
+  private stepKnocks(dt: number): void {
+    for (const k of this.knocks) {
+      const body = k.body;
+      if (!body) continue;
+      k.t += dt;
+      if (k.t >= KNOCK_SECONDS) {
+        body.position.copy(k.home);
+        k.body = null;
+        continue;
+      }
+      body.position.copy(k.home).addScaledVector(k.away, knockOffset(k.t, k.power, false));
+    }
+  }
+
+  /** Puts every knocked body straight back home. */
+  private settleKnocks(): void {
+    for (const k of this.knocks) {
+      if (!k.body) continue;
+      k.body.position.copy(k.home);
+      k.body = null;
+    }
   }
 
   /** The HUD side of a hit: HP readout tint, floating number, block chime, and the caller's flash. */
@@ -1802,6 +2061,8 @@ export interface CombatHookDeps {
   onSession?: (session: CombatSession | null) => void;
   /** Passed to each session: damage landing on the player (the edge flash and haptics). */
   onPlayerHit?: (hit: PlayerHit) => void;
+  /** Passed to each session: softer spell effects (the OS reduced-motion preference). */
+  reducedMotion?: boolean;
   /** Called once a fight is decided and its banner has held, with the player's remaining hp. */
   onEnd?: (end: { room: number; outcome: 'win' | 'defeat'; playerHp: number | null }) => void;
 }
@@ -1879,6 +2140,9 @@ export class CombatHook {
         actions: this.deps.actions,
         actorOf: (body) => floor.actorOf?.(body) ?? null,
         ...(this.deps.onPlayerHit ? { onPlayerHit: this.deps.onPlayerHit } : {}),
+        ...(this.deps.reducedMotion === undefined
+          ? {}
+          : { reducedMotion: this.deps.reducedMotion }),
         end: (outcome) => {
           const playerHp = this.session?.controller.state.player.hp ?? null;
           // The flow's board takes over from here, so the banner must not cover it.

@@ -46,7 +46,7 @@ const RAMP: SparkRamp = { hot: linearRgb(GLOW_HOT), mid: linearRgb(SPARK_AMBER) 
 const DOT_RGB = linearRgb(GLOW_HOT);
 
 /** 16 x 16 white disc with a soft alpha falloff, shared by the sparks and the contact dot. */
-function discTexture(): THREE.DataTexture {
+export function discTexture(): THREE.DataTexture {
   const n = 16;
   const data = new Uint8Array(n * n * 4);
   for (let y = 0; y < n; y++)
@@ -63,6 +63,19 @@ function discTexture(): THREE.DataTexture {
   texture.minFilter = THREE.LinearFilter;
   texture.needsUpdate = true;
   return texture;
+}
+
+/**
+ * Splices a per-point `pointScale` attribute into a `PointsMaterial`'s size. Every material patched
+ * here shares one program (same splice, same cache key), so the spell effects add no shader build.
+ */
+export function usePointScale(material: THREE.PointsMaterial): void {
+  material.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader
+      .replace(POINTS_SIZE_DECL, `${POINTS_SIZE_DECL}\nattribute float pointScale;`)
+      .replace(POINTS_SIZE_ASSIGN, 'gl_PointSize = size * pointScale;');
+  };
+  material.customProgramCacheKey = () => 'sigil-sparks-scaled';
 }
 
 /**
@@ -119,12 +132,7 @@ export class SigilSparks extends THREE.Group {
       blending: THREE.AdditiveBlending,
       toneMapped: false,
     });
-    this.pointsMaterial.onBeforeCompile = (shader) => {
-      shader.vertexShader = shader.vertexShader
-        .replace(POINTS_SIZE_DECL, `${POINTS_SIZE_DECL}\nattribute float pointScale;`)
-        .replace(POINTS_SIZE_ASSIGN, 'gl_PointSize = size * pointScale;');
-    };
-    this.pointsMaterial.customProgramCacheKey = () => 'sigil-sparks-scaled';
+    usePointScale(this.pointsMaterial);
     this.points = new THREE.Points(geometry, this.pointsMaterial);
     this.points.name = 'sigil-sparks-points';
     this.points.frustumCulled = false;

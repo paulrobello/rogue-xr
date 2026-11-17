@@ -292,7 +292,7 @@ export class FlingController {
     const extents = table?.halfExtents ?? DEFAULT_TABLE_HALF_EXTENTS;
     const overTable =
       table !== null &&
-      (isOverTable(origin, table.pose, extents) ||
+      (isOverTable(origin, table.pose, extents, { margin: 0.3 }) ||
         (flick && throwCrossesTable(origin, velocity, table.pose, extents)));
     if (!overTable) return springBack('none', 'Drop the card on the table');
     // A sigil card is already waiting on the plate; `table()` would refuse it.

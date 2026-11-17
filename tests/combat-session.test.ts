@@ -12,6 +12,11 @@ import {
 } from '../src/combat/combat-session.ts';
 import { CombatController } from '../src/combat-view/controller.ts';
 import { type PlayerHit, playerHit, segmentEvents } from '../src/combat-view/enemy-turn.ts';
+import {
+  CARD_LAUNCH_DELAY,
+  FLIGHT_MAX_SECONDS,
+  FLIGHT_MIN_SECONDS,
+} from '../src/combat-view/impact-timing.ts';
 import { getCard } from '../src/content/cards.ts';
 import { dieById } from '../src/content/dice.ts';
 import { encounterSetups } from '../src/content/enemies.ts';
@@ -20,6 +25,7 @@ import { Stream } from '../src/core/rng.ts';
 import { fitCombatFraming } from '../src/desktop/combat-framing.ts';
 import { DicePresenter } from '../src/dice/presenter.ts';
 import { SIGIL_TEMPLATES } from '../src/sigil/index.ts';
+import { GLYPH_LAUNCH_SECONDS } from '../src/sigil-plate/index.ts';
 import { type FloorView, mountFloorView } from '../src/world/floor-view.ts';
 
 const DT = 1 / 60;
@@ -497,6 +503,93 @@ describe('combat session', () => {
     rig.hook.dispose();
   }, 60_000);
 
+  // Quest 3 playtest 2026-11-16: an attack must visibly hit the enemy. The bolt flies to the hit
+  // point, and the HP change and hit reaction show at contact, not at release.
+  it('lands a flung attack on the enemy: bolt, impact and knock-back, then the HP change', async () => {
+    const rig = await openFight('SPIRE002', { deck: Array(10).fill('strike') });
+    const { session } = rig;
+    const enemy = session.enemies[0];
+    if (!enemy) throw new Error('no enemy');
+    const hpOf = (s: CombatSession['view']) => s.enemies.find((e) => e.id === enemy.id)?.hp ?? -1;
+    const home = enemy.body.position.clone();
+    const before = hpOf(session.view);
+    const uid = session.controller.state.piles.hand[0]?.uid as number;
+    drag(rig, session, uid, at(session, 'enemy', enemy.id));
+    expect(hpOf(session.controller.state)).toBeLessThan(before);
+    expect(session.attackInFlight).toBe(true);
+    expect(hpOf(session.view)).toBe(before);
+    let flew = 0;
+    let t = DT;
+    while (session.attackInFlight && t < 1) {
+      rig.step();
+      t += DT;
+      if (session.spellFx.flying > 0) flew += DT;
+    }
+    expect(session.attackInFlight).toBe(false);
+    expect(flew).toBeGreaterThan(FLIGHT_MIN_SECONDS - 2 * DT);
+    expect(t).toBeLessThanOrEqual(CARD_LAUNCH_DELAY + FLIGHT_MAX_SECONDS + 2 * DT);
+    expect(hpOf(session.view)).toBe(hpOf(session.controller.state));
+    expect(session.spellFx.flashing).toBe(1);
+    rig.step(0.05);
+    expect(enemy.body.position.distanceTo(home)).toBeGreaterThan(0.01);
+    rig.step(0.5);
+    expect(enemy.body.position.equals(home)).toBe(true);
+    expect(session.spellFx.active).toBe(false);
+    rig.hook.dispose();
+  }, 60_000);
+
+  it('casts a damage sigil as its glyph collapses, one bolt to every enemy, landing together', async () => {
+    const rig = await openFight('SPIRE002', { deck: Array(10).fill('cogstorm') });
+    const { session } = rig;
+    const living = session.controller.state.enemies.filter((e) => e.hp > 0).length;
+    const before = session.view.enemies.map((e) => e.hp);
+    const uid = session.controller.state.piles.hand[0]?.uid as number;
+    drag(rig, session, uid, at(session, 'table'));
+    expect(session.controller.stage).toBe('sigil');
+    drawSigil(rig, session);
+    expect(session.controller.stage).toBe('idle');
+    expect(session.plate.casting).toBe(true);
+    expect(session.attackInFlight).toBe(true);
+    expect(session.view.enemies.map((e) => e.hp)).toEqual(before);
+    let most = 0;
+    let t = 0;
+    while (session.attackInFlight && t < 2) {
+      rig.step();
+      t += DT;
+      most = Math.max(most, session.spellFx.flying);
+      // Nothing leaves the plate before the glyph collapses.
+      if (session.plate.casting && session.plate.castAge < GLYPH_LAUNCH_SECONDS - DT)
+        expect(session.spellFx.flying).toBe(0);
+    }
+    expect(session.attackInFlight).toBe(false);
+    expect(most).toBe(Math.min(4, living));
+    expect(session.view.enemies.map((e) => e.hp)).toEqual(
+      session.controller.state.enemies.map((e) => e.hp),
+    );
+    expect(session.spellFx.flashing).toBe(Math.min(4, living));
+    rig.hook.dispose();
+  }, 60_000);
+
+  it('lands a bolt still in flight at once when the player ends the turn', async () => {
+    const rig = await openFight('SPIRE002', { deck: Array(10).fill('strike') });
+    const { session } = rig;
+    const enemy = session.enemies[0];
+    if (!enemy) throw new Error('no enemy');
+    const home = enemy.body.position.clone();
+    const uid = session.controller.state.piles.hand[0]?.uid as number;
+    drag(rig, session, uid, at(session, 'enemy', enemy.id));
+    expect(session.attackInFlight).toBe(true);
+    const hit = session.controller.state.enemies.find((e) => e.id === enemy.id)?.hp;
+    rig.actions.emit({ type: 'end-turn' });
+    rig.step();
+    expect(session.attackInFlight).toBe(false);
+    // The enemy phase starts from the state with the strike landed, and every body ends home.
+    expect(session.view.enemies.find((e) => e.id === enemy.id)?.hp).toBe(hit);
+    waitEnemyPhase(rig, session);
+    expect(enemy.body.position.equals(home)).toBe(true);
+    rig.hook.dispose();
+  }, 60_000);
+
   it('replays the same fight identically from the same seed', async () => {
     const a = await playFight(await openFight());
     const b = await playFight(await openFight());
@@ -618,17 +711,22 @@ describe('desktop HUD fit', () => {
     return camera;
   };
   // The bug bash placements: the 0.5 m last-resort table, the 0.65 m comfortable fallback, the
-  // default 0.85 m one (H5), and the guardian (taller, its readout higher), on the real table's
+  // 0.85 m one (H5), the 1.0 m fallback and 1.2 m default after the 2026-11-16 playtest, and the guardian (taller, its readout higher), on the real table's
   // sockets and on the greybox.
   const placements = [
     { tier: 'regular', distance: 0.5, asset: true },
     { tier: 'regular', distance: 0.65, asset: true },
     { tier: 'regular', distance: 0.85, asset: true },
+    { tier: 'regular', distance: 1.0, asset: true },
+    { tier: 'regular', distance: 1.2, asset: true },
     { tier: 'guardian', distance: 0.5, asset: true },
     { tier: 'guardian', distance: 0.65, asset: true },
     { tier: 'guardian', distance: 0.85, asset: true },
+    { tier: 'guardian', distance: 1.0, asset: true },
+    { tier: 'guardian', distance: 1.2, asset: true },
     { tier: 'regular', distance: 0.5, asset: false },
     { tier: 'regular', distance: 0.85, asset: false },
+    { tier: 'regular', distance: 1.2, asset: false },
   ] as const;
   for (const { tier, distance, asset } of placements) {
     const where = `${tier}, table ${distance} m, ${asset ? 'table asset' : 'greybox'}`;
@@ -690,7 +788,7 @@ describe('desktop HUD fit', () => {
 });
 
 describe('XR status panel', () => {
-  it('sits inside both eyes of the seated forward view at the 0.5, 0.65 and 0.85 m tables', async () => {
+  it('sits inside both eyes of the seated forward view at the 0.5 to 1.2 m tables', async () => {
     stubCanvas2d();
     try {
       for (const asset of [true, false]) {
@@ -709,7 +807,7 @@ describe('XR status panel', () => {
         const yaw = (pose.yaw * Math.PI) / 180;
         const [fx, fz] = [Math.sin(yaw), -Math.cos(yaw)];
         const [rx, rz] = [Math.cos(yaw), Math.sin(yaw)];
-        for (const distance of [0.5, 0.65, 0.85]) {
+        for (const distance of [0.5, 0.65, 0.85, 1.0, 1.2]) {
           for (const eye of [-0.032, 0.032]) {
             // The emulated Quest 3 eye (IWER: 90 degree vertical fov, half of a 1600 x 900 canvas),
             // level, at the seated eye height (the table top sits 0.75 m below it).

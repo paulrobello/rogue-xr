@@ -280,6 +280,7 @@ const makeCombat = (target: FloorView): CombatHook => {
     actions,
     ...(audio ? { audio } : {}),
     onPlayerHit,
+    reducedMotion: hitFx.reducedMotion,
     fightOptions,
     // Read when a fight opens: `heroEnv` is declared below this hook's construction.
     diceEnv: () => heroEnv,
