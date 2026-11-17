@@ -1,7 +1,11 @@
 // @vitest-environment node
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { bakedRoomMaterial, roomLightsFragmentBegin } from '../src/world/study-room.ts';
+import {
+  bakedRoomMaterial,
+  emitterSlot,
+  roomLightsFragmentBegin,
+} from '../src/world/study-room.ts';
 
 /** Runs the material's patch over three's real MeshStandardMaterial fragment shader. */
 function patchedFragment(): string {
@@ -53,5 +57,37 @@ describe('bakedRoomMaterial (lightmap contract)', () => {
     expect(() =>
       roomLightsFragmentBegin('#if ( NUM_POINT_LIGHTS > 0 ) && defined( RE_Direct )'),
     ).toThrow(/NUM_DIR_LIGHTS/);
+  });
+});
+
+describe('emitterSlot (baked colour of emitting slots)', () => {
+  it('leaves non-emitting slots tone-mapped and reflecting the probe', () => {
+    expect(emitterSlot(new THREE.MeshStandardMaterial({ color: '#bf9759' }))).toEqual({
+      toneMapped: true,
+      reflectsProbe: true,
+    });
+  });
+
+  it('takes constant emitters (flame, coals, lamp glass) out of tone mapping only', () => {
+    const flame = new THREE.MeshStandardMaterial({ emissive: '#895121', emissiveIntensity: 5.6 });
+    expect(emitterSlot(flame)).toEqual({ toneMapped: false, reflectsProbe: true });
+  });
+
+  it('keeps emissive-mapped glass tone-mapped but out of the probe', () => {
+    const glass = new THREE.MeshStandardMaterial({
+      emissive: 0xffffff,
+      emissiveIntensity: 0.8,
+      emissiveMap: new THREE.Texture(),
+    });
+    expect(emitterSlot(glass)).toEqual({ toneMapped: true, reflectsProbe: false });
+  });
+
+  it('treats a dark or zero-intensity emissive as no emitter', () => {
+    const unlit = new THREE.MeshStandardMaterial({ emissiveMap: new THREE.Texture() });
+    unlit.emissive.set(1, 1, 1);
+    unlit.emissiveIntensity = 0;
+    expect(emitterSlot(unlit)).toEqual({ toneMapped: true, reflectsProbe: true });
+    const black = new THREE.MeshStandardMaterial({ emissive: 0x000000, emissiveIntensity: 3 });
+    expect(emitterSlot(black)).toEqual({ toneMapped: true, reflectsProbe: true });
   });
 });

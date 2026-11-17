@@ -60,6 +60,16 @@ export interface Shot {
     gameLights?: boolean;
     /** room-lights.ts: each room's socket lights and the hand lantern 0.35 m below, 0.4 m ahead of the eye. */
     dynamicLights?: boolean;
+    /** Colour-wash investigation: 'none' renders the full material path without AgX. */
+    tone?: 'none';
+    /** envMapIntensity 0 on room slots whose name contains any of these. */
+    envOffSlots?: string[];
+    /** toneMapped false on room slots whose name contains any of these. */
+    untonedSlots?: string[];
+    /** toneMapped true on room slots whose name contains any of these (undoes a runtime opt-out). */
+    tonedSlots?: string[];
+    /** Region mask: slots whose name contains any of these render white, everything else black. */
+    mask?: string[];
   };
 }
 
@@ -168,6 +178,10 @@ export async function mountKitProof(w: number, h: number, shot: Shot) {
         if (light.envIntensity !== undefined && m.envMap) m.envMapIntensity = light.envIntensity;
         if (light.lightmapGain !== undefined) m.lightMapIntensity *= light.lightmapGain;
         if (light.aoIntensity !== undefined && m.aoMap) m.aoMapIntensity = light.aoIntensity;
+        const hit = (names?: string[]) => !!names?.some((s) => m.name.includes(s));
+        if (hit(light.envOffSlots)) m.envMapIntensity = 0;
+        if (hit(light.untonedSlots)) m.toneMapped = false;
+        if (hit(light.tonedSlots)) m.toneMapped = true;
         if (light.envDiffuse === false) {
           const baked = m.onBeforeCompile;
           m.onBeforeCompile = (shader, r) => {
@@ -181,6 +195,21 @@ export async function mountKitProof(w: number, h: number, shot: Shot) {
         }
         m.needsUpdate = true;
       });
+    }
+    if (light.tone === 'none') renderer.toneMapping = THREE.NoToneMapping;
+    if (light.mask) {
+      const on = new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false });
+      const off = new THREE.MeshBasicMaterial({ color: 0x000000, toneMapped: false });
+      const names = light.mask;
+      scene.background = new THREE.Color(0x000000);
+      for (const model of models) {
+        model.traverse((node) => {
+          const mesh = node as THREE.Mesh;
+          if (!mesh.isMesh) return;
+          const n = (mesh.material as THREE.Material).name;
+          mesh.material = names.some((s) => n.includes(s)) ? on : off;
+        });
+      }
     }
     if (light.gameLights) {
       const sun = new THREE.DirectionalLight(PALETTE.candle, 1.4);

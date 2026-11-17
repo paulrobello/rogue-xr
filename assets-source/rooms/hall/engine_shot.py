@@ -150,18 +150,59 @@ def variant_shots() -> list[tuple[str, str, dict]]:
     return out
 
 
+EMITTERS = ["_flame", "_coals", "_lamp-glass"]
+# Colour-wash investigation (--wash): every room camera as base and lightmap-only, and on the five
+# diagnosis cameras one variable at a time plus region masks per slot.
+WASH_DIAG = {
+    "tone-none": {"tone": "none"},
+    "env-off": {"envOff": True},
+    "glass-env-off": {"envOffSlots": ["_stained-glass"]},
+    "emit-env-off": {"envOffSlots": EMITTERS},
+    "emit-untoned": {"untonedSlots": EMITTERS},
+    "emit-toned": {"tonedSlots": EMITTERS},
+    "glass-untoned": {"untonedSlots": ["_stained-glass"]},
+    "mask-fire": {"mask": ["_flame", "_coals"]},
+    "mask-lampglass": {"mask": ["_lamp-glass"]},
+    "mask-glass": {"mask": ["_stained-glass"]},
+    "mask-gilt": {"mask": ["_gilt"]},
+}
+WASH_DIAG_CAMERAS = {("guardian-vault", "hero"), ("guardian-vault", "brazier"), ("guardian-vault", "reward-eye"),
+                     ("gear-shaft", "hero"), ("gear-shaft", "ring"), ("gear-shaft", "void")}
+WASH_EXTRA = {"guardian-vault": {"reward-eye": {"eye": [0.3, 1.6, -1.0], "look": [0.0, 1.6, -6.0], "vfov": 70.0}}}
+
+
+def wash_shots() -> list[tuple[str, str, dict]]:
+    out = []
+    for room in ("study", "hall", "corridor", "guardian-vault", "gear-shaft"):
+        report = ROOMS / room / "staging/report.json"
+        cams = dict(json.loads(report.read_text()).get("cameras_runtime") or FALLBACK_CAMERAS.get(room, {}))
+        cams.update(WASH_EXTRA.get(room, {}))
+        alone = [{"id": room, "position": [0, 0], "turns": 0}]
+        for cam_name, cam in cams.items():
+            view = {"rooms": alone, "eye": cam["eye"], "look": cam["look"], "vfov": cam["vfov"]}
+            out.append((room, f"{cam_name}.base", {**view, "diffuse": False}))
+            out.append((room, f"{cam_name}.diffuse", {**view, "diffuse": True}))
+            touched = {"mask": [*EMITTERS, "_stained-glass"]}
+            out.append((room, f"{cam_name}.mask-touched", {**view, "diffuse": False, "light": touched}))
+            if (room, cam_name) in WASH_DIAG_CAMERAS:
+                for variant, light in WASH_DIAG.items():
+                    out.append((room, f"{cam_name}.{variant}", {**view, "diffuse": False, "light": light}))
+    return out
+
+
 def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     failed = False
     errors: list[str] = []
-    variants = "--variants" in sys.argv
+    wash = "--wash" in sys.argv
+    variants = "--variants" in sys.argv or wash
     if variants:
         VARIANT_OUT.mkdir(parents=True, exist_ok=True)
     with sync_playwright() as p:
         browser = p.chromium.launch(channel="chromium", headless=True, args=["--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist"])
         only = sys.argv[sys.argv.index("--only") + 1] if "--only" in sys.argv else ""
         only_room = sys.argv[sys.argv.index("--room") + 1] if "--room" in sys.argv else ""
-        for room, name, shot in variant_shots() if variants else shots():
+        for room, name, shot in wash_shots() if wash else variant_shots() if variants else shots():
             if not name.startswith(only) or (only_room and room != only_room):
                 continue
             page = browser.new_page(viewport={"width": W, "height": H})
@@ -183,7 +224,7 @@ def main() -> int:
                 page.locator("canvas").screenshot(path=str(png))
                 mean = page.evaluate(MEAN_JS)
                 print(f"{room} {name}: {page.evaluate('window.__info')} gpu={page.evaluate('window.__gpu')} mean={mean} -> {png}")
-                failed |= sum(mean) < 5
+                failed |= sum(mean) < 5 and ".mask-" not in name
                 page.close()
                 continue
             renders = ROOMS / room / "staging/renders"

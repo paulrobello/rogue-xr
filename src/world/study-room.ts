@@ -168,6 +168,27 @@ export function bakedRoomMaterial<T extends THREE.MeshStandardMaterial>(material
   return material;
 }
 
+/**
+ * How an emitting slot meets the display transform and the probe, so it shows the bake's colour.
+ * Constant emitters (flames, coals, lamp glass) emit above 1.0 linear, where AgX's shoulder pulls
+ * them toward white, while the bake and its Standard-view review clip them and keep the hue; so they
+ * skip tone mapping, and therefore also ignore `toneMappingExposure`. Emissive-mapped glass shows
+ * transmitted light, which in a dark room outweighs any reflection of the interior, and the
+ * placeholder probe is a lit studio whose panels mirror in the smooth glass; so glass takes no probe.
+ */
+export function emitterSlot(material: THREE.MeshStandardMaterial): {
+  toneMapped: boolean;
+  reflectsProbe: boolean;
+} {
+  const glows =
+    material.emissiveIntensity > 0 &&
+    Math.max(material.emissive.r, material.emissive.g, material.emissive.b) > 0;
+  return {
+    toneMapped: !(glows && !material.emissiveMap),
+    reflectsProbe: !(glows && material.emissiveMap),
+  };
+}
+
 export interface StudyAsset {
   readonly manifest: StudyManifest;
   /** Every texture the instances read, for the load veil's spread uploads. */
@@ -209,10 +230,10 @@ export async function loadStudyAsset(options: {
   owned.push(lightmap.texture);
   for (const material of slots.values()) {
     bakedRoomMaterial(material);
-    if (options.envMap) {
-      material.envMap = options.envMap;
-      material.envMapIntensity = STUDY_ENV_INTENSITY;
-    }
+    const slot = emitterSlot(material);
+    material.toneMapped = slot.toneMapped;
+    if (options.envMap) material.envMap = options.envMap;
+    material.envMapIntensity = slot.reflectsProbe ? STUDY_ENV_INTENSITY : 0;
   }
   gltf.scene.name = `${study.manifest.template}-model`;
   const textures = new Set<THREE.Texture>();
