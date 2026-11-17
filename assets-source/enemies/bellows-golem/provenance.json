@@ -308,7 +308,7 @@
     },
     {
       "gate": "independent visual score",
-      "status": "unscored",
+      "status": "below bar: 77/100 (bar 80), scored 2026-11-16",
       "notes": "create-rigged-character-assets requires an independent >= 80/100 score; unscored means unaccepted"
     }
   ],
@@ -335,97 +335,52 @@
     "independentScoreNote": "the recorded independentScore scored the previous build; an independent re-score of this build is pending"
   },
   "independentScore": {
-    "score": 73,
+    "score": 77,
     "scale": "0-100 visual fidelity to the concept",
-    "scorer": "independent reviewer agent (separate from the authoring agent; did not build the model)",
+    "scorer": "independent reviewer agent (separate from the authoring agent; did not build the asset)",
     "date": "2026-11-16",
     "acceptanceBar": 80,
     "clearsBar": false,
     "rubric": [
       {
         "criterion": "silhouette and proportions",
-        "points": 22,
+        "points": 23,
         "max": 30,
-        "note": "The head is the one large shape that moved: the capsule now stands clearly proud of the collar between the chimneys in the front compare panel and in every engine shot, as the sheet draws it, and the bellows now narrow below the barrel. The rest of the big shapes are unchanged. The pauldrons still read from the front and back as side-on stacked drums with a dome cap, where the sheet has tall curved plates that hug the barrel and cap the shoulder. The barrel keeps near-straight sides instead of the sheet's egg. The side view stands upright with the arms hanging vertical and the fist under the shoulder, where the sheet hunches and angles the forearm forward with the fist ahead of the knee. The legs are slim cylinders with black thighs against the sheet's bulky brass leg armour, the feet are blocks, and the fists are now an open, cupped hand of separate finger blocks with a hooked thumb, narrower than the gauntlet, where the sheet's fist is a compact round mass wider than the gauntlet."
+        "note": "Up 1 from pass 2. Two shapes moved toward the sheet. The fists are now closed brass masses wider than the gauntlet. On the orthographic front compare panel, a non-background row-span scan (more than 30 summed RGB from the backdrop (48, 44, 41)) gives the model's left arm 50-58 px across the gauntlet (y 508-556) and 65 px across the fist (y 580-596), a ratio of about 1.14, and the right arm 52-58 px against 59-65 px. On the concept, the fist's outer edge sits about 8 px outside the gauntlet's outer edge (x 17 at y 596 against x 25 at y 548). The concept's inner edge merges with the legs, so no clean ratio exists there. Pass 2 had an open cupped hand narrower than the gauntlet. The legs now carry brass thigh plates, round knee caps and layered brass shins (frozen crop x 280-640, y 440-720 at 2x; front compare panel), replacing the slim black cylinders. Unchanged and still off: the pauldrons are side-on stacked drums with a dome cap (front and back compare panels, glow-close x 720-900), where the sheet draws tall curved plates hugging the barrel; the barrel has near-straight sides in the front panel against the sheet's egg; the side panel stands upright with the forearm hanging under the shoulder, where the sheet hunches and drives the fist ahead of the knee; the fists are square plated boxes, not the sheet's rounded mitt; and the feet are flat slabs."
       },
       {
         "criterion": "signature features",
-        "points": 20,
+        "points": 21,
         "max": 25,
-        "note": "Three signature items now match. The front grille has six glowing slots between five thin bars, measured as six glow runs along the centre line of glow-close against six on the sheet, with a hot centre (hue 49 to 51 in the middle slots, 34 to 36 at the edges; the sheet runs 52 in the centre to 21 at the edges). The head carries a faceted face plate with the two round amber eyes, measured (243, 173, 70) against the sheet's (238, 175, 74). The back strap now arches across the upper back in the back compare panel, shallower than the sheet's. The chimney ember domes stand in for the flame plume as the design note asks. Still short: the fists have a knuckle row but read as separate pegs over a gunmetal core with a thin tube thumb, not the sheet's closed fist with a heavy thumb plate; and emeralds show only on the pauldron hubs and elbows from the side, with none on the knees or upper arms from the front, where the sheet shows six from the front."
+        "note": "Up 1 from pass 2. Kept: the front grille has six glow slots between five bars, counted as six glow runs on rows y 400, 420 and 440 of glow-close (mask R>235, G>150, B<110); the faceted head with two round amber eyes; the arched back strap; ember domes in place of the flame plume per the design note. New: knee emeralds now read from the front, clean round gems in a brass bezel (hit crop x 330-620, y 520-650 at 2x), A green connected-blob count (hue 100-170, S>0.4, at least 4 px) finds 3 gems on the model front compare panel (one pauldron rim and two knees) against 4 on the concept front panel. The concept's smaller elbow and knee gems partly fall under the 4 px threshold at that scale, and about 6 are visible by eye on the sheet (an estimate). No elbow or upper-arm gem faces the front on the model. The fist now has a knuckle row and a thumb plate folded across the fingers instead of the pass-2 pegs and tube thumb. Still short: the fist fingers are flat rectangular plates with dark fronts that read as slots in a box, not curled fingers; and the side pauldron is a plain brass dome with an emerald, not the sheet's ring with a dark lens."
       },
       {
         "criterion": "surface detail and material read",
-        "points": 12,
+        "points": 13,
         "max": 20,
-        "note": "The pleats are dark rounded tubes and the riveted waist band, lugs and knee caps still add credible detail. New problem: the brass tileable reads as wood on flat faces. The knuckle blocks in idle measure (73, 52, 21), V 0.29, against the forearm brass at V 0.57 in the same shot, so they read as olive wooden dowel ends, and in the attack shot the same faces and the gauntlet end cap turn pale cream with a visible grain, like teeth. The grille bars and ring in glow-close show the same pale grain. The circular brass swirl is still visible on the head face plate in glow-close, so the lower normal strength did not remove it. The face plate is barely raised and the eyes are visibly faceted octagons. The walnut is a flat colour with a few vertical seams and none of the sheet's plank grain or horizontal plank joints, and the pelvis, thighs and feet are plain."
+        "note": "Up 1 from pass 2. The pass-3 brass claim holds: at glow-close the head face and pauldron show smooth gradients with no grain or swirl (zoom of x 340-510, y 20-230 at 3x and x 720-900, y 240-560 at 2x); fine high-pass std (gray minus 1.5 px blur) is 2.46 inside the head face plate (box 395-450, 60-95) and 2.34 on the pauldron. The finger-plate fronts no longer read as wood grain, though they stay dark: idle left finger fronts median (79, 52, 17), V 0.31, against the fist body (117, 84, 46), V 0.46, and forearm (138, 102, 59), V 0.54. The plates stand proud with bevelled rims and no visible z-fighting or thumb gap at 3x. The fist and thumb shading is visibly faceted. Still flat: the walnut has a fine high-pass std of 2.89 at blur 3 in glow-close against 9.56 on the sheet's barrel, with no plank grain or horizontal plank joints. The face plate is a thin outline barely raised from the head, and the eyes are about 10-sided polygons at glow-close. The pelvis is plain."
       },
       {
         "criterion": "colour and value",
         "points": 12,
         "max": 15,
-        "note": "Judged from the engine shots. The pleats now match the sheet's value: idle (49, 39, 30), V 0.19, against the concept's (56, 38, 30), V 0.22, though greyer (hue 28, S 0.39 against hue 18, S 0.46), so the dark-bellows-under-lit-barrel split now reads. The barrel walnut measures (73, 46, 31), V 0.29, in idle and V 0.37 in glow-close, against the concept's shaded panels at V 0.23 to 0.25, the same hue (21). Brass varies by region rather than being uniformly darker: the idle forearm is (146, 115, 71), hue 35, S 0.51, V 0.57, against the concept forearm's (127, 88, 48), hue 30, S 0.62, V 0.50, so slightly brighter, yellower and less saturated, while the glow-close pauldron is V 0.43. The grille core is yellower than the sheet's (median hue 41 to 43 against 33) and lacks the sheet's orange-red rim and spill onto the walnut. The dark olive knuckle blocks break the brass colour within the fist."
+        "note": "Unchanged at 12. Brass now matches on the forearm and head: idle forearm (138, 102, 59), hue 33, S 0.57, V 0.54, against the sheet's (144, 100, 53), hue 31, S 0.63, V 0.56; idle head (135, 93, 46) against (133, 96, 53). The pauldron is still dark: glow-close (115, 86, 44), V 0.45, against the sheet's (155, 115, 65), V 0.61. The walnut is lighter than the sheet: idle (76, 48, 34), V 0.30, against (56, 36, 25), V 0.22, same hue (20 against 21). The pleats are greyer and yellower: (53, 42, 32), hue 29, S 0.40, V 0.21, against (43, 28, 23), hue 15, S 0.47, V 0.17. The grille core is still yellower: idle glow median (247, 195, 75), hue 42, against the sheet's (232, 153, 56), hue 33, with no orange-red rim or spill onto the walnut."
       },
       {
         "criterion": "readability at play distance",
-        "points": 7,
+        "points": 8,
         "max": 10,
-        "note": "At 2.6 m the head, the eyes and the six-slot grille give a strong focal point and the brass-and-walnut brute reads at once. The fists are still the nearest and largest shapes in the seated view, and they read as a cupped hand of pegs in idle and as a row of pale teeth in attack, not as crushing fists, which works against the crush tell. The hit shot shows no core flare (glow median (243, 177, 78) against idle (242, 173, 79)), so hit relies on pose; the frozen tint gap is a known evidence gap and is not counted."
+        "note": "Up 1 from pass 2. At 2.6 m the fists, the nearest and largest shapes, now read as closed crushing fists in idle, hit, attack and frozen. Pass 2 read them as cupped pegs or pale teeth, so this helps the crush tell. The head, eyes and six-slot grille remain a strong focal point. Against that, the fists read as square boxes with four dark slots. The hit shot still has no core flare: hit glow (246, 192, 75) against idle (247, 195, 75), so the hit tell relies on pose alone. The frozen tint gap is a known evidence gap and is not counted."
       }
     ],
     "topFixes": [
-      "Rebuild the fists as one closed brass mass wider than the gauntlet: fingers fused into flat-faced plates with only shallow creases (no gunmetal gaps), a heavy thumb plate folded over the index and middle fingers instead of the tube hook, and the fist material switched to the same brass the forearm uses so the knuckles stop reading as wooden dowels or pale teeth. This moves all five criteria, because the fists are the nearest shapes in the seated view.",
-      "Fix the brass tileable on flat faces: the knuckle fronts, gauntlet end caps and grille bars show a wood-like grain and turn pale cream at grazing angles, and the head still shows the circular swirl. Use a factor-only or a much finer brushed brass on small flat faces and remove the swirl from the head, then re-measure the fist and forearm brass in the same shot.",
-      "Change the large shapes the head fix left behind: replace the side-on drum pauldrons with curved plates that hug the barrel and cap the shoulder, angle the forearms forward so the fists sit ahead of the knees with a slight forward hunch, and bulk the legs with brass armour and a round knee joint carrying an emerald visible from the front."
+      "Replace the drum-stack pauldrons with tall curved brass shoulder plates that hug the upper barrel and cap the shoulder, as on the sheet front and back. Carry the side ring with a dark lens and set an emerald facing forward. Then lift the pauldron brass from V 0.45 to about 0.60 in the engine. This is the largest silhouette miss left in every front, back and seated view.",
+      "Round the fist into the sheet's mitt. Chamfer or bevel the box corners, turn the four flat finger plates into curled knuckle segments with rounded fronts, and lift the finger-front value from V 0.31 to about 0.40-0.45 so they stop reading as dark slots. Use smooth normals on the fist and thumb so the faceting disappears.",
+      "Give the barrel the sheet's egg profile, widest at the chest and tapering into the pleats, and add a forward hunch with forearms angled so the fists sit ahead of the knees in idle and side views.",
+      "Add plank grain and horizontal plank joints to the walnut, through a baked or tileable normal and albedo variation, and darken it from V 0.30 to about 0.22. Shift the pleats toward hue 15 at S 0.47.",
+      "Shift the grille glow from hue 42 to about 33 with an orange-red rim and a spill onto the surrounding walnut, and add a brief core flare to the hit clip.",
+      "Raise the head face plate into a distinct proud plate, and raise the eye discs to 16 or more segments so they read round at glow-close."
     ],
-    "method": "Re-score of the uncommitted golem pass-2 build on HEAD 4aeecbd by a separate reviewer agent that did not build the model. Each point of the previous 68 review was re-checked against the new images rather than carried forward. Silhouette and proportions were judged from the EEVEE orthographic front, side and back panels of bellows-golem.fidelity-compare.jpg (cropped and enlarged 2x with Pillow), because they match the sheet's angles and scale. Material and colour were weighted on the six engine shots (three.js, the seated player at 2.6 m, with the runtime D11 glow), because the game is seen through that renderer, the glow ramp is runtime-only (so the EEVEE grilles read pale) and the dark EEVEE backdrop mirrors in the polished brass and skews its value. Colour is the median sRGB of body pixels in hand-placed boxes checked by overlay, never floor: walnut on strap-free barrel panels, pleats between the front straps, brass on the forearm gauntlet and pauldron with a hue-ratio mask, knuckles on the right fist, glow by a max-channel-over-180 mask, and glow slots counted as glow runs along the grille's centre line in glow-close and on the concept. Claims checked: clenched fists (partly: knuckle row present, but separate blocks over a gunmetal core with a tube thumb, and the knuckles read as wood), taller head with a face plate (yes; plate barely raised, swirl remains), domed pauldron caps (present, still read as drums), darker pleats (yes, value matches), tapered bellows (yes), back strap arc (yes, shallower than the sheet), six-slot grille with a hot centre (yes, measured), brass normal 0.06 (the swirl is still visible on the head). The frozen shot's missing rime tint and the missing flame plume were not counted. Rubric: silhouette and proportions 30, signature features 25, surface detail and material read 20, colour and value 15, readability at play distance 10; bar 80.",
-    "evidence": [
-      {
-        "path": "assets-source/concepts/golem-sheet-1.png",
-        "sha256": "8c5bafcf4a25372cab90935515ca4372933bb5c83d61213a528958a1ec29352b"
-      },
-      {
-        "path": "docs/art-bible.md",
-        "sha256": "11da71b45f24eeb258ef77d328ef1aa009297a9231608cb80bb429aa3ff2ad6a"
-      },
-      {
-        "path": "assets-source/concepts/p5-automatons-design.md",
-        "sha256": "36c069d9fd9e45ceb84f8ff1d26a04bd2d9dfac73ca084047d5b606ac346cc83"
-      },
-      {
-        "path": "assets-source/enemies/bellows-golem/bellows-golem.fidelity-compare.jpg",
-        "sha256": "258bd617c14a86535416ab5ba360f0bb68b0111e6714026af3cb3d365e7a008b"
-      },
-      {
-        "path": "assets-source/enemies/bellows-golem/bellows-golem.review-sheet.jpg",
-        "sha256": "79b10b9416ff49ed597eb451bb3c31952e145671e90dfa8b2f47cbde89bb3ea6"
-      },
-      {
-        "path": "assets-source/enemies/bellows-golem/staging/engine/idle.jpg",
-        "sha256": "b8b269c8b53528d31a447b318bd940ec57c374ab8fa3a2de07b0a860b681c3a3"
-      },
-      {
-        "path": "assets-source/enemies/bellows-golem/staging/engine/attack.jpg",
-        "sha256": "a1b5515faebc1be835000784f4a213d5f837e14678598f741de90cf3b22e9efd"
-      },
-      {
-        "path": "assets-source/enemies/bellows-golem/staging/engine/hit.jpg",
-        "sha256": "893c4343770af32ee5083ab7344e18d9e53960fed9c86c9848cc78b0f8359a48"
-      },
-      {
-        "path": "assets-source/enemies/bellows-golem/staging/engine/frozen.jpg",
-        "sha256": "7b100377385f4cbf1a3b0dfedb9974ef44783f1e21d8adfcfcfc71246094ecb4"
-      },
-      {
-        "path": "assets-source/enemies/bellows-golem/staging/engine/death.jpg",
-        "sha256": "b9a9d852df817c3099f56e9df9b1b174dbce40cc4c0c12a19f1cad8d9f0f4cac"
-      },
-      {
-        "path": "assets-source/enemies/bellows-golem/staging/engine/glow-close.jpg",
-        "sha256": "700de905b6b8104ce91c1d54f7e638bd32be0ac55571418cdf691ca9ce619603"
-      }
-    ],
-    "previousScore": 68,
-    "build": "the golem pass-2 commit after 4aeecbd"
+    "method": "Independent pass-3 review by an agent that did not build the model. The author's header text and self-score on the compare and review sheets were ignored. Only provenance.json independentScore (pass 2, 73) was read, for deltas. Silhouette was judged from the EEVEE orthographic front, side and back panels of bellows-golem.fidelity-compare.jpg, cropped and enlarged 2x with Pillow beside the concept panels. Material, colour and readability were weighted on the six three.js engine shots (seated player at 2.6 m, runtime glow), with targeted 2-3x Lanczos crops of the fists (idle), legs and belt (frozen), knees (hit), and the head and pauldron (glow-close). Colours are medians over hand-placed boxes with hue, saturation and value masks (walnut hue 5-32, brass hue 22-50 at V>0.35, pleats V<0.30, glow max>180), compared with matching boxes on golem-sheet-1.png. Texture grain is a high-pass standard deviation (grayscale minus a Gaussian blur at 1.5 px and 3 px). Grille slots are glow runs along three rows in glow-close. Emeralds are green connected blobs (hue 100-170, S>0.4) in the compare panels. Results on the pass-3 claims: brass grain and head swirl gone, confirmed; fist plates stand proud with no visible overlap fighting or thumb gap, confirmed at 3x, though the finger fronts stay dark and the shading faceted; legs do not cut into the belt in the frozen pose, confirmed (in the engine frozen shot the right fist hides the right leg, so the left leg was checked there and both legs in staging/renders/anim-frozen.png at 5x, where each thigh plate sits below the belt band without crossing it); knee emeralds clean, confirmed. The rubric weights are 30, 25, 20, 15 and 10, the bar is 80, and the points sum to the score."
   }
 }
