@@ -11,11 +11,13 @@ Determinism (GLB only, written elsewhere):
 Clean reimport check (fresh process):
     ... build-room-kit.py -- --room hall --reimport
 
-Hall: 10 x 10 m entry hall, four brass-framed doorways, panelled walnut wainscot under wallpaper,
-coffered walnut ceiling, a gear-ring chandelier over a brass floor compass, two walnut benches, four
-corner candelabra and a stained-glass lancet in the north wall. Corridor: 2 x 8 m passage, brass
-pilaster ribs and walnut beams, a hexagonal wall lantern at the lamp socket, four candle sconces
-and a ruby banner at the banner socket.
+Hall: 10 x 10 m entry hall, four brass-framed doorways, a 1.2 m panelled walnut wainscot, walnut
+pilasters, frieze and panel mouldings over the wallpaper, a walnut cove and coffered ceiling, a
+gear-ring chandelier over a brass floor compass, two walnut benches, four corner candelabra, a lit
+niche on every wall, a stone fireplace in the north wall and a stained-glass lancet. Corridor: 2 x 8 m
+passage, a 1.2 m wainscot, panel mouldings over small-motif wallpaper, a walnut cove, brass pilaster
+ribs and walnut beams, three open-bottomed hexagonal lanterns alternating sides (the east one at the
+lamp socket) and a ruby banner at the banner socket.
 """
 
 from __future__ import annotations
@@ -43,8 +45,22 @@ CONST = {  # linear base colour, roughness, metallic, emission strength (study v
     "flame": ((1.0, 0.62, 0.22), 0.5, 0.0, 6.0),
     "cloth": ((0.29, 0.03, 0.04), 0.85, 0.0, 0.0),  # ruby (art bible), the study's ruby book cloth
     "lamp-glass": ((1.0, 0.70, 0.32), 0.3, 0.0, 2.0),
+    # P5-T2 rework. Coals: deep ember red, a dark albedo with strong emission. The coals sit beside
+    # the fire bake lights, so their lightmap term is large: at albedo 0.55 it alone pushed red past 1.0
+    # and AgX turned the grate a pale salmon (engine R-B 76). Colour x 0.25 and strength x 4 keep the
+    # emitted light (bake and runtime) unchanged and cut the lit term to a quarter. Gilt: a dielectric
+    # brass for big gear faces: the PBR brass sets are fully metallic, so under the lightmap they have
+    # no diffuse term and read dark (crown gear L 46, vault wall gears L 40).
+    "coals": ((0.1375, 0.025, 0.00375), 0.9, 0.0, 12.0),
+    "gilt": ((0.52, 0.31, 0.10), 0.42, 0.0, 0.0),
 }
-EMISSIVE_RUNTIME = {"flame": 3.0, "lamp-glass": 1.5}
+EMISSIVE_RUNTIME = {"flame": 3.0, "lamp-glass": 1.5, "coals": 5.6}
+# Fire flames in the P5-T2 rooms: the shared flame (white-hot at 3.0, R-B 39 after AgX) made the
+# furnace a white light box and the braziers white spikes. Same dark-albedo split as the coals: the
+# emitted colour is (1.0, 0.33, 0.06) at Blender strength 6 and runtime intensity 1.4.
+FIRE_FLAME = {"const": {"flame": ((0.25, 0.0825, 0.015), 0.5, 0.0, 24.0)}, "emissive": {"flame": 5.6}}
+# Bake-light colour of fire (furnace, braziers): deeper than the candle colour build_lights defaults to.
+FIRE = {"type": "POINT", "color": (1.0, 0.46, 0.16)}
 # Encode percentile per room: candle flames sit centimetres from wax and brass, and those texels are a
 # larger share of a small room's map. Above it they clip; the report records the clipped fraction.
 WINDOW = {"wall": "N", "a": 2.6, "half_w": 0.6, "sill": 1.4, "spring": 2.55}
@@ -64,9 +80,12 @@ ROOMS = {
     },
     "corridor": {
         "height": 3.4,
-        # 1024: the project file's 32-64 px/m lightmap target; 2048 would put ~110 m2 near 120 px/m.
-        "lightmap": 1024,
-        "slots": ["stone-floor", "wallpaper", "walnut", "brass-aged", "brass-polished", "wax", "flame", "cloth", "lamp-glass"],
+        # 2048: at 1024 the corridor sat at 52.8 px/m against the study's 66.3, and the review asked
+        # for the kit's density. It lands above the project file's 32-64 px/m guide (see the notes).
+        "lightmap": 2048,
+        "slots": ["stone-floor", "wallpaper", "walnut", "brass-aged", "brass-polished", "cloth", "lamp-glass"],
+        # Motifs a third of the hall's size: at 2 m wide the walls are within arm's reach.
+        "tile": {"wallpaper": 0.25},
         "cameras": {
             "hero": {"loc": (0.25, -3.5, 1.6), "look": (-0.1, 4.0, 1.5), "vfov": 70.0},
             "lamp": {"loc": (-0.55, 2.9, 1.6), "look": (0.9, -1.0, 1.7), "vfov": 70.0},
@@ -74,14 +93,20 @@ ROOMS = {
         "stile_step": 0.8,
         "percentile": 98.0,
     },
-    # P5-T2. 5 m tall: the drive shaft and its turning crown gear need headroom above the 4 m greybox.
+    # P5-T2. The chamber ceiling is at 5 m; `height` bounds the shaft void that rises from a hole over
+    # the drive shaft to 8 m (a well with a gallery ring and a gear train).
     "gear-shaft": {
-        "height": 5.0,
+        "height": 8.0,
+        "ceiling": 5.0,
         "lightmap": 2048,
-        "slots": ["stone-floor", "wallpaper", "walnut", "brass-aged", "brass-polished", "wax", "flame", "lamp-glass"],
+        "slots": ["stone-floor", "wallpaper", "walnut", "brass-aged", "brass-polished", "wax", "flame", "lamp-glass", "coals", "gilt"],
+        # Brass scratches at 2.5x the kit scale: fewer, broader marks (the review: "calm the noise").
+        "tile": {"brass-aged": 1.25, "brass-polished": 1.25},
+        **FIRE_FLAME,
         "cameras": {
-            "hero": {"loc": (-1.0, -5.0, 1.6), "look": (0.4, 3.0, 2.9), "vfov": 70.0},
+            "hero": {"loc": (-1.0, -5.0, 1.6), "look": (0.4, 3.0, 3.3), "vfov": 70.0},
             "ring": {"loc": (2.6, 2.4, 1.6), "look": (-0.6, -0.8, 3.5), "vfov": 70.0},
+            "void": {"loc": (2.2, -2.6, 1.6), "look": (0.0, 0.0, 6.5), "vfov": 70.0},
         },
         "stile_step": 0.9,
         "percentile": 99.0,
@@ -89,7 +114,8 @@ ROOMS = {
     "guardian-vault": {
         "height": 6.0,
         "lightmap": 2048,
-        "slots": ["stone-floor", "wallpaper", "walnut", "brass-aged", "brass-polished", "stained-glass", "wax", "flame"],
+        "slots": ["stone-floor", "wallpaper", "walnut", "brass-aged", "brass-polished", "stained-glass", "wax", "flame", "coals", "gilt"],
+        **FIRE_FLAME,
         "cameras": {
             "hero": {"loc": (1.0, -5.2, 1.6), "look": (0.0, 5.5, 2.7), "vfov": 70.0},
             "brazier": {"loc": (-1.5, -2.5, 1.6), "look": (4.0, 4.0, 1.8), "vfov": 70.0},
@@ -101,7 +127,30 @@ ROOMS = {
 # Gear-shaft crown gear: a separate rigid glTF node spun at runtime about its own Y axis (P5-T12).
 GEAR_RING = {"node": "gear-shaft_gear_ring", "pivot_z": 3.6, "r_tip": 2.0, "teeth": 56, "thick": 0.12, "hub_r": 0.36, "shaft_r": 0.3,
              "radPerSec": 0.35}
+HALL = {
+    "wainscot": 1.2,
+    "fireplace": ("N", -3.55, 0.8),  # wall, wall-local centre, half width (kit.fireplace)
+    "niches": [("N", 0.9), ("E", -3.75), ("S", -3.75), ("W", -3.75)],
+    # Wall-local positions, on the coffer beam lines; N +2.5 is the lancet.
+    "pilasters": {"N": [-2.5], "E": [-2.5, 2.5], "S": [-2.5, 2.5], "W": [-2.5, 2.5]},
+    "frames": {"E": [(-2.3, -0.1), (2.7, 4.8)], "S": [(0.0, 2.3), (2.7, 4.8)], "W": [(-2.3, -0.1), (2.7, 4.8)]},
+    # Frieze runs, clear of the chimney crown and the lancet surround.
+    "frieze": {"N": [(-5.0, -4.39), (-2.71, 1.83), (3.37, 5.0)]},
+}
+CORRIDOR = {
+    "wainscot": 1.2,
+    "frames": [(-3.75, -2.25), (-1.75, -0.55), (0.55, 1.75), (2.25, 3.75)],  # both side walls
+    # Wall lanterns alternate sides: east at the lamp socket, west 3 m either side, outside the hero frame.
+    "lanterns": [("lamp", 0.8, 0.0), ("lantern_s", -0.8, -3.0), ("lantern_n", -0.8, 3.0)],
+}
+# A lantern's bake light: a point for the glow on the walls near it, and a downward spot standing in
+# for the brass cap that throws its light down through the glass floor, so each lantern bakes its
+# own pool. Point lights 2.2 m up and 3 m apart light a 2 m corridor floor almost evenly.
+LANTERN_POOL = {"type": "SPOT", "spot_size": math.radians(70.0), "spot_blend": 0.35}
 VAULT_WINDOWS = [{"wall": "N", "a": a, "half_w": 0.55, "sill": 1.7, "spring": 3.1} for a in (-2.6, 0.0, 2.6)]
+# Gear-shaft void: ceiling hole half size (the crown gear's tip radius is 2.0), gallery ring height,
+# and the two levels of the static gear train.
+GEAR_SHAFT = {"hole": 2.1, "gallery_z": 7.0, "train_z": (5.55, 6.15)}
 
 
 def parse_args() -> argparse.Namespace:
@@ -127,34 +176,66 @@ def window_opening() -> tuple:
     return (WINDOW["a"] - WINDOW["half_w"], WINDOW["a"] + WINDOW["half_w"], WINDOW["sill"], apex)
 
 
+def room_tile(p: str) -> dict:
+    """TILE for a room's slots, with the room's own overrides (the corridor's smaller wallpaper)."""
+    return {k: v for k, v in {**TILE, **ROOMS[p].get("tile", {})}.items() if k in ROOMS[p]["slots"]}
+
+
+def room_const(p: str) -> dict:
+    """CONST for a room's slots, with the room's own overrides (the P5-T2 fire flame)."""
+    return {k: v for k, v in {**CONST, **ROOMS[p].get("const", {})}.items() if k in ROOMS[p]["slots"]}
+
+
 def build_hall(b, room: kit.Room, high: bool) -> tuple[list, list]:
-    """Returns runtime colliders and (name, Blender point, watts) bake lights."""
-    kit.build_shell(b, room, {"N": [window_opening()]}, ROOMS["hall"]["stile_step"])
+    """Returns runtime colliders and (name, Blender point, watts[, light options]) bake lights."""
+    T = room.height
+    fw, fa, fh = HALL["fireplace"]
+    breast = (fa - fh, fa + fh, 0.0, T - 0.2)  # the shell leaves the wall open behind the chimney breast
+    openings = {"N": [window_opening()]}
+    openings.setdefault(fw, []).append(breast)
+    kit.build_shell(b, room, openings, ROOMS["hall"]["stile_step"], cornice=False, wainscot=HALL["wainscot"])
+    kit.cove_cornice(b, room, {fw: [(-room.half(fw), breast[0]), (breast[1], room.half(fw))]})
     # The study's lancet is authored centred on its wall: shift its frame to the window's centre.
     S.WIN = {"x0": -WINDOW["half_w"], "x1": WINDOW["half_w"], "sill": WINDOW["sill"], "spring": WINDOW["spring"]}
     S.WIN["apex"] = window_opening()[3]
     S.wall_frame = lambda wall: room.frame(wall) @ Matrix.Translation((WINDOW["a"], 0, 0))
     S.build_window(b, high)
     S.wall_frame = room.frame
-    T = room.height
+    # Panelled bays: pilasters on the beam lines, a frieze under the cove, mouldings in the free bays.
+    W = HALL["wainscot"]
+    for wall in "NSEW":
+        b.xf = room.frame(wall)
+        for a in HALL["pilasters"].get(wall, []):
+            kit.pilaster(b, a, W + 0.05, T - 0.3)
+        for a0, a1 in HALL["frieze"].get(wall, [(-room.half(wall), room.half(wall))]):
+            b.box(a0, a1, 0, 0.025, T - 0.56, T - 0.3, "walnut", drop="y")
+        for a0, a1 in HALL["frames"].get(wall, []):
+            kit.moulding_frame(b, a0, a1, W + 0.25, T - 0.76)
+        b.xf = Matrix.Identity(4)
     # Coffered ceiling: walnut beams both ways at +-2.5 m, ends buried in the walls.
     for c in (-2.5, 2.5):
         b.box(-room.hx, room.hx, c - 0.14, c + 0.14, T - 0.3, T, "walnut", drop="txX")
         b.box(c - 0.14, c + 0.14, -room.hy, room.hy, T - 0.26, T, "walnut", drop="tyY")
     kit.medallion(b, high)
-    lights = [(f"chandelier_{i}", p, 14.0) for i, p in enumerate(kit.chandelier(b, room, high, 2.85))]
+    lights = [(f"chandelier_{i}", p, 12.0) for i, p in enumerate(kit.chandelier(b, room, high, 2.85))]
     colliders = []
     for sx, sy in ((-1, 1), (1, -1), (1, 1), (-1, -1)):  # sconce-nw, sconce-se sockets first
-        flames, box = kit.torchere(b, sx * 4.6, sy * 4.6, 2.2, high)
+        flames, box = kit.candelabrum(b, sx * 4.6, sy * 4.6, 2.2, high)
+        lights += [(f"torchere_{len(colliders)}_{k}", f, 15.0) for k, f in enumerate(flames)]
         colliders.append(box)
-        lights.append((f"torchere_{len(colliders) - 1}", Vector((sx * 4.6, sy * 4.6, 2.2)), 40.0))
     for cx in (-4.0, 4.0):  # bench-w and bench-e sockets
         colliders.append(kit.bench(b, cx, 0.0, 0.9, high))
+    fire_lights, fire_box, _ = kit.fireplace(b, room, fw, fa, high)
+    colliders.append(fire_box)
+    lights += fire_lights
+    for wall, a in HALL["niches"]:
+        lights.append((f"niche_{wall}", kit.wall_niche(b, room, wall, a, high), 5.0))
     return colliders, lights
 
 
 def build_corridor(b, room: kit.Room, high: bool) -> tuple[list, list]:
-    kit.build_shell(b, room, {}, ROOMS["corridor"]["stile_step"])
+    kit.build_shell(b, room, {}, ROOMS["corridor"]["stile_step"], cornice=False, wainscot=CORRIDOR["wainscot"])
+    kit.cove_cornice(b, room)
     T = room.height
     for y in (-2.0, 2.0):  # brass pilaster ribs and a walnut beam
         b.box(-room.hx, room.hx, y - 0.11, y + 0.11, T - 0.24, T, "walnut", drop="txX")
@@ -166,12 +247,17 @@ def build_corridor(b, room: kit.Room, high: bool) -> tuple[list, list]:
             b.box(a - 0.12, a + 0.12, 0, 0.08, 0, 0.18, "brass-aged", drop="yb")  # plinth
             b.box(a - 0.12, a + 0.12, 0, 0.08, T - 0.32, T - 0.24, "brass-aged", drop="y")  # capital
             b.xf = Matrix.Identity(4)
-    flame = kit.lantern(b, 0.8, 0.0, 2.2, room.hx, high)
+    for wall in "WE":
+        b.xf = room.frame(wall)
+        for a0, a1 in CORRIDOR["frames"]:
+            kit.moulding_frame(b, a0, a1, CORRIDOR["wainscot"] + 0.2, T - 0.45)
+        b.xf = Matrix.Identity(4)
+    lights = []
+    for name, x, y in CORRIDOR["lanterns"]:
+        flame = kit.lantern_open(b, x, y, 2.2, room.hx if x > 0 else -room.hx, high)
+        lights += [(name, flame, 12.0), (f"{name}_pool", flame - Vector((0, 0, 0.05)), 28.0, LANTERN_POOL)]
     kit.banner(b, -room.hx, -room.hx + 0.04, 0.0, high)
-    S.SCONCES = [("W", 2.9), ("W", -2.9), ("E", 2.9), ("E", -2.9)]
-    sconces = S.build_sconces(b, high)
-    lights = [("lamp", Vector((0.8, 0.0, 2.2)), 35.0)] + [(f"sconce_{i}", p, 18.0) for i, p in enumerate(sconces)]
-    assert (flame - Vector((0.8, 0.0, 2.2))).length < 0.05, flame
+    assert (lights[0][1] - Vector((0.8, 0.0, 2.2))).length < 0.05, lights[0]  # the lamp light socket
     return [], lights
 
 
@@ -181,21 +267,28 @@ def lancet_opening(w: dict) -> tuple:
 
 
 def build_gear_shaft(b, room: kit.Room, high: bool) -> tuple[list, list]:
-    """Furnace-driven gear shaft: masonry firebox with four glowing grates at the centre, polished
-    drive shaft to a ceiling boss, a parts crate, two lanterns and four candle sconces. The turning
-    crown gear is built separately (rigid_parts)."""
-    kit.build_shell(b, room, {}, ROOMS["gear-shaft"]["stile_step"])
-    T = room.height
-    for c in (-3.5, 3.5):  # walnut beams across the chamber, clear of the shaft boss
-        b.box(-room.hx, room.hx, c - 0.14, c + 0.14, T - 0.3, T, "walnut", drop="txX")
-    furnace = kit.furnace_shaft(b, high, T, GEAR_RING["shaft_r"])
+    """Furnace-driven gear shaft: masonry firebox with four coal grates at the centre in a grated coal
+    pit behind a stone kerb, polished drive shaft rising through a hole in the 5 m ceiling into a shaft
+    void to 8 m, with a static gear train meshing up the shaft and a gallery ring with four candles; a
+    parts crate, two lanterns and four candle sconces. The turning crown gear is built separately
+    (rigid_parts)."""
+    C, H = ROOMS["gear-shaft"]["ceiling"], GEAR_SHAFT["hole"]
+    kit.build_shell(b, room, {}, ROOMS["gear-shaft"]["stile_step"], cornice=False, ceiling_z=C, ceiling_hole=H)
+    kit.cove_cornice(b, room, top=C)
+    for c in (-3.5, 3.5):  # walnut beams across the chamber, clear of the shaft hole
+        b.box(-room.hx, room.hx, c - 0.14, c + 0.14, C - 0.3, C, "walnut", drop="txX")
+    furnace = kit.furnace_shaft(b, high, room.height, GEAR_RING["shaft_r"])
     colliders = [kit.crate(b, 3.0, -4.5, 0.8)]  # crate socket (runtime 3, 4.5)
+    colliders.append(kit.furnace_pit(b, high))
+    gallery = kit.shaft_well(b, C, room.height, H, GEAR_SHAFT["gallery_z"], high)
+    kit.gear_train(b, high, *GEAR_SHAFT["train_z"], GEAR_RING["shaft_r"])
     lamps = [kit.lantern(b, 3.6, 5.6, 2.4, room.hx, high), kit.lantern(b, -3.6, -5.6, 2.4, -room.hx, high)]  # lamp-n, lamp-s
     S.SCONCES = [("E", 3.0), ("E", -3.0), ("W", 3.6), ("W", -3.8)]
     sconces = S.build_sconces(b, high)
-    lights = [(f"furnace_{i}", p, 40.0) for i, p in enumerate(furnace)]
+    lights = [(f"furnace_{i}", p, 40.0, FIRE) for i, p in enumerate(furnace)]
     lights += [(n, p, 40.0) for n, p in zip(("lamp_n", "lamp_s"), lamps)]
     lights += [(f"sconce_{i}", p, 18.0) for i, p in enumerate(sconces)]
+    lights += [(f"gallery_{i}", p, 6.0) for i, p in enumerate(gallery)]  # 4-fold symmetric about the ring axis
     return colliders, lights
 
 
@@ -203,28 +296,32 @@ def build_guardian_vault(b, room: kit.Room, high: bool) -> tuple[list, list]:
     """Guardian arena: 6 m vault, four stone pillars with brazier troughs at the light sockets, three
     stained-glass lancets and a brass gear rosette behind the reward, walnut ceiling grid, a gear
     chandelier over the brass duelling circle and a processional inlay from the door."""
-    kit.build_shell(b, room, {"N": [lancet_opening(w) for w in VAULT_WINDOWS]}, ROOMS["guardian-vault"]["stile_step"])
+    # The apse piers and altar steps stand on the north wall: the wall is left open behind them.
+    north = [lancet_opening(w) for w in VAULT_WINDOWS] + kit.apse_openings()
+    kit.build_shell(b, room, {"N": sorted(north)}, ROOMS["guardian-vault"]["stile_step"], cornice=False)
+    p1 = kit.APSE["p1"]
+    kit.cove_cornice(b, room, {"N": [(-room.hx, -p1), (p1, room.hx)]})  # the apse sides close the cove ends
     for w in VAULT_WINDOWS:
         S.WIN = {"x0": -w["half_w"], "x1": w["half_w"], "sill": w["sill"], "spring": w["spring"], "apex": lancet_opening(w)[3]}
-        S.wall_frame = lambda wall, a=w["a"]: room.frame(wall) @ Matrix.Translation((a, 0, 0))
-        S.build_window(b, high)
-    S.wall_frame = room.frame
+        kit.lancet_frame(b, room, w["a"], high)
     T = room.height
     for c in (-4.0, 4.0):
         b.box(-room.hx, room.hx, c - 0.16, c + 0.16, T - 0.32, T, "walnut", drop="txX")
         b.box(c - 0.16, c + 0.16, -room.hy, room.hy, T - 0.28, T, "walnut", drop="tyY")
-    kit.wall_gear(b, room, "N", 0.0, 5.0, 0.72, 26, high)
-    kit.wall_gear(b, room, "W", 0.0, 3.4, 1.0, 32, high)
-    kit.wall_gear(b, room, "E", 0.0, 3.4, 1.0, 32, high)
+    # Gilt wall gears; the north one sits inside the apse arch, over the centre lancet.
+    kit.wall_gear(b, room, "N", 0.0, 4.8, 0.6, 24, high, slot="gilt")
+    kit.wall_gear(b, room, "W", 0.0, 3.4, 1.0, 32, high, slot="gilt")
+    kit.wall_gear(b, room, "E", 0.0, 3.4, 1.0, 32, high, slot="gilt")
     kit.arena_circle(b, 0.0, 3.0, high)  # guardian socket (runtime 0, -3)
-    for x in (0.35, 1.65):  # processional inlay from the south door to the circle
-        b.box(x - 0.03, x + 0.03, -room.hy + 0.06, 0.95, 0.0, 0.005, "brass-aged", drop="b")
+    for x in (0.35, 1.65):  # processional inlay from the south door to the circle (top face only)
+        b.box(x - 0.03, x + 0.03, -room.hy + 0.06, 0.95, 0.0, 0.005, "brass-aged", drop="bxXyY")
     lights = [(f"chandelier_{i}", p, 14.0) for i, p in enumerate(kit.chandelier(b, room, high, 4.3))]
-    colliders = []
+    colliders, apse_lights = kit.apse(b, room, high)
+    lights += apse_lights
     for name, (x, z) in zip(("nw", "ne", "sw", "se"), ((-4, -4), (4, -4), (-4, 4), (4, 4))):  # runtime pillar sockets
         pts, box = kit.pillar(b, float(x), float(-z), T)
         colliders.append(box)
-        lights += [(f"brazier_{name}_in", pts[0], 30.0), (f"brazier_{name}_out", pts[1], 15.0)]
+        lights += [(f"brazier_{name}_in", pts[0], 30.0, FIRE), (f"brazier_{name}_out", pts[1], 15.0, FIRE)]
     return colliders, lights
 
 
@@ -253,11 +350,15 @@ def build_lights(room: kit.Room, lights: list) -> None:
     bg = next(n for n in world.node_tree.nodes if n.type == "BACKGROUND")
     bg.inputs["Color"].default_value = (0.05, 0.035, 0.022, 1.0)
     bg.inputs["Strength"].default_value = 0.5
-    for name, loc, energy in lights:
-        data = bpy.data.lights.new(f"{room.piece}_{name}", "POINT")
+    for name, loc, energy, *opts in lights:
+        o = opts[0] if opts else {}
+        data = bpy.data.lights.new(f"{room.piece}_{name}", o.get("type", "POINT"))
         data.energy = energy
         data.shadow_soft_size = 0.02
-        data.color = (1.0, 0.58, 0.26)
+        data.color = o.get("color", (1.0, 0.58, 0.26))
+        if "spot_size" in o:  # a SPOT points down -Z unrotated
+            data.spot_size = o["spot_size"]
+            data.spot_blend = o["spot_blend"]
         obj = bpy.data.objects.new(f"{room.piece}_{name}", data)
         obj.location = loc
         scene.collection.objects.link(obj)
@@ -309,14 +410,17 @@ def manifest_entry(room: kit.Room, colliders: list, lightmap: dict | None, budge
     spec = kit.SPECS[room.piece]
     p = room.piece
     materials = {}
+    tile = room_tile(p)
+    const = room_const(p)
+    emissive = {**EMISSIVE_RUNTIME, **ROOMS[p].get("emissive", {})}
     for slot in ROOMS[p]["slots"]:
-        if slot in TILE:
-            materials[f"{p}_{slot}"] = {"pbr": slot, "tileMeters": TILE[slot]}
+        if slot in tile:
+            materials[f"{p}_{slot}"] = {"pbr": slot, "tileMeters": tile[slot]}
         else:
-            color, rough = CONST[slot][0], CONST[slot][1]
+            color, rough = const[slot][0], const[slot][1]
             entry = {"color": S.srgb_hex(color)}
-            if slot in EMISSIVE_RUNTIME:
-                entry.update({"emissive": S.srgb_hex(color), "emissiveIntensity": EMISSIVE_RUNTIME[slot]})
+            if slot in emissive:
+                entry.update({"emissive": S.srgb_hex(color), "emissiveIntensity": emissive[slot]})
             else:
                 entry["roughness"] = rough
             materials[f"{p}_{slot}"] = entry
@@ -420,7 +524,7 @@ def main() -> None:
     args = parse_args()
     cfg = ROOMS[args.room]
     room = kit.Room(args.room, cfg["height"])
-    kit.configure(room, list(cfg["slots"]), {k: v for k, v in TILE.items() if k in cfg["slots"]}, {k: v for k, v in CONST.items() if k in cfg["slots"]}, cfg["cameras"])
+    kit.configure(room, list(cfg["slots"]), room_tile(args.room), room_const(args.room), cfg["cameras"])
     if args.reimport:
         reimport(room)
         return
@@ -436,8 +540,11 @@ def main() -> None:
                     "generator": "scripts/assets/build-room-kit.py", "helper": "scripts/assets/room_kit.py (reuses build-room-study.py functions)"}
 
     high, _, _, high_rigid = build(room, True)
+    grain = P in ("hall", "corridor", "gear-shaft", "guardian-vault")  # P5 rework: lengthwise walnut grain on mouldings and beams
     for obj in (high, *high_rigid):
         S.uv0_tiled(obj)
+        if grain:
+            report["lengthwise_grain_high"] = report.get("lengthwise_grain_high", 0) + kit.lengthwise_grain(obj)
         S.apply_bevel(obj)
     report["high"] = {"triangles": sum(S.count_tris(o) for o in (high, *high_rigid)), "slots": len(S.SLOTS)}
     high_all = [high, *high_rigid]
@@ -449,6 +556,8 @@ def main() -> None:
     cams = {name: S.make_camera(name) for name in cfg["cameras"]}
     for obj in low_all:
         S.uv0_tiled(obj)
+        if grain:
+            report["lengthwise_grain_low"] = report.get("lengthwise_grain_low", 0) + kit.lengthwise_grain(obj)
     bpy.context.view_layer.update()
     if not args.glb_out:
         S.set_visible(low_all, False)
@@ -563,7 +672,7 @@ def main() -> None:
     bpy.ops.wm.save_as_mainfile(filepath=str(S.BLEND_DIR / f"{P}_low.blend"), copy=True, compress=True)
     report["blend"] = {p.name: {"sha256": S.sha256(p), "bytes": p.stat().st_size} for p in sorted(S.BLEND_DIR.glob("*.blend"))}
     report["colliders_added"] = colliders
-    report["bake_lights"] = [{"name": n, "blender": [round(v, 4) for v in p], "watts": w} for n, p, w in lights]
+    report["bake_lights"] = [{"name": n, "blender": [round(v, 4) for v in p], "watts": w, **({"light": o[0]} if o else {})} for n, p, w, *o in lights]
     report["cameras_runtime"] = {k: {"eye": [v["loc"][0], v["loc"][2], -v["loc"][1]], "look": [v["look"][0], v["look"][2], -v["look"][1]], "vfov": v["vfov"]}
                                  for k, v in cfg["cameras"].items()}
     report["host_load_end"] = S.load_avg()

@@ -4,12 +4,12 @@
   "route": "scripted",
   "generator": {
     "path": "scripts/assets/build-room-kit.py",
-    "sha256": "d93dcb87c43733bd661850808e1055cb1104093347940f8e42d22d1bd48c4d48"
+    "sha256": "775b0a9b919fb005821c0805f6548cfab2cbd29e250012c0a70a9cb01d0f8da5"
   },
   "generatorDeps": [
     {
       "path": "scripts/assets/room_kit.py",
-      "sha256": "0e850b3688d935eea2ece632ce57614a30edbe6b51e78d323a6a0ee599b73ff4"
+      "sha256": "3d421c1295a23001d9c0f18848d5805bc424068b7ce2130fbb630a3257288cb4"
     },
     {
       "path": "scripts/assets/build-room-study.py",
@@ -21,14 +21,14 @@
     },
     {
       "path": "scripts/assets/build-cog-sentry.py",
-      "sha256": "9f045c4e6314b29a4bb82572fa040a0a0f9f68079b311b630d76fd0e1918d0a6"
+      "sha256": "8f80d1ae8d10adeab5123ba9497e9d00a8ea4c6e5c0855c902cf65274f25bacc"
     }
   ],
   "authoringAgent": {
     "harness": "claude-code (dispatched sub-agent)",
     "model": "claude-opus-5-5"
   },
-  "blender": "5.2.2 LTS",
+  "blender": "5.3.0",
   "toolVersions": {
     "ktx": "ktx version: v4.4.2",
     "gltfExporter": "Blender 5.2.2 bundled io_scene_gltf2"
@@ -37,30 +37,30 @@
     "store": "assets-source/rooms/gear-shaft/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)",
     "files": {
       "gear-shaft_high.blend": {
-        "sha256": "c48dc6d66c86259d25232c47401fe094d133eb57156fc78612f57dbc9abe43db",
-        "bytes": 802506
+        "sha256": "05e48379ae4af75e521a8d52199fe9923f98245e22d0e9917fa12d7aae5a0509",
+        "bytes": 1588959
       },
       "gear-shaft_low.blend": {
-        "sha256": "2e4581c3a3037a6cb7914a0b08094eef46a81a630cc0e30029129989dd31c92d",
-        "bytes": 255747
+        "sha256": "c9163b1a32931f03733323c2c387154667372b19368780e9a768e4b03519a5ff",
+        "bytes": 387432
       }
     }
   },
   "bake": {
-    "device": "GPU:METAL (Apple M4 Max (GPU - 40 cores))",
+    "device": "GPU:METAL (Apple M4 (GPU - 10 cores))",
     "lightmap": {
-      "coverage": 0.7142,
-      "scale": 7.025497,
-      "clipped_fraction": 0.00994,
-      "mean_irradiance": 0.380445,
+      "coverage": 0.6738,
+      "scale": 4.990032,
+      "clipped_fraction": 0.00998,
+      "mean_irradiance": 0.332881,
       "p05_irradiance": 0.0,
       "percentile": 99.0,
       "encoded_p05_255": 0,
-      "encoded_median_255": 43,
-      "seconds": 14.08,
+      "encoded_median_255": 45,
+      "seconds": 42.26,
       "host_load": [
-        9.67,
-        11.57
+        1.47,
+        1.17
       ],
       "timing_valid": true,
       "size": 2048,
@@ -78,63 +78,73 @@
     }
   },
   "budgets": {
-    "triangles": 4434,
-    "materials": 8,
+    "triangles": 9286,
+    "materials": 10,
     "texturePx": {
       "gear-shaft.lightmap.ktx2": {
         "width": 2048,
         "height": 2048
       }
     },
-    "highTriangles": 28918,
-    "glbBytes": 297248
+    "highTriangles": 64650,
+    "glbBytes": 801608
   },
   "texelDensityPxPerM": {
     "lightmap": {
-      "mean_px_per_m": 61.3,
-      "min_px_per_m": 51.6,
-      "max_px_per_m": 61.37
+      "mean_px_per_m": 46.01,
+      "min_px_per_m": 38.92,
+      "max_px_per_m": 46.28
     },
     "lightmapBySlot": {
       "brass-aged": {
-        "area_m2": 31.94,
-        "median_px_per_m": 61.4,
-        "min_px_per_m": 51.6
+        "area_m2": 49.43,
+        "median_px_per_m": 46.3,
+        "min_px_per_m": 38.9
       },
       "brass-polished": {
-        "area_m2": 10.55,
-        "median_px_per_m": 61.0,
-        "min_px_per_m": 51.6
+        "area_m2": 16.82,
+        "median_px_per_m": 46.0,
+        "min_px_per_m": 38.9
+      },
+      "coals": {
+        "area_m2": 6.93,
+        "median_px_per_m": 46.3,
+        "min_px_per_m": 46.3
       },
       "flame": {
-        "area_m2": 1.98,
-        "median_px_per_m": 61.4,
-        "min_px_per_m": 61.4
+        "area_m2": 0.51,
+        "median_px_per_m": 46.3,
+        "min_px_per_m": 46.3
+      },
+      "gilt": {
+        "area_m2": 11.01,
+        "median_px_per_m": 46.3,
+        "min_px_per_m": 38.9
       },
       "lamp-glass": {
         "area_m2": 0.27,
-        "median_px_per_m": 57.1,
-        "min_px_per_m": 57.1
+        "median_px_per_m": 43.1,
+        "min_px_per_m": 43.0
       },
       "stone-floor": {
-        "area_m2": 104.16,
-        "median_px_per_m": 61.4,
-        "min_px_per_m": 61.4
+        "area_m2": 162.4,
+        "median_px_per_m": 46.3,
+        "min_px_per_m": 46.3
       },
       "wallpaper": {
         "area_m2": 153.28,
-        "median_px_per_m": 61.4,
-        "min_px_per_m": 61.4
+        "median_px_per_m": 46.3,
+        "min_px_per_m": 46.3
       },
       "walnut": {
-        "area_m2": 176.07,
-        "median_px_per_m": 61.4,
-        "min_px_per_m": 61.4
+        "area_m2": 196.18,
+        "median_px_per_m": 46.3,
+        "min_px_per_m": 40.6
       },
       "wax": {
-        "area_m2": 0.05,
-        "median_px_per_m": 59.8,
-        "min_px_per_m": 55.2
+        "area_m2": 0.13,
+        "median_px_per_m": 44.5,
+        "min_px_per_m": 41.6
       }
     }
   },
@@ -260,25 +270,27 @@
   "derivedFiles": [
     {
       "path": "public/assets/rooms/gear-shaft/gear-shaft.glb",
-      "sha256": "bb57a7997cc8188e46eb84f589158f71ae6dd21e9a153f19c75a0c247b900927",
-      "bytes": 297248
+      "sha256": "e828d8e7323df315d1b26e6e89bfa1dba4fc42b6d3f5d7556775e6c62ce1387a",
+      "bytes": 801608
     },
     {
       "path": "public/assets/rooms/gear-shaft/gear-shaft.lightmap.ktx2",
-      "sha256": "9e0d15ef0b1e68731bb31ae9cdbbd3e1f04a224f4a5e05844364805a07067ea9",
-      "bytes": 2460260
+      "sha256": "a7707d76ef57ba9ba09ba8301d7ba2ce1f59e76dcb3b734176010f31ec94d578",
+      "bytes": 2757188
     },
     {
       "path": "public/assets/rooms/gear-shaft/gear-shaft.manifest.json",
-      "sha256": "5f54cf59c2d6c79ca122379144c7312da1412b3bfd41150a7a5b693b094e40a3",
-      "bytes": 3435
+      "sha256": "41191dd824c82228f05d21481433f68399cb855762413c3eeb0f2b4e5866fe4a",
+      "bytes": 4903
     }
   ],
   "stagingFiles": {
-    "gear-shaft.glb": "bb57a7997cc8188e46eb84f589158f71ae6dd21e9a153f19c75a0c247b900927",
-    "gear-shaft.lightmap.ktx2": "9e0d15ef0b1e68731bb31ae9cdbbd3e1f04a224f4a5e05844364805a07067ea9",
-    "gear-shaft.lightmap.png": "078e863b58fec78d4e8d04af62957945e613524ce32636bd7d3f81f90d183500",
-    "gear-shaft.manifest.json": "5f54cf59c2d6c79ca122379144c7312da1412b3bfd41150a7a5b693b094e40a3"
+    "engine-compare.json": "100c381f07226adf22be9b7832650ccfdcdb35d626d5f912482d885ab5094787",
+    "gear-shaft.glb": "e828d8e7323df315d1b26e6e89bfa1dba4fc42b6d3f5d7556775e6c62ce1387a",
+    "gear-shaft.lightmap.ktx2": "a7707d76ef57ba9ba09ba8301d7ba2ce1f59e76dcb3b734176010f31ec94d578",
+    "gear-shaft.lightmap.png": "7189254859629008a362ab54018cc2561312443d8301141af3c4cbb37c32034c",
+    "gear-shaft.manifest.json": "41191dd824c82228f05d21481433f68399cb855762413c3eeb0f2b4e5866fe4a",
+    "uv1-report.json": "269b7404dbeffeb5608569b3e6ca828bd56dc02bb3c1131fb3d9a247713a3ef8"
   },
   "references": [
     {
@@ -303,8 +315,8 @@
   "materialsUsed": "approved P4-T3 set (public/assets/materials), bound by slot name; not regenerated",
   "license": "Original work generated in Blender from a checked-in script; concept references from Paul's paid Higgsfield plan (Terms of Use 4.4)",
   "reimport": {
-    "triangles": 4434,
-    "material_count": 8,
+    "triangles": 9286,
+    "material_count": 10,
     "uv_layers": [
       [
         "UVMap",
@@ -321,7 +333,7 @@
       "max": [
         4.0,
         6.0,
-        5.0
+        8.0
       ]
     },
     "checks": {
@@ -342,7 +354,7 @@
   },
   "validation": {
     "pass": true,
-    "date": "2026-11-15",
+    "date": "2026-11-17",
     "checks": [
       "presence",
       "hashes",
@@ -411,9 +423,9 @@
       "gear-shaft_gear_ring": {
         "triangles": 2392,
         "lightmap_density": {
-          "mean_px_per_m": 59.89,
-          "min_px_per_m": 51.83,
-          "max_px_per_m": 61.36
+          "mean_px_per_m": 45.16,
+          "min_px_per_m": 39.09,
+          "max_px_per_m": 46.28
         },
         "location_blender": [
           0.0,
@@ -426,16 +438,16 @@
       "gear-shaft_gear_ring": {
         "azimuth": {
           "sector_means": [
-            0.08269,
-            0.08159,
-            0.08101,
-            0.08004,
-            0.07981,
-            0.08063,
-            0.08195,
-            0.08138
+            0.07797,
+            0.07685,
+            0.07564,
+            0.07474,
+            0.07383,
+            0.0741,
+            0.07657,
+            0.07719
           ],
-          "min_over_max": 0.965,
+          "min_over_max": 0.947,
           "sectors": 8
         },
         "casts_baked_shadow": false
@@ -459,35 +471,39 @@
   "reviewEvidence": [
     {
       "path": "assets-source/rooms/gear-shaft/staging/review-sheet.jpg",
-      "sha256": "6e9c239b3901bd05fa0cfb60c9065a1867c305ff13cbbd7e6fc2e57577a30e1b"
+      "sha256": "b37bba2c853a0b96762b044f6036b5f26ed92ee2b43e8d939f4be317ffc0b69a"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-hero-gear-turned.jpg",
-      "sha256": "fb8ba32a810c3f863055fefeca3015d88f8fe205fbf41def27c16771aa275d4c"
+      "sha256": "429c20e7b3dccd561066959b00a9883593a833a6ace10cd924d62729ee4f8009"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-hero.diffuse-gear-turned.jpg",
-      "sha256": "463bc34a248ffa5ad03565e7e916cc36fb95dea075f2e1e664bdc63ba69f4026"
+      "sha256": "4946f4094f723e00f228f03f70c2acf81a3c9df4b67eef9fe9093683ef8dc960"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-hero.diffuse.jpg",
-      "sha256": "766eb14771421fbec51d2a497c174ba99f31716059b18e042b123c73b074e3c6"
+      "sha256": "d3c19d2974f7c722bc81229202a0cfeb7d50c045bca4538f23d4d2fc71f198f4"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-hero.jpg",
-      "sha256": "2c588f97b1231e8e3fb7870409c91d63d9dbbbf4fef4f86a4f0a541bdd8394c8"
+      "sha256": "bb5a31e7d4e2482a601f329d277100577539be8fd0bcc40397ce17df68ea4e85"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-ring-gear-turned.jpg",
-      "sha256": "cbab894fc29197e63fe525c9dba31406e8d0ecc7b279fe0bb6d2a8ca549700e5"
+      "sha256": "5f14d6e21f29588f545b6665d236489ef3fd1096a472abb30b18daf1eb4e0ad7"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-ring.jpg",
-      "sha256": "dc0ac3b84547af0ca4bf5aa5be154b8d0fa6f29da201ba8e43b516643d0caa36"
+      "sha256": "2bb9b8123831c0428bf57640ea92862e10542bbf9ca3e50ac02a3f71dac843a2"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-seam-north.jpg",
-      "sha256": "177eea1e54742530700edc9119e57c3f6ea1f9a065ee847e208f2a5cd7d1d23e"
+      "sha256": "18ba18191ed2cf256fbbb863c89e89e38cd1882b0264e24c043f9b112477a02e"
+    },
+    {
+      "path": "docs/verification/p5-rooms-gear-shaft-void.jpg",
+      "sha256": "faa2d9e3250f2c3cf5075afa01cfde7d57526eaa66ee7b3295edfce30b8ccc34"
     }
   ],
   "independentScore": {
@@ -535,5 +551,30 @@
       "Calm the brass scratch noise to painterly value variation, and fix the grey beam side faces."
     ],
     "method": "Looked at (2026-11-16): docs/art-bible.md; PRD.md lightmap contract (lines 87-95); assets-source/concepts/room-sheet-1.png, room-sheet-2.png; study benchmark assets-source/rooms/study/staging/review-sheet.jpg + provenance.json + engine-compare.json; docs/verification/p5-int-study.jpg; assets-source/rooms/gear-shaft/provenance.json, staging/review-sheet.jpg, staging/engine-compare.json, staging/gear-shaft.lightmap.png (texel stats), docs/verification/p5-rooms-gear-shaft-*.jpg and p5-int-gear-shaft*.jpg; Pillow crops and region means under /tmp/rxr-score/rooms/."
+  },
+  "buildDecisions": {
+    "by": "orchestrator of the 2026-11-17 re-bake (build decisions, not owner approvals; Paul's review is still pending)",
+    "date": "2026-11-17",
+    "decisions": [
+      {
+        "id": "D3",
+        "decision": "The dielectric `gilt` CONST slot (a departure from the shared metallic PBR brass sets) is allowed for this build."
+      },
+      {
+        "id": "D4",
+        "decision": "Static gear train above the ceiling hole; only the crown gear is a rigid spinning node."
+      },
+      {
+        "id": "D5",
+        "decision": "Accept the gear-shaft density drop (61.3 to 46.0 px/m built) from the void, pit and gear train."
+      },
+      {
+        "id": "D6",
+        "decision": "Keep the deeper fire colour: P5-T2 flames emit (1.0, 0.33, 0.06), unlike the hall and study candle flame."
+      }
+    ],
+    "notes": [
+      "Coals and P5-T2 fire flames carry a dark albedo with strong emission (colour x 0.25, Blender strength and runtime emissiveIntensity x 4: coals 12.0 / 5.6, flame 24.0 / 5.6), so the emitted light is unchanged and the lightmap term on them is a quarter. Measured on the first 2026-11-17 bake: engine firebox R-B 101 -> 108, pit 112 -> 112."
+    ]
   }
 }

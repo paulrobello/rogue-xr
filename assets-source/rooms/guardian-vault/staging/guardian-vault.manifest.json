@@ -5,8 +5,8 @@
     "file": "guardian-vault.lightmap.ktx2",
     "uv": 1,
     "encoding": "srgb-scaled",
-    "scale": 6.427347183227539,
-    "intensity": 20.192107
+    "scale": 2.7621097564697266,
+    "intensity": 8.677424
   },
   "id": "guardian-vault",
   "kinds": [
@@ -266,6 +266,42 @@
     },
     {
       "min": [
+        -1.78,
+        0,
+        -6.0
+      ],
+      "max": [
+        -1.12,
+        6.0,
+        -4.66
+      ]
+    },
+    {
+      "min": [
+        1.12,
+        0,
+        -6.0
+      ],
+      "max": [
+        1.78,
+        6.0,
+        -4.66
+      ]
+    },
+    {
+      "min": [
+        -0.93,
+        0,
+        -6.0
+      ],
+      "max": [
+        0.93,
+        1.36,
+        -5.45
+      ]
+    },
+    {
+      "min": [
         -4.7,
         0,
         -4.7
@@ -314,8 +350,8 @@
     }
   ],
   "budget": {
-    "tris": 7263,
-    "materials": 8,
+    "tris": 8757,
+    "materials": 10,
     "texturePx": 2048
   },
   "materials": {
@@ -348,9 +384,18 @@
       "roughness": 0.55
     },
     "guardian-vault_flame": {
-      "color": "#ffce81",
-      "emissive": "#ffce81",
-      "emissiveIntensity": 3.0
+      "color": "#895121",
+      "emissive": "#895121",
+      "emissiveIntensity": 5.6
+    },
+    "guardian-vault_coals": {
+      "color": "#682c0c",
+      "emissive": "#682c0c",
+      "emissiveIntensity": 5.6
+    },
+    "guardian-vault_gilt": {
+      "color": "#bf9759",
+      "roughness": 0.42
     }
   },
   "glassEmissiveIntensity": 0.8

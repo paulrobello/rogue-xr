@@ -4,12 +4,12 @@
   "route": "scripted",
   "generator": {
     "path": "scripts/assets/build-room-kit.py",
-    "sha256": "d93dcb87c43733bd661850808e1055cb1104093347940f8e42d22d1bd48c4d48"
+    "sha256": "775b0a9b919fb005821c0805f6548cfab2cbd29e250012c0a70a9cb01d0f8da5"
   },
   "generatorDeps": [
     {
       "path": "scripts/assets/room_kit.py",
-      "sha256": "0e850b3688d935eea2ece632ce57614a30edbe6b51e78d323a6a0ee599b73ff4"
+      "sha256": "3d421c1295a23001d9c0f18848d5805bc424068b7ce2130fbb630a3257288cb4"
     },
     {
       "path": "scripts/assets/build-room-study.py",
@@ -21,14 +21,14 @@
     },
     {
       "path": "scripts/assets/build-cog-sentry.py",
-      "sha256": "9f045c4e6314b29a4bb82572fa040a0a0f9f68079b311b630d76fd0e1918d0a6"
+      "sha256": "8f80d1ae8d10adeab5123ba9497e9d00a8ea4c6e5c0855c902cf65274f25bacc"
     }
   ],
   "authoringAgent": {
     "harness": "claude-code (dispatched sub-agent)",
     "model": "claude-opus-5-5"
   },
-  "blender": "5.2.2 LTS",
+  "blender": "5.3.0",
   "toolVersions": {
     "ktx": "ktx version: v4.4.2",
     "gltfExporter": "Blender 5.2.2 bundled io_scene_gltf2"
@@ -37,33 +37,33 @@
     "store": "assets-source/rooms/corridor/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)",
     "files": {
       "corridor_high.blend": {
-        "sha256": "3d851a3f804004bbb4a65258878d7f05dabe8851e4cc68e74ce3bb6ee5246b0f",
-        "bytes": 387669
+        "sha256": "323abca8d0faed355ffd894466ddf45cadc7ec1abdb5689321886323aa3cc5cb",
+        "bytes": 359654
       },
       "corridor_low.blend": {
-        "sha256": "34a960f68cd2c21bc36149d0a14d642130bf82be54a341b83dd4bda9216755c9",
-        "bytes": 168248
+        "sha256": "53e4c285f08129983629796680675e652dae380e75082b1301c0c4617d31e0d4",
+        "bytes": 174891
       }
     }
   },
   "bake": {
-    "device": "GPU:METAL (Apple M4 Max (GPU - 40 cores))",
+    "device": "GPU:METAL (Apple M4 (GPU - 10 cores))",
     "lightmap": {
-      "coverage": 0.658,
-      "scale": 2.818017,
+      "coverage": 0.7473,
+      "scale": 1.543141,
       "clipped_fraction": 0.01997,
-      "mean_irradiance": 0.460576,
+      "mean_irradiance": 0.142991,
       "p05_irradiance": 0.0,
       "percentile": 98.0,
       "encoded_p05_255": 0,
-      "encoded_median_255": 64,
-      "seconds": 2.15,
+      "encoded_median_255": 57,
+      "seconds": 42.17,
       "host_load": [
-        10.99,
-        10.75
+        1.43,
+        2.11
       ],
       "timing_valid": true,
-      "size": 1024,
+      "size": 2048,
       "samples": 256,
       "pass": "DIFFUSE direct+indirect, colour off, metallic forced 0, OIDN",
       "marginPx": 8,
@@ -78,68 +78,58 @@
     }
   },
   "budgets": {
-    "triangles": 1556,
-    "materials": 9,
+    "triangles": 1912,
+    "materials": 7,
     "texturePx": {
       "corridor.lightmap.ktx2": {
-        "width": 1024,
-        "height": 1024
+        "width": 2048,
+        "height": 2048
       }
     },
-    "highTriangles": 9917,
-    "glbBytes": 120300
+    "highTriangles": 11863,
+    "glbBytes": 144132
   },
   "texelDensityPxPerM": {
     "lightmap": {
-      "mean_px_per_m": 52.82,
-      "min_px_per_m": 44.05,
-      "max_px_per_m": 55.24
+      "mean_px_per_m": 123.8,
+      "min_px_per_m": 105.03,
+      "max_px_per_m": 124.91
     },
     "lightmapBySlot": {
       "brass-aged": {
-        "area_m2": 4.86,
-        "median_px_per_m": 49.8,
-        "min_px_per_m": 46.5
+        "area_m2": 5.18,
+        "median_px_per_m": 124.9,
+        "min_px_per_m": 105.0
       },
       "brass-polished": {
-        "area_m2": 0.51,
-        "median_px_per_m": 51.4,
-        "min_px_per_m": 46.1
+        "area_m2": 0.44,
+        "median_px_per_m": 124.9,
+        "min_px_per_m": 105.4
       },
       "cloth": {
         "area_m2": 2.03,
-        "median_px_per_m": 55.2,
-        "min_px_per_m": 55.2
-      },
-      "flame": {
-        "area_m2": 0.0,
-        "median_px_per_m": 49.0,
-        "min_px_per_m": 49.0
+        "median_px_per_m": 124.9,
+        "min_px_per_m": 124.9
       },
       "lamp-glass": {
-        "area_m2": 0.13,
-        "median_px_per_m": 51.4,
-        "min_px_per_m": 49.0
+        "area_m2": 0.46,
+        "median_px_per_m": 116.2,
+        "min_px_per_m": 116.2
       },
       "stone-floor": {
         "area_m2": 16.0,
-        "median_px_per_m": 49.8,
-        "min_px_per_m": 49.8
+        "median_px_per_m": 124.9,
+        "min_px_per_m": 124.9
       },
       "wallpaper": {
-        "area_m2": 43.52,
-        "median_px_per_m": 55.2,
-        "min_px_per_m": 49.0
+        "area_m2": 40.16,
+        "median_px_per_m": 124.9,
+        "min_px_per_m": 124.9
       },
       "walnut": {
-        "area_m2": 52.53,
-        "median_px_per_m": 49.8,
-        "min_px_per_m": 49.0
-      },
-      "wax": {
-        "area_m2": 0.05,
-        "median_px_per_m": 49.0,
-        "min_px_per_m": 44.1
+        "area_m2": 61.75,
+        "median_px_per_m": 124.9,
+        "min_px_per_m": 109.1
       }
     }
   },
@@ -200,25 +190,26 @@
   "derivedFiles": [
     {
       "path": "public/assets/rooms/corridor/corridor.glb",
-      "sha256": "ec2afaae06bd274327d256298aef0c7afcef02db9901283ec454c7a67f38da47",
-      "bytes": 120300
+      "sha256": "a47e2247183f21e15071aacee7c7a434e35c623b3ae5fa3e41b3bd524b41d00f",
+      "bytes": 144132
     },
     {
       "path": "public/assets/rooms/corridor/corridor.lightmap.ktx2",
-      "sha256": "8072428e28fc77876713ba778b08f1fa815c927f1c95d079b17e5a53c040d59a",
-      "bytes": 746787
+      "sha256": "5af49e178ab26ff77e3d14b22cd3f6257e38756c3ab364ee2045e07773460499",
+      "bytes": 2689409
     },
     {
       "path": "public/assets/rooms/corridor/corridor.manifest.json",
-      "sha256": "37ef2a667f836c7d27f88bf1fba344681668137c92b856aa021106261f96651e",
-      "bytes": 2952
+      "sha256": "034459d6dc6b2b30d5b9b4f98ddbe95b017cfe3273171b2183bb43bdb47cd0e5",
+      "bytes": 2755
     }
   ],
   "stagingFiles": {
-    "corridor.glb": "ec2afaae06bd274327d256298aef0c7afcef02db9901283ec454c7a67f38da47",
-    "corridor.lightmap.ktx2": "8072428e28fc77876713ba778b08f1fa815c927f1c95d079b17e5a53c040d59a",
-    "corridor.lightmap.png": "ac2f0c7bd2b883e2f253ce02459c3ad21626f5c174e6b800be8e44142a4a3db2",
-    "corridor.manifest.json": "37ef2a667f836c7d27f88bf1fba344681668137c92b856aa021106261f96651e",
+    "corridor.glb": "a47e2247183f21e15071aacee7c7a434e35c623b3ae5fa3e41b3bd524b41d00f",
+    "corridor.lightmap.ktx2": "5af49e178ab26ff77e3d14b22cd3f6257e38756c3ab364ee2045e07773460499",
+    "corridor.lightmap.png": "22744fea69166b21186d71a253704c0804d25767a8e61304ae3e869888eef328",
+    "corridor.manifest.json": "034459d6dc6b2b30d5b9b4f98ddbe95b017cfe3273171b2183bb43bdb47cd0e5",
+    "engine-compare.json": "7de03cf76e513c21e810c89e6676ebb61afddc5b45b2c6157fe4569a87a7ba24",
     "uv1-report.json": "591d68bba9dc641b47b32775aed7c0363305dfd395bd3f16b4f9162216a890d6"
   },
   "references": [
@@ -244,8 +235,8 @@
   "materialsUsed": "approved P4-T3 set (public/assets/materials), bound by slot name; not regenerated",
   "license": "Original work generated in Blender from a checked-in script; concept references from Paul's paid Higgsfield plan (Terms of Use 4.4)",
   "reimport": {
-    "triangles": 1556,
-    "material_count": 9,
+    "triangles": 1912,
+    "material_count": 7,
     "uv_layers": [
       [
         "UVMap",
@@ -282,7 +273,7 @@
   },
   "validation": {
     "pass": true,
-    "date": "2026-11-15",
+    "date": "2026-11-17",
     "checks": [
       "presence",
       "hashes",
@@ -332,27 +323,27 @@
   "reviewEvidence": [
     {
       "path": "assets-source/rooms/corridor/staging/review-sheet.jpg",
-      "sha256": "97a73103f4839bd345489f1f679f9e11c697c309104e890d7050b60376238aa1"
+      "sha256": "58cdfb38a72dc924171163ae7178283946f865cb60a2f50bca63d5a75ec53970"
     },
     {
       "path": "docs/verification/p5-rooms-corridor-floor-sealed-north.jpg",
-      "sha256": "312dcc5279050cc47c80083508fd4fd22c3b94f1ef543e7000d94d4b4df19066"
+      "sha256": "d4e1b9dd7ae79232267f0c0fa4a996eeff457497f501e850460dd596ad3ac8e9"
     },
     {
       "path": "docs/verification/p5-rooms-corridor-hero.diffuse.jpg",
-      "sha256": "55fc99018c5cbfad9c2f4cb75c5be80eed158f1b43f8778500ce68afa99722f5"
+      "sha256": "4fd8001a23a7156d619597ae7fb050957b8246dde9ffd0770e71d9b1709bde77"
     },
     {
       "path": "docs/verification/p5-rooms-corridor-hero.jpg",
-      "sha256": "72c9d64fcf1339ad68ba6768ba5fb5757c04d73cbea4c7410bff063cff66a49b"
+      "sha256": "304d0e1dda8839988a1ae38fe53aedc45011172bb48519f730a94b482a8301dd"
     },
     {
       "path": "docs/verification/p5-rooms-corridor-lamp.jpg",
-      "sha256": "aa34181f6f23202b3dcf4fc27bc673011964afe79abae43e5019f0a43502b726"
+      "sha256": "1dc05a4746eee2fd7d1ac55218b354d1fdbe54f1fbd515c5c24e29d6f9666e32"
     },
     {
       "path": "docs/verification/p5-rooms-corridor-seam-from-corridor.jpg",
-      "sha256": "cdb8e858e0562c708731f22602113d6832c582043d1731610e8acd8ff57bb68d"
+      "sha256": "891f67302ece4a4f6908c227e424dd3a9d2d3333686332f79dc0666b63f5db91"
     }
   ],
   "independentScore": {

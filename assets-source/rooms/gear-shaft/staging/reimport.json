@@ -1,23 +1,25 @@
 {
   "glb": "gear-shaft.glb",
-  "glb_sha256": "bb57a7997cc8188e46eb84f589158f71ae6dd21e9a153f19c75a0c247b900927",
-  "blender": "5.2.2 LTS",
+  "glb_sha256": "e828d8e7323df315d1b26e6e89bfa1dba4fc42b6d3f5d7556775e6c62ce1387a",
+  "blender": "5.3.0",
   "meshes": [
     "gear-shaft",
     "gear-shaft_gear_ring"
   ],
-  "triangles": 4434,
+  "triangles": 9286,
   "materials": [
     "gear-shaft_brass-aged",
     "gear-shaft_brass-polished",
+    "gear-shaft_coals",
     "gear-shaft_flame",
+    "gear-shaft_gilt",
     "gear-shaft_lamp-glass",
     "gear-shaft_stone-floor",
     "gear-shaft_wallpaper",
     "gear-shaft_walnut",
     "gear-shaft_wax"
   ],
-  "material_count": 8,
+  "material_count": 10,
   "uv_layers": [
     [
       "UVMap",
@@ -34,7 +36,7 @@
     "max": [
       4.0,
       6.0,
-      5.0
+      8.0
     ]
   },
   "texture_px": {

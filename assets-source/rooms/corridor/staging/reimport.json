@@ -1,23 +1,21 @@
 {
   "glb": "corridor.glb",
-  "glb_sha256": "ec2afaae06bd274327d256298aef0c7afcef02db9901283ec454c7a67f38da47",
-  "blender": "5.2.2 LTS",
+  "glb_sha256": "a47e2247183f21e15071aacee7c7a434e35c623b3ae5fa3e41b3bd524b41d00f",
+  "blender": "5.3.0",
   "meshes": [
     "corridor"
   ],
-  "triangles": 1556,
+  "triangles": 1912,
   "materials": [
     "corridor_brass-aged",
     "corridor_brass-polished",
     "corridor_cloth",
-    "corridor_flame",
     "corridor_lamp-glass",
     "corridor_stone-floor",
     "corridor_wallpaper",
-    "corridor_walnut",
-    "corridor_wax"
+    "corridor_walnut"
   ],
-  "material_count": 9,
+  "material_count": 7,
   "uv_layers": [
     [
       "UVMap",
@@ -39,8 +37,8 @@
   },
   "texture_px": {
     "corridor.lightmap.ktx2": {
-      "width": 1024,
-      "height": 1024
+      "width": 2048,
+      "height": 2048
     }
   },
   "checks": {

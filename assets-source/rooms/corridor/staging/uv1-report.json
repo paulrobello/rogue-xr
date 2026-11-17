@@ -1,11 +1,11 @@
 {
   "glb": "corridor.glb",
-  "glb_sha256": "ec2afaae06bd274327d256298aef0c7afcef02db9901283ec454c7a67f38da47",
-  "size": 1024,
-  "islands": 432,
-  "coverage": 0.318,
+  "glb_sha256": "a47e2247183f21e15071aacee7c7a434e35c623b3ae5fa3e41b3bd524b41d00f",
+  "size": 2048,
+  "islands": 563,
+  "coverage": 0.4593,
   "overlap_px": 0,
-  "texels_claimed_twice": 1320,
-  "claims_per_covered_texel": 1.004,
+  "texels_claimed_twice": 7200,
+  "claims_per_covered_texel": 1.0037,
   "min_gap_px": 20
 }

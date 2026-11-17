@@ -1,73 +1,85 @@
 {
   "piece": "gear-shaft",
-  "blender": "5.2.2 LTS",
-  "host_load_start": 9.29,
+  "blender": "5.3.0",
+  "host_load_start": 1.42,
   "lightmap_size": 2048,
   "samples": 256,
   "generator": "scripts/assets/build-room-kit.py",
   "helper": "scripts/assets/room_kit.py (reuses build-room-study.py functions)",
+  "lengthwise_grain_high": 92,
   "high": {
-    "triangles": 28918,
-    "slots": 8
+    "triangles": 64650,
+    "slots": 10
   },
+  "lengthwise_grain_low": 92,
   "low": {
-    "triangles": 4434,
-    "vertices": 3088,
-    "materials": 8,
+    "triangles": 9286,
+    "vertices": 6220,
+    "materials": 10,
     "lightmap_density": {
-      "mean_px_per_m": 61.3,
-      "min_px_per_m": 51.6,
-      "max_px_per_m": 61.37
+      "mean_px_per_m": 46.01,
+      "min_px_per_m": 38.92,
+      "max_px_per_m": 46.28
     },
     "lightmap_density_by_slot": {
       "brass-aged": {
-        "area_m2": 31.94,
-        "median_px_per_m": 61.4,
-        "min_px_per_m": 51.6
+        "area_m2": 49.43,
+        "median_px_per_m": 46.3,
+        "min_px_per_m": 38.9
       },
       "brass-polished": {
-        "area_m2": 10.55,
-        "median_px_per_m": 61.0,
-        "min_px_per_m": 51.6
+        "area_m2": 16.82,
+        "median_px_per_m": 46.0,
+        "min_px_per_m": 38.9
+      },
+      "coals": {
+        "area_m2": 6.93,
+        "median_px_per_m": 46.3,
+        "min_px_per_m": 46.3
       },
       "flame": {
-        "area_m2": 1.98,
-        "median_px_per_m": 61.4,
-        "min_px_per_m": 61.4
+        "area_m2": 0.51,
+        "median_px_per_m": 46.3,
+        "min_px_per_m": 46.3
+      },
+      "gilt": {
+        "area_m2": 11.01,
+        "median_px_per_m": 46.3,
+        "min_px_per_m": 38.9
       },
       "lamp-glass": {
         "area_m2": 0.27,
-        "median_px_per_m": 57.1,
-        "min_px_per_m": 57.1
+        "median_px_per_m": 43.1,
+        "min_px_per_m": 43.0
       },
       "stone-floor": {
-        "area_m2": 104.16,
-        "median_px_per_m": 61.4,
-        "min_px_per_m": 61.4
+        "area_m2": 162.4,
+        "median_px_per_m": 46.3,
+        "min_px_per_m": 46.3
       },
       "wallpaper": {
         "area_m2": 153.28,
-        "median_px_per_m": 61.4,
-        "min_px_per_m": 61.4
+        "median_px_per_m": 46.3,
+        "min_px_per_m": 46.3
       },
       "walnut": {
-        "area_m2": 176.07,
-        "median_px_per_m": 61.4,
-        "min_px_per_m": 61.4
+        "area_m2": 196.18,
+        "median_px_per_m": 46.3,
+        "min_px_per_m": 40.6
       },
       "wax": {
-        "area_m2": 0.05,
-        "median_px_per_m": 59.8,
-        "min_px_per_m": 55.2
+        "area_m2": 0.13,
+        "median_px_per_m": 44.5,
+        "min_px_per_m": 41.6
       }
     },
     "rigid_nodes": {
       "gear-shaft_gear_ring": {
         "triangles": 2392,
         "lightmap_density": {
-          "mean_px_per_m": 59.89,
-          "min_px_per_m": 51.83,
-          "max_px_per_m": 61.36
+          "mean_px_per_m": 45.16,
+          "min_px_per_m": 39.09,
+          "max_px_per_m": 46.28
         },
         "location_blender": [
           0.0,
@@ -77,14 +89,14 @@
       }
     }
   },
-  "canonicalized_primitives": 10,
-  "glb_bytes": 297248,
-  "device": "GPU:METAL (Apple M4 Max (GPU - 40 cores))",
+  "canonicalized_primitives": 12,
+  "glb_bytes": 801608,
+  "device": "GPU:METAL (Apple M4 (GPU - 10 cores))",
   "lightmap_bake": {
-    "seconds": 14.08,
+    "seconds": 42.26,
     "host_load": [
-      9.67,
-      11.57
+      1.47,
+      1.17
     ],
     "timing_valid": true
   },
@@ -92,16 +104,16 @@
     "gear-shaft_gear_ring": {
       "azimuth": {
         "sector_means": [
-          0.08269,
-          0.08159,
-          0.08101,
-          0.08004,
-          0.07981,
-          0.08063,
-          0.08195,
-          0.08138
+          0.07797,
+          0.07685,
+          0.07564,
+          0.07474,
+          0.07383,
+          0.0741,
+          0.07657,
+          0.07719
         ],
-        "min_over_max": 0.965,
+        "min_over_max": 0.947,
         "sectors": 8
       },
       "casts_baked_shadow": false
@@ -109,14 +121,14 @@
   },
   "denoise": "compositor OIDN, HDR, accurate prefilter, high quality",
   "lightmap": {
-    "coverage": 0.7142,
-    "scale": 7.025497,
-    "clipped_fraction": 0.00994,
-    "mean_irradiance": 0.380445,
+    "coverage": 0.6738,
+    "scale": 4.990032,
+    "clipped_fraction": 0.00998,
+    "mean_irradiance": 0.332881,
     "p05_irradiance": 0.0,
     "percentile": 99.0,
     "encoded_p05_255": 0,
-    "encoded_median_255": 43
+    "encoded_median_255": 45
   },
   "ktx2": {
     "tool": "ktx version: v4.4.2",
@@ -125,22 +137,33 @@
     }
   },
   "renders": [
+    "engine.hero-gear-turned.png",
+    "engine.hero.diffuse-gear-turned.png",
+    "engine.hero.diffuse.png",
+    "engine.hero.png",
+    "engine.ring-gear-turned.png",
+    "engine.ring.png",
+    "engine.seam-north.png",
+    "engine.void.png",
     "hero.high.png",
     "hero.lightmapped.png",
     "hero.low.png",
     "hero.reference-diffuse.png",
     "ring.high.png",
     "ring.lightmapped.png",
-    "ring.low.png"
+    "ring.low.png",
+    "void.high.png",
+    "void.lightmapped.png",
+    "void.low.png"
   ],
   "blend": {
     "gear-shaft_high.blend": {
-      "sha256": "c48dc6d66c86259d25232c47401fe094d133eb57156fc78612f57dbc9abe43db",
-      "bytes": 802506
+      "sha256": "05e48379ae4af75e521a8d52199fe9923f98245e22d0e9917fa12d7aae5a0509",
+      "bytes": 1588959
     },
     "gear-shaft_low.blend": {
-      "sha256": "2e4581c3a3037a6cb7914a0b08094eef46a81a630cc0e30029129989dd31c92d",
-      "bytes": 255747
+      "sha256": "c9163b1a32931f03733323c2c387154667372b19368780e9a768e4b03519a5ff",
+      "bytes": 387432
     }
   },
   "colliders_added": [
@@ -155,6 +178,18 @@
         0.81,
         4.94
       ]
+    },
+    {
+      "min": [
+        -1.82,
+        0,
+        -1.82
+      ],
+      "max": [
+        1.82,
+        0.31,
+        1.82
+      ]
     }
   ],
   "bake_lights": [
@@ -165,7 +200,15 @@
         0.0,
         0.55
       ],
-      "watts": 40.0
+      "watts": 40.0,
+      "light": {
+        "type": "POINT",
+        "color": [
+          1.0,
+          0.46,
+          0.16
+        ]
+      }
     },
     {
       "name": "furnace_1",
@@ -174,7 +217,15 @@
         1.55,
         0.55
       ],
-      "watts": 40.0
+      "watts": 40.0,
+      "light": {
+        "type": "POINT",
+        "color": [
+          1.0,
+          0.46,
+          0.16
+        ]
+      }
     },
     {
       "name": "furnace_2",
@@ -183,7 +234,15 @@
         0.0,
         0.55
       ],
-      "watts": 40.0
+      "watts": 40.0,
+      "light": {
+        "type": "POINT",
+        "color": [
+          1.0,
+          0.46,
+          0.16
+        ]
+      }
     },
     {
       "name": "furnace_3",
@@ -192,7 +251,15 @@
         -1.55,
         0.55
       ],
-      "watts": 40.0
+      "watts": 40.0,
+      "light": {
+        "type": "POINT",
+        "color": [
+          1.0,
+          0.46,
+          0.16
+        ]
+      }
     },
     {
       "name": "lamp_n",
@@ -247,6 +314,42 @@
         2.16
       ],
       "watts": 18.0
+    },
+    {
+      "name": "gallery_0",
+      "blender": [
+        1.88,
+        1.88,
+        7.215
+      ],
+      "watts": 6.0
+    },
+    {
+      "name": "gallery_1",
+      "blender": [
+        -1.88,
+        1.88,
+        7.215
+      ],
+      "watts": 6.0
+    },
+    {
+      "name": "gallery_2",
+      "blender": [
+        -1.88,
+        -1.88,
+        7.215
+      ],
+      "watts": 6.0
+    },
+    {
+      "name": "gallery_3",
+      "blender": [
+        1.88,
+        -1.88,
+        7.215
+      ],
+      "watts": 6.0
     }
   ],
   "cameras_runtime": {
@@ -258,7 +361,7 @@
       ],
       "look": [
         0.4,
-        2.9,
+        3.3,
         -3.0
       ],
       "vfov": 70.0
@@ -275,13 +378,28 @@
         0.8
       ],
       "vfov": 70.0
+    },
+    "void": {
+      "eye": [
+        2.2,
+        1.6,
+        2.6
+      ],
+      "look": [
+        0.0,
+        6.5,
+        -0.0
+      ],
+      "vfov": 70.0
     }
   },
-  "host_load_end": 11.99,
+  "host_load_end": 1.53,
   "files": {
-    "gear-shaft.glb": "bb57a7997cc8188e46eb84f589158f71ae6dd21e9a153f19c75a0c247b900927",
-    "gear-shaft.lightmap.ktx2": "9e0d15ef0b1e68731bb31ae9cdbbd3e1f04a224f4a5e05844364805a07067ea9",
-    "gear-shaft.lightmap.png": "078e863b58fec78d4e8d04af62957945e613524ce32636bd7d3f81f90d183500",
-    "gear-shaft.manifest.json": "5f54cf59c2d6c79ca122379144c7312da1412b3bfd41150a7a5b693b094e40a3"
+    "engine-compare.json": "100c381f07226adf22be9b7832650ccfdcdb35d626d5f912482d885ab5094787",
+    "gear-shaft.glb": "e828d8e7323df315d1b26e6e89bfa1dba4fc42b6d3f5d7556775e6c62ce1387a",
+    "gear-shaft.lightmap.ktx2": "a7707d76ef57ba9ba09ba8301d7ba2ce1f59e76dcb3b734176010f31ec94d578",
+    "gear-shaft.lightmap.png": "7189254859629008a362ab54018cc2561312443d8301141af3c4cbb37c32034c",
+    "gear-shaft.manifest.json": "41191dd824c82228f05d21481433f68399cb855762413c3eeb0f2b4e5866fe4a",
+    "uv1-report.json": "269b7404dbeffeb5608569b3e6ca828bd56dc02bb3c1131fb3d9a247713a3ef8"
   }
 }

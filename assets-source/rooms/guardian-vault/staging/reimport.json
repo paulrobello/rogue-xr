@@ -1,22 +1,24 @@
 {
   "glb": "guardian-vault.glb",
-  "glb_sha256": "ebe98219f0e43d4dc6c4d8a341c9153072850caa15b37115cdabdad61fa758b8",
-  "blender": "5.2.2 LTS",
+  "glb_sha256": "38400c93070f2203d827e0a6c07faa2ef8688b747a89e2e70aefecc41b48813c",
+  "blender": "5.3.0",
   "meshes": [
     "guardian-vault"
   ],
-  "triangles": 7263,
+  "triangles": 8757,
   "materials": [
     "guardian-vault_brass-aged",
     "guardian-vault_brass-polished",
+    "guardian-vault_coals",
     "guardian-vault_flame",
+    "guardian-vault_gilt",
     "guardian-vault_stained-glass",
     "guardian-vault_stone-floor",
     "guardian-vault_wallpaper",
     "guardian-vault_walnut",
     "guardian-vault_wax"
   ],
-  "material_count": 8,
+  "material_count": 10,
   "uv_layers": [
     [
       "UVMap",
