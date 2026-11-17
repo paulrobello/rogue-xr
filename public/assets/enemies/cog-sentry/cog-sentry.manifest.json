@@ -13,14 +13,14 @@
   "mesh": "sentry-body",
   "bounds": {
     "min": [
-      -0.358,
+      -0.3878,
       0.0,
-      -0.18
+      -0.245
     ],
     "max": [
-      0.358,
+      0.3878,
       1.9612,
-      0.165
+      0.157
     ]
   },
   "skeleton": {
@@ -92,8 +92,8 @@
       "parent": "chest",
       "position": [
         0.0,
-        1.43,
-        -0.15
+        1.46,
+        -0.19
       ]
     },
     "socket-eye": {
@@ -101,15 +101,15 @@
       "parent": "head",
       "position": [
         0.0,
-        1.835,
-        -0.11
+        1.811,
+        -0.125
       ]
     },
     "socket-weapon": {
       "bone": "hand.R",
       "parent": "hand.R",
       "position": [
-        0.3,
+        0.328,
         0.78,
         -0.03
       ]
@@ -128,12 +128,22 @@
     "brass-polished": {
       "set": "brass-polished",
       "tileMeters": 0.5,
-      "normalScale": 0.35
+      "normalScale": 0.35,
+      "tint": [
+        0.87,
+        0.71,
+        0.74
+      ]
     },
     "brass-aged": {
       "set": "brass-aged",
       "tileMeters": 0.5,
-      "normalScale": 0.35
+      "normalScale": 0.35,
+      "tint": [
+        0.74,
+        0.6,
+        0.63
+      ]
     },
     "gunmetal": {
       "set": null,
@@ -146,7 +156,7 @@
     }
   },
   "budget": {
-    "tris": 2992,
+    "tris": 9368,
     "materials": 4,
     "bones": 21,
     "influences": 4

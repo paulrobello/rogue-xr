@@ -305,7 +305,9 @@ _P5_META = {
 ENEMY_META = {
     "cog-sentry": {
         "reference_note": "P4-T2 concept sheet picked for the Cog Sentry (docs/art-bible.md)",
-        "materials_used": "approved P4-T3 brass-polished and brass-aged sets bound by slot name at runtime; gunmetal and sentry-glow are factor-only",
+        "materials_used": "approved P4-T3 brass-polished and brass-aged sets bound by slot name at runtime, each sampled at one texel "
+                          "(constant UV) and tinted by its manifest slot tint (linear multiplier); gunmetal (gunmetal and jewels "
+                          "from COLOR_0) and sentry-glow are factor-only",
         "evidence_glob": ("docs/verification", "p4-sentry-*.jpg"),
         "concept": {"who": "Paul", "when": "2026-11-15", "gate": "concept", "status": "approved", "evidence": "docs/art-bible.md: sentry-sheet-1.png picked for the Cog Sentry"},
     },

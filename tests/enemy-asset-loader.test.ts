@@ -172,6 +172,7 @@ describe('per-slot tint on the shared brass sets', () => {
   });
   const sentryWith = (tint?: [number, number, number]): EnemyManifest => {
     const raw = JSON.parse(sentryManifest);
+    for (const slot of Object.values(raw.materialSlots) as { tint?: unknown }[]) delete slot.tint;
     if (tint) raw.materialSlots['brass-polished'].tint = tint;
     return parseEnemyManifest(raw, 'cog-sentry');
   };

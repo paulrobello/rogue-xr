@@ -1,14 +1,14 @@
 {
-  "glb_sha256": "b9c03a1919acbcd9b13c62749e093c5ab2c6f3414b7a484de6efd77b36db4b84",
-  "glb_bytes": 448820,
-  "triangles": 2992,
+  "glb_sha256": "7cadf35d5b245648d1930bb4e6972dfb51e4f329935356cc9e8259d59837589a",
+  "glb_bytes": 847052,
+  "triangles": 9368,
   "materials": [
     "brass-polished",
     "brass-aged",
     "gunmetal",
     "sentry-glow"
   ],
-  "vertices": 3724,
+  "vertices": 9217,
   "joints": [
     "root",
     "hips",
@@ -38,14 +38,14 @@
   "unweighted_vertices": 0,
   "bounds": {
     "min": [
-      -0.358,
+      -0.3878,
       0.0,
-      -0.18
+      -0.245
     ],
     "max": [
-      0.358,
+      0.3878,
       1.9612,
-      0.165
+      0.157
     ]
   },
   "clips": {
@@ -86,8 +86,8 @@
       "parent": "chest",
       "position": [
         0.0,
-        1.43,
-        -0.15
+        1.46,
+        -0.19
       ]
     },
     "socket-eye": {
@@ -95,15 +95,15 @@
       "parent": "head",
       "position": [
         0.0,
-        1.835,
-        -0.11
+        1.811,
+        -0.125
       ]
     },
     "socket-weapon": {
       "bone": "hand.R",
       "parent": "hand.R",
       "position": [
-        0.3,
+        0.328,
         0.78,
         -0.03
       ]
