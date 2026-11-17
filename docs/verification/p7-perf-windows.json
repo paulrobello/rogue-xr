@@ -1,0 +1,187 @@
+{
+  "recording": true,
+  "windows": [
+    {
+      "label": "room 0 hall",
+      "closedBy": "room 2 study",
+      "startMs": 4743,
+      "wallMs": 1794959017568,
+      "durationMs": 5149.800157546997,
+      "frames": 307,
+      "presenting": false,
+      "targetHz": null,
+      "budgetMs": null,
+      "meanMs": 16.774593347058623,
+      "p50Ms": 16.700000762939453,
+      "p95Ms": 16.799999237060547,
+      "p99Ms": 16.799999237060547,
+      "maxMs": 50.099998474121094,
+      "overBudgetPct": null,
+      "over2xBudgetPct": null,
+      "fps": 59.6139637671364,
+      "foveation": 0.5,
+      "scale": 0.85,
+      "truncated": false
+    },
+    {
+      "label": "phase combat",
+      "closedBy": "dice-throw",
+      "startMs": 10907.700000047684,
+      "wallMs": 1794959023733,
+      "durationMs": 2466.700054168701,
+      "frames": 127,
+      "presenting": false,
+      "targetHz": null,
+      "budgetMs": null,
+      "meanMs": 19.4228350721945,
+      "p50Ms": 16.700000762939453,
+      "p95Ms": 16.799999237060547,
+      "p99Ms": 83.30000305175781,
+      "maxMs": 283.29998779296875,
+      "overBudgetPct": null,
+      "over2xBudgetPct": null,
+      "fps": 51.48578960193037,
+      "foveation": 0.5,
+      "scale": 0.85,
+      "truncated": false
+    },
+    {
+      "label": "cast",
+      "closedBy": "play",
+      "startMs": 14977.5,
+      "wallMs": 1794959027802,
+      "durationMs": 1950.0000648498535,
+      "frames": 117,
+      "presenting": false,
+      "targetHz": null,
+      "budgetMs": null,
+      "meanMs": 16.66666722093892,
+      "p50Ms": 16.700000762939453,
+      "p95Ms": 16.700000762939453,
+      "p99Ms": 16.799999237060547,
+      "maxMs": 16.799999237060547,
+      "overBudgetPct": null,
+      "over2xBudgetPct": null,
+      "fps": 59.99999800461996,
+      "foveation": 0.5,
+      "scale": 0.85,
+      "truncated": false
+    },
+    {
+      "label": "play",
+      "closedBy": "phase reward",
+      "startMs": 17941.5,
+      "wallMs": 1794959030766,
+      "durationMs": 2716.6000938415527,
+      "frames": 163,
+      "presenting": false,
+      "targetHz": null,
+      "budgetMs": null,
+      "meanMs": 16.666258244426704,
+      "p50Ms": 16.700000762939453,
+      "p95Ms": 16.700000762939453,
+      "p99Ms": 16.799999237060547,
+      "maxMs": 16.799999237060547,
+      "overBudgetPct": null,
+      "over2xBudgetPct": null,
+      "fps": 60.00147035609543,
+      "foveation": 0.5,
+      "scale": 0.85,
+      "truncated": false
+    }
+  ],
+  "hitches": [
+    {
+      "label": "room 0 hall",
+      "ms": 50.100000000000364,
+      "sinceMarkMs": 50.100000000000364,
+      "wallMs": 1794959017568,
+      "presenting": false
+    },
+    {
+      "label": "room 0 hall",
+      "ms": 50.100000000000364,
+      "sinceMarkMs": 6133.2,
+      "wallMs": 1794959023651,
+      "presenting": false
+    },
+    {
+      "label": "phase combat",
+      "ms": 66.59999999999854,
+      "sinceMarkMs": 83.29999999999927,
+      "wallMs": 1794959023808,
+      "presenting": false
+    },
+    {
+      "label": "phase combat",
+      "ms": 33.399999999999636,
+      "sinceMarkMs": 850,
+      "wallMs": 1794959024573,
+      "presenting": false
+    },
+    {
+      "label": "phase combat",
+      "ms": 283.2999999999993,
+      "sinceMarkMs": 2549.8999999999996,
+      "wallMs": 1794959026273,
+      "presenting": false
+    },
+    {
+      "label": "phase combat",
+      "ms": 83.29999999999927,
+      "sinceMarkMs": 2649.8999999999996,
+      "wallMs": 1794959026380,
+      "presenting": false
+    },
+    {
+      "label": "phase combat",
+      "ms": 33.30000000000109,
+      "sinceMarkMs": 2683.2000000000007,
+      "wallMs": 1794959026402,
+      "presenting": false
+    },
+    {
+      "label": "cast",
+      "ms": 83.40000000000146,
+      "sinceMarkMs": 83.40000000000146,
+      "wallMs": 1794959027802,
+      "presenting": false
+    },
+    {
+      "label": "play",
+      "ms": 33.29999999999927,
+      "sinceMarkMs": 33.29999999999927,
+      "wallMs": 1794959030766,
+      "presenting": false
+    },
+    {
+      "label": "phase reward",
+      "ms": 33.39999999999782,
+      "sinceMarkMs": 50,
+      "wallMs": 1794959034528,
+      "presenting": false
+    }
+  ],
+  "current": {
+    "label": "phase reward",
+    "closedBy": null,
+    "startMs": 21657.600000023842,
+    "wallMs": 1794959034482,
+    "durationMs": 1566.6000518798828,
+    "frames": 94,
+    "presenting": false,
+    "targetHz": null,
+    "budgetMs": null,
+    "meanMs": 16.665957998722156,
+    "p50Ms": 16.700000762939453,
+    "p95Ms": 16.700000762939453,
+    "p99Ms": 16.799999237060547,
+    "maxMs": 16.799999237060547,
+    "overBudgetPct": null,
+    "over2xBudgetPct": null,
+    "fps": 60.00255131308226,
+    "foveation": 0.5,
+    "scale": 0.85,
+    "truncated": false
+  }
+}
