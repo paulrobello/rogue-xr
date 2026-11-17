@@ -7,9 +7,11 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { generateFloor } from '/src/floor/generate.ts';
+import { PALETTE } from '/src/palette.ts';
 import { buildFloorWorld } from '/src/world/floor-world.ts';
 import { createKtx2Loader } from '/src/world/ktx2.ts';
 import { loadPbrSet } from '/src/world/materials.ts';
+import { buildRoomLights, createHandLantern, DynamicLightBudget } from '/src/world/room-lights.ts';
 import {
   heroTemplates,
   loadStudyAsset,
@@ -39,6 +41,24 @@ export interface Shot {
   floor?: { seed: string; at: [number, number]; kit?: string[] };
   /** Turns a named rigid node (e.g. the gear-shaft crown gear) about its local Y before the frame. */
   spin?: { node: string; angle: number };
+  /**
+   * Room-light investigation toggles (engine_shot.py --variants). Each defaults to the shipped
+   * runtime, so shots without them render exactly as before.
+   */
+  light?: {
+    /** No environment map on the room materials at all (lightmap only, still under AgX). */
+    envOff?: boolean;
+    /** false: zero `iblIrradiance` on the baked-room programs, so the probe adds specular only. */
+    envDiffuse?: boolean;
+    /** Overrides STUDY_ENV_INTENSITY on the room materials. */
+    envIntensity?: number;
+    /** Multiplies every room material's lightMapIntensity (the manifest value). */
+    lightmapGain?: number;
+    /** floor-view.ts greybox lights: DirectionalLight(candle, 1.4) at (6, 12, 4) and HemisphereLight(candle, void, 0.8). */
+    gameLights?: boolean;
+    /** room-lights.ts: each room's socket lights and the hand lantern 0.35 m below, 0.4 m ahead of the eye. */
+    dynamicLights?: boolean;
+  };
 }
 
 export async function mountKitProof(w: number, h: number, shot: Shot) {
@@ -51,7 +71,7 @@ export async function mountKitProof(w: number, h: number, shot: Shot) {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color().setRGB(0.004, 0.003, 0.002, THREE.LinearSRGBColorSpace);
   let env: THREE.Texture | null = null;
-  if (!shot.diffuse) {
+  if (!shot.diffuse && !shot.light?.envOff) {
     const pmrem = new THREE.PMREMGenerator(renderer);
     env = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
     pmrem.dispose();
@@ -132,6 +152,59 @@ export async function mountKitProof(w: number, h: number, shot: Shot) {
   const camera = new THREE.PerspectiveCamera(shot.vfov, w / h, 0.05, 100);
   camera.position.set(...shot.eye);
   camera.lookAt(...shot.look);
+  const light = shot.light;
+  let dynamicLights = 0;
+  if (light) {
+    const seen = new Set<THREE.MeshStandardMaterial>();
+    for (const model of models) {
+      model.traverse((node) => {
+        const mesh = node as THREE.Mesh;
+        if (!mesh.isMesh) return;
+        const m = mesh.material as THREE.MeshStandardMaterial;
+        if (seen.has(m)) return;
+        seen.add(m);
+        if (light.envIntensity !== undefined && m.envMap) m.envMapIntensity = light.envIntensity;
+        if (light.lightmapGain !== undefined) m.lightMapIntensity *= light.lightmapGain;
+        if (light.envDiffuse === false) {
+          const baked = m.onBeforeCompile;
+          m.onBeforeCompile = (shader, r) => {
+            baked.call(m, shader, r);
+            shader.fragmentShader = shader.fragmentShader.replace(
+              '#include <lights_fragment_end>',
+              'iblIrradiance = vec3( 0.0 );\n#include <lights_fragment_end>',
+            );
+          };
+          m.customProgramCacheKey = () => 'baked-room-no-ibl-diffuse';
+        }
+        m.needsUpdate = true;
+      });
+    }
+    if (light.gameLights) {
+      const sun = new THREE.DirectionalLight(PALETTE.candle, 1.4);
+      sun.position.set(6, 12, 4);
+      scene.add(sun, new THREE.HemisphereLight(PALETTE.candle, PALETTE.void, 0.8));
+    }
+    if (light.dynamicLights) {
+      const placed = shot.floor ? [] : shot.rooms;
+      for (const room of placed) {
+        const template = manifests.find((m) => m.template.id === room.id)?.template;
+        if (!template) continue;
+        const rig = buildRoomLights(template, { budget: new DynamicLightBudget() });
+        rig.group.position.set(room.position[0], 0, room.position[1]);
+        rig.group.rotation.y = (-Math.PI / 2) * room.turns;
+        scene.add(rig.group);
+        dynamicLights += rig.lights.length;
+      }
+      const lantern = createHandLantern();
+      const ahead = new THREE.Vector3();
+      camera.getWorldDirection(ahead);
+      ahead.y = 0;
+      ahead.normalize().multiplyScalar(0.4);
+      lantern.group.position.set(shot.eye[0] + ahead.x, shot.eye[1] - 0.35, shot.eye[2] + ahead.z);
+      scene.add(lantern.group);
+      dynamicLights += 1;
+    }
+  }
   renderer.render(scene, camera);
   await new Promise((resolve) => requestAnimationFrame(resolve));
   renderer.render(scene, camera);
@@ -140,6 +213,7 @@ export async function mountKitProof(w: number, h: number, shot: Shot) {
     triangles,
     sealed,
     spun,
+    dynamicLights,
     programs: renderer.info.programs?.length ?? 0,
   };
 }

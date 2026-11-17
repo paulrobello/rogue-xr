@@ -17,6 +17,7 @@ black frame or a software renderer is caught.
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -105,15 +106,52 @@ def shots() -> list[tuple[str, str, dict]]:
     return out
 
 
+VARIANT_OUT = Path(os.environ.get("RXR_VARIANT_DIR", "/tmp/rxr-room-light"))
+# Room-light investigation (engine-proof.ts `light` toggles). Written only under VARIANT_OUT as
+# <room>.<camera>.<variant>.png, never to staging/renders or docs/verification (sha256-pinned evidence).
+VARIANTS: dict[str, dict] = {
+    "base": {},
+    "lm-agx": {"envOff": True},
+    "no-ibl-diffuse": {"envDiffuse": False},
+    "no-ibl-diffuse-g115": {"envDiffuse": False, "lightmapGain": 1.15},
+    "game": {"gameLights": True},
+    "game-dynamic": {"gameLights": True, "dynamicLights": True},
+    "fix-game-dynamic": {"envDiffuse": False, "gameLights": True, "dynamicLights": True},
+}
+VARIANT_CAMERAS = {"hall": ["hero", "bench"], "corridor": ["hero", "lamp"], "guardian-vault": ["hero", "brazier"],
+                   "gear-shaft": ["hero"], "study": ["hero", "desk"]}
+
+
+def variant_shots() -> list[tuple[str, str, dict]]:
+    out = []
+    for room, names in VARIANT_CAMERAS.items():
+        report = ROOMS / room / "staging/report.json"
+        if not report.exists():
+            continue
+        cams = json.loads(report.read_text()).get("cameras_runtime", {})
+        alone = [{"id": room, "position": [0, 0], "turns": 0}]
+        for cam_name in names:
+            cam = cams.get(cam_name)
+            if not cam:
+                continue
+            for variant, light in VARIANTS.items():
+                shot = {"rooms": alone, "eye": cam["eye"], "look": cam["look"], "vfov": cam["vfov"], "diffuse": False, "light": light}
+                out.append((room, f"{cam_name}.{variant}", shot))
+    return out
+
+
 def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     failed = False
     errors: list[str] = []
+    variants = "--variants" in sys.argv
+    if variants:
+        VARIANT_OUT.mkdir(parents=True, exist_ok=True)
     with sync_playwright() as p:
         browser = p.chromium.launch(channel="chromium", headless=True, args=["--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist"])
         only = sys.argv[sys.argv.index("--only") + 1] if "--only" in sys.argv else ""
         only_room = sys.argv[sys.argv.index("--room") + 1] if "--room" in sys.argv else ""
-        for room, name, shot in shots():
+        for room, name, shot in variant_shots() if variants else shots():
             if not name.startswith(only) or (only_room and room != only_room):
                 continue
             page = browser.new_page(viewport={"width": W, "height": H})
@@ -128,6 +166,14 @@ def main() -> int:
             if err:
                 print(f"{room} {name}: ERROR {err}")
                 failed = True
+                page.close()
+                continue
+            if variants:
+                png = VARIANT_OUT / f"{room}.{name}.png"
+                page.locator("canvas").screenshot(path=str(png))
+                mean = page.evaluate(MEAN_JS)
+                print(f"{room} {name}: {page.evaluate('window.__info')} gpu={page.evaluate('window.__gpu')} mean={mean} -> {png}")
+                failed |= sum(mean) < 5
                 page.close()
                 continue
             renders = ROOMS / room / "staging/renders"

@@ -128,14 +128,16 @@ export function heroRoomTemplates(
 
 /**
  * Lightmap contract (PRD): the bake already holds diffuse direct and indirect light, so the room's
- * surfaces take only the specular part of the dynamic lights and no ambient or hemisphere fill.
+ * surfaces take only the specular part of the dynamic lights and of the environment probe, and no
+ * ambient, hemisphere or probe diffuse fill. three adds the probe's diffuse from `iblIrradiance`
+ * (summed in lights_fragment_maps, spent in RE_IndirectSpecular), not from `irradiance`.
  */
 export function bakedRoomMaterial<T extends THREE.MeshStandardMaterial>(material: T): T {
   material.onBeforeCompile = (shader) => {
     shader.fragmentShader = shader.fragmentShader
       .replace(
         '#include <lights_fragment_maps>',
-        'irradiance = vec3( 0.0 );\n#include <lights_fragment_maps>',
+        'irradiance = vec3( 0.0 );\n#include <lights_fragment_maps>\niblIrradiance = vec3( 0.0 );',
       )
       .replace(
         '#include <lights_fragment_end>',
