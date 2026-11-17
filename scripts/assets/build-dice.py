@@ -9,9 +9,11 @@ enamel faces and amber pips or numerals). Both are built procedurally, with no p
   the frame.
 - glass-d8: an octahedron of circumradius 26 mm. Each facet is a brass rail band in the facet plane
   and a brass chamfer down to a smoked-glass panel recessed 0.8 mm, which samples the inner part of
-  its atlas page `dice-d8` cell (glass and amber numeral, without the painted brass band). The glass
-  is nearly opaque and tinted dark by the face slot `color`, so no back-face numeral shows through.
-  A brass cog and axle sit inside as the core.
+  its atlas page `dice-d8` cell (glass and amber numeral, without the painted brass band). The rails
+  are smooth-shaded with analytic normals that roll from the edge bisector over the facet normal
+  and down the chamfer, so each rail reads as a rounded brass bead with a continuous highlight. The
+  glass is nearly opaque and tinted dark by the face slot `color`, so no back-face numeral shows
+  through. A brass cog and axle sit inside as the core.
 
 Pips and numerals glow from the atlas glow pages (`dice-d6-glow`, `dice-d8-glow`), bound as the face
 slot's emissive map at the slot's `emissiveIntensity`; the manifest names the page in `glowPage`.
@@ -96,8 +98,9 @@ D6_ART_PX = (53.0, 203.0)
 D8_CORE = {"teeth": 10, "r_root": 0.0062, "r_tip": 0.0085, "half_thick": 0.0014, "axle_r": 0.0012, "axle_half": 0.011}
 # Brass rails, as scales of each facet about its centroid: the flat rail band ends at `band`, the
 # chamfer drops `depth` to the glass panel at `panel`. The panel samples its atlas triangle scaled by
-# `art` about the centroid, inside the painted brass band (which starts about 0.82 out).
-D8_RAIL = {"band": 0.83, "panel": 0.74, "art": 0.80, "depth": 0.0008}
+# `art` about the centroid, inside the painted brass band (which starts about 0.82 out). Band 0.78 and
+# panel 0.70: at 0.80 / 0.72 the face-up rails measured 5.8 to 6.6 % of die height (target 6.5 to 9).
+D8_RAIL = {"band": 0.78, "panel": 0.70, "art": 0.80, "depth": 0.0008}
 
 DIE = {
     "brass-d6": {"kind": "d6", "page": "dice-d6", "values": [1, 2, 3, 4, 5, 6], "normals": D6_NORMALS,
@@ -106,19 +109,30 @@ DIE = {
                  "mats": ["brass-polished", "glass-d8-face"]},
 }
 BRASS, FACE = 0, 1
-DETAIL = {"low": {"bevel_steps": 3, "axle_sides": 8, "pip_sides": 8}, "high": {"bevel_steps": 8, "axle_sides": 24, "pip_sides": 16}}
+# rail_steps: segments along each d8 rail, so the smooth rail normals roll along the edge too.
+DETAIL = {"low": {"bevel_steps": 3, "axle_sides": 8, "pip_sides": 8, "rail_steps": 4},
+          "high": {"bevel_steps": 8, "axle_sides": 24, "pip_sides": 16, "rail_steps": 6}}
 
 # Runtime face-material parameters, shipped in the manifest (dice-asset.ts applies them). `color`
-# multiplies the atlas page; `emissiveIntensity` applies to the `glowPage` emissive map.
+# multiplies the atlas page; `emissiveIntensity` applies to the `glowPage` emissive map. The faces
+# render with `toneMapped` false: AgX cannot show candle amber at the pips' luminance (max S about
+# 0.43 at relL 0.57), so build_ui_atlas.py authors the pages as displayed colours. `envMapScale`
+# multiplies the dice environment intensity (DICE_ENV_INTENSITY 0.35) on the slot: 0.3 keeps the
+# neutral room probe's grazing reflection off the walnut well walls and the d8 side glass.
 FACE_SLOTS = {
     "brass-d6-face": {"roughness": 0.55, "metalness": 0.0, "emissiveIntensity": 1.0, "transparent": False, "opacity": 1.0,
-                      "color": "#FFFFFF", "glowPage": "dice-d6-glow"},
-    "glass-d8-face": {"roughness": 0.25, "metalness": 0.0, "emissiveIntensity": 0.6, "transparent": True, "opacity": 0.97,
-                      "color": "#463A30", "glowPage": "dice-d8-glow"},
+                      "color": "#FFFFFF", "glowPage": "dice-d6-glow", "toneMapped": False, "envMapScale": 0.3},
+    "glass-d8-face": {"roughness": 0.25, "metalness": 0.0, "emissiveIntensity": 1.0, "transparent": True, "opacity": 0.97,
+                      "color": "#463A30", "glowPage": "dice-d8-glow", "toneMapped": False, "envMapScale": 0.3},
 }
-# Roughness, metallic, and a base colour more saturated than the palette's polished brass #DEC16A:
-# AgX desaturates the lit metal (the env-lit #DEC16A measured S 0.29 to 0.32 in engine).
-BRASS_FACTORS = ((0xD8, 0xAC, 0x38), 0.3, 1.0)
+# Roughness, metallic, and a base colour more saturated than the palette's polished brass #DEC16A
+# (same hue, H45): AgX desaturates the lit metal. Roughness 0.30 and env scale 2.4 won the engine
+# sweep (env 1.6 / 2.0 / 2.4 x roughness 0.30 / 0.22 / 0.15): the only cell to reach p90 relL 0.45 and
+# median V 0.65 together. No cell reaches p10 0.10: lower roughness darkens everything, not the low end.
+BRASS_FACTORS = ((0xE6, 0xBE, 0x48), 0.30, 1.0)
+# Body slot multiplier on the dice environment intensity: the metal is lit almost only by the probe,
+# and at 1x its median read relL 0.15 (V 0.52) against polished brass V 0.87.
+BRASS_ENV_SCALE = 2.4
 
 
 def sha256(path: Path) -> str:
@@ -369,15 +383,29 @@ def d8_panel_corners(face: int) -> list:
     return d8_scaled(face, D8_RAIL["panel"], D8_RAIL["depth"])
 
 
+def lerp_points(a, b, m: int) -> list:
+    """m + 1 points from a to b with exact endpoints, identical whichever facet asks for the edge."""
+    if b < a:
+        return list(reversed(lerp_points(b, a, m)))
+    return [a] + [add(a, mul(sub(b, a), i / m)) for i in range(1, m)] + [b]
+
+
 def build_d8(detail: str) -> list:
     polys = []
+    m = DETAIL[detail]["rail_steps"]
+    half = m // 2
     for face in range(8):
         n = D8_NORMALS[face]
         outer, band, panel = d8_face_corners(face), d8_scaled(face, D8_RAIL["band"]), d8_panel_corners(face)
         for k in range(3):
             k1 = (k + 1) % 3
-            polys.append((facing([outer[k], outer[k1], band[k1], band[k]], n), BRASS, ("brass", None), False))
-            polys.append((facing([band[k], band[k1], panel[k1], panel[k]], n), BRASS, ("brass", None), False))
+            edge, inner = lerp_points(outer[k], outer[k1], m), lerp_points(band[k], band[k1], m)
+            for i in range(m):
+                polys.append((facing([edge[i], edge[i + 1], inner[i + 1], inner[i]], n), BRASS, ("brass", None), True))
+            # Chamfer to the (triangular) glass panel: fans to its two corners, no T-junction on the panel.
+            for i in range(m):
+                polys.append((facing([inner[i], inner[i + 1], panel[k] if i < half else panel[k1]], n), BRASS, ("brass", None), True))
+            polys.append((facing([inner[half], panel[k1], panel[k]], n), BRASS, ("brass", None), True))
         polys.append((panel, FACE, ("facet", face), False))
     g = D8_CORE
     # Cog in the runtime XZ plane (axis +Y), flat-shaded; caps are explicit fans, so triangulation is fixed.
@@ -683,6 +711,57 @@ def exact_bevel_normals(path: Path, die: str) -> int:
     return changed
 
 
+def exact_rail_normals(path: Path, die: str) -> int:
+    """Smooth d8 rail normals by position, so the bytes do not depend on Blender's smoothing: on two or
+    more facet planes (edges, tips) the normalised sum of those facet normals, on one plane (the
+    band's inner edge) that facet's normal, below the planes (the chamfer foot at the glass) the facet
+    normal tilted toward the facet centre by the chamfer angle. The core (cog and axle) keeps its flat
+    normals. Returns the number of vertices rewritten."""
+    import numpy as np
+
+    if DIE[die]["kind"] != "d8":
+        return 0
+    gltf, binary = glb_parts(path)
+    normals = np.array(D8_NORMALS)
+    plane = D8_R * INV_SQRT3
+    inradius = D8_R * math.sqrt(2) / (2 * math.sqrt(3))
+    tilt = math.atan2(D8_RAIL["depth"], (D8_RAIL["band"] - D8_RAIL["panel"]) * inradius)
+    changed = 0
+    for mesh in gltf["meshes"]:
+        for prim in mesh["primitives"]:
+            if gltf["materials"][prim["material"]]["name"] != "brass-polished":
+                continue
+            _, pos = accessor_view(gltf, binary, prim["attributes"]["POSITION"])
+            nstart, nrm = accessor_view(gltf, binary, prim["attributes"]["NORMAL"])
+            new = nrm.astype(np.float32).copy()
+            for v, p in enumerate(pos.astype(np.float64)):
+                out = rail_normal(p, normals, plane, tilt)
+                if out is not None:
+                    new[v] = out.astype(np.float32)
+            changed += int(np.count_nonzero(np.any(new != nrm, axis=1)))
+            binary[nstart : nstart + new.nbytes] = new.tobytes()
+    glb_write(path, gltf, binary)
+    return changed
+
+
+def rail_normal(p, normals, plane: float, tilt: float):
+    """Analytic rail normal at runtime position `p` (see exact_rail_normals), or None for the core."""
+    import numpy as np
+
+    if np.abs(p).sum() < 0.02:
+        return None
+    d = normals @ p - plane
+    on = np.abs(d) < 1e-6
+    if on.any():
+        out = normals[on].sum(axis=0)
+    else:
+        f = normals[int(np.argmax(d))]
+        to_centre = f * plane - p
+        to_centre = to_centre - f * (to_centre @ f)
+        out = f * math.cos(tilt) + to_centre / np.linalg.norm(to_centre) * math.sin(tilt)
+    return out / np.linalg.norm(out)
+
+
 def face_table(die: str) -> list:
     return [{"index": i, "value": v, "normal": [float(x) for x in DIE[die]["normals"][i]]} for i, v in enumerate(DIE[die]["values"])]
 
@@ -791,7 +870,8 @@ def build_manifest(die: str, gate: dict, atlas: dict) -> dict:
     spec = DIE[die]
     collider = ({"shape": "cuboid", "halfExtent": D6_HALF, "source": "src/dice/faces.ts D6_HALF_EXTENT"} if spec["kind"] == "d6"
                 else {"shape": "convexHull", "circumradius": D8_R, "source": "src/dice/faces.ts D8_CIRCUMRADIUS"})
-    slots = {"brass-polished": {"role": "body", "set": "brass-polished", "tileMeters": TILE_METERS, "factorOnly": True}}
+    slots = {"brass-polished": {"role": "body", "set": "brass-polished", "tileMeters": TILE_METERS, "factorOnly": True,
+                                "envMapScale": BRASS_ENV_SCALE}}
     face_name = spec["mats"][FACE]
     slots[face_name] = {"role": "face", "atlasPage": spec["page"], **FACE_SLOTS[face_name]}
     faces = []
@@ -1029,6 +1109,7 @@ def build_die(bpy, bmesh, die: str, args, atlas: dict, helpers) -> dict:
         "authoringAgent": "Claude Code subagent (claude-opus-5-5), dispatched by the rogue-xr primary session",
     }
     report["exact_bevel_normals"] = exact_bevel_normals(glb, die)
+    report["exact_rail_normals"] = exact_rail_normals(glb, die)
     report["canonicalized_primitives"] = helpers.canonicalize_indices(glb)
     add_extras(glb, die)
     gate = gate_glb(glb, die, atlas, helpers)

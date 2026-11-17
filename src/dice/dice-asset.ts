@@ -55,6 +55,13 @@ export interface DiceMaterialSlot {
   color?: string;
   /** Glow page this slot's `emissiveIntensity` is tuned for (`dice-d6-glow`, `dice-d8-glow`). */
   glowPage?: string;
+  /**
+   * False renders the slot without tone mapping, so its pages display as authored: AgX caps an amber
+   * pip or numeral near S 0.43 at relL 0.57. The slot then ignores `toneMappingExposure`. Default true.
+   */
+  toneMapped?: boolean;
+  /** Multiplier on the `setEnvironment` intensity for this slot's material (default 1). */
+  envMapScale?: number;
 }
 
 /** Emissive intensity of `slot` while a glow page is bound (see `DICE_GLOW_INTENSITY`). */
@@ -109,6 +116,10 @@ export function parseDiceManifest(raw: unknown): DiceManifest {
       !(Number.isFinite(s.emissiveIntensity) && s.emissiveIntensity >= 0)
     )
       throw new Error('dice manifest: slot emissiveIntensity must be a non-negative number');
+    if (s.envMapScale !== undefined && !(Number.isFinite(s.envMapScale) && s.envMapScale >= 0))
+      throw new Error('dice manifest: slot envMapScale must be a non-negative number');
+    if (s.toneMapped !== undefined && typeof s.toneMapped !== 'boolean')
+      throw new Error('dice manifest: slot toneMapped must be a boolean');
   }
   return m as DiceManifest;
 }
@@ -142,6 +153,8 @@ interface DieResources {
   geometry: THREE.BufferGeometry;
   /** Per geometry group, in GLB primitive order. */
   materials: THREE.Material[];
+  /** The manifest slot's `envMapScale` per material (1 when absent). */
+  envScales: number[];
   face: THREE.MeshStandardMaterial;
   /** The manifest's face slot. */
   faceSlot: DiceMaterialSlot;
@@ -188,20 +201,20 @@ export class DiceAsset {
   }
 
   /**
-   * Lights the dice from `envMap` at `intensity` on every standard material. The metal body reads
-   * black without a reflection source, and the combat scene has no `scene.environment`. The map
-   * stays owned by the caller.
+   * Lights the dice from `envMap` at `intensity` times each slot's `envMapScale` on every standard
+   * material. The metal body reads black without a reflection source, and the combat scene has no
+   * `scene.environment`. The map stays owned by the caller.
    */
   setEnvironment(envMap: THREE.Texture | null, intensity: number): void {
     if (this.disposed) return;
     for (const die of this.dice.values()) {
-      for (const m of die.materials) {
+      die.materials.forEach((m, i) => {
         const lit = m as THREE.MeshStandardMaterial;
-        if (!lit.isMeshStandardMaterial) continue;
+        if (!lit.isMeshStandardMaterial) return;
         lit.envMap = envMap;
-        lit.envMapIntensity = intensity;
+        lit.envMapIntensity = intensity * (die.envScales[i] ?? 1);
         lit.needsUpdate = true;
-      }
+      });
     }
   }
 
@@ -249,6 +262,7 @@ function faceMaterial(kind: DieKind, name: string, slot: DiceMaterialSlot) {
     metalness: slot.metalness ?? 0,
     transparent: slot.transparent ?? false,
     opacity: slot.opacity ?? 1,
+    toneMapped: slot.toneMapped ?? true,
     side: THREE.FrontSide,
   });
 }
@@ -280,10 +294,12 @@ async function parseDie(
 
   const faces: THREE.MeshStandardMaterial[] = [];
   let faceSlot: DiceMaterialSlot | undefined;
+  const envScales: number[] = [];
   const materials = meshes.map((m) => {
     const source = m.material as THREE.MeshStandardMaterial;
     const slot = manifest.materialSlots[source.name];
     if (!slot) throw new Error(`${manifest.id} glb: material ${source.name} not in the manifest`);
+    envScales.push(slot.envMapScale ?? 1);
     if (slot.role === 'face') {
       source.dispose();
       const face = faceMaterial(manifest.kind, source.name, slot);
@@ -305,7 +321,7 @@ async function parseDie(
   if (faces.length !== 1 || !face || !faceSlot)
     throw new Error(`${manifest.id} glb: expected one face material`);
   const normals = manifest.faces.map(({ normal: [x, y, z] }) => ({ x, y, z }));
-  return { manifest, geometry, materials, face, faceSlot, normals };
+  return { manifest, geometry, materials, envScales, face, faceSlot, normals };
 }
 
 /** Builds the asset from GLB bytes and manifests (both dice). Rejects corrupt or mismatched bytes. */

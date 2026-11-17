@@ -301,41 +301,41 @@
         72,
         96
       ],
-      "lumGain": 1.46,
+      "lumGain": 2.92,
       "hueMix": 0.75,
       "method": "linear-light luminance x lumGain, chromaticity moved hueMix toward target, masked to the walnut panel before the pips are composited"
     },
-    "diceGlowPages": "dice-d6-glow and dice-d8-glow: saturated amber #FF9A10 times (core + 0.35 x soft glow), black elsewhere; same slots as the colour pages",
+    "diceGlowPages": "displayed through toneMapped false: dice-d6-glow pips #DEA84B times (core + 0.15 x soft glow outside the bezel, linear light), dice-d8-glow numerals #FBBF56 times (core + 0.5 x soft glow, linear light); black elsewhere; same slots as the colour pages. d6 colour page: amber pip core #836129 (0.95 of the pip radius), warm-black bezel to 1.15, warm-black well band at slot px [74.5, 81.5]",
     "files": [
       {
         "file": "public/assets/ui/dice-d6-glow.ktx2",
-        "bytes": 26441,
-        "sha256": "86e8a411c2ea5ca95dd7a1e0aeaaacd45c164c9393733ec91f86bb85611bb94f"
+        "bytes": 34212,
+        "sha256": "982d03efdf5eb69340be2e222de6eb5fff180a2619b4479bd0d473b2d4df4d49"
       },
       {
         "file": "public/assets/ui/dice-d6-glow.png",
-        "bytes": 41215,
-        "sha256": "79fb9bec7ac796d7b56990957663e299415d1a2baf36bc7ef59f95b0f3d57858"
+        "bytes": 70055,
+        "sha256": "a396109e8632ade8356ac2a42b4ab7edbe9675da5b57f9d58a12fdf6fa107a0a"
       },
       {
         "file": "public/assets/ui/dice-d6.ktx2",
-        "bytes": 124533,
-        "sha256": "4eb835fd4824760c5c8c77dab8b93bad3d21353ca78f4d0ec338a4186a52caf6"
+        "bytes": 122770,
+        "sha256": "9bf7b4a2daa6fc8eb91cd37d205e19a1e7ca734a1c4998a43016f7d2f01eccd1"
       },
       {
         "file": "public/assets/ui/dice-d6.png",
-        "bytes": 254911,
-        "sha256": "a60a4b6b28aac8b30588c7535d61369804292e90b739d20bcd580400b3d8f576"
+        "bytes": 250266,
+        "sha256": "aa99d4653af135c7328f18d6ff2513dfd6e2fc0894bc2c44295c773ceb536105"
       },
       {
         "file": "public/assets/ui/dice-d8-glow.ktx2",
-        "bytes": 32702,
-        "sha256": "4dc2f57f6253bcb2cd7b10f13f0a0ed8a4656989558d492391fa09758e9276f2"
+        "bytes": 40873,
+        "sha256": "46feb1f49c5d80fa5b02ca3e3edd38ca9cc019a774b60cd51bf5833baf6aee12"
       },
       {
         "file": "public/assets/ui/dice-d8-glow.png",
-        "bytes": 38855,
-        "sha256": "6db435947943d7120bef79205cb822b7a65ad92354abf7b857ccd5edbe05f674"
+        "bytes": 53010,
+        "sha256": "eabd75d494798e5646f66332d7e6df205df5db169fac448244113bba32daba58"
       },
       {
         "file": "public/assets/ui/dice-d8.ktx2",

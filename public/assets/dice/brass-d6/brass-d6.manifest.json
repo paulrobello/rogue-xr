@@ -143,7 +143,8 @@
       "role": "body",
       "set": "brass-polished",
       "tileMeters": 0.5,
-      "factorOnly": true
+      "factorOnly": true,
+      "envMapScale": 2.4
     },
     "brass-d6-face": {
       "role": "face",
@@ -154,7 +155,9 @@
       "transparent": false,
       "opacity": 1.0,
       "color": "#FFFFFF",
-      "glowPage": "dice-d6-glow"
+      "glowPage": "dice-d6-glow",
+      "toneMapped": false,
+      "envMapScale": 0.3
     }
   },
   "budget": {

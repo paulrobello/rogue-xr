@@ -48,7 +48,8 @@ export interface DicePresenterOptions {
 
 /**
  * Reflection strength of the room probe on the authored dice. At 0 the metal body reads black in the
- * tray (no `scene.environment`); 0.35 puts the brass between the table's ring and gear brass.
+ * tray (no `scene.environment`); 0.35 puts the brass between the table's ring and gear brass. Each
+ * manifest slot's `envMapScale` multiplies it (`DiceAsset.setEnvironment`).
  */
 export const DICE_ENV_INTENSITY = 0.35;
 

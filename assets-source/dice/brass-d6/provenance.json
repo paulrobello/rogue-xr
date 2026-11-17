@@ -4,12 +4,12 @@
   "route": "scripted (procedural Blender geometry; no provider generation; face art reused from the P5-T6 UI atlas)",
   "generator": {
     "path": "scripts/assets/build-dice.py",
-    "sha256": "c7cf82481eedd7b6886030fb8eca61ec695c0d3bb8b77f531e32039e25ea84de"
+    "sha256": "282bb125907c0d27bcc123208bce8bda780bd0619d9da7bf91200c2c099a5666"
   },
   "generatorDeps": [
     {
       "path": "scripts/assets/build-cog-sentry.py",
-      "sha256": "efbb25906af6a0cbc9244d3e5573d0a85c819e8af8e7f6f75229ed43da299733",
+      "sha256": "8f80d1ae8d10adeab5123ba9497e9d00a8ea4c6e5c0855c902cf65274f25bacc",
       "use": "read_glb and canonicalize_indices"
     }
   ],
@@ -33,7 +33,7 @@
       "ui/dice-d6 (shared UI atlas page, resident for the UI)",
       "ui/dice-d6-glow (shared UI atlas glow page, the face emissive map)"
     ],
-    "glbBytes": 53524
+    "glbBytes": 53528
   },
   "lods": "LOD0 only: a 40 mm die stays within the 1,500-triangle dice budget (DICE_LIMITS), so a LOD chain saves nothing measurable",
   "bake": "none: face art is the shared atlas page and brass is a factor (or the shared brass-polished set), so nothing is baked",
@@ -162,34 +162,34 @@
   "derivedFiles": [
     {
       "path": "public/assets/dice/brass-d6/brass-d6.glb",
-      "sha256": "1e19869279d7e586b8accd53e324f2792f29900750212c23d75f3968b7585dd0",
-      "bytes": 53524
+      "sha256": "3c2c7d7a091ada915791b51851ef7d1aa499e764565c20ff5649614f4cfda0a8",
+      "bytes": 53528
     },
     {
       "path": "public/assets/dice/brass-d6/brass-d6.manifest.json",
-      "sha256": "ade2231d957322a11d7de69b666f0fdb776d3f88d1c59486ffc9b974009432f9",
-      "bytes": 3009
+      "sha256": "cb4d293f2c31ab027af6b27472ebd1e38b08ad6e9d6d44493ccbf0a6d5c3cd76",
+      "bytes": 3088
     }
   ],
   "sourceFiles": [
     {
       "path": "assets-source/dice/brass-d6/blend/brass-d6.high.blend",
-      "sha256": "99322165aa0d82f17964c1b700130fa847d2e131c0184400d89ef46dd7a3bf79",
-      "bytes": 155331
+      "sha256": "f8d51afb59617c5cefefee98d35f33ade70c47af2cd1bc42490fd93486bc9520",
+      "bytes": 155330
     },
     {
       "path": "assets-source/dice/brass-d6/blend/brass-d6.low.blend",
-      "sha256": "6ccefc271a3224a93e06fb0f447ddaf6479ce03317b226f93fd59f881fd7b975",
-      "bytes": 96800
+      "sha256": "aacea0630fa64ae147c7f03ddd3ad3eacf55130d8faa33ea0aabdcae904683d0",
+      "bytes": 96798
     },
     {
       "path": "assets-source/dice/brass-d6/staging/report.json",
-      "sha256": "b482caf57556d4f2f350251ec91b947a14b5dc211bdcbc3116a76a8ac87d7f1d",
-      "bytes": 2880
+      "sha256": "d5182e57290797cf0ee94e0ae52b6c583d41b4c38b5355ec90ba90a1b24f213c",
+      "bytes": 2907
     },
     {
       "path": "assets-source/dice/brass-d6/staging/reimport.json",
-      "sha256": "b6a507f30864a615377e1f77195463a34bf10b7f6add90391b37b28993c73ffe",
+      "sha256": "4ab086b1967d48ba8ebb001d85a92a1391ef4a4ed04ce99d9cd1428d1fa95d0d",
       "bytes": 964
     }
   ],
@@ -200,25 +200,25 @@
     },
     {
       "path": "public/assets/ui/dice-d6.png",
-      "sha256": "a60a4b6b28aac8b30588c7535d61369804292e90b739d20bcd580400b3d8f576",
-      "bytes": 254911
+      "sha256": "aa99d4653af135c7328f18d6ff2513dfd6e2fc0894bc2c44295c773ceb536105",
+      "bytes": 250266
     }
   ],
   "reviewEvidence": [
     {
       "path": "assets-source/dice/dice.review-sheet.jpg",
-      "sha256": "32acb63e171dba55e36670266835c46c43382cb762c4aef154adac9e21e7306e",
-      "bytes": 261369
+      "sha256": "875057eb1cf924ee2bae852516db92116f83e0544456afc461ee209dd5a668f9",
+      "bytes": 269610
     },
     {
       "path": "docs/verification/p5-dice-brass-d6-lineup.jpg",
-      "sha256": "8146f9d30c02f636f664458edb69cb33d504fe232dcd4dc2b7322d6396474438",
-      "bytes": 39304
+      "sha256": "0ee3593d0981d56fe4aa6d4c749a69ad67336f38c9731c786fba0811266adc98",
+      "bytes": 47437
     },
     {
       "path": "docs/verification/p5-dice-brass-d6.jpg",
-      "sha256": "74696ea5c9ee31699758a4db0121255da91c5c2b6c746194c3c126852b1eefc0",
-      "bytes": 37161
+      "sha256": "6eb5488fae7d7b2b6be3b399fde9606efdf985b7c20da2df168870b7d8468414",
+      "bytes": 45490
     }
   ],
   "references": [

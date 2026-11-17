@@ -307,6 +307,64 @@ describe('dice asset lifecycle', () => {
     ).toThrow(/not #rrggbb/);
   });
 
+  it('applies slot toneMapped and envMapScale to the dice materials only (pass-3 fields)', async () => {
+    const d6 = structuredClone(files.d6.manifest);
+    const d8 = structuredClone(files.d8.manifest);
+    const bodyOf = (m: DiceManifest) => {
+      const slot = Object.values(m.materialSlots).find((s) => s.role === 'body');
+      if (!slot) throw new Error(`${m.id}: no body slot`);
+      return slot;
+    };
+    Object.assign(faceSlotOf(d6), { toneMapped: false, envMapScale: 0.3 });
+    Object.assign(bodyOf(d6), { envMapScale: 2 });
+    // d8 keeps both fields absent: tone mapped, unscaled.
+    delete faceSlotOf(d8).toneMapped;
+    delete faceSlotOf(d8).envMapScale;
+    delete bodyOf(d8).envMapScale;
+    const local = await parseDice(glbs(), { d6: parseDiceManifest(d6), d8: parseDiceManifest(d8) });
+    asset = local;
+    const env = new THREE.Texture();
+    local.setEnvironment(env, 0.35);
+    const mats = (kind: DieKind) => local.spawn(kind).material as THREE.MeshStandardMaterial[];
+    const d6Face = mats('d6').find((m) => m.name.endsWith('-face'));
+    const d6Body = mats('d6').find((m) => !m.name.endsWith('-face'));
+    expect(d6Face?.toneMapped).toBe(false);
+    expect(d6Face?.envMap).toBe(env);
+    expect(d6Face?.envMapIntensity).toBeCloseTo(0.105, 12);
+    expect(d6Body?.toneMapped).toBe(true);
+    expect(d6Body?.envMapIntensity).toBeCloseTo(0.7, 12);
+    for (const m of mats('d8')) {
+      expect(m.toneMapped).toBe(true);
+      expect(m.envMapIntensity).toBeCloseTo(0.35, 12);
+    }
+    // Binding the pages keeps the slot's tone mapping.
+    local.bindFaceMaps({ d6: new THREE.Texture() }, { d6: new THREE.Texture() });
+    expect(d6Face?.toneMapped).toBe(false);
+    for (const bad of [{ envMapScale: -1 }, { envMapScale: Number.NaN }, { toneMapped: 'no' }]) {
+      expect(() =>
+        parseDiceManifest({
+          ...files.d6.manifest,
+          materialSlots: { x: { ...faceSlotOf(files.d6.manifest), ...bad } },
+        }),
+      ).toThrow(/envMapScale|toneMapped/);
+    }
+    env.dispose();
+  });
+
+  it('the shipped face slots apply their manifest tone mapping and env scale', async () => {
+    asset = await parseDice(glbs(), manifests());
+    asset.setEnvironment(new THREE.Texture(), 0.35);
+    for (const kind of KINDS) {
+      const slots = files[kind].manifest.materialSlots;
+      for (const m of asset.spawn(kind).material as THREE.MeshStandardMaterial[]) {
+        const slot = slots[m.name];
+        expect(slot).toBeDefined();
+        expect(m.toneMapped).toBe(slot?.toneMapped ?? true);
+        expect(m.envMapIntensity).toBeCloseTo(0.35 * (slot?.envMapScale ?? 1), 12);
+      }
+    }
+  });
+
   it('emits nothing when a colour page is bound without a glow page', async () => {
     const local = await parseDice(glbs(), manifests());
     asset = local;

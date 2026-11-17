@@ -179,22 +179,25 @@
       "role": "body",
       "set": "brass-polished",
       "tileMeters": 0.5,
-      "factorOnly": true
+      "factorOnly": true,
+      "envMapScale": 2.4
     },
     "glass-d8-face": {
       "role": "face",
       "atlasPage": "dice-d8",
       "roughness": 0.25,
       "metalness": 0.0,
-      "emissiveIntensity": 0.6,
+      "emissiveIntensity": 1.0,
       "transparent": true,
       "opacity": 0.97,
       "color": "#463A30",
-      "glowPage": "dice-d8-glow"
+      "glowPage": "dice-d8-glow",
+      "toneMapped": false,
+      "envMapScale": 0.3
     }
   },
   "budget": {
-    "tris": 296,
+    "tris": 512,
     "materials": 2,
     "texturesProduced": 0,
     "texturesSampled": [

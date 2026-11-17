@@ -4,12 +4,12 @@
   "route": "scripted (procedural Blender geometry; no provider generation; face art reused from the P5-T6 UI atlas)",
   "generator": {
     "path": "scripts/assets/build-dice.py",
-    "sha256": "c7cf82481eedd7b6886030fb8eca61ec695c0d3bb8b77f531e32039e25ea84de"
+    "sha256": "282bb125907c0d27bcc123208bce8bda780bd0619d9da7bf91200c2c099a5666"
   },
   "generatorDeps": [
     {
       "path": "scripts/assets/build-cog-sentry.py",
-      "sha256": "efbb25906af6a0cbc9244d3e5573d0a85c819e8af8e7f6f75229ed43da299733",
+      "sha256": "8f80d1ae8d10adeab5123ba9497e9d00a8ea4c6e5c0855c902cf65274f25bacc",
       "use": "read_glb and canonicalize_indices"
     }
   ],
@@ -25,15 +25,15 @@
     "store": "assets-source/dice/glass-d8/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)"
   },
   "budgets": {
-    "triangles": 296,
-    "highTriangles": 360,
+    "triangles": 512,
+    "highTriangles": 720,
     "materials": 2,
     "texturesProduced": 0,
     "texturesSampled": [
       "ui/dice-d8 (shared UI atlas page, resident for the UI)",
       "ui/dice-d8-glow (shared UI atlas glow page, the face emissive map)"
     ],
-    "glbBytes": 20292
+    "glbBytes": 25052
   },
   "lods": "LOD0 only: a 40 mm die stays within the 1,500-triangle dice budget (DICE_LIMITS), so a LOD chain saves nothing measurable",
   "bake": "none: face art is the shared atlas page and brass is a factor (or the shared brass-polished set), so nothing is baked",
@@ -198,34 +198,34 @@
   "derivedFiles": [
     {
       "path": "public/assets/dice/glass-d8/glass-d8.glb",
-      "sha256": "4b9ba3d52bafebd9420f05c3a22219b5b3972acb876f9cdd04594b0a47713638",
-      "bytes": 20292
+      "sha256": "582953e4206a0b2ebbbac30e79e2863ea010b224caf266b3d5b67acc245a9954",
+      "bytes": 25052
     },
     {
       "path": "public/assets/dice/glass-d8/glass-d8.manifest.json",
-      "sha256": "d8aba43e79b7274dd7a6f85883ed2609c4d65724281ca116b8866c2afdf8a805",
-      "bytes": 3943
+      "sha256": "c361de58ee558b2c7515c90b34dc4f16b8e8e13fc0c4380436d38479d747f387",
+      "bytes": 4022
     }
   ],
   "sourceFiles": [
     {
       "path": "assets-source/dice/glass-d8/blend/glass-d8.high.blend",
-      "sha256": "20d7ddde9fe60d30230ffad7380af03caa6173d2d9e1f2022dce1e6a92778647",
-      "bytes": 75880
+      "sha256": "b1507dbd70d84c3de450bd3a492f5b8a8a9624079f6a5f6126ba7c9a6d5a7bdc",
+      "bytes": 83377
     },
     {
       "path": "assets-source/dice/glass-d8/blend/glass-d8.low.blend",
-      "sha256": "bf3b8d7cec5d639d72607f5b2a811bd304800ce54f6e07a4341587f810bfe0a9",
-      "bytes": 77027
+      "sha256": "faaeb935a79af1d7ecd778889b08378174cb32ba90fbea5476380751417688d3",
+      "bytes": 81775
     },
     {
       "path": "assets-source/dice/glass-d8/staging/report.json",
-      "sha256": "8bd01bed9c7db5dac5ea8a809e9278a0e79270cdaaf06d09b981f11e973a423a",
-      "bytes": 3022
+      "sha256": "c4a58fbdb186a366f8e7ab014da54bac61d0a16e5cdbb061ae4c8c9dbb1caa8e",
+      "bytes": 3051
     },
     {
       "path": "assets-source/dice/glass-d8/staging/reimport.json",
-      "sha256": "92eb5166fcf240ea092bbc6ebec64e1b35eca4ed062346a31d76b1156c3e3886",
+      "sha256": "6efdb92855e59ac84c8b926d7a087005ac261c00d374a58716719d520a0796ad",
       "bytes": 1094
     }
   ],
@@ -243,18 +243,18 @@
   "reviewEvidence": [
     {
       "path": "assets-source/dice/dice.review-sheet.jpg",
-      "sha256": "32acb63e171dba55e36670266835c46c43382cb762c4aef154adac9e21e7306e",
-      "bytes": 261369
+      "sha256": "875057eb1cf924ee2bae852516db92116f83e0544456afc461ee209dd5a668f9",
+      "bytes": 269610
     },
     {
       "path": "docs/verification/p5-dice-glass-d8-lineup.jpg",
-      "sha256": "afb4eaa2eacaa83c007a2dcd57e30647432a24077782b23d66be8969898cf4a9",
-      "bytes": 26353
+      "sha256": "597a884b31157ef0c04e156a84b9e38fc5a3b4ada26b7d1aa11b02c8c6f1737e",
+      "bytes": 30965
     },
     {
       "path": "docs/verification/p5-dice-glass-d8.jpg",
-      "sha256": "966a458ba067518aa373528a71ef036980a34d3238d843d0f1c30ef35e6d4f66",
-      "bytes": 24319
+      "sha256": "654fae54439aa8206b233f844b6cafda29fe7251e9acc1d58a213fe4fd879220",
+      "bytes": 27073
     }
   ],
   "references": [

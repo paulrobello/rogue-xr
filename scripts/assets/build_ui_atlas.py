@@ -8,6 +8,7 @@ Deterministic: the same sources produce byte-identical PNG/JPG outputs. Writes
   public/assets/ui/dice-d8.png        glass d8 faces, 256 px slots, 1024x512 (faces 0-7)
   public/assets/ui/dice-d6-glow.png   emissive masks for the d6 page: amber pips on black, same slots
   public/assets/ui/dice-d8-glow.png   emissive masks for the d8 page: amber numerals on black, same slots
+  (the dice pages are displayed through toneMapped false: their colours are the displayed colours)
   public/assets/ui/glyphs.png         5 sigil glyphs drawn from src/sigil/templates.ts, 256 px slots, 1024x512
   public/assets/ui/title-2048.jpg     title key art backdrop 2048x1152, and title-1024.jpg 1024x576
   public/assets/ui/*.ktx2             UASTC + Zstandard, mipmapped, bottom-left origin (when ktx exists)
@@ -56,6 +57,36 @@ GLOW_HALO = 0.35
 # washes a bright emitter toward white, so the emitter itself must sit well past the target hue.
 GLOW_FILL = (0xFF, 0x9A, 0x10)
 
+# Dice faces render with toneMapped false (dice-asset.ts, slot `toneMapped`): a face pixel displays as
+# its linear radiance, sRGB-encoded and clipped, so the pages carry the displayed colour itself. AgX
+# cannot show this amber at this luminance (max S about 0.43 at relL 0.57 for hue 34-38).
+# Lit pip and numeral core as displayed: H38, S 0.66, relL 0.57 (art bible candle amber #F3BE65 is
+# H38, S 0.58, relL 0.57).
+DICE_MARK_TARGET = (0xF8, 0xBC, 0x55)
+# d6 pip: displayed linear = target x (D6_PIP_ALBEDO x E + D6_PIP_EMIT x slot emissiveIntensity 1.0).
+# The walnut faces' illuminance E measures 1.1 to 1.6 in the engine stills (AgX-inverted walnut over
+# the atlas walnut mean), so the pip lands at 0.92 to 1.04 of the target on every lit face. The emit is
+# 0.78, not 0.66: the shadow-side pips measured relL 0.40 at 0.66 and 0.446 at 0.75 in the engine
+# stills (floor 0.45).
+D6_PIP_ALBEDO = 0.24
+D6_PIP_EMIT = 0.78
+# The lit pip core is 0.95 of the painted pip radius (0.072 slot, 18.4 px), and a warm-black bezel
+# runs out to 1.15 (21.2 px): the dark rim at the cup lip. The cup rim (14 px) sits inside the core.
+D6_PIP_CORE = 0.95
+D6_PIP_BEZEL = 1.15
+# Spill outside the bezel, blended in linear light: about 1.3 to 2.2x the walnut at 1.2 to 1.4 pip
+# radii (the scored pass-2 spill was #825B39 against walnut relL 0.066). With the brighter walnut,
+# 0.3 measured 2.1 to 2.9x and 0.2 measured 1.8 to 2.6x.
+D6_GLOW_HALO = 0.15
+# Warm-black band where the d6 well's lip and ledge sample the page (build-dice.py D6_LIP_UV_SCALE):
+# slot pixels 46..52 and 203..209 around the 53..203 floor window, so the well walls read dark.
+D6_WELL_BAND_PX = (74.5, 81.5)
+# d8 numeral glow: emissive = target x D8_MARK_EMIT x slot emissiveIntensity 1.0, times opacity 0.97.
+# The halo is blended in linear light (not sRGB code values), so the soft glow bleeds visibly past the
+# stroke instead of falling to black within 2 screen pixels.
+D8_MARK_EMIT = 1.03
+D8_GLOW_HALO = 0.5
+
 # d6 walnut grade (art bible oiled walnut #583C26): the painted panel reads too red and dark.
 # Panel: rounded rect in 256 px slot pixels (x0, y0, x1, y1), measured inside the brass bevel;
 # the corner radius clears the bevel's chamfered corners. The mask starts WALNUT_INSET px inside
@@ -68,8 +99,11 @@ WALNUT_INSET_PX = 2
 WALNUT_FEATHER_PX = 3
 WALNUT_LUM_GATE = (72, 96)
 # Linear-light grade: luminance x WALNUT_LUM_GAIN (keeps grain contrast exactly), chromaticity
-# moved WALNUT_HUE_MIX of the way to the target's (keeps some of the painted streak colour).
-WALNUT_LUM_GAIN = 1.46
+# moved WALNUT_HUE_MIX of the way to the target's (keeps some of the painted streak colour). The gain
+# is 2x the AgX-era 1.46: at the faces' env scale 0.3 the engine walnut measured relL 0.031 (top)
+# and 0.020 (front) against the bible's #583C26 (relL about 0.05), so the albedo carries the light the
+# room probe no longer adds.
+WALNUT_LUM_GAIN = 2.92
 WALNUT_HUE_MIX = 0.75
 
 # Pip centres in a unit d6 face (origin top-left), per value.
@@ -215,11 +249,19 @@ def glow_layer(size: tuple[int, int], draw_fn, blur: float) -> np.ndarray:
     return np.asarray(mask.filter(ImageFilter.GaussianBlur(blur)), dtype=np.float64) / 255
 
 
-def lit_mark(base: np.ndarray, draw_fn, scale: int) -> tuple[np.ndarray, np.ndarray]:
+def lit_mark(
+    base: np.ndarray,
+    draw_fn,
+    scale: int,
+    glow_fill: tuple[int, int, int] = GLOW_FILL,
+    halo: float = GLOW_HALO,
+    linear_halo: bool = False,
+) -> tuple[np.ndarray, np.ndarray]:
     """Composites an amber glowing mark (pip or numeral) drawn by `draw_fn` at `scale`x onto `base`.
 
-    Also returns the face's emissive glow tile: `GLOW_FILL` over the mark core plus `GLOW_HALO` of
-    its soft glow, black elsewhere, alpha 255.
+    Also returns the face's emissive glow tile: `glow_fill` over the mark core plus `halo` of its soft
+    glow, black elsewhere, alpha 255. With `linear_halo` the coverage scales the fill in linear light,
+    so the decoded emission is proportional to it.
     """
     h, w = base.shape[:2]
     big = (w * scale, h * scale)
@@ -243,9 +285,74 @@ def lit_mark(base: np.ndarray, draw_fn, scale: int) -> tuple[np.ndarray, np.ndar
     out = out * (1 - core_small[..., None]) + fill * core_small[..., None]
     res = base.copy()
     res[..., :3] = np.clip(np.rint(out), 0, 255).astype(np.uint8)
-    emit = np.clip(core_small + GLOW_HALO * glow, 0, 1)
+    emit = np.clip(core_small + halo * glow, 0, 1)
     lit = np.full((h, w, 4), 255, np.uint8)
-    lit[..., :3] = np.clip(np.rint(np.array(GLOW_FILL, np.float64) * emit[..., None]), 0, 255).astype(np.uint8)
+    if linear_halo:
+        fill = linear_to_srgb(srgb_to_linear(np.array(glow_fill, np.float64)) * emit[..., None])
+    else:
+        fill = np.array(glow_fill, np.float64) * emit[..., None]
+    lit[..., :3] = np.clip(np.rint(fill), 0, 255).astype(np.uint8)
+    return res, lit
+
+
+def scaled_srgb(rgb: tuple[int, int, int], k: float) -> tuple[int, int, int]:
+    """`rgb` scaled by `k` in linear light, as 8-bit sRGB."""
+    out = linear_to_srgb(srgb_to_linear(np.array(rgb, np.float64)) * k)
+    r, g, b = (int(v) for v in np.clip(np.rint(out), 0, 255))
+    return r, g, b
+
+
+def disc_coverage(size: int, centres: list[tuple[float, float]], radius: float, scale: int) -> np.ndarray:
+    """Anti-aliased coverage of discs (slot pixels, origin top-left) drawn at `scale`x, 0..1."""
+    big = Image.new("L", (size * scale, size * scale), 0)
+    d = ImageDraw.Draw(big)
+    r = radius * scale
+    for x, y in centres:
+        d.ellipse((x * scale - r, y * scale - r, x * scale + r, y * scale + r), fill=255)
+    return np.asarray(big.resize((size, size), Image.Resampling.LANCZOS), dtype=np.float64) / 255
+
+
+def blur(mask: np.ndarray, radius: float) -> np.ndarray:
+    return np.asarray(Image.fromarray(np.uint8(np.rint(mask * 255))).filter(ImageFilter.GaussianBlur(radius)), dtype=np.float64) / 255
+
+
+def lit_pips(base: np.ndarray, value: int, scale: int) -> tuple[np.ndarray, np.ndarray]:
+    """d6 face `value`: a warm-black well band, then per pip an amber core (D6_PIP_CORE of the painted
+    radius) inside a warm-black bezel ring (to D6_PIP_BEZEL), on the colour page; on the glow page the
+    core emits D6_PIP_EMIT of the target and the soft spill emits outside the bezel only."""
+    size = base.shape[0]
+    centres = [(u * size, v * size) for u, v in PIPS[value]]
+    r = 0.072 * size
+    core = disc_coverage(size, centres, r * D6_PIP_CORE, scale)
+    ring_disc = disc_coverage(size, centres, r * D6_PIP_BEZEL, scale)
+    ring = np.clip(ring_disc - core, 0, 1)
+    shadow = blur(ring_disc, 3)
+    glow = blur(ring_disc, 7)
+    outside = 1 - ring_disc
+
+    c = (size - 1) / 2
+    yy, xx = np.mgrid[0:size, 0:size]
+    cheb = np.maximum(np.abs(xx - c), np.abs(yy - c))
+    lo, hi = D6_WELL_BAND_PX
+    band = np.clip(cheb - lo, 0, 1) * np.clip(hi + 1 - cheb, 0, 1)
+
+    out = base[..., :3].astype(np.float64)
+    out = out * (1 - band[..., None]) + np.array(WARM_BLACK) * band[..., None]
+    out *= 1 - 0.55 * shadow[..., None]
+    out += np.array(AMBER) * 0.5 * (glow * outside)[..., None]
+    out = out * (1 - ring[..., None]) + np.array(WARM_BLACK) * ring[..., None]
+    albedo = np.array(scaled_srgb(DICE_MARK_TARGET, D6_PIP_ALBEDO), np.float64)
+    out = out * (1 - core[..., None]) + albedo * core[..., None]
+    # The 6-face's outer rows reach past the floor window; the lip samples there, so the band wins.
+    out = out * (1 - band[..., None]) + np.array(WARM_BLACK) * band[..., None]
+    core = core * (1 - band)
+    res = base.copy()
+    res[..., :3] = np.clip(np.rint(out), 0, 255).astype(np.uint8)
+
+    emit = np.clip(core + D6_GLOW_HALO * glow * outside * (1 - band), 0, 1)
+    lit = np.full(base.shape[:2] + (4,), 255, np.uint8)
+    fill = srgb_to_linear(np.array(scaled_srgb(DICE_MARK_TARGET, D6_PIP_EMIT), np.float64))
+    lit[..., :3] = np.clip(np.rint(linear_to_srgb(fill * emit[..., None])), 0, 255).astype(np.uint8)
     return res, lit
 
 
@@ -321,14 +428,7 @@ def build_dice() -> tuple[Image.Image, Image.Image, Image.Image, Image.Image, di
     d8_glow[..., 3] = 255
     d6_faces, d8_faces = [], []
     for index, value in enumerate(D6_VALUES):
-
-        def pips(d: ImageDraw.ImageDraw, value: int = value) -> None:
-            r = 0.072 * DIE_SLOT * scale
-            for u, v in PIPS[value]:
-                x, y = u * DIE_SLOT * scale, v * DIE_SLOT * scale
-                d.ellipse((x - r, y - r, x + r, y + r), fill=255)
-
-        face, lit = lit_mark(d6_base, pips, scale)
+        face, lit = lit_pips(d6_base, value, scale)
         px, py = (index % 4) * DIE_SLOT, (index // 4) * DIE_SLOT
         d6_page[py : py + DIE_SLOT, px : px + DIE_SLOT] = face
         d6_glow[py : py + DIE_SLOT, px : px + DIE_SLOT] = lit
@@ -342,7 +442,9 @@ def build_dice() -> tuple[Image.Image, Image.Image, Image.Image, Image.Image, di
                 y = cy + 46 * scale
                 d.rectangle((cx - 20 * scale, y, cx + 20 * scale, y + 7 * scale), fill=255)
 
-        face, lit = lit_mark(d8_base, numeral, scale)
+        face, lit = lit_mark(
+            d8_base, numeral, scale, scaled_srgb(DICE_MARK_TARGET, D8_MARK_EMIT), D8_GLOW_HALO, linear_halo=True
+        )
         px, py = (index % 4) * DIE_SLOT, (index // 4) * DIE_SLOT
         d8_page[py : py + DIE_SLOT, px : px + DIE_SLOT] = face
         d8_glow[py : py + DIE_SLOT, px : px + DIE_SLOT] = lit
@@ -587,7 +689,15 @@ def main() -> None:
             "hueMix": WALNUT_HUE_MIX,
             "method": "linear-light luminance x lumGain, chromaticity moved hueMix toward target, masked to the walnut panel before the pips are composited",
         },
-        "diceGlowPages": "dice-d6-glow and dice-d8-glow: saturated amber #{:02X}{:02X}{:02X} times (core + {} x soft glow), black elsewhere; same slots as the colour pages".format(*GLOW_FILL, GLOW_HALO),
+        "diceGlowPages": (
+            "displayed through toneMapped false: dice-d6-glow pips #{:02X}{:02X}{:02X} times (core + {} x soft glow outside the "
+            "bezel, linear light), dice-d8-glow numerals #{:02X}{:02X}{:02X} times (core + {} x soft glow, linear light); black elsewhere; "
+            "same slots as the colour pages. d6 colour page: amber pip core #{:02X}{:02X}{:02X} ({} of the pip radius), "
+            "warm-black bezel to {}, warm-black well band at slot px {}"
+        ).format(
+            *scaled_srgb(DICE_MARK_TARGET, D6_PIP_EMIT), D6_GLOW_HALO, *scaled_srgb(DICE_MARK_TARGET, D8_MARK_EMIT), D8_GLOW_HALO,
+            *scaled_srgb(DICE_MARK_TARGET, D6_PIP_ALBEDO), D6_PIP_CORE, D6_PIP_BEZEL, list(D6_WELL_BAND_PX),
+        ),
         "files": [{"file": rel(p), "bytes": p.stat().st_size, "sha256": sha256(p)} for p in outputs],
     }
     prov_path.write_text(json.dumps(prov, indent=2) + "\n")

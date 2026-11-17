@@ -2,17 +2,17 @@
   "piece": "brass-d6",
   "blender": "5.3.0",
   "generator": "scripts/assets/build-dice.py",
-  "generator_sha256": "c7cf82481eedd7b6886030fb8eca61ec695c0d3bb8b77f531e32039e25ea84de",
+  "generator_sha256": "282bb125907c0d27bcc123208bce8bda780bd0619d9da7bf91200c2c099a5666",
   "generator_deps": {
-    "scripts/assets/build-cog-sentry.py": "efbb25906af6a0cbc9244d3e5573d0a85c819e8af8e7f6f75229ed43da299733"
+    "scripts/assets/build-cog-sentry.py": "8f80d1ae8d10adeab5123ba9497e9d00a8ea4c6e5c0855c902cf65274f25bacc"
   },
   "atlas": {
     "manifest": "public/assets/ui/ui-atlas.json",
     "sha256": "b7c412942b3cd7cc5acd15a2e354b7576917494d3ad5a8391f847c8007270d38",
     "page": "public/assets/ui/dice-d6.png",
-    "page_sha256": "a60a4b6b28aac8b30588c7535d61369804292e90b739d20bcd580400b3d8f576",
+    "page_sha256": "aa99d4653af135c7328f18d6ff2513dfd6e2fc0894bc2c44295c773ceb536105",
     "glow_page": "public/assets/ui/dice-d6-glow.png",
-    "glow_page_sha256": "79fb9bec7ac796d7b56990957663e299415d1a2baf36bc7ef59f95b0f3d57858"
+    "glow_page_sha256": "a396109e8632ade8356ac2a42b4ab7edbe9675da5b57f9d58a12fdf6fa107a0a"
   },
   "triangles": {
     "low": 1254,
@@ -20,10 +20,11 @@
   },
   "authoringAgent": "Claude Code subagent (claude-opus-5-5), dispatched by the rogue-xr primary session",
   "exact_bevel_normals": 376,
+  "exact_rail_normals": 0,
   "canonicalized_primitives": 2,
   "reimport": {
-    "glb_sha256": "1e19869279d7e586b8accd53e324f2792f29900750212c23d75f3968b7585dd0",
-    "glb_bytes": 53524,
+    "glb_sha256": "3c2c7d7a091ada915791b51851ef7d1aa499e764565c20ff5649614f4cfda0a8",
+    "glb_bytes": 53528,
     "triangles": 1254,
     "materials": [
       "brass-polished",
@@ -88,11 +89,11 @@
   ],
   "render_seconds": 1.4,
   "files": {
-    "assets-source/dice/brass-d6/blend/brass-d6.high.blend": "99322165aa0d82f17964c1b700130fa847d2e131c0184400d89ef46dd7a3bf79",
-    "assets-source/dice/brass-d6/blend/brass-d6.low.blend": "6ccefc271a3224a93e06fb0f447ddaf6479ce03317b226f93fd59f881fd7b975",
-    "assets-source/dice/brass-d6/staging/reimport.json": "b6a507f30864a615377e1f77195463a34bf10b7f6add90391b37b28993c73ffe",
-    "public/assets/dice/brass-d6/brass-d6.glb": "1e19869279d7e586b8accd53e324f2792f29900750212c23d75f3968b7585dd0",
-    "public/assets/dice/brass-d6/brass-d6.manifest.json": "ade2231d957322a11d7de69b666f0fdb776d3f88d1c59486ffc9b974009432f9"
+    "assets-source/dice/brass-d6/blend/brass-d6.high.blend": "f8d51afb59617c5cefefee98d35f33ade70c47af2cd1bc42490fd93486bc9520",
+    "assets-source/dice/brass-d6/blend/brass-d6.low.blend": "aacea0630fa64ae147c7f03ddd3ad3eacf55130d8faa33ea0aabdcae904683d0",
+    "assets-source/dice/brass-d6/staging/reimport.json": "4ab086b1967d48ba8ebb001d85a92a1391ef4a4ed04ce99d9cd1428d1fa95d0d",
+    "public/assets/dice/brass-d6/brass-d6.glb": "3c2c7d7a091ada915791b51851ef7d1aa499e764565c20ff5649614f4cfda0a8",
+    "public/assets/dice/brass-d6/brass-d6.manifest.json": "cb4d293f2c31ab027af6b27472ebd1e38b08ad6e9d6d44493ccbf0a6d5c3cd76"
   },
-  "total_seconds": 1.5
+  "total_seconds": 1.6
 }

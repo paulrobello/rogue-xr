@@ -45,6 +45,10 @@ const faceSlot = (kind: DieKind) => {
   return slot;
 };
 
+/** The manifest slot's `envMapScale` for a dice material (1 when absent, as setEnvironment applies). */
+const envScale = (kind: DieKind, m: THREE.Material) =>
+  files[kind].manifest.materialSlots[m.name]?.envMapScale ?? 1;
+
 const loadAsset = () =>
   parseDice(
     { d6: files.d6.glb.slice(0), d8: files.d8.glb.slice(0) },
@@ -188,7 +192,7 @@ describe('dice presenter with the authored models', () => {
     for (const kind of KINDS) {
       for (const m of asset.spawn(kind).material as THREE.MeshStandardMaterial[]) {
         expect(m.envMap).toBe(env);
-        expect(m.envMapIntensity).toBe(0.5);
+        expect(m.envMapIntensity).toBeCloseTo(0.5 * envScale(kind, m), 12);
       }
     }
     // A transparent face slot (the glass d8) casts no shadow; an opaque one does.
@@ -213,7 +217,9 @@ describe('dice presenter with the authored models', () => {
         expect(materials.length).toBeGreaterThan(0);
         for (const m of materials) {
           expect(m.envMap, `${kind} ${m.name}`).toBe(env);
-          expect(m.envMapIntensity).toBe(DICE_ENV_INTENSITY);
+          // The greybox fallback has no manifest slots, so it takes the plain intensity.
+          const scale = models ? envScale(kind, m) : 1;
+          expect(m.envMapIntensity).toBeCloseTo(DICE_ENV_INTENSITY * scale, 12);
           if (m.metalness >= 0.9) metal++;
         }
       }

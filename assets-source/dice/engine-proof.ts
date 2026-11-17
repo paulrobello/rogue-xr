@@ -1,11 +1,13 @@
 // In-engine stills of the P5-T7 dice, loaded by assets-source/dice/engine_shot.py through the
 // running Vite dev server (it serves and transforms this file; it is outside src/, biome and tsc).
 // Uses the real runtime path: loadDice() for the GLBs and the UI atlas KTX2 colour and glow pages
-// bound with bindFaceMaps() as DicePresenter.applyFaces does, posed with the presenter's correction
-// (correctionRotation from identity).
+// bound with bindFaceMaps() as DicePresenter.applyFaces does, lit by the room probe through
+// setEnvironment() at DICE_ENV_INTENSITY as DicePresenter does (so the slots' envMapScale and
+// toneMapped apply), posed with the presenter's correction (correctionRotation from identity).
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { type DiceAsset, loadDice } from '/src/dice/dice-asset.ts';
+import { DICE_ENV_INTENSITY } from '/src/dice/presenter.ts';
 import { correctionRotation, D8_CIRCUMRADIUS, type DieKind, dieVertices } from '/src/dice/faces.ts';
 import { QUAT_IDENTITY } from '/src/dice/quat.ts';
 import { sharedKtx2Loader } from '/src/ui/first-render.ts';
@@ -24,7 +26,9 @@ export async function mountDiceProof(w: number, h: number) {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#1c140e');
   const pmrem = new THREE.PMREMGenerator(renderer);
-  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  const probe = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  // The floor reflects the scene environment; the dice materials carry their own envMap.
+  scene.environment = probe;
   scene.environmentIntensity = 0.35;
   const key = new THREE.DirectionalLight('#ffd9a0', 2.2);
   key.position.set(-0.4, 0.9, 0.6);
@@ -60,6 +64,14 @@ export async function mountDiceProof(w: number, h: number) {
     { d6: await page('dice-d6'), d8: await page('dice-d8') },
     { d6: await glowPage('brass-d6'), d8: await glowPage('glass-d8') },
   );
+  asset.setEnvironment(probe, DICE_ENV_INTENSITY);
+  /** Manifest look of every shared dice material, for `tune` to override and restore. */
+  const looks = new Map<THREE.MeshStandardMaterial, { env: number; roughness: number; toneMapped: boolean }>();
+  for (const kind of ['d6', 'd8'] as const) {
+    for (const m of asset.spawn(kind).material as THREE.MeshStandardMaterial[]) {
+      looks.set(m, { env: m.envMapIntensity, roughness: m.roughness, toneMapped: m.toneMapped });
+    }
+  }
   /** Sweep override of the face slot's emissiveIntensity (null keeps the manifest value). */
   let glowOverride: number | null = null;
   const faceMaterial = (mesh: THREE.Mesh) =>
@@ -118,8 +130,8 @@ export async function mountDiceProof(w: number, h: number) {
           const g = outer[0].clone().add(outer[1]).add(outer[2]).multiplyScalar(1 / 3);
           const scaled = (k: number, depth: number) =>
             outer.map((p) => g.clone().add(p.clone().sub(g).multiplyScalar(k)).addScaledVector(nv, -depth));
-          band = scaled(0.83, 0);
-          panel = scaled(0.74, 0.0008);
+          band = scaled(0.78, 0);
+          panel = scaled(0.7, 0.0008);
         }
         return {
           index,
@@ -138,6 +150,30 @@ export async function mountDiceProof(w: number, h: number) {
     setGlow(value: number | null) {
       glowOverride = value;
       return { override: value, manifest: manifestGlow };
+    },
+    /**
+     * Sweep overrides without a Blender rebuild (null or absent restores the manifest look): env
+     * multipliers on DICE_ENV_INTENSITY for the brass body and the face slots, brass roughness, and
+     * face tone mapping. Applies to every die, shown or not.
+     */
+    tune(o: {
+      bodyEnvScale?: number | null;
+      faceEnvScale?: number | null;
+      d6FaceEnvScale?: number | null;
+      d8FaceEnvScale?: number | null;
+      brassRoughness?: number | null;
+      faceToneMapped?: boolean | null;
+    }) {
+      for (const [m, look] of looks) {
+        const face = m.name.endsWith('-face');
+        const perDie = m.name.includes('-d6-') ? o.d6FaceEnvScale : o.d8FaceEnvScale;
+        const scale = face ? (perDie ?? o.faceEnvScale) : o.bodyEnvScale;
+        m.envMapIntensity = scale == null ? look.env : DICE_ENV_INTENSITY * scale;
+        if (!face) m.roughness = o.brassRoughness ?? look.roughness;
+        if (face) m.toneMapped = o.faceToneMapped ?? look.toneMapped;
+        m.needsUpdate = true;
+      }
+      return [...looks].map(([m]) => ({ name: m.name, env: m.envMapIntensity, roughness: m.roughness, toneMapped: m.toneMapped }));
     },
     geometry,
     /** `hero`: face 0 up beside a second die, seated three-quarter view. `lineup`: every face up. */
