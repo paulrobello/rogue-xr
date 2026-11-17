@@ -8,6 +8,7 @@ import { isValidSeed, normalizeSeed, randomSeed, Stream } from '../core/rng.ts';
 import { BreakApart } from '../enemies/break-apart.ts';
 import type { EnemyActor, EnemyAsset } from '../enemies/enemy-asset.ts';
 import { generateFloor } from '../floor/generate.ts';
+import { nearSet, shellSet } from '../floor/visibility.ts';
 import { PALETTE } from '../palette.ts';
 import type { TreasureLoot } from '../rules/run.ts';
 import { DEFAULT_VIGNETTE, vignetteStep, yawFromMatrix } from '../xr/locomotion.ts';
@@ -36,6 +37,11 @@ export const LOOT_REACH = 4;
 const TOAST_LIFT = 0.95;
 /** Height above a hearth's base where its panel hangs, in metres (over the bowl). */
 const HEARTH_TOAST_LIFT = 1.25;
+/**
+ * Actors in rooms seen only down a corridor step once every this many frames, in turn, with the
+ * skipped seconds folded in and no look-at; actors in hidden rooms hold their pose.
+ */
+export const SHELL_ACTOR_EVERY = 4;
 
 /** The treasure coffers of a floor: picking, opening and the found-item panel. */
 export interface FloorLoot {
@@ -196,6 +202,13 @@ export function mountFloorView(
   });
   const at = new THREE.Vector3();
   const actors = new Map<THREE.Object3D, EnemyActor>();
+  /** Per actor: its turn among shell-room steps and the seconds not yet stepped. */
+  const paces = new Map<EnemyActor, { slot: number; pending: number }>();
+  let slots = 0;
+  let frame = 0;
+  let tiersFor = -1;
+  let near = new Set<number>();
+  let shell = new Set<number>();
   // H9: an automaton whose death clip has ended falls apart into its parts, under the floor group
   // so a cleared room (which unparents and disposes the actor) never takes the pieces with it.
   const debris = new BreakApart(world.group);
@@ -216,8 +229,12 @@ export function mountFloorView(
         if (!model || actors.has(body) || !body.parent) continue;
         const actor = model.asset.spawn();
         model.prepare?.(actor);
-        if (world.replaceEnemy(room, body, actor.object)) actors.set(actor.object, actor);
-        else actor.dispose();
+        if (world.replaceEnemy(room, body, actor.object)) {
+          actors.set(actor.object, actor);
+          paces.set(actor, { slot: slots++, pending: 0 });
+          // Poses the idle clip now, so a hidden room's actor never shows its bind pose.
+          actor.update(0);
+        } else actor.dispose();
       }
     }
   };
@@ -238,6 +255,7 @@ export function mountFloorView(
   };
   const disposeActor = (actor: EnemyActor): void => {
     actors.delete(actor.object);
+    paces.delete(actor);
     actor.dispose();
   };
   let toast: LootToast | null = null;
@@ -455,6 +473,12 @@ export function mountFloorView(
       encounter.update(dt);
       dressEnemies();
       head.getWorldPosition(at);
+      if (tiersFor !== world.current) {
+        tiersFor = world.current;
+        near = nearSet(world.plan, tiersFor);
+        shell = shellSet(world.plan, tiersFor);
+      }
+      frame++;
       // Clips run on real seconds; the freeze is a pose, not a slowed clock.
       for (const actor of [...actors.values()]) {
         if (!actor.object.parent) {
@@ -464,7 +488,18 @@ export function mountFloorView(
         if (encounter.frozen) {
           if (!actor.frozen && !actor.dead && actor.state === 'idle') actor.freeze();
         } else if (actor.frozen) actor.unfreeze();
-        actor.update(dt, at);
+        const room = actor.object.userData.room as number;
+        const pace = paces.get(actor);
+        if (!pace || near.has(room) || room === encounter.activeRoom) {
+          actor.update(dt + (pace?.pending ?? 0), at);
+          if (pace) pace.pending = 0;
+        } else if (shell.has(room)) {
+          pace.pending += dt;
+          if ((frame + pace.slot) % SHELL_ACTOR_EVERY === 0) {
+            actor.update(pace.pending, null);
+            pace.pending = 0;
+          }
+        }
         if (actor.dead && !shattered.has(actor) && !actor.action('death').isRunning()) {
           shattered.add(actor);
           debris.shatterActor(actor, Stream.fromKey(`${world.plan.seed}:shatter:${shatters++}`));

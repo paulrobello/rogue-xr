@@ -8,7 +8,7 @@ import {
   type RoomTemplate,
 } from '../content/rooms.ts';
 import { type FloorPlan, type WorldRoom, worldRooms } from '../floor/generate.ts';
-import { nearSet, shellSet } from '../floor/visibility.ts';
+import { nearSet, visibleSet } from '../floor/visibility.ts';
 import { PALETTE } from '../palette.ts';
 import { enemyHeading, enemyLocalRotationY } from './enemy-facing.ts';
 import { buildGreyboxRoom, createGreyboxMaterials, type GreyboxMaterials } from './greybox.ts';
@@ -33,9 +33,9 @@ export interface FloorWorld {
   plan: FloorPlan;
   rooms: readonly WorldRoom[];
   /**
-   * One group per room, in plan order. The current room and its neighbours are shown in full;
-   * rooms seen only down a corridor (`shellSet`) show their shell without enemies, coffers or
-   * hearths; the rest are hidden.
+   * One group per room, in plan order. Every room the player can see (`visibleSet`: the current
+   * room, its neighbours and the rooms seen down a corridor) is shown with its enemies, coffers and
+   * hearths, so nothing appears on approach; the rest are hidden whole.
    */
   roomGroups: readonly THREE.Group[];
   /** Placeholder automatons keyed by room index. */
@@ -345,25 +345,11 @@ export function buildFloorWorld(
       hearthKit.dispose();
     },
   };
-  // Detail is only touched when a room changes tier, so a fight's own body hiding is left alone.
-  const shells = new Set<number>();
-  const setDetail = (room: number, shown: boolean) => {
-    for (const body of enemies.get(room) ?? []) body.visible = shown;
-    for (const c of coffers) if (c.room === room) c.object.visible = shown;
-    for (const h of hearths) if (h.room === room) h.object.visible = shown;
-  };
+  // Only room groups change: a fight's own body hiding is left alone.
   function applyVisibility() {
-    const near = nearSet(plan, world.current);
-    const shell = shellSet(plan, world.current);
+    const visible = visibleSet(plan, world.current);
     roomGroups.forEach((g, i) => {
-      g.visible = near.has(i) || shell.has(i);
-      if (shell.has(i) && !shells.has(i)) {
-        shells.add(i);
-        setDetail(i, false);
-      } else if (!shell.has(i) && shells.has(i)) {
-        shells.delete(i);
-        setDetail(i, true);
-      }
+      g.visible = visible.has(i);
     });
   }
   applyVisibility();

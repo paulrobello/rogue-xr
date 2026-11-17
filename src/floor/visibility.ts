@@ -19,7 +19,8 @@ export function nearSet(plan: FloorPlan, current: number): Set<number> {
  * Rooms outside `nearSet` that the player can see down a corridor. A corridor's two doors face
  * each other on one straight axis, and corridors join door to door, so a chain of corridors is a
  * single sight-line: from the current room, each corridor neighbour shows the room beyond it, and
- * so on while that room is itself a corridor. Rooms seen only this way are drawn as a lit shell.
+ * so on while that room is itself a corridor. Rooms seen only this way are drawn with their
+ * contents but take no gameplay (colliders, landings) and run their actors at a reduced rate.
  */
 export function shellSet(plan: FloorPlan, current: number): Set<number> {
   const near = nearSet(plan, current);
