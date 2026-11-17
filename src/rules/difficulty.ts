@@ -28,10 +28,12 @@ export interface DifficultyScale {
  * runs, fresh workshop, hearths, guardian phase 2; 2026-11-17, `bun scripts/balance/winrate.ts
  * --miss 0,0.15`), by the multiplier the player's sigils earn on Casual (0.5 / 0.75 / 1.0):
  * Casual 70.8 / 80.5 / 89.5 % (60.0 / 70.8 / 79.0 % when 15 % of picked cards are missed; Orrery
- * Warden 51 hp, Grand Escapement 72 hp, enemy damage x0.7, player max hp 90). The same player wins
- * 0 % on Normal (Orrery Warden 69 hp, Grand Escapement 120 hp) and on Hard; the old Casual (x0.85 /
- * 0.7 / 0.7 hp, damage x0.85, max hp 72) gave it 2 / 4 / 8 %. An earlier planning bot (not in the
- * tree) won Hard 9.8 %, Normal 26.5 %, old Casual 76.3 %.
+ * Warden 51 hp, Grand Escapement 72 hp, enemy damage x0.7, player max hp 90). Normal, retuned at
+ * Paul's request the same day, gives it 27.5 / 29.5 / 43.8 % (20.8 / 23.5 / 33.0 % with misses;
+ * warden 55 hp, guardian 88 hp, damage x0.75, max hp 78); the old Normal (x1 / 0.75 / 0.75 hp,
+ * damage x1, max hp 60) gave it 0 %, as Hard still does. The old Casual (x0.85 / 0.7 / 0.7 hp,
+ * damage x0.85, max hp 72) gave it 2 / 4 / 8 %. An earlier planning bot (not in the tree) won Hard
+ * 9.8 %, old Normal 26.5 %, old Casual 76.3 %.
  */
 export const DIFFICULTY_SCALE: Readonly<Record<Difficulty, DifficultyScale>> = {
   casual: {
@@ -40,9 +42,9 @@ export const DIFFICULTY_SCALE: Readonly<Record<Difficulty, DifficultyScale>> = {
     playerMaxHp: 1.5,
   },
   normal: {
-    enemyHp: { regular: 1, elite: 0.75, guardian: 0.75 },
-    enemyDamage: 1,
-    playerMaxHp: 1,
+    enemyHp: { regular: 0.8, elite: 0.6, guardian: 0.55 },
+    enemyDamage: 0.75,
+    playerMaxHp: 1.3,
   },
   hard: {
     enemyHp: { regular: 1, elite: 1, guardian: 1 },

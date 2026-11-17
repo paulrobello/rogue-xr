@@ -66,7 +66,8 @@ describe('flow transitions', () => {
       purchased: { 'sturdy-frame': 2, 'spare-die': 1, 'wide-catalog': 1 },
     };
     const flow = flowWith(ws);
-    flow.newRun(SEED);
+    // Hard keeps the workshop's max hp unscaled.
+    flow.newRun(SEED, 'hard');
     expect(flow.phase).toBe('explore');
     expect(flow.run).toMatchObject({
       seed: normalizeSeed(SEED),

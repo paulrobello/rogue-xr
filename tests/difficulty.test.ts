@@ -70,19 +70,14 @@ describe('difficulty multipliers', () => {
     expect(difficultyMaxHp(DEFAULT_MAX_HP, 'hard')).toBe(DEFAULT_MAX_HP);
   });
 
-  it('Normal lowers only the elite and the guardian hp', () => {
-    const warden = encounterSetups(ENCOUNTERS.elite[0] as never, 'normal')[0] as EnemySetup;
-    const guardian = encounterSetups(ENCOUNTERS.guardian[0] as never, 'normal')[0] as EnemySetup;
-    expect(warden.hp).toBe(69);
-    expect(guardian.hp).toBe(120);
-    expect(warden.hp).toBeLessThan(ENEMIES['orrery-warden'].hp);
-    expect(guardian.hp).toBeLessThan(ENEMIES['grand-escapement'].hp);
-    expect(damages(warden)).toEqual(damages(ENEMIES['orrery-warden']));
-    expect(damages(guardian)).toEqual(damages(ENEMIES['grand-escapement']));
-    for (const enc of ENCOUNTERS.regular) {
-      expect(encounterSetups(enc, 'normal')).toEqual(encounterSetups(enc));
-    }
-    expect(difficultyMaxHp(DEFAULT_MAX_HP, 'normal')).toBe(DEFAULT_MAX_HP);
+  it('Normal scales hp and damage between Casual and Hard and raises the player max hp', () => {
+    const scaled = (kind: EnemyKind, tier: (typeof TIERS)[number]) =>
+      scaleEnemySetup(ENEMIES[kind], tier, 'normal');
+    expect(scaled('orrery-warden', 'elite').hp).toBe(55);
+    expect(scaled('grand-escapement', 'guardian').hp).toBe(88);
+    expect(scaled('cog-sentry', 'regular').hp).toBe(30);
+    expect(damages(scaled('cog-sentry', 'regular'))).toEqual([6, 3]);
+    expect(difficultyMaxHp(DEFAULT_MAX_HP, 'normal')).toBe(78);
   });
 
   it('Casual scales hp and damage further and raises the player max hp', () => {

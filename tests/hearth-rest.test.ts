@@ -128,7 +128,7 @@ describe('RunFlow.useHearth', () => {
   it('works only while exploring', () => {
     const flow = newFlow();
     expect(flow.useHearth(REST_ROOM, 'chest')).toBeNull();
-    flow.newRun(REST_SEED);
+    flow.newRun(REST_SEED, 'hard');
     flow.fightStarted(2);
     expect(flow.phase).toBe('combat');
     expect(flow.useHearth(REST_ROOM, 'chest')).toBeNull();
@@ -143,7 +143,7 @@ describe('RunFlow.useHearth', () => {
     const flow = newFlow();
     const seen: FlowEvent[] = [];
     flow.onChange((e) => seen.push(e));
-    flow.newRun(REST_SEED);
+    flow.newRun(REST_SEED, 'hard');
     flow.fightStarted(2);
     flow.fightEnded({ room: 2, outcome: 'flee', tier: 'regular', playerHp: 25 });
     expect(flow.phase).toBe('explore');
@@ -163,12 +163,12 @@ describe('RunFlow.useHearth', () => {
 
   it('forgets used hearths with the run', () => {
     const flow = newFlow();
-    flow.newRun(REST_SEED);
+    flow.newRun(REST_SEED, 'hard');
     flow.useHearth(REST_ROOM, 'chest');
     flow.fightStarted(2);
     flow.fightEnded({ room: 2, outcome: 'defeat', tier: 'regular' });
     flow.toTitle();
-    flow.newRun(REST_SEED);
+    flow.newRun(REST_SEED, 'hard');
     expect(flow.lastHearth).toBeNull();
     expect(flow.isHearthUsed(REST_ROOM, 'chest')).toBe(false);
     expect(flow.run?.usedHearths).toBeUndefined();
@@ -178,7 +178,7 @@ describe('RunFlow.useHearth', () => {
     const db = await openDb(undefined);
     const flow = newFlow();
     const saved = bindFlowPersistence(flow, db);
-    flow.newRun(REST_SEED);
+    flow.newRun(REST_SEED, 'hard');
     flow.fightStarted(2);
     flow.fightEnded({ room: 2, outcome: 'flee', tier: 'regular', playerHp: 20 });
     flow.enterRoom(REST_ROOM);
