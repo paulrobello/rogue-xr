@@ -30,8 +30,10 @@ import { combatPitch, createDesktopControls } from './desktop/controls.ts';
 import { Walker } from './desktop/walker.ts';
 import { type EnemyActor, type EnemyAsset, tryLoadEnemyAsset } from './enemies/enemy-asset.ts';
 import { RunFlow } from './flow/flow.ts';
-import { FlowUi } from './flow/panels.ts';
+import { FlowUi, rewardCardTexture } from './flow/panels.ts';
 import { bindFlowPersistence } from './flow/persist.ts';
+import { RewardCardFaces } from './flow/reward-cards.ts';
+import { HOLO_CARD_ASPECT } from './hand/fan-layout.ts';
 import { flingTraceLog } from './hand/fling-trace.ts';
 import { PALETTE } from './palette.ts';
 import { foveationValue, mountPerf } from './perf/index.ts';
@@ -57,7 +59,13 @@ import type { HearthPick } from './world/hearth.ts';
 import { dressHeroRooms, fetchHeroRooms, loadHeroAssets } from './world/hero-rooms.ts';
 import { createKtx2Loader } from './world/ktx2.ts';
 import { mountLightmapProof } from './world/lightmap-proof.ts';
-import type { LootMaterials, LootPick } from './world/loot.ts';
+import {
+  type Coffer,
+  type CofferCardFace,
+  type LootMaterials,
+  type LootPick,
+  nearestCard,
+} from './world/loot.ts';
 import { mountMaterialProof } from './world/material-proof.ts';
 import { loadPbrSet } from './world/materials.ts';
 import { mountRoomAssetProof } from './world/room-asset-proof.ts';
@@ -491,16 +499,40 @@ const heroReady: Promise<void> = floor
 const persistence = db
   ? bindFlowPersistence(flow, db, () => floor?.world.current ?? flow.room)
   : null;
+/** Width of the card a coffer raises, metres: about a reward-board card, readable from the approach. */
+const CHEST_CARD_WIDTH = 0.18;
+/** The card face a coffer raises: the reward board's atlas face for one card. */
+const chestCardFace = (id: string): CofferCardFace => {
+  const height = CHEST_CARD_WIDTH * HOLO_CARD_ASPECT;
+  const faces = new RewardCardFaces(
+    [{ id, x: 0, y: 0, width: CHEST_CARD_WIDTH, height }],
+    rewardCardTexture,
+  );
+  return { object: faces.root, width: CHEST_CARD_WIDTH, height, dispose: () => faces.dispose() };
+};
+const cofferAt = (target: FloorView, room: number, socketId: string): Coffer | undefined =>
+  target.loot.coffers.find((c) => c.room === room && c.socketId === socketId);
+/** The hand that grabbed the waiting card for the claim in flight; the card flies to the head otherwise. */
+let claimHand: THREE.Object3D | null = null;
 flow.onChange((event) => {
   if (event.type === 'loot') {
     storedSnapshot = flow.snapshot(Date.now(), floor?.world.current ?? flow.room);
-    if (floor?.loot.open(event.room, event.socketId, event.loot)) {
-      const coffer = floor.loot.coffers.find(
-        (c) => c.room === event.room && c.socketId === event.socketId,
-      );
-      const at = coffer?.object.getWorldPosition(new THREE.Vector3());
+    const coffer = floor ? cofferAt(floor, event.room, event.socketId) : undefined;
+    const at = coffer?.object.getWorldPosition(new THREE.Vector3());
+    if (event.stage === 'claimed') {
+      // The card flies to the claimer; the panel over the coffer then names it.
+      coffer?.claimCard(claimHand ?? camera, claimHand ? 0 : 0.3);
+      if (floor?.loot.open(event.room, event.socketId, event.loot)) audio?.playSfx('card-draw', at);
+    } else if (event.loot.kind === 'card') {
+      // The card rises out of the coffer and waits there to be claimed: no panel yet.
+      if (coffer) {
+        coffer.open(true);
+        coffer.showCard(event.loot.card, chestCardFace(event.loot.card), true, camera);
+        audio?.playSfx('gear-clank', at);
+      }
+    } else if (floor?.loot.open(event.room, event.socketId, event.loot)) {
       audio?.playSfx('gear-clank', at);
-      audio?.playSfx(event.loot.kind === 'cogs' ? 'cog-pickup' : 'card-draw', at);
+      audio?.playSfx('cog-pickup', at);
     }
     return;
   }
@@ -554,6 +586,11 @@ const continueRun = (): void => {
   for (const key of snap.run.openedLoot ?? []) {
     const opened = parseLootKey(key);
     if (opened) target.loot.markOpened(opened.room, opened.socketId);
+  }
+  for (const { key, card } of snap.run.pendingLoot ?? []) {
+    const opened = parseLootKey(key);
+    const coffer = opened && cofferAt(target, opened.room, opened.socketId);
+    coffer?.showCard(card, chestCardFace(card), false, camera);
   }
   for (const key of snap.run.usedHearths ?? []) {
     const used = parseLootKey(key);
@@ -636,8 +673,26 @@ window.addEventListener('pointermove', (event) => {
 // press never starts drag-to-look. A click that misses falls through to looking around.
 const canOpenLoot = (): boolean =>
   !!floor && flow.phase === 'explore' && floor.encounter.phase === 'idle' && !ui?.visible;
-const openCoffer = (pick: LootPick | null): boolean =>
-  !!pick && canOpenLoot() && flow.openLoot(pick.room, pick.socketId, pick.kind) !== null;
+/** Opens the shut coffer, or claims the card waiting over an open one, that a pick found. */
+const openCoffer = (pick: LootPick | null): boolean => {
+  if (!pick || !canOpenLoot()) return false;
+  if (!pick.claim) return flow.openLoot(pick.room, pick.socketId, pick.kind) !== null;
+  claimHand = null;
+  return flow.claimLoot(pick.room, pick.socketId) !== null;
+};
+/** How near a hand must be to the waiting card for a squeeze to grab it, metres. */
+const GRAB_REACH = 0.25;
+/** Claims the waiting card in the current room that `hand` is close enough to grab. */
+const grabLootCard = (hand: THREE.Object3D | null): boolean => {
+  if (!floor || !hand || !canOpenLoot()) return false;
+  const here = floor.loot.coffers.filter((c) => c.room === floor?.world.current);
+  const coffer = nearestCard(here, hand.getWorldPosition(new THREE.Vector3()), GRAB_REACH);
+  if (!coffer) return false;
+  claimHand = hand;
+  const claimed = flow.claimLoot(coffer.room, coffer.socketId) !== null;
+  claimHand = null;
+  return claimed;
+};
 const useHearth = (pick: HearthPick | null): boolean =>
   !!pick && canOpenLoot() && flow.useHearth(pick.room, pick.socketId) !== null;
 /** Opens the coffer or uses the hearth a ray reaches in the current room (a room holds only one kind). */
@@ -800,6 +855,11 @@ for (const index of [0, 1]) {
     const id = hit ? ui.controlAt(hit.object) : null;
     if (id) actions.emit({ type: 'select', controlId: id });
   });
+  // Exploring, a squeeze with the hand at the card waiting over an open coffer grabs it.
+  controller.addEventListener('squeezestart', (event) => {
+    const side = (event as unknown as { data?: XRInputSource }).data?.handedness;
+    if (xr.presenting && (side === 'left' || side === 'right')) grabLootCard(xr.grips()[side]);
+  });
   bind('squeezestart', 'squeeze', true);
   bind('squeezeend', 'squeeze', false);
   bind('selectstart', 'trigger', true);
@@ -901,6 +961,11 @@ if (floor && params.has('debug')) {
         return stand.coffer;
       },
       screenOfCoffer,
+      /** Screen point of the card waiting over the coffer `name`, for a claim click, or null. */
+      screenOfLootCard(name: string) {
+        const node = floor?.world.group.getObjectByName(name)?.getObjectByName('coffer-card');
+        return node?.parent ? screenOfCoffer(name, node.position.y) : null;
+      },
       /**
        * Lowers the live phase-1 guardian to `margin` hp (default 1) above its phase-2 threshold, so
        * the next card that damages it crosses the threshold through the rules' own `checkPhase`.

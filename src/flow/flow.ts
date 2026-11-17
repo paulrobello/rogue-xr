@@ -8,6 +8,7 @@ import {
 } from '../rules/difficulty.ts';
 import {
   chooseReward,
+  claimTreasure,
   createRun,
   lootKey,
   openTreasure,
@@ -81,7 +82,10 @@ export interface RunSummary {
   readonly bankTotal: number;
 }
 
-/** A treasure pickup opened while exploring, already applied to the run. */
+/**
+ * A treasure pickup opened while exploring. Cogs are already paid; a card waits in the coffer
+ * (`RunState.pendingLoot`) until `claimLoot`.
+ */
 export interface OpenedLoot {
   readonly room: number;
   readonly socketId: string;
@@ -98,10 +102,16 @@ export interface UsedHearth {
   readonly hp: number;
 }
 
+/**
+ * `'opened'`: a coffer was opened (`openLoot`). `'claimed'`: its pending card went into the deck
+ * (`claimLoot`); `loot` is that card. Both are `'loot'` events, so the run is saved after either.
+ */
+export type LootStage = 'opened' | 'claimed';
+
 export type FlowEvent =
   | { readonly type: 'phase'; readonly from: FlowPhase; readonly to: FlowPhase }
   | { readonly type: 'workshop' }
-  | ({ readonly type: 'loot' } & OpenedLoot)
+  | ({ readonly type: 'loot'; readonly stage: LootStage } & OpenedLoot)
   | ({ readonly type: 'hearth' } & UsedHearth);
 
 export interface FlowOptions {
@@ -163,6 +173,11 @@ export class RunFlow {
   /** Whether the run already used the hearth at `socketId` in `room`. */
   isHearthUsed(room: number, socketId: string): boolean {
     return this.runValue?.usedHearths?.includes(lootKey(room, socketId)) ?? false;
+  }
+  /** The card waiting to be claimed in the opened coffer at `socketId` in `room`, or null. */
+  pendingCard(room: number, socketId: string): string | null {
+    const key = lootKey(room, socketId);
+    return this.runValue?.pendingLoot?.find((p) => p.key === key)?.card ?? null;
   }
   /** Whether the run already opened the pickup at `socketId` in `room`. */
   isLootOpened(room: number, socketId: string): boolean {
@@ -295,9 +310,10 @@ export class RunFlow {
   }
 
   /**
-   * Opens a treasure pickup while exploring: rolls it from the `loot` stream, applies it to the run
-   * and records it, so it can never open twice (a resumed run keeps it recorded). Returns what was
-   * found, or null (changing nothing) outside `explore` or when it was already opened.
+   * Opens a treasure pickup while exploring: rolls it from the `loot` stream and records it, so it
+   * can never open twice (a resumed run keeps it recorded). Cogs are paid at once; a card waits in
+   * the coffer for `claimLoot`. Returns what was found, or null (changing nothing) outside `explore`
+   * or when it was already opened.
    */
   openLoot(room: number, socketId: string, kind: TreasureKind): TreasureLoot | null {
     const run = this.runValue;
@@ -306,8 +322,24 @@ export class RunFlow {
     if (!result) return null;
     this.runValue = result.run;
     this.lootValue = { room, socketId, loot: result.loot };
-    this.emit({ type: 'loot', ...this.lootValue });
+    this.emit({ type: 'loot', stage: 'opened', ...this.lootValue });
     return result.loot;
+  }
+
+  /**
+   * Claims the card waiting in the opened coffer at `socketId` in `room` into the deck. Returns the
+   * card id, or null (changing nothing) outside `explore` or when no card waits there (never
+   * opened, a cog coffer, or already claimed).
+   */
+  claimLoot(room: number, socketId: string): string | null {
+    const run = this.runValue;
+    if (this.phaseValue !== 'explore' || !run) return null;
+    const result = claimTreasure(run, lootKey(room, socketId));
+    if (!result) return null;
+    this.runValue = result.run;
+    const loot: TreasureLoot = { kind: 'card', card: result.card };
+    this.emit({ type: 'loot', stage: 'claimed', room, socketId, loot });
+    return result.card;
   }
 
   /**

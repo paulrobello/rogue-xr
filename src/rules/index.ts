@@ -31,8 +31,10 @@ export {
   validate,
 } from './engine.ts';
 export {
+  type ClaimResult,
   type CogRange,
   chooseReward,
+  claimTreasure,
   createRun,
   DEFAULT_MAX_HP,
   HEARTH_HEAL_FRACTION,
@@ -40,6 +42,7 @@ export {
   hearthHeal,
   lootKey,
   openTreasure,
+  type PendingLoot,
   parseLootKey,
   REWARD_CHOICES,
   REWARD_COGS,

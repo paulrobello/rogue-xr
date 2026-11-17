@@ -70,12 +70,13 @@ describe('openTreasure', () => {
     expect(run.openedLoot).toBeUndefined();
   });
 
-  it('adds one pool card for a card pickup, once', () => {
+  it('rolls one pool card for a card pickup, once, and leaves it pending outside the deck', () => {
     const run = newRun();
     const first = openTreasure(run, KEY, 'card', REWARD_POOL);
     if (first?.loot.kind !== 'card') throw new Error('expected a card');
     expect(REWARD_POOL).toContain(first.loot.card);
-    expect(first.run.deck).toEqual([...run.deck, first.loot.card]);
+    expect(first.run.deck).toEqual(run.deck);
+    expect(first.run.pendingLoot).toEqual([{ key: KEY, card: first.loot.card }]);
     expect(first.run.cogs).toBe(run.cogs);
     expect(openTreasure(first.run, KEY, 'card', REWARD_POOL)).toBeNull();
   });
@@ -167,12 +168,13 @@ describe('RunFlow.openLoot', () => {
     const before = flow.run as RunState;
     const found = flow.openLoot(pickup.room, pickup.socketId, pickup.kind);
     if (found?.kind !== 'card') throw new Error('SPIRE001 holds a card coffer');
-    expect(flow.run?.deck).toEqual([...before.deck, found.card]);
+    expect(flow.run?.deck).toEqual(before.deck);
+    expect(flow.pendingCard(pickup.room, pickup.socketId)).toBe(found.card);
     expect(flow.run?.cogs).toBe(before.cogs);
     expect(flow.isLootOpened(pickup.room, pickup.socketId)).toBe(true);
     expect(flow.lastLoot).toEqual({ room: pickup.room, socketId: pickup.socketId, loot: found });
     expect(flow.openLoot(pickup.room, pickup.socketId, pickup.kind)).toBeNull();
-    expect(flow.run?.deck).toHaveLength(before.deck.length + 1);
+    expect(flow.run?.deck).toHaveLength(before.deck.length);
     expect(seen.filter((e) => e.type === 'loot')).toHaveLength(1);
     expect(flow.phase).toBe('explore');
   });

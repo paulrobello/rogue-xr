@@ -23,6 +23,8 @@ export interface RunState {
   readonly rewardChoices?: number;
   /** Keys (`lootKey`) of the treasure pickups already opened this run. Absent means none. */
   readonly openedLoot?: readonly string[];
+  /** Cards found in opened coffers and not yet claimed into the deck, oldest first. Absent means none. */
+  readonly pendingLoot?: readonly PendingLoot[];
   /** Keys (`lootKey`) of the rest-room hearths already used this run. Absent means none. */
   readonly usedHearths?: readonly string[];
   /** The level chosen for this run. Absent (every save made before levels existed) means `DEFAULT_DIFFICULTY`. */
@@ -83,7 +85,13 @@ export interface RewardOfferResult {
 
 export type RewardChoice = string | typeof SKIP_REWARD;
 
-/** A treasure-room pickup, already applied to the returned run. */
+/** A card waiting in an opened coffer: the coffer's `lootKey` and the card id it rolled. */
+export interface PendingLoot {
+  readonly key: string;
+  readonly card: string;
+}
+
+/** A treasure-room pickup. Cogs are already paid; `openTreasure` leaves a card pending (`claimTreasure`). */
 export type TreasureLoot =
   | { readonly kind: 'cogs'; readonly cogs: number }
   | { readonly kind: 'card'; readonly card: string };
@@ -223,8 +231,9 @@ export function parseLootKey(key: string): { room: number; socketId: string } | 
 
 /**
  * Opens the treasure pickup `key` once. Returns null, touching nothing, when the run already opened
- * it, so a second call can never re-roll or pay twice. Otherwise applies `treasureLoot` and records
- * the key, advancing only the `loot` stream.
+ * it, so a second call can never re-roll or pay twice. Otherwise rolls it with `treasureLoot` (the
+ * same single `loot` draw) and records the key. Cogs are paid at once; a card is not added to the
+ * deck but recorded in `pendingLoot` until `claimTreasure` takes it.
  */
 export function openTreasure(
   run: RunState,
@@ -235,7 +244,37 @@ export function openTreasure(
   const opened = run.openedLoot ?? [];
   if (opened.includes(key)) return null;
   const result = treasureLoot(run, kind, pool);
-  return { run: { ...result.run, openedLoot: [...opened, key] }, loot: result.loot };
+  const recorded: RunState = { ...result.run, openedLoot: [...opened, key] };
+  if (result.loot.kind === 'cogs') return { run: recorded, loot: result.loot };
+  const pending = [...(run.pendingLoot ?? []), { key, card: result.loot.card }];
+  return { run: { ...recorded, deck: run.deck, pendingLoot: pending }, loot: result.loot };
+}
+
+export interface ClaimResult {
+  readonly run: RunState;
+  /** The card id now at the end of the deck. */
+  readonly card: string;
+}
+
+/**
+ * Claims the card pending in the opened coffer `key`: appends it to the deck and drops the pending
+ * entry (the field is omitted once none are left). Returns null, touching nothing, when no card is
+ * pending under `key` (never opened, a cog coffer, or already claimed). No random draw.
+ */
+export function claimTreasure(run: RunState, key: string): ClaimResult | null {
+  const pending = run.pendingLoot ?? [];
+  const found = pending.find((p) => p.key === key);
+  if (!found) return null;
+  const { pendingLoot: _pending, ...rest } = run;
+  const left = pending.filter((p) => p !== found);
+  return {
+    run: {
+      ...rest,
+      deck: [...run.deck, found.card],
+      ...(left.length === 0 ? {} : { pendingLoot: left }),
+    },
+    card: found.card,
+  };
 }
 
 /**

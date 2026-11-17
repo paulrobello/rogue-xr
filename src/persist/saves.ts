@@ -1,6 +1,6 @@
 import { normalizeSeed, STREAMS, type StreamState } from '../core/rng.ts';
 import { isDifficulty } from '../rules/difficulty.ts';
-import type { RewardOffer, RewardTier, RunState } from '../rules/run.ts';
+import type { PendingLoot, RewardOffer, RewardTier, RunState } from '../rules/run.ts';
 import {
   createWorkshop,
   maxTier,
@@ -91,6 +91,17 @@ function strings(v: unknown, path: string): string[] {
   return [...v] as string[];
 }
 
+function pendingLoot(v: unknown, path: string): PendingLoot[] {
+  if (!Array.isArray(v)) fail(path, 'expected an array');
+  return v.map((entry, i) => {
+    const r = rec(entry, `${path}[${i}]`);
+    if (typeof r.key !== 'string' || typeof r.card !== 'string') {
+      fail(`${path}[${i}]`, 'expected { key, card } strings');
+    }
+    return { key: r.key, card: r.card };
+  });
+}
+
 function streamState(v: unknown, path: string): StreamState {
   if (!Array.isArray(v) || v.length !== 4) fail(path, 'expected four 32-bit words');
   // sfc32 words can be negative: `a = b ^ (b >>> 9)` leaves a signed int32 in the state.
@@ -142,6 +153,9 @@ function validateRunState(raw: unknown, path: string): RunState {
   const openedLoot = r.openedLoot === undefined ? [] : strings(r.openedLoot, `${path}.openedLoot`);
   const usedHearths =
     r.usedHearths === undefined ? [] : strings(r.usedHearths, `${path}.usedHearths`);
+  // Added later still: a save from before claimable chest cards has no card waiting.
+  const pending =
+    r.pendingLoot === undefined ? [] : pendingLoot(r.pendingLoot, `${path}.pendingLoot`);
   // Also added after version 1: an older save names no level and resumes as `DEFAULT_DIFFICULTY`.
   if (r.difficulty !== undefined && !isDifficulty(r.difficulty)) {
     fail(`${path}.difficulty`, 'unknown difficulty');
@@ -158,6 +172,7 @@ function validateRunState(raw: unknown, path: string): RunState {
     ...(rewardChoices === undefined ? {} : { rewardChoices }),
     ...(openedLoot.length === 0 ? {} : { openedLoot }),
     ...(usedHearths.length === 0 ? {} : { usedHearths }),
+    ...(pending.length === 0 ? {} : { pendingLoot: pending }),
     ...(difficulty === undefined ? {} : { difficulty }),
   };
 }
