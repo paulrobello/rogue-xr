@@ -189,15 +189,24 @@ const _delta = new THREE.Quaternion();
 const _euler = new THREE.Euler(0, 0, 0, 'YXZ');
 
 /**
- * The head look-at of one actor, layered on its animation: call `update` right after the mixer,
- * which rewrites every bone each frame, so the offset never accumulates. The turn is built in the
- * body frame and conjugated into each bone's parent frame, so no bone's local axes matter. A rig
- * without a `head` bone gets no HeadLook (see {@link HeadLook.find}): nothing else ever turns.
+ * The head look-at of one actor, layered on its animation: call `update` right after the mixer. The
+ * mixer skips a bone whose animated value did not change since its last write (a constant track,
+ * a held or clamped clip), which would leave last frame's turn on it, so `update` puts such a bone
+ * back on its animated rotation before turning it again and the turn never compounds. The turn is
+ * built in the body frame and conjugated into each bone's parent frame, so no bone's local axes
+ * matter. A rig without a `head` bone gets no HeadLook (see {@link HeadLook.find}): nothing else
+ * ever turns.
  */
 export class HeadLook {
   readonly state: LookState = createLookState();
   /** Bones the turn is split over, outermost first, with each one's share of it. */
   readonly bones: readonly { readonly bone: THREE.Object3D; readonly share: number }[];
+  /** Per bone: its animated rotation under the last turn, and the rotation that turn left on it. */
+  private readonly applied: {
+    readonly base: THREE.Quaternion;
+    readonly turned: THREE.Quaternion;
+  }[];
+  private hasApplied = false;
 
   constructor(
     readonly root: THREE.Object3D,
@@ -211,6 +220,10 @@ export class HeadLook {
           { bone: head, share: 1 - limits.neckShare },
         ]
       : [{ bone: head, share: 1 }];
+    this.applied = this.bones.map(() => ({
+      base: new THREE.Quaternion(),
+      turned: new THREE.Quaternion(),
+    }));
   }
 
   /** The look for `root`'s `head` bone, split with its parent when that is a neck; null without a head. */
@@ -234,21 +247,38 @@ export class HeadLook {
 
   /** Steps the look toward `target` (a world point, or null) and turns the bones. */
   update(dt: number, target: THREE.Vector3 | null, enabled: boolean): void {
+    this.undoSkipped();
     let offset: THREE.Vector3 | null = null;
     if (enabled && target) {
       offset = this.root.worldToLocal(_offset.copy(target)).sub(this.pivot(_pivot));
     }
     if (!stepLook(this.state, offset, enabled, dt, this.limits)) return;
-    for (const { bone, share } of this.bones) {
+    this.bones.forEach(({ bone, share }, i) => {
+      const applied = this.applied[i];
+      applied?.base.copy(bone.quaternion);
       this.parentFrame(bone, _frame);
       _frameInv.copy(_frame).invert();
       _delta.setFromEuler(_euler.set(this.state.pitch * share, this.state.yaw * share, 0, 'YXZ'));
       bone.quaternion.premultiply(_frame).premultiply(_delta).premultiply(_frameInv);
-    }
+      applied?.turned.copy(bone.quaternion);
+    });
+    this.hasApplied = true;
   }
 
+  /** Clears the look and takes its turn off any bone the mixer has not rewritten since. */
   reset(): void {
+    this.undoSkipped();
     resetLook(this.state);
+  }
+
+  /** Puts each bone still holding the last turn (the mixer skipped it) back on its animated rotation. */
+  private undoSkipped(): void {
+    if (!this.hasApplied) return;
+    this.hasApplied = false;
+    this.bones.forEach(({ bone }, i) => {
+      const applied = this.applied[i];
+      if (applied && bone.quaternion.equals(applied.turned)) bone.quaternion.copy(applied.base);
+    });
   }
 
   /** The head pivot in the root's frame, from the bones' current (just animated) local transforms. */
