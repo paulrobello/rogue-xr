@@ -1,7 +1,14 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { generateFloor, worldRooms } from '../src/floor/generate.ts';
-import { buildFloorWorld, neighbours, roomAt, visibleSet } from '../src/world/floor-world.ts';
+import {
+  buildFloorWorld,
+  nearSet,
+  neighbours,
+  roomAt,
+  shellSet,
+  visibleSet,
+} from '../src/world/floor-world.ts';
 
 const SEEDS = ['SPIRE001', 'SPIRE002', 'GEARS777', 'BRASS042', 'VA1T9QZK'];
 
@@ -16,9 +23,12 @@ describe('neighbours and visibleSet', () => {
       expect(neighbours(plan, a.room)).toContain(b.room);
       expect(neighbours(plan, b.room)).toContain(a.room);
     }
-    const visible = visibleSet(plan, 0);
-    expect(visible.has(0)).toBe(true);
-    expect(visible.size).toBe(1 + neighbours(plan, 0).length);
+    const near = nearSet(plan, 0);
+    expect(near.has(0)).toBe(true);
+    expect(near.size).toBe(1 + neighbours(plan, 0).length);
+    // SPIRE001's entry looks down a corridor into a fight room two doors away.
+    expect(visibleSet(plan, 0)).toEqual(new Set([...near, ...shellSet(plan, 0)]));
+    expect(shellSet(plan, 0).size).toBeGreaterThan(0);
   });
 });
 
@@ -99,5 +109,74 @@ describe('buildFloorWorld', () => {
     expect(world.current).toBe(next);
     world.dispose();
     expect(world.group.parent).toBeNull();
+  });
+
+  it('draws corridor-seen rooms as a shell, keeps gameplay on the near rooms, and promotes on entry', () => {
+    const plan = generateFloor('SHELL024');
+    const world = buildFloorWorld(plan);
+    const shell = shellSet(plan, 0);
+    const near = nearSet(plan, 0);
+    expect(shell.size).toBeGreaterThan(0);
+    const detailShown = (room: number) => [
+      ...(world.enemies.get(room) ?? []).map((b) => b.visible),
+      ...world.coffers.filter((c) => c.room === room).map((c) => c.object.visible),
+      ...world.hearths.filter((h) => h.room === room).map((h) => h.object.visible),
+    ];
+    const shellDetail = [...shell].flatMap(detailShown);
+    // SHELL024 shows a treasure room and a fight room down its corridors.
+    expect(world.coffers.some((c) => shell.has(c.room))).toBe(true);
+    expect([...shell].some((r) => (world.enemies.get(r) ?? []).length > 0)).toBe(true);
+    expect(shellDetail.length).toBeGreaterThan(0);
+    expect(shellDetail.every((v) => !v)).toBe(true);
+    for (const r of shell) {
+      const g = world.roomGroups[r];
+      expect(g?.visible).toBe(true);
+      expect(g?.getObjectByName('floor')?.visible).toBe(true);
+    }
+    for (const r of near) expect(detailShown(r).every((v) => v)).toBe(true);
+
+    // Colliders and teleport landings reach the near rooms only.
+    const nearColliders = [...near].flatMap((i) => world.colliders[i] ?? []);
+    expect(world.nearbyColliders()).toEqual(nearColliders);
+    const shellRects = [...shell].flatMap((i) => world.rooms[i]?.template.walkable ?? []).length;
+    expect(world.nearbyWalkable().length).toBe(
+      [...near].flatMap((i) => world.rooms[i]?.template.walkable ?? []).length,
+    );
+    expect(shellRects).toBeGreaterThan(0);
+
+    // A body swapped in while its room is a shell stays hidden.
+    const fightShell = [...shell].find((r) => (world.enemies.get(r) ?? []).length > 0) as number;
+    const body = world.enemies.get(fightShell)?.[0] as THREE.Object3D;
+    const model = new THREE.Group();
+    expect(world.replaceEnemy(fightShell, body, model)).toBe(true);
+    expect(model.visible).toBe(false);
+
+    // Stepping into the corridor promotes the room beyond it to full detail.
+    const corridor = neighbours(plan, 0).find((n) =>
+      neighbours(plan, n).includes(fightShell),
+    ) as number;
+    expect(plan.rooms[corridor]?.role).toBe('corridor');
+    const [x, z] = centre(world.rooms[corridor]?.footprint ?? { min: [0, 0], max: [0, 0] });
+    expect(world.update(x, z)).toBe(true);
+    expect(nearSet(plan, corridor).has(fightShell)).toBe(true);
+    expect(detailShown(fightShell).every((v) => v)).toBe(true);
+    expect(model.visible).toBe(true);
+    // Hidden rooms keep their detail on; the room group hides them.
+    for (const [i, g] of world.roomGroups.entries()) {
+      expect(g.visible).toBe(visibleSet(plan, corridor).has(i));
+      if (shellSet(plan, corridor).has(i)) expect(detailShown(i).every((v) => !v)).toBe(true);
+      else expect(detailShown(i).every((v) => v)).toBe(true);
+    }
+    world.dispose();
+  });
+
+  it('hides a rest room hearth while the room is only seen down a corridor', () => {
+    const plan = generateFloor('SHELL018');
+    const world = buildFloorWorld(plan);
+    const shell = shellSet(plan, 0);
+    const hearths = world.hearths.filter((h) => shell.has(h.room));
+    expect(hearths.length).toBeGreaterThan(0);
+    for (const h of hearths) expect(h.object.visible).toBe(false);
+    world.dispose();
   });
 });

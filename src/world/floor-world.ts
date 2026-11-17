@@ -8,25 +8,13 @@ import {
   type RoomTemplate,
 } from '../content/rooms.ts';
 import { type FloorPlan, type WorldRoom, worldRooms } from '../floor/generate.ts';
+import { nearSet, shellSet } from '../floor/visibility.ts';
 import { PALETTE } from '../palette.ts';
 import { buildGreyboxRoom, createGreyboxMaterials, type GreyboxMaterials } from './greybox.ts';
 import { type Hearth, HearthKit, type HearthMaterials, hearthSocket } from './hearth.ts';
 import { type Coffer, CofferKit, type LootMaterials, surfaceHeightAt } from './loot.ts';
 
-/** Rooms joined to `room` by a door. */
-export function neighbours(plan: FloorPlan, room: number): number[] {
-  const out: number[] = [];
-  for (const [a, b] of plan.connections) {
-    if (a.room === room) out.push(b.room);
-    else if (b.room === room) out.push(a.room);
-  }
-  return out;
-}
-
-/** The current room and its door neighbours: everything the player can see into. */
-export function visibleSet(plan: FloorPlan, current: number): Set<number> {
-  return new Set([current, ...neighbours(plan, current)]);
-}
+export { nearSet, neighbours, shellSet, visibleSet } from '../floor/visibility.ts';
 
 /** Index of the room whose footprint holds the floor point, preferring `hint` on shared walls. */
 export function roomAt(rooms: readonly WorldRoom[], x: number, z: number, hint = -1): number {
@@ -43,7 +31,11 @@ export interface FloorWorld {
   group: THREE.Group;
   plan: FloorPlan;
   rooms: readonly WorldRoom[];
-  /** One group per room, in plan order; only the current room and its neighbours are visible. */
+  /**
+   * One group per room, in plan order. The current room and its neighbours are shown in full;
+   * rooms seen only down a corridor (`shellSet`) show their shell without enemies, coffers or
+   * hearths; the rest are hidden.
+   */
   roomGroups: readonly THREE.Group[];
   /** Placeholder automatons keyed by room index. */
   enemies: ReadonlyMap<number, readonly THREE.Object3D[]>;
@@ -250,7 +242,7 @@ export function buildFloorWorld(
     colliders,
     current: 0,
     nearbyWalkable() {
-      return [...visibleSet(plan, world.current)].flatMap((i) => {
+      return [...nearSet(plan, world.current)].flatMap((i) => {
         const [ox, oz] = plan.rooms[i]?.position ?? [0, 0];
         return (rooms[i]?.template.walkable ?? []).map(
           (w): Rect => ({
@@ -261,7 +253,7 @@ export function buildFloorWorld(
       });
     },
     nearbyColliders() {
-      return [...visibleSet(plan, world.current)].flatMap((i) => colliders[i] ?? []);
+      return [...nearSet(plan, world.current)].flatMap((i) => colliders[i] ?? []);
     },
     update(x, z) {
       const next = roomAt(rooms, x, z, world.current);
@@ -289,6 +281,7 @@ export function buildFloorWorld(
       next.userData = { ...body.userData };
       next.position.set(body.position.x, 0, body.position.z);
       next.rotation.copy(body.rotation);
+      next.visible = body.visible;
       parent.add(next);
       body.removeFromParent();
       list[index] = next;
@@ -327,10 +320,25 @@ export function buildFloorWorld(
       hearthKit.dispose();
     },
   };
+  // Detail is only touched when a room changes tier, so a fight's own body hiding is left alone.
+  const shells = new Set<number>();
+  const setDetail = (room: number, shown: boolean) => {
+    for (const body of enemies.get(room) ?? []) body.visible = shown;
+    for (const c of coffers) if (c.room === room) c.object.visible = shown;
+    for (const h of hearths) if (h.room === room) h.object.visible = shown;
+  };
   function applyVisibility() {
-    const visible = visibleSet(plan, world.current);
+    const near = nearSet(plan, world.current);
+    const shell = shellSet(plan, world.current);
     roomGroups.forEach((g, i) => {
-      g.visible = visible.has(i);
+      g.visible = near.has(i) || shell.has(i);
+      if (shell.has(i) && !shells.has(i)) {
+        shells.add(i);
+        setDetail(i, false);
+      } else if (!shell.has(i) && shells.has(i)) {
+        shells.delete(i);
+        setDetail(i, true);
+      }
     });
   }
   applyVisibility();
