@@ -4,6 +4,7 @@ import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import { ENEMIES, type EnemyKind } from '../content/enemies.ts';
 import { loadPbrSet, type PbrSet } from '../world/materials.ts';
 import { applyGlowLook, writeGlowIslands } from './glow.ts';
+import { HeadLook } from './look-at.ts';
 
 /**
  * Runtime contract of every automaton model, `public/assets/enemies/<id>/<id>.manifest.json` plus
@@ -406,6 +407,8 @@ export class EnemyActor {
   /** Called when a clip passes one of its manifest events, such as the attack's `impact`. */
   onEvent: ((event: string, clip: ActorClip) => void) | null = null;
   readonly asset: EnemyAsset;
+  /** The head look-at toward the player, or null for a rig without a `head` bone. */
+  readonly headLook: HeadLook | null;
   private readonly actions = new Map<ActorClip, THREE.AnimationAction>();
   private readonly fades = new Map<ActorClip, Fade>();
   private readonly materials: MaterialState[] = [];
@@ -464,6 +467,7 @@ export class EnemyActor {
       }
       o.material = clone;
     });
+    this.headLook = HeadLook.find(this.object);
     this.mixer = new THREE.AnimationMixer(this.object);
     for (const name of ENEMY_CLIPS) {
       const clip = asset.clips.get(name);
@@ -606,7 +610,12 @@ export class EnemyActor {
     return promise;
   }
 
-  update(dt: number): void {
+  /**
+   * Steps fades, clips and the hit flash by `dt` seconds. `lookAt`, the player's head in world
+   * space, turns the head toward it while it stands in front of the body; null eases the head back
+   * to the animated pose, as death and the freeze always do.
+   */
+  update(dt: number, lookAt: THREE.Vector3 | null = null): void {
     if (this.disposedFlag || !(dt >= 0)) return;
     for (const [name, f] of this.fades) {
       const action = this.action(name);
@@ -623,6 +632,7 @@ export class EnemyActor {
     const before = current ? current.time : 0;
     this.mixer.update(dt);
     this.holdCaseOpen();
+    this.headLook?.update(dt, lookAt, !this.deadFlag && !this.frozenFlag);
     if (current && this.currentClip && this.onEvent) {
       const events = this.eventsOf(this.currentClip);
       for (const [event, at] of Object.entries(events)) {
@@ -650,6 +660,7 @@ export class EnemyActor {
     this.setRime(false);
     this.applyGlow();
     this.currentClip = null;
+    this.headLook?.reset();
     this.play('idle', { fade: 0 });
     this.mixer.update(0);
   }
