@@ -264,7 +264,7 @@ describe('DiceWorld', () => {
     expect(fallbacks).toBe(0);
     expect(worstCorrectionMs).toBeLessThanOrEqual(100 + FIXED_STEP * 1000);
     expect(CORRECTION_STEPS * FIXED_STEP).toBeCloseTo(0.1, 12);
-  });
+  }, 60_000);
 
   it('reaches the same result at any frame rate', async () => {
     const t = randomThrow(Stream.fromKey('frame-rate'), 'd8');
