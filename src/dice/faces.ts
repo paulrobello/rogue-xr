@@ -64,6 +64,11 @@ export function dieVertices(kind: DieKind): readonly Vec3[] {
   return kind === 'd6' ? D6_VERTICES : D8_VERTICES;
 }
 
+/** Radius of the sphere around the die's centre that holds every vertex, whatever its orientation. */
+export function dieRadius(kind: DieKind): number {
+  return Math.max(...dieVertices(kind).map((v) => Math.hypot(v.x, v.y, v.z)));
+}
+
 /** Index of the face whose world-space normal points closest to +Y. */
 export function upFace(quaternion: Quat, normals: readonly Vec3[]): number {
   let best = 0;

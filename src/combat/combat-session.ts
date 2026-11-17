@@ -55,7 +55,7 @@ import { Stream } from '../core/rng.ts';
 import { type DiceAsset, loadDice } from '../dice/dice-asset.ts';
 import type { DieKind } from '../dice/faces.ts';
 import { DicePresenter, type PresentedRoll } from '../dice/presenter.ts';
-import type { DiceWorldOptions } from '../dice/world.ts';
+import { AUTHORED_TRAY_HALF, type DiceWorldOptions } from '../dice/world.ts';
 import type { SentryActor } from '../enemies/sentry-asset.ts';
 import type { AimRay } from '../hand/aim.ts';
 import { CardFan } from '../hand/card-fan.ts';
@@ -135,8 +135,8 @@ const STATUS_TIP_NEAR = 0.9;
 const HINT_LIFT = 0.17;
 /** The table top glows (this opacity range, pulsing at this period) while an untargeted card is held. */
 const DROP_GLOW = { min: 0.05, max: 0.16, seconds: 1.1 } as const;
-const TRAY_HALF_X = 0.2;
-const TRAY_HALF_Z = 0.11;
+const TRAY_HALF_X = AUTHORED_TRAY_HALF.halfX;
+const TRAY_HALF_Z = AUTHORED_TRAY_HALF.halfZ;
 const ENEMY_RADIUS = 0.5;
 /** The HUD stays inside this normalized device extent of the desktop view (1 is the screen edge). */
 const HUD_VIEW_MARGIN = 0.92;

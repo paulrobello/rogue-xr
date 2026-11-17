@@ -4,6 +4,7 @@ import {
   correctionPoseAt,
   D6_HALF_EXTENT,
   type DieKind,
+  dieRadius,
   dieVertices,
   faceNormals,
   planCorrection,
@@ -32,6 +33,13 @@ export interface DiceWorldOptions {
   /** A die still moving this long after the throw is corrected anyway. */
   maxRollSeconds: number;
 }
+
+/**
+ * Inner half-extent of the authored combat table's felt tray (`combat-table.manifest.json`
+ * `trayInner.size` is 0.31 x 0.19). The dice world must be this size so a resting die cannot sit
+ * past the visible wall.
+ */
+export const AUTHORED_TRAY_HALF = { halfX: 0.155, halfZ: 0.095 } as const;
 
 export const DEFAULT_OPTIONS: Readonly<DiceWorldOptions> = {
   halfX: 0.3,
@@ -150,9 +158,16 @@ export class DiceWorld {
       throw new RangeError(`Face ${targetFace} does not exist on a ${kind}`);
     }
     this.removeDie(id);
+    // A release at or past the rim would start the die inside a wall, and the 3 cm wall can push it out the far side.
+    const reachX = Math.max(0, this.options.halfX - dieRadius(kind));
+    const reachZ = Math.max(0, this.options.halfZ - dieRadius(kind));
     const body = this.world.createRigidBody(
       RAPIER.RigidBodyDesc.dynamic()
-        .setTranslation(position.x, position.y, position.z)
+        .setTranslation(
+          Math.min(reachX, Math.max(-reachX, position.x)),
+          position.y,
+          Math.min(reachZ, Math.max(-reachZ, position.z)),
+        )
         .setRotation(orientation)
         .setLinvel(linvel.x, linvel.y, linvel.z)
         .setAngvel(angvel)
