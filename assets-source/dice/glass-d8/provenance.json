@@ -304,54 +304,55 @@
     },
     {
       "gate": "independent visual score",
-      "status": "below bar: 49/100 (bar 80), scored 2026-11-16",
+      "status": "below bar: 53/100 (bar 80), scored 2026-11-16",
       "notes": "blender-kit-pieces requires an independent >= 80/100 score; unscored means unaccepted"
     }
   ],
   "independentScore": {
-    "score": 49,
-    "scale": "0-100 visual fidelity to the concept and art bible",
+    "score": 53,
+    "scale": "0-100 visual fidelity to the art direction",
     "scorer": "independent reviewer agent (separate from the authoring agent; did not build the asset)",
     "date": "2026-11-16",
     "acceptanceBar": 80,
     "clearsBar": false,
     "rubric": [
       {
-        "criterion": "silhouette and proportions",
+        "criterion": "silhouette and form",
         "points": 18,
         "max": 30,
-        "note": "A correct, crisp regular octahedron (the reference shows a d20; the d8 shape is a gameplay requirement). It loses points against panel 4's construction of chunky bevelled brass rails between faces and softened solid edges: the model's brass is wire-thin edge trim, about 1 to 2 px in the 600 px closeup, so the die reads as a faceted gem rather than a brass-bodied die."
+        "note": "Unchanged (18). The die is a clean, crisp regular octahedron, and the d8 shape is a gameplay requirement. Against panel 4's chunky bevelled brass rails, the brass here is still wire trim. On the right die, which is about 255 px tall in p5-dice-glass-d8.jpg, the outer edge rail measures about 2 px (bright at x=545 to 546, y=460). The equator band is about 5 px (y=382 to 386) between dark seams. The die reads as a faceted gem rather than a brass-bodied die."
       },
       {
         "criterion": "signature features",
-        "points": 11,
+        "points": 13,
         "max": 25,
-        "note": "The plan names this die 'glass d8', so glass is sanctioned, but the result loses the brass body almost entirely and renders as pale clear glass with cream numerals. Numerals from the back faces show through mirrored (the reversed 3 in the Blender 3/4 view, the mirrored 5 in the tray) and compete with the face-up value. The jewel-tone internal flecks are a nice nod to the palette. The atlas page (dark smoked glass, thick brass bevel, glowing amber numerals) is on-bible, but the model does not carry it through."
+        "note": "Up 2 from 11. Commit e2a9530 makes the numerals emissive. The face-up numeral cores now measure #C2A580 to #C6AC88 (relL 0.40 to 0.43), lighter than the glass behind them. They are cream-tan at S 0.31 to 0.35, not candle amber: the reference d20 numerals measure #FFC64B and #FDC642 (S 0.71 to 0.74). Through-body ghosting remains. A bright internal edge line crosses the face-up '1' on the left die (relL 0.15 to 0.17 against glass 0.11, x=347 to 350, y=240). A ghost numeral stroke on that die's side face reaches relL 0.30, 75% of the face-up numeral core. The brass body is still not carried through. The jewel flecks at the face corners stay as a palette nod."
       },
       {
         "criterion": "surface detail and material read",
         "points": 11,
         "max": 20,
-        "note": "The Blender renders show attractive refraction and jewel caustics. In engine (p5-dice-ingame-d8-tray.jpg, the closeup and the lineup) it reads as frosted pale plastic. The atlas's brass bevel band is not visible on the model faces. Its look depends heavily on the environment: dark and amber in p5-ui-dice-d8.jpg, washed out on the lit tray."
+        "note": "Unchanged (11). Refraction streaks and ruby, emerald and sapphire corner flecks are visible in the 4x crop. The body still reads as hazy, frosted pale glass rather than the dark smoked glass of the atlas page. The left die's side face renders pale grey-tan (side-face body #766459, S 0.25) and looks like frosted plastic. No bevelled brass band shows around the faces."
       },
       {
         "criterion": "colour and value",
-        "points": 6,
+        "points": 7,
         "max": 15,
-        "note": "The glass body renders at #8B684F to #9D7F63 (L 0.43 to 0.50), much lighter than the atlas face median #67523A (L 0.32). The numerals render #B2926C to #CAAE87 (S 0.31 to 0.39) against an atlas amber core of #FAD99B (S 0.90), so candle amber is lost. The die is a low-contrast tan within the value range of the brass tray wall and walnut table."
+        "note": "Up 1 from 6. The face-interior glass (p20 to p70 of each face) measures #7B593B to #8C6847 (relL 0.12 to 0.16). That is darker than the last score's #8B684F to #9D7F63, but on a different backdrop, so the delta is approximate. It is still lighter than the atlas face (#67523A) and far from warm black (#231D1A). The glass sits close to the walnut floor (#714F36, relL 0.094), only about 1.2 to 1.5:1, so the die separates from the table mainly through its rails and numerals. The numeral hue is near amber (H33 to 35) but saturation is half that of candle amber (S 0.31 to 0.38 against 0.58)."
       },
       {
         "criterion": "readability at play distance",
-        "points": 3,
+        "points": 4,
         "max": 10,
-        "note": "In the tray shot the face-up 7 measures #CAAE87 against adjacent glass #9D7A5A, a contrast ratio of about 1.8:1. The mirrored back-face 5 (#C5AF8B) is equally bright and sits at the visual centre of the die, so the rolled value is ambiguous. Numerals cover roughly 8 to 15 px at 0.5 to 1 m on Quest 3: legible in size, failing on contrast."
+        "note": "Up 1 from 3. Numeral-core-to-glass contrast measures 2.54:1 (left die '1'), 2.78:1 (left die '3'), 2.39:1 (right die '7') and 2.31:1 (right die '3'), median about 2.5:1. The last score had 1.8:1, from a tray shot, so the delta is approximate. All four are still well below 4.5:1. Through-body ghosts at 75% of the face-up numeral's luminance, plus the internal edge line, still compete with the rolled value. In the lineup each die is about 70 px across, and several show two or three numerals at similar brightness. Numeral size is adequate (8 to 15 px at 0.5 to 1 m on Quest 3). Contrast and ghosting fail."
       }
     ],
     "topFixes": [
-      "Make the glass dark and mostly opaque (smoked warm-black near #231D1A to #3A2A1E with low transmission), or hide back faces and through-body numerals, so only the face-up numeral shows and no mirrored digits.",
-      "Render the numerals as emissive candle amber (#F3BE65 / #FAD99B core); target a contrast ratio of at least 4.5:1 against the face, from the current 1.8:1.",
-      "Thicken the brass into real bevelled edge rails (or the atlas's brass bevel band around each face) so the die reads as brass-bodied with glass panels, per the art bible and panel 4."
+      "Make the glass dark and mostly opaque: a smoked warm-black body near #231D1A to #3A2A1E with low transmission and roughness, or render back faces and internal edges out. Only the face-up numerals should be visible, and the through-body ghosts (now 75% of front-numeral luminance) and the internal edge line should disappear.",
+      "Change the numeral emissive colour and map from cream to saturated amber: a core near #FFC64B or #F3BE65 with S of at least 0.6, at moderate intensity (about 1.0 to 1.2) or with selective bloom, so tone mapping does not wash it to tan. Target numeral-to-face contrast of at least 4.5:1, from the current median of about 2.5:1.",
+      "Thicken the brass into real bevelled edge rails, about 6 to 8% of the die height instead of the current 2 to 5 px on a 255 px die, or carry the atlas's brass bevel band around each face, so the die reads as a brass body with glass panels, as the art bible and panel 4 require.",
+      "Once the body is dark, check value separation from the walnut table. Glass against the floor is currently only 1.2 to 1.5:1. Bright brass rails plus a dark body should frame the die clearly against #583C26."
     ],
-    "method": "Independent reviewer read docs/art-bible.md, PRD.md and plans/ (the 'glass d8' naming), assets-source/dice/glass-d8/provenance.json, assets-source/style/locked/L-board-1.png (panel 4), assets-source/dice/dice.review-sheet.jpg, public/assets/ui/dice-d8.png, and docs/verification p5-dice-ingame-d8-tray.jpg, -closeup.jpg, p5-dice-glass-d8.jpg, p5-dice-glass-d8-lineup.jpg and p5-ui-dice-d8.jpg; Pillow samples. Desktop and Blender evidence only, no headset capture. Date 2026-11-16."
+    "method": "Independent reviewer (did not build the asset). I read the dice and palette sections of docs/art-bible.md and the previous independentScore in assets-source/dice/glass-d8/provenance.json, and did not open any author self-score or fidelity file. Primary evidence was the in-engine renders of the shipped HEAD in /tmp/rxr-prev/dice-shipped-shots/: p5-dice-glass-d8.jpg and p5-dice-glass-d8-lineup.jpg, both 960x640, cropped and upscaled 2x to 4x for inspection. The reference was L-board-1.png panel 4, cropped at (60,956)-(750,1490); its d20 numeral faces gave target contrasts of 4.4:1 and 6.2:1 with S 0.71 to 0.74 amber. Measurements used Pillow under python3 -I. In crop boxes inside each face, the numeral core is the top 5% of pixels by relative luminance and the glass is the p20 to p70 band. I also ran pixel scans across the brass rails, the internal edge line and a ghost numeral. Contrast ratios are WCAG. Rectangles mostly covering the floor were discarded. The deltas against the last score (49) are approximate, because that score's figures came from in-game tray shots with a darker floor and different light. All evidence is desktop (Apple M4, ANGLE Metal) with no headset capture. Date 2026-11-16."
   }
 }
