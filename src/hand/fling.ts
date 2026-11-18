@@ -59,14 +59,18 @@ export interface FlingOptions {
 }
 
 /**
- * How a release was resolved: a flick at a target, a point at a target, a drop on the table, or a
- * press (an untargeted card played by the trigger, wherever the hand is).
+ * How a play was resolved: a flick at a target, a point at a target, a drop on the table, an aim
+ * (a held targeted card used with the trigger at the enemy the ray aims at), or a press (a held
+ * untargeted card used with the trigger, wherever the hand is).
  */
-export type FlingVia = 'flick' | 'point' | 'drop' | 'press' | 'none';
+export type FlingVia = 'flick' | 'point' | 'drop' | 'aim' | 'press' | 'none';
 
 export interface FlingDecision {
-  /** `staged`: the controller now waits for the sigil plate, and the card stays out of the fan. */
-  readonly outcome: 'played' | 'staged' | 'sprung-back';
+  /**
+   * `staged`: the controller now waits for the sigil plate, and the card stays out of the fan.
+   * `held`: a use found no target or the rules refused it, and the card is still in the hand.
+   */
+  readonly outcome: 'played' | 'staged' | 'sprung-back' | 'held';
   readonly via: FlingVia;
   readonly uid: number;
   readonly cardId: string;
@@ -100,11 +104,13 @@ export function rayFromObject(object: THREE.Object3D): AimRay {
  *
  * - `grab(index)` picks the card up and selects it; an unaffordable card springs straight back.
  * - `update(dt)` samples the main grip into the velocity window while a card is held.
- * - `release()` resolves the throw. A targeted card plays at the flick's aim-assisted target, else at
- *   the target the main-hand ray points at, else springs back. An untargeted card plays when
- *   released over the table or flicked across it, else springs back. `release(true)` plays an
- *   untargeted card on the table wherever the hand is (the trigger press). A card the rules refuse
- *   springs back and the selection is cancelled.
+ * - `activate()` uses the held card (the trigger): a targeted card plays at the enemy the main-hand
+ *   ray aims at, through the same 20 degree cone as a throw, else the point radius; an untargeted
+ *   card plays wherever the hand is; a sigil card is staged for the plate. With no target, or a
+ *   refusal, the card stays held.
+ * - `putBack()` lets go of the held card (the grip release): it springs back to the fan.
+ * - `release()` resolves a throw (kept for the recorded fling traces): a flick's aim-assisted
+ *   target, else the pointed target, or a drop on the table, else it springs back.
  *
  * A played or staged card burns away (`CardFan.playOut`) from where it was let go, drifting toward
  * its target; its fan slot stays hidden until the caller re-sets the hand. A `staged` sigil card
@@ -310,6 +316,74 @@ export class FlingController {
       if (!result.ok) return springBack('drop', result.reason);
     }
     return this.settle(held, onTable ? 'press' : flick ? 'flick' : 'drop', null, speed, null, null);
+  }
+
+  /**
+   * The held card's use (the trigger, or the desktop's second click): a targeted card plays at the
+   * enemy the main-hand ray aims at (the aim cone around the ray, then the point radius), an
+   * untargeted card plays wherever the hand is, and a sigil card is laid down for the plate
+   * (`staged`). A card with no target in reach, or one the rules refuse, stays held: only
+   * `putBack` returns it. Null when nothing is held or nothing played.
+   */
+  activate(): FlingDecision | null {
+    const held = this.held;
+    if (!held) return null;
+    let targetId: string | null = null;
+    let angleDeg: number | null = null;
+    let site: FlingTargetSite | undefined;
+    if (held.card.target === 'enemy') {
+      const sites = this.targetsOf();
+      const alive = new Set(livingEnemies(this.combat.state).map((e) => e.id));
+      const targets: AimTarget[] = sites.map((s) => ({ ...s, valid: alive.has(s.id) }));
+      const ray = this.pointRay?.() ?? null;
+      if (ray) {
+        const len = Math.hypot(ray.direction[0], ray.direction[1], ray.direction[2]) || 1;
+        // The ray direction at the flick threshold speed, so the aim cone of a throw applies.
+        const k = Math.max(this.tuning.minSpeed, 1) / len;
+        const aim: Vec3 = [ray.direction[0] * k, ray.direction[1] * k, ray.direction[2] * k];
+        const pick = pickFlingTarget(ray.origin, aim, targets, this.tuning);
+        targetId = pick?.id ?? pickPointTarget(ray, targets, this.tuning.pointRadius)?.id ?? null;
+        angleDeg = pick?.angleDeg ?? null;
+      }
+      if (targetId === null) {
+        return this.record(
+          held,
+          'held',
+          'aim',
+          null,
+          0,
+          null,
+          'No target in reach, aim at an enemy',
+        );
+      }
+      const result = this.combat.target(targetId);
+      if (!result.ok) return this.record(held, 'held', 'aim', targetId, 0, null, result.reason);
+      site = sites.find((s) => s.id === targetId);
+    } else if (this.combat.stage !== 'sigil') {
+      const result = this.combat.table();
+      if (!result.ok) return this.record(held, 'held', 'press', null, 0, null, result.reason);
+    }
+    this.held = null;
+    this.fan.release();
+    return this.settle(
+      held,
+      held.card.target === 'enemy' ? 'aim' : 'press',
+      targetId,
+      0,
+      angleDeg,
+      site ? site.position : null,
+    );
+  }
+
+  /** Lets go of the held card without playing it: it springs back to the fan, selection cancelled. */
+  putBack(): boolean {
+    const held = this.held;
+    if (!held) return false;
+    this.held = null;
+    this.fan.returnToFan(held.index);
+    this.combat.cancel();
+    this.record(held, 'sprung-back', 'none', null, 0, null, null);
+    return true;
   }
 
   /** Abandons a staged sigil cast: cancels the selection and springs the card back to the fan. */

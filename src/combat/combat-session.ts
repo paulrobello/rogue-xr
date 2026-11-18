@@ -91,12 +91,7 @@ import {
 } from '../ui/icon-sheet.ts';
 import type { EncounterDirector } from './encounter.ts';
 import { chooseEncounter, enemyKindOf, fightSeed } from './encounter-choice.ts';
-import {
-  DEFAULT_TABLE_DISTANCE,
-  TABLE_HALF_DEPTH,
-  TABLE_HALF_WIDTH,
-  type TablePose,
-} from './placement.ts';
+import { DEFAULT_TABLE_DISTANCE, type TablePose } from './placement.ts';
 
 export { HIT_NUMBER_SECONDS } from '../combat-view/hit-numbers.ts';
 export { chooseEncounter, fightSeed } from './encounter-choice.ts';
@@ -107,8 +102,7 @@ export const WIN_HOLD_SECONDS = 1.2;
 /** Seconds the defeat banner holds before the automatons go home. */
 export const DEFEAT_HOLD_SECONDS = 1.6;
 const PLATE_DONE_SECONDS = 1.6;
-/** The cast card reveal: frame height over width, its share of the plate, and its lift off it. */
-const REVEAL_ASPECT = 1.51;
+/** The cast card's art disc: its diameter's share of the plate's shorter side, and its lift off it. */
 const REVEAL_FILL = 0.8;
 const REVEAL_LIFT = 0.03;
 /** The ward shield forms this far from the eye toward the plate, and this far below that line. */
@@ -129,6 +123,12 @@ export const DESKTOP_DICE_HINT = 'Click the glowing die to throw it (or press T)
 export const FLEE_REFUSED = 'There is no escaping this fight';
 /** Why a flee is refused while the enemies act or a play's effects are still landing. */
 export const FLEE_WAIT = 'Wait for your turn to flee';
+/** A first FLEE press arms it; a second press within this many seconds flees. */
+export const FLEE_CONFIRM_SECONDS = 4;
+/** The prompt while FLEE is armed. */
+export const FLEE_CONFIRM = 'Press FLEE again to flee the fight';
+/** The FLEE button's label while armed. */
+export const FLEE_CONFIRM_LABEL = 'CONFIRM?';
 /** Flee sits this far inward of End Turn along the table edge, centre to centre, metres. */
 const FLEE_GAP = 0.26;
 /** Width of the table hint label, metres; it hangs this high over the dice tray. */
@@ -141,8 +141,6 @@ const STATUS_TIP_OFFSET = { up: 0.14, toward: 0.04 } as const;
 /** Nearer than this, metres, the tooltip keeps its size; farther, it grows in proportion. */
 const STATUS_TIP_NEAR = 0.9;
 const HINT_LIFT = 0.17;
-/** The table top glows (this opacity range, pulsing at this period) while an untargeted card is held. */
-const DROP_GLOW = { min: 0.05, max: 0.16, seconds: 1.1 } as const;
 const TRAY_HALF_X = AUTHORED_TRAY_HALF.halfX;
 const TRAY_HALF_Z = AUTHORED_TRAY_HALF.halfZ;
 const ENEMY_RADIUS = 0.5;
@@ -442,8 +440,6 @@ export class CombatSession {
   private readonly hintLabel: CanvasLabel | null;
   /** The table hint's text, '' when hidden. */
   hint = '';
-  /** The table top's glow while an untargeted card is held: where letting go plays it. */
-  readonly dropZone: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
   private readonly disposers: (() => void)[] = [];
   /** Objects the desktop view may slide to keep them on screen, with their XR layout positions. */
   private readonly anchors: {
@@ -501,6 +497,13 @@ export class CombatSession {
   private holding: 'mouse' | 'xr' | null = null;
   /** True while the XR main hand holds the waiting die (squeeze held); letting go throws it. */
   private holdingDie = false;
+  /** True while the XR main-hand squeeze is down, whatever it holds. */
+  private mainSqueezed = false;
+  /** A dice card was just used in XR: its die goes to the main hand if the grip is still held. */
+  private takeDie = false;
+  /** Seconds left to confirm a flee with a second press; 0 while FLEE is not armed. */
+  private fleeArmed = 0;
+  private fleeText = 'FLEE';
   private drawing: 'mouse' | 'xr' | null = null;
   private plateDone = 0;
   private castTimer = -1;
@@ -666,22 +669,6 @@ export class CombatSession {
       this.endButton.add(this.fleeButton);
     }
     this.fleeLabel = this.fleeButton ? buttonLabel(this.fleeButton, 'FLEE') : null;
-    this.dropZone = new THREE.Mesh(
-      new THREE.PlaneGeometry(TABLE_HALF_WIDTH * 2, TABLE_HALF_DEPTH * 2),
-      new THREE.MeshBasicMaterial({
-        color: PALETTE.candle,
-        transparent: true,
-        opacity: DROP_GLOW.min,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-        toneMapped: false,
-      }),
-    );
-    this.dropZone.name = 'table-drop-zone';
-    this.dropZone.position.copy(onTable(0, 0, 0.004));
-    this.dropZone.rotation.set(-Math.PI / 2, 0, yawRad, 'YXZ');
-    this.dropZone.visible = false;
-    this.group.add(this.dropZone);
     this.tip = safeLabel(640, 240, TIP_WIDTH);
     if (this.tip) {
       this.tip.mesh.name = 'status-tip';
@@ -773,10 +760,7 @@ export class CombatSession {
     this.group.add(this.fx);
     this.effectFx = new CastFx({ reducedMotion: deps.reducedMotion ?? false });
     this.group.add(this.effectFx);
-    this.revealCard = new CastReveal({
-      reducedMotion: deps.reducedMotion ?? false,
-      syncLabels: deps.syncLabels ?? true,
-    });
+    this.revealCard = new CastReveal({ reducedMotion: deps.reducedMotion ?? false });
     this.group.add(this.revealCard);
 
     this.handAnchor.name = 'desktop-hand';
@@ -862,11 +846,24 @@ export class CombatSession {
     this.pausedValue = value;
   }
 
+  /** True while a hand card is held (picked up, not yet used or put back). */
+  get holdingCard(): boolean {
+    return this.holding !== null;
+  }
+
+  /** True while FLEE waits for its confirming second press. */
+  get fleeConfirming(): boolean {
+    return this.fleeArmed > 0;
+  }
+
   /**
-   * Flees the fight: ends it at once through `end('flee')`, keeping the player's hp; an automaton
-   * already killed is taken off the floor. Refused (false, with a message) in an elite or guardian
-   * fight, while the enemies act, a card is held or a play's effects (or a death) are still
-   * playing, while a die waits, and once the fight is decided. A refused flee is not queued.
+   * A press of FLEE (the button or the desktop F key). The first press only arms it: the button
+   * reads CONFIRM and a second press within `FLEE_CONFIRM_SECONDS` flees. Any other verb, the
+   * timeout or the enemy turn disarms it. The flee ends the fight through `end('flee')`, keeping the
+   * player's hp; an automaton already killed is taken off the floor. Refused (false, with a message,
+   * and disarmed) in an elite or guardian fight, while the enemies act, a card is held or a play's
+   * effects (or a death) are still playing, while a die waits, and once the fight is decided. A
+   * refused flee is not queued. True only for the press that fled.
    */
   flee(): boolean {
     if (this.disposed || this.pausedValue || this.ended || this.controller.outcome !== null)
@@ -878,7 +875,15 @@ export class CombatSession {
     if (this.busy() || this.diceFirst()) return false;
     const dying = [...this.dying].some((a) => !a.disposed && a.action('death').isRunning());
     if (this.flight || this.launch || this.castTimer > 0 || this.holding !== null || dying) {
+      this.disarmFlee();
       this.message = FLEE_WAIT;
+      return false;
+    }
+    if (this.fleeArmed <= 0) {
+      this.fleeArmed = FLEE_CONFIRM_SECONDS;
+      this.message = FLEE_CONFIRM;
+      this.sfx('ui-tick');
+      this.paintFlee();
       return false;
     }
     this.cancel();
@@ -1263,6 +1268,8 @@ export class CombatSession {
   /** True when a pointer press along this ray would land on a combat control (the desktop bridge claims it). */
   claims(origin: Vec3T, direction: Vec3T): boolean {
     if (this.disposed || this.pausedValue || this.controller.outcome !== null) return false;
+    // A held card's use click lands anywhere the mouse aims, an enemy body included.
+    if (this.holding === 'mouse') return true;
     const ray = new THREE.Ray(new THREE.Vector3(...origin), new THREE.Vector3(...direction));
     return this.hitAt(ray) !== null;
   }
@@ -1275,6 +1282,17 @@ export class CombatSession {
     // Before sync, so the frame the enemy phase ends also deals the new hand.
     this.advance(dt);
     if (this.dirty) this.sync();
+    if (this.takeDie) {
+      this.takeDie = false;
+      if (this.pendingThrow && this.mainSqueezed && this.holding === null) this.holdingDie = true;
+    }
+    if (this.fleeArmed > 0) {
+      this.fleeArmed = this.shown ? 0 : Math.max(0, this.fleeArmed - dt);
+      if (this.fleeArmed === 0) {
+        if (this.message === FLEE_CONFIRM) this.message = '';
+        this.paintFlee();
+      }
+    }
     this.stepHitFeedback(dt);
     if (this.xr && this.holding === null && this.xr.mainRay) {
       const r = rayFromObject(this.xr.mainRay);
@@ -1285,12 +1303,6 @@ export class CombatSession {
     this.plate.setHint(this.xr ? XR_SIGIL_HINT : '');
     this.stepHeldDie();
     this.showHint(this.tableHint());
-    const dropping = this.holding !== null && this.fling.holding?.card.target === 'none';
-    this.dropZone.visible = dropping;
-    if (dropping) {
-      const wave = 0.5 - 0.5 * Math.cos((2 * Math.PI * this.clock) / DROP_GLOW.seconds);
-      this.dropZone.material.opacity = DROP_GLOW.min + (DROP_GLOW.max - DROP_GLOW.min) * wave;
-    }
     if (this.drawing === 'xr' && this.xr?.main) {
       const tip = this.tipOf(this.xr.main);
       const ray = this.xr.mainRay ? rayFromObject(this.xr.mainRay) : null;
@@ -1376,7 +1388,7 @@ export class CombatSession {
     this.fleeLabel?.dispose();
     this.hintLabel?.dispose();
     this.tip?.dispose();
-    for (const mesh of [this.endButton, this.fleeButton, this.trayHit, this.dropZone]) {
+    for (const mesh of [this.endButton, this.fleeButton, this.trayHit]) {
       if (!mesh) continue;
       mesh.geometry.dispose();
       (mesh.material as THREE.Material).dispose();
@@ -1405,11 +1417,18 @@ export class CombatSession {
     }
     if (action.phase === 'up') {
       if (this.drawing === 'mouse') this.liftPen();
-      if (this.holding === 'mouse') this.release(ray);
+      return;
+    }
+    // The desktop verbs mirror XR: a click picks a card up (the grip), the next click uses it where
+    // the mouse aims (the trigger), and a right click puts it back (`combat-cancel`, the release).
+    if (this.holding === 'mouse') {
+      this.placeMouseGrip(ray);
+      this.use();
       return;
     }
     if ((this.controller.outcome !== null && !this.pendingThrow) || this.busy()) return;
     const hit = this.hitAt(ray);
+    if (hit !== 'flee') this.disarmFlee();
     if (hit === 'tray') this.throwDice();
     else if (hit === 'plate') {
       this.plate.beginStroke();
@@ -1426,9 +1445,11 @@ export class CombatSession {
 
   private hand(action: Extract<GameAction, { type: 'combat-hand' }>): void {
     const xr = this.xr;
+    if (action.hand === 'main' && action.control === 'squeeze') this.mainSqueezed = action.pressed;
     if (!xr || action.hand !== 'main' || this.disposed || this.pausedValue) return;
     if (action.pressed && this.busy()) return;
     if (action.control === 'squeeze') {
+      if (action.pressed) this.disarmFlee();
       // A rolled die is grabbed by the main hand and thrown as it is let go, even once the rules
       // have decided the fight (a killing dice card waits for its die).
       if (action.pressed && this.pendingThrow && this.holding === null) {
@@ -1443,33 +1464,29 @@ export class CombatSession {
       if (action.pressed) {
         const index = this.fan.hovered;
         if (index !== null && this.controller.outcome === null) this.grab(index, 'xr');
-      } else if (this.holding === 'xr') this.release(null);
+      } else if (this.holding === 'xr') this.putBack();
       return;
     }
     if (!action.pressed) {
       if (this.drawing === 'xr') this.liftPen();
       return;
     }
+    // The trigger uses the held card; a card still in the fan must be grabbed first.
+    if (this.holding === 'xr') {
+      this.use();
+      return;
+    }
     if (this.pendingThrow) {
+      this.disarmFlee();
       this.throwDice();
       return;
     }
     if (this.controller.outcome !== null) return;
     if (this.plateLive()) {
+      this.disarmFlee();
       this.plate.beginStroke();
       this.castTimer = -1;
       this.drawing = 'xr';
-      return;
-    }
-    // F8: the trigger plays an untargeted card (block, a sweep, a sigil card) on the table, held or
-    // pointed at in the fan, so nobody has to find the drop gesture.
-    if (this.holding === 'xr') {
-      if (this.fling.holding?.card.target === 'none') this.release(null, true);
-      return;
-    }
-    const hovered = this.fan.hovered;
-    if (hovered !== null && this.handCard(hovered)?.target === 'none') {
-      if (this.grab(hovered, 'xr')) this.release(null, true);
       return;
     }
     if (xr.mainRay) {
@@ -1477,6 +1494,7 @@ export class CombatSession {
       const hit = this.hitAt(
         new THREE.Ray(new THREE.Vector3(...r.origin), new THREE.Vector3(...r.direction)),
       );
+      if (hit !== 'flee') this.disarmFlee();
       if (hit === 'end-turn') this.endTurn();
       else if (hit === 'flee') this.flee();
       else if (hit === 'tray') this.throwDice();
@@ -1493,13 +1511,24 @@ export class CombatSession {
     return true;
   }
 
-  /** Lets go of the held card; `onTable` plays an untargeted card wherever it is (the trigger). */
-  private release(ray: THREE.Ray | null, onTable = false): void {
-    if (ray) this.placeMouseGrip(ray);
+  /**
+   * Uses the held card (the trigger, or the desktop's second click). A targeted card plays at the
+   * aimed enemy, an untargeted one plays, a sigil card is laid down and its plate opens (the next
+   * trigger presses draw), and a dice card hands its die to a main hand still gripping. A card with
+   * no target in reach stays held, with the reason as the message.
+   */
+  private use(): void {
+    this.disarmFlee();
     const grip = this.holding === 'xr' ? this.xr?.main : this.mouseGrip;
+    const dice = this.fling.holding?.card.dice !== undefined;
+    const decision = this.fling.activate();
+    if (!decision) return;
+    if (decision.outcome === 'held') {
+      if (decision.reason) this.message = decision.reason;
+      return;
+    }
     this.holding = null;
-    const decision = this.fling.release(onTable);
-    if (decision?.outcome === 'played' && grip) {
+    if (decision.outcome === 'played' && grip) {
       this.launch = {
         from: grip.getWorldPosition(new THREE.Vector3()),
         at: this.clock + CARD_LAUNCH_DELAY,
@@ -1507,12 +1536,20 @@ export class CombatSession {
         kind: 'card',
       };
     }
-    if (decision?.outcome === 'sprung-back' && decision.reason) this.message = decision.reason;
-    if (decision?.outcome === 'staged')
+    if (decision.outcome === 'staged')
       this.message = this.xr ? XR_SIGIL_HINT : 'Draw the sigil on the plate';
+    this.takeDie = dice && this.xr !== null;
+    this.dirty = true;
+  }
+
+  /** Lets go of the held card without using it: it springs back to the fan. */
+  private putBack(): void {
+    this.holding = null;
+    this.fling.putBack();
   }
 
   private endTurn(): void {
+    this.disarmFlee();
     if (this.disposed || this.pausedValue || this.controller.outcome !== null || this.busy())
       return;
     if (this.diceFirst()) return;
@@ -1524,6 +1561,7 @@ export class CombatSession {
   }
 
   private throwDice(): void {
+    this.disarmFlee();
     if (this.disposed || this.pausedValue || this.busy()) return;
     const pending = this.pendingThrow;
     if (!pending) {
@@ -1639,6 +1677,7 @@ export class CombatSession {
     if (this.pendingThrow) return this.xr ? XR_DICE_HINT : DESKTOP_DICE_HINT;
     const held = this.holding ? this.fling.holding?.card : undefined;
     if (held?.target === 'none') return untargetedHint(held.name, this.xr ? 'held-xr' : 'held');
+    if (held) return targetedHint(held.name, this.xr ? 'held-xr' : 'held');
     if (this.xr && this.holding === null && this.controller.stage === 'idle') {
       const hovered = this.fan.hovered;
       const card = hovered === null ? null : this.handCard(hovered);
@@ -1712,6 +1751,28 @@ export class CombatSession {
     this.dirty = true;
   }
 
+  /** Drops an armed FLEE back to its resting state. */
+  private disarmFlee(): void {
+    if (this.fleeArmed <= 0) return;
+    this.fleeArmed = 0;
+    if (this.message === FLEE_CONFIRM) this.message = '';
+    this.paintFlee();
+  }
+
+  /** FLEE's colour and label: dark while the enemies act, ruby CONFIRM? while armed. */
+  private paintFlee(): void {
+    if (!this.fleeButton) return;
+    const armed = this.fleeArmed > 0;
+    (this.fleeButton.material as THREE.MeshStandardMaterial).color.set(
+      this.shown !== null ? PALETTE.warmBlack : armed ? PALETTE.ruby : PALETTE.walnut,
+    );
+    const text = armed ? FLEE_CONFIRM_LABEL : 'FLEE';
+    if (this.fleeLabel && text !== this.fleeText) {
+      this.fleeText = text;
+      drawButtonText(this.fleeLabel, text);
+    }
+  }
+
   /** True (with a HUD prompt) while the enemy phase plays: every player verb waits for it. */
   private busy(): boolean {
     if (!this.shown) return false;
@@ -1720,6 +1781,8 @@ export class CombatSession {
   }
 
   private cancel(): void {
+    this.disarmFlee();
+    if (this.holding !== null) this.putBack();
     this.castTimer = -1;
     if (this.drawing) {
       this.drawing = null;
@@ -1893,7 +1956,9 @@ export class CombatSession {
       }
     }
     const awaited = this.controller.awaitedSigil;
-    if (awaited && this.plate.phase === 'hidden') this.plate.show(awaited, this.platePose);
+    // A held sigil card is selected but not used yet: its plate opens once the trigger lays it down.
+    if (awaited && this.plate.phase === 'hidden' && this.holding === null)
+      this.plate.show(awaited, this.platePose);
     else if (!awaited && (this.plate.phase === 'ready' || this.plate.phase === 'drawing'))
       this.plate.hide();
     this.showBodies();
@@ -2148,7 +2213,7 @@ export class CombatSession {
   /** Shows the cast card `cardId` over the plate, `delay` seconds from now. */
   private showReveal(cardId: string, delay: number): void {
     const p = this.platePose;
-    const width = Math.min(2 * p.halfWidth, (2 * p.halfHeight) / REVEAL_ASPECT) * REVEAL_FILL;
+    const width = Math.min(2 * p.halfWidth, 2 * p.halfHeight) * REVEAL_FILL;
     const centre = {
       x: p.center.x + p.normal.x * REVEAL_LIFT,
       y: p.center.y + p.normal.y * REVEAL_LIFT,
@@ -2438,10 +2503,7 @@ export class CombatSession {
     (this.endButton.material as THREE.MeshStandardMaterial).color.set(
       waiting ? PALETTE.warmBlack : PALETTE.walnut,
     );
-    if (this.fleeButton)
-      (this.fleeButton.material as THREE.MeshStandardMaterial).color.set(
-        waiting ? PALETTE.warmBlack : PALETTE.walnut,
-      );
+    this.paintFlee();
     const endText = waiting ? 'ENEMY TURN' : 'END TURN';
     if (this.endLabel && endText !== this.endText) {
       this.endText = endText;
@@ -2506,9 +2568,15 @@ export class CombatSession {
  * the XR main hand, or pointed at in the XR fan.
  */
 export function untargetedHint(name: string, how: 'held' | 'held-xr' | 'pointed-xr'): string {
-  if (how === 'held') return `Release over the table to play ${name}`;
-  if (how === 'held-xr') return `Let go over the table, or pull the trigger, to play ${name}`;
-  return `Pull the trigger to play ${name}`;
+  if (how === 'held') return `Click to play ${name}, right click to put it back`;
+  if (how === 'held-xr') return `Pull the trigger to play ${name}, let go to put it back`;
+  return `Grip to pick up ${name}, then pull the trigger`;
+}
+
+/** The table hint for a held card that needs an enemy: with the mouse, or in the XR main hand. */
+export function targetedHint(name: string, how: 'held' | 'held-xr'): string {
+  if (how === 'held') return `Click an enemy to play ${name}, right click to put it back`;
+  return `Aim at an enemy and pull the trigger to play ${name}, let go to put it back`;
 }
 
 function drawButtonText(label: CanvasLabel, text: string, color: string = PALETTE.parchment): void {

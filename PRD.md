@@ -19,7 +19,7 @@ The first deliverable is a **vertical slice**: one floor at final visual quality
 1. G1 — A complete seeded run of the slice plays from title screen to death or victory on a physical Quest 3, seated, with controllers.
 2. G2 — The look reads as premium: baked-lit brass, walnut and stained-glass rooms, full-scale automatons, painted card art, all in one consistent style approved by Paul.
 3. G3 — Frame pacing holds 72 Hz while exploring and never drops below 45 fps in seated combat, measured on the headset.
-4. G4 — The VR verbs are the fun: flinging cards, rolling real dice and drawing sigils each feel physical and readable.
+4. G4 — The VR verbs are the fun: playing cards from the hand, rolling real dice and drawing sigils each feel physical and readable.
 5. G5 — Every run is reproducible from a visible, shareable seed: same seed, same floor, same draws, same dice results.
 6. G6 — The game is fully playable in a desktop browser with mouse and keyboard, running the same actions, for development and tests.
 
@@ -63,7 +63,7 @@ The first deliverable is a **vertical slice**: one floor at final visual quality
 | `rules/` | Pure, data-driven deckbuilder rules engine: cards, steam (energy), block, damage, statuses, enemy intents, dice-result hooks, sigil multiplier hooks. No rendering. Fully unit-tested. |
 | `content/` | Data files: card definitions, enemy definitions and intent scripts, dice definitions, room-template manifest, workshop upgrades. |
 | `world/` | Room-template loading, lightmap binding, dynamic-light budget, set dressing instancing, door/transition streaming. |
-| `xr/` | Session, locomotion (smooth, snap turn, vignette, teleport toggle, seated height calibration), combat table, card fan, card fling with aim assist, dice presentation, sigil capture. |
+| `xr/` | Session, locomotion (smooth, snap turn, vignette, teleport toggle, seated height calibration), combat table, card fan, card grab-and-use with aim assist, dice presentation, sigil capture. |
 | `desktop/` | Mouse/keyboard presentation of every action. |
 | `sigil/` | $P point-cloud recognizer, templates, score → power-multiplier mapping. Pure. |
 | `dice/` | Rapier world for dice, settle detection, throw-time look-ahead that numbers the die so it lands on the seeded face (settle correction as fallback). |
@@ -77,7 +77,7 @@ The first deliverable is a **vertical slice**: one floor at final visual quality
 - **D2 — Procedural floors from authored, baked room templates.** Blender produces 8 to 12 room templates for the full game (4 to 5 for the slice). Each template is fully lightmapped and baked. Procgen builds the branching-wing graph, chooses templates and their door orientation, and varies dressing, loot and enemies. Each room has at most 4 dynamic lights (candles, a hand-held lantern) and one baked environment probe.
 - **D3 — Familiar rules, novel verbs.** 3 steam per turn, a hand of 5, visible enemy intents, standard block and damage. The novelty lives in how cards, dice and sigils are performed.
 - **D4 — Full-scale foes.** Automatons stand at full scale 2 to 3 m beyond a waist-high brass table that unfolds at the seat. The table holds the draw and discard piles, the dice tray and the sigil plate.
-- **D5 — Card play.** Cards fan in the off-hand controller. Grab one with the main hand and flick it toward a target. Aim assist snaps to the nearest valid target within a 20° cone. Point-and-trigger release is an always-available fallback. Cards with no target are dropped on the table.
+- **D5 — Card play.** Cards fan in the off-hand controller. One verb for every card: grab it with the main-hand grip, then pull the trigger to use it; letting go of the grip puts it back in the hand. The trigger does nothing to a card still in the fan. A targeted card fires at the enemy the main hand aims at; aim assist snaps to the nearest valid target within a 20° cone of the aim, and a card with no target in reach stays held. A card with no target plays where it is. A sigil card is laid down by the trigger and opens the plate; each later trigger press draws a stroke and the glyph casts 0.6 s after the last release. A dice card plays and hands its die to the gripping hand; letting go throws it. Desktop: click a card to pick it up, click again to use it where the mouse aims, right click to put it back (Paul's playtest, 2026-11-17).
 - **D6 — Sigils.** A sigil is traced in the air with the controller tip onto a glowing plate. A $P point-cloud recognizer scores it against the card's template. The score maps to a 0.5 to 1.25 power multiplier, and a trace below the minimum score fizzles to the 0.5 floor rather than failing outright.
 - **D7 — Seated comfort.** The game is seated-only. Recenter calibrates a virtual standing eye height. Turning is a 30° snap by default with smooth turn as an option, a comfort vignette shows during locomotion, and teleport is a toggle.
 - **D8 — One style board governs all 2D art.** A Higgsfield style-reference board (palette, brushwork, card frame) is approved first. Every card illustration, UI element and concept image is generated against it.
@@ -186,7 +186,7 @@ Acceptance:
 
 ### P3 — XR combat verbs
 
-Scope: time-freeze and the combat table unfolding at the seat, full-scale greybox automatons, card fan in the off-hand, grab and fling with 20° aim assist, point-and-trigger fallback, drop-on-table for untargeted cards, Rapier dice with seeded-face correction, sigil plate capture with $P scoring and the multiplier mapping, desktop equivalents for all of these.
+Scope: time-freeze and the combat table unfolding at the seat, full-scale greybox automatons, card fan in the off-hand, grab then trigger to use a card with 20° aim assist (letting go puts it back), Rapier dice with seeded-face correction, sigil plate capture with $P scoring and the multiplier mapping, desktop equivalents for all of these.
 
 Depends on P1 (the world and locomotion) and P2 (the rules).
 
@@ -194,7 +194,7 @@ Acceptance:
 - In Rapier unit tests, the seeded-face correction always shows the RNG result, with no visible snap above a 100 ms ease.
 - $P recognizer tests: the reference traces of each of the 5 sigils score ≥ 0.85, and cross-sigil confusion stays below the minimum score.
 - A full fight is playable in XR with controllers and on desktop through the same actions.
-- Physical: flinging, dice and sigils feel readable seated; combat stays ≥ 45 fps in greybox.
+- Physical: card play, dice and sigils feel readable seated; combat stays ≥ 45 fps in greybox.
 
 ### P4 — Quest look proof
 
@@ -236,7 +236,7 @@ The full spire (number of floors and acts), hand tracking, custom mage gloves, a
 
 - **R1 — Quest frame budget.** Baked rooms plus skinned automatons plus transparent cards may exceed 13.9 ms. Mitigated by putting the P4 proof before content breadth, and by per-asset budgets.
 - **R2 — Lightmaps on rotated templates.** Rotating a template when it is placed must not break baked light directions. Mitigated by baking world-independent lighting inside each template and restricting rotations to the door orientations the manifest permits.
-- **R3 — Card fling feel.** Controller throw velocity is noisy. Mitigated by the aim-assist cone, the point-and-trigger fallback, and tunable thresholds.
+- **R3 — Card aim feel.** Controller pointing is noisy at range. Mitigated by the 20° aim-assist cone around the aim, the point radius behind it, and tunable thresholds. Throw velocity no longer plays cards (D5), so its noise no longer matters.
 - **R4 — Dice correction visibility.** If the seeded-face correction is visible it breaks trust. Mitigated since 2026-11-17 by numbering the die at the throw from a physics look-ahead, so it settles naturally on the seeded face; the eased settle correction remains only as a counted fallback. Headset check of the new presentation pending.
 - **R5 — Sigil drawing with controllers.** Tracing in the air may be imprecise when seated. Mitigated by the forgiving score floor (0.5), large plate, and per-sigil tolerance tuning.
 - **R6 — Art consistency across Higgsfield generations.** Mitigated by D8 (one style board) and owner review of the style board before any batch.
@@ -249,6 +249,6 @@ The full spire (number of floors and acts), hand tracking, custom mage gloves, a
 - **Q1** — How many floors and acts does the full 15 to 20 minute run have after the slice?
 - **Q2** — Which workshop upgrades and unlock tree make up the full meta-progression?
 - **Q3** — When does the Playwright/IWER e2e gate land (post-slice by default)?
-- **Q4** — When does hand-tracking input come in, and what replaces fling and sigil gestures for it?
+- **Q4** — When does hand-tracking input come in, and what replaces the grip-and-trigger card use and the sigil gestures for it?
 - **Q5** — Story framing: who is the apprentice, and why does the spire rebuild itself?
 - **Q6** — Should the house Blender export guide adopt this project's lightmap contract once P4 proves it?

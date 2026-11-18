@@ -4,6 +4,8 @@ import {
   CombatHook,
   type CombatHookDeps,
   type CombatSession,
+  FLEE_CONFIRM,
+  FLEE_CONFIRM_SECONDS,
   FLEE_WAIT,
 } from '../src/combat/combat-session.ts';
 import { ActionBus } from '../src/core/actions.ts';
@@ -114,6 +116,8 @@ describe('Flee control (card B)', () => {
     const hp = rig.session.controller.state.player.hp;
     const flee = rig.session.worldOf('flee') as THREE.Vector3;
     click(rig, flee);
+    expect(rig.ends).toEqual([]);
+    click(rig, flee);
     expect(rig.ends).toEqual([{ room: rig.room, outcome: 'flee', playerHp: hp }]);
     expect(rig.view.encounter.phase).toBe('folding');
     expect(rig.hook.banner).toBe('');
@@ -148,7 +152,8 @@ describe('Flee control (card B)', () => {
     expect(rig.session.enemyPhase).toBe(false);
     rig.step(0.2);
     expect(rig.ends).toEqual([]);
-    // Back in the player's input window it works.
+    // Back in the player's input window it works: arm, then confirm.
+    expect(rig.session.flee()).toBe(false);
     expect(rig.session.flee()).toBe(true);
     expect(rig.ends.map((e) => e.outcome)).toEqual(['flee']);
     rig.hook.dispose();
@@ -205,6 +210,7 @@ describe('fleeing after a kill', () => {
       ...controller.state,
       enemies: controller.state.enemies.map((e) => (e.id === first.id ? { ...e, hp: 0 } : e)),
     };
+    expect(rig.session.flee()).toBe(false);
     expect(rig.session.flee()).toBe(true);
     expect(first.body.parent).toBeNull();
     expect(second.body.parent).not.toBeNull();
@@ -248,6 +254,69 @@ describe('pausing a fight (card A)', () => {
     expect(rig.session.enemyPhase).toBe(false);
     expect(rig.ends).toEqual([]);
     expect(rig.session.message).not.toBe(FLEE_WAIT);
+    rig.hook.dispose();
+  }, 60_000);
+});
+
+describe('FLEE asks for confirmation (card G)', () => {
+  it('a single press only arms FLEE; a second press within the window flees', async () => {
+    const rig = await openFight('regular');
+    const flee = rig.session.worldOf('flee') as THREE.Vector3;
+    click(rig, flee);
+    expect(rig.session.fleeConfirming).toBe(true);
+    expect(rig.session.message).toBe(FLEE_CONFIRM);
+    rig.step(FLEE_CONFIRM_SECONDS - 0.5);
+    expect(rig.ends).toEqual([]);
+    expect(rig.view.encounter.phase).toBe('active');
+    click(rig, flee);
+    expect(rig.ends.map((e) => e.outcome)).toEqual(['flee']);
+    rig.hook.dispose();
+  }, 60_000);
+
+  it('disarms after the timeout, so a later single press arms again and never flees', async () => {
+    const rig = await openFight('regular');
+    const flee = rig.session.worldOf('flee') as THREE.Vector3;
+    click(rig, flee);
+    rig.step(FLEE_CONFIRM_SECONDS + 0.1);
+    expect(rig.session.fleeConfirming).toBe(false);
+    expect(rig.session.message).toBe('');
+    click(rig, flee);
+    expect(rig.ends).toEqual([]);
+    expect(rig.session.fleeConfirming).toBe(true);
+    rig.step(10);
+    expect(rig.ends).toEqual([]);
+    rig.hook.dispose();
+  }, 60_000);
+
+  it('any other verb disarms it: picking up a card, End Turn, and the enemy turn', async () => {
+    const rig = await openFight('regular');
+    const { session } = rig;
+    const flee = session.worldOf('flee') as THREE.Vector3;
+    click(rig, flee);
+    expect(session.fleeConfirming).toBe(true);
+    // Picking up a card disarms; FLEE is then refused while it is held.
+    const card = session.controller.state.piles.hand[0];
+    if (!card) throw new Error('no card');
+    click(rig, session.worldOf('card', card.uid) as THREE.Vector3);
+    rig.step();
+    expect(session.holdingCard).toBe(true);
+    expect(session.fleeConfirming).toBe(false);
+    expect(session.flee()).toBe(false);
+    expect(session.message).toBe(FLEE_WAIT);
+    expect(session.fleeConfirming).toBe(false);
+    rig.actions.emit({ type: 'combat-cancel' });
+    rig.step(0.5);
+
+    // End Turn disarms, and the enemy turn refuses the confirming press.
+    click(rig, flee);
+    expect(session.fleeConfirming).toBe(true);
+    rig.actions.emit({ type: 'end-turn' });
+    rig.step();
+    expect(session.fleeConfirming).toBe(false);
+    expect(session.enemyPhase).toBe(true);
+    expect(session.flee()).toBe(false);
+    expect(session.fleeConfirming).toBe(false);
+    expect(rig.ends).toEqual([]);
     rig.hook.dispose();
   }, 60_000);
 });

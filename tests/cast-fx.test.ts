@@ -1,12 +1,16 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
+import { parseCardAtlas } from '../src/cards/card-atlas.ts';
+import { cardFaceInstance } from '../src/cards/card-face-material.ts';
 import {
   CAST_FX_POINTS,
   CastFx,
   STEAM_CAPACITY,
   STREAM_CAPACITY,
 } from '../src/combat-view/cast-fx.ts';
-import { CastReveal } from '../src/combat-view/cast-reveal.ts';
+import { ART_ONLY_WINDOW, artWindowTexels, CastReveal } from '../src/combat-view/cast-reveal.ts';
 import {
   type CastFxKind,
   castFxSteps,
@@ -369,7 +373,7 @@ describe('CastFx', () => {
 
 describe('CastReveal', () => {
   it('shows the card after its delay for the reveal, then hides, in one draw', () => {
-    const reveal = new CastReveal({ syncLabels: false });
+    const reveal = new CastReveal();
     const right = { x: 1, y: 0, z: 0 };
     const up = { x: 0, y: 1, z: 0 };
     reveal.show('warding-glyph', { x: 0, y: 1, z: -0.6 }, right, up, 0.1, GLYPH_LAUNCH_SECONDS);
@@ -377,11 +381,63 @@ describe('CastReveal', () => {
     expect(reveal.visible).toBe(false);
     reveal.update(GLYPH_LAUNCH_SECONDS + 0.01);
     expect(reveal.visible).toBe(true);
-    // The card, the flash glowing behind it, and the name and cost labels: allocated once.
-    expect(reveal.children).toHaveLength(3);
+    // The art disc and the flash glowing behind it: allocated once, no labels.
+    expect(reveal.children).toHaveLength(2);
     for (let t = 0; t < REVEAL_SECONDS; t += DT) reveal.update(DT);
     expect(reveal.visible).toBe(false);
     expect(reveal.active).toBe(false);
+    reveal.dispose();
+  });
+
+  // Playtest 2026-11-17: "when the glyph is complete i just want it to show the top graphic from
+  // the card, not the entire card".
+  it('shows only the round art window: a square disc quad, no frame, no name or cost text', () => {
+    const atlas = parseCardAtlas(
+      JSON.parse(readFileSync(resolve('public/assets/cards/atlas/card-atlas.json'), 'utf8')),
+    );
+    const pages = atlas.pages.map(() => new THREE.Texture());
+    const reveal = new CastReveal({ art: { atlas, pages } });
+    const right = { x: 1, y: 0, z: 0 };
+    const up = { x: 0, y: 1, z: 0 };
+    reveal.show('warding-glyph', { x: 0, y: 1, z: -0.6 }, right, up, 0.12);
+    reveal.update(REVEAL_IN_SECONDS + 0.01);
+    expect(reveal.visible).toBe(true);
+    const mesh = reveal.getObjectByName('cast-reveal-card') as THREE.InstancedMesh;
+    const material = mesh.material as THREE.ShaderMaterial;
+    // A square quad the disc's diameter across, not a card-shaped one.
+    expect(mesh.scale.x).toBeCloseTo(0.12);
+    expect(mesh.scale.y).toBeCloseTo(mesh.scale.x);
+    // The window fills the quad, and the frame page is fully transparent: the shader discards
+    // everything outside the circle and draws only art inside it.
+    const win = material.uniforms.uWindow?.value as THREE.Vector4;
+    expect(win.toArray()).toEqual([...ART_ONLY_WINDOW]);
+    const frame = material.uniforms.uFrame?.value as THREE.DataTexture;
+    expect(pages).not.toContain(frame);
+    expect(frame.image.width * frame.image.height).toBe(1);
+    expect([...(frame.image.data as Uint8Array)]).toEqual([0, 0, 0, 0]);
+    // The frame rect spans the window's own texel size, so the shader's edge width is unchanged.
+    const geometry = mesh.geometry;
+    const frameUv = geometry.getAttribute('aFrameUv');
+    const texels = artWindowTexels({ atlas, pages }, 'warding-glyph');
+    expect(texels).toBeGreaterThan(400);
+    expect([frameUv.getX(0), frameUv.getY(0), frameUv.getZ(0), frameUv.getW(0)]).toEqual([
+      0,
+      0,
+      Math.fround(texels),
+      Math.fround(texels),
+    ]);
+    // The art layers are the hand card's own atlas rects.
+    const face = cardFaceInstance(atlas, 'warding-glyph');
+    const back = geometry.getAttribute('aBackUv');
+    expect([back.getX(0), back.getY(0), back.getZ(0), back.getW(0)]).toEqual(
+      face.backUv.map((v) => Math.fround(v)),
+    );
+    // No text anywhere.
+    let texts = 0;
+    reveal.traverse((o) => {
+      if ((o as { isTroikaText?: boolean }).isTroikaText || o.name.includes('label')) texts++;
+    });
+    expect(texts).toBe(0);
     reveal.dispose();
   });
 });

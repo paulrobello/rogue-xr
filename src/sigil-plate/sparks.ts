@@ -202,10 +202,12 @@ export class SigilSparks extends THREE.Group {
     const alive = this.pool.step(h, gx, gy, gz, RAMP);
 
     const target = this.contact ? 1 : 0;
+    // Eases toward the target and stops there: an out dot with no contact must stay out, not rise a
+    // frame from 0 and flicker.
     this.dotLevel =
-      target >= this.dotLevel
-        ? Math.min(1, this.dotLevel + h / 0.04)
-        : Math.max(0, this.dotLevel - h / DOT_FADE_SECONDS);
+      target > this.dotLevel
+        ? Math.min(target, this.dotLevel + h / 0.04)
+        : Math.max(target, this.dotLevel - h / DOT_FADE_SECONDS);
     const level = this.dotLevel;
     let scale = 0;
     if (level > 0) {

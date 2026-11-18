@@ -75,7 +75,7 @@ function at(session: CombatSession, kind: CombatPick, key?: number | string): TH
   return p;
 }
 
-/** Flings the first hand card at the first living enemy with the mouse. */
+/** Plays the first hand card at the first living enemy with the mouse: click it up, click the enemy. */
 function flingFirstCard(rig: Rig): void {
   const { session } = rig;
   const card = session.controller.state.piles.hand[0];
@@ -84,11 +84,13 @@ function flingFirstCard(rig: Rig): void {
   const from = at(session, 'card', card.uid);
   const to = at(session, 'enemy', foe.id);
   pointerAt(rig, from, 'down');
+  pointerAt(rig, from, 'up');
   rig.step();
   for (let i = 1; i <= 6; i++) {
     pointerAt(rig, from.clone().lerp(to, i / 6), 'move');
     rig.step();
   }
+  pointerAt(rig, to, 'down');
   pointerAt(rig, to, 'up');
   rig.step();
 }
@@ -295,6 +297,81 @@ describe('F11 the rolled die pulses in the tray until it is thrown', () => {
     for (let i = 0; i < 600 && session.awaitingDice; i++) step();
     expect(session.rolls).toHaveLength(1);
     expect(session.rolls[0]?.value).toBe(session.controller.lastDice?.value);
+    rig.hook.dispose();
+  }, 60_000);
+
+  // Card verbs (playtest 2026-11-17): grab the dice card, the trigger plays it at the aimed enemy
+  // and the gripping hand takes its die; letting go throws. Letting go of the card instead puts it
+  // back with nothing rolled.
+  it('in XR a held dice card is put back by letting go, or used by the trigger, which hands over the die', async () => {
+    const rig = await openFight({ deck: Array(10).fill('cog-toss') });
+    const { session, camera } = rig;
+    const scene = camera.parent as THREE.Scene;
+    const head = camera.getWorldPosition(new THREE.Vector3());
+    const main = new THREE.Group();
+    const mainRay = new THREE.Group();
+    const off = new THREE.Group();
+    off.position.copy(head).add(new THREE.Vector3(-0.18, -0.3, -0.3));
+    scene.add(main, mainRay, off);
+    const xr = { main, mainRay, off };
+    const rest = head.clone().add(new THREE.Vector3(0.18, -0.3, -0.3));
+    const pose = (target: THREE.Vector3) => {
+      for (const o of [main, mainRay]) {
+        o.position.copy(rest);
+        o.lookAt(target);
+        o.rotateY(Math.PI);
+        o.updateMatrixWorld(true);
+      }
+    };
+    const step = (seconds = 1 / 60) => {
+      for (let t = 0; t < seconds - 1e-9; t += 1 / 60) {
+        camera.updateMatrixWorld(true);
+        rig.view.update(camera, 1 / 60);
+        rig.hook.update(1 / 60, xr);
+      }
+    };
+    const hand = (control: 'squeeze' | 'trigger', pressed: boolean) =>
+      rig.actions.emit({ type: 'combat-hand', hand: 'main', control, pressed });
+    step();
+    const handSize = session.controller.state.piles.hand.length;
+    const card = () => at(session, 'card', session.controller.state.piles.hand[0]?.uid as number);
+
+    pose(card());
+    step();
+    hand('squeeze', true);
+    step();
+    expect(session.holdingCard).toBe(true);
+    hand('squeeze', false);
+    step(0.5);
+    expect(session.holdingCard).toBe(false);
+    expect(session.awaitingThrow).toBe(false);
+    expect(session.controller.lastDice).toBeNull();
+    expect(session.controller.state.piles.hand).toHaveLength(handSize);
+
+    pose(card());
+    step();
+    hand('squeeze', true);
+    step();
+    const foe = session.controller.state.enemies.find((e) => e.hp > 0);
+    if (!foe) throw new Error('no enemy');
+    pose(at(session, 'enemy', foe.id));
+    step();
+    hand('trigger', true);
+    hand('trigger', false);
+    step(0.1);
+    expect(session.fling.lastDecision).toMatchObject({ outcome: 'played', targetId: foe.id });
+    expect(session.awaitingThrow).toBe(true);
+    // The die is in the gripping hand.
+    const die = session.dice.waiting as THREE.Object3D;
+    main.position.add(new THREE.Vector3(0.05, 0.05, 0));
+    main.updateMatrixWorld(true);
+    step();
+    expect(die.getWorldPosition(new THREE.Vector3()).distanceTo(main.position)).toBeLessThan(1e-6);
+    hand('squeeze', false);
+    step();
+    expect(session.awaitingThrow).toBe(false);
+    for (let i = 0; i < 600 && session.awaitingDice; i++) step();
+    expect(session.rolls).toHaveLength(1);
     rig.hook.dispose();
   }, 60_000);
 });

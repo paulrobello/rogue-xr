@@ -184,15 +184,51 @@ function at(
   return p;
 }
 
-/** Drags a hand card along the mouse ray to `to` over a few frames and lets go. */
-function drag(rig: Rig, session: CombatSession, uid: number, to: THREE.Vector3): void {
+/** Stand-in tracked hands for an XR fight: main grip and ray posed together, the fan on `off`. */
+function xrHands(rig: Rig) {
+  const { camera } = rig;
+  const scene = camera.parent as THREE.Scene;
+  const head = camera.getWorldPosition(new THREE.Vector3());
+  const main = new THREE.Group();
+  const mainRay = new THREE.Group();
+  const off = new THREE.Group();
+  off.position.copy(head).add(new THREE.Vector3(-0.18, -0.3, -0.3));
+  scene.add(main, mainRay, off);
+  const hands = { main, mainRay, off };
+  return {
+    rest: head.clone().add(new THREE.Vector3(0.18, -0.3, -0.3)),
+    pose(from: THREE.Vector3, target: THREE.Vector3) {
+      for (const o of [main, mainRay]) {
+        o.position.copy(from);
+        o.lookAt(target);
+        o.rotateY(Math.PI);
+        o.updateMatrixWorld(true);
+      }
+    },
+    step(seconds = DT) {
+      for (let t = 0; t < seconds - 1e-9; t += DT) {
+        camera.updateMatrixWorld(true);
+        rig.view.update(camera, DT);
+        rig.hook.update(DT, hands);
+      }
+    },
+    hand(control: 'squeeze' | 'trigger', pressed: boolean) {
+      rig.actions.emit({ type: 'combat-hand', hand: 'main', control, pressed });
+    },
+  };
+}
+
+/** Desktop play: clicks a hand card to pick it up, moves the mouse to `to` and clicks to use it. */
+function playCard(rig: Rig, session: CombatSession, uid: number, to: THREE.Vector3): void {
   const from = at(session, 'card', uid);
   pointerAt(rig, from, 'down');
+  pointerAt(rig, from, 'up');
   rig.step();
   for (let i = 1; i <= 6; i++) {
     pointerAt(rig, from.clone().lerp(to, i / 6), 'move');
     rig.step();
   }
+  pointerAt(rig, to, 'down');
   pointerAt(rig, to, 'up');
   rig.step();
 }
@@ -230,7 +266,7 @@ interface FightLog {
   outcome: string | null;
 }
 
-/** Plays the fight with desktop verbs only: drags at enemies, drops on the table, sigils, dice, End Turn. */
+/** Plays the fight with desktop verbs only: cards used at enemies or on the table, sigils, dice, End Turn. */
 async function playFight(rig: Rig & { session: CombatSession }): Promise<FightLog> {
   const { session } = rig;
   const verbs = new Set<string>();
@@ -279,10 +315,10 @@ async function playFight(rig: Rig & { session: CombatSession }): Promise<FightLo
     const handBefore = state.piles.hand.length;
     if (card.target === 'enemy') {
       const foe = state.enemies.find((e) => e.hp > 0);
-      drag(rig, session, playable.uid, at(session, 'enemy', foe?.id));
+      playCard(rig, session, playable.uid, at(session, 'enemy', foe?.id));
       verbs.add('fling');
     } else {
-      drag(rig, session, playable.uid, at(session, 'table'));
+      playCard(rig, session, playable.uid, at(session, 'table'));
       verbs.add('drop');
     }
     const stageAfter: string = session.controller.stage;
@@ -372,7 +408,7 @@ describe('combat session', () => {
     const { session } = rig;
     const table = at(session, 'table');
     const first = session.controller.state.piles.hand[0]?.uid as number;
-    drag(rig, session, first, table);
+    playCard(rig, session, first, table);
     expect(session.controller.stage).toBe('sigil');
     drawSigil(rig, session);
     expect(session.plate.phase).toBe('done');
@@ -380,7 +416,7 @@ describe('combat session', () => {
     expect(blockAfterFirst).toBeGreaterThan(0);
 
     const second = session.controller.state.piles.hand[0]?.uid as number;
-    drag(rig, session, second, table);
+    playCard(rig, session, second, table);
     expect(session.controller.stage).toBe('sigil');
     rig.step(2);
     expect(session.plate.phase).toBe('ready');
@@ -392,146 +428,185 @@ describe('combat session', () => {
     expect(session.controller.state.player.block).toBeGreaterThan(blockAfterFirst);
   }, 60_000);
 
-  // F8 (Quest 3 playtest 2026-11-17): "defense cards seem like they need to be thrown down with a
-  // gesture which is not obvious". The trigger plays an untargeted card, pointed at in the fan or held,
-  // and the table says so (and glows while one is held).
-  it('plays a block card in XR with the trigger, pointed at or held, with a table hint', async () => {
+  // Card verbs (Quest 3 playtest 2026-11-17): "if you are holding a card and you release it it goes
+  // back to your hand, trigger while holding the card should be activator". The trigger does nothing
+  // to a card still in the fan; a grabbed card is used by the trigger or put back by letting go.
+  it('plays a block card in XR only once grabbed: trigger uses it, letting go puts it back', async () => {
     const rig = await openFight('SPIRE002', { deck: Array(10).fill('defend') });
-    const { session, camera } = rig;
-    const scene = camera.parent as THREE.Scene;
-    const head = camera.getWorldPosition(new THREE.Vector3());
-    const main = new THREE.Group();
-    const mainRay = new THREE.Group();
-    const off = new THREE.Group();
-    off.position.copy(head).add(new THREE.Vector3(-0.18, -0.3, -0.3));
-    scene.add(main, mainRay, off);
-    const xr = { main, mainRay, off };
-    const pose = (from: THREE.Vector3, target: THREE.Vector3) => {
-      for (const o of [main, mainRay]) {
-        o.position.copy(from);
-        o.lookAt(target);
-        o.rotateY(Math.PI);
-        o.updateMatrixWorld(true);
-      }
-    };
-    const step = (seconds = DT) => {
-      for (let t = 0; t < seconds - 1e-9; t += DT) {
-        camera.updateMatrixWorld(true);
-        rig.view.update(camera, DT);
-        rig.hook.update(DT, xr);
-      }
-    };
-    const hand = (control: 'squeeze' | 'trigger', pressed: boolean) =>
-      rig.actions.emit({ type: 'combat-hand', hand: 'main', control, pressed });
+    const { session } = rig;
+    const xr = xrHands(rig);
     const name = getCard('defend').name;
-    const rest = head.clone().add(new THREE.Vector3(0.18, -0.3, -0.3));
-    step();
+    xr.step();
     const handSize = session.controller.state.piles.hand.length;
+    const first = () => at(session, 'card', session.controller.state.piles.hand[0]?.uid as number);
 
-    // Pointed at in the fan: the hint says pull the trigger, and the trigger plays it.
-    pose(rest, at(session, 'card', session.controller.state.piles.hand[0]?.uid as number));
-    step();
+    // Pointed at in the fan: the hint says grip first, and the trigger alone plays nothing.
+    xr.pose(xr.rest, first());
+    xr.step();
     expect(session.fan.hovered).toBe(0);
     expect(session.hint).toBe(untargetedHint(name, 'pointed-xr'));
-    hand('trigger', true);
-    hand('trigger', false);
-    step(0.5);
-    expect(session.fling.lastDecision).toMatchObject({ outcome: 'played', via: 'press' });
-    expect(session.controller.state.piles.hand).toHaveLength(handSize - 1);
-    const block = session.controller.state.player.block;
-    expect(block).toBeGreaterThan(0);
+    xr.hand('trigger', true);
+    xr.hand('trigger', false);
+    xr.step(0.5);
+    expect(session.controller.state.piles.hand).toHaveLength(handSize);
+    expect(session.controller.state.player.block).toBe(0);
 
-    // Held in the main hand: the hint says let go over the table or pull the trigger, the table
-    // glows, and the trigger plays it from wherever the hand is.
-    pose(rest, at(session, 'card', session.controller.state.piles.hand[0]?.uid as number));
-    step();
-    hand('squeeze', true);
-    step();
+    // Grabbed and let go: back in the hand, nothing selected.
+    xr.pose(xr.rest, first());
+    xr.step();
+    xr.hand('squeeze', true);
+    xr.step();
+    expect(session.holdingCard).toBe(true);
     expect(session.hint).toBe(untargetedHint(name, 'held-xr'));
-    expect(session.dropZone.visible).toBe(true);
-    hand('trigger', true);
-    step();
+    xr.hand('squeeze', false);
+    xr.step(0.5);
+    expect(session.holdingCard).toBe(false);
+    expect(session.controller.stage).toBe('idle');
+    expect(session.controller.state.piles.hand).toHaveLength(handSize);
+    expect(session.fan.count).toBe(handSize);
+
+    // Grabbed and triggered: it plays from wherever the hand is.
+    xr.pose(xr.rest, first());
+    xr.step();
+    xr.hand('squeeze', true);
+    xr.step();
+    xr.hand('trigger', true);
+    xr.step();
     expect(session.fling.lastDecision).toMatchObject({ outcome: 'played', via: 'press' });
-    expect(session.controller.state.player.block).toBeGreaterThan(block);
-    expect(session.dropZone.visible).toBe(false);
-    hand('trigger', false);
-    hand('squeeze', false);
-    step();
-    expect(session.controller.state.piles.hand).toHaveLength(handSize - 2);
+    expect(session.controller.state.player.block).toBeGreaterThan(0);
+    xr.hand('trigger', false);
+    xr.hand('squeeze', false);
+    xr.step();
+    expect(session.controller.state.piles.hand).toHaveLength(handSize - 1);
     rig.hook.dispose();
   }, 60_000);
 
-  it('tells a desktop player holding a block card to release it over the table, which plays it', async () => {
+  it('fires a held attack in XR at the enemy the hand aims at, and keeps it held with no aim', async () => {
+    const rig = await openFight('SPIRE002', { deck: Array(10).fill('strike') });
+    const { session } = rig;
+    const xr = xrHands(rig);
+    xr.step();
+    const uid = session.controller.state.piles.hand[0]?.uid as number;
+    const enemy = session.controller.state.enemies[0];
+    if (!enemy) throw new Error('no enemy');
+    const hp = enemy.hp;
+    xr.pose(xr.rest, at(session, 'card', uid));
+    xr.step();
+    xr.hand('trigger', true);
+    xr.hand('trigger', false);
+    xr.step();
+    expect(session.holdingCard).toBe(false);
+    expect(session.controller.stage).toBe('idle');
+    // Grabbed and let go: back in the hand, nothing selected.
+    xr.hand('squeeze', true);
+    xr.step();
+    expect(session.controller.stage).toBe('target');
+    xr.hand('squeeze', false);
+    xr.step(0.5);
+    expect(session.holdingCard).toBe(false);
+    expect(session.controller.stage).toBe('idle');
+    expect(session.controller.state.piles.hand.some((c) => c.uid === uid)).toBe(true);
+    xr.pose(xr.rest, at(session, 'card', uid));
+    xr.step();
+    xr.hand('squeeze', true);
+    xr.step();
+    expect(session.controller.stage).toBe('target');
+
+    // Aimed at the floor behind the player: no target, the card stays in the hand.
+    xr.pose(xr.rest, xr.rest.clone().add(new THREE.Vector3(0, -1, 2)));
+    xr.step();
+    xr.hand('trigger', true);
+    xr.hand('trigger', false);
+    xr.step();
+    expect(session.holdingCard).toBe(true);
+    expect(session.fling.lastDecision).toMatchObject({ outcome: 'held' });
+
+    // Aimed a little off the enemy, inside the assist cone: it fires at that enemy.
+    const foe = at(session, 'enemy', enemy.id);
+    xr.pose(xr.rest, foe.clone().add(new THREE.Vector3(0.35, 0.2, 0)));
+    xr.step();
+    xr.hand('trigger', true);
+    xr.step();
+    expect(session.fling.lastDecision).toMatchObject({
+      outcome: 'played',
+      via: 'aim',
+      targetId: enemy.id,
+    });
+    expect(session.holdingCard).toBe(false);
+    xr.hand('trigger', false);
+    xr.hand('squeeze', false);
+    xr.step(FLIGHT_MAX_SECONDS + 0.5);
+    expect(session.controller.state.enemies[0]?.hp).toBeLessThan(hp);
+    rig.hook.dispose();
+  }, 60_000);
+
+  it('a desktop block card is clicked up, clicked to play, or right-clicked back to the hand', async () => {
     const rig = await openFight('SPIRE002', { deck: Array(10).fill('defend') });
     const { session } = rig;
     const card = session.controller.state.piles.hand[0];
     if (!card) throw new Error('no card');
     const from = at(session, 'card', card.uid);
     pointerAt(rig, from, 'down');
+    pointerAt(rig, from, 'up');
     rig.step();
+    expect(session.holdingCard).toBe(true);
     expect(session.hint).toBe(untargetedHint(getCard('defend').name, 'held'));
-    expect(session.dropZone.visible).toBe(true);
+    // The right click (main.ts sends combat-cancel) puts it back.
+    rig.actions.emit({ type: 'combat-cancel' });
+    rig.step(0.5);
+    expect(session.holdingCard).toBe(false);
+    expect(session.controller.stage).toBe('idle');
+    expect(session.controller.state.player.block).toBe(0);
+
+    pointerAt(rig, from, 'down');
+    pointerAt(rig, from, 'up');
+    rig.step();
+    // Letting go of the mouse button does not play it; the next click does, wherever it lands.
+    expect(session.holdingCard).toBe(true);
     const table = at(session, 'table');
-    for (let i = 1; i <= 6; i++) {
-      pointerAt(rig, from.clone().lerp(table, i / 6), 'move');
-      rig.step();
-    }
+    pointerAt(rig, table, 'move');
+    rig.step();
+    pointerAt(rig, table, 'down');
     pointerAt(rig, table, 'up');
     rig.step();
     expect(session.fling.lastDecision).toMatchObject({ outcome: 'played', targetId: null });
     expect(session.controller.state.player.block).toBeGreaterThan(0);
     expect(session.hint).toBe('');
-    expect(session.dropZone.visible).toBe(false);
     rig.hook.dispose();
   }, 60_000);
 
   // Quest 3 report 2026-11-15: tracing on the plate with a controller drew nothing and the cast
   // said "too short". The tip, out of reach of the plate, fed a miss every frame that closed the
-  // stroke the ray had just started, so no stroke ever held two points.
-  it('casts a sigil traced in XR by holding the trigger and pointing at the plate', async () => {
+  // stroke the ray had just started, so no stroke ever held two points. Playtest 2026-11-17: the
+  // plate opened (and the trigger drew, lighting its dot) while the glyph card was still only held.
+  it('casts a sigil in XR: grab the card, trigger lays it down, then each trigger press draws', async () => {
     const rig = await openFight('SPIRE002', { deck: Array(10).fill('warding-glyph') });
-    const { session, camera } = rig;
-    const scene = camera.parent as THREE.Scene;
-    const head = camera.getWorldPosition(new THREE.Vector3());
-    const main = new THREE.Group();
-    const mainRay = new THREE.Group();
-    const off = new THREE.Group();
-    off.position.copy(head).add(new THREE.Vector3(-0.18, -0.3, -0.3));
-    scene.add(main, mainRay, off);
-    const xr = { main, mainRay, off };
-    const pose = (from: THREE.Vector3, target: THREE.Vector3) => {
-      for (const o of [main, mainRay]) {
-        o.position.copy(from);
-        o.lookAt(target);
-        o.rotateY(Math.PI);
-        o.updateMatrixWorld(true);
-      }
-    };
-    const step = (seconds = DT) => {
-      for (let t = 0; t < seconds - 1e-9; t += DT) {
-        camera.updateMatrixWorld(true);
-        rig.view.update(camera, DT);
-        rig.hook.update(DT, xr);
-      }
-    };
-    const hand = (control: 'squeeze' | 'trigger', pressed: boolean) =>
-      rig.actions.emit({ type: 'combat-hand', hand: 'main', control, pressed });
-
-    const rest = head.clone().add(new THREE.Vector3(0.18, -0.3, -0.3));
-    step();
+    const { session } = rig;
+    const xr = xrHands(rig);
+    xr.step();
     const uid = session.controller.state.piles.hand[0]?.uid as number;
-    pose(rest, at(session, 'card', uid));
-    step();
+    xr.pose(xr.rest, at(session, 'card', uid));
+    xr.step();
     expect(session.fan.hovered).toBe(0);
-    hand('squeeze', true);
-    step();
-    const table = at(session, 'table');
-    for (let i = 1; i <= 6; i++) {
-      pose(rest.clone().lerp(table.clone().setY(table.y + 0.25), i / 6), table);
-      step();
-    }
-    hand('squeeze', false);
-    step(0.5);
+    xr.hand('squeeze', true);
+    xr.step(0.3);
+    // Held only: no plate yet.
+    expect(session.plate.phase).toBe('hidden');
+    xr.hand('squeeze', false);
+    xr.step(0.5);
+    expect(session.plate.phase).toBe('hidden');
+    expect(session.controller.stage).toBe('idle');
+
+    xr.pose(xr.rest, at(session, 'card', uid));
+    xr.step();
+    xr.hand('squeeze', true);
+    xr.step();
+    xr.hand('trigger', true);
+    xr.step();
+    xr.hand('trigger', false);
+    xr.hand('squeeze', false);
+    xr.step(0.5);
+    expect(session.fling.lastDecision).toMatchObject({ outcome: 'staged', via: 'press' });
     expect(session.controller.stage).toBe('sigil');
     expect(session.plate.phase).toBe('ready');
     expect(session.plate.hintText).toMatch(/trigger/i);
@@ -542,24 +617,84 @@ describe('combat session', () => {
       new THREE.Vector3(p.center.x, p.center.y, p.center.z)
         .addScaledVector(new THREE.Vector3(p.right.x, p.right.y, p.right.z), (pt.x - 0.5) * size)
         .addScaledVector(new THREE.Vector3(p.up.x, p.up.y, p.up.z), (pt.y - 0.5) * size);
+    const sparks = session.plate.getObjectByName('sigil-sparks') as THREE.Object3D & {
+      dotBrightness: number;
+    };
+    const points = session.plate.getObjectByName('sigil-sparks-points') as THREE.Points;
+    // Card B: aiming at the plate before the trigger lights nothing.
+    xr.pose(xr.rest, onPlate({ x: 0.5, y: 0.5 }));
+    xr.step(0.3);
+    expect(sparks.dotBrightness).toBe(0);
+    expect(points.visible).toBe(false);
+
     const trail = session.plate.getObjectByName('sigil-plate-trail') as THREE.Mesh;
+    let lit = 0;
     for (const stroke of SIGIL_TEMPLATES.ward.strokes) {
-      pose(rest, onPlate(stroke[0] as { x: number; y: number }));
-      step();
-      hand('trigger', true);
+      xr.pose(xr.rest, onPlate(stroke[0] as { x: number; y: number }));
+      xr.step();
+      xr.hand('trigger', true);
       for (const pt of stroke) {
-        pose(rest, onPlate(pt));
-        step();
+        xr.pose(xr.rest, onPlate(pt));
+        xr.step();
+        lit = Math.max(lit, sparks.dotBrightness);
       }
+      expect(points.visible).toBe(true);
       expect(trail.geometry.drawRange.count).toBeGreaterThan(0);
-      hand('trigger', false);
-      step(0.1);
+      xr.hand('trigger', false);
+      xr.step(0.1);
     }
-    step(SIGIL_CAST_SECONDS + 0.1);
+    expect(lit).toBe(1);
+    xr.step(SIGIL_CAST_SECONDS + 0.1);
     expect(session.plate.phase).toBe('done');
     expect(session.plate.labelText).not.toMatch(/too short|fizzle/i);
     expect(session.controller.stage).toBe('idle');
     expect(session.controller.state.player.block).toBeGreaterThan(0);
+    rig.hook.dispose();
+  }, 60_000);
+
+  it('a targeted dice sigil (Furnace Brand) is laid down the same way: aim, trigger, plate waits', async () => {
+    const rig = await openFight('SPIRE002', { deck: Array(10).fill('furnace-brand') });
+    const { session } = rig;
+    const xr = xrHands(rig);
+    xr.step();
+    const uid = session.controller.state.piles.hand[0]?.uid as number;
+    const enemy = session.controller.state.enemies[0];
+    if (!enemy) throw new Error('no enemy');
+    xr.pose(xr.rest, at(session, 'card', uid));
+    xr.step();
+    xr.hand('squeeze', true);
+    xr.step(0.3);
+    expect(session.plate.phase).toBe('hidden');
+    xr.pose(xr.rest, at(session, 'enemy', enemy.id));
+    xr.step();
+    xr.hand('trigger', true);
+    xr.step();
+    xr.hand('trigger', false);
+    xr.step(0.4);
+    expect(session.fling.lastDecision).toMatchObject({
+      outcome: 'staged',
+      via: 'aim',
+      targetId: enemy.id,
+    });
+    expect(session.controller.stage).toBe('sigil');
+    expect(session.plate.phase).toBe('ready');
+    const sparks = session.plate.getObjectByName('sigil-sparks') as THREE.Object3D & {
+      dotBrightness: number;
+    };
+    const p = session.platePoseNow;
+    xr.pose(xr.rest, new THREE.Vector3(p.center.x, p.center.y, p.center.z));
+    xr.step(0.2);
+    expect(sparks.dotBrightness).toBe(0);
+    // Letting go of the grip after laying it down keeps the cast waiting.
+    xr.hand('squeeze', false);
+    xr.step(0.3);
+    expect(session.plate.phase).toBe('ready');
+    expect(session.controller.stage).toBe('sigil');
+    xr.hand('trigger', true);
+    xr.step();
+    expect(session.plate.phase).toBe('drawing');
+    expect(sparks.dotBrightness).toBeGreaterThan(0);
+    xr.hand('trigger', false);
     rig.hook.dispose();
   }, 60_000);
 
@@ -584,7 +719,7 @@ describe('combat session', () => {
     (controller as unknown as { changed(): void }).changed();
     rig.step(0.5);
 
-    drag(rig, session, 9001, at(session, 'table'));
+    playCard(rig, session, 9001, at(session, 'table'));
     expect(controller.stage).toBe('sigil');
     drawSigil(rig, session);
     expect(controller.stage).toBe('idle');
@@ -594,7 +729,7 @@ describe('combat session', () => {
     const enemy = session.enemies[0];
     if (!enemy) throw new Error('no enemy');
     const hpBefore = controller.state.enemies.find((e) => e.id === enemy.id)?.hp as number;
-    drag(rig, session, 9002, at(session, 'enemy', enemy.id));
+    playCard(rig, session, 9002, at(session, 'enemy', enemy.id));
     expect(controller.state.piles.hand.map((c) => c.uid)).toEqual([]);
     expect(controller.state.enemies.find((e) => e.id === enemy.id)?.hp).toBeLessThan(hpBefore);
     rig.hook.dispose();
@@ -611,7 +746,7 @@ describe('combat session', () => {
     const home = enemy.body.position.clone();
     const before = hpOf(session.view);
     const uid = session.controller.state.piles.hand[0]?.uid as number;
-    drag(rig, session, uid, at(session, 'enemy', enemy.id));
+    playCard(rig, session, uid, at(session, 'enemy', enemy.id));
     expect(hpOf(session.controller.state)).toBeLessThan(before);
     expect(session.attackInFlight).toBe(true);
     expect(hpOf(session.view)).toBe(before);
@@ -647,7 +782,7 @@ describe('combat session', () => {
     expect(session.numbers.slots).toHaveLength(HIT_NUMBER_SLOTS);
     const before = session.view.enemies.find((e) => e.id === enemy.id)?.hp ?? 0;
     const uid = session.controller.state.piles.hand[0]?.uid as number;
-    drag(rig, session, uid, at(session, 'enemy', enemy.id));
+    playCard(rig, session, uid, at(session, 'enemy', enemy.id));
     // Nothing floats while the bolt flies; the number shows with the HP change.
     expect(session.numbers.active).toHaveLength(0);
     for (let i = 0; i < 120 && session.attackInFlight; i++) rig.step();
@@ -688,7 +823,7 @@ describe('combat session', () => {
     const living = session.controller.state.enemies.filter((e) => e.hp > 0).length;
     const before = session.view.enemies.map((e) => e.hp);
     const uid = session.controller.state.piles.hand[0]?.uid as number;
-    drag(rig, session, uid, at(session, 'table'));
+    playCard(rig, session, uid, at(session, 'table'));
     expect(session.controller.stage).toBe('sigil');
     drawSigil(rig, session);
     expect(session.controller.stage).toBe('idle');
@@ -726,7 +861,7 @@ describe('combat session', () => {
     const { session } = rig;
     const before = session.view.player.block;
     const uid = session.controller.state.piles.hand[0]?.uid as number;
-    drag(rig, session, uid, at(session, 'table'));
+    playCard(rig, session, uid, at(session, 'table'));
     drawSigil(rig, session);
     expect(session.controller.state.player.block).toBeGreaterThan(before);
     expect(session.attackInFlight).toBe(true);
@@ -774,7 +909,7 @@ describe('combat session', () => {
     const { session } = rig;
     const before = session.view.player.block;
     const uid = session.controller.state.piles.hand[0]?.uid as number;
-    drag(rig, session, uid, at(session, 'table'));
+    playCard(rig, session, uid, at(session, 'table'));
     expect(session.controller.state.player.block).toBeGreaterThan(before);
     expect(session.castFx.shielding).toBe(true);
     expect(session.castReveal.active).toBe(false);
@@ -793,7 +928,7 @@ describe('combat session', () => {
     const { session } = rig;
     const before = session.view.player.steam;
     const uid = session.controller.state.piles.hand[0]?.uid as number;
-    drag(rig, session, uid, at(session, 'table'));
+    playCard(rig, session, uid, at(session, 'table'));
     expect(session.attackInFlight).toBe(true);
     expect(session.castFx.puffs).toBeGreaterThan(0);
     expect(session.castFx.streams).toBe(1);
@@ -812,7 +947,7 @@ describe('combat session', () => {
     if (!enemy) throw new Error('no enemy');
     const home = enemy.body.position.clone();
     const uid = session.controller.state.piles.hand[0]?.uid as number;
-    drag(rig, session, uid, at(session, 'enemy', enemy.id));
+    playCard(rig, session, uid, at(session, 'enemy', enemy.id));
     expect(session.attackInFlight).toBe(true);
     const hit = session.controller.state.enemies.find((e) => e.id === enemy.id)?.hp;
     rig.actions.emit({ type: 'end-turn' });

@@ -237,7 +237,12 @@ const perf = mountPerf(renderer, scene, rig, {
 perf.setFpsCounter((settings ?? DEFAULT_SETTINGS).fpsCounter);
 // The in-scene notice gets its own pass after the boards, which clear depth and would cover it.
 const noticeScene = new THREE.Scene();
-mountUpdateNotice({ scene: noticeScene, renderer, xr, search: location.search });
+const updateNotice = mountUpdateNotice({
+  scene: noticeScene,
+  renderer,
+  xr,
+  search: location.search,
+});
 
 // Audio: one director for the floor, resumed by the first gesture or the XR session start.
 const audio = floor ? new AudioDirector({ camera }) : null;
@@ -642,6 +647,7 @@ const ui = floor
       settings: () => settings ?? { ...DEFAULT_SETTINGS },
       onNewRun: startRun,
       onContinue: continueRun,
+      update: updateNotice,
       // A picked reward card flies to the hand whose ray picked it, else to just before the head.
       flyTarget: () =>
         rewardHand ? { object: rewardHand, standoff: 0 } : { object: camera, standoff: 0.3 },
@@ -864,6 +870,12 @@ const pointerUp = (event: PointerEvent): void => {
 };
 window.addEventListener('pointerup', pointerUp);
 window.addEventListener('pointercancel', pointerUp);
+// A right click puts a picked-up card back in the hand, the desktop form of letting go of the grip.
+renderer.domElement.addEventListener('contextmenu', (event) => {
+  if (!combat?.session?.holdingCard || xr.presenting) return;
+  event.preventDefault();
+  actions.emit({ type: 'combat-cancel' });
+});
 window.addEventListener('keydown', (event) => {
   if (floor?.encounter.phase !== 'active' || event.repeat || ui?.menuOpen) return;
   if (event.code === 'KeyE') actions.emit({ type: 'end-turn' });
@@ -874,7 +886,8 @@ window.addEventListener('keydown', (event) => {
   else if (event.code === 'KeyK') winFight();
 });
 
-// XR combat verbs: main hand (right) squeeze grabs and flings, trigger draws, throws and presses.
+// XR combat verbs: main hand (right) squeeze grabs a card (letting go puts it back) and holds the
+// die; the trigger uses the held card, draws on the plate, throws and presses.
 const MAIN_HAND = 'right' as const;
 const OFF_HAND = 'left' as const;
 for (const index of [0, 1]) {
@@ -1369,7 +1382,7 @@ renderer.setAnimationLoop((time, frame) => {
     const fight = floor.encounter.phase === 'idle' ? '' : ` · encounter ${floor.encounter.phase}`;
     const session = combat?.session;
     const combatLines = session
-      ? `\n${session.hudText()}\n${session.log.slice(-4).join('\n')}\nDrag a card at an enemy or onto the table · draw on the plate · T throw dice · E end turn · F flee · Esc menu`
+      ? `\n${session.hudText()}\n${session.log.slice(-4).join('\n')}\nClick a card to pick it up, click again to use it (at an enemy) · right click puts it back · draw on the plate · T throw dice · E end turn · F twice flee · Esc menu`
       : '';
     syncTraceButton(renderer.xr.isPresenting);
     hud.textContent = `seed ${floor.seed} · room ${floor.world.current} ${room?.templateId} (${room?.role}) · calls ${renderer.info.render.calls}${fight}${audio ? `\n${audio.statusLine}` : ''}${combatLines}`;

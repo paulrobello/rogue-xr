@@ -12,8 +12,9 @@ export type GameAction =
   | { type: 'new-run'; seed?: string }
   /**
    * Combat pointer (desktop mouse, or any world ray): `down` presses on whatever the ray hits (a fan
-   * card, the sigil plate, End Turn, the dice tray), `move` drags or hovers, `up` releases. `ndc` is
-   * the mouse in normalized device coordinates when the ray comes from the camera.
+   * card picks it up, the sigil plate starts a stroke, End Turn, the dice tray) or, while a card is
+   * held, uses it where the ray aims; `move` carries the held card, draws or hovers; `up` ends a
+   * stroke. `ndc` is the mouse in normalized device coordinates when the ray comes from the camera.
    */
   | {
       type: 'combat-pointer';
@@ -22,7 +23,11 @@ export type GameAction =
       direction: readonly [number, number, number];
       ndc?: readonly [number, number];
     }
-  /** A tracked controller button in combat: main-hand squeeze grabs and flings, trigger draws and points. */
+  /**
+   * A tracked controller button in combat: the main-hand squeeze grabs a card (letting go puts it
+   * back) or the waiting die (letting go throws it); the trigger uses the held card, draws on the
+   * plate and presses the table buttons.
+   */
   | { type: 'combat-hand'; hand: 'main' | 'off'; control: 'squeeze' | 'trigger'; pressed: boolean }
   | { type: 'end-turn' }
   | { type: 'throw-dice' }

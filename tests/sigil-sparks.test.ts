@@ -216,6 +216,36 @@ describe('SigilPlate sparks', () => {
     plate.dispose();
   });
 
+  // Playtest 2026-11-17: "glyph draw mode always has a lit point on the plate even before i pull
+  // trigger". With no contact the dot rose for one frame from 0 (target 0 >= level 0), faded, rose
+  // again: a flicker at the plate centre on every frame the plate showed.
+  it('keeps the contact dot out on a shown plate until a stroke touches it, aimed or not', () => {
+    const pose = facingPlate();
+    const plate = new SigilPlate();
+    plate.show('ward', pose);
+    const sparks = sparksOf(plate);
+    const points = plate.getObjectByName('sigil-sparks-points') as THREE.Points;
+    const color = points.geometry.getAttribute('color');
+    for (let i = 0; i < 30; i++) {
+      // The pen aimed at the plate with the trigger up stores nothing and lights nothing.
+      expect(plate.addTip(onPlate(pose, 0.05, 0.02))).toBe(false);
+      plate.update(FRAME);
+      expect(sparks.dotBrightness).toBe(0);
+      expect(points.visible).toBe(false);
+      expect(color.getX(DOT_SLOT)).toBe(0);
+    }
+    plate.beginStroke();
+    plate.addTip(onPlate(pose, 0.05, 0.02));
+    plate.update(FRAME);
+    expect(sparks.dotBrightness).toBeGreaterThan(0);
+    expect(points.visible).toBe(true);
+    plate.endStroke();
+    for (let i = 0; i < 30; i++) plate.update(FRAME);
+    expect(sparks.dotBrightness).toBe(0);
+    expect(points.visible).toBe(false);
+    plate.dispose();
+  });
+
   it('showers more on a fast stroke than at rest', () => {
     const count = (moving: boolean): number => {
       const pose = facingPlate();
