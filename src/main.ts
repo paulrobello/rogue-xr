@@ -77,6 +77,7 @@ import {
   loadStudyAsset,
   type StudyAsset,
 } from './world/study-room.ts';
+import { loadTableDecor, type TableDecor } from './world/table-decor.ts';
 import { runVeil } from './world/veil.ts';
 import { ComfortVignette } from './xr/comfort-vignette.ts';
 import { Locomotion, locomotionSettingsFrom } from './xr/locomotion.ts';
@@ -444,6 +445,19 @@ const lootMaterials: Promise<LootMaterials | null> = heroSet
       })
       .catch(() => null)
   : Promise.resolve(null);
+// Table decorations: one atlas material lit like the automatons (hero probe and the floor's lights).
+const tableDecor: Promise<TableDecor | null> = heroSet
+  ? heroSet
+      .then(async ({ ktx2 }) => {
+        const decor = await loadTableDecor(ktx2);
+        decor.material.envMap = heroEnv;
+        return decor;
+      })
+      .catch((error: unknown) => {
+        console.warn('table decorations unavailable, tables left bare', error);
+        return null;
+      })
+  : Promise.resolve(null);
 // One fetch per enemy kind for the session, whatever the floor count. A kind whose model is not
 // shipped yet resolves null at once (one console.info) and keeps its capsules.
 const enemyMaterials = heroSet?.then(({ set }) => set).catch(() => null) ?? null;
@@ -466,9 +480,14 @@ const dressFloor = async (target: FloorView): Promise<void> => {
         target.useEnemyAssets(new Map([[asset.id, asset]]), prepareEnemy);
     }),
   );
-  const [rooms, door, coffers] = await Promise.all([roomAssets, sealedDoorMaterial, lootMaterials]);
+  const [rooms, door, coffers, decor] = await Promise.all([
+    roomAssets,
+    sealedDoorMaterial,
+    lootMaterials,
+    tableDecor,
+  ]);
   if (target === floor) {
-    dressHeroRooms(target, rooms);
+    dressHeroRooms(target, rooms, decor);
     if (door) target.world.dressSealedDoors(door.material, door.tileMeters);
     if (coffers) {
       target.loot.dress(coffers);
@@ -495,12 +514,19 @@ const heroReady: Promise<void> = floor
       }
       const table = await tableAsset;
       if (table) variants.push(table.scene);
+      const decor = await tableDecor;
+      const decorSample = decor?.sample() ?? null;
+      if (decorSample) variants.push(decorSample);
       await DiceWorld.warmUp();
       try {
-        const textures = new Set(rooms.flatMap((room) => room.textures));
+        const textures = new Set([
+          ...rooms.flatMap((room) => room.textures),
+          ...(decor?.textures ?? []),
+        ]);
         await runVeil(renderer, scene, camera, [...textures], { variants });
       } finally {
         for (const actor of actors) actor.dispose();
+        decorSample?.geometry.dispose();
       }
     })().catch((error: unknown) => console.warn('hero asset warm-up failed', error))
   : Promise.resolve();

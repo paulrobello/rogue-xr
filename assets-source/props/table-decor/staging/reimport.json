@@ -1,0 +1,50 @@
+{
+  "glb": "table-decor.glb",
+  "glb_sha256": "14980709879d807f5fd70b096a05ac1391cffc62e826dc00f9a13ad6df50113e",
+  "glb_bytes": 44612,
+  "blender": "5.3.0",
+  "per_kind": {
+    "candle": {
+      "tris": 272,
+      "attributes": [
+        "NORMAL",
+        "POSITION",
+        "TEXCOORD_0"
+      ],
+      "identity": true
+    },
+    "books": {
+      "tris": 150,
+      "attributes": [
+        "NORMAL",
+        "POSITION",
+        "TEXCOORD_0"
+      ],
+      "identity": true
+    },
+    "vase": {
+      "tris": 576,
+      "attributes": [
+        "NORMAL",
+        "POSITION",
+        "TEXCOORD_0"
+      ],
+      "identity": true
+    }
+  },
+  "materials": [
+    "table-decor"
+  ],
+  "checks": {
+    "three_prop_nodes": true,
+    "tris_le_600_each": true,
+    "tris_match_manifest": true,
+    "one_material": true,
+    "image_free": true,
+    "single_sided": true,
+    "uv0_normals_only": true,
+    "identity_nodes": true,
+    "blender_reimport": true
+  },
+  "pass": true
+}

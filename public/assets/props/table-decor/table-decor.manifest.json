@@ -1,0 +1,43 @@
+{
+  "id": "table-decor",
+  "glb": "table-decor.glb",
+  "material": "table-decor",
+  "maps": {
+    "basecolor": "table-decor.basecolor.ktx2",
+    "normal": "table-decor.normal.ktx2",
+    "orm": "table-decor.orm.ktx2",
+    "emissive": "table-decor.emissive.ktx2"
+  },
+  "texturePx": 1024,
+  "emissiveIntensity": 1.6,
+  "envMapIntensity": 0.3,
+  "kinds": {
+    "candle": {
+      "node": "table-decor_candle",
+      "tris": 272,
+      "radius": 0.0701,
+      "reservedRadius": 0.072,
+      "height": 0.203
+    },
+    "books": {
+      "node": "table-decor_books",
+      "tris": 150,
+      "radius": 0.1026,
+      "reservedRadius": 0.11,
+      "height": 0.084
+    },
+    "vase": {
+      "node": "table-decor_vase",
+      "tris": 576,
+      "radius": 0.0635,
+      "reservedRadius": 0.07,
+      "height": 0.222
+    }
+  },
+  "budget": {
+    "trisPerKindMax": 600,
+    "materials": 1,
+    "textures": 4
+  },
+  "frame": "runtime +Y up; each node's origin is the prop's base centre, standing on the table top"
+}

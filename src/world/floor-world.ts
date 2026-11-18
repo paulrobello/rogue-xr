@@ -14,6 +14,7 @@ import { enemyHeading, enemyLocalRotationY } from './enemy-facing.ts';
 import { buildGreyboxRoom, createGreyboxMaterials, type GreyboxMaterials } from './greybox.ts';
 import { type Hearth, HearthKit, type HearthMaterials, hearthSocket } from './hearth.ts';
 import { type Coffer, CofferKit, type LootMaterials, surfaceHeightAt } from './loot.ts';
+import { disposeTableDecor } from './table-decor.ts';
 
 export { nearSet, neighbours, shellSet, visibleSet } from '../floor/visibility.ts';
 
@@ -361,6 +362,7 @@ export function buildFloorWorld(
       g.add(model);
     },
     dispose() {
+      disposeTableDecor(group);
       group.removeFromParent();
       for (const m of [...Object.values(materials), enemyMaterial, capMaterial]) m.dispose();
       capGeometry.dispose();

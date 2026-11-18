@@ -1,0 +1,801 @@
+{
+  "base": "http://localhost:4264",
+  "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+  "seeds": {
+    "SPIRE002": {
+      "rooms": [
+        "hall",
+        "corridor",
+        "study",
+        "gear-shaft",
+        "study",
+        "study",
+        "guardian-vault"
+      ],
+      "meshes": [
+        {
+          "room": 0,
+          "template": "hall",
+          "centre": [
+            0,
+            0
+          ],
+          "matrix": [
+            2.220446049250313e-16,
+            0,
+            1,
+            0,
+            0,
+            1,
+            0,
+            0,
+            -1,
+            0,
+            2.220446049250313e-16,
+            0,
+            0,
+            0,
+            0,
+            1
+          ],
+          "placements": [
+            {
+              "room": 0,
+              "table": "bench-w",
+              "kind": "candle",
+              "x": -4.083072523301001,
+              "y": 0.47,
+              "z": 0.06788554139155895,
+              "yaw": 3.1857792076457017
+            },
+            {
+              "room": 0,
+              "table": "bench-w",
+              "kind": "books",
+              "x": -3.9918860681238586,
+              "y": 0.47,
+              "z": 0.2841567304660566,
+              "yaw": 4.570009865357338
+            },
+            {
+              "room": 0,
+              "table": "bench-w",
+              "kind": "vase",
+              "x": -3.955930490230676,
+              "y": 0.47,
+              "z": -0.2425235385680571,
+              "yaw": 5.978177346053732
+            },
+            {
+              "room": 0,
+              "table": "bench-e",
+              "kind": "candle",
+              "x": 4.098959412510973,
+              "y": 0.47,
+              "z": 0.31269881256483495,
+              "yaw": 1.3257500525254091
+            },
+            {
+              "room": 0,
+              "table": "bench-e",
+              "kind": "books",
+              "x": 4.0448853283771316,
+              "y": 0.47,
+              "z": -0.19749680417357013,
+              "yaw": 3.363179784200356
+            },
+            {
+              "room": 0,
+              "table": "bench-e",
+              "kind": "vase",
+              "x": 3.98113425800344,
+              "y": 0.47,
+              "z": 0.1799587174784392,
+              "yaw": 2.516942892614249
+            }
+          ],
+          "castShadow": false,
+          "envMap": true,
+          "envMapIntensity": 0.3,
+          "emissiveIntensity": 1.6,
+          "tris": 1996
+        },
+        {
+          "room": 3,
+          "template": "gear-shaft",
+          "centre": [
+            11,
+            8
+          ],
+          "matrix": [
+            2.220446049250313e-16,
+            0,
+            1,
+            0,
+            0,
+            1,
+            0,
+            0,
+            -1,
+            0,
+            2.220446049250313e-16,
+            0,
+            11,
+            0,
+            8,
+            1
+          ],
+          "placements": [
+            {
+              "room": 3,
+              "table": "crate",
+              "kind": "candle",
+              "x": 3.019931168240495,
+              "y": 0.8,
+              "z": 4.561626736427657,
+              "yaw": 3.904755758327799
+            },
+            {
+              "room": 3,
+              "table": "crate",
+              "kind": "books",
+              "x": 2.821168409101665,
+              "y": 0.8,
+              "z": 4.540267942752689,
+              "yaw": 1.1744269767404776
+            }
+          ],
+          "castShadow": false,
+          "envMap": true,
+          "envMapIntensity": 0.3,
+          "emissiveIntensity": 1.6,
+          "tris": 422
+        }
+      ]
+    },
+    "SPIRE004": {
+      "rooms": [
+        "hall",
+        "hall",
+        "corridor",
+        "study",
+        "gear-shaft",
+        "hall",
+        "corridor",
+        "guardian-vault"
+      ],
+      "meshes": [
+        {
+          "room": 0,
+          "template": "hall",
+          "centre": [
+            0,
+            0
+          ],
+          "matrix": [
+            -2.220446049250313e-16,
+            0,
+            -1,
+            0,
+            0,
+            1,
+            0,
+            0,
+            1,
+            0,
+            -2.220446049250313e-16,
+            0,
+            0,
+            0,
+            0,
+            1
+          ],
+          "placements": [
+            {
+              "room": 0,
+              "table": "bench-w",
+              "kind": "vase",
+              "x": -4.10105223658029,
+              "y": 0.47,
+              "z": -0.32359069570200516,
+              "yaw": 4.65549736024321
+            },
+            {
+              "room": 0,
+              "table": "bench-e",
+              "kind": "candle",
+              "x": 3.9913953704959715,
+              "y": 0.47,
+              "z": -0.261958326857537,
+              "yaw": 0.5582753829591365
+            }
+          ],
+          "castShadow": false,
+          "envMap": true,
+          "envMapIntensity": 0.3,
+          "emissiveIntensity": 1.6,
+          "tris": 848
+        },
+        {
+          "room": 1,
+          "template": "hall",
+          "centre": [
+            10,
+            0
+          ],
+          "matrix": [
+            -1,
+            0,
+            1.2246467991473532e-16,
+            0,
+            0,
+            1,
+            0,
+            0,
+            -1.2246467991473532e-16,
+            0,
+            -1,
+            0,
+            10,
+            0,
+            0,
+            1
+          ],
+          "placements": [
+            {
+              "room": 1,
+              "table": "bench-w",
+              "kind": "vase",
+              "x": -3.89150792300934,
+              "y": 0.47,
+              "z": -0.17842554833507165,
+              "yaw": 4.13958829844569
+            },
+            {
+              "room": 1,
+              "table": "bench-e",
+              "kind": "vase",
+              "x": 3.94115634765476,
+              "y": 0.47,
+              "z": 0.17266568659106268,
+              "yaw": 0.2944640609929485
+            },
+            {
+              "room": 1,
+              "table": "bench-e",
+              "kind": "books",
+              "x": 3.9740202639484776,
+              "y": 0.47,
+              "z": -0.2593239655927755,
+              "yaw": 0.20514182040881138
+            },
+            {
+              "room": 1,
+              "table": "bench-e",
+              "kind": "candle",
+              "x": 4.053195270709228,
+              "y": 0.47,
+              "z": -0.012653360554482787,
+              "yaw": 2.8880290508251005
+            }
+          ],
+          "castShadow": false,
+          "envMap": true,
+          "envMapIntensity": 0.3,
+          "emissiveIntensity": 1.6,
+          "tris": 1574
+        },
+        {
+          "room": 5,
+          "template": "hall",
+          "centre": [
+            -10,
+            0
+          ],
+          "matrix": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            -10,
+            0,
+            0,
+            1
+          ],
+          "placements": [
+            {
+              "room": 5,
+              "table": "bench-w",
+              "kind": "candle",
+              "x": -3.8962075223764403,
+              "y": 0.47,
+              "z": 0.3073659584666602,
+              "yaw": 5.716746288355105
+            },
+            {
+              "room": 5,
+              "table": "bench-e",
+              "kind": "candle",
+              "x": 4.059740032180678,
+              "y": 0.47,
+              "z": 0.3027398474747315,
+              "yaw": 5.0300448645530205
+            },
+            {
+              "room": 5,
+              "table": "bench-e",
+              "kind": "books",
+              "x": 3.9941157316905445,
+              "y": 0.47,
+              "z": -0.06794552862178534,
+              "yaw": 1.8441456610518667
+            }
+          ],
+          "castShadow": false,
+          "envMap": true,
+          "envMapIntensity": 0.3,
+          "emissiveIntensity": 1.6,
+          "tris": 694
+        }
+      ]
+    }
+  },
+  "shots": [
+    {
+      "name": "SPIRE002-room0-hall-bench-w",
+      "seed": "SPIRE002",
+      "room": 0,
+      "table": "hall:bench-w",
+      "props": "candle+books+vase",
+      "eye": [
+        -6.661338147750939e-16,
+        1.2,
+        -3
+      ],
+      "target": [
+        -8.881784197001252e-16,
+        0.5499999999999999,
+        -4
+      ],
+      "path": "assets-source/props/table-decor/engine/SPIRE002-room0-hall-bench-w.jpg",
+      "state": {
+        "eye": [
+          0,
+          1.2,
+          -3
+        ],
+        "yaw": 0,
+        "pitch": -0.576,
+        "room": 0
+      },
+      "calls": {
+        "withDecor": 28,
+        "without": 27
+      },
+      "mean": [
+        49,
+        24.2,
+        12.4
+      ]
+    },
+    {
+      "name": "SPIRE002-room0-hall-bench-e",
+      "seed": "SPIRE002",
+      "room": 0,
+      "table": "hall:bench-e",
+      "props": "candle+books+vase",
+      "eye": [
+        6.661338147750939e-16,
+        1.2,
+        3
+      ],
+      "target": [
+        8.881784197001252e-16,
+        0.5499999999999999,
+        4
+      ],
+      "path": "assets-source/props/table-decor/engine/SPIRE002-room0-hall-bench-e.jpg",
+      "state": {
+        "eye": [
+          0,
+          1.2,
+          3
+        ],
+        "yaw": 179.91,
+        "pitch": -0.576,
+        "room": 0
+      },
+      "calls": {
+        "withDecor": 19,
+        "without": 18
+      },
+      "mean": [
+        51.3,
+        27,
+        16.5
+      ]
+    },
+    {
+      "name": "SPIRE002-room3-gear-shaft-crate",
+      "seed": "SPIRE002",
+      "room": 3,
+      "table": "gear-shaft:crate",
+      "props": "candle+books",
+      "eye": [
+        7.3320502943378445,
+        1.2,
+        10.445299803774772
+      ],
+      "target": [
+        6.500000000000001,
+        0.88,
+        11
+      ],
+      "path": "assets-source/props/table-decor/engine/SPIRE002-room3-gear-shaft-crate.jpg",
+      "state": {
+        "eye": [
+          7.332,
+          1.2,
+          10.445
+        ],
+        "yaw": 236.26,
+        "pitch": -0.308,
+        "room": 3
+      },
+      "calls": {
+        "withDecor": 9,
+        "without": 8
+      },
+      "mean": [
+        43.2,
+        18,
+        9.1
+      ]
+    },
+    {
+      "seed": "SPIRE002",
+      "name": "closeup-candle",
+      "room": 0,
+      "table": "hall:bench-w",
+      "props": "candle",
+      "eye": [
+        -0.03660758748203735,
+        0.87,
+        -3.584051792670265
+      ],
+      "target": [
+        -0.06788554139155985,
+        0.57,
+        -4.083072523301001
+      ],
+      "done": true,
+      "path": "assets-source/props/table-decor/engine/closeup-candle.jpg",
+      "state": {
+        "eye": [
+          -0.037,
+          0.87,
+          -3.584
+        ],
+        "yaw": 356.32,
+        "pitch": -0.54,
+        "room": 0
+      },
+      "calls": {
+        "withDecor": 27,
+        "without": 26
+      },
+      "mean": [
+        47.1,
+        23,
+        14.3
+      ]
+    },
+    {
+      "seed": "SPIRE002",
+      "name": "closeup-books",
+      "room": 0,
+      "table": "hall:bench-w",
+      "props": "books",
+      "eye": [
+        -0.14645538489945054,
+        0.87,
+        -3.5112215911452225
+      ],
+      "target": [
+        -0.2841567304660575,
+        0.52,
+        -3.9918860681238586
+      ],
+      "done": true,
+      "path": "assets-source/props/table-decor/engine/closeup-books.jpg",
+      "state": {
+        "eye": [
+          -0.146,
+          0.87,
+          -3.511
+        ],
+        "yaw": 343.9,
+        "pitch": -0.612,
+        "room": 0
+      },
+      "calls": {
+        "withDecor": 27,
+        "without": 26
+      },
+      "mean": [
+        46,
+        22.2,
+        12.6
+      ]
+    },
+    {
+      "seed": "SPIRE002",
+      "name": "closeup-vase",
+      "room": 0,
+      "table": "hall:bench-w",
+      "props": "vase",
+      "eye": [
+        0.11956685773613895,
+        0.87,
+        -3.4712845837806183
+      ],
+      "target": [
+        0.24252353856805622,
+        0.57,
+        -3.955930490230676
+      ],
+      "done": true,
+      "path": "assets-source/props/table-decor/engine/closeup-vase.jpg",
+      "state": {
+        "eye": [
+          0.12,
+          0.87,
+          -3.471
+        ],
+        "yaw": 14.26,
+        "pitch": -0.54,
+        "room": 0
+      },
+      "calls": {
+        "withDecor": 28,
+        "without": 27
+      },
+      "mean": [
+        50.8,
+        25.3,
+        14.4
+      ]
+    },
+    {
+      "name": "SPIRE004-room0-hall-bench-w",
+      "seed": "SPIRE004",
+      "room": 0,
+      "table": "hall:bench-w",
+      "props": "vase",
+      "eye": [
+        6.661338147750939e-16,
+        1.2,
+        3
+      ],
+      "target": [
+        8.881784197001252e-16,
+        0.5499999999999999,
+        4
+      ],
+      "path": "assets-source/props/table-decor/engine/SPIRE004-room0-hall-bench-w.jpg",
+      "state": {
+        "eye": [
+          0,
+          1.2,
+          3
+        ],
+        "yaw": 179.91,
+        "pitch": -0.576,
+        "room": 0
+      },
+      "calls": {
+        "withDecor": 28,
+        "without": 27
+      },
+      "mean": [
+        48.7,
+        24.5,
+        13.8
+      ]
+    },
+    {
+      "name": "SPIRE004-room0-hall-bench-e",
+      "seed": "SPIRE004",
+      "room": 0,
+      "table": "hall:bench-e",
+      "props": "candle",
+      "eye": [
+        -6.661338147750939e-16,
+        1.2,
+        -3
+      ],
+      "target": [
+        -8.881784197001252e-16,
+        0.5499999999999999,
+        -4
+      ],
+      "path": "assets-source/props/table-decor/engine/SPIRE004-room0-hall-bench-e.jpg",
+      "state": {
+        "eye": [
+          0,
+          1.2,
+          -3
+        ],
+        "yaw": 0.05,
+        "pitch": -0.576,
+        "room": 0
+      },
+      "calls": {
+        "withDecor": 10,
+        "without": 9
+      },
+      "mean": [
+        41.6,
+        18.1,
+        9.5
+      ]
+    },
+    {
+      "name": "SPIRE004-room1-hall-bench-w",
+      "seed": "SPIRE004",
+      "room": 1,
+      "table": "hall:bench-w",
+      "props": "vase",
+      "eye": [
+        13,
+        1.2,
+        -3.6739403974420594e-16
+      ],
+      "target": [
+        14,
+        0.5499999999999999,
+        -4.898587196589413e-16
+      ],
+      "path": "assets-source/props/table-decor/engine/SPIRE004-room1-hall-bench-w.jpg",
+      "state": {
+        "eye": [
+          13,
+          1.2,
+          0
+        ],
+        "yaw": 89.98,
+        "pitch": -0.576,
+        "room": 1
+      },
+      "calls": {
+        "withDecor": 33,
+        "without": 32
+      },
+      "mean": [
+        50,
+        24.8,
+        13.7
+      ]
+    },
+    {
+      "name": "SPIRE004-room1-hall-bench-e",
+      "seed": "SPIRE004",
+      "room": 1,
+      "table": "hall:bench-e",
+      "props": "vase+books+candle",
+      "eye": [
+        7,
+        1.2,
+        3.6739403974420594e-16
+      ],
+      "target": [
+        6,
+        0.5499999999999999,
+        4.898587196589413e-16
+      ],
+      "path": "assets-source/props/table-decor/engine/SPIRE004-room1-hall-bench-e.jpg",
+      "state": {
+        "eye": [
+          7,
+          1.2,
+          0
+        ],
+        "yaw": 269.89,
+        "pitch": -0.576,
+        "room": 1
+      },
+      "calls": {
+        "withDecor": 23,
+        "without": 21
+      },
+      "mean": [
+        46.8,
+        21.6,
+        11
+      ]
+    },
+    {
+      "name": "SPIRE004-room5-hall-bench-w",
+      "seed": "SPIRE004",
+      "room": 5,
+      "table": "hall:bench-w",
+      "props": "candle",
+      "eye": [
+        -13,
+        1.2,
+        0
+      ],
+      "target": [
+        -14,
+        0.5499999999999999,
+        0
+      ],
+      "path": "assets-source/props/table-decor/engine/SPIRE004-room5-hall-bench-w.jpg",
+      "state": {
+        "eye": [
+          -13,
+          1.2,
+          0
+        ],
+        "yaw": 269.89,
+        "pitch": -0.576,
+        "room": 5
+      },
+      "calls": {
+        "withDecor": 19,
+        "without": 18
+      },
+      "mean": [
+        50.6,
+        25.4,
+        13.9
+      ]
+    },
+    {
+      "name": "SPIRE004-room5-hall-bench-e",
+      "seed": "SPIRE004",
+      "room": 5,
+      "table": "hall:bench-e",
+      "props": "candle+books",
+      "eye": [
+        -7,
+        1.2,
+        0
+      ],
+      "target": [
+        -6,
+        0.5499999999999999,
+        0
+      ],
+      "path": "assets-source/props/table-decor/engine/SPIRE004-room5-hall-bench-e.jpg",
+      "state": {
+        "eye": [
+          -7,
+          1.2,
+          0
+        ],
+        "yaw": 90.03,
+        "pitch": -0.576,
+        "room": 5
+      },
+      "calls": {
+        "withDecor": 23,
+        "without": 21
+      },
+      "mean": [
+        46.7,
+        22.2,
+        11.7
+      ]
+    }
+  ],
+  "errors": []
+}

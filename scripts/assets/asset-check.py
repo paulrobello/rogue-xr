@@ -691,6 +691,198 @@ def assemble_dice(die: str) -> None:
     print(f"wrote {prov_path.relative_to(ROOT)}")
 
 
+DECOR_RUNTIME = ROOT / "public/assets/props/table-decor"
+DECOR_SOURCES = ROOT / "assets-source/props/table-decor"
+DECOR_GENERATOR = "scripts/assets/build-table-decor.py"
+DECOR_GENERATOR_DEPS = ["scripts/assets/lightmap_helpers.py"]
+DECOR_LIMITS = {"tris_per_kind": 600, "materials": 1, "texture_px": 1024}
+# src/floor/table-decor.ts DECOR_RADIUS: the footprint placement reserves for each prop.
+DECOR_RADIUS = {"candle": 0.072, "books": 0.11, "vase": 0.07}
+DECOR_MAPS = {"basecolor": KHR_DF_TRANSFER_SRGB, "normal": KHR_DF_TRANSFER_LINEAR,
+              "orm": KHR_DF_TRANSFER_LINEAR, "emissive": KHR_DF_TRANSFER_SRGB}
+
+
+def check_decor(errors: list[str], warnings: list[str]) -> dict:
+    rt, src = DECOR_RUNTIME, DECOR_SOURCES
+    err = lambda msg: errors.append(f"props/table-decor: {msg}")  # noqa: E731
+    summary: dict = {}
+    files = {"table-decor.glb", "table-decor.manifest.json", *(f"table-decor.{r}.ktx2" for r in DECOR_MAPS)}
+    for name in sorted(files):
+        if not (rt / name).exists():
+            err(f"missing runtime file {name}")
+    extra = sorted(p.name for p in rt.iterdir() if p.name not in files)
+    if extra:
+        err(f"unlisted runtime files {extra}")
+    if any(not (rt / n).exists() for n in files):
+        return summary
+    m = json.loads((rt / "table-decor.manifest.json").read_text())
+    if m.get("id") != "table-decor" or m.get("glb") != "table-decor.glb":
+        err("manifest id/glb do not match the directory")
+    g = glb_json(rt / "table-decor.glb")
+    glb = glb_stats(rt / "table-decor.glb")
+    summary["glb"] = glb
+    if glb["images"] or glb["textures"]:
+        err("GLB must be image-free (maps ship as KTX2 beside it)")
+    if glb["materials"] != [m.get("material")] or len(glb["materials"]) > DECOR_LIMITS["materials"]:
+        err(f"GLB materials {glb['materials']} != the one shared material {m.get('material')!r}")
+    if any(mat.get("doubleSided") for mat in g.get("materials", [])):
+        err("materials must be single-sided")
+    meshes = g.get("meshes", [])
+    per_kind: dict[str, int] = {}
+    for kind, radius in DECOR_RADIUS.items():
+        spec = m.get("kinds", {}).get(kind)
+        if not spec:
+            err(f"manifest kinds.{kind} missing")
+            continue
+        node = next((n for n in g.get("nodes", []) if n.get("name") == spec.get("node")), None)
+        if node is None or "mesh" not in node:
+            err(f"node {spec.get('node')} missing from the GLB")
+            continue
+        if any(k in node for k in ("translation", "rotation", "scale", "matrix")):
+            err(f"node {spec['node']} must carry no transform (its origin is the prop's base centre)")
+        tris = 0
+        for prim in meshes[node["mesh"]]["primitives"]:
+            acc = g["accessors"][prim["indices"]] if "indices" in prim else g["accessors"][prim["attributes"]["POSITION"]]
+            tris += acc["count"] // 3
+            pos = g["accessors"][prim["attributes"]["POSITION"]]
+            lo, hi = pos.get("min", [0, 0, 0]), pos.get("max", [0, 0, 0])
+            if abs(lo[1]) > 1e-4:
+                err(f"{kind} base sits at y {lo[1]:.4f}, not on the table top (y 0)")
+            reach = max(abs(lo[0]), abs(hi[0]), abs(lo[2]), abs(hi[2]))
+            if reach > radius + 1e-3:
+                err(f"{kind} reaches {reach:.4f} m, beyond its {radius} m placement footprint")
+        per_kind[kind] = tris
+        if tris > DECOR_LIMITS["tris_per_kind"]:
+            err(f"{kind} has {tris} triangles, over {DECOR_LIMITS['tris_per_kind']}")
+        if spec.get("tris") != tris:
+            err(f"manifest {kind} tris {spec.get('tris')} != measured {tris}")
+        if spec.get("reservedRadius") != radius:
+            err(f"manifest {kind} reservedRadius {spec.get('reservedRadius')} != table-decor.ts {radius}")
+    summary["perKind"] = per_kind
+    sizes = set()
+    summary["maps"] = {}
+    for role, transfer in DECOR_MAPS.items():
+        name = m.get("maps", {}).get(role)
+        if name != f"table-decor.{role}.ktx2":
+            err(f"manifest maps.{role} is {name!r}")
+            continue
+        h = ktx2_header(rt / name)
+        summary["maps"][role] = h
+        sizes.add((h["width"], h["height"]))
+        if h["width"] != h["height"] or h["width"] > DECOR_LIMITS["texture_px"]:
+            err(f"{name} is {h['width']}x{h['height']}, not square <= {DECOR_LIMITS['texture_px']}")
+        if h["levels"] < 2:
+            err(f"{name} has no mip chain")
+        if h["transfer"] != transfer:
+            err(f"{name} transfer {h['transfer']}, expected {'sRGB' if transfer == KHR_DF_TRANSFER_SRGB else 'linear'}")
+    if len(sizes) > 1:
+        err(f"maps differ in size {sorted(sizes)}")
+    if m.get("texturePx") not in {w for w, _ in sizes}:
+        err(f"manifest texturePx {m.get('texturePx')} != map size {sorted(sizes)}")
+
+    prov_path = src / "provenance.json"
+    if not prov_path.exists():
+        err("provenance.json missing (run --assemble-decor)")
+        return summary
+    prov = json.loads(prov_path.read_text())
+    if not prov.get("validation", {}).get("pass"):
+        err("provenance validation.pass is not true")
+    if "independentScore" in json.dumps(prov):
+        err("provenance must not carry an independentScore (scored by an independent reviewer)")
+    recorded = {d["path"]: d["sha256"] for d in prov.get("derivedFiles", []) + prov.get("sourceFiles", [])}
+    for name in sorted(files):
+        rel = f"public/assets/props/table-decor/{name}"
+        if rel not in recorded:
+            err(f"{rel} not recorded in provenance")
+        elif recorded[rel] != sha256(rt / name):
+            err(f"{rel} hash differs from provenance")
+    for d in prov.get("sourceFiles", []) + prov.get("references", []) + prov.get("reviewEvidence", []):
+        path = ROOT / d["path"]
+        if not path.exists() or sha256(path) != d["sha256"]:
+            err(f"{d['path']} missing or changed since provenance")
+    for dep in [prov.get("generator", {})] + prov.get("generatorDeps", []):
+        if not (ROOT / dep.get("path", "")).exists():
+            err(f"generator {dep.get('path')} missing")
+        elif sha256(ROOT / dep["path"]) != dep.get("sha256"):
+            warnings.append(f"props/table-decor: {dep['path']} changed since the build (stale; rebuild before re-review)")
+    reimport = src / "staging/reimport.json"
+    if not reimport.exists():
+        err("staging/reimport.json missing")
+    else:
+        r = json.loads(reimport.read_text())
+        if not r.get("pass") or r.get("glb_sha256") != sha256(rt / "table-decor.glb"):
+            err("reimport gate did not pass for the shipped GLB")
+    return summary
+
+
+def assemble_decor() -> None:
+    src, rt = DECOR_SOURCES, DECOR_RUNTIME
+    report = json.loads((src / "staging/report.json").read_text())
+    reimport = json.loads((src / "staging/reimport.json").read_text())
+    manifest = json.loads((rt / "table-decor.manifest.json").read_text())
+    entry = lambda p: {"path": str(p.relative_to(ROOT)), "sha256": sha256(p), "bytes": p.stat().st_size}  # noqa: E731
+    sources = [entry(p) for p in sorted((src / "blend").iterdir()) if p.suffix == ".blend"]
+    sources += [entry(src / "staging" / n) for n in ("report.json", "reimport.json", "table-decor.basecolor.png", "table-decor.normal.png",
+                                                     "table-decor.orm.png", "table-decor.emissive.png")]
+    sources += [entry(ROOT / r) for r in report["renders"]]
+    evidence = [src / "table-decor.review-sheet.jpg", *sorted((src / "engine").glob("*.jpg"))]
+    prov = {
+        "pieceId": "table-decor",
+        "version": 1,
+        "route": "scripted (procedural Blender high and low geometry, Cycles selected-to-active bake to one shared atlas; no provider generation)",
+        "generator": {"path": DECOR_GENERATOR, "sha256": sha256(ROOT / DECOR_GENERATOR)},
+        "generatorDeps": [{"path": d, "sha256": sha256(ROOT / d), "use": "select_device, image_rgba, srgb_encode, write_png_rgb"} for d in DECOR_GENERATOR_DEPS],
+        "authoringAgent": {"harness": "claude-code (dispatched sub-agent)", "model": "claude-opus-5-5"},
+        "blender": report["blender"],
+        "toolVersions": {"ktx": report["ktx2"]["tool"], "gltfExporter": f"Blender {report['blender']} bundled io_scene_gltf2"},
+        "blendFiles": {"store": "assets-source/props/table-decor/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)"},
+        "budgets": {"trianglesPerKind": {k: v["low"] for k, v in report["triangles"].items()},
+                    "highTrianglesPerKind": {k: v["high"] for k, v in report["triangles"].items()},
+                    "materials": len(reimport["materials"]), "texturePx": manifest["texturePx"], "textures": 4,
+                    "drawCallsPerDressedRoom": 1, "glbBytes": reimport["glb_bytes"]},
+        "lods": "LOD0 only: every prop is under 600 triangles and a dressed room merges its props into one mesh (one draw call)",
+        "bake": {**report["bake"], "ktx2": report["ktx2"]["encodes"]},
+        "texelDensityPxPerM": report["texel_density_px_per_m"],
+        "geometry": report["geometry"],
+        "pivot": "each node's origin is the prop's base centre (runtime y = 0 is the table top)",
+        "placement": "src/floor/table-decor.ts placeTableDecor, stream Stream.fromKey(`${seed}:table-decor`)",
+        "derivedFiles": [entry(p) for p in sorted(rt.iterdir())],
+        "sourceFiles": sources,
+        "reviewEvidence": [entry(p) for p in evidence if p.exists()],
+        "references": [{"path": "assets-source/style/locked/L-board-1.png", "sha256": sha256(ROOT / "assets-source/style/locked/L-board-1.png"),
+                        "provider": "higgsfield", "note": "canonical Gilded Lamplight style board (docs/art-bible.md); no prop concept sheet exists"}],
+        "materialsUsed": "brass reuses the approved P4-T3 brass-aged set (box-projected into the bake); walnut, wax, glazed ceramic, leather and paper are procedural in the generator",
+        "license": "Original work generated in Blender from a checked-in script; style reference from Paul's paid Higgsfield plan (Terms of Use 4.4)",
+        "reimport": {k: reimport[k] for k in ("per_kind", "materials", "checks", "pass")},
+        "validation": {"pass": False, "date": datetime.date.today().isoformat(), "checks": []},
+        "approvals": [
+            {"gate": "concept", "status": "pending", "notes": "Paul's 2026-11-17 playtest request names candle, book and vase; no prop concept sheet was made"},
+            {"gate": "technical", "status": "pending", "notes": "validate-generated-assets verdict is reported to the orchestrator, not self-recorded"},
+            {"gate": "creative", "status": "pending", "notes": "assets-source/props/table-decor/table-decor.review-sheet.jpg"},
+            {"gate": "rights", "status": "pending", "notes": "original procedural geometry; brass-aged set carries its own provenance"},
+            {"gate": "owner", "status": "pending", "notes": "Paul approves the in-engine look (docs/blender-kit-project.md ruling 3)"},
+            {"gate": "independent visual score", "status": "unscored", "notes": "blender-kit-pieces requires an independent >= 80/100 score; unscored means unaccepted"},
+        ],
+    }
+    prov_path = src / "provenance.json"
+    prov_path.write_text(json.dumps(prov, indent=2) + "\n")
+    errors: list[str] = []
+    warnings: list[str] = []
+    check_decor(errors, warnings)
+    remaining = [e for e in errors if "validation.pass" not in e]
+    if remaining:
+        prov_path.unlink()
+        raise SystemExit("assemble refused, gate errors:\n" + "\n".join(remaining))
+    prov["validation"] = {"pass": True, "date": datetime.date.today().isoformat(),
+                          "checks": ["presence, no unlisted files", "hashes", "image-free glb, one single-sided material",
+                                     "three transform-free prop nodes, each <= 600 tris and matching the manifest",
+                                     "each prop stands on y 0 inside its table-decor.ts footprint",
+                                     "ktx2 maps square, same size <= 1024, mipped, sRGB colour and linear data",
+                                     "clean Blender reimport"]}
+    prov_path.write_text(json.dumps(prov, indent=2) + "\n")
+    print(f"wrote {prov_path.relative_to(ROOT)}")
+
+
 def assemble(template: str) -> None:
     src = SOURCES / template
     rt = RUNTIME / template
@@ -764,6 +956,7 @@ def main() -> int:
     parser.add_argument("--assemble", metavar="TEMPLATE")
     parser.add_argument("--assemble-enemy", metavar="ENEMY")
     parser.add_argument("--assemble-dice", metavar="DIE")
+    parser.add_argument("--assemble-decor", action="store_true")
     args = parser.parse_args()
     if args.assemble:
         assemble(args.assemble)
@@ -771,6 +964,8 @@ def main() -> int:
         assemble_enemy(args.assemble_enemy)
     if args.assemble_dice:
         assemble_dice(args.assemble_dice)
+    if args.assemble_decor:
+        assemble_decor()
     errors: list[str] = []
     warnings: list[str] = []
     rooms = sorted(p.name for p in RUNTIME.iterdir() if p.is_dir()) if RUNTIME.exists() else []
@@ -791,6 +986,10 @@ def main() -> int:
         s = check_dice(die, errors, warnings)
         glb = s.get("glb", {})
         print(f"asset-check dice/{die}: {glb.get('triangles')} tris, {len(glb.get('materials', []))} materials, {glb.get('images')} images")
+    if DECOR_RUNTIME.exists():
+        s = check_decor(errors, warnings)
+        sizes = ", ".join(f"{k} {v['width']}px" for k, v in s.get("maps", {}).items())
+        print(f"asset-check props/table-decor: tris {s.get('perKind')}, {len(s.get('glb', {}).get('materials', []))} material; {sizes}")
     for w in warnings:
         print(f"WARN {w}")
     for e in errors:

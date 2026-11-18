@@ -1,0 +1,438 @@
+{
+  "pieceId": "table-decor",
+  "version": 1,
+  "route": "scripted (procedural Blender high and low geometry, Cycles selected-to-active bake to one shared atlas; no provider generation)",
+  "generator": {
+    "path": "scripts/assets/build-table-decor.py",
+    "sha256": "c30fed23cb95ccf6bf6c9f1432edb4030892d271583d1b6c1336023233b4fb09"
+  },
+  "generatorDeps": [
+    {
+      "path": "scripts/assets/lightmap_helpers.py",
+      "sha256": "c74c968a3d3ed95bae831262af3c5ab1bacedfa0e2e131b95d5d7bf4e59d66ad",
+      "use": "select_device, image_rgba, srgb_encode, write_png_rgb"
+    }
+  ],
+  "authoringAgent": {
+    "harness": "claude-code (dispatched sub-agent)",
+    "model": "claude-opus-5-5"
+  },
+  "blender": "5.3.0",
+  "toolVersions": {
+    "ktx": "ktx version: v4.4.2",
+    "gltfExporter": "Blender 5.3.0 bundled io_scene_gltf2"
+  },
+  "blendFiles": {
+    "store": "assets-source/props/table-decor/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)"
+  },
+  "budgets": {
+    "trianglesPerKind": {
+      "candle": 272,
+      "books": 150,
+      "vase": 576
+    },
+    "highTrianglesPerKind": {
+      "candle": 2704,
+      "books": 666,
+      "vase": 3200
+    },
+    "materials": 1,
+    "texturePx": 1024,
+    "textures": 4,
+    "drawCallsPerDressedRoom": 1,
+    "glbBytes": 44612
+  },
+  "lods": "LOD0 only: every prop is under 600 triangles and a dressed room merges its props into one mesh (one draw call)",
+  "bake": {
+    "size": 1024,
+    "device": "GPU:METAL (Apple M4 (GPU - 10 cores))",
+    "cage_extrusion_m": 0.004,
+    "max_ray_distance_m": 0.012,
+    "ao_distance_m": 0.03,
+    "margin_px": 8,
+    "samples": {
+      "albedo": 4,
+      "rough": 4,
+      "metal": 1,
+      "emit": 4,
+      "normal": 8,
+      "ao": 128
+    },
+    "passes": "base colour, roughness, metallic and emission as EMIT passes of each channel; NORMAL tangent; AO",
+    "seconds": {
+      "table-decor_candle.albedo": 0.33,
+      "table-decor_candle.rough": 0.33,
+      "table-decor_candle.metal": 0.29,
+      "table-decor_candle.emit": 0.31,
+      "table-decor_candle.normal": 0.33,
+      "table-decor_candle.ao": 0.44,
+      "table-decor_books_0.albedo": 0.33,
+      "table-decor_books_0.rough": 0.32,
+      "table-decor_books_0.metal": 0.32,
+      "table-decor_books_0.emit": 0.31,
+      "table-decor_books_0.normal": 0.34,
+      "table-decor_books_0.ao": 0.56,
+      "table-decor_books_1.albedo": 0.33,
+      "table-decor_books_1.rough": 0.32,
+      "table-decor_books_1.metal": 0.3,
+      "table-decor_books_1.emit": 0.33,
+      "table-decor_books_1.normal": 0.35,
+      "table-decor_books_1.ao": 0.53,
+      "table-decor_books_2.albedo": 0.34,
+      "table-decor_books_2.rough": 0.33,
+      "table-decor_books_2.metal": 0.31,
+      "table-decor_books_2.emit": 0.32,
+      "table-decor_books_2.normal": 0.36,
+      "table-decor_books_2.ao": 0.49,
+      "table-decor_vase.albedo": 0.34,
+      "table-decor_vase.rough": 0.32,
+      "table-decor_vase.metal": 0.29,
+      "table-decor_vase.emit": 0.3,
+      "table-decor_vase.normal": 0.33,
+      "table-decor_vase.ao": 0.45
+    },
+    "seconds_total": 10.6,
+    "load1_before": 1.94,
+    "load1_after": 2.18,
+    "coverage": 0.3068,
+    "ao_mean": 0.7646,
+    "ao_mean_per_kind": {
+      "candle": 0.8331,
+      "books": 0.7149,
+      "vase": 0.9454
+    },
+    "uv_overlap_texels": 0,
+    "ao_p05": 0.0,
+    "rough_mean": 0.5663,
+    "metal_fraction": 0.0643,
+    "emissive_fraction": 0.0031,
+    "albedo_mean_srgb8": [
+      104.2,
+      73.2,
+      53.7
+    ],
+    "normal_mean": [
+      0.5048,
+      0.5037,
+      0.9206
+    ],
+    "ktx2": {
+      "table-decor.basecolor.ktx2": "create --format R8G8B8_SRGB --assign-tf srgb --encode uastc --uastc-quality 2 --zstd 18 --generate-mipmap",
+      "table-decor.normal.ktx2": "create --format R8G8B8_UNORM --assign-tf linear --encode uastc --uastc-quality 2 --zstd 18 --generate-mipmap --normalize",
+      "table-decor.orm.ktx2": "create --format R8G8B8_UNORM --assign-tf linear --encode uastc --uastc-quality 2 --zstd 18 --generate-mipmap",
+      "table-decor.emissive.ktx2": "create --format R8G8B8_SRGB --assign-tf srgb --encode uastc --uastc-quality 2 --zstd 18 --generate-mipmap"
+    }
+  },
+  "texelDensityPxPerM": {
+    "candle": 813.2,
+    "books": 841.8,
+    "vase": 789.4
+  },
+  "geometry": {
+    "candle": {
+      "radius_low": 0.0701,
+      "radius_high": 0.0701,
+      "height_low": 0.203,
+      "height_high": 0.203,
+      "min_z_low": 0.0
+    },
+    "books": {
+      "radius_low": 0.1026,
+      "radius_high": 0.1026,
+      "height_low": 0.084,
+      "height_high": 0.0852,
+      "min_z_low": 0.0
+    },
+    "vase": {
+      "radius_low": 0.0635,
+      "radius_high": 0.0635,
+      "height_low": 0.222,
+      "height_high": 0.2235,
+      "min_z_low": 0.0
+    }
+  },
+  "pivot": "each node's origin is the prop's base centre (runtime y = 0 is the table top)",
+  "placement": "src/floor/table-decor.ts placeTableDecor, stream Stream.fromKey(`${seed}:table-decor`)",
+  "derivedFiles": [
+    {
+      "path": "public/assets/props/table-decor/table-decor.basecolor.ktx2",
+      "sha256": "6fde8a275a607f914c294ade598615cb947242e900da9a80df472c6a4b0dfb33",
+      "bytes": 514218
+    },
+    {
+      "path": "public/assets/props/table-decor/table-decor.emissive.ktx2",
+      "sha256": "85bd2dcb48348522dcc81d13fb5caa5974a994df8ffd7caef972c1de6ce885d0",
+      "bytes": 10360
+    },
+    {
+      "path": "public/assets/props/table-decor/table-decor.glb",
+      "sha256": "14980709879d807f5fd70b096a05ac1391cffc62e826dc00f9a13ad6df50113e",
+      "bytes": 44612
+    },
+    {
+      "path": "public/assets/props/table-decor/table-decor.manifest.json",
+      "sha256": "739f85f3ac69d6c187cf925f2171a606a529097eff3f675aa1d990e622613cf6",
+      "bytes": 1001
+    },
+    {
+      "path": "public/assets/props/table-decor/table-decor.normal.ktx2",
+      "sha256": "46e7778d40d35200187cf4cf155dc30adfca329dcb8a659aa038b98723f01998",
+      "bytes": 453682
+    },
+    {
+      "path": "public/assets/props/table-decor/table-decor.orm.ktx2",
+      "sha256": "5c68400f2aeb80cceb9eb740f381019887f81e86df81278da700824dc6588f8f",
+      "bytes": 511116
+    }
+  ],
+  "sourceFiles": [
+    {
+      "path": "assets-source/props/table-decor/blend/table-decor.high.blend",
+      "sha256": "d8e18e89f35d9224a376c4a270b83c16979a105f33914f8bf60d6151e6f07c0a",
+      "bytes": 242276
+    },
+    {
+      "path": "assets-source/props/table-decor/blend/table-decor.low.blend",
+      "sha256": "b1a86dbb9edaa655bb1f64ed7005f5816689816643e112d616e5ea58164bd83a",
+      "bytes": 242453
+    },
+    {
+      "path": "assets-source/props/table-decor/staging/report.json",
+      "sha256": "1125f2fa464ce9878ceab0fab546f8ba43433db033cf65849125eef7318e633a",
+      "bytes": 6408
+    },
+    {
+      "path": "assets-source/props/table-decor/staging/reimport.json",
+      "sha256": "05abec6e8f48e6f7c6940318bf4d3e58091a97405ad7760f8ed3d5f192ed061b",
+      "bytes": 972
+    },
+    {
+      "path": "assets-source/props/table-decor/staging/table-decor.basecolor.png",
+      "sha256": "0006c42082155e5868952c2e986e3003939643d352f55b7a7afbb7113d0efc5c",
+      "bytes": 484518
+    },
+    {
+      "path": "assets-source/props/table-decor/staging/table-decor.normal.png",
+      "sha256": "d51ef6ba483ac20f485b6c2b73501ddec307eaf4e4fb69e6e0331175442a9feb",
+      "bytes": 493793
+    },
+    {
+      "path": "assets-source/props/table-decor/staging/table-decor.orm.png",
+      "sha256": "a965e5a6a3254df22b461e9f35e5e965e7f97ec478b20e145a8edb79528a2664",
+      "bytes": 533006
+    },
+    {
+      "path": "assets-source/props/table-decor/staging/table-decor.emissive.png",
+      "sha256": "bdf898c0d66da48f24c4ec2d14379a9dac0a77eb358a90f847d3a7feea46ad1d",
+      "bytes": 10651
+    },
+    {
+      "path": "assets-source/props/table-decor/staging/renders/candle-high.png",
+      "sha256": "16f622d01206f2bf79ffea92d9bce0bf2c8edea5e0a0d52054ba58e58a01a3b6",
+      "bytes": 449724
+    },
+    {
+      "path": "assets-source/props/table-decor/staging/renders/candle-low.png",
+      "sha256": "99ddc4187f4a1abe3cb14e0d3bc69dd16635d095650b638158bf521426396138",
+      "bytes": 446144
+    },
+    {
+      "path": "assets-source/props/table-decor/staging/renders/books-high.png",
+      "sha256": "2099e1b0a5299aa9d7d2be66d71edc50ae27e2c1eda84ee6659103d2279c4369",
+      "bytes": 522135
+    },
+    {
+      "path": "assets-source/props/table-decor/staging/renders/books-low.png",
+      "sha256": "486effad37acfb9581a83153753e76b262665fdaae4852d724e9a65b0daea176",
+      "bytes": 504164
+    },
+    {
+      "path": "assets-source/props/table-decor/staging/renders/vase-high.png",
+      "sha256": "b85c3aeffb593a5bf429f127a26a3ff6037976b64091428109deb2cb96574841",
+      "bytes": 445391
+    },
+    {
+      "path": "assets-source/props/table-decor/staging/renders/vase-low.png",
+      "sha256": "a6bb9f153e18d52490e8ff1e3cf425a3c89c410ad13a5ca2c504cd831f78b08e",
+      "bytes": 449547
+    },
+    {
+      "path": "assets-source/props/table-decor/staging/renders/set-low.png",
+      "sha256": "abe7b555de7133a92bf08e91417b8ada2896faddc6cfebeab3ed2064857e583c",
+      "bytes": 465505
+    },
+    {
+      "path": "assets-source/props/table-decor/staging/renders/set-high.png",
+      "sha256": "182725d230759182b863a990a1920cddc0caca903a499e772a49ba6a5be1b64b",
+      "bytes": 463074
+    }
+  ],
+  "reviewEvidence": [
+    {
+      "path": "assets-source/props/table-decor/table-decor.review-sheet.jpg",
+      "sha256": "056a826d4045e4a4b525fc61c63098252c4df356a37e3af516e958202e4900a4",
+      "bytes": 812389
+    },
+    {
+      "path": "assets-source/props/table-decor/engine/SPIRE002-room0-hall-bench-e.jpg",
+      "sha256": "38411ef8c9f69353f99a89f7ec2d04a0304d302edbec2761d5543c1542067c58",
+      "bytes": 263938
+    },
+    {
+      "path": "assets-source/props/table-decor/engine/SPIRE002-room0-hall-bench-w.jpg",
+      "sha256": "92ecf3db44e92cf11492b037bcc7fc972502ecadedb31bba9c80eb2ff565dcbb",
+      "bytes": 269708
+    },
+    {
+      "path": "assets-source/props/table-decor/engine/SPIRE002-room3-gear-shaft-crate.jpg",
+      "sha256": "f5a4f66ca37fb8b99e1d5f96bbbadea9dbd320c1c837f1f1f9f1b8bf3b91e636",
+      "bytes": 312503
+    },
+    {
+      "path": "assets-source/props/table-decor/engine/SPIRE004-room0-hall-bench-e.jpg",
+      "sha256": "51b4bdd1a1bc1cfa9c9f42afdb26b373c8563ceabe3ad95b735cab54a0c182a4",
+      "bytes": 238303
+    },
+    {
+      "path": "assets-source/props/table-decor/engine/SPIRE004-room0-hall-bench-w.jpg",
+      "sha256": "aa5581a2d98701af1271bda8be41de9e50d7cacbe2e8983797176bc30afd588c",
+      "bytes": 265028
+    },
+    {
+      "path": "assets-source/props/table-decor/engine/SPIRE004-room1-hall-bench-e.jpg",
+      "sha256": "246a2c7eac82312417acf4ac05bd9736ca2711b340b4934568561a5d43416304",
+      "bytes": 242505
+    },
+    {
+      "path": "assets-source/props/table-decor/engine/SPIRE004-room1-hall-bench-w.jpg",
+      "sha256": "f0413a11b679dfd35788a5837b56586337f4dee2188d8b1080c4b7b83a05cc56",
+      "bytes": 245454
+    },
+    {
+      "path": "assets-source/props/table-decor/engine/SPIRE004-room5-hall-bench-e.jpg",
+      "sha256": "eb0fc8e85303ac0a35ed71dc4225695c9d4a4a6d8fc63539ee648c7dfe78738f",
+      "bytes": 237162
+    },
+    {
+      "path": "assets-source/props/table-decor/engine/SPIRE004-room5-hall-bench-w.jpg",
+      "sha256": "326649eb20d66e607ce021a228cbb66db97561fb640b58ff076cecbbbdf0cdc0",
+      "bytes": 251606
+    },
+    {
+      "path": "assets-source/props/table-decor/engine/closeup-books.jpg",
+      "sha256": "494c502538099e43888ba3b0bb1dda59a9fdbadef31e1d0adf5cf062594ada89",
+      "bytes": 261268
+    },
+    {
+      "path": "assets-source/props/table-decor/engine/closeup-candle.jpg",
+      "sha256": "940cbff12e1a939d7488d2b68816e2bfa1f2b208ccbbeedf43e524ab03b7230b",
+      "bytes": 280304
+    },
+    {
+      "path": "assets-source/props/table-decor/engine/closeup-vase.jpg",
+      "sha256": "3f1ad7686e352545f27077c01e4864af22bb627a2ca5d12f1fe07f2cae22ee59",
+      "bytes": 291991
+    }
+  ],
+  "references": [
+    {
+      "path": "assets-source/style/locked/L-board-1.png",
+      "sha256": "d3fffc8eb300cc6f40236c28930401ef1bd06be0e27be76999839e3bfeacc018",
+      "provider": "higgsfield",
+      "note": "canonical Gilded Lamplight style board (docs/art-bible.md); no prop concept sheet exists"
+    }
+  ],
+  "materialsUsed": "brass reuses the approved P4-T3 brass-aged set (box-projected into the bake); walnut, wax, glazed ceramic, leather and paper are procedural in the generator",
+  "license": "Original work generated in Blender from a checked-in script; style reference from Paul's paid Higgsfield plan (Terms of Use 4.4)",
+  "reimport": {
+    "per_kind": {
+      "candle": {
+        "tris": 272,
+        "attributes": [
+          "NORMAL",
+          "POSITION",
+          "TEXCOORD_0"
+        ],
+        "identity": true
+      },
+      "books": {
+        "tris": 150,
+        "attributes": [
+          "NORMAL",
+          "POSITION",
+          "TEXCOORD_0"
+        ],
+        "identity": true
+      },
+      "vase": {
+        "tris": 576,
+        "attributes": [
+          "NORMAL",
+          "POSITION",
+          "TEXCOORD_0"
+        ],
+        "identity": true
+      }
+    },
+    "materials": [
+      "table-decor"
+    ],
+    "checks": {
+      "three_prop_nodes": true,
+      "tris_le_600_each": true,
+      "tris_match_manifest": true,
+      "one_material": true,
+      "image_free": true,
+      "single_sided": true,
+      "uv0_normals_only": true,
+      "identity_nodes": true,
+      "blender_reimport": true
+    },
+    "pass": true
+  },
+  "validation": {
+    "pass": true,
+    "date": "2026-11-17",
+    "checks": [
+      "presence, no unlisted files",
+      "hashes",
+      "image-free glb, one single-sided material",
+      "three transform-free prop nodes, each <= 600 tris and matching the manifest",
+      "each prop stands on y 0 inside its table-decor.ts footprint",
+      "ktx2 maps square, same size <= 1024, mipped, sRGB colour and linear data",
+      "clean Blender reimport"
+    ]
+  },
+  "approvals": [
+    {
+      "gate": "concept",
+      "status": "pending",
+      "notes": "Paul's 2026-11-17 playtest request names candle, book and vase; no prop concept sheet was made"
+    },
+    {
+      "gate": "technical",
+      "status": "pending",
+      "notes": "validate-generated-assets verdict is reported to the orchestrator, not self-recorded"
+    },
+    {
+      "gate": "creative",
+      "status": "pending",
+      "notes": "assets-source/props/table-decor/table-decor.review-sheet.jpg"
+    },
+    {
+      "gate": "rights",
+      "status": "pending",
+      "notes": "original procedural geometry; brass-aged set carries its own provenance"
+    },
+    {
+      "gate": "owner",
+      "status": "pending",
+      "notes": "Paul approves the in-engine look (docs/blender-kit-project.md ruling 3)"
+    },
+    {
+      "gate": "independent visual score",
+      "status": "unscored",
+      "notes": "blender-kit-pieces requires an independent >= 80/100 score; unscored means unaccepted"
+    }
+  ]
+}
