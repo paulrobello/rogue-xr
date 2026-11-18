@@ -179,7 +179,7 @@ describe('floor view encounters', () => {
     expect(rig.position.y).toBe(rigBefore.y);
     expect(view.encounter.seatDistance).toBeCloseTo(startDistance + 0.2);
     expect(view.encounter.table.position.equals(tableBefore)).toBe(true);
-    expect(view.turnVignette).toBeCloseTo(DEFAULT_VIGNETTE.maxStrength);
+    expect(view.turnVignette).toBe(0);
 
     view.setTableDistance(1.3, head);
     expect(rig.position.z).toBeCloseTo(rigBefore.z + 0.2);

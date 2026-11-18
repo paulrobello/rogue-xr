@@ -58,6 +58,8 @@ export interface FloorLoot {
   pick(origin: THREE.Vector3, direction: THREE.Vector3, maxDistance?: number): LootPick | null;
   /** Swings the coffer's lid open and shows `found` on a panel over it. Returns false for an unknown coffer. */
   open(room: number, socketId: string, found: TreasureLoot): boolean;
+  /** Shows the lock message if the coffer still belongs to an uncleared encounter. */
+  showLock(room: number, socketId: string): boolean;
   /** Shows a coffer already open, with no panel (resuming a saved run). */
   markOpened(room: number, socketId: string): void;
   /** Dresses the coffers in the game's walnut and brass (the flat placeholders stay on a failure). */
@@ -206,6 +208,7 @@ export function mountFloorView(
   const encounter = new EncounterDirector({
     world,
     table: tableHost,
+    onCleared: (room) => world.releaseGuardedDoor(room),
     lockLocomotion: (l) => {
       locked = l;
     },
@@ -278,6 +281,8 @@ export function mountFloorView(
   };
   const cofferOf = (room: number, socketId: string): Coffer | undefined =>
     world.coffers.find((c) => c.room === room && c.socketId === socketId);
+  const lootLocked = (room: number): boolean =>
+    world.plan.rooms[room]?.role === 'combat' && !encounter.isCleared(room);
   const loot: FloorLoot = {
     coffers: world.coffers,
     pick(origin, direction, maxDistance = LOOT_REACH) {
@@ -286,11 +291,24 @@ export function mountFloorView(
     },
     open(room, socketId, found) {
       const coffer = cofferOf(room, socketId);
-      if (!coffer) return false;
+      if (!coffer || lootLocked(room)) return false;
       coffer.open(true);
+      if (found.kind === 'cogs') coffer.showCogs(found.cogs);
       dropToast();
       const at = coffer.object.getWorldPosition(new THREE.Vector3());
       toast = new LootToast(found, at.setY(at.y + TOAST_LIFT));
+      world.group.add(toast.root);
+      return true;
+    },
+    showLock(room, socketId) {
+      const coffer = cofferOf(room, socketId);
+      if (!coffer || !lootLocked(room)) return false;
+      dropToast();
+      const at = coffer.object.getWorldPosition(new THREE.Vector3());
+      toast = new LootToast(
+        { text: 'Locked', caption: 'Defeat this room’s automatons' },
+        at.setY(at.y + TOAST_LIFT),
+      );
       world.group.add(toast.root);
       return true;
     },
@@ -371,7 +389,7 @@ export function mountFloorView(
       suspended = value;
     },
     markCleared(room) {
-      for (const body of world.enemies.get(room) ?? []) body.removeFromParent();
+      encounter.markCleared(room);
     },
     standPoint(room) {
       const r = world.rooms[room];
@@ -496,7 +514,6 @@ export function mountFloorView(
       rig.position.x += delta[0];
       rig.position.z += delta[1];
       rig.updateMatrixWorld(true);
-      turnVignette = DEFAULT_VIGNETTE.maxStrength;
     },
     update(head, dt) {
       turnVignette = vignetteStep(turnVignette, 0, dt, DEFAULT_VIGNETTE);

@@ -9,11 +9,11 @@
   "generatorDeps": [
     {
       "path": "scripts/assets/room_kit.py",
-      "sha256": "5600b9f67b900540370af102d982678acfc6d54c14de4afa4310e84626081e40"
+      "sha256": "b085857642cb191f8b4d61290099d09efbdd7ca48d0d32fbc38e69f34f6c810f"
     },
     {
       "path": "scripts/assets/build-room-study.py",
-      "sha256": "b918e8511fef38f662c4a98c441a15780cbf621969691351a754f6e200274fce"
+      "sha256": "015a9cfafdf1f9498de017cb447e02d401205c503df68926c825b04348bcda9f"
     },
     {
       "path": "scripts/assets/lightmap_helpers.py",
@@ -41,34 +41,34 @@
     "store": "assets-source/rooms/hall/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)",
     "files": {
       "hall_high.blend": {
-        "sha256": "b5200d2dfbee3605e3e1b1c8089e3b9a6776453bd3e3a5af6e4e6887ceff82f4",
-        "bytes": 1026047
+        "sha256": "498ccb2499ae56c34adf1386ab08d3a81c6c4de6b478f0c6fb66a04191872eb1",
+        "bytes": 1027684
       },
       "hall_low.blend": {
-        "sha256": "8c20583f21ab043a41234123c9ef9c69732a1529cc6806416092b35ad6fc89ab",
-        "bytes": 349450
+        "sha256": "54c8b3735ef726339287c00477e41546a374df0e7076f75b6f9a1f12a501f53e",
+        "bytes": 349720
       }
     }
   },
   "bake": {
     "device": "GPU:METAL (Apple M4 (GPU - 10 cores))",
     "lightmap": {
-      "coverage": 0.6992,
-      "scale": 5.411592,
-      "clipped_fraction": 0.00994,
-      "mean_irradiance": 0.442837,
+      "coverage": 0.6867,
+      "scale": 5.490201,
+      "clipped_fraction": 0.00993,
+      "mean_irradiance": 0.451181,
       "p05_irradiance": 0.0,
       "percentile": 99.0,
       "encoded_p05_255": 0,
       "encoded_median_255": 41,
-      "seconds": 45.54,
+      "seconds": 44.84,
       "pass_seconds": [
-        38.96,
-        6.58
+        38.31,
+        6.53
       ],
       "host_load": [
-        1.18,
-        1.18
+        5.04,
+        3.07
       ],
       "timing_valid": true,
       "diffuse_bounces": 4,
@@ -90,7 +90,7 @@
     }
   },
   "budgets": {
-    "triangles": 6747,
+    "triangles": 6753,
     "materials": 8,
     "texturePx": {
       "hall.lightmap.ktx2": {
@@ -98,55 +98,55 @@
         "height": 2048
       }
     },
-    "highTriangles": 41683,
-    "glbBytes": 484480
+    "highTriangles": 41742,
+    "glbBytes": 484916
   },
   "texelDensityPxPerM": {
     "lightmap": {
-      "mean_px_per_m": 52.54,
-      "min_px_per_m": 44.41,
-      "max_px_per_m": 52.81
+      "mean_px_per_m": 51.85,
+      "min_px_per_m": 43.83,
+      "max_px_per_m": 52.12
     },
     "lightmapBySlot": {
       "brass-aged": {
         "area_m2": 9.95,
-        "median_px_per_m": 52.8,
-        "min_px_per_m": 44.4
+        "median_px_per_m": 52.1,
+        "min_px_per_m": 43.8
       },
       "brass-polished": {
-        "area_m2": 2.45,
-        "median_px_per_m": 52.8,
-        "min_px_per_m": 44.4
+        "area_m2": 2.47,
+        "median_px_per_m": 52.1,
+        "min_px_per_m": 43.8
       },
       "flame": {
         "area_m2": 0.32,
-        "median_px_per_m": 52.8,
-        "min_px_per_m": 52.8
+        "median_px_per_m": 52.1,
+        "min_px_per_m": 52.1
       },
       "stained-glass": {
         "area_m2": 2.26,
-        "median_px_per_m": 52.8,
-        "min_px_per_m": 52.8
+        "median_px_per_m": 52.1,
+        "min_px_per_m": 52.1
       },
       "stone-floor": {
         "area_m2": 104.45,
-        "median_px_per_m": 52.8,
-        "min_px_per_m": 52.8
+        "median_px_per_m": 52.1,
+        "min_px_per_m": 52.1
       },
       "wallpaper": {
         "area_m2": 104.65,
-        "median_px_per_m": 52.8,
-        "min_px_per_m": 52.8
+        "median_px_per_m": 52.1,
+        "min_px_per_m": 52.1
       },
       "walnut": {
         "area_m2": 240.83,
-        "median_px_per_m": 52.8,
-        "min_px_per_m": 46.2
+        "median_px_per_m": 52.1,
+        "min_px_per_m": 45.6
       },
       "wax": {
         "area_m2": 0.37,
-        "median_px_per_m": 50.8,
-        "min_px_per_m": 50.7
+        "median_px_per_m": 50.1,
+        "min_px_per_m": 50.1
       }
     }
   },
@@ -283,27 +283,26 @@
   "derivedFiles": [
     {
       "path": "public/assets/rooms/hall/hall.glb",
-      "sha256": "d2af53500c023a863378a18586ad8e4028d572853a4bf0a4817e862bfbbb26d9",
-      "bytes": 484480
+      "sha256": "ead7eb3d08df029c77e983724bdc39817e8d359a5afd12992d31ce1ee3d3378f",
+      "bytes": 484916
     },
     {
       "path": "public/assets/rooms/hall/hall.lightmap.ktx2",
-      "sha256": "4f73313b640e07d998779124825fb76257eb8b96ca8816b67ee46009ffa8ba9b",
-      "bytes": 2833126
+      "sha256": "0f16be4bc41b2e7cc4eaadac885f23fac2610ac1cd432b57b192d2aa33ca77a3",
+      "bytes": 2798349
     },
     {
       "path": "public/assets/rooms/hall/hall.manifest.json",
-      "sha256": "cce9d7b507e7b4dc4ee306b44da424a8071354c30ecaad2a0623a2f91c990980",
+      "sha256": "92d3f0f1de3be360c985d76700e75d529bd9eb0f0cdfd4229134291a0b6fe33e",
       "bytes": 5130
     }
   ],
   "stagingFiles": {
-    "engine-compare.json": "591c6ca434843d141edc4728b6816865732db7e384007fcfb5f768cde4e0e8ba",
-    "hall.glb": "d2af53500c023a863378a18586ad8e4028d572853a4bf0a4817e862bfbbb26d9",
-    "hall.lightmap.ktx2": "4f73313b640e07d998779124825fb76257eb8b96ca8816b67ee46009ffa8ba9b",
-    "hall.lightmap.png": "3315e9ed289ad3dbb77d08cb4d97989d2170db0266368a6e7d7576f9fe2ac973",
-    "hall.manifest.json": "cce9d7b507e7b4dc4ee306b44da424a8071354c30ecaad2a0623a2f91c990980",
-    "uv1-report.json": "31a06f2e5b581cc60c04e5a9e17a339ff4895e4cda7a20c88cc77084c5507f53"
+    "hall.glb": "ead7eb3d08df029c77e983724bdc39817e8d359a5afd12992d31ce1ee3d3378f",
+    "hall.lightmap.ktx2": "0f16be4bc41b2e7cc4eaadac885f23fac2610ac1cd432b57b192d2aa33ca77a3",
+    "hall.lightmap.png": "4d5b24836f2fd37945a7876357564796ca19b02c71726131aa60becc655d7e01",
+    "hall.manifest.json": "92d3f0f1de3be360c985d76700e75d529bd9eb0f0cdfd4229134291a0b6fe33e",
+    "uv1-report.json": "0c7f3fac96b0fb37d7a24ea57a2efd17fd00848ae75f894ece8a53add2bc1c0e"
   },
   "references": [
     {
@@ -328,7 +327,7 @@
   "materialsUsed": "approved P4-T3 set (public/assets/materials), bound by slot name; not regenerated",
   "license": "Original work generated in Blender from a checked-in script; concept references from Paul's paid Higgsfield plan (Terms of Use 4.4)",
   "reimport": {
-    "triangles": 6747,
+    "triangles": 6753,
     "material_count": 8,
     "uv_layers": [
       [
@@ -374,7 +373,7 @@
   },
   "validation": {
     "pass": true,
-    "date": "2026-11-17",
+    "date": "2026-11-18",
     "checks": [
       "presence",
       "hashes",
@@ -427,199 +426,10 @@
   ],
   "reviewEvidence": [
     {
-      "path": "assets-source/rooms/hall/staging/review-sheet.jpg",
-      "sha256": "005022b82cce0fa2edc294f02ec6cd49e8e49245d4e6f9ac802bf77be12a8935"
-    },
-    {
-      "path": "docs/verification/p5-rooms-hall-bench.jpg",
-      "sha256": "8a5f1bfb00af5948812c82b2e0e2a4df04797bdb899c2a46c1c8cd767a8fdd85"
-    },
-    {
-      "path": "docs/verification/p5-rooms-hall-floor-sealed-west-close.jpg",
-      "sha256": "8fda00cd94764877c368c692484ea45cbd0ef6a0f936a1b6a03a77c620391f1c"
-    },
-    {
-      "path": "docs/verification/p5-rooms-hall-floor-sealed-west.jpg",
-      "sha256": "48ef9d8d5accf0dd17df7a524cfdae976fd8ceea7f4f206a31a70c58ba6a781f"
-    },
-    {
-      "path": "docs/verification/p5-rooms-hall-hero.diffuse.jpg",
-      "sha256": "0960f2d5e34550b0b25e373ed05fff6de11be9c957d731498b78067297d61ac2"
-    },
-    {
-      "path": "docs/verification/p5-rooms-hall-hero.jpg",
-      "sha256": "fcd3cf8e118ccdc5660b5f8ea6e5bc57ea7106ba12c08deb4ca7461db211a9a1"
-    },
-    {
-      "path": "docs/verification/p5-rooms-hall-plug-n-in.jpg",
-      "sha256": "572a5fd025a5bb6f376529c65f16991f16f56a4dd2767c29f321f5c4d1226ee1"
-    },
-    {
-      "path": "docs/verification/p5-rooms-hall-plug-n-out.jpg",
-      "sha256": "7e70fb0b7adae95fa0b10817ab4cc059d214359cc702cb975ed3339810305489"
-    },
-    {
-      "path": "docs/verification/p5-rooms-hall-seam-north.jpg",
-      "sha256": "0425b26f140a5557e138d1fec8764dd06095ae3a3aecd61639241ef9ec6a6a4c"
-    },
-    {
-      "path": "docs/verification/p5-rooms-hall-seam-west-turned.jpg",
-      "sha256": "f504d9087c324fb634a8b7762b2719fe6391e7a7d0b1c6a52616f6183ef90806"
-    },
-    {
-      "path": "docs/verification/p5-int-hall-bench-east.jpg",
-      "sha256": "57c75af1cb43f9d7ee7e62763cefa4f88a663d770a4f58c9514d23488eda8b27"
-    },
-    {
-      "path": "docs/verification/p5-int-hall-bench-west.jpg",
-      "sha256": "4046fd7807c77e1f62725f084acea2fd47de5edf4f11da68ef57780fb26da2e4"
-    },
-    {
-      "path": "docs/verification/p5-int-hall-sealed.jpg",
-      "sha256": "baac50a4644d453f6fa6cc01d6a6a0b2537ff766e48743407a32a9d053ffb2ab"
-    },
-    {
-      "path": "docs/verification/p5-int-hall.jpg",
-      "sha256": "49dc7427d9f9ee270512e1c16f5ead5e2a105fb84a7abe72dd015eac82d1e76b"
-    },
-    {
-      "path": "docs/verification/hall-fire-close.jpg",
-      "sha256": "307ee924760fc066159f2a163a44416ad83142bde3605c81886dbae63302a3a5"
-    },
-    {
-      "path": "docs/verification/hall-fire-entry.jpg",
-      "sha256": "9bdeaf5729c01c867dec96ead20e271099e9d76e60fb1c200b4b00093d0c6fd2"
-    },
-    {
-      "path": "docs/verification/hall-fire-strip.jpg",
-      "sha256": "b363c2ccf99956345ff413c0ba1c3962c1c1016c3155c5755363b3d5046f79de"
+      "path": "docs/verification/p5-rooms-hall-quest-window.jpg",
+      "sha256": "dd226ed6c96276b2263f7256833752b7ea513857c9f7c8f4888f92e262c60c8f"
     }
   ],
-  "independentScore": {
-    "score": 80,
-    "scale": "0-100 visual fidelity to the art bible and study-kit language",
-    "scorer": "Independent Codex hall reviewer, separate from the authoring agent",
-    "date": "2026-11-17",
-    "acceptanceBar": 80,
-    "clearsBar": true,
-    "build": "91d9e3e",
-    "previousScore": 74,
-    "rubric": [
-      {
-        "criterion": "form, layout and proportions",
-        "points": 25,
-        "max": 30,
-        "note": "Both direct doorway views show about 190 horizontal pixels of separation between the nearest bench edge and the frame in a 1600 px image. The central brass compass and overhead chandelier define the gathering area. The rectangular volume and small fireplace retain the earlier limitations."
-      },
-      {
-        "criterion": "signature features: gathering space",
-        "points": 20,
-        "max": 25,
-        "note": "From the entry the warm, changing fire is identifiable across the room. The dressed benches, candle niches and compass give the hall a distinct use, but the benches sit against separate walls and the niches lose their candles at room distance."
-      },
-      {
-        "criterion": "surface detail and material read",
-        "points": 14,
-        "max": 20,
-        "note": "The close view and six-frame strip resolve overlapping soft amber tips and bright cores above the wood. The historical hero has three hard, single-tone triangles. The firebox is still faced in pale stone and the fuel reads as straight-cut timber. Floor joints, walnut and brass remain legible. The bake reports 52.54 px/m mean and 44.41 minimum."
-      },
-      {
-        "criterion": "colour, value and lighting mood",
-        "points": 12,
-        "max": 15,
-        "note": "The flame now has a hot yellow core with orange edges distinct from its surround and a warm pool immediately at the threshold. The alcove remains pale: matched hero surround L* p90 is 78.9 versus 75.9 previously. At the same hero niche the mean L* remains 22.0. The integrated floor band L* p90/p10 is 2.86 versus 2.88 previously. The floor still lacks room-scale falloff."
-      },
-      {
-        "criterion": "readability and comfort at seated VR distance",
-        "points": 9,
-        "max": 10,
-        "note": "In the seated-camera captures the dressed benches sit to the side of each path, brass doorposts clearly frame walkable openings, and the bright fire reads from the entry. The small niche candles and subdued benches recede against the walnut. Judged from captured views only."
-      }
-    ],
-    "topFixes": [
-      "Darken the firebox lining enough to silhouette the layered flames and give the straight-cut fuel a more irregular profile.",
-      "Strengthen the localized light at the niche and across the floor nearest the hearth while keeping the center lane legible."
-    ],
-    "method": "Compared the captured integration, room and fire views plus staging contact sheet against docs/art-bible.md. Used Pillow crops of the 91d9e3e doorways, close fire, strip and corresponding hero firebox at b1df5d3. Computed CIE L* from linearized sRGB at identical hero niche and surround coordinates (690,325)-(738,388) and (422,400)-(508,462); integrated floor uses every column and rows 600-929. Across five later strip panels versus the first, 5.5-12.5% of the central 295x270 fire region changes by over 12 mean absolute RGB levels. Verified evidence bytes against Git. This independent visual score is limited to the recorded captures. Owner acceptance, headset comfort and physical Quest performance require separate evidence.",
-    "evidence": [
-      {
-        "path": "docs/art-bible.md",
-        "sha256": "11da71b45f24eeb258ef77d328ef1aa009297a9231608cb80bb429aa3ff2ad6a"
-      },
-      {
-        "path": "assets-source/rooms/hall/staging/report.json",
-        "sha256": "33afd1f9dabaacee268427f9e952e7103f3a81a083aa26282895bf7c051ba000"
-      },
-      {
-        "path": "assets-source/rooms/hall/staging/review-sheet.jpg",
-        "sha256": "005022b82cce0fa2edc294f02ec6cd49e8e49245d4e6f9ac802bf77be12a8935"
-      },
-      {
-        "path": "docs/verification/p5-int-hall-bench-east.jpg",
-        "sha256": "57c75af1cb43f9d7ee7e62763cefa4f88a663d770a4f58c9514d23488eda8b27"
-      },
-      {
-        "path": "docs/verification/p5-int-hall-bench-west.jpg",
-        "sha256": "4046fd7807c77e1f62725f084acea2fd47de5edf4f11da68ef57780fb26da2e4"
-      },
-      {
-        "path": "docs/verification/p5-int-hall-sealed.jpg",
-        "sha256": "baac50a4644d453f6fa6cc01d6a6a0b2537ff766e48743407a32a9d053ffb2ab"
-      },
-      {
-        "path": "docs/verification/p5-int-hall.jpg",
-        "sha256": "49dc7427d9f9ee270512e1c16f5ead5e2a105fb84a7abe72dd015eac82d1e76b"
-      },
-      {
-        "path": "docs/verification/p5-rooms-hall-bench.jpg",
-        "sha256": "8a5f1bfb00af5948812c82b2e0e2a4df04797bdb899c2a46c1c8cd767a8fdd85"
-      },
-      {
-        "path": "docs/verification/p5-rooms-hall-floor-sealed-west-close.jpg",
-        "sha256": "8fda00cd94764877c368c692484ea45cbd0ef6a0f936a1b6a03a77c620391f1c"
-      },
-      {
-        "path": "docs/verification/p5-rooms-hall-floor-sealed-west.jpg",
-        "sha256": "48ef9d8d5accf0dd17df7a524cfdae976fd8ceea7f4f206a31a70c58ba6a781f"
-      },
-      {
-        "path": "docs/verification/p5-rooms-hall-hero.diffuse.jpg",
-        "sha256": "0960f2d5e34550b0b25e373ed05fff6de11be9c957d731498b78067297d61ac2"
-      },
-      {
-        "path": "docs/verification/p5-rooms-hall-hero.jpg",
-        "sha256": "fcd3cf8e118ccdc5660b5f8ea6e5bc57ea7106ba12c08deb4ca7461db211a9a1"
-      },
-      {
-        "path": "docs/verification/p5-rooms-hall-plug-n-in.jpg",
-        "sha256": "572a5fd025a5bb6f376529c65f16991f16f56a4dd2767c29f321f5c4d1226ee1"
-      },
-      {
-        "path": "docs/verification/p5-rooms-hall-plug-n-out.jpg",
-        "sha256": "7e70fb0b7adae95fa0b10817ab4cc059d214359cc702cb975ed3339810305489"
-      },
-      {
-        "path": "docs/verification/p5-rooms-hall-seam-north.jpg",
-        "sha256": "0425b26f140a5557e138d1fec8764dd06095ae3a3aecd61639241ef9ec6a6a4c"
-      },
-      {
-        "path": "docs/verification/p5-rooms-hall-seam-west-turned.jpg",
-        "sha256": "f504d9087c324fb634a8b7762b2719fe6391e7a7d0b1c6a52616f6183ef90806"
-      },
-      {
-        "path": "docs/verification/hall-fire-close.jpg",
-        "sha256": "307ee924760fc066159f2a163a44416ad83142bde3605c81886dbae63302a3a5"
-      },
-      {
-        "path": "docs/verification/hall-fire-entry.jpg",
-        "sha256": "9bdeaf5729c01c867dec96ead20e271099e9d76e60fb1c200b4b00093d0c6fd2"
-      },
-      {
-        "path": "docs/verification/hall-fire-strip.jpg",
-        "sha256": "b363c2ccf99956345ff413c0ba1c3962c1c1016c3155c5755363b3d5046f79de"
-      }
-    ]
-  },
   "independentScoreHistory": [
     {
       "score": 68,
@@ -784,13 +594,219 @@
           "sha256": "cc67b274b2f9731ab842e5e92b9fa8f83db7df3724d1754c6d2753952100fcf0"
         }
       ]
+    },
+    {
+      "score": 80,
+      "scale": "0-100 visual fidelity to the art bible and study-kit language",
+      "scorer": "Independent Codex hall reviewer, separate from the authoring agent",
+      "date": "2026-11-17",
+      "acceptanceBar": 80,
+      "clearsBar": true,
+      "build": "91d9e3e",
+      "previousScore": 74,
+      "rubric": [
+        {
+          "criterion": "form, layout and proportions",
+          "points": 25,
+          "max": 30,
+          "note": "Both direct doorway views show about 190 horizontal pixels of separation between the nearest bench edge and the frame in a 1600 px image. The central brass compass and overhead chandelier define the gathering area. The rectangular volume and small fireplace retain the earlier limitations."
+        },
+        {
+          "criterion": "signature features: gathering space",
+          "points": 20,
+          "max": 25,
+          "note": "From the entry the warm, changing fire is identifiable across the room. The dressed benches, candle niches and compass give the hall a distinct use, but the benches sit against separate walls and the niches lose their candles at room distance."
+        },
+        {
+          "criterion": "surface detail and material read",
+          "points": 14,
+          "max": 20,
+          "note": "The close view and six-frame strip resolve overlapping soft amber tips and bright cores above the wood. The historical hero has three hard, single-tone triangles. The firebox is still faced in pale stone and the fuel reads as straight-cut timber. Floor joints, walnut and brass remain legible. The bake reports 52.54 px/m mean and 44.41 minimum."
+        },
+        {
+          "criterion": "colour, value and lighting mood",
+          "points": 12,
+          "max": 15,
+          "note": "The flame now has a hot yellow core with orange edges distinct from its surround and a warm pool immediately at the threshold. The alcove remains pale: matched hero surround L* p90 is 78.9 versus 75.9 previously. At the same hero niche the mean L* remains 22.0. The integrated floor band L* p90/p10 is 2.86 versus 2.88 previously. The floor still lacks room-scale falloff."
+        },
+        {
+          "criterion": "readability and comfort at seated VR distance",
+          "points": 9,
+          "max": 10,
+          "note": "In the seated-camera captures the dressed benches sit to the side of each path, brass doorposts clearly frame walkable openings, and the bright fire reads from the entry. The small niche candles and subdued benches recede against the walnut. Judged from captured views only."
+        }
+      ],
+      "topFixes": [
+        "Darken the firebox lining enough to silhouette the layered flames and give the straight-cut fuel a more irregular profile.",
+        "Strengthen the localized light at the niche and across the floor nearest the hearth while keeping the center lane legible."
+      ],
+      "method": "Compared the captured integration, room and fire views plus staging contact sheet against docs/art-bible.md. Used Pillow crops of the 91d9e3e doorways, close fire, strip and corresponding hero firebox at b1df5d3. Computed CIE L* from linearized sRGB at identical hero niche and surround coordinates (690,325)-(738,388) and (422,400)-(508,462); integrated floor uses every column and rows 600-929. Across five later strip panels versus the first, 5.5-12.5% of the central 295x270 fire region changes by over 12 mean absolute RGB levels. Verified evidence bytes against Git. This independent visual score is limited to the recorded captures. Owner acceptance, headset comfort and physical Quest performance require separate evidence.",
+      "evidence": [
+        {
+          "path": "docs/art-bible.md",
+          "sha256": "11da71b45f24eeb258ef77d328ef1aa009297a9231608cb80bb429aa3ff2ad6a"
+        },
+        {
+          "path": "assets-source/rooms/hall/staging/report.json",
+          "sha256": "33afd1f9dabaacee268427f9e952e7103f3a81a083aa26282895bf7c051ba000"
+        },
+        {
+          "path": "assets-source/rooms/hall/staging/review-sheet.jpg",
+          "sha256": "005022b82cce0fa2edc294f02ec6cd49e8e49245d4e6f9ac802bf77be12a8935"
+        },
+        {
+          "path": "docs/verification/p5-int-hall-bench-east.jpg",
+          "sha256": "57c75af1cb43f9d7ee7e62763cefa4f88a663d770a4f58c9514d23488eda8b27"
+        },
+        {
+          "path": "docs/verification/p5-int-hall-bench-west.jpg",
+          "sha256": "4046fd7807c77e1f62725f084acea2fd47de5edf4f11da68ef57780fb26da2e4"
+        },
+        {
+          "path": "docs/verification/p5-int-hall-sealed.jpg",
+          "sha256": "baac50a4644d453f6fa6cc01d6a6a0b2537ff766e48743407a32a9d053ffb2ab"
+        },
+        {
+          "path": "docs/verification/p5-int-hall.jpg",
+          "sha256": "49dc7427d9f9ee270512e1c16f5ead5e2a105fb84a7abe72dd015eac82d1e76b"
+        },
+        {
+          "path": "docs/verification/p5-rooms-hall-bench.jpg",
+          "sha256": "8a5f1bfb00af5948812c82b2e0e2a4df04797bdb899c2a46c1c8cd767a8fdd85"
+        },
+        {
+          "path": "docs/verification/p5-rooms-hall-floor-sealed-west-close.jpg",
+          "sha256": "8fda00cd94764877c368c692484ea45cbd0ef6a0f936a1b6a03a77c620391f1c"
+        },
+        {
+          "path": "docs/verification/p5-rooms-hall-floor-sealed-west.jpg",
+          "sha256": "48ef9d8d5accf0dd17df7a524cfdae976fd8ceea7f4f206a31a70c58ba6a781f"
+        },
+        {
+          "path": "docs/verification/p5-rooms-hall-hero.diffuse.jpg",
+          "sha256": "0960f2d5e34550b0b25e373ed05fff6de11be9c957d731498b78067297d61ac2"
+        },
+        {
+          "path": "docs/verification/p5-rooms-hall-hero.jpg",
+          "sha256": "fcd3cf8e118ccdc5660b5f8ea6e5bc57ea7106ba12c08deb4ca7461db211a9a1"
+        },
+        {
+          "path": "docs/verification/p5-rooms-hall-plug-n-in.jpg",
+          "sha256": "572a5fd025a5bb6f376529c65f16991f16f56a4dd2767c29f321f5c4d1226ee1"
+        },
+        {
+          "path": "docs/verification/p5-rooms-hall-plug-n-out.jpg",
+          "sha256": "7e70fb0b7adae95fa0b10817ab4cc059d214359cc702cb975ed3339810305489"
+        },
+        {
+          "path": "docs/verification/p5-rooms-hall-seam-north.jpg",
+          "sha256": "0425b26f140a5557e138d1fec8764dd06095ae3a3aecd61639241ef9ec6a6a4c"
+        },
+        {
+          "path": "docs/verification/p5-rooms-hall-seam-west-turned.jpg",
+          "sha256": "f504d9087c324fb634a8b7762b2719fe6391e7a7d0b1c6a52616f6183ef90806"
+        },
+        {
+          "path": "docs/verification/hall-fire-close.jpg",
+          "sha256": "307ee924760fc066159f2a163a44416ad83142bde3605c81886dbae63302a3a5"
+        },
+        {
+          "path": "docs/verification/hall-fire-entry.jpg",
+          "sha256": "9bdeaf5729c01c867dec96ead20e271099e9d76e60fb1c200b4b00093d0c6fd2"
+        },
+        {
+          "path": "docs/verification/hall-fire-strip.jpg",
+          "sha256": "b363c2ccf99956345ff413c0ba1c3962c1c1016c3155c5755363b3d5046f79de"
+        }
+      ]
     }
   ],
   "revision": {
     "agent": "Codex with GPT-6.1 Terra",
+    "date": "2026-11-18",
     "changes": [
-      "Moved both benches clear of the hall doorways",
-      "Rebuilt the hall and refreshed the runtime evidence"
+      "Extended the center mullions to the lancet peaks"
     ]
+  },
+  "independentScore": {
+    "score": 80,
+    "date": "2026-11-18",
+    "scale": "0-100 visual fidelity to the art bible and study-kit language",
+    "scorer": "Independent visual reviewer, separate from room authorship",
+    "acceptanceBar": 80,
+    "clearsBar": true,
+    "previousScore": 80,
+    "rubric": [
+      {
+        "criterion": "form, layout and proportions",
+        "points": 25,
+        "max": 30,
+        "note": "The center strip meets the top of the glass directly below the timber header at this oblique angle. Opening clearance, benches, compass and room proportions carry their historical assessment."
+      },
+      {
+        "criterion": "signature features: gathering space",
+        "points": 20,
+        "max": 25,
+        "note": "One niche candle and the adjacent standing fixture can be identified in the new view. Entry-to-fire visibility, seating and the central gathering area are outside the frame."
+      },
+      {
+        "criterion": "surface detail and material read",
+        "points": 14,
+        "max": 20,
+        "note": "The gold center strip is distinct from the dark diagonal leads. Jewel panes, wood grain and the wallpaper pattern stay distinct around the apex. Hearth lining and flame animation retain the prior assessment."
+      },
+      {
+        "criterion": "colour, value and lighting mood",
+        "points": 12,
+        "max": 15,
+        "note": "The lit wallpaper and niche create a contrast with the dark ceiling beam, while the coloured window remains readable. This view does not establish room-scale hearth falloff or the floor values."
+      },
+      {
+        "criterion": "readability and comfort at seated VR distance",
+        "points": 9,
+        "max": 10,
+        "note": "The window and candle read clearly in the close view. The frame does not show seated path clearance or sightlines through doorways, so the prior score for those features is retained."
+      }
+    ],
+    "topFixes": [
+      "The previous review identified pale firebox lining and weak localized hearth lighting. Recheck both from the entry using this bake."
+    ],
+    "method": "Independent change review against the previous five-criterion rubric. Examined the supplied 1280x720 capture at full resolution and the window apex in a 3x nearest-neighbour crop. The hero JPG listed in evidence is the previous build and was checked for historical context only. The wider room criteria retain the previous assessment wherever the fresh images cannot establish a change. The staged GLB hash matches its reimport, UV and bake reports, the compressed lightmap hash matches the bake report, and reimport passed all listed checks. UV report records zero overlapping pixels. No new room-wide capture, animated sequence, physical Quest measurement or owner sign-off is part of this review.",
+    "evidence": [
+      {
+        "path": "docs/verification/p5-rooms-hall-quest-window.jpg",
+        "sha256": "dd226ed6c96276b2263f7256833752b7ea513857c9f7c8f4888f92e262c60c8f"
+      },
+      {
+        "path": "assets-source/rooms/hall/staging/reimport.json",
+        "sha256": "ffd52982aed18295421ba355296e482bde9c1499dc18143fae3111725cf0db15"
+      },
+      {
+        "path": "assets-source/rooms/hall/staging/uv1-report.json",
+        "sha256": "0c7f3fac96b0fb37d7a24ea57a2efd17fd00848ae75f894ece8a53add2bc1c0e"
+      },
+      {
+        "path": "assets-source/rooms/hall/staging/report.json",
+        "sha256": "eecfc94eeb0a96be58ab673c3c4010b6a2bf827d6a0d77980f603ed343b1af1f"
+      },
+      {
+        "path": "assets-source/rooms/hall/staging/hall.glb",
+        "sha256": "ead7eb3d08df029c77e983724bdc39817e8d359a5afd12992d31ce1ee3d3378f"
+      },
+      {
+        "path": "assets-source/rooms/hall/staging/hall.lightmap.ktx2",
+        "sha256": "0f16be4bc41b2e7cc4eaadac885f23fac2610ac1cd432b57b192d2aa33ca77a3"
+      },
+      {
+        "path": "docs/verification/p5-rooms-hall-hero.jpg",
+        "sha256": "fcd3cf8e118ccdc5660b5f8ea6e5bc57ea7106ba12c08deb4ca7461db211a9a1"
+      },
+      {
+        "path": "docs/art-bible.md",
+        "sha256": "11da71b45f24eeb258ef77d328ef1aa009297a9231608cb80bb429aa3ff2ad6a"
+      }
+    ],
+    "build": "GLB ead7eb3d08df",
+    "runtimeGlbSha256": "ead7eb3d08df029c77e983724bdc39817e8d359a5afd12992d31ce1ee3d3378f"
   }
 }

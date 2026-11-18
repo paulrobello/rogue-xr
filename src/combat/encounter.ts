@@ -23,6 +23,7 @@ import {
 const DEG = Math.PI / 180;
 const REGULAR_RADIUS = 0.5;
 const GUARDIAN_RADIUS = 0.8;
+const ENCOUNTER_TRIGGER_RADIUS = 2.5;
 /**
  * Clear space kept between the seated head and any automaton's horizontal extent when a fight ends.
  * An automaton whose pre-fight home is closer than its extent plus this holds its combat slot.
@@ -49,6 +50,8 @@ export interface EncounterConfig {
   world: EncounterWorld;
   /** Called with true when combat starts and false once the table has folded away. */
   lockLocomotion: (locked: boolean) => void;
+  /** Releases rewards and doors after the room's first clear, including on save restore. */
+  onCleared?: (room: number) => void;
   /** Replaces the greybox table; it must expose `leaf-left` and `leaf-right` nodes. */
   table?: THREE.Object3D;
   triggerRadius?: number;
@@ -121,6 +124,7 @@ export class EncounterDirector {
   readonly table: THREE.Object3D;
   private readonly world: EncounterWorld;
   private readonly lock: (locked: boolean) => void;
+  private readonly onCleared: ((room: number) => void) | undefined;
   private readonly ownsTable: boolean;
   private readonly triggerRadius: number;
   private readonly unfoldSeconds: number;
@@ -155,9 +159,10 @@ export class EncounterDirector {
   constructor(config: EncounterConfig) {
     this.world = config.world;
     this.lock = config.lockLocomotion;
+    this.onCleared = config.onCleared;
     this.ownsTable = !config.table;
     this.table = config.table ?? buildTableGreybox();
-    this.triggerRadius = config.triggerRadius ?? 1.2;
+    this.triggerRadius = config.triggerRadius ?? ENCOUNTER_TRIGGER_RADIUS;
     this.unfoldSeconds = config.unfoldSeconds ?? 0.6;
     this.moveSeconds = config.moveSeconds ?? 0.8;
     this.frozenTimeScale = config.frozenTimeScale ?? 0.05;
@@ -221,6 +226,13 @@ export class EncounterDirector {
     return this.cleared.has(room);
   }
 
+  markCleared(room: number): void {
+    if (this.cleared.has(room)) return;
+    this.cleared.add(room);
+    for (const enemy of this.liveEnemies(room)) enemy.removeFromParent();
+    this.onCleared?.(room);
+  }
+
   /** Real delta seconds scaled by the freeze, for ambient animation. */
   scaledDt(dt: number): number {
     return dt * this.scale;
@@ -235,6 +247,11 @@ export class EncounterDirector {
     if (this.phaseValue !== 'idle' || this.cooldown > 0) return null;
     const room = this.world.current;
     if (this.cleared.has(room) || !this.world.plan.rooms[room]?.encounter) return null;
+    const footprint = this.world.rooms[room]?.footprint;
+    if (!footprint) return null;
+    const { min, max } = footprint;
+    if (player.x < min[0] || player.x > max[0] || player.z < min[1] || player.z > max[1])
+      return null;
     const p = new THREE.Vector3();
     let best: EncounterTrigger | null = null;
     for (const enemy of this.liveEnemies(room)) {
@@ -330,8 +347,7 @@ export class EncounterDirector {
     this.elapsed = 0;
     this.phaseValue = 'folding';
     if (outcome === 'win') {
-      for (const e of this.liveEnemies(this.room)) e.removeFromParent();
-      this.cleared.add(this.room);
+      this.markCleared(this.room);
       this.moves = [];
       this.movesDone = true;
       return;

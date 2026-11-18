@@ -7,7 +7,7 @@ import { formatSeed, isValidSeed, normalizeSeed, randomSeed } from '../src/core/
 import { fitCombatFraming, projectToNdc, type XYZ } from '../src/desktop/combat-framing.ts';
 import { combatPitch, createDesktopControls } from '../src/desktop/controls.ts';
 import { WALK_SPEED, Walker } from '../src/desktop/walker.ts';
-import { generateFloor } from '../src/floor/generate.ts';
+import { type DoorRef, generateFloor, guardedConnection } from '../src/floor/generate.ts';
 import { platePoseAboveTable } from '../src/sigil-plate/index.ts';
 import { buildFloorWorld, type FloorWorld } from '../src/world/floor-world.ts';
 
@@ -110,7 +110,11 @@ describe('desktop walk through a seeded floor', () => {
       rig.position.copy(world.spawnPoint());
 
       // Door chain from the entry to the vault, following each room's parent link backwards.
-      const chain: (readonly [number, number])[] = [];
+      const chain: {
+        from: DoorRef;
+        approach: readonly [number, number];
+        through: readonly [number, number];
+      }[] = [];
       let room = plan.guardianRoom;
       while (room !== 0) {
         const link = plan.connections.find(([, b]) => b.room === room);
@@ -120,11 +124,25 @@ describe('desktop walk through a seeded floor', () => {
         const out = { N: [0, -1], S: [0, 1], E: [1, 0], W: [-1, 0] }[door?.facing ?? 'N'];
         const [x, z] = door?.world ?? [0, 0];
         // Facing points out of room b, so approach from room a's side and step into room b.
-        chain.unshift([x + out[0] * 0.9, z + out[1] * 0.9], [x - out[0] * 0.9, z - out[1] * 0.9]);
+        chain.unshift({
+          from: a,
+          approach: [x + out[0] * 0.9, z + out[1] * 0.9],
+          through: [x - out[0] * 0.9, z - out[1] * 0.9],
+        });
         room = a.room;
       }
-      for (const point of chain) {
-        expect(walkTo(world, walker, rig, actions, point), `stuck short of ${point}`).toBe(true);
+      const guard = guardedConnection(plan)?.[0];
+      for (const { from, approach, through } of chain) {
+        expect(walkTo(world, walker, rig, actions, approach), `stuck short of ${approach}`).toBe(
+          true,
+        );
+        if (from.room === guard?.room && from.door === guard.door) {
+          expect(walkTo(world, walker, rig, actions, through)).toBe(false);
+          world.releaseGuardedDoor(from.room);
+        }
+        expect(walkTo(world, walker, rig, actions, through), `stuck short of ${through}`).toBe(
+          true,
+        );
       }
       expect(world.current).toBe(plan.guardianRoom);
       world.dispose();

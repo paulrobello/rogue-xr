@@ -558,6 +558,7 @@ flow.onChange((event) => {
       // The card rises out of the coffer and waits there to be claimed: no panel yet.
       if (coffer) {
         coffer.open(true);
+        if (event.loot.cogs) coffer.showCogs(event.loot.cogs);
         coffer.showCard(event.loot.card, chestCardFace(event.loot.card), true, camera);
         audio?.playSfx('gear-clank', at);
       }
@@ -754,6 +755,7 @@ const canOpenLoot = (): boolean =>
 /** Opens the shut coffer, or claims the card waiting over an open one, that a pick found. */
 const openCoffer = (pick: LootPick | null): boolean => {
   if (!pick || !canOpenLoot()) return false;
+  if (floor?.loot.showLock(pick.room, pick.socketId)) return true;
   if (!pick.claim) return flow.openLoot(pick.room, pick.socketId, pick.kind) !== null;
   claimHand = null;
   return flow.claimLoot(pick.room, pick.socketId) !== null;
@@ -1000,7 +1002,11 @@ if (floor && params.has('debug')) {
     const target = floor;
     if (!target) return null;
     const coffer = target.loot.coffers.find(
-      (c) => !c.opened && (room === undefined || c.room === room),
+      (c) =>
+        !c.opened &&
+        (room === undefined
+          ? target.world.plan.rooms[c.room]?.role === 'treasure'
+          : c.room === room),
     );
     const at = coffer ? target.loot.approachPoint(coffer.room, coffer.socketId) : null;
     if (!coffer || !at) return null;

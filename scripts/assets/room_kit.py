@@ -905,7 +905,7 @@ def lancet_frame(b, room: Room, a: float, high: bool, mullion: str = "brass-poli
             b.face([(ia, 0, iz), (ib, 0, jz), (ib, d, jz), (ia, d, iz)], (-mx, 0, -mz), "walnut")  # soffit
             b.face([(oa, 0, oz), (ob, 0, pz), (ob, d, pz), (oa, d, oz)], (mx, 0, mz), "walnut")  # extrados
     b.box(x0 - f - 0.05, x1 + f + 0.05, 0, 0.26, sill - 0.1, sill, "walnut", drop="y")
-    b.box(-0.02, 0.02, 0.012, 0.05, sill, apex - 0.15, mullion, drop="bt")
+    S.lancet_mullion(b, left, sill, apex, mullion)
     b.xf = Matrix.Identity(4)
 
 

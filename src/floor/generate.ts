@@ -42,6 +42,8 @@ export interface SealedDoor extends DoorRef {
 
 /** Chance that a floor boards up one of its dead-end doors; every other one is plain wall. */
 export const BOARDED_DOOR_CHANCE = 0.5;
+const GUARDED_CHEST_CHANCE = 0.45;
+const GUARDED_DOOR_CHANCE = 0.65;
 
 export interface FloorPlan {
   seed: string;
@@ -243,6 +245,7 @@ function attempt(rng: RunRng, params: FloorParams): FloorPlan | null {
   const tips = new Set(wings.map((chain, w) => (w === deepest ? -1 : (chain.at(-1) as number))));
   const ai = rng.stream('ai');
   const loot = rng.stream('loot');
+  const guardedLoot = Stream.fromKey(`${rng.seed}:guarded-chests`);
   const placed: PlacedRoom[] = rooms.map((r, index) => {
     const t = r.template;
     let role: RoomKind;
@@ -297,6 +300,17 @@ function attempt(rng: RunRng, params: FloorParams): FloorPlan | null {
           kind: p.role === 'guardian' ? 'card' : loot.pick(['cogs', 'card'] as const),
         },
       ];
+    } else if (
+      p.role === 'combat' &&
+      lootSockets.length > 0 &&
+      guardedLoot.next() < GUARDED_CHEST_CHANCE
+    ) {
+      p.loot = [
+        {
+          socketId: guardedLoot.pick(lootSockets).id,
+          kind: guardedLoot.pick(['cogs', 'card'] as const),
+        },
+      ];
     }
   }
 
@@ -322,6 +336,19 @@ function boardUpOne(sealed: SealedDoor[], seed: string): void {
   const candidates = sealed.filter((s) => s.room !== 0);
   if (candidates.length === 0 || doors.next() >= BOARDED_DOOR_CHANCE) return;
   doors.pick(candidates).style = 'boarded';
+}
+
+/** Picks at most one lock on an outward edge from a combat room. Every room keeps its entry open. */
+export function guardedConnection(plan: FloorPlan): readonly [DoorRef, DoorRef] | null {
+  const stream = Stream.fromKey(`${plan.seed}:guarded-connections`);
+  const candidates = plan.connections.filter(
+    ([from, to]) =>
+      plan.rooms[from.room]?.role === 'combat' &&
+      (plan.rooms[to.room]?.depth ?? 0) > (plan.rooms[from.room]?.depth ?? 0),
+  );
+  return candidates.length > 0 && stream.next() < GUARDED_DOOR_CHANCE
+    ? stream.pick(candidates)
+    : null;
 }
 
 /**

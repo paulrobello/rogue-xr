@@ -249,6 +249,40 @@ describe('open chest geometry', () => {
     }
   });
 
+  it('closes both barrel-lid ends while retaining the inner lining', () => {
+    const { coffer } = standing();
+    coffer.open(false);
+    const lid = coffer.object.getObjectByName('coffer-lid') as THREE.Object3D;
+    coffer.object.updateMatrixWorld(true);
+    for (const side of [-1, 1] as const) {
+      const outer = coffer.object.getObjectByName('coffer-lid-top');
+      const inner = coffer.object.getObjectByName(`coffer-lid-inner-end-${side}`);
+      expect(outer?.visible).toBe(true);
+      expect(inner?.visible).toBe(true);
+      expect(inner?.parent).toBe(lid);
+    }
+  });
+
+  it('reveals cogs in sequence before allowing the card to hover', () => {
+    const { coffer, viewer } = standing();
+    coffer.open(true);
+    coffer.showCogs(3);
+    coffer.showCard('overwind', fakeFace(), true, viewer);
+    const cogs = coffer.object.getObjectByName('coffer-cogs');
+    expect(cogs?.children).toHaveLength(3);
+    step(coffer, 0.39);
+    expect(cogs?.children.filter((child) => child.visible)).toHaveLength(1);
+    step(coffer, 0.08);
+    expect(cogs?.children.filter((child) => child.visible)).toHaveLength(2);
+    expect(cogs?.children[0]?.position.y).toBeGreaterThan(BODY_HEIGHT);
+    expect(coffer.cardHit).toBeNull();
+    step(coffer, 0.65);
+    expect(cogs?.children).toHaveLength(0);
+    expect(coffer.cardHit).toBeNull();
+    step(coffer, 1);
+    expect(coffer.cardHit).not.toBeNull();
+  });
+
   it('dresses the lining in a darkened clone of the kit wood and the card back in brass', () => {
     const { coffer, kit, viewer } = standing();
     const wood = new THREE.MeshStandardMaterial({ color: '#806040' });

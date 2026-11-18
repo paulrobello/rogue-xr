@@ -1,11 +1,11 @@
 {
   "glb": "guardian-vault.glb",
-  "glb_sha256": "ba152feb7b7772ba7c188af935307f1d0a35ed31444549dda8e8fdf2ba9dd3b3",
+  "glb_sha256": "f2923a8018d7c34955dad1854883dbfdd42dc8426d3b49cc7af9b0acd95363ce",
   "size": 2048,
-  "islands": 1856,
-  "coverage": 0.4881,
+  "islands": 1859,
+  "coverage": 0.4794,
   "overlap_px": 0,
-  "texels_claimed_twice": 570,
+  "texels_claimed_twice": 565,
   "claims_per_covered_texel": 1.0003,
   "min_gap_px": 10
 }

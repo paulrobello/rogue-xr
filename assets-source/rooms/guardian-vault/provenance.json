@@ -4,16 +4,16 @@
   "route": "scripted",
   "generator": {
     "path": "scripts/assets/build-room-kit.py",
-    "sha256": "bfc6cb49e4d0e021f3d0b7ca56cb5489d359c1005555fab29220d09c4847ebe4"
+    "sha256": "e164e9371c2fdbcc3da73b12dd6c40b7b390e335bbc03d319f8cd7f15e9bb01f"
   },
   "generatorDeps": [
     {
       "path": "scripts/assets/room_kit.py",
-      "sha256": "8b8aaf8d5cece75208234940278211c10f0f6353b6f6f60010f261e16b5c4249"
+      "sha256": "b085857642cb191f8b4d61290099d09efbdd7ca48d0d32fbc38e69f34f6c810f"
     },
     {
       "path": "scripts/assets/build-room-study.py",
-      "sha256": "b918e8511fef38f662c4a98c441a15780cbf621969691351a754f6e200274fce"
+      "sha256": "015a9cfafdf1f9498de017cb447e02d401205c503df68926c825b04348bcda9f"
     },
     {
       "path": "scripts/assets/lightmap_helpers.py",
@@ -41,34 +41,34 @@
     "store": "assets-source/rooms/guardian-vault/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)",
     "files": {
       "guardian-vault_high.blend": {
-        "sha256": "4074c2ec4e720d49a82bae527fa8baf10286914d9714fa11f1c92d3423e9f4e2",
-        "bytes": 2266130
+        "sha256": "33577b3b3e70ff984f2282dae525c57a1b049a42db2546fd8f415b38f951e862",
+        "bytes": 2275723
       },
       "guardian-vault_low.blend": {
-        "sha256": "63dcbcf3beab6adb0c7ff11393b28904f1a7436f0d033d6f966cdbded22154de",
-        "bytes": 734155
+        "sha256": "98a7573ff0dbe61430852508af4e5de69b2b52c72be9fcd487b3042c73b731d9",
+        "bytes": 733340
       }
     }
   },
   "bake": {
     "device": "GPU:METAL (Apple M4 (GPU - 10 cores))",
     "lightmap": {
-      "coverage": 0.6812,
-      "scale": 4.311789,
+      "coverage": 0.6699,
+      "scale": 4.291631,
       "clipped_fraction": 0.00997,
-      "mean_irradiance": 0.45244,
+      "mean_irradiance": 0.465634,
       "p05_irradiance": 0.0,
       "percentile": 99.0,
       "encoded_p05_255": 0,
       "encoded_median_255": 66,
-      "seconds": 55.63,
+      "seconds": 54.74,
       "pass_seconds": [
-        53.82,
-        1.81
+        52.95,
+        1.79
       ],
       "host_load": [
-        1.96,
-        1.36
+        2.68,
+        1.79
       ],
       "timing_valid": true,
       "diffuse_bounces": 2,
@@ -90,7 +90,7 @@
     }
   },
   "budgets": {
-    "triangles": 18889,
+    "triangles": 18907,
     "materials": 12,
     "texturePx": {
       "guardian-vault.lightmap.ktx2": {
@@ -98,75 +98,75 @@
         "height": 2048
       }
     },
-    "highTriangles": 72070,
-    "glbBytes": 1638708
+    "highTriangles": 72247,
+    "glbBytes": 1640496
   },
   "texelDensityPxPerM": {
     "lightmap": {
-      "mean_px_per_m": 47.41,
-      "min_px_per_m": 39.38,
-      "max_px_per_m": 47.89
+      "mean_px_per_m": 46.96,
+      "min_px_per_m": 39.01,
+      "max_px_per_m": 47.43
     },
     "lightmapBySlot": {
       "brass-aged": {
         "area_m2": 40.61,
-        "median_px_per_m": 47.9,
-        "min_px_per_m": 39.4
+        "median_px_per_m": 47.4,
+        "min_px_per_m": 39.0
       },
       "brass-polished": {
         "area_m2": 19.61,
-        "median_px_per_m": 47.9,
-        "min_px_per_m": 39.6
+        "median_px_per_m": 47.4,
+        "min_px_per_m": 39.3
       },
       "coals": {
         "area_m2": 4.15,
-        "median_px_per_m": 47.9,
-        "min_px_per_m": 47.9
+        "median_px_per_m": 47.4,
+        "min_px_per_m": 47.4
       },
       "flame": {
         "area_m2": 1.3,
-        "median_px_per_m": 46.1,
-        "min_px_per_m": 39.7
+        "median_px_per_m": 45.7,
+        "min_px_per_m": 39.4
       },
       "gilt": {
         "area_m2": 7.37,
-        "median_px_per_m": 47.3,
-        "min_px_per_m": 39.9
+        "median_px_per_m": 46.9,
+        "min_px_per_m": 39.5
       },
       "hot_flame": {
         "area_m2": 1.96,
-        "median_px_per_m": 46.1,
-        "min_px_per_m": 39.7
+        "median_px_per_m": 45.7,
+        "min_px_per_m": 39.4
       },
       "stained-glass": {
         "area_m2": 6.84,
-        "median_px_per_m": 47.0,
-        "min_px_per_m": 47.0
+        "median_px_per_m": 46.5,
+        "min_px_per_m": 46.5
       },
       "stone-floor": {
         "area_m2": 261.19,
-        "median_px_per_m": 47.9,
-        "min_px_per_m": 40.7
+        "median_px_per_m": 47.4,
+        "min_px_per_m": 40.3
       },
       "tip_flame": {
         "area_m2": 1.27,
-        "median_px_per_m": 46.1,
-        "min_px_per_m": 39.7
+        "median_px_per_m": 45.7,
+        "min_px_per_m": 39.3
       },
       "wallpaper": {
         "area_m2": 226.51,
-        "median_px_per_m": 47.7,
-        "min_px_per_m": 47.0
+        "median_px_per_m": 47.2,
+        "min_px_per_m": 46.5
       },
       "walnut": {
-        "area_m2": 328.81,
-        "median_px_per_m": 47.8,
-        "min_px_per_m": 40.2
+        "area_m2": 328.88,
+        "median_px_per_m": 47.3,
+        "min_px_per_m": 39.9
       },
       "wax": {
         "area_m2": 0.21,
-        "median_px_per_m": 47.0,
-        "min_px_per_m": 40.8
+        "median_px_per_m": 46.5,
+        "min_px_per_m": 40.5
       }
     }
   },
@@ -291,27 +291,26 @@
   "derivedFiles": [
     {
       "path": "public/assets/rooms/guardian-vault/guardian-vault.glb",
-      "sha256": "ba152feb7b7772ba7c188af935307f1d0a35ed31444549dda8e8fdf2ba9dd3b3",
-      "bytes": 1638708
+      "sha256": "f2923a8018d7c34955dad1854883dbfdd42dc8426d3b49cc7af9b0acd95363ce",
+      "bytes": 1640496
     },
     {
       "path": "public/assets/rooms/guardian-vault/guardian-vault.lightmap.ktx2",
-      "sha256": "f03b7944d47131a0f62fcb652ad568a64298d323f812e460d3a88b62d1e3a73b",
-      "bytes": 2752315
+      "sha256": "0bab7d726ed717c8898e5347ca2c9c217ead07e0535d7a47527b353312ff2ea8",
+      "bytes": 2733921
     },
     {
       "path": "public/assets/rooms/guardian-vault/guardian-vault.manifest.json",
-      "sha256": "06656dcc6524e85d198cf74e8cbb84ad3a46cb566bd488dcf08787ec581bf115",
-      "bytes": 5582
+      "sha256": "343c1d920f6f788ac46449cd133ccf7822b7e0020dfbc5ce7d4552f57f1aa565",
+      "bytes": 5581
     }
   ],
   "stagingFiles": {
-    "engine-compare.json": "f97e823e7e46dc2d19109e49d35dcd8b0df294b618103c1ff35ddc64449b3ae4",
-    "guardian-vault.glb": "ba152feb7b7772ba7c188af935307f1d0a35ed31444549dda8e8fdf2ba9dd3b3",
-    "guardian-vault.lightmap.ktx2": "f03b7944d47131a0f62fcb652ad568a64298d323f812e460d3a88b62d1e3a73b",
-    "guardian-vault.lightmap.png": "e0e5677a9102baae389172d564a603ef602193f78fc5ec562ebcd66a833f2dbf",
-    "guardian-vault.manifest.json": "06656dcc6524e85d198cf74e8cbb84ad3a46cb566bd488dcf08787ec581bf115",
-    "uv1-report.json": "23c14ad4cfc4dcd8d5f40b717dc0ba72b9e98950b0da75fc6919fb51e81e23d9"
+    "guardian-vault.glb": "f2923a8018d7c34955dad1854883dbfdd42dc8426d3b49cc7af9b0acd95363ce",
+    "guardian-vault.lightmap.ktx2": "0bab7d726ed717c8898e5347ca2c9c217ead07e0535d7a47527b353312ff2ea8",
+    "guardian-vault.lightmap.png": "dc266ed7a492f6a563ace0f7c1d1ba9e8b8e970a1554376fc45b0c1a1fed9820",
+    "guardian-vault.manifest.json": "343c1d920f6f788ac46449cd133ccf7822b7e0020dfbc5ce7d4552f57f1aa565",
+    "uv1-report.json": "db6a83dae3544a845a61d51af74dabab96142c61d729d463315176f962b25964"
   },
   "references": [
     {
@@ -336,7 +335,7 @@
   "materialsUsed": "approved P4-T3 set (public/assets/materials), bound by slot name; not regenerated",
   "license": "Original work generated in Blender from a checked-in script; concept references from Paul's paid Higgsfield plan (Terms of Use 4.4)",
   "reimport": {
-    "triangles": 18889,
+    "triangles": 18907,
     "material_count": 12,
     "uv_layers": [
       [
@@ -376,7 +375,7 @@
   },
   "validation": {
     "pass": true,
-    "date": "2026-11-17",
+    "date": "2026-11-18",
     "checks": [
       "presence",
       "hashes",
@@ -425,242 +424,10 @@
   ],
   "reviewEvidence": [
     {
-      "path": "assets-source/rooms/guardian-vault/staging/review-sheet.jpg",
-      "sha256": "de12f86c2cabb877f3878e890664b8f12f8ba46289ccb6dc2bc69dba93b8db3d"
-    },
-    {
-      "path": "docs/verification/p5-rooms-guardian-vault-brazier.jpg",
-      "sha256": "700fbde5e1ba5bcbd4334f5859d76b36e6903d10537010e4804e43f07f7afd83"
-    },
-    {
-      "path": "docs/verification/p5-rooms-guardian-vault-hero.diffuse.jpg",
-      "sha256": "ad6635578f52b62de384c95dd8bcac7d6f3b61b6500bd7b647a2de03559bf10c"
-    },
-    {
-      "path": "docs/verification/p5-rooms-guardian-vault-hero.jpg",
-      "sha256": "297458a86275775d275fe14d5d1d4d1bec908c207f214c3ecc2280b3b07bf1bb"
-    },
-    {
-      "path": "docs/verification/p5-rooms-guardian-vault-plug-s-in.jpg",
-      "sha256": "6ca2d763788e9dfb37775645ca5ba847b55d1d1f187d4fafdd57e6ca1d7c1073"
-    },
-    {
-      "path": "docs/verification/p5-rooms-guardian-vault-plug-s-out.jpg",
-      "sha256": "268599927d98d70dc00bc15236977d18118962abc99cddb0cc8ac3101bfae037"
-    },
-    {
-      "path": "docs/verification/p5-rooms-guardian-vault-reward-eye.jpg",
-      "sha256": "138575fe655408d8fbc8dbe20cdb5255043d83500ebda06a3a6f8ec3ba7ffb09"
-    },
-    {
-      "path": "docs/verification/p5-rooms-guardian-vault-seam-from-corridor.jpg",
-      "sha256": "c2099886e06827207ba13b7142f32ead8edcdac0748a459ca694f028b24a70fd"
-    },
-    {
-      "path": "docs/verification/p5-rooms-guardian-vault-seam-south.jpg",
-      "sha256": "70905e1b84fa5261afb84d4107420ba64a8bf119bee717dd21ee7fb56e600428"
+      "path": "docs/verification/p5-rooms-guardian-vault-quest-window.jpg",
+      "sha256": "bf6fe407dd77998806a55203415d89c06d4e430aabcccdecc284045c8bdb6def"
     }
   ],
-  "independentScore": {
-    "score": 82,
-    "scale": "0-100 visual fidelity to the art bible and study-kit language",
-    "scorer": "independent reviewer agent (separate from the authoring agent; did not build the asset)",
-    "date": "2026-11-17",
-    "acceptanceBar": 80,
-    "clearsBar": true,
-    "build": "8428cd8",
-    "previousScore": 79,
-    "rubric": [
-      {
-        "criterion": "form, layout and proportions",
-        "points": 25,
-        "max": 30,
-        "note": "Fixed: the south aisle inlay now closes into a rectangle and stops about 50 px short of the plug wall base in plug-s-in (crossbar near y 620-630, x 480-800), instead of running into the blank wall. Plug s: changed box x 488-813, y 114-540; column-mean L* across the left edge 13.3-19.1 and right edge 12.0-16.4, no architrave, seam or leak in the 1x crop; gilt-band counts (9.7-16.5%) are the damask motif. Still open: flat plank deck behind the arches and no dais. Every other box (piers, floor, ring, wall gear, chandelier) matches the old build within 0.3 L*."
-      },
-      {
-        "criterion": "signature features: boss arena",
-        "points": 19,
-        "max": 25,
-        "note": "Unchanged: the guardian ring is still flat floor (hero ring box 490-760 x 495-550 L* 30.1 in both builds; p5-int-guardian-vault.jpg shows the guardian standing on it), so it reads as a lit chapel more than an arena."
-      },
-      {
-        "criterion": "surface detail and material read",
-        "points": 16,
-        "max": 20,
-        "note": "Flames improved: altar teardrops now carry a near-white core (reward-eye flame mask, pixels above L* 88: 0% -> 25-37%; in game 0% -> 13%) and read as candle flames at game distance, but at reward-eye range nested shells leave vertical dark slits and a hard horizontal band in the core (crops/re-flames.png, 4x of x 0-160, y 300-400). Oculus still not brass: on its own pixels (old ivory mask, 313 px around centre 641,268) the ring went L* 81.1 -> 46.8, sat 0.24 -> 0.30, hue 34.5, a grey-olive, against the wall gears on the same slot at L* 45.4, sat 0.64, hue 39.4; its hub stays pale (L* 67.0). Piers unchanged (box 392-448 x 200-470 L* 37.0, p90 57.9). Lightmap 38.9 -> 47.4 px/m produced no visible change (all boxes within 0.3 L*), so no credit."
-      },
-      {
-        "criterion": "colour, value and lighting mood",
-        "points": 14,
-        "max": 15,
-        "note": "Frame unchanged: hero L* 23.9, hue 20.4, sat 0.693, 0.0% under L* 2. Flame colour now on target: reward-eye mask hue 31.7-32.3 -> 35.9-37.2, sat 0.47-0.49, R-B 111-121 against #F3BE65 hue 37.6, sat 0.58; in game box 425-560 x 450-488 hue 31.0 -> 34.2, sat 0.46, R-B 104."
-      },
-      {
-        "criterion": "readability and comfort at seated VR distance",
-        "points": 8,
-        "max": 10,
-        "note": "Clear axis and open floor. The altar flames remain the brightest shapes at eye height and got brighter (reward-eye L* p90 81.2 -> 89.7) but are narrower and soft-cored, so the net glare is about the same."
-      }
-    ],
-    "topFixes": [
-      "Raise a stepped dais under the guardian ring so the shrine reads as an arena (the socket change D1 leaves to Paul), and vault the ceiling over the apse instead of the flat plank deck.",
-      "Make the oculus gear read as brass: its ring measures sat 0.30, hue 34.5 against the wall gears on the same slot at sat 0.64, hue 39.4; warm its light or probe and darken the pale hub (L* 67).",
-      "Remove the vertical dark slits and the hard core band from the nested flame shells so each flame is one soft gradient at reward-eye range."
-    ],
-    "method": "Read the brief, the art bible and the previous block (79), re-checking its fixes (flames, oculus, inlay, density, dais). Judged the engine shots first: p5-rooms-guardian-vault-hero, hero.diffuse, reward-eye, brazier, plug-s-in, plug-s-out, seam-south, seam-from-corridor at 8428cd8 and p5-int-guardian-vault.jpg, against the b1df5d3 shots in /tmp/rxr-r5/before (hashes match the previous evidence) and the builder crops in /tmp/rxr-r5/cmp. Measured in Pillow and numpy: whole-frame CIE L*, hue and saturation; box stats old vs new for oculus, wall gear, chandelier, altar gear, piers, floor and ring; the oculus on its own pixels with hub and ring split; flame masks with core share in hero, reward-eye and in game; the plug seam check. Crops at 1-8x in /tmp/fb17/rescore2/crops, scripts in /tmp/fb17/rescore2/scripts. The oculus is not visible in the in-game frame (the camera faces the end wall), so it was judged on the hero shot only. Did not read report.json or engine-compare.json; read provenance.json only for build decisions and texel density. No repo edits.",
-    "evidence": [
-      {
-        "path": "docs/art-bible.md",
-        "sha256": "11da71b45f24eeb258ef77d328ef1aa009297a9231608cb80bb429aa3ff2ad6a"
-      },
-      {
-        "path": "assets-source/rooms/guardian-vault/provenance.json",
-        "sha256": "eb31a09275c52d3b6909803281d2ddc9a3da4216ff0f4e408a04b1ddc4b6e653"
-      },
-      {
-        "path": "docs/verification/p5-rooms-guardian-vault-brazier.jpg",
-        "sha256": "700fbde5e1ba5bcbd4334f5859d76b36e6903d10537010e4804e43f07f7afd83"
-      },
-      {
-        "path": "docs/verification/p5-rooms-guardian-vault-hero.diffuse.jpg",
-        "sha256": "ad6635578f52b62de384c95dd8bcac7d6f3b61b6500bd7b647a2de03559bf10c"
-      },
-      {
-        "path": "docs/verification/p5-rooms-guardian-vault-hero.jpg",
-        "sha256": "297458a86275775d275fe14d5d1d4d1bec908c207f214c3ecc2280b3b07bf1bb"
-      },
-      {
-        "path": "docs/verification/p5-rooms-guardian-vault-plug-s-in.jpg",
-        "sha256": "6ca2d763788e9dfb37775645ca5ba847b55d1d1f187d4fafdd57e6ca1d7c1073"
-      },
-      {
-        "path": "docs/verification/p5-rooms-guardian-vault-plug-s-out.jpg",
-        "sha256": "268599927d98d70dc00bc15236977d18118962abc99cddb0cc8ac3101bfae037"
-      },
-      {
-        "path": "docs/verification/p5-rooms-guardian-vault-reward-eye.jpg",
-        "sha256": "138575fe655408d8fbc8dbe20cdb5255043d83500ebda06a3a6f8ec3ba7ffb09"
-      },
-      {
-        "path": "docs/verification/p5-rooms-guardian-vault-seam-from-corridor.jpg",
-        "sha256": "c2099886e06827207ba13b7142f32ead8edcdac0748a459ca694f028b24a70fd"
-      },
-      {
-        "path": "docs/verification/p5-rooms-guardian-vault-seam-south.jpg",
-        "sha256": "70905e1b84fa5261afb84d4107420ba64a8bf119bee717dd21ee7fb56e600428"
-      },
-      {
-        "path": "docs/verification/p5-int-guardian-vault.jpg",
-        "sha256": "1ee1cfa7bff6f3287a99bb6f6b4340c3820a2514140b980151046cfcd8c94340"
-      },
-      {
-        "path": "/tmp/rxr-r5/before/verification/p5-rooms-guardian-vault-brazier.jpg",
-        "sha256": "a4de70d6c6666c31e217d2645ec4882eadc151633e71c5898be2027024948e31"
-      },
-      {
-        "path": "/tmp/rxr-r5/before/verification/p5-rooms-guardian-vault-hero.diffuse.jpg",
-        "sha256": "0ffdef50395c8c26ec6965f53c7889d1f1b3ae16468d2501c07dd0ea8a14f9b0"
-      },
-      {
-        "path": "/tmp/rxr-r5/before/verification/p5-rooms-guardian-vault-hero.jpg",
-        "sha256": "191d5483e0d88a27cacebd869327835c855c66b0604d83697690ac5fe48ffa00"
-      },
-      {
-        "path": "/tmp/rxr-r5/before/verification/p5-rooms-guardian-vault-plug-s-in.jpg",
-        "sha256": "8f1b89169b479662c113787fe8b040d18cd48b36c70f38625891925d6544a82c"
-      },
-      {
-        "path": "/tmp/rxr-r5/before/verification/p5-rooms-guardian-vault-plug-s-out.jpg",
-        "sha256": "a714c44b9f0058374a8f0af765edc21724057a2726e3395f3dd342b4d6ff3928"
-      },
-      {
-        "path": "/tmp/rxr-r5/before/verification/p5-rooms-guardian-vault-reward-eye.jpg",
-        "sha256": "ee4a076066155fc76e78ca1fb55d5cbe1dc49ab1336f5dd18f9c3384ed206f19"
-      },
-      {
-        "path": "/tmp/rxr-r5/before/verification/p5-rooms-guardian-vault-seam-from-corridor.jpg",
-        "sha256": "232c778f2d56eee7ec1a8e8561c71cb05ca3e6d14667290110bb4c3c093a38d5"
-      },
-      {
-        "path": "/tmp/rxr-r5/before/verification/p5-rooms-guardian-vault-seam-south.jpg",
-        "sha256": "a87b74a01fed5f6a05af3c674ed974bb94f20ab2e00d7b2a8bfb29d7c4f3b48f"
-      },
-      {
-        "path": "/tmp/rxr-r5/before/verification/p5-int-guardian-vault.jpg",
-        "sha256": "59badef74657dfd9a2df62ab1652a6488a806ceb030c113312aaafa96a293b4d"
-      },
-      {
-        "path": "/tmp/rxr-r5/cmp/gv-hero.jpg",
-        "sha256": "774083e133926aa7df9c6e2e5e552946aaab2a7da76bc7d19dec961f68aa20e8"
-      },
-      {
-        "path": "/tmp/rxr-r5/cmp/gv-flame.jpg",
-        "sha256": "e1a50275c1b2fba168fba93a9d7c7e2cb7fdd9f813d2456537f360ba06e7c4e1"
-      },
-      {
-        "path": "/tmp/rxr-r5/cmp/gv-oculus.jpg",
-        "sha256": "27edeb154330bc8c7036ea7bc4fecaeda1f8d6feff226193eac8ab139bd4c758"
-      },
-      {
-        "path": "/tmp/rxr-r5/cmp/plug-gv.jpg",
-        "sha256": "d78dc63159a36357ebc07fd8e861a76fb6aaa1415f9c46c8f92ec9447d2b0e8a"
-      },
-      {
-        "path": "/tmp/rxr-r5/cmp/gv-int.jpg",
-        "sha256": "8061a630ad79db43d98ebb7e5499a46165ff74c951e7c8de77af25227c76287b"
-      },
-      {
-        "path": "/tmp/rxr-r5/cmp/gv-reward-eye.jpg",
-        "sha256": "25946d87def8cbe85850fd5f5f28e16740c08eaa5cccad8e961751d398d31585"
-      },
-      {
-        "path": "/tmp/rxr-r5/cmp/gv-int-flame.jpg",
-        "sha256": "22f1f7aa6e3c6e001abc7ad6597ecf8ad846f736ba559ac8be55da5009120aa3"
-      }
-    ]
-  },
-  "buildDecisions": {
-    "by": "orchestrator of the 2026-11-17 re-bake (build decisions, not owner approvals; Paul's review is still pending)",
-    "date": "2026-11-17",
-    "decisions": [
-      {
-        "id": "D1",
-        "decision": "Apse with a stepped altar behind the reward socket instead of a dais; greybox sockets unchanged (a dais needs src/content/rooms.ts to raise them, Paul's call)."
-      },
-      {
-        "id": "D2",
-        "decision": "Accept the vault's ~43 px/m lightmap mean (built 42.63) without zone weighting; one 2048 map cannot reach 65 px/m at uniform density.",
-        "revised": {
-          "by": "rebake-3 sub-agent of the 2026-11-17 orchestrator (build decisions, not owner approvals; Paul's review is still pending)",
-          "date": "2026-11-17",
-          "decision": "Accept the built 39.54 px/m lightmap mean (min 32.56) without zone weighting. Rework 2's diaphragm arches and sconces and rework 3's apse ribs add area to the one 2048 map, so the uniform density fell below the ~43 recorded here; weighting the apse and ring up would lower the walls and ceiling, which the review did not ask for."
-        }
-      },
-      {
-        "id": "D3",
-        "decision": "The dielectric `gilt` CONST slot (a departure from the shared metallic PBR brass sets) is allowed for this build.",
-        "revised": {
-          "by": "rebake-2 sub-agent of the 2026-11-17 orchestrator (build decisions, not owner approvals; Paul's review is still pending)",
-          "date": "2026-11-17",
-          "decision": "Kept the dielectric `gilt` CONST slot and lifted its albedo from (0.73, 0.60, 0.10) to (0.70, 0.68, 0.12). Reason: bound at runtime to the kit's metallic brass-polished set (UV0 now projected for it), the gears measured gilt hue 28 (gear shaft hero) and 27 (vault hero) with mask luma 1.9x (gear shaft) the lightmap-only frame, against 36 and 40 for the lifted constant; the old constant measured 30-34 under the revised fire."
-        }
-      },
-      {
-        "id": "D6",
-        "decision": "Keep the deeper fire colour: P5-T2 flames emit (1.0, 0.33, 0.06), unlike the hall and study candle flame.",
-        "revised": {
-          "by": "rebake-2 sub-agent of the 2026-11-17 orchestrator (build decisions, not owner approvals; Paul's review is still pending)",
-          "date": "2026-11-17",
-          "decision": "Fire colour revised toward the candle amber: FIRE bake light (1.0, 0.46, 0.16) -> (1.0, 0.58, 0.26), FIRE_FLAME emission (1.0, 0.33, 0.06) -> (1.0, 0.5, 0.14) (albedo (0.25, 0.125, 0.035) x 4, same strengths). Fire stays hotter than candles because the P5-T2 rooms now bake their candles and lanterns paler, (1.0, 0.80, 0.60). Reason: the deep fire held the gilt at hue 27-30 and the frames at saturation 0.80-0.82."
-        }
-      }
-    ],
-    "notes": [
-      "Coals and P5-T2 fire flames carry a dark albedo with strong emission (colour x 0.25, Blender strength and runtime emissiveIntensity x 4: coals 12.0 / 5.6, flame 24.0 / 5.6), so the emitted light is unchanged and the lightmap term on them is a quarter. Measured on the first 2026-11-17 bake: engine firebox R-B 101 -> 108, pit 112 -> 112.",
-      "Rework 2 (2026-11-17): bake with 2 diffuse bounces, candles at (1.0, 0.80, 0.60), four 80 W candle sconces on the side walls, three walnut diaphragm arches replace the east-west beams, the apse oculus gear moved to brass-polished.",
-      "Rework 3 (2026-11-17): walnut ribs under the apse barrel at y 5.05 and 5.6 (Blender) carry the diaphragm arches into the apse; the centre lancet's mullion is walnut (the brass-polished bar read luma 131.8 against the glass at 69)."
-    ]
-  },
   "independentScoreHistory": [
     {
       "score": 79,
@@ -917,6 +684,252 @@
           "sha256": "656d54f31dbcaffec301352abec4b63526473dd08526974bf16ea7b9fc00d911"
         }
       ]
+    },
+    {
+      "score": 82,
+      "scale": "0-100 visual fidelity to the art bible and study-kit language",
+      "scorer": "independent reviewer agent (separate from the authoring agent; did not build the asset)",
+      "date": "2026-11-17",
+      "acceptanceBar": 80,
+      "clearsBar": true,
+      "build": "8428cd8",
+      "previousScore": 79,
+      "rubric": [
+        {
+          "criterion": "form, layout and proportions",
+          "points": 25,
+          "max": 30,
+          "note": "Fixed: the south aisle inlay now closes into a rectangle and stops about 50 px short of the plug wall base in plug-s-in (crossbar near y 620-630, x 480-800), instead of running into the blank wall. Plug s: changed box x 488-813, y 114-540; column-mean L* across the left edge 13.3-19.1 and right edge 12.0-16.4, no architrave, seam or leak in the 1x crop; gilt-band counts (9.7-16.5%) are the damask motif. Still open: flat plank deck behind the arches and no dais. Every other box (piers, floor, ring, wall gear, chandelier) matches the old build within 0.3 L*."
+        },
+        {
+          "criterion": "signature features: boss arena",
+          "points": 19,
+          "max": 25,
+          "note": "Unchanged: the guardian ring is still flat floor (hero ring box 490-760 x 495-550 L* 30.1 in both builds; p5-int-guardian-vault.jpg shows the guardian standing on it), so it reads as a lit chapel more than an arena."
+        },
+        {
+          "criterion": "surface detail and material read",
+          "points": 16,
+          "max": 20,
+          "note": "Flames improved: altar teardrops now carry a near-white core (reward-eye flame mask, pixels above L* 88: 0% -> 25-37%; in game 0% -> 13%) and read as candle flames at game distance, but at reward-eye range nested shells leave vertical dark slits and a hard horizontal band in the core (crops/re-flames.png, 4x of x 0-160, y 300-400). Oculus still not brass: on its own pixels (old ivory mask, 313 px around centre 641,268) the ring went L* 81.1 -> 46.8, sat 0.24 -> 0.30, hue 34.5, a grey-olive, against the wall gears on the same slot at L* 45.4, sat 0.64, hue 39.4; its hub stays pale (L* 67.0). Piers unchanged (box 392-448 x 200-470 L* 37.0, p90 57.9). Lightmap 38.9 -> 47.4 px/m produced no visible change (all boxes within 0.3 L*), so no credit."
+        },
+        {
+          "criterion": "colour, value and lighting mood",
+          "points": 14,
+          "max": 15,
+          "note": "Frame unchanged: hero L* 23.9, hue 20.4, sat 0.693, 0.0% under L* 2. Flame colour now on target: reward-eye mask hue 31.7-32.3 -> 35.9-37.2, sat 0.47-0.49, R-B 111-121 against #F3BE65 hue 37.6, sat 0.58; in game box 425-560 x 450-488 hue 31.0 -> 34.2, sat 0.46, R-B 104."
+        },
+        {
+          "criterion": "readability and comfort at seated VR distance",
+          "points": 8,
+          "max": 10,
+          "note": "Clear axis and open floor. The altar flames remain the brightest shapes at eye height and got brighter (reward-eye L* p90 81.2 -> 89.7) but are narrower and soft-cored, so the net glare is about the same."
+        }
+      ],
+      "topFixes": [
+        "Raise a stepped dais under the guardian ring so the shrine reads as an arena (the socket change D1 leaves to Paul), and vault the ceiling over the apse instead of the flat plank deck.",
+        "Make the oculus gear read as brass: its ring measures sat 0.30, hue 34.5 against the wall gears on the same slot at sat 0.64, hue 39.4; warm its light or probe and darken the pale hub (L* 67).",
+        "Remove the vertical dark slits and the hard core band from the nested flame shells so each flame is one soft gradient at reward-eye range."
+      ],
+      "method": "Read the brief, the art bible and the previous block (79), re-checking its fixes (flames, oculus, inlay, density, dais). Judged the engine shots first: p5-rooms-guardian-vault-hero, hero.diffuse, reward-eye, brazier, plug-s-in, plug-s-out, seam-south, seam-from-corridor at 8428cd8 and p5-int-guardian-vault.jpg, against the b1df5d3 shots in /tmp/rxr-r5/before (hashes match the previous evidence) and the builder crops in /tmp/rxr-r5/cmp. Measured in Pillow and numpy: whole-frame CIE L*, hue and saturation; box stats old vs new for oculus, wall gear, chandelier, altar gear, piers, floor and ring; the oculus on its own pixels with hub and ring split; flame masks with core share in hero, reward-eye and in game; the plug seam check. Crops at 1-8x in /tmp/fb17/rescore2/crops, scripts in /tmp/fb17/rescore2/scripts. The oculus is not visible in the in-game frame (the camera faces the end wall), so it was judged on the hero shot only. Did not read report.json or engine-compare.json; read provenance.json only for build decisions and texel density. No repo edits.",
+      "evidence": [
+        {
+          "path": "docs/art-bible.md",
+          "sha256": "11da71b45f24eeb258ef77d328ef1aa009297a9231608cb80bb429aa3ff2ad6a"
+        },
+        {
+          "path": "assets-source/rooms/guardian-vault/provenance.json",
+          "sha256": "eb31a09275c52d3b6909803281d2ddc9a3da4216ff0f4e408a04b1ddc4b6e653"
+        },
+        {
+          "path": "docs/verification/p5-rooms-guardian-vault-brazier.jpg",
+          "sha256": "700fbde5e1ba5bcbd4334f5859d76b36e6903d10537010e4804e43f07f7afd83"
+        },
+        {
+          "path": "docs/verification/p5-rooms-guardian-vault-hero.diffuse.jpg",
+          "sha256": "ad6635578f52b62de384c95dd8bcac7d6f3b61b6500bd7b647a2de03559bf10c"
+        },
+        {
+          "path": "docs/verification/p5-rooms-guardian-vault-hero.jpg",
+          "sha256": "297458a86275775d275fe14d5d1d4d1bec908c207f214c3ecc2280b3b07bf1bb"
+        },
+        {
+          "path": "docs/verification/p5-rooms-guardian-vault-plug-s-in.jpg",
+          "sha256": "6ca2d763788e9dfb37775645ca5ba847b55d1d1f187d4fafdd57e6ca1d7c1073"
+        },
+        {
+          "path": "docs/verification/p5-rooms-guardian-vault-plug-s-out.jpg",
+          "sha256": "268599927d98d70dc00bc15236977d18118962abc99cddb0cc8ac3101bfae037"
+        },
+        {
+          "path": "docs/verification/p5-rooms-guardian-vault-reward-eye.jpg",
+          "sha256": "138575fe655408d8fbc8dbe20cdb5255043d83500ebda06a3a6f8ec3ba7ffb09"
+        },
+        {
+          "path": "docs/verification/p5-rooms-guardian-vault-seam-from-corridor.jpg",
+          "sha256": "c2099886e06827207ba13b7142f32ead8edcdac0748a459ca694f028b24a70fd"
+        },
+        {
+          "path": "docs/verification/p5-rooms-guardian-vault-seam-south.jpg",
+          "sha256": "70905e1b84fa5261afb84d4107420ba64a8bf119bee717dd21ee7fb56e600428"
+        },
+        {
+          "path": "docs/verification/p5-int-guardian-vault.jpg",
+          "sha256": "1ee1cfa7bff6f3287a99bb6f6b4340c3820a2514140b980151046cfcd8c94340"
+        },
+        {
+          "path": "/tmp/rxr-r5/before/verification/p5-rooms-guardian-vault-brazier.jpg",
+          "sha256": "a4de70d6c6666c31e217d2645ec4882eadc151633e71c5898be2027024948e31"
+        },
+        {
+          "path": "/tmp/rxr-r5/before/verification/p5-rooms-guardian-vault-hero.diffuse.jpg",
+          "sha256": "0ffdef50395c8c26ec6965f53c7889d1f1b3ae16468d2501c07dd0ea8a14f9b0"
+        },
+        {
+          "path": "/tmp/rxr-r5/before/verification/p5-rooms-guardian-vault-hero.jpg",
+          "sha256": "191d5483e0d88a27cacebd869327835c855c66b0604d83697690ac5fe48ffa00"
+        },
+        {
+          "path": "/tmp/rxr-r5/before/verification/p5-rooms-guardian-vault-plug-s-in.jpg",
+          "sha256": "8f1b89169b479662c113787fe8b040d18cd48b36c70f38625891925d6544a82c"
+        },
+        {
+          "path": "/tmp/rxr-r5/before/verification/p5-rooms-guardian-vault-plug-s-out.jpg",
+          "sha256": "a714c44b9f0058374a8f0af765edc21724057a2726e3395f3dd342b4d6ff3928"
+        },
+        {
+          "path": "/tmp/rxr-r5/before/verification/p5-rooms-guardian-vault-reward-eye.jpg",
+          "sha256": "ee4a076066155fc76e78ca1fb55d5cbe1dc49ab1336f5dd18f9c3384ed206f19"
+        },
+        {
+          "path": "/tmp/rxr-r5/before/verification/p5-rooms-guardian-vault-seam-from-corridor.jpg",
+          "sha256": "232c778f2d56eee7ec1a8e8561c71cb05ca3e6d14667290110bb4c3c093a38d5"
+        },
+        {
+          "path": "/tmp/rxr-r5/before/verification/p5-rooms-guardian-vault-seam-south.jpg",
+          "sha256": "a87b74a01fed5f6a05af3c674ed974bb94f20ab2e00d7b2a8bfb29d7c4f3b48f"
+        },
+        {
+          "path": "/tmp/rxr-r5/before/verification/p5-int-guardian-vault.jpg",
+          "sha256": "59badef74657dfd9a2df62ab1652a6488a806ceb030c113312aaafa96a293b4d"
+        },
+        {
+          "path": "/tmp/rxr-r5/cmp/gv-hero.jpg",
+          "sha256": "774083e133926aa7df9c6e2e5e552946aaab2a7da76bc7d19dec961f68aa20e8"
+        },
+        {
+          "path": "/tmp/rxr-r5/cmp/gv-flame.jpg",
+          "sha256": "e1a50275c1b2fba168fba93a9d7c7e2cb7fdd9f813d2456537f360ba06e7c4e1"
+        },
+        {
+          "path": "/tmp/rxr-r5/cmp/gv-oculus.jpg",
+          "sha256": "27edeb154330bc8c7036ea7bc4fecaeda1f8d6feff226193eac8ab139bd4c758"
+        },
+        {
+          "path": "/tmp/rxr-r5/cmp/plug-gv.jpg",
+          "sha256": "d78dc63159a36357ebc07fd8e861a76fb6aaa1415f9c46c8f92ec9447d2b0e8a"
+        },
+        {
+          "path": "/tmp/rxr-r5/cmp/gv-int.jpg",
+          "sha256": "8061a630ad79db43d98ebb7e5499a46165ff74c951e7c8de77af25227c76287b"
+        },
+        {
+          "path": "/tmp/rxr-r5/cmp/gv-reward-eye.jpg",
+          "sha256": "25946d87def8cbe85850fd5f5f28e16740c08eaa5cccad8e961751d398d31585"
+        },
+        {
+          "path": "/tmp/rxr-r5/cmp/gv-int-flame.jpg",
+          "sha256": "22f1f7aa6e3c6e001abc7ad6597ecf8ad846f736ba559ac8be55da5009120aa3"
+        }
+      ]
     }
-  ]
+  ],
+  "revision": {
+    "agent": "Codex with GPT-6.1 Terra",
+    "date": "2026-11-18",
+    "changes": [
+      "Extended the center mullions to the lancet peaks"
+    ]
+  },
+  "independentScore": {
+    "score": 82,
+    "date": "2026-11-18",
+    "scale": "0-100 visual fidelity to the art bible and study-kit language",
+    "scorer": "Independent visual reviewer, separate from room authorship",
+    "acceptanceBar": 80,
+    "clearsBar": true,
+    "previousScore": 82,
+    "rubric": [
+      {
+        "criterion": "form, layout and proportions",
+        "points": 25,
+        "max": 30,
+        "note": "The dark center bar ends in the point formed by the timber arch, between two visible stone piers. The aisle, closed-door inlay and flat arena deck retain their historical assessment."
+      },
+      {
+        "criterion": "signature features: boss arena",
+        "points": 19,
+        "max": 25,
+        "note": "Stone piers and the ornamental gear identify the shrine architecture. The guardian ring, altar and approach cannot be evaluated from the new upward-facing view."
+      },
+      {
+        "criterion": "surface detail and material read",
+        "points": 16,
+        "max": 20,
+        "note": "The dark wood center bar belongs to the arch and remains visually distinct from the diamond leads. Stone joints and brass bands read clearly. The altar flame cores and face-on oculus are outside the new capture."
+      },
+      {
+        "criterion": "colour, value and lighting mood",
+        "points": 14,
+        "max": 15,
+        "note": "Cool panes stand out against the warm stone, timber and wallpaper. The wider sanctuary balance and altar glare retain their prior assessment."
+      },
+      {
+        "criterion": "readability and comfort at seated VR distance",
+        "points": 8,
+        "max": 10,
+        "note": "The window point remains legible between the piers. This view cannot establish the guardian silhouette, altar glare or sightlines during play."
+      }
+    ],
+    "topFixes": [
+      "The prior review identified a flat guardian platform, muted brass on the oculus and hard bands in the altar flames. Recheck those from the encounter and reward cameras."
+    ],
+    "method": "Independent change review against the previous five-criterion rubric. Examined the supplied 1280x720 capture at full resolution and the window apex in a 3x nearest-neighbour crop. The hero JPG listed in evidence is the previous build and was checked for historical context only. The wider room criteria retain the previous assessment wherever the fresh images cannot establish a change. The staged GLB hash matches its reimport, UV and bake reports, the compressed lightmap hash matches the bake report, and reimport passed all listed checks. UV report records zero overlapping pixels. No new room-wide capture, animated sequence, physical Quest measurement or owner sign-off is part of this review.",
+    "evidence": [
+      {
+        "path": "docs/verification/p5-rooms-guardian-vault-quest-window.jpg",
+        "sha256": "bf6fe407dd77998806a55203415d89c06d4e430aabcccdecc284045c8bdb6def"
+      },
+      {
+        "path": "assets-source/rooms/guardian-vault/staging/reimport.json",
+        "sha256": "a838efff35e75207c79c9a6f624ee49f7c26311927f8d46e836f9b73a480eeda"
+      },
+      {
+        "path": "assets-source/rooms/guardian-vault/staging/uv1-report.json",
+        "sha256": "db6a83dae3544a845a61d51af74dabab96142c61d729d463315176f962b25964"
+      },
+      {
+        "path": "assets-source/rooms/guardian-vault/staging/report.json",
+        "sha256": "7a85989f5f924b405ebd0b617eed55e50ced4293a7856bb859686cd82a9eddd7"
+      },
+      {
+        "path": "assets-source/rooms/guardian-vault/staging/guardian-vault.glb",
+        "sha256": "f2923a8018d7c34955dad1854883dbfdd42dc8426d3b49cc7af9b0acd95363ce"
+      },
+      {
+        "path": "assets-source/rooms/guardian-vault/staging/guardian-vault.lightmap.ktx2",
+        "sha256": "0bab7d726ed717c8898e5347ca2c9c217ead07e0535d7a47527b353312ff2ea8"
+      },
+      {
+        "path": "docs/verification/p5-rooms-guardian-vault-hero.jpg",
+        "sha256": "297458a86275775d275fe14d5d1d4d1bec908c207f214c3ecc2280b3b07bf1bb"
+      },
+      {
+        "path": "docs/art-bible.md",
+        "sha256": "11da71b45f24eeb258ef77d328ef1aa009297a9231608cb80bb429aa3ff2ad6a"
+      }
+    ],
+    "build": "GLB f2923a8018d7",
+    "runtimeGlbSha256": "f2923a8018d7c34955dad1854883dbfdd42dc8426d3b49cc7af9b0acd95363ce"
+  }
 }

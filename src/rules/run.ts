@@ -94,7 +94,7 @@ export interface PendingLoot {
 /** A treasure-room pickup. Cogs are already paid; `openTreasure` leaves a card pending (`claimTreasure`). */
 export type TreasureLoot =
   | { readonly kind: 'cogs'; readonly cogs: number }
-  | { readonly kind: 'card'; readonly card: string };
+  | { readonly kind: 'card'; readonly card: string; readonly cogs?: number };
 
 export interface TreasureLootResult {
   readonly run: RunState;
@@ -232,8 +232,8 @@ export function parseLootKey(key: string): { room: number; socketId: string } | 
 /**
  * Opens the treasure pickup `key` once. Returns null, touching nothing, when the run already opened
  * it, so a second call can never re-roll or pay twice. Otherwise rolls it with `treasureLoot` (the
- * same single `loot` draw) and records the key. Cogs are paid at once; a card is not added to the
- * deck but recorded in `pendingLoot` until `claimTreasure` takes it.
+ * same single `loot` draw) and records the key. Cogs are paid at once; a card waits in
+ * `pendingLoot` until `claimTreasure` takes it.
  */
 export function openTreasure(
   run: RunState,
@@ -247,7 +247,12 @@ export function openTreasure(
   const recorded: RunState = { ...result.run, openedLoot: [...opened, key] };
   if (result.loot.kind === 'cogs') return { run: recorded, loot: result.loot };
   const pending = [...(run.pendingLoot ?? []), { key, card: result.loot.card }];
-  return { run: { ...recorded, deck: run.deck, pendingLoot: pending }, loot: result.loot };
+  // The card chest purse has its own draw so existing seeded card and treasure rolls stay stable.
+  const cogs = Stream.fromKey(`${run.seed}:card-chest-cogs:${key}`).int(2, 4);
+  return {
+    run: { ...recorded, deck: run.deck, cogs: recorded.cogs + cogs, pendingLoot: pending },
+    loot: { ...result.loot, cogs },
+  };
 }
 
 export interface ClaimResult {

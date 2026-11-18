@@ -51,7 +51,7 @@ describe('openTreasure then claimTreasure', () => {
   it('rolls the same card on the same loot draw as before claiming existed', () => {
     for (const [seed, want] of Object.entries(ROLLED)) {
       const result = openTreasure(newRun(seed), KEY, 'card', REWARD_POOL);
-      expect(result?.loot).toEqual({ kind: 'card', card: want.card });
+      expect(result?.loot).toMatchObject({ kind: 'card', card: want.card });
       expect(result?.run.rng.loot).toEqual(want.loot);
       expect(result?.run.pendingLoot).toEqual([{ key: KEY, card: want.card }]);
     }
@@ -178,6 +178,7 @@ describe('RunFlow.claimLoot', () => {
     await saved.flushed();
     const snapshot = await loadRunSnapshot(db);
     expect(snapshot?.run.pendingLoot).toEqual([{ key: KEY, card: 'overwind' }]);
+    expect(snapshot?.run.cogs).toBe(flow.run?.cogs);
     expect(snapshot?.run.deck).toEqual(STARTER_DECK);
 
     const resumed = newFlow();

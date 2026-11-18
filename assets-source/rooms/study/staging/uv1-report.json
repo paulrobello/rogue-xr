@@ -1,11 +1,11 @@
 {
   "glb": "study.glb",
-  "glb_sha256": "feac13e816ad7ac36a2f22a8c2f83b2d12503a730250f61a37d40732b145abac",
+  "glb_sha256": "902a5b27fb7cbd1c1239f56b2dc95f3fe022eaf3eb5ddd1dad8ebd4a3e94c020",
   "size": 2048,
-  "islands": 1041,
-  "coverage": 0.4344,
+  "islands": 1073,
+  "coverage": 0.4296,
   "overlap_px": 0,
-  "texels_claimed_twice": 2161,
-  "claims_per_covered_texel": 1.0012,
+  "texels_claimed_twice": 2054,
+  "claims_per_covered_texel": 1.0011,
   "min_gap_px": 20
 }

@@ -33,15 +33,15 @@ function enemyWorld(e: THREE.Object3D): THREE.Vector3 {
 }
 
 /** A player spot 1 m from the first enemy, toward the room centre. */
-function playerNear(world: FloorWorld, room: number) {
+function playerNear(world: FloorWorld, room: number, distance = 1) {
   const e = world.enemies.get(room)?.[0] as THREE.Object3D;
   const p = enemyWorld(e);
   const fp = world.rooms[room]?.footprint as { min: [number, number]; max: [number, number] };
   const cx = (fp.min[0] + fp.max[0]) / 2;
   const cz = (fp.min[1] + fp.max[1]) / 2;
   const len = Math.hypot(cx - p.x, cz - p.z) || 1;
-  const x = p.x + ((cx - p.x) / len) * 1;
-  const z = p.z + ((cz - p.z) / len) * 1;
+  const x = p.x + ((cx - p.x) / len) * distance;
+  const z = p.z + ((cz - p.z) / len) * distance;
   return { x, z, yaw: headingTo([x, z], [p.x, p.z]) };
 }
 
@@ -76,6 +76,31 @@ describe('EncounterDirector trigger', () => {
     const { world, room } = worldWithEncounter('SPIRE001');
     const director = new EncounterDirector({ world, lockLocomotion: () => {}, triggerRadius: 0.5 });
     expect(director.checkTrigger(playerNear(world, room))).toBeNull();
+  });
+
+  it('starts a fight beyond the old 1.2 m trigger from inside the room', () => {
+    const { world, room } = worldWithEncounter('SPIRE001');
+    for (const other of world.enemies.get(room)?.slice(1) ?? []) other.removeFromParent();
+    const director = new EncounterDirector({ world, lockLocomotion: () => {} });
+    const hit = director.checkTrigger(playerNear(world, room, 2.2));
+    expect(hit?.distance).toBeCloseTo(2.2);
+    expect(director.checkTrigger(playerNear(world, room, 2.8))).toBeNull();
+  });
+
+  it('releases guarded content on a win and never on a flee', () => {
+    const { world, room } = worldWithEncounter('SPIRE001');
+    const onCleared = vi.fn<(room: number) => void>();
+    const director = new EncounterDirector({ world, lockLocomotion: () => {}, onCleared });
+    const player = playerNear(world, room);
+    expect(director.begin(room, player).ok).toBe(true);
+    director.end('flee');
+    run(director, 2);
+    expect(onCleared).not.toHaveBeenCalled();
+    expect(director.begin(room, player).ok).toBe(true);
+    director.end('win');
+    expect(onCleared).toHaveBeenCalledExactlyOnceWith(room);
+    director.markCleared(room);
+    expect(onCleared).toHaveBeenCalledTimes(1);
   });
 });
 

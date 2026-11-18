@@ -77,7 +77,9 @@ describe('openTreasure', () => {
     expect(REWARD_POOL).toContain(first.loot.card);
     expect(first.run.deck).toEqual(run.deck);
     expect(first.run.pendingLoot).toEqual([{ key: KEY, card: first.loot.card }]);
-    expect(first.run.cogs).toBe(run.cogs);
+    expect(first.loot.cogs).toBeGreaterThanOrEqual(2);
+    expect(first.loot.cogs).toBeLessThanOrEqual(4);
+    expect(first.run.cogs).toBe(run.cogs + (first.loot.cogs ?? 0));
     expect(openTreasure(first.run, KEY, 'card', REWARD_POOL)).toBeNull();
   });
 
@@ -170,7 +172,7 @@ describe('RunFlow.openLoot', () => {
     if (found?.kind !== 'card') throw new Error('SPIRE001 holds a card coffer');
     expect(flow.run?.deck).toEqual(before.deck);
     expect(flow.pendingCard(pickup.room, pickup.socketId)).toBe(found.card);
-    expect(flow.run?.cogs).toBe(before.cogs);
+    expect(flow.run?.cogs).toBe(before.cogs + (found.cogs ?? 0));
     expect(flow.isLootOpened(pickup.room, pickup.socketId)).toBe(true);
     expect(flow.lastLoot).toEqual({ room: pickup.room, socketId: pickup.socketId, loot: found });
     expect(flow.openLoot(pickup.room, pickup.socketId, pickup.kind)).toBeNull();

@@ -41,6 +41,10 @@ const CARD_BOB_RATE = 2.4;
 /** Slow sway about the facing direction, radians, and how fast the card turns to the viewer (1/s). */
 const CARD_SWAY = 0.12;
 const CARD_TURN_RATE = 3;
+/** Cog rewards rise one at a time before the card is released. */
+const COG_RISE_TIME = 0.55;
+const COG_STAGGER = 0.12;
+const COG_RISE = 0.38;
 /** Halo size over the card size, and the hit quad's margin around the card. */
 const HALO_SCALE = 2.1;
 const HIT_SCALE = 1.5;
@@ -110,6 +114,8 @@ export interface Coffer {
     animate: boolean,
     viewer: THREE.Object3D | null,
   ): void;
+  /** Queues a visible, sequential cog reward reveal before the card rises. */
+  showCogs(amount: number): void;
   /**
    * Sends the waiting card to `to` (stopping `standoff` metres short, toward the coffer), shrinking it
    * away and freeing it. Returns false when no card waits.
@@ -259,13 +265,35 @@ function vault(radius: number, length: number): THREE.CylinderGeometry {
   );
 }
 
-/** The barrel lid's outer shell with half-ring end caps, `LID_SHELL` thick, hinge-local about z = 0. */
+/** The barrel lid's outer shell with solid wooden ends, hinge-local about z = 0. */
 function lidGeometry(): THREE.BufferGeometry {
-  const cap = (side: 1 | -1): THREE.BufferGeometry =>
-    new THREE.RingGeometry(LID_RADIUS - LID_SHELL, LID_RADIUS, 14, 1, 0, Math.PI)
+  const end = (side: 1 | -1): THREE.BufferGeometry =>
+    new THREE.CircleGeometry(LID_RADIUS, 14, 0, Math.PI)
       .rotateY((side * Math.PI) / 2)
       .translate((side * WIDTH) / 2, 0, 0);
-  return merged([vault(LID_RADIUS, WIDTH), cap(1), cap(-1)]);
+  return merged([vault(LID_RADIUS, WIDTH), end(1), end(-1)]);
+}
+
+function rewardCogGeometry(): THREE.BufferGeometry {
+  const shape = new THREE.Shape();
+  const segments = 32;
+  for (let i = 0; i < segments; i++) {
+    const angle = (i * 2 * Math.PI) / segments;
+    const radius = i % 4 === 1 || i % 4 === 2 ? 0.047 : 0.036;
+    const x = Math.cos(angle) * radius;
+    const y = Math.sin(angle) * radius;
+    if (i === 0) shape.moveTo(x, y);
+    else shape.lineTo(x, y);
+  }
+  shape.closePath();
+  const hole = new THREE.Path();
+  hole.absarc(0, 0, 0.015, 0, 2 * Math.PI, true);
+  shape.holes.push(hole);
+  return new THREE.ExtrudeGeometry(shape, {
+    bevelEnabled: false,
+    curveSegments: 10,
+    depth: 0.012,
+  }).center();
 }
 
 /** The brass frame round the lid's open face, sitting on the rim when it is shut. */
@@ -355,7 +383,17 @@ export class CofferKit {
   private readonly body = this.geometry(bodyGeometry());
   private readonly innerShell = this.geometry(innerGeometry());
   private readonly lid = this.geometry(lidGeometry());
+  private readonly rewardCog = this.geometry(rewardCogGeometry());
   private readonly lidInner = this.geometry(inward(vault(LID_RADIUS - LID_SHELL, WIDTH)));
+  private readonly lidInnerEnds = ([-1, 1] as const).map((side) =>
+    this.geometry(
+      inward(
+        new THREE.CircleGeometry(LID_RADIUS - LID_SHELL, 14, 0, Math.PI).rotateY(
+          (side * Math.PI) / 2,
+        ),
+      ),
+    ),
+  );
   private readonly lidRim = this.geometry(lidRimGeometry());
   private readonly bodyBand = this.geometry(bodyBandGeometry());
   private readonly lidBand = this.geometry(lidBandGeometry());
@@ -424,6 +462,15 @@ export class CofferKit {
     object.add(hinge);
     this.part(this.lid, 'wood', hinge, 'coffer-lid-top').position.z = -DEPTH / 2;
     this.part(this.lidInner, 'inner', hinge, 'coffer-lid-inner').position.z = -DEPTH / 2;
+    for (const [index, side] of [-1, 1].entries()) {
+      const end = this.part(
+        this.lidInnerEnds[index] as THREE.BufferGeometry,
+        'inner',
+        hinge,
+        `coffer-lid-inner-end-${side}`,
+      );
+      end.position.set(side * (WIDTH / 2 - LID_SHELL), 0, -DEPTH / 2);
+    }
     this.part(this.lidRim, 'brass', hinge, 'coffer-lid-rim').position.z = -DEPTH / 2;
     this.part(this.lidBand, 'brass', hinge, 'coffer-lid-band').position.z = -DEPTH / 2;
     const latch = this.part(this.latch, 'brass', object, 'coffer-latch');
@@ -445,7 +492,8 @@ export class CofferKit {
     let angle = 0;
     let target = 0;
     let clock = 0;
-    const card = this.cardSlot(object, () => angle >= RISE_ANGLE);
+    const cogs = this.cogSlot(object, () => angle >= RISE_ANGLE);
+    const card = this.cardSlot(object, () => angle >= RISE_ANGLE && cogs.done());
     const coffer: Coffer = {
       object,
       room,
@@ -473,6 +521,9 @@ export class CofferKit {
       showCard(cardId, face, animate, viewer) {
         card.show(cardId, face, animate, viewer);
       },
+      showCogs(amount) {
+        cogs.show(amount);
+      },
       claimCard(to, standoff = 0.3) {
         return card.claim(to, standoff);
       },
@@ -485,11 +536,65 @@ export class CofferKit {
         }
         const pulse = target > 0 ? 0.6 : 1 + 0.22 * Math.sin(clock * 2.4);
         gem.scale.setScalar(pulse);
+        cogs.update(dt);
         card.update(dt, clock);
       },
     };
     object.userData.coffer = coffer;
     return coffer;
+  }
+
+  /** Sequentially lifts the visible cog reward from the open coffer. */
+  private cogSlot(coffer: THREE.Group, lidUp: () => boolean) {
+    const root = new THREE.Group();
+    root.name = 'coffer-cogs';
+    coffer.add(root);
+    const cogs: THREE.Mesh[] = [];
+    let elapsed = 0;
+    let state: 'none' | 'waiting' | 'rising' | 'done' = 'none';
+    const show = (amount: number): void => {
+      if (state !== 'none') return;
+      const count = Math.max(0, Math.floor(amount));
+      if (count === 0) {
+        state = 'done';
+        return;
+      }
+      for (let i = 0; i < count; i++) {
+        const cog = new THREE.Mesh(this.rewardCog, this.material('brass'));
+        cog.name = `coffer-cog-${i}`;
+        cog.rotation.x = -0.35;
+        cog.position.set(((i % 3) - 1) * 0.09, FLOOR_Y + 0.02, 0);
+        cog.visible = false;
+        root.add(cog);
+        cogs.push(cog);
+      }
+      elapsed = 0;
+      state = 'waiting';
+    };
+    return {
+      show,
+      done: (): boolean => state === 'none' || state === 'done',
+      update: (dt: number): void => {
+        if (state === 'waiting' && lidUp()) state = 'rising';
+        if (state !== 'rising') return;
+        elapsed += dt;
+        for (let i = 0; i < cogs.length; i++) {
+          const t = Math.max(0, Math.min(1, (elapsed - i * COG_STAGGER) / COG_RISE_TIME));
+          const cog = cogs[i];
+          if (!cog) continue;
+          cog.visible = t > 0 && t < 1;
+          cog.position.y = FLOOR_Y + 0.02 + COG_RISE * easeOut(t);
+          cog.position.z = -0.08 * t;
+          cog.scale.setScalar(Math.min(1, (1 - t) * 3));
+          cog.rotation.z += dt * 3;
+        }
+        if (elapsed >= (cogs.length - 1) * COG_STAGGER + COG_RISE_TIME) {
+          for (const cog of cogs) cog.removeFromParent();
+          cogs.length = 0;
+          state = 'done';
+        }
+      },
+    };
   }
 
   /**
@@ -592,10 +697,10 @@ export class CofferKit {
         coffer.add(root);
         this.liveCards.add(release);
         t = 0;
-        state = animate ? 'waiting' : 'hovering';
+        state = animate || !lidUp() ? 'waiting' : 'hovering';
         root.position.set(0, animate ? startY : hoverY, 0);
         root.scale.setScalar(animate ? CARD_START_SCALE : 1);
-        root.visible = !animate;
+        root.visible = state === 'hovering';
       },
       claim: (to: THREE.Object3D, gap: number): boolean => {
         if (state === 'none' || state === 'flying') return false;

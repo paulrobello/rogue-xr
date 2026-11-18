@@ -5,8 +5,8 @@
     "file": "hall.lightmap.ktx2",
     "uv": 1,
     "encoding": "srgb-scaled",
-    "scale": 5.411591529846191,
-    "intensity": 17.001016
+    "scale": 5.490201473236084,
+    "intensity": 17.247977
   },
   "id": "hall",
   "kinds": [
@@ -352,7 +352,7 @@
     }
   ],
   "budget": {
-    "tris": 6747,
+    "tris": 6753,
     "materials": 8,
     "texturePx": 2048
   },

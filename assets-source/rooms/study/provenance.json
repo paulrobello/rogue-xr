@@ -4,7 +4,7 @@
   "route": "scripted",
   "generator": {
     "path": "scripts/assets/build-room-study.py",
-    "sha256": "b918e8511fef38f662c4a98c441a15780cbf621969691351a754f6e200274fce"
+    "sha256": "015a9cfafdf1f9498de017cb447e02d401205c503df68926c825b04348bcda9f"
   },
   "generatorDeps": [
     {
@@ -23,38 +23,38 @@
   "blender": "5.3.0",
   "toolVersions": {
     "ktx": "ktx version: v4.4.2",
-    "gltfExporter": "Blender 5.2.2 bundled io_scene_gltf2"
+    "gltfExporter": "Blender 5.3.0 bundled io_scene_gltf2"
   },
   "blendFiles": {
     "store": "assets-source/rooms/study/blend (storage ruling pending, PRD project file section 1.5)",
     "files": {
       "study_high.blend": {
-        "sha256": "5fa4a2b51d981e2f27eed7d63fe2630cfd5e0b4fcd5b5f7746c8af99ef6a98a1",
-        "bytes": 3929416
+        "sha256": "31108144ee5cfde80891911b1722f7090b4b33f7bfdb0a03b15fef73e6fb635b",
+        "bytes": 3928204
       },
       "study_low.blend": {
-        "sha256": "6ba173d5bbae4eed64d0c1ea29708d1e7c09d79653e58ca04405a868316e55c6",
-        "bytes": 354718
+        "sha256": "8b99f486fbb90520f38259f8f808e9417f8b9c71e7ac4ee59e904e2f6f973d75",
+        "bytes": 355737
       }
     }
   },
   "bake": {
     "device": "GPU:METAL (Apple M4 (GPU - 10 cores))",
     "lightmap": {
-      "coverage": 0.7402,
-      "scale": 3.172889,
-      "clipped_fraction": 0.00399,
-      "mean_irradiance": 0.217766,
+      "coverage": 0.7436,
+      "scale": 3.762979,
+      "clipped_fraction": 0.00398,
+      "mean_irradiance": 0.260274,
       "p05_irradiance": 0.0,
       "percentile": 99.6,
-      "seconds": 43.93,
+      "seconds": 47.71,
       "pass_seconds": [
-        40.51,
-        3.42
+        44.38,
+        3.33
       ],
       "host_load": [
-        1.8,
-        1.91
+        5.14,
+        4.8
       ],
       "timing_valid": true,
       "panels": "pass 1: room and door frames, every door frame and plug invisible to shadow, diffuse, glossy, transmission and volume rays; pass 2: door plugs only into the same image, plugs fully visible, frames hidden from render (room_panels.bake_with_panels)",
@@ -72,9 +72,9 @@
       "ao_distance_m": 0.12,
       "margin_px": 8,
       "seconds": {
-        "albedo": 1.11,
-        "normal": 0.8,
-        "ao": 3.88
+        "albedo": 1.51,
+        "normal": 0.94,
+        "ao": 4.3
       },
       "coverage": 0.4527,
       "ao_mean": 0.7642,
@@ -90,8 +90,8 @@
         0.8688
       ],
       "host_load": [
-        1.59,
-        1.86
+        2.11,
+        2.98
       ]
     },
     "ktx2": {
@@ -105,7 +105,7 @@
     }
   },
   "budgets": {
-    "triangles": 6968,
+    "triangles": 6974,
     "materials": 9,
     "texturePx": {
       "study.basecolor.ktx2": {
@@ -125,60 +125,60 @@
         "height": 2048
       }
     },
-    "highTriangles": 124637,
-    "glbBytes": 440908
+    "highTriangles": 124696,
+    "glbBytes": 436064
   },
   "texelDensityPxPerM": {
     "lightmap": {
-      "mean_px_per_m": 65.52,
-      "min_px_per_m": 52.52,
-      "max_px_per_m": 69.34
+      "mean_px_per_m": 65.36,
+      "min_px_per_m": 50.2,
+      "max_px_per_m": 65.98
     },
     "lightmapBySlot": {
       "books": {
         "area_m2": 26.94,
-        "median_px_per_m": 69.3,
-        "min_px_per_m": 58.2
+        "median_px_per_m": 66.0,
+        "min_px_per_m": 65.6
       },
       "brass-aged": {
         "area_m2": 13.39,
-        "median_px_per_m": 69.3,
-        "min_px_per_m": 52.5
+        "median_px_per_m": 66.0,
+        "min_px_per_m": 50.5
       },
       "brass-polished": {
-        "area_m2": 7.2,
-        "median_px_per_m": 67.7,
-        "min_px_per_m": 52.5
+        "area_m2": 7.22,
+        "median_px_per_m": 64.5,
+        "min_px_per_m": 50.2
       },
       "flame": {
         "area_m2": 0.01,
-        "median_px_per_m": 66.2,
-        "min_px_per_m": 58.2
+        "median_px_per_m": 64.3,
+        "min_px_per_m": 59.0
       },
       "stained-glass": {
         "area_m2": 2.26,
-        "median_px_per_m": 58.4,
-        "min_px_per_m": 58.4
+        "median_px_per_m": 65.7,
+        "min_px_per_m": 65.7
       },
       "stone-floor": {
         "area_m2": 64.0,
-        "median_px_per_m": 69.3,
-        "min_px_per_m": 69.3
+        "median_px_per_m": 66.0,
+        "min_px_per_m": 66.0
       },
       "wallpaper": {
         "area_m2": 89.26,
-        "median_px_per_m": 58.4,
-        "min_px_per_m": 58.2
+        "median_px_per_m": 65.6,
+        "min_px_per_m": 62.4
       },
       "walnut": {
         "area_m2": 206.98,
-        "median_px_per_m": 69.3,
-        "min_px_per_m": 58.2
+        "median_px_per_m": 66.0,
+        "min_px_per_m": 51.7
       },
       "wax": {
         "area_m2": 0.07,
-        "median_px_per_m": 67.6,
-        "min_px_per_m": 53.3
+        "median_px_per_m": 64.3,
+        "min_px_per_m": 50.8
       }
     }
   },
@@ -300,43 +300,42 @@
     },
     {
       "path": "public/assets/rooms/study/study.glb",
-      "sha256": "feac13e816ad7ac36a2f22a8c2f83b2d12503a730250f61a37d40732b145abac",
-      "bytes": 440908
+      "sha256": "902a5b27fb7cbd1c1239f56b2dc95f3fe022eaf3eb5ddd1dad8ebd4a3e94c020",
+      "bytes": 436064
     },
     {
       "path": "public/assets/rooms/study/study.lightmap.ktx2",
-      "sha256": "330354a719506236b9c0ad0ef734909c45defb7a6d3031b9bb9d7d40dadb7134",
-      "bytes": 2665418
+      "sha256": "3f19bae9005bd1d3fca255d3dc16b5d073dc9657f3c8b2224f1f6062d2cc2ce4",
+      "bytes": 2685454
     },
     {
       "path": "public/assets/rooms/study/study.manifest.json",
-      "sha256": "758cf894806e0babf142a3a3245282a1dc913436490c8233e47e55c025275286",
-      "bytes": 4481
+      "sha256": "b713265df9968bac33d48729d47060c7c459e8a6480862cba2488d5c23ac99fe",
+      "bytes": 4482
     },
     {
       "path": "public/assets/rooms/study/study.normal.ktx2",
-      "sha256": "e72dfde808151f2223714378c70a4f3fe5e688949bdb0c72bc31a0062f62757b",
-      "bytes": 1877173
+      "sha256": "7c79c1a96792b3cbc38c0bb53537ef2180b40d0f0810a5c39152b7486a1b78e7",
+      "bytes": 1877176
     },
     {
       "path": "public/assets/rooms/study/study.orm.ktx2",
-      "sha256": "c399929ae32a5a0f41676136cda4bcaf031e641ff703eae9d526f8761563b3d2",
-      "bytes": 1584359
+      "sha256": "ed8e6532aeaa3b523bd2d7dea450a5959404781a3df496071af3eeb839666a81",
+      "bytes": 1584326
     }
   ],
   "stagingFiles": {
-    "engine-compare.json": "abb36a28e9c767cc9c03ecd221bcde323d957e85ecf440769ff4028e365ce94a",
     "study.basecolor.ktx2": "b02368371914b7f903b80acdde92d9951f2e0b88105b3ac47afe78e3fe683084",
     "study.basecolor.png": "69cf3fef0f3d8f4ee9295380b847a134d19b7c8a1aa5a28bec781b655a781fe6",
-    "study.glb": "feac13e816ad7ac36a2f22a8c2f83b2d12503a730250f61a37d40732b145abac",
-    "study.lightmap.ktx2": "330354a719506236b9c0ad0ef734909c45defb7a6d3031b9bb9d7d40dadb7134",
-    "study.lightmap.png": "153efa42de60cfe440c7b0108daba0031023c974ce8f146ffc548f90261fe24e",
-    "study.manifest.json": "758cf894806e0babf142a3a3245282a1dc913436490c8233e47e55c025275286",
-    "study.normal.ktx2": "e72dfde808151f2223714378c70a4f3fe5e688949bdb0c72bc31a0062f62757b",
-    "study.normal.png": "a97ccdfe84f7dae105a90294222e516b7dd34bb45015c00e2416c045363b3b58",
-    "study.orm.ktx2": "c399929ae32a5a0f41676136cda4bcaf031e641ff703eae9d526f8761563b3d2",
-    "study.orm.png": "26b780e06e99b0c348e6a174d0186e35c4a73f38bdad3f4a65b38339caed7342",
-    "uv1-report.json": "a8739025dce72e28f8c96d5d772d48f86b65617e5d436bb807084bfe00f3a9a3"
+    "study.glb": "902a5b27fb7cbd1c1239f56b2dc95f3fe022eaf3eb5ddd1dad8ebd4a3e94c020",
+    "study.lightmap.ktx2": "3f19bae9005bd1d3fca255d3dc16b5d073dc9657f3c8b2224f1f6062d2cc2ce4",
+    "study.lightmap.png": "b027fb0db1194442198ad8b91532136083b243aaea9d1eee09fd0f00211c16f1",
+    "study.manifest.json": "b713265df9968bac33d48729d47060c7c459e8a6480862cba2488d5c23ac99fe",
+    "study.normal.ktx2": "7c79c1a96792b3cbc38c0bb53537ef2180b40d0f0810a5c39152b7486a1b78e7",
+    "study.normal.png": "ecd975183f4d2fbab20287c61928e6ad72afd981b9ddbc6186ce566472edd43e",
+    "study.orm.ktx2": "ed8e6532aeaa3b523bd2d7dea450a5959404781a3df496071af3eeb839666a81",
+    "study.orm.png": "432e4d516f4a6b418a262fd4465ba617ce9901c481ba44bcfd79a3e6942e0e48",
+    "uv1-report.json": "b8c3fdf0879060347e3f0a006ec604f494d46adb28547057d91468150db8e591"
   },
   "references": [
     {
@@ -355,7 +354,7 @@
   "materialsUsed": "approved P4-T3 set (public/assets/materials), bound by slot name; not regenerated",
   "license": "Original work generated in Blender from a checked-in script; concept references from Paul's paid Higgsfield plan (Terms of Use 4.4)",
   "reimport": {
-    "triangles": 6968,
+    "triangles": 6974,
     "material_count": 9,
     "uv_layers": [
       [
@@ -393,7 +392,7 @@
   },
   "validation": {
     "pass": true,
-    "date": "2026-11-17",
+    "date": "2026-11-18",
     "checks": [
       "presence",
       "hashes",
@@ -425,102 +424,207 @@
       "notes": "in-engine look approval (P4-T10)"
     }
   ],
+  "independentScoreHistory": [
+    {
+      "score": 84,
+      "scale": "0-100 visual fidelity to the art bible and study-kit language",
+      "scorer": "independent reviewer agent (separate from the authoring agent; did not build the asset)",
+      "date": "2026-11-17",
+      "acceptanceBar": 80,
+      "clearsBar": true,
+      "build": "b1df5d3",
+      "previousScore": null,
+      "rubric": [
+        {
+          "criterion": "form, layout and proportions",
+          "points": 26,
+          "max": 30,
+          "note": "Bookcase walls on three sides, a coffered walnut ceiling, a stained lancet on the axis and the central gear column give the box dense walls and a strong centre (hero, p5-int-study.jpg). Door frames are thin gilt and consistent. Plug check (scripts/plug.py, bbox from |in-out|>25): gilt pixels in 10 px bands on left, right and top of the former door box are 0.00%; column-mean L* across the edges stays within the sconce falloff on the left (L* 15 to 11 over 32 px, a smooth gradient, not a step) and 3 L* on the right; Laplacian variance on the edges (80-278 against 74-384 on the open wall) sits inside the range of the open wall beside it, so no seam, leak, z-fight or leftover architrave. Still a single-height box."
+        },
+        {
+          "criterion": "signature features: study",
+          "points": 21,
+          "max": 25,
+          "note": "Bookcases, gear column, stained-glass patch on the floor and wall sconces carry the study read. The writing desk is small and set against the far wall (desk shot), so the 'study' furniture is under-scaled next to the column."
+        },
+        {
+          "criterion": "surface detail and material read",
+          "points": 17,
+          "max": 20,
+          "note": "The only room with baked basecolor, normal and ORM from a 124,637-tri high poly, 65.5 px/m lightmap. Book spines, wainscot grain and brass read as painted materials. The column brass is uniform and slightly foil-like in the desk shot."
+        },
+        {
+          "criterion": "colour, value and lighting mood",
+          "points": 12,
+          "max": 15,
+          "note": "On palette: hero frame hue 18.8, sat 0.713; in-game hue 19.5, sat 0.685, L* 16.3. Stained glass throws coloured floor patches as the bible asks. Deduction: the engine hero is dark, L* 11.7 with 39.5% under L* 5 and 9.8% under L* 2; the wainscot box 960-1080 x 420-500 is L* 8.3 with 48% under L* 5, so corners fall toward black rather than warm dark. In-game: 21.8% under L* 5, 7.3% under L* 2."
+        },
+        {
+          "criterion": "readability and comfort at seated VR distance",
+          "points": 8,
+          "max": 10,
+          "note": "Enemies read clearly against the floor in p5-int-study.jpg and the column marks the centre. The dark lower walls (L* 8.3) and the dense bookcase colour noise at the periphery cost a little."
+        }
+      ],
+      "topFixes": [
+        "Lift the lower-wall and corner values toward warm dark: hero 39.5% of pixels under L* 5 and 9.8% under L* 2, wainscot L* 8.3; target the hall's in-game 18% / 2%.",
+        "Scale up the writing desk or move it forward so the study furniture reads at seated distance next to the gear column.",
+        "Give the column brass painted value variation instead of the uniform foil read in the desk shot."
+      ],
+      "method": "Benchmark room, scored with the corridor's criteria and maxima, with 'signature features: study' in place of 'passage'. No previous independent score exists. Viewed in full p5-rooms-study-hero, hero.diffuse, desk, plug-e-in, plug-e-out, p5-int-study.jpg and p5-int-study-sealed.jpg, and the staging review sheet for attribution. Measured frame and box RGB, hue, saturation, CIE L* stats and crush shares (HUD masked on p5-int), floor L* p90/p10 (hero 11.42, in-game 5.15), and ran the plug diff, gilt edge band, edge-profile and Laplacian checks. Scripts in /tmp/fb17/rescore/scripts/. This score records no owner approval. No repo edits.",
+      "evidence": [
+        {
+          "path": "docs/art-bible.md",
+          "sha256": "11da71b45f24eeb258ef77d328ef1aa009297a9231608cb80bb429aa3ff2ad6a"
+        },
+        {
+          "path": "docs/verification/p5-int-study.jpg",
+          "sha256": "2a54130faf77c6c6c434c677b39b4337fe3a2d57de7c097331b06c9cfb4aeaaa"
+        },
+        {
+          "path": "docs/verification/p5-rooms-study-hero.jpg",
+          "sha256": "4a957664f7295ac42ed681fc118a9ff25fb29dc9cd46d2d8fe363edff9913936"
+        },
+        {
+          "path": "docs/verification/p5-rooms-study-hero.diffuse.jpg",
+          "sha256": "55429bc1cbdf3e1f3698faf60e1efce96af5427fcc7656a2c19e22a5427c4325"
+        },
+        {
+          "path": "docs/verification/p5-rooms-study-desk.jpg",
+          "sha256": "ebee38562667091b1c99b0bc610caaad83f55e9abae895990860135dd359da0e"
+        },
+        {
+          "path": "docs/verification/p5-rooms-study-plug-e-in.jpg",
+          "sha256": "ead883f6b61887d274de00e798120a4a613ab46f65d0087d19ac1ea555e85a6d"
+        },
+        {
+          "path": "docs/verification/p5-rooms-study-plug-e-out.jpg",
+          "sha256": "b09fdb779c4291d3eadc5efc509c621465a9d8bacc266af0c51f39838d4f1a20"
+        },
+        {
+          "path": "docs/verification/p5-int-study-sealed.jpg",
+          "sha256": "6ca9768ac760034bc17054eaa133790ae2faf1484e939216011027a7f04f5032"
+        },
+        {
+          "path": "assets-source/rooms/study/staging/review-sheet.jpg",
+          "sha256": "cefaee013f802882f5660ba8669226f55ae36362aa752b62f33464142db9f38b"
+        },
+        {
+          "path": "assets-source/rooms/study/staging/report.json",
+          "sha256": "2d244a1a42ccdf57026b39f69f39a12923a06e3888e6105592d82f452726338e"
+        },
+        {
+          "path": "assets-source/rooms/study/staging/engine-compare.json",
+          "sha256": "abb36a28e9c767cc9c03ecd221bcde323d957e85ecf440769ff4028e365ce94a"
+        },
+        {
+          "path": "assets-source/rooms/study/provenance.json",
+          "sha256": "4b477c8c168f64c81b2d48b301257a762d205485b0194075f8b68832e5648961"
+        }
+      ]
+    }
+  ],
+  "reviewEvidence": [
+    {
+      "path": "docs/verification/p5-rooms-study-quest-candles.jpg",
+      "sha256": "e77d2cdbe0b467eb7f5e7d10c1e3e30877cb18be9a5ab3496622b7d52d084b4b"
+    },
+    {
+      "path": "docs/verification/p5-rooms-study-quest-window.jpg",
+      "sha256": "4819a3aae1df0e1bd9b8993ce0d22b245b579c98ddc7b8b9d84d9281b737d561"
+    }
+  ],
+  "revision": {
+    "agent": "Codex with GPT-6.1 Terra",
+    "date": "2026-11-18",
+    "changes": [
+      "Extended the center mullions to the lancet peaks",
+      "Placed the desk candles and their bake lights above the letter rack"
+    ]
+  },
   "independentScore": {
     "score": 84,
+    "date": "2026-11-18",
     "scale": "0-100 visual fidelity to the art bible and study-kit language",
-    "scorer": "independent reviewer agent (separate from the authoring agent; did not build the asset)",
-    "date": "2026-11-17",
+    "scorer": "Independent visual reviewer, separate from room authorship",
     "acceptanceBar": 80,
     "clearsBar": true,
-    "build": "b1df5d3",
-    "previousScore": null,
+    "previousScore": 84,
     "rubric": [
       {
         "criterion": "form, layout and proportions",
         "points": 26,
         "max": 30,
-        "note": "Bookcase walls on three sides, a coffered walnut ceiling, a stained lancet on the axis and the central gear column give the box dense walls and a strong centre (hero, p5-int-study.jpg). Door frames are thin gilt and consistent. Plug check (scripts/plug.py, bbox from |in-out|>25): gilt pixels in 10 px bands on left, right and top of the former door box are 0.00%; column-mean L* across the edges stays within the sconce falloff on the left (L* 15 to 11 over 32 px, a smooth gradient, not a step) and 3 L* on the right; Laplacian variance on the edges (80-278 against 74-384 on the open wall) sits inside the range of the open wall beside it, so no seam, leak, z-fight or leftover architrave. Still a single-height box."
+        "note": "The center bar rises continuously through the lancet and meets its upper wood trim. The two candlestick bases sit flat on the top ledge with the writing surface visible below. Overall volume, doorway seams and proportions retain the previous assessment."
       },
       {
         "criterion": "signature features: study",
         "points": 21,
         "max": 25,
-        "note": "Bookcases, gear column, stained-glass patch on the floor and wall sconces carry the study read. The writing desk is small and set against the far wall (desk shot), so the 'study' furniture is under-scaled next to the column."
+        "note": "The book spines frame the stained glass and the matched desk candlesticks give the writing station identifiable fittings. Its scale against the central gear column remains a limitation in the historical wide view."
       },
       {
         "criterion": "surface detail and material read",
         "points": 17,
         "max": 20,
-        "note": "The only room with baked basecolor, normal and ORM from a 124,637-tri high poly, 65.5 px/m lightmap. Book spines, wainscot grain and brass read as painted materials. The column brass is uniform and slightly foil-like in the desk shot."
+        "note": "Dark lead separates the jewel panes. Brass stems, wax, shelf lip and bookcase grain remain distinguishable in the close-ups. The column finish is outside the new frames."
       },
       {
         "criterion": "colour, value and lighting mood",
         "points": 12,
         "max": 15,
-        "note": "On palette: hero frame hue 18.8, sat 0.713; in-game hue 19.5, sat 0.685, L* 16.3. Stained glass throws coloured floor patches as the bible asks. Deduction: the engine hero is dark, L* 11.7 with 39.5% under L* 5 and 9.8% under L* 2; the wainscot box 960-1080 x 420-500 is L* 8.3 with 48% under L* 5, so corners fall toward black rather than warm dark. In-game: 21.8% under L* 5, 7.3% under L* 2."
+        "note": "The desk shelf and upper wall receive warm light. The raised flames are individually visible, though the wallpaper competes with both. The new views do not measure lower-wall black levels or the coloured floor patch."
       },
       {
         "criterion": "readability and comfort at seated VR distance",
         "points": 8,
         "max": 10,
-        "note": "Enemies read clearly against the floor in p5-int-study.jpg and the column marks the centre. The dark lower walls (L* 8.3) and the dense bookcase colour noise at the periphery cost a little."
+        "note": "The candle bodies and shelf are legible at this close camera. The previous seated-distance grade is carried forward. Neither new view includes an encounter or a seated overview."
       }
     ],
     "topFixes": [
-      "Lift the lower-wall and corner values toward warm dark: hero 39.5% of pixels under L* 5 and 9.8% under L* 2, wainscot L* 8.3; target the hall's in-game 18% / 2%.",
-      "Scale up the writing desk or move it forward so the study furniture reads at seated distance next to the gear column.",
-      "Give the column brass painted value variation instead of the uniform foil read in the desk shot."
+      "Recheck the lower-wall values and desk scale from the seated gameplay camera with the new bake. The historical wide frame shows the central gear column dominating the study."
     ],
-    "method": "Benchmark room, scored with the corridor's criteria and maxima, with 'signature features: study' in place of 'passage'. No previous independent score exists. Viewed in full p5-rooms-study-hero, hero.diffuse, desk, plug-e-in, plug-e-out, p5-int-study.jpg and p5-int-study-sealed.jpg, and the staging review sheet for attribution. Measured frame and box RGB, hue, saturation, CIE L* stats and crush shares (HUD masked on p5-int), floor L* p90/p10 (hero 11.42, in-game 5.15), and ran the plug diff, gilt edge band, edge-profile and Laplacian checks. Scripts in /tmp/fb17/rescore/scripts/. This score records no owner approval. No repo edits.",
+    "method": "Independent change review against the previous five-criterion rubric. Examined the supplied 1280x720 capture at full resolution and the window apex in a 3x nearest-neighbour crop. Inspected a 2x crop across both study candleholders and their feet. The hero JPG listed in evidence is the previous build and was checked for historical context only. The wider room criteria retain the previous assessment wherever the fresh images cannot establish a change. The staged GLB hash matches its reimport, UV and bake reports, the compressed lightmap hash matches the bake report, and reimport passed all listed checks. UV report records zero overlapping pixels. No new room-wide capture, animated sequence, physical Quest measurement or owner sign-off is part of this review.",
     "evidence": [
       {
-        "path": "docs/art-bible.md",
-        "sha256": "11da71b45f24eeb258ef77d328ef1aa009297a9231608cb80bb429aa3ff2ad6a"
+        "path": "docs/verification/p5-rooms-study-quest-window.jpg",
+        "sha256": "4819a3aae1df0e1bd9b8993ce0d22b245b579c98ddc7b8b9d84d9281b737d561"
       },
       {
-        "path": "docs/verification/p5-int-study.jpg",
-        "sha256": "2a54130faf77c6c6c434c677b39b4337fe3a2d57de7c097331b06c9cfb4aeaaa"
+        "path": "docs/verification/p5-rooms-study-quest-candles.jpg",
+        "sha256": "e77d2cdbe0b467eb7f5e7d10c1e3e30877cb18be9a5ab3496622b7d52d084b4b"
+      },
+      {
+        "path": "assets-source/rooms/study/staging/reimport.json",
+        "sha256": "0b82e538781235397945c1abf7356adfdbe9d1511ab2140075f06b16f47b2387"
+      },
+      {
+        "path": "assets-source/rooms/study/staging/uv1-report.json",
+        "sha256": "b8c3fdf0879060347e3f0a006ec604f494d46adb28547057d91468150db8e591"
+      },
+      {
+        "path": "assets-source/rooms/study/staging/report.json",
+        "sha256": "747eaf2b44e1794fc75c91482e8f030a8021ab95fb6b58aea2934a56c88458fd"
+      },
+      {
+        "path": "assets-source/rooms/study/staging/study.glb",
+        "sha256": "902a5b27fb7cbd1c1239f56b2dc95f3fe022eaf3eb5ddd1dad8ebd4a3e94c020"
+      },
+      {
+        "path": "assets-source/rooms/study/staging/study.lightmap.ktx2",
+        "sha256": "3f19bae9005bd1d3fca255d3dc16b5d073dc9657f3c8b2224f1f6062d2cc2ce4"
       },
       {
         "path": "docs/verification/p5-rooms-study-hero.jpg",
         "sha256": "4a957664f7295ac42ed681fc118a9ff25fb29dc9cd46d2d8fe363edff9913936"
       },
       {
-        "path": "docs/verification/p5-rooms-study-hero.diffuse.jpg",
-        "sha256": "55429bc1cbdf3e1f3698faf60e1efce96af5427fcc7656a2c19e22a5427c4325"
-      },
-      {
-        "path": "docs/verification/p5-rooms-study-desk.jpg",
-        "sha256": "ebee38562667091b1c99b0bc610caaad83f55e9abae895990860135dd359da0e"
-      },
-      {
-        "path": "docs/verification/p5-rooms-study-plug-e-in.jpg",
-        "sha256": "ead883f6b61887d274de00e798120a4a613ab46f65d0087d19ac1ea555e85a6d"
-      },
-      {
-        "path": "docs/verification/p5-rooms-study-plug-e-out.jpg",
-        "sha256": "b09fdb779c4291d3eadc5efc509c621465a9d8bacc266af0c51f39838d4f1a20"
-      },
-      {
-        "path": "docs/verification/p5-int-study-sealed.jpg",
-        "sha256": "6ca9768ac760034bc17054eaa133790ae2faf1484e939216011027a7f04f5032"
-      },
-      {
-        "path": "assets-source/rooms/study/staging/review-sheet.jpg",
-        "sha256": "cefaee013f802882f5660ba8669226f55ae36362aa752b62f33464142db9f38b"
-      },
-      {
-        "path": "assets-source/rooms/study/staging/report.json",
-        "sha256": "2d244a1a42ccdf57026b39f69f39a12923a06e3888e6105592d82f452726338e"
-      },
-      {
-        "path": "assets-source/rooms/study/staging/engine-compare.json",
-        "sha256": "abb36a28e9c767cc9c03ecd221bcde323d957e85ecf440769ff4028e365ce94a"
-      },
-      {
-        "path": "assets-source/rooms/study/provenance.json",
-        "sha256": "4b477c8c168f64c81b2d48b301257a762d205485b0194075f8b68832e5648961"
+        "path": "docs/art-bible.md",
+        "sha256": "11da71b45f24eeb258ef77d328ef1aa009297a9231608cb80bb429aa3ff2ad6a"
       }
-    ]
+    ],
+    "build": "GLB 902a5b27fb7c",
+    "runtimeGlbSha256": "902a5b27fb7cbd1c1239f56b2dc95f3fe022eaf3eb5ddd1dad8ebd4a3e94c020"
   }
 }

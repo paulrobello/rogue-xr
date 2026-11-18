@@ -7,7 +7,12 @@ import {
   type Rect,
   type RoomTemplate,
 } from '../content/rooms.ts';
-import { type FloorPlan, type WorldRoom, worldRooms } from '../floor/generate.ts';
+import {
+  type FloorPlan,
+  guardedConnection,
+  type WorldRoom,
+  worldRooms,
+} from '../floor/generate.ts';
 import { nearSet, visibleSet } from '../floor/visibility.ts';
 import { PALETTE } from '../palette.ts';
 import { enemyHeading, enemyLocalRotationY } from './enemy-facing.ts';
@@ -50,6 +55,8 @@ export interface FloorWorld {
   nearbyWalkable(): readonly Rect[];
   /** Re-evaluates the current room from a world-space floor point; returns true when it changed. */
   update(x: number, z: number): boolean;
+  /** Opens the forward door held by a defeated encounter. */
+  releaseGuardedDoor(room: number): void;
   spawnPoint(): THREE.Vector3;
   /**
    * Swaps one of `room`'s automaton bodies for `next` (a loaded model), keeping its place, heading,
@@ -64,7 +71,7 @@ export interface FloorWorld {
    * them shows a door leaf in each wall-style door instead.
    */
   dressRoom(room: number, model: THREE.Object3D): void;
-  /** The treasure coffers on this floor, one per treasure-room loot pickup. */
+  /** The treasure and encounter-guarded coffers on this floor. */
   readonly coffers: readonly Coffer[];
   /** Re-dresses every coffer in `materials` (owned by the caller); they start in flat placeholders. */
   dressCoffers(materials: LootMaterials): void;
@@ -100,6 +107,15 @@ const INTO_ROOM_YAW: Record<Facing, number> = {
   W: Math.PI / 2,
   E: -Math.PI / 2,
 };
+
+function doorwayCollider(door: WorldRoom['doors'][number]): Box {
+  const [x, z] = door.world;
+  const depth = WALL_THICKNESS / 2;
+  const width = door.width / 2;
+  const acrossX = door.facing === 'N' || door.facing === 'S';
+  const [hx, hz] = acrossX ? [width, depth] : [depth, width];
+  return { min: [x - hx, 0, z - hz], max: [x + hx, WALL_HEIGHT, z + hz] };
+}
 
 const enemyGeometry = new THREE.CapsuleGeometry(0.35, 1.2, 4, 12);
 const guardianGeometry = new THREE.CapsuleGeometry(0.6, 1.8, 4, 12);
@@ -143,9 +159,9 @@ function buildRoom(
     group.add(body);
     enemies.push(body);
   }
-  // Only a treasure room shows its loot: the guardian vault's card is paid by the win itself.
+  // The guardian vault's reward is paid by the win itself.
   const coffers: Coffer[] = [];
-  if (placed.role === 'treasure') {
+  if (placed.role === 'treasure' || placed.role === 'combat') {
     for (const pickup of placed.loot) {
       const s = t.lootSockets.find((socket) => socket.id === pickup.socketId);
       if (!s) continue;
@@ -259,14 +275,33 @@ export function buildFloorWorld(
     fill.position.copy(cap.position);
     fill.quaternion.copy(cap.quaternion);
     roomGroup.add(fill);
-    const ew = door.facing === 'E' || door.facing === 'W';
-    const [hx, hz] = ew
-      ? [WALL_THICKNESS / 2, DOOR_WIDTH / 2]
-      : [DOOR_WIDTH / 2, WALL_THICKNESS / 2];
-    colliders[s.room]?.push({
-      min: [door.world[0] - hx, 0, door.world[1] - hz],
-      max: [door.world[0] + hx, WALL_HEIGHT, door.world[1] + hz],
-    });
+    colliders[s.room]?.push(doorwayCollider(door));
+  }
+
+  const passage = guardedConnection(plan);
+  const guard = passage?.[0];
+  const door = rooms[guard?.room ?? -1]?.doors.find((d) => d.id === guard?.door);
+  const guardMaterial = new THREE.MeshStandardMaterial({
+    color: PALETTE.walnut,
+    side: THREE.DoubleSide,
+    roughness: 0.72,
+  });
+  const lockMaterial = new THREE.MeshBasicMaterial({
+    color: PALETTE.candle,
+    side: THREE.DoubleSide,
+  });
+  const lockGeometry = new THREE.CircleGeometry(0.1, 4);
+  const lockedDoor = passage && door ? new THREE.Mesh(capGeometry, guardMaterial) : null;
+  const barrier = door ? doorwayCollider(door) : null;
+  if (passage && door && lockedDoor && barrier) {
+    lockedDoor.name = `encounter-lock-${passage[0].room}-${door.id}`;
+    lockedDoor.position.set(door.world[0], 0, door.world[1]);
+    lockedDoor.rotation.y = INTO_ROOM_YAW[door.facing];
+    const badge = new THREE.Mesh(lockGeometry, lockMaterial);
+    badge.position.set(0, 1.15, 0.012);
+    lockedDoor.add(badge);
+    roomGroups[passage[0].room]?.attach(lockedDoor);
+    for (const side of passage) colliders[side.room]?.push(barrier);
   }
 
   const world: FloorWorld = {
@@ -297,6 +332,15 @@ export function buildFloorWorld(
       world.current = next;
       applyVisibility();
       return true;
+    },
+    releaseGuardedDoor(room) {
+      if (!passage || passage[0].room !== room || !lockedDoor?.parent || !barrier) return;
+      lockedDoor.removeFromParent();
+      for (const side of passage) {
+        const boxes = colliders[side.room];
+        const index = boxes?.indexOf(barrier) ?? -1;
+        if (index >= 0) boxes?.splice(index, 1);
+      }
     },
     spawnPoint() {
       const entry = rooms[0]?.footprint;
@@ -364,9 +408,18 @@ export function buildFloorWorld(
     dispose() {
       disposeTableDecor(group);
       group.removeFromParent();
-      for (const m of [...Object.values(materials), enemyMaterial, capMaterial]) m.dispose();
+      for (const m of [
+        ...Object.values(materials),
+        enemyMaterial,
+        capMaterial,
+        guardMaterial,
+        lockMaterial,
+      ])
+        m.dispose();
       capGeometry.dispose();
       fillGeometry.dispose();
+      wallFillGeometry.dispose();
+      lockGeometry.dispose();
       kit.dispose();
       hearthKit.dispose();
     },

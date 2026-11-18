@@ -158,7 +158,7 @@ describe('sealed door styles', () => {
     for (const [seed, hash] of Object.entries(before)) {
       const p = generateFloor(seed);
       const key = JSON.stringify({
-        rooms: p.rooms,
+        rooms: p.rooms.map((room) => (room.role === 'combat' ? { ...room, loot: [] } : room)),
         connections: p.connections,
         sealed: p.sealed.map((s) => [s.room, s.door]),
         g: p.guardianRoom,

@@ -2,10 +2,11 @@ import * as THREE from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getCard } from '../src/content/cards.ts';
 import { GREYBOX_TEMPLATES, type RoomTemplate } from '../src/content/rooms.ts';
-import { generateFloor, worldRooms } from '../src/floor/generate.ts';
+import { generateFloor, guardedConnection, worldRooms } from '../src/floor/generate.ts';
 import { mountFloorView } from '../src/world/floor-view.ts';
 import { buildFloorWorld } from '../src/world/floor-world.ts';
 import { lootLines, surfaceHeightAt } from '../src/world/loot.ts';
+import { moveWithCollision, type Vec2 } from '../src/xr/locomotion.ts';
 
 /** The desk collider the baked study manifest adds (`public/assets/rooms/study`). */
 const DESK = { min: [1.721, 0, 1.721], max: [3.079, 1.07, 3.079] } as const;
@@ -17,18 +18,14 @@ const STUDY_WITH_DESK: readonly RoomTemplate[] = GREYBOX_TEMPLATES.map((t) =>
 
 const SEEDS = ['SPIRE001', 'SPIRE002', 'SPIRE003', 'SPIRE005', 'SPIRE034', 'SPIRE004', 'SPIRE010'];
 
-function treasureRooms(seed: string) {
-  return generateFloor(seed).rooms.filter((r) => r.role === 'treasure' && r.loot.length > 0);
-}
-
 describe('coffers in the floor world', () => {
-  it('stands one in each treasure room and none anywhere else, guardian vault included', () => {
+  it('builds the planned treasure and combat coffers and pays the vault reward separately', () => {
     for (const seed of SEEDS) {
       const plan = generateFloor(seed);
       const world = buildFloorWorld(plan);
-      const expected = treasureRooms(seed).flatMap((r) =>
-        r.loot.map((l) => `coffer-${r.index}-${l.socketId}`),
-      );
+      const expected = plan.rooms
+        .filter((r) => r.role === 'treasure' || r.role === 'combat')
+        .flatMap((r) => r.loot.map((l) => `coffer-${r.index}-${l.socketId}`));
       expect(world.coffers.map((c) => c.object.name).sort()).toEqual(expected.sort());
       expect(world.coffers.every((c) => c.room !== plan.guardianRoom)).toBe(true);
       expect(plan.rooms[plan.guardianRoom]?.loot.length).toBeGreaterThan(0);
@@ -151,7 +148,9 @@ describe('floor loot view', () => {
 
   it('opens a coffer: the lid swings, the picked coffer stops being a target, a panel shows the find', () => {
     const { view } = mount('SPIRE002');
-    const coffer = view.loot.coffers[0];
+    const coffer = view.loot.coffers.find(
+      (c) => view.world.plan.rooms[c.room]?.role === 'treasure',
+    );
     if (!coffer) throw new Error('SPIRE002 has a coffer');
     enter(view, coffer.room);
     const target = coffer.object.getWorldPosition(new THREE.Vector3());
@@ -182,6 +181,59 @@ describe('floor loot view', () => {
     expect(view.loot.toast).toBeNull();
     expect(view.world.group.getObjectByName('loot-toast-root')).toBeUndefined();
     expect(toastBefore?.text).toBe('+19 cogs');
+    view.dispose();
+  });
+
+  it('shows the lock on a combat coffer until its room is cleared', () => {
+    const { view } = mount('SPIRE002');
+    const coffer = view.loot.coffers.find((c) => view.world.plan.rooms[c.room]?.role === 'combat');
+    if (!coffer) throw new Error('SPIRE002 has a guarded coffer');
+    const { room, socketId } = coffer;
+    const payout = { kind: 'cogs', cogs: 7 } as const;
+    expect(view.loot.showLock(room, socketId)).toBe(true);
+    expect(view.loot.toast?.text).toBe('Locked');
+    expect(view.loot.open(room, socketId, payout)).toBe(false);
+    expect(coffer.opened).toBe(false);
+    view.markCleared(room);
+    expect(view.loot.showLock(room, socketId)).toBe(false);
+    expect(view.loot.open(room, socketId, payout)).toBe(true);
+    expect(coffer.opened).toBe(true);
+    view.dispose();
+  });
+
+  it('blocks a selected exit on both sides and removes its collider when restoring a win', () => {
+    const seed = SEEDS.find((seed) => guardedConnection(generateFloor(seed)) !== null);
+    if (!seed) throw new Error('no guarded doors in the fixture set');
+    const { view } = mount(seed);
+    const passage = guardedConnection(view.world.plan);
+    if (!passage) throw new Error('missing guarded connection');
+    const [from, to] = passage;
+    const door = view.world.rooms[from.room]?.doors.find((door) => door.id === from.door);
+    if (!door) throw new Error('missing guarded door');
+    const walkThrough = (room: number, sign: number): number => {
+      enter(view, room);
+      const [x, z] = door.world;
+      const sx = door.facing === 'W' ? sign : door.facing === 'E' ? -sign : 0;
+      const sz = door.facing === 'N' ? sign : door.facing === 'S' ? -sign : 0;
+      const start: Vec2 = [x + sx * 0.6, z + sz * 0.6];
+      const end = moveWithCollision(start, [-sx * 1.2, -sz * 1.2], view.world.nearbyColliders());
+      return (end[0] - x) * sx + (end[1] - z) * sz;
+    };
+    expect(door.world).toEqual(
+      view.world.rooms[to.room]?.doors.find((door) => door.id === to.door)?.world,
+    );
+    const visual = view.world.group.getObjectByName(`encounter-lock-${from.room}-${from.door}`);
+    expect(visual?.parent).toBe(view.world.roomGroups[from.room]);
+    expect(walkThrough(from.room, 1)).toBeGreaterThan(0.25);
+    expect(walkThrough(to.room, -1)).toBeGreaterThan(0.25);
+    view.markCleared(to.room);
+    expect(walkThrough(from.room, 1)).toBeGreaterThan(0.25);
+    view.markCleared(from.room);
+    expect(
+      view.world.group.getObjectByName(`encounter-lock-${from.room}-${from.door}`),
+    ).toBeUndefined();
+    expect(walkThrough(from.room, 1)).toBeCloseTo(-0.6);
+    expect(walkThrough(to.room, -1)).toBeCloseTo(-0.6);
     view.dispose();
   });
 

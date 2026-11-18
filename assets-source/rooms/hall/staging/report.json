@@ -2,147 +2,147 @@
   "piece": "hall",
   "blender": "5.3.0",
   "gltf_exporter": "Blender 5.3.0 bundled io_scene_gltf2 5.3.43",
-  "host_load_start": 1.2,
+  "host_load_start": 5.04,
   "lightmap_size": 2048,
   "samples": 256,
   "generator": "scripts/assets/build-room-kit.py",
   "helper": "scripts/assets/room_kit.py (reuses build-room-study.py functions)",
   "lengthwise_grain_high": 298,
   "high": {
-    "triangles": 41683,
+    "triangles": 41742,
     "slots": 8
   },
   "lengthwise_grain_low": 298,
   "low": {
-    "triangles": 6747,
-    "vertices": 4980,
+    "triangles": 6753,
+    "vertices": 4982,
     "materials": 8,
     "lightmap_density": {
-      "mean_px_per_m": 52.54,
-      "min_px_per_m": 44.41,
-      "max_px_per_m": 52.81
+      "mean_px_per_m": 51.85,
+      "min_px_per_m": 43.83,
+      "max_px_per_m": 52.12
     },
     "lightmap_density_by_slot": {
       "brass-aged": {
         "area_m2": 9.95,
-        "median_px_per_m": 52.8,
-        "min_px_per_m": 44.4
+        "median_px_per_m": 52.1,
+        "min_px_per_m": 43.8
       },
       "brass-polished": {
-        "area_m2": 2.45,
-        "median_px_per_m": 52.8,
-        "min_px_per_m": 44.4
+        "area_m2": 2.47,
+        "median_px_per_m": 52.1,
+        "min_px_per_m": 43.8
       },
       "flame": {
         "area_m2": 0.32,
-        "median_px_per_m": 52.8,
-        "min_px_per_m": 52.8
+        "median_px_per_m": 52.1,
+        "min_px_per_m": 52.1
       },
       "stained-glass": {
         "area_m2": 2.26,
-        "median_px_per_m": 52.8,
-        "min_px_per_m": 52.8
+        "median_px_per_m": 52.1,
+        "min_px_per_m": 52.1
       },
       "stone-floor": {
         "area_m2": 104.45,
-        "median_px_per_m": 52.8,
-        "min_px_per_m": 52.8
+        "median_px_per_m": 52.1,
+        "min_px_per_m": 52.1
       },
       "wallpaper": {
         "area_m2": 104.65,
-        "median_px_per_m": 52.8,
-        "min_px_per_m": 52.8
+        "median_px_per_m": 52.1,
+        "min_px_per_m": 52.1
       },
       "walnut": {
         "area_m2": 240.83,
-        "median_px_per_m": 52.8,
-        "min_px_per_m": 46.2
+        "median_px_per_m": 52.1,
+        "min_px_per_m": 45.6
       },
       "wax": {
         "area_m2": 0.37,
-        "median_px_per_m": 50.8,
-        "min_px_per_m": 50.7
+        "median_px_per_m": 50.1,
+        "min_px_per_m": 50.1
       }
     },
     "panels": {
       "door-frame-e": {
         "triangles": 34,
         "lightmap_density": {
-          "mean_px_per_m": 52.8,
-          "min_px_per_m": 52.8,
-          "max_px_per_m": 52.8
+          "mean_px_per_m": 52.11,
+          "min_px_per_m": 52.11,
+          "max_px_per_m": 52.11
         }
       },
       "door-frame-n": {
         "triangles": 34,
         "lightmap_density": {
-          "mean_px_per_m": 52.8,
-          "min_px_per_m": 52.8,
-          "max_px_per_m": 52.8
+          "mean_px_per_m": 52.11,
+          "min_px_per_m": 52.11,
+          "max_px_per_m": 52.11
         }
       },
       "door-frame-s": {
         "triangles": 34,
         "lightmap_density": {
-          "mean_px_per_m": 52.8,
-          "min_px_per_m": 52.8,
-          "max_px_per_m": 52.8
+          "mean_px_per_m": 52.11,
+          "min_px_per_m": 52.11,
+          "max_px_per_m": 52.11
         }
       },
       "door-frame-w": {
         "triangles": 34,
         "lightmap_density": {
-          "mean_px_per_m": 52.8,
-          "min_px_per_m": 52.8,
-          "max_px_per_m": 52.8
+          "mean_px_per_m": 52.11,
+          "min_px_per_m": 52.11,
+          "max_px_per_m": 52.11
         }
       },
       "door-plug-e": {
         "triangles": 20,
         "lightmap_density": {
-          "mean_px_per_m": 52.8,
-          "min_px_per_m": 52.8,
-          "max_px_per_m": 52.8
+          "mean_px_per_m": 52.11,
+          "min_px_per_m": 52.11,
+          "max_px_per_m": 52.11
         }
       },
       "door-plug-n": {
         "triangles": 20,
         "lightmap_density": {
-          "mean_px_per_m": 52.8,
-          "min_px_per_m": 52.8,
-          "max_px_per_m": 52.8
+          "mean_px_per_m": 52.11,
+          "min_px_per_m": 52.11,
+          "max_px_per_m": 52.11
         }
       },
       "door-plug-s": {
         "triangles": 20,
         "lightmap_density": {
-          "mean_px_per_m": 52.8,
-          "min_px_per_m": 52.8,
-          "max_px_per_m": 52.8
+          "mean_px_per_m": 52.11,
+          "min_px_per_m": 52.11,
+          "max_px_per_m": 52.11
         }
       },
       "door-plug-w": {
         "triangles": 20,
         "lightmap_density": {
-          "mean_px_per_m": 52.8,
-          "min_px_per_m": 52.8,
-          "max_px_per_m": 52.8
+          "mean_px_per_m": 52.11,
+          "min_px_per_m": 52.11,
+          "max_px_per_m": 52.11
         }
       }
     }
   },
   "canonicalized_primitives": 20,
-  "glb_bytes": 484480,
+  "glb_bytes": 484916,
   "device": "GPU:METAL (Apple M4 (GPU - 10 cores))",
   "lightmap_bake": {
-    "seconds": 45.54,
+    "seconds": 44.84,
     "pass_seconds": [
-      38.96,
-      6.58
+      38.31,
+      6.53
     ],
     "host_load": [
-      1.18,
-      1.18
+      5.04,
+      3.07
     ],
     "timing_valid": true,
     "diffuse_bounces": 4,
@@ -152,10 +152,10 @@
   },
   "denoise": "compositor OIDN, HDR, accurate prefilter, high quality",
   "lightmap": {
-    "coverage": 0.6992,
-    "scale": 5.411592,
-    "clipped_fraction": 0.00994,
-    "mean_irradiance": 0.442837,
+    "coverage": 0.6867,
+    "scale": 5.490201,
+    "clipped_fraction": 0.00993,
+    "mean_irradiance": 0.451181,
     "p05_irradiance": 0.0,
     "percentile": 99.0,
     "encoded_p05_255": 0,
@@ -167,23 +167,14 @@
       "hall.lightmap.ktx2": "create --format R8G8B8_SRGB --assign-tf srgb --encode uastc --uastc-quality 2 --zstd 18 --generate-mipmap"
     }
   },
-  "renders": [
-    "bench.high.png",
-    "bench.lightmapped.png",
-    "bench.low.png",
-    "hero.high.png",
-    "hero.lightmapped.png",
-    "hero.low.png",
-    "hero.reference-diffuse.png"
-  ],
   "blend": {
     "hall_high.blend": {
-      "sha256": "b5200d2dfbee3605e3e1b1c8089e3b9a6776453bd3e3a5af6e4e6887ceff82f4",
-      "bytes": 1026047
+      "sha256": "498ccb2499ae56c34adf1386ab08d3a81c6c4de6b478f0c6fb66a04191872eb1",
+      "bytes": 1027684
     },
     "hall_low.blend": {
-      "sha256": "8c20583f21ab043a41234123c9ef9c69732a1529cc6806416092b35ad6fc89ab",
-      "bytes": 349450
+      "sha256": "54c8b3735ef726339287c00477e41546a374df0e7076f75b6f9a1f12a501f53e",
+      "bytes": 349720
     }
   },
   "colliders_added": [
@@ -536,13 +527,12 @@
       "vfov": 70.0
     }
   },
-  "host_load_end": 1.66,
+  "host_load_end": 2.99,
   "files": {
-    "engine-compare.json": "591c6ca434843d141edc4728b6816865732db7e384007fcfb5f768cde4e0e8ba",
-    "hall.glb": "d2af53500c023a863378a18586ad8e4028d572853a4bf0a4817e862bfbbb26d9",
-    "hall.lightmap.ktx2": "4f73313b640e07d998779124825fb76257eb8b96ca8816b67ee46009ffa8ba9b",
-    "hall.lightmap.png": "3315e9ed289ad3dbb77d08cb4d97989d2170db0266368a6e7d7576f9fe2ac973",
-    "hall.manifest.json": "cce9d7b507e7b4dc4ee306b44da424a8071354c30ecaad2a0623a2f91c990980",
-    "uv1-report.json": "31a06f2e5b581cc60c04e5a9e17a339ff4895e4cda7a20c88cc77084c5507f53"
+    "hall.glb": "ead7eb3d08df029c77e983724bdc39817e8d359a5afd12992d31ce1ee3d3378f",
+    "hall.lightmap.ktx2": "0f16be4bc41b2e7cc4eaadac885f23fac2610ac1cd432b57b192d2aa33ca77a3",
+    "hall.lightmap.png": "4d5b24836f2fd37945a7876357564796ca19b02c71726131aa60becc655d7e01",
+    "hall.manifest.json": "92d3f0f1de3be360c985d76700e75d529bd9eb0f0cdfd4229134291a0b6fe33e",
+    "uv1-report.json": "0c7f3fac96b0fb37d7a24ea57a2efd17fd00848ae75f894ece8a53add2bc1c0e"
   }
 }

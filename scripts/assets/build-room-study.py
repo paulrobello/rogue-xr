@@ -60,6 +60,7 @@ BOOKCASES = [  # (wall, start, end) along the wall's own axis
     ("W", -1.4, 1.4),
 ]
 DESK = {"cx": 2.4, "cy": -2.4, "w": 1.3, "d": 0.62, "top": 0.78, "angle": math.radians(-135)}
+CANDLE_BASE_OFFSET = 0.29
 CANDLES = [(-0.42, 0.18), (0.36, 0.2)]  # desk-local (x, y) of the two desk candles
 SCONCES = [("E", -2.6), ("S", 2.8), ("W", 2.5)]  # clear of both doorways
 GEARS = [  # z, tip radius, teeth, thickness
@@ -329,6 +330,18 @@ def build_shell(b: Builder, high: bool) -> None:
         b.box(-H, H, y - 0.13, y + 0.13, T - 0.3, T, "walnut", drop="txX")
 
 
+def lancet_mullion(b: Builder, left: list, sill: float, apex: float, slot: str) -> None:
+    half_width = 0.02
+    x, z = left[-2]
+    shoulder = apex + (z - apex) * half_width / abs(x)
+    b.box(-half_width, half_width, 0.012, 0.05, sill, shoulder, slot, drop="bt")
+    for y, normal in ((0.012, (0, -1, 0)), (0.05, (0, 1, 0))):
+        b.face([(-half_width, y, shoulder), (half_width, y, shoulder), (0, y, apex)], normal, slot)
+    for sign in (-1, 1):
+        b.face([(sign * half_width, 0.012, shoulder), (sign * half_width, 0.05, shoulder),
+                (0, 0.05, apex), (0, 0.012, apex)], (sign, 0, 1), slot)
+
+
 def build_window(b: Builder, high: bool) -> None:
     """Glass lancet in the north wall opening, spandrels filling the rectangle above the arch, a
     walnut surround, a deep sill and a brass mullion."""
@@ -345,7 +358,7 @@ def build_window(b: Builder, high: bool) -> None:
     b.box(x1, x1 + f, 0, d, sill - 0.1, apex + f, "walnut", drop="y")
     b.box(x0, x1, 0, d, apex, apex + f, "walnut", drop="yxX")
     b.box(x0 - f - 0.05, x1 + f + 0.05, 0, 0.26, sill - 0.1, sill, "walnut", drop="y")
-    b.box(-0.02, 0.02, 0.012, 0.05, sill, apex - 0.15, "brass-polished", drop="bt")
+    lancet_mullion(b, left, sill, apex, "brass-polished")
     b.xf = Matrix.Identity(4)
 
 
@@ -420,12 +433,13 @@ def build_desk(b: Builder, high: bool) -> list:
     b.box(-w, w, d - 0.16, d, top, top + 0.26, "walnut", drop="b")  # letter rack
     b.box(-w - 0.01, w + 0.01, d - 0.17, d + 0.01, top + 0.26, top + 0.29, "brass-aged", drop="b")
     seg = 24 if high else 10
+    candle_base = top + CANDLE_BASE_OFFSET
     for cx, cy in CANDLES:
-        b.cylinder(cx, cy, 0.05, top, top + 0.015, seg, "brass-polished", caps="t")
-        b.cylinder(cx, cy, 0.012, top + 0.015, top + 0.12, seg // 2, "brass-polished", caps="")
-        b.cylinder(cx, cy, 0.035, top + 0.12, top + 0.135, seg, "brass-polished", caps="tb")
-        b.cylinder(cx, cy, 0.018, top + 0.135, top + 0.26, seg // 2, "wax", caps="t")
-        flame(b, cx, cy, top + 0.27)
+        b.cylinder(cx, cy, 0.05, candle_base, candle_base + 0.015, seg, "brass-polished", caps="t")
+        b.cylinder(cx, cy, 0.012, candle_base + 0.015, candle_base + 0.12, seg // 2, "brass-polished", caps="")
+        b.cylinder(cx, cy, 0.035, candle_base + 0.12, candle_base + 0.135, seg, "brass-polished", caps="tb")
+        b.cylinder(cx, cy, 0.018, candle_base + 0.135, candle_base + 0.26, seg // 2, "wax", caps="t")
+        flame(b, cx, cy, candle_base + 0.27)
     b.xf = Matrix.Identity(4)
     corners = [Matrix.Translation((D["cx"], D["cy"], 0)) @ Matrix.Rotation(D["angle"], 4, "Z") @ Vector((sx * w, sy * d, 0)) for sx in (-1, 1) for sy in (-1, 1)]
     lo = Vector((min(c.x for c in corners), min(c.y for c in corners), 0))
@@ -706,7 +720,7 @@ def build_lights(sconce_flames: list) -> None:
     D = DESK
     xf = Matrix.Translation((D["cx"], D["cy"], 0)) @ Matrix.Rotation(D["angle"], 4, "Z")
     for i, (cx, cy) in enumerate(CANDLES):
-        point(f"candle_{i}", xf @ Vector((cx, cy, D["top"] + 0.3)), 30.0)
+        point(f"candle_{i}", xf @ Vector((cx, cy, D["top"] + CANDLE_BASE_OFFSET + 0.3)), 30.0)
     for i, loc in enumerate(sconce_flames):
         point(f"sconce_{i}", loc, 45.0)
     # Late sun through the lancet: from the north, high, warm. Glass tints what passes.

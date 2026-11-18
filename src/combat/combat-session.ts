@@ -132,8 +132,11 @@ export const FLEE_CONFIRM_SECONDS = 4;
 export const FLEE_CONFIRM = 'Press FLEE again to flee the fight';
 /** The FLEE button's label while armed. */
 export const FLEE_CONFIRM_LABEL = 'CONFIRM?';
-/** Flee sits this far inward of End Turn along the table edge, centre to centre, metres. */
-const FLEE_GAP = 0.26;
+const CONTROL_AT = { right: 0.92, forward: -0.16, lift: 0.31 } as const;
+const CONTROL_WIDTH = 0.28;
+const CONTROL_HEIGHT = 0.1;
+const CONTROL_DEPTH = 0.021;
+const CONTROL_GAP = 0.13;
 /** Width of the table hint label, metres; it hangs this high over the dice tray. */
 const HINT_WIDTH = 0.46;
 /** The status tooltip: its width, metres, and how far it floats above and in front of the badge. */
@@ -265,6 +268,27 @@ function worldCorners(mesh: THREE.Mesh): THREE.Vector3[] {
       for (const z of [box.min.z, box.max.z])
         out.push(new THREE.Vector3(x, y, z).applyMatrix4(mesh.matrixWorld));
   return out;
+}
+
+function controlPlate(width: number, height: number, depth: number): THREE.ExtrudeGeometry {
+  const x = width / 2;
+  const y = height / 2;
+  const cut = 0.012;
+  const shape = new THREE.Shape([
+    new THREE.Vector2(-x + cut, -y),
+    new THREE.Vector2(x - cut, -y),
+    new THREE.Vector2(x, -y + cut),
+    new THREE.Vector2(x, y - cut),
+    new THREE.Vector2(x - cut, y),
+    new THREE.Vector2(-x + cut, y),
+    new THREE.Vector2(-x, y - cut),
+    new THREE.Vector2(-x, -y + cut),
+  ]);
+  return new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false }).translate(
+    0,
+    0,
+    -depth / 2,
+  );
 }
 
 /** How far to move a span `[lo, hi]` so it sits inside `[-margin, margin]` (centred when too wide). */
@@ -440,6 +464,8 @@ export class CombatSession {
   private readonly bodies: THREE.Object3D[];
   private readonly hidden: THREE.Object3D[] = [];
   private readonly endButton: THREE.Mesh;
+  private readonly controlFrames: THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>[] =
+    [];
   /** The Flee control beside End Turn, only in a fight `canFlee` allows. */
   private readonly fleeButton: THREE.Mesh | null;
   private readonly fleeLabel: CanvasLabel | null;
@@ -645,43 +671,51 @@ export class CombatSession {
     this.trayHit.position.y = 0.04;
     dice.root.add(this.trayHit);
 
-    const button = (name: string, color: string, at: THREE.Vector3): THREE.Mesh => {
+    const button = (name: string, edge: string): THREE.Mesh => {
       const mesh = new THREE.Mesh(
-        new THREE.BoxGeometry(0.2, 0.03, 0.09),
-        new THREE.MeshStandardMaterial({ color, roughness: 0.5, metalness: 0.4 }),
+        controlPlate(CONTROL_WIDTH, CONTROL_HEIGHT, CONTROL_DEPTH),
+        new THREE.MeshStandardMaterial({
+          color: PALETTE.warmBlack,
+          roughness: 0.43,
+          metalness: 0.14,
+        }),
       );
       mesh.name = name;
-      mesh.position.copy(at);
-      mesh.rotation.y = yawRad;
-      this.group.add(mesh);
+      const frame = new THREE.Mesh(
+        controlPlate(CONTROL_WIDTH + 0.018, CONTROL_HEIGHT + 0.018, 0.016),
+        new THREE.MeshStandardMaterial({
+          color: edge,
+          roughness: 0.34,
+          metalness: 0.62,
+          emissive: edge,
+          emissiveIntensity: 0.18,
+        }),
+      );
+      frame.name = `${name}-frame`;
+      frame.position.z = -0.008;
+      mesh.add(frame);
+      this.controlFrames.push(frame);
       return mesh;
     };
-    this.endButton = button('end-turn', PALETTE.walnut, onTable(0.55, -0.28, 0.02));
+    this.endButton = button('end-turn', PALETTE.brass);
+    this.endButton.position.copy(onTable(CONTROL_AT.right, CONTROL_AT.forward, CONTROL_AT.lift));
+    this.endButton.rotation.y = yawRad;
+    this.endButton.rotateX(-0.2);
+    this.group.add(this.endButton);
     const buttonLabel = (mesh: THREE.Mesh, text: string): CanvasLabel | null => {
-      const label = safeLabel(256, 96, 0.2);
+      const label = safeLabel(512, 192, CONTROL_WIDTH - 0.025);
       if (!label) return null;
-      label.mesh.position.set(0, 0.017, 0);
-      label.mesh.rotation.x = -Math.PI / 2;
+      label.mesh.position.z = CONTROL_DEPTH / 2 + 0.001;
       mesh.add(label.mesh);
       drawButtonText(label, text);
       return label;
     };
     this.endLabel = buttonLabel(this.endButton, 'END TURN');
     this.endText = 'END TURN';
-    // A child of End Turn, inward along the table edge, so the desktop HUD fit moves the pair as one.
-    this.fleeButton = canFlee(deps.tier)
-      ? new THREE.Mesh(
-          new THREE.BoxGeometry(0.2, 0.03, 0.09),
-          new THREE.MeshStandardMaterial({
-            color: PALETTE.walnut,
-            roughness: 0.5,
-            metalness: 0.4,
-          }),
-        )
-      : null;
+    // The desktop HUD moves both controls as one group.
+    this.fleeButton = canFlee(deps.tier) ? button('flee', PALETTE.ruby) : null;
     if (this.fleeButton) {
-      this.fleeButton.name = 'flee';
-      this.fleeButton.position.set(-FLEE_GAP, 0, 0);
+      this.fleeButton.position.y = -CONTROL_GAP;
       this.endButton.add(this.fleeButton);
     }
     this.fleeLabel = this.fleeButton ? buttonLabel(this.fleeButton, 'FLEE') : null;
@@ -1490,7 +1524,7 @@ export class CombatSession {
     this.hintLabel?.dispose();
     this.tip?.dispose();
     this.cardTipLabel?.dispose();
-    for (const mesh of [this.endButton, this.fleeButton, this.trayHit]) {
+    for (const mesh of [this.endButton, this.fleeButton, this.trayHit, ...this.controlFrames]) {
       if (!mesh) continue;
       mesh.geometry.dispose();
       (mesh.material as THREE.Material).dispose();
@@ -1892,7 +1926,7 @@ export class CombatSession {
     if (!this.fleeButton) return;
     const armed = this.fleeArmed > 0;
     (this.fleeButton.material as THREE.MeshStandardMaterial).color.set(
-      this.shown !== null ? PALETTE.warmBlack : armed ? PALETTE.ruby : PALETTE.walnut,
+      armed && this.shown === null ? PALETTE.ruby : PALETTE.warmBlack,
     );
     const text = armed ? FLEE_CONFIRM_LABEL : 'FLEE';
     if (this.fleeLabel && text !== this.fleeText) {
@@ -2629,7 +2663,7 @@ export class CombatSession {
     // End Turn reads as disabled while the enemies act.
     const waiting = this.shown !== null;
     (this.endButton.material as THREE.MeshStandardMaterial).color.set(
-      waiting ? PALETTE.warmBlack : PALETTE.walnut,
+      waiting ? PALETTE.void : PALETTE.warmBlack,
     );
     this.paintFlee();
     const endText = waiting ? 'ENEMY TURN' : 'END TURN';
@@ -2710,7 +2744,7 @@ export function targetedHint(name: string, how: 'held' | 'held-xr'): string {
 function drawButtonText(label: CanvasLabel, text: string, color: string = PALETTE.parchment): void {
   label.draw((ctx, w, h) => {
     ctx.fillStyle = color;
-    ctx.font = `bold ${text.length > 8 ? 36 : 44}px system-ui, sans-serif`;
+    ctx.font = `bold ${text.length > 8 ? 68 : 82}px Georgia, serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(text, w / 2, h / 2);
