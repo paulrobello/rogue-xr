@@ -7,6 +7,10 @@
 // same `turn` intents a player sends) and screenshots the 1600 x 1000 page with its debug HUD.
 //
 //   node scripts/shots/p5-int.mjs [--base http://localhost:4260] [--out docs/verification] [--only hall,study]
+//   node scripts/shots/p5-int.mjs --greybox --only hall-sealed,corridor-sealed,study-sealed
+//
+// --greybox blocks every room asset request so each room falls back to its greybox, and writes
+// p5-int-greybox-<name>.jpg instead.
 //
 // Needs a running dev server (`make dev-start`, port 4260) and a GPU: Chromium runs headless with
 // ANGLE on Metal (PW_GPU=swiftshader opts into software GL). The run fails (exit 1) when the floor
@@ -24,6 +28,7 @@ const { values: opts } = parseArgs({
     out: { type: 'string', default: 'docs/verification' },
     only: { type: 'string', default: '' },
     headed: { type: 'boolean', default: false },
+    greybox: { type: 'boolean', default: false },
   },
 });
 
@@ -80,10 +85,16 @@ try {
     if (only.size && !only.has(shot.name)) continue;
     const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 1 });
     const page = await context.newPage();
+    if (opts.greybox) await page.route('**/assets/rooms/**', (route) => route.abort());
     page.on('pageerror', (error) => fail(`${shot.name}: page error ${error}`));
     page.on('console', (msg) => {
       // The music tracks are not produced yet (their 404s are expected, as in the xr-emu walk).
-      if (msg.type() === 'error' && !/\/audio\/music\/|music not found|404/.test(msg.text()))
+      const blocked = opts.greybox && msg.location()?.url?.includes('/assets/rooms/');
+      if (
+        msg.type() === 'error' &&
+        !blocked &&
+        !/\/audio\/music\/|music not found|404/.test(msg.text())
+      )
         fail(`${shot.name}: console ${msg.text()}`);
     });
     await page.goto(`${opts.base}/?seed=${SEED}&debug`);
@@ -145,7 +156,7 @@ try {
         hud: document.getElementById('debug-hud')?.textContent?.split('\n')[0] ?? '',
       };
     });
-    const path = join(opts.out, `p5-int-${shot.name}.jpg`);
+    const path = join(opts.out, `p5-int-${opts.greybox ? 'greybox-' : ''}${shot.name}.jpg`);
     const jpeg = await page.screenshot({ path, type: 'jpeg', quality: 85 });
     // Mean colour of the saved frame itself (the play canvas does not preserve its buffer).
     const mean = await page.evaluate(async (b64) => {
