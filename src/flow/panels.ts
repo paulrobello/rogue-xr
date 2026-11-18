@@ -25,7 +25,6 @@ import {
   type Difficulty,
   runDifficulty,
 } from '../rules/difficulty.ts';
-import { SKIP_REWARD } from '../rules/run.ts';
 import { maxTier, nextCost, UPGRADE_IDS, UPGRADES, type UpgradeId } from '../rules/workshop.ts';
 import { CARD_FLIGHT_SECONDS, flightGoal, flightPose, flightScale } from './card-flight.ts';
 import type { FlowPhase, RunFlow } from './flow.ts';
@@ -281,7 +280,7 @@ const clamp01 = (v: number): number => Math.max(0, Math.min(1, Math.round(v * 10
 
 /**
  * Splits a control id (`<board>-<cell>`) into its board and cell. Board names prefix each other
- * ('reward' and 'reward-skip'), so the longest matching board name wins.
+ * ('reward-info' and 'reward'), so the longest matching board name wins.
  */
 export function splitControlId(
   boards: readonly string[],
@@ -655,6 +654,7 @@ export class FlowUi {
       workshop: () => this.buildWorkshop(),
       settings: () => this.buildSettings(),
       reward: () => this.buildReward(),
+      'guardian-cleared': () => this.buildGuardianCleared(),
       death: () => this.buildSummary(),
       victory: () => this.buildSummary(),
     };
@@ -1063,7 +1063,18 @@ export class FlowUi {
             ]
           : []),
         ...this.choiceRows(),
-        { id: 'abandon', label: 'Abandon run', onSelect: () => this.setMenu('confirm') },
+        ...(this.deps.flow.phase === 'explore' && this.deps.flow.guardianDefeated
+          ? [
+              {
+                id: 'finish-run',
+                label: 'Finish run',
+                onSelect: () => this.deps.flow.finishVictory(),
+              },
+            ]
+          : []),
+        ...(this.deps.flow.phase === 'explore' && this.deps.flow.guardianDefeated
+          ? []
+          : [{ id: 'abandon', label: 'Abandon run', onSelect: () => this.setMenu('confirm') }]),
       ],
       { x: 0, y: 0.22, z: -BOARD_DISTANCE },
       { width: 0.8, heading: 'Paused', selected: this.choiceSelected() },
@@ -1197,14 +1208,18 @@ export class FlowUi {
     const { flow } = this.deps;
     const offer = flow.offer;
     if (!offer) return;
+    const deck = new Set(flow.run?.deck ?? []);
     const n = offer.cards.length;
     const width = Math.min(1.25, 0.3 * n + 0.02 * (n - 1));
     const cardHeight = ((width - 0.02 * (n - 1)) / n) * HOLO_CARD_ASPECT;
     const header = this.board(
       'reward-info',
-      [{ id: 'cogs', label: `${offer.cogs} cogs collected · choose one card for the deck` }],
+      [{ id: 'cogs', label: `${offer.cogs} cogs · choose one card for the deck` }],
       { x: 0, y: 0.32, z: -BOARD_DISTANCE },
-      { width, heading: 'The automatons fall silent' },
+      {
+        width,
+        heading: offer.tier === 'guardian' ? 'Guardian reward' : 'The automatons fall silent',
+      },
     );
     const cards = createMenuPanel({
       name: 'reward',
@@ -1230,18 +1245,34 @@ export class FlowUi {
     const slots = cards.root.children.flatMap((child) => {
       const id = cards.cellAt(child);
       if (!id) return [];
+      child.userData.accessibleLabel = `${deck.has(id) ? 'Choose' : 'NEW · choose'} ${getCard(id).name}`;
       const { width, height } = (child as THREE.Mesh<THREE.PlaneGeometry>).geometry.parameters;
       return [{ id, x: child.position.x, y: child.position.y, width, height }];
     });
-    this.rewardFaces = new RewardCardFaces(slots, rewardCardTexture, this.deps.rewardCards);
+    const newCardIds = offer.cards.filter((id) => !deck.has(id));
+    this.rewardFaces = new RewardCardFaces(slots, rewardCardTexture, {
+      ...this.deps.rewardCards,
+      newCardIds,
+    });
     cards.root.add(this.rewardFaces.root);
     this.boards.push({ name: 'reward', panel: cards, group, plates: new Map() });
     this.root.add(group);
+  }
+
+  private buildGuardianCleared(): void {
+    const { flow } = this.deps;
     this.board(
-      'reward-skip',
-      [{ id: 'skip', label: 'Skip the card', onSelect: () => flow.pickReward(SKIP_REWARD) }],
-      { x: 0, y: group.position.y - cardHeight - 0.05, z: -BOARD_DISTANCE },
-      { width: 0.36 },
+      'guardian',
+      [
+        {
+          id: 'explore',
+          label: 'Continue exploring',
+          onSelect: () => flow.exploreAfterGuardian(),
+        },
+        { id: 'finish', label: 'Finish run', onSelect: () => flow.finishVictory() },
+      ],
+      { x: 0, y: 0.18, z: -BOARD_DISTANCE },
+      { width: 0.72, heading: 'The guardian falls' },
     );
   }
 

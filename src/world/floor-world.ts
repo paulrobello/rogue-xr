@@ -166,7 +166,7 @@ function buildRoom(
       const s = t.lootSockets.find((socket) => socket.id === pickup.socketId);
       if (!s) continue;
       const surface = surfaceHeightAt(t.colliders, s.position[0], s.position[2]);
-      const coffer = kit.build(index, s, pickup.kind, surface);
+      const coffer = kit.build(index, s, pickup.kind, surface, placed.role === 'combat');
       group.add(coffer.object);
       group.getObjectByName(`socket-${s.id}`)?.removeFromParent();
       coffers.push(coffer);

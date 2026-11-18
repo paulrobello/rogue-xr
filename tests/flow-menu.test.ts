@@ -124,7 +124,7 @@ describe('in-run menu (card A)', () => {
     flow.fightEnded({ room: 2, outcome: 'win', tier: 'regular' });
     ui.sync(head);
     expect(ui.menuOpen).toBe(false);
-    expect(ui.controlIds()).toContain('reward-skip-skip');
+    expect(ui.controlIds()).not.toContain('reward-skip-skip');
     ui.dispose();
   });
 });
@@ -200,7 +200,7 @@ describe('reward card flight (card C)', () => {
     expect(flying).toBeDefined();
     const start = flying?.getWorldPosition(new THREE.Vector3()) as THREE.Vector3;
     const handAt = hand.getWorldPosition(new THREE.Vector3());
-    // A second pick, or Skip, during the flight does nothing.
+    // A second pick, or the removed Skip control, during the flight does nothing.
     expect(ui.activate(`reward-${flow.offer?.cards[1]}`)).toBe(false);
     expect(ui.activate('reward-skip-skip')).toBe(false);
 
@@ -225,14 +225,12 @@ describe('reward card flight (card C)', () => {
     ui.dispose();
   });
 
-  it('Skip still closes the board at once', () => {
+  it('has no Skip control on the reward board', () => {
     const { flow, ui, head } = rig(() => ({ object: head, standoff: 0.3 }));
     toReward(flow, ui, head);
-    const deck = flow.run?.deck.length;
-    expect(ui.activate('reward-skip-skip')).toBe(true);
+    expect(ui.activate('reward-skip-skip')).toBe(false);
     expect(ui.claiming).toBe(false);
-    expect(flow.phase).toBe('explore');
-    expect(flow.run?.deck.length).toBe(deck);
+    expect(flow.phase).toBe('reward');
     ui.dispose();
   });
 });

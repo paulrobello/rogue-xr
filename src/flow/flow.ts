@@ -44,16 +44,18 @@ export type FlowPhase =
   | 'explore'
   | 'combat'
   | 'reward'
+  | 'guardian-cleared'
   | 'death'
   | 'victory';
 
 export const FLOW_TRANSITIONS: Readonly<Record<FlowPhase, readonly FlowPhase[]>> = {
-  title: ['explore', 'reward', 'workshop', 'settings'],
+  title: ['explore', 'reward', 'guardian-cleared', 'workshop', 'settings'],
   workshop: ['title'],
   settings: ['title'],
-  explore: ['combat', 'title'],
+  explore: ['combat', 'victory', 'title'],
   combat: ['explore', 'reward', 'death', 'victory', 'title'],
-  reward: ['explore'],
+  reward: ['explore', 'guardian-cleared'],
+  'guardian-cleared': ['explore', 'victory', 'title'],
   death: ['title'],
   victory: ['title'],
 };
@@ -132,6 +134,7 @@ export class RunFlow {
   private workshopValue: WorkshopState;
   private runValue: RunState | null = null;
   private offerValue: RewardOffer | null = null;
+  private guardianDefeatedValue = false;
   private summaryValue: RunSummary | null = null;
   private lootValue: OpenedLoot | null = null;
   private hearthValue: UsedHearth | null = null;
@@ -159,6 +162,9 @@ export class RunFlow {
   /** The reward on screen in `reward`, otherwise null. */
   get offer(): RewardOffer | null {
     return this.offerValue;
+  }
+  get guardianDefeated(): boolean {
+    return this.guardianDefeatedValue;
   }
   get summary(): RunSummary | null {
     return this.summaryValue;
@@ -191,10 +197,13 @@ export class RunFlow {
   get room(): number {
     return this.roomValue;
   }
-  /** True while a run is being played (explore, combat or reward). */
+  /** True while a run is being played, including the post-guardian exploration phase. */
   get inRun(): boolean {
     return (
-      this.phaseValue === 'explore' || this.phaseValue === 'combat' || this.phaseValue === 'reward'
+      this.phaseValue === 'explore' ||
+      this.phaseValue === 'combat' ||
+      this.phaseValue === 'reward' ||
+      this.phaseValue === 'guardian-cleared'
     );
   }
 
@@ -221,6 +230,7 @@ export class RunFlow {
     if (this.phaseValue === 'death' || this.phaseValue === 'victory') {
       this.runValue = null;
       this.offerValue = null;
+      this.guardianDefeatedValue = false;
     }
     return this.go('title');
   }
@@ -264,6 +274,10 @@ export class RunFlow {
     this.runValue = snapshot.run;
     this.resetRunBookkeeping(snapshot.roomIndex, cleared);
     this.offerValue = snapshot.phase === 'reward' ? snapshot.pendingReward : null;
+    this.guardianDefeatedValue =
+      snapshot.guardianDefeated === true ||
+      snapshot.phase === 'guardian-cleared' ||
+      snapshot.pendingReward?.tier === 'guardian';
     return this.go(snapshot.phase);
   }
 
@@ -282,8 +296,8 @@ export class RunFlow {
   }
 
   /**
-   * A fight ended. A win clears the room and opens the reward, or ends the run in victory when the
-   * guardian fell; a defeat ends the run in death; fleeing returns to exploring with the room still
+   * A fight ended. A win clears the room and opens the reward, including the guardian's required
+   * card; claiming that card enters post-guardian exploration. A defeat ends the run in death; fleeing returns to exploring with the room still
    * uncleared and no reward, and is refused (changing nothing) for an elite or guardian fight
    * (`canFlee`). Only acts in `combat`, so a second end call for the same fight is a no-op.
    */
@@ -302,11 +316,7 @@ export class RunFlow {
     if (!this.clearedRooms.includes(result.room)) this.clearedRooms.push(result.room);
     const healed = this.withHp(run, result.playerHp);
     const rolled = rewardOffer(healed, result.tier, this.opts.rewardPool);
-    if (result.tier === 'guardian') {
-      // The run is over, so a card would never be played: pay the guardian purse and skip the card.
-      this.runValue = chooseReward(rolled.run, rolled.offer, SKIP_REWARD);
-      return this.finish('victory');
-    }
+    if (result.tier === 'guardian') this.guardianDefeatedValue = true;
     this.runValue = rolled.run;
     this.offerValue = rolled.offer;
     return this.go('reward');
@@ -373,6 +383,7 @@ export class RunFlow {
     this.runValue = null;
     this.offerValue = null;
     this.summaryValue = null;
+    this.guardianDefeatedValue = false;
     return this.go('title');
   }
 
@@ -382,26 +393,44 @@ export class RunFlow {
     const offer = this.offerValue;
     if (this.phaseValue !== 'reward' || !run || !offer) return false;
     if (choice !== SKIP_REWARD && !offer.cards.includes(choice)) return false;
+    if (offer.tier === 'guardian' && choice === SKIP_REWARD) return false;
     this.runValue = chooseReward(run, offer, choice);
     this.offerValue = null;
-    return this.go('explore');
+    return offer.tier === 'guardian' ? this.go('guardian-cleared') : this.go('explore');
+  }
+
+  /** Continues exploring after the guardian reward has been claimed. */
+  exploreAfterGuardian(): boolean {
+    return (
+      this.guardianDefeatedValue && this.phaseValue === 'guardian-cleared' && this.go('explore')
+    );
+  }
+
+  /** Ends a guardian-cleared run in victory, banking its purse exactly once. */
+  finishVictory(): boolean {
+    if (!this.guardianDefeatedValue) return false;
+    if (this.phaseValue !== 'guardian-cleared' && this.phaseValue !== 'explore') return false;
+    return this.finish('victory');
   }
 
   /**
-   * The resumable state at an explore or reward boundary, or null in any other phase. `roomIndex`
+   * The resumable state at an explore, reward or guardian-cleared boundary, or null in any other phase. `roomIndex`
    * defaults to the last room entered.
    */
   snapshot(now: number = Date.now(), roomIndex: number = this.roomValue): RunSnapshot | null {
     const run = this.runValue;
-    if (!run || (this.phaseValue !== 'explore' && this.phaseValue !== 'reward')) return null;
+    const phase = this.phaseValue;
+    if (!run || (phase !== 'explore' && phase !== 'reward' && phase !== 'guardian-cleared'))
+      return null;
     return snapshotRun(
       run,
       {
-        phase: this.phaseValue,
+        phase,
         floorSeed: run.seed,
         roomIndex,
         clearedEncounters: this.clearedRooms.map(String),
         pendingReward: this.phaseValue === 'reward' ? this.offerValue : null,
+        guardianDefeated: this.guardianDefeatedValue,
       },
       now,
     );
@@ -414,6 +443,7 @@ export class RunFlow {
 
   private resetRunBookkeeping(room: number, cleared: readonly number[]): void {
     this.offerValue = null;
+    this.guardianDefeatedValue = false;
     this.summaryValue = null;
     this.lootValue = null;
     this.hearthValue = null;
@@ -427,7 +457,7 @@ export class RunFlow {
   /** Ends the run: banks the purse once and builds the summary. */
   private finish(outcome: 'death' | 'victory'): boolean {
     const run = this.runValue;
-    if (!run) return false;
+    if (!run || !this.canTransition(outcome)) return false;
     this.workshopValue = bankRunCogs(this.workshopValue, run);
     this.offerValue = null;
     this.summaryValue = {

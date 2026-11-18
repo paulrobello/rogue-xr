@@ -67,7 +67,6 @@ const POLICY = {
   woundValue: 6,
   overheatValue: 0.7,
   sigilPower: 1.25,
-  rewardMin: 3,
   dupPenalty: 1,
   optional: 'regular',
 };
@@ -306,7 +305,7 @@ const REWARD_SCORE = {
   'rivet-volley': 2,
 };
 
-/** Best offered card for the deck (or null to skip). */
+/** Best offered card for the deck. */
 function pickReward(offer, deck) {
   let best = null;
   for (const id of offer.cards) {
@@ -314,7 +313,7 @@ function pickReward(offer, deck) {
     const score = (REWARD_SCORE[id] ?? 0) - (id === 'furnace-brand' ? 0 : POLICY.dupPenalty * have);
     if (!best || score > best.score) best = { id, score };
   }
-  return best && best.score >= POLICY.rewardMin ? best.id : null;
+  return best?.id ?? null;
 }
 
 /** Runs before any app script: catches the renderer and scenes, and the text each canvas draws. */
@@ -708,8 +707,12 @@ async function runSeed(seed, mode) {
       const outcome = await fight(room, target);
       if (outcome !== 'won') return 'stop';
       const ph = await phase();
-      if (ph === 'victory') return 'stop';
       if (ph === 'reward') await reward(room);
+      if ((await phase()) === 'guardian-cleared') {
+        await clickControl('guardian-finish');
+        await until('victory-after-guardian', () => window.__flow.flow.phase === 'victory');
+        return 'stop';
+      }
       if (!(await until('explore-after-reward', () => window.__flow.flow.phase === 'explore')))
         return 'stop';
       await wait(900);
@@ -1011,8 +1014,11 @@ async function runSeed(seed, mode) {
     await shot(`reward-r${room}`);
     const before = await ev(() => window.__flow.flow.run);
     const pick = offer ? pickReward(offer, before.deck) : null;
-    await clickControl(pick ? `reward-${pick}` : 'reward-skip-skip');
-    await until('reward-claimed', () => window.__flow.flow.phase === 'explore');
+    if (!pick) return fail('empty-reward-offer', { room });
+    await clickControl(`reward-${pick}`);
+    await until('reward-claimed', () =>
+      ['explore', 'guardian-cleared'].includes(window.__flow.flow.phase),
+    );
     const after = await ev(() => window.__flow.flow.run);
     report.rewards.push({
       room,
@@ -1161,8 +1167,7 @@ async function runSeed(seed, mode) {
     console.log(
       `  r${room} ${target.tier} ${s.outcome} t${s.turn} hp${s.player.hp} played ${record.cardsPlayed}`,
     );
-    const next =
-      s.outcome === 'won' ? (target.tier === 'guardian' ? 'victory' : 'reward') : 'death';
+    const next = s.outcome === 'won' ? 'reward' : 'death';
     await until(`flow-${next}-r${room}`, (n) => window.__flow.flow.phase === n, next, 20000);
     await runHp(`fight r${room} ${s.outcome}`);
     if (next !== 'death') {

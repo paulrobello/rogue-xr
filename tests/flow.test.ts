@@ -145,16 +145,31 @@ describe('flow transitions', () => {
     expect(flow.workshop.cogsBanked).toBe(purse);
   });
 
-  it('clearing the guardian room wins the run with the guardian purse', () => {
+  it('clearing the guardian room offers a required card before post-boss exploration', () => {
     const flow = flowWith();
     flow.newRun(SEED);
     winRegular(flow, 1, 'skip');
     const before = flow.run?.cogs ?? 0;
     flow.fightStarted(6);
     expect(flow.fightEnded({ room: 6, outcome: 'win', tier: 'guardian' })).toBe(true);
-    expect(flow.phase).toBe('victory');
-    expect(flow.offer).toBeNull();
+    expect(flow.phase).toBe('reward');
+    expect(flow.guardianDefeated).toBe(true);
+    const guardianPurse = flow.run?.cogs;
+    expect(flow.finishVictory()).toBe(false);
+    expect(flow.toTitle()).toBe(false);
+    expect(flow.phase).toBe('reward');
+    expect(flow.run?.cogs).toBe(guardianPurse);
+    expect(flow.offer).not.toBeNull();
+    expect(flow.pickReward(SKIP_REWARD)).toBe(false);
+    const card = flow.offer?.cards[0] as string;
+    expect(flow.pickReward(card)).toBe(true);
+    expect(flow.phase).toBe('guardian-cleared');
     expect(flow.run?.cogs).toBe(before + REWARD_COGS.guardian.min);
+    expect(flow.exploreAfterGuardian()).toBe(true);
+    expect(flow.phase).toBe('explore');
+    expect(flow.finishVictory()).toBe(true);
+    expect(flow.phase).toBe('victory');
+    expect(flow.finishVictory()).toBe(false);
     expect(flow.summary).toMatchObject({
       outcome: 'victory',
       fightsWon: 2,

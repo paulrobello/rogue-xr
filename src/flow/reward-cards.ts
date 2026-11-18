@@ -33,6 +33,8 @@ export interface RewardCardFacesOptions {
   loadArt?: boolean;
   /** Run troika typesetting for the labels. Off in tests, where no font can be fetched. */
   syncLabels?: boolean;
+  /** Offered card ids that are not already in the run deck. These receive a permanent NEW cue. */
+  newCardIds?: readonly string[];
 }
 
 /**
@@ -129,6 +131,9 @@ export class RewardCardFaces {
   private readonly gems: THREE.InstancedMesh;
   private readonly labels = new BatchedText();
   private readonly halo: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
+  private readonly newHalos: (THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial> | null)[];
+  private readonly newBadges: (THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial> | null)[];
+  private readonly newCardIds: ReadonlySet<string>;
   private readonly fallbacks: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>[];
   /** The material's own 1x1 blank page, bound until the art arrives; `applyCardFaceArt` unbinds it. */
   private readonly blankPage: THREE.Texture;
@@ -149,6 +154,7 @@ export class RewardCardFaces {
     this.cards = slots.map((s) => getCard(s.id));
     this.fallbackFace = fallbackFace;
     this.syncLabels = opts.syncLabels ?? true;
+    this.newCardIds = new Set(opts.newCardIds ?? []);
     this.root.name = 'reward-card-faces';
 
     const geometry = new THREE.PlaneGeometry(1, 1);
@@ -181,6 +187,48 @@ export class RewardCardFaces {
     this.halo.name = 'reward-card-halo';
     this.halo.visible = false;
 
+    this.newHalos = slots.map((slot) => {
+      if (!this.newCardIds.has(slot.id)) return null;
+      const mesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(
+          slot.width + HALO_BORDER * slot.width * 2,
+          slot.height + HALO_BORDER * slot.width * 2,
+        ),
+        new THREE.MeshBasicMaterial({ color: PALETTE.brass, toneMapped: false }),
+      );
+      mesh.name = `reward-card-new-frame-${slot.id}`;
+      mesh.visible = this.newCardIds.has(slot.id);
+      mesh.position.set(slot.x, slot.y, HALO_Z);
+      return mesh;
+    });
+    this.newBadges = slots.map((slot) => {
+      if (!this.newCardIds.has(slot.id)) return null;
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 64;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = PALETTE.brass;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = PALETTE.warmBlack;
+        ctx.font = '700 42px system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('NEW', canvas.width / 2, canvas.height / 2);
+      }
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      const mesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(slot.width * 0.38, slot.width * 0.095),
+        new THREE.MeshBasicMaterial({ map: texture, toneMapped: false }),
+      );
+      mesh.name = `reward-card-new-badge-${slot.id}`;
+      mesh.userData.semanticName = 'new-card-marker';
+      mesh.userData.cardId = slot.id;
+      mesh.visible = true;
+      return mesh;
+    });
+
     this.fallbacks = slots.map((slot) => {
       const mesh = new THREE.Mesh(
         new THREE.PlaneGeometry(slot.width, slot.height),
@@ -191,7 +239,15 @@ export class RewardCardFaces {
       return mesh;
     });
 
-    for (const object of [this.body, this.gems, this.labels, this.halo, ...this.fallbacks]) {
+    for (const object of [
+      this.body,
+      this.gems,
+      this.labels,
+      this.halo,
+      ...this.newHalos.filter((mesh) => mesh !== null),
+      ...this.newBadges.filter((mesh) => mesh !== null),
+      ...this.fallbacks,
+    ]) {
       object.raycast = () => undefined;
       this.root.add(object);
     }
@@ -300,6 +356,12 @@ export class RewardCardFaces {
     this.gems.dispose();
     this.halo.geometry.dispose();
     this.halo.material.dispose();
+    for (const mesh of [...this.newHalos, ...this.newBadges]) {
+      if (!mesh) continue;
+      mesh.geometry.dispose();
+      mesh.material.map?.dispose();
+      mesh.material.dispose();
+    }
     for (const mesh of this.fallbacks) {
       mesh.geometry.dispose();
       mesh.material.map?.dispose();
@@ -388,6 +450,18 @@ export class RewardCardFaces {
       const w = slot.width * s;
       const h = slot.height * s;
       const z = FACE_Z + lift;
+      const newFrame = this.newHalos[i];
+      if (newFrame) {
+        newFrame.position.set(slot.x, y, HALO_Z + lift * 0.5);
+        newFrame.scale.setScalar(Math.max(1e-3, 1 - gone));
+        newFrame.visible = gone < 1;
+      }
+      const badge = this.newBadges[i];
+      if (badge) {
+        badge.position.set(slot.x + w * 0.31, y + h * 0.45, z + TEXT_Z);
+        badge.scale.setScalar(Math.max(1e-3, 1 - gone));
+        badge.visible = gone < 1;
+      }
       tmpMatrix.compose(tmpPosition.set(slot.x, y, z), IDENTITY, tmpScale.set(w, h, 1));
       this.body.setMatrixAt(i, tmpMatrix);
       if (on) {

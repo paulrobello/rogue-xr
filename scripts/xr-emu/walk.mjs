@@ -23,6 +23,7 @@ const { values: opts } = parseArgs({
     headed: { type: 'boolean', default: false },
     // Only the card fan and sigil checks: New Run, one fight, then stop.
     focus: { type: 'boolean', default: false },
+    controls: { type: 'boolean', default: false },
     // Only the enemy-phase checks: one two-automaton fight on TURN_SEED.
     turns: { type: 'boolean', default: false },
     // Only the turned-away Enter VR check (XO5): the title must be re-placed in front of the head.
@@ -175,7 +176,49 @@ try {
     await settle(800);
   };
 
-  if (opts.notice) {
+  if (opts.controls) {
+    await page.goto(`${opts.base}/?seed=SPIRE002&debug`);
+    await waitFor('controls-app', () => window.__combat?.heroReady);
+    await ev(() => window.__combat.heroReady);
+    await enterVr();
+    await ev(() => window.__combat.teleportToEncounter(2));
+    await waitFor('controls-active', () => window.__combat.session);
+    for (const target of ['end-turn', 'flee']) {
+      const point = await ev((id) => window.__xrEmu.worldOf(id), target);
+      await aim(MAIN, point);
+      await settle(400);
+      const facts = await ev((id) => {
+        const probe = window.__xrEmu;
+        const { world, camera } = probe.ctx();
+        const button = world.getObjectByName(id);
+        const V = camera.position.constructor;
+        const at = button.getWorldPosition(new V());
+        const normal = button.getWorldDirection(new V());
+        const eye = camera.getWorldPosition(new V());
+        const tips = probe.scenes.flatMap((scene) =>
+          scene.children.filter(
+            (node) =>
+              node.visible &&
+              node.geometry?.type === 'SphereGeometry' &&
+              node.geometry.parameters.radius === 0.006,
+          ),
+        );
+        const offsets = tips.map((node) =>
+          button.worldToLocal(node.getWorldPosition(new V())).toArray(),
+        );
+        return { facing: normal.dot(eye.sub(at).normalize()), offsets };
+      }, target);
+      record(
+        `controls-${target}-facing-and-ray`,
+        facts.facing > 0.998 &&
+          facts.offsets.some(
+            ([x, y, z]) => Math.abs(x) < 0.025 && Math.abs(y) < 0.025 && z > 0 && z < 0.02,
+          ),
+        facts,
+      );
+    }
+    await shot('combat-control-rays');
+  } else if (opts.notice) {
     await noticeCheck();
   } else if (opts.turns) {
     await enemyTurnCheck();
@@ -442,7 +485,7 @@ try {
     record('xr-rest-fight-won-by-a-played-card', killed.ok === true, killed);
     await waitFor('rest-reward', () => window.__flow.flow.phase === 'reward', undefined, 30000);
     await settle(800);
-    await press('reward-skip-skip');
+    await press(`reward-${await ev(() => window.__flow.flow.offer.cards[0])}`);
     await waitFor('rest-explore', () => window.__flow.flow.phase === 'explore');
     const wounded = await ev(() => ({
       hp: window.__flow.flow.run.hp,
@@ -1910,19 +1953,20 @@ try {
           deck: window.__flow.flow.run.deck.length,
         };
       });
-      const pick = fightIndex === 0 ? `reward-${reward.card}` : 'reward-skip-skip';
+      const pick = `reward-${reward.card}`;
       if (fightIndex === 0) {
         await aim(MAIN, await ev((id) => window.__xrEmu.worldOf(id), pick));
         await settle(300);
         await shot('7-reward-hover');
       }
       const hovered = await press(pick);
+      await waitFor('claimed-offer', () => window.__flow.flow.phase === 'explore');
       const picked = await ev(() => ({
         phase: window.__flow.flow.phase,
         deck: window.__flow.flow.run.deck.length,
         cogs: window.__flow.flow.run.cogs,
       }));
-      const wantDeck = fightIndex === 0 ? reward.deck + 1 : reward.deck;
+      const wantDeck = reward.deck + 1;
       record(
         `fight-${fightIndex}-and-reward`,
         active && picked.phase === 'explore' && picked.deck === wantDeck,

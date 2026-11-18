@@ -8,12 +8,12 @@ import { DEFAULT_SETTINGS } from '../src/persist/db.ts';
 import { createWorkshop } from '../src/rules/workshop.ts';
 
 describe('splitControlId', () => {
-  const boards = ['reward-info', 'reward', 'reward-skip'];
+  const boards = ['reward-info', 'reward'];
 
   it('picks the longest board name that prefixes the id', () => {
     expect(splitControlId(boards, 'reward-skip-skip')).toEqual({
-      board: 'reward-skip',
-      cell: 'skip',
+      board: 'reward',
+      cell: 'skip-skip',
     });
     expect(splitControlId(boards, 'reward-rivet-volley')).toEqual({
       board: 'reward',
@@ -31,7 +31,7 @@ describe('splitControlId', () => {
 });
 
 describe('FlowUi reward board', () => {
-  it('skips the card when Skip is activated (was routed to the card row and ignored)', () => {
+  it('offers only cards, with no Skip control', () => {
     const flow = new RunFlow({
       workshop: createWorkshop(),
       starterDeck: STARTER_DECK,
@@ -53,11 +53,8 @@ describe('FlowUi reward board', () => {
     flow.fightEnded({ room: 1, outcome: 'win', tier: 'regular' });
     expect(flow.phase).toBe('reward');
     ui.sync(head);
-    const deck = flow.run?.deck.length;
-    expect(ui.controlIds()).toContain('reward-skip-skip');
-    expect(ui.activate('reward-skip-skip')).toBe(true);
-    expect(flow.phase).toBe('explore');
-    expect(flow.run?.deck.length).toBe(deck);
+    expect(ui.controlIds()).not.toContain('reward-skip-skip');
+    expect(ui.controlIds().some((id) => id.startsWith('reward-'))).toBe(true);
     ui.dispose();
   });
 });

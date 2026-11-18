@@ -287,7 +287,7 @@ export function audioStateForFlow(
   scene: MusicScene = {},
 ): AudioState {
   if (phase === 'death') return 'defeat';
-  if (phase === 'victory') return 'victory';
+  if (phase === 'victory' || phase === 'guardian-cleared') return 'victory';
   if (phase === 'settings') return 'title';
   return audioStateFor(phase, encounter, scene);
 }

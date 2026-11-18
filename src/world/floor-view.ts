@@ -208,7 +208,10 @@ export function mountFloorView(
   const encounter = new EncounterDirector({
     world,
     table: tableHost,
-    onCleared: (room) => world.releaseGuardedDoor(room),
+    onCleared: (room) => {
+      world.releaseGuardedDoor(room);
+      for (const coffer of world.coffers) if (coffer.room === room) coffer.unlock();
+    },
     lockLocomotion: (l) => {
       locked = l;
     },
@@ -313,7 +316,9 @@ export function mountFloorView(
       return true;
     },
     markOpened(room, socketId) {
-      cofferOf(room, socketId)?.open(false);
+      const coffer = cofferOf(room, socketId);
+      coffer?.unlock();
+      coffer?.open(false);
     },
     dress(materials) {
       world.dressCoffers(materials);

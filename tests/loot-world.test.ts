@@ -191,10 +191,13 @@ describe('floor loot view', () => {
     const { room, socketId } = coffer;
     const payout = { kind: 'cogs', cogs: 7 } as const;
     expect(view.loot.showLock(room, socketId)).toBe(true);
+    const padlock = coffer.object.getObjectByName('coffer-padlock');
+    expect(padlock?.visible).toBe(true);
     expect(view.loot.toast?.text).toBe('Locked');
     expect(view.loot.open(room, socketId, payout)).toBe(false);
     expect(coffer.opened).toBe(false);
     view.markCleared(room);
+    expect(padlock?.visible).toBe(false);
     expect(view.loot.showLock(room, socketId)).toBe(false);
     expect(view.loot.open(room, socketId, payout)).toBe(true);
     expect(coffer.opened).toBe(true);

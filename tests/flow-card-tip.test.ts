@@ -89,7 +89,7 @@ describe('card keyword tip on the reward board and the deck viewer', () => {
     const tip = tipMesh(ui);
     expect(tip?.visible).toBe(true);
     expect(tip?.parent?.name).toBe('reward-card-faces');
-    ui.hover('reward-skip-skip');
+    ui.hover(null);
     expect(ui.cardTipShown).toBeNull();
     expect(tipMesh(ui)).toBeUndefined();
     if (plain) {

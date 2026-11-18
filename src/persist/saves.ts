@@ -31,7 +31,7 @@ export class SaveError extends Error {
 }
 
 /** Phases a run can be resumed in. Combat is not resumable: snapshot at explore or reward boundaries. */
-export type SnapshotPhase = 'explore' | 'reward';
+export type SnapshotPhase = 'explore' | 'reward' | 'guardian-cleared';
 
 /** Where the player stands in the floor. The floor itself regenerates from `floorSeed`. */
 export interface SnapshotWorld {
@@ -44,6 +44,8 @@ export interface SnapshotWorld {
   readonly clearedEncounters: readonly string[];
   /** The reward on screen when `phase` is `'reward'`, otherwise null. */
   readonly pendingReward: RewardOffer | null;
+  /** True after the guardian has fallen, including while its reward is being claimed. */
+  readonly guardianDefeated?: boolean;
 }
 
 export interface RunSnapshot extends SnapshotWorld {
@@ -193,7 +195,9 @@ function validateReward(raw: unknown, path: string): RewardOffer {
 export function validateSnapshot(raw: unknown): RunSnapshot {
   const r = rec(raw, 'snapshot');
   if (r.version !== SNAPSHOT_VERSION) fail('snapshot.version', `expected ${SNAPSHOT_VERSION}`);
-  if (r.phase !== 'explore' && r.phase !== 'reward') fail('snapshot.phase', 'unknown phase');
+  if (r.phase !== 'explore' && r.phase !== 'reward' && r.phase !== 'guardian-cleared') {
+    fail('snapshot.phase', 'unknown phase');
+  }
   if (typeof r.floorSeed !== 'string' || r.floorSeed === '') {
     fail('snapshot.floorSeed', 'expected a non-empty string');
   }
@@ -204,6 +208,9 @@ export function validateSnapshot(raw: unknown): RunSnapshot {
   if ((r.phase === 'reward') !== (pendingReward !== null)) {
     fail('snapshot.pendingReward', 'must be present exactly when phase is reward');
   }
+  if (r.guardianDefeated !== undefined && typeof r.guardianDefeated !== 'boolean') {
+    fail('snapshot.guardianDefeated', 'expected a boolean');
+  }
   return {
     version: SNAPSHOT_VERSION,
     savedAt: int(r.savedAt, 'snapshot.savedAt', 0),
@@ -213,6 +220,7 @@ export function validateSnapshot(raw: unknown): RunSnapshot {
     roomIndex: int(r.roomIndex, 'snapshot.roomIndex', 0),
     clearedEncounters: strings(r.clearedEncounters, 'snapshot.clearedEncounters'),
     pendingReward,
+    ...(r.guardianDefeated === undefined ? {} : { guardianDefeated: r.guardianDefeated }),
   };
 }
 

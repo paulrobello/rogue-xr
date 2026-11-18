@@ -107,8 +107,8 @@ describe('reward board card faces (F7)', () => {
     });
     expect(halo.visible).toBe(true);
     expect(halo.position.x).toBeCloseTo(instance(body, target).position.x);
-    // Moving to the skip button clears the card's highlight.
-    ui.hover('reward-skip-skip');
+    // Moving off the board clears the card's highlight.
+    ui.hover(null);
     expect(instance(body, target).position.z).toBeCloseTo(rest[target]?.position.z ?? Number.NaN);
     expect(halo.visible).toBe(false);
     ui.dispose();

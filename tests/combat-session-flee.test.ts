@@ -159,6 +159,41 @@ describe('Flee control (card B)', () => {
     rig.hook.dispose();
   }, 60_000);
 
+  it('faces both controls toward a moved eye and lets the ray hit the exposed Flee rim', async () => {
+    const rig = await openFight('regular');
+    const eye = new THREE.Vector3();
+    for (const offset of [0, 0.2]) {
+      rig.camera.position.z += offset;
+      rig.session.fitHudToView(rig.camera);
+      rig.camera.getWorldPosition(eye);
+      for (const name of ['end-turn', 'flee']) {
+        const mesh = rig.view.world.group.getObjectByName(name);
+        if (!mesh) throw new Error(name);
+        const centre = mesh.getWorldPosition(new THREE.Vector3());
+        expect(
+          mesh.getWorldDirection(new THREE.Vector3()).dot(eye.clone().sub(centre).normalize()),
+        ).toBeCloseTo(1, 5);
+      }
+    }
+    const frame = rig.view.world.group.getObjectByName('flee-frame');
+    if (!frame) throw new Error('missing Flee frame');
+    const target = frame.localToWorld(new THREE.Vector3(0.146, 0, 0.008));
+    const forward = frame.getWorldDirection(new THREE.Vector3());
+    const origin = target.clone().addScaledVector(forward, 0.5);
+    const direction = forward.negate();
+    expect(rig.session.rayDistance(new THREE.Ray(origin, direction))).toBeCloseTo(0.5, 5);
+    for (const phase of ['down', 'up'] as const) {
+      rig.actions.emit({
+        type: 'combat-pointer',
+        phase,
+        origin: [origin.x, origin.y, origin.z],
+        direction: [direction.x, direction.y, direction.z],
+      });
+    }
+    expect(rig.session.message).toBe(FLEE_CONFIRM);
+    rig.hook.dispose();
+  });
+
   it('the desktop HUD fit keeps FLEE in view and clear of END TURN', async () => {
     const rig = await openFight('regular');
     const pose = rig.view.encounter.tablePose;

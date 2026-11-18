@@ -490,6 +490,8 @@ export class CombatSession {
   }[] = [];
   private hudMoved = false;
   private readonly raycaster = new THREE.Raycaster();
+  private readonly controlSurfaces: THREE.Object3D[] = [];
+  private readonly controlIntersections: THREE.Intersection[] = [];
   private readonly handPoint = new THREE.Vector3();
   private readonly numberAt = new THREE.Vector3();
   /** Where each label drew its status badges, rebuilt with every paint, for the pointer tooltip. */
@@ -695,6 +697,7 @@ export class CombatSession {
       frame.position.z = -0.008;
       mesh.add(frame);
       this.controlFrames.push(frame);
+      this.controlSurfaces.push(mesh, frame);
       return mesh;
     };
     this.endButton = button('end-turn', PALETTE.brass);
@@ -719,6 +722,7 @@ export class CombatSession {
       this.endButton.add(this.fleeButton);
     }
     this.fleeLabel = this.fleeButton ? buttonLabel(this.fleeButton, 'FLEE') : null;
+    this.faceControlsToEye();
     this.tip = safeLabel(640, 240, TIP_WIDTH);
     if (this.tip) {
       this.tip.mesh.name = 'status-tip';
@@ -1175,7 +1179,17 @@ export class CombatSession {
       }
       return rect;
     };
+    const seatedEye = camera.getWorldPosition(this.eye);
     const rectOf = (mesh: THREE.Mesh): NdcRect | null => {
+      if (mesh === this.endButton) {
+        this.faceControlsToEye(seatedEye);
+        mesh.updateWorldMatrix(true, true);
+        return rectOfPoints(
+          this.controlFrames
+            .flatMap((frame) => worldCorners(frame))
+            .concat(worldCorners(mesh), this.fleeButton ? worldCorners(this.fleeButton) : []),
+        );
+      }
       mesh.updateMatrixWorld(true);
       return rectOfPoints(worldCorners(mesh));
     };
@@ -1377,6 +1391,30 @@ export class CombatSession {
       anchor.object.quaternion.copy(anchor.turn);
       anchor.object.scale.setScalar(1);
     }
+    this.faceControlsToEye();
+  }
+
+  /** Faces the paired controls at the current seated eye, retaining their table-space positions. */
+  private faceControlsToEye(eye = this.deps.camera.getWorldPosition(this.eye)): void {
+    this.endButton.lookAt(eye);
+    this.fleeButton?.lookAt(eye);
+  }
+
+  /** Both aiming and activation use the frontmost plaque or rim under the ray. */
+  private controlHit(ray: THREE.Ray): THREE.Intersection | undefined {
+    this.raycaster.ray.copy(ray);
+    this.endButton.updateWorldMatrix(true, true);
+    this.controlIntersections.length = 0;
+    return this.raycaster.intersectObjects(
+      this.controlSurfaces,
+      false,
+      this.controlIntersections,
+    )[0];
+  }
+
+  rayDistance(ray: THREE.Ray): number | null {
+    if (this.disposed || this.pausedValue) return null;
+    return this.controlHit(ray)?.distance ?? null;
   }
 
   private plateCorners(): THREE.Vector3[] {
@@ -1413,6 +1451,7 @@ export class CombatSession {
     if (this.disposed || this.pausedValue) return;
     this.clock += dt;
     this.setXr(xr);
+    if (this.xr) this.faceControlsToEye();
     // Before sync, so the frame the enemy phase ends also deals the new hand.
     this.advance(dt);
     if (this.dirty) this.sync();
@@ -2034,9 +2073,11 @@ export class CombatSession {
       )
         return 'plate';
     }
-    if (this.raycaster.intersectObject(this.endButton, false).length > 0) return 'end-turn';
-    if (this.fleeButton && this.raycaster.intersectObject(this.fleeButton, false).length > 0)
-      return 'flee';
+    const control = this.controlHit(ray)?.object;
+    if (control)
+      return control === this.fleeButton || control.parent === this.fleeButton
+        ? 'flee'
+        : 'end-turn';
     const card = this.fan.pointerHover(ray);
     return card;
   }

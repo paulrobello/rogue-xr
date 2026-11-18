@@ -97,6 +97,7 @@ export interface Coffer {
   /** The invisible box a ray tests. */
   readonly hit: THREE.Mesh;
   readonly opened: boolean;
+  unlock(): void;
   /** The card rising or hovering over the open coffer, waiting to be claimed; null once it flies off. */
   readonly card: string | null;
   /** The invisible quad a ray tests to claim the card once it hovers (not while it rises), else null. */
@@ -163,6 +164,42 @@ function merged(parts: THREE.BufferGeometry[]): THREE.BufferGeometry {
   for (const part of parts) part.dispose();
   if (!geometry) throw new Error('coffer parts do not merge');
   return geometry;
+}
+
+/** A brass padlock with an open shackle loop and a cut-through keyhole. */
+function padlockGeometry(): THREE.BufferGeometry {
+  const outline = new THREE.Shape();
+  outline.moveTo(-0.073, 0.035);
+  outline.lineTo(0.073, 0.035);
+  outline.lineTo(0.073, -0.041);
+  outline.lineTo(0.057, -0.058);
+  outline.lineTo(-0.057, -0.058);
+  outline.lineTo(-0.073, -0.041);
+  outline.closePath();
+  const keyhole = new THREE.Path();
+  keyhole.absarc(0, 0, 0.016, -Math.PI / 3, (4 * Math.PI) / 3, false);
+  keyhole.lineTo(-0.013, -0.035);
+  keyhole.lineTo(0.013, -0.035);
+  keyhole.closePath();
+  outline.holes.push(keyhole);
+  // Keep the whole silhouette in one extrusion, with a brass arch behind the lock body.
+  const arch = new THREE.Shape();
+  arch.moveTo(-0.052, 0.029);
+  arch.lineTo(-0.052, 0.066);
+  arch.absarc(0, 0.066, 0.052, Math.PI, 0, true);
+  arch.lineTo(0.052, 0.029);
+  arch.lineTo(0.033, 0.029);
+  arch.absarc(0, 0.066, 0.033, 0, Math.PI, false);
+  arch.lineTo(-0.033, 0.029);
+  arch.closePath();
+  return merged([
+    new THREE.ExtrudeGeometry(outline, { depth: 0.03, bevelEnabled: false, curveSegments: 10 }),
+    new THREE.ExtrudeGeometry(arch, {
+      depth: 0.014,
+      bevelEnabled: false,
+      curveSegments: 10,
+    }).translate(0, 0, 0.011),
+  ]);
 }
 
 /** Hollow body: a solid base up to the inner floor and four walls up to the rim. */
@@ -398,6 +435,7 @@ export class CofferKit {
   private readonly bodyBand = this.geometry(bodyBandGeometry());
   private readonly lidBand = this.geometry(lidBandGeometry());
   private readonly latch = this.geometry(new THREE.BoxGeometry(0.1, 0.12, 0.035));
+  private readonly lock = this.geometry(padlockGeometry());
   private readonly gem = this.geometry(new THREE.SphereGeometry(0.032, 10, 8));
   private readonly glow = this.geometry(glowGeometry());
   private readonly halo = this.geometry(haloGeometry());
@@ -448,7 +486,7 @@ export class CofferKit {
   }
 
   /** Builds the coffer for `socket` of `room`, standing `surface` metres above the room floor. */
-  build(room: number, socket: Socket, kind: LootKind, surface: number): Coffer {
+  build(room: number, socket: Socket, kind: LootKind, surface: number, locked = false): Coffer {
     const object = new THREE.Group();
     object.name = `coffer-${room}-${socket.id}`;
     object.position.set(socket.position[0], socket.position[1] + surface, socket.position[2]);
@@ -479,6 +517,11 @@ export class CofferKit {
     gem.name = 'coffer-gem';
     gem.position.set(0, BODY_HEIGHT - 0.03, -DEPTH / 2 - 0.04);
     object.add(gem);
+    const padlock = locked ? this.part(this.lock, 'brass', object, 'coffer-padlock') : null;
+    if (padlock) {
+      padlock.position.set(0, BODY_HEIGHT - 0.068, -DEPTH / 2 - 0.061);
+      gem.visible = false;
+    }
     const glow = new THREE.Mesh(this.glow, this.light);
     glow.name = 'coffer-glow';
     glow.visible = false;
@@ -504,6 +547,10 @@ export class CofferKit {
       get opened() {
         return target > 0;
       },
+      unlock() {
+        if (padlock) padlock.visible = false;
+        gem.visible = true;
+      },
       get card() {
         return card.waiting();
       },
@@ -511,6 +558,7 @@ export class CofferKit {
         return card.hovering() ? card.hit : null;
       },
       open(animate) {
+        if (padlock?.visible) return;
         target = OPEN_ANGLE;
         if (!animate) {
           angle = OPEN_ANGLE;

@@ -115,6 +115,7 @@ requestCardFaceArt(sharedKtx2Loader(renderer)).catch((error: unknown) =>
 );
 
 const scene = new THREE.Scene();
+const combatLaserRay = new THREE.Ray();
 scene.background = new THREE.Color(PALETTE.void);
 
 // The rig is the player's locomotion root; the camera sits at seated-calibrated eye height.
@@ -586,7 +587,7 @@ flow.onChange((event) => {
   // they came in by, before the snapshot below records the room.
   if (event.from === 'combat' && event.to === 'explore') standAtEntry(flow.room);
   const abandoned = event.to === 'title' && (event.from === 'explore' || event.from === 'combat');
-  if (event.to === 'explore' || event.to === 'reward') {
+  if (event.to === 'explore' || event.to === 'reward' || event.to === 'guardian-cleared') {
     storedSnapshot = flow.snapshot(Date.now(), floor?.world.current ?? flow.room);
   } else if (event.to === 'death' || event.to === 'victory' || abandoned) {
     storedSnapshot = null;
@@ -1330,9 +1331,20 @@ renderer.setAnimationLoop((time, frame) => {
   ui?.sync(camera);
   ui?.update(deltaSeconds);
   const laserHits = { left: null as number | null, right: null as number | null };
-  // The beam ends on the status badge whose explanation it is showing.
-  const statusAt = xr.presenting ? combat?.session?.statusHover?.distance : undefined;
-  if (statusAt !== undefined) laserHits[MAIN_HAND] = statusAt;
+  if (xr.presenting && combat?.session && !ui?.visible) {
+    const rays = xr.rays();
+    for (const side of ['left', 'right'] as const) {
+      const source = rays[side];
+      if (!source) continue;
+      source.updateWorldMatrix(true, false);
+      combatLaserRay.origin.setFromMatrixPosition(source.matrixWorld);
+      combatLaserRay.direction.set(0, 0, -1).transformDirection(source.matrixWorld);
+      laserHits[side] = combat.session.rayDistance(combatLaserRay);
+    }
+    const status = combat.session.statusHover?.distance;
+    if (status !== undefined)
+      laserHits[MAIN_HAND] = Math.min(laserHits[MAIN_HAND] ?? Infinity, status);
+  }
   if (ui?.visible && xr.presenting) {
     const ray = xr.rays()[MAIN_HAND];
     const hit = ray ? uiPointer.castFrom(ray, ui.targets()) : null;
@@ -1346,7 +1358,9 @@ renderer.setAnimationLoop((time, frame) => {
       if (!source) continue;
       const { origin, direction } = controllerRay(source);
       const distance = pickupDistance(origin, direction);
-      if (distance !== null) laserHits[side] = distance;
+      if (distance !== null)
+        laserHits[side] =
+          laserHits[side] === null ? distance : Math.min(laserHits[side] as number, distance);
     }
   }
   if (floor && audio) {
