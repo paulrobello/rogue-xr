@@ -44,6 +44,8 @@ None. Every `sha256`, `bytes`, triangle count, material count, bone count and im
 
 - Later (2026-11-17): the gear shaft and guardian vault were rebuilt in `8428cd8` and re-scored 81 and 82. The combat table scored 58 and the table decorations 69 (both below the bar; fix cards filed). The table rebuild `b241d9b` re-scored 72: walnut, felt, tray and brass swirl fixed; a black left body strap (reversed winding), flat cream brass and weak contact AO remain.
 - The table decorations re-scored 84/100 on `31aa007`. Their provenance records the independent review and 38 verified evidence hashes. Quest appearance and owner approval remain open.
+- The hall re-scored 80/100 on `91d9e3e`. The rebuild passed reimport with 6,747 triangles, eight materials and a 20 px UV1 gap. Two game captures show clear bench-to-door spacing.
+- The combat table re-scored 80/100 on `cde4d7c` after the corrected left strap, brass retuning, floor contact shadow and crowned inlays. Reimport passed with 6,152 triangles, four materials and stable sockets. All 15 build hashes matched. Ten Metal Chromium captures showed the proof views and real fights. The owner headset review remains open.
 
 Still open: F6 (Blender version: the PRD pins 5.2.2 LTS, MiniMac runs 5.3.0).
 
@@ -133,9 +135,9 @@ Files: `assets-source/dice/{brass-d6,glass-d8}/`, `public/assets/dice/...`. Gene
 | Asset | Technical | Rights | Creative | Owner |
 | --- | --- | --- | --- | --- |
 | 1 Study | pass | pass | pending (re-score in progress, unscored) | pending |
-| 2 Combat table | fail (F1, F2) | fail (F1) | pending | pending |
+| 2 Combat table | pass | pass | independent 80 on `cde4d7c` | pending |
 | 3 Cog Sentry | pass | pass | pass (80) | pending |
-| 4a Hall | pass | pass | pending (re-score in progress, 68 below bar) | pass with exception (Paul 2026-11-16, hearth open) |
+| 4a Hall | pass | pass | independent 80 on `91d9e3e` | updated hall and fire pending Quest review |
 | 4b Corridor | pass | pass | pending (re-score in progress, 80, evidence stale F5) | pending |
 | 5a Gear-shaft | pass | pass | pending (re-score in progress, 75 below bar) | pending |
 | 5b Guardian-vault | pass | pass | pending (re-score in progress, 79 below bar) | pending |

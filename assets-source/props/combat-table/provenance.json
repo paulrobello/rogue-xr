@@ -143,7 +143,6 @@
       "Proof view and seated room 2 and 4 engine captures: ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)"
     ],
     "open": [
-      "Independent visual review",
       "Owner Quest review"
     ]
   },
@@ -156,7 +155,7 @@
     {
       "gate": "creative",
       "status": "pending",
-      "notes": "independent score 58 on 659a0fb, below the 80 bar (independentScore); review sheet assets-source/props/combat-table/staging/combat-table.review-sheet.jpg"
+      "notes": "Independent score 80/100 on cde4d7c; see independentScore. Owner look review remains open."
     },
     {
       "gate": "rights",
@@ -170,62 +169,62 @@
     }
   ],
   "independentScore": {
-    "score": 79,
+    "score": 80,
     "scale": "0-100 visual fidelity to the art bible and study-kit language",
     "scorer": "independent reviewer (Claude Opus 5.5; separate from the authoring agent)",
-    "date": "2026-11-17",
+    "date": "2026-11-18",
     "acceptanceBar": 80,
-    "clearsBar": false,
-    "build": "a26831b",
-    "previousScore": 72,
+    "clearsBar": true,
+    "build": "cde4d7c",
+    "previousScore": 79,
     "rubric": [
       {
         "criterion": "material fidelity to the art bible",
-        "points": 21,
+        "points": 22,
         "max": 25,
-        "note": "Walnut is unchanged and still on target: game-fight shows a dark oiled brown with soft grain, which matches the study wood language. The felt still reads as ruby cloth with visible nap in engine-player-view and in the game-fight tray. The brass changed most. On b241d9b it read pale cream (L* 68). Now the rim, straps, tray frame and gear read as warm saturated gold in game-fight, and they sit closer to the automaton brass in the same frame. The before/after sheet confirms the shift from cream to gold on the rim, straps and foot. That agrees with the builder's rim L* 71.2 to 56.9 and cross strap 72.8 to 59.5. Brass still does not fully read as polished metal on the flat inlays. The straps and cross strap are a uniform band with no highlight gradient: the builder reports L* SD 1.0 against 0.9 before, and that SD did not improve. Only the bell foot and the curved rim show a specular sweep."
+        "note": "Improved by one point. Walnut is still a dark oiled brown close to #583C26, and the felt is ruby cloth with visible nap (game-fight tray, engine-player-view). The brass keeps the warm gold from a26831b. The crown helps most on the right-hand straps. In game-fight and engine-grazing the right upper strap pair now carries a bright specular line that changes in intensity along its length, so it reads as a raised metal inlay rather than a painted band. That matches the builder's SD 5.9 to 15.8 at (1019,440). The left lower straps show a softer gradient that is visible but modest, consistent with SD 0.6 to 6.3. The cross strap and the pad frames still read nearly flat (SD 2.7), and the C-scrolls and gear plate are unchanged flat brass. Brass on the top still reads less polished than the bell foot and the rim sweep."
       },
       {
         "criterion": "form and silhouette (folded and unfolded)",
         "points": 15,
         "max": 20,
-        "note": "Unchanged from b241d9b, and the builder states node geometry is unchanged. Both states have clean silhouettes. Unfolded is a two-leaf oval on a banded walnut drum with a brass bell foot. Folded is a square top with the leaves hanging edge-on (game-folded, engine-folded). The top language of table-sheet-1 panel 3 is present: recessed bevelled tray, strap inlays, gear medallion and scroll inlays. Panels 1 and 2 remain unmet. Folded is not the closed brass-banded rune drum, and unfolded is not radial petals around exposed gearing. The bell foot still reads large and plain relative to the top in game-folded."
+        "note": "Unchanged. The crown keeps the strap footprints, and the silhouettes are the same in game-folded, engine-folded and engine-unfolded. Unfolded is a two-leaf oval on a banded walnut drum with a brass bell foot. Folded is a square top with the leaves hanging edge-on. The top language of table-sheet-1 panel 3 is present. Panels 1 and 2 are still not met: there is no closed rune drum and no radial petal layout around exposed gearing. The bell foot still reads large and plain under the folded top."
       },
       {
         "criterion": "lighting integration in engine",
         "points": 15,
         "max": 20,
-        "note": "Improved. game-folded now shows a dark contact ring on the floor around the bell foot, so the table no longer floats. This is consistent with the builder's 16.4 to 8.9 L* under the foot with the adjacent strips unchanged. The brass now sits nearer the automatons' tone instead of glowing cream. Still open: the table walnut reads brighter and more evenly lit than the lightmapped room wood and floor around it, so the table still looks lit apart from the room. The shadow appears only under the foot. There is no shadow from the top onto the drum or the floor, and the tray-lip and gear contact darkening still looks weak in game-fight."
+        "note": "Unchanged. The contact ring under the foot from a26831b is still visible in game-folded. The fresh AO bake does not visibly deepen the darkening at the tray lip or gear plate in game-fight or engine-player-view. The table walnut is still brighter and more evenly lit than the lightmapped floor and shelving around it, so the top looks lit apart from the room. The top casts no shadow onto the drum or the floor beyond the foot. The new strap highlights do respond to the scene light, which helps them sit in the room."
       },
       {
         "criterion": "readability as a play surface",
         "points": 12,
         "max": 15,
-        "note": "Unchanged. The recessed tray reads clearly and the die stands out on the felt (game-fight). Felt, walnut and brass are well separated. The draw and discard pads are still small and empty. The FLEE and END TURN plaques still cover the right leaf, its straps and the edge of the discard pad. Strap lines still cut the top into narrow wedges. Not shown by any frame: a card lying on the felt, piles on the pads, or the hand in play over the tray. The hand is held below the table edge."
+        "note": "Unchanged. The tray reads clearly and the die stands out on the felt. Felt, walnut and brass separate well, and the stronger strap highlights do not compete with the tray. The draw and discard pads are still small and empty. The FLEE and END TURN plaques still cover the right leaf, its straps and the edge of the discard pad. The straps still cut the top into narrow wedges. Not covered by any frame: a card lying on the felt, piles on the pads, or a hand played over the tray. The fan in game-fight is held below the table edge, so it is not evidence of a card on the felt."
       },
       {
         "criterion": "surface defects (seams, normals, AO)",
         "points": 8,
         "max": 10,
-        "note": "The main fault is fixed. The left body strap that rendered black on b241d9b now reads as brass in game-fight, matching the mirrored right pair, and the before/after sheet confirms it. Builder figures: L* 0.7/0.3 to 57.1/53.2 at the stated boxes. No hinge seams or normal swirls are visible on the tray or rim. Remaining: scratch/streak texture on the near leaf rim end and coarse bark-like walnut grain at grazing light (engine-grazing, left foreground). Contact AO at the tray lip and gear is still faint."
+        "note": "No new seams, z-fighting or shading breaks are visible where the crowned straps meet the walnut, the rim or the cross strap. That holds in game-fight, engine-grazing and the gameplay and grazing halves of the comparison image. Still present: scratch streaks on the near leaf rim end and coarse bark-like walnut grain at grazing light (engine-grazing, left foreground). Contact AO at the tray lip and gear is still faint after the rebake. At 800×600 and 1600×1000 the frames are too coarse to rule out sub-pixel z-fighting at the strap ends. Only a close or headset view would settle that."
       },
       {
         "criterion": "craft detail (hinges, inlay, edges)",
         "points": 8,
         "max": 10,
-        "note": "Unchanged. The bevelled recessed tray frame catches light on its front edge. Also present: strap inlays and the cross strap, four flat C-scroll inlays, a gear medallion with a domed boss, drum bands, hinge tabs visible folded (engine-folded), and a bell foot with a good highlight sweep. Still missing against the concept: rune bands on the drum and the sunk card wells beside the tray."
+        "note": "Close to unchanged. The crowned straps add a little edge interest. Also present: the bevelled recessed tray frame, four C-scroll inlays, a gear medallion with a domed boss, drum bands, hinge tabs in the folded state, and a bell foot with a good highlight sweep. Still missing against the concept: rune bands on the drum and sunk card wells beside the tray."
       }
     ],
     "topFixes": [
-      "Give the flat brass inlays (straps, cross strap, pad frames) a highlight gradient: slight bevel/crown geometry or a lower roughness so the straps stop reading as uniform paint (L* SD about 1)",
-      "Integrate the top with the room light: bring the table walnut down toward the lightmapped room wood, or add a matching floor light pool, and extend the contact shadow beyond the foot",
-      "Strengthen contact AO at the tray lip and gear plate",
-      "Keep the FLEE and END TURN plaques off the right leaf so the discard pad reads as a play zone, and enlarge the pads",
+      "Carry the crown or a lower roughness to the cross strap and pad frames, which are still near-flat (SD 2.7), and strengthen the left strap gradient",
+      "Bring the table walnut toward the lightmapped room tone and extend the contact shadow beyond the foot",
+      "Deepen contact AO at the tray lip and gear plate; the rebake shows no visible gain there",
+      "Move the FLEE and END TURN plaques off the right leaf and enlarge the draw and discard pads",
       "Move the folded form toward table-sheet-1 panel 1 (closed drum with rune bands) and slim the bell foot",
-      "Capture proof of a card on the felt and piles on the pads before the next review",
-      "Calm the scratch streaks on the leaf rim end seen at grazing light"
+      "Calm the leaf rim-end scratch streaks and the coarse grazing-light grain",
+      "Capture a card lying on the felt, piles on the pads, and a close strap-end view before the next review"
     ],
-    "method": "I read docs/art-bible.md (palette: walnut #583C26, brass #DEC16A, ruby felt) and the previous independentScore of 72 on b241d9b with its rubric and topFixes, then the approved concept table-sheet-1.png. I scored the two in-game frames first (staging/game-fight.jpg with the die in the tray, and game-folded.jpg). Then I scored the engine proof frames (engine-player-view, engine-grazing, engine-folded, engine-unfolded) and the combat-table review sheet. For change attribution I used .local/handoff-build/table-before-after.jpg, and for room context the unchanged study shot docs/verification/p5-int-study.jpg. This was a visual review only, using the Read image viewer under the read-only constraint. I ran no pixel measurement scripts, so every L* figure quoted is the builder's, and I checked each one by eye only. All three checks agree with what is visible. The left strap is no longer black. The cross strap and rim moved from cream to gold. A dark contact ring now sits under the bell foot in game-folded. The strap SD claim (0.9 to 1.0) also matches what I see: the strap still looks flat. I did not open report.json, and I accepted the reimport figures (6,068 tris, 4 materials, unchanged node and budget contract) and the clean Metal Chromium log as stated by the builder without checking them. The quest and xr-emu frames predate this build and were excluded. The new frames do not show a card lying on the felt, piles on the pads, or the asset under Quest lighting. The faults still open from the 72 review are the panel 1 and 2 form gap, the missing rune bands and card wells, flat strap brass, the table lit apart from the room, weak tray and gear contact AO, small empty pads under the FLEE and END TURN plaques, and the leaf-end scratch streaks. Fixed since then: the black left strap, the pale cream brass tone and the missing foot contact shadow. 79 is below the bar of 80. This is not an owner approval.",
+    "method": "I read the art-bible palette and material rows in docs/art-bible.md and the previous independentScore of 79 on a26831b, including its rubric, topFixes and method. I compared against the approved concept table-sheet-1, which I viewed only as panels 1 to 3 inside the review sheet and did not open as a standalone file. I scored the in-game frames first (game-fight and game-folded), then the proof frames (engine-player-view, engine-grazing and the review sheet). I viewed engine-folded and engine-unfolded only through the review sheet tiles. For attribution I used .local/handoff-build/table-crowned-compare.jpg, which puts previous on the left and current on the right. I checked report.json for the 6,152 low-poly triangle count. I did not read p5-int-study separately and relied on the room context in the game frames. This was a visual review only, using the Read image viewer under the read-only constraint. I ran no pixel measurements, so every L* figure quoted is the builder's, checked by eye only. The right upper strap highlight that varies along its length is clearly visible. The left lower strap gain is visible but small. The cross strap looks nearly flat, which fits its small SD change. I accepted the four material slots and the Metal Chromium capture platform as stated. The photos do not cover a card on the felt, piles on the pads, Quest lighting or headset scale, or close strap-end detail where sub-pixel z-fighting could hide. Fixed since 79: the flat-band look on the body and leaf straps, partially. Still open: the cross strap and pad frames, the room-light mismatch, weak tray and gear AO, the plaques covering the right leaf, the panel 1 and 2 form gap, the missing rune bands and card wells, and the rim streaks. 80 meets the bar of 80 only narrowly, on a one-point material gain. This is not an owner or Quest approval.",
     "evidence": [
       {
         "path": "docs/art-bible.md",
@@ -236,42 +235,28 @@
         "sha256": "bc5823964df0b85cce0c984d4555f2af7c57e5e55e7ae5740dbb35fd4dcb9f4c"
       },
       {
-        "path": "assets-source/props/combat-table/provenance.json",
-        "sha256": "3b334d087c95527851a14d9d66f4c20c4714d56e317416b2f79abedf8a19b595",
-        "commit": "a26831b",
-        "note": "Prior review provenance as read at the scored commit"
-      },
-      {
         "path": "assets-source/props/combat-table/staging/game-fight.jpg",
-        "sha256": "0afdbd8cb45e68a3202dbcd0e17015b8afe30d2ace15037186b0a90e0a01afa3"
+        "sha256": "8933c57636e142a68233804695b676a1dd4e2ed255026d12f5599f9fc9d16342"
       },
       {
         "path": "assets-source/props/combat-table/staging/game-folded.jpg",
-        "sha256": "15cf1ee0947fe444194037dd5113d40b4f4a32dba97ac4aec71d73d25e9763fd"
+        "sha256": "0783ec8cf6dd870ea56c9d3383b6ac0c93274580d91768c4916038e5618733e6"
       },
       {
         "path": "assets-source/props/combat-table/staging/engine-player-view.jpg",
-        "sha256": "9890e72ce3df297645b8d554216ea8dc98d57326da77cc4cba719fc59117855c"
+        "sha256": "a0eaec0f9d42181cc000a7cf057efe2bf65978baf37b0c5347cb85e3cc273050"
       },
       {
         "path": "assets-source/props/combat-table/staging/engine-grazing.jpg",
-        "sha256": "924eda8f00cf4882ca6ed2628300cfcd32fe51f938a4101910a2933189a0aeb4"
-      },
-      {
-        "path": "assets-source/props/combat-table/staging/engine-folded.jpg",
-        "sha256": "173e56139a67cd57534d46d5ecb06e7b8d9f519a59d50c86b42943ac0b517bde"
-      },
-      {
-        "path": "assets-source/props/combat-table/staging/engine-unfolded.jpg",
-        "sha256": "004ad0f4b86f38d0f5cbf2f7cbff96be81edcedcf3fc584e2349b7c1b816fed3"
+        "sha256": "96678c8cfa987a78366386d22668eb48b3ce1587b159ecc5620a034c0e642bbd"
       },
       {
         "path": "assets-source/props/combat-table/staging/combat-table.review-sheet.jpg",
-        "sha256": "ae96af29fc9988d892c45f5a7f433b054c0db592ef2e208a31f6ddc9a22156a6"
+        "sha256": "84192e46026df23895eee3b6cd0654bd2b10cc3f4f14cde07020d6b7d7e14031"
       },
       {
-        "path": "docs/verification/p5-int-study.jpg",
-        "sha256": "2a54130faf77c6c6c434c677b39b4337fe3a2d57de7c097331b06c9cfb4aeaaa"
+        "path": "assets-source/props/combat-table/staging/report.json",
+        "sha256": "690942d54bcec4e2ab7b0e1d98b200d488f0d458344c660fbe798ca71854966c"
       }
     ]
   },
@@ -639,6 +624,112 @@
         {
           "path": "src/combat/table-asset-proof.ts",
           "sha256": "47a884542fed259a73c6954f76170b57d2ec611e9e4839dc3bb3d584f931173a"
+        }
+      ]
+    },
+    {
+      "score": 79,
+      "scale": "0-100 visual fidelity to the art bible and study-kit language",
+      "scorer": "independent reviewer (Claude Opus 5.5; separate from the authoring agent)",
+      "date": "2026-11-17",
+      "acceptanceBar": 80,
+      "clearsBar": false,
+      "build": "a26831b",
+      "previousScore": 72,
+      "rubric": [
+        {
+          "criterion": "material fidelity to the art bible",
+          "points": 21,
+          "max": 25,
+          "note": "Walnut is unchanged and still on target: game-fight shows a dark oiled brown with soft grain, which matches the study wood language. The felt still reads as ruby cloth with visible nap in engine-player-view and in the game-fight tray. The brass changed most. On b241d9b it read pale cream (L* 68). Now the rim, straps, tray frame and gear read as warm saturated gold in game-fight, and they sit closer to the automaton brass in the same frame. The before/after sheet confirms the shift from cream to gold on the rim, straps and foot. That agrees with the builder's rim L* 71.2 to 56.9 and cross strap 72.8 to 59.5. Brass still does not fully read as polished metal on the flat inlays. The straps and cross strap are a uniform band with no highlight gradient: the builder reports L* SD 1.0 against 0.9 before, and that SD did not improve. Only the bell foot and the curved rim show a specular sweep."
+        },
+        {
+          "criterion": "form and silhouette (folded and unfolded)",
+          "points": 15,
+          "max": 20,
+          "note": "Unchanged from b241d9b, and the builder states node geometry is unchanged. Both states have clean silhouettes. Unfolded is a two-leaf oval on a banded walnut drum with a brass bell foot. Folded is a square top with the leaves hanging edge-on (game-folded, engine-folded). The top language of table-sheet-1 panel 3 is present: recessed bevelled tray, strap inlays, gear medallion and scroll inlays. Panels 1 and 2 remain unmet. Folded is not the closed brass-banded rune drum, and unfolded is not radial petals around exposed gearing. The bell foot still reads large and plain relative to the top in game-folded."
+        },
+        {
+          "criterion": "lighting integration in engine",
+          "points": 15,
+          "max": 20,
+          "note": "Improved. game-folded now shows a dark contact ring on the floor around the bell foot, so the table no longer floats. This is consistent with the builder's 16.4 to 8.9 L* under the foot with the adjacent strips unchanged. The brass now sits nearer the automatons' tone instead of glowing cream. Still open: the table walnut reads brighter and more evenly lit than the lightmapped room wood and floor around it, so the table still looks lit apart from the room. The shadow appears only under the foot. There is no shadow from the top onto the drum or the floor, and the tray-lip and gear contact darkening still looks weak in game-fight."
+        },
+        {
+          "criterion": "readability as a play surface",
+          "points": 12,
+          "max": 15,
+          "note": "Unchanged. The recessed tray reads clearly and the die stands out on the felt (game-fight). Felt, walnut and brass are well separated. The draw and discard pads are still small and empty. The FLEE and END TURN plaques still cover the right leaf, its straps and the edge of the discard pad. Strap lines still cut the top into narrow wedges. Not shown by any frame: a card lying on the felt, piles on the pads, or the hand in play over the tray. The hand is held below the table edge."
+        },
+        {
+          "criterion": "surface defects (seams, normals, AO)",
+          "points": 8,
+          "max": 10,
+          "note": "The main fault is fixed. The left body strap that rendered black on b241d9b now reads as brass in game-fight, matching the mirrored right pair, and the before/after sheet confirms it. Builder figures: L* 0.7/0.3 to 57.1/53.2 at the stated boxes. No hinge seams or normal swirls are visible on the tray or rim. Remaining: scratch/streak texture on the near leaf rim end and coarse bark-like walnut grain at grazing light (engine-grazing, left foreground). Contact AO at the tray lip and gear is still faint."
+        },
+        {
+          "criterion": "craft detail (hinges, inlay, edges)",
+          "points": 8,
+          "max": 10,
+          "note": "Unchanged. The bevelled recessed tray frame catches light on its front edge. Also present: strap inlays and the cross strap, four flat C-scroll inlays, a gear medallion with a domed boss, drum bands, hinge tabs visible folded (engine-folded), and a bell foot with a good highlight sweep. Still missing against the concept: rune bands on the drum and the sunk card wells beside the tray."
+        }
+      ],
+      "topFixes": [
+        "Give the flat brass inlays (straps, cross strap, pad frames) a highlight gradient: slight bevel/crown geometry or a lower roughness so the straps stop reading as uniform paint (L* SD about 1)",
+        "Integrate the top with the room light: bring the table walnut down toward the lightmapped room wood, or add a matching floor light pool, and extend the contact shadow beyond the foot",
+        "Strengthen contact AO at the tray lip and gear plate",
+        "Keep the FLEE and END TURN plaques off the right leaf so the discard pad reads as a play zone, and enlarge the pads",
+        "Move the folded form toward table-sheet-1 panel 1 (closed drum with rune bands) and slim the bell foot",
+        "Capture proof of a card on the felt and piles on the pads before the next review",
+        "Calm the scratch streaks on the leaf rim end seen at grazing light"
+      ],
+      "method": "I read docs/art-bible.md (palette: walnut #583C26, brass #DEC16A, ruby felt) and the previous independentScore of 72 on b241d9b with its rubric and topFixes, then the approved concept table-sheet-1.png. I scored the two in-game frames first (staging/game-fight.jpg with the die in the tray, and game-folded.jpg). Then I scored the engine proof frames (engine-player-view, engine-grazing, engine-folded, engine-unfolded) and the combat-table review sheet. For change attribution I used .local/handoff-build/table-before-after.jpg, and for room context the unchanged study shot docs/verification/p5-int-study.jpg. This was a visual review only, using the Read image viewer under the read-only constraint. I ran no pixel measurement scripts, so every L* figure quoted is the builder's, and I checked each one by eye only. All three checks agree with what is visible. The left strap is no longer black. The cross strap and rim moved from cream to gold. A dark contact ring now sits under the bell foot in game-folded. The strap SD claim (0.9 to 1.0) also matches what I see: the strap still looks flat. I did not open report.json, and I accepted the reimport figures (6,068 tris, 4 materials, unchanged node and budget contract) and the clean Metal Chromium log as stated by the builder without checking them. The quest and xr-emu frames predate this build and were excluded. The new frames do not show a card lying on the felt, piles on the pads, or the asset under Quest lighting. The faults still open from the 72 review are the panel 1 and 2 form gap, the missing rune bands and card wells, flat strap brass, the table lit apart from the room, weak tray and gear contact AO, small empty pads under the FLEE and END TURN plaques, and the leaf-end scratch streaks. Fixed since then: the black left strap, the pale cream brass tone and the missing foot contact shadow. 79 is below the bar of 80. This is not an owner approval.",
+      "evidence": [
+        {
+          "path": "docs/art-bible.md",
+          "sha256": "11da71b45f24eeb258ef77d328ef1aa009297a9231608cb80bb429aa3ff2ad6a"
+        },
+        {
+          "path": "assets-source/concepts/table-sheet-1.png",
+          "sha256": "bc5823964df0b85cce0c984d4555f2af7c57e5e55e7ae5740dbb35fd4dcb9f4c"
+        },
+        {
+          "path": "assets-source/props/combat-table/provenance.json",
+          "sha256": "3b334d087c95527851a14d9d66f4c20c4714d56e317416b2f79abedf8a19b595",
+          "commit": "a26831b",
+          "note": "Prior review provenance as read at the scored commit"
+        },
+        {
+          "path": "assets-source/props/combat-table/staging/game-fight.jpg",
+          "sha256": "0afdbd8cb45e68a3202dbcd0e17015b8afe30d2ace15037186b0a90e0a01afa3"
+        },
+        {
+          "path": "assets-source/props/combat-table/staging/game-folded.jpg",
+          "sha256": "15cf1ee0947fe444194037dd5113d40b4f4a32dba97ac4aec71d73d25e9763fd"
+        },
+        {
+          "path": "assets-source/props/combat-table/staging/engine-player-view.jpg",
+          "sha256": "9890e72ce3df297645b8d554216ea8dc98d57326da77cc4cba719fc59117855c"
+        },
+        {
+          "path": "assets-source/props/combat-table/staging/engine-grazing.jpg",
+          "sha256": "924eda8f00cf4882ca6ed2628300cfcd32fe51f938a4101910a2933189a0aeb4"
+        },
+        {
+          "path": "assets-source/props/combat-table/staging/engine-folded.jpg",
+          "sha256": "173e56139a67cd57534d46d5ecb06e7b8d9f519a59d50c86b42943ac0b517bde"
+        },
+        {
+          "path": "assets-source/props/combat-table/staging/engine-unfolded.jpg",
+          "sha256": "004ad0f4b86f38d0f5cbf2f7cbff96be81edcedcf3fc584e2349b7c1b816fed3"
+        },
+        {
+          "path": "assets-source/props/combat-table/staging/combat-table.review-sheet.jpg",
+          "sha256": "ae96af29fc9988d892c45f5a7f433b054c0db592ef2e208a31f6ddc9a22156a6"
+        },
+        {
+          "path": "docs/verification/p5-int-study.jpg",
+          "sha256": "2a54130faf77c6c6c434c677b39b4337fe3a2d57de7c097331b06c9cfb4aeaaa"
         }
       ]
     }
