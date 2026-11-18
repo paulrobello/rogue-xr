@@ -709,148 +709,344 @@
     }
   ],
   "independentScore": {
-    "score": 78,
+    "score": 81,
     "scale": "0-100 visual fidelity to the art bible and study-kit language",
     "scorer": "independent reviewer agent (separate from the authoring agent; did not build the asset)",
     "date": "2026-11-17",
     "acceptanceBar": 80,
-    "clearsBar": false,
-    "build": "b1df5d3",
-    "previousScore": 75,
+    "clearsBar": true,
+    "build": "8428cd8",
+    "previousScore": 78,
     "rubric": [
       {
         "criterion": "form, layout and proportions",
         "points": 25,
         "max": 30,
-        "note": "New: a counter gear pair on a second shaft meshes with the crown pair at the well (mesh-000..315). In 2x crops of the contact zone x 560-780, y 120-520 across all eight frames the teeth sit in the opposite gaps with no tooth drawn through another. Still the same 8x12x5 m box with the furnace plinth central, and the shaft still stops in the well. Plug check (scripts/plug.py, bbox from |in-out|>25): gilt pixels in 10 px bands on left, right and top of the former door box are 0.00%; column-mean L* across the edges stays within 4 L* (left 11.5-17.8, right 14.2-19.5); Laplacian variance on the edges (116-402 against 90-320 on the open wall) sits inside the range of the open wall beside it, so no seam, leak, z-fight or leftover architrave."
+        "note": "Partly fixed: the drive shaft now rises past the gear stack into the void above the ceiling opening (void shot, shaft at x 625-665 from y ~300 up), but its rounded top is still visible in the dark at about y 168, so it still visibly ends rather than climbing out of view; no point added. Tooth contact zone x 540-800, y 100-560 on all eight light-only mesh frames (crops/contact-lm.png): teeth sit in the opposite gaps, no tooth drawn through another. Plug w: changed box (in-out>25) x 445-764, y 103-548; column-mean L* across the left edge 12.2-17.1 and right edge 11.6-16.4, no architrave, seam or leak at 1x and 2x; the gilt-band counts (6.8-16.7%) are the damask motif, which the crop confirms. Still the same 8x12 m box with the furnace plinth central."
       },
       {
         "criterion": "signature features: vertical machinery",
         "points": 22,
         "max": 25,
-        "note": "Fixed: the gear train moves together. Hero vs hero-gear-turned now differs by 8.76 levels in the upper-pair box 565-780 x 20-155 (was 0.11) and 16.96 in the crown box; the floor box differs by 0.00. Across the mesh series both the crown box (6.7-8.0) and counter box (9.3-12.1) change at every 45 degree step while a static wall box stays at 0.00. Fixed: flames now render in three.js as four teardrop cards behind the bars (gs-fire-3x.jpg). I did not measure the rotation direction or tooth ratio. In game the gear turns too: p5-int-gear-shaft vs -turned differ by 9.29 levels in the gear box 600-1300 x 0-500 (whole frame 2.95)."
+        "note": "Motion unchanged from b1df5d3: crown and counter pairs change at every 45 degree step (textured gear-pixel temporal std 3.92 L*) while a stone control box stays at 0.00. Counter rotation not measured visually; the manifest declares gear_ring +0.35 rad/s and gear_counter -0.56 rad/s (32:20). The gears lost luminance as a feature: on identical gear pixels (mask from the old flat-gilt frame, eroded 2 px) hero L* 41.2 -> 32.8, in game 40.9 -> 32.8, so the train reads as dark bronze rather than lit brass from the seat. Net: no change."
       },
       {
         "criterion": "surface detail and material read",
-        "points": 13,
+        "points": 14,
         "max": 20,
-        "note": "Still open: the gilt is flat painted card. On a gilt mask (sat>0.3, v>0.45, hue 25-55) the crown and counter gears measure L* 40.6-41.2 with L* std 2.9-4.9 in every mesh frame, sat 0.68-0.71, against #DEC16A at sat 0.52; no worn edges or highlights. The flames are single-colour cards with hard edges and no core gradient. The plinth stone is pale (box 530-820 x 515-570: RGB 144,102,66, L* 46.5). Lightmap density 44.4 px/m."
+        "note": "Brass-aged alias: on identical hero gear pixels L* std 7.8 -> 13.1, high-frequency detail (L* minus 2 px blur) 3.0 -> 5.1, highlight share (L*>60) 2.4% -> 5.9%, against the study orrery on the same set at detail 6.8, L* 49.4, sat 0.53, hue 33.4. Split by light-only frames over eight angles, the material term (textured/light-only linear luminance) only moved 0.852 -> 0.805; with the old light the new material would sit at L* 38.7 against 39.7, so the alias is not what darkened the gears. At 3-4x (crops/gs-hero-gear4x.png, gs-int-gear3x.png) teeth read as crumpled foil and rim faces as mottled tan, and 10% of gear pixels fall under L* 20; the bible asks for soft painted variation. The builder's D3 figures (sat 0.41-0.43, hue 33) come from a gilt mask on the new frame that keeps 33% of gear pixels (the highlights); on all gear pixels sat is 0.71-0.79, hue 28. Flames are now three flat bands stacked with straight horizontal seams at y ~620 and ~634 (6x crop x 630-740, y 590-665; L* steps 15 and 6 at x 722), so graded but posterized, 12% near-white core. Plinth stone toned down: box 530-820 x 515-570 L* 46.5 -> 25.3, face 530-610 x 580-680 L* 45.7 -> 35.7. Lightmap 44.4 -> 54.1 px/m gives no visible change I could measure, so no credit."
       },
       {
         "criterion": "colour, value and lighting mood",
-        "points": 11,
+        "points": 12,
         "max": 15,
-        "note": "Frame hue 20.5, sat 0.714, L* 18.4, 0.4% under L* 2, matching the kit. Fire improved but still peach: flame mask in hero x 620-750, y 580-655 is RGB 234,176,117, hue 30.6, sat 0.50, R-B 117 (was hue 26.8, sat 0.49), against #F3BE65 hue 37.4, sat 0.58; in game (firebox 910-1090 x 630-780 at 1600x1000) hue 29.1, sat 0.46, R-B 97. Baked light on the gears: in a fixed gilt-masked box 690-760 x 340-420 on the counter gear, mean L* runs 41.3, 40.2, 37.0, 40.0, 41.7, 41.3, 40.2, 37.0 over the eight angles, and a diagonal brown shadow streak is visible on the gear face at 090 and 315 (3x crops), so a faint baked shade turns with the gear. It is a 4-5 L* dip, small at 3.6 m overhead. No tooth interpenetration in any frame."
+        "note": "Fixed: gear light no longer turns with the gears. On 105,156 pixels that are gear in all eight light-only frames, per-pixel temporal std is 0.20 L* (p90 0.34) against 1.52 (p90 3.11) in the old build; per-angle mean 30.6-30.7; old box 690-760 x 340-420 now 33.5-34.0 at every angle (was 36.2-44.6). The same rebake cut the light on the gears by 46% (light-only linear luminance 0.130 -> 0.070, L* 42.3 -> 30.2) and warmed it (light-only hue 29.5 -> 26.0), so rendered brass moved to hue 28.5 against #DEC16A at 45. Room 2-3 L* darker in every shot: hero 18.4 -> 15.9 (pixels under L* 10 38% -> 45%), in game 21.3 -> 18.2 with 1.2% under L* 2, still above the study in game (16.5), so not too dark for the kit, but the gears lost about 10 L*. Fire warmer: hero flame mask hue 28.7 -> 32.1, sat 0.49, R-B 112; in game hue 31.3, against #F3BE65 hue 37.6."
       },
       {
         "criterion": "readability and comfort at seated VR distance",
-        "points": 7,
+        "points": 8,
         "max": 10,
-        "note": "Floor lanes unchanged. The pale plinth (L* 46.5) and fire remain the brightest large area and pull focus from the enemy positions. The new gears sit overhead, outside the near field."
+        "note": "The plinth no longer pulls focus: in game face box 650-880 x 640-780 L* 48.0 -> 36.1 (p90 72.5 next to the grate). In game floor 100-500 x 820-960 darkened 28.2 -> 19.7, still clearly above the corners. The fire stays the focal light (L* p90 89.4), which suits a furnace room."
       }
     ],
     "topFixes": [
-      "Give the brass painted variation and worn-edge highlights (gear L* std 2.9-4.9, sat 0.68-0.71 against #DEC16A at sat 0.52), and rebake the moving gears without directional shade so the shadow streak (L* 37.0 against 41 in box 690-760 x 340-420 at 090 and 315) no longer turns with them.",
-      "Replace the flat single-colour flame cards with soft-edged, core-to-tip graded cards near #F3BE65 (now hue 30.6, sat 0.50; in game hue 34.1, sat 0.37), and tone down the pale plinth stone (L* 46.5).",
-      "Let the shaft climb out of view instead of ending visibly in the well, and confirm the counter gear turns opposite the crown at the tooth ratio (not measured here)."
+      "Restore light on the gear train: the rotation-invariant rebake cut gear irradiance 46% (light-only L* 42.3 -> 30.2) and brass now renders L* 33, hue 28.5; lift the gear bake or probe so brass sits near L* 40 and hue 33-40 without reintroducing the turning shade.",
+      "Smooth the flame cards: replace the three flat stacked bands with straight seams (y ~620 and ~634 in the hero, L* steps up to 15) with one soft vertical gradient to a near-white core.",
+      "Calm the brass-aged texture on the gears: scale the crinkle up or blur it so the teeth stop reading as crumpled foil at 3-4x (detail 5.1, 10% of pixels under L* 20), keeping the worn-edge highlights."
     ],
-    "method": "Read the brief, art bible and the previous block (75), re-checking its fixes as claims (flames, gilt, shaft, motion). Viewed all p5-rooms-gear-shaft-*.jpg used here (hero, hero.diffuse, hero-gear-turned, ring, void, seam-north, plug-w-in, plug-w-out, mesh-000 to mesh-315) and p5-int-gear-shaft(-turned).jpg. Measured box and frame RGB, hue, saturation, CIE L* stats, a flame mask, gilt-masked gear stats per mesh frame, mean absolute frame differences per gear box between successive mesh frames and between base and turned shots, fixed gilt-masked boxes on the gear faces across all eight angles to test for baked light turning with the gear, and the plug checks. Made 2x crops of the tooth contact zone in all eight mesh frames on one sheet and a 3x crop of the firebox. Read report.json and engine-compare.json (frame ratio 0.84) for attribution. Rotation direction and ratio were not measured. Scripts in /tmp/fb17/rescore/scripts/. No repo edits.",
+    "method": "Read the brief, the art bible and the previous block (78), re-checking its three fixes as claims. Judged the engine shots first: all p5-rooms-gear-shaft-*.jpg at 8428cd8 (hero, hero-gear-turned, ring, void, seam-north, plug-w-in/out, mesh-000..315, mesh-lm-000..315, floor-boarded-n and close) and p5-int-gear-shaft(-turned).jpg, against the b1df5d3 shots in /tmp/rxr-r5/before (hashes match the previous evidence) and the builder crops in /tmp/rxr-r5/cmp. Measured in Pillow and numpy: whole-frame CIE L*, hue and saturation; gear brass on identical pixels using a mask taken from the old flat-gilt frame and applied to both builds (hero, in game, void, all eight mesh angles); per-pixel temporal std of L* across the eight light-only frames on pixels that are gear in every frame, with a stone control box; textured over light-only linear-luminance ratios to separate material from light; high-frequency detail; flame masks with top/bottom and core stats and vertical L* profiles; plinth, floor and wall boxes; the plug seam check. Crops at 1-6x in /tmp/fb17/rescore2/crops, scripts in /tmp/fb17/rescore2/scripts. Did not read report.json or engine-compare.json; read provenance.json only for D3/D4 and texel density. Counter-gear rotation direction was not measured. No repo edits.",
     "evidence": [
       {
         "path": "docs/art-bible.md",
         "sha256": "11da71b45f24eeb258ef77d328ef1aa009297a9231608cb80bb429aa3ff2ad6a"
       },
       {
-        "path": "docs/verification/p5-int-study.jpg",
-        "sha256": "2a54130faf77c6c6c434c677b39b4337fe3a2d57de7c097331b06c9cfb4aeaaa"
-      },
-      {
         "path": "docs/verification/p5-rooms-study-hero.jpg",
         "sha256": "4a957664f7295ac42ed681fc118a9ff25fb29dc9cd46d2d8fe363edff9913936"
       },
       {
-        "path": "docs/verification/p5-rooms-gear-shaft-hero.jpg",
-        "sha256": "ff9d6c964e33959d3fa7a480e94a4f2530517f1529bfa052f4293098fb312d46"
+        "path": "assets-source/rooms/gear-shaft/provenance.json",
+        "sha256": "3597a98430b090219d5f251e79ff1a85c07fe1b211e37cbc736ba7913b2414e8"
       },
       {
-        "path": "docs/verification/p5-rooms-gear-shaft-hero.diffuse.jpg",
-        "sha256": "948b32b1daccd3a843bc451f5f956d671643b1096f1ed807f673b25c5ca5b033"
+        "path": "docs/verification/p5-rooms-gear-shaft-floor-boarded-n-close.jpg",
+        "sha256": "960478a0897ff4d7503ffff440c0223fc39688c9f2caf9539191689b70c963b5"
+      },
+      {
+        "path": "docs/verification/p5-rooms-gear-shaft-floor-boarded-n.jpg",
+        "sha256": "d622aa7b512ab6edcc01a1676d8319059805dbb1f80394e7da3f3257d93553cb"
       },
       {
         "path": "docs/verification/p5-rooms-gear-shaft-hero-gear-turned.jpg",
-        "sha256": "cea90ffce89867b623a193858721e52c8f9f0bf3e11a3766ef212003bbbc992d"
+        "sha256": "008744ec2d250265905e89e908cb4147b23b8e87802eea84d5c7f8610e82b821"
       },
       {
-        "path": "docs/verification/p5-rooms-gear-shaft-ring.jpg",
-        "sha256": "fbc51f3b6b17c94c43816213ce815825974e068da5bb83c40aba4aebd32a8028"
+        "path": "docs/verification/p5-rooms-gear-shaft-hero.diffuse-gear-turned.jpg",
+        "sha256": "b6811b3d5f5f48bfc77c850a8a6509b06b3592aabef4c7af9469a644f23aaec9"
       },
       {
-        "path": "docs/verification/p5-rooms-gear-shaft-void.jpg",
-        "sha256": "9b99f9fa1441c4ff85dce14567d3ca2d4634f335e6498e57dda1fbf9e9a8e331"
+        "path": "docs/verification/p5-rooms-gear-shaft-hero.diffuse.jpg",
+        "sha256": "6d7e3b0bd75a02475a4bce908a9f6e8f4565456203f555a85af3927d1ea256f4"
       },
       {
-        "path": "docs/verification/p5-rooms-gear-shaft-seam-north.jpg",
-        "sha256": "95d1ef03f401161dc2a4234cec92edd3ff21bb4c6c64943d599f2aba830598b0"
-      },
-      {
-        "path": "docs/verification/p5-rooms-gear-shaft-plug-w-in.jpg",
-        "sha256": "9b723fbc9c795365d528243a1be2d33ea2f54e9ffae73a7b2b6f823418f7c2d5"
-      },
-      {
-        "path": "docs/verification/p5-rooms-gear-shaft-plug-w-out.jpg",
-        "sha256": "d1142bab49e1a7395ad29e583a91a701d99de1aa4882ca15c6db80b655100935"
+        "path": "docs/verification/p5-rooms-gear-shaft-hero.jpg",
+        "sha256": "06c26faa785353a9114a0b905bed6e373100308e9b690720abe4e21b277e2f36"
       },
       {
         "path": "docs/verification/p5-rooms-gear-shaft-mesh-000.jpg",
-        "sha256": "38ee093d432487cb2f0b5d640225917904ee62cf3c4daf88a3b5d59af0152b37"
+        "sha256": "59f362b0a25721a911a90b2b940110eef608761d31ee38c3ca4209b4f2a24efb"
       },
       {
         "path": "docs/verification/p5-rooms-gear-shaft-mesh-045.jpg",
-        "sha256": "001a52e67474ec333abf284911db21a133c961e4cf13c2057a2de8a23b804db0"
+        "sha256": "d1ab6e6e33c76d4cbbe9561c5374c418b6cb25b74708c4c3ac674da12277fb0c"
       },
       {
         "path": "docs/verification/p5-rooms-gear-shaft-mesh-090.jpg",
-        "sha256": "3344df70f5d36294d1a1f47f64352e240c80de516624accf505976205d7f2477"
+        "sha256": "6801a3cfcd7e45c631c5fbc64a76dca76fc92b8acfe4b13244abd2a4b36deb78"
       },
       {
         "path": "docs/verification/p5-rooms-gear-shaft-mesh-135.jpg",
-        "sha256": "f2743fe799dec2af909be795190d2fe39f11b1a6d0fc6c3a05f09e220dce256e"
+        "sha256": "ee1ceb821b5e06a6fda5ed9eb1814724ef9188c9d51e798bbe0a107e7862b6ba"
       },
       {
         "path": "docs/verification/p5-rooms-gear-shaft-mesh-180.jpg",
-        "sha256": "b00447f4436072bd2d76be7c340f65bf08d0f0a95cd96890e910becca31ea693"
+        "sha256": "96f3e188466da0187007045d097242af72298574bb4038926e73e5407aabaee5"
       },
       {
         "path": "docs/verification/p5-rooms-gear-shaft-mesh-225.jpg",
-        "sha256": "da840114545c13068f6b564884226108e894b228375b90c8806a1e73c94a4bf6"
+        "sha256": "3eae6cd5b73e85e16c73dd5848053ef244231ab33e8ada8f3125cab9d35965da"
       },
       {
         "path": "docs/verification/p5-rooms-gear-shaft-mesh-270.jpg",
-        "sha256": "f4c7bd7f590d5674bdd7a504e31f739400fba603fc21236df3856daefedb5bde"
+        "sha256": "badd69bc2dec7737c3891dfc4a79a1c070eadb357bcc035aa491b9161019ed0d"
       },
       {
         "path": "docs/verification/p5-rooms-gear-shaft-mesh-315.jpg",
-        "sha256": "02525da9ef902f6f204c396295dce8f80c744611f6655558183ca102248e34de"
+        "sha256": "d670e5cc44bac892ef36801e6cdaa32ff4996acd1735efe38a80cd3fbf4eb914"
+      },
+      {
+        "path": "docs/verification/p5-rooms-gear-shaft-mesh-lm-000.jpg",
+        "sha256": "79025cd75bed6657ae42e21e88e916d99bf63cef9f1255f03d15fbbf8b1073dc"
+      },
+      {
+        "path": "docs/verification/p5-rooms-gear-shaft-mesh-lm-045.jpg",
+        "sha256": "b61bd4554ba8add10bed60a1fec5d8299c7ed79fe9ab1ac0cc303611eb34d429"
+      },
+      {
+        "path": "docs/verification/p5-rooms-gear-shaft-mesh-lm-090.jpg",
+        "sha256": "f1f757371af17aaa493d1c8b28a6f712ce1b8cb2ed49fe5d50570b68ebd00c1a"
+      },
+      {
+        "path": "docs/verification/p5-rooms-gear-shaft-mesh-lm-135.jpg",
+        "sha256": "695fc2b9b11589b7b58930314015197e107a7bcef0887a2df3b8646a7b75fc46"
+      },
+      {
+        "path": "docs/verification/p5-rooms-gear-shaft-mesh-lm-180.jpg",
+        "sha256": "c5f484972033d5ff34b4691be2c3b678794198026823416251eab158481f96da"
+      },
+      {
+        "path": "docs/verification/p5-rooms-gear-shaft-mesh-lm-225.jpg",
+        "sha256": "2ddd905a656bdc834316b716e5eb30c02065b552189997abc11ab32fd35bf6df"
+      },
+      {
+        "path": "docs/verification/p5-rooms-gear-shaft-mesh-lm-270.jpg",
+        "sha256": "40d4d5ab9d62fea5402e61a497a5ca51f897762d80630cc589c4d2f4883abed4"
+      },
+      {
+        "path": "docs/verification/p5-rooms-gear-shaft-mesh-lm-315.jpg",
+        "sha256": "0ae52bfe1e3d0f4f88670686bb415318975db1bd8e343182d08b2f60b234c891"
+      },
+      {
+        "path": "docs/verification/p5-rooms-gear-shaft-plug-w-in.jpg",
+        "sha256": "28d035bac70d647439c22a425173cbec10e7a496c7046ef7558d4a0c493c0f65"
+      },
+      {
+        "path": "docs/verification/p5-rooms-gear-shaft-plug-w-out.jpg",
+        "sha256": "eae949f569ae52c0a64579073de939fc49d361575c53093a385e1696e326d8da"
+      },
+      {
+        "path": "docs/verification/p5-rooms-gear-shaft-ring-gear-turned.jpg",
+        "sha256": "8a824c54bf8fef7d3f5f3e596fb00234fbda103d93de3c205f8775d43ba39398"
+      },
+      {
+        "path": "docs/verification/p5-rooms-gear-shaft-ring.jpg",
+        "sha256": "b5b723f9f773b8db9489e75c647fec64c6efe4e0863b0badcac8f4553dd33d1c"
+      },
+      {
+        "path": "docs/verification/p5-rooms-gear-shaft-seam-north.jpg",
+        "sha256": "d485ec77bd805836da7119d8ad3c088fc7bc4711e21cf8c4a7f3525cf6b55ff7"
+      },
+      {
+        "path": "docs/verification/p5-rooms-gear-shaft-void.jpg",
+        "sha256": "a88b3b490c910836304791659a93e40fa720fdfde558a3fb45cf2a1a09c9ad31"
       },
       {
         "path": "docs/verification/p5-int-gear-shaft.jpg",
-        "sha256": "622fd5610d57da635256d71d2625c704abe24be079533097591c8e0f09fc40e2"
+        "sha256": "9ff1e7618671d0670ef25ca1032297ab6910585e794ae31a683715a0d7f8e7ae"
       },
       {
         "path": "docs/verification/p5-int-gear-shaft-turned.jpg",
+        "sha256": "f2cbcc7f969d9a77351e6e4c4997d15e98e43b49f97e79dfa4922f3858d9b9f6"
+      },
+      {
+        "path": "/tmp/rxr-r5/before/verification/p5-rooms-gear-shaft-hero-gear-turned.jpg",
+        "sha256": "cea90ffce89867b623a193858721e52c8f9f0bf3e11a3766ef212003bbbc992d"
+      },
+      {
+        "path": "/tmp/rxr-r5/before/verification/p5-rooms-gear-shaft-hero.diffuse-gear-turned.jpg",
+        "sha256": "b8d3591ca34ad736ef3aef6b3d1228199f467ab50c1645d3a41f82706b71426d"
+      },
+      {
+        "path": "/tmp/rxr-r5/before/verification/p5-rooms-gear-shaft-hero.diffuse.jpg",
+        "sha256": "948b32b1daccd3a843bc451f5f956d671643b1096f1ed807f673b25c5ca5b033"
+      },
+      {
+        "path": "/tmp/rxr-r5/before/verification/p5-rooms-gear-shaft-hero.jpg",
+        "sha256": "ff9d6c964e33959d3fa7a480e94a4f2530517f1529bfa052f4293098fb312d46"
+      },
+      {
+        "path": "/tmp/rxr-r5/before/verification/p5-rooms-gear-shaft-mesh-000.jpg",
+        "sha256": "38ee093d432487cb2f0b5d640225917904ee62cf3c4daf88a3b5d59af0152b37"
+      },
+      {
+        "path": "/tmp/rxr-r5/before/verification/p5-rooms-gear-shaft-mesh-045.jpg",
+        "sha256": "001a52e67474ec333abf284911db21a133c961e4cf13c2057a2de8a23b804db0"
+      },
+      {
+        "path": "/tmp/rxr-r5/before/verification/p5-rooms-gear-shaft-mesh-090.jpg",
+        "sha256": "3344df70f5d36294d1a1f47f64352e240c80de516624accf505976205d7f2477"
+      },
+      {
+        "path": "/tmp/rxr-r5/before/verification/p5-rooms-gear-shaft-mesh-135.jpg",
+        "sha256": "f2743fe799dec2af909be795190d2fe39f11b1a6d0fc6c3a05f09e220dce256e"
+      },
+      {
+        "path": "/tmp/rxr-r5/before/verification/p5-rooms-gear-shaft-mesh-180.jpg",
+        "sha256": "b00447f4436072bd2d76be7c340f65bf08d0f0a95cd96890e910becca31ea693"
+      },
+      {
+        "path": "/tmp/rxr-r5/before/verification/p5-rooms-gear-shaft-mesh-225.jpg",
+        "sha256": "da840114545c13068f6b564884226108e894b228375b90c8806a1e73c94a4bf6"
+      },
+      {
+        "path": "/tmp/rxr-r5/before/verification/p5-rooms-gear-shaft-mesh-270.jpg",
+        "sha256": "f4c7bd7f590d5674bdd7a504e31f739400fba603fc21236df3856daefedb5bde"
+      },
+      {
+        "path": "/tmp/rxr-r5/before/verification/p5-rooms-gear-shaft-mesh-315.jpg",
+        "sha256": "02525da9ef902f6f204c396295dce8f80c744611f6655558183ca102248e34de"
+      },
+      {
+        "path": "/tmp/rxr-r5/before/verification/p5-rooms-gear-shaft-plug-w-in.jpg",
+        "sha256": "9b723fbc9c795365d528243a1be2d33ea2f54e9ffae73a7b2b6f823418f7c2d5"
+      },
+      {
+        "path": "/tmp/rxr-r5/before/verification/p5-rooms-gear-shaft-plug-w-out.jpg",
+        "sha256": "d1142bab49e1a7395ad29e583a91a701d99de1aa4882ca15c6db80b655100935"
+      },
+      {
+        "path": "/tmp/rxr-r5/before/verification/p5-rooms-gear-shaft-ring-gear-turned.jpg",
+        "sha256": "503e3ab8764c4a6e0d0bd853397ef622cbb8e12fa951f850f11aa5efab559f86"
+      },
+      {
+        "path": "/tmp/rxr-r5/before/verification/p5-rooms-gear-shaft-ring.jpg",
+        "sha256": "fbc51f3b6b17c94c43816213ce815825974e068da5bb83c40aba4aebd32a8028"
+      },
+      {
+        "path": "/tmp/rxr-r5/before/verification/p5-rooms-gear-shaft-seam-north.jpg",
+        "sha256": "95d1ef03f401161dc2a4234cec92edd3ff21bb4c6c64943d599f2aba830598b0"
+      },
+      {
+        "path": "/tmp/rxr-r5/before/verification/p5-rooms-gear-shaft-void.jpg",
+        "sha256": "9b99f9fa1441c4ff85dce14567d3ca2d4634f335e6498e57dda1fbf9e9a8e331"
+      },
+      {
+        "path": "/tmp/rxr-r5/before/verification/p5-int-gear-shaft-turned.jpg",
         "sha256": "041f4a444f343e047c3bcb579d45c31eb4ac2d8ba4a4bdf501be7e6d753da349"
       },
       {
-        "path": "assets-source/rooms/gear-shaft/staging/report.json",
-        "sha256": "e45fbd0317e38a8fb5c949f13c70531a5523ef7db86e3e1eaf7afd5f97aee980"
+        "path": "/tmp/rxr-r5/before/verification/p5-int-gear-shaft.jpg",
+        "sha256": "622fd5610d57da635256d71d2625c704abe24be079533097591c8e0f09fc40e2"
       },
       {
-        "path": "assets-source/rooms/gear-shaft/staging/engine-compare.json",
-        "sha256": "ffc436b26d649bdd71deae751f1b902bbd7cd273cd183aef3c6f887374d38b7c"
+        "path": "/tmp/rxr-r5/before/new/p5-rooms-gear-shaft-floor-boarded-n-close.jpg",
+        "sha256": "35f874ce1499efd13c096dd8be950fcf25f30a826034de9ba4b246cd6b32cc9e"
       },
       {
-        "path": "assets-source/rooms/gear-shaft/provenance.json",
-        "sha256": "dfeac81487396eb143a3c9700c07d1e65d963157523fc0f48493ff3f73954e5e"
+        "path": "/tmp/rxr-r5/before/new/p5-rooms-gear-shaft-floor-boarded-n.jpg",
+        "sha256": "603503c778025e55ff8a662b0f17f81e637fff2bf549855119268639682e6d97"
+      },
+      {
+        "path": "/tmp/rxr-r5/before/new/p5-rooms-gear-shaft-mesh-lm-000.jpg",
+        "sha256": "6d736bc0753a0fe4ae4ca325e822becf036fcc8198b3b29a7ad6f41a6077eb13"
+      },
+      {
+        "path": "/tmp/rxr-r5/before/new/p5-rooms-gear-shaft-mesh-lm-045.jpg",
+        "sha256": "47d7dcd6e8144893bcf719811a77134585253709aa2bdc23c6b8e1f3f6d44b01"
+      },
+      {
+        "path": "/tmp/rxr-r5/before/new/p5-rooms-gear-shaft-mesh-lm-090.jpg",
+        "sha256": "0c4b704b7825af90041f9244d5cbb29de04ad44a42b039215b4ffde94b528ae0"
+      },
+      {
+        "path": "/tmp/rxr-r5/before/new/p5-rooms-gear-shaft-mesh-lm-135.jpg",
+        "sha256": "7294f993c8125cc7ba9101c66820f4336795714547df22dbf7890f0fc5cb56c4"
+      },
+      {
+        "path": "/tmp/rxr-r5/before/new/p5-rooms-gear-shaft-mesh-lm-180.jpg",
+        "sha256": "a066f5c42de0d095dd871d82a568f7701588c68881e7f6990daf9cbdf371e6ba"
+      },
+      {
+        "path": "/tmp/rxr-r5/before/new/p5-rooms-gear-shaft-mesh-lm-225.jpg",
+        "sha256": "4e4f4496f39953436ffac7e5af37359b009f0a7bbe1995155e324ac6c4bf1678"
+      },
+      {
+        "path": "/tmp/rxr-r5/before/new/p5-rooms-gear-shaft-mesh-lm-270.jpg",
+        "sha256": "4532d3ef5e8d2ee35da6eeec1ca4dc5dc3842123bbbb7b4d2fcbcfcae1c0e0fa"
+      },
+      {
+        "path": "/tmp/rxr-r5/before/new/p5-rooms-gear-shaft-mesh-lm-315.jpg",
+        "sha256": "70bf013aab5455dfe227c2ae5f500991e977f8f02248e26bf9184aa31976a6d2"
+      },
+      {
+        "path": "/tmp/rxr-r5/cmp/hero-gear.jpg",
+        "sha256": "629947e840c05281aa9e3c257846676b167a16a8b49d4999322e7b773f734809"
+      },
+      {
+        "path": "/tmp/rxr-r5/cmp/gs-furnace.jpg",
+        "sha256": "25a7e03381a9ea61a0ffeca21ccdb65a9dfc9d5d097d8873e8e2e6a7ad6b543b"
+      },
+      {
+        "path": "/tmp/rxr-r5/cmp/gs-void.jpg",
+        "sha256": "6040054166ab0d9401aa15ca79bf95aa2834144b858637e4ab28158417c9fc98"
+      },
+      {
+        "path": "/tmp/rxr-r5/cmp/int-gs.jpg",
+        "sha256": "f667e6c01b649dd2f4edc1e030066e48d679c1d949c1ac6b5e76beb4e36dfad3"
+      },
+      {
+        "path": "/tmp/rxr-r5/cmp/int-gs-gear.jpg",
+        "sha256": "85a78f9b9d8cce7b08d839aa17207a91f4db0dff26ce94ecf91b6f111e83cb97"
+      },
+      {
+        "path": "/tmp/rxr-r5/cmp/int-gs-plinth.jpg",
+        "sha256": "a2f39df545c393a76897dcca0521fab1647bc7c4b2b226f8376aa8ec0e1e1aca"
+      },
+      {
+        "path": "/tmp/rxr-r5/cmp/mesh090.jpg",
+        "sha256": "90aadde26a02241e68983cd8b13e8aed1d564b260ad40fb66e707ff51846ade0"
+      },
+      {
+        "path": "/tmp/rxr-r5/cmp/tile-mesh.jpg",
+        "sha256": "29cf9e700342aa3d94e2f1e6ae9dbc55fa826582bbe49c226bd14a0b6498f74a"
+      },
+      {
+        "path": "/tmp/rxr-r5/cmp/speck.jpg",
+        "sha256": "4aa7682b9b92910a5df94a168a65d7956641cf88f121279ede5d6f2833382400"
+      },
+      {
+        "path": "/tmp/rxr-r5/cmp/fb-lm.jpg",
+        "sha256": "24baed01fd349ad2ad74679baf018beb54ff5f02e948033be83145bbbbc1ba59"
       }
     ]
   },
@@ -871,7 +1067,7 @@
         "revised": {
           "by": "roomfix sub-agent of the 2026-11-17 orchestrator (build decisions, not owner approvals; Paul's review is still pending)",
           "date": "2026-11-17",
-          "decision": "Reversed: the gilt slot is bound at runtime to the approved brass-aged PBR set through the manifest alias pbr_alias, with edges worn to brass-polished (tile 1.25). Reason: the independent re-score of b1df5d3 found the gilt reads as flat painted card (in-game L* std 2.9-4.9, saturation 0.68-0.71 against #DEC16A at 0.52). Measured after: L* std 11.4-12.2 on gilt-masked mesh frames, saturation 0.41-0.43, hue 33. The builder notes the set reads as hammered foil at this scale; the re-score judges it."
+          "decision": "Reversed: the gilt slot is bound at runtime to the approved brass-aged PBR set through the manifest alias pbr_alias, with edges worn to brass-polished (tile 1.25). Reason: the independent re-score of b1df5d3 found the gilt reads as flat painted card (in-game L* std 2.9-4.9, saturation 0.68-0.71 against #DEC16A at 0.52). Measured after: L* std 11.4-12.2 on gilt-masked mesh frames. The builder's saturation 0.41-0.43 and hue 33 came from a mask keeping only 33% of gear pixels (the highlights); the independent re-score of 8428cd8 measured saturation 0.71-0.79 and hue 28 over all gear pixels, brass at L* 33. It found the alias itself near value-neutral (L* 38.7 against 39.7 under the old light), most of the darkening from the rotation-invariant gear lightmap, and real variation gained (detail 3.0 to 5.1), with teeth reading as crumpled foil at 3-4x. Room scored 81."
         }
       },
       {
@@ -1052,6 +1248,152 @@
       ],
       "previousScore": 71,
       "build": "60cff33"
+    },
+    {
+      "score": 78,
+      "scale": "0-100 visual fidelity to the art bible and study-kit language",
+      "scorer": "independent reviewer agent (separate from the authoring agent; did not build the asset)",
+      "date": "2026-11-17",
+      "acceptanceBar": 80,
+      "clearsBar": false,
+      "build": "b1df5d3",
+      "previousScore": 75,
+      "rubric": [
+        {
+          "criterion": "form, layout and proportions",
+          "points": 25,
+          "max": 30,
+          "note": "New: a counter gear pair on a second shaft meshes with the crown pair at the well (mesh-000..315). In 2x crops of the contact zone x 560-780, y 120-520 across all eight frames the teeth sit in the opposite gaps with no tooth drawn through another. Still the same 8x12x5 m box with the furnace plinth central, and the shaft still stops in the well. Plug check (scripts/plug.py, bbox from |in-out|>25): gilt pixels in 10 px bands on left, right and top of the former door box are 0.00%; column-mean L* across the edges stays within 4 L* (left 11.5-17.8, right 14.2-19.5); Laplacian variance on the edges (116-402 against 90-320 on the open wall) sits inside the range of the open wall beside it, so no seam, leak, z-fight or leftover architrave."
+        },
+        {
+          "criterion": "signature features: vertical machinery",
+          "points": 22,
+          "max": 25,
+          "note": "Fixed: the gear train moves together. Hero vs hero-gear-turned now differs by 8.76 levels in the upper-pair box 565-780 x 20-155 (was 0.11) and 16.96 in the crown box; the floor box differs by 0.00. Across the mesh series both the crown box (6.7-8.0) and counter box (9.3-12.1) change at every 45 degree step while a static wall box stays at 0.00. Fixed: flames now render in three.js as four teardrop cards behind the bars (gs-fire-3x.jpg). I did not measure the rotation direction or tooth ratio. In game the gear turns too: p5-int-gear-shaft vs -turned differ by 9.29 levels in the gear box 600-1300 x 0-500 (whole frame 2.95)."
+        },
+        {
+          "criterion": "surface detail and material read",
+          "points": 13,
+          "max": 20,
+          "note": "Still open: the gilt is flat painted card. On a gilt mask (sat>0.3, v>0.45, hue 25-55) the crown and counter gears measure L* 40.6-41.2 with L* std 2.9-4.9 in every mesh frame, sat 0.68-0.71, against #DEC16A at sat 0.52; no worn edges or highlights. The flames are single-colour cards with hard edges and no core gradient. The plinth stone is pale (box 530-820 x 515-570: RGB 144,102,66, L* 46.5). Lightmap density 44.4 px/m."
+        },
+        {
+          "criterion": "colour, value and lighting mood",
+          "points": 11,
+          "max": 15,
+          "note": "Frame hue 20.5, sat 0.714, L* 18.4, 0.4% under L* 2, matching the kit. Fire improved but still peach: flame mask in hero x 620-750, y 580-655 is RGB 234,176,117, hue 30.6, sat 0.50, R-B 117 (was hue 26.8, sat 0.49), against #F3BE65 hue 37.4, sat 0.58; in game (firebox 910-1090 x 630-780 at 1600x1000) hue 29.1, sat 0.46, R-B 97. Baked light on the gears: in a fixed gilt-masked box 690-760 x 340-420 on the counter gear, mean L* runs 41.3, 40.2, 37.0, 40.0, 41.7, 41.3, 40.2, 37.0 over the eight angles, and a diagonal brown shadow streak is visible on the gear face at 090 and 315 (3x crops), so a faint baked shade turns with the gear. It is a 4-5 L* dip, small at 3.6 m overhead. No tooth interpenetration in any frame."
+        },
+        {
+          "criterion": "readability and comfort at seated VR distance",
+          "points": 7,
+          "max": 10,
+          "note": "Floor lanes unchanged. The pale plinth (L* 46.5) and fire remain the brightest large area and pull focus from the enemy positions. The new gears sit overhead, outside the near field."
+        }
+      ],
+      "topFixes": [
+        "Give the brass painted variation and worn-edge highlights (gear L* std 2.9-4.9, sat 0.68-0.71 against #DEC16A at sat 0.52), and rebake the moving gears without directional shade so the shadow streak (L* 37.0 against 41 in box 690-760 x 340-420 at 090 and 315) no longer turns with them.",
+        "Replace the flat single-colour flame cards with soft-edged, core-to-tip graded cards near #F3BE65 (now hue 30.6, sat 0.50; in game hue 34.1, sat 0.37), and tone down the pale plinth stone (L* 46.5).",
+        "Let the shaft climb out of view instead of ending visibly in the well, and confirm the counter gear turns opposite the crown at the tooth ratio (not measured here)."
+      ],
+      "method": "Read the brief, art bible and the previous block (75), re-checking its fixes as claims (flames, gilt, shaft, motion). Viewed all p5-rooms-gear-shaft-*.jpg used here (hero, hero.diffuse, hero-gear-turned, ring, void, seam-north, plug-w-in, plug-w-out, mesh-000 to mesh-315) and p5-int-gear-shaft(-turned).jpg. Measured box and frame RGB, hue, saturation, CIE L* stats, a flame mask, gilt-masked gear stats per mesh frame, mean absolute frame differences per gear box between successive mesh frames and between base and turned shots, fixed gilt-masked boxes on the gear faces across all eight angles to test for baked light turning with the gear, and the plug checks. Made 2x crops of the tooth contact zone in all eight mesh frames on one sheet and a 3x crop of the firebox. Read report.json and engine-compare.json (frame ratio 0.84) for attribution. Rotation direction and ratio were not measured. Scripts in /tmp/fb17/rescore/scripts/. No repo edits.",
+      "evidence": [
+        {
+          "path": "docs/art-bible.md",
+          "sha256": "11da71b45f24eeb258ef77d328ef1aa009297a9231608cb80bb429aa3ff2ad6a"
+        },
+        {
+          "path": "docs/verification/p5-int-study.jpg",
+          "sha256": "2a54130faf77c6c6c434c677b39b4337fe3a2d57de7c097331b06c9cfb4aeaaa"
+        },
+        {
+          "path": "docs/verification/p5-rooms-study-hero.jpg",
+          "sha256": "4a957664f7295ac42ed681fc118a9ff25fb29dc9cd46d2d8fe363edff9913936"
+        },
+        {
+          "path": "docs/verification/p5-rooms-gear-shaft-hero.jpg",
+          "sha256": "ff9d6c964e33959d3fa7a480e94a4f2530517f1529bfa052f4293098fb312d46"
+        },
+        {
+          "path": "docs/verification/p5-rooms-gear-shaft-hero.diffuse.jpg",
+          "sha256": "948b32b1daccd3a843bc451f5f956d671643b1096f1ed807f673b25c5ca5b033"
+        },
+        {
+          "path": "docs/verification/p5-rooms-gear-shaft-hero-gear-turned.jpg",
+          "sha256": "cea90ffce89867b623a193858721e52c8f9f0bf3e11a3766ef212003bbbc992d"
+        },
+        {
+          "path": "docs/verification/p5-rooms-gear-shaft-ring.jpg",
+          "sha256": "fbc51f3b6b17c94c43816213ce815825974e068da5bb83c40aba4aebd32a8028"
+        },
+        {
+          "path": "docs/verification/p5-rooms-gear-shaft-void.jpg",
+          "sha256": "9b99f9fa1441c4ff85dce14567d3ca2d4634f335e6498e57dda1fbf9e9a8e331"
+        },
+        {
+          "path": "docs/verification/p5-rooms-gear-shaft-seam-north.jpg",
+          "sha256": "95d1ef03f401161dc2a4234cec92edd3ff21bb4c6c64943d599f2aba830598b0"
+        },
+        {
+          "path": "docs/verification/p5-rooms-gear-shaft-plug-w-in.jpg",
+          "sha256": "9b723fbc9c795365d528243a1be2d33ea2f54e9ffae73a7b2b6f823418f7c2d5"
+        },
+        {
+          "path": "docs/verification/p5-rooms-gear-shaft-plug-w-out.jpg",
+          "sha256": "d1142bab49e1a7395ad29e583a91a701d99de1aa4882ca15c6db80b655100935"
+        },
+        {
+          "path": "docs/verification/p5-rooms-gear-shaft-mesh-000.jpg",
+          "sha256": "38ee093d432487cb2f0b5d640225917904ee62cf3c4daf88a3b5d59af0152b37"
+        },
+        {
+          "path": "docs/verification/p5-rooms-gear-shaft-mesh-045.jpg",
+          "sha256": "001a52e67474ec333abf284911db21a133c961e4cf13c2057a2de8a23b804db0"
+        },
+        {
+          "path": "docs/verification/p5-rooms-gear-shaft-mesh-090.jpg",
+          "sha256": "3344df70f5d36294d1a1f47f64352e240c80de516624accf505976205d7f2477"
+        },
+        {
+          "path": "docs/verification/p5-rooms-gear-shaft-mesh-135.jpg",
+          "sha256": "f2743fe799dec2af909be795190d2fe39f11b1a6d0fc6c3a05f09e220dce256e"
+        },
+        {
+          "path": "docs/verification/p5-rooms-gear-shaft-mesh-180.jpg",
+          "sha256": "b00447f4436072bd2d76be7c340f65bf08d0f0a95cd96890e910becca31ea693"
+        },
+        {
+          "path": "docs/verification/p5-rooms-gear-shaft-mesh-225.jpg",
+          "sha256": "da840114545c13068f6b564884226108e894b228375b90c8806a1e73c94a4bf6"
+        },
+        {
+          "path": "docs/verification/p5-rooms-gear-shaft-mesh-270.jpg",
+          "sha256": "f4c7bd7f590d5674bdd7a504e31f739400fba603fc21236df3856daefedb5bde"
+        },
+        {
+          "path": "docs/verification/p5-rooms-gear-shaft-mesh-315.jpg",
+          "sha256": "02525da9ef902f6f204c396295dce8f80c744611f6655558183ca102248e34de"
+        },
+        {
+          "path": "docs/verification/p5-int-gear-shaft.jpg",
+          "sha256": "622fd5610d57da635256d71d2625c704abe24be079533097591c8e0f09fc40e2"
+        },
+        {
+          "path": "docs/verification/p5-int-gear-shaft-turned.jpg",
+          "sha256": "041f4a444f343e047c3bcb579d45c31eb4ac2d8ba4a4bdf501be7e6d753da349"
+        },
+        {
+          "path": "assets-source/rooms/gear-shaft/staging/report.json",
+          "sha256": "e45fbd0317e38a8fb5c949f13c70531a5523ef7db86e3e1eaf7afd5f97aee980"
+        },
+        {
+          "path": "assets-source/rooms/gear-shaft/staging/engine-compare.json",
+          "sha256": "ffc436b26d649bdd71deae751f1b902bbd7cd273cd183aef3c6f887374d38b7c"
+        },
+        {
+          "path": "assets-source/rooms/gear-shaft/provenance.json",
+          "sha256": "dfeac81487396eb143a3c9700c07d1e65d963157523fc0f48493ff3f73954e5e"
+        }
+      ]
     }
   ]
 }
