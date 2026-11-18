@@ -1,16 +1,14 @@
 import { createPointer } from '@par/xr-workspace';
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { audioStateForFlow } from './audio/cues.ts';
 import { AudioDirector } from './audio/index.ts';
 import { mountCardProof } from './cards/card-proof.ts';
 import { CombatHook, type CombatPick, type XrHands } from './combat/combat-session.ts';
 import {
-  bindTableMaterials,
+  type CombatTableAsset,
+  loadCombatTable,
   mountTableAssetProof,
-  parseTableAssetManifest,
-  TABLE_ASSET_BASE,
 } from './combat/table-asset-proof.ts';
 import {
   HitFeedback,
@@ -354,20 +352,10 @@ const reflect = (root: THREE.Object3D, intensity: number): void => {
 
 // The P4-T5 table asset replaces the greybox once it loads; the greybox stays on any failure.
 // Every rebuilt floor gets a clone of the same loaded asset.
-const tableAsset: Promise<{ scene: THREE.Object3D; top: number } | null> = floor
-  ? (async () => {
-      const manifest = parseTableAssetManifest(
-        await (await fetch(`${TABLE_ASSET_BASE}/combat-table.manifest.json`)).json(),
-      );
-      const gltf = await new GLTFLoader().loadAsync(`${TABLE_ASSET_BASE}/${manifest.glb}`);
-      await bindTableMaterials(gltf.scene, manifest, renderer).catch((error: unknown) =>
-        console.warn('combat table materials fell back to factors', error),
-      );
-      reflect(gltf.scene, 0.45);
-      return { scene: gltf.scene, top: manifest.authoredTopHeight };
-    })().catch((error: unknown) => {
-      console.warn('combat table asset unavailable, greybox kept', error);
-      return null;
+const tableAsset: Promise<CombatTableAsset | null> = floor
+  ? loadCombatTable(renderer).then((asset) => {
+      if (asset) reflect(asset.scene, 0.45);
+      return asset;
     })
   : Promise.resolve(null);
 let tableUses = 0;

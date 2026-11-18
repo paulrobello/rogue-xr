@@ -112,6 +112,48 @@ export async function bindTableMaterials(
   });
 }
 
+/** The loaded P4-T5 table: its scene and the authored top height the floor fits it to. */
+export interface CombatTableAsset {
+  scene: THREE.Object3D;
+  top: number;
+}
+
+/** Loading seams, replaced in tests. */
+export interface CombatTableLoaders {
+  fetchJson(url: string): Promise<unknown>;
+  loadGltf(url: string): Promise<{ scene: THREE.Object3D }>;
+  bind(root: THREE.Object3D, manifest: TableAssetManifest): Promise<void>;
+}
+
+/**
+ * Loads the table for the floor. A failed manifest or GLB resolves null so the greybox table
+ * stays; a failed material bind keeps the GLB's factor-only materials.
+ */
+export async function loadCombatTable(
+  renderer: THREE.WebGLRenderer,
+  loaders: Partial<CombatTableLoaders> = {},
+): Promise<CombatTableAsset | null> {
+  const fetchJson = loaders.fetchJson ?? (async (url: string) => (await fetch(url)).json());
+  const loadGltf = loaders.loadGltf ?? ((url: string) => new GLTFLoader().loadAsync(url));
+  const bind =
+    loaders.bind ??
+    ((root: THREE.Object3D, manifest: TableAssetManifest) =>
+      bindTableMaterials(root, manifest, renderer));
+  try {
+    const manifest = parseTableAssetManifest(
+      await fetchJson(`${TABLE_ASSET_BASE}/combat-table.manifest.json`),
+    );
+    const gltf = await loadGltf(`${TABLE_ASSET_BASE}/${manifest.glb}`);
+    await bind(gltf.scene, manifest).catch((error: unknown) =>
+      console.warn('combat table materials fell back to factors', error),
+    );
+    return { scene: gltf.scene, top: manifest.authoredTopHeight };
+  } catch (error: unknown) {
+    console.warn('combat table asset unavailable, greybox kept', error);
+    return null;
+  }
+}
+
 /**
  * Proof view for the P4-T5 table asset: loads the GLB, binds the materials and sweeps the unfold.
  * Hook in src/main.ts: `} else if (view === 'table-asset-proof') { await mountTableAssetProof(scene, rig, renderer); }`

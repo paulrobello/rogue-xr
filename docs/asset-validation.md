@@ -40,7 +40,9 @@ None. Every `sha256`, `bytes`, triangle count, material count, bone count and im
 - F7: `assets-source/ui/provenance.json` records `scriptSha256`. The script and its outputs last changed together in `04cb20e`.
 - F8: `docs/owner-review.md` and `docs/verification.md` carry the current counts and scores.
 
-Still open: F2 (combat table fallback test, needs a seam out of `src/main.ts`) and F6 (Blender version: the PRD pins 5.2.2 LTS, MiniMac runs 5.3.0).
+- F2: the floor's table load moved out of `src/main.ts` into `loadCombatTable` (`src/combat/table-asset-proof.ts`). `tests/combat-table-fallback.test.ts` fails the manifest fetch and the GLB load (each resolves null, so the greybox stays) and fails the material bind (the factor-only materials stay). The combat table's technical gate has no open finding.
+
+Still open: F6 (Blender version: the PRD pins 5.2.2 LTS, MiniMac runs 5.3.0).
 
 ## 1. Study hero room
 

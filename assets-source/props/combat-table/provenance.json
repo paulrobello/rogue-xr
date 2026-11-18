@@ -130,17 +130,16 @@
       "13 of 13 staging report hashes match the files on disk",
       "9 of 9 source material hashes match public/assets/materials",
       "reimport: 4,184 triangles, 4 materials, no errors",
-      "tests/combat-table-asset.test.ts 6 of 6"
+      "tests/combat-table-asset.test.ts 6 of 6",
+      "tests/combat-table-fallback.test.ts 3 of 3: a failed manifest fetch or GLB load resolves null (greybox kept); a failed material bind keeps the factor-only materials (loadCombatTable in src/combat/table-asset-proof.ts, F2)"
     ],
-    "open": [
-      "no failure-path test for the greybox and factor-only fallbacks in src/main.ts (F2)"
-    ]
+    "open": []
   },
   "approvals": [
     {
       "gate": "technical",
       "status": "pending",
-      "notes": "open until the fallback test exists (F2)"
+      "notes": "F2 resolved (fallback tests exist); technical checks pass, recording stays with the owner review"
     },
     {
       "gate": "creative",
