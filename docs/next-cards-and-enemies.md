@@ -16,7 +16,7 @@ Steam is the cost to play one card. Base and upgraded text describe a single pla
 | **Shear Pin** · attack | 1 · one enemy | Deal 7 damage. Pinned. | Deal 9 damage. Pinned. | A steel pin holds the unplayed card in the fan as the rest are discarded. Pulling the pin launches it. |
 | **Rust Spray** · skill | 1 · all enemies | Apply 2 Rust. | Apply 3 Rust. | A wide copper nozzle sprays orange droplets. The next Block gain sheds flakes. |
 | **Iron Knuckle** · dice attack | 2 · one enemy | Roll an iron d4 once. Deal 3 + roll damage twice. | Deal 5 + roll twice. | The rolled face locks into the gauntlet. Two piston strikes show separate damage numbers. |
-| **Brass Bulwark** · skill | 2 · self | Gain 14 Block. | Gain 18 Block. | Two hinged plates meet in front of the tray and the Block counter rises immediately. |
+| **Brass Bulwark** · skill | 3 · self | Gain 14 Block. | Gain 18 Block. | Two hinged plates meet in front of the tray and the Block counter rises immediately. |
 | **Anchor Glyph** · sigil | 1 · self | Trace an anchor. Gain 8 Block and 2 Plating. | Gain 11 Block and 3 Plating. | A traced anchor drops onto the plate. Links closing around it count the Plating stacks. |
 | **Counterstroke** · new attack | 2 · one enemy | Deal 10 damage. If the target’s shown intent has two or more hits, also gain 6 Block. | Deal 13 damage. Gain 8 Block when the condition holds. | Two marks on a ratchet align when aimed at a qualifying enemy. Its return stroke deploys a shield. |
 | **Quench Seal** · new sigil | 1 · one enemy | Trace Ward. Remove up to 3 Overheat from the target. Gain 4 Block plus 2 per stack removed. | Remove up to 4. Gain 5 Block plus 2 per stack removed. | Heat leaves the enemy in visible pulses. Each pulse clouds the player’s glass shield. |
@@ -38,10 +38,16 @@ HP and damage are Hard/base values. Use the existing difficulty scaling at other
 | **Twin Furnace Mites** · 20 HP each | Regular pair. One asset with two distinct enamel markings. Each mite shows its own intent above its own body. | **Double Spark** (3) opens two shutters and deals 3 twice. **Stoke** (2) uncovers one orange coal, deals 4 and applies 1 Overheat. **Clink** (1) pulls in its legs and gains 6 Block. | Rivet Volley can soften both. Focus one down to remove its next intent. Quench Seal can spend heat that **you** previously applied to a mite with Furnace Brand. |
 | **Null-Crown Auditor** · 78 HP | Alternate elite. A suspended ledger mask has a broad brass stamp on one arm and an abacus on the other. The stamp remains visible from the seat. | **Tally** (weight 3) shifts two beads and deals 4 twice. **Reconcile** (2) closes the ledger for 14 Block and raises the stamp. Its next intent is always **Levy**, one hit for 18. After Levy, resume the seeded picker. | Reconcile gives a full turn’s warning. Apply Rust before its shield forms, or hold a Pinned attack while drawing defense. Counterstroke helps against Tally. Brass Bulwark helps against Levy. |
 
+### Approved concept sheets
+
+Paul approved these three art references on November 18, 2026.
+
+The Glasswing Scrivener telegraphs with its pen nibs and folding wings. The Twin Furnace Mites share a body shape, with a ruby stripe on one and ivory bands on the other. The Null-Crown Auditor raises the stamp for Reconcile and brings it down for Levy. [Glasswing Scrivener](../assets-source/concepts/foundry/glasswing-scrivener.png) · [Twin Furnace Mites](../assets-source/concepts/foundry/twin-furnace-mites.png) · [Null-Crown Auditor](../assets-source/concepts/foundry/null-crown-auditor.png)
+
 ## Three turns to test
 
 1. **Open against the mites.** Both show Double Spark. Rivet Volley costs 1 and deals 4 to each. Counterstroke costs the remaining 2, deals 10 to one and gives 6 Block. With no other statuses, the pair deals 12 total and the player takes 6. Killing a weakened mite with that stroke removes its attack entirely.
-2. **Read the Auditor.** It shows Reconcile. Rust Spray costs 1 and makes its impending 14 Block become 7. Play Rivet Plate for 1 and Piston Strike for 1. Next turn, Plating pays 3 Block. A base Brass Bulwark brings that to 17 against the announced 18-damage Levy.
+2. **Read the Auditor.** It shows Reconcile. Rust Spray costs 1 and makes its impending 14 Block become 7. Play Rivet Plate for 1 and Piston Strike for 1. Next turn, Plating pays 3 Block. Spend all 3 Steam on Brass Bulwark for 14 more Block. With 17 Block, the announced 18-damage Levy deals 1 damage.
 3. **Cash out heat.** The Scrivener has 3 Overheat and shows Cross Out. A clean Quench Seal costs 1, removes those stacks and grants 10 Block. Iron Knuckle costs 2. A d4 result of 3 deals 6 twice before defenses. The player covers the incoming two hits at the cost of the burn they would otherwise have kept.
 
 ## Build and playtest

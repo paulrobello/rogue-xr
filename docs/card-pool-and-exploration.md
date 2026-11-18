@@ -52,7 +52,7 @@ The slice's 15 stay as they are: Piston Strike, Cog Toss, Ratchet Flurry, Rivet 
 | Spare Parts | skill | 1 | common | Draw 2 | Draw 3 |
 | Grease Gun | skill | 0 | common | Scry 3 | Scry 4, draw 1 |
 | Iron Knuckle | attack | 1 | common | Twice: 3 + iron d4 damage | Twice: 5 + d4 |
-| Brass Bulwark | skill | 2 | common | 14 block | 18 block |
+| Brass Bulwark | skill | 3 | common | 14 block | 18 block |
 | Torque Wrench | attack | 1 | common | 6 damage, 1 Rust | 9 damage, 2 Rust |
 | Counterweight | skill | 2 | uncommon | 12 block. Pinned | 16 block |
 | Flywheel Swing | attack | 2 | uncommon | 12 damage, +4 if you have block | 15 damage, +5 |
@@ -174,6 +174,12 @@ A commission board in the entry room offers 1 or 2 tasks per floor, picked from 
 
 Optionally, one patrolling automaton per floor walks between rooms. Touching it starts a fight as usual. You can avoid it by timing, or quieten it with an Oil Can.
 
+### E6. Stairs between floors
+
+On multi-floor runs, a player can climb a marked staircase to the next floor and come back down the same stairs. Both landings show the direction and destination floor. From a seated position, the player can point at the stairs and confirm travel, then arrive on a level landing facing into the room.
+
+Keep the deck, HP and cog purse with the run. Keep each floor’s layout, opened chests, cleared encounters and unlocked doors with that floor. A return trip resumes exploration at the matching landing. Repeated crossings and save/resume must preserve those changes without paying a reward twice.
+
 ## 6. Work items, in build order
 
 | Code | Work | Depends on |
@@ -188,13 +194,14 @@ Optionally, one patrolling automaton per floor walks between rooms. Touching it 
 | W8 | Remaining field cards (Scrying Lens, Recall Spiral, Oil Can, Tuning Fork, Forge Ember, Polishing Kit, Smoke Flask, Spare Valve) | W1, W4, W5 |
 | W9 | Remaining puzzle types (gear train, orrery, bell chimes) and the wandering automaton | W4 |
 | W10 | Wave C combat cards, Junk cards, and the act 2 enemies that add Junk | W7, PRD Q1 (acts) |
+| W11 | Build paired up/down stairs and per-floor saves. Verify ascend, descend, reload on either floor, and revisit a cleared room and an opened chest. | A run spanning at least two seeded floors, after the one-floor slice |
 
 Assets per wave go through the art bible (D8) and the asset table:
 - **Wave A:** 15 illustrations, the iron d4 model and faces, the anchor glyph.
 - **Wave B:** 15 illustrations, the Mechanism frame, the crystal d12, the eye glyph.
 - **Wave C:** 15 illustrations, 3 Junk illustrations, the hourglass glyph.
 - **Field cards:** 12 illustrations, 2 field frames, the key glyph.
-- **Exploration:** lock, puzzle and board panels through the room kit (Blender).
+- **Exploration:** lock, puzzle and board panels, paired staircase landings and directional floor signs through the room kit (Blender).
 
 ## 7. Decisions for Paul
 

@@ -1,0 +1,40 @@
+{
+  "status": "Enemy concepts approved",
+  "generator": "OpenAI ImageGen in Codex",
+  "referencePreparation": "Each locked reference was reduced to fit 850 × 600 pixels before generation.",
+  "references": [
+    "assets-source/style/locked/L-board-1.png",
+    "assets-source/style/locked/L-automaton.png"
+  ],
+  "sharedPrompt": "Clockwork Spire, The Scrivener's Foundry. Reinterpret the supplied Gilded Lamplight artwork into a new original enemy concept sheet. Ref 1 sets the warm chiaroscuro and polished materials; ref 2 sets plate joints, jewel rivets and craft quality. Replace the humanoid reference with the following new design. Use a wide landscape 3:2 museum-quality game character design plate in opaque muted warm umber grey, soft studio ground shadow and amber raking light, broad accurate painterly strokes, rich dark oxidized iron, rubbed satin brass edge highlights, original Art Nouveau mechanical workshop craft. Full silhouettes, strong shapes legible from seated VR distance. Aim for art-director portfolio quality, not a game screenshot. Two clearly separated scales, a large full-body 3/4 hero design on roughly the left two thirds and smaller credited-to-same-design behavioral vignettes on the right in a neat vertical column, with ample margin. Unlettered sheet, no captions, numerals, watermarks, diagrams with arrows, HUD, cards, dice or logos. Transparent jewel colors as accents, no cool ambient wash. All repeated poses depict the same underlying mechanical asset.",
+  "sheets": [
+    {
+      "file": "glasswing-scrivener.png",
+      "prompt": "GLASSWING SCRIVENER. A creature built by the tower's lexicographers. Slender six-legged brass insect no larger than a violin, narrow engraved thorax with amber clockwork core, split mandible holding TWO long articulated transparent fountain-pen nibs, split tips with breather holes and a little dark ink, clear glass as well as brass. Two broad translucent ruby and pale sapphire leaded-glass wings on book-like hinges, warm light transmitted onto the ground. Give the wings lots of breathing room; use only sparse, elegant lead veins to keep their clarity. Main 3/4 creature poised in walking stance, completely in frame, both pens visible. Show three separate smaller readable poses to the right: one nib raised for Inscribe; two nib tips visibly crossed in an X for Cross Out; wings folded forward and meeting like closed covers as a physical shield for Proof. Make the posture and working nibs carry these tells even in monochrome. Calm, precise, elegant menace, no fleshy insect parts.",
+      "width": 1536,
+      "height": 1024,
+      "sha256": "2d3cb12e3b73d57d0eb1cedc96cd944a29ee751cbc48c50140acc1a251fab018"
+    },
+    {
+      "file": "twin-furnace-mites.png",
+      "prompt": "TWIN FURNACE MITES. Pair of squat hand-built walking furnaces, round cast-iron bellies, rounded brass carapaces, six short sturdy folded articulated feet, each the size of a small kettle. Both visually identical chassis and same paired hinged rectangular firebox shutters facing player, visibly mechanical doors with ceramic lining. One indivdual has a single broad ruby enamel stripe running down its crown, the other two narrow ivory brass-framed enamel bands, readable in grayscale even when the fire is bright. Hero area shows exactly TWO complete mites at matching size side by side in a single 3/4 view, with a narrow gap between their feet and different attitudes. First holds both distinct shutters spread wide with two amber vents (Double Spark). The other shows a single orange coal through one open shutter (Stoke). On the right, intimate mechanical study of one identical mite, legs tucked completely underneath, shutters closed, armor tucked tight (Clink); below, a hinge close-up conveying the double-door construction. Charming but dangerous physical simplicity, weight, ember orange reflected off brass. Do not connect the mites with a cable. No piles of gears.",
+      "width": 1536,
+      "height": 1024,
+      "sha256": "d4234ecf37a871a9dd2ee5189ef305468b25fe22ceb6d81a32f959d5e522925e"
+    },
+    {
+      "file": "null-crown-auditor.png",
+      "prompt": "NULL-CROWN AUDITOR, the elite automaton of the accountancy vault. A hovering tall imposing faceless concave ledger mask in pale ivory enamel hangs inside an incomplete crown-shaped brass frame, with a blade-thin closed-ledger spine and zero legs. Strong asymmetric silhouette: one long articulated arm terminates in an enormous flat-bottomed square official seal/stamp with a visible blank striking face, other arm is a clearly readable counting abacus with parallel rods and only a few large dark ruby/tarnished-gold beads. A book-shaped mechanical chest opens and closes, an amber mainspring glowing through the spine; suspended with a soft ground shadow. Main full figure in deliberate neutral three-quarter view with both arms and stamp clearly visible at seated eye level; controlled officious posture. Right side has three distinct full silhouette miniatures of same figure: Tally slides two abacus beads; Reconcile visibly shuts its chest ledger while raising stamp high over its shoulder; Levy swings the stamp down in a broad descending blow, face parallel to floor, a narrow warm dust crescent at contact. Stylized shapes but functional pivots. No spheres, no orbiting planets, no weapons or guns, no face, no human legs, no lettering. The stamp has to be chunky enough to read in silhouette in every pose.",
+      "revisionPrompt": "Make a surgical revision to this exact original Null-Crown Auditor character design sheet. Preserve the full-size hero painting and its proportions, all materials, empty warm background, blank stamp, bead-counter arm, ivory face, incomplete crown, shadows, and the existing three miniature poses on the right. In the MIDDLE miniature at far right ONLY (the pose with the brass stamp raised overhead), alter the ledger torso: the two covers must meet shut in a single closed book, so that the viewer sees an uninterrupted dark walnut leather front cover framed in brass with a central clasp, a narrow page block visible along ONE edge. Face that flat book cover at the viewer. There must no longer be a center V, split covers or open pages in this middle torso. The closed ledger and raised stamp together are this enemy's game signal. Leave the stamp raised and its square striking face fully visible. Preserve all other poses including the open book in the large hero. No letters or numbers. Keep landscape 3:2 framing.",
+      "width": 1536,
+      "height": 1024,
+      "sha256": "dff47cf78a197e102345426edd3c14eb6eb43a5a011cc1c71da034683e7081c7"
+    }
+  ],
+  "approval": {
+    "scope": "Concept art for the three sheets listed below",
+    "reviewer": "Paul Robello",
+    "date": "2026-11-18",
+    "feedback": "new enemy concepts approved"
+  }
+}
