@@ -1,6 +1,6 @@
 {
   "glb": "hall.glb",
-  "glb_sha256": "ead7eb3d08df029c77e983724bdc39817e8d359a5afd12992d31ce1ee3d3378f",
+  "glb_sha256": "347daf50c30f9a9b193ceea9a9f4fa5ae67fb921376fb6b2efc509b80e40e76e",
   "blender": "5.3.0",
   "meshes": [
     "door-frame-e",
@@ -13,7 +13,7 @@
     "door-plug-w",
     "hall"
   ],
-  "triangles": 6753,
+  "triangles": 6739,
   "materials": [
     "hall_brass-aged",
     "hall_brass-polished",

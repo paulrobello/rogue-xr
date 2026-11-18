@@ -344,7 +344,7 @@ def lancet_mullion(b: Builder, left: list, sill: float, apex: float, slot: str) 
 
 def build_window(b: Builder, high: bool) -> None:
     """Glass lancet in the north wall opening, spandrels filling the rectangle above the arch, a
-    walnut surround, a deep sill and a brass mullion."""
+    walnut surround and a deep sill."""
     b.xf = wall_frame("N")
     seg = 24 if high else 10
     left, right = arch_points(seg)
@@ -358,7 +358,6 @@ def build_window(b: Builder, high: bool) -> None:
     b.box(x1, x1 + f, 0, d, sill - 0.1, apex + f, "walnut", drop="y")
     b.box(x0, x1, 0, d, apex, apex + f, "walnut", drop="yxX")
     b.box(x0 - f - 0.05, x1 + f + 0.05, 0, 0.26, sill - 0.1, sill, "walnut", drop="y")
-    lancet_mullion(b, left, sill, apex, "brass-polished")
     b.xf = Matrix.Identity(4)
 
 

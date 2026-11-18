@@ -14,6 +14,7 @@ import {
   DICE_AUTO_THROW_SECONDS,
   DICE_SETTLE_FALLBACK_SECONDS,
   XR_DICE_HINT,
+  XR_HELD_DICE_HINT,
 } from '../src/combat/combat-session.ts';
 import { ActionBus } from '../src/core/actions.ts';
 import { mountFloorView } from '../src/world/floor-view.ts';
@@ -286,6 +287,7 @@ describe('F11 the rolled die pulses in the tray until it is thrown', () => {
     expect(session.hint).toBe(XR_DICE_HINT);
     hand('squeeze', true);
     step();
+    expect(session.hint).toBe(XR_HELD_DICE_HINT);
     // The die follows the hand while it is held.
     const die = session.dice.waiting as THREE.Object3D;
     const tray = at(session, 'dice');
@@ -308,7 +310,7 @@ describe('F11 the rolled die pulses in the tray until it is thrown', () => {
   // and the gripping hand takes its die; letting go throws. Letting go of the card instead puts it
   // back with nothing rolled.
   it('in XR a held dice card is put back by letting go, or used by the trigger, which hands over the die', async () => {
-    const rig = await openFight({ deck: Array(10).fill('cog-toss') });
+    const rig = await openFight({ deck: Array(10).fill('cog-toss'), bonusDice: 1 });
     const { session, camera } = rig;
     const scene = camera.parent as THREE.Scene;
     const head = camera.getWorldPosition(new THREE.Vector3());
@@ -365,6 +367,7 @@ describe('F11 the rolled die pulses in the tray until it is thrown', () => {
     step(0.1);
     expect(session.fling.lastDecision).toMatchObject({ outcome: 'played', targetId: foe.id });
     expect(session.awaitingThrow).toBe(true);
+    expect(session.hint).toBe(XR_HELD_DICE_HINT);
     // The die is in the gripping hand.
     const die = session.dice.waiting as THREE.Object3D;
     main.position.add(new THREE.Vector3(0.05, 0.05, 0));
@@ -375,7 +378,7 @@ describe('F11 the rolled die pulses in the tray until it is thrown', () => {
     step();
     expect(session.awaitingThrow).toBe(false);
     for (let i = 0; i < 600 && session.awaitingDice; i++) step();
-    expect(session.rolls).toHaveLength(1);
+    expect(session.rolls).toHaveLength(2);
     rig.hook.dispose();
   }, 60_000);
 });

@@ -5,8 +5,8 @@
     "file": "study.lightmap.ktx2",
     "uv": 1,
     "encoding": "srgb-scaled",
-    "scale": 3.76297926902771,
-    "intensity": 11.821748
+    "scale": 3.7835512161254883,
+    "intensity": 11.886377
   },
   "id": "study",
   "kinds": [
@@ -284,7 +284,7 @@
     }
   ],
   "budget": {
-    "tris": 6974,
+    "tris": 6960,
     "materials": 9,
     "texturePx": 2048
   },

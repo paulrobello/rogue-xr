@@ -85,6 +85,31 @@ describe('FlowUi permanent-card shop', () => {
     const first = PERMANENT_CARD_IDS[0] as string;
     expect(ui.controlIds()).toContain(`workshop-buy-permanent-${first}`);
     expect(ui.root.getObjectByName(`workshop-permanent-effect-${first}`)).toBeDefined();
+    const inspect = (id: string) => {
+      const thumbnail = ui.root.getObjectByName(`workshop-card-${id}`);
+      if (!thumbnail) throw new Error(`Missing icon for ${id}`);
+      ui.root.updateWorldMatrix(true, true);
+      const origin = head.getWorldPosition(new THREE.Vector3());
+      const ray = new THREE.Raycaster(
+        origin,
+        thumbnail.getWorldPosition(new THREE.Vector3()).sub(origin).normalize(),
+      );
+      const firstHit = ray.intersectObjects(ui.targets(), true)[0];
+      if (!firstHit) throw new Error(`Ray missed ${id}`);
+      const control = ui.controlAt(firstHit.object);
+      expect(control).toBe(thumbnail.name);
+      ui.hover(control);
+      const face = ui.root.getObjectByName(`workshop-card-preview-${id}`);
+      expect(face?.visible).toBe(true);
+      return face;
+    };
+    const firstFace = inspect(first);
+    expect(ui.activate(`workshop-card-${first}`)).toBe(true);
+    const costlyFace = inspect('escapement-hammer');
+    expect(firstFace?.visible).toBe(false);
+    ui.hover(null);
+    expect(costlyFace?.visible).toBe(false);
+    expect(flow.workshop.permanentCards).toEqual([]);
     expect(flow.workshop.cogsBanked).toBe(60);
 
     expect(ui.activate(`workshop-buy-permanent-${first}`)).toBe(true);
@@ -93,9 +118,15 @@ describe('FlowUi permanent-card shop', () => {
     expect(ui.root.getObjectByName('workshop-feedback')).toBeDefined();
     expect(ui.activate(`workshop-buy-permanent-${first}`)).toBe(false);
 
+    expect(ui.root.getObjectByName(`workshop-card-preview-${first}`)).toBeUndefined();
+    const ownedFace = inspect(first);
+    expect(flow.workshop.cogsBanked).toBe(0);
+
     expect(ui.controlIds()).toContain('workshop-next-page');
     expect(ui.activate('workshop-next-page')).toBe(true);
     expect(ui.root.getObjectByName('workshop-page')).toBeDefined();
+    expect(ownedFace?.parent).toBeNull();
+    expect(ui.root.getObjectByName(`workshop-card-${first}`)).toBeUndefined();
     expect(ui.activate('workshop-previous-page')).toBe(true);
     expect(ui.activate('workshop-back')).toBe(true);
     expect(ui.controlIds()).toContain('workshop-permanent-cards');

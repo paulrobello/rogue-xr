@@ -1,12 +1,12 @@
 {
   "piece": "study",
   "blender": "5.3.0",
-  "host_load_start": 2.12,
+  "host_load_start": 3.45,
   "lightmap_size": 2048,
   "atlas_size": 2048,
   "samples": 256,
   "high": {
-    "triangles": 124696,
+    "triangles": 124591,
     "slots": 17
   },
   "device": "GPU:METAL (Apple M4 (GPU - 10 cores))",
@@ -18,9 +18,9 @@
     "ao_distance_m": 0.12,
     "margin_px": 8,
     "seconds": {
-      "albedo": 1.51,
-      "normal": 0.94,
-      "ao": 4.3
+      "albedo": 1.56,
+      "normal": 0.82,
+      "ao": 5.2
     },
     "coverage": 0.4527,
     "ao_mean": 0.7642,
@@ -36,44 +36,44 @@
       0.8688
     ],
     "host_load": [
-      2.11,
-      2.98
+      4.77,
+      7.27
     ]
   },
   "low": {
-    "triangles": 6974,
-    "vertices": 4401,
+    "triangles": 6960,
+    "vertices": 4391,
     "materials": 9,
     "lightmap_density": {
-      "mean_px_per_m": 65.36,
-      "min_px_per_m": 50.2,
-      "max_px_per_m": 65.98
+      "mean_px_per_m": 65.39,
+      "min_px_per_m": 50.22,
+      "max_px_per_m": 66.02
     },
     "lightmap_density_by_slot": {
       "books": {
         "area_m2": 26.94,
         "median_px_per_m": 66.0,
-        "min_px_per_m": 65.6
+        "min_px_per_m": 65.7
       },
       "brass-aged": {
         "area_m2": 13.39,
         "median_px_per_m": 66.0,
-        "min_px_per_m": 50.5
+        "min_px_per_m": 50.4
       },
       "brass-polished": {
-        "area_m2": 7.22,
-        "median_px_per_m": 64.5,
+        "area_m2": 6.88,
+        "median_px_per_m": 64.4,
         "min_px_per_m": 50.2
       },
       "flame": {
         "area_m2": 0.01,
         "median_px_per_m": 64.3,
-        "min_px_per_m": 59.0
+        "min_px_per_m": 59.1
       },
       "stained-glass": {
         "area_m2": 2.26,
-        "median_px_per_m": 65.7,
-        "min_px_per_m": 65.7
+        "median_px_per_m": 65.8,
+        "min_px_per_m": 65.8
       },
       "stone-floor": {
         "area_m2": 64.0,
@@ -82,7 +82,7 @@
       },
       "wallpaper": {
         "area_m2": 89.26,
-        "median_px_per_m": 65.6,
+        "median_px_per_m": 65.7,
         "min_px_per_m": 62.4
       },
       "walnut": {
@@ -100,57 +100,57 @@
       "door-frame-e": {
         "triangles": 26,
         "lightmap_density": {
-          "mean_px_per_m": 65.98,
-          "min_px_per_m": 65.98,
-          "max_px_per_m": 65.98
+          "mean_px_per_m": 66.02,
+          "min_px_per_m": 66.02,
+          "max_px_per_m": 66.02
         }
       },
       "door-frame-s": {
         "triangles": 26,
         "lightmap_density": {
-          "mean_px_per_m": 65.98,
-          "min_px_per_m": 65.98,
-          "max_px_per_m": 65.98
+          "mean_px_per_m": 66.02,
+          "min_px_per_m": 66.02,
+          "max_px_per_m": 66.02
         }
       },
       "door-plug-e": {
         "triangles": 10,
         "lightmap_density": {
-          "mean_px_per_m": 65.98,
-          "min_px_per_m": 65.98,
-          "max_px_per_m": 65.98
+          "mean_px_per_m": 66.02,
+          "min_px_per_m": 66.02,
+          "max_px_per_m": 66.02
         }
       },
       "door-plug-s": {
         "triangles": 10,
         "lightmap_density": {
-          "mean_px_per_m": 65.98,
-          "min_px_per_m": 65.98,
-          "max_px_per_m": 65.98
+          "mean_px_per_m": 66.02,
+          "min_px_per_m": 66.02,
+          "max_px_per_m": 66.02
         }
       }
     }
   },
-  "glb_bytes": 436064,
+  "glb_bytes": 434940,
   "lightmap_bake": {
-    "seconds": 47.71,
+    "seconds": 56.56,
     "pass_seconds": [
-      44.38,
-      3.33
+      52.82,
+      3.74
     ],
     "host_load": [
-      5.14,
-      4.8
+      7.27,
+      4.1
     ],
     "timing_valid": true,
     "panels": "pass 1: room and door frames, every door frame and plug invisible to shadow, diffuse, glossy, transmission and volume rays; pass 2: door plugs only into the same image, plugs fully visible, frames hidden from render (room_panels.bake_with_panels)"
   },
   "denoise": "compositor OIDN, HDR, accurate prefilter, high quality",
   "lightmap": {
-    "coverage": 0.7436,
-    "scale": 3.762979,
-    "clipped_fraction": 0.00398,
-    "mean_irradiance": 0.260274,
+    "coverage": 0.7417,
+    "scale": 3.783551,
+    "clipped_fraction": 0.00399,
+    "mean_irradiance": 0.248141,
     "p05_irradiance": 0.0,
     "percentile": 99.6
   },
@@ -165,12 +165,12 @@
   },
   "blend": {
     "study_high.blend": {
-      "sha256": "31108144ee5cfde80891911b1722f7090b4b33f7bfdb0a03b15fef73e6fb635b",
-      "bytes": 3928204
+      "sha256": "a5cc2a2097f093ed86dd3f264837fdfb5f54ab6333a0a703b51b4b5c201d80de",
+      "bytes": 3930841
     },
     "study_low.blend": {
-      "sha256": "8b99f486fbb90520f38259f8f808e9417f8b9c71e7ac4ee59e904e2f6f973d75",
-      "bytes": 355737
+      "sha256": "584f34735fc11226c0faafba200a44ed3cb3edd8f79cd8f96380b621ab3d5dcf",
+      "bytes": 355452
     }
   },
   "colliders_added": [
@@ -223,18 +223,19 @@
       ]
     }
   ],
-  "host_load_end": 5.3,
+  "host_load_end": 4.42,
   "files": {
+    "engine-compare.json": "abb36a28e9c767cc9c03ecd221bcde323d957e85ecf440769ff4028e365ce94a",
     "study.basecolor.ktx2": "b02368371914b7f903b80acdde92d9951f2e0b88105b3ac47afe78e3fe683084",
     "study.basecolor.png": "69cf3fef0f3d8f4ee9295380b847a134d19b7c8a1aa5a28bec781b655a781fe6",
-    "study.glb": "902a5b27fb7cbd1c1239f56b2dc95f3fe022eaf3eb5ddd1dad8ebd4a3e94c020",
-    "study.lightmap.ktx2": "3f19bae9005bd1d3fca255d3dc16b5d073dc9657f3c8b2224f1f6062d2cc2ce4",
-    "study.lightmap.png": "b027fb0db1194442198ad8b91532136083b243aaea9d1eee09fd0f00211c16f1",
-    "study.manifest.json": "b713265df9968bac33d48729d47060c7c459e8a6480862cba2488d5c23ac99fe",
-    "study.normal.ktx2": "7c79c1a96792b3cbc38c0bb53537ef2180b40d0f0810a5c39152b7486a1b78e7",
-    "study.normal.png": "ecd975183f4d2fbab20287c61928e6ad72afd981b9ddbc6186ce566472edd43e",
-    "study.orm.ktx2": "ed8e6532aeaa3b523bd2d7dea450a5959404781a3df496071af3eeb839666a81",
-    "study.orm.png": "432e4d516f4a6b418a262fd4465ba617ce9901c481ba44bcfd79a3e6942e0e48",
+    "study.glb": "70f1514008ef5ed17d865ebd431129c22a231829b130373a2d980c2bb25da1b1",
+    "study.lightmap.ktx2": "1a1bf7e3ff1065e725c083ee9051439e0d0ce944f65af76e11832b83c25350c4",
+    "study.lightmap.png": "63d690c53b5fda972efdbbe24c126b91dfff3a97686224a01ea40c1ae700c869",
+    "study.manifest.json": "aa2ae71cd55a92c78e7de094958cc24afffb79d4815d593e4a37932f34e037bd",
+    "study.normal.ktx2": "e72dfde808151f2223714378c70a4f3fe5e688949bdb0c72bc31a0062f62757b",
+    "study.normal.png": "a97ccdfe84f7dae105a90294222e516b7dd34bb45015c00e2416c045363b3b58",
+    "study.orm.ktx2": "3835cb4dcbcf143f4fa7e2d78ec05efc1bc5b53b0605aebb0be23ca579d445ab",
+    "study.orm.png": "8872f7f32c46bf7f865574eaf3f1b16c95a1a62a7c2cc05785bee34b68ca7078",
     "uv1-report.json": "b8c3fdf0879060347e3f0a006ec604f494d46adb28547057d91468150db8e591"
   }
 }

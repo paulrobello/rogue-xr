@@ -337,12 +337,18 @@ function rewardCogGeometry(): THREE.BufferGeometry {
 function lidRimGeometry(): THREE.BufferGeometry {
   const h = 0.012;
   const y = h / 2 + 0.001;
+  const proud = 0.003;
   const strip = LID_SHELL + 0.006;
+  const width = WIDTH + 2 * proud;
+  const depth = DEPTH + 2 * proud;
+  const endZ = (depth - strip) / 2;
+  const sideX = (width - strip) / 2;
+  // The rails meet edge to edge and stand proud of the wooden end caps.
   return merged([
-    new THREE.BoxGeometry(WIDTH, h, strip).translate(0, y, -(LID_RADIUS - strip / 2)),
-    new THREE.BoxGeometry(WIDTH, h, strip).translate(0, y, LID_RADIUS - strip / 2),
-    new THREE.BoxGeometry(strip, h, DEPTH).translate(-(WIDTH - strip) / 2, y, 0),
-    new THREE.BoxGeometry(strip, h, DEPTH).translate((WIDTH - strip) / 2, y, 0),
+    new THREE.BoxGeometry(width - 2 * strip, h, strip).translate(0, y, -endZ),
+    new THREE.BoxGeometry(width - 2 * strip, h, strip).translate(0, y, endZ),
+    new THREE.BoxGeometry(strip, h, depth).translate(-sideX, y, 0),
+    new THREE.BoxGeometry(strip, h, depth).translate(sideX, y, 0),
   ]);
 }
 

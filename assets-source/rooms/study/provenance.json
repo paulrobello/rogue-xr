@@ -4,7 +4,7 @@
   "route": "scripted",
   "generator": {
     "path": "scripts/assets/build-room-study.py",
-    "sha256": "015a9cfafdf1f9498de017cb447e02d401205c503df68926c825b04348bcda9f"
+    "sha256": "809c9db70529905825f5af345950c5a1ef78b8abb239504a8824e5afcd656685"
   },
   "generatorDeps": [
     {
@@ -29,32 +29,32 @@
     "store": "assets-source/rooms/study/blend (storage ruling pending, PRD project file section 1.5)",
     "files": {
       "study_high.blend": {
-        "sha256": "31108144ee5cfde80891911b1722f7090b4b33f7bfdb0a03b15fef73e6fb635b",
-        "bytes": 3928204
+        "sha256": "a5cc2a2097f093ed86dd3f264837fdfb5f54ab6333a0a703b51b4b5c201d80de",
+        "bytes": 3930841
       },
       "study_low.blend": {
-        "sha256": "8b99f486fbb90520f38259f8f808e9417f8b9c71e7ac4ee59e904e2f6f973d75",
-        "bytes": 355737
+        "sha256": "584f34735fc11226c0faafba200a44ed3cb3edd8f79cd8f96380b621ab3d5dcf",
+        "bytes": 355452
       }
     }
   },
   "bake": {
     "device": "GPU:METAL (Apple M4 (GPU - 10 cores))",
     "lightmap": {
-      "coverage": 0.7436,
-      "scale": 3.762979,
-      "clipped_fraction": 0.00398,
-      "mean_irradiance": 0.260274,
+      "coverage": 0.7417,
+      "scale": 3.783551,
+      "clipped_fraction": 0.00399,
+      "mean_irradiance": 0.248141,
       "p05_irradiance": 0.0,
       "percentile": 99.6,
-      "seconds": 47.71,
+      "seconds": 56.56,
       "pass_seconds": [
-        44.38,
-        3.33
+        52.82,
+        3.74
       ],
       "host_load": [
-        5.14,
-        4.8
+        7.27,
+        4.1
       ],
       "timing_valid": true,
       "panels": "pass 1: room and door frames, every door frame and plug invisible to shadow, diffuse, glossy, transmission and volume rays; pass 2: door plugs only into the same image, plugs fully visible, frames hidden from render (room_panels.bake_with_panels)",
@@ -72,9 +72,9 @@
       "ao_distance_m": 0.12,
       "margin_px": 8,
       "seconds": {
-        "albedo": 1.51,
-        "normal": 0.94,
-        "ao": 4.3
+        "albedo": 1.56,
+        "normal": 0.82,
+        "ao": 5.2
       },
       "coverage": 0.4527,
       "ao_mean": 0.7642,
@@ -90,8 +90,8 @@
         0.8688
       ],
       "host_load": [
-        2.11,
-        2.98
+        4.77,
+        7.27
       ]
     },
     "ktx2": {
@@ -105,7 +105,7 @@
     }
   },
   "budgets": {
-    "triangles": 6974,
+    "triangles": 6960,
     "materials": 9,
     "texturePx": {
       "study.basecolor.ktx2": {
@@ -125,40 +125,40 @@
         "height": 2048
       }
     },
-    "highTriangles": 124696,
-    "glbBytes": 436064
+    "highTriangles": 124591,
+    "glbBytes": 434940
   },
   "texelDensityPxPerM": {
     "lightmap": {
-      "mean_px_per_m": 65.36,
-      "min_px_per_m": 50.2,
-      "max_px_per_m": 65.98
+      "mean_px_per_m": 65.39,
+      "min_px_per_m": 50.22,
+      "max_px_per_m": 66.02
     },
     "lightmapBySlot": {
       "books": {
         "area_m2": 26.94,
         "median_px_per_m": 66.0,
-        "min_px_per_m": 65.6
+        "min_px_per_m": 65.7
       },
       "brass-aged": {
         "area_m2": 13.39,
         "median_px_per_m": 66.0,
-        "min_px_per_m": 50.5
+        "min_px_per_m": 50.4
       },
       "brass-polished": {
-        "area_m2": 7.22,
-        "median_px_per_m": 64.5,
+        "area_m2": 6.88,
+        "median_px_per_m": 64.4,
         "min_px_per_m": 50.2
       },
       "flame": {
         "area_m2": 0.01,
         "median_px_per_m": 64.3,
-        "min_px_per_m": 59.0
+        "min_px_per_m": 59.1
       },
       "stained-glass": {
         "area_m2": 2.26,
-        "median_px_per_m": 65.7,
-        "min_px_per_m": 65.7
+        "median_px_per_m": 65.8,
+        "min_px_per_m": 65.8
       },
       "stone-floor": {
         "area_m2": 64.0,
@@ -167,7 +167,7 @@
       },
       "wallpaper": {
         "area_m2": 89.26,
-        "median_px_per_m": 65.6,
+        "median_px_per_m": 65.7,
         "min_px_per_m": 62.4
       },
       "walnut": {
@@ -300,41 +300,42 @@
     },
     {
       "path": "public/assets/rooms/study/study.glb",
-      "sha256": "902a5b27fb7cbd1c1239f56b2dc95f3fe022eaf3eb5ddd1dad8ebd4a3e94c020",
-      "bytes": 436064
+      "sha256": "70f1514008ef5ed17d865ebd431129c22a231829b130373a2d980c2bb25da1b1",
+      "bytes": 434940
     },
     {
       "path": "public/assets/rooms/study/study.lightmap.ktx2",
-      "sha256": "3f19bae9005bd1d3fca255d3dc16b5d073dc9657f3c8b2224f1f6062d2cc2ce4",
-      "bytes": 2685454
+      "sha256": "1a1bf7e3ff1065e725c083ee9051439e0d0ce944f65af76e11832b83c25350c4",
+      "bytes": 2673048
     },
     {
       "path": "public/assets/rooms/study/study.manifest.json",
-      "sha256": "b713265df9968bac33d48729d47060c7c459e8a6480862cba2488d5c23ac99fe",
-      "bytes": 4482
+      "sha256": "aa2ae71cd55a92c78e7de094958cc24afffb79d4815d593e4a37932f34e037bd",
+      "bytes": 4484
     },
     {
       "path": "public/assets/rooms/study/study.normal.ktx2",
-      "sha256": "7c79c1a96792b3cbc38c0bb53537ef2180b40d0f0810a5c39152b7486a1b78e7",
-      "bytes": 1877176
+      "sha256": "e72dfde808151f2223714378c70a4f3fe5e688949bdb0c72bc31a0062f62757b",
+      "bytes": 1877173
     },
     {
       "path": "public/assets/rooms/study/study.orm.ktx2",
-      "sha256": "ed8e6532aeaa3b523bd2d7dea450a5959404781a3df496071af3eeb839666a81",
-      "bytes": 1584326
+      "sha256": "3835cb4dcbcf143f4fa7e2d78ec05efc1bc5b53b0605aebb0be23ca579d445ab",
+      "bytes": 1584362
     }
   ],
   "stagingFiles": {
+    "engine-compare.json": "abb36a28e9c767cc9c03ecd221bcde323d957e85ecf440769ff4028e365ce94a",
     "study.basecolor.ktx2": "b02368371914b7f903b80acdde92d9951f2e0b88105b3ac47afe78e3fe683084",
     "study.basecolor.png": "69cf3fef0f3d8f4ee9295380b847a134d19b7c8a1aa5a28bec781b655a781fe6",
-    "study.glb": "902a5b27fb7cbd1c1239f56b2dc95f3fe022eaf3eb5ddd1dad8ebd4a3e94c020",
-    "study.lightmap.ktx2": "3f19bae9005bd1d3fca255d3dc16b5d073dc9657f3c8b2224f1f6062d2cc2ce4",
-    "study.lightmap.png": "b027fb0db1194442198ad8b91532136083b243aaea9d1eee09fd0f00211c16f1",
-    "study.manifest.json": "b713265df9968bac33d48729d47060c7c459e8a6480862cba2488d5c23ac99fe",
-    "study.normal.ktx2": "7c79c1a96792b3cbc38c0bb53537ef2180b40d0f0810a5c39152b7486a1b78e7",
-    "study.normal.png": "ecd975183f4d2fbab20287c61928e6ad72afd981b9ddbc6186ce566472edd43e",
-    "study.orm.ktx2": "ed8e6532aeaa3b523bd2d7dea450a5959404781a3df496071af3eeb839666a81",
-    "study.orm.png": "432e4d516f4a6b418a262fd4465ba617ce9901c481ba44bcfd79a3e6942e0e48",
+    "study.glb": "70f1514008ef5ed17d865ebd431129c22a231829b130373a2d980c2bb25da1b1",
+    "study.lightmap.ktx2": "1a1bf7e3ff1065e725c083ee9051439e0d0ce944f65af76e11832b83c25350c4",
+    "study.lightmap.png": "63d690c53b5fda972efdbbe24c126b91dfff3a97686224a01ea40c1ae700c869",
+    "study.manifest.json": "aa2ae71cd55a92c78e7de094958cc24afffb79d4815d593e4a37932f34e037bd",
+    "study.normal.ktx2": "e72dfde808151f2223714378c70a4f3fe5e688949bdb0c72bc31a0062f62757b",
+    "study.normal.png": "a97ccdfe84f7dae105a90294222e516b7dd34bb45015c00e2416c045363b3b58",
+    "study.orm.ktx2": "3835cb4dcbcf143f4fa7e2d78ec05efc1bc5b53b0605aebb0be23ca579d445ab",
+    "study.orm.png": "8872f7f32c46bf7f865574eaf3f1b16c95a1a62a7c2cc05785bee34b68ca7078",
     "uv1-report.json": "b8c3fdf0879060347e3f0a006ec604f494d46adb28547057d91468150db8e591"
   },
   "references": [
@@ -354,7 +355,7 @@
   "materialsUsed": "approved P4-T3 set (public/assets/materials), bound by slot name; not regenerated",
   "license": "Original work generated in Blender from a checked-in script; concept references from Paul's paid Higgsfield plan (Terms of Use 4.4)",
   "reimport": {
-    "triangles": 6974,
+    "triangles": 6960,
     "material_count": 9,
     "uv_layers": [
       [
@@ -424,6 +425,13 @@
       "notes": "in-engine look approval (P4-T10)"
     }
   ],
+  "revision": {
+    "date": "2026-11-18",
+    "agent": "Codex",
+    "changes": [
+      "Removed the brass center bar from the stained-glass window and rebaked the room lightmap."
+    ]
+  },
   "independentScoreHistory": [
     {
       "score": 84,
@@ -522,109 +530,97 @@
           "sha256": "4b477c8c168f64c81b2d48b301257a762d205485b0194075f8b68832e5648961"
         }
       ]
+    },
+    {
+      "score": 84,
+      "date": "2026-11-18",
+      "scale": "0-100 visual fidelity to the art bible and study-kit language",
+      "scorer": "Independent visual reviewer, separate from room authorship",
+      "acceptanceBar": 80,
+      "clearsBar": true,
+      "previousScore": 84,
+      "rubric": [
+        {
+          "criterion": "form, layout and proportions",
+          "points": 26,
+          "max": 30,
+          "note": "The center bar rises continuously through the lancet and meets its upper wood trim. The two candlestick bases sit flat on the top ledge with the writing surface visible below. Overall volume, doorway seams and proportions retain the previous assessment."
+        },
+        {
+          "criterion": "signature features: study",
+          "points": 21,
+          "max": 25,
+          "note": "The book spines frame the stained glass and the matched desk candlesticks give the writing station identifiable fittings. Its scale against the central gear column remains a limitation in the historical wide view."
+        },
+        {
+          "criterion": "surface detail and material read",
+          "points": 17,
+          "max": 20,
+          "note": "Dark lead separates the jewel panes. Brass stems, wax, shelf lip and bookcase grain remain distinguishable in the close-ups. The column finish is outside the new frames."
+        },
+        {
+          "criterion": "colour, value and lighting mood",
+          "points": 12,
+          "max": 15,
+          "note": "The desk shelf and upper wall receive warm light. The raised flames are individually visible, though the wallpaper competes with both. The new views do not measure lower-wall black levels or the coloured floor patch."
+        },
+        {
+          "criterion": "readability and comfort at seated VR distance",
+          "points": 8,
+          "max": 10,
+          "note": "The candle bodies and shelf are legible at this close camera. The previous seated-distance grade is carried forward. Neither new view includes an encounter or a seated overview."
+        }
+      ],
+      "topFixes": [
+        "Recheck the lower-wall values and desk scale from the seated gameplay camera with the new bake. The historical wide frame shows the central gear column dominating the study."
+      ],
+      "method": "Independent change review against the previous five-criterion rubric. Examined the supplied 1280x720 capture at full resolution and the window apex in a 3x nearest-neighbour crop. Inspected a 2x crop across both study candleholders and their feet. The hero JPG listed in evidence is the previous build and was checked for historical context only. The wider room criteria retain the previous assessment wherever the fresh images cannot establish a change. The staged GLB hash matches its reimport, UV and bake reports, the compressed lightmap hash matches the bake report, and reimport passed all listed checks. UV report records zero overlapping pixels. No new room-wide capture, animated sequence, physical Quest measurement or owner sign-off is part of this review.",
+      "evidence": [
+        {
+          "path": "docs/verification/p5-rooms-study-quest-window.jpg",
+          "sha256": "4819a3aae1df0e1bd9b8993ce0d22b245b579c98ddc7b8b9d84d9281b737d561"
+        },
+        {
+          "path": "docs/verification/p5-rooms-study-quest-candles.jpg",
+          "sha256": "e77d2cdbe0b467eb7f5e7d10c1e3e30877cb18be9a5ab3496622b7d52d084b4b"
+        },
+        {
+          "path": "assets-source/rooms/study/staging/reimport.json",
+          "sha256": "0b82e538781235397945c1abf7356adfdbe9d1511ab2140075f06b16f47b2387"
+        },
+        {
+          "path": "assets-source/rooms/study/staging/uv1-report.json",
+          "sha256": "b8c3fdf0879060347e3f0a006ec604f494d46adb28547057d91468150db8e591"
+        },
+        {
+          "path": "assets-source/rooms/study/staging/report.json",
+          "sha256": "747eaf2b44e1794fc75c91482e8f030a8021ab95fb6b58aea2934a56c88458fd"
+        },
+        {
+          "path": "assets-source/rooms/study/staging/study.glb",
+          "sha256": "902a5b27fb7cbd1c1239f56b2dc95f3fe022eaf3eb5ddd1dad8ebd4a3e94c020"
+        },
+        {
+          "path": "assets-source/rooms/study/staging/study.lightmap.ktx2",
+          "sha256": "3f19bae9005bd1d3fca255d3dc16b5d073dc9657f3c8b2224f1f6062d2cc2ce4"
+        },
+        {
+          "path": "docs/verification/p5-rooms-study-hero.jpg",
+          "sha256": "4a957664f7295ac42ed681fc118a9ff25fb29dc9cd46d2d8fe363edff9913936"
+        },
+        {
+          "path": "docs/art-bible.md",
+          "sha256": "11da71b45f24eeb258ef77d328ef1aa009297a9231608cb80bb429aa3ff2ad6a"
+        }
+      ],
+      "build": "GLB 902a5b27fb7c",
+      "runtimeGlbSha256": "902a5b27fb7cbd1c1239f56b2dc95f3fe022eaf3eb5ddd1dad8ebd4a3e94c020"
     }
   ],
   "reviewEvidence": [
     {
-      "path": "docs/verification/p5-rooms-study-quest-candles.jpg",
-      "sha256": "e77d2cdbe0b467eb7f5e7d10c1e3e30877cb18be9a5ab3496622b7d52d084b4b"
-    },
-    {
-      "path": "docs/verification/p5-rooms-study-quest-window.jpg",
-      "sha256": "4819a3aae1df0e1bd9b8993ce0d22b245b579c98ddc7b8b9d84d9281b737d561"
+      "path": "docs/verification/p5-int-study-unobstructed-window.jpg",
+      "sha256": "6f134d54cc81147027506ba11931cb3357bc80b5bfcfc50b1f49929da75366bd"
     }
-  ],
-  "revision": {
-    "agent": "Codex with GPT-6.1 Terra",
-    "date": "2026-11-18",
-    "changes": [
-      "Extended the center mullions to the lancet peaks",
-      "Placed the desk candles and their bake lights above the letter rack"
-    ]
-  },
-  "independentScore": {
-    "score": 84,
-    "date": "2026-11-18",
-    "scale": "0-100 visual fidelity to the art bible and study-kit language",
-    "scorer": "Independent visual reviewer, separate from room authorship",
-    "acceptanceBar": 80,
-    "clearsBar": true,
-    "previousScore": 84,
-    "rubric": [
-      {
-        "criterion": "form, layout and proportions",
-        "points": 26,
-        "max": 30,
-        "note": "The center bar rises continuously through the lancet and meets its upper wood trim. The two candlestick bases sit flat on the top ledge with the writing surface visible below. Overall volume, doorway seams and proportions retain the previous assessment."
-      },
-      {
-        "criterion": "signature features: study",
-        "points": 21,
-        "max": 25,
-        "note": "The book spines frame the stained glass and the matched desk candlesticks give the writing station identifiable fittings. Its scale against the central gear column remains a limitation in the historical wide view."
-      },
-      {
-        "criterion": "surface detail and material read",
-        "points": 17,
-        "max": 20,
-        "note": "Dark lead separates the jewel panes. Brass stems, wax, shelf lip and bookcase grain remain distinguishable in the close-ups. The column finish is outside the new frames."
-      },
-      {
-        "criterion": "colour, value and lighting mood",
-        "points": 12,
-        "max": 15,
-        "note": "The desk shelf and upper wall receive warm light. The raised flames are individually visible, though the wallpaper competes with both. The new views do not measure lower-wall black levels or the coloured floor patch."
-      },
-      {
-        "criterion": "readability and comfort at seated VR distance",
-        "points": 8,
-        "max": 10,
-        "note": "The candle bodies and shelf are legible at this close camera. The previous seated-distance grade is carried forward. Neither new view includes an encounter or a seated overview."
-      }
-    ],
-    "topFixes": [
-      "Recheck the lower-wall values and desk scale from the seated gameplay camera with the new bake. The historical wide frame shows the central gear column dominating the study."
-    ],
-    "method": "Independent change review against the previous five-criterion rubric. Examined the supplied 1280x720 capture at full resolution and the window apex in a 3x nearest-neighbour crop. Inspected a 2x crop across both study candleholders and their feet. The hero JPG listed in evidence is the previous build and was checked for historical context only. The wider room criteria retain the previous assessment wherever the fresh images cannot establish a change. The staged GLB hash matches its reimport, UV and bake reports, the compressed lightmap hash matches the bake report, and reimport passed all listed checks. UV report records zero overlapping pixels. No new room-wide capture, animated sequence, physical Quest measurement or owner sign-off is part of this review.",
-    "evidence": [
-      {
-        "path": "docs/verification/p5-rooms-study-quest-window.jpg",
-        "sha256": "4819a3aae1df0e1bd9b8993ce0d22b245b579c98ddc7b8b9d84d9281b737d561"
-      },
-      {
-        "path": "docs/verification/p5-rooms-study-quest-candles.jpg",
-        "sha256": "e77d2cdbe0b467eb7f5e7d10c1e3e30877cb18be9a5ab3496622b7d52d084b4b"
-      },
-      {
-        "path": "assets-source/rooms/study/staging/reimport.json",
-        "sha256": "0b82e538781235397945c1abf7356adfdbe9d1511ab2140075f06b16f47b2387"
-      },
-      {
-        "path": "assets-source/rooms/study/staging/uv1-report.json",
-        "sha256": "b8c3fdf0879060347e3f0a006ec604f494d46adb28547057d91468150db8e591"
-      },
-      {
-        "path": "assets-source/rooms/study/staging/report.json",
-        "sha256": "747eaf2b44e1794fc75c91482e8f030a8021ab95fb6b58aea2934a56c88458fd"
-      },
-      {
-        "path": "assets-source/rooms/study/staging/study.glb",
-        "sha256": "902a5b27fb7cbd1c1239f56b2dc95f3fe022eaf3eb5ddd1dad8ebd4a3e94c020"
-      },
-      {
-        "path": "assets-source/rooms/study/staging/study.lightmap.ktx2",
-        "sha256": "3f19bae9005bd1d3fca255d3dc16b5d073dc9657f3c8b2224f1f6062d2cc2ce4"
-      },
-      {
-        "path": "docs/verification/p5-rooms-study-hero.jpg",
-        "sha256": "4a957664f7295ac42ed681fc118a9ff25fb29dc9cd46d2d8fe363edff9913936"
-      },
-      {
-        "path": "docs/art-bible.md",
-        "sha256": "11da71b45f24eeb258ef77d328ef1aa009297a9231608cb80bb429aa3ff2ad6a"
-      }
-    ],
-    "build": "GLB 902a5b27fb7c",
-    "runtimeGlbSha256": "902a5b27fb7cbd1c1239f56b2dc95f3fe022eaf3eb5ddd1dad8ebd4a3e94c020"
-  }
+  ]
 }

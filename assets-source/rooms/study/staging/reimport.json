@@ -1,6 +1,6 @@
 {
   "glb": "study.glb",
-  "glb_sha256": "902a5b27fb7cbd1c1239f56b2dc95f3fe022eaf3eb5ddd1dad8ebd4a3e94c020",
+  "glb_sha256": "70f1514008ef5ed17d865ebd431129c22a231829b130373a2d980c2bb25da1b1",
   "blender": "5.3.0",
   "meshes": [
     "door-frame-e",
@@ -9,7 +9,7 @@
     "door-plug-s",
     "study"
   ],
-  "triangles": 6974,
+  "triangles": 6960,
   "materials": [
     "study_books",
     "study_brass-aged",

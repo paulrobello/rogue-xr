@@ -69,6 +69,7 @@ export interface FlowUiDeps {
   onNewRun: (seed: string, difficulty: Difficulty) => void;
   onContinue: () => void;
   onSettings: (next: Settings) => void;
+  setTableDistance?: (distance: number) => boolean;
   /** How the reward board draws its card faces. Default: the shared hand atlas, typeset. */
   rewardCards?: RewardCardFacesOptions;
   /**
@@ -322,6 +323,12 @@ export class FlowUi {
   private deckPage = 0;
   /** Invisible hit planes over the deck viewer's cards, so the pointer can rest on one. */
   private deckHits: THREE.Group | null = null;
+  /** Small atlas faces and their non-activating hit planes in the permanent-card shop. */
+  private workshopFaces: RewardCardFaces | null = null;
+  private workshopHits: THREE.Group | null = null;
+  /** One stable, non-hit preview face shown while a shop thumbnail is hovered. */
+  private workshopPreviews = new Map<string, RewardCardFaces>();
+  private workshopPreviewId: string | null = null;
   /** Built on first use; null when the canvas is unavailable. */
   private cardTipLabel: CanvasLabel | null | undefined;
   private cardTipKey = '';
@@ -334,6 +341,7 @@ export class FlowUi {
   private workshopSubview: WorkshopSubview = 'main';
   private permanentCardPage = 0;
   private permanentCardMessage = '';
+  private tableDistanceMessage = '';
   private seedValue: string;
   private seedDraft = '';
   private shownFor: FlowPhase | null = null;
@@ -446,6 +454,7 @@ export class FlowUi {
         if (cell) ids.push(`${board.name}-${cell}`);
       }
     }
+    if (this.workshopHits) ids.push(...this.workshopHits.children.map((hit) => hit.name));
     return ids;
   }
 
@@ -454,6 +463,7 @@ export class FlowUi {
     if (!this.root.visible) return [];
     const out = this.boards.map((b) => b.panel.root);
     if (this.deckHits) out.push(this.deckHits);
+    if (this.workshopHits) out.push(this.workshopHits);
     return out;
   }
 
@@ -462,6 +472,8 @@ export class FlowUi {
     const deckIndex: unknown = object.userData.deckCard;
     if (typeof deckIndex === 'number' && object.parent === this.deckHits)
       return `${DECK_CARD}${deckIndex}`;
+    const workshopCard = object.userData.workshopCard;
+    if (typeof workshopCard === 'string' && object.parent === this.workshopHits) return object.name;
     for (const board of this.boards) {
       const cell = board.panel.cellAt(object);
       if (cell) return `${board.name}-${cell}`;
@@ -472,6 +484,10 @@ export class FlowUi {
   activate(controlId: string): boolean {
     // A flying reward card owns the board until it lands.
     if (this.flight) return false;
+    if (controlId.startsWith('workshop-card-')) {
+      this.hover(controlId);
+      return this.workshopPreviewId !== null;
+    }
     const target = this.boardOf(controlId);
     return target ? target.board.panel.activate(target.cell) : false;
   }
@@ -481,6 +497,12 @@ export class FlowUi {
     this.paintHover(this.hoveredId, false);
     this.hoveredId = controlId;
     this.paintHover(controlId, true);
+    if (controlId?.startsWith('workshop-card-')) {
+      this.showWorkshopPreview(controlId.slice('workshop-card-'.length));
+    } else {
+      for (const preview of this.workshopPreviews.values()) preview.root.visible = false;
+      this.workshopPreviewId = null;
+    }
     this.showCardTip(controlId);
   }
 
@@ -568,6 +590,7 @@ export class FlowUi {
     const phase = this.deps.flow.phase;
     if (phase === this.shownFor) return;
     this.shownFor = phase;
+    this.tableDistanceMessage = '';
     if (phase !== 'title') this.subview = 'main';
     if (phase !== 'workshop') this.workshopSubview = 'main';
     this.menu = 'closed';
@@ -654,6 +677,18 @@ export class FlowUi {
       }
     });
     this.deckHits = null;
+    this.workshopHits?.traverse((o) => {
+      if (o instanceof THREE.Mesh) {
+        o.geometry.dispose();
+        (o.material as THREE.Material).dispose();
+      }
+    });
+    this.workshopHits = null;
+    this.workshopFaces?.dispose();
+    this.workshopFaces = null;
+    for (const preview of this.workshopPreviews.values()) preview.dispose();
+    this.workshopPreviews.clear();
+    this.workshopPreviewId = null;
     this.boards = [];
     this.extras = [];
     this.selectedIds.clear();
@@ -980,10 +1015,14 @@ export class FlowUi {
             }
           : { id: `buy-permanent-${id}`, label: `Needs ${permanentCardCost(id)}` };
       rows.push([
+        { id: `icon-top-${id}`, label: '', weight: 0.5 },
         { id: `permanent-${id}`, label: `${card.name} · ${card.cost} steam`, weight: 2 },
         buy,
       ]);
-      rows.push({ id: `permanent-effect-${id}`, label: card.description });
+      rows.push([
+        { id: `icon-bottom-${id}`, label: '', weight: 0.5 },
+        { id: `permanent-effect-${id}`, label: card.description, weight: 3 },
+      ]);
     }
     if (PERMANENT_CARD_IDS.length > PERMANENT_CARD_PAGE_SIZE) {
       const pageCount = Math.ceil(PERMANENT_CARD_IDS.length / PERMANENT_CARD_PAGE_SIZE);
@@ -1013,15 +1052,68 @@ export class FlowUi {
       label: 'Back to workshop',
       onSelect: () => this.closePermanentCards(),
     });
-    this.board(
+    const board = this.board(
       'workshop',
       rows,
-      { x: 0, y: 0.32, z: -BOARD_DISTANCE },
+      { x: -0.1, y: 0.32, z: -BOARD_DISTANCE },
       {
-        width: 0.8,
+        width: 0.9,
         heading: 'Permanent cards',
       },
     );
+    const width = 0.088;
+    const slots = cards.map((id) => {
+      const top = board.panel.root.getObjectByName(`workshop-icon-top-${id}`);
+      const bottom = board.panel.root.getObjectByName(`workshop-icon-bottom-${id}`);
+      if (!top || !bottom) throw new Error(`Missing Workshop card slot for ${id}`);
+      return {
+        id,
+        x: top.position.x,
+        y: (top.position.y + bottom.position.y) / 2,
+        width,
+        height: width * HOLO_CARD_ASPECT,
+      };
+    });
+    this.workshopFaces = new RewardCardFaces(slots, rewardCardTexture, this.deps.rewardCards);
+    this.workshopFaces.root.name = 'workshop-card-faces';
+    this.workshopFaces.root.position.z = 0.008;
+    board.group.add(this.workshopFaces.root);
+    this.workshopHits = new THREE.Group();
+    this.workshopHits.name = 'workshop-card-hits';
+    slots.forEach((slot) => {
+      const hit = new THREE.Mesh(
+        new THREE.PlaneGeometry(slot.width, slot.height),
+        new THREE.MeshBasicMaterial({ visible: false }),
+      );
+      hit.name = `workshop-card-${slot.id}`;
+      hit.position.set(slot.x, slot.y, 0.022);
+      hit.userData.workshopCard = slot.id;
+      this.workshopHits?.add(hit);
+    });
+    board.group.add(this.workshopHits);
+  }
+
+  private showWorkshopPreview(id: string): void {
+    const faces = this.workshopFaces;
+    const parent = faces?.root.parent;
+    if (!parent || !faces?.slot(id) || this.workshopPreviewId === id) return;
+    let preview = this.workshopPreviews.get(id);
+    if (!preview) {
+      const width = 0.36;
+      preview = new RewardCardFaces(
+        [{ id, x: 0, y: 0, width, height: width * HOLO_CARD_ASPECT }],
+        rewardCardTexture,
+        this.deps.rewardCards,
+      );
+      preview.root.name = `workshop-card-preview-${id}`;
+      preview.root.position.set(0.69, -0.24, 0.055);
+      parent.add(preview.root);
+      this.workshopPreviews.set(id, preview);
+    }
+    const previous = this.workshopPreviewId && this.workshopPreviews.get(this.workshopPreviewId);
+    if (previous) previous.root.visible = false;
+    this.workshopPreviewId = id;
+    preview.root.visible = true;
   }
 
   private buyPermanent(id: string): void {
@@ -1105,12 +1197,24 @@ export class FlowUi {
    */
   private choiceRows(): MenuRow[] {
     const choose = (change: Partial<Settings>): void => {
-      this.deps.onSettings({ ...this.deps.settings(), ...change });
+      this.tableDistanceMessage = '';
+      if (
+        change.tableDistance !== undefined &&
+        this.deps.setTableDistance?.(change.tableDistance) === false
+      ) {
+        this.tableDistanceMessage = `No clearance at ${change.tableDistance.toFixed(1)} m`;
+      } else {
+        this.deps.onSettings({ ...this.deps.settings(), ...change });
+      }
       this.refresh();
     };
     return [
       [
-        { id: 'tableDistance-label', label: 'Table distance', weight: 2 },
+        {
+          id: 'tableDistance-label',
+          label: this.tableDistanceMessage || 'Table distance',
+          weight: 2,
+        },
         ...TABLE_DISTANCE_CHOICES.map((d) => ({
           id: tableDistanceCell(d),
           label: `${d.toFixed(1)} m`,
@@ -1199,6 +1303,7 @@ export class FlowUi {
   }
 
   private setMenu(view: MenuView): void {
+    this.tableDistanceMessage = '';
     this.menu = view;
     this.refresh();
   }

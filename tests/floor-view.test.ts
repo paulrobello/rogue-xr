@@ -194,6 +194,11 @@ describe('floor view encounters', () => {
     view.setTableDistance(1.3, head);
     expect(rig.position.distanceTo(rigBefore)).toBeLessThan(1e-12);
     expect(view.encounter.seatDistance).toBeCloseTo(startDistance);
-    expect(view.encounter.tableDistance).toBe(1.3);
+    expect(view.encounter.tableDistance).toBe(1.1);
+
+    colliders.pop();
+    view.setTableDistance(1.3, head);
+    expect(rig.position.z).toBeCloseTo(rigBefore.z + 0.2);
+    expect(view.encounter.seatDistance).toBeCloseTo(startDistance + 0.2);
   });
 });

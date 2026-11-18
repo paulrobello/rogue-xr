@@ -357,4 +357,13 @@ describe('EncounterDirector table distance setting (F3)', () => {
       expect(placed).toBeGreaterThan(0);
     },
   );
+
+  it('uses a small off-axis seat when straight movement is blocked', () => {
+    const { world, room } = worldWithEncounter('SPIRE001');
+    const director = new EncounterDirector({ world, lockLocomotion: () => {} });
+    expect(director.begin(room, playerNear(world, room)).ok).toBe(true);
+    const delta = director.adjustTableDistance(1.3, (shift) => Math.abs(shift[0]) > 1e-6);
+    expect(delta?.[0]).not.toBe(0);
+    expect(director.seatDistance).toBeCloseTo(1.3);
+  });
 });

@@ -126,6 +126,7 @@ const TIP_OFFSET = 0.06;
 export const XR_SIGIL_HINT = 'Hold the trigger and point at the plate to trace the glyph';
 /** The table hint while a rolled die waits for its throw, in XR and on the desktop. */
 export const XR_DICE_HINT = 'Grab the glowing die and let go to throw it';
+export const XR_HELD_DICE_HINT = 'Release your grip to roll';
 export const DESKTOP_DICE_HINT = 'Click the glowing die to throw it (or press T)';
 /** Why an elite or guardian fight shows no Flee control and refuses one. */
 export const FLEE_REFUSED = 'There is no escaping this fight';
@@ -1884,7 +1885,10 @@ export class CombatSession {
    * held (or, in XR, pointed at in the fan), or ''.
    */
   private tableHint(): string {
-    if (this.pendingThrow) return this.xr ? XR_DICE_HINT : DESKTOP_DICE_HINT;
+    if (this.pendingThrow) {
+      if (!this.xr) return DESKTOP_DICE_HINT;
+      return this.holdingDie ? XR_HELD_DICE_HINT : XR_DICE_HINT;
+    }
     const held = this.holding ? this.fling.holding?.card : undefined;
     if (held?.target === 'none') return untargetedHint(held.name, this.xr ? 'held-xr' : 'held');
     if (held) return targetedHint(held.name, this.xr ? 'held-xr' : 'held');

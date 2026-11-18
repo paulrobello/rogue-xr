@@ -11,7 +11,10 @@ import { ButtonEdge, MENU_BUTTON } from '../src/xr/menu-button.ts';
 
 const SEED = 'BRASS042';
 
-function rig(fly: (() => FlyTarget | null) | undefined = undefined) {
+function rig(
+  fly: (() => FlyTarget | null) | undefined = undefined,
+  seatHasRoom?: (distance: number) => boolean,
+) {
   const flow = new RunFlow({
     workshop: createWorkshop(),
     starterDeck: STARTER_DECK,
@@ -27,6 +30,7 @@ function rig(fly: (() => FlyTarget | null) | undefined = undefined) {
     settings: () => settings,
     onNewRun: (seed) => flow.newRun(seed),
     onContinue: () => {},
+    setTableDistance: seatHasRoom,
     onSettings: (next) => {
       settings = next;
       applied.push(next);
@@ -67,6 +71,22 @@ describe('in-run menu (card A)', () => {
     ui.dispose();
   });
 
+  it('only saves a table-distance choice after moving to a clear seat', () => {
+    let blocked = false;
+    const r = rig(undefined, () => !blocked);
+    r.flow.newRun(SEED);
+    r.ui.sync(r.head);
+    r.ui.openMenu(r.head);
+    r.ui.activate('menu-tableDistance-12');
+    blocked = true;
+    r.ui.activate('menu-tableDistance-13');
+    expect(r.settings().tableDistance).toBe(1.2);
+    expect(r.applied.map((s) => s.tableDistance)).toEqual([1.2]);
+    blocked = false;
+    r.ui.activate('menu-tableDistance-13');
+    expect(r.settings().tableDistance).toBe(1.3);
+    r.ui.dispose();
+  });
   it('applies foveation, table distance and the FPS counter at once through onSettings', () => {
     const { flow, ui, head, applied, settings } = rig();
     flow.newRun(SEED);

@@ -107,7 +107,7 @@ export interface FloorView {
    */
   update(head: THREE.Object3D, dt: number): void;
   /** Updates the preference and repositions the rig during a fight when the path is clear. */
-  setTableDistance(distance: number, head: THREE.Object3D): void;
+  setTableDistance(distance: number, head: THREE.Object3D): boolean;
   /**
    * Swaps the greybox table for a loaded asset (the P4-T5 GLB). The asset must expose `leaf-left`
    * and `leaf-right`; its top is `authoredTopHeight` above its origin and is fitted to each
@@ -502,6 +502,10 @@ export function mountFloorView(
       };
     },
     setTableDistance(distance, head) {
+      if (encounter.phase === 'idle') {
+        encounter.tableDistance = distance;
+        return true;
+      }
       const delta = encounter.adjustTableDistance(distance, (shift) => {
         const room = world.rooms[encounter.activeRoom];
         if (!room) return false;
@@ -515,10 +519,15 @@ export function mountFloorView(
           validateLanding(target, { colliders, walkable: combatRoom(room).walkable }) === 'ok'
         );
       });
-      if (!delta) return;
+      if (!delta)
+        return (
+          encounter.tableDistance === distance &&
+          (encounter.seatDistance === null || Math.abs(encounter.seatDistance - distance) < 1e-6)
+        );
       rig.position.x += delta[0];
       rig.position.z += delta[1];
       rig.updateMatrixWorld(true);
+      return true;
     },
     update(head, dt) {
       turnVignette = vignetteStep(turnVignette, 0, dt, DEFAULT_VIGNETTE);

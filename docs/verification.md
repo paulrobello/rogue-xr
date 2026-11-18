@@ -28,7 +28,7 @@ Desktop frame numbers only rank variants. Only headset measurements close a budg
 | --- | --- | --- |
 | G1 Full seeded run on a Quest 3 | Partially met | The run loop is met on browser evidence. No recorded title-to-death-or-victory run on a physical Quest 3. Seated comfort is unchecked on a headset. The teleport toggle and the drawn comfort vignette are wired and pass the emulator walk, so only their comfort remains open. |
 | G2 Premium, consistent look approved by Paul | Partially met | Direction, style board and the six core materials are approved. The in-engine look of rooms, automatons, cards, UI and dice is not approved, every model has model, rig and animation gates pending, and nothing was viewed at Quest resolution. See [owner-review.md](owner-review.md). |
-| G3 72 Hz exploring, 45 fps floor in combat, measured on the headset | Not met | No headset measurement exists. |
+| G3 50 fps floor exploring and in combat, 72 Hz target | Open | Quest frame windows recorded below. Worst-view and full-run checks remain. |
 | G4 The VR verbs are the fun | Partially met | Logic and desktop equivalents are met on browser evidence. Fling, dice and sigil feel on the headset is not met. The fling aim-assist criterion was checked against synthetic traces only. |
 | G5 Reproducible from a visible, shareable seed | Met on browser evidence | None for the seed logic. The title and end-of-run boards show the seed and `?seed=` starts that run. There is no copy or share control, and during a run the seed shows only in the desktop debug readout. |
 | G6 Fully playable on desktop with mouse and keyboard | Met on browser evidence | Verified in Chromium only. The debug readout shows on every desktop load (Q-FR3 in [playtesting.md](playtesting.md)). |
@@ -115,12 +115,12 @@ Status: partially met. Gap: no owner approval of the in-engine look, four automa
 
 ## G3: frame pacing, measured on the headset
 
-Requires: 72 Hz held while exploring (reprojection counts as a miss) and never below 45 fps in seated combat, measured on the headset. Budgets in the PRD: 13.9 ms exploring, at most 22 ms combat, at most 350k visible triangles per eye in the worst combat view, at most 200 draw calls, at most 4 dynamic lights per room plus the lantern.
+Requires: a 50 FPS floor on Quest in exploration and seated combat, targeting 72 Hz. Budgets in the PRD: 13.9 ms target, 20 ms floor, at most 350k visible triangles per eye in the worst combat view, at most 200 draw calls, at most 4 dynamic lights per room plus the lantern.
 
 | Criterion | Closed by | Status |
 | --- | --- | --- |
-| G3.1 Exploration holds 72 Hz on Quest 3 | Physical | Not met |
-| G3.2 Combat at 45 fps or above in the worst view (table, automaton, fanned hand, rolling dice) | Physical | Not met |
+| G3.1 Exploration holds at least 50 fps on Quest 3 | Physical | Not met |
+| G3.2 Combat at 50 fps or above in the worst view (table, automaton, fanned hand, rolling dice) | Physical | Not met |
 | G3.3 Visible triangles and draw calls in the worst combat view | Physical | Not met |
 | G3.4 Asset budgets by count (PRD Quest 3 table) | Browser (counts, not timing) | Met by count. Does not close G3. |
 | G3.5 Dynamic-light and precompile discipline | Browser | Met as design checks only |
@@ -129,13 +129,13 @@ Requires: 72 Hz held while exploring (reprojection counts as a miss) and never b
 ### G3 browser evidence
 
 - G3.3 desktop figures (headless Chromium, 60 Hz rAF cap), from the bug bash: at most 30 draw calls exploring, 58 in combat, 24 on the reward board, at most 15.2k triangles, no frame interval above 16.8 ms. They were taken on `d8c73e9`, when only the study, the Cog Sentry, the table, the dice, the cards and the UI were real assets. The hall, corridor, gear-shaft and vault rooms and the Hound, Golem, Warden and Escapement came later (commits `e9d9b60`, `1ea7ac2`, `665edd9`, `dfa29bf`), and the Escapement alone is 37,296 triangles now. The numbers are stale, rank variants only, and close nothing.
-- G3.4: rooms: study 6,974 tris and 9 materials, hall 6,753 and 8, corridor 1,986 and 7, gear-shaft 9,872 and 12, guardian-vault 12,277 and 10, all with at most 2048 px textures (limits 100k, 16, 2048 px). Automatons: Sentry 10,140 tris, 21 bones, 4 materials; Hound 23,368, 33, 4; Golem 24,340, 22, 4; Warden 24,730, 31, 4 (limits 25k, 40 bones, 4); Grand Escapement 37,296 tris, 38 bones, 4 materials (guardian limits 40k, 60). Table 6,152 tris and 4 materials (limits 20k, 4). The CI asset gate checks the rooms and automatons. The table has a Blender reimport report and dedicated `combat-table-asset.test.ts` checks in the same CI target. Tests: `tests/sentry-asset.test.ts` › "meets the PRD automaton budgets: <= 25k triangles, <= 4 materials, <= 40 bones"; `tests/room-study-asset.test.ts` › "stays inside the PRD room budgets". The counts fit the limits and say nothing about frame time.
+- G3.4: rooms: study 6,960 tris and 9 materials, hall 6,739 and 8, corridor 1,986 and 7, gear-shaft 9,872 and 12, guardian-vault 12,277 and 10, all with at most 2048 px textures (limits 100k, 16, 2048 px). Automatons: Sentry 10,140 tris, 21 bones, 4 materials; Hound 23,368, 33, 4; Golem 24,340, 22, 4; Warden 24,730, 31, 4 (limits 25k, 40 bones, 4); Grand Escapement 37,296 tris, 38 bones, 4 materials (guardian limits 40k, 60). Table 6,152 tris and 4 materials (limits 20k, 4). The CI asset gate checks the rooms and automatons. The table has a Blender reimport report and dedicated `combat-table-asset.test.ts` checks in the same CI target. Tests: `tests/sentry-asset.test.ts` › "meets the PRD automaton budgets: <= 25k triangles, <= 4 materials, <= 40 bones"; `tests/room-study-asset.test.ts` › "stays inside the PRD room budgets". The counts fit the limits and say nothing about frame time.
 - G3.5: `tests/room-lights.test.ts` › "accepts exactly MAX_LIGHT_SOCKETS sockets and throws on one more", "is 4 room lights plus the lantern"; `tests/veil.test.ts` › "compiles every program before uploading, and uploads a few textures per frame".
-- G3.6: `?perf=1` mounts the wrist gauge and a desktop panel with a frame-log download; 2 s windows with p50, p95 and worst; framebuffer scale options with 0.85 default and foveation 0.5 re-asserted every frame. Tests: `tests/perf.test.ts` › "emits a summary when a frame crosses the 2 s boundary", "reports the worst frame and fps for a steady 72 Hz run", "assertFoveation re-asserts 0.5 every presenting frame and is idle otherwise".
+- G3.6: `?perf=1` mounts the wrist gauge and a desktop panel with a frame-log download; 2 s windows with p50, p95 and worst; framebuffer scale options with 1.2 default and foveation 0.5 re-asserted every frame. Tests: `tests/perf.test.ts` › "emits a summary when a frame crosses the 2 s boundary", "reports the worst frame and fps for a steady 72 Hz run", "assertFoveation re-asserts 0.5 every presenting frame and is idle otherwise".
 
 ### G3 emulator evidence
 
-Emulator evidence, not a measurement: `xr-foveation-medium` and `xr-framebuffer-scale` confirm the app requests foveation 0.5 and a 0.85 framebuffer scale. IWER applies neither, so this says nothing about frame time.
+Emulator evidence, not a measurement: `xr-foveation-medium` and `xr-framebuffer-scale` check the app’s foveation and framebuffer-scale requests. IWER applies neither, so this says nothing about frame time.
 
 ### G3 physical evidence
 
@@ -150,9 +150,19 @@ Paul compared text legibility on Quest 3 in Orrery Warden combat on build `31aa0
 
 Quest Browser's recorder identified the 0.85 scale and foveation off in all four runs. At the 1.2 capture, VrApi reported 62/90 FPS, 31 stale frames, 12.86 ms of app GPU time and 98% GPU utilisation. At the 1.25 capture it reported 66/90 FPS and 32 stale frames. The gauge's 72 target is fixed.
 
-The 1.2 and 1.25 study exploration windows lasted 2.1 and 1.4 seconds respectively and averaged 65.4 and 67.2 FPS. The 1.5 combat window lasted 22.7 seconds and averaged 47.8 FPS with a 23.8 ms 95th-percentile frame. The active fight workload still needs a longer comparison at fixed settings. Screenshots, frame records and VrApi logs are in the local `.local/headset/` archive. The default remains 0.85. P5-T13 still needs a full run.
+The 1.2 and 1.25 study exploration windows lasted 2.1 and 1.4 seconds respectively and averaged 65.4 and 67.2 FPS. The 1.5 combat window lasted 22.7 seconds and averaged 47.8 FPS with a 23.8 ms 95th-percentile frame. The active fight workload still needs a longer comparison at fixed settings. Screenshots, frame records and VrApi logs are in the local `.local/headset/` archive. That pass retained the original 0.85 default. P5-T13 still needs a full run.
 
-Status: not met. The 72 Hz exploration and 45 FPS combat budgets have yet to be verified over sustained windows.
+On November 18 at 11:50 AM PST, the Bellows Golem capture at 1.2 showed 60 FPS against the 72 FPS gauge target and a 171 ms worst frame in the previous 20 seconds. The 11:51 AM study window capture showed 78 FPS and 20.9 ms worst. The scale and foveation (off) are confirmed by the headset’s saved frame recorder. In the same session:
+
+| Scene and local start time | Recorded duration | Mean FPS | 95th percentile frame | Worst frame |
+| --- | ---: | ---: | ---: | ---: |
+| Hall exploration, 11:49:07 AM | 11.4 s | 66.6 | 17.4 ms | 21.3 ms |
+| Combat, 11:49:22 AM | 60.0 s | 53.4 | 22.5 ms | 185.4 ms |
+| Study exploration, 11:51:38 AM | 19.9 s | 78.8 | 15.4 ms | 20.9 ms |
+
+Paul set a 50 FPS floor and prioritized legibility. The 1.2 default meets that floor on average in these exploration and combat windows, with individual frames above 20 ms. The two original images are in the local headset archive under `quest-20261118-115154/`.
+
+Status: full-run and worst-view headset verification remain open. The averages above do not establish a continuous 50 FPS floor.
 
 ## G4: the VR verbs are the fun (fling, dice, sigils)
 
@@ -262,7 +272,7 @@ None of these are recorded anywhere. They are the cards that carry the physical 
 | --- | --- | --- |
 | P0-T6 | Open `https://spire.pardev.net` in Quest Browser, press Enter VR, confirm brass hands and the title board | G1.7 |
 | P1-T7 | Walk a seeded floor seated: comfort, snap turn, locomotion, with the teleport toggle on (Settings, Teleport) and off and the comfort vignette. Judge the vignette strength and the arc | G1.6b |
-| P3-T8 | Fight seated with controllers: fan feel, fling, dice readability, sigil drawing, correction visibility, 45 fps floor | G4.7, G4.8, G4.2, G3.2 |
+| P3-T8 | Fight seated with controllers: fan feel, fling, dice readability, sigil drawing, correction visibility, 50 fps floor | G4.7, G4.8, G4.2, G3.2 |
 | P4-T10 | Measure exploring in the study and the worst combat view with `?perf=1`, tune scale, approve the look | G3.1, G3.2, G3.3, G2.6, G2.8 |
 | P5-T13 | Full seeded run on Quest 3, title to workshop, budgets held, numbers recorded | G1.5, G3 |
 | P6-T1 | Before and after headset numbers in `docs/performance/` | G3 |

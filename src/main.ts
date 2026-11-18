@@ -673,6 +673,7 @@ const ui = floor
       // A picked reward card flies to the hand whose ray picked it, else to just before the head.
       flyTarget: () =>
         rewardHand ? { object: rewardHand, standoff: 0 } : { object: camera, standoff: 0.3 },
+      setTableDistance: (distance) => floor?.setTableDistance(distance, camera) ?? true,
       onSettings: (next) => {
         settings = next;
         audio?.setVolumes({
@@ -681,7 +682,6 @@ const ui = floor
           sfx: next.sfxVolume,
         });
         Object.assign(locomotion.settings, locomotionSettingsFrom(next));
-        floor?.setTableDistance(next.tableDistance, camera);
         xr.setFoveation(next.foveation);
         perf.setFoveation(foveationValue(next.foveation));
         perf.setFpsCounter(next.fpsCounter);

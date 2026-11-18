@@ -263,6 +263,28 @@ describe('open chest geometry', () => {
     }
   });
 
+  it('joins the brass rails edge-to-edge, proud of the wooden lid', () => {
+    const { coffer } = standing();
+    const rim = coffer.object.getObjectByName('coffer-lid-rim') as THREE.Mesh;
+    const wood = coffer.object.getObjectByName('coffer-lid-top') as THREE.Mesh;
+    for (const mesh of [rim, wood]) mesh.geometry.computeBoundingBox();
+    const bounds = rim.geometry.boundingBox as THREE.Box3;
+    const shell = wood.geometry.boundingBox as THREE.Box3;
+    for (const axis of ['x', 'z'] as const) {
+      expect(bounds.max[axis] - shell.max[axis]).toBeGreaterThan(0.002);
+      expect(shell.min[axis] - bounds.min[axis]).toBeGreaterThan(0.002);
+    }
+    rim.updateWorldMatrix(true, false);
+    for (const x of [bounds.min.x + 0.009, bounds.max.x - 0.009]) {
+      for (const z of [bounds.min.z + 0.015, bounds.max.z - 0.015]) {
+        const origin = rim.localToWorld(new THREE.Vector3(x, bounds.max.y + 0.1, z));
+        const down = new THREE.Vector3(0, -1, 0).transformDirection(rim.matrixWorld);
+        const hits = new THREE.Raycaster(origin, down).intersectObject(rim, false);
+        expect(hits.filter((hit) => Math.abs(hit.distance - 0.1) < 1e-5)).toHaveLength(1);
+      }
+    }
+  });
+
   it('reveals cogs in sequence before allowing the card to hover', () => {
     const { coffer, viewer } = standing();
     coffer.open(true);

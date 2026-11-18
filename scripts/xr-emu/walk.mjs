@@ -24,6 +24,7 @@ const { values: opts } = parseArgs({
     // Only the card fan and sigil checks: New Run, one fight, then stop.
     focus: { type: 'boolean', default: false },
     controls: { type: 'boolean', default: false },
+    workshop: { type: 'boolean', default: false },
     // Only the enemy-phase checks: one two-automaton fight on TURN_SEED.
     turns: { type: 'boolean', default: false },
     // Only the turned-away Enter VR check (XO5): the title must be re-placed in front of the head.
@@ -176,7 +177,62 @@ try {
     await settle(800);
   };
 
-  if (opts.controls) {
+  if (opts.workshop) {
+    await page.goto(`${opts.base}/?title&debug`);
+    await waitFor('workshop-ready', () => window.__flow?.ui?.visible);
+    await enterVr();
+    const layer = await ev(() => window.__xrEmu.layerInits[0]);
+    record(
+      'workshop-default-scale',
+      (layer.framebufferScaleFactor ?? layer.scaleFactor) === 1.2,
+      layer,
+    );
+    await press('title-workshop');
+    await press('workshop-permanent-cards');
+    const pageOne = await ev(() =>
+      window.__flow.ui.controlIds().filter((id) => id.startsWith('workshop-card-')),
+    );
+    record('shop-icons', pageOne.length === 3, pageOne);
+    for (const id of pageOne) {
+      const card = id.slice('workshop-card-'.length);
+      const target = await ev((id) => window.__xrEmu.worldOf(id), id);
+      if (!target) {
+        record('shop-hit-target', false, id);
+        continue;
+      }
+      await aim(MAIN, target);
+      await waitFor(
+        `shop-face-${card}`,
+        ({ card, id }) => {
+          const ui = window.__flow.ui;
+          const face = ui.root.getObjectByName(`workshop-card-preview-${card}`);
+          return (
+            ui.hoveredId === id &&
+            face?.visible &&
+            face.getObjectByName(`reward-card-fallback-${card}`)?.visible === false
+          );
+        },
+        { card, id },
+      );
+      await pullTrigger(MAIN);
+      const ws = await ev(() => window.__flow.flow.workshop);
+      record(
+        `shop-inspect-without-buying-${card}`,
+        ws.permanentCards.length === 0 && ws.cogsBanked === 0,
+        ws.permanentCards,
+      );
+    }
+    await shot('workshop-card-inspect');
+    await press('workshop-next-page');
+    const oldIconsGone = await ev(
+      (ids) => ids.every((id) => !window.__flow.ui.root.getObjectByName(id)),
+      pageOne,
+    );
+    record('shop-page-clears-icons', oldIconsGone, pageOne);
+    await press('workshop-back');
+    await press('workshop-back');
+    record('shop-back-to-title', (await phase()) === 'title', {});
+  } else if (opts.controls) {
     await page.goto(`${opts.base}/?seed=SPIRE002&debug`);
     await waitFor('controls-app', () => window.__combat?.heroReady);
     await ev(() => window.__combat.heroReady);
@@ -1236,7 +1292,7 @@ try {
     );
     const scale =
       session.layerInits[0]?.framebufferScaleFactor ?? session.layerInits[0]?.scaleFactor;
-    record('xr-framebuffer-scale', scale === 0.85, {
+    record('xr-framebuffer-scale', scale === 1.2, {
       layerInits: session.layerInits,
       note: 'requested at layer creation; IWER emulation renders at the canvas size',
     });
