@@ -69,6 +69,20 @@ FIRE_FLAME = {"const": {"flame": ((0.25, 0.125, 0.035), 0.5, 0.0, 24.0)}, "emiss
 # old (1.0, 0.46, 0.16) put the gilt at hue 27 and the gear shaft at frame saturation 0.82. Fire stays
 # hotter than the candles: the P5-T2 rooms bake their candles paler (`candle_color`).
 FIRE = {"type": "POINT", "color": (1.0, 0.58, 0.26)}
+# Room fixes 2026-11-17 (gear shaft and vault): graded fire flames (kit.graded_flame_cards). Same
+# dark-albedo split as FIRE_FLAME, so the runtime cap (1 / peak) shows each colour at full value: a pale
+# hot core (1.0, 0.72, 0.30), the candle-amber body #F3BE65 (1.0, 0.575, 0.145), and a deeper rim and tip
+# (1.0, 0.45, 0.09) at 2.8 / 4 = 0.7 of full value, so the card's edge falls off.
+GRADED_FLAME = {"const": {"hot_flame": ((0.25, 0.18, 0.075), 0.5, 0.0, 24.0), "flame": ((0.25, 0.144, 0.036), 0.5, 0.0, 24.0),
+                          "tip_flame": ((0.25, 0.1125, 0.0225), 0.5, 0.0, 20.0)},
+                "emissive": {"hot_flame": 5.6, "flame": 5.6, "tip_flame": 2.8}}
+# Door aprons (kit.door_panels_apron): the frame panel owns the wall ring and floor strip round its
+# architrave and bakes its contact AO there, so the shell stays valid for an open, plugged or boarded door.
+DOOR_APRON = {"side": 0.24, "top": 0.24, "floor": 0.2}
+# Lightmap packing of the rooms fixed on 2026-11-17: a 6 px pack margin (min island gap measured by
+# asset-check-uv1, at least 8 px) and a 4 px bake margin, under half that gap, raise the density
+# against the default 10 px / 8 px, which spent most of the 2048 atlas on gutters (UV coverage 0.33).
+DENSE_PACK = {"lightmap_gap_px": 6, "bake_margin_px": 4}
 # P5-T2 candle and lantern bake colour, paler than the kit default (1.0, 0.58, 0.26): walnut and red
 # wallpaper re-saturate whatever light they bounce, and the fire carries the room's amber.
 PALE_CANDLE = (1.0, 0.80, 0.60)
@@ -120,24 +134,32 @@ ROOMS = {
     # P5-T2. The chamber ceiling is at 5 m; `height` bounds the shaft void that rises from a hole over
     # the drive shaft to 8 m (a well with a gallery ring and a gear train).
     "gear-shaft": {
-        "height": 8.0,
+        # Room fixes 2026-11-17: `height` bounds the drive shaft, which now climbs past the open top of
+        # the well (GEAR_SHAFT well_top) to 14 m, into the dark out of view.
+        "height": 14.0,
         "ceiling": 5.0,
         "lightmap": 2048,
         "slots": ["stone-floor", "wallpaper", "walnut", "brass-aged", "brass-polished", "wax", "flame", "lamp-glass", "coals", "gilt",
-                  "gilt-worn", "bronze"],
-        # Rework 3. Gilt in two values: gear faces keep the kit gilt; tooth flanks, rims and spoke sides a
-        # darker, less saturated worn gilt (the review: L* std 4.1-5.1 against the study's 8.8, saturation
-        # 0.62-0.66 against 0.50). Paler edges (0.86, 0.82, 0.36) still lit darker than the faces (they
-        # face sideways) and reached only L* std 5.3-6.0.
+                  "bronze", "hot_flame", "tip_flame"],
+        # Room fixes 2026-11-17: the gilt slot is bound to the approved brass-aged PBR set (its value
+        # variation, scratches and ORM roughness) instead of a flat dielectric colour (L* std 2.9-4.9,
+        # sat 0.68-0.71 against #DEC16A at 0.52), and the gears' tooth flanks, rims and spoke sides
+        # (kit.wear_gilt) take the polished set as worn, bright edges.
+        "pbr_alias": {"gilt": "brass-aged"},
+        "gilt_worn": "brass-polished",
+        # The rigid nodes' texels hold rotation-invariant light (kit.rigid_invariant_lightmap), so the
+        # baked shade no longer turns with the counter gear.
+        "rigid_lightmap": "invariant",
+        "door_apron": DOOR_APRON,
+        **DENSE_PACK,
         # Bronze: a lightmap-lit dielectric for the drive shaft, its bands and the furnace and kerb trim.
         # On the metallic brass sets they read as crumpled foil (shaft luma std 35.4, p95 152).
-        "const": {**FIRE_FLAME["const"], "gilt-worn": ((0.62, 0.59, 0.24), 0.5, 0.0, 0.0),
-                  "bronze": ((0.50, 0.39, 0.16), 0.5, 0.0, 0.0)},
+        "const": {**FIRE_FLAME["const"], **GRADED_FLAME["const"], "bronze": ((0.50, 0.39, 0.16), 0.5, 0.0, 0.0)},
         # Brass scratches at 2.5x the kit scale: fewer, broader marks (the review: "calm the noise").
-        "tile": {"brass-aged": 1.25, "brass-polished": 1.25},
+        "tile": {"brass-aged": 1.25, "brass-polished": 1.25, "gilt": 1.25},
         # The pit's runtime glow: at 5.6 its red channel clipped on top of the lit term, a flat slab;
         # lower, the baked gradient from the furnace grates to the kerb shows.
-        "emissive": {**FIRE_FLAME["emissive"], "coals": 1.5},
+        "emissive": {**FIRE_FLAME["emissive"], **GRADED_FLAME["emissive"], "coals": 1.5},
         # Bake: two diffuse bounces (factory 4: each bounce off walnut and wallpaper reddens the light;
         # the ceiling, lit only by bounce, read hue 7.5), pale candles, and lantern light passing a pale
         # glass instead of the amber lamp-glass colour.
@@ -155,8 +177,12 @@ ROOMS = {
     "guardian-vault": {
         "height": 6.0,
         "lightmap": 2048,
-        "slots": ["stone-floor", "wallpaper", "walnut", "brass-aged", "brass-polished", "stained-glass", "wax", "flame", "coals", "gilt"],
-        **FIRE_FLAME,
+        "slots": ["stone-floor", "wallpaper", "walnut", "brass-aged", "brass-polished", "stained-glass", "wax", "flame", "coals", "gilt",
+                  "hot_flame", "tip_flame"],
+        "const": {**FIRE_FLAME["const"], **GRADED_FLAME["const"]},
+        "emissive": {**FIRE_FLAME["emissive"], **GRADED_FLAME["emissive"]},
+        "door_apron": DOOR_APRON,
+        **DENSE_PACK,
         "diffuse_bounces": 2,
         "candle_color": PALE_CANDLE,
         "cameras": {
@@ -215,7 +241,7 @@ VAULT_SCONCES = [("E", -2.2), ("E", 2.2), ("W", -2.2), ("W", 2.2)]
 VAULT_SCONCE_W = 80.0
 # Gear-shaft void: ceiling hole half size (the crown gear's tip radius is 2.0), gallery ring height,
 # and the two levels of the static gear train.
-GEAR_SHAFT = {"hole": 2.1, "gallery_z": 7.0, "train_z": (5.55, 6.15), "candle_in": 1.53}
+GEAR_SHAFT = {"hole": 2.1, "gallery_z": 7.0, "train_z": (5.55, 6.15), "candle_in": 1.53, "well_top": 8.0, "shaft_top": 14.0}
 
 
 def parse_args() -> argparse.Namespace:
@@ -342,17 +368,21 @@ def build_gear_shaft(b, room: kit.Room, high: bool) -> tuple[list, list]:
     parts crate, two lanterns and four candle sconces. The turning crown gear is built separately
     (rigid_parts)."""
     C, H = ROOMS["gear-shaft"]["ceiling"], GEAR_SHAFT["hole"]
-    kit.build_shell(b, room, {}, ROOMS["gear-shaft"]["stile_step"], cornice=False, ceiling_z=C, ceiling_hole=H)
+    kit.build_shell(b, room, {}, ROOMS["gear-shaft"]["stile_step"], cornice=False, ceiling_z=C, ceiling_hole=H, apron=ROOMS["gear-shaft"]["door_apron"])
     kit.cove_cornice(b, room, top=C)
     for c in (-3.5, 3.5):  # walnut beams across the chamber, clear of the shaft hole
         b.box(-room.hx, room.hx, c - 0.14, c + 0.14, C - 0.3, C, "walnut", drop="txX")
     # Rework 3: the shaft runs up into a bearing bridge at the top of the well (no free end), on bronze.
-    furnace = kit.furnace_shaft(b, high, room.height - 0.38, GEAR_RING["shaft_r"], shaft_slot="bronze", trim="bronze", bands=(2.2, 2.9, 4.4))
+    # Room fixes 2026-11-17: the shaft climbs on through the bearing bridge past the open top of the
+    # well into the dark (no visible end), and the fire bake lights sit 9 cm out from the grate mouths
+    # (clear of the bars), so the pale plinth stone (L* 46.5) round them is lit at a grazing angle.
+    furnace = kit.furnace_shaft(b, high, GEAR_SHAFT["shaft_top"], GEAR_RING["shaft_r"], shaft_slot="bronze", trim="bronze", bands=(2.2, 2.9, 4.4),
+                                light_out=0.09)
     colliders = [kit.crate(b, 3.0, -4.5, 0.8)]  # crate socket (runtime 3, 4.5)
     colliders.append(kit.furnace_pit(b, high, trim="bronze"))
     # Candles inboard of the gallery ledge, so the void camera sees one lit (on the ledge they were hidden).
-    gallery = kit.shaft_well(b, C, room.height, H, GEAR_SHAFT["gallery_z"], high, candle_in=GEAR_SHAFT["candle_in"])
-    kit.bearing_bridge(b, H, room.height, GEAR_RING["shaft_r"])
+    gallery = kit.shaft_well(b, C, GEAR_SHAFT["well_top"], H, GEAR_SHAFT["gallery_z"], high, candle_in=GEAR_SHAFT["candle_in"])
+    kit.bearing_bridge(b, H, GEAR_SHAFT["well_top"], GEAR_RING["shaft_r"])
     # The drive gears ride the crown gear's node and the counter gears their own (rigid_parts). The
     # secondary shaft turns in two static bearing arms to the well corner (end 2.93 m out on the diagonal).
     gc = GEAR_COUNTER
@@ -377,7 +407,7 @@ def build_guardian_vault(b, room: kit.Room, high: bool) -> tuple[list, list]:
     chandelier over the brass duelling circle and a processional inlay from the door."""
     # The apse piers and altar steps stand on the north wall: the wall is left open behind them.
     north = [lancet_opening(w) for w in VAULT_WINDOWS] + kit.apse_openings()
-    kit.build_shell(b, room, {"N": sorted(north)}, ROOMS["guardian-vault"]["stile_step"], cornice=False)
+    kit.build_shell(b, room, {"N": sorted(north)}, ROOMS["guardian-vault"]["stile_step"], cornice=False, apron=ROOMS["guardian-vault"]["door_apron"])
     p1 = kit.APSE["p1"]
     kit.cove_cornice(b, room, {"N": [(-room.hx, -p1), (p1, room.hx)]})  # the apse sides close the cove ends
     for w in VAULT_WINDOWS:
@@ -391,12 +421,19 @@ def build_guardian_vault(b, room: kit.Room, high: bool) -> tuple[list, list]:
     for c in (-4.0, 4.0):
         b.box(c - 0.16, c + 0.16, -room.hy, room.hy, T - 0.28, T, "walnut", drop="tyY")
     # Gilt wall gears; the apse oculus gear over the centre lancet is polished brass (the kit's metal).
-    kit.wall_gear(b, room, "N", 0.0, 4.8, 0.6, 24, high, slot="brass-polished")
+    # Room fixes 2026-11-17: the polished oculus gear read ivory (saturation 0.36) against the stone;
+    # gilt like its wall-gear pair.
+    kit.wall_gear(b, room, "N", 0.0, 4.8, 0.6, 24, high, slot="gilt")
     kit.wall_gear(b, room, "W", 0.0, 3.4, 1.0, 32, high, slot="gilt")
     kit.wall_gear(b, room, "E", 0.0, 3.4, 1.0, 32, high, slot="gilt")
     kit.arena_circle(b, 0.0, 3.0, high)  # guardian socket (runtime 0, -3)
-    for x in (0.35, 1.65):  # processional inlay from the south door to the circle (top face only)
-        b.box(x - 0.03, x + 0.03, -room.hy + 0.06, 0.95, 0.0, 0.005, "brass-aged", drop="bxXyY")
+    # Processional inlay to the circle (top face only). Room fixes 2026-11-17: it starts 0.9 m in
+    # from the south wall at a brass cross bar, not at the wall (where a plugged south door left it
+    # pointing at a door that is not there).
+    y0 = -room.hy + 0.9
+    for x in (0.35, 1.65):
+        b.box(x - 0.03, x + 0.03, y0, 0.95, 0.0, 0.005, "brass-aged", drop="bxXyY")
+    b.box(0.29, 1.71, y0 - 0.06, y0, 0.0, 0.005, "brass-aged", drop="b")
     lights = [(f"chandelier_{i}", p, 14.0) for i, p in enumerate(kit.chandelier(b, room, high, 4.3))]
     colliders, apse_lights = kit.apse(b, room, high)
     kit.apse_ribs(b, room, (5.05, 5.6), high)  # rework 3: the diaphragm arches carried into the apse barrel
@@ -448,11 +485,16 @@ def build(room: kit.Room, high: bool):
     colliders, lights = BUILDERS[room.piece](b, room, high)
     obj = b.finish()
     rigid = rigid_parts(room, high)
-    if "gilt-worn" in ROOMS[room.piece]["slots"]:
+    cfg = ROOMS[room.piece]
+    worn = cfg.get("gilt_worn", "gilt-worn")
+    if worn in cfg["slots"] and "gilt" in cfg["slots"]:
         for o in (obj, *rigid):
-            kit.wear_gilt(o)
+            kit.wear_gilt(o, worn=worn)
     wainscot = {"hall": HALL["wainscot"], "corridor": CORRIDOR["wainscot"]}.get(room.piece)
-    door = kit.door_panels(room, high, ROOMS[room.piece]["stile_step"], wainscot)
+    if "door_apron" in cfg:
+        door = kit.door_panels_apron(room, high, cfg["stile_step"], cfg["door_apron"], wainscot)
+    else:
+        door = kit.door_panels(room, high, cfg["stile_step"], wainscot)
     return obj, colliders, lights, rigid, door
 
 
@@ -528,7 +570,7 @@ def manifest_entry(room: kit.Room, colliders: list, lightmap: dict | None, budge
     emissive = {**EMISSIVE_RUNTIME, **ROOMS[p].get("emissive", {})}
     for slot in ROOMS[p]["slots"]:
         if slot in tile:
-            materials[f"{p}_{slot}"] = {"pbr": slot, "tileMeters": tile[slot]}
+            materials[f"{p}_{slot}"] = {"pbr": ROOMS[p].get("pbr_alias", {}).get(slot, slot), "tileMeters": tile[slot]}
         else:
             color, rough = const[slot][0], const[slot][1]
             entry = {"color": S.srgb_hex(color)}
@@ -642,7 +684,7 @@ def uv0(obj, report: dict, build_name: str) -> None:
     S.uv0_tiled(obj)
     key = f"lengthwise_grain_{build_name}"
     report[key] = report.get(key, 0) + kit.lengthwise_grain(obj)
-    if "gilt" in S.SLOTS:
+    if "gilt" in S.SLOTS and "gilt" not in S.TILE:  # a tiled gilt (pbr_alias) is already projected at its room tile
         kit.tiled_uv_slot(obj, "gilt", TILE["brass-polished"])
     if S.PIECE == "corridor":
         key = f"narrow_side_uv_{build_name}"
@@ -660,14 +702,29 @@ def shown(objs: list) -> list:
     return [o for o in objs if not o.name.startswith("door-plug-")]
 
 
+def gltf_exporter() -> str:
+    """The glTF exporter that ran: Blender's own version and its bundled io_scene_gltf2 add-on's."""
+    import addon_utils
+
+    mod = next((m for m in addon_utils.modules() if m.__name__ == "io_scene_gltf2"), None)
+    info = getattr(mod, "bl_info", None) or (addon_utils.module_bl_info(mod) if mod is not None else {})
+    ver = ".".join(str(v) for v in info.get("version", ())) or "unknown"
+    return f"Blender {bpy.app.version_string} bundled io_scene_gltf2 {ver}"
+
+
 def main() -> None:
     args = parse_args()
     cfg = ROOMS[args.room]
     room = kit.Room(args.room, cfg["height"])
     kit.configure(room, list(cfg["slots"]), room_tile(args.room), room_const(args.room), cfg["cameras"])
+    kit.GRADED_FLAME = "hot_flame" in cfg["slots"]
     if args.reimport:
         reimport(room)
         return
+    for slot, src in cfg.get("pbr_alias", {}).items():  # a slot bound to another slot's PBR set (same maps, own name)
+        mat = S.material(src).copy()
+        mat.name = f"{room.piece}_{slot}"
+        S._MATS[slot] = mat
     P = room.piece
     for d in (S.STAGING, S.BLEND_DIR, S.SCRATCH, S.RUNTIME):
         d.mkdir(parents=True, exist_ok=True)
@@ -676,10 +733,13 @@ def main() -> None:
         bpy.data.objects.remove(obj)
     scene = bpy.context.scene
     size = cfg["lightmap"]
-    report: dict = {"piece": P, "blender": bpy.app.version_string, "host_load_start": S.load_avg(), "lightmap_size": size, "samples": args.samples,
+    report: dict = {"piece": P, "blender": bpy.app.version_string, "gltf_exporter": gltf_exporter(), "host_load_start": S.load_avg(), "lightmap_size": size, "samples": args.samples,
                     "generator": "scripts/assets/build-room-kit.py", "helper": "scripts/assets/room_kit.py (reuses build-room-study.py functions)"}
 
     high, _, _, high_rigid, high_door = build(room, True)
+    for slot in ("hot_flame", "tip_flame"):  # two-sided like the study's crossed flame cards (glTF doubleSided)
+        if slot in S._MATS:
+            S._MATS[slot].use_backface_culling = False
     high_all = [high, *high_rigid, *high_door["door-frame"], *high_door["door-plug"]]
     for obj in high_all:
         uv0(obj, report, "high")
@@ -700,8 +760,10 @@ def main() -> None:
         bpy.ops.wm.save_as_mainfile(filepath=str(S.BLEND_DIR / f"{P}_high.blend"), copy=True, compress=True)
         S.set_visible(low_all, True)
 
-    # One atlas for the shell, its rigid nodes and its panels (PRD lightmap contract: 10 px island pad).
-    kit.unwrap_lightmap_uv_multi(low_all, size, gap_px=10)
+    # One atlas for the shell, its rigid nodes and its panels (PRD lightmap contract: at least 4 px
+    # padding; asset-check-uv1 gates the measured gap at 8 px). 10 px pack margin unless the room sets one.
+    gap_px, margin_px = cfg.get("lightmap_gap_px", 10), cfg.get("bake_margin_px", 8)
+    kit.unwrap_lightmap_uv_multi(low_all, size, gap_px=gap_px)
     tris = sum(S.count_tris(o) for o in low_all)
     report["low"] = {
         "triangles": tris,
@@ -741,15 +803,30 @@ def main() -> None:
             scene.cycles.diffuse_bounces = cfg["diffuse_bounces"]
         S.set_metal_links(False)
         load0 = S.load_avg()
-        raw, passes = kit.panels.bake_with_panels([low, *rigid], frames, plugs, size, args.samples, no_shadow=rigid)
+        if margin_px == 8:
+            raw, passes = kit.panels.bake_with_panels([low, *rigid], frames, plugs, size, args.samples, no_shadow=rigid)
+        else:
+            raw, passes = kit.bake_panels([low, *rigid], frames, plugs, size, args.samples, rigid, margin_px)
         S.set_metal_links(True)
         report["lightmap_bake"] = {"seconds": round(sum(passes), 2), "pass_seconds": passes, "host_load": [load0, S.load_avg()],
                                    "timing_valid": max(load0, S.load_avg()) <= 15, "diffuse_bounces": scene.cycles.diffuse_bounces,
+                                   "margin_px": margin_px, "island_pad_px": gap_px,
                                    "panels": "pass 1: shell, rigid nodes and door frames, every door frame and plug invisible to shadow, "
                                              "diffuse, glossy, transmission and volume rays; pass 2: door plugs only into the same image, "
                                              "plugs fully visible, frames hidden from render (room_panels.bake_with_panels)"}
         lm.save_exr(raw, S.SCRATCH / f"{P}.lightmap.raw.exr")
         image = lm.denoise_image(raw, S.SCRATCH)
+        if cfg.get("rigid_lightmap") == "invariant" or "door_apron" in cfg:  # room fixes 2026-11-17: edit the denoised bake
+            rgba = lm.image_rgba(image)
+            if rigid and cfg.get("rigid_lightmap") == "invariant":
+                before = {o.name: kit.azimuth_uniformity(o, rgba, size) for o in rigid}
+                report["rigid_invariant"] = kit.rigid_invariant_lightmap(rgba, rigid, size, args.samples, margin_px)
+                for name, value in before.items():
+                    report["rigid_invariant"][name]["azimuth_before"] = value
+            if "door_apron" in cfg:
+                report["door_contact_ao"] = {"apron": cfg["door_apron"], **kit.frame_contact_ao(rgba, frames, size, args.samples, margin_px)}
+            image.pixels.foreach_set(rgba[::-1].astype("float32").ravel())
+            image.update()
         if rigid:
             rgba = lm.image_rgba(image)
             report["rigid_lightmap"] = {o.name: {"azimuth": kit.azimuth_uniformity(o, rgba, size), "casts_baked_shadow": False} for o in rigid}

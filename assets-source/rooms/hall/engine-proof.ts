@@ -76,6 +76,8 @@ export interface Shot {
     tonedSlots?: string[];
     /** Region mask: slots whose name contains any of these render white, everything else black. */
     mask?: string[];
+    /** White albedo with no colour, normal or AO map: with `diffuse`, the frame is the baked light alone. */
+    whiteAlbedo?: boolean;
   };
 }
 
@@ -210,6 +212,12 @@ export async function mountKitProof(w: number, h: number, shot: Shot) {
         if (hit(light.envOffSlots)) m.envMapIntensity = 0;
         if (hit(light.untonedSlots)) m.toneMapped = false;
         if (hit(light.tonedSlots)) m.toneMapped = true;
+        if (light.whiteAlbedo) {
+          m.color.setRGB(1, 1, 1);
+          m.map = null;
+          m.normalMap = null;
+          m.aoMap = null;
+        }
         if (light.envDiffuse === false) {
           const baked = m.onBeforeCompile;
           m.onBeforeCompile = (shader, r) => {

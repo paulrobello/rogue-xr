@@ -197,18 +197,22 @@ def configure(room: Room, slots: list, tile: dict, const: dict, cameras: dict) -
 
 
 def build_shell(b, room: Room, extra_openings: dict, stile_step: float, cornice: bool = True, wainscot: float | None = None,
-                ceiling_z: float | None = None, ceiling_hole: float | None = None) -> None:
+                ceiling_z: float | None = None, ceiling_hole: float | None = None, apron: dict | None = None) -> None:
     """Stone floor, walnut ceiling, walnut wainscot under wallpaper, chair rail, skirting, cornice,
     wainscot stiles, with each door opening left bare for its panels (door_panels). `extra_openings` maps a wall to window holes.
     The defaults reproduce the original P5-T2 rooms exactly; the hall and corridor pass `cornice=False`
     (they build `cove_cornice`) and a taller `wainscot`. The gear shaft passes `ceiling_z` (walls and
     ceiling stop below `room.height`, which bounds the shaft void above) and `ceiling_hole`, the half
-    size of a square hole in the ceiling centred on the room."""
+    size of a square hole in the ceiling centred on the room. `apron` (DOOR_APRON form) leaves each
+    door's apron (wall ring and floor strip, door_panels_apron) bare as well, so the door panels own it."""
     hx, hy, T = room.hx, room.hy, room.height if ceiling_z is None else ceiling_z
     W = S.WAINSCOT if wainscot is None else wainscot
     height = S.HEIGHT
     S.HEIGHT = T  # wall_rects runs to S.HEIGHT; unchanged when ceiling_z is None
-    b.face([(-hx, -hy, 0), (hx, -hy, 0), (hx, hy, 0), (-hx, hy, 0)], (0, 0, 1), "stone-floor")
+    if apron is None:
+        b.face([(-hx, -hy, 0), (hx, -hy, 0), (hx, hy, 0), (-hx, hy, 0)], (0, 0, 1), "stone-floor")
+    else:
+        floor_without_aprons(b, room, apron)
     if ceiling_hole is None:
         b.face([(-hx, -hy, T), (hx, -hy, T), (hx, hy, T), (-hx, hy, T)], (0, 0, -1), "walnut")
     else:
@@ -218,7 +222,10 @@ def build_shell(b, room: Room, extra_openings: dict, stile_step: float, cornice:
     for wall in "NSEW":
         half = room.half(wall)
         b.xf = room.frame(wall)
-        openings = room.door_openings(wall) + extra_openings.get(wall, [])
+        doors = room.door_openings(wall)
+        if apron is not None:
+            doors = [(o0 - apron["side"], o1 + apron["side"], z0, z1 + apron["top"]) for o0, o1, z0, z1 in doors]
+        openings = doors + extra_openings.get(wall, [])
         S.HALF = half
         for a0, a1, z0, z1 in S.wall_rects(openings):
             if z0 < W < z1:
@@ -661,7 +668,7 @@ def gear_ring(name: str, pivot_z: float, high: bool, r_tip: float, teeth: int, t
 
 
 def furnace_shaft(b, high: bool, height: float, shaft_r: float, shaft_slot: str = "brass-polished", trim: str = "brass-aged",
-                  bands: tuple = (2.2, 2.9, 4.4, 7.4)) -> list:
+                  bands: tuple = (2.2, 2.9, 4.4, 7.4), light_out: float = 0.45) -> list:
     """Masonry firebox inside the greybox's 2.4 m shaft collider with a grate on each face over a bed of
     coals and a row of flame cards, and the polished drive shaft rising from it to a boss at `height`
     (the top of the shaft void). Returns four bake-light points in open air outside the grates: 4-fold
@@ -694,7 +701,7 @@ def furnace_shaft(b, high: bool, height: float, shaft_r: float, shaft_slot: str 
             y = -0.39 + j * 0.13
             b.box(h - 0.04, h + 0.01, y - 0.015, y + 0.015, 0.25, 0.8, "brass-polished", drop="bt")
         b.box(h - 0.02, h + 0.04, -0.52, 0.52, 0.8, 0.87, "brass-polished", drop="")  # lintel
-        lights.append(b.xf @ Vector((h + 0.45, 0.0, 0.55)))
+        lights.append(b.xf @ Vector((h + light_out, 0.0, 0.55)))
         b.xf = Matrix.Identity(4)
     b.annulus(0, 0, shaft_r, 0.75, fz, fz + 0.12, seg, trim, sides="to")  # collar
     b.cylinder(0, 0, shaft_r, fz + 0.12, height, seg, shaft_slot, caps="")
@@ -976,6 +983,9 @@ def soft_flame(b, cx: float, cy: float, z: float, h: float, r: float, cards: int
     raw = [math.sqrt(t) * (1.0 - t) ** 1.2 for t in ts]
     peak = max(raw)
     prof = [(z + t * h, r * w / peak) for t, w in zip(ts, raw)]
+    if GRADED_FLAME and slot == "flame":
+        graded_flame_cards(b, cx, cy, prof, ts, cards, yaw)
+        return
     for k in range(cards):
         a = yaw + math.pi * k / cards
         c, s = math.cos(a), math.sin(a)
@@ -1270,3 +1280,315 @@ def wear_gilt(obj, slot: str = "gilt", worn: str = "gilt-worn", max_nz: float = 
             poly.material_index = wi
             n += 1
     return n
+
+
+# ---------------------------------------------------------------------------------------------
+# Room fixes, 2026-11-17 (gear shaft and guardian vault only). The study, hall and corridor builds
+# never set GRADED_FLAME, pass `apron` or call the functions below, so their outputs
+# are unchanged by this block.
+# ---------------------------------------------------------------------------------------------
+
+GRADED_FLAME = False  # build-room-kit sets it for rooms whose slots list `hot_flame` and `tip_flame`
+
+
+def graded_flame_cards(b, cx: float, cy: float, prof: list, ts: tuple, cards: int, yaw: float, edge: float = 0.24) -> None:
+    """soft_flame's teardrop cards in three emitters: a pale `hot_flame` core in the lower half, the
+    candle-amber `flame` above it, and a deeper, dimmer `tip_flame` rim and tip, so each card grades
+    from a warm core to an amber tip and its edge falls off instead of ending in one flat colour."""
+    for k in range(cards):
+        a = yaw + math.pi * k / cards
+        c, s = math.cos(a), math.sin(a)
+        n = (-s, c, 0)
+
+        def P(w: float, z: float, c: float = c, s: float = s) -> tuple:
+            return (cx + w * c, cy + w * s, z)
+
+        for i, ((za, wa), (zb, wb)) in enumerate(zip(prof, prof[1:])):
+            t = (ts[i] + ts[i + 1]) / 2
+            core = "hot_flame" if t < 0.45 else "flame" if t < 0.8 else "tip_flame"
+            ia, ib = wa * (1 - edge), wb * (1 - edge)
+            if wb < 1e-6:
+                b.face([P(-wa, za), P(wa, za), P(0.0, zb)], n, "tip_flame")
+            elif wa < 1e-6:
+                b.face([P(0.0, za), P(ib, zb), P(-ib, zb)], n, core)
+                b.face([P(0.0, za), P(-ib, zb), P(-wb, zb)], n, "tip_flame")
+                b.face([P(0.0, za), P(wb, zb), P(ib, zb)], n, "tip_flame")
+            else:
+                b.face([P(-ia, za), P(ia, za), P(ib, zb), P(-ib, zb)], n, core)
+                b.face([P(-wa, za), P(-ia, za), P(-ib, zb), P(-wb, zb)], n, "tip_flame")
+                b.face([P(ia, za), P(wa, za), P(wb, zb), P(ib, zb)], n, "tip_flame")
+
+
+# Door aprons: the wall ring round the architrave and the floor strip in front of a door belong to the
+# door panels, not the shell, so the frame can carry its contact shadow there and the plug a clean wall.
+# Wall-local metres: `side` beside each opening edge, `top` above the lintel, `floor` into the room.
+# Each margin is the 0.12 m architrave plus more than the contact-AO distance, so the AO fades out
+# inside the apron and its edge meets the shell at the same baked value.
+
+
+def apron_floor_rects(room: Room, apron: dict) -> list:
+    """Blender-XY (x0, x1, y0, y1) of every door's floor apron."""
+    out = []
+    for wall in "NSEW":
+        f = room.frame(wall)
+        for o0, o1, _, _ in room.door_openings(wall):
+            p = f @ Vector((o0 - apron["side"], 0.0, 0.0))
+            q = f @ Vector((o1 + apron["side"], apron["floor"], 0.0))
+            out.append((round(min(p.x, q.x), 6), round(max(p.x, q.x), 6), round(min(p.y, q.y), 6), round(max(p.y, q.y), 6)))
+    return out
+
+
+def floor_without_aprons(b, room: Room, apron: dict) -> None:
+    """The shell's stone floor as grid cells (shared corners, so it welds into one island) with each
+    door's floor apron left out."""
+    holes = apron_floor_rects(room, apron)
+    xs = sorted({-room.hx, room.hx, *[h[0] for h in holes], *[h[1] for h in holes]})
+    ys = sorted({-room.hy, room.hy, *[h[2] for h in holes], *[h[3] for h in holes]})
+    for x0, x1 in zip(xs, xs[1:]):
+        for y0, y1 in zip(ys, ys[1:]):
+            mx, my = (x0 + x1) / 2, (y0 + y1) / 2
+            if any(h[0] < mx < h[1] and h[2] < my < h[3] for h in holes):
+                continue
+            b.face([(x0, y0, 0), (x1, y0, 0), (x1, y1, 0), (x0, y1, 0)], (0, 0, 1), "stone-floor")
+
+
+def apron_ring(b, s, wide, W: float, f: float = 0.12) -> None:
+    """The wall of a door apron round the opening, behind the architrave too (as the shell had it, so
+    no slit opens behind the jambs), as one grid cut at the architrave edges, the wainscot and the
+    head lines, so its faces weld; and the chair rail and skirting stubs from the apron edge to the
+    architrave (their open ends meet the shell's runs and the architrave's sides)."""
+    a_cuts = sorted({wide.a0, s.a0 - f, s.a0, s.a1, s.a1 + f, wide.a1})
+    z_cuts = sorted({0.0, W, s.z1, s.z1 + f, wide.z1})
+    for a0, a1 in zip(a_cuts, a_cuts[1:]):
+        for z0, z1 in zip(z_cuts, z_cuts[1:]):
+            if s.a0 <= a0 and a1 <= s.a1 and z1 <= s.z1:
+                continue  # the doorway
+            b.face([(a0, 0, z0), (a1, 0, z0), (a1, 0, z1), (a0, 0, z1)], (0, 1, 0), "walnut" if z1 <= W else "wallpaper")
+    for a0, a1 in ((wide.a0, s.a0 - f), (s.a1 + f, wide.a1)):
+        b.box(a0, a1, 0, 0.04, W - 0.03, W + 0.05, "walnut", drop="xXy")  # chair rail stub
+        b.box(a0, a1, 0, 0.025, 0, 0.14, "walnut", drop="xXyb")  # skirting stub
+
+
+def door_panels_apron(room: Room, high: bool, stile_step: float, apron: dict, wainscot: float | None = None) -> dict:
+    """door_panels with aprons: `door-frame-<id>` is the architrave, reveals and threshold plus the
+    apron's wall ring and floor strip; `door-plug-<id>` is the plain wall over the whole apron (the
+    shell's dressing run across it) plus the same floor strip. Exactly one of the two shows at runtime,
+    so the coplanar apron faces never meet. Returns {panel kind: [objects in slot order]}."""
+    W = S.WAINSCOT if wainscot is None else wainscot
+    spec = panels.WallSpec(wainscot=W, chair_rail=True, skirting=True, stile_step=stile_step, threshold=True)
+    out: dict = {}
+    for s in panels.door_slots(room.doors, S.DOOR_W, S.DOOR_H):
+        wide = panels.PanelSlot(s.id, s.kind, s.wall, s.a0 - apron["side"], s.a1 + apron["side"], s.z0, s.z1 + apron["top"])
+        for panel in panels.SLOT_PANELS[s.kind]:
+            name = panels.node_name(panel, s)
+            b = S.Builder(f"{name}_high" if high else name)
+            b.xf = room.frame(s.wall)
+            if panel == "door-frame":
+                panels.door_frame(b, s, spec)
+                apron_ring(b, s, wide, W)
+            else:
+                panels.door_plug(b, wide, spec)
+            b.face([(wide.a0, 0, 0), (wide.a1, 0, 0), (wide.a1, apron["floor"], 0), (wide.a0, apron["floor"], 0)], (0, 0, 1), "stone-floor")
+            b.xf = Matrix.Identity(4)
+            out.setdefault(panel, []).append(b.finish())
+    return out
+
+
+def bake_panels(shell: list, frames: list, plugs: list, size: int, samples: int, no_shadow: list, margin_px: int) -> tuple:
+    """room_panels.bake_with_panels with the bake margin as a parameter (the narrower island gap of the
+    rooms that raise their lightmap density needs a margin under half the gap)."""
+    image, t1 = panels.bake_irradiance_multi([*shell, *frames], size, samples, no_shadow, margin_px=margin_px, ray_hidden=[*frames, *plugs])
+    t2 = 0.0
+    if plugs:
+        for f in frames:
+            f.hide_render = True
+        image, t2 = panels.bake_irradiance_multi(plugs, size, samples, no_shadow, margin_px=margin_px, image=image)
+        for f in frames:
+            f.hide_render = False
+    return image, [round(t1, 2), round(t2, 2)]
+
+
+def _bake_aux(targets: list, visible: list, kind: str, size: int, samples: int, margin_px: int):
+    """Bakes `kind` ('AO' or 'EMIT') for `targets` into a fresh float image (UV1) with only `targets`
+    and `visible` rendered. Returns RGBA, row 0 at the top; alpha marks baked texels and margins."""
+    import bpy
+
+    scene = bpy.context.scene
+    image = bpy.data.images.new(f"aux_{kind.lower()}", size, size, alpha=True, float_buffer=True)
+    image.generated_color = (0.0, 0.0, 0.0, 0.0)
+    image.colorspace_settings.name = "Non-Color"
+    shown = set(targets) | set(visible)
+    saved = [(o, o.hide_render) for o in scene.objects]
+    for o, _ in saved:
+        o.hide_render = o not in shown
+    mats = []
+    for obj in targets:
+        for slot in obj.material_slots:
+            if slot.material not in mats:
+                mats.append(slot.material)
+    for mat in mats:
+        tex = mat.node_tree.nodes.new("ShaderNodeTexImage")
+        tex.name = "aux_bake_target"
+        tex.image = image
+        mat.node_tree.nodes.active = tex
+    for obj in targets:
+        obj.data.uv_layers.active = obj.data.uv_layers[panels.LIGHTMAP_UV]
+    for o in bpy.context.view_layer.objects:
+        o.select_set(o in targets)
+    bpy.context.view_layer.objects.active = targets[0]
+    scene.cycles.samples = samples
+    bpy.ops.object.bake(type=kind, margin=margin_px, margin_type="EXTEND", use_clear=True, target="IMAGE_TEXTURES")
+    for mat in mats:
+        mat.node_tree.nodes.remove(mat.node_tree.nodes["aux_bake_target"])
+    for obj in targets:
+        obj.data.uv_layers.active = obj.data.uv_layers[0]
+    for o, h in saved:
+        o.hide_render = h
+    rgba = S.lm.image_rgba(image)
+    bpy.data.images.remove(image)
+    return rgba
+
+
+def _uv_sample(obj, rgba, size: int, poly) -> list:
+    """Mean RGB of the texels at a polygon's UV1 centroid and its corners pulled 30 % toward it."""
+    uv = obj.data.uv_layers[panels.LIGHTMAP_UV].data
+    pts = [uv[i].uv for i in poly.loop_indices]
+    cu, cv = sum(p.x for p in pts) / len(pts), sum(p.y for p in pts) / len(pts)
+    acc = [0.0, 0.0, 0.0]
+    samples = [(cu, cv), *[(cu + 0.7 * (p.x - cu), cv + 0.7 * (p.y - cv)) for p in pts]]
+    for u, v in samples:
+        px, py = min(size - 1, max(0, int(u * size))), min(size - 1, max(0, int((1 - v) * size)))
+        for k in range(3):
+            acc[k] += float(rgba[py, px, k])
+    return [a / len(samples) for a in acc]
+
+
+def _ring_class(poly) -> tuple:
+    """Rotation-invariant class of a rigid node's polygon about its local Z: facing (up, down, out, in,
+    side), height band (5 cm) and radius band (10 cm)."""
+    n, c = poly.normal, poly.center
+    r = math.hypot(c.x, c.y)
+    if n.z > 0.5:
+        kind = "up"
+    elif n.z < -0.5:
+        kind = "down"
+    else:
+        radial = (n.x * c.x + n.y * c.y) / r if r > 1e-6 else 0.0
+        kind = "out" if radial > 0.5 else "in" if radial < -0.5 else "side"
+    return kind, round(c.z / 0.05), round(r / 0.1)
+
+
+def rigid_invariant_lightmap(rgba, rigid: list, size: int, samples: int, margin_px: int, ao_distance: float = 0.3,
+                             ao_strength: float = 0.8) -> dict:
+    """Replaces each rigid node's texels in `rgba` (the denoised bake, changed in place) with light that
+    does not turn with the node: per rotation-invariant class (_ring_class), the area-weighted mean of
+    the bake over every polygon of the class all round the axis, times the node's own ambient occlusion
+    baked with nothing else in the scene. Both depend only on the node's geometry in its own frame, so
+    a turned node carries the same light. Returns per-node stats."""
+    import bpy
+
+    scene = bpy.context.scene
+    saved_dist = scene.world.light_settings.distance
+    scene.world.light_settings.distance = ao_distance
+    emit = bpy.data.materials.new("rigid_class_emit")
+    nt = emit.node_tree
+    for node in list(nt.nodes):
+        nt.nodes.remove(node)
+    attr = nt.nodes.new("ShaderNodeAttribute")
+    attr.attribute_type = "GEOMETRY"
+    attr.attribute_name = "rigid_class"
+    em = nt.nodes.new("ShaderNodeEmission")
+    em.inputs["Strength"].default_value = 1.0
+    out = nt.nodes.new("ShaderNodeOutputMaterial")
+    nt.links.new(attr.outputs["Color"], em.inputs["Color"])
+    nt.links.new(em.outputs["Emission"], out.inputs["Surface"])
+    stats = {}
+    for obj in rigid:
+        ao = _bake_aux([obj], [], "AO", size, samples, margin_px)
+        ao[..., :3] = 1.0 - ao_strength * (1.0 - ao[..., :3])
+        mesh = obj.data
+        groups: dict = {}
+        for poly in mesh.polygons:
+            if poly.area <= 1e-9:
+                continue
+            e = _uv_sample(obj, rgba, size, poly)
+            a = _uv_sample(obj, ao, size, poly)[0]
+            g = groups.setdefault(_ring_class(poly), [0.0, 0.0, 0.0, 0.0, 0.0])
+            for k in range(3):
+                g[k] += e[k] * poly.area
+            g[3] += a * poly.area
+            g[4] += poly.area
+        col = mesh.color_attributes.new("rigid_class", "FLOAT_COLOR", "CORNER")
+        for poly in mesh.polygons:
+            g = groups.get(_ring_class(poly))
+            value = (0.0, 0.0, 0.0)
+            if g is not None and g[4] > 0:
+                m_ao = max(g[3] / g[4], 1e-3)
+                value = tuple(g[k] / g[4] / m_ao for k in range(3))
+            for li in poly.loop_indices:
+                col.data[li].color = (*value, 1.0)
+        originals = [s.material for s in obj.material_slots]
+        for i in range(len(obj.material_slots)):
+            obj.material_slots[i].material = emit
+        cls = _bake_aux([obj], [], "EMIT", size, 16, margin_px)
+        for i, m in enumerate(originals):
+            obj.material_slots[i].material = m
+        mesh.color_attributes.remove(mesh.color_attributes["rigid_class"])
+        mask = cls[..., 3] > 0.5
+        rgba[mask, :3] = cls[mask, :3] * ao[mask, :3]
+        stats[obj.name] = {"classes": len(groups), "texels": int(mask.sum()), "ao_distance_m": ao_distance, "ao_strength": ao_strength,
+                           "method": "per-class mean of the bake (facing, 5 cm height band, 10 cm radius band) x the node's own AO"}
+    bpy.data.materials.remove(emit)
+    scene.world.light_settings.distance = saved_dist
+    return stats
+
+
+def frame_contact_ao(rgba, frames: list, size: int, samples: int, margin_px: int, distance: float = 0.12, strength: float = 0.85) -> dict:
+    """Contact shadow of each door frame, multiplied into its own texels of `rgba` (in place). The frame
+    is baked with the shell (frames invisible to every ray, so the shell holds for a plugged door);
+    here the architrave's ambient occlusion within `distance` darkens the frame's apron (the AO the
+    architrave adds: AO with it over AO without it, so the apron's own corners are not darkened twice)
+    and the architrave itself (AO from itself and its apron). Only frame texels change and the AO fades
+    to 1 inside the apron, so a plugged door shows no trace and an open or boarded door carries its
+    contact shadow at the jamb and the threshold."""
+    import bmesh
+    import bpy
+    import numpy as np
+
+    scene = bpy.context.scene
+    saved_dist = scene.world.light_settings.distance
+    scene.world.light_settings.distance = distance
+    brass = S.SLOTS.index("brass-aged")
+    arch, apron = [], []
+    for f in frames:
+        for keep_arch, dest in ((True, arch), (False, apron)):
+            o = f.copy()
+            o.data = f.data.copy()
+            o.name = f"{f.name}_{'arch' if keep_arch else 'apron'}_ao"
+            scene.collection.objects.link(o)
+            bm = bmesh.new()
+            bm.from_mesh(o.data)
+            bmesh.ops.delete(bm, geom=[p for p in bm.faces if (p.material_index == brass) != keep_arch], context="FACES")
+            bm.to_mesh(o.data)
+            bm.free()
+            dest.append(o)
+    with_arch = _bake_aux(apron, arch, "AO", size, samples, margin_px)
+    without = _bake_aux(apron, [], "AO", size, samples, margin_px)
+    own = _bake_aux(arch, apron, "AO", size, samples, margin_px)
+    m_ap = with_arch[..., 3] > 0.5
+    m_ar = own[..., 3] > 0.5
+    ratio = np.clip(with_arch[..., 0] / np.maximum(without[..., 0], 1e-3), 0.0, 1.0)
+    f_ap = 1.0 - strength * (1.0 - ratio)
+    f_ar = 1.0 - strength * (1.0 - np.clip(own[..., 0], 0.0, 1.0))
+    only_ap = m_ap & ~m_ar
+    rgba[only_ap, :3] *= f_ap[only_ap, None]
+    rgba[m_ar, :3] *= f_ar[m_ar, None]
+    for o in (*arch, *apron):
+        mesh = o.data
+        bpy.data.objects.remove(o)
+        bpy.data.meshes.remove(mesh)
+    scene.world.light_settings.distance = saved_dist
+    return {"distance_m": distance, "strength": strength, "apron_texels": int(only_ap.sum()), "architrave_texels": int(m_ar.sum()),
+            "apron_factor_min": round(float(f_ap[only_ap].min()), 3) if only_ap.any() else None,
+            "apron_factor_p05": round(float(np.percentile(f_ap[only_ap], 5)), 3) if only_ap.any() else None,
+            "architrave_factor_p05": round(float(np.percentile(f_ar[m_ar], 5)), 3) if m_ar.any() else None}

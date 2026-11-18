@@ -76,8 +76,9 @@ def shots() -> list[tuple[str, str, dict]]:
     # Real floor-world path (buildFloorWorld + dressRoom, sealed-door caps): seed KA000013 seals the
     # hall's west door at (-5, -1) (hall at the origin, 0 turns) and the corridor at (-1, -9)'s north
     # door at (-1, -13).
-    def floor(at: list[float], eye: list[float], look: list[float]) -> dict:
-        return {"rooms": [], "eye": eye, "look": look, "vfov": 70.0, "diffuse": False, "floor": {"seed": "KA000013", "at": at}}
+    def floor(at: list[float], eye: list[float], look: list[float], seed: str = "KA000013", kit: list[str] | None = None) -> dict:
+        spec = {"seed": seed, "at": at, **({"kit": kit} if kit else {})}
+        return {"rooms": [], "eye": eye, "look": look, "vfov": 70.0, "diffuse": False, "floor": spec}
 
     out.append(("hall", "floor-sealed-west", floor([0, 0], [-2.2, 1.6, 1.0], [-5.0, 1.4, -1.2])))
     out.append(("hall", "floor-sealed-west-close", floor([0, 0], [-4.1, 1.3, 0.5], [-5.0, 0.5, -1.6])))
@@ -101,6 +102,16 @@ def shots() -> list[tuple[str, str, dict]]:
     for k in range(8):
         out.append(("gear-shaft", f"mesh-{k * 45:03d}", {"rooms": gs, "eye": [1.75, 4.7, 0.55], "look": [0.6, 5.85, -0.6], "vfov": 60.0,
                                                          "diffuse": False, "spin": train_spin(k * math.pi / 4)}))
+    # The same eight frames as baked light alone (white albedo, no maps, metalness 0): the gears'
+    # lighting must not turn with them, so a fixed screen region reads the same L* at every angle.
+    for k in range(8):
+        out.append(("gear-shaft", f"mesh-lm-{k * 45:03d}", {"rooms": gs, "eye": [1.75, 4.7, 0.55], "look": [0.6, 5.85, -0.6], "vfov": 60.0,
+                                                            "diffuse": True, "light": {"whiteAlbedo": True}, "spin": train_spin(k * math.pi / 4)}))
+    # A boarded door on the real floor path: seed KA000050 boards the north door of the gear shaft at
+    # (-10, -1) (0 turns, door at world (-9, -7)); the frame shows with the walnut boards over it.
+    gsf = {"seed": "KA000050", "kit": ["gear-shaft"]}
+    out.append(("gear-shaft", "floor-boarded-n", floor([-10, -1], [-9.8, 1.3, -4.6], [-9.0, 1.0, -7.0], **gsf)))
+    out.append(("gear-shaft", "floor-boarded-n-close", floor([-10, -1], [-9.0, 0.75, -6.1], [-9.75, 0.25, -7.0], **gsf)))
     gn = [*gs, {"id": "corridor", "position": [1, -10], "turns": 0}]
     out.append(("gear-shaft", "seam-north", {"rooms": gn, "eye": [0.4, 1.6, -3.0], "look": [1.0, 1.5, -14.0], "vfov": 70.0, "diffuse": False}))
     # Guardian vault: its only door (south) into a corridor at (1, 10), seen from the corridor and
@@ -179,6 +190,17 @@ def variant_shots() -> list[tuple[str, str, dict]]:
             if cam_name == "hero":
                 # Lightmap only, as the pinned engine.hero.diffuse.png: checks camera, placement and binding.
                 out.append((room, "hero.diffuse", {"rooms": alone, "eye": cam["eye"], "look": cam["look"], "vfov": cam["vfov"], "diffuse": True}))
+    # Gilt-slot masks of the mesh-* frames (same camera and train angles), to measure the gears' light
+    # in a fixed screen region on gear pixels only.
+    for k in range(8):
+        out.append(("gear-shaft", f"mesh.mask-{k * 45:03d}", {"rooms": [{"id": "gear-shaft", "position": [0, 0], "turns": 0}], "eye": [1.75, 4.7, 0.55],
+                                                             "look": [0.6, 5.85, -0.6], "vfov": 60.0, "diffuse": True, "light": {"mask": ["_gilt"]},
+                                                             "spin": train_spin(k * math.pi / 4)}))
+    # The boarded door (seed KA000050) as baked light alone, to measure its contact shadow.
+    floor = {"seed": "KA000050", "at": [-10, -1], "kit": ["gear-shaft"]}
+    for name, eye, look in (("floor-boarded.lm", [-9.8, 1.3, -4.6], [-9.0, 1.0, -7.0]), ("floor-boarded-close.lm", [-9.0, 0.75, -6.1], [-9.75, 0.25, -7.0])):
+        out.append(("gear-shaft", name, {"rooms": [], "eye": eye, "look": look, "vfov": 70.0, "diffuse": True, "light": {"whiteAlbedo": True},
+                                         "floor": floor}))
     return out
 
 

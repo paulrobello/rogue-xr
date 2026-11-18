@@ -1,26 +1,28 @@
 {
   "glb": "guardian-vault.glb",
-  "glb_sha256": "7154876fa1dc9fd29c8d5b203be3ef7a7a96d6d47c0396ebe38e0ad64f74ec52",
+  "glb_sha256": "ba152feb7b7772ba7c188af935307f1d0a35ed31444549dda8e8fdf2ba9dd3b3",
   "blender": "5.3.0",
   "meshes": [
     "door-frame-s",
     "door-plug-s",
     "guardian-vault"
   ],
-  "triangles": 12277,
+  "triangles": 18889,
   "materials": [
     "guardian-vault_brass-aged",
     "guardian-vault_brass-polished",
     "guardian-vault_coals",
     "guardian-vault_flame",
     "guardian-vault_gilt",
+    "guardian-vault_hot_flame",
     "guardian-vault_stained-glass",
     "guardian-vault_stone-floor",
+    "guardian-vault_tip_flame",
     "guardian-vault_wallpaper",
     "guardian-vault_walnut",
     "guardian-vault_wax"
   ],
-  "material_count": 10,
+  "material_count": 12,
   "uv_layers": [
     [
       "UVMap",
@@ -64,11 +66,11 @@
   "panels": {
     "door-frame-s": {
       "found": true,
-      "triangles": 34
+      "triangles": 92
     },
     "door-plug-s": {
       "found": true,
-      "triangles": 20
+      "triangles": 28
     }
   },
   "pass": true

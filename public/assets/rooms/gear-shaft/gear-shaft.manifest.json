@@ -5,8 +5,8 @@
     "file": "gear-shaft.lightmap.ktx2",
     "uv": 1,
     "encoding": "srgb-scaled",
-    "scale": 5.170748233795166,
-    "intensity": 16.244385
+    "scale": 5.906820297241211,
+    "intensity": 18.556823
   },
   "id": "gear-shaft",
   "kinds": [
@@ -280,8 +280,8 @@
     }
   ],
   "budget": {
-    "tris": 9872,
-    "materials": 12,
+    "tris": 10934,
+    "materials": 13,
     "texturePx": 2048
   },
   "materials": {
@@ -310,8 +310,8 @@
       "roughness": 0.55
     },
     "gear-shaft_flame": {
-      "color": "#896335",
-      "emissive": "#896335",
+      "color": "#896a35",
+      "emissive": "#896a35",
       "emissiveIntensity": 5.6
     },
     "gear-shaft_lamp-glass": {
@@ -325,16 +325,22 @@
       "emissiveIntensity": 1.5
     },
     "gear-shaft_gilt": {
-      "color": "#dad761",
-      "roughness": 0.42
-    },
-    "gear-shaft_gilt-worn": {
-      "color": "#ceca86",
-      "roughness": 0.5
+      "pbr": "brass-aged",
+      "tileMeters": 1.25
     },
     "gear-shaft_bronze": {
       "color": "#bca86f",
       "roughness": 0.5
+    },
+    "gear-shaft_hot_flame": {
+      "color": "#89764d",
+      "emissive": "#89764d",
+      "emissiveIntensity": 5.6
+    },
+    "gear-shaft_tip_flame": {
+      "color": "#895e29",
+      "emissive": "#895e29",
+      "emissiveIntensity": 2.8
     }
   },
   "glassEmissiveIntensity": 0.8,

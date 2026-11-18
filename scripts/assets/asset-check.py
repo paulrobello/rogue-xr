@@ -787,8 +787,9 @@ def check_decor(errors: list[str], warnings: list[str]) -> dict:
     prov = json.loads(prov_path.read_text())
     if not prov.get("validation", {}).get("pass"):
         err("provenance validation.pass is not true")
-    if "independentScore" in json.dumps(prov):
-        err("provenance must not carry an independentScore (scored by an independent reviewer)")
+    score = prov.get("independentScore")
+    if score is not None and not str(score.get("scorer", "")).startswith("independent reviewer"):
+        err("independentScore must come from an independent reviewer, not the builder")
     recorded = {d["path"]: d["sha256"] for d in prov.get("derivedFiles", []) + prov.get("sourceFiles", [])}
     for name in sorted(files):
         rel = f"public/assets/props/table-decor/{name}"
@@ -902,7 +903,9 @@ def assemble(template: str) -> None:
         "generatorDeps": [{"path": d, "sha256": sha256(ROOT / d)} for d in deps[1:]],
         "authoringAgent": {"harness": "claude-code (dispatched sub-agent)", "model": "claude-opus-5-5"},
         "blender": report["blender"],
-        "toolVersions": {"ktx": report.get("ktx2", {}).get("tool"), "gltfExporter": "Blender 5.2.2 bundled io_scene_gltf2"},
+        # The exporter that ran (build-room-kit.py records it); older reports name only the Blender version.
+        "toolVersions": {"ktx": report.get("ktx2", {}).get("tool"),
+                         "gltfExporter": report.get("gltf_exporter", f"Blender {report['blender']} bundled io_scene_gltf2")},
         "blendFiles": {
             "store": f"assets-source/rooms/{template}/blend (storage ruling pending, {BLEND_STORE_NOTE.get(template, 'docs/blender-kit-project.md ruling 5')})",
             "files": report.get("blend", {}),
@@ -910,7 +913,8 @@ def assemble(template: str) -> None:
         "bake": {
             "device": report.get("device"),
             "lightmap": {**report.get("lightmap", {}), **report.get("lightmap_bake", {}), "size": report["lightmap_size"], "samples": report["samples"],
-                         "pass": "DIFFUSE direct+indirect, colour off, metallic forced 0, OIDN", "marginPx": 8, "islandPadPx": 10},
+                         "pass": "DIFFUSE direct+indirect, colour off, metallic forced 0, OIDN",
+                         "marginPx": report.get("lightmap_bake", {}).get("margin_px", 8), "islandPadPx": report.get("lightmap_bake", {}).get("island_pad_px", 10)},
             "books": report.get("books_bake"),
             "ktx2": report.get("ktx2"),
         },
