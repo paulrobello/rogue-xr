@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { EncounterDirector } from '../combat/encounter.ts';
 import { chooseEncounter } from '../combat/encounter-choice.ts';
-import { rigTurnAboutHead } from '../combat/placement.ts';
+import { combatRoom, rigTurnAboutHead } from '../combat/placement.ts';
 import { buildTableGreybox, disposeTable, TABLE_NODES } from '../combat/table-greybox.ts';
 import type { RoomTemplate } from '../content/rooms.ts';
 import { isValidSeed, normalizeSeed, randomSeed, Stream } from '../core/rng.ts';
@@ -11,7 +11,14 @@ import { generateFloor } from '../floor/generate.ts';
 import { nearSet, shellSet } from '../floor/visibility.ts';
 import { PALETTE } from '../palette.ts';
 import type { TreasureLoot } from '../rules/run.ts';
-import { DEFAULT_VIGNETTE, vignetteStep, yawFromMatrix } from '../xr/locomotion.ts';
+import {
+  DEFAULT_VIGNETTE,
+  moveWithCollision,
+  type Vec2,
+  validateLanding,
+  vignetteStep,
+  yawFromMatrix,
+} from '../xr/locomotion.ts';
 import { animateFires, FIRE_NODE } from './fireplace.ts';
 import { buildFloorWorld, type FloorWorld } from './floor-world.ts';
 import {
@@ -97,6 +104,8 @@ export interface FloorView {
    * about the head by that turn as the fight starts, so the player faces the table.
    */
   update(head: THREE.Object3D, dt: number): void;
+  /** Updates the preference and repositions the rig during a fight when the path is clear. */
+  setTableDistance(distance: number, head: THREE.Object3D): void;
   /**
    * Swaps the greybox table for a loaded asset (the P4-T5 GLB). The asset must expose `leaf-left`
    * and `leaf-right`; its top is `authoredTopHeight` above its origin and is fitted to each
@@ -468,6 +477,26 @@ export function mountFloorView(
           null,
         sigilPlate: tableHost.getObjectByName('socket-sigil-plate') ?? null,
       };
+    },
+    setTableDistance(distance, head) {
+      const delta = encounter.adjustTableDistance(distance, (shift) => {
+        const room = world.rooms[encounter.activeRoom];
+        if (!room) return false;
+        const colliders = world.colliders[encounter.activeRoom] ?? [];
+        head.getWorldPosition(at);
+        const from: Vec2 = [at.x, at.z];
+        const target: Vec2 = [at.x + shift[0], at.z + shift[1]];
+        const moved = moveWithCollision(from, shift, colliders);
+        return (
+          Math.hypot(moved[0] - target[0], moved[1] - target[1]) < 1e-4 &&
+          validateLanding(target, { colliders, walkable: combatRoom(room).walkable }) === 'ok'
+        );
+      });
+      if (!delta) return;
+      rig.position.x += delta[0];
+      rig.position.z += delta[1];
+      rig.updateMatrixWorld(true);
+      turnVignette = DEFAULT_VIGNETTE.maxStrength;
     },
     update(head, dt) {
       turnVignette = vignetteStep(turnVignette, 0, dt, DEFAULT_VIGNETTE);

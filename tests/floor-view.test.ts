@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { combatRoom, headingDelta, planEncounter } from '../src/combat/placement.ts';
+import type { Box } from '../src/content/rooms.ts';
 import { mountFloorView } from '../src/world/floor-view.ts';
 import { DEFAULT_VIGNETTE, yawFromMatrix } from '../src/xr/locomotion.ts';
 
@@ -125,7 +126,7 @@ describe('floor view encounters', () => {
     expect(headingDelta(yawFromMatrix(head.matrixWorld.elements), table.yaw)).toBeLessThan(1e-6);
   });
 
-  it('leaves the rig alone when the table fits straight ahead', () => {
+  it('keeps the rig still on straight-ahead entry and moves the seat when distance changes', () => {
     const scene = new THREE.Scene();
     const rig = new THREE.Group();
     scene.add(rig);
@@ -167,5 +168,32 @@ describe('floor view encounters', () => {
     expect(rig.position.distanceTo(rigBefore)).toBeLessThan(1e-12);
     expect(rig.rotation.y).toBe(0);
     expect(view.turnVignette).toBe(0);
+
+    step(view, head, 1.2);
+    expect(view.encounter.phase).toBe('active');
+    const startDistance = view.encounter.seatDistance as number;
+    const tableBefore = view.encounter.table.position.clone();
+    view.setTableDistance(1.3, head);
+    expect(rig.position.x).toBeCloseTo(rigBefore.x);
+    expect(rig.position.z).toBeCloseTo(rigBefore.z + 0.2);
+    expect(rig.position.y).toBe(rigBefore.y);
+    expect(view.encounter.seatDistance).toBeCloseTo(startDistance + 0.2);
+    expect(view.encounter.table.position.equals(tableBefore)).toBe(true);
+    expect(view.turnVignette).toBeCloseTo(DEFAULT_VIGNETTE.maxStrength);
+
+    view.setTableDistance(1.3, head);
+    expect(rig.position.z).toBeCloseTo(rigBefore.z + 0.2);
+    view.setTableDistance(1.1, head);
+    expect(rig.position.distanceTo(rigBefore)).toBeLessThan(1e-12);
+
+    const colliders = view.world.colliders[view.encounter.activeRoom] as Box[];
+    colliders.push({
+      min: [seat.x - 0.4, 0, seat.z + 0.26],
+      max: [seat.x + 0.4, 1.8, seat.z + 0.3],
+    });
+    view.setTableDistance(1.3, head);
+    expect(rig.position.distanceTo(rigBefore)).toBeLessThan(1e-12);
+    expect(view.encounter.seatDistance).toBeCloseTo(startDistance);
+    expect(view.encounter.tableDistance).toBe(1.3);
   });
 });

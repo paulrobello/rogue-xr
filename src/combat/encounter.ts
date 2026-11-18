@@ -4,11 +4,14 @@ import {
   combatRoom,
   DEFAULT_TABLE_DISTANCE,
   type EnemyPlacement,
+  forwardOf,
+  MIN_TABLE_DISTANCE,
   type PlayerPose,
   planEncounter,
   rightOf,
   type TablePlacement,
   type TablePose,
+  type Vec2,
 } from './placement.ts';
 import {
   buildTableGreybox,
@@ -143,6 +146,7 @@ export class EncounterDirector {
   private room = -1;
   private pose: TablePose | null = null;
   private placedDistance: number | null = null;
+  private seatDistanceOffset = 0;
   /** Where the seated player was when the fight began, on the floor plane. */
   private seat: readonly [number, number] | null = null;
   private moves: Move[] = [];
@@ -194,6 +198,23 @@ export class EncounterDirector {
    */
   get seatDistance(): number | null {
     return this.pose ? this.placedDistance : null;
+  }
+
+  /** Applies the preference now if the running fight has room to move the seat along the table axis. */
+  adjustTableDistance(distance: number, canMove: (delta: Vec2) => boolean): Vec2 | null {
+    if (distance === this.tableDistance) return null;
+    this.tableDistance = distance;
+    const { pose, seat, placedDistance } = this;
+    if (!pose || !seat || placedDistance === null || this.phaseValue === 'folding') return null;
+    const requested = Math.max(MIN_TABLE_DISTANCE, distance + this.seatDistanceOffset);
+    const move = placedDistance - requested;
+    if (Math.abs(move) < EPS) return null;
+    const [fx, fz] = forwardOf(pose.yaw);
+    const delta: Vec2 = [fx * move, fz * move];
+    if (!canMove(delta)) return null;
+    this.seat = [seat[0] + delta[0], seat[1] + delta[1]];
+    this.placedDistance = requested;
+    return delta;
   }
 
   isCleared(room: number): boolean {
@@ -277,6 +298,7 @@ export class EncounterDirector {
     this.room = room;
     this.pose = pose;
     this.placedDistance = plan.table.distance;
+    this.seatDistanceOffset = plan.table.distance - this.tableDistance;
     this.seat = [player.x, player.z];
     this.table.position.set(pose.x, 0, pose.z);
     this.table.rotation.y = -pose.yaw * DEG;

@@ -679,7 +679,7 @@ const ui = floor
           sfx: next.sfxVolume,
         });
         Object.assign(locomotion.settings, locomotionSettingsFrom(next));
-        if (floor) floor.encounter.tableDistance = next.tableDistance;
+        floor?.setTableDistance(next.tableDistance, camera);
         xr.setFoveation(next.foveation);
         perf.setFoveation(foveationValue(next.foveation));
         perf.setFpsCounter(next.fpsCounter);
