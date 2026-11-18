@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { SfxId } from '../audio/cues.ts';
 import { CanvasLabel, roundRect, wrapText } from '../combat-view/canvas-label.ts';
+import { cardTip } from '../combat-view/card-keywords.ts';
 import { CastFx } from '../combat-view/cast-fx.ts';
 import { CastReveal } from '../combat-view/cast-reveal.ts';
 import {
@@ -38,16 +39,18 @@ import {
   knockOffset,
 } from '../combat-view/impact-timing.ts';
 import { crownBounds, intentChips, READOUT_MARGIN, readoutCentreY } from '../combat-view/index.ts';
+import { readoutHeightsClear } from '../combat-view/panel-layout.ts';
 import { type BoltKind, SpellFx } from '../combat-view/spell-fx.ts';
 import {
   drawChipsWithStatuses,
+  drawTip,
   STATUS_NAME,
   type StatusRegion,
   statusAtUv,
   statusExplanation,
 } from '../combat-view/status-info.ts';
 import { dropToFitView, fitsView } from '../combat-view/view-fit.ts';
-import { getCard } from '../content/cards.ts';
+import { getCard, type SliceCard } from '../content/cards.ts';
 import { dieById } from '../content/dice.ts';
 import { type EncounterTier, encounterSetups } from '../content/enemies.ts';
 import type { ActionBus, GameAction } from '../core/actions.ts';
@@ -91,7 +94,7 @@ import {
 } from '../ui/icon-sheet.ts';
 import type { EncounterDirector } from './encounter.ts';
 import { chooseEncounter, enemyKindOf, fightSeed } from './encounter-choice.ts';
-import { DEFAULT_TABLE_DISTANCE, type TablePose } from './placement.ts';
+import { DEFAULT_TABLE_DISTANCE, type TablePose, WAIST_DROP } from './placement.ts';
 
 export { HIT_NUMBER_SECONDS } from '../combat-view/hit-numbers.ts';
 export { chooseEncounter, fightSeed } from './encounter-choice.ts';
@@ -140,6 +143,12 @@ const TIP_HALF_HEIGHT = (TIP_WIDTH * 240) / 640 / 2;
 const STATUS_TIP_OFFSET = { up: 0.14, toward: 0.04 } as const;
 /** Nearer than this, metres, the tooltip keeps its size; farther, it grows in proportion. */
 const STATUS_TIP_NEAR = 0.9;
+/** The card keyword tip: canvas height (fits a three-keyword card), width in metres, and its place
+ * above the card (metres up from the card's centre, and toward the eye). */
+const CARD_TIP_PX_HEIGHT = 600;
+const CARD_TIP_WIDTH = 0.3;
+const CARD_TIP_LIFT = 0.08;
+const CARD_TIP_TOWARD = 0.03;
 const HINT_LIFT = 0.17;
 const TRAY_HALF_X = AUTHORED_TRAY_HALF.halfX;
 const TRAY_HALF_Z = AUTHORED_TRAY_HALF.halfZ;
@@ -159,6 +168,8 @@ const DESKTOP_STATUS_SCALE = 0.8;
 const STATUS_WIDTH = 0.38;
 const STATUS_AT = { right: -0.38, forward: 0.32, lift: 0.68 } as const;
 const STATUS_FACE_SEAT = DEFAULT_TABLE_DISTANCE;
+/** Half the eye separation the XR panel clearance checks from the seat (the emulated Quest 3), metres. */
+const SEAT_EYE_HALF_IPD = 0.032;
 /** The desktop hand strip, a camera child: its pose at the base field of view. */
 const HAND_HOME = { position: [0, -0.26, -0.42] as const, pitch: 0.2, scale: 0.9 } as const;
 /**
@@ -477,6 +488,11 @@ export class CombatSession {
     text: string;
     distance: number;
   } | null = null;
+  /** The tip listing the keywords of the card the pointer is on, or of the held card. */
+  private readonly cardTipLabel: CanvasLabel | null;
+  private cardTipKey = '';
+  /** The card whose keyword tip shows, by id, or null. For tests and the HUD. */
+  cardTipShown: { id: string; titles: string[] } | null = null;
   private readonly eye = new THREE.Vector3();
   private platePose: PlatePose;
   private handKey = '';
@@ -677,6 +693,14 @@ export class CombatSession {
       this.tip.mesh.material.depthTest = false;
       this.group.add(this.tip.mesh);
     }
+    this.cardTipLabel = safeLabel(640, CARD_TIP_PX_HEIGHT, CARD_TIP_WIDTH);
+    if (this.cardTipLabel) {
+      this.cardTipLabel.mesh.name = 'card-tip';
+      this.cardTipLabel.mesh.visible = false;
+      this.cardTipLabel.mesh.renderOrder = 4;
+      this.cardTipLabel.mesh.material.depthTest = false;
+      this.group.add(this.cardTipLabel.mesh);
+    }
     this.hintLabel = safeLabel(768, 192, HINT_WIDTH);
     if (this.hintLabel) {
       const mesh = this.hintLabel.mesh;
@@ -731,6 +755,7 @@ export class CombatSession {
       this.group.add(label.mesh);
       this.labels.push({ id, label });
     });
+    this.clearReadoutsOfStatus(deps.seatDistance ?? STATUS_FACE_SEAT);
     const anchor = (object: THREE.Mesh, kind: 'button' | 'readout' | 'status', scale = 1) =>
       this.anchors.push({
         object,
@@ -1016,6 +1041,42 @@ export class CombatSession {
   }
 
   /**
+   * Playtest 2026-11-17: the status panel stands near eye level left of centre, which is where a
+   * short automaton's readout (the Spring Hound's) lands seen from the seat. Raises each readout the
+   * seat (both eyes, `SEAT_EYE_HALF_IPD` aside) would see overlapping the status panel or an earlier
+   * readout until it clears; it runs before the anchors record their XR home positions.
+   */
+  private clearReadoutsOfStatus(seatDistance: number): void {
+    if (this.labels.length === 0) return;
+    this.deps.root.updateWorldMatrix(true, true);
+    const forward: [number, number] = [
+      Math.sin(this.pose.yaw * DEG),
+      -Math.cos(this.pose.yaw * DEG),
+    ];
+    const seat = {
+      x: this.pose.x - forward[0] * seatDistance,
+      y: this.pose.height + WAIST_DROP,
+      z: this.pose.z - forward[1] * seatDistance,
+    };
+    const eyes = [-SEAT_EYE_HALF_IPD, SEAT_EYE_HALF_IPD].map((side) => ({
+      x: seat.x - forward[1] * side,
+      y: seat.y,
+      z: seat.z + forward[0] * side,
+    }));
+    const fixed = this.status ? [worldCorners(this.status.mesh)] : [];
+    const panels = this.labels.map(({ label }) => ({
+      centre: label.mesh.getWorldPosition(new THREE.Vector3()),
+      width: label.mesh.geometry.parameters.width,
+      height: label.mesh.geometry.parameters.height,
+    }));
+    const heights = readoutHeightsClear({ eyes, forward }, fixed, panels);
+    this.labels.forEach(({ label }, i) => {
+      label.mesh.position.y +=
+        (heights[i] as number) - (panels[i] as { centre: THREE.Vector3 }).centre.y;
+    });
+  }
+
+  /**
    * World-space corners of every HUD element a desktop player must be able to see: End Turn, the
    * dice tray, the sigil plate, the status panel and each automaton's readout.
    */
@@ -1134,6 +1195,45 @@ export class CombatSession {
         if (cover && cover.y0 - HUD_GAP - (rect.y1 - rect.y0) >= -margin) {
           move(mesh, rect, 0, cover.y0 - HUD_GAP - rect.y1);
           rect = rectOf(mesh);
+        }
+        // The panel never covers a readout: try below, above, left and right of the readouts in
+        // its way, at full size and then smaller.
+        const onReadout = (r: NdcRect): boolean => readouts.some((p) => overlaps(p, r));
+        if (rect && onReadout(rect)) {
+          const start = mesh.position.clone();
+          let found: NdcRect | null = null;
+          for (const shrink of READOUT_SHRINK) {
+            mesh.position.copy(start);
+            mesh.scale.setScalar(anchor.scale * shrink);
+            const r = rectOf(mesh);
+            if (!r) break;
+            const hits = readouts.filter((p) => overlaps(p, r));
+            const moves: [number, number][] = [[0, 0]];
+            if (hits.length > 0) {
+              moves.push(
+                [0, Math.min(...hits.map((p) => p.y0)) - HUD_GAP - r.y1],
+                [0, Math.max(...hits.map((p) => p.y1)) + HUD_GAP - r.y0],
+                [Math.min(...hits.map((p) => p.x0)) - HUD_GAP - r.x1, 0],
+                [Math.max(...hits.map((p) => p.x1)) + HUD_GAP - r.x0, 0],
+              );
+            }
+            for (const [dx, dy] of moves) {
+              mesh.position.copy(start);
+              move(mesh, r, dx, dy);
+              const moved = rectOf(mesh);
+              if (moved && inside(moved) && !onReadout(moved)) {
+                found = moved;
+                break;
+              }
+            }
+            if (found) break;
+          }
+          if (found) rect = found;
+          else {
+            mesh.position.copy(start);
+            mesh.scale.setScalar(anchor.scale);
+            rect = rectOf(mesh);
+          }
         }
       } else if (rect && zone && anchor.kind === 'readout') {
         // A cast must never hide a readout: try above the plate and its result label, then the
@@ -1303,6 +1403,7 @@ export class CombatSession {
     this.plate.setHint(this.xr ? XR_SIGIL_HINT : '');
     this.stepHeldDie();
     this.showHint(this.tableHint());
+    this.showCardTip();
     if (this.drawing === 'xr' && this.xr?.main) {
       const tip = this.tipOf(this.xr.main);
       const ray = this.xr.mainRay ? rayFromObject(this.xr.mainRay) : null;
@@ -1388,6 +1489,7 @@ export class CombatSession {
     this.fleeLabel?.dispose();
     this.hintLabel?.dispose();
     this.tip?.dispose();
+    this.cardTipLabel?.dispose();
     for (const mesh of [this.endButton, this.fleeButton, this.trayHit]) {
       if (!mesh) continue;
       mesh.geometry.dispose();
@@ -1615,22 +1717,7 @@ export class CombatSession {
     const key = `${found.owner}:${id}:${stacks}`;
     if (key !== this.tipKey) {
       this.tipKey = key;
-      tip.draw((ctx, w, h) => {
-        ctx.fillStyle = 'rgba(18,12,7,0.92)';
-        roundRect(ctx, 4, 4, w - 8, h - 8, 16);
-        ctx.fill();
-        ctx.strokeStyle = PALETTE.brass;
-        ctx.lineWidth = 4;
-        ctx.stroke();
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'middle';
-        ctx.fillStyle = PALETTE.candle;
-        ctx.font = 'bold 40px system-ui, sans-serif';
-        ctx.fillText(`${name} ${stacks}`, 24, 44);
-        ctx.fillStyle = PALETTE.parchment;
-        ctx.font = '500 30px system-ui, sans-serif';
-        wrapText(ctx, text, 24, 96, w - 48, 36);
-      });
+      tip.draw((ctx, w, h) => drawTip(ctx, w, h, [{ title: `${name} ${stacks}`, text }]));
     }
     // Above the badge (below it when that would leave the top of the view), nudged toward the
     // viewer, turned to face them, and grown with distance so it reads as it would at
@@ -1647,6 +1734,47 @@ export class CombatSession {
     }
     this.deps.camera.getWorldQuaternion(tip.mesh.quaternion);
     tip.mesh.visible = true;
+  }
+
+  /**
+   * Playtest 2026-11-17: the card the laser or mouse is on in the fan, or the card in hand, shows
+   * the explanation of each keyword it uses beside it (statuses in the badge tooltip's wording).
+   */
+  private showCardTip(): void {
+    const label = this.cardTipLabel;
+    if (!label) return;
+    let card: SliceCard | null = null;
+    let at: THREE.Vector3 | null = null;
+    const held = this.holding ? this.fling.holding : null;
+    if (held && !this.drawing) {
+      card = getCard(held.card.id);
+      at = (this.xr?.main ?? this.mouseGrip).getWorldPosition(new THREE.Vector3());
+    } else if (!this.holding && this.statusHover === null && this.fan.hovered !== null) {
+      const uid = this.controller.state.piles.hand[this.fan.hovered]?.uid;
+      card = this.handCard(this.fan.hovered);
+      at = uid === undefined ? null : this.worldOf('card', uid);
+    }
+    const entries = card ? cardTip(card) : [];
+    if (!card || !at || entries.length === 0) {
+      this.cardTipShown = null;
+      this.cardTipKey = '';
+      label.mesh.visible = false;
+      return;
+    }
+    if (card.id !== this.cardTipKey) {
+      this.cardTipKey = card.id;
+      label.draw((ctx, w, h) => drawTip(ctx, w, h, entries, true));
+    }
+    this.cardTipShown = { id: card.id, titles: entries.map((e) => e.title) };
+    // Its bottom edge (where the fitted plate stands) just above the card, nudged toward the eye
+    // and turned to face it.
+    const eye = this.deps.camera.getWorldPosition(this.eye);
+    const mesh = label.mesh;
+    mesh.position.copy(at);
+    mesh.position.addScaledVector(eye.sub(at).normalize(), CARD_TIP_TOWARD);
+    mesh.position.y += CARD_TIP_LIFT + mesh.geometry.parameters.height / 2;
+    this.deps.camera.getWorldQuaternion(mesh.quaternion);
+    mesh.visible = true;
   }
 
   /** The waiting die follows the XR main hand while it is held; it drops back if the hand is lost. */

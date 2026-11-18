@@ -3,6 +3,7 @@ import { DECAYS_AT_TURN_END, VULNERABLE_MULTIPLIER, WEAK_MULTIPLIER } from '../r
 import type { StatusId } from '../rules/types.ts';
 import { STATUS_ICON } from '../ui/icon-atlas.ts';
 import { drawIconRow, type IconChip, type IconSheet } from '../ui/icon-sheet.ts';
+import { roundRect } from './canvas-label.ts';
 
 /** Display name of each status. Exhaustive: a new status fails the type check until it has one. */
 export const STATUS_NAME: Readonly<Record<StatusId, string>> = {
@@ -17,16 +18,23 @@ const percent = (multiplier: number): number => Math.round(Math.abs(1 - multipli
 /**
  * A plain-language explanation of status `id` at `stacks` stacks on the player (`you`) or an enemy
  * (`it`), for the pointer tooltip. The numbers come from the rules (`src/rules/statuses.ts`), so a
- * rules change shows here.
+ * rules change shows here. `stacks` null explains the status per stack (a card keyword, whose stack
+ * count may be a dice roll).
  */
-export function statusExplanation(id: StatusId, stacks: number, who: 'you' | 'it' = 'it'): string {
+export function statusExplanation(
+  id: StatusId,
+  stacks: number | null,
+  who: 'you' | 'it' = 'it',
+): string {
   const you = who === 'you';
   const their = you ? 'your' : 'its';
+  const hp = stacks === null ? '1 HP per stack' : `${stacks} HP`;
+  const more = stacks === null ? '1 more damage per stack' : `${stacks} more damage`;
   const what: Record<StatusId, string> = {
     weak: `${you ? 'Your' : 'Its'} attacks deal ${percent(WEAK_MULTIPLIER)}% less damage.`,
     vulnerable: `Attacks against ${you ? 'you' : 'it'} deal ${percent(VULNERABLE_MULTIPLIER)}% more damage.`,
-    overheat: `${you ? 'You lose' : 'It loses'} ${stacks} HP at the start of ${their} turn, ignoring block, then 1 stack.`,
-    'wound-up': `Each of ${their} attack hits deals ${stacks} more damage.`,
+    overheat: `${you ? 'You lose' : 'It loses'} ${hp} at the start of ${their} turn, ignoring block, then 1 stack.`,
+    'wound-up': `Each of ${their} attack hits deals ${more}.`,
   };
   const wears = DECAYS_AT_TURN_END.includes(id)
     ? ` Loses 1 stack at the end of ${their} turn.`
@@ -152,4 +160,75 @@ export function statusAtUv(
   const px = u * width;
   const py = (1 - v) * height;
   return regions.find((r) => px >= r.x0 && px <= r.x1 && py >= r.y0 && py <= r.y1) ?? null;
+}
+
+/** One entry of an explanation tip: a bold title and its wrapped explanation. */
+export interface TipEntry {
+  readonly title: string;
+  readonly text: string;
+}
+
+/** The lines `text` wraps to at `maxWidth` in the current font. */
+function wrapLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+  const lines: string[] = [];
+  let line = '';
+  for (const word of text.split(' ')) {
+    const next = line === '' ? word : `${line} ${word}`;
+    if (ctx.measureText(next).width > maxWidth && line !== '') {
+      lines.push(line);
+      line = word;
+    } else line = next;
+  }
+  if (line !== '') lines.push(line);
+  return lines;
+}
+
+const TIP_TITLE_FONT = 'bold 40px system-ui, sans-serif';
+const TIP_TEXT_FONT = '500 30px system-ui, sans-serif';
+/** Tip layout, canvas pixels: inset, first title centre, title to text, text line, entry gap. */
+const TIP = { inset: 24, top: 44, title: 52, line: 36, gap: 20 } as const;
+
+/**
+ * Draws an explanation tip on a `w` by `h` canvas: a dark plate with a brass rim, then each entry's
+ * title in candle and its text in parchment, wrapped. The status badge tip and the card keyword tip
+ * both draw through this. `fit` shrinks the plate to its entries and stands it on the canvas's
+ * bottom edge (a card tip of one keyword is short); without it the plate fills the canvas.
+ */
+export function drawTip(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  entries: readonly TipEntry[],
+  fit = false,
+): void {
+  const maxWidth = w - 2 * TIP.inset;
+  ctx.font = TIP_TEXT_FONT;
+  const wrapped = entries.map((e) => wrapLines(ctx, e.text, maxWidth));
+  const used =
+    TIP.top +
+    wrapped.reduce((sum, lines) => sum + TIP.title + lines.length * TIP.line + TIP.gap, 0) -
+    TIP.gap;
+  const top = fit ? Math.max(0, h - used - 8) : 0;
+  ctx.fillStyle = 'rgba(18,12,7,0.92)';
+  roundRect(ctx, 4, top + 4, w - 8, h - top - 8, 16);
+  ctx.fill();
+  ctx.strokeStyle = PALETTE.brass;
+  ctx.lineWidth = 4;
+  ctx.stroke();
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  let y = top + TIP.top;
+  entries.forEach(({ title }, i) => {
+    ctx.fillStyle = PALETTE.candle;
+    ctx.font = TIP_TITLE_FONT;
+    ctx.fillText(title, TIP.inset, y);
+    ctx.fillStyle = PALETTE.parchment;
+    ctx.font = TIP_TEXT_FONT;
+    y += TIP.title;
+    for (const line of wrapped[i] ?? []) {
+      ctx.fillText(line, TIP.inset, y);
+      y += TIP.line;
+    }
+    y += TIP.gap;
+  });
 }
