@@ -109,10 +109,6 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.AgXToneMapping;
 app.append(renderer.domElement);
-// Headset A/B for mid-range text sharpness: `?fbscale=1.25` renders the XR eye buffers at 1.25x the
-// browser's recommended size (three default 1). Applies at the next session start.
-const fbScale = Number(params.get('fbscale'));
-if (fbScale > 0) renderer.xr.setFramebufferScaleFactor(Math.min(fbScale, 2));
 // Card art loads at boot so the first fight's hand opens on real faces, not flat tints.
 requestCardFaceArt(sharedKtx2Loader(renderer)).catch((error: unknown) =>
   console.warn('card atlas prefetch failed; the fan retries', error),
@@ -394,7 +390,7 @@ const roomAssets: Promise<StudyAsset[]> = heroSet
   ? heroSet
       .then(({ ktx2, set }) =>
         loadHeroAssets(heroRooms.manifests, (study) =>
-          loadStudyAsset({ study, set, ktx2, envMap: heroEnv }),
+          loadStudyAsset({ study, set, ktx2, envMap: heroEnv, reducedMotion: hitFx.reducedMotion }),
         ),
       )
       .catch((error: unknown) => {

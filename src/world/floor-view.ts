@@ -12,6 +12,7 @@ import { nearSet, shellSet } from '../floor/visibility.ts';
 import { PALETTE } from '../palette.ts';
 import type { TreasureLoot } from '../rules/run.ts';
 import { DEFAULT_VIGNETTE, vignetteStep, yawFromMatrix } from '../xr/locomotion.ts';
+import { animateFires, FIRE_NODE } from './fireplace.ts';
 import { buildFloorWorld, type FloorWorld } from './floor-world.ts';
 import {
   type Hearth,
@@ -245,6 +246,8 @@ export function mountFloorView(
     room: THREE.Object3D;
   }
   const spinners: Spinner[] = [];
+  /** Live fireplace fires (the hall's); instances of one template share the material and its clock. */
+  const fires: { material: THREE.ShaderMaterial; room: THREE.Object3D }[] = [];
   let clock = 0;
   const spin = (dt: number): void => {
     clock += dt;
@@ -252,6 +255,7 @@ export function mountFloorView(
       if (s.room.visible)
         s.node.quaternion.setFromAxisAngle(s.axis, rigidAngle(s.radPerSec, clock));
     }
+    animateFires(fires, clock);
   };
   const disposeActor = (actor: EnemyActor): void => {
     actors.delete(actor.object);
@@ -404,6 +408,9 @@ export function mountFloorView(
           const axis = new THREE.Vector3(...rigid.axis).normalize();
           spinners.push({ node, axis, radPerSec: rigid.radPerSec, room: group });
         }
+        const fire = model.getObjectByName(FIRE_NODE) as THREE.Mesh | undefined;
+        if (fire && group && fire.material instanceof THREE.ShaderMaterial)
+          fires.push({ material: fire.material, room: group });
         dressed++;
       });
       return dressed;
@@ -414,6 +421,7 @@ export function mountFloorView(
     dispose() {
       dropToast();
       spinners.length = 0;
+      fires.length = 0;
       debris.dispose();
       for (const actor of [...actors.values()]) disposeActor(actor);
       models.clear();

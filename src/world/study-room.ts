@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { GREYBOX_TEMPLATES, parseRoomTemplate, type RoomTemplate } from '../content/rooms.ts';
+import { dressFireplace } from './fireplace.ts';
 import { loadRoomLightmap, parseTemplateManifest, type TemplateManifest } from './lightmap.ts';
 import { type CompressedTextureLoader, configurePbrTexture, type PbrSet } from './materials.ts';
 
@@ -238,6 +239,8 @@ export async function loadStudyAsset(options: {
   ktx2: CompressedTextureLoader;
   envMap?: THREE.Texture | null;
   base?: string;
+  /** Softens the live fireplace fire's motion (the OS reduced-motion preference). */
+  reducedMotion?: boolean;
 }): Promise<StudyAsset> {
   const { study, set, ktx2 } = options;
   const id = study.manifest.template;
@@ -269,6 +272,8 @@ export async function loadStudyAsset(options: {
     if (options.envMap) material.envMap = options.envMap;
     material.envMapIntensity = slot.reflectsProbe ? STUDY_ENV_INTENSITY : 0;
   }
+  // After the lightmap binding, which wants uv1 on every mesh: the fire is unlit.
+  const fire = dressFireplace(id, gltf.scene, flameSlot, options.reducedMotion ?? false);
   gltf.scene.name = `${study.manifest.template}-model`;
   const textures = new Set<THREE.Texture>();
   for (const material of slots.values()) {
@@ -291,6 +296,7 @@ export async function loadStudyAsset(options: {
         if ((node as THREE.Mesh).isMesh) (node as THREE.Mesh).geometry.dispose();
       });
       for (const material of slots.values()) material.dispose();
+      fire?.dispose();
       for (const texture of owned) texture.dispose();
     },
   };
