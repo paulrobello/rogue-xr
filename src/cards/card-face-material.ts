@@ -84,6 +84,21 @@ void main() {
   gl_Position = projectionMatrix * viewPos;
 }`;
 
+/**
+ * The frame's window edge. The atlas frame is straight (not premultiplied) alpha, and the RGB under
+ * its transparent hole is left over from the key (dark green, `(0, 56, 0)` on the skill frame), so
+ * a filtered tap on the hole's edge mixes that green in at partial alpha. The shader therefore takes
+ * the edge's colour from a second tap this far out into the opaque brass (frame texels, plus screen
+ * footprints so it holds under minification, at most `FRAME_EDGE_MAX_TEXELS`), uses the edge tap's
+ * alpha only as coverage, and draws the art under the frame out to the same distance, so no fragment
+ * between the painted window and the opaque brass is discarded.
+ */
+export const FRAME_EDGE_TEXELS = 2;
+export const FRAME_EDGE_FOOTPRINTS = 1.5;
+export const FRAME_EDGE_MAX_TEXELS = 8;
+
+const glslFloat = (v: number): string => (Number.isInteger(v) ? `${v}.0` : String(v));
+
 const FRAGMENT = /* glsl */ `
 uniform sampler2D uFrame;
 uniform sampler2D uPage0;
@@ -119,6 +134,11 @@ const float WALL = 0.12;
 // Width of the glowing burn front and of the char band behind it, in burn-field units.
 const float RIM = 0.05;
 const float CHAR = 0.12;
+const float EDGE_TEXELS = ${glslFloat(FRAME_EDGE_TEXELS)};
+const float EDGE_FOOTPRINTS = ${glslFloat(FRAME_EDGE_FOOTPRINTS)};
+const float EDGE_MAX_TEXELS = ${glslFloat(FRAME_EDGE_MAX_TEXELS)};
+// Below this coverage the hole colour cannot show, so the window's middle skips the second tap.
+const float EDGE_MIN_ALPHA = 0.02;
 
 vec4 pageSample(float page, vec2 uv, vec2 gx, vec2 gy) {
   if (page < 0.5) return textureGrad(uPage0, uv, gx, gy);
@@ -174,12 +194,21 @@ void main() {
     // Window space: x right, y up, in window diameters from the window centre.
     float diameter = 2.0 * uWindow.z;
     vec2 w = vec2(vUv.x - uWindow.x, ((1.0 - vUv.y) - uWindow.y) * uWindow.w);
-    bool inWindow = length(w) < uWindow.z;
+    float dist = length(w);
     vec2 q = vec2(w.x, -w.y) / diameter;
     vec2 qx = dFdx(q);
     vec2 qy = dFdy(q);
 
     vec2 frameUv = mix(vFrameUv.xy, vFrameUv.zw, vUv);
+    vec2 fx = dFdx(frameUv);
+    vec2 fy = dFdy(frameUv);
+    // One frame texel in card widths (the units of w), and a screen pixel in frame texels.
+    vec2 frameTexels = abs(vFrameUv.zw - vFrameUv.xy) * vec2(textureSize(uFrame, 0));
+    float texel = 1.0 / frameTexels.x;
+    float footprint = max(1.0, fwidth(dist) / texel);
+    float edge = min(EDGE_TEXELS + EDGE_FOOTPRINTS * footprint, EDGE_MAX_TEXELS) * texel;
+    // The art runs under the frame out to the opaque brass, so nothing on the edge is discarded.
+    bool inWindow = dist < uWindow.z + edge;
     vec4 frame = texture2D(uFrame, frameUv);
     if (!inWindow && frame.a < 0.5) discard;
     color = frame.rgb;
@@ -212,7 +241,15 @@ void main() {
       float lip = length(q + slope * WALL) * 2.0;
       float ring = length(q) * 2.0;
       art *= max(0.0, 1.0 - 0.6 * smoothstep(0.7, 1.05, lip) - 0.25 * smoothstep(0.8, 1.0, ring));
-      color = mix(art, frame.rgb, frame.a);
+      vec3 brass = frame.rgb;
+      if (frame.a > EDGE_MIN_ALPHA) {
+        // The edge's colour from the opaque brass, pushed out along the radius (w.y runs down the
+        // card, frame v runs up it); its own alpha stays the coverage.
+        vec2 outward = w / max(dist, 1e-5) * edge;
+        vec2 push = vec2(outward.x, -outward.y / uWindow.w) * (vFrameUv.zw - vFrameUv.xy);
+        brass = textureGrad(uFrame, frameUv + push, fx, fy).rgb;
+      }
+      color = mix(art, brass, frame.a);
     }
   }
   if (vBurn.w > 0.5) color = burnCard(color);

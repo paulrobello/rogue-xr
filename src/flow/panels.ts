@@ -52,6 +52,16 @@ export interface FlowUiDeps {
    * (a standoff in front of it). Absent or null: the card is taken without a flight.
    */
   flyTarget?: () => FlyTarget | null;
+  /** A newer deployed build: the title offers the reload while one is available. */
+  update?: TitleUpdate;
+}
+
+/** A newer deployed build the title can reload into (`mountUpdateNotice`'s result fits). */
+export interface TitleUpdate {
+  readonly available: boolean;
+  reload(): void;
+  /** Calls `listener` when `available` may have changed; returns the unsubscribe. */
+  onChange(listener: () => void): () => void;
 }
 
 /** What a picked reward card flies to: `object`'s world position, stopping `standoff` metres short. */
@@ -60,8 +70,8 @@ export interface FlyTarget {
   readonly standoff: number;
 }
 
-/** The in-run menu: closed, its main board, or the abandon confirmation. */
-export type MenuView = 'closed' | 'main' | 'confirm';
+/** The in-run menu: closed, its main board, the deck viewer, or the abandon confirmation. */
+export type MenuView = 'closed' | 'main' | 'deck' | 'confirm';
 /** Phases the in-run menu opens over. */
 const MENU_PHASES: readonly FlowPhase[] = ['explore', 'combat'];
 
@@ -94,6 +104,12 @@ const BOARD_WIDTH = 0.66;
 const BOARD_PAD = 0.045;
 const BOARD_DISTANCE = 1.25;
 const ART_DISTANCE = 2.7;
+/** The deck viewer: cards per row and rows per page, card width and the gap between cards, metres. */
+const DECK_COLUMNS = 4;
+const DECK_ROWS = 2;
+export const DECK_PAGE_SIZE = DECK_COLUMNS * DECK_ROWS;
+const DECK_CARD_WIDTH = 0.15;
+const DECK_GAP = 0.02;
 const ART_WIDTH = 3.4;
 
 type Subview = 'main' | 'seed';
@@ -276,6 +292,8 @@ export class FlowUi {
   private boards: Board[] = [];
   private extras: THREE.Object3D[] = [];
   private rewardFaces: RewardCardFaces | null = null;
+  private deckFaces: RewardCardFaces | null = null;
+  private deckPage = 0;
   private hoveredId: string | null = null;
   /** Control ids drawn as the chosen option. */
   private readonly selectedIds = new Set<string>();
@@ -287,6 +305,7 @@ export class FlowUi {
   private flight: RewardFlight | null = null;
   private artTexture: THREE.Texture | null = null;
   private readonly stopAbove: () => void;
+  private readonly stopUpdate: () => void;
 
   constructor(deps: FlowUiDeps) {
     this.deps = deps;
@@ -294,6 +313,11 @@ export class FlowUi {
     this.root.name = 'flow-ui';
     this.root.visible = false;
     this.stopAbove = keepAbove(this.root);
+    // `sync` rebuilds the title on the way back from a run; this covers a build found while on it.
+    this.stopUpdate =
+      deps.update?.onChange(() => {
+        if (this.shownFor === 'title' && this.deps.flow.phase === 'title') this.refresh();
+      }) ?? (() => {});
   }
 
   /** The seed New Run will use. */
@@ -314,6 +338,13 @@ export class FlowUi {
   /** True while the in-run menu is up: exploration and the fight pause. */
   get menuOpen(): boolean {
     return this.menu !== 'closed';
+  }
+
+  /** Card ids on the deck viewer's page in deck order, or empty when the viewer is not open. */
+  get deckCards(): readonly string[] {
+    if (this.menu !== 'deck') return [];
+    const deck = this.deps.flow.run?.deck ?? [];
+    return deck.slice(this.deckPage * DECK_PAGE_SIZE, (this.deckPage + 1) * DECK_PAGE_SIZE);
   }
 
   /** True while a picked reward card is flying to the player (the pick lands when it arrives). */
@@ -459,6 +490,7 @@ export class FlowUi {
     this.endFlight();
     this.clear();
     this.stopAbove();
+    this.stopUpdate();
     this.artTexture?.dispose();
     this.root.removeFromParent();
   }
@@ -502,6 +534,8 @@ export class FlowUi {
     }
     this.rewardFaces?.dispose();
     this.rewardFaces = null;
+    this.deckFaces?.dispose();
+    this.deckFaces = null;
     this.boards = [];
     this.extras = [];
     this.selectedIds.clear();
@@ -674,7 +708,16 @@ export class FlowUi {
     this.keyArt();
     const snap = this.deps.snapshot();
     const level = this.deps.settings().difficulty;
-    const rows: MenuRow[] = [
+    const rows: MenuRow[] = [];
+    const update = this.deps.update;
+    if (update?.available) {
+      rows.push({
+        id: 'reload',
+        label: 'New version ready · Reload',
+        onSelect: () => update.reload(),
+      });
+    }
+    rows.push(
       {
         id: 'new-run',
         label: 'New Run',
@@ -690,7 +733,7 @@ export class FlowUi {
         onSelect: () => this.chooseDifficulty(d),
       })),
       { id: 'difficulty-note', label: `${DIFFICULTY_LABEL[level]}: ${DIFFICULTY_NOTE[level]}` },
-    ];
+    );
     if (snap) {
       rows.push({
         id: 'continue',
@@ -878,8 +921,15 @@ export class FlowUi {
     ];
   }
 
-  /** The in-run menu: Resume, the shared choices and Abandon run, or the abandon confirmation. */
+  /**
+   * The in-run menu: Resume, the deck viewer (exploring only), the shared choices and Abandon run;
+   * or the deck viewer; or the abandon confirmation.
+   */
   private buildMenu(): void {
+    if (this.menu === 'deck') {
+      this.buildDeck();
+      return;
+    }
     if (this.menu === 'confirm') {
       this.board(
         'menu-confirm',
@@ -898,6 +948,15 @@ export class FlowUi {
       'menu',
       [
         { id: 'resume', label: 'Resume', onSelect: () => this.closeMenu() },
+        ...(this.deps.flow.phase === 'explore'
+          ? [
+              {
+                id: 'deck',
+                label: `Deck · ${this.deps.flow.run?.deck.length ?? 0} cards`,
+                onSelect: () => this.openDeck(),
+              },
+            ]
+          : []),
         ...this.choiceRows(),
         { id: 'abandon', label: 'Abandon run', onSelect: () => this.setMenu('confirm') },
       ],
@@ -909,6 +968,75 @@ export class FlowUi {
   private setMenu(view: MenuView): void {
     this.menu = view;
     this.refresh();
+  }
+
+  private openDeck(): void {
+    this.deckPage = 0;
+    this.setMenu('deck');
+  }
+
+  private turnDeckPage(page: number): void {
+    this.deckPage = page;
+    this.refresh();
+  }
+
+  /**
+   * The deck viewer: one page of the run deck as real card faces (the reward board's atlas faces),
+   * a heading with the count, and Previous, Next and Back. The faces only draw; the buttons take
+   * the laser and the mouse.
+   */
+  private buildDeck(): void {
+    const deck = this.deps.flow.run?.deck ?? [];
+    const pages = Math.max(1, Math.ceil(deck.length / DECK_PAGE_SIZE));
+    this.deckPage = Math.min(Math.max(0, this.deckPage), pages - 1);
+    const page = this.deckPage;
+    const cards = this.deckCards;
+    const cardHeight = DECK_CARD_WIDTH * HOLO_CARD_ASPECT;
+    const width = DECK_COLUMNS * DECK_CARD_WIDTH + (DECK_COLUMNS - 1) * DECK_GAP;
+    const top = 0.32;
+    const info = this.board(
+      'menu-deck',
+      [{ id: 'count', label: `${deck.length} cards · page ${page + 1} of ${pages}` }],
+      { x: 0, y: top, z: -BOARD_DISTANCE },
+      { width, heading: 'Your deck' },
+    );
+    const cardsTop = top - info.panel.height - BOARD_PAD * 2 - 0.03;
+    const slots = cards.map((id, i) => {
+      const column = i % DECK_COLUMNS;
+      const row = Math.floor(i / DECK_COLUMNS);
+      return {
+        id,
+        x: -width / 2 + DECK_CARD_WIDTH / 2 + column * (DECK_CARD_WIDTH + DECK_GAP),
+        y: -cardHeight / 2 - row * (cardHeight + DECK_GAP),
+        width: DECK_CARD_WIDTH,
+        height: cardHeight,
+      };
+    });
+    this.deckFaces = new RewardCardFaces(slots, rewardCardTexture, this.deps.rewardCards);
+    this.deckFaces.root.name = 'deck-card-faces';
+    this.deckFaces.root.position.set(0, cardsTop, -BOARD_DISTANCE);
+    this.root.add(this.deckFaces.root);
+    const navY = cardsTop - DECK_ROWS * cardHeight - (DECK_ROWS - 1) * DECK_GAP - 0.05;
+    this.board(
+      'menu-deck-nav',
+      [
+        [
+          {
+            id: 'prev',
+            label: 'Previous',
+            ...(page > 0 ? { onSelect: () => this.turnDeckPage(page - 1) } : {}),
+          },
+          {
+            id: 'next',
+            label: 'Next',
+            ...(page < pages - 1 ? { onSelect: () => this.turnDeckPage(page + 1) } : {}),
+          },
+        ],
+        { id: 'back', label: 'Back', onSelect: () => this.setMenu('main') },
+      ],
+      { x: 0, y: navY, z: -BOARD_DISTANCE },
+      { width: 0.5 },
+    );
   }
 
   /** Drops a reward flight without applying its pick (the board went away under it). */

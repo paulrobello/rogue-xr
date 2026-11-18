@@ -1,6 +1,7 @@
 import type * as THREE from 'three';
 import { createDomNotice } from './dom-notice.ts';
 import { reloadApp } from './reload.ts';
+import { createUpdateState } from './state.ts';
 import {
   type BuildManifest,
   createUpdateWatcher,
@@ -18,25 +19,47 @@ export interface UpdateNoticeOptions {
   search?: string;
 }
 
+/** The mounted notice, for screens that offer the reload themselves (the title board). */
+export interface UpdateNotice {
+  /** True while a newer build is deployed, including after the player chose Later. */
+  readonly available: boolean;
+  /** Reloads into the newer build, leaving an immersive session first. */
+  reload(): void;
+  /** Calls `listener` whenever `available` or the notice changes; returns the unsubscribe. */
+  onChange(listener: () => void): () => void;
+  dispose(): void;
+}
+
+/** The notice on a page without a build stamp: nothing is ever available. */
+const INERT_NOTICE: UpdateNotice = {
+  available: false,
+  reload() {},
+  onChange: () => () => {},
+  dispose() {},
+};
+
 /**
  * Tells an open tab that a newer build is deployed. The running build is the id the build stamped
  * into the page (`<meta name="app-build">`), so the dev server, which has none, never shows it.
  * Desktop gets a bar with Reload and Later; an immersive session gets the same choice on a panel
- * in the scene. Later hides the notice until a different newer build appears.
+ * in the scene. Later hides the notice until a different newer build appears; the build stays
+ * `available`, so the title board can still offer the reload.
  */
-export function mountUpdateNotice({ scene, renderer, xr, search = '' }: UpdateNoticeOptions): {
-  dispose(): void;
-} {
+export function mountUpdateNotice({
+  scene,
+  renderer,
+  xr,
+  search = '',
+}: UpdateNoticeOptions): UpdateNotice {
   const runningBuildId =
     document.querySelector<HTMLMetaElement>('meta[name="app-build"]')?.content || null;
-  if (runningBuildId === null) return { dispose() {} };
+  if (runningBuildId === null) return INERT_NOTICE;
 
-  let latest: BuildManifest | null = null;
-  let dismissed: string | null = null;
+  const state = createUpdateState();
   let reloading = false;
 
   const sync = (): void => {
-    const wanted = latest !== null && latest.buildId !== dismissed;
+    const wanted = state.noticeWanted;
     const immersive = renderer.xr.isPresenting;
     if (wanted && !immersive) domNotice.show();
     else domNotice.hide();
@@ -49,21 +72,16 @@ export function mountUpdateNotice({ scene, renderer, xr, search = '' }: UpdateNo
       if (!navigated) reloading = false;
     });
   };
-  const onLater = (): void => {
-    dismissed = latest?.buildId ?? null;
-    sync();
-  };
+  const onLater = (): void => state.later();
 
   const domNotice = createDomNotice({ onReload, onLater });
   const xrNotice = createXrNotice({ scene, renderer, onReload, onLater });
   const watcher = createUpdateWatcher({
     runningBuildId,
     intervalMs: pollMsFromQuery(search) ?? DEFAULT_POLL_MS,
-    onChange(manifest) {
-      latest = manifest;
-      sync();
-    },
+    onChange: (manifest: BuildManifest | null) => state.report(manifest),
   });
+  const stopSync = state.onChange(sync);
 
   const onVisible = (): void => {
     if (document.visibilityState === 'visible') void watcher.check();
@@ -77,7 +95,13 @@ export function mountUpdateNotice({ scene, renderer, xr, search = '' }: UpdateNo
   watcher.start();
 
   return {
+    get available() {
+      return state.available;
+    },
+    reload: onReload,
+    onChange: (listener) => state.onChange(listener),
     dispose() {
+      stopSync();
       watcher.dispose();
       window.removeEventListener('focus', onFocus);
       window.removeEventListener('online', onFocus);

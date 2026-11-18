@@ -88,8 +88,10 @@ describe('card face portal depth (H8)', () => {
       expect(material.fragmentShader).toContain(varying);
     }
     expect(material.vertexShader).toContain('attribute vec4 aBurn;');
-    // No extra texture taps: the frame plus the three layer samples, as before the portal.
-    expect(material.fragmentShader.match(/textureGrad\(/g)).toHaveLength(3);
+    // The frame plus the three layer samples, as before the portal, and one brass tap that only
+    // runs on the window's edge band (card-frame-edge.test.ts).
+    expect(material.fragmentShader.match(/textureGrad\(/g)).toHaveLength(4);
+    expect(material.fragmentShader).toContain('if (frame.a > EDGE_MIN_ALPHA) {');
     expect(material.fragmentShader.match(/texture2D\(/g)).toHaveLength(1);
     material.dispose();
   });
