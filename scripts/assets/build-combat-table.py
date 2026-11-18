@@ -67,7 +67,6 @@ GEAR_ROOT, GEAR_TIP = DRUM_R + 0.015, DRUM_R + 0.032
 DRUM_BANDS = ((0.455, 0.485), (0.665, 0.69))
 # Brass strap inlays (proud of the top), x ranges on each side. Body straps flank the hinge; leaf
 # straps run parallel to it, so a hanging leaf shows them as horizontal bands level with the drum's.
-STRAP_H = 0.0015
 BODY_STRAP_X = (0.375, 0.395)
 LEAF_STRAPS_X = ((0.405, 0.435), (HINGE_X + (HINGE_Z - DRUM_BANDS[0][1]), HINGE_X + (HINGE_Z - DRUM_BANDS[0][0])))
 CROSS_STRAP_Y = (-0.012, 0.008)  # between the tray frame and the gear medallion
@@ -345,7 +344,24 @@ def build_scene(bpy, bmesh, detail: str, scene) -> dict:
     def strap(bm, x0, x1):
         """A strap inlay across the top between x0 < x1, ending at the rim lip's inner edge."""
         y0, y1 = se_y_at_x(R_IN, x0), se_y_at_x(R_IN, x1)
-        prism(bm, [(x0, -y0), (x1, -y1), (x1, y1), (x0, y0)], TOP, TOP + STRAP_H, P, P)
+        crowned_strap(bm, [(x0, -y0), (x1, -y1), (x1, y1), (x0, y0)])
+
+    def crowned_strap(bm, outline):
+        """Crown a CCW four-corner strap across its first edge, keeping its footprint fixed."""
+        profile = ((0.0, 0.0003), (0.25, 0.0019), (0.5, 0.0025), (0.75, 0.0019), (1.0, 0.0003))
+
+        def point(a, b, t, height):
+            return (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, TOP + height)
+
+        front = [point(outline[0], outline[1], t, h) for t, h in profile]
+        back = [point(outline[3], outline[2], t, h) for t, h in profile]
+        for i in range(len(profile) - 1):
+            face(bm, [front[i], front[i + 1], back[i + 1], back[i]], P)
+        bottom = [(x, y, TOP) for x, y in outline]
+        face(bm, [bottom[0], bottom[1], *reversed(front)], P)
+        face(bm, [bottom[1], bottom[2], back[-1], front[-1]], P)
+        face(bm, [bottom[2], bottom[3], *back], P)
+        face(bm, [bottom[3], bottom[0], front[0], back[0]], P)
 
     def ribbon(bm, curve, width, z0, z1, mat):
         """A flat strip of `width` along a polyline, extruded from z0 to z1 (top, both sides, ends)."""
@@ -447,7 +463,7 @@ def build_scene(bpy, bmesh, detail: str, scene) -> dict:
         x0, x1 = sorted((sgn * BODY_STRAP_X[0], sgn * BODY_STRAP_X[1]))
         strap(bm, x0, x1)
     cy0, cy1 = CROSS_STRAP_Y
-    prism(bm, [(-BODY_STRAP_X[0], cy0), (BODY_STRAP_X[0], cy0), (BODY_STRAP_X[0], cy1), (-BODY_STRAP_X[0], cy1)], TOP, TOP + STRAP_H, P, P)
+    crowned_strap(bm, [(BODY_STRAP_X[0], cy0), (BODY_STRAP_X[0], cy1), (-BODY_STRAP_X[0], cy1), (-BODY_STRAP_X[0], cy0)])
     parts.append((bm, "body", False))
     # Brass flourishes (flat inlay scrolls, table-sheet-1 panel 3): in front of the tray, and
     # flanking the gear medallion.

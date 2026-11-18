@@ -3,7 +3,7 @@
   "route": "scripted (procedural Blender geometry; no provider generation; shared PBR material sets)",
   "generator": {
     "path": "scripts/assets/build-combat-table.py",
-    "sha256": "8cca40653df170913a553fb5f69c76bb273c1f586701e952d28386131b949382"
+    "sha256": "0fc5a3305ff9487842e0712b0c58591050ffe9af649db9595df88869af9031eb"
   },
   "generatorDeps": [
     {
@@ -16,18 +16,18 @@
   "blendFiles": [
     {
       "path": "assets-source/props/combat-table/staging/combat-table.high.blend",
-      "sha256": "baded5d19f44a9bc4288bdba7daf7fc2a6782d36479df27a8ce16ad8ce5c89be",
-      "bytes": 973477
+      "sha256": "54008de9a1dd178535ae2c9bb8ebd98a5739453c47f6bf57416e5777ced9ee33",
+      "bytes": 978545
     },
     {
       "path": "assets-source/props/combat-table/staging/combat-table.low.blend",
-      "sha256": "304b06662ffd7a581bf57d083e7963276ffcbab36572fcd2c3b44d6dda3e9f01",
-      "bytes": 277081
+      "sha256": "59095a382067ac8f6e1e7242f8c824a4f3b69653c34775e008dc336bea8f8ea2",
+      "bytes": 280154
     }
   ],
   "budgets": {
-    "triangles": 6068,
-    "trianglesHigh": 34206,
+    "triangles": 6152,
+    "trianglesHigh": 34522,
     "maxTriangles": 20000,
     "materials": [
       "walnut",
@@ -45,26 +45,26 @@
     "size": 2048,
     "ao_distance_m": 0.12,
     "seconds_per_node": {
-      "table-body": 2.98,
-      "leaf-left": 1.15,
-      "leaf-right": 1.1
+      "table-body": 3.01,
+      "leaf-left": 1.09,
+      "leaf-right": 1.09
     },
-    "coverage": 0.3779,
-    "ao_mean": 0.8082,
+    "coverage": 0.3836,
+    "ao_mean": 0.8095,
     "ao_p05": 0.0
   },
   "texelDensityPxPerM": {
     "uv0_tile": {
       "walnut": 2048.0,
       "brass-aged": 2025.0,
-      "brass-polished": 2031.5,
+      "brass-polished": 2029.6,
       "felt": 4096.0
     },
     "uv1_ao": {
-      "walnut": 598.7,
-      "brass-aged": 592.0,
-      "brass-polished": 594.1,
-      "felt": 598.7
+      "walnut": 603.1,
+      "brass-aged": 596.5,
+      "brass-polished": 598.5,
+      "felt": 602.7
     }
   },
   "references": [
@@ -99,13 +99,13 @@
   "derivedFiles": [
     {
       "path": "public/assets/props/combat-table/combat-table.ao.ktx2",
-      "sha256": "af2541c0af04c8ab52a446a5eeffa45b54d060b8152eeea0f3ac2d4b686b0e32",
-      "bytes": 1418641
+      "sha256": "5d2b41faee8eff68f3c13b43d299326c4215850244d0179a16fbdf2b3df23c80",
+      "bytes": 1465692
     },
     {
       "path": "public/assets/props/combat-table/combat-table.ao.png",
-      "sha256": "76aebc35beab9ceecf2e63023c379a7b815e64e288f7c7a83ab1f43b4557c8dd",
-      "bytes": 1206551
+      "sha256": "6536ae98640fd5b5c79aee68fc1f5166cc3a9a14fda71c7c0e9776f1ddb1804b",
+      "bytes": 1229541
     },
     {
       "path": "public/assets/props/combat-table/combat-table.felt.basecolor.png",
@@ -119,19 +119,19 @@
     },
     {
       "path": "public/assets/props/combat-table/combat-table.glb",
-      "sha256": "5e8022dac723d1e610530f0e5ebb1f867bb2da0dc4688811b73834adaa5f31c2",
-      "bytes": 325308
+      "sha256": "174163a2c3e3238fdd7f7aa668a326b736ff06ef198d3ec4099c3b7115d85ec4",
+      "bytes": 330932
     },
     {
       "path": "public/assets/props/combat-table/combat-table.manifest.json",
-      "sha256": "2f50a43d1a6767fa012123ccf594d7069e4069df6602d13848b88068b44fcde7",
+      "sha256": "39833ea5fad4011bc4cc797109f1f50b06f44611105f7d184a59561ea37d69be",
       "bytes": 7711
     }
   ],
   "stagingReport": {
     "path": "assets-source/props/combat-table/staging/report.json",
-    "sha256": "1ea2b182a3754e2a9e7458418baf9a747f58f246ae92d4b099858ff1829c80e7",
-    "bytes": 6689
+    "sha256": "690942d54bcec4e2ab7b0e1d98b200d488f0d458344c660fbe798ca71854966c",
+    "bytes": 6690
   },
   "license": "Original work generated in Blender from a checked-in script; concept reference and the shared PBR material sources from Paul's paid Higgsfield plan (Terms of Use 4.4)",
   "validation": {
@@ -139,7 +139,7 @@
     "record": "docs/asset-validation.md section 2",
     "checks": [
       "15 staging and runtime hashes match",
-      "Reimport: 6,068 triangles, 4 materials",
+      "Reimport: 6,152 triangles, 4 materials",
       "Proof view and seated room 2 and 4 engine captures: ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)"
     ],
     "open": [
@@ -170,149 +170,108 @@
     }
   ],
   "independentScore": {
-    "score": 72,
+    "score": 79,
     "scale": "0-100 visual fidelity to the art bible and study-kit language",
-    "scorer": "independent reviewer agent (separate from the authoring agent; did not build the asset)",
+    "scorer": "independent reviewer (Claude Opus 5.5; separate from the authoring agent)",
     "date": "2026-11-17",
     "acceptanceBar": 80,
     "clearsBar": false,
-    "build": "b241d9b",
-    "previousScore": 58,
+    "build": "a26831b",
+    "previousScore": 72,
     "rubric": [
       {
         "criterion": "material fidelity to the art bible",
-        "points": 19,
+        "points": 21,
         "max": 25,
-        "note": "Walnut is now on target. A hue/L* mask over the game-fight top (300,372)-(1310,655) gives walnut #503221 L* 24.0, C* 19.7, hab 55.2, dE 4.9 to #583C26. It was dE 14.1 at L* 39.9 on the previous build. engine-player-view gives #5C3B26, dE 2.6. The grain matches the study by construction: the table binds the shared walnut set at tileMeters 0.5, the same as study_walnut in the study manifest. The felt now reads as cloth. The 3x crop of game-fight (690,500)-(910,575) shows nap streaks. Its high-pass SD is 5.4 against 3.0 to 3.9 for flat walnut boxes, up from 0.29 to 0.56 on the previous build. The felt mask #902F29 is dE 7.3 to ruby #93212B, previously 17.7. Brass is the weak material. The game-fight brass mask is #C3A16C L* 68.1, C* 32.9 (target 47.2), hab 79.5 (target 90.7), dE 19.3 to #DEC16A. It reads as pale cream and flat, not polished metal. The cross strap (580,463)-(740,467) has L* SD 0.9 and the gear ring (760,425)-(790,438) has SD 3.1. The automaton brass in the same frame has SD 12.5. Only the bell foot is lively (SD 12.3, p95 83.2). The flat look is a runtime tune: the manifest gives the brass slots envScale 3.4 and 4.5, a #FFE060 tint and roughnessScale 0.4 to 0.6."
+        "note": "Walnut is unchanged and still on target: game-fight shows a dark oiled brown with soft grain, which matches the study wood language. The felt still reads as ruby cloth with visible nap in engine-player-view and in the game-fight tray. The brass changed most. On b241d9b it read pale cream (L* 68). Now the rim, straps, tray frame and gear read as warm saturated gold in game-fight, and they sit closer to the automaton brass in the same frame. The before/after sheet confirms the shift from cream to gold on the rim, straps and foot. That agrees with the builder's rim L* 71.2 to 56.9 and cross strap 72.8 to 59.5. Brass still does not fully read as polished metal on the flat inlays. The straps and cross strap are a uniform band with no highlight gradient: the builder reports L* SD 1.0 against 0.9 before, and that SD did not improve. Only the bell foot and the curved rim show a specular sweep."
       },
       {
         "criterion": "form and silhouette (folded and unfolded)",
         "points": 15,
         "max": 20,
-        "note": "Both states have clean silhouettes. Unfolded is a 1.50 x 0.80 m oval: in engine-unfolded (275,215)-(545,395) it reads as a two-leaf oval on a banded walnut drum and a brass bell foot. In game-folded (620,430)-(985,715), the square centre top sits on the drum with the leaves hanging edge-on. The fight-view top language of table-sheet-1 panel 3 is now present: the tray is recessed in a bevelled frame (inner walls visible in the 2x crop of engine-player-view (240,190)-(560,560)), with strap inlays, a cross strap and flourishes. Panels 1 and 2 are still not met. Folded, the asset is a drop-leaf box on a partial drum, not the closed brass-banded drum with rune bands. Unfolded, it is a two-leaf oval, not radial petals around exposed gearing. The bell foot reads large and plain: (705,600)-(895,712) in game-folded, about 190 px wide against a 355 px top."
+        "note": "Unchanged from b241d9b, and the builder states node geometry is unchanged. Both states have clean silhouettes. Unfolded is a two-leaf oval on a banded walnut drum with a brass bell foot. Folded is a square top with the leaves hanging edge-on (game-folded, engine-folded). The top language of table-sheet-1 panel 3 is present: recessed bevelled tray, strap inlays, gear medallion and scroll inlays. Panels 1 and 2 remain unmet. Folded is not the closed brass-banded rune drum, and unfolded is not radial petals around exposed gearing. The bell foot still reads large and plain relative to the top in game-folded."
       },
       {
         "criterion": "lighting integration in engine",
-        "points": 13,
+        "points": 15,
         "max": 20,
-        "note": "The previous build's black brass is gone. That came from p3-desktop-fight-1-table.jpg, which predates this build: it shows the raised box tray, no straps and black brass. In game-fight every brass surface is lit: mask p05 L* 57.2, tray frame back p05 15.1. The table still reads as lit apart from the room. Its walnut is L* 24.0, against floor L* 11.7 at game-fight (60,700)-(240,800) and 12.2 at game-folded (300,600)-(500,700), wainscot L* 5.0 at game-folded (960,225)-(1080,330), and bookcase side L* 12.6. Yet the floor shows no light pool around the foot: 16.4 under the foot at (740,714)-(860,722) against 15.9 on both sides. Table brass (L* 68.1) is 18 L* brighter than the automaton brass in the same frame (L* 49.6 hound, 52.5 sentry, dE 21.5). There is no contact shadow where the foot meets the floor (+0.5 L*). Tray contact darkening is weak: -2.5 L* along the front lip at (700,590)-(760,596) against (560,600)-(640,606), +0.8 on the left side, and +0.4 under the gear."
+        "note": "Improved. game-folded now shows a dark contact ring on the floor around the bell foot, so the table no longer floats. This is consistent with the builder's 16.4 to 8.9 L* under the foot with the adjacent strips unchanged. The brass now sits nearer the automatons' tone instead of glowing cream. Still open: the table walnut reads brighter and more evenly lit than the lightmapped room wood and floor around it, so the table still looks lit apart from the room. The shadow appears only under the foot. There is no shadow from the top onto the drum or the floor, and the tray-lip and gear contact darkening still looks weak in game-fight."
       },
       {
         "criterion": "readability as a play surface",
         "points": 12,
         "max": 15,
-        "note": "The recessed tray reads clearly and the die stands out. Die body vs felt is dE 36.5 ((806,505)-(830,530) against (760,505)-(795,530)). Felt vs walnut is dE 33.9 and tray frame vs walnut is dE 34.6. The draw and discard pads are small: about 55 x 30 px at game-fight (385,490)-(440,520) and (1150,490)-(1210,520) in a 1600 px frame. They were empty in every frame of this build, so piles on them could not be judged. The top is busy: two straps per side, the cross strap, the rim and the flourishes cut the walnut into narrow wedges. The runtime FLEE and END TURN plaques cover the right panel and its straps at (940,530)-(1330,600). No frame of b241d9b shows a card lying on the felt."
+        "note": "Unchanged. The recessed tray reads clearly and the die stands out on the felt (game-fight). Felt, walnut and brass are well separated. The draw and discard pads are still small and empty. The FLEE and END TURN plaques still cover the right leaf, its straps and the edge of the discard pad. Strap lines still cut the top into narrow wedges. Not shown by any frame: a card lying on the felt, piles on the pads, or the hand in play over the tray. The hand is held below the table edge."
       },
       {
         "criterion": "surface defects (seams, normals, AO)",
-        "points": 5,
+        "points": 8,
         "max": 10,
-        "note": "New defect: the left body strap renders black. game-fight row profiles show a 12 to 16 px band at L* 0 to 1, immediately inboard of the left hinge strap. It runs from (572-580,440) to (484-496,600). The mirror right hinge reads as two brass straps (L* 92 and 87) with 4 px of walnut (L* 22 to 24) between them. The same black band shows in engine-grazing at x 140-156, y 350, in engine-player-view (160-200,300-440) and in the Blender render-player-view.png, so it is geometry, not runtime. Likely cause: scripts/assets/build-combat-table.py line 447 calls strap(bm, sgn*0.375, sgn*0.395). For sgn -1 that gives x0 > x1 against the docstring's x0 < x1, which reverses the prism winding and flips the face normals. The leaf straps sort with min/max and the right side is fine. Fixed since the previous build: grazing walnut L* SD dropped from 16.7 to 9.2-9.9 (engine-grazing (580,300)-(760,440)), and the aged-brass swirl no longer shows on the tray or rim (game-fight rim band (600,628)-(1000,645) L* SD 5.1, previously 13.1). Scratch streaks remain on the leaf rim end in engine-grazing (10,440)-(60,480): L* SD 22.3. Contact AO is weak, as noted under lighting."
+        "note": "The main fault is fixed. The left body strap that rendered black on b241d9b now reads as brass in game-fight, matching the mirrored right pair, and the before/after sheet confirms it. Builder figures: L* 0.7/0.3 to 57.1/53.2 at the stated boxes. No hinge seams or normal swirls are visible on the tray or rim. Remaining: scratch/streak texture on the near leaf rim end and coarse bark-like walnut grain at grazing light (engine-grazing, left foreground). Contact AO at the tray lip and gear is still faint."
       },
       {
         "criterion": "craft detail (hinges, inlay, edges)",
         "points": 8,
         "max": 10,
-        "note": "Present: the bevelled recessed tray frame (front bevel face (700,579)-(900,586) L* p95 96.5, so the edge catches light), brass strap inlays and a cross strap, four flat scroll inlays, a gear medallion with a domed boss, drum bands, and hinge knuckles (small brass tabs in the 3x crop of engine-folded (430,240)-(500,290)). The scrolls do not break the art-nouveau filigree rule. FLOURISH in the build script is w 0.007 m by h 0.0012 m, they are simple single-ribbon C-scrolls with no openwork or layered tendrils, and they come from table-sheet-1 panel 3. On screen they are 4 to 5 px wide (vertical profiles at x 760-860, y 590-618 in game-fight), so they read as flat inlay lines. Missing compared with the concept: rune bands on the drum and the sunk card wells beside the tray."
+        "note": "Unchanged. The bevelled recessed tray frame catches light on its front edge. Also present: strap inlays and the cross strap, four flat C-scroll inlays, a gear medallion with a domed boss, drum bands, hinge tabs visible folded (engine-folded), and a bell foot with a good highlight sweep. Still missing against the concept: rune bands on the drum and the sunk card wells beside the tray."
       }
     ],
     "topFixes": [
-      "Fix the black left body strap: in scripts/assets/build-combat-table.py line 447, pass the strap bounds sorted (min/max, as the leaf straps already do) so the sgn=-1 strap stops being built with reversed winding, then rebake",
-      "Make the table brass read as polished metal in the fight: lower envScale (3.4/4.5) and the #FFE060 tint in combat-table.manifest.json materialSlots, so the straps, rim and gear get a highlight gradient (strap L* SD 0.9 now, automaton brass SD 12.5) and sit nearer the automaton brass (L* 68 vs 50) and #DEC16A chroma (C* 33 vs 47)",
-      "Integrate the table with the room light: bring the table walnut (L* 24) toward the lightmapped wood around it, or give the floor a matching light pool, and add a contact shadow under the bell foot (currently +0.5 L* against the open floor)",
-      "Strengthen contact AO at the tray lip and gear plate (raise the walnut slot's contact, or bake a darker margin): the tray front is only -2.5 L* and the gear +0.4",
-      "Move toward table-sheet-1 panels 1 and 2 for the folded form: close the drum with brass rune bands so the folded table reads as the banded drum, and slim the plain bell foot",
-      "Simplify the top's line work or widen the panels, and keep the runtime FLEE and END TURN plaques off the right leaf so the pads read as play zones"
+      "Give the flat brass inlays (straps, cross strap, pad frames) a highlight gradient: slight bevel/crown geometry or a lower roughness so the straps stop reading as uniform paint (L* SD about 1)",
+      "Integrate the top with the room light: bring the table walnut down toward the lightmapped room wood, or add a matching floor light pool, and extend the contact shadow beyond the foot",
+      "Strengthen contact AO at the tray lip and gear plate",
+      "Keep the FLEE and END TURN plaques off the right leaf so the discard pad reads as a play zone, and enlarge the pads",
+      "Move the folded form toward table-sheet-1 panel 1 (closed drum with rune bands) and slim the bell foot",
+      "Capture proof of a card on the felt and piles on the pads before the next review",
+      "Calm the scratch streaks on the leaf rim end seen at grazing light"
     ],
-    "method": "I read docs/art-bible.md, table-sheet-1.png, the previous independentScore block and the study review sheet. I weighted the two b241d9b in-game frames first (staging/game-fight.jpg and game-folded.jpg, 1600x1000), then the four re-aimed engine-*.jpg (800x600). I used render-player-view.png, render-high-unfolded.png, the combat-table review sheet, report.json, the combat-table manifest, the build script and src/combat/table-asset-proof.ts only to attribute faults. p3-desktop-fight-1-table.jpg and the xr-emu frames predate the rebuild (p3 shows the raised box tray, no straps and black brass), so I did not score them. With Pillow and numpy (python3 -I, scripts in /tmp/fb17/table-score2/scripts/), I measured box means as sRGB, CIE L*, C*, hue angle, L* SD and p05/p95. I measured high-pass SD (luminance minus a 3 px Gaussian) for cloth versus wood, and CIE76 dE between surfaces and against the palette hexes #583C26, #DEC16A and #93212B. I classified hue/L* masks into walnut, brass and felt over each top, and took per-pixel L* row profiles across both hinge strap pairs and through the scroll ribbons. I compared contact strips next to the tray, gear and foot with strips 20 to 200 px away, and measured the automaton brass and the room wood in the same frames. I made 2 to 4x gridded crops of every scored area, including side-by-side crops against the previous build's frames in /tmp/fb17/table-score/crops/. The crops, annotated boxes and masks are in /tmp/fb17/table-score2/crops/, and the numbers are in measure.json, measure2.json and measure3.json there. The study desk in engine.desk.png is too small and dark to compare (desk body L* 3.5), so the walnut comparison relies on the shared set and tile size and on room wood in the same frames.",
+    "method": "I read docs/art-bible.md (palette: walnut #583C26, brass #DEC16A, ruby felt) and the previous independentScore of 72 on b241d9b with its rubric and topFixes, then the approved concept table-sheet-1.png. I scored the two in-game frames first (staging/game-fight.jpg with the die in the tray, and game-folded.jpg). Then I scored the engine proof frames (engine-player-view, engine-grazing, engine-folded, engine-unfolded) and the combat-table review sheet. For change attribution I used .local/handoff-build/table-before-after.jpg, and for room context the unchanged study shot docs/verification/p5-int-study.jpg. This was a visual review only, using the Read image viewer under the read-only constraint. I ran no pixel measurement scripts, so every L* figure quoted is the builder's, and I checked each one by eye only. All three checks agree with what is visible. The left strap is no longer black. The cross strap and rim moved from cream to gold. A dark contact ring now sits under the bell foot in game-folded. The strap SD claim (0.9 to 1.0) also matches what I see: the strap still looks flat. I did not open report.json, and I accepted the reimport figures (6,068 tris, 4 materials, unchanged node and budget contract) and the clean Metal Chromium log as stated by the builder without checking them. The quest and xr-emu frames predate this build and were excluded. The new frames do not show a card lying on the felt, piles on the pads, or the asset under Quest lighting. The faults still open from the 72 review are the panel 1 and 2 form gap, the missing rune bands and card wells, flat strap brass, the table lit apart from the room, weak tray and gear contact AO, small empty pads under the FLEE and END TURN plaques, and the leaf-end scratch streaks. Fixed since then: the black left strap, the pale cream brass tone and the missing foot contact shadow. 79 is below the bar of 80. This is not an owner approval.",
     "evidence": [
       {
-        "path": "assets-source/props/combat-table/staging/game-fight.jpg",
-        "sha256": "d2ef4879c117dd409ff76fed7fd845cd431bcc12a95b82397f71559903787c4e"
-      },
-      {
-        "path": "assets-source/props/combat-table/staging/game-folded.jpg",
-        "sha256": "68ff92fd0463befffaaa794f60d8aed5cf22f0acdd69906d2c95036593e676a7"
-      },
-      {
-        "path": "assets-source/props/combat-table/staging/engine-folded.jpg",
-        "sha256": "a61dceb24ea67d70100deb759e0abffdbba67a9705b232015ceffc59a866487c"
-      },
-      {
-        "path": "assets-source/props/combat-table/staging/engine-unfolded.jpg",
-        "sha256": "b52d7a5c76261937d8742f4bbc3484723296f54424f21515df369767d16585ba"
-      },
-      {
-        "path": "assets-source/props/combat-table/staging/engine-grazing.jpg",
-        "sha256": "6a3d011e4fc14ea656af41e2448c43e407fa4fca37156a092115bd1b636f2dd0"
-      },
-      {
-        "path": "assets-source/props/combat-table/staging/engine-player-view.jpg",
-        "sha256": "72e996da6a6c9eca2d2da480cb33eafd2e9ad05fff1b7f4d9e64067888bc265b"
-      },
-      {
-        "path": "assets-source/props/combat-table/staging/combat-table.review-sheet.jpg",
-        "sha256": "e1f71d64c54f46a9b1c586a6d08f8dafc8c11962bebfefd712f69fe683192aa3"
-      },
-      {
-        "path": "assets-source/props/combat-table/staging/render-player-view.png",
-        "sha256": "de251f09c7d0890034fc53676eaa614110d767d140e4e95c11e923d1de5b97c6"
-      },
-      {
-        "path": "assets-source/props/combat-table/staging/render-high-unfolded.png",
-        "sha256": "0d84e9a88a396ce4285d22e382ac5c7f1fb469acbfd52ebc7a1a0dea86838daf"
-      },
-      {
-        "path": "assets-source/props/combat-table/staging/report.json",
-        "sha256": "4ea5d26219950c72ec53cc482f8d03fb2499454fac833d267355a1c872776e3f"
-      },
-      {
-        "path": "assets-source/props/combat-table/provenance.json",
-        "sha256": "dec6ec1e803d16beadeb5c6a00f5387bd5f940ccb4ddcfa1e2d74654e34ce849"
+        "path": "docs/art-bible.md",
+        "sha256": "11da71b45f24eeb258ef77d328ef1aa009297a9231608cb80bb429aa3ff2ad6a"
       },
       {
         "path": "assets-source/concepts/table-sheet-1.png",
         "sha256": "bc5823964df0b85cce0c984d4555f2af7c57e5e55e7ae5740dbb35fd4dcb9f4c"
       },
       {
-        "path": "assets-source/rooms/study/staging/review-sheet.jpg",
-        "sha256": "cefaee013f802882f5660ba8669226f55ae36362aa752b62f33464142db9f38b"
+        "path": "assets-source/props/combat-table/provenance.json",
+        "sha256": "3b334d087c95527851a14d9d66f4c20c4714d56e317416b2f79abedf8a19b595",
+        "commit": "a26831b",
+        "note": "Prior review provenance as read at the scored commit"
       },
       {
-        "path": "assets-source/rooms/study/staging/renders/engine.desk.png",
-        "sha256": "fe61e4791a75b018b0aefffb2740429e298ee3acffa4a6c36927ce5db63f586e"
+        "path": "assets-source/props/combat-table/staging/game-fight.jpg",
+        "sha256": "0afdbd8cb45e68a3202dbcd0e17015b8afe30d2ace15037186b0a90e0a01afa3"
       },
       {
-        "path": "assets-source/rooms/study/staging/renders/engine.hero.png",
-        "sha256": "24771b6010d8af1bc33a5245a8e6d13525f4a8339c92bbb37cd0c03aae06396f"
+        "path": "assets-source/props/combat-table/staging/game-folded.jpg",
+        "sha256": "15cf1ee0947fe444194037dd5113d40b4f4a32dba97ac4aec71d73d25e9763fd"
       },
       {
-        "path": "assets-source/rooms/study/staging/renders/desk.high.png",
-        "sha256": "295e2b476c0e40246bf5433ce7148c6cdb6f0e348be4b491ed6e84e394d49f98"
+        "path": "assets-source/props/combat-table/staging/engine-player-view.jpg",
+        "sha256": "9890e72ce3df297645b8d554216ea8dc98d57326da77cc4cba719fc59117855c"
       },
       {
-        "path": "docs/verification/p3-desktop-fight-1-table.jpg",
-        "sha256": "5d78d40f6668d41778d0ea03c7d245846f6df353aba32ecddb6583de75352ad3"
+        "path": "assets-source/props/combat-table/staging/engine-grazing.jpg",
+        "sha256": "924eda8f00cf4882ca6ed2628300cfcd32fe51f938a4101910a2933189a0aeb4"
       },
       {
-        "path": "docs/art-bible.md",
-        "sha256": "11da71b45f24eeb258ef77d328ef1aa009297a9231608cb80bb429aa3ff2ad6a"
+        "path": "assets-source/props/combat-table/staging/engine-folded.jpg",
+        "sha256": "173e56139a67cd57534d46d5ecb06e7b8d9f519a59d50c86b42943ac0b517bde"
       },
       {
-        "path": "scripts/assets/build-combat-table.py",
-        "sha256": "5eb9fa362695b08c3a1d2db764d36a75059ed55ec9750746f41e325da6aee02e"
+        "path": "assets-source/props/combat-table/staging/engine-unfolded.jpg",
+        "sha256": "004ad0f4b86f38d0f5cbf2f7cbff96be81edcedcf3fc584e2349b7c1b816fed3"
       },
       {
-        "path": "public/assets/props/combat-table/combat-table.manifest.json",
-        "sha256": "9b3ee29dbbef22311d6b4d143f1fea79525227ee4bba7dd62c78b627de84fde7"
+        "path": "assets-source/props/combat-table/staging/combat-table.review-sheet.jpg",
+        "sha256": "ae96af29fc9988d892c45f5a7f433b054c0db592ef2e208a31f6ddc9a22156a6"
       },
       {
-        "path": "public/assets/rooms/study/study.manifest.json",
-        "sha256": "758cf894806e0babf142a3a3245282a1dc913436490c8233e47e55c025275286"
-      },
-      {
-        "path": "src/combat/table-asset-proof.ts",
-        "sha256": "47a884542fed259a73c6954f76170b57d2ec611e9e4839dc3bb3d584f931173a"
+        "path": "docs/verification/p5-int-study.jpg",
+        "sha256": "2a54130faf77c6c6c434c677b39b4337fe3a2d57de7c097331b06c9cfb4aeaaa"
       }
     ]
   },
@@ -535,6 +494,153 @@
           "sha256": "c4991ce5539612b50cd9821fd3e6895e58f66df2b8ecd3131b9f754d5f2a9c7a"
         }
       ]
+    },
+    {
+      "score": 72,
+      "scale": "0-100 visual fidelity to the art bible and study-kit language",
+      "scorer": "independent reviewer agent (separate from the authoring agent; did not build the asset)",
+      "date": "2026-11-17",
+      "acceptanceBar": 80,
+      "clearsBar": false,
+      "build": "b241d9b",
+      "previousScore": 58,
+      "rubric": [
+        {
+          "criterion": "material fidelity to the art bible",
+          "points": 19,
+          "max": 25,
+          "note": "Walnut is now on target. A hue/L* mask over the game-fight top (300,372)-(1310,655) gives walnut #503221 L* 24.0, C* 19.7, hab 55.2, dE 4.9 to #583C26. It was dE 14.1 at L* 39.9 on the previous build. engine-player-view gives #5C3B26, dE 2.6. The grain matches the study by construction: the table binds the shared walnut set at tileMeters 0.5, the same as study_walnut in the study manifest. The felt now reads as cloth. The 3x crop of game-fight (690,500)-(910,575) shows nap streaks. Its high-pass SD is 5.4 against 3.0 to 3.9 for flat walnut boxes, up from 0.29 to 0.56 on the previous build. The felt mask #902F29 is dE 7.3 to ruby #93212B, previously 17.7. Brass is the weak material. The game-fight brass mask is #C3A16C L* 68.1, C* 32.9 (target 47.2), hab 79.5 (target 90.7), dE 19.3 to #DEC16A. It reads as pale cream and flat, not polished metal. The cross strap (580,463)-(740,467) has L* SD 0.9 and the gear ring (760,425)-(790,438) has SD 3.1. The automaton brass in the same frame has SD 12.5. Only the bell foot is lively (SD 12.3, p95 83.2). The flat look is a runtime tune: the manifest gives the brass slots envScale 3.4 and 4.5, a #FFE060 tint and roughnessScale 0.4 to 0.6."
+        },
+        {
+          "criterion": "form and silhouette (folded and unfolded)",
+          "points": 15,
+          "max": 20,
+          "note": "Both states have clean silhouettes. Unfolded is a 1.50 x 0.80 m oval: in engine-unfolded (275,215)-(545,395) it reads as a two-leaf oval on a banded walnut drum and a brass bell foot. In game-folded (620,430)-(985,715), the square centre top sits on the drum with the leaves hanging edge-on. The fight-view top language of table-sheet-1 panel 3 is now present: the tray is recessed in a bevelled frame (inner walls visible in the 2x crop of engine-player-view (240,190)-(560,560)), with strap inlays, a cross strap and flourishes. Panels 1 and 2 are still not met. Folded, the asset is a drop-leaf box on a partial drum, not the closed brass-banded drum with rune bands. Unfolded, it is a two-leaf oval, not radial petals around exposed gearing. The bell foot reads large and plain: (705,600)-(895,712) in game-folded, about 190 px wide against a 355 px top."
+        },
+        {
+          "criterion": "lighting integration in engine",
+          "points": 13,
+          "max": 20,
+          "note": "The previous build's black brass is gone. That came from p3-desktop-fight-1-table.jpg, which predates this build: it shows the raised box tray, no straps and black brass. In game-fight every brass surface is lit: mask p05 L* 57.2, tray frame back p05 15.1. The table still reads as lit apart from the room. Its walnut is L* 24.0, against floor L* 11.7 at game-fight (60,700)-(240,800) and 12.2 at game-folded (300,600)-(500,700), wainscot L* 5.0 at game-folded (960,225)-(1080,330), and bookcase side L* 12.6. Yet the floor shows no light pool around the foot: 16.4 under the foot at (740,714)-(860,722) against 15.9 on both sides. Table brass (L* 68.1) is 18 L* brighter than the automaton brass in the same frame (L* 49.6 hound, 52.5 sentry, dE 21.5). There is no contact shadow where the foot meets the floor (+0.5 L*). Tray contact darkening is weak: -2.5 L* along the front lip at (700,590)-(760,596) against (560,600)-(640,606), +0.8 on the left side, and +0.4 under the gear."
+        },
+        {
+          "criterion": "readability as a play surface",
+          "points": 12,
+          "max": 15,
+          "note": "The recessed tray reads clearly and the die stands out. Die body vs felt is dE 36.5 ((806,505)-(830,530) against (760,505)-(795,530)). Felt vs walnut is dE 33.9 and tray frame vs walnut is dE 34.6. The draw and discard pads are small: about 55 x 30 px at game-fight (385,490)-(440,520) and (1150,490)-(1210,520) in a 1600 px frame. They were empty in every frame of this build, so piles on them could not be judged. The top is busy: two straps per side, the cross strap, the rim and the flourishes cut the walnut into narrow wedges. The runtime FLEE and END TURN plaques cover the right panel and its straps at (940,530)-(1330,600). No frame of b241d9b shows a card lying on the felt."
+        },
+        {
+          "criterion": "surface defects (seams, normals, AO)",
+          "points": 5,
+          "max": 10,
+          "note": "New defect: the left body strap renders black. game-fight row profiles show a 12 to 16 px band at L* 0 to 1, immediately inboard of the left hinge strap. It runs from (572-580,440) to (484-496,600). The mirror right hinge reads as two brass straps (L* 92 and 87) with 4 px of walnut (L* 22 to 24) between them. The same black band shows in engine-grazing at x 140-156, y 350, in engine-player-view (160-200,300-440) and in the Blender render-player-view.png, so it is geometry, not runtime. Likely cause: scripts/assets/build-combat-table.py line 447 calls strap(bm, sgn*0.375, sgn*0.395). For sgn -1 that gives x0 > x1 against the docstring's x0 < x1, which reverses the prism winding and flips the face normals. The leaf straps sort with min/max and the right side is fine. Fixed since the previous build: grazing walnut L* SD dropped from 16.7 to 9.2-9.9 (engine-grazing (580,300)-(760,440)), and the aged-brass swirl no longer shows on the tray or rim (game-fight rim band (600,628)-(1000,645) L* SD 5.1, previously 13.1). Scratch streaks remain on the leaf rim end in engine-grazing (10,440)-(60,480): L* SD 22.3. Contact AO is weak, as noted under lighting."
+        },
+        {
+          "criterion": "craft detail (hinges, inlay, edges)",
+          "points": 8,
+          "max": 10,
+          "note": "Present: the bevelled recessed tray frame (front bevel face (700,579)-(900,586) L* p95 96.5, so the edge catches light), brass strap inlays and a cross strap, four flat scroll inlays, a gear medallion with a domed boss, drum bands, and hinge knuckles (small brass tabs in the 3x crop of engine-folded (430,240)-(500,290)). The scrolls do not break the art-nouveau filigree rule. FLOURISH in the build script is w 0.007 m by h 0.0012 m, they are simple single-ribbon C-scrolls with no openwork or layered tendrils, and they come from table-sheet-1 panel 3. On screen they are 4 to 5 px wide (vertical profiles at x 760-860, y 590-618 in game-fight), so they read as flat inlay lines. Missing compared with the concept: rune bands on the drum and the sunk card wells beside the tray."
+        }
+      ],
+      "topFixes": [
+        "Fix the black left body strap: in scripts/assets/build-combat-table.py line 447, pass the strap bounds sorted (min/max, as the leaf straps already do) so the sgn=-1 strap stops being built with reversed winding, then rebake",
+        "Make the table brass read as polished metal in the fight: lower envScale (3.4/4.5) and the #FFE060 tint in combat-table.manifest.json materialSlots, so the straps, rim and gear get a highlight gradient (strap L* SD 0.9 now, automaton brass SD 12.5) and sit nearer the automaton brass (L* 68 vs 50) and #DEC16A chroma (C* 33 vs 47)",
+        "Integrate the table with the room light: bring the table walnut (L* 24) toward the lightmapped wood around it, or give the floor a matching light pool, and add a contact shadow under the bell foot (currently +0.5 L* against the open floor)",
+        "Strengthen contact AO at the tray lip and gear plate (raise the walnut slot's contact, or bake a darker margin): the tray front is only -2.5 L* and the gear +0.4",
+        "Move toward table-sheet-1 panels 1 and 2 for the folded form: close the drum with brass rune bands so the folded table reads as the banded drum, and slim the plain bell foot",
+        "Simplify the top's line work or widen the panels, and keep the runtime FLEE and END TURN plaques off the right leaf so the pads read as play zones"
+      ],
+      "method": "I read docs/art-bible.md, table-sheet-1.png, the previous independentScore block and the study review sheet. I weighted the two b241d9b in-game frames first (staging/game-fight.jpg and game-folded.jpg, 1600x1000), then the four re-aimed engine-*.jpg (800x600). I used render-player-view.png, render-high-unfolded.png, the combat-table review sheet, report.json, the combat-table manifest, the build script and src/combat/table-asset-proof.ts only to attribute faults. p3-desktop-fight-1-table.jpg and the xr-emu frames predate the rebuild (p3 shows the raised box tray, no straps and black brass), so I did not score them. With Pillow and numpy (python3 -I, scripts in /tmp/fb17/table-score2/scripts/), I measured box means as sRGB, CIE L*, C*, hue angle, L* SD and p05/p95. I measured high-pass SD (luminance minus a 3 px Gaussian) for cloth versus wood, and CIE76 dE between surfaces and against the palette hexes #583C26, #DEC16A and #93212B. I classified hue/L* masks into walnut, brass and felt over each top, and took per-pixel L* row profiles across both hinge strap pairs and through the scroll ribbons. I compared contact strips next to the tray, gear and foot with strips 20 to 200 px away, and measured the automaton brass and the room wood in the same frames. I made 2 to 4x gridded crops of every scored area, including side-by-side crops against the previous build's frames in /tmp/fb17/table-score/crops/. The crops, annotated boxes and masks are in /tmp/fb17/table-score2/crops/, and the numbers are in measure.json, measure2.json and measure3.json there. The study desk in engine.desk.png is too small and dark to compare (desk body L* 3.5), so the walnut comparison relies on the shared set and tile size and on room wood in the same frames.",
+      "evidence": [
+        {
+          "path": "assets-source/props/combat-table/staging/game-fight.jpg",
+          "sha256": "d2ef4879c117dd409ff76fed7fd845cd431bcc12a95b82397f71559903787c4e"
+        },
+        {
+          "path": "assets-source/props/combat-table/staging/game-folded.jpg",
+          "sha256": "68ff92fd0463befffaaa794f60d8aed5cf22f0acdd69906d2c95036593e676a7"
+        },
+        {
+          "path": "assets-source/props/combat-table/staging/engine-folded.jpg",
+          "sha256": "a61dceb24ea67d70100deb759e0abffdbba67a9705b232015ceffc59a866487c"
+        },
+        {
+          "path": "assets-source/props/combat-table/staging/engine-unfolded.jpg",
+          "sha256": "b52d7a5c76261937d8742f4bbc3484723296f54424f21515df369767d16585ba"
+        },
+        {
+          "path": "assets-source/props/combat-table/staging/engine-grazing.jpg",
+          "sha256": "6a3d011e4fc14ea656af41e2448c43e407fa4fca37156a092115bd1b636f2dd0"
+        },
+        {
+          "path": "assets-source/props/combat-table/staging/engine-player-view.jpg",
+          "sha256": "72e996da6a6c9eca2d2da480cb33eafd2e9ad05fff1b7f4d9e64067888bc265b"
+        },
+        {
+          "path": "assets-source/props/combat-table/staging/combat-table.review-sheet.jpg",
+          "sha256": "e1f71d64c54f46a9b1c586a6d08f8dafc8c11962bebfefd712f69fe683192aa3"
+        },
+        {
+          "path": "assets-source/props/combat-table/staging/render-player-view.png",
+          "sha256": "de251f09c7d0890034fc53676eaa614110d767d140e4e95c11e923d1de5b97c6"
+        },
+        {
+          "path": "assets-source/props/combat-table/staging/render-high-unfolded.png",
+          "sha256": "0d84e9a88a396ce4285d22e382ac5c7f1fb469acbfd52ebc7a1a0dea86838daf"
+        },
+        {
+          "path": "assets-source/props/combat-table/staging/report.json",
+          "sha256": "4ea5d26219950c72ec53cc482f8d03fb2499454fac833d267355a1c872776e3f"
+        },
+        {
+          "path": "assets-source/props/combat-table/provenance.json",
+          "sha256": "dec6ec1e803d16beadeb5c6a00f5387bd5f940ccb4ddcfa1e2d74654e34ce849"
+        },
+        {
+          "path": "assets-source/concepts/table-sheet-1.png",
+          "sha256": "bc5823964df0b85cce0c984d4555f2af7c57e5e55e7ae5740dbb35fd4dcb9f4c"
+        },
+        {
+          "path": "assets-source/rooms/study/staging/review-sheet.jpg",
+          "sha256": "cefaee013f802882f5660ba8669226f55ae36362aa752b62f33464142db9f38b"
+        },
+        {
+          "path": "assets-source/rooms/study/staging/renders/engine.desk.png",
+          "sha256": "fe61e4791a75b018b0aefffb2740429e298ee3acffa4a6c36927ce5db63f586e"
+        },
+        {
+          "path": "assets-source/rooms/study/staging/renders/engine.hero.png",
+          "sha256": "24771b6010d8af1bc33a5245a8e6d13525f4a8339c92bbb37cd0c03aae06396f"
+        },
+        {
+          "path": "assets-source/rooms/study/staging/renders/desk.high.png",
+          "sha256": "295e2b476c0e40246bf5433ce7148c6cdb6f0e348be4b491ed6e84e394d49f98"
+        },
+        {
+          "path": "docs/verification/p3-desktop-fight-1-table.jpg",
+          "sha256": "5d78d40f6668d41778d0ea03c7d245846f6df353aba32ecddb6583de75352ad3"
+        },
+        {
+          "path": "docs/art-bible.md",
+          "sha256": "11da71b45f24eeb258ef77d328ef1aa009297a9231608cb80bb429aa3ff2ad6a"
+        },
+        {
+          "path": "scripts/assets/build-combat-table.py",
+          "sha256": "5eb9fa362695b08c3a1d2db764d36a75059ed55ec9750746f41e325da6aee02e"
+        },
+        {
+          "path": "public/assets/props/combat-table/combat-table.manifest.json",
+          "sha256": "9b3ee29dbbef22311d6b4d143f1fea79525227ee4bba7dd62c78b627de84fde7"
+        },
+        {
+          "path": "public/assets/rooms/study/study.manifest.json",
+          "sha256": "758cf894806e0babf142a3a3245282a1dc913436490c8233e47e55c025275286"
+        },
+        {
+          "path": "src/combat/table-asset-proof.ts",
+          "sha256": "47a884542fed259a73c6954f76170b57d2ec611e9e4839dc3bb3d584f931173a"
+        }
+      ]
     }
   ],
   "revision": {
@@ -542,44 +648,45 @@
     "changes": [
       "Corrected left strap winding",
       "Retuned brass",
-      "Added a runtime floor contact shadow"
+      "Added a runtime floor contact shadow",
+      "Crowned brass inlays to recover a specular highlight gradient"
     ]
   },
   "reviewEvidence": [
     {
       "path": "assets-source/props/combat-table/staging/combat-table.review-sheet.jpg",
-      "sha256": "ae96af29fc9988d892c45f5a7f433b054c0db592ef2e208a31f6ddc9a22156a6",
-      "bytes": 523069
+      "sha256": "84192e46026df23895eee3b6cd0654bd2b10cc3f4f14cde07020d6b7d7e14031",
+      "bytes": 526701
     },
     {
       "path": "assets-source/props/combat-table/staging/engine-folded.jpg",
-      "sha256": "173e56139a67cd57534d46d5ecb06e7b8d9f519a59d50c86b42943ac0b517bde",
-      "bytes": 16737
+      "sha256": "69ef4aa37f445c2505df6d44fee735a97d191e7fea9e5eb7fccc4c43c576f99d",
+      "bytes": 16811
     },
     {
       "path": "assets-source/props/combat-table/staging/engine-grazing.jpg",
-      "sha256": "924eda8f00cf4882ca6ed2628300cfcd32fe51f938a4101910a2933189a0aeb4",
-      "bytes": 66610
+      "sha256": "96678c8cfa987a78366386d22668eb48b3ce1587b159ecc5620a034c0e642bbd",
+      "bytes": 68485
     },
     {
       "path": "assets-source/props/combat-table/staging/engine-player-view.jpg",
-      "sha256": "9890e72ce3df297645b8d554216ea8dc98d57326da77cc4cba719fc59117855c",
-      "bytes": 70045
+      "sha256": "a0eaec0f9d42181cc000a7cf057efe2bf65978baf37b0c5347cb85e3cc273050",
+      "bytes": 71595
     },
     {
       "path": "assets-source/props/combat-table/staging/engine-unfolded.jpg",
-      "sha256": "004ad0f4b86f38d0f5cbf2f7cbff96be81edcedcf3fc584e2349b7c1b816fed3",
-      "bytes": 17249
+      "sha256": "f9350af4ad4bab2ca676a38025f6f38ecbab23fa9154ccaf857efe6478b03cf0",
+      "bytes": 17435
     },
     {
       "path": "assets-source/props/combat-table/staging/game-fight.jpg",
-      "sha256": "0afdbd8cb45e68a3202dbcd0e17015b8afe30d2ace15037186b0a90e0a01afa3",
-      "bytes": 390370
+      "sha256": "8933c57636e142a68233804695b676a1dd4e2ed255026d12f5599f9fc9d16342",
+      "bytes": 390405
     },
     {
       "path": "assets-source/props/combat-table/staging/game-folded.jpg",
-      "sha256": "15cf1ee0947fe444194037dd5113d40b4f4a32dba97ac4aec71d73d25e9763fd",
-      "bytes": 372919
+      "sha256": "0783ec8cf6dd870ea56c9d3383b6ac0c93274580d91768c4916038e5618733e6",
+      "bytes": 372867
     }
   ]
 }

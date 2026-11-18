@@ -287,7 +287,7 @@
     ]
   },
   "budgets": {
-    "triangles": 6068,
+    "triangles": 6152,
     "triangleLimit": 20000,
     "materials": 4,
     "materialLimit": 4
