@@ -88,6 +88,16 @@ function defaultPerfStorage(): PerfStorage | null {
 type PerfGlobals = { __spirePerfMark?: (label?: string) => void; __spirePerfClear?: () => void };
 
 /**
+ * `?fbscale=` overrides the stored framebuffer scale for this page load (a headset A/B; nothing is
+ * saved), clamped to 0.5-2. Null when absent or not a positive number.
+ */
+export function scaleOverrideFromSearch(search: string): number | null {
+  const raw = new URLSearchParams(search).get('fbscale');
+  const value = raw === null ? Number.NaN : Number(raw);
+  return Number.isFinite(value) && value > 0 ? Math.min(2, Math.max(0.5, value)) : null;
+}
+
+/**
  * Wires performance instrumentation. Always: applies the stored framebuffer scale now (call
  * before Enter VR), re-asserts the foveation level (`options.foveation`, then `setFoveation`)
  * every frame, and aggregates 2 s frame windows. With
@@ -109,7 +119,10 @@ export function mountPerf(
     options.perfStorage === undefined ? defaultPerfStorage() : options.perfStorage;
   const storage = options.storage;
   const loadedScale = storage === undefined ? loadXrScale() : loadXrScale(storage);
-  applySessionScale(renderer, loadedScale);
+  const override = scaleOverrideFromSearch(search);
+  const sessionScale = override ?? loadedScale;
+  if (override === null) applySessionScale(renderer, loadedScale);
+  else if (!renderer.xr.isPresenting) renderer.xr.setFramebufferScaleFactor(override);
   let foveation = options.foveation ?? XR_FOVEATION;
 
   let gauge: PerfGauge | null = null;
@@ -130,7 +143,7 @@ export function mountPerf(
           ? (renderer.xr.getSession?.()?.frameRate ?? options.targetHz ?? DEFAULT_TARGET_HZ)
           : null,
         foveation,
-        scale: loadedScale,
+        scale: sessionScale,
       }),
     });
     setActivePerfRecorder(recorder);

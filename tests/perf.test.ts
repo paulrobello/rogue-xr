@@ -2,7 +2,7 @@ import { FOVEATION_LEVELS } from '@par/xr-workspace';
 import type * as THREE from 'three';
 import { describe, expect, it, vi } from 'vitest';
 import { FrameStats, percentileNearestRank, RateSampler } from '../src/perf/frame-stats.ts';
-import { mountPerf } from '../src/perf/index.ts';
+import { mountPerf, scaleOverrideFromSearch } from '../src/perf/index.ts';
 import {
   applySessionScale,
   assertFoveation,
@@ -318,5 +318,35 @@ describe('foveation setting (F4)', () => {
     perf.frame(14, 1000);
     expect(renderer.xr.setFoveation).toHaveBeenLastCalledWith(0.5);
     perf.dispose();
+  });
+});
+
+describe('?fbscale headset A/B', () => {
+  const idle = () => ({
+    xr: { isPresenting: false, setFramebufferScaleFactor: vi.fn(), setFoveation: vi.fn() },
+  });
+  const mount = (renderer: ReturnType<typeof idle>, search: string) =>
+    mountPerf(renderer as unknown as THREE.WebGLRenderer, {} as THREE.Scene, {} as THREE.Group, {
+      enabled: false,
+      camera: {} as THREE.Camera,
+      storage: memoryStorage({ 'rogue-xr.xrScale': '0.85' }),
+      search,
+    });
+
+  it('overrides the stored scale for the page load, clamped to 0.5-2', () => {
+    const r = idle();
+    mount(r, '?fbscale=1.25');
+    expect(r.xr.setFramebufferScaleFactor).toHaveBeenCalledTimes(1);
+    expect(r.xr.setFramebufferScaleFactor).toHaveBeenLastCalledWith(1.25);
+    expect(scaleOverrideFromSearch('?fbscale=3')).toBe(2);
+    expect(scaleOverrideFromSearch('?fbscale=0.1')).toBe(0.5);
+  });
+
+  it('keeps the stored scale without the param or with a bad value', () => {
+    for (const search of ['', '?fbscale=', '?fbscale=abc', '?fbscale=-1']) {
+      const r = idle();
+      mount(r, search);
+      expect(r.xr.setFramebufferScaleFactor).toHaveBeenLastCalledWith(0.85);
+    }
   });
 });
