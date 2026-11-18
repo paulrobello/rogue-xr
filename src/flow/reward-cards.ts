@@ -265,6 +265,11 @@ export class RewardCardFaces {
   }
 
   /** Lifts, grows and frames the card `id` (or drops the highlight with `on` false). */
+  /** The slot of the card with `id`, or the `index`th slot; undefined when there is none. */
+  slot(key: string | number): RewardCardSlot | undefined {
+    return typeof key === 'number' ? this.slots[key] : this.slots.find((s) => s.id === key);
+  }
+
   hover(id: string, on: boolean): void {
     const index = this.slots.findIndex((s) => s.id === id);
     if (index < 0 || this.leaving) return;

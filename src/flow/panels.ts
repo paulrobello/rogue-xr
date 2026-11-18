@@ -9,6 +9,9 @@ import {
 } from '@par/xr-workspace';
 import * as THREE from 'three';
 import { TABLE_DISTANCE_CHOICES } from '../combat/placement.ts';
+import { CanvasLabel } from '../combat-view/canvas-label.ts';
+import { cardTip } from '../combat-view/card-keywords.ts';
+import { drawTip } from '../combat-view/status-info.ts';
 import { getCard } from '../content/cards.ts';
 import { formatSeed } from '../core/rng.ts';
 import { appendSeedChar, SEED_ALPHABET, SEED_LENGTH } from '../desktop/seed-title.ts';
@@ -26,7 +29,21 @@ import { SKIP_REWARD } from '../rules/run.ts';
 import { maxTier, nextCost, UPGRADE_IDS, UPGRADES, type UpgradeId } from '../rules/workshop.ts';
 import { CARD_FLIGHT_SECONDS, flightGoal, flightPose, flightScale } from './card-flight.ts';
 import type { FlowPhase, RunFlow } from './flow.ts';
-import { RewardCardFaces, type RewardCardFacesOptions } from './reward-cards.ts';
+import {
+  RewardCardFaces,
+  type RewardCardFacesOptions,
+  type RewardCardSlot,
+} from './reward-cards.ts';
+
+/**
+ * The card keyword tip on the reward board and the deck viewer: canvas height (fits a three-keyword
+ * card), width, and how far it stands in front of the card face (clear of the hover lift), metres.
+ */
+const CARD_TIP_PX_HEIGHT = 600;
+const CARD_TIP_WIDTH = 0.3;
+const CARD_TIP_FORWARD = 0.06;
+/** Control id prefix of a deck viewer card: `deck-card-<index on the page>`. */
+const DECK_CARD = 'deck-card-';
 
 /** Title key art and its runtime-title safe region (0..1, origin top-left), from `ui-atlas.json`. */
 export interface KeyArt {
@@ -294,6 +311,13 @@ export class FlowUi {
   private rewardFaces: RewardCardFaces | null = null;
   private deckFaces: RewardCardFaces | null = null;
   private deckPage = 0;
+  /** Invisible hit planes over the deck viewer's cards, so the pointer can rest on one. */
+  private deckHits: THREE.Group | null = null;
+  /** Built on first use; null when the canvas is unavailable. */
+  private cardTipLabel: CanvasLabel | null | undefined;
+  private cardTipKey = '';
+  /** The card whose keyword tip shows (its id and keyword titles), or null. */
+  cardTipShown: { id: string; titles: string[] } | null = null;
   private hoveredId: string | null = null;
   /** Control ids drawn as the chosen option. */
   private readonly selectedIds = new Set<string>();
@@ -415,11 +439,17 @@ export class FlowUi {
 
   /** Objects a pointer ray should test. */
   targets(): THREE.Object3D[] {
-    return this.root.visible ? this.boards.map((b) => b.panel.root) : [];
+    if (!this.root.visible) return [];
+    const out = this.boards.map((b) => b.panel.root);
+    if (this.deckHits) out.push(this.deckHits);
+    return out;
   }
 
-  /** Control id under a hit object, or null. */
+  /** Control id under a hit object, or null. A deck viewer card is `deck-card-<index>`. */
   controlAt(object: THREE.Object3D): string | null {
+    const deckIndex: unknown = object.userData.deckCard;
+    if (typeof deckIndex === 'number' && object.parent === this.deckHits)
+      return `${DECK_CARD}${deckIndex}`;
     for (const board of this.boards) {
       const cell = board.panel.cellAt(object);
       if (cell) return `${board.name}-${cell}`;
@@ -439,6 +469,71 @@ export class FlowUi {
     this.paintHover(this.hoveredId, false);
     this.hoveredId = controlId;
     this.paintHover(controlId, true);
+    this.showCardTip(controlId);
+  }
+
+  /**
+   * Playtest 2026-11-17: a reward or deck viewer card the laser or mouse rests on shows the
+   * explanation of each keyword it uses above it (the combat hand's tip, `drawTip` over `cardTip`).
+   */
+  private showCardTip(controlId: string | null): void {
+    const found = controlId ? this.cardAt(controlId) : null;
+    const entries = found ? cardTip(getCard(found.id)) : [];
+    const label = found && entries.length > 0 ? this.cardTip() : null;
+    if (!found || !label) {
+      this.hideCardTip();
+      return;
+    }
+    if (found.id !== this.cardTipKey) {
+      this.cardTipKey = found.id;
+      label.draw((ctx, w, h) => drawTip(ctx, w, h, entries, true));
+    }
+    const { slot, faces } = found;
+    const height = label.mesh.geometry.parameters.height;
+    faces.root.add(label.mesh);
+    label.mesh.position.set(slot.x, slot.y + slot.height / 2 + height / 2, CARD_TIP_FORWARD);
+    label.mesh.visible = true;
+    this.cardTipShown = { id: found.id, titles: entries.map((e) => e.title) };
+  }
+
+  private hideCardTip(): void {
+    this.cardTipShown = null;
+    this.cardTipKey = '';
+    if (this.cardTipLabel) {
+      this.cardTipLabel.mesh.visible = false;
+      this.cardTipLabel.mesh.removeFromParent();
+    }
+  }
+
+  /** The tip label, built on first use (null when there is no 2D canvas). */
+  private cardTip(): CanvasLabel | null {
+    if (this.cardTipLabel === undefined) {
+      try {
+        this.cardTipLabel = new CanvasLabel(640, CARD_TIP_PX_HEIGHT, CARD_TIP_WIDTH);
+        this.cardTipLabel.mesh.name = 'flow-card-tip';
+        this.cardTipLabel.mesh.renderOrder = 4;
+        this.cardTipLabel.mesh.material.depthTest = false;
+        this.cardTipLabel.mesh.raycast = () => undefined;
+      } catch {
+        this.cardTipLabel = null;
+      }
+    }
+    return this.cardTipLabel;
+  }
+
+  /** The card a control id names on the reward board or the deck viewer, with its face slot. */
+  private cardAt(
+    controlId: string,
+  ): { id: string; slot: RewardCardSlot; faces: RewardCardFaces } | null {
+    if (controlId.startsWith(DECK_CARD) && this.deckFaces) {
+      const index = Number(controlId.slice(DECK_CARD.length));
+      const slot = this.deckFaces.slot(index);
+      return slot ? { id: slot.id, slot, faces: this.deckFaces } : null;
+    }
+    const target = this.boardOf(controlId);
+    if (target?.board.name !== 'reward' || !this.rewardFaces) return null;
+    const slot = this.rewardFaces.slot(target.cell);
+    return slot ? { id: slot.id, slot, faces: this.rewardFaces } : null;
   }
 
   /** Desktop typing into the seed field. Returns whether the key was used. */
@@ -489,6 +584,8 @@ export class FlowUi {
   dispose(): void {
     this.endFlight();
     this.clear();
+    this.cardTipLabel?.dispose();
+    this.cardTipLabel = null;
     this.stopAbove();
     this.stopUpdate();
     this.artTexture?.dispose();
@@ -532,10 +629,18 @@ export class FlowUi {
         (art.material as THREE.Material).dispose();
       }
     }
+    this.hideCardTip();
     this.rewardFaces?.dispose();
     this.rewardFaces = null;
     this.deckFaces?.dispose();
     this.deckFaces = null;
+    this.deckHits?.traverse((o) => {
+      if (o instanceof THREE.Mesh) {
+        o.geometry.dispose();
+        (o.material as THREE.Material).dispose();
+      }
+    });
+    this.deckHits = null;
     this.boards = [];
     this.extras = [];
     this.selectedIds.clear();
@@ -1016,6 +1121,19 @@ export class FlowUi {
     this.deckFaces.root.name = 'deck-card-faces';
     this.deckFaces.root.position.set(0, cardsTop, -BOARD_DISTANCE);
     this.root.add(this.deckFaces.root);
+    // The faces only draw; these undrawn planes take the pointer for the keyword tip.
+    this.deckHits = new THREE.Group();
+    this.deckHits.name = 'deck-card-hits';
+    slots.forEach((slot, i) => {
+      const hit = new THREE.Mesh(
+        new THREE.PlaneGeometry(slot.width, slot.height),
+        new THREE.MeshBasicMaterial({ visible: false }),
+      );
+      hit.position.set(slot.x, slot.y, 0);
+      hit.userData.deckCard = i;
+      this.deckHits?.add(hit);
+    });
+    this.deckFaces.root.add(this.deckHits);
     const navY = cardsTop - DECK_ROWS * cardHeight - (DECK_ROWS - 1) * DECK_GAP - 0.05;
     this.board(
       'menu-deck-nav',
@@ -1053,6 +1171,7 @@ export class FlowUi {
    */
   private pickRewardCard(slot: { id: string; x: number; y: number; width: number }): void {
     const { flow } = this.deps;
+    this.hideCardTip();
     const target = this.deps.flyTarget?.() ?? null;
     if (!target || !this.rewardFaces?.claim(slot.id)) {
       flow.pickReward(slot.id);
