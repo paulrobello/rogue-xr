@@ -466,49 +466,169 @@
     }
   ],
   "independentScore": {
-    "score": 68,
+    "score": 74,
     "scale": "0-100 visual fidelity to the art bible and study-kit language",
     "scorer": "independent reviewer agent (separate from the authoring agent; did not build the asset)",
-    "date": "2026-11-16",
+    "date": "2026-11-17",
     "acceptanceBar": 80,
     "clearsBar": false,
+    "build": "b1df5d3",
+    "previousScore": 68,
     "rubric": [
       {
         "criterion": "form, layout and proportions",
-        "points": 21,
+        "points": 24,
         "max": 30,
-        "note": "10x10x4 m box with coffered beam ceiling, walnut wainscot and four offset 1.6 m doors; proportions sit right for a seated 1.6 m probe. It is a plain rectangle with no alcove, niche, arch or hearth recess. The study benchmark is also a box but fills its walls with bookcases, while the hall walls are bare wallpaper above the wainscot."
+        "note": "Fixed in part: the walls are now broken into pilaster bays with moulded panels, two candle niches, a fireplace breast and a ceiling cove on the far wall (hero x 300-1060, y 230-470; p5-int-hall.jpg). That answers the old 'plain rectangle' finding. Still a 10x10 m box at one ceiling height, and the fireplace is small for the room: its surround spans hero x 422-508 (about 7% of frame width) against a 1280 px wall run, so it does not anchor the far wall. Plug check (scripts/plug.py, bbox from |in-out|>25): gilt pixels in 10 px bands on left, right and top of the former door box are 0.00% on all three bands; column-mean L* across the edges stays within 1.5 L* (left 5.6-8.7, right 9.0-10.9, top 11.5-13.8); Laplacian variance on the edges (77-81 against 66-84 inside and outside) sits inside the range of the open wall beside it, so no seam, leak, z-fight or leftover architrave."
       },
       {
         "criterion": "signature features: gathering space",
-        "points": 15,
+        "points": 18,
         "max": 25,
-        "note": "Gear chandelier, brass compass floor inlay, two benches, one stained-glass lancet and two floor candelabra. That is thin for a gathering space. The template has no hearth, table or rug (hearth and rug are runtime dressing), so the floor area reads empty in p5-rooms-hall-hero.jpg."
+        "note": "Fixed in part: a hearth, two wall niches with candles, floor candelabra, benches and the compass inlay now give the room a gathering read; p5-int-hall.jpg shows the study through the east door with its gear column, so the hall arrives somewhere. Still thin: the niches are dim boxes (hero niche box 690-738 x 325-388: L* 22.0, p90 39.7) with a single 1-2 px candle each, and the fireplace reads as a pale tiled box rather than a lit hearth (3x crop hall-fire-3x.jpg). No table or rug in the template, so the floor centre is still empty apart from the inlay."
       },
       {
         "criterion": "surface detail and material read",
-        "points": 14,
+        "points": 12,
         "max": 20,
-        "note": "Lightmap is clean: 68.6 px/m mean against the study's 66.3, coverage 0.742, no visible seams at the north/west door joins (seam-north, seam-west-turned). Kit-wide deduction: lightmap-only over shared tiling sets, where the study ships baked basecolor/normal/ORM from a 124,581-tri high-poly (hall high is 25,115). Walls are one repeating damask with no breakup."
+        "note": "New faults on the new dressing. The fire is three flat cone cards of one colour with hard edges (3x crop of plug-n-in x 150-420, y 340-540), the same flat-card fault the other rooms carry. The firebox interior is pale cream stone with no soot or glow gradient: surround box 422-508 x 400-462 runs L* p10 8.7 to p90 75.9, mean RGB 129,91,61, making it the palest large surface in the room. Lightmap density fell from 68.6 to 52.5 px/m mean (report.json, min 44.4) against the study's 65.5. Damask, wainscot grain and floor stone still read cleanly."
       },
       {
         "criterion": "colour, value and lighting mood",
-        "points": 10,
+        "points": 11,
         "max": 15,
-        "note": "Palette is on-bible: warm floor RGB 93,71,56, walnut ceiling 84,38,20, stained-glass patch on the floor. Kit/runtime deduction shared with the study (engine/diffuse frame ratio 1.90 vs study 1.89): in engine the floor shows no pools, foreground L=76 against back-floor L=77. The lightmap itself is also flatter than the study (p90/p10 texel ratio 3.96 vs 7.0)."
+        "note": "Palette on-bible: hero frame hue 17.1, sat 0.751, L* 13.6, near the study engine hero (18.8, 0.713, 11.7). Floor value range improved: hero floor rows 470-720 L* p90/p10 6.84 (old bake figure 3.96). The in-game floor is still flat: p5-int-hall.jpg rows 600-930 give p90/p10 2.88 against 5.15 in p5-int-study.jpg. Fire colour misses candle amber: flame mask in hero x 440-495 measures RGB 213,170,127, hue 30.2, sat 0.41, R-B 86, against #F3BE65 at hue 37.4, sat 0.58, so it reads peach-cream. The left wall at hero x 0-100, y 180-400 is L* 8.8 with 46.5% of pixels under L* 5."
       },
       {
         "criterion": "readability and comfort at seated VR distance",
-        "points": 8,
+        "points": 9,
         "max": 10,
-        "note": "Large clean forms, a clear enemy lane at 2-2.5 m, and a chandelier above head height. The gilt damask is high-contrast near the sconces (L p5 39 to p95 149), which is busy at the periphery."
+        "note": "Large clean forms and an open 2-2.5 m lane. In-game frame has 18.2% under L* 5 and 1.9% under L* 2 (HUD masked), lower crush than the study in-game (21.8%, 7.3%). Small deduction: the pale fireplace box is the brightest large surface at eye height (L* p90 75.9) and pulls the eye from the lane."
       }
     ],
     "topFixes": [
-      "Add a role anchor to the template: a fireplace recess or long table zone with its own baked warm pool, so the gathering read does not depend on runtime dressing.",
-      "Break up the wall plane with bookcase or panelled bays and one niche per wall, so it matches the study's dense walls; the wallpaper should cover far less area.",
-      "Restore floor value falloff: the bake p90/p10 is 3.96 against the study's 7.0, so tighten sconce falloff and darken the corners, then fix the kit-wide engine exposure/env flattening."
+      "Rebuild the fireplace as a lit hearth: darken and soot the firebox interior (surround box L* p90 75.9 now), replace the three flat cone cards with layered soft-edged flame cards graded from a hot core to candle amber (#F3BE65; now hue 30.2, sat 0.41), and bake a warm floor pool in front of it.",
+      "Scale the fireplace up to anchor the far wall (it spans about 7% of hero width) or give it an overmantel, and make the two niches read: brighter candle and a baked warm pool inside (niche L* 22.0 now).",
+      "Restore lightmap density to the study's level (52.5 px/m mean now against 68.6 before and 65.5 in the study) and lift in-game floor falloff (p5-int-hall floor p90/p10 2.88 against the study's 5.15)."
     ],
-    "method": "Looked at (2026-11-16): docs/art-bible.md; PRD.md lightmap contract (lines 87-95); assets-source/concepts/room-sheet-1.png, room-sheet-2.png; study benchmark assets-source/rooms/study/staging/review-sheet.jpg + provenance.json + engine-compare.json; docs/verification/p5-int-study.jpg; assets-source/rooms/hall/provenance.json, staging/review-sheet.jpg, staging/engine-compare.json, staging/hall.lightmap.png (texel stats), docs/verification/p5-rooms-hall-*.jpg and p5-int-hall*.jpg; Pillow crops and region means under /tmp/rxr-score/rooms/."
-  }
+    "method": "Read the brief, docs/art-bible.md and the previous independentScore (68), whose findings I re-checked as claims. Weighted the engine shots: all nine docs/verification/p5-rooms-hall-*.jpg, p5-int-hall.jpg and p5-int-hall-sealed.jpg, viewed in full and as contact sheets, with 2-4x Lanczos crops of the fireplace, niches, stained lancet and the plug edges. Measured with Pillow and numpy (python3 -I, scripts in /tmp/fb17/rescore/scripts/): frame and box mean RGB, HSV hue and saturation, CIE L* mean, std, p10 and p90, share under L* 5 and 2 (HUD and button masked on p5-int shots), a flame-colour mask (R>170, G>120, R-B>60, L*>60), floor L* p90/p10, and for the plug a |in-out| diff bbox, gilt hue mask in 10 px edge bands, edge column and row L* profiles and Laplacian variance. Benchmarked against the study engine hero and p5-int-study.jpg re-measured at this build. Used report.json and engine-compare.json (lightmap vs Cycles frame ratio 0.909) only to attribute faults. The rework-2 dressing (fireplace, niches, bays, cove, candelabra) has not been approved by Paul; I scored what is visible and this score implies no approval. No repo file was edited.",
+    "evidence": [
+      {
+        "path": "docs/art-bible.md",
+        "sha256": "11da71b45f24eeb258ef77d328ef1aa009297a9231608cb80bb429aa3ff2ad6a"
+      },
+      {
+        "path": "docs/verification/p5-int-study.jpg",
+        "sha256": "2a54130faf77c6c6c434c677b39b4337fe3a2d57de7c097331b06c9cfb4aeaaa"
+      },
+      {
+        "path": "docs/verification/p5-rooms-study-hero.jpg",
+        "sha256": "4a957664f7295ac42ed681fc118a9ff25fb29dc9cd46d2d8fe363edff9913936"
+      },
+      {
+        "path": "docs/verification/p5-rooms-hall-hero.jpg",
+        "sha256": "962613f8e0a6155c9d324841b9d25b2619f967e7526c3c33ba6e3aaff4e6b58c"
+      },
+      {
+        "path": "docs/verification/p5-rooms-hall-hero.diffuse.jpg",
+        "sha256": "ad4916091951a344f5ca9b5c99fd617a78266998af085bcc934f8a75cc50e15f"
+      },
+      {
+        "path": "docs/verification/p5-rooms-hall-plug-n-in.jpg",
+        "sha256": "07448fc152516f1be294469fe4a0295d7a4441f09e9d2a6cafcff7de3c7e4ddb"
+      },
+      {
+        "path": "docs/verification/p5-rooms-hall-plug-n-out.jpg",
+        "sha256": "d966d52e45ef4773ff5d3634749d9368f163e4f79523b9562f658b43bfce44a7"
+      },
+      {
+        "path": "docs/verification/p5-rooms-hall-bench.jpg",
+        "sha256": "402824f98867a109005f7ba5835d1342a11999f2b46bc6a6f5b5ee95eac2dc4d"
+      },
+      {
+        "path": "docs/verification/p5-rooms-hall-seam-north.jpg",
+        "sha256": "c518c22aabc31eebca52be3f24e64b57c17f4ac935f9fbd2e966b31ecd19c0b5"
+      },
+      {
+        "path": "docs/verification/p5-rooms-hall-seam-west-turned.jpg",
+        "sha256": "f8fa291e1351e451daab38809d255c962a69e63fb627b265ff97202c156a607d"
+      },
+      {
+        "path": "docs/verification/p5-rooms-hall-floor-sealed-west.jpg",
+        "sha256": "e2d2cb5ad5af09aebdfd6e541c28ab2500a3ea2bd0f73d4a46b8050a902cc57a"
+      },
+      {
+        "path": "docs/verification/p5-rooms-hall-floor-sealed-west-close.jpg",
+        "sha256": "e12184dca5646d22b8f642f054b29f5415c320cb5beef28c3c67abdb3d21e6a1"
+      },
+      {
+        "path": "docs/verification/p5-int-hall.jpg",
+        "sha256": "35f163e51566db6c1fad8b4e2825ca4c1ee531fbd8b76d3f3f23382bd4d871a4"
+      },
+      {
+        "path": "docs/verification/p5-int-hall-sealed.jpg",
+        "sha256": "4a11487bc6ce17eccacb4d5bc5f3b194e7e403fc6232fe95dcad82f08b5d33eb"
+      },
+      {
+        "path": "assets-source/rooms/hall/staging/report.json",
+        "sha256": "4d6f91c038455e72220072d93997e7ac7a974a7ed2ce2e57450e0608d99d245c"
+      },
+      {
+        "path": "assets-source/rooms/hall/staging/engine-compare.json",
+        "sha256": "f4937226bab58a8928073bec5c4923d92165669c432732feb32bc2e8b0576ae9"
+      },
+      {
+        "path": "assets-source/rooms/hall/provenance.json",
+        "sha256": "cc67b274b2f9731ab842e5e92b9fa8f83db7df3724d1754c6d2753952100fcf0"
+      }
+    ]
+  },
+  "independentScoreHistory": [
+    {
+      "score": 68,
+      "scale": "0-100 visual fidelity to the art bible and study-kit language",
+      "scorer": "independent reviewer agent (separate from the authoring agent; did not build the asset)",
+      "date": "2026-11-16",
+      "acceptanceBar": 80,
+      "clearsBar": false,
+      "rubric": [
+        {
+          "criterion": "form, layout and proportions",
+          "points": 21,
+          "max": 30,
+          "note": "10x10x4 m box with coffered beam ceiling, walnut wainscot and four offset 1.6 m doors; proportions sit right for a seated 1.6 m probe. It is a plain rectangle with no alcove, niche, arch or hearth recess. The study benchmark is also a box but fills its walls with bookcases, while the hall walls are bare wallpaper above the wainscot."
+        },
+        {
+          "criterion": "signature features: gathering space",
+          "points": 15,
+          "max": 25,
+          "note": "Gear chandelier, brass compass floor inlay, two benches, one stained-glass lancet and two floor candelabra. That is thin for a gathering space. The template has no hearth, table or rug (hearth and rug are runtime dressing), so the floor area reads empty in p5-rooms-hall-hero.jpg."
+        },
+        {
+          "criterion": "surface detail and material read",
+          "points": 14,
+          "max": 20,
+          "note": "Lightmap is clean: 68.6 px/m mean against the study's 66.3, coverage 0.742, no visible seams at the north/west door joins (seam-north, seam-west-turned). Kit-wide deduction: lightmap-only over shared tiling sets, where the study ships baked basecolor/normal/ORM from a 124,581-tri high-poly (hall high is 25,115). Walls are one repeating damask with no breakup."
+        },
+        {
+          "criterion": "colour, value and lighting mood",
+          "points": 10,
+          "max": 15,
+          "note": "Palette is on-bible: warm floor RGB 93,71,56, walnut ceiling 84,38,20, stained-glass patch on the floor. Kit/runtime deduction shared with the study (engine/diffuse frame ratio 1.90 vs study 1.89): in engine the floor shows no pools, foreground L=76 against back-floor L=77. The lightmap itself is also flatter than the study (p90/p10 texel ratio 3.96 vs 7.0)."
+        },
+        {
+          "criterion": "readability and comfort at seated VR distance",
+          "points": 8,
+          "max": 10,
+          "note": "Large clean forms, a clear enemy lane at 2-2.5 m, and a chandelier above head height. The gilt damask is high-contrast near the sconces (L p5 39 to p95 149), which is busy at the periphery."
+        }
+      ],
+      "topFixes": [
+        "Add a role anchor to the template: a fireplace recess or long table zone with its own baked warm pool, so the gathering read does not depend on runtime dressing.",
+        "Break up the wall plane with bookcase or panelled bays and one niche per wall, so it matches the study's dense walls; the wallpaper should cover far less area.",
+        "Restore floor value falloff: the bake p90/p10 is 3.96 against the study's 7.0, so tighten sconce falloff and darken the corners, then fix the kit-wide engine exposure/env flattening."
+      ],
+      "method": "Looked at (2026-11-16): docs/art-bible.md; PRD.md lightmap contract (lines 87-95); assets-source/concepts/room-sheet-1.png, room-sheet-2.png; study benchmark assets-source/rooms/study/staging/review-sheet.jpg + provenance.json + engine-compare.json; docs/verification/p5-int-study.jpg; assets-source/rooms/hall/provenance.json, staging/review-sheet.jpg, staging/engine-compare.json, staging/hall.lightmap.png (texel stats), docs/verification/p5-rooms-hall-*.jpg and p5-int-hall*.jpg; Pillow crops and region means under /tmp/rxr-score/rooms/."
+    }
+  ]
 }

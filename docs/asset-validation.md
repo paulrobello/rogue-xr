@@ -31,6 +31,17 @@ None. Every `sha256`, `bytes`, triangle count, material count, bone count and im
 - F7, the UI provenance records `scripts/assets/build_ui_atlas.py` by path only, no hash. Current sha256 5b33dacd0389a2d4 (first 16 hex shown). Adding it is a new field, not a stale value, so I did not add it.
 - F8, stale prose in `docs/owner-review.md` and `docs/verification.md` (G3.4): Sentry 2,992 tris (now 10,140), study 6,948 (6,968), hall 4,213 (6,747), corridor 1,556 (1,986), gear-shaft 4,434 (9,872), guardian-vault 7,263 (12,277), Hound 23,044 (23,368), Golem 23,474 (24,340), Warden 24,794 (24,730). "independent score `unscored` on every asset" is stale for 11 of 12 records. Not edited, out of the stated scope.
 
+## Resolved after the sweep (2026-11-17)
+
+- F1: `assets-source/props/combat-table/provenance.json` written from `staging/report.json`, with the runtime and blend hashes recomputed from disk, a license line and every gate pending. Rights evidence now exists. Technical stays open on F2.
+- F3: `tests/icon-sheet-fallback.test.ts` (fallback words with no icon; a failed manifest fetch rejects, keeps no sheet and retries) and `tests/key-art-fallback.test.ts` (the title, wordmark and controls build when the key art cannot load).
+- F4: the PRD budget table has a floor guardian row (40k triangles, 4 materials, 60 bones), matching P5-T4 and the asset gate.
+- F5: all five rooms re-scored on `b1df5d3` by an independent reviewer: study 84, corridor 80, hall 74, gear-shaft 78, guardian-vault 79. Each `independentScore` holds the new block with current evidence hashes; the previous blocks moved to `independentScoreHistory`.
+- F7: `assets-source/ui/provenance.json` records `scriptSha256`. The script and its outputs last changed together in `04cb20e`.
+- F8: `docs/owner-review.md` and `docs/verification.md` carry the current counts and scores.
+
+Still open: F2 (combat table fallback test, needs a seam out of `src/main.ts`) and F6 (Blender version: the PRD pins 5.2.2 LTS, MiniMac runs 5.3.0).
+
 ## 1. Study hero room
 
 Files: `assets-source/rooms/study/`, `public/assets/rooms/study/`.

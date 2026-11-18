@@ -120,6 +120,7 @@
   ],
   "derivatives": {
     "script": "scripts/assets/build_ui_atlas.py",
+    "scriptSha256": "5b33dacd038985d7843624773a3b7be2bb6c11ae234b1f81df25b4b0878642f7",
     "ktx": "ktx 4.4.2",
     "font": {
       "file": "node_modules/@par/xr-workspace/assets/fonts/NotoSans-Regular.ttf",

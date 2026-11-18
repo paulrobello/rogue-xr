@@ -104,6 +104,7 @@ The house Blender export guide has no lightmap section, so this project defines 
 | Visible triangles | at most 350k per eye, both eyes counted, in the worst combat view |
 | Room template | at most 100k triangles, at most 16 materials, textures up to 2048 px KTX2 |
 | Automaton | at most 25k triangles skinned, at most 4 materials, at most 40 bones |
+| Floor guardian | at most 40k triangles skinned, at most 4 materials, at most 60 bones, plus a phase-change clip (plans/phase-5-slice-content.md P5-T4; only one guardian is on screen) |
 | Draw calls | at most 200 per frame (no multiview, so every draw runs twice) |
 | Dynamic lights | at most 4 per room, plus the lantern |
 | Shaders | all programs precompiled behind the load veil; variants driven by uniforms |

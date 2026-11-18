@@ -456,144 +456,108 @@
     "date": "2026-11-17",
     "acceptanceBar": 80,
     "clearsBar": false,
+    "build": "b1df5d3",
+    "previousScore": 79,
     "rubric": [
       {
         "criterion": "form, layout and proportions",
         "points": 24,
         "max": 30,
-        "note": "Improved: three walnut diaphragm arches now spring from the side walls and curve across the nave (hero y 25-160), replacing the two straight beams, and four wall sconces give the long side walls a rhythm. The apse, the three pointed lancets, the stepped altar and the gear chandelier on the axis still compose well. The geometry did change this time: low 8,757 to 11,969 tris, high 67,501 to 63,804, GLB 756,540 to 891,148 bytes. Still open: behind the arches the ceiling is the same flat plank deck, and there is no vault or rib over the apse (the builder confirms the apse keeps its plain barrel soffit). The apse is still a shallow stone-faced slab with a pointed opening, not a recessed bay. There is still no dais: report.json colliders are unchanged, the altar tops out at y 1.36 and the four braziers at 1.41 (D1)."
+        "note": "Diaphragm arches, stone piers, apse with three lancets, stepped altar and chandelier compose a strong axis. Still open: flat plank deck behind the arches and no dais. Plug check (scripts/plug.py, bbox from |in-out|>25): gilt pixels in 10 px bands on left, right and top of the former door box are 0.00%; column-mean L* across the edges stays within 4 L* apart from a 1-2 column brightening of 18.6-20.4 at the left edge inside the noise of the damask; Laplacian variance on the edges (151-283 against 121-268 on the open wall) sits inside the range of the open wall beside it, so no seam, leak, z-fight or leftover architrave. Small: a brass aisle inlay runs straight into the blank plug wall in plug-s-in (x about 740-760, y 560-720), pointing at a door that is not there."
       },
       {
         "criterion": "signature features: boss arena",
         "points": 19,
         "max": 25,
-        "note": "Structurally unchanged. The guardian position is still flat floor inside a thin brass ring inlay, with no raised or enclosed fighting ground. Brighter light helps the ring read: the ring interior is luma 72.1 against 61.1 on open floor (lightmap-only frame: 61.1 against 53.3), and the stained-glass patches now land inside it (arena crop). The aisle inlays, brazier pillars, chandelier and arches all converge on the shrine. Read cold, it is still a well-lit chapel with a shrine rather than a boss arena."
+        "note": "Structurally unchanged: the guardian ring is still flat floor (p5-int-guardian-vault.jpg shows the guardian on the ring), so it reads as a lit chapel more than an arena."
       },
       {
         "criterion": "surface detail and material read",
         "points": 15,
         "max": 20,
-        "note": "Fixed: the faceted pyramid flames are now teardrop cards. Improved: on the brass mask the wall gears read 118,84,38 (hue 34.3, G/R 0.71), up from hue 29 and G/R 0.60. They are still short of #DEC16A (hue 45, G/R 0.87). New runtime fault: the apse oculus gear (now brass-polished) went from grey to bleached ivory. It reads 134,110,87 (luma 113.5, saturation 0.35) against 72,43,16 lightmap-only and 74,45,17 in Blender, so blue rises from 16 to 87 and luma rises 2.4x. In the reward-eye shot it is the palest metal in view (117.3 luma), bone-coloured, not brass (oculus crop). The chandelier is better than v3 but still washed out: 133,96,63 (saturation 0.53) against 144,94,42 (0.71) lightmap-only. Worse: the centre-lancet gilt mullion is now luma 131.8 against glass at 68-69 at the reward eye, up from 111 against 72. In the hero shot the runtime lifts it to 81.2, against 54.6 lightmap-only. The engine flames render as thin slivers: some cards are edge-on or missing. On a flame-colour mask they cover 1,282 and 1,577 px against 1,527 and 1,781 in Blender for the same camera, and the Blender frame shows full teardrops. Where they do show, they are flat, hard-edged lemon shapes with no core-to-tip gradient. Lightmap density dropped to 39.61 mean and 32.61 minimum px/m (from 42.63 and 35.99), against 66.3 for the study. D2 still records ~43. Stone, damask and floor stay crisp and in the kit's language."
+        "note": "Not fixed: the oculus gear still reads pale ivory, not brass (hero box 612-668 x 240-295: RGB 110,89,71, sat 0.36, against the previous 134,110,87 at sat 0.35 and #DEC16A at sat 0.52). Not verified: the centre mullion; the box I tried mixed in glass colour, so I give it no credit either way. Still open: altar flames are flat single-colour teardrops with hard edges (gv-flame-3x.jpg). Pale stone piers (hero 392-448 x 200-470: L* 37.0, p90 58.0). Lightmap density 38.9 px/m mean against the study's 65.5."
       },
       {
         "criterion": "colour, value and lighting mood",
         "points": 13,
         "max": 15,
-        "note": "Fixed: overall value. The hero frame mean is luma 54.8, up from 33.7, with the in-game study at 56.1 (p5-int-study.jpg). The re-shot study engine.hero is 28.2, so the vault is now brighter than its like-for-like reference. Wallpaper reads 39.5 (far left), 43.1 (mid) and 66.8 (near the sconce) in the hero, and 56.6 at the reward eye. The study measures 36.8-65.1 in its engine hero and 42.6-63.4 in-game. The sconces make real pools and the brazier foot stays brighter than open floor (83.5 against 61.1). Clipping is 0.05% of the frame. Still open, and worse: flame warmth is lost at runtime. On the flame mask, the engine reads 215,179,124 (R-B 92, saturation 0.43) against 246,184,97 (R-B 149) lightmap-only and 248,202,108 (R-B 140) in Blender. That is a 38% loss of R-B (v3: 20-25%), and the flames read pale cream instead of candle amber #F3BE65 (R-B 142). The sconce hotspots also desaturate at runtime: the brazier-camera sconce box reads saturation 0.33 against 0.43 in Blender, and it looks pinkish. A cool cast sits on the apse lintel walnut: blue 35 against 12 lightmap-only. The art bible allows no cool ambient fill. I saw no black areas apart from the sealed far door of the corridor in the seam-south shot (proof-path cap, not penalised)."
+        "note": "Frame hue 21.0, sat 0.643, L* 23.9, 0.0% under L* 2. Flame warmth improved: hero flame mask RGB 220,168,114, hue 30.6, sat 0.48, R-B 105 (was R-B 92); reward-eye 237,175,106, R-B 131, hue 31.4, still short of #F3BE65 (hue 37.4, R-B 142). In game they read paler (p5-int-guardian-vault.jpg box 430-560 x 400-450: hue 28.4, sat 0.39, R-B 75)."
       },
       {
         "criterion": "readability and comfort at seated VR distance",
         "points": 8,
         "max": 10,
-        "note": "The single strong axis, the open floor and the brighter side walls keep the guardian and reward positions obvious and the room's width readable when seated. Deductions: at the reward eye-point, the flat lemon flame cards on both frame edges are still the brightest hard-edged shapes at eye height (luma 168-189, max 246). The pale mullion (131.8 against glass at 69) splits the focal window directly behind the reward."
+        "note": "Clear axis and open floor. The flat flame cards at the reward eye-point remain the brightest hard-edged shapes at eye height (L* p90 81.1)."
       }
     ],
     "topFixes": [
-      "Fix the runtime material path for emissive and polished parts. Today the engine strips the warmth that the lightmap-only and Blender frames keep. The flames show R-B 92 in the engine against 149 lightmap-only. The brass-polished oculus gear shows 134,110,87 against 72,43,16. The gilt centre mullion shows 131.8 against glass at 69, and the sconce hotspots show saturation 0.33 against 0.43. Exempt the flame/emissive slot from the probe and tone-mapping desaturation, or pre-compensate it. Give polished brass a warm in-room environment so it lands near #DEC16A, not ivory. Dull the mullion to the walnut frame value.",
-      "Make the flame cards render as full soft teardrops in three.js. They currently show as edge-on slivers covering 84-89% of the Blender flame area for the same camera, so check double-siding and the crossing. Give them an alpha falloff and a hotter core so they stop reading as flat lemon shapes at the reward eye-point.",
-      "Turn the shrine into an arena. Raise a stepped dais under the guardian socket, which needs the src/content/rooms.ts socket change that D1 leaves to Paul. Carry the new diaphragm arches into the apse as ribs, or a groin vault over the shrine, instead of the flat plank deck and plain soffit. While rebaking, update D2 to the built 39.6 px/m or zone-weight the lightmap toward the apse and floor ring."
+      "Raise a stepped dais under the guardian ring so the shrine reads as an arena (needs the socket change D1 leaves to Paul), and vault the ceiling over the apse instead of the flat plank deck.",
+      "Replace the flat single-colour flame teardrops with soft-edged, core-graded cards near #F3BE65 (now hue 30.6-31.4, R-B 105-131).",
+      "Stop the south-aisle brass inlay short of the blank plug wall or end it on a feature, and raise lightmap density toward the study (38.9 against 65.5 px/m)."
     ],
-    "method": "Judged the engine frames first and weighted them; used the Blender lightmapped and Cycles renders and the three.js lightmap-only frame to separate bake from runtime problems. Viewed in full all six docs/verification/p5-rooms-guardian-vault-*.jpg, the review sheet, the study engine.hero (re-shot at 60cff33) and p5-int-study.jpg. Made Pillow crops at 2-4x of: the oculus gear (engine, lightmap-only and Blender side by side), the brazier flames (engine and Blender), the reward-eye flames and centre lancet, the chandelier, the sconces, the ceiling arches and the guardian ring. With numpy, measured the sRGB mean, Rec.709 luma, HLS hue, G/R, R-B and HSV saturation in identical pixel boxes on engine.hero, engine.hero.diffuse, hero.lightmapped and hero.reference-diffuse, plus the reward-eye and brazier frames. Masks: brass G/R>0.55 with L>35; flames R>170, G>130, R-B>60, L>150. The full-res PNGs match the docs JPGs with mean absolute difference 3.0, which is JPEG noise. Compared frame and wallpaper luma against the study engine hero (28.2) and in-game (56.1). Read the art bible, report.json (11,969/63,804 tris; density 39.61/32.61 px/m; colliders unchanged; clipped 0.99%), engine-compare.json (frame ratio 0.903, RMSE 0.0429; engine hero mean 54.0), uv1-report.json (0 px overlap, min gap 16 px, 1.0003 claims per texel) and provenance.json (previous independentScore 76 at ac21f3b; D3 and D6 revised, D1 and D2 unchanged). Treated rebake2-status.md as claims. Confirmed: brighter wallpaper (it claims 50.4; I measure 39.5-66.8 by box), arches, sconces, teardrop flames, gilt hue (39.8 on its stricter mask; 34.3 on mine). Disputed: the oculus gear 'hue 35, luma 175' does not read as brass, because on my mask it is saturation 0.35, ivory. Not credited: the self-score of 81. Did not run any build or edit any repo file.",
+    "method": "Read the brief, art bible and the previous block (79), re-checking its fixes (flames, oculus, mullion, dais). Viewed p5-rooms-guardian-vault-hero, hero.diffuse, reward-eye, brazier, plug-s-in, plug-s-out, seam-south, seam-from-corridor and p5-int-guardian-vault.jpg. Measured frame and box RGB, hue, saturation, CIE L* stats, a flame mask on hero and reward-eye, the oculus, mullion and pier boxes, and the plug checks, with 2-4x crops. Read report.json and engine-compare.json (frame ratio 0.899) for attribution. Scripts in /tmp/fb17/rescore/scripts/. No repo edits.",
     "evidence": [
       {
         "path": "docs/art-bible.md",
         "sha256": "11da71b45f24eeb258ef77d328ef1aa009297a9231608cb80bb429aa3ff2ad6a"
       },
       {
+        "path": "docs/verification/p5-int-study.jpg",
+        "sha256": "2a54130faf77c6c6c434c677b39b4337fe3a2d57de7c097331b06c9cfb4aeaaa"
+      },
+      {
+        "path": "docs/verification/p5-rooms-study-hero.jpg",
+        "sha256": "4a957664f7295ac42ed681fc118a9ff25fb29dc9cd46d2d8fe363edff9913936"
+      },
+      {
         "path": "docs/verification/p5-rooms-guardian-vault-hero.jpg",
-        "sha256": "22bc5d7916f84cd7b1835e5157ba6733641397a640e987aeae0621d64e7b0162"
+        "sha256": "191d5483e0d88a27cacebd869327835c855c66b0604d83697690ac5fe48ffa00"
       },
       {
         "path": "docs/verification/p5-rooms-guardian-vault-hero.diffuse.jpg",
-        "sha256": "ccc711080bc35d8f792f39b5c1814379905fb705c1adc652beb033a9a8dd5ef8"
+        "sha256": "0ffdef50395c8c26ec6965f53c7889d1f1b3ae16468d2501c07dd0ea8a14f9b0"
       },
       {
         "path": "docs/verification/p5-rooms-guardian-vault-reward-eye.jpg",
-        "sha256": "093092abc479ba2d57e0897d1d1cbd8f0c1784de2fdf31e73fca372aaf43a105"
+        "sha256": "ee4a076066155fc76e78ca1fb55d5cbe1dc49ab1336f5dd18f9c3384ed206f19"
       },
       {
         "path": "docs/verification/p5-rooms-guardian-vault-brazier.jpg",
-        "sha256": "f59c736c5bf8036d52b522b033a1a651c339473ce2f03c145640400426ab2c67"
+        "sha256": "a4de70d6c6666c31e217d2645ec4882eadc151633e71c5898be2027024948e31"
+      },
+      {
+        "path": "docs/verification/p5-rooms-guardian-vault-plug-s-in.jpg",
+        "sha256": "8f1b89169b479662c113787fe8b040d18cd48b36c70f38625891925d6544a82c"
+      },
+      {
+        "path": "docs/verification/p5-rooms-guardian-vault-plug-s-out.jpg",
+        "sha256": "a714c44b9f0058374a8f0af765edc21724057a2726e3395f3dd342b4d6ff3928"
       },
       {
         "path": "docs/verification/p5-rooms-guardian-vault-seam-south.jpg",
-        "sha256": "91ac448d9e9b28a2b63ff95b411855c21dad47dd9091e26a64e16646624a9a88"
+        "sha256": "a87b74a01fed5f6a05af3c674ed974bb94f20ab2e00d7b2a8bfb29d7c4f3b48f"
       },
       {
         "path": "docs/verification/p5-rooms-guardian-vault-seam-from-corridor.jpg",
-        "sha256": "b8b03d168a8af26e8961ba71c0c1b96e780b2274dbb2befdeea9e3e61917db3f"
+        "sha256": "232c778f2d56eee7ec1a8e8561c71cb05ca3e6d14667290110bb4c3c093a38d5"
       },
       {
-        "path": "docs/verification/p5-int-study.jpg",
-        "sha256": "6258394c368a71674c74cb5dba4d66729a12beddd65e6f8152e9b9769fad4a08"
-      },
-      {
-        "path": "assets-source/rooms/study/staging/renders/engine.hero.png",
-        "sha256": "adf7d70305e41881d439713d3f54eac81df4891db5700c8988166641460f7648"
-      },
-      {
-        "path": "assets-source/rooms/study/staging/report.json",
-        "sha256": "1e612067e910a4160df83e67c0ffed5220fe6c1bc5f883e1e597cb6613bdcd6a"
-      },
-      {
-        "path": "assets-source/rooms/guardian-vault/staging/review-sheet.jpg",
-        "sha256": "ab0d0a85a112f0b31cfe7d625affd05bab4fa29a0a423ad0effe339adcb201ff"
-      },
-      {
-        "path": "assets-source/rooms/guardian-vault/staging/renders/engine.hero.png",
-        "sha256": "a7217083aeebfdded55da5f5ef5809781b32bc0d874ead8bded22e76aa8df9fb"
-      },
-      {
-        "path": "assets-source/rooms/guardian-vault/staging/renders/engine.hero.diffuse.png",
-        "sha256": "8b2c300415548d129587aebefb638e41eb65e4c654803ef3ea3888f7c8dcd0c8"
-      },
-      {
-        "path": "assets-source/rooms/guardian-vault/staging/renders/hero.lightmapped.png",
-        "sha256": "99f12dff48fb1fd8757e59cf4e157f7aadee4faf12f6972ecddb9ddc007e97d5"
-      },
-      {
-        "path": "assets-source/rooms/guardian-vault/staging/renders/hero.reference-diffuse.png",
-        "sha256": "37efad55bda329c704cea131faf1b6ab17f1593af5bfd3a98ade46f54c53e7e9"
-      },
-      {
-        "path": "assets-source/rooms/guardian-vault/staging/renders/engine.reward-eye.png",
-        "sha256": "6b00bfde0dbb11f498c07f12a80f7acea4f3ecfa6c0e745c553af87bda5e1031"
-      },
-      {
-        "path": "assets-source/rooms/guardian-vault/staging/renders/engine.brazier.png",
-        "sha256": "6541bcca2e40cb7bbcdafc16f42af23a307ad822f589fb13ec0fada7383e9960"
-      },
-      {
-        "path": "assets-source/rooms/guardian-vault/staging/renders/brazier.lightmapped.png",
-        "sha256": "4ff7434dd2217f9a84e9e4a5f56da4b1884c638c3246a1ae5de96f71427d6004"
+        "path": "docs/verification/p5-int-guardian-vault.jpg",
+        "sha256": "59badef74657dfd9a2df62ab1652a6488a806ceb030c113312aaafa96a293b4d"
       },
       {
         "path": "assets-source/rooms/guardian-vault/staging/report.json",
-        "sha256": "7f76ca32904bf5bc681e0bffdcb6e0dac53b43fb169a1dd767cd96b3ddc2dcf8"
+        "sha256": "a9ab51eab647209360b6c07455cb0625e5e4f38ab0da0bbe6cf1fba00c7592a4"
       },
       {
         "path": "assets-source/rooms/guardian-vault/staging/engine-compare.json",
-        "sha256": "cee7bb401dc4019183329d6c6203e8f9212112a5c4c8e28f85917b1bbdbdb319"
-      },
-      {
-        "path": "assets-source/rooms/guardian-vault/staging/uv1-report.json",
-        "sha256": "746751012ca7bb812058752c65bbd8a3838eb005dbe1a4da762bcf2d1876d6ba"
+        "sha256": "f97e823e7e46dc2d19109e49d35dcd8b0df294b618103c1ff35ddc64449b3ae4"
       },
       {
         "path": "assets-source/rooms/guardian-vault/provenance.json",
-        "sha256": "98039201e1ca70d416872202ec101811f46094d3a1a2305643f7d9a3fa1456f1"
-      },
-      {
-        "path": "/tmp/rxr-prev/rebake2-status.md",
-        "sha256": "1a3e0a308267c2b1225260fa31bb09d0a4ea5ecd617359199a78856caae741a8"
-      },
-      {
-        "path": "/tmp/rxr-prev/score-guardian-vault-v3.json",
-        "sha256": "90004bc2e00c1e985885e12110880188e352ba2b0bf33190fc2ba291a4c6548f"
+        "sha256": "656d54f31dbcaffec301352abec4b63526473dd08526974bf16ea7b9fc00d911"
       }
-    ],
-    "previousScore": 76,
-    "build": "60cff33"
+    ]
   },
   "buildDecisions": {
     "by": "orchestrator of the 2026-11-17 re-bake (build decisions, not owner approvals; Paul's review is still pending)",
@@ -636,5 +600,153 @@
       "Rework 2 (2026-11-17): bake with 2 diffuse bounces, candles at (1.0, 0.80, 0.60), four 80 W candle sconces on the side walls, three walnut diaphragm arches replace the east-west beams, the apse oculus gear moved to brass-polished.",
       "Rework 3 (2026-11-17): walnut ribs under the apse barrel at y 5.05 and 5.6 (Blender) carry the diaphragm arches into the apse; the centre lancet's mullion is walnut (the brass-polished bar read luma 131.8 against the glass at 69)."
     ]
-  }
+  },
+  "independentScoreHistory": [
+    {
+      "score": 79,
+      "scale": "0-100 visual fidelity to the art bible and study-kit language",
+      "scorer": "independent reviewer agent (separate from the authoring agent; did not build the asset)",
+      "date": "2026-11-17",
+      "acceptanceBar": 80,
+      "clearsBar": false,
+      "rubric": [
+        {
+          "criterion": "form, layout and proportions",
+          "points": 24,
+          "max": 30,
+          "note": "Improved: three walnut diaphragm arches now spring from the side walls and curve across the nave (hero y 25-160), replacing the two straight beams, and four wall sconces give the long side walls a rhythm. The apse, the three pointed lancets, the stepped altar and the gear chandelier on the axis still compose well. The geometry did change this time: low 8,757 to 11,969 tris, high 67,501 to 63,804, GLB 756,540 to 891,148 bytes. Still open: behind the arches the ceiling is the same flat plank deck, and there is no vault or rib over the apse (the builder confirms the apse keeps its plain barrel soffit). The apse is still a shallow stone-faced slab with a pointed opening, not a recessed bay. There is still no dais: report.json colliders are unchanged, the altar tops out at y 1.36 and the four braziers at 1.41 (D1)."
+        },
+        {
+          "criterion": "signature features: boss arena",
+          "points": 19,
+          "max": 25,
+          "note": "Structurally unchanged. The guardian position is still flat floor inside a thin brass ring inlay, with no raised or enclosed fighting ground. Brighter light helps the ring read: the ring interior is luma 72.1 against 61.1 on open floor (lightmap-only frame: 61.1 against 53.3), and the stained-glass patches now land inside it (arena crop). The aisle inlays, brazier pillars, chandelier and arches all converge on the shrine. Read cold, it is still a well-lit chapel with a shrine rather than a boss arena."
+        },
+        {
+          "criterion": "surface detail and material read",
+          "points": 15,
+          "max": 20,
+          "note": "Fixed: the faceted pyramid flames are now teardrop cards. Improved: on the brass mask the wall gears read 118,84,38 (hue 34.3, G/R 0.71), up from hue 29 and G/R 0.60. They are still short of #DEC16A (hue 45, G/R 0.87). New runtime fault: the apse oculus gear (now brass-polished) went from grey to bleached ivory. It reads 134,110,87 (luma 113.5, saturation 0.35) against 72,43,16 lightmap-only and 74,45,17 in Blender, so blue rises from 16 to 87 and luma rises 2.4x. In the reward-eye shot it is the palest metal in view (117.3 luma), bone-coloured, not brass (oculus crop). The chandelier is better than v3 but still washed out: 133,96,63 (saturation 0.53) against 144,94,42 (0.71) lightmap-only. Worse: the centre-lancet gilt mullion is now luma 131.8 against glass at 68-69 at the reward eye, up from 111 against 72. In the hero shot the runtime lifts it to 81.2, against 54.6 lightmap-only. The engine flames render as thin slivers: some cards are edge-on or missing. On a flame-colour mask they cover 1,282 and 1,577 px against 1,527 and 1,781 in Blender for the same camera, and the Blender frame shows full teardrops. Where they do show, they are flat, hard-edged lemon shapes with no core-to-tip gradient. Lightmap density dropped to 39.61 mean and 32.61 minimum px/m (from 42.63 and 35.99), against 66.3 for the study. D2 still records ~43. Stone, damask and floor stay crisp and in the kit's language."
+        },
+        {
+          "criterion": "colour, value and lighting mood",
+          "points": 13,
+          "max": 15,
+          "note": "Fixed: overall value. The hero frame mean is luma 54.8, up from 33.7, with the in-game study at 56.1 (p5-int-study.jpg). The re-shot study engine.hero is 28.2, so the vault is now brighter than its like-for-like reference. Wallpaper reads 39.5 (far left), 43.1 (mid) and 66.8 (near the sconce) in the hero, and 56.6 at the reward eye. The study measures 36.8-65.1 in its engine hero and 42.6-63.4 in-game. The sconces make real pools and the brazier foot stays brighter than open floor (83.5 against 61.1). Clipping is 0.05% of the frame. Still open, and worse: flame warmth is lost at runtime. On the flame mask, the engine reads 215,179,124 (R-B 92, saturation 0.43) against 246,184,97 (R-B 149) lightmap-only and 248,202,108 (R-B 140) in Blender. That is a 38% loss of R-B (v3: 20-25%), and the flames read pale cream instead of candle amber #F3BE65 (R-B 142). The sconce hotspots also desaturate at runtime: the brazier-camera sconce box reads saturation 0.33 against 0.43 in Blender, and it looks pinkish. A cool cast sits on the apse lintel walnut: blue 35 against 12 lightmap-only. The art bible allows no cool ambient fill. I saw no black areas apart from the sealed far door of the corridor in the seam-south shot (proof-path cap, not penalised)."
+        },
+        {
+          "criterion": "readability and comfort at seated VR distance",
+          "points": 8,
+          "max": 10,
+          "note": "The single strong axis, the open floor and the brighter side walls keep the guardian and reward positions obvious and the room's width readable when seated. Deductions: at the reward eye-point, the flat lemon flame cards on both frame edges are still the brightest hard-edged shapes at eye height (luma 168-189, max 246). The pale mullion (131.8 against glass at 69) splits the focal window directly behind the reward."
+        }
+      ],
+      "topFixes": [
+        "Fix the runtime material path for emissive and polished parts. Today the engine strips the warmth that the lightmap-only and Blender frames keep. The flames show R-B 92 in the engine against 149 lightmap-only. The brass-polished oculus gear shows 134,110,87 against 72,43,16. The gilt centre mullion shows 131.8 against glass at 69, and the sconce hotspots show saturation 0.33 against 0.43. Exempt the flame/emissive slot from the probe and tone-mapping desaturation, or pre-compensate it. Give polished brass a warm in-room environment so it lands near #DEC16A, not ivory. Dull the mullion to the walnut frame value.",
+        "Make the flame cards render as full soft teardrops in three.js. They currently show as edge-on slivers covering 84-89% of the Blender flame area for the same camera, so check double-siding and the crossing. Give them an alpha falloff and a hotter core so they stop reading as flat lemon shapes at the reward eye-point.",
+        "Turn the shrine into an arena. Raise a stepped dais under the guardian socket, which needs the src/content/rooms.ts socket change that D1 leaves to Paul. Carry the new diaphragm arches into the apse as ribs, or a groin vault over the shrine, instead of the flat plank deck and plain soffit. While rebaking, update D2 to the built 39.6 px/m or zone-weight the lightmap toward the apse and floor ring."
+      ],
+      "method": "Judged the engine frames first and weighted them; used the Blender lightmapped and Cycles renders and the three.js lightmap-only frame to separate bake from runtime problems. Viewed in full all six docs/verification/p5-rooms-guardian-vault-*.jpg, the review sheet, the study engine.hero (re-shot at 60cff33) and p5-int-study.jpg. Made Pillow crops at 2-4x of: the oculus gear (engine, lightmap-only and Blender side by side), the brazier flames (engine and Blender), the reward-eye flames and centre lancet, the chandelier, the sconces, the ceiling arches and the guardian ring. With numpy, measured the sRGB mean, Rec.709 luma, HLS hue, G/R, R-B and HSV saturation in identical pixel boxes on engine.hero, engine.hero.diffuse, hero.lightmapped and hero.reference-diffuse, plus the reward-eye and brazier frames. Masks: brass G/R>0.55 with L>35; flames R>170, G>130, R-B>60, L>150. The full-res PNGs match the docs JPGs with mean absolute difference 3.0, which is JPEG noise. Compared frame and wallpaper luma against the study engine hero (28.2) and in-game (56.1). Read the art bible, report.json (11,969/63,804 tris; density 39.61/32.61 px/m; colliders unchanged; clipped 0.99%), engine-compare.json (frame ratio 0.903, RMSE 0.0429; engine hero mean 54.0), uv1-report.json (0 px overlap, min gap 16 px, 1.0003 claims per texel) and provenance.json (previous independentScore 76 at ac21f3b; D3 and D6 revised, D1 and D2 unchanged). Treated rebake2-status.md as claims. Confirmed: brighter wallpaper (it claims 50.4; I measure 39.5-66.8 by box), arches, sconces, teardrop flames, gilt hue (39.8 on its stricter mask; 34.3 on mine). Disputed: the oculus gear 'hue 35, luma 175' does not read as brass, because on my mask it is saturation 0.35, ivory. Not credited: the self-score of 81. Did not run any build or edit any repo file.",
+      "evidence": [
+        {
+          "path": "docs/art-bible.md",
+          "sha256": "11da71b45f24eeb258ef77d328ef1aa009297a9231608cb80bb429aa3ff2ad6a"
+        },
+        {
+          "path": "docs/verification/p5-rooms-guardian-vault-hero.jpg",
+          "sha256": "22bc5d7916f84cd7b1835e5157ba6733641397a640e987aeae0621d64e7b0162"
+        },
+        {
+          "path": "docs/verification/p5-rooms-guardian-vault-hero.diffuse.jpg",
+          "sha256": "ccc711080bc35d8f792f39b5c1814379905fb705c1adc652beb033a9a8dd5ef8"
+        },
+        {
+          "path": "docs/verification/p5-rooms-guardian-vault-reward-eye.jpg",
+          "sha256": "093092abc479ba2d57e0897d1d1cbd8f0c1784de2fdf31e73fca372aaf43a105"
+        },
+        {
+          "path": "docs/verification/p5-rooms-guardian-vault-brazier.jpg",
+          "sha256": "f59c736c5bf8036d52b522b033a1a651c339473ce2f03c145640400426ab2c67"
+        },
+        {
+          "path": "docs/verification/p5-rooms-guardian-vault-seam-south.jpg",
+          "sha256": "91ac448d9e9b28a2b63ff95b411855c21dad47dd9091e26a64e16646624a9a88"
+        },
+        {
+          "path": "docs/verification/p5-rooms-guardian-vault-seam-from-corridor.jpg",
+          "sha256": "b8b03d168a8af26e8961ba71c0c1b96e780b2274dbb2befdeea9e3e61917db3f"
+        },
+        {
+          "path": "docs/verification/p5-int-study.jpg",
+          "sha256": "6258394c368a71674c74cb5dba4d66729a12beddd65e6f8152e9b9769fad4a08"
+        },
+        {
+          "path": "assets-source/rooms/study/staging/renders/engine.hero.png",
+          "sha256": "adf7d70305e41881d439713d3f54eac81df4891db5700c8988166641460f7648"
+        },
+        {
+          "path": "assets-source/rooms/study/staging/report.json",
+          "sha256": "1e612067e910a4160df83e67c0ffed5220fe6c1bc5f883e1e597cb6613bdcd6a"
+        },
+        {
+          "path": "assets-source/rooms/guardian-vault/staging/review-sheet.jpg",
+          "sha256": "ab0d0a85a112f0b31cfe7d625affd05bab4fa29a0a423ad0effe339adcb201ff"
+        },
+        {
+          "path": "assets-source/rooms/guardian-vault/staging/renders/engine.hero.png",
+          "sha256": "a7217083aeebfdded55da5f5ef5809781b32bc0d874ead8bded22e76aa8df9fb"
+        },
+        {
+          "path": "assets-source/rooms/guardian-vault/staging/renders/engine.hero.diffuse.png",
+          "sha256": "8b2c300415548d129587aebefb638e41eb65e4c654803ef3ea3888f7c8dcd0c8"
+        },
+        {
+          "path": "assets-source/rooms/guardian-vault/staging/renders/hero.lightmapped.png",
+          "sha256": "99f12dff48fb1fd8757e59cf4e157f7aadee4faf12f6972ecddb9ddc007e97d5"
+        },
+        {
+          "path": "assets-source/rooms/guardian-vault/staging/renders/hero.reference-diffuse.png",
+          "sha256": "37efad55bda329c704cea131faf1b6ab17f1593af5bfd3a98ade46f54c53e7e9"
+        },
+        {
+          "path": "assets-source/rooms/guardian-vault/staging/renders/engine.reward-eye.png",
+          "sha256": "6b00bfde0dbb11f498c07f12a80f7acea4f3ecfa6c0e745c553af87bda5e1031"
+        },
+        {
+          "path": "assets-source/rooms/guardian-vault/staging/renders/engine.brazier.png",
+          "sha256": "6541bcca2e40cb7bbcdafc16f42af23a307ad822f589fb13ec0fada7383e9960"
+        },
+        {
+          "path": "assets-source/rooms/guardian-vault/staging/renders/brazier.lightmapped.png",
+          "sha256": "4ff7434dd2217f9a84e9e4a5f56da4b1884c638c3246a1ae5de96f71427d6004"
+        },
+        {
+          "path": "assets-source/rooms/guardian-vault/staging/report.json",
+          "sha256": "7f76ca32904bf5bc681e0bffdcb6e0dac53b43fb169a1dd767cd96b3ddc2dcf8"
+        },
+        {
+          "path": "assets-source/rooms/guardian-vault/staging/engine-compare.json",
+          "sha256": "cee7bb401dc4019183329d6c6203e8f9212112a5c4c8e28f85917b1bbdbdb319"
+        },
+        {
+          "path": "assets-source/rooms/guardian-vault/staging/uv1-report.json",
+          "sha256": "746751012ca7bb812058752c65bbd8a3838eb005dbe1a4da762bcf2d1876d6ba"
+        },
+        {
+          "path": "assets-source/rooms/guardian-vault/provenance.json",
+          "sha256": "98039201e1ca70d416872202ec101811f46094d3a1a2305643f7d9a3fa1456f1"
+        },
+        {
+          "path": "/tmp/rxr-prev/rebake2-status.md",
+          "sha256": "1a3e0a308267c2b1225260fa31bb09d0a4ea5ecd617359199a78856caae741a8"
+        },
+        {
+          "path": "/tmp/rxr-prev/score-guardian-vault-v3.json",
+          "sha256": "90004bc2e00c1e985885e12110880188e352ba2b0bf33190fc2ba291a4c6548f"
+        }
+      ],
+      "previousScore": 76,
+      "build": "60cff33"
+    }
+  ]
 }

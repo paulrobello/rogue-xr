@@ -1,0 +1,161 @@
+{
+  "pieceId": "combat-table",
+  "route": "scripted (procedural Blender geometry; no provider generation; shared PBR material sets)",
+  "generator": {
+    "path": "scripts/assets/build-combat-table.py",
+    "sha256": "2dc281f221ed3bffd6540b1ff989424301446a611596c7cffe169d1fdbe7deb1"
+  },
+  "generatorDeps": [
+    {
+      "path": "scripts/assets/lightmap_helpers.py",
+      "sha256": "c74c968a3d3ed95bae831262af3c5ab1bacedfa0e2e131b95d5d7bf4e59d66ad"
+    }
+  ],
+  "authoringAgent": "Claude Code subagent (claude-opus-5-5), dispatched by the rogue-xr primary session",
+  "blender": "5.2.2 LTS",
+  "blendFiles": [
+    {
+      "path": "assets-source/props/combat-table/staging/combat-table.high.blend",
+      "sha256": "320c8255541a8295ea85f2f7b975e57bc560c14dd0f94a25bae4cfc9e58eba64",
+      "bytes": 630718
+    },
+    {
+      "path": "assets-source/props/combat-table/staging/combat-table.low.blend",
+      "sha256": "d51369ab0a0f1104e7e0a64ba4a7d44e3340eabdd8e410234adb59c3245e5883",
+      "bytes": 214056
+    }
+  ],
+  "budgets": {
+    "triangles": 4184,
+    "trianglesHigh": 23196,
+    "maxTriangles": 20000,
+    "materials": [
+      "walnut",
+      "brass-aged",
+      "brass-polished",
+      "felt"
+    ],
+    "maxMaterials": 4,
+    "aoAtlasPx": 1024
+  },
+  "bake": {
+    "device": "GPU:METAL (Apple M4 Max (GPU - 40 cores))",
+    "samples": 64,
+    "margin_px": 8,
+    "size": 1024,
+    "ao_distance_m": 0.12,
+    "seconds_per_node": {
+      "table-body": 6.26,
+      "leaf-left": 0.53,
+      "leaf-right": 0.48
+    },
+    "coverage": 0.2784,
+    "ao_mean": 0.8127,
+    "ao_p05": 0.0
+  },
+  "texelDensityPxPerM": {
+    "uv0_tile": {
+      "walnut": 2045.8,
+      "brass-aged": 2028.2,
+      "brass-polished": 2017.1,
+      "felt": 2048.0
+    },
+    "uv1_ao": {
+      "walnut": 281.7,
+      "brass-aged": 279.9,
+      "brass-polished": 277.5,
+      "felt": 281.8
+    }
+  },
+  "references": [
+    {
+      "path": "assets-source/concepts/table-sheet-1.png",
+      "sha256": "bc5823964df0b85cce0c984d4555f2af7c57e5e55e7ae5740dbb35fd4dcb9f4c",
+      "provider": "higgsfield",
+      "pickedBy": "Paul, 2026-11-15 (docs/art-bible.md)",
+      "jobRecord": "assets-source/style/provenance.json"
+    }
+  ],
+  "materialsUsed": {
+    "sets": {
+      "walnut": {
+        "basecolor": "c2c1d72ba308c02f6304ee389a86d6663199d01a352160c347801cefd4042a0b",
+        "normal": "3ee262cb20e41fe1f8b6dac8528f0b3f51e6e129cc9542f99d81c21242046558",
+        "orm": "6de73e58bc870595d74968b44e4f94b153c2dfc529ae6cb5c9e2beda5c24846d"
+      },
+      "brass-aged": {
+        "basecolor": "f731331533f5e9293ab3172f052aef3f3984924012dfe3c44540756af17b4316",
+        "normal": "752f6211fca91fa4e2beb4e43c11ba097d2da7139268fdf33fb5b2ee26bfbe3a",
+        "orm": "dab4896ed62310c39b975954f70cddf116f86518842eb7d84b0fde14dc7adbeb"
+      },
+      "brass-polished": {
+        "basecolor": "e06711b70706c57713bad023bfd9690715a67ae7b85fcc3041d596f7b0630e15",
+        "normal": "48e62a85458bfc64ffc095f4f6a44c69b0058b90e01a664a3f3682a0222bfb3c",
+        "orm": "ac621605925e523ca9b25bd18bbfe4bdab575bb3a9876a5390adc5a29c559e9a"
+      }
+    },
+    "record": "assets-source/materials/README.md"
+  },
+  "derivedFiles": [
+    {
+      "path": "public/assets/props/combat-table/combat-table.ao.ktx2",
+      "sha256": "7bf9fc37a9493e124bb24d758395f65e8e4f71b2a8ea77df3b9db2719899e1b2",
+      "bytes": 460478
+    },
+    {
+      "path": "public/assets/props/combat-table/combat-table.ao.png",
+      "sha256": "846582be5d7016424855c7daf40825acb388bc4a496c4d7a9ba1c422a2b238b5",
+      "bytes": 363980
+    },
+    {
+      "path": "public/assets/props/combat-table/combat-table.glb",
+      "sha256": "af23a6d82cf4b63047e8339bc37bf345b68b43d7e6ceba611ad6fd69d5aa2904",
+      "bytes": 235412
+    },
+    {
+      "path": "public/assets/props/combat-table/combat-table.manifest.json",
+      "sha256": "d6962cece9753a069e5a6126a7a8c6553e6538cc0defdc2d09ec9441551baed6",
+      "bytes": 6567
+    }
+  ],
+  "stagingReport": {
+    "path": "assets-source/props/combat-table/staging/report.json",
+    "sha256": "4d06b951519b9f30ec32baa4b39ac8512dadb81fd33f8e83abe17173beabb348"
+  },
+  "license": "Original work generated in Blender from a checked-in script; concept reference and the shared PBR material sources from Paul's paid Higgsfield plan (Terms of Use 4.4)",
+  "validation": {
+    "date": "2026-11-17",
+    "record": "docs/asset-validation.md section 2",
+    "checks": [
+      "13 of 13 staging report hashes match the files on disk",
+      "9 of 9 source material hashes match public/assets/materials",
+      "reimport: 4,184 triangles, 4 materials, no errors",
+      "tests/combat-table-asset.test.ts 6 of 6"
+    ],
+    "open": [
+      "no failure-path test for the greybox and factor-only fallbacks in src/main.ts (F2)"
+    ]
+  },
+  "approvals": [
+    {
+      "gate": "technical",
+      "status": "pending",
+      "notes": "open until the fallback test exists (F2)"
+    },
+    {
+      "gate": "creative",
+      "status": "pending",
+      "notes": "no independent score yet; review sheet assets-source/props/combat-table/staging/combat-table.review-sheet.jpg"
+    },
+    {
+      "gate": "rights",
+      "status": "pending",
+      "notes": "evidence in license above; verdict in docs/asset-validation.md"
+    },
+    {
+      "gate": "owner",
+      "status": "pending",
+      "notes": "Paul approves the in-engine look (P4-T10)"
+    }
+  ]
+}

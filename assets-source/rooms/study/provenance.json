@@ -424,5 +424,103 @@
       "status": "pending",
       "notes": "in-engine look approval (P4-T10)"
     }
-  ]
+  ],
+  "independentScore": {
+    "score": 84,
+    "scale": "0-100 visual fidelity to the art bible and study-kit language",
+    "scorer": "independent reviewer agent (separate from the authoring agent; did not build the asset)",
+    "date": "2026-11-17",
+    "acceptanceBar": 80,
+    "clearsBar": true,
+    "build": "b1df5d3",
+    "previousScore": null,
+    "rubric": [
+      {
+        "criterion": "form, layout and proportions",
+        "points": 26,
+        "max": 30,
+        "note": "Bookcase walls on three sides, a coffered walnut ceiling, a stained lancet on the axis and the central gear column give the box dense walls and a strong centre (hero, p5-int-study.jpg). Door frames are thin gilt and consistent. Plug check (scripts/plug.py, bbox from |in-out|>25): gilt pixels in 10 px bands on left, right and top of the former door box are 0.00%; column-mean L* across the edges stays within the sconce falloff on the left (L* 15 to 11 over 32 px, a smooth gradient, not a step) and 3 L* on the right; Laplacian variance on the edges (80-278 against 74-384 on the open wall) sits inside the range of the open wall beside it, so no seam, leak, z-fight or leftover architrave. Still a single-height box."
+      },
+      {
+        "criterion": "signature features: study",
+        "points": 21,
+        "max": 25,
+        "note": "Bookcases, gear column, stained-glass patch on the floor and wall sconces carry the study read. The writing desk is small and set against the far wall (desk shot), so the 'study' furniture is under-scaled next to the column."
+      },
+      {
+        "criterion": "surface detail and material read",
+        "points": 17,
+        "max": 20,
+        "note": "The only room with baked basecolor, normal and ORM from a 124,637-tri high poly, 65.5 px/m lightmap. Book spines, wainscot grain and brass read as painted materials. The column brass is uniform and slightly foil-like in the desk shot."
+      },
+      {
+        "criterion": "colour, value and lighting mood",
+        "points": 12,
+        "max": 15,
+        "note": "On palette: hero frame hue 18.8, sat 0.713; in-game hue 19.5, sat 0.685, L* 16.3. Stained glass throws coloured floor patches as the bible asks. Deduction: the engine hero is dark, L* 11.7 with 39.5% under L* 5 and 9.8% under L* 2; the wainscot box 960-1080 x 420-500 is L* 8.3 with 48% under L* 5, so corners fall toward black rather than warm dark. In-game: 21.8% under L* 5, 7.3% under L* 2."
+      },
+      {
+        "criterion": "readability and comfort at seated VR distance",
+        "points": 8,
+        "max": 10,
+        "note": "Enemies read clearly against the floor in p5-int-study.jpg and the column marks the centre. The dark lower walls (L* 8.3) and the dense bookcase colour noise at the periphery cost a little."
+      }
+    ],
+    "topFixes": [
+      "Lift the lower-wall and corner values toward warm dark: hero 39.5% of pixels under L* 5 and 9.8% under L* 2, wainscot L* 8.3; target the hall's in-game 18% / 2%.",
+      "Scale up the writing desk or move it forward so the study furniture reads at seated distance next to the gear column.",
+      "Give the column brass painted value variation instead of the uniform foil read in the desk shot."
+    ],
+    "method": "Benchmark room, scored with the corridor's criteria and maxima, with 'signature features: study' in place of 'passage'. No previous independent score exists. Viewed in full p5-rooms-study-hero, hero.diffuse, desk, plug-e-in, plug-e-out, p5-int-study.jpg and p5-int-study-sealed.jpg, and the staging review sheet for attribution. Measured frame and box RGB, hue, saturation, CIE L* stats and crush shares (HUD masked on p5-int), floor L* p90/p10 (hero 11.42, in-game 5.15), and ran the plug diff, gilt edge band, edge-profile and Laplacian checks. Scripts in /tmp/fb17/rescore/scripts/. This score records no owner approval. No repo edits.",
+    "evidence": [
+      {
+        "path": "docs/art-bible.md",
+        "sha256": "11da71b45f24eeb258ef77d328ef1aa009297a9231608cb80bb429aa3ff2ad6a"
+      },
+      {
+        "path": "docs/verification/p5-int-study.jpg",
+        "sha256": "2a54130faf77c6c6c434c677b39b4337fe3a2d57de7c097331b06c9cfb4aeaaa"
+      },
+      {
+        "path": "docs/verification/p5-rooms-study-hero.jpg",
+        "sha256": "4a957664f7295ac42ed681fc118a9ff25fb29dc9cd46d2d8fe363edff9913936"
+      },
+      {
+        "path": "docs/verification/p5-rooms-study-hero.diffuse.jpg",
+        "sha256": "55429bc1cbdf3e1f3698faf60e1efce96af5427fcc7656a2c19e22a5427c4325"
+      },
+      {
+        "path": "docs/verification/p5-rooms-study-desk.jpg",
+        "sha256": "ebee38562667091b1c99b0bc610caaad83f55e9abae895990860135dd359da0e"
+      },
+      {
+        "path": "docs/verification/p5-rooms-study-plug-e-in.jpg",
+        "sha256": "ead883f6b61887d274de00e798120a4a613ab46f65d0087d19ac1ea555e85a6d"
+      },
+      {
+        "path": "docs/verification/p5-rooms-study-plug-e-out.jpg",
+        "sha256": "b09fdb779c4291d3eadc5efc509c621465a9d8bacc266af0c51f39838d4f1a20"
+      },
+      {
+        "path": "docs/verification/p5-int-study-sealed.jpg",
+        "sha256": "6ca9768ac760034bc17054eaa133790ae2faf1484e939216011027a7f04f5032"
+      },
+      {
+        "path": "assets-source/rooms/study/staging/review-sheet.jpg",
+        "sha256": "cefaee013f802882f5660ba8669226f55ae36362aa752b62f33464142db9f38b"
+      },
+      {
+        "path": "assets-source/rooms/study/staging/report.json",
+        "sha256": "2d244a1a42ccdf57026b39f69f39a12923a06e3888e6105592d82f452726338e"
+      },
+      {
+        "path": "assets-source/rooms/study/staging/engine-compare.json",
+        "sha256": "abb36a28e9c767cc9c03ecd221bcde323d957e85ecf440769ff4028e365ce94a"
+      },
+      {
+        "path": "assets-source/rooms/study/provenance.json",
+        "sha256": "4b477c8c168f64c81b2d48b301257a762d205485b0194075f8b68832e5648961"
+      }
+    ]
+  }
 }
