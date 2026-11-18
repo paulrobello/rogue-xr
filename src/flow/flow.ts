@@ -1,3 +1,4 @@
+import { PERMANENT_CARD_IDS } from '../content/rewards.ts';
 import type { RunSnapshot } from '../persist/saves.ts';
 import { snapshotRun } from '../persist/saves.ts';
 import {
@@ -25,7 +26,9 @@ import {
 } from '../rules/run.ts';
 import {
   bankRunCogs,
+  buyPermanentCard,
   buyUpgrade,
+  canBuyPermanentCard,
   nextCost,
   runOptionsFrom,
   type UpgradeId,
@@ -249,6 +252,20 @@ export class RunFlow {
     return true;
   }
 
+  canBuyPermanentCard(id: string): boolean {
+    return (
+      this.phaseValue === 'workshop' &&
+      canBuyPermanentCard(this.workshopValue, id, PERMANENT_CARD_IDS)
+    );
+  }
+
+  buyPermanentCard(id: string): boolean {
+    if (!this.canBuyPermanentCard(id)) return false;
+    this.workshopValue = buyPermanentCard(this.workshopValue, id, PERMANENT_CARD_IDS);
+    this.emit({ type: 'workshop' });
+    return true;
+  }
+
   /**
    * Starts a fresh run on `seed` from the title at `difficulty`, with the workshop's upgrades applied
    * and the level's player max hp on top. The level is stored on the run.
@@ -256,7 +273,8 @@ export class RunFlow {
   newRun(seed: string, difficulty: Difficulty = DEFAULT_DIFFICULTY): boolean {
     if (this.phaseValue !== 'title') return false;
     const base = runOptionsFrom(this.workshopValue);
-    this.runValue = createRun(seed, this.opts.starterDeck, {
+    const deck = [...this.opts.starterDeck, ...this.workshopValue.permanentCards];
+    this.runValue = createRun(seed, deck, {
       ...base,
       maxHp: difficultyMaxHp(base.maxHp, difficulty),
       difficulty,

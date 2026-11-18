@@ -20,7 +20,11 @@ import { mountFloorView } from '../src/world/floor-view.ts';
 
 const DT = 1 / 60;
 
-async function openFight(options: { enemyHp?: number; deck?: readonly string[] }) {
+async function openFight(options: {
+  enemyHp?: number;
+  deck?: readonly string[];
+  bonusDice?: number;
+}) {
   const scene = new THREE.Scene();
   const view = mountFloorView(scene, new THREE.Group(), 'SPIRE002');
   const room = view.world.plan.rooms.findIndex((r) => r.encounter?.tier === 'regular');
@@ -375,3 +379,18 @@ describe('F11 the rolled die pulses in the tray until it is thrown', () => {
     rig.hook.dispose();
   }, 60_000);
 });
+
+it('renders and settles both Spare Die rolls before releasing effects', async () => {
+  const rig = await openFight({ deck: Array(10).fill('cog-toss'), bonusDice: 1 });
+  const { session } = rig;
+  flingFirstCard(rig);
+  const readout = session.controller.lastDice;
+  expect(readout?.rolls).toHaveLength(2);
+  expect(session.awaitingThrow).toBe(true);
+  rig.actions.emit({ type: 'throw-dice' });
+  for (let i = 0; i < 600 && session.awaitingDice; i++) rig.step();
+  expect(session.rolls).toHaveLength(2);
+  expect(session.message).toBe(`${readout?.rolls.join(' and ')} · Kept ${readout?.value}`);
+  expect(readout?.value).toBe(Math.max(...(readout?.rolls ?? [])));
+  rig.hook.dispose();
+}, 60_000);

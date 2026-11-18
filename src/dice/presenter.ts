@@ -471,28 +471,36 @@ export class DicePresenter {
    * replays whatever the hand did. Returns the die id.
    */
   throw(kind: DieKind, face: number, value: number): string {
+    return this.throwMany([{ kind, face, value }])[0] as string;
+  }
+
+  throwMany(specs: readonly { kind: DieKind; face: number; value: number }[]): string[] {
     if (this.disposed) throw new Error('DicePresenter is disposed');
     const held = this.waitingDie?.held?.clone() ?? null;
     this.clear();
     const s = this.stream;
     const span = (k: number) => (s.next() * 2 - 1) * k;
     const { halfX, halfZ } = this.options;
-    const id = `die-${++this.count}`;
-    const position = { x: span(halfX * 0.5), y: 0.1 + s.next() * 0.04, z: halfZ * 0.55 };
-    const linvel = { x: span(0.25), y: -0.1 - s.next() * 0.2, z: -(0.5 + s.next() * 0.5) };
-    const angvel = { x: span(18), y: span(18), z: span(18) };
-    if (held) {
-      const clamp = (v: number, k: number) => Math.min(k, Math.max(-k, v));
-      position.x = clamp(held.x, halfX * HAND_START_INSET);
-      position.y = Math.min(HAND_START_TOP, Math.max(position.y, held.y));
-      position.z = clamp(held.z, halfZ * HAND_START_INSET);
-    }
-    this.world.throwDie(id, kind, position, linvel, angvel, face);
-    const mesh = this.spawnMesh(kind, id);
-    this.root.add(mesh);
-    this.dice.set(id, { mesh, kind, face, value, label: null });
-    this.copyPose(id);
-    return id;
+    const ids: string[] = [];
+    specs.forEach((spec, index) => {
+      const id = `die-${++this.count}`;
+      const position = { x: span(halfX * 0.5), y: 0.1 + s.next() * 0.04, z: halfZ * 0.55 };
+      const linvel = { x: span(0.25), y: -0.1 - s.next() * 0.2, z: -(0.5 + s.next() * 0.5) };
+      const angvel = { x: span(18), y: span(18), z: span(18) };
+      if (held && index === 0) {
+        const clamp = (v: number, k: number) => Math.min(k, Math.max(-k, v));
+        position.x = clamp(held.x, halfX * HAND_START_INSET);
+        position.y = Math.min(HAND_START_TOP, Math.max(position.y, held.y));
+        position.z = clamp(held.z, halfZ * HAND_START_INSET);
+      }
+      this.world.throwDie(id, spec.kind, position, linvel, angvel, spec.face);
+      const mesh = this.spawnMesh(spec.kind, id);
+      this.root.add(mesh);
+      this.dice.set(id, { mesh, kind: spec.kind, face: spec.face, value: spec.value, label: null });
+      this.copyPose(id);
+      ids.push(id);
+    });
+    return ids;
   }
 
   /** The face index showing up on the die's mesh right now. */

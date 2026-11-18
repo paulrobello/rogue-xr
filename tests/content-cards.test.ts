@@ -103,8 +103,8 @@ const EXPECTED: Readonly<Record<string, Outcome>> = {
   'ratchet-flurry+': { hp: [51, 60], steam: 2 },
   'rivet-volley': { hp: [56, 56], steam: 2 },
   'rivet-volley+': { hp: [54, 54], steam: 2 },
-  'escapement-hammer': { hp: [49, 60], enemyStatuses: [{ vulnerable: 1 }, {}], steam: 1 },
-  'escapement-hammer+': { hp: [46, 60], enemyStatuses: [{ vulnerable: 2 }, {}], steam: 1 },
+  'escapement-hammer': { hp: [49, 60], enemyStatuses: [{ vulnerable: 1 }, {}], steam: 0 },
+  'escapement-hammer+': { hp: [46, 60], enemyStatuses: [{ vulnerable: 2 }, {}], steam: 0 },
   defend: { hp: [60, 60], block: 5, steam: 2 },
   'defend+': { hp: [60, 60], block: 8, steam: 2 },
   'lucky-rivets': { hp: [60, 60], block: 6, steam: 2 },
@@ -115,8 +115,8 @@ const EXPECTED: Readonly<Record<string, Outcome>> = {
   'overwind+': { hp: [60, 60], steam: 2, playerStatuses: { 'wound-up': 3 }, pile: 'exhaust' },
   'spanner-jam': { hp: [60, 60], enemyStatuses: [{ weak: 1, vulnerable: 1 }, {}], steam: 2 },
   'spanner-jam+': { hp: [60, 60], enemyStatuses: [{ weak: 2, vulnerable: 2 }, {}], steam: 2 },
-  cogstorm: { hp: [52, 52], steam: 1 },
-  'cogstorm+': { hp: [48, 48], steam: 1 },
+  cogstorm: { hp: [52, 52], steam: 0 },
+  'cogstorm+': { hp: [48, 48], steam: 0 },
   'furnace-brand': { hp: [56, 60], enemyStatuses: [{ overheat: 4 }, {}], steam: 2 },
   'furnace-brand+': { hp: [54, 60], enemyStatuses: [{ overheat: 5 }, {}], steam: 2 },
   'warding-glyph': { hp: [60, 60], block: 8, steam: 2 },
@@ -183,7 +183,8 @@ describe('card effects through the engine', () => {
   it('Escapement Hammer leaves the target Vulnerable for the next hit', () => {
     const hammer = getCard('escapement-hammer');
     const strike = getCard('strike');
-    const deck = [hammer, strike, ...Array.from({ length: 8 }, () => filler)];
+    const valve = getCard('release-valve');
+    const deck = [hammer, strike, valve, ...Array.from({ length: 7 }, () => filler)];
     const opened = startCombat({
       player: { hp: 40, maxHp: 40 },
       deck,
@@ -191,6 +192,7 @@ describe('card effects through the engine', () => {
       rng: new RunRng('C4RDS000').snapshot(),
     });
     let state = toHand(toHand(apply(opened.state, { type: 'start-turn' }).state, 0), 1);
+    state = apply(toHand(state, 2), playAction(valve, 2)).state;
     state = apply(state, playAction(hammer, 0)).state;
     state = apply(state, playAction(strike, 1)).state;
     expect(state.enemies[0]?.hp).toBe(ENEMY_HP - 11 - 9);

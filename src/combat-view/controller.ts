@@ -85,6 +85,8 @@ export interface DiceReadout {
   readonly dieName: string;
   readonly faces: number;
   readonly value: number;
+  /** Every physical roll, in order. The final entry is not necessarily the kept winner. */
+  readonly rolls: readonly number[];
 }
 
 export type InvalidSubject =
@@ -372,10 +374,12 @@ export class CombatController {
     if (info.dice !== undefined) {
       const die = dieById(info.dice);
       let best = Number.NEGATIVE_INFINITY;
+      const rolls: number[] = [];
       for (let n = 0; n <= this.bonusDice; n++) {
         const rolled = rollDice(current, die);
         current = rolled.state;
         best = Math.max(best, rolled.roll.value);
+        rolls.push(rolled.roll.value);
       }
       dice = best;
       this.lastDice = {
@@ -384,6 +388,7 @@ export class CombatController {
         dieName: die.name,
         faces: die.faces.length,
         value: best,
+        rolls,
       };
     }
     const action = {

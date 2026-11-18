@@ -83,10 +83,13 @@ export {
 export * from './types.ts';
 export {
   bankRunCogs,
+  buyPermanentCard,
   buyUpgrade,
+  canBuyPermanentCard,
   createWorkshop,
   maxTier,
   nextCost,
+  permanentCardCost,
   runOptionsFrom,
   UPGRADE_IDS,
   UPGRADES,

@@ -40,7 +40,12 @@ import {
 } from '../combat-view/impact-timing.ts';
 import { crownBounds, intentChips, READOUT_MARGIN, readoutCentreY } from '../combat-view/index.ts';
 import { readoutHeightsClear } from '../combat-view/panel-layout.ts';
-import { type BoltKind, SpellFx } from '../combat-view/spell-fx.ts';
+import {
+  type AttackVisualKind,
+  attackVisualKind,
+  type BoltKind,
+  SpellFx,
+} from '../combat-view/spell-fx.ts';
 import {
   drawChipsWithStatuses,
   drawTip,
@@ -403,6 +408,7 @@ interface Flight {
   readonly from: THREE.Vector3;
   readonly power: number;
   readonly kind: BoltKind;
+  readonly visual: AttackVisualKind;
   readonly targets: { readonly id: string; readonly at: THREE.Vector3 }[];
   /** Seconds from the play until the bolt leaves, the bolt's flight time, and the contact time. */
   readonly delay: number;
@@ -525,7 +531,10 @@ export class CombatSession {
   private platePose: PlatePose;
   private handKey = '';
   private lastDice: CombatController['lastDice'] = null;
-  private pendingThrow: { kind: DieKind; face: number; value: number } | null = null;
+  private pendingThrow: { kind: DieKind; face: number; value: number }[] | null = null;
+  private settlingDice = 0;
+  private keptDiceHint = '';
+  private lastResolvedRoll: number | null = null;
   /**
    * A played dice card's effects and the view from before it, held until its die settles: `waiting`
    * counts seconds since the roll (before the throw) or since the throw (after it).
@@ -853,8 +862,7 @@ export class CombatSession {
       dice.onSettled((roll) => {
         perfMark('dice-settled');
         this.rolls.push(roll);
-        this.releaseHeld();
-        this.message = `Rolled ${roll.value}`;
+        if (this.settlingDice > 0 && --this.settlingDice === 0) this.releaseHeld();
         this.sfx('dice-settle', dice.root.position);
       }),
       deps.actions.on('combat-pointer', (a) => this.pointer(a)),
@@ -1746,7 +1754,8 @@ export class CombatSession {
     this.pendingThrow = null;
     this.holdingDie = false;
     if (this.held) this.held.waiting = 0;
-    this.dice.throw(pending.kind, pending.face, pending.value);
+    this.dice.throwMany(pending);
+    this.settlingDice = pending.length;
     perfMark('dice-throw');
     this.sfx('dice-roll', this.dice.root.position);
     this.message = '';
@@ -1884,7 +1893,7 @@ export class CombatSession {
       const card = hovered === null ? null : this.handCard(hovered);
       if (card?.target === 'none') return untargetedHint(card.name, 'pointed-xr');
     }
-    return '';
+    return this.keptDiceHint;
   }
 
   /** Shows `text` on the table hint label (hidden for ''), redrawing only when it changes. */
@@ -1937,6 +1946,14 @@ export class CombatSession {
     const held = this.held;
     if (!held || this.pendingThrow) return;
     this.held = null;
+    this.settlingDice = 0;
+    const readout = this.controller.lastDice;
+    if (readout) {
+      this.lastResolvedRoll = readout.value;
+      this.keptDiceHint =
+        readout.rolls.length > 1 ? `${readout.rolls.join(' and ')} · Kept ${readout.value}` : '';
+      this.message = this.keptDiceHint || `Rolled ${readout.value}`;
+    }
     // A dice attack flies once its die settles: from the plate for a sigil, else from the tray.
     const sigil = this.launch?.kind === 'sigil' ? this.launch : null;
     this.launch = {
@@ -2149,13 +2166,17 @@ export class CombatSession {
       const dieId = roll ? getCard(roll.cardId).dice : undefined;
       if (roll && dieId) {
         const die = dieById(dieId);
-        this.pendingThrow = {
+        this.keptDiceHint = '';
+        this.pendingThrow = roll.rolls.map((value) => ({
           kind: die.faces.length === 6 ? 'd6' : 'd8',
-          face: die.faces.indexOf(roll.value),
-          value: roll.value,
-        };
-        this.dice.showWaiting(this.pendingThrow.kind);
-        this.message = `Throw the ${die.name}`;
+          face: die.faces.indexOf(value),
+          value,
+        }));
+        this.dice.showWaiting(this.pendingThrow[0]?.kind ?? 'd6');
+        this.message =
+          roll.rolls.length > 1
+            ? `Throw ${roll.rolls.length} × ${die.name}`
+            : `Throw the ${die.name}`;
       }
     }
     const awaited = this.controller.awaitedSigil;
@@ -2403,6 +2424,7 @@ export class CombatSession {
       from,
       power: launch?.power ?? CARD_POWER,
       kind: launch?.kind ?? 'card',
+      visual: attackVisualKind(card?.id),
       targets,
       delay,
       seconds,
@@ -2493,7 +2515,7 @@ export class CombatSession {
     if (!f.launched && t >= f.delay - 1e-9) {
       f.launched = true;
       for (const target of f.targets)
-        this.fx.launch(f.from, target.at, f.seconds, f.power, f.kind, t - f.delay);
+        this.fx.launch(f.from, target.at, f.seconds, f.power, f.kind, t - f.delay, f.visual);
     }
     if (t >= f.contact - 1e-9) {
       this.landFlight();
@@ -2508,7 +2530,7 @@ export class CombatSession {
     this.flight = null;
     this.lastShown = f.after;
     for (const target of f.targets) {
-      this.fx.impact(target.at, f.from, f.power);
+      this.fx.impact(target.at, f.from, f.power, f.visual);
       this.knock(target.id, f.from, f.power);
     }
     this.present(f.events);
@@ -2698,8 +2720,8 @@ export class CombatSession {
       ctx.textBaseline = 'middle';
       ctx.fillText(`Turn ${state.turn}`, 24, 186);
       ctx.fillText(this.banner || `Stage: ${this.stage}`, 24, 236);
-      const last = this.rolls[this.rolls.length - 1];
-      if (last) ctx.fillText(`Last roll ${last.value}`, 24, 284);
+      if (this.lastResolvedRoll !== null)
+        ctx.fillText(`Last roll ${this.lastResolvedRoll}`, 24, 284);
     });
     // End Turn reads as disabled while the enemies act.
     const waiting = this.shown !== null;

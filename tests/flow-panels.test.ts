@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { STARTER_DECK } from '../src/content/cards.ts';
-import { REWARD_POOL } from '../src/content/rewards.ts';
+import { PERMANENT_CARD_IDS, REWARD_POOL } from '../src/content/rewards.ts';
 import { RunFlow } from '../src/flow/flow.ts';
 import { FlowUi, splitControlId, tableDistanceCell } from '../src/flow/panels.ts';
 import { DEFAULT_SETTINGS } from '../src/persist/db.ts';
@@ -55,6 +55,52 @@ describe('FlowUi reward board', () => {
     ui.sync(head);
     expect(ui.controlIds()).not.toContain('reward-skip-skip');
     expect(ui.controlIds().some((id) => id.startsWith('reward-'))).toBe(true);
+    ui.dispose();
+  });
+});
+
+describe('FlowUi permanent-card shop', () => {
+  it('browses, buys, reports ownership, paginates, and returns to the workshop', () => {
+    const flow = new RunFlow({
+      workshop: { ...createWorkshop(), cogsBanked: 60 },
+      starterDeck: STARTER_DECK,
+      rewardPool: REWARD_POOL,
+    });
+    const ui = new FlowUi({
+      flow,
+      keyArt: { url: '', titleSafe: { x: 0, y: 0, w: 0.3, h: 0.4 } },
+      seed: 'BRASS042',
+      snapshot: () => null,
+      settings: () => ({ ...DEFAULT_SETTINGS }),
+      onNewRun: (seed) => flow.newRun(seed),
+      onContinue: () => {},
+      onSettings: () => {},
+    });
+    const head = new THREE.Object3D();
+    flow.openWorkshop();
+    ui.sync(head);
+    expect(ui.controlIds()).toContain('workshop-permanent-cards');
+
+    expect(ui.activate('workshop-permanent-cards')).toBe(true);
+    const first = PERMANENT_CARD_IDS[0] as string;
+    expect(ui.controlIds()).toContain(`workshop-buy-permanent-${first}`);
+    expect(ui.root.getObjectByName(`workshop-permanent-effect-${first}`)).toBeDefined();
+    expect(flow.workshop.cogsBanked).toBe(60);
+
+    expect(ui.activate(`workshop-buy-permanent-${first}`)).toBe(true);
+    expect(flow.workshop.permanentCards).toContain(first);
+    expect(flow.workshop.cogsBanked).toBe(0);
+    expect(ui.root.getObjectByName('workshop-feedback')).toBeDefined();
+    expect(ui.activate(`workshop-buy-permanent-${first}`)).toBe(false);
+
+    expect(ui.controlIds()).toContain('workshop-next-page');
+    expect(ui.activate('workshop-next-page')).toBe(true);
+    expect(ui.root.getObjectByName('workshop-page')).toBeDefined();
+    expect(ui.activate('workshop-previous-page')).toBe(true);
+    expect(ui.activate('workshop-back')).toBe(true);
+    expect(ui.controlIds()).toContain('workshop-permanent-cards');
+    expect(ui.activate('workshop-back')).toBe(true);
+    expect(flow.phase).toBe('title');
     ui.dispose();
   });
 });

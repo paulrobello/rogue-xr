@@ -6,6 +6,9 @@ export const WORKSHOP_VERSION = 1;
 
 export type UpgradeId = 'sturdy-frame' | 'spare-die' | 'wide-catalog';
 export const UPGRADE_IDS: readonly UpgradeId[] = ['sturdy-frame', 'spare-die', 'wide-catalog'];
+export function permanentCardCost(id: string): number {
+  return id === 'escapement-hammer' ? 120 : 60;
+}
 
 /** What one purchased tier adds to a fresh run. Tiers stack additively. */
 export interface UpgradeEffect {
@@ -23,23 +26,18 @@ export interface UpgradeDef {
   readonly effectPerTier: UpgradeEffect;
 }
 
-/**
- * The slice's three upgrades. A run banks roughly 80 to 100 cogs (about five regular fights at 10-15,
- * plus treasure), so prices are sized for about one purchase per run and a full tree takes about five
- * runs: sturdy-frame 30/60/90 (180), spare-die 90, wide-catalog 60/120 (180), 450 cogs in all.
- */
 export const UPGRADES: Readonly<Record<UpgradeId, UpgradeDef>> = {
   'sturdy-frame': {
     id: 'sturdy-frame',
     name: 'Sturdy Frame',
     description: 'Start each run with 5 more maximum HP per tier.',
-    costs: [30, 60, 90],
+    costs: [30, 120, 180],
     effectPerTier: { maxHp: 5 },
   },
   'spare-die': {
     id: 'spare-die',
     name: 'Spare Die',
-    description: 'Start each run with one extra die in the dice tray.',
+    description: 'Roll the die on each dice card twice. Keep the higher result.',
     costs: [90],
     effectPerTier: { bonusDice: 1 },
   },
@@ -47,7 +45,7 @@ export const UPGRADES: Readonly<Record<UpgradeId, UpgradeDef>> = {
     id: 'wide-catalog',
     name: 'Wide Catalog',
     description: 'Card rewards offer one more choice per tier.',
-    costs: [60, 120],
+    costs: [60, 240],
     effectPerTier: { rewardChoices: 1 },
   },
 };
@@ -59,6 +57,7 @@ export interface WorkshopState {
   readonly cogsBanked: number;
   /** Tiers bought per upgrade, 0 to the upgrade's tier cap. */
   readonly purchased: Readonly<Record<UpgradeId, number>>;
+  readonly permanentCards: readonly string[];
 }
 
 export function createWorkshop(): WorkshopState {
@@ -66,7 +65,39 @@ export function createWorkshop(): WorkshopState {
     version: WORKSHOP_VERSION,
     cogsBanked: 0,
     purchased: { 'sturdy-frame': 0, 'spare-die': 0, 'wide-catalog': 0 },
+    permanentCards: [],
   };
+}
+
+/** Buys one card permanently. Throws `RulesError` for an unknown, duplicate, or unaffordable card. */
+export function buyPermanentCard(
+  ws: WorkshopState,
+  id: string,
+  catalog: readonly string[],
+): WorkshopState {
+  if (!catalog.includes(id)) throw new RulesError(`Unknown permanent card ${id}`);
+  if (ws.permanentCards.includes(id)) throw new RulesError(`Permanent card ${id} is already owned`);
+  const cost = permanentCardCost(id);
+  if (ws.cogsBanked < cost) {
+    throw new RulesError(`Permanent card ${id} costs ${cost} cogs, only ${ws.cogsBanked} banked`);
+  }
+  return {
+    ...ws,
+    cogsBanked: ws.cogsBanked - cost,
+    permanentCards: [...ws.permanentCards, id],
+  };
+}
+
+export function canBuyPermanentCard(
+  ws: WorkshopState,
+  id: string,
+  catalog: readonly string[],
+): boolean {
+  return (
+    catalog.includes(id) &&
+    !ws.permanentCards.includes(id) &&
+    ws.cogsBanked >= permanentCardCost(id)
+  );
 }
 
 export const maxTier = (id: UpgradeId): number => UPGRADES[id].costs.length;

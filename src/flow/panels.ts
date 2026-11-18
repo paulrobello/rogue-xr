@@ -13,6 +13,7 @@ import { CanvasLabel } from '../combat-view/canvas-label.ts';
 import { cardTip } from '../combat-view/card-keywords.ts';
 import { drawTip } from '../combat-view/status-info.ts';
 import { getCard } from '../content/cards.ts';
+import { PERMANENT_CARD_IDS } from '../content/rewards.ts';
 import { formatSeed } from '../core/rng.ts';
 import { appendSeedChar, SEED_ALPHABET, SEED_LENGTH } from '../desktop/seed-title.ts';
 import { HOLO_CARD_ASPECT } from '../hand/fan-layout.ts';
@@ -25,7 +26,14 @@ import {
   type Difficulty,
   runDifficulty,
 } from '../rules/difficulty.ts';
-import { maxTier, nextCost, UPGRADE_IDS, UPGRADES, type UpgradeId } from '../rules/workshop.ts';
+import {
+  maxTier,
+  nextCost,
+  permanentCardCost,
+  UPGRADE_IDS,
+  UPGRADES,
+  type UpgradeId,
+} from '../rules/workshop.ts';
 import { CARD_FLIGHT_SECONDS, flightGoal, flightPose, flightScale } from './card-flight.ts';
 import type { FlowPhase, RunFlow } from './flow.ts';
 import {
@@ -127,8 +135,10 @@ export const DECK_PAGE_SIZE = DECK_COLUMNS * DECK_ROWS;
 const DECK_CARD_WIDTH = 0.15;
 const DECK_GAP = 0.02;
 const ART_WIDTH = 3.4;
+const PERMANENT_CARD_PAGE_SIZE = 3;
 
 type Subview = 'main' | 'seed';
+type WorkshopSubview = 'main' | 'permanent-cards';
 
 /** A reward card on its way to the player; the pick is applied when it lands. */
 interface RewardFlight {
@@ -321,6 +331,9 @@ export class FlowUi {
   /** Control ids drawn as the chosen option. */
   private readonly selectedIds = new Set<string>();
   private subview: Subview = 'main';
+  private workshopSubview: WorkshopSubview = 'main';
+  private permanentCardPage = 0;
+  private permanentCardMessage = '';
   private seedValue: string;
   private seedDraft = '';
   private shownFor: FlowPhase | null = null;
@@ -556,6 +569,7 @@ export class FlowUi {
     if (phase === this.shownFor) return;
     this.shownFor = phase;
     if (phase !== 'title') this.subview = 'main';
+    if (phase !== 'workshop') this.workshopSubview = 'main';
     this.menu = 'closed';
     this.endFlight();
     this.rebuild();
@@ -895,6 +909,10 @@ export class FlowUi {
   }
 
   private buildWorkshop(): void {
+    if (this.workshopSubview === 'permanent-cards') {
+      this.buildPermanentCards();
+      return;
+    }
     const { flow } = this.deps;
     const ws = flow.workshop;
     const rows: MenuRow[] = [{ id: 'bank', label: `${ws.cogsBanked} cogs banked` }];
@@ -911,6 +929,11 @@ export class FlowUi {
       rows.push([{ id: `name-${id}`, label: `${def.name}  ${tier}`, weight: 2 }, buy]);
       rows.push({ id: `desc-${id}`, label: def.description });
     }
+    rows.push({
+      id: 'permanent-cards',
+      label: 'Permanent cards',
+      onSelect: () => this.openPermanentCards(),
+    });
     rows.push({ id: 'back', label: 'Back to title', onSelect: () => flow.toTitle() });
     this.board(
       'workshop',
@@ -925,6 +948,100 @@ export class FlowUi {
 
   private buy(id: UpgradeId): void {
     if (this.deps.flow.buy(id)) this.refresh();
+  }
+
+  private openPermanentCards(): void {
+    this.workshopSubview = 'permanent-cards';
+    this.permanentCardPage = 0;
+    this.permanentCardMessage = '';
+    this.refresh();
+  }
+
+  private buildPermanentCards(): void {
+    const { flow } = this.deps;
+    const start = this.permanentCardPage * PERMANENT_CARD_PAGE_SIZE;
+    const cards = PERMANENT_CARD_IDS.slice(start, start + PERMANENT_CARD_PAGE_SIZE);
+    const rows: MenuRow[] = [
+      {
+        id: 'bank',
+        label: `${flow.workshop.cogsBanked} cogs banked`,
+      },
+    ];
+    for (const id of cards) {
+      const card = getCard(id);
+      const owned = flow.workshop.permanentCards.includes(id);
+      const buy: MenuCell = owned
+        ? { id: `buy-permanent-${id}`, label: 'Owned' }
+        : flow.canBuyPermanentCard(id)
+          ? {
+              id: `buy-permanent-${id}`,
+              label: `Buy · ${permanentCardCost(id)}`,
+              onSelect: () => this.buyPermanent(id),
+            }
+          : { id: `buy-permanent-${id}`, label: `Needs ${permanentCardCost(id)}` };
+      rows.push([
+        { id: `permanent-${id}`, label: `${card.name} · ${card.cost} steam`, weight: 2 },
+        buy,
+      ]);
+      rows.push({ id: `permanent-effect-${id}`, label: card.description });
+    }
+    if (PERMANENT_CARD_IDS.length > PERMANENT_CARD_PAGE_SIZE) {
+      const pageCount = Math.ceil(PERMANENT_CARD_IDS.length / PERMANENT_CARD_PAGE_SIZE);
+      rows.push([
+        {
+          id: 'previous-page',
+          label: 'Previous',
+          onSelect: this.permanentCardPage > 0 ? () => this.changePermanentCardPage(-1) : undefined,
+        },
+        { id: 'page', label: `Page ${this.permanentCardPage + 1}/${pageCount}` },
+        {
+          id: 'next-page',
+          label: 'Next',
+          onSelect:
+            this.permanentCardPage + 1 < pageCount
+              ? () => this.changePermanentCardPage(1)
+              : undefined,
+        },
+      ]);
+    }
+    rows.push({
+      id: 'feedback',
+      label: this.permanentCardMessage || 'Start every future run with each card you buy.',
+    });
+    rows.push({
+      id: 'back',
+      label: 'Back to workshop',
+      onSelect: () => this.closePermanentCards(),
+    });
+    this.board(
+      'workshop',
+      rows,
+      { x: 0, y: 0.32, z: -BOARD_DISTANCE },
+      {
+        width: 0.8,
+        heading: 'Permanent cards',
+      },
+    );
+  }
+
+  private buyPermanent(id: string): void {
+    if (this.deps.flow.buyPermanentCard(id)) {
+      this.permanentCardMessage = `${getCard(id).name} added permanently.`;
+      this.refresh();
+    }
+  }
+
+  private changePermanentCardPage(delta: number): void {
+    const pageCount = Math.max(1, Math.ceil(PERMANENT_CARD_IDS.length / PERMANENT_CARD_PAGE_SIZE));
+    this.permanentCardPage = Math.max(0, Math.min(pageCount - 1, this.permanentCardPage + delta));
+    this.permanentCardMessage = '';
+    this.refresh();
+  }
+
+  private closePermanentCards(): void {
+    this.workshopSubview = 'main';
+    this.permanentCardMessage = '';
+    this.refresh();
   }
 
   private buildSettings(): void {

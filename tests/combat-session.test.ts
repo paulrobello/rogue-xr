@@ -735,11 +735,11 @@ describe('combat session', () => {
     rig.hook.dispose();
   }, 60_000);
 
-  // Quest 3 playtest 2026-11-16: an attack must visibly hit the enemy. The bolt flies to the hit
-  // point, and the HP change and hit reaction show at contact, not at release.
-  it('lands a flung attack on the enemy: bolt, impact and knock-back, then the HP change', async () => {
+  it('lands a flung Piston Strike with physical impact, knock-back and HP change at contact', async () => {
     const rig = await openFight('SPIRE002', { deck: Array(10).fill('strike') });
     const { session } = rig;
+    const launch = vi.spyOn(session.spellFx, 'launch');
+    const impact = vi.spyOn(session.spellFx, 'impact');
     const enemy = session.enemies[0];
     if (!enemy) throw new Error('no enemy');
     const hpOf = (s: CombatSession['view']) => s.enemies.find((e) => e.id === enemy.id)?.hp ?? -1;
@@ -767,6 +767,8 @@ describe('combat session', () => {
     rig.step(0.5);
     expect(enemy.body.position.equals(home)).toBe(true);
     expect(session.spellFx.active).toBe(false);
+    expect(launch.mock.calls[0]?.[6]).toBe('physical');
+    expect(impact.mock.calls[0]?.[3]).toBe('physical');
     rig.hook.dispose();
   }, 60_000);
 
@@ -820,6 +822,8 @@ describe('combat session', () => {
   it('casts a damage sigil as its glyph collapses, one bolt to every enemy, landing together', async () => {
     const rig = await openFight('SPIRE002', { deck: Array(10).fill('cogstorm') });
     const { session } = rig;
+    const launch = vi.spyOn(session.spellFx, 'launch');
+    const impact = vi.spyOn(session.spellFx, 'impact');
     const living = session.controller.state.enemies.filter((e) => e.hp > 0).length;
     const before = session.view.enemies.map((e) => e.hp);
     const uid = session.controller.state.piles.hand[0]?.uid as number;
@@ -850,6 +854,8 @@ describe('combat session', () => {
       session.controller.state.enemies.map((e) => e.hp),
     );
     expect(session.spellFx.flashing).toBe(Math.min(4, living));
+    expect(launch.mock.calls[0]?.[6]).toBe('storm');
+    expect(impact.mock.calls[0]?.[3]).toBe('storm');
     rig.hook.dispose();
   }, 60_000);
 

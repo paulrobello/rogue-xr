@@ -95,7 +95,7 @@ export const CARDS: readonly SliceCard[] = [
     id: 'escapement-hammer',
     name: 'Escapement Hammer',
     type: 'attack',
-    cost: 2,
+    cost: 3,
     target: 'enemy',
     effects: [
       { type: 'damage', amount: 11, target: 'target' },
@@ -197,7 +197,7 @@ export const CARDS: readonly SliceCard[] = [
     name: 'Cogstorm',
     type: 'sigil',
     sigil: 'gear',
-    cost: 2,
+    cost: 3,
     target: 'none',
     effects: [{ type: 'damage', amount: 4, hits: 2, target: 'all-opponents' }],
     description: 'Deal 4 damage to all enemies 2 times.',

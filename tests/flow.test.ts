@@ -191,6 +191,34 @@ describe('flow transitions', () => {
     expect(flow.buy('sturdy-frame')).toBe(false);
   });
 
+  it('applies permanent cards once to each new run and preserves a previously saved deck', async () => {
+    const card = 'ratchet-flurry';
+    const db = await openDb();
+    const flow = flowWith({ ...createWorkshop(), cogsBanked: 80 });
+    const persistence = bindFlowPersistence(flow, db);
+    expect(flow.buyPermanentCard(card)).toBe(false);
+    flow.newRun(SEED);
+    const oldRun = flow.snapshot();
+    if (!oldRun) throw new Error('Expected an active run snapshot');
+    flow.abandonRun();
+    flow.openWorkshop();
+    expect(flow.buyPermanentCard(card)).toBe(true);
+    expect(flow.buyPermanentCard(card)).toBe(false);
+    await persistence.flushed();
+    persistence.dispose();
+
+    const loaded = flowWith(await loadWorkshop(db));
+    expect(loaded.workshop.cogsBanked).toBe(20);
+    loaded.continueRun(oldRun);
+    expect(loaded.run?.deck).toEqual(STARTER_DECK);
+    loaded.abandonRun();
+    for (const seed of [SEED, 'SPIRE002']) {
+      loaded.newRun(seed);
+      expect(loaded.run?.deck).toEqual([...STARTER_DECK, card]);
+      loaded.abandonRun();
+    }
+  });
+
   it('every declared transition is reachable from the title', () => {
     const reachable = new Set<FlowPhase>(['title']);
     let grew = true;

@@ -1,4 +1,4 @@
-import { CARDS } from './cards.ts';
+import { CARDS, STARTER_DECK } from './cards.ts';
 
 /** Starter-only basics: the deck already holds four of each, so they are never offered as rewards. */
 const BASICS: ReadonlySet<string> = new Set(['strike', 'defend']);
@@ -10,4 +10,9 @@ const BASICS: ReadonlySet<string> = new Set(['strike', 'defend']);
  */
 export const REWARD_POOL: readonly string[] = CARDS.filter((card) => !BASICS.has(card.id)).map(
   (card) => card.id,
+);
+
+/** Cards available for permanent purchase, excluding cards already in the starter deck. */
+export const PERMANENT_CARD_IDS: readonly string[] = REWARD_POOL.filter(
+  (id) => !STARTER_DECK.includes(id),
 );

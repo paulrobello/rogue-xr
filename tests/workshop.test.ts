@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { IDBFactory } from 'fake-indexeddb';
 import { afterEach, describe, expect, it } from 'vitest';
 import { STARTER_DECK } from '../src/content/cards.ts';
-import { REWARD_POOL } from '../src/content/rewards.ts';
+import { PERMANENT_CARD_IDS, REWARD_POOL } from '../src/content/rewards.ts';
 import type { PersistDb } from '../src/persist/db.ts';
 import {
   closeDb,
@@ -29,7 +29,9 @@ import {
 } from '../src/persist/saves.ts';
 import {
   bankRunCogs,
+  buyPermanentCard,
   buyUpgrade,
+  canBuyPermanentCard,
   chooseReward,
   createRun,
   createWorkshop,
@@ -126,6 +128,42 @@ describe('bankRunCogs', () => {
   });
 });
 
+describe('permanent cards', () => {
+  it('buys an available card immutably and reports validity', () => {
+    const ws = withCogs(createWorkshop(), 60);
+    const id = PERMANENT_CARD_IDS[0] as string;
+    expect(canBuyPermanentCard(ws, id, PERMANENT_CARD_IDS)).toBe(true);
+    const bought = buyPermanentCard(ws, id, PERMANENT_CARD_IDS);
+    expect(bought).toMatchObject({ cogsBanked: 0, permanentCards: [id] });
+    expect(ws.permanentCards).toEqual([]);
+    expect(canBuyPermanentCard(bought, id, PERMANENT_CARD_IDS)).toBe(false);
+    expect(() => buyPermanentCard(bought, id, PERMANENT_CARD_IDS)).toThrow(RulesError);
+  });
+
+  it('charges 120 cogs for a permanent Escapement Hammer', () => {
+    const id = 'escapement-hammer';
+    expect(canBuyPermanentCard(withCogs(createWorkshop(), 119), id, PERMANENT_CARD_IDS)).toBe(
+      false,
+    );
+    expect(buyPermanentCard(withCogs(createWorkshop(), 120), id, PERMANENT_CARD_IDS)).toMatchObject(
+      { cogsBanked: 0, permanentCards: [id] },
+    );
+  });
+
+  it('rejects unavailable and unaffordable cards', () => {
+    const id = PERMANENT_CARD_IDS[0] as string;
+    expect(canBuyPermanentCard(createWorkshop(), id, PERMANENT_CARD_IDS)).toBe(false);
+    expect(() => buyPermanentCard(createWorkshop(), id, PERMANENT_CARD_IDS)).toThrow(RulesError);
+    expect(() =>
+      buyPermanentCard(
+        withCogs(createWorkshop(), 60),
+        STARTER_DECK[0] as string,
+        PERMANENT_CARD_IDS,
+      ),
+    ).toThrow(RulesError);
+  });
+});
+
 describe('runOptionsFrom', () => {
   it('a fresh workshop reproduces the baseline run', () => {
     const base = createRun(SEED, STARTER_DECK);
@@ -177,6 +215,34 @@ describe('workshop persistence', () => {
     const { putWorkshop } = await import('../src/persist/db.ts');
     await putWorkshop(handle, { version: 1, cogsBanked: -5, purchased: {} });
     await expect(loadWorkshop(handle)).rejects.toBeInstanceOf(SaveError);
+  });
+
+  it('loads old workshop saves with purchases defaulted without changing upgrades', async () => {
+    const handle = await freshDb();
+    const { putWorkshop } = await import('../src/persist/db.ts');
+    await putWorkshop(handle, {
+      version: 1,
+      cogsBanked: 17,
+      purchased: { 'sturdy-frame': 2, 'spare-die': 1, 'wide-catalog': 0 },
+    });
+    await expect(loadWorkshop(handle)).resolves.toEqual({
+      ...createWorkshop(),
+      cogsBanked: 17,
+      purchased: { 'sturdy-frame': 2, 'spare-die': 1, 'wide-catalog': 0 },
+    });
+  });
+
+  it('rejects duplicate or unavailable permanent cards', async () => {
+    const handle = await freshDb();
+    const { putWorkshop } = await import('../src/persist/db.ts');
+    for (const permanentCards of [
+      [PERMANENT_CARD_IDS[0], PERMANENT_CARD_IDS[0]],
+      [STARTER_DECK[0]],
+      ['not-a-card'],
+    ]) {
+      await putWorkshop(handle, { ...createWorkshop(), permanentCards });
+      await expect(loadWorkshop(handle)).rejects.toBeInstanceOf(SaveError);
+    }
   });
 
   it('refuses to save an over-maxed workshop', async () => {
@@ -273,7 +339,11 @@ describe('run snapshots', () => {
 describe('export and import', () => {
   async function populated(): Promise<{ handle: PersistDb; ws: WorkshopState; snap: RunSnapshot }> {
     const handle = await freshDb();
-    const ws = buyUpgrade(buyUpgrade(withCogs(createWorkshop(), 300), 'spare-die'), 'wide-catalog');
+    const ws = buyPermanentCard(
+      buyUpgrade(buyUpgrade(withCogs(createWorkshop(), 360), 'spare-die'), 'wide-catalog'),
+      PERMANENT_CARD_IDS[0] as string,
+      PERMANENT_CARD_IDS,
+    );
     const snap = snapshotRun(
       steps(createRun(SEED, STARTER_DECK, runOptionsFrom(ws)), 2),
       WORLD,

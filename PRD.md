@@ -211,7 +211,7 @@ Acceptance:
 
 ### P5 — Slice content
 
-Scope: the remaining 3 to 4 room templates, 2 more regular automatons + the elite + the floor guardian, all 15 card illustrations and frames, UI icons, dice faces and models, 5 sigil glyphs, the title key art, 11 music cues (owner-generated in Suno, D12), about 20 SFX, the title screen with seed entry, the reward screen, death and victory flow, the workshop hub with 3 upgrades, run currency, a run snapshot for resume, and save export and import.
+Scope: the remaining 3 to 4 room templates, 2 more regular automatons + the elite + the floor guardian, all 15 card illustrations and frames, UI icons, dice faces and models, 5 sigil glyphs, the title key art, 11 music cues (owner-generated in Suno, D12), about 20 SFX, the title screen with seed entry, the reward screen, death and victory flow, the workshop hub with 3 upgrades and one-time purchases of non-starter reward cards (60 banked cogs each or 120 for Escapement Hammer, one copy in every future starting deck), run currency, a run snapshot for resume, and save export and import.
 
 Depends on P3 and P4.
 

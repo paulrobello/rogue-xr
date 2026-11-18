@@ -1,8 +1,13 @@
 // @vitest-environment node
 import * as THREE from 'three';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { IMPACT_SECONDS } from '../src/combat-view/impact-timing.ts';
-import { BOLT_CAPACITY, SPELL_FX_POINTS, SpellFx } from '../src/combat-view/spell-fx.ts';
+import {
+  attackVisualKind,
+  BOLT_CAPACITY,
+  SPELL_FX_POINTS,
+  SpellFx,
+} from '../src/combat-view/spell-fx.ts';
 
 const from = { x: 0, y: 1, z: 0 };
 const to = { x: 0, y: 1.3, z: -1.5 };
@@ -12,7 +17,64 @@ function run(fx: SpellFx, seconds: number): void {
 }
 
 describe('spell fx', () => {
-  it('is one pre-sized additive points draw that never reallocates', () => {
+  it('selects a stable visual family for every attack card, including upgrades', () => {
+    expect(attackVisualKind('strike')).toBe('physical');
+    expect(attackVisualKind('strike+')).toBe('physical');
+    expect(attackVisualKind('cog-toss')).toBe('cog');
+    expect(attackVisualKind('ratchet-flurry')).toBe('flurry');
+    expect(attackVisualKind('rivet-volley')).toBe('volley');
+    expect(attackVisualKind('escapement-hammer')).toBe('hammer');
+    expect(attackVisualKind('cogstorm')).toBe('storm');
+    expect(attackVisualKind('furnace-brand')).toBe('furnace');
+    expect(attackVisualKind('arc-bolt')).toBe('lightning');
+    expect(attackVisualKind(null)).toBe('lightning');
+  });
+
+  it('keeps family colour on the pooled bolt and family impact through its lifetime', () => {
+    const physical = new SpellFx();
+    const lightning = new SpellFx();
+    const physicalPoints = physical.getObjectByName('spell-fx-points') as THREE.Points;
+    const lightningPoints = lightning.getObjectByName('spell-fx-points') as THREE.Points;
+    physical.launch(from, to, 0.3, 1, 'card', 0, attackVisualKind('strike'));
+    lightning.launch(from, to, 0.3, 1, 'card', 0, attackVisualKind('arc-bolt'));
+    physical.update(0.05);
+    lightning.update(0.05);
+    const p = physicalPoints.geometry.getAttribute('color') as THREE.BufferAttribute;
+    const l = lightningPoints.geometry.getAttribute('color') as THREE.BufferAttribute;
+    const component = (attribute: THREE.BufferAttribute, axis: number, i: number): number =>
+      axis === 0 ? attribute.getX(i) : axis === 1 ? attribute.getY(i) : attribute.getZ(i);
+    const coloursDiffer = Array.from({ length: p.count }, (_, i) =>
+      [0, 1, 2].some((axis) => Math.abs(component(p, axis, i) - component(l, axis, i)) > 1e-6),
+    ).some(Boolean);
+    expect(coloursDiffer).toBe(true);
+    physical.impact(to, from, 1, attackVisualKind('strike'));
+    expect(physical.flashing).toBe(1);
+    run(physical, 1);
+    expect(physical.active).toBe(false);
+    physical.dispose();
+    lightning.dispose();
+  });
+
+  it('reuses each metal projectile mesh across casts and frees its geometry once', () => {
+    const fx = new SpellFx();
+    const mesh = fx.getObjectByName('attack-solid-0') as THREE.Mesh;
+    const geometries = [];
+    for (const kind of ['cog', 'volley', 'hammer', 'cog'] as const) {
+      fx.launch(from, to, 0.3, 1, 'card', 0, kind);
+      fx.update(1 / 72);
+      expect(mesh.visible).toBe(true);
+      geometries.push(mesh.geometry);
+      fx.reset();
+      expect(mesh.visible).toBe(false);
+    }
+    expect(new Set(geometries).size).toBe(3);
+    expect(geometries[3]).toBe(geometries[0]);
+    const dispose = vi.spyOn(mesh.geometry, 'dispose');
+    fx.dispose();
+    expect(dispose).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the additive trails and sparks in one fixed points buffer', () => {
     const fx = new SpellFx();
     const points = fx.getObjectByName('spell-fx-points') as THREE.Points;
     const material = points.material as THREE.PointsMaterial;

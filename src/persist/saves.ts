@@ -1,3 +1,4 @@
+import { PERMANENT_CARD_IDS } from '../content/rewards.ts';
 import { normalizeSeed, STREAMS, type StreamState } from '../core/rng.ts';
 import { isDifficulty } from '../rules/difficulty.ts';
 import type { PendingLoot, RewardOffer, RewardTier, RunState } from '../rules/run.ts';
@@ -127,10 +128,21 @@ export function validateWorkshop(raw: unknown): WorkshopState {
       bought[id] === undefined ? 0 : int(bought[id], `workshop.purchased.${id}`, 0, maxTier(id)),
     ]),
   ) as WorkshopState['purchased'];
+  const permanentCards =
+    r.permanentCards === undefined ? [] : strings(r.permanentCards, 'workshop.permanentCards');
+  for (const [i, id] of permanentCards.entries()) {
+    if (!(PERMANENT_CARD_IDS as readonly string[]).includes(id)) {
+      fail(`workshop.permanentCards[${i}]`, 'unknown or unavailable card');
+    }
+  }
+  if (new Set(permanentCards).size !== permanentCards.length) {
+    fail('workshop.permanentCards', 'duplicate card');
+  }
   return {
     version: WORKSHOP_VERSION,
     cogsBanked: int(r.cogsBanked, 'workshop.cogsBanked', 0),
     purchased,
+    permanentCards,
   };
 }
 
