@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { audioStateForFlow } from './audio/cues.ts';
 import { AudioDirector } from './audio/index.ts';
+import { requestCardFaceArt } from './cards/card-face-material.ts';
 import { mountCardProof } from './cards/card-proof.ts';
 import { CombatHook, type CombatPick, type XrHands } from './combat/combat-session.ts';
 import {
@@ -53,6 +54,7 @@ import {
 } from './rules/difficulty.ts';
 import { parseLootKey, type RewardTier } from './rules/run.ts';
 import { createWorkshop } from './rules/workshop.ts';
+import { sharedKtx2Loader } from './ui/first-render.ts';
 import { mountUpdateNotice } from './update/index.ts';
 import { type FloorView, mountFloorView, seedFromQuery } from './world/floor-view.ts';
 import type { HearthPick } from './world/hearth.ts';
@@ -107,6 +109,14 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.AgXToneMapping;
 app.append(renderer.domElement);
+// Headset A/B for mid-range text sharpness: `?fbscale=1.25` renders the XR eye buffers at 1.25x the
+// browser's recommended size (three default 1). Applies at the next session start.
+const fbScale = Number(params.get('fbscale'));
+if (fbScale > 0) renderer.xr.setFramebufferScaleFactor(Math.min(fbScale, 2));
+// Card art loads at boot so the first fight's hand opens on real faces, not flat tints.
+requestCardFaceArt(sharedKtx2Loader(renderer)).catch((error: unknown) =>
+  console.warn('card atlas prefetch failed; the fan retries', error),
+);
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(PALETTE.void);

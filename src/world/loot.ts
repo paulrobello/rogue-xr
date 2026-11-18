@@ -719,7 +719,9 @@ export function lootLines(loot: TreasureLoot): ToastLines {
     : { text: `New card: ${getCard(loot.card).name}`, caption: 'Added to your deck' };
 }
 
-const TOAST_PX = { w: 768, h: 256 };
+/** Drawn at 768 x 256 and stored at 2x: the panel is read from 1-2 m, where 640 px/m magnified. */
+const TOAST_PX = { w: 1536, h: 512 };
+const TOAST_DRAW_SCALE = 2;
 const TOAST_WIDTH = 1.2;
 const TOAST_LIFE = 4.2;
 const TOAST_FADE = 0.7;
@@ -737,7 +739,10 @@ export class LootToast {
     const { text, caption } = 'caption' in found ? found : lootLines(found);
     this.text = text;
     this.label = new CanvasLabel(TOAST_PX.w, TOAST_PX.h, TOAST_WIDTH);
-    this.label.draw((ctx, w, h) => {
+    this.label.draw((ctx, pw, ph) => {
+      ctx.scale(TOAST_DRAW_SCALE, TOAST_DRAW_SCALE);
+      const w = pw / TOAST_DRAW_SCALE;
+      const h = ph / TOAST_DRAW_SCALE;
       ctx.fillStyle = PALETTE.warmBlack;
       ctx.fillRect(0, 0, w, h);
       ctx.strokeStyle = PALETTE.brass;

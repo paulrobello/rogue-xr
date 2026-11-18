@@ -8,6 +8,7 @@ import {
   type CardFaceArt,
   cardFaceInstance,
   createCardFaceMaterial,
+  loadedCardFaceArt,
   requestCardFaceArt,
   writeCardBurn,
   writeCardFace,
@@ -296,16 +297,6 @@ export class CardFan {
     this.body.name = 'card-fan-bodies';
     this.body.count = 0;
     this.body.frustumCulled = false;
-    if (opts.loadArt ?? true) {
-      onFirstRender(this.body, (renderer) => {
-        requestCardFaceArt(sharedKtx2Loader(renderer)).then(
-          (art) => {
-            if (!this.disposed) this.setArt(art);
-          },
-          (error: unknown) => console.warn('card atlas failed to load; flat cards stay', error),
-        );
-      });
-    }
 
     // A dark disc inside the painted cost medallion so the light cost number reads over the gem.
     this.gems = new THREE.InstancedMesh(
@@ -321,6 +312,20 @@ export class CardFan {
     this.labels.frustumCulled = false;
 
     this.root.add(this.body, this.gems, this.labels);
+
+    // Art the boot prefetch already loaded applies now, so the first hand never shows flat cards.
+    const ready = (opts.loadArt ?? true) ? loadedCardFaceArt() : null;
+    if (ready) this.setArt(ready);
+    else if (opts.loadArt ?? true) {
+      onFirstRender(this.body, (renderer) => {
+        requestCardFaceArt(sharedKtx2Loader(renderer)).then(
+          (art) => {
+            if (!this.disposed) this.setArt(art);
+          },
+          (error: unknown) => console.warn('card atlas failed to load; flat cards stay', error),
+        );
+      });
+    }
   }
 
   /**

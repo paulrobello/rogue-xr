@@ -21,7 +21,8 @@ export class CanvasLabel {
     this.ctx = ctx;
     this.texture = new THREE.CanvasTexture(this.canvas);
     this.texture.colorSpace = THREE.SRGBColorSpace;
-    this.texture.anisotropy = 4;
+    // three clamps this to the GPU's maximum; labels are read at oblique angles across the table.
+    this.texture.anisotropy = 16;
     this.mesh = new THREE.Mesh(
       new THREE.PlaneGeometry(widthMeters, (widthMeters * pxHeight) / pxWidth),
       // toneMapped is off so AgX does not wash out the flat label colors.
