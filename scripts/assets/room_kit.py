@@ -287,7 +287,13 @@ def bench(b, cx: float, cy: float, length_y: float, high: bool) -> dict:
             lx, ly = cx + sx * (w - 0.06), cy + sy * (l2 - 0.08)
             b.box(lx - 0.025, lx + 0.025, ly - 0.025, ly + 0.025, 0.04, top - 0.06, "walnut", drop="bt")
             b.box(lx - 0.032, lx + 0.032, ly - 0.032, ly + 0.032, 0.0, 0.04, "brass-aged", drop="b")
-    b.box(cx - 0.02, cx + 0.02, cy - l2 + 0.1, cy + l2 - 0.1, 0.16, 0.2, "walnut", drop="xX")  # stretcher
+    # End rails span the legs; the centre stretcher meets their inner faces.
+    rail_end = l2 - 0.08
+    leg_inside = w - 0.06 - 0.025
+    for sign in (-1, 1):
+        y = cy + sign * rail_end
+        b.box(cx - leg_inside, cx + leg_inside, y - 0.02, y + 0.02, 0.16, 0.2, "walnut", drop="xX")
+    b.box(cx - 0.02, cx + 0.02, cy - rail_end + 0.02, cy + rail_end - 0.02, 0.16, 0.2, "walnut", drop="yY")
     b.box(cx - w - 0.005, cx + w + 0.005, cy - l2 - 0.005, cy + l2 + 0.005, top - 0.075, top - 0.06, "brass-aged", drop="t")  # apron band
     return S.runtime_box(Vector((cx - w - 0.005, cy - l2 - 0.005, 0)), Vector((cx + w + 0.005, cy + l2 + 0.005, 0)), top)
 

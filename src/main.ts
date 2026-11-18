@@ -1,6 +1,7 @@
 import { createPointer } from '@par/xr-workspace';
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { configureTextBuilder } from 'troika-three-text';
 import { audioStateForFlow } from './audio/cues.ts';
 import { AudioDirector } from './audio/index.ts';
 import { requestCardFaceArt } from './cards/card-face-material.ts';
@@ -88,6 +89,10 @@ import { TeleportView } from './xr/teleport-view.ts';
 
 const app = document.querySelector<HTMLDivElement>('#app');
 if (!app) throw new Error('Missing #app root');
+
+// Menu, gauge and card glyphs must share this setting before Troika's first font request.
+const xrText = { sdfGlyphSize: 128, useWorker: false };
+configureTextBuilder(xrText);
 
 const params = new URLSearchParams(location.search);
 const view = params.get('view');

@@ -9,7 +9,7 @@ import {
 } from '@par/xr-workspace';
 import * as THREE from 'three';
 import { TABLE_DISTANCE_CHOICES } from '../combat/placement.ts';
-import { CanvasLabel } from '../combat-view/canvas-label.ts';
+import { CanvasLabel, configureTextTexture } from '../combat-view/canvas-label.ts';
 import { cardTip } from '../combat-view/card-keywords.ts';
 import { drawTip } from '../combat-view/status-info.ts';
 import { getCard } from '../content/cards.ts';
@@ -274,7 +274,7 @@ export function rewardCardTexture(id: string, hovered: boolean): THREE.CanvasTex
     });
   }
   const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
+  configureTextTexture(texture);
   return texture;
 }
 
@@ -769,7 +769,7 @@ export class FlowUi {
     if (opts.heading) {
       const heading = createScalableLabel(opts.heading, width, 0.08, {
         backplate: false,
-        fontSize: 0.05,
+        fontSize: 0.06,
       });
       heading.position.set(0, BOARD_PAD + 0.0, 0);
       heading.position.y = 0.05;
@@ -1004,19 +1004,21 @@ export class FlowUi {
     ];
     for (const id of cards) {
       const card = getCard(id);
-      const owned = flow.workshop.permanentCards.includes(id);
-      const buy: MenuCell = owned
-        ? { id: `buy-permanent-${id}`, label: 'Owned' }
-        : flow.canBuyPermanentCard(id)
-          ? {
-              id: `buy-permanent-${id}`,
-              label: `Buy · ${permanentCardCost(id)}`,
-              onSelect: () => this.buyPermanent(id),
-            }
-          : { id: `buy-permanent-${id}`, label: `Needs ${permanentCardCost(id)}` };
+      const owned = flow.workshop.permanentCards.filter((cardId) => cardId === id).length;
+      const buy: MenuCell = flow.canBuyPermanentCard(id)
+        ? {
+            id: `buy-permanent-${id}`,
+            label: `Buy · ${permanentCardCost(id)}`,
+            onSelect: () => this.buyPermanent(id),
+          }
+        : { id: `buy-permanent-${id}`, label: `Needs ${permanentCardCost(id)}` };
       rows.push([
         { id: `icon-top-${id}`, label: '', weight: 0.5 },
-        { id: `permanent-${id}`, label: `${card.name} · ${card.cost} steam`, weight: 2 },
+        {
+          id: `permanent-${id}`,
+          label: `${card.name} · ${card.cost} steam · Owned ${owned}`,
+          weight: 2,
+        },
         buy,
       ]);
       rows.push([
@@ -1106,7 +1108,10 @@ export class FlowUi {
         this.deps.rewardCards,
       );
       preview.root.name = `workshop-card-preview-${id}`;
-      preview.root.position.set(0.69, -0.24, 0.055);
+      preview.root.position.set(0, -0.24, 0.12);
+      preview.root.traverse((object) => {
+        object.raycast = () => undefined;
+      });
       parent.add(preview.root);
       this.workshopPreviews.set(id, preview);
     }

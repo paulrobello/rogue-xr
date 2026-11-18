@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { configureTextTexture } from '../combat-view/canvas-label.ts';
 import type { Stream } from '../core/rng.ts';
 import { PALETTE } from '../palette.ts';
 import { onFirstRender, sharedKtx2Loader } from '../ui/first-render.ts';
@@ -237,7 +238,7 @@ function resultSprite(value: number): THREE.Sprite | null {
   ctx.textBaseline = 'middle';
   ctx.fillText(String(value), 64, 70);
   const texture = new THREE.CanvasTexture(ctx.canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
+  configureTextTexture(texture);
   const sprite = new THREE.Sprite(
     new THREE.SpriteMaterial({ map: texture, depthTest: false, toneMapped: false }),
   );

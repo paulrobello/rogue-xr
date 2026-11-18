@@ -1,5 +1,7 @@
 // @vitest-environment node
 import { readFileSync } from 'node:fs';
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { describe, expect, it } from 'vitest';
 import {
   type Box,
@@ -44,6 +46,32 @@ function checkRotations(boxes: Box[]): void {
 }
 
 describe('hall bench clearance', () => {
+  it('exports outward faces on both long sides of each stretcher and rails between the legs', async () => {
+    const bytes = Uint8Array.from(readFileSync('public/assets/rooms/hall/hall.glb'));
+    const { scene } = await new GLTFLoader().parseAsync(bytes.buffer, '');
+    scene.updateMatrixWorld(true);
+    const ray = new THREE.Raycaster();
+    const trace = (x: number, z: number, dx: number, dz: number, expected: number) => {
+      ray.set(new THREE.Vector3(x, 0.183, z), new THREE.Vector3(dx, 0, dz));
+      const hit = ray.intersectObject(scene, true)[0];
+      expect(hit?.distance).toBeCloseTo(expected, 4);
+      if (!hit?.normal) throw new Error('No rail normal in the hall model');
+      expect(
+        hit.normal.transformDirection(hit.object.matrixWorld).dot(ray.ray.direction),
+      ).toBeLessThan(-0.99);
+    };
+    for (const [cx, cz] of [
+      [-4, 2],
+      [4, -2],
+    ] as const) {
+      for (const side of [-1, 1]) {
+        trace(cx + side * 0.1, cz, -side, 0, 0.08);
+        trace(cx + 0.08, cz + side * 0.29, 0, side, 0.06);
+        trace(cx - 0.08, cz + side * 0.29, 0, side, 0.06);
+      }
+    }
+  });
+
   it('checks source bench placement, sockets and door aprons in every rotation', () => {
     const source = readFileSync('scripts/assets/build-room-kit.py', 'utf8');
     const specs = readFileSync('scripts/assets/room_kit.py', 'utf8');

@@ -180,6 +180,21 @@ try {
   if (opts.workshop) {
     await page.goto(`${opts.base}/?title&debug`);
     await waitFor('workshop-ready', () => window.__flow?.ui?.visible);
+    await ev(async () => {
+      const { openDb } = await import('/src/persist/db.ts');
+      const { loadWorkshop, saveWorkshop } = await import('/src/persist/saves.ts');
+      const db = await openDb();
+      await saveWorkshop(db, {
+        ...(await loadWorkshop(db)),
+        cogsBanked: 120,
+        permanentCards: ['ratchet-flurry'],
+      });
+    });
+    await page.reload();
+    await waitFor(
+      'shop-saved-copy',
+      () => window.__flow?.flow.workshop.permanentCards.length === 1,
+    );
     await enterVr();
     const layer = await ev(() => window.__xrEmu.layerInits[0]);
     record(
@@ -209,6 +224,8 @@ try {
           return (
             ui.hoveredId === id &&
             face?.visible &&
+            Math.abs(face.position.x) < 0.001 &&
+            face.position.z > 0.05 &&
             face.getObjectByName(`reward-card-fallback-${card}`)?.visible === false
           );
         },
@@ -218,11 +235,24 @@ try {
       const ws = await ev(() => window.__flow.flow.workshop);
       record(
         `shop-inspect-without-buying-${card}`,
-        ws.permanentCards.length === 0 && ws.cogsBanked === 0,
+        ws.permanentCards.length === 1 && ws.cogsBanked === 120,
         ws.permanentCards,
       );
     }
     await shot('workshop-card-inspect');
+    for (const [copies, balance] of [
+      [2, 60],
+      [3, 0],
+    ]) {
+      await press('workshop-buy-permanent-ratchet-flurry');
+      const ws = await ev(() => window.__flow.flow.workshop);
+      record(
+        `shop-owns-${copies}-copies`,
+        ws.permanentCards.filter((id) => id === 'ratchet-flurry').length === copies &&
+          ws.cogsBanked === balance,
+        ws,
+      );
+    }
     await press('workshop-next-page');
     const oldIconsGone = await ev(
       (ids) => ids.every((id) => !window.__flow.ui.root.getObjectByName(id)),

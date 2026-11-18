@@ -1,5 +1,14 @@
 import * as THREE from 'three';
 
+/** Configure app-authored raster text for crisp, stable sampling in XR. */
+export function configureTextTexture(texture: THREE.Texture): void {
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 16;
+  texture.magFilter = THREE.LinearFilter;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.generateMipmaps = true;
+}
+
 /** A flat plane textured from a 2D canvas that is redrawn on demand. Placeholder text and art for the debug view. */
 export class CanvasLabel {
   readonly mesh: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
@@ -14,15 +23,15 @@ export class CanvasLabel {
     transparent = true,
   ) {
     this.canvas = document.createElement('canvas');
-    this.canvas.width = pxWidth;
-    this.canvas.height = pxHeight;
+    const density = Math.max(1, (widthMeters * 1280) / pxWidth);
+    this.canvas.width = Math.ceil(pxWidth * density);
+    this.canvas.height = Math.ceil(pxHeight * density);
     const ctx = this.canvas.getContext('2d');
     if (!ctx) throw new Error('2D canvas is not available');
+    ctx.scale(this.canvas.width / pxWidth, this.canvas.height / pxHeight);
     this.ctx = ctx;
     this.texture = new THREE.CanvasTexture(this.canvas);
-    this.texture.colorSpace = THREE.SRGBColorSpace;
-    // three clamps this to the GPU's maximum; labels are read at oblique angles across the table.
-    this.texture.anisotropy = 16;
+    configureTextTexture(this.texture);
     this.mesh = new THREE.Mesh(
       new THREE.PlaneGeometry(widthMeters, (widthMeters * pxHeight) / pxWidth),
       // toneMapped is off so AgX does not wash out the flat label colors.

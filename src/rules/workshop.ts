@@ -69,14 +69,13 @@ export function createWorkshop(): WorkshopState {
   };
 }
 
-/** Buys one card permanently. Throws `RulesError` for an unknown, duplicate, or unaffordable card. */
+/** Buys one copy of a card permanently. Throws `RulesError` for an unknown or unaffordable card. */
 export function buyPermanentCard(
   ws: WorkshopState,
   id: string,
   catalog: readonly string[],
 ): WorkshopState {
   if (!catalog.includes(id)) throw new RulesError(`Unknown permanent card ${id}`);
-  if (ws.permanentCards.includes(id)) throw new RulesError(`Permanent card ${id} is already owned`);
   const cost = permanentCardCost(id);
   if (ws.cogsBanked < cost) {
     throw new RulesError(`Permanent card ${id} costs ${cost} cogs, only ${ws.cogsBanked} banked`);
@@ -93,11 +92,7 @@ export function canBuyPermanentCard(
   id: string,
   catalog: readonly string[],
 ): boolean {
-  return (
-    catalog.includes(id) &&
-    !ws.permanentCards.includes(id) &&
-    ws.cogsBanked >= permanentCardCost(id)
-  );
+  return catalog.includes(id) && ws.cogsBanked >= permanentCardCost(id);
 }
 
 export const maxTier = (id: UpgradeId): number => UPGRADES[id].costs.length;

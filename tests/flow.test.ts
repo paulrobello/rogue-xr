@@ -194,7 +194,7 @@ describe('flow transitions', () => {
   it('applies permanent cards once to each new run and preserves a previously saved deck', async () => {
     const card = 'ratchet-flurry';
     const db = await openDb();
-    const flow = flowWith({ ...createWorkshop(), cogsBanked: 80 });
+    const flow = flowWith({ ...createWorkshop(), cogsBanked: 140 });
     const persistence = bindFlowPersistence(flow, db);
     expect(flow.buyPermanentCard(card)).toBe(false);
     flow.newRun(SEED);
@@ -203,7 +203,7 @@ describe('flow transitions', () => {
     flow.abandonRun();
     flow.openWorkshop();
     expect(flow.buyPermanentCard(card)).toBe(true);
-    expect(flow.buyPermanentCard(card)).toBe(false);
+    expect(flow.buyPermanentCard(card)).toBe(true);
     await persistence.flushed();
     persistence.dispose();
 
@@ -214,7 +214,7 @@ describe('flow transitions', () => {
     loaded.abandonRun();
     for (const seed of [SEED, 'SPIRE002']) {
       loaded.newRun(seed);
-      expect(loaded.run?.deck).toEqual([...STARTER_DECK, card]);
+      expect(loaded.run?.deck).toEqual([...STARTER_DECK, card, card]);
       loaded.abandonRun();
     }
   });

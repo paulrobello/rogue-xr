@@ -9,7 +9,7 @@
   "generatorDeps": [
     {
       "path": "scripts/assets/room_kit.py",
-      "sha256": "b085857642cb191f8b4d61290099d09efbdd7ca48d0d32fbc38e69f34f6c810f"
+      "sha256": "0137f356fb955d8d6637abeafc7cc27d356f955aeee835269e1c0018636aae03"
     },
     {
       "path": "scripts/assets/build-room-study.py",
@@ -41,34 +41,34 @@
     "store": "assets-source/rooms/hall/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)",
     "files": {
       "hall_high.blend": {
-        "sha256": "4fd83edc19bd88bdc5fa4e42da9659e2b0ca0643bfeec544c288d75dfeac7862",
-        "bytes": 1025923
+        "sha256": "a46d6fc93d5093c08166167c1252da3cc3052b208a38d84efaa3942f88f72c49",
+        "bytes": 1028403
       },
       "hall_low.blend": {
-        "sha256": "b4751d8ff7da9ed28051d503c3f6f2e79cdb9f14d6ca60ce0faf1e0e964ed6f9",
-        "bytes": 350138
+        "sha256": "f1d53012dbf3dd0eb629b12280ac3d5043d16456aa4bb7b6c4c3bd6a0f3b60b7",
+        "bytes": 352324
       }
     }
   },
   "bake": {
     "device": "GPU:METAL (Apple M4 (GPU - 10 cores))",
     "lightmap": {
-      "coverage": 0.7107,
-      "scale": 5.439584,
-      "clipped_fraction": 0.00996,
-      "mean_irradiance": 0.429345,
+      "coverage": 0.7031,
+      "scale": 5.489309,
+      "clipped_fraction": 0.00995,
+      "mean_irradiance": 0.438027,
       "p05_irradiance": 0.0,
       "percentile": 99.0,
       "encoded_p05_255": 0,
       "encoded_median_255": 41,
-      "seconds": 52.58,
+      "seconds": 53.51,
       "pass_seconds": [
-        45.41,
-        7.17
+        46.3,
+        7.21
       ],
       "host_load": [
-        4.05,
-        2.65
+        2.9,
+        6.33
       ],
       "timing_valid": true,
       "diffuse_bounces": 4,
@@ -90,7 +90,7 @@
     }
   },
   "budgets": {
-    "triangles": 6739,
+    "triangles": 6771,
     "materials": 8,
     "texturePx": {
       "hall.lightmap.ktx2": {
@@ -98,55 +98,55 @@
         "height": 2048
       }
     },
-    "highTriangles": 41637,
-    "glbBytes": 483792
+    "highTriangles": 41821,
+    "glbBytes": 486544
   },
   "texelDensityPxPerM": {
     "lightmap": {
-      "mean_px_per_m": 53.21,
-      "min_px_per_m": 44.98,
-      "max_px_per_m": 53.49
+      "mean_px_per_m": 52.73,
+      "min_px_per_m": 44.58,
+      "max_px_per_m": 53.01
     },
     "lightmapBySlot": {
       "brass-aged": {
         "area_m2": 9.95,
-        "median_px_per_m": 53.5,
-        "min_px_per_m": 45.0
+        "median_px_per_m": 53.0,
+        "min_px_per_m": 44.6
       },
       "brass-polished": {
         "area_m2": 2.13,
-        "median_px_per_m": 52.6,
-        "min_px_per_m": 45.0
+        "median_px_per_m": 52.1,
+        "min_px_per_m": 44.6
       },
       "flame": {
         "area_m2": 0.32,
-        "median_px_per_m": 53.5,
-        "min_px_per_m": 53.5
+        "median_px_per_m": 53.0,
+        "min_px_per_m": 53.0
       },
       "stained-glass": {
         "area_m2": 2.26,
-        "median_px_per_m": 53.5,
-        "min_px_per_m": 53.5
+        "median_px_per_m": 53.0,
+        "min_px_per_m": 53.0
       },
       "stone-floor": {
         "area_m2": 104.45,
-        "median_px_per_m": 53.5,
-        "min_px_per_m": 53.5
+        "median_px_per_m": 53.0,
+        "min_px_per_m": 53.0
       },
       "wallpaper": {
         "area_m2": 104.65,
-        "median_px_per_m": 53.5,
-        "min_px_per_m": 53.5
+        "median_px_per_m": 53.0,
+        "min_px_per_m": 53.0
       },
       "walnut": {
-        "area_m2": 240.83,
-        "median_px_per_m": 53.5,
-        "min_px_per_m": 46.8
+        "area_m2": 241.1,
+        "median_px_per_m": 53.0,
+        "min_px_per_m": 46.4
       },
       "wax": {
         "area_m2": 0.37,
-        "median_px_per_m": 51.4,
-        "min_px_per_m": 51.4
+        "median_px_per_m": 50.9,
+        "min_px_per_m": 50.9
       }
     }
   },
@@ -283,27 +283,27 @@
   "derivedFiles": [
     {
       "path": "public/assets/rooms/hall/hall.glb",
-      "sha256": "347daf50c30f9a9b193ceea9a9f4fa5ae67fb921376fb6b2efc509b80e40e76e",
-      "bytes": 483792
+      "sha256": "da48daf828a2dda869d9a253dc9af21aca72b8a527dcadf58ad82a9e8b2c1e6a",
+      "bytes": 486544
     },
     {
       "path": "public/assets/rooms/hall/hall.lightmap.ktx2",
-      "sha256": "71c0fc935033f0d8c79a219c580873ec9f5e1b46bf584d906337fe53f2045900",
-      "bytes": 2873046
+      "sha256": "c34e9988d482cd075d87598cc8f5e77e79287035186d59b3d068e29f6a9ffb34",
+      "bytes": 2872851
     },
     {
       "path": "public/assets/rooms/hall/hall.manifest.json",
-      "sha256": "190a3bcac30dd6af6d5f2c5743b0a646fe4033149dcf4cc706a44b89c22622d2",
+      "sha256": "fd68844de3d4108f3c01b5c832fd4204411a369a6913f559d7d0705607a822d9",
       "bytes": 5130
     }
   ],
   "stagingFiles": {
     "engine-compare.json": "591c6ca434843d141edc4728b6816865732db7e384007fcfb5f768cde4e0e8ba",
-    "hall.glb": "347daf50c30f9a9b193ceea9a9f4fa5ae67fb921376fb6b2efc509b80e40e76e",
-    "hall.lightmap.ktx2": "71c0fc935033f0d8c79a219c580873ec9f5e1b46bf584d906337fe53f2045900",
-    "hall.lightmap.png": "39565ad0fce24797f0667c5ece787d018723bd26d9f79622209ab8b596c31893",
-    "hall.manifest.json": "190a3bcac30dd6af6d5f2c5743b0a646fe4033149dcf4cc706a44b89c22622d2",
-    "uv1-report.json": "0c7f3fac96b0fb37d7a24ea57a2efd17fd00848ae75f894ece8a53add2bc1c0e"
+    "hall.glb": "da48daf828a2dda869d9a253dc9af21aca72b8a527dcadf58ad82a9e8b2c1e6a",
+    "hall.lightmap.ktx2": "c34e9988d482cd075d87598cc8f5e77e79287035186d59b3d068e29f6a9ffb34",
+    "hall.lightmap.png": "bba6809bd6b34eff8e4ab0957f7e0956197a505ca4a50e41bfe8dd41114a2149",
+    "hall.manifest.json": "fd68844de3d4108f3c01b5c832fd4204411a369a6913f559d7d0705607a822d9",
+    "uv1-report.json": "227cd3473b977a7c344b610a6f9dc6581b6e79b53b87185b38013d95448e1351"
   },
   "references": [
     {
@@ -328,7 +328,7 @@
   "materialsUsed": "approved P4-T3 set (public/assets/materials), bound by slot name; not regenerated",
   "license": "Original work generated in Blender from a checked-in script; concept references from Paul's paid Higgsfield plan (Terms of Use 4.4)",
   "reimport": {
-    "triangles": 6739,
+    "triangles": 6771,
     "material_count": 8,
     "uv_layers": [
       [
@@ -429,15 +429,12 @@
     {
       "path": "docs/verification/p5-int-hall-unobstructed-window.jpg",
       "sha256": "7dd14bfcda85b2bd0807e0f65c0930915aec38c707082441405044c14ece45b7"
+    },
+    {
+      "path": "docs/verification/p5-int-hall-bench-rails.jpg",
+      "sha256": "40f1865df6f2f8d893d0bdcc03d6287f4daf5d0fa9ec998b47682f79945b6ad1"
     }
   ],
-  "revision": {
-    "date": "2026-11-18",
-    "agent": "Codex",
-    "changes": [
-      "Removed the brass center bar from the stained-glass window and rebaked the room lightmap."
-    ]
-  },
   "independentScoreHistory": [
     {
       "score": 68,
@@ -809,5 +806,12 @@
       "build": "GLB ead7eb3d08df",
       "runtimeGlbSha256": "ead7eb3d08df029c77e983724bdc39817e8d359a5afd12992d31ce1ee3d3378f"
     }
-  ]
+  ],
+  "revision": {
+    "date": "2026-11-18",
+    "agent": "Codex",
+    "changes": [
+      "Restored the exposed stretcher sides on both hall benches and joined each stretcher to the legs with two walnut cross rails. Rebaked and reimported the hall."
+    ]
+  }
 }

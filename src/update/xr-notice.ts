@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { configureTextTexture } from '../combat-view/canvas-label.ts';
 import { PALETTE } from '../palette.ts';
 import { BUTTONS, buttonAtUv, type NoticeButton, PANEL } from './layout.ts';
 
@@ -61,7 +62,7 @@ export function createXrNotice({ scene, renderer, onReload, onLater }: XrNoticeO
   canvas.width = PANEL.canvasWidth;
   canvas.height = PANEL.canvasHeight;
   const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
+  configureTextTexture(texture);
   const material = new THREE.MeshBasicMaterial({
     map: texture,
     transparent: true,

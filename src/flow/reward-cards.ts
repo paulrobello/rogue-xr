@@ -12,6 +12,7 @@ import {
   writeCardFace,
   writeCardTint,
 } from '../cards/card-face-material.ts';
+import { configureTextTexture } from '../combat-view/canvas-label.ts';
 import { getCard, type SliceCard } from '../content/cards.ts';
 import { PALETTE } from '../palette.ts';
 import { onFirstRender, sharedKtx2Loader } from '../ui/first-render.ts';
@@ -217,7 +218,7 @@ export class RewardCardFaces {
         ctx.fillText('NEW', canvas.width / 2, canvas.height / 2);
       }
       const texture = new THREE.CanvasTexture(canvas);
-      texture.colorSpace = THREE.SRGBColorSpace;
+      configureTextTexture(texture);
       const mesh = new THREE.Mesh(
         new THREE.PlaneGeometry(slot.width * 0.38, slot.width * 0.095),
         new THREE.MeshBasicMaterial({ map: texture, toneMapped: false }),

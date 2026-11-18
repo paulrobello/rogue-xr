@@ -137,7 +137,23 @@ describe('permanent cards', () => {
     expect(bought).toMatchObject({ cogsBanked: 0, permanentCards: [id] });
     expect(ws.permanentCards).toEqual([]);
     expect(canBuyPermanentCard(bought, id, PERMANENT_CARD_IDS)).toBe(false);
-    expect(() => buyPermanentCard(bought, id, PERMANENT_CARD_IDS)).toThrow(RulesError);
+  });
+
+  it('buys repeated copies at the same per-copy price', () => {
+    const id = PERMANENT_CARD_IDS[0] as string;
+    const twice = buyPermanentCard(
+      buyPermanentCard(withCogs(createWorkshop(), 120), id, PERMANENT_CARD_IDS),
+      id,
+      PERMANENT_CARD_IDS,
+    );
+    expect(twice).toMatchObject({ cogsBanked: 0, permanentCards: [id, id] });
+  });
+
+  it('rejects a repeated copy when the remaining balance is insufficient', () => {
+    const id = PERMANENT_CARD_IDS[0] as string;
+    const once = buyPermanentCard(withCogs(createWorkshop(), 60), id, PERMANENT_CARD_IDS);
+    expect(canBuyPermanentCard(once, id, PERMANENT_CARD_IDS)).toBe(false);
+    expect(() => buyPermanentCard(once, id, PERMANENT_CARD_IDS)).toThrow(RulesError);
   });
 
   it('charges 120 cogs for a permanent Escapement Hammer', () => {
@@ -232,14 +248,13 @@ describe('workshop persistence', () => {
     });
   });
 
-  it('rejects duplicate or unavailable permanent cards', async () => {
+  it('loads repeated permanent cards and rejects unavailable cards', async () => {
     const handle = await freshDb();
     const { putWorkshop } = await import('../src/persist/db.ts');
-    for (const permanentCards of [
-      [PERMANENT_CARD_IDS[0], PERMANENT_CARD_IDS[0]],
-      [STARTER_DECK[0]],
-      ['not-a-card'],
-    ]) {
+    const id = PERMANENT_CARD_IDS[0] as string;
+    await putWorkshop(handle, { ...createWorkshop(), permanentCards: [id, id] });
+    await expect(loadWorkshop(handle)).resolves.toMatchObject({ permanentCards: [id, id] });
+    for (const permanentCards of [[STARTER_DECK[0]], ['not-a-card']]) {
       await putWorkshop(handle, { ...createWorkshop(), permanentCards });
       await expect(loadWorkshop(handle)).rejects.toBeInstanceOf(SaveError);
     }
@@ -339,9 +354,14 @@ describe('run snapshots', () => {
 describe('export and import', () => {
   async function populated(): Promise<{ handle: PersistDb; ws: WorkshopState; snap: RunSnapshot }> {
     const handle = await freshDb();
+    const upgraded = buyUpgrade(
+      buyUpgrade(withCogs(createWorkshop(), 360), 'spare-die'),
+      'wide-catalog',
+    );
+    const card = PERMANENT_CARD_IDS[0] as string;
     const ws = buyPermanentCard(
-      buyUpgrade(buyUpgrade(withCogs(createWorkshop(), 360), 'spare-die'), 'wide-catalog'),
-      PERMANENT_CARD_IDS[0] as string,
+      buyPermanentCard(upgraded, card, PERMANENT_CARD_IDS),
+      card,
       PERMANENT_CARD_IDS,
     );
     const snap = snapshotRun(

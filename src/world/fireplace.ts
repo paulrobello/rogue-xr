@@ -7,6 +7,8 @@ export interface Firebox extends FireboxShape {
   readonly centre: readonly [number, number, number];
   /** Turn about +Y that points the firebox's local +z out of its opening, radians (a quarter-turn multiple). */
   readonly yaw: number;
+  /** Compresses the flame geometry along its depth behind a shallow grate. */
+  readonly depthScale?: number;
 }
 
 /**
@@ -14,7 +16,7 @@ export interface Firebox extends FireboxShape {
  * wall N at wall-local a = -3.55 (build-room-kit.py HALL): opening 0.9 m wide and 0.8 m tall, back
  * lining 0.08 m and opening 0.45 m off the wall, flame cards 0.25 m off it, wall N at z = -5.
  */
-export const FIREBOXES: Readonly<Record<string, Firebox>> = {
+export const FIREBOXES: Readonly<Record<string, Firebox | readonly Firebox[]>> = {
   hall: {
     centre: [-3.55, 0, -4.75],
     yaw: 0,
@@ -23,6 +25,19 @@ export const FIREBOXES: Readonly<Record<string, Firebox>> = {
     back: -0.17,
     front: 0.2,
   },
+  // Runtime +Z points out of the south grate. The coals are at radius 1.00 m and bars start at 1.06 m.
+  'gear-shaft': [0, 1, 2, 3].map((turn): Firebox => {
+    const yaw = (turn * Math.PI) / 2;
+    return {
+      centre: [Math.sin(yaw) * 1.03, 0.148, Math.cos(yaw) * 1.03],
+      yaw,
+      halfWidth: 0.45,
+      height: 0.65,
+      back: -0.028,
+      front: 0.028,
+      depthScale: 0.12,
+    };
+  }),
 };
 
 /** Colours of a wood fire: a yellow-white heart, amber body and deep orange-red tips. */
@@ -64,11 +79,12 @@ export function fireboxMatrix(firebox: Firebox): THREE.Matrix4 {
  */
 export function stripBakedFire(
   root: THREE.Object3D,
-  box: THREE.Box3,
+  box: THREE.Box3 | readonly THREE.Box3[],
   isFire: (materialName: string) => boolean,
 ): number {
   root.updateMatrixWorld(true);
   const toRoot = root.matrixWorld.clone().invert();
+  const boxes: readonly THREE.Box3[] = box instanceof THREE.Box3 ? [box] : box;
   let dropped = 0;
   const meshes: THREE.Mesh[] = [];
   root.traverse((node) => {
@@ -92,7 +108,8 @@ export function stripBakedFire(
       a.fromBufferAttribute(position, i).applyMatrix4(toLocal);
       b.fromBufferAttribute(position, j).applyMatrix4(toLocal);
       c.fromBufferAttribute(position, k).applyMatrix4(toLocal);
-      if (box.containsPoint(a.add(b).add(c).divideScalar(3))) dropped++;
+      const centre = a.add(b).add(c).divideScalar(3);
+      if (boxes.some((bounds) => bounds.containsPoint(centre))) dropped++;
       else kept.push(i, j, k);
     }
     if (kept.length === source.length) continue;
@@ -110,6 +127,7 @@ export function stripBakedFire(
 /** The live fire for one room model: its mesh and what drives it. */
 export interface FireplaceFire {
   readonly mesh: THREE.Mesh;
+  readonly extras?: readonly THREE.Mesh[];
   readonly material: THREE.ShaderMaterial;
   dispose(): void;
 }
@@ -121,24 +139,32 @@ export interface FireplaceFire {
  */
 export function buildFireplaceFire(
   key: string,
-  firebox: Firebox,
+  firebox: Firebox | readonly Firebox[],
   reducedMotion = false,
 ): FireplaceFire {
-  const geometry = fireboxFlameGeometry(key, firebox);
+  const boxes: readonly Firebox[] = Array.isArray(firebox) ? firebox : [firebox as Firebox];
   const material = flameMaterial({ ...WOOD_FIRE, motion: reducedMotion ? REDUCED_MOTION : 1 });
   material.name = 'fireplace-flames';
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.name = FIRE_NODE;
-  mesh.position.set(...firebox.centre);
-  mesh.rotation.y = firebox.yaw;
-  mesh.renderOrder = 1;
-  mesh.castShadow = false;
-  mesh.receiveShadow = false;
+  const meshes = boxes.map((box, i) => {
+    const depthScale = box.depthScale ?? 1;
+    const shape = { ...box, back: box.back / depthScale, front: box.front / depthScale };
+    const geometry = fireboxFlameGeometry(i === 0 ? key : `${key}-${i}`, shape);
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.name = FIRE_NODE;
+    mesh.position.set(...box.centre);
+    mesh.rotation.y = box.yaw;
+    mesh.scale.z = depthScale;
+    mesh.renderOrder = 1;
+    return mesh;
+  });
+  const [mesh, ...extras] = meshes;
+  if (!mesh) throw new Error('No firebox opening');
   return {
     mesh,
+    extras,
     material,
     dispose() {
-      geometry.dispose();
+      for (const part of meshes) part.geometry.dispose();
       material.dispose();
     },
   };
@@ -154,13 +180,14 @@ export function dressFireplace(
   isFire: (materialName: string) => boolean,
   reducedMotion = false,
 ): FireplaceFire | null {
-  const firebox = FIREBOXES[templateId];
-  if (!firebox) return null;
-  const dropped = stripBakedFire(model, fireboxBounds(firebox), isFire);
+  const configured = FIREBOXES[templateId];
+  if (!configured) return null;
+  const fireboxes = Array.isArray(configured) ? configured : [configured];
+  const dropped = stripBakedFire(model, fireboxes.map(fireboxBounds), isFire);
   if (dropped === 0)
     console.warn(`${templateId}: no baked fire in the firebox; live fire added anyway`);
-  const fire = buildFireplaceFire(templateId, firebox, reducedMotion);
-  model.add(fire.mesh);
+  const fire = buildFireplaceFire(templateId, fireboxes, reducedMotion);
+  model.add(fire.mesh, ...(fire.extras ?? []));
   return fire;
 }
 

@@ -101,6 +101,11 @@ describe('FlowUi permanent-card shop', () => {
       ui.hover(control);
       const face = ui.root.getObjectByName(`workshop-card-preview-${id}`);
       expect(face?.visible).toBe(true);
+      expect(face?.position.x).toBe(0);
+      expect(face?.position.z).toBeGreaterThan(0.055);
+      face?.traverse((object) => {
+        expect(object.raycast).not.toBe(THREE.Object3D.prototype.raycast);
+      });
       return face;
     };
     const firstFace = inspect(first);
@@ -116,6 +121,7 @@ describe('FlowUi permanent-card shop', () => {
     expect(flow.workshop.permanentCards).toContain(first);
     expect(flow.workshop.cogsBanked).toBe(0);
     expect(ui.root.getObjectByName('workshop-feedback')).toBeDefined();
+    // The card remains listed with its owned count, but cannot be bought without cogs.
     expect(ui.activate(`workshop-buy-permanent-${first}`)).toBe(false);
 
     expect(ui.root.getObjectByName(`workshop-card-preview-${first}`)).toBeUndefined();

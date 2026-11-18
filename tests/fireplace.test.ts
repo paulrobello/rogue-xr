@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { describe, expect, it } from 'vitest';
 import { generateFloor } from '../src/floor/generate.ts';
 import {
@@ -284,5 +285,88 @@ describe('replacing the hall fire', () => {
     view.dispose();
     for (const f of fires) f.dispose();
     expect(generateFloor('SPIRE002').rooms[0]?.templateId).toBe('hall');
+  });
+});
+
+describe('replacing the gear-shaft furnaces', () => {
+  it('uses all four authored openings and keeps coals and the live fire bounded', async () => {
+    const bytes = readFileSync(
+      join(process.cwd(), 'public/assets/rooms/gear-shaft/gear-shaft.glb'),
+    );
+    const gltf = await new Promise<{ scene: THREE.Object3D }>((resolve, reject) => {
+      const start = bytes.byteOffset;
+      new GLTFLoader().parse(
+        bytes.buffer.slice(start, start + bytes.byteLength),
+        '',
+        resolve,
+        reject,
+      );
+    });
+    const flameMeshes: THREE.Mesh[] = [];
+    const coalMeshes: THREE.Mesh[] = [];
+    gltf.scene.traverse((node) => {
+      const mesh = node as THREE.Mesh;
+      if (!mesh.isMesh || Array.isArray(mesh.material)) return;
+      if (mesh.material.name.endsWith('_flame')) flameMeshes.push(mesh);
+      if (mesh.material.name.endsWith('_coals')) coalMeshes.push(mesh);
+    });
+    expect(flameMeshes.length).toBeGreaterThan(0);
+    expect(coalMeshes.length).toBeGreaterThan(0);
+    const beforeCoals = coalMeshes.map((mesh) => mesh.visible);
+    const fire = dressFireplace('gear-shaft', gltf.scene, flameSlot);
+    expect(fire).not.toBeNull();
+    expect(gltf.scene.getObjectsByProperty('name', FIRE_NODE)).toHaveLength(4);
+    expect(fire?.extras).toHaveLength(3);
+    expect(beforeCoals.every((visible, i) => visible === coalMeshes[i]?.visible)).toBe(true);
+    const boxes = (FIREBOXES['gear-shaft'] as readonly Firebox[]).map(fireboxBounds);
+    for (const mesh of flameMeshes) {
+      const positions = mesh.geometry.getAttribute('position') as THREE.BufferAttribute;
+      const index = mesh.geometry.index;
+      const toRoot = gltf.scene.matrixWorld.clone().invert().multiply(mesh.matrixWorld);
+      for (let i = 0; i < (index?.count ?? 0); i += 3) {
+        const centroid = new THREE.Vector3();
+        for (let j = 0; j < 3; j++) {
+          const vertex = new THREE.Vector3().fromBufferAttribute(
+            positions,
+            index?.getX(i + j) ?? 0,
+          );
+          centroid.add(vertex);
+        }
+        centroid.multiplyScalar(1 / 3).applyMatrix4(toRoot);
+        expect(boxes.some((box) => box.containsPoint(centroid))).toBe(false);
+      }
+    }
+    expect(fire?.mesh.geometry.boundingSphere?.radius ?? 0).toBeGreaterThan(0);
+    expect(fire?.mesh.geometry.boundingSphere?.radius).toBeLessThan(0.8);
+    fire?.dispose();
+  });
+
+  it('keeps every furnace fire inside its opening for all room rotations', () => {
+    const configured = FIREBOXES['gear-shaft'];
+    expect(Array.isArray(configured)).toBe(true);
+    const fireboxes = configured as readonly Firebox[];
+    expect(fireboxes).toHaveLength(4);
+    for (const turns of [0, 1, 2, 3]) {
+      const room = new THREE.Group();
+      room.rotation.y = (-Math.PI / 2) * turns;
+      const model = new THREE.Group();
+      room.add(model);
+      const fire = dressFireplace('gear-shaft', model, flameSlot);
+      if (!fire) throw new Error('gear-shaft has furnaces');
+      room.updateMatrixWorld(true);
+      const toRoomLocal = room.matrixWorld.clone().invert();
+      const bounds = fireboxes.map((firebox) => fireboxBounds(firebox));
+      for (const mesh of [fire.mesh, ...(fire.extras ?? [])]) {
+        const points = mesh.geometry.getAttribute('position');
+        for (let i = 0; i < points.count; i++) {
+          const point = new THREE.Vector3()
+            .fromBufferAttribute(points, i)
+            .applyMatrix4(mesh.matrixWorld)
+            .applyMatrix4(toRoomLocal);
+          expect(bounds.some((box) => box.containsPoint(point))).toBe(true);
+        }
+      }
+      fire.dispose();
+    }
   });
 });

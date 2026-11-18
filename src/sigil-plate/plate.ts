@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { configureTextTexture } from '../combat-view/canvas-label.ts';
 import { GLOW_HOT } from '../enemies/glow.ts';
 import { PALETTE } from '../palette.ts';
 import {
@@ -45,6 +46,7 @@ const HINT_HEIGHT = 0.05;
 const HINT_CANVAS = { width: 1024, height: 112 } as const;
 const GUIDE_Z = 0.002;
 const LABEL_CANVAS = { width: 256, height: 128 } as const;
+const LABEL_PIXEL_SCALE = 2;
 
 /**
  * The trail skips tone mapping so its hot head can show the D11 amber. Its settled colour is what
@@ -210,11 +212,11 @@ export class SigilPlate extends THREE.Group {
 
     this.labelCanvas = typeof document === 'undefined' ? null : document.createElement('canvas');
     if (this.labelCanvas) {
-      this.labelCanvas.width = LABEL_CANVAS.width;
-      this.labelCanvas.height = LABEL_CANVAS.height;
+      this.labelCanvas.width = LABEL_CANVAS.width * LABEL_PIXEL_SCALE;
+      this.labelCanvas.height = LABEL_CANVAS.height * LABEL_PIXEL_SCALE;
     }
     this.labelTexture = this.labelCanvas ? new THREE.CanvasTexture(this.labelCanvas) : null;
-    if (this.labelTexture) this.labelTexture.colorSpace = THREE.SRGBColorSpace;
+    if (this.labelTexture) configureTextTexture(this.labelTexture);
     this.labelMaterial = new THREE.MeshBasicMaterial({
       map: this.labelTexture,
       transparent: true,
@@ -236,6 +238,7 @@ export class SigilPlate extends THREE.Group {
       this.hintCanvas.height = HINT_CANVAS.height;
     }
     this.hintTexture = this.hintCanvas ? new THREE.CanvasTexture(this.hintCanvas) : null;
+    if (this.hintTexture) configureTextTexture(this.hintTexture);
     if (this.hintTexture) this.hintTexture.colorSpace = THREE.SRGBColorSpace;
     this.hintMaterial = new THREE.MeshBasicMaterial({
       map: this.hintTexture,
@@ -587,6 +590,7 @@ export class SigilPlate extends THREE.Group {
     this.labelMaterial.opacity = 1;
     const ctx = this.labelCanvas?.getContext('2d');
     if (!ctx || !this.labelTexture) return;
+    ctx.setTransform(LABEL_PIXEL_SCALE, 0, 0, LABEL_PIXEL_SCALE, 0, 0);
     const { width, height } = LABEL_CANVAS;
     ctx.clearRect(0, 0, width, height);
     ctx.textAlign = 'center';

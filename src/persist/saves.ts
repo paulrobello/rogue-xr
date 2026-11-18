@@ -135,9 +135,6 @@ export function validateWorkshop(raw: unknown): WorkshopState {
       fail(`workshop.permanentCards[${i}]`, 'unknown or unavailable card');
     }
   }
-  if (new Set(permanentCards).size !== permanentCards.length) {
-    fail('workshop.permanentCards', 'duplicate card');
-  }
   return {
     version: WORKSHOP_VERSION,
     cogsBanked: int(r.cogsBanked, 'workshop.cogsBanked', 0),

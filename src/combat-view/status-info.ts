@@ -183,8 +183,8 @@ function wrapLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number
   return lines;
 }
 
-const TIP_TITLE_FONT = 'bold 40px system-ui, sans-serif';
-const TIP_TEXT_FONT = '500 30px system-ui, sans-serif';
+const TIP_TITLE_FONT = 'bold 46px system-ui, sans-serif';
+const TIP_TEXT_FONT = '500 34px system-ui, sans-serif';
 /** Tip layout, canvas pixels: inset, first title centre, title to text, text line, entry gap. */
 const TIP = { inset: 24, top: 44, title: 52, line: 36, gap: 20 } as const;
 
