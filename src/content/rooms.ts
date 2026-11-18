@@ -324,8 +324,8 @@ export const GREYBOX_TEMPLATES: readonly RoomTemplate[] = [
     enemySockets: [socket('enemy-a', 0, -2.5, 180), socket('enemy-b', 2, -2, 200)],
     lootSockets: [socket('chest', -3.5, 3.5, 45)],
     dressingSockets: [
-      socket('bench-w', -4, 0, 90),
-      socket('bench-e', 4, 0, 270),
+      socket('bench-w', -4, 2, 90),
+      socket('bench-e', 4, -2, 270),
       socket('rug', 0, 0),
     ],
     lightSockets: [socket('sconce-nw', -4.6, -4.6, 0, 2.2), socket('sconce-se', 4.6, 4.6, 0, 2.2)],

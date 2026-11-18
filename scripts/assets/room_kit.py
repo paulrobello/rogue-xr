@@ -73,7 +73,7 @@ SPECS = {
         "rotations": [0, 1, 2, 3],
         "enemySockets": [_sock("enemy-a", 0, -2.5, 180), _sock("enemy-b", 2, -2, 200)],
         "lootSockets": [_sock("chest", -3.5, 3.5, 45)],
-        "dressingSockets": [_sock("bench-w", -4, 0, 90), _sock("bench-e", 4, 0, 270), _sock("rug", 0, 0)],
+        "dressingSockets": [_sock("bench-w", -4, 2, 90), _sock("bench-e", 4, -2, 270), _sock("rug", 0, 0)],
         "lightSockets": [_sock("sconce-nw", -4.6, -4.6, 0, 2.2), _sock("sconce-se", 4.6, 4.6, 0, 2.2)],
         "probe": [0, 1.6, 0],
     },

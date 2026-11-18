@@ -314,8 +314,8 @@ def build_hall(b, room: kit.Room, high: bool) -> tuple[list, list]:
         flames, box = kit.candelabrum(b, sx * 4.6, sy * 4.6, 2.2, high)
         lights += [(f"torchere_{len(colliders)}_{k}", f, 15.0) for k, f in enumerate(flames)]
         colliders.append(box)
-    for cx in (-4.0, 4.0):  # bench-w and bench-e sockets
-        colliders.append(kit.bench(b, cx, 0.0, 0.9, high))
+    colliders.append(kit.bench(b, -4.0, -2.0, 0.9, high))
+    colliders.append(kit.bench(b, 4.0, 2.0, 0.9, high))
     fire_lights, fire_box, _ = kit.fireplace(b, room, fw, fa, high)
     colliders.append(fire_box)
     lights += fire_lights

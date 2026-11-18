@@ -1,7 +1,8 @@
 {
   "piece": "hall",
   "blender": "5.3.0",
-  "host_load_start": 2.2,
+  "gltf_exporter": "Blender 5.3.0 bundled io_scene_gltf2 5.3.43",
+  "host_load_start": 1.2,
   "lightmap_size": 2048,
   "samples": 256,
   "generator": "scripts/assets/build-room-kit.py",
@@ -134,25 +135,27 @@
   "glb_bytes": 484480,
   "device": "GPU:METAL (Apple M4 (GPU - 10 cores))",
   "lightmap_bake": {
-    "seconds": 45.87,
+    "seconds": 45.54,
     "pass_seconds": [
-      39.25,
-      6.62
+      38.96,
+      6.58
     ],
     "host_load": [
-      2.2,
-      1.48
+      1.18,
+      1.18
     ],
     "timing_valid": true,
     "diffuse_bounces": 4,
+    "margin_px": 8,
+    "island_pad_px": 10,
     "panels": "pass 1: shell, rigid nodes and door frames, every door frame and plug invisible to shadow, diffuse, glossy, transmission and volume rays; pass 2: door plugs only into the same image, plugs fully visible, frames hidden from render (room_panels.bake_with_panels)"
   },
   "denoise": "compositor OIDN, HDR, accurate prefilter, high quality",
   "lightmap": {
     "coverage": 0.6992,
-    "scale": 5.39846,
-    "clipped_fraction": 0.00997,
-    "mean_irradiance": 0.442858,
+    "scale": 5.411592,
+    "clipped_fraction": 0.00994,
+    "mean_irradiance": 0.442837,
     "p05_irradiance": 0.0,
     "percentile": 99.0,
     "encoded_p05_255": 0,
@@ -168,13 +171,6 @@
     "bench.high.png",
     "bench.lightmapped.png",
     "bench.low.png",
-    "engine.bench.png",
-    "engine.floor-sealed-west-close.png",
-    "engine.floor-sealed-west.png",
-    "engine.hero.diffuse.png",
-    "engine.hero.png",
-    "engine.seam-north.png",
-    "engine.seam-west-turned.png",
     "hero.high.png",
     "hero.lightmapped.png",
     "hero.low.png",
@@ -182,12 +178,12 @@
   ],
   "blend": {
     "hall_high.blend": {
-      "sha256": "bfff8fe5a32236df42be4fd3200b5549668485978d15e03b65d29e33cfd91d43",
-      "bytes": 1025876
+      "sha256": "b5200d2dfbee3605e3e1b1c8089e3b9a6776453bd3e3a5af6e4e6887ceff82f4",
+      "bytes": 1026047
     },
     "hall_low.blend": {
-      "sha256": "a5bed67741a9c5aa838e1b3b0660fd91d1b230476b7fbf0f394e1820fcb3a3b8",
-      "bytes": 349999
+      "sha256": "8c20583f21ab043a41234123c9ef9c69732a1529cc6806416092b35ad6fc89ab",
+      "bytes": 349450
     }
   },
   "colliders_added": [
@@ -243,24 +239,24 @@
       "min": [
         -4.215,
         0,
-        -0.455
+        1.545
       ],
       "max": [
         -3.785,
         0.47,
-        0.455
+        2.455
       ]
     },
     {
       "min": [
         3.785,
         0,
-        -0.455
+        -2.455
       ],
       "max": [
         4.215,
         0.47,
-        0.455
+        -1.545
       ]
     },
     {
@@ -540,13 +536,13 @@
       "vfov": 70.0
     }
   },
-  "host_load_end": 2.59,
+  "host_load_end": 1.66,
   "files": {
-    "engine-compare.json": "f4937226bab58a8928073bec5c4923d92165669c432732feb32bc2e8b0576ae9",
-    "hall.glb": "85c2b07f7c32e940d2d4dd9106fb1eb76f042fecef5ec680b404c58e76f97476",
-    "hall.lightmap.ktx2": "e337c12b658d2916c8c7f341942ef1db4e1d36a5b64e26b0a7094ac31b49d8dc",
-    "hall.lightmap.png": "4781aaa6b0c041d2da3b15a2bfa3baceb80d46bd85099e5debff55a23ce849fe",
-    "hall.manifest.json": "ed8219beb53ad99a3aadaa3f336b035e0b45000d4b67d0cc127bee6420827504",
-    "uv1-report.json": "017584ee64f47e6897de640dd3b24380095af9516cd5f50ffcc4def110be55fb"
+    "engine-compare.json": "591c6ca434843d141edc4728b6816865732db7e384007fcfb5f768cde4e0e8ba",
+    "hall.glb": "d2af53500c023a863378a18586ad8e4028d572853a4bf0a4817e862bfbbb26d9",
+    "hall.lightmap.ktx2": "4f73313b640e07d998779124825fb76257eb8b96ca8816b67ee46009ffa8ba9b",
+    "hall.lightmap.png": "3315e9ed289ad3dbb77d08cb4d97989d2170db0266368a6e7d7576f9fe2ac973",
+    "hall.manifest.json": "cce9d7b507e7b4dc4ee306b44da424a8071354c30ecaad2a0623a2f91c990980",
+    "uv1-report.json": "31a06f2e5b581cc60c04e5a9e17a339ff4895e4cda7a20c88cc77084c5507f53"
   }
 }

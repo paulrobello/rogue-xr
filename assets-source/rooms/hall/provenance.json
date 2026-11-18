@@ -4,12 +4,12 @@
   "route": "scripted",
   "generator": {
     "path": "scripts/assets/build-room-kit.py",
-    "sha256": "9929766d83645ee9946099015e217085f449cad9ef7b0c34c9593768a523015f"
+    "sha256": "e164e9371c2fdbcc3da73b12dd6c40b7b390e335bbc03d319f8cd7f15e9bb01f"
   },
   "generatorDeps": [
     {
       "path": "scripts/assets/room_kit.py",
-      "sha256": "292e340c5086c8f7b811d4f8cfa28234beb5ad723414d734ca27120186d86603"
+      "sha256": "5600b9f67b900540370af102d982678acfc6d54c14de4afa4310e84626081e40"
     },
     {
       "path": "scripts/assets/build-room-study.py",
@@ -35,18 +35,18 @@
   "blender": "5.3.0",
   "toolVersions": {
     "ktx": "ktx version: v4.4.2",
-    "gltfExporter": "Blender 5.2.2 bundled io_scene_gltf2"
+    "gltfExporter": "Blender 5.3.0 bundled io_scene_gltf2 5.3.43"
   },
   "blendFiles": {
     "store": "assets-source/rooms/hall/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)",
     "files": {
       "hall_high.blend": {
-        "sha256": "bfff8fe5a32236df42be4fd3200b5549668485978d15e03b65d29e33cfd91d43",
-        "bytes": 1025876
+        "sha256": "b5200d2dfbee3605e3e1b1c8089e3b9a6776453bd3e3a5af6e4e6887ceff82f4",
+        "bytes": 1026047
       },
       "hall_low.blend": {
-        "sha256": "a5bed67741a9c5aa838e1b3b0660fd91d1b230476b7fbf0f394e1820fcb3a3b8",
-        "bytes": 349999
+        "sha256": "8c20583f21ab043a41234123c9ef9c69732a1529cc6806416092b35ad6fc89ab",
+        "bytes": 349450
       }
     }
   },
@@ -54,24 +54,26 @@
     "device": "GPU:METAL (Apple M4 (GPU - 10 cores))",
     "lightmap": {
       "coverage": 0.6992,
-      "scale": 5.39846,
-      "clipped_fraction": 0.00997,
-      "mean_irradiance": 0.442858,
+      "scale": 5.411592,
+      "clipped_fraction": 0.00994,
+      "mean_irradiance": 0.442837,
       "p05_irradiance": 0.0,
       "percentile": 99.0,
       "encoded_p05_255": 0,
       "encoded_median_255": 41,
-      "seconds": 45.87,
+      "seconds": 45.54,
       "pass_seconds": [
-        39.25,
-        6.62
+        38.96,
+        6.58
       ],
       "host_load": [
-        2.2,
-        1.48
+        1.18,
+        1.18
       ],
       "timing_valid": true,
       "diffuse_bounces": 4,
+      "margin_px": 8,
+      "island_pad_px": 10,
       "panels": "pass 1: shell, rigid nodes and door frames, every door frame and plug invisible to shadow, diffuse, glossy, transmission and volume rays; pass 2: door plugs only into the same image, plugs fully visible, frames hidden from render (room_panels.bake_with_panels)",
       "size": 2048,
       "samples": 256,
@@ -229,7 +231,7 @@
         "position": [
           -4,
           0,
-          0
+          2
         ],
         "yaw": 90
       },
@@ -238,7 +240,7 @@
         "position": [
           4,
           0,
-          0
+          -2
         ],
         "yaw": 270
       },
@@ -281,27 +283,27 @@
   "derivedFiles": [
     {
       "path": "public/assets/rooms/hall/hall.glb",
-      "sha256": "85c2b07f7c32e940d2d4dd9106fb1eb76f042fecef5ec680b404c58e76f97476",
+      "sha256": "d2af53500c023a863378a18586ad8e4028d572853a4bf0a4817e862bfbbb26d9",
       "bytes": 484480
     },
     {
       "path": "public/assets/rooms/hall/hall.lightmap.ktx2",
-      "sha256": "e337c12b658d2916c8c7f341942ef1db4e1d36a5b64e26b0a7094ac31b49d8dc",
-      "bytes": 2833664
+      "sha256": "4f73313b640e07d998779124825fb76257eb8b96ca8816b67ee46009ffa8ba9b",
+      "bytes": 2833126
     },
     {
       "path": "public/assets/rooms/hall/hall.manifest.json",
-      "sha256": "ed8219beb53ad99a3aadaa3f336b035e0b45000d4b67d0cc127bee6420827504",
+      "sha256": "cce9d7b507e7b4dc4ee306b44da424a8071354c30ecaad2a0623a2f91c990980",
       "bytes": 5130
     }
   ],
   "stagingFiles": {
-    "engine-compare.json": "f4937226bab58a8928073bec5c4923d92165669c432732feb32bc2e8b0576ae9",
-    "hall.glb": "85c2b07f7c32e940d2d4dd9106fb1eb76f042fecef5ec680b404c58e76f97476",
-    "hall.lightmap.ktx2": "e337c12b658d2916c8c7f341942ef1db4e1d36a5b64e26b0a7094ac31b49d8dc",
-    "hall.lightmap.png": "4781aaa6b0c041d2da3b15a2bfa3baceb80d46bd85099e5debff55a23ce849fe",
-    "hall.manifest.json": "ed8219beb53ad99a3aadaa3f336b035e0b45000d4b67d0cc127bee6420827504",
-    "uv1-report.json": "017584ee64f47e6897de640dd3b24380095af9516cd5f50ffcc4def110be55fb"
+    "engine-compare.json": "591c6ca434843d141edc4728b6816865732db7e384007fcfb5f768cde4e0e8ba",
+    "hall.glb": "d2af53500c023a863378a18586ad8e4028d572853a4bf0a4817e862bfbbb26d9",
+    "hall.lightmap.ktx2": "4f73313b640e07d998779124825fb76257eb8b96ca8816b67ee46009ffa8ba9b",
+    "hall.lightmap.png": "3315e9ed289ad3dbb77d08cb4d97989d2170db0266368a6e7d7576f9fe2ac973",
+    "hall.manifest.json": "cce9d7b507e7b4dc4ee306b44da424a8071354c30ecaad2a0623a2f91c990980",
+    "uv1-report.json": "31a06f2e5b581cc60c04e5a9e17a339ff4895e4cda7a20c88cc77084c5507f53"
   },
   "references": [
     {
@@ -426,43 +428,71 @@
   "reviewEvidence": [
     {
       "path": "assets-source/rooms/hall/staging/review-sheet.jpg",
-      "sha256": "e00afa0f927a87d6b5ceabded863ef5e3650860f4665f052705e8e546e3f9ea1"
+      "sha256": "005022b82cce0fa2edc294f02ec6cd49e8e49245d4e6f9ac802bf77be12a8935"
     },
     {
       "path": "docs/verification/p5-rooms-hall-bench.jpg",
-      "sha256": "402824f98867a109005f7ba5835d1342a11999f2b46bc6a6f5b5ee95eac2dc4d"
+      "sha256": "8a5f1bfb00af5948812c82b2e0e2a4df04797bdb899c2a46c1c8cd767a8fdd85"
     },
     {
       "path": "docs/verification/p5-rooms-hall-floor-sealed-west-close.jpg",
-      "sha256": "e12184dca5646d22b8f642f054b29f5415c320cb5beef28c3c67abdb3d21e6a1"
+      "sha256": "8fda00cd94764877c368c692484ea45cbd0ef6a0f936a1b6a03a77c620391f1c"
     },
     {
       "path": "docs/verification/p5-rooms-hall-floor-sealed-west.jpg",
-      "sha256": "e2d2cb5ad5af09aebdfd6e541c28ab2500a3ea2bd0f73d4a46b8050a902cc57a"
+      "sha256": "48ef9d8d5accf0dd17df7a524cfdae976fd8ceea7f4f206a31a70c58ba6a781f"
     },
     {
       "path": "docs/verification/p5-rooms-hall-hero.diffuse.jpg",
-      "sha256": "ad4916091951a344f5ca9b5c99fd617a78266998af085bcc934f8a75cc50e15f"
+      "sha256": "0960f2d5e34550b0b25e373ed05fff6de11be9c957d731498b78067297d61ac2"
     },
     {
       "path": "docs/verification/p5-rooms-hall-hero.jpg",
-      "sha256": "962613f8e0a6155c9d324841b9d25b2619f967e7526c3c33ba6e3aaff4e6b58c"
+      "sha256": "fcd3cf8e118ccdc5660b5f8ea6e5bc57ea7106ba12c08deb4ca7461db211a9a1"
     },
     {
       "path": "docs/verification/p5-rooms-hall-plug-n-in.jpg",
-      "sha256": "07448fc152516f1be294469fe4a0295d7a4441f09e9d2a6cafcff7de3c7e4ddb"
+      "sha256": "572a5fd025a5bb6f376529c65f16991f16f56a4dd2767c29f321f5c4d1226ee1"
     },
     {
       "path": "docs/verification/p5-rooms-hall-plug-n-out.jpg",
-      "sha256": "d966d52e45ef4773ff5d3634749d9368f163e4f79523b9562f658b43bfce44a7"
+      "sha256": "7e70fb0b7adae95fa0b10817ab4cc059d214359cc702cb975ed3339810305489"
     },
     {
       "path": "docs/verification/p5-rooms-hall-seam-north.jpg",
-      "sha256": "c518c22aabc31eebca52be3f24e64b57c17f4ac935f9fbd2e966b31ecd19c0b5"
+      "sha256": "0425b26f140a5557e138d1fec8764dd06095ae3a3aecd61639241ef9ec6a6a4c"
     },
     {
       "path": "docs/verification/p5-rooms-hall-seam-west-turned.jpg",
-      "sha256": "f8fa291e1351e451daab38809d255c962a69e63fb627b265ff97202c156a607d"
+      "sha256": "f504d9087c324fb634a8b7762b2719fe6391e7a7d0b1c6a52616f6183ef90806"
+    },
+    {
+      "path": "docs/verification/p5-int-hall-bench-east.jpg",
+      "sha256": "57c75af1cb43f9d7ee7e62763cefa4f88a663d770a4f58c9514d23488eda8b27"
+    },
+    {
+      "path": "docs/verification/p5-int-hall-bench-west.jpg",
+      "sha256": "4046fd7807c77e1f62725f084acea2fd47de5edf4f11da68ef57780fb26da2e4"
+    },
+    {
+      "path": "docs/verification/p5-int-hall-sealed.jpg",
+      "sha256": "baac50a4644d453f6fa6cc01d6a6a0b2537ff766e48743407a32a9d053ffb2ab"
+    },
+    {
+      "path": "docs/verification/p5-int-hall.jpg",
+      "sha256": "49dc7427d9f9ee270512e1c16f5ead5e2a105fb84a7abe72dd015eac82d1e76b"
+    },
+    {
+      "path": "docs/verification/hall-fire-close.jpg",
+      "sha256": "307ee924760fc066159f2a163a44416ad83142bde3605c81886dbae63302a3a5"
+    },
+    {
+      "path": "docs/verification/hall-fire-entry.jpg",
+      "sha256": "9bdeaf5729c01c867dec96ead20e271099e9d76e60fb1c200b4b00093d0c6fd2"
+    },
+    {
+      "path": "docs/verification/hall-fire-strip.jpg",
+      "sha256": "b363c2ccf99956345ff413c0ba1c3962c1c1016c3155c5755363b3d5046f79de"
     }
   ],
   "independentScore": {
@@ -630,5 +660,12 @@
       ],
       "method": "Looked at (2026-11-16): docs/art-bible.md; PRD.md lightmap contract (lines 87-95); assets-source/concepts/room-sheet-1.png, room-sheet-2.png; study benchmark assets-source/rooms/study/staging/review-sheet.jpg + provenance.json + engine-compare.json; docs/verification/p5-int-study.jpg; assets-source/rooms/hall/provenance.json, staging/review-sheet.jpg, staging/engine-compare.json, staging/hall.lightmap.png (texel stats), docs/verification/p5-rooms-hall-*.jpg and p5-int-hall*.jpg; Pillow crops and region means under /tmp/rxr-score/rooms/."
     }
-  ]
+  ],
+  "revision": {
+    "agent": "Codex with GPT-6.1 Terra",
+    "changes": [
+      "Moved both benches clear of the hall doorways",
+      "Rebuilt the hall and refreshed the runtime evidence"
+    ]
+  }
 }

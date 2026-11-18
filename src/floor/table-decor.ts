@@ -53,8 +53,8 @@ export interface DecorTable {
  */
 export const DECOR_TABLES: Readonly<Record<string, readonly DecorTable[]>> = {
   hall: [
-    { id: 'bench-w', x: -4, z: 0, halfX: 0.21, halfZ: 0.45, top: 0.47, margin: 0.025 },
-    { id: 'bench-e', x: 4, z: 0, halfX: 0.21, halfZ: 0.45, top: 0.47, margin: 0.025 },
+    { id: 'bench-w', x: -4, z: 2, halfX: 0.21, halfZ: 0.45, top: 0.47, margin: 0.025 },
+    { id: 'bench-e', x: 4, z: -2, halfX: 0.21, halfZ: 0.45, top: 0.47, margin: 0.025 },
   ],
   'gear-shaft': [{ id: 'crate', x: 3, z: 4.5, halfX: 0.4, halfZ: 0.4, top: 0.8, margin: 0.09 }],
 };

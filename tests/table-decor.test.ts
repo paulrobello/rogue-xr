@@ -129,8 +129,8 @@ describe('placeTableDecor', () => {
     expect([...seen].sort()).toEqual([0, 1, 2]);
   });
 
-  it('kept every prop where it stood before variants existed (they draw last)', () => {
-    // SPIRE002 as placed before the variant pass was added.
+  it('keeps seeded prop offsets and yaw when variants are drawn last', () => {
+    // SPIRE002 before variants, with the hall bench translations applied.
     const ids = generateFloor('SPIRE002').rooms.map((r) => r.templateId);
     const now = placeTableDecor('SPIRE002', ids).map((p) => [
       p.room,
@@ -141,10 +141,10 @@ describe('placeTableDecor', () => {
       Math.round(p.yaw * 1e4) / 1e4,
     ]);
     expect(now).toEqual([
-      [0, 'bench-w', 'vase', -4.0911, -0.3313, 5.3738],
-      [0, 'bench-e', 'books', 4.0081, -0.2034, 0.3901],
-      [0, 'bench-e', 'candle', 3.9763, 0.304, 2.7788],
-      [0, 'bench-e', 'vase', 4.1125, 0.1675, 2.8075],
+      [0, 'bench-w', 'vase', -4.0911, 1.6687, 5.3738],
+      [0, 'bench-e', 'books', 4.0081, -2.2034, 0.3901],
+      [0, 'bench-e', 'candle', 3.9763, -1.696, 2.7788],
+      [0, 'bench-e', 'vase', 4.1125, -1.8325, 2.8075],
       [3, 'crate', 'candle', 2.9648, 4.2998, 0.3184],
       [3, 'crate', 'books', 3.0635, 4.5971, 1.2719],
     ]);

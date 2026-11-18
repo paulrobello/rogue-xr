@@ -1,23 +1,23 @@
 {
   "lightmap_vs_cycles_diffuse": {
-    "frame_ratio": 0.909,
-    "rmse_srgb": 0.0312,
+    "frame_ratio": 0.914,
+    "rmse_srgb": 0.0313,
     "bands": {
       "ceiling": 0.875,
       "upper walls": 0.881,
-      "lower walls": 0.923,
+      "lower walls": 0.942,
       "floor near": 0.951
     }
   },
   "frame_means_255": {
     "engine.bench.png": 33.6,
-    "engine.floor-sealed-west-close.png": 30.0,
-    "engine.floor-sealed-west.png": 29.9,
-    "engine.hero.diffuse.png": 27.9,
-    "engine.hero.png": 32.3,
+    "engine.floor-sealed-west-close.png": 30.8,
+    "engine.floor-sealed-west.png": 30.4,
+    "engine.hero.diffuse.png": 28.0,
+    "engine.hero.png": 32.4,
     "engine.plug-n-in.png": 35.0,
-    "engine.plug-n-out.png": 35.4,
-    "engine.seam-north.png": 40.1,
+    "engine.plug-n-out.png": 35.5,
+    "engine.seam-north.png": 40.2,
     "engine.seam-west-turned.png": 34.2
   }
 }
