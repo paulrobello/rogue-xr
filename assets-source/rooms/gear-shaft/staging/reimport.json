@@ -1,12 +1,19 @@
 {
   "glb": "gear-shaft.glb",
-  "glb_sha256": "760f94a64a9794371d987f8f96d9fae035f9c88c50f5d17edee71a5686f9bac1",
+  "glb_sha256": "5988762f54cd106b09c10a626d92000c3d7831ac9d9ef7b68668f4fd8367b10a",
   "blender": "5.3.0",
   "meshes": [
+    "door-frame-n",
+    "door-frame-s",
+    "door-frame-w",
+    "door-plug-n",
+    "door-plug-s",
+    "door-plug-w",
     "gear-shaft",
+    "gear-shaft_gear_counter",
     "gear-shaft_gear_ring"
   ],
-  "triangles": 7832,
+  "triangles": 9872,
   "materials": [
     "gear-shaft_brass-aged",
     "gear-shaft_brass-polished",
@@ -59,7 +66,14 @@
     "footprint_x": true,
     "footprint_y": true,
     "inside_footprint": true,
-    "gear_ring_node_on_axis": true
+    "gear_ring_node_on_axis": true,
+    "gear_counter_node_on_axis": true,
+    "panel_door-frame-n": true,
+    "panel_door-plug-n": true,
+    "panel_door-frame-s": true,
+    "panel_door-plug-s": true,
+    "panel_door-frame-w": true,
+    "panel_door-plug-w": true
   },
   "rigid_nodes": {
     "gear-shaft_gear_ring": {
@@ -71,7 +85,44 @@
       ],
       "rotation_angle": 0.0,
       "parent": null,
-      "triangles": 4456
+      "triangles": 4776
+    },
+    "gear-shaft_gear_counter": {
+      "found": true,
+      "location_blender": [
+        1.054,
+        1.054,
+        5.85
+      ],
+      "rotation_angle": 0.0,
+      "parent": null,
+      "triangles": 1644
+    }
+  },
+  "panels": {
+    "door-frame-n": {
+      "found": true,
+      "triangles": 34
+    },
+    "door-plug-n": {
+      "found": true,
+      "triangles": 20
+    },
+    "door-frame-s": {
+      "found": true,
+      "triangles": 34
+    },
+    "door-plug-s": {
+      "found": true,
+      "triangles": 20
+    },
+    "door-frame-w": {
+      "found": true,
+      "triangles": 34
+    },
+    "door-plug-w": {
+      "found": true,
+      "triangles": 20
     }
   },
   "pass": true

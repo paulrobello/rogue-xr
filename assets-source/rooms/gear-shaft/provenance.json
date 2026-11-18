@@ -4,16 +4,16 @@
   "route": "scripted",
   "generator": {
     "path": "scripts/assets/build-room-kit.py",
-    "sha256": "037cd14f169ff58c9704b4e8204dc3286655c7d7695c5b0dfb16923fd2212ddb"
+    "sha256": "9929766d83645ee9946099015e217085f449cad9ef7b0c34c9593768a523015f"
   },
   "generatorDeps": [
     {
       "path": "scripts/assets/room_kit.py",
-      "sha256": "577c7cba3babdf3d77bc54b353e8a93eba6f23c060a6404c4d9c7235f731bb2d"
+      "sha256": "292e340c5086c8f7b811d4f8cfa28234beb5ad723414d734ca27120186d86603"
     },
     {
       "path": "scripts/assets/build-room-study.py",
-      "sha256": "2e20a14f0968fa4fe4b0adecec9d44945887dcfb47d19d3d31859767b523e016"
+      "sha256": "b918e8511fef38f662c4a98c441a15780cbf621969691351a754f6e200274fce"
     },
     {
       "path": "scripts/assets/lightmap_helpers.py",
@@ -22,6 +22,10 @@
     {
       "path": "scripts/assets/build-cog-sentry.py",
       "sha256": "8f80d1ae8d10adeab5123ba9497e9d00a8ea4c6e5c0855c902cf65274f25bacc"
+    },
+    {
+      "path": "scripts/assets/room_panels.py",
+      "sha256": "07154a7ecc06413468537a5043b7772df73c405c4a6b0f4294ef851efd9b1bc3"
     }
   ],
   "authoringAgent": {
@@ -37,33 +41,38 @@
     "store": "assets-source/rooms/gear-shaft/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)",
     "files": {
       "gear-shaft_high.blend": {
-        "sha256": "3674a2922bb1c0577d7c1153c1af746ea316b223b2ac2c17803f8fbc7c99b694",
-        "bytes": 1305424
+        "sha256": "e20e1823ebddccba4039faa7bd96773c9dcfa91bca634ee56266ba12e5a3f7da",
+        "bytes": 1568781
       },
       "gear-shaft_low.blend": {
-        "sha256": "a9f37928ac943fc8f32afbcba520752a82be8650a284e5b345305260aaa212c3",
-        "bytes": 364167
+        "sha256": "1c905b33ec6343adb2e48cfb866d5b62a8cb1bf0c21cf27623d287c702f719cb",
+        "bytes": 405739
       }
     }
   },
   "bake": {
     "device": "GPU:METAL (Apple M4 (GPU - 10 cores))",
     "lightmap": {
-      "coverage": 0.6734,
-      "scale": 5.250408,
-      "clipped_fraction": 0.00996,
-      "mean_irradiance": 0.422695,
-      "p05_irradiance": 0.0,
+      "coverage": 0.6595,
+      "scale": 5.170748,
+      "clipped_fraction": 0.00995,
+      "mean_irradiance": 0.417329,
+      "p05_irradiance": 1e-06,
       "percentile": 99.0,
       "encoded_p05_255": 0,
       "encoded_median_255": 45,
-      "seconds": 42.06,
+      "seconds": 51.1,
+      "pass_seconds": [
+        45.82,
+        5.28
+      ],
       "host_load": [
-        2.26,
-        1.86
+        1.52,
+        1.78
       ],
       "timing_valid": true,
       "diffuse_bounces": 2,
+      "panels": "pass 1: shell, rigid nodes and door frames, every door frame and plug invisible to shadow, diffuse, glossy, transmission and volume rays; pass 2: door plugs only into the same image, plugs fully visible, frames hidden from render (room_panels.bake_with_panels)",
       "size": 2048,
       "samples": 256,
       "pass": "DIFFUSE direct+indirect, colour off, metallic forced 0, OIDN",
@@ -79,7 +88,7 @@
     }
   },
   "budgets": {
-    "triangles": 7832,
+    "triangles": 9872,
     "materials": 12,
     "texturePx": {
       "gear-shaft.lightmap.ktx2": {
@@ -87,65 +96,65 @@
         "height": 2048
       }
     },
-    "highTriangles": 50704,
-    "glbBytes": 612996
+    "highTriangles": 65878,
+    "glbBytes": 768920
   },
   "texelDensityPxPerM": {
     "lightmap": {
-      "mean_px_per_m": 47.43,
-      "min_px_per_m": 40.13,
-      "max_px_per_m": 47.73
+      "mean_px_per_m": 44.39,
+      "min_px_per_m": 31.4,
+      "max_px_per_m": 45.75
     },
     "lightmapBySlot": {
       "brass-aged": {
-        "area_m2": 19.97,
-        "median_px_per_m": 47.7,
-        "min_px_per_m": 44.4
+        "area_m2": 15.14,
+        "median_px_per_m": 45.7,
+        "min_px_per_m": 32.7
       },
       "brass-polished": {
         "area_m2": 3.94,
-        "median_px_per_m": 47.7,
-        "min_px_per_m": 42.9
+        "median_px_per_m": 45.7,
+        "min_px_per_m": 32.7
       },
       "bronze": {
         "area_m2": 37.49,
-        "median_px_per_m": 47.7,
-        "min_px_per_m": 40.1
+        "median_px_per_m": 45.7,
+        "min_px_per_m": 34.8
       },
       "coals": {
         "area_m2": 6.93,
-        "median_px_per_m": 47.7,
-        "min_px_per_m": 47.4
+        "median_px_per_m": 45.7,
+        "min_px_per_m": 38.8
       },
       "flame": {
         "area_m2": 0.74,
-        "median_px_per_m": 47.7,
-        "min_px_per_m": 43.1
+        "median_px_per_m": 45.5,
+        "min_px_per_m": 38.8
       },
       "lamp-glass": {
         "area_m2": 0.62,
-        "median_px_per_m": 46.1,
-        "min_px_per_m": 44.4
+        "median_px_per_m": 44.0,
+        "min_px_per_m": 32.7
       },
       "stone-floor": {
         "area_m2": 162.4,
-        "median_px_per_m": 47.7,
-        "min_px_per_m": 47.4
+        "median_px_per_m": 45.7,
+        "min_px_per_m": 38.8
       },
       "wallpaper": {
         "area_m2": 153.28,
-        "median_px_per_m": 47.7,
-        "min_px_per_m": 47.4
+        "median_px_per_m": 45.5,
+        "min_px_per_m": 38.8
       },
       "walnut": {
         "area_m2": 183.89,
-        "median_px_per_m": 47.7,
-        "min_px_per_m": 41.8
+        "median_px_per_m": 45.7,
+        "min_px_per_m": 38.8
       },
       "wax": {
         "area_m2": 0.12,
-        "median_px_per_m": 46.0,
-        "min_px_per_m": 42.9
+        "median_px_per_m": 44.0,
+        "min_px_per_m": 31.4
       }
     }
   },
@@ -271,27 +280,27 @@
   "derivedFiles": [
     {
       "path": "public/assets/rooms/gear-shaft/gear-shaft.glb",
-      "sha256": "760f94a64a9794371d987f8f96d9fae035f9c88c50f5d17edee71a5686f9bac1",
-      "bytes": 612996
+      "sha256": "5988762f54cd106b09c10a626d92000c3d7831ac9d9ef7b68668f4fd8367b10a",
+      "bytes": 768920
     },
     {
       "path": "public/assets/rooms/gear-shaft/gear-shaft.lightmap.ktx2",
-      "sha256": "07ec101007dc0d46ca9910faa5738a13993b7dc931a866c35e5dab8253db4991",
-      "bytes": 2827574
+      "sha256": "0f01990bef1099ee00bcc8846c14dccf4433aa98be54df0260e51694cf44a513",
+      "bytes": 2854530
     },
     {
       "path": "public/assets/rooms/gear-shaft/gear-shaft.manifest.json",
-      "sha256": "6b2d595bbff6d4bd2e2c05a4f4a1db00c16241a6fae808d5cad8a636d3ebc99b",
-      "bytes": 5072
+      "sha256": "b595838ff4cc81c700e45b8506d7caef25b84431f562d03bb6fd317203911d4f",
+      "bytes": 5525
     }
   ],
   "stagingFiles": {
-    "engine-compare.json": "390e7c37fe0d13a024e171af54b88490cf07e84388282e6c64c78c00a50e2602",
-    "gear-shaft.glb": "760f94a64a9794371d987f8f96d9fae035f9c88c50f5d17edee71a5686f9bac1",
-    "gear-shaft.lightmap.ktx2": "07ec101007dc0d46ca9910faa5738a13993b7dc931a866c35e5dab8253db4991",
-    "gear-shaft.lightmap.png": "6973e40fd74ffb294740d2f83be1111040650bde0996a984336b5ad10faa35af",
-    "gear-shaft.manifest.json": "6b2d595bbff6d4bd2e2c05a4f4a1db00c16241a6fae808d5cad8a636d3ebc99b",
-    "uv1-report.json": "bc30bf0930c59fb0422da80dd4cb6042e04aaaa69e43f92e273f1e2d4c978f17"
+    "engine-compare.json": "ffc436b26d649bdd71deae751f1b902bbd7cd273cd183aef3c6f887374d38b7c",
+    "gear-shaft.glb": "5988762f54cd106b09c10a626d92000c3d7831ac9d9ef7b68668f4fd8367b10a",
+    "gear-shaft.lightmap.ktx2": "0f01990bef1099ee00bcc8846c14dccf4433aa98be54df0260e51694cf44a513",
+    "gear-shaft.lightmap.png": "6cec20b52117a61b6fb6b7588294d50dea722bb46eaf0672183df568014a3010",
+    "gear-shaft.manifest.json": "b595838ff4cc81c700e45b8506d7caef25b84431f562d03bb6fd317203911d4f",
+    "uv1-report.json": "8a6ad76568bb061c6255ed851ed608dbfbcf27d3080a3bf8f311f074d590f0d3"
   },
   "references": [
     {
@@ -316,7 +325,7 @@
   "materialsUsed": "approved P4-T3 set (public/assets/materials), bound by slot name; not regenerated",
   "license": "Original work generated in Blender from a checked-in script; concept references from Paul's paid Higgsfield plan (Terms of Use 4.4)",
   "reimport": {
-    "triangles": 7832,
+    "triangles": 9872,
     "material_count": 12,
     "uv_layers": [
       [
@@ -349,7 +358,14 @@
       "footprint_x": true,
       "footprint_y": true,
       "inside_footprint": true,
-      "gear_ring_node_on_axis": true
+      "gear_ring_node_on_axis": true,
+      "gear_counter_node_on_axis": true,
+      "panel_door-frame-n": true,
+      "panel_door-plug-n": true,
+      "panel_door-frame-s": true,
+      "panel_door-plug-s": true,
+      "panel_door-frame-w": true,
+      "panel_door-plug-w": true
     },
     "pass": true
   },
@@ -418,20 +434,53 @@
         ],
         "radPerSec": 0.35,
         "note": "spin node.rotation.y; lightmap baked at rest with the node invisible to shadow rays, so turning it breaks no baked shadow"
+      },
+      {
+        "node": "gear-shaft_gear_counter",
+        "pivot": [
+          1.054,
+          5.85,
+          -1.054
+        ],
+        "axis": [
+          0,
+          1,
+          0
+        ],
+        "radPerSec": -0.56,
+        "meshesWith": {
+          "node": "gear-shaft_gear_ring",
+          "teeth": 20,
+          "partnerTeeth": 32
+        },
+        "note": "counter-rotates at the inverse tooth ratio from the same clock; at rest its teeth sit in the drive gears' gaps"
       }
     ],
     "lowPoly": {
       "gear-shaft_gear_ring": {
-        "triangles": 4456,
+        "triangles": 4776,
         "lightmap_density": {
-          "mean_px_per_m": 46.55,
-          "min_px_per_m": 39.98,
-          "max_px_per_m": 47.73
+          "mean_px_per_m": 44.62,
+          "min_px_per_m": 38.4,
+          "max_px_per_m": 45.75
         },
         "location_blender": [
           0.0,
           0.0,
           3.6
+        ]
+      },
+      "gear-shaft_gear_counter": {
+        "triangles": 1644,
+        "lightmap_density": {
+          "mean_px_per_m": 44.28,
+          "min_px_per_m": 38.43,
+          "max_px_per_m": 45.75
+        },
+        "location_blender": [
+          1.054,
+          1.054,
+          5.85
         ]
       }
     },
@@ -439,16 +488,33 @@
       "gear-shaft_gear_ring": {
         "azimuth": {
           "sector_means": [
-            0.0931,
-            0.09069,
-            0.09014,
-            0.09183,
-            0.09107,
-            0.0901,
-            0.09106,
-            0.09356
+            0.09358,
+            0.08989,
+            0.08909,
+            0.08993,
+            0.08966,
+            0.08884,
+            0.09086,
+            0.09383
           ],
-          "min_over_max": 0.963,
+          "min_over_max": 0.947,
+          "sectors": 8
+        },
+        "casts_baked_shadow": false
+      },
+      "gear-shaft_gear_counter": {
+        "azimuth": {
+          "sector_means": [
+            0.05235,
+            0.05003,
+            0.06853,
+            0.07466,
+            0.07684,
+            0.07861,
+            0.07692,
+            0.06824
+          ],
+          "min_over_max": 0.636,
           "sectors": 8
         },
         "casts_baked_shadow": false
@@ -464,47 +530,130 @@
         ],
         "rotation_angle": 0.0,
         "parent": null,
-        "triangles": 4456
+        "triangles": 4776
+      },
+      "gear-shaft_gear_counter": {
+        "found": true,
+        "location_blender": [
+          1.054,
+          1.054,
+          5.85
+        ],
+        "rotation_angle": 0.0,
+        "parent": null,
+        "triangles": 1644
       }
+    },
+    "gearMesh": {
+      "steps": 1440,
+      "turns_of_a": 1.0,
+      "turns_of_b": 1.6,
+      "pairs": [
+        {
+          "z_world": 5.59,
+          "outline_points": [
+            128,
+            80
+          ],
+          "crossing_steps": 0,
+          "min_clearance_m": 0.00316,
+          "centre_distance_m": 1.49058,
+          "tooth_overlap_m": 0.05942
+        },
+        {
+          "z_world": 6.19,
+          "outline_points": [
+            128,
+            80
+          ],
+          "crossing_steps": 0,
+          "min_clearance_m": 0.00316,
+          "centre_distance_m": 1.49058,
+          "tooth_overlap_m": 0.05942
+        }
+      ],
+      "pass": true,
+      "rate_ratio": -1.6,
+      "inverse_tooth_ratio": -1.6
     },
     "shadowPolicy": "baked with the node invisible to shadow rays (Cycles visible_shadow off), so no static surface holds its shadow"
   },
   "reviewEvidence": [
     {
       "path": "assets-source/rooms/gear-shaft/staging/review-sheet.jpg",
-      "sha256": "54d463a5220d55ed11fc3c020374dbbb56ec902e403b046c3b90629862db448c"
+      "sha256": "fa263697be1cc943b10613b670c94fa72aaba87f59255d48f414c70f5d289202"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-hero-gear-turned.jpg",
-      "sha256": "0fd191f0b16566be14bbe8032e5c380410cb43216a1a1c5538810fecf3ccba2b"
+      "sha256": "cea90ffce89867b623a193858721e52c8f9f0bf3e11a3766ef212003bbbc992d"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-hero.diffuse-gear-turned.jpg",
-      "sha256": "573514fb38a67aa3239509faf88969eb739b9a2d8f9164f05b409d43c3a38689"
+      "sha256": "b8d3591ca34ad736ef3aef6b3d1228199f467ab50c1645d3a41f82706b71426d"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-hero.diffuse.jpg",
-      "sha256": "5bdb7805738d4f4a6e80a1dce46cb2a9a9b99f4592f82b7607c5b94085ffd0b6"
+      "sha256": "948b32b1daccd3a843bc451f5f956d671643b1096f1ed807f673b25c5ca5b033"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-hero.jpg",
-      "sha256": "4613b4f72d75343b5fac51ba14b37115a63fe5f5bc1349aca23807de1fd6dafc"
+      "sha256": "ff9d6c964e33959d3fa7a480e94a4f2530517f1529bfa052f4293098fb312d46"
+    },
+    {
+      "path": "docs/verification/p5-rooms-gear-shaft-mesh-000.jpg",
+      "sha256": "38ee093d432487cb2f0b5d640225917904ee62cf3c4daf88a3b5d59af0152b37"
+    },
+    {
+      "path": "docs/verification/p5-rooms-gear-shaft-mesh-045.jpg",
+      "sha256": "001a52e67474ec333abf284911db21a133c961e4cf13c2057a2de8a23b804db0"
+    },
+    {
+      "path": "docs/verification/p5-rooms-gear-shaft-mesh-090.jpg",
+      "sha256": "3344df70f5d36294d1a1f47f64352e240c80de516624accf505976205d7f2477"
+    },
+    {
+      "path": "docs/verification/p5-rooms-gear-shaft-mesh-135.jpg",
+      "sha256": "f2743fe799dec2af909be795190d2fe39f11b1a6d0fc6c3a05f09e220dce256e"
+    },
+    {
+      "path": "docs/verification/p5-rooms-gear-shaft-mesh-180.jpg",
+      "sha256": "b00447f4436072bd2d76be7c340f65bf08d0f0a95cd96890e910becca31ea693"
+    },
+    {
+      "path": "docs/verification/p5-rooms-gear-shaft-mesh-225.jpg",
+      "sha256": "da840114545c13068f6b564884226108e894b228375b90c8806a1e73c94a4bf6"
+    },
+    {
+      "path": "docs/verification/p5-rooms-gear-shaft-mesh-270.jpg",
+      "sha256": "f4c7bd7f590d5674bdd7a504e31f739400fba603fc21236df3856daefedb5bde"
+    },
+    {
+      "path": "docs/verification/p5-rooms-gear-shaft-mesh-315.jpg",
+      "sha256": "02525da9ef902f6f204c396295dce8f80c744611f6655558183ca102248e34de"
+    },
+    {
+      "path": "docs/verification/p5-rooms-gear-shaft-plug-w-in.jpg",
+      "sha256": "9b723fbc9c795365d528243a1be2d33ea2f54e9ffae73a7b2b6f823418f7c2d5"
+    },
+    {
+      "path": "docs/verification/p5-rooms-gear-shaft-plug-w-out.jpg",
+      "sha256": "d1142bab49e1a7395ad29e583a91a701d99de1aa4882ca15c6db80b655100935"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-ring-gear-turned.jpg",
-      "sha256": "48aa92970af69cc875988061ee63de83aaaa112d4850915fba1660cc5b6257a2"
+      "sha256": "503e3ab8764c4a6e0d0bd853397ef622cbb8e12fa951f850f11aa5efab559f86"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-ring.jpg",
-      "sha256": "a1978b9bd38b6be48648c8b61b77a7375cf76571f884aa2283b82efed1092b5b"
+      "sha256": "fbc51f3b6b17c94c43816213ce815825974e068da5bb83c40aba4aebd32a8028"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-seam-north.jpg",
-      "sha256": "47e0f67e2802c073f53c3e0e95f88ea5718306b7a08d65a0bfd450900e215e4e"
+      "sha256": "95d1ef03f401161dc2a4234cec92edd3ff21bb4c6c64943d599f2aba830598b0"
     },
     {
       "path": "docs/verification/p5-rooms-gear-shaft-void.jpg",
-      "sha256": "3079ae716e933d98ca343d81c98ba519b89c4e7e840aaaa934d2eea2ecd42a33"
+      "sha256": "9b99f9fa1441c4ff85dce14567d3ca2d4634f335e6498e57dda1fbf9e9a8e331"
     }
   ],
   "independentScore": {
@@ -653,19 +802,33 @@
       {
         "id": "D4",
         "decision": "Static gear train above the ceiling hole; only the crown gear is a rigid spinning node.",
+        "earlierRevisions": [
+          {
+            "by": "rebake-3 sub-agent of the 2026-11-17 orchestrator (build decisions, not owner approvals; Paul's review is still pending)",
+            "date": "2026-11-17",
+            "decision": "The two drive-shaft gears of the old static train (5.55 m and 6.15 m) are now part of the crown gear's rigid node and turn with it at its rate, so everything on the drive shaft turns together. The secondary shaft, its two gears and its wall arms are removed. A working train needs counter-rotating partners: a second rigid node with a negative rate, which scripts/assets/asset-check.py (RIGID_REQUIRED = {gear-shaft_gear_ring}, positive radPerSec, axis [0, 1, 0]) and tests/room-kit-asset.test.ts (rigidNodes length 1) do not allow; stopping the crown gear fails the same checks."
+          }
+        ],
         "revised": {
-          "by": "rebake-3 sub-agent of the 2026-11-17 orchestrator (build decisions, not owner approvals; Paul's review is still pending)",
+          "by": "rooms-4 sub-agent of the 2026-11-17 orchestrator (build decisions, not owner approvals; Paul's review is still pending)",
           "date": "2026-11-17",
-          "decision": "The two drive-shaft gears of the old static train (5.55 m and 6.15 m) are now part of the crown gear's rigid node and turn with it at its rate, so everything on the drive shaft turns together. The secondary shaft, its two gears and its wall arms are removed. A working train needs counter-rotating partners: a second rigid node with a negative rate, which scripts/assets/asset-check.py (RIGID_REQUIRED = {gear-shaft_gear_ring}, positive radPerSec, axis [0, 1, 0]) and tests/room-kit-asset.test.ts (rigidNodes length 1) do not allow; stopping the crown gear fails the same checks."
+          "decision": "The gear train meshes and turns. Two rigid nodes share one clock: gear-shaft_gear_ring (crown gear plus the two coaxial 32-tooth drive gears at 5.55 m and 6.15 m, +0.35 rad/s) and the new gear-shaft_gear_counter (two 20-tooth gears on a secondary shaft at (1.054, 5.85, -1.054), -0.56 rad/s = -0.35 x 32/20). Both stages are 32:20, so the compound train closes on one drive shaft; the upper drive gear went from 22 to 32 teeth for that reason. The secondary shaft hangs from two static brass bearing arms to the corner. Over one full crown turn (1440 steps, 1.6 counter turns) both pairs show 0 outline crossings, 3.16 mm minimum clearance and 59.4 mm tooth overlap at a 1.4906 m centre distance (report.json gear_mesh). scripts/assets/asset-check.py now requires both nodes, any finite nonzero signed rate, the meshesWith rate ratio and a passing gear_mesh; tests/room-kit-asset.test.ts checks both nodes and the ratio. The counter gear's baked azimuth uniformity is 0.636 (ring 0.947), so its lighting turns with it more visibly than the ring's."
         }
       },
       {
         "id": "D5",
         "decision": "Accept the gear-shaft density drop (61.3 to 46.0 px/m built) from the void, pit and gear train.",
+        "earlierRevisions": [
+          {
+            "by": "rebake-3 sub-agent of the 2026-11-17 orchestrator (build decisions, not owner approvals; Paul's review is still pending)",
+            "date": "2026-11-17",
+            "decision": "Accept the built 47.43 px/m lightmap mean (min 40.13) from the void, pit and gear stack."
+          }
+        ],
         "revised": {
-          "by": "rebake-3 sub-agent of the 2026-11-17 orchestrator (build decisions, not owner approvals; Paul's review is still pending)",
+          "by": "rooms-4 sub-agent of the 2026-11-17 orchestrator (build decisions, not owner approvals; Paul's review is still pending)",
           "date": "2026-11-17",
-          "decision": "Accept the built 47.43 px/m lightmap mean (min 40.13) from the void, pit and gear stack."
+          "decision": "Accept the built 44.39 px/m lightmap mean (min 31.4 on the wax slot; walls and floors 38.8) from the void, pit, gear train, counter gear and door panels."
         }
       },
       {

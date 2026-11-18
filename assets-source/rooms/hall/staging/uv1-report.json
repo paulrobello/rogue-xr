@@ -1,11 +1,11 @@
 {
   "glb": "hall.glb",
-  "glb_sha256": "fa5469d0138bbd1b59c4180f60a0bc9e38c90763a446f52e194874c0a6f478ad",
+  "glb_sha256": "85c2b07f7c32e940d2d4dd9106fb1eb76f042fecef5ec680b404c58e76f97476",
   "size": 2048,
-  "islands": 895,
-  "coverage": 0.4768,
+  "islands": 1600,
+  "coverage": 0.3224,
   "overlap_px": 0,
-  "texels_claimed_twice": 4455,
-  "claims_per_covered_texel": 1.0022,
+  "texels_claimed_twice": 2540,
+  "claims_per_covered_texel": 1.0019,
   "min_gap_px": 20
 }

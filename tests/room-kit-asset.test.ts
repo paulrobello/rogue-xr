@@ -145,30 +145,75 @@ describe.each(KIT)('kit room asset %s (P5-T1, P5-T2)', (id) => {
   });
 });
 
-describe('gear-shaft crown gear (P5-T2 rigid node)', () => {
+describe.each(BAKED)('door panels of %s (room_panels.py, PRD D2)', (id) => {
+  const room = parseRoomTemplate(rawManifest(id));
+  const gltf = glbJson(id);
+  const roots = new Set(gltf.scenes[0]?.nodes ?? []);
+
+  it.each(['door-frame', 'door-plug'])(
+    'ships %s-<id> for every door as a root mesh node at rest',
+    (panel) => {
+      for (const door of room.doors) {
+        const index = gltf.nodes.findIndex((n) => n.name === `${panel}-${door.id}`);
+        expect(index, `${panel}-${door.id}`).toBeGreaterThanOrEqual(0);
+        const node = gltf.nodes[index];
+        expect(roots.has(index)).toBe(true);
+        expect(node?.mesh).toBeTypeOf('number');
+        expect(node?.children ?? []).toHaveLength(0);
+        expect(node?.translation).toBeUndefined();
+        expect(node?.rotation).toBeUndefined();
+      }
+    },
+  );
+});
+
+describe('gear-shaft gear train (P5-T2 rigid nodes)', () => {
   const raw = rawManifest('gear-shaft') as {
-    rigidNodes?: { node: string; pivot: number[]; axis: number[]; radPerSec: number }[];
+    rigidNodes?: {
+      node: string;
+      pivot: number[];
+      axis: number[];
+      radPerSec: number;
+      meshesWith?: { node: string; teeth: number; partnerTeeth: number };
+    }[];
   };
   const gltf = glbJson('gear-shaft');
+  const nodes = raw.rigidNodes ?? [];
 
-  it('names one root mesh node on the spin axis, unrotated at rest', () => {
-    expect(raw.rigidNodes).toHaveLength(1);
-    const ring = raw.rigidNodes?.[0];
-    expect(ring?.node).toBe('gear-shaft_gear_ring');
-    expect(ring?.axis).toEqual([0, 1, 0]);
-    expect(ring?.radPerSec).toBeGreaterThan(0);
-    const index = gltf.nodes.findIndex((n) => n.name === ring?.node);
-    expect(index).toBeGreaterThanOrEqual(0);
-    expect(gltf.scenes[0]?.nodes).toContain(index);
-    const node = gltf.nodes[index];
-    expect(node?.mesh).toBeTypeOf('number');
-    expect(node?.children ?? []).toHaveLength(0);
-    expect(node?.rotation ?? [0, 0, 0, 1]).toEqual([0, 0, 0, 1]);
-    node?.translation?.forEach((v, i) => {
-      expect(v).toBeCloseTo(ring?.pivot[i] ?? Number.NaN, 5);
-    });
-    expect(ring?.pivot[0]).toBe(0);
-    expect(ring?.pivot[2]).toBe(0);
+  it('names the crown gear on the room axis and its counter gear', () => {
+    expect(nodes.map((r) => r.node)).toEqual(['gear-shaft_gear_ring', 'gear-shaft_gear_counter']);
+    expect(nodes[0]?.radPerSec).toBeGreaterThan(0);
+    expect(nodes[0]?.pivot[0]).toBe(0);
+    expect(nodes[0]?.pivot[2]).toBe(0);
+  });
+
+  it.each([0, 1])(
+    'ships rigid node %i as a root mesh node on its spin axis, unrotated at rest',
+    (i) => {
+      const rigid = nodes[i];
+      expect(rigid?.axis).toEqual([0, 1, 0]);
+      const index = gltf.nodes.findIndex((n) => n.name === rigid?.node);
+      expect(index).toBeGreaterThanOrEqual(0);
+      expect(gltf.scenes[0]?.nodes).toContain(index);
+      const node = gltf.nodes[index];
+      expect(node?.mesh).toBeTypeOf('number');
+      expect(node?.children ?? []).toHaveLength(0);
+      expect(node?.rotation ?? [0, 0, 0, 1]).toEqual([0, 0, 0, 1]);
+      node?.translation?.forEach((v, k) => {
+        expect(v).toBeCloseTo(rigid?.pivot[k] ?? Number.NaN, 5);
+      });
+    },
+  );
+
+  it('counter-rotates the counter gear at the inverse tooth ratio', () => {
+    const [ring, counter] = nodes;
+    const mesh = counter?.meshesWith;
+    expect(mesh?.node).toBe(ring?.node);
+    expect(counter?.radPerSec).toBeLessThan(0);
+    expect((counter?.radPerSec ?? 0) / (ring?.radPerSec ?? 1)).toBeCloseTo(
+      -(mesh?.partnerTeeth ?? 0) / (mesh?.teeth ?? 1),
+      5,
+    );
   });
 });
 

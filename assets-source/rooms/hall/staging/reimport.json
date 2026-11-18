@@ -1,11 +1,19 @@
 {
   "glb": "hall.glb",
-  "glb_sha256": "fa5469d0138bbd1b59c4180f60a0bc9e38c90763a446f52e194874c0a6f478ad",
-  "blender": "5.2.2 LTS",
+  "glb_sha256": "85c2b07f7c32e940d2d4dd9106fb1eb76f042fecef5ec680b404c58e76f97476",
+  "blender": "5.3.0",
   "meshes": [
+    "door-frame-e",
+    "door-frame-n",
+    "door-frame-s",
+    "door-frame-w",
+    "door-plug-e",
+    "door-plug-n",
+    "door-plug-s",
+    "door-plug-w",
     "hall"
   ],
-  "triangles": 4213,
+  "triangles": 6747,
   "materials": [
     "hall_brass-aged",
     "hall_brass-polished",
@@ -53,7 +61,49 @@
     "inside_ceiling": true,
     "footprint_x": true,
     "footprint_y": true,
-    "inside_footprint": true
+    "inside_footprint": true,
+    "panel_door-frame-e": true,
+    "panel_door-plug-e": true,
+    "panel_door-frame-n": true,
+    "panel_door-plug-n": true,
+    "panel_door-frame-s": true,
+    "panel_door-plug-s": true,
+    "panel_door-frame-w": true,
+    "panel_door-plug-w": true
+  },
+  "panels": {
+    "door-frame-e": {
+      "found": true,
+      "triangles": 34
+    },
+    "door-plug-e": {
+      "found": true,
+      "triangles": 20
+    },
+    "door-frame-n": {
+      "found": true,
+      "triangles": 34
+    },
+    "door-plug-n": {
+      "found": true,
+      "triangles": 20
+    },
+    "door-frame-s": {
+      "found": true,
+      "triangles": 34
+    },
+    "door-plug-s": {
+      "found": true,
+      "triangles": 20
+    },
+    "door-frame-w": {
+      "found": true,
+      "triangles": 34
+    },
+    "door-plug-w": {
+      "found": true,
+      "triangles": 20
+    }
   },
   "pass": true
 }

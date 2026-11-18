@@ -1,68 +1,102 @@
 {
   "piece": "corridor",
   "blender": "5.3.0",
-  "host_load_start": 2.25,
+  "host_load_start": 2.62,
   "lightmap_size": 2048,
   "samples": 256,
   "generator": "scripts/assets/build-room-kit.py",
   "helper": "scripts/assets/room_kit.py (reuses build-room-study.py functions)",
-  "lengthwise_grain_high": 88,
-  "narrow_side_uv_high": 232,
+  "lengthwise_grain_high": 108,
+  "narrow_side_uv_high": 244,
   "high": {
-    "triangles": 11939,
+    "triangles": 12071,
     "slots": 7
   },
-  "lengthwise_grain_low": 88,
-  "narrow_side_uv_low": 232,
+  "lengthwise_grain_low": 108,
+  "narrow_side_uv_low": 244,
   "low": {
-    "triangles": 1946,
-    "vertices": 1478,
+    "triangles": 1986,
+    "vertices": 1542,
     "materials": 7,
     "lightmap_density": {
-      "mean_px_per_m": 124.54,
-      "min_px_per_m": 105.67,
-      "max_px_per_m": 125.67
+      "mean_px_per_m": 117.64,
+      "min_px_per_m": 99.84,
+      "max_px_per_m": 118.74
     },
     "lightmap_density_by_slot": {
       "brass-aged": {
-        "area_m2": 5.46,
-        "median_px_per_m": 125.7,
-        "min_px_per_m": 105.7
+        "area_m2": 1.8,
+        "median_px_per_m": 118.7,
+        "min_px_per_m": 99.8
       },
       "brass-polished": {
         "area_m2": 0.44,
-        "median_px_per_m": 125.7,
-        "min_px_per_m": 106.1
+        "median_px_per_m": 118.7,
+        "min_px_per_m": 100.2
       },
       "cloth": {
         "area_m2": 2.03,
-        "median_px_per_m": 125.7,
-        "min_px_per_m": 125.7
+        "median_px_per_m": 118.7,
+        "min_px_per_m": 118.7
       },
       "lamp-glass": {
         "area_m2": 0.46,
-        "median_px_per_m": 116.9,
-        "min_px_per_m": 116.9
+        "median_px_per_m": 110.5,
+        "min_px_per_m": 110.5
       },
       "stone-floor": {
         "area_m2": 16.0,
-        "median_px_per_m": 125.7,
-        "min_px_per_m": 125.7
+        "median_px_per_m": 118.7,
+        "min_px_per_m": 118.7
       },
       "wallpaper": {
         "area_m2": 40.16,
-        "median_px_per_m": 125.7,
-        "min_px_per_m": 125.7
+        "median_px_per_m": 118.7,
+        "min_px_per_m": 118.7
       },
       "walnut": {
         "area_m2": 60.74,
-        "median_px_per_m": 125.7,
-        "min_px_per_m": 109.7
+        "median_px_per_m": 118.7,
+        "min_px_per_m": 103.7
+      }
+    },
+    "panels": {
+      "door-frame-n": {
+        "triangles": 34,
+        "lightmap_density": {
+          "mean_px_per_m": 118.73,
+          "min_px_per_m": 118.73,
+          "max_px_per_m": 118.73
+        }
+      },
+      "door-frame-s": {
+        "triangles": 34,
+        "lightmap_density": {
+          "mean_px_per_m": 118.73,
+          "min_px_per_m": 118.73,
+          "max_px_per_m": 118.74
+        }
+      },
+      "door-plug-n": {
+        "triangles": 20,
+        "lightmap_density": {
+          "mean_px_per_m": 118.73,
+          "min_px_per_m": 118.73,
+          "max_px_per_m": 118.73
+        }
+      },
+      "door-plug-s": {
+        "triangles": 20,
+        "lightmap_density": {
+          "mean_px_per_m": 118.73,
+          "min_px_per_m": 118.73,
+          "max_px_per_m": 118.73
+        }
       }
     }
   },
-  "canonicalized_primitives": 7,
-  "glb_bytes": 149648,
+  "canonicalized_primitives": 13,
+  "glb_bytes": 158048,
   "bake_glass_transmit": [
     1.0,
     1.0,
@@ -70,24 +104,29 @@
   ],
   "device": "GPU:METAL (Apple M4 (GPU - 10 cores))",
   "lightmap_bake": {
-    "seconds": 26.87,
+    "seconds": 32.18,
+    "pass_seconds": [
+      27.7,
+      4.48
+    ],
     "host_load": [
-      2.23,
-      1.81
+      2.57,
+      2.09
     ],
     "timing_valid": true,
-    "diffuse_bounces": 1
+    "diffuse_bounces": 1,
+    "panels": "pass 1: shell, rigid nodes and door frames, every door frame and plug invisible to shadow, diffuse, glossy, transmission and volume rays; pass 2: door plugs only into the same image, plugs fully visible, frames hidden from render (room_panels.bake_with_panels)"
   },
   "denoise": "compositor OIDN, HDR, accurate prefilter, high quality",
   "lightmap": {
-    "coverage": 0.7595,
-    "scale": 3.958609,
-    "clipped_fraction": 0.01994,
-    "mean_irradiance": 0.689381,
+    "coverage": 0.7405,
+    "scale": 3.821878,
+    "clipped_fraction": 0.01992,
+    "mean_irradiance": 0.681113,
     "p05_irradiance": 0.0,
     "percentile": 98.0,
     "encoded_p05_255": 0,
-    "encoded_median_255": 62
+    "encoded_median_255": 65
   },
   "ktx2": {
     "tool": "ktx version: v4.4.2",
@@ -111,12 +150,12 @@
   ],
   "blend": {
     "corridor_high.blend": {
-      "sha256": "7234adf45ee2cddb18437c0c823d15eace50e082e0297e045d786d8fff6e6410",
-      "bytes": 361979
+      "sha256": "19ab926c0593122bea176eabd4e33cfc8b5e69292516ebd9a6be63836aa40bb1",
+      "bytes": 367792
     },
     "corridor_low.blend": {
-      "sha256": "b786ce1d3a2d5fad1ad461c5642873438fdd28c65b08f6ecd0c9d1ec24dd946d",
-      "bytes": 175838
+      "sha256": "565db3a229b83f9ea2a3fdcfa25149988165a06470d9f93969ad7c24b8c5e4b3",
+      "bytes": 178902
     }
   },
   "colliders_added": [],
@@ -255,13 +294,13 @@
       "vfov": 70.0
     }
   },
-  "host_load_end": 1.72,
+  "host_load_end": 2.08,
   "files": {
-    "corridor.glb": "69163f629ef655e077365d03e978b205ad2ecac73538673c4e36024f3b720d0f",
-    "corridor.lightmap.ktx2": "a03821c5affdd72ae784e105c706c06c4eedfdef1c3ccd57744243a2da79579c",
-    "corridor.lightmap.png": "9c0ecd7219a7070a95c54bca8bcae1aed442077eb7a049505486a5601cae1cb0",
-    "corridor.manifest.json": "96ad1c8fa76f1500474628f7c549c92e9f17217509c75e485cc1adfea12ac194",
-    "engine-compare.json": "ded0f5be0cda250afe720001a1d9de990704539a11bdd048cbf7bb0463e19c4c",
-    "uv1-report.json": "910d907be487bdb42324ea08fc27e10b6c3aac545a623283a569901e01f7ca58"
+    "corridor.glb": "442b67f4a6b45abb6b63771d3422a5aa5eb8934e3ce52cad1cb6b375bb35a7de",
+    "corridor.lightmap.ktx2": "8f8256439177825f8aa855e384a413bf064e0e5da0e99119d6c5803154f66932",
+    "corridor.lightmap.png": "9729e472912144256d4fd64aaa9d1c5880ff00d7604a348f1d195f4186b03100",
+    "corridor.manifest.json": "5a4963210fa02ddc15d46b9f4c58b7b8cc7996f4b3d235e936d0f014b6bedba9",
+    "engine-compare.json": "f9962786914b96b35d94c4cd4c89a5a85557eb5f88a1e6c95c27908e60b7e1f3",
+    "uv1-report.json": "cd2b8964fd132095747bcc8a3890b46e370767851b26e53f61b9f7e61d0707ae"
   }
 }

@@ -30,8 +30,9 @@ KTX2_MAGIC = b"\xabKTX 20\xbb\r\n\x1a\n"
 KHR_DF_TRANSFER_LINEAR, KHR_DF_TRANSFER_SRGB = 1, 2
 # Generator and the helpers it imports; provenance pins their hashes.
 _KIT_DEPS = ["scripts/assets/build-room-kit.py", "scripts/assets/room_kit.py", "scripts/assets/build-room-study.py",
-             "scripts/assets/lightmap_helpers.py", "scripts/assets/build-cog-sentry.py"]
-GENERATOR_DEPS = {"study": ["scripts/assets/build-room-study.py", "scripts/assets/lightmap_helpers.py"], "hall": _KIT_DEPS, "corridor": _KIT_DEPS,
+             "scripts/assets/lightmap_helpers.py", "scripts/assets/build-cog-sentry.py", "scripts/assets/room_panels.py"]
+GENERATOR_DEPS = {"study": ["scripts/assets/build-room-study.py", "scripts/assets/lightmap_helpers.py", "scripts/assets/room_panels.py"],
+                  "hall": _KIT_DEPS, "corridor": _KIT_DEPS,
                   "gear-shaft": _KIT_DEPS, "guardian-vault": _KIT_DEPS}
 _KIT_REFERENCES = ["assets-source/style/locked/L-board-1.png", "assets-source/style/locked/L-study.png", "assets-source/concepts/room-sheet-1.png"]
 REFERENCES = {
@@ -75,7 +76,9 @@ APPROVALS = {
 }
 BLEND_STORE_NOTE = {"study": "PRD project file section 1.5"}
 # Templates that must ship named rigid animated nodes (manifest rigidNodes).
-RIGID_REQUIRED = {"gear-shaft": {"gear-shaft_gear_ring"}}
+RIGID_REQUIRED = {"gear-shaft": {"gear-shaft_gear_ring", "gear-shaft_gear_counter"}}
+# Panels every template door carries (scripts/assets/room_panels.py SLOT_PANELS["door"]).
+DOOR_PANELS = ("door-frame", "door-plug")
 
 
 def sha256(path: Path) -> str:
@@ -200,9 +203,41 @@ def check_room(template: str, errors: list[str], warnings: list[str]) -> dict:
                 err(f"rigid node {r['node']} translation {t} != manifest pivot {r.get('pivot')}")
             if any(abs(a - b) > 1e-6 for a, b in zip(n.get("rotation", [0, 0, 0, 1]), [0, 0, 0, 1])) or n.get("scale", [1, 1, 1]) != [1, 1, 1]:
                 err(f"rigid node {r['node']} must be unrotated and unscaled at rest")
-            if r.get("axis") != [0, 1, 0] or not r.get("radPerSec", 0) > 0:
-                err(f"rigid node {r['node']} needs axis [0, 1, 0] and a positive radPerSec")
+            rate = r.get("radPerSec")
+            if r.get("axis") != [0, 1, 0] or not isinstance(rate, (int, float)) or not math.isfinite(rate) or rate == 0:
+                err(f"rigid node {r['node']} needs axis [0, 1, 0] and a finite nonzero radPerSec")
+                continue
+            # A meshing partner turns the other way at the inverse tooth ratio (runtime: one clock).
+            mw = r.get("meshesWith")
+            if mw is not None:
+                partner = next((q for q in rigid if q.get("node") == mw.get("node")), None)
+                if partner is None or not isinstance(mw.get("teeth"), int) or not isinstance(mw.get("partnerTeeth"), int):
+                    err(f"rigid node {r['node']} meshesWith needs a rigid partner node, teeth and partnerTeeth")
+                elif abs(rate * mw["teeth"] + partner["radPerSec"] * mw["partnerTeeth"]) > 1e-4 * abs(partner["radPerSec"] * mw["partnerTeeth"]):
+                    err(f"rigid node {r['node']} rate {rate} is not -{mw['partnerTeeth']}/{mw['teeth']} x its partner's {partner['radPerSec']}")
         summary["rigidNodes"] = [r["node"] for r in rigid]
+        # Two or more rigid nodes mesh: the build's numeric check over a full turn must have passed.
+        if len(rigid) > 1:
+            mesh = json.loads((src / "staging/report.json").read_text()).get("gear_mesh") or {}
+            if not mesh.get("pass"):
+                err("staging/report.json gear_mesh must pass (no interpenetration over a full turn)")
+            summary["gearMesh"] = [{k: q.get(k) for k in ("crossing_steps", "min_clearance_m")} for q in mesh.get("pairs", [])]
+    # Door panel slots (room_panels.py, PRD D2): every template door ships a frame and a plug as root
+    # mesh nodes at the identity, so floor-world.ts dressRoom can show one and hide the other.
+    g = glb_json(rt / f"{template}.glb")
+    nodes = g.get("nodes", [])
+    roots = set(g.get("scenes", [{}])[g.get("scene", 0)].get("nodes", []))
+    for door in m.get("doors", []):
+        for panel in DOOR_PANELS:
+            name = f"{panel}-{door.get('id')}"
+            idx = next((i for i, n in enumerate(nodes) if n.get("name") == name), None)
+            if idx is None:
+                err(f"door panel node {name} not in the GLB")
+                continue
+            n = nodes[idx]
+            if idx not in roots or "mesh" not in n or n.get("children") or any(k in n for k in ("translation", "rotation", "scale", "matrix")):
+                err(f"door panel node {name} must be a root mesh node at the identity transform")
+    summary["doorPanels"] = sorted(n.get("name") for n in nodes if n.get("name", "").startswith(DOOR_PANELS))
     budget = m.get("budget", {})
     if budget.get("tris") != glb["triangles"]:
         err(f"manifest budget.tris {budget.get('tris')} != measured {glb['triangles']}")
@@ -703,7 +738,7 @@ def assemble(template: str) -> None:
     }
     if manifest.get("rigidNodes"):
         prov["rigidNodes"] = {"manifest": manifest["rigidNodes"], "lowPoly": report["low"].get("rigid_nodes"), "lightmap": report.get("rigid_lightmap"),
-                              "reimport": reimport.get("rigid_nodes"),
+                              "reimport": reimport.get("rigid_nodes"), "gearMesh": report.get("gear_mesh"),
                               "shadowPolicy": "baked with the node invisible to shadow rays (Cycles visible_shadow off), so no static surface holds its shadow"}
     if template != "study":  # kit rooms bind their review evidence to the bytes shown
         prov["reviewEvidence"] = [{"path": str(p.relative_to(ROOT)), "sha256": sha256(p)} for p in

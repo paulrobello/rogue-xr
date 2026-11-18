@@ -4,16 +4,16 @@
   "route": "scripted",
   "generator": {
     "path": "scripts/assets/build-room-kit.py",
-    "sha256": "d93dcb87c43733bd661850808e1055cb1104093347940f8e42d22d1bd48c4d48"
+    "sha256": "9929766d83645ee9946099015e217085f449cad9ef7b0c34c9593768a523015f"
   },
   "generatorDeps": [
     {
       "path": "scripts/assets/room_kit.py",
-      "sha256": "0e850b3688d935eea2ece632ce57614a30edbe6b51e78d323a6a0ee599b73ff4"
+      "sha256": "292e340c5086c8f7b811d4f8cfa28234beb5ad723414d734ca27120186d86603"
     },
     {
       "path": "scripts/assets/build-room-study.py",
-      "sha256": "2e20a14f0968fa4fe4b0adecec9d44945887dcfb47d19d3d31859767b523e016"
+      "sha256": "b918e8511fef38f662c4a98c441a15780cbf621969691351a754f6e200274fce"
     },
     {
       "path": "scripts/assets/lightmap_helpers.py",
@@ -21,14 +21,18 @@
     },
     {
       "path": "scripts/assets/build-cog-sentry.py",
-      "sha256": "9f045c4e6314b29a4bb82572fa040a0a0f9f68079b311b630d76fd0e1918d0a6"
+      "sha256": "8f80d1ae8d10adeab5123ba9497e9d00a8ea4c6e5c0855c902cf65274f25bacc"
+    },
+    {
+      "path": "scripts/assets/room_panels.py",
+      "sha256": "07154a7ecc06413468537a5043b7772df73c405c4a6b0f4294ef851efd9b1bc3"
     }
   ],
   "authoringAgent": {
     "harness": "claude-code (dispatched sub-agent)",
     "model": "claude-opus-5-5"
   },
-  "blender": "5.2.2 LTS",
+  "blender": "5.3.0",
   "toolVersions": {
     "ktx": "ktx version: v4.4.2",
     "gltfExporter": "Blender 5.2.2 bundled io_scene_gltf2"
@@ -37,32 +41,38 @@
     "store": "assets-source/rooms/hall/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)",
     "files": {
       "hall_high.blend": {
-        "sha256": "4a60a3cc7da00468a087bca09e131ac8d6d381d01268d641f81a4c5e5b4ebdf4",
-        "bytes": 764308
+        "sha256": "bfff8fe5a32236df42be4fd3200b5549668485978d15e03b65d29e33cfd91d43",
+        "bytes": 1025876
       },
       "hall_low.blend": {
-        "sha256": "c4830e740b9ec3976a282ab0a2dd14b25717fc7a036194303d80b9eab4da7f1a",
-        "bytes": 256660
+        "sha256": "a5bed67741a9c5aa838e1b3b0660fd91d1b230476b7fbf0f394e1820fcb3a3b8",
+        "bytes": 349999
       }
     }
   },
   "bake": {
-    "device": "GPU:METAL (Apple M4 Max (GPU - 40 cores))",
+    "device": "GPU:METAL (Apple M4 (GPU - 10 cores))",
     "lightmap": {
-      "coverage": 0.7424,
-      "scale": 2.999473,
+      "coverage": 0.6992,
+      "scale": 5.39846,
       "clipped_fraction": 0.00997,
-      "mean_irradiance": 0.470745,
+      "mean_irradiance": 0.442858,
       "p05_irradiance": 0.0,
       "percentile": 99.0,
       "encoded_p05_255": 0,
-      "encoded_median_255": 50,
-      "seconds": 9.0,
+      "encoded_median_255": 41,
+      "seconds": 45.87,
+      "pass_seconds": [
+        39.25,
+        6.62
+      ],
       "host_load": [
-        11.38,
-        11.48
+        2.2,
+        1.48
       ],
       "timing_valid": true,
+      "diffuse_bounces": 4,
+      "panels": "pass 1: shell, rigid nodes and door frames, every door frame and plug invisible to shadow, diffuse, glossy, transmission and volume rays; pass 2: door plugs only into the same image, plugs fully visible, frames hidden from render (room_panels.bake_with_panels)",
       "size": 2048,
       "samples": 256,
       "pass": "DIFFUSE direct+indirect, colour off, metallic forced 0, OIDN",
@@ -78,7 +88,7 @@
     }
   },
   "budgets": {
-    "triangles": 4213,
+    "triangles": 6747,
     "materials": 8,
     "texturePx": {
       "hall.lightmap.ktx2": {
@@ -86,55 +96,55 @@
         "height": 2048
       }
     },
-    "highTriangles": 25115,
-    "glbBytes": 296924
+    "highTriangles": 41683,
+    "glbBytes": 484480
   },
   "texelDensityPxPerM": {
     "lightmap": {
-      "mean_px_per_m": 68.6,
-      "min_px_per_m": 55.78,
-      "max_px_per_m": 68.78
+      "mean_px_per_m": 52.54,
+      "min_px_per_m": 44.41,
+      "max_px_per_m": 52.81
     },
     "lightmapBySlot": {
       "brass-aged": {
-        "area_m2": 13.12,
-        "median_px_per_m": 68.7,
-        "min_px_per_m": 55.8
+        "area_m2": 9.95,
+        "median_px_per_m": 52.8,
+        "min_px_per_m": 44.4
       },
       "brass-polished": {
-        "area_m2": 2.2,
-        "median_px_per_m": 68.7,
-        "min_px_per_m": 59.1
+        "area_m2": 2.45,
+        "median_px_per_m": 52.8,
+        "min_px_per_m": 44.4
       },
       "flame": {
-        "area_m2": 0.02,
-        "median_px_per_m": 68.2,
-        "min_px_per_m": 68.2
+        "area_m2": 0.32,
+        "median_px_per_m": 52.8,
+        "min_px_per_m": 52.8
       },
       "stained-glass": {
         "area_m2": 2.26,
-        "median_px_per_m": 68.7,
-        "min_px_per_m": 68.7
+        "median_px_per_m": 52.8,
+        "min_px_per_m": 52.8
       },
       "stone-floor": {
-        "area_m2": 100.0,
-        "median_px_per_m": 68.8,
-        "min_px_per_m": 68.8
+        "area_m2": 104.45,
+        "median_px_per_m": 52.8,
+        "min_px_per_m": 52.8
       },
       "wallpaper": {
-        "area_m2": 108.78,
-        "median_px_per_m": 68.2,
-        "min_px_per_m": 68.1
+        "area_m2": 104.65,
+        "median_px_per_m": 52.8,
+        "min_px_per_m": 52.8
       },
       "walnut": {
-        "area_m2": 199.38,
-        "median_px_per_m": 68.8,
-        "min_px_per_m": 68.1
+        "area_m2": 240.83,
+        "median_px_per_m": 52.8,
+        "min_px_per_m": 46.2
       },
       "wax": {
-        "area_m2": 0.28,
-        "median_px_per_m": 66.7,
-        "min_px_per_m": 62.8
+        "area_m2": 0.37,
+        "median_px_per_m": 50.8,
+        "min_px_per_m": 50.7
       }
     }
   },
@@ -271,26 +281,27 @@
   "derivedFiles": [
     {
       "path": "public/assets/rooms/hall/hall.glb",
-      "sha256": "fa5469d0138bbd1b59c4180f60a0bc9e38c90763a446f52e194874c0a6f478ad",
-      "bytes": 296924
+      "sha256": "85c2b07f7c32e940d2d4dd9106fb1eb76f042fecef5ec680b404c58e76f97476",
+      "bytes": 484480
     },
     {
       "path": "public/assets/rooms/hall/hall.lightmap.ktx2",
-      "sha256": "9479b0593d456758e09d273cb40127ecf5bda1bede5db44213c081e9ca733531",
-      "bytes": 2676830
+      "sha256": "e337c12b658d2916c8c7f341942ef1db4e1d36a5b64e26b0a7094ac31b49d8dc",
+      "bytes": 2833664
     },
     {
       "path": "public/assets/rooms/hall/hall.manifest.json",
-      "sha256": "acdac691968688ddb102b70161e0c6a00a15bbbab42ab705c8f746a84799b573",
-      "bytes": 4984
+      "sha256": "ed8219beb53ad99a3aadaa3f336b035e0b45000d4b67d0cc127bee6420827504",
+      "bytes": 5130
     }
   ],
   "stagingFiles": {
-    "hall.glb": "fa5469d0138bbd1b59c4180f60a0bc9e38c90763a446f52e194874c0a6f478ad",
-    "hall.lightmap.ktx2": "9479b0593d456758e09d273cb40127ecf5bda1bede5db44213c081e9ca733531",
-    "hall.lightmap.png": "37715cd8deee18235fe74b19404a1c41bfb723349c3b38d45c9d589a976a3b23",
-    "hall.manifest.json": "acdac691968688ddb102b70161e0c6a00a15bbbab42ab705c8f746a84799b573",
-    "uv1-report.json": "96a2d01df31e17690be9748dc54ed8a045c27bbc263a94f697b66133010cc9b0"
+    "engine-compare.json": "f4937226bab58a8928073bec5c4923d92165669c432732feb32bc2e8b0576ae9",
+    "hall.glb": "85c2b07f7c32e940d2d4dd9106fb1eb76f042fecef5ec680b404c58e76f97476",
+    "hall.lightmap.ktx2": "e337c12b658d2916c8c7f341942ef1db4e1d36a5b64e26b0a7094ac31b49d8dc",
+    "hall.lightmap.png": "4781aaa6b0c041d2da3b15a2bfa3baceb80d46bd85099e5debff55a23ce849fe",
+    "hall.manifest.json": "ed8219beb53ad99a3aadaa3f336b035e0b45000d4b67d0cc127bee6420827504",
+    "uv1-report.json": "017584ee64f47e6897de640dd3b24380095af9516cd5f50ffcc4def110be55fb"
   },
   "references": [
     {
@@ -315,7 +326,7 @@
   "materialsUsed": "approved P4-T3 set (public/assets/materials), bound by slot name; not regenerated",
   "license": "Original work generated in Blender from a checked-in script; concept references from Paul's paid Higgsfield plan (Terms of Use 4.4)",
   "reimport": {
-    "triangles": 4213,
+    "triangles": 6747,
     "material_count": 8,
     "uv_layers": [
       [
@@ -347,13 +358,21 @@
       "inside_ceiling": true,
       "footprint_x": true,
       "footprint_y": true,
-      "inside_footprint": true
+      "inside_footprint": true,
+      "panel_door-frame-e": true,
+      "panel_door-plug-e": true,
+      "panel_door-frame-n": true,
+      "panel_door-plug-n": true,
+      "panel_door-frame-s": true,
+      "panel_door-plug-s": true,
+      "panel_door-frame-w": true,
+      "panel_door-plug-w": true
     },
     "pass": true
   },
   "validation": {
     "pass": true,
-    "date": "2026-11-15",
+    "date": "2026-11-17",
     "checks": [
       "presence",
       "hashes",
@@ -407,35 +426,43 @@
   "reviewEvidence": [
     {
       "path": "assets-source/rooms/hall/staging/review-sheet.jpg",
-      "sha256": "d52d4e1eff8a467e78308670e82d4af44dfb71c55c34c18967ebf7d0a688de95"
+      "sha256": "e00afa0f927a87d6b5ceabded863ef5e3650860f4665f052705e8e546e3f9ea1"
     },
     {
       "path": "docs/verification/p5-rooms-hall-bench.jpg",
-      "sha256": "079db4433449e0f5fe94f64f484573c6a134506298089c1138aabee1212ac27e"
+      "sha256": "402824f98867a109005f7ba5835d1342a11999f2b46bc6a6f5b5ee95eac2dc4d"
     },
     {
       "path": "docs/verification/p5-rooms-hall-floor-sealed-west-close.jpg",
-      "sha256": "c2188365c27e1ece46049a007d26ce6a8f84905a3c51280244b0573fcef9c0b3"
+      "sha256": "e12184dca5646d22b8f642f054b29f5415c320cb5beef28c3c67abdb3d21e6a1"
     },
     {
       "path": "docs/verification/p5-rooms-hall-floor-sealed-west.jpg",
-      "sha256": "e464327394b29cd3bc0ecb133a6f7b2ecd94c594ec13bc2f9759fd3e784ead44"
+      "sha256": "e2d2cb5ad5af09aebdfd6e541c28ab2500a3ea2bd0f73d4a46b8050a902cc57a"
     },
     {
       "path": "docs/verification/p5-rooms-hall-hero.diffuse.jpg",
-      "sha256": "47e49f929e24d51657ca56e022e096db8ea423edc17ad72f81b5990225e0b145"
+      "sha256": "ad4916091951a344f5ca9b5c99fd617a78266998af085bcc934f8a75cc50e15f"
     },
     {
       "path": "docs/verification/p5-rooms-hall-hero.jpg",
-      "sha256": "5cea933509b115980fdf2f0c0399b35ba0e4b8a5b013646222fca7352bfd8cac"
+      "sha256": "962613f8e0a6155c9d324841b9d25b2619f967e7526c3c33ba6e3aaff4e6b58c"
+    },
+    {
+      "path": "docs/verification/p5-rooms-hall-plug-n-in.jpg",
+      "sha256": "07448fc152516f1be294469fe4a0295d7a4441f09e9d2a6cafcff7de3c7e4ddb"
+    },
+    {
+      "path": "docs/verification/p5-rooms-hall-plug-n-out.jpg",
+      "sha256": "d966d52e45ef4773ff5d3634749d9368f163e4f79523b9562f658b43bfce44a7"
     },
     {
       "path": "docs/verification/p5-rooms-hall-seam-north.jpg",
-      "sha256": "00ea09449e5559aa3c0571b6fc1da759a4b412a3c6a3c18019175b9749798324"
+      "sha256": "c518c22aabc31eebca52be3f24e64b57c17f4ac935f9fbd2e966b31ecd19c0b5"
     },
     {
       "path": "docs/verification/p5-rooms-hall-seam-west-turned.jpg",
-      "sha256": "74c4f43ef1e2bdc7c587263e26f62c7a61c4f27c5d0556d83fa6d763db1a3bc9"
+      "sha256": "f8fa291e1351e451daab38809d255c962a69e63fb627b265ff97202c156a607d"
     }
   ],
   "independentScore": {

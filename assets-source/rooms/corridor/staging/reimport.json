@@ -1,11 +1,15 @@
 {
   "glb": "corridor.glb",
-  "glb_sha256": "69163f629ef655e077365d03e978b205ad2ecac73538673c4e36024f3b720d0f",
+  "glb_sha256": "442b67f4a6b45abb6b63771d3422a5aa5eb8934e3ce52cad1cb6b375bb35a7de",
   "blender": "5.3.0",
   "meshes": [
-    "corridor"
+    "corridor",
+    "door-frame-n",
+    "door-frame-s",
+    "door-plug-n",
+    "door-plug-s"
   ],
-  "triangles": 1946,
+  "triangles": 1986,
   "materials": [
     "corridor_brass-aged",
     "corridor_brass-polished",
@@ -52,7 +56,29 @@
     "inside_ceiling": true,
     "footprint_x": true,
     "footprint_y": true,
-    "inside_footprint": true
+    "inside_footprint": true,
+    "panel_door-frame-n": true,
+    "panel_door-plug-n": true,
+    "panel_door-frame-s": true,
+    "panel_door-plug-s": true
+  },
+  "panels": {
+    "door-frame-n": {
+      "found": true,
+      "triangles": 34
+    },
+    "door-plug-n": {
+      "found": true,
+      "triangles": 20
+    },
+    "door-frame-s": {
+      "found": true,
+      "triangles": 34
+    },
+    "door-plug-s": {
+      "found": true,
+      "triangles": 20
+    }
   },
   "pass": true
 }

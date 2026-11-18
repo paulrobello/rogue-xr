@@ -1,11 +1,13 @@
 {
   "glb": "guardian-vault.glb",
-  "glb_sha256": "64ac0227fe42b2f91efe219b5eff44321c34fee58d260a7bc56d4cec864f5a2a",
+  "glb_sha256": "7154876fa1dc9fd29c8d5b203be3ef7a7a96d6d47c0396ebe38e0ad64f74ec52",
   "blender": "5.3.0",
   "meshes": [
+    "door-frame-s",
+    "door-plug-s",
     "guardian-vault"
   ],
-  "triangles": 12257,
+  "triangles": 12277,
   "materials": [
     "guardian-vault_brass-aged",
     "guardian-vault_brass-polished",
@@ -55,7 +57,19 @@
     "inside_ceiling": true,
     "footprint_x": true,
     "footprint_y": true,
-    "inside_footprint": true
+    "inside_footprint": true,
+    "panel_door-frame-s": true,
+    "panel_door-plug-s": true
+  },
+  "panels": {
+    "door-frame-s": {
+      "found": true,
+      "triangles": 34
+    },
+    "door-plug-s": {
+      "found": true,
+      "triangles": 20
+    }
   },
   "pass": true
 }

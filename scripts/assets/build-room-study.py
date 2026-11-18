@@ -32,6 +32,7 @@ from mathutils import Matrix, Vector
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import lightmap_helpers as lm  # noqa: E402
+import room_panels as panels  # noqa: E402
 
 PIECE = "study"
 ROOT = Path(__file__).resolve().parents[2]
@@ -320,16 +321,7 @@ def build_shell(b: Builder, high: bool) -> None:
         for a0, a1 in spans:
             b.box(a0, a1, 0, 0.04, WAINSCOT - 0.03, WAINSCOT + 0.05, "walnut", drop="xXy")
         b.box(-H, H, 0, 0.14, T - 0.18, T, "walnut", drop="xXyt")
-        for o in openings:
-            if o[2] == 0.0:  # door: brass-aged architrave
-                f = 0.12
-                b.box(o[0] - f, o[0], 0, 0.05, 0, o[3] + f, "brass-aged", drop="yb")
-                b.box(o[1], o[1] + f, 0, 0.05, 0, o[3] + f, "brass-aged", drop="yb")
-                b.box(o[0], o[1], 0, 0.05, o[3], o[3] + f, "brass-aged", drop="yxX")
-                # Reveal: the jamb faces of the zero-thickness opening, so the edge reads as a frame.
-                b.face([(o[0], 0, 0), (o[0], 0.05, 0), (o[0], 0.05, o[3]), (o[0], 0, o[3])], (1, 0, 0), "brass-aged")
-                b.face([(o[1], 0, 0), (o[1], 0.05, 0), (o[1], 0.05, o[3]), (o[1], 0, o[3])], (-1, 0, 0), "brass-aged")
-                b.face([(o[0], 0, o[3]), (o[1], 0, o[3]), (o[1], 0.05, o[3]), (o[0], 0.05, o[3])], (0, 0, -1), "brass-aged")
+        # Door architraves are panels (build_door_panels): the shell leaves each opening bare.
         b.xf = Matrix.Identity(4)
     build_window(b, high)
     # Ceiling beams, east-west, ends buried in the walls.
@@ -1007,6 +999,9 @@ def reimport() -> None:
             "footprint_8m": abs(lo[0] + HALF) < 0.06 and abs(hi[0] - HALF) < 0.06,
         },
     }
+    facts, checks = panels.reimport_checks({o.name: o for o in bpy.data.objects}, panels.door_slots(DOORS, DOOR_W, DOOR_H))
+    result["panels"] = facts
+    result["checks"].update(checks)
     result["pass"] = all(result["checks"].values())
     (STAGING / "reimport.json").write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps(result, indent=2))
@@ -1100,7 +1095,17 @@ def build_all(high: bool, rng: random.Random) -> tuple[bpy.types.Object, bpy.typ
             poly.material_index = 0
         books_obj.data.materials.clear()
         books_obj.data.materials.append(material("books"))
-    return room_obj, books_obj, colliders, flames
+    return room_obj, books_obj, colliders, flames, build_door_panels(high)
+
+
+# The study's wall dressing a door plug continues: a 1 m wainscot under a chair rail, no skirting, no
+# stiles, and no threshold plate in the frame.
+STUDY_WALL = panels.WallSpec(wainscot=WAINSCOT, chair_rail=True, skirting=False, stile_step=None, threshold=False)
+
+
+def build_door_panels(high: bool) -> dict:
+    """The door panel slot of each study door (room_panels): `door-frame-<id>` and `door-plug-<id>`."""
+    return panels.build_panels(Builder, wall_frame, panels.door_slots(DOORS, DOOR_W, DOOR_H), STUDY_WALL, high)
 
 
 def apply_bevel(obj: bpy.types.Object) -> None:
@@ -1137,25 +1142,30 @@ def main() -> None:
     }
 
     # High: individual books, more segments, bevelled edges. Built first so its RNG stream is fixed.
-    high, _, _, _ = build_all(True, random.Random(4242))
+    high, _, _, _, high_door = build_all(True, random.Random(4242))
+    high_panels = [*high_door["door-frame"], *high_door["door-plug"]]
     high_slots = list(SLOTS)
-    uv0_tiled(high)
+    for obj in (high, *high_panels):
+        uv0_tiled(obj)
     del SLOTS[len(SLOTS) - len(BOOK_COLORS):]
-    apply_bevel(high)
-    report["high"] = {"triangles": count_tris(high), "slots": len(high_slots)}
+    for obj in (high, *high_panels):
+        apply_bevel(obj)
+    report["high"] = {"triangles": sum(count_tris(o) for o in (high, *high_panels)), "slots": len(high_slots)}
 
-    low, books_low, colliders, flames = build_all(False, random.Random(4242))
+    low, books_low, colliders, flames, door = build_all(False, random.Random(4242))
+    frames, plugs = door["door-frame"], door["door-plug"]
     door_backing = build_door_backing()
     build_lights(flames)
     cams = {name: make_camera(name) for name in CAMERAS}
-    uv0_tiled(low)
+    for obj in (low, *frames, *plugs):
+        uv0_tiled(obj)
     uv0_atlas(books_low, args.atlas)
     bpy.context.view_layer.update()
 
     if not args.glb_out:
-        set_visible([low, books_low], False)
+        set_visible([low, books_low, *frames, *plugs], False)
         bpy.ops.wm.save_as_mainfile(filepath=str(BLEND_DIR / f"{PIECE}_high.blend"), copy=True, compress=True)
-        set_visible([low, books_low], True)
+        set_visible([low, books_low, *frames, *plugs], True)
 
     if not args.skip_bake:
         report["device"] = lm.select_device(args.device)
@@ -1170,34 +1180,41 @@ def main() -> None:
     bpy.context.view_layer.objects.active = low
     bpy.ops.object.join()
 
-    lm.unwrap_lightmap_uv(low, args.size, gap_px=10)
+    # One atlas for the room and its door panels (PRD lightmap contract: 10 px island pad).
+    low_all = [low, *frames, *plugs]
+    panels.unwrap_lightmap_uv_multi(low_all, args.size, gap_px=10)
     report["low"] = {
-        "triangles": count_tris(low),
+        "triangles": sum(count_tris(o) for o in low_all),
         "vertices": len(low.data.vertices),
         "materials": len({p.material_index for p in low.data.polygons}),
         "lightmap_density": lm.lightmap_texel_density(low, args.size),
         "lightmap_density_by_slot": density_by_slot(low, args.size),
+        "panels": {o.name: {"triangles": count_tris(o), "lightmap_density": lm.lightmap_texel_density(o, args.size)} for o in (*frames, *plugs)},
     }
     print(f"[{PIECE}] high tris={report['high']['triangles']} low tris={report['low']['triangles']}")
     print(json.dumps(report["low"]["lightmap_density_by_slot"], indent=1))
 
     # Export before any bake output is bound, so the GLB is the same with or without bakes.
     glb = Path(args.glb_out) if args.glb_out else STAGING / GLB_NAME
-    export_glb(low, glb)
+    panels.export_glb_multi(low_all, glb)
     report["glb_bytes"] = glb.stat().st_size
     if args.glb_out:
         print(f"[{PIECE}] determinism GLB {glb} {sha256(glb)}")
         return
 
-    set_visible([high], False)
+    set_visible([high, *high_panels], False)
     lightmap = None
     if not args.skip_bake:
         bind_books_atlas(STAGING / f"{PIECE}.basecolor.png")
         set_metal_links(False)
         load0 = load_avg()
-        raw, seconds = lm.bake_irradiance(low, args.size, args.samples)
+        raw, passes = panels.bake_with_panels([low], frames, plugs, args.size, args.samples, no_shadow=[])
         set_metal_links(True)
-        report["lightmap_bake"] = {"seconds": round(seconds, 2), "host_load": [load0, load_avg()], "timing_valid": max(load0, load_avg()) <= 15}
+        report["lightmap_bake"] = {"seconds": round(sum(passes), 2), "pass_seconds": passes, "host_load": [load0, load_avg()],
+                                   "timing_valid": max(load0, load_avg()) <= 15,
+                                   "panels": "pass 1: room and door frames, every door frame and plug invisible to shadow, diffuse, glossy, "
+                                             "transmission and volume rays; pass 2: door plugs only into the same image, plugs fully visible, "
+                                             "frames hidden from render (room_panels.bake_with_panels)"}
         lm.save_exr(raw, SCRATCH / f"{PIECE}.lightmap.raw.exr")
         image = lm.denoise_image(raw, SCRATCH)
         report["denoise"] = "compositor OIDN, HDR, accurate prefilter, high quality"
@@ -1241,19 +1258,23 @@ def main() -> None:
         render_settings("BLENDER_EEVEE", 64)
         set_visible([door_backing], True)
         for name, cam in cams.items():
-            set_visible([low], False)
-            set_visible([high], True)
+            set_visible([low, *frames, *plugs], False)
+            set_visible([high, *high_door["door-frame"]], True)
             render_to(cam, renders / f"{name}.high.png")
-            set_visible([high], False)
-            set_visible([low], True)
+            set_visible([high, *high_panels], False)
+            set_visible([low, *frames], True)
             render_to(cam, renders / f"{name}.low.png")
         if lightmap is not None:
             originals = lightmapped_preview_materials(low, STAGING / f"{PIECE}.lightmap.png", lightmap["scale"])
+            for obj in (*frames, *plugs):  # same slot order: the panels take the same preview materials
+                for i, mat in enumerate(low.data.materials):
+                    obj.data.materials[i] = mat
             scene.view_settings.view_transform = "Standard"
             for name, cam in cams.items():
                 render_to(cam, renders / f"{name}.lightmapped.png")
-            for i, mat in enumerate(originals):
-                low.data.materials[i] = mat
+            for obj in (low, *frames, *plugs):
+                for i, mat in enumerate(originals):
+                    obj.data.materials[i] = mat
             # Cycles diffuse-only reference for the engine comparison (same path tracer as the bake).
             render_settings("CYCLES", 96)
             scene.view_settings.view_transform = "Standard"
@@ -1266,8 +1287,9 @@ def main() -> None:
             set_metal_links(True)
         report["renders"] = sorted(p.name for p in renders.glob("*.png"))
 
-    set_visible([high], False)
-    bpy.data.objects.remove(high)
+    set_visible([high, *high_panels], False)
+    for obj in (high, *high_panels):
+        bpy.data.objects.remove(obj)
     bpy.ops.wm.save_as_mainfile(filepath=str(BLEND_DIR / f"{PIECE}_low.blend"), copy=True, compress=True)
     report["blend"] = {p.name: {"sha256": sha256(p), "bytes": p.stat().st_size} for p in sorted(BLEND_DIR.glob("*.blend"))}
     report["colliders_added"] = colliders

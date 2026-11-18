@@ -170,6 +170,14 @@ ROOMS = {
 # Gear-shaft crown gear: a separate rigid glTF node spun at runtime about its own Y axis (P5-T12).
 GEAR_RING = {"node": "gear-shaft_gear_ring", "pivot_z": 3.6, "r_tip": 2.0, "teeth": 56, "thick": 0.12, "hub_r": 0.36, "shaft_r": 0.3,
              "radPerSec": 0.35}
+# The meshing train in the shaft void: at both train levels a drive gear on the crown gear's node meshes a
+# counter gear on a secondary shaft on the diagonal, its own rigid node. Both stages are 32:20, because a
+# two-stage train closes on one drive shaft only when the stage ratios are equal. The counter node turns
+# the other way at the inverse tooth ratio. c puts the secondary shaft 1.4906 m off the axis: the 1.474 m
+# sum of the pitch radii plus 3 mm, the clearance build-time gear_mesh_check measures over a full turn.
+GEAR_TRAIN = {"drive": (0.95, 32, 0.34), "counter": (0.6, 20, 0.84), "thick": 0.08, "at": 45.0}
+GEAR_COUNTER = {"node": "gear-shaft_gear_counter", "c": 1.054, "pivot_z": 5.85, "shaft_r": 0.07,
+                "radPerSec": round(-GEAR_RING["radPerSec"] * GEAR_TRAIN["drive"][1] / GEAR_TRAIN["counter"][1], 6)}
 HALL = {
     "wainscot": 1.2,
     "fireplace": ("N", -3.55, 0.8),  # wall, wall-local centre, half width (kit.fireplace)
@@ -345,7 +353,13 @@ def build_gear_shaft(b, room: kit.Room, high: bool) -> tuple[list, list]:
     # Candles inboard of the gallery ledge, so the void camera sees one lit (on the ledge they were hidden).
     gallery = kit.shaft_well(b, C, room.height, H, GEAR_SHAFT["gallery_z"], high, candle_in=GEAR_SHAFT["candle_in"])
     kit.bearing_bridge(b, H, room.height, GEAR_RING["shaft_r"])
-    # The upper gears ride the crown gear's node (rigid_parts): one drive shaft, one rate.
+    # The drive gears ride the crown gear's node and the counter gears their own (rigid_parts). The
+    # secondary shaft turns in two static bearing arms to the well corner (end 2.93 m out on the diagonal).
+    gc = GEAR_COUNTER
+    for z in (GEAR_SHAFT["train_z"][0] - 0.3, GEAR_SHAFT["train_z"][1] + 0.3):
+        b.xf = Matrix.Translation((gc["c"], gc["c"], 0)) @ Matrix.Rotation(math.pi / 4, 4, "Z")
+        b.box(gc["shaft_r"] + 0.005, 2.93 - gc["c"] * math.sqrt(2), -0.03, 0.03, z - 0.03, z + 0.03, "brass-aged", drop="xX")
+        b.xf = Matrix.Identity(4)
     lamps = [kit.lantern(b, 3.6, 5.6, 2.4, room.hx, high), kit.lantern(b, -3.6, -5.6, 2.4, -room.hx, high)]  # lamp-n, lamp-s
     S.SCONCES = [("E", 3.0), ("E", -3.0), ("W", 3.6), ("W", -3.8)]
     sconces = S.build_sconces(b, high)
@@ -405,14 +419,28 @@ def rigid_parts(room: kit.Room, high: bool) -> list:
     """Separate rigid objects a template animates at runtime (each its own glTF node)."""
     if room.piece != "gear-shaft":
         return []
-    g = GEAR_RING
-    # Rework 3: the two drive-shaft gears of the old static train (5.55 m and 6.15 m) join the crown
-    # gear's node, so everything on the drive shaft turns at one rate. The secondary shaft's gears are
-    # gone: a meshing partner must counter-rotate, and asset-check and the vitest suite allow only the one
-    # rigid node, with a positive rate about +Y.
-    coaxial = [(z - g["pivot_z"], r, n, frac, 45.0, 0.08)
-               for z, r, n, frac in ((GEAR_SHAFT["train_z"][0], 0.95, 32, 0.34), (GEAR_SHAFT["train_z"][1], 0.65, 22, 0.84))]
-    return [kit.gear_ring_stack(f"{g['node']}_high" if high else g["node"], g["pivot_z"], high, g["r_tip"], g["teeth"], g["thick"], g["hub_r"], coaxial)]
+    g, gc, t = GEAR_RING, GEAR_COUNTER, GEAR_TRAIN
+    # The drive gears at both train levels turn with the crown gear (one drive shaft, one rate); each
+    # meshes a counter gear on the secondary shaft, which is the second rigid node.
+    coaxial = [(z - g["pivot_z"], *t["drive"], t["at"], t["thick"]) for z in GEAR_SHAFT["train_z"]]
+    sfx = "_high" if high else ""
+    ring = kit.gear_ring_stack(f"{g['node']}{sfx}", g["pivot_z"], high, g["r_tip"], g["teeth"], g["thick"], g["hub_r"], coaxial)
+    levels = [z - gc["pivot_z"] for z in GEAR_SHAFT["train_z"]]
+    counter = kit.counter_gear(f"{gc['node']}{sfx}", (gc["c"], gc["c"], gc["pivot_z"]), high, gc["shaft_r"], levels,
+                               *t["counter"], t["at"] + 180.0, t["thick"])
+    return [ring, counter]
+
+
+def gear_mesh(rigid: list) -> dict:
+    """Build-time mesh check of the train's two pairs over a full turn of the crown gear (kit.gear_mesh_check)."""
+    g, gc, t = GEAR_RING, GEAR_COUNTER, GEAR_TRAIN
+    ring, counter = rigid
+    half = t["thick"] / 2
+    pairs = [(z - g["pivot_z"] + half, z - gc["pivot_z"] + half) for z in GEAR_SHAFT["train_z"]]
+    out = kit.gear_mesh_check(ring, counter, pairs, t["drive"][0], t["counter"][0], g["radPerSec"], gc["radPerSec"])
+    out["rate_ratio"] = round(gc["radPerSec"] / g["radPerSec"], 6)
+    out["inverse_tooth_ratio"] = round(-t["drive"][1] / t["counter"][1], 6)
+    return out
 
 
 def build(room: kit.Room, high: bool):
@@ -423,7 +451,9 @@ def build(room: kit.Room, high: bool):
     if "gilt-worn" in ROOMS[room.piece]["slots"]:
         for o in (obj, *rigid):
             kit.wear_gilt(o)
-    return obj, colliders, lights, rigid
+    wainscot = {"hall": HALL["wainscot"], "corridor": CORRIDOR["wainscot"]}.get(room.piece)
+    door = kit.door_panels(room, high, ROOMS[room.piece]["stile_step"], wainscot)
+    return obj, colliders, lights, rigid, door
 
 
 def build_lights(room: kit.Room, lights: list) -> None:
@@ -520,10 +550,14 @@ def manifest_entry(room: kit.Room, colliders: list, lightmap: dict | None, budge
         "glassEmissiveIntensity": 0.8,
     }
     if p == "gear-shaft":
-        g = GEAR_RING
+        g, gc, t = GEAR_RING, GEAR_COUNTER, GEAR_TRAIN
         entry["rigidNodes"] = [{
             "node": g["node"], "pivot": [0, g["pivot_z"], 0], "axis": [0, 1, 0], "radPerSec": g["radPerSec"],
             "note": "spin node.rotation.y; lightmap baked at rest with the node invisible to shadow rays, so turning it breaks no baked shadow",
+        }, {
+            "node": gc["node"], "pivot": [gc["c"], gc["pivot_z"], -gc["c"]], "axis": [0, 1, 0], "radPerSec": gc["radPerSec"],
+            "meshesWith": {"node": g["node"], "teeth": t["counter"][1], "partnerTeeth": t["drive"][1]},
+            "note": "counter-rotates at the inverse tooth ratio from the same clock; at rest its teeth sit in the drive gears' gaps",
         }]
     return entry
 
@@ -574,15 +608,21 @@ def reimport(room: kit.Room) -> None:
         },
     }
     if room.piece == "gear-shaft":
-        g = GEAR_RING
-        ring = bpy.data.objects.get(g["node"])
-        found = ring is not None
-        loc = ring.matrix_world.to_translation() if found else Vector((9, 9, 9))
-        angle = ring.matrix_world.to_quaternion().angle if found else 9.0
-        result["rigid_nodes"] = {g["node"]: {"found": found, "location_blender": [round(v, 4) for v in loc], "rotation_angle": round(angle, 6),
-                                             "parent": ring.parent.name if found and ring.parent else None,
-                                             "triangles": sum(len(p.vertices) - 2 for p in ring.data.polygons) if found else 0}}
-        result["checks"]["gear_ring_node_on_axis"] = found and (loc - Vector((0, 0, g["pivot_z"]))).length < 1e-4 and angle < 1e-6
+        result["rigid_nodes"] = {}
+        for name, pivot, check in ((GEAR_RING["node"], (0, 0, GEAR_RING["pivot_z"]), "gear_ring_node_on_axis"),
+                                   (GEAR_COUNTER["node"], (GEAR_COUNTER["c"], GEAR_COUNTER["c"], GEAR_COUNTER["pivot_z"]), "gear_counter_node_on_axis")):
+            node = bpy.data.objects.get(name)
+            found = node is not None
+            loc = node.matrix_world.to_translation() if found else Vector((9, 9, 9))
+            angle = node.matrix_world.to_quaternion().angle if found else 9.0
+            result["rigid_nodes"][name] = {"found": found, "location_blender": [round(v, 4) for v in loc], "rotation_angle": round(angle, 6),
+                                           "parent": node.parent.name if found and node.parent else None,
+                                           "triangles": sum(len(p.vertices) - 2 for p in node.data.polygons) if found else 0}
+            result["checks"][check] = found and node.parent is None and (loc - Vector(pivot)).length < 1e-4 and angle < 1e-6
+    facts, checks = kit.panels.reimport_checks({o.name: o for o in bpy.data.objects},
+                                                kit.panels.door_slots(room.doors, S.DOOR_W, S.DOOR_H))
+    result["panels"] = facts
+    result["checks"].update(checks)
     result["pass"] = all(result["checks"].values())
     (S.STAGING / "reimport.json").write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps(result, indent=2))
@@ -609,12 +649,15 @@ def uv0(obj, report: dict, build_name: str) -> None:
         report[key] = report.get(key, 0) + kit.narrow_side_uv(obj, tile=TILE["walnut"])
 
 
-def export(low, path: Path, rigid: list) -> int:
-    if rigid:
-        kit.export_glb_multi([low, *rigid], path)
-    else:
-        S.export_glb(low, path)
+def export(objs: list, path: Path) -> int:
+    """The room, its rigid nodes and its panels, each its own glTF node."""
+    kit.export_glb_multi(objs, path)
     return CANONICALIZE(path)
+
+
+def shown(objs: list) -> list:
+    """What the renders show: doors open, so no plug (a plugged view is an engine shot)."""
+    return [o for o in objs if not o.name.startswith("door-plug-")]
 
 
 def main() -> None:
@@ -636,15 +679,16 @@ def main() -> None:
     report: dict = {"piece": P, "blender": bpy.app.version_string, "host_load_start": S.load_avg(), "lightmap_size": size, "samples": args.samples,
                     "generator": "scripts/assets/build-room-kit.py", "helper": "scripts/assets/room_kit.py (reuses build-room-study.py functions)"}
 
-    high, _, _, high_rigid = build(room, True)
-    for obj in (high, *high_rigid):
+    high, _, _, high_rigid, high_door = build(room, True)
+    high_all = [high, *high_rigid, *high_door["door-frame"], *high_door["door-plug"]]
+    for obj in high_all:
         uv0(obj, report, "high")
         S.apply_bevel(obj)
-    report["high"] = {"triangles": sum(S.count_tris(o) for o in (high, *high_rigid)), "slots": len(S.SLOTS)}
-    high_all = [high, *high_rigid]
+    report["high"] = {"triangles": sum(S.count_tris(o) for o in high_all), "slots": len(S.SLOTS)}
 
-    low, colliders, lights, rigid = build(room, False)
-    low_all = [low, *rigid]
+    low, colliders, lights, rigid, door = build(room, False)
+    frames, plugs = door["door-frame"], door["door-plug"]
+    low_all = [low, *rigid, *frames, *plugs]
     backing = S.build_door_backing()
     build_lights(room, lights)
     cams = {name: S.make_camera(name) for name in cfg["cameras"]}
@@ -656,10 +700,8 @@ def main() -> None:
         bpy.ops.wm.save_as_mainfile(filepath=str(S.BLEND_DIR / f"{P}_high.blend"), copy=True, compress=True)
         S.set_visible(low_all, True)
 
-    if rigid:
-        kit.unwrap_lightmap_uv_multi(low_all, size, gap_px=10)
-    else:
-        lm.unwrap_lightmap_uv(low, size, gap_px=10)
+    # One atlas for the shell, its rigid nodes and its panels (PRD lightmap contract: 10 px island pad).
+    kit.unwrap_lightmap_uv_multi(low_all, size, gap_px=10)
     tris = sum(S.count_tris(o) for o in low_all)
     report["low"] = {
         "triangles": tris,
@@ -671,12 +713,16 @@ def main() -> None:
     if rigid:
         report["low"]["rigid_nodes"] = {o.name: {"triangles": S.count_tris(o), "lightmap_density": lm.lightmap_texel_density(o, size),
                                                  "location_blender": [round(v, 4) for v in o.location]} for o in rigid}
+        report["gear_mesh"] = gear_mesh(rigid)
+        print(f"[{P}] gear mesh {json.dumps(report['gear_mesh'])}")
+        assert report["gear_mesh"]["pass"], "gear train interpenetrates"
+    report["low"]["panels"] = {o.name: {"triangles": S.count_tris(o), "lightmap_density": lm.lightmap_texel_density(o, size)} for o in (*frames, *plugs)}
     print(f"[{P}] high tris={report['high']['triangles']} low tris={tris} density={report['low']['lightmap_density']} by_slot={report['low']['lightmap_density_by_slot']}")
     assert tris <= 100_000 and len(S.SLOTS) <= 16, "PRD room budget exceeded"
     assert report["low"]["materials"] == len(S.SLOTS), "every slot must be used (manifest lists all)"
 
     glb = Path(args.glb_out) if args.glb_out else S.STAGING / S.GLB_NAME
-    report["canonicalized_primitives"] = export(low, glb, rigid)
+    report["canonicalized_primitives"] = export(low_all, glb)
     report["glb_bytes"] = glb.stat().st_size
     if args.glb_out:
         print(f"[{P}] determinism GLB {glb} {S.sha256(glb)}")
@@ -695,13 +741,13 @@ def main() -> None:
             scene.cycles.diffuse_bounces = cfg["diffuse_bounces"]
         S.set_metal_links(False)
         load0 = S.load_avg()
-        if rigid:
-            raw, seconds = kit.bake_irradiance_multi(low_all, size, args.samples, no_shadow=rigid)
-        else:
-            raw, seconds = lm.bake_irradiance(low, size, args.samples)
+        raw, passes = kit.panels.bake_with_panels([low, *rigid], frames, plugs, size, args.samples, no_shadow=rigid)
         S.set_metal_links(True)
-        report["lightmap_bake"] = {"seconds": round(seconds, 2), "host_load": [load0, S.load_avg()], "timing_valid": max(load0, S.load_avg()) <= 15,
-                                   "diffuse_bounces": scene.cycles.diffuse_bounces}
+        report["lightmap_bake"] = {"seconds": round(sum(passes), 2), "pass_seconds": passes, "host_load": [load0, S.load_avg()],
+                                   "timing_valid": max(load0, S.load_avg()) <= 15, "diffuse_bounces": scene.cycles.diffuse_bounces,
+                                   "panels": "pass 1: shell, rigid nodes and door frames, every door frame and plug invisible to shadow, "
+                                             "diffuse, glossy, transmission and volume rays; pass 2: door plugs only into the same image, "
+                                             "plugs fully visible, frames hidden from render (room_panels.bake_with_panels)"}
         lm.save_exr(raw, S.SCRATCH / f"{P}.lightmap.raw.exr")
         image = lm.denoise_image(raw, S.SCRATCH)
         if rigid:
@@ -737,14 +783,14 @@ def main() -> None:
         S.set_visible([backing], True)
         for name, cam in cams.items():
             S.set_visible(low_all, False)
-            S.set_visible(high_all, True)
+            S.set_visible(shown(high_all), True)
             S.render_to(cam, renders / f"{name}.high.png")
             S.set_visible(high_all, False)
-            S.set_visible(low_all, True)
+            S.set_visible(shown(low_all), True)
             S.render_to(cam, renders / f"{name}.low.png")
         if lightmap is not None:
             originals = S.lightmapped_preview_materials(low, S.STAGING / f"{P}.lightmap.png", lightmap["scale"])
-            for obj in rigid:  # same slot order: the rigid nodes take the same preview materials
+            for obj in (*rigid, *frames, *plugs):  # same slot order: they take the same preview materials
                 for i, mat in enumerate(low.data.materials):
                     obj.data.materials[i] = mat
             scene.view_settings.view_transform = "Standard"

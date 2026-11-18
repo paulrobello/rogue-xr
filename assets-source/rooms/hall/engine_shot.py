@@ -17,6 +17,7 @@ black frame or a software renderer is caught.
 from __future__ import annotations
 
 import json
+import math
 import os
 import sys
 from pathlib import Path
@@ -26,7 +27,7 @@ from playwright.sync_api import sync_playwright
 REPO = Path(__file__).resolve().parents[3]
 ROOMS = REPO / "assets-source/rooms"
 OUT = REPO / "docs/verification"
-ORIGIN = "http://localhost:4260"
+ORIGIN = os.environ.get("RXR_ORIGIN", "http://localhost:4260")
 W, H = 1280, 720
 PAGE = """<!doctype html><html><body style="margin:0;background:#000">
 <script type="module">
@@ -57,8 +58,8 @@ MEAN_JS = """(() => {
 def shots() -> list[tuple[str, str, dict]]:
     """(room the shot belongs to, shot name, Shot config)."""
     out = []
-    for room in ("hall", "corridor", "gear-shaft", "guardian-vault"):
-        cams = json.loads((ROOMS / room / "staging/report.json").read_text())["cameras_runtime"]
+    for room in ("study", "hall", "corridor", "gear-shaft", "guardian-vault"):
+        cams = json.loads((ROOMS / room / "staging/report.json").read_text()).get("cameras_runtime") or FALLBACK_CAMERAS[room]
         alone = [{"id": room, "position": [0, 0], "turns": 0}]
         for name, cam in cams.items():
             out.append((room, name, {"rooms": alone, "eye": cam["eye"], "look": cam["look"], "vfov": cam["vfov"], "diffuse": False}))
@@ -82,18 +83,24 @@ def shots() -> list[tuple[str, str, dict]]:
     out.append(("hall", "floor-sealed-west-close", floor([0, 0], [-4.1, 1.3, 0.5], [-5.0, 0.5, -1.6])))
     out.append(("corridor", "floor-sealed-north", floor([-1, -9], [-1.4, 1.6, -9.6], [-1.0, 1.3, -13.0])))
 
-    # P5-T2. Gear-shaft: the crown gear turned by an arbitrary 37 degrees through getObjectByName (the
-    # P5-T12 integration path); the lightmap must still read (no baked shadow breaks); and the north
-    # door seam into a corridor at (1, -10).
+    # P5-T2. Gear-shaft: the train turned by an arbitrary 37 degrees of the crown gear through
+    # getObjectByName (the P5-T12 integration path), every rigid node at its manifest rate from one
+    # clock; the lightmap must still read (no baked shadow breaks); and the north door seam into a
+    # corridor at (1, -10).
     gs = [{"id": "gear-shaft", "position": [0, 0], "turns": 0}]
     gcam = json.loads((ROOMS / "gear-shaft/staging/report.json").read_text())["cameras_runtime"]
     for name in ("hero", "ring"):
         c = gcam[name]
         out.append(("gear-shaft", f"{name}-gear-turned", {"rooms": gs, "eye": c["eye"], "look": c["look"], "vfov": c["vfov"], "diffuse": False,
-                                                          "spin": {"node": "gear-shaft_gear_ring", "angle": 0.6458}}))
+                                                          "spin": train_spin(0.6458)}))
     c = gcam["hero"]
     out.append(("gear-shaft", "hero.diffuse-gear-turned", {"rooms": gs, "eye": c["eye"], "look": c["look"], "vfov": c["vfov"], "diffuse": True,
-                                                           "spin": {"node": "gear-shaft_gear_ring", "angle": 0.6458}}))
+                                                           "spin": train_spin(0.6458)}))
+    # The meshing train in the shaft void from under the ceiling hole, at eight crown angles over a
+    # full turn (the counter gear at the manifest rate ratio): teeth must sit in gaps in every frame.
+    for k in range(8):
+        out.append(("gear-shaft", f"mesh-{k * 45:03d}", {"rooms": gs, "eye": [1.75, 4.7, 0.55], "look": [0.6, 5.85, -0.6], "vfov": 60.0,
+                                                         "diffuse": False, "spin": train_spin(k * math.pi / 4)}))
     gn = [*gs, {"id": "corridor", "position": [1, -10], "turns": 0}]
     out.append(("gear-shaft", "seam-north", {"rooms": gn, "eye": [0.4, 1.6, -3.0], "look": [1.0, 1.5, -14.0], "vfov": 70.0, "diffuse": False}))
     # Guardian vault: its only door (south) into a corridor at (1, 10), seen from the corridor and
@@ -103,7 +110,32 @@ def shots() -> list[tuple[str, str, dict]]:
     out.append(("guardian-vault", "seam-from-corridor", {"rooms": vn, "eye": [1.0, 1.6, 12.6], "look": [0.4, 1.8, 0.0], "vfov": 70.0, "diffuse": False}))
     out.append(("guardian-vault", "seam-south", {"rooms": vn, "eye": [0.6, 1.6, 2.0], "look": [1.0, 1.3, 13.0], "vfov": 70.0, "diffuse": False}))
     out.append(("guardian-vault", "reward-eye", {"rooms": vn[:1], "eye": [0.3, 1.6, -1.0], "look": [0.0, 1.6, -6.0], "vfov": 70.0, "diffuse": False}))
+    # Door panels (room_panels.py): one wall per room, seen from inside at the seated eye (1.2 m),
+    # with the door plugged (dressRoom's wall-style seal: plug shown, frame hidden) and open.
+    for room, door, eye, look in PLUG_SHOTS:
+        alone = [{"id": room, "position": [0, 0], "turns": 0}]
+        for state, plugged in (("in", [door]), ("out", [])):
+            out.append((room, f"plug-{door}-{state}", {"rooms": alone, "eye": eye, "look": look, "vfov": 70.0, "diffuse": False,
+                                                        "plugged": plugged}))
     return out
+
+
+def train_spin(crown: float) -> list[dict]:
+    """Every gear-shaft rigid node turned as the runtime turns it when the crown gear is at `crown`
+    radians: angle = radPerSec x one shared clock (floor-view.ts rigidAngle)."""
+    nodes = json.loads((REPO / "public/assets/rooms/gear-shaft/gear-shaft.manifest.json").read_text())["rigidNodes"]
+    clock = crown / nodes[0]["radPerSec"]
+    return [{"node": n["node"], "angle": n["radPerSec"] * clock} for n in nodes]
+
+
+# (room, template door id, eye, look) in runtime coordinates, room at the origin unturned.
+PLUG_SHOTS = [
+    ("study", "e", [1.0, 1.2, 0.3], [4.0, 1.1, -1.0]),
+    ("hall", "n", [-0.2, 1.2, -2.0], [-1.0, 1.1, -5.0]),
+    ("corridor", "n", [0.35, 1.2, -1.2], [0.0, 1.1, -4.0]),
+    ("gear-shaft", "w", [-2.1, 1.2, 2.6], [-4.0, 1.1, 1.0]),
+    ("guardian-vault", "s", [0.3, 1.2, 3.2], [1.0, 1.1, 6.0]),
+]
 
 
 VARIANT_OUT = Path(os.environ.get("RXR_VARIANT_DIR", "/tmp/rxr-room-light"))

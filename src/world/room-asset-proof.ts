@@ -65,6 +65,10 @@ export async function mountRoomAssetProof(
     ktx2.dispose();
     const model = asset.instantiate();
     model.name = manifest.template;
+    // Door plugs only show where the floor seals a door; the proof frames every doorway open.
+    model.traverse((node) => {
+      if (node.name.startsWith('door-plug-')) node.visible = false;
+    });
     scene.add(model);
     return frameProof(model, params, rig, camera);
   }
@@ -81,6 +85,7 @@ export async function mountRoomAssetProof(
     slots.set(name, await slotMaterial(name, entry, pbr.materials, usePng, ktx2, study));
   }
   gltf.scene.traverse((node) => {
+    if (node.name.startsWith('door-plug-')) node.visible = false;
     const mesh = node as THREE.Mesh;
     if (!mesh.isMesh) return;
     const name = (mesh.material as THREE.Material).name;

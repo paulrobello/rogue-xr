@@ -4,16 +4,16 @@
   "route": "scripted",
   "generator": {
     "path": "scripts/assets/build-room-kit.py",
-    "sha256": "037cd14f169ff58c9704b4e8204dc3286655c7d7695c5b0dfb16923fd2212ddb"
+    "sha256": "9929766d83645ee9946099015e217085f449cad9ef7b0c34c9593768a523015f"
   },
   "generatorDeps": [
     {
       "path": "scripts/assets/room_kit.py",
-      "sha256": "577c7cba3babdf3d77bc54b353e8a93eba6f23c060a6404c4d9c7235f731bb2d"
+      "sha256": "292e340c5086c8f7b811d4f8cfa28234beb5ad723414d734ca27120186d86603"
     },
     {
       "path": "scripts/assets/build-room-study.py",
-      "sha256": "2e20a14f0968fa4fe4b0adecec9d44945887dcfb47d19d3d31859767b523e016"
+      "sha256": "b918e8511fef38f662c4a98c441a15780cbf621969691351a754f6e200274fce"
     },
     {
       "path": "scripts/assets/lightmap_helpers.py",
@@ -22,6 +22,10 @@
     {
       "path": "scripts/assets/build-cog-sentry.py",
       "sha256": "8f80d1ae8d10adeab5123ba9497e9d00a8ea4c6e5c0855c902cf65274f25bacc"
+    },
+    {
+      "path": "scripts/assets/room_panels.py",
+      "sha256": "07154a7ecc06413468537a5043b7772df73c405c4a6b0f4294ef851efd9b1bc3"
     }
   ],
   "authoringAgent": {
@@ -37,33 +41,38 @@
     "store": "assets-source/rooms/corridor/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)",
     "files": {
       "corridor_high.blend": {
-        "sha256": "7234adf45ee2cddb18437c0c823d15eace50e082e0297e045d786d8fff6e6410",
-        "bytes": 361979
+        "sha256": "19ab926c0593122bea176eabd4e33cfc8b5e69292516ebd9a6be63836aa40bb1",
+        "bytes": 367792
       },
       "corridor_low.blend": {
-        "sha256": "b786ce1d3a2d5fad1ad461c5642873438fdd28c65b08f6ecd0c9d1ec24dd946d",
-        "bytes": 175838
+        "sha256": "565db3a229b83f9ea2a3fdcfa25149988165a06470d9f93969ad7c24b8c5e4b3",
+        "bytes": 178902
       }
     }
   },
   "bake": {
     "device": "GPU:METAL (Apple M4 (GPU - 10 cores))",
     "lightmap": {
-      "coverage": 0.7595,
-      "scale": 3.958609,
-      "clipped_fraction": 0.01994,
-      "mean_irradiance": 0.689381,
+      "coverage": 0.7405,
+      "scale": 3.821878,
+      "clipped_fraction": 0.01992,
+      "mean_irradiance": 0.681113,
       "p05_irradiance": 0.0,
       "percentile": 98.0,
       "encoded_p05_255": 0,
-      "encoded_median_255": 62,
-      "seconds": 26.87,
+      "encoded_median_255": 65,
+      "seconds": 32.18,
+      "pass_seconds": [
+        27.7,
+        4.48
+      ],
       "host_load": [
-        2.23,
-        1.81
+        2.57,
+        2.09
       ],
       "timing_valid": true,
       "diffuse_bounces": 1,
+      "panels": "pass 1: shell, rigid nodes and door frames, every door frame and plug invisible to shadow, diffuse, glossy, transmission and volume rays; pass 2: door plugs only into the same image, plugs fully visible, frames hidden from render (room_panels.bake_with_panels)",
       "size": 2048,
       "samples": 256,
       "pass": "DIFFUSE direct+indirect, colour off, metallic forced 0, OIDN",
@@ -79,7 +88,7 @@
     }
   },
   "budgets": {
-    "triangles": 1946,
+    "triangles": 1986,
     "materials": 7,
     "texturePx": {
       "corridor.lightmap.ktx2": {
@@ -87,50 +96,50 @@
         "height": 2048
       }
     },
-    "highTriangles": 11939,
-    "glbBytes": 149648
+    "highTriangles": 12071,
+    "glbBytes": 158048
   },
   "texelDensityPxPerM": {
     "lightmap": {
-      "mean_px_per_m": 124.54,
-      "min_px_per_m": 105.67,
-      "max_px_per_m": 125.67
+      "mean_px_per_m": 117.64,
+      "min_px_per_m": 99.84,
+      "max_px_per_m": 118.74
     },
     "lightmapBySlot": {
       "brass-aged": {
-        "area_m2": 5.46,
-        "median_px_per_m": 125.7,
-        "min_px_per_m": 105.7
+        "area_m2": 1.8,
+        "median_px_per_m": 118.7,
+        "min_px_per_m": 99.8
       },
       "brass-polished": {
         "area_m2": 0.44,
-        "median_px_per_m": 125.7,
-        "min_px_per_m": 106.1
+        "median_px_per_m": 118.7,
+        "min_px_per_m": 100.2
       },
       "cloth": {
         "area_m2": 2.03,
-        "median_px_per_m": 125.7,
-        "min_px_per_m": 125.7
+        "median_px_per_m": 118.7,
+        "min_px_per_m": 118.7
       },
       "lamp-glass": {
         "area_m2": 0.46,
-        "median_px_per_m": 116.9,
-        "min_px_per_m": 116.9
+        "median_px_per_m": 110.5,
+        "min_px_per_m": 110.5
       },
       "stone-floor": {
         "area_m2": 16.0,
-        "median_px_per_m": 125.7,
-        "min_px_per_m": 125.7
+        "median_px_per_m": 118.7,
+        "min_px_per_m": 118.7
       },
       "wallpaper": {
         "area_m2": 40.16,
-        "median_px_per_m": 125.7,
-        "min_px_per_m": 125.7
+        "median_px_per_m": 118.7,
+        "min_px_per_m": 118.7
       },
       "walnut": {
         "area_m2": 60.74,
-        "median_px_per_m": 125.7,
-        "min_px_per_m": 109.7
+        "median_px_per_m": 118.7,
+        "min_px_per_m": 103.7
       }
     }
   },
@@ -191,27 +200,27 @@
   "derivedFiles": [
     {
       "path": "public/assets/rooms/corridor/corridor.glb",
-      "sha256": "69163f629ef655e077365d03e978b205ad2ecac73538673c4e36024f3b720d0f",
-      "bytes": 149648
+      "sha256": "442b67f4a6b45abb6b63771d3422a5aa5eb8934e3ce52cad1cb6b375bb35a7de",
+      "bytes": 158048
     },
     {
       "path": "public/assets/rooms/corridor/corridor.lightmap.ktx2",
-      "sha256": "a03821c5affdd72ae784e105c706c06c4eedfdef1c3ccd57744243a2da79579c",
-      "bytes": 2760667
+      "sha256": "8f8256439177825f8aa855e384a413bf064e0e5da0e99119d6c5803154f66932",
+      "bytes": 2793349
     },
     {
       "path": "public/assets/rooms/corridor/corridor.manifest.json",
-      "sha256": "96ad1c8fa76f1500474628f7c549c92e9f17217509c75e485cc1adfea12ac194",
+      "sha256": "5a4963210fa02ddc15d46b9f4c58b7b8cc7996f4b3d235e936d0f014b6bedba9",
       "bytes": 2756
     }
   ],
   "stagingFiles": {
-    "corridor.glb": "69163f629ef655e077365d03e978b205ad2ecac73538673c4e36024f3b720d0f",
-    "corridor.lightmap.ktx2": "a03821c5affdd72ae784e105c706c06c4eedfdef1c3ccd57744243a2da79579c",
-    "corridor.lightmap.png": "9c0ecd7219a7070a95c54bca8bcae1aed442077eb7a049505486a5601cae1cb0",
-    "corridor.manifest.json": "96ad1c8fa76f1500474628f7c549c92e9f17217509c75e485cc1adfea12ac194",
-    "engine-compare.json": "ded0f5be0cda250afe720001a1d9de990704539a11bdd048cbf7bb0463e19c4c",
-    "uv1-report.json": "910d907be487bdb42324ea08fc27e10b6c3aac545a623283a569901e01f7ca58"
+    "corridor.glb": "442b67f4a6b45abb6b63771d3422a5aa5eb8934e3ce52cad1cb6b375bb35a7de",
+    "corridor.lightmap.ktx2": "8f8256439177825f8aa855e384a413bf064e0e5da0e99119d6c5803154f66932",
+    "corridor.lightmap.png": "9729e472912144256d4fd64aaa9d1c5880ff00d7604a348f1d195f4186b03100",
+    "corridor.manifest.json": "5a4963210fa02ddc15d46b9f4c58b7b8cc7996f4b3d235e936d0f014b6bedba9",
+    "engine-compare.json": "f9962786914b96b35d94c4cd4c89a5a85557eb5f88a1e6c95c27908e60b7e1f3",
+    "uv1-report.json": "cd2b8964fd132095747bcc8a3890b46e370767851b26e53f61b9f7e61d0707ae"
   },
   "references": [
     {
@@ -236,7 +245,7 @@
   "materialsUsed": "approved P4-T3 set (public/assets/materials), bound by slot name; not regenerated",
   "license": "Original work generated in Blender from a checked-in script; concept references from Paul's paid Higgsfield plan (Terms of Use 4.4)",
   "reimport": {
-    "triangles": 1946,
+    "triangles": 1986,
     "material_count": 7,
     "uv_layers": [
       [
@@ -268,7 +277,11 @@
       "inside_ceiling": true,
       "footprint_x": true,
       "footprint_y": true,
-      "inside_footprint": true
+      "inside_footprint": true,
+      "panel_door-frame-n": true,
+      "panel_door-plug-n": true,
+      "panel_door-frame-s": true,
+      "panel_door-plug-s": true
     },
     "pass": true
   },
@@ -324,27 +337,35 @@
   "reviewEvidence": [
     {
       "path": "assets-source/rooms/corridor/staging/review-sheet.jpg",
-      "sha256": "c115a71e559ef47135ec04690ed618872f84c125a519dc274ce99cd0804a6d1a"
+      "sha256": "34b2b86355e31a15960b91699c54ed738475cfff2c99adc53ba8bb84cc28da06"
     },
     {
       "path": "docs/verification/p5-rooms-corridor-floor-sealed-north.jpg",
-      "sha256": "605368386272ca073f8f1455ac93b83c5788884594ff2d86cb378bd4074a9e7d"
+      "sha256": "4e3408f2d176bf5a7288ec8dac41ec92cb76973fed764dc8b64564c488e956f1"
     },
     {
       "path": "docs/verification/p5-rooms-corridor-hero.diffuse.jpg",
-      "sha256": "2fe051ac0680d9d67e2a0cbd4cc6c4768497caf8e5375d29f87109859f67c5ab"
+      "sha256": "8bd172277b1165aae366765bdf18364ccdd124e63f6b013e2c84983ffcaafe48"
     },
     {
       "path": "docs/verification/p5-rooms-corridor-hero.jpg",
-      "sha256": "3c654956dbfaa5a472226681aa011dd53cd897a8d0c40bafdcdde5c5583c3bb6"
+      "sha256": "ab514188f1995ed77bfad68f54493125e20f3a192a2f0a925450d88697beb27b"
     },
     {
       "path": "docs/verification/p5-rooms-corridor-lamp.jpg",
-      "sha256": "4f055d1e280ae0121b5a72d80eec5f088bc3b696ea1a5677397cca06bef3e556"
+      "sha256": "c6406457722c19bb3854a78d8e465dca4ed1ecb0c2a3b56d027c8ad04dc3a5b7"
+    },
+    {
+      "path": "docs/verification/p5-rooms-corridor-plug-n-in.jpg",
+      "sha256": "eb6dce36c86975f0fff0f4783cc5f6706ce19bb0e39f3dd7c8dcdad13d1dba5d"
+    },
+    {
+      "path": "docs/verification/p5-rooms-corridor-plug-n-out.jpg",
+      "sha256": "445f07b31774d2948a7a4586652731fcb73960be6057ae9cce003a393dca47a1"
     },
     {
       "path": "docs/verification/p5-rooms-corridor-seam-from-corridor.jpg",
-      "sha256": "f065f3dfc208467c195bf7eb57fcb97ba67e1926b1c2b8abfc9838613d930484"
+      "sha256": "a92229a58cbac113335b90648f511eac081858c7738ad91854ee38c9e5664b84"
     }
   ],
   "independentScore": {

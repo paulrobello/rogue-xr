@@ -19,8 +19,8 @@ TILE = (640, 360)
 PANELS = [
     (ROOT / "assets-source/concepts/room-sheet-1.png", "Approved concept (room-sheet-1, panel 1)", (48, 28, 2712, 812)),
     (R / "hero.lightmapped.png", "Textured EEVEE still, lit by the shipped lightmap", None),
-    (R / "hero.high.png", "High poly, EEVEE, hero camera (124,581 tris)", None),
-    (R / "hero.low.png", "Low poly, EEVEE, same camera (6,948 tris)", None),
+    (R / "hero.high.png", "High poly, EEVEE, hero camera (124,637 tris)", None),
+    (R / "hero.low.png", "Low poly, EEVEE, same camera (6,968 tris)", None),
     (R / "hero.reference-diffuse.png", "Cycles diffuse reference (lightmap validation)", None),
     (R / "engine.hero.diffuse.png", "three.js, lightmap only, no tone mapping", None),
     (R / "engine.hero.png", "In engine: three.js 0.186.1, KTX2 maps, AgX", None),

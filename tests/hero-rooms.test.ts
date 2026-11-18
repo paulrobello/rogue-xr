@@ -159,10 +159,14 @@ describe('hero room lifecycle', () => {
     }
     previous?.dispose();
     expect(scene.children.length).toBe(baseline);
-    // One spinner per placed gear-shaft, and no growth across New Runs.
+    // One spinner per rigid node of each placed gear-shaft, and no growth across New Runs.
     const shafts = generateFloor(SEED).rooms.filter((r) => r.templateId === 'gear-shaft').length;
+    const nodes = MANIFESTS.get('gear-shaft')?.rigidNodes.length ?? 0;
     expect(shafts).toBeGreaterThan(0);
-    expect(counts).toEqual(Array(3).fill({ children: counts[0]?.children, spinners: shafts }));
+    expect(nodes).toBeGreaterThan(1);
+    expect(counts).toEqual(
+      Array(3).fill({ children: counts[0]?.children, spinners: shafts * nodes }),
+    );
   });
 });
 
@@ -206,6 +210,16 @@ describe('gear-shaft crown gear spin', () => {
     expect(a.ring.quaternion.angleTo(b.ring.quaternion)).toBeLessThan(1e-6);
     const expected = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), rate * 2);
     expect(a.ring.quaternion.angleTo(expected)).toBeLessThan(1e-6);
+    // Every rigid node turns from the same clock at its own signed rate.
+    const group = a.view.world.roomGroups[a.room] as THREE.Group;
+    for (const r of MANIFESTS.get('gear-shaft')?.rigidNodes ?? []) {
+      const node = group.getObjectByName(r.node) as THREE.Object3D;
+      const want = new THREE.Quaternion().setFromAxisAngle(
+        new THREE.Vector3(...r.axis).normalize(),
+        rigidAngle(r.radPerSec, 2),
+      );
+      expect(node.quaternion.angleTo(want)).toBeLessThan(1e-6);
+    }
     a.view.dispose();
     b.view.dispose();
   });

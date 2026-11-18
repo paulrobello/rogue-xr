@@ -39,8 +39,14 @@ export interface Shot {
    * door caps included; `at` is the floor point that picks the current room.
    */
   floor?: { seed: string; at: [number, number]; kit?: string[] };
-  /** Turns a named rigid node (e.g. the gear-shaft crown gear) about its local Y before the frame. */
-  spin?: { node: string; angle: number };
+  /**
+   * Door panels in `rooms` mode (the floor path uses dressRoom): template door ids whose
+   * `door-plug-<id>` shows and `door-frame-<id>` hides, as dressRoom does for a wall-style seal.
+   * Every other door shows its frame and hides its plug. Defaults to none (all doors open).
+   */
+  plugged?: string[];
+  /** Turns named rigid nodes (e.g. the gear-shaft crown and counter gears) about their local Y before the frame. */
+  spin?: { node: string; angle: number }[];
   /**
    * Room-light investigation toggles (engine_shot.py --variants). Each defaults to the shipped
    * runtime, so shots without them render exactly as before.
@@ -148,17 +154,27 @@ export async function mountKitProof(w: number, h: number, shot: Shot) {
       group.add(model);
       scene.add(group);
       models.push(model);
+      const plugged = new Set(shot.plugged ?? []);
+      for (const door of assets.get(room.id)?.manifest.template.doors ?? []) {
+        const plug = model.getObjectByName(`door-plug-${door.id}`);
+        const frame = model.getObjectByName(`door-frame-${door.id}`);
+        const closed = plugged.has(door.id) && plug !== undefined;
+        if (plug) plug.visible = closed;
+        if (frame) frame.visible = !closed;
+      }
     }
   }
   let spun = 0;
-  if (shot.spin) {
+  for (const spin of shot.spin ?? []) {
+    let found = 0;
     for (const model of models) {
-      const node = model.getObjectByName(shot.spin.node);
+      const node = model.getObjectByName(spin.node);
       if (!node) continue;
-      node.rotation.y = shot.spin.angle;
-      spun++;
+      node.rotation.y = spin.angle;
+      found++;
     }
-    if (spun === 0) throw new Error(`kit proof: no node ${shot.spin.node}`);
+    if (found === 0) throw new Error(`kit proof: no node ${spin.node}`);
+    spun += found;
   }
   for (const model of models) {
     model.traverse((node) => {

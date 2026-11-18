@@ -1,11 +1,15 @@
 {
   "glb": "study.glb",
-  "glb_sha256": "5ca942a30e3599112fa2ed55a975fbec73f5dfec0637fb3c79c7d917fd5f381d",
-  "blender": "5.2.2 LTS",
+  "glb_sha256": "feac13e816ad7ac36a2f22a8c2f83b2d12503a730250f61a37d40732b145abac",
+  "blender": "5.3.0",
   "meshes": [
+    "door-frame-e",
+    "door-frame-s",
+    "door-plug-e",
+    "door-plug-s",
     "study"
   ],
-  "triangles": 6948,
+  "triangles": 6968,
   "materials": [
     "study_books",
     "study_brass-aged",
@@ -62,7 +66,29 @@
     "two_uv_layers_every_mesh": true,
     "no_embedded_images": true,
     "floor_at_zero": true,
-    "footprint_8m": true
+    "footprint_8m": true,
+    "panel_door-frame-e": true,
+    "panel_door-plug-e": true,
+    "panel_door-frame-s": true,
+    "panel_door-plug-s": true
+  },
+  "panels": {
+    "door-frame-e": {
+      "found": true,
+      "triangles": 26
+    },
+    "door-plug-e": {
+      "found": true,
+      "triangles": 10
+    },
+    "door-frame-s": {
+      "found": true,
+      "triangles": 26
+    },
+    "door-plug-s": {
+      "found": true,
+      "triangles": 10
+    }
   },
   "pass": true
 }

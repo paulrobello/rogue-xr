@@ -21,6 +21,8 @@ from pathlib import Path
 
 from mathutils import Matrix, Vector
 
+import room_panels as panels
+
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 STUDY_GENERATOR = HERE / "build-room-study.py"
@@ -197,7 +199,7 @@ def configure(room: Room, slots: list, tile: dict, const: dict, cameras: dict) -
 def build_shell(b, room: Room, extra_openings: dict, stile_step: float, cornice: bool = True, wainscot: float | None = None,
                 ceiling_z: float | None = None, ceiling_hole: float | None = None) -> None:
     """Stone floor, walnut ceiling, walnut wainscot under wallpaper, chair rail, skirting, cornice,
-    wainscot stiles and brass-aged door architraves. `extra_openings` maps a wall to window holes.
+    wainscot stiles, with each door opening left bare for its panels (door_panels). `extra_openings` maps a wall to window holes.
     The defaults reproduce the original P5-T2 rooms exactly; the hall and corridor pass `cornice=False`
     (they build `cove_cornice`) and a taller `wainscot`. The gear shaft passes `ceiling_z` (walls and
     ceiling stop below `room.height`, which bounds the shaft void above) and `ceiling_hole`, the half
@@ -241,20 +243,19 @@ def build_shell(b, room: Room, extra_openings: dict, stile_step: float, cornice:
                     b.box(a - 0.03, a + 0.03, 0, 0.018, 0.14, W - 0.03, "walnut", drop="ybt")
         if cornice:
             b.box(-half, half, 0, 0.14, T - 0.18, T, "walnut", drop="xXyt")  # cornice
-        for o in room.door_openings(wall):
-            f = 0.12
-            b.box(o[0] - f, o[0], 0, 0.05, 0, o[3] + f, "brass-aged", drop="yb")
-            b.box(o[1], o[1] + f, 0, 0.05, 0, o[3] + f, "brass-aged", drop="yb")
-            b.box(o[0], o[1], 0, 0.05, o[3], o[3] + f, "brass-aged", drop="yxX")
-            b.face([(o[0], 0, 0), (o[0], 0.05, 0), (o[0], 0.05, o[3]), (o[0], 0, o[3])], (1, 0, 0), "brass-aged")
-            b.face([(o[1], 0, 0), (o[1], 0.05, 0), (o[1], 0.05, o[3]), (o[1], 0, o[3])], (-1, 0, 0), "brass-aged")
-            b.face([(o[0], 0, o[3]), (o[1], 0, o[3]), (o[1], 0.05, o[3]), (o[0], 0.05, o[3])], (0, 0, -1), "brass-aged")
-            # Brass threshold plate across the doorway, inside the footprint: the neighbour room's
-            # plate meets it on the shared edge.
-            b.box(o[0], o[1], 0, 0.06, 0, 0.012, "brass-aged", drop="by")
+        # Door architraves are panels (door_panels): the shell leaves each opening bare.
         b.xf = Matrix.Identity(4)
     S.HALF = room.hx
     S.HEIGHT = height
+
+
+def door_panels(room: Room, high: bool, stile_step: float, wainscot: float | None = None) -> dict:
+    """The door panel slot of every template door: `door-frame-<id>` (architrave, reveal, threshold
+    plate) and `door-plug-<id>` (the shell's wainscot, stiles, chair rail and skirting run across the
+    opening), each its own object (room_panels). Returns {panel kind: [objects]}."""
+    spec = panels.WallSpec(wainscot=S.WAINSCOT if wainscot is None else wainscot, chair_rail=True, skirting=True, stile_step=stile_step,
+                           threshold=True)
+    return panels.build_panels(S.Builder, room.frame, panels.door_slots(room.doors, S.DOOR_W, S.DOOR_H), spec, high)
 
 
 # ---------------------------------------------------------------------------------------------
@@ -607,89 +608,10 @@ def greybox_colliders(spec: dict) -> list:
     return [*perimeter_colliders(spec), *spec.get("extraColliders", [])]
 
 
-def unwrap_lightmap_uv_multi(objs: list, size: int, gap_px: int = 10) -> None:
-    """lightmap_helpers.unwrap_lightmap_uv for several objects packed into ONE UV1 atlas (multi-object
-    edit mode packs every island together), so a rigid animated node shares the room's lightmap."""
-    import bpy
-
-    for obj in objs:
-        mesh = obj.data
-        if S.lm.LIGHTMAP_UV not in mesh.uv_layers:
-            mesh.uv_layers.new(name=S.lm.LIGHTMAP_UV)
-        mesh.uv_layers.active = mesh.uv_layers[S.lm.LIGHTMAP_UV]
-    if bpy.context.object is not None and bpy.context.object.mode != "OBJECT":
-        bpy.ops.object.mode_set(mode="OBJECT")
-    for other in bpy.context.view_layer.objects:
-        other.select_set(other in objs)
-    bpy.context.view_layer.objects.active = objs[0]
-    bpy.ops.object.mode_set(mode="EDIT")
-    bpy.ops.mesh.select_all(action="SELECT")
-    bpy.ops.uv.smart_project(angle_limit=math.radians(66), island_margin=0.0, scale_to_bounds=False)
-    bpy.ops.uv.pack_islands(rotate=True, margin_method="FRACTION", margin=gap_px / size)
-    bpy.ops.object.mode_set(mode="OBJECT")
-
-
-def bake_irradiance_multi(objs: list, size: int, samples: int, no_shadow: list, margin_px: int = 8):
-    """lightmap_helpers.bake_irradiance for several objects into one image in one bake call. Objects
-    in `no_shadow` (rigid animated nodes) are invisible to shadow rays, so the static surfaces carry
-    no baked shadow of a part that moves at runtime."""
-    import time
-
-    import bpy
-
-    scene = bpy.context.scene
-    scene.cycles.samples = samples
-    scene.cycles.use_denoising = False
-    image = bpy.data.images.new(f"{objs[0].name}_lightmap", size, size, alpha=True, float_buffer=True)
-    image.generated_color = (0.0, 0.0, 0.0, 0.0)
-    image.colorspace_settings.name = "Non-Color"
-    mats = []
-    for obj in objs:
-        for slot in obj.material_slots:
-            if slot.material not in mats:
-                mats.append(slot.material)
-    restore = []
-    for mat in mats:
-        nodes = mat.node_tree.nodes
-        metallic = next(n for n in nodes if n.type == "BSDF_PRINCIPLED").inputs["Metallic"]
-        restore.append((mat, metallic.default_value))
-        metallic.default_value = 0.0
-        tex = nodes.new("ShaderNodeTexImage")
-        tex.name = "lightmap_bake_target"
-        tex.image = image
-        nodes.active = tex
-    for obj in objs:
-        obj.data.uv_layers.active = obj.data.uv_layers[S.lm.LIGHTMAP_UV]
-    for obj in no_shadow:
-        obj.visible_shadow = False
-    for other in bpy.context.view_layer.objects:
-        other.select_set(other in objs)
-    bpy.context.view_layer.objects.active = objs[0]
-    started = time.monotonic()
-    bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT", "INDIRECT"}, margin=margin_px, margin_type="EXTEND",
-                        use_clear=True, target="IMAGE_TEXTURES")
-    elapsed = time.monotonic() - started
-    for obj in no_shadow:
-        obj.visible_shadow = True
-    for mat, value in restore:
-        nodes = mat.node_tree.nodes
-        next(n for n in nodes if n.type == "BSDF_PRINCIPLED").inputs["Metallic"].default_value = value
-        nodes.remove(nodes["lightmap_bake_target"])
-    for obj in objs:
-        obj.data.uv_layers.active = obj.data.uv_layers[0]
-    return image, elapsed
-
-
-def export_glb_multi(objs: list, path: Path) -> None:
-    """The study's export_glb with several selected objects (room plus its rigid animated nodes)."""
-    import bpy
-
-    for other in bpy.context.view_layer.objects:
-        other.select_set(other in objs)
-    bpy.context.view_layer.objects.active = objs[0]
-    bpy.ops.export_scene.gltf(filepath=str(path), export_format="GLB", use_selection=True, use_active_scene=True, export_texcoords=True,
-                              export_normals=True, export_tangents=False, export_materials="EXPORT", export_image_format="NONE",
-                              export_cameras=False, export_lights=False, export_apply=True, export_extras=False)
+# Several objects in one lightmap atlas: shared with the study generator, so they live in room_panels.
+unwrap_lightmap_uv_multi = panels.unwrap_lightmap_uv_multi
+bake_irradiance_multi = panels.bake_irradiance_multi
+export_glb_multi = panels.export_glb_multi
 
 
 def azimuth_uniformity(obj, rgba, size: int, sectors: int = 8) -> dict:
@@ -1227,6 +1149,83 @@ def gear_ring_stack(name: str, pivot_z: float, high: bool, r_tip: float, teeth: 
     obj = b.finish()
     obj.location = (0.0, 0.0, pivot_z)
     return obj
+
+
+def counter_gear(name: str, pivot: tuple, high: bool, shaft_r: float, levels: list, r_tip: float, teeth: int, frac: float,
+                 at: float, thick: float):
+    """A secondary shaft with a gear at each of `levels` (z relative to the pivot), one rigid node whose
+    origin is on the shaft axis: the gears are turned so a gap (frac 0.84) faces the drive gear at `at`
+    degrees. The shaft runs 0.35 m past the outer gears, through the static bearing arms."""
+    b = S.Builder(name)
+    S.SHAFT_R = shaft_r
+    for dz in levels:
+        b.xf = Matrix.Rotation(math.radians(at) - 2 * math.pi * frac / teeth, 4, "Z")
+        b.gear(dz, r_tip, teeth, thick, "gilt", high)
+        b.xf = Matrix.Identity(4)
+    b.cylinder(0, 0, shaft_r, min(levels) - 0.35, max(levels) + 0.35, 16 if high else 8, "brass-polished", caps="tb")
+    obj = b.finish()
+    obj.location = pivot
+    return obj
+
+
+def gear_outline(obj, z: float, r_min: float, r_max: float):
+    """The toothed outline of the gear whose top face is at local z: the mesh's own vertices on that plane
+    between root and tip radius, in angle order (a closed polyline in the node's local XY)."""
+    import numpy as np
+
+    pts = {}
+    for v in obj.data.vertices:
+        x, y, vz = v.co
+        r = math.hypot(x, y)
+        if abs(vz - z) < 1e-4 and r_min - 1e-4 <= r <= r_max + 1e-4:
+            pts[(round(x, 6), round(y, 6))] = math.atan2(y, x)
+    return np.array(sorted(pts, key=pts.get))
+
+
+def gear_mesh_check(a, b, pairs: list, ra_tip: float, rb_tip: float, rate_a: float, rate_b: float, steps: int = 1440) -> dict:
+    """Numeric interpenetration check of meshing gears on two rigid nodes over a full turn of node a.
+    Each of `pairs` is (top-face z local to a, top-face z local to b) of one meshing pair. Both outlines
+    come from the built meshes; at each step node a is turned by theta and node b by theta * rate_b /
+    rate_a about their own Z axes (their runtime spins from one clock), and the closed outlines are tested
+    for crossing segments and for the smallest vertex-to-segment distance."""
+    import numpy as np
+
+    def crosses(P, Q) -> bool:
+        a0, d1 = P, np.roll(P, -1, 0) - P
+        b0, d2 = Q, np.roll(Q, -1, 0) - Q
+        den = d1[:, None, 0] * d2[None, :, 1] - d1[:, None, 1] * d2[None, :, 0]
+        w = b0[None] - a0[:, None]
+        with np.errstate(divide="ignore", invalid="ignore"):
+            t = (w[..., 0] * d2[None, :, 1] - w[..., 1] * d2[None, :, 0]) / den
+            u = (w[..., 0] * d1[:, None, 1] - w[..., 1] * d1[:, None, 0]) / den
+        return bool(((np.abs(den) > 1e-12) & (t >= 0) & (t <= 1) & (u >= 0) & (u <= 1)).any())
+
+    def gap(P, Q) -> float:
+        q0, d = Q, np.roll(Q, -1, 0) - Q
+        w = P[:, None] - q0[None]
+        t = np.clip((w * d[None]).sum(2) / (d * d).sum(1)[None], 0, 1)
+        return float(np.sqrt(((w - t[..., None] * d[None]) ** 2).sum(2)).min())
+
+    def turned(P, ang, at):
+        c, s = math.cos(ang), math.sin(ang)
+        return P @ np.array([[c, s], [-s, c]]) + np.array(at)
+
+    pa, pb = (a.location.x, a.location.y), (b.location.x, b.location.y)
+    out = {"steps": steps, "turns_of_a": 1.0, "turns_of_b": round(abs(rate_b / rate_a), 4), "pairs": []}
+    for za, zb in pairs:
+        A = gear_outline(a, za, ra_tip - min(0.08, ra_tip * 0.12), ra_tip)
+        B = gear_outline(b, zb, rb_tip - min(0.08, rb_tip * 0.12), rb_tip)
+        hits, worst = 0, 9.0
+        for i in range(steps):
+            th = 2 * math.pi * i / steps
+            Aw, Bw = turned(A, th, pa), turned(B, th * rate_b / rate_a, pb)
+            hits += crosses(Aw, Bw)
+            worst = min(worst, gap(Aw, Bw), gap(Bw, Aw))
+        out["pairs"].append({"z_world": round(a.location.z + za, 4), "outline_points": [len(A), len(B)], "crossing_steps": hits,
+                             "min_clearance_m": round(worst, 5), "centre_distance_m": round(math.dist(pa, pb), 5),
+                             "tooth_overlap_m": round(ra_tip + rb_tip - math.dist(pa, pb), 5)})
+    out["pass"] = all(p["crossing_steps"] == 0 and p["min_clearance_m"] > 0.001 and p["tooth_overlap_m"] > 0.03 for p in out["pairs"])
+    return out
 
 
 def bearing_bridge(b, h: float, z_top: float, shaft_r: float, w: float = 0.08, depth: float = 0.16) -> None:
