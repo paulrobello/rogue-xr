@@ -8,7 +8,7 @@ import {
   type RoomTemplate,
   rotateTemplate,
 } from '../content/rooms.ts';
-import { RunRng, type Stream } from '../core/rng.ts';
+import { RunRng, Stream } from '../core/rng.ts';
 
 export type EncounterTier = 'regular' | 'elite' | 'guardian';
 export type LootKind = 'cogs' | 'card';
@@ -33,12 +33,22 @@ export interface DoorRef {
   door: string;
 }
 
+/** How a door that leads nowhere is closed: plain wall, or (rarely) a boarded-up door leaf. */
+export type SealStyle = 'wall' | 'boarded';
+
+export interface SealedDoor extends DoorRef {
+  style: SealStyle;
+}
+
+/** Chance that a floor boards up one of its dead-end doors; every other one is plain wall. */
+export const BOARDED_DOOR_CHANCE = 0.5;
+
 export interface FloorPlan {
   seed: string;
   rooms: readonly PlacedRoom[];
   connections: readonly (readonly [DoorRef, DoorRef])[];
-  /** Doors that lead nowhere; the world builds a sealed cap in each. */
-  sealed: readonly DoorRef[];
+  /** Doors that lead nowhere; the world closes each with a wall or a boarded door. */
+  sealed: readonly SealedDoor[];
   guardianRoom: number;
 }
 
@@ -291,15 +301,27 @@ function attempt(rng: RunRng, params: FloorParams): FloorPlan | null {
   }
 
   const connections: (readonly [DoorRef, DoorRef])[] = [];
-  const sealed: DoorRef[] = [];
+  const sealed: SealedDoor[] = [];
   rooms.forEach((r, index) => {
     if (r.parent) {
       const own = [...r.used][0] as string;
       connections.push([r.parent, { room: index, door: own }]);
     }
-    for (const d of openDoors(r)) sealed.push({ room: index, door: d });
+    for (const d of openDoors(r)) sealed.push({ room: index, door: d, style: 'wall' });
   });
+  boardUpOne(sealed, rng.seed);
   return { seed: rng.seed, rooms: placed, connections, sealed, guardianRoom };
+}
+
+/**
+ * Boards up at most one dead-end door per floor, never in the entry room. The draw comes from a
+ * stream keyed on the seed alone, so it shifts no layout draw and needs no saved stream state.
+ */
+function boardUpOne(sealed: SealedDoor[], seed: string): void {
+  const doors = Stream.fromKey(`${seed}:sealed-doors`);
+  const candidates = sealed.filter((s) => s.room !== 0);
+  if (candidates.length === 0 || doors.next() >= BOARDED_DOOR_CHANCE) return;
+  doors.pick(candidates).style = 'boarded';
 }
 
 /**

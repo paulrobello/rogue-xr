@@ -232,6 +232,8 @@ Acceptance:
 
 The full spire (number of floors and acts), hand tracking, custom mage gloves, a larger card and dice pool, more room templates, a Playwright/IWER e2e gate, and possibly a daily seed. See Open Questions.
 
+Locks and consumables (Paul, 2026-11-17): some doors and chests are locked and open only with a key or an unlock spell. The player carries an inventory of single-use items and cards, separate from the deck. Keys are found or won and are spent on use. A lock-pick spell needs its sigil drawn on the lock and is gone once cast. The goal is to make backtracking worth doing.
+
 ## Risks
 
 - **R1 — Quest frame budget.** Baked rooms plus skinned automatons plus transparent cards may exceed 13.9 ms. Mitigated by putting the P4 proof before content breadth, and by per-asset budgets.

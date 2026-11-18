@@ -102,10 +102,49 @@ describe('buildFloorWorld', () => {
         expect(at.x).toBeCloseTo(door?.world[0] ?? Number.NaN, 5);
         expect(at.z).toBeCloseTo(door?.world[1] ?? Number.NaN, 5);
         expect(cap?.parent).toBe(world.roomGroups[s.room]);
+        // Only a boarded door shows its leaf; a wall-style door is greybox wall over the gap.
+        expect(cap?.visible).toBe(s.style === 'boarded');
+        const fill = world.group.getObjectByName(`door-fill-${s.room}-${s.door}`);
+        const lintel = world.group.getObjectByName(`lintel-fill-${s.room}-${s.door}`);
+        expect(fill !== undefined).toBe(s.style === 'wall');
+        expect(lintel !== undefined).toBe(s.style === 'boarded');
       }
       world.dispose();
     });
   }
+
+  it('closes a wall-style door with the model plug, and keeps the leaf without one', () => {
+    const plan = generateFloor(SEEDS[0] as string);
+    const s = plan.sealed.find((d) => d.style === 'wall');
+    if (!s) throw new Error('no wall-style door');
+    const room = buildFloorWorld(plan);
+    const doors = room.rooms[s.room]?.doors ?? [];
+    const model = new THREE.Group();
+    for (const d of doors) {
+      for (const part of ['plug', 'frame']) {
+        const node = new THREE.Object3D();
+        node.name = `door-${part}-${d.id}`;
+        model.add(node);
+      }
+    }
+    room.dressRoom(s.room, model);
+    const walls = new Set(
+      plan.sealed.filter((d) => d.room === s.room && d.style === 'wall').map((d) => d.door),
+    );
+    for (const d of doors) {
+      expect(model.getObjectByName(`door-plug-${d.id}`)?.visible).toBe(walls.has(d.id));
+      expect(model.getObjectByName(`door-frame-${d.id}`)?.visible).toBe(!walls.has(d.id));
+    }
+    expect(room.group.getObjectByName(`sealed-${s.room}-${s.door}`)?.visible).toBe(false);
+    expect(room.group.getObjectByName(`door-fill-${s.room}-${s.door}`)).toBeUndefined();
+    room.dispose();
+
+    // A model without plug nodes (the current GLBs) shows the door leaf instead.
+    const bare = buildFloorWorld(plan);
+    bare.dressRoom(s.room, new THREE.Group());
+    expect(bare.group.getObjectByName(`sealed-${s.room}-${s.door}`)?.visible).toBe(true);
+    bare.dispose();
+  });
 
   it('shows the current room and its neighbours, and moves with the player', () => {
     const plan = generateFloor('SPIRE001');

@@ -260,10 +260,14 @@ describe('sealed doors', () => {
         );
         normal.set(0, 0, 1).applyQuaternion(cap.getWorldQuaternion(new THREE.Quaternion()));
         expect(normal.dot(toCentre)).toBeGreaterThan(0);
-        // The greybox fill closes the wall above the lintel, on the room side of the line.
-        const fill = world.group.getObjectByName(`lintel-fill-${s.room}-${s.door}`) as THREE.Mesh;
+        // The greybox fill closes the wall above a boarded door's lintel, or the whole gap of a
+        // wall-style door, on the room side of the line.
+        const boarded = s.style === 'boarded';
+        const fill = world.group.getObjectByName(
+          `${boarded ? 'lintel-fill' : 'door-fill'}-${s.room}-${s.door}`,
+        ) as THREE.Mesh;
         box.setFromObject(fill);
-        expect(box.min.y).toBeCloseTo(DOOR_HEIGHT, 6);
+        expect(box.min.y).toBeCloseTo(boarded ? DOOR_HEIGHT : 0, 6);
         expect(box.max.y).toBeCloseTo(4, 6);
         const inward = normal[across];
         const line = ew ? door.world[0] : door.world[1];

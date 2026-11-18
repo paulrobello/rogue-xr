@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { Stream } from '../src/core/rng.ts';
+import { hashString, Stream } from '../src/core/rng.ts';
 import { type FloorPlan, generateFloor, rectsOverlap, worldRooms } from '../src/floor/generate.ts';
 
 const CROCKFORD = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
@@ -125,6 +125,45 @@ describe('floor/ stays pure', () => {
           spec === '../content/rooms.ts' || spec === '../core/rng.ts' || spec?.startsWith('./');
         expect(allowed, `${file} imports ${spec}`).toBe(true);
       }
+    }
+  });
+});
+
+describe('sealed door styles', () => {
+  it('closes dead ends with wall, boarding up at most one door per floor outside the entry', () => {
+    let boardedFloors = 0;
+    for (const seed of seeds(200)) {
+      const plan = generateFloor(seed);
+      const boarded = plan.sealed.filter((s) => s.style === 'boarded');
+      expect(plan.sealed.every((s) => s.style === 'wall' || s.style === 'boarded')).toBe(true);
+      expect(boarded.length).toBeLessThanOrEqual(1);
+      expect(boarded.every((s) => s.room !== 0)).toBe(true);
+      expect(generateFloor(seed).sealed).toEqual(plan.sealed);
+      if (boarded.length === 1) boardedFloors += 1;
+    }
+    // BOARDED_DOOR_CHANCE is one half, so roughly half the floors board up one door.
+    expect(boardedFloors).toBeGreaterThan(60);
+    expect(boardedFloors).toBeLessThan(140);
+  });
+
+  it('keeps the layouts of existing seeds', () => {
+    // Fingerprints of rooms, connections, sealed doors and guardian room from before door styles.
+    const before: Record<string, number> = {
+      SP1RE001: 3329191451,
+      C1KW0RK2: 3967666655,
+      BRASS777: 4256974880,
+      '0000000A': 886306418,
+      ZZZZZZZZ: 897884495,
+    };
+    for (const [seed, hash] of Object.entries(before)) {
+      const p = generateFloor(seed);
+      const key = JSON.stringify({
+        rooms: p.rooms,
+        connections: p.connections,
+        sealed: p.sealed.map((s) => [s.room, s.door]),
+        g: p.guardianRoom,
+      });
+      expect(hashString(key)).toBe(hash);
     }
   });
 });

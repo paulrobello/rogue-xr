@@ -57,7 +57,10 @@ export interface FloorWorld {
   replaceEnemy(room: number, body: THREE.Object3D, next: THREE.Object3D): boolean;
   /**
    * Dresses `room` with a baked template model in place of its greybox floor, walls and socket
-   * markers. The automatons and sealed-door caps stay. `model` is room-local.
+   * markers. The automatons and boarded-door leaves stay. `model` is room-local. A model that
+   * carries `door-plug-<id>` and `door-frame-<id>` nodes closes each wall-style door with its
+   * plug and drops that door's frame, and hides the plug of every other door; a model without
+   * them shows a door leaf in each wall-style door instead.
    */
   dressRoom(room: number, model: THREE.Object3D): void;
   /** The treasure coffers on this floor, one per treasure-room loot pickup. */
@@ -68,7 +71,7 @@ export interface FloorWorld {
   readonly hearths: readonly Hearth[];
   /** Re-dresses every hearth's brass in `materials` (owned by the caller). */
   dressHearths(materials: HearthMaterials): void;
-  /** The closed-door leaves in every sealed doorway. */
+  /** A door leaf in every sealed doorway; only boarded doors show theirs until a room is dressed. */
   readonly sealedDoors: readonly THREE.Mesh[];
   /**
    * Gives every sealed door leaf `material` (owned by the caller), its UVs scaled so one texture
@@ -82,7 +85,7 @@ export interface FloorWorld {
  * Greybox children a baked room model replaces: the floor, collider walls, socket markers and the
  * wall fill above sealed doorways (the baked shell has its own wall above the lintel).
  */
-const GREYBOX_PART = /^(floor|collider-\d+|socket-.+|light-.+|lintel-fill-.+)$/;
+const GREYBOX_PART = /^(floor|collider-\d+|socket-.+|light-.+|lintel-fill-.+|door-fill-.+)$/;
 
 /** Lintel height of every doorway: baked rooms frame a 1.6 x 2.4 m opening. */
 export const DOOR_HEIGHT = 2.4;
@@ -230,6 +233,9 @@ export function buildFloorWorld(
   const fillDepth = WALL_THICKNESS / 2;
   const fillGeometry = new THREE.BoxGeometry(DOOR_WIDTH, WALL_HEIGHT - DOOR_HEIGHT, fillDepth);
   fillGeometry.translate(0, (WALL_HEIGHT + DOOR_HEIGHT) / 2, fillDepth / 2);
+  // A wall-style door is greybox wall over the whole gap.
+  const wallFillGeometry = new THREE.BoxGeometry(DOOR_WIDTH, WALL_HEIGHT, fillDepth);
+  wallFillGeometry.translate(0, WALL_HEIGHT / 2, fillDepth / 2);
   const sealedDoors: THREE.Mesh[] = [];
   for (const s of plan.sealed) {
     const door = rooms[s.room]?.doors.find((d) => d.id === s.door);
@@ -241,10 +247,14 @@ export function buildFloorWorld(
     cap.position.set(door.world[0], 0, door.world[1]);
     cap.rotation.y = yaw;
     cap.userData.room = s.room;
+    cap.userData.door = s.door;
+    cap.userData.style = s.style;
+    cap.visible = s.style === 'boarded';
     roomGroup.attach(cap);
     sealedDoors.push(cap);
-    const fill = new THREE.Mesh(fillGeometry, materials.wall);
-    fill.name = `lintel-fill-${s.room}-${s.door}`;
+    const wall = s.style === 'wall';
+    const fill = new THREE.Mesh(wall ? wallFillGeometry : fillGeometry, materials.wall);
+    fill.name = `${wall ? 'door-fill' : 'lintel-fill'}-${s.room}-${s.door}`;
     fill.position.copy(cap.position);
     fill.quaternion.copy(cap.quaternion);
     roomGroup.add(fill);
@@ -332,6 +342,20 @@ export function buildFloorWorld(
       if (!g) return;
       for (const child of [...g.children]) {
         if (GREYBOX_PART.test(child.name)) child.removeFromParent();
+      }
+      const walls = new Set(
+        plan.sealed.filter((s) => s.room === room && s.style === 'wall').map((s) => s.door),
+      );
+      for (const door of rooms[room]?.doors ?? []) {
+        const plug = model.getObjectByName(`door-plug-${door.id}`);
+        const frame = model.getObjectByName(`door-frame-${door.id}`);
+        const closed = walls.has(door.id) && plug !== undefined;
+        if (plug) plug.visible = closed;
+        if (frame) frame.visible = !closed;
+      }
+      for (const cap of sealedDoors) {
+        if (cap.userData.room !== room || cap.userData.style !== 'wall') continue;
+        cap.visible = model.getObjectByName(`door-plug-${cap.userData.door}`) === undefined;
       }
       model.userData.room = room;
       g.add(model);
