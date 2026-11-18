@@ -92,8 +92,8 @@ NORMAL_SCALE = {"walnut": 0.5, "brass-aged": 0.15, "brass-polished": 0.06, "felt
 # only, so contact needs this).
 RUNTIME_LOOK = {
     "walnut": {"tint": "#9AA088", "envScale": 0.6, "contact": 0.9},
-    "brass-aged": {"tint": "#FFE060", "roughnessScale": 0.6, "envScale": 3.4, "contact": 0.7},
-    "brass-polished": {"tint": "#FFE060", "roughnessScale": 0.4, "envScale": 4.5, "contact": 0.7},
+    "brass-aged": {"tint": "#E6C050", "roughnessScale": 0.6, "envScale": 2.0, "contact": 0.7},
+    "brass-polished": {"tint": "#E6C050", "roughnessScale": 0.4, "envScale": 2.6, "contact": 0.7},
     "felt": {"tint": "#FF3858", "contact": 1.0},
 }
 # Factor-only GLB materials (sRGB, roughness, metallic): the fallback look when the sets fail to load.
@@ -444,7 +444,8 @@ def build_scene(bpy, bmesh, detail: str, scene) -> dict:
     # Brass strap inlays between the top's panels: along both hinge lines and across the centre band.
     bm = new_bm()
     for sgn in (-1, 1):
-        strap(bm, sgn * BODY_STRAP_X[0], sgn * BODY_STRAP_X[1])
+        x0, x1 = sorted((sgn * BODY_STRAP_X[0], sgn * BODY_STRAP_X[1]))
+        strap(bm, x0, x1)
     cy0, cy1 = CROSS_STRAP_Y
     prism(bm, [(-BODY_STRAP_X[0], cy0), (BODY_STRAP_X[0], cy0), (BODY_STRAP_X[0], cy1), (-BODY_STRAP_X[0], cy1)], TOP, TOP + STRAP_H, P, P)
     parts.append((bm, "body", False))

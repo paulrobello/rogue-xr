@@ -319,6 +319,27 @@ class DecalBuilder {
   }
 }
 
+/** A round contact shadow for a freestanding prop on a lightmapped floor. */
+export function createFloorContactShadow(
+  radius: number,
+  softness: number,
+): THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial> {
+  const b = new DecalBuilder();
+  const extent = radius + softness;
+  b.ground(
+    0,
+    0,
+    0,
+    extent,
+    extent,
+    0,
+    undefined,
+    [radius, radius, radius, softness],
+    [0, 0, 0, SHADOW_ALPHA],
+  );
+  return new THREE.Mesh(b.geometry(), createDecalMaterial());
+}
+
 /**
  * Light pools under candles, a halo behind each flame and a contact shadow under every prop, as one
  * geometry: pools first, so a prop's shadow darkens the light it stands in.

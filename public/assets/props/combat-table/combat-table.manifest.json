@@ -309,9 +309,9 @@
       "uv0": "tile units (metres / tileMeters): bind the set at repeat (1, 1)",
       "tileMeters": 0.5,
       "normalScale": 0.15,
-      "tint": "#FFE060",
+      "tint": "#E6C050",
       "roughnessScale": 0.6,
-      "envScale": 3.4,
+      "envScale": 2.0,
       "contact": 0.7
     },
     "brass-polished": {
@@ -320,9 +320,9 @@
       "uv0": "tile units (metres / tileMeters): bind the set at repeat (1, 1)",
       "tileMeters": 0.5,
       "normalScale": 0.06,
-      "tint": "#FFE060",
+      "tint": "#E6C050",
       "roughnessScale": 0.4,
-      "envScale": 4.5,
+      "envScale": 2.6,
       "contact": 0.7
     },
     "felt": {

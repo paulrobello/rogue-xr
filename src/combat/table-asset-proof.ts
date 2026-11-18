@@ -3,6 +3,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { PALETTE } from '../palette.ts';
 import { loadPbrSet } from '../world/materials.ts';
+import { createFloorContactShadow } from '../world/table-decor.ts';
 
 /** Runtime contract of `public/assets/props/combat-table/` (scripts/assets/build-combat-table.py). */
 export const TABLE_ASSET_BASE = '/assets/props/combat-table';
@@ -232,6 +233,10 @@ export async function loadCombatTable(
     await bind(gltf.scene, manifest).catch((error: unknown) =>
       console.warn('combat table materials fell back to factors', error),
     );
+    // The bell foot is 0.30 m in radius. Its AO map can't reach the separately lightmapped floor.
+    const shadow = createFloorContactShadow(0.3, 0.1);
+    shadow.name = 'combat-table-contact-shadow';
+    gltf.scene.add(shadow);
     return { scene: gltf.scene, top: manifest.authoredTopHeight };
   } catch (error: unknown) {
     console.warn('combat table asset unavailable, greybox kept', error);

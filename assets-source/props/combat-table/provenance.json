@@ -3,7 +3,7 @@
   "route": "scripted (procedural Blender geometry; no provider generation; shared PBR material sets)",
   "generator": {
     "path": "scripts/assets/build-combat-table.py",
-    "sha256": "5eb9fa362695b08c3a1d2db764d36a75059ed55ec9750746f41e325da6aee02e"
+    "sha256": "8cca40653df170913a553fb5f69c76bb273c1f586701e952d28386131b949382"
   },
   "generatorDeps": [
     {
@@ -16,13 +16,13 @@
   "blendFiles": [
     {
       "path": "assets-source/props/combat-table/staging/combat-table.high.blend",
-      "sha256": "6574d376b1dd5204c040714e13b753f843ae60901e8a03a205d875d181ed3ca8",
-      "bytes": 971838
+      "sha256": "baded5d19f44a9bc4288bdba7daf7fc2a6782d36479df27a8ce16ad8ce5c89be",
+      "bytes": 973477
     },
     {
       "path": "assets-source/props/combat-table/staging/combat-table.low.blend",
-      "sha256": "462e09ccc4cba40c7163e32834f7751679a4ba47afb8674b71b6060bea3e9175",
-      "bytes": 276135
+      "sha256": "304b06662ffd7a581bf57d083e7963276ffcbab36572fcd2c3b44d6dda3e9f01",
+      "bytes": 277081
     }
   ],
   "budgets": {
@@ -45,12 +45,12 @@
     "size": 2048,
     "ao_distance_m": 0.12,
     "seconds_per_node": {
-      "table-body": 3.02,
-      "leaf-left": 1.13,
-      "leaf-right": 1.11
+      "table-body": 2.98,
+      "leaf-left": 1.15,
+      "leaf-right": 1.1
     },
-    "coverage": 0.3745,
-    "ao_mean": 0.8043,
+    "coverage": 0.3779,
+    "ao_mean": 0.8082,
     "ao_p05": 0.0
   },
   "texelDensityPxPerM": {
@@ -61,10 +61,10 @@
       "felt": 4096.0
     },
     "uv1_ao": {
-      "walnut": 595.6,
-      "brass-aged": 589.0,
-      "brass-polished": 591.0,
-      "felt": 595.5
+      "walnut": 598.7,
+      "brass-aged": 592.0,
+      "brass-polished": 594.1,
+      "felt": 598.7
     }
   },
   "references": [
@@ -99,13 +99,13 @@
   "derivedFiles": [
     {
       "path": "public/assets/props/combat-table/combat-table.ao.ktx2",
-      "sha256": "2dcd247b495471ae08ff8a1c7f716c91ca1175c7454329566dba2a4748ec4288",
-      "bytes": 1390629
+      "sha256": "af2541c0af04c8ab52a446a5eeffa45b54d060b8152eeea0f3ac2d4b686b0e32",
+      "bytes": 1418641
     },
     {
       "path": "public/assets/props/combat-table/combat-table.ao.png",
-      "sha256": "29440bb64bebce5d9a11345de426c793906164bf7f1f5e5878f7a1d2dcd1819b",
-      "bytes": 1151877
+      "sha256": "76aebc35beab9ceecf2e63023c379a7b815e64e288f7c7a83ab1f43b4557c8dd",
+      "bytes": 1206551
     },
     {
       "path": "public/assets/props/combat-table/combat-table.felt.basecolor.png",
@@ -119,31 +119,33 @@
     },
     {
       "path": "public/assets/props/combat-table/combat-table.glb",
-      "sha256": "283b4f00fd99811886463fde9f6eb72bcdcab3c1883bcedfcf2f83b1900fa7e4",
-      "bytes": 325708
+      "sha256": "5e8022dac723d1e610530f0e5ebb1f867bb2da0dc4688811b73834adaa5f31c2",
+      "bytes": 325308
     },
     {
       "path": "public/assets/props/combat-table/combat-table.manifest.json",
-      "sha256": "9b3ee29dbbef22311d6b4d143f1fea79525227ee4bba7dd62c78b627de84fde7",
+      "sha256": "2f50a43d1a6767fa012123ccf594d7069e4069df6602d13848b88068b44fcde7",
       "bytes": 7711
     }
   ],
   "stagingReport": {
     "path": "assets-source/props/combat-table/staging/report.json",
-    "sha256": "4ea5d26219950c72ec53cc482f8d03fb2499454fac833d267355a1c872776e3f"
+    "sha256": "1ea2b182a3754e2a9e7458418baf9a747f58f246ae92d4b099858ff1829c80e7",
+    "bytes": 6689
   },
   "license": "Original work generated in Blender from a checked-in script; concept reference and the shared PBR material sources from Paul's paid Higgsfield plan (Terms of Use 4.4)",
   "validation": {
     "date": "2026-11-17",
     "record": "docs/asset-validation.md section 2",
     "checks": [
-      "15 of 15 staging report hashes match the files on disk",
-      "reimport: 6,068 triangles, 4 materials, no errors",
-      "tests/combat-table-asset.test.ts 7 of 7 (felt maps shipped; tray socket on the recessed felt floor)",
-      "tests/combat-table-fallback.test.ts 3 of 3: a failed manifest fetch or GLB load resolves null (greybox kept); a failed material bind keeps the factor-only materials (loadCombatTable in src/combat/table-asset-proof.ts, F2)",
-      "engine shots on MiniMac, ANGLE (Apple, ANGLE Metal Renderer: Apple M4): staging engine-*.jpg (proof page) and game-fight.jpg / game-folded.jpg (real game page, eye 1.2 m), no black frame, no page or console errors"
+      "15 staging and runtime hashes match",
+      "Reimport: 6,068 triangles, 4 materials",
+      "Proof view and seated room 2 and 4 engine captures: ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)"
     ],
-    "open": []
+    "open": [
+      "Independent visual review",
+      "Owner Quest review"
+    ]
   },
   "approvals": [
     {
@@ -533,6 +535,51 @@
           "sha256": "c4991ce5539612b50cd9821fd3e6895e58f66df2b8ecd3131b9f754d5f2a9c7a"
         }
       ]
+    }
+  ],
+  "revision": {
+    "agent": "Codex with GPT-6.1 Terra",
+    "changes": [
+      "Corrected left strap winding",
+      "Retuned brass",
+      "Added a runtime floor contact shadow"
+    ]
+  },
+  "reviewEvidence": [
+    {
+      "path": "assets-source/props/combat-table/staging/combat-table.review-sheet.jpg",
+      "sha256": "ae96af29fc9988d892c45f5a7f433b054c0db592ef2e208a31f6ddc9a22156a6",
+      "bytes": 523069
+    },
+    {
+      "path": "assets-source/props/combat-table/staging/engine-folded.jpg",
+      "sha256": "173e56139a67cd57534d46d5ecb06e7b8d9f519a59d50c86b42943ac0b517bde",
+      "bytes": 16737
+    },
+    {
+      "path": "assets-source/props/combat-table/staging/engine-grazing.jpg",
+      "sha256": "924eda8f00cf4882ca6ed2628300cfcd32fe51f938a4101910a2933189a0aeb4",
+      "bytes": 66610
+    },
+    {
+      "path": "assets-source/props/combat-table/staging/engine-player-view.jpg",
+      "sha256": "9890e72ce3df297645b8d554216ea8dc98d57326da77cc4cba719fc59117855c",
+      "bytes": 70045
+    },
+    {
+      "path": "assets-source/props/combat-table/staging/engine-unfolded.jpg",
+      "sha256": "004ad0f4b86f38d0f5cbf2f7cbff96be81edcedcf3fc584e2349b7c1b816fed3",
+      "bytes": 17249
+    },
+    {
+      "path": "assets-source/props/combat-table/staging/game-fight.jpg",
+      "sha256": "0afdbd8cb45e68a3202dbcd0e17015b8afe30d2ace15037186b0a90e0a01afa3",
+      "bytes": 390370
+    },
+    {
+      "path": "assets-source/props/combat-table/staging/game-folded.jpg",
+      "sha256": "15cf1ee0947fe444194037dd5113d40b4f4a32dba97ac4aec71d73d25e9763fd",
+      "bytes": 372919
     }
   ]
 }

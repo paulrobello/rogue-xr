@@ -2,7 +2,7 @@
   "piece": "combat-table",
   "blender": "5.3.0",
   "generator": "scripts/assets/build-combat-table.py",
-  "generator_sha256": "5eb9fa362695b08c3a1d2db764d36a75059ed55ec9750746f41e325da6aee02e",
+  "generator_sha256": "8cca40653df170913a553fb5f69c76bb273c1f586701e952d28386131b949382",
   "helper_sha256": {
     "lightmap_helpers.py": "c74c968a3d3ed95bae831262af3c5ab1bacedfa0e2e131b95d5d7bf4e59d66ad"
   },
@@ -50,10 +50,10 @@
       "felt": 4096.0
     },
     "uv1_ao": {
-      "walnut": 595.6,
-      "brass-aged": 589.0,
-      "brass-polished": 591.0,
-      "felt": 595.5
+      "walnut": 598.7,
+      "brass-aged": 592.0,
+      "brass-polished": 594.1,
+      "felt": 598.7
     }
   },
   "authoringAgent": "Claude Code subagent (claude-opus-5-5), dispatched by the rogue-xr primary session",
@@ -64,12 +64,12 @@
     "size": 2048,
     "ao_distance_m": 0.12,
     "seconds_per_node": {
-      "table-body": 3.02,
-      "leaf-left": 1.13,
-      "leaf-right": 1.11
+      "table-body": 2.98,
+      "leaf-left": 1.15,
+      "leaf-right": 1.1
     },
-    "coverage": 0.3745,
-    "ao_mean": 0.8043,
+    "coverage": 0.3779,
+    "ao_mean": 0.8082,
     "ao_p05": 0.0
   },
   "reimport": {
@@ -184,23 +184,23 @@
       "table-body"
     ]
   },
-  "render_seconds": 2.3,
+  "render_seconds": 2.4,
   "files": {
-    "assets-source/props/combat-table/staging/combat-table.high.blend": "6574d376b1dd5204c040714e13b753f843ae60901e8a03a205d875d181ed3ca8",
-    "assets-source/props/combat-table/staging/combat-table.low.blend": "462e09ccc4cba40c7163e32834f7751679a4ba47afb8674b71b6060bea3e9175",
-    "assets-source/props/combat-table/staging/render-high-unfolded.png": "0d84e9a88a396ce4285d22e382ac5c7f1fb469acbfd52ebc7a1a0dea86838daf",
-    "assets-source/props/combat-table/staging/render-low-folded.png": "4e8a1af959c2d62f71d0df4b26302ef2a9c711ba0d65e5b59fef40dc54dc35b4",
-    "assets-source/props/combat-table/staging/render-low-grazing.png": "75b1ec0fcb5a07b122a25f0540ac4c82460f111c798cbd5850db7f7285e8c06d",
-    "assets-source/props/combat-table/staging/render-low-unfolded-cmp.png": "23044cd81e09784e6c53df13eb7c06ff0dbe125703c4990c862492a2d52536f3",
-    "assets-source/props/combat-table/staging/render-low-unfolded.png": "a29b801dae302d6fda38ee39bd72f5772afdfec8ef6397c97dba0fb8fa9e7370",
-    "assets-source/props/combat-table/staging/render-player-view.png": "de251f09c7d0890034fc53676eaa614110d767d140e4e95c11e923d1de5b97c6",
-    "assets-source/props/combat-table/staging/render-scale.png": "5a5f552b9c9bdf19fbde7220d80b9a5ca40d4c77a6418f812c91e8422fe3a04e",
-    "public/assets/props/combat-table/combat-table.ao.ktx2": "2dcd247b495471ae08ff8a1c7f716c91ca1175c7454329566dba2a4748ec4288",
-    "public/assets/props/combat-table/combat-table.ao.png": "29440bb64bebce5d9a11345de426c793906164bf7f1f5e5878f7a1d2dcd1819b",
+    "assets-source/props/combat-table/staging/combat-table.high.blend": "baded5d19f44a9bc4288bdba7daf7fc2a6782d36479df27a8ce16ad8ce5c89be",
+    "assets-source/props/combat-table/staging/combat-table.low.blend": "304b06662ffd7a581bf57d083e7963276ffcbab36572fcd2c3b44d6dda3e9f01",
+    "assets-source/props/combat-table/staging/render-high-unfolded.png": "2c2fc48a689acaf5173c157bed250a36db2f9ba9182e9d4cd3fa7aa9929169b2",
+    "assets-source/props/combat-table/staging/render-low-folded.png": "1b779e12b27da517536c71d872aaf43510f4f17f92efae78270927761057c820",
+    "assets-source/props/combat-table/staging/render-low-grazing.png": "916871eae1b9fdf81102902f462fd21552fe8958372bea7687a1b54e7ebee7f3",
+    "assets-source/props/combat-table/staging/render-low-unfolded-cmp.png": "692f97b79bf7a51210f843f02f669c5f481413a838c23631c81dd95b06cd7783",
+    "assets-source/props/combat-table/staging/render-low-unfolded.png": "a454ae514448fb2506c4a129eff9eed2ebacb6dd5ada7ed17e4b885946953d78",
+    "assets-source/props/combat-table/staging/render-player-view.png": "f5fa7adf76c2f4fadf16a233f2318f83826b9181e5ca4c36d811b9890a4d8597",
+    "assets-source/props/combat-table/staging/render-scale.png": "f158f868044ff0e39aaefc51f15104e7c47e4759b464ab10f2186b1752044ea8",
+    "public/assets/props/combat-table/combat-table.ao.ktx2": "af2541c0af04c8ab52a446a5eeffa45b54d060b8152eeea0f3ac2d4b686b0e32",
+    "public/assets/props/combat-table/combat-table.ao.png": "76aebc35beab9ceecf2e63023c379a7b815e64e288f7c7a83ab1f43b4557c8dd",
     "public/assets/props/combat-table/combat-table.felt.basecolor.png": "c7a405437f18ed0010e4d4ea4483e0677bd9c10f558cb644df145c01161cb287",
     "public/assets/props/combat-table/combat-table.felt.normal.png": "3943d2f58af7839b19e9e9f66e6b69598aaf209e7f6b227f24ae9cbfc4f2b25c",
-    "public/assets/props/combat-table/combat-table.glb": "283b4f00fd99811886463fde9f6eb72bcdcab3c1883bcedfcf2f83b1900fa7e4",
-    "public/assets/props/combat-table/combat-table.manifest.json": "9b3ee29dbbef22311d6b4d143f1fea79525227ee4bba7dd62c78b627de84fde7"
+    "public/assets/props/combat-table/combat-table.glb": "5e8022dac723d1e610530f0e5ebb1f867bb2da0dc4688811b73834adaa5f31c2",
+    "public/assets/props/combat-table/combat-table.manifest.json": "2f50a43d1a6767fa012123ccf594d7069e4069df6602d13848b88068b44fcde7"
   },
-  "total_seconds": 21.8
+  "total_seconds": 20.1
 }
