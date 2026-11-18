@@ -17,11 +17,13 @@ const TEXT_WORDS: Record<string, RegExp> = {
   steam: /\bSteam\b/,
   draw: /\bDraw\b/,
   exhaust: /\bExhaust\b/,
-  dice: /\bRoll a d(6|8)\b/,
+  dice: /\bRoll (?:a d(6|8)|an iron d4)\b/,
   weak: /\bWeak\b/,
   vulnerable: /\bVulnerable\b/,
   overheat: /\bOverheat\b/,
   'wound-up': /\bWound-up\b/,
+  plating: /\bPlating\b/,
+  rust: /\bRust\b/,
 };
 
 describe('card keywords', () => {
@@ -51,7 +53,7 @@ describe('card keywords', () => {
 
   it('covers every status the catalogue applies, with the badge tooltip wording', () => {
     const seen = new Set(ALL.flatMap((c) => cardKeywords(c)));
-    for (const id of ['weak', 'vulnerable', 'overheat', 'wound-up'] as const) {
+    for (const id of ['weak', 'vulnerable', 'overheat', 'wound-up', 'plating', 'rust'] as const) {
       expect(seen.has(id), id).toBe(true);
       expect(id in STATUS_NAME).toBe(true);
     }

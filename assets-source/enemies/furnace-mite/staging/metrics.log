@@ -1,0 +1,8 @@
+14:49:50 | INFO: Data are loaded, start creating Blender stuff
+14:49:50 | INFO: Blender create Mesh node furnace-mark-extra
+14:49:50 | INFO: Blender create Mesh node furnace-mite-mesh
+14:49:50 | INFO: glTF import finished in 0.20s
+POSE_METRICS {"attack": {"finalMaxZ": 1.2149, "finalMinZ": -0.0, "minZ": -0.0}, "death": {"finalMaxZ": 0.9824, "finalMinZ": -0.0, "minZ": -0.0003}, "frozen": {"finalMaxZ": 1.2149, "finalMinZ": -0.0, "minZ": -0.0}, "hit": {"finalMaxZ": 1.2149, "finalMinZ": -0.0, "minZ": -0.0}, "idle": {"finalMaxZ": 1.2149, "finalMinZ": -0.0, "minZ": -0.0}, "intent-clink": {"finalMaxZ": 1.2149, "finalMinZ": -0.0, "minZ": -0.0}, "intent-double-spark": {"finalMaxZ": 1.2149, "finalMinZ": -0.0, "minZ": -0.0}, "intent-stoke": {"finalMaxZ": 1.2149, "finalMinZ": -0.0, "minZ": -0.0}}
+Blender 5.2.3 LTS (hash e13b728c6880 built 2026-10-22 01:35:05)
+
+Blender quit

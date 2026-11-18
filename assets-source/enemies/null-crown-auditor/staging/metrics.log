@@ -1,0 +1,7 @@
+14:49:59 | INFO: Data are loaded, start creating Blender stuff
+14:49:59 | INFO: Blender create Mesh node null-crown-auditor-mesh
+14:49:59 | INFO: glTF import finished in 0.14s
+POSE_METRICS {"action-levy": {"finalMaxZ": 1.3681, "finalMinZ": 0.2025, "minZ": 0.0016}, "attack": {"finalMaxZ": 1.3681, "finalMinZ": 0.0, "minZ": 0.0}, "death": {"finalMaxZ": 0.4326, "finalMinZ": 0.0, "minZ": 0.0}, "frozen": {"finalMaxZ": 1.3681, "finalMinZ": 0.0, "minZ": 0.0}, "hit": {"finalMaxZ": 1.3681, "finalMinZ": 0.0, "minZ": 0.0}, "idle": {"finalMaxZ": 1.3681, "finalMinZ": 0.0, "minZ": -0.0}, "intent-levy": {"finalMaxZ": 1.5086, "finalMinZ": 0.2025, "minZ": 0.0}, "intent-reconcile": {"finalMaxZ": 1.529, "finalMinZ": 0.2025, "minZ": 0.0}, "intent-tally": {"finalMaxZ": 1.3681, "finalMinZ": 0.0, "minZ": 0.0}}
+Blender 5.2.3 LTS (hash e13b728c6880 built 2026-10-22 01:35:05)
+
+Blender quit

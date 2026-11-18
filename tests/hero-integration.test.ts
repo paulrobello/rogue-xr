@@ -267,7 +267,7 @@ function killAll(session: CombatSession, rig: HookRig): void {
 
 describe('Cog Sentry on the floor', () => {
   it('keeps the capsules when the sentry never loads', () => {
-    const view = mountFloorView(new THREE.Scene(), new THREE.Group(), SEED);
+    const view = mountFloorView(new THREE.Scene(), new THREE.Group(), SEED, { contentVersion: 1 });
     const room = sentryRoom(view);
     expect(view.actors).toHaveLength(0);
     for (const body of view.world.enemies.get(room) ?? []) {
@@ -309,7 +309,7 @@ describe('Cog Sentry on the floor', () => {
   });
 
   it('freezes on contact, swings on its attack, and dies before the win hands over', async () => {
-    const view = mountFloorView(new THREE.Scene(), new THREE.Group(), SEED);
+    const view = mountFloorView(new THREE.Scene(), new THREE.Group(), SEED, { contentVersion: 1 });
     const room = sentryRoom(view);
     view.useEnemyAssets(only(await loadTestSentry()));
     const rig = openHook(view, room, { options: { enemyHp: 1 } });

@@ -51,6 +51,7 @@ const stubActor = (kind: string): SentryActor =>
   ({
     asset: { manifest: manifest(kind) },
     onEvent: null,
+    showIntent: () => {},
     dead: false,
     disposed: false,
     socket: () => null,

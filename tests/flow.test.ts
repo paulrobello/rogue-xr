@@ -238,6 +238,19 @@ describe('flow transitions', () => {
 });
 
 describe('continue from a snapshot', () => {
+  it('keeps a legacy content boundary through a follow-up save, then resets it for a fresh run', () => {
+    const source = flowWith();
+    source.newRun(SEED);
+    const raw = source.snapshot(1, 0) as NonNullable<ReturnType<RunFlow['snapshot']>>;
+    const legacy = { ...raw, contentVersion: 1 };
+    const resumed = flowWith();
+    expect(resumed.continueRun(legacy)).toBe(true);
+    expect(resumed.snapshot()?.contentVersion).toBe(1);
+    expect(resumed.abandonRun()).toBe(true);
+    expect(resumed.newRun('SPIRE002')).toBe(true);
+    expect(resumed.snapshot()?.contentVersion).toBe(2);
+  });
+
   it('restores the same run and offer, and continues identically', () => {
     const a = flowWith();
     a.newRun(SEED);

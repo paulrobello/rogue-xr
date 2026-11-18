@@ -13,13 +13,21 @@ import type { Fighter, Statuses, StatusId } from './types.ts';
  * - Wound-up: each of the owner's attack hits deals +stacks damage, added before Weak and Vulnerable.
  *   It never decays and lasts the whole combat.
  */
-export const STATUS_IDS: readonly StatusId[] = ['weak', 'vulnerable', 'overheat', 'wound-up'];
+export const STATUS_IDS: readonly StatusId[] = [
+  'weak',
+  'vulnerable',
+  'overheat',
+  'wound-up',
+  'plating',
+  'rust',
+];
 
 /** Statuses that lose one stack at the end of their owner's turn. */
-export const DECAYS_AT_TURN_END: readonly StatusId[] = ['weak', 'vulnerable'];
+export const DECAYS_AT_TURN_END: readonly StatusId[] = ['weak', 'vulnerable', 'rust'];
 
 export const WEAK_MULTIPLIER = 0.75;
 export const VULNERABLE_MULTIPLIER = 1.5;
+export const RUST_MULTIPLIER = 0.5;
 
 export function stacks(statuses: Statuses, id: StatusId): number {
   return statuses[id] ?? 0;

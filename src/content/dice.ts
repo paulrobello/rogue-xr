@@ -5,7 +5,7 @@ import type { DieDef } from '../rules/dice.ts';
  * rolls it with `rollDice` from `src/rules/dice.ts`, and passes `roll.value` as the play-card `dice`.
  * `faces[i]` is the value on model face `i`, the order the dice models (P5) must follow.
  */
-export const DIE_IDS = ['brass-d6', 'glass-d8'] as const;
+export const DIE_IDS = ['brass-d6', 'glass-d8', 'iron-d4'] as const;
 export type DieId = (typeof DIE_IDS)[number];
 
 /** Steady six-sided brass die: 1 to 6, mean 3.5. */
@@ -18,9 +18,13 @@ export const GLASS_D8: DieDef = {
   faces: [1, 2, 3, 4, 5, 6, 7, 8],
 };
 
+/** True tetrahedral iron die: 1 to 4, mean 2.5. */
+export const IRON_D4: DieDef = { id: 'iron-d4', name: 'Iron d4', faces: [1, 2, 3, 4] };
+
 export const DICE: Readonly<Record<DieId, DieDef>> = {
   'brass-d6': BRASS_D6,
   'glass-d8': GLASS_D8,
+  'iron-d4': IRON_D4,
 };
 
 export function dieById(id: DieId): DieDef {

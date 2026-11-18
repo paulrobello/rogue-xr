@@ -1,3 +1,4 @@
+import { MAX_HAND } from '../rules/types.ts';
 /**
  * Pure fan layout for the off-hand card hand. No three.js: positions are metres in grip-local space
  * (x right, y up, +z toward the player's face when the controller points forward), rotations are
@@ -41,7 +42,7 @@ export interface FanOptions {
   minScale: number;
 }
 
-export const MAX_HAND = 10;
+export { MAX_HAND } from '../rules/types.ts';
 
 /** Holo card width (metres) and the slice atlas frame aspect (`card-atlas.json`, 672x1016 px frames). */
 export const HOLO_CARD_WIDTH = 0.063;

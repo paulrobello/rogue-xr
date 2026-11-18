@@ -61,6 +61,8 @@ export function scaleEffects(
         return { ...effect, amount: scale(effect.amount) };
       case 'apply-status':
         return { ...effect, stacks: scale(effect.stacks) };
+      case 'block-from-status':
+        return { ...effect, multiplier: m };
       default:
         return effect;
     }

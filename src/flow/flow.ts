@@ -1,4 +1,5 @@
-import { PERMANENT_CARD_IDS } from '../content/rewards.ts';
+import { ENCOUNTER_CONTENT_VERSION } from '../combat/encounter-choice.ts';
+import { LEGACY_REWARD_POOL, PERMANENT_CARD_IDS } from '../content/rewards.ts';
 import type { RunSnapshot } from '../persist/saves.ts';
 import { snapshotRun } from '../persist/saves.ts';
 import {
@@ -146,6 +147,7 @@ export class RunFlow {
   private roomValue = 0;
   private readonly listeners = new Set<(event: FlowEvent) => void>();
   private readonly opts: FlowOptions;
+  private contentVersionValue = ENCOUNTER_CONTENT_VERSION;
 
   constructor(opts: FlowOptions) {
     this.opts = opts;
@@ -272,6 +274,7 @@ export class RunFlow {
    */
   newRun(seed: string, difficulty: Difficulty = DEFAULT_DIFFICULTY): boolean {
     if (this.phaseValue !== 'title') return false;
+    this.contentVersionValue = ENCOUNTER_CONTENT_VERSION;
     const base = runOptionsFrom(this.workshopValue);
     const deck = [...this.opts.starterDeck, ...this.workshopValue.permanentCards];
     this.runValue = createRun(seed, deck, {
@@ -290,6 +293,7 @@ export class RunFlow {
       .map((id) => Number(id))
       .filter((n) => Number.isInteger(n) && n >= 0);
     this.runValue = snapshot.run;
+    this.contentVersionValue = snapshot.contentVersion ?? 1;
     this.resetRunBookkeeping(snapshot.roomIndex, cleared);
     this.offerValue = snapshot.phase === 'reward' ? snapshot.pendingReward : null;
     this.guardianDefeatedValue =
@@ -333,7 +337,11 @@ export class RunFlow {
     }
     if (!this.clearedRooms.includes(result.room)) this.clearedRooms.push(result.room);
     const healed = this.withHp(run, result.playerHp);
-    const rolled = rewardOffer(healed, result.tier, this.opts.rewardPool);
+    const pool =
+      this.contentVersionValue < ENCOUNTER_CONTENT_VERSION
+        ? LEGACY_REWARD_POOL
+        : this.opts.rewardPool;
+    const rolled = rewardOffer(healed, result.tier, pool);
     if (result.tier === 'guardian') this.guardianDefeatedValue = true;
     this.runValue = rolled.run;
     this.offerValue = rolled.offer;
@@ -349,7 +357,11 @@ export class RunFlow {
   openLoot(room: number, socketId: string, kind: TreasureKind): TreasureLoot | null {
     const run = this.runValue;
     if (this.phaseValue !== 'explore' || !run) return null;
-    const result = openTreasure(run, lootKey(room, socketId), kind, this.opts.rewardPool);
+    const pool =
+      this.contentVersionValue < ENCOUNTER_CONTENT_VERSION
+        ? LEGACY_REWARD_POOL
+        : this.opts.rewardPool;
+    const result = openTreasure(run, lootKey(room, socketId), kind, pool);
     if (!result) return null;
     this.runValue = result.run;
     this.lootValue = { room, socketId, loot: result.loot };
@@ -449,6 +461,7 @@ export class RunFlow {
         clearedEncounters: this.clearedRooms.map(String),
         pendingReward: this.phaseValue === 'reward' ? this.offerValue : null,
         guardianDefeated: this.guardianDefeatedValue,
+        contentVersion: this.contentVersionValue,
       },
       now,
     );

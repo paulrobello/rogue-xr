@@ -1,0 +1,134 @@
+{
+  "pieceId": "furnace-mite",
+  "version": 1,
+  "route": "Procedural original Blender geometry, rig, and keyed clips from approved concept.",
+  "generator": {
+    "path": "scripts/assets/build-foundry-enemies.py",
+    "sha256": "895b2f78269a49f05c910d218db5f7d17cc419776f8672ee64afb5967f74e9d8",
+    "bytes": 23694
+  },
+  "authoringAgent": {
+    "harness": "Codex delegated Blender author"
+  },
+  "blender": "5.2.3 LTS",
+  "derivedFiles": [
+    {
+      "path": "public/assets/enemies/furnace-mite/furnace-mite.glb",
+      "sha256": "f7fe7f0ba7f706168af175f879433e62e009c99e839db5223fb62ed4c44380f4",
+      "bytes": 334796
+    },
+    {
+      "path": "public/assets/enemies/furnace-mite/furnace-mite.manifest.json",
+      "sha256": "4914485b24b125a458aefbef75236a8621170f440e0901556793fbf18dcd8a5a",
+      "bytes": 2400
+    }
+  ],
+  "sourceFiles": [
+    {
+      "path": "assets-source/enemies/furnace-mite/staging/furnace-mite.blend",
+      "sha256": "9e949fc32689d6646e80fb1deb53b7306658f23ddf5a9e079be66f7fb108ac35",
+      "bytes": 241003
+    },
+    {
+      "path": "assets-source/enemies/furnace-mite/staging/reimport.json",
+      "sha256": "98515ab08b28d8fc6b67434dcf775cc9f9a562b2cb50553649c32e55aac8935d",
+      "bytes": 4321
+    },
+    {
+      "path": "assets-source/enemies/furnace-mite/staging/metrics.log",
+      "sha256": "717d02b66298f5a93127c09c75992f03d42ce1479bfd1fa7e250d337349b907f",
+      "bytes": 873
+    },
+    {
+      "path": "assets-source/enemies/furnace-mite/staging/action-metrics.log",
+      "sha256": "49e6dd52c7a79037bea620508210642b7d1c84e440493b962c32f4fc925205f2",
+      "bytes": 1029
+    },
+    {
+      "path": "scripts/assets/build-spring-hound.py",
+      "sha256": "432c7c8a1218564bef7c697dee7ff76225fa2915bdb3e454d4960723ddfad8ba",
+      "bytes": 105430
+    }
+  ],
+  "references": [
+    {
+      "path": "assets-source/concepts/foundry/twin-furnace-mites.png",
+      "sha256": "d4234ecf37a871a9dd2ee5189ef305468b25fe22ceb6d81a32f959d5e522925e",
+      "bytes": 2164717
+    }
+  ],
+  "reviewEvidence": [
+    {
+      "path": "assets-source/enemies/furnace-mite/staging/concept-comparison.jpg",
+      "sha256": "6a677fc85f21ac371d03aee29274892c6a09e96d32146d48fdc518e4e219aba6",
+      "bytes": 122682
+    },
+    {
+      "path": "assets-source/enemies/furnace-mite/staging/frame-14.4-attack.png",
+      "sha256": "8fd27303624c7580d26851be90fd587dbe3d53a9c7e891d499cedefc60fb40b7",
+      "bytes": 133488
+    },
+    {
+      "path": "assets-source/enemies/furnace-mite/staging/frame-14.4-intent-double-spark.png",
+      "sha256": "9de0d0ae23270a491b223ab9d2ae70c02d8a40f2753b1cda594828b2726727a0",
+      "bytes": 132989
+    },
+    {
+      "path": "assets-source/enemies/furnace-mite/staging/frame-36-death.png",
+      "sha256": "b5ee42d06a13c17634fb77f03d20d8be8b9676f8ec83b15f0afc94b5585fbc7e",
+      "bytes": 123302
+    },
+    {
+      "path": "assets-source/enemies/furnace-mite/staging/variant-grayscale-comparison.jpg",
+      "sha256": "b9ad9d8a86335b708d594e0f6b39d86e6250bd716ab857fb4105680596ec1f04",
+      "bytes": 22485
+    },
+    {
+      "path": "assets-source/enemies/furnace-mite/staging/variant-one-intent-double-spark.png",
+      "sha256": "6c43161979b47dd9c4497579bc11ccbefc3e42c2c5853104226193f8c674852f",
+      "bytes": 133164
+    },
+    {
+      "path": "assets-source/enemies/furnace-mite/staging/variant-two-intent-double-spark.png",
+      "sha256": "c72016808afd59321e416632628de86d2ed9bb89b4e3a247c4e7a4d8981bedba",
+      "bytes": 132989
+    }
+  ],
+  "license": "Original procedural Blender work; concept reference is user-provided and approved.",
+  "validation": {
+    "pass": true,
+    "scope": "Technical export and sampled poses in staging/reimport.json. Desktop combat and independent visual review completed. Owner model and physical Quest review remain pending."
+  },
+  "approvals": [
+    {
+      "gate": "concept",
+      "status": "approved",
+      "who": "Paul",
+      "when": "2026-11-18",
+      "evidence": "docs/next-cards-and-enemies.md"
+    },
+    {
+      "gate": "model",
+      "status": "pending"
+    },
+    {
+      "gate": "rig",
+      "status": "pending"
+    },
+    {
+      "gate": "animation",
+      "status": "pending"
+    },
+    {
+      "gate": "independent visual score",
+      "status": "reviewed",
+      "score": 81,
+      "outOf": 100,
+      "who": "Independent Astra visual review",
+      "when": "2026-11-18",
+      "glbSha256": "f7fe7f0ba7f706168af175f879433e62e009c99e839db5223fb62ed4c44380f4",
+      "evidence": "Final re-imported poses compared with the approved concept and desktop combat captures.",
+      "notes": "The single ruby band and double ivory bands are distinguishable in grayscale. Open furnace slots read from the seat. The Double Spark windup and strike still have similar silhouettes."
+    }
+  ]
+}

@@ -111,6 +111,10 @@ function cloneModel(m) {
 /** Plays `card` at `target` (enemy id or null) into model `m`, in place. */
 function applyCard(m, card, target) {
   m.steam -= card.cost;
+  const gainBlock = (amount) => {
+    // Rust halves newly gained block, matching the rules engine's visible status behavior.
+    m.block += stackOf(m.pst, 'rust') > 0 ? Math.floor(amount / 2) : amount;
+  };
   for (const e of card.effects) {
     if (e.type === 'damage') {
       const base = scaled(amountOf(e.amount, card), card);
@@ -130,7 +134,7 @@ function applyCard(m, card, target) {
         }
       }
     } else if (e.type === 'block') {
-      m.block += scaled(amountOf(e.amount, card), card);
+      gainBlock(scaled(amountOf(e.amount, card), card));
     } else if (e.type === 'gain-steam') {
       m.steam += amountOf(e.amount, card);
       m.bonus += 0.5;
@@ -155,6 +159,21 @@ function applyCard(m, card, target) {
           }
         }
       }
+    } else if (e.type === 'conditional-block') {
+      const enemy = m.enemies.find((x) => x.id === target && x.hp > 0);
+      const hits =
+        enemy?.intent?.effects
+          .filter((f) => f.type === 'damage')
+          .reduce((sum, f) => sum + (f.hits ?? 1), 0) ?? 0;
+      if (hits >= e.minTargetHits) gainBlock(scaled(amountOf(e.amount, card), card));
+    } else if (e.type === 'block-from-status') {
+      const source = e.removeFrom === 'target' ? m.enemies.find((x) => x.id === target) : null;
+      const statuses = source ? source.st : m.pst;
+      const had = stackOf(statuses, e.status);
+      const removed = Math.min(had, e.maxStacks);
+      statuses[e.status] = had - removed;
+      if (statuses[e.status] <= 0) delete statuses[e.status];
+      gainBlock(scaled(e.base + e.perStack * removed, card));
     }
   }
 }

@@ -50,6 +50,7 @@ const ALL_DEFS: readonly SliceCard[] = CARDS.flatMap((card) => [card, upgradedCa
 function rollFor(def: SliceCard): number | undefined {
   if (def.dice === 'brass-d6') return D6_ROLL;
   if (def.dice === 'glass-d8') return D8_ROLL;
+  if (def.dice === 'iron-d4') return 4;
   return undefined;
 }
 
@@ -125,6 +126,22 @@ const EXPECTED: Readonly<Record<string, Outcome>> = {
   'arc-bolt+': { hp: [48, 60], steam: 2 },
   'time-spiral': { hp: [60, 60], enemyStatuses: [{ weak: 1 }, { weak: 1 }], steam: 2, drawn: 2 },
   'time-spiral+': { hp: [60, 60], enemyStatuses: [{ weak: 2 }, { weak: 2 }], steam: 2, drawn: 3 },
+  counterstroke: { hp: [50, 60], block: 0, steam: 1 },
+  'counterstroke+': { hp: [47, 60], block: 0, steam: 1 },
+  'quench-seal': { hp: [60, 60], block: 4, steam: 2 },
+  'quench-seal+': { hp: [60, 60], block: 5, steam: 2 },
+  'brass-bulwark': { hp: [60, 60], block: 14, steam: 0 },
+  'brass-bulwark+': { hp: [60, 60], block: 18, steam: 0 },
+  'anchor-glyph': { hp: [60, 60], block: 8, steam: 2, playerStatuses: { plating: 2 } },
+  'anchor-glyph+': { hp: [60, 60], block: 11, steam: 2, playerStatuses: { plating: 3 } },
+  'iron-knuckle': { hp: [46, 60], steam: 1 },
+  'iron-knuckle+': { hp: [42, 60], steam: 1 },
+  'rivet-plate': { hp: [60, 60], steam: 2, playerStatuses: { plating: 3 } },
+  'rivet-plate+': { hp: [60, 60], steam: 2, playerStatuses: { plating: 4 } },
+  'shear-pin': { hp: [53, 60], steam: 2 },
+  'shear-pin+': { hp: [51, 60], steam: 2 },
+  'rust-spray': { hp: [60, 60], steam: 2, enemyStatuses: [{ rust: 2 }, { rust: 2 }] },
+  'rust-spray+': { hp: [60, 60], steam: 2, enemyStatuses: [{ rust: 3 }, { rust: 3 }] },
 };
 
 describe('card effects through the engine', () => {
@@ -216,6 +233,8 @@ const STATUS_NAMES: Readonly<Record<StatusId, string>> = {
   vulnerable: 'Vulnerable',
   overheat: 'Overheat',
   'wound-up': 'Wound-up',
+  plating: 'Plating',
+  rust: 'Rust',
 };
 
 function amountText(amount: Amount): string {
@@ -245,26 +264,34 @@ function effectText(effect: Effect): string {
       const all = effect.target === 'all-opponents' ? ' to all enemies' : '';
       return `Apply ${amountText(effect.stacks)} ${status}${all}.`;
     }
+    case 'conditional-block':
+      return `If its intent hits twice or more, gain ${amountText(effect.amount)} Block.`;
+    case 'block-from-status':
+      return `Trace Ward. Remove up to ${effect.maxStacks} enemy Overheat. Gain ${effect.base} Block + ${effect.perStack} per stack spent.`;
   }
 }
 
 /** Canonical rules text; every card's hand-written description must equal it. */
 function rulesText(def: SliceCard): string {
   const parts: string[] = [];
-  if (def.dice) parts.push(`Roll a ${def.dice === 'brass-d6' ? 'd6' : 'd8'}.`);
+  if (def.dice)
+    parts.push(
+      `Roll ${def.dice === 'iron-d4' ? 'an iron d4' : `a ${def.dice === 'brass-d6' ? 'd6' : 'd8'}`}.`,
+    );
   parts.push(...def.effects.map(effectText));
   if (def.exhaust) parts.push('Exhaust.');
+  if (def.pinned) parts.push('Pinned.');
   return parts.join(' ');
 }
 
 describe('card schema', () => {
-  it('has 15 cards with unique ids, split 5 attacks, 5 skills, 5 sigil spells', () => {
-    expect(CARDS).toHaveLength(15);
-    expect(new Set(CARDS.map((c) => c.id)).size).toBe(15);
-    expect(CARDS_BY_ID.size).toBe(15);
-    for (const type of ['attack', 'skill', 'sigil'] as const) {
-      expect(CARDS.filter((c) => c.type === type)).toHaveLength(5);
-    }
+  it('has the complete card roster with unique ids', () => {
+    expect(CARDS).toHaveLength(23);
+    expect(new Set(CARDS.map((c) => c.id)).size).toBe(CARDS.length);
+    expect(CARDS_BY_ID.size).toBe(CARDS.length);
+    expect(CARDS.filter((c) => c.type === 'attack')).toHaveLength(8);
+    expect(CARDS.filter((c) => c.type === 'skill')).toHaveLength(8);
+    expect(CARDS.filter((c) => c.type === 'sigil')).toHaveLength(7);
   });
 
   it('has at least 4 dice cards, and the dice hook is set exactly when an effect uses a roll', () => {
@@ -275,9 +302,9 @@ describe('card schema', () => {
     }
   });
 
-  it('gives every sigil spell, and only sigil spells, one of the 5 sigil ids', () => {
+  it('gives every sigil spell, and only sigil spells, a known sigil id', () => {
     const sigils = CARDS.filter((c) => c.type === 'sigil').map((c) => c.sigil);
-    expect([...sigils].sort()).toEqual([...SIGIL_IDS].sort());
+    expect(new Set(sigils).size).toBeGreaterThanOrEqual(SIGIL_IDS.length);
     for (const def of ALL_DEFS) {
       if (def.type === 'sigil') expect(SIGIL_IDS).toContain(def.sigil);
       else expect(def.sigil, def.id).toBeUndefined();

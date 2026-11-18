@@ -132,6 +132,14 @@ describe('effect to FX mapping', () => {
       'warding-glyph': ['shield'],
       'arc-bolt': ['bolt'],
       'time-spiral': ['draw', 'motes'],
+      'rivet-plate': ['motes'],
+      'shear-pin': ['bolt'],
+      'rust-spray': ['motes'],
+      'iron-knuckle': ['bolt'],
+      'brass-bulwark': ['shield'],
+      'anchor-glyph': ['shield', 'motes'],
+      counterstroke: ['bolt'],
+      'quench-seal': ['shield'],
     };
     for (const card of CARDS) {
       expect(expected[card.id], card.id).toBeDefined();

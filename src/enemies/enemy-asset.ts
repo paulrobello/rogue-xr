@@ -20,7 +20,9 @@ export type EnemyClip = (typeof ENEMY_CLIPS)[number];
  * opens). Loaded only for an enemy whose content defines `phaseTwo`, so no other model carries it.
  */
 export const PHASE_CLIP = 'phase-change';
-export type ActorClip = EnemyClip | typeof PHASE_CLIP;
+type IntentClip = `intent-${string}`;
+type MoveActionClip = `action-${string}`;
+export type ActorClip = EnemyClip | typeof PHASE_CLIP | IntentClip | MoveActionClip;
 /**
  * Bones the phase-change clip leaves open (the guardian's doors and side plates). Every clip keys
  * every bone, so after the change the actor re-applies the clip's final pose to these each frame
@@ -72,6 +74,8 @@ export interface EnemyManifest {
   skeleton: { root: string; bones: number; joints: string[]; maxInfluences: number };
   rootMotion: string;
   clips: Record<EnemyClip, EnemyClipSpec>;
+  intentClips?: Readonly<Record<string, IntentClip>>;
+  actionClips?: Readonly<Record<string, MoveActionClip>>;
   sockets: Partial<
     Record<EnemySocket, { bone: string; parent: string | null; position: number[] }>
   >;
@@ -96,6 +100,16 @@ export function parseEnemyManifest(raw: unknown, id?: string): EnemyManifest {
     if (!spec || !(spec.duration > 0) || (spec.loop !== 'repeat' && spec.loop !== 'once')) {
       throw new Error(`${who} manifest: clip ${clip} missing or invalid`);
     }
+  }
+  if (m.intentClips) {
+    for (const [move, name] of Object.entries(m.intentClips)) {
+      if (!move || name !== `intent-${move}`)
+        throw new Error(`${who} manifest: invalid intent clip ${name}`);
+    }
+  }
+  for (const [move, name] of Object.entries(m.actionClips ?? {})) {
+    if (name !== `action-${move}` || !m.intentClips?.[move])
+      throw new Error(`${who} manifest: invalid action clip ${name}`);
   }
   for (const socket of ENEMY_SOCKETS) {
     const entry = m.sockets?.[socket];
@@ -187,6 +201,7 @@ export class EnemyAsset {
     private readonly owned: Owned,
     /** The phase-change clip: set for an enemy with a rules phase 2, null for every other model. */
     readonly phaseClip: THREE.AnimationClip | null = null,
+    readonly moveClips: ReadonlyMap<IntentClip | MoveActionClip, THREE.AnimationClip> = new Map(),
   ) {}
 
   get id(): string {
@@ -198,9 +213,9 @@ export class EnemyAsset {
     return this.live.size;
   }
 
-  spawn(): EnemyActor {
+  spawn(variant = 0): EnemyActor {
     if (this.disposed) throw new Error(`${this.id} asset disposed`);
-    const actor = new EnemyActor(this);
+    const actor = new EnemyActor(this, variant);
     this.live.add(actor);
     return actor;
   }
@@ -287,12 +302,22 @@ export async function parseEnemyAsset(
     o.material = Array.isArray(o.material) ? o.material.map(bind) : bind(o.material);
   });
   const materials = new Set<THREE.Material>([...bound.keys(), ...bound.values()]);
+  const moveClips = new Map<IntentClip | MoveActionClip, THREE.AnimationClip>();
+  for (const name of [
+    ...Object.values(manifest.intentClips ?? {}),
+    ...Object.values(manifest.actionClips ?? {}),
+  ]) {
+    const clip = gltf.animations.find((a) => a.name === name);
+    if (!clip) throw new Error(`${who} glb: intent clip ${name} missing`);
+    moveClips.set(name, clip);
+  }
   return new EnemyAsset(
     manifest,
     gltf.scene,
     clips,
     { materials: [...materials], geometries: [...geometries] },
     phaseClip,
+    moveClips,
   );
 }
 
@@ -413,6 +438,7 @@ export class EnemyActor {
   private readonly fades = new Map<ActorClip, Fade>();
   private readonly materials: MaterialState[] = [];
   private currentClip: ActorClip | null = null;
+  private intentPose: IntentClip | null = null;
   /** The case's state: closed until the phase-change clip plays, `changing` while it runs, then open. */
   private casePhase: 'closed' | 'changing' | 'open' = 'closed';
   private phaseChangeCount = 0;
@@ -434,18 +460,22 @@ export class EnemyActor {
       this.deferredAttack = false;
       this.play(attack ? 'attack' : this.frozenFlag ? 'frozen' : 'idle', { fade: 0.25 });
     } else if (
-      (clip === 'attack' || clip === 'hit') &&
+      (clip === 'attack' || clip === 'hit' || clip?.startsWith('action-')) &&
       clip === this.currentClip &&
       !this.deadFlag
     ) {
-      this.play(this.frozenFlag ? 'frozen' : 'idle', { fade: 0.25 });
+      this.play(this.intentPose ?? (this.frozenFlag ? 'frozen' : 'idle'), { fade: 0.25 });
     }
   };
 
-  constructor(asset: EnemyAsset) {
+  constructor(asset: EnemyAsset, variant = 0) {
     this.asset = asset;
     this.object = cloneSkinned(asset.template);
     this.object.name = asset.manifest.id;
+    if (asset.id === 'furnace-mite') {
+      const stripe = this.object.getObjectByName('furnace-mark-extra');
+      if (stripe) stripe.visible = variant % 2 !== 0;
+    }
     const clones = new Map<THREE.Material, THREE.MeshStandardMaterial>();
     const glowName = asset.manifest.emissive.material;
     const cull = cullSphere(asset.manifest);
@@ -455,6 +485,9 @@ export class EnemyActor {
       let clone = clones.get(o.material);
       if (!clone) {
         clone = o.material.clone();
+        if (asset.id === 'furnace-mite' && clone.name === 'foundry-mark') {
+          clone.color.set(variant % 2 === 0 ? '#a52533' : '#fff1c7');
+        }
         clones.set(o.material, clone);
         const glow = clone.name === glowName;
         if (glow) applyGlowLook(clone, asset.manifest.emissive.color);
@@ -476,6 +509,12 @@ export class EnemyActor {
       const once = asset.manifest.clips[name].loop === 'once';
       action.setLoop(once ? THREE.LoopOnce : THREE.LoopRepeat, Infinity);
       action.clampWhenFinished = once;
+      this.actions.set(name, action);
+    }
+    for (const [name, clip] of asset.moveClips) {
+      const action = this.mixer.clipAction(clip);
+      action.setLoop(THREE.LoopOnce, 1);
+      action.clampWhenFinished = true;
       this.actions.set(name, action);
     }
     const phase = asset.phaseClip;
@@ -525,6 +564,21 @@ export class EnemyActor {
     return action;
   }
 
+  /** Hold the advertised move between reactions, until the next intent is revealed. */
+  showIntent(id: string | null): void {
+    const pose = (id && this.asset.manifest.intentClips?.[id]) || null;
+    if (this.intentPose === pose) return;
+    this.intentPose = pose;
+    if (
+      this.deadFlag ||
+      this.currentClip === 'attack' ||
+      this.currentClip === 'hit' ||
+      this.currentClip?.startsWith('action-')
+    )
+      return;
+    this.play(pose ?? (this.frozenFlag ? 'frozen' : 'idle'), { fade: 0.15 });
+  }
+
   socket(name: EnemySocket): THREE.Object3D | undefined {
     return this.object.getObjectByName(name);
   }
@@ -555,11 +609,12 @@ export class EnemyActor {
     return next;
   }
 
-  attack(): void {
+  attack(moveId?: string): void {
     if (this.deadFlag) return;
     // The case finishes opening first; the swing follows it.
     if (this.casePhase === 'changing') this.deferredAttack = true;
-    else this.play('attack', { fade: 0.15 });
+    else
+      this.play((moveId && this.asset.manifest.actionClips?.[moveId]) || 'attack', { fade: 0.15 });
   }
 
   /** Hit reaction: interrupts anything but death, flashes the emissive core. The case opening is never cut short. */
@@ -660,6 +715,7 @@ export class EnemyActor {
     this.setRime(false);
     this.applyGlow();
     this.currentClip = null;
+    this.intentPose = null;
     this.headLook?.reset();
     this.play('idle', { fade: 0 });
     this.mixer.update(0);
@@ -685,6 +741,7 @@ export class EnemyActor {
   }
 
   private eventsOf(clip: ActorClip): Record<string, number> {
+    if (clip.startsWith('action-')) return this.asset.manifest.clips.attack.events;
     const specs = this.asset.manifest.clips as Partial<Record<ActorClip, EnemyClipSpec>>;
     return specs[clip]?.events ?? {};
   }

@@ -77,7 +77,11 @@ describe('reward board card faces (F7)', () => {
     expect(art.pages).toContain(material.uniforms.uFrame?.value);
     // Each instance carries its own card's atlas rects, as the hand writes them.
     const frameUv = body.geometry.getAttribute('aFrameUv');
-    expect(frameUv.getX(0)).toBeCloseTo(atlas.frames.attack.uv[0]);
+    offer.cards.forEach((id, i) => {
+      const definition = atlas.cards[id];
+      if (!definition) throw new Error(`No atlas entry for ${id}`);
+      expect(frameUv.getX(i)).toBeCloseTo(atlas.frames[definition.frame].uv[0]);
+    });
     for (const id of offer.cards) {
       expect(ui.root.getObjectByName(`reward-card-fallback-${id}`)?.visible).toBe(false);
     }

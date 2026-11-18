@@ -213,13 +213,17 @@ describe('scoreToMultiplier', () => {
 
 describe('difficulty levels', () => {
   const LEVELS: readonly SigilLevel[] = ['casual', 'normal', 'hard'];
+  const CALIBRATION_IDS: readonly SigilId[] = ['gear', 'flame', 'ward', 'bolt', 'spiral'];
   const traces = SIGIL_IDS.flatMap((id) =>
     VARIANTS.map((variant) => ({ id, variant, trace: referenceTrace(id, variant) })),
   );
   const multiplier = (trace: Stroke[], id: SigilId, level: SigilLevel): number =>
     scoreToMultiplier(scoreAgainst(trace, id, level));
   const mean = (level: SigilLevel): number =>
-    traces.reduce((sum, t) => sum + multiplier(t.trace, t.id, level), 0) / traces.length;
+    traces
+      .filter((t) => CALIBRATION_IDS.includes(t.id))
+      .reduce((sum, t) => sum + multiplier(t.trace, t.id, level), 0) /
+    (CALIBRATION_IDS.length * VARIANTS.length);
 
   it('the sigil level is exactly the run difficulty', () => {
     expectTypeOf<SigilLevel>().toEqualTypeOf<Difficulty>();
@@ -271,6 +275,34 @@ describe('difficulty levels', () => {
             `${id} v${variant} vs ${other} on ${level}`,
           ).toBeLessThan(MIN_SCORE);
         }
+      }
+    }
+  });
+
+  it('Anchor has a clean trace at every difficulty', () => {
+    for (const level of LEVELS) {
+      expect(
+        scoreAgainst(referenceTrace('anchor', 0), 'anchor', level),
+        level,
+      ).toBeGreaterThanOrEqual(MIN_SCORE);
+    }
+  });
+
+  it('Anchor keeps a jittered trace above the floor at every difficulty', () => {
+    for (const level of LEVELS) {
+      const trace = jitter(referenceTrace('anchor', 1), 0.001, 1049);
+      expect(scoreAgainst(trace, 'anchor', level), level).toBeGreaterThanOrEqual(MIN_SCORE);
+    }
+  });
+
+  it('Anchor does not confuse with another sigil at any difficulty', () => {
+    for (const level of LEVELS) {
+      for (const other of SIGIL_IDS) {
+        if (other === 'anchor') continue;
+        expect(
+          scoreAgainst(referenceTrace('anchor', 2), other, level),
+          `${other} on ${level}`,
+        ).toBeLessThan(MIN_SCORE);
       }
     }
   });

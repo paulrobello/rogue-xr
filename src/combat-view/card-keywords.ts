@@ -12,7 +12,17 @@ import { STEAM_PER_TURN } from '../rules/types.ts';
 import { STATUS_NAME, statusExplanation, type TipEntry } from './status-info.ts';
 
 /** A card keyword: a status the card applies, or a mechanic its data uses. */
-export type CardKeyword = 'block' | 'steam' | 'draw' | 'exhaust' | 'dice' | 'sigil' | StatusId;
+export type CardKeyword =
+  | 'block'
+  | 'steam'
+  | 'draw'
+  | 'exhaust'
+  | 'dice'
+  | 'sigil'
+  | 'pinned'
+  | 'counterstroke'
+  | 'quench'
+  | StatusId;
 
 /** Display name of each mechanic keyword (statuses take `STATUS_NAME`). Exhaustive. */
 const MECHANIC_NAME: Readonly<Record<Exclude<CardKeyword, StatusId>, string>> = {
@@ -22,6 +32,9 @@ const MECHANIC_NAME: Readonly<Record<Exclude<CardKeyword, StatusId>, string>> = 
   exhaust: 'Exhaust',
   dice: 'Roll',
   sigil: 'Sigil',
+  pinned: 'Pinned',
+  counterstroke: 'Counterstroke',
+  quench: 'Quench Seal',
 };
 
 /** What each mechanic keyword does. Exhaustive: a new keyword fails the type check until it has one. */
@@ -31,6 +44,9 @@ const MECHANIC_TEXT: Readonly<Record<Exclude<CardKeyword, StatusId | 'dice'>, st
   draw: 'Takes cards from your draw pile into your hand.',
   exhaust: 'Removed from this fight once played, instead of going to the discard pile.',
   sigil: 'Trace its glyph on the sigil plate to cast it; a cleaner trace casts it stronger.',
+  pinned: 'Stays in your hand when you end your turn. Playing it still discards it normally.',
+  counterstroke: 'Checks the target’s shown intent when played. Two or more hits grant the shield.',
+  quench: 'Removes Overheat from the target before calculating its Block gain.',
 };
 
 const isStatus = (k: CardKeyword): k is StatusId => k in STATUS_NAME;
@@ -48,11 +64,22 @@ export function cardKeywords(card: SliceCard): CardKeyword[] {
   };
   if (card.sigil) add('sigil');
   if (card.dice) add('dice');
+  if (card.pinned) add('pinned');
+  if (card.id.replace(/\+$/, '') === 'counterstroke') add('counterstroke');
+  if (card.id.replace(/\+$/, '') === 'quench-seal') add('quench');
   for (const effect of card.effects) {
     if (effect.type === 'block') add('block');
     else if (effect.type === 'gain-steam' || effect.type === 'lose-steam') add('steam');
     else if (effect.type === 'draw') add('draw');
     else if (effect.type === 'apply-status') add(effect.status);
+    else if (effect.type === 'block-from-status') {
+      add('quench');
+      add('block');
+      add(effect.status);
+    } else if (effect.type === 'conditional-block') {
+      add('counterstroke');
+      add('block');
+    }
   }
   if (card.exhaust) add('exhaust');
   return out;

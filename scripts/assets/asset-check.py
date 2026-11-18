@@ -320,6 +320,11 @@ ENEMY_SOURCES = ROOT / "assets-source/enemies"
 ENEMY_LIMITS = {"tris": 25_000, "materials": 4, "bones": 40, "influences": 4}
 ENEMY_CLIPS = {"idle", "attack", "hit", "death", "frozen"}
 # The floor guardian (P5-T4) gets a larger budget and a one-shot `phase-change` clip on top of the five.
+FOUNDRY_INTENTS = {
+    "glasswing-scrivener": ("inscribe", "cross-out", "proof"),
+    "furnace-mite": ("double-spark", "stoke", "clink"),
+    "null-crown-auditor": ("tally", "reconcile", "levy"),
+}
 GUARDIAN = "grand-escapement"
 GUARDIAN_LIMITS = {**ENEMY_LIMITS, "tris": 40_000, "bones": 60}
 ENEMY_GENERATORS = {"cog-sentry": "scripts/assets/build-cog-sentry.py", "spring-hound": "scripts/assets/build-spring-hound.py",
@@ -402,7 +407,13 @@ def check_enemy(enemy: str, errors: list[str], warnings: list[str]) -> dict:
         err("GLB must be image-free (brass slots bind the shared P4-T3 sets by name)")
     if any("JOINTS_0" not in a or "WEIGHTS_0" not in a for a in attrs) or any("WEIGHTS_1" in a for a in attrs):
         err("every primitive needs exactly one JOINTS_0/WEIGHTS_0 set (<= 4 influences)")
-    if clips != want_clips or set(m.get("clips", {})) != want_clips:
+    intents = {name: "intent-" + name for name in FOUNDRY_INTENTS.get(enemy, ())}
+    if m.get("intentClips", {}) != intents:
+        err(f"intent clip map differs from the authored moves {intents}")
+    actions = {"levy": "action-levy"} if enemy == "null-crown-auditor" else {}
+    if m.get("actionClips", {}) != actions:
+        err(f"action clip map differs from the authored moves {actions}")
+    if clips != want_clips | set(intents.values()) | set(actions.values()) or set(m.get("clips", {})) != want_clips:
         err(f"clips {sorted(clips)} / manifest {sorted(m.get('clips', {}))} != {sorted(want_clips)}")
     budget = m.get("budget", {})
     if budget.get("tris") != glb["triangles"] or budget.get("bones") != bones or budget.get("materials") != len(glb["materials"]):

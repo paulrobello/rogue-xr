@@ -16,10 +16,8 @@ import type { Vec3 } from './quat.ts';
  * `bindFaceMaps`, and the asset never disposes them.
  */
 export const DICE_ASSET_BASE = '/assets/dice';
-export const DICE_ASSET_IDS = { d6: 'brass-d6', d8: 'glass-d8' } as const satisfies Record<
-  DieKind,
-  DieId
->;
+export const DICE_ASSET_IDS = { d6: 'brass-d6', d8: 'glass-d8', d4: 'iron-d4' } as const;
+// d4 is the procedural tetrahedron in DicePresenter. There is intentionally no d4 GLB request.
 const KINDS: readonly DieKind[] = ['d6', 'd8'];
 /**
  * Emissive intensity of a face slot while a glow page is bound, unless the slot names its glow page
@@ -31,7 +29,11 @@ const KINDS: readonly DieKind[] = ['d6', 'd8'];
  */
 export const DICE_GLOW_INTENSITY = 1.8;
 /** Factor colour of each face slot until its atlas page is bound (art-bible walnut and sapphire). */
-const FACE_FALLBACK: Readonly<Record<DieKind, string>> = { d6: '#583c26', d8: '#2d4a93' };
+const FACE_FALLBACK: Readonly<Record<DieKind, string>> = {
+  d6: '#583c26',
+  d8: '#2d4a93',
+  d4: '#34373b',
+};
 
 export interface DiceFace {
   index: number;
@@ -92,13 +94,14 @@ function isVec(v: unknown): v is [number, number, number] {
 export function parseDiceManifest(raw: unknown): DiceManifest {
   const m = raw as Partial<DiceManifest>;
   if (typeof m !== 'object' || m === null) throw new Error('dice manifest: expected an object');
-  if (m.kind !== 'd6' && m.kind !== 'd8') throw new Error('dice manifest: kind must be d6 or d8');
+  if (m.kind !== 'd6' && m.kind !== 'd8' && m.kind !== 'd4')
+    throw new Error('dice manifest: kind must be d4, d6 or d8');
   if (m.id !== DICE_ASSET_IDS[m.kind])
     throw new Error(`dice manifest: id ${m.id} is not a ${m.kind}`);
   if (typeof m.glb !== 'string' || typeof m.node !== 'string')
     throw new Error('dice manifest: glb or node missing');
   if (m.frame?.up !== '+Y') throw new Error('dice manifest: frame must be +Y up');
-  const count = m.kind === 'd6' ? 6 : 8;
+  const count = m.kind === 'd6' ? 6 : m.kind === 'd8' ? 8 : 4;
   if (!Array.isArray(m.faces) || m.faces.length !== count)
     throw new Error(`dice manifest: expected ${count} faces`);
   m.faces.forEach((face, i) => {
@@ -326,17 +329,18 @@ async function parseDie(
 
 /** Builds the asset from GLB bytes and manifests (both dice). Rejects corrupt or mismatched bytes. */
 export async function parseDice(
-  glbs: Readonly<Record<DieKind, ArrayBuffer>>,
-  manifests: Readonly<Record<DieKind, DiceManifest>>,
+  glbs: Readonly<Partial<Record<DieKind, ArrayBuffer>>>,
+  manifests: Readonly<Partial<Record<DieKind, DiceManifest>>>,
   set: PbrSet | null = null,
 ): Promise<DiceAsset> {
   const dice = new Map<DieKind, DieResources>();
   try {
     for (const kind of KINDS) {
       const manifest = manifests[kind];
+      if (!manifest || !glbs[kind]) throw new Error(`dice manifest for ${kind} is missing`);
       if (manifest.kind !== kind)
         throw new Error(`dice manifest for ${kind} is a ${manifest.kind}`);
-      dice.set(kind, await parseDie(glbs[kind], manifest, set));
+      dice.set(kind, await parseDie(glbs[kind] as ArrayBuffer, manifest, set));
     }
   } catch (error) {
     new DiceAsset(dice).dispose();

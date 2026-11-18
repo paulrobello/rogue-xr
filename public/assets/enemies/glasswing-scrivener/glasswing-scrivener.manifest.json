@@ -1,0 +1,144 @@
+{
+  "id": "glasswing-scrivener",
+  "version": 1,
+  "glb": "glasswing-scrivener.glb",
+  "frame": {
+    "units": "m",
+    "up": "+Y",
+    "forward": "-Z",
+    "origin": "floor"
+  },
+  "root": "glasswing-scrivener",
+  "mesh": "glasswing-scrivener-body",
+  "bounds": {
+    "min": [
+      -1.2340999841690063,
+      0.0,
+      -1.1974999904632568
+    ],
+    "max": [
+      1.2340999841690063,
+      1.7353999614715576,
+      0.49000000953674316
+    ]
+  },
+  "skeleton": {
+    "root": "root",
+    "bones": 12,
+    "joints": [
+      "root",
+      "body",
+      "wing.L",
+      "nib.L",
+      "leg0.L",
+      "leg1.L",
+      "leg2.L",
+      "wing.R",
+      "nib.R",
+      "leg0.R",
+      "leg1.R",
+      "leg2.R"
+    ],
+    "maxInfluences": 1
+  },
+  "rootMotion": "code-owned; root joint fixed",
+  "clips": {
+    "idle": {
+      "duration": 2,
+      "loop": "repeat",
+      "events": {}
+    },
+    "attack": {
+      "duration": 1,
+      "loop": "once",
+      "events": {
+        "impact": 0.6
+      }
+    },
+    "hit": {
+      "duration": 0.5,
+      "loop": "once",
+      "events": {}
+    },
+    "death": {
+      "duration": 1.5,
+      "loop": "once",
+      "events": {
+        "down": 1.2
+      }
+    },
+    "frozen": {
+      "duration": 1,
+      "loop": "repeat",
+      "events": {},
+      "held": true
+    }
+  },
+  "intentClips": {
+    "inscribe": "intent-inscribe",
+    "cross-out": "intent-cross-out",
+    "proof": "intent-proof"
+  },
+  "sockets": {
+    "socket-hit": {
+      "bone": "body",
+      "parent": "body",
+      "position": [
+        0,
+        0.7185584090650081,
+        0
+      ]
+    },
+    "socket-eye": {
+      "bone": "body",
+      "parent": "body",
+      "position": [
+        0,
+        0.8685584090650081,
+        -0.35
+      ]
+    },
+    "socket-weapon": {
+      "bone": "body",
+      "parent": "body",
+      "position": [
+        0,
+        0.6185584090650081,
+        -0.55
+      ]
+    }
+  },
+  "emissive": {
+    "material": "foundry-glow",
+    "color": "#F3BE65",
+    "intensity": 0.8,
+    "nodes": [
+      "socket-hit"
+    ]
+  },
+  "materialSlots": {
+    "foundry-brass": {
+      "set": null,
+      "factorOnly": true
+    },
+    "foundry-dark": {
+      "set": null,
+      "factorOnly": true
+    },
+    "foundry-glow": {
+      "set": null,
+      "factorOnly": true,
+      "emissive": true
+    },
+    "foundry-glass": {
+      "set": null,
+      "factorOnly": true
+    }
+  },
+  "budget": {
+    "tris": 9520,
+    "materials": 4,
+    "bones": 12,
+    "influences": 1
+  }
+}

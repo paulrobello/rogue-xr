@@ -311,12 +311,79 @@ def dumps(value: object, indent: int = 0) -> str:
     return json.dumps(value, ensure_ascii=False)
 
 
+# Foundry subjects share a page with three pairs of background layers from the existing atlas.
+FOUNDRY_ART = [
+    ("rivet-plate", "skill", "guards", 0), ("brass-bulwark", "skill", "guards", 1),
+    ("rust-spray", "skill", "guards", 2), ("shear-pin", "attack", "guards", 3),
+    ("iron-knuckle", "attack", "strikes", 0), ("counterstroke", "attack", "strikes", 1),
+    ("anchor-glyph", "sigil", "strikes", 2), ("quench-seal", "sigil", "strikes", 3),
+]
+
+
+def add_foundry_page(index: dict, ktx: Path, skip_ktx: bool) -> None:
+    filename = "foundry.png"
+    page_id = next((i for i, p in enumerate(index["pages"]) if p["png"] == filename), len(index["pages"]))
+    page = np.zeros((PAGE, PAGE, 4), np.uint8)
+    size = CELL - 2 * CELL_INSET
+
+    def put(slot: int, cell: np.ndarray, source: str) -> dict:
+        row, col = divmod(slot, PAGE // CELL)
+        x, y = col * CELL, row * CELL
+        page[y:y+CELL,x:x+CELL] = cell
+        x, y = x + CELL_INSET, y + CELL_INSET
+        return {"page":page_id,"rect":[x,y,size,size],"uv":uv(x,y,size,size,PAGE,PAGE),"source":source}
+
+    backdrops = {}
+    for i, (family, original) in enumerate((("attack","strike"),("skill","defend"),("sigil","warding-glyph"))):
+        backdrops[family] = {}
+        for j, layer in enumerate(("back","mid")):
+            entry = index["cards"][original]["layers"][layer]
+            x,y,_,_ = entry["rect"]
+            with Image.open(OUT / index["pages"][entry["page"]]["png"]) as img:
+                cell = np.array(img.convert("RGBA").crop((x-CELL_INSET,y-CELL_INSET,x-CELL_INSET+CELL,y-CELL_INSET+CELL)))
+            backdrops[family][layer] = put(8+2*i+j,cell,entry["source"])
+    for slot,(card,family,sheet,quadrant) in enumerate(FOUNDRY_ART):
+        path = SRC / "foundry" / f"{sheet}.png"
+        with Image.open(path) as img:
+            w,h = img.size
+            row,col = divmod(quadrant,2)
+            subject = img.convert("RGBA").crop((col*w//2,row*h//2,(col+1)*w//2,(row+1)*h//2))
+            bounds = subject.getchannel("A").point(lambda a: 255 if a>=16 else 0).getbbox()
+            if not bounds:
+                raise ValueError(f"Missing foreground for {card}")
+            subject = subject.crop(bounds)
+            subject.thumbnail((int(size*.82),int(size*.82)),Image.Resampling.LANCZOS)
+            centred = Image.new("RGBA",(size,size))
+            centred.paste(subject,((size-subject.width)//2,(size-subject.height)//2))
+        front = put(slot,extrude(bleed(np.array(centred)),CELL_INSET,CELL_INSET),str(path.relative_to(ROOT)))
+        index["cards"][card] = {"type":family,"frame":family,"glow":GLOW[family],
+                                "layers":{**backdrops[family],"front":front},"stack":LAYER_DEFAULTS}
+    png = OUT / filename
+    save_png(page,png)
+    entry = {"png":filename,"pngSha256":sha256(png),"pngBytes":png.stat().st_size,"width":PAGE,"height":PAGE}
+    if not skip_ktx:
+        compressed = encode_ktx2(ktx,png)
+        entry.update(ktx2=compressed.name,ktx2Sha256=sha256(compressed),ktx2Bytes=compressed.stat().st_size)
+    if page_id == len(index["pages"]):
+        index["pages"].append(entry)
+    else:
+        index["pages"][page_id] = entry
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--ktx", type=Path, default=DEFAULT_KTX)
     ap.add_argument("--skip-ktx", action="store_true")
+    ap.add_argument("--foundry-only", action="store_true", help="extend the checked-in slice atlas using the Foundry source sheets")
     args = ap.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
+
+    manifest = OUT / "card-atlas.json"
+    if args.foundry_only:
+        index = json.loads(manifest.read_text())
+        add_foundry_page(index,args.ktx,args.skip_ktx)
+        manifest.write_text(dumps(index) + "\n")
+        return
 
     pages: list[np.ndarray] = []
     cards: dict[str, dict] = {}
@@ -387,7 +454,8 @@ def main() -> None:
         "frames": frames,
         "cards": cards,
     }
-    (OUT / "card-atlas.json").write_text(dumps(index) + "\n")
+    add_foundry_page(index,args.ktx,args.skip_ktx)
+    manifest.write_text(dumps(index) + "\n")
     print(f"card-atlas.json: {len(cards)} cards, {len(frames)} frames, {len(page_entries)} pages")
 
 

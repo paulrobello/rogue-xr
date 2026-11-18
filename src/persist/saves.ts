@@ -1,3 +1,4 @@
+import { ENCOUNTER_CONTENT_VERSION } from '../combat/encounter-choice.ts';
 import { PERMANENT_CARD_IDS } from '../content/rewards.ts';
 import { normalizeSeed, STREAMS, type StreamState } from '../core/rng.ts';
 import { isDifficulty } from '../rules/difficulty.ts';
@@ -47,6 +48,8 @@ export interface SnapshotWorld {
   readonly pendingReward: RewardOffer | null;
   /** True after the guardian has fallen, including while its reward is being claimed. */
   readonly guardianDefeated?: boolean;
+  /** Encounter/reward content generation used to build this floor. Absent means the original pool. */
+  readonly contentVersion?: number;
 }
 
 export interface RunSnapshot extends SnapshotWorld {
@@ -220,6 +223,14 @@ export function validateSnapshot(raw: unknown): RunSnapshot {
   if (r.guardianDefeated !== undefined && typeof r.guardianDefeated !== 'boolean') {
     fail('snapshot.guardianDefeated', 'expected a boolean');
   }
+  if (
+    r.contentVersion !== undefined &&
+    (typeof r.contentVersion !== 'number' ||
+      !Number.isInteger(r.contentVersion) ||
+      r.contentVersion < 1)
+  ) {
+    fail('snapshot.contentVersion', 'expected a positive integer');
+  }
   return {
     version: SNAPSHOT_VERSION,
     savedAt: int(r.savedAt, 'snapshot.savedAt', 0),
@@ -230,6 +241,7 @@ export function validateSnapshot(raw: unknown): RunSnapshot {
     clearedEncounters: strings(r.clearedEncounters, 'snapshot.clearedEncounters'),
     pendingReward,
     ...(r.guardianDefeated === undefined ? {} : { guardianDefeated: r.guardianDefeated }),
+    ...(r.contentVersion === undefined ? {} : { contentVersion: r.contentVersion }),
   };
 }
 
@@ -246,6 +258,7 @@ export function snapshotRun(
       run,
       ...world,
       pendingReward: world.pendingReward ?? null,
+      contentVersion: world.contentVersion ?? ENCOUNTER_CONTENT_VERSION,
     }),
   );
 }

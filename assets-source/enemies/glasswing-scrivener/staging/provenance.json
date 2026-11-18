@@ -1,0 +1,83 @@
+{
+  "concept": "assets-source/concepts/foundry/glasswing-scrivener.png",
+  "conceptSha256": "2d3cb12e3b73d57d0eb1cedc96cd944a29ee751cbc48c50140acc1a251fab018",
+  "conceptApproval": "Paul, 2026-11-18",
+  "author": "Codex Blender author",
+  "blender": "5.2.3 LTS",
+  "generator": "scripts/assets/build-foundry-enemies.py",
+  "maxInfluences": 1,
+  "maxWeightSumError": 0.0,
+  "unweightedVertices": 0,
+  "glbSha256": "baa63b549de98a46bbe946021c7a2bd65181ada28ce02085102e7e77549c8586",
+  "blendSha256": "1f8776daded269f689782c8be902b002a68d2526747559582138a1eec27b6763",
+  "generatorSha256": "895b2f78269a49f05c910d218db5f7d17cc419776f8672ee64afb5967f74e9d8",
+  "triangles": 9520,
+  "bones": 12,
+  "measuredClips": {
+    "attack": {
+      "start": 0.0,
+      "duration": 1.0,
+      "channels": 36
+    },
+    "death": {
+      "start": 0.0,
+      "duration": 1.5,
+      "channels": 36
+    },
+    "frozen": {
+      "start": 0.0,
+      "duration": 1.0,
+      "channels": 36
+    },
+    "hit": {
+      "start": 0.0,
+      "duration": 0.5,
+      "channels": 36
+    },
+    "idle": {
+      "start": 0.0,
+      "duration": 2.0,
+      "channels": 36
+    },
+    "intent-cross-out": {
+      "start": 0.0,
+      "duration": 0.6000000238418579,
+      "channels": 36
+    },
+    "intent-inscribe": {
+      "start": 0.0,
+      "duration": 0.6000000238418579,
+      "channels": 36
+    },
+    "intent-proof": {
+      "start": 0.0,
+      "duration": 0.6000000238418579,
+      "channels": 36
+    }
+  },
+  "reimport": {
+    "armatures": 1,
+    "bones": 12,
+    "meshes": 1,
+    "actions": [
+      "attack.001",
+      "death.001",
+      "frozen.001",
+      "hit.001",
+      "idle.001",
+      "intent-cross-out.001",
+      "intent-inscribe.001",
+      "intent-proof.001"
+    ],
+    "objects": [
+      "glasswing-scrivener-body.001",
+      "glasswing-scrivener.001",
+      "socket-eye.001",
+      "socket-hit.001",
+      "socket-weapon.001"
+    ]
+  },
+  "visualApproval": "pending",
+  "independentReview": "pending",
+  "gameplayLifecycle": "pending"
+}

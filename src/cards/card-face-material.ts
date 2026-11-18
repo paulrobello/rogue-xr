@@ -104,6 +104,7 @@ uniform sampler2D uFrame;
 uniform sampler2D uPage0;
 uniform sampler2D uPage1;
 uniform sampler2D uPage2;
+uniform sampler2D uPage3;
 uniform float uHasArt;
 // Window centre (u from left, v from top), radius as a fraction of width; card height over width.
 uniform vec4 uWindow;
@@ -143,7 +144,8 @@ const float EDGE_MIN_ALPHA = 0.02;
 vec4 pageSample(float page, vec2 uv, vec2 gx, vec2 gy) {
   if (page < 0.5) return textureGrad(uPage0, uv, gx, gy);
   if (page < 1.5) return textureGrad(uPage1, uv, gx, gy);
-  return textureGrad(uPage2, uv, gx, gy);
+  if (page < 2.5) return textureGrad(uPage2, uv, gx, gy);
+  return textureGrad(uPage3, uv, gx, gy);
 }
 
 // 1 inside the layer square, 0 outside, so a layer never samples its neighbouring atlas cell.
@@ -287,6 +289,7 @@ export function createCardFaceMaterial(): THREE.ShaderMaterial {
       uPage0: { value: blank },
       uPage1: { value: blank },
       uPage2: { value: blank },
+      uPage3: { value: blank },
       uHasArt: { value: 0 },
       uWindow: { value: new THREE.Vector4(0.5, 0.37, 0.41, 1.5) },
       uSizes: { value: new THREE.Vector4(2.6, 0.95, 0.7, 1.05) },
@@ -315,10 +318,13 @@ export function applyCardFaceArt(
   const { atlas, pages } = art;
   const frame = atlas.frames.attack;
   const sample = Object.values(atlas.cards)[0] as CardAtlasCard;
-  const artPages = [...new Set(Object.values(atlas.cards).map((c) => c.layers.back.page))].sort();
+  const artPages = [...new Set(Object.values(atlas.cards).map((c) => c.layers.back.page))].sort(
+    (a, b) => a - b,
+  );
   const u = material.uniforms as Record<string, THREE.IUniform>;
   (u.uFrame as THREE.IUniform).value = pages[frame.page];
-  artPages.slice(0, 3).forEach((page, i) => {
+  if (artPages.length > 4) throw new Error('Card atlas exceeds the four art samplers');
+  artPages.forEach((page, i) => {
     (u[`uPage${i}`] as THREE.IUniform).value = pages[page];
   });
   (u.uWindow as THREE.IUniform<THREE.Vector4>).value.set(
@@ -357,7 +363,9 @@ export interface CardFaceInstance {
 /** The per-instance data for one card; `id` may be an upgraded id (`strike+`). */
 export function cardFaceInstance(atlas: CardAtlas, id: string): CardFaceInstance {
   const { card, frame } = cardArt(atlas, id);
-  const artPages = [...new Set(Object.values(atlas.cards).map((c) => c.layers.back.page))].sort();
+  const artPages = [...new Set(Object.values(atlas.cards).map((c) => c.layers.back.page))].sort(
+    (a, b) => a - b,
+  );
   const slot = artPages.indexOf(card.layers.back.page);
   const glow = new THREE.Color(card.glow);
   const front = card.stack.front.offset ?? [0, 0];

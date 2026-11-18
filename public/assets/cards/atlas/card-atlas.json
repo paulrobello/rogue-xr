@@ -40,6 +40,16 @@
       "ktx2": "card-atlas-3.ktx2",
       "ktx2Sha256": "852d5f8c1e9c8ce76ae0d085a5a15fa234aa49bff40d2d2c5a3bc5282fa98976",
       "ktx2Bytes": 1318991
+    },
+    {
+      "png": "foundry.png",
+      "pngSha256": "e9cc2479129c739bb100a71007b070a6bf1382c1a1e34b4ad4cf61474ec0d185",
+      "pngBytes": 4056491,
+      "width": 2048,
+      "height": 2048,
+      "ktx2": "foundry.ktx2",
+      "ktx2Sha256": "36a7d22613533e1398d8600f60a44ad1ea68d68f513990d5e412c650944b1cff",
+      "ktx2Bytes": 2223609
     }
   ],
   "frames": {
@@ -792,6 +802,366 @@
           "rect": [1040, 1552, 480, 480],
           "uv": [0.507812, 0.007812, 0.742188, 0.242188],
           "source": "assets-source/cards/time-spiral/time-spiral-front.cutout.png"
+        }
+      },
+      "stack": {
+        "back": {
+          "depth": 0.03,
+          "size": 2.6,
+          "opaque": true
+        },
+        "mid": {
+          "depth": 0.016,
+          "size": 0.95
+        },
+        "glow": {
+          "depth": 0.007,
+          "size": 0.7,
+          "additive": true
+        },
+        "front": {
+          "depth": 0.005,
+          "size": 1.05
+        }
+      }
+    },
+    "rivet-plate": {
+      "type": "skill",
+      "frame": "skill",
+      "glow": "#5a8cff",
+      "layers": {
+        "back": {
+          "page": 4,
+          "rect": [1040, 1040, 480, 480],
+          "uv": [0.507812, 0.257812, 0.742188, 0.492188],
+          "source": "assets-source/cards/defend/defend-back.png"
+        },
+        "mid": {
+          "page": 4,
+          "rect": [1552, 1040, 480, 480],
+          "uv": [0.757812, 0.257812, 0.992188, 0.492188],
+          "source": "assets-source/cards/defend/defend-mid-r1.cutout.png"
+        },
+        "front": {
+          "page": 4,
+          "rect": [16, 16, 480, 480],
+          "uv": [0.007812, 0.757812, 0.242188, 0.992188],
+          "source": "assets-source/cards/foundry/guards.png"
+        }
+      },
+      "stack": {
+        "back": {
+          "depth": 0.03,
+          "size": 2.6,
+          "opaque": true
+        },
+        "mid": {
+          "depth": 0.016,
+          "size": 0.95
+        },
+        "glow": {
+          "depth": 0.007,
+          "size": 0.7,
+          "additive": true
+        },
+        "front": {
+          "depth": 0.005,
+          "size": 1.05
+        }
+      }
+    },
+    "brass-bulwark": {
+      "type": "skill",
+      "frame": "skill",
+      "glow": "#5a8cff",
+      "layers": {
+        "back": {
+          "page": 4,
+          "rect": [1040, 1040, 480, 480],
+          "uv": [0.507812, 0.257812, 0.742188, 0.492188],
+          "source": "assets-source/cards/defend/defend-back.png"
+        },
+        "mid": {
+          "page": 4,
+          "rect": [1552, 1040, 480, 480],
+          "uv": [0.757812, 0.257812, 0.992188, 0.492188],
+          "source": "assets-source/cards/defend/defend-mid-r1.cutout.png"
+        },
+        "front": {
+          "page": 4,
+          "rect": [528, 16, 480, 480],
+          "uv": [0.257812, 0.757812, 0.492188, 0.992188],
+          "source": "assets-source/cards/foundry/guards.png"
+        }
+      },
+      "stack": {
+        "back": {
+          "depth": 0.03,
+          "size": 2.6,
+          "opaque": true
+        },
+        "mid": {
+          "depth": 0.016,
+          "size": 0.95
+        },
+        "glow": {
+          "depth": 0.007,
+          "size": 0.7,
+          "additive": true
+        },
+        "front": {
+          "depth": 0.005,
+          "size": 1.05
+        }
+      }
+    },
+    "rust-spray": {
+      "type": "skill",
+      "frame": "skill",
+      "glow": "#5a8cff",
+      "layers": {
+        "back": {
+          "page": 4,
+          "rect": [1040, 1040, 480, 480],
+          "uv": [0.507812, 0.257812, 0.742188, 0.492188],
+          "source": "assets-source/cards/defend/defend-back.png"
+        },
+        "mid": {
+          "page": 4,
+          "rect": [1552, 1040, 480, 480],
+          "uv": [0.757812, 0.257812, 0.992188, 0.492188],
+          "source": "assets-source/cards/defend/defend-mid-r1.cutout.png"
+        },
+        "front": {
+          "page": 4,
+          "rect": [1040, 16, 480, 480],
+          "uv": [0.507812, 0.757812, 0.742188, 0.992188],
+          "source": "assets-source/cards/foundry/guards.png"
+        }
+      },
+      "stack": {
+        "back": {
+          "depth": 0.03,
+          "size": 2.6,
+          "opaque": true
+        },
+        "mid": {
+          "depth": 0.016,
+          "size": 0.95
+        },
+        "glow": {
+          "depth": 0.007,
+          "size": 0.7,
+          "additive": true
+        },
+        "front": {
+          "depth": 0.005,
+          "size": 1.05
+        }
+      }
+    },
+    "shear-pin": {
+      "type": "attack",
+      "frame": "attack",
+      "glow": "#ff6a2a",
+      "layers": {
+        "back": {
+          "page": 4,
+          "rect": [16, 1040, 480, 480],
+          "uv": [0.007812, 0.257812, 0.242188, 0.492188],
+          "source": "assets-source/cards/attack-strike/attack-strike-back.png"
+        },
+        "mid": {
+          "page": 4,
+          "rect": [528, 1040, 480, 480],
+          "uv": [0.257812, 0.257812, 0.492188, 0.492188],
+          "source": "assets-source/cards/attack-strike/attack-strike-mid.cutout.png"
+        },
+        "front": {
+          "page": 4,
+          "rect": [1552, 16, 480, 480],
+          "uv": [0.757812, 0.757812, 0.992188, 0.992188],
+          "source": "assets-source/cards/foundry/guards.png"
+        }
+      },
+      "stack": {
+        "back": {
+          "depth": 0.03,
+          "size": 2.6,
+          "opaque": true
+        },
+        "mid": {
+          "depth": 0.016,
+          "size": 0.95
+        },
+        "glow": {
+          "depth": 0.007,
+          "size": 0.7,
+          "additive": true
+        },
+        "front": {
+          "depth": 0.005,
+          "size": 1.05
+        }
+      }
+    },
+    "iron-knuckle": {
+      "type": "attack",
+      "frame": "attack",
+      "glow": "#ff6a2a",
+      "layers": {
+        "back": {
+          "page": 4,
+          "rect": [16, 1040, 480, 480],
+          "uv": [0.007812, 0.257812, 0.242188, 0.492188],
+          "source": "assets-source/cards/attack-strike/attack-strike-back.png"
+        },
+        "mid": {
+          "page": 4,
+          "rect": [528, 1040, 480, 480],
+          "uv": [0.257812, 0.257812, 0.492188, 0.492188],
+          "source": "assets-source/cards/attack-strike/attack-strike-mid.cutout.png"
+        },
+        "front": {
+          "page": 4,
+          "rect": [16, 528, 480, 480],
+          "uv": [0.007812, 0.507812, 0.242188, 0.742188],
+          "source": "assets-source/cards/foundry/strikes.png"
+        }
+      },
+      "stack": {
+        "back": {
+          "depth": 0.03,
+          "size": 2.6,
+          "opaque": true
+        },
+        "mid": {
+          "depth": 0.016,
+          "size": 0.95
+        },
+        "glow": {
+          "depth": 0.007,
+          "size": 0.7,
+          "additive": true
+        },
+        "front": {
+          "depth": 0.005,
+          "size": 1.05
+        }
+      }
+    },
+    "counterstroke": {
+      "type": "attack",
+      "frame": "attack",
+      "glow": "#ff6a2a",
+      "layers": {
+        "back": {
+          "page": 4,
+          "rect": [16, 1040, 480, 480],
+          "uv": [0.007812, 0.257812, 0.242188, 0.492188],
+          "source": "assets-source/cards/attack-strike/attack-strike-back.png"
+        },
+        "mid": {
+          "page": 4,
+          "rect": [528, 1040, 480, 480],
+          "uv": [0.257812, 0.257812, 0.492188, 0.492188],
+          "source": "assets-source/cards/attack-strike/attack-strike-mid.cutout.png"
+        },
+        "front": {
+          "page": 4,
+          "rect": [528, 528, 480, 480],
+          "uv": [0.257812, 0.507812, 0.492188, 0.742188],
+          "source": "assets-source/cards/foundry/strikes.png"
+        }
+      },
+      "stack": {
+        "back": {
+          "depth": 0.03,
+          "size": 2.6,
+          "opaque": true
+        },
+        "mid": {
+          "depth": 0.016,
+          "size": 0.95
+        },
+        "glow": {
+          "depth": 0.007,
+          "size": 0.7,
+          "additive": true
+        },
+        "front": {
+          "depth": 0.005,
+          "size": 1.05
+        }
+      }
+    },
+    "anchor-glyph": {
+      "type": "sigil",
+      "frame": "sigil",
+      "glow": "#3fe08a",
+      "layers": {
+        "back": {
+          "page": 4,
+          "rect": [16, 1552, 480, 480],
+          "uv": [0.007812, 0.007812, 0.242188, 0.242188],
+          "source": "assets-source/cards/warding-glyph/warding-glyph-back.png"
+        },
+        "mid": {
+          "page": 4,
+          "rect": [528, 1552, 480, 480],
+          "uv": [0.257812, 0.007812, 0.492188, 0.242188],
+          "source": "assets-source/cards/warding-glyph/warding-glyph-mid-r1.cutout.png"
+        },
+        "front": {
+          "page": 4,
+          "rect": [1040, 528, 480, 480],
+          "uv": [0.507812, 0.507812, 0.742188, 0.742188],
+          "source": "assets-source/cards/foundry/strikes.png"
+        }
+      },
+      "stack": {
+        "back": {
+          "depth": 0.03,
+          "size": 2.6,
+          "opaque": true
+        },
+        "mid": {
+          "depth": 0.016,
+          "size": 0.95
+        },
+        "glow": {
+          "depth": 0.007,
+          "size": 0.7,
+          "additive": true
+        },
+        "front": {
+          "depth": 0.005,
+          "size": 1.05
+        }
+      }
+    },
+    "quench-seal": {
+      "type": "sigil",
+      "frame": "sigil",
+      "glow": "#3fe08a",
+      "layers": {
+        "back": {
+          "page": 4,
+          "rect": [16, 1552, 480, 480],
+          "uv": [0.007812, 0.007812, 0.242188, 0.242188],
+          "source": "assets-source/cards/warding-glyph/warding-glyph-back.png"
+        },
+        "mid": {
+          "page": 4,
+          "rect": [528, 1552, 480, 480],
+          "uv": [0.257812, 0.007812, 0.492188, 0.242188],
+          "source": "assets-source/cards/warding-glyph/warding-glyph-mid-r1.cutout.png"
+        },
+        "front": {
+          "page": 4,
+          "rect": [1552, 528, 480, 480],
+          "uv": [0.757812, 0.507812, 0.992188, 0.742188],
+          "source": "assets-source/cards/foundry/strikes.png"
         }
       },
       "stack": {

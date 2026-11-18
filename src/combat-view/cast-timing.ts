@@ -65,7 +65,7 @@ const clamp01 = (x: number): number => (x < 0 ? 0 : x > 1 ? 1 : x);
 const amountOf = (a: Amount): number => (typeof a === 'number' ? a : (a.base ?? 0) + a.dice);
 
 /** The FX step for one effect, without its start time; null for an effect with no FX. */
-function stepOf(effect: Effect): Omit<CastFxStep, 'at'> | null {
+function stepOf(effect: Effect, gainedBlock: number): Omit<CastFxStep, 'at'> | null {
   switch (effect.type) {
     case 'damage':
       return { kind: 'bolt', amount: amountOf(effect.amount) * (effect.hits ?? 1) };
@@ -85,6 +85,10 @@ function stepOf(effect: Effect): Omit<CastFxStep, 'at'> | null {
       };
     case 'draw':
       return { kind: 'draw', amount: amountOf(effect.amount) };
+    case 'block-from-status':
+      return { kind: 'shield', amount: effect.base + effect.perStack * effect.maxStacks };
+    case 'conditional-block':
+      return gainedBlock > 0 ? { kind: 'shield', amount: gainedBlock } : null;
     default: {
       const never: never = effect;
       return never;
@@ -97,12 +101,12 @@ function stepOf(effect: Effect): Omit<CastFxStep, 'at'> | null {
  * after the previous non-bolt one, except enemy motes on a card that also strikes, which ride with
  * the bolt (so the damage never waits for them).
  */
-export function castFxSteps(card: Pick<CardDef, 'effects'>): CastFxStep[] {
+export function castFxSteps(card: Pick<CardDef, 'effects'>, gainedBlock = 0): CastFxStep[] {
   const strikes = card.effects.some((e) => e.type === 'damage');
   const steps: CastFxStep[] = [];
   let next = 0;
   for (const effect of card.effects) {
-    const step = stepOf(effect);
+    const step = stepOf(effect, gainedBlock);
     if (!step) continue;
     if (step.kind === 'bolt' || (strikes && step.kind === 'motes' && step.toward === 'enemy')) {
       steps.push({ ...step, at: 0 });

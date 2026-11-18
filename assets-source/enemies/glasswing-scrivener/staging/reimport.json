@@ -1,0 +1,179 @@
+{
+  "pass": true,
+  "glb_sha256": "baa63b549de98a46bbe946021c7a2bd65181ada28ce02085102e7e77549c8586",
+  "max_influences": 1,
+  "unweighted_vertices": 0,
+  "max_weight_sum_error": 0.0,
+  "triangles": 9520,
+  "bone_count": 12,
+  "clips": {
+    "attack": {
+      "start": 0.0,
+      "duration": 1.0,
+      "channels": 36
+    },
+    "death": {
+      "start": 0.0,
+      "duration": 1.5,
+      "channels": 36
+    },
+    "frozen": {
+      "start": 0.0,
+      "duration": 1.0,
+      "channels": 36
+    },
+    "hit": {
+      "start": 0.0,
+      "duration": 0.5,
+      "channels": 36
+    },
+    "idle": {
+      "start": 0.0,
+      "duration": 2.0,
+      "channels": 36
+    },
+    "intent-cross-out": {
+      "start": 0.0,
+      "duration": 0.6000000238418579,
+      "channels": 36
+    },
+    "intent-inscribe": {
+      "start": 0.0,
+      "duration": 0.6000000238418579,
+      "channels": 36
+    },
+    "intent-proof": {
+      "start": 0.0,
+      "duration": 0.6000000238418579,
+      "channels": 36
+    }
+  },
+  "blender_reimport": {
+    "armatures": 1,
+    "bones": 12,
+    "meshes": 1,
+    "actions": [
+      "attack.001",
+      "death.001",
+      "frozen.001",
+      "hit.001",
+      "idle.001",
+      "intent-cross-out.001",
+      "intent-inscribe.001",
+      "intent-proof.001"
+    ],
+    "objects": [
+      "glasswing-scrivener-body.001",
+      "glasswing-scrivener.001",
+      "socket-eye.001",
+      "socket-hit.001",
+      "socket-weapon.001"
+    ]
+  },
+  "poseMetrics": {
+    "attack": {
+      "finalMaxZ": 1.7354,
+      "finalMinZ": -0.0,
+      "minZ": -0.0
+    },
+    "death": {
+      "finalMaxZ": 1.0549,
+      "finalMinZ": -0.0,
+      "minZ": -0.0001
+    },
+    "frozen": {
+      "finalMaxZ": 1.7354,
+      "finalMinZ": -0.0,
+      "minZ": -0.0
+    },
+    "hit": {
+      "finalMaxZ": 1.7354,
+      "finalMinZ": -0.0,
+      "minZ": -0.0
+    },
+    "idle": {
+      "finalMaxZ": 1.7354,
+      "finalMinZ": -0.0,
+      "minZ": -0.0
+    },
+    "intent-cross-out": {
+      "finalMaxZ": 1.7354,
+      "finalMinZ": 0.053,
+      "minZ": -0.0
+    },
+    "intent-inscribe": {
+      "finalMaxZ": 1.7354,
+      "finalMinZ": -0.0,
+      "minZ": -0.0
+    },
+    "intent-proof": {
+      "finalMaxZ": 1.0565,
+      "finalMinZ": -0.0,
+      "minZ": -0.0
+    }
+  },
+  "actionMetrics": {
+    "attack": {
+      "0": {
+        "nib.R": {
+          "center": [
+            0.4215,
+            0.9012,
+            0.266
+          ],
+          "maxZ": 0.7826,
+          "minZ": -0.0
+        }
+      },
+      "14.4": {
+        "nib.R": {
+          "center": [
+            0.4215,
+            1.3854,
+            0.4269
+          ],
+          "maxZ": 0.718,
+          "minZ": 0.2695
+        }
+      },
+      "24": {
+        "nib.R": {
+          "center": [
+            0.4215,
+            0.9012,
+            0.266
+          ],
+          "maxZ": 0.7826,
+          "minZ": -0.0
+        }
+      },
+      "7.2": {
+        "nib.R": {
+          "center": [
+            0.4215,
+            0.9609,
+            0.357
+          ],
+          "maxZ": 0.7895,
+          "minZ": 0.1313
+        }
+      }
+    }
+  },
+  "actionMetricsTimebase": "Blender reimport at 24 fps; frame 14.4 is 0.6 seconds, frame 24 is 1.0 second",
+  "checks": [
+    "skin weights",
+    "finite bind matrices and vertex positions",
+    "one skin",
+    "budget",
+    "clip inventory and durations",
+    "fixed root",
+    "Blender glTF reimport",
+    "sampled reimported clips for floor clearance",
+    "measured action motion at gameplay impact"
+  ],
+  "notChecked": [
+    "visual acceptance",
+    "actual gameplay lifecycle"
+  ]
+}

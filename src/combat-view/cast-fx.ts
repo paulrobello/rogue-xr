@@ -59,6 +59,8 @@ const STATUS_RGB: Record<StatusId, LinearRgb> = {
   vulnerable: boost(linearRgb(PALETTE.ruby), 2.6),
   overheat: linearRgb(SPARK_AMBER),
   'wound-up': BRASS,
+  plating: boost(linearRgb(PALETTE.brass), 2.0),
+  rust: boost(linearRgb('#d85b2b'), 2.2),
 };
 
 function mixRgb(a: LinearRgb, b: LinearRgb, k: number): LinearRgb {

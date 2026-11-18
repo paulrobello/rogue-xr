@@ -105,7 +105,8 @@ async function openFight(
 ): Promise<Rig & { session: CombatSession }> {
   const scene = new THREE.Scene();
   const player = new THREE.Group();
-  const view = mountFloorView(scene, player, seed);
+  // These fixed combat traces predate the roster expansion.
+  const view = mountFloorView(scene, player, seed, { contentVersion: 1 });
   if (where.tableAsset) view.useTableAsset(where.tableAsset, TABLE_ASSET_TOP);
   // A regular fight: the scripted policy is not meant to beat the elite or the guardian.
   const room =
@@ -344,7 +345,13 @@ describe('combat session', () => {
     const { session, view } = rig;
     expect(session.room).toBe(view.encounter.activeRoom);
     const tier = view.world.plan.rooms[rig.room]?.encounter?.tier ?? 'regular';
-    const expected = chooseEncounter(view.seed, rig.room, tier, rig.bodies.length);
+    const expected = chooseEncounter(
+      view.seed,
+      rig.room,
+      tier,
+      rig.bodies.length,
+      view.contentVersion,
+    );
     expect(session.controller.state.enemies.map((e) => e.id.replace(/-\d+$/, ''))).toEqual(
       expected.enemies,
     );
@@ -1281,7 +1288,13 @@ describe('enemy phase, one enemy at a time', () => {
   /** A bare controller with the session's fight: the unsequenced resolution. */
   const bareTwin = (rig: Rig & { session: CombatSession }, deck?: readonly string[]) => {
     const tier = rig.view.world.plan.rooms[rig.room]?.encounter?.tier ?? 'regular';
-    const encounter = chooseEncounter(rig.view.seed, rig.room, tier, rig.bodies.length);
+    const encounter = chooseEncounter(
+      rig.view.seed,
+      rig.room,
+      tier,
+      rig.bodies.length,
+      rig.view.contentVersion,
+    );
     return new CombatController({
       seed: fightSeed(rig.view.seed, rig.room),
       setups: encounterSetups(encounter),

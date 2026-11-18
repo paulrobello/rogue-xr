@@ -118,7 +118,8 @@ PIPS = {
 
 D6_VALUES = [1, 2, 3, 4, 5, 6]
 D8_VALUES = [1, 2, 3, 4, 5, 6, 7, 8]
-SIGIL_IDS = ["gear", "flame", "ward", "bolt", "spiral"]
+D4_VALUES = [1, 2, 3, 4]
+SIGIL_IDS = ["gear", "flame", "ward", "bolt", "spiral", "anchor"]
 
 
 def sha256(path: Path) -> str:
@@ -194,7 +195,7 @@ def build_icons() -> tuple[Image.Image, dict, list[dict]]:
     cutout = np.asarray(Image.open(SRC / spec["cutout"]).convert("RGBA"))
     cols, rows = spec["grid"]["cols"], spec["grid"]["rows"]
     cw, ch = sheet.shape[1] // cols, sheet.shape[0] // rows
-    ids: list[str] = spec["cells"]
+    ids: list[str] = [*spec["cells"], "status-plating", "status-rust"]
     page_cols = 4
     page_w = page_cols * ICON_SLOT
     page_h = math.ceil(len(ids) / page_cols) * ICON_SLOT
@@ -203,6 +204,24 @@ def build_icons() -> tuple[Image.Image, dict, list[dict]]:
     crops: list[dict] = []
     inner = ICON_SLOT - 2 * ICON_PAD
     for i, icon_id in enumerate(ids):
+        px, py = (i % page_cols) * ICON_SLOT, (i // page_cols) * ICON_SLOT
+        if i >= len(spec["cells"]):
+            # These two status marks are authored locally because the historical raw sheet predates
+            # Foundry. Keep them deterministic and distinct from the legacy sprite aliases.
+            tile = Image.new("RGBA", (inner, inner), (0, 0, 0, 0))
+            d = ImageDraw.Draw(tile)
+            c = inner // 2
+            if icon_id == "status-plating":
+                for inset, color in ((30, (238, 207, 126, 255)), (20, (184, 145, 67, 255)), (10, (255, 229, 157, 255))):
+                    d.rounded_rectangle((inset, inset, inner - inset, inner - inset), radius=8, outline=color, width=7)
+            else:
+                d.ellipse((18, 18, inner - 18, inner - 18), fill=(174, 64, 32, 220), outline=(255, 151, 49, 255), width=5)
+                for dx, dy in ((-20, -8), (4, -24), (18, 12), (-6, 22)):
+                    d.polygon([(c + dx, c + dy), (c + dx + 8, c + dy - 16), (c + dx + 16, c + dy + 5)], fill=(255, 190, 68, 255))
+            page[py + ICON_PAD : py + ICON_PAD + inner, px + ICON_PAD : px + ICON_PAD + inner] = np.asarray(tile)
+            icons[icon_id] = entry("icons", px, py, ICON_SLOT, ICON_SLOT, page_w, page_h)
+            crops.append({"id": icon_id, "sourceRect": None})
+            continue
         cx, cy = (i % cols) * cw, (i // cols) * ch
         alpha = cutout[cy : cy + ch, cx : cx + cw, 3]
         x0, y0, x1, y1 = content_bbox(alpha > 128)
@@ -223,7 +242,6 @@ def build_icons() -> tuple[Image.Image, dict, list[dict]]:
         small = Image.fromarray(tile, "RGBA").resize((inner, inner), Image.Resampling.LANCZOS)
         arr = np.asarray(small).copy()
         arr[arr[..., 3] < 4] = 0
-        px, py = (i % page_cols) * ICON_SLOT, (i // page_cols) * ICON_SLOT
         page[py + ICON_PAD : py + ICON_PAD + inner, px + ICON_PAD : px + ICON_PAD + inner] = arr
         icons[icon_id] = entry("icons", px, py, ICON_SLOT, ICON_SLOT, page_w, page_h)
         crops.append({"id": icon_id, "sourceRect": {"x": int(sx0), "y": int(sy0), "w": side, "h": side}})
@@ -396,7 +414,7 @@ def grade_walnut(plate: np.ndarray) -> np.ndarray:
     return np.clip(np.rint(out), 0, 255).astype(np.uint8)
 
 
-def build_dice() -> tuple[Image.Image, Image.Image, Image.Image, Image.Image, dict, dict]:
+def build_dice() -> tuple[Image.Image, Image.Image, Image.Image, Image.Image, Image.Image, Image.Image, dict, dict]:
     sheet = np.asarray(Image.open(SRC / "raw/dice-plates.png").convert("RGB"))
     (ax0, ay0, ax1, ay1), (bx0, by0, bx1, by1) = plate_boxes(sheet)
     d6_plate = Image.fromarray(sheet[ay0:ay1, ax0:ax1]).resize((DIE_SLOT, DIE_SLOT), Image.Resampling.LANCZOS)
@@ -422,11 +440,13 @@ def build_dice() -> tuple[Image.Image, Image.Image, Image.Image, Image.Image, di
     font = ImageFont.truetype(str(FONT), 92 * scale)
     d6_page = np.zeros((DIE_SLOT * 2, DIE_SLOT * 4, 4), np.uint8)
     d8_page = np.zeros((DIE_SLOT * 2, DIE_SLOT * 4, 4), np.uint8)
+    d4_page = np.zeros((DIE_SLOT * 2, DIE_SLOT * 4, 4), np.uint8)
     d6_glow = np.zeros((DIE_SLOT * 2, DIE_SLOT * 4, 4), np.uint8)
     d8_glow = np.zeros((DIE_SLOT * 2, DIE_SLOT * 4, 4), np.uint8)
+    d4_glow = np.zeros((DIE_SLOT * 2, DIE_SLOT * 4, 4), np.uint8)
     d6_glow[..., 3] = 255
     d8_glow[..., 3] = 255
-    d6_faces, d8_faces = [], []
+    d6_faces, d8_faces, d4_faces = [], [], []
     for index, value in enumerate(D6_VALUES):
         face, lit = lit_pips(d6_base, value, scale)
         px, py = (index % 4) * DIE_SLOT, (index // 4) * DIE_SLOT
@@ -449,10 +469,28 @@ def build_dice() -> tuple[Image.Image, Image.Image, Image.Image, Image.Image, di
         d8_page[py : py + DIE_SLOT, px : px + DIE_SLOT] = face
         d8_glow[py : py + DIE_SLOT, px : px + DIE_SLOT] = lit
         d8_faces.append({"index": index, "value": value, **entry("dice-d8", px, py, DIE_SLOT, DIE_SLOT, 1024, 512)})
+    d4_base = np.dstack([np.full((DIE_SLOT, DIE_SLOT, 3), (0x34, 0x37, 0x3B), np.uint8), tri_alpha])
+    for index, value in enumerate(D4_VALUES):
+        def numeral(d: ImageDraw.ImageDraw, index: int = index) -> None:
+            # A standard d4 repeats the apex value on the three adjacent triangles. Draw all
+            # vertex values at their corners so whichever vertex rests up reads consistently.
+            corner_font = ImageFont.truetype(str(FONT), 52 * scale)
+            labels = [v for v in D4_VALUES if v - 1 != index]
+            for (vx, vy), label in zip(tri, labels):
+                cx = DIE_SLOT / 2 + 0.56 * (vx - DIE_SLOT / 2)
+                cy = (top + 2 * tri_h / 3) + 0.56 * (vy - (top + 2 * tri_h / 3))
+                d.text((cx * scale, cy * scale), str(label), font=corner_font, fill=255,
+                       anchor="mm", stroke_width=2 * scale, stroke_fill=255)
+        face, lit = lit_mark(d4_base, numeral, scale, scaled_srgb(DICE_MARK_TARGET, D8_MARK_EMIT), D8_GLOW_HALO, linear_halo=True)
+        px, py = (index % 4) * DIE_SLOT, (index // 4) * DIE_SLOT
+        d4_page[py : py + DIE_SLOT, px : px + DIE_SLOT] = face
+        d4_glow[py : py + DIE_SLOT, px : px + DIE_SLOT] = lit
+        d4_faces.append({"index": index, "value": value, **entry("dice-d4", px, py, DIE_SLOT, DIE_SLOT, 1024, 512)})
     triangle = [[round(x / DIE_SLOT, 6), round(y / DIE_SLOT, 6)] for x, y in tri]
     dice = {
         "brass-d6": {"kind": "d6", "shape": "square", "triangle": None, "faces": d6_faces, "glowPage": "dice-d6-glow"},
         "glass-d8": {"kind": "d8", "shape": "triangle", "triangle": triangle, "faces": d8_faces, "glowPage": "dice-d8-glow"},
+        "iron-d4": {"kind": "d4", "shape": "triangle", "triangle": triangle, "faces": d4_faces, "glowPage": "dice-d4-glow"},
     }
     sources = {
         "d6PlateRect": {"x": ax0, "y": ay0, "w": ax1 - ax0, "h": ay1 - ay0},
@@ -461,8 +499,10 @@ def build_dice() -> tuple[Image.Image, Image.Image, Image.Image, Image.Image, di
     return (
         Image.fromarray(dilate_rgb(d6_page), "RGBA"),
         Image.fromarray(dilate_rgb(d8_page), "RGBA"),
+        Image.fromarray(dilate_rgb(d4_page), "RGBA"),
         Image.fromarray(d6_glow, "RGBA"),
         Image.fromarray(d8_glow, "RGBA"),
+        Image.fromarray(d4_glow, "RGBA"),
         dice,
         sources,
     )
@@ -630,7 +670,7 @@ def main() -> None:
     DOCS.mkdir(parents=True, exist_ok=True)
 
     icons_page, icons, crops = build_icons()
-    d6_page, d8_page, d6_glow, d8_glow, dice, dice_src = build_dice()
+    d6_page, d8_page, d4_page, d6_glow, d8_glow, d4_glow, dice, dice_src = build_dice()
     glyph_page, glyphs = build_glyphs()
     key_variants = build_key_art()
 
@@ -638,9 +678,11 @@ def main() -> None:
         "icons": icons_page,
         "dice-d6": d6_page,
         "dice-d8": d8_page,
+        "dice-d4": d4_page,
         "glyphs": glyph_page,
         "dice-d6-glow": d6_glow,
         "dice-d8-glow": d8_glow,
+        "dice-d4-glow": d4_glow,
     }
     ktx_available = not args.no_ktx and args.ktx.exists()
     pages = {}

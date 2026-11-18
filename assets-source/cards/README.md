@@ -65,3 +65,7 @@ share under `game-data/rogue-xr/`, at the same relative paths as here (macOS mou
 `/Volumes/homes/game-data/rogue-xr/assets-source/cards/`). `raw-store.json` lists every file with
 its sha256 and size; each hash also appears in `provenance.json`. To restore them, copy that folder
 back over this one and check the hashes against `raw-store.json`.
+
+## Foundry illustrations
+
+The eight Foundry illustrations come from the two original transparent sheets in `foundry/`. Rebuild their supplemental atlas page with `python3 scripts/assets/build_card_atlas.py --foundry-only`. The generator crops the named quadrants, extrudes their gutters and reuses the shipped attack, skill and sigil backdrop layers. The full build also includes this page.

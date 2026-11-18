@@ -45,6 +45,9 @@ export type BoltKind = 'sigil' | 'card';
 
 /** Stable visual families for attacks. These change only the pooled presentation, never damage. */
 export type AttackVisualKind =
+  | 'pin'
+  | 'knuckle'
+  | 'counterstroke'
   | 'physical'
   | 'cog'
   | 'flurry'
@@ -71,6 +74,12 @@ export function attackVisualKind(cardId: string | null | undefined): AttackVisua
       return 'storm';
     case 'furnace-brand':
       return 'furnace';
+    case 'shear-pin':
+      return 'pin';
+    case 'iron-knuckle':
+      return 'knuckle';
+    case 'counterstroke':
+      return 'counterstroke';
     case 'arc-bolt':
       return 'lightning';
     default:
@@ -79,6 +88,9 @@ export function attackVisualKind(cardId: string | null | undefined): AttackVisua
 }
 
 const VISUAL_RGB: Record<AttackVisualKind, LinearRgb> = {
+  pin: linearRgb('#f1d6b4'),
+  knuckle: linearRgb('#b4a59b'),
+  counterstroke: linearRgb('#d57040'),
   physical: linearRgb('#d98b45'),
   cog: linearRgb('#e0b14b'),
   flurry: linearRgb('#ef6b4a'),
@@ -348,6 +360,11 @@ export class SpellFx extends THREE.Group {
         mesh.position.set(at3.x, at3.y, at3.z);
         this.direction.set(dx, to3.y - from3.y, dz).normalize();
         mesh.quaternion.setFromUnitVectors(FORWARD, this.direction);
+        if (visual === 'knuckle' && !this.reducedMotion) {
+          mesh.rotateZ(-0.5 + 0.8 * s);
+          mesh.translateZ(0.08 * Math.sin(s * Math.PI * 4));
+        }
+        if (visual === 'counterstroke') mesh.rotateX(this.reducedMotion ? 0 : 0.5 * (1 - s));
         if (visual === 'hammer') mesh.rotateX(this.reducedMotion ? -0.35 : 0.85 - 1.7 * s);
         if (visual === 'cog' || visual === 'storm') {
           mesh.rotateY(0.4);

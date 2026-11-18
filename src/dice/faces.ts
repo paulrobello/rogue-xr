@@ -12,11 +12,12 @@ import {
 } from './quat.ts';
 
 /** The dice shapes the slice has: `brass-d6` is a cube, `glass-d8` an octahedron. */
-export type DieKind = 'd6' | 'd8';
+export type DieKind = 'd6' | 'd8' | 'd4';
 
 /** Metres. The cube's half edge and the octahedron's centre-to-vertex distance. */
 export const D6_HALF_EXTENT = 0.02;
 export const D8_CIRCUMRADIUS = 0.026;
+export const D4_CIRCUMRADIUS = 0.026;
 
 const UP: Vec3 = { x: 0, y: 1, z: 0 };
 const INV_SQRT3 = 1 / Math.sqrt(3);
@@ -42,6 +43,14 @@ const D8_NORMALS: readonly Vec3[] = Array.from({ length: 8 }, (_, i) => ({
   z: (i & 1 ? -1 : 1) * INV_SQRT3,
 }));
 
+const D4_NORMALS: readonly Vec3[] = [
+  { x: INV_SQRT3, y: INV_SQRT3, z: INV_SQRT3 },
+  { x: -INV_SQRT3, y: -INV_SQRT3, z: INV_SQRT3 },
+  { x: -INV_SQRT3, y: INV_SQRT3, z: -INV_SQRT3 },
+  { x: INV_SQRT3, y: -INV_SQRT3, z: -INV_SQRT3 },
+];
+const DOWN: Vec3 = { x: 0, y: -1, z: 0 };
+
 const D6_VERTICES: readonly Vec3[] = [-1, 1].flatMap((x) =>
   [-1, 1].flatMap((y) =>
     [-1, 1].map((z) => ({ x: x * D6_HALF_EXTENT, y: y * D6_HALF_EXTENT, z: z * D6_HALF_EXTENT })),
@@ -56,14 +65,20 @@ const D8_VERTICES: readonly Vec3[] = [
   { x: 0, y: 0, z: D8_CIRCUMRADIUS },
   { x: 0, y: 0, z: -D8_CIRCUMRADIUS },
 ];
+// A regular tetrahedron centred at the origin, with vertices opposite the face normals above.
+const D4_VERTICES: readonly Vec3[] = D4_NORMALS.map((n) => ({
+  x: -n.x * D4_CIRCUMRADIUS,
+  y: -n.y * D4_CIRCUMRADIUS,
+  z: -n.z * D4_CIRCUMRADIUS,
+}));
 
 export function faceNormals(kind: DieKind): readonly Vec3[] {
-  return kind === 'd6' ? D6_NORMALS : D8_NORMALS;
+  return kind === 'd6' ? D6_NORMALS : kind === 'd8' ? D8_NORMALS : D4_NORMALS;
 }
 
 /** Convex hull vertices of the die in local space. */
 export function dieVertices(kind: DieKind): readonly Vec3[] {
-  return kind === 'd6' ? D6_VERTICES : D8_VERTICES;
+  return kind === 'd6' ? D6_VERTICES : kind === 'd8' ? D8_VERTICES : D4_VERTICES;
 }
 
 /** Radius of the sphere around the die's centre that holds every vertex, whatever its orientation. */
@@ -145,6 +160,17 @@ export function numberingOffset(kind: DieKind, targetFace: number, landingFace: 
   const to = normals[landingFace];
   if (from === undefined || to === undefined)
     throw new RangeError(`No face ${targetFace} or ${landingFace} on a ${kind}`);
+  // A d4's number is printed at a vertex. Resting on the opposite triangular face puts that
+  // vertex uniquely at the apex, so map the target and predicted landing vertices together.
+  if (kind === 'd4')
+    return quatFromUnitVectors(
+      { x: -from.x, y: -from.y, z: -from.z },
+      {
+        x: -to.x,
+        y: -to.y,
+        z: -to.z,
+      },
+    );
   for (const rotation of SOLID_ROTATIONS) {
     const n = rotateVec(rotation, from);
     if (n.x * to.x + n.y * to.y + n.z * to.z > 0.999) return rotation;
@@ -157,7 +183,10 @@ export function upFace(quaternion: Quat, normals: readonly Vec3[]): number {
   let best = 0;
   let bestY = Number.NEGATIVE_INFINITY;
   for (let i = 0; i < normals.length; i++) {
-    const y = rotateVec(quaternion, normals[i] as Vec3).y;
+    const rotated = rotateVec(quaternion, normals[i] as Vec3);
+    // For a tetrahedron, the upper vertex is opposite this face normal. The face itself is
+    // therefore the contact face and must point down, not up like cube/octahedron face numbering.
+    const y = normals.length === 4 && normals === D4_NORMALS ? -rotated.y : rotated.y;
     if (y > bestY) {
       bestY = y;
       best = i;
@@ -179,7 +208,10 @@ export function correctionRotation(
   const normal = normals[targetFace];
   if (normal === undefined)
     throw new RangeError(`No face ${targetFace} on a die of ${normals.length} faces`);
-  return quatFromUnitVectors(rotateVec(currentQuat, normal), UP);
+  return quatFromUnitVectors(
+    rotateVec(currentQuat, normal),
+    normals.length === 4 && normals === D4_NORMALS ? DOWN : UP,
+  );
 }
 
 /** World-space heights and the contact point of the lowest part of the die in `pose`. */

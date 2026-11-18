@@ -11,6 +11,8 @@ export const STATUS_NAME: Readonly<Record<StatusId, string>> = {
   vulnerable: 'Vulnerable',
   overheat: 'Overheat',
   'wound-up': 'Wound-up',
+  plating: 'Plating',
+  rust: 'Rust',
 };
 
 const percent = (multiplier: number): number => Math.round(Math.abs(1 - multiplier) * 100);
@@ -35,6 +37,8 @@ export function statusExplanation(
     vulnerable: `Attacks against ${you ? 'you' : 'it'} deal ${percent(VULNERABLE_MULTIPLIER)}% more damage.`,
     overheat: `${you ? 'You lose' : 'It loses'} ${hp} at the start of ${their} turn, ignoring block, then 1 stack.`,
     'wound-up': `Each of ${their} attack hits deals ${more}.`,
+    plating: `${you ? 'Your' : 'Its'} Plating grants Block at the start of ${their} turn, then loses 1 stack.`,
+    rust: `New Block gained by ${you ? 'you' : 'it'} is halved, rounded down. Loses 1 stack at the end of ${their} turn.`,
   };
   const wears = DECAYS_AT_TURN_END.includes(id)
     ? ` Loses 1 stack at the end of ${their} turn.`

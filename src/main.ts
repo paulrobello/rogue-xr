@@ -173,8 +173,8 @@ const heroRooms = proofView
   ? { manifests: [], templates: undefined }
   : await fetchHeroRooms(HERO_ROOMS, (id) => fetchStudyManifest(id));
 const worldTemplates = heroRooms.templates;
-const mountFloor = (seed: string): FloorView => {
-  const view = mountFloorView(scene, rig, seed, { templates: worldTemplates });
+const mountFloor = (seed: string, contentVersion?: number): FloorView => {
+  const view = mountFloorView(scene, rig, seed, { templates: worldTemplates, contentVersion });
   view.encounter.tableDistance = (settings ?? DEFAULT_SETTINGS).tableDistance;
   return view;
 };
@@ -621,11 +621,17 @@ function standAtEntry(room: number): void {
   rig.updateMatrixWorld(true);
 }
 /** Puts a pristine floor for `seed` under the player, rebuilding in place (no reload, XR stays up). */
-const freshFloor = (seed: string): FloorView => {
-  if (floor && floor.seed === seed && !floorUsed) return floor;
+const freshFloor = (seed: string, contentVersion?: number): FloorView => {
+  if (
+    floor &&
+    floor.seed === seed &&
+    floor.contentVersion === (contentVersion ?? floor.contentVersion) &&
+    !floorUsed
+  )
+    return floor;
   combat?.dispose();
   floor?.dispose();
-  floor = mountFloor(seed);
+  floor = mountFloor(seed, contentVersion);
   combat = makeCombat(floor);
   fitTable(floor);
   void dressFloor(floor);
@@ -644,7 +650,8 @@ const startRun = (seed: string, difficulty: Difficulty): void => {
 const continueRun = (): void => {
   const snap = storedSnapshot;
   if (!snap || flow.phase !== 'title') return;
-  const target = freshFloor(snap.floorSeed);
+  // Saves predating contentVersion used the original encounter pool.
+  const target = freshFloor(snap.floorSeed, snap.contentVersion ?? 1);
   for (const room of snap.clearedEncounters) target.markCleared(Number(room));
   for (const key of snap.run.openedLoot ?? []) {
     const opened = parseLootKey(key);

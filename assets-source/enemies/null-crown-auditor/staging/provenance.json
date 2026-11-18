@@ -1,0 +1,89 @@
+{
+  "concept": "assets-source/concepts/foundry/null-crown-auditor.png",
+  "conceptSha256": "dff47cf78a197e102345426edd3c14eb6eb43a5a011cc1c71da034683e7081c7",
+  "conceptApproval": "Paul, 2026-11-18",
+  "author": "Codex Blender author",
+  "blender": "5.2.3 LTS",
+  "generator": "scripts/assets/build-foundry-enemies.py",
+  "maxInfluences": 1,
+  "maxWeightSumError": 0.0,
+  "unweightedVertices": 0,
+  "glbSha256": "9237a4c5fd5b656b2ed05073e3c2ce31b01a22593f121277ee1cb8aea0588ff7",
+  "blendSha256": "86807deaedab02378eaa67cdaaba167bcfab6d07588e9a10f8413b9d6d3c92a7",
+  "generatorSha256": "895b2f78269a49f05c910d218db5f7d17cc419776f8672ee64afb5967f74e9d8",
+  "triangles": 7080,
+  "bones": 9,
+  "measuredClips": {
+    "action-levy": {
+      "start": 0.0,
+      "duration": 1.0,
+      "channels": 27
+    },
+    "attack": {
+      "start": 0.0,
+      "duration": 1.0,
+      "channels": 27
+    },
+    "death": {
+      "start": 0.0,
+      "duration": 1.5,
+      "channels": 27
+    },
+    "frozen": {
+      "start": 0.0,
+      "duration": 1.0,
+      "channels": 27
+    },
+    "hit": {
+      "start": 0.0,
+      "duration": 0.5,
+      "channels": 27
+    },
+    "idle": {
+      "start": 0.0,
+      "duration": 2.0,
+      "channels": 27
+    },
+    "intent-levy": {
+      "start": 0.0,
+      "duration": 0.6000000238418579,
+      "channels": 27
+    },
+    "intent-reconcile": {
+      "start": 0.0,
+      "duration": 0.6000000238418579,
+      "channels": 27
+    },
+    "intent-tally": {
+      "start": 0.0,
+      "duration": 0.6000000238418579,
+      "channels": 27
+    }
+  },
+  "reimport": {
+    "armatures": 1,
+    "bones": 9,
+    "meshes": 1,
+    "actions": [
+      "action-levy.001",
+      "attack.001",
+      "death.001",
+      "frozen.001",
+      "hit.001",
+      "idle.001",
+      "intent-levy.001",
+      "intent-reconcile.001",
+      "intent-tally.001"
+    ],
+    "objects": [
+      "null-crown-auditor-body.001",
+      "null-crown-auditor.001",
+      "socket-eye.001",
+      "socket-hit.001",
+      "socket-weapon.001"
+    ]
+  },
+  "visualApproval": "pending",
+  "independentReview": "pending",
+  "gameplayLifecycle": "pending"
+}

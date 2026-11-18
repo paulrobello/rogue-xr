@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { EncounterDirector } from '../combat/encounter.ts';
-import { chooseEncounter } from '../combat/encounter-choice.ts';
+import { chooseEncounter, ENCOUNTER_CONTENT_VERSION } from '../combat/encounter-choice.ts';
 import { combatRoom, rigTurnAboutHead } from '../combat/placement.ts';
 import { buildTableGreybox, disposeTable, TABLE_NODES } from '../combat/table-greybox.ts';
 import type { RoomTemplate } from '../content/rooms.ts';
@@ -92,6 +92,7 @@ export interface FloorView {
   loot: FloorLoot;
   hearth: FloorHearths;
   seed: string;
+  readonly contentVersion: number;
   encounter: EncounterDirector;
   /** True while an encounter holds the player in place. */
   readonly locked: boolean;
@@ -159,11 +160,11 @@ export interface FloorView {
 }
 
 /** The enemy kind each body will play, in socket order, from the room's seeded encounter. */
-function tagEnemyKinds(world: FloorWorld, seed: string): void {
+function tagEnemyKinds(world: FloorWorld, seed: string, contentVersion: number): void {
   for (const [room, bodies] of world.enemies) {
     const tier = world.plan.rooms[room]?.encounter?.tier;
     if (!tier || bodies.length === 0) continue;
-    const { enemies } = chooseEncounter(seed, room, tier, bodies.length);
+    const { enemies } = chooseEncounter(seed, room, tier, bodies.length, contentVersion);
     bodies.forEach((body, i) => {
       const kind = enemies[i];
       if (kind) body.userData.enemyKind = kind;
@@ -174,6 +175,8 @@ function tagEnemyKinds(world: FloorWorld, seed: string): void {
 export interface FloorViewOptions {
   /** Templates the world is built from (the floor plan always uses the greybox set). */
   templates?: readonly RoomTemplate[];
+  /** Encounter content generation used to build this floor. */
+  contentVersion?: number;
 }
 
 /** Greybox exploration view: the generated floor, flat greybox lighting, the rig at the entry. */
@@ -183,8 +186,9 @@ export function mountFloorView(
   seed: string,
   options: FloorViewOptions = {},
 ): FloorView {
+  const contentVersion = options.contentVersion ?? ENCOUNTER_CONTENT_VERSION;
   const world = buildFloorWorld(generateFloor(seed), options.templates);
-  tagEnemyKinds(world, seed);
+  tagEnemyKinds(world, seed, contentVersion);
   scene.add(world.group);
   // Greybox lighting is two global lights; per-room sockets get real lights with the lightmaps (P4-T7).
   const sun = new THREE.DirectionalLight(PALETTE.candle, 1.4);
@@ -239,11 +243,11 @@ export function mountFloorView(
     if (!undressed || encounter.phase !== 'idle') return;
     undressed = false;
     for (const [room, bodies] of world.enemies) {
-      for (const body of [...bodies]) {
+      for (const [index, body] of [...bodies].entries()) {
         const kind = body.userData.enemyKind;
         const model = typeof kind === 'string' ? models.get(kind) : undefined;
         if (!model || actors.has(body) || !body.parent) continue;
-        const actor = model.asset.spawn();
+        const actor = model.asset.spawn(index);
         model.prepare?.(actor);
         if (world.replaceEnemy(room, body, actor.object)) {
           actors.set(actor.object, actor);
@@ -386,6 +390,7 @@ export function mountFloorView(
     loot,
     hearth,
     seed,
+    contentVersion,
     encounter,
     get suspendTriggers() {
       return suspended;

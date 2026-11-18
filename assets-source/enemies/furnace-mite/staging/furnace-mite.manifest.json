@@ -1,0 +1,140 @@
+{
+  "id": "furnace-mite",
+  "version": 1,
+  "glb": "furnace-mite.glb",
+  "frame": {
+    "units": "m",
+    "up": "+Y",
+    "forward": "-Z",
+    "origin": "floor"
+  },
+  "root": "furnace-mite",
+  "mesh": "furnace-mite-body",
+  "bounds": {
+    "min": [
+      -0.7211999893188477,
+      0.0,
+      -0.5424000024795532
+    ],
+    "max": [
+      0.7211999893188477,
+      1.214900016784668,
+      0.4399999976158142
+    ]
+  },
+  "skeleton": {
+    "root": "root",
+    "bones": 8,
+    "joints": [
+      "root",
+      "body",
+      "shutter.L",
+      "leg0.L",
+      "leg1.L",
+      "shutter.R",
+      "leg0.R",
+      "leg1.R"
+    ],
+    "maxInfluences": 1
+  },
+  "rootMotion": "code-owned; root joint fixed",
+  "clips": {
+    "idle": {
+      "duration": 2,
+      "loop": "repeat",
+      "events": {}
+    },
+    "attack": {
+      "duration": 1,
+      "loop": "once",
+      "events": {
+        "impact": 0.6
+      }
+    },
+    "hit": {
+      "duration": 0.5,
+      "loop": "once",
+      "events": {}
+    },
+    "death": {
+      "duration": 1.5,
+      "loop": "once",
+      "events": {
+        "down": 1.2
+      }
+    },
+    "frozen": {
+      "duration": 1,
+      "loop": "repeat",
+      "events": {},
+      "held": true
+    }
+  },
+  "intentClips": {
+    "double-spark": "intent-double-spark",
+    "stoke": "intent-stoke",
+    "clink": "intent-clink"
+  },
+  "sockets": {
+    "socket-hit": {
+      "bone": "body",
+      "parent": "body",
+      "position": [
+        0,
+        0.6770394451916217,
+        0
+      ]
+    },
+    "socket-eye": {
+      "bone": "body",
+      "parent": "body",
+      "position": [
+        0,
+        0.8270394451916218,
+        -0.35
+      ]
+    },
+    "socket-weapon": {
+      "bone": "body",
+      "parent": "body",
+      "position": [
+        0,
+        0.5770394451916218,
+        -0.55
+      ]
+    }
+  },
+  "emissive": {
+    "material": "foundry-glow",
+    "color": "#F3BE65",
+    "intensity": 0.8,
+    "nodes": [
+      "socket-hit"
+    ]
+  },
+  "materialSlots": {
+    "foundry-brass": {
+      "set": null,
+      "factorOnly": true
+    },
+    "foundry-dark": {
+      "set": null,
+      "factorOnly": true
+    },
+    "foundry-glow": {
+      "set": null,
+      "factorOnly": true,
+      "emissive": true
+    },
+    "foundry-mark": {
+      "set": null,
+      "factorOnly": true
+    }
+  },
+  "budget": {
+    "tris": 7296,
+    "materials": 4,
+    "bones": 8,
+    "influences": 1
+  }
+}

@@ -24,6 +24,7 @@ import {
   type EnemyMove,
   type EnemyState,
   type Fighter,
+  MAX_HAND,
   PLAYER_ID,
   type PlayerState,
   RulesError,
@@ -81,8 +82,13 @@ export function resolveAmount(amount: Amount, dice: number | null): number {
 
 export function usesDice(effects: readonly Effect[]): boolean {
   return effects.some((effect) => {
-    const amount = effect.type === 'apply-status' ? effect.stacks : effect.amount;
-    return typeof amount !== 'number';
+    const amount =
+      effect.type === 'apply-status'
+        ? effect.stacks
+        : 'amount' in effect
+          ? effect.amount
+          : undefined;
+    return amount !== undefined && typeof amount !== 'number';
   });
 }
 
@@ -159,8 +165,8 @@ function validateCard(def: CardDef): string | null {
 
 function validateMove(enemyId: string, move: EnemyMove): string | null {
   const weight = move.weight ?? 1;
-  if (!Number.isInteger(weight) || weight < 1)
-    return `Move ${move.id} needs a positive integer weight`;
+  if (!Number.isInteger(weight) || weight < 0)
+    return `Move ${move.id} needs a non-negative integer weight`;
   if (usesDice(move.effects)) return `Move ${move.id} of ${enemyId} may not use dice amounts`;
   const playerOnly = move.effects.find((e) => e.type === 'draw' || e.type.endsWith('-steam'));
   if (playerOnly) return `Move ${move.id} of ${enemyId} uses player-only effect ${playerOnly.type}`;
@@ -183,9 +189,15 @@ function validateSetup(action: StartCombat): string | null {
     if (phaseTwo && !(phaseTwo.hpFraction > 0 && phaseTwo.hpFraction < 1))
       return `Enemy ${enemy.id} needs a phase-2 threshold between 0 and 1`;
     if (phaseTwo && phaseTwo.moves.length === 0) return `Enemy ${enemy.id} has no phase-2 moves`;
-    for (const move of [...enemy.moves, ...(phaseTwo?.moves ?? [])]) {
-      const problem = validateMove(enemy.id, move);
-      if (problem) return problem;
+    for (const moves of [enemy.moves, ...(phaseTwo ? [phaseTwo.moves] : [])]) {
+      if (!moves.some((move) => (move.weight ?? 1) > 0))
+        return `Enemy ${enemy.id} has no selectable move`;
+      for (const move of moves) {
+        const problem = validateMove(enemy.id, move);
+        if (problem) return problem;
+        if (move.followUp && !moves.some((next) => next.id === move.followUp))
+          return `Enemy ${enemy.id} has unknown follow-up ${move.followUp}`;
+      }
     }
   }
   for (const def of deck) {
@@ -353,6 +365,13 @@ function setSteam(w: Work, to: number): void {
   w.events.push({ type: 'steam-changed', from, to });
 }
 
+function gainBlock(w: Work, id: ActorId, raw: number): void {
+  const recipient = fighter(w, id);
+  const amount = stacks(recipient.statuses, 'rust') > 0 ? Math.floor(raw / 2) : raw;
+  update(w, id, { block: recipient.block + amount });
+  w.events.push({ type: 'block-gained', target: id, amount });
+}
+
 function clearBlock(w: Work, id: ActorId): void {
   const amount = fighter(w, id).block;
   if (amount === 0) return;
@@ -392,7 +411,7 @@ function decayAtTurnEnd(w: Work, id: ActorId): void {
 }
 
 function drawCards(w: Work, count: number): void {
-  for (let i = 0; i < count; i++) {
+  for (let i = 0; i < count && w.hand.length < MAX_HAND; i++) {
     if (w.draw.length === 0) {
       if (w.discard.length === 0) return;
       w.draw = w.deck.shuffle(w.discard);
@@ -405,18 +424,18 @@ function drawCards(w: Work, count: number): void {
   }
 }
 
-/** Weighted pick from the `ai` stream. Every pick draws once, even for a single-move enemy. */
 function chooseIntent(w: Work, enemy: EnemyState): EnemyState {
-  const total = enemy.moves.reduce((sum, m) => sum + (m.weight ?? 1), 0);
-  let roll = w.ai.int(1, total);
-  let intent = enemy.moves[0] as EnemyMove;
-  for (const move of enemy.moves) {
-    roll -= move.weight ?? 1;
-    if (roll <= 0) {
-      intent = move;
-      break;
-    }
+  const forced = enemy.intent?.followUp;
+  let intent = forced ? enemy.moves.find((move) => move.id === forced) : undefined;
+  if (!intent) {
+    const total = enemy.moves.reduce((sum, m) => sum + (m.weight ?? 1), 0);
+    let roll = w.ai.int(1, total);
+    intent = enemy.moves.find((move) => {
+      roll -= move.weight ?? 1;
+      return roll <= 0;
+    });
   }
+  if (!intent) throw new RulesError(`No intent for ${enemy.id}`);
   w.events.push({
     type: 'enemy-intent',
     enemyId: enemy.id,
@@ -472,6 +491,7 @@ function resolveEffects(
   chosen: ActorId | null,
   dice: number | null,
 ): void {
+  const aimedIntent = w.enemies.find((enemy) => enemy.id === chosen)?.intent;
   for (const effect of effects) {
     if (isOver(w) || !isAlive(fighter(w, actor))) return;
     switch (effect.type) {
@@ -485,9 +505,7 @@ function resolveEffects(
         break;
       }
       case 'block': {
-        const amount = resolveAmount(effect.amount, dice);
-        update(w, actor, { block: fighter(w, actor).block + amount });
-        w.events.push({ type: 'block-gained', target: actor, amount });
+        gainBlock(w, actor, resolveAmount(effect.amount, dice));
         break;
       }
       case 'gain-steam':
@@ -514,6 +532,38 @@ function resolveEffects(
         }
         break;
       }
+      case 'block-from-status': {
+        const source = effect.removeFrom === 'target' ? chosen : actor;
+        if (!source) throw new RulesError('A heat transfer requires a target');
+        const owner = fighter(w, source);
+        const before = stacks(owner.statuses, effect.status);
+        const removed = Math.min(effect.maxStacks, before);
+        if (removed > 0) {
+          update(w, source, { statuses: withStacks(owner.statuses, effect.status, -removed) });
+          w.events.push({
+            type: 'status-ticked',
+            target: source,
+            status: effect.status,
+            from: before,
+            to: before - removed,
+          });
+        }
+        const raw = effect.base + removed * effect.perStack;
+        const scaled =
+          effect.multiplier === undefined
+            ? raw
+            : Math.max(0, Math.floor(raw * effect.multiplier + 0.5 + 1e-9));
+        gainBlock(w, actor, scaled);
+        break;
+      }
+      case 'conditional-block': {
+        const hits =
+          aimedIntent?.effects.reduce((n, e) => n + (e.type === 'damage' ? (e.hits ?? 1) : 0), 0) ??
+          0;
+        if (hits < effect.minTargetHits) break;
+        gainBlock(w, actor, resolveAmount(effect.amount, dice));
+        break;
+      }
       case 'draw':
         drawCards(w, resolveAmount(effect.amount, dice));
         break;
@@ -528,6 +578,11 @@ function startTurn(w: Work): void {
   clearBlock(w, PLAYER_ID);
   overheatTick(w, PLAYER_ID);
   if (isOver(w)) return;
+  const plating = stacks(w.player.statuses, 'plating');
+  if (plating > 0) {
+    gainBlock(w, PLAYER_ID, plating);
+    tickStatus(w, PLAYER_ID, 'plating');
+  }
   setSteam(w, STEAM_PER_TURN);
   drawCards(w, DRAW_PER_TURN);
 }
@@ -552,10 +607,11 @@ function playCard(w: Work, action: PlayCard): void {
 
 function endTurn(w: Work): void {
   for (const card of w.hand) {
+    if (card.def.pinned) continue;
     w.discard.push(card);
     w.events.push({ type: 'card-discarded', uid: card.uid, cardId: card.def.id });
   }
-  w.hand = [];
+  w.hand = w.hand.filter((card) => card.def.pinned);
   decayAtTurnEnd(w, PLAYER_ID);
   w.events.push({ type: 'turn-ended', turn: w.turn });
   w.phase = 'enemy';

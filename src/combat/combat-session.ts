@@ -24,6 +24,7 @@ import {
   segmentEvents,
   type TurnSegment,
 } from '../combat-view/enemy-turn.ts';
+import { FoundryFx } from '../combat-view/foundry-fx.ts';
 import { HIT_RED } from '../combat-view/hit-feedback.ts';
 import {
   HIT_NUMBER_RISE,
@@ -310,6 +311,7 @@ export interface CombatSessionDeps {
   seed: string;
   room: number;
   tier: EncounterTier;
+  contentVersion?: number;
   tablePose: TablePose;
   /** Player-to-table-centre distance the table was placed at, metres. Default STATUS_FACE_SEAT. */
   seatDistance?: number;
@@ -596,6 +598,7 @@ export class CombatSession {
   private readonly fx: SpellFx;
   /** The non-attack effect FX (shield, steam, motes, draw shimmer) and the cast card reveal. */
   private readonly effectFx: CastFx;
+  private readonly foundryFx: FoundryFx;
   private readonly revealCard: CastReveal;
   private launch: Launch | null = null;
   private flight: Flight | null = null;
@@ -619,7 +622,13 @@ export class CombatSession {
     };
     // Left to right across the table, the order the director placed them in.
     const ordered = [...deps.bodies].sort((a, b) => lateral(a) - lateral(b));
-    const encounter = chooseEncounter(deps.seed, deps.room, deps.tier, ordered.length);
+    const encounter = chooseEncounter(
+      deps.seed,
+      deps.room,
+      deps.tier,
+      ordered.length,
+      deps.contentVersion,
+    );
     const { difficulty, ...controllerOptions } = deps.options ?? {};
     this.controller = new CombatController({
       ...controllerOptions,
@@ -833,6 +842,8 @@ export class CombatSession {
     this.group.add(this.fx);
     this.effectFx = new CastFx({ reducedMotion: deps.reducedMotion ?? false });
     this.group.add(this.effectFx);
+    this.foundryFx = new FoundryFx(deps.reducedMotion ?? false);
+    this.group.add(this.foundryFx);
     this.revealCard = new CastReveal({ reducedMotion: deps.reducedMotion ?? false });
     this.group.add(this.revealCard);
 
@@ -1506,6 +1517,7 @@ export class CombatSession {
     // Bolts step before the flight check, so a bolt reaches its target on the frame it lands.
     this.fx.update(dt);
     this.effectFx.update(dt);
+    this.foundryFx.update(dt);
     this.revealCard.update(dt);
     this.stepFlight();
     this.stepKnocks(dt);
@@ -1545,7 +1557,10 @@ export class CombatSession {
     if (this.disposed) return;
     this.disposed = true;
     this.deps.audio?.stopLoop('sigil-trace');
-    for (const actor of this.actors.values()) actor.onEvent = null;
+    for (const actor of this.actors.values()) {
+      actor.onEvent = null;
+      actor.showIntent(null);
+    }
     if (this.beat?.body && this.beat.home) this.beat.body.position.copy(this.beat.home);
     this.beat = null;
     this.queue.length = 0;
@@ -1556,6 +1571,7 @@ export class CombatSession {
     this.settleKnocks();
     this.fx.dispose();
     this.effectFx.dispose();
+    this.foundryFx.dispose();
     this.revealCard.dispose();
     this.numbers.dispose();
     for (const off of this.disposers.splice(0)) off();
@@ -2172,7 +2188,7 @@ export class CombatSession {
         const die = dieById(dieId);
         this.keptDiceHint = '';
         this.pendingThrow = roll.rolls.map((value) => ({
-          kind: die.faces.length === 6 ? 'd6' : 'd8',
+          kind: die.faces.length === 6 ? 'd6' : die.faces.length === 8 ? 'd8' : 'd4',
           face: die.faces.indexOf(value),
           value,
         }));
@@ -2266,7 +2282,7 @@ export class CombatSession {
     let endAt = seg.lead.length > 0 ? LEAD_ONLY_SECONDS : 0;
     if (motion === 'clip' && actor) {
       const spec = actor.asset.manifest.clips.attack;
-      actor.attack();
+      actor.attack(seg.moveId ?? undefined);
       impactAt = (spec.events.impact ?? spec.duration / 2) + IMPACT_GRACE_SECONDS;
       endAt = spec.duration + CLIP_GRACE_SECONDS;
     } else if (motion === 'lunge') {
@@ -2371,7 +2387,7 @@ export class CombatSession {
       hits.delete(actor);
       if (actor.dead) continue;
       this.dying.add(actor);
-      if (this.deathWait < 0) this.deathWait = DEATH_WAIT_SECONDS;
+      this.deathWait = DEATH_WAIT_SECONDS;
       void actor.die();
     }
     for (const actor of hits) actor.hit();
@@ -2404,7 +2420,11 @@ export class CombatSession {
     const played = events.find((e) => e.type === 'card-played');
     const card = played?.type === 'card-played' ? getCard(played.cardId) : null;
     // Only a play the player made (with a launch point) gets effect FX besides the bolt.
-    const steps = card && launch ? castFxSteps(card) : [];
+    const gainedBlock = events.reduce(
+      (total, e) => total + (e.type === 'block-gained' && e.target === PLAYER_ID ? e.amount : 0),
+      0,
+    );
+    const steps = card && launch ? castFxSteps(card, gainedBlock) : [];
     const from = launch?.from ?? this.fan.root.getWorldPosition(new THREE.Vector3());
     const targets = ids.flatMap((id) => {
       const at = this.aimOfId(id);
@@ -2472,23 +2492,46 @@ export class CombatSession {
     played: CombatEvent | undefined,
   ): void {
     if (steps.length === 0) return;
+    const cardId = played?.type === 'card-played' ? played.cardId.replace(/\+$/, '') : undefined;
     const eye = this.deps.camera.getWorldPosition(new THREE.Vector3());
     const c = this.platePose.center;
     const ward = eye.clone().lerp(new THREE.Vector3(c.x, c.y, c.z), SHIELD_REACH);
     ward.y -= SHIELD_DROP;
+    if (played?.type === 'card-played' && cardId === 'quench-seal' && played.target) {
+      const heat = events.find(
+        (e) => e.type === 'status-ticked' && e.target === played.target && e.status === 'overheat',
+      );
+      const source = this.aimOfId(played.target);
+      if (heat?.type === 'status-ticked' && source) {
+        for (let i = 0; i < heat.from - heat.to; i++)
+          this.effectFx.motes(source, ward, 'overheat', delay + 0.055 * i);
+      }
+    }
     const strikes = steps.some((s) => s.kind === 'bolt');
     let block = 0;
     for (const e of events)
       if (e.type === 'block-gained' && e.target === PLAYER_ID) block += e.amount;
+    if (played?.type === 'card-played') {
+      const affected = events.flatMap((e) => {
+        if (e.type !== 'status-applied' || e.status !== 'rust') return [];
+        const at = this.aimOfId(e.target);
+        return at ? [at] : [];
+      });
+      if (cardId !== 'counterstroke' || block > 0)
+        this.foundryFx.play(played.cardId, from, eye, affected, ward, delay);
+    }
     for (const step of steps) {
       const at = delay + step.at;
       if (step.kind === 'shield') {
+        if (cardId === 'brass-bulwark' || cardId === 'counterstroke' || cardId === 'quench-seal')
+          continue;
         this.effectFx.shield(ward, eye.clone().sub(ward), block || step.amount, at);
       } else if (step.kind === 'steam') {
         this.effectFx.steam(from, step.amount, at);
       } else if (step.kind === 'draw') {
         this.effectFx.draw(from, this.fan.root.getWorldPosition(new THREE.Vector3()), at);
       } else if (step.kind === 'motes' && step.status) {
+        if (cardId === 'rust-spray' || cardId === 'rivet-plate') continue;
         if (step.toward === 'player') {
           this.effectFx.motes(from, ward, step.status, at);
           continue;
@@ -2651,6 +2694,9 @@ export class CombatSession {
 
   private paint(): void {
     const state = this.view;
+    for (const enemy of state.enemies) {
+      if (enemy.hp > 0) this.actors.get(enemy.id)?.showIntent(enemy.intent?.id ?? null);
+    }
     const icons: IconSheet | null = iconSheet();
     const vitals = (hp: number, maxHp: number, block: number) => [
       { icon: 'hp' as IconId, text: `${hp}/${maxHp}`, fallback: 'HP' },
@@ -2846,6 +2892,7 @@ function sharedDiceModels(): Promise<DiceAsset | null> {
 
 export interface CombatHookFloor {
   seed: string;
+  contentVersion?: number;
   encounter: Pick<EncounterDirector, 'phase' | 'activeRoom' | 'tablePose' | 'end'> & {
     readonly seatDistance?: number | null;
   };
@@ -2959,6 +3006,7 @@ export class CombatHook {
         seed: floor.seed,
         room,
         tier,
+        ...(floor.contentVersion === undefined ? {} : { contentVersion: floor.contentVersion }),
         tablePose: pose,
         ...(seat == null ? {} : { seatDistance: seat }),
         bodies,

@@ -37,6 +37,9 @@ export const ENEMY_ORDER: readonly EnemyKind[] = [
   'bellows-golem',
   'orrery-warden',
   'grand-escapement',
+  'glasswing-scrivener',
+  'furnace-mite',
+  'null-crown-auditor',
 ];
 
 export interface CombatOptions {

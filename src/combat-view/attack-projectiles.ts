@@ -1,16 +1,19 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
-export type SolidAttack = 'cog' | 'hammer' | 'volley' | 'flurry' | 'storm' | 'furnace';
-
-const SOLID_ATTACKS: ReadonlySet<string> = new Set([
+const SOLID_KINDS = [
   'cog',
   'hammer',
   'volley',
   'flurry',
   'storm',
   'furnace',
-]);
+  'pin',
+  'knuckle',
+  'counterstroke',
+] as const;
+export type SolidAttack = (typeof SOLID_KINDS)[number];
+const SOLID_ATTACKS: ReadonlySet<string> = new Set(SOLID_KINDS);
 
 export function isSolidAttack(kind: string): kind is SolidAttack {
   return SOLID_ATTACKS.has(kind);
@@ -36,6 +39,51 @@ export function projectileGeometry(kind: SolidAttack): THREE.BufferGeometry {
         0xffcd72,
       );
     }
+  } else if (kind === 'pin') {
+    part(new THREE.CylinderGeometry(0.013, 0.015, 0.22, 8).rotateX(Math.PI / 2), 0xd9d8ce);
+    part(
+      new THREE.CylinderGeometry(0.033, 0.033, 0.02, 10)
+        .rotateX(Math.PI / 2)
+        .translate(0, 0, -0.106),
+      0xb35942,
+    );
+  } else if (kind === 'knuckle') {
+    part(new THREE.SphereGeometry(1, 10, 7).scale(0.085, 0.048, 0.077), 0x724331);
+    const wrist = new THREE.CylinderGeometry(0.062, 0.055, 0.047, 10).rotateX(Math.PI / 2);
+    part(wrist.translate(0, -0.006, -0.076), 0xcb9242);
+    for (const x of [-0.063, -0.022, 0.022, 0.063]) {
+      const finger = new THREE.SphereGeometry(1, 8, 6).scale(0.024, 0.036, 0.043);
+      part(finger.translate(x, 0.016, 0.059 - Math.abs(x) * 0.18), 0xc9cbd1);
+    }
+    part(
+      new THREE.SphereGeometry(1, 8, 6).scale(0.032, 0.032, 0.043).translate(0.075, -0.016, 0.011),
+      0xb58045,
+    );
+    part(new THREE.ConeGeometry(0.047, 0.06, 3).translate(0, 0.06, -0.016), 0xc33f3b);
+  } else if (kind === 'counterstroke') {
+    const pin = new THREE.CylinderGeometry(0.033, 0.033, 0.097, 10).rotateZ(Math.PI / 2);
+    part(pin.translate(0, 0, -0.042), 0xcf9545);
+    for (const side of [-1, 1]) {
+      part(
+        new THREE.BoxGeometry(0.016, 0.028, 0.135)
+          .rotateX(-0.33)
+          .translate(side * 0.046, 0.023, 0.008),
+        0xa62e38,
+      );
+      part(new THREE.SphereGeometry(0.016, 8, 5).translate(side * 0.053, 0, -0.042), 0xf6d77d);
+    }
+    part(
+      new THREE.CylinderGeometry(0.02, 0.028, 0.113, 10)
+        .rotateX(Math.PI / 2)
+        .translate(0, 0.039, 0.071),
+      0xf0c36a,
+    );
+    part(
+      new THREE.CylinderGeometry(0.041, 0.026, 0.036, 8)
+        .rotateX(Math.PI / 2)
+        .translate(0, 0.039, 0.135),
+      0xbfc3c8,
+    );
   } else if (kind === 'flurry') {
     const slash = new THREE.Shape();
     slash.moveTo(-0.085, -0.064);

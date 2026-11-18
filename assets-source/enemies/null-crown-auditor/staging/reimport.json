@@ -1,0 +1,308 @@
+{
+  "pass": true,
+  "glb_sha256": "9237a4c5fd5b656b2ed05073e3c2ce31b01a22593f121277ee1cb8aea0588ff7",
+  "max_influences": 1,
+  "unweighted_vertices": 0,
+  "max_weight_sum_error": 0.0,
+  "triangles": 7080,
+  "bone_count": 9,
+  "clips": {
+    "action-levy": {
+      "start": 0.0,
+      "duration": 1.0,
+      "channels": 27
+    },
+    "attack": {
+      "start": 0.0,
+      "duration": 1.0,
+      "channels": 27
+    },
+    "death": {
+      "start": 0.0,
+      "duration": 1.5,
+      "channels": 27
+    },
+    "frozen": {
+      "start": 0.0,
+      "duration": 1.0,
+      "channels": 27
+    },
+    "hit": {
+      "start": 0.0,
+      "duration": 0.5,
+      "channels": 27
+    },
+    "idle": {
+      "start": 0.0,
+      "duration": 2.0,
+      "channels": 27
+    },
+    "intent-levy": {
+      "start": 0.0,
+      "duration": 0.6000000238418579,
+      "channels": 27
+    },
+    "intent-reconcile": {
+      "start": 0.0,
+      "duration": 0.6000000238418579,
+      "channels": 27
+    },
+    "intent-tally": {
+      "start": 0.0,
+      "duration": 0.6000000238418579,
+      "channels": 27
+    }
+  },
+  "blender_reimport": {
+    "armatures": 1,
+    "bones": 9,
+    "meshes": 1,
+    "actions": [
+      "action-levy.001",
+      "attack.001",
+      "death.001",
+      "frozen.001",
+      "hit.001",
+      "idle.001",
+      "intent-levy.001",
+      "intent-reconcile.001",
+      "intent-tally.001"
+    ],
+    "objects": [
+      "null-crown-auditor-body.001",
+      "null-crown-auditor.001",
+      "socket-eye.001",
+      "socket-hit.001",
+      "socket-weapon.001"
+    ]
+  },
+  "poseMetrics": {
+    "action-levy": {
+      "finalMaxZ": 1.3681,
+      "finalMinZ": 0.2025,
+      "minZ": 0.0016
+    },
+    "attack": {
+      "finalMaxZ": 1.3681,
+      "finalMinZ": 0.0,
+      "minZ": 0.0
+    },
+    "death": {
+      "finalMaxZ": 0.4326,
+      "finalMinZ": 0.0,
+      "minZ": 0.0
+    },
+    "frozen": {
+      "finalMaxZ": 1.3681,
+      "finalMinZ": 0.0,
+      "minZ": 0.0
+    },
+    "hit": {
+      "finalMaxZ": 1.3681,
+      "finalMinZ": 0.0,
+      "minZ": 0.0
+    },
+    "idle": {
+      "finalMaxZ": 1.3681,
+      "finalMinZ": 0.0,
+      "minZ": -0.0
+    },
+    "intent-levy": {
+      "finalMaxZ": 1.5086,
+      "finalMinZ": 0.2025,
+      "minZ": 0.0
+    },
+    "intent-reconcile": {
+      "finalMaxZ": 1.529,
+      "finalMinZ": 0.2025,
+      "minZ": 0.0
+    },
+    "intent-tally": {
+      "finalMaxZ": 1.3681,
+      "finalMinZ": 0.0,
+      "minZ": 0.0
+    }
+  },
+  "actionMetrics": {
+    "action-levy": {
+      "0": {
+        "stamp": {
+          "center": [
+            -0.2341,
+            0.0867,
+            1.0812
+          ],
+          "maxZ": 1.5086,
+          "minZ": 0.5067
+        }
+      },
+      "14.4": {
+        "stamp": {
+          "center": [
+            -0.6244,
+            0.0867,
+            0.2766
+          ],
+          "maxZ": 0.7403,
+          "minZ": 0.0
+        }
+      },
+      "24": {
+        "stamp": {
+          "center": [
+            -0.771,
+            0.0867,
+            0.6041
+          ],
+          "maxZ": 0.8567,
+          "minZ": 0.2759
+        }
+      },
+      "7.2": {
+        "stamp": {
+          "center": [
+            -0.2341,
+            0.0867,
+            1.0812
+          ],
+          "maxZ": 1.5086,
+          "minZ": 0.5067
+        }
+      }
+    },
+    "attack": {
+      "0": {
+        "bead.0": {
+          "center": [
+            0.5964,
+            0.084,
+            0.315
+          ],
+          "maxZ": 0.3539,
+          "minZ": 0.2761
+        },
+        "bead.1": {
+          "center": [
+            0.714,
+            0.084,
+            0.4326
+          ],
+          "maxZ": 0.4715,
+          "minZ": 0.3937
+        },
+        "stamp": {
+          "center": [
+            -0.6244,
+            0.0867,
+            0.2766
+          ],
+          "maxZ": 0.7403,
+          "minZ": 0.0
+        }
+      },
+      "14.4": {
+        "bead.0": {
+          "center": [
+            0.6964,
+            0.084,
+            0.315
+          ],
+          "maxZ": 0.3539,
+          "minZ": 0.2761
+        },
+        "bead.1": {
+          "center": [
+            0.814,
+            0.084,
+            0.4326
+          ],
+          "maxZ": 0.4715,
+          "minZ": 0.3937
+        },
+        "stamp": {
+          "center": [
+            -0.6244,
+            0.0867,
+            0.2766
+          ],
+          "maxZ": 0.7403,
+          "minZ": 0.0
+        }
+      },
+      "24": {
+        "bead.0": {
+          "center": [
+            0.5964,
+            0.084,
+            0.315
+          ],
+          "maxZ": 0.3539,
+          "minZ": 0.2761
+        },
+        "bead.1": {
+          "center": [
+            0.714,
+            0.084,
+            0.4326
+          ],
+          "maxZ": 0.4715,
+          "minZ": 0.3937
+        },
+        "stamp": {
+          "center": [
+            -0.6244,
+            0.0867,
+            0.2766
+          ],
+          "maxZ": 0.7403,
+          "minZ": 0.0
+        }
+      },
+      "7.2": {
+        "bead.0": {
+          "center": [
+            0.6964,
+            0.084,
+            0.315
+          ],
+          "maxZ": 0.3539,
+          "minZ": 0.2761
+        },
+        "bead.1": {
+          "center": [
+            0.814,
+            0.084,
+            0.4326
+          ],
+          "maxZ": 0.4715,
+          "minZ": 0.3937
+        },
+        "stamp": {
+          "center": [
+            -0.6244,
+            0.0867,
+            0.2766
+          ],
+          "maxZ": 0.7403,
+          "minZ": 0.0
+        }
+      }
+    }
+  },
+  "actionMetricsTimebase": "Blender reimport at 24 fps; frame 14.4 is 0.6 seconds, frame 24 is 1.0 second",
+  "checks": [
+    "skin weights",
+    "finite bind matrices and vertex positions",
+    "one skin",
+    "budget",
+    "clip inventory and durations",
+    "fixed root",
+    "Blender glTF reimport",
+    "sampled reimported clips for floor clearance",
+    "measured action motion at gameplay impact"
+  ],
+  "notChecked": [
+    "visual acceptance",
+    "actual gameplay lifecycle"
+  ]
+}

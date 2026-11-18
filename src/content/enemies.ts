@@ -15,7 +15,10 @@ export type EnemyKind =
   | 'spring-hound'
   | 'bellows-golem'
   | 'orrery-warden'
-  | 'grand-escapement';
+  | 'grand-escapement'
+  | 'glasswing-scrivener'
+  | 'furnace-mite'
+  | 'null-crown-auditor';
 
 export type EncounterTier = 'regular' | 'elite' | 'guardian';
 
@@ -115,6 +118,39 @@ export const ENEMIES: Readonly<Record<EnemyKind, EnemySetup>> = {
     moves: GUARDIAN_PHASE_ONE,
     phaseTwo: { hpFraction: GUARDIAN_PHASE_TWO_HP_FRACTION, moves: GUARDIAN_PHASE_TWO },
   },
+  'glasswing-scrivener': {
+    id: 'glasswing-scrivener',
+    name: 'Glasswing Scrivener',
+    hp: 34,
+    moves: [
+      move('inscribe', 'attack-debuff', 3, [hit(5), onPlayer('vulnerable', 2)]),
+      move('cross-out', 'attack', 2, [hit(3, 2)]),
+      move('proof', 'defend', 2, [block(10)]),
+    ],
+  },
+  'furnace-mite': {
+    id: 'furnace-mite',
+    name: 'Twin Furnace Mite',
+    hp: 20,
+    moves: [
+      move('double-spark', 'attack', 3, [hit(3, 2)]),
+      move('stoke', 'attack-debuff', 2, [
+        hit(4),
+        { type: 'apply-status', status: 'overheat', stacks: 1, target: 'target' },
+      ]),
+      move('clink', 'defend', 1, [block(6)]),
+    ],
+  },
+  'null-crown-auditor': {
+    id: 'null-crown-auditor',
+    name: 'Null-Crown Auditor',
+    hp: 78,
+    moves: [
+      move('tally', 'attack', 3, [hit(4, 2)]),
+      { ...move('reconcile', 'defend', 2, [block(14)]), followUp: 'levy' },
+      move('levy', 'attack', 0, [hit(18)]),
+    ],
+  },
 };
 
 /** Threat cost of one enemy against a floor budget. */
@@ -124,6 +160,9 @@ export const ENEMY_THREAT: Readonly<Record<EnemyKind, number>> = {
   'bellows-golem': 3,
   'orrery-warden': 6,
   'grand-escapement': 10,
+  'glasswing-scrivener': 3,
+  'furnace-mite': 2,
+  'null-crown-auditor': 8,
 };
 
 export interface Encounter {
@@ -149,8 +188,13 @@ export const ENCOUNTERS: Readonly<Record<EncounterTier, readonly Encounter[]>> =
     encounter('hound-pack', 'regular', ['spring-hound', 'spring-hound']),
     encounter('sentry-hound', 'regular', ['cog-sentry', 'spring-hound']),
     encounter('sentry-pair', 'regular', ['cog-sentry', 'cog-sentry']),
+    encounter('foundry-scrivener', 'regular', ['glasswing-scrivener']),
+    encounter('twin-furnace-mites', 'regular', ['furnace-mite', 'furnace-mite']),
   ],
-  elite: [encounter('warden', 'elite', ['orrery-warden'])],
+  elite: [
+    encounter('warden', 'elite', ['orrery-warden']),
+    encounter('null-crown-auditor', 'elite', ['null-crown-auditor']),
+  ],
   guardian: [encounter('escapement', 'guardian', ['grand-escapement'])],
 };
 

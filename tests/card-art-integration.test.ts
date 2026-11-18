@@ -52,8 +52,8 @@ describe('card atlas parsing', () => {
     ).toThrow(/frame/);
   });
 
-  it('gives each of the 15 cards three layer rects on one art page, and its type frame', () => {
-    expect(baseCards).toHaveLength(15);
+  it('gives each of the 23 cards three layer rects on one art page, and its type frame', () => {
+    expect(baseCards).toHaveLength(23);
     for (const card of baseCards) {
       const { card: entry, frame } = cardArt(atlas, card.id);
       expect(entry.frame).toBe(card.type);
@@ -70,11 +70,11 @@ describe('card atlas parsing', () => {
       expect(face.midUv).toEqual(entry.layers.mid.uv);
       expect(face.frontUv).toEqual(entry.layers.front.uv);
       expect(face.frameUv).toEqual(frame.uv);
-      expect([0, 1, 2]).toContain(face.glowPage[3]);
+      expect([0, 1, 2, 3]).toContain(face.glowPage[3]);
     }
-    // One art page per card type, so the shader's three page samplers cover every card.
+    // The three original family pages and the Foundry page are all bound.
     const slots = new Set(baseCards.map((c) => cardFaceInstance(atlas, c.id).glowPage[3]));
-    expect(slots.size).toBe(3);
+    expect(slots.size).toBe(4);
   });
 
   it('shares upgraded cards with their base art', () => {

@@ -125,10 +125,43 @@ const spiral: readonly Stroke[] = [
   }),
 ];
 
+/** Anchor: looped crown, stem, and two flukes. */
+const anchor: readonly Stroke[] = [
+  polyline(
+    [
+      { x: 0.5, y: 1 },
+      { x: 0.22, y: 0.78 },
+      { x: 0.22, y: 0.58 },
+      { x: 0.28, y: 0.46 },
+      { x: 0.5, y: 0.4 },
+      { x: 0.72, y: 0.46 },
+      { x: 0.78, y: 0.58 },
+      { x: 0.78, y: 0.78 },
+      { x: 0.5, y: 1 },
+      { x: 0.5, y: 0.4 },
+      { x: 0.5, y: 0.05 },
+      { x: 0.22, y: 0.2 },
+      { x: 0.05, y: 0.2 },
+      { x: 0.18, y: 0.34 },
+    ],
+    6,
+  ),
+  polyline(
+    [
+      { x: 0.5, y: 0.05 },
+      { x: 0.78, y: 0.2 },
+      { x: 0.95, y: 0.2 },
+      { x: 0.82, y: 0.34 },
+    ],
+    6,
+  ),
+];
+
 export const SIGIL_TEMPLATES: Readonly<Record<SigilId, SigilTemplate>> = {
   gear: { id: 'gear', strokes: gear },
   flame: { id: 'flame', strokes: flame },
   ward: { id: 'ward', strokes: ward },
   bolt: { id: 'bolt', strokes: bolt },
   spiral: { id: 'spiral', strokes: spiral },
+  anchor: { id: 'anchor', strokes: anchor },
 };

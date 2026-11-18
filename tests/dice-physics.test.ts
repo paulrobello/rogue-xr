@@ -161,6 +161,21 @@ describe('upFace and correctionRotation', () => {
   });
 });
 
+describe('d4 vertex-up rest convention', () => {
+  it.each([0, 1, 2, 3])('outcome %i leaves the selected vertex as the unique apex', (target) => {
+    const normals = faceNormals('d4');
+    const vertices = dieVertices('d4');
+    const turned = correctionRotation({ x: 0, y: 0, z: 0, w: 1 }, normals, target);
+    const heights = vertices.map((vertex) => rotateVec(turned, vertex).y);
+    const apex = Math.max(...heights);
+    expect(heights[target]).toBeCloseTo(apex, 9);
+    expect(heights.filter((height) => apex - height < 1e-9)).toHaveLength(1);
+    const floor = Math.min(...heights);
+    expect(heights.filter((height) => Math.abs(height - floor) < 1e-9)).toHaveLength(3);
+    expect(upFace(turned, normals)).toBe(target);
+  });
+});
+
 describe('planCorrection', () => {
   it.each(KINDS)('%s never sinks, ends flat on the surface and stays inside the tray', (kind) => {
     const stream = Stream.fromKey(`plan-${kind}`);

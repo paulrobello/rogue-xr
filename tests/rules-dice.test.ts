@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BRASS_D6, DICE, DIE_IDS, dieById, GLASS_D8 } from '../src/content/dice.ts';
+import { BRASS_D6, DICE, DIE_IDS, dieById, GLASS_D8, IRON_D4 } from '../src/content/dice.ts';
 import { RunRng } from '../src/core/rng.ts';
 import {
   apply,
@@ -49,10 +49,11 @@ function combat(seed = SEED): CombatState {
 }
 
 describe('content dice', () => {
-  it('defines a brass d6 and a glass d8 with their face values', () => {
-    expect(DIE_IDS).toEqual(['brass-d6', 'glass-d8']);
+  it('defines brass d6, glass d8, and iron d4 with their face values', () => {
+    expect(DIE_IDS).toEqual(['brass-d6', 'glass-d8', 'iron-d4']);
     expect(BRASS_D6.faces).toEqual([1, 2, 3, 4, 5, 6]);
     expect(GLASS_D8.faces).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+    expect(IRON_D4.faces).toEqual([1, 2, 3, 4]);
     for (const id of DIE_IDS) {
       expect(dieById(id).id).toBe(id);
       expect(DICE[id]).toBe(dieById(id));

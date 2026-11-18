@@ -24,6 +24,8 @@ export const STATUS_ICON_IDS = [
   'status-vulnerable',
   'status-overheat',
   'status-wound-up',
+  'status-plating',
+  'status-rust',
 ] as const;
 export const ICON_IDS = [...RESOURCE_ICON_IDS, ...INTENT_ICON_IDS, ...STATUS_ICON_IDS] as const;
 export type IconId = (typeof ICON_IDS)[number];
@@ -44,6 +46,8 @@ export const STATUS_ICON: Readonly<Record<StatusId, IconId>> = {
   vulnerable: 'status-vulnerable',
   overheat: 'status-overheat',
   'wound-up': 'status-wound-up',
+  plating: 'status-plating',
+  rust: 'status-rust',
 };
 
 export interface PxRect {
@@ -80,7 +84,7 @@ export interface DieFaceEntry extends AtlasEntry {
 }
 
 export interface DieFaceSet {
-  readonly kind: 'd6' | 'd8';
+  readonly kind: 'd4' | 'd6' | 'd8';
   readonly shape: 'square' | 'triangle';
   /** For triangle faces: the triangle's corners inside the slot, in slot-relative 0..1 coordinates (y down). */
   readonly triangle: readonly (readonly [number, number])[] | null;

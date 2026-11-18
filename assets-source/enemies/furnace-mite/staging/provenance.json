@@ -1,0 +1,84 @@
+{
+  "concept": "assets-source/concepts/foundry/twin-furnace-mites.png",
+  "conceptSha256": "d4234ecf37a871a9dd2ee5189ef305468b25fe22ceb6d81a32f959d5e522925e",
+  "conceptApproval": "Paul, 2026-11-18",
+  "author": "Codex Blender author",
+  "blender": "5.2.3 LTS",
+  "generator": "scripts/assets/build-foundry-enemies.py",
+  "maxInfluences": 1,
+  "maxWeightSumError": 0.0,
+  "unweightedVertices": 0,
+  "glbSha256": "f7fe7f0ba7f706168af175f879433e62e009c99e839db5223fb62ed4c44380f4",
+  "blendSha256": "9e949fc32689d6646e80fb1deb53b7306658f23ddf5a9e079be66f7fb108ac35",
+  "generatorSha256": "895b2f78269a49f05c910d218db5f7d17cc419776f8672ee64afb5967f74e9d8",
+  "triangles": 7296,
+  "bones": 8,
+  "measuredClips": {
+    "attack": {
+      "start": 0.0,
+      "duration": 1.0,
+      "channels": 24
+    },
+    "death": {
+      "start": 0.0,
+      "duration": 1.5,
+      "channels": 24
+    },
+    "frozen": {
+      "start": 0.0,
+      "duration": 1.0,
+      "channels": 24
+    },
+    "hit": {
+      "start": 0.0,
+      "duration": 0.5,
+      "channels": 24
+    },
+    "idle": {
+      "start": 0.0,
+      "duration": 2.0,
+      "channels": 24
+    },
+    "intent-clink": {
+      "start": 0.0,
+      "duration": 0.6000000238418579,
+      "channels": 24
+    },
+    "intent-double-spark": {
+      "start": 0.0,
+      "duration": 0.6000000238418579,
+      "channels": 24
+    },
+    "intent-stoke": {
+      "start": 0.0,
+      "duration": 0.6000000238418579,
+      "channels": 24
+    }
+  },
+  "reimport": {
+    "armatures": 1,
+    "bones": 8,
+    "meshes": 2,
+    "actions": [
+      "attack.001",
+      "death.001",
+      "frozen.001",
+      "hit.001",
+      "idle.001",
+      "intent-clink.001",
+      "intent-double-spark.001",
+      "intent-stoke.001"
+    ],
+    "objects": [
+      "furnace-mark-extra.001",
+      "furnace-mite-body.001",
+      "furnace-mite.001",
+      "socket-eye.001",
+      "socket-hit.001",
+      "socket-weapon.001"
+    ]
+  },
+  "visualApproval": "pending",
+  "independentReview": "pending",
+  "gameplayLifecycle": "pending"
+}

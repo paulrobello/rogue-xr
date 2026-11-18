@@ -16,7 +16,7 @@ import type { DieKind } from '../src/dice/faces.ts';
 import { DICE_ENV_INTENSITY, DicePresenter } from '../src/dice/presenter.ts';
 import type { UiAtlasManifest } from '../src/ui/icon-atlas.ts';
 
-const KINDS: readonly DieKind[] = ['d6', 'd8'];
+const KINDS: readonly ('d6' | 'd8')[] = ['d6', 'd8'];
 const DT = 1 / 60;
 const root = new URL('../public/assets/', import.meta.url);
 const atlas = JSON.parse(
@@ -57,7 +57,12 @@ const loadAsset = () =>
 
 const TRAY = { halfX: 0.2, halfZ: 0.11 };
 const stream = () => Stream.fromKey('TEST0001:dice-integration');
-const pages = (): { manifest: UiAtlasManifest; d6: THREE.Texture; d8: THREE.Texture } => ({
+const pages = (): {
+  manifest: UiAtlasManifest;
+  d6: THREE.Texture;
+  d8: THREE.Texture;
+  d4?: THREE.Texture;
+} => ({
   manifest: atlas,
   d6: new THREE.Texture(),
   d8: new THREE.Texture(),
@@ -109,7 +114,10 @@ describe('dice presenter with the authored models', () => {
   it('binds the colour pages as maps and the glow pages as emissive maps', async () => {
     const presenter = await DicePresenter.create(stream(), { ...TRAY, models: asset });
     const page = pages();
-    const glow = { d6: new THREE.Texture(), d8: new THREE.Texture() };
+    const glow: Record<'d6' | 'd8', THREE.Texture> = {
+      d6: new THREE.Texture(),
+      d8: new THREE.Texture(),
+    };
     presenter.applyFaces({ ...page, d6Glow: glow.d6, d8Glow: glow.d8 });
     for (const kind of KINDS) {
       const face = (asset.spawn(kind).material as THREE.MeshStandardMaterial[]).find((m) =>
@@ -144,7 +152,10 @@ describe('dice presenter with the authored models', () => {
     const greybox = (kind: DieKind) =>
       presenter.mesh(presenter.throw(kind, 0, 1))?.material as THREE.MeshStandardMaterial;
     const page = pages();
-    const glow = { d6: new THREE.Texture(), d8: new THREE.Texture() };
+    const glow: Record<'d6' | 'd8', THREE.Texture> = {
+      d6: new THREE.Texture(),
+      d8: new THREE.Texture(),
+    };
     presenter.applyFaces({ ...page, d6Glow: glow.d6, d8Glow: glow.d8 });
     for (const kind of KINDS) {
       const m = greybox(kind);

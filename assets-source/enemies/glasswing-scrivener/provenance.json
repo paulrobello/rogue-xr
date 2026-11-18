@@ -1,0 +1,119 @@
+{
+  "pieceId": "glasswing-scrivener",
+  "version": 1,
+  "route": "Procedural original Blender geometry, rig, and keyed clips from approved concept.",
+  "generator": {
+    "path": "scripts/assets/build-foundry-enemies.py",
+    "sha256": "895b2f78269a49f05c910d218db5f7d17cc419776f8672ee64afb5967f74e9d8",
+    "bytes": 23694
+  },
+  "authoringAgent": {
+    "harness": "Codex delegated Blender author"
+  },
+  "blender": "5.2.3 LTS",
+  "derivedFiles": [
+    {
+      "path": "public/assets/enemies/glasswing-scrivener/glasswing-scrivener.glb",
+      "sha256": "baa63b549de98a46bbe946021c7a2bd65181ada28ce02085102e7e77549c8586",
+      "bytes": 455356
+    },
+    {
+      "path": "public/assets/enemies/glasswing-scrivener/glasswing-scrivener.manifest.json",
+      "sha256": "536a844e089668838f1b5e50f51607c4068b1b82080c2e0e7ff5d47243a47f9d",
+      "bytes": 2489
+    }
+  ],
+  "sourceFiles": [
+    {
+      "path": "assets-source/enemies/glasswing-scrivener/staging/glasswing-scrivener.blend",
+      "sha256": "1f8776daded269f689782c8be902b002a68d2526747559582138a1eec27b6763",
+      "bytes": 300069
+    },
+    {
+      "path": "assets-source/enemies/glasswing-scrivener/staging/reimport.json",
+      "sha256": "64e1da8436929bdb9af8ea101d72dd2fbccec46df7f3f03d39d2d7147edabdf0",
+      "bytes": 3572
+    },
+    {
+      "path": "assets-source/enemies/glasswing-scrivener/staging/metrics.log",
+      "sha256": "efad431d63521928d58c67e1340be27e1c4aedfa31a63ab39f655a6cbcbb3d02",
+      "bytes": 820
+    },
+    {
+      "path": "assets-source/enemies/glasswing-scrivener/staging/action-metrics.log",
+      "sha256": "1c359b810bed862cadffe973b0e74bb84542db93551553527f55f3b6caff89df",
+      "bytes": 625
+    },
+    {
+      "path": "scripts/assets/build-spring-hound.py",
+      "sha256": "432c7c8a1218564bef7c697dee7ff76225fa2915bdb3e454d4960723ddfad8ba",
+      "bytes": 105430
+    }
+  ],
+  "references": [
+    {
+      "path": "assets-source/concepts/foundry/glasswing-scrivener.png",
+      "sha256": "2d3cb12e3b73d57d0eb1cedc96cd944a29ee751cbc48c50140acc1a251fab018",
+      "bytes": 2275782
+    }
+  ],
+  "reviewEvidence": [
+    {
+      "path": "assets-source/enemies/glasswing-scrivener/staging/concept-comparison.jpg",
+      "sha256": "cbe53c4caa1715810fb395a4c52e6b2bebab7b353f032ce4261e86d15e2e8fd9",
+      "bytes": 139754
+    },
+    {
+      "path": "assets-source/enemies/glasswing-scrivener/staging/frame-14.4-intent-cross-out.png",
+      "sha256": "2f246acb5a8cc13852be0c910b9604710eee7ef3a0789e4adaa2053b09b98bb0",
+      "bytes": 160595
+    },
+    {
+      "path": "assets-source/enemies/glasswing-scrivener/staging/frame-14.4-intent-proof.png",
+      "sha256": "96f39da509fc49f0984218c14cbc8ea6ef43f1fdd4cd36e00be363e7fbfae1ef",
+      "bytes": 144369
+    },
+    {
+      "path": "assets-source/enemies/glasswing-scrivener/staging/frame-36-death.png",
+      "sha256": "05ab86278c482b626eec3a4296d18c1dbf22f58d0a36e32b0fda47da3981ff05",
+      "bytes": 122668
+    }
+  ],
+  "license": "Original procedural Blender work; concept reference is user-provided and approved.",
+  "validation": {
+    "pass": true,
+    "scope": "Technical export and sampled poses in staging/reimport.json. Desktop combat and independent visual review completed. Owner model and physical Quest review remain pending."
+  },
+  "approvals": [
+    {
+      "gate": "concept",
+      "status": "approved",
+      "who": "Paul",
+      "when": "2026-11-18",
+      "evidence": "docs/next-cards-and-enemies.md"
+    },
+    {
+      "gate": "model",
+      "status": "pending"
+    },
+    {
+      "gate": "rig",
+      "status": "pending"
+    },
+    {
+      "gate": "animation",
+      "status": "pending"
+    },
+    {
+      "gate": "independent visual score",
+      "status": "reviewed",
+      "score": 86,
+      "outOf": 100,
+      "who": "Independent Astra visual review",
+      "when": "2026-11-18",
+      "glbSha256": "baa63b549de98a46bbe946021c7a2bd65181ada28ce02085102e7e77549c8586",
+      "evidence": "Final re-imported poses compared with the approved concept and desktop combat captures.",
+      "notes": "Cross Out forms an X. Proof lowers both wings around the visible face. The translucent panes are flatter and more uniform than the concept glass."
+    }
+  ]
+}

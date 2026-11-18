@@ -12,6 +12,23 @@ export const REWARD_POOL: readonly string[] = CARDS.filter((card) => !BASICS.has
   (card) => card.id,
 );
 
+/** Reward pool used before the Foundry expansion. Existing saves keep this boundary for new rolls. */
+export const LEGACY_REWARD_POOL: readonly string[] = [
+  'cog-toss',
+  'ratchet-flurry',
+  'rivet-volley',
+  'escapement-hammer',
+  'lucky-rivets',
+  'release-valve',
+  'overwind',
+  'spanner-jam',
+  'cogstorm',
+  'furnace-brand',
+  'warding-glyph',
+  'arc-bolt',
+  'time-spiral',
+];
+
 /** Cards available for permanent purchase, excluding cards already in the starter deck. */
 export const PERMANENT_CARD_IDS: readonly string[] = REWARD_POOL.filter(
   (id) => !STARTER_DECK.includes(id),

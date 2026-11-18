@@ -26,9 +26,9 @@ const KEY = lootKey(ROOM, SOCKET);
  * `openTreasure`, which added it to the deck on open), with the `loot` stream after the draw.
  */
 const ROLLED: Record<string, { card: string; loot: readonly number[] }> = {
-  SPIRE001: { card: 'overwind', loot: [1483294244, 2371642548, 4175475884, 3270100271] },
-  SPIRE002: { card: 'release-valve', loot: [1077963653, 2652091926, 1061691496, 1394955649] },
-  BRASS042: { card: 'warding-glyph', loot: [1306531626, 3920134790, 1112530678, 3891371150] },
+  SPIRE001: { card: 'furnace-brand', loot: [1483294244, 2371642548, 4175475884, 3270100271] },
+  SPIRE002: { card: 'cogstorm', loot: [1077963653, 2652091926, 1061691496, 1394955649] },
+  BRASS042: { card: 'iron-knuckle', loot: [1306531626, 3920134790, 1112530678, 3891371150] },
 };
 
 const newRun = (seed = SEED): RunState => createRun(seed, STARTER_DECK);
@@ -61,8 +61,8 @@ describe('openTreasure then claimTreasure', () => {
     const run = Object.freeze(opened());
     expect(run.deck).toEqual(STARTER_DECK);
     const claimed = claimTreasure(run, KEY);
-    expect(claimed?.card).toBe('overwind');
-    expect(claimed?.run.deck).toEqual([...STARTER_DECK, 'overwind']);
+    expect(claimed?.card).toBe('furnace-brand');
+    expect(claimed?.run.deck).toEqual([...STARTER_DECK, 'furnace-brand']);
     expect(claimed?.run.pendingLoot).toBeUndefined();
     expect('pendingLoot' in (claimed?.run ?? {})).toBe(false);
     expect(claimed?.run.openedLoot).toEqual([KEY]);
@@ -106,7 +106,7 @@ describe('snapshots carry pending cards', () => {
   it('round-trips a pending card through snapshotRun and JSON', () => {
     const run = opened();
     const snap = snapshotRun(run, world, 1);
-    expect(snap.run.pendingLoot).toEqual([{ key: KEY, card: 'overwind' }]);
+    expect(snap.run.pendingLoot).toEqual([{ key: KEY, card: 'furnace-brand' }]);
     expect(validateSnapshot(JSON.parse(JSON.stringify(snap))).run).toEqual(run);
   });
 
@@ -139,12 +139,12 @@ describe('RunFlow.claimLoot', () => {
     expect(flow.claimLoot(ROOM, SOCKET)).toBeNull();
     flow.openLoot(ROOM, SOCKET, 'card');
     const deck = flow.run?.deck ?? [];
-    expect(flow.pendingCard(ROOM, SOCKET)).toBe('overwind');
+    expect(flow.pendingCard(ROOM, SOCKET)).toBe('furnace-brand');
     flow.fightStarted(2);
     expect(flow.claimLoot(ROOM, SOCKET)).toBeNull();
     flow.fightEnded({ room: 2, outcome: 'flee', tier: 'regular' });
-    expect(flow.claimLoot(ROOM, SOCKET)).toBe('overwind');
-    expect(flow.run?.deck).toEqual([...deck, 'overwind']);
+    expect(flow.claimLoot(ROOM, SOCKET)).toBe('furnace-brand');
+    expect(flow.run?.deck).toEqual([...deck, 'furnace-brand']);
     expect(flow.pendingCard(ROOM, SOCKET)).toBeNull();
     expect(flow.claimLoot(ROOM, SOCKET)).toBeNull();
     expect(flow.run?.deck).toHaveLength(deck.length + 1);
@@ -155,7 +155,7 @@ describe('RunFlow.claimLoot', () => {
       stage: 'claimed',
       room: ROOM,
       socketId: SOCKET,
-      loot: { kind: 'card', card: 'overwind' },
+      loot: { kind: 'card', card: 'furnace-brand' },
     });
   });
 
@@ -177,7 +177,7 @@ describe('RunFlow.claimLoot', () => {
     flow.openLoot(ROOM, SOCKET, 'card');
     await saved.flushed();
     const snapshot = await loadRunSnapshot(db);
-    expect(snapshot?.run.pendingLoot).toEqual([{ key: KEY, card: 'overwind' }]);
+    expect(snapshot?.run.pendingLoot).toEqual([{ key: KEY, card: 'furnace-brand' }]);
     expect(snapshot?.run.cogs).toBe(flow.run?.cogs);
     expect(snapshot?.run.deck).toEqual(STARTER_DECK);
 
@@ -185,13 +185,13 @@ describe('RunFlow.claimLoot', () => {
     const resumedSave = bindFlowPersistence(resumed, db);
     expect(resumed.continueRun(snapshot as NonNullable<typeof snapshot>)).toBe(true);
     expect(resumed.isLootOpened(ROOM, SOCKET)).toBe(true);
-    expect(resumed.pendingCard(ROOM, SOCKET)).toBe('overwind');
+    expect(resumed.pendingCard(ROOM, SOCKET)).toBe('furnace-brand');
     expect(resumed.openLoot(ROOM, SOCKET, 'card')).toBeNull();
-    expect(resumed.claimLoot(ROOM, SOCKET)).toBe('overwind');
+    expect(resumed.claimLoot(ROOM, SOCKET)).toBe('furnace-brand');
     expect(resumed.claimLoot(ROOM, SOCKET)).toBeNull();
     await resumedSave.flushed();
     const after = await loadRunSnapshot(db);
-    expect(after?.run.deck).toEqual([...STARTER_DECK, 'overwind']);
+    expect(after?.run.deck).toEqual([...STARTER_DECK, 'furnace-brand']);
     expect(after?.run.pendingLoot).toBeUndefined();
     expect(after?.run).toEqual(resumed.run);
     saved.dispose();

@@ -1,0 +1,144 @@
+{
+  "id": "null-crown-auditor",
+  "version": 1,
+  "glb": "null-crown-auditor.glb",
+  "frame": {
+    "units": "m",
+    "up": "+Y",
+    "forward": "-Z",
+    "origin": "floor"
+  },
+  "root": "null-crown-auditor",
+  "mesh": "null-crown-auditor-body",
+  "bounds": {
+    "min": [
+      -1.0115000009536743,
+      0.0,
+      -0.20579999685287476
+    ],
+    "max": [
+      0.8601999878883362,
+      1.3681000471115112,
+      0.22679999470710754
+    ]
+  },
+  "skeleton": {
+    "root": "root",
+    "bones": 9,
+    "joints": [
+      "root",
+      "body",
+      "stamp",
+      "abacus",
+      "cover.L",
+      "cover.R",
+      "bead.0",
+      "bead.1",
+      "bead.2"
+    ],
+    "maxInfluences": 1
+  },
+  "rootMotion": "code-owned; root joint fixed",
+  "clips": {
+    "idle": {
+      "duration": 2,
+      "loop": "repeat",
+      "events": {}
+    },
+    "attack": {
+      "duration": 1,
+      "loop": "once",
+      "events": {
+        "impact": 0.6
+      }
+    },
+    "hit": {
+      "duration": 0.5,
+      "loop": "once",
+      "events": {}
+    },
+    "death": {
+      "duration": 1.5,
+      "loop": "once",
+      "events": {
+        "down": 1.2
+      }
+    },
+    "frozen": {
+      "duration": 1,
+      "loop": "repeat",
+      "events": {},
+      "held": true
+    }
+  },
+  "intentClips": {
+    "tally": "intent-tally",
+    "reconcile": "intent-reconcile",
+    "levy": "intent-levy"
+  },
+  "actionClips": {
+    "levy": "action-levy"
+  },
+  "sockets": {
+    "socket-hit": {
+      "bone": "body",
+      "parent": "body",
+      "position": [
+        0.0,
+        0.46620000946521756,
+        -0.0
+      ]
+    },
+    "socket-eye": {
+      "bone": "body",
+      "parent": "body",
+      "position": [
+        0.0,
+        0.5922000094652176,
+        -0.294
+      ]
+    },
+    "socket-weapon": {
+      "bone": "body",
+      "parent": "body",
+      "position": [
+        -0.672,
+        0.17220000946521757,
+        -0.084
+      ]
+    }
+  },
+  "emissive": {
+    "material": "foundry-glow",
+    "color": "#F3BE65",
+    "intensity": 0.8,
+    "nodes": [
+      "socket-hit"
+    ]
+  },
+  "materialSlots": {
+    "foundry-brass": {
+      "set": null,
+      "factorOnly": true
+    },
+    "foundry-dark": {
+      "set": null,
+      "factorOnly": true
+    },
+    "foundry-glow": {
+      "set": null,
+      "factorOnly": true,
+      "emissive": true
+    },
+    "foundry-mark": {
+      "set": null,
+      "factorOnly": true
+    }
+  },
+  "budget": {
+    "tris": 7080,
+    "materials": 4,
+    "bones": 9,
+    "influences": 1
+  }
+}

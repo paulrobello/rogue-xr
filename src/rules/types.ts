@@ -4,12 +4,13 @@ import type { RunRngState } from '../core/rng.ts';
 export const STEAM_PER_TURN = 3;
 /** Cards drawn at the start of every player turn (D3). */
 export const DRAW_PER_TURN = 5;
+export const MAX_HAND = 10;
 
 /** `'player'` or an enemy id. Enemy ids must never be `'player'`. */
 export type ActorId = string;
 export const PLAYER_ID = 'player';
 
-export type StatusId = 'weak' | 'vulnerable' | 'overheat' | 'wound-up';
+export type StatusId = 'weak' | 'vulnerable' | 'overheat' | 'wound-up' | 'plating' | 'rust';
 /** Stack counts by status. A status with zero stacks is absent. */
 export type Statuses = Readonly<Partial<Record<StatusId, number>>>;
 
@@ -43,6 +44,23 @@ export type Effect =
       readonly stacks: Amount;
       readonly target: EffectTarget;
     }
+  | {
+      readonly type: 'block-from-status';
+      readonly status: StatusId;
+      readonly maxStacks: number;
+      readonly base: number;
+      readonly perStack: number;
+      readonly target: 'self';
+      readonly removeFrom: 'self' | 'target';
+      /** Set by sigil resolution so the resulting total is scaled once. */
+      readonly multiplier?: number;
+    }
+  | {
+      readonly type: 'conditional-block';
+      readonly amount: Amount;
+      readonly target: 'self';
+      readonly minTargetHits: number;
+    }
   | { readonly type: 'draw'; readonly amount: Amount };
 
 /** How a card picks its target: an enemy, or nothing (dropped on the table, D5). */
@@ -59,6 +77,8 @@ export interface CardDef {
   readonly effects: readonly Effect[];
   /** Goes to the exhaust pile instead of discard after it is played. */
   readonly exhaust?: boolean;
+  /** Keeps this card in hand when the player ends the turn. */
+  readonly pinned?: boolean;
 }
 
 /** A card instance in a pile. `uid` is unique within one combat. */
@@ -76,6 +96,8 @@ export interface EnemyMove {
   readonly effects: readonly Effect[];
   /** Relative weight for the `ai`-stream pick (default 1). */
   readonly weight?: number;
+  /** An announced move that must follow this action. A weight of zero reserves it for follow-ups. */
+  readonly followUp?: string;
 }
 
 export interface Fighter {

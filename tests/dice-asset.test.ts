@@ -23,7 +23,7 @@ import {
 import { QUAT_IDENTITY } from '../src/dice/quat.ts';
 import { dieFace, type UiAtlasManifest } from '../src/ui/icon-atlas.ts';
 
-const KINDS: readonly DieKind[] = ['d6', 'd8'];
+const KINDS: readonly ('d6' | 'd8')[] = ['d6', 'd8'];
 const root = new URL('../public/assets/', import.meta.url);
 const atlas = JSON.parse(
   readFileSync(new URL('ui/ui-atlas.json', root), 'utf8'),
@@ -54,14 +54,14 @@ const files = Object.fromEntries(
     const bytes = readFileSync(new URL(manifest.glb, base));
     return [kind, { manifest, bytes, gltf: readGlbJson(bytes) }];
   }),
-) as Record<DieKind, { manifest: DiceManifest; bytes: Buffer; gltf: Gltf }>;
+) as Record<'d6' | 'd8', { manifest: DiceManifest; bytes: Buffer; gltf: Gltf }>;
 
 function arrayBuffer(bytes: Buffer): ArrayBuffer {
   return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
 }
 const glbs = () =>
   ({ d6: arrayBuffer(files.d6.bytes), d8: arrayBuffer(files.d8.bytes) }) as Record<
-    DieKind,
+    'd6' | 'd8',
     ArrayBuffer
   >;
 const manifests = () => ({ d6: files.d6.manifest, d8: files.d8.manifest });

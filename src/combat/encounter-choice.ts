@@ -7,6 +7,18 @@ import {
 import { Stream } from '../core/rng.ts';
 
 const CROCKFORD = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+/** Bump when seeded encounter choices change in a way that affects resumable floors. */
+export const ENCOUNTER_CONTENT_VERSION = 2;
+const LEGACY_ENCOUNTER_IDS = new Set([
+  'sentry',
+  'hound',
+  'golem',
+  'hound-pack',
+  'sentry-hound',
+  'sentry-pair',
+  'warden',
+  'escapement',
+]);
 
 /** The encounter the floor plan's room gets: one of its tier whose size matches the room's automatons. */
 export function chooseEncounter(
@@ -14,11 +26,14 @@ export function chooseEncounter(
   room: number,
   tier: EncounterTier,
   count: number,
+  contentVersion = ENCOUNTER_CONTENT_VERSION,
 ): Encounter {
-  const fits = ENCOUNTERS[tier].filter((e) => e.enemies.length === count);
-  return Stream.fromKey(`${seed}:room-${room}:encounter`).pick(
-    fits.length > 0 ? fits : ENCOUNTERS[tier],
-  );
+  const pool =
+    contentVersion < ENCOUNTER_CONTENT_VERSION
+      ? ENCOUNTERS[tier].filter((e) => LEGACY_ENCOUNTER_IDS.has(e.id))
+      : ENCOUNTERS[tier];
+  const fits = pool.filter((e) => e.enemies.length === count);
+  return Stream.fromKey(`${seed}:room-${room}:encounter`).pick(fits.length > 0 ? fits : pool);
 }
 
 /** A per-room combat seed derived from the run seed, so each fight shuffles and rolls its own way. */

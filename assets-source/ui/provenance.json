@@ -120,7 +120,6 @@
   ],
   "derivatives": {
     "script": "scripts/assets/build_ui_atlas.py",
-    "scriptSha256": "5b33dacd038985d7843624773a3b7be2bb6c11ae234b1f81df25b4b0878642f7",
     "ktx": "ktx 4.4.2",
     "font": {
       "file": "node_modules/@par/xr-workspace/assets/fonts/NotoSans-Regular.ttf",
@@ -271,6 +270,14 @@
           "w": 451,
           "h": 451
         }
+      },
+      {
+        "id": "status-plating",
+        "sourceRect": null
+      },
+      {
+        "id": "status-rust",
+        "sourceRect": null
       }
     ],
     "dicePlateRects": {
@@ -308,6 +315,26 @@
     },
     "diceGlowPages": "displayed through toneMapped false: dice-d6-glow pips #DEA84B times (core + 0.15 x soft glow outside the bezel, linear light), dice-d8-glow numerals #FBBF56 times (core + 0.5 x soft glow, linear light); black elsewhere; same slots as the colour pages. d6 colour page: amber pip core #836129 (0.95 of the pip radius), warm-black bezel to 1.15, warm-black well band at slot px [74.5, 81.5]",
     "files": [
+      {
+        "file": "public/assets/ui/dice-d4-glow.ktx2",
+        "bytes": 20981,
+        "sha256": "433a4a700b7479aee0d4af4a3d26af1328749d09c28b6aed0f842d40ffea43ee"
+      },
+      {
+        "file": "public/assets/ui/dice-d4-glow.png",
+        "bytes": 26943,
+        "sha256": "a9da1e159250ca624f0b766b6ca1856db2a2ce087821d5e85326cb6f2ce86968"
+      },
+      {
+        "file": "public/assets/ui/dice-d4.ktx2",
+        "bytes": 27677,
+        "sha256": "f9fa566d4297685d0bc8afd6c6f3a9965ad2ce6c0e48106129fb42041c655a89"
+      },
+      {
+        "file": "public/assets/ui/dice-d4.png",
+        "bytes": 33772,
+        "sha256": "f6bac93a8b9b4f0712606e4adbe1ff88a565226bfd98f09d738c296e5b6eb424"
+      },
       {
         "file": "public/assets/ui/dice-d6-glow.ktx2",
         "bytes": 34212,
@@ -350,23 +377,23 @@
       },
       {
         "file": "public/assets/ui/glyphs.ktx2",
-        "bytes": 78943,
-        "sha256": "2101d2dfac236e98f7a6892d9b3739eb74ecbbcacb4d4025560f0ac16825e142"
+        "bytes": 95565,
+        "sha256": "0eb03a08e77c1449abef764ad372bf77a9a4536653d7fa4f9bbf5a0eb0b22521"
       },
       {
         "file": "public/assets/ui/glyphs.png",
-        "bytes": 102777,
-        "sha256": "b59eef75bea90e1c1a10f49635d9e857279b295c999a718aaa467af9b7271bd5"
+        "bytes": 125114,
+        "sha256": "35ec6cbcf83e80fa989e888f3b24065fb52c2159d9baf379ca70c0357ac9421e"
       },
       {
         "file": "public/assets/ui/icons.ktx2",
-        "bytes": 203795,
-        "sha256": "626af387088a22300b70979f83055b9ccbf41ccbfcda07eae4b481a3d1833def"
+        "bytes": 215985,
+        "sha256": "e39e6a3c457222e030342e6ed3e307c27167b44c3722397c141a98c2352cc2e5"
       },
       {
         "file": "public/assets/ui/icons.png",
-        "bytes": 443900,
-        "sha256": "73a87071da4e66593bc947022c26637f61e692a1ef08a9ea45c3db625afcf5a5"
+        "bytes": 450304,
+        "sha256": "b67f0448649b5de136515046293c2807ac9317e20892be0e616a3f7b4b5edafe"
       },
       {
         "file": "public/assets/ui/title-1024.jpg",
@@ -380,8 +407,8 @@
       },
       {
         "file": "public/assets/ui/ui-atlas.json",
-        "bytes": 11389,
-        "sha256": "b7c412942b3cd7cc5acd15a2e354b7576917494d3ad5a8391f847c8007270d38"
+        "bytes": 14112,
+        "sha256": "4c2012e9f8b019af5553ed7253c287285b918fd2e79b339d4cd6a71e062078bb"
       }
     ]
   }

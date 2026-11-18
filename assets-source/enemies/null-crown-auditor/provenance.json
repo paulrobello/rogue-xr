@@ -1,0 +1,119 @@
+{
+  "pieceId": "null-crown-auditor",
+  "version": 1,
+  "route": "Procedural original Blender geometry, rig, and keyed clips from approved concept.",
+  "generator": {
+    "path": "scripts/assets/build-foundry-enemies.py",
+    "sha256": "895b2f78269a49f05c910d218db5f7d17cc419776f8672ee64afb5967f74e9d8",
+    "bytes": 23694
+  },
+  "authoringAgent": {
+    "harness": "Codex delegated Blender author"
+  },
+  "blender": "5.2.3 LTS",
+  "derivedFiles": [
+    {
+      "path": "public/assets/enemies/null-crown-auditor/null-crown-auditor.glb",
+      "sha256": "9237a4c5fd5b656b2ed05073e3c2ce31b01a22593f121277ee1cb8aea0588ff7",
+      "bytes": 359396
+    },
+    {
+      "path": "public/assets/enemies/null-crown-auditor/null-crown-auditor.manifest.json",
+      "sha256": "efaf55cac8536230b1483de0d45bad4186825cebe136f540fd959f7dbba4201e",
+      "bytes": 2496
+    }
+  ],
+  "sourceFiles": [
+    {
+      "path": "assets-source/enemies/null-crown-auditor/staging/null-crown-auditor.blend",
+      "sha256": "86807deaedab02378eaa67cdaaba167bcfab6d07588e9a10f8413b9d6d3c92a7",
+      "bytes": 243368
+    },
+    {
+      "path": "assets-source/enemies/null-crown-auditor/staging/reimport.json",
+      "sha256": "4b87fd4338516e450785a4b458e78c3308fb312b8fc537444d78b2678bf5c676",
+      "bytes": 5971
+    },
+    {
+      "path": "assets-source/enemies/null-crown-auditor/staging/metrics.log",
+      "sha256": "cd2d20971abb7e246ad41c7f9e18624e09c4522024df8e8dc513e278818666d5",
+      "bytes": 876
+    },
+    {
+      "path": "assets-source/enemies/null-crown-auditor/staging/action-metrics.log",
+      "sha256": "8dc3c53b22d06619f05e6b070c17c0c0bd0d97dd7a6b792dac159bea459a3d4c",
+      "bytes": 1615
+    },
+    {
+      "path": "scripts/assets/build-spring-hound.py",
+      "sha256": "432c7c8a1218564bef7c697dee7ff76225fa2915bdb3e454d4960723ddfad8ba",
+      "bytes": 105430
+    }
+  ],
+  "references": [
+    {
+      "path": "assets-source/concepts/foundry/null-crown-auditor.png",
+      "sha256": "dff47cf78a197e102345426edd3c14eb6eb43a5a011cc1c71da034683e7081c7",
+      "bytes": 2117260
+    }
+  ],
+  "reviewEvidence": [
+    {
+      "path": "assets-source/enemies/null-crown-auditor/staging/concept-comparison.jpg",
+      "sha256": "54adb7b52cafdb0739f0e3b24384511c26c2ca69a1c2ddcf18ce0d315a53acac",
+      "bytes": 121509
+    },
+    {
+      "path": "assets-source/enemies/null-crown-auditor/staging/frame-14.4-action-levy.png",
+      "sha256": "662b4cfc5addc7731966b7892cc24b11ff16d042a14b0f902d70c351978a11cf",
+      "bytes": 132368
+    },
+    {
+      "path": "assets-source/enemies/null-crown-auditor/staging/frame-14.4-intent-reconcile.png",
+      "sha256": "07709947711014d92c3230e1735d377f419865c12592014a32a9a3b20e0893ca",
+      "bytes": 132755
+    },
+    {
+      "path": "assets-source/enemies/null-crown-auditor/staging/frame-36-death.png",
+      "sha256": "25fa953f570fc59db58befc5d4ca72d0f031349dcebb0ee293ecd92934d16a15",
+      "bytes": 119555
+    }
+  ],
+  "license": "Original procedural Blender work; concept reference is user-provided and approved.",
+  "validation": {
+    "pass": true,
+    "scope": "Technical export and sampled poses in staging/reimport.json. Desktop combat and independent visual review completed. Owner model and physical Quest review remain pending."
+  },
+  "approvals": [
+    {
+      "gate": "concept",
+      "status": "approved",
+      "who": "Paul",
+      "when": "2026-11-18",
+      "evidence": "docs/next-cards-and-enemies.md"
+    },
+    {
+      "gate": "model",
+      "status": "pending"
+    },
+    {
+      "gate": "rig",
+      "status": "pending"
+    },
+    {
+      "gate": "animation",
+      "status": "pending"
+    },
+    {
+      "gate": "independent visual score",
+      "status": "reviewed",
+      "score": 85,
+      "outOf": 100,
+      "who": "Independent Astra visual review",
+      "when": "2026-11-18",
+      "glbSha256": "9237a4c5fd5b656b2ed05073e3c2ce31b01a22593f121277ee1cb8aea0588ff7",
+      "evidence": "Final re-imported poses compared with the approved concept and desktop combat captures.",
+      "notes": "The full crown fits in the combat view and the raised warning reads differently from the lowered stamp. The press appears lighter than in the concept."
+    }
+  ]
+}

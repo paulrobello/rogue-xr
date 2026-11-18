@@ -74,6 +74,9 @@ describe('roster', () => {
       'Bellows Golem',
       'Orrery Warden',
       'Grand Escapement',
+      'Glasswing Scrivener',
+      'Twin Furnace Mite',
+      'Null-Crown Auditor',
     ]);
     for (const [kind, setup] of Object.entries(ENEMIES)) expect(setup.id).toBe(kind);
   });
@@ -92,7 +95,7 @@ describe('roster', () => {
     }
   });
 
-  it('applies Weak and Vulnerable to the player with at least 2 stacks', () => {
+  it('applies Weak and Vulnerable to the player', () => {
     for (const enemy of ROSTER) {
       for (const move of allMoves(enemy)) {
         for (const effect of move.effects) {
@@ -118,7 +121,8 @@ describe('every move resolves through the engine', () => {
   for (const enemy of ROSTER) {
     for (const move of allMoves(enemy)) {
       it(`${enemy.id}/${move.id}`, () => {
-        const only: EnemySetup = { ...enemy, moves: [move] };
+        // Exercise this action in isolation, including moves reserved for a follow-up.
+        const only: EnemySetup = { ...enemy, moves: [{ ...move, weight: 1, followUp: undefined }] };
         const { state, events } = passRounds(begin([only], 'SP1RE000'), 2);
         const acted = events.filter((e) => e.type === 'enemy-acted');
         expect(acted).toEqual([
@@ -172,10 +176,17 @@ describe('encounters', () => {
       expect(enc.enemies.length).toBeGreaterThanOrEqual(1);
       expect(enc.enemies.length).toBeLessThanOrEqual(2);
       for (const kind of enc.enemies) {
-        expect(['cog-sentry', 'spring-hound', 'bellows-golem']).toContain(kind);
+        expect([
+          'cog-sentry',
+          'spring-hound',
+          'bellows-golem',
+          'glasswing-scrivener',
+          'furnace-mite',
+        ]).toContain(kind);
       }
     }
-    expect(ENCOUNTERS.elite.map((e) => e.enemies)).toEqual([['orrery-warden']]);
+    expect(ENCOUNTERS.elite.map((e) => e.enemies)).toContainEqual(['orrery-warden']);
+    expect(ENCOUNTERS.elite.map((e) => e.enemies)).toContainEqual(['null-crown-auditor']);
     expect(ENCOUNTERS.guardian.map((e) => e.enemies)).toEqual([['grand-escapement']]);
   });
 

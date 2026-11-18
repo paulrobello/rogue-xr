@@ -60,7 +60,7 @@ describe('card atlas index', () => {
   const baseCards = CARDS.filter((c) => !c.upgraded);
 
   it('covers every slice card and its type', () => {
-    expect(baseCards).toHaveLength(15);
+    expect(baseCards).toHaveLength(23);
     expect(Object.keys(atlas.cards).sort()).toEqual(baseCards.map((c) => c.id).sort());
     for (const card of baseCards) {
       const entry = atlas.cards[card.id];

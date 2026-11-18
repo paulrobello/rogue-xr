@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { BRASS_D6, DIE_IDS, GLASS_D8 } from '../src/content/dice.ts';
+import { BRASS_D6, DIE_IDS, GLASS_D8, IRON_D4 } from '../src/content/dice.ts';
 import { faceNormals } from '../src/dice/faces.ts';
 import { STATUS_IDS } from '../src/rules/statuses.ts';
 import { SIGIL_TEMPLATES } from '../src/sigil/templates.ts';
@@ -113,11 +113,21 @@ describe('UI atlas manifest', () => {
 
   it('lists a glow page per die with the same size and slots as its colour page', () => {
     expect(Object.keys(manifest.pages).sort()).toEqual(
-      ['dice-d6', 'dice-d6-glow', 'dice-d8', 'dice-d8-glow', 'glyphs', 'icons'].sort(),
+      [
+        'dice-d4',
+        'dice-d4-glow',
+        'dice-d6',
+        'dice-d6-glow',
+        'dice-d8',
+        'dice-d8-glow',
+        'glyphs',
+        'icons',
+      ].sort(),
     );
     for (const [die, colour, glow] of [
       ['brass-d6', 'dice-d6', 'dice-d6-glow'],
       ['glass-d8', 'dice-d8', 'dice-d8-glow'],
+      ['iron-d4', 'dice-d4', 'dice-d4-glow'],
     ] as const) {
       const set = manifest.dice[die];
       expect(set.glowPage).toBe(glow);

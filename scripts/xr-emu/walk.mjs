@@ -25,6 +25,7 @@ const { values: opts } = parseArgs({
     focus: { type: 'boolean', default: false },
     controls: { type: 'boolean', default: false },
     workshop: { type: 'boolean', default: false },
+    foundry: { type: 'boolean', default: false },
     // Only the enemy-phase checks: one two-automaton fight on TURN_SEED.
     turns: { type: 'boolean', default: false },
     // Only the turned-away Enter VR check (XO5): the title must be re-placed in front of the head.
@@ -177,7 +178,83 @@ try {
     await settle(800);
   };
 
-  if (opts.workshop) {
+  if (opts.foundry) {
+    await page.goto(`${opts.base}/?title&debug`);
+    await waitFor('foundry-ready', () => window.__flow?.ui?.visible);
+    await ev(async () => {
+      const { openDb } = await import('/src/persist/db.ts');
+      const { saveRunSnapshot, snapshotRun } = await import('/src/persist/saves.ts');
+      const { createRun } = await import('/src/rules/run.ts');
+      const run = createRun('SP1RE003', Array(10).fill('counterstroke'));
+      await saveRunSnapshot(
+        await openDb(),
+        snapshotRun(run, {
+          contentVersion: 2,
+          phase: 'explore',
+          floorSeed: run.seed,
+          roomIndex: 0,
+          clearedEncounters: [],
+        }),
+      );
+    });
+    await page.reload();
+    await enterVr();
+    await press('title-continue');
+    await waitFor('foundry-explore', () => window.__flow.flow.phase === 'explore');
+    await ev(() => window.__combat.heroReady);
+    await ev(() => window.__combat.teleportToEncounter(3));
+    await waitFor(
+      'foundry-fight',
+      () => window.__combat.session && window.__combat.floor.encounter.phase === 'active',
+    );
+    await holdFan();
+    const gesture = await ev(() => {
+      const session = window.__combat.session;
+      const card = session.controller.state.piles.hand[0];
+      const enemy = session.controller.state.enemies.find((e) => e.intent?.id === 'double-spark');
+      const cardPos = session.worldOf('card', card.uid);
+      const enemyPos = enemy && session.worldOf('enemy', enemy.id);
+      return {
+        card: cardPos?.toArray(),
+        enemy: enemyPos?.toArray(),
+        target: enemy?.id,
+        uid: card.uid,
+      };
+    });
+    if (gesture.card && gesture.enemy) {
+      const coord = (a) => ({ x: a[0], y: a[1], z: a[2] });
+      const handOrigin = await headPoint(HAND_OFFSET.right);
+      const pointMain = async (at) => {
+        await ev(({ from, at }) => window.__xrEmu.placeAt('right', from, at), {
+          from: handOrigin,
+          at,
+        });
+        await frames();
+      };
+      await pointMain(coord(gesture.card));
+      await waitFor('foundry-card-hover', () => window.__combat.session.fan.hovered === 0);
+      await ev(() => window.__xrEmu.device.controllers.right.updateButtonValue('squeeze', 1));
+      await settle(150);
+      await pointMain(coord(gesture.enemy));
+      await settle(160);
+      await pullTrigger(MAIN);
+      await ev(() => window.__xrEmu.device.controllers.right.updateButtonValue('squeeze', 0));
+      await waitFor(
+        'foundry-counterstroke-resolved',
+        () => window.__combat.session.controller.state.player.block === 6,
+      );
+      const result = await ev(() => {
+        const s = window.__combat.session;
+        return {
+          steam: s.controller.state.player.steam,
+          block: s.controller.state.player.block,
+          hp: s.controller.state.enemies.map((e) => e.hp),
+        };
+      });
+      record('foundry-xr-multihit-counter', result.steam === 1 && result.block === 6, result);
+      await shot('foundry-counterstroke');
+    } else record('foundry-double-spark', false, gesture);
+  } else if (opts.workshop) {
     await page.goto(`${opts.base}/?title&debug`);
     await waitFor('workshop-ready', () => window.__flow?.ui?.visible);
     await ev(async () => {

@@ -12,7 +12,13 @@ import {
   type UiAtlasManifest,
 } from '../ui/icon-atlas.ts';
 import { DICE_GLOW_INTENSITY, type DiceAsset } from './dice-asset.ts';
-import { D6_HALF_EXTENT, D8_CIRCUMRADIUS, type DieKind, faceNormals } from './faces.ts';
+import {
+  D6_HALF_EXTENT,
+  D8_CIRCUMRADIUS,
+  type DieKind,
+  dieVertices,
+  faceNormals,
+} from './faces.ts';
 import { DiceWorld, type DiceWorldOptions } from './world.ts';
 
 /** A die that came to rest showing the engine's face. */
@@ -98,10 +104,7 @@ function canvas2d(size: number): CanvasRenderingContext2D | null {
 }
 
 /** The UI atlas die each presenter kind wears. */
-export const DIE_ATLAS_ID = { d6: 'brass-d6', d8: 'glass-d8' } as const satisfies Record<
-  DieKind,
-  string
->;
+export const DIE_ATLAS_ID = { d6: 'brass-d6', d8: 'glass-d8', d4: 'iron-d4' } as const;
 
 /**
  * UVs for a `BoxGeometry` (4 vertices per group, groups +X, -X, +Y, -Y, +Z, -Z, each spanning 0..1)
@@ -161,6 +164,41 @@ export function d8FaceUvs(set: DieFaceSet, positions: ArrayLike<number>): Float3
   return out;
 }
 
+const D4_CORNERS = [
+  [0.5, 0.07],
+  [0.97, 0.91],
+  [0.03, 0.91],
+] as const;
+
+/** The face opposite vertex i uses tile i; its other three vertices carry their own values in ascending order. */
+export function d4FaceUvs(set: DieFaceSet, positions: ArrayLike<number>): Float32Array {
+  const corners = set.triangle;
+  if (corners?.length !== 3) throw new RangeError('d4 atlas needs a face triangle');
+  const verts = dieVertices('d4');
+  const uv = new Float32Array((positions.length * 2) / 3);
+  for (let i = 0; i < positions.length; i += 9) {
+    const ids = [0, 3, 6].map((offset) => {
+      const x = positions[i + offset],
+        y = positions[i + offset + 1],
+        z = positions[i + offset + 2];
+      const hit = verts.findIndex((v) => Math.hypot(v.x - x, v.y - y, v.z - z) < 1e-6);
+      if (hit < 0) throw new RangeError('Unknown tetrahedron vertex');
+      return hit;
+    });
+    const opposite = verts.findIndex((_, id) => !ids.includes(id));
+    const slot = set.faces.find((f) => f.index === opposite)?.uv;
+    if (!slot) throw new RangeError(`d4 atlas has no face ${opposite}`);
+    const numbers = [...ids].sort((a, b) => a - b);
+    ids.forEach((id, k) => {
+      const [x, y] = corners[numbers.indexOf(id)] as readonly [number, number];
+      const n = (i * 2) / 3 + 2 * k;
+      uv[n] = slot.u0 + x * (slot.u1 - slot.u0);
+      uv[n + 1] = slot.v1 - y * (slot.v1 - slot.v0);
+    });
+  }
+  return uv;
+}
+
 /** The face index of `kind` that `faces.ts` maps to `value`, and its atlas entry. */
 export function atlasFaceFor(manifest: UiAtlasManifest, kind: DieKind, faceIndex: number) {
   return dieFace(manifest, DIE_ATLAS_ID[kind], faceIndex);
@@ -173,6 +211,8 @@ export interface DiePages {
   d8: THREE.Texture;
   d6Glow?: THREE.Texture | null;
   d8Glow?: THREE.Texture | null;
+  d4?: THREE.Texture;
+  d4Glow?: THREE.Texture | null;
 }
 
 let diePages: Promise<DiePages> | null = null;
@@ -203,13 +243,15 @@ function loadDiePages(renderer: THREE.WebGLRenderer) {
           return null;
         });
       };
-      const [d6, d8, d6Glow, d8Glow] = await Promise.all([
+      const [d6, d8, d4, d6Glow, d8Glow, d4Glow] = await Promise.all([
         page('dice-d6'),
         page('dice-d8'),
+        page('dice-d4'),
         glow(manifest.dice['brass-d6']),
         glow(manifest.dice['glass-d8']),
+        glow(manifest.dice['iron-d4']),
       ]);
-      return { manifest, d6, d8, d6Glow, d8Glow };
+      return { manifest, d6, d8, d4, d6Glow, d8Glow, d4Glow };
     })();
     diePages.catch(() => {
       diePages = null;
@@ -245,6 +287,64 @@ function resultSprite(value: number): THREE.Sprite | null {
   sprite.scale.setScalar(0.06);
   sprite.renderOrder = 10;
   return sprite;
+}
+
+function d4FaceTexture(): THREE.CanvasTexture | null {
+  const ctx = canvas2d(256);
+  if (!ctx) return null;
+  ctx.fillStyle = '#34373b';
+  ctx.fillRect(0, 0, 256, 256);
+  ctx.fillStyle = '#f5d28b';
+  ctx.font = 'bold 24px serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  for (let face = 0; face < 4; face++) {
+    const values = [1, 2, 3, 4].filter((v) => v !== face + 1);
+    D4_CORNERS.forEach(([x, y], k) => {
+      ctx.fillText(
+        String(values[k]),
+        128 * ((face % 2) + 0.5 + (x - 0.5) * 0.55),
+        128 * (Math.floor(face / 2) + 0.63 + (y - 0.63) * 0.55),
+      );
+    });
+  }
+  const texture = new THREE.CanvasTexture(ctx.canvas);
+  configureTextTexture(texture);
+  return texture;
+}
+
+function buildD4Geometry(): THREE.BufferGeometry {
+  const verts = dieVertices('d4');
+  const positions: number[] = [];
+  for (let face = 0; face < 4; face++) {
+    const ids = [0, 1, 2, 3].filter((i) => i !== face);
+    const [a, b, c] = ids.map((i) => new THREE.Vector3(verts[i].x, verts[i].y, verts[i].z));
+    if (b.clone().sub(a).cross(c.clone().sub(a)).dot(a) < 0) ids.reverse();
+    for (const i of ids) positions.push(verts[i].x, verts[i].y, verts[i].z);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.computeVertexNormals();
+  const faces = [0, 1, 2, 3].map((i) => ({
+    index: i,
+    value: i + 1,
+    page: 'fallback',
+    px: { x: 0, y: 0, w: 128, h: 128 },
+    uv: {
+      u0: (i % 2) / 2,
+      u1: ((i % 2) + 1) / 2,
+      v1: 1 - Math.floor(i / 2) / 2,
+      v0: 1 - (Math.floor(i / 2) + 1) / 2,
+    },
+  }));
+  geometry.setAttribute(
+    'uv',
+    new THREE.BufferAttribute(
+      d4FaceUvs({ kind: 'd4', shape: 'triangle', triangle: D4_CORNERS, faces }, positions),
+      2,
+    ),
+  );
+  return geometry;
 }
 
 function buildD8Geometry(): THREE.BufferGeometry {
@@ -290,9 +390,12 @@ export class DicePresenter {
   private readonly blank: THREE.Texture;
   private readonly d6Material: THREE.MeshStandardMaterial;
   private readonly d8Material: THREE.MeshStandardMaterial;
+  private readonly d4Material: THREE.MeshStandardMaterial;
   private facesRequested = false;
   private readonly d6Geometry: THREE.BufferGeometry;
   private readonly d8Geometry: THREE.BufferGeometry;
+  private readonly d4Geometry: THREE.BufferGeometry;
+  private readonly d4Texture: THREE.CanvasTexture | null;
   private readonly offSettled: () => void;
   private readonly halo: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>;
   private waitingDie: Waiting | null = null;
@@ -314,7 +417,8 @@ export class DicePresenter {
     // texture swap does not recompile the program.
     this.d6Geometry.clearGroups();
     this.d8Geometry = buildD8Geometry();
-    this.geometries.push(this.d6Geometry, this.d8Geometry);
+    this.d4Geometry = buildD4Geometry();
+    this.geometries.push(this.d6Geometry, this.d8Geometry, this.d4Geometry);
     const blank = whitePixel();
     this.blank = blank;
     this.textures.push(blank);
@@ -335,7 +439,16 @@ export class DicePresenter {
       roughness: 0.15,
       flatShading: true,
     });
-    this.materials.push(this.d6Material, this.d8Material);
+    this.d4Texture = d4FaceTexture();
+    this.d4Material = new THREE.MeshStandardMaterial({
+      color: '#ffffff',
+      map: this.d4Texture,
+      metalness: 0.85,
+      roughness: 0.3,
+      flatShading: true,
+    });
+    if (this.d4Texture) this.textures.push(this.d4Texture);
+    this.materials.push(this.d6Material, this.d8Material, this.d4Material);
     // The waiting die's pulsing ring, drawn flat on the tray floor; its own resources, so the
     // shared dice materials never change.
     const haloGeometry = new THREE.RingGeometry(HALO_INNER, HALO_OUTER, 40);
@@ -357,7 +470,7 @@ export class DicePresenter {
     this.materials.push(haloMaterial);
     const env = options.envMap;
     if (env) {
-      for (const material of [this.d6Material, this.d8Material]) {
+      for (const material of [this.d6Material, this.d8Material, this.d4Material]) {
         material.envMap = env;
         material.envMapIntensity = DICE_ENV_INTENSITY;
       }
@@ -512,7 +625,8 @@ export class DicePresenter {
     let best = -1;
     let bestY = Number.NEGATIVE_INFINITY;
     faceNormals(entry.kind).forEach((n, i) => {
-      const y = new THREE.Vector3(n.x, n.y, n.z).applyQuaternion(q).y;
+      const y =
+        new THREE.Vector3(n.x, n.y, n.z).applyQuaternion(q).y * (entry.kind === 'd4' ? -1 : 1);
       if (y > bestY) {
         bestY = y;
         best = i;
@@ -548,8 +662,11 @@ export class DicePresenter {
    * `map`, the glow pages (when present) as `emissiveMap`, so only pips and numerals emit.
    */
   applyFaces(pages: DiePages): void {
-    const glow = { d6: pages.d6Glow ?? null, d8: pages.d8Glow ?? null };
-    this.options.models?.bindFaceMaps({ d6: pages.d6, d8: pages.d8 }, glow);
+    const glow = { d6: pages.d6Glow ?? null, d8: pages.d8Glow ?? null, d4: pages.d4Glow ?? null };
+    this.options.models?.bindFaceMaps(
+      { d6: pages.d6, d8: pages.d8, ...(pages.d4 ? { d4: pages.d4 } : {}) },
+      glow,
+    );
     const d6Uv = this.d6Geometry.getAttribute('uv') as THREE.BufferAttribute;
     d6Uv.set(d6FaceUvs(pages.manifest.dice['brass-d6'], d6Uv.array));
     d6Uv.needsUpdate = true;
@@ -558,6 +675,16 @@ export class DicePresenter {
       d8FaceUvs(pages.manifest.dice['glass-d8'], this.d8Geometry.getAttribute('position').array),
     );
     d8Uv.needsUpdate = true;
+    const d4Set = pages.manifest.dice['iron-d4'];
+    if (pages.d4 && d4Set) {
+      const d4Uv = this.d4Geometry.getAttribute('uv') as THREE.BufferAttribute;
+      d4Uv.set(d4FaceUvs(d4Set, this.d4Geometry.getAttribute('position').array));
+      d4Uv.needsUpdate = true;
+      this.d4Material.map = pages.d4;
+    }
+    this.d4Material.emissiveMap = glow.d4 ?? this.blank;
+    this.d4Material.emissive.set(glow.d4 ? '#ffffff' : '#000000');
+    this.d4Material.emissiveIntensity = glow.d4 ? DICE_GLOW_INTENSITY : 0;
     for (const [material, page, lit] of [
       [this.d6Material, pages.d6, glow.d6],
       [this.d8Material, pages.d8, glow.d8],
@@ -572,11 +699,14 @@ export class DicePresenter {
   }
 
   private spawnMesh(kind: DieKind, name: string): THREE.Mesh {
+    const authored = kind === 'd4' ? null : this.options.models?.spawn(kind);
     const mesh =
-      this.options.models?.spawn(kind) ??
+      authored ??
       (kind === 'd6'
         ? new THREE.Mesh(this.d6Geometry, this.d6Material)
-        : new THREE.Mesh(this.d8Geometry, this.d8Material));
+        : kind === 'd8'
+          ? new THREE.Mesh(this.d8Geometry, this.d8Material)
+          : new THREE.Mesh(this.d4Geometry, this.d4Material));
     mesh.name = name;
     if (!this.facesRequested) {
       this.facesRequested = true;
