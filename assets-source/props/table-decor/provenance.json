@@ -573,159 +573,187 @@
     },
     {
       "gate": "independent visual score",
-      "status": "unscored",
-      "notes": "blender-kit-pieces requires an independent >= 80/100 score; unscored means unaccepted"
+      "status": "scored",
+      "notes": "84/100 on 31aa007; independentScore holds the review and evidence hashes"
     }
   ],
   "independentScore": {
-    "score": 69,
+    "score": 84,
     "scale": "0-100 visual fidelity to the art bible and study-kit language",
-    "scorer": "independent reviewer agent (separate from the authoring agent; did not build the asset)",
+    "scorer": "independent reviewer (GPT-6.2 Astra; separate from the authoring agent)",
     "date": "2026-11-17",
     "acceptanceBar": 80,
-    "clearsBar": false,
-    "build": "1879940",
-    "previousScore": null,
+    "clearsBar": true,
+    "build": "31aa007",
+    "previousScore": 69,
     "rubric": [
       {
         "criterion": "material fidelity to the art bible",
-        "points": 18,
+        "points": 21,
         "max": 25,
-        "note": "Brass holds: with one mask (C*>20, L*>35) the candle dish in closeup-candle px745-858 y565-630 is L* 44.1, C* 28.0, hue 72.8 against the approved study gear column in p5-int-study px640-940 y260-720 at L* 40.9, C* 28.2, hue 65.1. The vase neck band (closeup-vase px765-835 y400-418, L* 54.9, hue 70.5) and book clasps (closeup-candle px585-615 y568-600, L* 55.3, hue 79.5) sit in the same family. Raw #DEC16A is L* 78.9, but the approved study brass also renders near L* 41-44 in engine. Oxblood glaze reads as glazed ceramic: closeup-vase px745-860 y440-590 is L* 22.8, C* 30.8, hue 31.7 against ruby #93212B at hue 26.5, with specular streaks to p95 L* 38.2. The flame fails candle amber. In closeup-candle px790-812 y383-437 (L*>70) it is #E3CBAC, C* 19.2, HSV saturation 0.244, against #F3BE65 at C* 52.3 and saturation 0.584, so it carries 37% of the target chroma and reads cream-white, not amber. The atlas is amber under the flame (basecolor #CA9D62 and emissive #C99855 over 4177 texels), so the loss comes from emission strength into tone mapping. The bake render shows the same loss (candle-low.png flame saturation 0.235). The brown top cover is nearly flat: closeup-candle px430-540 y545-590 spans only L* 28.5 to 31.9 (p05 to p95), less of the soft painted value variation the bible asks for."
+        "note": "The flame now reads amber. In closeup-candle, x790–812 y383–437, pixels above L*70 average #F0B969, C*49.1, hue 77.0°, saturation 0.562. The target #F3BE65 has C*52.3 and saturation 0.584. In candle-low.png the flame remains cream (x305–335 y60–165, L*>60, C*27.2, saturation 0.379). Room and engine close-ups take precedence. In closeup-candle the dish at x745–858 y565–630 became paler: C*28.0 to 24.6 with C*>12, L*>35, b*>a*. With the stricter common C*>20 mask, the dish is L*56.8 / C*25.0 / hue 76.2°, versus L*40.9 / C*28.2 / hue 65.1° for the study gear at x640–940 y260–720. Highlights are readable but the broad pale cup and saucer flatten the metal response. The oxblood body in closeup-vase, x745–860 y440–590, is L*22.9 / C*30.6 with a clear glaze highlight. Brown leather at x430–540 y545–590 in closeup-candle spans L*30.2–40.3 (p05–p95); the green and red covers stay distinguishable."
       },
       {
         "criterion": "form and silhouette",
-        "points": 16,
+        "points": 17,
         "max": 20,
-        "note": "All three read at 1-2 m. The chamberstick has a dish, cup, bead collar and ring handle (the handle shows in SPIRE004-room5-bench-w px575-595 y585-595). The book stack staggers three boards with brass bands. The baluster vase has a flared lip, gilt neck band and foot ring. Geometry heights are 0.203, 0.084 and 0.222 m on 272, 150 and 576 tris. The flame is a solid lozenge, not a card: lit width is 16-18 px at two yaws (closeup-candle row y425, 16 px; closeup-books row y355, 18 px). Its silhouette is angular, though, with a hard edge and no soft taper. The vase profile shows slight segment kinks along its left contour at 3x (closeup-vase px730-760 y440-600)."
+        "note": "At 1.2 m camera height, the dish and wick, stepped book boards, vase lip, neck and foot identify each prop in the bench views. In closeup-candle the L*>70 flame is 9, 17 and 18 pixels wide at y395, 410 and 425 inside x780–825; a second yaw in closeup-books gives 7, 14 and 20 pixels at y325, 335 and 355 inside x1080–1120. It tapers, but retains a stiff, pointed outline at both angles. At 3×, the vase shoulder and belly silhouette in closeup-vase (x723–880 y315–640) has shallow straight sections. The GLB index counts give 419 triangles for candle, 276/184/184 for book variants, exactly 600 for vase."
       },
       {
         "criterion": "lighting integration in engine (sits in the room's light, contact)",
-        "points": 10,
+        "points": 17,
         "max": 20,
-        "note": "The lit candle makes no pool, against the bible rule that candles and lamps make pools. On SPIRE004-room0-bench-e the table beside the candle (px680-740 y525-565) is L* 5.7 and the far end (px950-1010 y525-565) is L* 6.4. On SPIRE004-room5-bench-w the figures are L* 6.4 beside the candle (px645-700 y560-600) and 6.5 at the far end (px950-1010 y560-600). The flame has no glow or bloom: L* is a flat 82-85 plateau from y394 to y432 in closeup-candle (x797-805) and falls to L* 4.7 one row above the tip (y380). Contact is weak because castShadow is false and there is no contact or blob shadow. Under the candle dish (x790-810) the table reads L* 6.1-7.9 at y636-640 against 2.9-4.8 at y645-650. Under the vase foot (closeup-candle x1250-1290) it reads 5.1-7.2 at y769-772 against 4.4-6.3 further out. Only the books darken their footprint, by about 1.5 L* (x440-470, y712-718 at 3.2-4.5 against y725-745 at 4.7-5.5). Rendered over albedo, the wax gets 0.66 while the bench gets 0.10 (walnut #583C26 used as a proxy for the bench albedo), about 6.4 times the light of the surface it stands on, which reads slightly pasted on. Brass highlights drop from bake p95 L* 79.2 (candle-low.png) to engine p95 61.7 (closeup-candle). That loss is runtime, from envMapIntensity 0.3, but it still matches the study brass p95 of 52.1. No floating and no interpenetration was found in 12 shots."
+        "note": "SPIRE004 room 0 east has a warm wood pool averaging L*22.2 at x680–740 y525–565 versus L*6.4 at x950–1010 on the same rows. Room 5 west gives L*23.4 versus 6.5 at x645–700 and x950–1010, y560–600. In closeup-candle the flame profile at x797–805 rises from L*28.4 at y380 outside the tip to 73.2 at y394 and 85.8 at y434 near the base. Contact is visible on all three: below the candle x790–810, L*7.8 at y637 increases to 21.1 at y650; below the books x440–470, L*2.2 at y712 increases to 7.8 at y729; below the vase in closeup-vase x790–810, L*1.8 at y622 increases to 7.6 at y639. The tight dark rim under the dish is conspicuous in the room-1 east shot. There, the average of two 7×7 patches centered on x794 y540/543 is L*9.2, against 20.4 at x794 y570. On this same table, wood-grain and angle swamp the comparable forward-edge contrast for the books and vase."
       },
       {
         "criterion": "scale and placement",
         "points": 13,
         "max": 15,
-        "note": "In SPIRE004-room1-bench-e the front edge of the 0.9 m bench top spans px500-1100 (600 px, about 667 px/m). The candle measures 113 px from flame tip y422 to the dish at y535, the vase 140 px (y432-572) and the books 83 px wide (x605-688). That is consistent with the 0.203, 0.222 and 0.084 m geometry seen slightly behind the edge, and plausible for a 0.47 m bench and a seated player at 1.2 m eye height. Placement keeps the 0.025 m bench margin and the 0.09 m crate margin over the brass straps (SPIRE002-room3-crate px780-990 y410-600 is clear). Props sit at top heights of 0.47 and 0.80 m, and min_z_low is 0.0 for all kinds. The vase near the back edge in SPIRE004-room0-bench-w (px945-1020 y385-515) reads crowded against the doorway, and the set is small relative to the bench, which gives a 3-prop table about a third of the top."
+        "note": "The SPIRE004 room-1 east front edge spans about 600 pixels (x500–1100). On that bench the visible candle spans about 113 pixels (y422–535) and the vase about 140 (y432–572). Both read at seated scale; the render report gives 1.2 m eye height, 0.47 m hall tops, 0.80 m crate top, and model heights of 0.203 m, 0.222 m and 0.052–0.118 m for candle, vase and books respectively. All five model bases are at zero in staging. No visible floating, prop-to-prop collision or strap penetration in the ten furnished-table frames. The lone vase on SPIRE004 room-0 west (base x976 y507, top x994 y397) crowds the doorway visually. This score covers the captured layout at 31aa007; doorway clearance and any later bench move need separate evidence."
       },
       {
         "criterion": "surface defects (seams, normals, AO)",
-        "points": 6,
+        "points": 8,
         "max": 10,
-        "note": "One visible defect is clear: a near-black slot in the wax at the drip, seen from two yaws. In closeup-books x1071-1073 y378-402 it measures L* 0-4 inside wax of L* 56-72. In closeup-candle x782-784 y452-470 it measures L* 2.3-13.3 inside wax of L* 65-70. It is attributed to the bake: candle-high.png shows a clean drip, while candle-low.png shows black marks at the drip tips (crop px255-375 y170-340). The vase belly mark is faint, 1.9 L* below its surround (closeup-vase px760-777 y482-490 at L* 22.7, against 24.6 at px760-800 y470-500). The builder flags (bad normals under the books and AO p05 0.0) are the same texels: 24,237 inverted tangent normals (RGB 128,128,0) and 44,490 texels with AO<0.05 (10.0% of covered texels). All sit on page-cream basecolor #CBB88F, which are the hidden page-block undersides, and none show in books-low.png or the engine close-ups. That is atlas waste, not a visible fault. A wax UV seam was suspected but not confirmed: closeup-books columns x1058-1075 over y420-500 rise smoothly from L* 51.2 to 56.0 with no dip."
+        "note": "The earlier black wax notch is resolved in both views. In closeup-books the old notch region x1066–1076 y378–402 bottoms at L*37.1 and averages 59.4 versus 69.6 on adjacent wax; closeup-candle x782–785 across y452–470 averages L*56.4–66.0 by column. No continuous black slit appears at 3×. The vase belly patch at x760–777 y482–490 still reads 1.9 L* below the surrounding x760–800 y470–500 (23.6 versus 25.5); it is subtle at bench distance. The generator default and staging report both specify CPU. Recorded geometric-island AO p05 is 0.5333; the independently decoded ORM on nonblack base-color texels, which includes bleed padding, gives p05 0.373 and 0.83% below 0.05. The same padded mask gives 5,162 negative-Z normal texels, clustering mostly around page-colored regions; the report counts 466 using its stricter normal threshold and geometric mask. No comparable defect is visible on the exposed book surfaces."
       },
       {
         "criterion": "variety across tables",
-        "points": 6,
+        "points": 8,
         "max": 10,
-        "note": "The count and position draw works. Over 9 dressed tables (engine/report.json) there are three tables with 3 props, two with 2 and four with 1, and every kind mix, position and yaw differs, which does break the stamped repeat the owner asked about. Each kind is one fixed mesh, though, and the book stack always has the same order (brown on green on red) and the same offsets, so a repeated book stack or candle reads as a copy. SPIRE002-room0 shows the identical trio on both benches in one room (bench-e px650-1000 y415-560, bench-w px570-995 y410-570). No 0-prop table appears in this sample (expected weight 0.15), and there is no height, wear or colour variant."
+        "note": "The ten photographed furnished tables comprise five singles, two pairs and three trios. Three leather arrangements appear: a three-book stack, a low pair on the crate and an upright red book beside a flat green one. In x620–990 y320–665 across the three close-ups, green-dominant pixels total 1,868, 2,064 and 14,424 respectively; the upright variant exposes far more green cover. At room distance both opposed SPIRE002 room-0 benches still carry the same three kinds and book variant. Candle and vase each retain one silhouette; differing yaw does little for the rotationally symmetric vase. The sample demonstrates variation in dressed tables; it contains no photograph of an empty one."
       }
     ],
     "topFixes": [
-      "Candle flame: lower the runtime emissiveIntensity from 1.6, or the baked emission strength, so the tone-mapped flame keeps candle amber (target C* about 50 and saturation about 0.58, measured 19 and 0.24). Add a white-hot core to amber tip gradient and soften the hard lozenge edge.",
-      "Candle: give the lit candle a light footprint on the table, either a small additive warm glow decal or blob under the dish or a cheap emissive halo sprite. The table beside it measures L* 5.7 against 6.4 at the far end, so there is no pool.",
-      "All props: add a soft contact or blob shadow, or a baked AO ground decal, under each prop. Candle and vase footprints show no darkening, and the books only about 1.5 L*.",
-      "Candle wax: rebake the drip tips so they stop going black. Low plus atlas shows black marks where high is clean, and in engine they are a 2-3 px slot at L* 0-4 at the drip.",
-      "Books: add 2-3 stack variants (order, count, offsets, one standing or open book) and a little value variation on the brown top cover (p05-p95 only 28.5-31.9 L*).",
-      "Candle holder: raise envMapIntensity for the brass texels, or the probe contribution, so dish highlights get back toward the bake p95 L* 79 (engine 61.7).",
-      "Atlas: delete or shrink the hidden page-block undersides, which hold 10% of covered texels with AO<0.05 and inverted normals, and spend those texels on the visible props."
+      "Candle holder: deepen the cup and saucer midtones while retaining their narrow brass rim highlights to match the study fittings.",
+      "Candle dish: soften the dark contact ring on the brightest hall benches while preserving the immediate footprint and amber light pool.",
+      "Vase: smooth the angular shoulder-to-belly outline by redistributing its existing profile rings and soften the faint belly patch. Keep the 600-triangle limit."
     ],
-    "method": "Weighted the 12 in-engine shots (SPIRE002 room 0 benches and room 3 crate, SPIRE004 rooms 0, 1 and 5 benches, and close-ups of each prop), all three.js with AgX on an Apple M4 per engine/report.json. Used the review sheet, staging renders, staging/report.json and the 1024 px baked maps only to attribute faults to the bake or to runtime. Compared style against the approved study (assets-source/rooms/study/staging/review-sheet.jpg, docs/verification/p5-int-study.jpg and p5-rooms-study-desk.jpg, including the study sconce candles). With Pillow and numpy (python3 -I, scripts in /tmp/fb17/decor-score/scripts/) I made 3-4x crops of every prop and measured region means, CIE L*, C*, hue and HSV saturation for the flame, wax, brass dish and cup, vase body, foot, neck band and belly mark, each book cover, and pages and clasps. I compared these with the palette hexes (#DEC16A, #F3BE65, #93212B) and with the study brass under one shared mask. I also ran row and column L* profiles across each prop base onto the table for contact, across the wax for the notch and seam, and down the flame for its core gradient. Light pools were measured by comparing the table next to each candle with the far end of the same bench, and the prop light factor as rendered luminance over atlas albedo. The atlas analysis covered AO<0.05 and inverted-normal texels by island and basecolor, and the basecolor under emissive texels. Placements came from engine/report.json and the bench and crate dimensions from src/floor/table-decor.ts. Not checked: the Quest 3 headset view and stereo scale, flame flicker or animation, the KTX2 encodes (the PNG maps were analysed), and the GLB itself.",
+    "method": "Scored all 15 committed Apple M4 engine frames first: ten table views from three seeds and five close-ups. Compared 2× and 3× nearest-neighbor crops of every prop and all three book arrangements with the locked board, study sconce, study desk, high/low staging renders and review sheets. Decoded original-resolution JPEGs and PNGs with Pillow/NumPy using sRGB-to-D65 CIELAB, HSV saturation, common material masks and base-to-wood luminance profiles. Verified triangle counts directly from GLB index accessors. Reproduced the previous brass value on the historical closeup-candle.jpg (1879940 SHA-256 940cbff12e1a939d7488d2b68816e2bfa1f2b208ccbbeedf43e524ab03b7230b). Evidence below identifies current-build inputs. Static desktop screenshots cannot establish Quest stereo scale, motion or flicker, headset performance, walk-through door clearance or owner approval. Bake determinism was not rerun and compressed KTX2 channels were not inspected independently.",
     "evidence": [
       {
-        "path": "assets-source/props/table-decor/engine/closeup-candle.jpg",
-        "sha256": "940cbff12e1a939d7488d2b68816e2bfa1f2b208ccbbeedf43e524ab03b7230b"
-      },
-      {
-        "path": "assets-source/props/table-decor/engine/closeup-books.jpg",
-        "sha256": "494c502538099e43888ba3b0bb1dda59a9fdbadef31e1d0adf5cf062594ada89"
-      },
-      {
-        "path": "assets-source/props/table-decor/engine/closeup-vase.jpg",
-        "sha256": "3f1ad7686e352545f27077c01e4864af22bb627a2ca5d12f1fe07f2cae22ee59"
+        "path": "assets-source/props/table-decor/engine/9Q0E85RS-room0-hall-bench-e.jpg",
+        "sha256": "d3fa0290466a8af7982c03e563480f6c3d0c4d8abacfe3af9a6e468291ad28e6"
       },
       {
         "path": "assets-source/props/table-decor/engine/SPIRE002-room0-hall-bench-e.jpg",
-        "sha256": "38411ef8c9f69353f99a89f7ec2d04a0304d302edbec2761d5543c1542067c58"
+        "sha256": "417a087a7548a37e17cd130b6a197e45c102dae1c2dcf4e88213099e3f8778e1"
       },
       {
         "path": "assets-source/props/table-decor/engine/SPIRE002-room0-hall-bench-w.jpg",
-        "sha256": "92ecf3db44e92cf11492b037bcc7fc972502ecadedb31bba9c80eb2ff565dcbb"
+        "sha256": "4f1f356133c8d31eae994d6280e3053f457f8cdf831fb0b2e20060c5cd4f1c2a"
       },
       {
         "path": "assets-source/props/table-decor/engine/SPIRE002-room3-gear-shaft-crate.jpg",
-        "sha256": "f5a4f66ca37fb8b99e1d5f96bbbadea9dbd320c1c837f1f1f9f1b8bf3b91e636"
+        "sha256": "6a17c43d8b277df0fa81117619737035211ea776a49330faea5a4d232660d0fc"
       },
       {
         "path": "assets-source/props/table-decor/engine/SPIRE004-room0-hall-bench-e.jpg",
-        "sha256": "51b4bdd1a1bc1cfa9c9f42afdb26b373c8563ceabe3ad95b735cab54a0c182a4"
+        "sha256": "3dfb4b9e0a9b7e84b896a29584d464e7fa04f3580d63d295a1e22e77fa2aba9c"
       },
       {
         "path": "assets-source/props/table-decor/engine/SPIRE004-room0-hall-bench-w.jpg",
-        "sha256": "aa5581a2d98701af1271bda8be41de9e50d7cacbe2e8983797176bc30afd588c"
+        "sha256": "5ada5adde2acf900bcf52a4e9b1bf3ceb66da035cdae748fa32c012dc947b166"
       },
       {
         "path": "assets-source/props/table-decor/engine/SPIRE004-room1-hall-bench-e.jpg",
-        "sha256": "246a2c7eac82312417acf4ac05bd9736ca2711b340b4934568561a5d43416304"
+        "sha256": "ef4cfcc1220045bb287b51f4bacd9e37de5137de5dfa8fd47cb5c5152a2e2777"
       },
       {
         "path": "assets-source/props/table-decor/engine/SPIRE004-room1-hall-bench-w.jpg",
-        "sha256": "f0413a11b679dfd35788a5837b56586337f4dee2188d8b1080c4b7b83a05cc56"
+        "sha256": "c29964e8f4f79b44068deb153926654ca71adc290e45f645d4323c7023095e2f"
       },
       {
         "path": "assets-source/props/table-decor/engine/SPIRE004-room5-hall-bench-e.jpg",
-        "sha256": "eb0fc8e85303ac0a35ed71dc4225695c9d4a4a6d8fc63539ee648c7dfe78738f"
+        "sha256": "39be408b58d0f818a1378921b2bbb03aafc8b02cd4b339460f2860837fb718cb"
       },
       {
         "path": "assets-source/props/table-decor/engine/SPIRE004-room5-hall-bench-w.jpg",
-        "sha256": "326649eb20d66e607ce021a228cbb66db97561fb640b58ff076cecbbbdf0cdc0"
+        "sha256": "4439d4599ce373a7a58a7ae0ec09bdcc1845f7dd71fe28b16857b5f680471b04"
+      },
+      {
+        "path": "assets-source/props/table-decor/engine/closeup-books-v1.jpg",
+        "sha256": "c083fc379100f6081e098d8cdaf906c0a7c197a3fbdc77a37b97b9aad9ede176"
+      },
+      {
+        "path": "assets-source/props/table-decor/engine/closeup-books-v2.jpg",
+        "sha256": "e7110ab92bbb8d0c82097e50c2021378680e3a2f14a1d9f2164c4a802b63bea5"
+      },
+      {
+        "path": "assets-source/props/table-decor/engine/closeup-books.jpg",
+        "sha256": "11bdfefb537b95401298e37a8d6c00f7e33c7e419a8f6278ea9103a12804a669"
+      },
+      {
+        "path": "assets-source/props/table-decor/engine/closeup-candle.jpg",
+        "sha256": "7d717787645ac3d73627d19c0d7a44309d9ca9d68d382c4504b213669aec8008"
+      },
+      {
+        "path": "assets-source/props/table-decor/engine/closeup-vase.jpg",
+        "sha256": "ea594bc344bde2a50b781c4b5d5bed82ce7fd67538707fcdb4c54caab0fe3d2f"
       },
       {
         "path": "assets-source/props/table-decor/engine/report.json",
-        "sha256": "cad8c5b35dcfb3668b618a7ef0f19d5a6cca8cec49474c774540f042bf226f10"
+        "sha256": "b4c39788eaff7b10e3f1cfa038088ea98acc1bf4215bc2d338b7ccbd8eead146"
       },
       {
         "path": "assets-source/props/table-decor/table-decor.review-sheet.jpg",
-        "sha256": "056a826d4045e4a4b525fc61c63098252c4df356a37e3af516e958202e4900a4"
+        "sha256": "5e175a07a518d66e694b92afbdf500befa70bcfb71f96af04bf7a702600ac6e5"
       },
       {
         "path": "assets-source/props/table-decor/staging/report.json",
-        "sha256": "1125f2fa464ce9878ceab0fab546f8ba43433db033cf65849125eef7318e633a"
+        "sha256": "56d4e725b7951f64f8759db72d5f140eaedc910097b9eef3e51facea8e1b8a09"
       },
       {
-        "path": "assets-source/props/table-decor/staging/reimport.json",
-        "sha256": "05abec6e8f48e6f7c6940318bf4d3e58091a97405ad7760f8ed3d5f192ed061b"
-      },
-      {
-        "path": "assets-source/props/table-decor/staging/table-decor.basecolor.png",
-        "sha256": "0006c42082155e5868952c2e986e3003939643d352f55b7a7afbb7113d0efc5c"
-      },
-      {
-        "path": "assets-source/props/table-decor/staging/table-decor.normal.png",
-        "sha256": "d51ef6ba483ac20f485b6c2b73501ddec307eaf4e4fb69e6e0331175442a9feb"
-      },
-      {
-        "path": "assets-source/props/table-decor/staging/table-decor.orm.png",
-        "sha256": "a965e5a6a3254df22b461e9f35e5e965e7f97ec478b20e145a8edb79528a2664"
-      },
-      {
-        "path": "assets-source/props/table-decor/staging/table-decor.emissive.png",
-        "sha256": "bdf898c0d66da48f24c4ec2d14379a9dac0a77eb358a90f847d3a7feea46ad1d"
-      },
-      {
-        "path": "assets-source/props/table-decor/staging/renders/candle-high.png",
-        "sha256": "16f622d01206f2bf79ffea92d9bce0bf2c8edea5e0a0d52054ba58e58a01a3b6"
-      },
-      {
-        "path": "assets-source/props/table-decor/staging/renders/candle-low.png",
-        "sha256": "99ddc4187f4a1abe3cb14e0d3bc69dd16635d095650b638158bf521426396138"
+        "path": "assets-source/props/table-decor/staging/renders/books-high.png",
+        "sha256": "7fd5e9986b2f7fe78a344c4304a16877dbade71bfd826d469938f74e7b5899db"
       },
       {
         "path": "assets-source/props/table-decor/staging/renders/books-low.png",
-        "sha256": "486effad37acfb9581a83153753e76b262665fdaae4852d724e9a65b0daea176"
+        "sha256": "15c692a1a33559096ce8687762f5d50eeb8c56856dd525b6d9f988314a6eb5b0"
+      },
+      {
+        "path": "assets-source/props/table-decor/staging/renders/books-variants-low.png",
+        "sha256": "ae4c7367eef20e5f4c32900f5114ca3f6cfb910b4413131cc0b826b0aff6b76f"
+      },
+      {
+        "path": "assets-source/props/table-decor/staging/renders/candle-high.png",
+        "sha256": "7bca07c92b7a2e9362a27070d4ed39f506376a14ae9e8b289ccbb8fd2ffee9f2"
+      },
+      {
+        "path": "assets-source/props/table-decor/staging/renders/candle-low.png",
+        "sha256": "088f559bd6f7bb929b5f0fafe1891e50213fe95e7b354597f8e5962662c2d78e"
+      },
+      {
+        "path": "assets-source/props/table-decor/staging/renders/set-high.png",
+        "sha256": "b85f313c7ee4338f99667fe562eb6298f08de83f7b6125e5e835e59da9dc3bbf"
+      },
+      {
+        "path": "assets-source/props/table-decor/staging/renders/set-low.png",
+        "sha256": "22e3831235598b7c727d1c8a118e7ea0ffb541b7db6429716ce5cb16abf537c0"
+      },
+      {
+        "path": "assets-source/props/table-decor/staging/renders/vase-high.png",
+        "sha256": "3b63168b4f4dc69b4acf6607a31b9faf7f5a506243cbc8afda7b744b1e0f57a4"
+      },
+      {
+        "path": "assets-source/props/table-decor/staging/renders/vase-low.png",
+        "sha256": "f5239a5d243a2c070d187d95af8e1c677a5c26d9eb7736f340d137ec200e9e1e"
+      },
+      {
+        "path": "assets-source/props/table-decor/staging/table-decor.basecolor.png",
+        "sha256": "4bb19d86e7b261eaf5f9273d2119fc02658e756dfa0f81d68febbc5f545ffe6c"
+      },
+      {
+        "path": "assets-source/props/table-decor/staging/table-decor.emissive.png",
+        "sha256": "98598dedb871da2aa3ba9725860348a2c5d8a53e66903fe1b55a2d7e4fb40e4f"
+      },
+      {
+        "path": "assets-source/props/table-decor/staging/table-decor.normal.png",
+        "sha256": "2c81adefa130bddfc9eae1e437a21c971bf9ce5bf1305fa0065b4b04ec2f9dda"
+      },
+      {
+        "path": "assets-source/props/table-decor/staging/table-decor.orm.png",
+        "sha256": "73f8c3d2534b357d70697d6e8ca846106418a830a123af3f16cea6158788a7b1"
       },
       {
         "path": "assets-source/rooms/study/staging/review-sheet.jpg",
@@ -740,17 +768,199 @@
         "sha256": "ebee38562667091b1c99b0bc610caaad83f55e9abae895990860135dd359da0e"
       },
       {
+        "path": "assets-source/style/locked/L-board-1.png",
+        "sha256": "d3fffc8eb300cc6f40236c28930401ef1bd06be0e27be76999839e3bfeacc018"
+      },
+      {
         "path": "docs/art-bible.md",
         "sha256": "11da71b45f24eeb258ef77d328ef1aa009297a9231608cb80bb429aa3ff2ad6a"
       },
       {
-        "path": "src/floor/table-decor.ts",
-        "sha256": "1ed547f6e3eb6f0c6d39530e5001bb4bbd562c573c71316d1f0e7c8168f88e70"
+        "path": "public/assets/props/table-decor/table-decor.glb",
+        "sha256": "c9b4e3472c8500fb8d9209e41a7136604a67e162ce0609abcfe4b916b09d92a7"
       },
       {
-        "path": "src/world/table-decor.ts",
-        "sha256": "0989aa119ffcf742d8d977225fa519397e34d8615f92f46508d046fb7727089c"
+        "path": "scripts/assets/build-table-decor.py",
+        "sha256": "7b8255436033364d3969231c5c19937d3b3e2e937602993dfe6a9101fce4a8b2"
       }
     ]
-  }
+  },
+  "independentScoreHistory": [
+    {
+      "score": 69,
+      "scale": "0-100 visual fidelity to the art bible and study-kit language",
+      "scorer": "independent reviewer agent (separate from the authoring agent; did not build the asset)",
+      "date": "2026-11-17",
+      "acceptanceBar": 80,
+      "clearsBar": false,
+      "build": "1879940",
+      "previousScore": null,
+      "rubric": [
+        {
+          "criterion": "material fidelity to the art bible",
+          "points": 18,
+          "max": 25,
+          "note": "Brass holds: with one mask (C*>20, L*>35) the candle dish in closeup-candle px745-858 y565-630 is L* 44.1, C* 28.0, hue 72.8 against the approved study gear column in p5-int-study px640-940 y260-720 at L* 40.9, C* 28.2, hue 65.1. The vase neck band (closeup-vase px765-835 y400-418, L* 54.9, hue 70.5) and book clasps (closeup-candle px585-615 y568-600, L* 55.3, hue 79.5) sit in the same family. Raw #DEC16A is L* 78.9, but the approved study brass also renders near L* 41-44 in engine. Oxblood glaze reads as glazed ceramic: closeup-vase px745-860 y440-590 is L* 22.8, C* 30.8, hue 31.7 against ruby #93212B at hue 26.5, with specular streaks to p95 L* 38.2. The flame fails candle amber. In closeup-candle px790-812 y383-437 (L*>70) it is #E3CBAC, C* 19.2, HSV saturation 0.244, against #F3BE65 at C* 52.3 and saturation 0.584, so it carries 37% of the target chroma and reads cream-white, not amber. The atlas is amber under the flame (basecolor #CA9D62 and emissive #C99855 over 4177 texels), so the loss comes from emission strength into tone mapping. The bake render shows the same loss (candle-low.png flame saturation 0.235). The brown top cover is nearly flat: closeup-candle px430-540 y545-590 spans only L* 28.5 to 31.9 (p05 to p95), less of the soft painted value variation the bible asks for."
+        },
+        {
+          "criterion": "form and silhouette",
+          "points": 16,
+          "max": 20,
+          "note": "All three read at 1-2 m. The chamberstick has a dish, cup, bead collar and ring handle (the handle shows in SPIRE004-room5-bench-w px575-595 y585-595). The book stack staggers three boards with brass bands. The baluster vase has a flared lip, gilt neck band and foot ring. Geometry heights are 0.203, 0.084 and 0.222 m on 272, 150 and 576 tris. The flame is a solid lozenge, not a card: lit width is 16-18 px at two yaws (closeup-candle row y425, 16 px; closeup-books row y355, 18 px). Its silhouette is angular, though, with a hard edge and no soft taper. The vase profile shows slight segment kinks along its left contour at 3x (closeup-vase px730-760 y440-600)."
+        },
+        {
+          "criterion": "lighting integration in engine (sits in the room's light, contact)",
+          "points": 10,
+          "max": 20,
+          "note": "The lit candle makes no pool, against the bible rule that candles and lamps make pools. On SPIRE004-room0-bench-e the table beside the candle (px680-740 y525-565) is L* 5.7 and the far end (px950-1010 y525-565) is L* 6.4. On SPIRE004-room5-bench-w the figures are L* 6.4 beside the candle (px645-700 y560-600) and 6.5 at the far end (px950-1010 y560-600). The flame has no glow or bloom: L* is a flat 82-85 plateau from y394 to y432 in closeup-candle (x797-805) and falls to L* 4.7 one row above the tip (y380). Contact is weak because castShadow is false and there is no contact or blob shadow. Under the candle dish (x790-810) the table reads L* 6.1-7.9 at y636-640 against 2.9-4.8 at y645-650. Under the vase foot (closeup-candle x1250-1290) it reads 5.1-7.2 at y769-772 against 4.4-6.3 further out. Only the books darken their footprint, by about 1.5 L* (x440-470, y712-718 at 3.2-4.5 against y725-745 at 4.7-5.5). Rendered over albedo, the wax gets 0.66 while the bench gets 0.10 (walnut #583C26 used as a proxy for the bench albedo), about 6.4 times the light of the surface it stands on, which reads slightly pasted on. Brass highlights drop from bake p95 L* 79.2 (candle-low.png) to engine p95 61.7 (closeup-candle). That loss is runtime, from envMapIntensity 0.3, but it still matches the study brass p95 of 52.1. No floating and no interpenetration was found in 12 shots."
+        },
+        {
+          "criterion": "scale and placement",
+          "points": 13,
+          "max": 15,
+          "note": "In SPIRE004-room1-bench-e the front edge of the 0.9 m bench top spans px500-1100 (600 px, about 667 px/m). The candle measures 113 px from flame tip y422 to the dish at y535, the vase 140 px (y432-572) and the books 83 px wide (x605-688). That is consistent with the 0.203, 0.222 and 0.084 m geometry seen slightly behind the edge, and plausible for a 0.47 m bench and a seated player at 1.2 m eye height. Placement keeps the 0.025 m bench margin and the 0.09 m crate margin over the brass straps (SPIRE002-room3-crate px780-990 y410-600 is clear). Props sit at top heights of 0.47 and 0.80 m, and min_z_low is 0.0 for all kinds. The vase near the back edge in SPIRE004-room0-bench-w (px945-1020 y385-515) reads crowded against the doorway, and the set is small relative to the bench, which gives a 3-prop table about a third of the top."
+        },
+        {
+          "criterion": "surface defects (seams, normals, AO)",
+          "points": 6,
+          "max": 10,
+          "note": "One visible defect is clear: a near-black slot in the wax at the drip, seen from two yaws. In closeup-books x1071-1073 y378-402 it measures L* 0-4 inside wax of L* 56-72. In closeup-candle x782-784 y452-470 it measures L* 2.3-13.3 inside wax of L* 65-70. It is attributed to the bake: candle-high.png shows a clean drip, while candle-low.png shows black marks at the drip tips (crop px255-375 y170-340). The vase belly mark is faint, 1.9 L* below its surround (closeup-vase px760-777 y482-490 at L* 22.7, against 24.6 at px760-800 y470-500). The builder flags (bad normals under the books and AO p05 0.0) are the same texels: 24,237 inverted tangent normals (RGB 128,128,0) and 44,490 texels with AO<0.05 (10.0% of covered texels). All sit on page-cream basecolor #CBB88F, which are the hidden page-block undersides, and none show in books-low.png or the engine close-ups. That is atlas waste, not a visible fault. A wax UV seam was suspected but not confirmed: closeup-books columns x1058-1075 over y420-500 rise smoothly from L* 51.2 to 56.0 with no dip."
+        },
+        {
+          "criterion": "variety across tables",
+          "points": 6,
+          "max": 10,
+          "note": "The count and position draw works. Over 9 dressed tables (engine/report.json) there are three tables with 3 props, two with 2 and four with 1, and every kind mix, position and yaw differs, which does break the stamped repeat the owner asked about. Each kind is one fixed mesh, though, and the book stack always has the same order (brown on green on red) and the same offsets, so a repeated book stack or candle reads as a copy. SPIRE002-room0 shows the identical trio on both benches in one room (bench-e px650-1000 y415-560, bench-w px570-995 y410-570). No 0-prop table appears in this sample (expected weight 0.15), and there is no height, wear or colour variant."
+        }
+      ],
+      "topFixes": [
+        "Candle flame: lower the runtime emissiveIntensity from 1.6, or the baked emission strength, so the tone-mapped flame keeps candle amber (target C* about 50 and saturation about 0.58, measured 19 and 0.24). Add a white-hot core to amber tip gradient and soften the hard lozenge edge.",
+        "Candle: give the lit candle a light footprint on the table, either a small additive warm glow decal or blob under the dish or a cheap emissive halo sprite. The table beside it measures L* 5.7 against 6.4 at the far end, so there is no pool.",
+        "All props: add a soft contact or blob shadow, or a baked AO ground decal, under each prop. Candle and vase footprints show no darkening, and the books only about 1.5 L*.",
+        "Candle wax: rebake the drip tips so they stop going black. Low plus atlas shows black marks where high is clean, and in engine they are a 2-3 px slot at L* 0-4 at the drip.",
+        "Books: add 2-3 stack variants (order, count, offsets, one standing or open book) and a little value variation on the brown top cover (p05-p95 only 28.5-31.9 L*).",
+        "Candle holder: raise envMapIntensity for the brass texels, or the probe contribution, so dish highlights get back toward the bake p95 L* 79 (engine 61.7).",
+        "Atlas: delete or shrink the hidden page-block undersides, which hold 10% of covered texels with AO<0.05 and inverted normals, and spend those texels on the visible props."
+      ],
+      "method": "Weighted the 12 in-engine shots (SPIRE002 room 0 benches and room 3 crate, SPIRE004 rooms 0, 1 and 5 benches, and close-ups of each prop), all three.js with AgX on an Apple M4 per engine/report.json. Used the review sheet, staging renders, staging/report.json and the 1024 px baked maps only to attribute faults to the bake or to runtime. Compared style against the approved study (assets-source/rooms/study/staging/review-sheet.jpg, docs/verification/p5-int-study.jpg and p5-rooms-study-desk.jpg, including the study sconce candles). With Pillow and numpy (python3 -I, scripts in /tmp/fb17/decor-score/scripts/) I made 3-4x crops of every prop and measured region means, CIE L*, C*, hue and HSV saturation for the flame, wax, brass dish and cup, vase body, foot, neck band and belly mark, each book cover, and pages and clasps. I compared these with the palette hexes (#DEC16A, #F3BE65, #93212B) and with the study brass under one shared mask. I also ran row and column L* profiles across each prop base onto the table for contact, across the wax for the notch and seam, and down the flame for its core gradient. Light pools were measured by comparing the table next to each candle with the far end of the same bench, and the prop light factor as rendered luminance over atlas albedo. The atlas analysis covered AO<0.05 and inverted-normal texels by island and basecolor, and the basecolor under emissive texels. Placements came from engine/report.json and the bench and crate dimensions from src/floor/table-decor.ts. Not checked: the Quest 3 headset view and stereo scale, flame flicker or animation, the KTX2 encodes (the PNG maps were analysed), and the GLB itself.",
+      "evidence": [
+        {
+          "path": "assets-source/props/table-decor/engine/closeup-candle.jpg",
+          "sha256": "940cbff12e1a939d7488d2b68816e2bfa1f2b208ccbbeedf43e524ab03b7230b"
+        },
+        {
+          "path": "assets-source/props/table-decor/engine/closeup-books.jpg",
+          "sha256": "494c502538099e43888ba3b0bb1dda59a9fdbadef31e1d0adf5cf062594ada89"
+        },
+        {
+          "path": "assets-source/props/table-decor/engine/closeup-vase.jpg",
+          "sha256": "3f1ad7686e352545f27077c01e4864af22bb627a2ca5d12f1fe07f2cae22ee59"
+        },
+        {
+          "path": "assets-source/props/table-decor/engine/SPIRE002-room0-hall-bench-e.jpg",
+          "sha256": "38411ef8c9f69353f99a89f7ec2d04a0304d302edbec2761d5543c1542067c58"
+        },
+        {
+          "path": "assets-source/props/table-decor/engine/SPIRE002-room0-hall-bench-w.jpg",
+          "sha256": "92ecf3db44e92cf11492b037bcc7fc972502ecadedb31bba9c80eb2ff565dcbb"
+        },
+        {
+          "path": "assets-source/props/table-decor/engine/SPIRE002-room3-gear-shaft-crate.jpg",
+          "sha256": "f5a4f66ca37fb8b99e1d5f96bbbadea9dbd320c1c837f1f1f9f1b8bf3b91e636"
+        },
+        {
+          "path": "assets-source/props/table-decor/engine/SPIRE004-room0-hall-bench-e.jpg",
+          "sha256": "51b4bdd1a1bc1cfa9c9f42afdb26b373c8563ceabe3ad95b735cab54a0c182a4"
+        },
+        {
+          "path": "assets-source/props/table-decor/engine/SPIRE004-room0-hall-bench-w.jpg",
+          "sha256": "aa5581a2d98701af1271bda8be41de9e50d7cacbe2e8983797176bc30afd588c"
+        },
+        {
+          "path": "assets-source/props/table-decor/engine/SPIRE004-room1-hall-bench-e.jpg",
+          "sha256": "246a2c7eac82312417acf4ac05bd9736ca2711b340b4934568561a5d43416304"
+        },
+        {
+          "path": "assets-source/props/table-decor/engine/SPIRE004-room1-hall-bench-w.jpg",
+          "sha256": "f0413a11b679dfd35788a5837b56586337f4dee2188d8b1080c4b7b83a05cc56"
+        },
+        {
+          "path": "assets-source/props/table-decor/engine/SPIRE004-room5-hall-bench-e.jpg",
+          "sha256": "eb0fc8e85303ac0a35ed71dc4225695c9d4a4a6d8fc63539ee648c7dfe78738f"
+        },
+        {
+          "path": "assets-source/props/table-decor/engine/SPIRE004-room5-hall-bench-w.jpg",
+          "sha256": "326649eb20d66e607ce021a228cbb66db97561fb640b58ff076cecbbbdf0cdc0"
+        },
+        {
+          "path": "assets-source/props/table-decor/engine/report.json",
+          "sha256": "cad8c5b35dcfb3668b618a7ef0f19d5a6cca8cec49474c774540f042bf226f10"
+        },
+        {
+          "path": "assets-source/props/table-decor/table-decor.review-sheet.jpg",
+          "sha256": "056a826d4045e4a4b525fc61c63098252c4df356a37e3af516e958202e4900a4"
+        },
+        {
+          "path": "assets-source/props/table-decor/staging/report.json",
+          "sha256": "1125f2fa464ce9878ceab0fab546f8ba43433db033cf65849125eef7318e633a"
+        },
+        {
+          "path": "assets-source/props/table-decor/staging/reimport.json",
+          "sha256": "05abec6e8f48e6f7c6940318bf4d3e58091a97405ad7760f8ed3d5f192ed061b"
+        },
+        {
+          "path": "assets-source/props/table-decor/staging/table-decor.basecolor.png",
+          "sha256": "0006c42082155e5868952c2e986e3003939643d352f55b7a7afbb7113d0efc5c"
+        },
+        {
+          "path": "assets-source/props/table-decor/staging/table-decor.normal.png",
+          "sha256": "d51ef6ba483ac20f485b6c2b73501ddec307eaf4e4fb69e6e0331175442a9feb"
+        },
+        {
+          "path": "assets-source/props/table-decor/staging/table-decor.orm.png",
+          "sha256": "a965e5a6a3254df22b461e9f35e5e965e7f97ec478b20e145a8edb79528a2664"
+        },
+        {
+          "path": "assets-source/props/table-decor/staging/table-decor.emissive.png",
+          "sha256": "bdf898c0d66da48f24c4ec2d14379a9dac0a77eb358a90f847d3a7feea46ad1d"
+        },
+        {
+          "path": "assets-source/props/table-decor/staging/renders/candle-high.png",
+          "sha256": "16f622d01206f2bf79ffea92d9bce0bf2c8edea5e0a0d52054ba58e58a01a3b6"
+        },
+        {
+          "path": "assets-source/props/table-decor/staging/renders/candle-low.png",
+          "sha256": "99ddc4187f4a1abe3cb14e0d3bc69dd16635d095650b638158bf521426396138"
+        },
+        {
+          "path": "assets-source/props/table-decor/staging/renders/books-low.png",
+          "sha256": "486effad37acfb9581a83153753e76b262665fdaae4852d724e9a65b0daea176"
+        },
+        {
+          "path": "assets-source/rooms/study/staging/review-sheet.jpg",
+          "sha256": "cefaee013f802882f5660ba8669226f55ae36362aa752b62f33464142db9f38b"
+        },
+        {
+          "path": "docs/verification/p5-int-study.jpg",
+          "sha256": "2a54130faf77c6c6c434c677b39b4337fe3a2d57de7c097331b06c9cfb4aeaaa"
+        },
+        {
+          "path": "docs/verification/p5-rooms-study-desk.jpg",
+          "sha256": "ebee38562667091b1c99b0bc610caaad83f55e9abae895990860135dd359da0e"
+        },
+        {
+          "path": "docs/art-bible.md",
+          "sha256": "11da71b45f24eeb258ef77d328ef1aa009297a9231608cb80bb429aa3ff2ad6a"
+        },
+        {
+          "path": "src/floor/table-decor.ts",
+          "sha256": "1ed547f6e3eb6f0c6d39530e5001bb4bbd562c573c71316d1f0e7c8168f88e70"
+        },
+        {
+          "path": "src/world/table-decor.ts",
+          "sha256": "0989aa119ffcf742d8d977225fa519397e34d8615f92f46508d046fb7727089c"
+        }
+      ]
+    }
+  ]
 }

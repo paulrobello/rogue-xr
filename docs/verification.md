@@ -8,7 +8,7 @@ Per-goal evidence for G1 to G6 in the [PRD](../PRD.md#goals). Every goal below h
 | Build verified | `f32f508` (HEAD of `p0-foundation` and of `origin/main`) |
 | CI at that build | The GitHub Actions run for `f32f508` concluded `success` (2026-11-16 03:42 PST). CI runs `make checkall-ci`: Biome, strict `tsc`, Vitest, production build, `make asset-check`, Gitleaks. Vitest was not rerun for this document. |
 | Live site | `https://spire.pardev.net/version.json` returned HTTP 200 with commit `f32f508` and `builtAt` 2026-11-16 03:43 PST. That is an HTTP check of the deployed build. No browser render of the live site was taken for this document. |
-| Headset evidence | None recorded. `docs/performance/` does not exist, and no file in the repository holds Quest frame times, adb captures or a headset verdict. The only physical observations are the informal ones from Paul's 2026-11-15 Quest playtest, quoted under G1 and G4. |
+| Headset evidence | Paul captured four performance-gauge readings on Quest 3 on November 17, 2026, on live build `31aa007`. See G3 physical evidence for the screenshots and frame recorder results. |
 
 ## Evidence classes
 
@@ -100,7 +100,7 @@ Requires: baked-lit brass, walnut and stained-glass rooms, full-scale automatons
 - G2.4: five rigged automatons are integrated: Cog Sentry 1.96 m, Spring Hound 1.23 m, Bellows Golem 2.06 m, Orrery Warden 2.64 m, Grand Escapement 3.21 m (each `staging/report.json`, `reimport.bounds`). Tests: `tests/hero-integration.test.ts` › "dresses each body with its own kind and keeps capsules for kinds without a model", "freezes on contact, swings on its attack, and dies before the win hands over". Screenshots: `p4-sentry-idle.jpg`, `p4-sentry-attack.jpg`, `p4-sentry-death.jpg`, `p6-fullrun-SPIRE002-r3-warden.jpg`, `p6-fullrun-SPIRE004-r7-guardian.jpg`. Commits `a0e5ef7`, `665edd9`, `dfa29bf`, `bfa26ee`, `779462a`, `7ae84dc`.
 - G2.5: 15 illustrations and 3 frames packed into four atlas pages. Tests: `tests/card-atlas.test.ts` › "covers every slice card and its type", "ships every page as PNG and KTX2 at the declared size, at most 2048 px". Commits `831c3d2`, `77b439d`. Screenshots: `p5-ui-fan-art.jpg`, `p5-ui-holo-card-proof.jpg`, `p5-ui-card-text-after.jpg`.
 - G2.6 (owner record): approvals recorded for the style board, materials and three concept picks. Pending: the in-engine look of the study and four other rooms, all five automatons (model, rig, animation), the combat table, card illustrations and frames, UI icons, dice faces, sigil glyphs, key art, dice models, SFX, and four automaton concepts. Full list with review images: [owner-review.md](owner-review.md).
-- G2.7: `make asset-check` (presence, hashes against provenance, PRD budgets for rooms and enemies) passes in CI. Independent visual scores (bar 80): study 84, corridor 80, hall 74 (re-scored on `b1df5d3`), gear-shaft 81, guardian-vault 82 (re-scored on `8428cd8`), Sentry 80, Hound 82, Golem 82, Warden 82, Escapement 80, d6 83, d8 87, combat table 72 (re-scored on `b241d9b`), table decorations 69; the UI set is unscored. Gate-by-gate results: [asset-validation.md](asset-validation.md). "Technical" is recorded as pending a verdict from the orchestrating session for the rooms, dice, UI and brand records.
+- G2.7: `make asset-check` (presence, hashes against provenance, PRD budgets for rooms and enemies) passes in CI. Independent visual scores (bar 80): study 84, corridor 80, hall 74 (re-scored on `b1df5d3`), gear-shaft 81, guardian-vault 82 (re-scored on `8428cd8`), Sentry 80, Hound 82, Golem 82, Warden 82, Escapement 80, d6 83, d8 87, combat table 72 (re-scored on `b241d9b`), table decorations 84 (re-scored on `31aa007`); the UI set is unscored. Gate-by-gate results: [asset-validation.md](asset-validation.md). "Technical" is recorded as pending a verdict from the orchestrating session for the rooms, dice, UI and brand records.
 - The author self-scores of the Hound (67), Warden (78) and Escapement (78) are fidelity estimates against the concept sheets, not approvals.
 
 ### G2 emulator evidence
@@ -139,9 +139,20 @@ Emulator evidence, not a measurement: `xr-foveation-medium` and `xr-framebuffer-
 
 ### G3 physical evidence
 
-None recorded. `docs/performance/` does not exist. Pending: P4-T10 (exploring in the study and the worst combat view, with scale and light tuning), P5-T13 (full run) and P6-T1 (before and after numbers), recorded in `docs/performance/` with device and load state.
+Paul compared text legibility on Quest 3 in Orrery Warden combat on build `31aa007` on November 17, 2026. He reported better legibility at 1.2, 1.25 and 1.5. The screenshots show the player HUD and the enemy stats panel.
 
-Status: not met. The gap is the entire headset measurement.
+| Time (PST) | Applied scale | Gauge FPS (72 target) | Longest frame shown (previous 20 s) |
+| --- | --- | ---: | ---: |
+| 10:41:33 PM | 0.85, no override | 88 | 218 ms |
+| 10:42:17 PM | 1.5 | 51 | 348 ms |
+| 10:42:44 PM | 1.25 | 66 | 378 ms |
+| 10:49:47 PM | 1.2 | 62 | 465 ms |
+
+Quest Browser's recorder identified the 0.85 scale and foveation off in all four runs. At the 1.2 capture, VrApi reported 62/90 FPS, 31 stale frames, 12.86 ms of app GPU time and 98% GPU utilisation. At the 1.25 capture it reported 66/90 FPS and 32 stale frames. The gauge's 72 target is fixed.
+
+The 1.2 and 1.25 study exploration windows lasted 2.1 and 1.4 seconds respectively and averaged 65.4 and 67.2 FPS. The 1.5 combat window lasted 22.7 seconds and averaged 47.8 FPS with a 23.8 ms 95th-percentile frame. The active fight workload still needs a longer comparison at fixed settings. Screenshots, frame records and VrApi logs are in the local `.local/headset/` archive. The default remains 0.85. P5-T13 still needs a full run.
+
+Status: not met. The 72 Hz exploration and 45 FPS combat budgets have yet to be verified over sustained windows.
 
 ## G4: the VR verbs are the fun (fling, dice, sigils)
 

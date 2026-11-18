@@ -43,6 +43,7 @@ None. Every `sha256`, `bytes`, triangle count, material count, bone count and im
 - F2: the floor's table load moved out of `src/main.ts` into `loadCombatTable` (`src/combat/table-asset-proof.ts`). `tests/combat-table-fallback.test.ts` fails the manifest fetch and the GLB load (each resolves null, so the greybox stays) and fails the material bind (the factor-only materials stay). The combat table's technical gate has no open finding.
 
 - Later (2026-11-17): the gear shaft and guardian vault were rebuilt in `8428cd8` and re-scored 81 and 82. The combat table scored 58 and the table decorations 69 (both below the bar; fix cards filed). The table rebuild `b241d9b` re-scored 72: walnut, felt, tray and brass swirl fixed; a black left body strap (reversed winding), flat cream brass and weak contact AO remain.
+- The table decorations re-scored 84/100 on `31aa007`. Their provenance records the independent review and 38 verified evidence hashes. Quest appearance and owner approval remain open.
 
 Still open: F6 (Blender version: the PRD pins 5.2.2 LTS, MiniMac runs 5.3.0).
 
