@@ -2,22 +2,64 @@
   "piece": "table-decor",
   "blender": "5.3.0",
   "generator": "scripts/assets/build-table-decor.py",
-  "generator_sha256": "c30fed23cb95ccf6bf6c9f1432edb4030892d271583d1b6c1336023233b4fb09",
+  "generator_sha256": "7b8255436033364d3969231c5c19937d3b3e2e937602993dfe6a9101fce4a8b2",
   "helper_sha256": {
     "lightmap_helpers.py": "c74c968a3d3ed95bae831262af3c5ab1bacedfa0e2e131b95d5d7bf4e59d66ad"
   },
-  "load1_at_start": 1.9365234375,
+  "load1_at_start": 2.52490234375,
   "texel_density_px_per_m": {
-    "candle": 813.2,
-    "books": 841.8,
-    "vase": 789.4
+    "candle": 917.4,
+    "books": 962.9,
+    "vase": 894.8
   },
-  "device": "GPU:METAL (Apple M4 (GPU - 10 cores))",
+  "device": "CPU",
+  "written_fraction": {
+    "albedo": 0.9491,
+    "rough": 0.9491,
+    "metal": 0.9491,
+    "emit": 0.9491,
+    "normal": 0.9491,
+    "ao": 0.9491
+  },
   "bake": {
     "size": 1024,
-    "device": "GPU:METAL (Apple M4 (GPU - 10 cores))",
-    "cage_extrusion_m": 0.004,
-    "max_ray_distance_m": 0.012,
+    "device": "CPU",
+    "cage_extrusion_m": {
+      "default": 0.004,
+      "wax": 0.008
+    },
+    "max_ray_distance_m": {
+      "default": 0.012,
+      "wax": 0.02
+    },
+    "checks": {
+      "wax_texels": 10041,
+      "wax_dark_texels": 0,
+      "wax_albedo_min_srgb": 0.759,
+      "wax_normal_z_min": 0.438,
+      "wax_ao_min": 0.163,
+      "flame_texels": 831,
+      "flame_emit_mean_srgb8": [
+        242.5,
+        187.3,
+        102.9
+      ],
+      "flame_emit_p05_p95_srgb8": [
+        [
+          237,
+          164,
+          76
+        ],
+        [
+          252,
+          219,
+          156
+        ]
+      ],
+      "flame_albedo_max_srgb": 0.0,
+      "inverted_normal_texels": 466,
+      "ao_below_0_05_texels": 479
+    },
     "ao_distance_m": 0.03,
     "margin_px": 8,
     "samples": {
@@ -30,101 +72,177 @@
     },
     "passes": "base colour, roughness, metallic and emission as EMIT passes of each channel; NORMAL tangent; AO",
     "seconds": {
-      "table-decor_candle.albedo": 0.33,
-      "table-decor_candle.rough": 0.33,
-      "table-decor_candle.metal": 0.29,
-      "table-decor_candle.emit": 0.31,
-      "table-decor_candle.normal": 0.33,
-      "table-decor_candle.ao": 0.44,
-      "table-decor_books_0.albedo": 0.33,
-      "table-decor_books_0.rough": 0.32,
-      "table-decor_books_0.metal": 0.32,
-      "table-decor_books_0.emit": 0.31,
-      "table-decor_books_0.normal": 0.34,
-      "table-decor_books_0.ao": 0.56,
-      "table-decor_books_1.albedo": 0.33,
-      "table-decor_books_1.rough": 0.32,
-      "table-decor_books_1.metal": 0.3,
-      "table-decor_books_1.emit": 0.33,
-      "table-decor_books_1.normal": 0.35,
-      "table-decor_books_1.ao": 0.53,
-      "table-decor_books_2.albedo": 0.34,
-      "table-decor_books_2.rough": 0.33,
-      "table-decor_books_2.metal": 0.31,
-      "table-decor_books_2.emit": 0.32,
-      "table-decor_books_2.normal": 0.36,
-      "table-decor_books_2.ao": 0.49,
-      "table-decor_vase.albedo": 0.34,
-      "table-decor_vase.rough": 0.32,
-      "table-decor_vase.metal": 0.29,
-      "table-decor_vase.emit": 0.3,
-      "table-decor_vase.normal": 0.33,
-      "table-decor_vase.ao": 0.45
+      "table-decor_candle_part-holder.albedo": 0.06,
+      "table-decor_candle_part-holder.rough": 0.05,
+      "table-decor_candle_part-holder.metal": 0.03,
+      "table-decor_candle_part-holder.emit": 0.04,
+      "table-decor_candle_part-holder.normal": 0.06,
+      "table-decor_candle_part-holder.ao": 0.31,
+      "table-decor_candle_part-wax.albedo": 0.05,
+      "table-decor_candle_part-wax.rough": 0.05,
+      "table-decor_candle_part-wax.metal": 0.03,
+      "table-decor_candle_part-wax.emit": 0.04,
+      "table-decor_candle_part-wax.normal": 0.07,
+      "table-decor_candle_part-wax.ao": 0.3,
+      "table-decor_candle_part-wick.albedo": 0.05,
+      "table-decor_candle_part-wick.rough": 0.05,
+      "table-decor_candle_part-wick.metal": 0.03,
+      "table-decor_candle_part-wick.emit": 0.04,
+      "table-decor_candle_part-wick.normal": 0.06,
+      "table-decor_candle_part-wick.ao": 0.19,
+      "table-decor_candle_part-flame.albedo": 0.05,
+      "table-decor_candle_part-flame.rough": 0.05,
+      "table-decor_candle_part-flame.metal": 0.03,
+      "table-decor_candle_part-flame.emit": 0.04,
+      "table-decor_candle_part-flame.normal": 0.06,
+      "table-decor_candle_part-flame.ao": 0.2,
+      "table-decor_books_part-0.albedo": 0.06,
+      "table-decor_books_part-0.rough": 0.06,
+      "table-decor_books_part-0.metal": 0.03,
+      "table-decor_books_part-0.emit": 0.04,
+      "table-decor_books_part-0.normal": 0.11,
+      "table-decor_books_part-0.ao": 0.82,
+      "table-decor_books_part-1.albedo": 0.06,
+      "table-decor_books_part-1.rough": 0.05,
+      "table-decor_books_part-1.metal": 0.03,
+      "table-decor_books_part-1.emit": 0.04,
+      "table-decor_books_part-1.normal": 0.1,
+      "table-decor_books_part-1.ao": 0.69,
+      "table-decor_books_part-2.albedo": 0.05,
+      "table-decor_books_part-2.rough": 0.06,
+      "table-decor_books_part-2.metal": 0.03,
+      "table-decor_books_part-2.emit": 0.04,
+      "table-decor_books_part-2.normal": 0.09,
+      "table-decor_books_part-2.ao": 0.58,
+      "table-decor_vase.albedo": 0.06,
+      "table-decor_vase.rough": 0.06,
+      "table-decor_vase.metal": 0.03,
+      "table-decor_vase.emit": 0.04,
+      "table-decor_vase.normal": 0.11,
+      "table-decor_vase.ao": 0.83
     },
-    "seconds_total": 10.6,
-    "load1_before": 1.94,
-    "load1_after": 2.18,
-    "coverage": 0.3068,
-    "ao_mean": 0.7646,
+    "seconds_total": 6.0,
+    "load1_before": 2.4,
+    "load1_after": 2.33,
+    "coverage": 0.2349,
+    "ao_mean": 0.9318,
     "ao_mean_per_kind": {
-      "candle": 0.8331,
-      "books": 0.7149,
-      "vase": 0.9454
+      "candle": 0.9265,
+      "books": 0.9125,
+      "vase": 0.9786
     },
     "uv_overlap_texels": 0,
-    "ao_p05": 0.0,
-    "rough_mean": 0.5663,
-    "metal_fraction": 0.0643,
-    "emissive_fraction": 0.0031,
+    "ao_p05": 0.5333,
+    "ao_p05_per_kind": {
+      "candle": 0.6875,
+      "books": 0.4958,
+      "vase": 0.8625
+    },
+    "rough_mean": 0.5294,
+    "metal_fraction": 0.0784,
+    "emissive_fraction": 0.0067,
     "albedo_mean_srgb8": [
-      104.2,
-      73.2,
-      53.7
+      111.7,
+      75.9,
+      55.5
     ],
     "normal_mean": [
-      0.5048,
-      0.5037,
-      0.9206
+      0.5171,
+      0.5087,
+      0.9848
     ]
   },
   "triangles": {
     "candle": {
-      "low": 272,
+      "low": 419,
       "high": 2704
     },
     "books": {
-      "low": 150,
+      "low": 276,
       "high": 666
     },
+    "books_1": {
+      "low": 184,
+      "high": null
+    },
+    "books_2": {
+      "low": 184,
+      "high": null
+    },
     "vase": {
-      "low": 576,
+      "low": 600,
       "high": 3200
     }
   },
   "geometry": {
     "candle": {
       "radius_low": 0.0701,
-      "radius_high": 0.0701,
       "height_low": 0.203,
+      "min_z_low": 0.0,
+      "radius_high": 0.0701,
       "height_high": 0.203,
-      "min_z_low": 0.0
+      "contact": {
+        "x": 0.0074,
+        "z": 0.0,
+        "halfX": 0.0594,
+        "halfZ": 0.052,
+        "corner": 0.052
+      }
     },
     "books": {
       "radius_low": 0.1026,
-      "radius_high": 0.1026,
       "height_low": 0.084,
+      "min_z_low": 0.0,
+      "radius_high": 0.1026,
       "height_high": 0.0852,
-      "min_z_low": 0.0
+      "contact": {
+        "x": 0.008,
+        "z": 0.0,
+        "halfX": 0.076,
+        "halfZ": 0.059,
+        "corner": 0.004
+      }
+    },
+    "books_1": {
+      "radius_low": 0.0988,
+      "height_low": 0.052,
+      "min_z_low": 0.0,
+      "contact": {
+        "x": 0.011,
+        "z": 0.004,
+        "halfX": 0.069,
+        "halfZ": 0.054,
+        "corner": 0.004
+      }
+    },
+    "books_2": {
+      "radius_low": 0.1081,
+      "height_low": 0.118,
+      "min_z_low": 0.0,
+      "contact": {
+        "x": 0.0,
+        "z": 0.003,
+        "halfX": 0.084,
+        "halfZ": 0.071,
+        "corner": 0.004
+      }
     },
     "vase": {
       "radius_low": 0.0635,
-      "radius_high": 0.0635,
       "height_low": 0.222,
+      "min_z_low": 0.0,
+      "radius_high": 0.0635,
       "height_high": 0.2235,
-      "min_z_low": 0.0
+      "contact": {
+        "x": 0.0,
+        "z": 0.0,
+        "halfX": 0.0375,
+        "halfZ": 0.0375,
+        "corner": 0.0375
+      }
     }
   },
-  "glb_sha256": "14980709879d807f5fd70b096a05ac1391cffc62e826dc00f9a13ad6df50113e",
+  "glb_sha256": "c9b4e3472c8500fb8d9209e41a7136604a67e162ce0609abcfe4b916b09d92a7",
   "ktx2": {
     "tool": "ktx version: v4.4.2",
     "encodes": {
@@ -142,16 +260,17 @@
     "assets-source/props/table-decor/staging/renders/vase-high.png",
     "assets-source/props/table-decor/staging/renders/vase-low.png",
     "assets-source/props/table-decor/staging/renders/set-low.png",
-    "assets-source/props/table-decor/staging/renders/set-high.png"
+    "assets-source/props/table-decor/staging/renders/set-high.png",
+    "assets-source/props/table-decor/staging/renders/books-variants-low.png"
   ],
   "reimport": {
     "glb": "table-decor.glb",
-    "glb_sha256": "14980709879d807f5fd70b096a05ac1391cffc62e826dc00f9a13ad6df50113e",
-    "glb_bytes": 44612,
+    "glb_sha256": "c9b4e3472c8500fb8d9209e41a7136604a67e162ce0609abcfe4b916b09d92a7",
+    "glb_bytes": 73360,
     "blender": "5.3.0",
     "per_kind": {
       "candle": {
-        "tris": 272,
+        "tris": 419,
         "attributes": [
           "NORMAL",
           "POSITION",
@@ -160,7 +279,25 @@
         "identity": true
       },
       "books": {
-        "tris": 150,
+        "tris": 276,
+        "attributes": [
+          "NORMAL",
+          "POSITION",
+          "TEXCOORD_0"
+        ],
+        "identity": true
+      },
+      "books_1": {
+        "tris": 184,
+        "attributes": [
+          "NORMAL",
+          "POSITION",
+          "TEXCOORD_0"
+        ],
+        "identity": true
+      },
+      "books_2": {
+        "tris": 184,
         "attributes": [
           "NORMAL",
           "POSITION",
@@ -169,7 +306,7 @@
         "identity": true
       },
       "vase": {
-        "tris": 576,
+        "tris": 600,
         "attributes": [
           "NORMAL",
           "POSITION",
@@ -182,7 +319,7 @@
       "table-decor"
     ],
     "checks": {
-      "three_prop_nodes": true,
+      "every_prop_node": true,
       "tris_le_600_each": true,
       "tris_match_manifest": true,
       "one_material": true,
@@ -194,14 +331,14 @@
     },
     "pass": true
   },
-  "seconds": 22.9,
-  "load1_at_end": 3.193359375,
+  "seconds": 18.4,
+  "load1_at_end": 2.30712890625,
   "files": {
-    "table-decor.basecolor.ktx2": "6fde8a275a607f914c294ade598615cb947242e900da9a80df472c6a4b0dfb33",
-    "table-decor.emissive.ktx2": "85bd2dcb48348522dcc81d13fb5caa5974a994df8ffd7caef972c1de6ce885d0",
-    "table-decor.glb": "14980709879d807f5fd70b096a05ac1391cffc62e826dc00f9a13ad6df50113e",
-    "table-decor.manifest.json": "739f85f3ac69d6c187cf925f2171a606a529097eff3f675aa1d990e622613cf6",
-    "table-decor.normal.ktx2": "46e7778d40d35200187cf4cf155dc30adfca329dcb8a659aa038b98723f01998",
-    "table-decor.orm.ktx2": "5c68400f2aeb80cceb9eb740f381019887f81e86df81278da700824dc6588f8f"
+    "table-decor.basecolor.ktx2": "db28d524437f22f285856074af144f3ba390a08f7dba5666fc3180bb0f817b95",
+    "table-decor.emissive.ktx2": "c4334aeb82df51fb4d0181b44f9d863b74205cfe2d02b6dadbb7dccc273fb2bc",
+    "table-decor.glb": "c9b4e3472c8500fb8d9209e41a7136604a67e162ce0609abcfe4b916b09d92a7",
+    "table-decor.manifest.json": "5b44cc686f8f534de44d6bf1f32e7db2d6b5841bba10998bc5be904f84d46006",
+    "table-decor.normal.ktx2": "cd265271316fbc5abdbf5afc7318e399807ce81fd55b48e0d8bd7c2f4e306519",
+    "table-decor.orm.ktx2": "8c7decaffaf2fc9a30ef4212159dcb2d5382330d66085b19f8c039ffa001ffe0"
   }
 }

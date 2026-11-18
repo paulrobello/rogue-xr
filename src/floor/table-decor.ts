@@ -20,6 +20,16 @@ export const DECOR_RADIUS: Readonly<Record<DecorKind, number>> = {
   vase: 0.07,
 };
 
+/**
+ * Meshes per kind (`<node>`, `<node>_1`, ... in the GLB): the book stack has three arrangements of
+ * its three baked books, the candle and vase one each. Every variant fits its kind's footprint.
+ */
+export const DECOR_VARIANTS: Readonly<Record<DecorKind, number>> = {
+  candle: 1,
+  books: 3,
+  vase: 1,
+};
+
 /** A small table top in template-local runtime coordinates (x, z; y up). */
 export interface DecorTable {
   id: string;
@@ -67,6 +77,8 @@ export interface DecorPlacement {
   z: number;
   /** Radians about +y. */
   yaw: number;
+  /** Which of the kind's `DECOR_VARIANTS` meshes stands here. */
+  variant: number;
 }
 
 /** The keyed stream every floor's table decorations draw from (not a saved `RunRng` stream). */
@@ -104,7 +116,8 @@ function dressTable(stream: Stream, room: number, t: DecorTable): DecorPlacement
       }
     }
     const yaw = stream.next() * Math.PI * 2;
-    if (spot) placed.push({ room, table: t.id, kind, x: spot[0], y: t.top, z: spot[1], yaw });
+    if (spot)
+      placed.push({ room, table: t.id, kind, x: spot[0], y: t.top, z: spot[1], yaw, variant: 0 });
   }
   return placed;
 }
@@ -120,5 +133,10 @@ export function placeTableDecor(seed: string, templateIds: readonly string[]): D
   templateIds.forEach((id, room) => {
     for (const t of DECOR_TABLES[id] ?? []) out.push(...dressTable(stream, room, t));
   });
+  // Variants draw after every position and yaw, so adding them moved no existing seed's props.
+  for (const p of out) {
+    const n = DECOR_VARIANTS[p.kind];
+    if (n > 1) p.variant = stream.int(0, n - 1);
+  }
   return out;
 }

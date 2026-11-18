@@ -9,29 +9,89 @@
     "emissive": "table-decor.emissive.ktx2"
   },
   "texturePx": 1024,
-  "emissiveIntensity": 1.6,
+  "emissiveIntensity": 1.0,
   "envMapIntensity": 0.3,
+  "metalEnvMapIntensity": 1.0,
   "kinds": {
     "candle": {
-      "node": "table-decor_candle",
-      "tris": 272,
-      "radius": 0.0701,
       "reservedRadius": 0.072,
-      "height": 0.203
+      "variants": [
+        {
+          "node": "table-decor_candle",
+          "tris": 419,
+          "radius": 0.0701,
+          "height": 0.203,
+          "contact": {
+            "x": 0.0074,
+            "z": 0.0,
+            "halfX": 0.0594,
+            "halfZ": 0.052,
+            "corner": 0.052
+          }
+        }
+      ]
     },
     "books": {
-      "node": "table-decor_books",
-      "tris": 150,
-      "radius": 0.1026,
       "reservedRadius": 0.11,
-      "height": 0.084
+      "variants": [
+        {
+          "node": "table-decor_books",
+          "tris": 276,
+          "radius": 0.1026,
+          "height": 0.084,
+          "contact": {
+            "x": 0.008,
+            "z": 0.0,
+            "halfX": 0.076,
+            "halfZ": 0.059,
+            "corner": 0.004
+          }
+        },
+        {
+          "node": "table-decor_books_1",
+          "tris": 184,
+          "radius": 0.0988,
+          "height": 0.052,
+          "contact": {
+            "x": 0.011,
+            "z": 0.004,
+            "halfX": 0.069,
+            "halfZ": 0.054,
+            "corner": 0.004
+          }
+        },
+        {
+          "node": "table-decor_books_2",
+          "tris": 184,
+          "radius": 0.1081,
+          "height": 0.118,
+          "contact": {
+            "x": 0.0,
+            "z": 0.003,
+            "halfX": 0.084,
+            "halfZ": 0.071,
+            "corner": 0.004
+          }
+        }
+      ]
     },
     "vase": {
-      "node": "table-decor_vase",
-      "tris": 576,
-      "radius": 0.0635,
       "reservedRadius": 0.07,
-      "height": 0.222
+      "variants": [
+        {
+          "node": "table-decor_vase",
+          "tris": 600,
+          "radius": 0.0635,
+          "height": 0.222,
+          "contact": {
+            "x": 0.0,
+            "z": 0.0,
+            "halfX": 0.0375,
+            "halfZ": 0.0375,
+            "corner": 0.0375
+          }
+        }
+      ]
     }
   },
   "budget": {

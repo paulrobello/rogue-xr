@@ -128,6 +128,53 @@ async function drawCalls(page) {
   });
 }
 
+/**
+ * Screen pixels of every dressed prop in the current room: its base centre, its top, the candle
+ * flame, and table points walked from the base toward the eye (metres from the axis), for
+ * contact-shadow and light-pool profiles.
+ */
+async function probes(page) {
+  return page.evaluate(
+    ({ walk }) => {
+      const c = window.__combat;
+      const camera = c.camera;
+      const V = camera.position.constructor;
+      const eye = camera.getWorldPosition(new V());
+      const canvas = document.querySelector('canvas');
+      const px = (v) => {
+        const n = v.clone().project(camera);
+        return [
+          Math.round(((n.x + 1) / 2) * canvas.clientWidth * 10) / 10,
+          Math.round(((1 - n.y) / 2) * canvas.clientHeight * 10) / 10,
+        ];
+      };
+      const out = [];
+      const g = c.floor.world.roomGroups[c.floor.world.current];
+      g?.updateMatrixWorld(true);
+      g?.traverse((n) => {
+        if (!n.userData.tableDecor) return;
+        for (const p of n.userData.placements) {
+          const at = (x, y, z) => new V(x, y, z).applyMatrix4(n.matrixWorld);
+          const base = at(p.x, p.y, p.z);
+          const toEye = new V(eye.x - base.x, 0, eye.z - base.z).normalize();
+          const height = { candle: 0.203, books: 0.084, vase: 0.222 }[p.kind];
+          out.push({
+            kind: p.kind,
+            variant: p.variant,
+            table: p.table,
+            base: px(base),
+            top: px(base.clone().setY(base.y + height)),
+            flame: p.kind === 'candle' ? px(base.clone().setY(base.y + 0.18)) : null,
+            walk: walk.map((d) => [d, px(base.clone().addScaledVector(toEye, d))]),
+          });
+        }
+      });
+      return out;
+    },
+    { walk: [0.04, 0.055, 0.065, 0.075, 0.09, 0.11, 0.14, 0.18, 0.25] },
+  );
+}
+
 async function shoot(page, shot) {
   await pose(page, shot.eye, aim(shot.eye, shot.target));
   const calls = await drawCalls(page);
@@ -145,7 +192,7 @@ async function shoot(page, shot) {
   const path = join(opts.out, `${shot.name}.jpg`);
   const jpeg = await page.screenshot({ path, type: 'jpeg', quality: 88 });
   const mean = await meanColour(page, jpeg);
-  report.shots.push({ ...shot, path, state, calls, mean });
+  report.shots.push({ ...shot, path, state, calls, mean, probes: await probes(page) });
   console.log(
     `${shot.name}: ${shot.props} ${JSON.stringify(state)} calls=${calls.withDecor} (without decor ${calls.without}) mean=${JSON.stringify(mean)} -> ${path}`,
   );
@@ -245,15 +292,24 @@ try {
           target,
         });
         for (const p of props) {
-          if (closeUps.has(p.kind)) continue;
+          // One close-up per kind (the first met), and one per further book arrangement.
+          let key = p.kind;
+          if (closeUps.has(key)) {
+            if (p.kind !== 'books') continue;
+            if ([...closeUps.values()].some((s) => s.kind === 'books' && s.variant === p.variant))
+              continue;
+            key = `books-v${p.variant}`;
+          }
           const at = toWorld(mesh.matrix, p.x, p.y, p.z);
           const lift = p.kind === 'books' ? 0.05 : 0.1;
           const focus = [at[0], at[1] + lift, at[2]];
           const flat = [eye[0] - at[0], eye[2] - at[2]];
           const fl = Math.hypot(...flat) || 1;
-          closeUps.set(p.kind, {
+          closeUps.set(key, {
             seed,
-            name: `closeup-${p.kind}`,
+            kind: p.kind,
+            variant: p.variant,
+            name: `closeup-${key}`,
             room: mesh.room,
             table: `${mesh.template}:${table}`,
             props: p.kind,

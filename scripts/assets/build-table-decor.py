@@ -16,7 +16,8 @@ in staging and as UASTC KTX2 beside an image-free GLB with one material and one 
 
 Blender run (build, bake, export, encode, reimport, .blend sources, renders):
     "$BLENDER" -b --factory-startup --python-exit-code 1 -P scripts/assets/build-table-decor.py -- \
-        [--skip-bake] [--skip-renders] [--device GPU|CPU]
+        [--skip-bake] [--skip-renders] [--device CPU|GPU]
+The bake defaults to CPU: a Metal AO bake differs run to run, the CPU bake is byte-identical.
 Review sheet (system Python with Pillow, after the Blender run and the engine stills):
     python3 -I scripts/assets/build-table-decor.py --sheet
 
@@ -48,13 +49,19 @@ STYLE_BOARD = ROOT / "assets-source/style/locked/L-board-1.png"
 KTX = Path.home() / ".local/opt/ktx-software-4.4.2/bin/ktx"
 
 KINDS = ("candle", "books", "vase")
+# GLB nodes: one per kind, plus the two extra book arrangements (src/floor/table-decor.ts DECOR_VARIANTS).
+NODES = ("candle", "books", "books_1", "books_2", "vase")
+KIND_OF = {"books_1": "books", "books_2": "books"}
 ATLAS = 1024
 LIMIT_TRIS = 600
 MARGIN_PX = 8
 BRASS_TILE_M = 0.5  # brass-aged tiles at 0.5 m (public/assets/materials/materials.json)
-# Runtime look (bound by src/world/table-decor.ts from the manifest).
-EMISSIVE_INTENSITY = 1.6
+# Runtime look (bound by src/world/table-decor.ts from the manifest). The flame skips tone mapping
+# there, so intensity 1 shows the baked emission texel as authored.
+EMISSIVE_INTENSITY = 1.0
 ENV_INTENSITY = 0.3
+# Probe reflection on metallic texels only (the brass and gilt), against ENV_INTENSITY elsewhere.
+METAL_ENV_INTENSITY = 1.0
 # Footprint radii the placement module reserves (src/floor/table-decor.ts DECOR_RADIUS).
 RESERVED_RADIUS = {"candle": 0.072, "books": 0.11, "vase": 0.07}
 
@@ -76,16 +83,22 @@ def hexl(h: str) -> tuple:
 SLOTS = {
     "brass": (None, None, 0.0, None, 1.0, 0.0, None),  # the shared brass-aged set
     "wax": ("#E9D9B6", "#D2B884", 90.0, 0.55, 0.0, 0.08, None),
-    "flame": ("#FFE2A0", "#F08C2C", 0.0, 0.6, 0.0, 0.0, ("#FFD98A", "#F08C2C")),
-    "leather-red": ("#6E2622", "#4A1714", 140.0, 0.62, 0.0, 0.25, None),
-    "leather-green": ("#26452E", "#162B1C", 140.0, 0.62, 0.0, 0.25, None),
-    "leather-brown": ("#664126", "#3F2716", 140.0, 0.64, 0.0, 0.25, None),
+    "wick": ("#2E2119", "#1C140F", 300.0, 0.9, 0.0, 0.0, None),
+    # Pure emission: a black lit term, so the runtime's light never washes the flame to cream.
+    "flame": ("#000000", "#000000", 0.0, 0.6, 0.0, 0.0, "ramp"),
+    "leather-red": ("#82322A", "#43140F", 140.0, 0.62, 0.0, 0.25, None),
+    "leather-green": ("#30553A", "#132619", 140.0, 0.62, 0.0, 0.25, None),
+    "leather-brown": ("#7C5233", "#382213", 140.0, 0.64, 0.0, 0.25, None),
     "paper": ("#DCCBA2", "#B9A479", 60.0, 0.85, 0.0, 0.0, None),
     "gilt": ("#D3AC52", "#9C7A34", 120.0, 0.32, 1.0, 0.05, None),
     "glaze": ("#6E1E1C", "#3E0F10", 30.0, 0.2, 0.0, 0.03, None),
     "clay": ("#8C5D3E", "#6A432B", 160.0, 0.9, 0.0, 0.2, None),
 }
 SLOT_NAMES = list(SLOTS)
+# Flame emission from its base (z 0.157) to its tip (0.203): a small hot core, a candle-amber body
+# (#F3BE65, docs/art-bible.md) and a deeper amber tip. (position 0-1, sRGB hex)
+FLAME_Z = (0.157, 0.203)
+FLAME_RAMP = ((0.0, "#FFE9B8"), (0.14, "#F9D184"), (0.32, "#F3BE65"), (0.8, "#ECA24A"), (1.0, "#E08C3A"))
 
 
 def parse_args() -> argparse.Namespace:
@@ -93,7 +106,7 @@ def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser()
     p.add_argument("--skip-bake", action="store_true")
     p.add_argument("--skip-renders", action="store_true")
-    p.add_argument("--device", default="GPU", choices=["GPU", "CPU"])
+    p.add_argument("--device", default="CPU", choices=["GPU", "CPU"])
     p.add_argument("--sheet", action="store_true")
     return p.parse_args(argv)
 
@@ -162,22 +175,35 @@ def box(bm, x0, x1, y0, y1, z0, z1, slot: str, xf=None) -> None:
         f.smooth = False
 
 
-def candle(bm, high: bool) -> None:
-    seg = 48 if high else 12
-    if high:
-        dish = [(0, 0), (0.046, 0), (0.051, 0.002), (0.053, 0.006), (0.0525, 0.010), (0.050, 0.0125), (0.047, 0.0125),
-                (0.044, 0.0105), (0.036, 0.0085), (0.025, 0.0085), (0.0225, 0.010), (0.0215, 0.014), (0.021, 0.036),
-                (0.0235, 0.039), (0.0245, 0.044), (0.0225, 0.0465), (0.0185, 0.0465), (0, 0.0465)]
-    else:
-        dish = [(0, 0), (0.052, 0), (0.053, 0.010), (0.046, 0.0125), (0.024, 0.009), (0.022, 0.040), (0.0245, 0.0455), (0, 0.0465)]
-    lathe(bm, dish, seg, "brass")
-    wax_seg = 32 if high else 10
-    if high:
-        wax = [(0, 0.044), (0.018, 0.044), (0.018, 0.148), (0.0172, 0.153), (0.0145, 0.1545), (0.008, 0.151), (0.0015, 0.150), (0, 0.150)]
-    else:
-        wax = [(0, 0.044), (0.018, 0.044), (0.018, 0.153), (0, 0.150)]
-    lathe(bm, wax, wax_seg, "wax")
-    if high:
+CANDLE_PARTS = ("holder", "wax", "wick", "flame")
+# Cage extrusion and max ray distance per bake part (m). The wax cage clears the drips, which stand
+# up to 3.8 mm proud of the low wax's flat faces, so no cage ray starts inside a drip.
+CAGE = {"wax": (0.008, 0.02)}
+CAGE_DEFAULT = (0.004, 0.012)
+
+
+def candle(bm, high: bool, only: str | None = None) -> None:
+    """The chamberstick, or only one bake part of it (`CANDLE_PARTS`): each part bakes from its own
+    high, so a cage ray from the wax never lands on the ring handle or the flame."""
+    if only in (None, "holder"):
+        seg = 48 if high else 16
+        if high:
+            dish = [(0, 0), (0.046, 0), (0.051, 0.002), (0.053, 0.006), (0.0525, 0.010), (0.050, 0.0125), (0.047, 0.0125),
+                    (0.044, 0.0105), (0.036, 0.0085), (0.025, 0.0085), (0.0225, 0.010), (0.0215, 0.014), (0.021, 0.036),
+                    (0.0235, 0.039), (0.0245, 0.044), (0.0225, 0.0465), (0.0185, 0.0465), (0, 0.0465)]
+        else:
+            # No base disc (it sits on the table) and no socket cap under the wax: hidden texels.
+            dish = [(0.052, 0), (0.053, 0.010), (0.046, 0.0125), (0.024, 0.009), (0.022, 0.040), (0.0245, 0.0455), (0.0175, 0.0465)]
+        lathe(bm, dish, seg, "brass")
+        torus_x(bm, 0.059, 0.0115, 0.0085, 0.0026, 24 if high else 8, 8 if high else 4, "brass")
+    if only in (None, "wax"):
+        wax_seg = 32 if high else 16
+        if high:
+            wax = [(0, 0.044), (0.018, 0.044), (0.018, 0.148), (0.0172, 0.153), (0.0145, 0.1545), (0.008, 0.151), (0.0015, 0.150), (0, 0.150)]
+        else:
+            wax = [(0.018, 0.044), (0.018, 0.153), (0, 0.150)]  # its base sits inside the socket
+        lathe(bm, wax, wax_seg, "wax")
+    if only in (None, "wax") and high:
         # Wax runs down the side and a wick.
         for ang, length in ((0.4, 0.034), (2.3, 0.022), (4.4, 0.045)):
             cx, cy = 0.0172 * math.cos(ang), 0.0172 * math.sin(ang)
@@ -188,12 +214,17 @@ def candle(bm, high: bool) -> None:
             for v in bm.verts[start:]:
                 v.co.x += cx
                 v.co.y += cy
-        lathe(bm, [(0, 0.1500), (0.0013, 0.1500), (0.0012, 0.1595), (0, 0.1605)], 8, "wax")
-    flame = [(0, 0.157), (0.0055, 0.162), (0.0082, 0.170), (0.0072, 0.180), (0.0042, 0.191), (0, 0.203)]
-    if not high:
-        flame = [(0, 0.157), (0.0078, 0.166), (0.0062, 0.182), (0, 0.203)]
-    lathe(bm, flame, 16 if high else 6, "flame")
-    torus_x(bm, 0.059, 0.0115, 0.0085, 0.0026, 24 if high else 8, 8 if high else 4, "brass")
+    if only in (None, "wick"):
+        if high:
+            lathe(bm, [(0, 0.1500), (0.0013, 0.1500), (0.0012, 0.1595), (0, 0.1605)], 8, "wick")
+        else:
+            lathe(bm, [(0.0013, 0.1495), (0.0012, 0.1600), (0, 0.1610)], 5, "wick")
+    if only in (None, "flame"):
+        if high:
+            flame = [(0, 0.157), (0.0055, 0.162), (0.0082, 0.170), (0.0072, 0.180), (0.0042, 0.191), (0, 0.203)]
+        else:
+            flame = [(0, 0.157), (0.0052, 0.1612), (0.0078, 0.168), (0.0073, 0.178), (0.0050, 0.188), (0.0023, 0.1965), (0, 0.203)]
+        lathe(bm, flame, 16 if high else 10, "flame")
 
 
 BOOKS = [  # (width x, depth y, thickness, cover slot, yaw, dx, dy)
@@ -201,6 +232,61 @@ BOOKS = [  # (width x, depth y, thickness, cover slot, yaw, dx, dy)
     (0.152, 0.108, 0.028, "leather-green", 0.13, 0.006, -0.003),
     (0.134, 0.094, 0.024, "leather-brown", -0.21, -0.006, 0.004),
 ]
+
+
+def gridbox(bm, xs: list, ys: list, z0: float, z1: float, slot: str, xf, drop_top=(), drop_bottom=(), sides: bool = True,
+            spine_side: bool = True) -> None:
+    """A box over xs[0]..xs[-1] by ys[0]..ys[-1] whose faces split on every xs and ys line, so a face
+    butting against it shares its vertices (no T-junction). Top or bottom cells (i, j) listed in
+    drop_top / drop_bottom are left out; sides False leaves out the four walls, spine_side False the -x
+    wall (hidden inside a book's spine)."""
+    from mathutils import Vector
+
+    def quad(pts) -> None:
+        f = bm.faces.new([bm.verts.new(xf @ Vector(p)) for p in pts])
+        f.material_index = SLOT_NAMES.index(slot)
+        f.smooth = False
+    for i in range(len(xs) - 1):
+        for j in range(len(ys) - 1):
+            xa, xb, ya, yb = xs[i], xs[i + 1], ys[j], ys[j + 1]
+            if (i, j) not in drop_top:
+                quad([(xa, ya, z1), (xb, ya, z1), (xb, yb, z1), (xa, yb, z1)])
+            if (i, j) not in drop_bottom:
+                quad([(xa, ya, z0), (xa, yb, z0), (xb, yb, z0), (xb, ya, z0)])
+    if not sides:
+        return
+    for j in range(len(ys) - 1):
+        ya, yb = ys[j], ys[j + 1]
+        quad([(xs[-1], ya, z0), (xs[-1], yb, z0), (xs[-1], yb, z1), (xs[-1], ya, z1)])
+        if spine_side:
+            quad([(xs[0], yb, z0), (xs[0], ya, z0), (xs[0], ya, z1), (xs[0], yb, z1)])
+    for i in range(len(xs) - 1):
+        xa, xb = xs[i], xs[i + 1]
+        quad([(xa, ys[0], z0), (xb, ys[0], z0), (xb, ys[0], z1), (xa, ys[0], z1)])
+        quad([(xb, ys[-1], z0), (xa, ys[-1], z0), (xa, ys[-1], z1), (xb, ys[-1], z1)])
+
+
+def book_xf(i: int):
+    """Where book i of the stack sits (its builder frame: spine on -x, base on z = 0)."""
+    from mathutils import Matrix
+    z = sum(b[2] for b in BOOKS[:i])
+    _, _, _, _, yaw, dx, dy = BOOKS[i]
+    return Matrix.Translation((dx, dy, z)) @ Matrix.Rotation(yaw, 4, "Z")
+
+
+def book_variants():
+    """The other two book arrangements, as (book index, matrix from the stack pose) lists: the baked
+    stack books moved, so the variants share their atlas islands. Variant 1 is two books (green
+    under brown, turned against it); variant 2 stands the red book on its tail behind the green
+    one. Each bottom book stays square to the prop axes so its contact rectangle hugs it."""
+    from mathutils import Matrix
+    t1 = BOOKS[1][2]
+    v1 = [(1, Matrix.Translation((0.004, -0.004, 0.0))),
+          (2, Matrix.Translation((0.0002, 0.0089, t1)) @ Matrix.Rotation(-0.42, 4, "Z"))]
+    hd0, t0 = BOOKS[0][1] / 2, BOOKS[0][2]
+    v2 = [(1, Matrix.Translation((0.0, -0.020, 0.0))),
+          (0, Matrix.Translation((0.0, 0.036 + t0, hd0)) @ Matrix.Rotation(math.pi / 2, 4, "X"))]
+    return [[(i, m @ book_xf(i).inverted()) for i, m in v] for v in (v1, v2)]
 
 
 def books(bm, high: bool, only: int | None = None) -> None:
@@ -230,9 +316,18 @@ def books(bm, high: bool, only: int | None = None) -> None:
 
         # Boards and a page block set 4 mm in (the page edges read in silhouette), on a round spine.
         board = 0.0028 if high else 0.0035
-        box(bm, -hw + t / 2, hw, -hd, hd, 0.0, board, cover, xf)
-        box(bm, -hw + t / 2, hw, -hd, hd, t - board, t, cover, xf)
-        box(bm, -hw + t / 2 - (0.001 if high else 0.0), hw - 0.004, -hd + 0.004, hd - 0.004, board, t - board, "paper", xf)
+        if high:
+            box(bm, -hw + t / 2, hw, -hd, hd, 0.0, board, cover, xf)
+            box(bm, -hw + t / 2, hw, -hd, hd, t - board, t, cover, xf)
+            box(bm, -hw + t / 2 - 0.001, hw - 0.004, -hd + 0.004, hd - 0.004, board, t - board, "paper", xf)
+        else:
+            # The low keeps only what shows: the page block's top and bottom and the boards' inner
+            # faces under it are hidden, so they take no atlas texels (and no cage ray from inside).
+            s4 = 0.004
+            xs, ys = [-hw + t / 2, hw - s4, hw], [-hd, -hd + s4, hd - s4, hd]
+            gridbox(bm, xs, ys, 0.0, board, cover, xf, drop_top={(0, 1)}, spine_side=False)
+            gridbox(bm, xs, ys, t - board, t, cover, xf, drop_bottom={(0, 1)}, spine_side=False)
+            gridbox(bm, xs[:2], ys[1:3], board, t - board, "paper", xf, drop_top={(0, 0)}, drop_bottom={(0, 0)}, spine_side=False)
         spine(-hd, hd, t / 2, cover)
         if high:
             for yb in (-hd * 0.55, hd * 0.55):
@@ -252,7 +347,7 @@ def vase(bm, high: bool) -> None:
                 (0.0285, 0.2195), (0.0225, 0.208), (0.020, 0.195), (0.019, 0.172), (0, 0.168)]
         seg = 64
     else:
-        prof = [(0, 0), (0.0375, 0.002), (0.034, 0.012), (0.050, 0.045), (0.059, 0.072), (0.0635, 0.098), (0.0615, 0.118),
+        prof = [(0.034, 0), (0.0375, 0.003), (0.034, 0.012), (0.050, 0.045), (0.059, 0.072), (0.0635, 0.098), (0.0615, 0.118),
                 (0.054, 0.138), (0.031, 0.172), (0.0255, 0.192), (0.0355, 0.2215), (0.030, 0.222), (0.020, 0.195), (0, 0.185)]
         seg = 24
     lathe(bm, prof, seg, vase_slot)
@@ -338,7 +433,25 @@ def blender_main(args: argparse.Namespace) -> None:
             noise.inputs["Scale"].default_value = max(nscale, 1.0)
             noise.inputs["Detail"].default_value = 6.0
             nt.links.new(tc.outputs["Object"], noise.inputs["Vector"])
-            ch["base"] = mix_color(nt, hexl(ca), hexl(cb), noise.outputs["Fac"]) if nscale > 0 else None
+            fac = noise.outputs["Fac"]
+            if slot.startswith("leather"):
+                # Broad painted mottling under the grain: a low-frequency noise stretched to the full
+                # 0-1 range carries most of the value, the fine noise the rest.
+                broad = nt.nodes.new("ShaderNodeTexNoise")
+                broad.inputs["Scale"].default_value = 16.0
+                broad.inputs["Detail"].default_value = 3.0
+                nt.links.new(tc.outputs["Object"], broad.inputs["Vector"])
+                spread = nt.nodes.new("ShaderNodeMapRange")
+                spread.inputs["From Min"].default_value = 0.36
+                spread.inputs["From Max"].default_value = 0.64
+                nt.links.new(broad.outputs["Fac"], spread.inputs["Value"])
+                blend = nt.nodes.new("ShaderNodeMix")
+                blend.data_type = "FLOAT"
+                blend.inputs["Factor"].default_value = 0.7
+                nt.links.new(fac, blend.inputs["A"])
+                nt.links.new(spread.outputs["Result"], blend.inputs["B"])
+                fac = blend.outputs["Result"]
+            ch["base"] = mix_color(nt, hexl(ca), hexl(cb), fac) if nscale > 0 else None
             if ch["base"] is None:
                 sep_z = nt.nodes.new("ShaderNodeSeparateXYZ")
                 nt.links.new(tc.outputs["Object"], sep_z.inputs["Vector"])
@@ -379,8 +492,21 @@ def blender_main(args: argparse.Namespace) -> None:
         nt.links.new(ch["rough"], bsdf.inputs["Roughness"])
         bsdf.inputs["Metallic"].default_value = metal
         ch["metal_value"] = metal
-        if emit:
-            ch["emit"] = mix_color(nt, hexl(emit[0]), hexl(emit[1]), ch["zfac"])
+        if emit == "ramp":
+            sep_f = nt.nodes.new("ShaderNodeSeparateXYZ")
+            nt.links.new(tc.outputs["Object"], sep_f.inputs["Vector"])
+            along = nt.nodes.new("ShaderNodeMapRange")
+            along.inputs["From Min"].default_value, along.inputs["From Max"].default_value = FLAME_Z
+            nt.links.new(sep_f.outputs["Z"], along.inputs["Value"])
+            cr = nt.nodes.new("ShaderNodeValToRGB")
+            els = cr.color_ramp.elements
+            while len(els) < len(FLAME_RAMP):
+                els.new(0.5)
+            for el, (pos, hx) in zip(els, FLAME_RAMP):
+                el.position = pos
+                el.color = (*hexl(hx), 1.0)
+            nt.links.new(along.outputs["Result"], cr.inputs["Fac"])
+            ch["emit"] = cr.outputs["Color"]
             nt.links.new(ch["emit"], bsdf.inputs["Emission Color"])
             bsdf.inputs["Emission Strength"].default_value = 1.0
         else:
@@ -429,7 +555,7 @@ def blender_main(args: argparse.Namespace) -> None:
         bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=1e-6)
         bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
         bmesh.ops.triangulate(bm, faces=bm.faces[:], quad_method="FIXED", ngon_method="BEAUTY")
-        name = f"{PIECE}_{kind}" + ("" if part is None else f"_{part}") + ("_high" if high else "")
+        name = f"{PIECE}_{kind}" + ("" if part is None else f"_part-{part}") + ("_high" if high else "")
         mesh = bpy.data.meshes.new(name)
         bm.to_mesh(mesh)
         bm.free()
@@ -447,15 +573,17 @@ def blender_main(args: argparse.Namespace) -> None:
     # Bake pairs (high, low): one per prop, and one per book of the stack; the book lows join into
     # `table-decor_books` after the bake.
     pairs = []
+    cages = []
     for k in KINDS:
-        if k == "books":
-            pairs += [(k, build(k, True, i), build(k, False, i)) for i in range(len(BOOKS))]
-        else:
-            pairs.append((k, build(k, True), build(k, False)))
+        parts = {"books": list(range(len(BOOKS))), "candle": list(CANDLE_PARTS)}.get(k, [None])
+        for part in parts:
+            pairs.append((k, build(k, True, part), build(k, False, part)))
+            cages.append(CAGE.get(part, CAGE_DEFAULT) if isinstance(part, str) else CAGE_DEFAULT)
     bake_lows = [lo for _, _, lo in pairs]
+    candle_part = {part: n for n, part in enumerate(CANDLE_PARTS)}  # candle pairs come first
 
-    def join(kind: str, high: bool):
-        objs = [h if high else lo for k, h, lo in pairs if k == kind]
+    def join(kind: str, high: bool, objs: list | None = None):
+        objs = objs or [h if high else lo for k, h, lo in pairs if k == kind]
         if len(objs) == 1:
             return objs[0]
         bpy.ops.object.select_all(action="DESELECT")
@@ -469,24 +597,36 @@ def blender_main(args: argparse.Namespace) -> None:
         return obj
 
     def check_geometry(highs: dict, lows: dict) -> tuple[dict, dict]:
-        """Low triangle budget, footprint radius about the origin and base on z = 0."""
-        tris = {k: {"low": len(lows[k].data.polygons), "high": len(highs[k].data.polygons)} for k in KINDS}
+        """Low triangle budget, footprint radius about the origin and base on z = 0, per node (the
+        book variants have no high of their own: they are the stack's baked books moved)."""
+        tris = {k: {"low": len(lows[k].data.polygons), "high": len(highs[k].data.polygons) if k in highs else None} for k in NODES}
         print("triangles", json.dumps(tris))
-        for k in KINDS:
+        for k in NODES:
             if tris[k]["low"] > LIMIT_TRIS:
                 raise RuntimeError(f"{k}: {tris[k]['low']} low triangles over {LIMIT_TRIS}")
         geo = {}
-        for k in KINDS:
+        for k in NODES:
+            kind = KIND_OF.get(k, k)
+
             def radius(o):
                 return max(math.hypot(v.co.x, v.co.y) for v in o.data.vertices)
 
             def zmax(o):
                 return max(v.co.z for v in o.data.vertices)
-            geo[k] = {"radius_low": round(radius(lows[k]), 4), "radius_high": round(radius(highs[k]), 4),
-                      "height_low": round(zmax(lows[k]), 4), "height_high": round(zmax(highs[k]), 4),
-                      "min_z_low": round(min(v.co.z for v in lows[k].data.vertices), 5)}
-            if max(geo[k]["radius_low"], geo[k]["radius_high"]) > RESERVED_RADIUS[k] + 1e-4:
-                raise RuntimeError(f"{k}: footprint radius {geo[k]} exceeds the reserved {RESERVED_RADIUS[k]}")
+            lo = lows[k]
+            geo[k] = {"radius_low": round(radius(lo), 4), "height_low": round(zmax(lo), 4),
+                      "min_z_low": round(min(v.co.z for v in lo.data.vertices), 5)}
+            if k in highs:
+                geo[k].update(radius_high=round(radius(highs[k]), 4), height_high=round(zmax(highs[k]), 4))
+            # Contact footprint (runtime x, z) for the blob shadow: the bbox of the vertices on the table.
+            base = [v.co for v in lo.data.vertices if v.co.z < 0.004]
+            x0, x1 = min(c.x for c in base), max(c.x for c in base)
+            z0, z1 = min(-c.y for c in base), max(-c.y for c in base)
+            half = ((x1 - x0) / 2, (z1 - z0) / 2)
+            geo[k]["contact"] = {"x": round((x0 + x1) / 2, 4), "z": round((z0 + z1) / 2, 4), "halfX": round(half[0], 4),
+                                 "halfZ": round(half[1], 4), "corner": round(min(half) if kind != "books" else 0.004, 4)}
+            if max(geo[k]["radius_low"], geo[k].get("radius_high", 0.0)) > RESERVED_RADIUS[kind] + 1e-4:
+                raise RuntimeError(f"{k}: footprint radius {geo[k]} exceeds the reserved {RESERVED_RADIUS[kind]}")
             if abs(geo[k]["min_z_low"]) > 1e-5:
                 raise RuntimeError(f"{k}: low base is not on z = 0")
         print("geometry", json.dumps(geo))
@@ -556,7 +696,8 @@ def blender_main(args: argparse.Namespace) -> None:
                 scene.cycles.samples = samples
                 kwargs = {"normal_space": "TANGENT"} if btype == "NORMAL" else {}
                 started = time.monotonic()
-                bpy.ops.object.bake(type=btype, use_selected_to_active=True, cage_extrusion=0.004, max_ray_distance=0.012,
+                cage, reach = cages[n]
+                bpy.ops.object.bake(type=btype, use_selected_to_active=True, cage_extrusion=cage, max_ray_distance=reach,
                                     margin=0, use_clear=True, target="IMAGE_TEXTURES", **kwargs)
                 timings[f"{lo.name}.{chan}"] = round(time.monotonic() - started, 2)
                 nt.nodes.remove(tex)
@@ -565,38 +706,49 @@ def blender_main(args: argparse.Namespace) -> None:
             o.hide_render = False
             o.hide_set(False)
         surface("bsdf")
-        # Composite the three props, each only inside its own rasterized UV islands (the bake's alpha
-        # is not a coverage mask), and dilate into the gutters.
+        # Composite the props, each only inside its own rasterized UV islands, keeping only texels the
+        # bake wrote (alpha 1): the one-texel grown rim of a mask the bake never reached held zeros,
+        # which dilated into black albedo, AO 0 and inverted normals along every island edge. Each
+        # channel then dilates from its own written texels over the rim and into the gutters.
         masks = [uv_mask(o, np) for o in bake_lows]
         overlap = int(sum((masks[i] & masks[j]).sum() for i in range(len(masks)) for j in range(i + 1, len(masks))))
         if overlap:
             raise RuntimeError(f"UV islands of different bake targets overlap on {overlap} texels")
         cover = np.logical_or.reduce(masks)
         comp = {}
+        written = {}
+        # Every pass rasterizes the same islands; the albedo (EMIT) pass's alpha says which texels
+        # the bake reached (the NORMAL pass sets alpha everywhere).
+        reached = [m & (im[..., 3] > 0.5) for im, m in zip(per["albedo"], masks)]
+        reached = [w if w.sum() >= 0.5 * m.sum() else m for w, m in zip(reached, masks)]
         for chan, images in per.items():
             acc = np.zeros((ATLAS, ATLAS, 3), dtype=np.float32)
-            for im, m in zip(images, masks):
-                acc[m] = im[..., :3][m]
+            got = np.zeros((ATLAS, ATLAS), dtype=bool)
+            for im, w in zip(images, reached):
+                acc[w] = im[..., :3][w]
+                got |= w
             comp[chan] = acc
+            written[chan] = got
+        report["written_fraction"] = {c: round(float(written[c][cover].mean()), 4) for c in comp}
+        filled = cover.copy()
+        for c in comp:
+            have = written[c].copy()
+            for _ in range(MARGIN_PX + 3):
+                sums = np.zeros_like(comp[c])
+                counts = np.zeros((ATLAS, ATLAS), dtype=np.float32)
+                for dy in (-1, 0, 1):
+                    for dx in (-1, 0, 1):
+                        if dx == 0 and dy == 0:
+                            continue
+                        sf = np.roll(np.roll(have, dy, 0), dx, 1)
+                        counts += sf
+                        sums += np.roll(np.roll(comp[c], dy, 0), dx, 1) * sf[..., None]
+                grow = (~have) & (counts > 0)
+                comp[c][grow] = sums[grow] / counts[grow][:, None]
+                have |= grow
+            filled |= have
         per_kind_ao = {k: round(float(comp["ao"][..., 0][np.logical_or.reduce([m for (kk, _, _), m in zip(pairs, masks) if kk == k])].mean()), 4)
                        for k in KINDS}
-        filled = cover.copy()
-        for _ in range(MARGIN_PX):
-            grow = np.zeros_like(filled)
-            sums = {c: np.zeros_like(a) for c, a in comp.items()}
-            counts = np.zeros((ATLAS, ATLAS), dtype=np.float32)
-            for dy in (-1, 0, 1):
-                for dx in (-1, 0, 1):
-                    if dx == 0 and dy == 0:
-                        continue
-                    sf = np.roll(np.roll(filled, dy, 0), dx, 1)
-                    counts += sf
-                    for c, a in comp.items():
-                        sums[c] += np.roll(np.roll(a, dy, 0), dx, 1) * sf[..., None]
-            grow = (~filled) & (counts > 0)
-            for c in comp:
-                comp[c][grow] = sums[c][grow] / counts[grow][:, None]
-            filled |= grow
         normal = np.clip(comp["normal"], 0, 1)
         normal[~filled] = (0.5, 0.5, 1.0)
         ao = np.clip(comp["ao"][..., 0], 0, 1)
@@ -616,8 +768,37 @@ def blender_main(args: argparse.Namespace) -> None:
             path = STAGING / f"{PIECE}.{chan}.png"
             lm.write_png_rgb(path, arr)
             maps[chan] = path
+        # The wax must hold no near-black or inverted texel (the old drip slot), and the flame island
+        # carries the authored ramp.
+        def eroded(m):
+            e = m.copy()
+            for _ in range(2):
+                e = e & np.roll(e, 1, 0) & np.roll(e, -1, 0) & np.roll(e, 1, 1) & np.roll(e, -1, 1)
+            return e
+        wax_m = eroded(masks[candle_part["wax"]])
+        flame_m = eroded(masks[candle_part["flame"]])
+        base8 = lm.srgb_encode(albedo)
+        lum = base8 @ np.array([0.2126, 0.7152, 0.0722])
+        emit8 = np.round(lm.srgb_encode(emit[flame_m]) * 255)
+        checks = {
+            "wax_texels": int(wax_m.sum()),
+            "wax_dark_texels": int((lum[wax_m] < 0.35).sum()),
+            "wax_albedo_min_srgb": round(float(lum[wax_m].min()), 3),
+            "wax_normal_z_min": round(float(normal[wax_m][:, 2].min()), 3),
+            "wax_ao_min": round(float(ao[wax_m].min()), 3),
+            "flame_texels": int(flame_m.sum()),
+            "flame_emit_mean_srgb8": [round(float(v), 1) for v in emit8.mean(axis=0)],
+            "flame_emit_p05_p95_srgb8": [[int(v) for v in np.percentile(emit8, 5, axis=0)], [int(v) for v in np.percentile(emit8, 95, axis=0)]],
+            "flame_albedo_max_srgb": round(float(base8[flame_m].max()), 3),
+            "inverted_normal_texels": int((normal[cover][:, 2] < 0.25).sum()),
+            "ao_below_0_05_texels": int((ao[cover] < 0.05).sum()),
+        }
+        print("bake checks", json.dumps(checks))
+        if checks["wax_dark_texels"] or checks["wax_normal_z_min"] < 0.3:
+            raise RuntimeError(f"wax bake has dark or inverted texels: {checks}")
         report["bake"] = {
-            "size": ATLAS, "device": report["device"], "cage_extrusion_m": 0.004, "max_ray_distance_m": 0.012,
+            "size": ATLAS, "device": report["device"], "cage_extrusion_m": {"default": CAGE_DEFAULT[0], **{k: v[0] for k, v in CAGE.items()}},
+            "max_ray_distance_m": {"default": CAGE_DEFAULT[1], **{k: v[1] for k, v in CAGE.items()}}, "checks": checks,
             "ao_distance_m": 0.03, "margin_px": MARGIN_PX, "samples": {c: s for c, _, _, s in plan},
             "passes": "base colour, roughness, metallic and emission as EMIT passes of each channel; NORMAL tangent; AO",
             "seconds": timings, "seconds_total": round(sum(timings.values()), 1),
@@ -625,6 +806,8 @@ def blender_main(args: argparse.Namespace) -> None:
             "coverage": round(float(cover.mean()), 4),
             "ao_mean": round(float(ao[cover].mean()), 4), "ao_mean_per_kind": per_kind_ao,
             "uv_overlap_texels": overlap, "ao_p05": round(float(np.percentile(ao[cover], 5)), 4),
+            "ao_p05_per_kind": {k: round(float(np.percentile(comp["ao"][..., 0][np.logical_or.reduce([m for (kk, _, _), m in zip(pairs, masks) if kk == k])], 5)), 4)
+                                for k in KINDS},
             "rough_mean": round(float(rough[cover].mean()), 4),
             "metal_fraction": round(float((metal[cover] > 0.5).mean()), 4),
             "emissive_fraction": round(float((emit[cover].max(axis=1) > 0.1).mean()), 4),
@@ -654,8 +837,23 @@ def blender_main(args: argparse.Namespace) -> None:
         nt.links.new(tex["emissive"].outputs["Color"], bsdf.inputs["Emission Color"])
         bsdf.inputs["Emission Strength"].default_value = EMISSIVE_INTENSITY
 
+    # Book variants: copies of the stack's baked lows (UVs and all), moved into each arrangement.
+    book_lows = [lo for k, _, lo in pairs if k == "books"]
+    variant_lows = {}
+    for n, layout in enumerate(book_variants(), start=1):
+        objs = []
+        for i, mat in layout:
+            o = book_lows[i].copy()
+            o.data = book_lows[i].data.copy()
+            o.data.transform(mat)
+            o.name = o.data.name = f"{PIECE}_books_{n}_part-{i}"
+            scene.collection.objects.link(o)
+            objs.append(o)
+        variant_lows[f"books_{n}"] = objs
     highs = {k: join(k, True) for k in KINDS}
     lows = {k: join(k, False) for k in KINDS}
+    for node, objs in variant_lows.items():
+        lows[node] = join(node, False, objs)
     tris, geo = check_geometry(highs, lows)
     report["triangles"] = tris
     report["geometry"] = geo
@@ -665,6 +863,7 @@ def blender_main(args: argparse.Namespace) -> None:
     bpy.ops.object.select_all(action="DESELECT")
     for o in lows.values():
         o.select_set(True)
+        o.hide_set(False)
     bpy.context.view_layer.objects.active = lows["candle"]
     bpy.ops.export_scene.gltf(filepath=str(glb), export_format="GLB", use_selection=True, use_active_scene=True,
                               export_texcoords=True, export_normals=True, export_tangents=False, export_materials="EXPORT",
@@ -694,8 +893,11 @@ def blender_main(args: argparse.Namespace) -> None:
         "texturePx": ATLAS,
         "emissiveIntensity": EMISSIVE_INTENSITY,
         "envMapIntensity": ENV_INTENSITY,
-        "kinds": {k: {"node": f"{PIECE}_{k}", "tris": tris[k]["low"], "radius": geo[k]["radius_low"],
-                      "reservedRadius": RESERVED_RADIUS[k], "height": geo[k]["height_low"]} for k in KINDS},
+        "metalEnvMapIntensity": METAL_ENV_INTENSITY,
+        "kinds": {k: {"reservedRadius": RESERVED_RADIUS[k],
+                      "variants": [{"node": f"{PIECE}_{n}", "tris": tris[n]["low"], "radius": geo[n]["radius_low"],
+                                    "height": geo[n]["height_low"], "contact": geo[n]["contact"]}
+                                   for n in NODES if KIND_OF.get(n, n) == k]} for k in KINDS},
         "budget": {"trisPerKindMax": LIMIT_TRIS, "materials": 1, "textures": 4},
         "frame": "runtime +Y up; each node's origin is the prop's base centre, standing on the table top",
     }
@@ -824,8 +1026,14 @@ def render_all(bpy, scene, highs: dict, lows: dict, rdir: Path) -> list[str]:
     for k, (x, y) in spots.items():
         lows[k].location = (x, y, 0)
         highs[k].location = (x, y, 0)
-    shoot(rdir / "set-low.png", list(lows.values()), (0, 0, 0.08), 0.95, 0.42, 60.0)
+    shoot(rdir / "set-low.png", [lows[k] for k in KINDS], (0, 0, 0.08), 0.95, 0.42, 60.0)
     shoot(rdir / "set-high.png", list(highs.values()), (0, 0, 0.08), 0.95, 0.42, 60.0)
+    # The three book arrangements side by side (lows: the variants have no high of their own).
+    for o in list(highs.values()) + list(lows.values()):
+        o.location = (0, 0, 0)
+    for node, x in (("books", -0.24), ("books_1", 0.0), ("books_2", 0.24)):
+        lows[node].location = (x, 0, 0)
+    shoot(rdir / "books-variants-low.png", [lows["books"], lows["books_1"], lows["books_2"]], (0, 0, 0.05), 1.0, 0.45, 60.0)
     for o in list(highs.values()) + list(lows.values()):
         o.location = (0, 0, 0)
         o.hide_render = False
@@ -839,7 +1047,8 @@ def reimport(bpy, glb: Path, manifest: dict) -> dict:
     g = json.loads(data[20:20 + jl])
     nodes = {n["name"]: n for n in g.get("nodes", [])}
     per = {}
-    for k, entry in manifest["kinds"].items():
+    entries = {v["node"].removeprefix(f"{PIECE}_"): v for kind in manifest["kinds"].values() for v in kind["variants"]}
+    for k, entry in entries.items():
         n = nodes.get(entry["node"])
         if n is None or "mesh" not in n:
             per[k] = None
@@ -853,15 +1062,15 @@ def reimport(bpy, glb: Path, manifest: dict) -> dict:
     bpy.ops.import_scene.gltf(filepath=str(glb))
     meshes = [o for o in bpy.context.scene.objects if o.type == "MESH"]
     checks = {
-        "three_prop_nodes": all(per.get(k) for k in KINDS),
-        "tris_le_600_each": all(per[k] and per[k]["tris"] <= LIMIT_TRIS for k in KINDS),
-        "tris_match_manifest": all(per[k] and per[k]["tris"] == manifest["kinds"][k]["tris"] for k in KINDS),
+        "every_prop_node": all(per.get(k) for k in NODES) and sorted(per) == sorted(NODES),
+        "tris_le_600_each": all(per[k] and per[k]["tris"] <= LIMIT_TRIS for k in NODES),
+        "tris_match_manifest": all(per[k] and per[k]["tris"] == entries[k]["tris"] for k in NODES),
         "one_material": len(g.get("materials", [])) == 1,
         "image_free": not g.get("images") and not g.get("textures"),
         "single_sided": not any(m.get("doubleSided") for m in g.get("materials", [])),
-        "uv0_normals_only": all(per[k] and per[k]["attributes"] == ["NORMAL", "POSITION", "TEXCOORD_0"] for k in KINDS),
-        "identity_nodes": all(per[k] and per[k]["identity"] for k in KINDS),
-        "blender_reimport": len(meshes) == 3,
+        "uv0_normals_only": all(per[k] and per[k]["attributes"] == ["NORMAL", "POSITION", "TEXCOORD_0"] for k in NODES),
+        "identity_nodes": all(per[k] and per[k]["identity"] for k in NODES),
+        "blender_reimport": len(meshes) == len(NODES),
     }
     result = {"glb": glb.name, "glb_sha256": sha256(glb), "glb_bytes": len(data), "blender": bpy.app.version_string,
               "per_kind": per, "materials": [m.get("name") for m in g.get("materials", [])], "checks": checks,
@@ -892,6 +1101,9 @@ def compose_sheet() -> Path:
                      (STAGING / f"{PIECE}.basecolor.png", "Shared atlas: base colour") if k == "candle" else
                      (STAGING / f"{PIECE}.normal.png", "Shared atlas: tangent normal") if k == "books" else
                      (STAGING / f"{PIECE}.orm.png", "Shared atlas: ORM")])
+    rows.append([(rdir / "books-variants-low.png", "Books: the three arrangements (low + atlas)"),
+                 (STAGING / f"{PIECE}.emissive.png", "Shared atlas: emission (flame ramp)"),
+                 (rdir / "set-low.png", "Low set again, for scale")])
     for i in range(0, len(engine), 3):
         rows.append([(p, f"In engine: {p.stem}") for p in engine[i:i + 3]])
     cell_w, cell_h, pad, cap = 520, 390, 12, 28

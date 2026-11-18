@@ -4,7 +4,7 @@
   "route": "scripted (procedural Blender high and low geometry, Cycles selected-to-active bake to one shared atlas; no provider generation)",
   "generator": {
     "path": "scripts/assets/build-table-decor.py",
-    "sha256": "c30fed23cb95ccf6bf6c9f1432edb4030892d271583d1b6c1336023233b4fb09"
+    "sha256": "7b8255436033364d3969231c5c19937d3b3e2e937602993dfe6a9101fce4a8b2"
   },
   "generatorDeps": [
     {
@@ -27,9 +27,11 @@
   },
   "budgets": {
     "trianglesPerKind": {
-      "candle": 272,
-      "books": 150,
-      "vase": 576
+      "candle": 419,
+      "books": 276,
+      "books_1": 184,
+      "books_2": 184,
+      "vase": 600
     },
     "highTrianglesPerKind": {
       "candle": 2704,
@@ -39,15 +41,49 @@
     "materials": 1,
     "texturePx": 1024,
     "textures": 4,
-    "drawCallsPerDressedRoom": 1,
-    "glbBytes": 44612
+    "drawCallsPerDressedRoom": 2,
+    "glbBytes": 73360
   },
-  "lods": "LOD0 only: every prop is under 600 triangles and a dressed room merges its props into one mesh (one draw call)",
+  "lods": "LOD0 only: every prop is under 600 triangles; a dressed room merges its props into one mesh (one draw call) and its light pools, flame halos and contact shadows into one decal child (one more, src/world/table-decor.ts)",
   "bake": {
     "size": 1024,
-    "device": "GPU:METAL (Apple M4 (GPU - 10 cores))",
-    "cage_extrusion_m": 0.004,
-    "max_ray_distance_m": 0.012,
+    "device": "CPU",
+    "cage_extrusion_m": {
+      "default": 0.004,
+      "wax": 0.008
+    },
+    "max_ray_distance_m": {
+      "default": 0.012,
+      "wax": 0.02
+    },
+    "checks": {
+      "wax_texels": 10041,
+      "wax_dark_texels": 0,
+      "wax_albedo_min_srgb": 0.759,
+      "wax_normal_z_min": 0.438,
+      "wax_ao_min": 0.163,
+      "flame_texels": 831,
+      "flame_emit_mean_srgb8": [
+        242.5,
+        187.3,
+        102.9
+      ],
+      "flame_emit_p05_p95_srgb8": [
+        [
+          237,
+          164,
+          76
+        ],
+        [
+          252,
+          219,
+          156
+        ]
+      ],
+      "flame_albedo_max_srgb": 0.0,
+      "inverted_normal_texels": 466,
+      "ao_below_0_05_texels": 479
+    },
     "ao_distance_m": 0.03,
     "margin_px": 8,
     "samples": {
@@ -60,61 +96,84 @@
     },
     "passes": "base colour, roughness, metallic and emission as EMIT passes of each channel; NORMAL tangent; AO",
     "seconds": {
-      "table-decor_candle.albedo": 0.33,
-      "table-decor_candle.rough": 0.33,
-      "table-decor_candle.metal": 0.29,
-      "table-decor_candle.emit": 0.31,
-      "table-decor_candle.normal": 0.33,
-      "table-decor_candle.ao": 0.44,
-      "table-decor_books_0.albedo": 0.33,
-      "table-decor_books_0.rough": 0.32,
-      "table-decor_books_0.metal": 0.32,
-      "table-decor_books_0.emit": 0.31,
-      "table-decor_books_0.normal": 0.34,
-      "table-decor_books_0.ao": 0.56,
-      "table-decor_books_1.albedo": 0.33,
-      "table-decor_books_1.rough": 0.32,
-      "table-decor_books_1.metal": 0.3,
-      "table-decor_books_1.emit": 0.33,
-      "table-decor_books_1.normal": 0.35,
-      "table-decor_books_1.ao": 0.53,
-      "table-decor_books_2.albedo": 0.34,
-      "table-decor_books_2.rough": 0.33,
-      "table-decor_books_2.metal": 0.31,
-      "table-decor_books_2.emit": 0.32,
-      "table-decor_books_2.normal": 0.36,
-      "table-decor_books_2.ao": 0.49,
-      "table-decor_vase.albedo": 0.34,
-      "table-decor_vase.rough": 0.32,
-      "table-decor_vase.metal": 0.29,
-      "table-decor_vase.emit": 0.3,
-      "table-decor_vase.normal": 0.33,
-      "table-decor_vase.ao": 0.45
+      "table-decor_candle_part-holder.albedo": 0.06,
+      "table-decor_candle_part-holder.rough": 0.05,
+      "table-decor_candle_part-holder.metal": 0.03,
+      "table-decor_candle_part-holder.emit": 0.04,
+      "table-decor_candle_part-holder.normal": 0.06,
+      "table-decor_candle_part-holder.ao": 0.31,
+      "table-decor_candle_part-wax.albedo": 0.05,
+      "table-decor_candle_part-wax.rough": 0.05,
+      "table-decor_candle_part-wax.metal": 0.03,
+      "table-decor_candle_part-wax.emit": 0.04,
+      "table-decor_candle_part-wax.normal": 0.07,
+      "table-decor_candle_part-wax.ao": 0.3,
+      "table-decor_candle_part-wick.albedo": 0.05,
+      "table-decor_candle_part-wick.rough": 0.05,
+      "table-decor_candle_part-wick.metal": 0.03,
+      "table-decor_candle_part-wick.emit": 0.04,
+      "table-decor_candle_part-wick.normal": 0.06,
+      "table-decor_candle_part-wick.ao": 0.19,
+      "table-decor_candle_part-flame.albedo": 0.05,
+      "table-decor_candle_part-flame.rough": 0.05,
+      "table-decor_candle_part-flame.metal": 0.03,
+      "table-decor_candle_part-flame.emit": 0.04,
+      "table-decor_candle_part-flame.normal": 0.06,
+      "table-decor_candle_part-flame.ao": 0.2,
+      "table-decor_books_part-0.albedo": 0.06,
+      "table-decor_books_part-0.rough": 0.06,
+      "table-decor_books_part-0.metal": 0.03,
+      "table-decor_books_part-0.emit": 0.04,
+      "table-decor_books_part-0.normal": 0.11,
+      "table-decor_books_part-0.ao": 0.82,
+      "table-decor_books_part-1.albedo": 0.06,
+      "table-decor_books_part-1.rough": 0.05,
+      "table-decor_books_part-1.metal": 0.03,
+      "table-decor_books_part-1.emit": 0.04,
+      "table-decor_books_part-1.normal": 0.1,
+      "table-decor_books_part-1.ao": 0.69,
+      "table-decor_books_part-2.albedo": 0.05,
+      "table-decor_books_part-2.rough": 0.06,
+      "table-decor_books_part-2.metal": 0.03,
+      "table-decor_books_part-2.emit": 0.04,
+      "table-decor_books_part-2.normal": 0.09,
+      "table-decor_books_part-2.ao": 0.58,
+      "table-decor_vase.albedo": 0.06,
+      "table-decor_vase.rough": 0.06,
+      "table-decor_vase.metal": 0.03,
+      "table-decor_vase.emit": 0.04,
+      "table-decor_vase.normal": 0.11,
+      "table-decor_vase.ao": 0.83
     },
-    "seconds_total": 10.6,
-    "load1_before": 1.94,
-    "load1_after": 2.18,
-    "coverage": 0.3068,
-    "ao_mean": 0.7646,
+    "seconds_total": 6.0,
+    "load1_before": 2.4,
+    "load1_after": 2.33,
+    "coverage": 0.2349,
+    "ao_mean": 0.9318,
     "ao_mean_per_kind": {
-      "candle": 0.8331,
-      "books": 0.7149,
-      "vase": 0.9454
+      "candle": 0.9265,
+      "books": 0.9125,
+      "vase": 0.9786
     },
     "uv_overlap_texels": 0,
-    "ao_p05": 0.0,
-    "rough_mean": 0.5663,
-    "metal_fraction": 0.0643,
-    "emissive_fraction": 0.0031,
+    "ao_p05": 0.5333,
+    "ao_p05_per_kind": {
+      "candle": 0.6875,
+      "books": 0.4958,
+      "vase": 0.8625
+    },
+    "rough_mean": 0.5294,
+    "metal_fraction": 0.0784,
+    "emissive_fraction": 0.0067,
     "albedo_mean_srgb8": [
-      104.2,
-      73.2,
-      53.7
+      111.7,
+      75.9,
+      55.5
     ],
     "normal_mean": [
-      0.5048,
-      0.5037,
-      0.9206
+      0.5171,
+      0.5087,
+      0.9848
     ],
     "ktx2": {
       "table-decor.basecolor.ktx2": "create --format R8G8B8_SRGB --assign-tf srgb --encode uastc --uastc-quality 2 --zstd 18 --generate-mipmap",
@@ -124,31 +183,76 @@
     }
   },
   "texelDensityPxPerM": {
-    "candle": 813.2,
-    "books": 841.8,
-    "vase": 789.4
+    "candle": 917.4,
+    "books": 962.9,
+    "vase": 894.8
   },
   "geometry": {
     "candle": {
       "radius_low": 0.0701,
-      "radius_high": 0.0701,
       "height_low": 0.203,
+      "min_z_low": 0.0,
+      "radius_high": 0.0701,
       "height_high": 0.203,
-      "min_z_low": 0.0
+      "contact": {
+        "x": 0.0074,
+        "z": 0.0,
+        "halfX": 0.0594,
+        "halfZ": 0.052,
+        "corner": 0.052
+      }
     },
     "books": {
       "radius_low": 0.1026,
-      "radius_high": 0.1026,
       "height_low": 0.084,
+      "min_z_low": 0.0,
+      "radius_high": 0.1026,
       "height_high": 0.0852,
-      "min_z_low": 0.0
+      "contact": {
+        "x": 0.008,
+        "z": 0.0,
+        "halfX": 0.076,
+        "halfZ": 0.059,
+        "corner": 0.004
+      }
+    },
+    "books_1": {
+      "radius_low": 0.0988,
+      "height_low": 0.052,
+      "min_z_low": 0.0,
+      "contact": {
+        "x": 0.011,
+        "z": 0.004,
+        "halfX": 0.069,
+        "halfZ": 0.054,
+        "corner": 0.004
+      }
+    },
+    "books_2": {
+      "radius_low": 0.1081,
+      "height_low": 0.118,
+      "min_z_low": 0.0,
+      "contact": {
+        "x": 0.0,
+        "z": 0.003,
+        "halfX": 0.084,
+        "halfZ": 0.071,
+        "corner": 0.004
+      }
     },
     "vase": {
       "radius_low": 0.0635,
-      "radius_high": 0.0635,
       "height_low": 0.222,
+      "min_z_low": 0.0,
+      "radius_high": 0.0635,
       "height_high": 0.2235,
-      "min_z_low": 0.0
+      "contact": {
+        "x": 0.0,
+        "z": 0.0,
+        "halfX": 0.0375,
+        "halfZ": 0.0375,
+        "corner": 0.0375
+      }
     }
   },
   "pivot": "each node's origin is the prop's base centre (runtime y = 0 is the table top)",
@@ -156,182 +260,202 @@
   "derivedFiles": [
     {
       "path": "public/assets/props/table-decor/table-decor.basecolor.ktx2",
-      "sha256": "6fde8a275a607f914c294ade598615cb947242e900da9a80df472c6a4b0dfb33",
-      "bytes": 514218
+      "sha256": "db28d524437f22f285856074af144f3ba390a08f7dba5666fc3180bb0f817b95",
+      "bytes": 542875
     },
     {
       "path": "public/assets/props/table-decor/table-decor.emissive.ktx2",
-      "sha256": "85bd2dcb48348522dcc81d13fb5caa5974a994df8ffd7caef972c1de6ce885d0",
-      "bytes": 10360
+      "sha256": "c4334aeb82df51fb4d0181b44f9d863b74205cfe2d02b6dadbb7dccc273fb2bc",
+      "bytes": 17094
     },
     {
       "path": "public/assets/props/table-decor/table-decor.glb",
-      "sha256": "14980709879d807f5fd70b096a05ac1391cffc62e826dc00f9a13ad6df50113e",
-      "bytes": 44612
+      "sha256": "c9b4e3472c8500fb8d9209e41a7136604a67e162ce0609abcfe4b916b09d92a7",
+      "bytes": 73360
     },
     {
       "path": "public/assets/props/table-decor/table-decor.manifest.json",
-      "sha256": "739f85f3ac69d6c187cf925f2171a606a529097eff3f675aa1d990e622613cf6",
-      "bytes": 1001
+      "sha256": "5b44cc686f8f534de44d6bf1f32e7db2d6b5841bba10998bc5be904f84d46006",
+      "bytes": 2337
     },
     {
       "path": "public/assets/props/table-decor/table-decor.normal.ktx2",
-      "sha256": "46e7778d40d35200187cf4cf155dc30adfca329dcb8a659aa038b98723f01998",
-      "bytes": 453682
+      "sha256": "cd265271316fbc5abdbf5afc7318e399807ce81fd55b48e0d8bd7c2f4e306519",
+      "bytes": 520808
     },
     {
       "path": "public/assets/props/table-decor/table-decor.orm.ktx2",
-      "sha256": "5c68400f2aeb80cceb9eb740f381019887f81e86df81278da700824dc6588f8f",
-      "bytes": 511116
+      "sha256": "8c7decaffaf2fc9a30ef4212159dcb2d5382330d66085b19f8c039ffa001ffe0",
+      "bytes": 517002
     }
   ],
   "sourceFiles": [
     {
       "path": "assets-source/props/table-decor/blend/table-decor.high.blend",
-      "sha256": "d8e18e89f35d9224a376c4a270b83c16979a105f33914f8bf60d6151e6f07c0a",
-      "bytes": 242276
+      "sha256": "723547bb15a65cafa4cdb63d9ff6e71ff393d1625e478d4026ae49784ab40e09",
+      "bytes": 260673
     },
     {
       "path": "assets-source/props/table-decor/blend/table-decor.low.blend",
-      "sha256": "b1a86dbb9edaa655bb1f64ed7005f5816689816643e112d616e5ea58164bd83a",
-      "bytes": 242453
+      "sha256": "a252fd8af7cb2731461d9b6c6dbaee16639e2e1aa2fe98d27e6f7ebc245b4f48",
+      "bytes": 261011
     },
     {
       "path": "assets-source/props/table-decor/staging/report.json",
-      "sha256": "1125f2fa464ce9878ceab0fab546f8ba43433db033cf65849125eef7318e633a",
-      "bytes": 6408
+      "sha256": "56d4e725b7951f64f8759db72d5f140eaedc910097b9eef3e51facea8e1b8a09",
+      "bytes": 9753
     },
     {
       "path": "assets-source/props/table-decor/staging/reimport.json",
-      "sha256": "05abec6e8f48e6f7c6940318bf4d3e58091a97405ad7760f8ed3d5f192ed061b",
-      "bytes": 972
+      "sha256": "0ebb8b5983d9b9d776b48c9519a7584a123206e95943894c728c66144d269e6a",
+      "bytes": 1283
     },
     {
       "path": "assets-source/props/table-decor/staging/table-decor.basecolor.png",
-      "sha256": "0006c42082155e5868952c2e986e3003939643d352f55b7a7afbb7113d0efc5c",
-      "bytes": 484518
+      "sha256": "4bb19d86e7b261eaf5f9273d2119fc02658e756dfa0f81d68febbc5f545ffe6c",
+      "bytes": 404348
     },
     {
       "path": "assets-source/props/table-decor/staging/table-decor.normal.png",
-      "sha256": "d51ef6ba483ac20f485b6c2b73501ddec307eaf4e4fb69e6e0331175442a9feb",
-      "bytes": 493793
+      "sha256": "2c81adefa130bddfc9eae1e437a21c971bf9ce5bf1305fa0065b4b04ec2f9dda",
+      "bytes": 495589
     },
     {
       "path": "assets-source/props/table-decor/staging/table-decor.orm.png",
-      "sha256": "a965e5a6a3254df22b461e9f35e5e965e7f97ec478b20e145a8edb79528a2664",
-      "bytes": 533006
+      "sha256": "73f8c3d2534b357d70697d6e8ca846106418a830a123af3f16cea6158788a7b1",
+      "bytes": 463352
     },
     {
       "path": "assets-source/props/table-decor/staging/table-decor.emissive.png",
-      "sha256": "bdf898c0d66da48f24c4ec2d14379a9dac0a77eb358a90f847d3a7feea46ad1d",
-      "bytes": 10651
+      "sha256": "98598dedb871da2aa3ba9725860348a2c5d8a53e66903fe1b55a2d7e4fb40e4f",
+      "bytes": 10966
     },
     {
       "path": "assets-source/props/table-decor/staging/renders/candle-high.png",
-      "sha256": "16f622d01206f2bf79ffea92d9bce0bf2c8edea5e0a0d52054ba58e58a01a3b6",
-      "bytes": 449724
+      "sha256": "7bca07c92b7a2e9362a27070d4ed39f506376a14ae9e8b289ccbb8fd2ffee9f2",
+      "bytes": 449912
     },
     {
       "path": "assets-source/props/table-decor/staging/renders/candle-low.png",
-      "sha256": "99ddc4187f4a1abe3cb14e0d3bc69dd16635d095650b638158bf521426396138",
-      "bytes": 446144
+      "sha256": "088f559bd6f7bb929b5f0fafe1891e50213fe95e7b354597f8e5962662c2d78e",
+      "bytes": 445529
     },
     {
       "path": "assets-source/props/table-decor/staging/renders/books-high.png",
-      "sha256": "2099e1b0a5299aa9d7d2be66d71edc50ae27e2c1eda84ee6659103d2279c4369",
-      "bytes": 522135
+      "sha256": "7fd5e9986b2f7fe78a344c4304a16877dbade71bfd826d469938f74e7b5899db",
+      "bytes": 520480
     },
     {
       "path": "assets-source/props/table-decor/staging/renders/books-low.png",
-      "sha256": "486effad37acfb9581a83153753e76b262665fdaae4852d724e9a65b0daea176",
-      "bytes": 504164
+      "sha256": "15c692a1a33559096ce8687762f5d50eeb8c56856dd525b6d9f988314a6eb5b0",
+      "bytes": 504102
     },
     {
       "path": "assets-source/props/table-decor/staging/renders/vase-high.png",
-      "sha256": "b85c3aeffb593a5bf429f127a26a3ff6037976b64091428109deb2cb96574841",
+      "sha256": "3b63168b4f4dc69b4acf6607a31b9faf7f5a506243cbc8afda7b744b1e0f57a4",
       "bytes": 445391
     },
     {
       "path": "assets-source/props/table-decor/staging/renders/vase-low.png",
-      "sha256": "a6bb9f153e18d52490e8ff1e3cf425a3c89c410ad13a5ca2c504cd831f78b08e",
-      "bytes": 449547
+      "sha256": "f5239a5d243a2c070d187d95af8e1c677a5c26d9eb7736f340d137ec200e9e1e",
+      "bytes": 447920
     },
     {
       "path": "assets-source/props/table-decor/staging/renders/set-low.png",
-      "sha256": "abe7b555de7133a92bf08e91417b8ada2896faddc6cfebeab3ed2064857e583c",
-      "bytes": 465505
+      "sha256": "22e3831235598b7c727d1c8a118e7ea0ffb541b7db6429716ce5cb16abf537c0",
+      "bytes": 465513
     },
     {
       "path": "assets-source/props/table-decor/staging/renders/set-high.png",
-      "sha256": "182725d230759182b863a990a1920cddc0caca903a499e772a49ba6a5be1b64b",
-      "bytes": 463074
+      "sha256": "b85f313c7ee4338f99667fe562eb6298f08de83f7b6125e5e835e59da9dc3bbf",
+      "bytes": 463155
+    },
+    {
+      "path": "assets-source/props/table-decor/staging/renders/books-variants-low.png",
+      "sha256": "ae4c7367eef20e5f4c32900f5114ca3f6cfb910b4413131cc0b826b0aff6b76f",
+      "bytes": 456611
     }
   ],
   "reviewEvidence": [
     {
       "path": "assets-source/props/table-decor/table-decor.review-sheet.jpg",
-      "sha256": "056a826d4045e4a4b525fc61c63098252c4df356a37e3af516e958202e4900a4",
-      "bytes": 812389
+      "sha256": "5e175a07a518d66e694b92afbdf500befa70bcfb71f96af04bf7a702600ac6e5",
+      "bytes": 953939
+    },
+    {
+      "path": "assets-source/props/table-decor/engine/9Q0E85RS-room0-hall-bench-e.jpg",
+      "sha256": "d3fa0290466a8af7982c03e563480f6c3d0c4d8abacfe3af9a6e468291ad28e6",
+      "bytes": 248519
     },
     {
       "path": "assets-source/props/table-decor/engine/SPIRE002-room0-hall-bench-e.jpg",
-      "sha256": "38411ef8c9f69353f99a89f7ec2d04a0304d302edbec2761d5543c1542067c58",
-      "bytes": 263938
+      "sha256": "417a087a7548a37e17cd130b6a197e45c102dae1c2dcf4e88213099e3f8778e1",
+      "bytes": 263971
     },
     {
       "path": "assets-source/props/table-decor/engine/SPIRE002-room0-hall-bench-w.jpg",
-      "sha256": "92ecf3db44e92cf11492b037bcc7fc972502ecadedb31bba9c80eb2ff565dcbb",
-      "bytes": 269708
+      "sha256": "4f1f356133c8d31eae994d6280e3053f457f8cdf831fb0b2e20060c5cd4f1c2a",
+      "bytes": 269990
     },
     {
       "path": "assets-source/props/table-decor/engine/SPIRE002-room3-gear-shaft-crate.jpg",
-      "sha256": "f5a4f66ca37fb8b99e1d5f96bbbadea9dbd320c1c837f1f1f9f1b8bf3b91e636",
-      "bytes": 312503
+      "sha256": "6a17c43d8b277df0fa81117619737035211ea776a49330faea5a4d232660d0fc",
+      "bytes": 307775
     },
     {
       "path": "assets-source/props/table-decor/engine/SPIRE004-room0-hall-bench-e.jpg",
-      "sha256": "51b4bdd1a1bc1cfa9c9f42afdb26b373c8563ceabe3ad95b735cab54a0c182a4",
-      "bytes": 238303
+      "sha256": "3dfb4b9e0a9b7e84b896a29584d464e7fa04f3580d63d295a1e22e77fa2aba9c",
+      "bytes": 238691
     },
     {
       "path": "assets-source/props/table-decor/engine/SPIRE004-room0-hall-bench-w.jpg",
-      "sha256": "aa5581a2d98701af1271bda8be41de9e50d7cacbe2e8983797176bc30afd588c",
-      "bytes": 265028
+      "sha256": "5ada5adde2acf900bcf52a4e9b1bf3ceb66da035cdae748fa32c012dc947b166",
+      "bytes": 265188
     },
     {
       "path": "assets-source/props/table-decor/engine/SPIRE004-room1-hall-bench-e.jpg",
-      "sha256": "246a2c7eac82312417acf4ac05bd9736ca2711b340b4934568561a5d43416304",
-      "bytes": 242505
+      "sha256": "ef4cfcc1220045bb287b51f4bacd9e37de5137de5dfa8fd47cb5c5152a2e2777",
+      "bytes": 242968
     },
     {
       "path": "assets-source/props/table-decor/engine/SPIRE004-room1-hall-bench-w.jpg",
-      "sha256": "f0413a11b679dfd35788a5837b56586337f4dee2188d8b1080c4b7b83a05cc56",
-      "bytes": 245454
+      "sha256": "c29964e8f4f79b44068deb153926654ca71adc290e45f645d4323c7023095e2f",
+      "bytes": 245502
     },
     {
       "path": "assets-source/props/table-decor/engine/SPIRE004-room5-hall-bench-e.jpg",
-      "sha256": "eb0fc8e85303ac0a35ed71dc4225695c9d4a4a6d8fc63539ee648c7dfe78738f",
-      "bytes": 237162
+      "sha256": "39be408b58d0f818a1378921b2bbb03aafc8b02cd4b339460f2860837fb718cb",
+      "bytes": 236930
     },
     {
       "path": "assets-source/props/table-decor/engine/SPIRE004-room5-hall-bench-w.jpg",
-      "sha256": "326649eb20d66e607ce021a228cbb66db97561fb640b58ff076cecbbbdf0cdc0",
-      "bytes": 251606
+      "sha256": "4439d4599ce373a7a58a7ae0ec09bdcc1845f7dd71fe28b16857b5f680471b04",
+      "bytes": 252083
+    },
+    {
+      "path": "assets-source/props/table-decor/engine/closeup-books-v1.jpg",
+      "sha256": "c083fc379100f6081e098d8cdaf906c0a7c197a3fbdc77a37b97b9aad9ede176",
+      "bytes": 274819
+    },
+    {
+      "path": "assets-source/props/table-decor/engine/closeup-books-v2.jpg",
+      "sha256": "e7110ab92bbb8d0c82097e50c2021378680e3a2f14a1d9f2164c4a802b63bea5",
+      "bytes": 260396
     },
     {
       "path": "assets-source/props/table-decor/engine/closeup-books.jpg",
-      "sha256": "494c502538099e43888ba3b0bb1dda59a9fdbadef31e1d0adf5cf062594ada89",
-      "bytes": 261268
+      "sha256": "11bdfefb537b95401298e37a8d6c00f7e33c7e419a8f6278ea9103a12804a669",
+      "bytes": 261640
     },
     {
       "path": "assets-source/props/table-decor/engine/closeup-candle.jpg",
-      "sha256": "940cbff12e1a939d7488d2b68816e2bfa1f2b208ccbbeedf43e524ab03b7230b",
-      "bytes": 280304
+      "sha256": "7d717787645ac3d73627d19c0d7a44309d9ca9d68d382c4504b213669aec8008",
+      "bytes": 280681
     },
     {
       "path": "assets-source/props/table-decor/engine/closeup-vase.jpg",
-      "sha256": "3f1ad7686e352545f27077c01e4864af22bb627a2ca5d12f1fe07f2cae22ee59",
-      "bytes": 291991
+      "sha256": "ea594bc344bde2a50b781c4b5d5bed82ce7fd67538707fcdb4c54caab0fe3d2f",
+      "bytes": 292661
     }
   ],
   "references": [
@@ -347,7 +471,7 @@
   "reimport": {
     "per_kind": {
       "candle": {
-        "tris": 272,
+        "tris": 419,
         "attributes": [
           "NORMAL",
           "POSITION",
@@ -356,7 +480,25 @@
         "identity": true
       },
       "books": {
-        "tris": 150,
+        "tris": 276,
+        "attributes": [
+          "NORMAL",
+          "POSITION",
+          "TEXCOORD_0"
+        ],
+        "identity": true
+      },
+      "books_1": {
+        "tris": 184,
+        "attributes": [
+          "NORMAL",
+          "POSITION",
+          "TEXCOORD_0"
+        ],
+        "identity": true
+      },
+      "books_2": {
+        "tris": 184,
         "attributes": [
           "NORMAL",
           "POSITION",
@@ -365,7 +507,7 @@
         "identity": true
       },
       "vase": {
-        "tris": 576,
+        "tris": 600,
         "attributes": [
           "NORMAL",
           "POSITION",
@@ -378,7 +520,7 @@
       "table-decor"
     ],
     "checks": {
-      "three_prop_nodes": true,
+      "every_prop_node": true,
       "tris_le_600_each": true,
       "tris_match_manifest": true,
       "one_material": true,
@@ -397,7 +539,7 @@
       "presence, no unlisted files",
       "hashes",
       "image-free glb, one single-sided material",
-      "three transform-free prop nodes, each <= 600 tris and matching the manifest",
+      "transform-free prop nodes (candle, three book arrangements, vase), each <= 600 tris and matching the manifest",
       "each prop stands on y 0 inside its table-decor.ts footprint",
       "ktx2 maps square, same size <= 1024, mipped, sRGB colour and linear data",
       "clean Blender reimport"

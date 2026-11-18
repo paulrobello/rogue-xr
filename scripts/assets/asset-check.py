@@ -698,6 +698,8 @@ DECOR_GENERATOR_DEPS = ["scripts/assets/lightmap_helpers.py"]
 DECOR_LIMITS = {"tris_per_kind": 600, "materials": 1, "texture_px": 1024}
 # src/floor/table-decor.ts DECOR_RADIUS: the footprint placement reserves for each prop.
 DECOR_RADIUS = {"candle": 0.072, "books": 0.11, "vase": 0.07}
+# src/floor/table-decor.ts DECOR_VARIANTS: meshes per kind.
+DECOR_VARIANTS = {"candle": 1, "books": 3, "vase": 1}
 DECOR_MAPS = {"basecolor": KHR_DF_TRANSFER_SRGB, "normal": KHR_DF_TRANSFER_LINEAR,
               "orm": KHR_DF_TRANSFER_LINEAR, "emissive": KHR_DF_TRANSFER_SRGB}
 
@@ -729,35 +731,48 @@ def check_decor(errors: list[str], warnings: list[str]) -> dict:
         err("materials must be single-sided")
     meshes = g.get("meshes", [])
     per_kind: dict[str, int] = {}
+    listed = set()
     for kind, radius in DECOR_RADIUS.items():
         spec = m.get("kinds", {}).get(kind)
         if not spec:
             err(f"manifest kinds.{kind} missing")
             continue
-        node = next((n for n in g.get("nodes", []) if n.get("name") == spec.get("node")), None)
-        if node is None or "mesh" not in node:
-            err(f"node {spec.get('node')} missing from the GLB")
-            continue
-        if any(k in node for k in ("translation", "rotation", "scale", "matrix")):
-            err(f"node {spec['node']} must carry no transform (its origin is the prop's base centre)")
-        tris = 0
-        for prim in meshes[node["mesh"]]["primitives"]:
-            acc = g["accessors"][prim["indices"]] if "indices" in prim else g["accessors"][prim["attributes"]["POSITION"]]
-            tris += acc["count"] // 3
-            pos = g["accessors"][prim["attributes"]["POSITION"]]
-            lo, hi = pos.get("min", [0, 0, 0]), pos.get("max", [0, 0, 0])
-            if abs(lo[1]) > 1e-4:
-                err(f"{kind} base sits at y {lo[1]:.4f}, not on the table top (y 0)")
-            reach = max(abs(lo[0]), abs(hi[0]), abs(lo[2]), abs(hi[2]))
-            if reach > radius + 1e-3:
-                err(f"{kind} reaches {reach:.4f} m, beyond its {radius} m placement footprint")
-        per_kind[kind] = tris
-        if tris > DECOR_LIMITS["tris_per_kind"]:
-            err(f"{kind} has {tris} triangles, over {DECOR_LIMITS['tris_per_kind']}")
-        if spec.get("tris") != tris:
-            err(f"manifest {kind} tris {spec.get('tris')} != measured {tris}")
         if spec.get("reservedRadius") != radius:
             err(f"manifest {kind} reservedRadius {spec.get('reservedRadius')} != table-decor.ts {radius}")
+        variants = spec.get("variants", [])
+        if len(variants) != DECOR_VARIANTS[kind]:
+            err(f"manifest {kind} has {len(variants)} variants, table-decor.ts DECOR_VARIANTS wants {DECOR_VARIANTS[kind]}")
+        for v in variants:
+            name = v.get("node")
+            listed.add(name)
+            node = next((n for n in g.get("nodes", []) if n.get("name") == name), None)
+            if node is None or "mesh" not in node:
+                err(f"node {name} missing from the GLB")
+                continue
+            if any(k in node for k in ("translation", "rotation", "scale", "matrix")):
+                err(f"node {name} must carry no transform (its origin is the prop's base centre)")
+            tris = 0
+            for prim in meshes[node["mesh"]]["primitives"]:
+                acc = g["accessors"][prim["indices"]] if "indices" in prim else g["accessors"][prim["attributes"]["POSITION"]]
+                tris += acc["count"] // 3
+                pos = g["accessors"][prim["attributes"]["POSITION"]]
+                lo, hi = pos.get("min", [0, 0, 0]), pos.get("max", [0, 0, 0])
+                if abs(lo[1]) > 1e-4:
+                    err(f"{name} base sits at y {lo[1]:.4f}, not on the table top (y 0)")
+                reach = max(abs(lo[0]), abs(hi[0]), abs(lo[2]), abs(hi[2]))
+                if reach > radius + 1e-3:
+                    err(f"{name} reaches {reach:.4f} m, beyond its {radius} m placement footprint")
+            per_kind[name] = tris
+            if tris > DECOR_LIMITS["tris_per_kind"]:
+                err(f"{name} has {tris} triangles, over {DECOR_LIMITS['tris_per_kind']}")
+            if v.get("tris") != tris:
+                err(f"manifest {name} tris {v.get('tris')} != measured {tris}")
+            contact = v.get("contact", {})
+            if not all(isinstance(contact.get(f), (int, float)) for f in ("x", "z", "halfX", "halfZ", "corner")):
+                err(f"manifest {name} contact footprint missing")
+    unlisted = sorted(n.get("name") for n in g.get("nodes", []) if "mesh" in n and n.get("name") not in listed)
+    if unlisted:
+        err(f"GLB mesh nodes not in the manifest: {unlisted}")
     summary["perKind"] = per_kind
     sizes = set()
     summary["maps"] = {}
@@ -838,10 +853,10 @@ def assemble_decor() -> None:
         "toolVersions": {"ktx": report["ktx2"]["tool"], "gltfExporter": f"Blender {report['blender']} bundled io_scene_gltf2"},
         "blendFiles": {"store": "assets-source/props/table-decor/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)"},
         "budgets": {"trianglesPerKind": {k: v["low"] for k, v in report["triangles"].items()},
-                    "highTrianglesPerKind": {k: v["high"] for k, v in report["triangles"].items()},
+                    "highTrianglesPerKind": {k: v["high"] for k, v in report["triangles"].items() if v["high"] is not None},
                     "materials": len(reimport["materials"]), "texturePx": manifest["texturePx"], "textures": 4,
-                    "drawCallsPerDressedRoom": 1, "glbBytes": reimport["glb_bytes"]},
-        "lods": "LOD0 only: every prop is under 600 triangles and a dressed room merges its props into one mesh (one draw call)",
+                    "drawCallsPerDressedRoom": 2, "glbBytes": reimport["glb_bytes"]},
+        "lods": "LOD0 only: every prop is under 600 triangles; a dressed room merges its props into one mesh (one draw call) and its light pools, flame halos and contact shadows into one decal child (one more, src/world/table-decor.ts)",
         "bake": {**report["bake"], "ktx2": report["ktx2"]["encodes"]},
         "texelDensityPxPerM": report["texel_density_px_per_m"],
         "geometry": report["geometry"],
@@ -866,17 +881,26 @@ def assemble_decor() -> None:
         ],
     }
     prov_path = src / "provenance.json"
+    # The independent reviewer's score is theirs: a rebuild carries it over verbatim, never rewrites it.
+    previous_text = prov_path.read_text() if prov_path.exists() else None
+    if previous_text:
+        previous = json.loads(previous_text)
+        if "independentScore" in previous:
+            prov["independentScore"] = previous["independentScore"]
     prov_path.write_text(json.dumps(prov, indent=2) + "\n")
     errors: list[str] = []
     warnings: list[str] = []
     check_decor(errors, warnings)
     remaining = [e for e in errors if "validation.pass" not in e]
     if remaining:
-        prov_path.unlink()
+        if previous_text:
+            prov_path.write_text(previous_text)
+        else:
+            prov_path.unlink()
         raise SystemExit("assemble refused, gate errors:\n" + "\n".join(remaining))
     prov["validation"] = {"pass": True, "date": datetime.date.today().isoformat(),
                           "checks": ["presence, no unlisted files", "hashes", "image-free glb, one single-sided material",
-                                     "three transform-free prop nodes, each <= 600 tris and matching the manifest",
+                                     "transform-free prop nodes (candle, three book arrangements, vase), each <= 600 tris and matching the manifest",
                                      "each prop stands on y 0 inside its table-decor.ts footprint",
                                      "ktx2 maps square, same size <= 1024, mipped, sRGB colour and linear data",
                                      "clean Blender reimport"]}
