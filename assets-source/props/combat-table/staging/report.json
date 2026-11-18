@@ -1,8 +1,8 @@
 {
   "piece": "combat-table",
-  "blender": "5.2.2 LTS",
+  "blender": "5.3.0",
   "generator": "scripts/assets/build-combat-table.py",
-  "generator_sha256": "2dc281f221ed3bffd6540b1ff989424301446a611596c7cffe169d1fdbe7deb1",
+  "generator_sha256": "5eb9fa362695b08c3a1d2db764d36a75059ed55ec9750746f41e325da6aee02e",
   "helper_sha256": {
     "lightmap_helpers.py": "c74c968a3d3ed95bae831262af3c5ab1bacedfa0e2e131b95d5d7bf4e59d66ad"
   },
@@ -29,68 +29,77 @@
     }
   },
   "triangles": {
-    "low": 4184,
-    "high": 23196
+    "low": 6068,
+    "high": 34206
   },
-  "ao_atlas_size": 1024,
+  "ao_atlas_size": 2048,
+  "felt_maps": {
+    "size": 512,
+    "seed": 1715,
+    "tile_m": 0.25,
+    "files": [
+      "combat-table.felt.basecolor.png",
+      "combat-table.felt.normal.png"
+    ]
+  },
   "texel_density_px_per_m": {
     "uv0_tile": {
-      "walnut": 2045.8,
-      "brass-aged": 2028.2,
-      "brass-polished": 2017.1,
-      "felt": 2048.0
+      "walnut": 2048.0,
+      "brass-aged": 2025.0,
+      "brass-polished": 2031.5,
+      "felt": 4096.0
     },
     "uv1_ao": {
-      "walnut": 281.7,
-      "brass-aged": 279.9,
-      "brass-polished": 277.5,
-      "felt": 281.8
+      "walnut": 595.6,
+      "brass-aged": 589.0,
+      "brass-polished": 591.0,
+      "felt": 595.5
     }
   },
   "authoringAgent": "Claude Code subagent (claude-opus-5-5), dispatched by the rogue-xr primary session",
   "bake": {
-    "device": "GPU:METAL (Apple M4 Max (GPU - 40 cores))",
+    "device": "GPU:METAL (Apple M4 (GPU - 10 cores))",
     "samples": 64,
     "margin_px": 8,
-    "size": 1024,
+    "size": 2048,
     "ao_distance_m": 0.12,
     "seconds_per_node": {
-      "table-body": 6.26,
-      "leaf-left": 0.53,
-      "leaf-right": 0.48
+      "table-body": 3.02,
+      "leaf-left": 1.13,
+      "leaf-right": 1.11
     },
-    "coverage": 0.2784,
-    "ao_mean": 0.8127,
+    "coverage": 0.3745,
+    "ao_mean": 0.8043,
     "ao_p05": 0.0
   },
   "reimport": {
     "errors": [],
-    "triangles": 4184,
+    "triangles": 6068,
     "primitives": {
       "table-body": {
-        "triangles": 3568,
+        "triangles": 5388,
         "primitives": 4
       },
       "leaf-left": {
-        "triangles": 308,
-        "primitives": 4
+        "triangles": 340,
+        "primitives": 3
       },
       "leaf-right": {
-        "triangles": 308,
-        "primitives": 4
+        "triangles": 340,
+        "primitives": 3
       }
     },
     "materials": [
       "walnut",
-      "brass-aged",
       "brass-polished",
-      "felt"
+      "felt",
+      "brass-aged"
     ],
     "uv0_density_px_per_m": {
-      "walnut": 2045.8,
-      "brass-aged": 2028.2,
-      "brass-polished": 2017.1,
-      "felt": 2048.0
+      "walnut": 2048.0,
+      "brass-aged": 2025.0,
+      "brass-polished": 2031.5,
+      "felt": 4096.0
     },
     "nodes": [
       "socket-draw",
@@ -111,10 +120,10 @@
         ],
         "unfolded_top_flush": true,
         "unfolded_inner_edge_ok": true,
-        "unfolded_reach_m": 0.7477,
+        "unfolded_reach_m": 0.7485,
         "folded_intrusions": 0,
-        "folded_lowest_y_m": 0.3673,
-        "folded_clearance_to_gear_ring_m": 0.128
+        "folded_lowest_y_m": 0.3665,
+        "folded_clearance_to_gear_ring_m": 0.048
       },
       "leaf-right": {
         "hinge": [
@@ -124,16 +133,16 @@
         ],
         "unfolded_top_flush": true,
         "unfolded_inner_edge_ok": true,
-        "unfolded_reach_m": 0.7477,
+        "unfolded_reach_m": 0.7485,
         "folded_intrusions": 0,
-        "folded_lowest_y_m": 0.3673,
-        "folded_clearance_to_gear_ring_m": 0.128
+        "folded_lowest_y_m": 0.3665,
+        "folded_clearance_to_gear_ring_m": 0.048
       }
     },
     "sockets_unfolded_world": {
       "socket-dice-tray": [
         0.0,
-        0.756,
+        0.724,
         0.18
       ],
       "socket-draw": [
@@ -154,13 +163,13 @@
     },
     "bounds_unfolded": {
       "min": [
-        -0.7477,
+        -0.7485,
         0.0,
         -0.4
       ],
       "max": [
-        0.7477,
-        0.795,
+        0.7485,
+        0.768,
         0.4
       ]
     },
@@ -175,21 +184,23 @@
       "table-body"
     ]
   },
-  "render_seconds": 2.8,
+  "render_seconds": 2.3,
   "files": {
-    "assets-source/props/combat-table/staging/combat-table.high.blend": "320c8255541a8295ea85f2f7b975e57bc560c14dd0f94a25bae4cfc9e58eba64",
-    "assets-source/props/combat-table/staging/combat-table.low.blend": "d51369ab0a0f1104e7e0a64ba4a7d44e3340eabdd8e410234adb59c3245e5883",
-    "assets-source/props/combat-table/staging/render-high-unfolded.png": "4e11f6e1954f3f77c8899b68d03efc359bae7ff81e14e0124aad96187329a4f5",
-    "assets-source/props/combat-table/staging/render-low-folded.png": "48d20f4bc362572f283d52a3180bc1195ce9f3eb29fec3cdeaaf7bc35841adb8",
-    "assets-source/props/combat-table/staging/render-low-grazing.png": "bb45a80488093e3bd4f91d29ececaa028670bb17f9141578bd7705bdd8c14607",
-    "assets-source/props/combat-table/staging/render-low-unfolded-cmp.png": "c1efc240d498e22185e704953bcba85dd2b1de5572704c472e8ed50c746beff4",
-    "assets-source/props/combat-table/staging/render-low-unfolded.png": "f28215c6b74b76edd836e061cfd761f9836de0931c58efdfaaddb6ee5ffe31f3",
-    "assets-source/props/combat-table/staging/render-player-view.png": "e6e8dbf98eaf6599147cb0648a4b3ba73ad10145d047dc3a5eb9ad1887eb5848",
-    "assets-source/props/combat-table/staging/render-scale.png": "95ad6106612c7ff47f7284c890f874ceccc567f2a8e6d50f71c688951734a32e",
-    "public/assets/props/combat-table/combat-table.ao.ktx2": "7bf9fc37a9493e124bb24d758395f65e8e4f71b2a8ea77df3b9db2719899e1b2",
-    "public/assets/props/combat-table/combat-table.ao.png": "846582be5d7016424855c7daf40825acb388bc4a496c4d7a9ba1c422a2b238b5",
-    "public/assets/props/combat-table/combat-table.glb": "af23a6d82cf4b63047e8339bc37bf345b68b43d7e6ceba611ad6fd69d5aa2904",
-    "public/assets/props/combat-table/combat-table.manifest.json": "d6962cece9753a069e5a6126a7a8c6553e6538cc0defdc2d09ec9441551baed6"
+    "assets-source/props/combat-table/staging/combat-table.high.blend": "6574d376b1dd5204c040714e13b753f843ae60901e8a03a205d875d181ed3ca8",
+    "assets-source/props/combat-table/staging/combat-table.low.blend": "462e09ccc4cba40c7163e32834f7751679a4ba47afb8674b71b6060bea3e9175",
+    "assets-source/props/combat-table/staging/render-high-unfolded.png": "0d84e9a88a396ce4285d22e382ac5c7f1fb469acbfd52ebc7a1a0dea86838daf",
+    "assets-source/props/combat-table/staging/render-low-folded.png": "4e8a1af959c2d62f71d0df4b26302ef2a9c711ba0d65e5b59fef40dc54dc35b4",
+    "assets-source/props/combat-table/staging/render-low-grazing.png": "75b1ec0fcb5a07b122a25f0540ac4c82460f111c798cbd5850db7f7285e8c06d",
+    "assets-source/props/combat-table/staging/render-low-unfolded-cmp.png": "23044cd81e09784e6c53df13eb7c06ff0dbe125703c4990c862492a2d52536f3",
+    "assets-source/props/combat-table/staging/render-low-unfolded.png": "a29b801dae302d6fda38ee39bd72f5772afdfec8ef6397c97dba0fb8fa9e7370",
+    "assets-source/props/combat-table/staging/render-player-view.png": "de251f09c7d0890034fc53676eaa614110d767d140e4e95c11e923d1de5b97c6",
+    "assets-source/props/combat-table/staging/render-scale.png": "5a5f552b9c9bdf19fbde7220d80b9a5ca40d4c77a6418f812c91e8422fe3a04e",
+    "public/assets/props/combat-table/combat-table.ao.ktx2": "2dcd247b495471ae08ff8a1c7f716c91ca1175c7454329566dba2a4748ec4288",
+    "public/assets/props/combat-table/combat-table.ao.png": "29440bb64bebce5d9a11345de426c793906164bf7f1f5e5878f7a1d2dcd1819b",
+    "public/assets/props/combat-table/combat-table.felt.basecolor.png": "c7a405437f18ed0010e4d4ea4483e0677bd9c10f558cb644df145c01161cb287",
+    "public/assets/props/combat-table/combat-table.felt.normal.png": "3943d2f58af7839b19e9e9f66e6b69598aaf209e7f6b227f24ae9cbfc4f2b25c",
+    "public/assets/props/combat-table/combat-table.glb": "283b4f00fd99811886463fde9f6eb72bcdcab3c1883bcedfcf2f83b1900fa7e4",
+    "public/assets/props/combat-table/combat-table.manifest.json": "9b3ee29dbbef22311d6b4d143f1fea79525227ee4bba7dd62c78b627de84fde7"
   },
-  "total_seconds": 19.2
+  "total_seconds": 21.8
 }

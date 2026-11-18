@@ -86,7 +86,7 @@
       "parent": "combat-table",
       "translation": [
         0,
-        0.756,
+        0.724,
         0.18
       ],
       "rotation": [
@@ -216,7 +216,7 @@
   "socketsUnfoldedWorld": {
     "socket-dice-tray": [
       0.0,
-      0.756,
+      0.724,
       0.18
     ],
     "socket-draw": [
@@ -236,7 +236,7 @@
     ]
   },
   "sockets": {
-    "socket-dice-tray": "felt floor centre of the dice tray; +Y up",
+    "socket-dice-tray": "felt floor centre of the dice tray, recessed below the top; +Y up",
     "socket-draw": "felt pad centre of the draw slot on leaf-left; card long axis along Z",
     "socket-discard": "felt pad centre of the discard slot on leaf-right; card long axis along Z",
     "socket-sigil-plate": "floating plate centre above the gear medallion; the plate faces +Z (the player)"
@@ -253,16 +253,18 @@
     "trayInner": {
       "centre": [
         0.0,
-        0.756,
+        0.724,
         0.18
       ],
       "size": [
         0.31,
         0.19
       ],
-      "floorHeight": 0.756,
-      "wallTopHeight": 0.795
+      "floorHeight": 0.724,
+      "wallTopHeight": 0.76
     },
+    "trayFrameWidth": 0.03,
+    "trayRecessDepth": 0.026,
     "medallion": {
       "centre": [
         0.0,
@@ -274,18 +276,18 @@
   },
   "boundsUnfolded": {
     "min": [
-      -0.7477,
+      -0.7485,
       0.0,
       -0.4
     ],
     "max": [
-      0.7477,
-      0.795,
+      0.7485,
+      0.768,
       0.4
     ]
   },
   "budgets": {
-    "triangles": 4184,
+    "triangles": 6068,
     "triangleLimit": 20000,
     "materials": 4,
     "materialLimit": 4
@@ -296,26 +298,50 @@
       "setManifest": "/assets/materials/materials.json",
       "uv0": "tile units (metres / tileMeters): bind the set at repeat (1, 1)",
       "tileMeters": 0.5,
-      "normalScale": 1.0
+      "normalScale": 0.5,
+      "tint": "#9AA088",
+      "envScale": 0.6,
+      "contact": 0.9
     },
     "brass-aged": {
       "set": "brass-aged",
       "setManifest": "/assets/materials/materials.json",
       "uv0": "tile units (metres / tileMeters): bind the set at repeat (1, 1)",
       "tileMeters": 0.5,
-      "normalScale": 0.35
+      "normalScale": 0.15,
+      "tint": "#FFE060",
+      "roughnessScale": 0.6,
+      "envScale": 3.4,
+      "contact": 0.7
     },
     "brass-polished": {
       "set": "brass-polished",
       "setManifest": "/assets/materials/materials.json",
       "uv0": "tile units (metres / tileMeters): bind the set at repeat (1, 1)",
       "tileMeters": 0.5,
-      "normalScale": 0.35
+      "normalScale": 0.06,
+      "tint": "#FFE060",
+      "roughnessScale": 0.4,
+      "envScale": 4.5,
+      "contact": 0.7
     },
     "felt": {
       "set": null,
-      "factorOnly": true,
-      "note": "flat ruby velvet; keep the GLB material (factors only, no maps)"
+      "factorOnly": false,
+      "maps": {
+        "basecolor": "combat-table.felt.basecolor.png",
+        "normal": "combat-table.felt.normal.png"
+      },
+      "uv0": "tile units (metres / tileMeters): bind the maps at repeat (1, 1)",
+      "tileMeters": 0.25,
+      "normalScale": 0.7,
+      "sheen": {
+        "color": "#7A1A28",
+        "roughness": 0.5
+      },
+      "note": "ruby velvet: generated nap maps beside the GLB, bound on a sheen material; the GLB's factor-only felt is the fallback",
+      "tint": "#FF3858",
+      "contact": 1.0
     }
   },
   "ao": {
@@ -325,16 +351,17 @@
     "channel": 1,
     "flipY": false,
     "colorSpace": "linear",
-    "binding": "replaces aoMap on every slot (felt included), read through UV1; the shared ORM still drives roughness and metalness on UV0"
+    "binding": "replaces aoMap on every slot (felt included), read through UV1; the shared ORM still drives roughness and metalness on UV0. Each slot's `contact` also multiplies it into base colour, because three applies aoMap to indirect light only"
   },
   "binder": [
     "Clone each shared material (and its textures) before changing it: loadPbrSet shares textures across consumers that set repeat.",
     "Bind a slot by its exact GLB material name; never by substring.",
     "The GLB has no TANGENT: three derives the tangent frame from UV0 derivatives, matching the shared sets' flipY = true upload.",
-    "If the sets or the AO map fail to load, the GLB's factor-only materials stay bound (fallback)."
+    "If the sets or the AO map fail to load, the GLB's factor-only materials stay bound (fallback).",
+    "Slot look: `tint` multiplies the bound colour (sRGB hex), `roughnessScale` multiplies the ORM roughness, `envScale` scales the environment radiance whatever envMapIntensity the room sets, `contact` mixes the UV1 AO into base colour."
   ],
   "drawCalls": {
-    "perEye": 12,
-    "stereo": 24
+    "perEye": 10,
+    "stereo": 20
   }
 }

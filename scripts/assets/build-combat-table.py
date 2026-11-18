@@ -1,13 +1,16 @@
-"""P4-T5 combat table: a brass and walnut drop-leaf table with two hinged leaves, a dice tray, draw and
-discard slots and a sigil plate socket. Built procedurally and exported as an image-free GLB whose
-materials are named after the approved P4-T3 tileable sets (`public/assets/materials/`). UV0 is in
-tile units (metres / tileMeters, so the shared sets bind at repeat 1); UV1 is a unique atlas holding
-the table's own baked ambient occlusion (`combat-table.ao.png` / `.ktx2`).
+"""P4-T5 combat table (form after assets-source/concepts/table-sheet-1.png): a brass and walnut
+drop-leaf table on a brass-banded drum, with two hinged leaves, a felt dice tray recessed into the top
+inside a bevelled brass frame, brass strap inlays and scroll flourishes, draw and discard slots and a
+sigil plate socket. Built procedurally and exported as an image-free GLB whose materials are named
+after the approved P4-T3 tileable sets (`public/assets/materials/`). UV0 is in tile units (metres /
+tileMeters, so the shared sets bind at repeat 1); UV1 is a unique atlas holding the table's own baked
+ambient occlusion (`combat-table.ao.png` / `.ktx2`). The felt's nap maps (`combat-table.felt.*.png`)
+are generated beside the GLB; the manifest's materialSlots carry the runtime look.
 
 Blender run (build, AO bake, export, reimport gate, manifest, renders, .blend sources):
     "$BLENDER" -b --factory-startup --python-exit-code 1 -P scripts/assets/build-combat-table.py -- \
         [--out assets-source/props/combat-table/staging] [--runtime public/assets/props/combat-table] \
-        [--size 1024] [--samples 64] [--device GPU|CPU] [--skip-bake] [--skip-renders]
+        [--size 2048] [--samples 64] [--device GPU|CPU] [--skip-bake] [--skip-renders]
 Review sheet (system Python with Pillow, after the Blender run):
     python3 -I scripts/assets/build-combat-table.py --sheet [--out ...]
 
@@ -38,26 +41,61 @@ KTX = Path.home() / ".local/opt/ktx-software-4.4.2/bin/ktx"
 # Dimensions in metres, Blender frame.
 TOP = 0.75  # authored playing-surface height; the runtime scales the root to the seated waist height
 SLAB = 0.035  # top thickness
-# Unfolded top: an ellipse 1.50 m wide by 0.80 m deep, the footprint src/combat/placement.ts reserves
-# (TABLE_HALF_WIDTH 0.75, TABLE_HALF_DEPTH 0.4). The leaves hinge on the 0.80 m centre band's edges.
+# Unfolded top: a superellipse 1.50 m wide by 0.80 m deep inside the footprint src/combat/placement.ts
+# reserves (TABLE_HALF_WIDTH 0.75, TABLE_HALF_DEPTH 0.4). The exponent squares the leaves off so a
+# folded leaf hangs as a near-rectangular drum wall (table-sheet-1 panel 1) instead of a D skirt.
 R = (0.75, 0.40)
+SUPER_N = 3.0
 R_IN = (R[0] - 0.02, R[1] - 0.02)  # inner edge of the polished rim lip
 HINGE_X = 0.40
 LIP = 0.004  # polished brass lip proud of the top along the rim
 HINGE_Z = TOP - SLAB  # hinge axis runs along Blender Y at the slab's bottom outer edge
-TRAY = {"cy": -0.18, "w": 0.34, "d": 0.22, "wall": 0.015, "h": 0.045, "felt": 0.006}
-SLOT = {"cx": 0.56, "cy": -0.13, "w": 0.085, "d": 0.11, "border": 0.008, "h": 0.003, "felt": 0.0015}
+# Dice tray recessed into the top (table-sheet-1 panel 3). The felt floor keeps the 0.31 x 0.19 m
+# size src/dice/world.ts AUTHORED_TRAY_HALF matches; a bevelled brass frame rings the opening.
+TRAY = {"cy": -0.18, "inner_w": 0.31, "inner_d": 0.19, "frame": 0.03, "depth": 0.026}
+# Frame profile from the outer edge inward: (inset, height above TOP, material of the step ending here).
+TRAY_PROFILE = [(0.0, 0.0, None), (0.0, 0.003, 2), (0.010, 0.010, 2), (0.018, 0.010, 2), (0.030, 0.0, 2), (0.030, -0.026, 3)]
+SLOT = {"cx": 0.56, "cy": -0.13, "inner_w": 0.069, "inner_d": 0.094, "frame": 0.011, "felt": 0.0015}
+SLOT_PROFILE = [(0.0, 0.0, None), (0.0, 0.0015, 2), (0.004, 0.0035, 2), (0.007, 0.0035, 2), (0.011, 0.0015, 2)]
 MEDALLION = {"cy": 0.15, "root": 0.09, "tip": 0.105, "teeth": 20, "h": 0.006}
 SIGIL_SOCKET = (0.0, 0.15, TOP + 0.30)  # floats above the gear medallion, between centre and far edge
 FOLD_DEG = 90.0
+# Drum under the top (folded, the table reads as table-sheet-1 panel 1: a brass-banded drum).
+DRUM_R = 0.32
+GEAR_ROOT, GEAR_TIP = DRUM_R + 0.015, DRUM_R + 0.032
+# Brass bands round the drum (Blender z). The leaf straps sit where these bands land when folded.
+DRUM_BANDS = ((0.455, 0.485), (0.665, 0.69))
+# Brass strap inlays (proud of the top), x ranges on each side. Body straps flank the hinge; leaf
+# straps run parallel to it, so a hanging leaf shows them as horizontal bands level with the drum's.
+STRAP_H = 0.0015
+BODY_STRAP_X = (0.375, 0.395)
+LEAF_STRAPS_X = ((0.405, 0.435), (HINGE_X + (HINGE_Z - DRUM_BANDS[0][1]), HINGE_X + (HINGE_Z - DRUM_BANDS[0][0])))
+CROSS_STRAP_Y = (-0.012, 0.008)  # between the tray frame and the gear medallion
+FLOURISH = {"w": 0.007, "h": 0.0012}
 
-# Material slots. The tileable sets are the approved P4-T3 materials; felt is a flat ruby velvet.
+# Material slots. The tileable sets are the approved P4-T3 materials; felt is a ruby velvet with a
+# generated nap (basecolor + normal beside the GLB, bound at runtime with a sheen).
 MATS = ["walnut", "brass-aged", "brass-polished", "felt"]
 W, A, P, F = range(4)
-FELT_SRGB = (0x5A, 0x10, 0x18)  # darker than the art-bible ruby #93212B so the tray reads as velvet
-# Per-slot normal strength on the table. The brass sets' relief reads as crumpled foil on the
-# table's narrow rims and flares at full strength; the shared sets themselves are unchanged.
-NORMAL_SCALE = {"walnut": 1.0, "brass-aged": 0.35, "brass-polished": 0.35, "felt": 1.0}
+FELT_SRGB = (0x86, 0x1C, 0x27)  # nap map mean, toward the art-bible ruby #93212B
+FELT_TILE_M = 0.25
+FELT_PX = 512
+FELT_SHEEN = {"color": "#7A1A28", "roughness": 0.5}
+# Per-slot normal strength on the table. The brass sets' turned-ring relief draws a concentric swirl
+# on the table's straight rims and frames, so the table brass runs almost smooth; the walnut relief
+# turns bark-like at grazing light at full strength. The shared sets themselves are unchanged.
+NORMAL_SCALE = {"walnut": 0.5, "brass-aged": 0.15, "brass-polished": 0.06, "felt": 0.7}
+# Runtime look (bindTableMaterials), tuned in the fight under the hero probe and AgX: walnut tint and
+# lower environment gain toward oiled walnut #583C26 (the leaves greyed out under env specular), brass
+# tint, ORM roughness scale and environment gain for saturated highlights, a felt tint toward ruby
+# #93212B, and how much of the baked AO multiplies base colour (three applies aoMap to indirect light
+# only, so contact needs this).
+RUNTIME_LOOK = {
+    "walnut": {"tint": "#9AA088", "envScale": 0.6, "contact": 0.9},
+    "brass-aged": {"tint": "#FFE060", "roughnessScale": 0.6, "envScale": 3.4, "contact": 0.7},
+    "brass-polished": {"tint": "#FFE060", "roughnessScale": 0.4, "envScale": 4.5, "contact": 0.7},
+    "felt": {"tint": "#FF3858", "contact": 1.0},
+}
 # Factor-only GLB materials (sRGB, roughness, metallic): the fallback look when the sets fail to load.
 EXPORT_FACTORS = {
     "walnut": ((0x58, 0x3C, 0x26), 0.6, 0.0),
@@ -83,7 +121,7 @@ def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser()
     p.add_argument("--out", type=Path, default=DEFAULT_OUT)
     p.add_argument("--runtime", type=Path, default=DEFAULT_RUNTIME)
-    p.add_argument("--size", type=int, default=1024)
+    p.add_argument("--size", type=int, default=2048)
     p.add_argument("--samples", type=int, default=64)
     p.add_argument("--device", choices=["GPU", "CPU"], default="GPU")
     p.add_argument("--skip-bake", action="store_true")
@@ -100,37 +138,51 @@ def circle_pts(cx: float, cy: float, r: float, n: int) -> list[tuple[float, floa
     return [(cx + r * math.cos(2 * math.pi * i / n), cy + r * math.sin(2 * math.pi * i / n)) for i in range(n)]
 
 
-Ellipse = tuple[float, float]  # semi-axes (x, y)
+Ellipse = tuple[float, float]  # semi-axes (x, y) of the SUPER_N superellipse
+
+
+def se_pt(r: Ellipse, a: float) -> tuple[float, float]:
+    c, s = math.cos(a), math.sin(a)
+    return (r[0] * math.copysign(abs(c) ** (2 / SUPER_N), c), r[1] * math.copysign(abs(s) ** (2 / SUPER_N), s))
+
+
+def se_angle_at_x(r: Ellipse, c: float) -> float:
+    """Parameter angle in [0, pi/2] where the superellipse r crosses x = c."""
+    return math.acos((c / r[0]) ** (SUPER_N / 2))
+
+
+def se_y_at_x(r: Ellipse, x: float) -> float:
+    return r[1] * max(0.0, 1 - (abs(x) / r[0]) ** SUPER_N) ** (1 / SUPER_N)
 
 
 def arc_pts(r: Ellipse, a0: float, a1: float, n_full: int) -> list[tuple[float, float]]:
     steps = max(2, math.ceil(abs(a1 - a0) / (2 * math.pi) * n_full))
-    return [(r[0] * math.cos(a0 + (a1 - a0) * i / steps), r[1] * math.sin(a0 + (a1 - a0) * i / steps)) for i in range(steps + 1)]
+    return [se_pt(r, a0 + (a1 - a0) * i / steps) for i in range(steps + 1)]
 
 
 def centre_band(r: Ellipse, c: float, n_full: int) -> list[tuple[float, float]]:
-    """The ellipse r clipped to |x| <= c."""
-    t = math.acos(c / r[0])
+    """The superellipse r clipped to |x| <= c."""
+    t = se_angle_at_x(r, c)
     back = arc_pts(r, t, math.pi - t, n_full)  # from (c, h) over the far side to (-c, h)
     front = arc_pts(r, math.pi + t, 2 * math.pi - t, n_full)  # from (-c, -h) to (c, -h)
     return back + front
 
 
 def leaf_d(r: Ellipse, c: float, n_full: int, side: int) -> list[tuple[float, float]]:
-    """The segment of ellipse r beyond x = side * c."""
-    t = math.acos(c / r[0])
+    """The segment of superellipse r beyond x = side * c."""
+    t = se_angle_at_x(r, c)
     if side > 0:
         return arc_pts(r, -t, t, n_full)
     return arc_pts(r, math.pi - t, math.pi + t, n_full)
 
 
 def band_segment(r_out: Ellipse, r_in: Ellipse, c: float, n_full: int, a_mid: float, side_clip: int) -> list[tuple[float, float]]:
-    """Elliptical ring between r_in and r_out, clipped by the line x = side_clip * c.
+    """Superelliptical ring between r_in and r_out, clipped by the line x = side_clip * c.
 
     side_clip = +1 / -1 keeps the leaf side; 0 keeps |x| <= c on the half where sign(y) = sign(a_mid).
     """
-    to = math.acos(c / r_out[0])
-    ti = math.acos(c / r_in[0])
+    to = se_angle_at_x(r_out, c)
+    ti = se_angle_at_x(r_in, c)
     if side_clip == 0:
         if a_mid > 0:  # far side, y > 0
             return arc_pts(r_out, to, math.pi - to, n_full) + arc_pts(r_in, math.pi - ti, ti, n_full)
@@ -153,6 +205,34 @@ def gear_pts(cx: float, cy: float, root: float, tip: float, teeth: int, samples:
             f = 0.80 + 0.20 * s / samples
             pts.append((cx + root * math.cos(a + f * pitch), cy + root * math.sin(a + f * pitch)))
     return pts
+
+
+def scroll(x0: float, y0: float, sign: int, lead: float, wave: float, r0: float, r1: float, turns: float, n_full: int) -> list[tuple[float, float]]:
+    """A C-scroll: a gently waved lead from (x0, y0) along sign * X, ending in a spiral curl that rolls
+    over the top and inward (radius r0 down to r1)."""
+    pts = []
+    k = 10
+    for i in range(k):
+        u = i / k
+        pts.append((x0 + sign * lead * u, y0 - wave * math.sin(math.pi * u)))
+    cx, cy = x0 + sign * (lead + r0), y0
+    steps = max(8, math.ceil(turns * n_full))
+    for i in range(steps + 1):
+        s = i / steps
+        a = math.pi - 2 * math.pi * turns * s  # from the lead's end, over the top, clockwise
+        r = r0 + (r1 - r0) * s
+        pts.append((cx + sign * r * math.cos(a), cy + r * math.sin(a)))
+    return pts
+
+
+def flourish_curves(n_full: int) -> list[list[tuple[float, float]]]:
+    """Brass scroll inlays: a mirrored pair in front of the tray and a pair flanking the medallion."""
+    front_y = TRAY["cy"] - TRAY["inner_d"] / 2 - TRAY["frame"] - 0.04
+    out = []
+    for sign in (-1, 1):
+        out.append(scroll(sign * 0.006, front_y, sign, 0.058, 0.008, 0.02, 0.008, 1.3, n_full))
+        out.append(scroll(sign * (MEDALLION["tip"] + 0.012), MEDALLION["cy"], sign, 0.09, -0.01, 0.024, 0.009, 1.3, n_full))
+    return out
 
 
 # --------------------------------------------------------------------------------------------------
@@ -233,6 +313,65 @@ def build_scene(bpy, bmesh, detail: str, scene) -> dict:
             f = bm.faces.new([outer[i], inner[i], inner[k], outer[k]])
             f.material_index = mat
 
+    def top_with_hole(bm, outline, hole, z, mat):
+        """Flat upward face over a CCW outline with a CCW hole, triangulated."""
+        from mathutils.geometry import tessellate_polygon
+
+        loops = [[Vector((x, y, z)) for x, y in outline], [Vector((x, y, z)) for x, y in hole]]
+        flat = [p for loop in loops for p in loop]
+        verts = [bm.verts.new(p) for p in flat]
+        for tri in tessellate_polygon(loops):
+            a, b, c = (flat[i] for i in tri)
+            order = tri if (b - a).cross(c - a).z > 0 else (tri[0], tri[2], tri[1])
+            f = bm.faces.new([verts[i] for i in order])
+            f.material_index = mat
+
+    def bevel_frame(bm, cx, cy, hx, hy, profile, floor_mat):
+        """A rectangular frame lofted through `profile` [(inset, height above TOP, mat), ...] from the
+        outer edge (half extents hx, hy) inward, closed by a floor face at the last ring."""
+        rings = []
+        for inset, h, _m in profile:
+            x0, x1, y0, y1 = cx - hx + inset, cx + hx - inset, cy - hy + inset, cy + hy - inset
+            rings.append([bm.verts.new((x, y, TOP + h)) for x, y in ((x0, y0), (x1, y0), (x1, y1), (x0, y1))])
+        for k in range(1, len(rings)):
+            lo, hi = rings[k - 1], rings[k]
+            for i in range(4):
+                j = (i + 1) % 4
+                f = bm.faces.new([lo[i], lo[j], hi[j], hi[i]])
+                f.material_index = profile[k][2]
+        f = bm.faces.new(rings[-1])
+        f.material_index = floor_mat
+
+    def strap(bm, x0, x1):
+        """A strap inlay across the top between x0 < x1, ending at the rim lip's inner edge."""
+        y0, y1 = se_y_at_x(R_IN, x0), se_y_at_x(R_IN, x1)
+        prism(bm, [(x0, -y0), (x1, -y1), (x1, y1), (x0, y0)], TOP, TOP + STRAP_H, P, P)
+
+    def ribbon(bm, curve, width, z0, z1, mat):
+        """A flat strip of `width` along a polyline, extruded from z0 to z1 (top, both sides, ends)."""
+        n = len(curve)
+        left, right = [], []
+        for i, (x, y) in enumerate(curve):
+            ax, ay = curve[max(0, i - 1)]
+            bx, by = curve[min(n - 1, i + 1)]
+            tx, ty = bx - ax, by - ay
+            ln = math.hypot(tx, ty) or 1.0
+            nx, ny = -ty / ln * width / 2, tx / ln * width / 2
+            left.append((x + nx, y + ny))
+            right.append((x - nx, y - ny))
+        lt = [bm.verts.new((x, y, z1)) for x, y in left]
+        rt = [bm.verts.new((x, y, z1)) for x, y in right]
+        lb = [bm.verts.new((x, y, z0)) for x, y in left]
+        rb = [bm.verts.new((x, y, z0)) for x, y in right]
+        for i in range(n - 1):
+            # Wound outward: top up, the left wall toward +normal, the right wall toward -normal.
+            for quad in ([rt[i], rt[i + 1], lt[i + 1], lt[i]], [lb[i + 1], lb[i], lt[i], lt[i + 1]], [rb[i], rb[i + 1], rt[i + 1], rt[i]]):
+                f = bm.faces.new(quad)
+                f.material_index = mat
+        for quad in ([rb[0], rt[0], lt[0], lb[0]], [lb[-1], lt[-1], rt[-1], rb[-1]]):
+            f = bm.faces.new(quad)
+            f.material_index = mat
+
     parts: list = []  # (bm, owner) owner in {"body", "leaf-left", "leaf-right"}
 
     # Pedestal: foot, column and the cup under the drum (lathe, one profile).
@@ -249,36 +388,42 @@ def build_scene(bpy, bmesh, detail: str, scene) -> dict:
             (0.07, 0.37, P),
             (0.09, 0.39, P),
             (0.09, 0.41, A),
-            (0.13, 0.43, A),
-            (0.235, 0.44, A),
-            (0.24, 0.445, A),
-            (0.24, 0.70, W),
+            (0.16, 0.425, A),
+            (0.26, 0.435, A),
+            (DRUM_R - 0.005, 0.44, A),
+            (DRUM_R, 0.445, A),
+            (DRUM_R, 0.70, W),
         ],
         segs,
     )
     parts.append((bm, "body", True))
-    # Brass bands round the drum, and straps over the box-projection seams at 45 degrees.
-    for z0, z1 in ((0.455, 0.48), (0.665, 0.69)):
+    # Polished brass bands round the drum, and aged straps over the box-projection seams at 45 degrees.
+    for z0, z1 in DRUM_BANDS:
         bm = new_bm()
-        lathe(bm, [(0.24, z0, A), (0.25, z0, A), (0.25, z1, A), (0.24, z1, A)], segs)
+        lathe(bm, [(DRUM_R, z0, P), (DRUM_R + 0.01, z0, P), (DRUM_R + 0.01, z1, P), (DRUM_R, z1, P)], segs)
         parts.append((bm, "body", True))
     bm = new_bm()
     for k in range(8):
         ang = math.radians(45 * k)
-        local = [(0.236, -0.011), (0.246, -0.011), (0.246, 0.011), (0.236, 0.011)]
+        local = [(DRUM_R - 0.004, -0.011), (DRUM_R + 0.006, -0.011), (DRUM_R + 0.006, 0.011), (DRUM_R - 0.004, 0.011)]
         outline = [(x * math.cos(ang) - y * math.sin(ang), x * math.sin(ang) + y * math.cos(ang)) for x, y in local]
-        prism(bm, outline, 0.48, 0.665, A, A)
+        prism(bm, outline, DRUM_BANDS[0][1], DRUM_BANDS[1][0], A, A)
     parts.append((bm, "body", False))
     # Gear ring under the top, visible in the shadow line between drum and slab.
     bm = new_bm()
-    gear = gear_pts(0, 0, 0.255, 0.272, 36, d["gear_samples"])
+    gear = gear_pts(0, 0, GEAR_ROOT, GEAR_TIP, 44, d["gear_samples"])
     prism(bm, gear, 0.70, HINGE_Z, P, P, top=False)
-    gear_bottom_strip(bm, gear, 0.235, 0.70, P)
+    gear_bottom_strip(bm, gear, DRUM_R - 0.005, 0.70, P)
     parts.append((bm, "body", False))
-    # Fixed centre band of the top: brass on its curved rim, walnut on the hinge edges.
+    # Fixed centre band of the top: polished brass on its curved rim, walnut on the hinge edges, and
+    # the dice tray's opening cut out of the walnut top.
+    t = TRAY
+    tx = t["inner_w"] / 2 + t["frame"]
+    ty0, ty1 = t["cy"] - t["inner_d"] / 2 - t["frame"], t["cy"] + t["inner_d"] / 2 + t["frame"]
     bm = new_bm()
     band = centre_band(R, HINGE_X, arc_n)
-    prism(bm, band, HINGE_Z, TOP, W, None, W, side_fn=lambda i, a, b: W if abs(a[0] - b[0]) < 1e-9 and abs(abs(a[0]) - HINGE_X) < 1e-6 else A)
+    prism(bm, band, HINGE_Z, TOP, W, None, W, top=False, side_fn=lambda i, a, b: W if abs(a[0] - b[0]) < 1e-9 and abs(abs(a[0]) - HINGE_X) < 1e-6 else P)
+    top_with_hole(bm, band, [(-tx, ty0), (tx, ty0), (tx, ty1), (-tx, ty1)], TOP, W)
     parts.append((bm, "body", False))
     bm = new_bm()
     for mid in (1, -1):
@@ -290,21 +435,24 @@ def build_scene(bpy, bmesh, detail: str, scene) -> dict:
     prism(bm, gear_pts(0, m["cy"], m["root"], m["tip"], m["teeth"], d["gear_samples"]), TOP, TOP + m["h"], P, P)
     parts.append((bm, "body", False))
     bm = new_bm()
-    lathe(bm, [(0.03, TOP + m["h"], A), (0.03, TOP + m["h"] + 0.008, A), (0.022, TOP + m["h"] + 0.012, A), (0.0, TOP + m["h"] + 0.012, A)], max(16, segs // 2), 0.0, m["cy"])
+    lathe(bm, [(0.03, TOP + m["h"], P), (0.03, TOP + m["h"] + 0.008, P), (0.022, TOP + m["h"] + 0.012, P), (0.0, TOP + m["h"] + 0.012, P)], max(16, segs // 2), 0.0, m["cy"])
     parts.append((bm, "body", True))
-    # Dice tray in front of the player: polished frame, felt floor.
+    # Dice tray recessed into the top: bevelled polished frame, felt walls and floor.
     bm = new_bm()
-    t = TRAY
-    x0, x1 = -t["w"] / 2, t["w"] / 2
-    y0, y1 = t["cy"] - t["d"] / 2, t["cy"] + t["d"] / 2
-    wl = t["wall"]
-    box(bm, x0, x1, y0, y0 + wl, TOP, TOP + t["h"], P)
-    box(bm, x0, x1, y1 - wl, y1, TOP, TOP + t["h"], P)
-    box(bm, x0, x0 + wl, y0 + wl, y1 - wl, TOP, TOP + t["h"], P)
-    box(bm, x1 - wl, x1, y0 + wl, y1 - wl, TOP, TOP + t["h"], P)
+    bevel_frame(bm, 0.0, t["cy"], tx, (ty1 - ty0) / 2, TRAY_PROFILE, F)
     parts.append((bm, "body", False))
+    # Brass strap inlays between the top's panels: along both hinge lines and across the centre band.
     bm = new_bm()
-    face(bm, [(x0 + wl, y0 + wl, TOP + t["felt"]), (x1 - wl, y0 + wl, TOP + t["felt"]), (x1 - wl, y1 - wl, TOP + t["felt"]), (x0 + wl, y1 - wl, TOP + t["felt"])], F)
+    for sgn in (-1, 1):
+        strap(bm, sgn * BODY_STRAP_X[0], sgn * BODY_STRAP_X[1])
+    cy0, cy1 = CROSS_STRAP_Y
+    prism(bm, [(-BODY_STRAP_X[0], cy0), (BODY_STRAP_X[0], cy0), (BODY_STRAP_X[0], cy1), (-BODY_STRAP_X[0], cy1)], TOP, TOP + STRAP_H, P, P)
+    parts.append((bm, "body", False))
+    # Brass flourishes (flat inlay scrolls, table-sheet-1 panel 3): in front of the tray, and
+    # flanking the gear medallion.
+    bm = new_bm()
+    for curve in flourish_curves(d["arc"]):
+        ribbon(bm, curve, FLOURISH["w"], TOP, TOP + FLOURISH["h"], P)
     parts.append((bm, "body", False))
 
     # Leaves, built in table coordinates (unfolded) and moved onto their hinge origins later.
@@ -312,24 +460,21 @@ def build_scene(bpy, bmesh, detail: str, scene) -> dict:
         bm = new_bm()
         outline = leaf_d(R, HINGE_X, arc_n, side)
         # leaf_d is an open arc; closing it adds the hinge edge (walnut, hidden when unfolded).
-        prism(bm, outline, HINGE_Z, TOP, W, None, W, side_fn=lambda i, a, b: W if abs(a[0] - b[0]) < 1e-9 else A)
+        prism(bm, outline, HINGE_Z, TOP, W, None, W, side_fn=lambda i, a, b: W if abs(a[0] - b[0]) < 1e-9 else P)
         parts.append((bm, name, False))
         bm = new_bm()
         prism(bm, band_segment(R, R_IN, HINGE_X, arc_n, 0, side), TOP, TOP + LIP, P, P)
         parts.append((bm, name, False))
+        # Straps parallel to the hinge: folded, they hang level with the drum's bands.
+        bm = new_bm()
+        for x0, x1 in LEAF_STRAPS_X:
+            a, b = side * x0, side * x1
+            strap(bm, min(a, b), max(a, b))
+        parts.append((bm, name, False))
         s = SLOT
         cx = side * s["cx"]
-        sx0, sx1 = cx - s["w"] / 2, cx + s["w"] / 2
-        sy0, sy1 = s["cy"] - s["d"] / 2, s["cy"] + s["d"] / 2
-        b = s["border"]
         bm = new_bm()
-        box(bm, sx0, sx1, sy0, sy0 + b, TOP, TOP + s["h"], P)
-        box(bm, sx0, sx1, sy1 - b, sy1, TOP, TOP + s["h"], P)
-        box(bm, sx0, sx0 + b, sy0 + b, sy1 - b, TOP, TOP + s["h"], P)
-        box(bm, sx1 - b, sx1, sy0 + b, sy1 - b, TOP, TOP + s["h"], P)
-        parts.append((bm, name, False))
-        bm = new_bm()
-        face(bm, [(sx0 + b, sy0 + b, TOP + s["felt"]), (sx1 - b, sy0 + b, TOP + s["felt"]), (sx1 - b, sy1 - b, TOP + s["felt"]), (sx0 + b, sy1 - b, TOP + s["felt"])], F)
+        bevel_frame(bm, cx, s["cy"], s["inner_w"] / 2 + s["frame"], s["inner_d"] / 2 + s["frame"], SLOT_PROFILE, F)
         parts.append((bm, name, False))
         bm = new_bm()
         for ky in (-0.22, 0.0, 0.22):
@@ -417,7 +562,7 @@ def add_sockets(bpy, objs: dict) -> dict:
     root = objs["root"]
     t, s = TRAY, SLOT
     specs = [
-        ("socket-dice-tray", root, (0.0, t["cy"], TOP + t["felt"])),
+        ("socket-dice-tray", root, (0.0, t["cy"], TOP - t["depth"])),
         ("socket-sigil-plate", root, SIGIL_SOCKET),
         ("socket-draw", objs["leaf-left"], (-s["cx"] + HINGE_X, s["cy"], TOP + s["felt"] - HINGE_Z)),
         ("socket-discard", objs["leaf-right"], (s["cx"] - HINGE_X, s["cy"], TOP + s["felt"] - HINGE_Z)),
@@ -437,7 +582,7 @@ def add_sockets(bpy, objs: dict) -> dict:
 def tile_uvs(bpy, objs: dict) -> None:
     """Adds the `tile` UV layer: per-face box projection in table metres / the set's tile size."""
     tile_m = {name: json.loads((MATERIAL_DIR / "materials.json").read_text())[name]["tileMeters"] for name in MATS[:3]}
-    tile_m["felt"] = 0.5
+    tile_m["felt"] = FELT_TILE_M
     for owner in ("body", "leaf-left", "leaf-right"):
         obj = objs[owner]
         me = obj.data
@@ -501,17 +646,36 @@ def srgb_to_linear(c: float) -> float:
     return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
 
 
-def make_source_materials(bpy) -> None:
+def make_source_materials(bpy, felt_dir: Path) -> None:
     """Tile-mapped materials built from the approved P4-T3 PNG maps (render and bake sources)."""
     for name in MATS:
         mat = bpy.data.materials.new(f"{PIECE}-{name}")
         nt = mat.node_tree
         bsdf = next(n for n in nt.nodes if n.type == "BSDF_PRINCIPLED")
         if name == "felt":
-            bsdf.inputs["Base Color"].default_value = (*(srgb_to_linear(c) for c in FELT_SRGB), 1.0)
-            bsdf.inputs["Roughness"].default_value = 0.95
+            # The generated nap maps (felt_maps), as the runtime binds them, with a velvet sheen.
+            bsdf.inputs["Roughness"].default_value = 0.9
             bsdf.inputs["Metallic"].default_value = 0.0
-            mat["orm_const"] = (1.0, 0.95, 0.0)
+            bsdf.inputs["Sheen Weight"].default_value = 1.0
+            bsdf.inputs["Sheen Roughness"].default_value = FELT_SHEEN["roughness"]
+            sheen = FELT_SHEEN["color"]
+            bsdf.inputs["Sheen Tint"].default_value = (*(srgb_to_linear(int(sheen[i : i + 2], 16)) for i in (1, 3, 5)), 1.0)
+            uvn = nt.nodes.new("ShaderNodeUVMap")
+            uvn.uv_map = "tile"
+            for role, socket in (("basecolor", "Base Color"), ("normal", None)):
+                img = bpy.data.images.load(str(felt_dir / f"{PIECE}.felt.{role}.png"), check_existing=True)
+                img.colorspace_settings.name = "sRGB" if role == "basecolor" else "Non-Color"
+                tex = nt.nodes.new("ShaderNodeTexImage")
+                tex.image = img
+                nt.links.new(uvn.outputs["UV"], tex.inputs["Vector"])
+                if socket:
+                    nt.links.new(tex.outputs["Color"], bsdf.inputs[socket])
+                else:
+                    nm = nt.nodes.new("ShaderNodeNormalMap")
+                    nm.uv_map = "tile"
+                    nm.inputs["Strength"].default_value = NORMAL_SCALE["felt"]
+                    nt.links.new(tex.outputs["Color"], nm.inputs["Color"])
+                    nt.links.new(nm.outputs["Normal"], bsdf.inputs["Normal"])
             continue
         uvn = nt.nodes.new("ShaderNodeUVMap")
         uvn.uv_map = "tile"
@@ -534,6 +698,39 @@ def make_source_materials(bpy) -> None:
         nm.inputs["Strength"].default_value = NORMAL_SCALE[name]
         nt.links.new(texs["normal"].outputs["Color"], nm.inputs["Color"])
         nt.links.new(nm.outputs["Normal"], bsdf.inputs["Normal"])
+
+
+def felt_maps(size: int = FELT_PX, seed: int = 1715) -> dict:
+    """Tileable velvet nap: crushed-pile mottling, a pile grain and fine fibres combed along the
+    plank direction, as an sRGB basecolor around FELT_SRGB and a matching tangent-space normal map.
+    Periodic by construction (filtered in the frequency domain), deterministic for a seed."""
+    import numpy as np
+
+    rng = np.random.default_rng(seed)
+    fy = np.fft.fftfreq(size)[:, None]
+    fx = np.fft.fftfreq(size)[None, :]
+
+    def field(sigma_px: float, stretch: float = 1.0):
+        w = np.fft.fft2(rng.standard_normal((size, size)))
+        g = np.exp(-2 * (np.pi * sigma_px) ** 2 * (fx**2 + (fy * stretch) ** 2))
+        out = np.real(np.fft.ifft2(w * g))
+        return out / out.std()
+
+    mottle = field(36.0)  # crushed pile, about 2 cm across at FELT_TILE_M
+    grain = field(4.0, 0.35)  # pile tufts, combed along the tile's V (the planks' run)
+    fibre = field(1.2, 0.25)
+    shade = 1.0 + 0.13 * mottle + 0.08 * grain + 0.05 * fibre
+    base = np.array([srgb_to_linear(c) for c in FELT_SRGB])
+    lin = np.clip(base[None, None, :] * shade[..., None], 0.0, 1.0)
+    srgb = np.where(lin <= 0.0031308, lin * 12.92, 1.055 * np.power(lin, 1 / 2.4) - 0.055)
+    height = 0.55 * grain + 0.35 * fibre + 0.25 * mottle
+    gx = (np.roll(height, -1, axis=1) - np.roll(height, 1, axis=1)) / 2
+    gy = (np.roll(height, -1, axis=0) - np.roll(height, 1, axis=0)) / 2
+    k = 0.6
+    n = np.stack([-k * gx, k * gy, np.ones_like(gx)], axis=-1)
+    n /= np.linalg.norm(n, axis=-1, keepdims=True)
+    to8 = lambda a: np.round(np.clip(a, 0, 1) * 255).astype(np.uint8)  # noqa: E731
+    return {"basecolor": to8(srgb), "normal": to8(n * 0.5 + 0.5)}
 
 
 def bake_ao(bpy, objs: dict, size: int, samples: int, device: str, margin_px: int) -> dict:
@@ -873,7 +1070,7 @@ def gate_glb(path: Path) -> dict:
         off_axis = np.hypot(fold_pts[:, 0] - side * HINGE_X, fold_pts[:, 1] - HINGE_Z) > 0.0095 + 1e-4
         inside = (side * fold_pts[:, 0] < HINGE_X - 1e-4) & off_axis
         hang = float(np.min(fold_pts[:, 1]))
-        drum_gap = float(np.min(side * fold_pts[off_axis][:, 0])) - 0.272  # gear ring tip radius
+        drum_gap = float(np.min(side * fold_pts[off_axis][:, 0])) - GEAR_TIP
         checks[name] = {
             "hinge": [round(float(v), 6) for v in hinge],
             "unfolded_top_flush": bool(top_ok),
@@ -958,6 +1155,7 @@ def build_manifest(gate: dict, glb: Path, ao_png: Path | None, ao_ktx: Path | No
         if [round(v, 6) for v in rest] != expected:
             raise RuntimeError(f"{name} rest rotation {rest} != expected folded {expected}")
     t = TRAY
+    floor = round(TOP - t["depth"], 4)
     return {
         "piece": PIECE,
         "glb": glb.name,
@@ -969,7 +1167,7 @@ def build_manifest(gate: dict, glb: Path, ao_png: Path | None, ao_ktx: Path | No
         "leaves": leaves,
         "socketsUnfoldedWorld": gate["sockets_unfolded_world"],
         "sockets": {
-            "socket-dice-tray": "felt floor centre of the dice tray; +Y up",
+            "socket-dice-tray": "felt floor centre of the dice tray, recessed below the top; +Y up",
             "socket-draw": "felt pad centre of the draw slot on leaf-left; card long axis along Z",
             "socket-discard": "felt pad centre of the discard slot on leaf-right; card long axis along Z",
             "socket-sigil-plate": "floating plate centre above the gear medallion; the plate faces +Z (the player)",
@@ -981,11 +1179,13 @@ def build_manifest(gate: dict, glb: Path, ao_png: Path | None, ao_ktx: Path | No
             "rimLipHeight": LIP,
             "rimLipWidth": 0.02,
             "trayInner": {
-                "centre": [0.0, round(TOP + t["felt"], 4), round(-t["cy"], 4)],
-                "size": [round(t["w"] - 2 * t["wall"], 4), round(t["d"] - 2 * t["wall"], 4)],
-                "floorHeight": round(TOP + t["felt"], 4),
-                "wallTopHeight": round(TOP + t["h"], 4),
+                "centre": [0.0, floor, round(-t["cy"], 4)],
+                "size": [t["inner_w"], t["inner_d"]],
+                "floorHeight": floor,
+                "wallTopHeight": round(TOP + max(h for _i, h, _m in TRAY_PROFILE), 4),
             },
+            "trayFrameWidth": t["frame"],
+            "trayRecessDepth": t["depth"],
             "medallion": {"centre": [0.0, round(TOP + MEDALLION["h"], 4), round(-MEDALLION["cy"], 4)], "radius": MEDALLION["tip"]},
         },
         "boundsUnfolded": gate["bounds_unfolded"],
@@ -994,8 +1194,14 @@ def build_manifest(gate: dict, glb: Path, ao_png: Path | None, ao_ktx: Path | No
             name: (
                 {
                     "set": None,
-                    "factorOnly": True,
-                    "note": "flat ruby velvet; keep the GLB material (factors only, no maps)",
+                    "factorOnly": False,
+                    "maps": {"basecolor": f"{PIECE}.felt.basecolor.png", "normal": f"{PIECE}.felt.normal.png"},
+                    "uv0": "tile units (metres / tileMeters): bind the maps at repeat (1, 1)",
+                    "tileMeters": FELT_TILE_M,
+                    "normalScale": NORMAL_SCALE[name],
+                    "sheen": FELT_SHEEN,
+                    "note": "ruby velvet: generated nap maps beside the GLB, bound on a sheen material; the GLB's factor-only felt is the fallback",
+                    **RUNTIME_LOOK[name],
                 }
                 if name == "felt"
                 else {
@@ -1004,6 +1210,7 @@ def build_manifest(gate: dict, glb: Path, ao_png: Path | None, ao_ktx: Path | No
                     "uv0": "tile units (metres / tileMeters): bind the set at repeat (1, 1)",
                     "tileMeters": tile_m[name],
                     "normalScale": NORMAL_SCALE[name],
+                    **RUNTIME_LOOK[name],
                 }
             )
             for name in MATS
@@ -1015,13 +1222,14 @@ def build_manifest(gate: dict, glb: Path, ao_png: Path | None, ao_ktx: Path | No
             "channel": 1,
             "flipY": False,
             "colorSpace": "linear",
-            "binding": "replaces aoMap on every slot (felt included), read through UV1; the shared ORM still drives roughness and metalness on UV0",
+            "binding": "replaces aoMap on every slot (felt included), read through UV1; the shared ORM still drives roughness and metalness on UV0. Each slot's `contact` also multiplies it into base colour, because three applies aoMap to indirect light only",
         },
         "binder": [
             "Clone each shared material (and its textures) before changing it: loadPbrSet shares textures across consumers that set repeat.",
             "Bind a slot by its exact GLB material name; never by substring.",
             "The GLB has no TANGENT: three derives the tangent frame from UV0 derivatives, matching the shared sets' flipY = true upload.",
             "If the sets or the AO map fail to load, the GLB's factor-only materials stay bound (fallback).",
+            "Slot look: `tint` multiplies the bound colour (sRGB hex), `roughnessScale` multiplies the ORM roughness, `envScale` scales the environment radiance whatever envMapIntensity the room sets, `contact` mixes the UV1 AO into base colour.",
         ],
         "drawCalls": {"perEye": draw_calls, "stereo": 2 * draw_calls},
     }
@@ -1170,11 +1378,14 @@ def compose_sheet(out: Path) -> Path:
         ("Grazing light: shared normal maps on the low", out / "render-low-grazing.png"),
         ("Scale: 1.6 m pole (10 cm bands), 1.2 m seated eye", out / "render-scale.png"),
         ("Player view from the seat (eye 1.2 m)", out / "render-player-view.png"),
-        # Captured by hand from src/combat/table-asset-proof.ts (three.js 0.186.1, desktop Chrome).
-        ("In engine: unfolded (shared sets + AO, ACES)", out / "engine-unfolded.jpg"),
-        ("In engine: folded rest pose", out / "engine-folded.jpg"),
-        ("In engine: seated player view", out / "engine-player-view.jpg"),
-        ("In engine: grazing light from the far side", out / "engine-grazing.jpg"),
+        # src/combat/table-asset-proof.ts (three.js 0.186.1, AgX, headless Chromium on ANGLE Metal).
+        ("In engine (proof page): unfolded", out / "engine-unfolded.jpg"),
+        ("In engine (proof page): folded rest pose", out / "engine-folded.jpg"),
+        ("In engine (proof page): seated player view", out / "engine-player-view.jpg"),
+        ("In engine (proof page): grazing light", out / "engine-grazing.jpg"),
+        # The real game page (/?seed=SPIRE002&debug), eye at the seated 1.2 m.
+        ("In game: fight, die in the tray, hand and piles", out / "game-fight.jpg"),
+        ("In game: unfolding, leaves still hanging", out / "game-folded.jpg"),
     ]
     tw, th, pad, cap = 640, 480, 12, 28
     cols = 2
@@ -1214,7 +1425,10 @@ def main_blender(args: argparse.Namespace) -> None:
     margin_px = 8
     pack_px = 10  # per-island pad, so islands sit 20 px apart (>= 2 x margin + 2)
 
-    make_source_materials(bpy)
+    felt = felt_maps()
+    for role, rgb in felt.items():
+        write_png(rgb, runtime / f"{PIECE}.felt.{role}.png")
+    make_source_materials(bpy, runtime)
     low_scene = bpy.context.scene
     low_scene.name = f"{PIECE}-low"
     high_scene = bpy.data.scenes.new(f"{PIECE}-high")
@@ -1251,6 +1465,7 @@ def main_blender(args: argparse.Namespace) -> None:
         },
         "triangles": {"low": tris_low, "high": tris_high},
         "ao_atlas_size": args.size,
+        "felt_maps": {"size": FELT_PX, "seed": 1715, "tile_m": FELT_TILE_M, "files": [f"{PIECE}.felt.basecolor.png", f"{PIECE}.felt.normal.png"]},
         "texel_density_px_per_m": density,
         "authoringAgent": "Claude Code subagent (claude-opus-5-5), dispatched by the rogue-xr primary session",
     }
@@ -1282,6 +1497,8 @@ def main_blender(args: argparse.Namespace) -> None:
         raise RuntimeError(f"GLB gate failed: {gate['errors']}")
 
     ao_ktx = encode_ktx2(ao_png) if ao_png and KTX.exists() else None
+    if ao_ktx is None and (runtime / f"{PIECE}.ao.ktx2").exists():
+        (runtime / f"{PIECE}.ao.ktx2").unlink()  # never ship a KTX2 that no longer matches the PNG
     manifest = build_manifest(gate, glb, ao_png, ao_ktx)
     (runtime / f"{PIECE}.manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
 

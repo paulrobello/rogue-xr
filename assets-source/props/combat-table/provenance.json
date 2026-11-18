@@ -3,7 +3,7 @@
   "route": "scripted (procedural Blender geometry; no provider generation; shared PBR material sets)",
   "generator": {
     "path": "scripts/assets/build-combat-table.py",
-    "sha256": "2dc281f221ed3bffd6540b1ff989424301446a611596c7cffe169d1fdbe7deb1"
+    "sha256": "5eb9fa362695b08c3a1d2db764d36a75059ed55ec9750746f41e325da6aee02e"
   },
   "generatorDeps": [
     {
@@ -12,59 +12,59 @@
     }
   ],
   "authoringAgent": "Claude Code subagent (claude-opus-5-5), dispatched by the rogue-xr primary session",
-  "blender": "5.2.2 LTS",
+  "blender": "5.3.0",
   "blendFiles": [
     {
       "path": "assets-source/props/combat-table/staging/combat-table.high.blend",
-      "sha256": "320c8255541a8295ea85f2f7b975e57bc560c14dd0f94a25bae4cfc9e58eba64",
-      "bytes": 630718
+      "sha256": "6574d376b1dd5204c040714e13b753f843ae60901e8a03a205d875d181ed3ca8",
+      "bytes": 971838
     },
     {
       "path": "assets-source/props/combat-table/staging/combat-table.low.blend",
-      "sha256": "d51369ab0a0f1104e7e0a64ba4a7d44e3340eabdd8e410234adb59c3245e5883",
-      "bytes": 214056
+      "sha256": "462e09ccc4cba40c7163e32834f7751679a4ba47afb8674b71b6060bea3e9175",
+      "bytes": 276135
     }
   ],
   "budgets": {
-    "triangles": 4184,
-    "trianglesHigh": 23196,
+    "triangles": 6068,
+    "trianglesHigh": 34206,
     "maxTriangles": 20000,
     "materials": [
       "walnut",
-      "brass-aged",
       "brass-polished",
-      "felt"
+      "felt",
+      "brass-aged"
     ],
     "maxMaterials": 4,
-    "aoAtlasPx": 1024
+    "aoAtlasPx": 2048
   },
   "bake": {
-    "device": "GPU:METAL (Apple M4 Max (GPU - 40 cores))",
+    "device": "GPU:METAL (Apple M4 (GPU - 10 cores))",
     "samples": 64,
     "margin_px": 8,
-    "size": 1024,
+    "size": 2048,
     "ao_distance_m": 0.12,
     "seconds_per_node": {
-      "table-body": 6.26,
-      "leaf-left": 0.53,
-      "leaf-right": 0.48
+      "table-body": 3.02,
+      "leaf-left": 1.13,
+      "leaf-right": 1.11
     },
-    "coverage": 0.2784,
-    "ao_mean": 0.8127,
+    "coverage": 0.3745,
+    "ao_mean": 0.8043,
     "ao_p05": 0.0
   },
   "texelDensityPxPerM": {
     "uv0_tile": {
-      "walnut": 2045.8,
-      "brass-aged": 2028.2,
-      "brass-polished": 2017.1,
-      "felt": 2048.0
+      "walnut": 2048.0,
+      "brass-aged": 2025.0,
+      "brass-polished": 2031.5,
+      "felt": 4096.0
     },
     "uv1_ao": {
-      "walnut": 281.7,
-      "brass-aged": 279.9,
-      "brass-polished": 277.5,
-      "felt": 281.8
+      "walnut": 595.6,
+      "brass-aged": 589.0,
+      "brass-polished": 591.0,
+      "felt": 595.5
     }
   },
   "references": [
@@ -99,39 +99,49 @@
   "derivedFiles": [
     {
       "path": "public/assets/props/combat-table/combat-table.ao.ktx2",
-      "sha256": "7bf9fc37a9493e124bb24d758395f65e8e4f71b2a8ea77df3b9db2719899e1b2",
-      "bytes": 460478
+      "sha256": "2dcd247b495471ae08ff8a1c7f716c91ca1175c7454329566dba2a4748ec4288",
+      "bytes": 1390629
     },
     {
       "path": "public/assets/props/combat-table/combat-table.ao.png",
-      "sha256": "846582be5d7016424855c7daf40825acb388bc4a496c4d7a9ba1c422a2b238b5",
-      "bytes": 363980
+      "sha256": "29440bb64bebce5d9a11345de426c793906164bf7f1f5e5878f7a1d2dcd1819b",
+      "bytes": 1151877
+    },
+    {
+      "path": "public/assets/props/combat-table/combat-table.felt.basecolor.png",
+      "sha256": "c7a405437f18ed0010e4d4ea4483e0677bd9c10f558cb644df145c01161cb287",
+      "bytes": 201555
+    },
+    {
+      "path": "public/assets/props/combat-table/combat-table.felt.normal.png",
+      "sha256": "3943d2f58af7839b19e9e9f66e6b69598aaf209e7f6b227f24ae9cbfc4f2b25c",
+      "bytes": 600189
     },
     {
       "path": "public/assets/props/combat-table/combat-table.glb",
-      "sha256": "af23a6d82cf4b63047e8339bc37bf345b68b43d7e6ceba611ad6fd69d5aa2904",
-      "bytes": 235412
+      "sha256": "283b4f00fd99811886463fde9f6eb72bcdcab3c1883bcedfcf2f83b1900fa7e4",
+      "bytes": 325708
     },
     {
       "path": "public/assets/props/combat-table/combat-table.manifest.json",
-      "sha256": "d6962cece9753a069e5a6126a7a8c6553e6538cc0defdc2d09ec9441551baed6",
-      "bytes": 6567
+      "sha256": "9b3ee29dbbef22311d6b4d143f1fea79525227ee4bba7dd62c78b627de84fde7",
+      "bytes": 7711
     }
   ],
   "stagingReport": {
     "path": "assets-source/props/combat-table/staging/report.json",
-    "sha256": "4d06b951519b9f30ec32baa4b39ac8512dadb81fd33f8e83abe17173beabb348"
+    "sha256": "4ea5d26219950c72ec53cc482f8d03fb2499454fac833d267355a1c872776e3f"
   },
   "license": "Original work generated in Blender from a checked-in script; concept reference and the shared PBR material sources from Paul's paid Higgsfield plan (Terms of Use 4.4)",
   "validation": {
     "date": "2026-11-17",
     "record": "docs/asset-validation.md section 2",
     "checks": [
-      "13 of 13 staging report hashes match the files on disk",
-      "9 of 9 source material hashes match public/assets/materials",
-      "reimport: 4,184 triangles, 4 materials, no errors",
-      "tests/combat-table-asset.test.ts 6 of 6",
-      "tests/combat-table-fallback.test.ts 3 of 3: a failed manifest fetch or GLB load resolves null (greybox kept); a failed material bind keeps the factor-only materials (loadCombatTable in src/combat/table-asset-proof.ts, F2)"
+      "15 of 15 staging report hashes match the files on disk",
+      "reimport: 6,068 triangles, 4 materials, no errors",
+      "tests/combat-table-asset.test.ts 7 of 7 (felt maps shipped; tray socket on the recessed felt floor)",
+      "tests/combat-table-fallback.test.ts 3 of 3: a failed manifest fetch or GLB load resolves null (greybox kept); a failed material bind keeps the factor-only materials (loadCombatTable in src/combat/table-asset-proof.ts, F2)",
+      "engine shots on MiniMac, ANGLE (Apple, ANGLE Metal Renderer: Apple M4): staging engine-*.jpg (proof page) and game-fight.jpg / game-folded.jpg (real game page, eye 1.2 m), no black frame, no page or console errors"
     ],
     "open": []
   },

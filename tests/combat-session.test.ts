@@ -38,7 +38,7 @@ const TABLE_ASSET_TOP = 0.756;
 function tableAssetStandIn(): THREE.Object3D {
   const asset = new THREE.Group();
   for (const [name, y, z] of [
-    ['socket-dice-tray', 0.756, 0.18],
+    ['socket-dice-tray', 0.724, 0.18],
     ['socket-sigil-plate', 1.05, -0.15],
   ] as const) {
     const socket = new THREE.Object3D();

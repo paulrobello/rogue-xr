@@ -19,6 +19,25 @@ export const TABLE_ASSET_NODES = [
 export type TableLeaf = 'leaf-left' | 'leaf-right';
 type Quat = [number, number, number, number];
 
+/** One GLB material slot: a shared set, or the GLB's factors (optionally with maps beside the GLB). */
+export interface TableMaterialSlot {
+  set: string | null;
+  factorOnly?: boolean;
+  tileMeters?: number;
+  normalScale?: number;
+  /** Maps shipped beside the GLB (file names under TABLE_ASSET_BASE), bound when `set` is null. */
+  maps?: { basecolor: string; normal?: string };
+  sheen?: { color: string; roughness: number };
+  /** sRGB hex multiplied into the bound colour. */
+  tint?: string;
+  /** Multiplies the bound roughness (the ORM green channel for shared sets). */
+  roughnessScale?: number;
+  /** Scales the environment radiance, on top of whatever envMapIntensity the room sets. */
+  envScale?: number;
+  /** How much of the UV1 AO multiplies base colour (three applies aoMap to indirect light only). */
+  contact?: number;
+}
+
 export interface TableAssetManifest {
   glb: string;
   authoredTopHeight: number;
@@ -27,10 +46,7 @@ export interface TableAssetManifest {
     { parent: string | null; translation: number[]; rotation: Quat; scale: number[] }
   >;
   leaves: Record<TableLeaf, { hinge: number[]; foldedRotation: Quat; unfoldedRotation: Quat }>;
-  materialSlots: Record<
-    string,
-    { set: string | null; factorOnly?: boolean; tileMeters?: number; normalScale?: number }
-  >;
+  materialSlots: Record<string, TableMaterialSlot>;
   ao: { png: string; ktx2: string | null; uv: number; channel: number; flipY: boolean };
 }
 
@@ -65,8 +81,41 @@ export function leafQuaternion(
 }
 
 /**
+ * Applies a slot's `contact` and `envScale` in the shader: the UV1 AO multiplied into diffuse colour
+ * (so contact shows under direct light), and the environment radiance scaled (so the room's
+ * envMapIntensity, set on every table material after load, still leaves brass its highlights).
+ */
+export function applyTableLook(
+  material: THREE.MeshStandardMaterial,
+  contact: number,
+  envScale: number,
+): void {
+  if (contact <= 0 && envScale === 1) return;
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.tableContact = { value: contact };
+    shader.uniforms.tableEnvScale = { value: envScale };
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        '#include <common>',
+        '#include <common>\nuniform float tableContact;\nuniform float tableEnvScale;',
+      )
+      .replace(
+        '#include <map_fragment>',
+        '#include <map_fragment>\n#ifdef USE_AOMAP\n\tdiffuseColor.rgb *= mix( 1.0, texture2D( aoMap, vAoMapUv ).r, tableContact );\n#endif',
+      )
+      .replace(
+        '#include <lights_fragment_maps>',
+        '#include <lights_fragment_maps>\n#if defined( RE_IndirectSpecular )\n\tradiance *= tableEnvScale;\n#endif',
+      );
+  };
+  // Every slot shares the patched program; the values live in each material's own uniforms.
+  material.customProgramCacheKey = () => 'combat-table-look';
+}
+
+/**
  * Binds the shared P4-T3 sets onto the GLB by exact material name, on clones (the set's textures
- * are shared with the room), and the table's own AO on UV1. Slots with no set keep the GLB's
+ * are shared with the room), and the table's own AO on UV1. A slot with no set binds the maps
+ * beside the GLB when it lists them (the felt nap, on a sheen material), else keeps the GLB's
  * factor-only material, which is also the fallback when a set fails to load.
  */
 export async function bindTableMaterials(
@@ -81,12 +130,30 @@ export async function bindTableMaterials(
   ao.flipY = manifest.ao.flipY;
   ao.channel = manifest.ao.channel;
   ao.colorSpace = THREE.NoColorSpace;
+  const loader = new THREE.TextureLoader();
+  const sideMaps = new Map<string, { map: THREE.Texture; normalMap: THREE.Texture | null }>();
+  for (const [name, slot] of Object.entries(manifest.materialSlots)) {
+    if (slot.set || !slot.maps) continue;
+    const load = async (file: string, srgb: boolean): Promise<THREE.Texture> => {
+      const texture = await loader.loadAsync(`${TABLE_ASSET_BASE}/${file}`);
+      texture.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      return texture;
+    };
+    sideMaps.set(name, {
+      map: await load(slot.maps.basecolor, true),
+      normalMap: slot.maps.normal ? await load(slot.maps.normal, false) : null,
+    });
+  }
   const bound = new Map<string, THREE.MeshStandardMaterial>();
   const bind = (source: THREE.MeshStandardMaterial): THREE.MeshStandardMaterial => {
     const cached = bound.get(source.name);
     if (cached) return cached;
     const slot = manifest.materialSlots[source.name];
     const shared = slot?.set ? set.materials.get(slot.set) : undefined;
+    const side = sideMaps.get(source.name);
     let material: THREE.MeshStandardMaterial;
     if (shared) {
       material = shared.clone();
@@ -97,11 +164,29 @@ export async function bindTableMaterials(
       material.metalnessMap = orm;
       const s = slot?.normalScale ?? 1;
       material.normalScale.set(s, s);
+    } else if (side) {
+      const physical = new THREE.MeshPhysicalMaterial({
+        map: side.map,
+        normalMap: side.normalMap,
+        roughness: 0.9,
+        metalness: 0,
+        sheen: slot?.sheen ? 1 : 0,
+        sheenColor: new THREE.Color(slot?.sheen?.color ?? '#000000'),
+        sheenRoughness: slot?.sheen?.roughness ?? 1,
+      });
+      const s = slot?.normalScale ?? 1;
+      physical.normalScale.set(s, s);
+      material = physical;
     } else {
       material = source.clone();
     }
     material.name = source.name;
     material.aoMap = ao;
+    // Tint and roughness tune the bound maps; the factor-only fallback keeps the GLB's palette values.
+    if ((shared || side) && slot?.tint) material.color.multiply(new THREE.Color(slot.tint));
+    if ((shared || side) && slot?.roughnessScale !== undefined)
+      material.roughness *= slot.roughnessScale;
+    applyTableLook(material, slot?.contact ?? 0, slot?.envScale ?? 1);
     bound.set(source.name, material);
     return material;
   };

@@ -73,13 +73,24 @@ describe('combat table asset manifest', () => {
     expect(manifest.authoredTopHeight).toBeCloseTo(0.75, 3);
   });
 
-  it('binds only to shared sets that exist, and ships its AO map', () => {
+  it('seats the dice tray socket on the recessed felt floor, below the playing surface', () => {
+    const tray = manifest.nodes['socket-dice-tray']?.translation ?? [];
+    const inner = raw.surface.trayInner;
+    expect(tray[1]).toBeCloseTo(inner.floorHeight, 4);
+    expect(tray[1]).toBeLessThan(manifest.authoredTopHeight);
+    expect(inner.size).toEqual([0.31, 0.19]);
+  });
+
+  it('binds only to shared sets or shipped maps that exist, and ships its AO map', () => {
     const sets = JSON.parse(
       readFileSync(new URL('../public/assets/materials/materials.json', import.meta.url), 'utf8'),
     );
     for (const [name, slot] of Object.entries(manifest.materialSlots)) {
-      if (slot.set === null) expect(slot.factorOnly).toBe(true);
-      else expect(sets[slot.set], name).toBeDefined();
+      if (slot.set !== null) expect(sets[slot.set], name).toBeDefined();
+      else if (slot.maps) {
+        for (const file of Object.values(slot.maps))
+          expect(existsSync(new URL(file, base)), file).toBe(true);
+      } else expect(slot.factorOnly).toBe(true);
     }
     expect(existsSync(new URL(manifest.ao.png, base))).toBe(true);
     if (manifest.ao.ktx2) expect(existsSync(new URL(manifest.ao.ktx2, base))).toBe(true);

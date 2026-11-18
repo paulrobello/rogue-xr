@@ -182,7 +182,7 @@ async function open(
     fit.position.set(pose.x, 0, pose.z);
     fit.scale.set(1, height / 0.756, 1);
     for (const [name, y, z] of [
-      ['socket-dice-tray', 0.756, 0.18],
+      ['socket-dice-tray', 0.724, 0.18],
       ['socket-sigil-plate', 1.05, -0.15],
     ] as const) {
       const socket = new THREE.Object3D();
