@@ -2,13 +2,14 @@
   "meshes": 7,
   "materials": 3,
   "packedTextures": 6,
-  "runtimeBytes": 2486756,
-  "sha256": "d06922be57ecc3772fca2fbd035cc9862d095301fa9335a18df4c6f0c125945e",
-  "reimport": "Seven identity roots, finite UV0 and coordinates, nonzero triangles, exact 2x4m bounds, clear portals, zero-plane contacts and no rear faces",
+  "runtimeBytes": 2458604,
+  "sha256": "173f8b6b2fa20e0e8b040567fa67f2834f0c20d2007d29721588ac03e8faaaf8",
+  "reimport": "Seven identity roots, finite UV0 and coordinates, nonzero triangles, exact 2x4m bounds, clear portals, zero-plane contacts, no rear faces and no lateral end-plane faces",
+  "lateralEndPlaneTriangles": 0,
   "blender": "5.2.3 LTS",
   "nodes": {
     "BoilerBay": {
-      "triangles": 1996,
+      "triangles": 1944,
       "depthMeters": 0.2,
       "vertices": 1251,
       "materials": [
@@ -16,7 +17,7 @@
       ]
     },
     "BoilerServiceBay": {
-      "triangles": 3380,
+      "triangles": 3328,
       "depthMeters": 0.2,
       "vertices": 2173,
       "materials": [
@@ -25,7 +26,7 @@
       ]
     },
     "BoilerDoor": {
-      "triangles": 1270,
+      "triangles": 1222,
       "depthMeters": 0.2,
       "vertices": 809,
       "materials": [
@@ -33,7 +34,7 @@
       ]
     },
     "TimberBay": {
-      "triangles": 1760,
+      "triangles": 1696,
       "depthMeters": 0.174,
       "vertices": 1452,
       "materials": [
@@ -41,7 +42,7 @@
       ]
     },
     "TimberCarvedBay": {
-      "triangles": 2248,
+      "triangles": 2184,
       "depthMeters": 0.185,
       "vertices": 1611,
       "materials": [
@@ -50,7 +51,7 @@
       ]
     },
     "TimberDoor": {
-      "triangles": 1044,
+      "triangles": 1004,
       "depthMeters": 0.174,
       "vertices": 755,
       "materials": [
@@ -66,7 +67,7 @@
         "all 12 fin meshes",
         "wall return flange"
       ],
-      "triangles": 6036,
+      "triangles": 5984,
       "depthMeters": 0.222,
       "vertices": 3503,
       "materials": [
@@ -83,13 +84,13 @@
   "source": "Original scripted geometry, cast finishes and wood-cut atlas derived from the project walnut",
   "woodSource": "public/assets/materials/walnut/walnut.basecolor.png",
   "inputsSha256": {
-    "scripts/assets/build-architectural-finishes.py": "2c43b39b8acb6743feb2aeb7fbc08386e938f1cb0bf29df12bba7df2f1729d61",
+    "scripts/assets/build-architectural-finishes.py": "a4965ec7a916e17058cb7fe57efd9f3607b3c0daa413aabc12adb84cbe2e421a",
     "scripts/assets/finish_surfaces.py": "04e2ca5b9de03a339e60998e8d568b07d7ff31dce540ce4abc5aa16e91221ab8",
     "public/assets/materials/walnut/walnut.basecolor.png": "c2c1d72ba308c02f6304ee389a86d6663199d01a352160c347801cefd4042a0b"
   },
   "blendSha256": {
-    "architectural-finishes_high.blend": "823bea8c924c6fcc7837413c8baf840e769fc3cf005466407ac43a44f21a0926",
-    "architectural-finishes_low.blend": "c399c2c10093021aedd91a6a771c0aaa2508ad8e42ba2694b3d9d25b2122978a"
+    "architectural-finishes_high.blend": "e645645149c2a2ae63a3687ee0840e244198751a33aa346456c292f23f29cc5a",
+    "architectural-finishes_low.blend": "28e728a46f5bef500bbf8eff15492065f832a7a2eaccb92081328b835115a450"
   },
   "atlasPixels": [
     768,

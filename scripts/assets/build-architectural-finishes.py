@@ -48,6 +48,13 @@ class Bay:
     def mesh(self, name: str, points: list[Point], faces: list[tuple], swatch: int,
              grain: str = "v", glass: bool = False) -> bpy.types.Mesh:
         # Coordinates are (right, up, proud). Blender's front is -Y.
+        faces = [face for face in faces if not any(
+            all(abs(points[index][0] - side) < 1e-7 for index in face) for side in (-1., 1.))]
+        if name in ("Steam main", "Header web", "Top angle", "Kick channel",
+                    "Cornice course", "Skirt and chair rail"):
+            ends = [{(round(z, 7), round(depth, 7)) for x, z, depth in points
+                     if abs(x - side) < 1e-7} for side in (-1., 1.)]
+            assert ends[0] and ends[0] == ends[1], (self.name, name, ends)
         mesh = bpy.data.meshes.new(name)
         mesh.from_pydata([(x, -depth, z) for x, z, depth in points], [], faces)
         mesh.update()
@@ -714,6 +721,9 @@ def validate(path: Path) -> dict:
         assert all(t.area > 1e-12 for t in mesh.loop_triangles), obj.name
         assert not any(all(abs(coords[i].y) < .000001 for i in tri.vertices)
                        for tri in mesh.loop_triangles), obj.name
+        end_faces = sum(any(all(abs(coords[i].x - side) < .000001 for i in tri.vertices)
+                            for side in (-1., 1.)) for tri in mesh.loop_triangles)
+        assert end_faces == 0, (obj.name, end_faces)
         assert all(math.isfinite(u) and 0 <= u <= 1 for entry in mesh.uv_layers.active.data for u in entry.uv)
         if obj.name.endswith("Door"):
             for a, b in (((-.8, 0.), (-.8, 4.)), ((.8, 0.), (.8, 4.)),
@@ -730,7 +740,8 @@ def validate(path: Path) -> dict:
                         or all(v.z >= 2.3999 for v in pts)), obj.name
     return {"meshes": len(gltf["meshes"]), "materials": len(gltf["materials"]), "packedTextures": len(gltf["images"]),
             "runtimeBytes": len(data), "sha256": hashlib.sha256(data).hexdigest(),
-            "reimport": "Seven identity roots, finite UV0 and coordinates, nonzero triangles, exact 2x4m bounds, clear portals, zero-plane contacts and no rear faces"}
+            "reimport": "Seven identity roots, finite UV0 and coordinates, nonzero triangles, exact 2x4m bounds, clear portals, zero-plane contacts, no rear faces and no lateral end-plane faces",
+            "lateralEndPlaneTriangles": 0}
 
 
 def main() -> None:

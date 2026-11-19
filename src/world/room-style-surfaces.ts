@@ -1,6 +1,10 @@
 import * as THREE from 'three';
 import type { RoomStyle, RoomStyleKit } from './room-styles.ts';
 
+const ROOM_EDGE = 4;
+// The wall backing is 12 mm thick. Ceiling members seat halfway into it.
+const BEARING_EDGE = ROOM_EDGE - 0.006;
+
 type Point = readonly [number, number, number];
 
 function edgeLength(a: Point, b: Point): number {
@@ -22,7 +26,11 @@ class SurfaceBuilder {
     points: readonly [Point, Point, Point] | readonly [Point, Point, Point, Point],
     cell: number,
     shade = 1,
+    exposed = true,
   ): void {
+    // Each authored face has a deterministic texture offset, including faces buried in a wall.
+    const faceIndex = this.faces++;
+    if (!exposed) return;
     const [first, second] = points;
     const last = points[points.length - 1];
     this.a.set(second[0] - first[0], second[1] - first[1], second[2] - first[2]);
@@ -33,8 +41,8 @@ class SurfaceBuilder {
     const rotate = height > width;
     const uSpan = Math.min(0.96, (rotate ? height : width) / 1.75);
     const vSpan = Math.min(0.96, (rotate ? width : height) / 1.25);
-    const u0 = 0.02 + (0.96 - uSpan) * (((this.faces * 37) % 97) / 97);
-    const v0 = 0.02 + (0.96 - vSpan) * (((this.faces * 59) % 101) / 101);
+    const u0 = 0.02 + (0.96 - uSpan) * (((faceIndex * 37) % 97) / 97);
+    const v0 = 0.02 + (0.96 - vSpan) * (((faceIndex * 59) % 101) / 101);
     const offset = this.positions.length / 3;
     for (const [i, p] of points.entries()) {
       this.positions.push(...p);
@@ -49,7 +57,6 @@ class SurfaceBuilder {
     }
     this.indices.push(offset, offset + 1, offset + 2);
     if (points.length === 4) this.indices.push(offset, offset + 2, offset + 3);
-    this.faces++;
   }
 
   box(
@@ -61,13 +68,14 @@ class SurfaceBuilder {
     d: number,
     cell: number,
     shade = 1,
+    limit = BEARING_EDGE,
   ): void {
-    const l = x - w / 2,
-      r = x + w / 2,
+    const l = Math.max(-limit, x - w / 2),
+      r = Math.min(limit, x + w / 2),
       b = y - h / 2,
       t = y + h / 2,
-      n = z - d / 2,
-      f = z + d / 2;
+      n = Math.max(-limit, z - d / 2),
+      f = Math.min(limit, z + d / 2);
     this.face(
       [
         [l, t, f],
@@ -97,6 +105,7 @@ class SurfaceBuilder {
       ],
       cell,
       shade,
+      f < limit,
     );
     this.face(
       [
@@ -107,6 +116,7 @@ class SurfaceBuilder {
       ],
       cell,
       shade,
+      n > -limit,
     );
     this.face(
       [
@@ -117,6 +127,7 @@ class SurfaceBuilder {
       ],
       cell,
       shade,
+      l > -limit,
     );
     this.face(
       [
@@ -127,6 +138,7 @@ class SurfaceBuilder {
       ],
       cell,
       shade,
+      r < limit,
     );
   }
 
@@ -203,8 +215,8 @@ class SurfaceBuilder {
 }
 
 function boiler(b: SurfaceBuilder): void {
-  b.box(0, -0.041, 0, 8, 0.058, 8, 4, 0.54);
-  b.box(0, 4.018, 0, 8.02, 0.024, 8.02, 1, 0.65);
+  b.box(0, -0.041, 0, 8, 0.058, 8, 4, 0.54, ROOM_EDGE);
+  b.box(0, 4.018, 0, 8, 0.024, 8, 1, 0.65);
   for (let row = 0; row < 8; row++)
     for (let col = 0; col < 8; col++) {
       const x = col - 3.5,
@@ -239,7 +251,7 @@ function boiler(b: SurfaceBuilder): void {
   ]) {
     for (let j = 0; j < 4; j++) {
       const z0 = -4 + j * 2;
-      b.pipe(x, 3.66, z0, z0 + 2, r, cell);
+      b.pipe(x, 3.66, Math.max(-BEARING_EDGE, z0), Math.min(BEARING_EDGE, z0 + 2), r, cell);
       b.pipe(x, 3.66, z0 + 0.96, z0 + 1.04, r + 0.014, 2);
       b.box(x, 3.75, z0 + 1, 0.035, 0.12, 0.04, 1);
     }
@@ -247,7 +259,7 @@ function boiler(b: SurfaceBuilder): void {
 }
 
 function timber(b: SurfaceBuilder): void {
-  b.box(0, -0.024, 0, 8, 0.03, 8, 3, 0.62);
+  b.box(0, -0.024, 0, 8, 0.03, 8, 3, 0.62, ROOM_EDGE);
   for (let row = 0; row < 40; row++) {
     const z = -3.9 + row * 0.2;
     let left = -4;

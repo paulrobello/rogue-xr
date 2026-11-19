@@ -1,6 +1,6 @@
-"""Compare HEAD and rebuilt furnishing triangles, ignoring only the edited visor.
+"""Compare furnishing triangles outside one intentionally edited subtree.
 
-Usage: uv run --with numpy python scripts/assets/compare-interior-roots.py OLD.glb NEW.glb
+Usage: uv run --with numpy python scripts/assets/compare-interior-roots.py OLD.glb NEW.glb [candelabrum]
 """
 import json
 import struct
@@ -43,22 +43,26 @@ def triangles(doc, binary, primitive, skip_uv=False):
     return result
 
 
-def scene(path):
+def scene(path, candle_revision=False):
     doc, binary = load(path)
     out = {}
     def visit(i):
         node = doc['nodes'][i]
-        if node.get('name') == 'ClockworkArmor_Visor':
+        name = node.get('name', '')
+        if not candle_revision and name == 'ClockworkArmor_Visor':
             return
+        children = node.get('children', [])
+        if candle_revision and name == 'Candelabrum':
+            children = [j for j in children if doc['nodes'][j].get('name', '').startswith('Candelabrum_FlameSocket_')]
         entry = {'transform': {k: node[k] for k in ('translation', 'rotation', 'scale', 'matrix') if k in node},
-                 'children': sorted(doc['nodes'][j].get('name') for j in node.get('children', [])),
+                 'children': sorted(doc['nodes'][j].get('name') for j in children),
                  'primitives': []}
         if 'mesh' in node:
             for primitive in doc['meshes'][node['mesh']]['primitives']:
                 material = doc['materials'][primitive['material']]
                 entry['primitives'].append((material, primitive))
         out[node['name']] = entry
-        for child in node.get('children', []):
+        for child in children:
             visit(child)
     for i, node in enumerate(doc['nodes']):
         if node.get('name') in ROOTS:
@@ -66,8 +70,11 @@ def scene(path):
     return doc, binary, out
 
 
-a, ab, left = scene(sys.argv[1])
-b, bb, right = scene(sys.argv[2])
+if len(sys.argv) not in (3, 4) or (len(sys.argv) == 4 and sys.argv[3] != 'candelabrum'):
+    raise SystemExit('Expected OLD.glb NEW.glb [candelabrum]')
+candle_revision = len(sys.argv) == 4
+a, ab, left = scene(sys.argv[1], candle_revision)
+b, bb, right = scene(sys.argv[2], candle_revision)
 assert left.keys() == right.keys(), 'node names differ'
 for name, x in left.items():
     y = right[name]
@@ -76,4 +83,4 @@ for name, x in left.items():
     for (xm, xp), (ym, yp) in zip(x['primitives'], y['primitives']):
         assert xm == ym, (name, 'material changed')
         assert triangles(a, ab, xp) == triangles(b, bb, yp), (name, xm['name'], 'triangle attributes differ')
-print('PASS', len(left), 'nodes: transforms, material definitions and oriented triangles with attributes match outside visor')
+print('PASS', len(left), 'nodes: transforms, material definitions and oriented triangles with attributes match outside edited geometry')

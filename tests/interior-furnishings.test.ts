@@ -73,6 +73,38 @@ async function realAsset(): Promise<InteriorFurnishingsAsset> {
 }
 
 describe('interior furnishings', () => {
+  it('exports smooth side normals on the candleholder metal and wax', async () => {
+    const { roots } = await realAsset();
+    const sides = new Map<string, number>();
+    const flat = new Set<string>();
+    const normal = new THREE.Vector3();
+    const a = new THREE.Vector3(),
+      b = new THREE.Vector3(),
+      c = new THREE.Vector3();
+    roots.Candelabrum.traverse((mesh) => {
+      if (!(mesh instanceof THREE.Mesh)) return;
+      const g = mesh.geometry,
+        positions = g.getAttribute('position'),
+        normals = g.getAttribute('normal');
+      const material = mesh.material.name;
+      for (let i = 0; i < (g.index?.count ?? positions.count); i += 3) {
+        const indices = [0, 1, 2].map((k) => g.index?.getX(i + k) ?? i + k);
+        a.fromBufferAttribute(positions, indices[0]);
+        const face = b
+          .fromBufferAttribute(positions, indices[1])
+          .sub(a)
+          .cross(c.fromBufferAttribute(positions, indices[2]).sub(a))
+          .normalize();
+        if (Math.abs(face.y) >= 0.15) continue;
+        sides.set(material, (sides.get(material) ?? 0) + 1);
+        if (indices.every((j) => normal.fromBufferAttribute(normals, j).dot(face) > 0.99999))
+          flat.add(material);
+      }
+    });
+    expect([...sides.keys()].sort()).toEqual(['AntiqueBrass', 'BlackIron', 'ClockIvory']);
+    expect([...flat]).toEqual([]);
+  });
+
   it('loads textured dining wood and upholstery materials', async () => {
     const furniture = await realAsset();
     const materials = new Map<string, THREE.MeshStandardMaterial>();

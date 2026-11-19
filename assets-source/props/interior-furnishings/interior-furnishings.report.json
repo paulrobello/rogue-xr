@@ -37,7 +37,8 @@
         2.41,
         0.17
       ],
-      "mesh_count": 6
+      "mesh_count": 6,
+      "triangles": 572
     },
     "DoorDouble": {
       "dimensions_m": [
@@ -55,7 +56,8 @@
         2.41,
         0.17
       ],
-      "mesh_count": 9
+      "mesh_count": 9,
+      "triangles": 880
     },
     "DoorArched": {
       "dimensions_m": [
@@ -73,7 +75,8 @@
         2.4,
         0.135
       ],
-      "mesh_count": 4
+      "mesh_count": 4,
+      "triangles": 800
     },
     "Curtain": {
       "dimensions_m": [
@@ -91,7 +94,8 @@
         2.405,
         0.168
       ],
-      "mesh_count": 3
+      "mesh_count": 3,
+      "triangles": 21916
     },
     "DiningChair": {
       "dimensions_m": [
@@ -109,7 +113,8 @@
         1.09,
         0.25
       ],
-      "mesh_count": 3
+      "mesh_count": 3,
+      "triangles": 884
     },
     "DiningTable": {
       "dimensions_m": [
@@ -127,7 +132,8 @@
         0.851,
         0.44
       ],
-      "mesh_count": 2
+      "mesh_count": 2,
+      "triangles": 2808
     },
     "Bookcase": {
       "dimensions_m": [
@@ -145,7 +151,8 @@
         2.3,
         0.277
       ],
-      "mesh_count": 13
+      "mesh_count": 13,
+      "triangles": 8000
     },
     "Candelabrum": {
       "dimensions_m": [
@@ -163,7 +170,8 @@
         0.99,
         0.35
       ],
-      "mesh_count": 3
+      "mesh_count": 3,
+      "triangles": 1882
     },
     "WallClock": {
       "dimensions_m": [
@@ -181,7 +189,8 @@
         0.735,
         0.161
       ],
-      "mesh_count": 7
+      "mesh_count": 7,
+      "triangles": 1276
     },
     "ClockworkArmor": {
       "dimensions_m": [
@@ -199,7 +208,8 @@
         1.855,
         0.3
       ],
-      "mesh_count": 11
+      "mesh_count": 11,
+      "triangles": 11372
     },
     "FramedPainting": {
       "dimensions_m": [
@@ -217,7 +227,8 @@
         1.02,
         0.13
       ],
-      "mesh_count": 5
+      "mesh_count": 5,
+      "triangles": 10328
     }
   },
   "movable_nodes": [
@@ -247,7 +258,8 @@
     "LibraryBindingAtlas requires the shared runtime book texture; canvas UVs are texture-ready.",
     "No authored colliders or LODs."
   ],
-  "triangles": 59992,
-  "size_bytes": 7219168,
-  "sha256": "01b71b300214d38ee16cbc042e9181182a937b2870324ce1f70aa92ff5b68396"
+  "triangles": 60718,
+  "size_bytes": 7197564,
+  "candelabrum_extra_triangles": 726,
+  "sha256": "5d3b4f5b96ae9228f05a316d3a8ebba50df9694578ef2268fef3d572ee4e8b8f"
 }

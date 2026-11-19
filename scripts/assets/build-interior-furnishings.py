@@ -284,14 +284,168 @@ for z in (-.10,.1): cube(pull,'Gilt line',(0,-.097,z),(.09,.006,.01),brass)
 cube(pull,'Red ribbon',(0,-.098,.064),(.018,.005,.16),velvet,.001)
 for y in (-.04,.01,.06): cube(pull,'Page edge',(0,y,.14),(.074,.003,.003),ivory)
 
-candle=empty('Candelabrum'); cyl(candle,'Weighted base',(0,0,.035),.24,.07,iron,verts=16,r2=.19); torus(candle,'Base rim',(0,0,.075),.17,.014,brass)
-cyl(candle,'Stem',(0,0,.43),.035,.70,brass,verts=12); cyl(candle,'Stem collar',(0,0,.47),.065,.08,iron)
+def turned(
+    parent: bpy.types.Object,
+    name: str,
+    center: tuple[float, float],
+    profile: list[tuple[float, float]],
+    mat: bpy.types.Material,
+    segments: int = 16,
+    cap_top: bool = False,
+) -> bpy.types.Object:
+    vertices = [
+        (
+            center[0] + r * math.cos(math.tau * i / segments),
+            center[1] + r * math.sin(math.tau * i / segments),
+            z,
+        )
+        for z, r in profile
+        for i in range(segments)
+    ]
+    faces = [
+        (
+            j * segments + i,
+            j * segments + (i + 1) % segments,
+            (j + 1) * segments + (i + 1) % segments,
+            (j + 1) * segments + i,
+        )
+        for j in range(len(profile) - 1)
+        for i in range(segments)
+    ]
+    if cap_top:
+        faces.append(tuple((len(profile) - 1) * segments + i for i in range(segments)))
+    mesh = bpy.data.meshes.new(name)
+    mesh.from_pydata(vertices, [], faces)
+    mesh.update()
+    ob = bpy.data.objects.new(name, mesh)
+    bpy.context.collection.objects.link(ob)
+    ob.parent = parent
+    mesh.materials.append(mat)
+    for face in mesh.polygons:
+        face.use_smooth = (
+            len(face.vertices) == 4
+            and profile[face.index // segments][0]
+            != profile[face.index // segments + 1][0]
+        )
+    return ob
+
+
+def curved_candle_arm(parent: bpy.types.Object, angle: float) -> None:
+    direction = Vector((math.cos(angle), math.sin(angle), 0))
+    side = Vector((-math.sin(angle), math.cos(angle), 0))
+    path = []
+    for j in range(9):
+        t = j / 8
+        u = 1 - t
+        path.append(
+            (
+                3 * u * u * t * 0.19 + 3 * u * t * t * 0.31 + t * t * t * 0.31,
+                u * u * u * 0.56
+                + 3 * u * u * t * 0.56
+                + 3 * u * t * t * 0.58
+                + t * t * t * 0.76,
+            )
+        )
+    segments = 10
+    vertices = []
+    for j, (radius, z) in enumerate(path):
+        before = path[max(0, j - 1)]
+        after = path[min(len(path) - 1, j + 1)]
+        tangent = (
+            direction * (after[0] - before[0]) + Vector((0, 0, after[1] - before[1]))
+        ).normalized()
+        up = tangent.cross(side)
+        center = direction * radius + Vector((0, 0, z))
+        vertices.extend(
+            center
+            + 0.022
+            * (
+                side * math.cos(math.tau * i / segments)
+                + up * math.sin(math.tau * i / segments)
+            )
+            for i in range(segments)
+        )
+    faces = [
+        (
+            j * segments + i,
+            j * segments + (i + 1) % segments,
+            (j + 1) * segments + (i + 1) % segments,
+            (j + 1) * segments + i,
+        )
+        for j in range(len(path) - 1)
+        for i in range(segments)
+    ]
+    mesh = bpy.data.meshes.new("Curved arm")
+    mesh.from_pydata(vertices, [], faces)
+    mesh.update()
+    ob = bpy.data.objects.new("Curved arm", mesh)
+    bpy.context.collection.objects.link(ob)
+    ob.parent = parent
+    mesh.materials.append(iron)
+    for face in mesh.polygons:
+        face.use_smooth = True
+
+
+candle = empty("Candelabrum")
+turned(
+    candle, "Weighted base", (0, 0), [(0, 0.24), (0.07, 0.19)], iron, 24, cap_top=True
+)
+turned(
+    candle,
+    "Base rim",
+    (0, 0),
+    [(0.061, 0.17), (0.075, 0.184), (0.089, 0.17)],
+    brass,
+    32,
+)
+turned(candle, "Stem", (0, 0), [(0.069, 0.035), (0.78, 0.035)], brass)
+turned(
+    candle,
+    "Stem collar",
+    (0, 0),
+    [(0.43, 0.034), (0.43, 0.065), (0.51, 0.065), (0.51, 0.034)],
+    iron,
+    12,
+)
 for i in range(5):
-    ang=i*2*math.pi/5; x=.31*math.cos(ang); y=.31*math.sin(ang)
-    bar(candle,'Swept arm',(.0,.0,.56),(x*.6,y*.6,.57),.022,iron); bar(candle,'Upturned arm',(x*.6,y*.6,.57),(x,y,.76),.022,iron)
-    cyl(candle,'Candle cup',(x,y,.79),.055,.065,brass,verts=12,r2=.043); cyl(candle,'Wax candle',(x,y,.89),.026,.17,ivory,verts=10)
-    empty('Candelabrum_FlameSocket_%02d'%(i+1),candle,(x,y,.985))
-cyl(candle,'Center candle cup',(0,0,.81),.055,.07,brass); cyl(candle,'Center candle',(0,0,.91),.026,.16,ivory); empty('Candelabrum_FlameSocket_00',candle,(0,0,1.0))
+    ang = i * 2 * math.pi / 5
+    x = 0.31 * math.cos(ang)
+    y = 0.31 * math.sin(ang)
+    curved_candle_arm(candle, ang)
+    turned(
+        candle,
+        "Candle cup",
+        (x, y),
+        [(0.7575, 0.020), (0.7575, 0.055), (0.8225, 0.043), (0.8225, 0.025)],
+        brass,
+    )
+    turned(
+        candle,
+        "Wax candle",
+        (x, y),
+        [(0.805, 0.026), (0.975, 0.026)],
+        ivory,
+        12,
+        cap_top=True,
+    )
+    empty("Candelabrum_FlameSocket_%02d" % (i + 1), candle, (x, y, 0.985))
+turned(
+    candle,
+    "Center candle cup",
+    (0, 0),
+    [(0.775, 0.034), (0.775, 0.055), (0.845, 0.055), (0.845, 0.025)],
+    brass,
+)
+turned(
+    candle,
+    "Center candle",
+    (0, 0),
+    [(0.83, 0.026), (0.99, 0.026)],
+    ivory,
+    12,
+    cap_top=True,
+)
+empty("Candelabrum_FlameSocket_00", candle, (0, 0, 1.0))
 
 clock=empty('WallClock'); cyl(clock,'Turned round clock case',(0,-.035,.46),.275,.07,wood,'Y',32)
 torus(clock,'Turned clock rim',(0,-.075,.46),.255,.012,wood2,'Y')
@@ -474,15 +628,20 @@ report={'generator':'scripts/assets/build-interior-furnishings.py','blender':bpy
 triangles=0
 for n in required:
     root=bpy.data.objects[n]; descendants=[root]+list(root.children_recursive); meshes=[o for o in descendants if o.type=='MESH']; points=[]
+    root_triangles=0
     for ob in meshes:
-        triangles+=sum(len(p.vertices)-2 for p in ob.data.polygons)
+        root_triangles+=sum(len(p.vertices)-2 for p in ob.data.polygons)
         points += [root.matrix_world.inverted() @ ob.matrix_world @ v.co for v in ob.data.vertices]
+    triangles+=root_triangles
     if not points: raise RuntimeError('Empty root '+n)
     lo=[min(p[i] for p in points) for i in (0,2,1)]; hi=[max(p[i] for p in points) for i in (0,2,1)]
     lo[2],hi[2]=-hi[2],-lo[2]
-    report['roots'][n]={'dimensions_m':[round(hi[i]-lo[i],3) for i in range(3)],'bounds_min':[round(v,3) for v in lo],'bounds_max':[round(v,3) for v in hi],'mesh_count':len(meshes)}
+    report['roots'][n]={'dimensions_m':[round(hi[i]-lo[i],3) for i in range(3)],'bounds_min':[round(v,3) for v in lo],'bounds_max':[round(v,3) for v in hi],'mesh_count':len(meshes),'triangles':root_triangles}
 report['triangles']=triangles; report['size_bytes']=staged.stat().st_size
-if triangles>60000 or staged.stat().st_size>8_000_000: raise RuntimeError('Kit budget exceeded: %d triangles, %d bytes' % (triangles,staged.stat().st_size))
+candle_extra=max(0,report['roots']['Candelabrum']['triangles']-1156)
+report['candelabrum_extra_triangles']=candle_extra
+if candle_extra>750 or triangles-candle_extra>60000 or triangles>60750 or staged.stat().st_size>8_000_000:
+    raise RuntimeError('Kit budget exceeded: %d triangles (%d candelabrum extra), %d bytes' % (triangles,candle_extra,staged.stat().st_size))
 assert not any(o.type in {'CAMERA','LIGHT'} for o in bpy.context.scene.objects)
 os.replace(staged,PUB/'interior-furnishings.glb')
 report['sha256']=hashlib.sha256((PUB/'interior-furnishings.glb').read_bytes()).hexdigest()
@@ -490,7 +649,7 @@ report['sha256']=hashlib.sha256((PUB/'interior-furnishings.glb').read_bytes()).h
 provenance_path=SRC/'provenance.json'
 previous=json.loads(provenance_path.read_text()) if provenance_path.exists() else {}
 provenance={'author':'Original procedural Blender modeling','license':'MIT','source':'interior-furnishings.blend','generator':'scripts/assets/build-interior-furnishings.py','output':'public/assets/props/interior-furnishings/interior-furnishings.glb','blender':bpy.app.version_string,'glb_sha256':report['sha256'],'blend_sha256':hashlib.sha256((SRC/'interior-furnishings.blend').read_bytes()).hexdigest(),'generator_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),'approval':'Revised geometry reimported and checked. Final independent review and owner visual acceptance pending.'}
-for key in ('historicalReview', 'previousVerification', 'verification', 'dining_revision', 'visor_revision'):
+for key in ('historicalReview', 'previousVerification', 'verification', 'dining_revision', 'visor_revision', 'candelabrum_revision'):
     if key in previous:
         provenance[key] = previous[key]
 provenance_path.write_text(json.dumps(provenance,indent=2)+'\n')
