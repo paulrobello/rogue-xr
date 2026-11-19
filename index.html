@@ -90,10 +90,45 @@
         position: fixed;
         inset: 0;
       }
+      #loading-screen {
+        position: fixed;
+        inset: 0;
+        z-index: 2147483647;
+        display: grid;
+        align-items: center;
+        padding-inline: clamp(1.5rem, 8vw, 8rem);
+        background-color: #120c07;
+        background-image: linear-gradient(90deg, rgba(18, 12, 7, .96), rgba(18, 12, 7, .73) 36%, rgba(18, 12, 7, .06)), url("/assets/ui/title-1024.jpg");
+        background-size: cover;
+        background-position: center;
+      }
+      #loading-screen[hidden] { display: none; }
+      .loading-copy { max-width: 26rem; }
+      .loading-copy h1 {
+        margin: 0;
+        color: #f2dfb8;
+        font: 500 clamp(3.4rem, 8vw, 7rem)/.95 Georgia, serif;
+        letter-spacing: -.04em;
+      }
+      .loading-copy p { margin: 1.5rem 0 .8rem; color: #ebdaba; }
+      .loading-track { width: 9rem; height: 3px; background: #544128; overflow: hidden; }
+      .loading-track::after { content: ''; display: block; width: 40%; height: 100%; background: #dec16a; animation: winding 1.8s ease-in-out infinite alternate; }
+      @keyframes winding { to { transform: translateX(150%); } }
+      @media (prefers-reduced-motion: reduce) { .loading-track::after { animation: none; } }
+      #loading-screen[data-failed] .loading-track { display: none; }
+      #loading-retry { padding: .55rem 1rem; border: 1px solid #dec16a; background: #231d1a; color: #f2dfb8; font: inherit; cursor: pointer; }
     </style>
   </head>
   <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.ts"></script>
+    <div id="loading-screen">
+      <div class="loading-copy">
+        <h1>Clockwork<br />Spire</h1>
+        <p id="loading-status" role="status">Loading the tower…</p>
+        <div class="loading-track" aria-hidden="true"></div>
+        <button id="loading-retry" type="button" hidden>Retry</button>
+      </div>
+    </div>
+    <div id="app" inert></div>
+    <script type="module" src="/src/launch.ts"></script>
   </body>
 </html>

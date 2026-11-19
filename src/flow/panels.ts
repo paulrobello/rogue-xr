@@ -10,6 +10,7 @@ import {
   type RadialMenu,
 } from '@par/xr-workspace';
 import * as THREE from 'three';
+import { Text } from 'troika-three-text';
 import { TABLE_DISTANCE_CHOICES } from '../combat/placement.ts';
 import { CanvasLabel, configureTextTexture } from '../combat-view/canvas-label.ts';
 import { cardTip } from '../combat-view/card-keywords.ts';
@@ -377,6 +378,8 @@ export class FlowUi {
   private radialDecor: THREE.Group | null = null;
   private flight: RewardFlight | null = null;
   private artTexture: THREE.Texture | null = null;
+  private artLoaded = Promise.resolve(true);
+
   private stopAbove: (() => void) | null = null;
   private readonly stopUpdate: () => void;
 
@@ -390,6 +393,26 @@ export class FlowUi {
       deps.update?.onChange(() => {
         if (this.shownFor === 'title' && this.deps.flow.phase === 'title') this.refresh();
       }) ?? (() => {});
+  }
+
+  /** Waits for the active board's artwork and for its first text geometry to be available. */
+  async waitForArtwork(): Promise<void> {
+    const labels: Promise<void>[] = [];
+    this.root.traverseVisible((node) => {
+      if (!(node instanceof Text) || !node.text || node.textRenderInfo) return;
+      labels.push(
+        new Promise<void>((resolve) => {
+          const done = () => {
+            node.removeEventListener('synccomplete', done);
+            resolve();
+          };
+          node.addEventListener('synccomplete', done);
+          node.sync();
+        }),
+      );
+    });
+    const [artLoaded] = await Promise.all([this.artLoaded, ...labels]);
+    if (!artLoaded) throw new Error('Title artwork unavailable');
   }
 
   /** The seed New Run will use. */
@@ -944,8 +967,15 @@ export class FlowUi {
   private keyArt(): void {
     const height = (ART_WIDTH * 9) / 16;
     if (!this.artTexture) {
-      this.artTexture = new THREE.TextureLoader().load(this.deps.keyArt.url);
-      this.artTexture.colorSpace = THREE.SRGBColorSpace;
+      this.artLoaded = new Promise<boolean>((resolve) => {
+        this.artTexture = new THREE.TextureLoader().load(
+          this.deps.keyArt.url,
+          () => resolve(true),
+          undefined,
+          () => resolve(false),
+        );
+        this.artTexture.colorSpace = THREE.SRGBColorSpace;
+      });
     }
     const art = new THREE.Mesh(
       new THREE.PlaneGeometry(ART_WIDTH, height),

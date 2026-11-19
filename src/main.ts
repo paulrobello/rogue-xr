@@ -13,6 +13,7 @@ import {
   loadCombatTable,
   mountTableAssetProof,
 } from './combat/table-asset-proof.ts';
+import { CanvasLabel } from './combat-view/canvas-label.ts';
 import {
   HitFeedback,
   hapticFor,
@@ -58,6 +59,8 @@ import {
 import { parseLootKey, type RewardTier } from './rules/run.ts';
 import { createWorkshop } from './rules/workshop.ts';
 import { sharedKtx2Loader } from './ui/first-render.ts';
+import { loadIconSheet } from './ui/icon-sheet.ts';
+import { failLoading, revealGame, showLoading } from './ui/loading-screen.ts';
 import { mountUpdateNotice } from './update/index.ts';
 import { type FloorView, mountFloorView, seedFromQuery } from './world/floor-view.ts';
 import type { HearthPick } from './world/hearth.ts';
@@ -125,7 +128,7 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.AgXToneMapping;
 app.append(renderer.domElement);
 // Card art loads at boot so the first fight's hand opens on real faces, not flat tints.
-requestCardFaceArt(sharedKtx2Loader(renderer)).catch((error: unknown) =>
+const cardArtReady = requestCardFaceArt(sharedKtx2Loader(renderer)).catch((error: unknown) =>
   console.warn('card atlas prefetch failed; the fan retries', error),
 );
 
@@ -196,6 +199,10 @@ const mountFloor = (seed: string, contentVersion?: number): FloorView => {
   return view;
 };
 if (!proofView) floor = mountFloor(bootSeed);
+let readyFloor: FloorView | undefined;
+let loadingFailed = false;
+let covered = true;
+const busy = () => covered && !proofView;
 /** True once a run has played on the mounted floor, so the next run needs a fresh one. */
 let floorUsed = false;
 /** Set when a finished run returns to the title: the next frame swaps in a pristine floor (H1). */
@@ -274,6 +281,7 @@ const updateNotice = mountUpdateNotice({
 
 // Audio: one director for the floor, resumed by the first gesture or the XR session start.
 const audio = floor ? new AudioDirector({ camera }) : null;
+const soundReady = audio?.load();
 if (audio) {
   scene.add(audio.root);
   if (settings) {
@@ -283,7 +291,6 @@ if (audio) {
       sfx: settings.sfxVolume,
     });
   }
-  void audio.load();
   audio.unlockOnGesture(window);
   audio.unlockOnGesture(document, ['visibilitychange']);
   audio.unlockOnXrSession(renderer.xr);
@@ -389,13 +396,11 @@ const tableAsset: Promise<CombatTableAsset | null> = floor
     })
   : Promise.resolve(null);
 let tableUses = 0;
-const fitTable = (target: FloorView): void => {
-  void tableAsset.then((asset) => {
+const fitTable = (target: FloorView): Promise<void> =>
+  tableAsset.then((asset) => {
     if (!asset || target !== floor) return;
     target.useTableAsset(tableUses++ === 0 ? asset.scene : asset.scene.clone(true), asset.top);
   });
-};
-if (floor) fitTable(floor);
 
 // P4-T9 hero assets: the baked rooms dress their templates and each automaton model replaces its
 // kind's capsules. One KTX2 material set backs them all; each falls back to its greybox on its own
@@ -521,12 +526,12 @@ const dressFloor = async (target: FloorView): Promise<void> => {
       return art;
     });
     dressed.push(
-      pressureArt.then((art) => {
-        if (target === floor) target.pressure?.dress(art);
-      }),
+      pressureArt
+        .then((art) => {
+          if (target === floor) target.pressure?.dress(art);
+        })
+        .catch((error: unknown) => console.warn('Pressure Works dressing unavailable', error)),
     );
-  }
-  if (target.pressure) {
     interiors ??= Promise.all([
       Promise.all([loadInteriorFurnishings(), libraryBindings]).then(([asset, atlas]) => {
         if (atlas) bindBookcaseAtlas(asset, atlas);
@@ -543,13 +548,25 @@ const dressFloor = async (target: FloorView): Promise<void> => {
       ),
     ]);
   }
-  const [rooms, door, coffers, decor] = await Promise.all([
+  const [rooms, door, coffers, decor, furnishings] = await Promise.all([
     roomAssets,
     sealedDoorMaterial,
     lootMaterials,
     tableDecor,
+    target.pressure
+      ? interiors?.catch((error: unknown) => {
+          console.warn('Interior furnishing kit unavailable', error);
+          return null;
+        })
+      : null,
+    fitTable(target),
+    ...dressed,
   ]);
   if (target === floor) {
+    const missing = target.world.plan.rooms.find(
+      (placed) => !rooms.some((room) => room.manifest.template.id === placed.templateId),
+    );
+    if (missing) throw new Error(`Couldn't load the ${missing.templateId} room`);
     dressHeroRooms(target, rooms, decor);
     const candles = new Set<THREE.MeshStandardMaterial>();
     for (const group of target.world.roomGroups)
@@ -561,29 +578,33 @@ const dressFloor = async (target: FloorView): Promise<void> => {
       });
     if (decor) candles.add(decor.material);
     target.setCandleMaterials([...candles], hitFx.reducedMotion);
-    if (target.pressure && interiors)
-      dressed.push(
-        interiors
-          .then(([kit, paintings]) => {
-            if (target === floor) target.setFurnishings(kit, paintings, hitFx.reducedMotion);
-          })
-          .catch((error) => console.warn('Interior furnishing kit unavailable', error)),
-      );
+    if (furnishings) target.setFurnishings(furnishings[0], furnishings[1], hitFx.reducedMotion);
     if (door) target.world.dressSealedDoors(door.material, door.tileMeters);
     if (coffers) {
       target.loot.dress(coffers);
       target.hearth.dress({ brass: coffers.brass });
     }
   }
-  await Promise.all(dressed);
 };
-/** Resolves once the boot floor wears its hero assets and their programs are compiled. */
-const heroReady: Promise<void> = floor
-  ? (async () => {
-      const target = floor;
-      await dressFloor(target);
-      void heroSet?.then(({ ktx2 }) => ktx2.dispose());
+async function prepareFloor(target: FloorView, boot = false): Promise<void> {
+  covered = true;
+  loadingFailed = false;
+  showLoading('Loading the tower…');
+  try {
+    await dressFloor(target);
+    if (floor !== target) return;
+    ui?.sync(camera);
+    await ui?.waitForArtwork();
+    if (boot) {
+      showLoading('Preparing the scene…');
+
       const [rooms, models] = await Promise.all([roomAssets, loadedEnemies()]);
+      await Promise.all([
+        cardArtReady,
+        soundReady,
+        xr.handsReady,
+        loadIconSheet().catch((error: unknown) => console.warn('UI icon atlas unavailable', error)),
+      ]);
       // One instance per baked room and per loaded automaton, so every program (the corridor's
       // cloth and lamp glass, the vault's braziers, each model's skinning) links behind the veil
       // even when this floor never places it.
@@ -598,19 +619,32 @@ const heroReady: Promise<void> = floor
       const decor = await tableDecor;
       const decorSample = decor?.sample() ?? null;
       if (decorSample) variants.push(decorSample);
-      await DiceWorld.warmUp();
       try {
+        await DiceWorld.warmUp();
         const textures = new Set([
           ...rooms.flatMap((room) => room.textures),
           ...(decor?.textures ?? []),
         ]);
-        await runVeil(renderer, scene, camera, [...textures], { variants });
+        await runVeil(renderer, scene, camera, [...textures], { variants, fadeFrames: 0 });
       } finally {
         for (const actor of actors) actor.dispose();
         decorSample?.geometry.dispose();
       }
-    })().catch((error: unknown) => console.warn('hero asset warm-up failed', error))
-  : Promise.resolve();
+    }
+    if (floor === target) readyFloor = target;
+  } catch (error) {
+    if (floor === target) {
+      loadingFailed = true;
+      failLoading(error);
+    }
+  } finally {
+    if (boot)
+      void heroSet?.then(
+        ({ ktx2 }) => ktx2.dispose(),
+        () => {},
+      );
+  }
+}
 
 // Flow glue: persistence, the in-scene boards, starting and resuming runs on a fresh floor.
 const persistence = db
@@ -743,8 +777,7 @@ const freshFloor = (seed: string, contentVersion?: number): FloorView => {
   floor = mountFloor(seed, contentVersion);
   floor.setAudio(audio);
   combat = makeCombat(floor);
-  fitTable(floor);
-  void dressFloor(floor);
+  void prepareFloor(floor);
   return floor;
 };
 const startRun = (seed: string, difficulty: Difficulty): void => {
@@ -834,19 +867,23 @@ let rewardHand: THREE.Object3D | null = null;
  * a staged card or a stroke (Escape's old job in a fight). Returns whether anything changed.
  */
 const toggleMenu = (): boolean => {
-  if (!ui) return false;
+  if (!ui || busy()) return false;
   if (!ui.menuOpen && flow.phase === 'combat') actions.emit({ type: 'combat-cancel' });
   return ui.toggleMenu(camera);
 };
 const menuEdge = new ButtonEdge();
 // Escape toggles the in-run menu; the boards' own Escape (back to the title) is handled below.
 window.addEventListener('keydown', (event) => {
+  if (busy()) return;
   if (event.key !== 'Escape' || event.repeat || xr.presenting) return;
   if (toggleMenu()) event.preventDefault();
 });
 if (ui) uiScene.add(ui.root);
 if (ui && directSeed) startRun(bootSeed, settings?.difficulty ?? DEFAULT_DIFFICULTY);
+ui?.sync(camera);
+const heroReady = floor ? prepareFloor(floor, true) : Promise.resolve();
 actions.on('select', ({ controlId }) => {
+  if (busy()) return;
   ui?.activate(controlId);
 });
 const uiPointer = createPointer({ far: 6 });
@@ -1009,6 +1046,7 @@ window.addEventListener('pointermove', (event) => {
 // Keyboard on the boards: type a seed, arrows move focus, Enter activates, Escape backs out.
 let focusIndex = -1;
 window.addEventListener('keydown', (event) => {
+  if (busy()) return;
   if (!ui?.visible || xr.presenting) return;
   if (ui.typeKey(event.key)) {
     event.preventDefault();
@@ -1088,6 +1126,7 @@ renderer.domElement.addEventListener('contextmenu', (event) => {
   actions.emit({ type: 'combat-cancel' });
 });
 window.addEventListener('keydown', (event) => {
+  if (busy()) return;
   if (floor?.encounter.phase !== 'active' || event.repeat || ui?.menuOpen) return;
   if (event.code === 'KeyE') actions.emit({ type: 'end-turn' });
   else if (event.code === 'KeyT' || event.code === 'Space') actions.emit({ type: 'throw-dice' });
@@ -1111,6 +1150,7 @@ for (const index of [0, 1]) {
     pressed: boolean,
   ): void => {
     controller.addEventListener(type, (event) => {
+      if (busy()) return;
       const side = (event as unknown as { data?: XRInputSource }).data?.handedness;
       if (side !== 'left' && side !== 'right') return;
       actions.emit({
@@ -1122,6 +1162,7 @@ for (const index of [0, 1]) {
     });
   };
   controller.addEventListener('select', (event) => {
+    if (busy()) return;
     if (!ui?.visible) {
       if (floor && canOpenLoot() && xr.presenting) {
         const { origin, direction } = controllerRay(controller);
@@ -1142,6 +1183,7 @@ for (const index of [0, 1]) {
   });
   // Exploring, a squeeze with the hand at the card waiting over an open coffer grabs it.
   controller.addEventListener('squeezestart', (event) => {
+    if (busy()) return;
     const side = (event as unknown as { data?: XRInputSource }).data?.handedness;
     if (!xr.presenting || (side !== 'left' && side !== 'right') || !canOpenLoot() || !floor) return;
     const hand = xr.grips()[side];
@@ -1430,6 +1472,7 @@ actions.on('new-run', ({ seed }) => {
 });
 
 const enterButton = document.createElement('button');
+enterButton.id = 'enter-vr';
 enterButton.textContent = 'Enter VR';
 enterButton.disabled = true;
 Object.assign(enterButton.style, {
@@ -1446,13 +1489,16 @@ Object.assign(enterButton.style, {
 });
 enterButton.addEventListener('click', () => {
   // Resume audio inside the click, before requestSession: window gestures stop once immersive.
+  if (busy()) return;
   audio?.unlock('enter-vr');
   void xr.enter();
 });
 app.append(enterButton);
 if (proofView) enterButton.hidden = true;
+let vrSupported = false;
 void xr.supported().then((ok) => {
-  enterButton.disabled = !ok;
+  vrSupported = ok;
+  enterButton.disabled = busy() || !ok;
   if (!ok) enterButton.textContent = 'VR not available';
 });
 // `?debug` keeps every card release as a replay trace (P3-T3) and offers them as one JSON download
@@ -1514,11 +1560,47 @@ window.addEventListener('resize', () => {
 const sceneStats = { calls: 0, triangles: 0 };
 let framedSession: unknown = null;
 let framedAspect = 0;
+const loadingScene = new THREE.Scene();
+loadingScene.background = new THREE.Color(PALETTE.void);
+let loadingLabel: CanvasLabel | undefined;
 const timer = new THREE.Timer();
 renderer.setAnimationLoop((time, frame) => {
   perf.frame(null, time);
   timer.update(time);
   const deltaSeconds = Math.min(timer.getDelta(), 0.1);
+  if (titleReset) {
+    // Rebuilt between frames: Return to title fires inside the board's input handling.
+    titleReset = false;
+    const target = freshFloor(ui?.seed ?? randomSeed());
+    const spawn = target.world.spawnPoint();
+    rig.position.set(spawn.x, rig.position.y, spawn.z);
+    floorUsed = false;
+    // The title board was placed before the move: re-place it in front of the moved head.
+    rig.updateMatrixWorld(true);
+    ui?.recenter(camera);
+  }
+  if (floor && floor !== readyFloor) {
+    if (xr.presenting) {
+      loadingLabel ??= new CanvasLabel(768, 128, 0.85);
+      const message = loadingFailed ? 'Load failed · Exit VR to retry' : 'Loading the tower…';
+      if (loadingLabel.mesh.userData.message !== message) {
+        loadingLabel.mesh.userData.message = message;
+        loadingLabel.draw((ctx, w, h) => {
+          ctx.font = '46px Georgia, serif';
+          ctx.fillStyle = PALETTE.parchment;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(message, w / 2, h / 2);
+        });
+        loadingScene.add(loadingLabel.mesh);
+      }
+      camera.getWorldQuaternion(loadingLabel.mesh.quaternion);
+      camera.getWorldPosition(loadingLabel.mesh.position);
+      loadingLabel.mesh.translateZ(-1.4);
+      renderer.render(loadingScene, camera);
+    }
+    return;
+  }
   if (xr.presenting) {
     xr.update(deltaSeconds, frame);
     if (floor) locomotion.setWorld(floor.world.nearbyColliders(), floor.world.nearbyWalkable());
@@ -1584,17 +1666,6 @@ renderer.setAnimationLoop((time, frame) => {
     walker.update(deltaSeconds);
   }
   cardProof?.update(time / 1000, xr.presenting);
-  if (titleReset) {
-    // Rebuilt between frames: Return to title fires inside the board's input handling.
-    titleReset = false;
-    const target = freshFloor(ui?.seed ?? randomSeed());
-    const spawn = target.world.spawnPoint();
-    rig.position.set(spawn.x, rig.position.y, spawn.z);
-    floorUsed = false;
-    // The title board was placed before the move: re-place it in front of the moved head.
-    rig.updateMatrixWorld(true);
-    ui?.recenter(camera);
-  }
   // The in-run menu pauses the floor and the fight: no triggers, no encounter clock, no session.
   const paused = ui?.menuOpen ?? false;
   if (floor) floor.suspendTriggers = flow.phase !== 'explore' || paused;
@@ -1728,5 +1799,10 @@ renderer.setAnimationLoop((time, frame) => {
     banner.textContent = text;
     // A flow board (reward, death, victory) replaces the fight banner, never sits under it.
     banner.style.display = text && !xr.presenting && !ui?.visible ? '' : 'none';
+  }
+  if (covered && (!floor || floor === readyFloor)) {
+    revealGame();
+    covered = false;
+    enterButton.disabled = !vrSupported;
   }
 });

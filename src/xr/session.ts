@@ -19,6 +19,7 @@ export const XR_SESSION_OPTIONS = {
 type Side = 'left' | 'right';
 
 interface TrackedSource {
+  readonly assetReady: Promise<boolean>;
   update(deltaSeconds: number): void;
   hide(): void;
   aim(hit: number | null, visible: boolean): void;
@@ -41,6 +42,7 @@ export interface XrSticks {
 }
 
 export interface XrRig {
+  readonly handsReady: Promise<boolean[]>;
   supported(): Promise<boolean>;
   enter(): Promise<void>;
   exit(): Promise<void>;
@@ -140,6 +142,7 @@ export function createXrRig(
       get input() {
         return input;
       },
+      assetReady: visual.assetReady,
       grip,
       ray: controller,
     };
@@ -157,6 +160,7 @@ export function createXrRig(
   });
 
   return {
+    handsReady: Promise.all(sources.map((source) => source.assetReady)),
     supported: () => session.supported(),
     enter: () => session.enter(),
     exit: () => session.exit(),
