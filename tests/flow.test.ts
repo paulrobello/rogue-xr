@@ -6,7 +6,13 @@ import { normalizeSeed } from '../src/core/rng.ts';
 import { FLOW_TRANSITIONS, type FlowEvent, type FlowPhase, RunFlow } from '../src/flow/flow.ts';
 import { bindFlowPersistence } from '../src/flow/persist.ts';
 import { openDb } from '../src/persist/db.ts';
-import { loadRunSnapshot, loadWorkshop, validateSnapshot } from '../src/persist/saves.ts';
+import {
+  exportSave,
+  importSave,
+  loadRunSnapshot,
+  loadWorkshop,
+  validateSnapshot,
+} from '../src/persist/saves.ts';
 import { pressureTarget, readPressure } from '../src/rules/pressure.ts';
 import { REWARD_COGS, SKIP_REWARD } from '../src/rules/run.ts';
 import { createWorkshop, type WorkshopState } from '../src/rules/workshop.ts';
@@ -297,7 +303,7 @@ describe('continue from a snapshot', () => {
 });
 
 describe('pressure regulator', () => {
-  it('uses an isolated named stream and pays once when all dials match', () => {
+  it('collects notes, turns independently, then primes, opens, and claims once', () => {
     const flow = flowWith();
     flow.newRun(SEED);
     const beforeRng = flow.run?.rng;
@@ -306,8 +312,17 @@ describe('pressure regulator', () => {
     flow.onChange((event) => events.push(event));
 
     const firstValve = target.findIndex((value) => value !== 1) as 0 | 1 | 2;
+    expect(flow.collectPressureNote(4, 'dispatch')).toMatchObject({
+      action: 'note',
+      note: 'dispatch',
+      reward: 0,
+    });
+    expect(flow.collectPressureNote(4, 'A')).toMatchObject({ action: 'note', note: 'A' });
+    expect(flow.collectPressureNote(4, 'A')).toBeNull();
+    expect(flow.collectPressureNote(4, 'B')).toMatchObject({ action: 'note', note: 'B' });
+    expect(flow.collectPressureNote(4, 'C')).toMatchObject({ action: 'note', note: 'C' });
     const first = flow.turnPressureValve(4, firstValve);
-    expect(first).toMatchObject({ type: 'pressure', room: 4, reward: 0, solved: false });
+    expect(first).toMatchObject({ type: 'pressure', action: 'turn', reward: 0, solved: false });
     expect(flow.run?.rng).toEqual(beforeRng);
 
     for (let valve = 0; valve < 3; valve++) {
@@ -316,13 +331,29 @@ describe('pressure regulator', () => {
         flow.turnPressureValve(4, index);
       }
     }
-    expect(readPressure(flow.run as NonNullable<RunFlow['run']>)).toEqual({
+    expect(readPressure(flow.run as NonNullable<RunFlow['run']>)).toMatchObject({
       dials: target,
+      solved: false,
+    });
+    expect(flow.run?.cogs).toBe(0);
+    expect(flow.primePressure(4)).toMatchObject({ action: 'prime', solved: true, reward: 0 });
+    expect(flow.openPressureDrawer(4)).toMatchObject({
+      action: 'open',
+      drawerOpen: true,
+      reward: 0,
+    });
+    expect(flow.claimPressureReward(4)).toMatchObject({
+      action: 'claim',
+      reward: 20,
+      rewardClaimed: true,
+    });
+    expect(events.at(-1)).toMatchObject({
+      type: 'pressure',
+      action: 'claim',
+      reward: 20,
       solved: true,
     });
-    expect(flow.run?.cogs).toBe(20);
-    expect(events.at(-1)).toMatchObject({ type: 'pressure', reward: 20, solved: true });
-    expect(flow.turnPressureValve(4, 0)).toBeNull();
+    expect(flow.claimPressureReward(4)).toBeNull();
     expect(flow.run?.cogs).toBe(20);
   });
 
@@ -346,6 +377,85 @@ describe('pressure regulator', () => {
     expect(restored.pressure).toEqual(source.pressure);
     expect(restored.turnPressureValve(2, valve)).not.toBeNull();
     saved.dispose();
+  });
+
+  it('round-trips collected, solved-closed, and open-unclaimed pressure without awarding twice', async () => {
+    const db = await openDb();
+    const source = flowWith();
+    const saved = bindFlowPersistence(source, db);
+    source.newRun(SEED);
+    source.collectPressureNote(1, 'A');
+    await saved.flushed();
+    const collected = await loadRunSnapshot(db);
+    expect(collected?.run.pressure).toMatchObject({
+      notes: ['A'],
+      solved: false,
+      drawerOpen: false,
+      rewardClaimed: false,
+    });
+    const imported = await exportSave(db);
+    await importSave(db, imported);
+    expect((await loadRunSnapshot(db))?.run.pressure).toMatchObject({ notes: ['A'] });
+
+    for (const id of ['B', 'C'] as const) source.collectPressureNote(1, id);
+    const target = pressureTarget(SEED);
+    for (let i = 0; i < 3; i++)
+      while (source.pressure.dials[i] !== target[i]) source.turnPressureValve(1, i as 0 | 1 | 2);
+    source.primePressure(1);
+    await saved.flushed();
+    const solvedClosed = await loadRunSnapshot(db);
+    expect(solvedClosed?.run.pressure).toMatchObject({
+      solved: true,
+      drawerOpen: false,
+      rewardClaimed: false,
+    });
+    const restored = flowWith();
+    restored.continueRun(structuredClone(solvedClosed) as NonNullable<typeof solvedClosed>);
+    expect(restored.claimPressureReward(1)).toBeNull();
+    expect(restored.openPressureDrawer(1)?.reward).toBe(0);
+    expect(restored.claimPressureReward(1)?.reward).toBe(20);
+    expect(restored.claimPressureReward(1)).toBeNull();
+    expect(restored.run?.cogs).toBe(20);
+    saved.dispose();
+  });
+
+  it('normalizes legacy solved saves as already paid and rejects invalid combinations', () => {
+    const source = flowWith();
+    source.newRun(SEED);
+    const raw = source.snapshot(1, 0) as NonNullable<ReturnType<RunFlow['snapshot']>>;
+    const legacy = structuredClone(raw) as unknown as Record<string, unknown>;
+    const run = legacy.run as Record<string, unknown>;
+    run.pressure = { dials: pressureTarget(SEED), solved: true };
+    const validated = validateSnapshot(legacy);
+    expect(validated.run.pressure).toMatchObject({
+      solved: true,
+      notes: [],
+      drawerOpen: true,
+      rewardClaimed: true,
+    });
+    const restored = flowWith();
+    restored.continueRun(validated);
+    expect(restored.snapshot()?.run.pressure).toMatchObject({
+      solved: true,
+      notes: [],
+      drawerOpen: true,
+      rewardClaimed: true,
+    });
+    expect(restored.openPressureDrawer(0)).toBeNull();
+    expect(restored.claimPressureReward(0)).toBeNull();
+    expect(restored.run?.cogs).toBe(0);
+
+    for (const pressure of [
+      { dials: pressureTarget(SEED), solved: false, rewardClaimed: true },
+      { dials: pressureTarget(SEED), solved: false, drawerOpen: true },
+      { dials: pressureTarget(SEED), solved: true, drawerOpen: false, rewardClaimed: true },
+      { dials: pressureTarget(SEED), solved: false, notes: ['A', 'A'] },
+      { dials: pressureTarget(SEED), solved: false, notes: ['D'] },
+    ]) {
+      const bad = structuredClone(raw) as unknown as Record<string, unknown>;
+      (bad.run as Record<string, unknown>).pressure = pressure;
+      expect(() => validateSnapshot(bad)).toThrow();
+    }
   });
 
   it('accepts v1/v2 snapshots without pressure and refuses pressure outside exploration', () => {

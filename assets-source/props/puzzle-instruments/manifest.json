@@ -1,0 +1,926 @@
+{
+  "schema": 1,
+  "description": "Original procedural clockwork puzzle component study; visual and runtime acceptance pending.",
+  "frame": "Blender Z-up, metres; GLB Y-up",
+  "generator": "scripts/assets/build-puzzle-instruments.py",
+  "blender": "5.2.3 LTS",
+  "material_palette": [
+    "palette_brass",
+    "palette_iron",
+    "palette_copper",
+    "palette_ivory",
+    "palette_blue_glass",
+    "palette_oxide",
+    "palette_wood"
+  ],
+  "pieces": [
+    {
+      "id": "winding_key",
+      "description": "Double bow winding key with square shaft",
+      "pivot": "shaft tip at origin",
+      "bounds_min_m": [
+        -0.17399999499320984,
+        -0.08900000154972076,
+        0.0
+      ],
+      "bounds_max_m": [
+        0.17399999499320984,
+        0.08900000154972076,
+        0.3750000298023224
+      ],
+      "dimensions_m": [
+        0.3479999899864197,
+        0.17800000309944153,
+        0.3750000298023224
+      ],
+      "moving_pivots": [],
+      "triangles": 792
+    },
+    {
+      "id": "winding_arbor",
+      "description": "Matching square arbor with brass collar",
+      "pivot": "shaft axis at base",
+      "bounds_min_m": [
+        -0.11999999731779099,
+        -0.11999999731779099,
+        0.0
+      ],
+      "bounds_max_m": [
+        0.11999999731779099,
+        0.11999999731779099,
+        0.10000000149011612
+      ],
+      "dimensions_m": [
+        0.23999999463558197,
+        0.23999999463558197,
+        0.10000000149011612
+      ],
+      "moving_pivots": [
+        {
+          "name": "arbor_turn_pivot",
+          "position_m": [
+            0.0,
+            0.0,
+            0.02500000037252903
+          ]
+        }
+      ],
+      "triangles": 118
+    },
+    {
+      "id": "gear_small",
+      "description": "Toothed gear, 12 teeth",
+      "pivot": "rotation axis at origin",
+      "bounds_min_m": [
+        -0.18565228581428528,
+        -0.18565228581428528,
+        0.0
+      ],
+      "bounds_max_m": [
+        0.18565228581428528,
+        0.18565228581428528,
+        0.09400000423192978
+      ],
+      "dimensions_m": [
+        0.37130457162857056,
+        0.37130457162857056,
+        0.09400000423192978
+      ],
+      "moving_pivots": [],
+      "triangles": 716
+    },
+    {
+      "id": "gear_medium",
+      "description": "Toothed gear, 18 teeth",
+      "pivot": "rotation axis at origin",
+      "bounds_min_m": [
+        -0.2678709626197815,
+        -0.26967766880989075,
+        0.0
+      ],
+      "bounds_max_m": [
+        0.2678709626197815,
+        0.26967766880989075,
+        0.09400000423192978
+      ],
+      "dimensions_m": [
+        0.535741925239563,
+        0.5393553376197815,
+        0.09400000423192978
+      ],
+      "moving_pivots": [],
+      "triangles": 836
+    },
+    {
+      "id": "gear_large",
+      "description": "Toothed gear, 24 teeth",
+      "pivot": "rotation axis at origin",
+      "bounds_min_m": [
+        -0.3494422435760498,
+        -0.3494422435760498,
+        0.0
+      ],
+      "bounds_max_m": [
+        0.3494422435760498,
+        0.3494422435760498,
+        0.09400000423192978
+      ],
+      "dimensions_m": [
+        0.6988844871520996,
+        0.6988844871520996,
+        0.09400000423192978
+      ],
+      "moving_pivots": [],
+      "triangles": 956
+    },
+    {
+      "id": "pegboard_spindle",
+      "description": "Pegboard spindle with stepped bearing",
+      "pivot": "rotation axis at base",
+      "bounds_min_m": [
+        -0.10999999940395355,
+        -0.10999999940395355,
+        0.0
+      ],
+      "bounds_max_m": [
+        0.10999999940395355,
+        0.10999999940395355,
+        0.2549999952316284
+      ],
+      "dimensions_m": [
+        0.2199999988079071,
+        0.2199999988079071,
+        0.2549999952316284
+      ],
+      "moving_pivots": [],
+      "triangles": 276
+    },
+    {
+      "id": "relic_triangle",
+      "description": "Keyed triangle relic",
+      "pivot": "insertion tip at origin",
+      "bounds_min_m": [
+        -0.0949999988079071,
+        -0.0949999988079071,
+        0.0
+      ],
+      "bounds_max_m": [
+        0.0949999988079071,
+        0.0949999988079071,
+        0.26249998807907104
+      ],
+      "dimensions_m": [
+        0.1899999976158142,
+        0.1899999976158142,
+        0.26249998807907104
+      ],
+      "moving_pivots": [],
+      "triangles": 108
+    },
+    {
+      "id": "socket_triangle",
+      "description": "Matching triangle receptacle, visible inset profile",
+      "pivot": "well base at origin",
+      "bounds_min_m": [
+        -0.07000000029802322,
+        -0.12124355882406235,
+        0.0
+      ],
+      "bounds_max_m": [
+        0.14000000059604645,
+        0.12124355882406235,
+        0.07500000298023224
+      ],
+      "dimensions_m": [
+        0.21000000089406967,
+        0.2424871176481247,
+        0.07500000298023224
+      ],
+      "moving_pivots": [],
+      "triangles": 19
+    },
+    {
+      "id": "relic_square",
+      "description": "Keyed square relic",
+      "pivot": "insertion tip at origin",
+      "bounds_min_m": [
+        -0.0949999988079071,
+        -0.0949999988079071,
+        0.0
+      ],
+      "bounds_max_m": [
+        0.0949999988079071,
+        0.0949999988079071,
+        0.26249998807907104
+      ],
+      "dimensions_m": [
+        0.1899999976158142,
+        0.1899999976158142,
+        0.26249998807907104
+      ],
+      "moving_pivots": [],
+      "triangles": 116
+    },
+    {
+      "id": "socket_square",
+      "description": "Matching square receptacle, visible inset profile",
+      "pivot": "well base at origin",
+      "bounds_min_m": [
+        -0.14000000059604645,
+        -0.14000000059604645,
+        0.0
+      ],
+      "bounds_max_m": [
+        0.14000000059604645,
+        0.14000000059604645,
+        0.07500000298023224
+      ],
+      "dimensions_m": [
+        0.2800000011920929,
+        0.2800000011920929,
+        0.07500000298023224
+      ],
+      "moving_pivots": [],
+      "triangles": 26
+    },
+    {
+      "id": "relic_hex",
+      "description": "Keyed hex relic",
+      "pivot": "insertion tip at origin",
+      "bounds_min_m": [
+        -0.0949999988079071,
+        -0.0949999988079071,
+        0.0
+      ],
+      "bounds_max_m": [
+        0.0949999988079071,
+        0.0949999988079071,
+        0.26249998807907104
+      ],
+      "dimensions_m": [
+        0.1899999976158142,
+        0.1899999976158142,
+        0.26249998807907104
+      ],
+      "moving_pivots": [],
+      "triangles": 132
+    },
+    {
+      "id": "socket_hex",
+      "description": "Matching hex receptacle, visible inset profile",
+      "pivot": "well base at origin",
+      "bounds_min_m": [
+        -0.14000000059604645,
+        -0.12124355882406235,
+        0.0
+      ],
+      "bounds_max_m": [
+        0.14000000059604645,
+        0.12124355882406235,
+        0.07500000298023224
+      ],
+      "dimensions_m": [
+        0.2800000011920929,
+        0.2424871176481247,
+        0.07500000298023224
+      ],
+      "moving_pivots": [],
+      "triangles": 40
+    },
+    {
+      "id": "shutter_lantern",
+      "description": "Caged lantern with sliding slotted shutter",
+      "pivot": "center on base plane",
+      "bounds_min_m": [
+        -0.14499999582767487,
+        -0.14499999582767487,
+        0.0
+      ],
+      "bounds_max_m": [
+        0.14499999582767487,
+        0.14499999582767487,
+        0.3720000088214874
+      ],
+      "dimensions_m": [
+        0.28999999165534973,
+        0.28999999165534973,
+        0.3720000088214874
+      ],
+      "moving_pivots": [],
+      "triangles": 684
+    },
+    {
+      "id": "mirror_gimbal",
+      "description": "Nested rings with angled reflective mirror",
+      "pivot": "gimbal center",
+      "bounds_min_m": [
+        -0.17499999701976776,
+        -0.17499999701976776,
+        0.17499999701976776
+      ],
+      "bounds_max_m": [
+        0.17499999701976776,
+        0.17499999701976776,
+        0.2199999988079071
+      ],
+      "dimensions_m": [
+        0.3499999940395355,
+        0.3499999940395355,
+        0.04500000178813934
+      ],
+      "moving_pivots": [],
+      "triangles": 952
+    },
+    {
+      "id": "polarizing_lens",
+      "description": "Rotating marked polarizer lens",
+      "pivot": "rotation axis at origin",
+      "bounds_min_m": [
+        -0.14999999105930328,
+        -0.14999999105930328,
+        0.005000000819563866
+      ],
+      "bounds_max_m": [
+        0.14999999105930328,
+        0.14999999105930328,
+        0.04500000178813934
+      ],
+      "dimensions_m": [
+        0.29999998211860657,
+        0.29999998211860657,
+        0.04000000096857548
+      ],
+      "moving_pivots": [],
+      "triangles": 488
+    },
+    {
+      "id": "prism",
+      "description": "Triangular dispersive prism",
+      "pivot": "center on base plane",
+      "bounds_min_m": [
+        -0.10392304509878159,
+        -0.05999999865889549,
+        0.0
+      ],
+      "bounds_max_m": [
+        0.10392304509878159,
+        0.11999999731779099,
+        0.23999999463558197
+      ],
+      "dimensions_m": [
+        0.20784609019756317,
+        0.17999999597668648,
+        0.23999999463558197
+      ],
+      "moving_pivots": [],
+      "triangles": 8
+    },
+    {
+      "id": "pipe_selector",
+      "description": "Cross manifold with indexed rotating selector",
+      "pivot": "selector axis at base",
+      "bounds_min_m": [
+        -0.23000000417232513,
+        -0.23000000417232513,
+        0.0
+      ],
+      "bounds_max_m": [
+        0.23000000417232513,
+        0.23000000417232513,
+        0.14400000870227814
+      ],
+      "dimensions_m": [
+        0.46000000834465027,
+        0.46000000834465027,
+        0.14400000870227814
+      ],
+      "moving_pivots": [],
+      "triangles": 536
+    },
+    {
+      "id": "carrier_capsule",
+      "description": "Pneumatic message capsule with banded shell",
+      "pivot": "center on base plane",
+      "bounds_min_m": [
+        -0.07600000500679016,
+        -0.07600000500679016,
+        0.0
+      ],
+      "bounds_max_m": [
+        0.07600000500679016,
+        0.07600000500679016,
+        0.2799999713897705
+      ],
+      "dimensions_m": [
+        0.15200001001358032,
+        0.15200001001358032,
+        0.2799999713897705
+      ],
+      "moving_pivots": [],
+      "triangles": 660
+    },
+    {
+      "id": "whistle_chime",
+      "description": "Pipe whistle with striker and bell",
+      "pivot": "center on base plane",
+      "bounds_min_m": [
+        -0.09000000357627869,
+        -0.09000000357627869,
+        0.0
+      ],
+      "bounds_max_m": [
+        0.09000000357627869,
+        0.09000000357627869,
+        0.3824999928474426
+      ],
+      "dimensions_m": [
+        0.18000000715255737,
+        0.18000000715255737,
+        0.3824999928474426
+      ],
+      "moving_pivots": [],
+      "triangles": 288
+    },
+    {
+      "id": "float_chamber",
+      "description": "Framed transparent float chamber with lift rod",
+      "pivot": "center on base plane",
+      "bounds_min_m": [
+        -0.12999999523162842,
+        -0.12999999523162842,
+        0.0
+      ],
+      "bounds_max_m": [
+        0.12999999523162842,
+        0.12999999523162842,
+        0.45000001788139343
+      ],
+      "dimensions_m": [
+        0.25999999046325684,
+        0.25999999046325684,
+        0.45000001788139343
+      ],
+      "moving_pivots": [],
+      "triangles": 1184
+    },
+    {
+      "id": "repair_patch",
+      "description": "Riveted gasket repair patch",
+      "pivot": "center on base plane",
+      "bounds_min_m": [
+        -0.11999999731779099,
+        -0.09000000357627869,
+        0.002499999478459358
+      ],
+      "bounds_max_m": [
+        0.11999999731779099,
+        0.09000000357627869,
+        0.04800000041723251
+      ],
+      "dimensions_m": [
+        0.23999999463558197,
+        0.18000000715255737,
+        0.045500000938773155
+      ],
+      "moving_pivots": [],
+      "triangles": 188
+    },
+    {
+      "id": "balance_scale",
+      "description": "Beam scale with two suspended pans",
+      "pivot": "center on base plane",
+      "bounds_min_m": [
+        -0.3100000023841858,
+        -0.11999999731779099,
+        0.0
+      ],
+      "bounds_max_m": [
+        0.3100000023841858,
+        0.11999999731779099,
+        0.3225000202655792
+      ],
+      "dimensions_m": [
+        0.6200000047683716,
+        0.23999999463558197,
+        0.3225000202655792
+      ],
+      "moving_pivots": [
+        {
+          "name": "balance_beam_pivot",
+          "position_m": [
+            0.0,
+            0.0,
+            0.3100000023841858
+          ]
+        }
+      ],
+      "triangles": 324
+    },
+    {
+      "id": "scale_weights",
+      "description": "Three graduated calibrated weights",
+      "pivot": "center on base plane",
+      "bounds_min_m": [
+        -0.14500001072883606,
+        -0.06499999761581421,
+        0.0
+      ],
+      "bounds_max_m": [
+        0.1850000023841858,
+        0.06499999761581421,
+        0.1639999896287918
+      ],
+      "dimensions_m": [
+        0.33000001311302185,
+        0.12999999523162842,
+        0.1639999896287918
+      ],
+      "moving_pivots": [],
+      "triangles": 552
+    },
+    {
+      "id": "dual_pendulum",
+      "description": "Two pendulums with separate swing pivots",
+      "pivot": "origin at ground plane",
+      "bounds_min_m": [
+        -0.1599999964237213,
+        -0.04500000178813934,
+        0.0625
+      ],
+      "bounds_max_m": [
+        0.1599999964237213,
+        0.04500000178813934,
+        0.32500001788139343
+      ],
+      "dimensions_m": [
+        0.3199999928474426,
+        0.09000000357627869,
+        0.26250001788139343
+      ],
+      "moving_pivots": [
+        {
+          "name": "pendulum_left_pivot",
+          "position_m": [
+            -0.10000000149011612,
+            0.0,
+            0.30000001192092896
+          ]
+        },
+        {
+          "name": "pendulum_right_pivot",
+          "position_m": [
+            0.10000000149011612,
+            0.0,
+            0.30000001192092896
+          ]
+        }
+      ],
+      "triangles": 220
+    },
+    {
+      "id": "tension_gauge",
+      "description": "Circular gauge with a needle and tension spring",
+      "pivot": "center on base plane",
+      "bounds_min_m": [
+        -0.14000000059604645,
+        -0.14000000059604645,
+        0.0
+      ],
+      "bounds_max_m": [
+        0.25999999046325684,
+        0.14000000059604645,
+        0.09200000762939453
+      ],
+      "dimensions_m": [
+        0.3999999910593033,
+        0.2800000011920929,
+        0.09200000762939453
+      ],
+      "moving_pivots": [],
+      "triangles": 256
+    },
+    {
+      "id": "ratchet_pair",
+      "description": "Two complementary ratchet wheels",
+      "pivot": "gear rotation axis at origin",
+      "bounds_min_m": [
+        -0.12376819550991058,
+        -0.12376819550991058,
+        0.0
+      ],
+      "bounds_max_m": [
+        0.22780868411064148,
+        0.12376819550991058,
+        0.09400000423192978
+      ],
+      "dimensions_m": [
+        0.35157687962055206,
+        0.24753639101982117,
+        0.09400000423192978
+      ],
+      "moving_pivots": [],
+      "triangles": 728
+    },
+    {
+      "id": "stamp_press",
+      "description": "Hand press with raised stamp and platen",
+      "pivot": "center on base plane",
+      "bounds_min_m": [
+        -0.12999999523162842,
+        -0.10000000149011612,
+        0.0
+      ],
+      "bounds_max_m": [
+        0.12999999523162842,
+        0.10000000149011612,
+        0.3400000035762787
+      ],
+      "dimensions_m": [
+        0.25999999046325684,
+        0.20000000298023224,
+        0.3400000035762787
+      ],
+      "moving_pivots": [],
+      "triangles": 152
+    },
+    {
+      "id": "pinned_drum",
+      "description": "Indexed player drum with raised pins",
+      "pivot": "rotation axis at base",
+      "bounds_min_m": [
+        -0.11497052013874054,
+        -0.11521260440349579,
+        0.0
+      ],
+      "bounds_max_m": [
+        0.11500000953674316,
+        0.11427471041679382,
+        0.25699999928474426
+      ],
+      "dimensions_m": [
+        0.2299705296754837,
+        0.2294873148202896,
+        0.25699999928474426
+      ],
+      "moving_pivots": [
+        {
+          "name": "drum_rotation_pivot",
+          "position_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      ],
+      "triangles": 656
+    },
+    {
+      "id": "embossing_plate",
+      "description": "Raised-symbol rubbing or embossing plate",
+      "pivot": "center on base plane",
+      "bounds_min_m": [
+        -0.125,
+        -0.0949999988079071,
+        0.0
+      ],
+      "bounds_max_m": [
+        0.125,
+        0.0949999988079071,
+        0.04699999839067459
+      ],
+      "dimensions_m": [
+        0.25,
+        0.1899999976158142,
+        0.04699999839067459
+      ],
+      "moving_pivots": [],
+      "triangles": 408
+    },
+    {
+      "id": "magnet_key_grille",
+      "description": "Slotted magnetic key grille with hidden key",
+      "pivot": "center on base plane",
+      "bounds_min_m": [
+        -0.12999999523162842,
+        -0.10000000149011612,
+        0.000499999150633812
+      ],
+      "bounds_max_m": [
+        0.12999999523162842,
+        0.10000000149011612,
+        0.08400000631809235
+      ],
+      "dimensions_m": [
+        0.25999999046325684,
+        0.20000000298023224,
+        0.08350000716745853
+      ],
+      "moving_pivots": [],
+      "triangles": 456
+    },
+    {
+      "id": "conductor_bridge",
+      "description": "Two terminal conductive bridge",
+      "pivot": "center on base plane",
+      "bounds_min_m": [
+        -0.14500001072883606,
+        -0.04500000178813934,
+        0.0
+      ],
+      "bounds_max_m": [
+        0.14500001072883606,
+        0.04500000178813934,
+        0.09250000864267349
+      ],
+      "dimensions_m": [
+        0.2900000214576721,
+        0.09000000357627869,
+        0.09250000864267349
+      ],
+      "moving_pivots": [],
+      "triangles": 196
+    },
+    {
+      "id": "miniature_spire",
+      "description": "Miniature spire and removable floor disks",
+      "pivot": "center on base plane",
+      "bounds_min_m": [
+        -0.15000000596046448,
+        -0.15000000596046448,
+        0.0
+      ],
+      "bounds_max_m": [
+        0.15000000596046448,
+        0.15000000596046448,
+        0.4050000011920929
+      ],
+      "dimensions_m": [
+        0.30000001192092896,
+        0.30000001192092896,
+        0.4050000011920929
+      ],
+      "moving_pivots": [],
+      "triangles": 176
+    },
+    {
+      "id": "lift_basket",
+      "description": "Railed dumbwaiter basket",
+      "pivot": "center on base plane",
+      "bounds_min_m": [
+        -0.10999999940395355,
+        -0.10000000149011612,
+        0.0
+      ],
+      "bounds_max_m": [
+        0.10999999940395355,
+        0.10000000149011612,
+        0.23999999463558197
+      ],
+      "dimensions_m": [
+        0.2199999988079071,
+        0.20000000298023224,
+        0.23999999463558197
+      ],
+      "moving_pivots": [],
+      "triangles": 108
+    },
+    {
+      "id": "fog_mirror",
+      "description": "Framed mirror with stylized steam curls",
+      "pivot": "center on base plane",
+      "bounds_min_m": [
+        -0.11500000208616257,
+        -0.0949999988079071,
+        0.0
+      ],
+      "bounds_max_m": [
+        0.11500000208616257,
+        0.0949999988079071,
+        0.06949999928474426
+      ],
+      "dimensions_m": [
+        0.23000000417232513,
+        0.1899999976158142,
+        0.06949999928474426
+      ],
+      "moving_pivots": [],
+      "triangles": 60
+    }
+  ],
+  "gear_kinematics": [
+    {
+      "teeth": [
+        12,
+        18
+      ],
+      "center_distance_m": 0.40499999999999997,
+      "phase_b_radians": 3.316125578789226,
+      "b_rotation_per_a": -0.6666666666666666,
+      "samples_per_tooth": 96,
+      "edge_intersections": 0
+    },
+    {
+      "teeth": [
+        18,
+        24
+      ],
+      "center_distance_m": 0.567,
+      "phase_b_radians": 3.2615840396644034,
+      "b_rotation_per_a": -0.75,
+      "samples_per_tooth": 96,
+      "edge_intersections": 0
+    },
+    {
+      "teeth": [
+        12,
+        24
+      ],
+      "center_distance_m": 0.486,
+      "phase_b_radians": 3.2724923474893677,
+      "b_rotation_per_a": -0.5,
+      "samples_per_tooth": 96,
+      "edge_intersections": 0
+    }
+  ],
+  "total_triangles": 13415,
+  "hashes": {
+    "puzzle-instruments.blend": "06ca4efe010e48c5b28edb7fa62496d0b656f729b9b0e8c4a64edf9dfeb2a182",
+    "puzzle-instruments.glb": "358d31b662f1f7fa722958c56b8b33d5704395612eebc261e5557f5ea10101ea",
+    "puzzle-instruments-contact.png": "18830784c728579599506cdb4b1a50c640a6b3c1b802c8152ac9bc18fea76442",
+    "puzzle-instruments-side.png": "e3828ad018326f2058a65f67f115c91ed247b966c9508fa9d9416c06ce5f09a8",
+    "build-puzzle-instruments.py": "7c749df80d2d6edd6b1c5797faaf361601375a8c0e4a746b74519572d86f12b0"
+  },
+  "notes": [
+    "Gear profiles use a common module and sampled edge intersection checks, but are simplified trapezoids rather than involute profiles; contact forces and continuous clearance are unverified.",
+    "Components are concept studies; owner review and in-engine validation remain open."
+  ],
+  "pump_drive_derivative": {
+    "schema": 1,
+    "source_sha256": "06ca4efe010e48c5b28edb7fa62496d0b656f729b9b0e8c4a64edf9dfeb2a182",
+    "glb_sha256": "1149e0d491c7e6ad9150a7996fae8ebe0ba2af12be0850b4c81557278a40a21f",
+    "blender": "5.2.3 LTS",
+    "frame": "glTF/Three.js Y-up metres",
+    "mount": "Rotate +Y shaft axis to machine +Z about +X by +90 degrees.",
+    "reimport": "passed",
+    "pieces": [
+      {
+        "id": "gear_small",
+        "bounds_min_m_y_up": [
+          -0.18565228581428528,
+          0.0,
+          -0.18565228581428528
+        ],
+        "bounds_max_m_y_up": [
+          0.18565228581428528,
+          0.09400000423192978,
+          0.18565228581428528
+        ],
+        "dimensions_m_y_up": [
+          0.37130457162857056,
+          0.09400000423192978,
+          0.37130457162857056
+        ],
+        "shaft_axis_y_up": [
+          0,
+          1,
+          0
+        ],
+        "triangles": 716
+      },
+      {
+        "id": "gear_medium",
+        "bounds_min_m_y_up": [
+          -0.2678709626197815,
+          0.0,
+          -0.26967766880989075
+        ],
+        "bounds_max_m_y_up": [
+          0.2678709626197815,
+          0.09400000423192978,
+          0.26967766880989075
+        ],
+        "dimensions_m_y_up": [
+          0.535741925239563,
+          0.09400000423192978,
+          0.5393553376197815
+        ],
+        "shaft_axis_y_up": [
+          0,
+          1,
+          0
+        ],
+        "triangles": 836
+      }
+    ],
+    "helper": "scripts/assets/export-pump-drive.py",
+    "helper_sha256": "15197401625b1c6a210d02c0398beaa33959322fd61e8f779e8e4e359d3284cc",
+    "output": "public/assets/props/pressure-works/pump-drive.glb",
+    "three_js_validation": "GLTFLoader parsed both roots at origin, confirmed Y-up bounds and +90-degree X rotation mapping shaft +Y to +Z."
+  },
+  "independentVisualReview": {
+    "score": 83,
+    "outOf": 100,
+    "reviewer": "Independent Astra visual review",
+    "notes": "Reimported 34 roots. Gear-center distances were sampled and the two-gear derivative runs in Pressure Works. The other instruments are reusable prototype components."
+  }
+}

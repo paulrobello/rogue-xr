@@ -32,7 +32,9 @@ import {
   hearthLines,
   pickHearth,
 } from './hearth.ts';
+import { InteriorFurnishings, type InteriorFurnishingsAsset } from './interior-furnishings.ts';
 import { type Coffer, type LootMaterials, type LootPick, LootToast, pickCoffer } from './loot.ts';
+import { PressureNotes } from './pressure-notes.ts';
 import { PressureWorks } from './pressure-works.ts';
 import { type RigidNode, rigidAngle } from './study-room.ts';
 
@@ -97,6 +99,17 @@ export interface FloorView {
   loot: FloorLoot;
   hearth: FloorHearths;
   pressure: PressureWorks | null;
+  notes: PressureNotes | null;
+  readonly furnishings: InteriorFurnishings | null;
+  setFurnishings(
+    asset: InteriorFurnishingsAsset,
+    paintings: readonly THREE.Texture[],
+    reducedMotion: boolean,
+  ): void;
+  setCandleMaterials(
+    materials: readonly THREE.MeshStandardMaterial[],
+    reducedMotion: boolean,
+  ): void;
   seed: string;
   readonly contentVersion: number;
   encounter: EncounterDirector;
@@ -196,6 +209,7 @@ export function mountFloorView(
   const base = generateFloor(seed);
   const plan = contentVersion >= PRESSURE_WORKS_VERSION ? attachPressureWing(base) : base;
   const world = buildFloorWorld(plan, options.templates);
+  const notes = plan.pressureWing ? new PressureNotes(world) : null;
   const pressure = plan.pressureWing ? new PressureWorks(world, plan.pressureWing) : null;
   tagEnemyKinds(world, seed, contentVersion);
   scene.add(world.group);
@@ -276,6 +290,9 @@ export function mountFloorView(
   const spinners: Spinner[] = [];
   /** Live fireplace fires (the hall's); instances of one template share the material and its clock. */
   const fires: { material: THREE.ShaderMaterial; room: THREE.Object3D }[] = [];
+  let furnishings: InteriorFurnishings | null = null;
+  let candleMotion = 1;
+  let candles: { material: THREE.MeshStandardMaterial; intensity: number }[] = [];
   let clock = 0;
   const spin = (dt: number): void => {
     clock += dt;
@@ -284,6 +301,10 @@ export function mountFloorView(
         s.node.quaternion.setFromAxisAngle(s.axis, rigidAngle(s.radPerSec, clock));
     }
     animateFires(fires, clock);
+    const light =
+      1 + candleMotion * (0.055 * Math.sin(clock * 3.1) + 0.022 * Math.sin(clock * 6.8));
+    for (const c of candles) c.material.emissiveIntensity = c.intensity * light;
+    furnishings?.update(dt, candleMotion < 1);
   };
   const disposeActor = (actor: EnemyActor): void => {
     actors.delete(actor.object);
@@ -399,6 +420,21 @@ export function mountFloorView(
     loot,
     hearth,
     pressure,
+    notes,
+    get furnishings() {
+      return furnishings;
+    },
+    setFurnishings(asset, paintings, reducedMotion) {
+      if (!furnishings)
+        furnishings = new InteriorFurnishings(world, asset, { paintings, reducedMotion });
+    },
+    setCandleMaterials(materials, reducedMotion) {
+      candleMotion = reducedMotion ? 0.25 : 1;
+      candles = materials.map((material) => {
+        material.userData.baseCandleIntensity ??= material.emissiveIntensity;
+        return { material, intensity: material.userData.baseCandleIntensity as number };
+      });
+    },
     seed,
     contentVersion,
     encounter,
@@ -466,6 +502,8 @@ export function mountFloorView(
       return spinners.length;
     },
     dispose() {
+      furnishings?.dispose();
+      notes?.dispose();
       pressure?.dispose();
       dropToast();
       spinners.length = 0;

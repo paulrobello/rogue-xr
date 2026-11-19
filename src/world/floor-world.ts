@@ -52,6 +52,8 @@ export interface FloorWorld {
   current: number;
   /** Colliders of the current room and its neighbours, the only walls the player can reach. */
   nearbyColliders(): readonly Box[];
+  /** Adds a world-space collider for a removable room furnishing. */
+  addFixtureCollider(room: number, box: Box): () => void;
   /** World-space walkable rects of the current room and its neighbours (teleport landings). */
   nearbyWalkable(): readonly Rect[];
   /** Re-evaluates the current room from a world-space floor point; returns true when it changed. */
@@ -325,6 +327,14 @@ export function buildFloorWorld(
           }),
         );
       });
+    },
+    addFixtureCollider(room, box) {
+      const boxes = colliders[room];
+      boxes.push(box);
+      return () => {
+        const index = boxes.indexOf(box);
+        if (index >= 0) boxes.splice(index, 1);
+      };
     },
     nearbyColliders() {
       return [...nearSet(plan, world.current)].flatMap((i) => colliders[i] ?? []);

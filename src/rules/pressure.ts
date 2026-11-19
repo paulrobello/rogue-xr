@@ -1,21 +1,48 @@
 import { normalizeSeed, Stream } from '../core/rng.ts';
 import type { RunState } from './run.ts';
-import type { PressureDial, PressureDials, PressureState } from './types.ts';
+import type {
+  NormalizedPressureState,
+  PressureDial,
+  PressureDials,
+  PressureNoteId,
+} from './types.ts';
 
-export type { PressureDials, PressureState } from './types.ts';
+export type {
+  NormalizedPressureState,
+  PressureDials,
+  PressureNoteId,
+  PressureState,
+  StoredPressureState,
+} from './types.ts';
 
+export const PRESSURE_REWARD = 20;
+const NOTE_IDS = ['dispatch', 'A', 'B', 'C'] as const satisfies readonly PressureNoteId[];
+
+export interface PressureActionResult {
+  readonly run: RunState;
+  readonly dials: PressureDials;
+  readonly solved: boolean;
+  readonly notes: readonly PressureNoteId[];
+  readonly drawerOpen: boolean;
+  readonly rewardClaimed: boolean;
+  readonly reward: 0 | 20;
+  readonly note?: PressureNoteId;
+}
+
+/** Legacy result export retained for rules consumers. */
 export interface PressureTurnResult {
   readonly run: RunState;
   readonly dials: PressureDials;
   readonly solved: boolean;
-  /** 20 only for the turn that solves the regulator. */
   readonly reward: 0 | 20;
 }
 
-export const PRESSURE_REWARD = 20;
-
 function defaultDials(): PressureDials {
   return [1, 1, 1];
+}
+
+export function isPressureNoteId(value: unknown): value is PressureNoteId {
+  return typeof value === 'string' && (NOTE_IDS as readonly string[]).includes(value);
 }
 
 /** The station setting is a seeded permutation, so it is never the untouched default. */
@@ -25,32 +52,80 @@ export function pressureTarget(seed: string): PressureDials {
   return [a, b, c];
 }
 
-/** Reads the regulator without exposing mutable state from a run snapshot. */
-export function readPressure(run: Pick<RunState, 'pressure'>): PressureState {
+/** Returns the normalized pressure view. A v3 solved save is already paid. */
+export function readPressure(run: Pick<RunState, 'pressure'>): NormalizedPressureState {
   const pressure = run.pressure;
   return {
     dials: pressure ? [...pressure.dials] : defaultDials(),
     solved: pressure?.solved === true,
+    notes: pressure?.notes ? [...pressure.notes] : [],
+    drawerOpen: pressure?.drawerOpen ?? pressure?.solved === true,
+    rewardClaimed: pressure?.rewardClaimed ?? pressure?.solved === true,
   };
 }
 
-/** Advances one valve, paying the regulator reward once when all dials match its target. */
-export function turnPressureValve(run: RunState, valve: 0 | 1 | 2): PressureTurnResult | null {
+function result(
+  run: RunState,
+  state: NormalizedPressureState,
+  reward: 0 | 20,
+  note?: PressureNoteId,
+): PressureActionResult {
+  return {
+    run,
+    dials: state.dials,
+    solved: state.solved,
+    notes: state.notes,
+    drawerOpen: state.drawerOpen,
+    rewardClaimed: state.rewardClaimed,
+    reward,
+    ...(note === undefined ? {} : { note }),
+  };
+}
+
+export function collectPressureNote(
+  run: RunState,
+  note: PressureNoteId,
+): PressureActionResult | null {
+  const current = readPressure(run);
+  if (current.notes.includes(note)) return null;
+  const state: NormalizedPressureState = { ...current, notes: [...current.notes, note] };
+  return result({ ...run, pressure: state }, state, 0, note);
+}
+
+/** Turns one valve without solving or paying. Priming and claiming are explicit actions. */
+export function turnPressureValve(run: RunState, valve: 0 | 1 | 2): PressureActionResult | null {
   const current = readPressure(run);
   if (current.solved) return null;
-  const dials: [PressureDial, PressureDial, PressureDial] = [
-    current.dials[0],
-    current.dials[1],
-    current.dials[2],
-  ];
+  const dials: [PressureDial, PressureDial, PressureDial] = [...current.dials];
   dials[valve] = ((dials[valve] % 3) + 1) as PressureDial;
+  const state: NormalizedPressureState = { ...current, dials };
+  return result({ ...run, pressure: state }, state, 0);
+}
+
+export function primePressure(run: RunState): PressureActionResult | null {
+  const current = readPressure(run);
+  if (current.solved || !(['A', 'B', 'C'] as const).every((id) => current.notes.includes(id)))
+    return null;
   const target = pressureTarget(run.seed);
-  const solved = dials.every((dial, index) => dial === target[index]);
-  const reward: 0 | 20 = solved ? PRESSURE_REWARD : 0;
-  return {
-    run: { ...run, cogs: run.cogs + reward, pressure: { dials, solved } },
-    dials,
-    solved,
-    reward,
-  };
+  if (!current.dials.every((dial, index) => dial === target[index])) return null;
+  const state: NormalizedPressureState = { ...current, solved: true };
+  return result({ ...run, pressure: state }, state, 0);
+}
+
+export function openPressureDrawer(run: RunState): PressureActionResult | null {
+  const current = readPressure(run);
+  if (!current.solved || current.drawerOpen) return null;
+  const state: NormalizedPressureState = { ...current, drawerOpen: true };
+  return result({ ...run, pressure: state }, state, 0);
+}
+
+export function claimPressureReward(run: RunState): PressureActionResult | null {
+  const current = readPressure(run);
+  if (!current.drawerOpen || current.rewardClaimed) return null;
+  const state: NormalizedPressureState = { ...current, rewardClaimed: true };
+  return result(
+    { ...run, cogs: run.cogs + PRESSURE_REWARD, pressure: state },
+    state,
+    PRESSURE_REWARD,
+  );
 }

@@ -61,6 +61,7 @@ import { mountUpdateNotice } from './update/index.ts';
 import { type FloorView, mountFloorView, seedFromQuery } from './world/floor-view.ts';
 import type { HearthPick } from './world/hearth.ts';
 import { dressHeroRooms, fetchHeroRooms, loadHeroAssets } from './world/hero-rooms.ts';
+import { INTERIOR_PAINTINGS, loadInteriorFurnishings } from './world/interior-furnishings.ts';
 import { createKtx2Loader } from './world/ktx2.ts';
 import { mountLightmapProof } from './world/lightmap-proof.ts';
 import {
@@ -72,6 +73,7 @@ import {
 } from './world/loot.ts';
 import { mountMaterialProof } from './world/material-proof.ts';
 import { loadPbrSet } from './world/materials.ts';
+import type { PressureAction } from './world/pressure-compartment.ts';
 import { loadPressureArt, type PressureArt } from './world/pressure-works.ts';
 import { mountRoomAssetProof } from './world/room-asset-proof.ts';
 import {
@@ -475,6 +477,9 @@ const loadedEnemies = async (): Promise<EnemyAsset[]> =>
   (await Promise.all(enemyAssets.values())).filter((a): a is EnemyAsset => a !== null);
 const prepareEnemy = (actor: EnemyActor): void => reflect(actor.object, 0.45);
 let pressureArt: Promise<PressureArt> | undefined;
+let interiors:
+  | Promise<[Awaited<ReturnType<typeof loadInteriorFurnishings>>, THREE.Texture[]]>
+  | undefined;
 const dressFloor = async (target: FloorView): Promise<void> => {
   // Each model dresses its kind as soon as it lands, so a slow or broken one holds back no other.
   const dressed = [...enemyAssets.values()].map((pending) =>
@@ -494,6 +499,22 @@ const dressFloor = async (target: FloorView): Promise<void> => {
       }),
     );
   }
+  if (target.pressure) {
+    interiors ??= Promise.all([
+      loadInteriorFurnishings().then((asset) => {
+        reflect(asset.scene, 0.34);
+        return asset;
+      }),
+      Promise.all(
+        INTERIOR_PAINTINGS.map(async (url) => {
+          const tex = await new THREE.TextureLoader().loadAsync(url);
+          tex.colorSpace = THREE.SRGBColorSpace;
+          tex.anisotropy = 4;
+          return tex;
+        }),
+      ),
+    ]);
+  }
   const [rooms, door, coffers, decor] = await Promise.all([
     roomAssets,
     sealedDoorMaterial,
@@ -502,6 +523,24 @@ const dressFloor = async (target: FloorView): Promise<void> => {
   ]);
   if (target === floor) {
     dressHeroRooms(target, rooms, decor);
+    const candles = new Set<THREE.MeshStandardMaterial>();
+    for (const group of target.world.roomGroups)
+      group.traverse((node) => {
+        if (!(node instanceof THREE.Mesh)) return;
+        for (const m of Array.isArray(node.material) ? node.material : [node.material]) {
+          if (m instanceof THREE.MeshStandardMaterial && m.name.endsWith('_flame')) candles.add(m);
+        }
+      });
+    if (decor) candles.add(decor.material);
+    target.setCandleMaterials([...candles], hitFx.reducedMotion);
+    if (target.pressure && interiors)
+      dressed.push(
+        interiors
+          .then(([kit, paintings]) => {
+            if (target === floor) target.setFurnishings(kit, paintings, hitFx.reducedMotion);
+          })
+          .catch((error) => console.warn('Interior furnishing kit unavailable', error)),
+      );
     if (door) target.world.dressSealedDoors(door.material, door.tileMeters);
     if (coffers) {
       target.loot.dress(coffers);
@@ -564,7 +603,15 @@ const cofferAt = (target: FloorView, room: number, socketId: string): Coffer | u
   target.loot.coffers.find((c) => c.room === room && c.socketId === socketId);
 /** The hand that grabbed the waiting card for the claim in flight; the card flies to the head otherwise. */
 let claimHand: THREE.Object3D | null = null;
+const syncNotes = (target: FloorView | null | undefined): void => {
+  target?.notes?.sync(
+    flow.pressure.notes,
+    (room) => flow.cleared.includes(room),
+    (room, socket) => flow.isLootOpened(room, socket),
+  );
+};
 flow.onChange((event) => {
+  syncNotes(floor);
   if (event.type === 'loot') {
     perfMark(`chest-${event.stage}`);
     storedSnapshot = flow.snapshot(Date.now(), floor?.world.current ?? flow.room);
@@ -589,11 +636,16 @@ flow.onChange((event) => {
     return;
   }
   if (event.type === 'pressure') {
-    floor?.pressure?.sync(event, !hitFx.reducedMotion);
     storedSnapshot = flow.snapshot(Date.now(), event.room);
-    const at = floor?.pressure?.pump.getWorldPosition(new THREE.Vector3());
-    audio?.playSfx('gear-clank', at);
-    if (event.solved) audio?.playSfx('cog-pickup', at);
+    if (event.action === 'note') {
+      if (event.note) ui?.readNote(event.note, camera);
+      audio?.playSfx('card-draw');
+    } else {
+      floor?.pressure?.sync(event, !hitFx.reducedMotion, event.action);
+      const at = floor?.pressure?.pump.getWorldPosition(new THREE.Vector3());
+      audio?.playSfx(event.action === 'claim' ? 'cog-pickup' : 'gear-clank', at);
+      if (event.action === 'prime') audio?.playSfx('steam-vent', at);
+    }
     return;
   }
   if (event.type === 'hearth') {
@@ -694,10 +746,12 @@ const continueRun = (): void => {
   floorUsed = true;
   flow.continueRun(snap);
   target.pressure?.sync(flow.pressure);
+  syncNotes(target);
 };
 const ui = floor
   ? new FlowUi({
       flow,
+      noteRecord: (id) => floor?.notes?.record(id) ?? null,
       keyArt: { url: '/assets/ui/title-2048.jpg', titleSafe: { x: 0.03, y: 0.3, w: 0.27, h: 0.4 } },
       seed: bootSeed,
       snapshot: () => storedSnapshot,
@@ -811,25 +865,66 @@ const grabLootCard = (hand: THREE.Object3D | null): boolean => {
 };
 const useHearth = (pick: HearthPick | null): boolean =>
   !!pick && canOpenLoot() && flow.useHearth(pick.room, pick.socketId) !== null;
-/** The puzzle fixtures occupy a separate room from treasure and hearths. */
-const activatePickup = (origin: THREE.Vector3, direction: THREE.Vector3): boolean => {
+function operateMachine(hit: PressureAction, hand?: XRHandedness): boolean {
   if (!floor || !canOpenLoot()) return false;
-  const valve = floor.pressure?.pick(origin, direction);
-  if (valve) return flow.turnPressureValve(floor.world.current, valve.valve) !== null;
-  return (
-    openCoffer(floor.loot.pick(origin, direction)) ||
-    useHearth(floor.hearth.pick(origin, direction))
-  );
-};
-const pickupDistance = (origin: THREE.Vector3, direction: THREE.Vector3): number | null => {
+  const room = floor.world.current;
+  const result =
+    hit.action === 'turn'
+      ? flow.turnPressureValve(room, hit.valve)
+      : hit.action === 'prime'
+        ? flow.primePressure(room)
+        : hit.action === 'open'
+          ? flow.openPressureDrawer(room)
+          : flow.claimPressureReward(room);
+  if (!result && hit.action === 'prime') floor.pressure?.primeMiss();
+  if (hand) {
+    const inputs = Array.from(renderer.xr.getSession()?.inputSources ?? []).filter(
+      (source) => source.handedness === hand,
+    );
+    pulseHaptics(
+      inputs,
+      result ? (hit.action === 'prime' ? 0.6 : hit.action === 'open' ? 0.36 : 0.2) : 0.12,
+      result && hit.action === 'prime' ? 260 : 70,
+    );
+  }
+  return true;
+}
+
+function fieldHit(origin: THREE.Vector3, direction: THREE.Vector3) {
   if (!floor) return null;
-  const valve = floor.pressure?.pick(origin, direction);
-  if (valve) return valve.distance;
-  const near = [floor.loot.pick(origin, direction), floor.hearth.pick(origin, direction)].filter(
-    (pick) => pick !== null,
-  );
-  return near.length === 0 ? null : Math.min(...near.map((pick) => pick.distance));
+  const note = floor.notes?.pick(origin, direction);
+  const machine = floor.pressure?.pick(origin, direction);
+  const coffer = floor.loot.pick(origin, direction);
+  const hearth = floor.hearth.pick(origin, direction);
+  const hits = [
+    ...(note ? [{ kind: 'note' as const, hit: note }] : []),
+    ...(machine ? [{ kind: 'machine' as const, hit: machine }] : []),
+    ...(coffer ? [{ kind: 'coffer' as const, hit: coffer }] : []),
+    ...(hearth ? [{ kind: 'hearth' as const, hit: hearth }] : []),
+  ];
+  return hits.sort((a, b) => a.hit.distance - b.hit.distance)[0] ?? null;
+}
+const activatePickup = (
+  origin: THREE.Vector3,
+  direction: THREE.Vector3,
+  hand?: XRHandedness,
+): boolean => {
+  if (!canOpenLoot()) return false;
+  const pick = fieldHit(origin, direction);
+  if (!pick) return false;
+  switch (pick.kind) {
+    case 'note':
+      return flow.collectPressureNote(pick.hit.room, pick.hit.id) !== null;
+    case 'machine':
+      return operateMachine(pick.hit, hand);
+    case 'coffer':
+      return openCoffer(pick.hit);
+    case 'hearth':
+      return useHearth(pick.hit);
+  }
 };
+const pickupDistance = (origin: THREE.Vector3, direction: THREE.Vector3): number | null =>
+  fieldHit(origin, direction)?.hit.distance ?? null;
 /** Ray origin and direction of an XR controller (its -Z axis, the beam the laser draws). */
 const controllerRay = (
   controller: THREE.Object3D,
@@ -952,6 +1047,8 @@ window.addEventListener('keydown', (event) => {
 
 // XR combat verbs: main hand (right) squeeze grabs a card (letting go puts it back) and holds the
 // die; the trigger uses the held card, draws on the plate, throws and presses.
+let pullMark: { side: 'left' | 'right'; hand: THREE.Object3D; start: THREE.Vector3 } | null = null;
+const pullPoint = new THREE.Vector3();
 const MAIN_HAND = 'right' as const;
 const OFF_HAND = 'left' as const;
 for (const index of [0, 1]) {
@@ -972,11 +1069,15 @@ for (const index of [0, 1]) {
       });
     });
   };
-  controller.addEventListener('select', () => {
+  controller.addEventListener('select', (event) => {
     if (!ui?.visible) {
       if (floor && canOpenLoot() && xr.presenting) {
         const { origin, direction } = controllerRay(controller);
-        activatePickup(origin, direction);
+        activatePickup(
+          origin,
+          direction,
+          (event as unknown as { data?: XRInputSource }).data?.handedness,
+        );
       }
       return;
     }
@@ -990,9 +1091,35 @@ for (const index of [0, 1]) {
   // Exploring, a squeeze with the hand at the card waiting over an open coffer grabs it.
   controller.addEventListener('squeezestart', (event) => {
     const side = (event as unknown as { data?: XRInputSource }).data?.handedness;
-    if (xr.presenting && (side === 'left' || side === 'right')) grabLootCard(xr.grips()[side]);
+    if (!xr.presenting || (side !== 'left' && side !== 'right') || !canOpenLoot() || !floor) return;
+    const hand = xr.grips()[side];
+    if (!hand) return;
+    const position = hand.getWorldPosition(new THREE.Vector3());
+    const note = floor.notes?.near(position, GRAB_REACH)[0];
+    if (note) {
+      flow.collectPressureNote(note.room, note.id);
+      return;
+    }
+    const machine = floor.pressure?.near(position, GRAB_REACH);
+    if (floor.pressure && machine?.action === 'open') {
+      // A nearby grip can physically pull the badge; the laser offers the same action at a distance.
+      pullMark = { side, hand, start: floor.pressure.pump.worldToLocal(position) };
+      return;
+    }
+    if (machine) {
+      operateMachine(machine, side);
+      return;
+    }
+    grabLootCard(hand);
   });
   bind('squeezestart', 'squeeze', true);
+  controller.addEventListener('squeezeend', (event) => {
+    if (
+      pullMark &&
+      (event as unknown as { data?: XRInputSource }).data?.handedness === pullMark.side
+    )
+      pullMark = null;
+  });
   bind('squeezeend', 'squeeze', false);
   bind('selectstart', 'trigger', true);
   bind('selectend', 'trigger', false);
@@ -1145,6 +1272,45 @@ if (floor && params.has('debug')) {
       },
       camera,
       screenOf,
+      /** Stand beside a service slip, facing it, for a seeded exploration walk. */
+      teleportToNote(id: Parameters<RunFlow['collectPressureNote']>[1]) {
+        const note = floor?.notes?.placements.find((p) => p.id === id);
+        if (!floor || !note) return null;
+        const at = note.location;
+        const room = floor.world.rooms[note.room];
+        const cx = (room.footprint.min[0] + room.footprint.max[0]) / 2,
+          cz = (room.footprint.min[1] + room.footprint.max[1]) / 2;
+        const dir = new THREE.Vector3(cx - at.x, 0, cz - at.z);
+        if (dir.lengthSq() < 0.01) dir.set(0, 0, 1);
+        dir.normalize();
+        for (const angle of [0, Math.PI / 2, -Math.PI / 2, Math.PI]) {
+          const side = dir.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), angle);
+          const x = at.x + side.x * 1.8,
+            z = at.z + side.z * 1.8;
+          if (
+            x < room.footprint.min[0] + 0.25 ||
+            x > room.footprint.max[0] - 0.25 ||
+            z < room.footprint.min[1] + 0.25 ||
+            z > room.footprint.max[1] - 0.25
+          )
+            continue;
+          if (
+            floor.world.colliders[note.room].some(
+              (b) =>
+                x > b.min[0] - 0.18 &&
+                x < b.max[0] + 0.18 &&
+                z > b.min[2] - 0.18 &&
+                z < b.max[2] + 0.18,
+            )
+          )
+            continue;
+          rig.position.set(x, rig.position.y, z);
+          walker.yaw = (Math.atan2(at.x - x, -(at.z - z)) * 180) / Math.PI;
+          floor.world.update(x, z);
+          return note.room;
+        }
+        return null;
+      },
       teleportToPressure(place: 'entrance' | 'gallery' | 'pump') {
         const works = floor?.pressure;
         if (!works || !floor) return null;
@@ -1403,6 +1569,19 @@ renderer.setAnimationLoop((time, frame) => {
     const hit = ray ? uiPointer.castFrom(ray, ui.targets()) : null;
     ui.hover(hit ? ui.controlAt(hit.object) : null);
     laserHits[MAIN_HAND] = hit ? hit.distance : null;
+  }
+  if (pullMark) {
+    if (!xr.presenting || !canOpenLoot() || !floor?.pressure) pullMark = null;
+    else {
+      pullMark.hand.getWorldPosition(pullPoint);
+      const before = pullMark.start;
+      const now = floor.pressure.pump.worldToLocal(pullPoint);
+      if (now.z - before.z >= 0.085) {
+        const hand = pullMark.side;
+        pullMark = null;
+        operateMachine({ action: 'open', distance: 0 }, hand);
+      }
+    }
   }
   if (floor && xr.presenting && canOpenLoot()) {
     // The beam ends on a coffer it can open.

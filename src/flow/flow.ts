@@ -13,7 +13,17 @@ import {
   runDifficulty,
 } from '../rules/difficulty.ts';
 import { canFlee } from '../rules/flee.ts';
-import { type PressureDials, readPressure, turnPressureValve } from '../rules/pressure.ts';
+import {
+  claimPressureReward,
+  collectPressureNote,
+  isPressureNoteId,
+  openPressureDrawer,
+  type PressureDials,
+  type PressureNoteId,
+  primePressure,
+  readPressure,
+  turnPressureValve,
+} from '../rules/pressure.ts';
 import {
   chooseReward,
   claimTreasure,
@@ -117,8 +127,13 @@ export interface UsedHearth {
 export interface PressureTurnResultView {
   readonly type: 'pressure';
   readonly room: number;
+  readonly action: 'note' | 'turn' | 'prime' | 'open' | 'claim';
+  readonly note?: PressureNoteId;
   readonly dials: PressureDials;
   readonly solved: boolean;
+  readonly notes: readonly PressureNoteId[];
+  readonly drawerOpen: boolean;
+  readonly rewardClaimed: boolean;
   readonly reward: 0 | 20;
 }
 
@@ -204,7 +219,24 @@ export class RunFlow {
     return readPressure(this.runValue ?? { pressure: undefined });
   }
 
-  /** Turns one regulator valve while exploring. A solved regulator cannot pay twice. */
+  /** Records a pressure-room note once while exploring. */
+  collectPressureNote(room: number, note: PressureNoteId): PressureTurnResultView | null {
+    const run = this.runValue;
+    if (
+      this.phaseValue !== 'explore' ||
+      this.contentVersionValue < PRESSURE_WORKS_VERSION ||
+      !run ||
+      !Number.isInteger(room) ||
+      room < 0 ||
+      !isPressureNoteId(note)
+    )
+      return null;
+    const result = collectPressureNote(run, note);
+    if (!result) return null;
+    return this.applyPressureResult(room, result, 'note');
+  }
+
+  /** Turns one regulator valve without solving or paying. */
   turnPressureValve(room: number, valve: 0 | 1 | 2): PressureTurnResultView | null {
     const run = this.runValue;
     if (
@@ -218,17 +250,55 @@ export class RunFlow {
       return null;
     const result = turnPressureValve(run, valve);
     if (!result) return null;
-    this.enterRoom(room);
-    this.runValue = result.run;
-    const event = {
-      type: 'pressure' as const,
-      room,
-      dials: result.dials,
-      solved: result.solved,
-      reward: result.reward,
-    };
-    this.emit(event);
-    return event;
+    return this.applyPressureResult(room, result, 'turn');
+  }
+
+  /** Primes the regulator after all three lettered notes have been read and dials match. */
+  primePressure(room: number): PressureTurnResultView | null {
+    const run = this.runValue;
+    if (
+      this.phaseValue !== 'explore' ||
+      this.contentVersionValue < PRESSURE_WORKS_VERSION ||
+      !run ||
+      !Number.isInteger(room) ||
+      room < 0
+    )
+      return null;
+    const result = primePressure(run);
+    if (!result) return null;
+    return this.applyPressureResult(room, result, 'prime');
+  }
+
+  /** Claims the solved regulator compartment once. */
+  claimPressureReward(room: number): PressureTurnResultView | null {
+    const run = this.runValue;
+    if (
+      this.phaseValue !== 'explore' ||
+      this.contentVersionValue < PRESSURE_WORKS_VERSION ||
+      !run ||
+      !Number.isInteger(room) ||
+      room < 0
+    )
+      return null;
+    const result = claimPressureReward(run);
+    if (!result) return null;
+    return this.applyPressureResult(room, result, 'claim');
+  }
+
+  /** Opens the pressure reward drawer after the regulator has been primed. */
+  openPressureDrawer(room: number): PressureTurnResultView | null {
+    const run = this.runValue;
+    if (
+      this.phaseValue !== 'explore' ||
+      this.contentVersionValue < PRESSURE_WORKS_VERSION ||
+      !run ||
+      !Number.isInteger(room) ||
+      room < 0
+    )
+      return null;
+    const result = openPressureDrawer(run);
+    if (!result) return null;
+    return this.applyPressureResult(room, result, 'open');
   }
   /** The card waiting to be claimed in the opened coffer at `socketId` in `room`, or null. */
   pendingCard(room: number, socketId: string): string | null {
@@ -510,6 +580,38 @@ export class RunFlow {
   private withHp(run: RunState, hp: number | undefined): RunState {
     if (hp === undefined) return run;
     return { ...run, hp: Math.max(0, Math.min(run.maxHp, Math.round(hp))) };
+  }
+
+  private applyPressureResult(
+    room: number,
+    result: {
+      readonly run: RunState;
+      readonly dials: PressureDials;
+      readonly solved: boolean;
+      readonly notes: readonly PressureNoteId[];
+      readonly drawerOpen: boolean;
+      readonly rewardClaimed: boolean;
+      readonly reward: 0 | 20;
+      readonly note?: PressureNoteId;
+    },
+    action: PressureTurnResultView['action'],
+  ): PressureTurnResultView {
+    this.enterRoom(room);
+    this.runValue = result.run;
+    const event: PressureTurnResultView = {
+      type: 'pressure',
+      room,
+      action,
+      ...(result.note === undefined ? {} : { note: result.note }),
+      dials: result.dials,
+      solved: result.solved,
+      notes: result.notes,
+      drawerOpen: result.drawerOpen,
+      rewardClaimed: result.rewardClaimed,
+      reward: result.reward,
+    };
+    this.emit(event);
+    return event;
   }
 
   private resetRunBookkeeping(room: number, cleared: readonly number[]): void {

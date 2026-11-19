@@ -1,0 +1,19 @@
+{
+  "brief": "Original manually authored rigid modular reward compartment and primer lever for Pressure Works. User-directed proportions and behavior in task brief.",
+  "authoring": "Procedural Blender geometry, Blender 5.2.3 LTS",
+  "source_kind": "Original project-owned procedural artwork; no external source or provider assets.",
+  "license": "Project license",
+  "inputs": {
+    "scripts/assets/build-pressure-compartment.py": "145fdb5d9e9df5958ecba78fa7ddec6a9ad2ba1a208d4a752ad9db24a29c7754",
+    "assets-source/props/pressure-compartment/service-compartment.blend": "c02e4ff0ac307cc1787e7ec4883a824b2323985c8927ec6674d26a973256fc31",
+    "public/assets/props/pressure-works/service-compartment.glb": "4db6303ff5dc78a6262c399a974e500daf8c71c886228bf6ee9445ef6a477df8"
+  },
+  "checks": "GLB reimport, hierarchy assertions, triangle and material limits, closed and open EEVEE images.",
+  "approval": "Independent prototype art review complete. Final owner visual approval pending.",
+  "independentVisualReview": {
+    "score": 86,
+    "outOf": 100,
+    "reviewer": "Independent Astra visual review",
+    "notes": "Closed, open, and claimed states verified through desktop and emulated XR controls. The five cogs stay hidden until the drawer opens in the game."
+  }
+}

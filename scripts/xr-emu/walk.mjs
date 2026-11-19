@@ -181,34 +181,82 @@ try {
   };
 
   if (opts.pressure) {
-    await page.goto(`${opts.base}/?seed=P1PE0028&debug`);
-    await waitFor('pressure-wing', () => !!window.__combat?.floor?.pressure);
-    await ev(() => window.__combat.heroReady);
+    await page.goto(`${opts.base}/?title&debug`);
+    await waitFor('field-notes-title', () => !!window.__flow?.ui?.visible);
+    await ev(async () => {
+      const [{ openDb }, { saveRunSnapshot, snapshotRun }, { createRun }] = await Promise.all([
+        import('/src/persist/db.ts'),
+        import('/src/persist/saves.ts'),
+        import('/src/rules/run.ts'),
+      ]);
+      const run = {
+        ...createRun('N0TE0032', ['strike', 'defend']),
+        pressure: {
+          dials: [1, 1, 1],
+          solved: false,
+          notes: ['A', 'B'],
+          drawerOpen: false,
+          rewardClaimed: false,
+        },
+      };
+      await saveRunSnapshot(
+        await openDb(),
+        snapshotRun(run, {
+          phase: 'explore',
+          contentVersion: 3,
+          floorSeed: run.seed,
+          roomIndex: 0,
+          clearedEncounters: ['1', '2', '3', '4', '5', '6'],
+        }),
+      );
+    });
+    await page.reload();
     await enterVr();
+    await press('title-continue');
+    await waitFor(
+      'pressure-wing',
+      () => !!window.__combat?.floor?.pressure && window.__flow.flow.phase === 'explore',
+    );
+    await ev(() => window.__combat.heroReady);
+    const target = async (name) => {
+      const point = await ev((n) => window.__xrEmu.worldOf(n), name);
+      await aim(MAIN, point);
+      await ev(() => window.__xrEmu.frames(3));
+      await pullTrigger(MAIN);
+    };
+    await ev(() => window.__combat.teleportToNote('C'));
+    await target('pressure-note-C');
+    await waitFor('read-bench-slip', () => window.__flow.ui.menuView === 'note');
+    await press('menu-note-items');
+    await press('menu-items-item-C');
+    await press('menu-note-resume');
     const before = await ev(() => {
       window.__combat.teleportToPressure('pump');
       return window.__flow.flow.run.cogs;
     });
-    for (const [valve, reading] of [
+    for (const [valve, n] of [
+      [0, 2],
       [1, 2],
       [1, 3],
-      [2, 2],
     ]) {
-      const point = await ev((i) => window.__xrEmu.worldOf(`pressure-wheel-${i}`), valve);
-      await aim(MAIN, point);
-      await ev(() => window.__xrEmu.frames(3));
-      await pullTrigger(MAIN);
-      await waitFor('turn-pressure-valve', ([i, n]) => window.__flow.flow.pressure.dials[i] === n, [
+      await target(`pressure-wheel-${valve}`);
+      await waitFor('turn-valve', ([i, r]) => window.__flow.flow.pressure.dials[i] === r, [
         valve,
-        reading,
+        n,
       ]);
     }
-    const solved = await ev(() => {
-      const f = window.__flow.flow;
-      return { dials: f.pressure.dials, solved: f.pressure.solved, cogs: f.run.cogs };
-    });
-    record('pressure-payout', solved.solved && solved.cogs === before + 20, solved);
-    await shot('pressure-works');
+    await target('pressure-primer');
+    await waitFor('machine-restarted', () => window.__flow.flow.pressure.solved);
+    await target('pressure-maker-mark');
+    await waitFor('drawer-open', () => window.__flow.flow.pressure.drawerOpen);
+    await settle(650);
+    await shot('pressure-reward-drawer');
+    await target('pressure-reward-cogs');
+    const result = await ev(() => ({
+      state: window.__flow.flow.pressure,
+      cogs: window.__flow.flow.run.cogs,
+    }));
+    record('pressure-payout', result.state.rewardClaimed && result.cogs === before + 20, result);
   } else if (opts.deck) {
     await page.goto(`${opts.base}/?seed=${opts.seed}&debug`);
     await waitFor('deck-run-ready', () => window.__flow?.flow.phase === 'explore');

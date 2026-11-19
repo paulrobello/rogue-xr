@@ -26,6 +26,7 @@ import {
   type Difficulty,
   runDifficulty,
 } from '../rules/difficulty.ts';
+import type { PressureNoteId } from '../rules/pressure.ts';
 import {
   maxTier,
   nextCost,
@@ -34,6 +35,7 @@ import {
   UPGRADES,
   type UpgradeId,
 } from '../rules/workshop.ts';
+import type { PressureNoteRecord } from '../world/pressure-notes.ts';
 import { CARD_FLIGHT_SECONDS, flightGoal, flightPose, flightScale } from './card-flight.ts';
 import { DECK_SORTS, type DeckSort, deckStacks } from './deck-view.ts';
 import type { FlowPhase, RunFlow } from './flow.ts';
@@ -80,6 +82,7 @@ export interface FlowUiDeps {
   flyTarget?: () => FlyTarget | null;
   /** A newer deployed build: the title offers the reload while one is available. */
   update?: TitleUpdate;
+  noteRecord?: (id: PressureNoteId) => PressureNoteRecord | null;
 }
 
 /** A newer deployed build the title can reload into (`mountUpdateNotice`'s result fits). */
@@ -97,7 +100,7 @@ export interface FlyTarget {
 }
 
 /** The in-run menu: closed, its main board, the deck viewer, or the abandon confirmation. */
-export type MenuView = 'closed' | 'main' | 'deck' | 'confirm';
+export type MenuView = 'closed' | 'main' | 'deck' | 'confirm' | 'items' | 'note';
 /** Phases the in-run menu opens over. */
 const MENU_PHASES: readonly FlowPhase[] = ['explore', 'combat'];
 
@@ -362,6 +365,9 @@ export class FlowUi {
   private seedDraft = '';
   private shownFor: FlowPhase | null = null;
   private menu: MenuView = 'closed';
+  private noteId: PressureNoteId | null = null;
+  private notePhysical = false;
+  private menuHead: THREE.Object3D | null = null;
   private flight: RewardFlight | null = null;
   private artTexture: THREE.Texture | null = null;
   private stopAbove: (() => void) | null = null;
@@ -416,6 +422,7 @@ export class FlowUi {
   openMenu(head: THREE.Object3D): boolean {
     if (this.menu !== 'closed' || !MENU_PHASES.includes(this.deps.flow.phase)) return false;
     this.menu = 'main';
+    this.menuHead = head;
     this.rebuild();
     this.place(head, true);
     return true;
@@ -425,6 +432,8 @@ export class FlowUi {
   closeMenu(): boolean {
     if (this.menu === 'closed') return false;
     this.menu = 'closed';
+    this.noteId = null;
+    this.notePhysical = false;
     this.rebuild();
     return true;
   }
@@ -432,6 +441,19 @@ export class FlowUi {
   /** Opens the in-run menu, or closes it when it is open. Returns whether anything changed. */
   toggleMenu(head: THREE.Object3D): boolean {
     return this.menuOpen ? this.closeMenu() : this.openMenu(head);
+  }
+
+  /** Opens an acquired note in front of the player. */
+  readNote(id: PressureNoteId, head: THREE.Object3D): boolean {
+    const record = this.deps.noteRecord?.(id);
+    if (!record || !this.deps.flow.pressure.notes.includes(id)) return false;
+    this.noteId = id;
+    this.notePhysical = true;
+    this.menuHead = head;
+    this.menu = 'note';
+    this.rebuild();
+    this.place(head, true);
+    return true;
   }
 
   /**
@@ -607,6 +629,8 @@ export class FlowUi {
     if (phase !== 'title') this.subview = 'main';
     if (phase !== 'workshop') this.workshopSubview = 'main';
     this.menu = 'closed';
+    this.noteId = null;
+    this.notePhysical = false;
     this.endFlight();
     this.rebuild();
     if (this.root.visible) this.place(head);
@@ -1277,6 +1301,14 @@ export class FlowUi {
    * or the deck viewer; or the abandon confirmation.
    */
   private buildMenu(): void {
+    if (this.menu === 'items') {
+      this.buildItems();
+      return;
+    }
+    if (this.menu === 'note') {
+      this.buildNote();
+      return;
+    }
     if (this.menu === 'deck') {
       this.buildDeck();
       return;
@@ -1308,6 +1340,7 @@ export class FlowUi {
               },
             ]
           : []),
+        { id: 'items', label: 'Items', onSelect: () => this.openItems() },
         ...this.choiceRows(),
         ...(this.deps.flow.phase === 'explore' && this.deps.flow.guardianDefeated
           ? [
@@ -1336,6 +1369,106 @@ export class FlowUi {
   private openDeck(): void {
     this.deckPage = 0;
     this.setMenu('deck');
+  }
+
+  private openItems(): void {
+    this.noteId = null;
+    this.notePhysical = false;
+    this.setMenu('items');
+  }
+
+  private buildItems(): void {
+    const ids = this.deps.flow.pressure.notes;
+    const rows: MenuRow[] =
+      ids.length === 0
+        ? [{ id: 'empty', label: 'No items collected yet' }]
+        : ids.map((id) => {
+            const record = this.deps.noteRecord?.(id);
+            return {
+              id: `item-${id}`,
+              label: record ? `${record.title} · ${record.source}` : id,
+              onSelect: () => {
+                if (!this.menuHead || !record) return;
+                this.noteId = id;
+                this.notePhysical = false;
+                this.setMenu('note');
+              },
+            };
+          });
+    rows.push({ id: 'back', label: 'Back', onSelect: () => this.setMenu('main') });
+    this.board(
+      'menu-items',
+      rows,
+      { x: 0, y: 0.22, z: -BOARD_DISTANCE },
+      { width: 0.8, heading: 'Items' },
+    );
+  }
+
+  private buildNote(): void {
+    const id = this.noteId;
+    const record = id ? this.deps.noteRecord?.(id) : null;
+    if (!record) {
+      this.setMenu('items');
+      return;
+    }
+    const controls: MenuRow = [
+      ...(this.notePhysical
+        ? [{ id: 'put-away', label: 'Put away', onSelect: () => this.setMenu('closed') }]
+        : [{ id: 'back', label: 'Back', onSelect: () => this.setMenu('items') }]),
+      ...(this.notePhysical
+        ? [{ id: 'items', label: 'Items', onSelect: () => this.setMenu('items') }]
+        : [{ id: 'resume', label: 'Resume', onSelect: () => this.setMenu('closed') }]),
+    ];
+    const board = this.board(
+      'menu-note',
+      [controls],
+      { x: 0, y: -0.34, z: -BOARD_DISTANCE },
+      { width: 0.78 },
+    );
+    const paper = document.createElement('canvas');
+    paper.width = 1200;
+    paper.height = 760;
+    const ctx = paper.getContext('2d');
+    if (ctx) {
+      const wash = ctx.createLinearGradient(0, 0, paper.width, paper.height);
+      wash.addColorStop(0, '#f3e3c1');
+      wash.addColorStop(0.7, '#e7d1a5');
+      wash.addColorStop(1, '#d2b88d');
+      ctx.fillStyle = wash;
+      ctx.fillRect(0, 0, paper.width, paper.height);
+      ctx.strokeStyle = '#917650';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(26, 26, 1148, 708);
+      ctx.fillStyle = '#624429';
+      ctx.font = '600 32px system-ui, sans-serif';
+      ctx.fillText('PRESSURE WORKS', 76, 104);
+      ctx.fillStyle = '#2e2118';
+      ctx.font = 'bold 66px Georgia, serif';
+      ctx.fillText(record.title, 72, 213, 1050);
+      ctx.fillRect(76, 253, 1048, 3);
+      ctx.font = '43px system-ui, sans-serif';
+      let y = 350;
+      for (const line of wrapText(ctx, record.body, 1028)) {
+        ctx.fillText(line, 76, y);
+        y += 62;
+      }
+      ctx.fillStyle = '#5b422b';
+      ctx.font = 'italic 32px Georgia, serif';
+      ctx.fillText(record.origin ?? `Found on the ${record.source}`, 76, 678, 1042);
+    }
+    const texture = new THREE.CanvasTexture(paper);
+    configureTextTexture(texture);
+    const sheet = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.84, (0.84 * 760) / 1200),
+      new THREE.MeshBasicMaterial({ map: texture, toneMapped: false }),
+    );
+    sheet.name = 'menu-note-sheet';
+    sheet.userData.noteId = id;
+    sheet.userData.title = record.title;
+    sheet.userData.body = record.body;
+    sheet.position.set(0, 0.336, 0.004);
+    sheet.raycast = () => undefined;
+    board.group.add(sheet);
   }
 
   private turnDeckPage(page: number): void {

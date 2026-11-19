@@ -2,7 +2,12 @@ import { ENCOUNTER_CONTENT_VERSION } from '../combat/encounter-choice.ts';
 import { PERMANENT_CARD_IDS } from '../content/rewards.ts';
 import { normalizeSeed, STREAMS, type StreamState } from '../core/rng.ts';
 import { isDifficulty } from '../rules/difficulty.ts';
-import { type PressureDials, type PressureState, pressureTarget } from '../rules/pressure.ts';
+import {
+  isPressureNoteId,
+  type PressureDials,
+  pressureTarget,
+  type StoredPressureState,
+} from '../rules/pressure.ts';
 import type { PendingLoot, RewardOffer, RewardTier, RunState } from '../rules/run.ts';
 import {
   createWorkshop,
@@ -109,7 +114,7 @@ function pendingLoot(v: unknown, path: string): PendingLoot[] {
   });
 }
 
-function pressure(v: unknown, path: string, seed: string): PressureState {
+function pressure(v: unknown, path: string, seed: string): StoredPressureState {
   const r = rec(v, path);
   if (!Array.isArray(r.dials) || r.dials.length !== 3)
     fail(`${path}.dials`, 'expected three dial values');
@@ -119,8 +124,22 @@ function pressure(v: unknown, path: string, seed: string): PressureState {
   if (typeof r.solved !== 'boolean') fail(`${path}.solved`, 'expected a boolean');
   const target = pressureTarget(seed);
   const matchesTarget = dials.every((dial, i) => dial === target[i]);
-  if (r.solved !== matchesTarget) fail(`${path}.solved`, 'does not match the seeded target');
-  return { dials, solved: r.solved };
+  if (r.solved === true && !matchesTarget)
+    fail(`${path}.solved`, 'does not match the seeded target');
+  const notes = r.notes === undefined ? [] : r.notes;
+  if (!Array.isArray(notes) || notes.some((note) => !isPressureNoteId(note))) {
+    fail(`${path}.notes`, 'expected unique pressure note ids');
+  }
+  if (new Set(notes).size !== notes.length) fail(`${path}.notes`, 'contains a duplicate note');
+  const rewardClaimed = r.rewardClaimed === undefined ? r.solved === true : r.rewardClaimed;
+  if (typeof rewardClaimed !== 'boolean') fail(`${path}.rewardClaimed`, 'expected a boolean');
+  if (!r.solved && rewardClaimed) fail(`${path}.rewardClaimed`, 'cannot be claimed before solving');
+  const drawerOpen = r.drawerOpen === undefined ? r.solved === true : r.drawerOpen;
+  if (typeof drawerOpen !== 'boolean') fail(`${path}.drawerOpen`, 'expected a boolean');
+  if (!r.solved && drawerOpen) fail(`${path}.drawerOpen`, 'cannot open before solving');
+  if (!drawerOpen && rewardClaimed)
+    fail(`${path}.rewardClaimed`, 'cannot be claimed before opening drawer');
+  return { dials, solved: r.solved, notes: [...notes], drawerOpen, rewardClaimed };
 }
 
 function streamState(v: unknown, path: string): StreamState {

@@ -276,7 +276,22 @@ export class RulesError extends Error {
 export type PressureDial = 1 | 2 | 3;
 export type PressureDials = readonly [PressureDial, PressureDial, PressureDial];
 
+export type PressureNoteId = 'dispatch' | 'A' | 'B' | 'C';
+
 export interface PressureState {
   readonly dials: PressureDials;
   readonly solved: boolean;
+}
+
+export interface NormalizedPressureState extends PressureState {
+  readonly notes: readonly PressureNoteId[];
+  readonly drawerOpen: boolean;
+  readonly rewardClaimed: boolean;
+}
+
+/** Stored pressure state. The two fields added after v3 remain optional for old saves. */
+export interface StoredPressureState extends PressureState {
+  readonly notes?: readonly PressureNoteId[];
+  readonly drawerOpen?: boolean;
+  readonly rewardClaimed?: boolean;
 }

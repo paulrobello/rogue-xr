@@ -151,9 +151,11 @@ At most 2 puzzles per floor, each about 30 to 90 seconds to solve. Each puzzle h
 | Sigil door | Trace an unfamiliar glyph that is not in your deck | A torn page shows the glyph |
 | Bell chimes | Strike bells in order | A music box plays the order (each tone also has a colour, for players who cannot hear it) |
 
-**Playable Pressure Works wing.** A brass-framed sign marks the optional passage. The Pipe Gallery displays the required readings for circuits A, B and C. In the Pump Room, click a handwheel or point at it and pull the trigger to advance its reading from 1 to 2 to 3 and back to 1. Matching the gallery plate restores the pressure and pays 20 run cogs once. Both partial settings and the payout survive a reload.
+**Playable Pressure Works wing.** The Pipe Gallery sends you looking for three circuit readings. A runner’s dispatch points toward a real find. Pick up each service slip to read it; **Items** in the pause menu keeps it for the run. Slips can lie on a desk, bench or floor, appear inside an opened coffer, or drop after an encounter. Uncollected slips remain available on return.
 
-Use seed `P1PE0028` to find the signed doorway in the starting hall. New runs append a gallery and a pump room wherever the two footprints fit. Earlier saves keep their original rooms and rewards. The pressure wing uses the existing corridor and study architecture with a new pipe assembly, regulator, and accumulator banks. [Quest Browser room views](verification/pressure-works.jpg)
+Read all three circuits, set the wheels, and pull the primer. Steam vents and the gear drive starts. Pull the toothed maker’s mark to open the drawer, then take the cogs. The machine pays 20 run cogs only on collection. Prior runs that already received the automatic payout stay paid.
+
+Use seed `N0TE0032` for a wing branching from the starting hall and a mix of coffer, automaton and bench notes. The quest, journal, modular decor palette, and independent ingredient pool are recorded in the [puzzle recipe book](puzzle-recipe-book.md). [Pressure Works room views](verification/pressure-works.jpg)
 
 ### E3. Optional paths
 
@@ -191,7 +193,7 @@ Keep the deck, HP and cog purse with the run. Keep each floor’s layout, opened
 | W1 | Satchel: inventory model in `rules/run.ts`, saving and resuming, the XR wrist panel and the desktop key, and the field card frame | none |
 | W2 | Locks: brass and iron lock panels, the lock-pick plate on a lock, key items, lock placement on optional branches from a named stream | W1, the panel slot card |
 | W3 | Wave A combat cards with M1, M2, M5, M6, M7, the iron d4 and the anchor glyph, plus the glyph-distinctness test | none |
-| W4 | Pressure valves and a separate gallery clue are playable. The sigil door is planned. | W2 for the sigil door |
+| W4 | Pressure valves, separate collectible field notes and a reward compartment are playable. The sigil door is planned. | W2 for the sigil door |
 | W5 | Floor generator loops: shortcut doors and hidden doors | the panel slot card |
 | W6 | Commission board and 3 task types | W1 |
 | W7 | Wave B combat cards with M3, M8, M9, M10, the crystal d12 and the eye glyph | W3 |

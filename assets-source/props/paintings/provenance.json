@@ -1,0 +1,10 @@
+{
+  "source": "Original ImageGen diptych for Clockwork Spire",
+  "direction": "Victorian clockmaker in teal holds a winding key; on the return visit she turns and points it toward a red book.",
+  "derivation": "Left and right 768-by-1024 crops, each resized to 540 by 720 pixels and encoded as WebP quality 85.",
+  "sha256": {
+    "assets-source/props/paintings/clockmaker-diptych.png": "7495e091a5b3e84ab0df89afe1902217fddd427df90cf2ad046bd662a34717ca",
+    "public/assets/props/paintings/clockmaker-first.webp": "ee2594b17e1b4d0d70fced6d80fe0f2abb57e0764b9cbad108d7501f692a57cf",
+    "public/assets/props/paintings/clockmaker-return.webp": "5558b4e6684fc046ee2cd51349f253e28a8d06600284ad3013e1a124bd5bf528"
+  }
+}

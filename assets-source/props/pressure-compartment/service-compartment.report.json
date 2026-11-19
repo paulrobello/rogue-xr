@@ -1,0 +1,51 @@
+{
+  "blender": "5.2.3 LTS",
+  "runtime_axes": "Blender (x, z, -y)",
+  "blender_bounds": [
+    [
+      -0.6990000009536743,
+      1.1610000133514404
+    ],
+    [
+      -0.6360000371932983,
+      -0.2524999976158142
+    ],
+    [
+      0.18000000715255737,
+      0.8434937000274658
+    ]
+  ],
+  "triangles": 2000,
+  "mesh_count": 50,
+  "materials": [
+    "compartment aged brass.001",
+    "compartment bright gold.001",
+    "compartment cast iron.001",
+    "compartment dark lining.001",
+    "compartment walnut.001"
+  ],
+  "drawer_pivot_runtime": [
+    0,
+    0.23,
+    0.34
+  ],
+  "drawer_open_runtime_z": 0.42,
+  "primer_pivot_runtime": [
+    1.1,
+    0.67,
+    0.45
+  ],
+  "steam_outlets_runtime": [
+    [
+      -0.67,
+      0.25,
+      0.466
+    ],
+    [
+      0.67,
+      0.25,
+      0.466
+    ]
+  ],
+  "glb_sha256": "4db6303ff5dc78a6262c399a974e500daf8c71c886228bf6ee9445ef6a477df8"
+}

@@ -14,6 +14,19 @@ describe('Pressure Works on a playable floor', () => {
       floor.dispose();
     }
   });
+  it('animates the shared candle emitter from the floor clock', () => {
+    const rig = new THREE.Group();
+    const view = mountFloorView(new THREE.Scene(), rig, 'N0TE0032');
+    const material = new THREE.MeshStandardMaterial({
+      emissive: 0xffca70,
+      emissiveIntensity: 0.85,
+    });
+    view.setCandleMaterials([material], false);
+    view.update(rig, 0.22);
+    expect(material.emissiveIntensity).toBeGreaterThan(0.85);
+    view.dispose();
+    material.dispose();
+  });
   it('picks individual front-facing valves within reach, respects obstructions, and locks the solved station', () => {
     const floor = mountFloorView(new THREE.Scene(), new THREE.Group(), 'P1PE0028');
     const works = floor.pressure,
@@ -25,7 +38,11 @@ describe('Pressure Works on a playable floor', () => {
     expect(works.pick(origin, dir(0))).toBeNull();
     floor.world.update(origin.x, origin.z);
     expect(floor.world.current).toBe(wing.pumpRoom);
-    for (const i of [0, 1, 2]) expect(works.pick(origin, dir(i))?.valve).toBe(i);
+    for (const i of [0, 1, 2]) {
+      const picked = works.pick(origin, dir(i));
+      expect(picked?.action).toBe('turn');
+      if (picked?.action === 'turn') expect(picked.valve).toBe(i);
+    }
     const rear = works.pump.localToWorld(new THREE.Vector3(0, 1.19, -0.7));
     const centre = works.targets[1].getWorldPosition(new THREE.Vector3());
     expect(works.pick(rear, centre.clone().sub(rear).normalize())).toBeNull();
