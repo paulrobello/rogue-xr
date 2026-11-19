@@ -196,7 +196,7 @@
   "atlasInputs": [
     {
       "path": "public/assets/ui/ui-atlas.json",
-      "sha256": "c818c24addf45c1d2117e860fdc101228980df0b736dff920958547732b0f0cd"
+      "sha256": "20da84bbe54d6e8aa36300052f9975dd6b49a037b8127c09f174a6c2266d45fb"
     },
     {
       "path": "public/assets/ui/dice-d6.png",

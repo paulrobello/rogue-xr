@@ -14,6 +14,7 @@ export interface CardUpgrade {
   readonly effects?: readonly Effect[];
   readonly exhaust?: boolean;
   readonly dice?: DieId;
+  readonly sigil?: SigilId;
   readonly description: string;
 }
 
@@ -203,6 +204,7 @@ export const CARDS: readonly SliceCard[] = [
     description: 'Deal 4 damage to all enemies 2 times.',
     upgrade: {
       effects: [{ type: 'damage', amount: 6, hits: 2, target: 'all-opponents' }],
+      sigil: 'gear-plus',
       description: 'Deal 6 damage to all enemies 2 times.',
     },
   },
@@ -229,6 +231,7 @@ export const CARDS: readonly SliceCard[] = [
           target: 'target',
         },
       ],
+      sigil: 'flame-plus',
       description: 'Roll a d6. Deal 6 damage. Apply 1 + roll Overheat.',
     },
   },
@@ -243,6 +246,7 @@ export const CARDS: readonly SliceCard[] = [
     description: 'Gain 8 Block.',
     upgrade: {
       effects: [{ type: 'block', amount: 11 }],
+      sigil: 'ward-plus',
       description: 'Gain 11 Block.',
     },
   },
@@ -258,6 +262,7 @@ export const CARDS: readonly SliceCard[] = [
     description: 'Roll a d8. Deal 3 + roll damage.',
     upgrade: {
       effects: [{ type: 'damage', amount: { base: 5, dice: 1 }, target: 'target' }],
+      sigil: 'bolt-plus',
       description: 'Roll a d8. Deal 5 + roll damage.',
     },
   },
@@ -278,6 +283,7 @@ export const CARDS: readonly SliceCard[] = [
         { type: 'draw', amount: 3 },
         { type: 'apply-status', status: 'weak', stacks: 2, target: 'all-opponents' },
       ],
+      sigil: 'spiral-plus',
       description: 'Draw 3 cards. Apply 2 Weak to all enemies.',
     },
   },
@@ -362,6 +368,7 @@ export const CARDS: readonly SliceCard[] = [
         { type: 'block', amount: 11 },
         { type: 'apply-status', status: 'plating', stacks: 3, target: 'self' },
       ],
+      sigil: 'anchor-plus',
       description: 'Gain 11 Block. Gain 3 Plating.',
     },
   },
@@ -388,7 +395,7 @@ export const CARDS: readonly SliceCard[] = [
     id: 'quench-seal',
     name: 'Quench Seal',
     type: 'sigil',
-    sigil: 'ward',
+    sigil: 'quench',
     cost: 1,
     target: 'enemy',
     effects: [
@@ -402,7 +409,7 @@ export const CARDS: readonly SliceCard[] = [
         removeFrom: 'target',
       },
     ],
-    description: 'Trace Ward. Remove up to 3 enemy Overheat. Gain 4 Block + 2 per stack spent.',
+    description: 'Trace Quench. Remove up to 3 enemy Overheat. Gain 4 Block + 2 per stack spent.',
     upgrade: {
       effects: [
         {
@@ -415,7 +422,8 @@ export const CARDS: readonly SliceCard[] = [
           removeFrom: 'target',
         },
       ],
-      description: 'Trace Ward. Remove up to 4 enemy Overheat. Gain 5 Block + 2 per stack spent.',
+      sigil: 'quench-plus',
+      description: 'Trace Quench. Remove up to 4 enemy Overheat. Gain 5 Block + 2 per stack spent.',
     },
   },
 ];
@@ -440,10 +448,11 @@ export const STARTER_DECK: readonly string[] = [
 export function upgradedCard(def: SliceCard): SliceCard {
   const { upgrade, ...base } = def;
   if (def.upgraded || !upgrade) throw new Error(`Card ${def.id} has no upgrade`);
-  const { name, ...fields } = upgrade;
+  const { name, sigil, ...fields } = upgrade;
   return {
     ...base,
     ...fields,
+    ...(sigil === undefined ? {} : { sigil }),
     id: `${def.id}${UPGRADE_SUFFIX}`,
     name: name ?? `${def.name}${UPGRADE_SUFFIX}`,
     upgraded: true,

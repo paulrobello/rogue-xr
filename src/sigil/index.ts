@@ -57,38 +57,51 @@ export function distanceToScore(distance: number, level: SigilLevel = DEFAULT_SI
   return Math.min(1, Math.max(0, 1 - distance / DISTANCE_AT_ZERO_BY_LEVEL[level]));
 }
 
-function scoreCloud(cloud: Cloud | null, id: SigilId, level: SigilLevel): number {
-  if (!cloud) return 0;
-  return distanceToScore(greedyCloudMatch(cloud, templateClouds.get(id) as Cloud), level);
+function cloudDistances(cloud: Cloud): Map<SigilId, number> {
+  const distances = new Map<SigilId, number>();
+  for (const [id, reference] of templateClouds)
+    distances.set(id, greedyCloudMatch(cloud, reference));
+  return distances;
 }
 
-/**
- * Score a trace against one sigil: how well the player drew the card's own sigil, judged at `level`
- * (Casual by default). 0 for an empty trace.
- */
+/** A clear match for a different glyph lowers the score. Pen lifts carry no penalty. */
+function matchScore(distance: number, nearest: number, level: SigilLevel): number {
+  const accuracy = distanceToScore(distance, level);
+  return accuracy >= MIN_SCORE && distance > nearest ? (accuracy * nearest) / distance : accuracy;
+}
+
 export function scoreAgainst(
   strokes: readonly Stroke[],
   sigilId: SigilId,
   level: SigilLevel = DEFAULT_SIGIL_LEVEL,
 ): number {
-  return scoreCloud(toCloud(strokes), sigilId, level);
+  const cloud = toCloud(strokes);
+  if (!cloud) return 0;
+  const distance = greedyCloudMatch(cloud, templateClouds.get(sigilId) as Cloud);
+  const accuracy = distanceToScore(distance, level);
+  if (accuracy < MIN_SCORE) return accuracy;
+  let nearest = distance;
+  for (const [id, reference] of templateClouds) {
+    if (id !== sigilId) nearest = Math.min(nearest, greedyCloudMatch(cloud, reference));
+  }
+  return matchScore(distance, nearest, level);
 }
 
-/**
- * Score a trace against every candidate sigil (all five by default) and name the best match.
- * Ties keep candidate order. An empty or dot-only trace scores 0 everywhere.
- */
 export function recognize(
   strokes: readonly Stroke[],
   candidates: readonly SigilId[] = SIGIL_IDS,
 ): Recognition {
   if (candidates.length === 0) throw new Error('recognize needs at least one candidate sigil');
   const cloud = toCloud(strokes);
+  const distances = cloud && cloudDistances(cloud);
+  const nearest = distances ? Math.min(...distances.values()) : 0;
   const scores: SigilScore[] = candidates
-    .map((id) => ({ id, score: scoreCloud(cloud, id, DEFAULT_SIGIL_LEVEL) }))
+    .map((id) => ({
+      id,
+      score: distances ? matchScore(distances.get(id) as number, nearest, DEFAULT_SIGIL_LEVEL) : 0,
+    }))
     .sort((a, b) => b.score - a.score);
-  const best = scores[0] as SigilScore;
-  return { id: best.id, score: best.score, scores };
+  return { ...(scores[0] as SigilScore), scores };
 }
 
 /**

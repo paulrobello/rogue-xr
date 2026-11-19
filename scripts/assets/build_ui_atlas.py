@@ -9,7 +9,7 @@ Deterministic: the same sources produce byte-identical PNG/JPG outputs. Writes
   public/assets/ui/dice-d6-glow.png   emissive masks for the d6 page: amber pips on black, same slots
   public/assets/ui/dice-d8-glow.png   emissive masks for the d8 page: amber numerals on black, same slots
   (the dice pages are displayed through toneMapped false: their colours are the displayed colours)
-  public/assets/ui/glyphs.png         6 sigil glyphs drawn from src/sigil/templates.ts, 256 px slots, 1024x512
+  public/assets/ui/glyphs.png         14 sigil glyphs drawn from src/sigil/templates.ts, 256 px slots, 1024x1024
   public/assets/ui/title-2048.jpg     title key art backdrop 2048x1152, and title-1024.jpg 1024x576
   public/assets/ui/*.ktx2             UASTC + Zstandard, mipmapped, bottom-left origin (when ktx exists)
   public/assets/ui/ui-atlas.json      manifest read by src/ui/icon-atlas.ts
@@ -122,7 +122,7 @@ D4_VALUES = [1, 2, 3, 4]
 # Outward CCW vertex order for each face opposite vertex 0..3. The atlas corners are
 # apex, left, right, matching this order in the runtime geometry.
 D4_FACE_VERTICES = ((3, 2, 1), (0, 2, 3), (3, 1, 0), (0, 1, 2))
-SIGIL_IDS = ["gear", "flame", "ward", "bolt", "spiral", "anchor"]
+SIGIL_IDS = ["gear", "flame", "ward", "bolt", "spiral", "anchor", "quench", "gear-plus", "flame-plus", "ward-plus", "bolt-plus", "spiral-plus", "anchor-plus", "quench-plus"]
 
 
 def sha256(path: Path) -> str:
@@ -532,7 +532,7 @@ def build_glyphs() -> tuple[Image.Image, dict]:
     big = GLYPH_SLOT * scale
     margin = 30 * scale
     span = big - 2 * margin
-    page = np.zeros((GLYPH_SLOT * 2, GLYPH_SLOT * 4, 4), np.uint8)
+    page = np.zeros((GLYPH_SLOT * 4, GLYPH_SLOT * 4, 4), np.uint8)
     glyphs: dict = {}
     for i, sigil_id in enumerate(SIGIL_IDS):
         strokes = templates[sigil_id]["strokes"]
@@ -559,7 +559,7 @@ def build_glyphs() -> tuple[Image.Image, dict]:
         tile[tile[..., 3] < 2] = 0
         px, py = (i % 4) * GLYPH_SLOT, (i // 4) * GLYPH_SLOT
         page[py : py + GLYPH_SLOT, px : px + GLYPH_SLOT] = tile
-        glyphs[sigil_id] = entry("glyphs", px, py, GLYPH_SLOT, GLYPH_SLOT, 1024, 512)
+        glyphs[sigil_id] = entry("glyphs", px, py, GLYPH_SLOT, GLYPH_SLOT, 1024, 1024)
     return Image.fromarray(dilate_rgb(page, 40), "RGBA"), glyphs
 
 

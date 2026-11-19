@@ -180,6 +180,23 @@ try {
     await settle(800);
   };
 
+  // `--focus` is a single-purpose sigil trace run. Keep it ahead of the other optional suites so
+  // an accidentally combined flag cannot silently turn the focused evidence run into a full walk.
+  if (opts.focus) {
+    // The focused branch is dispatched inside walk(); clear any other suite selectors first.
+    opts.pressure = false;
+    opts.deck = false;
+    opts.foundry = false;
+    opts.workshop = false;
+    opts.controls = false;
+    opts.notice = undefined;
+    opts.turns = false;
+    opts.recenter = false;
+    opts.treasure = false;
+    opts.rest = false;
+    opts.guardian = false;
+    opts.loco = true;
+  }
   if (opts.pressure) {
     await page.goto(`${opts.base}/?title&debug`);
     await waitFor('field-notes-title', () => !!window.__flow?.ui?.visible);
@@ -578,6 +595,23 @@ try {
     await settle(300);
     await pullTrigger(MAIN);
     await settle(900);
+    // Opening a card coffer only raises the reward. Claim the waiting card with the main-hand ray
+    // and trigger before checking the payout, matching the normal physical input path.
+    const cardTarget = await ev((coffer) => {
+      const node = window.__combat.floor.world.group
+        .getObjectByName(coffer)
+        ?.getObjectByName('coffer-card');
+      if (!node) return null;
+      const V = node.position.constructor;
+      const p = node.getWorldPosition(new V());
+      return { x: p.x, y: p.y, z: p.z };
+    }, name);
+    if (cardTarget) {
+      await aim(MAIN, cardTarget);
+      await settle(300);
+      await pullTrigger(MAIN);
+      await settle(900);
+    }
     const after = await state();
     await shot('17-treasure-opened');
     const paid = after.cogs - before.cogs;
@@ -1232,17 +1266,33 @@ try {
     );
     await shot('22-guardian-phase2-before');
 
-    // A real card: select a Strike and aim it at the guardian, the controller path a desktop click takes.
-    const played = await ev(() => {
+    // A real card: grip a Strike, aim at the guardian, then trigger to use it. Releasing grip after
+    // trigger is only cleanup for the held-card path and must not be the attack action.
+    const card = await ev(() => {
       const c = window.__combat.session.controller;
-      const card = c.state.piles.hand.find(
+      const strike = c.state.piles.hand.find(
         (h) => h.def.id === 'strike' && h.def.cost <= c.state.player.steam,
       );
       const enemy = c.state.enemies[0];
-      if (!card) return { ok: false, reason: 'no Strike in hand' };
-      return c.select(card.uid).ok ? c.target(enemy.id) : { ok: false, reason: 'select failed' };
+      if (!strike || !enemy) return null;
+      const p = window.__combat.session.worldOf('card', strike.uid);
+      return p ? { uid: strike.uid, card: { x: p.x, y: p.y, z: p.z }, enemy: enemy.id } : null;
     });
-    await ev(() => window.__xrEmu.frames(6));
+    let played = { ok: false, reason: 'no Strike in hand' };
+    if (card) {
+      await aim(MAIN, card.card);
+      await settle(250);
+      await ev(() => window.__xrEmu.device.controllers.right.updateButtonValue('squeeze', 1));
+      await settle(150);
+      const enemyTarget = await ev((id) => {
+        const p = window.__combat.session.worldOf('enemy', id);
+        return p ? { x: p.x, y: p.y, z: p.z } : null;
+      }, card.enemy);
+      await aim(MAIN, enemyTarget);
+      await pullTrigger(MAIN);
+      await ev(() => window.__xrEmu.device.controllers.right.updateButtonValue('squeeze', 0));
+      played = { ok: true, via: 'xr-grip-trigger' };
+    }
     const crossed = await read();
     record(
       'xr-guardian-phase2-card-crosses-threshold',
@@ -2340,6 +2390,7 @@ try {
     });
     await ev(() => window.__xrEmu.setHead(1.2, 0));
     await holdFan();
+    await enemyPhaseOver('sigil-before-stage');
 
     // Stage the sigil card with the main hand: point at it, squeeze, carry it over the table, let go.
     const pick = await ev(() => {
@@ -2387,6 +2438,12 @@ try {
       await settle(60);
     }
     await settle(300);
+    // Activate the held sigil at the table. Grip release only cancels a still-held card, so the
+    // trigger is the actual stage action in the combat input path.
+    await ev(() => window.__xrEmu.device.controllers.right.updateButtonValue('trigger', 1));
+    await settle(100);
+    await ev(() => window.__xrEmu.device.controllers.right.updateButtonValue('trigger', 0));
+    await settle(120);
     await ev(() => window.__xrEmu.device.controllers.right.updateButtonValue('squeeze', 0));
     await settle(500);
     const staged = await ev(() => {
@@ -2480,7 +2537,33 @@ try {
       perStroke: trace.slice(0, -1),
       newTrailPixels: pixels,
     });
-    await settle(1200);
+    // Releasing the trigger only ends this stroke. Leave the complete trace waiting well past the
+    // old auto-cast delay, then aim at the real plate Cast control and trigger it explicitly.
+    await settle(2000);
+    const castTarget = await ev(() => {
+      const session = window.__combat.session;
+      const button = session.plate.getObjectByName('sigil-cast');
+      if (!button) return null;
+      const p = session.platePoseNow;
+      const y = -p.halfHeight - 0.075;
+      const z = 0.008;
+      return {
+        x: p.center.x + p.up.x * y + p.normal.x * z,
+        y: p.center.y + p.up.y * y + p.normal.y * z,
+        z: p.center.z + p.up.z * y + p.normal.z * z,
+      };
+    });
+    if (!castTarget) {
+      record('xr-sigil-cast-control', false, 'sigil-cast mesh is missing');
+      return;
+    }
+    await pointAt(castTarget);
+    await settle(120);
+    await ev(() => window.__xrEmu.device.controllers.right.updateButtonValue('trigger', 1));
+    await settle(80);
+    await ev(() => window.__xrEmu.device.controllers.right.updateButtonValue('trigger', 0));
+    await settle(120);
+    record('xr-sigil-cast-control', true, { target: castTarget });
     await shot('14-sigil-cast');
     const cast = await ev(() => {
       const s = window.__combat.session;

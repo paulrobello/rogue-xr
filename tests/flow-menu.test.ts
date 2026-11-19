@@ -55,9 +55,8 @@ describe('in-run menu (card A)', () => {
     expect(ui.menuOpen).toBe(true);
     expect(ui.visible).toBe(true);
     expect(ui.controlIds()).toEqual(
-      expect.arrayContaining(['menu-resume', 'menu-abandon', 'menu-foveation-high']),
+      expect.arrayContaining(['menu-resume', 'menu-settings', 'menu-deck', 'menu-items']),
     );
-    expect(ui.controlIds()).toContain(`menu-${tableDistanceCell(1.3)}`);
     expect(ui.toggleMenu(head)).toBe(true);
     expect(ui.menuOpen).toBe(false);
     expect(ui.visible).toBe(false);
@@ -161,17 +160,25 @@ describe('in-run menu placement', () => {
       camera.updateMatrixWorld(true);
       ui.sync(camera);
       expect(ui.openMenu(camera)).toBe(true);
+      ui.update(0.8);
       ui.root.updateMatrixWorld(true);
-      const box = new THREE.Box3().setFromObject(
-        ui.root.getObjectByName('menu-board') as THREE.Object3D,
-      );
-      for (const x of [box.min.x, box.max.x])
-        for (const y of [box.min.y, box.max.y])
-          for (const z of [box.min.z, box.max.z]) {
-            const p = new THREE.Vector3(x, y, z).project(camera);
-            expect(Math.abs(p.x), `pitch ${pitch} x`).toBeLessThanOrEqual(1);
-            expect(Math.abs(p.y), `pitch ${pitch} y`).toBeLessThanOrEqual(1);
-          }
+      const wheel = ui.root.getObjectByName('radial-menu');
+      if (!wheel) throw new Error('Missing radial menu');
+      const ring = wheel.getObjectByName('menu-clockwork-rim');
+      if (!ring) throw new Error('Missing clockwork bezel');
+      let vertices = 0;
+      const point = new THREE.Vector3();
+      ring.traverse((part) => {
+        if (!(part instanceof THREE.Mesh)) return;
+        const positions = part.geometry.getAttribute('position');
+        for (let i = 0; i < positions.count; i++) {
+          point.fromBufferAttribute(positions, i).applyMatrix4(part.matrixWorld).project(camera);
+          if (Math.abs(point.x) > 1 || Math.abs(point.y) > 1)
+            throw Error(`Wheel clipped at pitch ${pitch}: ${point.x}, ${point.y}`);
+        }
+        vertices += positions.count;
+      });
+      expect(vertices).toBeGreaterThan(0);
       ui.dispose();
     }
   });

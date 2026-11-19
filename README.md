@@ -4,6 +4,22 @@ A seated WebXR roguelike deckbuilder for Meta Quest 3: climb a self-rebuilding a
 
 Status: vertical slice in progress, playable at <https://spire.pardev.net> (open it in the Quest 3 browser and press Enter VR). See [PRD.md](PRD.md) for goals and the phase ladder, and [plans/](plans/) for per-phase implementation plans.
 
+## In-run controls
+
+Open the wrist menu to choose **Settings**, **Deck**, or **Items**. Select the center to resume. To draw a sigil, hold the drawing-hand trigger and trace on the plate. Lift between strokes and take as long as you need. Squeeze the drawing-hand grip or point at **Cast** and pull the trigger to commit. On desktop, draw with the mouse and click **Cast**. [Base and upgraded glyphs](docs/verification/spell-glyphs.png)
+
+## Room layout showcase
+
+[Walk the enemy-free room showcase](https://spire.pardev.net/?seed=MAPTEST2). The link uses a separate save slot. All ten rooms are accessible from the entry hall. Open the radial menu to see your room number, template, and dimensions.
+
+| Route from room 0 | What to inspect |
+| --- | --- |
+| 0 → 1 → 2 | A 10 × 10 m hall opens into an 8 × 12 m gear shaft and an 8 × 8 m study. |
+| 0 → 3 → 4 → 5 → 7 | A second hall leads through an 8 × 2 m corridor and a quarter-turned gear shaft into the 12 × 12 m guardian vault. |
+| 0 → 6 → 8 → 9 | Two narrow corridors lead to the pressure gallery and pump study. |
+
+When reporting a layout issue, include `MAPTEST2`, the room number or route, and the fixture you were facing.
+
 ## CI and deploy
 
 `.github/workflows/ci.yml` runs `make checkall-ci` on every push to `main` and every pull request. It checks out this repo and `paulrobello/mux-xr` side by side, because `@par/xr-workspace` is a `file:` dependency on the sibling. The mux-xr commit is pinned in one place, [toolkit-release.json](toolkit-release.json): to take a newer toolkit, change its `sha` to a full commit, run the gate locally against that checkout, and push.

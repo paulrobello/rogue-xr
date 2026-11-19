@@ -85,6 +85,7 @@ import {
 import {
   castPower,
   GLYPH_LAUNCH_SECONDS,
+  MIN_CAST_POINTS,
   type PlatePose,
   plateLabelCorners,
   platePoseAboveTable,
@@ -118,14 +119,12 @@ const REVEAL_LIFT = 0.03;
 /** The ward shield forms this far from the eye toward the plate, and this far below that line. */
 const SHIELD_REACH = 0.42;
 const SHIELD_DROP = 0.04;
-/** A sigil casts once the pen has been lifted this long, so multi-stroke glyphs (gear) can be drawn. */
-export const SIGIL_CAST_SECONDS = 0.6;
 /** The desktop drag plane sits this far above the table top, so a dragged card skims it. */
 const DRAG_LIFT = 0.12;
 const DRAG_REACH = 3;
 const TIP_OFFSET = 0.06;
 /** How to trace a glyph with controllers, shown above the plate and as the staged-card message. */
-export const XR_SIGIL_HINT = 'Hold the trigger and point at the plate to trace the glyph';
+export const XR_SIGIL_HINT = 'Trigger to trace · Lift between strokes · Grip or select Cast';
 /** The table hint while a rolled die waits for its throw, in XR and on the desktop. */
 export const XR_DICE_HINT = 'Grab the glowing die and let go to throw it';
 export const XR_HELD_DICE_HINT = 'Release your grip to roll';
@@ -436,7 +435,15 @@ interface Knock {
 const KNOCK_SLOTS = 4;
 
 /** What a combat pickable is, for scripted pointer tests and the debug hook. */
-export type CombatPick = 'card' | 'enemy' | 'end-turn' | 'flee' | 'dice' | 'plate' | 'table';
+export type CombatPick =
+  | 'card'
+  | 'enemy'
+  | 'end-turn'
+  | 'flee'
+  | 'dice'
+  | 'plate'
+  | 'sigil-cast'
+  | 'table';
 
 /**
  * One fight on the exploration floor, alive while the encounter is `active`. It owns the
@@ -474,6 +481,8 @@ export class CombatSession {
   private readonly bodies: THREE.Object3D[];
   private readonly hidden: THREE.Object3D[] = [];
   private readonly endButton: THREE.Mesh;
+  private readonly castButton: THREE.Mesh;
+  private readonly castLabel: CanvasLabel | null;
   private readonly controlFrames: THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>[] =
     [];
   /** The Flee control beside End Turn, only in a fight `canFlee` allows. */
@@ -562,8 +571,9 @@ export class CombatSession {
   private fleeArmed = 0;
   private fleeText = 'FLEE';
   private drawing: 'mouse' | 'xr' | null = null;
+  private castHover = false;
+  private castAppearance: 'hidden' | 'disabled' | 'ready' | 'hover' = 'hidden';
   private plateDone = 0;
-  private castTimer = -1;
   private endTimer = -1;
   private ended = false;
   private disposed = false;
@@ -837,6 +847,11 @@ export class CombatSession {
       ? platePoseFromNode(deps.sockets.sigilPlate)
       : platePoseAboveTable(this.pose);
     this.plate.hide();
+    this.castButton = button('sigil-cast', PALETTE.emerald);
+    this.castButton.position.set(0, -this.platePose.halfHeight - 0.075, 0.008);
+    this.castLabel = buttonLabel(this.castButton, 'CAST');
+    this.castButton.visible = false;
+    this.plate.add(this.castButton);
     this.plate.reducedMotion = deps.reducedMotion ?? false;
     deps.root.add(this.plate);
     this.fx = new SpellFx({ reducedMotion: deps.reducedMotion ?? false });
@@ -958,7 +973,7 @@ export class CombatSession {
     }
     if (this.busy() || this.diceFirst()) return false;
     const dying = [...this.dying].some((a) => !a.disposed && a.action('death').isRunning());
-    if (this.flight || this.launch || this.castTimer > 0 || this.holding !== null || dying) {
+    if (this.flight || this.launch || this.holding !== null || dying) {
       this.disarmFlee();
       this.message = FLEE_WAIT;
       return false;
@@ -1073,6 +1088,8 @@ export class CombatSession {
       }
       case 'end-turn':
         return this.endButton.getWorldPosition(new THREE.Vector3());
+      case 'sigil-cast':
+        return this.castButton.getWorldPosition(new THREE.Vector3());
       case 'flee':
         return this.fleeButton?.getWorldPosition(new THREE.Vector3()) ?? null;
       case 'dice':
@@ -1207,6 +1224,7 @@ export class CombatSession {
         mesh.updateWorldMatrix(true, true);
         return rectOfPoints(
           this.controlFrames
+            .filter((frame) => frame.parent === this.endButton || frame.parent === this.fleeButton)
             .flatMap((frame) => worldCorners(frame))
             .concat(worldCorners(mesh), this.fleeButton ? worldCorners(this.fleeButton) : []),
         );
@@ -1492,9 +1510,10 @@ export class CombatSession {
       const r = rayFromObject(this.xr.mainRay);
       const ray = new THREE.Ray(new THREE.Vector3(...r.origin), new THREE.Vector3(...r.direction));
       this.fan.pointerHover(ray);
+      this.setCastHover(ray);
       this.pointStatus(this.drawing || this.holdingDie ? null : ray);
     } else if (this.xr) this.pointStatus(null);
-    this.plate.setHint(this.xr ? XR_SIGIL_HINT : '');
+    this.plate.setHint(this.xr ? XR_SIGIL_HINT : 'Drag to trace · Click Cast when ready');
     this.stepHeldDie();
     this.showHint(this.tableHint());
     this.showCardTip();
@@ -1507,10 +1526,7 @@ export class CombatSession {
       );
       if (added) this.deps.audio?.startLoop('sigil-trace', this.platePose.center);
     }
-    if (this.castTimer > 0 && this.drawing === null) {
-      this.castTimer -= dt;
-      if (this.castTimer <= 0) this.finishSigil();
-    }
+    this.syncCastControl();
     this.fling.update(dt);
     this.fan.update(dt);
     this.dice.update(dt);
@@ -1585,11 +1601,18 @@ export class CombatSession {
     for (const { label } of this.labels) label.dispose();
     this.status?.dispose();
     this.endLabel?.dispose();
+    this.castLabel?.dispose();
     this.fleeLabel?.dispose();
     this.hintLabel?.dispose();
     this.tip?.dispose();
     this.cardTipLabel?.dispose();
-    for (const mesh of [this.endButton, this.fleeButton, this.trayHit, ...this.controlFrames]) {
+    for (const mesh of [
+      this.endButton,
+      this.fleeButton,
+      this.castButton,
+      this.trayHit,
+      ...this.controlFrames,
+    ]) {
       if (!mesh) continue;
       mesh.geometry.dispose();
       (mesh.material as THREE.Material).dispose();
@@ -1613,6 +1636,7 @@ export class CombatSession {
       if (this.drawing === 'mouse') this.feedMouse(ray);
       else if (this.holding === 'mouse') this.placeMouseGrip(ray);
       else this.fan.pointerHover(ray);
+      this.setCastHover(ray);
       this.pointStatus(this.drawing || this.holding ? null : ray);
       return;
     }
@@ -1631,9 +1655,9 @@ export class CombatSession {
     const hit = this.hitAt(ray);
     if (hit !== 'flee') this.disarmFlee();
     if (hit === 'tray') this.throwDice();
+    else if (hit === 'sigil-cast') this.finishSigil();
     else if (hit === 'plate') {
       this.plate.beginStroke();
-      this.castTimer = -1;
       this.drawing = 'mouse';
       this.feedMouse(ray);
     } else if (hit === 'end-turn') this.endTurn();
@@ -1651,6 +1675,10 @@ export class CombatSession {
     if (action.pressed && this.busy()) return;
     if (action.control === 'squeeze') {
       if (action.pressed) this.disarmFlee();
+      if (action.pressed && this.plateLive() && this.drawing === null) {
+        this.finishSigil();
+        return;
+      }
       // A rolled die is grabbed by the main hand and thrown as it is let go, even once the rules
       // have decided the fight (a killing dice card waits for its die).
       if (action.pressed && this.pendingThrow && this.holding === null) {
@@ -1683,10 +1711,19 @@ export class CombatSession {
       return;
     }
     if (this.controller.outcome !== null) return;
+    if (xr.mainRay) {
+      const r = rayFromObject(xr.mainRay);
+      const hit = this.hitAt(
+        new THREE.Ray(new THREE.Vector3(...r.origin), new THREE.Vector3(...r.direction)),
+      );
+      if (hit === 'sigil-cast') {
+        this.finishSigil();
+        return;
+      }
+    }
     if (this.plateLive()) {
       this.disarmFlee();
       this.plate.beginStroke();
-      this.castTimer = -1;
       this.drawing = 'xr';
       return;
     }
@@ -2026,7 +2063,6 @@ export class CombatSession {
   private cancel(): void {
     this.disarmFlee();
     if (this.holding !== null) this.putBack();
-    this.castTimer = -1;
     if (this.drawing) {
       this.drawing = null;
       this.deps.audio?.stopLoop('sigil-trace');
@@ -2036,17 +2072,19 @@ export class CombatSession {
     this.controller.cancel();
   }
 
-  /** Ends a stroke; the glyph casts after `SIGIL_CAST_SECONDS` unless another stroke starts. */
+  /** Ends a stroke and leaves the accumulated trace ready for explicit cast confirmation. */
   private liftPen(): void {
     this.drawing = null;
     this.deps.audio?.stopLoop('sigil-trace');
     this.plate.endStroke();
-    this.castTimer = SIGIL_CAST_SECONDS;
   }
 
   private finishSigil(): void {
-    this.castTimer = -1;
-    if (!this.plateLive()) return;
+    if (!this.plateLive() || this.drawing) return;
+    if (this.plate.pointCount < MIN_CAST_POINTS) {
+      this.message = 'Draw a longer trace before casting';
+      return;
+    }
     const result = this.plate.finish();
     if (!result) {
       this.message = 'Trace too short, draw the glyph';
@@ -2094,7 +2132,9 @@ export class CombatSession {
     this.mouseGrip.updateMatrixWorld(true);
   }
 
-  private hitAt(ray: THREE.Ray): 'tray' | 'plate' | 'end-turn' | 'flee' | number | null {
+  private hitAt(
+    ray: THREE.Ray,
+  ): 'tray' | 'plate' | 'sigil-cast' | 'end-turn' | 'flee' | number | null {
     this.raycaster.ray.copy(ray);
     this.group.updateWorldMatrix(true, true);
     if (this.pendingThrow) {
@@ -2117,9 +2157,11 @@ export class CombatSession {
     }
     const control = this.controlHit(ray)?.object;
     if (control)
-      return control === this.fleeButton || control.parent === this.fleeButton
-        ? 'flee'
-        : 'end-turn';
+      return this.isCastControl(control)
+        ? 'sigil-cast'
+        : control === this.fleeButton || control.parent === this.fleeButton
+          ? 'flee'
+          : 'end-turn';
     const card = this.fan.pointerHover(ray);
     return card;
   }
@@ -2129,6 +2171,18 @@ export class CombatSession {
       this.controller.stage === 'sigil' &&
       (this.plate.phase === 'ready' || this.plate.phase === 'drawing')
     );
+  }
+
+  private isCastControl(object: THREE.Object3D): boolean {
+    return object === this.castButton || object.parent === this.castButton;
+  }
+
+  private setCastHover(ray: THREE.Ray): void {
+    const object = this.controlHit(ray)?.object;
+    const hovered = object !== undefined && this.isCastControl(object) && this.plateLive();
+    if (hovered === this.castHover) return;
+    this.castHover = hovered;
+    this.syncCastControl();
   }
 
   // ---- state to visuals ------------------------------------------------------------------------
@@ -2808,6 +2862,27 @@ export class CombatSession {
       this.endText = endText;
       drawButtonText(this.endLabel, endText, waiting ? PALETTE.brassDark : PALETTE.parchment);
     }
+    this.syncCastControl();
+  }
+
+  private syncCastControl(): void {
+    const state = !this.plateLive()
+      ? 'hidden'
+      : this.plate.pointCount < MIN_CAST_POINTS
+        ? 'disabled'
+        : this.castHover
+          ? 'hover'
+          : 'ready';
+    if (state === this.castAppearance) return;
+    this.castAppearance = state;
+    this.castButton.visible = state !== 'hidden';
+    if (!this.castButton.visible) return;
+    const disabled = state === 'disabled';
+    (this.castButton.material as THREE.MeshStandardMaterial).color.set(
+      disabled ? PALETTE.void : state === 'hover' ? PALETTE.candle : PALETTE.emerald,
+    );
+    if (this.castLabel)
+      drawButtonText(this.castLabel, 'CAST', disabled ? PALETTE.brassDark : PALETTE.parchment);
   }
 
   private targetSites(): FlingTargetSite[] {

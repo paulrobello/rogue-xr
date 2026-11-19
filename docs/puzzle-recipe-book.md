@@ -26,6 +26,7 @@ Set the three valves, then operate the primer. The machinery stirs, vents steam,
 
 ## Example combinations
 
+- **The key in the light.** A stained-glass window casts colored shapes across the floor. Three teeth and a bow resolve into a key when seen together. Its tip points to a loose brass tile. Pressing the tile opens a small cache. Make the silhouette readable by brightness as well as color.
 - **The absent door.** A painting of an arched double door points to an ordinary wall. After a return visit one painted leaf is open. A scratch in the corresponding real panel identifies the book that releases it.
 - **The stalled clock.** A coffer holds a wind-up key. An enemy carries the missing gear. The player seats the gear between two differently sized wheels, winds the clock and watches its light reveal a floor inscription at the marked hour.
 - **The curator’s inventory.** A dispatch names three objects without naming their sockets. A second room’s painting shows their order. Placing them makes successive parts of a cabinet move until its reward compartment opens.
@@ -67,7 +68,7 @@ These are design ingredients. The component kits supply physical starting pieces
 
 ## Asset shelf
 
-The furnishings and instruments are node libraries. A room places selected roots and reuses their geometry and materials. Dining and library furniture, gallery paintings, clocks, armor as dressing, and lit candelabras can be selected by the runtime. On a return visit, the clockmaker looks toward a red book. Each portrait has a bookcase in the same room. Find the gilt winding key on the red spine and pull it with a nearby grip, a trigger ray, or a desktop click. The book tips forward and the lower panel folds inward to reveal the clockmaker’s cache. Each cache pays 10 cogs once and stays open after Continue or a save import. Both the built-in study shelves and the freestanding case use individually drawn bindings and paper edges. [Study books in Quest Browser](verification/quest-study-book-bindings.jpg) Waking armor and walk-through secret passages remain future encounters.
+The furnishings and instruments are node libraries. A room places selected roots and reuses their geometry and materials. Dining and library furniture, gallery paintings, clocks, armor as dressing, and lit candelabras can be selected by the runtime. Only the clockmaker portrait changes on a return visit. It appears once on a floor that can pair it with a bookcase. Other paintings show different subjects and stay the same. [Curtains and gallery frames in Quest Browser](verification/clockwork-interiors-quest.jpg) The clockmaker looks toward a red book in the same room. Find the gilt winding key on the red spine and pull it with a nearby grip, a trigger ray, or a desktop click. The book tips forward and the lower panel folds inward to reveal the clockmaker’s cache. Each cache pays 10 cogs once and stays open after Continue or a save import. Both the built-in study shelves and the freestanding case use individually drawn bindings and paper edges. [Study books in Quest Browser](verification/quest-study-book-bindings.jpg) Waking armor and walk-through secret passages remain future encounters.
 
 | Kit | Available now |
 | --- | --- |

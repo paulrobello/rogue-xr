@@ -300,15 +300,40 @@ def external_checks(files: list[Path], loops: list[Path], stereo: list[Path]) ->
     return out
 
 
+def unfold_paper(source: np.ndarray) -> np.ndarray:
+    """Two creases opening under tension followed by a softer rustle as the sheet settles."""
+    paper = fold_mono(source)[:, 0]
+    mix = np.zeros(round(0.92 * SR), dtype=np.float32)
+    # Use only the papery transients from the original card recording, before its closing clip tick.
+    for onset, start, end, stretch, level in [
+        (0.02, 0.010, 0.106, 1.35, 0.40),
+        (0.10, 0.295, 0.365, 1.80, 0.48),
+        (0.29, 0.105, 0.012, 1.45, 0.81),
+        (0.37, 0.285, 0.372, 2.05, 1.00),
+        (0.59, 0.368, 0.290, 1.60, 0.39),
+        (0.73, 0.035, 0.102, 1.65, 0.18),
+    ]:
+        count = round(abs(end - start) * SR * stretch)
+        transient = np.interp(np.linspace(start * SR, end * SR, count), np.arange(len(paper)), paper)
+        transient *= np.sin(np.linspace(0, np.pi, count)) ** 0.65
+        offset = round(onset * SR)
+        mix[offset:offset + count] += transient * level
+    return mix[:, None]
+
+
 def build_sfx(spec: dict, only: set[str], derived: Path, out: Path) -> dict[str, dict]:
     results: dict[str, dict] = {}
     for cue in spec["cues"]:
         cid = cue["id"]
         if only and cid not in only:
             continue
-        src = AUDIO_SRC / "sfx" / "raw" / f"{cid}.mp3"
+        source_id = "card-draw" if cid == "paper-unfold" else cid
+        src = AUDIO_SRC / "sfx" / "raw" / f"{source_id}.mp3"
         steps: list[str] = []
         clip = decode(src, 2)
+        if cid == "paper-unfold":
+            clip = unfold_paper(clip)
+            steps.append("Layer and stretch six dry paper transients into two opening folds and a settling rustle")
         loop_info = None
         if cue["loop"]:
             native = loop_metrics(clip)
@@ -494,6 +519,8 @@ def main() -> None:
             "music_note": "Suno is owner-generated; see assets-source/audio/music/SUNO-HANDOFF.md",
         }
         music_log = Path(args.music_src) / "generation-log.json"
+        if "paper-unfold" in provenance["sfx"]:
+            provenance["sfx"]["paper-unfold"]["approval"] = "New edit of the existing card-draw recording. Runtime verification is separate from owner listening approval."
         if music and music_log.exists():
             provenance["music_source"] = json.loads(music_log.read_text())["source"]
             provenance["music_generation_log"] = rel(music_log)

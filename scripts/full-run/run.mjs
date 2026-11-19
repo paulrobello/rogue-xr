@@ -1347,7 +1347,7 @@ async function runSeed(seed, mode) {
     return false;
   }
 
-  /** Traces the sigil's template strokes with the mouse on the plate (72 % of the plate). */
+  /** Traces the sigil's template strokes, then explicitly clicks the visible Cast control. */
   async function trace(sigil) {
     const strokes = await ev((id) => window.__fr.plateStrokes(id), sigil);
     for (const stroke of strokes) {
@@ -1357,6 +1357,9 @@ async function runSeed(seed, mode) {
       await page.mouse.up();
       await wait(60);
     }
+    const cast = await ev(() => window.__combat.screenOf('sigil-cast'));
+    if (!cast) throw new Error('sigil Cast control is not reachable');
+    await page.mouse.click(cast.x, cast.y);
     await page
       .waitForFunction(
         () =>

@@ -107,8 +107,12 @@ export function toCloud(strokes: readonly Stroke[], n: number = CLOUD_SIZE): Clo
  * Weighted cloud distance from `start`: each point of `a`, in order, claims its nearest unclaimed
  * point of `b`; earlier claims weigh more (weight 1 - k/n for the k-th claim).
  */
-function cloudDistance(a: Cloud, b: Cloud, start: number): number {
-  const n = a.length;
+function cloudDistance(
+  distances: Float64Array,
+  n: number,
+  start: number,
+  transposed: boolean,
+): number {
   const matched = new Array<boolean>(n).fill(false);
   let sum = 0;
   let i = start;
@@ -117,7 +121,7 @@ function cloudDistance(a: Cloud, b: Cloud, start: number): number {
     let index = -1;
     for (let j = 0; j < n; j++) {
       if (matched[j]) continue;
-      const d = distance(a[i] as Point, b[j] as Point);
+      const d = distances[transposed ? j * n + i : i * n + j];
       if (d < best) {
         best = d;
         index = j;
@@ -138,10 +142,19 @@ function cloudDistance(a: Cloud, b: Cloud, start: number): number {
  */
 export function greedyCloudMatch(a: Cloud, b: Cloud): number {
   const n = a.length;
+  // All start positions and both traversal directions share the same pairwise distances.
+  const distances = new Float64Array(n * n);
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) distances[i * n + j] = distance(a[i] as Point, b[j] as Point);
+  }
   const step = Math.floor(n ** (1 - EPSILON));
   let min = Number.POSITIVE_INFINITY;
   for (let i = 0; i < n; i += step) {
-    min = Math.min(min, cloudDistance(a, b, i), cloudDistance(b, a, i));
+    min = Math.min(
+      min,
+      cloudDistance(distances, n, i, false),
+      cloudDistance(distances, n, i, true),
+    );
   }
   return min / ((n + 1) / 2);
 }

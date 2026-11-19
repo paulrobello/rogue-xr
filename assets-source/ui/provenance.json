@@ -377,13 +377,13 @@
       },
       {
         "file": "public/assets/ui/glyphs.ktx2",
-        "bytes": 96695,
-        "sha256": "a205908c2edbd535b44bdfcaadf692f65fcfe327b5a02ef87373c46c45d7c2a4"
+        "bytes": 201867,
+        "sha256": "c05c2eadcdbfff00bf1628d88d61724789c3c56e428ccaf0c1b319412c83bb02"
       },
       {
         "file": "public/assets/ui/glyphs.png",
-        "bytes": 126426,
-        "sha256": "d23453fdf1076fe48842d8c3caaf630fedfe6fb984a3ccfa2fb4972824f21fc2"
+        "bytes": 307024,
+        "sha256": "6dd13bc02e420ca9d4481ab59f8db1293a04b70325b4656c9ae3e438d22f49d7"
       },
       {
         "file": "public/assets/ui/icons.ktx2",
@@ -407,8 +407,8 @@
       },
       {
         "file": "public/assets/ui/ui-atlas.json",
-        "bytes": 14112,
-        "sha256": "4c2012e9f8b019af5553ed7253c287285b918fd2e79b339d4cd6a71e062078bb"
+        "bytes": 16383,
+        "sha256": "20da84bbe54d6e8aa36300052f9975dd6b49a037b8127c09f174a6c2266d45fb"
       }
     ]
   }

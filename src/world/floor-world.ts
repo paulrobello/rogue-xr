@@ -59,7 +59,9 @@ export interface FloorWorld {
   /** Re-evaluates the current room from a world-space floor point; returns true when it changed. */
   update(x: number, z: number): boolean;
   /** Opens the forward door held by a defeated encounter. */
-  releaseGuardedDoor(room: number): void;
+  releaseGuardedDoor(room: number, immediate?: boolean): THREE.Vector3 | null;
+  /** Advances a released doorway's hinge animation. */
+  updateAnimations(dt: number): void;
   spawnPoint(): THREE.Vector3;
   /**
    * Swaps one of `room`'s automaton bodies for `next` (a loaded model), keeping its place, heading,
@@ -169,7 +171,7 @@ function buildRoom(
       const s = t.lootSockets.find((socket) => socket.id === pickup.socketId);
       if (!s) continue;
       const surface = surfaceHeightAt(t.colliders, s.position[0], s.position[2]);
-      const coffer = kit.build(index, s, pickup.kind, surface, placed.role === 'combat');
+      const coffer = kit.build(index, s, pickup.kind, surface, placed.encounter !== null);
       group.add(coffer.object);
       group.getObjectByName(`socket-${s.id}`)?.removeFromParent();
       coffers.push(coffer);
@@ -296,15 +298,35 @@ export function buildFloorWorld(
     side: THREE.DoubleSide,
   });
   const lockGeometry = new THREE.CircleGeometry(0.1, 4);
-  const lockedDoor = passage && door ? new THREE.Mesh(capGeometry, guardMaterial) : null;
+  const lockedDoor = passage && door ? new THREE.Group() : null;
   const barrier = door ? doorwayCollider(door) : null;
+  let doorAngle = 0;
+  let doorOpening = false;
+  let doorHinge: THREE.Group | null = null;
+  let doorReleased = false;
+  const reducedMotion =
+    typeof globalThis.matchMedia === 'function' &&
+    globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (passage && door && lockedDoor && barrier) {
     lockedDoor.name = `encounter-lock-${passage[0].room}-${door.id}`;
-    lockedDoor.position.set(door.world[0], 0, door.world[1]);
-    lockedDoor.rotation.y = INTO_ROOM_YAW[door.facing];
+    const leaf = new THREE.Mesh(capGeometry, guardMaterial);
+    leaf.name = 'encounter-lock-leaf';
+    const yaw = INTO_ROOM_YAW[door.facing];
+    const hinge = new THREE.Group();
+    doorHinge = hinge;
+    const hingeSide = -DOOR_WIDTH / 2;
+    lockedDoor.position.set(
+      door.world[0] + Math.cos(yaw) * hingeSide,
+      0,
+      door.world[1] - Math.sin(yaw) * hingeSide,
+    );
+    lockedDoor.rotation.y = yaw;
+    leaf.position.x = -hingeSide;
+    hinge.add(leaf);
+    lockedDoor.add(hinge);
     const badge = new THREE.Mesh(lockGeometry, lockMaterial);
     badge.position.set(0, 1.15, 0.012);
-    lockedDoor.add(badge);
+    leaf.add(badge);
     roomGroups[passage[0].room]?.attach(lockedDoor);
     for (const side of passage) colliders[side.room]?.push(barrier);
   }
@@ -346,14 +368,32 @@ export function buildFloorWorld(
       applyVisibility();
       return true;
     },
-    releaseGuardedDoor(room) {
-      if (!passage || passage[0].room !== room || !lockedDoor?.parent || !barrier) return;
-      lockedDoor.removeFromParent();
+    releaseGuardedDoor(room, immediate = false) {
+      if (
+        !door ||
+        !passage ||
+        passage[0].room !== room ||
+        !lockedDoor?.parent ||
+        !barrier ||
+        doorReleased
+      )
+        return null;
       for (const side of passage) {
         const boxes = colliders[side.room];
         const index = boxes?.indexOf(barrier) ?? -1;
         if (index >= 0) boxes?.splice(index, 1);
       }
+      doorReleased = true;
+      doorOpening = true;
+      doorAngle = immediate || reducedMotion ? Math.PI / 2 : 0;
+      if (doorHinge) doorHinge.rotation.y = doorAngle;
+      return new THREE.Vector3(door.world[0], 1.1, door.world[1]);
+    },
+    updateAnimations(dt) {
+      if (!doorOpening || !lockedDoor?.parent || reducedMotion) return;
+      doorAngle = Math.min(Math.PI / 2, doorAngle + Math.max(0, dt) * 2.8);
+      if (doorHinge) doorHinge.rotation.y = doorAngle;
+      if (doorAngle >= Math.PI / 2) doorOpening = false;
     },
     spawnPoint() {
       const entry = rooms[0]?.footprint;

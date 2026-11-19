@@ -374,7 +374,7 @@ export interface TraceResult {
   /** Power multiplier from `scoreToMultiplier`, 0.5..1.25. */
   readonly multiplier: number;
   readonly quality: SigilQuality;
-  /** The best-matching of all five sigils, for "you drew X" feedback. */
+  /** The best-matching authored sigil, for "you drew X" feedback. */
   readonly recognizedAs: SigilId;
   readonly points: number;
   /** False for a stray tap with fewer than MIN_CAST_POINTS points: do not cast. */

@@ -106,31 +106,72 @@ mesh=bpy.data.meshes.new('Arch fan'); mesh.from_pydata(verts,[],faces); mesh.upd
 for z in (.5,1.2): panel(leaf,.69,z,1.1,.52)
 cyl(leaf,'Knob',(1.25,-.11,1.02),.045,.05,brass,'Y')
 
-curtain=empty('Curtain'); cyl(curtain,'Curtain rod',(0,0,2.35),.03,1.9,brass,'X')
+# Vertex colors retain the subtle nap variation in the exported glTF material.
+drape=material('WineVelvetNap',(1,1,1),0,.95)
+attribute=drape.node_tree.nodes.new('ShaderNodeVertexColor'); attribute.layer_name='VelvetNap'
+drape.node_tree.links.new(attribute.outputs['Color'],drape.node_tree.nodes['Principled BSDF'].inputs['Base Color'])
+MATS.append(drape)
+
+def rope(parent,name,points,r,mat):
+    curve=bpy.data.curves.new(name,'CURVE'); curve.dimensions='3D'; curve.resolution_u=12
+    curve.bevel_depth=r; curve.bevel_resolution=3; curve.resolution_u=12
+    spline=curve.splines.new('BEZIER'); spline.bezier_points.add(len(points)-1)
+    for point,co in zip(spline.bezier_points,points):
+        point.co=co; point.handle_left_type='AUTO'; point.handle_right_type='AUTO'
+    ob=bpy.data.objects.new(name,curve); bpy.context.collection.objects.link(ob); ob.parent=parent
+    ob.data.materials.append(mat); bpy.context.view_layer.objects.active=ob
+    bpy.ops.object.select_all(action='DESELECT'); ob.select_set(True); bpy.ops.object.convert(target='MESH')
+    for poly in ob.data.polygons: poly.use_smooth=True
+    return ob
+
+curtain=empty('Curtain'); cyl(curtain,'Curtain rod',(0,0,2.35),.022,2.12,brass,'X',verts=20)
 for s in (-1,1):
-    cyl(curtain,'Finial',(s*.99,0,2.35),.065,.11,brass,'X')
-    bar(curtain,'Rod wall bracket',(s*.91,0,2.35),(s*.91,.14,2.35),.018,brass)
-    cyl(curtain,'Wall mounting plate',(s*.91,.15,2.35),.055,.025,brass,'Y')
-    for x in (.18,.34,.50,.66,.82):
-        loop=torus(curtain,'Curtain ring',(s*x,0,2.35),.043,.008,brass)
+    oval(curtain,'Rod finial',(s*1.08,0,2.35),(.075,.043,.043),brass)
+    bar(curtain,'Rod wall bracket',(s*.98,0,2.35),(s*.98,.14,2.35),.017,brass,verts=12)
+    cyl(curtain,'Wall mounting plate',(s*.98,.15,2.35),.055,.025,brass,'Y',verts=20)
+    for x in (.49,.59,.69,.79,.89,.97):
+        loop=torus(curtain,'Curtain ring',(s*x,0,2.35),.040,.007,brass)
         loop.rotation_euler[1]=math.pi/2
-        bar(curtain,'Curtain tab',(s*x,-.025,2.32),(s*x,-.035,2.275),.009,velvet)
-    # One continuous folded surface narrows at the tie and opens at the hem.
-    rows=[(.18,.17,.88),(.40,.19,.88),(.62,.25,.88),(.82,.40,.88),(.99,.52,.88),(1.16,.40,.88),(1.40,.28,.88),(1.72,.19,.88),(2.00,.15,.88),(2.28,.13,.88)]
-    verts=[]
-    for z,inner,outer in rows:
-        for i in range(17):
-            t=i/16
-            verts.append((s*(inner+(outer-inner)*t),-.035-.035*math.cos(t*math.tau*4),z))
+        bar(curtain,'Curtain tab',(s*x,-.005,2.315),(s*x,-.012,2.275),.009,velvet)
+    # Curved gathered fabric, with a smooth change in width above and below the tie.
+    rows,cols=32,48
+    verts=[]; tones=[]
+    for j in range(rows+1):
+        v=j/rows; z=.18+2.10*v
+        gather=math.exp(-((v-.39)/.21)**2)
+        inner=.48+.19*gather+.035*(1-v)+(.012 if s>0 else -.012)
+        outer=.99-.025*gather+.012*math.sin(v*2.7+s*.4)
+        for i in range(cols+1):
+            u=i/cols
+            phase=math.tau*(3.15*u+.035*math.sin(v*4+s))
+            wave=math.cos(phase)+.21*math.cos(phase*2+.65)
+            amp=.040+.014*(1-gather)+.006*math.sin(v*3+u*4)
+            x=s*(inner+(outer-inner)*u+.008*math.sin(v*4+u*8)*math.sin(math.pi*u))
+            y=-.025-amp*wave-.015*math.sin(v*math.pi)
+            hem=(1-v)**9*(.018*math.cos(phase+.2)+.008*math.sin(u*13+s))
+            verts.append((x,y,z+hem))
+            nap=.79+.12*math.cos(phase+.35)+.025*math.sin(v*19+u*37+s)+.015*math.sin(v*83+u*91)
+            tones.append((.27*nap,.017*nap,.041*nap,1))
     faces=[]
-    for row in range(len(rows)-1):
-        for i in range(16):
-            a=row*17+i; faces.append((a,a+1,a+18,a+17) if s>0 else (a+17,a+18,a+1,a))
-    mesh=bpy.data.meshes.new('Curtain folds'); mesh.from_pydata(verts,[],faces); mesh.update()
-    o=bpy.data.objects.new('Pleated velvet',mesh); bpy.context.collection.objects.link(o); o.parent=curtain; o.data.materials.append(velvet)
+    for j in range(rows):
+        for i in range(cols):
+            a=j*(cols+1)+i
+            faces.append((a,a+1,a+cols+2,a+cols+1) if s>0 else (a+cols+1,a+cols+2,a+1,a))
+    mesh=bpy.data.meshes.new('Curved velvet folds'); mesh.from_pydata(verts,[],faces); mesh.update()
+    colors=mesh.color_attributes.new(name='VelvetNap',type='FLOAT_COLOR',domain='CORNER')
+    for loop in mesh.loops: colors.data[loop.index].color=tones[loop.vertex_index]
+    o=bpy.data.objects.new('Draped velvet panel',mesh); bpy.context.collection.objects.link(o); o.parent=curtain; o.data.materials.append(drape)
+    for poly in mesh.polygons: poly.use_smooth=True
     solid=o.modifiers.new('Cloth thickness','SOLIDIFY'); solid.thickness=.008
-    bar(curtain,'Tie braid',(s*.50,-.09,.99),(s*.89,-.09,1.02),.016,brass)
-    cyl(curtain,'Tie clasp',(s*.70,-.10,1.005),.035,.02,brass,'Y')
+    # A loop curves around the front of the gathered cloth and ends at a wall hook.
+    hookx=s*1.065; hookz=1.00
+    cyl(curtain,'Tieback wall rosette',(hookx,.15,hookz),.039,.025,brass,'Y',verts=20)
+    rope(curtain,'Wall hook',[(hookx,.135,hookz),(hookx,.075,hookz),(s*1.045,.03,hookz-.025)],.008,brass)
+    rope(curtain,'Gathered tieback',[(s*.68,-.055,1.015),(s*.72,-.115,.985),(s*.86,-.13,.972),(s*.98,-.08,.985),(s*1.045,.03,.975)],.012,brass)
+    rope(curtain,'Tassel cord',[(s*.78,-.13,.985),(s*.80,-.14,.92),(s*.79,-.14,.86)],.006,brass)
+    oval(curtain,'Tassel knot',(s*.79,-.14,.855),(.018,.016,.023),brass)
+    cyl(curtain,'Tassel skirt',(s*.79,-.14,.805),.028,.085,brass,verts=16,r2=.015)
+    oval(curtain,'Tassel tip',(s*.79,-.14,.76),(.026,.016,.012),brass)
 
 chair=empty('DiningChair')
 for x in (-.23,.23):
@@ -249,10 +290,36 @@ for x in (.06,.10,.14,.18,.22): cyl(visor,'Visor rivet',(x,-.128,-.09),.007,.01,
 bar(visor,'Visor brow',(.025,-.12,.025),(.255,-.12,.025),.01,brass)
 
 painting=empty('FramedPainting'); cube(painting,'Canvas',(0,0,.50),(.78,.035,.80),cloth,.005)
-for x in (-.44,.44): cube(painting,'Frame side',(x,-.055,.50),(.09,.04,1.0),wood2,.01)
-for z in (.045,.955): cube(painting,'Frame rail',(0,-.055,z),(.95,.04,.09),wood2,.01)
-for x in (-.395,.395): cube(painting,'Gilt inner side',(x,-.08,.50),(.015,.02,.84),brass)
-for z in (.085,.915): cube(painting,'Gilt inner rail',(0,-.08,z),(.80,.02,.015),brass)
+backing=material('PictureBacking',(.65,.53,.36),0,.95); MATS.append(backing)
+cube(painting,'Canvas backing',(0,.024,.50),(.96,.008,.98),backing)
+# Nested mitred contours form a deep, carved molding without crossing the image aperture.
+profile=[(.470,-.075),(.480,-.085),(.489,-.084),(.495,-.067),
+         (.505,-.064),(.515,-.075),(.525,-.094),(.538,-.105),
+         (.550,-.103),(.558,-.089),(.567,-.065),(.578,-.055),
+         (.590,-.060),(.600,-.045),(.600,.012)]
+verts=[]
+for r,y in profile:
+    x=.38+(r-.470); z=.39+(r-.470)
+    verts.extend([(-x,y,.50-z),(x,y,.50-z),(x,y,.50+z),(-x,y,.50+z)])
+faces=[]
+for j in range(len(profile)-1):
+    for i in range(4): faces.append((j*4+i,j*4+(i+1)%4,(j+1)*4+(i+1)%4,(j+1)*4+i))
+mesh=bpy.data.meshes.new('Mitred ogee molding');mesh.from_pydata(verts,[],faces);mesh.update()
+o=bpy.data.objects.new('Carved walnut molding',mesh);bpy.context.collection.objects.link(o);o.parent=painting
+for m in (wood,wood2,brass): mesh.materials.append(m)
+for poly in mesh.polygons:
+    band=poly.index//4; poly.material_index=2 if band in (0,1,2) else (1 if band in (3,4,8,9,10,11) else 0)
+# Corner florets and paired diagonal leaves remain entirely outside the aperture.
+for sx in (-1,1):
+    for sz in (-1,1):
+        x=sx*.458; z=.50+sz*.468
+        cyl(painting,'Corner rosette',(x,-.111,z),.030,.012,brass,'Y',verts=20)
+        for k in range(8):
+            t=math.tau*k/8
+            oval(painting,'Rosette petal',(x+.019*math.cos(t),-.119,z+.019*math.sin(t)),(.010,.006,.010),wood2)
+        oval(painting,'Rosette center',(x,-.124,z),(.009,.006,.009),brass)
+        for dx,dz in ((-.039,0),(0,-.039)):
+            leaf=oval(painting,'Carved corner leaf',(x+sx*dx,-.106,z+sz*dz),(.025,.009,.012) if dz==0 else (.012,.009,.025),wood2)
 latch=empty('FramedPainting_RearLatch',painting,(.24,.01,.50))
 
 roots=[single,double,arch,curtain,chair,table,book,candle,clock,armor,painting]

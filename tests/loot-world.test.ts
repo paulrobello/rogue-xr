@@ -197,6 +197,7 @@ describe('floor loot view', () => {
     expect(view.loot.open(room, socketId, payout)).toBe(false);
     expect(coffer.opened).toBe(false);
     view.markCleared(room);
+    view.update(new THREE.Object3D(), 0.25);
     expect(padlock?.visible).toBe(false);
     expect(view.loot.showLock(room, socketId)).toBe(false);
     expect(view.loot.open(room, socketId, payout)).toBe(true);
@@ -227,6 +228,8 @@ describe('floor loot view', () => {
     );
     const visual = view.world.group.getObjectByName(`encounter-lock-${from.room}-${from.door}`);
     expect(visual?.parent).toBe(view.world.roomGroups[from.room]);
+    const leaf = visual?.getObjectByName('encounter-lock-leaf');
+    const before = leaf?.getWorldPosition(new THREE.Vector3());
     expect(walkThrough(from.room, 1)).toBeGreaterThan(0.25);
     expect(walkThrough(to.room, -1)).toBeGreaterThan(0.25);
     view.markCleared(to.room);
@@ -234,7 +237,16 @@ describe('floor loot view', () => {
     view.markCleared(from.room);
     expect(
       view.world.group.getObjectByName(`encounter-lock-${from.room}-${from.door}`),
-    ).toBeUndefined();
+    ).toBeDefined();
+    view.suspendTriggers = true;
+    const head = new THREE.Object3D();
+    view.update(head, 0.05);
+    const during = leaf?.getWorldPosition(new THREE.Vector3());
+    expect(before && during && during.distanceTo(before)).toBeGreaterThan(0.001);
+    for (let i = 1; i < 20; i++) view.update(head, 0.05);
+    const openedDoor = view.world.group.getObjectByName(`encounter-lock-${from.room}-${from.door}`);
+    expect(openedDoor).toBeDefined();
+    expect(openedDoor?.getObjectByName('encounter-lock-leaf')).toBeDefined();
     expect(walkThrough(from.room, 1)).toBeCloseTo(-0.6);
     expect(walkThrough(to.room, -1)).toBeCloseTo(-0.6);
     view.dispose();

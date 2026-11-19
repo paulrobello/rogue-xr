@@ -19,7 +19,7 @@ Steam is the cost to play one card. Base and upgraded text describe a single pla
 | **Brass Bulwark** · skill | 3 · self | Gain 14 Block. | Gain 18 Block. | Two hinged plates meet in front of the tray and the Block counter rises immediately. |
 | **Anchor Glyph** · sigil | 1 · self | Trace an anchor. Gain 8 Block and 2 Plating. | Gain 11 Block and 3 Plating. | Draw once around the eye, down the shank and around both flukes. A green anchor drops on a short brass chain. |
 | **Counterstroke** · new attack | 2 · one enemy | Deal 10 damage. If the target’s shown intent has two or more hits, also gain 6 Block. | Deal 13 damage. Gain 8 Block when the condition holds. | A ratchet ram strikes. A ruby guard unfolds on the return stroke when the target telegraphs multiple hits. |
-| **Quench Seal** · new sigil | 1 · one enemy | Trace Ward. Remove up to 3 Overheat from the target. Gain 4 Block plus 2 per stack removed. | Remove up to 4. Gain 5 Block plus 2 per stack removed. | Heat motes travel from the enemy to a translucent shield when the seal consumes Overheat. |
+| **Quench Seal** · new sigil | 1 · one enemy | Trace Quench. Remove up to 3 Overheat from the target. Gain 4 Block plus 2 per stack removed. | Remove up to 4. Gain 5 Block plus 2 per stack removed. | Cold bars cross a falling water drop as heat motes travel from the enemy into the seal. |
 
 **Timing and balance**
 

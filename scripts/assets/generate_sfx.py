@@ -75,6 +75,8 @@ def main() -> None:
     key = api_key()
     RAW.mkdir(parents=True, exist_ok=True)
     for cue in spec["cues"]:
+        if cue.get("local_edit"):
+            continue
         cue_id = cue["id"]
         if wanted and cue_id not in wanted and cue_id not in retry:
             continue

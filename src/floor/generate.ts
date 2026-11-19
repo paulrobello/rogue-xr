@@ -63,6 +63,9 @@ export interface FloorParams {
   templates: readonly RoomTemplate[];
 }
 
+/** Reserved walk-through of all five baked room templates. */
+export const SHOWCASE_SEED = 'MAPTEST2';
+
 export const DEFAULT_FLOOR_PARAMS: FloorParams = {
   minRooms: 6,
   maxRooms: 8,
@@ -280,9 +283,9 @@ function attempt(rng: RunRng, params: FloorParams): FloorPlan | null {
       : -1;
   for (const p of placed) {
     const sockets = rooms[p.index]?.template.enemySockets ?? [];
-    if (p.role === 'guardian') {
+    if (rng.seed !== SHOWCASE_SEED && p.role === 'guardian') {
       p.encounter = { tier: 'guardian', socketIds: sockets.slice(0, 1).map((s) => s.id) };
-    } else if (p.role === 'combat') {
+    } else if (rng.seed !== SHOWCASE_SEED && p.role === 'combat') {
       const tier: EncounterTier = p.index === elite ? 'elite' : 'regular';
       const count = tier === 'elite' ? 1 : ai.int(1, Math.min(2, sockets.length));
       p.encounter = {
@@ -344,7 +347,7 @@ export function guardedConnection(plan: FloorPlan): readonly [DoorRef, DoorRef] 
   const stream = Stream.fromKey(`${plan.seed}:guarded-connections`);
   const candidates = plan.connections.filter(
     ([from, to]) =>
-      plan.rooms[from.room]?.role === 'combat' &&
+      plan.rooms[from.room]?.encounter != null &&
       (plan.rooms[to.room]?.depth ?? 0) > (plan.rooms[from.room]?.depth ?? 0) &&
       to.room !== plan.pressureWing?.gallery,
   );

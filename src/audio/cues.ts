@@ -44,6 +44,7 @@ export const SFX = {
   'steam-vent': sfx('steam-vent', 'positional', 0.1),
   'gear-clank': sfx('gear-clank', 'positional', 0.05),
   'door-open': sfx('door-open', 'positional', 0.2),
+  'paper-unfold': sfx('paper-unfold', 'positional', 0.2),
   'ui-tick': sfx('ui-tick', 'ui', 0.03),
   'automaton-hit': sfx('automaton-hit', 'positional', 0.05),
   'automaton-death': sfx('automaton-death', 'positional', 0.2),

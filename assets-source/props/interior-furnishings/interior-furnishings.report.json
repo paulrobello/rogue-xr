@@ -1,6 +1,6 @@
 {
   "generator": "scripts/assets/build-interior-furnishings.py",
-  "blender": "5.2.2 LTS",
+  "blender": "5.3.0",
   "coordinate_system": "glTF Y-up; front +Z; dimensions metres",
   "materials": [
     "Walnut",
@@ -13,7 +13,9 @@
     "OxbloodLeather",
     "MidnightEnamel",
     "ClockIvory",
-    "LibraryBindingAtlas"
+    "LibraryBindingAtlas",
+    "WineVelvetNap",
+    "PictureBacking"
   ],
   "roots": {
     "DoorSingle": {
@@ -72,21 +74,21 @@
     },
     "Curtain": {
       "dimensions_m": [
-        2.09,
-        2.235,
-        0.273
+        2.31,
+        2.251,
+        0.331
       ],
       "bounds_min": [
-        -1.045,
-        0.18,
+        -1.155,
+        0.154,
         -0.163
       ],
       "bounds_max": [
-        1.045,
-        2.415,
-        0.11
+        1.155,
+        2.405,
+        0.168
       ],
-      "mesh_count": 2
+      "mesh_count": 3
     },
     "DiningChair": {
       "dimensions_m": [
@@ -198,21 +200,21 @@
     },
     "FramedPainting": {
       "dimensions_m": [
-        0.97,
-        1.0,
-        0.107
+        1.02,
+        1.04,
+        0.158
       ],
       "bounds_min": [
-        -0.485,
-        0.0,
-        -0.018
+        -0.51,
+        -0.02,
+        -0.028
       ],
       "bounds_max": [
-        0.485,
-        1.0,
-        0.09
+        0.51,
+        1.02,
+        0.13
       ],
-      "mesh_count": 3
+      "mesh_count": 5
     }
   },
   "movable_nodes": [
@@ -242,7 +244,7 @@
     "LibraryBindingAtlas requires the shared runtime book texture; canvas UVs are texture-ready.",
     "No authored colliders or LODs."
   ],
-  "triangles": 26780,
-  "size_bytes": 1870292,
-  "sha256": "c88a72daa60c0df103452d1f2ef7b63f625ff27694827fcf7a878e3e15a18ae8"
+  "triangles": 55080,
+  "size_bytes": 3117960,
+  "sha256": "865dae4394339f83bd08a8b1c3d7cd4355cc2ce5e873334ce57b9bfd682f1858"
 }

@@ -42,6 +42,14 @@ function asset(): InteriorFurnishingsAsset {
   return { scene: new THREE.Group(), roots };
 }
 
+function paintedAsset(): InteriorFurnishingsAsset {
+  const result = asset();
+  const canvas = new THREE.Mesh(new THREE.PlaneGeometry(0.78, 0.8));
+  canvas.name = 'Canvas';
+  result.roots.FramedPainting.add(canvas);
+  return result;
+}
+
 async function realAsset(): Promise<InteriorFurnishingsAsset> {
   const bytes = await readFile('public/assets/props/interior-furnishings/interior-furnishings.glb');
   const start = bytes.byteOffset;
@@ -92,17 +100,13 @@ describe('interior furnishings', () => {
     for (const seed of [...seeds, 'N0TE0032']) {
       const world = buildFloorWorld(generateFloor(seed));
       const furnishings = new InteriorFurnishings(world, asset());
-      for (const portrait of furnishings.placements.filter((p) => p.root === 'FramedPainting')) {
-        portraits++;
-        expect(
-          furnishings.placements.some((p) => p.room === portrait.room && p.root === 'Bookcase'),
-        ).toBe(true);
-      }
+      portraits += furnishings.placements.filter((p) => p.root === 'FramedPainting').length;
       for (const curtain of furnishings.placements.filter((p) => p.root === 'Curtain')) {
         curtains++;
         const template = templateById(world.plan.rooms[curtain.room]?.templateId ?? 'corridor');
         expect(['hall', 'study']).toContain(template.id);
-        expect(curtain.position.z).toBeCloseTo(template.footprint.min[1] + 0.2615, 3);
+        expect(curtain.position.x).toBe(template.id === 'hall' ? 2.6 : 0);
+        expect(curtain.position.z).toBeCloseTo(template.footprint.min[1] + 0.165, 3);
       }
       furnishings.dispose();
     }
@@ -112,6 +116,52 @@ describe('interior furnishings', () => {
     const noteFurnishings = new InteriorFurnishings(noteWorld, asset());
     expect(noteFurnishings.placements.some((p) => p.root === 'FramedPainting')).toBe(true);
     noteFurnishings.dispose();
+  });
+
+  it('allocates one reachable clue and unique static artwork per seeded floor', () => {
+    const textures = Array.from({ length: 5 }, () => new THREE.Texture());
+    let floorsWithClue = 0;
+    for (const seed of ['N0TE0032', 'SPIRE002', 'SPIRE004', 'S0AR00X0', 'S0BR00X0']) {
+      const world = buildFloorWorld(generateFloor(seed));
+      const furnishings = new InteriorFurnishings(world, paintedAsset(), { paintings: textures });
+      const paintings = furnishings.placements.filter((p) => p.root === 'FramedPainting');
+      const assigned = paintings
+        .map((painting) => painting.object.userData.paintingIndex)
+        .filter((index): index is number => Number.isInteger(index));
+      expect(new Set(assigned).size).toBe(assigned.length);
+      expect(assigned.every((index) => index >= 0 && index < textures.length)).toBe(true);
+      const clues = paintings.filter((painting) => painting.object.userData.paintingIndex === 0);
+      expect(clues.length).toBeLessThanOrEqual(1);
+      for (const clue of clues) {
+        floorsWithClue++;
+        expect(
+          furnishings.placements.some((p) => p.room === clue.room && p.root === 'Bookcase'),
+        ).toBe(true);
+        const before = clue.object.userData.paintingIndex;
+        const transit = clue.room === 0 ? 1 : 0;
+        world.current = clue.room;
+        furnishings.update(0.1);
+        world.current = transit;
+        furnishings.update(0.1);
+        world.current = clue.room;
+        furnishings.update(0.1);
+        expect(clue.object.userData.paintingIndex).toBe(1);
+        expect(before).toBe(0);
+      }
+      for (const painting of paintings.filter((p) => p.object.userData.paintingIndex >= 2)) {
+        const before = painting.object.userData.paintingIndex;
+        const transit = painting.room === 0 ? 1 : 0;
+        world.current = painting.room;
+        furnishings.update(0.1);
+        world.current = transit;
+        furnishings.update(0.1);
+        world.current = painting.room;
+        furnishings.update(0.1);
+        expect(painting.object.userData.paintingIndex).toBe(before);
+      }
+      furnishings.dispose();
+    }
+    expect(floorsWithClue).toBeGreaterThan(0);
   });
 
   it('keeps real GLB furnishings out of every rotated doorway and flush to their walls', async () => {
@@ -133,13 +183,23 @@ describe('interior furnishings', () => {
     const seedAlphabet = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
     const seeds = [
       'N0TE0032',
+      'MAPTEST2',
+      'T0WR0011',
       'SPIRE002',
       'SPIRE004',
       ...Array.from({ length: seedAlphabet.length }, (_, i) => `S0${seedAlphabet[i]}R00X0`),
     ];
     for (const seed of seeds) {
       const world = buildFloorWorld(generateFloor(seed), templates);
-      const furnishings = new InteriorFurnishings(world, furnishingsAsset);
+      const furnishings = new InteriorFurnishings(world, furnishingsAsset, {
+        paintings: Array.from({ length: 5 }, () => new THREE.Texture()),
+      });
+      const pictureIds = furnishings.placements
+        .filter((p) => p.root === 'FramedPainting')
+        .map((p) => p.object.userData.paintingIndex);
+      expect(pictureIds.filter((id) => id === 0)).toHaveLength(1);
+      expect(pictureIds).not.toContain(undefined);
+      expect(new Set(pictureIds).size).toBe(pictureIds.length);
       if (seed === 'N0TE0032')
         expect(furnishings.placements.some((p) => p.root === 'FramedPainting')).toBe(true);
       world.group.updateMatrixWorld(true);
@@ -173,11 +233,11 @@ describe('interior furnishings', () => {
             Math.abs(local.min.z - template.footprint.min[1]),
             Math.abs(template.footprint.max[1] - local.max.z),
           ];
-          expect(Math.min(...distances)).toBeGreaterThanOrEqual(0.005);
-          expect(Math.min(...distances)).toBeCloseTo(
-            placement.root === 'Curtain' ? 0.125 : 0.012,
-            2,
-          );
+          if (placement.root === 'Curtain') {
+            expect(local.min.z - template.footprint.min[1]).toBeCloseTo(-0.0005, 4);
+          } else {
+            expect(Math.min(...distances)).toBeCloseTo(0.012, 2);
+          }
         }
         if (placement.root === 'Curtain') {
           expect(local.min.y).toBeGreaterThan(1.0);

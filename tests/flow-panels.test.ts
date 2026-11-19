@@ -257,6 +257,48 @@ describe('FlowUi settings board comfort toggles', () => {
   });
 });
 
+describe('FlowUi in-run radial menu', () => {
+  it('offers Settings, Deck, and Items with a cancel center', () => {
+    const flow = new RunFlow({
+      workshop: createWorkshop(),
+      starterDeck: STARTER_DECK,
+      rewardPool: REWARD_POOL,
+    });
+    const ui = new FlowUi({
+      flow,
+      keyArt: { url: '', titleSafe: { x: 0, y: 0, w: 0.3, h: 0.4 } },
+      seed: 'BRASS042',
+      snapshot: () => null,
+      settings: () => ({ ...DEFAULT_SETTINGS }),
+      onNewRun: (seed) => flow.newRun(seed),
+      onContinue: () => {},
+      onSettings: () => {},
+    });
+    flow.newRun('BRASS042');
+    const head = new THREE.Object3D();
+    expect(ui.openMenu(head)).toBe(true);
+    expect(ui.controlIds()).toEqual(
+      expect.arrayContaining(['menu-settings', 'menu-deck', 'menu-items', 'menu-cancel']),
+    );
+    ui.update(0.8);
+    const radial = ui.root.getObjectByName('radial-menu');
+    expect(radial?.parent).toBe(ui.root);
+    const settingsSector = ui.root.getObjectByName('radial-menu-settings');
+    expect(settingsSector).toBeDefined();
+    ui.root.updateMatrixWorld(true);
+    expect(ui.controlAt(settingsSector?.children[0] ?? new THREE.Object3D())).toBe('menu-settings');
+    expect(ui.activate('menu-settings')).toBe(true);
+    expect(ui.menuView).toBe('settings');
+    expect(ui.controlIds()).toContain('settings-back');
+    expect(ui.activate('settings-back')).toBe(true);
+    expect(ui.menuView).toBe('main');
+    ui.update(0.8);
+    expect(ui.activate('menu-cancel')).toBe(true);
+    expect(ui.menuOpen).toBe(false);
+    ui.dispose();
+  });
+});
+
 describe('FlowUi settings board table distance and foveation (F3, F4)', () => {
   it('offers 0.9 to 1.3 m and off to high, shows the choice and saves a pick', () => {
     const flow = new RunFlow({

@@ -8,7 +8,22 @@ export interface Point {
 export type Stroke = readonly Point[];
 
 /** The sigil ids card content refers to. */
-export const SIGIL_IDS = ['gear', 'flame', 'ward', 'bolt', 'spiral', 'anchor'] as const;
+export const SIGIL_IDS = [
+  'gear',
+  'flame',
+  'ward',
+  'bolt',
+  'spiral',
+  'anchor',
+  'quench',
+  'gear-plus',
+  'flame-plus',
+  'ward-plus',
+  'bolt-plus',
+  'spiral-plus',
+  'anchor-plus',
+  'quench-plus',
+] as const;
 export type SigilId = (typeof SIGIL_IDS)[number];
 
 export interface SigilTemplate {

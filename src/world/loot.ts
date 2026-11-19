@@ -97,7 +97,7 @@ export interface Coffer {
   /** The invisible box a ray tests. */
   readonly hit: THREE.Mesh;
   readonly opened: boolean;
-  unlock(): void;
+  unlock(immediate?: boolean): boolean;
   /** The card rising or hovering over the open coffer, waiting to be claimed; null once it flies off. */
   readonly card: string | null;
   /** The invisible quad a ray tests to claim the card once it hovers (not while it rises), else null. */
@@ -528,6 +528,7 @@ export class CofferKit {
       padlock.position.set(0, BODY_HEIGHT - 0.068, -DEPTH / 2 - 0.061);
       gem.visible = false;
     }
+    const padlockStart = padlock?.position.clone() ?? null;
     const glow = new THREE.Mesh(this.glow, this.light);
     glow.name = 'coffer-glow';
     glow.visible = false;
@@ -540,6 +541,9 @@ export class CofferKit {
 
     let angle = 0;
     let target = 0;
+    let unlockProgress = padlock ? 0 : 1;
+    let unlocking = false;
+    let secured = locked;
     let clock = 0;
     const cogs = this.cogSlot(object, () => angle >= RISE_ANGLE);
     const card = this.cardSlot(object, () => angle >= RISE_ANGLE && cogs.done());
@@ -551,11 +555,23 @@ export class CofferKit {
       key: lootKey(room, socket.id),
       hit,
       get opened() {
-        return target > 0;
+        return target === OPEN_ANGLE;
       },
-      unlock() {
-        if (padlock) padlock.visible = false;
-        gem.visible = true;
+      unlock(immediate = false) {
+        if (!padlock || !secured) return false;
+        secured = false;
+        // The spring lifts the lid as the catch releases; taking the contents opens it fully.
+        target = 0.2;
+        if (immediate) {
+          padlock.visible = false;
+          gem.visible = true;
+          unlockProgress = 1;
+          angle = target;
+          hinge.rotation.x = angle;
+        } else {
+          unlocking = true;
+        }
+        return true;
       },
       get card() {
         return card.waiting();
@@ -564,7 +580,7 @@ export class CofferKit {
         return card.hovering() ? card.hit : null;
       },
       open(animate) {
-        if (padlock?.visible) return;
+        if (secured) return;
         target = OPEN_ANGLE;
         if (!animate) {
           angle = OPEN_ANGLE;
@@ -583,6 +599,16 @@ export class CofferKit {
       },
       update(dt) {
         clock += dt;
+        if (unlocking && padlock && padlockStart) {
+          unlockProgress = Math.min(1, unlockProgress + Math.max(0, dt) * 5);
+          padlock.position.y = padlockStart.y - 0.08 * unlockProgress;
+          padlock.rotation.z = 0.55 * unlockProgress;
+          if (unlockProgress >= 1) {
+            padlock.visible = false;
+            unlocking = false;
+            gem.visible = true;
+          }
+        }
         if (angle < target) {
           angle = Math.min(target, angle + OPEN_RATE * dt);
           hinge.rotation.x = angle;

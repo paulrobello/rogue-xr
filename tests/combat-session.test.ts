@@ -9,7 +9,6 @@ import {
   ENEMY_GAP_SECONDS,
   fightSeed,
   HIT_NUMBER_SECONDS,
-  SIGIL_CAST_SECONDS,
   untargetedHint,
 } from '../src/combat/combat-session.ts';
 import { REVEAL_EFFECT_AT, SHIELD_FORM_SECONDS } from '../src/combat-view/cast-timing.ts';
@@ -234,7 +233,7 @@ function playCard(rig: Rig, session: CombatSession, uid: number, to: THREE.Vecto
   rig.step();
 }
 
-/** Traces the awaited sigil's template strokes on the plate with the mouse, then waits for the cast. */
+/** Traces the awaited sigil's template strokes, then explicitly clicks the visible Cast control. */
 function drawSigil(rig: Rig, session: CombatSession): void {
   const sigil = session.controller.awaitedSigil;
   if (!sigil) throw new Error('no sigil awaited');
@@ -257,7 +256,9 @@ function drawSigil(rig: Rig, session: CombatSession): void {
     pointerAt(rig, at(session, 'plate', undefined, u, v), 'up');
     rig.step(0.1);
   }
-  rig.step(SIGIL_CAST_SECONDS + 0.1);
+  pointerAt(rig, at(session, 'sigil-cast'), 'down');
+  pointerAt(rig, at(session, 'sigil-cast'), 'up');
+  rig.step(0.1);
 }
 
 interface FightLog {
@@ -429,7 +430,7 @@ describe('combat session', () => {
     expect(session.plate.phase).toBe('ready');
     expect(session.plate.sigilId).toBe('ward');
     // The controller how-to line is XR only; the desktop HUD carries its own instructions.
-    expect(session.plate.hintText).toBe('');
+    expect(session.plate.hintText).toMatch(/click cast/i);
     drawSigil(rig, session);
     expect(session.controller.stage).toBe('idle');
     expect(session.controller.state.player.block).toBeGreaterThan(blockAfterFirst);
@@ -651,7 +652,16 @@ describe('combat session', () => {
       xr.step(0.1);
     }
     expect(lit).toBe(1);
-    xr.step(SIGIL_CAST_SECONDS + 0.1);
+    // Releasing the final stroke does not auto-cast, even after the former timer window elapses.
+    xr.step(3);
+    expect(session.plate.phase).toBe('ready');
+    expect(session.controller.stage).toBe('sigil');
+    xr.pose(xr.rest, at(session, 'sigil-cast'));
+    xr.step();
+    xr.hand('squeeze', true);
+    xr.step();
+    xr.hand('squeeze', false);
+    xr.step(0.1);
     expect(session.plate.phase).toBe('done');
     expect(session.plate.labelText).not.toMatch(/too short|fizzle/i);
     expect(session.controller.stage).toBe('idle');

@@ -8,6 +8,9 @@ export const INTERIOR_FURNISHINGS_BASE = '/assets/props/interior-furnishings';
 export const INTERIOR_PAINTINGS = [
   '/assets/props/paintings/clockmaker-first.webp',
   '/assets/props/paintings/clockmaker-return.webp',
+  '/assets/props/paintings/river-valley.webp',
+  '/assets/props/paintings/pears-and-pitcher.webp',
+  '/assets/props/paintings/coastal-cliffs.webp',
 ] as const;
 const ROOT_NAMES = [
   'DoorSingle',
@@ -84,6 +87,7 @@ interface Candidate {
   z: number;
   y?: number;
   yaw: number;
+  clueEligible?: boolean;
 }
 type RootBounds = Readonly<Record<InteriorFurnishingRoot, THREE.Box3>>;
 
@@ -91,14 +95,14 @@ const SIZES: Readonly<Record<InteriorFurnishingRoot, [number, number]>> = {
   DoorSingle: [1.7, 0.29],
   DoorDouble: [1.7, 0.29],
   DoorArched: [1.6, 0.25],
-  Curtain: [2.09, 0.273],
+  Curtain: [2.31, 0.331],
   DiningChair: [0.56, 0.5],
   DiningTable: [1.75, 0.88],
   Bookcase: [1.56, 0.5],
   Candelabrum: [0.671, 0.7],
   WallClock: [0.55, 0.161],
   ClockworkArmor: [1.007, 0.6],
-  FramedPainting: [0.97, 0.107],
+  FramedPainting: [1.02, 0.158],
 };
 
 const THEME_ROOTS: Readonly<Record<InteriorTheme, readonly InteriorFurnishingRoot[]>> = {
@@ -302,10 +306,7 @@ function candidatesFor(
   for (const root of theme === 'dining' ? [] : THEME_ROOTS[theme]) {
     if (root === 'Curtain') continue;
     const c = placeOnWall(root);
-    if (c && root === 'FramedPainting' && !placeOnWall('Bookcase', c)) {
-      result.pop();
-      taken.pop();
-    }
+    if (c && root === 'FramedPainting') c.clueEligible = Boolean(placeOnWall('Bookcase', c));
   }
   const windowX = template.id === 'hall' ? 2.6 : template.id === 'study' ? 0 : undefined;
   if (windowX !== undefined && (theme === 'gallery' || theme === 'dining')) {
@@ -323,7 +324,8 @@ function candidatesFor(
 }
 
 function fitWallCandidate(candidate: Candidate, bounds: THREE.Box3, fp: Rect): void {
-  const inset = (candidate.root === 'Curtain' ? 0.125 : 0.012) - bounds.min.z;
+  // The curtain bounds include the backs of its mounting plates. Sink them just inside the wall.
+  const inset = (candidate.root === 'Curtain' ? -0.0005 : 0.012) - bounds.min.z;
   switch (candidate.yaw) {
     case 0:
       candidate.z = fp.min[1] + inset;
@@ -372,11 +374,11 @@ export class InteriorFurnishings {
   private readonly root: THREE.Group;
   private readonly paintings: readonly THREE.Texture[];
   private readonly paintingMaterials: THREE.MeshBasicMaterial[];
-  private readonly paintingGeometry = new THREE.PlaneGeometry(0.91, 0.91);
+  private readonly paintingGeometry = new THREE.PlaneGeometry(0.78, 0.8);
+  private readonly cluePaintingRoom: number | undefined;
   private elapsed = 0;
   private lastRoom: number;
   private readonly visited = new Set<number>();
-  private readonly changedPaintings = new Set<number>();
 
   constructor(
     private readonly world: FloorWorld,
@@ -412,14 +414,24 @@ export class InteriorFurnishings {
     this.root = new THREE.Group();
     this.root.name = 'interior-furnishings';
     this.paintings = options.paintings ?? [];
-    this.paintingMaterials = this.paintings.map((texture) => {
+    this.paintingMaterials = this.paintings.map((texture, index) => {
       texture.flipY = true;
-      const cropHeight = 540 / 720 / (0.77 / 0.79);
-      texture.repeat.set(1, cropHeight);
-      texture.offset.set(0, (1 - cropHeight) * 0.66);
+      if (index < 2) {
+        const cropHeight = 540 / 720 / (0.77 / 0.79);
+        texture.repeat.set(1, cropHeight);
+        texture.offset.set(0, (1 - cropHeight) * 0.66);
+      } else {
+        texture.repeat.set(1, 1);
+        texture.offset.set(0, 0);
+      }
       return new THREE.MeshBasicMaterial({ map: texture, transparent: true, toneMapped: false });
     });
     const stream = Stream.fromKey(`${world.plan.seed}:interior-furnishings`);
+    const decorativeIndices = Stream.fromKey(`${world.plan.seed}:interior-paintings`).shuffle(
+      this.paintingMaterials.slice(2).map((_, index) => index + 2),
+    );
+    const paintingsToDress: { object: THREE.Object3D; room: number; eligible: boolean }[] = [];
+    const planned: { room: number; theme: InteriorTheme; candidates: Candidate[] }[] = [];
     const made: InteriorPlacement[] = [];
     const themes = new Map<number, InteriorTheme>();
     for (let room = 0; room < world.plan.rooms.length; room++) {
@@ -435,6 +447,24 @@ export class InteriorFurnishings {
         world.plan.rooms[room]?.role === 'combat'
           ? candidatesFor(world, room, 'gallery', stream, rootBounds)
           : candidatesFor(world, room, theme, stream, rootBounds);
+      planned.push({ room, theme, candidates });
+    }
+    // Try an entrance gallery if the natural themes produced no reachable book-and-portrait pair.
+    if (!planned.some((entry) => entry.candidates.some((c) => c.clueEligible))) {
+      const entrance = planned.find((entry) => entry.room === 0);
+      if (entrance) {
+        const fallback = Stream.fromKey(`${world.plan.seed}:entrance-gallery`);
+        for (let i = 0; i < 12; i++) {
+          const candidates = candidatesFor(world, 0, 'gallery', fallback, rootBounds);
+          if (candidates.some((c) => c.clueEligible)) {
+            entrance.theme = 'gallery';
+            entrance.candidates = candidates;
+            break;
+          }
+        }
+      }
+    }
+    for (const { room, theme, candidates } of planned) {
       for (const c of candidates) {
         const box = boxFor(c, rootBounds);
         const object = asset.roots[c.root].clone(true);
@@ -455,13 +485,24 @@ export class InteriorFurnishings {
           this.removeColliders.push(world.addFixtureCollider(room, worldBox(world, room, box)));
         if (c.root === 'Candelabrum') this.addFlames(object, options.reducedMotion ?? false);
         if (c.root === 'FramedPainting' && this.paintingMaterials.length)
-          this.setPainting(object, 0);
+          paintingsToDress.push({ object, room, eligible: c.clueEligible ?? false });
       }
       if (candidates.length) {
         themes.set(room, theme);
       }
     }
-    this.placements = made;
+    const clue = paintingsToDress.find((painting) => painting.eligible);
+    if (this.paintingMaterials.length) {
+      if (clue) this.setPainting(clue.object, 0);
+      for (const painting of paintingsToDress) {
+        if (painting === clue) continue;
+        const index = decorativeIndices.shift();
+        if (index !== undefined) this.setPainting(painting.object, index);
+        else painting.object.removeFromParent();
+      }
+    }
+    this.cluePaintingRoom = clue?.room;
+    this.placements = made.filter((placement) => placement.object.parent !== null);
     this.themes = themes;
     this.lastRoom = world.current;
     this.visited.add(world.current);
@@ -515,12 +556,10 @@ export class InteriorFurnishings {
     if (room !== this.lastRoom) {
       if (this.visited.has(room)) {
         const painting = this.placements.find(
-          (p) => p.room === room && p.root === 'FramedPainting',
+          (p) => p.room === room && p.root === 'FramedPainting' && p.room === this.cluePaintingRoom,
         );
-        if (painting && this.paintingMaterials.length > 1 && !this.changedPaintings.has(room)) {
-          const current = Number(painting.object.userData.paintingIndex ?? 0);
-          this.setPainting(painting.object, (current + 1) % this.paintingMaterials.length);
-          this.changedPaintings.add(room);
+        if (painting && this.paintingMaterials.length > 1) {
+          this.setPainting(painting.object, 1);
         }
       }
       this.visited.add(room);

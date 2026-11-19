@@ -1,11 +1,13 @@
 import {
   createMenuPanel,
+  createRadialMenu,
   createScalableLabel,
   disposeScalableLabel,
   keepAbove,
   type MenuCell,
   type MenuPanel,
   type MenuRow,
+  type RadialMenu,
 } from '@par/xr-workspace';
 import * as THREE from 'three';
 import { TABLE_DISTANCE_CHOICES } from '../combat/placement.ts';
@@ -82,6 +84,8 @@ export interface FlowUiDeps {
   flyTarget?: () => FlyTarget | null;
   /** A newer deployed build: the title offers the reload while one is available. */
   update?: TitleUpdate;
+  onNoteOpened?: (position: THREE.Vector3) => void;
+  showcaseRoom?: () => string | null;
   noteRecord?: (id: PressureNoteId) => PressureNoteRecord | null;
 }
 
@@ -100,7 +104,7 @@ export interface FlyTarget {
 }
 
 /** The in-run menu: closed, its main board, the deck viewer, or the abandon confirmation. */
-export type MenuView = 'closed' | 'main' | 'deck' | 'confirm' | 'items' | 'note';
+export type MenuView = 'closed' | 'main' | 'settings' | 'deck' | 'confirm' | 'items' | 'note';
 /** Phases the in-run menu opens over. */
 const MENU_PHASES: readonly FlowPhase[] = ['explore', 'combat'];
 
@@ -150,6 +154,7 @@ const PERMANENT_CARD_PAGE_SIZE = 3;
 
 type Subview = 'main' | 'seed';
 type WorkshopSubview = 'main' | 'permanent-cards';
+type RunMenuAction = 'settings' | 'deck' | 'items';
 
 /** A reward card on its way to the player; the pick is applied when it lands. */
 interface RewardFlight {
@@ -368,6 +373,8 @@ export class FlowUi {
   private noteId: PressureNoteId | null = null;
   private notePhysical = false;
   private menuHead: THREE.Object3D | null = null;
+  private radialMenu: RadialMenu<RunMenuAction> | null = null;
+  private radialDecor: THREE.Group | null = null;
   private flight: RewardFlight | null = null;
   private artTexture: THREE.Texture | null = null;
   private stopAbove: (() => void) | null = null;
@@ -443,16 +450,17 @@ export class FlowUi {
     return this.menuOpen ? this.closeMenu() : this.openMenu(head);
   }
 
-  /** Opens an acquired note in front of the player. */
-  readNote(id: PressureNoteId, head: THREE.Object3D): boolean {
-    const record = this.deps.noteRecord?.(id);
-    if (!record || !this.deps.flow.pressure.notes.includes(id)) return false;
+  /** Opens an acquired note, from a physical pickup or from Items. */
+  readNote(id: PressureNoteId, head: THREE.Object3D, physical = true): boolean {
+    if (!this.deps.noteRecord?.(id) || !this.deps.flow.pressure.notes.includes(id)) return false;
+    if (this.menu === 'note' && this.noteId === id) return false;
     this.noteId = id;
-    this.notePhysical = true;
+    this.notePhysical = physical;
     this.menuHead = head;
-    this.menu = 'note';
-    this.rebuild();
-    this.place(head, true);
+    this.setMenu('note');
+    if (physical) this.place(head, true);
+    const sheet = this.root.getObjectByName('menu-note-sheet');
+    if (sheet) this.deps.onNoteOpened?.(sheet.getWorldPosition(new THREE.Vector3()));
     return true;
   }
 
@@ -461,6 +469,7 @@ export class FlowUi {
    * and the board closes. Call every frame.
    */
   update(dt: number): void {
+    this.radialMenu?.update(dt);
     const flight = this.flight;
     if (!flight) return;
     this.rewardFaces?.update(dt);
@@ -483,6 +492,9 @@ export class FlowUi {
   /** Interactive control ids in reading order, for keyboard focus. */
   controlIds(): string[] {
     const ids: string[] = [];
+    if (this.menu !== 'closed') ids.push('menu-resume');
+    if (this.menu === 'main' && this.radialMenu)
+      ids.push('menu-settings', 'menu-deck', 'menu-items', 'menu-cancel');
     for (const board of this.boards) {
       for (const child of board.panel.root.children) {
         const cell = board.panel.cellAt(child);
@@ -497,6 +509,7 @@ export class FlowUi {
   targets(): THREE.Object3D[] {
     if (!this.root.visible) return [];
     const out = this.boards.map((b) => b.panel.root);
+    if (this.radialMenu?.root.visible) out.push(this.radialMenu.root);
     if (this.deckHits) out.push(this.deckHits);
     if (this.workshopHits) out.push(this.workshopHits);
     return out;
@@ -504,6 +517,11 @@ export class FlowUi {
 
   /** Control id under a hit object, or null. A deck viewer card is `deck-card-<index>`. */
   controlAt(object: THREE.Object3D): string | null {
+    if (this.radialMenu) {
+      const action = this.radialMenu.actionAt(object);
+      if (action === 'cancel') return 'menu-cancel';
+      if (action) return `menu-${action}`;
+    }
     const deckIndex: unknown = object.userData.deckCard;
     if (typeof deckIndex === 'number' && object.parent === this.deckHits)
       return `${DECK_CARD}${deckIndex}`;
@@ -523,6 +541,32 @@ export class FlowUi {
       this.hover(controlId);
       return this.workshopPreviewId !== null;
     }
+    if (controlId === 'menu-cancel' || controlId === 'menu-resume') return this.closeMenu();
+    if (controlId === 'menu-abandon') {
+      this.setMenu('settings');
+      return this.activate('settings-abandon');
+    }
+    if (
+      controlId.startsWith('menu-') &&
+      /^(foveation|tableDistance|fpsCounter|turnMode|teleportEnabled|masterVolume|musicVolume|sfxVolume)-/.test(
+        controlId.slice('menu-'.length),
+      )
+    ) {
+      this.setMenu('settings');
+      return this.activate(`settings-${controlId.slice('menu-'.length)}`);
+    }
+    if (controlId === 'menu-settings') {
+      this.setMenu('settings');
+      return true;
+    }
+    if (controlId === 'menu-deck') {
+      this.openDeck();
+      return true;
+    }
+    if (controlId === 'menu-items') {
+      this.openItems();
+      return true;
+    }
     const target = this.boardOf(controlId);
     return target ? target.board.panel.activate(target.cell) : false;
   }
@@ -531,6 +575,14 @@ export class FlowUi {
     if (controlId === this.hoveredId) return;
     this.paintHover(this.hoveredId, false);
     this.hoveredId = controlId;
+    if (this.radialMenu && this.menu === 'main') {
+      const action = controlId?.startsWith('menu-') ? controlId.slice('menu-'.length) : null;
+      this.radialMenu.setHovered(
+        action === 'cancel' || action === 'settings' || action === 'deck' || action === 'items'
+          ? action
+          : null,
+      );
+    }
     this.paintHover(controlId, true);
     if (controlId?.startsWith('workshop-card-')) {
       this.showWorkshopPreview(controlId.slice('workshop-card-'.length));
@@ -684,6 +736,23 @@ export class FlowUi {
   private clear(): void {
     this.stopAbove?.();
     this.stopAbove = null;
+    if (this.radialDecor) {
+      this.radialDecor.traverse((object) => {
+        if (!(object as THREE.Mesh).isMesh) return;
+        const mesh = object as THREE.Mesh;
+        mesh.geometry.dispose();
+        const material = mesh.material;
+        if (Array.isArray(material)) {
+          material.forEach((entry) => {
+            entry.dispose();
+          });
+        } else material.dispose();
+      });
+      this.radialDecor.removeFromParent();
+      this.radialDecor = null;
+    }
+    this.radialMenu?.dispose();
+    this.radialMenu = null;
     for (const board of this.boards) {
       for (const plate of board.plates.values()) disposeMesh(plate);
       board.panel.dispose();
@@ -1185,7 +1254,7 @@ export class FlowUi {
     this.refresh();
   }
 
-  private buildSettings(): void {
+  private buildSettings(inRun = false): void {
     const s = this.deps.settings();
     const knob = (
       key: 'masterVolume' | 'musicVolume' | 'sfxVolume',
@@ -1233,7 +1302,23 @@ export class FlowUi {
           teleportEnabled: !cur.teleportEnabled,
         })),
         ...this.choiceRows(),
-        { id: 'back', label: 'Back to title', onSelect: () => this.deps.flow.toTitle() },
+        ...(inRun && !this.deps.flow.guardianDefeated
+          ? [{ id: 'abandon', label: 'Abandon run', onSelect: () => this.setMenu('confirm') }]
+          : []),
+        ...(inRun && this.deps.flow.phase === 'explore' && this.deps.flow.guardianDefeated
+          ? [
+              {
+                id: 'finish-run',
+                label: 'Finish run',
+                onSelect: () => this.deps.flow.finishVictory(),
+              },
+            ]
+          : []),
+        {
+          id: 'back',
+          label: inRun ? 'Back to menu' : 'Back to title',
+          onSelect: () => (inRun ? this.setMenu('main') : this.deps.flow.toTitle()),
+        },
       ],
       { x: 0, y: 0.26, z: -BOARD_DISTANCE },
       { width: 0.8, heading: 'Settings', selected: this.choiceSelected() },
@@ -1309,6 +1394,10 @@ export class FlowUi {
       this.buildNote();
       return;
     }
+    if (this.menu === 'settings') {
+      this.buildRunSettings();
+      return;
+    }
     if (this.menu === 'deck') {
       this.buildDeck();
       return;
@@ -1327,37 +1416,81 @@ export class FlowUi {
       );
       return;
     }
-    this.board(
-      'menu',
-      [
-        { id: 'resume', label: 'Resume', onSelect: () => this.closeMenu() },
-        ...(this.deps.flow.phase === 'explore'
-          ? [
-              {
-                id: 'deck',
-                label: `Deck · ${this.deps.flow.run?.deck.length ?? 0} cards`,
-                onSelect: () => this.openDeck(),
-              },
-            ]
-          : []),
-        { id: 'items', label: 'Items', onSelect: () => this.openItems() },
-        ...this.choiceRows(),
-        ...(this.deps.flow.phase === 'explore' && this.deps.flow.guardianDefeated
-          ? [
-              {
-                id: 'finish-run',
-                label: 'Finish run',
-                onSelect: () => this.deps.flow.finishVictory(),
-              },
-            ]
-          : []),
-        ...(this.deps.flow.phase === 'explore' && this.deps.flow.guardianDefeated
-          ? []
-          : [{ id: 'abandon', label: 'Abandon run', onSelect: () => this.setMenu('confirm') }]),
+    this.buildRadialMenu();
+  }
+
+  private buildRadialMenu(): void {
+    this.radialMenu = createRadialMenu<RunMenuAction>({
+      items: [
+        { id: 'settings', label: 'Settings' },
+        { id: 'deck', label: 'Deck' },
+        { id: 'items', label: 'Items' },
       ],
-      { x: 0, y: 0.22, z: -BOARD_DISTANCE },
-      { width: 0.8, heading: 'Paused', selected: this.choiceSelected() },
-    );
+      accentColor: PALETTE.brass,
+      theme: {
+        glass: PALETTE.warmBlack,
+        selected: PALETTE.brassDark,
+        cancel: PALETTE.walnut,
+        text: PALETTE.parchment,
+        outline: PALETTE.brass,
+      },
+      centerLabel: 'Resume',
+    });
+    this.radialMenu.root.position.set(0, 0, -BOARD_DISTANCE);
+    this.radialMenu.root.scale.setScalar(1.18);
+    this.radialMenu.open();
+    this.radialDecor = this.clockworkRim();
+    this.radialMenu.root.add(this.radialDecor);
+    const room = this.deps.showcaseRoom?.();
+    if (room) {
+      const plaque = createScalableLabel(room, 0.55, 0.063, {
+        background: PALETTE.warmBlack,
+        border: PALETTE.brass,
+      });
+      plaque.name = 'showcase-room-plaque';
+      plaque.position.set(0, -0.44, 0.01);
+      this.radialMenu.root.add(plaque);
+      this.extras.push(plaque);
+    }
+    this.root.add(this.radialMenu.root);
+    this.extras.push(this.radialMenu.root);
+  }
+
+  private clockworkRim(): THREE.Group {
+    const group = new THREE.Group();
+    group.name = 'menu-clockwork-rim';
+    const brass = new THREE.MeshBasicMaterial({ color: PALETTE.brass, toneMapped: false });
+    const darkBrass = new THREE.MeshBasicMaterial({ color: PALETTE.brassDark, toneMapped: false });
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.395, 0.014, 8, 48), brass);
+    rim.position.z = -0.004;
+    rim.raycast = () => undefined;
+    group.add(rim);
+    const inner = new THREE.Mesh(new THREE.TorusGeometry(0.119, 0.006, 6, 32), darkBrass);
+    inner.position.z = -0.003;
+    inner.raycast = () => undefined;
+    group.add(inner);
+    for (let index = 0; index < 12; index += 1) {
+      const angle = (index / 12) * Math.PI * 2;
+      const tick = new THREE.Mesh(
+        new THREE.BoxGeometry(0.009, index % 3 === 0 ? 0.045 : 0.025, 0.004),
+        darkBrass,
+      );
+      tick.position.set(Math.cos(angle) * 0.395, Math.sin(angle) * 0.395, -0.002);
+      tick.rotation.z = angle;
+      tick.raycast = () => undefined;
+      group.add(tick);
+    }
+    for (const angle of [0, Math.PI / 2, Math.PI, (Math.PI * 3) / 2]) {
+      const rivet = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 6), brass);
+      rivet.position.set(Math.cos(angle) * 0.395, Math.sin(angle) * 0.395, 0.003);
+      rivet.raycast = () => undefined;
+      group.add(rivet);
+    }
+    return group;
+  }
+
+  private buildRunSettings(): void {
+    this.buildSettings(true);
   }
 
   private setMenu(view: MenuView): void {
@@ -1389,9 +1522,7 @@ export class FlowUi {
               label: record ? `${record.title} · ${record.source}` : id,
               onSelect: () => {
                 if (!this.menuHead || !record) return;
-                this.noteId = id;
-                this.notePhysical = false;
-                this.setMenu('note');
+                this.readNote(id, this.menuHead, false);
               },
             };
           });

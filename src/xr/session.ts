@@ -91,6 +91,22 @@ export function createXrRig(
     const visual = createStandardHand({
       handColor: WORKSPACE_COLORS.handColor,
       armColor: WORKSPACE_COLORS.armColor,
+      theme: {
+        hand: {
+          color: '#b87333',
+          roughness: 0.42,
+          metalness: 0.78,
+          emissive: '#241006',
+          emissiveIntensity: 0.08,
+        },
+        sleeve: {
+          color: '#2b1014',
+          roughness: 0.78,
+          metalness: 0.12,
+          emissive: '#090304',
+          emissiveIntensity: 0.03,
+        },
+      },
     });
     const laser = createLaser(laserScene);
     let input: XRInputSource | null = null;

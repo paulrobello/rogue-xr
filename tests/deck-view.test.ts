@@ -142,16 +142,10 @@ describe('deck viewer in the in-run menu (playtest card E)', () => {
     ui.dispose();
   });
 
-  it('is not offered in a fight, and the menu closes from the viewer', () => {
+  it('is offered in a fight, and the menu closes from the viewer', () => {
     const { flow, ui, head } = rig();
     flow.newRun(SEED);
     flow.fightStarted(2);
-    ui.sync(head);
-    ui.openMenu(head);
-    expect(ui.controlIds()).not.toContain('menu-deck');
-    ui.closeMenu();
-
-    flow.fightEnded({ room: 2, outcome: 'flee', tier: 'regular' });
     ui.sync(head);
     ui.openMenu(head);
     ui.activate('menu-deck');

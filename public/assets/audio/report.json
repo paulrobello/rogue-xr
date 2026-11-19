@@ -1088,6 +1088,60 @@
         "channels": 1,
         "duration_s": 1.0065
       }
+    },
+    "paper-unfold": {
+      "intermediate_wav": "assets-source/audio/derived/paper-unfold.wav",
+      "intermediate_sha256": "d003ecc9eb87954750bd8c04445e6591a8424551c8af17128cdc39ff743d5df0",
+      "pre_gain": {
+        "integrated_lufs": -31.5,
+        "true_peak_dbtp": -12.0,
+        "momentary_max_lufs": -28.9
+      },
+      "gain_db": 10.75,
+      "encode_attempts": 2,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -20.8,
+        "true_peak_dbtp": -1.1,
+        "momentary_max_lufs": -18.2
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -4.8,
+      "loudness_status": "deviation",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": true,
+      "decoded_frames": 39862,
+      "decoded_duration_s": 0.8305,
+      "decoded_pcm_sha256": "129317482f0f77a835736b7f0953d4a470ffd3da31aaa90219b89ec99a6c764a",
+      "id": "paper-unfold",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/raw/card-draw.mp3",
+      "source_sha256": "0c0888d5fdd0b44b4010875206f3e94608a4a55222abae7ad2173fb272032065",
+      "source_probe": {
+        "codec": "mp3",
+        "sample_rate": 44100,
+        "channels": 2,
+        "duration_s": 0.6802
+      },
+      "trim": {
+        "trimmed_head_ms": 17.9,
+        "trimmed_tail_ms": 71.7
+      },
+      "steps": [
+        "Layer and stretch six dry paper transients into two opening folds and a settling rustle",
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/paper-unfold.ogg",
+      "runtime_sha256": "1019ba50f1e499d26a7123e1785c0214466130c9ffe32f1acec76af005f03d1e",
+      "runtime_bytes": 10538,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.837
+      }
     }
   },
   "music": {

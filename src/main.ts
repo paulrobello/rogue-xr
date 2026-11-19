@@ -25,12 +25,13 @@ import { STARTER_DECK } from './content/cards.ts';
 import { ENEMIES } from './content/enemies.ts';
 import { REWARD_POOL } from './content/rewards.ts';
 import { ActionBus } from './core/actions.ts';
-import { randomSeed } from './core/rng.ts';
+import { isValidSeed, normalizeSeed, randomSeed } from './core/rng.ts';
 import { fitCombatFraming } from './desktop/combat-framing.ts';
 import { combatPitch, createDesktopControls } from './desktop/controls.ts';
 import { Walker } from './desktop/walker.ts';
 import { DiceWorld } from './dice/world.ts';
 import { type EnemyActor, type EnemyAsset, tryLoadEnemyAsset } from './enemies/enemy-asset.ts';
+import { SHOWCASE_SEED } from './floor/generate.ts';
 import { encounterStartsFight, fleeStandPoint } from './flow/flee.ts';
 import { RunFlow } from './flow/flow.ts';
 import { FlowUi, rewardCardTexture } from './flow/panels.ts';
@@ -160,10 +161,17 @@ if (view === 'lightmap-proof') {
 // The game loop (title, run, death or victory, title) for the floor view. `?seed=` starts that run
 // straight away, so seed links and scripted checks land on the floor; `?title` shows the title instead.
 const playMode = !proofView;
-const db = playMode ? await openDb() : null;
+const querySeed = params.get('seed');
+const showcaseLink =
+  querySeed !== null && isValidSeed(querySeed) && normalizeSeed(querySeed) === SHOWCASE_SEED;
+const settingsDb = playMode ? await openDb() : null;
+const db =
+  playMode && showcaseLink
+    ? await openDb(undefined, { name: 'rogue-xr-room-showcase' })
+    : settingsDb;
 const workshop = db ? await loadWorkshop(db).catch(() => createWorkshop()) : createWorkshop();
 let storedSnapshot: RunSnapshot | null = db ? await loadRunSnapshot(db).catch(() => null) : null;
-let settings: Settings | null = db ? await loadSettings(db) : null;
+let settings: Settings | null = settingsDb ? await loadSettings(settingsDb) : null;
 // `?difficulty=casual|normal|hard` sets the level a `?seed=` link starts at and the title's choice,
 // for this page only (saved once the player changes a setting).
 const queryDifficulty = params.get('difficulty');
@@ -280,6 +288,7 @@ if (audio) {
   audio.unlockOnGesture(document, ['visibilitychange']);
   audio.unlockOnXrSession(renderer.xr);
 }
+floor?.setAudio(audio);
 
 // Player hit feedback: an edge flash drawn after the boards (desktop and both XR eyes) and a
 // controller pulse in XR. Settings has no reduced-motion option, so the OS preference softens it.
@@ -658,7 +667,6 @@ flow.onChange((event) => {
     storedSnapshot = flow.snapshot(Date.now(), event.room);
     if (event.action === 'note') {
       if (event.note) ui?.readNote(event.note, camera);
-      audio?.playSfx('card-draw');
     } else {
       floor?.pressure?.sync(event, !hitFx.reducedMotion, event.action);
       const at = floor?.pressure?.pump.getWorldPosition(new THREE.Vector3());
@@ -683,7 +691,8 @@ flow.onChange((event) => {
     storedSnapshot = flow.snapshot(Date.now(), event.room);
     floor?.book.open(event.room);
     floor?.showBookSecret(event.cogs, event.inscription, event.room);
-    audio?.playSfx('cog-pickup');
+    const at = floor?.book.objectAt(event.room)?.getWorldPosition(new THREE.Vector3());
+    audio?.playSfx('cog-pickup', at);
     return;
   }
   if (event.type !== 'phase') return;
@@ -732,6 +741,7 @@ const freshFloor = (seed: string, contentVersion?: number): FloorView => {
   combat?.dispose();
   floor?.dispose();
   floor = mountFloor(seed, contentVersion);
+  floor.setAudio(audio);
   combat = makeCombat(floor);
   fitTable(floor);
   void dressFloor(floor);
@@ -752,7 +762,7 @@ const continueRun = (): void => {
   if (!snap || flow.phase !== 'title') return;
   // Saves predating contentVersion used the original encounter pool.
   const target = freshFloor(snap.floorSeed, snap.contentVersion ?? 1);
-  for (const room of snap.clearedEncounters) target.markCleared(Number(room));
+  for (const room of snap.clearedEncounters) target.markCleared(Number(room), true);
   for (const key of snap.run.openedLoot ?? []) {
     const opened = parseLootKey(key);
     if (opened) target.loot.markOpened(opened.room, opened.socketId);
@@ -778,6 +788,15 @@ const continueRun = (): void => {
 const ui = floor
   ? new FlowUi({
       flow,
+      showcaseRoom: () => {
+        if (floor?.seed !== SHOWCASE_SEED) return null;
+        const index = floor.world.current;
+        const { template, footprint } = floor.world.rooms[index];
+        const width = footprint.max[0] - footprint.min[0],
+          depth = footprint.max[1] - footprint.min[1];
+        return `Room ${index} · ${template.id.replaceAll('-', ' ')} · ${width} × ${depth} m`;
+      },
+      onNoteOpened: (at) => audio?.playSfx('paper-unfold', at),
       noteRecord: (id) => floor?.notes?.record(id) ?? null,
       keyArt: { url: '/assets/ui/title-2048.jpg', titleSafe: { x: 0.03, y: 0.3, w: 0.27, h: 0.4 } },
       seed: bootSeed,
@@ -801,7 +820,7 @@ const ui = floor
         xr.setFoveation(next.foveation);
         perf.setFoveation(foveationValue(next.foveation));
         perf.setFpsCounter(next.fpsCounter);
-        if (db) void saveSettings(db, next);
+        if (settingsDb) void saveSettings(settingsDb, next);
       },
     })
   : null;
@@ -1381,7 +1400,14 @@ if (floor && params.has('debug')) {
       },
       /** Screen point of a board control, for pointer automation. */
       screenOfControl(controlId: string) {
-        const node = ui?.root.getObjectByName(controlId);
+        const radialNames: Record<string, string> = {
+          'menu-settings': 'radial-menu-settings',
+          'menu-deck': 'radial-menu-deck',
+          'menu-items': 'radial-menu-items',
+          'menu-cancel': 'radial-menu-cancel',
+          'menu-resume': 'radial-menu-cancel',
+        };
+        const node = ui?.root.getObjectByName(radialNames[controlId] ?? controlId);
         if (!node) return null;
         const p = node.getWorldPosition(new THREE.Vector3());
         camera.updateMatrixWorld(true);

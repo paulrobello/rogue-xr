@@ -267,7 +267,7 @@ function effectText(effect: Effect): string {
     case 'conditional-block':
       return `If its intent hits twice or more, gain ${amountText(effect.amount)} Block.`;
     case 'block-from-status':
-      return `Trace Ward. Remove up to ${effect.maxStacks} enemy Overheat. Gain ${effect.base} Block + ${effect.perStack} per stack spent.`;
+      return `Trace Quench. Remove up to ${effect.maxStacks} enemy Overheat. Gain ${effect.base} Block + ${effect.perStack} per stack spent.`;
   }
 }
 
@@ -304,11 +304,25 @@ describe('card schema', () => {
 
   it('gives every sigil spell, and only sigil spells, a known sigil id', () => {
     const sigils = CARDS.filter((c) => c.type === 'sigil').map((c) => c.sigil);
-    expect(new Set(sigils).size).toBeGreaterThanOrEqual(SIGIL_IDS.length);
+    expect(
+      new Set([...sigils, ...CARDS.flatMap((c) => (c.upgrade?.sigil ? [c.upgrade.sigil] : []))])
+        .size,
+    ).toBeGreaterThanOrEqual(SIGIL_IDS.length);
     for (const def of ALL_DEFS) {
       if (def.type === 'sigil') expect(SIGIL_IDS).toContain(def.sigil);
       else expect(def.sigil, def.id).toBeUndefined();
     }
+  });
+
+  it('assigns every shipped sigil card id, including upgrades, a unique glyph pattern', () => {
+    const ids = CARDS.filter((card) => card.type === 'sigil').flatMap((card) => [
+      card.id,
+      `${card.id}+`,
+    ]);
+    const sigils = ids.map((id) => getCard(id).sigil);
+    expect(ids).toHaveLength(14);
+    expect(new Set(sigils).size).toBe(14);
+    expect(new Set(sigils).size).toBe(SIGIL_IDS.length);
   });
 
   it('matches every description to the card effects', () => {
@@ -323,7 +337,7 @@ describe('card schema', () => {
       expect(up.upgraded).toBe(true);
       expect(up.upgrade).toBeUndefined();
       expect(up.type).toBe(card.type);
-      expect(up.sigil).toBe(card.sigil);
+      expect(up.sigil).toBe(card.upgrade?.sigil ?? card.sigil);
       const changed =
         up.cost !== card.cost ||
         up.exhaust !== card.exhaust ||

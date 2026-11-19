@@ -5,6 +5,21 @@
   "sha256": {
     "assets-source/props/paintings/clockmaker-diptych.png": "7495e091a5b3e84ab0df89afe1902217fddd427df90cf2ad046bd662a34717ca",
     "public/assets/props/paintings/clockmaker-first.webp": "ee2594b17e1b4d0d70fced6d80fe0f2abb57e0764b9cbad108d7501f692a57cf",
-    "public/assets/props/paintings/clockmaker-return.webp": "5558b4e6684fc046ee2cd51349f253e28a8d06600284ad3013e1a124bd5bf528"
+    "public/assets/props/paintings/clockmaker-return.webp": "5558b4e6684fc046ee2cd51349f253e28a8d06600284ad3013e1a124bd5bf528",
+    "assets-source/props/paintings/river-valley.png": "b3e316f8a745c397586f9cac3654a597542301eda320405f8a1a85ab4b50258e",
+    "public/assets/props/paintings/river-valley.webp": "6f7c57693f41c566f19805b074fa9f883361f64a080bece7a0d58f9c5523e602",
+    "assets-source/props/paintings/pears-and-pitcher.png": "dde7b66089775dd9eb8ff61d0252c824b1686d3946caa1a7b3d45cb5cf8d88f5",
+    "public/assets/props/paintings/pears-and-pitcher.webp": "70c7b2e40a8575697eb9ac70d51b7d59ad4de547ae7c0ea68d8ee5626c69f469",
+    "assets-source/props/paintings/coastal-cliffs.png": "b70b10473d2105ecf6ba91c407a10de96e60dec294c28ec66a7792c58cd0b71c",
+    "public/assets/props/paintings/coastal-cliffs.webp": "391aedf865b9988bf9e55f2c8fc43b4d3ca879c0be55d28f2677a8c6a5b0365f"
+  },
+  "decorativePaintings": {
+    "source": "Three original ImageGen oil paintings created for Clockwork Spire.",
+    "subjects": [
+      "river-valley",
+      "pears-and-pitcher",
+      "coastal-cliffs"
+    ],
+    "derivation": "Each source is resized to 640 × 640 pixels and encoded as WebP at quality 86 without metadata."
   }
 }

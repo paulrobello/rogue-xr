@@ -8,7 +8,7 @@ import { DEFAULT_SETTINGS } from '../src/persist/db.ts';
 import type { PressureNoteId } from '../src/rules/pressure.ts';
 import { createWorkshop } from '../src/rules/workshop.ts';
 
-function setup() {
+function setup(onNoteOpened?: (at: THREE.Vector3) => void) {
   const flow = new RunFlow({
     workshop: createWorkshop(),
     starterDeck: STARTER_DECK,
@@ -54,6 +54,7 @@ function setup() {
     onNewRun: (seed) => flow.newRun(seed),
     onContinue: () => {},
     onSettings: () => {},
+    onNoteOpened,
     noteRecord: (id) => records.get(id) ?? null,
   });
   return { flow, ui, head: new THREE.Object3D() };
@@ -106,4 +107,22 @@ describe('FlowUi pressure Items', () => {
     expect(ui.menuView).toBe('closed');
     ui.dispose();
   });
+});
+
+it('unfolds at the sheet on pickup and on reread, once per opening', () => {
+  const positions: THREE.Vector3[] = [];
+  const { ui, flow, head } = setup((at) => positions.push(at.clone()));
+  flow.newRun('BRASS042');
+  expect(ui.readNote('A', head)).toBe(false);
+  flow.collectPressureNote(1, 'A');
+  ui.readNote('A', head);
+  ui.readNote('A', head);
+  ui.refresh();
+  expect(positions).toHaveLength(1);
+  ui.activate('menu-note-items');
+  ui.activate('menu-items-item-A');
+  expect(positions).toHaveLength(2);
+  const sheet = ui.root.getObjectByName('menu-note-sheet');
+  expect(sheet?.getWorldPosition(new THREE.Vector3()).distanceTo(positions[1])).toBeLessThan(0.001);
+  ui.dispose();
 });

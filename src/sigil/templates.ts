@@ -1,7 +1,7 @@
 import type { Point, SigilId, SigilTemplate, Stroke } from './types.ts';
 
 /**
- * The six sigil templates, authored as plate-space strokes (+y up, roughly a unit box).
+ * Card sigils and their upgraded forms, authored as plate-space strokes (+y up, roughly a unit box).
  * Each is sampled from a simple parametric curve so the set is deterministic and easy to restyle.
  * The guide glyph shown on the plate should be drawn from these same strokes.
  */
@@ -158,6 +158,137 @@ const anchor: readonly Stroke[] = [
   ],
 ];
 
+/** Quench: a falling cooling drop crossed by three short chill bars (four strokes). */
+const quench: readonly Stroke[] = [
+  sampleCurve(48, (t) => {
+    const a = TAU * t;
+    return { x: 0.5 + 0.34 * Math.sin(a) * Math.sin(a / 2), y: 0.5 - 0.5 * Math.cos(a) };
+  }),
+  polyline(
+    [
+      { x: 0.22, y: 0.62 },
+      { x: 0.78, y: 0.62 },
+    ],
+    8,
+  ),
+  polyline(
+    [
+      { x: 0.28, y: 0.48 },
+      { x: 0.72, y: 0.48 },
+    ],
+    8,
+  ),
+  polyline(
+    [
+      { x: 0.34, y: 0.34 },
+      { x: 0.66, y: 0.34 },
+    ],
+    8,
+  ),
+];
+
+function fitStrokes(
+  strokes: readonly Stroke[],
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+): Stroke[] {
+  return strokes.map((stroke) => stroke.map((p) => ({ x: x + p.x * width, y: y + p.y * height })));
+}
+
+/* Two meshing hubs share a slanted drive shaft. */
+const gearPlus: readonly Stroke[] = [
+  sampleCurve(64, (t) => ({
+    x: 0.29 + 0.25 * Math.cos(TAU * t),
+    y: 0.55 + 0.25 * Math.sin(TAU * t),
+  })),
+  sampleCurve(64, (t) => ({
+    x: 0.72 + 0.19 * Math.cos(TAU * t),
+    y: 0.45 + 0.19 * Math.sin(TAU * t),
+  })),
+  polyline(
+    [
+      { x: 0.06, y: 0.55 },
+      { x: 0.94, y: 0.45 },
+    ],
+    20,
+  ),
+];
+
+/** A second tongue of fire rises beside the first. */
+const flamePlus: readonly Stroke[] = [
+  ...fitStrokes(flame, 0, 0.1, 0.53, 0.67),
+  ...fitStrokes(flame, 0.44, 0.1, 0.55, 0.9),
+];
+/** A crown sits above the reinforced shield. */
+const wardPlus: readonly Stroke[] = [
+  ...fitStrokes(ward, 0.04, 0, 0.92, 0.7),
+  polyline(
+    [
+      { x: 0.11, y: 0.7 },
+      { x: 0.07, y: 0.98 },
+      { x: 0.32, y: 0.83 },
+      { x: 0.5, y: 1 },
+      { x: 0.69, y: 0.83 },
+      { x: 0.93, y: 0.98 },
+      { x: 0.89, y: 0.7 },
+    ],
+    8,
+  ),
+];
+const boltPlus: readonly Stroke[] = [
+  ...bolt,
+  polyline(
+    [
+      { x: 0.72, y: 0.86 },
+      { x: 0.9, y: 0.7 },
+    ],
+    8,
+  ),
+];
+const spiralPlus: readonly Stroke[] = [
+  ...spiral,
+  polyline(
+    [
+      { x: 0.2, y: 0.2 },
+      { x: 0.5, y: 0.8 },
+      { x: 0.8, y: 0.2 },
+      { x: 0.2, y: 0.2 },
+    ],
+    8,
+  ),
+];
+const anchorPlus: readonly Stroke[] = [
+  ...anchor,
+  polyline(
+    [
+      { x: 0.07, y: 0.62 },
+      { x: 0.93, y: 0.62 },
+    ],
+    20,
+  ),
+];
+/** A falling drop over an open quenching basin. */
+const quenchPlus: readonly Stroke[] = [
+  ...fitStrokes([quench[0] as Stroke], 0.2, 0.41, 0.6, 0.56),
+  polyline(
+    [
+      { x: 0.04, y: 0.39 },
+      { x: 0.2, y: 0.08 },
+      { x: 0.8, y: 0.08 },
+      { x: 0.96, y: 0.39 },
+    ],
+    8,
+  ),
+  polyline(
+    [
+      { x: 0.08, y: 0.34 },
+      { x: 0.92, y: 0.34 },
+    ],
+    12,
+  ),
+];
 export const SIGIL_TEMPLATES: Readonly<Record<SigilId, SigilTemplate>> = {
   gear: { id: 'gear', strokes: gear },
   flame: { id: 'flame', strokes: flame },
@@ -165,4 +296,12 @@ export const SIGIL_TEMPLATES: Readonly<Record<SigilId, SigilTemplate>> = {
   bolt: { id: 'bolt', strokes: bolt },
   spiral: { id: 'spiral', strokes: spiral },
   anchor: { id: 'anchor', strokes: anchor },
+  quench: { id: 'quench', strokes: quench },
+  'gear-plus': { id: 'gear-plus', strokes: gearPlus },
+  'flame-plus': { id: 'flame-plus', strokes: flamePlus },
+  'ward-plus': { id: 'ward-plus', strokes: wardPlus },
+  'bolt-plus': { id: 'bolt-plus', strokes: boltPlus },
+  'spiral-plus': { id: 'spiral-plus', strokes: spiralPlus },
+  'anchor-plus': { id: 'anchor-plus', strokes: anchorPlus },
+  'quench-plus': { id: 'quench-plus', strokes: quenchPlus },
 };

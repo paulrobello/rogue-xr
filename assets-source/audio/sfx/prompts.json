@@ -5,6 +5,8 @@
   "output_format": "mp3_44100_128",
   "style": "Gilded Lamplight: warm arcane brass clockwork wizard tower (docs/art-bible.md). Brass, walnut, glass and steam. No speech, no music unless the cue is a sting.",
   "cues": [
+    {"id": "paper-unfold", "class": "positional", "duration_seconds": 0.9, "loop": false, "local_edit": true,
+     "text": "Two dry paper creases open, followed by a softer rustle as the sheet settles in the reader's hands."},
     {"id": "card-draw", "class": "positional", "duration_seconds": 0.7, "prompt_influence": 0.6, "loop": false,
      "text": "A single thick card slid quickly off a walnut deck with a soft paper whisper and a tiny brass clip tick. Dry, close, no reverb, one-shot."},
     {"id": "card-fling", "class": "positional", "duration_seconds": 0.9, "prompt_influence": 0.6, "loop": false,

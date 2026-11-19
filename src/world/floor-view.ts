@@ -39,6 +39,10 @@ import { PressureNotes } from './pressure-notes.ts';
 import { PressureWorks } from './pressure-works.ts';
 import { type RigidNode, rigidAngle } from './study-room.ts';
 
+export interface FloorAudio {
+  playSfx(id: 'door-open' | 'gear-clank', at?: { x: number; y: number; z: number }): boolean;
+}
+
 /** The run seed from `?seed=`, or a fresh random one when it is missing or malformed. */
 export function seedFromQuery(search: string): string {
   const raw = new URLSearchParams(search).get('seed');
@@ -185,7 +189,9 @@ export interface FloorView {
    */
   suspendTriggers: boolean;
   /** Removes `room`'s automatons so its encounter never fires again (resuming a saved run). */
-  markCleared(room: number): void;
+  markCleared(room: number, silent?: boolean): void;
+  /** Connects the shared audio director after the floor is mounted. */
+  setAudio(audio: FloorAudio | null): void;
   /** A standing point about 1 m inside `room` from its first door, or null for an unknown room. */
   standPoint(room: number): THREE.Vector3 | null;
   /** Removes the floor, its lights and the table from the scene and frees their GPU resources. */
@@ -237,6 +243,11 @@ export function mountFloorView(
   rig.position.set(spawn.x, rig.position.y, spawn.z);
 
   let locked = false;
+  let floorAudio: FloorAudio | null = null;
+  let suppressUnlockAudio = false;
+  const reducedUnlockMotion =
+    typeof globalThis.matchMedia === 'function' &&
+    globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches;
   let suspended = false;
   let turnVignette = 0;
   // The director keeps this host for its life; the greybox or the real asset hangs under it.
@@ -250,8 +261,14 @@ export function mountFloorView(
     world,
     table: tableHost,
     onCleared: (room) => {
-      world.releaseGuardedDoor(room);
-      for (const coffer of world.coffers) if (coffer.room === room) coffer.unlock();
+      const doorAt = world.releaseGuardedDoor(room, suppressUnlockAudio);
+      if (doorAt && !suppressUnlockAudio) floorAudio?.playSfx('door-open', doorAt);
+      for (const coffer of world.coffers) {
+        if (coffer.room !== room) continue;
+        if (!coffer.unlock(suppressUnlockAudio || reducedUnlockMotion)) continue;
+        const at = coffer.object.getWorldPosition(new THREE.Vector3());
+        if (!suppressUnlockAudio) floorAudio?.playSfx('gear-clank', at);
+      }
     },
     lockLocomotion: (l) => {
       locked = l;
@@ -335,7 +352,7 @@ export function mountFloorView(
   const cofferOf = (room: number, socketId: string): Coffer | undefined =>
     world.coffers.find((c) => c.room === room && c.socketId === socketId);
   const lootLocked = (room: number): boolean =>
-    world.plan.rooms[room]?.role === 'combat' && !encounter.isCleared(room);
+    world.plan.rooms[room]?.encounter != null && !encounter.isCleared(room);
   const loot: FloorLoot = {
     coffers: world.coffers,
     pick(origin, direction, maxDistance = LOOT_REACH) {
@@ -367,7 +384,7 @@ export function mountFloorView(
     },
     markOpened(room, socketId) {
       const coffer = cofferOf(room, socketId);
-      coffer?.unlock();
+      coffer?.unlock(true);
       coffer?.open(false);
     },
     dress(materials) {
@@ -479,8 +496,16 @@ export function mountFloorView(
     set suspendTriggers(value) {
       suspended = value;
     },
-    markCleared(room) {
-      encounter.markCleared(room);
+    markCleared(room, silent = false) {
+      suppressUnlockAudio = silent;
+      try {
+        encounter.markCleared(room);
+      } finally {
+        suppressUnlockAudio = false;
+      }
+    },
+    setAudio(audio) {
+      floorAudio = audio;
     },
     standPoint(room) {
       const r = world.rooms[room];
@@ -621,6 +646,7 @@ export function mountFloorView(
     },
     update(head, dt) {
       pressure?.update(dt);
+      world.updateAnimations(dt);
       turnVignette = vignetteStep(turnVignette, 0, dt, DEFAULT_VIGNETTE);
       spin(dt);
       for (const coffer of world.coffers) coffer.update(dt);

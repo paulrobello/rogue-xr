@@ -222,3 +222,27 @@ describe('optional pressure wing', () => {
     expect(attachPressureWing(original)).toEqual(attachPressureWing(original));
   });
 });
+
+it('keeps MAPTEST2 connected and free of enemies and guarded doors throughout its ten-room tour', () => {
+  const plan = attachPressureWing(generateFloor('MAPTEST2'));
+  expect(plan.rooms).toHaveLength(10);
+  expect(reachable(plan).size).toBe(plan.rooms.length);
+  expect(new Set(plan.rooms.map((room) => room.templateId)).size).toBe(5);
+  expect(new Set(plan.rooms.map((room) => room.turns)).size).toBe(4);
+  expect(plan.rooms.every((room) => room.encounter === null)).toBe(true);
+  expect(guardedConnection(plan)).toBeNull();
+  expect(plan.connections.map((pair) => pair.map((door) => door.room))).toEqual([
+    [0, 1],
+    [1, 2],
+    [0, 3],
+    [3, 4],
+    [4, 5],
+    [0, 6],
+    [5, 7],
+    [6, 8],
+    [8, 9],
+  ]);
+  expect(generateFloor('MAPTEST3').rooms.some((room) => room.encounter?.tier === 'guardian')).toBe(
+    true,
+  );
+});

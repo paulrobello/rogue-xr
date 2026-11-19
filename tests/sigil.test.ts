@@ -104,6 +104,17 @@ describe('own-sigil reference traces', () => {
   }
 });
 
+it('keeps a clean trace when a player lifts and resumes along the same line', () => {
+  for (const id of SIGIL_IDS) {
+    const trace = SIGIL_TEMPLATES[id].strokes.flatMap((stroke) => {
+      const split = Math.floor(stroke.length / 2);
+      return [stroke.slice(0, split + 1), stroke.slice(split)];
+    });
+    expect(scoreAgainst(trace, id), id).toBeCloseTo(1, 3);
+    expect(recognize(trace).id).toBe(id);
+  }
+});
+
 describe('cross-sigil confusion', () => {
   for (const id of SIGIL_IDS) {
     it(`${id} traces stay below MIN_SCORE against every other sigil`, () => {

@@ -954,6 +954,20 @@
         "fade in 2 ms, fade out 30 ms (raised cosine)",
         "fold to mono 0.5*L+0.5*R (positional cue)"
       ]
+    },
+    "paper-unfold": {
+      "source_file": "assets-source/audio/sfx/raw/card-draw.mp3",
+      "source_sha256": "0c0888d5fdd0b44b4010875206f3e94608a4a55222abae7ad2173fb272032065",
+      "runtime_file": "public/assets/audio/sfx/paper-unfold.ogg",
+      "runtime_sha256": "1019ba50f1e499d26a7123e1785c0214466130c9ffe32f1acec76af005f03d1e",
+      "runtime_bytes": 10538,
+      "steps": [
+        "Layer and stretch six dry paper transients into two opening folds and a settling rustle",
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "approval": "New edit of the existing card-draw recording. Runtime verification is separate from owner listening approval."
     }
   },
   "music": {
