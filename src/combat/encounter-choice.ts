@@ -7,8 +7,10 @@ import {
 import { Stream } from '../core/rng.ts';
 
 const CROCKFORD = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
-/** Bump when seeded encounter choices change in a way that affects resumable floors. */
-export const ENCOUNTER_CONTENT_VERSION = 2;
+/** Existing snapshots keep their encounter pool and floor layout across content releases. */
+export const FOUNDRY_VERSION = 2;
+export const PRESSURE_WORKS_VERSION = 3;
+export const ENCOUNTER_CONTENT_VERSION = PRESSURE_WORKS_VERSION;
 const LEGACY_ENCOUNTER_IDS = new Set([
   'sentry',
   'hound',
@@ -29,7 +31,7 @@ export function chooseEncounter(
   contentVersion = ENCOUNTER_CONTENT_VERSION,
 ): Encounter {
   const pool =
-    contentVersion < ENCOUNTER_CONTENT_VERSION
+    contentVersion < FOUNDRY_VERSION
       ? ENCOUNTERS[tier].filter((e) => LEGACY_ENCOUNTER_IDS.has(e.id))
       : ENCOUNTERS[tier];
   const fits = pool.filter((e) => e.enemies.length === count);

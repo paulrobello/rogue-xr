@@ -19,6 +19,7 @@ import { enemyHeading, enemyLocalRotationY } from './enemy-facing.ts';
 import { buildGreyboxRoom, createGreyboxMaterials, type GreyboxMaterials } from './greybox.ts';
 import { type Hearth, HearthKit, type HearthMaterials, hearthSocket } from './hearth.ts';
 import { type Coffer, CofferKit, type LootMaterials, surfaceHeightAt } from './loot.ts';
+import { pressureColliders } from './pressure-works.ts';
 import { disposeTableDecor } from './table-decor.ts';
 
 export { nearSet, neighbours, shellSet, visibleSet } from '../floor/visibility.ts';
@@ -233,10 +234,12 @@ export function buildFloorWorld(
   group.updateMatrixWorld(true);
   const colliders: Box[][] = rooms.map((r, i) => {
     const [ox, oz] = plan.rooms[i]?.position ?? [0, 0];
-    return r.template.colliders.map((c) => ({
+    const boxes: Box[] = r.template.colliders.map((c) => ({
       min: [c.min[0] + ox, c.min[1], c.min[2] + oz],
       max: [c.max[0] + ox, c.max[1], c.max[2] + oz],
     }));
+    boxes.push(...pressureColliders(plan, i));
+    return boxes;
   });
   // A sealed doorway reads as a closed door: a one-sided leaf filling exactly the 1.6 x 2.4 m
   // opening on the wall line, facing into the room, so it sits flush at the back of the baked

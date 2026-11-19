@@ -2,7 +2,14 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { hashString, Stream } from '../src/core/rng.ts';
-import { type FloorPlan, generateFloor, rectsOverlap, worldRooms } from '../src/floor/generate.ts';
+import {
+  attachPressureWing,
+  type FloorPlan,
+  generateFloor,
+  guardedConnection,
+  rectsOverlap,
+  worldRooms,
+} from '../src/floor/generate.ts';
 
 const CROCKFORD = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 
@@ -165,5 +172,53 @@ describe('sealed door styles', () => {
       });
       expect(hashString(key)).toBe(hash);
     }
+  });
+});
+
+describe('optional pressure wing', () => {
+  it('adds a reachable corridor and treasure study without changing the original floor', () => {
+    let attached = 0;
+    for (const seed of seeds(500)) {
+      const original = generateFloor(seed);
+      const plan = attachPressureWing(original);
+      if (!plan.pressureWing) continue;
+      attached += 1;
+      const { gallery, pumpRoom, source } = plan.pressureWing;
+      expect(gallery).toBe(original.rooms.length);
+      expect(pumpRoom).toBe(gallery + 1);
+      expect(plan.rooms.slice(0, original.rooms.length)).toEqual(original.rooms);
+      expect(plan.connections.slice(0, original.connections.length)).toEqual(original.connections);
+      expect(plan.rooms[gallery]?.role).toBe('corridor');
+      expect(plan.rooms[pumpRoom]?.role).toBe('treasure');
+      expect(plan.rooms[gallery]?.encounter).toBeNull();
+      expect(plan.rooms[pumpRoom]?.encounter).toBeNull();
+      expect(plan.rooms[gallery]?.loot).toEqual([]);
+      expect(plan.rooms[pumpRoom]?.loot).toEqual([]);
+      expect(plan.sealed.some((s) => s.room === source.room && s.door === source.door)).toBe(false);
+      expect(guardedConnection(plan)).toEqual(guardedConnection(original));
+      expect(reachable(plan).size).toBe(plan.rooms.length);
+      const world = worldRooms(plan);
+      for (let i = 0; i < world.length; i++) {
+        for (let j = i + 1; j < world.length; j++) {
+          expect(rectsOverlap(world[i]?.footprint, world[j]?.footprint)).toBe(false);
+        }
+      }
+      for (const [a, b] of plan.connections.slice(original.connections.length)) {
+        const exit = world[a.room].doors.find((d) => d.id === a.door);
+        const entry = world[b.room].doors.find((d) => d.id === b.door);
+        expect(exit).toBeDefined();
+        expect(entry?.world).toEqual(exit?.world);
+        expect(entry?.facing).not.toBe(exit?.facing);
+      }
+    }
+    // Geometry is authored as a side-wing fit, so a high rate is expected while custom manifests
+    // remain allowed to decline gracefully.
+    expect(attached).toBeGreaterThan(450);
+  });
+
+  it('is deterministic and declines gracefully without both wing templates', () => {
+    const original = generateFloor('SP1RE001');
+    expect(attachPressureWing(original, [])).toBe(original);
+    expect(attachPressureWing(original)).toEqual(attachPressureWing(original));
   });
 });

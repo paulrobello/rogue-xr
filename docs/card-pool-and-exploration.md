@@ -1,6 +1,6 @@
 # Card pool and exploration plan
 
-Status: draft for Paul's review, 2026-11-17. Nothing here is built yet. Numbers are first-pass values, tuned in playtests. Paul asked for this in chat on 2026-11-17: plan the full card pool, including the lock pick and the other non-combat cards the roadmap needs, and make the game interesting between combat with puzzles, backtracking, optional paths and tasks.
+Status: draft for Paul's review, 2026-11-17. The Foundry combat batch and the first pressure-valve puzzle are playable. Other entries below are design proposals. Numbers are first-pass values, tuned in playtests. Paul asked for this in chat on 2026-11-17: plan the full card pool, including the lock pick and the other non-combat cards the roadmap needs, and make the game interesting between combat with puzzles, backtracking, optional paths and tasks.
 
 The slice reference points every new card is measured against: 3 steam per turn, a hand of 5, Piston Strike (1 steam, 6 damage) and Brass Guard (1 steam, 5 block).
 
@@ -151,6 +151,10 @@ At most 2 puzzles per floor, each about 30 to 90 seconds to solve. Each puzzle h
 | Sigil door | Trace an unfamiliar glyph that is not in your deck | A torn page shows the glyph |
 | Bell chimes | Strike bells in order | A music box plays the order (each tone also has a colour, for players who cannot hear it) |
 
+**Playable Pressure Works wing.** A brass-framed sign marks the optional passage. The Pipe Gallery displays the required readings for circuits A, B and C. In the Pump Room, click a handwheel or point at it and pull the trigger to advance its reading from 1 to 2 to 3 and back to 1. Matching the gallery plate restores the pressure and pays 20 run cogs once. Both partial settings and the payout survive a reload.
+
+Use seed `P1PE0028` to find the signed doorway in the starting hall. New runs append a gallery and a pump room wherever the two footprints fit. Earlier saves keep their original rooms and rewards. The pressure wing uses the existing corridor and study architecture with a new pipe assembly, regulator, and accumulator banks. [Quest Browser room views](verification/pressure-works.jpg)
+
 ### E3. Optional paths
 
 - **Locked side wings** branch off the main path (E1).
@@ -187,7 +191,7 @@ Keep the deck, HP and cog purse with the run. Keep each floor’s layout, opened
 | W1 | Satchel: inventory model in `rules/run.ts`, saving and resuming, the XR wrist panel and the desktop key, and the field card frame | none |
 | W2 | Locks: brass and iron lock panels, the lock-pick plate on a lock, key items, lock placement on optional branches from a named stream | W1, the panel slot card |
 | W3 | Wave A combat cards with M1, M2, M5, M6, M7, the iron d4 and the anchor glyph, plus the glyph-distinctness test | none |
-| W4 | Puzzles: the pure puzzle generator and 2 puzzle types first (pressure valves and the sigil door, which need the fewest new assets), clue placement in another room | W2 |
+| W4 | Pressure valves and a separate gallery clue are playable. The sigil door is planned. | W2 for the sigil door |
 | W5 | Floor generator loops: shortcut doors and hidden doors | the panel slot card |
 | W6 | Commission board and 3 task types | W1 |
 | W7 | Wave B combat cards with M3, M8, M9, M10, the crystal d12 and the eye glyph | W3 |

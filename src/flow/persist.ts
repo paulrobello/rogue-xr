@@ -31,7 +31,7 @@ export function bindFlowPersistence(
       enqueue(() => saveWorkshop(db, ws));
       return;
     }
-    if (event.type === 'loot' || event.type === 'hearth') {
+    if (event.type === 'loot' || event.type === 'hearth' || event.type === 'pressure') {
       const snapshot = flow.snapshot(Date.now(), roomIndex());
       if (snapshot) enqueue(() => saveRunSnapshot(db, snapshot));
       return;

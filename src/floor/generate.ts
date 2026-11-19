@@ -52,6 +52,7 @@ export interface FloorPlan {
   /** Doors that lead nowhere; the world closes each with a wall or a boarded door. */
   sealed: readonly SealedDoor[];
   guardianRoom: number;
+  pressureWing?: { gallery: number; pumpRoom: number; source: DoorRef };
 }
 
 export interface FloorParams {
@@ -344,7 +345,8 @@ export function guardedConnection(plan: FloorPlan): readonly [DoorRef, DoorRef] 
   const candidates = plan.connections.filter(
     ([from, to]) =>
       plan.rooms[from.room]?.role === 'combat' &&
-      (plan.rooms[to.room]?.depth ?? 0) > (plan.rooms[from.room]?.depth ?? 0),
+      (plan.rooms[to.room]?.depth ?? 0) > (plan.rooms[from.room]?.depth ?? 0) &&
+      to.room !== plan.pressureWing?.gallery,
   );
   return candidates.length > 0 && stream.next() < GUARDED_DOOR_CHANCE
     ? stream.pick(candidates)
@@ -363,6 +365,173 @@ export function generateFloor(seed: string, params: FloorParams = DEFAULT_FLOOR_
     if (plan) return plan;
   }
   throw new Error(`no valid floor for seed ${seed} after ${MAX_ATTEMPTS} attempts`);
+}
+
+interface PressureWingFit {
+  source: SealedDoor;
+  corridorTurns: QuarterTurns;
+  corridorDoor: string;
+  corridorExitDoor: string;
+  corridorPosition: readonly [number, number];
+  studyTurns: QuarterTurns;
+  studyDoor: string;
+  studyPosition: readonly [number, number];
+}
+
+/**
+ * Adds a deterministic, enemy-free side wing to a spare sealed door. The original floor data is
+ * never mutated, and all selection/layout draws come from a pressure-wing-only keyed stream.
+ */
+export function attachPressureWing(
+  plan: FloorPlan,
+  templates: readonly RoomTemplate[] = GREYBOX_TEMPLATES,
+): FloorPlan {
+  if (plan.pressureWing) return plan;
+  const corridor = templates.find((t) => t.id === 'corridor');
+  const study = templates.find((t) => t.id === 'study');
+  if (!corridor || !study) return plan;
+
+  let world: WorldRoom[];
+  try {
+    world = worldRooms(plan, templates);
+  } catch {
+    return plan;
+  }
+  const guardianPath = new Set<number>();
+  const route = new Map<number, number[]>();
+  for (const [a, b] of plan.connections) {
+    route.set(a.room, [...(route.get(a.room) ?? []), b.room]);
+    route.set(b.room, [...(route.get(b.room) ?? []), a.room]);
+  }
+  const queue: number[] = [0];
+  const previous = new Map<number, number>([[0, -1]]);
+  while (queue.length > 0) {
+    const room = queue.shift() as number;
+    if (room === plan.guardianRoom) break;
+    for (const next of route.get(room) ?? []) {
+      if (!previous.has(next)) {
+        previous.set(next, room);
+        queue.push(next);
+      }
+    }
+  }
+  for (let room = plan.guardianRoom; room >= 0; room = previous.get(room) ?? -1) {
+    guardianPath.add(room);
+    if (room === 0) break;
+  }
+
+  const fits: PressureWingFit[] = [];
+  for (const source of plan.sealed) {
+    if (source.room === plan.guardianRoom) continue;
+    const host = world[source.room];
+    const hostDoor = host?.doors.find((d) => d.id === source.door);
+    if (!host || !hostDoor) continue;
+    for (const corridorTurns of corridor.rotations) {
+      const rotatedCorridor = rotateTemplate(corridor, corridorTurns);
+      for (const corridorEntry of rotatedCorridor.doors) {
+        if (corridorEntry.facing !== OPPOSITE[hostDoor.facing]) continue;
+        const corridorPosition = [
+          hostDoor.world[0] - corridorEntry.position[0],
+          hostDoor.world[1] - corridorEntry.position[2],
+        ] as const;
+        const corridorWorld = worldRoom(corridor, corridorTurns, corridorPosition);
+        if (world.some((room) => rectsOverlap(room.footprint, corridorWorld.footprint))) continue;
+        const corridorExit = rotatedCorridor.doors.find((d) => d.id !== corridorEntry.id);
+        if (!corridorExit) continue;
+        for (const studyTurns of study.rotations) {
+          const rotatedStudy = rotateTemplate(study, studyTurns);
+          for (const studyDoor of rotatedStudy.doors) {
+            if (studyDoor.facing !== OPPOSITE[corridorExit.facing]) continue;
+            const studyPosition = [
+              corridorPosition[0] + corridorExit.position[0] - studyDoor.position[0],
+              corridorPosition[1] + corridorExit.position[2] - studyDoor.position[2],
+            ] as const;
+            const studyWorld = worldRoom(study, studyTurns, studyPosition);
+            if (
+              world.some((room) => rectsOverlap(room.footprint, studyWorld.footprint)) ||
+              rectsOverlap(corridorWorld.footprint, studyWorld.footprint)
+            )
+              continue;
+            fits.push({
+              source,
+              corridorTurns,
+              corridorDoor: corridorEntry.id,
+              corridorExitDoor: corridorExit.id,
+              corridorPosition,
+              studyTurns,
+              studyDoor: studyDoor.id,
+              studyPosition,
+            });
+          }
+        }
+      }
+    }
+  }
+  if (fits.length === 0) return plan;
+
+  const stream = Stream.fromKey(`${plan.seed}:pressure-wing`);
+  const preferred = fits.filter((fit) => !guardianPath.has(fit.source.room));
+  const candidates = preferred.length > 0 ? preferred : fits;
+  const nearestDepth = Math.min(
+    ...candidates.map((fit) => plan.rooms[fit.source.room]?.depth ?? Infinity),
+  );
+  const nearest = candidates.filter(
+    (fit) => (plan.rooms[fit.source.room]?.depth ?? Infinity) === nearestDepth,
+  );
+  const fit = stream.pick(nearest);
+  const gallery = plan.rooms.length;
+  const pumpRoom = gallery + 1;
+  const host = plan.rooms[fit.source.room] as PlacedRoom;
+  const wing =
+    host.wing >= 0 ? host.wing : Math.max(-1, ...plan.rooms.map((room) => room.wing)) + 1;
+  const newRooms: PlacedRoom[] = [
+    ...plan.rooms,
+    {
+      index: gallery,
+      templateId: corridor.id,
+      turns: fit.corridorTurns,
+      position: fit.corridorPosition,
+      role: 'corridor',
+      wing,
+      depth: host.depth + 1,
+      encounter: null,
+      loot: [],
+    },
+    {
+      index: pumpRoom,
+      templateId: study.id,
+      turns: fit.studyTurns,
+      position: fit.studyPosition,
+      role: 'treasure',
+      wing,
+      depth: host.depth + 2,
+      encounter: null,
+      loot: [],
+    },
+  ];
+  const galleryDoor: DoorRef = { room: gallery, door: fit.corridorDoor };
+  const galleryExit: DoorRef = { room: gallery, door: fit.corridorExitDoor };
+  const studyDoor: DoorRef = { room: pumpRoom, door: fit.studyDoor };
+  const connections = [
+    ...plan.connections.map(([a, b]) => [{ ...a }, { ...b }] as const),
+    [{ room: fit.source.room, door: fit.source.door }, galleryDoor] as const,
+    [galleryExit, studyDoor] as const,
+  ];
+  const sealed = [
+    ...plan.sealed
+      .filter((door) => door.room !== fit.source.room || door.door !== fit.source.door)
+      .map((door) => ({ ...door })),
+    ...rotateTemplate(study, fit.studyTurns)
+      .doors.filter((door) => door.id !== fit.studyDoor)
+      .map((door) => ({ room: pumpRoom, door: door.id, style: 'wall' as const })),
+  ];
+  return {
+    ...plan,
+    rooms: newRooms,
+    connections,
+    sealed,
+    pressureWing: { gallery, pumpRoom, source: { room: fit.source.room, door: fit.source.door } },
+  };
 }
 
 /** Every room's world-space template, for the world builder and for tests. */

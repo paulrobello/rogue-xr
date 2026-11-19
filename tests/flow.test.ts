@@ -6,7 +6,8 @@ import { normalizeSeed } from '../src/core/rng.ts';
 import { FLOW_TRANSITIONS, type FlowEvent, type FlowPhase, RunFlow } from '../src/flow/flow.ts';
 import { bindFlowPersistence } from '../src/flow/persist.ts';
 import { openDb } from '../src/persist/db.ts';
-import { loadRunSnapshot, loadWorkshop } from '../src/persist/saves.ts';
+import { loadRunSnapshot, loadWorkshop, validateSnapshot } from '../src/persist/saves.ts';
+import { pressureTarget, readPressure } from '../src/rules/pressure.ts';
 import { REWARD_COGS, SKIP_REWARD } from '../src/rules/run.ts';
 import { createWorkshop, type WorkshopState } from '../src/rules/workshop.ts';
 import { mountFloorView } from '../src/world/floor-view.ts';
@@ -248,7 +249,7 @@ describe('continue from a snapshot', () => {
     expect(resumed.snapshot()?.contentVersion).toBe(1);
     expect(resumed.abandonRun()).toBe(true);
     expect(resumed.newRun('SPIRE002')).toBe(true);
-    expect(resumed.snapshot()?.contentVersion).toBe(2);
+    expect(resumed.snapshot()?.contentVersion).toBe(3);
   });
 
   it('restores the same run and offer, and continues identically', () => {
@@ -292,6 +293,92 @@ describe('continue from a snapshot', () => {
     expect(b.phase).toBe('explore');
     expect(b.offer).toBeNull();
     expect(b.fightStarted(2)).toBe(false);
+  });
+});
+
+describe('pressure regulator', () => {
+  it('uses an isolated named stream and pays once when all dials match', () => {
+    const flow = flowWith();
+    flow.newRun(SEED);
+    const beforeRng = flow.run?.rng;
+    const target = pressureTarget(SEED);
+    const events: FlowEvent[] = [];
+    flow.onChange((event) => events.push(event));
+
+    const firstValve = target.findIndex((value) => value !== 1) as 0 | 1 | 2;
+    const first = flow.turnPressureValve(4, firstValve);
+    expect(first).toMatchObject({ type: 'pressure', room: 4, reward: 0, solved: false });
+    expect(flow.run?.rng).toEqual(beforeRng);
+
+    for (let valve = 0; valve < 3; valve++) {
+      const index = valve as 0 | 1 | 2;
+      while (readPressure(flow.run as NonNullable<RunFlow['run']>).dials[valve] !== target[valve]) {
+        flow.turnPressureValve(4, index);
+      }
+    }
+    expect(readPressure(flow.run as NonNullable<RunFlow['run']>)).toEqual({
+      dials: target,
+      solved: true,
+    });
+    expect(flow.run?.cogs).toBe(20);
+    expect(events.at(-1)).toMatchObject({ type: 'pressure', reward: 20, solved: true });
+    expect(flow.turnPressureValve(4, 0)).toBeNull();
+    expect(flow.run?.cogs).toBe(20);
+  });
+
+  it('persists a partial turn and restores it across export-shaped snapshots', async () => {
+    const db = await openDb();
+    const source = flowWith();
+    const saved = bindFlowPersistence(source, db);
+    source.newRun(SEED);
+    const target = pressureTarget(SEED);
+    const valve = target.findIndex((value) => value !== 1) as 0 | 1 | 2;
+    expect(source.turnPressureValve(2, valve)).not.toBeNull();
+    await saved.flushed();
+    const stored = await loadRunSnapshot(db);
+    expect(stored?.run.pressure?.solved).toBe(false);
+    expect(stored?.run.pressure?.dials).toEqual(
+      readPressure(source.run as NonNullable<RunFlow['run']>).dials,
+    );
+
+    const restored = flowWith();
+    expect(restored.continueRun(structuredClone(stored) as NonNullable<typeof stored>)).toBe(true);
+    expect(restored.pressure).toEqual(source.pressure);
+    expect(restored.turnPressureValve(2, valve)).not.toBeNull();
+    saved.dispose();
+  });
+
+  it('accepts v1/v2 snapshots without pressure and refuses pressure outside exploration', () => {
+    const source = flowWith();
+    source.newRun(SEED);
+    const raw = source.snapshot(1, 0) as NonNullable<ReturnType<RunFlow['snapshot']>>;
+    const legacy = structuredClone(raw) as unknown as Record<string, unknown>;
+    legacy.contentVersion = 2;
+    const legacyRun = legacy.run as unknown as Record<string, unknown>;
+    delete legacyRun.pressure;
+    const validated = validateSnapshot(legacy);
+    expect(validated.run.pressure).toBeUndefined();
+    const restored = flowWith();
+    expect(restored.continueRun(validated)).toBe(true);
+    expect(restored.snapshot()?.contentVersion).toBe(2);
+    const events: FlowEvent[] = [];
+    restored.onChange((event) => events.push(event));
+    expect(restored.turnPressureValve(0, 0)).toBeNull();
+    expect(events).toEqual([]);
+    expect(restored.fightStarted(1)).toBe(true);
+    expect(restored.turnPressureValve(0, 0)).toBeNull();
+
+    const missingVersion = structuredClone(raw) as unknown as Record<string, unknown>;
+    delete missingVersion.contentVersion;
+    const missing = flowWith();
+    expect(missing.continueRun(validateSnapshot(missingVersion))).toBe(true);
+    expect(missing.turnPressureValve(0, 0)).toBeNull();
+
+    const fresh = flowWith();
+    fresh.newRun(SEED);
+    expect(fresh.turnPressureValve(-1, 0)).toBeNull();
+    expect(fresh.turnPressureValve(1.5, 0)).toBeNull();
+    expect(fresh.turnPressureValve(0, 3 as 0 | 1 | 2)).toBeNull();
   });
 });
 

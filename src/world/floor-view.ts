@@ -1,13 +1,17 @@
 import * as THREE from 'three';
 import { EncounterDirector } from '../combat/encounter.ts';
-import { chooseEncounter, ENCOUNTER_CONTENT_VERSION } from '../combat/encounter-choice.ts';
+import {
+  chooseEncounter,
+  ENCOUNTER_CONTENT_VERSION,
+  PRESSURE_WORKS_VERSION,
+} from '../combat/encounter-choice.ts';
 import { combatRoom, rigTurnAboutHead } from '../combat/placement.ts';
 import { buildTableGreybox, disposeTable, TABLE_NODES } from '../combat/table-greybox.ts';
 import type { RoomTemplate } from '../content/rooms.ts';
 import { isValidSeed, normalizeSeed, randomSeed, Stream } from '../core/rng.ts';
 import { BreakApart } from '../enemies/break-apart.ts';
 import type { EnemyActor, EnemyAsset } from '../enemies/enemy-asset.ts';
-import { generateFloor } from '../floor/generate.ts';
+import { attachPressureWing, generateFloor } from '../floor/generate.ts';
 import { nearSet, shellSet } from '../floor/visibility.ts';
 import { PALETTE } from '../palette.ts';
 import type { TreasureLoot } from '../rules/run.ts';
@@ -29,6 +33,7 @@ import {
   pickHearth,
 } from './hearth.ts';
 import { type Coffer, type LootMaterials, type LootPick, LootToast, pickCoffer } from './loot.ts';
+import { PressureWorks } from './pressure-works.ts';
 import { type RigidNode, rigidAngle } from './study-room.ts';
 
 /** The run seed from `?seed=`, or a fresh random one when it is missing or malformed. */
@@ -91,6 +96,7 @@ export interface FloorView {
   world: FloorWorld;
   loot: FloorLoot;
   hearth: FloorHearths;
+  pressure: PressureWorks | null;
   seed: string;
   readonly contentVersion: number;
   encounter: EncounterDirector;
@@ -187,7 +193,10 @@ export function mountFloorView(
   options: FloorViewOptions = {},
 ): FloorView {
   const contentVersion = options.contentVersion ?? ENCOUNTER_CONTENT_VERSION;
-  const world = buildFloorWorld(generateFloor(seed), options.templates);
+  const base = generateFloor(seed);
+  const plan = contentVersion >= PRESSURE_WORKS_VERSION ? attachPressureWing(base) : base;
+  const world = buildFloorWorld(plan, options.templates);
+  const pressure = plan.pressureWing ? new PressureWorks(world, plan.pressureWing) : null;
   tagEnemyKinds(world, seed, contentVersion);
   scene.add(world.group);
   // Greybox lighting is two global lights; per-room sockets get real lights with the lightmaps (P4-T7).
@@ -389,6 +398,7 @@ export function mountFloorView(
     world,
     loot,
     hearth,
+    pressure,
     seed,
     contentVersion,
     encounter,
@@ -456,6 +466,7 @@ export function mountFloorView(
       return spinners.length;
     },
     dispose() {
+      pressure?.dispose();
       dropToast();
       spinners.length = 0;
       fires.length = 0;
@@ -535,6 +546,7 @@ export function mountFloorView(
       return true;
     },
     update(head, dt) {
+      pressure?.update(dt);
       turnVignette = vignetteStep(turnVignette, 0, dt, DEFAULT_VIGNETTE);
       spin(dt);
       for (const coffer of world.coffers) coffer.update(dt);

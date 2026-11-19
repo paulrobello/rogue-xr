@@ -272,3 +272,11 @@ export interface ApplyResult {
 export class RulesError extends Error {
   override readonly name = 'RulesError';
 }
+
+export type PressureDial = 1 | 2 | 3;
+export type PressureDials = readonly [PressureDial, PressureDial, PressureDial];
+
+export interface PressureState {
+  readonly dials: PressureDials;
+  readonly solved: boolean;
+}

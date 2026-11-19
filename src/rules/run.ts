@@ -1,6 +1,6 @@
 import { RunRng, type RunRngState, Stream } from '../core/rng.ts';
 import { type Difficulty, isDifficulty } from './difficulty.ts';
-import { RulesError } from './types.ts';
+import { type PressureState, RulesError } from './types.ts';
 
 /**
  * Run-level state that outlives a single combat: the run's RNG snapshot, the deck as a list of card
@@ -29,6 +29,8 @@ export interface RunState {
   readonly usedHearths?: readonly string[];
   /** The level chosen for this run. Absent (every save made before levels existed) means `DEFAULT_DIFFICULTY`. */
   readonly difficulty?: Difficulty;
+  /** The pressure regulator state. Absent in saves made before the regulator existed. */
+  readonly pressure?: PressureState;
 }
 
 /** Mirrors `EncounterTier` in `floor/generate.ts`; rules may not import from `floor/`. */

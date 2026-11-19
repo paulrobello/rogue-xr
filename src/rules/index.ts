@@ -32,6 +32,14 @@ export {
 } from './engine.ts';
 export { canFlee } from './flee.ts';
 export {
+  type PressureDials,
+  type PressureState,
+  type PressureTurnResult,
+  pressureTarget,
+  readPressure,
+  turnPressureValve,
+} from './pressure.ts';
+export {
   type ClaimResult,
   type CogRange,
   chooseReward,

@@ -1,4 +1,8 @@
-import { ENCOUNTER_CONTENT_VERSION } from '../combat/encounter-choice.ts';
+import {
+  ENCOUNTER_CONTENT_VERSION,
+  FOUNDRY_VERSION,
+  PRESSURE_WORKS_VERSION,
+} from '../combat/encounter-choice.ts';
 import { LEGACY_REWARD_POOL, PERMANENT_CARD_IDS } from '../content/rewards.ts';
 import type { RunSnapshot } from '../persist/saves.ts';
 import { snapshotRun } from '../persist/saves.ts';
@@ -9,6 +13,7 @@ import {
   runDifficulty,
 } from '../rules/difficulty.ts';
 import { canFlee } from '../rules/flee.ts';
+import { type PressureDials, readPressure, turnPressureValve } from '../rules/pressure.ts';
 import {
   chooseReward,
   claimTreasure,
@@ -109,6 +114,14 @@ export interface UsedHearth {
   readonly hp: number;
 }
 
+export interface PressureTurnResultView {
+  readonly type: 'pressure';
+  readonly room: number;
+  readonly dials: PressureDials;
+  readonly solved: boolean;
+  readonly reward: 0 | 20;
+}
+
 /**
  * `'opened'`: a coffer was opened (`openLoot`). `'claimed'`: its pending card went into the deck
  * (`claimLoot`); `loot` is that card. Both are `'loot'` events, so the run is saved after either.
@@ -119,7 +132,8 @@ export type FlowEvent =
   | { readonly type: 'phase'; readonly from: FlowPhase; readonly to: FlowPhase }
   | { readonly type: 'workshop' }
   | ({ readonly type: 'loot'; readonly stage: LootStage } & OpenedLoot)
-  | ({ readonly type: 'hearth' } & UsedHearth);
+  | ({ readonly type: 'hearth' } & UsedHearth)
+  | PressureTurnResultView;
 
 export interface FlowOptions {
   workshop: WorkshopState;
@@ -185,6 +199,36 @@ export class RunFlow {
   /** Whether the run already used the hearth at `socketId` in `room`. */
   isHearthUsed(room: number, socketId: string): boolean {
     return this.runValue?.usedHearths?.includes(lootKey(room, socketId)) ?? false;
+  }
+  get pressure(): ReturnType<typeof readPressure> {
+    return readPressure(this.runValue ?? { pressure: undefined });
+  }
+
+  /** Turns one regulator valve while exploring. A solved regulator cannot pay twice. */
+  turnPressureValve(room: number, valve: 0 | 1 | 2): PressureTurnResultView | null {
+    const run = this.runValue;
+    if (
+      this.phaseValue !== 'explore' ||
+      this.contentVersionValue < PRESSURE_WORKS_VERSION ||
+      !run ||
+      !Number.isInteger(room) ||
+      room < 0 ||
+      ![0, 1, 2].includes(valve)
+    )
+      return null;
+    const result = turnPressureValve(run, valve);
+    if (!result) return null;
+    this.enterRoom(room);
+    this.runValue = result.run;
+    const event = {
+      type: 'pressure' as const,
+      room,
+      dials: result.dials,
+      solved: result.solved,
+      reward: result.reward,
+    };
+    this.emit(event);
+    return event;
   }
   /** The card waiting to be claimed in the opened coffer at `socketId` in `room`, or null. */
   pendingCard(room: number, socketId: string): string | null {
@@ -338,9 +382,7 @@ export class RunFlow {
     if (!this.clearedRooms.includes(result.room)) this.clearedRooms.push(result.room);
     const healed = this.withHp(run, result.playerHp);
     const pool =
-      this.contentVersionValue < ENCOUNTER_CONTENT_VERSION
-        ? LEGACY_REWARD_POOL
-        : this.opts.rewardPool;
+      this.contentVersionValue < FOUNDRY_VERSION ? LEGACY_REWARD_POOL : this.opts.rewardPool;
     const rolled = rewardOffer(healed, result.tier, pool);
     if (result.tier === 'guardian') this.guardianDefeatedValue = true;
     this.runValue = rolled.run;
@@ -358,9 +400,7 @@ export class RunFlow {
     const run = this.runValue;
     if (this.phaseValue !== 'explore' || !run) return null;
     const pool =
-      this.contentVersionValue < ENCOUNTER_CONTENT_VERSION
-        ? LEGACY_REWARD_POOL
-        : this.opts.rewardPool;
+      this.contentVersionValue < FOUNDRY_VERSION ? LEGACY_REWARD_POOL : this.opts.rewardPool;
     const result = openTreasure(run, lootKey(room, socketId), kind, pool);
     if (!result) return null;
     this.runValue = result.run;

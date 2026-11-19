@@ -2,6 +2,7 @@ import { ENCOUNTER_CONTENT_VERSION } from '../combat/encounter-choice.ts';
 import { PERMANENT_CARD_IDS } from '../content/rewards.ts';
 import { normalizeSeed, STREAMS, type StreamState } from '../core/rng.ts';
 import { isDifficulty } from '../rules/difficulty.ts';
+import { type PressureDials, type PressureState, pressureTarget } from '../rules/pressure.ts';
 import type { PendingLoot, RewardOffer, RewardTier, RunState } from '../rules/run.ts';
 import {
   createWorkshop,
@@ -108,6 +109,20 @@ function pendingLoot(v: unknown, path: string): PendingLoot[] {
   });
 }
 
+function pressure(v: unknown, path: string, seed: string): PressureState {
+  const r = rec(v, path);
+  if (!Array.isArray(r.dials) || r.dials.length !== 3)
+    fail(`${path}.dials`, 'expected three dial values');
+  const dials = r.dials.map((dial, i) =>
+    int(dial, `${path}.dials[${i}]`, 1, 3),
+  ) as unknown as PressureDials;
+  if (typeof r.solved !== 'boolean') fail(`${path}.solved`, 'expected a boolean');
+  const target = pressureTarget(seed);
+  const matchesTarget = dials.every((dial, i) => dial === target[i]);
+  if (r.solved !== matchesTarget) fail(`${path}.solved`, 'does not match the seeded target');
+  return { dials, solved: r.solved };
+}
+
 function streamState(v: unknown, path: string): StreamState {
   if (!Array.isArray(v) || v.length !== 4) fail(path, 'expected four 32-bit words');
   // sfc32 words can be negative: `a = b ^ (b >>> 9)` leaves a signed int32 in the state.
@@ -170,6 +185,8 @@ function validateRunState(raw: unknown, path: string): RunState {
   // Added later still: a save from before claimable chest cards has no card waiting.
   const pending =
     r.pendingLoot === undefined ? [] : pendingLoot(r.pendingLoot, `${path}.pendingLoot`);
+  const pressureState =
+    r.pressure === undefined ? undefined : pressure(r.pressure, `${path}.pressure`, seed);
   // Also added after version 1: an older save names no level and resumes as `DEFAULT_DIFFICULTY`.
   if (r.difficulty !== undefined && !isDifficulty(r.difficulty)) {
     fail(`${path}.difficulty`, 'unknown difficulty');
@@ -188,6 +205,7 @@ function validateRunState(raw: unknown, path: string): RunState {
     ...(usedHearths.length === 0 ? {} : { usedHearths }),
     ...(pending.length === 0 ? {} : { pendingLoot: pending }),
     ...(difficulty === undefined ? {} : { difficulty }),
+    ...(pressureState === undefined ? {} : { pressure: pressureState }),
   };
 }
 

@@ -27,6 +27,7 @@ const { values: opts } = parseArgs({
     workshop: { type: 'boolean', default: false },
     foundry: { type: 'boolean', default: false },
     deck: { type: 'boolean', default: false },
+    pressure: { type: 'boolean', default: false },
     // Only the enemy-phase checks: one two-automaton fight on TURN_SEED.
     turns: { type: 'boolean', default: false },
     // Only the turned-away Enter VR check (XO5): the title must be re-placed in front of the head.
@@ -179,7 +180,36 @@ try {
     await settle(800);
   };
 
-  if (opts.deck) {
+  if (opts.pressure) {
+    await page.goto(`${opts.base}/?seed=P1PE0028&debug`);
+    await waitFor('pressure-wing', () => !!window.__combat?.floor?.pressure);
+    await ev(() => window.__combat.heroReady);
+    await enterVr();
+    const before = await ev(() => {
+      window.__combat.teleportToPressure('pump');
+      return window.__flow.flow.run.cogs;
+    });
+    for (const [valve, reading] of [
+      [1, 2],
+      [1, 3],
+      [2, 2],
+    ]) {
+      const point = await ev((i) => window.__xrEmu.worldOf(`pressure-wheel-${i}`), valve);
+      await aim(MAIN, point);
+      await ev(() => window.__xrEmu.frames(3));
+      await pullTrigger(MAIN);
+      await waitFor('turn-pressure-valve', ([i, n]) => window.__flow.flow.pressure.dials[i] === n, [
+        valve,
+        reading,
+      ]);
+    }
+    const solved = await ev(() => {
+      const f = window.__flow.flow;
+      return { dials: f.pressure.dials, solved: f.pressure.solved, cogs: f.run.cogs };
+    });
+    record('pressure-payout', solved.solved && solved.cogs === before + 20, solved);
+    await shot('pressure-works');
+  } else if (opts.deck) {
     await page.goto(`${opts.base}/?seed=${opts.seed}&debug`);
     await waitFor('deck-run-ready', () => window.__flow?.flow.phase === 'explore');
     await enterVr();

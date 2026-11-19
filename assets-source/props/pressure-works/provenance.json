@@ -1,0 +1,45 @@
+{
+  "source": "Original procedural Blender geometry and PBR material colors authored by Codex; no external inputs, images or paid providers.",
+  "blender": "5.2.3 LTS",
+  "validation": "Checked Blender reimport, bounds, material and triangle budgets, wheel pivots, file hashes and external resources. The assembled props and labels were inspected in the running game on a physical Quest 3 in Quest Browser. Final aesthetic and headset-worn comfort acceptance are pending.",
+  "sha256": {
+    "scripts/assets/build-pressure-works.py": "f554f80447837e0bb9bc9e003a2c10fb502ec5df54144c44997eefa1ee3ef675",
+    "scripts/assets/pressure_works_check.py": "88fdbf349f104c649ec7f8bb13c18e7828ef7bfdc0f83f3e6a77fa45bcf0b917",
+    "public/assets/props/pressure-works/manifold.glb": "6416b285a72aadd360be0d62a684e403343aa25674ed7a635f3c0647ccfe1ccb",
+    "assets-source/props/pressure-works/manifold.blend": "c6c54666848c2edff4c6769c979ff606990dd969a5d9cf966cd2cfa4a1c4fe5f",
+    "assets-source/props/pressure-works/manifold.report.json": "4a9a56a535dfed5d84538d3c0b1528299ed0d343730157ffcd7ddf39cfdafbdb",
+    "assets-source/props/pressure-works/manifold-front-three-quarter.png": "fbeafa0fef2d13741ec2525d135a0fb47c4986a38a466961ef245d2577c7d16b",
+    "public/assets/props/pressure-works/gallery-pipes.glb": "24376ea74ee3f1965328bb6fef97912489f9dc9da60d2da85ccabd5e021b2efb",
+    "assets-source/props/pressure-works/gallery-pipes.blend": "9ba7509eb29fbfe51592f5f0f88179fc87a6d1fc3afd448f94053799520b49e0",
+    "assets-source/props/pressure-works/gallery-pipes.report.json": "365f3a24ebce378bd6558baca7288ae0e6cddd9ed23af2f0401b107eb15ac47c",
+    "assets-source/props/pressure-works/gallery-pipes-front-three-quarter.png": "848f184191b6f90f973790bd00a72d2892e822a6ae9ad380156591b7fd14b65a",
+    "scripts/assets/build-pressure-accumulator.py": "8f194ee802da3a9e2865664fdceb692097c4d484242314cd3bd53cb723b49997",
+    "public/assets/props/pressure-works/accumulator-bank.glb": "5403ee1a1b3e7ad8d55cc8bcaad3664692809838d19b5943366205b4b0b956f1",
+    "assets-source/props/pressure-works/accumulator-bank.blend": "58ea408892cafe82a48cddf03614be2ddf509f7348cf95c298a8730d424b1d5b",
+    "assets-source/props/pressure-works/accumulator-bank.report.json": "878ca158c78d2dfd540011b31f38c98c6191e0d64d283389f553ca8713ed6141",
+    "assets-source/props/pressure-works/accumulator-bank-front-three-quarter.png": "3fa2a6e8d5611fbe1f0bb92404fb84b98836eded6237795b9a8253054c33477d"
+  },
+  "independentReview": [
+    {
+      "model": "gallery-pipes",
+      "score": 82,
+      "outOf": 100,
+      "sha256": "24376ea74ee3f1965328bb6fef97912489f9dc9da60d2da85ccabd5e021b2efb",
+      "observation": "Pipe banks and ivory gauges frame the readable calibration plate."
+    },
+    {
+      "model": "manifold",
+      "score": 85,
+      "outOf": 100,
+      "sha256": "6416b285a72aadd360be0d62a684e403343aa25674ed7a635f3c0647ccfe1ccb",
+      "observation": "Three controls are distinct. The right wheel has the lowest rim contrast."
+    },
+    {
+      "model": "accumulator-bank",
+      "score": 87,
+      "outOf": 100,
+      "sha256": "5403ee1a1b3e7ad8d55cc8bcaad3664692809838d19b5943366205b4b0b956f1",
+      "observation": "The tanks cover the library shelving while preserving wheel and label visibility from the seat."
+    }
+  ]
+}

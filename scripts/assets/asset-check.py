@@ -17,6 +17,7 @@ import datetime
 import hashlib
 import json
 import math
+import runpy
 import struct
 import sys
 from pathlib import Path
@@ -1029,6 +1030,7 @@ def main() -> int:
         s = check_decor(errors, warnings)
         sizes = ", ".join(f"{k} {v['width']}px" for k, v in s.get("maps", {}).items())
         print(f"asset-check props/table-decor: tris {s.get('perKind')}, {len(s.get('glb', {}).get('materials', []))} material; {sizes}")
+    runpy.run_path(str(ROOT / "scripts/assets/pressure_works_check.py"))["check_pressure"](errors)
     for w in warnings:
         print(f"WARN {w}")
     for e in errors:

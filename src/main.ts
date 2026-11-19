@@ -7,6 +7,7 @@ import { AudioDirector } from './audio/index.ts';
 import { requestCardFaceArt } from './cards/card-face-material.ts';
 import { mountCardProof } from './cards/card-proof.ts';
 import { CombatHook, type CombatPick, type XrHands } from './combat/combat-session.ts';
+import { ENCOUNTER_CONTENT_VERSION } from './combat/encounter-choice.ts';
 import {
   type CombatTableAsset,
   loadCombatTable,
@@ -71,6 +72,7 @@ import {
 } from './world/loot.ts';
 import { mountMaterialProof } from './world/material-proof.ts';
 import { loadPbrSet } from './world/materials.ts';
+import { loadPressureArt, type PressureArt } from './world/pressure-works.ts';
 import { mountRoomAssetProof } from './world/room-asset-proof.ts';
 import {
   fetchStudyManifest,
@@ -472,6 +474,7 @@ const enemyAssets = new Map<string, Promise<EnemyAsset | null>>(
 const loadedEnemies = async (): Promise<EnemyAsset[]> =>
   (await Promise.all(enemyAssets.values())).filter((a): a is EnemyAsset => a !== null);
 const prepareEnemy = (actor: EnemyActor): void => reflect(actor.object, 0.45);
+let pressureArt: Promise<PressureArt> | undefined;
 const dressFloor = async (target: FloorView): Promise<void> => {
   // Each model dresses its kind as soon as it lands, so a slow or broken one holds back no other.
   const dressed = [...enemyAssets.values()].map((pending) =>
@@ -480,6 +483,17 @@ const dressFloor = async (target: FloorView): Promise<void> => {
         target.useEnemyAssets(new Map([[asset.id, asset]]), prepareEnemy);
     }),
   );
+  if (target.pressure) {
+    pressureArt ??= loadPressureArt().then((art) => {
+      for (const model of Object.values(art)) reflect(model, 0.38);
+      return art;
+    });
+    dressed.push(
+      pressureArt.then((art) => {
+        if (target === floor) target.pressure?.dress(art);
+      }),
+    );
+  }
   const [rooms, door, coffers, decor] = await Promise.all([
     roomAssets,
     sealedDoorMaterial,
@@ -574,6 +588,14 @@ flow.onChange((event) => {
     }
     return;
   }
+  if (event.type === 'pressure') {
+    floor?.pressure?.sync(event, !hitFx.reducedMotion);
+    storedSnapshot = flow.snapshot(Date.now(), event.room);
+    const at = floor?.pressure?.pump.getWorldPosition(new THREE.Vector3());
+    audio?.playSfx('gear-clank', at);
+    if (event.solved) audio?.playSfx('cog-pickup', at);
+    return;
+  }
   if (event.type === 'hearth') {
     storedSnapshot = flow.snapshot(Date.now(), floor?.world.current ?? flow.room);
     if (floor?.hearth.use(event.room, event.socketId, event.healed)) {
@@ -625,7 +647,7 @@ const freshFloor = (seed: string, contentVersion?: number): FloorView => {
   if (
     floor &&
     floor.seed === seed &&
-    floor.contentVersion === (contentVersion ?? floor.contentVersion) &&
+    floor.contentVersion === (contentVersion ?? ENCOUNTER_CONTENT_VERSION) &&
     !floorUsed
   )
     return floor;
@@ -671,6 +693,7 @@ const continueRun = (): void => {
   target.world.update(at.x, at.z);
   floorUsed = true;
   flow.continueRun(snap);
+  target.pressure?.sync(flow.pressure);
 };
 const ui = floor
   ? new FlowUi({
@@ -788,14 +811,20 @@ const grabLootCard = (hand: THREE.Object3D | null): boolean => {
 };
 const useHearth = (pick: HearthPick | null): boolean =>
   !!pick && canOpenLoot() && flow.useHearth(pick.room, pick.socketId) !== null;
-/** Opens the coffer or uses the hearth a ray reaches in the current room (a room holds only one kind). */
-const activatePickup = (origin: THREE.Vector3, direction: THREE.Vector3): boolean =>
-  !!floor &&
-  (openCoffer(floor.loot.pick(origin, direction)) ||
-    useHearth(floor.hearth.pick(origin, direction)));
-/** How far a ray reaches a coffer or hearth it can act on, or null. */
+/** The puzzle fixtures occupy a separate room from treasure and hearths. */
+const activatePickup = (origin: THREE.Vector3, direction: THREE.Vector3): boolean => {
+  if (!floor || !canOpenLoot()) return false;
+  const valve = floor.pressure?.pick(origin, direction);
+  if (valve) return flow.turnPressureValve(floor.world.current, valve.valve) !== null;
+  return (
+    openCoffer(floor.loot.pick(origin, direction)) ||
+    useHearth(floor.hearth.pick(origin, direction))
+  );
+};
 const pickupDistance = (origin: THREE.Vector3, direction: THREE.Vector3): number | null => {
   if (!floor) return null;
+  const valve = floor.pressure?.pick(origin, direction);
+  if (valve) return valve.distance;
   const near = [floor.loot.pick(origin, direction), floor.hearth.pick(origin, direction)].filter(
     (pick) => pick !== null,
   );
@@ -1116,6 +1145,18 @@ if (floor && params.has('debug')) {
       },
       camera,
       screenOf,
+      teleportToPressure(place: 'entrance' | 'gallery' | 'pump') {
+        const works = floor?.pressure;
+        if (!works || !floor) return null;
+        const fixture = works[place];
+        const offset = place === 'gallery' ? 1.25 : place === 'pump' ? 2.38 : 2.6;
+        const at = fixture.localToWorld(new THREE.Vector3(place === 'pump' ? 0.24 : 0, 0, offset));
+        const target = fixture.getWorldPosition(new THREE.Vector3());
+        rig.position.set(at.x, rig.position.y, at.z);
+        walker.yaw = (Math.atan2(target.x - at.x, -(target.z - at.z)) * 180) / Math.PI;
+        floor.world.update(at.x, at.z);
+        return floor.world.current;
+      },
       teleportToEncounter,
       hitFx,
       locomotion,
