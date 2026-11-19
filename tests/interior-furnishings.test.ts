@@ -164,7 +164,7 @@ describe('interior furnishings', () => {
     expect(floorsWithClue).toBeGreaterThan(0);
   });
 
-  it('keeps real GLB furnishings out of every rotated doorway and flush to their walls', async () => {
+  it('keeps real furnishings clear of doorways and mounts paintings above the lower woodwork', async () => {
     const furnishingsAsset = await realAsset();
     const templates = await Promise.all(
       ['study', 'hall', 'corridor', 'guardian-vault', 'gear-shaft'].map(async (id) =>
@@ -238,6 +238,10 @@ describe('interior furnishings', () => {
           } else {
             expect(Math.min(...distances)).toBeCloseTo(0.012, 2);
           }
+        }
+        if (placement.root === 'FramedPainting') {
+          // The highest lower molding on a painted wall is the hall's 1.45–1.49 m bay trim.
+          expect(local.min.y - 1.49).toBeGreaterThanOrEqual(0.15);
         }
         if (placement.root === 'Curtain') {
           expect(local.min.y).toBeGreaterThan(1.0);

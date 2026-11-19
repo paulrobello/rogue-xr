@@ -105,6 +105,9 @@ const SIZES: Readonly<Record<InteriorFurnishingRoot, [number, number]>> = {
   FramedPainting: [1.02, 0.158],
 };
 
+// The hall's lower bay molding tops out at 1.49 m above the floor.
+const PAINTING_BOTTOM_Y = 1.65;
+
 const THEME_ROOTS: Readonly<Record<InteriorTheme, readonly InteriorFurnishingRoot[]>> = {
   library: ['Bookcase', 'WallClock', 'Candelabrum'],
   dining: ['DiningTable', 'DiningChair', 'Candelabrum'],
@@ -296,8 +299,9 @@ function candidatesFor(
       const c: Candidate = {
         ...spot,
         root,
-        y: root === 'WallClock' || root === 'FramedPainting' ? 1.18 : 0,
+        y: root === 'WallClock' ? 1.18 : 0,
       };
+      if (root === 'FramedPainting') c.y = PAINTING_BOTTOM_Y - rootBounds[root].min.y;
       if (WALL_FIXTURES.has(root)) fitWallCandidate(c, rootBounds[root], fp);
       if (sane([c])) return c;
     }
