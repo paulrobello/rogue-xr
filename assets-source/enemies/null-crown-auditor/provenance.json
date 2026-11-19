@@ -4,8 +4,8 @@
   "route": "Procedural original Blender geometry, rig, and keyed clips from approved concept.",
   "generator": {
     "path": "scripts/assets/build-foundry-enemies.py",
-    "sha256": "895b2f78269a49f05c910d218db5f7d17cc419776f8672ee64afb5967f74e9d8",
-    "bytes": 23694
+    "sha256": "0f6e6efd527cb7d28a642f4db53de1f6f41598f6f4af97ce4d6847b96f83fe23",
+    "bytes": 25377
   },
   "authoringAgent": {
     "harness": "Codex delegated Blender author"
@@ -14,40 +14,45 @@
   "derivedFiles": [
     {
       "path": "public/assets/enemies/null-crown-auditor/null-crown-auditor.glb",
-      "sha256": "9237a4c5fd5b656b2ed05073e3c2ce31b01a22593f121277ee1cb8aea0588ff7",
-      "bytes": 359396
+      "sha256": "b2c3bd0c4ebbc4eebe1c2e43500881172d811ad6630d84cdb4e18ee37906392d",
+      "bytes": 426580
     },
     {
       "path": "public/assets/enemies/null-crown-auditor/null-crown-auditor.manifest.json",
-      "sha256": "efaf55cac8536230b1483de0d45bad4186825cebe136f540fd959f7dbba4201e",
+      "sha256": "39d6fbbcf3d5c00467e4c0feee217855b5ec133ed34315afab7e350da6545251",
       "bytes": 2496
     }
   ],
   "sourceFiles": [
     {
       "path": "assets-source/enemies/null-crown-auditor/staging/null-crown-auditor.blend",
-      "sha256": "86807deaedab02378eaa67cdaaba167bcfab6d07588e9a10f8413b9d6d3c92a7",
-      "bytes": 243368
+      "sha256": "32a81acbe0f21bd1dee2558a9f01eb3fbdbadc1399accad6d2f31c85bd519d68",
+      "bytes": 277970
+    },
+    {
+      "path": "assets-source/enemies/null-crown-auditor/staging/provenance.json",
+      "sha256": "d4dd5d3a09b8e0e574e639e584f50da3c7fa1f8e36658ce53fba4ef83a2fdb17",
+      "bytes": 2125
     },
     {
       "path": "assets-source/enemies/null-crown-auditor/staging/reimport.json",
-      "sha256": "4b87fd4338516e450785a4b458e78c3308fb312b8fc537444d78b2678bf5c676",
-      "bytes": 5971
+      "sha256": "a6a7b5f434ad2f2ef41129df5f11a92faae6a11f57ea9801e39956c1b43140e1",
+      "bytes": 1924
     },
     {
-      "path": "assets-source/enemies/null-crown-auditor/staging/metrics.log",
-      "sha256": "cd2d20971abb7e246ad41c7f9e18624e09c4522024df8e8dc513e278818666d5",
-      "bytes": 876
-    },
-    {
-      "path": "assets-source/enemies/null-crown-auditor/staging/action-metrics.log",
-      "sha256": "8dc3c53b22d06619f05e6b070c17c0c0bd0d97dd7a6b792dac159bea459a3d4c",
-      "bytes": 1615
+      "path": "assets-source/enemies/null-crown-auditor/staging/pose-frames.json",
+      "sha256": "d2e18cc66af671867669f5e3dbbbb4f76e4f4fd93ac9acef67b730178aef35c4",
+      "bytes": 702
     },
     {
       "path": "scripts/assets/build-spring-hound.py",
       "sha256": "432c7c8a1218564bef7c697dee7ff76225fa2915bdb3e454d4960723ddfad8ba",
       "bytes": 105430
+    },
+    {
+      "path": "scripts/assets/render-foundry-polish.py",
+      "sha256": "af8058f42b1e26f1bd98d5dc3b30e2db35fa9a68e5fb10e8251032ea8a8b7d48",
+      "bytes": 3060
     }
   ],
   "references": [
@@ -59,30 +64,78 @@
   ],
   "reviewEvidence": [
     {
-      "path": "assets-source/enemies/null-crown-auditor/staging/concept-comparison.jpg",
-      "sha256": "54adb7b52cafdb0739f0e3b24384511c26c2ca69a1c2ddcf18ce0d315a53acac",
-      "bytes": 121509
+      "path": "assets-source/enemies/null-crown-auditor/staging/renders/action-levy-impact.png",
+      "sha256": "190c856ac8ccbc71a2e966b83bb8366c4c767cd4b2dc3c09ee8eb5209068fabf",
+      "bytes": 396519
     },
     {
-      "path": "assets-source/enemies/null-crown-auditor/staging/frame-14.4-action-levy.png",
-      "sha256": "662b4cfc5addc7731966b7892cc24b11ff16d042a14b0f902d70c351978a11cf",
-      "bytes": 132368
+      "path": "assets-source/enemies/null-crown-auditor/staging/renders/action-levy.png",
+      "sha256": "8f30e563255d94fbb40820533cee6635ee309ac0021349968a99060677e4bb77",
+      "bytes": 397130
     },
     {
-      "path": "assets-source/enemies/null-crown-auditor/staging/frame-14.4-intent-reconcile.png",
-      "sha256": "07709947711014d92c3230e1735d377f419865c12592014a32a9a3b20e0893ca",
-      "bytes": 132755
+      "path": "assets-source/enemies/null-crown-auditor/staging/renders/idle.png",
+      "sha256": "f418b2774ff6ce4ec16d0e6730dece224353d009992b943e3f8107f47089445d",
+      "bytes": 395831
     },
     {
-      "path": "assets-source/enemies/null-crown-auditor/staging/frame-36-death.png",
-      "sha256": "25fa953f570fc59db58befc5d4ca72d0f031349dcebb0ee293ecd92934d16a15",
-      "bytes": 119555
+      "path": "assets-source/enemies/null-crown-auditor/staging/renders/intent-levy.png",
+      "sha256": "d64e043a31edd80671e62cb8739a182ccfe101e1d8e96cafbd721a75b094e17b",
+      "bytes": 391226
+    },
+    {
+      "path": "assets-source/enemies/null-crown-auditor/staging/renders/intent-reconcile.png",
+      "sha256": "2bc46d8e2a7eb360534ff416e9c2c5bf6825401275588f1216df86a283ffba23",
+      "bytes": 394039
     }
   ],
   "license": "Original procedural Blender work; concept reference is user-provided and approved.",
   "validation": {
     "pass": true,
-    "scope": "Technical export and sampled poses in staging/reimport.json. Desktop combat and independent visual review completed. Owner model and physical Quest review remain pending."
+    "scope": "Technical export and Blender reimport passed. Clip floor bounds were sampled separately on the skinned runtime asset. The final actors were exercised in desktop combat. Physical Quest playtest feedback on these revised models is pending.",
+    "sampledPoses": {
+      "glbSha256": "b2c3bd0c4ebbc4eebe1c2e43500881172d811ad6630d84cdb4e18ee37906392d",
+      "method": "Three.js GLTFLoader, skinned vertex bounds in actor space sampled at 24 fps through every clip including endpoints. The Levy clip also has a sample at 0.6 seconds.",
+      "clips": {
+        "action-levy": {
+          "minY": 0,
+          "maxY": 1.56704,
+          "minYAtImpact": 0
+        },
+        "attack": {
+          "minY": 0,
+          "maxY": 1.38494
+        },
+        "death": {
+          "minY": 0,
+          "maxY": 1.38494
+        },
+        "frozen": {
+          "minY": 0,
+          "maxY": 1.38494
+        },
+        "hit": {
+          "minY": 0,
+          "maxY": 1.38494
+        },
+        "idle": {
+          "minY": 0,
+          "maxY": 1.38494
+        },
+        "intent-levy": {
+          "minY": 0,
+          "maxY": 1.57096
+        },
+        "intent-reconcile": {
+          "minY": 0,
+          "maxY": 1.57216
+        },
+        "intent-tally": {
+          "minY": 0,
+          "maxY": 1.38494
+        }
+      }
+    }
   },
   "approvals": [
     {
@@ -105,8 +158,15 @@
       "status": "pending"
     },
     {
+      "gate": "prior model feedback",
+      "status": "positive feedback on previous playable models",
+      "who": "Paul",
+      "when": "2026-11-18",
+      "notes": "Paul liked the previous playable models and requested additional polish; this does not record review of the revised bytes."
+    },
+    {
       "gate": "independent visual score",
-      "status": "reviewed",
+      "status": "historical review of previous GLB",
       "score": 85,
       "outOf": 100,
       "who": "Independent Astra visual review",
@@ -114,6 +174,17 @@
       "glbSha256": "9237a4c5fd5b656b2ed05073e3c2ce31b01a22593f121277ee1cb8aea0588ff7",
       "evidence": "Final re-imported poses compared with the approved concept and desktop combat captures.",
       "notes": "The full crown fits in the combat view and the raised warning reads differently from the lowered stamp. The press appears lighter than in the concept."
+    },
+    {
+      "gate": "independent visual score",
+      "status": "reviewed",
+      "glbSha256": "b2c3bd0c4ebbc4eebe1c2e43500881172d811ad6630d84cdb4e18ee37906392d",
+      "score": 90,
+      "outOf": 100,
+      "who": "Independent Astra visual review",
+      "when": "2026-11-18",
+      "evidence": "Current reimported GLB and seated pose renders; see staging/pose-frames.json.",
+      "notes": "Reconcile and Levy raised-stamp poses are distinct but their raised levels are subtle."
     }
   ]
 }

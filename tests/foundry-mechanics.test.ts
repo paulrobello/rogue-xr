@@ -4,8 +4,10 @@ import { ENEMIES } from '../src/content/enemies.ts';
 import { RunRng } from '../src/core/rng.ts';
 import {
   apply,
+  attackDamage,
   type CombatState,
   type EnemySetup,
+  foundryStance,
   playCardWithSigil,
   startCombat,
 } from '../src/rules/index.ts';
@@ -45,6 +47,59 @@ const play = (state: CombatState, uid: number, target?: string): CombatState =>
   apply(state, { type: 'play-card', uid, ...(target ? { target } : {}) }).state;
 
 describe('Foundry combat mechanics', () => {
+  it('maps visible intent poses to deterministic guarded and exposed damage', () => {
+    const guarded = {
+      intent: { id: 'proof', intent: 'defend', stance: 'guarded', effects: [] },
+    } as const;
+    const exposed = {
+      intent: { id: 'double-spark', intent: 'attack', stance: 'exposed', effects: [] },
+    } as const;
+    const neutral = { intent: { id: 'jam', intent: 'debuff', effects: [] } } as const;
+    expect(foundryStance(guarded)).toBe('guarded');
+    expect(foundryStance(exposed)).toBe('exposed');
+    expect(foundryStance(neutral)).toBe('neutral');
+    const fighter = { hp: 20, maxHp: 20, block: 0, statuses: {} };
+    expect(attackDamage(8, fighter, { ...fighter, ...guarded })).toBe(6);
+    expect(attackDamage(8, fighter, { ...fighter, ...exposed })).toBe(10);
+    expect(attackDamage(1, fighter, { ...fighter, ...guarded })).toBe(1);
+    expect(attackDamage(1, fighter, { ...fighter, ...exposed })).toBe(1);
+  });
+
+  it('resolves separate enemy postures per hit before Block, leaving Overheat and outgoing attacks unchanged', () => {
+    const mite = ENEMIES['furnace-mite'];
+    const twins = ['clink', 'double-spark'].map((moveId) => ({
+      ...mite,
+      id: moveId,
+      moves: mite.moves.filter((move) => move.id === moveId),
+    }));
+    let state = hand(begin([getCard('rivet-volley')], twins), 0);
+    state = {
+      ...state,
+      enemies: state.enemies.map((e) => ({ ...e, block: 2, statuses: { overheat: 3 } })),
+    };
+    state = play(state, 0);
+    // The same 4-point volley hits for 3 and 5, each against 2 existing Block.
+    expect(state.enemies.map((e) => [e.hp, e.block])).toEqual([
+      [19, 0],
+      [17, 0],
+    ]);
+    const turn = apply(apply(state, { type: 'end-turn' }).state, { type: 'enemy-act' });
+    expect(turn.state.enemies.map((e) => e.hp)).toEqual([16, 14]);
+    expect(turn.state.player.hp).toBe(44);
+  });
+
+  it('takes the next pose immediately and treats older moves with no posture as neutral', () => {
+    const auditor = ENEMIES['null-crown-auditor'];
+    const moves = auditor.moves.filter((move) => move.id !== 'tally');
+    let state = begin([getCard('strike')], [{ ...auditor, moves }]);
+    expect(foundryStance(state.enemies[0])).toBe('guarded');
+    state = apply(apply(state, { type: 'end-turn' }).state, { type: 'enemy-act' }).state;
+    expect(state.enemies[0].intent?.id).toBe('levy');
+    expect(foundryStance(state.enemies[0])).toBe('exposed');
+    const legacy = { ...moves[0], stance: undefined };
+    expect(attackDamage(8, state.player, { ...state.enemies[0], intent: legacy })).toBe(8);
+  });
+
   it('keeps an unplayed Pinned card through end-turn, then discards it when used', () => {
     let state = hand(begin([getCard('shear-pin')]), 0);
     state = apply(state, { type: 'end-turn' }).state;

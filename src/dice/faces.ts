@@ -11,7 +11,7 @@ import {
   type Vec3,
 } from './quat.ts';
 
-/** The dice shapes the slice has: `brass-d6` is a cube, `glass-d8` an octahedron. */
+/** The brass cube, glass octahedron and iron tetrahedron. */
 export type DieKind = 'd6' | 'd8' | 'd4';
 
 /** Metres. The cube's half edge and the octahedron's centre-to-vertex distance. */

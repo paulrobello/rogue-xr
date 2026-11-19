@@ -1,0 +1,20 @@
+{
+  "glbSha256": "9077abb1b0de7b85e8ebcb1d5652ae02f882483d9e938f6cc60ec121fa095356",
+  "fps": 24,
+  "camera": "orthographic seated-facing technical view",
+  "frames": {
+    "idle.png": {
+      "frame": 30,
+      "seconds": 1.25
+    },
+    "intent-cross-out.png": {
+      "frame": 18,
+      "seconds": 0.75
+    },
+    "intent-proof.png": {
+      "frame": 18,
+      "seconds": 0.75
+    }
+  },
+  "notes": "Held intent clips end at 0.6 seconds and remain clamped. Frames at 0.75 seconds show the held pose. Impact frames sample the 0.6-second event."
+}

@@ -8,10 +8,10 @@
   "maxInfluences": 1,
   "maxWeightSumError": 0.0,
   "unweightedVertices": 0,
-  "glbSha256": "f7fe7f0ba7f706168af175f879433e62e009c99e839db5223fb62ed4c44380f4",
-  "blendSha256": "9e949fc32689d6646e80fb1deb53b7306658f23ddf5a9e079be66f7fb108ac35",
-  "generatorSha256": "895b2f78269a49f05c910d218db5f7d17cc419776f8672ee64afb5967f74e9d8",
-  "triangles": 7296,
+  "glbSha256": "db5f8f497a45270f513ad2fd596a76ee11ac4f8c654c23489477a67dd8da688a",
+  "blendSha256": "765b0584eeb90b6b44ac73b3266055f0148847fde0583056a80e9f9ca6d2d76f",
+  "generatorSha256": "0f6e6efd527cb7d28a642f4db53de1f6f41598f6f4af97ce4d6847b96f83fe23",
+  "triangles": 8800,
   "bones": 8,
   "measuredClips": {
     "attack": {

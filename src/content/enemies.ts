@@ -45,7 +45,8 @@ const move = (
   intent: EnemyMove['intent'],
   weight: number,
   effects: Effect[],
-): EnemyMove => ({ id, intent, weight, effects });
+  stance?: EnemyMove['stance'],
+): EnemyMove => ({ id, intent, weight, effects, ...(stance ? { stance } : {}) });
 
 /**
  * Guardian phase 2 (default pending the owner, per assets-source/concepts/p5-automatons-design.md):
@@ -125,7 +126,7 @@ export const ENEMIES: Readonly<Record<EnemyKind, EnemySetup>> = {
     moves: [
       move('inscribe', 'attack-debuff', 3, [hit(5), onPlayer('vulnerable', 2)]),
       move('cross-out', 'attack', 2, [hit(3, 2)]),
-      move('proof', 'defend', 2, [block(10)]),
+      move('proof', 'defend', 2, [block(10)], 'guarded'),
     ],
   },
   'furnace-mite': {
@@ -133,12 +134,15 @@ export const ENEMIES: Readonly<Record<EnemyKind, EnemySetup>> = {
     name: 'Twin Furnace Mite',
     hp: 20,
     moves: [
-      move('double-spark', 'attack', 3, [hit(3, 2)]),
-      move('stoke', 'attack-debuff', 2, [
-        hit(4),
-        { type: 'apply-status', status: 'overheat', stacks: 1, target: 'target' },
-      ]),
-      move('clink', 'defend', 1, [block(6)]),
+      move('double-spark', 'attack', 3, [hit(3, 2)], 'exposed'),
+      move(
+        'stoke',
+        'attack-debuff',
+        2,
+        [hit(4), { type: 'apply-status', status: 'overheat', stacks: 1, target: 'target' }],
+        'exposed',
+      ),
+      move('clink', 'defend', 1, [block(6)], 'guarded'),
     ],
   },
   'null-crown-auditor': {
@@ -147,8 +151,8 @@ export const ENEMIES: Readonly<Record<EnemyKind, EnemySetup>> = {
     hp: 78,
     moves: [
       move('tally', 'attack', 3, [hit(4, 2)]),
-      { ...move('reconcile', 'defend', 2, [block(14)]), followUp: 'levy' },
-      move('levy', 'attack', 0, [hit(18)]),
+      { ...move('reconcile', 'defend', 2, [block(14)], 'guarded'), followUp: 'levy' },
+      move('levy', 'attack', 0, [hit(18)], 'exposed'),
     ],
   },
 };

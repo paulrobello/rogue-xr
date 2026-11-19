@@ -169,13 +169,23 @@ const D4_CORNERS = [
   [0.97, 0.91],
   [0.03, 0.91],
 ] as const;
+/** Outward CCW vertex order for each face opposite vertex 0..3. */
+export const D4_FACE_VERTICES = [
+  [3, 2, 1],
+  [0, 2, 3],
+  [3, 1, 0],
+  [0, 1, 2],
+] as const;
+/** Iron factor used while the d4 atlas is unavailable (including before canvas/texture setup). */
+const IRON_D4_COLOR = '#34373b';
 
-/** The face opposite vertex i uses tile i; its other three vertices carry their own values in ascending order. */
+/** The face opposite vertex i uses tile i; each corner carries the number of its vertex. */
 export function d4FaceUvs(set: DieFaceSet, positions: ArrayLike<number>): Float32Array {
   const corners = set.triangle;
   if (corners?.length !== 3) throw new RangeError('d4 atlas needs a face triangle');
   const verts = dieVertices('d4');
   const uv = new Float32Array((positions.length * 2) / 3);
+  const atlasCorners = [corners[0], corners[2], corners[1]] as const;
   for (let i = 0; i < positions.length; i += 9) {
     const ids = [0, 3, 6].map((offset) => {
       const x = positions[i + offset],
@@ -186,11 +196,14 @@ export function d4FaceUvs(set: DieFaceSet, positions: ArrayLike<number>): Float3
       return hit;
     });
     const opposite = verts.findIndex((_, id) => !ids.includes(id));
-    const slot = set.faces.find((f) => f.index === opposite)?.uv;
+    const face = set.faces.find((f) => f.index === opposite);
+    const slot = face?.uv;
     if (!slot) throw new RangeError(`d4 atlas has no face ${opposite}`);
-    const numbers = [...ids].sort((a, b) => a - b);
+    const numbers = face?.corners ?? D4_FACE_VERTICES[opposite].map((v) => v + 1);
     ids.forEach((id, k) => {
-      const [x, y] = corners[numbers.indexOf(id)] as readonly [number, number];
+      const corner = numbers.indexOf(id + 1);
+      if (corner < 0) throw new RangeError('Tetrahedron face is missing a vertex number');
+      const [x, y] = atlasCorners[corner] as readonly [number, number];
       const n = (i * 2) / 3 + 2 * k;
       uv[n] = slot.u0 + x * (slot.u1 - slot.u0);
       uv[n + 1] = slot.v1 - y * (slot.v1 - slot.v0);
@@ -292,20 +305,23 @@ function resultSprite(value: number): THREE.Sprite | null {
 function d4FaceTexture(): THREE.CanvasTexture | null {
   const ctx = canvas2d(256);
   if (!ctx) return null;
-  ctx.fillStyle = '#34373b';
+  ctx.fillStyle = IRON_D4_COLOR;
   ctx.fillRect(0, 0, 256, 256);
   ctx.fillStyle = '#f5d28b';
   ctx.font = 'bold 24px serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   for (let face = 0; face < 4; face++) {
-    const values = [1, 2, 3, 4].filter((v) => v !== face + 1);
-    D4_CORNERS.forEach(([x, y], k) => {
-      ctx.fillText(
-        String(values[k]),
+    const values = D4_FACE_VERTICES[face].map((vertex) => vertex + 1);
+    [D4_CORNERS[0], D4_CORNERS[2], D4_CORNERS[1]].forEach(([x, y], k) => {
+      ctx.save();
+      ctx.translate(
         128 * ((face % 2) + 0.5 + (x - 0.5) * 0.55),
         128 * (Math.floor(face / 2) + 0.63 + (y - 0.63) * 0.55),
       );
+      ctx.rotate([0, (-2 * Math.PI) / 3, (2 * Math.PI) / 3][k]);
+      ctx.fillText(String(values[k]), 0, 0);
+      ctx.restore();
     });
   }
   const texture = new THREE.CanvasTexture(ctx.canvas);
@@ -317,10 +333,7 @@ function buildD4Geometry(): THREE.BufferGeometry {
   const verts = dieVertices('d4');
   const positions: number[] = [];
   for (let face = 0; face < 4; face++) {
-    const ids = [0, 1, 2, 3].filter((i) => i !== face);
-    const [a, b, c] = ids.map((i) => new THREE.Vector3(verts[i].x, verts[i].y, verts[i].z));
-    if (b.clone().sub(a).cross(c.clone().sub(a)).dot(a) < 0) ids.reverse();
-    for (const i of ids) positions.push(verts[i].x, verts[i].y, verts[i].z);
+    for (const id of D4_FACE_VERTICES[face]) positions.push(verts[id].x, verts[id].y, verts[id].z);
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
@@ -441,10 +454,12 @@ export class DicePresenter {
     });
     this.d4Texture = d4FaceTexture();
     this.d4Material = new THREE.MeshStandardMaterial({
-      color: '#ffffff',
+      color: this.d4Texture ? '#ffffff' : IRON_D4_COLOR,
       map: this.d4Texture,
-      metalness: 0.85,
-      roughness: 0.3,
+      emissiveMap: blank,
+      emissive: '#000000',
+      metalness: 0.58,
+      roughness: 0.43,
       flatShading: true,
     });
     if (this.d4Texture) this.textures.push(this.d4Texture);
@@ -681,10 +696,13 @@ export class DicePresenter {
       d4Uv.set(d4FaceUvs(d4Set, this.d4Geometry.getAttribute('position').array));
       d4Uv.needsUpdate = true;
       this.d4Material.map = pages.d4;
+      this.d4Material.color.set('#ffffff');
+      const mask = glow.d4;
+      this.d4Material.emissiveMap = mask ?? this.blank;
+      this.d4Material.emissive.set(mask ? '#ffffff' : '#000000');
+      this.d4Material.emissiveIntensity = mask ? DICE_GLOW_INTENSITY : 0;
+      this.d4Material.needsUpdate = true;
     }
-    this.d4Material.emissiveMap = glow.d4 ?? this.blank;
-    this.d4Material.emissive.set(glow.d4 ? '#ffffff' : '#000000');
-    this.d4Material.emissiveIntensity = glow.d4 ? DICE_GLOW_INTENSITY : 0;
     for (const [material, page, lit] of [
       [this.d6Material, pages.d6, glow.d6],
       [this.d8Material, pages.d8, glow.d8],
@@ -709,10 +727,16 @@ export class DicePresenter {
           : new THREE.Mesh(this.d4Geometry, this.d4Material));
     mesh.name = name;
     if (!this.facesRequested) {
-      this.facesRequested = true;
       onFirstRender(mesh, (renderer) => {
-        if (!this.options.envMap)
-          this.options.models?.setEnvironment(roomProbe(renderer), DICE_ENV_INTENSITY);
+        if (this.facesRequested || this.disposed) return;
+        this.facesRequested = true;
+        if (!this.options.envMap) {
+          const env = roomProbe(renderer);
+          this.d4Material.envMap = env;
+          this.d4Material.envMapIntensity = DICE_ENV_INTENSITY;
+          this.d4Material.needsUpdate = true;
+          this.options.models?.setEnvironment(env, DICE_ENV_INTENSITY);
+        }
         loadDiePages(renderer).then(
           (pages) => {
             if (!this.disposed) this.applyFaces(pages);

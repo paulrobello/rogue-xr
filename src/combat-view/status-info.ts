@@ -1,6 +1,11 @@
 import { PALETTE } from '../palette.ts';
-import { DECAYS_AT_TURN_END, VULNERABLE_MULTIPLIER, WEAK_MULTIPLIER } from '../rules/statuses.ts';
-import type { StatusId } from '../rules/types.ts';
+import {
+  DECAYS_AT_TURN_END,
+  STANCE_MULTIPLIER,
+  VULNERABLE_MULTIPLIER,
+  WEAK_MULTIPLIER,
+} from '../rules/statuses.ts';
+import type { FoundryStance, StatusId } from '../rules/types.ts';
 import { STATUS_ICON } from '../ui/icon-atlas.ts';
 import { drawIconRow, type IconChip, type IconSheet } from '../ui/icon-sheet.ts';
 import { roundRect } from './canvas-label.ts';
@@ -48,15 +53,29 @@ export function statusExplanation(
   return `${what[id]}${wears}`;
 }
 
-/** A status chip's rectangle on its label canvas, canvas pixels (origin top-left, y down). */
-export interface StatusRegion {
-  readonly id: StatusId;
-  readonly stacks: number;
+const STANCE_NAME = { guarded: 'Guarded', exposed: 'Exposed' } as const;
+
+export function stanceReadout(stance: FoundryStance) {
+  const name = STANCE_NAME[stance];
+  const amount = percent(STANCE_MULTIPLIER[stance]);
+  const guard = stance === 'guarded';
+  return {
+    name,
+    label: `${name} · ${guard ? '−' : '+'}${amount}% damage taken`,
+    text: `Takes ${amount}% ${guard ? 'less' : 'more'} damage from each attack hit before Block. Overheat is unaffected.`,
+  };
+}
+
+/** Hit box in label pixels. Postures have no stack count. */
+export type StatusRegion = {
   readonly x0: number;
   readonly x1: number;
   readonly y0: number;
   readonly y1: number;
-}
+} & (
+  | { readonly id: StatusId; readonly stacks: number }
+  | { readonly id: FoundryStance; readonly stacks: null }
+);
 
 /** The statuses with stacks above zero, in rules order. */
 export function activeStatuses(

@@ -8,10 +8,10 @@
   "maxInfluences": 1,
   "maxWeightSumError": 0.0,
   "unweightedVertices": 0,
-  "glbSha256": "9237a4c5fd5b656b2ed05073e3c2ce31b01a22593f121277ee1cb8aea0588ff7",
-  "blendSha256": "86807deaedab02378eaa67cdaaba167bcfab6d07588e9a10f8413b9d6d3c92a7",
-  "generatorSha256": "895b2f78269a49f05c910d218db5f7d17cc419776f8672ee64afb5967f74e9d8",
-  "triangles": 7080,
+  "glbSha256": "b2c3bd0c4ebbc4eebe1c2e43500881172d811ad6630d84cdb4e18ee37906392d",
+  "blendSha256": "32a81acbe0f21bd1dee2558a9f01eb3fbdbadc1399accad6d2f31c85bd519d68",
+  "generatorSha256": "0f6e6efd527cb7d28a642f4db53de1f6f41598f6f4af97ce4d6847b96f83fe23",
+  "triangles": 9072,
   "bones": 9,
   "measuredClips": {
     "action-levy": {

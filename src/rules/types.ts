@@ -88,12 +88,15 @@ export interface CombatCard {
 }
 
 export type IntentKind = 'attack' | 'defend' | 'buff' | 'debuff' | 'attack-debuff' | 'unknown';
+export type FoundryStance = 'guarded' | 'exposed';
 
 /** One enemy move. Its effects resolve from the enemy's point of view (see `EffectTarget`). */
 export interface EnemyMove {
   readonly id: string;
   readonly intent: IntentKind;
   readonly effects: readonly Effect[];
+  /** Optional visible Foundry pose modifier. Legacy moves remain neutral. */
+  readonly stance?: FoundryStance;
   /** Relative weight for the `ai`-stream pick (default 1). */
   readonly weight?: number;
   /** An announced move that must follow this action. A weight of zero reserves it for follow-ups. */

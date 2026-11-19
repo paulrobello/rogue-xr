@@ -1,8 +1,0 @@
-14:49:52 | INFO: Data are loaded, start creating Blender stuff
-14:49:52 | INFO: Blender create Mesh node furnace-mark-extra
-14:49:52 | INFO: Blender create Mesh node furnace-mite-mesh
-14:49:53 | INFO: glTF import finished in 0.13s
-ACTION_METRICS {"attack": {"0": {"shutter.L": {"center": [-0.2365, 0.4987, 0.6297], "maxZ": 0.842, "minZ": 0.422}, "shutter.R": {"center": [0.2365, 0.4987, 0.6297], "maxZ": 0.842, "minZ": 0.422}}, "14.4": {"shutter.L": {"center": [-0.4762, 0.6274, 0.6986], "maxZ": 0.9242, "minZ": 0.4856}, "shutter.R": {"center": [0.4762, 0.6274, 0.6986], "maxZ": 0.9242, "minZ": 0.4856}}, "24": {"shutter.L": {"center": [-0.2365, 0.4987, 0.6297], "maxZ": 0.842, "minZ": 0.422}, "shutter.R": {"center": [0.2365, 0.4987, 0.6297], "maxZ": 0.842, "minZ": 0.422}}, "7.2": {"shutter.L": {"center": [-0.3917, 0.5614, 0.694], "maxZ": 0.9177, "minZ": 0.4791}, "shutter.R": {"center": [0.3917, 0.5614, 0.694], "maxZ": 0.9177, "minZ": 0.4791}}}}
-Blender 5.2.3 LTS (hash e13b728c6880 built 2026-10-22 01:35:05)
-
-Blender quit

@@ -4,8 +4,8 @@
   "route": "Procedural original Blender geometry, rig, and keyed clips from approved concept.",
   "generator": {
     "path": "scripts/assets/build-foundry-enemies.py",
-    "sha256": "895b2f78269a49f05c910d218db5f7d17cc419776f8672ee64afb5967f74e9d8",
-    "bytes": 23694
+    "sha256": "0f6e6efd527cb7d28a642f4db53de1f6f41598f6f4af97ce4d6847b96f83fe23",
+    "bytes": 25377
   },
   "authoringAgent": {
     "harness": "Codex delegated Blender author"
@@ -14,40 +14,45 @@
   "derivedFiles": [
     {
       "path": "public/assets/enemies/glasswing-scrivener/glasswing-scrivener.glb",
-      "sha256": "baa63b549de98a46bbe946021c7a2bd65181ada28ce02085102e7e77549c8586",
-      "bytes": 455356
+      "sha256": "9077abb1b0de7b85e8ebcb1d5652ae02f882483d9e938f6cc60ec121fa095356",
+      "bytes": 507416
     },
     {
       "path": "public/assets/enemies/glasswing-scrivener/glasswing-scrivener.manifest.json",
-      "sha256": "536a844e089668838f1b5e50f51607c4068b1b82080c2e0e7ff5d47243a47f9d",
-      "bytes": 2489
+      "sha256": "ea161f52b507e1d8d640978553173d1da5e8f21063ab9c5c75124c661866b4af",
+      "bytes": 2490
     }
   ],
   "sourceFiles": [
     {
       "path": "assets-source/enemies/glasswing-scrivener/staging/glasswing-scrivener.blend",
-      "sha256": "1f8776daded269f689782c8be902b002a68d2526747559582138a1eec27b6763",
-      "bytes": 300069
+      "sha256": "80dd818d3ac713f675648e3bf05669a740ed74ece94bafc5551f06aa6c78c1d9",
+      "bytes": 327255
+    },
+    {
+      "path": "assets-source/enemies/glasswing-scrivener/staging/provenance.json",
+      "sha256": "99deba42e94112261788782682c32056fb976bbb30c2ab197da058470a75aa1d",
+      "bytes": 2022
     },
     {
       "path": "assets-source/enemies/glasswing-scrivener/staging/reimport.json",
-      "sha256": "64e1da8436929bdb9af8ea101d72dd2fbccec46df7f3f03d39d2d7147edabdf0",
-      "bytes": 3572
+      "sha256": "7a189810ea9217ff5fd58a2558ab6c3d652190bb8ee814b4c46b93db598c9cb0",
+      "bytes": 1820
     },
     {
-      "path": "assets-source/enemies/glasswing-scrivener/staging/metrics.log",
-      "sha256": "efad431d63521928d58c67e1340be27e1c4aedfa31a63ab39f655a6cbcbb3d02",
-      "bytes": 820
-    },
-    {
-      "path": "assets-source/enemies/glasswing-scrivener/staging/action-metrics.log",
-      "sha256": "1c359b810bed862cadffe973b0e74bb84542db93551553527f55f3b6caff89df",
-      "bytes": 625
+      "path": "assets-source/enemies/glasswing-scrivener/staging/pose-frames.json",
+      "sha256": "0a204bb82b1547ae2fcd3ea7919e28c9b1c5c2c97acad991b91d05cd7cadec11",
+      "bytes": 549
     },
     {
       "path": "scripts/assets/build-spring-hound.py",
       "sha256": "432c7c8a1218564bef7c697dee7ff76225fa2915bdb3e454d4960723ddfad8ba",
       "bytes": 105430
+    },
+    {
+      "path": "scripts/assets/render-foundry-polish.py",
+      "sha256": "af8058f42b1e26f1bd98d5dc3b30e2db35fa9a68e5fb10e8251032ea8a8b7d48",
+      "bytes": 3060
     }
   ],
   "references": [
@@ -59,30 +64,63 @@
   ],
   "reviewEvidence": [
     {
-      "path": "assets-source/enemies/glasswing-scrivener/staging/concept-comparison.jpg",
-      "sha256": "cbe53c4caa1715810fb395a4c52e6b2bebab7b353f032ce4261e86d15e2e8fd9",
-      "bytes": 139754
+      "path": "assets-source/enemies/glasswing-scrivener/staging/renders/idle.png",
+      "sha256": "60bdd64fe6d006ac772f3f105789deaa92cd7422ef5374583c4c3d2238487c46",
+      "bytes": 463710
     },
     {
-      "path": "assets-source/enemies/glasswing-scrivener/staging/frame-14.4-intent-cross-out.png",
-      "sha256": "2f246acb5a8cc13852be0c910b9604710eee7ef3a0789e4adaa2053b09b98bb0",
-      "bytes": 160595
+      "path": "assets-source/enemies/glasswing-scrivener/staging/renders/intent-cross-out.png",
+      "sha256": "4e32233a6cfa6d817e64cce9bfa4a9834a3f3f73e4b55da438bd94b867c04b0d",
+      "bytes": 464986
     },
     {
-      "path": "assets-source/enemies/glasswing-scrivener/staging/frame-14.4-intent-proof.png",
-      "sha256": "96f39da509fc49f0984218c14cbc8ea6ef43f1fdd4cd36e00be363e7fbfae1ef",
-      "bytes": 144369
-    },
-    {
-      "path": "assets-source/enemies/glasswing-scrivener/staging/frame-36-death.png",
-      "sha256": "05ab86278c482b626eec3a4296d18c1dbf22f58d0a36e32b0fda47da3981ff05",
-      "bytes": 122668
+      "path": "assets-source/enemies/glasswing-scrivener/staging/renders/intent-proof.png",
+      "sha256": "cc3a966a32cf173fb1490cd676dc364b625c024331de2e403361b3ff74e32c26",
+      "bytes": 425542
     }
   ],
   "license": "Original procedural Blender work; concept reference is user-provided and approved.",
   "validation": {
     "pass": true,
-    "scope": "Technical export and sampled poses in staging/reimport.json. Desktop combat and independent visual review completed. Owner model and physical Quest review remain pending."
+    "scope": "Technical export and Blender reimport passed. Clip floor bounds were sampled separately on the skinned runtime asset. The final actors were exercised in desktop combat. Physical Quest playtest feedback on these revised models is pending.",
+    "sampledPoses": {
+      "glbSha256": "9077abb1b0de7b85e8ebcb1d5652ae02f882483d9e938f6cc60ec121fa095356",
+      "method": "Three.js GLTFLoader, skinned vertex bounds in actor space sampled at 24 fps through every clip including endpoints. The Levy clip also has a sample at 0.6 seconds.",
+      "clips": {
+        "attack": {
+          "minY": 0,
+          "maxY": 1.73539
+        },
+        "death": {
+          "minY": -7e-05,
+          "maxY": 1.75681
+        },
+        "frozen": {
+          "minY": 0,
+          "maxY": 1.73539
+        },
+        "hit": {
+          "minY": 0,
+          "maxY": 1.73539
+        },
+        "idle": {
+          "minY": 0,
+          "maxY": 1.73539
+        },
+        "intent-cross-out": {
+          "minY": 0,
+          "maxY": 1.73539
+        },
+        "intent-inscribe": {
+          "minY": 0,
+          "maxY": 1.73539
+        },
+        "intent-proof": {
+          "minY": 0,
+          "maxY": 1.73539
+        }
+      }
+    }
   },
   "approvals": [
     {
@@ -105,8 +143,15 @@
       "status": "pending"
     },
     {
+      "gate": "prior model feedback",
+      "status": "positive feedback on previous playable models",
+      "who": "Paul",
+      "when": "2026-11-18",
+      "notes": "Paul liked the previous playable models and requested additional polish; this does not record review of the revised bytes."
+    },
+    {
       "gate": "independent visual score",
-      "status": "reviewed",
+      "status": "historical review of previous GLB",
       "score": 86,
       "outOf": 100,
       "who": "Independent Astra visual review",
@@ -114,6 +159,16 @@
       "glbSha256": "baa63b549de98a46bbe946021c7a2bd65181ada28ce02085102e7e77549c8586",
       "evidence": "Final re-imported poses compared with the approved concept and desktop combat captures.",
       "notes": "Cross Out forms an X. Proof lowers both wings around the visible face. The translucent panes are flatter and more uniform than the concept glass."
+    },
+    {
+      "gate": "independent visual score",
+      "status": "reviewed",
+      "glbSha256": "9077abb1b0de7b85e8ebcb1d5652ae02f882483d9e938f6cc60ec121fa095356",
+      "score": 90,
+      "outOf": 100,
+      "who": "Independent Astra visual review",
+      "when": "2026-11-18",
+      "evidence": "Current reimported GLB and seated pose renders; see staging/pose-frames.json."
     }
   ]
 }

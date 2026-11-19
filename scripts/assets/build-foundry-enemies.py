@@ -76,7 +76,10 @@ def build_scrivener():
     ellipsoid((0,-.10,.84),(.30,.37,.14),BRASS,'body')
     ellipsoid((0,.38,.83),(.19,.20,.20),DARK,'body')
     ellipsoid((0,.43,.90),(.17,.18,.12),BRASS,'body')
-    P.disc((0,.556,.84),(0,1,0),.09,.035,GLOW,'body')
+    P.disc((0,.556,.84),(0,1,0),.11,.045,DARK,'body')
+    P.disc((0,.585,.84),(0,1,0),.075,.035,GLOW,'body')
+    for s in (-1,1):
+        rod((s*.03,.58,.91),(s*.14,.53,.96),.018,BRASS,'body')
     P.disc((0,.39,.67),(0,1,0),.13,.04,BRASS,'body')
     P.disc((0,.42,.67),(0,1,0),.087,.04,GLOW,'body')
     for y in (-.24,-.10,.04):
@@ -89,12 +92,20 @@ def build_scrivener():
         lower=[poly[0],(s*.52,-.075,1.14),(s*.87,-.13,1.38),poly[5],poly[6],poly[7],poly[8]]
         plate(lower,.014,WING_BLUE,wing); border(lower,BRASS,wing,.010)
         for j in (1,2,3,4,5,6,7): rod(poly[0],poly[j],.011,BRASS,wing)
+        # Fine branching leadwork gives each glass panel an etched, dimensional read.
+        for a,b in [((.35,1.14),(.51,1.31)),((.51,1.31),(.60,1.48)),
+                    ((.51,1.31),(.77,1.43)),((.77,1.43),(.96,1.59)),
+                    ((.77,1.43),(1.05,1.48)),((.50,1.13),(.68,1.22)),
+                    ((.68,1.22),(.85,1.32)),((.68,1.22),(.78,1.13))]:
+            rod((s*a[0],-.055,a[1]),(s*b[0],-.055,b[1]),.006,BRASS,wing)
         rod((s*.38,-.06,1.10),(s*.72,-.11,1.25),.010,BRASS,wing)
         gem((s*.2,-.03,.94),.055,wing)
         rod((s*.22,.30,.72),(s*.37,.58,.51),.055,BRASS,nib,.045)
         rod((s*.37,.58,.51),(s*.43,.79,.35),.053,BRASS,nib,.036)
         nibpts=[(s*.34,.76,.39),(s*.52,.76,.39),(s*.50,1.09,.08),(s*.44,1.18,-.01),(s*.38,1.09,.08)]
-        plate(nibpts,.035,IVORY,nib); border(nibpts,BRASS,nib,.012)
+        plate(nibpts,.055,IVORY,nib); border(nibpts,BRASS,nib,.012)
+        rod((s*.36,.78,.39),(s*.50,.78,.39),.018,BRASS,nib)
+        rod((s*.39,1.06,.10),(s*.44,1.15,.015),.009,BRASS,nib)
         rod((s*.44,.81,.35),(s*.44,1.12,.05),.009,DARK,nib)
         P.disc((s*.44,.96,.20),(0,1,0),.018,.02,DARK,nib,n=8)
         for i,y in enumerate((-.30,0,.25)):
@@ -117,8 +128,14 @@ def build_mite():
         P.ring((0,y,.68),(0,1,0),.445,.33,.012,.012,BRASS,'body',n=20)
     for s,n in [(-1,'L'),(1,'R')]:
         b=f'shutter.{n}'; x=s*.19
-        fire=[(x-.135,.421,.50),(x+.135,.421,.50),(x+.135,.421,.81),(x-.135,.421,.81)]
-        plate(fire,.025,DARK,'body'); border(fire,BRASS,'body',.025)
+        fire=[(x-.135,.39,.50),(x+.135,.39,.50),(x+.135,.39,.81),(x-.135,.39,.81)]
+        plate(fire,.095,DARK,'body'); border(fire,BRASS,'body',.025)
+        # Projecting side walls and riveted hinge barrels frame a recessed firebox.
+        for dx in (-.14,.14):
+            rod((x+dx,.40,.49),(x+dx,.48,.49),.022,BRASS,'body')
+            rod((x+dx,.40,.82),(x+dx,.48,.82),.022,BRASS,'body')
+        rod((s*.36,.47,.49),(s*.36,.47,.82),.034,BRASS,'body')
+        for z in (.53,.78): P.disc((s*.36,.47,z),(0,0,1),.042,.035,DARK,'body',n=10)
         for dx in (-.075,0,.075):
             slot=[(x+dx-.022,.447,.54),(x+dx+.022,.447,.54),(x+dx+.022,.447,.77),(x+dx-.022,.447,.77)]
             plate(slot,.012,GLOW,'body')
@@ -126,7 +143,8 @@ def build_mite():
         plate(poly,.065,DARK,b); border(poly,BRASS,b,.035)
         inset=[(x-.105,.505,.53),(x+.105,.505,.53),(x+.105,.505,.78),(x-.105,.505,.78)]
         border(inset,BRASS,b,.012)
-        rod((x,.49,.53),(x,.49,.78),.014,BRASS,b)
+        rod((x,.51,.53),(x,.51,.78),.014,BRASS,b)
+        for z in (.55,.65,.75): rod((x-.075,.52,z),(x+.075,.52,z),.008,BRASS,b)
         for z in (.52,.78): gem((x+s*.10,.51,z),.022,b)
         for i,y in enumerate((-.22,.24)):
             leg=f'leg{i}.{n}'; a=(s*.37,y,.42); knee=(s*.57,y,.27); foot=(s*.69,y+.06,.04)
@@ -148,6 +166,8 @@ def build_auditor():
         p=[(s*.035,.13,.53),(s*.34,.13,.49),(s*.37,.13,1.00),(s*.035,.13,.92)]
         plate(p,.06,DARK,bone); border(p,BRASS,bone,.022)
         rod((s*.10,.18,.57),(s*.29,.18,.88),.009,BRASS,bone)
+        for z in (.62,.70,.78):
+            rod((s*.10,.175,z),(s*.23,.175,z+.025),.006,IVORY,bone)
         gem((s*.31,.18,.55),.035,bone); gem((s*.32,.18,.94),.035,bone)
     rod((0,-.01,1.0),(0,0,1.32),.045,BRASS,'body')
     mask=[(-.13,.10,1.39),(0,.16,1.19),(.13,.10,1.39),(.11,.10,1.56),(0,.10,1.64),(-.11,.10,1.56)]
@@ -159,11 +179,17 @@ def build_auditor():
         gem((s*.31,.06,1.38),.045,'body')
     # Left arm ends in a large broad stamp; right arm carries a three-row abacus.
     rod((-.28,0,.94),(-.56,.02,.75),.105,BRASS,'stamp'); rod((-.56,.02,.75),(-.77,.06,.48),.085,DARK,'stamp')
-    ellipsoid((-.56,.05,.75),(.09,.09,.09),BRASS,'stamp')
-    p=[(-1.16,.06,.19),(-.52,.06,.19),(-.56,.06,.49),(-1.10,.06,.49)]
-    plate(p,.30,DARK,'stamp'); border(p,BRASS,'stamp',.045)
-    inset=[(-1.09,.23,.25),(-.60,.23,.25),(-.62,.23,.43),(-1.07,.23,.43)]
+    ellipsoid((-.56,.05,.75),(.12,.12,.12),BRASS,'stamp')
+    P.disc((-.56,.16,.75),(0,1,0),.075,.04,DARK,'stamp',n=12)
+    ellipsoid((-.77,.06,.49),(.12,.12,.10),BRASS,'stamp')
+    # A stepped shoulder flares into the broad face of the press.
+    p=[(-1.16,.06,.17),(-.50,.06,.17),(-.58,.06,.40),(-.67,.06,.48),(-1.00,.06,.48),(-1.08,.06,.40)]
+    plate(p,.34,DARK,'stamp'); border(p,BRASS,'stamp',.045)
+    sole=[(-1.19,.06,.15),(-.47,.06,.15),(-.49,.06,.22),(-1.17,.06,.22)]
+    plate(sole,.38,BRASS,'stamp'); border(sole,DARK,'stamp',.018)
+    inset=[(-1.08,.25,.25),(-.58,.25,.25),(-.62,.25,.39),(-1.04,.25,.39)]
     border(inset,BRASS,'stamp',.015)
+    for x in (-1.01,-.83,-.65): gem((x,.25,.31),.025,'stamp')
     rod((.28,0,.94),(.56,.02,.72),.095,BRASS,'abacus')
     frame=[(.60,.08,.42),(1.00,.08,.42),(1.00,.08,.92),(.60,.08,.92)]
     border(frame,BRASS,'abacus',.024)
@@ -231,7 +257,7 @@ for name,(rgba,rough,metal) in zip(MATS,colors):
 if ID=='glasswing-scrivener':
     tells={'intent-inscribe':{'nib.R':(30,0,-25)},'intent-cross-out':{'nib.L':(0,-45,0),'nib.R':(0,45,0)},'intent-proof':{'wing.L':(0,0,0),'wing.R':(0,0,0)}}
 elif ID=='furnace-mite':
-    tells={'intent-double-spark':{'shutter.L':(0,0,110),'shutter.R':(0,0,-110)},'intent-stoke':{'shutter.R':(0,0,-75)},'intent-clink':{'leg0.L':(0,0,18),'leg0.R':(0,0,-18),'leg1.L':(0,0,18),'leg1.R':(0,0,-18)}}
+    tells={'intent-double-spark':{'shutter.L':(0,0,75),'shutter.R':(0,0,-75)},'intent-stoke':{'shutter.R':(0,0,-75)},'intent-clink':{'leg0.L':(0,0,18),'leg0.R':(0,0,-18),'leg1.L':(0,0,18),'leg1.R':(0,0,-18)}}
 else:
     tells={'intent-tally':{'bead.0':(0,25,0),'bead.1':(0,-25,0)},'intent-reconcile':{'stamp':(0,130,0),'cover.L':(0,0,35),'cover.R':(0,0,-35)},'intent-levy':{'stamp':(0,145,0)}}
 clips={'idle':(2,'repeat',{}),'attack':(1,'once',{'impact':.6}),'hit':(.5,'once',{}),'death':(1.5,'once',{'down':1.2}),'frozen':(1,'repeat',{})}
@@ -247,7 +273,7 @@ for name,(duration,loop,events) in clips.items():
             if name in tells and frame>0 and (name!='intent-cross-out' or frame>=9): pose=tells[name]
             elif name=='attack' and frame in (9,18):
                 if ID=='glasswing-scrivener': pose={'nib.R':((8 if frame==9 else 20),0,0)}
-                elif ID=='furnace-mite': pose={'body':(4,0,0),'shutter.L':(0,0,70 if frame==9 else 110),'shutter.R':(0,0,-70 if frame==9 else -110)}
+                elif ID=='furnace-mite': pose={'body':(4,0,0),'shutter.L':(0,0,35 if frame==9 else 110),'shutter.R':(0,0,-35 if frame==9 else -110)}
                 else: pose={'bead.0':(0,0,0),'bead.1':(0,0,0)}
             elif name=='action-levy' and frame in (0,9,30): pose={'stamp':(0,45 if frame==30 else 145,0)}
             elif name=='hit' and frame==round(duration*30/2):

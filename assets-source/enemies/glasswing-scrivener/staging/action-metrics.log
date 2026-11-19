@@ -1,7 +1,0 @@
-14:49:57 | INFO: Data are loaded, start creating Blender stuff
-14:49:57 | INFO: Blender create Mesh node glasswing-scrivener-mesh
-14:49:57 | INFO: glTF import finished in 0.20s
-ACTION_METRICS {"attack": {"0": {"nib.R": {"center": [0.4215, 0.9012, 0.266], "maxZ": 0.7826, "minZ": -0.0}}, "14.4": {"nib.R": {"center": [0.4215, 1.3854, 0.4269], "maxZ": 0.718, "minZ": 0.2695}}, "24": {"nib.R": {"center": [0.4215, 0.9012, 0.266], "maxZ": 0.7826, "minZ": -0.0}}, "7.2": {"nib.R": {"center": [0.4215, 0.9609, 0.357], "maxZ": 0.7895, "minZ": 0.1313}}}}
-Blender 5.2.3 LTS (hash e13b728c6880 built 2026-10-22 01:35:05)
-
-Blender quit

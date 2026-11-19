@@ -279,6 +279,14 @@ describe('difficulty levels', () => {
     }
   });
 
+  it('Anchor has one continuous path and never visits the same point twice', () => {
+    const strokes = SIGIL_TEMPLATES.anchor.strokes;
+    expect(strokes).toHaveLength(1);
+    const points = strokes[0] as Stroke;
+    const uniquePoints = new Set(points.map(({ x, y }) => `${x.toFixed(5)},${y.toFixed(5)}`));
+    expect(uniquePoints.size).toBe(points.length);
+  });
+
   it('Anchor has a clean trace at every difficulty', () => {
     for (const level of LEVELS) {
       expect(

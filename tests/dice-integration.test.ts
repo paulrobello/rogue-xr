@@ -12,8 +12,13 @@ import {
   parseDice,
   parseDiceManifest,
 } from '../src/dice/dice-asset.ts';
-import type { DieKind } from '../src/dice/faces.ts';
-import { DICE_ENV_INTENSITY, DicePresenter } from '../src/dice/presenter.ts';
+import { type DieKind, dieVertices } from '../src/dice/faces.ts';
+import {
+  D4_FACE_VERTICES,
+  DICE_ENV_INTENSITY,
+  DicePresenter,
+  d4FaceUvs,
+} from '../src/dice/presenter.ts';
 import type { UiAtlasManifest } from '../src/ui/icon-atlas.ts';
 
 const KINDS: readonly ('d6' | 'd8')[] = ['d6', 'd8'];
@@ -259,5 +264,55 @@ describe('dice presenter with the authored models', () => {
       presenter.dispose();
     }
     asset.setEnvironment(null, 0);
+  });
+});
+
+describe('procedural iron d4 fallback', () => {
+  it('keeps outward UV winding and canonical corner values for every face', () => {
+    const vertices = dieVertices('d4');
+    const positions = D4_FACE_VERTICES.flatMap((ids) =>
+      ids.flatMap((id) => {
+        const v = vertices[id] as { x: number; y: number; z: number };
+        return [v.x, v.y, v.z];
+      }),
+    );
+    const uv = d4FaceUvs(atlas.dice['iron-d4'], positions);
+    for (let face = 0; face < 4; face++) {
+      const i = face * 6;
+      const area =
+        (uv[i + 2] - uv[i]) * (uv[i + 5] - uv[i + 1]) -
+        (uv[i + 3] - uv[i + 1]) * (uv[i + 4] - uv[i]);
+      expect(area).toBeGreaterThan(0);
+      expect(atlas.dice['iron-d4'].faces[face]?.corners).toEqual(
+        D4_FACE_VERTICES[face].map((vertex) => vertex + 1),
+      );
+    }
+  });
+
+  it('keeps an iron surface when the d4 atlas is unavailable', async () => {
+    const presenter = await DicePresenter.create(stream(), { ...TRAY });
+    presenter.throw('d4', 0, 1);
+    presenter.applyFaces({
+      manifest: atlas,
+      d6: new THREE.Texture(),
+      d8: new THREE.Texture(),
+    });
+    const material = presenter.mesh('die-1')?.material as THREE.MeshStandardMaterial;
+    expect(material.color.getHexString()).toBe('34373b');
+    expect(material.map).toBeNull();
+    presenter.dispose();
+  });
+
+  it('invalidates the d4 shader when a loaded atlas page is bound', async () => {
+    const presenter = await DicePresenter.create(stream(), { ...TRAY });
+    presenter.throw('d4', 0, 1);
+    const d4 = new THREE.Texture();
+    const material = presenter.mesh('die-1')?.material as THREE.MeshStandardMaterial;
+    expect(material.emissiveMap).toBeInstanceOf(THREE.Texture);
+    const before = material.version;
+    presenter.applyFaces({ manifest: atlas, d6: new THREE.Texture(), d8: new THREE.Texture(), d4 });
+    expect(material.map).toBe(d4);
+    expect(material.version).toBeGreaterThan(before);
+    presenter.dispose();
   });
 });

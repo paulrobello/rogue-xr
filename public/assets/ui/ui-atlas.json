@@ -612,6 +612,11 @@
         {
           "index": 0,
           "value": 1,
+          "corners": [
+            4,
+            3,
+            2
+          ],
           "page": "dice-d4",
           "px": {
             "x": 0,
@@ -629,6 +634,11 @@
         {
           "index": 1,
           "value": 2,
+          "corners": [
+            1,
+            3,
+            4
+          ],
           "page": "dice-d4",
           "px": {
             "x": 256,
@@ -646,6 +656,11 @@
         {
           "index": 2,
           "value": 3,
+          "corners": [
+            4,
+            2,
+            1
+          ],
           "page": "dice-d4",
           "px": {
             "x": 512,
@@ -663,6 +678,11 @@
         {
           "index": 3,
           "value": 4,
+          "corners": [
+            1,
+            2,
+            3
+          ],
           "page": "dice-d4",
           "px": {
             "x": 768,

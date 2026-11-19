@@ -52,6 +52,7 @@ import {
   drawTip,
   STATUS_NAME,
   type StatusRegion,
+  stanceReadout,
   statusAtUv,
   statusExplanation,
 } from '../combat-view/status-info.ts';
@@ -77,9 +78,9 @@ import {
   type CombatState,
   canFlee,
   type Difficulty,
+  foundryStance,
   intentDamage,
   PLAYER_ID,
-  type StatusId,
 } from '../rules/index.ts';
 import {
   castPower,
@@ -519,8 +520,8 @@ export class CombatSession {
    */
   statusHover: {
     owner: string;
-    id: StatusId;
-    stacks: number;
+    id: StatusRegion['id'];
+    stacks: number | null;
     name: string;
     text: string;
     distance: number;
@@ -1808,15 +1809,19 @@ export class CombatSession {
       return;
     }
     const { id, stacks } = found.region;
-    const name = STATUS_NAME[id];
-    const text = statusExplanation(id, stacks, found.who);
+    const { name, text } =
+      stacks === null
+        ? stanceReadout(id)
+        : { name: STATUS_NAME[id], text: statusExplanation(id, stacks, found.who) };
     this.statusHover = { owner: found.owner, id, stacks, name, text, distance: found.hit.distance };
     const tip = this.tip;
     if (!tip) return;
     const key = `${found.owner}:${id}:${stacks}`;
     if (key !== this.tipKey) {
       this.tipKey = key;
-      tip.draw((ctx, w, h) => drawTip(ctx, w, h, [{ title: `${name} ${stacks}`, text }]));
+      tip.draw((ctx, w, h) =>
+        drawTip(ctx, w, h, [{ title: stacks === null ? name : `${name} ${stacks}`, text }]),
+      );
     }
     // Above the badge (below it when that would leave the top of the view), nudged toward the
     // viewer, turned to face them, and grown with distance so it reads as it would at
@@ -2734,7 +2739,26 @@ export class CombatSession {
         const intent = intentChips(enemy, intentDamage(state, enemy.id));
         ctx.fillStyle = PALETTE.candle;
         ctx.font = 'bold 50px system-ui, sans-serif';
-        drawIconRow(ctx, icons, intent, w / 2, 200, 92, 'center');
+        const stance = foundryStance(enemy);
+        if (stance === 'neutral') {
+          drawIconRow(ctx, icons, intent, w / 2, 200, 92, 'center');
+        } else {
+          drawIconRow(ctx, icons, intent, w / 2, 172, 62, 'center');
+          const { label: description } = stanceReadout(stance);
+          ctx.font = 'bold 32px system-ui, sans-serif';
+          ctx.fillStyle = stance === 'guarded' ? '#d9f2ff' : '#ffe0a6';
+          ctx.textAlign = 'center';
+          ctx.fillText(description, w / 2, 229);
+          const half = ctx.measureText(description).width / 2 + 12;
+          regions.push({
+            id: stance,
+            stacks: null,
+            x0: w / 2 - half,
+            x1: w / 2 + half,
+            y0: 207,
+            y1: 253,
+          });
+        }
       });
     }
     this.status?.draw((ctx, w, h) => {

@@ -9,7 +9,7 @@ Deterministic: the same sources produce byte-identical PNG/JPG outputs. Writes
   public/assets/ui/dice-d6-glow.png   emissive masks for the d6 page: amber pips on black, same slots
   public/assets/ui/dice-d8-glow.png   emissive masks for the d8 page: amber numerals on black, same slots
   (the dice pages are displayed through toneMapped false: their colours are the displayed colours)
-  public/assets/ui/glyphs.png         5 sigil glyphs drawn from src/sigil/templates.ts, 256 px slots, 1024x512
+  public/assets/ui/glyphs.png         6 sigil glyphs drawn from src/sigil/templates.ts, 256 px slots, 1024x512
   public/assets/ui/title-2048.jpg     title key art backdrop 2048x1152, and title-1024.jpg 1024x576
   public/assets/ui/*.ktx2             UASTC + Zstandard, mipmapped, bottom-left origin (when ktx exists)
   public/assets/ui/ui-atlas.json      manifest read by src/ui/icon-atlas.ts
@@ -119,6 +119,9 @@ PIPS = {
 D6_VALUES = [1, 2, 3, 4, 5, 6]
 D8_VALUES = [1, 2, 3, 4, 5, 6, 7, 8]
 D4_VALUES = [1, 2, 3, 4]
+# Outward CCW vertex order for each face opposite vertex 0..3. The atlas corners are
+# apex, left, right, matching this order in the runtime geometry.
+D4_FACE_VERTICES = ((3, 2, 1), (0, 2, 3), (3, 1, 0), (0, 1, 2))
 SIGIL_IDS = ["gear", "flame", "ward", "bolt", "spiral", "anchor"]
 
 
@@ -469,23 +472,35 @@ def build_dice() -> tuple[Image.Image, Image.Image, Image.Image, Image.Image, Im
         d8_page[py : py + DIE_SLOT, px : px + DIE_SLOT] = face
         d8_glow[py : py + DIE_SLOT, px : px + DIE_SLOT] = lit
         d8_faces.append({"index": index, "value": value, **entry("dice-d8", px, py, DIE_SLOT, DIE_SLOT, 1024, 512)})
-    d4_base = np.dstack([np.full((DIE_SLOT, DIE_SLOT, 3), (0x34, 0x37, 0x3B), np.uint8), tri_alpha])
+    yy, xx = np.mgrid[:DIE_SLOT, :DIE_SLOT]
+    edge_distance = np.minimum.reduce([
+        np.abs((x1 - x0) * (yy - y0) - (y1 - y0) * (xx - x0)) / math.hypot(x1 - x0, y1 - y0)
+        for (x0, y0), (x1, y1) in zip(tri, (*tri[1:], tri[0]))
+    ])
+    brush = 3 * np.sin(0.81 * yy + 0.012 * xx) + 2 * np.sin(2.12 * yy - 0.008 * xx)
+    bevel = np.select([edge_distance < 4, edge_distance < 8, edge_distance < 12], [46, -30, 20], 0)
+    steel = np.array([96, 106, 116]) + (brush + bevel)[..., None]
+    d4_base = np.dstack([steel.astype(np.uint8), tri_alpha])
+    corner_font = ImageFont.truetype(str(FONT), 47 * scale)
     for index, value in enumerate(D4_VALUES):
-        def numeral(d: ImageDraw.ImageDraw, index: int = index) -> None:
-            # A standard d4 repeats the apex value on the three adjacent triangles. Draw all
-            # vertex values at their corners so whichever vertex rests up reads consistently.
-            corner_font = ImageFont.truetype(str(FONT), 52 * scale)
-            labels = [v for v in D4_VALUES if v - 1 != index]
-            for (vx, vy), label in zip(tri, labels):
-                cx = DIE_SLOT / 2 + 0.56 * (vx - DIE_SLOT / 2)
-                cy = (top + 2 * tri_h / 3) + 0.56 * (vy - (top + 2 * tri_h / 3))
-                d.text((cx * scale, cy * scale), str(label), font=corner_font, fill=255,
-                       anchor="mm", stroke_width=2 * scale, stroke_fill=255)
-        face, lit = lit_mark(d4_base, numeral, scale, scaled_srgb(DICE_MARK_TARGET, D8_MARK_EMIT), D8_GLOW_HALO, linear_halo=True)
+        corner_values = tuple(vertex + 1 for vertex in D4_FACE_VERTICES[index])
+
+        def numeral(d: ImageDraw.ImageDraw, corner_values: tuple[int, int, int] = corner_values) -> None:
+            # Each numeral faces its vertex, so the result reads upright on all three adjacent faces.
+            for (vx, vy), label, angle in zip((tri[0], tri[2], tri[1]), corner_values, (0, 120, -120)):
+                cx = DIE_SLOT / 2 + 0.53 * (vx - DIE_SLOT / 2)
+                cy = (top + 2 * tri_h / 3) + 0.53 * (vy - (top + 2 * tri_h / 3))
+                side = 72 * scale
+                glyph = Image.new("L", (side, side))
+                ImageDraw.Draw(glyph).text((side / 2, side / 2), str(label), font=corner_font,
+                                          fill=255, anchor="mm", stroke_width=scale, stroke_fill=255)
+                imprint = glyph.rotate(angle, resample=Image.Resampling.BICUBIC)
+                d.bitmap((round(cx * scale - side / 2), round(cy * scale - side / 2)), imprint, fill=255)
+        face, lit = lit_mark(d4_base, numeral, scale, scaled_srgb(DICE_MARK_TARGET, 0.68), 0.045, linear_halo=True)
         px, py = (index % 4) * DIE_SLOT, (index // 4) * DIE_SLOT
         d4_page[py : py + DIE_SLOT, px : px + DIE_SLOT] = face
         d4_glow[py : py + DIE_SLOT, px : px + DIE_SLOT] = lit
-        d4_faces.append({"index": index, "value": value, **entry("dice-d4", px, py, DIE_SLOT, DIE_SLOT, 1024, 512)})
+        d4_faces.append({"index": index, "value": value, "corners": list(corner_values), **entry("dice-d4", px, py, DIE_SLOT, DIE_SLOT, 1024, 512)})
     triangle = [[round(x / DIE_SLOT, 6), round(y / DIE_SLOT, 6)] for x, y in tri]
     dice = {
         "brass-d6": {"kind": "d6", "shape": "square", "triangle": None, "faces": d6_faces, "glowPage": "dice-d6-glow"},
@@ -634,7 +649,7 @@ def review_sheet(icons_page: Image.Image, d6: Image.Image, d8: Image.Image, glyp
         p = face["px"]
         d.text((x2 + p["x"] + 6, 44 + 512 + 40 + p["y"] + 4), f"i{face['index']}", font=small, fill=(200, 200, 200))
     y3 = 44 + 512 + 40 + 512 + 16
-    d.text((32, y3), "Sigil glyphs (glyphs.png): gear, flame, ward, bolt, spiral", font=f, fill=BRASS)
+    d.text((32, y3), f"Sigil glyphs (glyphs.png): {', '.join(SIGIL_IDS)}", font=f, fill=BRASS)
     gl = glyphs.resize((512, 256), Image.Resampling.LANCZOS)
     img.paste(gl, (32, y3 + 32), gl)
     d.text((x2, y3), "Title key art (title-1024.jpg); dashed box = titleSafe", font=f, fill=BRASS)

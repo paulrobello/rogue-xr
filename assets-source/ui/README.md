@@ -26,12 +26,12 @@ rights, spend, output hashes and approval state are in [provenance.json](provena
   origin top-left) and `uv` in three.js texture space (origin bottom-left, v up). PNG pages load with
   the default `flipY = true`; KTX2 pages are encoded with `--convert-texcoord-origin bottom-left`, so
   the same rect fits both.
-- **Icons** `icons.png` / `icons.ktx2`, 512x512 RGBA. 16 slots of 128 px: a 112 px medallion with 8 px
+- **Icons** `icons.png` / `icons.ktx2`, 512x640 RGBA. 18 icons in slots of 128 px: a 112 px medallion with 8 px
   of transparent padding on each side (16 px between neighbours). Alpha is the remover matte times a
   fitted disc; the outer rim band is green-despilled; RGB is dilated into transparent pixels so
   filtering and mips show no dark fringe. Ids: resources `steam block hp cogs draw dice`, intents
   `intent-<IntentKind>` (all six, including `attack-debuff` and `unknown`), statuses
-  `status-<StatusId>` (`weak vulnerable overheat wound-up`). `INTENT_ICON` and `STATUS_ICON` are
+  `status-<StatusId>` (`weak vulnerable overheat wound-up plating rust`). `INTENT_ICON` and `STATUS_ICON` are
   typed `Record`s, so a new intent or status fails the type check until it has an icon.
 - **Dice** `dice-d6.png` and `dice-d8.png` (+ KTX2), 1024x512, 256 px slots, slot `i` = model face `i`
   in the `src/dice/faces.ts` order, value `faces[i]` (index + 1), opposite faces sum to N + 1. Pips and
@@ -40,6 +40,7 @@ rights, spend, output hashes and approval state are in [provenance.json](provena
   triangle, apex up; its corners in slot-relative 0..1 coordinates (y down) are in the manifest
   (`dice.glass-d8.triangle`: apex, bottom right, bottom left), the numeral sits on the centroid,
   and 6 is underlined.
+- **Iron d4** uses four triangular tiles on `dice-d4.png` and a matching KTX2 page. Each tile lists the three vertex values in `corners` in apex, lower-left, lower-right order. The raised vertex shows the result on all three adjacent faces. The slim rim and brushed steel are albedo. Only the numerals emit through `dice-d4-glow`.
 - **Dice glow** `dice-d6-glow.png` and `dice-d8-glow.png` (+ KTX2), named by `dice.<id>.glowPage`:
   the emissive masks for the dice pages, same size and slots, so the face UVs fit both. RGB is the
   pip or numeral's amber fill times its core plus 0.35 of its soft glow, black elsewhere, alpha 255.

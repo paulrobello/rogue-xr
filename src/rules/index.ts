@@ -74,6 +74,7 @@ export {
   absorb,
   attackDamage,
   DECAYS_AT_TURN_END,
+  foundryStance,
   STATUS_IDS,
   stacks,
   VULNERABLE_MULTIPLIER,

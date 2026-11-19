@@ -1,10 +1,10 @@
 {
   "pass": true,
-  "glb_sha256": "f7fe7f0ba7f706168af175f879433e62e009c99e839db5223fb62ed4c44380f4",
+  "glb_sha256": "db5f8f497a45270f513ad2fd596a76ee11ac4f8c654c23489477a67dd8da688a",
   "max_influences": 1,
   "unweighted_vertices": 0,
   "max_weight_sum_error": 0.0,
-  "triangles": 7296,
+  "triangles": 8800,
   "bone_count": 8,
   "clips": {
     "attack": {
@@ -71,133 +71,6 @@
       "socket-weapon.001"
     ]
   },
-  "poseMetrics": {
-    "attack": {
-      "finalMaxZ": 1.2149,
-      "finalMinZ": -0.0,
-      "minZ": -0.0
-    },
-    "death": {
-      "finalMaxZ": 0.9824,
-      "finalMinZ": -0.0,
-      "minZ": -0.0003
-    },
-    "frozen": {
-      "finalMaxZ": 1.2149,
-      "finalMinZ": -0.0,
-      "minZ": -0.0
-    },
-    "hit": {
-      "finalMaxZ": 1.2149,
-      "finalMinZ": -0.0,
-      "minZ": -0.0
-    },
-    "idle": {
-      "finalMaxZ": 1.2149,
-      "finalMinZ": -0.0,
-      "minZ": -0.0
-    },
-    "intent-clink": {
-      "finalMaxZ": 1.2149,
-      "finalMinZ": -0.0,
-      "minZ": -0.0
-    },
-    "intent-double-spark": {
-      "finalMaxZ": 1.2149,
-      "finalMinZ": -0.0,
-      "minZ": -0.0
-    },
-    "intent-stoke": {
-      "finalMaxZ": 1.2149,
-      "finalMinZ": -0.0,
-      "minZ": -0.0
-    }
-  },
-  "actionMetrics": {
-    "attack": {
-      "0": {
-        "shutter.L": {
-          "center": [
-            -0.2365,
-            0.4987,
-            0.6297
-          ],
-          "maxZ": 0.842,
-          "minZ": 0.422
-        },
-        "shutter.R": {
-          "center": [
-            0.2365,
-            0.4987,
-            0.6297
-          ],
-          "maxZ": 0.842,
-          "minZ": 0.422
-        }
-      },
-      "14.4": {
-        "shutter.L": {
-          "center": [
-            -0.4762,
-            0.6274,
-            0.6986
-          ],
-          "maxZ": 0.9242,
-          "minZ": 0.4856
-        },
-        "shutter.R": {
-          "center": [
-            0.4762,
-            0.6274,
-            0.6986
-          ],
-          "maxZ": 0.9242,
-          "minZ": 0.4856
-        }
-      },
-      "24": {
-        "shutter.L": {
-          "center": [
-            -0.2365,
-            0.4987,
-            0.6297
-          ],
-          "maxZ": 0.842,
-          "minZ": 0.422
-        },
-        "shutter.R": {
-          "center": [
-            0.2365,
-            0.4987,
-            0.6297
-          ],
-          "maxZ": 0.842,
-          "minZ": 0.422
-        }
-      },
-      "7.2": {
-        "shutter.L": {
-          "center": [
-            -0.3917,
-            0.5614,
-            0.694
-          ],
-          "maxZ": 0.9177,
-          "minZ": 0.4791
-        },
-        "shutter.R": {
-          "center": [
-            0.3917,
-            0.5614,
-            0.694
-          ],
-          "maxZ": 0.9177,
-          "minZ": 0.4791
-        }
-      }
-    }
-  },
-  "actionMetricsTimebase": "Blender reimport at 24 fps; frame 14.4 is 0.6 seconds, frame 24 is 1.0 second",
   "checks": [
     "skin weights",
     "finite bind matrices and vertex positions",
@@ -205,11 +78,11 @@
     "budget",
     "clip inventory and durations",
     "fixed root",
-    "Blender glTF reimport",
-    "sampled reimported clips for floor clearance",
-    "measured action motion at gameplay impact"
+    "Blender glTF reimport"
   ],
   "notChecked": [
+    "sampled reimported floor clearance",
+    "action metrics at gameplay impact",
     "visual acceptance",
     "actual gameplay lifecycle"
   ]

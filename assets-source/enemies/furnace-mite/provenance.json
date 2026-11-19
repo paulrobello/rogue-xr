@@ -4,8 +4,8 @@
   "route": "Procedural original Blender geometry, rig, and keyed clips from approved concept.",
   "generator": {
     "path": "scripts/assets/build-foundry-enemies.py",
-    "sha256": "895b2f78269a49f05c910d218db5f7d17cc419776f8672ee64afb5967f74e9d8",
-    "bytes": 23694
+    "sha256": "0f6e6efd527cb7d28a642f4db53de1f6f41598f6f4af97ce4d6847b96f83fe23",
+    "bytes": 25377
   },
   "authoringAgent": {
     "harness": "Codex delegated Blender author"
@@ -14,40 +14,45 @@
   "derivedFiles": [
     {
       "path": "public/assets/enemies/furnace-mite/furnace-mite.glb",
-      "sha256": "f7fe7f0ba7f706168af175f879433e62e009c99e839db5223fb62ed4c44380f4",
-      "bytes": 334796
+      "sha256": "db5f8f497a45270f513ad2fd596a76ee11ac4f8c654c23489477a67dd8da688a",
+      "bytes": 384248
     },
     {
       "path": "public/assets/enemies/furnace-mite/furnace-mite.manifest.json",
-      "sha256": "4914485b24b125a458aefbef75236a8621170f440e0901556793fbf18dcd8a5a",
+      "sha256": "2ff972841e9be67b4122929a42dbf1ac99c3ed151d760a9f98e31d904bbc9060",
       "bytes": 2400
     }
   ],
   "sourceFiles": [
     {
       "path": "assets-source/enemies/furnace-mite/staging/furnace-mite.blend",
-      "sha256": "9e949fc32689d6646e80fb1deb53b7306658f23ddf5a9e079be66f7fb108ac35",
-      "bytes": 241003
+      "sha256": "765b0584eeb90b6b44ac73b3266055f0148847fde0583056a80e9f9ca6d2d76f",
+      "bytes": 264737
+    },
+    {
+      "path": "assets-source/enemies/furnace-mite/staging/provenance.json",
+      "sha256": "7d87e413ab9fcaa0a87f2f1c5b48dce22311f5a91fbcbe7c423643ffc8f3295a",
+      "bytes": 2036
     },
     {
       "path": "assets-source/enemies/furnace-mite/staging/reimport.json",
-      "sha256": "98515ab08b28d8fc6b67434dcf775cc9f9a562b2cb50553649c32e55aac8935d",
-      "bytes": 4321
+      "sha256": "bf536b6968f139a49d375e27a1b47120155c7eef73465d01b24658023bf282d9",
+      "bytes": 1835
     },
     {
-      "path": "assets-source/enemies/furnace-mite/staging/metrics.log",
-      "sha256": "717d02b66298f5a93127c09c75992f03d42ce1479bfd1fa7e250d337349b907f",
-      "bytes": 873
-    },
-    {
-      "path": "assets-source/enemies/furnace-mite/staging/action-metrics.log",
-      "sha256": "49e6dd52c7a79037bea620508210642b7d1c84e440493b962c32f4fc925205f2",
-      "bytes": 1029
+      "path": "assets-source/enemies/furnace-mite/staging/pose-frames.json",
+      "sha256": "29925628930892fa9091bc3aad2c5ec2572200de113903ecfce6520abf00d9a7",
+      "bytes": 943
     },
     {
       "path": "scripts/assets/build-spring-hound.py",
       "sha256": "432c7c8a1218564bef7c697dee7ff76225fa2915bdb3e454d4960723ddfad8ba",
       "bytes": 105430
+    },
+    {
+      "path": "scripts/assets/render-foundry-polish.py",
+      "sha256": "af8058f42b1e26f1bd98d5dc3b30e2db35fa9a68e5fb10e8251032ea8a8b7d48",
+      "bytes": 3060
     }
   ],
   "references": [
@@ -59,45 +64,83 @@
   ],
   "reviewEvidence": [
     {
-      "path": "assets-source/enemies/furnace-mite/staging/concept-comparison.jpg",
-      "sha256": "6a677fc85f21ac371d03aee29274892c6a09e96d32146d48fdc518e4e219aba6",
-      "bytes": 122682
+      "path": "assets-source/enemies/furnace-mite/staging/renders/attack-impact.png",
+      "sha256": "af41accacbfc98ef3ea5a8a2b3a94713ac3a5a8f88926cae84d07520a6797fe3",
+      "bytes": 383623
     },
     {
-      "path": "assets-source/enemies/furnace-mite/staging/frame-14.4-attack.png",
-      "sha256": "8fd27303624c7580d26851be90fd587dbe3d53a9c7e891d499cedefc60fb40b7",
-      "bytes": 133488
+      "path": "assets-source/enemies/furnace-mite/staging/renders/attack.png",
+      "sha256": "6613a5c69c21ea322313a826db1e89127c39ebfd1cbb27b1fc454791a0eaabc4",
+      "bytes": 387241
     },
     {
-      "path": "assets-source/enemies/furnace-mite/staging/frame-14.4-intent-double-spark.png",
-      "sha256": "9de0d0ae23270a491b223ab9d2ae70c02d8a40f2753b1cda594828b2726727a0",
-      "bytes": 132989
+      "path": "assets-source/enemies/furnace-mite/staging/renders/idle.png",
+      "sha256": "3141569b99ae9afe299de5386d6407669536220eb3f2fb508f9aeeaa4e78be46",
+      "bytes": 388681
     },
     {
-      "path": "assets-source/enemies/furnace-mite/staging/frame-36-death.png",
-      "sha256": "b5ee42d06a13c17634fb77f03d20d8be8b9676f8ec83b15f0afc94b5585fbc7e",
-      "bytes": 123302
+      "path": "assets-source/enemies/furnace-mite/staging/renders/intent-clink.png",
+      "sha256": "258fb6252535de01580f5f61417e9acea526c8543f6a09d5aeb674700d04fe83",
+      "bytes": 386928
     },
     {
-      "path": "assets-source/enemies/furnace-mite/staging/variant-grayscale-comparison.jpg",
-      "sha256": "b9ad9d8a86335b708d594e0f6b39d86e6250bd716ab857fb4105680596ec1f04",
-      "bytes": 22485
+      "path": "assets-source/enemies/furnace-mite/staging/renders/intent-double-spark.png",
+      "sha256": "462d9fe5d1759b2ba4ad832973bdfe6ffc97829ff27381d557ce4e31984e3ffb",
+      "bytes": 389128
     },
     {
-      "path": "assets-source/enemies/furnace-mite/staging/variant-one-intent-double-spark.png",
-      "sha256": "6c43161979b47dd9c4497579bc11ccbefc3e42c2c5853104226193f8c674852f",
-      "bytes": 133164
+      "path": "assets-source/enemies/furnace-mite/staging/renders/intent-stoke.png",
+      "sha256": "4d6f0f0a253148deb84fc85b97d026fc3a7ff4c5cc92503122ae76e2368bde86",
+      "bytes": 389253
     },
     {
-      "path": "assets-source/enemies/furnace-mite/staging/variant-two-intent-double-spark.png",
-      "sha256": "c72016808afd59321e416632628de86d2ed9bb89b4e3a247c4e7a4d8981bedba",
-      "bytes": 132989
+      "path": "assets-source/enemies/furnace-mite/staging/variant-single/idle.png",
+      "sha256": "87401f78bd7688b7e7bdb57771a0af495f2a65c5db866df50163cc264d066d95",
+      "bytes": 389686
     }
   ],
   "license": "Original procedural Blender work; concept reference is user-provided and approved.",
   "validation": {
     "pass": true,
-    "scope": "Technical export and sampled poses in staging/reimport.json. Desktop combat and independent visual review completed. Owner model and physical Quest review remain pending."
+    "scope": "Technical export and Blender reimport passed. Clip floor bounds were sampled separately on the skinned runtime asset. The final actors were exercised in desktop combat. Physical Quest playtest feedback on these revised models is pending.",
+    "sampledPoses": {
+      "glbSha256": "db5f8f497a45270f513ad2fd596a76ee11ac4f8c654c23489477a67dd8da688a",
+      "method": "Three.js GLTFLoader, skinned vertex bounds in actor space sampled at 24 fps through every clip including endpoints. The Levy clip also has a sample at 0.6 seconds.",
+      "clips": {
+        "attack": {
+          "minY": 0,
+          "maxY": 1.23846
+        },
+        "death": {
+          "minY": -0.00027,
+          "maxY": 1.23578
+        },
+        "frozen": {
+          "minY": 0,
+          "maxY": 1.21489
+        },
+        "hit": {
+          "minY": 0,
+          "maxY": 1.21489
+        },
+        "idle": {
+          "minY": 0,
+          "maxY": 1.21489
+        },
+        "intent-clink": {
+          "minY": 0,
+          "maxY": 1.21489
+        },
+        "intent-double-spark": {
+          "minY": 0,
+          "maxY": 1.21489
+        },
+        "intent-stoke": {
+          "minY": 0,
+          "maxY": 1.21489
+        }
+      }
+    }
   },
   "approvals": [
     {
@@ -120,8 +163,15 @@
       "status": "pending"
     },
     {
+      "gate": "prior model feedback",
+      "status": "positive feedback on previous playable models",
+      "who": "Paul",
+      "when": "2026-11-18",
+      "notes": "Paul liked the previous playable models and requested additional polish; this does not record review of the revised bytes."
+    },
+    {
       "gate": "independent visual score",
-      "status": "reviewed",
+      "status": "historical review of previous GLB",
       "score": 81,
       "outOf": 100,
       "who": "Independent Astra visual review",
@@ -129,6 +179,27 @@
       "glbSha256": "f7fe7f0ba7f706168af175f879433e62e009c99e839db5223fb62ed4c44380f4",
       "evidence": "Final re-imported poses compared with the approved concept and desktop combat captures.",
       "notes": "The single ruby band and double ivory bands are distinguishable in grayscale. Open furnace slots read from the seat. The Double Spark windup and strike still have similar silhouettes."
+    },
+    {
+      "gate": "independent visual score",
+      "status": "historical review of previous GLB",
+      "score": 84,
+      "outOf": 100,
+      "who": "Independent Astra visual review",
+      "when": "2026-11-18",
+      "glbSha256": "6e94d7ab6bf40b3623d1c95edf44f127a182d77860d1a9a782ff14b5bae57241",
+      "notes": "Double Spark warning at 30 degrees read nearly shut from the seat; superseded by revised shutters."
+    },
+    {
+      "gate": "independent visual score",
+      "status": "reviewed",
+      "glbSha256": "db5f8f497a45270f513ad2fd596a76ee11ac4f8c654c23489477a67dd8da688a",
+      "score": 89,
+      "outOf": 100,
+      "who": "Independent Astra visual review",
+      "when": "2026-11-18",
+      "evidence": "Current reimported GLB and seated pose renders; see staging/pose-frames.json.",
+      "notes": "Double Spark, Stoke and Clink show two, one and no lit cores from the seat, including at about 50 pixels. Warning and strike remain fairly similar."
     }
   ]
 }

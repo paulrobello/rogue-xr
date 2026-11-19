@@ -1,0 +1,37 @@
+{
+  "glbSha256": "db5f8f497a45270f513ad2fd596a76ee11ac4f8c654c23489477a67dd8da688a",
+  "fps": 24,
+  "camera": "orthographic seated-facing technical view",
+  "frames": {
+    "attack-impact.png": {
+      "frame": 14.4,
+      "seconds": 0.6
+    },
+    "attack.png": {
+      "frame": 18,
+      "seconds": 0.75
+    },
+    "idle.png": {
+      "frame": 30,
+      "seconds": 1.25
+    },
+    "intent-clink.png": {
+      "frame": 18,
+      "seconds": 0.75
+    },
+    "intent-double-spark.png": {
+      "frame": 18,
+      "seconds": 0.75
+    },
+    "intent-stoke.png": {
+      "frame": 18,
+      "seconds": 0.75
+    },
+    "variant-single/idle.png": {
+      "frame": 30,
+      "seconds": 1.25,
+      "note": "Single stripe tinted red and extra stripe hidden to match runtime variant."
+    }
+  },
+  "notes": "Held intent clips end at 0.6 seconds and remain clamped. Frames at 0.75 seconds show the held pose. Impact frames sample the 0.6-second event."
+}

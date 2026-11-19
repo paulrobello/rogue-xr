@@ -1,4 +1,4 @@
-import type { Fighter, Statuses, StatusId } from './types.ts';
+import type { EnemyMove, Fighter, FoundryStance, Statuses, StatusId } from './types.ts';
 
 /**
  * Status semantics. "Owner" is the fighter carrying the status; a turn boundary is the owner's own
@@ -44,17 +44,25 @@ export function withStacks(statuses: Statuses, id: StatusId, delta: number): Sta
   return out;
 }
 
-/**
- * Attack damage of one hit after the attacker's and defender's statuses, before block:
- * `floor(floor((base + Wound-up) × Weak) × Vulnerable)`, never below 0.
- */
-export function attackDamage(base: number, attacker: Fighter, defender: Fighter): number {
+export const STANCE_MULTIPLIER = { guarded: 0.75, exposed: 1.25 } as const;
+type Posture = { readonly intent?: EnemyMove | null };
+
+export function foundryStance(target: Posture): FoundryStance | 'neutral' {
+  return target.intent?.stance ?? 'neutral';
+}
+
+/** Wound-up adds first, then Weak and Vulnerable round down. Posture modifies each hit before Block. */
+export function attackDamage(base: number, attacker: Fighter, defender: Fighter & Posture): number {
   let damage = base + stacks(attacker.statuses, 'wound-up');
   if (stacks(attacker.statuses, 'weak') > 0) damage = Math.floor(damage * WEAK_MULTIPLIER);
   if (stacks(defender.statuses, 'vulnerable') > 0) {
     damage = Math.floor(damage * VULNERABLE_MULTIPLIER);
   }
-  return Math.max(0, damage);
+  const stance = foundryStance(defender);
+  if (damage <= 0) return 0;
+  return stance === 'neutral'
+    ? damage
+    : Math.max(1, Math.round(damage * STANCE_MULTIPLIER[stance]));
 }
 
 /** Splits incoming damage into the part block absorbs and the part that reaches HP. */

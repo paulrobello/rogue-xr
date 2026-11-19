@@ -1,7 +1,7 @@
 import type { Point, SigilId, SigilTemplate, Stroke } from './types.ts';
 
 /**
- * The five sigil templates, authored as plate-space strokes (+y up, roughly a unit box).
+ * The six sigil templates, authored as plate-space strokes (+y up, roughly a unit box).
  * Each is sampled from a simple parametric curve so the set is deterministic and easy to restyle.
  * The guide glyph shown on the plate should be drawn from these same strokes.
  */
@@ -125,36 +125,37 @@ const spiral: readonly Stroke[] = [
   }),
 ];
 
-/** Anchor: looped crown, stem, and two flukes. */
+/** One open stroke winds around the eye, drops down the shank and sweeps around both flukes. */
+const anchorEye = sampleCurve(23, (t) => {
+  const a = -Math.PI / 2 + 0.48 + (TAU - 0.48) * t;
+  return { x: 0.5 + 0.14 * Math.cos(a), y: 0.84 + 0.14 * Math.sin(a) };
+});
 const anchor: readonly Stroke[] = [
-  polyline(
-    [
-      { x: 0.5, y: 1 },
-      { x: 0.22, y: 0.78 },
-      { x: 0.22, y: 0.58 },
-      { x: 0.28, y: 0.46 },
-      { x: 0.5, y: 0.4 },
-      { x: 0.72, y: 0.46 },
-      { x: 0.78, y: 0.58 },
-      { x: 0.78, y: 0.78 },
-      { x: 0.5, y: 1 },
-      { x: 0.5, y: 0.4 },
-      { x: 0.5, y: 0.05 },
-      { x: 0.22, y: 0.2 },
-      { x: 0.05, y: 0.2 },
-      { x: 0.18, y: 0.34 },
-    ],
-    6,
-  ),
-  polyline(
-    [
-      { x: 0.5, y: 0.05 },
-      { x: 0.78, y: 0.2 },
-      { x: 0.95, y: 0.2 },
-      { x: 0.82, y: 0.34 },
-    ],
-    6,
-  ),
+  [
+    ...anchorEye,
+    ...polyline(
+      [
+        { x: 0.5, y: 0.7 },
+        { x: 0.5, y: 0.2 },
+        { x: 0.35, y: 0.23 },
+        { x: 0.22, y: 0.31 },
+        { x: 0.12, y: 0.42 },
+        { x: 0.05, y: 0.51 },
+        { x: 0.07, y: 0.29 },
+        { x: 0.15, y: 0.18 },
+        { x: 0.29, y: 0.09 },
+        { x: 0.5, y: 0.02 },
+        { x: 0.71, y: 0.09 },
+        { x: 0.85, y: 0.18 },
+        { x: 0.93, y: 0.29 },
+        { x: 0.95, y: 0.51 },
+        { x: 0.88, y: 0.42 },
+        { x: 0.78, y: 0.31 },
+        { x: 0.65, y: 0.23 },
+      ],
+      3,
+    ).slice(1),
+  ],
 ];
 
 export const SIGIL_TEMPLATES: Readonly<Record<SigilId, SigilTemplate>> = {

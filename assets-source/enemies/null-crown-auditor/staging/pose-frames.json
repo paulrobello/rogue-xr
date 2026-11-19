@@ -1,0 +1,28 @@
+{
+  "glbSha256": "b2c3bd0c4ebbc4eebe1c2e43500881172d811ad6630d84cdb4e18ee37906392d",
+  "fps": 24,
+  "camera": "orthographic seated-facing technical view",
+  "frames": {
+    "action-levy-impact.png": {
+      "frame": 14.4,
+      "seconds": 0.6
+    },
+    "action-levy.png": {
+      "frame": 18,
+      "seconds": 0.75
+    },
+    "idle.png": {
+      "frame": 30,
+      "seconds": 1.25
+    },
+    "intent-levy.png": {
+      "frame": 18,
+      "seconds": 0.75
+    },
+    "intent-reconcile.png": {
+      "frame": 18,
+      "seconds": 0.75
+    }
+  },
+  "notes": "Held intent clips end at 0.6 seconds and remain clamped. Frames at 0.75 seconds show the held pose. Impact frames sample the 0.6-second event."
+}

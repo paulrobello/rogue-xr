@@ -81,6 +81,8 @@ export interface AtlasEntry {
 export interface DieFaceEntry extends AtlasEntry {
   readonly index: number;
   readonly value: number;
+  /** Values at the atlas triangle corners, ordered apex, left, right. */
+  readonly corners?: readonly [number, number, number];
 }
 
 export interface DieFaceSet {
