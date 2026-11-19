@@ -35,6 +35,7 @@ import {
   type UpgradeId,
 } from '../rules/workshop.ts';
 import { CARD_FLIGHT_SECONDS, flightGoal, flightPose, flightScale } from './card-flight.ts';
+import { DECK_SORTS, type DeckSort, deckStacks } from './deck-view.ts';
 import type { FlowPhase, RunFlow } from './flow.ts';
 import {
   RewardCardFaces,
@@ -135,6 +136,12 @@ const DECK_ROWS = 2;
 export const DECK_PAGE_SIZE = DECK_COLUMNS * DECK_ROWS;
 const DECK_CARD_WIDTH = 0.15;
 const DECK_GAP = 0.02;
+const DECK_SORT_LABEL: Record<DeckSort, string> = {
+  order: 'Deck order',
+  offense: 'Offense',
+  defense: 'Defense',
+  utility: 'Utility',
+};
 const ART_WIDTH = 3.4;
 const PERMANENT_CARD_PAGE_SIZE = 3;
 
@@ -159,7 +166,13 @@ interface Board {
 }
 
 /** A brass-edged plate texture: flat fill, 2-step bevel, hairline frame. No rounded pills. */
-function plateTexture(fill: string, edge: string, w: number, h: number): THREE.CanvasTexture {
+function plateTexture(
+  fill: string,
+  edge: string,
+  w: number,
+  h: number,
+  borderRatio = 0.035,
+): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
   const px = 256;
   canvas.width = Math.max(16, Math.round((px * w) / Math.max(h, 0.001)));
@@ -174,7 +187,7 @@ function plateTexture(fill: string, edge: string, w: number, h: number): THREE.C
     shade.addColorStop(1, 'rgba(0,0,0,0.22)');
     ctx.fillStyle = shade;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    const line = Math.max(3, Math.round(canvas.height * 0.035));
+    const line = Math.max(1, Math.round(canvas.height * borderRatio));
     ctx.strokeStyle = edge;
     ctx.lineWidth = line;
     ctx.strokeRect(line / 2, line / 2, canvas.width - line, canvas.height - line);
@@ -320,7 +333,10 @@ export class FlowUi {
   private extras: THREE.Object3D[] = [];
   private rewardFaces: RewardCardFaces | null = null;
   private deckFaces: RewardCardFaces | null = null;
+  private deckBacks: THREE.InstancedMesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial> | null =
+    null;
   private deckPage = 0;
+  private deckSort: DeckSort = 'order';
   /** Invisible hit planes over the deck viewer's cards, so the pointer can rest on one. */
   private deckHits: THREE.Group | null = null;
   /** Small atlas faces and their non-activating hit planes in the permanent-card shop. */
@@ -348,7 +364,7 @@ export class FlowUi {
   private menu: MenuView = 'closed';
   private flight: RewardFlight | null = null;
   private artTexture: THREE.Texture | null = null;
-  private readonly stopAbove: () => void;
+  private stopAbove: (() => void) | null = null;
   private readonly stopUpdate: () => void;
 
   constructor(deps: FlowUiDeps) {
@@ -356,7 +372,6 @@ export class FlowUi {
     this.seedValue = deps.seed;
     this.root.name = 'flow-ui';
     this.root.visible = false;
-    this.stopAbove = keepAbove(this.root);
     // `sync` rebuilds the title on the way back from a run; this covers a build found while on it.
     this.stopUpdate =
       deps.update?.onChange(() => {
@@ -384,11 +399,9 @@ export class FlowUi {
     return this.menu !== 'closed';
   }
 
-  /** Card ids on the deck viewer's page in deck order, or empty when the viewer is not open. */
+  /** The front card of each stack on the displayed page. */
   get deckCards(): readonly string[] {
-    if (this.menu !== 'deck') return [];
-    const deck = this.deps.flow.run?.deck ?? [];
-    return deck.slice(this.deckPage * DECK_PAGE_SIZE, (this.deckPage + 1) * DECK_PAGE_SIZE);
+    return this.deckFaces?.slots.map((slot) => slot.id) ?? [];
   }
 
   /** True while a picked reward card is flying to the player (the pick lands when it arrives). */
@@ -622,7 +635,6 @@ export class FlowUi {
     this.clear();
     this.cardTipLabel?.dispose();
     this.cardTipLabel = null;
-    this.stopAbove();
     this.stopUpdate();
     this.artTexture?.dispose();
     this.root.removeFromParent();
@@ -646,6 +658,8 @@ export class FlowUi {
   }
 
   private clear(): void {
+    this.stopAbove?.();
+    this.stopAbove = null;
     for (const board of this.boards) {
       for (const plate of board.plates.values()) disposeMesh(plate);
       board.panel.dispose();
@@ -670,6 +684,11 @@ export class FlowUi {
     this.rewardFaces = null;
     this.deckFaces?.dispose();
     this.deckFaces = null;
+    if (this.deckBacks) {
+      disposeMesh(this.deckBacks);
+      this.deckBacks.dispose();
+      this.deckBacks = null;
+    }
     this.deckHits?.traverse((o) => {
       if (o instanceof THREE.Mesh) {
         o.geometry.dispose();
@@ -711,6 +730,7 @@ export class FlowUi {
     const build = menu ? () => this.buildMenu() : builders[phase];
     this.root.visible = build !== undefined;
     build?.();
+    if (build) this.stopAbove = keepAbove(this.root);
   }
 
   private setSubview(view: Subview): void {
@@ -1323,32 +1343,42 @@ export class FlowUi {
     this.refresh();
   }
 
-  /**
-   * The deck viewer: one page of the run deck as real card faces (the reward board's atlas faces),
-   * a heading with the count, and Previous, Next and Back. The faces only draw; the buttons take
-   * the laser and the mouse.
-   */
   private buildDeck(): void {
     const deck = this.deps.flow.run?.deck ?? [];
-    const pages = Math.max(1, Math.ceil(deck.length / DECK_PAGE_SIZE));
+    const stacks = deckStacks(deck, this.deckSort);
+    const pages = Math.max(1, Math.ceil(stacks.length / DECK_PAGE_SIZE));
     this.deckPage = Math.min(Math.max(0, this.deckPage), pages - 1);
     const page = this.deckPage;
-    const cards = this.deckCards;
+    const cards = stacks.slice(page * DECK_PAGE_SIZE, (page + 1) * DECK_PAGE_SIZE);
     const cardHeight = DECK_CARD_WIDTH * HOLO_CARD_ASPECT;
     const width = DECK_COLUMNS * DECK_CARD_WIDTH + (DECK_COLUMNS - 1) * DECK_GAP;
-    const top = 0.32;
+    const top = 0.37;
     const info = this.board(
       'menu-deck',
-      [{ id: 'count', label: `${deck.length} cards · page ${page + 1} of ${pages}` }],
+      [
+        {
+          id: 'count',
+          label: `${deck.length} ${deck.length === 1 ? 'card' : 'cards'} · ${stacks.length} distinct · page ${page + 1} of ${pages}`,
+        },
+        DECK_SORTS.map((sort) => ({
+          id: sort,
+          label: DECK_SORT_LABEL[sort],
+          onSelect: () => {
+            if (this.deckSort === sort) return;
+            this.deckSort = sort;
+            this.turnDeckPage(0);
+          },
+        })),
+      ],
       { x: 0, y: top, z: -BOARD_DISTANCE },
-      { width, heading: 'Your deck' },
+      { width, heading: 'Your deck', selected: [this.deckSort] },
     );
     const cardsTop = top - info.panel.height - BOARD_PAD * 2 - 0.03;
-    const slots = cards.map((id, i) => {
+    const slots = cards.map((stack, i) => {
       const column = i % DECK_COLUMNS;
       const row = Math.floor(i / DECK_COLUMNS);
       return {
-        id,
+        ...stack,
         x: -width / 2 + DECK_CARD_WIDTH / 2 + column * (DECK_CARD_WIDTH + DECK_GAP),
         y: -cardHeight / 2 - row * (cardHeight + DECK_GAP),
         width: DECK_CARD_WIDTH,
@@ -1359,6 +1389,7 @@ export class FlowUi {
     this.deckFaces.root.name = 'deck-card-faces';
     this.deckFaces.root.position.set(0, cardsTop, -BOARD_DISTANCE);
     this.root.add(this.deckFaces.root);
+    this.addStackDecorations(this.deckFaces.root, slots, cardHeight);
     // The faces only draw; these undrawn planes take the pointer for the keyword tip.
     this.deckHits = new THREE.Group();
     this.deckHits.name = 'deck-card-hits';
@@ -1372,27 +1403,79 @@ export class FlowUi {
       this.deckHits?.add(hit);
     });
     this.deckFaces.root.add(this.deckHits);
-    const navY = cardsTop - DECK_ROWS * cardHeight - (DECK_ROWS - 1) * DECK_GAP - 0.05;
+    const rows = pages > 1 ? DECK_ROWS : Math.max(1, Math.ceil(cards.length / DECK_COLUMNS));
+    const navY = cardsTop - rows * cardHeight - (rows - 1) * DECK_GAP - 0.05;
     this.board(
       'menu-deck-nav',
       [
         [
-          {
-            id: 'prev',
-            label: 'Previous',
-            ...(page > 0 ? { onSelect: () => this.turnDeckPage(page - 1) } : {}),
-          },
-          {
-            id: 'next',
-            label: 'Next',
-            ...(page < pages - 1 ? { onSelect: () => this.turnDeckPage(page + 1) } : {}),
-          },
+          ...(pages > 1
+            ? [
+                {
+                  id: 'prev',
+                  label: 'Previous',
+                  ...(page > 0 ? { onSelect: () => this.turnDeckPage(page - 1) } : {}),
+                },
+                {
+                  id: 'next',
+                  label: 'Next',
+                  ...(page < pages - 1 ? { onSelect: () => this.turnDeckPage(page + 1) } : {}),
+                },
+              ]
+            : []),
+          { id: 'back', label: 'Back', onSelect: () => this.setMenu('main') },
         ],
-        { id: 'back', label: 'Back', onSelect: () => this.setMenu('main') },
       ],
       { x: 0, y: navY, z: -BOARD_DISTANCE },
-      { width: 0.5 },
+      { width: pages > 1 ? width : 0.26 },
     );
+  }
+
+  private addStackDecorations(
+    root: THREE.Group,
+    slots: readonly (RewardCardSlot & { count: number })[],
+    height: number,
+  ): void {
+    const layerCount = slots.reduce((total, slot) => total + Math.min(2, slot.count - 1), 0);
+    if (!layerCount) return;
+    const backs = new THREE.InstancedMesh(
+      new THREE.PlaneGeometry(DECK_CARD_WIDTH, height),
+      new THREE.MeshBasicMaterial({
+        map: plateTexture(PALETTE.walnut, PALETTE.brass, DECK_CARD_WIDTH, height, 0.009),
+        toneMapped: false,
+      }),
+      layerCount,
+    );
+    backs.name = 'deck-stack-backs';
+    backs.raycast = () => undefined;
+    const matrix = new THREE.Matrix4();
+    let index = 0;
+    for (const slot of slots) {
+      if (slot.count < 2) continue;
+      for (let layer = 1; layer <= Math.min(2, slot.count - 1); layer++) {
+        const offset = layer * 0.0065;
+        backs.setMatrixAt(
+          index++,
+          matrix.makeTranslation(slot.x + offset, slot.y + offset, -0.0015 * layer),
+        );
+      }
+      const text = `×${slot.count}`;
+      const width = Math.min(slot.width * 0.76, 0.019 + 0.014 * text.length);
+      const badge = createScalableLabel(text, width, 0.033, {
+        background: PALETTE.warmBlack,
+        border: PALETTE.brass,
+        fontSize: Math.min(0.024, width / (text.length * 0.7)),
+      });
+      badge.name = `deck-stack-count-${slot.id}`;
+      badge.position.set(slot.x + (slot.width - width) / 2 - 0.004, slot.y - height * 0.075, 0.008);
+      badge.traverse((node) => {
+        node.raycast = () => undefined;
+      });
+      root.add(badge);
+      this.extras.push(badge);
+    }
+    root.add(backs);
+    this.deckBacks = backs;
   }
 
   /** Drops a reward flight without applying its pick (the board went away under it). */

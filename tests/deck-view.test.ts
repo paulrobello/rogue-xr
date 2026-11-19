@@ -9,10 +9,10 @@ import { createWorkshop } from '../src/rules/workshop.ts';
 
 const SEED = 'BRASS042';
 
-function rig() {
+function rig(starterDeck: readonly string[] = STARTER_DECK) {
   const flow = new RunFlow({
     workshop: createWorkshop(),
-    starterDeck: STARTER_DECK,
+    starterDeck,
     rewardPool: REWARD_POOL,
   });
   const ui = new FlowUi({
@@ -35,39 +35,91 @@ const faces = (ui: FlowUi): THREE.Object3D | undefined =>
   ui.root.getObjectByName('deck-card-faces');
 
 describe('deck viewer in the in-run menu (playtest card E)', () => {
-  it('opens from the menu while exploring, pages through the whole deck and goes back', () => {
+  it('shows all ten starter cards in four slots, with a count and offset backs only for repeats', () => {
     const { flow, ui, head } = rig();
     flow.newRun(SEED);
     ui.sync(head);
     ui.openMenu(head);
-    const deck = flow.run?.deck ?? [];
-    expect(deck.length).toBeGreaterThan(DECK_PAGE_SIZE);
     expect(ui.activate('menu-deck')).toBe(true);
-    expect(ui.menuView).toBe('deck');
-    expect(ui.deckCards).toEqual(deck.slice(0, DECK_PAGE_SIZE));
-    // Real card faces: one face slot per card on the page, drawn by the reward board's faces.
-    const bodies = faces(ui)?.getObjectByName('reward-card-bodies');
-    expect(bodies).toBeInstanceOf(THREE.InstancedMesh);
-    expect((bodies as THREE.InstancedMesh).count).toBe(DECK_PAGE_SIZE);
-    expect(ui.controlIds()).toEqual(
-      expect.arrayContaining(['menu-deck-nav-next', 'menu-deck-nav-back']),
+    expect(ui.deckCards).toEqual(['strike', 'defend', 'cog-toss', 'warding-glyph']);
+    expect(faces(ui)?.getObjectByName('deck-stack-count-strike')?.userData.labelText).toBe('×4');
+    expect(faces(ui)?.getObjectByName('deck-stack-count-defend')?.userData.labelText).toBe('×4');
+    expect(faces(ui)?.getObjectByName('deck-stack-count-cog-toss')).toBeUndefined();
+    const backs = faces(ui)?.getObjectByName('deck-stack-backs') as THREE.InstancedMesh;
+    expect(backs.count).toBe(4);
+    const bodies = faces(ui)?.getObjectByName('reward-card-bodies') as THREE.InstancedMesh;
+    expect(bodies.count).toBe(4);
+    expect(ui.root.getObjectByName('menu-deck-count')?.userData.labelText).toBe(
+      '10 cards · 4 distinct · page 1 of 1',
     );
-    // The first page has nothing before it: Previous is a label, not a control.
-    expect(ui.controlIds()).not.toContain('menu-deck-nav-prev');
-    expect(ui.activate('menu-deck-nav-prev')).toBe(false);
-
-    expect(ui.activate('menu-deck-nav-next')).toBe(true);
-    expect(ui.deckCards).toEqual(deck.slice(DECK_PAGE_SIZE));
     expect(ui.controlIds()).not.toContain('menu-deck-nav-next');
-    expect(ui.activate('menu-deck-nav-next')).toBe(false);
-    expect(ui.activate('menu-deck-nav-prev')).toBe(true);
-    expect(ui.deckCards).toEqual(deck.slice(0, DECK_PAGE_SIZE));
-
     expect(ui.activate('menu-deck-nav-back')).toBe(true);
     expect(ui.menuView).toBe('main');
     expect(ui.deckCards).toEqual([]);
     expect(faces(ui)).toBeUndefined();
     expect(ui.controlIds()).toContain('menu-resume');
+    ui.dispose();
+  });
+
+  it('groups exact card versions before paging and brings the chosen role to the front', () => {
+    const deck = [
+      'strike',
+      'defend',
+      'cog-toss',
+      'warding-glyph',
+      'strike+',
+      'iron-knuckle',
+      'arc-bolt',
+      'ratchet-flurry',
+      'rivet-plate',
+      'release-valve',
+      'counterstroke',
+      'time-spiral',
+      'brass-bulwark',
+      'rust-spray',
+      'strike+',
+      'counterstroke',
+      'strike+',
+      'defend',
+    ];
+    const { flow, ui, head } = rig(deck);
+    flow.newRun(SEED);
+    ui.sync(head);
+    ui.openMenu(head);
+    ui.activate('menu-deck');
+    expect(ui.deckCards).toEqual(deck.slice(0, DECK_PAGE_SIZE));
+    expect(faces(ui)?.getObjectByName('deck-stack-count-strike+')?.userData.labelText).toBe('×3');
+    expect(faces(ui)?.getObjectByName('deck-stack-count-strike')).toBeUndefined();
+    expect(ui.activate('menu-deck-nav-prev')).toBe(false);
+    expect(ui.activate('menu-deck-nav-next')).toBe(true);
+    expect(ui.deckCards).toEqual(deck.slice(8, 14));
+    expect(ui.activate('menu-deck-nav-next')).toBe(false);
+    expect(ui.activate('menu-deck-defense')).toBe(true);
+    expect(ui.deckCards.slice(0, 5)).toEqual([
+      'defend',
+      'warding-glyph',
+      'rivet-plate',
+      'counterstroke',
+      'brass-bulwark',
+    ]);
+    expect(ui.activate('menu-deck-nav-prev')).toBe(false);
+    expect(ui.activate('menu-deck-offense')).toBe(true);
+    expect(ui.deckCards.slice(0, 7)).toEqual([
+      'strike',
+      'cog-toss',
+      'strike+',
+      'iron-knuckle',
+      'arc-bolt',
+      'ratchet-flurry',
+      'counterstroke',
+    ]);
+    expect(ui.activate('menu-deck-utility')).toBe(true);
+    expect(ui.deckCards.slice(0, 3)).toEqual(['release-valve', 'time-spiral', 'rust-spray']);
+    expect(ui.activate('menu-deck-nav-next')).toBe(true);
+    expect(ui.activate('menu-deck-nav-prev')).toBe(true);
+    expect(ui.activate('menu-deck-order')).toBe(true);
+    expect(ui.deckCards).toEqual(deck.slice(0, DECK_PAGE_SIZE));
+    expect(flow.run?.deck).toEqual(deck);
     ui.dispose();
   });
 
@@ -81,8 +133,12 @@ describe('deck viewer in the in-run menu (playtest card E)', () => {
     ui.sync(head);
     ui.openMenu(head);
     ui.activate('menu-deck');
-    ui.activate('menu-deck-nav-next');
-    expect(ui.deckCards.at(-1)).toBe(picked);
+    const count = flow.run?.deck.filter((id) => id === picked).length ?? 0;
+    expect(ui.deckCards.filter((id) => id === picked)).toHaveLength(1);
+    if (count > 1)
+      expect(faces(ui)?.getObjectByName(`deck-stack-count-${picked}`)?.userData.labelText).toBe(
+        `×${count}`,
+      );
     ui.dispose();
   });
 

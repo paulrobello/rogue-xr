@@ -124,7 +124,7 @@ const IDENTITY = new THREE.Quaternion();
  */
 export class RewardCardFaces {
   readonly root = new THREE.Group();
-  private readonly slots: readonly RewardCardSlot[];
+  readonly slots: readonly RewardCardSlot[];
   private readonly cards: readonly SliceCard[];
   private readonly syncLabels: boolean;
   private readonly fallbackFace: FallbackFace;

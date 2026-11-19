@@ -26,6 +26,7 @@ const { values: opts } = parseArgs({
     controls: { type: 'boolean', default: false },
     workshop: { type: 'boolean', default: false },
     foundry: { type: 'boolean', default: false },
+    deck: { type: 'boolean', default: false },
     // Only the enemy-phase checks: one two-automaton fight on TURN_SEED.
     turns: { type: 'boolean', default: false },
     // Only the turned-away Enter VR check (XO5): the title must be re-placed in front of the head.
@@ -178,7 +179,29 @@ try {
     await settle(800);
   };
 
-  if (opts.foundry) {
+  if (opts.deck) {
+    await page.goto(`${opts.base}/?seed=${opts.seed}&debug`);
+    await waitFor('deck-run-ready', () => window.__flow?.flow.phase === 'explore');
+    await enterVr();
+    await ev(() => window.__xrEmu.device.controllers.left.updateButtonValue('y-button', 1));
+    await waitFor('run-menu-open', () => window.__flow.ui.menuView === 'main');
+    await ev(() => window.__xrEmu.device.controllers.left.updateButtonValue('y-button', 0));
+    await press('menu-deck');
+    await press('menu-deck-defense');
+    const visible = await ev(() => window.__flow.ui.deckCards);
+    record(
+      'deck-defense-first',
+      visible.join(',') === 'defend,warding-glyph,strike,cog-toss',
+      visible,
+    );
+    const badge = await ev(() => window.__xrEmu.worldOf('deck-stack-count-defend'));
+    if (badge) {
+      await aim(MAIN, badge);
+      await waitFor('inspect-counted-card', () => window.__flow.ui.cardTipShown?.id === 'defend');
+    } else record('defend-count-badge', false, 'missing count');
+    await shot('deck-stacks');
+    await press('menu-deck-nav-back');
+  } else if (opts.foundry) {
     await page.goto(`${opts.base}/?title&debug`);
     await waitFor('foundry-ready', () => window.__flow?.ui?.visible);
     await ev(async () => {
