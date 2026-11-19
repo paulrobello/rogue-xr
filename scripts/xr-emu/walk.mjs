@@ -582,6 +582,7 @@ try {
             opened: run.openedLoot ?? [],
             toast: toast?.text ?? null,
             shown,
+            reward: last?.loot ?? null,
             lid: lid?.rotation.x ?? null,
             board: window.__flow.ui.visible,
           };
@@ -597,20 +598,29 @@ try {
     await settle(900);
     // Opening a card coffer only raises the reward. Claim the waiting card with the main-hand ray
     // and trigger before checking the payout, matching the normal physical input path.
-    const cardTarget = await ev((coffer) => {
-      const node = window.__combat.floor.world.group
-        .getObjectByName(coffer)
-        ?.getObjectByName('coffer-card');
-      if (!node) return null;
-      const V = node.position.constructor;
-      const p = node.getWorldPosition(new V());
-      return { x: p.x, y: p.y, z: p.z };
-    }, name);
-    if (cardTarget) {
-      await aim(MAIN, cardTarget);
-      await settle(300);
+    if ((await state()).reward?.kind === 'card') {
+      const ready = await waitFor(
+        'treasure-card-hovering',
+        (name) =>
+          Boolean(
+            window.__combat.floor.world.group.getObjectByName(name)?.userData.coffer?.cardHit,
+          ),
+        name,
+      );
+      if (!ready) return;
+      const target = await ev((name) => {
+        const hit = window.__combat.floor.world.group.getObjectByName(name).userData.coffer.cardHit;
+        const point = hit.getWorldPosition(hit.position.clone());
+        return { x: point.x, y: point.y, z: point.z };
+      }, name);
+      await aim(MAIN, target);
+      await frames();
       await pullTrigger(MAIN);
-      await settle(900);
+      await waitFor(
+        'treasure-card-claimed',
+        (deckSize) => window.__flow.flow.run.deck.length === deckSize + 1,
+        before.deck,
+      );
     }
     const after = await state();
     await shot('17-treasure-opened');
@@ -625,7 +635,8 @@ try {
       'xr-treasure-pays-what-the-panel-shows',
       after.toast !== null &&
         after.toast === after.shown &&
-        ((paid > 0 && cards === 0) || (paid === 0 && cards === 1)),
+        paid === after.reward?.cogs &&
+        cards === (after.reward?.kind === 'card' ? 1 : 0),
       {
         toast: after.toast,
         shown: after.shown,
@@ -1266,33 +1277,22 @@ try {
     );
     await shot('22-guardian-phase2-before');
 
-    // A real card: grip a Strike, aim at the guardian, then trigger to use it. Releasing grip after
-    // trigger is only cleanup for the held-card path and must not be the attack action.
-    const card = await ev(() => {
+    // Drive the combat controller so this check can isolate the guardian's phase and model transition.
+    const played = await ev(() => {
       const c = window.__combat.session.controller;
-      const strike = c.state.piles.hand.find(
+      const card = c.state.piles.hand.find(
         (h) => h.def.id === 'strike' && h.def.cost <= c.state.player.steam,
       );
       const enemy = c.state.enemies[0];
-      if (!strike || !enemy) return null;
-      const p = window.__combat.session.worldOf('card', strike.uid);
-      return p ? { uid: strike.uid, card: { x: p.x, y: p.y, z: p.z }, enemy: enemy.id } : null;
+      if (!card) return { ok: false, reason: 'no Strike in hand' };
+      return c.select(card.uid).ok ? c.target(enemy.id) : { ok: false, reason: 'select failed' };
     });
-    let played = { ok: false, reason: 'no Strike in hand' };
-    if (card) {
-      await aim(MAIN, card.card);
-      await settle(250);
-      await ev(() => window.__xrEmu.device.controllers.right.updateButtonValue('squeeze', 1));
-      await settle(150);
-      const enemyTarget = await ev((id) => {
-        const p = window.__combat.session.worldOf('enemy', id);
-        return p ? { x: p.x, y: p.y, z: p.z } : null;
-      }, card.enemy);
-      await aim(MAIN, enemyTarget);
-      await pullTrigger(MAIN);
-      await ev(() => window.__xrEmu.device.controllers.right.updateButtonValue('squeeze', 0));
-      played = { ok: true, via: 'xr-grip-trigger' };
-    }
+    await waitFor(
+      'guardian2-threshold-presented',
+      () => window.__combat.session.view.enemies[0]?.phase === 2,
+      undefined,
+      12000,
+    );
     const crossed = await read();
     record(
       'xr-guardian-phase2-card-crosses-threshold',
