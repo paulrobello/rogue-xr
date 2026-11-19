@@ -12,7 +12,11 @@ import {
 import * as THREE from 'three';
 import { Text } from 'troika-three-text';
 import { TABLE_DISTANCE_CHOICES } from '../combat/placement.ts';
-import { CanvasLabel, configureTextTexture } from '../combat-view/canvas-label.ts';
+import {
+  CanvasLabel,
+  configureTextTexture,
+  measuredLines as wrapText,
+} from '../combat-view/canvas-label.ts';
 import { cardTip } from '../combat-view/card-keywords.ts';
 import { drawTip } from '../combat-view/status-info.ts';
 import { getCard } from '../content/cards.ts';
@@ -40,6 +44,7 @@ import {
 } from '../rules/workshop.ts';
 import type { PressureNoteRecord } from '../world/pressure-notes.ts';
 import { CARD_FLIGHT_SECONDS, flightGoal, flightPose, flightScale } from './card-flight.ts';
+import { dressClockworkDial } from './clockwork-dial.ts';
 import { DECK_SORTS, type DeckSort, deckStacks } from './deck-view.ts';
 import type { FlowPhase, RunFlow } from './flow.ts';
 import {
@@ -83,6 +88,7 @@ export interface FlowUiDeps {
    * (a standoff in front of it). Absent or null: the card is taken without a flight.
    */
   flyTarget?: () => FlyTarget | null;
+  dialProbe?: THREE.Texture | null;
   /** A newer deployed build: the title offers the reload while one is available. */
   update?: TitleUpdate;
   onNoteOpened?: (position: THREE.Vector3) => void;
@@ -220,20 +226,6 @@ function disposeMesh(mesh: THREE.Mesh): void {
   const material = mesh.material as THREE.MeshBasicMaterial;
   material.map?.dispose();
   material.dispose();
-}
-
-function wrapText(ctx: CanvasRenderingContext2D, text: string, width: number): string[] {
-  const lines: string[] = [];
-  let line = '';
-  for (const word of text.split(/\s+/)) {
-    const next = line ? `${line} ${word}` : word;
-    if (ctx.measureText(next).width > width && line) {
-      lines.push(line);
-      line = word;
-    } else line = next;
-  }
-  if (line) lines.push(line);
-  return lines;
 }
 
 /**
@@ -375,7 +367,7 @@ export class FlowUi {
   private notePhysical = false;
   private menuHead: THREE.Object3D | null = null;
   private radialMenu: RadialMenu<RunMenuAction> | null = null;
-  private radialDecor: THREE.Group | null = null;
+  private releaseDial: (() => void) | null = null;
   private flight: RewardFlight | null = null;
   private artTexture: THREE.Texture | null = null;
   private artLoaded = Promise.resolve(true);
@@ -759,21 +751,8 @@ export class FlowUi {
   private clear(): void {
     this.stopAbove?.();
     this.stopAbove = null;
-    if (this.radialDecor) {
-      this.radialDecor.traverse((object) => {
-        if (!(object as THREE.Mesh).isMesh) return;
-        const mesh = object as THREE.Mesh;
-        mesh.geometry.dispose();
-        const material = mesh.material;
-        if (Array.isArray(material)) {
-          material.forEach((entry) => {
-            entry.dispose();
-          });
-        } else material.dispose();
-      });
-      this.radialDecor.removeFromParent();
-      this.radialDecor = null;
-    }
+    this.releaseDial?.();
+    this.releaseDial = null;
     this.radialMenu?.dispose();
     this.radialMenu = null;
     for (const board of this.boards) {
@@ -1458,9 +1437,9 @@ export class FlowUi {
       ],
       accentColor: PALETTE.brass,
       theme: {
-        glass: PALETTE.warmBlack,
-        selected: PALETTE.brassDark,
-        cancel: PALETTE.walnut,
+        glass: '#244541',
+        selected: '#996830',
+        cancel: '#60422b',
         text: PALETTE.parchment,
         outline: PALETTE.brass,
       },
@@ -1469,8 +1448,7 @@ export class FlowUi {
     this.radialMenu.root.position.set(0, 0, -BOARD_DISTANCE);
     this.radialMenu.root.scale.setScalar(1.18);
     this.radialMenu.open();
-    this.radialDecor = this.clockworkRim();
-    this.radialMenu.root.add(this.radialDecor);
+    this.releaseDial = dressClockworkDial(this.radialMenu.root, this.deps.dialProbe ?? null);
     const room = this.deps.showcaseRoom?.();
     if (room) {
       const plaque = createScalableLabel(room, 0.55, 0.063, {
@@ -1484,39 +1462,6 @@ export class FlowUi {
     }
     this.root.add(this.radialMenu.root);
     this.extras.push(this.radialMenu.root);
-  }
-
-  private clockworkRim(): THREE.Group {
-    const group = new THREE.Group();
-    group.name = 'menu-clockwork-rim';
-    const brass = new THREE.MeshBasicMaterial({ color: PALETTE.brass, toneMapped: false });
-    const darkBrass = new THREE.MeshBasicMaterial({ color: PALETTE.brassDark, toneMapped: false });
-    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.395, 0.014, 8, 48), brass);
-    rim.position.z = -0.004;
-    rim.raycast = () => undefined;
-    group.add(rim);
-    const inner = new THREE.Mesh(new THREE.TorusGeometry(0.119, 0.006, 6, 32), darkBrass);
-    inner.position.z = -0.003;
-    inner.raycast = () => undefined;
-    group.add(inner);
-    for (let index = 0; index < 12; index += 1) {
-      const angle = (index / 12) * Math.PI * 2;
-      const tick = new THREE.Mesh(
-        new THREE.BoxGeometry(0.009, index % 3 === 0 ? 0.045 : 0.025, 0.004),
-        darkBrass,
-      );
-      tick.position.set(Math.cos(angle) * 0.395, Math.sin(angle) * 0.395, -0.002);
-      tick.rotation.z = angle;
-      tick.raycast = () => undefined;
-      group.add(tick);
-    }
-    for (const angle of [0, Math.PI / 2, Math.PI, (Math.PI * 3) / 2]) {
-      const rivet = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 6), brass);
-      rivet.position.set(Math.cos(angle) * 0.395, Math.sin(angle) * 0.395, 0.003);
-      rivet.raycast = () => undefined;
-      group.add(rivet);
-    }
-    return group;
   }
 
   private buildRunSettings(): void {
@@ -1542,20 +1487,27 @@ export class FlowUi {
 
   private buildItems(): void {
     const ids = this.deps.flow.pressure.notes;
-    const rows: MenuRow[] =
-      ids.length === 0
-        ? [{ id: 'empty', label: 'No items collected yet' }]
-        : ids.map((id) => {
-            const record = this.deps.noteRecord?.(id);
-            return {
-              id: `item-${id}`,
-              label: record ? `${record.title} · ${record.source}` : id,
-              onSelect: () => {
-                if (!this.menuHead || !record) return;
-                this.readNote(id, this.menuHead, false);
-              },
-            };
-          });
+    const rows: MenuRow[] = ids.map((id) => {
+      const record = this.deps.noteRecord?.(id);
+      return {
+        id: `item-${id}`,
+        label: record ? `${record.title} · ${record.source}` : id,
+        onSelect: () => {
+          if (!this.menuHead || !record) return;
+          this.readNote(id, this.menuHead, false);
+        },
+      };
+    });
+    const run = this.deps.flow.run;
+    const keys = run?.bookSecretKeyRooms ?? [];
+    const unlocked = new Set(run?.bookSecretCabinetRooms ?? []);
+    const carriedKeys = keys.filter((room) => !unlocked.has(room)).length;
+    if (carriedKeys)
+      rows.unshift({
+        id: 'clockmakers-key',
+        label: carriedKeys === 1 ? 'Clockmaker’s key' : `Clockmaker’s keys ×${carriedKeys}`,
+      });
+    if (!rows.length) rows.push({ id: 'empty', label: 'No items collected yet' });
     rows.push({ id: 'back', label: 'Back', onSelect: () => this.setMenu('main') });
     this.board(
       'menu-items',

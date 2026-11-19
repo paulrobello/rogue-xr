@@ -213,6 +213,8 @@ for z in (.06,.57,1.08,1.59,2.14): cube(book,'Shelf',(0,0,z),(1.45,.38,.09),wood
 cube(book,'Back',(0,.17,1.10),(1.34,.035,2.05),wood)
 cube(book,'Crown',(0,0,2.24),(1.56,.46,.12),wood2,.025)
 cube(book,'Lower compartment',(0,.14,.32),(1.28,.025,.40),iron)
+for x in (-.64,.64): cube(book,'Cabinet door side rebate',(x,-.182,.315),(.04,.05,.42),wood2)
+cube(book,'Cabinet door top rebate',(0,-.182,.52),(1.30,.05,.025),wood2)
 for shelf in range(1,4):
     for j in range(10):
         if shelf==2 and j==4: continue
@@ -223,15 +225,25 @@ for shelf in range(1,4):
         book_uv(cube(book,'Book spine',(x,-.135,z),(.103,.02,h),bindings,.004),col,row,0,2)
         for dz in (-.25,.25): cube(book,'Gilt spine',(x,-.147,z+h*dz),(.091,.006,.009),brass)
         for dy in (-.09,-.04,.01): cube(book,'Page edge',(x,dy,z+h/2-.009),(.074,.003,.003),ivory)
-slider=empty('Bookcase_Slider',book,(0,-.23,0)); cube(slider,'Sliding panel',(0,0,.30),(1.28,.045,.36),wood2,.02); cube(slider,'Slider inset',(0,-.03,.30),(1.1,.02,.22),wood,.015)
+slider=empty('Bookcase_Slider',book,(0,-.23,0))
+door=cube(slider,'Cabinet door',(0,0,.315),(1.30,.045,.42),wood2,.005)
+inset=cube(slider,'Cabinet door inset',(0,-.03,.315),(1.12,.02,.29),wood,.008)
+lock=cube(slider,'Lock escutcheon',(0,-.043,.31),(.075,.008,.09),brass,.006)
+round_cut=cyl(slider,'Keyhole round cutter',(0,-.02,.32),.012,.15,iron,'Y',verts=24)
+stem_cut=cube(slider,'Keyhole stem cutter',(0,-.02,.301),(.012,.15,.027),iron)
+bpy.context.view_layer.update()
+for target in (door,inset,lock):
+    for cutter in (round_cut,stem_cut):
+        modifier=target.modifiers.new('Keyhole','BOOLEAN'); modifier.operation='DIFFERENCE'; modifier.object=cutter
+        bpy.context.view_layer.objects.active=target; bpy.ops.object.modifier_apply(modifier=modifier.name)
+    for face in target.data.polygons: face.material_index=0
+    while len(target.data.materials)>1: target.data.materials.pop(index=1)
+for cutter in (round_cut,stem_cut): bpy.data.objects.remove(cutter,do_unlink=True)
 pull=empty('Bookcase_PullBook',book,(-.08,-.05,1.31)); book_uv(cube(pull,'Book pages',(0,.015,0),(.082,.17,.275),bindings,.003),0,3,0,1)
 for dx in (-.047,.047): book_uv(cube(pull,'Red cover',(dx,.015,0),(.009,.20,.30),bindings,.002),0,2,1,2)
 book_uv(cube(pull,'Red spine',(0,-.085,0),(.103,.02,.30),bindings,.004),0,0,0,2)
 for z in (-.10,.1): cube(pull,'Gilt line',(0,-.097,z),(.09,.006,.01),brass)
-for x in (-.018,.018): torus(pull,'Winding key bow',(x,-.102,.018),.016,.004,brass,'Y')
-bar(pull,'Winding key stem',(0,-.102,.012),(0,-.102,-.043),.005,brass)
-bar(pull,'Winding key tooth',(0,-.102,-.039),(.018,-.102,-.039),.004,brass)
-bar(pull,'Winding key tooth',(0,-.102,-.028),(.012,-.102,-.028),.004,brass)
+cube(pull,'Red ribbon',(0,-.098,.064),(.018,.005,.16),velvet,.001)
 for y in (-.04,.01,.06): cube(pull,'Page edge',(0,y,.14),(.074,.003,.003),ivory)
 
 candle=empty('Candelabrum'); cyl(candle,'Weighted base',(0,0,.035),.24,.07,iron,verts=16,r2=.19); torus(candle,'Base rim',(0,0,.075),.17,.014,brass)
@@ -289,9 +301,9 @@ for z in (-.055,-.015): cube(visor,'Eye slit',(.14,-.132,z),(.17,.012,.012),enam
 for x in (.06,.10,.14,.18,.22): cyl(visor,'Visor rivet',(x,-.128,-.09),.007,.01,brass,'Y',8)
 bar(visor,'Visor brow',(.025,-.12,.025),(.255,-.12,.025),.01,brass)
 
-painting=empty('FramedPainting'); cube(painting,'Canvas',(0,0,.50),(.78,.035,.80),cloth,.005)
+painting=empty('FramedPainting'); cube(painting,'Canvas',(0,-.054,.50),(.78,.035,.80),cloth,.001)
 backing=material('PictureBacking',(.65,.53,.36),0,.95); MATS.append(backing)
-cube(painting,'Canvas backing',(0,.024,.50),(.96,.008,.98),backing)
+cube(painting,'Canvas backing',(0,-.030,.50),(.98,.04,1.00),backing)
 # Nested mitred contours form a deep, carved molding without crossing the image aperture.
 profile=[(.470,-.075),(.480,-.085),(.489,-.084),(.495,-.067),
          (.505,-.064),(.515,-.075),(.525,-.094),(.538,-.105),

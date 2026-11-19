@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { glb_sha256 } from '../../assets-source/props/interior-furnishings/provenance.json';
 import { type Box, type Rect, type Socket, templateById } from '../content/rooms.ts';
 import { Stream } from '../core/rng.ts';
 import type { FloorWorld } from './floor-world.ts';
@@ -40,16 +41,18 @@ export function loadInteriorFurnishings(
   base = INTERIOR_FURNISHINGS_BASE,
 ): Promise<InteriorFurnishingsAsset> {
   if (!assetPromise) {
-    assetPromise = new GLTFLoader().loadAsync(`${base}/interior-furnishings.glb`).then((gltf) => {
-      gltf.scene.updateMatrixWorld(true);
-      const roots = {} as Record<InteriorFurnishingRoot, THREE.Object3D>;
-      for (const name of ROOT_NAMES) {
-        const root = gltf.scene.getObjectByName(name);
-        if (!root) throw new Error(`interior-furnishings: root ${name} missing`);
-        roots[name] = root;
-      }
-      return { scene: gltf.scene, roots };
-    });
+    assetPromise = new GLTFLoader()
+      .loadAsync(`${base}/interior-furnishings.glb?v=${glb_sha256}`)
+      .then((gltf) => {
+        gltf.scene.updateMatrixWorld(true);
+        const roots = {} as Record<InteriorFurnishingRoot, THREE.Object3D>;
+        for (const name of ROOT_NAMES) {
+          const root = gltf.scene.getObjectByName(name);
+          if (!root) throw new Error(`interior-furnishings: root ${name} missing`);
+          roots[name] = root;
+        }
+        return { scene: gltf.scene, roots };
+      });
   }
   return assetPromise;
 }
@@ -107,6 +110,7 @@ const SIZES: Readonly<Record<InteriorFurnishingRoot, [number, number]>> = {
 
 // The hall's lower bay molding tops out at 1.49 m above the floor.
 const PAINTING_BOTTOM_Y = 1.65;
+const WALL_ART_CENTRE_Y = 2.345;
 
 const THEME_ROOTS: Readonly<Record<InteriorTheme, readonly InteriorFurnishingRoot[]>> = {
   library: ['Bookcase', 'WallClock', 'Candelabrum'],
@@ -290,7 +294,7 @@ function candidatesFor(
       }
   }
   function placeOnWall(root: InteriorFurnishingRoot, near?: Candidate): Candidate | undefined {
-    const spots = spotsForWall(fp, SIZES[root][1], stream);
+    const spots = spotsForWall(fp, root, stream, template.id);
     if (near)
       spots.sort(
         (a, b) => Math.hypot(a.x - near.x, a.z - near.z) - Math.hypot(b.x - near.x, b.z - near.z),
@@ -299,9 +303,15 @@ function candidatesFor(
       const c: Candidate = {
         ...spot,
         root,
-        y: root === 'WallClock' ? 1.18 : 0,
+        y: 0,
       };
-      if (root === 'FramedPainting') c.y = PAINTING_BOTTOM_Y - rootBounds[root].min.y;
+      if (root === 'FramedPainting' || root === 'WallClock') {
+        const bounds = rootBounds[root];
+        c.y = Math.max(
+          PAINTING_BOTTOM_Y - bounds.min.y,
+          WALL_ART_CENTRE_Y - (bounds.max.y + bounds.min.y) / 2,
+        );
+      }
       if (WALL_FIXTURES.has(root)) fitWallCandidate(c, rootBounds[root], fp);
       if (sane([c])) return c;
     }
@@ -310,7 +320,9 @@ function candidatesFor(
   for (const root of theme === 'dining' ? [] : THEME_ROOTS[theme]) {
     if (root === 'Curtain') continue;
     const c = placeOnWall(root);
-    if (c && root === 'FramedPainting') c.clueEligible = Boolean(placeOnWall('Bookcase', c));
+    if (c && root === 'FramedPainting') {
+      c.clueEligible = Boolean(placeOnWall('Bookcase', c));
+    }
   }
   const windowX = template.id === 'hall' ? 2.6 : template.id === 'study' ? 0 : undefined;
   if (windowX !== undefined && (theme === 'gallery' || theme === 'dining')) {
@@ -328,38 +340,81 @@ function candidatesFor(
 }
 
 function fitWallCandidate(candidate: Candidate, bounds: THREE.Box3, fp: Rect): void {
-  // The curtain bounds include the backs of its mounting plates. Sink them just inside the wall.
-  const inset = (candidate.root === 'Curtain' ? -0.0005 : 0.012) - bounds.min.z;
-  switch (candidate.yaw) {
-    case 0:
-      candidate.z = fp.min[1] + inset;
-      break;
-    case Math.PI:
-      candidate.z = fp.max[1] - inset;
-      break;
-    case Math.PI / 2:
-      candidate.x = fp.min[0] + inset;
-      break;
-    case -Math.PI / 2:
-      candidate.x = fp.max[0] - inset;
-      break;
-  }
+  const inset = (candidate.root === 'Curtain' ? 0.003 : 0.012) - bounds.min.z;
+  if (candidate.yaw === 0) candidate.z = fp.min[1] + inset;
+  else if (candidate.yaw === Math.PI) candidate.z = fp.max[1] - inset;
+  else if (candidate.yaw === Math.PI / 2) candidate.x = fp.min[0] + inset;
+  else candidate.x = fp.max[0] - inset;
 }
 
+type Wall = 'N' | 'S' | 'E' | 'W';
+// Free wallpaper spans in the room kit’s wall frame, increasing to the viewer’s right.
+// The hall uses its molded apertures. The study and shaft spans stop at baked furniture,
+// doorway surrounds, lanterns and sconces that do not all have gameplay colliders.
+const WALL_BAYS: Record<string, Partial<Record<Wall, readonly [number, number][]>>> = {
+  hall: {
+    E: [
+      [-2.3, -0.1],
+      [2.7, 4.8],
+    ],
+    W: [
+      [-2.3, -0.1],
+      [2.7, 4.8],
+    ],
+    S: [
+      [0, 2.3],
+      [2.7, 4.8],
+    ],
+  },
+  study: { S: [[-3.85, -0.15]], E: [[0.15, 3.85]], W: [[-3.85, -1.55]] },
+  'gear-shaft': {
+    N: [[-3.8, -0.15]],
+    S: [[-3.8, -0.15]],
+    E: [
+      [-5.1, -3.28],
+      [-2.75, 2.75],
+      [3.28, 5.85],
+    ],
+    W: [
+      [-5.85, -4.1],
+      [-3.48, -2.1],
+      [0.12, 3.28],
+      [3.9, 5.05],
+    ],
+  },
+};
+
 function spotsForWall(
-  fp: ReturnType<typeof templateById>['footprint'],
-  depth: number,
+  fp: Rect,
+  root: InteriorFurnishingRoot,
   stream: Stream,
+  templateId: string,
 ): { x: number; z: number; yaw: number }[] {
-  const margin = 0.11 + depth / 2;
   const spots: { x: number; z: number; yaw: number }[] = [];
-  for (const along of [-0.53, 0, 0.53]) {
-    spots.push(
-      { x: fp.min[0] + margin, z: along * fp.max[1], yaw: Math.PI / 2 },
-      { x: fp.max[0] - margin, z: along * fp.max[1], yaw: -Math.PI / 2 },
-      { x: along * fp.max[0], z: fp.min[1] + margin, yaw: 0 },
-      { x: along * fp.max[0], z: fp.max[1] - margin, yaw: Math.PI },
-    );
+  const bays = WALL_FIXTURES.has(root) ? WALL_BAYS[templateId] : undefined;
+  const [width, depth] = SIZES[root];
+  const inset = 0.11 + depth / 2;
+  for (const wall of ['W', 'E', 'N', 'S'] as const) {
+    const half = wall === 'N' || wall === 'S' ? fp.max[0] : fp.max[1];
+    const centres = bays
+      ? (bays[wall] ?? []).filter(([a, b]) => b - a >= width + 0.1).map(([a, b]) => (a + b) / 2)
+      : [-half * 0.53, 0, half * 0.53];
+    for (const along of centres) {
+      switch (wall) {
+        case 'W':
+          spots.push({ x: fp.min[0] + inset, z: -along, yaw: Math.PI / 2 });
+          break;
+        case 'E':
+          spots.push({ x: fp.max[0] - inset, z: along, yaw: -Math.PI / 2 });
+          break;
+        case 'N':
+          spots.push({ x: along, z: fp.min[1] + inset, yaw: 0 });
+          break;
+        case 'S':
+          spots.push({ x: -along, z: fp.max[1] - inset, yaw: Math.PI });
+          break;
+      }
+    }
   }
   return stream.shuffle(spots);
 }
@@ -544,7 +599,15 @@ export class InteriorFurnishings {
       plane.name = 'FramedPainting_Image';
       const geometry = (canvas as THREE.Mesh).geometry;
       geometry.computeBoundingBox();
-      const front = geometry.boundingBox?.max.z ?? 0.088;
+      const canvasBounds = geometry.boundingBox;
+      const front = canvasBounds?.max.z ?? 0.088;
+      if (canvasBounds) {
+        plane.scale.set(
+          (canvasBounds.max.x - canvasBounds.min.x + 0.02) / 0.78,
+          (canvasBounds.max.y - canvasBounds.min.y + 0.02) / 0.8,
+          1,
+        );
+      }
       plane.position.set(0, 0, front + 0.003);
       canvas.add(plane);
     } else plane.material = this.paintingMaterials[index];

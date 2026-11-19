@@ -33,6 +33,10 @@ export interface RunState {
   readonly pressure?: StoredPressureState;
   /** Rooms whose marked book caches have paid out. */
   readonly bookSecretOpenedRooms?: readonly number[];
+  /** Rooms whose red-book key has been collected but not necessarily used. */
+  readonly bookSecretKeyRooms?: readonly number[];
+  /** Rooms whose cache cabinet was unlocked with its key. */
+  readonly bookSecretCabinetRooms?: readonly number[];
 }
 
 /** Mirrors `EncounterTier` in `floor/generate.ts`; rules may not import from `floor/`. */

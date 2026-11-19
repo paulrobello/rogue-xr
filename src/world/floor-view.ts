@@ -23,7 +23,7 @@ import {
   vignetteStep,
   yawFromMatrix,
 } from '../xr/locomotion.ts';
-import { type BookPick, BookSecret } from './book-secret.ts';
+import { BookSecret } from './book-secret.ts';
 import { animateFires, FIRE_NODE } from './fireplace.ts';
 import { buildFloorWorld, type FloorWorld } from './floor-world.ts';
 import {
@@ -34,7 +34,14 @@ import {
   pickHearth,
 } from './hearth.ts';
 import { InteriorFurnishings, type InteriorFurnishingsAsset } from './interior-furnishings.ts';
-import { type Coffer, type LootMaterials, type LootPick, LootToast, pickCoffer } from './loot.ts';
+import {
+  type Coffer,
+  type LootMaterials,
+  type LootPick,
+  LootToast,
+  pickCoffer,
+  type ToastLines,
+} from './loot.ts';
 import { PressureNotes } from './pressure-notes.ts';
 import { PressureWorks } from './pressure-works.ts';
 import { type RigidNode, rigidAngle } from './study-room.ts';
@@ -99,23 +106,12 @@ export interface FloorHearths {
   approachPoint(room: number, socketId: string, distance?: number): THREE.Vector3 | null;
 }
 
-export interface FloorBookSecret {
-  pick(origin: THREE.Vector3, direction: THREE.Vector3, maxDistance?: number): BookPick | null;
-  near(position: THREE.Vector3, radius?: number): BookPick | null;
-  open(room: number): boolean;
-  markOpened(rooms?: readonly number[]): void;
-  update(dt: number): void;
-  isOpened(room: number): boolean;
-  objectAt(room: number): THREE.Object3D | null;
-  openedRoomIds(): readonly number[];
-}
-
 export interface FloorView {
   world: FloorWorld;
   loot: FloorLoot;
   hearth: FloorHearths;
-  book: FloorBookSecret;
-  showBookSecret(cogs: number, inscription: string, room: number): void;
+  book: BookSecret;
+  showBookSecret(lines: ToastLines, head: THREE.Object3D): void;
   pressure: PressureWorks | null;
   notes: PressureNotes | null;
   readonly furnishings: InteriorFurnishings | null;
@@ -322,7 +318,7 @@ export function mountFloorView(
   /** Live fireplace fires (the hall's); instances of one template share the material and its clock. */
   const fires: { material: THREE.ShaderMaterial; room: THREE.Object3D }[] = [];
   let furnishings: InteriorFurnishings | null = null;
-  let book: BookSecret | null = null;
+  const book = new BookSecret(world, null);
   let candleMotion = 1;
   let candles: { material: THREE.MeshStandardMaterial; intensity: number }[] = [];
   let clock = 0;
@@ -337,7 +333,6 @@ export function mountFloorView(
       1 + candleMotion * (0.055 * Math.sin(clock * 3.1) + 0.022 * Math.sin(clock * 6.8));
     for (const c of candles) c.material.emissiveIntensity = c.intensity * light;
     furnishings?.update(dt, candleMotion < 1);
-    book?.update(dt);
   };
   const disposeActor = (actor: EnemyActor): void => {
     actors.delete(actor.object);
@@ -345,9 +340,11 @@ export function mountFloorView(
     actor.dispose();
   };
   let toast: LootToast | null = null;
+  let toastRoom = world.current;
   const dropToast = (): void => {
     toast?.dispose();
     toast = null;
+    toastRoom = world.current;
   };
   const cofferOf = (room: number, socketId: string): Coffer | undefined =>
     world.coffers.find((c) => c.room === room && c.socketId === socketId);
@@ -452,21 +449,13 @@ export function mountFloorView(
     world,
     loot,
     hearth,
-    get book() {
-      if (!book) book = new BookSecret(world, furnishings);
-      return book;
-    },
+    book,
     pressure,
     notes,
-    showBookSecret(cogs, inscription, room) {
-      const entry = book?.objectAt(room);
-      if (!entry) return;
+    showBookSecret(lines, head) {
       dropToast();
-      const at = entry.getWorldPosition(new THREE.Vector3());
-      toast = new LootToast(
-        { text: `+${cogs} cogs`, caption: inscription },
-        at.setY(at.y + TOAST_LIFT),
-      );
+      const anchor = head.localToWorld(new THREE.Vector3(0, 0.32, -1.65));
+      toast = new LootToast(lines, anchor);
       world.group.add(toast.root);
     },
     get furnishings() {
@@ -474,10 +463,8 @@ export function mountFloorView(
     },
     setFurnishings(asset, paintings, reducedMotion) {
       if (!furnishings) {
-        const openedRooms = book?.openedRoomIds() ?? [];
         furnishings = new InteriorFurnishings(world, asset, { paintings, reducedMotion });
-        book = new BookSecret(world, furnishings);
-        book.markOpened(openedRooms);
+        book.mount(furnishings);
       }
     },
     setCandleMaterials(materials, reducedMotion) {
@@ -562,7 +549,7 @@ export function mountFloorView(
       return spinners.length;
     },
     dispose() {
-      book?.dispose();
+      book.dispose();
       furnishings?.dispose();
       notes?.dispose();
       pressure?.dispose();
@@ -649,11 +636,12 @@ export function mountFloorView(
       world.updateAnimations(dt);
       turnVignette = vignetteStep(turnVignette, 0, dt, DEFAULT_VIGNETTE);
       spin(dt);
+      book.update(dt, head);
       for (const coffer of world.coffers) coffer.update(dt);
       for (const lit of world.hearths) lit.update(dt);
       if (toast) {
         head.getWorldPosition(at);
-        if (!toast.update(dt, at)) dropToast();
+        if (toastRoom !== world.current || !toast.update(dt, at)) dropToast();
       }
       encounter.update(dt);
       dressEnemies();

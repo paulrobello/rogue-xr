@@ -723,10 +723,21 @@ flow.onChange((event) => {
   }
   if (event.type === 'book-secret') {
     storedSnapshot = flow.snapshot(Date.now(), event.room);
-    floor?.book.open(event.room);
-    floor?.showBookSecret(event.cogs, event.inscription, event.room);
+    floor?.book.setStage(event.room, event.stage);
+    floor?.showBookSecret(
+      {
+        text:
+          event.stage === 'key'
+            ? 'Clockmaker’s key'
+            : event.stage === 'unlock'
+              ? 'Unlocked'
+              : `+${event.cogs} cogs`,
+        caption: event.inscription,
+      },
+      camera,
+    );
     const at = floor?.book.objectAt(event.room)?.getWorldPosition(new THREE.Vector3());
-    audio?.playSfx('cog-pickup', at);
+    audio?.playSfx(event.stage === 'unlock' ? 'gear-clank' : 'cog-pickup', at);
     return;
   }
   if (event.type !== 'phase') return;
@@ -809,7 +820,7 @@ const continueRun = (): void => {
     const used = parseLootKey(key);
     if (used) target.hearth.markUsed(used.room, used.socketId);
   }
-  target.book.markOpened(snap.run.bookSecretOpenedRooms ?? []);
+  target.book.restore(snap.run);
   const at = target.standPoint(snap.roomIndex) ?? target.world.spawnPoint();
   rig.position.set(at.x, rig.position.y, at.z);
   target.world.update(at.x, at.z);
@@ -839,6 +850,7 @@ const ui = floor
       onContinue: continueRun,
       update: updateNotice,
       // A picked reward card flies to the hand whose ray picked it, else to just before the head.
+      dialProbe: heroEnv,
       flyTarget: () =>
         rewardHand ? { object: rewardHand, standoff: 0 } : { object: camera, standoff: 0.3 },
       setTableDistance: (distance) => floor?.setTableDistance(distance, camera) ?? true,
@@ -948,8 +960,12 @@ const grabLootCard = (hand: THREE.Object3D | null): boolean => {
 };
 const useHearth = (pick: HearthPick | null): boolean =>
   !!pick && canOpenLoot() && flow.useHearth(pick.room, pick.socketId) !== null;
-const openBook = (pick: ReturnType<FloorView['book']['pick']> | null): boolean =>
-  !!pick && canOpenLoot() && flow.openBookSecret(pick.room);
+const openBook = (pick: ReturnType<FloorView['book']['pick']> | null): boolean => {
+  if (!pick || !canOpenLoot()) return false;
+  if (pick.kind === 'cabinet') return flow.unlockBookSecret(pick.room);
+  if (pick.kind === 'cog') return flow.claimBookSecret(pick.room);
+  return flow.findBookSecretKey(pick.room);
+};
 function operateMachine(hit: PressureAction, hand?: XRHandedness): boolean {
   if (!floor || !canOpenLoot()) return false;
   const room = floor.world.current;

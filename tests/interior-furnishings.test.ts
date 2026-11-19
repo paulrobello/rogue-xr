@@ -106,7 +106,7 @@ describe('interior furnishings', () => {
         const template = templateById(world.plan.rooms[curtain.room]?.templateId ?? 'corridor');
         expect(['hall', 'study']).toContain(template.id);
         expect(curtain.position.x).toBe(template.id === 'hall' ? 2.6 : 0);
-        expect(curtain.position.z).toBeCloseTo(template.footprint.min[1] + 0.165, 3);
+        expect(curtain.position.z).toBeCloseTo(template.footprint.min[1] + 0.1685, 3);
       }
       furnishings.dispose();
     }
@@ -203,6 +203,16 @@ describe('interior furnishings', () => {
       if (seed === 'N0TE0032')
         expect(furnishings.placements.some((p) => p.root === 'FramedPainting')).toBe(true);
       world.group.updateMatrixWorld(true);
+      if (seed === 'MAPTEST2') {
+        const entrancePortrait = furnishings.placements.find(
+          (p) => p.room === 0 && p.root === 'FramedPainting',
+        );
+        const entranceClock = furnishings.placements.find(
+          (p) => p.room === 0 && p.root === 'WallClock',
+        );
+        expect(entrancePortrait).toBeDefined();
+        expect(entranceClock?.position.y ?? 0).toBeGreaterThan(1.8);
+      }
       for (const placement of furnishings.placements) {
         if (placement.root === 'Curtain') curtainCount++;
         if (placement.root === 'FramedPainting') portraitCount++;
@@ -227,6 +237,10 @@ describe('interior furnishings', () => {
           );
         }
         if (['Bookcase', 'WallClock', 'FramedPainting', 'Curtain'].includes(placement.root)) {
+          expect(local.min.x).toBeGreaterThanOrEqual(template.footprint.min[0] - 0.002);
+          expect(local.max.x).toBeLessThanOrEqual(template.footprint.max[0] + 0.002);
+          expect(local.min.z).toBeGreaterThanOrEqual(template.footprint.min[1] - 0.002);
+          expect(local.max.z).toBeLessThanOrEqual(template.footprint.max[1] + 0.002);
           const distances = [
             Math.abs(local.min.x - template.footprint.min[0]),
             Math.abs(template.footprint.max[0] - local.max.x),
@@ -234,7 +248,7 @@ describe('interior furnishings', () => {
             Math.abs(template.footprint.max[1] - local.max.z),
           ];
           if (placement.root === 'Curtain') {
-            expect(local.min.z - template.footprint.min[1]).toBeCloseTo(-0.0005, 4);
+            expect(local.min.z - template.footprint.min[1]).toBeCloseTo(0.003, 4);
           } else {
             expect(Math.min(...distances)).toBeCloseTo(0.012, 2);
           }
@@ -242,6 +256,30 @@ describe('interior furnishings', () => {
         if (placement.root === 'FramedPainting') {
           // The highest lower molding on a painted wall is the hall's 1.45–1.49 m bay trim.
           expect(local.min.y - 1.49).toBeGreaterThanOrEqual(0.15);
+        }
+        if (
+          template.id === 'hall' &&
+          ['Bookcase', 'WallClock', 'FramedPainting'].includes(placement.root)
+        ) {
+          const edge = Math.min(
+            Math.abs(local.min.x - template.footprint.min[0]),
+            Math.abs(template.footprint.max[0] - local.max.x),
+            Math.abs(local.min.z - template.footprint.min[1]),
+            Math.abs(template.footprint.max[1] - local.max.z),
+          );
+          if (edge < 0.05) {
+            const onEastWest =
+              Math.abs(local.min.x - template.footprint.min[0]) < 0.05 ||
+              Math.abs(template.footprint.max[0] - local.max.x) < 0.05;
+            const west = Math.abs(local.min.x - template.footprint.min[0]) < 0.05;
+            const along = onEastWest
+              ? (west ? -1 : 1) * ((local.min.z + local.max.z) / 2)
+              : -((local.min.x + local.max.x) / 2);
+            const freeBay = onEastWest
+              ? (along >= -2.3 && along <= -0.1) || (along >= 2.7 && along <= 4.8)
+              : (along >= 0 && along <= 2.3) || (along >= 2.7 && along <= 4.8);
+            expect(freeBay).toBe(true);
+          }
         }
         if (placement.root === 'Curtain') {
           expect(local.min.y).toBeGreaterThan(1.0);

@@ -180,6 +180,17 @@ export function validateWorkshop(raw: unknown): WorkshopState {
   };
 }
 
+function roomIds(value: unknown, path: string): number[] | undefined {
+  if (value === undefined) return undefined;
+  if (
+    !Array.isArray(value) ||
+    value.some((id) => !Number.isInteger(id) || id < 0) ||
+    new Set(value).size !== value.length
+  )
+    fail(path, 'expected unique non-negative room integers');
+  return [...value];
+}
+
 function validateRunState(raw: unknown, path: string): RunState {
   const r = rec(raw, path);
   let seed: string;
@@ -206,17 +217,12 @@ function validateRunState(raw: unknown, path: string): RunState {
     r.pendingLoot === undefined ? [] : pendingLoot(r.pendingLoot, `${path}.pendingLoot`);
   const pressureState =
     r.pressure === undefined ? undefined : pressure(r.pressure, `${path}.pressure`, seed);
-  const bookSecretOpenedRooms = r.bookSecretOpenedRooms;
-  if (
-    bookSecretOpenedRooms !== undefined &&
-    (!Array.isArray(bookSecretOpenedRooms) ||
-      bookSecretOpenedRooms.some(
-        (room) => typeof room !== 'number' || !Number.isInteger(room) || room < 0,
-      ) ||
-      new Set(bookSecretOpenedRooms).size !== bookSecretOpenedRooms.length)
-  ) {
-    fail(`${path}.bookSecretOpenedRooms`, 'expected unique non-negative room integers');
-  }
+  const bookSecretOpenedRooms = roomIds(r.bookSecretOpenedRooms, `${path}.bookSecretOpenedRooms`);
+  const bookSecretKeyRooms = roomIds(r.bookSecretKeyRooms, `${path}.bookSecretKeyRooms`);
+  const bookSecretCabinetRooms = roomIds(
+    r.bookSecretCabinetRooms,
+    `${path}.bookSecretCabinetRooms`,
+  );
   // Also added after version 1: an older save names no level and resumes as `DEFAULT_DIFFICULTY`.
   if (r.difficulty !== undefined && !isDifficulty(r.difficulty)) {
     fail(`${path}.difficulty`, 'unknown difficulty');
@@ -236,9 +242,9 @@ function validateRunState(raw: unknown, path: string): RunState {
     ...(pending.length === 0 ? {} : { pendingLoot: pending }),
     ...(difficulty === undefined ? {} : { difficulty }),
     ...(pressureState === undefined ? {} : { pressure: pressureState }),
-    ...(bookSecretOpenedRooms === undefined
-      ? {}
-      : { bookSecretOpenedRooms: [...bookSecretOpenedRooms] }),
+    ...(bookSecretOpenedRooms === undefined ? {} : { bookSecretOpenedRooms }),
+    ...(bookSecretKeyRooms === undefined ? {} : { bookSecretKeyRooms }),
+    ...(bookSecretCabinetRooms === undefined ? {} : { bookSecretCabinetRooms }),
   };
 }
 

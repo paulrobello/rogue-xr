@@ -1,171 +1,263 @@
 import * as THREE from 'three';
-import { CanvasLabel } from '../combat-view/canvas-label.ts';
+import { flightGoal, flightPose, flightScale } from '../flow/card-flight.ts';
+import type { RunState } from '../rules/run.ts';
 import { cogGeometry } from './cog-geometry.ts';
 import type { FloorWorld } from './floor-world.ts';
 import type { InteriorFurnishings } from './interior-furnishings.ts';
 
 export interface BookPick {
   readonly room: number;
+  readonly kind: 'book' | 'cabinet' | 'cog';
   readonly distance: number;
   readonly object: THREE.Object3D;
 }
 
+export type BookStage = 'key' | 'unlock' | 'cogs';
 interface BookEntry {
-  readonly room: number;
-  readonly object: THREE.Object3D;
-  readonly caseObject: THREE.Object3D;
-  readonly slider: THREE.Object3D | null;
-  readonly sliderStart: THREE.Vector3;
-  opened: boolean;
-  cache: THREE.Object3D | null;
-  label: CanvasLabel | null;
+  caseObject: THREE.Object3D;
+  book: THREE.Object3D;
+  panel: THREE.Object3D;
+  panelRest: THREE.Vector3;
+  coins: THREE.Group | null;
   slide: number;
 }
+interface PickupFlight {
+  model: THREE.Group;
+  start: THREE.Vector3;
+  elapsed: number;
+}
 
-const PANEL_HINGE_HEIGHT = 0.48;
+const HINGE_Y = 0.525;
+const FLY_SECONDS = 0.62;
 
-/** Marked book interactions, including the recessed cache revealed behind each bookcase panel. */
+function brass(): THREE.MeshStandardMaterial {
+  return new THREE.MeshStandardMaterial({ color: 0xc99b4c, metalness: 0.55, roughness: 0.3 });
+}
+function keyModel(): THREE.Group {
+  const group = new THREE.Group();
+  const metal = brass();
+  const bow = new THREE.Mesh(new THREE.TorusGeometry(0.027, 0.006, 8, 24), metal);
+  bow.position.y = 0.052;
+  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.0065, 0.0065, 0.095, 12), metal);
+  shaft.position.y = -0.021;
+  group.add(bow, shaft);
+  for (const [y, width] of [
+    [-0.045, 0.021],
+    [-0.064, 0.027],
+  ] as const) {
+    const tooth = new THREE.Mesh(new THREE.BoxGeometry(width, 0.009, 0.011), metal);
+    tooth.position.set(width / 2, y, 0);
+    group.add(tooth);
+  }
+  group.name = 'clockmakers-key';
+  return group;
+}
+function cogPile(): THREE.Group {
+  const group = new THREE.Group();
+  group.name = 'book-secret-cogs';
+  const metal = brass();
+  for (const [i, x] of [-0.075, 0, 0.08].entries()) {
+    const coin = new THREE.Mesh(cogGeometry(0.044 - i * 0.003), metal);
+    coin.name = 'book-secret-cog';
+    coin.rotation.set(-0.4, -0.12 + i * 0.12, i * 0.24);
+    coin.position.set(x, 0, -i * 0.012);
+    group.add(coin);
+  }
+  const axle = new THREE.Mesh(
+    new THREE.SphereGeometry(0.022, 10, 8),
+    new THREE.MeshBasicMaterial({ visible: false }),
+  );
+  group.add(axle);
+  group.position.set(0, 0.16, 0.115);
+  return group;
+}
+function discard(group: THREE.Group): void {
+  const materials = new Set<THREE.Material>();
+  group.removeFromParent();
+  group.traverse((node) => {
+    if (node instanceof THREE.Mesh) {
+      node.geometry.dispose();
+      materials.add(node.material);
+    }
+  });
+  for (const m of materials) m.dispose();
+}
+
+/** Run progress can arrive before the room models when continuing a saved game. */
 export class BookSecret {
   private readonly books = new Map<number, BookEntry>();
+  private readonly stages = new Map<number, BookStage>();
+  private readonly keyholeHit = new THREE.BoxGeometry(0.07, 0.085, 0.008);
+  private readonly hitMaterial = new THREE.MeshBasicMaterial({ visible: false });
+  private readonly flights = new Set<PickupFlight>();
   private readonly ray = new THREE.Raycaster();
-  private readonly at = new THREE.Vector3();
-  private readonly openedRooms = new Set<number>();
+  private readonly point = new THREE.Vector3();
 
   constructor(
     private readonly world: FloorWorld,
     furnishings: InteriorFurnishings | null,
   ) {
-    for (const placement of furnishings?.placements ?? []) {
-      if (placement.root !== 'Bookcase') continue;
-      const marked = placement.object.getObjectByName('Bookcase_PullBook');
-      if (!marked) continue;
-      marked.userData.bookSecret = true;
-      const slider = placement.object.getObjectByName('Bookcase_Slider') ?? null;
-      const entry: BookEntry = {
-        room: placement.room,
-        object: marked,
-        caseObject: placement.object,
-        slider,
-        sliderStart: slider?.position.clone() ?? new THREE.Vector3(),
-        opened: false,
-        cache: null,
-        label: null,
+    if (furnishings) this.mount(furnishings);
+  }
+  mount(furnishings: InteriorFurnishings): void {
+    for (const { object: caseObject, room, root } of furnishings.placements) {
+      if (root !== 'Bookcase') continue;
+      const book = caseObject.getObjectByName('Bookcase_PullBook');
+      const panel = caseObject.getObjectByName('Bookcase_Slider');
+      if (!book || !panel) continue;
+      const lock = new THREE.Mesh(this.keyholeHit, this.hitMaterial);
+      lock.name = 'book-secret-lock';
+      lock.position.set(0, 0.31, 0.045);
+      panel.add(lock);
+      book.userData.bookSecret = true;
+      const entry = {
+        caseObject,
+        book,
+        panel,
+        panelRest: panel.position.clone(),
+        coins: null,
         slide: 0,
       };
-      this.books.set(entry.room, entry);
+      this.books.set(room, entry);
+      const stage = this.stages.get(room);
+      if (stage) this.apply(entry, stage, false);
     }
   }
-
+  private targets(
+    room: number,
+    entry: BookEntry,
+  ): { kind: BookPick['kind']; object: THREE.Object3D } | null {
+    switch (this.stages.get(room)) {
+      case 'key':
+        return { kind: 'cabinet', object: entry.panel };
+      case 'unlock':
+        return entry.coins && entry.slide >= 1 ? { kind: 'cog', object: entry.coins } : null;
+      case 'cogs':
+        return null;
+      default:
+        return { kind: 'book', object: entry.book };
+    }
+  }
   pick(origin: THREE.Vector3, direction: THREE.Vector3, maxDistance = 4): BookPick | null {
-    const book = this.books.get(this.world.current);
-    if (!book || book.opened) return null;
+    const room = this.world.current,
+      entry = this.books.get(room);
+    if (!entry) return null;
+    const target = this.targets(room, entry);
+    if (!target) return null;
     this.ray.set(origin, direction);
     this.ray.far = maxDistance;
-    const hit = this.ray.intersectObject(book.object)[0];
+    const hit = this.ray.intersectObject(entry.caseObject, true)[0];
     if (!hit) return null;
-    // Once the marked spine is in the ray, reject hits through the back or the side of its case.
-    const first = this.ray.intersectObject(book.caseObject)[0];
-    return first && first.distance < hit.distance - 0.0001
-      ? null
-      : { room: book.room, distance: hit.distance, object: book.object };
+    for (let n: THREE.Object3D | null = hit.object; n && n !== entry.caseObject; n = n.parent) {
+      if (n === target.object)
+        return { room, kind: target.kind, object: n, distance: hit.distance };
+    }
+    return null;
   }
-
   near(position: THREE.Vector3, radius = 0.25): BookPick | null {
-    const book = this.books.get(this.world.current);
-    if (!book || book.opened) return null;
-    const distance = book.object.getWorldPosition(this.at).distanceTo(position);
-    return distance <= radius ? { room: book.room, distance, object: book.object } : null;
+    const room = this.world.current,
+      entry = this.books.get(room);
+    if (!entry) return null;
+    const target = this.targets(room, entry);
+    if (!target) return null;
+    this.point.set(0, target.kind === 'cabinet' ? 0.31 : 0, target.kind === 'cabinet' ? 0.044 : 0);
+    target.object.localToWorld(this.point);
+    const d = this.point.distanceTo(position);
+    if (d > radius) return null;
+    if (d < 0.018) return { room, ...target, distance: d };
+    return this.pick(position, this.point.sub(position).normalize(), radius);
   }
-
-  open(room: number): boolean {
-    const book = this.books.get(room);
-    if (!book || book.opened) return false;
-    this.openedRooms.add(room);
-    book.opened = true;
-    book.object.userData.bookSecretOpened = true;
-    book.object.position.z += 0.065;
-    book.object.rotation.x += 0.29;
-    this.reveal(book);
-    return true;
+  restore(
+    run: Pick<RunState, 'bookSecretKeyRooms' | 'bookSecretCabinetRooms' | 'bookSecretOpenedRooms'>,
+  ): void {
+    const saved = new Map<number, BookStage>();
+    for (const room of run.bookSecretKeyRooms ?? []) saved.set(room, 'key');
+    for (const room of run.bookSecretCabinetRooms ?? []) saved.set(room, 'unlock');
+    for (const room of run.bookSecretOpenedRooms ?? []) saved.set(room, 'cogs');
+    for (const [room, stage] of saved) this.setStage(room, stage, false);
   }
-
-  markOpened(rooms: readonly number[]): void {
-    for (const room of rooms) {
-      this.openedRooms.add(room);
-      const book = this.books.get(room);
-      if (book && this.open(room)) this.setPanel(book, 1);
+  setStage(room: number, stage: BookStage, animate = true): void {
+    if (this.stages.get(room) === stage) return;
+    this.stages.set(room, stage);
+    const entry = this.books.get(room);
+    if (entry) this.apply(entry, stage, animate);
+  }
+  private apply(entry: BookEntry, stage: BookStage, animate: boolean): void {
+    if (!entry.book.userData.bookSecretOpened) {
+      entry.book.userData.bookSecretOpened = true;
+      entry.book.position.z += 0.065;
+      entry.book.rotation.x += 0.29;
     }
-  }
-
-  private setPanel(book: BookEntry, progress: number): void {
-    book.slide = progress;
-    if (!book.slider) return;
-    // The authored pivot is at floor height. Fold the door about its upper edge into the cubby.
-    const angle = (Math.PI / 2) * progress * progress * (3 - 2 * progress);
-    book.slider.rotation.x = angle;
-    book.slider.position.y = book.sliderStart.y + PANEL_HINGE_HEIGHT * (1 - Math.cos(angle));
-    book.slider.position.z = book.sliderStart.z - PANEL_HINGE_HEIGHT * Math.sin(angle);
-  }
-
-  update(dt: number): void {
-    for (const book of this.books.values()) {
-      if (book.opened && book.slide < 1)
-        this.setPanel(book, Math.min(1, book.slide + Math.max(0, dt) / 0.4));
-    }
-  }
-
-  isOpened(room: number): boolean {
-    return this.openedRooms.has(room);
-  }
-
-  openedRoomIds(): readonly number[] {
-    return [...this.openedRooms];
-  }
-
-  objectAt(room: number): THREE.Object3D | null {
-    return this.books.get(room)?.object ?? null;
-  }
-
-  dispose(): void {
-    for (const book of this.books.values()) {
-      book.cache?.removeFromParent();
-      if (book.cache instanceof THREE.Group) {
-        book.cache.traverse((child) => {
-          if (child instanceof THREE.Mesh && child !== book.label?.mesh) {
-            child.geometry.dispose();
-            (child.material as THREE.Material).dispose();
-          }
-        });
+    if (stage === 'key') {
+      if (animate) {
+        const key = keyModel();
+        key.position.copy(entry.book.position);
+        key.position.z += 0.18;
+        entry.caseObject.add(key);
+        this.fly(key);
       }
-      book.label?.dispose();
+      return;
+    }
+    if (!animate) this.setPanel(entry, 1);
+    if (stage === 'unlock') {
+      if (!entry.coins) {
+        entry.coins = cogPile();
+        entry.caseObject.add(entry.coins);
+      }
+    } else if (entry.coins) {
+      if (animate) this.fly(entry.coins);
+      else discard(entry.coins);
+      entry.coins = null;
     }
   }
-
-  private reveal(book: BookEntry): void {
-    if (book.cache) return;
-    book.cache = new THREE.Group();
-    book.cache.name = `book-secret-cache-${book.room}`;
-    for (const [i, x] of [-0.075, 0, 0.08].entries()) {
-      const coin = new THREE.Mesh(
-        cogGeometry(0.044 - i * 0.003),
-        new THREE.MeshStandardMaterial({ color: 0xc38a35, metalness: 0.62, roughness: 0.36 }),
-      );
-      coin.name = 'book-secret-cog';
-      coin.rotation.set(-0.4, -0.12 + i * 0.12, i * 0.24);
-      coin.position.set(x, 0.155, 0.11 - i * 0.012);
-      book.cache.add(coin);
-    }
-    const label = new CanvasLabel(768, 160, 0.48);
-    label.draw((ctx, width, height) => {
-      ctx.fillStyle = '#f5df9a';
-      ctx.font = '700 54px system-ui, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('CLOCKMAKER CACHE', width / 2, height / 2);
+  private fly(model: THREE.Group): void {
+    this.flights.add({ model, start: model.position.clone(), elapsed: 0 });
+    model.traverse((n) => {
+      n.raycast = () => undefined;
     });
-    label.mesh.position.set(0, 0.32, -0.108);
-    book.cache.add(label.mesh);
-    book.label = label;
-    book.caseObject.add(book.cache);
+  }
+  private setPanel(entry: BookEntry, progress: number): void {
+    entry.slide = progress;
+    const angle = (Math.PI / 2) * progress * progress * (3 - 2 * progress);
+    entry.panel.rotation.x = angle;
+    entry.panel.position.y = entry.panelRest.y + HINGE_Y * (1 - Math.cos(angle));
+    entry.panel.position.z = entry.panelRest.z - HINGE_Y * Math.sin(angle);
+  }
+  update(dt: number, head?: THREE.Object3D): void {
+    for (const [room, entry] of this.books) {
+      const stage = this.stages.get(room);
+      if ((stage === 'unlock' || stage === 'cogs') && entry.slide < 1)
+        this.setPanel(entry, Math.min(1, entry.slide + dt / 0.4));
+    }
+    for (const f of this.flights) {
+      f.elapsed += dt;
+      const t = Math.min(1, f.elapsed / FLY_SECONDS);
+      if (head && f.model.parent) {
+        head.getWorldPosition(this.point);
+        f.model.parent.worldToLocal(this.point);
+        flightGoal(f.start, this.point, 0.23, this.point);
+        const k = flightPose(f.start, this.point, t, f.model.position);
+        f.model.position.y += 0.1 * Math.sin(Math.PI * t);
+        f.model.rotation.y += dt * 3;
+        f.model.scale.setScalar(flightScale(k));
+      }
+      if (t >= 1) {
+        discard(f.model);
+        this.flights.delete(f);
+      }
+    }
+  }
+  objectAt(room: number): THREE.Object3D | null {
+    return this.books.get(room)?.book ?? null;
+  }
+  dispose(): void {
+    for (const entry of this.books.values()) if (entry.coins) discard(entry.coins);
+    for (const f of this.flights) discard(f.model);
+    this.keyholeHit.dispose();
+    this.hitMaterial.dispose();
+    for (const entry of this.books.values())
+      entry.panel.getObjectByName('book-secret-lock')?.removeFromParent();
+    this.flights.clear();
+    this.books.clear();
   }
 }

@@ -1,6 +1,6 @@
 {
   "generator": "scripts/assets/build-interior-furnishings.py",
-  "blender": "5.3.0",
+  "blender": "5.2.2 LTS",
   "coordinate_system": "glTF Y-up; front +Z; dimensions metres",
   "materials": [
     "Walnut",
@@ -130,7 +130,7 @@
       "dimensions_m": [
         1.56,
         2.3,
-        0.5
+        0.507
       ],
       "bounds_min": [
         -0.78,
@@ -140,9 +140,9 @@
       "bounds_max": [
         0.78,
         2.3,
-        0.27
+        0.277
       ],
-      "mesh_count": 11
+      "mesh_count": 13
     },
     "Candelabrum": {
       "dimensions_m": [
@@ -202,12 +202,12 @@
       "dimensions_m": [
         1.02,
         1.04,
-        0.158
+        0.142
       ],
       "bounds_min": [
         -0.51,
         -0.02,
-        -0.028
+        -0.012
       ],
       "bounds_max": [
         0.51,
@@ -244,7 +244,7 @@
     "LibraryBindingAtlas requires the shared runtime book texture; canvas UVs are texture-ready.",
     "No authored colliders or LODs."
   ],
-  "triangles": 55080,
-  "size_bytes": 3117960,
-  "sha256": "865dae4394339f83bd08a8b1c3d7cd4355cc2ce5e873334ce57b9bfd682f1858"
+  "triangles": 54928,
+  "size_bytes": 3111916,
+  "sha256": "0bce3d758e41e8040b39692240460c48247cbbf1247c88f5917afd2766bb9fba"
 }

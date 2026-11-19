@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { CanvasLabel } from '../combat-view/canvas-label.ts';
+import { CanvasLabel, measuredLines } from '../combat-view/canvas-label.ts';
 import { getCard } from '../content/cards.ts';
 import type { Box, Socket } from '../content/rooms.ts';
 import type { LootKind } from '../floor/generate.ts';
@@ -909,7 +909,7 @@ const TOAST_PX = { w: 1536, h: 512 };
 const TOAST_DRAW_SCALE = 2;
 const TOAST_WIDTH = 1.2;
 const TOAST_LIFE = 4.2;
-const TOAST_FADE = 0.7;
+const TOAST_FADE = 0.25;
 const TOAST_RISE = 0.12;
 
 /** An in-scene panel over an opened coffer or a used hearth: shows the result, faces the head and fades out. */
@@ -923,7 +923,15 @@ export class LootToast {
   constructor(found: TreasureLoot | ToastLines, at: THREE.Vector3) {
     const { text, caption } = 'caption' in found ? found : lootLines(found);
     this.text = text;
-    this.label = new CanvasLabel(TOAST_PX.w, TOAST_PX.h, TOAST_WIDTH);
+    const measure = document.createElement('canvas').getContext('2d');
+    if (!measure) throw new Error('2D canvas is not available');
+    const captionFont = '500 38px system-ui, sans-serif';
+    measure.font = captionFont;
+    const innerWidth = TOAST_PX.w / TOAST_DRAW_SCALE - 92;
+    const captionLines = measuredLines(measure, caption, innerWidth);
+    const leading = 47;
+    const extraHeight = Math.max(0, captionLines.length - 1) * leading * TOAST_DRAW_SCALE;
+    this.label = new CanvasLabel(TOAST_PX.w, TOAST_PX.h + extraHeight, TOAST_WIDTH);
     this.label.draw((ctx, pw, ph) => {
       ctx.scale(TOAST_DRAW_SCALE, TOAST_DRAW_SCALE);
       const w = pw / TOAST_DRAW_SCALE;
@@ -944,15 +952,17 @@ export class LootToast {
         ctx.font = `700 ${size}px system-ui, sans-serif`;
         size -= 4;
       } while (ctx.measureText(text).width > w - 90 && size > 28);
-      ctx.fillText(text, w / 2, h * 0.42);
-      ctx.font = '500 40px system-ui, sans-serif';
+      ctx.fillText(text, w / 2, 102, innerWidth);
+      ctx.font = captionFont;
       ctx.fillStyle = PALETTE.parchment;
-      ctx.fillText(caption, w / 2, h * 0.76);
+      for (const [i, line] of captionLines.entries())
+        ctx.fillText(line, w / 2, 191 + i * leading, innerWidth);
     });
     const { mesh } = this.label;
     mesh.name = 'loot-toast';
     mesh.renderOrder = 20;
     mesh.material.depthTest = false;
+    mesh.material.depthWrite = false;
     mesh.raycast = () => undefined;
     this.root.name = 'loot-toast-root';
     this.root.add(mesh);
@@ -970,7 +980,7 @@ export class LootToast {
     this.age += dt;
     const k = Math.min(1, this.age / TOAST_LIFE);
     this.root.position.set(this.base.x, this.base.y + TOAST_RISE * k, this.base.z);
-    this.root.rotation.y = Math.atan2(head.x - this.base.x, head.z - this.base.z);
+    this.root.lookAt(head);
     const left = TOAST_LIFE - this.age;
     this.label.mesh.material.opacity = Math.max(0, Math.min(1, left / TOAST_FADE));
     return this.age < TOAST_LIFE;

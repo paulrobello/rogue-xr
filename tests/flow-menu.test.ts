@@ -171,12 +171,21 @@ describe('in-run menu placement', () => {
       ring.traverse((part) => {
         if (!(part instanceof THREE.Mesh)) return;
         const positions = part.geometry.getAttribute('position');
-        for (let i = 0; i < positions.count; i++) {
-          point.fromBufferAttribute(positions, i).applyMatrix4(part.matrixWorld).project(camera);
-          if (Math.abs(point.x) > 1 || Math.abs(point.y) > 1)
-            throw Error(`Wheel clipped at pitch ${pitch}: ${point.x}, ${point.y}`);
+        const count = part instanceof THREE.InstancedMesh ? part.count : 1;
+        const matrix = new THREE.Matrix4();
+        for (let instance = 0; instance < count; instance++) {
+          if (part instanceof THREE.InstancedMesh) part.getMatrixAt(instance, matrix);
+          for (let i = 0; i < positions.count; i++) {
+            point
+              .fromBufferAttribute(positions, i)
+              .applyMatrix4(matrix)
+              .applyMatrix4(part.matrixWorld)
+              .project(camera);
+            if (Math.abs(point.x) > 1 || Math.abs(point.y) > 1)
+              throw Error(`Wheel clipped at pitch ${pitch}: ${point.x}, ${point.y}`);
+          }
         }
-        vertices += positions.count;
+        vertices += positions.count * count;
       });
       expect(vertices).toBeGreaterThan(0);
       ui.dispose();

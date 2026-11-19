@@ -5,7 +5,7 @@ import { GREYBOX_TEMPLATES, type RoomTemplate } from '../src/content/rooms.ts';
 import { generateFloor, guardedConnection, worldRooms } from '../src/floor/generate.ts';
 import { mountFloorView } from '../src/world/floor-view.ts';
 import { buildFloorWorld } from '../src/world/floor-world.ts';
-import { lootLines, surfaceHeightAt } from '../src/world/loot.ts';
+import { LootToast, lootLines, surfaceHeightAt } from '../src/world/loot.ts';
 import { moveWithCollision, type Vec2 } from '../src/xr/locomotion.ts';
 
 /** The desk collider the baked study manifest adds (`public/assets/rooms/study`). */
@@ -128,6 +128,31 @@ describe('floor loot view', () => {
     expect(view.world.current).toBe(room);
     view.world.group.updateMatrixWorld(true);
   };
+
+  it('keeps every line of a longer reward caption inside the framed plaque', () => {
+    const draws: [string, number, number, number][] = [];
+    const context = new Proxy(
+      {
+        measureText: (text: string) => ({ width: text.length * 20 }),
+        fillText: (...args: [string, number, number, number]) => draws.push(args),
+      },
+      { get: (target, key) => Reflect.get(target, key) ?? (() => undefined) },
+    );
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(
+      context as unknown as CanvasRenderingContext2D,
+    );
+    const caption = 'The clockmaker hid a cache for the one who noticed the red book.';
+    const toast = new LootToast({ text: '+10 cogs', caption }, new THREE.Vector3());
+    const lines = draws.slice(1);
+    expect(lines.length).toBeGreaterThan(1);
+    expect(lines.map(([line]) => line).join(' ')).toBe(caption);
+    for (const [line, x, y, maxWidth] of lines) {
+      expect(context.measureText(line).width).toBeLessThanOrEqual(maxWidth);
+      expect(x - maxWidth / 2).toBeGreaterThan(18);
+      expect(y + 20).toBeLessThan(toast.canvas.height / 2 - 18);
+    }
+    toast.dispose();
+  });
 
   it('picks an unopened coffer in the current room along a ray, within reach', () => {
     const { view } = mount('SPIRE002');

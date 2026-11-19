@@ -4,11 +4,11 @@
   "source": "interior-furnishings.blend",
   "generator": "scripts/assets/build-interior-furnishings.py",
   "output": "public/assets/props/interior-furnishings/interior-furnishings.glb",
-  "blender": "5.3.0",
-  "glb_sha256": "865dae4394339f83bd08a8b1c3d7cd4355cc2ce5e873334ce57b9bfd682f1858",
-  "blend_sha256": "5fcd4b0b512cad6c6f323b8c5a8cc111a3cf0f8161d29bfd5f3a5be67a18cd56",
-  "generator_sha256": "2b7cdf60000d916b9905e32567e86580ef24a46bff0cb07efe38d78e1bd186a9",
-  "approval": "Revised geometry reimported and checked. Final independent review and owner visual acceptance pending.",
+  "blender": "5.2.2 LTS",
+  "glb_sha256": "0bce3d758e41e8040b39692240460c48247cbbf1247c88f5917afd2766bb9fba",
+  "blend_sha256": "760e2998fb34b170652b513f6b47341892a85399a5d24bf13653a377c4df3997",
+  "generator_sha256": "1b32a9f8e4b4beb987722415a3c816c94a1fca8e8caf80a155b598c04e8b2733",
+  "approval": "Blender reimport, Quest Browser interaction checks and independent visual review completed. Owner headset acceptance pending.",
   "historicalReview": {
     "glb_sha256": "81a51c5c6e78a9da9d1a8832aed1d62fa2705c87d6f08a55e266c737ce981bb9",
     "score": 85,
@@ -17,10 +17,13 @@
     "notes": "Reimported roots and pivots checked. The themed room and live painting revisit were rendered on desktop. The armor is dressing; awakening logic is a recipe."
   },
   "verification": {
-    "environment": "Quest Browser, Adreno 740, flat browser camera in the playable floor",
-    "captures": [
-      "docs/verification/clockwork-interiors-quest.jpg"
-    ],
-    "ownerReview": "pending"
+    "image": "docs/verification/quest-gallery-corrections.jpg",
+    "renderer": "Quest Browser, Adreno 740",
+    "checks": [
+      "Closed and opened bookcase, visible keyhole, red spine without attached key",
+      "Canvas coverage at an oblique angle and centering in a clear wall bay",
+      "Curtain front and shared wall from the adjacent room",
+      "Independent Astra review of the revised in-game captures found no visual blocker."
+    ]
   }
 }

@@ -72,6 +72,24 @@ export function roundRect(
   ctx.closePath();
 }
 
+export function measuredLines(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  width: number,
+): string[] {
+  const lines: string[] = [];
+  let line = '';
+  for (const word of text.split(/\s+/)) {
+    const next = line ? `${line} ${word}` : word;
+    if (ctx.measureText(next).width > width && line) {
+      lines.push(line);
+      line = word;
+    } else line = next;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
 /** Draws `text` word-wrapped to `maxWidth`, returns the y below the last line. */
 export function wrapText(
   ctx: CanvasRenderingContext2D,
@@ -81,20 +99,9 @@ export function wrapText(
   maxWidth: number,
   lineHeight: number,
 ): number {
-  let line = '';
   let cursor = y;
-  for (const word of text.split(' ')) {
-    const next = line === '' ? word : `${line} ${word}`;
-    if (ctx.measureText(next).width > maxWidth && line !== '') {
-      ctx.fillText(line, x, cursor);
-      cursor += lineHeight;
-      line = word;
-    } else {
-      line = next;
-    }
-  }
-  if (line !== '') {
-    ctx.fillText(line, x, cursor);
+  for (const line of measuredLines(ctx, text, maxWidth)) {
+    ctx.fillText(line, x, cursor, maxWidth);
     cursor += lineHeight;
   }
   return cursor;

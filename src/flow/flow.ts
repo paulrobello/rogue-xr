@@ -150,6 +150,7 @@ export type FlowEvent =
   | ({ readonly type: 'hearth' } & UsedHearth)
   | {
       readonly type: 'book-secret';
+      readonly stage: 'key' | 'unlock' | 'cogs';
       readonly room: number;
       readonly cogs: number;
       readonly inscription: string;
@@ -517,12 +518,50 @@ export class RunFlow {
     return this.hearthValue;
   }
 
-  /** Collects the clockmaker’s cache once per furnished room. */
-  openBookSecret(room: number): boolean {
+  findBookSecretKey(room: number): boolean {
     const run = this.runValue;
     if (this.phaseValue !== 'explore' || !run || !Number.isInteger(room) || room < 0) return false;
+    const keys = run.bookSecretKeyRooms ?? [];
+    if (keys.includes(room) || (run.bookSecretOpenedRooms ?? []).includes(room)) return false;
+    this.runValue = {
+      ...run,
+      bookSecretKeyRooms: [...keys, room],
+    };
+    this.emit({
+      type: 'book-secret',
+      stage: 'key',
+      room,
+      cogs: 0,
+      inscription: 'Fits the lock below the shelves',
+    });
+    return true;
+  }
+
+  /** Uses a carried key to open the lower cabinet. */
+  unlockBookSecret(room: number): boolean {
+    const run = this.runValue;
+    if (this.phaseValue !== 'explore' || !run) return false;
+    const keys = run.bookSecretKeyRooms ?? [];
+    const cabinets = run.bookSecretCabinetRooms ?? [];
+    if (!keys.includes(room) || cabinets.includes(room)) return false;
+    this.runValue = { ...run, bookSecretCabinetRooms: [...cabinets, room] };
+    this.emit({
+      type: 'book-secret',
+      stage: 'unlock',
+      room,
+      cogs: 0,
+      inscription: 'Collect the cogs inside',
+    });
+    return true;
+  }
+
+  /** Claims the cabinet's cogs once, after it has been unlocked. */
+  claimBookSecret(room: number): boolean {
+    const run = this.runValue;
+    if (this.phaseValue !== 'explore' || !run) return false;
     const openedRooms = run.bookSecretOpenedRooms ?? [];
-    if (openedRooms.includes(room)) return false;
+    if (!(run.bookSecretCabinetRooms ?? []).includes(room) || openedRooms.includes(room))
+      return false;
     const cogs = 10;
     this.runValue = {
       ...run,
@@ -531,6 +570,7 @@ export class RunFlow {
     };
     this.emit({
       type: 'book-secret',
+      stage: 'cogs',
       room,
       cogs,
       inscription: 'The clockmaker hid a cache for the one who noticed.',
