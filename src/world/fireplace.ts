@@ -1,5 +1,13 @@
 import * as THREE from 'three';
-import { type FireboxShape, fireboxFlameGeometry, flameMaterial } from './hearth-coals.ts';
+import { candleMaterial } from './candle-flame.ts';
+import {
+  type FireboxShape,
+  FLAME_KIND,
+  type FlameQuad,
+  fireboxFlameGeometry,
+  flameMaterial,
+  flameQuadGeometry,
+} from './hearth-coals.ts';
 
 /** A baked room's open fireplace: where its firebox stands in the template's frame. */
 export interface Firebox extends FireboxShape {
@@ -52,6 +60,7 @@ const WOOD_FIRE = {
 const REDUCED_MOTION = 0.3;
 /** The fire mesh's name inside a room model. */
 export const FIRE_NODE = 'fireplace-fire';
+export const CANDLE_NODE = 'room-candle-flames';
 
 /** The template-local box of `firebox`'s opening, floor to lintel and back lining to opening. */
 export function fireboxBounds(firebox: Firebox): THREE.Box3 {
@@ -189,6 +198,67 @@ export function dressFireplace(
   const fire = buildFireplaceFire(templateId, fireboxes, reducedMotion);
   model.add(fire.mesh, ...(fire.extras ?? []));
   return fire;
+}
+
+// The hall GLB packs two crossed triangles per wick in hall_flame, with both sharing a tip.
+// The fireplace has already been stripped from that slot before the wicks are collected.
+export function dressCandleFlames(
+  model: THREE.Object3D,
+  isFlame: (name: string) => boolean,
+  reducedMotion = false,
+): THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial> | null {
+  model.updateWorldMatrix(true, true);
+  const inverse = model.matrixWorld.clone().invert();
+  const flames = new Map<string, FlameQuad>();
+  model.traverse((mesh) => {
+    if (
+      !(mesh instanceof THREE.Mesh) ||
+      Array.isArray(mesh.material) ||
+      !isFlame(mesh.material.name)
+    )
+      return;
+    const geometry = mesh.geometry;
+    const p = geometry.getAttribute('position');
+    const transform = new THREE.Matrix4().multiplyMatrices(inverse, mesh.matrixWorld);
+    const vertices = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
+    for (let i = 0; i < (geometry.index?.count ?? p.count); i += 3) {
+      for (const [k, v] of vertices.entries())
+        v.fromBufferAttribute(p, geometry.index?.getX(i + k) ?? i + k).applyMatrix4(transform);
+      const tip = vertices.reduce((top, v) => (v.y > top.y ? v : top));
+      const key = tip
+        .toArray()
+        .map((n) => n.toFixed(5))
+        .join(',');
+      if (flames.has(key)) continue;
+      const base = Math.min(...vertices.map((v) => v.y));
+      flames.set(key, {
+        x: tip.x,
+        y: base - 0.01,
+        z: tip.z,
+        seed: flames.size * 2.39996,
+        width: 0.044,
+        height: 0.078,
+        kind: FLAME_KIND.billboard,
+      });
+    }
+    mesh.visible = false;
+  });
+  if (!flames.size) return null;
+  const quads = [...flames.values()];
+  const geometry = flameQuadGeometry(quads);
+  const bounds = new THREE.Box3();
+  for (const q of quads) {
+    bounds.expandByPoint(new THREE.Vector3(q.x - q.width / 2, q.y, q.z - q.width / 2));
+    bounds.expandByPoint(new THREE.Vector3(q.x + q.width / 2, q.y + q.height, q.z + q.width / 2));
+  }
+  geometry.boundingSphere = bounds.getBoundingSphere(new THREE.Sphere());
+  const material = candleMaterial(0, reducedMotion, true);
+  material.name = CANDLE_NODE;
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.name = CANDLE_NODE;
+  mesh.raycast = () => undefined;
+  model.add(mesh);
+  return mesh;
 }
 
 /** Sets every room fire's clock to `seconds` while its room shows. */

@@ -3,7 +3,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { derivedFiles as corridorFiles } from '../../assets-source/rooms/corridor/provenance.json';
 import { derivedFiles as vaultFiles } from '../../assets-source/rooms/guardian-vault/provenance.json';
 import { GREYBOX_TEMPLATES, parseRoomTemplate, type RoomTemplate } from '../content/rooms.ts';
-import { dressFireplace } from './fireplace.ts';
+import { dressCandleFlames, dressFireplace } from './fireplace.ts';
 import {
   configureLightmapTexture,
   loadRoomLightmap,
@@ -314,6 +314,8 @@ export async function loadStudyAsset(options: {
   }
   // After the lightmap binding, which wants uv1 on every mesh: the fire is unlit.
   const fire = dressFireplace(id, gltf.scene, flameSlot, options.reducedMotion ?? false);
+  const candles =
+    id === 'hall' ? dressCandleFlames(gltf.scene, flameSlot, options.reducedMotion ?? false) : null;
   gltf.scene.name = `${study.manifest.template}-model`;
   const textures = new Set<THREE.Texture>();
   for (const material of slots.values()) {
@@ -337,6 +339,7 @@ export async function loadStudyAsset(options: {
       });
       for (const material of slots.values()) material.dispose();
       fire?.dispose();
+      candles?.material.dispose();
       for (const texture of owned) texture.dispose();
     },
   };

@@ -2,13 +2,13 @@
   "meshes": 7,
   "materials": 3,
   "packedTextures": 6,
-  "runtimeBytes": 2488788,
-  "sha256": "14633adbfe506cd77357f19924f7093b0bdc4b7bb317767e88e82bae80072bd1",
-  "reimport": "Seven identity roots, finite UV0 and coordinates, nonzero triangles, exact 2x4m bounds, clear portals",
-  "blender": "5.3.0",
+  "runtimeBytes": 2486756,
+  "sha256": "d06922be57ecc3772fca2fbd035cc9862d095301fa9335a18df4c6f0c125945e",
+  "reimport": "Seven identity roots, finite UV0 and coordinates, nonzero triangles, exact 2x4m bounds, clear portals, zero-plane contacts and no rear faces",
+  "blender": "5.2.3 LTS",
   "nodes": {
     "BoilerBay": {
-      "triangles": 1998,
+      "triangles": 1996,
       "depthMeters": 0.2,
       "vertices": 1251,
       "materials": [
@@ -16,7 +16,7 @@
       ]
     },
     "BoilerServiceBay": {
-      "triangles": 3382,
+      "triangles": 3380,
       "depthMeters": 0.2,
       "vertices": 2173,
       "materials": [
@@ -25,7 +25,7 @@
       ]
     },
     "BoilerDoor": {
-      "triangles": 1276,
+      "triangles": 1270,
       "depthMeters": 0.2,
       "vertices": 809,
       "materials": [
@@ -33,7 +33,7 @@
       ]
     },
     "TimberBay": {
-      "triangles": 1762,
+      "triangles": 1760,
       "depthMeters": 0.174,
       "vertices": 1452,
       "materials": [
@@ -41,7 +41,7 @@
       ]
     },
     "TimberCarvedBay": {
-      "triangles": 2250,
+      "triangles": 2248,
       "depthMeters": 0.185,
       "vertices": 1611,
       "materials": [
@@ -50,7 +50,7 @@
       ]
     },
     "TimberDoor": {
-      "triangles": 1050,
+      "triangles": 1044,
       "depthMeters": 0.174,
       "vertices": 755,
       "materials": [
@@ -66,7 +66,7 @@
         "all 12 fin meshes",
         "wall return flange"
       ],
-      "triangles": 6038,
+      "triangles": 6036,
       "depthMeters": 0.222,
       "vertices": 3503,
       "materials": [
@@ -83,13 +83,13 @@
   "source": "Original scripted geometry, cast finishes and wood-cut atlas derived from the project walnut",
   "woodSource": "public/assets/materials/walnut/walnut.basecolor.png",
   "inputsSha256": {
-    "scripts/assets/build-architectural-finishes.py": "ec9226629082c303e46aa5c78e6eb7e575ed4edc6d09a3481c72ea4ca3bf9e6e",
+    "scripts/assets/build-architectural-finishes.py": "2c43b39b8acb6743feb2aeb7fbc08386e938f1cb0bf29df12bba7df2f1729d61",
     "scripts/assets/finish_surfaces.py": "04e2ca5b9de03a339e60998e8d568b07d7ff31dce540ce4abc5aa16e91221ab8",
     "public/assets/materials/walnut/walnut.basecolor.png": "c2c1d72ba308c02f6304ee389a86d6663199d01a352160c347801cefd4042a0b"
   },
   "blendSha256": {
-    "architectural-finishes_high.blend": "5fe178e9e1decd05cf076c3486b64023de6ed33c54ed80249623d368d54cd055",
-    "architectural-finishes_low.blend": "6115e9f24b1a3df2f7479161eaf12da7b0c9e73b3ced577ef2c0400998a4e132"
+    "architectural-finishes_high.blend": "823bea8c924c6fcc7837413c8baf840e769fc3cf005466407ac43a44f21a0926",
+    "architectural-finishes_low.blend": "c399c2c10093021aedd91a6a771c0aaa2508ad8e42ba2694b3d9d25b2122978a"
   },
   "atlasPixels": [
     768,

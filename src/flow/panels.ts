@@ -161,7 +161,12 @@ const PERMANENT_CARD_PAGE_SIZE = 3;
 
 type Subview = 'main' | 'seed';
 type WorkshopSubview = 'main' | 'permanent-cards';
-type RunMenuAction = 'settings' | 'deck' | 'items';
+export const RUN_MENU_ITEMS = [
+  { id: 'settings', label: 'Settings' },
+  { id: 'deck', label: 'Deck' },
+  { id: 'items', label: 'Items' },
+] as const;
+type RunMenuAction = (typeof RUN_MENU_ITEMS)[number]['id'];
 
 /** A reward card on its way to the player; the pick is applied when it lands. */
 interface RewardFlight {
@@ -425,6 +430,10 @@ export class FlowUi {
   /** True while the in-run menu is up: exploration and the fight pause. */
   get menuOpen(): boolean {
     return this.menu !== 'closed';
+  }
+
+  get radialInteractive(): boolean {
+    return this.radialMenu?.interactive ?? false;
   }
 
   /** The front card of each stack on the displayed page. */
@@ -1430,11 +1439,7 @@ export class FlowUi {
 
   private buildRadialMenu(): void {
     this.radialMenu = createRadialMenu<RunMenuAction>({
-      items: [
-        { id: 'settings', label: 'Settings' },
-        { id: 'deck', label: 'Deck' },
-        { id: 'items', label: 'Items' },
-      ],
+      items: [...RUN_MENU_ITEMS],
       accentColor: PALETTE.brass,
       theme: {
         glass: '#244541',

@@ -24,7 +24,7 @@ import {
   yawFromMatrix,
 } from '../xr/locomotion.ts';
 import { BookSecret } from './book-secret.ts';
-import { animateFires, FIRE_NODE } from './fireplace.ts';
+import { animateFires, CANDLE_NODE, FIRE_NODE } from './fireplace.ts';
 import { buildFloorWorld, type FloorWorld } from './floor-world.ts';
 import {
   type Hearth,
@@ -486,6 +486,10 @@ export function mountFloorView(
     },
     setCandleMaterials(materials, reducedMotion) {
       candleMotion = reducedMotion ? 0.25 : 1;
+      for (const fire of fires) {
+        if (fire.material.name === CANDLE_NODE)
+          fire.material.uniforms.uMotion.value = reducedMotion ? 0 : 1;
+      }
       candles = materials.map((material) => {
         material.userData.baseCandleIntensity ??= material.emissiveIntensity;
         return { material, intensity: material.userData.baseCandleIntensity as number };
@@ -576,6 +580,9 @@ export function mountFloorView(
         const fire = model.getObjectByName(FIRE_NODE) as THREE.Mesh | undefined;
         if (fire && group && fire.material instanceof THREE.ShaderMaterial)
           fires.push({ material: fire.material, room: group });
+        const candles = model.getObjectByName(CANDLE_NODE) as THREE.Mesh | undefined;
+        if (candles && group && candles.material instanceof THREE.ShaderMaterial)
+          fires.push({ material: candles.material, room: group });
         dressed++;
       });
       return dressed;

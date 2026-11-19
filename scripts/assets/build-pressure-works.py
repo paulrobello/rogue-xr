@@ -130,7 +130,7 @@ def ring(center, radius, tube, mat, group="body", major_segments=24):
     return finish(o, mat, group)
 
 
-def gauge(x, y, z, radius):
+def gauge(x, y, z, radius, index):
     cylinder((x, y, z - 0.018), (x, y, z + 0.025), radius, "brass", sides=24)
     cylinder((x, y, z + 0.026), (x, y, z + 0.029), radius * 0.82, "ivory", sides=24)
     ring((x, y, z + 0.032), radius * 0.84, 0.009, "iron")
@@ -140,6 +140,7 @@ def gauge(x, y, z, radius):
         (x + radius * 0.43, y + radius * 0.34, z + 0.038),
         0.006,
         "dark",
+        f"gauge-needle-{index}",
         sides=6,
     )
     for i in range(9):
@@ -225,7 +226,7 @@ def manifold():
         wheel(x, i)
     for x in (-1.06, 1.06):
         cylinder((x, 0.19, 0.20), (x, 0.19, 0.35), 0.085, "brass")
-    gauge(0, 1.74, 0.31, 0.09)
+    gauge(0, 1.74, 0.31, 0.09, 0)
 
 
 def gallery():
@@ -266,10 +267,10 @@ def gallery():
                 "brass",
             )
         cylinder((x, 2.04, z), (x, 2.09, z), radius + 0.012, "brass")
-    for x in (-1.28, 0, 1.28):
+    for index, x in enumerate((-1.28, 0, 1.28)):
         cylinder((x, 0.12, -0.005), (x, 0.70, -0.005), 0.026, "copper")
         cylinder((x, 0.145, -0.005), (x, 0.21, -0.005), 0.038, "brass", sides=20)
-        gauge(x, 0.70, 0.005, 0.12 if x else 0.10)
+        gauge(x, 0.70, 0.005, 0.12 if x else 0.10, index)
         end = (-1.30 if x < 0 else 1.30 if x > 0 else 0.83)
         swept_pipe([(x, 0.70, -0.005), (x, 1.08, -0.005), (end, 1.08, -0.005)], 0.023, "copper", bend=0.06)
         cylinder((end, 1.04, -0.005), (end, 1.12, -0.005), 0.037, "brass", sides=20)
@@ -278,14 +279,14 @@ def gallery():
     box((0, 0.35, 0.037), (0.07, 0.25, 0.012), "ivory")
     for y in (0.19, 0.51):
         box((0, y, 0.012), (0.13, 0.05, 0.065), "brass")
-    box((0, 0.30, 0.046), (0.046, 0.11, 0.006), "patina")
+    box((0, 0.30, 0.046), (0.046, 0.11, 0.006), "patina", "sight-fluid")
     cylinder((0, 0.25, 0.05), (0, 0.46, 0.05), 0.003, "brass", sides=8)
     for x in (-1.55, 1.55):
         for y in (0.25, 0.65, 1.05, 1.45, 1.85, 2.08):
             rivet(x, y, -0.04)
 
 
-def merge_groups():
+def merge_groups(name):
     objects = [o for o in bpy.context.scene.objects if o.type == "MESH"]
     groups = {}
     for o in objects:
@@ -299,10 +300,18 @@ def merge_groups():
         bpy.ops.object.convert(target="MESH")
         bpy.ops.object.join()
         o = bpy.context.object
-        o.name = group if group.startswith("valve-") else "body-" + mat
+        moving = group.startswith(("valve-", "gauge-needle-")) or group == "sight-fluid"
+        o.name = group if moving else "body-" + mat
         if group.startswith("valve-"):
             index = int(group[-1])
             pivot = Vector(loc(((-0.82, 0, 0.82)[index], 1.05, 0.39)))
+        elif group.startswith("gauge-needle-"):
+            index = int(group[-1])
+            pivot = Vector(loc((0, 1.74, .348) if name == "manifold" else
+                               ((-1.28, 0, 1.28)[index], .70, .043)))
+        elif group == "sight-fluid":
+            pivot = Vector(loc((0, .245, .046)))
+        if moving:
             for v in o.data.vertices:
                 v.co = o.matrix_world @ v.co - pivot
             o.matrix_world = Matrix.Identity(4)
@@ -357,7 +366,7 @@ def build(name, fn):
     global MATS
     MATS = setup()
     fn()
-    merge_groups()
+    merge_groups(name)
     bpy.ops.wm.save_as_mainfile(filepath=str(SOURCE / f"{name}.blend"))
     bpy.ops.export_scene.gltf(
         filepath=str(SOURCE / f"{name}.staged.glb"), export_format="GLB"
@@ -386,7 +395,8 @@ def build(name, fn):
         for n in m.node_tree.nodes
         if n.type == "TEX_IMAGE"
     ), "external image"
-    render_preview(name)
+    if not os.environ.get("PRESSURE_SKIP_PREVIEW"):
+        render_preview(name)
     staged = SOURCE / f"{name}.staged.glb"
     target = OUT / f"{name}.glb"
     target.write_bytes(staged.read_bytes())
@@ -400,6 +410,113 @@ def build(name, fn):
     print("ASSET_REPORT", name, json.dumps(report))
 
 
-build("manifold", manifold)
-if not os.environ.get("PRESSURE_MANIFOLD_ONLY"):
-    build("gallery-pipes", gallery)
+def split_existing_instruments():
+    from collections import defaultdict
+    from mathutils import Vector, Matrix
+    from pathlib import Path
+
+    name = os.environ["PRESSURE_SPLIT_MODEL"]
+    src = SOURCE
+    bpy.ops.wm.open_mainfile(
+        filepath=str(Path(os.environ["PRESSURE_SPLIT_SOURCE_DIR"]) / (name + ".blend"))
+    )
+    coords = {
+        "manifold": [(0, 1.74, 0.348)],
+        "gallery-pipes": [(-1.28, 0.70, 0.043), (0, 0.70, 0.043), (1.28, 0.70, 0.043)],
+        "accumulator-bank": [(-0.64, 2.16, 0.347), (0.64, 2.16, 0.347)],
+    }[name]
+    targets = [(f"gauge-needle-{i}", p) for i, p in enumerate(coords)]
+    if name != "manifold":
+        targets.append(
+            (
+                "sight-fluid",
+                (0, 0.245, 0.046) if name == "gallery-pipes" else (0, 1.11, 0.189),
+            )
+        )
+
+    def loc(p):
+        return Vector((p[0], -p[2], p[1]))
+
+    for label, p in targets:
+        candidates = []
+        for o in list(bpy.context.scene.objects):
+            if o.type != "MESH":
+                continue
+            adj = defaultdict(set)
+            for e in o.data.edges:
+                a, b = e.vertices
+                adj[a].add(b)
+                adj[b].add(a)
+            seen = set()
+            for v in o.data.vertices:
+                if v.index in seen:
+                    continue
+                ids = []
+                stack = [v.index]
+                seen.add(v.index)
+                while stack:
+                    k = stack.pop()
+                    ids.append(k)
+                    for n in adj[k] - seen:
+                        seen.add(n)
+                        stack.append(n)
+                if len(ids) != (8 if label == "sight-fluid" else 12):
+                    continue
+                pts = [o.matrix_world @ o.data.vertices[i].co for i in ids]
+                lo = [min(q[i] for q in pts) for i in range(3)]
+                hi = [max(q[i] for q in pts) for i in range(3)]
+                pivot = loc(p)
+                if label == "sight-fluid":
+                    match = (
+                        abs(lo[2] - pivot.z) < 0.0001
+                        and abs((lo[0] + hi[0]) / 2 - pivot.x) < 0.0001
+                        and abs((lo[1] + hi[1]) / 2 - pivot.y) < 0.0001
+                    )
+                else:
+                    match = (
+                        abs((lo[1] + hi[1]) / 2 - pivot.y) < 0.0001
+                        and abs(lo[0] - (pivot.x - 0.00372)) < 0.0003
+                        and abs(
+                            lo[2]
+                            - (
+                                pivot.z - 0.00486
+                                if name == "accumulator-bank"
+                                else pivot.z - 0.00471
+                            )
+                        )
+                        < 0.0003
+                    )
+                if match:
+                    candidates.append((o, ids))
+        assert len(candidates) == 1, (name, label, len(candidates))
+        o, ids = candidates[0]
+        bpy.ops.object.select_all(action="DESELECT")
+        o.select_set(True)
+        bpy.context.view_layer.objects.active = o
+        bpy.ops.object.mode_set(mode="EDIT")
+        bpy.ops.mesh.select_all(action="DESELECT")
+        bpy.ops.object.mode_set(mode="OBJECT")
+        for i in ids:
+            o.data.vertices[i].select = True
+        bpy.ops.object.mode_set(mode="EDIT")
+        bpy.ops.mesh.separate(type="SELECTED")
+        bpy.ops.object.mode_set(mode="OBJECT")
+        new = next(x for x in bpy.context.selected_objects if x != o)
+        pivot = loc(p)
+        for v in new.data.vertices:
+            v.co = new.matrix_world @ v.co - pivot
+        new.matrix_world = Matrix.Identity(4)
+        new.location = pivot
+        new.name = label
+        if not o.data.polygons:
+            bpy.data.objects.remove(o, do_unlink=True)
+        print("SPLIT", label, tuple(new.location), len(new.data.polygons))
+    bpy.ops.wm.save_as_mainfile(filepath=str(src / (name + ".blend")))
+    bpy.ops.export_scene.gltf(filepath=str(OUT / (name + ".glb")), export_format="GLB")
+
+if os.environ.get("PRESSURE_SPLIT_MODEL"):
+    split_existing_instruments()
+else:
+    build("manifold", manifold)
+    if not os.environ.get("PRESSURE_MANIFOLD_ONLY"):
+        build("gallery-pipes", gallery)

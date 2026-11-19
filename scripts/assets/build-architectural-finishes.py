@@ -90,8 +90,7 @@ class Bay:
                 grain: str = "v", glass: bool = False) -> None:
         points = [(x, z, d) for outline, d in rings for x, z in outline]
         n = len(rings[0][0])
-        # Every relief seats in a solid backing; only the wall itself needs its rear skin.
-        faces = [tuple(reversed(range(n)))] if name == "Backing" else []
+        faces = []
         for k in range(len(rings) - 1):
             for i in range(n):
                 j = (i + 1) % n
@@ -175,7 +174,7 @@ class Bay:
     def shell(self, door: bool, swatch: int) -> None:
         slabs = [(0, 2, 2, 4)] if not door else [(-.9, 2, .2, 4), (.9, 2, .2, 4), (0, 3.2, 1.6, 1.6)]
         for x, z, w, h in slabs:
-            self.plate("Backing", x, z, w, h, -.018, .012, swatch, bevel=0)
+            self.plate("Backing", x, z, w, h, 0., .012, swatch, bevel=0)
 
 
 def rivets(b: Bay, x: float, z: float, width: float, height: float) -> None:
@@ -707,20 +706,31 @@ def validate(path: Path) -> dict:
         mesh = obj.data
         coords = [v.co for v in mesh.vertices]
         assert all(math.isfinite(value) for v in coords for value in v)
+        assert max(v.y for v in coords) <= .000001, obj.name
         assert abs(min(v.x for v in coords) + 1) < .0001 and abs(max(v.x for v in coords) - 1) < .0001
         assert abs(min(v.z for v in coords)) < .0001 and abs(max(v.z for v in coords) - 4) < .0001
         assert max(-v.y for v in coords) <= (.24 if obj.name == "BoilerExchangerBay" else .21)
         mesh.calc_loop_triangles()
         assert all(t.area > 1e-12 for t in mesh.loop_triangles), obj.name
+        assert not any(all(abs(coords[i].y) < .000001 for i in tri.vertices)
+                       for tri in mesh.loop_triangles), obj.name
         assert all(math.isfinite(u) and 0 <= u <= 1 for entry in mesh.uv_layers.active.data for u in entry.uv)
         if obj.name.endswith("Door"):
+            for a, b in (((-.8, 0.), (-.8, 4.)), ((.8, 0.), (.8, 4.)),
+                         ((-.8, 2.4), (.8, 2.4))):
+                def contains(pts: list, p: tuple) -> bool:
+                    return any(abs(v.x - p[0]) < .000001 and abs(v.y) < .000001
+                               and abs(v.z - p[1]) < .000001 for v in pts)
+                assert any(contains([coords[i] for i in tri.vertices], a)
+                           and contains([coords[i] for i in tri.vertices], b)
+                           for tri in mesh.loop_triangles), (obj.name, a, b)
             for tri in mesh.loop_triangles:
                 pts = [coords[index] for index in tri.vertices]
                 assert (all(v.x <= -.7999 for v in pts) or all(v.x >= .7999 for v in pts)
                         or all(v.z >= 2.3999 for v in pts)), obj.name
     return {"meshes": len(gltf["meshes"]), "materials": len(gltf["materials"]), "packedTextures": len(gltf["images"]),
             "runtimeBytes": len(data), "sha256": hashlib.sha256(data).hexdigest(),
-            "reimport": "Seven identity roots, finite UV0 and coordinates, nonzero triangles, exact 2x4m bounds, clear portals"}
+            "reimport": "Seven identity roots, finite UV0 and coordinates, nonzero triangles, exact 2x4m bounds, clear portals, zero-plane contacts and no rear faces"}
 
 
 def main() -> None:

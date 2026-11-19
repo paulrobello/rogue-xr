@@ -4,9 +4,10 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
 import bpy
-from mathutils import Vector
+from mathutils import Matrix, Vector
 from mathutils.bvhtree import BVHTree
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -147,7 +148,18 @@ def bent_pipe(points, radius):
     return obj
 
 
-def gauge(x, y, z, r):
+def moving(obj, name, pivot):
+    obj.name = name
+    obj["moving"] = True
+    pivot = Vector(loc(pivot))
+    for vertex in obj.data.vertices:
+        vertex.co = obj.matrix_world @ vertex.co - pivot
+    obj.matrix_world = Matrix.Identity(4)
+    obj.location = pivot
+    return obj
+
+
+def gauge(x, y, z, r, index):
     cylinder((x, y, z - 0.014), (x, y, z + 0.008), r, "brass", 24)
     cylinder((x, y, z + 0.009), (x, y, z + 0.011), r * 0.8, "ivory", 24)
     for i in range(7):
@@ -159,9 +171,10 @@ def gauge(x, y, z, r):
             "iron",
             6,
         )
-    cylinder(
+    needle = cylinder(
         (x, y, z + 0.012), (x + r * 0.36, y + r * 0.26, z + 0.012), 0.006, "iron", 6
     )
+    moving(needle, f"gauge-needle-{index}", (x, y, z + .012))
 
 
 def radial_distance(obj, x, height, angle):
@@ -259,11 +272,12 @@ for x in (-0.64, 0.64):
                                           'pipe_endpoint_m': [x, .33, .18]}
     for y in (.65, 1.20, 1.78, 2.20):
         cylinder((x+side*.43, y-.025, .18), (x+side*.43, y+.025, .18), .039, 'brass', 8)
-    gauge(x, 2.16, 0.335, 0.105)
+    gauge(x, 2.16, 0.335, 0.105, 0 if x < 0 else 1)
 # Central sight glass, legible against an iron panel.
 box((0, 1.43, 0.121), (0.18, 0.86, 0.10), "iron")
 box((0, 1.43, 0.177), (0.09, 0.68, 0.016), "ivory")
-box((0, 1.28, 0.189), (0.05, 0.34, 0.006), "patina")
+moving(box((0, 1.28, 0.189), (0.05, 0.34, 0.006), "patina"),
+       "sight-fluid", (0, 1.11, .189))
 for y in (1.06, 1.80):
     box((0, y, 0.19), (0.16, 0.07, 0.04), "brass")
 for x in (-1.23, 1.23):
@@ -305,7 +319,7 @@ for m in MATS.values():
     objs = [
         o
         for o in bpy.context.scene.objects
-        if o.type == "MESH" and o.data.materials[0] == m
+        if o.type == "MESH" and o.data.materials[0] == m and not o.get("moving")
     ]
     if not objs:
         continue
@@ -368,7 +382,8 @@ c.data.type = "ORTHO"
 c.data.ortho_scale = 4.2
 scene.camera = c
 scene.render.filepath = str(SRC / "accumulator-bank-front-three-quarter.png")
-bpy.ops.render.render(write_still=True)
+if not os.environ.get("PRESSURE_SKIP_PREVIEW"):
+    bpy.ops.render.render(write_still=True)
 target = OUT / "accumulator-bank.glb"
 target.write_bytes(staged.read_bytes())
 staged.unlink()

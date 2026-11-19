@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { generateFloor } from '../src/floor/generate.ts';
 import {
   buildFireplaceFire,
+  dressCandleFlames,
   dressFireplace,
   FIRE_NODE,
   FIREBOXES,
@@ -160,6 +161,27 @@ describe('the flame material', () => {
 });
 
 describe('replacing the hall fire', () => {
+  it('replaces the real hall candle triangles with one animated wick batch', () => {
+    const model = new THREE.Group();
+    const baked = new THREE.Mesh(
+      hallFlameGeometry(),
+      new THREE.MeshStandardMaterial({ name: 'hall_flame' }),
+    );
+    model.add(baked);
+    dressFireplace('hall', model, flameSlot);
+    const candles = dressCandleFlames(model, flameSlot);
+    if (!candles) throw new Error('Hall wicks missing');
+    expect(candles.geometry.getAttribute('params').count / 4).toBe(24);
+    expect(candles.material.uniforms.uMotion.value).toBe(1);
+    expect(
+      new Set(
+        Array.from(candles.geometry.getAttribute('params').array).filter((_, i) => i % 4 === 0),
+      ).size,
+    ).toBe(24);
+    expect(baked.visible).toBe(false);
+    candles.geometry.dispose();
+    candles.material.dispose();
+  });
   it('drops exactly the eight firebox triangles of the baked flame slot, keeping the candles', () => {
     const geometry = hallFlameGeometry();
     expect(triangles(geometry)).toBe(56);

@@ -12,7 +12,8 @@
     2.8499999046325684,
     0.3521961569786072
   ],
-  "sha256": "b0340f2afeee1b07a6a3b2dd47c18086bc342775ce0de44649ff8715e5738772",
-  "blender": "5.3.0",
-  "provenance": "Original procedural geometry by Codex, no external inputs or textures."
+  "sha256": "628b3bcaab8a70aebf07b34ec7af85378dd8315808f193baf7060b784dc930b5",
+  "blender": "5.2.3 LTS",
+  "provenance": "Original procedural geometry by Codex, no external inputs or textures.",
+  "instrument_separation": "Existing authored polygon islands separated at original rest positions; identity rotation and axle or bottom pivots."
 }

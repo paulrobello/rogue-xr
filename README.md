@@ -6,7 +6,7 @@ Status: vertical slice in progress, playable at <https://spire.pardev.net> (open
 
 ## In-run controls
 
-Open the wrist menu to choose **Settings**, **Deck**, or **Items**. Select the center to resume. To draw a sigil, hold the drawing-hand trigger and trace on the plate. Lift between strokes and take as long as you need. Squeeze the drawing-hand grip or point at **Cast** and pull the trigger to commit. On desktop, draw with the mouse and click **Cast**. [Base and upgraded glyphs](docs/verification/spell-glyphs.png)
+Click the right thumbstick to open the radial menu. Tilt it toward **Settings**, **Deck**, or **Items**, then pull the right trigger to select. Center the stick and pull the trigger to resume, or click the stick again to close the wheel. You can also press **Y** and point at a choice. To draw a sigil, hold the drawing-hand trigger and trace on the plate. Lift between strokes and take as long as you need. Squeeze the drawing-hand grip or point at **Cast** and pull the trigger to commit. On desktop, draw with the mouse and click **Cast**. [Base and upgraded glyphs](docs/verification/spell-glyphs.png)
 
 ## Room layout showcase
 

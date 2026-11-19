@@ -1,4 +1,4 @@
-import { createPointer } from '@par/xr-workspace';
+import { createPointer, createStickRadialNavigation } from '@par/xr-workspace';
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -37,7 +37,7 @@ import { type EnemyActor, type EnemyAsset, tryLoadEnemyAsset } from './enemies/e
 import { SHOWCASE_SEED } from './floor/generate.ts';
 import { encounterStartsFight, fleeStandPoint } from './flow/flee.ts';
 import { RunFlow } from './flow/flow.ts';
-import { FlowUi, rewardCardTexture } from './flow/panels.ts';
+import { FlowUi, RUN_MENU_ITEMS, rewardCardTexture } from './flow/panels.ts';
 import { bindFlowPersistence } from './flow/persist.ts';
 import { RewardCardFaces } from './flow/reward-cards.ts';
 import { HOLO_CARD_ASPECT } from './hand/fan-layout.ts';
@@ -952,6 +952,29 @@ const toggleMenu = (): boolean => {
   return ui.toggleMenu(camera);
 };
 const menuEdge = new ButtonEdge();
+const menuStick = createStickRadialNavigation<(typeof RUN_MENU_ITEMS)[number]['id'], 'right'>({
+  menu: {
+    get isOpen() {
+      return ui?.menuView === 'main';
+    },
+    get interactive() {
+      return ui?.radialInteractive ?? false;
+    },
+    setHovered(action) {
+      ui?.hover(action ? `menu-${action}` : null);
+    },
+  },
+  items: RUN_MENU_ITEMS.map((item) => item.id),
+  isBusy: () => busy() || Boolean(ui?.visible),
+  onOpen: toggleMenu,
+  onClose: () => ui?.closeMenu(),
+});
+let releaseMenuStick = false;
+renderer.xr.addEventListener('sessionend', () => {
+  menuStick.reset();
+  menuStick.update('right', { x: 0, y: 0, pressed: false });
+  releaseMenuStick = false;
+});
 // Escape toggles the in-run menu; the boards' own Escape (back to the title) is handled below.
 window.addEventListener('keydown', (event) => {
   if (busy()) return;
@@ -1045,7 +1068,7 @@ function operateMachine(hit: PressureAction, hand?: XRHandedness): boolean {
         : hit.action === 'open'
           ? flow.openPressureDrawer(room)
           : flow.claimPressureReward(room);
-  if (!result && hit.action === 'prime') floor.pressure?.primeMiss();
+  if (!result && hit.action === 'prime') floor.pressure?.primeMiss(!hitFx.reducedMotion);
   if (hand) {
     const inputs = Array.from(renderer.xr.getSession()?.inputSources ?? []).filter(
       (source) => source.handedness === hand,
@@ -1255,6 +1278,14 @@ for (const index of [0, 1]) {
           direction,
           (event as unknown as { data?: XRInputSource }).data?.handedness,
         );
+      }
+      return;
+    }
+    const side = (event as unknown as { data?: XRInputSource }).data?.handedness;
+    if (side === 'right' && menuStick.owns(side)) {
+      if (ui.radialInteractive) {
+        const action = menuStick.confirm() ?? 'cancel';
+        actions.emit({ type: 'select', controlId: `menu-${action}` });
       }
       return;
     }
@@ -1698,12 +1729,16 @@ renderer.setAnimationLoop((time, frame) => {
     }
     if (menuEdge.step(xr.buttonPressed(MENU_BUTTON.side, MENU_BUTTON.index))) toggleMenu();
     const { left, right } = xr.sticks();
+    // Locomotion reports +Y forward; the shared radial uses WebXR's raw -Y for up.
+    menuStick.update('right', { x: right[0], y: -right[1], pressed: xr.buttonPressed('right', 3) });
+    if (menuStick.active) releaseMenuStick = true;
+    else if (Math.hypot(...right) < 0.2) releaseMenuStick = false;
     const aimSource = xr.rays().right;
     const aimRay = aimSource ? controllerRay(aimSource) : null;
     drive.step({
       dt: deltaSeconds,
       left,
-      right,
+      right: releaseMenuStick ? [0, 0] : right,
       rightRay: aimRay
         ? {
             origin: [aimRay.origin.x, aimRay.origin.y, aimRay.origin.z],
@@ -1793,8 +1828,10 @@ renderer.setAnimationLoop((time, frame) => {
   if (ui?.visible && xr.presenting) {
     const ray = xr.rays()[MAIN_HAND];
     const hit = ray ? uiPointer.castFrom(ray, ui.targets()) : null;
-    ui.hover(hit ? ui.controlAt(hit.object) : null);
-    laserHits[MAIN_HAND] = hit ? hit.distance : null;
+    if (!menuStick.active) {
+      ui.hover(hit ? ui.controlAt(hit.object) : null);
+      laserHits[MAIN_HAND] = hit ? hit.distance : null;
+    }
   }
   if (pullMark) {
     if (!xr.presenting || !canOpenLoot() || !floor?.pressure) pullMark = null;

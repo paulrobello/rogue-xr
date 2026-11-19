@@ -14,6 +14,8 @@ import {
 import type { FloorWorld } from './floor-world.ts';
 import { normalizePressureState, type PressureAction, primeMiss } from './pressure-compartment.ts';
 
+import { PressureInstruments } from './pressure-instruments.ts';
+
 type Valve = 0 | 1 | 2;
 const FIXTURES = [
   'manifold',
@@ -123,6 +125,7 @@ export class PressureWorks {
   private readonly housing: Box | undefined;
   private readonly targetPoint = new THREE.Vector3();
   private readonly driveRotors: THREE.Group[] = [];
+  private readonly instruments = new PressureInstruments();
   private driveAngle = 0;
   private driveSpeed = 0;
   private steamTime = 0;
@@ -509,6 +512,11 @@ export class PressureWorks {
         }
       } else group.add(model.clone(true));
     }
+    this.instruments.bind(
+      this.parts.manifold,
+      this.parts['gallery-pipes'],
+      this.parts['accumulator-bank'],
+    );
     this.bindWheels();
     this.sync(this.state);
   }
@@ -558,6 +566,7 @@ export class PressureWorks {
         if (!animate) wheel.node.quaternion.copy(wheel.goal);
       }
     }
+    this.instruments.sync(this.state, animate);
     this.drawerGoal = this.state.drawerOpen ? 0.42 : 0;
     this.leverGoal = this.state.solved ? -0.9 : 0;
     if (!animate) {
@@ -579,6 +588,7 @@ export class PressureWorks {
   }
 
   update(dt: number): void {
+    this.instruments.update(dt);
     if (this.turning) {
       this.turning = false;
       for (const wheel of this.wheels) {
@@ -670,7 +680,8 @@ export class PressureWorks {
     }
     return result;
   }
-  primeMiss(): void {
+  primeMiss(animate = true): void {
+    if (animate) this.instruments.primerStroke();
     this.paint(this.heading, 'Primer held', primeMiss(this.state));
   }
 

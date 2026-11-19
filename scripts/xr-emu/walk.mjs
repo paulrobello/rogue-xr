@@ -127,7 +127,10 @@ try {
   };
   /** Points the main hand at a board control, checks the hover, then pulls the trigger. */
   const press = async (controlId, hand = MAIN) => {
-    const target = await ev((id) => window.__xrEmu.worldOf(id), controlId);
+    const target = await ev(
+      (id) => window.__xrEmu.worldOf(id) ?? window.__xrEmu.worldOf('radial-' + id),
+      controlId,
+    );
     if (!target) {
       record(`press:${controlId}`, false, 'control not on the boards');
       return false;
@@ -300,9 +303,65 @@ try {
     await page.goto(`${opts.base}/?seed=${opts.seed}&debug`);
     await waitFor('deck-run-ready', () => window.__flow?.flow.phase === 'explore');
     await enterVr();
+
+    const clickStick = async () => {
+      for (const down of [1, 0]) {
+        await ev(
+          (value) => window.__xrEmu.device.controllers.right.updateButtonValue('thumbstick', value),
+          down,
+        );
+        await ev(() => window.__xrEmu.frames(3));
+      }
+    };
+    const tilt = async (x, y, id) => {
+      await ev(
+        ([x, y]) => window.__xrEmu.device.controllers.right.updateAxes('thumbstick', x, y),
+        [x, y],
+      );
+      const selected = await waitFor(id, (expected) => window.__flow.ui.hoveredId === expected, id);
+      record(`stick-highlight-${id}`, selected);
+    };
+    await clickStick();
+    await waitFor('stick-wheel-interactive', () => window.__flow.ui.radialInteractive);
+    await tilt(-1, 0.5, 'menu-items');
+    await tilt(1, 0.5, 'menu-deck');
+    await tilt(0, -1, 'menu-settings');
+    await aim(MAIN, await ev(() => window.__xrEmu.worldOf('radial-menu-items')));
+    await ev(() => window.__xrEmu.frames(5));
+    record(
+      'stick-retains-highlight-against-ray',
+      await ev(() => window.__flow.ui.hoveredId === 'menu-settings'),
+    );
+    await pullTrigger(MAIN);
+    record(
+      'stick-trigger-opens-settings',
+      await ev(() => window.__flow.ui.menuView === 'settings'),
+    );
+    await ev(() => window.__xrEmu.device.controllers.right.updateAxes('thumbstick', 0, 0));
+    for (const down of [1, 0]) {
+      await ev(
+        (v) => window.__xrEmu.device.controllers.left.updateButtonValue('y-button', v),
+        down,
+      );
+      await ev(() => window.__xrEmu.frames(3));
+    }
+    await clickStick();
+    await waitFor('stick-centred-resume', () => window.__flow.ui.hoveredId === 'menu-cancel');
+    await pullTrigger(MAIN);
+    record(
+      'stick-centred-trigger-resumes',
+      await ev(
+        () => window.__flow.ui.menuView === 'closed' && window.__flow.flow.phase === 'explore',
+      ),
+    );
+    await clickStick();
+    await waitFor('stick-reopened', () => window.__flow.ui.menuView === 'main');
+    await clickStick();
+    record('stick-click-toggles-closed', await ev(() => window.__flow.ui.menuView === 'closed'));
     await ev(() => window.__xrEmu.device.controllers.left.updateButtonValue('y-button', 1));
     await waitFor('run-menu-open', () => window.__flow.ui.menuView === 'main');
     await ev(() => window.__xrEmu.device.controllers.left.updateButtonValue('y-button', 0));
+    await waitFor('ray-wheel-interactive', () => window.__flow.ui.radialInteractive);
     await press('menu-deck');
     await press('menu-deck-defense');
     const visible = await ev(() => window.__flow.ui.deckCards);
