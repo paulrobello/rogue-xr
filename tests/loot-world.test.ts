@@ -70,7 +70,74 @@ describe('coffers in the floor world', () => {
     const world = buildFloorWorld(plan, STUDY_WITH_DESK);
     world.group.updateMatrixWorld(true);
     const [coffer] = world.coffers;
-    expect(coffer?.object.getWorldPosition(new THREE.Vector3()).y).toBeCloseTo(1.07, 6);
+    expect(coffer?.object.getWorldPosition(new THREE.Vector3()).y).toBeCloseTo(0.78, 6);
+    world.dispose();
+  });
+
+  it('supports the desk coffer and clears the rack and candles throughout the lid swing', () => {
+    const world = buildFloorWorld(generateFloor('SPIRE002'), STUDY_WITH_DESK);
+    const coffer = world.coffers.find((c) => c.socketId === 'desk-drawer');
+    if (!coffer) throw new Error('missing study coffer');
+    world.group.updateMatrixWorld(true);
+    const toDesk = new THREE.Matrix4()
+      .makeRotationY(-Math.PI / 4)
+      .multiply(new THREE.Matrix4().makeTranslation(-2.4, -0.78, -2.4))
+      .multiply(world.roomGroups[coffer.room].matrixWorld.clone().invert());
+    const rack = new THREE.Box3(
+      new THREE.Vector3(-0.66, 0, 0.14),
+      new THREE.Vector3(0.66, 0.29, 0.32),
+    );
+    const obstacles = [
+      rack,
+      ...[
+        [0.42, 0.18],
+        [-0.36, 0.2],
+      ].map(
+        ([x, z]) =>
+          new THREE.Box3(
+            new THREE.Vector3(x - 0.05, 0.29, z - 0.05),
+            new THREE.Vector3(x + 0.05, 0.62, z + 0.05),
+          ),
+      ),
+    ];
+    const triangle = new THREE.Triangle(),
+      toLocal = new THREE.Matrix4();
+    const bodyBounds = new THREE.Box3();
+    let tested = 0,
+      collided = false;
+    coffer.unlock(true);
+    coffer.open(true);
+    for (let step = 0; step <= 24; step++) {
+      world.group.updateMatrixWorld(true);
+      coffer.object.traverse((node) => {
+        if (
+          !(node instanceof THREE.Mesh) ||
+          !node.visible ||
+          ['coffer-hit', 'coffer-glow'].includes(node.name)
+        )
+          return;
+        const g = node.geometry,
+          index = g.index,
+          pos = g.getAttribute('position');
+        toLocal.multiplyMatrices(toDesk, node.matrixWorld);
+        for (let i = 0; i < (index?.count ?? pos.count); i += 3) {
+          for (const [j, v] of [triangle.a, triangle.b, triangle.c].entries()) {
+            v.fromBufferAttribute(pos, index ? index.getX(i + j) : i + j).applyMatrix4(toLocal);
+            if (node.name === 'coffer-body' && step === 0) bodyBounds.expandByPoint(v);
+          }
+          tested++;
+          if (obstacles.some((o) => o.intersectsTriangle(triangle))) collided = true;
+        }
+      });
+      coffer.update(0.025);
+    }
+    expect(coffer.object.getObjectByName('coffer-lid')?.rotation.x).toBeGreaterThan(Math.PI / 2);
+    expect(tested).toBeGreaterThan(100);
+    expect(bodyBounds.min.y).toBeCloseTo(0, 5);
+    expect(bodyBounds.min.z).toBeGreaterThan(-0.31);
+    expect(bodyBounds.max.z).toBeLessThan(0.14);
+    expect(Math.max(Math.abs(bodyBounds.min.x), Math.abs(bodyBounds.max.x))).toBeLessThan(0.65);
+    expect(collided).toBe(false);
     world.dispose();
   });
 

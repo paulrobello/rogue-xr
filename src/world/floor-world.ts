@@ -171,7 +171,19 @@ function buildRoom(
       const s = t.lootSockets.find((socket) => socket.id === pickup.socketId);
       if (!s) continue;
       const surface = surfaceHeightAt(t.colliders, s.position[0], s.position[2]);
-      const coffer = kit.build(index, s, pickup.kind, surface, placed.encounter !== null);
+      // The study collider includes the candle rack, 0.29 m above the usable desk top.
+      const onDesk = t.id === 'study' && s.id === 'desk-drawer' && surface > 0;
+      const socket = onDesk
+        ? { ...s, position: [2.322, 0, 2.322] as [number, number, number], yaw: 315 }
+        : s;
+      const coffer = kit.build(
+        index,
+        socket,
+        pickup.kind,
+        onDesk ? 0.78 : surface,
+        placed.encounter !== null,
+      );
+      if (onDesk) coffer.object.scale.set(0.85, 1.1, 0.85);
       group.add(coffer.object);
       group.getObjectByName(`socket-${s.id}`)?.removeFromParent();
       coffers.push(coffer);

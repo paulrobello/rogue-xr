@@ -129,9 +129,10 @@ export async function loadRoomLightmap(
   baseUrl: string,
   loader: LightmapLoader | KTX2Loader,
   root?: THREE.Object3D,
+  version?: string,
 ): Promise<RoomLightmap> {
   const { lightmap } = parseTemplateManifest(manifest);
-  const url = `${baseUrl.replace(/\/+$/, '')}/${lightmap.file}`;
+  const url = `${baseUrl.replace(/\/+$/, '')}/${lightmap.file}${version ? `?v=${version}` : ''}`;
   const texture = configureLightmapTexture(await loader.loadAsync(url), lightmap);
   return { texture, url, bound: root ? bindLightmap(root, texture, lightmap) : 0 };
 }

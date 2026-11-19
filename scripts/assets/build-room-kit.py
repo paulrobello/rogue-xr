@@ -31,6 +31,7 @@ import sys
 from pathlib import Path
 
 import bpy
+import bmesh
 from mathutils import Matrix, Vector
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -350,7 +351,6 @@ def build_corridor(b, room: kit.Room, high: bool) -> tuple[list, list]:
         lights += [(name, flame, CORRIDOR["lantern_w"][0], color),
                    (f"{name}_pool", flame - Vector((0, 0, 0.05)), CORRIDOR["lantern_w"][1], {**LANTERN_POOL, **color})]
     kit.banner(b, -room.hx, -room.hx + 0.04, 0.0, high)
-    # Brass inlay along the 8 m run: two lines and a cross band at each pilaster pair and the lamp.
     kit.floor_inlay(b, room.hy - 0.08, (-0.5, 0.5), (-2.0, 0.0, 2.0))
     assert (lights[0][1] - Vector((0.8, 0.0, 2.2))).length < 0.05, lights[0]  # the lamp light socket
     return [], lights
@@ -691,6 +691,18 @@ def uv0(obj, report: dict, build_name: str) -> None:
         report[key] = report.get(key, 0) + kit.narrow_side_uv(obj, tile=TILE["walnut"])
 
 
+def remove_corridor_inlay(obj) -> None:
+    """Remove the five raised brass floor faces after the original UV atlas is packed."""
+    bm = bmesh.new()
+    bm.from_mesh(obj.data)
+    faces = [face for face in bm.faces if all(abs(v.co.z - 0.005) < 1e-6 for v in face.verts)]
+    assert len(faces) in (5, 10), f"expected five inlay faces, got {len(faces)}"
+    bmesh.ops.delete(bm, geom=faces, context="FACES_ONLY")
+    bm.to_mesh(obj.data)
+    bm.free()
+    obj.data.update()
+
+
 def export(objs: list, path: Path) -> int:
     """The room, its rigid nodes and its panels, each its own glTF node."""
     kit.export_glb_multi(objs, path)
@@ -744,6 +756,8 @@ def main() -> None:
     for obj in high_all:
         uv0(obj, report, "high")
         S.apply_bevel(obj)
+    if P == "corridor":
+        remove_corridor_inlay(high)
     report["high"] = {"triangles": sum(S.count_tris(o) for o in high_all), "slots": len(S.SLOTS)}
 
     low, colliders, lights, rigid, door = build(room, False)
@@ -764,6 +778,8 @@ def main() -> None:
     # padding; asset-check-uv1 gates the measured gap at 8 px). 10 px pack margin unless the room sets one.
     gap_px, margin_px = cfg.get("lightmap_gap_px", 10), cfg.get("bake_margin_px", 8)
     kit.unwrap_lightmap_uv_multi(low_all, size, gap_px=gap_px)
+    if P == "corridor":
+        remove_corridor_inlay(low)
     tris = sum(S.count_tris(o) for o in low_all)
     report["low"] = {
         "triangles": tris,

@@ -62,11 +62,14 @@ def torus(parent,name,loc,major,minor,mat,axis='Z'):
     if axis=='Y': o.rotation_euler[0]=math.pi/2
     o.data.materials.append(mat); return o
 
-def oval(parent,name,loc,size,mat):
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=16,ring_count=8,location=(0,0,0))
+def oval(parent,name,loc,size,mat,segments=16,rings=8,smooth=False):
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=segments,ring_count=rings,location=(0,0,0))
     o=bpy.context.object; o.name=name; o.parent=parent; o.location=loc; o.scale=size
     bpy.ops.object.transform_apply(location=False,rotation=False,scale=True)
-    o.data.materials.append(mat); return o
+    o.data.materials.append(mat)
+    if smooth:
+        for poly in o.data.polygons: poly.use_smooth=True
+    return o
 
 def panel(parent,x,z,w,h):
     cube(parent,'Inset panel',(x,-.077,z),(w,.028,h),wood2,.018)
@@ -265,41 +268,76 @@ for name,length,width,ang in [('WallClock_HourHand',.10,.018,-.7),('WallClock_Mi
     pivot=empty(name,clock,(0,-.155,.46)); pivot.rotation_euler[1]=ang; cube(pivot,'Clock hand',(0,0,length/2),(width,.012,length),iron,.004)
 sh=empty('WallClock_Shutter',clock,(-.26,-.14,.42))
 
+def armor_oval(parent,name,loc,size,mat):
+    return oval(parent,name,loc,size,mat,segments=24 if 'Pauldron' in name or 'pauldron' in name else 20,rings=12 if 'Pauldron' in name or 'pauldron' in name else 10,smooth=True)
+
+def armor_pauldron(parent,side):
+    center=Vector((side*.015,0,-.005)); radii=Vector((.145,.15,.12))
+    armor_oval(parent,'Rounded pauldron',center,radii,brass)
+    segments, rings=32, 8
+    verts=[]
+    for row in range(rings+1):
+        theta=.002+(1.38-.002)*row/rings
+        for col in range(segments):
+            phi=math.tau*col/segments
+            verts.append(center+Vector((1.008*radii.x*math.sin(theta)*math.cos(phi),1.008*radii.y*math.sin(theta)*math.sin(phi),1.008*radii.z*math.cos(theta))))
+    faces=[]
+    for row in range(rings):
+        for col in range(segments):
+            a=row*segments+col; b=row*segments+(col+1)%segments
+            faces.append((a,b,b+segments,a+segments))
+    mesh=bpy.data.meshes.new('Pauldron inset'); mesh.from_pydata(verts,[],faces); mesh.update()
+    ob=bpy.data.objects.new('Pauldron inset',mesh); bpy.context.collection.objects.link(ob); ob.parent=parent; ob.data.materials.append(iron)
+    for poly in mesh.polygons: poly.use_smooth=True
+
+def armor_joint(parent,name,loc,r,depth,mat,axis):
+    ob=cyl(parent,name,loc,r,depth,mat,axis,20)
+    bevel=ob.modifiers.new('Rounded plate edge','BEVEL'); bevel.width=.008; bevel.segments=3
+    bpy.context.view_layer.objects.active=ob; bpy.ops.object.modifier_apply(modifier=bevel.name)
+    for poly in ob.data.polygons:
+        poly.use_smooth=len(poly.vertices)==4
+    return ob
+
+def armor_bar(parent,name,a,b,r,mat):
+    ob=bar(parent,name,a,b,r,mat,verts=12)
+    for poly in ob.data.polygons:
+        poly.use_smooth=len(poly.vertices)==4
+    return ob
+
 armor=empty('ClockworkArmor'); cyl(armor,'Stand foot',(0,0,.035),.30,.07,iron,verts=16,r2=.24); cyl(armor,'Stand post',(0,.055,.8),.035,1.5,iron)
 for s in (-1,1):
     # Greaves and sabatons taper toward articulated knee and ankle joints.
-    oval(armor,'Greave',(s*.15,-.012,.40),(.095,.105,.31),iron)
-    oval(armor,'Sabatons',(s*.15,-.065,.12),(.105,.17,.065),iron)
-    bar(armor,'Greave ridge',(s*.15,-.118,.17),(s*.15,-.102,.65),.012,brass)
-    cyl(armor,'Knee joint',(s*.15,-.012,.73),.085,.15,iron,'Y',12)
-    oval(armor,'Knee cap',(s*.15,-.10,.73),(.105,.052,.095),brass)
-    oval(armor,'Thigh plate',(s*.15,0,.91),(.115,.115,.20),iron)
-    for z in (.27,.53): bar(armor,'Greave edge',(s*.08,-.073,z),(s*.22,-.073,z),.009,brass)
+    armor_oval(armor,'Greave',(s*.15,-.012,.40),(.095,.105,.31),iron)
+    armor_oval(armor,'Sabatons',(s*.15,-.065,.12),(.105,.17,.065),iron)
+    armor_bar(armor,'Greave ridge',(s*.15,-.118,.17),(s*.15,-.102,.65),.012,brass)
+    armor_joint(armor,'Knee joint',(s*.15,-.012,.73),.085,.15,iron,'Y')
+    armor_oval(armor,'Knee cap',(s*.15,-.10,.73),(.105,.052,.095),brass)
+    armor_oval(armor,'Thigh plate',(s*.15,0,.91),(.115,.115,.20),iron)
+    for z in (.27,.53): armor_bar(armor,'Greave edge',(s*.08,-.073,z),(s*.22,-.073,z),.009,brass)
     arm=empty('ClockworkArmor_%sArm'%('Left' if s<0 else 'Right'),armor,(s*.31,0,1.46))
-    oval(arm,'Rounded pauldron',(s*.015,0,-.005),(.145,.15,.12),brass)
-    oval(arm,'Pauldron inset',(s*.015,-.012,.016),(.132,.14,.10),iron)
-    oval(arm,'Upper arm',(s*.045,0,-.19),(.07,.08,.19),iron)
-    cyl(arm,'Elbow pivot',(s*.09,0,-.34),.072,.14,brass,'Y',12)
-    oval(arm,'Forearm vambrace',(s*.115,-.015,-.48),(.073,.082,.15),iron)
-    bar(arm,'Vambrace ridge',(s*.10,-.097,-.36),(s*.13,-.097,-.58),.01,brass)
-    oval(arm,'Gauntlet',(s*.13,-.03,-.635),(.063,.075,.09),iron)
-    for z in (-.60,-.65,-.69): bar(arm,'Finger guard',(s*.07,-.097,z),(s*.18,-.097,z),.008,brass)
+    armor_pauldron(arm,s)
+    armor_oval(arm,'Upper arm',(s*.045,0,-.19),(.07,.08,.19),iron)
+    armor_joint(arm,'Elbow pivot',(s*.09,0,-.34),.072,.14,brass,'Y')
+    armor_oval(arm,'Forearm vambrace',(s*.115,-.015,-.48),(.073,.082,.15),iron)
+    armor_bar(arm,'Vambrace ridge',(s*.10,-.097,-.36),(s*.13,-.097,-.58),.01,brass)
+    armor_oval(arm,'Gauntlet',(s*.13,-.03,-.635),(.063,.075,.09),iron)
+    for z in (-.60,-.65,-.69): armor_bar(arm,'Finger guard',(s*.07,-.097,z),(s*.18,-.097,z),.008,brass)
 # Layered silhouette and raised central ridge read as shaped steel rather than a box.
-oval(armor,'Breastplate',(0,0,1.27),(.265,.17,.30),iron)
-bar(armor,'Breastplate central ridge',(0,-.18,1.05),(0,-.155,1.52),.018,brass)
+armor_oval(armor,'Breastplate',(0,0,1.27),(.265,.17,.30),iron)
+armor_bar(armor,'Breastplate central ridge',(0,-.18,1.05),(0,-.155,1.52),.018,brass)
 for s in (-1,1):
-    bar(armor,'Breastplate upper edging',(0,-.15,1.50),(s*.215,-.105,1.43),.012,brass)
-    bar(armor,'Breastplate side edging',(s*.215,-.105,1.43),(s*.19,-.12,1.13),.012,brass)
+    armor_bar(armor,'Breastplate upper edging',(0,-.15,1.50),(s*.215,-.105,1.43),.012,brass)
+    armor_bar(armor,'Breastplate side edging',(s*.215,-.105,1.43),(s*.19,-.12,1.13),.012,brass)
     for z in (1.15,1.23,1.31): cyl(armor,'Breastplate rivet',(s*.175,-.124,z),.011,.015,brass,'Y',8)
 for z,w in [(1.06,.46),(1.00,.43),(.94,.40)]:
     cube(armor,'Overlapping fauld',(0,-.075,z),(w,.16,.065),iron,.02)
-    bar(armor,'Fauld edge',(-w*.46,-.16,z-.027),(w*.46,-.16,z-.027),.008,brass)
-head=empty('ClockworkArmor_Head',armor,(0,0,1.61)); oval(head,'Helmet dome',(0,0,.09),(.15,.13,.155),iron)
+    armor_bar(armor,'Fauld edge',(-w*.46,-.16,z-.027),(w*.46,-.16,z-.027),.008,brass)
+head=empty('ClockworkArmor_Head',armor,(0,0,1.61)); armor_oval(head,'Helmet dome',(0,0,.09),(.15,.13,.155),iron)
 torus(head,'Helmet crown band',(0,0,.19),.113,.01,brass)
-visor=empty('ClockworkArmor_Visor',head,(-.14,-.08,.17)); oval(visor,'Face guard',(.14,-.055,-.035),(.14,.075,.105),iron)
+visor=empty('ClockworkArmor_Visor',head,(-.14,-.08,.17)); armor_oval(visor,'Face guard',(.14,-.055,-.035),(.14,.075,.105),iron)
 for z in (-.055,-.015): cube(visor,'Eye slit',(.14,-.132,z),(.17,.012,.012),enamel,.003)
 for x in (.06,.10,.14,.18,.22): cyl(visor,'Visor rivet',(x,-.128,-.09),.007,.01,brass,'Y',8)
-bar(visor,'Visor brow',(.025,-.12,.025),(.255,-.12,.025),.01,brass)
+armor_bar(visor,'Visor brow',(.025,-.12,.025),(.255,-.12,.025),.01,brass)
 
 painting=empty('FramedPainting'); cube(painting,'Canvas',(0,-.054,.50),(.78,.035,.80),cloth,.001)
 backing=material('PictureBacking',(.65,.53,.36),0,.95); MATS.append(backing)

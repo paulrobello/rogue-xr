@@ -1,9 +1,9 @@
 {
   "glb": "corridor.glb",
-  "glb_sha256": "442b67f4a6b45abb6b63771d3422a5aa5eb8934e3ce52cad1cb6b375bb35a7de",
+  "glb_sha256": "f9ac14a4385d56bb83732c08c1cdae86fed8141c1a4f858e1139bbb36b0963e4",
   "size": 2048,
-  "islands": 586,
-  "coverage": 0.4429,
+  "islands": 581,
+  "coverage": 0.441,
   "overlap_px": 0,
   "texels_claimed_twice": 6828,
   "claims_per_covered_texel": 1.0037,

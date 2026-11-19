@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import provenance from '../../assets-source/props/pressure-works/provenance.json';
 import { CanvasLabel } from '../combat-view/canvas-label.ts';
 import { type Box, type Facing, rotateRect, templateById } from '../content/rooms.ts';
 import type { FloorPlan } from '../floor/generate.ts';
@@ -25,11 +26,18 @@ const VALVES = [0, 1, 2] as const;
 const CIRCUITS = ['A', 'B', 'C'] as const;
 const WHEEL_X = [-0.82, 0, 0.82];
 const PUMP_Z = -3.0;
-const PIPE_X = -0.81;
+const PIPE_X = -0.898;
 const BANK_X = [-2.2, 2.2] as const;
 const BANK_Z = -3.5;
 const FACING_IN: Record<Facing, number> = { N: 0, S: Math.PI, W: Math.PI / 2, E: -Math.PI / 2 };
 const NORMAL = new THREE.Vector3(0, 0, 1);
+const PRESSURE_GLBS = new Map(
+  Object.entries(provenance.sha256)
+    .filter(
+      ([path]) => path.startsWith('public/assets/props/pressure-works/') && path.endsWith('.glb'),
+    )
+    .map(([path, hash]) => [path.slice('public/assets/'.length), hash] as const),
+);
 
 export type PressureArt = Readonly<Partial<Record<Fixture, THREE.Group>>>;
 
@@ -39,7 +47,9 @@ export async function loadPressureArt(): Promise<PressureArt> {
   await Promise.all(
     FIXTURES.map(async (kind) => {
       try {
-        out[kind] = (await loader.loadAsync(`/assets/props/pressure-works/${kind}.glb`)).scene;
+        const path = `props/pressure-works/${kind}.glb`;
+        const stamp = PRESSURE_GLBS.get(path);
+        out[kind] = (await loader.loadAsync(`/assets/${path}${stamp ? `?v=${stamp}` : ''}`)).scene;
       } catch (error) {
         console.warn(`Pressure Works ${kind} unavailable`, error);
       }
@@ -189,8 +199,21 @@ export class PressureWorks {
       this.sign(this.entrance, 'pressure-works-nameplate', 1.52, 0.29, 0, 2.64, 0),
       'Pressure Works',
     );
+    // The banner sits 4 cm off the wall. Stand the plate just proud of the cloth and between the downpipes.
+    const plateDepth = -0.046;
+    const mount = new THREE.BoxGeometry(0.046, 0.12, 0.05);
+    const plate = new THREE.BoxGeometry(1.5, 0.55, 0.008);
+    this.fallbackGeometries.push(mount, plate);
+    for (const x of [-0.65, 0.65]) {
+      const post = new THREE.Mesh(mount, metal);
+      post.position.set(x, 1.68, plateDepth - 0.033);
+      this.gallery.add(post);
+    }
+    const backing = new THREE.Mesh(plate, shell);
+    backing.position.set(0, 1.68, plateDepth - 0.005);
+    this.gallery.add(backing);
     this.paint(
-      this.sign(this.gallery, 'pressure-calibration-record', 1.62, 0.6, 0, 1.68, 0.17),
+      this.sign(this.gallery, 'pressure-calibration-record', 1.5, 0.55, 0, 1.68, plateDepth),
       'Pipe Gallery',
       'Recover the three service slips',
       'Calibration records missing',

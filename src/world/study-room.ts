@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { derivedFiles as corridorFiles } from '../../assets-source/rooms/corridor/provenance.json';
 import { GREYBOX_TEMPLATES, parseRoomTemplate, type RoomTemplate } from '../content/rooms.ts';
 import { dressFireplace } from './fireplace.ts';
 import {
@@ -252,7 +253,14 @@ export async function loadStudyAsset(options: {
   const { study, set, ktx2 } = options;
   const id = study.manifest.template;
   const base = options.base ?? roomBase(id);
-  const gltf = await new GLTFLoader().loadAsync(`${base}/${study.manifest.glb}`);
+  const revision = (file: string) =>
+    id === 'corridor'
+      ? corridorFiles.find((entry) => entry.path === `public/assets/rooms/corridor/${file}`)?.sha256
+      : undefined;
+  const glbHash = revision(study.manifest.glb);
+  const gltf = await new GLTFLoader().loadAsync(
+    `${base}/${study.manifest.glb}${glbHash ? `?v=${glbHash}` : ''}`,
+  );
   const owned: THREE.Texture[] = [];
   const slots = new Map<string, THREE.MeshStandardMaterial>();
   for (const [name, entry] of Object.entries(study.materials)) {
@@ -279,7 +287,13 @@ export async function loadStudyAsset(options: {
     }
     mesh.material = material;
   });
-  const lightmap = await loadRoomLightmap(study.manifest, base, ktx2, gltf.scene);
+  const lightmap = await loadRoomLightmap(
+    study.manifest,
+    base,
+    ktx2,
+    gltf.scene,
+    revision(study.manifest.lightmap.file),
+  );
   owned.push(lightmap.texture);
   const books = slots.get('study_books');
   if (id === 'study' && books) {

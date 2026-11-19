@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
+import studyManifest from '../public/assets/rooms/study/study.manifest.json';
+import { GREYBOX_TEMPLATES, parseRoomTemplate } from '../src/content/rooms.ts';
 import { generateFloor } from '../src/floor/generate.ts';
 import { pressureTarget } from '../src/rules/pressure.ts';
 import { buildFloorWorld } from '../src/world/floor-world.ts';
@@ -79,6 +81,45 @@ describe('pressure notes', () => {
       () => true,
     );
     expect(notes.near(placement.location, 1)).not.toContain(placement);
+    notes.dispose();
+    world.dispose();
+  });
+
+  it('presents the letter upright and picks its corners from either side of an open chest', () => {
+    const templates = GREYBOX_TEMPLATES.map((t) =>
+      t.id === 'study' ? parseRoomTemplate(studyManifest) : t,
+    );
+    const world = buildFloorWorld(generateFloor('SPIRE002'), templates);
+    const notes = new PressureNotes(world);
+    const note = notes.placements.find((p) => p.source === 'chest');
+    if (!note) throw new Error('missing chest letter');
+    expect(note.object.parent?.scale.x).not.toBe(note.object.parent?.scale.y);
+    const sheet = note.object.children.find((p) => p.userData.noteSurface);
+    if (!sheet) throw new Error('missing printed paper');
+    world.update(note.location.x, note.location.z);
+    notes.sync(
+      [],
+      () => false,
+      (room, id) => room === note.room && id === note.socketId,
+    );
+    const viewer = new THREE.Object3D();
+    for (const approach of [
+      [0.3, 0.35, -0.45],
+      [-0.4, 0.14, 0.35],
+    ]) {
+      viewer.position.copy(note.location).add(new THREE.Vector3(...approach));
+      notes.update(viewer);
+      note.object.updateWorldMatrix(true, true);
+      const towardEye = viewer.position.clone().sub(note.location).normalize();
+      const normal = new THREE.Vector3(0, 0, 1).applyNormalMatrix(
+        new THREE.Matrix3().getNormalMatrix(sheet.matrixWorld),
+      );
+      expect(normal.dot(towardEye)).toBeGreaterThan(0.999);
+      const top = new THREE.Vector3(0, 1, 0).transformDirection(sheet.matrixWorld);
+      expect(top.y).toBeGreaterThan(0);
+      const corner = sheet.localToWorld(new THREE.Vector3(0.12, 0.08, 0));
+      expect(notes.pick(viewer.position, corner.sub(viewer.position))?.id).toBe(note.id);
+    }
     notes.dispose();
     world.dispose();
   });

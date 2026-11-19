@@ -244,7 +244,7 @@
     "LibraryBindingAtlas requires the shared runtime book texture; canvas UVs are texture-ready.",
     "No authored colliders or LODs."
   ],
-  "triangles": 54928,
-  "size_bytes": 3111916,
-  "sha256": "0bce3d758e41e8040b39692240460c48247cbbf1247c88f5917afd2766bb9fba"
+  "triangles": 59880,
+  "size_bytes": 3003776,
+  "sha256": "759663b979c7bf57255ba7f62e8265c67274402b699970b4de9b203a06a2216b"
 }

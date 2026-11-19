@@ -1,0 +1,36 @@
+{
+  "description": "Pump-only floor lightmap crop. Study sun disabled in a 256-sample Cycles Metal bake using the original UV1 atlas; original decoded lightmap retained outside a feathered sun footprint. Existing UV0 remains unchanged.",
+  "source_sha256": {
+    "assets-source/rooms/study/blend/study_low.blend": "584f34735fc11226c0faafba200a44ed3cb3edd8f79cd8f96380b621ab3d5dcf",
+    "public/assets/rooms/study/study.basecolor.ktx2": "b02368371914b7f903b80acdde92d9951f2e0b88105b3ac47afe78e3fe683084",
+    "public/assets/rooms/study/study.lightmap.ktx2": "1a1bf7e3ff1065e725c083ee9051439e0d0ce944f65af76e11832b83c25350c4",
+    "scripts/assets/build-pump-floor-bake.py": "2a864ba1df5a1dced9fdf191eaa0a5f269e6500106a01d7e68f8bdeb1f25a400",
+    "scripts/assets/build-pump-floor-chart.py": "4ec60d5ab41a9a333318de253f1746a7870231c9ff6204e33b663211c7eeeb46",
+    "public/assets/props/pressure-works/pump-floor-lightmap.png": "48974fc20f6b8caf7b48c5e05d5649993035ca0558e58e90bba3e818bd46e371"
+  },
+  "atlas_size": [
+    2048,
+    2048
+  ],
+  "floor_crop_pixels": [
+    0,
+    1500,
+    550,
+    2048
+  ],
+  "changed_pixel_count": 13258,
+  "changed_bounds_in_atlas": [
+    238,
+    1739,
+    422,
+    1851
+  ],
+  "scale": 3.7835512161254883,
+  "regeneration": [
+    "ktx extract --transcode rgba8 public/assets/rooms/study/study.basecolor.ktx2 /tmp/study-basecolor.png",
+    "ktx extract --transcode rgba8 public/assets/rooms/study/study.lightmap.ktx2 /tmp/study-lightmap.png",
+    "blender -b --factory-startup assets-source/rooms/study/blend/study_low.blend --python-exit-code 1 -P scripts/assets/build-pump-floor-bake.py -- /tmp/study-basecolor.png /tmp/pump-no-sun.npy",
+    "uv run --with numpy --with pillow --with scipy python scripts/assets/build-pump-floor-chart.py /tmp/study-lightmap.png /tmp/pump-no-sun.npy public/assets/props/pressure-works/pump-floor-lightmap.png"
+  ],
+  "note": "Cycles denoising and GPU render can vary by Blender and hardware; update runtime cache hash when regenerating."
+}

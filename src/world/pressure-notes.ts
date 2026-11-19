@@ -92,7 +92,7 @@ function paper(): {
 function furniture(world: FloorWorld, room: number, decor: readonly DecorPlacement[]): Candidate[] {
   const placed = world.plan.rooms[room];
   if (placed.templateId === 'study' && !world.coffers.some((c) => c.room === room))
-    return [{ room, source: 'desk', local: new THREE.Vector3(2.34, 0.784, 2.33) }];
+    return [{ room, source: 'desk', local: new THREE.Vector3(2.34, 0.784, 2.34) }];
   if (placed.templateId !== 'hall') return [];
   const candidates: Candidate[] = [];
   for (const t of DECOR_TABLES.hall) {
@@ -172,9 +172,13 @@ export class PressureNotes {
   private readonly wall = new THREE.Box3();
   private readonly crossing = new THREE.Vector3();
   private readonly raycaster = new THREE.Raycaster();
+  private readonly eye = new THREE.Vector3();
+  private readonly localNormal = new THREE.Vector3();
+  private readonly toLocalNormal = new THREE.Matrix3();
 
   constructor(private readonly world: FloorWorld) {
     const seed = world.plan.seed;
+    world.group.updateMatrixWorld(true);
     const stream = Stream.fromKey(`${seed}:pressure-notes`);
     const used = new Set<number>();
     const decor = placeTableDecor(
@@ -184,7 +188,7 @@ export class PressureNotes {
     const candidates: Candidate[] = [];
     for (const coffer of world.coffers) {
       if (coffer.room === world.plan.guardianRoom) continue;
-      const local = new THREE.Vector3(0.1, 0.316, 0.045);
+      const local = new THREE.Vector3(0.085, 0.37, 0.025);
       candidates.push({
         room: coffer.room,
         source: 'chest',
@@ -246,6 +250,7 @@ export class PressureNotes {
       object.userData.noteId = id;
       (candidate.parent ?? world.roomGroups[candidate.room]).add(object);
       object.position.copy(candidate.local);
+      if (candidate.source === 'chest') object.rotation.set(Math.PI / 3, Math.PI, 0, 'YXZ');
       if (candidate.source === 'chest' || candidate.source === 'drop') object.visible = false;
       const location = object.getWorldPosition(new THREE.Vector3());
       const placement = {
@@ -320,6 +325,26 @@ export class PressureNotes {
     };
   }
 
+  /** Keeps revealed chest letters turned toward the player's current seated/head-tracked eye. */
+  update(viewer: THREE.Object3D): void {
+    viewer.getWorldPosition(this.eye);
+    for (const placement of this.placements) {
+      if (
+        placement.source !== 'chest' ||
+        placement.room !== this.world.current ||
+        !placement.object.visible ||
+        !placement.object.parent
+      )
+        continue;
+      this.toLocalNormal.setFromMatrix4(placement.object.parent.matrixWorld).transpose();
+      this.localNormal.copy(this.eye).sub(placement.location).applyMatrix3(this.toLocalNormal);
+      const { x, y, z } = this.localNormal;
+      const distance = Math.hypot(x, z);
+      const yaw = distance > 0.001 ? Math.atan2(x, z) : placement.object.rotation.y;
+      placement.object.rotation.set(Math.atan2(distance, y), yaw, 0, 'YXZ');
+    }
+  }
+
   sync(
     collected: readonly PressureNoteId[],
     cleared: (room: number) => boolean,
@@ -347,8 +372,13 @@ export class PressureNotes {
     this.raycaster.far = MAX_PICK;
     let best: { id: PressureNoteId; room: number; distance: number } | null = null;
     for (const p of this.placements) {
-      if (!p.object.visible || p.room !== this.world.current || origin.y < p.location.y - 0.05)
+      if (
+        !p.object.visible ||
+        p.room !== this.world.current ||
+        (p.source !== 'chest' && origin.y < p.location.y - 0.05)
+      )
         continue;
+      p.object.updateWorldMatrix(true, true);
       const hit = this.raycaster.intersectObject(p.object, true)[0];
       if (!hit || (best && best.distance <= hit.distance)) continue;
       let blocked = false;

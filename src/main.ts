@@ -83,6 +83,7 @@ import { mountMaterialProof } from './world/material-proof.ts';
 import { loadPbrSet } from './world/materials.ts';
 import type { PressureAction } from './world/pressure-compartment.ts';
 import { loadPressureArt, type PressureArt } from './world/pressure-works.ts';
+import { loadPumpFloorLightmap } from './world/pump-room-floor.ts';
 import { mountRoomAssetProof } from './world/room-asset-proof.ts';
 import { loadBookBindings } from './world/study-books.ts';
 import {
@@ -548,7 +549,7 @@ const dressFloor = async (target: FloorView): Promise<void> => {
       ),
     ]);
   }
-  const [rooms, door, coffers, decor, furnishings] = await Promise.all([
+  const [rooms, door, coffers, decor, furnishings, pumpLight] = await Promise.all([
     roomAssets,
     sealedDoorMaterial,
     lootMaterials,
@@ -559,6 +560,7 @@ const dressFloor = async (target: FloorView): Promise<void> => {
           return null;
         })
       : null,
+    target.pressure ? loadPumpFloorLightmap() : undefined,
     fitTable(target),
     ...dressed,
   ]);
@@ -567,7 +569,7 @@ const dressFloor = async (target: FloorView): Promise<void> => {
       (placed) => !rooms.some((room) => room.manifest.template.id === placed.templateId),
     );
     if (missing) throw new Error(`Couldn't load the ${missing.templateId} room`);
-    dressHeroRooms(target, rooms, decor);
+    dressHeroRooms(target, rooms, decor, pumpLight);
     const candles = new Set<THREE.MeshStandardMaterial>();
     for (const group of target.world.roomGroups)
       group.traverse((node) => {

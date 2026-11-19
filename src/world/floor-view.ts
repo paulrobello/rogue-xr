@@ -44,6 +44,8 @@ import {
 } from './loot.ts';
 import { PressureNotes } from './pressure-notes.ts';
 import { PressureWorks } from './pressure-works.ts';
+import { removePumpRoomSunlight } from './pump-room-floor.ts';
+import { closePumpRoomWindow } from './pump-room-wall.ts';
 import { type RigidNode, rigidAngle } from './study-room.ts';
 
 export interface FloorAudio {
@@ -62,6 +64,7 @@ export function seedFromQuery(search: string): string {
 export const LOOT_REACH = 4;
 /** Height above a coffer's base where its toast hangs, in metres. */
 const TOAST_LIFT = 0.95;
+
 /** Height above a hearth's base where its panel hangs, in metres (over the bowl). */
 const HEARTH_TOAST_LIFT = 1.25;
 /**
@@ -161,6 +164,7 @@ export interface FloorView {
     templateId: string,
     instantiate: () => THREE.Object3D,
     rigidNodes?: readonly RigidNode[],
+    pumpLight?: THREE.Texture,
   ): number;
   /** Rigid nodes (the gear-shaft crown gear) this floor turns each frame. */
   readonly spinnerCount: number;
@@ -315,6 +319,7 @@ export function mountFloorView(
     room: THREE.Object3D;
   }
   const spinners: Spinner[] = [];
+  const pumpResources: (THREE.BufferGeometry | THREE.Material)[] = [];
   /** Live fireplace fires (the hall's); instances of one template share the material and its clock. */
   const fires: { material: THREE.ShaderMaterial; room: THREE.Object3D }[] = [];
   let furnishings: InteriorFurnishings | null = null;
@@ -522,11 +527,18 @@ export function mountFloorView(
       undressed = true;
       dressEnemies();
     },
-    useRoomAsset(templateId, instantiate, rigidNodes = []) {
+    useRoomAsset(templateId, instantiate, rigidNodes = [], pumpLight) {
       let dressed = 0;
       world.plan.rooms.forEach((room, index) => {
         if (room.templateId !== templateId) return;
         const model = instantiate();
+        if (index === world.plan.pressureWing?.pumpRoom && templateId === 'study') {
+          pumpResources.push(...closePumpRoomWindow(model));
+          if (pumpLight) {
+            const floor = removePumpRoomSunlight(model, pumpLight);
+            pumpResources.push(...floor.geometries, ...floor.materials);
+          }
+        }
         world.dressRoom(index, model);
         const group = world.roomGroups[index];
         for (const rigid of rigidNodes) {
@@ -549,6 +561,7 @@ export function mountFloorView(
       return spinners.length;
     },
     dispose() {
+      for (const resource of pumpResources) resource.dispose();
       book.dispose();
       furnishings?.dispose();
       notes?.dispose();
@@ -632,6 +645,7 @@ export function mountFloorView(
       return true;
     },
     update(head, dt) {
+      notes?.update(head);
       pressure?.update(dt);
       world.updateAnimations(dt);
       turnVignette = vignetteStep(turnVignette, 0, dt, DEFAULT_VIGNETTE);

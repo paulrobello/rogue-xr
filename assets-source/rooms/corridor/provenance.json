@@ -41,12 +41,12 @@
     "store": "assets-source/rooms/corridor/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)",
     "files": {
       "corridor_high.blend": {
-        "sha256": "19ab926c0593122bea176eabd4e33cfc8b5e69292516ebd9a6be63836aa40bb1",
-        "bytes": 367792
+        "sha256": "61e8e0af0a5c571a9165e19f7af11605a8361fdb0eab4f065ed6ea55c1811564",
+        "bytes": 365381
       },
       "corridor_low.blend": {
-        "sha256": "565db3a229b83f9ea2a3fdcfa25149988165a06470d9f93969ad7c24b8c5e4b3",
-        "bytes": 178902
+        "sha256": "b65cf54643159b8effc2e1b26484eb6914051af13bbde437b964914f9e0dfc80",
+        "bytes": 176621
       }
     }
   },
@@ -88,7 +88,7 @@
     }
   },
   "budgets": {
-    "triangles": 1986,
+    "triangles": 1976,
     "materials": 7,
     "texturePx": {
       "corridor.lightmap.ktx2": {
@@ -96,7 +96,7 @@
         "height": 2048
       }
     },
-    "highTriangles": 12071,
+    "highTriangles": 12061,
     "glbBytes": 158048
   },
   "texelDensityPxPerM": {
@@ -200,27 +200,26 @@
   "derivedFiles": [
     {
       "path": "public/assets/rooms/corridor/corridor.glb",
-      "sha256": "442b67f4a6b45abb6b63771d3422a5aa5eb8934e3ce52cad1cb6b375bb35a7de",
+      "sha256": "f9ac14a4385d56bb83732c08c1cdae86fed8141c1a4f858e1139bbb36b0963e4",
       "bytes": 158048
     },
     {
       "path": "public/assets/rooms/corridor/corridor.lightmap.ktx2",
-      "sha256": "8f8256439177825f8aa855e384a413bf064e0e5da0e99119d6c5803154f66932",
-      "bytes": 2793349
+      "sha256": "45f926c5d3fffeecf8548a01a3656e956811b1b6a5afc9fc32f94de5bc2348a2",
+      "bytes": 2787004
     },
     {
       "path": "public/assets/rooms/corridor/corridor.manifest.json",
-      "sha256": "5a4963210fa02ddc15d46b9f4c58b7b8cc7996f4b3d235e936d0f014b6bedba9",
+      "sha256": "74ad9485e68d224f4035d6a37e79c93ffa5fc6371ba3474687d4777a6ee92b72",
       "bytes": 2756
     }
   ],
   "stagingFiles": {
-    "corridor.glb": "442b67f4a6b45abb6b63771d3422a5aa5eb8934e3ce52cad1cb6b375bb35a7de",
-    "corridor.lightmap.ktx2": "8f8256439177825f8aa855e384a413bf064e0e5da0e99119d6c5803154f66932",
-    "corridor.lightmap.png": "9729e472912144256d4fd64aaa9d1c5880ff00d7604a348f1d195f4186b03100",
-    "corridor.manifest.json": "5a4963210fa02ddc15d46b9f4c58b7b8cc7996f4b3d235e936d0f014b6bedba9",
+    "corridor.glb": "f9ac14a4385d56bb83732c08c1cdae86fed8141c1a4f858e1139bbb36b0963e4",
+    "corridor.lightmap.ktx2": "45f926c5d3fffeecf8548a01a3656e956811b1b6a5afc9fc32f94de5bc2348a2",
+    "corridor.manifest.json": "74ad9485e68d224f4035d6a37e79c93ffa5fc6371ba3474687d4777a6ee92b72",
     "engine-compare.json": "f9962786914b96b35d94c4cd4c89a5a85557eb5f88a1e6c95c27908e60b7e1f3",
-    "uv1-report.json": "cd2b8964fd132095747bcc8a3890b46e370767851b26e53f61b9f7e61d0707ae"
+    "uv1-report.json": "85d12595fff2005e059593bd1ff4bd3b58ca32e30642b84dd999a5f3bbc468de"
   },
   "references": [
     {
@@ -245,7 +244,7 @@
   "materialsUsed": "approved P4-T3 set (public/assets/materials), bound by slot name; not regenerated",
   "license": "Original work generated in Blender from a checked-in script; concept references from Paul's paid Higgsfield plan (Terms of Use 4.4)",
   "reimport": {
-    "triangles": 1986,
+    "triangles": 1976,
     "material_count": 7,
     "uv_layers": [
       [
@@ -297,7 +296,8 @@
       "image-free glb",
       "ktx2 size/mips/transfer",
       "manifest consistency",
-      "clean reimport"
+      "clean reimport",
+      "retained geometry compared with original baseline"
     ]
   },
   "approvals": [
@@ -622,5 +622,31 @@
       "previousScore": 74,
       "build": "60cff33"
     }
-  ]
+  ],
+  "derivation": {
+    "method": "Removed five original brass floor inlay faces after UV packing and repaired their baked shadows on the unchanged floor lightmap UV island.",
+    "baseline_glb_sha256": "442b67f4a6b45abb6b63771d3422a5aa5eb8934e3ce52cad1cb6b375bb35a7de",
+    "script": "scripts/assets/strip-corridor-inlay.py",
+    "blend_script": "scripts/assets/strip-corridor-inlay-blend.py",
+    "prior_bake_and_density": "Baseline bake and density measurements predate removal; only the former inlay shadow texels were interpolated.",
+    "script_sha256": "3e0691fd87120e739c1f9da329a785b612fb2d2fc8301bfe8d2dc8b13f9eeeb8",
+    "blend_script_sha256": "416e9b4d9b5a05fd4f1f83ed7f1259c279f9b1a6661a466fbc2ba75ffd69b858",
+    "source_blender": "5.3.0",
+    "blend_edit_blender": "5.2.2 LTS (newer-file compatibility warning)",
+    "verification": "Original and edited blend mesh faces compared with per-corner position, normal and every UV, normalized by face and corner order, matching to 7 decimals. GLB retained triangle index order and all attribute buffers are byte-identical.",
+    "baseline_commit": "459f5bc25023504d13c3dbe8e7e2f298d6b9c722",
+    "mesh_fingerprint_script": "scripts/assets/corridor-mesh-fingerprint.py",
+    "mesh_fingerprint_script_sha256": "42d31f21617deb237dc3aea9d813603d25d0db54f20d47463ae23320e9aa1ac0",
+    "lightmap_repair": {
+      "script": "scripts/assets/repair-corridor-lightmap.py",
+      "baseline_lightmap_sha256": "8f8256439177825f8aa855e384a413bf064e0e5da0e99119d6c5803154f66932",
+      "baseline_commit": "459f5bc25023504d13c3dbe8e7e2f298d6b9c722",
+      "repair_pixels": 28626,
+      "level0_blocks_total": 262144,
+      "method": "Interpolate adjacent floor irradiance across five removed inlays; retain original UASTC blocks elsewhere at every mip level.",
+      "script_sha256": "a467bfee7ff71af2c76c93de1aa5e458bdd8bfa5ebc95222816c369778bbfe4b",
+      "level0_blocks_touched": 2200,
+      "level0_blocks_changed": 2190
+    }
+  }
 }

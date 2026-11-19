@@ -74,6 +74,43 @@ def cylinder(a, b, radius, mat, group="body", sides=12):
     return finish(o, mat, group)
 
 
+def swept_pipe(points, radius, mat, bend=0.10, sides=12):
+    """Sweep a tube through tangent quadratic bends in the runtime XY plane."""
+    points = [Vector(p) for p in points]
+    path = [points[0]]
+    for a, b, c in zip(points, points[1:], points[2:]):
+        incoming, outgoing = (b-a).normalized(), (c-b).normalized()
+        cut = min(bend, (b-a).length * 0.35, (c-b).length * 0.35)
+        start, end = b-incoming*cut, b+outgoing*cut
+        path.append(start)
+        for i in range(1, 5):
+            t = i / 4
+            path.append((1-t)**2*start + 2*(1-t)*t*b + t*t*end)
+    path.append(points[-1])
+    verts = []
+    for i, point in enumerate(path):
+        tangent = (path[min(i+1, len(path)-1)] - path[max(i-1, 0)]).normalized()
+        side = Vector((-tangent.y, tangent.x, 0)).normalized()
+        for j in range(sides):
+            theta = math.tau*j/sides
+            verts.append(loc(point + radius*(math.cos(theta)*side + math.sin(theta)*Vector((0,0,1)))))
+    faces = []
+    for i in range(len(path)-1):
+        for j in range(sides):
+            a = i*sides+j
+            b = i*sides+(j+1)%sides
+            faces.append((a,b,b+sides,a+sides))
+    faces.extend([tuple(reversed(range(sides))), tuple((len(path)-1)*sides+j for j in range(sides))])
+    mesh = bpy.data.meshes.new('Swept pipe')
+    mesh.from_pydata(verts, [], faces)
+    mesh.update()
+    ob = bpy.data.objects.new('Swept pipe', mesh)
+    bpy.context.collection.objects.link(ob)
+    for poly in mesh.polygons:
+        poly.use_smooth = len(poly.vertices) == 4
+    return finish(ob, mat, 'body')
+
+
 def ring(center, radius, tube, mat, group="body", major_segments=24):
     bpy.ops.mesh.primitive_torus_add(
         major_segments=major_segments,
@@ -190,7 +227,7 @@ def gallery():
         box((0, y, -0.075), (3.18, 0.07, 0.05), "iron")
         cylinder((-1.55, y, -0.005), (1.55, y, -0.005), 0.043, "copper")
         for x in (-1.38, -1.28, -1.15, -0.91, 0, 0.91, 1.15, 1.28, 1.38):
-            cylinder((x, y - 0.025, -0.005), (x, y + 0.025, -0.005), 0.046, "brass")
+            cylinder((x - 0.035, y, -0.005), (x + 0.035, y, -0.005), 0.053, "brass", sides=20)
         for x in (-1.55, 1.55):
             cylinder((x, y, -0.075), (x, y, -0.005), 0.046, "brass")
     for i, x in enumerate((-1.38, -1.15, -0.91, 0.91, 1.15, 1.38)):
@@ -205,10 +242,9 @@ def gallery():
             (x, 1.93, z),
             (x, 2.16, z),
         ]
-        for a, b in zip(points, points[1:]):
-            cylinder(a, b, radius, "copper" if i % 3 else "patina")
-        for px, py, pz in points[1:-1]:
-            cylinder((px, py - 0.025, pz), (px, py + 0.025, pz), radius + 0.006, "brass")
+        swept_pipe(points, radius, "copper" if i % 3 else "patina")
+        for y, sign in ((0.12, 1), (2.16, -1)):
+            cylinder((x, y + sign*0.028, z), (x, y + sign*0.10, z), radius + 0.010, "brass", sides=20)
         for y in (0.38, 0.69):
             cylinder((x, y - 0.035, z), (x, y + 0.035, z), radius + 0.012, "brass")
         for y in (1.17, 1.57):
@@ -221,10 +257,11 @@ def gallery():
         cylinder((x, 2.04, z), (x, 2.09, z), radius + 0.012, "brass")
     for x in (-1.28, 0, 1.28):
         cylinder((x, 0.12, -0.005), (x, 0.70, -0.005), 0.026, "copper")
+        cylinder((x, 0.145, -0.005), (x, 0.21, -0.005), 0.038, "brass", sides=20)
         gauge(x, 0.70, 0.005, 0.12 if x else 0.10)
         end = (-1.30 if x < 0 else 1.30 if x > 0 else 0.83)
-        cylinder((x, 0.70, -0.005), (x, 1.08, -0.005), 0.023, "copper")
-        cylinder((x, 1.08, -0.005), (end, 1.08, -0.005), 0.023, "copper")
+        swept_pipe([(x, 0.70, -0.005), (x, 1.08, -0.005), (end, 1.08, -0.005)], 0.023, "copper", bend=0.06)
+        cylinder((end, 1.04, -0.005), (end, 1.12, -0.005), 0.037, "brass", sides=20)
     # Porcelain sight glass, recessed between two brass caps under the placard.
     box((0, 0.35, 0.006), (0.12, 0.30, 0.055), "iron")
     box((0, 0.35, 0.037), (0.07, 0.25, 0.012), "ivory")

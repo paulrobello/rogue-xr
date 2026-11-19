@@ -419,16 +419,51 @@ function spotsForWall(
   return stream.shuffle(spots);
 }
 
-const flameVertex =
-  'varying vec2 vUv; void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}';
-const flameFragment =
-  'uniform float uTime; uniform float uMotion; varying vec2 vUv; void main(){vec2 p=vUv-.5; float a=1.0-smoothstep(.08,.5,length(vec2(p.x*(1.0+0.12*uMotion*sin(uTime*7.0)),p.y))); gl_FragColor=vec4(1.0,.32,.04,a); if(a<.01) discard;}';
+const FLAME_HEIGHT = 0.135;
+const flameVertex = `
+  varying vec2 flameUv;
+  void main() {
+    flameUv = uv;
+    vec4 center = modelViewMatrix * vec4(0., 0., 0., 1.);
+    vec3 up = normalize(modelViewMatrix[1].xyz);
+    vec3 side = cross(up, -center.xyz);
+    side = dot(side, side) > 0.00001 ? normalize(side) : vec3(1., 0., 0.);
+    center.xyz += side * position.x * length(modelMatrix[0].xyz)
+                + up * position.y * length(modelMatrix[1].xyz);
+    gl_Position = projectionMatrix * center;
+  }
+`;
+const flameFragment = `
+  uniform float uTime, uPhase, uMotion;
+  varying vec2 flameUv;
+  void main() {
+    float phase = uTime * 3.4 + uPhase;
+    float height = 0.89 + 0.025 * uMotion * sin(phase * 1.73);
+    float h = max(0., (flameUv.y - 0.025) / height);
+    float bend = uMotion * h * h * (0.19 * sin(phase) + 0.10 * sin(2.17 * phase - 3.8 * h));
+    float x = abs(flameUv.x - 0.5 - bend);
+    float radius = 0.39 * smoothstep(-0.07, 0.22, h) * pow(max(0., 1. - h), 0.83);
+    float aa = clamp(fwidth(x), 0.009, 0.065);
+    float edge = x - radius;
+    float body = 1. - smoothstep(-aa, aa, edge);
+    float halo = 1. - smoothstep(-0.015, 0.10, edge);
+    float alpha = (0.88 * body + 0.12 * halo) * smoothstep(0., 0.06, flameUv.y)
+                  * (1. - smoothstep(0.96, 1.02, h));
+    if (alpha < 0.01) discard;
+    float coreRadius = radius * 0.77 * (1. - smoothstep(0.24, 0.79, h));
+    float core = (1. - smoothstep(coreRadius * 0.65, coreRadius + aa, x))
+                 * (1. - smoothstep(0.66, 0.8, h));
+    vec3 color = mix(vec3(1., 0.14 + 0.15 * body, 0.012), vec3(1., 0.88, 0.16), core);
+    gl_FragColor = vec4(color, alpha);
+    #include <colorspace_fragment>
+  }
+`;
 
 export class InteriorFurnishings {
   readonly placements: readonly InteriorPlacement[];
   readonly themes: ReadonlyMap<number, InteriorTheme>;
   private readonly flameMaterials: THREE.ShaderMaterial[] = [];
-  private readonly flameGeometry = new THREE.PlaneGeometry(0.09, 0.18);
+  private readonly flameGeometry = new THREE.PlaneGeometry(0.096, FLAME_HEIGHT);
   private readonly removeColliders: (() => void)[] = [];
   private readonly root: THREE.Group;
   private readonly paintings: readonly THREE.Texture[];
@@ -577,14 +612,21 @@ export class InteriorFurnishings {
       const material = new THREE.ShaderMaterial({
         vertexShader: flameVertex,
         fragmentShader: flameFragment,
-        uniforms: { uTime: { value: 0 }, uMotion: { value: reducedMotion ? 0.2 : 1 } },
+        uniforms: {
+          uTime: { value: 0 },
+          uPhase: {
+            value: i * 2.39996 + candelabrum.position.x * 0.63 + candelabrum.position.z * 0.83,
+          },
+          uMotion: { value: reducedMotion ? 0 : 1 },
+        },
         transparent: true,
         depthWrite: false,
         toneMapped: false,
       });
       const flame = new THREE.Mesh(this.flameGeometry, material);
       flame.name = `flame-${i}`;
-      flame.position.y = 0.04;
+      flame.position.y = FLAME_HEIGHT / 2 - 0.006;
+      flame.raycast = () => undefined;
       socket.add(flame);
       this.flameMaterials.push(material);
     }
@@ -617,7 +659,7 @@ export class InteriorFurnishings {
     this.elapsed += Math.max(0, dt);
     for (const material of this.flameMaterials) {
       material.uniforms.uTime.value = this.elapsed;
-      material.uniforms.uMotion.value = reducedMotion ? 0.2 : 1;
+      material.uniforms.uMotion.value = reducedMotion ? 0 : 1;
     }
     const room = this.world.current;
     if (room !== this.lastRoom) {
