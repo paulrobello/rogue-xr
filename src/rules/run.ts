@@ -31,6 +31,8 @@ export interface RunState {
   readonly difficulty?: Difficulty;
   /** The pressure regulator state. Absent in saves made before the regulator existed. */
   readonly pressure?: StoredPressureState;
+  /** Rooms whose marked book caches have paid out. */
+  readonly bookSecretOpenedRooms?: readonly number[];
 }
 
 /** Mirrors `EncounterTier` in `floor/generate.ts`; rules may not import from `floor/`. */

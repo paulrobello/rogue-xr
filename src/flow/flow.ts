@@ -148,6 +148,12 @@ export type FlowEvent =
   | { readonly type: 'workshop' }
   | ({ readonly type: 'loot'; readonly stage: LootStage } & OpenedLoot)
   | ({ readonly type: 'hearth' } & UsedHearth)
+  | {
+      readonly type: 'book-secret';
+      readonly room: number;
+      readonly cogs: number;
+      readonly inscription: string;
+    }
   | PressureTurnResultView;
 
 export interface FlowOptions {
@@ -509,6 +515,27 @@ export class RunFlow {
     this.hearthValue = { room, socketId, healed: result.healed, hp: result.run.hp };
     this.emit({ type: 'hearth', ...this.hearthValue });
     return this.hearthValue;
+  }
+
+  /** Collects the clockmaker’s cache once per furnished room. */
+  openBookSecret(room: number): boolean {
+    const run = this.runValue;
+    if (this.phaseValue !== 'explore' || !run || !Number.isInteger(room) || room < 0) return false;
+    const openedRooms = run.bookSecretOpenedRooms ?? [];
+    if (openedRooms.includes(room)) return false;
+    const cogs = 10;
+    this.runValue = {
+      ...run,
+      cogs: run.cogs + cogs,
+      bookSecretOpenedRooms: [...openedRooms, room],
+    };
+    this.emit({
+      type: 'book-secret',
+      room,
+      cogs,
+      inscription: 'The clockmaker hid a cache for the one who noticed.',
+    });
+    return true;
   }
 
   /**

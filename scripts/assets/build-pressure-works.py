@@ -170,9 +170,8 @@ def manifold():
         for dx in (-0.25, 0.25):
             for y in (0.48, 1.48):
                 rivet(x + dx, y, 0.329)
-        cylinder((x, 0.22, 0.35), (x, 0.70, 0.35), 0.052, "copper")
         cylinder((x, 1.39, 0.35), (x, 1.70, 0.35), 0.052, "copper")
-        for y in (0.38, 0.57, 1.48, 1.62):
+        for y in (1.48, 1.62):
             cylinder((x, y - 0.025, 0.35), (x, y + 0.025, 0.35), 0.069, "brass")
     for i, x in enumerate((-0.82, 0, 0.82)):
         wheel(x, i)
@@ -189,20 +188,27 @@ def gallery():
         box((x, 1.12, -0.075), (0.08, 2.18, 0.05), "iron")
     for y in (0.12, 2.16):
         box((0, y, -0.075), (3.18, 0.07, 0.05), "iron")
+        cylinder((-1.55, y, -0.005), (1.55, y, -0.005), 0.043, "copper")
+        for x in (-1.38, -1.28, -1.15, -0.91, 0, 0.91, 1.15, 1.28, 1.38):
+            cylinder((x, y - 0.025, -0.005), (x, y + 0.025, -0.005), 0.046, "brass")
+        for x in (-1.55, 1.55):
+            cylinder((x, y, -0.075), (x, y, -0.005), 0.046, "brass")
     for i, x in enumerate((-1.38, -1.15, -0.91, 0.91, 1.15, 1.38)):
         radius = (0.028, 0.016, 0.024, 0.024, 0.016, 0.028)[i]
         z = (-0.015, 0.005, -0.01, -0.01, 0.005, -0.015)[i]
         shift = 0.08 if x < 0 else -0.08
         points = [
-            (x, 0.16, z),
+            (x, 0.12, z),
             (x, 0.85, z),
             (x + shift, 1.01, z),
             (x + shift, 1.77, z),
             (x, 1.93, z),
-            (x, 2.12, z),
+            (x, 2.16, z),
         ]
         for a, b in zip(points, points[1:]):
             cylinder(a, b, radius, "copper" if i % 3 else "patina")
+        for px, py, pz in points[1:-1]:
+            cylinder((px, py - 0.025, pz), (px, py + 0.025, pz), radius + 0.006, "brass")
         for y in (0.38, 0.69):
             cylinder((x, y - 0.035, z), (x, y + 0.035, z), radius + 0.012, "brass")
         for y in (1.17, 1.57):
@@ -214,9 +220,11 @@ def gallery():
             )
         cylinder((x, 2.04, z), (x, 2.09, z), radius + 0.012, "brass")
     for x in (-1.28, 0, 1.28):
-        cylinder((x, 0.19, -0.005), (x, 0.58, -0.005), 0.026, "copper")
+        cylinder((x, 0.12, -0.005), (x, 0.70, -0.005), 0.026, "copper")
         gauge(x, 0.70, 0.005, 0.12 if x else 0.10)
-        cylinder((x, 0.82, -0.005), (x, 1.08, -0.005), 0.023, "copper")
+        end = (-1.30 if x < 0 else 1.30 if x > 0 else 0.83)
+        cylinder((x, 0.70, -0.005), (x, 1.08, -0.005), 0.023, "copper")
+        cylinder((x, 1.08, -0.005), (end, 1.08, -0.005), 0.023, "copper")
     # Porcelain sight glass, recessed between two brass caps under the placard.
     box((0, 0.35, 0.006), (0.12, 0.30, 0.055), "iron")
     box((0, 0.35, 0.037), (0.07, 0.25, 0.012), "ivory")
@@ -224,7 +232,7 @@ def gallery():
         box((0, y, 0.012), (0.13, 0.05, 0.065), "brass")
     box((0, 0.30, 0.046), (0.046, 0.11, 0.006), "patina")
     cylinder((0, 0.25, 0.05), (0, 0.46, 0.05), 0.003, "brass", sides=8)
-    for x in (-1.48, 1.48):
+    for x in (-1.55, 1.55):
         for y in (0.25, 0.65, 1.05, 1.45, 1.85, 2.08):
             rivet(x, y, -0.04)
 

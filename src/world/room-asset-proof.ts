@@ -11,8 +11,9 @@ const BASE = '/assets/rooms/study';
 /** Dev-only: the PNG twins of the shipped KTX2 maps, kept beside the generator's staging output. */
 const STAGING = '/assets-source/rooms/study/staging';
 
-/** Blender cameras from scripts/assets/build-room-study.py, as runtime (x, y, z) = Blender (x, z, -y). */
+/** Hero and desk match the Blender cameras. Books shows the north shelves from reaching distance. */
 const CAMERAS = {
+  books: { eye: [-1.94, 1.74, -2.96], look: [-2.18, 1.45, -3.72] },
   hero: { eye: [1.6, 1.6, 3.2], look: [-0.4, 2.2, -4.0] },
   desk: { eye: [-2.8, 1.6, -0.6], look: [2.4, 0.9, 2.4] },
 } as const;

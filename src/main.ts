@@ -61,7 +61,11 @@ import { mountUpdateNotice } from './update/index.ts';
 import { type FloorView, mountFloorView, seedFromQuery } from './world/floor-view.ts';
 import type { HearthPick } from './world/hearth.ts';
 import { dressHeroRooms, fetchHeroRooms, loadHeroAssets } from './world/hero-rooms.ts';
-import { INTERIOR_PAINTINGS, loadInteriorFurnishings } from './world/interior-furnishings.ts';
+import {
+  bindBookcaseAtlas,
+  INTERIOR_PAINTINGS,
+  loadInteriorFurnishings,
+} from './world/interior-furnishings.ts';
 import { createKtx2Loader } from './world/ktx2.ts';
 import { mountLightmapProof } from './world/lightmap-proof.ts';
 import {
@@ -76,6 +80,7 @@ import { loadPbrSet } from './world/materials.ts';
 import type { PressureAction } from './world/pressure-compartment.ts';
 import { loadPressureArt, type PressureArt } from './world/pressure-works.ts';
 import { mountRoomAssetProof } from './world/room-asset-proof.ts';
+import { loadBookBindings } from './world/study-books.ts';
 import {
   fetchStudyManifest,
   HERO_ROOMS,
@@ -396,11 +401,24 @@ const heroSet = floor
       return { ktx2, set };
     })()
   : null;
+const libraryBindings = heroSet
+  ?.then(({ ktx2 }) => loadBookBindings(ktx2))
+  .catch((error: unknown) => {
+    console.warn('Book binding atlas unavailable', error);
+    return null;
+  });
 const roomAssets: Promise<StudyAsset[]> = heroSet
   ? heroSet
       .then(({ ktx2, set }) =>
-        loadHeroAssets(heroRooms.manifests, (study) =>
-          loadStudyAsset({ study, set, ktx2, envMap: heroEnv, reducedMotion: hitFx.reducedMotion }),
+        loadHeroAssets(heroRooms.manifests, async (study) =>
+          loadStudyAsset({
+            study,
+            set,
+            ktx2,
+            bookBindings: study.template.id === 'study' ? await libraryBindings : undefined,
+            envMap: heroEnv,
+            reducedMotion: hitFx.reducedMotion,
+          }),
         ),
       )
       .catch((error: unknown) => {
@@ -501,7 +519,8 @@ const dressFloor = async (target: FloorView): Promise<void> => {
   }
   if (target.pressure) {
     interiors ??= Promise.all([
-      loadInteriorFurnishings().then((asset) => {
+      Promise.all([loadInteriorFurnishings(), libraryBindings]).then(([asset, atlas]) => {
+        if (atlas) bindBookcaseAtlas(asset, atlas);
         reflect(asset.scene, 0.34);
         return asset;
       }),
@@ -660,6 +679,13 @@ flow.onChange((event) => {
     }
     return;
   }
+  if (event.type === 'book-secret') {
+    storedSnapshot = flow.snapshot(Date.now(), event.room);
+    floor?.book.open(event.room);
+    floor?.showBookSecret(event.cogs, event.inscription, event.room);
+    audio?.playSfx('cog-pickup');
+    return;
+  }
   if (event.type !== 'phase') return;
   perfMark(`phase ${event.to}`);
   // Only a flee goes from a fight straight back to exploring: the player steps back to the doorway
@@ -740,6 +766,7 @@ const continueRun = (): void => {
     const used = parseLootKey(key);
     if (used) target.hearth.markUsed(used.room, used.socketId);
   }
+  target.book.markOpened(snap.run.bookSecretOpenedRooms ?? []);
   const at = target.standPoint(snap.roomIndex) ?? target.world.spawnPoint();
   rig.position.set(at.x, rig.position.y, at.z);
   target.world.update(at.x, at.z);
@@ -865,6 +892,8 @@ const grabLootCard = (hand: THREE.Object3D | null): boolean => {
 };
 const useHearth = (pick: HearthPick | null): boolean =>
   !!pick && canOpenLoot() && flow.useHearth(pick.room, pick.socketId) !== null;
+const openBook = (pick: ReturnType<FloorView['book']['pick']> | null): boolean =>
+  !!pick && canOpenLoot() && flow.openBookSecret(pick.room);
 function operateMachine(hit: PressureAction, hand?: XRHandedness): boolean {
   if (!floor || !canOpenLoot()) return false;
   const room = floor.world.current;
@@ -896,11 +925,13 @@ function fieldHit(origin: THREE.Vector3, direction: THREE.Vector3) {
   const machine = floor.pressure?.pick(origin, direction);
   const coffer = floor.loot.pick(origin, direction);
   const hearth = floor.hearth.pick(origin, direction);
+  const book = floor.book.pick(origin, direction);
   const hits = [
     ...(note ? [{ kind: 'note' as const, hit: note }] : []),
     ...(machine ? [{ kind: 'machine' as const, hit: machine }] : []),
     ...(coffer ? [{ kind: 'coffer' as const, hit: coffer }] : []),
     ...(hearth ? [{ kind: 'hearth' as const, hit: hearth }] : []),
+    ...(book ? [{ kind: 'book' as const, hit: book }] : []),
   ];
   return hits.sort((a, b) => a.hit.distance - b.hit.distance)[0] ?? null;
 }
@@ -921,6 +952,8 @@ const activatePickup = (
       return openCoffer(pick.hit);
     case 'hearth':
       return useHearth(pick.hit);
+    case 'book':
+      return openBook(pick.hit);
   }
 };
 const pickupDistance = (origin: THREE.Vector3, direction: THREE.Vector3): number | null =>
@@ -1098,6 +1131,11 @@ for (const index of [0, 1]) {
     const note = floor.notes?.near(position, GRAB_REACH)[0];
     if (note) {
       flow.collectPressureNote(note.room, note.id);
+      return;
+    }
+    const book = floor.book.near(position, GRAB_REACH);
+    if (book) {
+      openBook(book);
       return;
     }
     const machine = floor.pressure?.near(position, GRAB_REACH);

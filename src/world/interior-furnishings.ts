@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { type Box, rotatePoint, type Socket, templateById } from '../content/rooms.ts';
+import { type Box, type Rect, type Socket, templateById } from '../content/rooms.ts';
 import { Stream } from '../core/rng.ts';
 import type { FloorWorld } from './floor-world.ts';
 
@@ -51,6 +51,19 @@ export function loadInteriorFurnishings(
   return assetPromise;
 }
 
+/** The freestanding case and the baked study use the same UV atlas. */
+export function bindBookcaseAtlas(asset: InteriorFurnishingsAsset, atlas: THREE.Texture): void {
+  asset.roots.Bookcase.traverse((node) => {
+    if (!(node instanceof THREE.Mesh)) return;
+    const mat = node.material;
+    if (mat instanceof THREE.MeshStandardMaterial && mat.name === 'LibraryBindingAtlas') {
+      mat.map = atlas;
+      mat.color.set(0xffffff);
+      mat.needsUpdate = true;
+    }
+  });
+}
+
 export interface InteriorPlacement {
   readonly room: number;
   readonly theme: InteriorTheme;
@@ -71,21 +84,21 @@ interface Candidate {
   z: number;
   y?: number;
   yaw: number;
-  size: [number, number];
 }
+type RootBounds = Readonly<Record<InteriorFurnishingRoot, THREE.Box3>>;
 
 const SIZES: Readonly<Record<InteriorFurnishingRoot, [number, number]>> = {
   DoorSingle: [1.7, 0.29],
   DoorDouble: [1.7, 0.29],
   DoorArched: [1.6, 0.25],
-  Curtain: [2.09, 0.183],
+  Curtain: [2.09, 0.273],
   DiningChair: [0.56, 0.5],
   DiningTable: [1.75, 0.88],
   Bookcase: [1.56, 0.5],
   Candelabrum: [0.671, 0.7],
-  WallClock: [0.678, 0.523],
+  WallClock: [0.55, 0.161],
   ClockworkArmor: [1.007, 0.6],
-  FramedPainting: [0.97, 0.152],
+  FramedPainting: [0.97, 0.107],
 };
 
 const THEME_ROOTS: Readonly<Record<InteriorTheme, readonly InteriorFurnishingRoot[]>> = {
@@ -95,12 +108,19 @@ const THEME_ROOTS: Readonly<Record<InteriorTheme, readonly InteriorFurnishingRoo
   workshop: ['ClockworkArmor', 'Bookcase', 'Candelabrum'],
 };
 
-function boxFor(c: Candidate): Box {
-  const [hx0, hz0] = c.size.map((v) => v / 2) as [number, number];
-  const rotated = Math.abs(Math.sin(c.yaw)) > 0.5;
-  const hx = rotated ? hz0 : hx0;
-  const hz = rotated ? hx0 : hz0;
-  return { min: [c.x - hx, 0, c.z - hz], max: [c.x + hx, 2.4, c.z + hz] };
+const WALL_FIXTURES = new Set<InteriorFurnishingRoot>([
+  'Bookcase',
+  'WallClock',
+  'FramedPainting',
+  'Curtain',
+]);
+
+function boxFor(c: Candidate, roots: RootBounds, access = false): Box {
+  const box = roots[c.root].clone();
+  if (access && c.root === 'Bookcase') box.max.z += 0.65;
+  box.applyMatrix4(new THREE.Matrix4().makeRotationY(c.yaw));
+  box.translate(new THREE.Vector3(c.x, c.y ?? 0, c.z));
+  return { min: box.min.toArray(), max: box.max.toArray() };
 }
 
 function overlaps(a: Box, b: Box, gap = 0.08): boolean {
@@ -110,13 +130,6 @@ function overlaps(a: Box, b: Box, gap = 0.08): boolean {
     a.min[2] < b.max[2] + gap &&
     a.max[2] > b.min[2] - gap
   );
-}
-
-function inverseTurnsPoint(
-  point: readonly [number, number, number],
-  turns: number,
-): [number, number, number] {
-  return rotatePoint(point, ((4 - turns) % 4) as 0 | 1 | 2 | 3) as [number, number, number];
 }
 
 function worldBox(world: FloorWorld, room: number, box: Box): Box {
@@ -147,36 +160,63 @@ function blocked(
   const windowX = template.id === 'hall' ? 2.6 : template.id === 'study' ? 0 : undefined;
   if (
     windowX !== undefined &&
+    root !== 'Curtain' &&
     box.min[2] < template.footprint.min[1] + 0.55 &&
     box.min[0] < windowX + 0.78 &&
     box.max[0] > windowX - 0.78
   )
     return true;
   const placedWorld = worldBox(world, room, box);
-  if (world.colliders[room]?.some((c) => overlaps(placedWorld, c, 0))) return true;
-  const turns = world.plan.rooms[room]?.turns ?? 0;
+  const footprint = world.rooms[room].footprint;
   if (
-    world.rooms[room]?.template.doors.some((door) => {
-      const [x, , z] = inverseTurnsPoint(door.position, turns);
+    world.colliders[room]?.some((c) => {
+      // Perimeter collision extends 10 cm inside the room; the visible wall is on its footprint edge.
+      const crossesWall =
+        c.min[0] < footprint.min[0] - 0.01 ||
+        c.max[0] > footprint.max[0] + 0.01 ||
+        c.min[2] < footprint.min[1] - 0.01 ||
+        c.max[2] > footprint.max[1] + 0.01;
+      if (WALL_FIXTURES.has(root) && crossesWall) return false;
       return (
-        box.min[0] <= x + door.width / 2 + 0.08 &&
-        box.max[0] >= x - door.width / 2 - 0.08 &&
-        box.min[2] <= z + 0.5 &&
-        box.max[2] >= z - 0.5
+        placedWorld.min[1] < c.max[1] &&
+        placedWorld.max[1] > c.min[1] &&
+        overlaps(placedWorld, c, 0)
+      );
+    })
+  )
+    return true;
+  if (
+    template.doors.some((door) => {
+      const [x, , z] = door.position;
+      const apron = 0.55;
+      const alongDoor = door.facing === 'N' || door.facing === 'S';
+      const alongMin = (alongDoor ? x : z) - door.width / 2 - 0.18;
+      const alongMax = (alongDoor ? x : z) + door.width / 2 + 0.18;
+      const acrossMin = (alongDoor ? z : x) - apron;
+      const acrossMax = (alongDoor ? z : x) + apron;
+      const alongBoxMin = alongDoor ? box.min[0] : box.min[2];
+      const alongBoxMax = alongDoor ? box.max[0] : box.max[2];
+      const acrossBoxMin = alongDoor ? box.min[2] : box.min[0];
+      const acrossBoxMax = alongDoor ? box.max[2] : box.max[0];
+      return (
+        alongBoxMin <= alongMax &&
+        alongBoxMax >= alongMin &&
+        acrossBoxMin <= acrossMax &&
+        acrossBoxMax >= acrossMin
       );
     })
   )
     return true;
   const sockets: readonly Socket[] = [
-    ...(world.rooms[room]?.template.enemySockets ?? []),
-    ...(world.rooms[room]?.template.lootSockets ?? []),
-    ...(world.rooms[room]?.template.dressingSockets ?? []),
+    ...template.enemySockets,
+    ...template.lootSockets,
+    ...template.dressingSockets,
   ];
   const socketMargin =
     root === 'Candelabrum' || root === 'DiningTable' || root === 'DiningChair' ? 0.1 : 0.28;
   if (
     sockets.some((s) => {
-      const [x, , z] = inverseTurnsPoint(s.position, turns);
+      const [x, , z] = s.position;
       return (
         box.min[0] <= x + socketMargin &&
         box.max[0] >= x - socketMargin &&
@@ -194,6 +234,7 @@ function candidatesFor(
   room: number,
   theme: InteriorTheme,
   stream: Stream,
+  rootBounds: RootBounds,
 ): Candidate[] {
   const placed = world.plan.rooms[room];
   const template = templateById(placed.templateId);
@@ -201,14 +242,14 @@ function candidatesFor(
   const result: Candidate[] = [];
   const taken: Box[] = [];
   const sane = (group: Candidate[]) => {
-    const bounds = group.map(boxFor);
+    const bounds = group.map((candidate) => boxFor(candidate, rootBounds, true));
     if (
       bounds.some(
         (box, i) =>
-          box.min[0] < fp.min[0] + 0.1 ||
-          box.max[0] > fp.max[0] - 0.1 ||
-          box.min[2] < fp.min[1] + 0.1 ||
-          box.max[2] > fp.max[1] - 0.1 ||
+          box.min[0] < fp.min[0] - 0.001 ||
+          box.max[0] > fp.max[0] + 0.001 ||
+          box.min[2] < fp.min[1] - 0.001 ||
+          box.max[2] > fp.max[1] + 0.001 ||
           blocked(world, room, group[i].root, box, taken),
       )
     )
@@ -234,39 +275,87 @@ function candidatesFor(
           x: x + Math.cos(yaw) * side * 1.25,
           z: z - Math.sin(yaw) * side * 1.25,
           yaw: yaw - (side * Math.PI) / 2,
-          size: SIZES.DiningChair,
         }));
-        if (sane([{ root: 'DiningTable', x, z, yaw, size: SIZES.DiningTable }, ...seats])) {
-          result.push({ root: 'Candelabrum', x, z, y: 0.78, yaw, size: SIZES.Candelabrum });
+        if (sane([{ root: 'DiningTable', x, z, yaw }, ...seats])) {
+          result.push({ root: 'Candelabrum', x, z, y: 0.78, yaw });
           break dining;
         }
       }
   }
-  const roots = theme === 'dining' ? (['Curtain'] as const) : THEME_ROOTS[theme];
-  for (const root of roots) {
-    const wallMounted = ['WallClock', 'FramedPainting', 'Curtain'].includes(root);
-    const depth = SIZES[root][1];
-    const margin = 0.14 + depth / 2;
-    const spots: { x: number; z: number; yaw: number }[] = [];
-    for (const along of [-0.53, 0, 0.53]) {
-      spots.push(
-        { x: fp.min[0] + margin, z: along * fp.max[1], yaw: Math.PI / 2 },
-        { x: fp.max[0] - margin, z: along * fp.max[1], yaw: -Math.PI / 2 },
-        { x: along * fp.max[0], z: fp.min[1] + margin, yaw: 0 },
-        { x: along * fp.max[0], z: fp.max[1] - margin, yaw: Math.PI },
+  function placeOnWall(root: InteriorFurnishingRoot, near?: Candidate): Candidate | undefined {
+    const spots = spotsForWall(fp, SIZES[root][1], stream);
+    if (near)
+      spots.sort(
+        (a, b) => Math.hypot(a.x - near.x, a.z - near.z) - Math.hypot(b.x - near.x, b.z - near.z),
       );
-    }
-    for (const spot of stream.shuffle(spots)) {
-      const c = {
+    for (const spot of spots) {
+      const c: Candidate = {
         ...spot,
         root,
-        y: wallMounted && root !== 'Curtain' ? 1.18 : 0,
-        size: SIZES[root],
+        y: root === 'WallClock' || root === 'FramedPainting' ? 1.18 : 0,
       };
-      if (sane([c])) break;
+      if (WALL_FIXTURES.has(root)) fitWallCandidate(c, rootBounds[root], fp);
+      if (sane([c])) return c;
     }
   }
+
+  for (const root of theme === 'dining' ? [] : THEME_ROOTS[theme]) {
+    if (root === 'Curtain') continue;
+    const c = placeOnWall(root);
+    if (c && root === 'FramedPainting' && !placeOnWall('Bookcase', c)) {
+      result.pop();
+      taken.pop();
+    }
+  }
+  const windowX = template.id === 'hall' ? 2.6 : template.id === 'study' ? 0 : undefined;
+  if (windowX !== undefined && (theme === 'gallery' || theme === 'dining')) {
+    const curtain: Candidate = {
+      root: 'Curtain',
+      x: windowX,
+      z: fp.min[1],
+      y: 1.3,
+      yaw: 0,
+    };
+    fitWallCandidate(curtain, rootBounds.Curtain, fp);
+    sane([curtain]);
+  }
   return result;
+}
+
+function fitWallCandidate(candidate: Candidate, bounds: THREE.Box3, fp: Rect): void {
+  const inset = (candidate.root === 'Curtain' ? 0.125 : 0.012) - bounds.min.z;
+  switch (candidate.yaw) {
+    case 0:
+      candidate.z = fp.min[1] + inset;
+      break;
+    case Math.PI:
+      candidate.z = fp.max[1] - inset;
+      break;
+    case Math.PI / 2:
+      candidate.x = fp.min[0] + inset;
+      break;
+    case -Math.PI / 2:
+      candidate.x = fp.max[0] - inset;
+      break;
+  }
+}
+
+function spotsForWall(
+  fp: ReturnType<typeof templateById>['footprint'],
+  depth: number,
+  stream: Stream,
+): { x: number; z: number; yaw: number }[] {
+  const margin = 0.11 + depth / 2;
+  const spots: { x: number; z: number; yaw: number }[] = [];
+  for (const along of [-0.53, 0, 0.53]) {
+    spots.push(
+      { x: fp.min[0] + margin, z: along * fp.max[1], yaw: Math.PI / 2 },
+      { x: fp.max[0] - margin, z: along * fp.max[1], yaw: -Math.PI / 2 },
+      { x: along * fp.max[0], z: fp.min[1] + margin, yaw: 0 },
+      { x: along * fp.max[0], z: fp.max[1] - margin, yaw: Math.PI },
+    );
+  }
+  return stream.shuffle(spots);
 }
 
 const flameVertex =
@@ -294,6 +383,32 @@ export class InteriorFurnishings {
     asset: InteriorFurnishingsAsset,
     options: InteriorFurnishingsOptions = {},
   ) {
+    const rootBounds = {} as Record<InteriorFurnishingRoot, THREE.Box3>;
+    for (const name of ROOT_NAMES) {
+      const root = asset.roots[name];
+      root.updateMatrixWorld(true);
+      const inverse = root.matrixWorld.clone().invert();
+      const bounds = new THREE.Box3();
+      root.traverse((node) => {
+        const mesh = node as THREE.Mesh;
+        if (!mesh.isMesh || !mesh.geometry) return;
+        mesh.geometry.computeBoundingBox();
+        if (!mesh.geometry.boundingBox) return;
+        bounds.union(
+          mesh.geometry.boundingBox
+            .clone()
+            .applyMatrix4(new THREE.Matrix4().multiplyMatrices(inverse, mesh.matrixWorld)),
+        );
+      });
+      if (bounds.isEmpty()) {
+        const [width, depth] = SIZES[name];
+        bounds.set(
+          new THREE.Vector3(-width / 2, 0, -depth / 2),
+          new THREE.Vector3(width / 2, 2.4, depth / 2),
+        );
+      }
+      rootBounds[name] = bounds;
+    }
     this.root = new THREE.Group();
     this.root.name = 'interior-furnishings';
     this.paintings = options.paintings ?? [];
@@ -318,10 +433,10 @@ export class InteriorFurnishings {
       const theme = (['library', 'dining', 'gallery', 'workshop'] as const)[stream.int(0, 3)];
       const candidates =
         world.plan.rooms[room]?.role === 'combat'
-          ? candidatesFor(world, room, 'gallery', stream)
-          : candidatesFor(world, room, theme, stream);
+          ? candidatesFor(world, room, 'gallery', stream, rootBounds)
+          : candidatesFor(world, room, theme, stream, rootBounds);
       for (const c of candidates) {
-        const box = boxFor(c);
+        const box = boxFor(c, rootBounds);
         const object = asset.roots[c.root].clone(true);
         object.name = `interior-${c.root}-${room}`;
         object.position.set(c.x, c.y ?? 0, c.z);
@@ -382,7 +497,10 @@ export class InteriorFurnishings {
     if (!plane) {
       plane = new THREE.Mesh(this.paintingGeometry, this.paintingMaterials[index]);
       plane.name = 'FramedPainting_Image';
-      plane.position.set(0, 0, 0.091);
+      const geometry = (canvas as THREE.Mesh).geometry;
+      geometry.computeBoundingBox();
+      const front = geometry.boundingBox?.max.z ?? 0.088;
+      plane.position.set(0, 0, front + 0.003);
       canvas.add(plane);
     } else plane.material = this.paintingMaterials[index];
     object.userData.paintingIndex = index;

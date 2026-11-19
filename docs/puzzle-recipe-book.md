@@ -67,7 +67,7 @@ These are design ingredients. The component kits supply physical starting pieces
 
 ## Asset shelf
 
-The furnishings and instruments are node libraries. A room places selected roots and reuses their geometry and materials. Dining and library furniture, gallery paintings, clocks, armor as dressing, and lit candelabras can be selected by the runtime. The clockmaker portrait looks toward the red book on a return visit. Waking armor encounters, secret bookcase passages, and the other puzzle recipes are designs for future encounters; their components can be tried independently.
+The furnishings and instruments are node libraries. A room places selected roots and reuses their geometry and materials. Dining and library furniture, gallery paintings, clocks, armor as dressing, and lit candelabras can be selected by the runtime. On a return visit, the clockmaker looks toward a red book. Each portrait has a bookcase in the same room. Find the gilt winding key on the red spine and pull it with a nearby grip, a trigger ray, or a desktop click. The book tips forward and the lower panel folds inward to reveal the clockmaker’s cache. Each cache pays 10 cogs once and stays open after Continue or a save import. Both the built-in study shelves and the freestanding case use individually drawn bindings and paper edges. [Study books in Quest Browser](verification/quest-study-book-bindings.jpg) Waking armor and walk-through secret passages remain future encounters.
 
 | Kit | Available now |
 | --- | --- |

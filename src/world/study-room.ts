@@ -2,8 +2,14 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { GREYBOX_TEMPLATES, parseRoomTemplate, type RoomTemplate } from '../content/rooms.ts';
 import { dressFireplace } from './fireplace.ts';
-import { loadRoomLightmap, parseTemplateManifest, type TemplateManifest } from './lightmap.ts';
+import {
+  configureLightmapTexture,
+  loadRoomLightmap,
+  parseTemplateManifest,
+  type TemplateManifest,
+} from './lightmap.ts';
 import { type CompressedTextureLoader, configurePbrTexture, type PbrSet } from './materials.ts';
+import { loadBookBindings, studyBookGeometry } from './study-books.ts';
 
 /** The baked hero rooms (P4-T4, P5-T1, P5-T2): each is `<id>.glb`, its lightmap and its manifest. */
 export const HERO_ROOMS = ['study', 'hall', 'corridor', 'gear-shaft', 'guardian-vault'] as const;
@@ -235,6 +241,7 @@ export interface StudyAsset {
  */
 export async function loadStudyAsset(options: {
   study: StudyManifest;
+  bookBindings?: THREE.Texture | null;
   set: PbrSet;
   ktx2: CompressedTextureLoader;
   envMap?: THREE.Texture | null;
@@ -249,7 +256,13 @@ export async function loadStudyAsset(options: {
   const owned: THREE.Texture[] = [];
   const slots = new Map<string, THREE.MeshStandardMaterial>();
   for (const [name, entry] of Object.entries(study.materials)) {
-    slots.set(name, await slotMaterial(name, entry, set, ktx2, base, study, owned, id));
+    if (id === 'study' && name === 'study_books') {
+      const atlas = options.bookBindings ?? (await loadBookBindings(ktx2));
+      if (!options.bookBindings) owned.push(atlas);
+      slots.set(name, new THREE.MeshStandardMaterial({ name, map: atlas, roughness: 0.78 }));
+    } else {
+      slots.set(name, await slotMaterial(name, entry, set, ktx2, base, study, owned, id));
+    }
   }
   gltf.scene.traverse((node) => {
     const mesh = node as THREE.Mesh;
@@ -259,10 +272,23 @@ export async function loadStudyAsset(options: {
     if (!material) throw new Error(`${id}: GLB slot ${authored.name}`);
     // Flame cards are authored double-sided; the slot material replaces the GLB's, so carry it over.
     if (authored.side === THREE.DoubleSide) material.side = THREE.DoubleSide;
+    if (id === 'study' && authored.name === 'study_books') {
+      const proxy = mesh.geometry;
+      mesh.geometry = studyBookGeometry(proxy);
+      proxy.dispose();
+    }
     mesh.material = material;
   });
   const lightmap = await loadRoomLightmap(study.manifest, base, ktx2, gltf.scene);
   owned.push(lightmap.texture);
+  const books = slots.get('study_books');
+  if (id === 'study' && books) {
+    // The room bake contains the old books' individual shadows. Use its shelf-level irradiance
+    // on the new bindings so shadows from the previous silhouettes cannot cross their pages.
+    const shelfLight = await ktx2.loadAsync(`/assets/props/study-books/book-irradiance.ktx2`);
+    books.lightMap = configureLightmapTexture(shelfLight, study.manifest.lightmap);
+    owned.push(shelfLight);
+  }
   for (const [name, material] of slots) {
     bakedRoomMaterial(material);
     if (flameSlot(name)) material.color.setRGB(0, 0, 0);

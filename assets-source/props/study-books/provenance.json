@@ -1,0 +1,14 @@
+{
+  "author": "Original procedural book art for Clockwork Spire",
+  "license": "MIT",
+  "source": "Book bindings and paper edges are drawn by the atlas generator. The book irradiance is derived from the baked study room. Lettering was rasterized using Georgia on macOS.",
+  "encoder": "KTX-Software 4.4.2, UASTC sRGB with mipmaps",
+  "files": {
+    "scripts/assets/build-book-bindings.py": "38038c577bacb95fcc4d6ee9ab2ee0ea1ac292b6f45b0ee24f6b9f106603b40e",
+    "scripts/assets/build-book-irradiance.py": "72b44b61bef6fb68a64b4b8f2ce981c6fffce67b83432410db56f3ed38b7c743",
+    "public/assets/rooms/study/study.glb": "70f1514008ef5ed17d865ebd431129c22a231829b130373a2d980c2bb25da1b1",
+    "public/assets/rooms/study/study.lightmap.ktx2": "1a1bf7e3ff1065e725c083ee9051439e0d0ce944f65af76e11832b83c25350c4",
+    "public/assets/props/study-books/book-bindings.ktx2": "7bd440437108f788ed546b87a3d25b73ef77a8678b64a591eadbd6fc05213356",
+    "public/assets/props/study-books/book-irradiance.ktx2": "87fe880dfd8c0be103f95a25a519a033aedb8924e28e61826c884fb0830a9dce"
+  }
+}

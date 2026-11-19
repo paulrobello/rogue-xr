@@ -206,6 +206,17 @@ function validateRunState(raw: unknown, path: string): RunState {
     r.pendingLoot === undefined ? [] : pendingLoot(r.pendingLoot, `${path}.pendingLoot`);
   const pressureState =
     r.pressure === undefined ? undefined : pressure(r.pressure, `${path}.pressure`, seed);
+  const bookSecretOpenedRooms = r.bookSecretOpenedRooms;
+  if (
+    bookSecretOpenedRooms !== undefined &&
+    (!Array.isArray(bookSecretOpenedRooms) ||
+      bookSecretOpenedRooms.some(
+        (room) => typeof room !== 'number' || !Number.isInteger(room) || room < 0,
+      ) ||
+      new Set(bookSecretOpenedRooms).size !== bookSecretOpenedRooms.length)
+  ) {
+    fail(`${path}.bookSecretOpenedRooms`, 'expected unique non-negative room integers');
+  }
   // Also added after version 1: an older save names no level and resumes as `DEFAULT_DIFFICULTY`.
   if (r.difficulty !== undefined && !isDifficulty(r.difficulty)) {
     fail(`${path}.difficulty`, 'unknown difficulty');
@@ -225,6 +236,9 @@ function validateRunState(raw: unknown, path: string): RunState {
     ...(pending.length === 0 ? {} : { pendingLoot: pending }),
     ...(difficulty === undefined ? {} : { difficulty }),
     ...(pressureState === undefined ? {} : { pressure: pressureState }),
+    ...(bookSecretOpenedRooms === undefined
+      ? {}
+      : { bookSecretOpenedRooms: [...bookSecretOpenedRooms] }),
   };
 }
 

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { Stream } from '../core/rng.ts';
+import { cogGeometry } from '../world/cog-geometry.ts';
 import type { EnemyActor, EnemyAsset } from './enemy-asset.ts';
 import { applyGlowLook, GLOW_ISLAND_ATTRIBUTE } from './glow.ts';
 
@@ -72,7 +73,6 @@ const BACK_BIAS = 0.6;
 const SPARK_LIFE: readonly [number, number] = [0.25, 0.6];
 const SPARK_SPEED: readonly [number, number] = [1.5, 3.5];
 const SPARK_SIZE = 0.014;
-const COG_RADIUS = 0.045;
 
 /** One part of a piece: the triangles of one bone in one source mesh, in that bone's bind frame. */
 export interface PartTemplate {
@@ -316,31 +316,6 @@ export function splitByBone(
     geometries,
     ownedMaterials,
   };
-}
-
-/** A loose gear: a toothed disc, built once per {@link BreakApart}. */
-function cogGeometry(): THREE.BufferGeometry {
-  const shape = new THREE.Shape();
-  const teeth = 8;
-  for (let i = 0; i < teeth * 2; i++) {
-    const r = i % 2 === 0 ? COG_RADIUS : COG_RADIUS * 0.72;
-    const a0 = (i / (teeth * 2)) * Math.PI * 2;
-    const a1 = ((i + 1) / (teeth * 2)) * Math.PI * 2;
-    if (i === 0) shape.moveTo(Math.cos(a0) * r, Math.sin(a0) * r);
-    else shape.lineTo(Math.cos(a0) * r, Math.sin(a0) * r);
-    shape.lineTo(Math.cos(a1) * r, Math.sin(a1) * r);
-  }
-  const hole = new THREE.Path();
-  hole.absarc(0, 0, COG_RADIUS * 0.28, 0, Math.PI * 2, true);
-  shape.holes.push(hole);
-  const geometry = new THREE.ExtrudeGeometry(shape, {
-    depth: COG_RADIUS * 0.35,
-    bevelEnabled: false,
-    curveSegments: 6,
-  });
-  geometry.center();
-  geometry.computeBoundingBox();
-  return geometry;
 }
 
 /** One rigid body: the holder object sits at the piece's box centre. */

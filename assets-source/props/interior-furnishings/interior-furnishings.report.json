@@ -1,6 +1,6 @@
 {
   "generator": "scripts/assets/build-interior-furnishings.py",
-  "blender": "5.2.3 LTS",
+  "blender": "5.2.2 LTS",
   "coordinate_system": "glTF Y-up; front +Z; dimensions metres",
   "materials": [
     "Walnut",
@@ -12,7 +12,8 @@
     "AgedPaper",
     "OxbloodLeather",
     "MidnightEnamel",
-    "ClockIvory"
+    "ClockIvory",
+    "LibraryBindingAtlas"
   ],
   "roots": {
     "DoorSingle": {
@@ -72,18 +73,18 @@
     "Curtain": {
       "dimensions_m": [
         2.09,
-        2.245,
-        0.183
+        2.235,
+        0.273
       ],
       "bounds_min": [
         -1.045,
-        0.17,
-        -0.065
+        0.18,
+        -0.163
       ],
       "bounds_max": [
         1.045,
         2.415,
-        0.118
+        0.11
       ],
       "mesh_count": 2
     },
@@ -139,7 +140,7 @@
         2.3,
         0.27
       ],
-      "mesh_count": 10
+      "mesh_count": 11
     },
     "Candelabrum": {
       "dimensions_m": [
@@ -161,21 +162,21 @@
     },
     "WallClock": {
       "dimensions_m": [
-        0.678,
-        0.84,
-        0.523
+        0.55,
+        0.55,
+        0.161
       ],
       "bounds_min": [
-        -0.403,
-        0.0,
-        -0.362
+        -0.275,
+        0.185,
+        -0.0
       ],
       "bounds_max": [
         0.275,
-        0.84,
+        0.735,
         0.161
       ],
-      "mesh_count": 8
+      "mesh_count": 7
     },
     "ClockworkArmor": {
       "dimensions_m": [
@@ -199,19 +200,19 @@
       "dimensions_m": [
         0.97,
         1.0,
-        0.152
+        0.107
       ],
       "bounds_min": [
         -0.485,
         0.0,
-        -0.062
+        -0.018
       ],
       "bounds_max": [
         0.485,
         1.0,
         0.09
       ],
-      "mesh_count": 4
+      "mesh_count": 3
     }
   },
   "movable_nodes": [
@@ -238,10 +239,10 @@
   ],
   "warnings": [
     "Visual approval and in-engine device acceptance pending.",
-    "Shared plain PBR colors; canvas UVs are texture-ready.",
+    "LibraryBindingAtlas requires the shared runtime book texture; canvas UVs are texture-ready.",
     "No authored colliders or LODs."
   ],
-  "triangles": 18252,
-  "size_bytes": 1296336,
-  "sha256": "81a51c5c6e78a9da9d1a8832aed1d62fa2705c87d6f08a55e266c737ce981bb9"
+  "triangles": 26780,
+  "size_bytes": 1870292,
+  "sha256": "c88a72daa60c0df103452d1f2ef7b63f625ff27694827fcf7a878e3e15a18ae8"
 }

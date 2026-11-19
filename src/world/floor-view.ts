@@ -23,6 +23,7 @@ import {
   vignetteStep,
   yawFromMatrix,
 } from '../xr/locomotion.ts';
+import { type BookPick, BookSecret } from './book-secret.ts';
 import { animateFires, FIRE_NODE } from './fireplace.ts';
 import { buildFloorWorld, type FloorWorld } from './floor-world.ts';
 import {
@@ -94,10 +95,23 @@ export interface FloorHearths {
   approachPoint(room: number, socketId: string, distance?: number): THREE.Vector3 | null;
 }
 
+export interface FloorBookSecret {
+  pick(origin: THREE.Vector3, direction: THREE.Vector3, maxDistance?: number): BookPick | null;
+  near(position: THREE.Vector3, radius?: number): BookPick | null;
+  open(room: number): boolean;
+  markOpened(rooms?: readonly number[]): void;
+  update(dt: number): void;
+  isOpened(room: number): boolean;
+  objectAt(room: number): THREE.Object3D | null;
+  openedRoomIds(): readonly number[];
+}
+
 export interface FloorView {
   world: FloorWorld;
   loot: FloorLoot;
   hearth: FloorHearths;
+  book: FloorBookSecret;
+  showBookSecret(cogs: number, inscription: string, room: number): void;
   pressure: PressureWorks | null;
   notes: PressureNotes | null;
   readonly furnishings: InteriorFurnishings | null;
@@ -291,6 +305,7 @@ export function mountFloorView(
   /** Live fireplace fires (the hall's); instances of one template share the material and its clock. */
   const fires: { material: THREE.ShaderMaterial; room: THREE.Object3D }[] = [];
   let furnishings: InteriorFurnishings | null = null;
+  let book: BookSecret | null = null;
   let candleMotion = 1;
   let candles: { material: THREE.MeshStandardMaterial; intensity: number }[] = [];
   let clock = 0;
@@ -305,6 +320,7 @@ export function mountFloorView(
       1 + candleMotion * (0.055 * Math.sin(clock * 3.1) + 0.022 * Math.sin(clock * 6.8));
     for (const c of candles) c.material.emissiveIntensity = c.intensity * light;
     furnishings?.update(dt, candleMotion < 1);
+    book?.update(dt);
   };
   const disposeActor = (actor: EnemyActor): void => {
     actors.delete(actor.object);
@@ -419,14 +435,33 @@ export function mountFloorView(
     world,
     loot,
     hearth,
+    get book() {
+      if (!book) book = new BookSecret(world, furnishings);
+      return book;
+    },
     pressure,
     notes,
+    showBookSecret(cogs, inscription, room) {
+      const entry = book?.objectAt(room);
+      if (!entry) return;
+      dropToast();
+      const at = entry.getWorldPosition(new THREE.Vector3());
+      toast = new LootToast(
+        { text: `+${cogs} cogs`, caption: inscription },
+        at.setY(at.y + TOAST_LIFT),
+      );
+      world.group.add(toast.root);
+    },
     get furnishings() {
       return furnishings;
     },
     setFurnishings(asset, paintings, reducedMotion) {
-      if (!furnishings)
+      if (!furnishings) {
+        const openedRooms = book?.openedRoomIds() ?? [];
         furnishings = new InteriorFurnishings(world, asset, { paintings, reducedMotion });
+        book = new BookSecret(world, furnishings);
+        book.markOpened(openedRooms);
+      }
     },
     setCandleMaterials(materials, reducedMotion) {
       candleMotion = reducedMotion ? 0.25 : 1;
@@ -502,6 +537,7 @@ export function mountFloorView(
       return spinners.length;
     },
     dispose() {
+      book?.dispose();
       furnishings?.dispose();
       notes?.dispose();
       pressure?.dispose();
