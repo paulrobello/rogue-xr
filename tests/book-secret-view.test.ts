@@ -2,7 +2,6 @@
 
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { describe, expect, it } from 'vitest';
 import { generateFloor } from '../src/floor/generate.ts';
 import { BookSecret } from '../src/world/book-secret.ts';
@@ -12,6 +11,7 @@ import {
   InteriorFurnishings,
   type InteriorFurnishingsAsset,
 } from '../src/world/interior-furnishings.ts';
+import { nodeGeometryLoader } from './helpers/gltf-node.ts';
 
 const ROOTS = [
   'DoorSingle',
@@ -31,13 +31,57 @@ async function realAsset(): Promise<InteriorFurnishingsAsset> {
   const bytes = await readFile('public/assets/props/interior-furnishings/interior-furnishings.glb');
   const start = bytes.byteOffset;
   const end = start + bytes.byteLength;
-  const gltf = await new GLTFLoader().parseAsync(bytes.buffer.slice(start, end), '');
+  const gltf = await nodeGeometryLoader().parseAsync(bytes.buffer.slice(start, end), '');
   const roots = {} as Record<(typeof ROOTS)[number], THREE.Object3D>;
   for (const name of ROOTS) roots[name] = gltf.scene.getObjectByName(name) as THREE.Object3D;
   return { scene: gltf.scene, roots };
 }
 
 describe('book secret view geometry', () => {
+  it('keeps the first clue visible to both eyes, then changes on a later unseen frame', async () => {
+    const world = buildFloorWorld(generateFloor('MAPTEST2'));
+    const furnishings = new InteriorFurnishings(world, await realAsset(), {
+      paintings: Array.from({ length: 5 }, () => new THREE.Texture()),
+    });
+    const clue = furnishings.placements.find(
+      (p) => p.root === 'FramedPainting' && p.object.userData.paintingIndex === 0,
+    );
+    expect(clue).toBeDefined();
+    if (!clue) return;
+    const center = clue.object.getWorldPosition(new THREE.Vector3());
+    const eye = new THREE.PerspectiveCamera(70, 1, 0.01, 20);
+    eye.position.copy(center).add(new THREE.Vector3(0, 0, 2));
+    eye.lookAt(center);
+    eye.updateMatrixWorld(true);
+    const secondEye = eye.clone();
+    secondEye.position.x += 0.064;
+    secondEye.lookAt(center);
+    secondEye.updateMatrixWorld(true);
+    furnishings.update(0, false, [eye, secondEye]);
+    world.current = clue.room;
+    furnishings.update(0, false, [eye, secondEye]);
+    world.current = clue.room === 0 ? 1 : 0;
+    furnishings.update(0, false, [eye, secondEye]);
+    world.current = clue.room;
+    furnishings.update(0, false, [eye, secondEye]);
+    expect(clue.object.userData.paintingIndex).toBe(0);
+    // The central ray can miss while a small part of the picture is still in one eye.
+    const rightEdge = new THREE.Box3().setFromObject(clue.object).max.x;
+    secondEye.position.set(rightEdge + 1.38, center.y, center.z + 2);
+    secondEye.lookAt(rightEdge + 1.38, center.y, center.z);
+    secondEye.updateMatrixWorld(true);
+    eye.lookAt(eye.position.clone().add(new THREE.Vector3(0, 0, 1)));
+    eye.updateMatrixWorld(true);
+    furnishings.update(0, false, [eye, secondEye]);
+    expect(clue.object.userData.paintingIndex).toBe(0);
+    secondEye.lookAt(secondEye.position.clone().add(new THREE.Vector3(0, 0, 1)));
+    secondEye.updateMatrixWorld(true);
+    furnishings.update(0, false, [eye, secondEye]);
+    expect(clue.object.userData.paintingIndex).toBe(1);
+    furnishings.dispose();
+    world.dispose();
+  });
+
   it('keeps the fitted cabinet locked, then opens and claims its cogs', async () => {
     const asset = await realAsset();
     const texture = new THREE.Texture();
@@ -57,10 +101,12 @@ describe('book secret view geometry', () => {
       expect(material.map).toBe(texture);
       expect(surfaces[0].geometry.getAttribute('uv')).toBeDefined();
     }
-    const world = buildFloorWorld(generateFloor('N0TE0032'));
+    const world = buildFloorWorld(generateFloor('MAPTEST2'));
     const furnishings = new InteriorFurnishings(world, asset);
     const placement = furnishings.placements.find(
-      (entry) => entry.root === 'Bookcase' && entry.object.getObjectByName('Bookcase_PullBook'),
+      (entry) =>
+        entry.root === 'Bookcase' &&
+        entry.object.getObjectByName('Bookcase_PullBook')?.userData.bookSecret,
     );
     expect(placement).toBeDefined();
     if (!placement) throw Error('Missing marked case');
@@ -136,7 +182,9 @@ describe('book secret view geometry', () => {
     const world = buildFloorWorld(generateFloor('N0TE0032'));
     const secret = new BookSecret(world, null);
     secret.restore(run);
-    const furnishings = new InteriorFurnishings(world, await realAsset());
+    const furnishings = new InteriorFurnishings(world, await realAsset(), {
+      preservedBookRooms: [0],
+    });
     secret.mount(furnishings);
     const shelf = furnishings.placements.find((p) => p.root === 'Bookcase' && p.room === 0)?.object;
     expect(shelf?.getObjectByName('Bookcase_PullBook')?.userData.bookSecretOpened).toBe(true);

@@ -83,7 +83,9 @@ import { mountMaterialProof } from './world/material-proof.ts';
 import { loadPbrSet } from './world/materials.ts';
 import type { PressureAction } from './world/pressure-compartment.ts';
 import { loadPressureArt, type PressureArt } from './world/pressure-works.ts';
+import { dressPumpMaterials } from './world/pump-materials.ts';
 import { loadPumpFloorLightmap } from './world/pump-room-floor.ts';
+import { loadPumpWallLightmap } from './world/pump-room-wall.ts';
 import { mountRoomAssetProof } from './world/room-asset-proof.ts';
 import { loadBookBindings } from './world/study-books.ts';
 import {
@@ -194,8 +196,16 @@ const heroRooms = proofView
   ? { manifests: [], templates: undefined }
   : await fetchHeroRooms(HERO_ROOMS, (id) => fetchStudyManifest(id));
 const worldTemplates = heroRooms.templates;
-const mountFloor = (seed: string, contentVersion?: number): FloorView => {
-  const view = mountFloorView(scene, rig, seed, { templates: worldTemplates, contentVersion });
+const mountFloor = (
+  seed: string,
+  contentVersion?: number,
+  preservedBookRooms?: readonly number[],
+): FloorView => {
+  const view = mountFloorView(scene, rig, seed, {
+    templates: worldTemplates,
+    contentVersion,
+    preservedBookRooms,
+  });
   view.encounter.tableDistance = (settings ?? DEFAULT_SETTINGS).tableDistance;
   return view;
 };
@@ -522,10 +532,13 @@ const dressFloor = async (target: FloorView): Promise<void> => {
     }),
   );
   if (target.pressure) {
-    pressureArt ??= loadPressureArt().then((art) => {
-      for (const model of Object.values(art)) reflect(model, 0.38);
-      return art;
-    });
+    pressureArt ??= Promise.all([loadPressureArt(), heroSet?.catch(() => null)]).then(
+      ([art, resources]) => {
+        for (const model of Object.values(art)) reflect(model, 0.38);
+        if (resources) dressPumpMaterials(art, resources.set);
+        return art;
+      },
+    );
     dressed.push(
       pressureArt
         .then((art) => {
@@ -560,7 +573,12 @@ const dressFloor = async (target: FloorView): Promise<void> => {
           return null;
         })
       : null,
-    target.pressure ? loadPumpFloorLightmap() : undefined,
+    target.pressure
+      ? Promise.all([loadPumpFloorLightmap(), loadPumpWallLightmap()]).then(([floor, wall]) => ({
+          floor,
+          wall,
+        }))
+      : undefined,
     fitTable(target),
     ...dressed,
   ]);
@@ -777,17 +795,22 @@ function standAtEntry(room: number): void {
   rig.updateMatrixWorld(true);
 }
 /** Puts a pristine floor for `seed` under the player, rebuilding in place (no reload, XR stays up). */
-const freshFloor = (seed: string, contentVersion?: number): FloorView => {
+const freshFloor = (
+  seed: string,
+  contentVersion?: number,
+  preservedBookRooms?: readonly number[],
+): FloorView => {
   if (
     floor &&
     floor.seed === seed &&
     floor.contentVersion === (contentVersion ?? ENCOUNTER_CONTENT_VERSION) &&
-    !floorUsed
+    !floorUsed &&
+    !preservedBookRooms?.length
   )
     return floor;
   combat?.dispose();
   floor?.dispose();
-  floor = mountFloor(seed, contentVersion);
+  floor = mountFloor(seed, contentVersion, preservedBookRooms);
   floor.setAudio(audio);
   combat = makeCombat(floor);
   void prepareFloor(floor);
@@ -807,7 +830,14 @@ const continueRun = (): void => {
   const snap = storedSnapshot;
   if (!snap || flow.phase !== 'title') return;
   // Saves predating contentVersion used the original encounter pool.
-  const target = freshFloor(snap.floorSeed, snap.contentVersion ?? 1);
+  const preservedBookRooms = [
+    ...new Set([
+      ...(snap.run.bookSecretKeyRooms ?? []),
+      ...(snap.run.bookSecretCabinetRooms ?? []),
+      ...(snap.run.bookSecretOpenedRooms ?? []),
+    ]),
+  ];
+  const target = freshFloor(snap.floorSeed, snap.contentVersion ?? 1, preservedBookRooms);
   for (const room of snap.clearedEncounters) target.markCleared(Number(room), true);
   for (const key of snap.run.openedLoot ?? []) {
     const opened = parseLootKey(key);
@@ -1582,6 +1612,7 @@ const loadingScene = new THREE.Scene();
 loadingScene.background = new THREE.Color(PALETTE.void);
 let loadingLabel: CanvasLabel | undefined;
 const timer = new THREE.Timer();
+const desktopEyes = [camera];
 renderer.setAnimationLoop((time, frame) => {
   perf.frame(null, time);
   timer.update(time);
@@ -1687,7 +1718,13 @@ renderer.setAnimationLoop((time, frame) => {
   // The in-run menu pauses the floor and the fight: no triggers, no encounter clock, no session.
   const paused = ui?.menuOpen ?? false;
   if (floor) floor.suspendTriggers = flow.phase !== 'explore' || paused;
-  floor?.update(camera, paused ? 0 : deltaSeconds);
+  if (xr.presenting) renderer.xr.updateCamera(camera);
+  else camera.updateWorldMatrix(true, false);
+  floor?.update(
+    camera,
+    paused ? 0 : deltaSeconds,
+    xr.presenting ? renderer.xr.getCamera().cameras : desktopEyes,
+  );
   if (floor && flow.inRun) {
     flow.enterRoom(floor.world.current);
     perfRoom(floor.world);

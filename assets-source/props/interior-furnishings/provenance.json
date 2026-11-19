@@ -4,11 +4,11 @@
   "source": "interior-furnishings.blend",
   "generator": "scripts/assets/build-interior-furnishings.py",
   "output": "public/assets/props/interior-furnishings/interior-furnishings.glb",
-  "blender": "5.2.2 LTS",
-  "glb_sha256": "759663b979c7bf57255ba7f62e8265c67274402b699970b4de9b203a06a2216b",
-  "blend_sha256": "98da9de652be23733d8ffbbaa2b7a2e17b34fd50f5442419e96e31ddf597e678",
-  "generator_sha256": "890b2c263bef0968af4e358a9646653c813a36c9bab7669669d57cb420598253",
-  "approval": "Reimport, close-range Quest Browser capture and independent visual inspection complete. Owner headset acceptance pending.",
+  "blender": "5.3.0",
+  "glb_sha256": "97898421426dadabb7bef619b18069495d4dd3d3300239f538b26080ada5fdfa",
+  "blend_sha256": "620d228e36e012e27fc4b269ca0f639e2881f0c0ea48e15bd45f6567fceb409b",
+  "generator_sha256": "9c8e83eaa33b91c6eea14fa8f229c9df79619ad48e53a199efe02efb56cb3fe2",
+  "approval": "Blender reimport, real Quest Browser inspection and independent visual review completed. Owner headset acceptance pending.",
   "historicalReview": {
     "glb_sha256": "81a51c5c6e78a9da9d1a8832aed1d62fa2705c87d6f08a55e266c737ce981bb9",
     "score": 85,
@@ -34,5 +34,41 @@
       "Smooth armor highlights across the helmet, shoulders, breastplate and knees",
       "Candelabrum sockets retained; flame tips bend independently around a yellow core"
     ]
+  },
+  "dining_revision": {
+    "baseline_glb_sha256": "759663b979c7bf57255ba7f62e8265c67274402b699970b4de9b203a06a2216b",
+    "method": "Three-board tabletop, component-aligned walnut PBR, woven claret PBR upholstery, and polished brass details. Packed texture sources are embedded in the GLB and the blend.",
+    "texture_generator": "scripts/assets/build-dining-textures.py",
+    "texture_generator_sha256": "af7148fff5ce730f4150aedc5a1d7ccc46e04d78f9364be846b73433c6beab3a",
+    "texture_sources": [
+      {
+        "path": "assets-source/props/interior-furnishings/textures/dining-claret.basecolor.png",
+        "sha256": "8a411ee1b1712678facfd6ebc9574274feb8477603ab68067c8a4981ac8debb4"
+      },
+      {
+        "path": "assets-source/props/interior-furnishings/textures/dining-claret.normal.png",
+        "sha256": "68f3572927c99cb8798276d709a7539ae98924430d22aa18ea4c597b65c10185"
+      },
+      {
+        "path": "assets-source/props/interior-furnishings/textures/dining-claret.orm.png",
+        "sha256": "14c22589f5b80ef72d4c3a42dc3b17c460363e55ec9c8ceacf0c146f971afd91"
+      },
+      {
+        "path": "assets-source/props/interior-furnishings/textures/dining-walnut.basecolor.png",
+        "sha256": "c2c1d72ba308c02f6304ee389a86d6663199d01a352160c347801cefd4042a0b"
+      },
+      {
+        "path": "assets-source/props/interior-furnishings/textures/dining-walnut.normal.png",
+        "sha256": "3ee262cb20e41fe1f8b6dac8528f0b3f51e6e129cc9542f99d81c21242046558"
+      },
+      {
+        "path": "assets-source/props/interior-furnishings/textures/dining-walnut.orm.png",
+        "sha256": "6de73e58bc870595d74968b44e4f94b153c2dfc529ae6cb5c9e2beda5c24846d"
+      }
+    ],
+    "walnut_source": "public/assets/materials/walnut (original kit PBR, MIT)",
+    "comparison": "90 non-dining nodes matched transforms, material names, triangle vertex sets, and all attributes within 1e-6; compare-interior-roots.py",
+    "visual_review": "Independent Astra review inspected the in-game walnut grain, brass bands, upholstery, seams and studs from seated and oblique views in Quest Browser.",
+    "in_game_evidence": "docs/verification/quest-pump-refit-and-furnishings.jpg"
   }
 }

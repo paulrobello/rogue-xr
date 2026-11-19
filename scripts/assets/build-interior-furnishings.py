@@ -21,6 +21,37 @@ paper=material('AgedPaper',(.68,.56,.36),0,.92); leather=material('OxbloodLeathe
 enamel=material('MidnightEnamel',(.035,.075,.085),.38,.35); ivory=material('ClockIvory',(.72,.64,.48),0,.7)
 bindings=material('LibraryBindingAtlas',(1,1,1),0,.72)
 MATS=[wood,wood2,brass,iron,velvet,cloth,paper,leather,enamel,ivory,bindings]
+# Dining has its own PBR slots; other furnishing roots keep their historical materials.
+def dining_pbr(name, prefix, metallic=0.0):
+    mat=material(name,(1,1,1),metallic,1)
+    nodes=mat.node_tree.nodes; links=mat.node_tree.links; shader=nodes.get('Principled BSDF')
+    texdir=Path(__file__).resolve().parents[2]/'assets-source/props/interior-furnishings/textures'
+    def image(channel, color_space):
+        node=nodes.new('ShaderNodeTexImage'); node.image=bpy.data.images.load(str(texdir/f'{prefix}.{channel}.png'),check_existing=True)
+        node.image.colorspace_settings.name=color_space; return node
+    base=image('basecolor','sRGB'); links.new(base.outputs['Color'],shader.inputs['Base Color'])
+    normal=image('normal','Non-Color'); normalmap=nodes.new('ShaderNodeNormalMap'); normalmap.inputs['Strength'].default_value=.32
+    links.new(normal.outputs['Color'],normalmap.inputs['Color']); links.new(normalmap.outputs['Normal'],shader.inputs['Normal'])
+    orm=image('orm','Non-Color'); separate=nodes.new('ShaderNodeSeparateColor'); links.new(orm.outputs['Color'],separate.inputs['Color'])
+    links.new(separate.outputs['Green'],shader.inputs['Roughness']); links.new(separate.outputs['Blue'],shader.inputs['Metallic'])
+    return mat
+
+dining_wood=dining_pbr('DiningWalnut','dining-walnut')
+dining_cloth=dining_pbr('DiningUpholstery','dining-claret')
+dining_brass=material('DiningPolishedBrass',(.68,.43,.13),.9,.24)
+MATS.extend([dining_wood,dining_cloth,dining_brass])
+
+def dining_uv(obj):
+    """Project grain along each component's longest tangent axis in local space."""
+    mesh=obj.data; uv=mesh.uv_layers.active or mesh.uv_layers.new(name='UVMap')
+    dims=[max(v.co[i] for v in mesh.vertices)-min(v.co[i] for v in mesh.vertices) for i in range(3)]
+    for poly in mesh.polygons:
+        normal=max(range(3),key=lambda i:abs(poly.normal[i])); tangent=[i for i in range(3) if i != normal]
+        along=max(tangent,key=lambda i:dims[i]); across=next(i for i in tangent if i != along)
+        for li in poly.loop_indices:
+            pt=mesh.vertices[mesh.loops[li].vertex_index].co
+            uv.data[li].uv=(pt[across]*2,pt[along]*2)
+
 
 def empty(name, parent=None, loc=(0,0,0)):
     o=bpy.data.objects.new(name,None); bpy.context.collection.objects.link(o); o.parent=parent; o.location=loc; return o
@@ -179,35 +210,39 @@ for s in (-1,1):
 chair=empty('DiningChair')
 for x in (-.23,.23):
     for y in (-.20,.20):
-        bar(chair,'Tapered leg',(x,y,.002),(x*.9,y*.9,.49),.035,wood)
-    bar(chair,'Back upright',(x,.19,.42),(x,.21,1.05),.035,wood2)
-cube(chair,'Carved seat', (0,0,.48),(.56,.50,.10),wood2,.035); cube(chair,'Velvet cushion',(0,-.015,.55),(.46,.40,.075),velvet,.045)
-cube(chair,'Crest rail',(0,.21,1.04),(.55,.07,.10),wood2,.025)
-cube(chair,'Back velvet',(0,.20,.81),(.40,.055,.37),velvet,.035)
-for x in (-.12,0,.12): cyl(chair,'Back button',(x,.16,.81),.014,.012,brass,'Y',8)
+        bar(chair,'Tapered leg',(x,y,.002),(x*.9,y*.9,.49),.035,dining_wood)
+    bar(chair,'Back upright',(x,.19,.42),(x,.21,1.05),.035,dining_wood)
+cube(chair,'Carved seat', (0,0,.48),(.56,.50,.10),dining_wood,.035); cube(chair,'Velvet cushion',(0,-.015,.55),(.46,.40,.075),dining_cloth,.045)
+cube(chair,'Crest rail',(0,.21,1.04),(.55,.07,.10),dining_wood,.025)
+cube(chair,'Back velvet',(0,.20,.81),(.40,.055,.37),dining_cloth,.035)
+for x in (-.12,0,.12): cyl(chair,'Back button',(x,.16,.81),.014,.012,dining_brass,'Y',8)
 for x in (-.23,.23):
     for y in (-.20,.20):
-        cyl(chair,'Leg collar',(x*.94,y*.94,.16),.039,.035,wood2,verts=10)
-        cyl(chair,'Brass foot',(x,y,.023),.038,.045,brass,verts=10)
-for x in (-.17,.17): bar(chair,'Back carving',(x,.155,.65),(x,.155,.97),.009,brass)
-for x in (-.19,0,.19): cyl(chair,'Seat tack',(x,-.235,.53),.009,.008,brass,'Y',8)
-bar(chair,'Seat front moulding',(-.24,-.241,.48),(.24,-.241,.48),.009,brass)
+        cyl(chair,'Leg collar',(x*.94,y*.94,.16),.039,.035,dining_wood,verts=10)
+        cyl(chair,'Brass foot',(x,y,.023),.038,.045,dining_brass,verts=10)
+for x in (-.22,.22): bar(chair,'Seat piping',(x,-.21,.574),(x,.18,.574),.006,dining_cloth)
+for x in (-.19,0,.19): cyl(chair,'Seat tack',(x,-.235,.53),.009,.008,dining_brass,'Y',8)
+bar(chair,'Seat front moulding',(-.24,-.241,.48),(.24,-.241,.48),.009,dining_brass)
 
-table=empty('DiningTable'); cube(table,'Tabletop',(0,0,.79),(1.75,.88,.10),wood2,.04)
-cube(table,'Apron',(0,0,.68),(1.57,.70,.18),wood,.022)
+table=empty('DiningTable')
+for y in (-.294,0,.294): cube(table,'Tabletop plank',(0,y,.79),(1.75,.292,.10),dining_wood,.01)
+cube(table,'Apron',(0,0,.68),(1.57,.70,.18),dining_wood,.022)
 for x in (-.70,.70):
     for y in (-.30,.30):
-        cyl(table,'Turned foot',(x,y,.09),.055,.18,wood,verts=10,r2=.04)
-        cyl(table,'Turned leg',(x,y,.43),.045,.55,wood2,verts=10,r2=.07)
-        torus(table,'Leg collar',(x,y,.64),.055,.009,brass)
-for x in (-.75,.75): cube(table,'Top end trim',(x,0,.848),(.018,.78,.007),brass)
+        cyl(table,'Turned foot',(x,y,.09),.055,.18,dining_wood,verts=10,r2=.04)
+        cyl(table,'Turned leg',(x,y,.43),.045,.55,dining_wood,verts=10,r2=.07)
+        torus(table,'Leg collar',(x,y,.64),.055,.009,dining_brass)
+for x in (-.75,.75): cube(table,'Top end trim',(x,0,.848),(.018,.78,.007),dining_brass)
 for y in (-.35,.35):
-    cube(table,'Apron moulding',(0,y,.67),(1.42,.018,.025),wood2,.007)
-    for x in (-.50,0,.50): cyl(table,'Apron pin',(x,y*1.035,.67),.013,.012,brass,'Y',8)
+    cube(table,'Apron moulding',(0,y,.67),(1.42,.018,.025),dining_wood,.007)
+    for x in (-.50,0,.50): cyl(table,'Apron pin',(x,y*1.035,.67),.013,.012,dining_brass,'Y',8)
 for x in (-.70,.70):
     for y in (-.30,.30):
-        torus(table,'Foot band',(x,y,.10),.05,.008,brass)
-        cyl(table,'Leg turning',(x,y,.46),.066,.09,wood,verts=10,r2=.05)
+        torus(table,'Foot band',(x,y,.10),.05,.008,dining_brass)
+        cyl(table,'Leg turning',(x,y,.46),.066,.09,dining_wood,verts=10,r2=.05)
+
+for ob in list(bpy.context.scene.objects):
+    if ob.type=='MESH' and ob.parent in (chair,table): dining_uv(ob)
 
 book=empty('Bookcase')
 cube(book,'Cabinet plinth',(0,0,.055),(1.50,.42,.11),wood,.015)
@@ -384,6 +419,7 @@ def combine():
         for ob in obs: ob.select_set(True)
         bpy.context.view_layer.objects.active=obs[0]; bpy.ops.object.join(); obs[0].name=parent.name+'_'+mat
 combine()
+bpy.ops.file.pack_all()
 bpy.ops.wm.save_as_mainfile(filepath=str(SRC/'interior-furnishings.blend'))
 staged=SRC/'interior-furnishings.staged.glb'
 bpy.ops.export_scene.gltf(filepath=str(staged),export_format='GLB',export_yup=True,export_apply=True)

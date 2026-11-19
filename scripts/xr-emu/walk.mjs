@@ -251,10 +251,32 @@ try {
       window.__combat.teleportToPressure('pump');
       return window.__flow.flow.run.cogs;
     });
+    const held = await ev(() => {
+      const works = window.__combat.floor.pressure,
+        pump = works.pump;
+      const hand = pump.localToWorld(pump.position.clone().set(1.1, 0.81, 0.527));
+      const aim = pump.localToWorld(pump.position.clone().set(0.82, 1.05, 0.412));
+      window.__xrEmu.placeAt('right', hand, aim);
+      return [...window.__flow.flow.pressure.dials];
+    });
+    await ev(() => window.__xrEmu.frames(4));
+    await ev(() => window.__xrEmu.device.controllers.right.updateButtonValue('squeeze', 1));
+    await ev(() => window.__xrEmu.frames(4));
+    await ev(() => window.__xrEmu.device.controllers.right.updateButtonValue('squeeze', 0));
+    await ev(() => window.__xrEmu.frames(2));
+    const afterGrip = await ev(() => window.__flow.flow.pressure.dials);
+    record(
+      'primer-grip-keeps-wheel-readings',
+      held.every((value, i) => value === afterGrip[i]),
+      { before: held, after: afterGrip },
+    );
     for (const [valve, n] of [
       [0, 2],
       [1, 2],
       [1, 3],
+      [2, 2],
+      [2, 3],
+      [2, 1],
     ]) {
       await target(`pressure-wheel-${valve}`);
       await waitFor('turn-valve', ([i, r]) => window.__flow.flow.pressure.dials[i] === r, [

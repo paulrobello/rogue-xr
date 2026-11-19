@@ -9,12 +9,12 @@
   "helper": "scripts/assets/room_kit.py (reuses build-room-study.py functions)",
   "lengthwise_grain_high": 162,
   "high": {
-    "triangles": 72247,
+    "triangles": 72166,
     "slots": 12
   },
   "lengthwise_grain_low": 276,
   "low": {
-    "triangles": 18907,
+    "triangles": 18893,
     "vertices": 12936,
     "materials": 12,
     "lightmap_density": {
@@ -155,12 +155,12 @@
   },
   "blend": {
     "guardian-vault_high.blend": {
-      "sha256": "33577b3b3e70ff984f2282dae525c57a1b049a42db2546fd8f415b38f951e862",
-      "bytes": 2275723
+      "sha256": "bf19371d5d9c19e082c482f4bf4b80c4cb119ce573e8afbab720c44400b8aad4",
+      "bytes": 2271109
     },
     "guardian-vault_low.blend": {
-      "sha256": "98a7573ff0dbe61430852508af4e5de69b2b52c72be9fcd487b3042c73b731d9",
-      "bytes": 733340
+      "sha256": "7d860bcc8c084fa2dda218d3ae738af8c43c689a7200871de47cfe850821c56d",
+      "bytes": 731183
     }
   },
   "colliders_added": [
@@ -548,10 +548,16 @@
   },
   "host_load_end": 1.89,
   "files": {
-    "guardian-vault.glb": "f2923a8018d7c34955dad1854883dbfdd42dc8426d3b49cc7af9b0acd95363ce",
-    "guardian-vault.lightmap.ktx2": "0bab7d726ed717c8898e5347ca2c9c217ead07e0535d7a47527b353312ff2ea8",
+    "guardian-vault.glb": "97d979de11c2c0e8eb501976a5421544561a73490eec40b3b5a7471cde3d36e0",
+    "guardian-vault.lightmap.ktx2": "77d42a2c376d6fb6819715741dcea4f0a9d33b687687e9e3c660dc830a69190d",
     "guardian-vault.lightmap.png": "dc266ed7a492f6a563ace0f7c1d1ba9e8b8e970a1554376fc45b0c1a1fed9820",
-    "guardian-vault.manifest.json": "343c1d920f6f788ac46449cd133ccf7822b7e0020dfbc5ce7d4552f57f1aa565",
-    "uv1-report.json": "db6a83dae3544a845a61d51af74dabab96142c61d729d463315176f962b25964"
+    "guardian-vault.manifest.json": "317054c651fc13bd48f7dd3f714440d9faa3a35ba1cfdd14456bf6c82229d119",
+    "uv1-report.json": "955bb7ec2eca8f781c605c64facf1a7ea8d70cc1fac1bf685f840b58f022077e"
+  },
+  "post_bake_derivation": {
+    "description": "Removed approach mesh faces and interpolated their baked floor shadows; other original bake statistics and the baseline PNG remain historical measurements.",
+    "removed_runtime_triangles": 14,
+    "lightmap_repair_pixels": 8541,
+    "lightmap_level0_blocks_touched": 652
   }
 }

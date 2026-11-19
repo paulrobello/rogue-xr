@@ -404,7 +404,7 @@ def build_gear_shaft(b, room: kit.Room, high: bool) -> tuple[list, list]:
 def build_guardian_vault(b, room: kit.Room, high: bool) -> tuple[list, list]:
     """Guardian arena: 6 m vault, four stone pillars with brazier troughs at the light sockets, three
     stained-glass lancets and a brass gear rosette behind the reward, walnut ceiling grid, a gear
-    chandelier over the brass duelling circle and a processional inlay from the door."""
+    chandelier over the brass duelling circle."""
     # The apse piers and altar steps stand on the north wall: the wall is left open behind them.
     north = [lancet_opening(w) for w in VAULT_WINDOWS] + kit.apse_openings()
     kit.build_shell(b, room, {"N": sorted(north)}, ROOMS["guardian-vault"]["stile_step"], cornice=False, apron=ROOMS["guardian-vault"]["door_apron"])
@@ -427,9 +427,7 @@ def build_guardian_vault(b, room: kit.Room, high: bool) -> tuple[list, list]:
     kit.wall_gear(b, room, "W", 0.0, 3.4, 1.0, 32, high, slot="gilt")
     kit.wall_gear(b, room, "E", 0.0, 3.4, 1.0, 32, high, slot="gilt")
     kit.arena_circle(b, 0.0, 3.0, high)  # guardian socket (runtime 0, -3)
-    # Processional inlay to the circle (top face only). Room fixes 2026-11-17: it starts 0.9 m in
-    # from the south wall at a brass cross bar, not at the wall (where a plugged south door left it
-    # pointing at a door that is not there).
+    # Pack the historical approach geometry into UV1 before removing it, preserving the floor atlas.
     y0 = -room.hy + 0.9
     for x in (0.35, 1.65):
         b.box(x - 0.03, x + 0.03, y0, 0.95, 0.0, 0.005, "brass-aged", drop="bxXyY")
@@ -703,6 +701,21 @@ def remove_corridor_inlay(obj) -> None:
     obj.data.update()
 
 
+def remove_vault_approach(obj) -> None:
+    """Retain the packed atlas while removing the former processional inlay."""
+    bm = bmesh.new()
+    bm.from_mesh(obj.data)
+    faces = [face for face in bm.faces if all(
+        0.2899 <= v.co.x <= 1.7101 and -5.1601 <= v.co.y <= 0.9501 and -0.0001 <= v.co.z <= 0.0051
+        for v in face.verts
+    )]
+    assert len(faces) in (7, 14, 47), f"unexpected vault approach face count: {len(faces)}"
+    bmesh.ops.delete(bm, geom=faces, context="FACES_ONLY")
+    bm.to_mesh(obj.data)
+    bm.free()
+    obj.data.update()
+
+
 def export(objs: list, path: Path) -> int:
     """The room, its rigid nodes and its panels, each its own glTF node."""
     kit.export_glb_multi(objs, path)
@@ -758,6 +771,8 @@ def main() -> None:
         S.apply_bevel(obj)
     if P == "corridor":
         remove_corridor_inlay(high)
+    elif P == "guardian-vault":
+        remove_vault_approach(high)
     report["high"] = {"triangles": sum(S.count_tris(o) for o in high_all), "slots": len(S.SLOTS)}
 
     low, colliders, lights, rigid, door = build(room, False)
@@ -780,6 +795,8 @@ def main() -> None:
     kit.unwrap_lightmap_uv_multi(low_all, size, gap_px=gap_px)
     if P == "corridor":
         remove_corridor_inlay(low)
+    elif P == "guardian-vault":
+        remove_vault_approach(low)
     tris = sum(S.count_tris(o) for o in low_all)
     report["low"] = {
         "triangles": tris,

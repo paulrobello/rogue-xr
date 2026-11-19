@@ -1,0 +1,16 @@
+{
+  "description": "Pump-only clear north wallpaper wall irradiance. A closed diffuse room proxy retains the original study sconce and desk-candle lights but excludes the study sun, window sky and furniture shadows. Cycles Metal, 256 samples, denoised and encoded with the original study scale. UV0 wallpaper repeat is unchanged.",
+  "sha256": "7985c2d26f4acbf840f6e9dbb23240d19058a13f5d0d97ee51104d0636311143",
+  "source_sha256": {
+    "assets-source/rooms/study/blend/study_low.blend": "584f34735fc11226c0faafba200a44ed3cb3edd8f79cd8f96380b621ab3d5dcf",
+    "scripts/assets/build-pump-wall-lightmap.py": "c6a38c5a560b355d986d18a5975dea6b620a1621c08cf8165dbca4e8118657e0",
+    "scripts/assets/lightmap_helpers.py": "c74c968a3d3ed95bae831262af3c5ab1bacedfa0e2e131b95d5d7bf4e59d66ad"
+  },
+  "size": [
+    512,
+    512
+  ],
+  "scale": 3.7835512161254883,
+  "regeneration": "blender -b --factory-startup assets-source/rooms/study/blend/study_low.blend --python-exit-code 1 -P scripts/assets/build-pump-wall-lightmap.py -- public/assets/props/pressure-works/pump-wall-lightmap.png",
+  "note": "Cycles GPU and denoising can vary across Blender versions and hardware; update the texture hash after regeneration."
+}

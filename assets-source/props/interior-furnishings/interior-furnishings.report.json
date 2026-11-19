@@ -1,6 +1,6 @@
 {
   "generator": "scripts/assets/build-interior-furnishings.py",
-  "blender": "5.2.2 LTS",
+  "blender": "5.3.0",
   "coordinate_system": "glTF Y-up; front +Z; dimensions metres",
   "materials": [
     "Walnut",
@@ -14,6 +14,9 @@
     "MidnightEnamel",
     "ClockIvory",
     "LibraryBindingAtlas",
+    "DiningWalnut",
+    "DiningUpholstery",
+    "DiningPolishedBrass",
     "WineVelvetNap",
     "PictureBacking"
   ],
@@ -106,7 +109,7 @@
         1.09,
         0.25
       ],
-      "mesh_count": 4
+      "mesh_count": 3
     },
     "DiningTable": {
       "dimensions_m": [
@@ -124,7 +127,7 @@
         0.851,
         0.44
       ],
-      "mesh_count": 3
+      "mesh_count": 2
     },
     "Bookcase": {
       "dimensions_m": [
@@ -244,7 +247,7 @@
     "LibraryBindingAtlas requires the shared runtime book texture; canvas UVs are texture-ready.",
     "No authored colliders or LODs."
   ],
-  "triangles": 59880,
-  "size_bytes": 3003776,
-  "sha256": "759663b979c7bf57255ba7f62e8265c67274402b699970b4de9b203a06a2216b"
+  "triangles": 59968,
+  "size_bytes": 7220384,
+  "sha256": "97898421426dadabb7bef619b18069495d4dd3d3300239f538b26080ada5fdfa"
 }

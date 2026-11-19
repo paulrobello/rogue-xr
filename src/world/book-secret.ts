@@ -104,7 +104,7 @@ export class BookSecret {
       if (root !== 'Bookcase') continue;
       const book = caseObject.getObjectByName('Bookcase_PullBook');
       const panel = caseObject.getObjectByName('Bookcase_Slider');
-      if (!book || !panel) continue;
+      if (!book?.userData.bookSecret || !panel) continue;
       const lock = new THREE.Mesh(this.keyholeHit, this.hitMaterial);
       lock.name = 'book-secret-lock';
       lock.position.set(0, 0.31, 0.045);

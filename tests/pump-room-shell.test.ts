@@ -14,7 +14,8 @@ it('replaces the pump lancet and projecting trim with continuous wallpaper while
     )
   ).scene;
   const pump = study.clone(true);
-  const owned = closePumpRoomWindow(pump);
+  const lightmap = new THREE.Texture();
+  const owned = closePumpRoomWindow(pump, lightmap);
   function materialHit(root: THREE.Object3D, x: number, y: number): THREE.Intersection {
     const wall: THREE.Mesh[] = [];
     root.traverseVisible((n) => {
@@ -43,9 +44,14 @@ it('replaces the pump lancet and projecting trim with continuous wallpaper while
       'study_wallpaper',
     );
     expect(hit.point.z).toBeCloseTo(-4, 5);
+    const material = (hit.object as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>)
+      .material;
+    expect(material.lightMap).toBe(lightmap);
+    expect(hit.uv1?.x).toBeCloseTo((x + 4) / 8, 4);
+    expect(hit.uv1?.y).toBeCloseTo((4 - y) / 3, 4);
     expect(hit.uv?.x).toBeCloseTo(x / 0.75, 4);
     expect(hit.uv?.y).toBeCloseTo(1 + y / 0.75, 4);
   }
   expect(owned.length).toBeGreaterThan(0);
-  for (const g of owned) g.dispose();
+  for (const resource of owned) resource.dispose();
 });

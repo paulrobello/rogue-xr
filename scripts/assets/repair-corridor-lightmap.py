@@ -1,8 +1,8 @@
 """Repair the former floor-inlay shadows without altering other lightmap blocks.
 
 Run: uv run --with numpy --with pillow --with zstandard python \
-  scripts/assets/repair-corridor-lightmap.py BASELINE.ktx2 OUTPUT.ktx2
-The baseline is the original corridor lightmap, before this repair. The floor UV
+  scripts/assets/repair-corridor-lightmap.py BASELINE.ktx2 OUTPUT.ktx2 [guardian-vault]
+The baseline is the original room lightmap, before this repair. The floor UV
 mapping is read from the existing runtime GLB; geometry and UVs are not modified.
 """
 from __future__ import annotations
@@ -21,23 +21,28 @@ import zstandard as zstd
 
 ROOT = Path(__file__).resolve().parents[2]
 KTX = Path.home() / '.local/opt/ktx-software-4.4.2/bin/ktx'
-GLB = ROOT / 'public/assets/rooms/corridor/corridor.glb'
 
 
-def floor_mapping():
-    data = GLB.read_bytes()
+def floor_mapping(room: str):
+    glb = ROOT / f"public/assets/rooms/{room}/{room}.glb"
+    data = glb.read_bytes()
     size = struct.unpack_from('<I', data, 12)[0]
     gltf = json.loads(data[20:20+size]); binary = data[28+size:]
-    mesh = next(m for m in gltf['meshes'] if m['name'] == 'corridor')
-    prim = next(p for p in mesh['primitives'] if gltf['materials'][p['material']]['name'] == 'corridor_stone-floor')
+    mesh = next(m for m in gltf['meshes'] if m['name'] == room)
+    prim = next(p for p in mesh['primitives'] if gltf['materials'][p['material']]['name'] == f'{room}_stone-floor')
     def read(index, width):
         a = gltf['accessors'][index]; v = gltf['bufferViews'][a['bufferView']]
         assert a['componentType'] == 5126 and 'byteStride' not in v
         return np.frombuffer(binary, dtype='<f4', count=a['count']*width, offset=v.get('byteOffset',0)+a.get('byteOffset',0)).reshape(-1,width)
     pos = read(prim['attributes']['POSITION'],3); uv = read(prim['attributes']['TEXCOORD_1'],2)
-    assert len(pos)==4 and np.allclose(pos[:,1],0)
+    if room == 'corridor':
+        assert len(pos)==4 and np.allclose(pos[:,1],0)
+    else:
+        select = (np.isclose(pos[:,1],0) & (np.isclose(pos[:,0],-.04) | np.isclose(pos[:,0],2.04)) & (np.isclose(pos[:,2],-6) | np.isclose(pos[:,2],5.8)))
+        pos, uv = pos[select], uv[select]
     x = np.polyfit(pos[:,0],uv[:,0],1); z = np.polyfit(pos[:,2],uv[:,1],1)
-    assert np.allclose(np.polyval(x,pos[:,0]),uv[:,0]) and np.allclose(np.polyval(z,pos[:,2]),uv[:,1])
+    tolerance = 1e-8 if room == 'corridor' else 1e-6
+    assert np.allclose(np.polyval(x,pos[:,0]),uv[:,0],atol=tolerance) and np.allclose(np.polyval(z,pos[:,2]),uv[:,1],atol=tolerance)
     return x,z
 
 
@@ -48,8 +53,9 @@ def levels(data):
     return [struct.unpack_from('<QQQ',data,80+24*i) for i in range(count)]
 
 
-def repair(source: Path, output: Path):
-    x,z=floor_mapping(); original=source.read_bytes(); original_levels=levels(original)
+def repair(source: Path, output: Path, room: str = "corridor"):
+    assert room in ("corridor", "guardian-vault")
+    x,z=floor_mapping(room); original=source.read_bytes(); original_levels=levels(original)
     masks=[]
     with tempfile.TemporaryDirectory() as tmp:
         tmp=Path(tmp); png=tmp/'source.png'; changed=tmp/'changed.png'; encoded=tmp/'encoded.ktx2'
@@ -68,8 +74,12 @@ def repair(source: Path, output: Path):
             for py in range(a+1,b):
                 t=(py-a)/(b-a); pixels[py,x0:x1+1]=np.rint((1-t)*pixels[a,x0:x1+1].astype(float)+t*pixels[b,x0:x1+1]).astype('uint8')
             mask[a+1:b,x0:x1+1]=True
-        for world_x in (-.5,.5): vertical(xp(world_x),yp(-3.92)-4,yp(3.92)+4)
-        for world_z in (-2,0,2): horizontal(yp(world_z),xp(-.5)-7,xp(.5)+7)
+        if room == 'corridor':
+            for world_x in (-.5,.5): vertical(xp(world_x),yp(-3.92)-4,yp(3.92)+4)
+            for world_z in (-2,0,2): horizontal(yp(world_z),xp(-.5)-7,xp(.5)+7)
+        else:
+            for world_x in (.35,1.65): vertical(xp(world_x),yp(-.95)-4,yp(5.16)+4)
+            horizontal(yp(5.13),xp(.29)-7,xp(1.71)+7)
         Image.fromarray(pixels).save(changed)
         subprocess.run([str(KTX),'create','--format','R8G8B8_SRGB','--assign-tf','srgb','--encode','uastc','--uastc-quality','2','--zstd','18','--generate-mipmap',str(changed),str(encoded)],check=True)
         new=encoded.read_bytes(); new_levels=levels(new)
@@ -94,4 +104,4 @@ def repair(source: Path, output: Path):
 
 
 if __name__ == '__main__':
-    repair(Path(sys.argv[1]),Path(sys.argv[2]))
+    repair(Path(sys.argv[1]),Path(sys.argv[2]),sys.argv[3] if len(sys.argv) > 3 else "corridor")

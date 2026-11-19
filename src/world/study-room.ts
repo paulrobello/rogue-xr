@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { derivedFiles as corridorFiles } from '../../assets-source/rooms/corridor/provenance.json';
+import { derivedFiles as vaultFiles } from '../../assets-source/rooms/guardian-vault/provenance.json';
 import { GREYBOX_TEMPLATES, parseRoomTemplate, type RoomTemplate } from '../content/rooms.ts';
 import { dressFireplace } from './fireplace.ts';
 import {
@@ -253,10 +254,9 @@ export async function loadStudyAsset(options: {
   const { study, set, ktx2 } = options;
   const id = study.manifest.template;
   const base = options.base ?? roomBase(id);
+  const files = id === 'corridor' ? corridorFiles : id === 'guardian-vault' ? vaultFiles : [];
   const revision = (file: string) =>
-    id === 'corridor'
-      ? corridorFiles.find((entry) => entry.path === `public/assets/rooms/corridor/${file}`)?.sha256
-      : undefined;
+    files.find((entry) => entry.path === `public/assets/rooms/${id}/${file}`)?.sha256;
   const glbHash = revision(study.manifest.glb);
   const gltf = await new GLTFLoader().loadAsync(
     `${base}/${study.manifest.glb}${glbHash ? `?v=${glbHash}` : ''}`,

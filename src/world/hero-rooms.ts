@@ -63,7 +63,7 @@ export function dressHeroRooms(
   view: FloorView,
   assets: readonly StudyAsset[],
   decor: TableDecor | null = null,
-  pumpLight?: Texture,
+  pumpLight?: { floor: Texture; wall: Texture },
 ): number {
   let dressed = 0;
   for (const asset of assets) {

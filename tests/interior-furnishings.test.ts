@@ -2,7 +2,6 @@
 
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { describe, expect, it } from 'vitest';
 import { parseRoomTemplate, templateById } from '../src/content/rooms.ts';
 import { generateFloor } from '../src/floor/generate.ts';
@@ -11,6 +10,7 @@ import {
   InteriorFurnishings,
   type InteriorFurnishingsAsset,
 } from '../src/world/interior-furnishings.ts';
+import { nodeGeometryLoader } from './helpers/gltf-node.ts';
 
 const ROOTS = [
   'DoorSingle',
@@ -31,6 +31,13 @@ function asset(): InteriorFurnishingsAsset {
   for (const name of ROOTS) {
     const root = new THREE.Group();
     root.name = name;
+    if (name === 'Bookcase') {
+      const book = new THREE.Group(),
+        slider = new THREE.Group();
+      book.name = 'Bookcase_PullBook';
+      slider.name = 'Bookcase_Slider';
+      root.add(book, slider);
+    }
     if (name === 'Candelabrum')
       for (let i = 0; i < 6; i++) {
         const socket = new THREE.Object3D();
@@ -54,7 +61,7 @@ async function realAsset(): Promise<InteriorFurnishingsAsset> {
   const bytes = await readFile('public/assets/props/interior-furnishings/interior-furnishings.glb');
   const start = bytes.byteOffset;
   const end = start + bytes.byteLength;
-  const gltf = await new GLTFLoader().parseAsync(bytes.buffer.slice(start, end), '');
+  const gltf = await nodeGeometryLoader().parseAsync(bytes.buffer.slice(start, end), '');
   gltf.scene.updateMatrixWorld(true);
   const roots = {} as Record<(typeof ROOTS)[number], THREE.Object3D>;
   for (const name of ROOTS) {
@@ -66,6 +73,23 @@ async function realAsset(): Promise<InteriorFurnishingsAsset> {
 }
 
 describe('interior furnishings', () => {
+  it('loads textured dining wood and upholstery materials', async () => {
+    const furniture = await realAsset();
+    const materials = new Map<string, THREE.MeshStandardMaterial>();
+    for (const root of [furniture.roots.DiningChair, furniture.roots.DiningTable]) {
+      root.traverse((object) => {
+        if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial)
+          materials.set(object.material.name, object.material);
+      });
+    }
+    for (const name of ['DiningWalnut', 'DiningUpholstery']) {
+      const material = materials.get(name);
+      expect(material?.map).toBeTruthy();
+      expect(material?.normalMap).toBeTruthy();
+      expect(material?.roughnessMap).toBeTruthy();
+    }
+  });
+
   it('uses a dedicated seed stream and keeps repeated floors identical', () => {
     const a = new InteriorFurnishings(buildFloorWorld(generateFloor('SPIRE002')), asset());
     const b = new InteriorFurnishings(buildFloorWorld(generateFloor('SPIRE002')), asset());
@@ -137,16 +161,22 @@ describe('interior furnishings', () => {
         expect(
           furnishings.placements.some((p) => p.room === clue.room && p.root === 'Bookcase'),
         ).toBe(true);
-        const before = clue.object.userData.paintingIndex;
-        const transit = clue.room === 0 ? 1 : 0;
+        const center = clue.object.getWorldPosition(new THREE.Vector3());
+        const camera = new THREE.PerspectiveCamera(70, 1, 0.01, 30);
+        camera.position.copy(center).add(new THREE.Vector3(0, 0, 1.5));
+        camera.lookAt(center);
+        camera.updateMatrixWorld(true);
         world.current = clue.room;
-        furnishings.update(0.1);
-        world.current = transit;
-        furnishings.update(0.1);
+        furnishings.update(0, false, [camera]);
+        world.current = clue.room === 0 ? 1 : 0;
+        furnishings.update(0, false, [camera]);
+        expect(clue.object.userData.paintingIndex).toBe(0);
+        camera.rotateY(Math.PI);
+        camera.updateMatrixWorld(true);
+        furnishings.update(0, false, [camera]);
         world.current = clue.room;
-        furnishings.update(0.1);
+        furnishings.update(0, false, [camera]);
         expect(clue.object.userData.paintingIndex).toBe(1);
-        expect(before).toBe(0);
       }
       for (const painting of paintings.filter((p) => p.object.userData.paintingIndex >= 2)) {
         const before = painting.object.userData.paintingIndex;
@@ -197,13 +227,35 @@ describe('interior furnishings', () => {
       const pictureIds = furnishings.placements
         .filter((p) => p.root === 'FramedPainting')
         .map((p) => p.object.userData.paintingIndex);
-      expect(pictureIds.filter((id) => id === 0)).toHaveLength(1);
+      expect(pictureIds.filter((id) => id === 0).length).toBeLessThanOrEqual(1);
       expect(pictureIds).not.toContain(undefined);
+      const cases = furnishings.placements.filter((p) => p.root === 'Bookcase');
+      const markedCases = cases.filter(
+        (p) => p.object.getObjectByName('Bookcase_PullBook')?.userData.bookSecret === true,
+      );
+      expect(markedCases.length).toBeLessThanOrEqual(1);
+      for (const ordinary of cases.filter((p) => !markedCases.includes(p))) {
+        expect(
+          (
+            ordinary.object.getObjectByName('Red ribbon') ??
+            ordinary.object.getObjectByName('Red_ribbon')
+          )?.visible ?? true,
+        ).toBe(false);
+        expect(
+          (
+            ordinary.object.getObjectByName('Lock escutcheon') ??
+            ordinary.object.getObjectByName('Lock_escutcheon')
+          )?.visible ?? true,
+        ).toBe(false);
+      }
       expect(new Set(pictureIds).size).toBe(pictureIds.length);
       if (seed === 'N0TE0032')
         expect(furnishings.placements.some((p) => p.root === 'FramedPainting')).toBe(true);
       world.group.updateMatrixWorld(true);
       if (seed === 'MAPTEST2') {
+        const armor = furnishings.placements.filter((p) => p.root === 'ClockworkArmor');
+        expect(armor).toHaveLength(1);
+        expect(armor[0]?.room).toBe(0);
         const entrancePortrait = furnishings.placements.find(
           (p) => p.room === 0 && p.root === 'FramedPainting',
         );
@@ -290,5 +342,71 @@ describe('interior furnishings', () => {
     }
     expect(curtainCount).toBeGreaterThan(0);
     expect(portraitCount).toBeGreaterThan(0);
+  });
+
+  it('keeps MAPTEST2 playtest dressing reachable and ordinary cases inert', async () => {
+    const furniture = await realAsset();
+    const world = buildFloorWorld(generateFloor('MAPTEST2'));
+    const furnishings = new InteriorFurnishings(world, furniture, {
+      paintings: Array.from({ length: 5 }, () => new THREE.Texture()),
+    });
+    expect(furnishings.placements.filter((p) => p.root === 'ClockworkArmor')).toHaveLength(1);
+    expect(furnishings.placements.filter((p) => p.root === 'DiningTable')).toHaveLength(1);
+    expect(furnishings.placements.filter((p) => p.root === 'DiningChair')).toHaveLength(2);
+    const cases = furnishings.placements.filter((p) => p.root === 'Bookcase');
+    const marked = cases.filter(
+      (p) => p.object.getObjectByName('Bookcase_PullBook')?.userData.bookSecret === true,
+    );
+    expect(marked).toHaveLength(1);
+    expect(cases.length - marked.length).toBeLessThanOrEqual(1);
+    for (const ordinary of cases.filter((p) => !marked.includes(p))) {
+      expect(ordinary.object.getObjectByName('Red_ribbon')?.visible).toBe(false);
+      expect(ordinary.object.getObjectByName('Lock_escutcheon')?.visible).toBe(false);
+      expect(ordinary.object.getObjectByName('bookcase-drawer-knob')).toBeDefined();
+    }
+    furnishings.dispose();
+    world.dispose();
+  });
+
+  it('preserves a legacy keyed room when its new theme had no case', async () => {
+    const furniture = await realAsset();
+    const world = buildFloorWorld(generateFloor('SPIRE004'));
+    const furnishings = new InteriorFurnishings(world, furniture, {
+      preservedBookRooms: [1],
+      paintings: Array.from({ length: 5 }, () => new THREE.Texture()),
+    });
+    const restored = furnishings.placements.find((p) => p.room === 1 && p.root === 'Bookcase');
+    expect(restored).toBeDefined();
+    expect(restored?.object.getObjectByName('Bookcase_PullBook')?.userData.bookSecret).toBe(true);
+    furnishings.dispose();
+    world.dispose();
+  });
+
+  it('keeps secret distribution deterministic with zero- and one-secret floors', () => {
+    const textures = Array.from({ length: 5 }, () => new THREE.Texture());
+    let zero = 0;
+    let one = 0;
+    const alphabet = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+    for (let i = 0; i < 30; i++) {
+      const seed = `S0${alphabet[i]}R00X0`;
+      const world = buildFloorWorld(generateFloor(seed));
+      const furnishings = new InteriorFurnishings(world, paintedAsset(), { paintings: textures });
+      const clues = furnishings.placements.filter(
+        (p) => p.root === 'FramedPainting' && p.object.userData.paintingIndex === 0,
+      );
+      expect(clues.length).toBeLessThanOrEqual(1);
+      const ordinary = furnishings.placements.filter(
+        (p) =>
+          p.root === 'Bookcase' &&
+          p.object.getObjectByName('Bookcase_PullBook')?.userData.bookSecret !== true,
+      );
+      expect(ordinary.length).toBeLessThanOrEqual(1);
+      if (clues.length === 0) zero++;
+      else one++;
+      furnishings.dispose();
+      world.dispose();
+    }
+    expect(zero).toBeGreaterThan(0);
+    expect(one).toBeGreaterThan(0);
   });
 });

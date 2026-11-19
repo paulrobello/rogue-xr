@@ -4,7 +4,7 @@
   "route": "scripted",
   "generator": {
     "path": "scripts/assets/build-room-kit.py",
-    "sha256": "e164e9371c2fdbcc3da73b12dd6c40b7b390e335bbc03d319f8cd7f15e9bb01f"
+    "sha256": "a3f860297e22cf66621956a9cc0d427e5973c8d4b9fff34d19261adc05cd0882"
   },
   "generatorDeps": [
     {
@@ -41,12 +41,12 @@
     "store": "assets-source/rooms/guardian-vault/blend (storage ruling pending, docs/blender-kit-project.md ruling 5)",
     "files": {
       "guardian-vault_high.blend": {
-        "sha256": "33577b3b3e70ff984f2282dae525c57a1b049a42db2546fd8f415b38f951e862",
-        "bytes": 2275723
+        "sha256": "bf19371d5d9c19e082c482f4bf4b80c4cb119ce573e8afbab720c44400b8aad4",
+        "bytes": 2271109
       },
       "guardian-vault_low.blend": {
-        "sha256": "98a7573ff0dbe61430852508af4e5de69b2b52c72be9fcd487b3042c73b731d9",
-        "bytes": 733340
+        "sha256": "7d860bcc8c084fa2dda218d3ae738af8c43c689a7200871de47cfe850821c56d",
+        "bytes": 731183
       }
     }
   },
@@ -90,7 +90,7 @@
     }
   },
   "budgets": {
-    "triangles": 18907,
+    "triangles": 18893,
     "materials": 12,
     "texturePx": {
       "guardian-vault.lightmap.ktx2": {
@@ -98,7 +98,7 @@
         "height": 2048
       }
     },
-    "highTriangles": 72247,
+    "highTriangles": 72166,
     "glbBytes": 1640496
   },
   "texelDensityPxPerM": {
@@ -291,26 +291,26 @@
   "derivedFiles": [
     {
       "path": "public/assets/rooms/guardian-vault/guardian-vault.glb",
-      "sha256": "f2923a8018d7c34955dad1854883dbfdd42dc8426d3b49cc7af9b0acd95363ce",
+      "sha256": "97d979de11c2c0e8eb501976a5421544561a73490eec40b3b5a7471cde3d36e0",
       "bytes": 1640496
     },
     {
       "path": "public/assets/rooms/guardian-vault/guardian-vault.lightmap.ktx2",
-      "sha256": "0bab7d726ed717c8898e5347ca2c9c217ead07e0535d7a47527b353312ff2ea8",
-      "bytes": 2733921
+      "sha256": "77d42a2c376d6fb6819715741dcea4f0a9d33b687687e9e3c660dc830a69190d",
+      "bytes": 2730937
     },
     {
       "path": "public/assets/rooms/guardian-vault/guardian-vault.manifest.json",
-      "sha256": "343c1d920f6f788ac46449cd133ccf7822b7e0020dfbc5ce7d4552f57f1aa565",
+      "sha256": "317054c651fc13bd48f7dd3f714440d9faa3a35ba1cfdd14456bf6c82229d119",
       "bytes": 5581
     }
   ],
   "stagingFiles": {
-    "guardian-vault.glb": "f2923a8018d7c34955dad1854883dbfdd42dc8426d3b49cc7af9b0acd95363ce",
-    "guardian-vault.lightmap.ktx2": "0bab7d726ed717c8898e5347ca2c9c217ead07e0535d7a47527b353312ff2ea8",
+    "guardian-vault.glb": "97d979de11c2c0e8eb501976a5421544561a73490eec40b3b5a7471cde3d36e0",
+    "guardian-vault.lightmap.ktx2": "77d42a2c376d6fb6819715741dcea4f0a9d33b687687e9e3c660dc830a69190d",
     "guardian-vault.lightmap.png": "dc266ed7a492f6a563ace0f7c1d1ba9e8b8e970a1554376fc45b0c1a1fed9820",
-    "guardian-vault.manifest.json": "343c1d920f6f788ac46449cd133ccf7822b7e0020dfbc5ce7d4552f57f1aa565",
-    "uv1-report.json": "db6a83dae3544a845a61d51af74dabab96142c61d729d463315176f962b25964"
+    "guardian-vault.manifest.json": "317054c651fc13bd48f7dd3f714440d9faa3a35ba1cfdd14456bf6c82229d119",
+    "uv1-report.json": "955bb7ec2eca8f781c605c64facf1a7ea8d70cc1fac1bf685f840b58f022077e"
   },
   "references": [
     {
@@ -335,7 +335,7 @@
   "materialsUsed": "approved P4-T3 set (public/assets/materials), bound by slot name; not regenerated",
   "license": "Original work generated in Blender from a checked-in script; concept references from Paul's paid Higgsfield plan (Terms of Use 4.4)",
   "reimport": {
-    "triangles": 18907,
+    "triangles": 18893,
     "material_count": 12,
     "uv_layers": [
       [
@@ -931,5 +931,37 @@
     ],
     "build": "GLB f2923a8018d7",
     "runtimeGlbSha256": "f2923a8018d7c34955dad1854883dbfdd42dc8426d3b49cc7af9b0acd95363ce"
+  },
+  "derivation": {
+    "method": "Removed the two approach strips and crossbar after atlas packing and interpolated their floor shadows on the existing lightmap. Original bake and density measurements describe the baseline.",
+    "baseline_glb_sha256": "f2923a8018d7c34955dad1854883dbfdd42dc8426d3b49cc7af9b0acd95363ce",
+    "baseline_lightmap_sha256": "0bab7d726ed717c8898e5347ca2c9c217ead07e0535d7a47527b353312ff2ea8",
+    "scripts": [
+      {
+        "path": "scripts/assets/strip-corridor-inlay.py",
+        "sha256": "1301f2cc425b47e4e24bd7187f955467248304241d20ab966e4d9ed554eb3c1b",
+        "room_argument": "guardian-vault"
+      },
+      {
+        "path": "scripts/assets/strip-corridor-inlay-blend.py",
+        "sha256": "1949d4aa0dc780fe555a9384795711588246e5dae1b83fab4382e8ec9fd591a6",
+        "room_argument": "guardian-vault"
+      },
+      {
+        "path": "scripts/assets/corridor-mesh-fingerprint.py",
+        "sha256": "b3074dbe5478dfd9a444d47a4a4a8ae0ff26e7a34855a238582c0f868779d285",
+        "room_argument": "guardian-vault"
+      },
+      {
+        "path": "scripts/assets/repair-corridor-lightmap.py",
+        "sha256": "d39a91c2c170f2abe7423350123e944635ee3119b40e9446f767545f48566436",
+        "room_argument": "guardian-vault"
+      }
+    ],
+    "verification": "Retained blend mesh positions, normals and UVs matched to seven decimals. GLB retains all vertex attributes and all other indices byte-for-byte. Clean Blender reimport and UV1 check passed.",
+    "lightmap_repair_pixels": 8541,
+    "level0_blocks_touched": 652,
+    "level0_blocks_total": 262144,
+    "review_note": "Previous independent score and images describe the prior build."
   }
 }

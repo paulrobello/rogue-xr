@@ -72,6 +72,11 @@ def box(name, p, size, mat, parent):
     o.name = name
     o.dimensions = (size[0], size[2], size[1])
     bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+    bevel = o.modifiers.new('cast edge', 'BEVEL')
+    bevel.width = min(.009, min(size) * .22)
+    bevel.segments = 1
+    bpy.context.view_layer.objects.active = o
+    bpy.ops.object.modifier_apply(modifier=bevel.name)
     o.data.materials.append(MATS[mat])
     return parent_preserve(o, parent)
 
@@ -114,11 +119,11 @@ def gear(name, center, radius, depth, teeth, mat, parent, horizontal=False):
 
 root = empty('service-compartment')
 # Frame is an open-front sleeve; separate solids leave the reward pocket hollow.
-box('sleeve-back', (0, .44, .27), (1.24, .48, .035), 'dark', root)
+box('sleeve-back', (0, .44, .27), (1.24, .478, .035), 'dark', root)
 for x in (-.61, .61):
     box('sleeve-side', (x, .44, .39), (.045, .48, .27), 'iron', root)
-for y in (.20, .68):
-    box('sleeve-rail', (0, y, .39), (1.25, .04, .27), 'iron', root)
+for y in (.199, .681):
+    box('sleeve-rail', (0, y, .39), (1.16, .04, .27), 'iron', root)
     box('brass-keeper', (0, y, .525), (1.19, .018, .024), 'brass', root)
 for x in (-.56, .56):
     for y in (.23, .65):
@@ -133,10 +138,10 @@ box('drawer-dark-backing', (0, .49, .40), (1.08, .012, .23), 'dark', drawer)
 for x in (-.55,.55):
     box('drawer-side', (x,.375,.4), (.035,.21,.26), 'wood', drawer)
     box('drawer-side-rim', (x,.483,.40), (.042,.014,.26), 'brass', drawer)
-box('drawer-back', (0,.375,.275), (1.12,.21,.025), 'wood', drawer)
+box('drawer-back', (0,.375,.274), (1.12,.208,.025), 'wood', drawer)
 box('drawer-front', (0,.385,.535), (1.16,.22,.045), 'wood', drawer)
 for y in (.285,.48):
-    box('drawer-front-trim', (0,y,.563), (1.10,.018,.014), 'brass', drawer)
+    box('drawer-front-trim', (0,y,.563), (1.05,.018,.014), 'brass', drawer)
 for x in (-.535,.535):
     box('drawer-front-trim', (x,.385,.563), (.018,.195,.014), 'brass', drawer)
 # Handle stands proud of the face with enough clearance to grip.
@@ -144,7 +149,7 @@ for x in (-.19,.19):
     cylinder('handle-post', (x,.37,.56), (x,.37,.615), .018, 'brass', drawer)
 cylinder('drawer-handle', (-.19,.37,.615), (.19,.37,.615), .021, 'gold', drawer, 12)
 gear('maker-mark', (0,.44,.575), .059, .016, 10, 'gold', drawer)
-cylinder('seal-center', (0,.44,.583), (0,.44,.591), .027, 'iron', drawer, 12)
+cylinder('seal-center', (0,.44,.584), (0,.44,.592), .027, 'iron', drawer, 12)
 
 cogs = empty('reward-cogs', (0,0,0), drawer)
 for i, (x, z, r) in enumerate(((-.34,.39,.066),(-.18,.405,.055),(.03,.39,.075),(.23,.405,.057),(.39,.385,.062))):
@@ -152,15 +157,19 @@ for i, (x, z, r) in enumerate(((-.34,.39,.066),(-.18,.405,.055),(.03,.39,.075),(
     cylinder('reward-cog-hub-%d' % i, (x,.514,z), (x,.521,z), r*.27, 'brass', cogs, 10)
 
 # The pivot coincides with the axle, so a runtime X rotation rocks the handle.
+box('primer-backing', (1.10,.67,.34), (.22,.25,.035), 'iron', root)
+for x in (1.025, 1.175):
+    for y in (.59, .75):
+        cylinder('primer-bolt', (x,y,.358), (x,y,.369), .011, 'gold', root, 8)
 cylinder('primer-mount', (1.10,.67,.355), (1.10,.67,.43), .061, 'iron', root)
-cylinder('primer-collar', (1.10,.67,.43), (1.10,.67,.45), .045, 'brass', root)
+cylinder('primer-collar', (1.10,.67,.429), (1.10,.67,.45), .045, 'brass', root)
 lever = empty('primer-lever', (1.10,.67,.45), root)
 cylinder('primer-stem', (1.10,.67,.45), (1.10,.80,.52), .015, 'brass', lever, 10)
 cylinder('primer-grip', (1.10,.79,.515), (1.10,.83,.537), .028, 'wood', lever, 10)
 # Small forward-facing outlets near the outer bottom corners.
 for x in (-.67,.67):
     cylinder('steam-outlet', (x,.25,.32), (x,.25,.46), .029, 'brass', root)
-    cylinder('steam-mouth', (x,.25,.46), (x,.25,.466), .018, 'dark', root)
+    cylinder('steam-mouth', (x,.25,.461), (x,.25,.467), .018, 'dark', root)
 
 bpy.context.view_layer.update()
 bpy.ops.wm.save_as_mainfile(filepath=str(args.out / 'service-compartment.blend'))

@@ -73,6 +73,77 @@ def sphere(pos, scale, m):
     return finish(o, m)
 
 
+def vessel(x):
+    # One closed elliptical pressure shell avoids intersections at the domed ends.
+    profile = ((.50, .02), (.53, .20), (.59, .58), (.68, .88),
+               (.76, 1), (1.96, 1), (2.04, .88), (2.13, .58),
+               (2.19, .20), (2.22, .02))
+    sides = 20
+    vertices = [loc((x + .34 * r * math.cos(math.tau*i/sides), y,
+                     .20 + .12 * r * math.sin(math.tau*i/sides)))
+                for y, r in profile for i in range(sides)]
+    faces = [(j*sides+i, j*sides+(i+1)%sides,
+              (j+1)*sides+(i+1)%sides, (j+1)*sides+i)
+             for j in range(len(profile)-1) for i in range(sides)]
+    faces += [tuple(reversed(range(sides))), tuple((len(profile)-1)*sides+i for i in range(sides))]
+    mesh = bpy.data.meshes.new('domed pressure shell')
+    mesh.from_pydata(vertices, [], faces)
+    mesh.update()
+    obj = bpy.data.objects.new('domed pressure shell', mesh)
+    bpy.context.collection.objects.link(obj)
+    for face in mesh.polygons:
+        face.use_smooth = len(face.vertices) == 4
+    finish(obj, 'iron')
+
+
+def band(x, y):
+    sides = 20
+    vertices = [loc((x + .348 * math.cos(math.tau*i/sides), y+dy,
+                     .20 + .126 * math.sin(math.tau*i/sides)))
+                for dy in (-.027, .027) for i in range(sides)]
+    faces = [(i, (i+1)%sides, (i+1)%sides+sides, i+sides) for i in range(sides)]
+    mesh = bpy.data.meshes.new('machined vessel band')
+    mesh.from_pydata(vertices, [], faces)
+    mesh.update()
+    obj = bpy.data.objects.new('machined vessel band', mesh)
+    bpy.context.collection.objects.link(obj)
+    for face in mesh.polygons:
+        face.use_smooth = True
+    finish(obj, 'brass')
+
+
+def bent_pipe(points, radius):
+    points = [Vector(p) for p in points]
+    path = [points[0]]
+    for a, b, c in zip(points, points[1:], points[2:]):
+        incoming, outgoing = (b-a).normalized(), (c-b).normalized()
+        cut = min(.10, (b-a).length*.35, (c-b).length*.35)
+        start, end = b-incoming*cut, b+outgoing*cut
+        path.append(start)
+        for i in range(1, 5):
+            t = i/4
+            path.append((1-t)**2*start + 2*(1-t)*t*b + t*t*end)
+    path.append(points[-1])
+    sides = 10
+    vertices = []
+    for i, p in enumerate(path):
+        tangent = (path[min(i+1, len(path)-1)]-path[max(i-1, 0)]).normalized()
+        side = Vector((-tangent.y, tangent.x, 0)).normalized()
+        for j in range(sides):
+            t = math.tau*j/sides
+            vertices.append(loc(p + radius*(math.cos(t)*side + math.sin(t)*Vector((0,0,1)))))
+    faces = [(i*sides+j, i*sides+(j+1)%sides, (i+1)*sides+(j+1)%sides, (i+1)*sides+j)
+             for i in range(len(path)-1) for j in range(sides)]
+    mesh = bpy.data.meshes.new('continuous delivery pipe')
+    mesh.from_pydata(vertices, [], faces)
+    mesh.update()
+    obj = bpy.data.objects.new('continuous delivery pipe', mesh)
+    bpy.context.collection.objects.link(obj)
+    for face in mesh.polygons:
+        face.use_smooth = True
+    finish(obj, 'copper')
+
+
 def gauge(x, y, z, r):
     cylinder((x, y, z - 0.014), (x, y, z + 0.008), r, "brass", 24)
     cylinder((x, y, z + 0.009), (x, y, z + 0.011), r * 0.8, "ivory", 24)
@@ -91,55 +162,37 @@ def gauge(x, y, z, r):
 
 
 # Continuous opaque back and stepped cast frame.
-box((0, 1.425, 0.035), (2.62, 2.85, 0.07), "patina")
+box((0, 1.425, 0.035), (2.60, 2.83, 0.07), "patina")
 for x in (-1.27, 1.27):
     box((x, 1.425, 0.083), (0.08, 2.85, 0.10), "iron")
 for y in (0.08, 2.77):
-    box((0, y, 0.083), (2.62, 0.16, 0.10), "iron")
+    box((0, y, 0.083), (2.44, 0.16, 0.10), "iron")
 for x in (-0.64, 0.64):
-    # Flattened elliptical vessel reads as a heavy tank from the side while staying shallow.
-    sphere((x, 1.38, 0.20), (0.37, 0.98, 0.13), "iron")
-    vessel = cylinder((x, 0.655, 0.197), (x, 2.105, 0.197), 0.34, "iron", 20)
-    vessel.scale.y = 0.367
-    for y in (0.78, 1.38, 1.98):
-        box((x, y, 0.255), (0.73, 0.09, 0.19), "brass")
-        for dx in (-0.29, 0.29):
-            cylinder((x + dx, y, 0.349), (x + dx, y, 0.365), 0.022, "copper", 8)
-    # Riveted vertical seam and subtle corrosion patches.
-    for y in (0.91, 1.04, 1.17, 1.30, 1.47, 1.60, 1.73, 1.86):
-        cylinder((x, y, 0.322), (x, y, 0.339), 0.012, "brass", 8)
-    for dx, y in ((-0.21, 0.99), (0.18, 1.69)):
-        box((x + dx, y, 0.326), (0.065, 0.14, 0.004), "patina")
-    # Relief bonnet and neck.
-    cylinder((x, 2.10, 0.19), (x, 2.39, 0.19), 0.105, "copper")
-    cylinder((x, 2.33, 0.19), (x, 2.40, 0.19), 0.13, "brass")
-    sphere((x, 2.42, 0.19), (0.14, 0.10, 0.12), "iron")
-    cylinder((x, 2.47, 0.19), (x, 2.57, 0.19), 0.035, "brass")
-    # Delivery line turns toward the frame and down, all within the shallow envelope.
+    vessel(x)
+    for y in (.80, 1.38, 1.94):
+        band(x, y)
+        for dx in (-.27, .27):
+            cylinder((x + dx, y, .275), (x + dx, y, .292), .014, 'copper', 8)
+    # Cast plinth and flanged connections support the vessel and its delivery line.
+    box((x, .37, .18), (.62, .13, .25), 'iron')
+    for dx in (-.23, .23):
+        box((x+dx, .20, .17), (.10, .22, .22), 'iron')
+    cylinder((x, .43, .20), (x, .55, .20), .13, 'brass', 16)
+    cylinder((x, 2.20, .19), (x, 2.39, .19), .09, 'copper')
+    cylinder((x, 2.23, .19), (x, 2.28, .19), .12, 'brass')
+    cylinder((x, 2.34, .19), (x, 2.40, .19), .12, 'brass')
+    sphere((x, 2.42, .19), (.12, .08, .11), 'iron')
+    cylinder((x, 2.45, .19), (x, 2.53, .19), .035, 'brass')
     side = -1 if x < 0 else 1
-    pts = [
-        (x, 2.51, 0.18),
-        (x + side * 0.28, 2.51, 0.18),
-        (x + side * 0.43, 2.36, 0.18),
-        (x + side * 0.43, 0.48, 0.18),
-        (x + side * 0.28, 0.33, 0.18),
-        (x, 0.33, 0.18),
-    ]
-    for a, b in zip(pts, pts[1:]):
-        cylinder(a, b, 0.027, "copper", 10)
-    for y in (0.65, 1.20, 1.78, 2.20):
-        cylinder(
-            (x + side * 0.43, y - 0.035, 0.18),
-            (x + side * 0.43, y + 0.035, 0.18),
-            0.041,
-            "brass",
-            10,
-        )
+    bent_pipe([(x, 2.51, .18), (x+side*.43, 2.51, .18),
+               (x+side*.43, .33, .18), (x, .33, .18)], .027)
+    for y in (.65, 1.20, 1.78, 2.20):
+        cylinder((x+side*.43, y-.025, .18), (x+side*.43, y+.025, .18), .039, 'brass', 10)
     gauge(x, 2.16, 0.335, 0.105)
 # Central sight glass, legible against an iron panel.
-box((0, 1.43, 0.12), (0.18, 0.86, 0.10), "iron")
+box((0, 1.43, 0.121), (0.18, 0.86, 0.10), "iron")
 box((0, 1.43, 0.177), (0.09, 0.68, 0.016), "ivory")
-box((0, 1.28, 0.188), (0.05, 0.34, 0.006), "patina")
+box((0, 1.28, 0.189), (0.05, 0.34, 0.006), "patina")
 for y in (1.06, 1.80):
     box((0, y, 0.19), (0.16, 0.07, 0.04), "brass")
 for x in (-1.23, 1.23):

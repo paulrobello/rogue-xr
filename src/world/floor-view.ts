@@ -142,7 +142,7 @@ export interface FloorView {
    * frame before rendering. A fight whose table had to turn off the head's heading snaps the rig
    * about the head by that turn as the fight starts, so the player faces the table.
    */
-  update(head: THREE.Object3D, dt: number): void;
+  update(head: THREE.Object3D, dt: number, cameras?: readonly THREE.Camera[]): void;
   /** Updates the preference and repositions the rig during a fight when the path is clear. */
   setTableDistance(distance: number, head: THREE.Object3D): boolean;
   /**
@@ -164,7 +164,7 @@ export interface FloorView {
     templateId: string,
     instantiate: () => THREE.Object3D,
     rigidNodes?: readonly RigidNode[],
-    pumpLight?: THREE.Texture,
+    pumpLight?: { floor: THREE.Texture; wall: THREE.Texture },
   ): number;
   /** Rigid nodes (the gear-shaft crown gear) this floor turns each frame. */
   readonly spinnerCount: number;
@@ -212,6 +212,7 @@ function tagEnemyKinds(world: FloorWorld, seed: string, contentVersion: number):
 }
 
 export interface FloorViewOptions {
+  preservedBookRooms?: readonly number[];
   /** Templates the world is built from (the floor plan always uses the greybox set). */
   templates?: readonly RoomTemplate[];
   /** Encounter content generation used to build this floor. */
@@ -327,7 +328,7 @@ export function mountFloorView(
   let candleMotion = 1;
   let candles: { material: THREE.MeshStandardMaterial; intensity: number }[] = [];
   let clock = 0;
-  const spin = (dt: number): void => {
+  const spin = (dt: number, cameras: readonly THREE.Camera[]): void => {
     clock += dt;
     for (const s of spinners) {
       if (s.room.visible)
@@ -337,7 +338,7 @@ export function mountFloorView(
     const light =
       1 + candleMotion * (0.055 * Math.sin(clock * 3.1) + 0.022 * Math.sin(clock * 6.8));
     for (const c of candles) c.material.emissiveIntensity = c.intensity * light;
-    furnishings?.update(dt, candleMotion < 1);
+    furnishings?.update(dt, candleMotion < 1, cameras);
   };
   const disposeActor = (actor: EnemyActor): void => {
     actors.delete(actor.object);
@@ -468,7 +469,11 @@ export function mountFloorView(
     },
     setFurnishings(asset, paintings, reducedMotion) {
       if (!furnishings) {
-        furnishings = new InteriorFurnishings(world, asset, { paintings, reducedMotion });
+        furnishings = new InteriorFurnishings(world, asset, {
+          paintings,
+          reducedMotion,
+          preservedBookRooms: options.preservedBookRooms,
+        });
         book.mount(furnishings);
       }
     },
@@ -533,9 +538,9 @@ export function mountFloorView(
         if (room.templateId !== templateId) return;
         const model = instantiate();
         if (index === world.plan.pressureWing?.pumpRoom && templateId === 'study') {
-          pumpResources.push(...closePumpRoomWindow(model));
           if (pumpLight) {
-            const floor = removePumpRoomSunlight(model, pumpLight);
+            pumpResources.push(...closePumpRoomWindow(model, pumpLight.wall));
+            const floor = removePumpRoomSunlight(model, pumpLight.floor);
             pumpResources.push(...floor.geometries, ...floor.materials);
           }
         }
@@ -644,12 +649,12 @@ export function mountFloorView(
       rig.updateMatrixWorld(true);
       return true;
     },
-    update(head, dt) {
+    update(head, dt, cameras = []) {
       notes?.update(head);
       pressure?.update(dt);
       world.updateAnimations(dt);
       turnVignette = vignetteStep(turnVignette, 0, dt, DEFAULT_VIGNETTE);
-      spin(dt);
+      spin(dt, cameras);
       book.update(dt, head);
       for (const coffer of world.coffers) coffer.update(dt);
       for (const lit of world.hearths) lit.update(dt);

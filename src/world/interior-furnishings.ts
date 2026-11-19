@@ -82,6 +82,7 @@ export interface InteriorPlacement {
 export interface InteriorFurnishingsOptions {
   readonly reducedMotion?: boolean;
   readonly paintings?: readonly THREE.Texture[];
+  readonly preservedBookRooms?: readonly number[];
 }
 
 interface Candidate {
@@ -246,12 +247,14 @@ function candidatesFor(
   theme: InteriorTheme,
   stream: Stream,
   rootBounds: RootBounds,
+  occupied: readonly Candidate[] = [],
+  requested: readonly InteriorFurnishingRoot[] = THEME_ROOTS[theme],
 ): Candidate[] {
   const placed = world.plan.rooms[room];
   const template = templateById(placed.templateId);
   const fp = template.footprint;
   const result: Candidate[] = [];
-  const taken: Box[] = [];
+  const taken = occupied.map((c) => boxFor(c, rootBounds, true));
   const sane = (group: Candidate[]) => {
     const bounds = group.map((candidate) => boxFor(candidate, rootBounds, true));
     if (
@@ -277,10 +280,13 @@ function candidatesFor(
       [1, -1],
       [1, 1],
     ]);
-    dining: for (const [sx, sz] of corners)
+    const centers = corners.map(([sx, sz]) => [sx * (fp.max[0] - 1.85), sz * (fp.max[1] - 1.85)]);
+    if (world.plan.seed === 'MAPTEST2') {
+      for (const x of [-0.55, 0, 0.55])
+        for (const z of [-0.54, -0.28, 0.28, 0.54]) centers.push([x * fp.max[0], z * fp.max[1]]);
+    }
+    dining: for (const [x, z] of centers)
       for (const yaw of angles) {
-        const x = sx * (fp.max[0] - 1.85),
-          z = sz * (fp.max[1] - 1.85);
         const seats = [-1, 1].map((side) => ({
           root: 'DiningChair' as const,
           x: x + Math.cos(yaw) * side * 1.25,
@@ -288,7 +294,13 @@ function candidatesFor(
           yaw: yaw - (side * Math.PI) / 2,
         }));
         if (sane([{ root: 'DiningTable', x, z, yaw }, ...seats])) {
-          result.push({ root: 'Candelabrum', x, z, y: 0.78, yaw });
+          result.push({
+            root: 'Candelabrum',
+            x,
+            z,
+            y: rootBounds.DiningTable.max.y - rootBounds.Candelabrum.min.y,
+            yaw,
+          });
           break dining;
         }
       }
@@ -317,7 +329,7 @@ function candidatesFor(
     }
   }
 
-  for (const root of theme === 'dining' ? [] : THEME_ROOTS[theme]) {
+  for (const root of theme === 'dining' ? [] : requested) {
     if (root === 'Curtain') continue;
     const c = placeOnWall(root);
     if (c && root === 'FramedPainting') {
@@ -472,7 +484,18 @@ export class InteriorFurnishings {
   private readonly cluePaintingRoom: number | undefined;
   private elapsed = 0;
   private lastRoom: number;
-  private readonly visited = new Set<number>();
+  private readonly cluePainting?: THREE.Object3D;
+  private readonly knobGeometry = new THREE.SphereGeometry(0.033, 16, 10);
+  private readonly knobMaterial = new THREE.MeshStandardMaterial({
+    color: 0xa57b49,
+    metalness: 0.52,
+    roughness: 0.38,
+  });
+  private readonly portraitBounds = new THREE.Box3();
+  private readonly eyeFrustum = new THREE.Frustum();
+  private readonly projectionView = new THREE.Matrix4();
+  private changePending = false;
+  private clueSeen = false;
 
   constructor(
     private readonly world: FloorWorld,
@@ -558,6 +581,83 @@ export class InteriorFurnishings {
         }
       }
     }
+    const showcase = world.plan.seed === 'MAPTEST2';
+    const secrets = Stream.fromKey(`${world.plan.seed}:bookcase-secrets`);
+    const preserved = new Set(options.preservedBookRooms ?? []);
+    for (const entry of planned) {
+      if (!preserved.has(entry.room) || entry.candidates.some((c) => c.root === 'Bookcase'))
+        continue;
+      // Older saves can hold a key in a room that has since changed theme. Reserve its cabinet first.
+      const [restored] = candidatesFor(
+        world,
+        entry.room,
+        'library',
+        secrets,
+        rootBounds,
+        [],
+        ['Bookcase'],
+      );
+      if (restored) {
+        const clearance = boxFor(restored, rootBounds, true);
+        entry.candidates = entry.candidates.filter(
+          (c) => !overlaps(clearance, boxFor(c, rootBounds, true)),
+        );
+        entry.candidates.push(restored);
+      }
+    }
+    const paired = planned.filter((entry) =>
+      entry.candidates.some((c) => c.root === 'FramedPainting' && c.clueEligible),
+    );
+    const secretRoom = preserved.size
+      ? paired.find((p) => preserved.has(p.room))?.room
+      : showcase || secrets.int(0, 2) === 0
+        ? paired[0]?.room
+        : undefined;
+    const activeBooks = new Set(preserved);
+    if (secretRoom !== undefined) activeBooks.add(secretRoom);
+    const plainRooms = planned.filter(
+      (p) => !activeBooks.has(p.room) && p.candidates.some((c) => c.root === 'Bookcase'),
+    );
+    const ordinaryRoom =
+      plainRooms.length && (showcase || secrets.next() < 0.65)
+        ? secrets.pick(plainRooms).room
+        : undefined;
+    for (const entry of planned) {
+      if (!activeBooks.has(entry.room) && entry.room !== ordinaryRoom)
+        entry.candidates = entry.candidates.filter((c) => c.root !== 'Bookcase');
+    }
+    if (showcase) {
+      const entrance = planned.find((p) => p.room === 0);
+      if (entrance && !entrance.candidates.some((c) => c.root === 'ClockworkArmor')) {
+        entrance.candidates.push(
+          ...candidatesFor(
+            world,
+            0,
+            'workshop',
+            Stream.fromKey('MAPTEST2:armor'),
+            rootBounds,
+            entrance.candidates,
+            ['ClockworkArmor'],
+          ),
+        );
+      }
+    }
+    if (showcase && !planned.some((p) => p.candidates.some((c) => c.root === 'DiningTable'))) {
+      const venues = planned.filter((p) => p.room !== 0 && !activeBooks.has(p.room));
+      for (const venue of venues) {
+        const group = candidatesFor(
+          world,
+          venue.room,
+          'dining',
+          Stream.fromKey('MAPTEST2:dining'),
+          rootBounds,
+          venue.candidates,
+        );
+        if (!group.some((c) => c.root === 'DiningTable')) continue;
+        venue.candidates.push(...group.filter((c) => c.root !== 'Curtain'));
+        break;
+      }
+    }
     for (const { room, theme, candidates } of planned) {
       for (const c of candidates) {
         const box = boxFor(c, rootBounds);
@@ -585,7 +685,27 @@ export class InteriorFurnishings {
         themes.set(room, theme);
       }
     }
-    const clue = paintingsToDress.find((painting) => painting.eligible);
+    const clue = paintingsToDress.find((p) => p.room === secretRoom);
+    for (const p of made) {
+      if (p.root !== 'Bookcase') continue;
+      const marked = activeBooks.has(p.room);
+      const book = p.object.getObjectByName('Bookcase_PullBook');
+      if (book) book.userData.bookSecret = marked;
+      if (!marked) {
+        const ribbon = book?.getObjectByName('Red_ribbon');
+        if (ribbon) ribbon.visible = false;
+        const lock = p.object.getObjectByName('Lock_escutcheon');
+        if (lock) lock.visible = false;
+        const panel = p.object.getObjectByName('Bookcase_Slider');
+        if (panel) {
+          const knob = new THREE.Mesh(this.knobGeometry, this.knobMaterial);
+          knob.name = 'bookcase-drawer-knob';
+          knob.scale.set(1, 1, 0.65);
+          knob.position.set(0, 0.31, 0.044);
+          panel.add(knob);
+        }
+      }
+    }
     if (this.paintingMaterials.length) {
       if (clue) this.setPainting(clue.object, 0);
       for (const painting of paintingsToDress) {
@@ -596,10 +716,11 @@ export class InteriorFurnishings {
       }
     }
     this.cluePaintingRoom = clue?.room;
+    this.cluePainting = clue?.object;
     this.placements = made.filter((placement) => placement.object.parent !== null);
     this.themes = themes;
     this.lastRoom = world.current;
-    this.visited.add(world.current);
+
     world.group.updateMatrixWorld(true);
   }
 
@@ -655,31 +776,48 @@ export class InteriorFurnishings {
     } else plane.material = this.paintingMaterials[index];
     object.userData.paintingIndex = index;
   }
-  update(dt: number, reducedMotion = false): void {
+  update(dt: number, reducedMotion = false, cameras: readonly THREE.Camera[] = []): void {
     this.elapsed += Math.max(0, dt);
     for (const material of this.flameMaterials) {
       material.uniforms.uTime.value = this.elapsed;
       material.uniforms.uMotion.value = reducedMotion ? 0 : 1;
     }
     const room = this.world.current;
-    if (room !== this.lastRoom) {
-      if (this.visited.has(room)) {
-        const painting = this.placements.find(
-          (p) => p.room === room && p.root === 'FramedPainting' && p.room === this.cluePaintingRoom,
-        );
-        if (painting && this.paintingMaterials.length > 1) {
-          this.setPainting(painting.object, 1);
+    const painting = this.cluePainting;
+    if (painting && painting.userData.paintingIndex === 0 && this.paintingMaterials.length > 1) {
+      if (this.clueSeen && this.lastRoom === this.cluePaintingRoom && room !== this.lastRoom)
+        this.changePending = true;
+      if (
+        cameras.length &&
+        (this.changePending || (!this.clueSeen && room === this.cluePaintingRoom))
+      ) {
+        this.portraitBounds.setFromObject(painting);
+        const visible = cameras.some((eye) => {
+          // XRManager has already composed each eye with the locomotion rig.
+          this.projectionView.multiplyMatrices(eye.projectionMatrix, eye.matrixWorldInverse);
+          this.eyeFrustum.setFromProjectionMatrix(
+            this.projectionView,
+            eye.coordinateSystem,
+            eye.reversedDepth,
+          );
+          return this.eyeFrustum.intersectsBox(this.portraitBounds);
+        });
+        if (visible) this.clueSeen = true;
+        else if (this.changePending) {
+          this.setPainting(painting, 1);
+          this.changePending = false;
         }
       }
-      this.visited.add(room);
-      this.lastRoom = room;
     }
+    this.lastRoom = room;
   }
   dispose(): void {
     for (const remove of this.removeColliders) remove();
     for (const p of this.placements) p.object.removeFromParent();
     for (const material of this.flameMaterials) material.dispose();
     for (const material of this.paintingMaterials) material.dispose();
+    this.knobGeometry.dispose();
+    this.knobMaterial.dispose();
     this.flameGeometry.dispose();
     this.paintingGeometry.dispose();
     this.root.removeFromParent();

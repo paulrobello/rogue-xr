@@ -1,6 +1,6 @@
 {
-  "vertices": 7132,
-  "triangles": 4184,
+  "vertices": 9940,
+  "triangles": 5608,
   "materials": 6,
   "runtime_bounds_min": [
     -1.3200000524520874,
@@ -12,7 +12,7 @@
     1.9800000190734863,
     0.42500001192092896
   ],
-  "sha256": "b26e29d8823aa82102e1d3dff0221660791d508b46d75030679a9186042910df",
-  "blender": "5.2.2 LTS",
+  "sha256": "74cb24016e0b532ac48141187790d07e112b97e7a31034cc2eeeb4e963485f7e",
+  "blender": "5.3.0",
   "provenance": "Original procedural geometry by Codex, no external inputs or textures."
 }

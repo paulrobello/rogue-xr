@@ -1,13 +1,13 @@
 {
   "glb": "guardian-vault.glb",
-  "glb_sha256": "f2923a8018d7c34955dad1854883dbfdd42dc8426d3b49cc7af9b0acd95363ce",
+  "glb_sha256": "97d979de11c2c0e8eb501976a5421544561a73490eec40b3b5a7471cde3d36e0",
   "blender": "5.3.0",
   "meshes": [
     "door-frame-s",
     "door-plug-s",
     "guardian-vault"
   ],
-  "triangles": 18907,
+  "triangles": 18893,
   "materials": [
     "guardian-vault_brass-aged",
     "guardian-vault_brass-polished",

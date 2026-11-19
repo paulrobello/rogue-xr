@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import compartmentProvenance from '../../assets-source/props/pressure-compartment/provenance.json';
 import provenance from '../../assets-source/props/pressure-works/provenance.json';
 import { CanvasLabel } from '../combat-view/canvas-label.ts';
 import { type Box, type Facing, rotateRect, templateById } from '../content/rooms.ts';
@@ -25,6 +26,9 @@ type Fixture = (typeof FIXTURES)[number];
 const VALVES = [0, 1, 2] as const;
 const CIRCUITS = ['A', 'B', 'C'] as const;
 const WHEEL_X = [-0.82, 0, 0.82];
+const WHEEL_Y = 1.05;
+const WHEEL_FACE_Z = 0.412;
+const WHEEL_RADIUS = 0.245;
 const PUMP_Z = -3.0;
 const PIPE_X = -0.898;
 const BANK_X = [-2.2, 2.2] as const;
@@ -32,7 +36,7 @@ const BANK_Z = -3.5;
 const FACING_IN: Record<Facing, number> = { N: 0, S: Math.PI, W: Math.PI / 2, E: -Math.PI / 2 };
 const NORMAL = new THREE.Vector3(0, 0, 1);
 const PRESSURE_GLBS = new Map(
-  Object.entries(provenance.sha256)
+  Object.entries({ ...provenance.sha256, ...compartmentProvenance.inputs })
     .filter(
       ([path]) => path.startsWith('public/assets/props/pressure-works/') && path.endsWith('.glb'),
     )
@@ -116,6 +120,7 @@ export class PressureWorks {
   private goldModel?: THREE.Object3D;
   private drawerRest = 0.34;
   private readonly enabledTargets: THREE.Object3D[] = [];
+  private readonly housing: Box | undefined;
   private readonly targetPoint = new THREE.Vector3();
   private readonly driveRotors: THREE.Group[] = [];
   private driveAngle = 0;
@@ -137,6 +142,11 @@ export class PressureWorks {
     private readonly wing: NonNullable<FloorPlan['pressureWing']>,
   ) {
     const { gallery, pumpRoom, source } = this.wing;
+    const housing = pressureColliders(world.plan, pumpRoom)[0];
+    this.housing = world.colliders[pumpRoom]?.find(
+      (b) =>
+        b.min.every((n, i) => n === housing.min[i]) && b.max.every((n, i) => n === housing.max[i]),
+    );
     this.pump.name = 'pressure-regulator';
     this.pump.position.z = PUMP_Z;
     this.gallery.name = 'pressure-pipe-gallery';
@@ -174,25 +184,25 @@ export class PressureWorks {
     const cabinet = new THREE.BoxGeometry(2.65, 1.4, 0.67);
     const wheel = new THREE.TorusGeometry(0.21, 0.038, 8, 24);
     const spoke = new THREE.BoxGeometry(0.4, 0.034, 0.03);
-    const hit = new THREE.PlaneGeometry(0.59, 0.87);
+    const hit = new THREE.PlaneGeometry(2 * WHEEL_RADIUS, 2 * WHEEL_RADIUS);
     this.fallbackGeometries.push(cabinet, wheel, spoke, hit);
     const body = new THREE.Mesh(cabinet, shell);
     body.position.y = 0.7;
     this.parts.manifold.add(body);
-    this.heading = this.sign(this.pump, 'regulator-heading', 2.04, 0.4, 0, 1.96, 0.49);
+    this.heading = this.sign(this.pump, 'regulator-heading', 1.82, 0.31, 0, 1.995, 0.365);
     for (const i of VALVES) {
       const knob = new THREE.Mesh(wheel, metal);
-      knob.position.set(WHEEL_X[i], 1.05, 0.39);
+      knob.position.set(WHEEL_X[i], WHEEL_Y, 0.39);
       knob.name = `valve-${i}`;
       knob.add(new THREE.Mesh(spoke, metal));
       this.parts.manifold.add(knob);
       const target = new THREE.Mesh(hit, invisible);
       target.name = `pressure-wheel-${i}`;
-      target.position.set(WHEEL_X[i], 1.19, 0.51);
+      target.position.set(WHEEL_X[i], WHEEL_Y, WHEEL_FACE_Z);
       this.pump.add(target);
       this.targets.push(target);
       this.values.push(
-        this.sign(this.pump, `pressure-reading-${i}`, 0.55, 0.26, WHEEL_X[i], 1.54, 0.48),
+        this.sign(this.pump, `pressure-reading-${i}`, 0.44, 0.176, WHEEL_X[i], 1.485, 0.419),
       );
     }
     this.paint(
@@ -238,6 +248,20 @@ export class PressureWorks {
       ctx.fillStyle = '#ddc8a0';
       ctx.fillText('Pull the maker’s mark', w / 2, h / 2, w * 0.96);
     });
+    for (const plate of [this.heading, ...this.values]) {
+      if (!plate) continue;
+      const { width, height } = plate.mesh.geometry.parameters;
+      const depth = plate === this.heading ? 0.1 : 0.086;
+      const casing = new THREE.Mesh(
+        new THREE.BoxGeometry(width + 0.008, height + 0.008, depth),
+        shell,
+      );
+      casing.position.copy(plate.mesh.position);
+      casing.position.z -= depth / 2 + 0.001;
+      this.fallbackGeometries.push(casing.geometry);
+      casing.raycast = () => undefined;
+      this.pump.add(casing);
+    }
     this.bindWheels();
     this.sync(this.state);
   }
@@ -251,9 +275,11 @@ export class PressureWorks {
     this.fallbackGeometries.push(cabinet.geometry);
     cabinet.position.set(0, 0.52, 0);
     this.fallbackVisuals.add(cabinet);
-    const lever = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.42, 0.08), metal);
+    const lever = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.18, 0.06), metal);
     this.fallbackGeometries.push(lever.geometry);
-    lever.position.set(1.1, 0.67, 0.45);
+    this.primer.position.set(1.1, 0.67, 0.45);
+    lever.position.set(0, 0.08, 0.044);
+    lever.rotation.x = Math.atan2(0.087, 0.16);
     this.primer.add(lever);
     const drawerBody = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.23, 0.42), shell);
     this.fallbackGeometries.push(drawerBody.geometry);
@@ -274,7 +300,14 @@ export class PressureWorks {
       this.compartmentTargets.push(mesh);
       return mesh;
     };
-    target('pressure-primer', new THREE.Vector3(1.12, 0.66, 0.64), [0.31, 0.35]);
+    // The proxy follows the angled stem from its mounting boss to the grip.
+    const primerHit = new THREE.Mesh(new THREE.CapsuleGeometry(0.045, 0.17, 4, 12), invisible);
+    primerHit.name = 'pressure-primer';
+    primerHit.position.set(1.1, 0.75, 0.494);
+    primerHit.rotation.x = Math.atan2(0.087, 0.16);
+    this.fallbackGeometries.push(primerHit.geometry);
+    this.compartment.add(primerHit);
+    this.compartmentTargets.push(primerHit);
     target('pressure-maker-mark', new THREE.Vector3(0, 0.43, 0.645), [0.42, 0.24]);
     target('pressure-reward-cogs', new THREE.Vector3(0, 0.53, 0.94), [0.98, 0.29]);
     const vapor = new THREE.BufferGeometry();
@@ -351,13 +384,68 @@ export class PressureWorks {
     return label;
   }
 
+  private paintReading(label: CanvasLabel | null, circuit: string, reading: number): void {
+    label?.draw((ctx, w, h) => {
+      this.enameledPlate(ctx, w, h);
+      ctx.fillStyle = '#f4e4b7';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = `bold ${Math.round(h * 0.64)}px Georgia,serif`;
+      ctx.fillText(circuit, w * 0.31, h * 0.51);
+      const x = w * 0.51,
+        y = h * 0.15,
+        width = w * 0.26,
+        height = h * 0.7;
+      ctx.fillStyle = '#0e1718';
+      ctx.fillRect(x - 5, y - 4, width + 10, height + 8);
+      const roller = ctx.createLinearGradient(0, y, 0, y + height);
+      roller.addColorStop(0, '#a18b60');
+      roller.addColorStop(0.28, '#eddfb7');
+      roller.addColorStop(0.58, '#f5e8c7');
+      roller.addColorStop(1, '#a89470');
+      ctx.fillStyle = roller;
+      ctx.fillRect(x, y, width, height);
+      ctx.fillStyle = '#29241b';
+      ctx.fillText(String(reading), x + width / 2, h * 0.51);
+    });
+  }
+
+  private enameledPlate(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+    const brass = ctx.createLinearGradient(0, 0, w, h);
+    brass.addColorStop(0, '#61492a');
+    brass.addColorStop(0.24, '#ead5a1');
+    brass.addColorStop(0.5, '#9b7747');
+    brass.addColorStop(0.82, '#dec491');
+    brass.addColorStop(1, '#62482d');
+    ctx.fillStyle = brass;
+    ctx.fillRect(0, 0, w, h);
+    const lip = Math.max(4, h * 0.033);
+    const enamel = ctx.createLinearGradient(0, lip, 0, h - lip);
+    enamel.addColorStop(0, '#294943');
+    enamel.addColorStop(0.18, '#1a3934');
+    enamel.addColorStop(1, '#112824');
+    ctx.fillStyle = enamel;
+    ctx.fillRect(lip, lip, w - 2 * lip, h - 2 * lip);
+    for (const x of [lip * 2.5, w - lip * 2.5]) {
+      ctx.fillStyle = brass;
+      ctx.beginPath();
+      ctx.arc(x, h / 2, lip * 0.82, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#58432e';
+      ctx.fillRect(x - lip * 0.55, h / 2 - lip * 0.11, lip * 1.1, lip * 0.22);
+    }
+  }
+
   private paint(label: CanvasLabel | null, title: string, detail = '', kicker = ''): void {
     label?.draw((ctx, w, h) => {
-      ctx.fillStyle = '#18322f';
-      ctx.fillRect(0, 0, w, h);
-      ctx.strokeStyle = PALETTE.brass;
-      ctx.lineWidth = 5;
-      ctx.strokeRect(5, 5, w - 10, h - 10);
+      if (label === this.heading) this.enameledPlate(ctx, w, h);
+      else {
+        ctx.fillStyle = '#18322f';
+        ctx.fillRect(0, 0, w, h);
+        ctx.strokeStyle = PALETTE.brass;
+        ctx.lineWidth = 5;
+        ctx.strokeRect(5, 5, w - 10, h - 10);
+      }
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = PALETTE.parchment;
@@ -388,6 +476,7 @@ export class PressureWorks {
           if (!source) continue;
           const pivot = new THREE.Group();
           pivot.name = `pressure-drive-${name}`;
+          if (i === 1) pivot.rotation.z = Math.PI + Math.PI / 18;
           pivot.position.set(-1.195 + i * 0.405 * 0.76, 0.52, 0.52);
           const cog = source.clone(true);
           cog.rotation.x = Math.PI / 2;
@@ -459,7 +548,7 @@ export class PressureWorks {
     for (const i of VALVES) {
       const val = this.state.dials[i];
       if (!this.painted || previous.dials[i] !== val) {
-        this.paint(this.values[i] ?? null, `${CIRCUITS[i]} · ${val}`);
+        this.paintReading(this.values[i] ?? null, CIRCUITS[i], val);
       }
       const wheel = this.wheels[i];
       if (wheel) {
@@ -532,13 +621,22 @@ export class PressureWorks {
     this.raycaster.set(origin, direction);
     this.raycaster.far = 4;
     this.pump.updateWorldMatrix(true, true);
+    if (this.pump.worldToLocal(this.targetPoint.copy(origin)).z < 0.34) return null;
     this.hits.length = 0;
-    const first = this.raycaster.intersectObjects(this.enabledTargets, false, this.hits)[0];
+    const first = this.raycaster
+      .intersectObjects(this.enabledTargets, false, this.hits)
+      .find(
+        (hit) =>
+          !this.targets.includes(hit.object as THREE.Mesh) ||
+          hit.point.distanceToSquared(hit.object.getWorldPosition(this.targetPoint)) <=
+            WHEEL_RADIUS ** 2,
+      );
     if (!first) return null;
     for (const obstacle of this.world.colliders[this.wing.pumpRoom] ?? []) {
       this.box.min.fromArray(obstacle.min);
       this.box.max.fromArray(obstacle.max);
-
+      // The walking collider encloses the projecting controls as well as the cabinet.
+      if (obstacle === this.housing && this.box.containsPoint(first.point)) continue;
       if (
         this.raycaster.ray.intersectBox(this.box, this.crossing) &&
         this.crossing.distanceTo(origin) < first.distance - 0.015
@@ -558,8 +656,16 @@ export class PressureWorks {
     if (this.world.current !== this.wing.pumpRoom) return null;
     let result: PressureAction | null = null;
     for (const t of this.enabledTargets) {
-      const distance = t.getWorldPosition(this.targetPoint).distanceTo(point);
-      if (distance <= reach && (!result || distance < result.distance))
+      const local = t.worldToLocal(this.targetPoint.copy(point));
+      const valve = this.targets.includes(t as THREE.Mesh);
+      if (
+        valve &&
+        (Math.hypot(local.x, local.y) > WHEEL_RADIUS || local.z < -0.04 || local.z > 0.1)
+      )
+        continue;
+      const distance = local.length();
+      const limit = t === this.compartmentTargets[0] ? Math.min(reach, 0.14) : reach;
+      if (distance <= limit && (!result || distance < result.distance))
         result = this.actionFor(t, distance);
     }
     return result;

@@ -1,19 +1,20 @@
 {
   "brief": "Original manually authored rigid modular reward compartment and primer lever for Pressure Works. User-directed proportions and behavior in task brief.",
-  "authoring": "Procedural Blender geometry, Blender 5.2.3 LTS",
+  "authoring": "Procedural Blender geometry, Blender 5.3.0",
   "source_kind": "Original project-owned procedural artwork; no external source or provider assets.",
   "license": "Project license",
   "inputs": {
-    "scripts/assets/build-pressure-compartment.py": "145fdb5d9e9df5958ecba78fa7ddec6a9ad2ba1a208d4a752ad9db24a29c7754",
-    "assets-source/props/pressure-compartment/service-compartment.blend": "c02e4ff0ac307cc1787e7ec4883a824b2323985c8927ec6674d26a973256fc31",
-    "public/assets/props/pressure-works/service-compartment.glb": "4db6303ff5dc78a6262c399a974e500daf8c71c886228bf6ee9445ef6a477df8"
+    "scripts/assets/build-pressure-compartment.py": "af203e6480091183996099f0fe123f1bf013071e40138fea09bc1ba304acd545",
+    "assets-source/props/pressure-compartment/service-compartment.blend": "77660a9dbc93fa2bdecb7e3d385ff817526b49269f06c4f9c42fe957cf3fef29",
+    "public/assets/props/pressure-works/service-compartment.glb": "70d3d2d7c900524ac6e8356eb8c1afd30f6207bd32ef52afb919aacce68d3575"
   },
   "checks": "GLB reimport, hierarchy assertions, triangle and material limits, closed and open EEVEE images.",
-  "approval": "Independent prototype art review complete. Final owner visual approval pending.",
+  "approval": "Reimport, assembled clearance checks, Quest Browser lever selection and independent visual review complete. Owner headset acceptance pending.",
   "independentVisualReview": {
     "score": 86,
     "outOf": 100,
     "reviewer": "Independent Astra visual review",
     "notes": "Closed, open, and claimed states verified through desktop and emulated XR controls. The five cogs stay hidden until the drawer opens in the game."
-  }
+  },
+  "questEvidence": "docs/verification/quest-pump-refit-and-furnishings.jpg"
 }

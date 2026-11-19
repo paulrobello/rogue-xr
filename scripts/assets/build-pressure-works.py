@@ -8,6 +8,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
 
 import bpy
@@ -60,6 +61,11 @@ def box(pos, size, mat, group="body"):
     o = bpy.context.object
     o.dimensions = (size[0], size[2], size[1])
     bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+    bevel = o.modifiers.new('cast edge', 'BEVEL')
+    bevel.width = min(0.012, min(size) * 0.22)
+    bevel.segments = 1
+    bpy.context.view_layer.objects.active = o
+    bpy.ops.object.modifier_apply(modifier=bevel.name)
     return finish(o, mat, group)
 
 
@@ -167,7 +173,7 @@ def wheel(x, idx):
     for i in range(6):
         a = i * math.tau / 6
         cylinder(
-            (x, 1.05, z),
+            (x + 0.012 * math.cos(a), 1.05 + 0.012 * math.sin(a), z),
             (x + 0.228 * math.cos(a), 1.05 + 0.228 * math.sin(a), z),
             0.012,
             "brass",
@@ -188,10 +194,10 @@ def wheel(x, idx):
 def manifold():
     box((0, 0.11, 0), (2.64, 0.22, 0.66), "iron")
     box((0, 0.88, -0.035), (2.48, 1.45, 0.57), "iron")
-    box((0, 1.69, -0.035), (2.57, 0.18, 0.59), "iron")
-    box((0, 1.84, -0.035), (2.35, 0.12, 0.53), "iron")
+    box((0, 1.692, -0.035), (2.57, 0.184, 0.59), "iron")
+    box((0, 1.842, -0.035), (2.35, 0.124, 0.53), "iron")
     box((0, 1.94, -0.035), (2.48, 0.08, 0.56), "brass")
-    for x in (-1.17, 1.17):
+    for x in (-1.20, 1.20):
         box((x, 0.91, 0.275), (0.11, 1.48, 0.06), "iron")
         for y in (0.30, 0.55, 0.80, 1.05, 1.30, 1.55):
             rivet(x, y, 0.315)
@@ -201,15 +207,20 @@ def manifold():
             (x, 0.98, 0.312), (0.59, 1.11, 0.018), ("copper", "patina", "iron")[station]
         )
         for dx in (-0.29, 0.29):
-            box((x + dx, 0.98, 0.326), (0.025, 1.08, 0.02), "iron")
+            box((x + dx, 0.98, 0.326), (0.025, 1.055, 0.02), "iron")
         for y in (0.43, 1.53):
             box((x, y, 0.326), (0.58, 0.025, 0.02), "iron")
         for dx in (-0.25, 0.25):
             for y in (0.48, 1.48):
                 rivet(x + dx, y, 0.329)
-        cylinder((x, 1.39, 0.35), (x, 1.70, 0.35), 0.052, "copper")
+        cylinder((x, 1.22, 0.35), (x, 1.78, 0.35), 0.052, "copper")
         for y in (1.48, 1.62):
             cylinder((x, y - 0.025, 0.35), (x, y + 0.025, 0.35), 0.069, "brass")
+        # Cast bearing and machined gland make each wheel read as a working valve.
+        cylinder((x, 1.05, .319), (x, 1.05, .344), .108, "iron", sides=20)
+        cylinder((x, 1.05, .342), (x, 1.05, .368), .086, "brass", sides=20)
+        for dx in (-.075, .075):
+            rivet(x+dx, 1.05, .37)
     for i, x in enumerate((-0.82, 0, 0.82)):
         wheel(x, i)
     for x in (-1.06, 1.06):
@@ -390,4 +401,5 @@ def build(name, fn):
 
 
 build("manifold", manifold)
-build("gallery-pipes", gallery)
+if not os.environ.get("PRESSURE_MANIFOLD_ONLY"):
+    build("gallery-pipes", gallery)
