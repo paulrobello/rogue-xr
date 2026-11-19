@@ -23,6 +23,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+ARCHITECTURAL_RUNTIME = ROOT / "public/assets/props/architectural-finishes"
+ARCHITECTURAL_SOURCE = ROOT / "assets-source/props/architectural-finishes"
 RUNTIME = ROOT / "public/assets/rooms"
 SOURCES = ROOT / "assets-source/rooms"
 LIMITS = {"tris": 100_000, "materials": 16, "texture_px": 2048, "light_sockets": 4}
@@ -116,6 +118,112 @@ def glb_stats(path: Path) -> dict:
         "textures": len(g.get("textures", [])),
         "missing_uv1": missing_uv1,
     }
+
+
+def check_architectural_finishes(errors: list[str]) -> dict:
+    """Check the reusable boiler/timber finish kit and its source chain."""
+    err = lambda msg: errors.append(f"props/architectural-finishes: {msg}")  # noqa: E731
+    report_path = ARCHITECTURAL_SOURCE / "report.json"
+    glb_path = ARCHITECTURAL_RUNTIME / "architectural-finishes.glb"
+    summary: dict = {}
+    if not report_path.exists() or not glb_path.exists():
+        if not report_path.exists():
+            err("report.json missing")
+        if not glb_path.exists():
+            err("architectural-finishes.glb missing")
+        return summary
+    report = json.loads(report_path.read_text())
+    try:
+        g = glb_json(glb_path)
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        err(f"invalid GLB: {exc}")
+        return summary
+
+    scene = g.get("scenes", [])[g.get("scene", 0)] if g.get("scenes") else {}
+    roots = scene.get("nodes", [])
+    names = [g.get("nodes", [])[i].get("name") for i in roots if i < len(g.get("nodes", []))]
+    expected_names = sorted(("BoilerBay", "BoilerServiceBay", "BoilerExchangerBay", "BoilerDoor", "TimberBay", "TimberCarvedBay", "TimberDoor"))
+    if len(roots) != 7 or len(set(roots)) != 7 or sorted(names) != expected_names:
+        err(f"GLB must expose exactly seven named roots {expected_names}, got {names}")
+    if any(i >= len(g.get("nodes", [])) for i in roots):
+        err("scene root index is outside nodes")
+
+    triangles = 0
+    per_root: dict[str, int] = {}
+    for i in roots:
+        if i >= len(g.get("nodes", [])):
+            continue
+        node = g["nodes"][i]
+        if node.get("children") or any(k in node for k in ("translation", "rotation", "scale", "matrix")):
+            err(f"root {node.get('name')} must be an identity, childless mesh node")
+        if "mesh" not in node or node["mesh"] >= len(g.get("meshes", [])):
+            err(f"root {node.get('name')} must reference one mesh")
+            continue
+        count = 0
+        for prim in g["meshes"][node["mesh"]].get("primitives", []):
+            if prim.get("mode", 4) != 4 or "POSITION" not in prim.get("attributes", {}):
+                err(f"root {node.get('name')} has non-triangle or position-less geometry")
+                continue
+            if not {"NORMAL", "TEXCOORD_0", "COLOR_0"} <= prim["attributes"].keys():
+                err(f"{node.get('name')} lacks shading normal, atlas UV or baked vertex color")
+            count += g["accessors"][prim.get("indices", prim["attributes"]["POSITION"])]["count"] // 3
+            pos = g["accessors"][prim["attributes"]["POSITION"]]
+            if any(len(pos.get(k, [])) != 3 for k in ("min", "max")):
+                err(f"root {node.get('name')} POSITION accessor lacks bounds")
+        name = node.get("name", f"root-{i}")
+        per_root[name] = count
+        triangles += count
+        if count > 7_000:
+            err(f"{name} has {count} triangles over the 7000-per-root budget")
+    if triangles > 20_000:
+        err(f"{triangles} triangles over the 20000-kit budget")
+    if per_root and any(per_root.get(n) != report.get("nodes", {}).get(n, {}).get("triangles") for n in per_root):
+        err(f"report node triangle counts do not match measured geometry: {per_root}")
+    summary["triangles"] = triangles
+    summary["roots"] = len(roots)
+
+    # Every image must be embedded in the GLB, and every textured finish must provide portable PBR maps.
+    images = g.get("images", [])
+    if len(images) != 6 or any("bufferView" not in image or not image.get("mimeType", "").startswith("image/") for image in images):
+        err("GLB must contain six embedded image textures")
+    if len(g.get("textures", [])) != 6 or any("source" not in texture for texture in g.get("textures", [])):
+        err("GLB texture table must contain six embedded sources")
+    for material in g.get("materials", []):
+        pbr = material.get("pbrMetallicRoughness", {})
+        if "baseColorTexture" not in pbr and "baseColorFactor" not in pbr:
+            err(f"material {material.get('name')} lacks base colour PBR input")
+        if "metallicRoughnessTexture" not in pbr and "metallicFactor" not in pbr:
+            err(f"material {material.get('name')} lacks metallic/roughness PBR input")
+        if material.get("name") != "PracticalAmberGlass" and "normalTexture" not in material:
+            err(f"material {material.get('name')} lacks tangent normal map")
+    if len(g.get("materials", [])) > 3:
+        err("more than three material slots")
+
+    bounds = [g["accessors"][p["attributes"]["POSITION"]] for mesh in g.get("meshes", []) for p in mesh.get("primitives", [])]
+    mins = [min(a["min"][axis] for a in bounds) for axis in range(3)] if bounds else []
+    maxs = [max(a["max"][axis] for a in bounds) for axis in range(3)] if bounds else []
+    if not bounds or mins[0] < -1.001 or maxs[0] > 1.001 or mins[1] < -0.001 or maxs[1] > 4.001 or mins[2] < -0.251 or maxs[2] > 0.251:
+        err(f"geometry exceeds the 2x4m, 0.5m-depth placement envelope: {mins}..{maxs}")
+
+    if report.get("sha256") != sha256(glb_path):
+        err("report sha256 differs from runtime GLB")
+    if set(report.get("inputsSha256", {})) != {"scripts/assets/build-architectural-finishes.py", "scripts/assets/finish_surfaces.py", "public/assets/materials/walnut/walnut.basecolor.png"}:
+        err("generator and texture input hashes are required")
+    if set(report.get("blendSha256", {})) != {"architectural-finishes_high.blend", "architectural-finishes_low.blend"}:
+        err("high and low Blender source hashes are required")
+    for rel, recorded in report.get("inputsSha256", {}).items():
+        path = ROOT / rel
+        if not path.exists() or sha256(path) != recorded:
+            err(f"source input hash differs or file is missing: {rel}")
+    for name, recorded in report.get("blendSha256", {}).items():
+        path = ARCHITECTURAL_SOURCE / name
+        if not path.exists() or sha256(path) != recorded:
+            err(f"blend source hash differs or file is missing: {name}")
+    if report.get("runtimeBytes") != glb_path.stat().st_size:
+        err("report runtimeBytes differs from runtime GLB")
+    summary["materials"] = len(g.get("materials", []))
+    summary["embeddedImages"] = len(images)
+    return summary
 
 
 def ktx2_header(path: Path) -> dict:
@@ -1030,6 +1138,9 @@ def main() -> int:
         s = check_decor(errors, warnings)
         sizes = ", ".join(f"{k} {v['width']}px" for k, v in s.get("maps", {}).items())
         print(f"asset-check props/table-decor: tris {s.get('perKind')}, {len(s.get('glb', {}).get('materials', []))} material; {sizes}")
+    architectural = check_architectural_finishes(errors)
+    if architectural:
+        print(f"asset-check props/architectural-finishes: {architectural.get('triangles')} tris, {architectural.get('materials')} materials, {architectural.get('embeddedImages')} embedded images, {architectural.get('roots')} roots")
     runpy.run_path(str(ROOT / "scripts/assets/pressure_works_check.py"))["check_pressure"](errors)
     for w in warnings:
         print(f"WARN {w}")

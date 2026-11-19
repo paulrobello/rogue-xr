@@ -369,10 +369,31 @@ for z,w in [(1.06,.46),(1.00,.43),(.94,.40)]:
     armor_bar(armor,'Fauld edge',(-w*.46,-.16,z-.027),(w*.46,-.16,z-.027),.008,brass)
 head=empty('ClockworkArmor_Head',armor,(0,0,1.61)); armor_oval(head,'Helmet dome',(0,0,.09),(.15,.13,.155),iron)
 torus(head,'Helmet crown band',(0,0,.19),.113,.01,brass)
-visor=empty('ClockworkArmor_Visor',head,(-.14,-.08,.17)); armor_oval(visor,'Face guard',(.14,-.055,-.035),(.14,.075,.105),iron)
-for z in (-.055,-.015): cube(visor,'Eye slit',(.14,-.132,z),(.17,.012,.012),enamel,.003)
-for x in (.06,.10,.14,.18,.22): cyl(visor,'Visor rivet',(x,-.128,-.09),.007,.01,brass,'Y',8)
-armor_bar(visor,'Visor brow',(.025,-.12,.025),(.255,-.12,.025),.01,brass)
+visor=empty('ClockworkArmor_Visor',head,(-.14,-.08,.17)); guard=armor_oval(visor,'Face guard',(.14,-.055,-.035),(.14,.075,.105),iron)
+def visor_strip(name,z,half_width,height,material):
+    # Follow the face guard instead of spanning its curved surface in a straight line.
+    steps=8; vertices=[]
+    for offset in (.006,-.004):
+        for dz in (-height/2,height/2):
+            for i in range(steps+1):
+                dx=half_width*(2*i/steps-1)
+                hit, point, _, _ = guard.ray_cast(Vector((dx,-1,z+dz+.035)),Vector((0,1,0)))
+                if not hit: raise RuntimeError('Visor strip missed face guard')
+                vertices.append((.14+dx,guard.location.y+point.y-offset,z+dz))
+    n=steps+1; faces=[]
+    for i in range(steps):
+        faces.extend([(i,i+1,n+i+1,n+i),
+                      (i,2*n+i,2*n+i+1,i+1),(n+i,n+i+1,3*n+i+1,3*n+i)])
+    faces.extend([(0,n,3*n,2*n),(steps,2*n+steps,3*n+steps,n+steps)])
+    mesh=bpy.data.meshes.new(name); mesh.from_pydata(vertices,[],faces); mesh.update()
+    obj=bpy.data.objects.new(name,mesh); bpy.context.collection.objects.link(obj); obj.parent=visor; obj.data.materials.append(material)
+for z in (-.055,-.015): visor_strip('Eye slit',z,.085,.012,enamel)
+visor_strip('Visor brow',.025,.095,.014,brass)
+for x in (.06,.10,.14,.18,.22):
+    hit, point, normal, _ = guard.ray_cast(Vector((x-.14,-1,-.055)),Vector((0,1,0)))
+    if not hit: raise RuntimeError('Visor rivet missed face guard')
+    rivet=cyl(visor,'Visor rivet',guard.location+point+normal*.002,.007,.012,brass,verts=8)
+    rivet.rotation_euler=normal.to_track_quat('Z','Y').to_euler()
 
 painting=empty('FramedPainting'); cube(painting,'Canvas',(0,-.054,.50),(.78,.035,.80),cloth,.001)
 backing=material('PictureBacking',(.65,.53,.36),0,.95); MATS.append(backing)
@@ -461,7 +482,7 @@ for n in required:
     lo[2],hi[2]=-hi[2],-lo[2]
     report['roots'][n]={'dimensions_m':[round(hi[i]-lo[i],3) for i in range(3)],'bounds_min':[round(v,3) for v in lo],'bounds_max':[round(v,3) for v in hi],'mesh_count':len(meshes)}
 report['triangles']=triangles; report['size_bytes']=staged.stat().st_size
-if triangles>60000 or staged.stat().st_size>8_000_000: raise RuntimeError('Kit budget exceeded')
+if triangles>60000 or staged.stat().st_size>8_000_000: raise RuntimeError('Kit budget exceeded: %d triangles, %d bytes' % (triangles,staged.stat().st_size))
 assert not any(o.type in {'CAMERA','LIGHT'} for o in bpy.context.scene.objects)
 os.replace(staged,PUB/'interior-furnishings.glb')
 report['sha256']=hashlib.sha256((PUB/'interior-furnishings.glb').read_bytes()).hexdigest()
@@ -469,6 +490,8 @@ report['sha256']=hashlib.sha256((PUB/'interior-furnishings.glb').read_bytes()).h
 provenance_path=SRC/'provenance.json'
 previous=json.loads(provenance_path.read_text()) if provenance_path.exists() else {}
 provenance={'author':'Original procedural Blender modeling','license':'MIT','source':'interior-furnishings.blend','generator':'scripts/assets/build-interior-furnishings.py','output':'public/assets/props/interior-furnishings/interior-furnishings.glb','blender':bpy.app.version_string,'glb_sha256':report['sha256'],'blend_sha256':hashlib.sha256((SRC/'interior-furnishings.blend').read_bytes()).hexdigest(),'generator_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),'approval':'Revised geometry reimported and checked. Final independent review and owner visual acceptance pending.'}
-if previous.get('historicalReview'): provenance['historicalReview']=previous['historicalReview']
+for key in ('historicalReview', 'previousVerification', 'verification', 'dining_revision', 'visor_revision'):
+    if key in previous:
+        provenance[key] = previous[key]
 provenance_path.write_text(json.dumps(provenance,indent=2)+'\n')
 print('KIT_REPORT',json.dumps(report))

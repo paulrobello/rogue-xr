@@ -7,7 +7,7 @@ import {
 } from '../combat/encounter-choice.ts';
 import { combatRoom, rigTurnAboutHead } from '../combat/placement.ts';
 import { buildTableGreybox, disposeTable, TABLE_NODES } from '../combat/table-greybox.ts';
-import type { RoomTemplate } from '../content/rooms.ts';
+import { type RoomTemplate, templateById } from '../content/rooms.ts';
 import { isValidSeed, normalizeSeed, randomSeed, Stream } from '../core/rng.ts';
 import { BreakApart } from '../enemies/break-apart.ts';
 import type { EnemyActor, EnemyAsset } from '../enemies/enemy-asset.ts';
@@ -44,8 +44,13 @@ import {
 } from './loot.ts';
 import { PressureNotes } from './pressure-notes.ts';
 import { PressureWorks } from './pressure-works.ts';
-import { removePumpRoomSunlight } from './pump-room-floor.ts';
-import { closePumpRoomWindow } from './pump-room-wall.ts';
+import {
+  applyRoomStyle,
+  copyStudyDesk,
+  disposeRoomStyle,
+  type RoomStyleKit,
+  roomStyleFor,
+} from './room-styles.ts';
 import { type RigidNode, rigidAngle } from './study-room.ts';
 
 export interface FloorAudio {
@@ -111,6 +116,7 @@ export interface FloorHearths {
 
 export interface FloorView {
   world: FloorWorld;
+  readonly styledRooms: readonly THREE.Group[];
   loot: FloorLoot;
   hearth: FloorHearths;
   book: BookSecret;
@@ -164,7 +170,7 @@ export interface FloorView {
     templateId: string,
     instantiate: () => THREE.Object3D,
     rigidNodes?: readonly RigidNode[],
-    pumpLight?: { floor: THREE.Texture; wall: THREE.Texture },
+    roomStyleKit?: RoomStyleKit,
   ): number;
   /** Rigid nodes (the gear-shaft crown gear) this floor turns each frame. */
   readonly spinnerCount: number;
@@ -319,8 +325,8 @@ export function mountFloorView(
     radPerSec: number;
     room: THREE.Object3D;
   }
+  const styledRooms: THREE.Group[] = [];
   const spinners: Spinner[] = [];
-  const pumpResources: (THREE.BufferGeometry | THREE.Material)[] = [];
   /** Live fireplace fires (the hall's); instances of one template share the material and its clock. */
   const fires: { material: THREE.ShaderMaterial; room: THREE.Object3D }[] = [];
   let furnishings: InteriorFurnishings | null = null;
@@ -453,6 +459,7 @@ export function mountFloorView(
   };
   return {
     world,
+    styledRooms,
     loot,
     hearth,
     book,
@@ -532,17 +539,28 @@ export function mountFloorView(
       undressed = true;
       dressEnemies();
     },
-    useRoomAsset(templateId, instantiate, rigidNodes = [], pumpLight) {
+    useRoomAsset(templateId, instantiate, rigidNodes = [], roomStyleKit) {
       let dressed = 0;
       world.plan.rooms.forEach((room, index) => {
         if (room.templateId !== templateId) return;
         const model = instantiate();
-        if (index === world.plan.pressureWing?.pumpRoom && templateId === 'study') {
-          if (pumpLight) {
-            pumpResources.push(...closePumpRoomWindow(model, pumpLight.wall));
-            const floor = removePumpRoomSunlight(model, pumpLight.floor);
-            pumpResources.push(...floor.geometries, ...floor.materials);
-          }
+        const style = roomStyleKit && roomStyleFor(world.plan, index);
+        if (style && roomStyleKit) {
+          const styled = new THREE.Group();
+          const doors = templateById(room.templateId).doors.map((door) => ({
+            facing: door.facing,
+            position: door.position,
+            closed: world.plan.sealed.some(
+              (d) => d.room === index && d.door === door.id && d.style === 'wall',
+            ),
+          }));
+          applyRoomStyle(styled, style, roomStyleKit, doors);
+          if (style === 'timber') copyStudyDesk(model, styled);
+          world.removeRoomFixtureColliders(index, style === 'timber');
+          styledRooms.push(styled);
+          world.dressRoom(index, styled);
+          dressed++;
+          return;
         }
         world.dressRoom(index, model);
         const group = world.roomGroups[index];
@@ -566,7 +584,7 @@ export function mountFloorView(
       return spinners.length;
     },
     dispose() {
-      for (const resource of pumpResources) resource.dispose();
+      for (const room of styledRooms) disposeRoomStyle(room);
       book.dispose();
       furnishings?.dispose();
       notes?.dispose();

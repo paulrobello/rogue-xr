@@ -1,57 +1,40 @@
 // @vitest-environment node
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { expect, it } from 'vitest';
-import { closePumpRoomWindow } from '../src/world/pump-room-wall.ts';
+import {
+  applyRoomStyle,
+  disposeRoomStyle,
+  roomStyleKitFromScene,
+} from '../src/world/room-styles.ts';
+import { nodeGeometryLoader } from './helpers/gltf-node.ts';
 
-it('replaces the pump lancet and projecting trim with continuous wallpaper while the adjacent study keeps its window', async () => {
-  const bytes = await readFile('public/assets/rooms/study/study.glb');
-  const study = (
-    await new GLTFLoader().parseAsync(
-      bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
-      '',
-    )
-  ).scene;
-  const pump = study.clone(true);
-  const lightmap = new THREE.Texture();
-  const owned = closePumpRoomWindow(pump, lightmap);
-  function materialHit(root: THREE.Object3D, x: number, y: number): THREE.Intersection {
-    const wall: THREE.Mesh[] = [];
-    root.traverseVisible((n) => {
-      if (n instanceof THREE.Mesh) wall.push(n);
-    });
-    return new THREE.Raycaster(
-      new THREE.Vector3(x, y, -3.5),
-      new THREE.Vector3(0, 0, -1),
-    ).intersectObjects(wall, false)[0];
-  }
-  expect(
-    (materialHit(study, 0, 2.4).object as THREE.Mesh<THREE.BufferGeometry, THREE.Material>).material
-      .name,
-  ).toBe('study_stained-glass');
-  const points = [
-    [-0.66, 2.4],
-    [0, 1.36],
-    [0, 2.4],
-    [0.64, 3.55],
-    [0.85, 2.7],
-    [2, 3.8],
-  ];
-  for (const [x, y] of points) {
-    const hit = materialHit(pump, x, y);
-    expect((hit.object as THREE.Mesh<THREE.BufferGeometry, THREE.Material>).material.name).toBe(
-      'study_wallpaper',
-    );
-    expect(hit.point.z).toBeCloseTo(-4, 5);
-    const material = (hit.object as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>)
-      .material;
-    expect(material.lightMap).toBe(lightmap);
-    expect(hit.uv1?.x).toBeCloseTo((x + 4) / 8, 4);
-    expect(hit.uv1?.y).toBeCloseTo((4 - y) / 3, 4);
-    expect(hit.uv?.x).toBeCloseTo(x / 0.75, 4);
-    expect(hit.uv?.y).toBeCloseTo(1 + y / 0.75, 4);
-  }
-  expect(owned.length).toBeGreaterThan(0);
-  for (const resource of owned) resource.dispose();
+it('keeps the real door aperture clear and covers the old window and sealed doorway with cast iron', async () => {
+  const bytes = await readFile(
+    'public/assets/props/architectural-finishes/architectural-finishes.glb',
+  );
+  const { scene } = await nodeGeometryLoader().parseAsync(
+    bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
+    '',
+  );
+  const pump = new THREE.Group();
+  applyRoomStyle(pump, 'boiler', roomStyleKitFromScene(scene), [
+    { facing: 'S', position: [-1, 0, 4] },
+    { facing: 'E', position: [4, 0, -1], closed: true },
+  ]);
+  pump.updateMatrixWorld(true);
+  const ray = new THREE.Raycaster();
+  ray.far = 1.2;
+  const hit = (x: number, y: number, z: number, dx: number, dz: number) => {
+    ray.set(new THREE.Vector3(x, y, z), new THREE.Vector3(dx, 0, dz));
+    return ray.intersectObject(pump, true)[0];
+  };
+  for (const offset of [-0.76, -0.43, 0, 0.43, 0.76])
+    for (const y of [0.15, 1, 1.65, 2.36]) {
+      expect(hit(-1 + offset, y, 3.4, 0, 1)).toBeUndefined();
+      expect(hit(3.4, y, -1 + offset, 1, 0)?.object.userData.roomStylePiece).toBe('BoilerBay');
+      expect(hit(offset, y, -3.4, 0, -1)?.object.userData.roomStylePiece).toBe('BoilerBay');
+    }
+  expect(hit(-1, 2.6, 3.4, 0, 1)?.object.userData.roomStylePiece).toBe('BoilerDoor');
+  disposeRoomStyle(pump);
 });

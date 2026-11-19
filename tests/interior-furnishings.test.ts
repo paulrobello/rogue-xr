@@ -142,6 +142,18 @@ describe('interior furnishings', () => {
     noteFurnishings.dispose();
   });
 
+  it('does not hang a curtain over the solid timber study finish', () => {
+    const world = buildFloorWorld(generateFloor('MAPTEST2'));
+    const furnishings = new InteriorFurnishings(world, asset());
+    expect(
+      furnishings.placements.some(
+        (placement) => placement.room === 2 && placement.root === 'Curtain',
+      ),
+    ).toBe(false);
+    furnishings.dispose();
+    world.dispose();
+  });
+
   it('allocates one reachable clue and unique static artwork per seeded floor', () => {
     const textures = Array.from({ length: 5 }, () => new THREE.Texture());
     let floorsWithClue = 0;

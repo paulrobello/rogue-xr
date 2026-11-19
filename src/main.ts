@@ -1,7 +1,9 @@
 import { createPointer } from '@par/xr-workspace';
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { configureTextBuilder } from 'troika-three-text';
+import { sha256 as architecturalFinishRevision } from '../assets-source/props/architectural-finishes/report.json';
 import { audioStateForFlow } from './audio/cues.ts';
 import { AudioDirector } from './audio/index.ts';
 import { requestCardFaceArt } from './cards/card-face-material.ts';
@@ -84,9 +86,9 @@ import { loadPbrSet } from './world/materials.ts';
 import type { PressureAction } from './world/pressure-compartment.ts';
 import { loadPressureArt, type PressureArt } from './world/pressure-works.ts';
 import { dressPumpMaterials } from './world/pump-materials.ts';
-import { loadPumpFloorLightmap } from './world/pump-room-floor.ts';
-import { loadPumpWallLightmap } from './world/pump-room-wall.ts';
 import { mountRoomAssetProof } from './world/room-asset-proof.ts';
+import { lightRoomStyle } from './world/room-style-lighting.ts';
+import { type RoomStyleKit, roomStyleFor, roomStyleKitFromScene } from './world/room-styles.ts';
 import { loadBookBindings } from './world/study-books.ts';
 import {
   fetchStudyManifest,
@@ -519,6 +521,22 @@ const enemyAssets = new Map<string, Promise<EnemyAsset | null>>(
 const loadedEnemies = async (): Promise<EnemyAsset[]> =>
   (await Promise.all(enemyAssets.values())).filter((a): a is EnemyAsset => a !== null);
 const prepareEnemy = (actor: EnemyActor): void => reflect(actor.object, 0.45);
+let styleKit: Promise<RoomStyleKit> | undefined;
+function architecturalFinishes(): Promise<RoomStyleKit> {
+  styleKit ??= new GLTFLoader()
+    .loadAsync(
+      `/assets/props/architectural-finishes/architectural-finishes.glb?v=${architecturalFinishRevision}`,
+    )
+    .then(({ scene }) => {
+      reflect(scene, 0.48);
+      return roomStyleKitFromScene(scene);
+    })
+    .catch((error: unknown) => {
+      styleKit = undefined;
+      throw error;
+    });
+  return styleKit;
+}
 let pressureArt: Promise<PressureArt> | undefined;
 let interiors:
   | Promise<[Awaited<ReturnType<typeof loadInteriorFurnishings>>, THREE.Texture[]]>
@@ -562,7 +580,7 @@ const dressFloor = async (target: FloorView): Promise<void> => {
       ),
     ]);
   }
-  const [rooms, door, coffers, decor, furnishings, pumpLight] = await Promise.all([
+  const [rooms, door, coffers, decor, furnishings, styles] = await Promise.all([
     roomAssets,
     sealedDoorMaterial,
     lootMaterials,
@@ -573,11 +591,8 @@ const dressFloor = async (target: FloorView): Promise<void> => {
           return null;
         })
       : null,
-    target.pressure
-      ? Promise.all([loadPumpFloorLightmap(), loadPumpWallLightmap()]).then(([floor, wall]) => ({
-          floor,
-          wall,
-        }))
+    target.world.plan.rooms.some((_, index) => roomStyleFor(target.world.plan, index))
+      ? architecturalFinishes()
       : undefined,
     fitTable(target),
     ...dressed,
@@ -587,7 +602,7 @@ const dressFloor = async (target: FloorView): Promise<void> => {
       (placed) => !rooms.some((room) => room.manifest.template.id === placed.templateId),
     );
     if (missing) throw new Error(`Couldn't load the ${missing.templateId} room`);
-    dressHeroRooms(target, rooms, decor, pumpLight);
+    dressHeroRooms(target, rooms, decor, styles);
     const candles = new Set<THREE.MeshStandardMaterial>();
     for (const group of target.world.roomGroups)
       group.traverse((node) => {
@@ -599,6 +614,8 @@ const dressFloor = async (target: FloorView): Promise<void> => {
     if (decor) candles.add(decor.material);
     target.setCandleMaterials([...candles], hitFx.reducedMotion);
     if (furnishings) target.setFurnishings(furnishings[0], furnishings[1], hitFx.reducedMotion);
+    for (const room of target.styledRooms)
+      lightRoomStyle(room, target.furnishings?.placements ?? []);
     if (door) target.world.dressSealedDoors(door.material, door.tileMeters);
     if (coffers) {
       target.loot.dress(coffers);
@@ -645,6 +662,25 @@ async function prepareFloor(target: FloorView, boot = false): Promise<void> {
           ...rooms.flatMap((room) => room.textures),
           ...(decor?.textures ?? []),
         ]);
+        for (const room of target.styledRooms) {
+          variants.push(room);
+          textures.add(room.userData.finishLightMap);
+          room.traverse((mesh) => {
+            if (
+              !(mesh instanceof THREE.Mesh) ||
+              !(mesh.material instanceof THREE.MeshStandardMaterial)
+            )
+              return;
+            for (const map of [
+              mesh.material.map,
+              mesh.material.normalMap,
+              mesh.material.roughnessMap,
+              mesh.material.metalnessMap,
+            ]) {
+              if (map) textures.add(map);
+            }
+          });
+        }
         await runVeil(renderer, scene, camera, [...textures], { variants, fadeFrames: 0 });
       } finally {
         for (const actor of actors) actor.dispose();

@@ -7,6 +7,7 @@ import math
 from pathlib import Path
 import bpy
 from mathutils import Vector
+from mathutils.bvhtree import BVHTree
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "assets-source/props/pressure-works"
@@ -94,6 +95,7 @@ def vessel(x):
     for face in mesh.polygons:
         face.use_smooth = len(face.vertices) == 4
     finish(obj, 'iron')
+    return obj
 
 
 def band(x, y):
@@ -142,6 +144,7 @@ def bent_pipe(points, radius):
     for face in mesh.polygons:
         face.use_smooth = True
     finish(obj, 'copper')
+    return obj
 
 
 def gauge(x, y, z, r):
@@ -161,33 +164,101 @@ def gauge(x, y, z, r):
     )
 
 
+def radial_distance(obj, x, height, angle):
+    """Measure actual triangle intersections in a tank-centered cross section."""
+    bpy.context.view_layer.update()
+    origin = Vector(loc((x, height, .19)))
+    direction = Vector((math.cos(angle), -math.sin(angle), 0))
+    inverse = obj.matrix_world.inverted()
+    local_origin = inverse @ origin
+    local_direction = (inverse.to_3x3() @ direction).normalized()
+    hit, point, _, _ = obj.ray_cast(local_origin, local_direction)
+    return (obj.matrix_world @ point - origin).length if hit else None
+
+
+def mesh_intersections(first, second):
+    bpy.context.view_layer.update()
+    def tree(obj):
+        vertices = [obj.matrix_world @ v.co for v in obj.data.vertices]
+        return BVHTree.FromPolygons(vertices, [p.vertices[:] for p in obj.data.polygons])
+    return len(tree(first).overlap(tree(second)))
+
+
+contact_report = []
 # Continuous opaque back and stepped cast frame.
-box((0, 1.425, 0.035), (2.60, 2.83, 0.07), "patina")
+box((0, 1.425, 0.035), (2.60, 2.83, 0.07), "iron")
 for x in (-1.27, 1.27):
     box((x, 1.425, 0.083), (0.08, 2.85, 0.10), "iron")
 for y in (0.08, 2.77):
     box((0, y, 0.083), (2.44, 0.16, 0.10), "iron")
 for x in (-0.64, 0.64):
-    vessel(x)
+    shell = vessel(x)
     for y in (.80, 1.38, 1.94):
         band(x, y)
         for dx in (-.27, .27):
             cylinder((x + dx, y, .275), (x + dx, y, .292), .014, 'copper', 8)
     # Cast plinth and flanged connections support the vessel and its delivery line.
-    box((x, .37, .18), (.62, .13, .25), 'iron')
+    plinth = box((x, .37, .18), (.62, .13, .25), 'iron')
     for dx in (-.23, .23):
         box((x+dx, .20, .17), (.10, .22, .22), 'iron')
     cylinder((x, .43, .20), (x, .55, .20), .13, 'brass', 16)
-    cylinder((x, 2.20, .19), (x, 2.39, .19), .09, 'copper')
-    cylinder((x, 2.23, .19), (x, 2.28, .19), .12, 'brass')
+    # Tapered socket starts inside the elliptical dome and overlaps the copper neck.
+    socket_profile = ((2.10, .13, .045), (2.19, .13, .065),
+                      (2.245, .105, .105))
+    sides = 12
+    verts = [loc((x + rx*math.cos(math.tau*i/sides), y,
+                  .19 + rz*math.sin(math.tau*i/sides)))
+             for y, rx, rz in socket_profile for i in range(sides)]
+    faces = [(j*sides+i, j*sides+(i+1)%sides,
+              (j+1)*sides+(i+1)%sides, (j+1)*sides+i)
+             for j in range(len(socket_profile)-1) for i in range(sides)]
+    mesh = bpy.data.meshes.new('welded neck socket'); mesh.from_pydata(verts, [], faces); mesh.update()
+    socket = bpy.data.objects.new('welded neck socket', mesh); bpy.context.collection.objects.link(socket)
+    finish(socket, 'iron')
+    neck = cylinder((x, 2.20, .19), (x, 2.39, .19), .09, 'copper')
+    sections = []
+    for height in (2.105, 2.238):
+        samples = []
+        for i in range(36):
+            angle = math.tau*i/36
+            a = radial_distance(socket, x, height, angle)
+            b = radial_distance(shell if height < 2.2 else neck, x, height, angle)
+            if a is None or b is None: raise RuntimeError('Missing socket contact section')
+            clearance = b-a if height < 2.2 else a-b
+            if clearance <= 0: raise RuntimeError(f'Socket overlap failed: x={x}, height={height}, angle={angle}, socket={a}, other={b}')
+            samples.append({'angle_rad': round(angle, 6), 'socket_radius_m': round(a, 6),
+                            'shell_or_neck_radius_m': round(b, 6), 'overlap_m': round(clearance, 6)})
+        sections.append({'height_m': height, 'samples': samples,
+                         'minimum_overlap_m': min(p['overlap_m'] for p in samples)})
+    profiles = []
+    for i in range(28):
+        height = 2.105 + (2.238-2.105)*i/27
+        profiles.append({'height_m': round(height, 6),
+                         'cuts': [{'angle_rad': round(angle, 6),
+                                   'socket_radius_m': radial_distance(socket, x, height, angle),
+                                   'shell_radius_m': radial_distance(shell, x, height, angle),
+                                   'neck_radius_m': radial_distance(neck, x, height, angle)}
+                                  for angle in (0, math.pi/2, math.pi, 3*math.pi/2)]})
+    contact_report.append({'tank_axis_x_m': x, 'sections': sections, 'profiles': profiles})
+    cylinder((x, 2.23, .19), (x, 2.28, .19), .12, 'brass', 12)
     cylinder((x, 2.34, .19), (x, 2.40, .19), .12, 'brass')
     sphere((x, 2.42, .19), (.12, .08, .11), 'iron')
     cylinder((x, 2.45, .19), (x, 2.53, .19), .035, 'brass')
     side = -1 if x < 0 else 1
-    bent_pipe([(x, 2.51, .18), (x+side*.43, 2.51, .18),
-               (x+side*.43, .33, .18), (x, .33, .18)], .027)
+    pipe = bent_pipe([(x, 2.51, .18), (x+side*.43, 2.51, .18),
+                      (x+side*.43, .33, .18), (x, .33, .18)], .027)
+    fitting = cylinder((x+side*.27, .33, .18), (x+side*.38, .33, .18), .048, 'brass', 8)
+    fitting_pipe = mesh_intersections(fitting, pipe)
+    fitting_plinth = mesh_intersections(fitting, plinth)
+    if not fitting_pipe or not fitting_plinth:
+        raise RuntimeError(f'Unseated lower return fitting: tank {x}, pipe {fitting_pipe}, plinth {fitting_plinth}')
+    contact_report[-1]['lower_return'] = {'fitting_pipe_triangle_intersections': fitting_pipe,
+                                          'fitting_plinth_triangle_intersections': fitting_plinth,
+                                          'fitting_axis_x_m': [x+side*.27, x+side*.38],
+                                          'plinth_outer_x_m': x+side*.31,
+                                          'pipe_endpoint_m': [x, .33, .18]}
     for y in (.65, 1.20, 1.78, 2.20):
-        cylinder((x+side*.43, y-.025, .18), (x+side*.43, y+.025, .18), .039, 'brass', 10)
+        cylinder((x+side*.43, y-.025, .18), (x+side*.43, y+.025, .18), .039, 'brass', 8)
     gauge(x, 2.16, 0.335, 0.105)
 # Central sight glass, legible against an iron panel.
 box((0, 1.43, 0.121), (0.18, 0.86, 0.10), "iron")
@@ -198,6 +269,36 @@ for y in (1.06, 1.80):
 for x in (-1.23, 1.23):
     for y in (0.23, 0.62, 1.01, 1.40, 1.79, 2.18, 2.58):
         cylinder((x, y, 0.13), (x, y, 0.146), 0.018, "brass", 8)
+
+(SRC / 'accumulator-bank-contact.json').write_text(json.dumps({
+    'method': '36 radial ray intersections per top section and BVH triangle intersections for each lower pipe fitting against its pipe and plinth',
+    'tanks': contact_report,
+}, indent=2) + '\n')
+
+# Draw measured triangle intersections as two orthogonal profile cuts for each tank.
+svg = ['<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="670" viewBox="0 0 1100 670">',
+       '<rect width="1100" height="670" fill="#17191c"/>']
+for tank_index, tank in enumerate(contact_report):
+    for plane in range(2):
+        ox, oy = 60 + tank_index*540, 50 + plane*300
+        svg.append(f'<text x="{ox}" y="{oy-12}" fill="white" font-size="16">Tank x={tank["tank_axis_x_m"]:+.2f} m, {"width" if plane == 0 else "depth"} section</text>')
+        svg.append(f'<rect x="{ox}" y="{oy}" width="470" height="240" fill="#22262a" stroke="#666"/>')
+        for key, color in (('shell_radius_m','#a8adb2'), ('socket_radius_m','#e8a847'), ('neck_radius_m','#cb6b43')):
+            for side in (0, 2):
+                runs = []; run = []
+                for sample in tank['profiles']:
+                    cut = sample['cuts'][plane+side]; radius = cut[key]
+                    if radius is None:
+                        if run: runs.append(run); run=[]
+                        continue
+                    px = ox + 235 + (1 if side == 0 else -1)*radius*850
+                    py = oy + 230 - (sample['height_m']-2.105)*1600
+                    run.append(f'{px:.2f},{py:.2f}')
+                if run: runs.append(run)
+                for points in runs:
+                    svg.append(f'<polyline points="{" ".join(points)}" fill="none" stroke="{color}" stroke-width="3"/>')
+svg.append('<text x="60" y="655" fill="white" font-size="15">Triangle-ray sections: gray = dome, gold = socket, copper = neck. Vertical scale: 0.133 m.</text></svg>')
+(SRC / 'accumulator-bank-contact.svg').write_text('\n'.join(svg)+'\n')
 
 # Merge by material for five draws.
 for m in MATS.values():

@@ -4,6 +4,7 @@ import { glb_sha256 } from '../../assets-source/props/interior-furnishings/prove
 import { type Box, type Rect, type Socket, templateById } from '../content/rooms.ts';
 import { Stream } from '../core/rng.ts';
 import type { FloorWorld } from './floor-world.ts';
+import { roomStyleFor } from './room-styles.ts';
 
 export const INTERIOR_FURNISHINGS_BASE = '/assets/props/interior-furnishings';
 export const INTERIOR_PAINTINGS = [
@@ -337,7 +338,11 @@ function candidatesFor(
     }
   }
   const windowX = template.id === 'hall' ? 2.6 : template.id === 'study' ? 0 : undefined;
-  if (windowX !== undefined && (theme === 'gallery' || theme === 'dining')) {
+  if (
+    windowX !== undefined &&
+    roomStyleFor(world.plan, room) !== 'timber' &&
+    (theme === 'gallery' || theme === 'dining')
+  ) {
     const curtain: Candidate = {
       root: 'Curtain',
       x: windowX,

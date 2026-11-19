@@ -204,7 +204,7 @@ def manifold():
     for station, x in enumerate((-0.82, 0, 0.82)):
         box((x, 0.98, 0.27), (0.64, 1.16, 0.07), "dark")
         box(
-            (x, 0.98, 0.312), (0.59, 1.11, 0.018), ("copper", "patina", "iron")[station]
+            (x, 0.98, 0.312), (0.59, 1.11, 0.018), ("copper", "dark", "iron")[station]
         )
         for dx in (-0.29, 0.29):
             box((x + dx, 0.98, 0.326), (0.025, 1.055, 0.02), "iron")

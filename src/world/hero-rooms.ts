@@ -1,6 +1,6 @@
-import type { Texture } from 'three';
 import { GREYBOX_TEMPLATES, type RoomTemplate } from '../content/rooms.ts';
 import type { FloorView } from './floor-view.ts';
+import type { RoomStyleKit } from './room-styles.ts';
 import { heroRoomTemplates, type StudyAsset, type StudyManifest } from './study-room.ts';
 import { dressTableDecor, type TableDecor } from './table-decor.ts';
 
@@ -63,7 +63,7 @@ export function dressHeroRooms(
   view: FloorView,
   assets: readonly StudyAsset[],
   decor: TableDecor | null = null,
-  pumpLight?: { floor: Texture; wall: Texture },
+  roomStyleKit?: RoomStyleKit,
 ): number {
   let dressed = 0;
   for (const asset of assets) {
@@ -71,7 +71,7 @@ export function dressHeroRooms(
       asset.manifest.template.id,
       asset.instantiate,
       asset.manifest.rigidNodes,
-      pumpLight,
+      roomStyleKit,
     );
   }
   if (decor) dressTableDecor(view.world, decor, new Set(assets.map((a) => a.manifest.template.id)));

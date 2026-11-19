@@ -1,24 +1,26 @@
 {
   "source": "Original procedural Blender geometry and PBR material colors authored by Codex; no external inputs, images or paid providers.",
   "blender": "5.3.0 (manifold, accumulator-bank); prior gallery build retains its recorded version",
-  "validation": "Manifold and accumulator bank were reimported in Blender 5.3.0 and their reported geometry and interaction pivots checked. Updated models await independent creative review and owner headset acceptance. Earlier independent scores apply only to their recorded hashes.",
+  "validation": "Manifold and accumulator bank reimported in Blender 5.3.0 and geometry budgets checked. For each tank, 36 triangle ray samples at each of two sections verify the socket lies inside the dome and surrounds the neck; triangle BVH intersections verify the lower return fitting contacts both the pipe and plinth. Orthogonal neck profile cuts are in accumulator-bank-contact.svg. Owner headset acceptance and independent creative review remain pending.",
   "sha256": {
-    "scripts/assets/build-pressure-works.py": "3590ee20613557fe4436002e979dfc73c5e0adb7fb515b6a7537a8918b50fef4",
+    "scripts/assets/build-pressure-works.py": "e08ada4eba3d7b8f5ef2b9f6d06580caca5234b6061cf44fcec0c80287c33db5",
     "scripts/assets/pressure_works_check.py": "88fdbf349f104c649ec7f8bb13c18e7828ef7bfdc0f83f3e6a77fa45bcf0b917",
-    "public/assets/props/pressure-works/manifold.glb": "74cb24016e0b532ac48141187790d07e112b97e7a31034cc2eeeb4e963485f7e",
-    "assets-source/props/pressure-works/manifold.blend": "98948b8419e9df4337ef6c09b29400018cb1fbe2c5ad32fcd599f25af57de728",
-    "assets-source/props/pressure-works/manifold.report.json": "5b2b0ecd7752c8c118072947daef1d1bc70c9346bcc3ca991160985559e84b29",
-    "assets-source/props/pressure-works/manifold-front-three-quarter.png": "1c479626035ea00faab1fa6201e908a21cd63494d3b2af658acc0822ca6030b9",
+    "public/assets/props/pressure-works/manifold.glb": "80e9d2df1737eb1e93360133dd720f236114ad9e5537d2e87222815c4c0e5682",
+    "assets-source/props/pressure-works/manifold.blend": "0d885025ad5074bb65ef0c04d456574aeae5f5933a122c0be96bd1acb3c8800c",
+    "assets-source/props/pressure-works/manifold.report.json": "344bd1ef2cbabb725ac2a6156c43beb03005429a3ee178a0d1a77b8acd4881ad",
+    "assets-source/props/pressure-works/manifold-front-three-quarter.png": "4bd85370ac68576eb17e69b81b5cf0470204d24246d4a48e8f45e84b8fa28a08",
     "public/assets/props/pressure-works/gallery-pipes.glb": "3b926834aca19c428ff576e8a81716dade8ccfd1725886f62c9aaaaca92a2626",
     "assets-source/props/pressure-works/gallery-pipes.blend": "1c72a330aabcf2a1f7a78e561ecb6fbd81955f5f959e8a82279ed2851d3ec1e5",
     "assets-source/props/pressure-works/gallery-pipes.report.json": "0e588717532957792bae3a135efff255d40adb724cc055f16ecaa2361cfb30cc",
     "assets-source/props/pressure-works/gallery-pipes-front-three-quarter.png": "910698d62d3af5af414ed0f6b5bcb103ec9fcfe6814615ab02e4846fe86e0b64",
-    "scripts/assets/build-pressure-accumulator.py": "967096dc2c4b0a6ef4ac4bafec813235f39bc8a03fb4a158a9024f5d186390f3",
-    "public/assets/props/pressure-works/accumulator-bank.glb": "99d556087ce3fe06a886e13c35c23a715f2a0f4fa6844aab36990470f524b2d8",
-    "assets-source/props/pressure-works/accumulator-bank.blend": "90b29bc27ec0a1a33b287e258484611bf634eca2adbc8c8cafad6357b290e584",
-    "assets-source/props/pressure-works/accumulator-bank.report.json": "0c1b0ff3429e9451f57981322f343c699cdb7ef217e15dbd27dfc6cc3e9558df",
-    "assets-source/props/pressure-works/accumulator-bank-front-three-quarter.png": "6f58376aa7c808d3053cb7e3c9c4a3fca641c9374efc98cab0b17948b3d6ff90",
-    "public/assets/props/pressure-works/pump-floor-lightmap.png": "48974fc20f6b8caf7b48c5e05d5649993035ca0558e58e90bba3e818bd46e371"
+    "scripts/assets/build-pressure-accumulator.py": "b501e4710d8f7e77067af5e4edc1df88af9d9a166467128feacdcc7ecf2e87e9",
+    "public/assets/props/pressure-works/accumulator-bank.glb": "b0340f2afeee1b07a6a3b2dd47c18086bc342775ce0de44649ff8715e5738772",
+    "assets-source/props/pressure-works/accumulator-bank.blend": "5c7407c445d60034597dcf914b8e656c4819c3794918ca6557dd815eae2d9464",
+    "assets-source/props/pressure-works/accumulator-bank.report.json": "201a8b15f109c7ff827de2c2f5243133ae30beca4f2630b8ed56e49cc86585ce",
+    "assets-source/props/pressure-works/accumulator-bank-front-three-quarter.png": "f5e4cecbe9086026522a66e08cc138b1025bf3e7ee0f367013b29fa6f67b3bf5",
+    "public/assets/props/pressure-works/pump-floor-lightmap.png": "48974fc20f6b8caf7b48c5e05d5649993035ca0558e58e90bba3e818bd46e371",
+    "assets-source/props/pressure-works/accumulator-bank-contact.json": "c0e80ed4927e90f90e56625f187256e0a0c4c387146f5ec3dc8f2ff662681778",
+    "assets-source/props/pressure-works/accumulator-bank-contact.svg": "25370162f60d879a22311a12f440848aa4694ab77d355675ba1a3fa72d9b24ec"
   },
   "independentReview": [
     {
@@ -54,5 +56,13 @@
       "public/assets/props/pressure-works/accumulator-bank.glb": "99d556087ce3fe06a886e13c35c23a715f2a0f4fa6844aab36990470f524b2d8"
     },
     "review": "Quest Browser and independent visual review checked panel sides, dark insets, cast housings, pipe unions, gauge readability, valve rims and primer clearance."
+  },
+  "boilerRevision": {
+    "evidence": "docs/verification/quest-modular-interiors.jpg",
+    "models": {
+      "public/assets/props/pressure-works/manifold.glb": "80e9d2df1737eb1e93360133dd720f236114ad9e5537d2e87222815c4c0e5682",
+      "public/assets/props/pressure-works/accumulator-bank.glb": "b0340f2afeee1b07a6a3b2dd47c18086bc342775ce0de44649ff8715e5738772"
+    },
+    "checks": "Quest Browser oblique views of the cast backing and tank unions. Radial section and triangle contact measurements are recorded in accumulator-bank-contact.json."
   }
 }

@@ -54,6 +54,8 @@ export interface FloorWorld {
   nearbyColliders(): readonly Box[];
   /** Adds a world-space collider for a removable room furnishing. */
   addFixtureCollider(room: number, box: Box): () => void;
+  /** Removes authored furniture colliders for a room whose baked furniture is being replaced. */
+  removeRoomFixtureColliders(room: number, keepDesk: boolean): void;
   /** World-space walkable rects of the current room and its neighbours (teleport landings). */
   nearbyWalkable(): readonly Rect[];
   /** Re-evaluates the current room from a world-space floor point; returns true when it changed. */
@@ -370,6 +372,41 @@ export function buildFloorWorld(
         if (index >= 0) boxes.splice(index, 1);
       };
     },
+    removeRoomFixtureColliders(room, keepDesk) {
+      const r = rooms[room],
+        [ox, oz] = plan.rooms[room].position;
+      const desk = r.template.dressingSockets.find((s) => s.id === 'desk');
+      const boxes = colliders[room];
+      for (const c of r.template.colliders) {
+        const fp = r.template.footprint;
+        if (
+          c.min[0] < fp.min[0] ||
+          c.min[2] < fp.min[1] ||
+          c.max[0] > fp.max[0] ||
+          c.max[2] > fp.max[1]
+        )
+          continue;
+        if (
+          keepDesk &&
+          desk &&
+          desk.position[0] >= c.min[0] &&
+          desk.position[0] <= c.max[0] &&
+          desk.position[2] >= c.min[2] &&
+          desk.position[2] <= c.max[2]
+        )
+          continue;
+        const i = boxes.findIndex(
+          (b) =>
+            b.min[0] === c.min[0] + ox &&
+            b.min[1] === c.min[1] &&
+            b.min[2] === c.min[2] + oz &&
+            b.max[0] === c.max[0] + ox &&
+            b.max[1] === c.max[1] &&
+            b.max[2] === c.max[2] + oz,
+        );
+        if (i >= 0) boxes.splice(i, 1);
+      }
+    },
     nearbyColliders() {
       return [...nearSet(plan, world.current)].flatMap((i) => colliders[i] ?? []);
     },
@@ -465,7 +502,9 @@ export function buildFloorWorld(
       }
       for (const cap of sealedDoors) {
         if (cap.userData.room !== room || cap.userData.style !== 'wall') continue;
-        cap.visible = model.getObjectByName(`door-plug-${cap.userData.door}`) === undefined;
+        cap.visible =
+          !model.userData.roomStyle &&
+          model.getObjectByName(`door-plug-${cap.userData.door}`) === undefined;
       }
       model.userData.room = room;
       g.add(model);

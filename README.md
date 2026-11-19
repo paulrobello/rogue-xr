@@ -14,9 +14,9 @@ Open the wrist menu to choose **Settings**, **Deck**, or **Items**. Select the c
 
 | Route from room 0 | What to inspect |
 | --- | --- |
-| 0 → 1 → 2 | The armor stands beside the entry hall doorway under the wall clock. Continue through the gear shaft to the walnut dining table and upholstered chairs in the study. |
+| 0 → 1 → 2 | The armor stands beside the entry hall doorway under the wall clock. Continue through the gear shaft to the walnut dining table and upholstered chairs in the timber-paneled dining room. |
 | 0 → 3 → 4 → 5 → 7 | A second hall leads through an 8 × 2 m corridor and a quarter-turned gear shaft into the 12 × 12 m guardian vault. |
-| 0 → 6 → 8 → 9 | Two narrow corridors lead to the pressure gallery and pump study. |
+| 0 → 6 → 8 → 9 | Two narrow corridors lead to the pressure gallery and the boiler room. Its west wall carries a finned copper heat exchanger, and the pressure controls sit between the tank banks. |
 
 When reporting a layout issue, include `MAPTEST2`, the room number or route, and the fixture you were facing.
 

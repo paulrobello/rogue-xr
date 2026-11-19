@@ -1,0 +1,2559 @@
+{
+  "method": "36 radial ray intersections per top section and BVH triangle intersections for each lower pipe fitting against its pipe and plinth",
+  "tanks": [
+    {
+      "tank_axis_x_m": -0.64,
+      "sections": [
+        {
+          "height_m": 2.105,
+          "samples": [
+            {
+              "angle_rad": 0.0,
+              "socket_radius_m": 0.13,
+              "shell_or_neck_radius_m": 0.221046,
+              "overlap_m": 0.091046
+            },
+            {
+              "angle_rad": 0.174533,
+              "socket_radius_m": 0.116536,
+              "shell_or_neck_radius_m": 0.214037,
+              "overlap_m": 0.097501
+            },
+            {
+              "angle_rad": 0.349066,
+              "socket_radius_m": 0.093561,
+              "shell_or_neck_radius_m": 0.179887,
+              "overlap_m": 0.086325
+            },
+            {
+              "angle_rad": 0.523599,
+              "socket_radius_m": 0.078063,
+              "shell_or_neck_radius_m": 0.149811,
+              "overlap_m": 0.071748
+            },
+            {
+              "angle_rad": 0.698132,
+              "socket_radius_m": 0.064596,
+              "shell_or_neck_radius_m": 0.125857,
+              "overlap_m": 0.061261
+            },
+            {
+              "angle_rad": 0.872665,
+              "socket_radius_m": 0.055847,
+              "shell_or_neck_radius_m": 0.111426,
+              "overlap_m": 0.055579
+            },
+            {
+              "angle_rad": 1.047198,
+              "socket_radius_m": 0.050538,
+              "shell_or_neck_radius_m": 0.100226,
+              "overlap_m": 0.049688
+            },
+            {
+              "angle_rad": 1.22173,
+              "socket_radius_m": 0.047468,
+              "shell_or_neck_radius_m": 0.093449,
+              "overlap_m": 0.045981
+            },
+            {
+              "angle_rad": 1.396263,
+              "socket_radius_m": 0.046069,
+              "shell_or_neck_radius_m": 0.090094,
+              "overlap_m": 0.044025
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.046111,
+              "shell_or_neck_radius_m": 0.0896,
+              "overlap_m": 0.043489
+            },
+            {
+              "angle_rad": 1.745329,
+              "socket_radius_m": 0.04592,
+              "shell_or_neck_radius_m": 0.090094,
+              "overlap_m": 0.044174
+            },
+            {
+              "angle_rad": 1.919862,
+              "socket_radius_m": 0.047315,
+              "shell_or_neck_radius_m": 0.093449,
+              "overlap_m": 0.046134
+            },
+            {
+              "angle_rad": 2.094395,
+              "socket_radius_m": 0.050375,
+              "shell_or_neck_radius_m": 0.100226,
+              "overlap_m": 0.049851
+            },
+            {
+              "angle_rad": 2.268928,
+              "socket_radius_m": 0.055667,
+              "shell_or_neck_radius_m": 0.111426,
+              "overlap_m": 0.055759
+            },
+            {
+              "angle_rad": 2.443461,
+              "socket_radius_m": 0.064387,
+              "shell_or_neck_radius_m": 0.125857,
+              "overlap_m": 0.06147
+            },
+            {
+              "angle_rad": 2.617994,
+              "socket_radius_m": 0.077634,
+              "shell_or_neck_radius_m": 0.149811,
+              "overlap_m": 0.072178
+            },
+            {
+              "angle_rad": 2.792527,
+              "socket_radius_m": 0.092952,
+              "shell_or_neck_radius_m": 0.179887,
+              "overlap_m": 0.086935
+            },
+            {
+              "angle_rad": 2.96706,
+              "socket_radius_m": 0.116152,
+              "shell_or_neck_radius_m": 0.214037,
+              "overlap_m": 0.097885
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.13,
+              "shell_or_neck_radius_m": 0.221046,
+              "overlap_m": 0.091046
+            },
+            {
+              "angle_rad": 3.316126,
+              "socket_radius_m": 0.116536,
+              "shell_or_neck_radius_m": 0.190668,
+              "overlap_m": 0.074132
+            },
+            {
+              "angle_rad": 3.490659,
+              "socket_radius_m": 0.093561,
+              "shell_or_neck_radius_m": 0.150199,
+              "overlap_m": 0.056637
+            },
+            {
+              "angle_rad": 3.665191,
+              "socket_radius_m": 0.078063,
+              "shell_or_neck_radius_m": 0.119312,
+              "overlap_m": 0.041248
+            },
+            {
+              "angle_rad": 3.839724,
+              "socket_radius_m": 0.064596,
+              "shell_or_neck_radius_m": 0.100234,
+              "overlap_m": 0.035638
+            },
+            {
+              "angle_rad": 4.014257,
+              "socket_radius_m": 0.055847,
+              "shell_or_neck_radius_m": 0.086786,
+              "overlap_m": 0.030938
+            },
+            {
+              "angle_rad": 4.18879,
+              "socket_radius_m": 0.050538,
+              "shell_or_neck_radius_m": 0.077854,
+              "overlap_m": 0.027316
+            },
+            {
+              "angle_rad": 4.363323,
+              "socket_radius_m": 0.047468,
+              "shell_or_neck_radius_m": 0.07259,
+              "overlap_m": 0.025122
+            },
+            {
+              "angle_rad": 4.537856,
+              "socket_radius_m": 0.046069,
+              "shell_or_neck_radius_m": 0.069984,
+              "overlap_m": 0.023915
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.046111,
+              "shell_or_neck_radius_m": 0.0696,
+              "overlap_m": 0.023489
+            },
+            {
+              "angle_rad": 4.886922,
+              "socket_radius_m": 0.04592,
+              "shell_or_neck_radius_m": 0.069984,
+              "overlap_m": 0.024064
+            },
+            {
+              "angle_rad": 5.061455,
+              "socket_radius_m": 0.047315,
+              "shell_or_neck_radius_m": 0.07259,
+              "overlap_m": 0.025275
+            },
+            {
+              "angle_rad": 5.235988,
+              "socket_radius_m": 0.050375,
+              "shell_or_neck_radius_m": 0.077854,
+              "overlap_m": 0.027479
+            },
+            {
+              "angle_rad": 5.410521,
+              "socket_radius_m": 0.055667,
+              "shell_or_neck_radius_m": 0.086786,
+              "overlap_m": 0.031119
+            },
+            {
+              "angle_rad": 5.585054,
+              "socket_radius_m": 0.064387,
+              "shell_or_neck_radius_m": 0.100234,
+              "overlap_m": 0.035846
+            },
+            {
+              "angle_rad": 5.759587,
+              "socket_radius_m": 0.077634,
+              "shell_or_neck_radius_m": 0.119312,
+              "overlap_m": 0.041678
+            },
+            {
+              "angle_rad": 5.934119,
+              "socket_radius_m": 0.092952,
+              "shell_or_neck_radius_m": 0.150199,
+              "overlap_m": 0.057247
+            },
+            {
+              "angle_rad": 6.108652,
+              "socket_radius_m": 0.116152,
+              "shell_or_neck_radius_m": 0.190668,
+              "overlap_m": 0.074516
+            }
+          ],
+          "minimum_overlap_m": 0.023489
+        },
+        {
+          "height_m": 2.238,
+          "samples": [
+            {
+              "angle_rad": 0.0,
+              "socket_radius_m": 0.108182,
+              "shell_or_neck_radius_m": 0.09,
+              "overlap_m": 0.018182
+            },
+            {
+              "angle_rad": 0.174533,
+              "socket_radius_m": 0.104895,
+              "shell_or_neck_radius_m": 0.088292,
+              "overlap_m": 0.016603
+            },
+            {
+              "angle_rad": 0.349066,
+              "socket_radius_m": 0.104895,
+              "shell_or_neck_radius_m": 0.08931,
+              "overlap_m": 0.015585
+            },
+            {
+              "angle_rad": 0.523599,
+              "socket_radius_m": 0.105154,
+              "shell_or_neck_radius_m": 0.08846,
+              "overlap_m": 0.016694
+            },
+            {
+              "angle_rad": 0.698132,
+              "socket_radius_m": 0.101959,
+              "shell_or_neck_radius_m": 0.088798,
+              "overlap_m": 0.01316
+            },
+            {
+              "angle_rad": 0.872665,
+              "socket_radius_m": 0.101959,
+              "shell_or_neck_radius_m": 0.088798,
+              "overlap_m": 0.01316
+            },
+            {
+              "angle_rad": 1.047198,
+              "socket_radius_m": 0.101017,
+              "shell_or_neck_radius_m": 0.08846,
+              "overlap_m": 0.012557
+            },
+            {
+              "angle_rad": 1.22173,
+              "socket_radius_m": 0.097948,
+              "shell_or_neck_radius_m": 0.08931,
+              "overlap_m": 0.008638
+            },
+            {
+              "angle_rad": 1.396263,
+              "socket_radius_m": 0.097948,
+              "shell_or_neck_radius_m": 0.088292,
+              "overlap_m": 0.009656
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.099909,
+              "shell_or_neck_radius_m": 0.09,
+              "overlap_m": 0.009909
+            },
+            {
+              "angle_rad": 1.745329,
+              "socket_radius_m": 0.096873,
+              "shell_or_neck_radius_m": 0.088292,
+              "overlap_m": 0.008582
+            },
+            {
+              "angle_rad": 1.919862,
+              "socket_radius_m": 0.096873,
+              "shell_or_neck_radius_m": 0.08931,
+              "overlap_m": 0.007563
+            },
+            {
+              "angle_rad": 2.094395,
+              "socket_radius_m": 0.100503,
+              "shell_or_neck_radius_m": 0.08846,
+              "overlap_m": 0.012043
+            },
+            {
+              "angle_rad": 2.268928,
+              "socket_radius_m": 0.099809,
+              "shell_or_neck_radius_m": 0.088798,
+              "overlap_m": 0.011011
+            },
+            {
+              "angle_rad": 2.443461,
+              "socket_radius_m": 0.099809,
+              "shell_or_neck_radius_m": 0.088798,
+              "overlap_m": 0.011011
+            },
+            {
+              "angle_rad": 2.617994,
+              "socket_radius_m": 0.103748,
+              "shell_or_neck_radius_m": 0.08846,
+              "overlap_m": 0.015288
+            },
+            {
+              "angle_rad": 2.792527,
+              "socket_radius_m": 0.10382,
+              "shell_or_neck_radius_m": 0.08931,
+              "overlap_m": 0.01451
+            },
+            {
+              "angle_rad": 2.96706,
+              "socket_radius_m": 0.10382,
+              "shell_or_neck_radius_m": 0.088292,
+              "overlap_m": 0.015528
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.108182,
+              "shell_or_neck_radius_m": 0.09,
+              "overlap_m": 0.018182
+            },
+            {
+              "angle_rad": 3.316126,
+              "socket_radius_m": 0.104895,
+              "shell_or_neck_radius_m": 0.088292,
+              "overlap_m": 0.016603
+            },
+            {
+              "angle_rad": 3.490659,
+              "socket_radius_m": 0.104895,
+              "shell_or_neck_radius_m": 0.08931,
+              "overlap_m": 0.015585
+            },
+            {
+              "angle_rad": 3.665191,
+              "socket_radius_m": 0.105154,
+              "shell_or_neck_radius_m": 0.08846,
+              "overlap_m": 0.016694
+            },
+            {
+              "angle_rad": 3.839724,
+              "socket_radius_m": 0.101959,
+              "shell_or_neck_radius_m": 0.088798,
+              "overlap_m": 0.01316
+            },
+            {
+              "angle_rad": 4.014257,
+              "socket_radius_m": 0.101959,
+              "shell_or_neck_radius_m": 0.088798,
+              "overlap_m": 0.01316
+            },
+            {
+              "angle_rad": 4.18879,
+              "socket_radius_m": 0.101017,
+              "shell_or_neck_radius_m": 0.08846,
+              "overlap_m": 0.012557
+            },
+            {
+              "angle_rad": 4.363323,
+              "socket_radius_m": 0.097948,
+              "shell_or_neck_radius_m": 0.08931,
+              "overlap_m": 0.008638
+            },
+            {
+              "angle_rad": 4.537856,
+              "socket_radius_m": 0.097948,
+              "shell_or_neck_radius_m": 0.088292,
+              "overlap_m": 0.009656
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.099909,
+              "shell_or_neck_radius_m": 0.09,
+              "overlap_m": 0.009909
+            },
+            {
+              "angle_rad": 4.886922,
+              "socket_radius_m": 0.096873,
+              "shell_or_neck_radius_m": 0.088292,
+              "overlap_m": 0.008582
+            },
+            {
+              "angle_rad": 5.061455,
+              "socket_radius_m": 0.096873,
+              "shell_or_neck_radius_m": 0.08931,
+              "overlap_m": 0.007563
+            },
+            {
+              "angle_rad": 5.235988,
+              "socket_radius_m": 0.100503,
+              "shell_or_neck_radius_m": 0.08846,
+              "overlap_m": 0.012043
+            },
+            {
+              "angle_rad": 5.410521,
+              "socket_radius_m": 0.099809,
+              "shell_or_neck_radius_m": 0.088798,
+              "overlap_m": 0.011011
+            },
+            {
+              "angle_rad": 5.585054,
+              "socket_radius_m": 0.099809,
+              "shell_or_neck_radius_m": 0.088798,
+              "overlap_m": 0.011011
+            },
+            {
+              "angle_rad": 5.759587,
+              "socket_radius_m": 0.103748,
+              "shell_or_neck_radius_m": 0.08846,
+              "overlap_m": 0.015288
+            },
+            {
+              "angle_rad": 5.934119,
+              "socket_radius_m": 0.10382,
+              "shell_or_neck_radius_m": 0.08931,
+              "overlap_m": 0.01451
+            },
+            {
+              "angle_rad": 6.108652,
+              "socket_radius_m": 0.10382,
+              "shell_or_neck_radius_m": 0.088292,
+              "overlap_m": 0.015528
+            }
+          ],
+          "minimum_overlap_m": 0.007563
+        }
+      ],
+      "profiles": [
+        {
+          "height_m": 2.105,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.22104585250075473,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.046111136527557946,
+              "shell_radius_m": 0.08960002514485449,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.22104585250075473,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.046111136527557946,
+              "shell_radius_m": 0.06960001542738457,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.109926,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.21546307509973459,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.047205790959937856,
+              "shell_radius_m": 0.0876296460226684,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.21546304052034695,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.047205790959937856,
+              "shell_radius_m": 0.06762963506565564,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.114852,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.20988032545600213,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.04830044528012907,
+              "shell_radius_m": 0.0856592648489487,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.20988035208038955,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.04830044528012907,
+              "shell_radius_m": 0.0656592484070495,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.119778,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.20429784289508227,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.04939505471600405,
+              "shell_radius_m": 0.08368897328796407,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.20429784289508227,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.04939505471600405,
+              "shell_radius_m": 0.06368896453959198,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.124704,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.1987150875203364,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.05048970980440157,
+              "shell_radius_m": 0.08171859262535157,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.1987150875203364,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.05048970980440157,
+              "shell_radius_m": 0.061718583936709315,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.12963,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.19313234429452944,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.05158436250311541,
+              "shell_radius_m": 0.07974821260259456,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.19313234429452944,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.05158436250311541,
+              "shell_radius_m": 0.0597482022433736,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.134556,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.18290299474379834,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.05267903285020743,
+              "shell_radius_m": 0.07613784078607244,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.18290299474379834,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.05267903285020743,
+              "shell_radius_m": 0.05613782943891389,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.139481,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.17229574895940356,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.05377368729419874,
+              "shell_radius_m": 0.07239410217648708,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.17229574895940356,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.05377368729419874,
+              "shell_radius_m": 0.052394106914616725,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.144407,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.16168844773015154,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.054868339517246144,
+              "shell_radius_m": 0.06865036542383479,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.1616885053299629,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.054868339517246144,
+              "shell_radius_m": 0.04865036795014258,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.149333,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.15108173896600907,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.055962950125485474,
+              "shell_radius_m": 0.06490680662016576,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.15108173896600907,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.055962950125485474,
+              "shell_radius_m": 0.044906810639531156,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.154259,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.1404744375390739,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.057057605166831185,
+              "shell_radius_m": 0.061163068252519256,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.1404744972075911,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.057057605166831185,
+              "shell_radius_m": 0.04116307163584442,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.159185,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.12986719424772036,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.05815225809016286,
+              "shell_radius_m": 0.057419330109105986,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.12986725878981767,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.05815225809016286,
+              "shell_radius_m": 0.03741933440452078,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.164111,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.11925995432145205,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.059246912942714544,
+              "shell_radius_m": 0.05367560741892509,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.11925995432145205,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.059246912942714544,
+              "shell_radius_m": 0.03367559607970057,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.169037,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.10865271017426634,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.06034156769022006,
+              "shell_radius_m": 0.04993186868562921,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.10865271017426634,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.06034156769022006,
+              "shell_radius_m": 0.029931858195747826,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.173963,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.09804540819233545,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.061436235602573,
+              "shell_radius_m": 0.04618811504905596,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.09804546993510282,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.061436235602573,
+              "shell_radius_m": 0.02618811983039882,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.178889,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.08743870367799084,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.06253084524281982,
+              "shell_radius_m": 0.04244457158680064,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.08743870367799084,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.06253084524281982,
+              "shell_radius_m": 0.022444560984588795,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.183815,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.07570624474001318,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.06362548378458817,
+              "shell_radius_m": 0.03870083454282502,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.07570630317350882,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.06362548378458817,
+              "shell_radius_m": 0.018700823363550226,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.188741,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.06394797386592112,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.06472015335890646,
+              "shell_radius_m": 0.034957096485567704,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.06394803576184661,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.06472015335890646,
+              "shell_radius_m": 0.014957085031256792,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.193667,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.1283333285507701,
+              "shell_radius_m": 0.05265039140769431,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.06766665150765741,
+              "shell_radius_m": 0.03136003018309183,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.1283333285507701,
+              "shell_radius_m": 0.05265045110738168,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.06766665150765741,
+              "shell_radius_m": 0.011360019224274208,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.198593,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12609422349190946,
+              "shell_radius_m": 0.041511058191162825,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.07124918645469594,
+              "shell_radius_m": 0.027813330022476015,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12609428257930178,
+              "shell_radius_m": 0.041511058191162825,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.07124918645469594,
+              "shell_radius_m": 0.007813319520882335,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.203519,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12385517255170352,
+              "shell_radius_m": 0.028128325701159005,
+              "neck_radius_m": 0.09000003221133768
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.07483172450983701,
+              "shell_radius_m": 0.02426662990091442,
+              "neck_radius_m": 0.09000000116725762
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12385517255170352,
+              "shell_radius_m": 0.028128325701159005,
+              "neck_radius_m": 0.09000003221133768
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.07483171517566785,
+              "shell_radius_m": 0.0042666197339379505,
+              "neck_radius_m": 0.09000000116725762
+            }
+          ]
+        },
+        {
+          "height_m": 2.208444,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12161618637713885,
+              "shell_radius_m": 0.010472595682012595,
+              "neck_radius_m": 0.09000003221133768
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.07841408115408405,
+              "shell_radius_m": 0.020720094179494514,
+              "neck_radius_m": 0.09000000116725762
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12161618637713885,
+              "shell_radius_m": 0.010472595682012595,
+              "neck_radius_m": 0.09000003221133768
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.07841407521559318,
+              "shell_radius_m": 0.0007200837110646187,
+              "neck_radius_m": 0.09000000116725762
+            }
+          ]
+        },
+        {
+          "height_m": 2.21337,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.11937707747529093,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000003221133768
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.08199658967241114,
+              "shell_radius_m": 0.0028266161871502785,
+              "neck_radius_m": 0.09000000116725762
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.11937713598667139,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000003221133768
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.08199661238853748,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000000116725762
+            }
+          ]
+        },
+        {
+          "height_m": 2.218296,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.11713802962387476,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000003221133768
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.08557912760706705,
+              "shell_radius_m": 0.006373316053408176,
+              "neck_radius_m": 0.09000000116725762
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.11713802962387476,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000003221133768
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.0855791357690093,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000000116725762
+            }
+          ]
+        },
+        {
+          "height_m": 2.223222,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.11489892075553015,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000003221133768
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.08916166268754658,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000000116725762
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.11489898154737586,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000003221133768
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.08916167313287131,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000000116725762
+            }
+          ]
+        },
+        {
+          "height_m": 2.228148,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.11265981336558445,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000003221133768
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.09274420026552521,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000000116725762
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.1126598712323264,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000003221133768
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.09274420026552521,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000000116725762
+            }
+          ]
+        },
+        {
+          "height_m": 2.233074,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.1104207623669815,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000003221133768
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.09632673764525303,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000000116725762
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.11042082140711254,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000003221133768
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.09632673281106773,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000000116725762
+            }
+          ]
+        },
+        {
+          "height_m": 2.238,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.10818177556557022,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000003221133768
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.09990906510997219,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000000116725762
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.10818183582762612,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000003221133768
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.09990908841422554,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000000116725762
+            }
+          ]
+        }
+      ],
+      "lower_return": {
+        "fitting_pipe_triangle_intersections": 22,
+        "fitting_plinth_triangle_intersections": 9,
+        "fitting_axis_x_m": [
+          -0.91,
+          -1.02
+        ],
+        "plinth_outer_x_m": -0.95,
+        "pipe_endpoint_m": [
+          -0.64,
+          0.33,
+          0.18
+        ]
+      }
+    },
+    {
+      "tank_axis_x_m": 0.64,
+      "sections": [
+        {
+          "height_m": 2.105,
+          "samples": [
+            {
+              "angle_rad": 0.0,
+              "socket_radius_m": 0.13,
+              "shell_or_neck_radius_m": 0.221046,
+              "overlap_m": 0.091046
+            },
+            {
+              "angle_rad": 0.174533,
+              "socket_radius_m": 0.116536,
+              "shell_or_neck_radius_m": 0.214037,
+              "overlap_m": 0.097501
+            },
+            {
+              "angle_rad": 0.349066,
+              "socket_radius_m": 0.093561,
+              "shell_or_neck_radius_m": 0.179887,
+              "overlap_m": 0.086325
+            },
+            {
+              "angle_rad": 0.523599,
+              "socket_radius_m": 0.078063,
+              "shell_or_neck_radius_m": 0.149811,
+              "overlap_m": 0.071748
+            },
+            {
+              "angle_rad": 0.698132,
+              "socket_radius_m": 0.064596,
+              "shell_or_neck_radius_m": 0.125857,
+              "overlap_m": 0.061261
+            },
+            {
+              "angle_rad": 0.872665,
+              "socket_radius_m": 0.055847,
+              "shell_or_neck_radius_m": 0.111426,
+              "overlap_m": 0.055579
+            },
+            {
+              "angle_rad": 1.047198,
+              "socket_radius_m": 0.050538,
+              "shell_or_neck_radius_m": 0.100226,
+              "overlap_m": 0.049688
+            },
+            {
+              "angle_rad": 1.22173,
+              "socket_radius_m": 0.047468,
+              "shell_or_neck_radius_m": 0.093449,
+              "overlap_m": 0.045981
+            },
+            {
+              "angle_rad": 1.396263,
+              "socket_radius_m": 0.046069,
+              "shell_or_neck_radius_m": 0.090094,
+              "overlap_m": 0.044025
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.046111,
+              "shell_or_neck_radius_m": 0.0896,
+              "overlap_m": 0.043489
+            },
+            {
+              "angle_rad": 1.745329,
+              "socket_radius_m": 0.04592,
+              "shell_or_neck_radius_m": 0.090094,
+              "overlap_m": 0.044174
+            },
+            {
+              "angle_rad": 1.919862,
+              "socket_radius_m": 0.047315,
+              "shell_or_neck_radius_m": 0.093449,
+              "overlap_m": 0.046134
+            },
+            {
+              "angle_rad": 2.094395,
+              "socket_radius_m": 0.050375,
+              "shell_or_neck_radius_m": 0.100226,
+              "overlap_m": 0.049851
+            },
+            {
+              "angle_rad": 2.268928,
+              "socket_radius_m": 0.055667,
+              "shell_or_neck_radius_m": 0.111426,
+              "overlap_m": 0.055759
+            },
+            {
+              "angle_rad": 2.443461,
+              "socket_radius_m": 0.064387,
+              "shell_or_neck_radius_m": 0.125857,
+              "overlap_m": 0.06147
+            },
+            {
+              "angle_rad": 2.617994,
+              "socket_radius_m": 0.077634,
+              "shell_or_neck_radius_m": 0.149811,
+              "overlap_m": 0.072178
+            },
+            {
+              "angle_rad": 2.792527,
+              "socket_radius_m": 0.092952,
+              "shell_or_neck_radius_m": 0.179887,
+              "overlap_m": 0.086935
+            },
+            {
+              "angle_rad": 2.96706,
+              "socket_radius_m": 0.116152,
+              "shell_or_neck_radius_m": 0.214037,
+              "overlap_m": 0.097886
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.13,
+              "shell_or_neck_radius_m": 0.221046,
+              "overlap_m": 0.091046
+            },
+            {
+              "angle_rad": 3.316126,
+              "socket_radius_m": 0.116536,
+              "shell_or_neck_radius_m": 0.190668,
+              "overlap_m": 0.074132
+            },
+            {
+              "angle_rad": 3.490659,
+              "socket_radius_m": 0.093561,
+              "shell_or_neck_radius_m": 0.150199,
+              "overlap_m": 0.056637
+            },
+            {
+              "angle_rad": 3.665191,
+              "socket_radius_m": 0.078063,
+              "shell_or_neck_radius_m": 0.119312,
+              "overlap_m": 0.041248
+            },
+            {
+              "angle_rad": 3.839724,
+              "socket_radius_m": 0.064596,
+              "shell_or_neck_radius_m": 0.100234,
+              "overlap_m": 0.035638
+            },
+            {
+              "angle_rad": 4.014257,
+              "socket_radius_m": 0.055847,
+              "shell_or_neck_radius_m": 0.086786,
+              "overlap_m": 0.030938
+            },
+            {
+              "angle_rad": 4.18879,
+              "socket_radius_m": 0.050538,
+              "shell_or_neck_radius_m": 0.077854,
+              "overlap_m": 0.027316
+            },
+            {
+              "angle_rad": 4.363323,
+              "socket_radius_m": 0.047468,
+              "shell_or_neck_radius_m": 0.07259,
+              "overlap_m": 0.025122
+            },
+            {
+              "angle_rad": 4.537856,
+              "socket_radius_m": 0.046069,
+              "shell_or_neck_radius_m": 0.069984,
+              "overlap_m": 0.023915
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.046111,
+              "shell_or_neck_radius_m": 0.0696,
+              "overlap_m": 0.023489
+            },
+            {
+              "angle_rad": 4.886922,
+              "socket_radius_m": 0.04592,
+              "shell_or_neck_radius_m": 0.069984,
+              "overlap_m": 0.024064
+            },
+            {
+              "angle_rad": 5.061455,
+              "socket_radius_m": 0.047315,
+              "shell_or_neck_radius_m": 0.07259,
+              "overlap_m": 0.025275
+            },
+            {
+              "angle_rad": 5.235988,
+              "socket_radius_m": 0.050375,
+              "shell_or_neck_radius_m": 0.077854,
+              "overlap_m": 0.027479
+            },
+            {
+              "angle_rad": 5.410521,
+              "socket_radius_m": 0.055667,
+              "shell_or_neck_radius_m": 0.086786,
+              "overlap_m": 0.031119
+            },
+            {
+              "angle_rad": 5.585054,
+              "socket_radius_m": 0.064387,
+              "shell_or_neck_radius_m": 0.100234,
+              "overlap_m": 0.035847
+            },
+            {
+              "angle_rad": 5.759587,
+              "socket_radius_m": 0.077634,
+              "shell_or_neck_radius_m": 0.119312,
+              "overlap_m": 0.041678
+            },
+            {
+              "angle_rad": 5.934119,
+              "socket_radius_m": 0.092952,
+              "shell_or_neck_radius_m": 0.150199,
+              "overlap_m": 0.057247
+            },
+            {
+              "angle_rad": 6.108652,
+              "socket_radius_m": 0.116152,
+              "shell_or_neck_radius_m": 0.190668,
+              "overlap_m": 0.074516
+            }
+          ],
+          "minimum_overlap_m": 0.023489
+        },
+        {
+          "height_m": 2.238,
+          "samples": [
+            {
+              "angle_rad": 0.0,
+              "socket_radius_m": 0.108182,
+              "shell_or_neck_radius_m": 0.09,
+              "overlap_m": 0.018182
+            },
+            {
+              "angle_rad": 0.174533,
+              "socket_radius_m": 0.104895,
+              "shell_or_neck_radius_m": 0.088292,
+              "overlap_m": 0.016603
+            },
+            {
+              "angle_rad": 0.349066,
+              "socket_radius_m": 0.104895,
+              "shell_or_neck_radius_m": 0.08931,
+              "overlap_m": 0.015585
+            },
+            {
+              "angle_rad": 0.523599,
+              "socket_radius_m": 0.105154,
+              "shell_or_neck_radius_m": 0.08846,
+              "overlap_m": 0.016694
+            },
+            {
+              "angle_rad": 0.698132,
+              "socket_radius_m": 0.101959,
+              "shell_or_neck_radius_m": 0.088798,
+              "overlap_m": 0.01316
+            },
+            {
+              "angle_rad": 0.872665,
+              "socket_radius_m": 0.101959,
+              "shell_or_neck_radius_m": 0.088798,
+              "overlap_m": 0.01316
+            },
+            {
+              "angle_rad": 1.047198,
+              "socket_radius_m": 0.101017,
+              "shell_or_neck_radius_m": 0.08846,
+              "overlap_m": 0.012557
+            },
+            {
+              "angle_rad": 1.22173,
+              "socket_radius_m": 0.097948,
+              "shell_or_neck_radius_m": 0.08931,
+              "overlap_m": 0.008638
+            },
+            {
+              "angle_rad": 1.396263,
+              "socket_radius_m": 0.097948,
+              "shell_or_neck_radius_m": 0.088292,
+              "overlap_m": 0.009656
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.099909,
+              "shell_or_neck_radius_m": 0.09,
+              "overlap_m": 0.009909
+            },
+            {
+              "angle_rad": 1.745329,
+              "socket_radius_m": 0.096873,
+              "shell_or_neck_radius_m": 0.088292,
+              "overlap_m": 0.008582
+            },
+            {
+              "angle_rad": 1.919862,
+              "socket_radius_m": 0.096873,
+              "shell_or_neck_radius_m": 0.08931,
+              "overlap_m": 0.007563
+            },
+            {
+              "angle_rad": 2.094395,
+              "socket_radius_m": 0.100503,
+              "shell_or_neck_radius_m": 0.08846,
+              "overlap_m": 0.012043
+            },
+            {
+              "angle_rad": 2.268928,
+              "socket_radius_m": 0.099809,
+              "shell_or_neck_radius_m": 0.088798,
+              "overlap_m": 0.011011
+            },
+            {
+              "angle_rad": 2.443461,
+              "socket_radius_m": 0.099809,
+              "shell_or_neck_radius_m": 0.088798,
+              "overlap_m": 0.011011
+            },
+            {
+              "angle_rad": 2.617994,
+              "socket_radius_m": 0.103748,
+              "shell_or_neck_radius_m": 0.08846,
+              "overlap_m": 0.015288
+            },
+            {
+              "angle_rad": 2.792527,
+              "socket_radius_m": 0.10382,
+              "shell_or_neck_radius_m": 0.08931,
+              "overlap_m": 0.01451
+            },
+            {
+              "angle_rad": 2.96706,
+              "socket_radius_m": 0.10382,
+              "shell_or_neck_radius_m": 0.088292,
+              "overlap_m": 0.015528
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.108182,
+              "shell_or_neck_radius_m": 0.09,
+              "overlap_m": 0.018182
+            },
+            {
+              "angle_rad": 3.316126,
+              "socket_radius_m": 0.104895,
+              "shell_or_neck_radius_m": 0.088292,
+              "overlap_m": 0.016603
+            },
+            {
+              "angle_rad": 3.490659,
+              "socket_radius_m": 0.104895,
+              "shell_or_neck_radius_m": 0.08931,
+              "overlap_m": 0.015585
+            },
+            {
+              "angle_rad": 3.665191,
+              "socket_radius_m": 0.105154,
+              "shell_or_neck_radius_m": 0.08846,
+              "overlap_m": 0.016694
+            },
+            {
+              "angle_rad": 3.839724,
+              "socket_radius_m": 0.101959,
+              "shell_or_neck_radius_m": 0.088798,
+              "overlap_m": 0.01316
+            },
+            {
+              "angle_rad": 4.014257,
+              "socket_radius_m": 0.101959,
+              "shell_or_neck_radius_m": 0.088798,
+              "overlap_m": 0.01316
+            },
+            {
+              "angle_rad": 4.18879,
+              "socket_radius_m": 0.101017,
+              "shell_or_neck_radius_m": 0.08846,
+              "overlap_m": 0.012557
+            },
+            {
+              "angle_rad": 4.363323,
+              "socket_radius_m": 0.097948,
+              "shell_or_neck_radius_m": 0.08931,
+              "overlap_m": 0.008638
+            },
+            {
+              "angle_rad": 4.537856,
+              "socket_radius_m": 0.097948,
+              "shell_or_neck_radius_m": 0.088292,
+              "overlap_m": 0.009656
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.099909,
+              "shell_or_neck_radius_m": 0.09,
+              "overlap_m": 0.009909
+            },
+            {
+              "angle_rad": 4.886922,
+              "socket_radius_m": 0.096873,
+              "shell_or_neck_radius_m": 0.088292,
+              "overlap_m": 0.008582
+            },
+            {
+              "angle_rad": 5.061455,
+              "socket_radius_m": 0.096873,
+              "shell_or_neck_radius_m": 0.08931,
+              "overlap_m": 0.007563
+            },
+            {
+              "angle_rad": 5.235988,
+              "socket_radius_m": 0.100503,
+              "shell_or_neck_radius_m": 0.08846,
+              "overlap_m": 0.012043
+            },
+            {
+              "angle_rad": 5.410521,
+              "socket_radius_m": 0.099809,
+              "shell_or_neck_radius_m": 0.088798,
+              "overlap_m": 0.011011
+            },
+            {
+              "angle_rad": 5.585054,
+              "socket_radius_m": 0.099809,
+              "shell_or_neck_radius_m": 0.088798,
+              "overlap_m": 0.011011
+            },
+            {
+              "angle_rad": 5.759587,
+              "socket_radius_m": 0.103748,
+              "shell_or_neck_radius_m": 0.08846,
+              "overlap_m": 0.015288
+            },
+            {
+              "angle_rad": 5.934119,
+              "socket_radius_m": 0.10382,
+              "shell_or_neck_radius_m": 0.08931,
+              "overlap_m": 0.01451
+            },
+            {
+              "angle_rad": 6.108652,
+              "socket_radius_m": 0.10382,
+              "shell_or_neck_radius_m": 0.088292,
+              "overlap_m": 0.015528
+            }
+          ],
+          "minimum_overlap_m": 0.007563
+        }
+      ],
+      "profiles": [
+        {
+          "height_m": 2.105,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.22104585250075473,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.046111136527557946,
+              "shell_radius_m": 0.08960002514485449,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.22104585250075473,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.046111136527557946,
+              "shell_radius_m": 0.06960001542738457,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.109926,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.2154631010342717,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.047205790959937856,
+              "shell_radius_m": 0.0876296460226684,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.21546307509973459,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.047205790959937856,
+              "shell_radius_m": 0.06762963506565564,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.114852,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.20988035208038955,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.04830044528012907,
+              "shell_radius_m": 0.0856592648489487,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.20988032545600213,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.04830044528012907,
+              "shell_radius_m": 0.0656592484070495,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.119778,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.20429784289508227,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.04939505471600405,
+              "shell_radius_m": 0.08368897328796407,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.20429784289508227,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.04939505471600405,
+              "shell_radius_m": 0.06368896453959198,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.124704,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.1987150875203364,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.05048970980440157,
+              "shell_radius_m": 0.08171859262535157,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.1987150875203364,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.05048970980440157,
+              "shell_radius_m": 0.061718583936709315,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.12963,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.19313234429452944,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.05158436250311541,
+              "shell_radius_m": 0.07974821260259456,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.19313234429452944,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.05158436250311541,
+              "shell_radius_m": 0.0597482022433736,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.134556,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.18290299474379834,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.05267903285020743,
+              "shell_radius_m": 0.07613784078607244,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.18290299474379834,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.05267903285020743,
+              "shell_radius_m": 0.05613782943891389,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.139481,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.17229574895940356,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.05377368729419874,
+              "shell_radius_m": 0.07239410217648708,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.17229574895940356,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.05377368729419874,
+              "shell_radius_m": 0.052394091361200094,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.144407,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.16168844773015154,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.054868339517246144,
+              "shell_radius_m": 0.06865036542383479,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.1616884765300598,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.054868339517246144,
+              "shell_radius_m": 0.048650353592758176,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.149333,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.15108173896600907,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.055962950125485474,
+              "shell_radius_m": 0.06490683531738312,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.15108173896600907,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.055962950125485474,
+              "shell_radius_m": 0.04490679508527464,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.154259,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.1404744972075911,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.057057605166831185,
+              "shell_radius_m": 0.061163068252519256,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.14047447068825325,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.057057605166831185,
+              "shell_radius_m": 0.04116307163584442,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.159185,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.12986719424772036,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.05815225809016286,
+              "shell_radius_m": 0.0574193443013153,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.12986719424772036,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.05815225809016286,
+              "shell_radius_m": 0.03741933440452078,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.164111,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.11925995432145205,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.059246912942714544,
+              "shell_radius_m": 0.05367560741892509,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.11925995432145205,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.059246912942714544,
+              "shell_radius_m": 0.03367559607970057,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.169037,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.10865271017426634,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.06034156769022006,
+              "shell_radius_m": 0.04993186868562921,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.10865271017426634,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.06034156769022006,
+              "shell_radius_m": 0.029931858195747826,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.173963,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.09804546993510282,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.061436235602573,
+              "shell_radius_m": 0.046188130171816784,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.09804540819233545,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.061436235602573,
+              "shell_radius_m": 0.02618811983039882,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.178889,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.08743870367799084,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.06253084524281982,
+              "shell_radius_m": 0.04244457158680064,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.08743870367799084,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.06253084524281982,
+              "shell_radius_m": 0.022444560984588795,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.183815,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.07570630317350882,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.06362548378458817,
+              "shell_radius_m": 0.03870083454282502,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.07570624474001318,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.06362548378458817,
+              "shell_radius_m": 0.018700823363550226,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.188741,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.06394803576184661,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.06472015335890646,
+              "shell_radius_m": 0.034957096485567704,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12999999704269258,
+              "shell_radius_m": 0.06394797386592112,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.06472015335890646,
+              "shell_radius_m": 0.014957085031256792,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.193667,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.1283333285507701,
+              "shell_radius_m": 0.05265045110738168,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.06766665150765741,
+              "shell_radius_m": 0.03136003018309183,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.1283333285507701,
+              "shell_radius_m": 0.05265039140769431,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.06766665150765741,
+              "shell_radius_m": 0.011360019224274208,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.198593,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12609422349190946,
+              "shell_radius_m": 0.041511058191162825,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.07124918645469594,
+              "shell_radius_m": 0.027813330022476015,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12609422349190946,
+              "shell_radius_m": 0.041511058191162825,
+              "neck_radius_m": null
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.07124918645469594,
+              "shell_radius_m": 0.007813319520882335,
+              "neck_radius_m": null
+            }
+          ]
+        },
+        {
+          "height_m": 2.203519,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12385517255170352,
+              "shell_radius_m": 0.028128325701159005,
+              "neck_radius_m": 0.09000003221133768
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.07483172450983701,
+              "shell_radius_m": 0.02426662990091442,
+              "neck_radius_m": 0.09000000116725762
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12385517255170352,
+              "shell_radius_m": 0.028128325701159005,
+              "neck_radius_m": 0.09000003221133768
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.07483171517566785,
+              "shell_radius_m": 0.0042666197339379505,
+              "neck_radius_m": 0.08999999599324324
+            }
+          ]
+        },
+        {
+          "height_m": 2.208444,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.12161618637713885,
+              "shell_radius_m": 0.010472595682012595,
+              "neck_radius_m": 0.09000003221133768
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.07841408115408405,
+              "shell_radius_m": 0.020720094179494514,
+              "neck_radius_m": 0.09000000116725762
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.12161618637713885,
+              "shell_radius_m": 0.010472595682012595,
+              "neck_radius_m": 0.09000003221133768
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.07841407521559318,
+              "shell_radius_m": 0.0007200837110646187,
+              "neck_radius_m": 0.08999999599324324
+            }
+          ]
+        },
+        {
+          "height_m": 2.21337,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.11937713598667139,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000003221133768
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.08199658967241114,
+              "shell_radius_m": 0.0028266161871502785,
+              "neck_radius_m": 0.09000000116725762
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.11937707747529093,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000003221133768
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.08199661238853748,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.08999999599324324
+            }
+          ]
+        },
+        {
+          "height_m": 2.218296,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.11713802962387476,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000003221133768
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.08557912760706705,
+              "shell_radius_m": 0.006373316053408176,
+              "neck_radius_m": 0.09000000116725762
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.11713802962387476,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000003221133768
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.0855791357690093,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.08999999599324324
+            }
+          ]
+        },
+        {
+          "height_m": 2.223222,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.11489898154737586,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000003221133768
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.08916166268754658,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000000116725762
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.11489892075553015,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000003221133768
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.08916167313287131,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.08999999599324324
+            }
+          ]
+        },
+        {
+          "height_m": 2.228148,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.1126598712323264,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000003221133768
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.09274420026552521,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000000116725762
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.11265981336558445,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000003221133768
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.09274420026552521,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.08999999599324324
+            }
+          ]
+        },
+        {
+          "height_m": 2.233074,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.11042082140711254,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000003221133768
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.09632673764525303,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000000116725762
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.1104207623669815,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000003221133768
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.09632673281106773,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.08999999599324324
+            }
+          ]
+        },
+        {
+          "height_m": 2.238,
+          "cuts": [
+            {
+              "angle_rad": 0,
+              "socket_radius_m": 0.10818183582762612,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000003221133768
+            },
+            {
+              "angle_rad": 1.570796,
+              "socket_radius_m": 0.09990906510997219,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000000116725762
+            },
+            {
+              "angle_rad": 3.141593,
+              "socket_radius_m": 0.10818177556557022,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.09000003221133768
+            },
+            {
+              "angle_rad": 4.712389,
+              "socket_radius_m": 0.09990908841422554,
+              "shell_radius_m": null,
+              "neck_radius_m": 0.08999999599324324
+            }
+          ]
+        }
+      ],
+      "lower_return": {
+        "fitting_pipe_triangle_intersections": 22,
+        "fitting_plinth_triangle_intersections": 9,
+        "fitting_axis_x_m": [
+          0.91,
+          1.02
+        ],
+        "plinth_outer_x_m": 0.95,
+        "pipe_endpoint_m": [
+          0.64,
+          0.33,
+          0.18
+        ]
+      }
+    }
+  ]
+}

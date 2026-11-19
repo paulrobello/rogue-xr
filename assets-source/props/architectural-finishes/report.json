@@ -1,0 +1,103 @@
+{
+  "meshes": 7,
+  "materials": 3,
+  "packedTextures": 6,
+  "runtimeBytes": 2488788,
+  "sha256": "14633adbfe506cd77357f19924f7093b0bdc4b7bb317767e88e82bae80072bd1",
+  "reimport": "Seven identity roots, finite UV0 and coordinates, nonzero triangles, exact 2x4m bounds, clear portals",
+  "blender": "5.3.0",
+  "nodes": {
+    "BoilerBay": {
+      "triangles": 1998,
+      "depthMeters": 0.2,
+      "vertices": 1251,
+      "materials": [
+        "BoilerFinish"
+      ]
+    },
+    "BoilerServiceBay": {
+      "triangles": 3382,
+      "depthMeters": 0.2,
+      "vertices": 2173,
+      "materials": [
+        "BoilerFinish",
+        "PracticalAmberGlass"
+      ]
+    },
+    "BoilerDoor": {
+      "triangles": 1276,
+      "depthMeters": 0.2,
+      "vertices": 809,
+      "materials": [
+        "BoilerFinish"
+      ]
+    },
+    "TimberBay": {
+      "triangles": 1762,
+      "depthMeters": 0.174,
+      "vertices": 1452,
+      "materials": [
+        "TimberFinish"
+      ]
+    },
+    "TimberCarvedBay": {
+      "triangles": 2250,
+      "depthMeters": 0.185,
+      "vertices": 1611,
+      "materials": [
+        "TimberFinish",
+        "PracticalAmberGlass"
+      ]
+    },
+    "TimberDoor": {
+      "triangles": 1050,
+      "depthMeters": 0.174,
+      "vertices": 755,
+      "materials": [
+        "TimberFinish"
+      ]
+    },
+    "BoilerExchangerBay": {
+      "steamPasses": 6,
+      "connectedFins": 12,
+      "mountingFeet": 4,
+      "tubeContacts": [
+        "overhead supply tee",
+        "all 12 fin meshes",
+        "wall return flange"
+      ],
+      "triangles": 6038,
+      "depthMeters": 0.222,
+      "vertices": 3503,
+      "materials": [
+        "BoilerFinish"
+      ]
+    }
+  },
+  "units": "metres",
+  "front": "glTF +Z",
+  "dimensionsMeters": [
+    2,
+    4
+  ],
+  "source": "Original scripted geometry, cast finishes and wood-cut atlas derived from the project walnut",
+  "woodSource": "public/assets/materials/walnut/walnut.basecolor.png",
+  "inputsSha256": {
+    "scripts/assets/build-architectural-finishes.py": "ec9226629082c303e46aa5c78e6eb7e575ed4edc6d09a3481c72ea4ca3bf9e6e",
+    "scripts/assets/finish_surfaces.py": "04e2ca5b9de03a339e60998e8d568b07d7ff31dce540ce4abc5aa16e91221ab8",
+    "public/assets/materials/walnut/walnut.basecolor.png": "c2c1d72ba308c02f6304ee389a86d6663199d01a352160c347801cefd4042a0b"
+  },
+  "blendSha256": {
+    "architectural-finishes_high.blend": "5fe178e9e1decd05cf076c3486b64023de6ed33c54ed80249623d368d54cd055",
+    "architectural-finishes_low.blend": "6115e9f24b1a3df2f7479161eaf12da7b0c9e73b3ced577ef2c0400998a4e132"
+  },
+  "atlasPixels": [
+    768,
+    512
+  ],
+  "ambient": "48 cosine-weighted BVH rays per corner",
+  "pbr": "Embedded sRGB base colour, tangent-space normal and packed linear roughness/metallic",
+  "sourceRights": "Original geometry and procedural finishes. Walnut source approval and commercial-use record: assets-source/materials/README.md.",
+  "rebuild": "blender -b --factory-startup --python-exit-code 1 -P scripts/assets/build-architectural-finishes.py",
+  "ownerVisualApproval": "pending"
+}
