@@ -106,7 +106,7 @@ export function primePressure(run: RunState): PressureActionResult | null {
   const current = readPressure(run);
   if (current.solved || !(['A', 'B', 'C'] as const).every((id) => current.notes.includes(id)))
     return null;
-  const target = pressureTarget(run.seed);
+  const target = pressureTarget(run.floorSeed ?? run.seed);
   if (!current.dials.every((dial, index) => dial === target[index])) return null;
   const state: NormalizedPressureState = { ...current, solved: true };
   return result({ ...run, pressure: state }, state, 0);

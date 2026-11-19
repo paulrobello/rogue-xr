@@ -10,7 +10,7 @@ Click the right thumbstick to open the radial menu. Tilt it toward **Settings**,
 
 ## Room layout showcase
 
-[Walk the enemy-free room showcase](https://spire.pardev.net/?seed=MAPTEST2). The link uses a separate save slot. All ten rooms are accessible from the entry hall. Open the radial menu to see your room number, template, and dimensions.
+[Walk the enemy-free room showcase](https://spire.pardev.net/?seed=MAPTEST2). The link uses a separate save slot. Floor 1 has ten rooms. Its entry hall also opens onto the stairs to a second enemy-free floor. Point at the flight or its destination sign, pull the trigger, and confirm **Go upstairs** or **Go downstairs**. Desktop players can click the same targets. Both routes arrive on level ground. Open the radial menu to see your room number, template, and dimensions.
 
 | Route from room 0 | What to inspect |
 | --- | --- |

@@ -26,6 +26,11 @@ export function bindFlowPersistence(
     queue = queue.then(write).catch((error: unknown) => console.error('save failed', error));
   };
   const off = flow.onChange((event) => {
+    if (event.type === 'floor-travel') {
+      const snapshot = flow.snapshot(Date.now(), event.room);
+      if (snapshot) enqueue(() => saveRunSnapshot(db, snapshot));
+      return;
+    }
     if (event.type === 'workshop') {
       const ws = flow.workshop;
       enqueue(() => saveWorkshop(db, ws));

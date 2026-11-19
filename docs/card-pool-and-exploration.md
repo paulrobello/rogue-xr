@@ -1,6 +1,6 @@
 # Card pool and exploration plan
 
-Status: draft for Paul's review, 2026-11-17. The Foundry combat batch and the first pressure-valve puzzle are playable. Other entries below are design proposals. Numbers are first-pass values, tuned in playtests. Paul asked for this in chat on 2026-11-17: plan the full card pool, including the lock pick and the other non-combat cards the roadmap needs, and make the game interesting between combat with puzzles, backtracking, optional paths and tasks.
+Status: draft for Paul's review, 2026-11-17. The Foundry combat batch, the pressure-valve puzzle and the first paired staircases are playable. Other entries below are design proposals. Numbers are first-pass values, tuned in playtests. Paul asked for this in chat on 2026-11-17: plan the full card pool, including the lock pick and the other non-combat cards the roadmap needs, and make the game interesting between combat with puzzles, backtracking, optional paths and tasks.
 
 The slice reference points every new card is measured against: 3 steam per turn, a hand of 5, Piston Strike (1 steam, 6 damage) and Brass Guard (1 steam, 5 block).
 
@@ -182,7 +182,7 @@ Optionally, one patrolling automaton per floor walks between rooms. Touching it 
 
 ### E6. Stairs between floors
 
-On multi-floor runs, a player can climb a marked staircase to the next floor and come back down the same stairs. Both landings show the direction and destination floor. From a seated position, the player can point at the stairs and confirm travel, then arrive on a level landing facing into the room.
+Runs now have two seeded floors. A player can take the marked staircase to Floor 2 and return to Floor 1. Both landings show the direction and destination floor. From a seated position, the player can point at the stairs and confirm travel, then arrive on a level landing facing into the room.
 
 Keep the deck, HP and cog purse with the run. Keep each floor’s layout, opened chests, cleared encounters and unlocked doors with that floor. A return trip resumes exploration at the matching landing. Repeated crossings and save/resume must preserve those changes without paying a reward twice.
 
@@ -200,7 +200,7 @@ Keep the deck, HP and cog purse with the run. Keep each floor’s layout, opened
 | W8 | Remaining field cards (Scrying Lens, Recall Spiral, Oil Can, Tuning Fork, Forge Ember, Polishing Kit, Smoke Flask, Spare Valve) | W1, W4, W5 |
 | W9 | Remaining puzzle types (gear train, orrery, bell chimes) and the wandering automaton | W4 |
 | W10 | Wave C combat cards, Junk cards, and the act 2 enemies that add Junk | W7, PRD Q1 (acts) |
-| W11 | Build paired up/down stairs and per-floor saves. Verify ascend, descend, reload on either floor, and revisit a cleared room and an opened chest. | A run spanning at least two seeded floors, after the one-floor slice |
+| W11 | Paired up/down stairs and per-floor saves are playable. Both floors keep their own opened chests, pressure works and cleared rooms. | Two seeded floors |
 
 Assets per wave go through the art bible (D8) and the asset table:
 - **Wave A:** 15 illustrations, the iron d4 model and faces, the anchor glyph.

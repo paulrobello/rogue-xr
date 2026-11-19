@@ -9,6 +9,7 @@ import {
   type StoredPressureState,
 } from '../rules/pressure.ts';
 import type { PendingLoot, RewardOffer, RewardTier, RunState } from '../rules/run.ts';
+import { floorSeedFor } from '../rules/run.ts';
 import {
   createWorkshop,
   maxTier,
@@ -56,6 +57,25 @@ export interface SnapshotWorld {
   readonly guardianDefeated?: boolean;
   /** Encounter/reward content generation used to build this floor. Absent means the original pool. */
   readonly contentVersion?: number;
+  readonly floorNumber?: number;
+  readonly reachedRooms?: readonly number[];
+  /** Visited floors other than the active one. */
+  readonly floors?: readonly FloorSnapshot[];
+}
+
+export interface FloorSnapshot {
+  readonly floorNumber: number;
+  readonly floorSeed: string;
+  readonly clearedEncounters: readonly string[];
+  readonly reachedRooms: readonly number[];
+  readonly guardianDefeated?: boolean;
+  readonly openedLoot?: readonly string[];
+  readonly pendingLoot?: readonly PendingLoot[];
+  readonly usedHearths?: readonly string[];
+  readonly pressure?: StoredPressureState;
+  readonly bookSecretOpenedRooms?: readonly number[];
+  readonly bookSecretKeyRooms?: readonly number[];
+  readonly bookSecretCabinetRooms?: readonly number[];
 }
 
 export interface RunSnapshot extends SnapshotWorld {
@@ -191,7 +211,7 @@ function roomIds(value: unknown, path: string): number[] | undefined {
   return [...value];
 }
 
-function validateRunState(raw: unknown, path: string): RunState {
+function validateRunState(raw: unknown, path: string, pressureSeed?: string): RunState {
   const r = rec(raw, path);
   let seed: string;
   try {
@@ -215,8 +235,13 @@ function validateRunState(raw: unknown, path: string): RunState {
   // Added later still: a save from before claimable chest cards has no card waiting.
   const pending =
     r.pendingLoot === undefined ? [] : pendingLoot(r.pendingLoot, `${path}.pendingLoot`);
+  const activeFloorSeed = pressureSeed ?? seed;
+  if (r.floorSeed !== undefined && r.floorSeed !== activeFloorSeed)
+    fail(`${path}.floorSeed`, 'does not match active floor');
   const pressureState =
-    r.pressure === undefined ? undefined : pressure(r.pressure, `${path}.pressure`, seed);
+    r.pressure === undefined
+      ? undefined
+      : pressure(r.pressure, `${path}.pressure`, activeFloorSeed);
   const bookSecretOpenedRooms = roomIds(r.bookSecretOpenedRooms, `${path}.bookSecretOpenedRooms`);
   const bookSecretKeyRooms = roomIds(r.bookSecretKeyRooms, `${path}.bookSecretKeyRooms`);
   const bookSecretCabinetRooms = roomIds(
@@ -230,6 +255,7 @@ function validateRunState(raw: unknown, path: string): RunState {
   const difficulty = r.difficulty;
   return {
     seed,
+    ...(r.floorSeed === undefined ? {} : { floorSeed: activeFloorSeed }),
     rng,
     deck: strings(r.deck, `${path}.deck`),
     cogs: int(r.cogs, `${path}.cogs`, 0),
@@ -270,6 +296,16 @@ export function validateSnapshot(raw: unknown): RunSnapshot {
   if (typeof r.floorSeed !== 'string' || r.floorSeed === '') {
     fail('snapshot.floorSeed', 'expected a non-empty string');
   }
+  const floorNumber =
+    r.floorNumber === undefined ? 1 : int(r.floorNumber, 'snapshot.floorNumber', 1, 2);
+  const activeRun = validateRunState(
+    r.run,
+    'snapshot.run',
+    r.floorNumber === undefined ? undefined : r.floorSeed,
+  );
+  const expectedSeed = floorSeedFor(activeRun.seed, floorNumber);
+  if (r.floorNumber !== undefined && r.floorSeed !== expectedSeed)
+    fail('snapshot.floorSeed', 'does not match this floor');
   const pendingReward =
     r.pendingReward === null || r.pendingReward === undefined
       ? null
@@ -291,7 +327,7 @@ export function validateSnapshot(raw: unknown): RunSnapshot {
   return {
     version: SNAPSHOT_VERSION,
     savedAt: int(r.savedAt, 'snapshot.savedAt', 0),
-    run: validateRunState(r.run, 'snapshot.run'),
+    run: activeRun,
     phase: r.phase,
     floorSeed: r.floorSeed,
     roomIndex: int(r.roomIndex, 'snapshot.roomIndex', 0),
@@ -299,7 +335,73 @@ export function validateSnapshot(raw: unknown): RunSnapshot {
     pendingReward,
     ...(r.guardianDefeated === undefined ? {} : { guardianDefeated: r.guardianDefeated }),
     ...(r.contentVersion === undefined ? {} : { contentVersion: r.contentVersion }),
+    ...(r.floorNumber === undefined ? {} : { floorNumber }),
+    ...(r.reachedRooms === undefined
+      ? {}
+      : { reachedRooms: roomIds(r.reachedRooms, 'snapshot.reachedRooms') }),
+    ...(r.floors === undefined
+      ? {}
+      : { floors: validateFloors(r.floors, activeRun.seed, floorNumber) }),
   };
+}
+
+function validateFloors(raw: unknown, runSeed: string, active: number): FloorSnapshot[] {
+  if (!Array.isArray(raw)) fail('snapshot.floors', 'expected an array');
+  const seen = new Set<number>([active]);
+  return raw.map((value, i) => {
+    const path = `snapshot.floors[${i}]`;
+    const r = rec(value, path);
+    const floorNumber = int(r.floorNumber, `${path}.floorNumber`, 1, 2);
+    if (seen.has(floorNumber)) fail(`${path}.floorNumber`, 'duplicate floor');
+    seen.add(floorNumber);
+    const floorSeed =
+      typeof r.floorSeed === 'string'
+        ? normalizeSeed(r.floorSeed)
+        : fail(`${path}.floorSeed`, 'expected a seed');
+    if (floorSeed !== floorSeedFor(runSeed, floorNumber))
+      fail(`${path}.floorSeed`, 'does not match run seed');
+    if (r.guardianDefeated !== undefined && typeof r.guardianDefeated !== 'boolean')
+      fail(`${path}.guardianDefeated`, 'expected a boolean');
+    const result: FloorSnapshot = {
+      floorNumber,
+      floorSeed,
+      clearedEncounters: strings(r.clearedEncounters, `${path}.clearedEncounters`),
+      reachedRooms: roomIds(r.reachedRooms, `${path}.reachedRooms`) ?? [],
+      ...(r.guardianDefeated === undefined ? {} : { guardianDefeated: r.guardianDefeated }),
+      ...(r.openedLoot === undefined
+        ? {}
+        : { openedLoot: strings(r.openedLoot, `${path}.openedLoot`) }),
+      ...(r.pendingLoot === undefined
+        ? {}
+        : { pendingLoot: pendingLoot(r.pendingLoot, `${path}.pendingLoot`) }),
+      ...(r.usedHearths === undefined
+        ? {}
+        : { usedHearths: strings(r.usedHearths, `${path}.usedHearths`) }),
+      ...(r.pressure === undefined
+        ? {}
+        : { pressure: pressure(r.pressure, `${path}.pressure`, floorSeed) }),
+      ...(r.bookSecretOpenedRooms === undefined
+        ? {}
+        : {
+            bookSecretOpenedRooms: roomIds(
+              r.bookSecretOpenedRooms,
+              `${path}.bookSecretOpenedRooms`,
+            ),
+          }),
+      ...(r.bookSecretKeyRooms === undefined
+        ? {}
+        : { bookSecretKeyRooms: roomIds(r.bookSecretKeyRooms, `${path}.bookSecretKeyRooms`) }),
+      ...(r.bookSecretCabinetRooms === undefined
+        ? {}
+        : {
+            bookSecretCabinetRooms: roomIds(
+              r.bookSecretCabinetRooms,
+              `${path}.bookSecretCabinetRooms`,
+            ),
+          }),
+    };
+    return result;
+  });
 }
 
 /** A detached, JSON-safe copy of the run and its world position, stamped with `now`. */

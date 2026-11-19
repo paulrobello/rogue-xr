@@ -1,4 +1,4 @@
-import { RunRng, type RunRngState, Stream } from '../core/rng.ts';
+import { hashString, normalizeSeed, RunRng, type RunRngState, Stream } from '../core/rng.ts';
 import { type Difficulty, isDifficulty } from './difficulty.ts';
 import { RulesError, type StoredPressureState } from './types.ts';
 
@@ -9,6 +9,8 @@ import { RulesError, type StoredPressureState } from './types.ts';
  */
 export interface RunState {
   readonly seed: string;
+  /** Seed of the active generated floor. Legacy runs omit it and use `seed`. */
+  readonly floorSeed?: string;
   /** All five stream snapshots. Reward and treasure rolls advance only `loot`. */
   readonly rng: RunRngState;
   /** Card ids in deck order. Duplicates allowed. */
@@ -62,6 +64,19 @@ export const TREASURE_COGS: CogRange = { min: 15, max: 25 };
 export const REWARD_CHOICES = 3;
 export const SKIP_REWARD = 'skip';
 export const DEFAULT_MAX_HP = 60;
+
+/** Stable eight-character seed for a floor in a multi-floor run. */
+export function floorSeedFor(runSeed: string, floorNumber: number): string {
+  if (!Number.isInteger(floorNumber) || floorNumber < 1)
+    throw new RulesError('floor number must be positive');
+  const normalized = normalizeSeed(runSeed);
+  if (floorNumber === 1) return normalized;
+  if (normalized === 'MAPTEST2' && floorNumber === 2) return 'MAPTEST3';
+  return hashString(`${normalized}:floor:${floorNumber}`)
+    .toString(16)
+    .toUpperCase()
+    .padStart(8, '0');
+}
 
 export interface RunOptions {
   /** Defaults to `DEFAULT_MAX_HP`. */
@@ -139,6 +154,7 @@ export function createRun(
     throw new RulesError(`Unknown difficulty ${String(difficulty)}`);
   return {
     seed: rng.seed,
+    floorSeed: rng.seed,
     rng: rng.snapshot(),
     deck: [...starterDeck],
     cogs,

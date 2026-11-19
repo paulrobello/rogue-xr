@@ -4,6 +4,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { configureTextBuilder } from 'troika-three-text';
 import { sha256 as architecturalFinishRevision } from '../assets-source/props/architectural-finishes/report.json';
+import { sha256 as stairwellRevision } from '../assets-source/props/stairwell/report.json';
 import { audioStateForFlow } from './audio/cues.ts';
 import { AudioDirector } from './audio/index.ts';
 import { requestCardFaceArt } from './cards/card-face-material.ts';
@@ -34,7 +35,8 @@ import { combatPitch, createDesktopControls } from './desktop/controls.ts';
 import { Walker } from './desktop/walker.ts';
 import { DiceWorld } from './dice/world.ts';
 import { type EnemyActor, type EnemyAsset, tryLoadEnemyAsset } from './enemies/enemy-asset.ts';
-import { SHOWCASE_SEED } from './floor/generate.ts';
+import { isShowcaseFloor, SHOWCASE_SEED } from './floor/generate.ts';
+import { placeStairEntry, type StairEntry } from './floor/stairs.ts';
 import { encounterStartsFight, fleeStandPoint } from './flow/flee.ts';
 import { RunFlow } from './flow/flow.ts';
 import { FlowUi, RUN_MENU_ITEMS, rewardCardTexture } from './flow/panels.ts';
@@ -58,13 +60,18 @@ import {
   isDifficulty,
   runDifficulty,
 } from './rules/difficulty.ts';
-import { parseLootKey, type RewardTier } from './rules/run.ts';
+import { floorSeedFor, parseLootKey, type RewardTier } from './rules/run.ts';
 import { createWorkshop } from './rules/workshop.ts';
 import { sharedKtx2Loader } from './ui/first-render.ts';
 import { loadIconSheet } from './ui/icon-sheet.ts';
 import { failLoading, revealGame, showLoading } from './ui/loading-screen.ts';
 import { mountUpdateNotice } from './update/index.ts';
-import { type FloorView, mountFloorView, seedFromQuery } from './world/floor-view.ts';
+import {
+  type FloorView,
+  mountFloorView,
+  playableFloorPlan,
+  seedFromQuery,
+} from './world/floor-view.ts';
 import type { HearthPick } from './world/hearth.ts';
 import { dressHeroRooms, fetchHeroRooms, loadHeroAssets } from './world/hero-rooms.ts';
 import {
@@ -202,9 +209,11 @@ const mountFloor = (
   seed: string,
   contentVersion?: number,
   preservedBookRooms?: readonly number[],
+  floorNumber: 1 | 2 = 1,
 ): FloorView => {
   const view = mountFloorView(scene, rig, seed, {
     templates: worldTemplates,
+    floorNumber,
     contentVersion,
     preservedBookRooms,
   });
@@ -521,6 +530,26 @@ const enemyAssets = new Map<string, Promise<EnemyAsset | null>>(
 const loadedEnemies = async (): Promise<EnemyAsset[]> =>
   (await Promise.all(enemyAssets.values())).filter((a): a is EnemyAsset => a !== null);
 const prepareEnemy = (actor: EnemyActor): void => reflect(actor.object, 0.45);
+let stairArt: Promise<Map<1 | 2, THREE.Object3D>> | undefined;
+function stairModels() {
+  stairArt ??= new GLTFLoader()
+    .loadAsync(`/assets/props/stairwell/stairwell.glb?v=${stairwellRevision}`)
+    .then(({ scene }) => {
+      reflect(scene, 0.46);
+      const up = scene.getObjectByName('StairUp'),
+        down = scene.getObjectByName('StairDown');
+      if (!up || !down) throw Error('Stair landings missing from the staircase kit');
+      return new Map<1 | 2, THREE.Object3D>([
+        [1, up],
+        [2, down],
+      ]);
+    })
+    .catch((error: unknown) => {
+      stairArt = undefined;
+      throw error;
+    });
+  return stairArt;
+}
 let styleKit: Promise<RoomStyleKit> | undefined;
 function architecturalFinishes(): Promise<RoomStyleKit> {
   styleKit ??= new GLTFLoader()
@@ -580,7 +609,7 @@ const dressFloor = async (target: FloorView): Promise<void> => {
       ),
     ]);
   }
-  const [rooms, door, coffers, decor, furnishings, styles] = await Promise.all([
+  const [rooms, door, coffers, decor, furnishings, styles, stairs] = await Promise.all([
     roomAssets,
     sealedDoorMaterial,
     lootMaterials,
@@ -594,6 +623,7 @@ const dressFloor = async (target: FloorView): Promise<void> => {
     target.world.plan.rooms.some((_, index) => roomStyleFor(target.world.plan, index))
       ? architecturalFinishes()
       : undefined,
+    target.world.stairEntry ? stairModels() : undefined,
     fitTable(target),
     ...dressed,
   ]);
@@ -602,6 +632,8 @@ const dressFloor = async (target: FloorView): Promise<void> => {
       (placed) => !rooms.some((room) => room.manifest.template.id === placed.templateId),
     );
     if (missing) throw new Error(`Couldn't load the ${missing.templateId} room`);
+    const stair = stairs?.get(target.floorNumber);
+    if (stair) target.dressStairs(stair);
     dressHeroRooms(target, rooms, decor, styles);
     const candles = new Set<THREE.MeshStandardMaterial>();
     for (const group of target.world.roomGroups)
@@ -835,10 +867,12 @@ const freshFloor = (
   seed: string,
   contentVersion?: number,
   preservedBookRooms?: readonly number[],
+  floorNumber: 1 | 2 = 1,
 ): FloorView => {
   if (
     floor &&
     floor.seed === seed &&
+    floor.floorNumber === floorNumber &&
     floor.contentVersion === (contentVersion ?? ENCOUNTER_CONTENT_VERSION) &&
     !floorUsed &&
     !preservedBookRooms?.length
@@ -846,7 +880,7 @@ const freshFloor = (
     return floor;
   combat?.dispose();
   floor?.dispose();
-  floor = mountFloor(seed, contentVersion, preservedBookRooms);
+  floor = mountFloor(seed, contentVersion, preservedBookRooms, floorNumber);
   floor.setAudio(audio);
   combat = makeCombat(floor);
   void prepareFloor(floor);
@@ -862,10 +896,7 @@ const startRun = (seed: string, difficulty: Difficulty): void => {
   floorUsed = true;
   flow.newRun(target.seed, difficulty);
 };
-const continueRun = (): void => {
-  const snap = storedSnapshot;
-  if (!snap || flow.phase !== 'title') return;
-  // Saves predating contentVersion used the original encounter pool.
+const savedFloor = (snap: RunSnapshot): FloorView => {
   const preservedBookRooms = [
     ...new Set([
       ...(snap.run.bookSecretKeyRooms ?? []),
@@ -873,7 +904,12 @@ const continueRun = (): void => {
       ...(snap.run.bookSecretOpenedRooms ?? []),
     ]),
   ];
-  const target = freshFloor(snap.floorSeed, snap.contentVersion ?? 1, preservedBookRooms);
+  const target = freshFloor(
+    snap.floorSeed,
+    snap.contentVersion ?? 1,
+    preservedBookRooms,
+    snap.floorNumber === 2 ? 2 : 1,
+  );
   for (const room of snap.clearedEncounters) target.markCleared(Number(room), true);
   for (const key of snap.run.openedLoot ?? []) {
     const opened = parseLootKey(key);
@@ -889,10 +925,55 @@ const continueRun = (): void => {
     if (used) target.hearth.markUsed(used.room, used.socketId);
   }
   target.book.restore(snap.run);
+  return target;
+};
+
+function arriveAtLanding(target: FloorView, entry: StairEntry): void {
+  const [fx, fz] = entry.facing;
+  if (xr.presenting) {
+    const dir = camera.getWorldDirection(new THREE.Vector3());
+    rig.rotation.y += Math.atan2(-fx, -fz) - Math.atan2(dir.x, dir.z);
+  } else {
+    walker.yaw = THREE.MathUtils.radToDeg(Math.atan2(-fx, fz));
+    rig.rotation.y = -THREE.MathUtils.degToRad(walker.yaw);
+  }
+  rig.updateMatrixWorld(true);
+  const eye = camera.getWorldPosition(new THREE.Vector3());
+  const [x, z] = entry.approach;
+  rig.position.x += x - eye.x;
+  rig.position.z += z - eye.z;
+  rig.updateMatrixWorld(true);
+  target.world.update(x, z);
+}
+
+function travelStairs(): void {
+  if (!floor?.stairs || busy() || flow.phase !== 'explore' || floor.locked || !flow.run) return;
+  const destination = floor.stairs.destination;
+  const nextSeed = floorSeedFor(flow.run.seed, destination);
+  const next = placeStairEntry(
+    playableFloorPlan(nextSeed, floor.contentVersion, destination),
+    worldTemplates,
+  );
+  if (!next || !flow.travelToFloor(destination, next.room)) return;
+  const snap = flow.snapshot(Date.now(), next.room);
+  if (!snap) throw Error('No exploration state after crossing the staircase');
+  const target = savedFloor(snap);
+  arriveAtLanding(target, next);
+  target.pressure?.sync(flow.pressure);
+  syncNotes(target);
+  storedSnapshot = snap;
+}
+
+const continueRun = (): void => {
+  const snap = storedSnapshot;
+  if (!snap || flow.phase !== 'title') return;
+  const target = savedFloor(snap);
   const at = target.standPoint(snap.roomIndex) ?? target.world.spawnPoint();
   rig.position.set(at.x, rig.position.y, at.z);
   target.world.update(at.x, at.z);
   floorUsed = true;
+  if (snap.floorNumber && target.world.stairEntry?.room === snap.roomIndex)
+    arriveAtLanding(target, target.world.stairEntry);
   flow.continueRun(snap);
   target.pressure?.sync(flow.pressure);
   syncNotes(target);
@@ -900,13 +981,15 @@ const continueRun = (): void => {
 const ui = floor
   ? new FlowUi({
       flow,
-      showcaseRoom: () => {
-        if (floor?.seed !== SHOWCASE_SEED) return null;
+      onStairTravel: travelStairs,
+      locationLabel: () => {
+        if (!floor) return null;
+        if (!isShowcaseFloor(floor.seed, floor.floorNumber)) return `Floor ${floor.floorNumber}`;
         const index = floor.world.current;
         const { template, footprint } = floor.world.rooms[index];
         const width = footprint.max[0] - footprint.min[0],
           depth = footprint.max[1] - footprint.min[1];
-        return `Room ${index} · ${template.id.replaceAll('-', ' ')} · ${width} × ${depth} m`;
+        return `Floor ${floor.floorNumber} · Room ${index} · ${template.id.replaceAll('-', ' ')} · ${width} × ${depth} m`;
       },
       onNoteOpened: (at) => audio?.playSfx('paper-unfold', at),
       noteRecord: (id) => floor?.notes?.record(id) ?? null,
@@ -1084,12 +1167,14 @@ function operateMachine(hit: PressureAction, hand?: XRHandedness): boolean {
 
 function fieldHit(origin: THREE.Vector3, direction: THREE.Vector3) {
   if (!floor) return null;
+  const stair = floor.stairs?.pick(floor.world.current, origin, direction);
   const note = floor.notes?.pick(origin, direction);
   const machine = floor.pressure?.pick(origin, direction);
   const coffer = floor.loot.pick(origin, direction);
   const hearth = floor.hearth.pick(origin, direction);
   const book = floor.book.pick(origin, direction);
   const hits = [
+    ...(stair ? [{ kind: 'stairs' as const, hit: stair }] : []),
     ...(note ? [{ kind: 'note' as const, hit: note }] : []),
     ...(machine ? [{ kind: 'machine' as const, hit: machine }] : []),
     ...(coffer ? [{ kind: 'coffer' as const, hit: coffer }] : []),
@@ -1107,6 +1192,8 @@ const activatePickup = (
   const pick = fieldHit(origin, direction);
   if (!pick) return false;
   switch (pick.kind) {
+    case 'stairs':
+      return ui?.openStairs(camera) ?? false;
     case 'note':
       return flow.collectPressureNote(pick.hit.room, pick.hit.id) !== null;
     case 'machine':

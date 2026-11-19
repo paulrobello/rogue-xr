@@ -1,0 +1,85 @@
+{
+  "asset": "Clockwork Spire paired staircase alcoves",
+  "authoring": "Scripted native Blender geometry; no external provider or paid generation",
+  "blender": "5.2.3 LTS Linux",
+  "coordinates": "runtime X right Y up +Z into alcove, origin centered at entrance floor",
+  "bounds_m": {
+    "x": [
+      -1.5,
+      1.5
+    ],
+    "y": [
+      -1.88,
+      4.12
+    ],
+    "z": [
+      0,
+      5
+    ]
+  },
+  "roots": {
+    "StairUp": {
+      "rise_m": 1.62,
+      "mesh_count": 5,
+      "triangles": 11624,
+      "sign_center": [
+        0,
+        2.87,
+        4.765
+      ]
+    },
+    "StairDown": {
+      "rise_m": -1.62,
+      "mesh_count": 6,
+      "triangles": 10652,
+      "sign_center": [
+        0,
+        -0.37,
+        4.765
+      ]
+    }
+  },
+  "sign_usable_size_m": [
+    0.88,
+    0.38
+  ],
+  "sign_facing": "-Z",
+  "entrance_clearance_m": [
+    1.6,
+    2.4
+  ],
+  "tread_count": 9,
+  "landing": "z=3.71..4.95",
+  "texture_source": "Existing project 1024 px tileable PBR maps, deterministically resized to 512 px and packed in the source blend and GLB; base color sRGB, normal and ORM linear",
+  "reimport": "Blender 5.2.3 GLB importer; named roots, finite coordinates, meshes, materials, triangles and bounds checked by scripts/assets/inspect-stairwell.py",
+  "colliders": "Runtime owned",
+  "illumination": "Visual sconces only; runtime owns lighting",
+  "lods": "None",
+  "bakes": "Existing tileable PBR maps, no high-to-low bake or lightmap",
+  "approval": "Technical and independent visual review complete. Owner headset review pending.",
+  "files_sha256": {
+    "scripts/assets/build-stairwell.py": "60e8b87605b1c85e020ff44449455c2120c3ce5f7a94e386b92b57f4e560530f",
+    "scripts/assets/inspect-stairwell.py": "2a5c5452b29d4dddec4546a86f2d4a9110c203106537c98cc2e330ec08beb9c7",
+    "assets-source/props/stairwell/stairwell.blend": "9d76bede817cd2a636801c8a5fa761491abe6a22eb96702fc59d61bf732a23ee",
+    "public/assets/props/stairwell/stairwell.glb": "53fa88d01ed0f5f18f6a57272f19c2038d29a5b26fdf590769fd8c13fcee3a6c",
+    "public/assets/materials/stone-floor/stone-floor.basecolor.png": "9ff95890f076e9d6886715be934eb0b640d203942a2ec6b9f8562e65758732fd",
+    "public/assets/materials/stone-floor/stone-floor.normal.png": "47adde7526f66f09f17705c6f3a802345b50bbd9d1d505f10fbe228004aefa7a",
+    "public/assets/materials/stone-floor/stone-floor.orm.png": "09a537be8f1a15fc993513d08d8feb34e76559d878c383ed356c08ebc07aff48",
+    "public/assets/materials/walnut/walnut.basecolor.png": "c2c1d72ba308c02f6304ee389a86d6663199d01a352160c347801cefd4042a0b",
+    "public/assets/materials/walnut/walnut.normal.png": "3ee262cb20e41fe1f8b6dac8528f0b3f51e6e129cc9542f99d81c21242046558",
+    "public/assets/materials/walnut/walnut.orm.png": "6de73e58bc870595d74968b44e4f94b153c2dfc529ae6cb5c9e2beda5c24846d",
+    "public/assets/materials/brass-aged/brass-aged.basecolor.png": "f731331533f5e9293ab3172f052aef3f3984924012dfe3c44540756af17b4316",
+    "public/assets/materials/brass-aged/brass-aged.normal.png": "752f6211fca91fa4e2beb4e43c11ba097d2da7139268fdf33fb5b2ee26bfbe3a",
+    "public/assets/materials/brass-aged/brass-aged.orm.png": "dab4896ed62310c39b975954f70cddf116f86518842eb7d84b0fde14dc7adbeb",
+    "scripts/assets/inspect-stairwell-contact.py": "4fc5121216ce1fcaef7d1a22869c5bd55d3f3afd8f0e9c744f7c9bcaa3f38f22",
+    "assets-source/props/stairwell/staging/StairUp.png": "760a34cb2f87e633853398699f2db6c758925883ab4a8b2aff8d7e725ae875e1",
+    "assets-source/props/stairwell/staging/StairDown.png": "62570a2a47dbcd793f978a5ed8d031a3270254f7146e5bbbd67a3cec25b65a7a",
+    "docs/verification/quest-paired-staircases.jpg": "77849e7fe6ad082f22a7730dab2e742a10d413c6b79f9a44dffd1b017b3c3f07"
+  },
+  "sha256": "53fa88d01ed0f5f18f6a57272f19c2038d29a5b26fdf590769fd8c13fcee3a6c",
+  "bytes": 5471564,
+  "visual_review": "Independent review of the final Quest Browser captures scored 9/10. The up and down arrows, rail supports and access doors are visible from each approach. The descending tread edges are subtler than the ascending edges.",
+  "rail_contact": "Measured each of 18 posts per variant: at least 0.0399997 m overlap through stringer axis. Six landing feet and anchors per variant overlap the landing by at least 0.0449999 m on each axis. Both stringer endpoints are within side-floor and landing-anchor volumes.",
+  "rear_door": "Closed walnut door, frame, brass hinges and pull; existing sign center and facing retained.",
+  "in_game_evidence": "docs/verification/quest-paired-staircases.jpg"
+}

@@ -6,6 +6,8 @@
 into the page canvas and applies neither foveation nor the framebuffer scale, so headset checks
 still close every comfort, budget and readability criterion.
 
+The `--stairs` check points the controller at each destination sign, confirms each crossing and checks arrival position and heading on both floors.
+
 ## Run it
 
 Start the dev server first (`make dev-start`, port 4260), then:

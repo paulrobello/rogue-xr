@@ -65,6 +65,9 @@ export interface FloorParams {
 
 /** Reserved walk-through of all five baked room templates. */
 export const SHOWCASE_SEED = 'MAPTEST2';
+export const SHOWCASE_UPPER_SEED = 'MAPTEST3';
+export const isShowcaseFloor = (seed: string, floor: 1 | 2): boolean =>
+  floor === 1 ? seed === SHOWCASE_SEED : seed === SHOWCASE_UPPER_SEED;
 
 export const DEFAULT_FLOOR_PARAMS: FloorParams = {
   minRooms: 6,

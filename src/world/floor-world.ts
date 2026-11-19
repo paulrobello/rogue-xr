@@ -13,6 +13,7 @@ import {
   type WorldRoom,
   worldRooms,
 } from '../floor/generate.ts';
+import { placeStairEntry, type StairEntry } from '../floor/stairs.ts';
 import { nearSet, visibleSet } from '../floor/visibility.ts';
 import { PALETTE } from '../palette.ts';
 import { enemyHeading, enemyLocalRotationY } from './enemy-facing.ts';
@@ -88,6 +89,10 @@ export interface FloorWorld {
   dressHearths(materials: HearthMaterials): void;
   /** A door leaf in every sealed doorway; only boarded doors show theirs until a room is dressed. */
   readonly sealedDoors: readonly THREE.Mesh[];
+  /** Deterministically selected outside stair landing, if this floor has a clear sealed doorway. */
+  readonly stairEntry: StairEntry | null;
+  /** Opens the selected stair doorway and moves its collision stop to the first riser. */
+  openStairEntry(): StairEntry | null;
   /**
    * Gives every sealed door leaf `material` (owned by the caller), its UVs scaled so one texture
    * tile covers `tileMeters`. Leaves keep their flat greybox colour until this is called.
@@ -299,6 +304,51 @@ export function buildFloorWorld(
     colliders[s.room]?.push(doorwayCollider(door));
   }
 
+  const stairEntry = placeStairEntry(plan, templates);
+  let stairOpened = false;
+  function openStairSeal(): StairEntry | null {
+    if (!stairEntry) return null;
+    if (stairOpened) return stairEntry;
+    stairOpened = true;
+    const cap = sealedDoors.find(
+      (candidate) =>
+        candidate.userData.room === stairEntry.room && candidate.userData.door === stairEntry.door,
+    );
+    cap?.removeFromParent();
+    const group = roomGroups[stairEntry.room];
+    group?.getObjectByName(`door-fill-${stairEntry.room}-${stairEntry.door}`)?.removeFromParent();
+    group?.getObjectByName(`lintel-fill-${stairEntry.room}-${stairEntry.door}`)?.removeFromParent();
+    const plug = group?.getObjectByName(`door-plug-${stairEntry.door}`);
+    if (plug) plug.visible = false;
+    const frame = group?.getObjectByName(`door-frame-${stairEntry.door}`);
+    if (frame) frame.visible = true;
+    const boxes = colliders[stairEntry.room];
+    const door = rooms[stairEntry.room]?.doors.find(
+      (candidate) => candidate.id === stairEntry.door,
+    );
+    const barrier = door && doorwayCollider(door);
+    if (barrier) {
+      const index =
+        boxes?.findIndex(
+          (candidate) =>
+            candidate.min[0] === barrier.min[0] &&
+            candidate.min[2] === barrier.min[2] &&
+            candidate.max[0] === barrier.max[0] &&
+            candidate.max[2] === barrier.max[2],
+        ) ?? -1;
+      if (index >= 0) {
+        // The first riser is the limit of smooth movement. Pointing at the flight confirms travel.
+        const dx = stairEntry.facing[0] * 0.42,
+          dz = stairEntry.facing[1] * 0.42;
+        boxes[index] = {
+          min: [barrier.min[0] + dx, 0, barrier.min[2] + dz],
+          max: [barrier.max[0] + dx, barrier.max[1], barrier.max[2] + dz],
+        };
+      }
+    }
+    return stairEntry;
+  }
+
   const passage = guardedConnection(plan);
   const guard = passage?.[0];
   const door = rooms[guard?.room ?? -1]?.doors.find((d) => d.id === guard?.door);
@@ -470,6 +520,8 @@ export function buildFloorWorld(
       return true;
     },
     sealedDoors,
+    stairEntry,
+    openStairEntry: openStairSeal,
     coffers,
     dressCoffers(loot) {
       kit.dress(loot);
@@ -496,7 +548,8 @@ export function buildFloorWorld(
       for (const door of rooms[room]?.doors ?? []) {
         const plug = model.getObjectByName(`door-plug-${door.id}`);
         const frame = model.getObjectByName(`door-frame-${door.id}`);
-        const closed = walls.has(door.id) && plug !== undefined;
+        const stairOpen = stairOpened && room === stairEntry?.room && door.id === stairEntry.door;
+        const closed = walls.has(door.id) && !stairOpen && plug !== undefined;
         if (plug) plug.visible = closed;
         if (frame) frame.visible = !closed;
       }

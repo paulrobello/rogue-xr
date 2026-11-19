@@ -11,7 +11,7 @@ import { type RoomTemplate, templateById } from '../content/rooms.ts';
 import { isValidSeed, normalizeSeed, randomSeed, Stream } from '../core/rng.ts';
 import { BreakApart } from '../enemies/break-apart.ts';
 import type { EnemyActor, EnemyAsset } from '../enemies/enemy-asset.ts';
-import { attachPressureWing, generateFloor } from '../floor/generate.ts';
+import { attachPressureWing, generateFloor, SHOWCASE_UPPER_SEED } from '../floor/generate.ts';
 import { nearSet, shellSet } from '../floor/visibility.ts';
 import { PALETTE } from '../palette.ts';
 import type { TreasureLoot } from '../rules/run.ts';
@@ -51,6 +51,7 @@ import {
   type RoomStyleKit,
   roomStyleFor,
 } from './room-styles.ts';
+import { Stairwell } from './stairwell.ts';
 import { type RigidNode, rigidAngle } from './study-room.ts';
 
 export interface FloorAudio {
@@ -116,6 +117,9 @@ export interface FloorHearths {
 
 export interface FloorView {
   world: FloorWorld;
+  readonly floorNumber: 1 | 2;
+  readonly stairs: Stairwell | null;
+  dressStairs(model: THREE.Object3D): void;
   readonly styledRooms: readonly THREE.Group[];
   loot: FloorLoot;
   hearth: FloorHearths;
@@ -218,11 +222,21 @@ function tagEnemyKinds(world: FloorWorld, seed: string, contentVersion: number):
 }
 
 export interface FloorViewOptions {
+  floorNumber?: 1 | 2;
   preservedBookRooms?: readonly number[];
   /** Templates the world is built from (the floor plan always uses the greybox set). */
   templates?: readonly RoomTemplate[];
   /** Encounter content generation used to build this floor. */
   contentVersion?: number;
+}
+
+export function playableFloorPlan(seed: string, contentVersion: number, floorNumber: 1 | 2 = 1) {
+  const generated = generateFloor(seed);
+  const base =
+    floorNumber === 2 && seed === SHOWCASE_UPPER_SEED
+      ? { ...generated, rooms: generated.rooms.map((r) => ({ ...r, encounter: null })) }
+      : generated;
+  return contentVersion >= PRESSURE_WORKS_VERSION ? attachPressureWing(base) : base;
 }
 
 /** Greybox exploration view: the generated floor, flat greybox lighting, the rig at the entry. */
@@ -233,8 +247,9 @@ export function mountFloorView(
   options: FloorViewOptions = {},
 ): FloorView {
   const contentVersion = options.contentVersion ?? ENCOUNTER_CONTENT_VERSION;
-  const base = generateFloor(seed);
-  const plan = contentVersion >= PRESSURE_WORKS_VERSION ? attachPressureWing(base) : base;
+  const plan = playableFloorPlan(seed, contentVersion, options.floorNumber);
+  let stairs: Stairwell | null = null;
+  const floorNumber = options.floorNumber ?? 1;
   const world = buildFloorWorld(plan, options.templates);
   const notes = plan.pressureWing ? new PressureNotes(world) : null;
   const pressure = plan.pressureWing ? new PressureWorks(world, plan.pressureWing) : null;
@@ -459,6 +474,15 @@ export function mountFloorView(
   };
   return {
     world,
+    floorNumber,
+    get stairs() {
+      return stairs;
+    },
+    dressStairs(model) {
+      if (stairs) return;
+      const landing = world.openStairEntry();
+      if (landing) stairs = new Stairwell(landing, floorNumber === 1 ? 2 : 1, world, model);
+    },
     styledRooms,
     loot,
     hearth,
@@ -555,7 +579,11 @@ export function mountFloorView(
             facing: door.facing,
             position: door.position,
             closed: world.plan.sealed.some(
-              (d) => d.room === index && d.door === door.id && d.style === 'wall',
+              (d) =>
+                d.room === index &&
+                d.door === door.id &&
+                d.style === 'wall' &&
+                !(stairs?.entry.room === index && stairs.entry.door === door.id),
             ),
           }));
           applyRoomStyle(styled, style, roomStyleKit, doors);
@@ -591,6 +619,7 @@ export function mountFloorView(
       return spinners.length;
     },
     dispose() {
+      stairs?.dispose();
       for (const room of styledRooms) disposeRoomStyle(room);
       book.dispose();
       furnishings?.dispose();

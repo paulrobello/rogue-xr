@@ -120,6 +120,32 @@ def glb_stats(path: Path) -> dict:
     }
 
 
+def check_stairwell(errors: list[str]) -> None:
+    source = ROOT / "assets-source/props/stairwell"
+    path = ROOT / "public/assets/props/stairwell/stairwell.glb"
+    report = json.loads((source / "report.json").read_text())
+    gltf = glb_json(path)
+    if report["sha256"] != sha256(path) or report["bytes"] != path.stat().st_size:
+        errors.append("stairwell: runtime revision and report disagree")
+    for name, expected in report["files_sha256"].items():
+        if sha256(ROOT / name) != expected:
+            errors.append(f"stairwell: changed source or artifact {name}")
+    nodes = gltf["nodes"]
+    roots = [nodes[i] for i in gltf["scenes"][gltf.get("scene", 0)]["nodes"]]
+    if {n["name"] for n in roots} != {"StairUp", "StairDown"} or len(roots) != 2:
+        errors.append("stairwell: both directional roots are required")
+    for root in roots:
+        children = root.get("children", [])
+        triangles = sum(gltf["accessors"][p["indices"]]["count"] // 3
+                        for child in children for p in gltf["meshes"][nodes[child]["mesh"]]["primitives"])
+        recorded = report["roots"][root["name"]]
+        if triangles != recorded["triangles"] or not 0 < triangles <= 12000 or len(children) != recorded["mesh_count"] or not 1 <= len(children) <= 6:
+            errors.append(f"stairwell: invalid mesh budget for {root['name']}")
+    if len(gltf["materials"]) != 6 or any("bufferView" not in image for image in gltf["images"]):
+        errors.append("stairwell: expected six materials including the descending brass nosings, with embedded texture maps")
+    print(f"asset-check props/stairwell: {len(roots)} directional flights, {path.stat().st_size} bytes")
+
+
 def check_architectural_finishes(errors: list[str]) -> dict:
     """Check the reusable boiler/timber finish kit and its source chain."""
     err = lambda msg: errors.append(f"props/architectural-finishes: {msg}")  # noqa: E731
@@ -1138,6 +1164,7 @@ def main() -> int:
         s = check_decor(errors, warnings)
         sizes = ", ".join(f"{k} {v['width']}px" for k, v in s.get("maps", {}).items())
         print(f"asset-check props/table-decor: tris {s.get('perKind')}, {len(s.get('glb', {}).get('materials', []))} material; {sizes}")
+    check_stairwell(errors)
     architectural = check_architectural_finishes(errors)
     if architectural:
         print(f"asset-check props/architectural-finishes: {architectural.get('triangles')} tris, {architectural.get('materials')} materials, {architectural.get('embeddedImages')} embedded images, {architectural.get('roots')} roots")

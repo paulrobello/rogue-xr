@@ -27,6 +27,7 @@ const { values: opts } = parseArgs({
     workshop: { type: 'boolean', default: false },
     foundry: { type: 'boolean', default: false },
     deck: { type: 'boolean', default: false },
+    stairs: { type: 'boolean', default: false },
     pressure: { type: 'boolean', default: false },
     // Only the enemy-phase checks: one two-automaton fight on TURN_SEED.
     turns: { type: 'boolean', default: false },
@@ -299,6 +300,66 @@ try {
       cogs: window.__flow.flow.run.cogs,
     }));
     record('pressure-payout', result.state.rewardClaimed && result.cogs === before + 20, result);
+  } else if (opts.stairs) {
+    await page.goto(`${opts.base}/?seed=MAPTEST2&debug`);
+    await waitFor(
+      'stair-model-ready',
+      () => window.__combat?.floor.stairs && document.getElementById('loading-screen')?.hidden,
+      undefined,
+      45000,
+    );
+    await enterVr();
+    for (const destination of [2, 1]) {
+      await ev(() => {
+        const c = window.__combat,
+          f = c.floor,
+          entry = f.stairs.entry;
+        const rig = window.__xrEmu.ctx().rig,
+          head = c.camera.getWorldPosition(c.camera.position.clone());
+        rig.position.x += entry.approach[0] - head.x;
+        rig.position.z += entry.approach[1] - head.z;
+        rig.updateMatrixWorld(true);
+      });
+      await ev(() => window.__xrEmu.frames(4));
+      await aim(MAIN, await ev(() => window.__xrEmu.worldOf('stair-destination-sign')));
+      await ev(() => window.__xrEmu.frames(4));
+      await pullTrigger(MAIN);
+      await waitFor('stair-confirmation', () => window.__flow.ui.menuView === 'stairs');
+      await press('stair-travel-go');
+      await waitFor(
+        'landed',
+        (n) =>
+          window.__combat.floor.floorNumber === n &&
+          window.__combat.floor.stairs &&
+          document.getElementById('loading-screen')?.hidden,
+        destination,
+        45000,
+      );
+      await ev(() => window.__xrEmu.frames(4));
+      const landed = await ev(() => {
+        const c = window.__combat,
+          f = c.floor,
+          entry = f.stairs.entry;
+        const eye = c.camera.getWorldPosition(c.camera.position.clone());
+        const dir = c.camera.getWorldDirection(eye.clone());
+        return {
+          number: f.floorNumber,
+          room: f.world.current,
+          landing: entry.room,
+          headY: eye.y,
+          offset: Math.hypot(eye.x - entry.approach[0], eye.z - entry.approach[1]),
+          facing: -(entry.facing[0] * dir.x + entry.facing[1] * dir.z),
+        };
+      });
+      record(
+        `stairs-floor-${destination}`,
+        landed.number === destination &&
+          landed.room === landed.landing &&
+          landed.offset < 0.12 &&
+          landed.facing > 0.87,
+        landed,
+      );
+    }
   } else if (opts.deck) {
     await page.goto(`${opts.base}/?seed=${opts.seed}&debug`);
     await waitFor('deck-run-ready', () => window.__flow?.flow.phase === 'explore');

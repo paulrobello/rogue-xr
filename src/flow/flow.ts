@@ -4,7 +4,7 @@ import {
   PRESSURE_WORKS_VERSION,
 } from '../combat/encounter-choice.ts';
 import { LEGACY_REWARD_POOL, PERMANENT_CARD_IDS } from '../content/rewards.ts';
-import type { RunSnapshot } from '../persist/saves.ts';
+import type { FloorSnapshot, RunSnapshot } from '../persist/saves.ts';
 import { snapshotRun } from '../persist/saves.ts';
 import {
   DEFAULT_DIFFICULTY,
@@ -28,6 +28,7 @@ import {
   chooseReward,
   claimTreasure,
   createRun,
+  floorSeedFor,
   lootKey,
   openTreasure,
   type RewardChoice,
@@ -145,6 +146,7 @@ export type LootStage = 'opened' | 'claimed';
 
 export type FlowEvent =
   | { readonly type: 'phase'; readonly from: FlowPhase; readonly to: FlowPhase }
+  | { readonly type: 'floor-travel'; readonly room: number }
   | { readonly type: 'workshop' }
   | ({ readonly type: 'loot'; readonly stage: LootStage } & OpenedLoot)
   | ({ readonly type: 'hearth' } & UsedHearth)
@@ -181,6 +183,8 @@ export class RunFlow {
   private readonly clearedRooms: number[] = [];
   private readonly reached = new Set<number>();
   private roomValue = 0;
+  private floorNumberValue = 1;
+  private readonly floorStates = new Map<number, FloorSnapshot>();
   private readonly listeners = new Set<(event: FlowEvent) => void>();
   private readonly opts: FlowOptions;
   private contentVersionValue = ENCOUNTER_CONTENT_VERSION;
@@ -323,6 +327,40 @@ export class RunFlow {
   get room(): number {
     return this.roomValue;
   }
+  get floorNumber(): number {
+    return this.floorNumberValue;
+  }
+  get floorSeed(): string {
+    return this.runValue ? floorSeedFor(this.runValue.seed, this.floorNumberValue) : '';
+  }
+
+  /** Changes floors only at an exploration boundary, preserving global deck, HP, purse and RNG. */
+  travelToFloor(destination: 1 | 2, destinationRoom: number): boolean {
+    const run = this.runValue;
+    if (
+      this.phaseValue !== 'explore' ||
+      !run ||
+      !Number.isInteger(destinationRoom) ||
+      destinationRoom < 0
+    )
+      return false;
+    if ((destination !== 1 && destination !== 2) || destination === this.floorNumberValue)
+      return false;
+    this.floorStates.set(this.floorNumberValue, this.archiveFloor());
+    this.lootValue = null;
+    this.hearthValue = null;
+    const next = this.floorStates.get(destination) ?? {
+      floorNumber: destination,
+      floorSeed: floorSeedFor(run.seed, destination),
+      clearedEncounters: [],
+      reachedRooms: [destinationRoom],
+    };
+    this.floorStates.delete(destination);
+    this.floorNumberValue = destination;
+    this.restoreFloor(next, destinationRoom);
+    this.emit({ type: 'floor-travel', room: destinationRoom });
+    return true;
+  }
   /** True while a run is being played, including the post-guardian exploration phase. */
   get inRun(): boolean {
     return (
@@ -404,6 +442,8 @@ export class RunFlow {
       difficulty,
     });
     this.resetRunBookkeeping(0, []);
+    this.floorNumberValue = 1;
+    this.floorStates.clear();
     return this.go('explore');
   }
 
@@ -415,7 +455,11 @@ export class RunFlow {
       .filter((n) => Number.isInteger(n) && n >= 0);
     this.runValue = snapshot.run;
     this.contentVersionValue = snapshot.contentVersion ?? 1;
+    this.floorNumberValue = snapshot.floorNumber ?? 1;
+    this.floorStates.clear();
+    for (const floor of snapshot.floors ?? []) this.floorStates.set(floor.floorNumber, floor);
     this.resetRunBookkeeping(snapshot.roomIndex, cleared);
+    for (const room of snapshot.reachedRooms ?? []) this.reached.add(room);
     this.offerValue = snapshot.phase === 'reward' ? snapshot.pendingReward : null;
     this.guardianDefeatedValue =
       snapshot.guardianDefeated === true ||
@@ -633,12 +677,15 @@ export class RunFlow {
       run,
       {
         phase,
-        floorSeed: run.seed,
+        floorSeed: this.floorSeed,
         roomIndex,
         clearedEncounters: this.clearedRooms.map(String),
         pendingReward: this.phaseValue === 'reward' ? this.offerValue : null,
         guardianDefeated: this.guardianDefeatedValue,
         contentVersion: this.contentVersionValue,
+        floorNumber: this.floorNumberValue,
+        reachedRooms: [...this.reached],
+        floors: [...this.floorStates.values()],
       },
       now,
     );
@@ -694,6 +741,52 @@ export class RunFlow {
     this.roomValue = room;
   }
 
+  private archiveFloor(): FloorSnapshot {
+    const run = this.runValue;
+    if (!run) throw new Error('cannot archive without a run');
+    return {
+      floorNumber: this.floorNumberValue,
+      floorSeed: this.floorSeed,
+      clearedEncounters: this.clearedRooms.map(String),
+      reachedRooms: [...this.reached],
+      guardianDefeated: this.guardianDefeatedValue,
+      openedLoot: run.openedLoot,
+      pendingLoot: run.pendingLoot,
+      usedHearths: run.usedHearths,
+      pressure: run.pressure,
+      bookSecretOpenedRooms: run.bookSecretOpenedRooms,
+      bookSecretKeyRooms: run.bookSecretKeyRooms,
+      bookSecretCabinetRooms: run.bookSecretCabinetRooms,
+    };
+  }
+
+  private restoreFloor(floor: FloorSnapshot, destinationRoom: number): void {
+    const run = this.runValue;
+    if (!run) return;
+    const cleared = floor.clearedEncounters
+      .map(Number)
+      .filter((n) => Number.isInteger(n) && n >= 0);
+    this.clearedRooms.length = 0;
+    this.clearedRooms.push(...cleared);
+    this.reached.clear();
+    for (const room of floor.reachedRooms ?? [destinationRoom]) this.reached.add(room);
+    this.reached.add(destinationRoom);
+    this.roomValue = destinationRoom;
+    this.offerValue = null;
+    this.guardianDefeatedValue = floor.guardianDefeated === true;
+    this.runValue = {
+      ...run,
+      floorSeed: floor.floorSeed,
+      openedLoot: floor.openedLoot,
+      pendingLoot: floor.pendingLoot,
+      usedHearths: floor.usedHearths,
+      pressure: floor.pressure,
+      bookSecretOpenedRooms: floor.bookSecretOpenedRooms,
+      bookSecretKeyRooms: floor.bookSecretKeyRooms,
+      bookSecretCabinetRooms: floor.bookSecretCabinetRooms,
+    };
+  }
+
   /** Ends the run: banks the purse once and builds the summary. */
   private finish(outcome: 'death' | 'victory'): boolean {
     const run = this.runValue;
@@ -704,8 +797,14 @@ export class RunFlow {
       outcome,
       seed: run.seed,
       difficulty: runDifficulty(run),
-      roomsReached: this.reached.size,
-      fightsWon: this.clearedRooms.length,
+      roomsReached: [...this.floorStates.values()].reduce(
+        (n, f) => n + f.reachedRooms.length,
+        this.reached.size,
+      ),
+      fightsWon: [...this.floorStates.values()].reduce(
+        (n, f) => n + f.clearedEncounters.length,
+        this.clearedRooms.length,
+      ),
       cogsEarned: run.cogs,
       bankTotal: this.workshopValue.cogsBanked,
     };
