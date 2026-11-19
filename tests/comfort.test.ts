@@ -406,7 +406,11 @@ describe('teleport view', () => {
     expect(view.ring.position.x).toBe(3);
     expect(view.ring.position.y).toBeGreaterThan(0);
 
+    view.update(preview(true, [3, -0.72, 1]), true);
+    expect(view.ring.position.y).toBeCloseTo(-0.72 + 0.022);
+    expect(view.ring.scale.x * view.ring.geometry.parameters.outerRadius * 2).toBeLessThan(0.34);
     view.update(preview(false, [3, 0, 1]));
+    expect(view.ring.scale.x).toBe(1);
     expect(view.ring.material.color.getHexString()).toBe(
       new THREE.Color(INVALID_COLOR).getHexString(),
     );

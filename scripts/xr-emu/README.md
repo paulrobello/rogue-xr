@@ -6,11 +6,11 @@
 into the page canvas and applies neither foveation nor the framebuffer scale, so headset checks
 still close every comfort, budget and readability criterion.
 
-The `--stairs` check uses the approach ray, chooses Stay, then drives the left stick up and back
-over the complete flight on both floors. It checks signed eye-height movement, ray selection from
-inside the flight, automatic confirmation on the far landing, deliberate confirmation after
-re-approach, and the final room, position and heading. It does not teleport between treads or call
-the floor-travel flow directly.
+The `--stairs` check aims a seated controller at the second and fifth treads on both flights.
+It compares the marker and the player's landing against the authored step heights, walks to the
+door, and checks that the sign, steps and rails ignore the trigger. Two trigger pulls on the
+handle must produce one floor change at full blackout. The check also measures the door swing,
+fade-in, arrival position, heading and seated head height.
 
 ## Run it
 

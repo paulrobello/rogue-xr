@@ -129,7 +129,7 @@ try {
   /** Points the main hand at a board control, checks the hover, then pulls the trigger. */
   const press = async (controlId, hand = MAIN) => {
     const target = await ev(
-      (id) => window.__xrEmu.worldOf(id) ?? window.__xrEmu.worldOf('radial-' + id),
+      (id) => window.__xrEmu.worldOf(id) ?? window.__xrEmu.worldOf(`radial-${id}`),
       controlId,
     );
     if (!target) {
@@ -324,97 +324,178 @@ try {
         rig.updateMatrixWorld(true);
       });
       await ev(() => window.__xrEmu.frames(4));
-      await aim(MAIN, await ev(() => window.__xrEmu.worldOf('stair-destination-sign')));
-      await ev(() => window.__xrEmu.frames(4));
-      await pullTrigger(MAIN);
-      await waitFor('stair-confirmation', () => window.__flow.ui.menuView === 'stairs');
-
-      await press('stair-travel-stay');
-      const readFlight = () =>
+      const readStairs = () =>
         ev(() => {
           const c = window.__combat,
-            f = c.floor,
-            g = f.stairs.root;
-          // The stereo projection camera can sit behind the physical center of the two eyes.
-          const eye = window.__xrEmu
-              .ctx()
-              .rig.localToWorld(c.camera.position.clone().copy(window.__xrEmu.device.position)),
-            local = g.worldToLocal(eye.clone());
-          return { depth: local.z, y: eye.y, view: window.__flow.ui.menuView };
+            q = window.__xrEmu,
+            g = c.floor.stairs.root;
+          const head = q.ctx().rig.localToWorld(c.camera.position.clone().copy(q.device.position));
+          const local = g.worldToLocal(head.clone());
+          const ring = c.teleportView.ring;
+          return {
+            depth: local.z,
+            headY: head.y,
+            groundY: c.locomotion.standingFloorY,
+            floor: c.floor.floorNumber,
+            phase: c.stairTransition.phase,
+            view: window.__flow.ui.menuView,
+            ringY: ring.visible ? ring.getWorldPosition(head.clone()).y : null,
+            preview: c.locomotion.teleportPreview,
+          };
         });
-      const first = await readFlight(),
-        sign = destination === 2 ? 1 : -1;
-      const walk = async (depth, forward) => {
-        const samples = [];
-        await ev(
-          (y) => window.__xrEmu.device.controllers.left.updateAxes('thumbstick', 0, y),
-          forward ? -1 : 1,
-        );
-        try {
-          for (let i = 0; i < 80; i++) {
-            const at = await readFlight();
-            samples.push(at);
-            if (at.view === 'stairs' || (forward ? at.depth >= depth : at.depth <= depth)) break;
-            await settle(85);
-          }
-        } finally {
-          await ev(() => window.__xrEmu.device.controllers.left.updateAxes('thumbstick', 0, 0));
-        }
-        return samples;
-      };
-      const threshold = (await walk(0.1, true)).at(-1);
-      const extended = await ev(() => {
-        const q = window.__xrEmu,
-          root = window.__combat.floor.stairs.root.name;
-        const hand = q.worldOf(root, [0.18, 1.25, 0.5]),
-          tread = q.worldOf(root, [0, root === 'staircase-up' ? 0.18 : -0.18, 1.1]);
-        q.placeAt('right', hand, tread);
-        return hand;
+      const first = await readStairs();
+      const headCalibration = first.headY - first.groundY;
+      const sign = destination === 2 ? 1 : -1;
+      await ev(() => {
+        const ui = window.__flow.ui;
+        ui.deps.onSettings({ ...ui.deps.settings(), teleportEnabled: true });
       });
+      // Aim from a seated hand at two tread centers, allowing for the teleport arc's gravity.
+      for (const step of [2, 5]) {
+        const height = sign * step * 0.18;
+        const depth = 1.08 + (step - 1) * 0.34;
+        await ev(
+          ({ height, depth }) => {
+            const q = window.__xrEmu,
+              g = window.__combat.floor.stairs.root;
+            const from = q.headPoint([0.18, -0.28, -0.3]);
+            const at = g.localToWorld(g.position.clone().set(0, height, depth));
+            const dx = at.x - from.x,
+              dz = at.z - from.z,
+              dy = at.y - from.y;
+            const gravity = 9.81,
+              speed = 7;
+            const range2 = dx * dx + dy * dy + dz * dz;
+            const a = speed * speed - gravity * dy;
+            const t2 = (2 * range2) / (a + Math.sqrt(a * a - gravity * gravity * range2));
+            at.y += (gravity * t2) / 2;
+            q.placeAt('right', from, at);
+            q.device.controllers.right.updateAxes('thumbstick', 0, -1);
+          },
+          { height, depth },
+        );
+        await ev(() => window.__xrEmu.frames(5));
+        const aimed = await readStairs();
+        await ev(() => window.__xrEmu.device.controllers.right.updateAxes('thumbstick', 0, 0));
+        await ev(() => window.__xrEmu.frames(5));
+        const planted = await readStairs();
+        record(
+          `stairs-teleport-tread-${destination}-${step}`,
+          aimed.preview?.valid &&
+            Math.abs(aimed.preview.landing[1] - height) < 0.001 &&
+            aimed.ringY !== null &&
+            Math.abs(aimed.ringY - height - 0.022) < 0.002 &&
+            Math.abs(planted.depth - depth) < 0.08 &&
+            Math.abs(planted.headY - headCalibration - height) < 0.02 &&
+            planted.floor === first.floor &&
+            planted.phase === 'idle',
+          {
+            height,
+            depth,
+            ring: aimed.ringY,
+            landing: aimed.preview?.landing,
+            reason: aimed.preview?.reason,
+            planted: planted.depth,
+            head: planted.headY,
+          },
+        );
+      }
+      await ev(() => window.__xrEmu.device.controllers.left.updateAxes('thumbstick', 0, -1));
+      try {
+        await waitFor(
+          'walk-to-handle',
+          () => {
+            const c = window.__combat,
+              q = window.__xrEmu;
+            const head = q
+              .ctx()
+              .rig.localToWorld(c.camera.position.clone().copy(q.device.position));
+            return c.floor.stairs.root.worldToLocal(head).z > 4.27;
+          },
+          undefined,
+          10000,
+        );
+      } finally {
+        await ev(() => window.__xrEmu.device.controllers.left.updateAxes('thumbstick', 0, 0));
+      }
+      const landing = await readStairs();
+      record(
+        `stairs-walk-landing-${destination}`,
+        landing.phase === 'idle' &&
+          landing.view === 'closed' &&
+          landing.depth > 4.25 &&
+          Math.abs(landing.groundY - 1.62 * sign) < 0.01,
+        landing,
+      );
+
+      const targets = await ev((sign) => {
+        const q = window.__xrEmu,
+          name = window.__combat.floor.stairs.root.name;
+        return [
+          q.worldOf('stair-destination-sign'),
+          q.worldOf(name, [0, sign * 1.26, 3.12]),
+          q.worldOf(name, [1.04, sign * 1.62 + 0.84, 3.8]),
+        ];
+      }, sign);
+      for (const target of targets) {
+        await aim(MAIN, target);
+        await ev(() => window.__xrEmu.frames(3));
+        await pullTrigger(MAIN);
+      }
+      const stayed = await readStairs();
+      record(
+        `stairs-nonhandle-inputs-noop-${destination}`,
+        stayed.phase === 'idle' && stayed.view === 'closed' && stayed.floor === first.floor,
+        stayed,
+      );
+      const handle = await ev(() => window.__xrEmu.worldOf('stair-door-handle-target'));
+      await aim(MAIN, handle);
       await ev(() => window.__xrEmu.frames(4));
+      const witness = ev(
+        () =>
+          new Promise((resolve) => {
+            const samples = [],
+              start = performance.now(),
+              oldFloor = window.__combat.floor.floorNumber;
+            const sample = () => {
+              const c = window.__combat,
+                t = c.stairTransition,
+                f = c.floor;
+              samples.push({
+                phase: t.phase,
+                opacity: t.opacity,
+                floor: f.floorNumber,
+                angle: f.stairs?.hinge.rotation.y ?? 0,
+              });
+              if (
+                (f.floorNumber !== oldFloor && t.phase === 'idle') ||
+                performance.now() - start > 10000
+              )
+                resolve(samples);
+              else window.__xrEmu.session.session.requestAnimationFrame(sample);
+            };
+            sample();
+          }),
+      );
       await pullTrigger(MAIN);
-      record(
-        'extended-trigger-at-first-step',
-        threshold.depth >= 0.1 && (await readFlight()).view === 'stairs',
-        { threshold, extended },
-      );
-      await press('stair-travel-stay');
-      const ascent = await walk(3.71, true);
-      const far = ascent.at(-1),
-        signedRise = (far.y - first.y) * sign;
-      const smooth = ascent.every((s, i) => i === 0 || (s.y - ascent[i - 1].y) * sign >= -0.025);
-      record(
-        'walk-full-flight',
-        smooth && Math.abs(signedRise - 1.62) < 0.06 && far.depth >= 3.71 && far.view === 'stairs',
-        { first, far, signedRise },
-      );
-      await press('stair-travel-stay');
-      await ev(() => window.__xrEmu.frames(10));
-      record('stay-on-landing', (await readFlight()).view === 'closed');
-      await aim(MAIN, await ev(() => window.__xrEmu.worldOf('stair-destination-sign')));
-      await ev(() => window.__xrEmu.frames(4));
       await pullTrigger(MAIN);
-      record('landing-door-trigger', (await readFlight()).view === 'stairs');
-      await press('stair-travel-stay');
-      const retreat = (await walk(-0.5, false)).at(-1);
+      const frames = await witness;
+      const changed = frames.findIndex((v) => v.floor === destination);
+      const switches = frames.filter((v, i) => i && v.floor !== frames[i - 1].floor).length;
+      const phases = [...new Set(frames.map((v) => v.phase))];
       record(
-        'walk-back-to-room',
-        Math.abs(retreat.y - first.y) < 0.03 && retreat.view === 'closed',
-        { retreat },
+        `stairs-handle-opens-${destination}`,
+        changed > 0 &&
+          switches === 1 &&
+          frames[changed - 1].opacity === 1 &&
+          frames[changed].opacity === 1 &&
+          frames.some((v) => v.phase === 'opening' && Math.abs(v.angle) > 0.65) &&
+          frames.some((v) => v.phase === 'fade-out' && v.opacity > 0 && v.opacity < 1) &&
+          frames.some((v) => v.phase === 'fade-in' && v.opacity > 0 && v.opacity < 1) &&
+          frames.at(-1).phase === 'idle',
+        { switches, phases, changed, angle: Math.min(...frames.map((v) => v.angle)) },
       );
-      await walk(3.71, true);
-      await waitFor('arrival-rearmed', () => window.__flow.ui.menuView === 'stairs');
-      await press('stair-travel-go');
-      await waitFor(
-        'landed',
-        (n) =>
-          window.__combat.floor.floorNumber === n &&
-          window.__combat.floor.stairs &&
-          document.getElementById('loading-screen')?.hidden,
-        destination,
-        45000,
-      );
-      await ev(() => window.__xrEmu.frames(4));
+      if (changed < 0) break;
       const landed = await ev(() => {
         const c = window.__combat,
           f = c.floor,
@@ -426,6 +507,7 @@ try {
           room: f.world.current,
           landing: entry.room,
           headY: eye.y,
+          groundY: c.locomotion?.standingFloorY ?? null,
           offset: Math.hypot(eye.x - entry.approach[0], eye.z - entry.approach[1]),
           facing: -(entry.facing[0] * dir.x + entry.facing[1] * dir.z),
         };
@@ -435,9 +517,13 @@ try {
         landed.number === destination &&
           landed.room === landed.landing &&
           landed.offset < 0.12 &&
-          Math.abs(landed.headY - first.y) < 0.06 &&
+          landed.groundY !== null &&
+          Math.abs(landed.headY - landed.groundY - headCalibration) < 0.08 &&
           landed.facing > 0.87,
-        landed,
+        {
+          ...landed,
+          phases,
+        },
       );
     }
   } else if (opts.deck) {

@@ -58,7 +58,7 @@ export class TeleportView {
   }
 
   /** Shows `preview` (the locomotion's current aim), or hides everything for null. */
-  update(preview: TeleportResult | null): void {
+  update(preview: TeleportResult | null, onStairs = false): void {
     this.root.visible = preview !== null && preview.points.length > 1;
     if (!preview || !this.root.visible) {
       this.arc.count = 0;
@@ -78,7 +78,11 @@ export class TeleportView {
     this.arc.instanceMatrix.needsUpdate = true;
     const landing = preview.landing;
     this.ring.visible = landing !== null;
-    if (landing) this.ring.position.set(landing[0], landing[1] + RING_LIFT, landing[2]);
+    if (landing) {
+      // A tread is 34 cm deep and its brass edge stands 16 mm above the wood.
+      this.ring.scale.setScalar(onStairs ? 0.45 : 1);
+      this.ring.position.set(landing[0], landing[1] + (onStairs ? 0.022 : RING_LIFT), landing[2]);
+    }
   }
 
   dispose(): void {

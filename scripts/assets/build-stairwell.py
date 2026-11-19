@@ -1,6 +1,7 @@
 """Build the paired Clockwork Spire stairwell alcoves. Run with Blender --background."""
 
 import sys
+import os
 from pathlib import Path
 
 import bpy
@@ -80,6 +81,7 @@ iron = material(
 edge_brass = material(
     "Stairwell bright brass", color=(0.78, 0.52, 0.19, 1), metal=0.65, rough=0.32
 )
+recess = material("Stairwell dark recess", color=(0.012, 0.012, 0.014, 1), rough=1)
 glow = material("Stairwell warm opal", color=(0.9, 0.57, 0.22, 1), rough=0.4)
 bs = glow.node_tree.nodes.get("Principled BSDF")
 bs.inputs["Emission Color"].default_value = (1, 0.38, 0.07, 1)
@@ -111,6 +113,23 @@ def box(name, pos, size, mat, parent, bevel=0.015):
         mod.segments = 2
         mod = ob.modifiers.new("weighted normals", "WEIGHTED_NORMAL")
         mod.keep_sharp = True
+    return ob
+
+
+def riser(name, z, low, high, parent):
+    mesh = bpy.data.meshes.new(name)
+    verts = [p(-0.96, low, z), p(-0.96, high, z), p(0.96, high, z), p(0.96, low, z)]
+    mesh.from_pydata(verts, [], [(0, 1, 2, 3)])
+    mesh.update()
+    ob = bpy.data.objects.new(name, mesh)
+    bpy.context.collection.objects.link(ob)
+    ob.parent = parent
+    mesh.materials.append(walnut)
+    uv = mesh.uv_layers.new(name="UVMap")
+    for poly in mesh.polygons:
+        for li in poly.loop_indices:
+            v = mesh.vertices[mesh.loops[li].vertex_index].co
+            uv.data[li].uv = (v.x, v.z)
     return ob
 
 
@@ -153,12 +172,24 @@ def build(kind, direction):
                 rootob,
                 0.008,
             )
-    box(kind + " back wall", (0, 1.12, 4.92), (2.85, 6, 0.16), stone, rootob)
+    # The doorway is a true aperture, with a dark recess deep enough for the leaf.
+    landing = direction * 1.62
+    for x in (-1.025, 1.025):
+        box(kind + " back wall side", (x, 1.12, 4.92), (0.80, 6, 0.16), stone, rootob)
+    bottom, top = -1.88, 4.12
+    for lo, hi in ((bottom, landing - 0.02), (landing + 2.14, top)):
+        if hi > lo:
+            box(kind + " back wall infill", (0, (lo + hi) / 2, 4.92), (1.25, hi - lo, 0.16), stone, rootob, 0)
+    box(kind + " recess back", (0, landing + 1.06, 6.12), (1.25, 2.12, 0.04), recess, rootob, 0)
+    for x in (-0.625, 0.625):
+        box(kind + " recess side", (x, landing + 1.06, 5.55), (0.04, 2.12, 1.14), recess, rootob, 0)
+    for y in (landing - 0.04, landing + 2.16):
+        box(kind + " recess cap", (0, y, 5.55), (1.25, 0.04, 1.14), recess, rootob, 0)
     box(kind + " ceiling", (0, 4.04, 2.55), (2.86, 0.12, 4.85), walnut, rootob)
     for z in (1.2, 2.2, 3.2, 4.2):
         box(kind + " ceiling beam", (0, 3.94, z), (2.72, 0.15, 0.14), walnut, rootob)
     # Floor strips frame an actual open stairwell on descent.
-    box(kind + " threshold", (0, -0.10, 0.47), (2.84, 0.20, 0.94), stone, rootob)
+    box(kind + " threshold", (0, -0.10, 0.455), (2.84, 0.20, 0.91), stone, rootob)
     for x in (-1.22, 1.22):
         box(kind + " side floor", (x, -0.10, 2.96), (0.42, 0.20, 3.98), stone, rootob)
     # Nine broad treads, each linked to a riser and brass nosing.
@@ -168,13 +199,13 @@ def build(kind, direction):
         if direction == 1:
             box(
                 f"{kind} step support {i:02d}",
-                (0, (h - 0.09) / 2 - 0.05, z),
-                (1.90, h + 0.01, 0.34),
+                (0, (h - 0.09) / 2 - 0.05, z + 0.003),
+                (1.90, h + 0.01, 0.334),
                 stone,
                 rootob,
                 0.003,
             )
-        box(
+        tread = box(
             f"{kind} tread {i:02d}",
             (0, h - 0.045, z),
             (1.96, 0.09, 0.34),
@@ -182,33 +213,22 @@ def build(kind, direction):
             rootob,
             0.018,
         )
+        for uv in tread.data.uv_layers.active.data:
+            uv.uv.x += i * 0.083
+            uv.uv.y += i * 0.037
         box(
             f"{kind} nosing {i:02d}",
-            (0, h + 0.005, z - 0.145),
+            (0, h + 0.005, z - (0.1375 if direction < 0 else 0.145)),
             (1.94, 0.022, 0.065 if direction < 0 else 0.04),
             edge_brass if direction < 0 else brass,
             rootob,
             0.006,
         )
-        box(
-            f"{kind} riser {i:02d}",
-            (0, h - direction * 0.09, z - 0.165),
-            (1.92, 0.18, 0.035),
-            walnut,
-            rootob,
-            0.005,
-        )
+        previous = h - direction * 0.18
+        riser(f"{kind} riser {i:02d}", z - 0.167, min(h, previous), max(h, previous), rootob)
     landing = direction * 1.62
     box(
-        kind + " landing", (0, landing - 0.10, 4.33), (2.00, 0.20, 1.24), walnut, rootob
-    )
-    box(
-        kind + " landing edge",
-        (0, landing + 0.012, 3.73),
-        (1.98, 0.024, 0.045),
-        brass,
-        rootob,
-        0.006,
+        kind + " landing", (0, landing - 0.10, 4.46), (2.00, 0.20, 0.98), walnut, rootob
     )
     for x in (-1.04, 1.04):
         # Continuous raked rails and balusters start after threshold, keeping the aperture clear.
@@ -286,7 +306,15 @@ def build(kind, direction):
                 iron,
                 rootob,
             )
-    # A closed door makes the landing a plausible continuation without changing the sign socket.
+    # Pivot is the physical left edge. Reparent the leaf components below while
+    # retaining their authored world transforms.
+    pivot = bpy.data.objects.new(kind + "_DoorPivot", None)
+    bpy.context.collection.objects.link(pivot)
+    pivot.parent = rootob
+    pivot.location = p(-0.59, landing, 4.915)
+    bpy.context.view_layer.update()
+    before_leaf = set(rootob.children)
+
     box(
         kind + " access door",
         (0, landing + 1.06, 4.87),
@@ -315,8 +343,8 @@ def build(kind, direction):
     for y in (landing + 0.32, landing + 1.82):
         rod(
             kind + " door hinge",
-            (-0.57, y - 0.10, 4.795),
-            (-0.57, y + 0.10, 4.795),
+            (-0.59, y - 0.10, 4.915),
+            (-0.59, y + 0.10, 4.915),
             0.027,
             brass,
             rootob,
@@ -365,6 +393,16 @@ def build(kind, direction):
             rootob,
             0.004,
         )
+    bpy.context.view_layer.update()
+    for ob in set(rootob.children) - before_leaf:
+        if any(token in ob.name for token in ("access door", "door pull", "sign ")):
+            world = ob.matrix_world.copy()
+            ob.parent = pivot
+            ob.matrix_world = world
+    socket = bpy.data.objects.new(kind + "_HandleSocket", None)
+    bpy.context.collection.objects.link(socket)
+    socket.parent = pivot
+    socket.location = p(1.03, 0.88, -0.14)
     # Small warm lamp housings; illumination is owned by the runtime.
     for x in (-1.27, 1.27):
         for z in (1.5, 3.5):
@@ -393,7 +431,7 @@ down = build("StairDown", -1)
 # Preserve independently editable components before merging runtime meshes.
 bpy.ops.wm.save_as_mainfile(filepath=str(out / "stairwell.blend"))
 # Collapse by root and material to keep runtime draw calls bounded.
-for parent in roots:
+for parent in [*roots, *(bpy.data.objects[r.name + "_DoorPivot"] for r in roots)]:
     groups = {}
     for ob in list(parent.children):
         if ob.type == "MESH":
@@ -456,7 +494,8 @@ for obj, other in ((up, down), (down, up)):
         child.hide_render = False
     scene.render.image_settings.file_format = "PNG"
     scene.render.filepath = str(out / (obj.name + ".png"))
-    bpy.ops.render.render(write_still=True)
+    if not os.environ.get("STAIRWELL_SKIP_RENDER"):
+        bpy.ops.render.render(write_still=True)
     for child in other.children_recursive:
         child.hide_render = False
 print("STAGED", out)

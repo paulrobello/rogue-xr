@@ -135,14 +135,23 @@ def check_stairwell(errors: list[str]) -> None:
     if {n["name"] for n in roots} != {"StairUp", "StairDown"} or len(roots) != 2:
         errors.append("stairwell: both directional roots are required")
     for root in roots:
-        children = root.get("children", [])
+        pending = list(root.get("children", []))
+        descendants = []
+        while pending:
+            node = nodes[pending.pop()]
+            descendants.append(node)
+            pending.extend(node.get("children", []))
+        meshes = [gltf["meshes"][n["mesh"]] for n in descendants if "mesh" in n]
         triangles = sum(gltf["accessors"][p["indices"]]["count"] // 3
-                        for child in children for p in gltf["meshes"][nodes[child]["mesh"]]["primitives"])
+                        for mesh in meshes for p in mesh["primitives"])
         recorded = report["roots"][root["name"]]
-        if triangles != recorded["triangles"] or not 0 < triangles <= 12000 or len(children) != recorded["mesh_count"] or not 1 <= len(children) <= 6:
+        if triangles != recorded["triangles"] or not 0 < triangles <= 12000 or len(meshes) != recorded["mesh_count"] or not 1 <= len(meshes) <= 10:
             errors.append(f"stairwell: invalid mesh budget for {root['name']}")
-    if len(gltf["materials"]) != 6 or any("bufferView" not in image for image in gltf["images"]):
-        errors.append("stairwell: expected six materials including the descending brass nosings, with embedded texture maps")
+        pivot = next((n for n in descendants if n["name"] == root["name"] + "_DoorPivot"), {})
+        if root["name"] + "_HandleSocket" not in [nodes[i]["name"] for i in pivot.get("children", [])]:
+            errors.append(f"stairwell: missing hinged door handle in {root['name']}")
+    if len(gltf["materials"]) != 7 or any("bufferView" not in image for image in gltf["images"]):
+        errors.append("stairwell: expected seven materials and embedded texture maps")
     print(f"asset-check props/stairwell: {len(roots)} directional flights, {path.stat().st_size} bytes")
 
 

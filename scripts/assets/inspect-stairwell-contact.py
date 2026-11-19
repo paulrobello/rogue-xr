@@ -1,8 +1,10 @@
 import json
+import math
 import sys
 
 import bpy
 from mathutils import Vector
+from mathutils.bvhtree import BVHTree
 
 p = sys.argv[sys.argv.index("--") + 1]
 bpy.ops.wm.open_mainfile(filepath=p)
@@ -13,6 +15,17 @@ def axis(o):
     low = min(v.co.z for v in o.data.vertices)
     high = max(v.co.z for v in o.data.vertices)
     return [o.matrix_world @ Vector((0, 0, low)), o.matrix_world @ Vector((0, 0, high))]
+
+
+def world_tree(obj, depsgraph):
+    evaluated = obj.evaluated_get(depsgraph)
+    mesh = evaluated.to_mesh()
+    try:
+        vertices = [evaluated.matrix_world @ v.co for v in mesh.vertices]
+        faces = [tuple(poly.vertices) for poly in mesh.polygons]
+        return BVHTree.FromPolygons(vertices, faces)
+    finally:
+        evaluated.to_mesh_clear()
 
 
 def bounds(o):
@@ -44,6 +57,30 @@ for n in ["StairUp", "StairDown"]:
         low, high = sorted((a.z, b.z))
         assert low < y < high
         penetrations.append(y - low)
+    threshold = bounds(bpy.data.objects[n + " threshold"])
+    first_tread = bounds(bpy.data.objects[n + " tread 00"])
+    first_riser = bounds(bpy.data.objects[n + " riser 00"])
+    assert abs(threshold[1][0] - first_riser[1][0] - 0.003) < 1e-5
+    assert abs(first_tread[1][1] - first_riser[1][0] - 0.003) < 1e-5
+    for i in range(9):
+        tread = bounds(bpy.data.objects[f"{n} tread {i:02d}"])
+        nose = bounds(bpy.data.objects[f"{n} nosing {i:02d}"])
+        riser = bpy.data.objects[f"{n} riser {i:02d}"]
+        rb = bounds(riser)
+        assert abs(tread[1][1] - rb[1][0] - 0.003) < 1e-5
+        assert abs(tread[1][1] - rb[1][1] - 0.003) < 1e-5
+        assert all(abs(poly.normal.z) < 1e-5 for poly in riser.data.polygons)
+        if i:
+            previous = bounds(bpy.data.objects[f"{n} tread {i - 1:02d}"])
+            assert abs(previous[1][0] - rb[1][0] - 0.003) < 1e-5
+        assert nose[1][1] <= tread[1][1] + 1e-5
+        if n == "StairUp":
+            support = bounds(bpy.data.objects[f"{n} step support {i:02d}"])
+            assert rb[1][0] - support[1][1] >= 0.0029
+        assert nose[2][1] > tread[2][1] + 0.01
+        for floor in [o for o in objs if o.name.startswith(n + " side floor")]:
+            fb = bounds(floor)
+            assert min(tread[0][1], fb[0][1]) <= max(tread[0][0], fb[0][0])
     landing = bpy.data.objects[n + " landing"]
     lb = bounds(landing)
     overlaps = []
@@ -63,8 +100,26 @@ for n in ["StairUp", "StairDown"]:
             assert all(limits[i][0] < point[i] < limits[i][1] for i in range(3))
     assert bpy.data.objects.get(n + " access door")
     sign = bpy.data.objects[n + " sign backplate"]
-    assert abs(sign.location.y + 4.815) < 1e-5
+    assert abs(sign.matrix_world.translation.y + 4.815) < 1e-5
+    assert sign.parent.name == n + "_DoorPivot"
+    pivot = bpy.data.objects[n + "_DoorPivot"]
+    leaves = [o for o in pivot.children if o.type == "MESH"]
+    obstacles = [o for o in objs if any(s in o.name for s in
+                 ("back wall", "recess side", "recess back", "door jamb", "door lintel"))]
+    for angle in range(5, 76, 5):
+        pivot.rotation_euler.z = -math.radians(angle)
+        bpy.context.view_layer.update()
+        depsgraph = bpy.context.evaluated_depsgraph_get()
+        for leaf in leaves:
+            leaf_tree = world_tree(leaf, depsgraph)
+            for obstacle in obstacles:
+                other_tree = world_tree(obstacle, depsgraph)
+                assert not leaf_tree.overlap(other_tree), (n, angle, leaf.name, obstacle.name)
+    pivot.rotation_euler.z = 0
+    bpy.context.view_layer.update()
     r[n] = {
+        "riser_vertical_face_count": 9,
+        "door_clear_travel_degrees": 75,
         "posts": len(posts),
         "post_axis_penetration_m_min": min(penetrations),
         "landing_anchors": len(feet) + len(anchors),

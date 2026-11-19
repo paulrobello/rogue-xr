@@ -15,13 +15,14 @@ import {
 } from '../floor/generate.ts';
 import {
   placeStairEntry,
-  STAIR_DOOR_DEPTH,
+  STAIR_DOOR_BARRIER,
   STAIR_HALF_WIDTH,
   STAIR_LANDING_END,
   STAIR_WIDTH,
   type StairEntry,
   stairGroundHeight,
   stairLocalPoint,
+  stairTeleportHeight,
 } from '../floor/stairs.ts';
 import { nearSet, visibleSet } from '../floor/visibility.ts';
 import { PALETTE } from '../palette.ts';
@@ -104,6 +105,8 @@ export interface FloorWorld {
   openStairEntry(floorNumber?: 1 | 2): StairEntry | null;
   /** Signed smooth ground height over the measured stair flight, or null outside it. */
   stairGroundHeight(x: number, z: number): number | null;
+  /** Discrete tread/landing top for teleport landings, or null outside the stairwell. */
+  teleportSurfaceHeight(x: number, z: number): number | null;
   /**
    * Gives every sealed door leaf `material` (owned by the caller), its UVs scaled so one texture
    * tile covers `tileMeters`. Leaves keep their flat greybox colour until this is called.
@@ -375,7 +378,7 @@ export function buildFloorWorld(
         stairEntry,
         -STAIR_WIDTH / 2,
         STAIR_WIDTH / 2,
-        STAIR_DOOR_DEPTH,
+        STAIR_DOOR_BARRIER,
         STAIR_LANDING_END,
       ),
     );
@@ -437,7 +440,8 @@ export function buildFloorWorld(
     colliders,
     current: 0,
     nearbyWalkable() {
-      return [...nearSet(plan, world.current)].flatMap((i) => {
+      const near = nearSet(plan, world.current);
+      const walkable = [...near].flatMap((i) => {
         const [ox, oz] = plan.rooms[i]?.position ?? [0, 0];
         return (rooms[i]?.template.walkable ?? []).map(
           (w): Rect => ({
@@ -446,6 +450,20 @@ export function buildFloorWorld(
           }),
         );
       });
+      if (stairOpened && stairEntry && near.has(stairEntry.room)) {
+        const [x, z] = stairEntry.world;
+        const [fx, fz] = stairEntry.facing;
+        const half = STAIR_HALF_WIDTH;
+        const ax = x - half * fz;
+        const bx = x + half * fz + STAIR_LANDING_END * fx;
+        const az = z + half * fx;
+        const bz = z - half * fx + STAIR_LANDING_END * fz;
+        walkable.push({
+          min: [Math.min(ax, bx), Math.min(az, bz)],
+          max: [Math.max(ax, bx), Math.max(az, bz)],
+        });
+      }
+      return walkable;
     },
     addFixtureCollider(room, box) {
       const boxes = colliders[room];
@@ -511,6 +529,11 @@ export function buildFloorWorld(
     },
     stairGroundHeight(x, z) {
       return stairOpened && stairEntry ? stairGroundHeight(stairEntry, x, z, stairDirection) : null;
+    },
+    teleportSurfaceHeight(x, z) {
+      return stairOpened && stairEntry
+        ? stairTeleportHeight(stairEntry, x, z, stairDirection)
+        : null;
     },
     releaseGuardedDoor(room, immediate = false) {
       if (

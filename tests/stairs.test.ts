@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { attachPressureWing, generateFloor, worldRooms } from '../src/floor/generate.ts';
-import {
-  placeStairEntry,
-  stairGroundHeight,
-  stairLandingOccupancy,
-  stairLocalPoint,
-} from '../src/floor/stairs.ts';
+import { placeStairEntry, stairGroundHeight, stairLocalPoint } from '../src/floor/stairs.ts';
 import { playableFloorPlan } from '../src/world/floor-view.ts';
 import { buildFloorWorld } from '../src/world/floor-world.ts';
 import { moveWithCollision } from '../src/xr/locomotion.ts';
@@ -82,9 +77,36 @@ describe('FloorWorld stair opening', () => {
     );
     expect(retreat[0]).toBeCloseTo(start[0], 1);
     expect(retreat[1]).toBeCloseTo(start[1], 1);
-    expect(stairLandingOccupancy(entry, end[0], end[1])).toBe(true);
     expect(world.group.getObjectByName(`sealed-${entry.room}-${entry.door}`)).toBeUndefined();
     expect(world.group.getObjectByName(`door-fill-${entry.room}-${entry.door}`)).toBeUndefined();
+    world.dispose();
+  });
+
+  it.each([1, 2] as const)('exposes discrete teleport tread tops on floor %i', (floor) => {
+    const world = buildFloorWorld(
+      playableFloorPlan(floor === 1 ? 'MAPTEST2' : 'MAPTEST3', 3, floor),
+    );
+    const entry = world.openStairEntry(floor);
+    if (!entry) throw Error('Missing stair door');
+    const at = (depth: number) =>
+      world.teleportSurfaceHeight(
+        entry.world[0] + entry.facing[0] * depth,
+        entry.world[1] + entry.facing[1] * depth,
+      );
+    expect(at(0.86)).toBeCloseTo(0);
+    expect(at(1.24)).toBeCloseTo(floor === 1 ? 0.18 : -0.18);
+    expect(at(1.26)).toBeCloseTo(floor === 1 ? 0.36 : -0.36);
+    expect(at(3.9)).toBeCloseTo(floor === 1 ? 1.62 : -1.62);
+    expect(at(4.5)).toBeCloseTo(floor === 1 ? 1.62 : -1.62);
+    const contains = (depth: number) => {
+      const x = entry.world[0] + depth * entry.facing[0];
+      const z = entry.world[1] + depth * entry.facing[1];
+      return world
+        .nearbyWalkable()
+        .some((r) => x >= r.min[0] && x <= r.max[0] && z >= r.min[1] && z <= r.max[1]);
+    };
+    expect(contains(4.5)).toBe(true);
+    expect(contains(5.8)).toBe(false);
     world.dispose();
   });
 });
@@ -103,7 +125,8 @@ it.each([1, 2] as const)(
     const y = number === 1 ? 1.62 : -1.62;
     const end = moveWithCollision(entry.approach, [12 * fx, 12 * fz], boxes, { floorY: y });
     const loc = stairLocalPoint(entry, ...end);
-    expect(loc.depth).toBeCloseTo(4.8 - 0.25, 4);
+    expect(loc.depth).toBeGreaterThan(3.97);
+    expect(loc.depth + 0.4).toBeLessThan(4.775);
     expect(world.stairGroundHeight(...end)).toBeCloseTo(y);
     for (const side of [-1, 1]) {
       const stopped = moveWithCollision(end, [3 * side * fz, -3 * side * fx], boxes, { floorY: y });
@@ -129,7 +152,7 @@ it.each([
     const height = (depth: number) =>
       stairGroundHeight(entry, 3 + fx * depth, -4 + fz * depth, direction);
     expect(height(0.4)).toBe(0 * direction);
-    expect(height((0.94 + 3.71) / 2)).toBeCloseTo(0.81 * direction);
+    expect(height((0.91 + 3.97) / 2)).toBeCloseTo(0.81 * direction);
     expect(height(4.2)).toBeCloseTo(1.62 * direction);
   }
 });

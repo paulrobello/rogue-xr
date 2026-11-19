@@ -12,20 +12,22 @@ export interface StairEntry {
   readonly facing: readonly [number, number];
   /** Safe point just inside the doorway for a seated player approach. */
   readonly approach: readonly [number, number];
-  /** The 3 m wide by 5 m deep outside alcove. */
+  /** Reserved alcove footprint, including the recess behind the door. */
   readonly alcove: Rect;
 }
 
 /** Runtime dimensions measured from scripts/assets/build-stairwell.py and report.json. */
-export const STAIR_THRESHOLD_DEPTH = 0.94;
-export const STAIR_FLIGHT_END = 3.71;
-export const STAIR_LANDING_END = 4.95;
-export const STAIR_WIDTH = 3;
-export const STAIR_HALF_WIDTH = 0.98;
-export const STAIR_DOOR_DEPTH = 4.8;
+export const STAIR_THRESHOLD_DEPTH = 0.91;
+export const STAIR_TREAD_PITCH = 0.34;
 export const STAIR_TREAD_COUNT = 9;
 export const STAIR_TREAD_RISE = 0.18;
 export const STAIR_TOTAL_RISE = STAIR_TREAD_COUNT * STAIR_TREAD_RISE;
+export const STAIR_FLIGHT_END = STAIR_THRESHOLD_DEPTH + STAIR_TREAD_COUNT * STAIR_TREAD_PITCH;
+export const STAIR_LANDING_END = 4.95;
+export const STAIR_WIDTH = 3;
+export const STAIR_HALF_WIDTH = 0.98;
+/** Keep the seated player's controller on the near side of the pull at full forward travel. */
+export const STAIR_DOOR_BARRIER = 4.54;
 
 export interface StairLocalPoint {
   readonly across: number;
@@ -50,6 +52,27 @@ export function stairHeightAtDepth(depth: number, direction: 1 | -1): number {
   return direction * STAIR_TOTAL_RISE * progress;
 }
 
+/** Discrete top surface used by teleport landings. Walking keeps the smooth support profile. */
+export function stairTreadHeightAtDepth(depth: number, direction: 1 | -1): number | null {
+  if (depth < 0 || depth > STAIR_LANDING_END) return null;
+  const front = STAIR_THRESHOLD_DEPTH;
+  if (depth < front) return 0;
+  const tread = Math.min(STAIR_TREAD_COUNT, 1 + Math.floor((depth - front) / STAIR_TREAD_PITCH));
+  return direction * tread * STAIR_TREAD_RISE;
+}
+
+/** World-space discrete tread/landing top, or null outside the open stairwell. */
+export function stairTeleportHeight(
+  entry: StairEntry,
+  x: number,
+  z: number,
+  direction: 1 | -1,
+): number | null {
+  const point = stairLocalPoint(entry, x, z);
+  if (Math.abs(point.across) > STAIR_HALF_WIDTH) return null;
+  return stairTreadHeightAtDepth(point.depth, direction);
+}
+
 /** Smooth signed support height for a player inside the stair enclosure. */
 export function stairGroundHeight(
   entry: StairEntry,
@@ -68,17 +91,7 @@ export function stairGroundHeight(
   return stairHeightAtDepth(point.depth, direction);
 }
 
-/** The door landing at the end of either flight. */
-export function stairLandingOccupancy(entry: StairEntry, x: number, z: number): boolean {
-  const point = stairLocalPoint(entry, x, z);
-  return (
-    Math.abs(point.across) <= STAIR_HALF_WIDTH &&
-    point.depth >= STAIR_FLIGHT_END &&
-    point.depth <= STAIR_LANDING_END
-  );
-}
-
-const ALCOVE_DEPTH = 5;
+const ALCOVE_DEPTH = 6.14;
 const OUTWARD: Record<Facing, readonly [number, number]> = {
   N: [0, -1],
   S: [0, 1],

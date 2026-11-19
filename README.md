@@ -10,7 +10,7 @@ Click the right thumbstick to open the radial menu. Tilt it toward **Settings**,
 
 ## Room layout showcase
 
-[Walk the enemy-free room showcase](https://spire.pardev.net/?seed=MAPTEST2). The link uses a separate save slot. Floor 1 has ten rooms. Its entry hall also opens onto the stairs to a second enemy-free floor. Walk up or down with the left thumbstick (WASD on desktop). The landing opens **Go upstairs** or **Go downstairs**. You can also point at a step or the destination door and pull the trigger, or click on desktop. Both routes arrive on level ground. Open the radial menu to see your room number, template, and dimensions.
+[Walk the enemy-free room showcase](https://spire.pardev.net/?seed=MAPTEST2). The link uses a separate save slot. Floor 1 has ten rooms. Its entry hall also opens onto the stairs to a second enemy-free floor. Walk with the left thumbstick (WASD on desktop), or aim the right controller at a tread, push the right stick forward, and release it to teleport there. Point at the door handle and pull either trigger, or click the handle on desktop. The door swings open and the view fades to the other floor, where you arrive on level ground. Open the radial menu to see your room number, template, and dimensions.
 
 | Route from room 0 | What to inspect |
 | --- | --- |

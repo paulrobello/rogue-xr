@@ -336,6 +336,8 @@ export interface TeleportEnv {
   walkable: readonly Rect[];
   colliders: readonly Box[];
   floorY?: number;
+  /** Optional world-space top surface. Null falls back to `floorY`, preserving flat rooms. */
+  surfaceHeight?: (x: number, z: number) => number | null;
 }
 
 export type TeleportReason =
@@ -352,7 +354,7 @@ export interface TeleportResult {
   reason: TeleportReason;
   /** Arc samples from the origin to where the arc ended (the landing, or the blocking hit). */
   points: Vec3[];
-  /** Landing point on the floor, set whenever the arc reached the floor unobstructed. */
+  /** Landing point on the surface, set whenever the arc reached it unobstructed. */
   landing: Vec3 | null;
 }
 
@@ -393,7 +395,10 @@ export function validateLanding(
       xz[1] <= w.max[1] + eps,
   );
   if (!inside) return 'out-of-bounds';
-  const pushed = resolveCollision(xz, env.colliders, { radius, floorY: env.floorY });
+  const pushed = resolveCollision(xz, env.colliders, {
+    radius,
+    floorY: env.surfaceHeight?.(...xz) ?? env.floorY,
+  });
   return Math.hypot(pushed[0] - xz[0], pushed[1] - xz[1]) > 1e-4 ? 'obstructed' : 'ok';
 }
 
@@ -426,8 +431,8 @@ export function sampleTeleportArc(
 /**
  * Casts the teleport arc and validates where it ends. The arc stops at the first collider it
  * crosses (segment test, so thin walls cannot be skipped) or where it first descends to the
- * floor. The landing must be within `maxRange`, inside a walkable rect and clear of colliders.
- * Greybox floors are flat, so `env.floorY` is the single landing height.
+ * walkable surface. The landing must be within `maxRange`, inside a walkable rect and clear of
+ * colliders. Flat rooms use `env.floorY`; stepped terrain can provide `env.surfaceHeight`.
  */
 export function resolveTeleport(
   origin: Vec3,
@@ -436,6 +441,7 @@ export function resolveTeleport(
   cfg: TeleportConfig = DEFAULT_TELEPORT,
 ): TeleportResult {
   const floorY = env.floorY ?? 0;
+  const surfaceAt = (x: number, z: number) => env.surfaceHeight?.(x, z) ?? floorY;
   const samples = sampleTeleportArc(origin, direction, cfg);
   if (samples.length < 2)
     return { valid: false, reason: 'no-direction', points: samples, landing: null };
@@ -446,11 +452,35 @@ export function resolveTeleport(
     const a = samples[i - 1] as Vec3;
     let b = samples[i] as Vec3;
     let reachedFloor = false;
-    if (b[1] <= floorY && a[1] > floorY) {
-      const f = (a[1] - floorY) / (a[1] - b[1]);
-      b = [a[0] + (b[0] - a[0]) * f, floorY, a[2] + (b[2] - a[2]) * f];
-      reachedFloor = true;
+    const surfaceA = surfaceAt(a[0], a[2]);
+    const surface = surfaceAt(b[0], b[2]);
+    let riser = false;
+    let end = 1;
+    // A segment can reach the old tread before it reaches the edge of a lower one.
+    for (const h of surfaceA === surface ? [surface] : [surfaceA, surface]) {
+      if (b[1] > h || a[1] <= h) continue;
+      const t = (a[1] - h) / (a[1] - b[1]);
+      const x = a[0] + (b[0] - a[0]) * t;
+      const z = a[2] + (b[2] - a[2]) * t;
+      if (t <= end && surfaceAt(x, z) === h) {
+        reachedFloor = true;
+        end = t;
+      }
     }
+    if (!reachedFloor && surface > surfaceA && b[1] <= surface) {
+      let lo = 0;
+      let hi = 1;
+      for (let pass = 0; pass < 14; pass++) {
+        const t = (lo + hi) / 2;
+        const h = surfaceAt(a[0] + (b[0] - a[0]) * t, a[2] + (b[2] - a[2]) * t);
+        if (h === surfaceA) lo = t;
+        else hi = t;
+      }
+      riser = a[1] + (b[1] - a[1]) * hi <= surface;
+      if (riser) end = hi;
+    }
+    if (reachedFloor || riser)
+      b = [a[0] + (b[0] - a[0]) * end, a[1] + (b[1] - a[1]) * end, a[2] + (b[2] - a[2]) * end];
     let hit: number | null = null;
     for (const box of env.colliders) {
       const t = segmentBoxHit(a, b, box);
@@ -465,8 +495,9 @@ export function resolveTeleport(
       return { valid: false, reason: 'blocked', points, landing: null };
     }
     points.push(b);
+    if (riser) return { valid: false, reason: 'blocked', points, landing: null };
     if (reachedFloor) {
-      landing = b;
+      landing = [b[0], surfaceAt(b[0], b[2]), b[2]];
       break;
     }
   }
@@ -554,10 +585,29 @@ export class Locomotion {
   private colliders: readonly Box[] = [];
   private walkable: readonly Rect[] = [];
   private floorY = 0;
+  private surfaceHeight: ((x: number, z: number) => number | null) | undefined;
   private groundOffset = 0;
+  private landedOn: Vec3 | null = null;
+
+  /** Keep the planted height at rest and blend onto the walking slope as the player moves away. */
+  followGround(x: number, z: number, smoothHeight: number): void {
+    let height = smoothHeight;
+    if (this.landedOn) {
+      const [lx, ly, lz] = this.landedOn;
+      const distance = Math.hypot(x - lx, z - lz);
+      if (distance < 0.34) height = ly + ((smoothHeight - ly) * distance) / 0.34;
+      else this.landedOn = null;
+    }
+    this.applyGroundOffset(height);
+  }
 
   /** Preserve the tracking-space height calibration when the walkable surface rises or falls. */
   setGroundOffset(height: number): void {
+    this.landedOn = null;
+    this.applyGroundOffset(height);
+  }
+
+  private applyGroundOffset(height: number): void {
     if (height === this.groundOffset) return;
     this.rig.position.y += height - this.groundOffset;
     this.groundOffset = height;
@@ -577,10 +627,16 @@ export class Locomotion {
   }
 
   /** World-space colliders and walkable rects of the rooms the player can currently reach. */
-  setWorld(colliders: readonly Box[], walkable: readonly Rect[], floorY = 0): void {
+  setWorld(
+    colliders: readonly Box[],
+    walkable: readonly Rect[],
+    floorY = 0,
+    surfaceHeight?: (x: number, z: number) => number | null,
+  ): void {
     this.colliders = colliders;
     this.walkable = walkable;
     this.floorY = floorY;
+    this.surfaceHeight = surfaceHeight;
   }
 
   /** Comfort vignette strength 0 to 1 for the renderer to consume. */
@@ -658,7 +714,12 @@ export class Locomotion {
       this.preview = resolveTeleport(
         aim.origin,
         aim.direction,
-        { walkable: this.walkable, colliders: this.colliders, floorY: this.floorY },
+        {
+          walkable: this.walkable,
+          colliders: this.colliders,
+          floorY: this.floorY,
+          surfaceHeight: this.surfaceHeight,
+        },
         DEFAULT_TELEPORT,
       );
       return false;
@@ -668,6 +729,10 @@ export class Locomotion {
     if (landing) {
       this.rig.position.x += landing[0] - headXZ[0];
       this.rig.position.z += landing[2] - headXZ[1];
+      this.setGroundOffset(landing[1] - this.floorY);
+      if (this.surfaceHeight?.(landing[0], landing[2]) != null) {
+        this.landedOn = [landing[0], this.groundOffset, landing[2]];
+      }
       // The jump shows as a vignette pulse that fades on the normal release ramp.
       this.strength = DEFAULT_VIGNETTE.maxStrength;
       return true;

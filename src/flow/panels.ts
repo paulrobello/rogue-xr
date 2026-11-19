@@ -91,7 +91,6 @@ export interface FlowUiDeps {
   dialProbe?: THREE.Texture | null;
   /** A newer deployed build: the title offers the reload while one is available. */
   update?: TitleUpdate;
-  onStairTravel?: () => void;
   onNoteOpened?: (position: THREE.Vector3) => void;
   locationLabel?: () => string | null;
   noteRecord?: (id: PressureNoteId) => PressureNoteRecord | null;
@@ -112,15 +111,7 @@ export interface FlyTarget {
 }
 
 /** The in-run menu: closed, its main board, the deck viewer, or the abandon confirmation. */
-export type MenuView =
-  | 'closed'
-  | 'main'
-  | 'settings'
-  | 'deck'
-  | 'confirm'
-  | 'items'
-  | 'note'
-  | 'stairs';
+export type MenuView = 'closed' | 'main' | 'settings' | 'deck' | 'confirm' | 'items' | 'note';
 /** Phases the in-run menu opens over. */
 const MENU_PHASES: readonly FlowPhase[] = ['explore', 'combat'];
 
@@ -481,15 +472,6 @@ export class FlowUi {
   /** Opens the in-run menu, or closes it when it is open. Returns whether anything changed. */
   toggleMenu(head: THREE.Object3D): boolean {
     return this.menuOpen ? this.closeMenu() : this.openMenu(head);
-  }
-
-  openStairs(head: THREE.Object3D): boolean {
-    if (!this.deps.onStairTravel || this.menuOpen || this.deps.flow.phase !== 'explore')
-      return false;
-    this.menuHead = head;
-    this.setMenu('stairs');
-    this.place(head, true);
-    return true;
   }
 
   /** Opens an acquired note, from a physical pickup or from Items. */
@@ -1426,27 +1408,6 @@ export class FlowUi {
    * or the deck viewer; or the abandon confirmation.
    */
   private buildMenu(): void {
-    if (this.menu === 'stairs') {
-      const up = this.deps.flow.floorNumber === 1;
-      this.board(
-        'stair-travel',
-        [
-          [
-            {
-              id: 'go',
-              label: up ? 'Go upstairs' : 'Go downstairs',
-              onSelect: () => {
-                if (this.closeMenu()) this.deps.onStairTravel?.();
-              },
-            },
-            { id: 'stay', label: 'Stay here', onSelect: () => this.closeMenu() },
-          ],
-        ],
-        { x: 0, y: 0.2, z: -BOARD_DISTANCE },
-        { width: 0.72, heading: `Travel to Floor ${up ? 2 : 1}?` },
-      );
-      return;
-    }
     if (this.menu === 'items') {
       this.buildItems();
       return;

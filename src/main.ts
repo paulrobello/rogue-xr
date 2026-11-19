@@ -96,6 +96,7 @@ import { dressPumpMaterials } from './world/pump-materials.ts';
 import { mountRoomAssetProof } from './world/room-asset-proof.ts';
 import { lightRoomStyle } from './world/room-style-lighting.ts';
 import { type RoomStyleKit, roomStyleFor, roomStyleKitFromScene } from './world/room-styles.ts';
+import { StairFade, StairTransit } from './world/stair-transit.ts';
 import { loadBookBindings } from './world/study-books.ts';
 import {
   fetchStudyManifest,
@@ -224,7 +225,11 @@ if (!proofView) floor = mountFloor(bootSeed);
 let readyFloor: FloorView | undefined;
 let loadingFailed = false;
 let covered = true;
-const busy = () => covered && !proofView;
+const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+const stairTransit = new StairTransit(reducedMotion);
+const stairFade = new StairFade();
+renderer.compile(stairFade.scene, camera);
+const busy = () => (covered && !proofView) || stairTransit.phase !== 'idle';
 /** True once a run has played on the mounted floor, so the next run needs a fresh one. */
 let floorUsed = false;
 /** Set when a finished run returns to the title: the next frame swaps in a pristine floor (H1). */
@@ -323,7 +328,7 @@ floor?.setAudio(audio);
 // Player hit feedback: an edge flash drawn after the boards (desktop and both XR eyes) and a
 // controller pulse in XR. Settings has no reduced-motion option, so the OS preference softens it.
 const hitFx = new HitFeedback({
-  reducedMotion: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false,
+  reducedMotion,
 });
 // Compiled now (compile visits hidden meshes) so the first hit does not stall on a shader build.
 renderer.compile(hitFx.scene, camera);
@@ -659,7 +664,7 @@ const dressFloor = async (target: FloorView): Promise<void> => {
 async function prepareFloor(target: FloorView, boot = false): Promise<void> {
   covered = true;
   loadingFailed = false;
-  showLoading('Loading the tower…');
+  if (stairTransit.phase !== 'loading') showLoading('Loading the tower…');
   try {
     await dressFloor(target);
     if (floor !== target) return;
@@ -948,22 +953,44 @@ function arriveAtLanding(target: FloorView, entry: StairEntry): void {
   target.world.update(x, z);
 }
 
-function travelStairs(): void {
-  if (!floor?.stairs || busy() || flow.phase !== 'explore' || floor.locked || !flow.run) return;
-  const destination = floor.stairs.destination;
+function travelStairs(): boolean {
+  const source = floor;
+  const stairs = source?.stairs;
+  if (!source || !stairs || busy() || flow.phase !== 'explore' || source.locked || !flow.run)
+    return false;
+  const destination = stairs.destination;
   const nextSeed = floorSeedFor(flow.run.seed, destination);
   const next = placeStairEntry(
-    playableFloorPlan(nextSeed, floor.contentVersion, destination),
+    playableFloorPlan(nextSeed, source.contentVersion, destination),
     worldTemplates,
   );
-  if (!next || !flow.travelToFloor(destination, next.room)) return;
-  const snap = flow.snapshot(Date.now(), next.room);
-  if (!snap) throw Error('No exploration state after crossing the staircase');
-  const target = savedFloor(snap);
-  arriveAtLanding(target, next);
-  target.pressure?.sync(flow.pressure);
-  syncNotes(target);
-  storedSnapshot = snap;
+  if (!next) return false;
+  const pull = stairs.handle.getWorldPosition(new THREE.Vector3());
+  let sounded = false;
+  const started = stairTransit.start({
+    swing(fraction) {
+      stairs.open(fraction);
+      if (!sounded && fraction > 0.04) {
+        sounded = true;
+        audio?.playSfx('door-open', pull);
+      }
+    },
+    cross() {
+      if (floor !== source || !flow.travelToFloor(destination, next.room)) {
+        stairs.open(0);
+        return;
+      }
+      const snap = flow.snapshot(Date.now(), next.room);
+      if (!snap) throw Error('No exploration state after crossing the staircase');
+      const target = savedFloor(snap);
+      arriveAtLanding(target, next);
+      target.pressure?.sync(flow.pressure);
+      syncNotes(target);
+      storedSnapshot = snap;
+    },
+  });
+  if (started) audio?.playSfx('gear-clank', pull, 0.5);
+  return started;
 }
 
 const continueRun = (): void => {
@@ -983,7 +1010,6 @@ const continueRun = (): void => {
 const ui = floor
   ? new FlowUi({
       flow,
-      onStairTravel: travelStairs,
       locationLabel: () => {
         if (!floor) return null;
         if (!isShowcaseFloor(floor.seed, floor.floorNumber)) return `Floor ${floor.floorNumber}`;
@@ -1112,7 +1138,11 @@ window.addEventListener('pointermove', (event) => {
 // Treasure: a desktop click on a coffer in the current room opens it, in the capture phase so the
 // press never starts drag-to-look. A click that misses falls through to looking around.
 const canOpenLoot = (): boolean =>
-  !!floor && flow.phase === 'explore' && floor.encounter.phase === 'idle' && !ui?.visible;
+  !!floor &&
+  !busy() &&
+  flow.phase === 'explore' &&
+  floor.encounter.phase === 'idle' &&
+  !ui?.visible;
 /** Opens the shut coffer, or claims the card waiting over an open one, that a pick found. */
 const openCoffer = (pick: LootPick | null): boolean => {
   if (!pick || !canOpenLoot()) return false;
@@ -1195,7 +1225,7 @@ const activatePickup = (
   if (!pick) return false;
   switch (pick.kind) {
     case 'stairs':
-      return ui?.openStairs(camera) ?? false;
+      return travelStairs();
     case 'note':
       return flow.collectPressureNote(pick.hit.room, pick.hit.id) !== null;
     case 'machine':
@@ -1518,6 +1548,9 @@ if (floor && params.has('debug')) {
   };
   Object.assign(window, {
     __combat: {
+      get stairTransition() {
+        return { phase: stairTransit.phase, opacity: stairTransit.opacity };
+      },
       /** Moves the rig to a spot facing the first unopened coffer (or `room`'s), as the walk does for fights. */
       teleportToLoot(room?: number) {
         const stand = lootStand(room);
@@ -1784,7 +1817,12 @@ renderer.setAnimationLoop((time, frame) => {
     rig.updateMatrixWorld(true);
     ui?.recenter(camera);
   }
+  stairTransit.update(deltaSeconds, floor === readyFloor || loadingFailed);
   if (floor && floor !== readyFloor) {
+    if (stairTransit.phase === 'loading' && !loadingFailed) {
+      stairFade.render(renderer, camera, 1);
+      return;
+    }
     if (xr.presenting) {
       loadingLabel ??= new CanvasLabel(768, 128, 0.85);
       const message = loadingFailed ? 'Load failed · Exit VR to retry' : 'Loading the tower…';
@@ -1808,7 +1846,13 @@ renderer.setAnimationLoop((time, frame) => {
   }
   if (xr.presenting) {
     xr.update(deltaSeconds, frame);
-    if (floor) locomotion.setWorld(floor.world.nearbyColliders(), floor.world.nearbyWalkable());
+    if (floor)
+      locomotion.setWorld(
+        floor.world.nearbyColliders(),
+        floor.world.nearbyWalkable(),
+        0,
+        floor.world.teleportSurfaceHeight,
+      );
     if (recenterPending && frame) {
       locomotion.recenter();
       recenterPending = false;
@@ -1834,7 +1878,7 @@ renderer.setAnimationLoop((time, frame) => {
             direction: [aimRay.direction.x, aimRay.direction.y, aimRay.direction.z],
           }
         : null,
-      locked: floor?.locked ?? false,
+      locked: stairTransit.phase !== 'idle' || (floor?.locked ?? false),
       boardVisible: ui?.visible ?? false,
     });
   } else {
@@ -1871,18 +1915,20 @@ renderer.setAnimationLoop((time, frame) => {
       framedSession = null;
     }
     desktop.update();
-    walker.enabled = !floor?.locked && !ui?.visible;
+    walker.enabled = !floor?.locked && !ui?.visible && stairTransit.phase === 'idle';
     walker.update(deltaSeconds, locomotion.standingFloorY);
   }
   camera.getWorldPosition(standingAt);
-  locomotion.setGroundOffset(floor?.world.stairGroundHeight(standingAt.x, standingAt.z) ?? 0);
+  locomotion.followGround(
+    standingAt.x,
+    standingAt.z,
+    floor?.world.stairGroundHeight(standingAt.x, standingAt.z) ?? 0,
+  );
   cardProof?.update(time / 1000, xr.presenting);
   // The in-run menu pauses the floor and the fight: no triggers, no encounter clock, no session.
   if (xr.presenting) renderer.xr.updateCamera(camera);
   else camera.updateWorldMatrix(true, false);
-  if (floor?.stairs?.enteredLanding(standingAt.x, standingAt.z) && canOpenLoot())
-    ui?.openStairs(camera);
-  const paused = ui?.menuOpen ?? false;
+  const paused = stairTransit.phase !== 'idle' || (ui?.menuOpen ?? false);
   if (floor) floor.suspendTriggers = flow.phase !== 'explore' || paused;
   floor?.update(
     camera,
@@ -1961,7 +2007,12 @@ renderer.setAnimationLoop((time, frame) => {
     );
     audio.update(deltaSeconds);
   }
-  teleportView.update(xr.presenting ? locomotion.teleportPreview : null);
+  const preview = xr.presenting ? locomotion.teleportPreview : null;
+  const mark = preview?.landing;
+  teleportView.update(
+    preview,
+    !!mark && floor?.world.teleportSurfaceHeight(mark[0], mark[2]) != null,
+  );
   renderer.render(scene, camera);
   sceneStats.calls = renderer.info.render.calls;
   sceneStats.triangles = renderer.info.render.triangles;
@@ -2005,6 +2056,7 @@ renderer.setAnimationLoop((time, frame) => {
     renderer.render(xr.updateLasers(laserHits), camera);
     renderer.autoClear = true;
   }
+  stairFade.render(renderer, camera, stairTransit.opacity);
   if (floor && showDebugHud && !xr.presenting) {
     const room = floor.world.plan.rooms[floor.world.current];
     const fight = floor.encounter.phase === 'idle' ? '' : ` · encounter ${floor.encounter.phase}`;

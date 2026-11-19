@@ -24,7 +24,7 @@ beforeAll(async () => {
   ).scene;
 });
 it.each([1, 2] as const)(
-  'picks real steps and the destination on the flight to Floor %s',
+  'picks the physical handle and swings it with the door to Floor %s',
   (destination) => {
     const model = scene.getObjectByName(destination === 2 ? 'StairUp' : 'StairDown');
     if (!model) throw Error('Missing staircase');
@@ -38,18 +38,24 @@ it.each([1, 2] as const)(
         .normalize();
       return stair.pick(room, origin, dir);
     };
-    const door = [0, rise + 1.25, 4.76],
-      tread = [0, rise / 9, 1.1];
-    expect(pick([0.18, 1.24, 0.5], tread)).not.toBeNull();
-    expect(pick([0.18, 1.24, 0.5], door)).not.toBeNull();
-    expect(pick([0, 1.4, -6.5], door)).not.toBeNull();
-    expect(pick([0.2, rise + 1.15, 4.05], door)).not.toBeNull();
-    expect(pick([0.1, rise + 1.1, 4.94], [0.1, rise + 1.1, 5.5])?.distance).toBe(0);
-    expect(pick([0, rise + 1.14, 4.2], [0, 0.5 * rise, 2.3])).not.toBeNull();
-    expect(pick([2, 1.3, 2], door)).toBeNull();
-    expect(pick([1.7, 1.3, -1], door)).toBeNull();
-    expect(pick([0, 1.3, -1], door, 1)).toBeNull();
-    expect(pick([0, 1.3, 0.55], [0, 1.3, -1])).toBeNull();
+    const handle = [0.44, rise + 0.88, 4.775];
+    expect(pick([0.18, 1.24, 0.5], [0, rise / 9, 1.1])).toBeNull();
+    expect(pick([0.2, rise + 1.15, 4.05], [0, rise + 1.25, 4.76])).toBeNull();
+    expect(pick([0.2, rise + 1.15, 4.05], handle)).not.toBeNull();
+    expect(pick(handle, [0.44, rise + 0.88, 5.5])?.distance).toBe(0);
+    expect(pick([0.44, rise + 0.88, 4.94], handle)).toBeNull();
+    expect(pick([2, 1.3, 2], handle)).toBeNull();
+    expect(pick([1.7, 1.3, -1], handle)).toBeNull();
+    expect(pick([0, 1.3, -1], handle, 1)).toBeNull();
+    const closed = stair.handle.getWorldPosition(new THREE.Vector3());
+    stair.open(1);
+    const opened = stair.root.worldToLocal(stair.handle.getWorldPosition(new THREE.Vector3()));
+    expect(opened.z).toBeGreaterThan(5.7);
+    expect(stair.hinge.rotation.y).toBeCloseTo((-Math.PI * 75) / 180);
+    stair.open(0);
+    expect(stair.handle.getWorldPosition(new THREE.Vector3()).distanceTo(closed)).toBeLessThan(
+      0.001,
+    );
     stair.dispose();
   },
 );

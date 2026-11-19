@@ -302,6 +302,44 @@ describe('teleport arc', () => {
     expect(r.points.at(-1)).toEqual(r.landing);
   });
 
+  it('lands on an optional stepped surface instead of the flat floor', () => {
+    const a = (20 * Math.PI) / 180;
+    const surfaceHeight = (_x: number, z: number) => (z < 1 ? 0 : 0.9);
+    const env: TeleportEnv = {
+      walkable: [{ min: [-4, -4], max: [4, 4] }],
+      colliders: [],
+      surfaceHeight,
+    };
+    const r = resolveTeleport([0, 1.2, 0], [0, Math.sin(a), Math.cos(a)], env, slow);
+    expect(r.reason).toBe('ok');
+    expect(r.landing?.[1]).toBeCloseTo(0.9);
+  });
+
+  it('rejects a ballistic segment that intersects a stepped riser', () => {
+    const env: TeleportEnv = {
+      walkable: [{ min: [-4, -4], max: [4, 4] }],
+      colliders: [],
+      surfaceHeight: (_x, z) => (z < 1 ? 0 : 0.9),
+    };
+    const r = resolveTeleport([0, 1, 0], [0, -0.2, 1], env, slow);
+    expect(r.valid).toBe(false);
+    expect(r.reason).toBe('blocked');
+    expect(r.landing).toBeNull();
+    expect(r.points.at(-1)?.[2]).toBeCloseTo(1, 1);
+  });
+
+  it('can land on the lip of a descending tread before crossing the step edge', () => {
+    const env: TeleportEnv = {
+      walkable: [{ min: [-1, -1], max: [2, 2] }],
+      colliders: [],
+      surfaceHeight: (_x, z) => (z < 0.12 ? 0 : -0.18),
+    };
+    const result = resolveTeleport([0, 0.11, 0], [0, -1, 1], env);
+    expect(result.reason).toBe('ok');
+    expect(result.landing?.[1]).toBe(0);
+    expect(result.landing?.[2]).toBeLessThan(0.12);
+  });
+
   it('is blocked by a wall even when a sample step straddles it', () => {
     const r = resolveTeleport([0, 1.2, 2], [0, 0.1, 1], ENV);
     expect(r.valid).toBe(false);
@@ -388,6 +426,22 @@ describe('Locomotion rig wiring', () => {
       expect(rig.position.y).toBeCloseTo(0.4);
     }
   });
+  it.each([-0.72, 0.72])(
+    'plants the player at the marked height of %s m until walking resumes',
+    (height) => {
+      const { head, loco } = build({ teleport: true });
+      loco.setWorld([], ENV.walkable, 0, () => height);
+      loco.recenter();
+      loco.update(1 / 72, { ...idle, teleportAim: { origin: [0, 1.3, 0], direction: [0, -1, 0] } });
+      expect(loco.teleportPreview?.landing).toEqual([0, height, 0]);
+      loco.update(1 / 72, idle);
+      loco.followGround(0, 0, height - 0.08);
+      expect(headWorld(head).y).toBeCloseTo(1.6 + height);
+      loco.followGround(0, 0.4, height - 0.08);
+      expect(headWorld(head).y).toBeCloseTo(1.6 + height - 0.08);
+    },
+  );
+
   it('recenters seated height to the virtual standing eye height', () => {
     const { rig, head, loco } = build();
     loco.recenter();

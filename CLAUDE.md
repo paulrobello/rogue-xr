@@ -10,7 +10,7 @@ Clockwork Spire (`rogue-xr`) is a seated WebXR roguelike deckbuilder for Quest 3
 | `make dev` | Vite dev server on port 4260 (foreground). `make dev-start` runs it in a par-mux window, `make dev-stop` stops it |
 | `make preview` | Serve the production build on port 4261 |
 | `make checkall` | Biome, strict TypeScript, Vitest, production build |
-| `make checkall-ci` | `checkall` plus Gitleaks. Must pass before any push |
+| `make checkall-ci` | `checkall` plus asset validation and Gitleaks. Must pass before any push |
 
 `../mux-xr` must exist as a sibling checkout: the toolkit is a `file:` dependency. `bun run prep` stages the toolkit's fonts and hand models into `public/` (gitignored) and runs before `dev` and `build`.
 
