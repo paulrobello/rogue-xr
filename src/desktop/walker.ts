@@ -31,7 +31,7 @@ export class Walker {
     });
   }
 
-  update(dt: number): void {
+  update(dt: number, floorY = 0): void {
     const forward = this.forward;
     const strafe = this.strafe;
     this.forward = 0;
@@ -44,6 +44,7 @@ export class Walker {
       [this.rig.position.x, this.rig.position.z],
       delta,
       this.colliders(),
+      { floorY },
     );
     this.rig.position.x = to[0];
     this.rig.position.z = to[1];

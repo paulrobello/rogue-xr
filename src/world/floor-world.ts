@@ -13,7 +13,16 @@ import {
   type WorldRoom,
   worldRooms,
 } from '../floor/generate.ts';
-import { placeStairEntry, type StairEntry } from '../floor/stairs.ts';
+import {
+  placeStairEntry,
+  STAIR_DOOR_DEPTH,
+  STAIR_HALF_WIDTH,
+  STAIR_LANDING_END,
+  STAIR_WIDTH,
+  type StairEntry,
+  stairGroundHeight,
+  stairLocalPoint,
+} from '../floor/stairs.ts';
 import { nearSet, visibleSet } from '../floor/visibility.ts';
 import { PALETTE } from '../palette.ts';
 import { enemyHeading, enemyLocalRotationY } from './enemy-facing.ts';
@@ -91,8 +100,10 @@ export interface FloorWorld {
   readonly sealedDoors: readonly THREE.Mesh[];
   /** Deterministically selected outside stair landing, if this floor has a clear sealed doorway. */
   readonly stairEntry: StairEntry | null;
-  /** Opens the selected stair doorway and moves its collision stop to the first riser. */
-  openStairEntry(): StairEntry | null;
+  /** Opens the selected stair doorway and installs side-rail and far-landing barriers. */
+  openStairEntry(floorNumber?: 1 | 2): StairEntry | null;
+  /** Signed smooth ground height over the measured stair flight, or null outside it. */
+  stairGroundHeight(x: number, z: number): number | null;
   /**
    * Gives every sealed door leaf `material` (owned by the caller), its UVs scaled so one texture
    * tile covers `tileMeters`. Leaves keep their flat greybox colour until this is called.
@@ -306,10 +317,25 @@ export function buildFloorWorld(
 
   const stairEntry = placeStairEntry(plan, templates);
   let stairOpened = false;
-  function openStairSeal(): StairEntry | null {
+  let stairDirection: 1 | -1 = 1;
+  function stairBarrier(entry: StairEntry, x0: number, x1: number, z0: number, z1: number): Box {
+    // The four possible facings are cardinal, so opposite corners give the world-space AABB.
+    const [fx, fz] = entry.facing,
+      [ox, oz] = entry.world;
+    const ax = ox + x0 * fz + z0 * fx,
+      bx = ox + x1 * fz + z1 * fx;
+    const az = oz - x0 * fx + z0 * fz,
+      bz = oz - x1 * fx + z1 * fz;
+    return {
+      min: [Math.min(ax, bx), -2, Math.min(az, bz)],
+      max: [Math.max(ax, bx), 4.2, Math.max(az, bz)],
+    };
+  }
+  function openStairSeal(floorNumber: 1 | 2 = 1): StairEntry | null {
     if (!stairEntry) return null;
     if (stairOpened) return stairEntry;
     stairOpened = true;
+    stairDirection = floorNumber === 1 ? 1 : -1;
     const cap = sealedDoors.find(
       (candidate) =>
         candidate.userData.room === stairEntry.room && candidate.userData.door === stairEntry.door,
@@ -337,15 +363,22 @@ export function buildFloorWorld(
             candidate.max[2] === barrier.max[2],
         ) ?? -1;
       if (index >= 0) {
-        // The first riser is the limit of smooth movement. Pointing at the flight confirms travel.
-        const dx = stairEntry.facing[0] * 0.42,
-          dz = stairEntry.facing[1] * 0.42;
-        boxes[index] = {
-          min: [barrier.min[0] + dx, 0, barrier.min[2] + dz],
-          max: [barrier.max[0] + dx, barrier.max[1], barrier.max[2] + dz],
-        };
+        boxes.splice(index, 1);
       }
     }
+    // The generated mesh leaves the flight open. Rails/side floors own the two edges and the
+    // closed far door owns the landing end. Treads are height-only and never collision walls.
+    boxes.push(
+      stairBarrier(stairEntry, -STAIR_WIDTH / 2, -STAIR_HALF_WIDTH, 0, STAIR_LANDING_END),
+      stairBarrier(stairEntry, STAIR_HALF_WIDTH, STAIR_WIDTH / 2, 0, STAIR_LANDING_END),
+      stairBarrier(
+        stairEntry,
+        -STAIR_WIDTH / 2,
+        STAIR_WIDTH / 2,
+        STAIR_DOOR_DEPTH,
+        STAIR_LANDING_END,
+      ),
+    );
     return stairEntry;
   }
 
@@ -461,11 +494,23 @@ export function buildFloorWorld(
       return [...nearSet(plan, world.current)].flatMap((i) => colliders[i] ?? []);
     },
     update(x, z) {
-      const next = roomAt(rooms, x, z, world.current);
+      let next = roomAt(rooms, x, z, world.current);
+      if (next < 0 && stairOpened && stairEntry) {
+        const point = stairLocalPoint(stairEntry, x, z);
+        if (
+          point.depth >= 0 &&
+          point.depth <= STAIR_LANDING_END &&
+          Math.abs(point.across) <= STAIR_WIDTH / 2
+        )
+          next = stairEntry.room;
+      }
       if (next < 0 || next === world.current) return false;
       world.current = next;
       applyVisibility();
       return true;
+    },
+    stairGroundHeight(x, z) {
+      return stairOpened && stairEntry ? stairGroundHeight(stairEntry, x, z, stairDirection) : null;
     },
     releaseGuardedDoor(room, immediate = false) {
       if (

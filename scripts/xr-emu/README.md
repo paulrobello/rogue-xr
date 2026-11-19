@@ -6,7 +6,11 @@
 into the page canvas and applies neither foveation nor the framebuffer scale, so headset checks
 still close every comfort, budget and readability criterion.
 
-The `--stairs` check points the controller at each destination sign, confirms each crossing and checks arrival position and heading on both floors.
+The `--stairs` check uses the approach ray, chooses Stay, then drives the left stick up and back
+over the complete flight on both floors. It checks signed eye-height movement, ray selection from
+inside the flight, automatic confirmation on the far landing, deliberate confirmation after
+re-approach, and the final room, position and heading. It does not teleport between treads or call
+the floor-travel flow directly.
 
 ## Run it
 

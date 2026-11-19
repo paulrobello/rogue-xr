@@ -554,6 +554,19 @@ export class Locomotion {
   private colliders: readonly Box[] = [];
   private walkable: readonly Rect[] = [];
   private floorY = 0;
+  private groundOffset = 0;
+
+  /** Preserve the tracking-space height calibration when the walkable surface rises or falls. */
+  setGroundOffset(height: number): void {
+    if (height === this.groundOffset) return;
+    this.rig.position.y += height - this.groundOffset;
+    this.groundOffset = height;
+    this.rig.updateMatrixWorld(true);
+  }
+
+  get standingFloorY(): number {
+    return this.floorY + this.groundOffset;
+  }
 
   constructor(
     private readonly rig: THREE.Object3D,
@@ -588,7 +601,7 @@ export class Locomotion {
   /** Lifts the rig so the seated head sits at the virtual standing eye height. */
   recenter(): void {
     this.rig.position.y =
-      this.floorY + calibrateHeight(this.head.position.y, this.settings.standingEyeHeight);
+      this.standingFloorY + calibrateHeight(this.head.position.y, this.settings.standingEyeHeight);
     this.rig.updateMatrixWorld(true);
   }
 
@@ -625,7 +638,9 @@ export class Locomotion {
       const [sx, sy] = applyDeadzone(input.moveX, input.moveY);
       const delta = smoothMove(yaw, sy, sx, this.settings.moveSpeed, dt);
       if (delta[0] !== 0 || delta[1] !== 0) {
-        const to = moveWithCollision(headXZ, delta, this.colliders, { floorY: this.floorY });
+        const to = moveWithCollision(headXZ, delta, this.colliders, {
+          floorY: this.standingFloorY,
+        });
         this.rig.position.x += to[0] - headXZ[0];
         this.rig.position.z += to[1] - headXZ[1];
         speed = Math.hypot(to[0] - headXZ[0], to[1] - headXZ[1]) / dt;

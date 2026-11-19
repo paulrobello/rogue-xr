@@ -318,6 +318,9 @@ try {
           head = c.camera.getWorldPosition(c.camera.position.clone());
         rig.position.x += entry.approach[0] - head.x;
         rig.position.z += entry.approach[1] - head.z;
+        // Three's camera looks down -Z. Face the stair's authored outward vector so the
+        // left-stick forward path follows the flight without per-tread placement.
+        rig.rotation.y = Math.atan2(-entry.facing[0], -entry.facing[1]);
         rig.updateMatrixWorld(true);
       });
       await ev(() => window.__xrEmu.frames(4));
@@ -325,6 +328,82 @@ try {
       await ev(() => window.__xrEmu.frames(4));
       await pullTrigger(MAIN);
       await waitFor('stair-confirmation', () => window.__flow.ui.menuView === 'stairs');
+
+      await press('stair-travel-stay');
+      const readFlight = () =>
+        ev(() => {
+          const c = window.__combat,
+            f = c.floor,
+            g = f.stairs.root;
+          // The stereo projection camera can sit behind the physical center of the two eyes.
+          const eye = window.__xrEmu
+              .ctx()
+              .rig.localToWorld(c.camera.position.clone().copy(window.__xrEmu.device.position)),
+            local = g.worldToLocal(eye.clone());
+          return { depth: local.z, y: eye.y, view: window.__flow.ui.menuView };
+        });
+      const first = await readFlight(),
+        sign = destination === 2 ? 1 : -1;
+      const walk = async (depth, forward) => {
+        const samples = [];
+        await ev(
+          (y) => window.__xrEmu.device.controllers.left.updateAxes('thumbstick', 0, y),
+          forward ? -1 : 1,
+        );
+        try {
+          for (let i = 0; i < 80; i++) {
+            const at = await readFlight();
+            samples.push(at);
+            if (at.view === 'stairs' || (forward ? at.depth >= depth : at.depth <= depth)) break;
+            await settle(85);
+          }
+        } finally {
+          await ev(() => window.__xrEmu.device.controllers.left.updateAxes('thumbstick', 0, 0));
+        }
+        return samples;
+      };
+      const threshold = (await walk(0.1, true)).at(-1);
+      const extended = await ev(() => {
+        const q = window.__xrEmu,
+          root = window.__combat.floor.stairs.root.name;
+        const hand = q.worldOf(root, [0.18, 1.25, 0.5]),
+          tread = q.worldOf(root, [0, root === 'staircase-up' ? 0.18 : -0.18, 1.1]);
+        q.placeAt('right', hand, tread);
+        return hand;
+      });
+      await ev(() => window.__xrEmu.frames(4));
+      await pullTrigger(MAIN);
+      record(
+        'extended-trigger-at-first-step',
+        threshold.depth >= 0.1 && (await readFlight()).view === 'stairs',
+        { threshold, extended },
+      );
+      await press('stair-travel-stay');
+      const ascent = await walk(3.71, true);
+      const far = ascent.at(-1),
+        signedRise = (far.y - first.y) * sign;
+      const smooth = ascent.every((s, i) => i === 0 || (s.y - ascent[i - 1].y) * sign >= -0.025);
+      record(
+        'walk-full-flight',
+        smooth && Math.abs(signedRise - 1.62) < 0.06 && far.depth >= 3.71 && far.view === 'stairs',
+        { first, far, signedRise },
+      );
+      await press('stair-travel-stay');
+      await ev(() => window.__xrEmu.frames(10));
+      record('stay-on-landing', (await readFlight()).view === 'closed');
+      await aim(MAIN, await ev(() => window.__xrEmu.worldOf('stair-destination-sign')));
+      await ev(() => window.__xrEmu.frames(4));
+      await pullTrigger(MAIN);
+      record('landing-door-trigger', (await readFlight()).view === 'stairs');
+      await press('stair-travel-stay');
+      const retreat = (await walk(-0.5, false)).at(-1);
+      record(
+        'walk-back-to-room',
+        Math.abs(retreat.y - first.y) < 0.03 && retreat.view === 'closed',
+        { retreat },
+      );
+      await walk(3.71, true);
+      await waitFor('arrival-rearmed', () => window.__flow.ui.menuView === 'stairs');
       await press('stair-travel-go');
       await waitFor(
         'landed',
@@ -356,6 +435,7 @@ try {
         landed.number === destination &&
           landed.room === landed.landing &&
           landed.offset < 0.12 &&
+          Math.abs(landed.headY - first.y) < 0.06 &&
           landed.facing > 0.87,
         landed,
       );

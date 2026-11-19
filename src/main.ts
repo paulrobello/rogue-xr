@@ -276,6 +276,7 @@ const locomotion = new Locomotion(
   locomotionSettingsFrom(settings ?? DEFAULT_SETTINGS),
 );
 const drive = new LocomotionDrive(locomotion);
+const standingAt = new THREE.Vector3();
 // Comfort cues: the teleport arc lives in the world (walls hide it), the vignette is a camera-locked
 // pass drawn after the boards and before the red hit flash.
 const teleportView = new TeleportView();
@@ -878,6 +879,7 @@ const freshFloor = (
     !preservedBookRooms?.length
   )
     return floor;
+  locomotion.setGroundOffset(0);
   combat?.dispose();
   floor?.dispose();
   floor = mountFloor(seed, contentVersion, preservedBookRooms, floorNumber);
@@ -1097,7 +1099,7 @@ window.addEventListener(
     if (event.target !== renderer.domElement) return;
     const ray = mouseRay(event);
     const id = pickUi(ray.origin, ray.direction);
-    event.stopPropagation();
+    event.stopImmediatePropagation();
     if (id) actions.emit({ type: 'select', controlId: id });
   },
   { capture: true },
@@ -1224,7 +1226,7 @@ window.addEventListener(
     if (xr.presenting || event.button !== 0 || event.target !== renderer.domElement) return;
     if (!floor || !canOpenLoot()) return;
     const { origin, direction } = mouseRay(event);
-    if (activatePickup(origin, direction)) event.stopPropagation();
+    if (activatePickup(origin, direction)) event.stopImmediatePropagation();
   },
   { capture: true },
 );
@@ -1750,7 +1752,7 @@ actions.on('exit-xr', () => {
   enterButton.style.display = '';
   syncTraceButton(false);
   camera.position.set(0, 1.6, 0);
-  rig.position.y = 0;
+  rig.position.y = locomotion.standingFloorY;
 });
 
 window.addEventListener('resize', () => {
@@ -1870,14 +1872,18 @@ renderer.setAnimationLoop((time, frame) => {
     }
     desktop.update();
     walker.enabled = !floor?.locked && !ui?.visible;
-    walker.update(deltaSeconds);
+    walker.update(deltaSeconds, locomotion.standingFloorY);
   }
+  camera.getWorldPosition(standingAt);
+  locomotion.setGroundOffset(floor?.world.stairGroundHeight(standingAt.x, standingAt.z) ?? 0);
   cardProof?.update(time / 1000, xr.presenting);
   // The in-run menu pauses the floor and the fight: no triggers, no encounter clock, no session.
-  const paused = ui?.menuOpen ?? false;
-  if (floor) floor.suspendTriggers = flow.phase !== 'explore' || paused;
   if (xr.presenting) renderer.xr.updateCamera(camera);
   else camera.updateWorldMatrix(true, false);
+  if (floor?.stairs?.enteredLanding(standingAt.x, standingAt.z) && canOpenLoot())
+    ui?.openStairs(camera);
+  const paused = ui?.menuOpen ?? false;
+  if (floor) floor.suspendTriggers = flow.phase !== 'explore' || paused;
   floor?.update(
     camera,
     paused ? 0 : deltaSeconds,

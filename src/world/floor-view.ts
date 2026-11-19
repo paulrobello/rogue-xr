@@ -480,7 +480,7 @@ export function mountFloorView(
     },
     dressStairs(model) {
       if (stairs) return;
-      const landing = world.openStairEntry();
+      const landing = world.openStairEntry(floorNumber);
       if (landing) stairs = new Stairwell(landing, floorNumber === 1 ? 2 : 1, world, model);
     },
     styledRooms,

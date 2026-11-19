@@ -16,7 +16,68 @@ export interface StairEntry {
   readonly alcove: Rect;
 }
 
-const ALCOVE_WIDTH = 3;
+/** Runtime dimensions measured from scripts/assets/build-stairwell.py and report.json. */
+export const STAIR_THRESHOLD_DEPTH = 0.94;
+export const STAIR_FLIGHT_END = 3.71;
+export const STAIR_LANDING_END = 4.95;
+export const STAIR_WIDTH = 3;
+export const STAIR_HALF_WIDTH = 0.98;
+export const STAIR_DOOR_DEPTH = 4.8;
+export const STAIR_TREAD_COUNT = 9;
+export const STAIR_TREAD_RISE = 0.18;
+export const STAIR_TOTAL_RISE = STAIR_TREAD_COUNT * STAIR_TREAD_RISE;
+
+export interface StairLocalPoint {
+  readonly across: number;
+  readonly depth: number;
+}
+
+/** Converts a world X/Z point into the entry's measured stairwell frame. */
+export function stairLocalPoint(entry: StairEntry, x: number, z: number): StairLocalPoint {
+  const dx = x - entry.world[0];
+  const dz = z - entry.world[1];
+  return {
+    across: dx * entry.facing[1] - dz * entry.facing[0],
+    depth: dx * entry.facing[0] + dz * entry.facing[1],
+  };
+}
+
+export function stairHeightAtDepth(depth: number, direction: 1 | -1): number {
+  const progress = Math.max(
+    0,
+    Math.min(1, (depth - STAIR_THRESHOLD_DEPTH) / (STAIR_FLIGHT_END - STAIR_THRESHOLD_DEPTH)),
+  );
+  return direction * STAIR_TOTAL_RISE * progress;
+}
+
+/** Smooth signed support height for a player inside the stair enclosure. */
+export function stairGroundHeight(
+  entry: StairEntry,
+  x: number,
+  z: number,
+  direction: 1 | -1 = 1,
+): number | null {
+  const point = stairLocalPoint(entry, x, z);
+  // A tracked head can lean beyond the rails even when virtual movement is constrained.
+  if (
+    Math.abs(point.across) > STAIR_WIDTH / 2 ||
+    point.depth < 0 ||
+    point.depth > STAIR_LANDING_END
+  )
+    return null;
+  return stairHeightAtDepth(point.depth, direction);
+}
+
+/** The door landing at the end of either flight. */
+export function stairLandingOccupancy(entry: StairEntry, x: number, z: number): boolean {
+  const point = stairLocalPoint(entry, x, z);
+  return (
+    Math.abs(point.across) <= STAIR_HALF_WIDTH &&
+    point.depth >= STAIR_FLIGHT_END &&
+    point.depth <= STAIR_LANDING_END
+  );
+}
+
 const ALCOVE_DEPTH = 5;
 const OUTWARD: Record<Facing, readonly [number, number]> = {
   N: [0, -1],
@@ -28,7 +89,7 @@ const OUTWARD: Record<Facing, readonly [number, number]> = {
 function alcoveFor(room: number, door: WorldRoom['doors'][number]): StairEntry {
   const outward = OUTWARD[door.facing];
   const [x, z] = door.world;
-  const half = ALCOVE_WIDTH / 2;
+  const half = STAIR_WIDTH / 2;
   const alcove: Rect =
     door.facing === 'N' || door.facing === 'S'
       ? {

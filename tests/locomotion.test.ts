@@ -375,6 +375,19 @@ describe('Locomotion rig wiring', () => {
     return new THREE.Vector3().setFromMatrixPosition(head.matrixWorld);
   }
 
+  it('keeps the seated calibration on a stair landing and after a floor change', () => {
+    const { rig, head, loco } = build();
+    loco.recenter();
+    for (const lift of [1.62, -1.62]) {
+      loco.setGroundOffset(lift);
+      expect(headWorld(head).y).toBeCloseTo(1.6 + lift);
+      loco.setGroundOffset(lift);
+      loco.recenter();
+      expect(headWorld(head).y).toBeCloseTo(1.6 + lift);
+      loco.setGroundOffset(0);
+      expect(rig.position.y).toBeCloseTo(0.4);
+    }
+  });
   it('recenters seated height to the virtual standing eye height', () => {
     const { rig, head, loco } = build();
     loco.recenter();
