@@ -196,6 +196,8 @@ const encounter = (id: string, tier: EncounterTier, enemies: EnemyKind[]): Encou
   threat: enemies.reduce((sum, kind) => sum + ENEMY_THREAT[kind], 0),
 });
 
+export const ROAMING_SENTRY = encounter('roaming-sentry', 'regular', ['cog-sentry']);
+
 export const CONSERVATORY_OWL = encounter('conservatory-owl', 'regular', ['clockwork-owl']);
 
 export const ENCOUNTERS: Readonly<Record<EncounterTier, readonly Encounter[]>> = {

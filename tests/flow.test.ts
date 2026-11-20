@@ -42,6 +42,24 @@ function winRegular(flow: RunFlow, room: number, pick: 'first' | 'skip' = 'first
 }
 
 describe('flow transitions', () => {
+  it('tracks a patrol victory independently from the room across a save', () => {
+    const flow = flowWith();
+    expect(flow.newRun(SEED)).toBe(true);
+    expect(flow.fightStarted(0, true)).toBe(false);
+    expect(flow.travelToFloor(2, 0)).toBe(true);
+    expect(flow.fightStarted(2, true)).toBe(true);
+    expect(flow.fightEnded({ room: 2, tier: 'regular', outcome: 'flee', patrol: true })).toBe(true);
+    expect(flow.run?.patrolDefeated).toBeUndefined();
+    expect(flow.fightStarted(2, true)).toBe(true);
+    expect(flow.fightEnded({ room: 2, tier: 'regular', outcome: 'win', patrol: true })).toBe(true);
+    expect(flow.cleared).not.toContain(2);
+    expect(flow.phase).toBe('reward');
+    const resumed = flowWith();
+    expect(resumed.continueRun(validateSnapshot(flow.snapshot()))).toBe(true);
+    expect(resumed.run?.patrolDefeated).toBe(true);
+    expect(resumed.cleared).not.toContain(2);
+  });
+
   it('locks the same optional coffer in the rules and the first-floor world for each seed', () => {
     const sites = new Set<string>();
     for (const seed of [SEED, 'MAPTEST2', 'WIND0000', 'KEEP0010', 'N0TE0032', 'BREW0001']) {
@@ -316,7 +334,7 @@ describe('continue from a snapshot', () => {
     expect(resumed.snapshot()?.contentVersion).toBe(1);
     expect(resumed.abandonRun()).toBe(true);
     expect(resumed.newRun('SPIRE002')).toBe(true);
-    expect(resumed.snapshot()?.contentVersion).toBe(7);
+    expect(resumed.snapshot()?.contentVersion).toBe(8);
   });
 
   it('restores the same run and offer, and continues identically', () => {

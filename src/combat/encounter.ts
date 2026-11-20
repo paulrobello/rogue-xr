@@ -1,5 +1,12 @@
 import * as THREE from 'three';
+import type { Box, Vec3 } from '../content/rooms.ts';
+import {
+  type PatrolApproach,
+  type PatrolApproachSample,
+  planPatrolApproach,
+} from '../enemies/patrol-approach.ts';
 import type { FloorPlan, WorldRoom } from '../floor/generate.ts';
+import { segmentBoxHit } from '../xr/locomotion.ts';
 import {
   combatRoom,
   DEFAULT_TABLE_DISTANCE,
@@ -39,6 +46,7 @@ export type EncounterOutcome = 'win' | 'defeat' | 'flee';
 export interface EncounterWorld {
   plan: FloorPlan;
   rooms: readonly WorldRoom[];
+  colliders?: readonly (readonly Box[])[];
   /** Placeholder automatons per room; each carries `userData {room, tier, socketId}`. */
   enemies: ReadonlyMap<number, readonly THREE.Object3D[]>;
   current: number;
@@ -89,6 +97,8 @@ interface Move {
   to: THREE.Vector3;
   fromRotY: number;
   toRotY: number;
+  approach?: PatrolApproach;
+  parentYaw?: number;
 }
 
 function smoothstep(t: number): number {
@@ -112,6 +122,15 @@ export function enemyReach(obj: THREE.Object3D): number {
 
 function wrapRadians(a: number): number {
   return a - Math.PI * 2 * Math.round(a / (Math.PI * 2));
+}
+
+function clearsPlayer(from: THREE.Vector3, to: Vec3, x: number, z: number): boolean {
+  return (
+    segmentBoxHit([from.x, 1, from.z], to, {
+      min: [x - 0.66, 0, z - 0.66],
+      max: [x + 0.66, 2.05, z + 0.66],
+    }) === null
+  );
 }
 
 /**
@@ -148,12 +167,16 @@ export class EncounterDirector {
   private open = 0;
   private cooldown = 0;
   private room = -1;
+  private patrol: THREE.Object3D | null = null;
+  patrolApproachPose: PatrolApproachSample | null = null;
   private pose: TablePose | null = null;
   private placedDistance: number | null = null;
   /** Where the seated player was when the fight began, on the floor plane. */
   private seat: readonly [number, number] | null = null;
   private moves: Move[] = [];
   private movesDone = true;
+  private patrolTableDelay = 0;
+  private patrolReturn: { foldSeconds: number; from: number } | null = null;
 
   constructor(config: EncounterConfig) {
     this.world = config.world;
@@ -189,6 +212,14 @@ export class EncounterDirector {
   /** The room whose encounter is running, or -1. */
   get activeRoom(): number {
     return this.room;
+  }
+
+  get activePatrol(): THREE.Object3D | null {
+    return this.patrol;
+  }
+
+  get patrolAtSlot(): boolean {
+    return this.patrol !== null && this.movesDone && this.phaseValue === 'unfolding';
   }
 
   /** Where the table stands during combat, or null. */
@@ -232,7 +263,18 @@ export class EncounterDirector {
         candidates.push([target[0] - seat[0], target[1] - seat[1]]);
       }
     }
-    const delta = candidates.find((candidate) => canMove(candidate));
+    const move = this.patrol ? this.moves[0] : undefined;
+    const delta = candidates.find(
+      (candidate) =>
+        canMove(candidate) &&
+        (!move ||
+          clearsPlayer(
+            move.from,
+            [move.to.x, 1, move.to.z],
+            seat[0] + candidate[0],
+            seat[1] + candidate[1],
+          )),
+    );
     if (!delta) return null;
     this.tableDistance = distance;
     this.seat = [seat[0] + delta[0], seat[1] + delta[1]];
@@ -287,18 +329,74 @@ export class EncounterDirector {
    * player's seat and sends the room's automatons to their places. Returns a failure, touching
    * nothing, when the table and enemies cannot be placed clear of walls.
    */
-  begin(room: number, player: PlayerPose): BeginResult {
+  begin(room: number, player: PlayerPose, patrol?: THREE.Object3D): BeginResult {
     if (this.phaseValue !== 'idle')
       return { ok: false, reason: `encounter already ${this.phaseValue}` };
+    if (patrol && (this.cooldown > 0 || room !== this.world.current || !patrol.parent))
+      return { ok: false, reason: 'patrol unavailable' };
     const worldRoom = this.world.rooms[room];
-    const enemies = this.liveEnemies(room);
+    const enemies = patrol ? [patrol] : this.liveEnemies(room);
     if (!worldRoom || enemies.length === 0)
       return { ok: false, reason: `room ${room} has no enemies` };
     const guardian = enemies.some((e) => e.userData.tier === 'guardian');
-    const plan = planEncounter(player, enemies.length, combatRoom(worldRoom), {
-      table: { distance: this.tableDistance },
-      enemies: { radius: guardian ? GUARDIAN_RADIUS : REGULAR_RADIUS },
-    });
+    const space = combatRoom(worldRoom);
+    const origin = patrol?.getWorldPosition(new THREE.Vector3());
+    const loadedColliders = patrol ? this.world.colliders?.[room] : undefined;
+    const blockers = loadedColliders ?? space.colliders;
+    const clearApproach = origin
+      ? (x: number, z: number) => {
+          const from: Vec3 = [origin.x, 1, origin.z];
+          const to: Vec3 = [x, 1, z];
+          const radius = 0.43;
+          return (
+            !blockers.some(
+              (b) =>
+                b.max[1] > 0.06 &&
+                b.min[1] < 2.05 &&
+                segmentBoxHit(from, to, {
+                  min: [b.min[0] - radius, 0, b.min[2] - radius],
+                  max: [b.max[0] + radius, 2.05, b.max[2] + radius],
+                }) !== null,
+            ) && clearsPlayer(origin, to, player.x, player.z)
+          );
+        }
+      : undefined;
+    const plan = planEncounter(
+      player,
+      enemies.length,
+      patrol
+        ? {
+            ...space,
+            colliders: blockers,
+            walkable: space.walkable.map((rect) => ({
+              min: [
+                Math.max(space.footprint.min[0], rect.min[0] - 0.28),
+                Math.max(space.footprint.min[1], rect.min[1] - 0.28),
+              ],
+              max: [
+                Math.min(space.footprint.max[0], rect.max[0] + 0.28),
+                Math.min(space.footprint.max[1], rect.max[1] + 0.28),
+              ],
+            })),
+          }
+        : space,
+      {
+        table: {
+          distance: this.tableDistance,
+          ...(patrol ? { maxOffsetDeg: 180, margin: 0.05 } : {}),
+        },
+        enemies: patrol
+          ? {
+              radius: 0.43,
+              margin: 0.06,
+              minDistance: 1.25,
+              preferred: 1.75,
+              maxDistance: 2.75,
+              ...(clearApproach ? { clearApproach } : {}),
+            }
+          : { radius: guardian ? GUARDIAN_RADIUS : REGULAR_RADIUS },
+      },
+    );
     if (!plan.ok) {
       this.cooldown = this.retryCooldown;
       return { ok: false, reason: plan.reason };
@@ -331,6 +429,8 @@ export class EncounterDirector {
     }
 
     this.room = room;
+    this.patrol = patrol ?? null;
+    this.patrolApproachPose = null;
     this.pose = pose;
     this.placedDistance = plan.table.distance;
     this.seat = [player.x, player.z];
@@ -341,6 +441,7 @@ export class EncounterDirector {
     this.startMoves(
       targets.map((t) => ({ obj: t.obj, world: [t.x, t.z], worldRotY: -t.yaw * DEG })),
     );
+    this.patrolTableDelay = this.patrol ? (this.moves[0]?.approach?.duration ?? 0) + 0.12 : 0;
     this.phaseValue = 'unfolding';
     this.elapsed = 0;
     this.open = 0;
@@ -360,11 +461,21 @@ export class EncounterDirector {
    */
   end(outcome: EncounterOutcome): void {
     if (this.phaseValue !== 'unfolding' && this.phaseValue !== 'active') return;
+    this.patrolApproachPose = null;
+    const approach = this.moves[0]?.approach;
+    if (outcome === 'flee' && this.patrol && approach) {
+      this.patrolReturn = {
+        foldSeconds: this.open * this.unfoldSeconds,
+        from: Math.min(this.elapsed, approach.duration),
+      };
+      this.movesDone = false;
+    }
     this.targetScale = 1;
     this.elapsed = 0;
     this.phaseValue = 'folding';
     if (outcome === 'win') {
-      this.markCleared(this.room);
+      if (this.patrol) this.patrol.removeFromParent();
+      else this.markCleared(this.room);
       this.moves = [];
       this.movesDone = true;
       return;
@@ -374,6 +485,7 @@ export class EncounterDirector {
       this.movesDone = true;
       return;
     }
+    if (this.patrolReturn) return;
     const seat = this.seat;
     const moves = this.liveEnemies(this.room).flatMap((obj) => {
       const home = this.homes.get(obj);
@@ -403,12 +515,19 @@ export class EncounterDirector {
     if (this.phaseValue === 'idle' || this.phaseValue === 'active') return;
     this.elapsed += dt;
     const opening = this.phaseValue === 'unfolding';
-    this.open = Math.min(
-      1,
-      Math.max(0, this.open + ((opening ? 1 : -1) * dt) / this.unfoldSeconds),
-    );
+    const progress =
+      opening && this.patrol
+        ? (this.elapsed - this.patrolTableDelay) / this.unfoldSeconds
+        : this.open + ((opening ? 1 : -1) * dt) / this.unfoldSeconds;
+    this.open = Math.min(1, Math.max(0, progress));
     setTableUnfold(this.table, this.open);
-    this.stepMoves();
+    const returning = this.patrolReturn;
+    if (!returning) this.stepMoves(this.elapsed);
+    else if (this.elapsed >= returning.foldSeconds) {
+      const t = Math.max(0, returning.from - (this.elapsed - returning.foldSeconds));
+      this.stepMoves(t);
+      this.movesDone = t === 0;
+    }
     const done = (opening ? this.open >= 1 - EPS : this.open <= EPS) && this.movesDone;
     if (!done) return;
     if (this.phaseValue === 'unfolding') {
@@ -418,6 +537,9 @@ export class EncounterDirector {
     this.phaseValue = 'idle';
     this.frozenValue = false;
     this.room = -1;
+    this.patrol = null;
+    this.patrolReturn = null;
+    this.patrolApproachPose = null;
     this.pose = null;
     this.seat = null;
     this.cooldown = this.retryCooldown;
@@ -447,30 +569,50 @@ export class EncounterDirector {
     this.moves = targets.flatMap(({ obj, world, worldRotY }) => {
       if (!obj.parent) return [];
       const from = obj.getWorldPosition(new THREE.Vector3());
+      const parentYaw = this.parentRotY(obj);
+      const approach =
+        obj === this.patrol
+          ? planPatrolApproach(
+              world[0] - from.x,
+              world[1] - from.z,
+              obj.rotation.y + parentYaw,
+              worldRotY,
+            )
+          : undefined;
       return [
         {
           obj,
           from,
           to: new THREE.Vector3(world[0], from.y, world[1]),
           fromRotY: obj.rotation.y,
-          toRotY: obj.rotation.y + wrapRadians(worldRotY - this.parentRotY(obj) - obj.rotation.y),
+          toRotY: obj.rotation.y + wrapRadians(worldRotY - parentYaw - obj.rotation.y),
+          ...(approach ? { approach, parentYaw } : {}),
         },
       ];
     });
     this.movesDone = this.moves.length === 0;
   }
 
-  private stepMoves(): void {
+  private stepMoves(elapsed: number): void {
     if (this.moves.length === 0) return;
-    const t = smoothstep(this.elapsed / this.moveSeconds);
+    const t = smoothstep(elapsed / this.moveSeconds);
     const p = new THREE.Vector3();
+    let done = true;
     for (const m of this.moves) {
-      p.lerpVectors(m.from, m.to, t);
+      const pose = m.approach?.sample(elapsed);
+      if (pose)
+        this.patrolApproachPose = this.patrolReturn
+          ? { ...pose, returning: true, speed: -pose.speed }
+          : pose;
+      p.lerpVectors(m.from, m.to, pose?.along ?? t);
       m.obj.parent?.updateWorldMatrix(true, false);
       m.obj.parent?.worldToLocal(p);
       m.obj.position.copy(p);
-      m.obj.rotation.y = m.fromRotY + (m.toRotY - m.fromRotY) * t;
+      m.obj.rotation.y = pose
+        ? pose.yaw - (m.parentYaw ?? 0)
+        : m.fromRotY + (m.toRotY - m.fromRotY) * t;
+      done &&= elapsed >= (m.approach?.duration ?? this.moveSeconds) - EPS;
     }
-    this.movesDone = this.elapsed >= this.moveSeconds - EPS;
+    this.movesDone = done;
   }
 }

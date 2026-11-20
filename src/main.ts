@@ -21,6 +21,7 @@ import { CombatHook, type CombatPick, type XrHands } from './combat/combat-sessi
 import {
   BRASS_CACHE_VERSION,
   ENCOUNTER_CONTENT_VERSION,
+  PATROL_VERSION,
   RETURN_PASSAGES_VERSION,
 } from './combat/encounter-choice.ts';
 import {
@@ -48,6 +49,7 @@ import { Walker } from './desktop/walker.ts';
 import { DiceWorld } from './dice/world.ts';
 import { makeClockworkOwlAsset } from './enemies/conservatory-actors.ts';
 import { type EnemyActor, type EnemyAsset, tryLoadEnemyAsset } from './enemies/enemy-asset.ts';
+import { loadPatrolClips } from './enemies/patrol-visual.ts';
 import { isShowcaseFloor, SHOWCASE_SEED } from './floor/generate.ts';
 import { placeStairEntry, type StairEntry } from './floor/stairs.ts';
 import { encounterStartsFight, fleeStandPoint } from './flow/flee.ts';
@@ -390,9 +392,11 @@ const fightOptions = () => {
   };
 };
 const fightTier = (target: FloorView, room: number): RewardTier =>
-  room === target.world.plan.guardianRoom
-    ? 'guardian'
-    : (target.world.plan.rooms[room]?.encounter?.tier ?? 'regular');
+  target.encounter.activePatrol
+    ? 'regular'
+    : room === target.world.plan.guardianRoom
+      ? 'guardian'
+      : (target.world.plan.rooms[room]?.encounter?.tier ?? 'regular');
 const makeCombat = (target: FloorView): CombatHook => {
   const hook: CombatHook = new CombatHook({
     floor: target,
@@ -409,6 +413,7 @@ const makeCombat = (target: FloorView): CombatHook => {
         room,
         outcome,
         tier: fightTier(target, room),
+        ...(target.encounter.activePatrol ? { patrol: true } : {}),
         ...(playerHp === null ? {} : { playerHp }),
       }),
   });
@@ -421,7 +426,12 @@ const winFight = (): void => {
   if (!target || target.encounter.phase === 'idle') return;
   const room = target.encounter.activeRoom;
   target.encounter.end('win');
-  flow.fightEnded({ room, outcome: 'win', tier: fightTier(target, room) });
+  flow.fightEnded({
+    room,
+    outcome: 'win',
+    tier: fightTier(target, room),
+    ...(target.encounter.activePatrol ? { patrol: true } : {}),
+  });
 };
 
 // Hero assets reflect a dim neutral room until the baked probes ship, as their proof views do.
@@ -712,6 +722,7 @@ function wizardPaintings(): Promise<THREE.Texture[]> {
 function syncPuzzles(target: FloorView, immediate = false): void {
   const run = flow.run;
   if (!run) return;
+  if (run.patrolDefeated) target.clearPatrol();
   if (immediate) {
     target.panels?.sync(flow.hiddenPanel, true);
     target.world.setPuzzleGateOpen('panel', flow.hiddenPanel.opened, true);
@@ -891,6 +902,16 @@ const dressFloor = async (target: FloorView): Promise<void> => {
       const art = await panelKit();
       if (target !== floor) return;
       target.dressPanels(art, hitFx.reducedMotion);
+    }
+    if (
+      target.floorNumber === 2 &&
+      target.contentVersion >= PATROL_VERSION &&
+      !isShowcaseFloor(target.seed, 2) &&
+      !flow.run?.patrolDefeated
+    ) {
+      const [asset, clips] = await Promise.all([enemyAssets.get('cog-sentry'), loadPatrolClips()]);
+      if (target !== floor) return;
+      if (asset && clips) target.dressPatrol(asset, clips, prepareEnemy);
     }
     syncPuzzles(target, true);
     for (const room of target.styledRooms)
@@ -1133,7 +1154,8 @@ flow.onChange((event) => {
   perfMark(`phase ${event.to}`);
   // Only a flee goes from a fight straight back to exploring: the player steps back to the doorway
   // they came in by, before the snapshot below records the room.
-  if (event.from === 'combat' && event.to === 'explore') standAtEntry(flow.room);
+  if (event.from === 'combat' && event.to === 'explore' && !floor?.encounter.activePatrol)
+    standAtEntry(flow.room);
   const abandoned = event.to === 'title' && (event.from === 'explore' || event.from === 'combat');
   if (event.to === 'explore' || event.to === 'reward' || event.to === 'guardian-cleared') {
     storedSnapshot = flow.snapshot(Date.now(), floor?.world.current ?? flow.room);
@@ -2525,7 +2547,10 @@ renderer.setAnimationLoop((time, frame) => {
     });
   } else {
     const pose = floor?.encounter.tablePose;
-    const fighting = floor?.encounter.phase === 'unfolding' || floor?.encounter.phase === 'active';
+    const encounter = floor?.encounter;
+    const fighting =
+      encounter?.phase === 'active' ||
+      (encounter?.phase === 'unfolding' && (!encounter.activePatrol || encounter.patrolAtSlot));
     if (fighting && pose) {
       const eye = camera.getWorldPosition(new THREE.Vector3());
       const ahead = Math.hypot(pose.x - eye.x, pose.z - eye.z);
@@ -2582,7 +2607,7 @@ renderer.setAnimationLoop((time, frame) => {
     flow.enterRoom(floor.world.current);
     perfRoom(floor.world);
     if (encounterStartsFight(floor.encounter.phase, flow.phase)) {
-      flow.fightStarted(floor.encounter.activeRoom);
+      flow.fightStarted(floor.encounter.activeRoom, !!floor.encounter.activePatrol);
     }
   }
   if (combat) combat.paused = paused;

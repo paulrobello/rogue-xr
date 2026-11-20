@@ -7,9 +7,22 @@ import { chromium } from 'playwright';
 import { exerciseBrassCache } from './brass-journey.mjs';
 import { exerciseCalibration } from './calibration-journey.mjs';
 import { installFieldControllers, useFieldController } from './field-controller.mjs';
+import { exercisePatrol } from './patrol-journey.mjs';
 
 const {
-  values: { base, seed, out, cdp, formula, commission, calibration, panels, brass, controller },
+  values: {
+    base,
+    seed,
+    out,
+    cdp,
+    formula,
+    commission,
+    calibration,
+    panels,
+    brass,
+    controller,
+    patrol,
+  },
 } = parseArgs({
   options: {
     base: { type: 'string', default: 'http://localhost:4266' },
@@ -22,6 +35,7 @@ const {
     panels: { type: 'boolean', default: false },
     brass: { type: 'boolean', default: false },
     controller: { type: 'boolean', default: false },
+    patrol: { type: 'boolean', default: false },
   },
 });
 if (controller && cdp) throw Error('Controller emulation requires desktop Chromium');
@@ -714,7 +728,22 @@ async function exerciseReturnJourney() {
   console.log('PASS end-to-end');
 }
 try {
-  if (brass)
+  if (patrol)
+    await exercisePatrol({
+      page,
+      base,
+      seed,
+      out,
+      ev,
+      ready,
+      stair,
+      approach,
+      resumeAt,
+      shot,
+      errors,
+      cdp,
+    });
+  else if (brass)
     await exerciseBrassCache({
       page,
       base,

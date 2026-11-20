@@ -137,6 +137,7 @@ export interface EnemyOptions {
   tableDistance?: number;
   /** Clear radius around each enemy. */
   radius?: number;
+  clearApproach?: (x: number, z: number) => boolean;
   preferred?: number;
   minDistance?: number;
   maxDistance?: number;
@@ -373,7 +374,8 @@ export function placeEnemies(
         const forward = Math.sqrt(d * d - lateral * lateral);
         const x = table.x + fx * forward + ux * lateral;
         const z = table.z + fz * forward + uz * lateral;
-        if (!circleClear(room, x, z, radius + margin)) continue;
+        if (!circleClear(room, x, z, radius + margin) || opts.clearApproach?.(x, z) === false)
+          continue;
         const crowded = placements.some(
           (p) => p !== null && Math.hypot(p.x - x, p.z - z) < separation,
         );

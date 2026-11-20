@@ -486,6 +486,8 @@ function validateRunState(
     r.bookSecretCabinetRooms,
     `${path}.bookSecretCabinetRooms`,
   );
+  if (r.patrolDefeated !== undefined && r.patrolDefeated !== true)
+    fail(`${path}.patrolDefeated`, 'expected true or absent');
   if (r.brassCacheSeen !== undefined && typeof r.brassCacheSeen !== 'boolean')
     fail(`${path}.brassCacheSeen`, 'expected a boolean');
   const brassKey =
@@ -525,6 +527,7 @@ function validateRunState(
     ...(bookSecretKeyRooms === undefined ? {} : { bookSecretKeyRooms }),
     ...(bookSecretCabinetRooms === undefined ? {} : { bookSecretCabinetRooms }),
     ...(brassKey === undefined ? {} : { brassKey }),
+    ...(r.patrolDefeated === true && { patrolDefeated: true }),
     ...(r.brassCacheSeen === true && { brassCacheSeen: true }),
   };
 }

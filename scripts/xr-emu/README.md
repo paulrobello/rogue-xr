@@ -46,7 +46,7 @@ notice run are the music tracks that are not produced yet.
 
 ## Return visits and exploration fixtures
 
-`return-journey.mjs` loads a real game build, places the tester at named fixtures, and goes through the title screen for a cold Continue. Select `--commission`, `--calibration`, `--panels`, `--formula` or `--brass`. The optional `--controller` switch uses a seated IWER controller on the associated physical targets. The native Quest Browser path uses `--cdp` with an isolated test origin.
+`return-journey.mjs` loads a real game build, places the tester at named fixtures, and goes through the title screen for a cold Continue. Select `--commission`, `--calibration`, `--panels`, `--formula`, `--brass` or `--patrol` (seed `PAT00000`). The optional `--controller` switch uses a seated IWER controller on the associated physical targets. The native Quest Browser path uses `--cdp` with an isolated test origin.
 
 ```sh
 node scripts/xr-emu/return-journey.mjs --brass --seed SPIRE001 --controller --base http://localhost:4262

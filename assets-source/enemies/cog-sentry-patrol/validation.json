@@ -1,0 +1,100 @@
+{
+  "jointCount": 21,
+  "samplesHz": 120,
+  "clips": {
+    "patrol-start": {
+      "durationSeconds": 0.5,
+      "samples": 61,
+      "oppositeShoeIntersectionSamples": 0,
+      "minimumMeshHeightM": -0.000185,
+      "peakSoleClearanceM": {
+        "R": 0.109745,
+        "L": 0.0001
+      },
+      "maxPlantedVertexDriftM": {
+        "R": 0.000188,
+        "L": 0.000172
+      },
+      "rootMatrixError": 0.0
+    },
+    "patrol-walk": {
+      "durationSeconds": 1.2,
+      "samples": 145,
+      "oppositeShoeIntersectionSamples": 0,
+      "minimumMeshHeightM": -0.000137,
+      "peakSoleClearanceM": {
+        "R": 0.109756,
+        "L": 0.109756
+      },
+      "maxPlantedVertexDriftM": {
+        "R": 0.000137,
+        "L": 0.000137
+      },
+      "rootMatrixError": 0.0
+    },
+    "patrol-stop": {
+      "durationSeconds": 0.7,
+      "samples": 85,
+      "oppositeShoeIntersectionSamples": 0,
+      "minimumMeshHeightM": -0.00013,
+      "peakSoleClearanceM": {
+        "R": 0.0001,
+        "L": 0.109681
+      },
+      "maxPlantedVertexDriftM": {
+        "R": 0.00014,
+        "L": 0.0001
+      },
+      "rootMatrixError": 0.0
+    },
+    "patrol-turn-left": {
+      "durationSeconds": 1.2,
+      "samples": 145,
+      "oppositeShoeIntersectionSamples": 0,
+      "minimumMeshHeightM": -0.000134,
+      "peakSoleClearanceM": {
+        "R": 0.086652,
+        "L": 0.085987
+      },
+      "maxPlantedVertexDriftM": {
+        "R": 0.000255,
+        "L": 0.000218
+      },
+      "rootMatrixError": 0.0
+    },
+    "patrol-turn-right": {
+      "durationSeconds": 1.2,
+      "samples": 145,
+      "oppositeShoeIntersectionSamples": 0,
+      "minimumMeshHeightM": -0.000134,
+      "peakSoleClearanceM": {
+        "R": 0.085987,
+        "L": 0.086652
+      },
+      "maxPlantedVertexDriftM": {
+        "R": 0.000218,
+        "L": 0.000255
+      },
+      "rootMatrixError": 0.0
+    }
+  },
+  "maxEndpointVertexErrorM": {
+    "walkLoop": 2.3e-07,
+    "startToWalk": 2.5e-07,
+    "walkToStop": 0.0,
+    "idleToStart": 0.0,
+    "stopToIdle": 1.2e-07,
+    "patrol-turn-leftStart": 0.0,
+    "patrol-turn-leftEnd": 7e-08,
+    "patrol-turn-rightStart": 0.0,
+    "patrol-turn-rightEnd": 1.2e-07
+  },
+  "sourceRigSha256": "7d6e9aced3a619ba6c29fbb9e5829bd5444521b8f8a656902d35f599a50c9e3c",
+  "combatGlbSha256": "6025f67d33f6eac7f66ac9771f83dfd505c43b97a0e7eaaea8a373e079f02811",
+  "locomotionGlbSha256": "ac0b9ef05d7aba909e1dad8438461a67c2aa84dff1a96be222e9cdb403e6899f",
+  "editableSha256": "4554a625ca31ea49ea3c5e8997205cb09e28444d13079ed42d1ed967ab723f27",
+  "generatorSha256": "b83778d7d1231737ab903dd39b1ec0931c1ae49b791ffbe087232cc177ba0d92",
+  "inspectorSha256": "0edf7bf471c07c32461cf529e20057ae6fe780c21db3a44368f9209e2d4f1b6d",
+  "locomotionBytes": 122684,
+  "blender": "5.2.3 LTS"
+}

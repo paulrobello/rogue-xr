@@ -186,7 +186,9 @@ Additional commission ideas include the following.
 
 ### E5. Wandering automaton
 
-Optionally, one patrolling automaton per floor walks between rooms. Touching it starts a fight as usual. You can avoid it by timing, or quieten it with an Oil Can.
+One avoidable Cog Sentry patrols the Upper Works on new runs with a clear route through an ordinary doorway. Seed `PAT00000` places it between Upper Works rooms 1 and 2. Close contact starts a regular encounter. A patrol win stays cleared independently of the room's encounter and treasure. The layout showcase keeps its enemy-free Upper Works. Later floors and the Oil Can interaction remain roadmap work.
+
+Use the existing Cog Sentry rig and material set. Astra Extra High owns all visual and animation work for this feature, including the independent review. Game code owns position and facing. Synchronize the authored gait to route distance and verify foot contact, braking, pivots and the combat handoff in the running game.
 
 ### E6. Stairs between floors
 
@@ -206,7 +208,7 @@ Keep the deck, HP and cog purse with the run. Keep each floor’s layout, opened
 | W6 | The keeper’s ledger offers recovery, restoration and delve commissions with a physical return payment. | W1 |
 | W7 | Wave B combat cards with M3, M8, M9, M10, the crystal d12 and the eye glyph | W3 |
 | W8 | Remaining field cards (Scrying Lens, Recall Spiral, Oil Can, Tuning Fork, Forge Ember, Polishing Kit, Smoke Flask, Spare Valve) | W1, W4, W5 |
-| W9 | Gear train and orrery are playable alternate instruments; the wandering automaton remains planned | W4 |
+| W9 | Gear train and orrery are playable alternate instruments. The Upper Works also has a seeded Cog Sentry patrol. | W4 |
 | W10 | Wave C combat cards, Junk cards, and the act 2 enemies that add Junk | W7, PRD Q1 (acts) |
 | W11 | Paired up/down stairs and per-floor saves are playable. Each floor keeps its opened chests and cleared encounters. Pressure Works is on Floor 1. The astral lift links the Upper Works and Conservatory. | Three seeded floors |
 
@@ -219,14 +221,14 @@ Assets per wave go through the art bible (D8) and the asset table:
 
 ## 7. Decisions for Paul
 
-| Code | Decision | Recommendation |
+| Code | Decision | Status or recommendation |
 | --- | --- | --- |
 | CP1 | Pool size for the full game | 60 combat cards (15 slice + 45 in three waves), 12 field cards, 3 Junk |
-| CP2 | What a failed Lock Pick trace does | The lock stays shut and the pick is kept, but each failed try lowers the fizzle line for the next. The pick is spent only when the lock opens |
-| CP3 | Satchel size | 3 slots, raised to 5 by a workshop upgrade |
+| CP2 | What a failed Lock Pick trace does | Approved. A miss keeps the pick and the lock stays shut. Every attempt uses the selected mode’s normal tracing difficulty. Spend the pick on success. Lock-pick rooms are optional. |
+| CP3 | Satchel size | Approved. Three consumable-tool slots, upgradeable to five. Discovered puzzle keys and ingredients use their own inventory. |
 | CP4 | Field cards in the reward offer | Sometimes, as a fourth option beside the card choices, from the `loot` stream |
 | CP5 | Mechanism cap | 3 on the table at once, so the table stays readable |
 | CP6 | Puzzles per floor | 1 to 2, never on the path to the guardian |
 | CP7 | Shortcut and hidden doors | Yes. They need loops in the floor generator (W5) |
-| CP8 | Wandering automaton | One per floor, optional, from wave W9 onward |
+| CP8 | Wandering automaton | Approved to build first. Begin with an avoidable Upper Works patrol, with particular attention to movement and animation. |
 | CP9 | Where to start after the slice | W1 satchel, then W2 locks, then W3 Wave A cards, so locks and backtracking land first |

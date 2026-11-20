@@ -1224,7 +1224,10 @@ def main() -> int:
         sizes = ", ".join(f"{k} {v['width']}px" for k, v in s.get("maps", {}).items())
         print(f"asset-check {room}: {glb.get('triangles')} tris, {len(glb.get('materials', []))} materials; {sizes}")
     enemies = sorted(p.name for p in ENEMY_RUNTIME.iterdir() if p.is_dir()) if ENEMY_RUNTIME.exists() else []
+    runpy.run_path(str(ROOT / "scripts/assets/build-sentry-patrol-contract.py"))["check_patrol"](errors)
     for enemy in enemies:
+        if enemy == "cog-sentry-patrol":
+            continue
         s = check_enemy(enemy, errors, warnings)
         glb = s.get("glb", {})
         print(f"asset-check enemies/{enemy}: {glb.get('triangles')} tris, {len(glb.get('materials', []))} materials, {s.get('bones')} bones, clips {s.get('clips')}")

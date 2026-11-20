@@ -5,6 +5,7 @@ import {
   chooseEncounter,
   ENCOUNTER_CONTENT_VERSION,
   HIDDEN_PANEL_VERSION,
+  PATROL_VERSION,
   PRESSURE_WORKS_VERSION,
   RETURN_PASSAGES_VERSION,
   UPPER_WORKS_VERSION,
@@ -15,6 +16,7 @@ import { type RoomTemplate, templateById } from '../content/rooms.ts';
 import { isValidSeed, normalizeSeed, randomSeed, Stream } from '../core/rng.ts';
 import { BreakApart } from '../enemies/break-apart.ts';
 import type { EnemyActor, EnemyAsset } from '../enemies/enemy-asset.ts';
+import { type PatrolClips, PatrolVisual } from '../enemies/patrol-visual.ts';
 import { conservatoryPlan } from '../floor/conservatory.ts';
 import {
   attachPressureWing,
@@ -24,6 +26,7 @@ import {
   SHOWCASE_UPPER_SEED,
 } from '../floor/generate.ts';
 import { attachHiddenPassage } from '../floor/hidden-passage.ts';
+import { type PatrolRoute, patrolPeriod, planPatrol, samplePatrol } from '../floor/patrol.ts';
 import { attachFloorOneTopology, withBrassCache } from '../floor/return-passages.ts';
 import { placeStairEntry } from '../floor/stairs.ts';
 import { nearSet, shellSet } from '../floor/visibility.ts';
@@ -257,6 +260,9 @@ export interface FloorView {
   ): void;
   /** The actor standing in for an automaton body, or null for a placeholder. */
   actorOf(body: THREE.Object3D): EnemyActor | null;
+  readonly patrolBody: THREE.Object3D | null;
+  dressPatrol(asset: EnemyAsset, clips: PatrolClips, prepare: (actor: EnemyActor) => void): void;
+  clearPatrol(): void;
   /** Live automaton actors on this floor. */
   readonly actors: readonly EnemyActor[];
   /**
@@ -415,6 +421,7 @@ export function mountFloorView(
     globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches;
   let suspended = false;
   let turnVignette = 0;
+  let patrolSeatTurn = 0;
   // The director keeps this host for its life; the greybox or the real asset hangs under it.
   const tableHost = new THREE.Group();
   tableHost.name = 'combat-table-host';
@@ -422,6 +429,15 @@ export function mountFloorView(
   tableHost.add(greybox);
   let fit: THREE.Group | null = null;
   let authoredTop = 1;
+  let patrol: {
+    actor: EnemyActor;
+    gait: PatrolVisual;
+    route: PatrolRoute;
+    elapsed: number;
+  } | null = null;
+  const wall = new THREE.Box3();
+  const crossing = new THREE.Vector3();
+  const sight = new THREE.Ray();
   const encounter = new EncounterDirector({
     world,
     table: tableHost,
@@ -440,6 +456,15 @@ export function mountFloorView(
     },
   });
   const at = new THREE.Vector3();
+  const alignSeat = (degrees: number, eye: THREE.Vector3): void => {
+    if (degrees === 0) return;
+    const turn = rigTurnAboutHead([rig.position.x, rig.position.z], [eye.x, eye.z], degrees);
+    rig.position.x = turn.x;
+    rig.position.z = turn.z;
+    rig.rotation.y += turn.rotationY;
+    rig.updateMatrixWorld(true);
+    turnVignette = DEFAULT_VIGNETTE.maxStrength;
+  };
   const actors = new Map<THREE.Object3D, EnemyActor>();
   /** Per actor: its turn among shell-room steps and the seconds not yet stepped. */
   const paces = new Map<EnemyActor, { slot: number; pending: number }>();
@@ -843,6 +868,38 @@ export function mountFloorView(
       const len = Math.hypot(dx, dz) || 1;
       return new THREE.Vector3(door[0] + dx / len, 0, door[1] + dz / len);
     },
+    get patrolBody() {
+      return patrol?.actor.object.parent ? patrol.actor.object : null;
+    },
+    dressPatrol(asset, clips, prepare) {
+      if (patrol || floorNumber !== 2 || guided || contentVersion < PATROL_VERSION) return;
+      const route = planPatrol(plan, world.rooms, world.colliders);
+      if (!route) return;
+      const actor = asset.spawn(0);
+      try {
+        prepare(actor);
+        const gait = PatrolVisual.create(actor, clips);
+        const pose = samplePatrol(route, 0);
+        actor.object.name = 'roaming-cog-sentry';
+        actor.object.userData = { room: pose.room, tier: 'regular', enemyKind: 'cog-sentry' };
+        actor.object.position.set(pose.x, 0, pose.z);
+        actor.object.rotation.y = pose.yaw;
+        actor.object.visible = world.roomGroups[pose.room]?.visible === true;
+        gait.update(0, pose);
+        world.group.add(actor.object);
+        actors.set(actor.object, actor);
+        patrol = { actor, gait, route, elapsed: 0 };
+      } catch (error) {
+        actor.dispose();
+        console.warn('Could not fit the roaming sentry rig', error);
+      }
+    },
+    clearPatrol() {
+      if (!patrol) return;
+      patrol.actor.object.removeFromParent();
+      disposeActor(patrol.actor);
+      patrol = null;
+    },
     get actors() {
       return [...actors.values()];
     },
@@ -1041,7 +1098,23 @@ export function mountFloorView(
         head.getWorldPosition(at);
         if (toastRoom !== world.current || !toast.update(dt, at)) dropToast();
       }
+      const previousPhase = encounter.phase;
       encounter.update(dt);
+      if (
+        patrolSeatTurn &&
+        encounter.activePatrol &&
+        (encounter.patrolAtSlot || encounter.phase === 'active')
+      ) {
+        alignSeat(patrolSeatTurn, head.getWorldPosition(at));
+        patrolSeatTurn = 0;
+      }
+      if (
+        patrol &&
+        encounter.activePatrol === patrol.actor.object &&
+        previousPhase === 'unfolding' &&
+        encounter.phase === 'active'
+      )
+        patrol.gait.release();
       dressEnemies();
       head.getWorldPosition(at);
       if (tiersFor !== world.current) {
@@ -1054,7 +1127,20 @@ export function mountFloorView(
       for (const actor of [...actors.values()]) {
         if (!actor.object.parent) {
           disposeActor(actor);
+          if (patrol?.actor === actor) patrol = null;
           continue;
+        }
+        if (patrol?.actor === actor) {
+          if (encounter.phase === 'idle') continue;
+          if (
+            (encounter.phase === 'unfolding' || encounter.phase === 'folding') &&
+            encounter.activePatrol === actor.object &&
+            encounter.patrolApproachPose
+          ) {
+            if (actor.frozen && encounter.patrolApproachPose.returning) actor.unfreeze();
+            patrol.gait.approach(dt, encounter.patrolApproachPose);
+            continue;
+          }
         }
         if (encounter.frozen) {
           if (!actor.frozen && !actor.dead && actor.state === 'idle') actor.freeze();
@@ -1082,29 +1168,60 @@ export function mountFloorView(
       if (encounter.phase !== 'idle') return;
       world.update(at.x, at.z);
       if (suspended) return;
+      let roamingBody: THREE.Object3D | undefined;
+      if (patrol) {
+        const { actor, gait, route } = patrol;
+        if (actor.frozen) actor.unfreeze();
+        const body = actor.object;
+        const next = (patrol.elapsed + dt) % patrolPeriod(route);
+        let pose = samplePatrol(route, next);
+        const separation = Math.hypot(at.x - pose.x, at.z - pose.z);
+        const yielding =
+          separation < 0.7 &&
+          separation < Math.hypot(at.x - body.position.x, at.z - body.position.z);
+        if (yielding) pose = samplePatrol(route, patrol.elapsed);
+        else patrol.elapsed = next;
+        body.position.set(pose.x, 0, pose.z);
+        body.rotation.y = pose.yaw;
+        body.userData.room = pose.room;
+        body.visible = world.roomGroups[pose.room]?.visible === true;
+        if (body.visible) {
+          if (yielding) {
+            gait.release();
+            actor.update(dt, at);
+          } else gait.update(dt, pose);
+        }
+        const distance = Math.hypot(at.x - pose.x, at.z - pose.z);
+        if (pose.room === world.current && distance <= 0.85) {
+          sight.origin.set(at.x, 1, at.z);
+          sight.direction.set(pose.x - at.x, 0, pose.z - at.z).normalize();
+          const occluded = world.colliders[pose.room].some((box) => {
+            wall.min.fromArray(box.min);
+            wall.max.fromArray(box.max);
+            return (
+              sight.intersectBox(wall, crossing) !== null &&
+              crossing.distanceTo(sight.origin) < distance - 0.015
+            );
+          });
+          if (!occluded) roamingBody = body;
+        }
+      }
       const hit = encounter.checkTrigger({ x: at.x, z: at.z });
-      if (!hit) return;
-      const began = encounter.begin(hit.room, {
-        x: at.x,
-        z: at.z,
-        yaw: yawFromMatrix(head.matrixWorld.elements),
-        eyeHeight: at.y,
-      });
+      if (!hit && !roamingBody) return;
+      const began = encounter.begin(
+        hit?.room ?? world.current,
+        {
+          x: at.x,
+          z: at.z,
+          yaw: yawFromMatrix(head.matrixWorld.elements),
+          eyeHeight: at.y,
+        },
+        hit ? undefined : roamingBody,
+      );
       if (!began.ok) return;
       if (fit) fit.scale.set(1, began.table.pose.height / authoredTop, 1);
-      // Snapped during the freeze while the table is still folded (invisible), behind the vignette.
-      if (began.table.offsetDeg !== 0) {
-        const turn = rigTurnAboutHead(
-          [rig.position.x, rig.position.z],
-          [at.x, at.z],
-          began.table.offsetDeg,
-        );
-        rig.position.x = turn.x;
-        rig.position.z = turn.z;
-        rig.rotation.y += turn.rotationY;
-        rig.updateMatrixWorld(true);
-        turnVignette = DEFAULT_VIGNETTE.maxStrength;
-      }
+      if (encounter.activePatrol) patrolSeatTurn = began.table.offsetDeg;
+      else alignSeat(began.table.offsetDeg, at);
     },
   };
 }

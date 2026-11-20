@@ -18,7 +18,8 @@ export const RETURN_PASSAGES_VERSION = 5;
 export const HIDDEN_PANEL_VERSION = 6;
 /** Portable brass key and its deterministic first-floor cache. */
 export const BRASS_CACHE_VERSION = 7;
-export const ENCOUNTER_CONTENT_VERSION = BRASS_CACHE_VERSION;
+export const PATROL_VERSION = 8;
+export const ENCOUNTER_CONTENT_VERSION = PATROL_VERSION;
 const LEGACY_ENCOUNTER_IDS = new Set([
   'sentry',
   'hound',
@@ -49,8 +50,8 @@ export function chooseEncounter(
 }
 
 /** A per-room combat seed derived from the run seed, so each fight shuffles and rolls its own way. */
-export function fightSeed(seed: string, room: number): string {
-  const s = Stream.fromKey(`${seed}:room-${room}:fight`);
+export function fightSeed(seed: string, room: number, patrol = false): string {
+  const s = Stream.fromKey(patrol ? `${seed}:patrol:fight` : `${seed}:room-${room}:fight`);
   return Array.from({ length: 8 }, () => CROCKFORD[s.int(0, 31)]).join('');
 }
 

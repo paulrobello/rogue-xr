@@ -59,7 +59,7 @@ import {
 import { dropToFitView, fitsView } from '../combat-view/view-fit.ts';
 import { getCard, type SliceCard } from '../content/cards.ts';
 import { dieById } from '../content/dice.ts';
-import { type EncounterTier, encounterSetups } from '../content/enemies.ts';
+import { type EncounterTier, encounterSetups, ROAMING_SENTRY } from '../content/enemies.ts';
 import type { ActionBus, GameAction } from '../core/actions.ts';
 import { Stream } from '../core/rng.ts';
 import { type DiceAsset, loadDice } from '../dice/dice-asset.ts';
@@ -311,6 +311,7 @@ export interface CombatSessionDeps {
   seed: string;
   room: number;
   tier: EncounterTier;
+  patrol?: boolean;
   contentVersion?: number;
   floorNumber?: number;
   tablePose: TablePose;
@@ -634,19 +635,21 @@ export class CombatSession {
     };
     // Left to right across the table, the order the director placed them in.
     const ordered = [...deps.bodies].sort((a, b) => lateral(a) - lateral(b));
-    const encounter = chooseEncounter(
-      deps.seed,
-      deps.room,
-      deps.tier,
-      ordered.length,
-      deps.contentVersion,
-      deps.floorNumber,
-    );
+    const encounter = deps.patrol
+      ? ROAMING_SENTRY
+      : chooseEncounter(
+          deps.seed,
+          deps.room,
+          deps.tier,
+          ordered.length,
+          deps.contentVersion,
+          deps.floorNumber,
+        );
     const { difficulty, ...controllerOptions } = deps.options ?? {};
     this.controller = new CombatController({
       ...controllerOptions,
       ...(difficulty === undefined ? {} : { difficulty }),
-      seed: fightSeed(deps.seed, deps.room),
+      seed: fightSeed(deps.seed, deps.room, deps.patrol),
       setups: encounterSetups(encounter, difficulty),
     });
     this.plate.level = difficulty ?? 'casual';
@@ -2997,6 +3000,7 @@ export interface CombatHookFloor {
   floorNumber?: number;
   encounter: Pick<EncounterDirector, 'phase' | 'activeRoom' | 'tablePose' | 'end'> & {
     readonly seatDistance?: number | null;
+    readonly activePatrol?: THREE.Object3D | null;
   };
   world: {
     plan: { rooms: readonly ({ encounter: { tier: EncounterTier } | null } | undefined)[] };
@@ -3095,9 +3099,12 @@ export class CombatHook {
     const { floor } = this.deps;
     const room = floor.encounter.activeRoom;
     const pose = floor.encounter.tablePose;
-    const tier = floor.world.plan.rooms[room]?.encounter?.tier;
+    const patrol = floor.encounter.activePatrol;
+    const tier = patrol ? 'regular' : floor.world.plan.rooms[room]?.encounter?.tier;
     if (!pose || !tier) return;
-    const bodies = (floor.world.enemies.get(room) ?? []).filter((b) => b.parent !== null);
+    const bodies = patrol
+      ? [patrol]
+      : (floor.world.enemies.get(room) ?? []).filter((b) => b.parent !== null);
     const options = this.deps.fightOptions?.() ?? this.deps.options;
     const seat = floor.encounter.seatDistance;
     this.handedOver = false;
@@ -3110,6 +3117,7 @@ export class CombatHook {
         tier,
         ...(floor.contentVersion === undefined ? {} : { contentVersion: floor.contentVersion }),
         ...(floor.floorNumber === undefined ? {} : { floorNumber: floor.floorNumber }),
+        ...(patrol ? { patrol: true } : {}),
         tablePose: pose,
         ...(seat == null ? {} : { seatDistance: seat }),
         bodies,

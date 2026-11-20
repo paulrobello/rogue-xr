@@ -3,6 +3,7 @@ import {
   ENCOUNTER_CONTENT_VERSION,
   FOUNDRY_VERSION,
   HIDDEN_PANEL_VERSION,
+  PATROL_VERSION,
   PRESSURE_WORKS_VERSION,
   RETURN_PASSAGES_VERSION,
 } from '../combat/encounter-choice.ts';
@@ -130,6 +131,7 @@ export const FLOW_TRANSITIONS: Readonly<Record<FlowPhase, readonly FlowPhase[]>>
 export type FightOutcome = 'win' | 'defeat' | 'flee';
 
 export interface FightResult {
+  readonly patrol?: boolean;
   readonly room: number;
   readonly outcome: FightOutcome;
   /** The encounter's tier; a `guardian` win ends the run in victory. */
@@ -939,8 +941,16 @@ export class RunFlow {
   }
 
   /** Exploration hands over to a fight. Ignored outside `explore`, so a dead run never fights again. */
-  fightStarted(room: number): boolean {
-    if (this.phaseValue !== 'explore' || this.clearedRooms.includes(room)) return false;
+  fightStarted(room: number, patrol = false): boolean {
+    if (
+      this.phaseValue !== 'explore' ||
+      (patrol
+        ? this.floorNumberValue !== 2 ||
+          this.contentVersionValue < PATROL_VERSION ||
+          this.runValue?.patrolDefeated
+        : this.clearedRooms.includes(room))
+    )
+      return false;
     this.enterRoom(room);
     return this.go('combat');
   }
@@ -953,7 +963,13 @@ export class RunFlow {
    */
   fightEnded(result: FightResult): boolean {
     const run = this.runValue;
-    if (this.phaseValue !== 'combat' || !run) return false;
+    if (
+      this.phaseValue !== 'combat' ||
+      !run ||
+      (result.patrol &&
+        (result.tier !== 'regular' || this.floorNumberValue !== 2 || run.patrolDefeated))
+    )
+      return false;
     if (result.outcome === 'flee') {
       if (!canFlee(result.tier)) return false;
       this.runValue = this.withHp(run, result.playerHp);
@@ -963,13 +979,14 @@ export class RunFlow {
       this.runValue = { ...run, hp: 0 };
       return this.finish('death');
     }
-    if (!this.clearedRooms.includes(result.room)) this.clearedRooms.push(result.room);
+    if (!result.patrol && !this.clearedRooms.includes(result.room))
+      this.clearedRooms.push(result.room);
     const healed = this.withHp(run, result.playerHp);
     const pool =
       this.contentVersionValue < FOUNDRY_VERSION ? LEGACY_REWARD_POOL : this.opts.rewardPool;
     const rolled = rewardOffer(healed, result.tier, pool);
     if (result.tier === 'guardian') this.guardianDefeatedValue = true;
-    this.runValue = rolled.run;
+    this.runValue = result.patrol ? { ...rolled.run, patrolDefeated: true } : rolled.run;
     this.offerValue = rolled.offer;
     return this.go('reward');
   }
@@ -1272,7 +1289,7 @@ export class RunFlow {
       ),
       fightsWon: [...this.floorStates.values()].reduce(
         (n, f) => n + f.clearedEncounters.length,
-        this.clearedRooms.length,
+        this.clearedRooms.length + Number(run.patrolDefeated === true),
       ),
       cogsEarned: run.cogs,
       bankTotal: this.workshopValue.cogsBanked,

@@ -62,6 +62,7 @@ export interface RunState {
   /** Cross-floor portable brass key. Absent in pre-v7 saves and treated as missing. */
   readonly brassKey?: BrassKeyState;
   readonly brassCacheSeen?: boolean;
+  readonly patrolDefeated?: true;
 }
 
 /** Mirrors `EncounterTier` in `floor/generate.ts`; rules may not import from `floor/`. */

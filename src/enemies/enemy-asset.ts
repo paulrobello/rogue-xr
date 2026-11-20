@@ -5,6 +5,7 @@ import { ENEMIES, type EnemyKind } from '../content/enemies.ts';
 import { loadPbrSet, type PbrSet } from '../world/materials.ts';
 import { applyGlowLook, writeGlowIslands } from './glow.ts';
 import { HeadLook } from './look-at.ts';
+import type { PatrolClipName } from './patrol-visual.ts';
 
 /**
  * Runtime contract of every automaton model, `public/assets/enemies/<id>/<id>.manifest.json` plus
@@ -22,7 +23,12 @@ export type EnemyClip = (typeof ENEMY_CLIPS)[number];
 export const PHASE_CLIP = 'phase-change';
 type IntentClip = `intent-${string}`;
 type MoveActionClip = `action-${string}`;
-export type ActorClip = EnemyClip | typeof PHASE_CLIP | IntentClip | MoveActionClip;
+export type ActorClip =
+  | EnemyClip
+  | typeof PHASE_CLIP
+  | IntentClip
+  | MoveActionClip
+  | PatrolClipName;
 /**
  * Bones the phase-change clip leaves open (the guardian's doors and side plates). Every clip keys
  * every bone, so after the change the actor re-applies the clip's final pose to these each frame
@@ -564,6 +570,11 @@ export class EnemyActor {
     return action;
   }
 
+  /** External locomotion clips participate in the same fades and interruptions as combat actions. */
+  bindPatrolClip(name: PatrolClipName, clip: THREE.AnimationClip): void {
+    this.actions.set(name, this.mixer.clipAction(clip));
+  }
+
   /** Hold the advertised move between reactions, until the next intent is revealed. */
   showIntent(id: string | null): void {
     const pose = (id && this.asset.manifest.intentClips?.[id]) || null;
@@ -729,6 +740,9 @@ export class EnemyActor {
     for (const clip of this.asset.clips.values()) this.mixer.uncacheClip(clip);
     this.mixer.uncacheRoot(this.object);
     this.fades.clear();
+    this.object.traverse((o) => {
+      if (o instanceof THREE.SkinnedMesh) o.skeleton.dispose();
+    });
     for (const m of this.materials) m.material.dispose();
     this.materials.length = 0;
     this.object.removeFromParent();
