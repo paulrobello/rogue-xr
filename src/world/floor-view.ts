@@ -49,7 +49,7 @@ import { BellChimes } from './bell-chimes.ts';
 import { BookSecret } from './book-secret.ts';
 import { BrassKeyStand } from './brass-key.ts';
 import { CalibrationBench } from './calibration-bench.ts';
-import { CalibrationCabinet } from './calibration-cabinet.ts';
+import { CalibrationCabinet, CalibrationKeyStand } from './calibration-cabinet.ts';
 import { CommissionOffice } from './commission-office.ts';
 import { ConservatoryArchive } from './conservatory-archive.ts';
 import { ConservatoryGallery } from './conservatory-gallery.ts';
@@ -176,6 +176,7 @@ export interface FloorView {
   dressCommission(art: THREE.Object3D, kind: CommissionKind, reducedMotion: boolean): void;
   readonly calibrationBench: CalibrationBench | null;
   readonly chartCabinet: CalibrationCabinet | null;
+  readonly calibrationKey: CalibrationKeyStand | null;
   dressCalibration(
     art: THREE.Object3D,
     tools: THREE.Object3D,
@@ -387,7 +388,8 @@ export function mountFloorView(
     archive: ConservatoryArchive | null = null;
   let office: CommissionOffice | null = null;
   let calibrationBench: CalibrationBench | null = null,
-    chartCabinet: CalibrationCabinet | null = null;
+    chartCabinet: CalibrationCabinet | null = null,
+    calibrationKey: CalibrationKeyStand | null = null;
   let panels: ServicePanels | null = null;
   let counterweight: CounterweightStation | null = null;
   const floorNumber = options.floorNumber ?? 1;
@@ -773,13 +775,19 @@ export function mountFloorView(
     get chartCabinet() {
       return chartCabinet;
     },
+    get calibrationKey() {
+      return calibrationKey;
+    },
     dressCalibration(art, tools, runSeed, face, reduced) {
       const props = furnishings?.placements ?? [];
       counterweight?.dress(art, reduced);
       if (floorNumber === 1 && !chartCabinet)
         chartCabinet = CalibrationCabinet.mount(world, art, tools, runSeed, props, face, reduced);
-      if (floorNumber === 2 && !calibrationBench)
+      if (floorNumber === 2 && !calibrationBench) {
         calibrationBench = CalibrationBench.mount(world, art, tools, runSeed, props, reduced);
+        if (calibrationBench.plan.kind === 'orrery')
+          calibrationKey = CalibrationKeyStand.mount(world, tools, props, calibrationBench.room);
+      }
     },
     get panels() {
       return panels;
@@ -933,13 +941,12 @@ export function mountFloorView(
           const doors = templateById(room.templateId).doors.map((door) => ({
             facing: door.facing,
             position: door.position,
-            closed: world.plan.sealed.some(
-              (d) =>
-                d.room === index &&
-                d.door === door.id &&
-                d.style === 'wall' &&
-                !(stairs?.entry.room === index && stairs.entry.door === door.id),
-            ),
+            closed:
+              world.plan.sealed.some(
+                (d) => d.room === index && d.door === door.id && d.style === 'wall',
+              ) &&
+              !(stairs?.entry.room === index && stairs.entry.door === door.id) &&
+              !world.plan.hiddenPassage?.decoys.some((d) => d.room === index && d.door === door.id),
           }));
           const edge = templateById(templateId).footprint.max[0];
           applyRoomStyle(styled, style, roomStyleKit, doors, edge);
@@ -991,6 +998,7 @@ export function mountFloorView(
       office?.dispose();
       calibrationBench?.dispose();
       chartCabinet?.dispose();
+      calibrationKey?.dispose();
       panels?.dispose();
       counterweight?.dispose();
       chimes?.dispose();

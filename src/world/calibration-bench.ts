@@ -12,7 +12,9 @@ import type { FloorWorld } from './floor-world.ts';
 import type { InteriorPlacement } from './interior-furnishings.ts';
 import { findPuzzleMount, kitPart } from './puzzle-placement.ts';
 
-type Control = { action: 'gear' | 'seat' | 'ring'; id: GearId } | { action: 'wind' | 'repair' };
+type Control =
+  | { action: 'gear' | 'seat' | 'ring'; id: GearId }
+  | { action: 'wind' | 'insert-key' | 'repair' };
 export type CalibrationAction = Control & { distance: number };
 const IDS = [0, 1, 2] as const;
 const WHEELS = ['gear_small', 'gear_medium', 'gear_large'] as const;
@@ -38,6 +40,7 @@ export class CalibrationBench {
   private collar?: THREE.Object3D;
   private broken?: THREE.Object3D;
   private insertion = 1;
+  private keyInsertion = 1;
   private readonly labels: CanvasLabel[] = [];
   private readonly hitMat = new THREE.MeshBasicMaterial({ visible: false });
   private readonly geometries: THREE.BufferGeometry[] = [];
@@ -117,6 +120,8 @@ export class CalibrationBench {
       return pivot;
     };
     this.key = kitPart(tools, 'winding_key').clone(true);
+    this.key.name = 'calibration-seated-key';
+    this.key.visible = false;
     this.key.rotation.x = Math.PI / 2;
     this.key.scale.setScalar(0.53);
     const crank = new THREE.Group();
@@ -164,6 +169,7 @@ export class CalibrationBench {
         this.label(String(GEAR_TEETH[slot]), (slot - 1) * 0.43, -0.385, 0.24, 0.11);
       }
     } else {
+      this.controls.push({ node: this.key, input: { action: 'wind' } });
       const bed = kitPart(art, 'OrreryBed').clone(true);
       bed.position.x = -0.105;
       this.object.add(
@@ -180,6 +186,7 @@ export class CalibrationBench {
       this.collar.visible = false;
       this.target(this.object, { action: 'repair' }, 0.061, -0.525, 0.106, 0.183).name =
         'orrery-repair-target';
+      this.label('Winding key', -0.525, -0.295, 0.13, 0.24);
       for (const id of IDS) {
         const arm = kitPart(art, ARMS[id]).clone(true);
         arm.position.x = -0.105;
@@ -257,8 +264,15 @@ export class CalibrationBench {
       this.collar.visible = state.repaired === true;
       this.poseCoupling();
     }
+    if (this.plan.kind === 'orrery') {
+      this.key.visible = state.key === 'inserted';
+      if (!this.key.visible || immediate || this.reduced) this.keyInsertion = 1;
+      else if (this.state?.key !== 'inserted') this.keyInsertion = 0;
+      this.poseKey();
+    } else {
+      this.key.visible = state.chart;
+    }
     this.state = state;
-    this.key.visible = state.chart;
     if (this.plan.kind === 'gears') {
       for (const id of IDS) {
         const slot = state.slots.indexOf(id),
@@ -293,6 +307,8 @@ export class CalibrationBench {
   private action(input: Control): Control | null {
     const state = this.state;
     if (!state || state.solved) return null;
+    if (input.action === 'wind' && state.kind === 'orrery' && state.key !== 'inserted')
+      return { action: 'insert-key' };
     if (input.action === 'repair' && state.repaired) return null;
     if (input.action === 'gear' && state.selected !== null && state.selected !== input.id) {
       const slot = state.slots.indexOf(input.id);
@@ -310,6 +326,7 @@ export class CalibrationBench {
     this.cast.far = 4;
     let nearest: CalibrationAction | null = null;
     for (const { node, input } of this.controls) {
+      if (!node.visible) continue;
       const action = this.action(input);
       if (!action) continue;
       node.updateWorldMatrix(true, true);
@@ -332,6 +349,7 @@ export class CalibrationBench {
     if (this.world.current !== this.room || this.state?.solved) return null;
     let best: CalibrationAction | null = null;
     for (const { node, input } of this.controls) {
+      if (!node.visible) continue;
       const action = this.action(input);
       if (!action) continue;
       const d = this.box.setFromObject(node).distanceToPoint(point);
@@ -343,6 +361,10 @@ export class CalibrationBench {
     const state = this.state;
     if (!state || !this.object.parent?.visible) return;
     if (this.plan.kind === 'orrery') {
+      if (this.keyInsertion < 1) {
+        this.keyInsertion = Math.min(1, this.keyInsertion + dt / 0.5);
+        this.poseKey();
+      }
       if (this.insertion < 1) {
         this.insertion = Math.min(1, this.insertion + dt / 0.58);
         this.poseCoupling();
@@ -371,6 +393,12 @@ export class CalibrationBench {
           ((slot % 2 === 0 ? -1 : 1) * this.spin * GEAR_TEETH[0]) / GEAR_TEETH[id] +
           (slot % 2 === 0 ? Math.PI / GEAR_TEETH[id] : 0);
     }
+  }
+  private poseKey(): void {
+    const t = this.keyInsertion;
+    const travel = 1 - t * t * (3 - 2 * t);
+    this.key.position.set(0, 0.03 * travel, 0.19 * travel);
+    this.key.rotation.x = Math.PI / 2 - 0.17 * travel;
   }
   private poseCoupling(): void {
     if (!this.collar) return;

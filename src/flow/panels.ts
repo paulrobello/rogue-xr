@@ -1536,6 +1536,8 @@ export class FlowUi {
       rows.push({ id: 'brass-coffer-key', label: 'Brass key · lower-floor coffer' });
     if (this.deps.flow.brassKey === 'spent')
       rows.push({ id: 'brass-coffer-open', label: 'Lower-floor coffer · unlocked' });
+    if (run?.calibration?.key === 'held')
+      rows.push({ id: 'orrery-winding-key', label: 'Winding key · insert in the orrery arbor' });
     if (run?.calibration?.spare && !run.calibration.repaired)
       rows.push({ id: 'orrery-service-coupling', label: 'Orrery shaft coupling · carried' });
     if (run?.calibration?.chart) {

@@ -1,7 +1,9 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
+import { generateUpperFloor } from '../src/floor/generate.ts';
 import { alchemyRecipe } from '../src/rules/alchemy.ts';
 import { INGREDIENT_ROOTS } from '../src/world/alchemy-conservatory.ts';
+import { buildFloorWorld } from '../src/world/floor-world.ts';
 import { CLOCK_CYCLE, StrikingClock } from '../src/world/striking-clock.ts';
 
 function artKit(): THREE.Group {
@@ -47,6 +49,37 @@ function nextStrike(clock: StrikingClock): boolean {
 }
 
 describe('striking clock', () => {
+  it('seats the entire inscription ahead of projecting wall moldings', () => {
+    const seed = 'MAPTEST2';
+    const floor = buildFloorWorld(generateUpperFloor(seed));
+    const first = StrikingClock.mount(floor, artKit(), seed, false)!;
+    const trim = new THREE.Group();
+    trim.position.copy(first.clueObject.position);
+    trim.quaternion.copy(first.clueObject.quaternion);
+    floor.roomGroups[first.clueRoom].add(trim);
+    first.dispose();
+    for (const [y, front] of [
+      [0.27, 0.015],
+      [-0.27, -0.012],
+    ]) {
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.035, 0.07));
+      rail.position.set(0, y, front - 0.035);
+      trim.add(rail);
+    }
+    floor.group.updateMatrixWorld(true);
+    const clock = StrikingClock.mount(floor, artKit(), seed, false)!;
+    const plate = clock.clueObject.getObjectByName(
+      'striking-clock-inscription',
+    ) as THREE.Mesh<THREE.BoxGeometry>;
+    const halfDepth = (plate.geometry.parameters.depth * plate.scale.z) / 2;
+    expect(clock.clueObject.position).toEqual(first.clueObject.position);
+    expect(plate.position.y).toBeCloseTo(-0.32);
+    expect(plate.position.z + halfDepth).toBeGreaterThan(-0.012);
+    expect(plate.position.z - halfDepth).toBeCloseTo(-0.07, 2);
+    clock.dispose();
+    floor.dispose();
+  });
+
   it('covers all twelve deterministic hours and matches clue and clock hands', () => {
     const seen = new Set<number>();
     for (let i = 0; i < 96 && seen.size < 12; i++) {
@@ -55,6 +88,9 @@ describe('striking clock', () => {
       expect(clock.clueObject.getObjectByName('ClockClueHand')?.rotation.z).toBeCloseTo(
         -((clock.hour % 12) * Math.PI) / 6,
       );
+      const inscription = clock.clueObject.getObjectByName('striking-clock-inscription');
+      expect(inscription?.userData.labelText).toContain(`until ${clock.hour} o’clock`);
+      expect(inscription?.userData.labelText).toContain('drawer');
       expect(Number.isFinite(clock.object.getObjectByName('ClockHourHand')?.rotation.z)).toBe(true);
       expect(Number.isFinite(clock.object.getObjectByName('ClockMinuteHand')?.rotation.z)).toBe(
         true,

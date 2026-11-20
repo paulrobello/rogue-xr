@@ -92,6 +92,28 @@ export async function exerciseCalibration({
     assert(await ev(() => window.__flow.flow.calibration.repaired));
     await resumeAt(2);
     assert(await ev(() => window.__flow.flow.calibration.repaired));
+    assert.equal(await ev(() => window.__flow.flow.calibration.key), 'missing');
+    assert(
+      await ev(() => {
+        const { calibrationBench, calibrationKey } = window.__combat.floor;
+        return calibrationKey && calibrationKey.room !== calibrationBench.room;
+      }),
+    );
+    await use('calibration-wind-target');
+    assert.equal(await ev(() => window.__flow.flow.calibration.key), 'missing');
+    await approach('orrery-key-stand', 'orrery-winding-key', 1.4);
+    await shot('winding-key-in-upper-works');
+    await click('orrery-winding-key');
+    assert.equal(await ev(() => window.__flow.flow.calibration.key), 'held');
+    await resumeAt(2);
+    assert.equal(await ev(() => window.__flow.flow.calibration.key), 'held');
+    await approach(bench, 'calibration-wind-target');
+    await shot('empty-winding-socket');
+    await click('calibration-wind-target');
+    assert.equal(await ev(() => window.__flow.flow.calibration.key), 'inserted');
+    await page.waitForTimeout(450);
+    await shot('winding-key-seated');
+    assert.equal(await ev(() => window.__flow.flow.calibration.solved), false);
     const detents = [...chart.matchAll(/ ([NESW])(?=\s*\/|$)/g)].map((m) => 'NESW'.indexOf(m[1]));
     assert.equal(detents.length, 3);
     for (const [id, d] of detents.entries()) {
@@ -100,6 +122,8 @@ export async function exerciseCalibration({
     }
     assert.deepEqual(await ev(() => window.__flow.flow.calibration.detents), detents);
   }
+  if (kind === 'orrery')
+    assert.equal(await ev(() => window.__flow.flow.calibration.key), 'inserted');
   await use('calibration-wind-target');
   assert(await ev(() => window.__flow.flow.calibration.solved));
   await shot('instrument-solved');

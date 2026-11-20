@@ -318,6 +318,7 @@ describe('interior furnishings', () => {
         ).toBe(false);
       }
       expect(new Set(pictureIds).size).toBe(pictureIds.length);
+      expect(furnishings.placements.some((p) => p.root === 'WallClock')).toBe(false);
       if (seed === 'N0TE0032')
         expect(furnishings.placements.some((p) => p.root === 'FramedPainting')).toBe(true);
       world.group.updateMatrixWorld(true);
@@ -328,11 +329,7 @@ describe('interior furnishings', () => {
         const entrancePortrait = furnishings.placements.find(
           (p) => p.room === 0 && p.root === 'FramedPainting',
         );
-        const entranceClock = furnishings.placements.find(
-          (p) => p.room === 0 && p.root === 'WallClock',
-        );
         expect(entrancePortrait).toBeDefined();
-        expect(entranceClock?.position.y ?? 0).toBeGreaterThan(1.8);
       }
       for (const placement of furnishings.placements) {
         if (placement.root === 'Curtain') curtainCount++;

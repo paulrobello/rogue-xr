@@ -207,7 +207,8 @@ cube(case,(0,-.215,-.365),(1.30,.48,.013),brass,.004)
 for x in (-.492,.492):
  line(case,(x,-.057,-.54),(x,-.356,-.425),.023,patina)
  cube(case,(x,-.056,-.479),(.094,.056,.198),walnut,.009)
-for x in (-.433,.193):
+assay_docks=(-.550,.360)
+for x in assay_docks:
  turning(case,(x,-.352,-.359),[(0,.088),(.005,.093),(.012,.088),(.016,.074)],patina)
 turning(case,(-.105,-.246,-.359),[(0,.106),(.008,.118),(.021,.117),(.028,.099),(.045,.087),(.05,.075)],brass)
 turning(case,(-.105,-.246,-.309),[(0,.067),(.03,.058),(.044,.044),(.071,.041),(.10,.027),(.236,.021),(.252,.038),(.264,.038),(.27,.025),(.315,.024)],patina)
@@ -323,7 +324,7 @@ fit('AssayHanger',assay,(0,0,0));beam=fit('AssayBeam',assay,(-.105,-.289,.012));
 other=pan.copy();scene.collection.objects.link(other);other.location.x=.265
 for ch in pan.children:
  c=ch.copy();scene.collection.objects.link(c);c.parent=other
-fit('AssayReference',other,(0,0,-.192));fit('AssayWeightA',assay,(-.433,-.352,-.343));fit('AssayWeightB',assay,(.193,-.352,-.343))
+fit('AssayReference',other,(0,0,-.192));fit('AssayWeightA',assay,(assay_docks[0],-.352,-.343));fit('AssayWeightB',assay,(assay_docks[1],-.352,-.343))
 bench.location=(0,0,1.24);assay.location=(1.62,0,1.25);chart.location=(-1.52,0,1.19)
 scene.world.use_nodes=True;scene.world.node_tree.nodes.get('Background').inputs[0].default_value=(.35,.38,.43,1);scene.world.node_tree.nodes.get('Background').inputs[1].default_value=.55
 for loc,energy,col,size in [((-3,-4,4),430,(1,.78,.58),4),((3,-3,3),350,(.62,.75,1),3),((0,2,4),380,(1,.70,.42),3)]:

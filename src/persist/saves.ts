@@ -346,12 +346,23 @@ function validateCalibration(value: unknown, path: string, seed: string): Stored
   ) {
     fail(path, 'invalid drive repair');
   }
+  const key =
+    r.key === undefined
+      ? plan.kind !== 'orrery' || !r.chart
+        ? 'missing'
+        : r.solved
+          ? 'inserted'
+          : 'held'
+      : r.key;
+  if (key !== 'missing' && key !== 'held' && key !== 'inserted')
+    fail(path, 'invalid winding key state');
   // Completed orreries from before the coupling step already released their cabinet.
   const priorRepair =
     plan.kind === 'orrery' && r.solved && r.spare === undefined && r.repaired === undefined;
   const state: StoredCalibrationState = {
     kind: plan.kind,
     chart: r.chart,
+    key,
     spare: r.spare ?? priorRepair,
     repaired: r.repaired ?? priorRepair,
     selected: r.selected,
@@ -366,7 +377,10 @@ function validateCalibration(value: unknown, path: string, seed: string): Stored
     (state.kind === 'orrery' && (occupied.length || state.selected !== null)) ||
     (state.repaired && (!state.spare || !state.chart)) ||
     (state.kind === 'gears' &&
-      (state.spare || state.repaired || state.detents.some((d) => d !== 0)))
+      (state.key !== 'missing' ||
+        state.spare ||
+        state.repaired ||
+        state.detents.some((d) => d !== 0)))
   )
     fail(path, 'inconsistent calibration progress');
   return state;

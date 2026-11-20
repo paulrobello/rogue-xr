@@ -652,6 +652,8 @@ export class InteriorFurnishings {
     }
     for (const { room, theme, candidates } of planned) {
       for (const c of candidates) {
+        // Wall-clock candidates still consume their original layout rolls for saved seeds.
+        if (c.root === 'WallClock') continue;
         if (c.root === 'Curtain' && upperIndustrial && roomStyleFor(world.plan, room, 2)) continue;
         const box = boxFor(c, rootBounds);
         const object = asset.roots[c.root].clone(true);
@@ -669,7 +671,7 @@ export class InteriorFurnishings {
           yaw: c.yaw,
         };
         made.push(placement);
-        if (!c.y && c.root !== 'FramedPainting' && c.root !== 'WallClock' && c.root !== 'Curtain')
+        if (!c.y && c.root !== 'FramedPainting' && c.root !== 'Curtain')
           this.removeColliders.push(world.addFixtureCollider(room, worldBox(world, room, box)));
         if (c.root === 'Candelabrum') this.addFlames(object, options.reducedMotion ?? false);
         if (c.root === 'FramedPainting' && this.paintingMaterials.length)

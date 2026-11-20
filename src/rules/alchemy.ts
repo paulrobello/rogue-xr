@@ -83,7 +83,7 @@ export function formulaObservation(seed: string, clue: FormulaClue): string {
   const order = i === 0 ? 'I' : 'II';
   const line = `${order} · ${ingredientNames[plan.ingredients[i]]}`;
   return clue === 'record' && plan.recipe === 'stillwind'
-    ? `${line} · Still at ${plan.quietHour} o’clock`
+    ? `${line} · Begin at ${plan.quietHour} on the cauldron dial`
     : line;
 }
 

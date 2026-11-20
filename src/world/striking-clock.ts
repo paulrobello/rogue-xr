@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Stream } from '../core/rng.ts';
 import { alchemyRecipe, type Ingredient } from '../rules/alchemy.ts';
 import { INGREDIENT_ROOTS } from './alchemy-conservatory.ts';
+import { ClockInscription } from './clock-inscription.ts';
 import type { FloorWorld } from './floor-world.ts';
 import type { InteriorPlacement } from './interior-furnishings.ts';
 import { findPuzzleMount, kitPart } from './puzzle-placement.ts';
@@ -20,6 +21,7 @@ export class StrikingClock {
   private readonly minuteHand: THREE.Object3D;
   private readonly pendulum: THREE.Object3D;
   private readonly drawer: THREE.Object3D;
+  private readonly inscription: ClockInscription;
   private readonly closedZ: number;
   private readonly ray = new THREE.Raycaster();
   private elapsed: number;
@@ -52,10 +54,11 @@ export class StrikingClock {
     clock.object.rotation.y = spot.yaw;
     clock.object.translateZ(0.21);
     world.roomGroups[spot.room].add(clock.object);
-    clock.clueObject.position.copy(clue.center);
+    clock.clueObject.position.copy(clue.wallSurface);
     clock.clueObject.rotation.y = clue.yaw;
-    clock.clueObject.translateZ(0.05);
+    clock.clueObject.translateZ(0.069);
     world.roomGroups[clue.room].add(clock.clueObject);
+    clock.seatInscription();
     clock.object.updateWorldMatrix(true, true);
     const bounds = new THREE.Box3().setFromObject(clock.object);
     clock.removeCollider = world.addFixtureCollider(spot.room, {
@@ -77,6 +80,15 @@ export class StrikingClock {
     this.object = kitPart(art, 'GrandfatherClock').clone(true);
     this.clueObject = kitPart(art, 'ClockClueDial').clone(true);
     kitPart(this.clueObject, 'ClockClueHand').rotation.z = (-(this.hour % 12) * Math.PI) / 6;
+    this.inscription = new ClockInscription(
+      'striking-clock-inscription',
+      0.74,
+      'Grandfather clock',
+      `Wait beside it until ${this.hour} o’clock.`,
+      'Take the ingredient from its drawer.',
+    );
+    this.inscription.object.position.set(0, 0.32, -0.056);
+    this.clueObject.add(this.inscription.object);
     this.hourHand = kitPart(this.object, 'ClockHourHand');
     this.minuteHand = kitPart(this.object, 'ClockMinuteHand');
     this.pendulum = kitPart(this.object, 'ClockPendulum');
@@ -89,6 +101,42 @@ export class StrikingClock {
     kitPart(this.object, 'ClockIngredientSocket').add(this.target);
     this.target.visible = false;
     this.pose();
+  }
+  private seatInscription(): void {
+    const surfaces: THREE.Object3D[] = [];
+    for (const child of this.world.roomGroups[this.clueRoom].children) {
+      if (child === this.clueObject) continue;
+      child.traverseVisible((node) => {
+        if (node instanceof THREE.Mesh && !node.material?.transparent) surfaces.push(node);
+      });
+    }
+    const inward = this.clueObject.getWorldDirection(new THREE.Vector3()).negate();
+    const point = new THREE.Vector3();
+    this.ray.far = 1.2;
+    const plate = this.inscription.object;
+    const { width, height, depth } = plate.geometry.parameters;
+    let bestRelief = Infinity;
+    for (const y of [0.32, -0.32]) {
+      let low = Infinity;
+      let high = -Infinity;
+      for (let i = 0; i <= 8; i++) {
+        for (let j = 0; j <= 4; j++) {
+          point.set(width * (i / 8 - 0.5), y + height * (j / 4 - 0.5), 0.65);
+          this.ray.set(this.clueObject.localToWorld(point), inward);
+          const hit = this.ray.intersectObjects(surfaces, false)[0];
+          if (!hit) continue;
+          const z = this.clueObject.worldToLocal(hit.point).z;
+          low = Math.min(low, z);
+          high = Math.max(high, z);
+        }
+      }
+      if (low > high || high - low >= bestRelief - 0.002) continue;
+      bestRelief = high - low;
+      const thickness = bestRelief + depth;
+      plate.scale.z = thickness / depth;
+      plate.position.set(0, y, low + thickness / 2 - 0.001);
+      if (bestRelief < 0.002) break;
+    }
   }
   setWitness(room: number) {
     this.witnessed = room === this.room;
@@ -141,6 +189,7 @@ export class StrikingClock {
   }
   dispose() {
     this.removeCollider?.();
+    this.inscription.dispose();
     this.object.removeFromParent();
     this.clueObject.removeFromParent();
   }

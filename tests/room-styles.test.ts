@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { GREYBOX_TEMPLATES, parseRoomTemplate } from '../src/content/rooms.ts';
 import { attachPressureWing, generateFloor, generateUpperFloor } from '../src/floor/generate.ts';
 import { placeTableDecor } from '../src/floor/table-decor.ts';
-import { playableFloorPlan } from '../src/world/floor-view.ts';
+import { mountFloorView, playableFloorPlan } from '../src/world/floor-view.ts';
 import { buildFloorWorld } from '../src/world/floor-world.ts';
 import {
   applyRoomStyle,
@@ -180,6 +180,31 @@ describe('room styles', () => {
     const bounds = new THREE.Box3().setFromObject(surfaces ?? new THREE.Group());
     expect(bounds.max.x).toBeGreaterThan(4.9);
     expect(bounds.max.z).toBeGreaterThan(4.9);
+  });
+
+  it('frames the solid MAPTEST3 inspection panel without dressing it in fixed heat exchanger pipes', () => {
+    const view = mountFloorView(new THREE.Scene(), new THREE.Group(), 'MAPTEST3', {
+      floorNumber: 2,
+    });
+    const world = view.world;
+    const ref = { room: 2, door: 'w' };
+    expect(world.plan.hiddenPassage?.decoys).toContainEqual(ref);
+    expect(world.plan.sealed).toContainEqual({ ...ref, style: 'wall' });
+    view.useRoomAsset('hall', () => new THREE.Group(), [], kit());
+    const model = world.roomGroups[ref.room].children.find(
+      (g) => g.userData.roomStyle === 'boiler',
+    );
+    if (!(model instanceof THREE.Group)) throw Error('Missing dressed hall');
+    expect(instanced(model, 'BoilerExchangerBay')).toHaveLength(0);
+    const doors = instanced(model, 'BoilerDoor')[0];
+    const matrix = new THREE.Matrix4();
+    expect(
+      Array.from({ length: doors.count }, (_, i) => {
+        doors.getMatrixAt(i, matrix);
+        return [matrix.elements[12], matrix.elements[14]];
+      }),
+    ).toContainEqual([-5, -1]);
+    view.dispose();
   });
 
   it('creates owned floor and ceiling surfaces without legacy study shell nodes', () => {

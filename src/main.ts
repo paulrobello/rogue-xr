@@ -731,6 +731,7 @@ function syncPuzzles(target: FloorView, immediate = false): void {
     target.brassKeyStand?.sync(flow.brassKey !== 'missing');
     target.calibrationBench?.sync(flow.calibration, true);
     target.chartCabinet?.sync(flow.calibration, true);
+    target.calibrationKey?.sync(flow.calibration.key !== 'missing');
   }
   const state = flow.counterweight;
   target.counterweight?.sync(
@@ -1092,6 +1093,7 @@ flow.onChange((event) => {
       event.action === 'claim' ? camera : undefined,
     );
     floor?.calibrationBench?.sync(flow.calibration);
+    floor?.calibrationKey?.sync(flow.calibration.key !== 'missing');
     storedSnapshot = flow.snapshot(Date.now(), floor?.world.current ?? flow.room);
     return;
   }
@@ -1672,6 +1674,15 @@ function operateCommission(input: CommissionAction): boolean {
 function readFolio(input: FolioPick): boolean {
   if (!floor || !flow.run) return false;
   const plan = calibrationPlan(flow.run.seed);
+  if (input.action === 'key') {
+    if (!flow.takeCalibrationKey()) return false;
+    floor.showBookSecret(
+      { text: 'Square winding key', caption: 'Insert it in the orrery’s lower drive socket.' },
+      camera,
+    );
+    audio?.playSfx('gear-clank');
+    return true;
+  }
   if (input.action === 'part') {
     if (!flow.takeCalibrationSpare()) return false;
     floor.showBookSecret(
@@ -1694,10 +1705,11 @@ function readFolio(input: FolioPick): boolean {
   const acquired = flow.takeCalibrationChart();
   floor.showBookSecret(
     {
-      text: acquired
-        ? 'Winding key and chart'
-        : plan.kind === 'gears'
-          ? 'Service diagram'
+      text:
+        plan.kind === 'gears'
+          ? acquired
+            ? 'Winding key and chart'
+            : 'Service diagram'
           : 'Celestial table',
       caption:
         plan.kind === 'gears'
@@ -1712,6 +1724,21 @@ function readFolio(input: FolioPick): boolean {
 function operateCalibration(hit: CalibrationAction): boolean {
   const bench = floor?.calibrationBench;
   if (!bench) return false;
+  if (hit.action === 'insert-key') {
+    if (flow.insertCalibrationKey()) {
+      audio?.playSfx('gear-clank');
+      floor?.showBookSecret(
+        { text: 'Winding key seated', caption: 'Turn it once the three bodies match the chart.' },
+        camera,
+      );
+    } else {
+      floor?.showBookSecret(
+        { text: 'Square socket', caption: 'Find the winding key in the Upper Works.' },
+        camera,
+      );
+    }
+    return true;
+  }
   if (hit.action === 'repair') {
     if (flow.repairCalibrationDrive()) {
       audio?.playSfx('gear-clank');
@@ -1734,7 +1761,12 @@ function operateCalibration(hit: CalibrationAction): boolean {
       audio?.playSfx(outcome === 'solved' ? 'door-open' : 'gear-clank');
     } else if (!flow.calibration.chart)
       floor?.showBookSecret(
-        { text: 'Empty winding arbor', caption: 'A square key fits this spindle.' },
+        flow.calibration.kind === 'orrery'
+          ? {
+              text: 'Celestial table missing',
+              caption: 'Read the chart in the pressure supply room.',
+            }
+          : { text: 'Empty winding arbor', caption: 'A square key fits this spindle.' },
         camera,
       );
     else if (flow.calibration.kind === 'orrery' && !flow.calibration.repaired)
@@ -1761,9 +1793,14 @@ function operatePanel(hit: PanelHit, side?: XRHandedness): boolean {
     audio?.playSfx('door-open', at);
   } else {
     audio?.playSfx(hit.hollow ? 'panel-hollow' : 'panel-solid', at);
-    if (hit.hollow && flow.discoverHiddenPanel())
+    if (!hit.hollow)
       floor.showBookSecret(
-        { text: 'Hollow service panel', caption: 'A recessed catch springs loose.' },
+        { text: 'Solid service panel', caption: 'A dull knock. This cover is fixed.' },
+        camera,
+      );
+    else if (flow.discoverHiddenPanel())
+      floor.showBookSecret(
+        { text: 'Hollow service panel', caption: 'Select the raised brass handle to open it.' },
         camera,
       );
   }
@@ -1781,7 +1818,12 @@ function inspectFormula(clue: FormulaClue): boolean {
   const recipe = flow.conservatoryFormula.recipe;
   floor.showBookSecret(
     {
-      text: clue === 'portrait' ? 'The painted seal' : RECORD_TITLES[recipe],
+      text:
+        clue === 'portrait'
+          ? 'The painted seal'
+          : recipe === 'stillwind'
+            ? 'Stillwind · Conservatory cauldron'
+            : RECORD_TITLES[recipe],
       caption: formulaObservation(flow.run.seed, clue),
     },
     camera,
@@ -1808,7 +1850,10 @@ function operateAlchemy(
         : flow.addIngredient(hit.ingredient);
   if (result === 'waiting')
     floor?.showBookSecret(
-      { text: 'The draft stirs the mixture', caption: 'The chart marks the still interval.' },
+      {
+        text: 'The draft stirs the mixture',
+        caption: 'Watch this cauldron’s dial for the marked hour.',
+      },
       camera,
     );
   if (result && result !== 'waiting')
@@ -1836,7 +1881,8 @@ function fieldHit(origin: THREE.Vector3, direction: THREE.Vector3) {
   const evidence = floor.formulaEvidence?.pick(origin, direction);
   const office = floor.office?.pick(origin, direction);
   const calibration = floor.calibrationBench?.pick(origin, direction),
-    folio = floor.chartCabinet?.pick(origin, direction);
+    folio =
+      floor.chartCabinet?.pick(origin, direction) ?? floor.calibrationKey?.pick(origin, direction);
   const key = floor.brassKeyStand?.pick(origin, direction);
   const panel = floor.panels?.pick(origin, direction);
   const hits = [
@@ -2111,7 +2157,9 @@ for (const index of [0, 1]) {
     if (office && operateCommission(office)) return;
     const cal = floor.calibrationBench?.near(position, GRAB_REACH);
     if (cal && operateCalibration(cal)) return;
-    const folio = floor.chartCabinet?.near(position, GRAB_REACH);
+    const folio =
+      floor.chartCabinet?.near(position, GRAB_REACH) ??
+      floor.calibrationKey?.near(position, GRAB_REACH);
     if (folio && readFolio(folio)) return;
     const panel = floor.panels?.near(position, GRAB_REACH);
     if (panel && operatePanel(panel, side)) return;

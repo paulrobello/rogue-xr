@@ -1,7 +1,7 @@
 {
-  "glb_sha256": "a37e47ffab1d31ae3a1b7a04d081c6f0ff31f7522003023f86c4183d7caef4e8",
-  "generator_sha256": "31d5a102d31f9c4def7f9de9e01181f1fa2ebd27373cf0b3e11bfab66a9c161f",
-  "source_blend_sha256": "49763f44ac48b7306752c02f4b7c1c69c9eb3b536024c885b0a375a2eff45bcb",
+  "glb_sha256": "0e5c9fcb470dae73d746789e990387c25a39bdab5a82b58292d4c88e54c63620",
+  "generator_sha256": "aee9ecb3825fc0a18ddb259b7e4e45878083a6a6a95acf323b55c63c875e83d1",
+  "source_blend_sha256": "dc70e9f49c2067ca38e587ad4bd8e36046f25275987d5632d9418bd7c3ac408f",
   "axes": "glTF +Y up, +Z front; metres",
   "root_nodes": [
     "CalibrationFrame",
@@ -30,10 +30,10 @@
   ],
   "triangles": 34888,
   "blender": "5.2.3 LTS",
-  "visual_approval": "pending independent and owner review",
+  "visual_approval": "Independent Astra Extra High browser review passed. Owner Quest review pending.",
   "limitations": [
     "No authored LOD or collider",
-    "Runtime play-distance and interaction review pending"
+    "Physical Quest play-distance and interaction review pending"
   ],
   "shared_material_sources": {
     "public/assets/materials/walnut/walnut.basecolor.png": "c2c1d72ba308c02f6304ee389a86d6663199d01a352160c347801cefd4042a0b",

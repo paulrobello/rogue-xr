@@ -221,7 +221,7 @@ export class CounterweightStation {
       if (weighing) to.set(fitted ? 0 : -0.22, fitted ? -0.192 : -0.18, 0);
       else if (hanging)
         to.set(fitted ? 0.485 : 0.52, fitted ? -0.169 : -0.18, fitted ? 0.207 : 0.23);
-      else if (fitted) to.set(i ? 0.193 : -0.433, -0.343, 0.352);
+      else if (fitted) to.set(i ? 0.36 : -0.55, -0.343, 0.352);
       else to.set(i ? 0.27 : -0.41, -0.38, 0.48);
       const scale = fitted ? 1 : weighing ? 0.89 : 1.35;
       const yaw = hanging && fitted ? Math.PI / 2 : 0;
@@ -248,6 +248,7 @@ export class CounterweightStation {
     }
     if (immediate || this.reduced) {
       this.beam.rotation.z = this.goal;
+      for (const pan of this.pans) pan.rotation.z = -this.goal;
       this.velocity = 0;
     }
   }

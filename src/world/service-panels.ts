@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { CanvasLabel } from '../combat-view/canvas-label.ts';
 import type { DoorRef } from '../floor/generate.ts';
 import type { StoredHiddenPanelState } from '../rules/types.ts';
 import type { FloorWorld } from './floor-world.ts';
@@ -14,10 +15,33 @@ interface Panel {
   root: THREE.Group;
   leaf: THREE.Object3D;
   catch: THREE.Object3D;
+  restY: number;
   restZ: number;
   room: number;
   hollow: boolean;
   knock: number;
+}
+
+function servicePaddle(): THREE.ExtrudeGeometry {
+  // Side profile of a folded palm latch, with a rolled lower edge for the fingers.
+  const profile = new THREE.Shape();
+  profile.moveTo(0, 0.053);
+  profile.lineTo(0.009, 0.053);
+  profile.lineTo(0.009, -0.027);
+  profile.quadraticCurveTo(0.009, -0.041, 0.024, -0.041);
+  profile.lineTo(0.028, -0.041);
+  profile.lineTo(0.028, -0.05);
+  profile.lineTo(0.015, -0.05);
+  profile.quadraticCurveTo(0, -0.05, 0, -0.03);
+  profile.closePath();
+  const geometry = new THREE.ExtrudeGeometry(profile, {
+    depth: 0.18,
+    bevelThickness: 0.002,
+    bevelSize: 0.002,
+    bevelSegments: 2,
+    curveSegments: 4,
+  });
+  return geometry.translate(0, 0, -0.09).rotateY(-Math.PI / 2);
 }
 
 export class ServicePanels {
@@ -25,6 +49,13 @@ export class ServicePanels {
   private readonly ray = new THREE.Raycaster();
   private readonly box = new THREE.Box3();
   private readonly contact = new THREE.Vector3();
+  private readonly paddle = servicePaddle();
+  private readonly brass = new THREE.MeshStandardMaterial({
+    color: 0xb38b57,
+    metalness: 0.55,
+    roughness: 0.43,
+  });
+  private readonly stencil?: CanvasLabel;
   private state: StoredHiddenPanelState = { discovered: false, opened: false };
   constructor(
     private readonly world: FloorWorld,
@@ -33,6 +64,18 @@ export class ServicePanels {
   ) {
     const plan = world.plan.hiddenPassage;
     if (!plan) throw Error('No service-panel passage on this floor');
+    if (typeof document !== 'undefined' && document.createElement('canvas').getContext('2d')) {
+      this.stencil = new CanvasLabel(640, 96, 0.58);
+      this.stencil.mesh.name = 'service-inspection-stencil';
+      this.stencil.mesh.position.set(0.8, 1.23, 0.063);
+      this.stencil.draw((ctx, w, h) => {
+        ctx.fillStyle = '#dfceaa';
+        ctx.font = 'bold 69px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('KNOCK TO TEST', w / 2, h / 2, w - 14);
+      });
+    }
     [plan.source, ...plan.decoys].forEach((ref, i) => {
       this.mount(art, ref, i === 0);
     });
@@ -47,7 +90,13 @@ export class ServicePanels {
     // A 10 mm stop overlaps the leaf edges and steps the service reveal inside the boiler jamb.
     frame.scale.set(0.79 / 0.8, 2.39 / 2.4, 0.55);
     frame.position.z = 0.028;
-    const latch = kitPart(leaf, 'PanelCatch');
+    const socket = kitPart(leaf, 'PanelCatch');
+    const latch = new THREE.Mesh(this.paddle, this.brass);
+    latch.position.copy(socket.position);
+    latch.position.z += 0.044;
+    socket.removeFromParent();
+    leaf.add(latch);
+    if (this.stencil) leaf.add(this.stencil.mesh.clone());
     leaf.name = 'service-leaf-' + ref.room;
     latch.name = 'service-catch-' + ref.room;
     leaf.position.x = -0.8;
@@ -60,6 +109,7 @@ export class ServicePanels {
       root,
       leaf,
       catch: latch,
+      restY: latch.position.y,
       restZ: latch.position.z,
       room: ref.room,
       hollow,
@@ -129,11 +179,10 @@ export class ServicePanels {
     for (const p of this.panels) {
       const open = p.hollow && this.state.opened,
         up = p.hollow && this.state.discovered;
-      p.catch.position.z = THREE.MathUtils.lerp(
-        p.catch.position.z,
-        p.restZ + (up ? 0.055 : 0),
-        blend,
-      );
+      p.catch.rotation.x = THREE.MathUtils.lerp(p.catch.rotation.x, up ? -0.95 : 0, blend);
+      // The top of the paddle stays on its hinge while the lower lip springs forward.
+      p.catch.position.y = p.restY + 0.053 * (1 - Math.cos(p.catch.rotation.x));
+      p.catch.position.z = p.restZ - 0.053 * Math.sin(p.catch.rotation.x);
       p.leaf.rotation.y = THREE.MathUtils.lerp(
         p.leaf.rotation.y,
         open ? THREE.MathUtils.degToRad(100) : 0,
@@ -157,5 +206,8 @@ export class ServicePanels {
   }
   dispose() {
     for (const p of this.panels) p.root.removeFromParent();
+    this.paddle.dispose();
+    this.brass.dispose();
+    this.stencil?.dispose();
   }
 }

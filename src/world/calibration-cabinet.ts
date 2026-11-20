@@ -10,8 +10,8 @@ import {
 import type { FloorWorld } from './floor-world.ts';
 import type { InteriorPlacement } from './interior-furnishings.ts';
 import type { CofferCardFace } from './loot.ts';
-import { findPuzzleMount, kitPart } from './puzzle-placement.ts';
-export type FolioPick = { action: 'chart' | 'card' | 'part'; distance: number };
+import { findPuzzleMount, kitPart, type PuzzleMount } from './puzzle-placement.ts';
+export type FolioPick = { action: 'chart' | 'card' | 'part' | 'key'; distance: number };
 
 function drawChart(
   ctx: CanvasRenderingContext2D,
@@ -109,7 +109,7 @@ function drawChart(
 
 export class CalibrationCabinet {
   readonly object: THREE.Object3D;
-  readonly key: THREE.Object3D;
+  readonly key: THREE.Object3D | null;
   readonly drawer: THREE.Object3D;
   readonly card: THREE.Object3D;
   readonly spare: THREE.Object3D | null;
@@ -173,12 +173,14 @@ export class CalibrationCabinet {
     this.object.name = 'calibration-chart-cabinet';
     this.drawer = kitPart(this.object, 'ChartDrawer');
     this.restZ = this.drawer.position.z;
-    this.key = kitPart(instruments, 'winding_key').clone(true);
-    this.key.name = 'folio-winding-key';
-    this.key.position.set(0.275, -0.125, 0.139);
-    this.key.rotation.z = -0.74;
-    this.key.scale.setScalar(0.45);
-    this.object.add(this.key);
+    this.key = plan.kind === 'gears' ? kitPart(instruments, 'winding_key').clone(true) : null;
+    if (this.key) {
+      this.key.name = 'folio-winding-key';
+      this.key.position.set(0.275, -0.125, 0.139);
+      this.key.rotation.z = -0.74;
+      this.key.scale.setScalar(0.45);
+      this.object.add(this.key);
+    }
     this.spare = plan.kind === 'orrery' ? kitPart(art, 'OrreryCoupling').clone(true) : null;
     if (this.spare) {
       const cradle = kitPart(art, 'OrreryCouplingCradle').clone(true);
@@ -213,7 +215,7 @@ export class CalibrationCabinet {
     }
   }
   sync(state: StoredCalibrationState, immediate = false, collector?: THREE.Object3D) {
-    this.key.visible = !state.chart;
+    if (this.key) this.key.visible = !state.chart;
     if (this.spare) this.spare.visible = !state.spare && !state.repaired;
     if (collector && state.claimed && !this.paid && this.card.visible && !this.reduced) {
       this.world.group.attach(this.card);
@@ -302,6 +304,126 @@ export class CalibrationCabinet {
     this.spareHit?.material.dispose();
     this.chart?.dispose();
     this.release?.();
+    this.object.removeFromParent();
+  }
+}
+
+export class CalibrationKeyStand {
+  readonly object = new THREE.Group();
+  readonly key = new THREE.Group();
+  readonly room: number;
+  private readonly label?: CanvasLabel;
+  private readonly target = new THREE.Box3();
+  private readonly obstacle = new THREE.Box3();
+  private readonly ray = new THREE.Ray();
+  private readonly hit = new THREE.Vector3();
+  private readonly release: () => void;
+
+  static mount(
+    world: FloorWorld,
+    tools: THREE.Object3D,
+    props: readonly InteriorPlacement[],
+    benchRoom: number,
+  ): CalibrationKeyStand {
+    const rooms = world.plan.rooms.filter((r) => r.index !== benchRoom && r.role !== 'guardian');
+    const entry = world.stairEntry?.room ?? 0;
+    const mount = (candidates: readonly number[]) =>
+      findPuzzleMount(world, candidates, props, 'orrery-key', 0.33, 0.62);
+    const site =
+      mount(rooms.filter((r) => r.index === entry).map((r) => r.index)) ??
+      mount(rooms.filter((r) => !r.encounter).map((r) => r.index)) ??
+      mount(rooms.map((r) => r.index));
+    if (!site) throw Error('No accessible Upper Works winding-key rack');
+    return new CalibrationKeyStand(world, tools, site);
+  }
+
+  private constructor(
+    private readonly world: FloorWorld,
+    tools: THREE.Object3D,
+    site: PuzzleMount,
+  ) {
+    this.room = site.room;
+    this.object.name = 'orrery-key-stand';
+    this.object.position.copy(site.wallSurface);
+    this.object.rotation.y = site.yaw;
+    world.roomGroups[this.room].add(this.object);
+    const wood = kitPart(tools, 'stamp_press').children.find((node) =>
+      node.name.startsWith('base'),
+    );
+    if (!wood) throw Error('Missing wooden press base for winding-key rack');
+    const board = wood.clone(true);
+    board.name = 'orrery-key-board';
+    board.rotation.x = Math.PI / 2;
+    board.scale.set(2, 1, 2.6);
+    board.position.set(0, 0, 0.025);
+    const peg = kitPart(tools, 'pegboard_spindle').clone(true);
+    peg.rotation.x = Math.PI / 2;
+    peg.scale.setScalar(0.45);
+    peg.position.set(0, 0.074, 0.049);
+    this.object.add(board, peg);
+    if (typeof document !== 'undefined' && document.createElement('canvas').getContext('2d')) {
+      this.label = new CanvasLabel(600, 85, 0.43, false);
+      this.label.draw((ctx, w, h) => {
+        ctx.fillStyle = '#876c45';
+        ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = '#263533';
+        ctx.fillRect(4, 4, w - 8, h - 8);
+        ctx.font = 'bold 53px Georgia, serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#f2dfb5';
+        ctx.fillText('Orrery winding key', w / 2, h / 2, w - 22);
+      });
+      this.label.mesh.position.set(0, 0.195, 0.052);
+      this.object.add(this.label.mesh);
+    }
+    this.object.updateWorldMatrix(true, true);
+    const rack = new THREE.Box3().setFromObject(this.object);
+    this.release = world.addFixtureCollider(this.room, {
+      min: rack.min.toArray(),
+      max: rack.max.toArray(),
+    });
+    const model = kitPart(tools, 'winding_key').clone(true);
+    model.position.y = -0.19;
+    this.key.name = 'orrery-winding-key';
+    this.key.scale.setScalar(0.82);
+    this.key.rotation.set(-0.79, 0, -0.52, 'ZXY');
+    this.key.position.set(0.013, -0.048, 0.231);
+    this.key.add(model);
+    this.object.add(this.key);
+    this.key.updateWorldMatrix(true, true);
+    this.target.setFromObject(this.key, true).expandByScalar(0.016);
+  }
+
+  sync(taken: boolean): void {
+    this.key.visible = !taken;
+  }
+  pick(origin: THREE.Vector3, direction: THREE.Vector3): FolioPick | null {
+    if (this.world.current !== this.room || !this.key.visible) return null;
+    this.ray.set(origin, direction);
+    if (!this.ray.intersectBox(this.target, this.hit)) return null;
+    const distance = origin.distanceTo(this.hit);
+    if (distance > 4) return null;
+    for (const b of this.world.colliders[this.room]) {
+      this.obstacle.min.fromArray(b.min);
+      this.obstacle.max.fromArray(b.max);
+      if (
+        !this.obstacle.intersectsBox(this.target) &&
+        this.ray.intersectBox(this.obstacle, this.hit) &&
+        origin.distanceTo(this.hit) < distance - 0.02
+      )
+        return null;
+    }
+    return { action: 'key', distance };
+  }
+  near(point: THREE.Vector3, reach: number): FolioPick | null {
+    if (this.world.current !== this.room || !this.key.visible) return null;
+    const distance = this.target.distanceToPoint(point);
+    return distance <= reach ? { action: 'key', distance } : null;
+  }
+  dispose(): void {
+    this.label?.dispose();
+    this.release();
     this.object.removeFromParent();
   }
 }

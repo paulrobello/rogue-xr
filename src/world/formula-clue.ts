@@ -5,8 +5,10 @@ import {
   conservatoryFormula,
   type FollowupRecipe,
   formulaClueOrder,
+  ingredientNames,
 } from '../rules/alchemy.ts';
 import { INGREDIENT_ROOTS } from './alchemy-conservatory.ts';
+import { ClockInscription } from './clock-inscription.ts';
 import type { ConservatoryGallery } from './conservatory-gallery.ts';
 import type { FloorWorld } from './floor-world.ts';
 import type { InteriorPlacement } from './interior-furnishings.ts';
@@ -30,6 +32,7 @@ export class FormulaEvidence {
   private readonly box = new THREE.Box3();
   private readonly point = new THREE.Vector3();
   private readonly owned: THREE.BufferGeometry[] = [];
+  private inscription?: ClockInscription;
   private target: THREE.Object3D;
   private release?: () => void;
   private constructor(
@@ -133,6 +136,15 @@ export class FormulaEvidence {
         dial.position.set(-0.354, -0.008, 0.035);
         kitPart(dial, 'ClockClueHand').rotation.z = (-plan.quietHour * Math.PI) / 6;
         evidence.object.add(dial);
+        evidence.inscription = new ClockInscription(
+          'stillwind-recipe-inscription',
+          0.98,
+          'Conservatory cauldron',
+          `Start Stillwind when its dial reads ${plan.quietHour}.`,
+          `Add ${ingredientNames[ingredient]} second.`,
+        );
+        evidence.inscription.object.position.set(0, -0.228, 0.45);
+        evidence.object.add(evidence.inscription.object);
         const bounds = new THREE.Box3().setFromObject(evidence.object);
         evidence.release = world.addFixtureCollider(point.room, {
           min: bounds.min.toArray(),
@@ -181,6 +193,7 @@ export class FormulaEvidence {
   }
   dispose() {
     this.release?.();
+    this.inscription?.dispose();
     this.object.removeFromParent();
     for (const geometry of this.owned) geometry.dispose();
   }

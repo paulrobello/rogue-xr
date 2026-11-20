@@ -32,6 +32,7 @@ it.each(['gears', 'orrery'] as const)(
     const p = calibrationPlan(seed);
     expect(flow.takeCalibrationChart()).toBe(false);
     expect(flow.takeCalibrationSpare()).toBe(false);
+    expect(flow.takeCalibrationKey()).toBe(false);
     flow.travelToFloor(2, 0);
     expect(flow.windCalibration()).toBeNull();
     expect(flow.takeCalibrationChart()).toBe(false);
@@ -69,6 +70,15 @@ it.each(['gears', 'orrery'] as const)(
       expect(flow.calibration.spare).toBe(true);
       expect(flow.repairCalibrationDrive()).toBe(true);
       expect(flow.repairCalibrationDrive()).toBe(false);
+      expect(flow.windCalibration()).toBeNull();
+      expect(flow.insertCalibrationKey()).toBe(false);
+      expect(flow.takeCalibrationKey()).toBe(true);
+      expect(flow.takeCalibrationKey()).toBe(false);
+      flow = reload(flow);
+      expect(flow.calibration.key).toBe('held');
+      expect(flow.windCalibration()).toBeNull();
+      expect(flow.insertCalibrationKey()).toBe(true);
+      expect(flow.insertCalibrationKey()).toBe(false);
       expect(flow.windCalibration()).toBe('stalled');
       for (const i of ids) for (let n = 0; n < p.detents[i]; n++) flow.turnCalibrationRing(i);
       flow = reload(flow);
@@ -80,13 +90,32 @@ it.each(['gears', 'orrery'] as const)(
     flow = reload(flow);
     if (kind === 'orrery') {
       const snapshot = flow.snapshot()!;
-      const { spare, repaired, ...oldCalibration } = flow.calibration;
+      const { key, spare, repaired, ...oldCalibration } = flow.calibration;
+      expect(key).toBe('inserted');
       expect(spare && repaired).toBe(true);
       const compatible = validateSnapshot({
         ...snapshot,
         run: { ...snapshot.run, calibration: oldCalibration },
       });
-      expect(compatible.run.calibration).toMatchObject({ spare: true, repaired: true });
+      expect(compatible.run.calibration).toMatchObject({
+        key: 'inserted',
+        spare: true,
+        repaired: true,
+      });
+      const partial = validateSnapshot({
+        ...snapshot,
+        run: { ...snapshot.run, calibration: { ...oldCalibration, solved: false } },
+      });
+      expect(partial.run.calibration?.key).toBe('held');
+      expect(() =>
+        validateSnapshot({
+          ...snapshot,
+          run: {
+            ...snapshot.run,
+            calibration: { ...oldCalibration, key: 'held', spare: true, repaired: true },
+          },
+        }),
+      ).toThrow('inconsistent calibration progress');
       expect(() =>
         validateSnapshot({
           ...snapshot,

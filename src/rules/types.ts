@@ -342,6 +342,7 @@ export type GearId = 0 | 1 | 2;
 export interface StoredCalibrationState {
   readonly kind: CalibrationKind;
   readonly chart: boolean;
+  readonly key: 'missing' | 'held' | 'inserted';
   readonly spare: boolean;
   readonly repaired: boolean;
   readonly selected: GearId | null;

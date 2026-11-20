@@ -35,11 +35,13 @@ import {
 import {
   claimCalibrationCard,
   type GearId,
+  insertCalibrationKey,
   readCalibration,
   repairCalibrationDrive,
   seatCalibrationGear,
   selectCalibrationGear,
   takeCalibrationChart,
+  takeCalibrationKey,
   takeCalibrationSpare,
   turnCalibrationRing,
   windCalibration,
@@ -236,7 +238,15 @@ export type FlowEvent =
     }
   | {
       readonly type: 'calibration';
-      readonly action: 'chart' | 'spare' | 'repair' | 'adjust' | 'solve' | 'claim';
+      readonly action:
+        | 'chart'
+        | 'key'
+        | 'insert'
+        | 'spare'
+        | 'repair'
+        | 'adjust'
+        | 'solve'
+        | 'claim';
     }
   | PressureTurnResultView
   | CommissionEvent
@@ -418,7 +428,7 @@ export class RunFlow {
   }
   private applyCalibration(
     next: RunState | null,
-    action: 'chart' | 'spare' | 'repair' | 'adjust' | 'solve' | 'claim',
+    action: Extract<FlowEvent, { type: 'calibration' }>['action'],
   ): boolean {
     if (!next) return false;
     this.runValue = next;
@@ -432,6 +442,14 @@ export class RunFlow {
   takeCalibrationSpare(): boolean {
     const r = this.calibrationRun(1);
     return !!r && this.pressure.solved && this.applyCalibration(takeCalibrationSpare(r), 'spare');
+  }
+  takeCalibrationKey(): boolean {
+    const r = this.calibrationRun(2);
+    return !!r && this.applyCalibration(takeCalibrationKey(r), 'key');
+  }
+  insertCalibrationKey(): boolean {
+    const r = this.calibrationRun(2);
+    return !!r && this.applyCalibration(insertCalibrationKey(r), 'insert');
   }
   repairCalibrationDrive(): boolean {
     const r = this.calibrationRun(2);

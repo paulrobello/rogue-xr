@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { expect, it } from 'vitest';
 import { generateUpperFloor, worldRooms } from '../src/floor/generate.ts';
@@ -9,6 +10,7 @@ import { createWorkshop } from '../src/rules/workshop.ts';
 import { playableFloorPlan } from '../src/world/floor-view.ts';
 import { buildFloorWorld } from '../src/world/floor-world.ts';
 import { ServicePanels } from '../src/world/service-panels.ts';
+import { nodeGeometryLoader } from './helpers/gltf-node.ts';
 
 it('reserves the original staircase, with an optional seeded, connected and stocked recess', () => {
   let count = 0,
@@ -59,25 +61,38 @@ it('restores the sprung latch and the open passage without repeating discovery',
     }),
   ).toThrow();
 });
-it('exposes the specific catch on discovery and stows the opened leaf past the hinge', () => {
+it('exposes the specific catch on discovery and stows the opened leaf past the hinge', async () => {
   const plan = playableFloorPlan('MAPTEST3', 6, 2),
-    world = buildFloorWorld(plan),
-    art = new THREE.Group();
-  const frame = new THREE.Group(),
-    leaf = new THREE.Group(),
-    latch = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.15, 0.045), new THREE.MeshBasicMaterial());
-  frame.name = 'PanelFrame';
-  leaf.name = 'PanelLeaf';
-  latch.name = 'PanelCatch';
-  latch.position.set(1.25, 1.05, 0.018);
-  leaf.add(latch);
-  art.add(frame, leaf);
-  const panels = new ServicePanels(world, art, true),
+    world = buildFloorWorld(plan);
+  const bytes = await readFile('public/assets/props/panel-kit/panel-kit.glb');
+  const { scene } = await nodeGeometryLoader().parseAsync(
+    bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.length),
+    '',
+  );
+  const panels = new ServicePanels(world, scene, true),
     p = panels.panels[0];
+  const aim = (panel: (typeof panels.panels)[number]) => {
+    world.current = panel.room;
+    const target = panel.catch.getWorldPosition(new THREE.Vector3());
+    const inward = panel.root.getWorldDirection(new THREE.Vector3());
+    return panels.pick(target.addScaledVector(inward, 1.6), inward.negate());
+  };
+  for (const panel of panels.panels) expect(aim(panel)?.action).toBe('knock');
   world.current = p.room;
   expect(panels.near(p.catch.getWorldPosition(new THREE.Vector3()), 0.04)?.action).toBe('knock');
+  const hinge = new THREE.Vector3(0, 0.053, 0);
+  const hingeBefore = p.catch.localToWorld(hinge.clone());
+  const lipBefore = p.catch.localToWorld(new THREE.Vector3(0, -0.05, 0));
   panels.sync({ discovered: true, opened: false }, true);
-  expect(p.catch.position.z).toBeGreaterThan(0.06);
+  expect(p.catch.localToWorld(hinge.clone()).distanceTo(hingeBefore)).toBeLessThan(0.001);
+  expect(
+    p.catch.localToWorld(new THREE.Vector3(0, -0.05, 0)).distanceTo(lipBefore),
+  ).toBeGreaterThan(0.085);
+  for (const decoy of panels.panels.slice(1)) {
+    expect(decoy.catch.rotation.x).toBe(0);
+    expect(aim(decoy)?.action).toBe('knock');
+  }
+  expect(aim(p)?.action).toBe('unlatch');
   expect(panels.near(p.catch.getWorldPosition(new THREE.Vector3()), 0.04)?.action).toBe('unlatch');
   panels.sync({ discovered: true, opened: true }, true);
   expect(p.leaf.rotation.y).toBeGreaterThan(Math.PI / 2);

@@ -30,6 +30,7 @@ export function readCalibration(
     run.calibration ?? {
       kind: calibrationPlan(run.seed).kind,
       chart: false,
+      key: 'missing',
       spare: false,
       repaired: false,
       selected: null,
@@ -54,11 +55,25 @@ export function calibrated(
 ): boolean {
   return state.kind === 'gears'
     ? meshedSpindles(state.slots, plan.gearOrder) === 3
-    : state.repaired && plan.detents.every((d, i) => state.detents[i] === d);
+    : state.key === 'inserted' &&
+        state.repaired &&
+        plan.detents.every((d, i) => state.detents[i] === d);
 }
 export function takeCalibrationChart(run: RunState): RunState | null {
   const s = readCalibration(run);
   return s.chart ? null : { ...run, calibration: { ...s, chart: true } };
+}
+export function takeCalibrationKey(run: RunState): RunState | null {
+  const s = readCalibration(run);
+  return s.kind === 'orrery' && s.key === 'missing'
+    ? { ...run, calibration: { ...s, key: 'held' } }
+    : null;
+}
+export function insertCalibrationKey(run: RunState): RunState | null {
+  const s = readCalibration(run);
+  return s.kind === 'orrery' && s.key === 'held'
+    ? { ...run, calibration: { ...s, key: 'inserted' } }
+    : null;
 }
 export function takeCalibrationSpare(run: RunState): RunState | null {
   const s = readCalibration(run);
@@ -95,7 +110,8 @@ export function turnCalibrationRing(run: RunState, id: GearId): RunState | null 
 }
 export function windCalibration(run: RunState): RunState | null {
   const s = readCalibration(run);
-  if (!s.chart || s.solved || (s.kind === 'orrery' && !s.repaired)) return null;
+  if (!s.chart || s.solved || (s.kind === 'orrery' && (!s.repaired || s.key !== 'inserted')))
+    return null;
   return calibrated(s, calibrationPlan(run.seed))
     ? { ...run, calibration: { ...s, selected: null, solved: true } }
     : run;
