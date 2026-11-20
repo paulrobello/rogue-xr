@@ -31,6 +31,7 @@ it.each(['gears', 'orrery'] as const)(
     flow.newRun(seed);
     const p = calibrationPlan(seed);
     expect(flow.takeCalibrationChart()).toBe(false);
+    expect(flow.takeCalibrationSpare()).toBe(false);
     flow.travelToFloor(2, 0);
     expect(flow.windCalibration()).toBeNull();
     expect(flow.takeCalibrationChart()).toBe(false);
@@ -42,8 +43,10 @@ it.each(['gears', 'orrery'] as const)(
     expect(flow.takeCalibrationChart()).toBe(true);
     expect(flow.takeCalibrationChart()).toBe(false);
     expect(flow.claimCalibrationCard()).toBeNull();
+    expect(flow.takeCalibrationSpare()).toBe(kind === 'orrery');
+    expect(flow.takeCalibrationSpare()).toBe(false);
     flow.travelToFloor(2, 0);
-    expect(flow.windCalibration()).toBe('stalled');
+    expect(flow.windCalibration()).toBe(kind === 'gears' ? 'stalled' : null);
     if (kind === 'gears') {
       const [a, b, c] = p.gearOrder;
       for (const [slot, id] of [
@@ -61,6 +64,12 @@ it.each(['gears', 'orrery'] as const)(
       expect(flow.calibration.slots).toEqual([a, b, c]);
       expect(meshedSpindles(flow.calibration.slots, p.gearOrder)).toBe(3);
     } else {
+      expect(flow.turnCalibrationRing(0)).toBe(false);
+      flow = reload(flow);
+      expect(flow.calibration.spare).toBe(true);
+      expect(flow.repairCalibrationDrive()).toBe(true);
+      expect(flow.repairCalibrationDrive()).toBe(false);
+      expect(flow.windCalibration()).toBe('stalled');
       for (const i of ids) for (let n = 0; n < p.detents[i]; n++) flow.turnCalibrationRing(i);
       flow = reload(flow);
     }
@@ -69,6 +78,25 @@ it.each(['gears', 'orrery'] as const)(
     expect(flow.claimCalibrationCard()).toBeNull();
     flow.travelToFloor(1, 0);
     flow = reload(flow);
+    if (kind === 'orrery') {
+      const snapshot = flow.snapshot()!;
+      const { spare, repaired, ...oldCalibration } = flow.calibration;
+      expect(spare && repaired).toBe(true);
+      const compatible = validateSnapshot({
+        ...snapshot,
+        run: { ...snapshot.run, calibration: oldCalibration },
+      });
+      expect(compatible.run.calibration).toMatchObject({ spare: true, repaired: true });
+      expect(() =>
+        validateSnapshot({
+          ...snapshot,
+          run: {
+            ...snapshot.run,
+            calibration: { ...oldCalibration, spare: true, repaired: false },
+          },
+        }),
+      ).toThrow('inconsistent calibration progress');
+    }
     const before = [...(flow.run?.deck ?? [])];
     expect(REWARD_POOL).toContain(p.rewardCard);
     expect(flow.claimCalibrationCard()).toBe(p.rewardCard);

@@ -14,7 +14,7 @@ The [keeper’s commission ledger](card-pool-and-exploration.md#e4-tasks-commiss
 
 Beyond the keeper’s ledger, two routes give the player a reason to remember something seen earlier.
 
-- A service chart and winding key wait inside the repaired pressure supply room. Complete the matching gear train or planetary orrery upstairs, then return to the downstairs cabinet for the raised card. [Calibration diagrams](puzzle-recipe-book.md#the-clockmakers-calibration-order)
+- A service chart and winding key wait inside the repaired pressure supply room. When the chart depicts an orrery, collect its spare shaft coupling there too. Complete the matching instrument upstairs, then return to the downstairs cabinet for the raised card. [Calibration diagrams](puzzle-recipe-book.md#the-clockmakers-calibration-order)
 - A three-tooth brass key hangs on a seeded Upper Works wall. Its enamel badge matches the padlock on an optional Floor 1 coffer. Inspecting the lock files its stamp in **Items**. Unlocking spends the key. The released coffer keeps its own loot and opens separately. A held key, a released lock and collected treasure each survive Continue.
 
 A hollow Upper Works service panel is another optional discovery. Listen for its longer ring or watch the catch move, then pull the catch to enter the service recess. Solid panels answer with a shorter tap.

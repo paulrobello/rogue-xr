@@ -31,6 +31,7 @@ export class FormulaEvidence {
   private readonly point = new THREE.Vector3();
   private readonly owned: THREE.BufferGeometry[] = [];
   private target: THREE.Object3D;
+  private release?: () => void;
   private constructor(
     readonly world: FloorWorld,
     readonly room: number,
@@ -66,19 +67,20 @@ export class FormulaEvidence {
       const rooms = world.plan.rooms
         .filter((r) => r.role !== 'guardian' && !r.encounter)
         .map((r) => r.index);
+      const width = plan.recipe === 'stillwind' ? 0.55 : 0.46;
       const point =
-        findPuzzleMount(world, rooms, props, 'archive-record', 0.46, 0.9) ??
+        findPuzzleMount(world, rooms, props, 'archive-record', width, 0.9) ??
         findPuzzleMount(
           world,
           world.plan.rooms.filter((r) => r.role !== 'guardian').map((r) => r.index),
           props,
           'archive-record',
-          0.46,
+          width,
           0.9,
         );
       if (!point) throw Error('Missing an accessible Upper Works record shelf');
       evidence = new FormulaEvidence(world, point.room, source);
-      evidence.object.position.copy(point.center);
+      evidence.object.position.copy(plan.recipe === 'stillwind' ? point.wallSurface : point.center);
       evidence.object.position.y = 1.13;
       evidence.object.rotation.y = point.yaw;
       world.roomGroups[point.room].add(evidence.object);
@@ -93,18 +95,49 @@ export class FormulaEvidence {
         'isMesh',
         true,
       )[0] as THREE.Mesh;
-      const rail = new THREE.BoxGeometry(0.64, 0.055, 0.47);
+      const rail = new THREE.BoxGeometry(plan.recipe === 'stillwind' ? 1.01 : 0.64, 0.055, 0.47);
       evidence.owned.push(rail);
       const shelf = new THREE.Mesh(rail, material.material);
       shelf.position.set(0, -0.13, 0.22);
       evidence.object.add(shelf);
       socket = kitPart(relic, name + 'Socket2');
       if (plan.recipe === 'stillwind') {
+        relic.scale.setScalar(1.5);
+        relic.position.set(0.02, 0.032, 0.18);
+        const backing = (width: number, depth: number, x: number, y: number, z: number) => {
+          const shape = new THREE.BoxGeometry(width, 0.033, depth);
+          evidence.owned.push(shape);
+          const rest = new THREE.Mesh(shape, material.material);
+          rest.rotation.x = relic.rotation.x;
+          rest.position.set(x, y, z);
+          evidence.object.add(rest);
+          const height = y + Math.sin(relic.rotation.x) * depth * 0.34 + 0.091;
+          const supportShape = new THREE.BoxGeometry(width * 0.84, height, 0.024);
+          evidence.owned.push(supportShape);
+          const support = new THREE.Mesh(supportShape, material.material);
+          support.position.set(
+            x,
+            -0.103 + height / 2,
+            z - Math.cos(relic.rotation.x) * depth * 0.34,
+          );
+          evidence.object.add(support);
+          return rest;
+        };
+        backing(0.5, 0.29, 0.02, 0.016, 0.16);
+        const glyphRest = backing(0.17, 0.2, 0.388, -0.021, 0.175);
+        socket = new THREE.Group();
+        socket.position.y = 0.018;
+        glyphRest.add(socket);
         const dial = kitPart(kit, 'ClockClueDial').clone(true);
-        dial.scale.setScalar(0.53);
-        dial.position.set(-0.21, 0.08, 0.125);
+        dial.scale.setScalar(0.46);
+        dial.position.set(-0.354, -0.008, 0.035);
         kitPart(dial, 'ClockClueHand').rotation.z = (-plan.quietHour * Math.PI) / 6;
         evidence.object.add(dial);
+        const bounds = new THREE.Box3().setFromObject(evidence.object);
+        evidence.release = world.addFixtureCollider(point.room, {
+          min: bounds.min.toArray(),
+          max: bounds.max.toArray(),
+        });
       }
     }
     const tile = kitPart(kit, 'RecipeTile' + INGREDIENT_ROOTS[ingredient]).clone(true);
@@ -147,6 +180,7 @@ export class FormulaEvidence {
     return distance <= reach ? { clue: this.clue, distance } : null;
   }
   dispose() {
+    this.release?.();
     this.object.removeFromParent();
     for (const geometry of this.owned) geometry.dispose();
   }

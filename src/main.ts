@@ -733,7 +733,12 @@ function syncPuzzles(target: FloorView, immediate = false): void {
     target.chartCabinet?.sync(flow.calibration, true);
   }
   const state = flow.counterweight;
-  target.counterweight?.sync(state.selected, counterweightTarget(run.seed), state.solved);
+  target.counterweight?.sync(
+    state.selected,
+    counterweightTarget(run.seed),
+    state.solved,
+    immediate,
+  );
   target.world.setPuzzleGateOpen('counterweight', state.solved, immediate);
   target.world.setPuzzleGateOpen('pressure', flow.pressure.solved, immediate);
   target.world.setPuzzleGateOpen('thorn', flow.alchemy.opened, immediate);
@@ -917,6 +922,10 @@ const dressFloor = async (target: FloorView): Promise<void> => {
     for (const room of target.styledRooms)
       lightRoomStyle(room, target.furnishings?.placements ?? []);
     if (door) target.world.dressSealedDoors(door.material, door.tileMeters);
+    const heroMaterials = await heroSet?.catch(() => null);
+    if (target !== floor) return;
+    if (heroMaterials) target.world.dressPuzzleGates(heroMaterials.set, heroEnv);
+    target.dressVentSteam(hitFx.reducedMotion);
     if (coffers) {
       target.loot.dress(coffers);
       target.hearth.dress({ brass: coffers.brass });
@@ -1663,6 +1672,15 @@ function operateCommission(input: CommissionAction): boolean {
 function readFolio(input: FolioPick): boolean {
   if (!floor || !flow.run) return false;
   const plan = calibrationPlan(flow.run.seed);
+  if (input.action === 'part') {
+    if (!flow.takeCalibrationSpare()) return false;
+    floor.showBookSecret(
+      { text: 'Spare shaft coupling', caption: 'For the Upper Works orrery' },
+      camera,
+    );
+    audio?.playSfx('gear-clank');
+    return true;
+  }
   if (input.action === 'card') {
     const card = flow.claimCalibrationCard();
     if (!card) return false;
@@ -1694,6 +1712,21 @@ function readFolio(input: FolioPick): boolean {
 function operateCalibration(hit: CalibrationAction): boolean {
   const bench = floor?.calibrationBench;
   if (!bench) return false;
+  if (hit.action === 'repair') {
+    if (flow.repairCalibrationDrive()) {
+      audio?.playSfx('gear-clank');
+      floor?.showBookSecret(
+        { text: 'Drive restored', caption: 'The rings now move on the shaft.' },
+        camera,
+      );
+    } else if (!flow.calibration.repaired) {
+      floor?.showBookSecret(
+        { text: 'Split shaft coupling', caption: 'A matching part belongs here.' },
+        camera,
+      );
+    }
+    return true;
+  }
   if (hit.action === 'wind') {
     const outcome = flow.windCalibration();
     if (outcome) {
@@ -1704,6 +1737,11 @@ function operateCalibration(hit: CalibrationAction): boolean {
         { text: 'Empty winding arbor', caption: 'A square key fits this spindle.' },
         camera,
       );
+    else if (flow.calibration.kind === 'orrery' && !flow.calibration.repaired)
+      floor?.showBookSecret(
+        { text: 'Drive disconnected', caption: 'The split coupling slips under load.' },
+        camera,
+      );
     return true;
   }
   const changed =
@@ -1711,7 +1749,7 @@ function operateCalibration(hit: CalibrationAction): boolean {
       ? flow.selectCalibrationGear(hit.id)
       : hit.action === 'seat'
         ? flow.seatCalibrationGear(hit.id)
-        : flow.turnCalibrationRing(hit.id);
+        : hit.action === 'ring' && flow.turnCalibrationRing(hit.id);
   if (changed) audio?.playSfx('gear-clank', undefined, 0.48);
   return changed;
 }

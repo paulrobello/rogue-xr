@@ -37,7 +37,18 @@ it.each(['gears', 'orrery'] as const)(
       (s) => calibrationPlan(s).kind === kind,
     )!;
     const world = buildFloorWorld(generateUpperFloor(seed));
-    const kitA = kit(['CalibrationFrame', 'OrreryInner', 'OrreryMiddle', 'OrreryOuter']),
+    const kitA = kit([
+        'CalibrationFrame',
+        'OrreryInner',
+        'OrreryMiddle',
+        'OrreryOuter',
+        'OrreryBed',
+        'OrreryDrive',
+        'OrreryConsole',
+        'OrreryCoupling',
+        'OrrerySplitCollar',
+        'OrreryKnob',
+      ]),
       kitB = kit([
         'gear_small',
         'gear_medium',
@@ -62,8 +73,16 @@ it.each(['gears', 'orrery'] as const)(
       );
       expect(GEAR_TEETH[order[0]]).toBeGreaterThan(0);
     } else {
+      const repair = bench.object.getObjectByName('orrery-repair-target')!;
+      expect(bench.near(repair.getWorldPosition(new THREE.Vector3()), 0.02)?.action).toBe('repair');
+      const knobs = [0, 1, 2].map((id) => bench.object.getObjectByName('orrery-control-' + id)!);
+      const dial = bench.object.getObjectByName('OrreryOuter')!;
+      expect(knobs.every((knob) => knob.position.x - dial.position.x > 0.42)).toBe(true);
       bench.sync({ ...s, detents: [1, 2, 3], chart: true }, true);
       expect(bench.object.getObjectByName('OrreryMiddle')?.rotation.z).toBeCloseTo(-Math.PI);
+      bench.sync({ ...s, chart: true, repaired: true }, true);
+      expect(bench.object.getObjectByName('OrrerySplitCollar')?.visible).toBe(false);
+      expect(bench.object.getObjectByName('OrreryCoupling')?.visible).toBe(true);
     }
     bench.dispose();
     world.dispose();

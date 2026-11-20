@@ -4,11 +4,11 @@
   "source": "interior-furnishings.blend",
   "generator": "scripts/assets/build-interior-furnishings.py",
   "output": "public/assets/props/interior-furnishings/interior-furnishings.glb",
-  "blender": "5.3.0",
-  "glb_sha256": "5d3b4f5b96ae9228f05a316d3a8ebba50df9694578ef2268fef3d572ee4e8b8f",
-  "blend_sha256": "d852dadffc54630f38b56ddc43f20cd07b2101ee776f00683b97c95dd618da1c",
-  "generator_sha256": "e1374f784a30d16e390a7705a4f48e728237c986c9e474cd6e846f07435569ab",
-  "approval": "Reimported and checked in Quest Browser from the table and at arm’s length. Independent visual review passed. Owner headset review pending.",
+  "blender": "5.2.3 LTS",
+  "glb_sha256": "b11894a2e9212f47a2493fda8dec30335ffe123b79b64d3791a7992a1ed624c5",
+  "blend_sha256": "b52f113985cc5198cf6d1142d33f6bc07ffd3c1bd86f32d458823893491a991e",
+  "generator_sha256": "5b10f67a01bba5b8637f2c349c443f034fa4e2edfb2d2e256172214550f4f50c",
+  "approval": "Revised geometry passed reimport and independent desktop visual review. Owner Quest acceptance is pending.",
   "historicalReview": {
     "glb_sha256": "81a51c5c6e78a9da9d1a8832aed1d62fa2705c87d6f08a55e266c737ce981bb9",
     "score": 85,
@@ -86,5 +86,44 @@
     "extra_triangles": 726,
     "glb_sha256": "5d3b4f5b96ae9228f05a316d3a8ebba50df9694578ef2268fef3d572ee4e8b8f",
     "in_game_evidence": "docs/verification/quest-timber-beams-candelabrum.jpg"
+  },
+  "armor_revision": {
+    "baseline_glb_sha256": "5d3b4f5b96ae9228f05a316d3a8ebba50df9694578ef2268fef3d572ee4e8b8f",
+    "glb_sha256": "b11894a2e9212f47a2493fda8dec30335ffe123b79b64d3791a7992a1ed624c5",
+    "geometry": {
+      "dimensions_m": [
+        0.873,
+        1.845,
+        0.536
+      ],
+      "bounds_min": [
+        -0.436,
+        0.0,
+        -0.268
+      ],
+      "bounds_max": [
+        0.436,
+        1.845,
+        0.268
+      ],
+      "mesh_count": 16,
+      "triangles": 10996
+    },
+    "method": "Original die-shaped plate lofts, embossed laurel and sunburst, separate sallet, visor and gauntlet lames. Embedded 256 px planished steel base color, tangent normal and metallic-roughness maps.",
+    "inputs_sha256": {
+      "scripts/assets/display_armor.py": "f4aaf625bdc862998eb68c4456f7107a75cf49a5378f9fd1a0006c9bc46eb36c",
+      "scripts/assets/build-armor-steel.py": "c5f745aa68ab00819dc5fbea2231f33f51885ee34d82e48b7b98e8631a646c52",
+      "assets-source/props/interior-furnishings/textures/armor-steel.basecolor.png": "e5bac85d23000f7f6ebaabd38f4de83b446d1bc075b6fc882f7a948882ff454e",
+      "assets-source/props/interior-furnishings/textures/armor-steel.normal.png": "d46c5a7cbf3b3c1f319118f61e2d2378a7be0d34aed9536f44b0ca56bce73265",
+      "assets-source/props/interior-furnishings/textures/armor-steel.orm.png": "7b402b0ecc921b7f5878a30ffa5a0969ef7acfcb0ff82b2321be5910e3a3ea76"
+    },
+    "review_image": "assets-source/props/interior-furnishings/armor-review.jpg",
+    "visual_review": {
+      "reviewer": "Independent Astra Extra High visual review",
+      "renderer": "Chromium, ANGLE Metal on Apple M4",
+      "score": 86,
+      "outOf": 100,
+      "notes": "The final in-room view showed distinguishable gilded plate, visor, greaves and shoulders."
+    }
   }
 }

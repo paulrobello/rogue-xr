@@ -156,8 +156,14 @@ export function lightRoomStyle(room: THREE.Group, placements: readonly InteriorP
   });
   for (const p of placements) {
     if (p.room !== room.userData.room) continue;
-    const { x, y, z } = p.position;
-    if (p.root === 'Candelabrum') lamps.push({ x, y: y + 1, z, power: 1.8 });
+    const { x, z } = p.position;
+    if (p.root === 'Candelabrum') {
+      const tip = p.object.getObjectByName('Candelabrum_FlameSocket_00');
+      if (tip) {
+        room.worldToLocal(tip.getWorldPosition(centre));
+        lamps.push({ x: centre.x, y: centre.y, z: centre.z, power: 1.8 });
+      }
+    }
     if (p.root !== 'DiningChair' && p.root !== 'DiningTable') continue;
     const table = p.root === 'DiningTable';
     footprint(

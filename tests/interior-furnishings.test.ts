@@ -73,6 +73,31 @@ async function realAsset(): Promise<InteriorFurnishingsAsset> {
 }
 
 describe('interior furnishings', () => {
+  it('seats the dining candleholder on the center plank with a tabletop scale', async () => {
+    const asset = await realAsset();
+    const world = buildFloorWorld(generateFloor('MAPTEST2'));
+    const furnishings = new InteriorFurnishings(world, asset);
+    const table = furnishings.placements.find((p) => p.root === 'DiningTable');
+    const lamp = furnishings.placements.find(
+      (p) => p.root === 'Candelabrum' && p.room === table?.room,
+    );
+    if (!table || !lamp) throw Error('Showcase dining set missing');
+    const origin = lamp.object.getWorldPosition(new THREE.Vector3());
+    const ray = new THREE.Raycaster(
+      origin.clone().add(new THREE.Vector3(0, 1, 0)),
+      new THREE.Vector3(0, -1, 0),
+    );
+    const surface = ray.intersectObject(table.object, true)[0];
+    expect(surface.point.y).toBeCloseTo(origin.y, 4);
+    const tip = lamp.object.getObjectByName('Candelabrum_FlameSocket_00');
+    if (!tip) throw Error('Missing flame socket');
+    const height = tip.getWorldPosition(new THREE.Vector3()).y - origin.y;
+    expect(height).toBeGreaterThan(0.38);
+    expect(height).toBeLessThan(0.46);
+    furnishings.dispose();
+    world.dispose();
+  });
+
   it('exports smooth side normals on the candleholder metal and wax', async () => {
     const { roots } = await realAsset();
     const sides = new Map<string, number>();

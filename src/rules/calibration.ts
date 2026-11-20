@@ -30,6 +30,8 @@ export function readCalibration(
     run.calibration ?? {
       kind: calibrationPlan(run.seed).kind,
       chart: false,
+      spare: false,
+      repaired: false,
       selected: null,
       slots: [null, null, null],
       detents: [0, 0, 0],
@@ -52,11 +54,21 @@ export function calibrated(
 ): boolean {
   return state.kind === 'gears'
     ? meshedSpindles(state.slots, plan.gearOrder) === 3
-    : plan.detents.every((d, i) => state.detents[i] === d);
+    : state.repaired && plan.detents.every((d, i) => state.detents[i] === d);
 }
 export function takeCalibrationChart(run: RunState): RunState | null {
   const s = readCalibration(run);
   return s.chart ? null : { ...run, calibration: { ...s, chart: true } };
+}
+export function takeCalibrationSpare(run: RunState): RunState | null {
+  const s = readCalibration(run);
+  return s.kind === 'orrery' && !s.spare ? { ...run, calibration: { ...s, spare: true } } : null;
+}
+export function repairCalibrationDrive(run: RunState): RunState | null {
+  const s = readCalibration(run);
+  return s.kind === 'orrery' && s.chart && s.spare && !s.repaired
+    ? { ...run, calibration: { ...s, repaired: true } }
+    : null;
 }
 export function selectCalibrationGear(run: RunState, id: GearId): RunState | null {
   const s = readCalibration(run);
@@ -76,14 +88,14 @@ export function seatCalibrationGear(run: RunState, slot: GearId): RunState | nul
 }
 export function turnCalibrationRing(run: RunState, id: GearId): RunState | null {
   const s = readCalibration(run);
-  if (s.kind !== 'orrery' || s.solved || ![0, 1, 2].includes(id)) return null;
+  if (s.kind !== 'orrery' || !s.repaired || s.solved || ![0, 1, 2].includes(id)) return null;
   const detents = [...s.detents];
   detents[id] = (detents[id] + 1) % 4;
   return { ...run, calibration: { ...s, detents } };
 }
 export function windCalibration(run: RunState): RunState | null {
   const s = readCalibration(run);
-  if (!s.chart || s.solved) return null;
+  if (!s.chart || s.solved || (s.kind === 'orrery' && !s.repaired)) return null;
   return calibrated(s, calibrationPlan(run.seed))
     ? { ...run, calibration: { ...s, selected: null, solved: true } }
     : run;

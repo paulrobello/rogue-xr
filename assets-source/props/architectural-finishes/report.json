@@ -3,7 +3,7 @@
   "materials": 3,
   "packedTextures": 6,
   "runtimeBytes": 2458604,
-  "sha256": "173f8b6b2fa20e0e8b040567fa67f2834f0c20d2007d29721588ac03e8faaaf8",
+  "sha256": "d44d630cfde710858c9f0746f37a0525ceb9a6df0a3e22d1d4b4a13ca0ba5f3e",
   "reimport": "Seven identity roots, finite UV0 and coordinates, nonzero triangles, exact 2x4m bounds, clear portals, zero-plane contacts, no rear faces and no lateral end-plane faces",
   "lateralEndPlaneTriangles": 0,
   "blender": "5.2.3 LTS",
@@ -84,13 +84,13 @@
   "source": "Original scripted geometry, cast finishes and wood-cut atlas derived from the project walnut",
   "woodSource": "public/assets/materials/walnut/walnut.basecolor.png",
   "inputsSha256": {
-    "scripts/assets/build-architectural-finishes.py": "a4965ec7a916e17058cb7fe57efd9f3607b3c0daa413aabc12adb84cbe2e421a",
+    "scripts/assets/build-architectural-finishes.py": "2153c6db14c5cd2b3f51e4f54c561123a465fc37823d7bbe5c2edb36576420c0",
     "scripts/assets/finish_surfaces.py": "04e2ca5b9de03a339e60998e8d568b07d7ff31dce540ce4abc5aa16e91221ab8",
     "public/assets/materials/walnut/walnut.basecolor.png": "c2c1d72ba308c02f6304ee389a86d6663199d01a352160c347801cefd4042a0b"
   },
   "blendSha256": {
-    "architectural-finishes_high.blend": "e645645149c2a2ae63a3687ee0840e244198751a33aa346456c292f23f29cc5a",
-    "architectural-finishes_low.blend": "28e728a46f5bef500bbf8eff15492065f832a7a2eaccb92081328b835115a450"
+    "architectural-finishes_high.blend": "8bee6b525dd63addced7f68f5f856b8ebb1fedcba6557a8fb455eb7679170b34",
+    "architectural-finishes_low.blend": "a19d7c47d3cd60d9928b06695051b6e44492e6676711cd850bd07ad4fc09bd5a"
   },
   "atlasPixels": [
     768,

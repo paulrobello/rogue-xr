@@ -340,9 +340,20 @@ function validateCalibration(value: unknown, path: string, seed: string): Stored
     r.detents.some((d) => !Number.isInteger(d) || d < 0 || d > 3)
   )
     fail(path, 'invalid ring detents');
+  if (
+    (r.spare !== undefined && typeof r.spare !== 'boolean') ||
+    (r.repaired !== undefined && typeof r.repaired !== 'boolean')
+  ) {
+    fail(path, 'invalid drive repair');
+  }
+  // Completed orreries from before the coupling step already released their cabinet.
+  const priorRepair =
+    plan.kind === 'orrery' && r.solved && r.spare === undefined && r.repaired === undefined;
   const state: StoredCalibrationState = {
     kind: plan.kind,
     chart: r.chart,
+    spare: r.spare ?? priorRepair,
+    repaired: r.repaired ?? priorRepair,
     selected: r.selected,
     slots: [...r.slots],
     detents: [...r.detents],
@@ -353,7 +364,9 @@ function validateCalibration(value: unknown, path: string, seed: string): Stored
     (state.claimed && !state.solved) ||
     (state.solved && (!state.chart || !calibrated(state, plan))) ||
     (state.kind === 'orrery' && (occupied.length || state.selected !== null)) ||
-    (state.kind === 'gears' && state.detents.some((d) => d !== 0))
+    (state.repaired && (!state.spare || !state.chart)) ||
+    (state.kind === 'gears' &&
+      (state.spare || state.repaired || state.detents.some((d) => d !== 0)))
   )
     fail(path, 'inconsistent calibration progress');
   return state;
@@ -602,13 +615,12 @@ export function validateSnapshot(raw: unknown): RunSnapshot {
     )
       fail('snapshot.run.commission.claimed', 'payment has no completed work order');
   }
-  if (activeRun.calibration?.chart) {
+  if (activeRun.calibration?.chart || activeRun.calibration?.spare) {
     const repaired =
       floorNumber === 1
         ? activeRun.pressure?.solved
         : floors?.find((f) => f.floorNumber === 1)?.pressure?.solved;
-    if (!repaired)
-      fail('snapshot.run.calibration.chart', 'the cabinet is behind the pressure lock');
+    if (!repaired) fail('snapshot.run.calibration', 'the cabinet is behind the pressure lock');
     if (
       activeRun.calibration.claimed &&
       !activeRun.deck.includes(calibrationPlan(activeRun.seed).rewardCard)

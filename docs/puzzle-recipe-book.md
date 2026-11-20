@@ -91,11 +91,11 @@ The [Conservatory recipe book and floor roadmap](conservatory-and-return-routes.
 
 ## The clockmaker’s calibration order
 
-Inside the restored pressure supply room is a folio with a square winding key. Inspect the service plate to take the key and copy the diagram to **Items**. Its matching instrument is in the Upper Works. Each run selects one instrument and one diagram.
+Inside the restored pressure supply room is a folio with a square winding key. Inspect the service plate to take the key and copy the diagram to **Items**. Its matching instrument is in the Upper Works. Each run selects one instrument and one diagram. For the orrery, also take the spare shaft coupling from its cradle beside the folio.
 
 | Instrument | Mechanism | Feedback |
 | --- | --- | --- |
 | Gear train | Select a 12-, 18-, or 24-tooth wheel, then select a spindle. The key runs the driver. A misplaced wheel can be moved again or exchanged with a wheel already seated. | Spindle spacing follows the actual pitch radii. An oversize wheel stands proud of the train; an undersize wheel leaves a gap. On a trial wind, rotation reaches the first break. |
-| Orrery | The chart records a compass bearing for the crescent moon, sun and ringed planet. Touch a body or use its matching control to advance that arm by one quarter turn. Wind the key when the three bodies match the table. | The bodies move on separate coaxial arms. Their shapes and compass markings identify the settings independently of color. |
+| Orrery | Fit the spare coupling into the broken drive socket. The chart gives a compass bearing for the crescent moon, sun and ringed planet. Touch a body or use its matching control to advance it by a quarter turn. Wind the key once all three match the chart. | The repair seats a visible coupling in the drive. The three bodies move on separate coaxial arms. Their shapes and compass markings identify the settings independently of color. |
 
 Restoring the instrument releases the drawer back in the pressure supply room. The printed reward card is added to the player's deck when claimed. The key, gear layout, ring positions, repair and single card claim persist across floor travel and Continue.

@@ -31,6 +31,7 @@ import { enemyHeading, enemyLocalRotationY } from './enemy-facing.ts';
 import { buildGreyboxRoom, createGreyboxMaterials, type GreyboxMaterials } from './greybox.ts';
 import { type Hearth, HearthKit, type HearthMaterials, hearthSocket } from './hearth.ts';
 import { type Coffer, CofferKit, type LootMaterials, surfaceHeightAt } from './loot.ts';
+import type { PbrSet } from './materials.ts';
 import { pressureColliders } from './pressure-works.ts';
 import { PuzzleGateVisual } from './puzzle-gates.ts';
 import { disposeTableDecor } from './table-decor.ts';
@@ -76,6 +77,7 @@ export interface FloorWorld {
   /** Opens the forward door held by a defeated encounter. */
   releaseGuardedDoor(room: number, immediate?: boolean): THREE.Vector3 | null;
   setPuzzleGateOpen(kind: PuzzleGate, open: boolean, immediate?: boolean): void;
+  dressPuzzleGates(set: PbrSet, environment: THREE.Texture | null): void;
   pickPuzzleGate(
     origin: THREE.Vector3,
     direction: THREE.Vector3,
@@ -141,6 +143,44 @@ const INTO_ROOM_YAW: Record<Facing, number> = {
   W: Math.PI / 2,
   E: -Math.PI / 2,
 };
+
+const checkedFrameGeometry = new WeakSet<THREE.BufferGeometry>();
+
+/** Earlier room bakes include a second reveal up to the lintel inside each full-height jamb. */
+function fitBakedDoorFrame(frame: THREE.Object3D): void {
+  frame.traverse((mesh) => {
+    if (!(mesh instanceof THREE.Mesh)) return;
+    const geometry = mesh.geometry;
+    const index = geometry.index;
+    if (!index || checkedFrameGeometry.has(geometry)) return;
+    checkedFrameGeometry.add(geometry);
+    const pos = geometry.getAttribute('position');
+    const fullJambs = new Set<string>();
+    const reveals = new Map<number, string>();
+    const bounds = new THREE.Box3(),
+      point = new THREE.Vector3();
+    for (let i = 0; i < index.count; i += 3) {
+      bounds.makeEmpty();
+      for (let j = 0; j < 3; j++)
+        bounds.expandByPoint(point.fromBufferAttribute(pos, index.getX(i + j)));
+      const { min, max } = bounds;
+      if (Math.abs(min.y) > 0.0001 || Math.min(max.x - min.x, max.z - min.z) > 0.0001) continue;
+      if (Math.abs(Math.max(max.x - min.x, max.z - min.z) - 0.05) > 0.0001) continue;
+      const strip = [min.x, max.x, min.z, max.z].map((v) => Math.round(v * 10000)).join(',');
+      if (Math.abs(max.y - DOOR_HEIGHT - 0.12) < 0.0001) fullJambs.add(strip);
+      else if (Math.abs(max.y - DOOR_HEIGHT) < 0.0001) reveals.set(i, strip);
+    }
+    if (![...reveals.values()].some((strip) => fullJambs.has(strip))) return;
+    const kept: number[] = [];
+    for (let i = 0; i < index.count; i += 3) {
+      const strip = reveals.get(i);
+      if (strip && fullJambs.has(strip)) continue;
+      kept.push(index.getX(i), index.getX(i + 1), index.getX(i + 2));
+    }
+    geometry.dispose();
+    geometry.setIndex(kept);
+  });
+}
 
 function doorwayCollider(door: WorldRoom['doors'][number]): Box {
   const [x, z] = door.world;
@@ -449,7 +489,9 @@ export function buildFloorWorld(
     const door = rooms[from.room].doors.find((d) => d.id === from.door);
     if (!door) throw Error(`Missing ${kind} gate doorway`);
     const visual =
-      kind === 'counterweight' || kind === 'pressure' ? new PuzzleGateVisual(kind) : null;
+      kind === 'counterweight' || kind === 'pressure'
+        ? new PuzzleGateVisual(kind, door.width, DOOR_HEIGHT)
+        : null;
     if (visual) {
       visual.object.position.set(door.world[0], 0, door.world[1]);
       visual.object.rotation.y = INTO_ROOM_YAW[door.facing];
@@ -591,6 +633,9 @@ export function buildFloorWorld(
       if (doorHinge) doorHinge.rotation.y = doorAngle;
       return new THREE.Vector3(door.world[0], 1.1, door.world[1]);
     },
+    dressPuzzleGates(set, environment) {
+      for (const gate of puzzleGates) gate.visual?.dress(set, environment);
+    },
     setPuzzleGateOpen(kind, open, immediate = false) {
       const gate = puzzleGates.find((g) => g.kind === kind);
       if (!gate || gate.open === open) return;
@@ -698,7 +743,10 @@ export function buildFloorWorld(
         const stairOpen = stairOpened && room === stairEntry?.room && door.id === stairEntry.door;
         const closed = walls.has(door.id) && !stairOpen && plug !== undefined;
         if (plug) plug.visible = closed;
-        if (frame) frame.visible = !closed;
+        if (frame) {
+          fitBakedDoorFrame(frame);
+          frame.visible = !closed;
+        }
       }
       for (const cap of sealedDoors) {
         if (cap.userData.room !== room || cap.userData.style !== 'wall') continue;

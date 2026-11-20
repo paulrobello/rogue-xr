@@ -96,6 +96,7 @@ interface Candidate {
   y?: number;
   yaw: number;
   clueEligible?: boolean;
+  scale?: number;
 }
 type RootBounds = Readonly<Record<InteriorFurnishingRoot, THREE.Box3>>;
 
@@ -116,6 +117,9 @@ const SIZES: Readonly<Record<InteriorFurnishingRoot, [number, number]>> = {
 // The hall's lower bay molding tops out at 1.49 m above the floor.
 const PAINTING_BOTTOM_Y = 1.65;
 const WALL_ART_CENTRE_Y = 2.345;
+// The center plank is lower than the brass strips at the ends of the table.
+const DINING_TABLE_SURFACE_Y = 0.84;
+const TABLE_CANDELABRUM_SCALE = 0.44;
 
 const THEME_ROOTS: Readonly<Record<InteriorTheme, readonly InteriorFurnishingRoot[]>> = {
   library: ['Bookcase', 'WallClock', 'Candelabrum'],
@@ -134,6 +138,7 @@ const WALL_FIXTURES = new Set<InteriorFurnishingRoot>([
 function boxFor(c: Candidate, roots: RootBounds, access = false): Box {
   const box = roots[c.root].clone();
   if (access && c.root === 'Bookcase') box.max.z += 0.65;
+  if (c.scale) box.applyMatrix4(new THREE.Matrix4().makeScale(c.scale, c.scale, c.scale));
   box.applyMatrix4(new THREE.Matrix4().makeRotationY(c.yaw));
   box.translate(new THREE.Vector3(c.x, c.y ?? 0, c.z));
   return { min: box.min.toArray(), max: box.max.toArray() };
@@ -302,7 +307,8 @@ function candidatesFor(
             root: 'Candelabrum',
             x,
             z,
-            y: rootBounds.DiningTable.max.y - rootBounds.Candelabrum.min.y,
+            y: DINING_TABLE_SURFACE_Y - rootBounds.Candelabrum.min.y * TABLE_CANDELABRUM_SCALE,
+            scale: TABLE_CANDELABRUM_SCALE,
             yaw,
           });
           break dining;
@@ -652,6 +658,7 @@ export class InteriorFurnishings {
         object.name = `interior-${c.root}-${room}`;
         object.position.set(c.x, c.y ?? 0, c.z);
         object.rotation.y = c.yaw;
+        if (c.scale) object.scale.multiplyScalar(c.scale);
         world.roomGroups[room]?.add(object);
         const placement = {
           room,

@@ -1,6 +1,6 @@
 {
   "generator": "scripts/assets/build-interior-furnishings.py",
-  "blender": "5.3.0",
+  "blender": "5.2.3 LTS",
   "coordinate_system": "glTF Y-up; front +Z; dimensions metres",
   "materials": [
     "Walnut",
@@ -18,6 +18,8 @@
     "DiningUpholstery",
     "DiningPolishedBrass",
     "WineVelvetNap",
+    "Burnished harness steel",
+    "Charcoal arming leather",
     "PictureBacking"
   ],
   "roots": {
@@ -194,22 +196,22 @@
     },
     "ClockworkArmor": {
       "dimensions_m": [
-        1.006,
-        1.855,
-        0.6
+        0.873,
+        1.845,
+        0.536
       ],
       "bounds_min": [
-        -0.503,
+        -0.436,
         0.0,
-        -0.3
+        -0.268
       ],
       "bounds_max": [
-        0.503,
-        1.855,
-        0.3
+        0.436,
+        1.845,
+        0.268
       ],
-      "mesh_count": 11,
-      "triangles": 11372
+      "mesh_count": 16,
+      "triangles": 10996
     },
     "FramedPainting": {
       "dimensions_m": [
@@ -258,8 +260,8 @@
     "LibraryBindingAtlas requires the shared runtime book texture; canvas UVs are texture-ready.",
     "No authored colliders or LODs."
   ],
-  "triangles": 60718,
-  "size_bytes": 7197564,
+  "triangles": 60342,
+  "size_bytes": 7344084,
   "candelabrum_extra_triangles": 726,
-  "sha256": "5d3b4f5b96ae9228f05a316d3a8ebba50df9694578ef2268fef3d572ee4e8b8f"
+  "sha256": "b11894a2e9212f47a2493fda8dec30335ffe123b79b64d3791a7992a1ed624c5"
 }

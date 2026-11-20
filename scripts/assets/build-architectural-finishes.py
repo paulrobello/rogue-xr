@@ -250,8 +250,8 @@ def boiler(b: Bay, service: bool, door: bool, has_exchanger: bool = False) -> No
             b.round("Web fastener", x, z, .019, .021, .09, .107, 2, 6)
     if door:
         for x in (-.85, .85):
-            b.plate("Portal jamb", x, 1.23, .10, 2.46, .009, .116, 0, .011)
-        b.plate("Cast lintel", 0, 2.47, 1.8, .14, .01, .12, 0, .012)
+            b.plate("Portal jamb", x, 1.23, .10, 2.46, .012, .116, 0, .011)
+        b.plate("Cast lintel", 0, 2.47, 1.8, .14, .012, .12, 0, .012)
         b.plate("Lintel cover", 0, 2.92, 1.78, .69, .009, .047, 0, .012, .075)
         for x in (-.64, .64):
             for i in range(3):

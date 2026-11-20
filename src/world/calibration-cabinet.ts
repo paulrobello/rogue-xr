@@ -11,7 +11,7 @@ import type { FloorWorld } from './floor-world.ts';
 import type { InteriorPlacement } from './interior-furnishings.ts';
 import type { CofferCardFace } from './loot.ts';
 import { findPuzzleMount, kitPart } from './puzzle-placement.ts';
-export type FolioPick = { action: 'chart' | 'card'; distance: number };
+export type FolioPick = { action: 'chart' | 'card' | 'part'; distance: number };
 
 function drawChart(
   ctx: CanvasRenderingContext2D,
@@ -112,6 +112,8 @@ export class CalibrationCabinet {
   readonly key: THREE.Object3D;
   readonly drawer: THREE.Object3D;
   readonly card: THREE.Object3D;
+  readonly spare: THREE.Object3D | null;
+  private spareHit?: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>;
   private readonly chart: CanvasLabel | null;
   private readonly cardHit: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
   private readonly cast = new THREE.Raycaster();
@@ -135,7 +137,7 @@ export class CalibrationCabinet {
     const gate = world.plan.connections.find((e) => e.puzzleGate === 'pressure');
     if (!gate) throw Error('Missing pressure supply room');
     const room = gate[1].room,
-      site = findPuzzleMount(world, [room], props, 'calibration-chart', 0.49, 0.78);
+      site = findPuzzleMount(world, [room], props, 'calibration-chart', 0.54, 0.78);
     if (!site) throw Error('No calibration cabinet bay in the supply room');
     const plan = calibrationPlan(seed),
       cabinet = new CalibrationCabinet(
@@ -177,6 +179,19 @@ export class CalibrationCabinet {
     this.key.rotation.z = -0.74;
     this.key.scale.setScalar(0.45);
     this.object.add(this.key);
+    this.spare = plan.kind === 'orrery' ? kitPart(art, 'OrreryCoupling').clone(true) : null;
+    if (this.spare) {
+      const cradle = kitPart(art, 'OrreryCouplingCradle').clone(true);
+      cradle.position.set(-0.428, -0.07, 0.07);
+      this.spare.name = 'orrery-drive-spare';
+      this.spare.position.set(-0.428, -0.065, 0.123);
+      this.spareHit = new THREE.Mesh(
+        new THREE.SphereGeometry(0.051, 12, 8),
+        new THREE.MeshBasicMaterial({ visible: false }),
+      );
+      this.spare.add(this.spareHit);
+      this.object.add(cradle, this.spare);
+    }
     this.card = face.object;
     this.card.name = 'calibration-card';
     this.cardHit = new THREE.Mesh(
@@ -199,6 +214,7 @@ export class CalibrationCabinet {
   }
   sync(state: StoredCalibrationState, immediate = false, collector?: THREE.Object3D) {
     this.key.visible = !state.chart;
+    if (this.spare) this.spare.visible = !state.spare && !state.repaired;
     if (collector && state.claimed && !this.paid && this.card.visible && !this.reduced) {
       this.world.group.attach(this.card);
       this.flight = { start: this.card.position.clone(), target: collector, t: 0 };
@@ -241,12 +257,18 @@ export class CalibrationCabinet {
       )
         return null;
     }
-    for (let n: THREE.Object3D | null = hit.object; n; n = n.parent)
+    for (let n: THREE.Object3D | null = hit.object; n; n = n.parent) {
       if (n === this.card) return { action: 'card', distance: hit.distance };
+      if (n === this.spare) return { action: 'part', distance: hit.distance };
+    }
     return { action: 'chart', distance: hit.distance };
   }
   near(point: THREE.Vector3, reach: number): FolioPick | null {
     if (this.room !== this.world.current) return null;
+    if (this.spare?.visible) {
+      const d = this.box.setFromObject(this.spare).distanceToPoint(point);
+      if (d <= reach) return { action: 'part', distance: d };
+    }
     if (this.card.visible && !this.paid) {
       const d = this.box.setFromObject(this.card).distanceToPoint(point);
       if (d <= reach) return { action: 'card', distance: d };
@@ -276,6 +298,8 @@ export class CalibrationCabinet {
     this.cardHit.geometry.dispose();
     this.cardHit.material.dispose();
     this.face.dispose();
+    this.spareHit?.geometry.dispose();
+    this.spareHit?.material.dispose();
     this.chart?.dispose();
     this.release?.();
     this.object.removeFromParent();

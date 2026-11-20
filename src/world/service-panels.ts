@@ -44,6 +44,9 @@ export class ServicePanels {
     root.name = hollow ? 'hollow-service-panel' : 'solid-service-panel-' + ref.room;
     const frame = kitPart(art, 'PanelFrame').clone(true),
       leaf = kitPart(art, 'PanelLeaf').clone(true);
+    // A 10 mm stop overlaps the leaf edges and steps the service reveal inside the boiler jamb.
+    frame.scale.set(0.79 / 0.8, 2.39 / 2.4, 0.55);
+    frame.position.z = 0.028;
     const latch = kitPart(leaf, 'PanelCatch');
     leaf.name = 'service-leaf-' + ref.room;
     latch.name = 'service-catch-' + ref.room;

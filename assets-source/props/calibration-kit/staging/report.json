@@ -1,7 +1,7 @@
 {
-  "glb_sha256": "b0ff7b2929c7d2fbf111f855d4849a37d788fb89b4bf1d08df9d2344fa16fb89",
-  "generator_sha256": "01a3d72a5b6f3a79fb0e8276f171d1db11cc714bb3bded58f66a87321d9e5ba0",
-  "source_blend_sha256": "8569e9802f9c07ceb9771216d992898dd872253637226a8eeeb8083ec2675e40",
+  "glb_sha256": "a37e47ffab1d31ae3a1b7a04d081c6f0ff31f7522003023f86c4183d7caef4e8",
+  "generator_sha256": "31d5a102d31f9c4def7f9de9e01181f1fa2ebd27373cf0b3e11bfab66a9c161f",
+  "source_blend_sha256": "49763f44ac48b7306752c02f4b7c1c69c9eb3b536024c885b0a375a2eff45bcb",
   "axes": "glTF +Y up, +Z front; metres",
   "root_nodes": [
     "CalibrationFrame",
@@ -9,16 +9,41 @@
     "OrreryMiddle",
     "OrreryOuter",
     "ChartCabinet",
-    "ChartDrawer"
+    "ChartDrawer",
+    "OrreryBed",
+    "OrreryConsole",
+    "OrreryKnob",
+    "OrreryDrive",
+    "OrrerySplitCollar",
+    "OrreryCoupling",
+    "OrreryCouplingCradle",
+    "AssayCase",
+    "AssayHanger",
+    "AssayBeam",
+    "AssayPan",
+    "AssayWeightA",
+    "AssayWeightB",
+    "AssayReference"
   ],
   "socket_nodes": [
     "CardRest"
   ],
-  "triangles": 10124,
+  "triangles": 34888,
   "blender": "5.2.3 LTS",
   "visual_approval": "pending independent and owner review",
   "limitations": [
     "No authored LOD or collider",
     "Runtime play-distance and interaction review pending"
-  ]
+  ],
+  "shared_material_sources": {
+    "public/assets/materials/walnut/walnut.basecolor.png": "c2c1d72ba308c02f6304ee389a86d6663199d01a352160c347801cefd4042a0b",
+    "public/assets/materials/walnut/walnut.normal.png": "3ee262cb20e41fe1f8b6dac8528f0b3f51e6e129cc9542f99d81c21242046558",
+    "public/assets/materials/walnut/walnut.orm.png": "6de73e58bc870595d74968b44e4f94b153c2dfc529ae6cb5c9e2beda5c24846d",
+    "public/assets/materials/brass-polished/brass-polished.basecolor.png": "e06711b70706c57713bad023bfd9690715a67ae7b85fcc3041d596f7b0630e15",
+    "public/assets/materials/brass-polished/brass-polished.normal.png": "48e62a85458bfc64ffc095f4f6a44c69b0058b90e01a664a3f3682a0222bfb3c",
+    "public/assets/materials/brass-polished/brass-polished.orm.png": "ac621605925e523ca9b25bd18bbfe4bdab575bb3a9876a5390adc5a29c559e9a",
+    "public/assets/materials/brass-aged/brass-aged.basecolor.png": "f731331533f5e9293ab3172f052aef3f3984924012dfe3c44540756af17b4316",
+    "public/assets/materials/brass-aged/brass-aged.normal.png": "752f6211fca91fa4e2beb4e43c11ba097d2da7139268fdf33fb5b2ee26bfbe3a",
+    "public/assets/materials/brass-aged/brass-aged.orm.png": "dab4896ed62310c39b975954f70cddf116f86518842eb7d84b0fde14dc7adbeb"
+  }
 }

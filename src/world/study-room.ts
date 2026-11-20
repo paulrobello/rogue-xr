@@ -4,6 +4,7 @@ import { derivedFiles as corridorFiles } from '../../assets-source/rooms/corrido
 import { derivedFiles as vaultFiles } from '../../assets-source/rooms/guardian-vault/provenance.json';
 import { GREYBOX_TEMPLATES, parseRoomTemplate, type RoomTemplate } from '../content/rooms.ts';
 import { dressCandleFlames, dressFireplace } from './fireplace.ts';
+import { closeLanternRoofs } from './lantern-roofs.ts';
 import {
   configureLightmapTexture,
   loadRoomLightmap,
@@ -284,6 +285,11 @@ export async function loadStudyAsset(options: {
       const proxy = mesh.geometry;
       mesh.geometry = studyBookGeometry(proxy);
       proxy.dispose();
+    }
+    if ((id === 'gear-shaft' || id === 'corridor') && authored.name === `${id}_brass-aged`) {
+      const original = mesh.geometry;
+      mesh.geometry = closeLanternRoofs(id, original);
+      if (original !== mesh.geometry) original.dispose();
     }
     mesh.material = material;
   });

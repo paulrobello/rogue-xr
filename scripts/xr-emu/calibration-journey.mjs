@@ -51,11 +51,17 @@ export async function exerciseCalibration({
     return label;
   });
   console.log('chart', chart);
+  const kind = await ev(() => window.__flow.flow.calibration.kind);
+  if (kind === 'orrery') {
+    await approach(cabinet, 'orrery-drive-spare', 1.5);
+    await shot('spare-shaft-coupling');
+    await click('orrery-drive-spare');
+    assert(await ev(() => window.__flow.flow.calibration.spare));
+  }
   await stair(2);
   await approach(bench, 'calibration-wind-target', 1.6);
   await click('calibration-wind-target');
   assert.equal(await ev(() => window.__flow.flow.calibration.solved), false);
-  const kind = await ev(() => window.__flow.flow.calibration.kind);
   async function use(n) {
     await approach(bench, n, 1.55);
     await click(n);
@@ -77,6 +83,15 @@ export async function exerciseCalibration({
     await use('calibration-socket-0');
     assert.deepEqual(await ev(() => window.__flow.flow.calibration.slots), order);
   } else {
+    await use('orrery-control-0');
+    assert.deepEqual(await ev(() => window.__flow.flow.calibration.detents), [0, 0, 0]);
+    assert.equal(await ev(() => window.__flow.flow.calibration.repaired), false);
+    await approach(bench, 'orrery-repair-target', 1.55);
+    await shot('broken-orrery-drive');
+    await click('orrery-repair-target');
+    assert(await ev(() => window.__flow.flow.calibration.repaired));
+    await resumeAt(2);
+    assert(await ev(() => window.__flow.flow.calibration.repaired));
     const detents = [...chart.matchAll(/ ([NESW])(?=\s*\/|$)/g)].map((m) => 'NESW'.indexOf(m[1]));
     assert.equal(detents.length, 3);
     for (const [id, d] of detents.entries()) {

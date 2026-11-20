@@ -89,6 +89,7 @@ import { ServicePanels } from './service-panels.ts';
 import { Stairwell } from './stairwell.ts';
 import { StrikingClock } from './striking-clock.ts';
 import { type RigidNode, rigidAngle } from './study-room.ts';
+import { WallVentSteam } from './wall-vent-steam.ts';
 
 export interface FloorAudio {
   playChime?(note: 0 | 1 | 2, at: THREE.Vector3): boolean;
@@ -274,6 +275,7 @@ export interface FloorView {
   markCleared(room: number, silent?: boolean): void;
   /** Connects the shared audio director after the floor is mounted. */
   setAudio(audio: FloorAudio | null): void;
+  dressVentSteam(reducedMotion: boolean): void;
   /** A standing point about 1 m inside `room` from its first door, or null for an unknown room. */
   standPoint(room: number): THREE.Vector3 | null;
   /** Removes the floor, its lights and the table from the scene and frees their GPU resources. */
@@ -391,6 +393,7 @@ export function mountFloorView(
   const floorNumber = options.floorNumber ?? 1;
   const world = buildFloorWorld(plan, options.templates);
   const brassCache = plan.brassCache;
+  let ventSteam: WallVentSteam | null = null;
   let brassKeyStand: BrassKeyStand | null = null;
   const notes = plan.pressureWing ? new PressureNotes(world, contentVersion) : null;
   const guided =
@@ -772,6 +775,7 @@ export function mountFloorView(
     },
     dressCalibration(art, tools, runSeed, face, reduced) {
       const props = furnishings?.placements ?? [];
+      counterweight?.dress(art, reduced);
       if (floorNumber === 1 && !chartCabinet)
         chartCabinet = CalibrationCabinet.mount(world, art, tools, runSeed, props, face, reduced);
       if (floorNumber === 2 && !calibrationBench)
@@ -851,6 +855,9 @@ export function mountFloorView(
       } finally {
         suppressUnlockAudio = false;
       }
+    },
+    dressVentSteam(reducedMotion) {
+      ventSteam ??= new WallVentSteam(world, reducedMotion);
     },
     setAudio(audio) {
       floorAudio = audio;
@@ -973,6 +980,8 @@ export function mountFloorView(
       return spinners.length;
     },
     dispose() {
+      ventSteam?.dispose();
+      ventSteam = null;
       formulaEvidence?.dispose();
       archive?.dispose();
       gallery?.dispose();
@@ -1089,6 +1098,7 @@ export function mountFloorView(
       counterweight?.update(dt);
       chimes?.update(dt);
       world.updateAnimations(dt);
+      ventSteam?.update(encounter.scaledDt(dt));
       turnVignette = vignetteStep(turnVignette, 0, dt, DEFAULT_VIGNETTE);
       spin(dt, cameras);
       book.update(dt, head);

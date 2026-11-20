@@ -71,9 +71,6 @@ def door_frame(b, s: PanelSlot, spec: WallSpec) -> None:
     b.box(o0 - f, o0, 0, 0.05, 0, top + f, "brass-aged", drop="yb")
     b.box(o1, o1 + f, 0, 0.05, 0, top + f, "brass-aged", drop="yb")
     b.box(o0, o1, 0, 0.05, top, top + f, "brass-aged", drop="yxX")
-    b.face([(o0, 0, 0), (o0, 0.05, 0), (o0, 0.05, top), (o0, 0, top)], (1, 0, 0), "brass-aged")
-    b.face([(o1, 0, 0), (o1, 0.05, 0), (o1, 0.05, top), (o1, 0, top)], (-1, 0, 0), "brass-aged")
-    b.face([(o0, 0, top), (o1, 0, top), (o1, 0.05, top), (o0, 0.05, top)], (0, 0, -1), "brass-aged")
     if spec.threshold:
         # Inside the footprint: a neighbour room's plate meets it on the shared edge.
         b.box(o0, o1, 0, 0.06, 0, 0.012, "brass-aged", drop="by")

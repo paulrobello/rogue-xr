@@ -110,6 +110,7 @@ export function applyRoomStyle(
   model.add(surfaces);
   model.userData.roomStyle = style;
   model.userData.finishEdge = edge;
+  if (style === 'boiler') model.userData.serviceVentPoses = bays.get('BoilerServiceBay') ?? [];
   return bayCenters.length * 4;
 }
 

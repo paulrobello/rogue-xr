@@ -12,7 +12,7 @@ import type { FloorWorld } from './floor-world.ts';
 import type { InteriorPlacement } from './interior-furnishings.ts';
 import { findPuzzleMount, kitPart } from './puzzle-placement.ts';
 
-type Control = { action: 'gear' | 'seat' | 'ring'; id: GearId } | { action: 'wind' };
+type Control = { action: 'gear' | 'seat' | 'ring'; id: GearId } | { action: 'wind' | 'repair' };
 export type CalibrationAction = Control & { distance: number };
 const IDS = [0, 1, 2] as const;
 const WHEELS = ['gear_small', 'gear_medium', 'gear_large'] as const;
@@ -34,6 +34,10 @@ export class CalibrationBench {
   readonly positions: number[];
   private readonly wheels: THREE.Group[] = [];
   private readonly arms: THREE.Object3D[] = [];
+  private readonly knobs: THREE.Object3D[] = [];
+  private collar?: THREE.Object3D;
+  private broken?: THREE.Object3D;
+  private insertion = 1;
   private readonly labels: CanvasLabel[] = [];
   private readonly hitMat = new THREE.MeshBasicMaterial({ visible: false });
   private readonly geometries: THREE.BufferGeometry[] = [];
@@ -73,7 +77,9 @@ export class CalibrationBench {
       calibrationPlan(seed),
       reducedMotion,
     );
-    bench.object.position.copy(site.center);
+    bench.object.position.copy(site.wallSurface);
+    bench.object.position.x += Math.sin(site.yaw) * 0.052;
+    bench.object.position.z += Math.cos(site.yaw) * 0.052;
     bench.object.rotation.y = site.yaw;
     world.roomGroups[site.room].add(bench.object);
     bench.object.updateWorldMatrix(true, true);
@@ -116,9 +122,9 @@ export class CalibrationBench {
     const crank = new THREE.Group();
     crank.name = 'calibration-drive';
     crank.position.set(
-      plan.kind === 'gears' ? this.positions[0] : -0.51,
-      plan.kind === 'gears' ? 0.1 : 0,
-      0.17,
+      plan.kind === 'gears' ? this.positions[0] : -0.525,
+      plan.kind === 'gears' ? 0.1 : -0.16,
+      plan.kind === 'gears' ? 0.17 : 0.178,
     );
     this.object.add(crank);
     crank.add(this.key);
@@ -158,33 +164,55 @@ export class CalibrationBench {
         this.label(String(GEAR_TEETH[slot]), (slot - 1) * 0.43, -0.385, 0.24, 0.11);
       }
     } else {
+      const bed = kitPart(art, 'OrreryBed').clone(true);
+      bed.position.x = -0.105;
+      this.object.add(
+        bed,
+        kitPart(art, 'OrreryConsole').clone(true),
+        kitPart(art, 'OrreryDrive').clone(true),
+      );
+      this.broken = kitPart(art, 'OrrerySplitCollar').clone(true);
+      this.collar = kitPart(art, 'OrreryCoupling').clone(true);
+      for (const part of [this.broken, this.collar]) {
+        part.position.set(-0.525, 0.106, 0.18);
+        this.object.add(part);
+      }
+      this.collar.visible = false;
+      this.target(this.object, { action: 'repair' }, 0.061, -0.525, 0.106, 0.183).name =
+        'orrery-repair-target';
       for (const id of IDS) {
         const arm = kitPart(art, ARMS[id]).clone(true);
-        arm.position.z += 0.065;
+        arm.position.x = -0.105;
+        arm.scale.setScalar(0.9);
         this.object.add(arm);
         this.arms.push(arm);
-        this.target(arm, { action: 'ring', id }, 0.044, 0, [0.12, 0.21, 0.3][id], 0.1).name =
-          'orrery-planet-' + id;
-        const knob = kitPart(tools, 'winding_arbor').clone(true);
-        knob.rotation.x = Math.PI / 2;
-        knob.scale.setScalar(0.38);
-        knob.position.set((id - 1) * 0.31, -0.31, 0.16);
+        this.target(
+          arm,
+          { action: 'ring', id },
+          0.044,
+          0,
+          [0.12, 0.21, 0.3][id],
+          [0.12, 0.146, 0.172][id],
+        ).name = 'orrery-planet-' + id;
+        const knob = kitPart(art, 'OrreryKnob').clone(true);
+        knob.position.set(0.382, (1 - id) * 0.19, 0.146);
         this.object.add(knob);
+        this.knobs.push(knob);
         this.target(
           this.object,
           { action: 'ring', id },
           0.06,
           knob.position.x,
           knob.position.y,
-          0.194,
+          0.193,
         ).name = 'orrery-control-' + id;
-        this.label(PLANET_NAMES[id], knob.position.x, -0.386, 0.215, id === 2 ? 0.24 : 0.14);
+        this.label(PLANET_NAMES[id], 0.528, knob.position.y, 0.13, id === 2 ? 0.186 : 0.115);
       }
       for (const [text, x, y] of [
-        ['N', 0, 0.365],
-        ['E', 0.36, 0],
-        ['S', 0, -0.34],
-        ['W', -0.36, 0],
+        ['N', -0.105, 0.34],
+        ['E', 0.231, 0],
+        ['S', -0.105, -0.34],
+        ['W', -0.441, 0],
       ] as const)
         this.label(text, x, y, 0.14, 0.055);
     }
@@ -222,6 +250,13 @@ export class CalibrationBench {
     return mesh;
   }
   sync(state: StoredCalibrationState, immediate = false) {
+    if (this.collar && this.broken) {
+      if (state.repaired && !this.state?.repaired)
+        this.insertion = immediate || this.reduced ? 1 : 0;
+      this.broken.visible = !state.repaired;
+      this.collar.visible = state.repaired === true;
+      this.poseCoupling();
+    }
     this.state = state;
     this.key.visible = state.chart;
     if (this.plan.kind === 'gears') {
@@ -258,6 +293,7 @@ export class CalibrationBench {
   private action(input: Control): Control | null {
     const state = this.state;
     if (!state || state.solved) return null;
+    if (input.action === 'repair' && state.repaired) return null;
     if (input.action === 'gear' && state.selected !== null && state.selected !== input.id) {
       const slot = state.slots.indexOf(input.id);
       if (slot >= 0) return { action: 'seat', id: slot as GearId };
@@ -307,18 +343,24 @@ export class CalibrationBench {
     const state = this.state;
     if (!state || !this.object.parent?.visible) return;
     if (this.plan.kind === 'orrery') {
+      if (this.insertion < 1) {
+        this.insertion = Math.min(1, this.insertion + dt / 0.58);
+        this.poseCoupling();
+      }
       for (const id of IDS) {
         const goal = (-state.detents[id] * Math.PI) / 2,
           arm = this.arms[id];
         arm.rotation.z +=
           Math.atan2(Math.sin(goal - arm.rotation.z), Math.cos(goal - arm.rotation.z)) *
           (this.reduced ? 1 : 1 - Math.exp(-10 * dt));
+        this.knobs[id].rotation.z = arm.rotation.z;
       }
     }
     this.pulse = Math.max(0, this.pulse - dt);
     if (this.reduced || (!state.solved && !this.pulse)) return;
     this.spin += dt * (state.solved ? 1 : 2.2);
     this.key.rotation.y = this.spin;
+    if (this.collar?.visible) this.collar.rotation.z = this.spin;
     if (!this.driver || !this.output) return;
     this.driver.rotation.z = this.spin;
     this.output.rotation.z = state.solved ? this.spin : 0;
@@ -329,6 +371,17 @@ export class CalibrationBench {
           ((slot % 2 === 0 ? -1 : 1) * this.spin * GEAR_TEETH[0]) / GEAR_TEETH[id] +
           (slot % 2 === 0 ? Math.PI / GEAR_TEETH[id] : 0);
     }
+  }
+  private poseCoupling(): void {
+    if (!this.collar) return;
+    const t = this.insertion,
+      ease = t * t * (3 - 2 * t);
+    this.collar.position.set(
+      -0.525 + 0.055 * (1 - ease),
+      0.106 + 0.032 * Math.sin(Math.PI * t),
+      0.18 + 0.14 * (1 - ease),
+    );
+    this.collar.rotation.z = (-(1 - ease) * Math.PI) / 3;
   }
   dispose() {
     this.object.removeFromParent();
