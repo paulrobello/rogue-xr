@@ -1,6 +1,7 @@
 import {
   ENCOUNTER_CONTENT_VERSION,
   FOUNDRY_VERSION,
+  HIDDEN_PANEL_VERSION,
   PRESSURE_WORKS_VERSION,
   RETURN_PASSAGES_VERSION,
 } from '../combat/encounter-choice.ts';
@@ -84,6 +85,7 @@ import {
   type TreasureLoot,
   useHearth,
 } from '../rules/run.ts';
+import type { StoredHiddenPanelState } from '../rules/types.ts';
 import {
   bankRunCogs,
   buyPermanentCard,
@@ -232,7 +234,12 @@ export type FlowEvent =
   | CounterweightResultView
   | AlchemyEvent
   | { readonly type: 'formula' }
+  | HiddenPanelEvent
   | BellChimeEvent;
+export interface HiddenPanelEvent {
+  readonly type: 'hidden-panel';
+  readonly action: 'discover' | 'open';
+}
 
 export interface FlowOptions {
   workshop: WorkshopState;
@@ -355,6 +362,36 @@ export class RunFlow {
     if (!next) return false;
     this.runValue = next;
     this.emit(event);
+    return true;
+  }
+  get hiddenPanel(): StoredHiddenPanelState {
+    return this.runValue?.hiddenPanel ?? { discovered: false, opened: false };
+  }
+  discoverHiddenPanel(): boolean {
+    if (
+      this.phaseValue !== 'explore' ||
+      !this.runValue ||
+      this.floorNumberValue !== 2 ||
+      this.contentVersionValue < HIDDEN_PANEL_VERSION ||
+      this.hiddenPanel.discovered
+    )
+      return false;
+    this.runValue = { ...this.runValue, hiddenPanel: { ...this.hiddenPanel, discovered: true } };
+    this.emit({ type: 'hidden-panel', action: 'discover' });
+    return true;
+  }
+  openHiddenPanel(): boolean {
+    if (
+      this.phaseValue !== 'explore' ||
+      !this.runValue ||
+      this.floorNumberValue !== 2 ||
+      this.contentVersionValue < HIDDEN_PANEL_VERSION ||
+      !this.hiddenPanel.discovered ||
+      this.hiddenPanel.opened
+    )
+      return false;
+    this.runValue = { ...this.runValue, hiddenPanel: { ...this.hiddenPanel, opened: true } };
+    this.emit({ type: 'hidden-panel', action: 'open' });
     return true;
   }
 

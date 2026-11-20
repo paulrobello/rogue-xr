@@ -348,3 +348,7 @@ export interface StoredCalibrationState {
   readonly solved: boolean;
   readonly claimed: boolean;
 }
+export interface StoredHiddenPanelState {
+  readonly discovered: boolean;
+  readonly opened: boolean;
+}

@@ -41,7 +41,7 @@ export interface SealedDoor extends DoorRef {
   style: SealStyle;
 }
 
-export type PuzzleGate = 'counterweight' | 'pressure' | 'thorn' | 'archive';
+export type PuzzleGate = 'counterweight' | 'pressure' | 'thorn' | 'archive' | 'panel';
 
 export type FloorConnection = readonly [DoorRef, DoorRef] & { puzzleGate?: PuzzleGate };
 
@@ -57,6 +57,7 @@ export interface FloorPlan {
   /** Doors that lead nowhere; the world closes each with a wall or a boarded door. */
   sealed: readonly SealedDoor[];
   guardianRoom: number;
+  hiddenPassage?: { source: DoorRef; decoys: readonly DoorRef[]; treasureRoom: number };
   pressureWing?: { gallery: number; pumpRoom: number; source: DoorRef };
 }
 

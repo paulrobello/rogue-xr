@@ -36,7 +36,7 @@ function site(plan: FloorPlan, ref: DoorRef): Site {
   return door;
 }
 
-function attachRoom(
+export function attachRoom(
   plan: FloorPlan,
   ref: DoorRef,
   turns: QuarterTurns,
@@ -69,7 +69,10 @@ function attachRoom(
     depth: host.depth + 1,
     wing: host.wing,
     encounter: null,
-    loot: role === 'treasure' ? [{ socketId: 'chest', kind: 'card' }] : [],
+    loot:
+      role === 'treasure' && template.lootSockets[0]
+        ? [{ socketId: template.lootSockets[0].id, kind: 'card' }]
+        : [],
   };
   const next = {
     ...plan,

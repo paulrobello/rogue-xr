@@ -37,6 +37,10 @@ The wax-sealed ledger on Floor 1 offers a seed-specific job. Point and pull the 
 
 Once the pressure supply door opens, inspect the cabinet’s chart and take its winding key. The seed chooses a gear train or an orrery in the Upper Works. Restoring it releases a bonus card at the cabinet downstairs. **Items** retains the diagram, and installed parts and ring bearings survive Continue. [Instrument mechanics](docs/puzzle-recipe-book.md#the-clockmakers-calibration-order)
 
+## Upper Works service recesses
+
+Some seeds have a secret service room on Floor 2. Knock on a service panel using a controller trigger, a nearby grip or a desktop click. A hollow panel rings longer and its recessed brass catch moves outward. Pull the catch to open the passage. **Items** keeps the discovered landmark. Existing saves retain their original Upper Works layout.
+
 ## CI and deploy
 
 `.github/workflows/ci.yml` runs `make checkall-ci` on every push to `main` and every pull request. It checks out this repo and `paulrobello/mux-xr` side by side, because `@par/xr-workspace` is a `file:` dependency on the sibling. The mux-xr commit is pinned in one place, [toolkit-release.json](toolkit-release.json): to take a newer toolkit, change its `sha` to a full commit, run the gate locally against that checkout, and push.

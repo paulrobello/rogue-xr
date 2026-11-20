@@ -3,6 +3,7 @@ import { EncounterDirector } from '../combat/encounter.ts';
 import {
   chooseEncounter,
   ENCOUNTER_CONTENT_VERSION,
+  HIDDEN_PANEL_VERSION,
   PRESSURE_WORKS_VERSION,
   RETURN_PASSAGES_VERSION,
   UPPER_WORKS_VERSION,
@@ -21,6 +22,7 @@ import {
   isShowcaseFloor,
   SHOWCASE_UPPER_SEED,
 } from '../floor/generate.ts';
+import { attachHiddenPassage } from '../floor/hidden-passage.ts';
 import { attachFloorOneTopology } from '../floor/return-passages.ts';
 import { placeStairEntry } from '../floor/stairs.ts';
 import { nearSet, shellSet } from '../floor/visibility.ts';
@@ -78,6 +80,7 @@ import {
   type RoomStyleKit,
   roomStyleFor,
 } from './room-styles.ts';
+import { ServicePanels } from './service-panels.ts';
 import { Stairwell } from './stairwell.ts';
 import { StrikingClock } from './striking-clock.ts';
 import { type RigidNode, rigidAngle } from './study-room.ts';
@@ -172,6 +175,8 @@ export interface FloorView {
     face: (id: string) => CofferCardFace,
     reduced: boolean,
   ): void;
+  readonly panels: ServicePanels | null;
+  dressPanels(art: THREE.Object3D, reducedMotion: boolean): void;
   readonly counterweight: CounterweightStation | null;
   dressChimes(art: THREE.Object3D): void;
   dressStairs(model: THREE.Object3D): void;
@@ -311,6 +316,7 @@ export function playableFloorPlan(
     floorNumber === 2 && seed === SHOWCASE_UPPER_SEED
       ? { ...generated, rooms: generated.rooms.map((r) => ({ ...r, encounter: null })) }
       : generated;
+  if (floorNumber === 2 && contentVersion >= HIDDEN_PANEL_VERSION) return attachHiddenPassage(base);
   if (contentVersion < PRESSURE_WORKS_VERSION || floorNumber !== 1) return base;
   if (contentVersion < RETURN_PASSAGES_VERSION) return attachPressureWing(base);
   return attachFloorOneTopology(base);
@@ -367,6 +373,7 @@ export function mountFloorView(
   let office: CommissionOffice | null = null;
   let calibrationBench: CalibrationBench | null = null,
     chartCabinet: CalibrationCabinet | null = null;
+  let panels: ServicePanels | null = null;
   let counterweight: CounterweightStation | null = null;
   const floorNumber = options.floorNumber ?? 1;
   const world = buildFloorWorld(plan, options.templates);
@@ -704,6 +711,13 @@ export function mountFloorView(
       if (floorNumber === 2 && !calibrationBench)
         calibrationBench = CalibrationBench.mount(world, art, tools, runSeed, props, reduced);
     },
+    get panels() {
+      return panels;
+    },
+    dressPanels(art, reducedMotion) {
+      if (!panels && world.plan.hiddenPassage)
+        panels = new ServicePanels(world, art, reducedMotion);
+    },
     get counterweight() {
       return counterweight;
     },
@@ -870,6 +884,7 @@ export function mountFloorView(
       office?.dispose();
       calibrationBench?.dispose();
       chartCabinet?.dispose();
+      panels?.dispose();
       counterweight?.dispose();
       chimes?.dispose();
       stairs?.dispose();
@@ -971,6 +986,7 @@ export function mountFloorView(
       office?.update(dt);
       calibrationBench?.update(dt);
       chartCabinet?.update(dt);
+      panels?.update(dt);
       counterweight?.update(dt);
       chimes?.update(dt);
       world.updateAnimations(dt);

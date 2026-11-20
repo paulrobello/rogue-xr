@@ -31,6 +31,7 @@ import argparse
 import hashlib
 import json
 import re
+import runpy
 import shutil
 import subprocess
 import sys
@@ -339,6 +340,19 @@ def build_sfx(spec: dict, only: set[str], derived: Path, out: Path) -> dict[str,
     for cue in spec["cues"]:
         cid = cue["id"]
         if only and cid not in only:
+            continue
+        if cid in ("panel-solid", "panel-hollow"):
+            src = ROOT / "scripts/assets/build-panel-knocks.py"
+            clip = runpy.run_path(str(src))["build"](cid, cid == "panel-hollow", out / "sfx")
+            dest = out / "sfx" / f"{cid}.ogg"
+            results[cid] = {
+                "id": cid, "class": cue["class"], "source_file": rel(src),
+                "source_sha256": sha256_file(src), "runtime_file": rel(dest),
+                "runtime_sha256": clip["sha256"], "runtime_bytes": dest.stat().st_size,
+                "runtime_probe": probe(dest), "decoded_duration_s": clip["seconds"],
+                "measured": measure(dest), "steps": ["Match the two strikes by onset RMS before Opus encoding"],
+                "generation": {"method": "original deterministic modal synthesis"},
+            }
             continue
         source_id = "card-draw" if cid == "paper-unfold" else cid
         if "procedural" in cue:

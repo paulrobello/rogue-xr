@@ -160,7 +160,7 @@ Use seed `N0TE0032` for a wing branching from the starting hall and a mix of cof
 ### E3. Optional paths
 
 - **Locked side wings** branch off the main path (E1).
-- **Hidden doors** are loose wall panels. The Scrying Lens reveals them, or the player can knock on panels and listen for a hollow sound.
+- **Hidden doors** can occur in the Upper Works on new runs. Knock on the steel service panels and listen to the response. Solid plates give a short tap. The hollow plate resonates, visibly shifts and raises a brass catch. Pull the catch to walk into the service recess and open its coffer. A discovered latch or opened door stays that way on return. The Scrying Lens is a future field-card alternative.
 - **Elite detour:** the elite room becomes optional, with a Vault Key as its reward.
 - **Shortcut doors** connect otherwise distant locations. The Floor 1 grille opens when the Upper Works balance lifts its counterweight. Other shortcuts can use far-side latches.
 

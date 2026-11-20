@@ -1322,6 +1322,60 @@
           "fundamental_hz": 329.6276
         }
       }
+    },
+    "panel-solid": {
+      "id": "panel-solid",
+      "class": "positional",
+      "source_file": "scripts/assets/build-panel-knocks.py",
+      "source_sha256": "f64c20b158bafbf7ce437ff60d66d20f32e479dc55000752ba6b55111bbdef27",
+      "runtime_file": "public/assets/audio/sfx/panel-solid.ogg",
+      "runtime_sha256": "58838417cdbd441e5b55b8ea789c3149365c529c9f096526684f04e05c001421",
+      "runtime_bytes": 3200,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.2665
+      },
+      "decoded_duration_s": 0.26,
+      "measured": {
+        "integrated_lufs": -24.9,
+        "true_peak_dbtp": -3.9,
+        "momentary_max_lufs": -24.9
+      },
+      "steps": [
+        "Match the two strikes by onset RMS before Opus encoding"
+      ],
+      "generation": {
+        "method": "original deterministic modal synthesis"
+      }
+    },
+    "panel-hollow": {
+      "id": "panel-hollow",
+      "class": "positional",
+      "source_file": "scripts/assets/build-panel-knocks.py",
+      "source_sha256": "f64c20b158bafbf7ce437ff60d66d20f32e479dc55000752ba6b55111bbdef27",
+      "runtime_file": "public/assets/audio/sfx/panel-hollow.ogg",
+      "runtime_sha256": "7840271263cc58761ae176631ffbf4eda33ad21accadcc430d5cc87910655445",
+      "runtime_bytes": 5246,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.5865
+      },
+      "decoded_duration_s": 0.58,
+      "measured": {
+        "integrated_lufs": -26.9,
+        "true_peak_dbtp": -9.1,
+        "momentary_max_lufs": -22.6
+      },
+      "steps": [
+        "Match the two strikes by onset RMS before Opus encoding"
+      ],
+      "generation": {
+        "method": "original deterministic modal synthesis"
+      }
     }
   },
   "music": {

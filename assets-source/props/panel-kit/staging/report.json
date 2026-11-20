@@ -1,0 +1,18 @@
+{
+  "glb_sha256": "6e650003189e98a474b93667736779bf966a7182991ff822dc52e44064bd8596",
+  "generator_sha256": "2fb5eacb27acf88925a8f72fd0a4f461e543c7fea2b7cc42b23d0c2efaf635bb",
+  "source_blend_sha256": "1e4172464caeed3be76066c7f8114c63e89cef41def183631305ec3cee7ffec2",
+  "axes": "glTF +Y up, +Z front; metres",
+  "root_nodes": [
+    "PanelFrame",
+    "PanelLeaf",
+    "PanelCatch"
+  ],
+  "triangles": 5768,
+  "blender": "5.2.3 LTS",
+  "visual_approval": "pending independent and owner review",
+  "limitations": [
+    "No authored LOD or collision meshes",
+    "Runtime play-distance, motion and interaction review pending"
+  ]
+}

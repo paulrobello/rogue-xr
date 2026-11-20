@@ -8,6 +8,7 @@ import {
   type StoredCommissionState,
   type StoredConservatoryFormula,
   type StoredCounterweightState,
+  type StoredHiddenPanelState,
   type StoredPressureState,
 } from './types.ts';
 
@@ -48,6 +49,7 @@ export interface RunState {
   readonly conservatoryFormula?: StoredConservatoryFormula;
   readonly commission?: StoredCommissionState;
   readonly calibration?: StoredCalibrationState;
+  readonly hiddenPanel?: StoredHiddenPanelState;
   /** Cross-floor bell puzzle progress. Absent in older saves and treated as idle. */
   readonly bellChimes?: StoredBellChimesState;
   /** Rooms whose marked book caches have paid out. */

@@ -197,6 +197,28 @@ def check_stairwell(errors: list[str]) -> None:
     print(f"asset-check props/stairwell: {len(roots)} directional flights, {path.stat().st_size} bytes")
 
 
+def check_hidden_panel(errors: list[str]) -> None:
+    source = ROOT / "assets-source/props/panel-kit"
+    runtime = ROOT / "public/assets/props/panel-kit/panel-kit.glb"
+    manifest = json.loads((source / "manifest.json").read_text())
+    for path, field in [(runtime, "glb_sha256"), (source / "panel-kit.blend", "source_blend_sha256"),
+                        (ROOT / "scripts/assets/build-panel-kit.py", "generator_sha256")]:
+        if sha256(path) != manifest[field]:
+            errors.append(f"Service panel hash mismatch: {path.name}")
+    glb = glb_json(runtime)
+    if set(manifest["root_nodes"]) - {n.get("name") for n in glb["nodes"]}:
+        errors.append("Missing service-panel controls")
+    if any("normalTexture" not in m or "baseColorTexture" not in m.get("pbrMetallicRoughness", {})
+           for m in glb["materials"]):
+        errors.append("Service panel material lacks color or relief texture")
+    sounds = json.loads((ROOT / "assets-source/audio/panel-knocks/manifest.json").read_text())
+    if sha256(ROOT / sounds["generator"]) != sounds["generatorSha256"]:
+        errors.append("Service-panel sound generator hash mismatch")
+    for clip in sounds["clips"]:
+        if sha256(ROOT / "public/assets/audio/sfx" / (clip["id"] + ".ogg")) != clip["sha256"]:
+            errors.append(f"Service-panel sound hash mismatch: {clip['id']}")
+
+
 def check_architectural_finishes(errors: list[str]) -> dict:
     """Check the reusable boiler/timber finish kit and its source chain."""
     err = lambda msg: errors.append(f"props/architectural-finishes: {msg}")  # noqa: E731
@@ -1216,6 +1238,7 @@ def main() -> int:
         sizes = ", ".join(f"{k} {v['width']}px" for k, v in s.get("maps", {}).items())
         print(f"asset-check props/table-decor: tris {s.get('perKind')}, {len(s.get('glb', {}).get('materials', []))} material; {sizes}")
     check_stairwell(errors)
+    check_hidden_panel(errors)
     check_alchemy(errors)
     check_mechanism_kit(errors, "archive-kit")
     check_mechanism_kit(errors, "commission-kit")

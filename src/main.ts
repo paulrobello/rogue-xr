@@ -9,6 +9,7 @@ import { sha256 as architecturalFinishRevision } from '../assets-source/props/ar
 import { glb_sha256 as archiveRevision } from '../assets-source/props/archive-kit/manifest.json';
 import { glb_sha256 as calibrationRevision } from '../assets-source/props/calibration-kit/manifest.json';
 import { glb_sha256 as commissionRevision } from '../assets-source/props/commission-kit/manifest.json';
+import { glb_sha256 as panelRevision } from '../assets-source/props/panel-kit/manifest.json';
 import { hashes as instrumentHashes } from '../assets-source/props/puzzle-instruments/manifest.json';
 import { sha256 as stairwellRevision } from '../assets-source/props/stairwell/report.json';
 import { audioStateForFlow } from './audio/cues.ts';
@@ -119,6 +120,7 @@ import { dressPumpMaterials } from './world/pump-materials.ts';
 import { mountRoomAssetProof } from './world/room-asset-proof.ts';
 import { lightRoomStyle } from './world/room-style-lighting.ts';
 import { type RoomStyleKit, roomStyleFor, roomStyleKitFromScene } from './world/room-styles.ts';
+import type { PanelHit } from './world/service-panels.ts';
 import { StairFade, StairTransit } from './world/stair-transit.ts';
 import { loadBookBindings } from './world/study-books.ts';
 import {
@@ -671,6 +673,20 @@ function calibrationKit(): Promise<THREE.Object3D> {
     });
   return calibrationArt;
 }
+let panelArt: Promise<THREE.Object3D> | undefined;
+function panelKit(): Promise<THREE.Object3D> {
+  panelArt ??= new GLTFLoader()
+    .loadAsync(`/assets/props/panel-kit/panel-kit.glb?v=${panelRevision}`)
+    .then(({ scene }) => {
+      reflect(scene, 0.52);
+      return scene;
+    })
+    .catch((error) => {
+      panelArt = undefined;
+      throw error;
+    });
+  return panelArt;
+}
 function wizardPaintings(): Promise<THREE.Texture[]> {
   portraitTextures ??= Promise.all(
     portraitAssets.map(async ({ name, runtimeSha256 }) => {
@@ -691,6 +707,8 @@ function syncPuzzles(target: FloorView, immediate = false): void {
   const run = flow.run;
   if (!run) return;
   if (immediate) {
+    target.panels?.sync(flow.hiddenPanel, true);
+    target.world.setPuzzleGateOpen('panel', flow.hiddenPanel.opened, true);
     target.office?.sync(flow.commission);
     target.calibrationBench?.sync(flow.calibration, true);
     target.chartCabinet?.sync(flow.calibration, true);
@@ -842,6 +860,11 @@ const dressFloor = async (target: FloorView): Promise<void> => {
         chestCardFace,
         hitFx.reducedMotion,
       );
+    }
+    if (target.world.plan.hiddenPassage) {
+      const art = await panelKit();
+      if (target !== floor) return;
+      target.dressPanels(art, hitFx.reducedMotion);
     }
     syncPuzzles(target, true);
     for (const room of target.styledRooms)
@@ -1007,6 +1030,12 @@ flow.onChange((event) => {
       event.action === 'claim' ? camera : undefined,
     );
     floor?.calibrationBench?.sync(flow.calibration);
+    storedSnapshot = flow.snapshot(Date.now(), floor?.world.current ?? flow.room);
+    return;
+  }
+  if (event.type === 'hidden-panel') {
+    floor?.panels?.sync(flow.hiddenPanel);
+    floor?.world.setPuzzleGateOpen('panel', flow.hiddenPanel.opened);
     storedSnapshot = flow.snapshot(Date.now(), floor?.world.current ?? flow.room);
     return;
   }
@@ -1601,6 +1630,28 @@ function operateCalibration(hit: CalibrationAction): boolean {
   if (changed) audio?.playSfx('gear-clank', undefined, 0.48);
   return changed;
 }
+function operatePanel(hit: PanelHit, side?: XRHandedness): boolean {
+  if (!floor?.panels || !canOpenLoot()) return false;
+  const at = floor.panels.strike(hit.index);
+  if (hit.action === 'unlatch') {
+    if (!flow.openHiddenPanel()) return false;
+    audio?.playSfx('door-open', at);
+  } else {
+    audio?.playSfx(hit.hollow ? 'panel-hollow' : 'panel-solid', at);
+    if (hit.hollow && flow.discoverHiddenPanel())
+      floor.showBookSecret(
+        { text: 'Hollow service panel', caption: 'A recessed catch springs loose.' },
+        camera,
+      );
+  }
+  if (side) {
+    const inputs = Array.from(renderer.xr.getSession()?.inputSources ?? []).filter(
+      (s) => s.handedness === side,
+    );
+    pulseHaptics(inputs, hit.hollow ? 0.29 : 0.15, hit.hollow ? 110 : 35);
+  }
+  return true;
+}
 function inspectFormula(clue: FormulaClue): boolean {
   if (!floor || !flow.run) return false;
   flow.learnFormulaClue(clue);
@@ -1663,10 +1714,12 @@ function fieldHit(origin: THREE.Vector3, direction: THREE.Vector3) {
   const office = floor.office?.pick(origin, direction);
   const calibration = floor.calibrationBench?.pick(origin, direction),
     folio = floor.chartCabinet?.pick(origin, direction);
+  const panel = floor.panels?.pick(origin, direction);
   const hits = [
     ...(office ? [{ kind: 'commission' as const, hit: office }] : []),
     ...(calibration ? [{ kind: 'calibration' as const, hit: calibration }] : []),
     ...(folio ? [{ kind: 'folio' as const, hit: folio }] : []),
+    ...(panel ? [{ kind: 'hidden-panel' as const, hit: panel }] : []),
     ...(archive ? [{ kind: 'archive' as const, hit: archive }] : []),
     ...(evidence ? [{ kind: 'formula-clue' as const, hit: evidence }] : []),
     ...(weight ? [{ kind: 'counterweight' as const, hit: weight }] : []),
@@ -1699,6 +1752,8 @@ const activatePickup = (
       return operateCalibration(pick.hit);
     case 'folio':
       return readFolio(pick.hit);
+    case 'hidden-panel':
+      return operatePanel(pick.hit, hand);
     case 'archive':
       return operateArchive(pick.hit.action);
     case 'formula-clue':
@@ -1928,6 +1983,8 @@ for (const index of [0, 1]) {
     if (cal && operateCalibration(cal)) return;
     const folio = floor.chartCabinet?.near(position, GRAB_REACH);
     if (folio && readFolio(folio)) return;
+    const panel = floor.panels?.near(position, GRAB_REACH);
+    if (panel && operatePanel(panel, side)) return;
     const archive = floor.archive?.near(position, GRAB_REACH);
     if (archive && operateArchive(archive.action)) return;
     const evidence = floor.formulaEvidence?.near(position, GRAB_REACH);

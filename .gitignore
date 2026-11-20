@@ -43,3 +43,7 @@ assets-source/props/commission-kit/staging/*.png
 assets-source/props/calibration-kit/staging/*.glb
 assets-source/props/calibration-kit/staging/*.png
 !assets-source/props/calibration-kit/staging/review*.png
+# Source textures are packed in the panel blend. Only authored review renders are tracked.
+assets-source/props/panel-kit/staging/*.glb
+assets-source/props/panel-kit/staging/*.png
+!assets-source/props/panel-kit/staging/review*.png

@@ -1540,6 +1540,13 @@ export class FlowUi {
       if (run.calibration.solved && !run.calibration.claimed)
         rows.push({ id: 'instrument-prize', label: 'Supply cabinet · released' });
     }
+    if (run?.hiddenPanel?.discovered)
+      rows.push({
+        id: 'discovered-panel',
+        label: run.hiddenPanel.opened
+          ? 'Upper Works · service recess open'
+          : 'Upper Works · loose service catch',
+      });
     const formula = run?.conservatoryFormula;
     if (run && formula) {
       if (formula.brewed && !formula.revealed)

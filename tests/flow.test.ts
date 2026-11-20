@@ -267,7 +267,7 @@ describe('continue from a snapshot', () => {
     expect(resumed.snapshot()?.contentVersion).toBe(1);
     expect(resumed.abandonRun()).toBe(true);
     expect(resumed.newRun('SPIRE002')).toBe(true);
-    expect(resumed.snapshot()?.contentVersion).toBe(5);
+    expect(resumed.snapshot()?.contentVersion).toBe(6);
   });
 
   it('restores the same run and offer, and continues identically', () => {

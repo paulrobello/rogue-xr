@@ -35,6 +35,7 @@ import {
 } from '../rules/pressure.ts';
 import type { PendingLoot, RewardOffer, RewardTier, RunState } from '../rules/run.ts';
 import { floorSeedFor } from '../rules/run.ts';
+import type { StoredHiddenPanelState } from '../rules/types.ts';
 import {
   createWorkshop,
   maxTier,
@@ -454,6 +455,19 @@ function validateRunState(
       : formula(r.conservatoryFormula, `${path}.conservatoryFormula`, seed);
   const commissionState =
     r.commission === undefined ? undefined : commission(r.commission, `${path}.commission`, seed);
+  const hiddenPanelState =
+    r.hiddenPanel === undefined
+      ? undefined
+      : (() => {
+          const h = rec(r.hiddenPanel, `${path}.hiddenPanel`);
+          if (
+            typeof h.discovered !== 'boolean' ||
+            typeof h.opened !== 'boolean' ||
+            (h.opened && !h.discovered)
+          )
+            fail(`${path}.hiddenPanel`, 'invalid panel progression');
+          return { discovered: h.discovered, opened: h.opened } as StoredHiddenPanelState;
+        })();
   if (
     formulaState &&
     (formulaState.added.length || formulaState.brewed) &&
@@ -496,6 +510,7 @@ function validateRunState(
     ...(alchemyState === undefined ? {} : { alchemy: alchemyState }),
     ...(formulaState === undefined ? {} : { conservatoryFormula: formulaState }),
     ...(commissionState === undefined ? {} : { commission: commissionState }),
+    ...(hiddenPanelState === undefined ? {} : { hiddenPanel: hiddenPanelState }),
     ...(bellChimesState === undefined ? {} : { bellChimes: bellChimesState }),
     ...(calibrationState && { calibration: calibrationState }),
     ...(bookSecretOpenedRooms === undefined ? {} : { bookSecretOpenedRooms }),

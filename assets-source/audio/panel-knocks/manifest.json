@@ -1,0 +1,31 @@
+{
+  "origin": "Original modal synthesis for Clockwork Spire",
+  "license": "MIT",
+  "generator": "scripts/assets/build-panel-knocks.py",
+  "generatorSha256": "f64c20b158bafbf7ce437ff60d66d20f32e479dc55000752ba6b55111bbdef27",
+  "encoder": "ffmpeg version 7.0.2-static https://johnvansickle.com/ffmpeg/  Copyright (c) 2000-2024 the FFmpeg developers",
+  "clips": [
+    {
+      "id": "panel-solid",
+      "codec": "Opus",
+      "channels": 1,
+      "sampleRate": 48000,
+      "seconds": 0.26,
+      "peakDbfs": -4.18,
+      "onsetRmsDbfs": -16.59,
+      "tailRmsDbfs": -52.62,
+      "sha256": "58838417cdbd441e5b55b8ea789c3149365c529c9f096526684f04e05c001421"
+    },
+    {
+      "id": "panel-hollow",
+      "codec": "Opus",
+      "channels": 1,
+      "sampleRate": 48000,
+      "seconds": 0.58,
+      "peakDbfs": -9.31,
+      "onsetRmsDbfs": -16.61,
+      "tailRmsDbfs": -23.56,
+      "sha256": "7840271263cc58761ae176631ffbf4eda33ad21accadcc430d5cc87910655445"
+    }
+  ]
+}

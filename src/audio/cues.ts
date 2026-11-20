@@ -57,6 +57,8 @@ export const SFX = {
   'victory-sting': sfx('victory-sting', 'ui', 0.5),
   'cog-pickup': sfx('cog-pickup', 'positional', 0.03),
   'block-ward': sfx('block-ward', 'positional', 0.1),
+  'panel-solid': sfx('panel-solid', 'positional', 0.08),
+  'panel-hollow': sfx('panel-hollow', 'positional', 0.08),
 } as const satisfies Record<string, SfxDef>;
 
 export type SfxId = keyof typeof SFX;

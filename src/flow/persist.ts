@@ -46,7 +46,8 @@ export function bindFlowPersistence(
       event.type === 'formula' ||
       event.type === 'commission' ||
       event.type === 'calibration' ||
-      event.type === 'alchemy'
+      event.type === 'alchemy' ||
+      event.type === 'hidden-panel'
     ) {
       const snapshot = flow.snapshot(Date.now(), roomIndex());
       if (snapshot) enqueue(() => saveRunSnapshot(db, snapshot));

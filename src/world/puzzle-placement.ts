@@ -105,7 +105,10 @@ export function findPuzzleMount(
   const stream = placementKey
     ? Stream.fromKey(`${world.plan.seed}:mount:${placementKey}`)
     : undefined;
-  for (const room of stream?.shuffle(rooms) ?? rooms) {
+  const offered = world.plan.hiddenPassage
+    ? rooms.filter((room) => room !== world.plan.hiddenPassage?.treasureRoom)
+    : rooms;
+  for (const room of stream?.shuffle(offered) ?? offered) {
     const mount = mountingPoint(world, room, props, stream, halfWidth, depth);
     if (mount) return mount;
   }

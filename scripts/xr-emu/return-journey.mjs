@@ -7,7 +7,7 @@ import { chromium } from 'playwright';
 import { exerciseCalibration } from './calibration-journey.mjs';
 
 const {
-  values: { base, seed, out, cdp, formula, commission, calibration },
+  values: { base, seed, out, cdp, formula, commission, calibration, panels },
 } = parseArgs({
   options: {
     base: { type: 'string', default: 'http://localhost:4266' },
@@ -17,6 +17,7 @@ const {
     formula: { type: 'boolean', default: false },
     commission: { type: 'boolean', default: false },
     calibration: { type: 'boolean', default: false },
+    panels: { type: 'boolean', default: false },
   },
 });
 await mkdir(out, { recursive: true });
@@ -462,6 +463,61 @@ async function exerciseCommission() {
   );
   console.log('PASS commission', kind);
 }
+async function exercisePanels() {
+  await page.goto(base + '/?seed=' + seed + '&debug');
+  await ready(1);
+  await stair(2);
+  const layout = await ev(() => window.__combat.floor.world.plan.hiddenPassage);
+  assert(layout && layout.decoys.length, 'fixture needs a true and a solid panel');
+  await crossing('panel', false);
+  await ev(() => {
+    const a = window.__combat.audio,
+      original = a.playSfx.bind(a);
+    window.knocks = [];
+    a.playSfx = (id, ...args) => {
+      if (id.startsWith('panel-')) window.knocks.push(id);
+      return original(id, ...args);
+    };
+  });
+  for (const [ref, hollow] of [
+    [layout.decoys[0], false],
+    [layout.source, true],
+  ]) {
+    const root = hollow ? 'hollow-service-panel' : 'solid-service-panel-' + ref.room,
+      leaf = 'service-leaf-' + ref.room;
+    await approach(root, leaf, 1.6, [0.76, 1.29, 0.035]);
+    await click(leaf, [0.76, 1.29, 0.035]);
+    assert.equal(await ev(() => window.__flow.flow.hiddenPanel.discovered), hollow);
+  }
+  assert.deepEqual(await ev(() => window.knocks), ['panel-solid', 'panel-hollow']);
+  const catchName = 'service-catch-' + layout.source.room;
+  await shot('sprung-catch');
+  await resumeAt(2);
+  assert(await ev(() => window.__flow.flow.hiddenPanel.discovered));
+  await approach('hollow-service-panel', catchName, 1.5);
+  await click(catchName);
+  assert(await ev(() => window.__flow.flow.hiddenPanel.opened));
+  await page.waitForTimeout(800);
+  await shot('secret-open');
+  await crossing('panel', true);
+  await ev(() => {
+    const f = window.__combat.floor,
+      w = f.world,
+      room = w.plan.hiddenPassage.treasureRoom,
+      coffer = w.coffers.find((c) => c.room === room);
+    if (
+      w.current !== room ||
+      !coffer ||
+      !window.__flow.flow.openLoot(room, coffer.socketId, coffer.kind)
+    )
+      throw Error('Cannot reach the service recess reward');
+  });
+  await resumeAt(2);
+  await crossing('panel', true);
+  assert.deepEqual(errors, []);
+  await writeFile(join(out, 'check.json'), JSON.stringify({ seed, layout, errors }, null, 2));
+  console.log('PASS service panels');
+}
 async function exerciseReturnJourney() {
   await page.goto(base + '/?seed=' + seed + '&debug');
   await ready(1);
@@ -661,6 +717,7 @@ try {
       shot,
       errors,
     });
+  else if (panels) await exercisePanels();
   else if (formula) await exerciseFormula();
   else await exerciseReturnJourney();
 } catch (error) {
