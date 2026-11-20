@@ -93,6 +93,7 @@ export function createXrRig(
     const visual = createStandardHand({
       handColor: WORKSPACE_COLORS.handColor,
       armColor: WORKSPACE_COLORS.armColor,
+      armNearFade: false,
       theme: {
         hand: {
           color: '#b87333',

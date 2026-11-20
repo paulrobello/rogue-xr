@@ -1,10 +1,14 @@
+// @vitest-environment node
+import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { generateUpperFloor } from '../src/floor/generate.ts';
 import { alchemyRecipe } from '../src/rules/alchemy.ts';
 import { INGREDIENT_ROOTS } from '../src/world/alchemy-conservatory.ts';
 import { buildFloorWorld } from '../src/world/floor-world.ts';
+import { kitPart } from '../src/world/puzzle-placement.ts';
 import { CLOCK_CYCLE, StrikingClock } from '../src/world/striking-clock.ts';
+import { nodeGeometryLoader } from './helpers/gltf-node.ts';
 
 function artKit(): THREE.Group {
   const art = new THREE.Group();
@@ -49,6 +53,47 @@ function nextStrike(clock: StrikingClock): boolean {
 }
 
 describe('striking clock', () => {
+  it('keeps the exported brass pin in front of both pointers at every angle', async () => {
+    const bytes = await readFile('public/assets/props/alchemy-kit/alchemy-kit.glb');
+    const art = (
+      await nodeGeometryLoader().parseAsync(
+        bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
+        '',
+      )
+    ).scene;
+    const clock = new StrikingClock(world() as never, 0, 1, art, 'MAPTEST2');
+    const hour = kitPart(clock.object, 'ClockHourHand');
+    const minute = kitPart(clock.object, 'ClockMinuteHand');
+    const cap = kitPart(clock.object, 'ClockHandHub');
+    const origin = cap.getWorldPosition(new THREE.Vector3());
+    const ray = new THREE.Raycaster(
+      origin.clone().add(new THREE.Vector3(0, 0, 0.2)),
+      new THREE.Vector3(0, 0, -1),
+    );
+    for (const hand of [hour, minute]) {
+      expect(hand.position.x).toBeCloseTo(origin.x, 5);
+      expect(hand.position.y).toBeCloseTo(origin.y, 5);
+    }
+    clock.update(((12 - clock.dialHours) * CLOCK_CYCLE) / 12);
+    const h = new THREE.Box3().setFromObject(hour, true);
+    const m = new THREE.Box3().setFromObject(minute, true);
+    expect(h.max.y - origin.y).toBeCloseTo(0.11);
+    expect(m.max.y - origin.y).toBeCloseTo(0.166);
+    expect(h.max.x).toBeLessThan(0.014);
+    expect(h.max.x).toBeGreaterThan(m.max.x);
+    for (const advance of [0, 10.8, 22.7, 18.5]) {
+      clock.update(advance);
+      clock.object.updateWorldMatrix(true, true);
+      expect(cap.getWorldPosition(new THREE.Vector3())).toEqual(origin);
+      const pinHit = ray.intersectObject(cap, true)[0];
+      expect(pinHit).toBeDefined();
+      expect(ray.intersectObject(clock.object, true)[0]?.object).toBe(pinHit.object);
+      const hours = clock.dialHours;
+      expect(hour.rotation.z).toBeCloseTo((-hours * Math.PI) / 6);
+      expect(minute.rotation.z).toBeCloseTo(-(hours % 1) * 2 * Math.PI);
+    }
+    clock.dispose();
+  });
   it('seats the entire inscription ahead of projecting wall moldings', () => {
     const seed = 'MAPTEST2';
     const floor = buildFloorWorld(generateUpperFloor(seed));

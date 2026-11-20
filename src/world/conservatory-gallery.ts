@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { FloorWorld } from './floor-world.ts';
 import type { InteriorPlacement } from './interior-furnishings.ts';
 import { findPuzzleMount, kitPart } from './puzzle-placement.ts';
@@ -37,10 +38,9 @@ export class ConservatoryGallery {
         gallery.dispose();
         return null;
       }
-      const frame = gallery.painting(tex, textures[2], i);
+      const frame = gallery.painting(tex, textures[2], i, site.center.distanceTo(site.wallSurface));
       frame.position.copy(site.center);
       frame.rotation.y = site.yaw;
-      frame.translateZ(0.03);
       world.roomGroups[site.room].add(frame);
       gallery.roomIds.push(site.room);
       const broomMount = findPuzzleMount(world, [site.room], props, 'caretaker-' + i, 0.65, 0.82);
@@ -61,7 +61,12 @@ export class ConservatoryGallery {
     }
     return gallery;
   }
-  private painting(tex: THREE.Texture, back: THREE.Texture, i: number): THREE.Group {
+  private painting(
+    tex: THREE.Texture,
+    back: THREE.Texture,
+    i: number,
+    wallDepth: number,
+  ): THREE.Group {
     const frame = new THREE.Group();
     frame.name = 'conservatory-portrait-' + i;
     const image = tex.image as { width: number; height: number };
@@ -69,16 +74,27 @@ export class ConservatoryGallery {
       w = (h * image.width) / image.height;
     const gold = new THREE.MeshStandardMaterial({
       color: 0xb08b47,
+      emissive: 0x50391d,
       metalness: 0.67,
       roughness: 0.31,
+      toneMapped: false,
     });
     const wood = new THREE.MeshStandardMaterial({
-      color: 0x35251e,
+      color: 0x544032,
+      emissive: 0x38291f,
       metalness: 0.18,
       roughness: 0.5,
+      toneMapped: false,
     });
     this.materials.push(gold, wood);
-    const rail = (outerW: number, outerH: number, t: number, z: number, mat: THREE.Material) => {
+    const rail = (
+      outerW: number,
+      outerH: number,
+      t: number,
+      z: number,
+      depth: number,
+      mat: THREE.Material,
+    ) => {
       const shape = new THREE.Shape();
       shape.moveTo(-outerW / 2, -outerH / 2);
       shape.lineTo(outerW / 2, -outerH / 2);
@@ -95,7 +111,7 @@ export class ConservatoryGallery {
       hole.closePath();
       shape.holes.push(hole);
       const geom = new THREE.ExtrudeGeometry(shape, {
-        depth: 0.012,
+        depth,
         bevelEnabled: true,
         bevelSegments: 2,
         bevelThickness: 0.006,
@@ -106,6 +122,7 @@ export class ConservatoryGallery {
       const mesh = new THREE.Mesh(geom, mat);
       mesh.position.z = z;
       frame.add(mesh);
+      return mesh;
     };
     const panel = (width: number, height: number, texture: THREE.Texture, front: boolean) => {
       const geom = new THREE.PlaneGeometry(width, height);
@@ -121,15 +138,31 @@ export class ConservatoryGallery {
       frame.add(mesh);
       return mesh;
     };
-    const backdrop = panel(w + 0.14, h + 0.14, back, false);
+    rail(w + 0.22, h + 0.22, 0.073, 0, 0.14, wood).name = `portrait-case-${i}`;
+    // A recessed hanging block bridges the uneven wall behind the clear, square edge of the case.
+    const blockDepth = wallDepth + 0.015;
+    const block = new THREE.BoxGeometry(w - 0.25, h - 0.25, blockDepth).translate(
+      0,
+      0,
+      -blockDepth / 2,
+    );
+    const cap = new THREE.BoxGeometry(w + 0.219, h + 0.219, 0.01);
+    const backing = mergeGeometries([cap, block]);
+    cap.dispose();
+    block.dispose();
+    this.geometries.push(backing);
+    const board = new THREE.Mesh(backing, wood);
+    board.name = `portrait-backing-${i}`;
+    frame.add(board);
+    const backdrop = panel(w + 0.12, h + 0.12, back, false);
+    backdrop.position.z = 0.008;
     backdrop.name = 'observatory-background-' + i;
-    const wizard = panel(w, h, tex, true);
-    wizard.position.z = 0.1;
+    const wizard = panel(w * 1.14, h * 1.14, tex, true);
+    wizard.position.set(0, -0.019, 0.085);
     wizard.name = 'wizard-portrait-' + i;
     this.figures.push(wizard);
-    rail(w + 0.22, h + 0.22, 0.042, 0.13, wood);
-    rail(w + 0.18, h + 0.18, 0.026, 0.155, gold);
-    rail(w + 0.135, h + 0.135, 0.014, 0.13, gold);
+    rail(w + 0.18, h + 0.18, 0.02, 0.142, 0.012, gold);
+    rail(w + 0.109, h + 0.109, 0.021, 0.144, 0.014, gold);
     this.portraitGroups.push(frame);
     return frame;
   }
@@ -141,8 +174,8 @@ export class ConservatoryGallery {
       frame.worldToLocal(this.local.copy(eye));
       const yaw = THREE.MathUtils.clamp(
         Math.atan2(this.local.x, Math.max(0.1, this.local.z)) * 0.33,
-        -0.14,
-        0.14,
+        -0.065,
+        0.065,
       );
       const wizard = this.figures[i];
       wizard.rotation.y = THREE.MathUtils.damp(wizard.rotation.y, yaw, 6, dt);

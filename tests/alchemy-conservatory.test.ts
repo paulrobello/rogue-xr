@@ -4,6 +4,7 @@ import { conservatoryPlan } from '../src/floor/conservatory.ts';
 import { alchemyRecipe } from '../src/rules/alchemy.ts';
 import { AlchemyConservatory, INGREDIENT_ROOTS } from '../src/world/alchemy-conservatory.ts';
 import { buildFloorWorld } from '../src/world/floor-world.ts';
+import { kitPart } from '../src/world/puzzle-placement.ts';
 
 function art(): THREE.Group {
   const root = new THREE.Group();
@@ -31,13 +32,21 @@ function art(): THREE.Group {
       hand.name = 'ClockClueHand';
       node.add(hand);
     }
+    if (name === 'AlchemyCauldron') {
+      for (const part of ['CauldronSwirl', ...[1, 2, 3, 4].map((i) => `CauldronBubble${i}`)]) {
+        const child = new THREE.Group();
+        child.name = part;
+        child.position.y = 0.657;
+        node.add(child);
+      }
+    }
     root.add(node);
   }
   return root;
 }
-function make(seed: string) {
+function make(seed: string, reducedMotion = true) {
   const world = buildFloorWorld(conservatoryPlan(seed));
-  return { world, puzzle: new AlchemyConservatory(world, art(), seed, true) };
+  return { world, puzzle: new AlchemyConservatory(world, art(), seed, reducedMotion) };
 }
 
 describe('alchemy conservatory authored puzzle', () => {
@@ -75,6 +84,68 @@ describe('alchemy conservatory authored puzzle', () => {
     expect(puzzle.near(new THREE.Vector3(0, 0, 0), 0.01)).toBeNull();
     expect(puzzle.ward.getObjectByName('ThornWardLeft')).toBeTruthy();
     expect(puzzle.ward.getObjectByName('ThornWardRight')).toBeTruthy();
+    puzzle.dispose();
+    world.dispose();
+  });
+  it('simmers with independent bubbles and carries both ingredients from tray to liquid before showing the potion', () => {
+    const { world, puzzle } = make('ALCH3MY1', false);
+    world.current = puzzle.cauldronRoom;
+    world.roomGroups[world.current].visible = true;
+    const recipe = alchemyRecipe('ALCH3MY1');
+    const state = { found: [...recipe], added: [], brewed: false, opened: false };
+    puzzle.sync(state, true);
+    const ingredients = recipe.map((id) =>
+      kitPart(world.group, `IngredientCradle${INGREDIENT_ROOTS[id]}`),
+    );
+    const home = ingredients.map((n) => n.position.clone());
+    const swirl = kitPart(puzzle.cauldron, 'CauldronSwirl');
+    const bubbles = [1, 2, 3, 4].map((i) => kitPart(puzzle.cauldron, `CauldronBubble${i}`));
+    puzzle.sync({ ...state, added: [recipe[0]] });
+    puzzle.animateIngredient(recipe[0]);
+    puzzle.update(0.35);
+    expect(swirl.rotation.y).toBeGreaterThan(0.2);
+    expect(new Set(bubbles.map((b) => b.position.y)).size).toBe(4);
+    expect(ingredients[0].position.y - home[0].y).toBeGreaterThan(0.3);
+    expect(ingredients[0].position.z).toBeLessThan(home[0].z - 0.1);
+    expect(puzzle.near(ingredients[0].getWorldPosition(new THREE.Vector3()), 0.02)).toBeNull();
+    puzzle.sync({ ...state, added: [...recipe], brewed: true });
+    puzzle.animateIngredient(recipe[1]);
+    puzzle.update(0.45);
+    expect(ingredients.every((n) => n.visible)).toBe(true);
+    expect(Math.abs(ingredients[0].position.z - puzzle.cauldron.position.z)).toBeLessThan(0.02);
+    expect(puzzle.potion.visible).toBe(false);
+    puzzle.update(0.5);
+    expect(ingredients.every((n) => !n.visible)).toBe(true);
+    expect(puzzle.potion.visible).toBe(true);
+    puzzle.dispose();
+    world.dispose();
+  });
+  it('settles mistaken ingredients back on the tray and never replays a saved addition', () => {
+    const { world, puzzle } = make('ALCH3MY1');
+    world.current = puzzle.cauldronRoom;
+    const node = kitPart(world.group, 'IngredientCradleMooncap');
+    const home = node.position.clone();
+    const state = { found: [0 as const], added: [], brewed: false, opened: false };
+    puzzle.sync(state);
+    puzzle.animateIngredient(0);
+    puzzle.update(0.15);
+    expect(node.visible).toBe(true);
+    expect(Math.abs(node.position.z - puzzle.cauldron.position.z)).toBeLessThan(0.01);
+    expect(kitPart(puzzle.cauldron, 'CauldronSwirl').rotation.y).toBe(0);
+    puzzle.update(0.4);
+    expect(node.position).toEqual(home);
+    expect(node.visible).toBe(true);
+    puzzle.animateIngredient(0);
+    puzzle.sync({ ...state, added: [0] }, true);
+    expect(node.visible).toBe(false);
+    expect(node.position).toEqual(home);
+    puzzle.sync(state);
+    puzzle.animateIngredient(0);
+    world.current = puzzle.tabletRoom;
+    puzzle.update(0.01);
+    world.current = puzzle.cauldronRoom;
+    expect(node.position).toEqual(home);
+    expect(node.visible).toBe(true);
     puzzle.dispose();
     world.dispose();
   });

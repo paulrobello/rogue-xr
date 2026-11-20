@@ -14,6 +14,7 @@ export const ROOM_STYLE_PIECES = [
   'TimberBay',
   'TimberCarvedBay',
   'TimberDoor',
+  'EncounterDoorLeaf',
 ] as const;
 export type RoomStylePiece = (typeof ROOM_STYLE_PIECES)[number];
 export type RoomStyle = 'boiler' | 'timber';

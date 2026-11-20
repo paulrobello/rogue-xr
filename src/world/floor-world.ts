@@ -76,6 +76,7 @@ export interface FloorWorld {
   update(x: number, z: number): boolean;
   /** Opens the forward door held by a defeated encounter. */
   releaseGuardedDoor(room: number, immediate?: boolean): THREE.Vector3 | null;
+  dressEncounterDoor(model: THREE.Object3D): void;
   setPuzzleGateOpen(kind: PuzzleGate, open: boolean, immediate?: boolean): void;
   dressPuzzleGates(set: PbrSet, environment: THREE.Texture | null): void;
   pickPuzzleGate(
@@ -444,11 +445,14 @@ export function buildFloorWorld(
     side: THREE.DoubleSide,
     roughness: 0.72,
   });
-  const lockMaterial = new THREE.MeshBasicMaterial({
-    color: PALETTE.candle,
-    side: THREE.DoubleSide,
-  });
-  const lockGeometry = new THREE.CircleGeometry(0.1, 4);
+  const guardGeometry = new THREE.BoxGeometry(DOOR_WIDTH - 0.02, DOOR_HEIGHT - 0.03, 0.064);
+  guardGeometry.translate(0, DOOR_HEIGHT / 2, 0);
+  const lockGeometry = new THREE.BoxGeometry(0.14, 0.14, 0.068)
+    .rotateZ(Math.PI / 4)
+    .translate(0, 1.15, 0);
+  const lockMaterial = new THREE.MeshBasicMaterial({ color: PALETTE.candle });
+  let guardLeaf: THREE.Group | null = null;
+  let guardSource: THREE.Object3D | null = null;
   const lockedDoor = passage && door ? new THREE.Group() : null;
   const barrier = door ? doorwayCollider(door) : null;
   let doorAngle = 0;
@@ -460,24 +464,28 @@ export function buildFloorWorld(
     globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (passage && door && lockedDoor && barrier) {
     lockedDoor.name = `encounter-lock-${passage[0].room}-${door.id}`;
-    const leaf = new THREE.Mesh(capGeometry, guardMaterial);
+    const leaf = new THREE.Group();
+    guardLeaf = leaf;
+    leaf.add(
+      new THREE.Mesh(guardGeometry, guardMaterial),
+      new THREE.Mesh(lockGeometry, lockMaterial),
+    );
     leaf.name = 'encounter-lock-leaf';
     const yaw = INTO_ROOM_YAW[door.facing];
     const hinge = new THREE.Group();
     doorHinge = hinge;
-    const hingeSide = -DOOR_WIDTH / 2;
+    // The barrel sits on the jamb. At 90 degrees even the proudest pull clears the opening.
+    const hingeSide = -DOOR_WIDTH / 2 - 0.025;
+    const hingeFront = 0.077;
     lockedDoor.position.set(
-      door.world[0] + Math.cos(yaw) * hingeSide,
+      door.world[0] + Math.cos(yaw) * hingeSide + Math.sin(yaw) * hingeFront,
       0,
-      door.world[1] - Math.sin(yaw) * hingeSide,
+      door.world[1] - Math.sin(yaw) * hingeSide + Math.cos(yaw) * hingeFront,
     );
     lockedDoor.rotation.y = yaw;
-    leaf.position.x = -hingeSide;
+    leaf.position.set(-hingeSide, 0, -hingeFront);
     hinge.add(leaf);
     lockedDoor.add(hinge);
-    const badge = new THREE.Mesh(lockGeometry, lockMaterial);
-    badge.position.set(0, 1.15, 0.012);
-    leaf.add(badge);
     roomGroups[passage[0].room]?.attach(lockedDoor);
     for (const side of passage) colliders[side.room]?.push(barrier);
   }
@@ -633,6 +641,11 @@ export function buildFloorWorld(
       if (doorHinge) doorHinge.rotation.y = doorAngle;
       return new THREE.Vector3(door.world[0], 1.1, door.world[1]);
     },
+    dressEncounterDoor(model) {
+      if (!guardLeaf || guardSource === model) return;
+      guardLeaf.clear().add(model.clone(true));
+      guardSource = model;
+    },
     dressPuzzleGates(set, environment) {
       for (const gate of puzzleGates) gate.visual?.dress(set, environment);
     },
@@ -761,18 +774,14 @@ export function buildFloorWorld(
       for (const gate of puzzleGates) gate.visual?.dispose();
       disposeTableDecor(group);
       group.removeFromParent();
-      for (const m of [
-        ...Object.values(materials),
-        enemyMaterial,
-        capMaterial,
-        guardMaterial,
-        lockMaterial,
-      ])
+      for (const m of [...Object.values(materials), enemyMaterial, capMaterial, guardMaterial])
         m.dispose();
       capGeometry.dispose();
       fillGeometry.dispose();
       wallFillGeometry.dispose();
+      guardGeometry.dispose();
       lockGeometry.dispose();
+      lockMaterial.dispose();
       kit.dispose();
       hearthKit.dispose();
     },

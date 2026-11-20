@@ -1,10 +1,10 @@
 {
-  "meshes": 7,
+  "meshes": 8,
   "materials": 3,
   "packedTextures": 6,
-  "runtimeBytes": 2458604,
-  "sha256": "d44d630cfde710858c9f0746f37a0525ceb9a6df0a3e22d1d4b4a13ca0ba5f3e",
-  "reimport": "Seven identity roots, finite UV0 and coordinates, nonzero triangles, exact 2x4m bounds, clear portals, zero-plane contacts, no rear faces and no lateral end-plane faces",
+  "runtimeBytes": 2643712,
+  "sha256": "1941fedbae7d86b5a4f7f94e7dd4eb1a3e7313925684b65dad4f74c9112a3d79",
+  "reimport": "Seven 2x4m identity wall bays with clear portals, zero-plane contacts and no lateral end faces; one double-faced encounter door leaf",
   "lateralEndPlaneTriangles": 0,
   "blender": "5.2.3 LTS",
   "nodes": {
@@ -73,6 +73,14 @@
       "materials": [
         "BoilerFinish"
       ]
+    },
+    "EncounterDoorLeaf": {
+      "triangles": 2450,
+      "depthMeters": 0.099,
+      "vertices": 1784,
+      "materials": [
+        "TimberFinish"
+      ]
     }
   },
   "units": "metres",
@@ -84,13 +92,13 @@
   "source": "Original scripted geometry, cast finishes and wood-cut atlas derived from the project walnut",
   "woodSource": "public/assets/materials/walnut/walnut.basecolor.png",
   "inputsSha256": {
-    "scripts/assets/build-architectural-finishes.py": "2153c6db14c5cd2b3f51e4f54c561123a465fc37823d7bbe5c2edb36576420c0",
+    "scripts/assets/build-architectural-finishes.py": "a9a47ee67cf8687c241c943d9ecbe7e0113660c1b45ff70f92fc481a03927575",
     "scripts/assets/finish_surfaces.py": "04e2ca5b9de03a339e60998e8d568b07d7ff31dce540ce4abc5aa16e91221ab8",
     "public/assets/materials/walnut/walnut.basecolor.png": "c2c1d72ba308c02f6304ee389a86d6663199d01a352160c347801cefd4042a0b"
   },
   "blendSha256": {
-    "architectural-finishes_high.blend": "8bee6b525dd63addced7f68f5f856b8ebb1fedcba6557a8fb455eb7679170b34",
-    "architectural-finishes_low.blend": "a19d7c47d3cd60d9928b06695051b6e44492e6676711cd850bd07ad4fc09bd5a"
+    "architectural-finishes_high.blend": "8707d237771253d9fdb8d1dab34fa1d67070d1d6288df133ab354424f200487e",
+    "architectural-finishes_low.blend": "a9d32e3a6f86b40faffa53681bfe50f3c43b7621989efaa44c3876f88d6eca0e"
   },
   "atlasPixels": [
     768,

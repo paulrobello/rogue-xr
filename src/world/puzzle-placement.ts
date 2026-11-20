@@ -18,6 +18,7 @@ function mountingPoint(
   stream: Stream | undefined,
   halfWidth: number,
   depth: number,
+  fullHeight: number | undefined,
 ): PuzzleMount | null {
   const template = templateById(world.plan.rooms[room].templateId);
   const { min, max } = template.footprint;
@@ -70,20 +71,26 @@ function mountingPoint(
         0.13,
       );
       const space = new THREE.Box3(
-        new THREE.Vector3(-halfWidth, -0.75, 0.07),
-        new THREE.Vector3(halfWidth, 0.65, depth),
+        new THREE.Vector3(-halfWidth, fullHeight ? -1.48 : -0.75, 0.07),
+        new THREE.Vector3(halfWidth, fullHeight ? fullHeight - 1.48 : 0.65, depth),
       ).applyMatrix4(new THREE.Matrix4().compose(center, q, new THREE.Vector3(1, 1, 1)));
       if (obstacles.some((b) => space.intersectsBox(b))) continue;
       const back = new THREE.Box3(
-        new THREE.Vector3(-halfWidth - 0.08, -0.49, -0.18),
-        new THREE.Vector3(halfWidth + 0.08, 0.49, depth),
+        new THREE.Vector3(-halfWidth - 0.08, fullHeight ? -1.48 : -0.49, -0.18),
+        new THREE.Vector3(halfWidth + 0.08, fullHeight ? fullHeight - 1.48 : 0.49, depth),
       ).applyMatrix4(new THREE.Matrix4().compose(center, q, new THREE.Vector3(1, 1, 1)));
       if (furnishingBounds.some((b) => back.intersectsBox(b))) continue;
       const direction = inward.clone().negate().transformDirection(parent.matrixWorld);
       probe.far = 0.93;
       const wallSurface = center.clone();
-      const clear = [-0.6, -0.3, 0, 0.3, 0.6].every((x) =>
-        [-0.34, 0, 0.34].every((y) => {
+      const samples = fullHeight
+        ? [-halfWidth, -halfWidth / 2, 0, halfWidth / 2, halfWidth]
+        : [-0.6, -0.3, 0, 0.3, 0.6];
+      const heights = fullHeight
+        ? [0.16 - 1.48, 0.68 - 1.48, 0, 0.34, fullHeight - 1.48]
+        : [-0.34, 0, 0.34];
+      const clear = samples.every((x) =>
+        heights.every((y) => {
           rayPoint.set(x, y, 0.63).applyQuaternion(q).add(center).applyMatrix4(parent.matrixWorld);
           probe.set(rayPoint, direction);
           const hit = probe.intersectObjects(surfaces, false)[0];
@@ -104,6 +111,7 @@ export function findPuzzleMount(
   placementKey?: string,
   halfWidth = 0.66,
   depth = 1.4,
+  fullHeight?: number,
 ): PuzzleMount | null {
   const stream = placementKey
     ? Stream.fromKey(`${world.plan.seed}:mount:${placementKey}`)
@@ -112,7 +120,7 @@ export function findPuzzleMount(
     ? rooms.filter((room) => room !== world.plan.hiddenPassage?.treasureRoom)
     : rooms;
   for (const room of stream?.shuffle(offered) ?? offered) {
-    const mount = mountingPoint(world, room, props, stream, halfWidth, depth);
+    const mount = mountingPoint(world, room, props, stream, halfWidth, depth, fullHeight);
     if (mount) return mount;
   }
   return null;

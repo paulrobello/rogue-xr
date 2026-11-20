@@ -1,7 +1,7 @@
 """Clockwork Spire calibration kit. Blender Z-up maps to glTF Y-up; front +Z.
 Run Blender -b --factory-startup --python-exit-code 1 -P scripts/assets/build-calibration-kit.py
 """
-import bpy,math,json,hashlib,shutil
+import bpy,math,json,hashlib,shutil,sys
 from pathlib import Path
 from mathutils import Vector
 import numpy as np
@@ -102,7 +102,16 @@ for x in (-.318,.318):line(r,(x,-.093,-.12),(x,-.093,.27),.003,brass)
 for z in (-.14,.26):line(r,(-.32,-.093,z),(.32,-.093,z),.003,brass)
 # Static upper lip masks a card until the independent tray slides forward.
 cube(r,(0,-.115,-.175),(.48,.18,.032),walnut,.004)
-for x in (-.22,.22):sphere(r,(x,-.10,-.235),(.009,.006,.009),brass)
+# Each outer runner is mortised into the backboard; the intermediate brass
+# member stays engaged with both the outer runner and the sliding drawer.
+for side in (-1,1):
+ cube(r,(side*.243,-.101,-.242),(.039,.142,.119),walnut,.005)
+ cube(r,(side*.227,-.103,-.266),(.013,.141,.047),patina)
+ cube(r,(side*.220,-.103,-.287),(.025,.141,.009),patina)
+slides=root('ChartDrawerSlides',r)
+for side in (-1,1):
+ cube(slides,(side*.218,-.099,-.267),(.012,.152,.030),brass,.0015)
+ cube(slides,(side*.211,-.099,-.279),(.018,.152,.007),brass)
 # Empty winding-key cradle: open clips plus a visible mounting pin, no duplicate key.
 for z in (-.045,.06):
  ring(r,(.355,-.105,z),.024,.024,.004,brass,start=math.pi*.15,end=math.pi*1.85,segments=24)
@@ -297,7 +306,7 @@ bpy.ops.object.select_all(action='SELECT');bpy.ops.export_scene.gltf(filepath=st
 bpy.ops.object.select_all(action='SELECT');bpy.ops.object.delete(use_global=False);bpy.ops.import_scene.gltf(filepath=str(OUT/'calibration-kit.glb'))
 missing=set(roots).union(sockets)-set(bpy.data.objects.keys())
 if missing:raise RuntimeError('missing names '+str(missing))
-if bpy.data.objects['ChartDrawer'].parent!=bpy.data.objects['ChartCabinet'] or bpy.data.objects['CardRest'].parent!=bpy.data.objects['ChartDrawer']:raise RuntimeError('incorrect drawer hierarchy')
+if any(bpy.data.objects[name].parent!=bpy.data.objects['ChartCabinet'] for name in ('ChartDrawer','ChartDrawerSlides')) or bpy.data.objects['CardRest'].parent!=bpy.data.objects['ChartDrawer']:raise RuntimeError('incorrect drawer hierarchy')
 tris=sum(sum(len(p.vertices)-2 for p in o.data.polygons) for o in bpy.context.scene.objects if o.type=='MESH')
 if tris>35000:raise RuntimeError('triangle budget '+str(tris))
 shutil.copy2(OUT/'calibration-kit.glb',DEST/'calibration-kit.glb')
@@ -305,6 +314,8 @@ def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 manifest={'glb_sha256':sha(DEST/'calibration-kit.glb'),'generator_sha256':sha(Path(__file__)),'source_blend_sha256':sha(SRC/'calibration-kit.blend'),'axes':'glTF +Y up, +Z front; metres','root_nodes':list(roots),'socket_nodes':sockets,'triangles':tris,'blender':bpy.app.version_string,'visual_approval':'pending independent and owner review','limitations':['No authored LOD or collider','Runtime play-distance and interaction review pending']}
 manifest['shared_material_sources']=source_maps
 (SRC/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n');(OUT/'report.json').write_text(json.dumps(manifest,indent=2)+'\n');print(json.dumps(manifest,indent=2))
+
+if '--skip-review' in sys.argv: sys.exit(0)
 
 # Staged fitting uses the same centres and pivots as the runtime fixtures.
 scene=bpy.context.scene
@@ -331,5 +342,7 @@ for loc,energy,col,size in [((-3,-4,4),430,(1,.78,.58),4),((3,-3,3),350,(.62,.75
  bpy.ops.object.light_add(type='AREA',location=loc);o=bpy.context.object;o.data.energy=energy;o.data.color=col;o.data.size=size
 bpy.ops.object.camera_add();cam=bpy.context.object;cam.data.type='ORTHO';scene.camera=cam;scene.render.engine='CYCLES';scene.cycles.samples=4;scene.cycles.use_denoising=True;scene.render.resolution_x=1000;scene.render.resolution_y=720;scene.render.resolution_percentage=100
 for name,loc,target,scale in [('review-front',(0,-5,1.4),(0,0,1.14),4.65),('review-three-quarter',(2.5,-5,2.4),(0,0,1.1),4.7),('review-orrery',(.55,-4,1.55),(0,0,1.24),1.80),('review-balance',(2.35,-4,1.98),(1.62,-.10,1.22),1.65),('review-cabinet',(-1,-3,1.55),(-1.56,0,1.19),1.20),('review-drawer-open',(-1,-3,1.55),(-1.56,0,1.19),1.20)]:
- if name=='review-drawer-open':bpy.data.objects['ChartDrawer'].location.y-=.18
+ if name=='review-drawer-open':
+  bpy.data.objects['ChartDrawer'].location.y-=.18
+  bpy.data.objects['ChartDrawerSlides'].location.y-=.09
  cam.location=loc;cam.rotation_euler=(Vector(target)-cam.location).to_track_quat('-Z','Y').to_euler();cam.data.ortho_scale=scale;scene.render.filepath=str(OUT/(name+'.png'));bpy.ops.render.render(write_still=True)

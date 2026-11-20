@@ -241,9 +241,9 @@ def check_architectural_finishes(errors: list[str]) -> dict:
     scene = g.get("scenes", [])[g.get("scene", 0)] if g.get("scenes") else {}
     roots = scene.get("nodes", [])
     names = [g.get("nodes", [])[i].get("name") for i in roots if i < len(g.get("nodes", []))]
-    expected_names = sorted(("BoilerBay", "BoilerServiceBay", "BoilerExchangerBay", "BoilerDoor", "TimberBay", "TimberCarvedBay", "TimberDoor"))
-    if len(roots) != 7 or len(set(roots)) != 7 or sorted(names) != expected_names:
-        err(f"GLB must expose exactly seven named roots {expected_names}, got {names}")
+    expected_names = sorted(("BoilerBay", "BoilerServiceBay", "BoilerExchangerBay", "BoilerDoor", "TimberBay", "TimberCarvedBay", "TimberDoor", "EncounterDoorLeaf"))
+    if sorted(names) != expected_names:
+        err(f"GLB must expose the named roots {expected_names}, got {names}")
     if any(i >= len(g.get("nodes", [])) for i in roots):
         err("scene root index is outside nodes")
 

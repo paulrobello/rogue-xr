@@ -96,7 +96,7 @@ from the `shared` block in `assets-source/style/prompts-locked.json`. Generate w
 
 Seven interchangeable two-metre bays share the study's doorway width, threshold and ceiling height. In `MAPTEST2`, room 9 uses ribbed cast-iron panels, copper mains and a finned heat exchanger on the west wall. Room 2 uses raised walnut panels, a beamed ceiling and staggered floorboards. Its desk still supports the coffer. Amber wall lamps light both finishes, and the candelabrum lights the dining set. [Quest Browser views](verification/quest-modular-interiors.jpg)
 
-The architectural asset check verifies the seven roots, physical envelope, triangle limits, embedded material maps and source hashes. The assembled rooms were inspected from inside and across their doorways on Quest 3. Independent visual review scored the final in-game captures 8/10. Owner review is pending.
+The architectural asset check verifies the seven wall bays, the double-sided encounter door, the physical envelope, triangle limits, embedded material maps and source hashes. The assembled rooms were inspected from inside and across their doorways on Quest 3. Independent visual review scored the final in-game captures 8/10. Owner review is pending.
 
 ## Runtime palette
 

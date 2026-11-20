@@ -1285,8 +1285,7 @@ function arriveAtLanding(target: FloorView, entry: StairEntry): void {
 let liftArrival: FloorView | null = null;
 function travelStairs(byLift = false): boolean {
   const source = floor;
-  const stairs = source?.stairs;
-  const transport = byLift ? source?.lift : stairs;
+  const transport = byLift ? source?.lift : source?.stairs;
   if (!source || !transport || busy() || flow.phase !== 'explore' || source.locked || !flow.run)
     return false;
   const destination = transport.destination;
@@ -1298,13 +1297,13 @@ function travelStairs(byLift = false): boolean {
         worldTemplates,
       );
   if (!next && !byLift) return false;
-  const pull = (byLift ? source.lift!.target : stairs!.handle).getWorldPosition(
+  const pull = ('target' in transport ? transport.target : transport.handle).getWorldPosition(
     new THREE.Vector3(),
   );
   let sounded = false;
   const started = stairTransit.start({
     swing(fraction) {
-      if (!byLift) stairs?.open(fraction);
+      transport.open(fraction);
       if (!sounded && fraction > 0.04) {
         sounded = true;
         audio?.playSfx('door-open', pull);
@@ -1312,7 +1311,7 @@ function travelStairs(byLift = false): boolean {
     },
     cross() {
       if (floor !== source || !flow.travelToFloor(destination, next?.room ?? 0)) {
-        if (!byLift) stairs?.open(0);
+        transport.open(0);
         return;
       }
       const snap = flow.snapshot(Date.now(), next?.room ?? 0);
@@ -1856,6 +1855,8 @@ function operateAlchemy(
       },
       camera,
     );
+  if (hit.action === 'add' && (result === 'correct' || result === 'mistake'))
+    floor?.alchemy?.animateIngredient(hit.ingredient);
   if (result && result !== 'waiting')
     audio?.playSfx(hit.action === 'collect' ? 'card-draw' : 'steam-vent');
   return !!result;

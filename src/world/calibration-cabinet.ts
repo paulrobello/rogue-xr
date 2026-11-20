@@ -119,6 +119,7 @@ export class CalibrationCabinet {
   private readonly cast = new THREE.Raycaster();
   private readonly box = new THREE.Box3();
   private readonly point = new THREE.Vector3();
+  private readonly slides: THREE.Object3D;
   private readonly restZ: number;
   private solved = false;
   private paid = false;
@@ -172,6 +173,7 @@ export class CalibrationCabinet {
     this.object = kitPart(art, 'ChartCabinet').clone(true);
     this.object.name = 'calibration-chart-cabinet';
     this.drawer = kitPart(this.object, 'ChartDrawer');
+    this.slides = kitPart(this.object, 'ChartDrawerSlides');
     this.restZ = this.drawer.position.z;
     this.key = plan.kind === 'gears' ? kitPart(instruments, 'winding_key').clone(true) : null;
     if (this.key) {
@@ -227,7 +229,9 @@ export class CalibrationCabinet {
     this.pose();
   }
   private pose() {
-    this.drawer.position.z = this.restZ + 0.18 * this.t;
+    const travel = 0.18 * this.t;
+    this.drawer.position.z = this.restZ + travel;
+    this.slides.position.z = travel / 2;
     if (this.flight) return;
     const rise = Math.max(0, (this.t - 0.48) / 0.52);
     this.card.visible = this.solved && !this.paid && this.t > 0.06;

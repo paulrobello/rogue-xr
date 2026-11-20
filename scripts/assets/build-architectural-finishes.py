@@ -16,7 +16,7 @@ from mathutils.bvhtree import BVHTree
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from finish_surfaces import GRID, TILE, finish_material
 
-NAMES = ("BoilerBay", "BoilerServiceBay", "BoilerDoor", "TimberBay", "TimberCarvedBay", "TimberDoor", "BoilerExchangerBay")
+NAMES = ("BoilerBay", "BoilerServiceBay", "BoilerDoor", "TimberBay", "TimberCarvedBay", "TimberDoor", "BoilerExchangerBay", "EncounterDoorLeaf")
 WIDTH, HEIGHT = 2.0, 4.0
 LAMP_Z = 2.75
 Point = tuple[float, float, float]
@@ -465,8 +465,12 @@ def timber(b: Bay, accent: bool, door: bool) -> None:
         b.plate("Engaged pilaster", x, 1.8, .098, 3.60, .01, .083, 1, .008)
         for off in (-.021, .021):
             b.plate("Reeded pilaster", x + off, 1.78, .021, 3.20, .081, .094, 2, .006)
-        for z, h, d in ((.095, .19, .108), (3.48, .18, .104), (3.584, .044, .116)):
-            b.plate("Capital and plinth", x, z, .098, h, .012, d, 2, .009)
+        # Half-capitals meet at the bay seam. Each projecting course has its own
+        # side plane; the old equal widths doubled the exposed shaft side faces.
+        for z, h, width, depth in ((.095, .19, .124, .108), (3.48, .18, .124, .104),
+                                  (3.584, .044, .146, .116)):
+            center = math.copysign(1 - width / 2, x)
+            b.plate("Capital and plinth", center, z, width, h, .012, depth, 2, .009)
     if door:
         for x in (-.85, .85):
             b.plate("Door lining", x, 1.27, .10, 2.54, .012, .109, 1, .009)
@@ -496,6 +500,48 @@ def timber(b: Bay, accent: bool, door: bool) -> None:
             wood_panel(b, x, 2.232, .807, 1.88, .112)
             b.plate("Upper field crest", x, 3.367, .804, .253, .017, .05, 0, .012, .038, "h")
             casing(b, "Crest mitre", x, 3.367, .829, .28, .05, .023, 2)
+
+
+def encounter_leaf(b: Bay) -> None:
+    # Two rebated faces meet at the mid-plane of a 64 mm walnut door.
+    b.plate("Walnut leaf", 0, 1.2, 1.58, 2.37, 0, .032, 1, .006)
+    for z, height in ((.475, .68), (1.554, 1.244)):
+        wood_panel(b, 0, z, 1.25, height, .104)
+    for x in (-.718, .718):
+        b.plate("Edge stile", x, 1.20, .11, 2.32, .029, .044, 2, .005)
+    for z, height in ((.076, .083), (.871, .086), (2.272, .124)):
+        b.plate("Cross rail", 0, z, 1.322, height, .029, .046, 2, .005, grain="h")
+    fan(b, 0, 1.926, .202)
+    for height in (.36, 1.18, 2.07):
+        b.plate("Strap leaf", -.739, height, .168, .064, .028, .050, 4, .005, .014, "h")
+        b.round("Hinge pin head", -.702, height, .009, .009, .049, .055, 3, 8)
+    x = .701
+    b.plate("Lock escutcheon", x, 1.078, .092, .304, .041, .055, 4, .006, .038)
+    b.plate("Key slot", x, .964, .010, .029, .054, .057, 3, .001)
+    for z in (1.034, 1.177):
+        b.round("Bail mounting rose", x, z, .027, .027, .053, .063, 4)
+        b.round("Bail stand off", x, z, .015, .015, .061, .085, 3)
+    b.plate("Brass pull", x, 1.1055, .027, .168, .079, .099, 4, .008, .012)
+    for front in b.objects[:]:
+        if front.name.startswith(("Strap leaf", "Hinge pin head")):
+            continue
+        back = front.copy()
+        back.data = front.data.copy()
+        for vertex in back.data.vertices:
+            vertex.co.y *= -1
+        back.data.flip_normals()
+        back.data.update()
+        bpy.context.scene.collection.objects.link(back)
+        b.objects.append(back)
+    for z in (.36, 1.18, 2.07):
+        b.plate("Hinge return", -.792, z, .074, .052, .045, .080, 4, .004)
+        sides = 12
+        points = [(-.825 + .014 * math.cos(math.tau * i / sides), z + rise,
+                   .077 + .014 * math.sin(math.tau * i / sides))
+                  for rise in (-.062, .062) for i in range(sides)]
+        faces = [(i, i + sides, (i + 1) % sides + sides, (i + 1) % sides) for i in range(sides)]
+        faces += [tuple(range(sides)), tuple(reversed(range(sides, 2 * sides)))]
+        b.mesh("Butt hinge barrel", points, faces, 4)
 
 
 def vertex_ambient(objects: list, lit: bool) -> None:
@@ -556,6 +602,8 @@ def join(objects: list, name: str) -> bpy.types.Object:
 
 
 def layout(i: int) -> tuple:
+    if NAMES[i] == "EncounterDoorLeaf":
+        return (4.16, 0., 0.)
     return (4.16, 0., 4.08) if NAMES[i] == "BoilerExchangerBay" else ((i % 3 - 1) * 2.08, 0., (1 - i // 3) * 4.08)
 
 
@@ -589,7 +637,7 @@ def shot(roots: list, path: Path) -> None:
     for row, style in enumerate(("boiler", "timber")):
         # One strip per style keeps the metre-wide details readable in review.
         for i, obj in enumerate(roots):
-            obj.hide_render = obj.name.startswith("Timber") != bool(row)
+            obj.hide_render = obj.name == "EncounterDoorLeaf" or obj.name.startswith("Timber") != bool(row)
         z = (1 - row) * 4.08 + 2
         cx = 1.04 if row == 0 else 0.
         camera.location = (cx + .90, -12, z + .38)
@@ -625,11 +673,14 @@ def build(src: Path, destination: Path, texture_dir: Path, high: bool) -> tuple[
     p.inputs["Emission Strength"].default_value = 1.7
     roots, info = [], {}
     for i, name in enumerate(NAMES):
-        wood = name.startswith("Timber")
+        leaf = name == "EncounterDoorLeaf"
+        wood = name.startswith("Timber") or leaf
         accent = name in ("BoilerServiceBay", "TimberCarvedBay")
         door = name.endswith("Door")
         bay = Bay(name, mat["Timber" if wood else "Boiler"], glass, high)
-        if wood:
+        if leaf:
+            encounter_leaf(bay)
+        elif wood:
             timber(bay, accent, door)
         else:
             boiler(bay, accent, door, name == "BoilerExchangerBay")
@@ -650,8 +701,12 @@ def build(src: Path, destination: Path, texture_dir: Path, high: bool) -> tuple[
             ymin = min(v.co.z for v in mesh.vertices)
             ymax = max(v.co.z for v in mesh.vertices)
             depth = max(-v.co.y for v in mesh.vertices)
-            assert abs(xmin + 1) < .0001 and abs(xmax - 1) < .0001
-            assert abs(ymin) < .0001 and abs(ymax - 4) < .0001 and depth <= (.24 if name == "BoilerExchangerBay" else .21)
+            if leaf:
+                assert -.85 < xmin < -.79 and .78 < xmax < .8 and 0 < ymin < .02 and 2.38 < ymax < 2.4
+                assert .09 < depth < .10 and abs(max(v.co.y for v in mesh.vertices) - depth) < .0001
+            else:
+                assert abs(xmin + 1) < .0001 and abs(xmax - 1) < .0001
+                assert abs(ymin) < .0001 and abs(ymax - 4) < .0001 and depth <= (.24 if name == "BoilerExchangerBay" else .21)
             assert len(mesh.loop_triangles) <= (7500 if name == "BoilerExchangerBay" else 6000), (name, len(mesh.loop_triangles))
             if door:
                 for tri in mesh.loop_triangles:
@@ -713,6 +768,10 @@ def validate(path: Path) -> dict:
         mesh = obj.data
         coords = [v.co for v in mesh.vertices]
         assert all(math.isfinite(value) for v in coords for value in v)
+        if obj.name == "EncounterDoorLeaf":
+            assert min(v.y for v in coords) < -.09 and max(v.y for v in coords) > .09
+            assert min(v.z for v in coords) > 0 and max(v.z for v in coords) < 2.4
+            continue
         assert max(v.y for v in coords) <= .000001, obj.name
         assert abs(min(v.x for v in coords) + 1) < .0001 and abs(max(v.x for v in coords) - 1) < .0001
         assert abs(min(v.z for v in coords)) < .0001 and abs(max(v.z for v in coords) - 4) < .0001
@@ -740,7 +799,7 @@ def validate(path: Path) -> dict:
                         or all(v.z >= 2.3999 for v in pts)), obj.name
     return {"meshes": len(gltf["meshes"]), "materials": len(gltf["materials"]), "packedTextures": len(gltf["images"]),
             "runtimeBytes": len(data), "sha256": hashlib.sha256(data).hexdigest(),
-            "reimport": "Seven identity roots, finite UV0 and coordinates, nonzero triangles, exact 2x4m bounds, clear portals, zero-plane contacts, no rear faces and no lateral end-plane faces",
+            "reimport": "Seven 2x4m identity wall bays with clear portals, zero-plane contacts and no lateral end faces; one double-faced encounter door leaf",
             "lateralEndPlaneTriangles": 0}
 
 

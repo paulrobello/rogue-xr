@@ -2,7 +2,7 @@
 
 The instrument frame has a 1.36 × 0.67 m slate opening. Its crescent moon, ember sun and ringed planet rotate on a common shaft above three rows of brass bearing shoes. The control knobs occupy the right side of the case. The left drive carries the broken collar and accepts the replacement coupling. The manifest records the editable Blender source, generator, runtime export and nine walnut and brass texture inputs. [Orrery](staging/review-orrery.png) · [Asset manifest](manifest.json)
 
-The cabinet displays the run’s gear or astronomical chart and mounts the orrery spare in a separate cradle. Its drawer advances 18 cm and the card rises from the tray. [Cabinet](staging/review-cabinet.png) · [Open drawer](staging/review-drawer-open.png)
+The cabinet displays the run’s gear or astronomical chart and mounts the orrery spare in a separate cradle. Its drawer advances 18 cm and the card rises from the tray. The cabinet sides carry fixed runners. Two brass slides travel 9 cm with the tray and stay engaged at full extension. [Original cabinet study](staging/review-cabinet.png) · [Original drawer study](staging/review-drawer-open.png)
 
 The balance has an independently pivoted beam, suspended pans, two removable weights, a reference weight and a chain with an open terminal hook. The game keeps the pans level as the beam tilts, carries a selected weight through an arc, and lets the beam settle as the weight lands. After the Quest playtest, the left shelf holder moved outward 11.7 cm and the right holder moved outward 16.7 cm to clear the suspended pans. [Original balance layout](staging/review-balance.png)
 

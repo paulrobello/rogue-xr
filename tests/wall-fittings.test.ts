@@ -1,29 +1,55 @@
 // @vitest-environment node
 import * as THREE from 'three';
 import { expect, it } from 'vitest';
-import { generateFloor } from '../src/floor/generate.ts';
+import { conservatoryPlan } from '../src/floor/conservatory.ts';
+import { generateFloor, generateUpperFloor } from '../src/floor/generate.ts';
 import { AstralLift } from '../src/world/astral-lift.ts';
 import { buildFloorWorld } from '../src/world/floor-world.ts';
 import { WallVentSteam } from '../src/world/wall-vent-steam.ts';
 
-it('seats the astral lift against the probed masonry', () => {
-  const world = buildFloorWorld(generateFloor('MAPTEST2'));
-  const art = new THREE.Group(),
-    medallion = new THREE.Group();
-  medallion.name = 'AstralLiftMedallion';
-  art.add(medallion);
-  const lift = AstralLift.mount(world, art, 2);
-  const center = lift.target.getWorldPosition(new THREE.Vector3());
-  const inward = lift.object.getWorldDirection(new THREE.Vector3());
-  const ray = new THREE.Raycaster(center.clone().addScaledVector(inward, 0.25), inward.negate());
-  const hit = ray.intersectObjects(
-    world.roomGroups[lift.room].children.filter((o) => o !== lift.object),
-    true,
-  )[0];
-  expect(hit.distance).toBeCloseTo(0.25, 4);
-  lift.dispose();
-  world.dispose();
-});
+it.each([
+  { plan: generateUpperFloor('MAPTEST2'), destination: 3 as const },
+  { plan: conservatoryPlan('MAPTEST2'), destination: 2 as const },
+])(
+  'mounts accessible lift doors that slide open on the route to floor $destination',
+  ({ plan, destination }) => {
+    const world = buildFloorWorld(plan);
+    const art = new THREE.Group();
+    const plate = new THREE.Mesh(new THREE.SphereGeometry(0.43), new THREE.MeshBasicMaterial());
+    plate.name = 'AstralLiftMedallion';
+    art.add(plate);
+    const lift = AstralLift.mount(world, art, destination);
+    world.current = lift.room;
+    world.roomGroups[lift.room].visible = true;
+    lift.object.updateWorldMatrix(true, true);
+    const back = new THREE.Box3().setFromObject(lift.object);
+    expect(back.min.y).toBeCloseTo(0, 2);
+    expect(back.max.y).toBeGreaterThan(2.3);
+    const inward = lift.object.getWorldDirection(new THREE.Vector3());
+    const point = (x: number, y: number, z: number) =>
+      lift.object.localToWorld(new THREE.Vector3(x, y, z));
+    const masonry = world.roomGroups[lift.room].children.filter((o) => o !== lift.object);
+    const mount = new THREE.Raycaster(point(0, 1.48, 0.5), inward.clone().negate());
+    expect(mount.intersectObjects(masonry, true)[0]?.distance).toBeCloseTo(0.5, 4);
+    for (const x of [-0.35, 0.35, lift.target.position.x])
+      expect(lift.pick(point(x, 1.23, 1.65), inward.clone().negate())?.distance).toBeLessThan(1.5);
+    const left = lift.object.getObjectByName('astral-lift-door-left');
+    const right = lift.object.getObjectByName('astral-lift-door-right');
+    if (!left || !right) throw Error('Missing lift doors');
+    const before = right.position.x - left.position.x;
+    lift.open(1);
+    lift.object.updateWorldMatrix(true, true);
+    expect(right.position.x - left.position.x).toBeGreaterThan(before + 0.8);
+    const ray = new THREE.Raycaster(point(-0.382, 1.3, 1.65), inward.negate());
+    expect(ray.intersectObject(lift.object, true)[0]?.object.name).toBe('astral-lift-interior');
+    expect(lift.pick(ray.ray.origin, ray.ray.direction)).toBeNull();
+    lift.dispose();
+    expect(lift.object.parent).toBeNull();
+    plate.geometry.dispose();
+    plate.material.dispose();
+    world.dispose();
+  },
+);
 
 it('emits intermittent steam from the mounted bay and respects reduced motion', () => {
   const world = buildFloorWorld(generateFloor('MAPTEST2'));

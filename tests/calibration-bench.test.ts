@@ -6,7 +6,8 @@ import { expect, it } from 'vitest';
 import { generateUpperFloor } from '../src/floor/generate.ts';
 import { calibrationPlan, GEAR_TEETH, readCalibration } from '../src/rules/calibration.ts';
 import { CalibrationBench, pitchRadius, spindleCenters } from '../src/world/calibration-bench.ts';
-import { CalibrationKeyStand } from '../src/world/calibration-cabinet.ts';
+import { CalibrationCabinet, CalibrationKeyStand } from '../src/world/calibration-cabinet.ts';
+import { playableFloorPlan } from '../src/world/floor-view.ts';
 import { buildFloorWorld } from '../src/world/floor-world.ts';
 import { nodeGeometryLoader } from './helpers/gltf-node.ts';
 
@@ -155,5 +156,52 @@ it('hangs a collectible authored winding key in a separate Upper Works room', as
     stand.dispose();
     expect(stand.object.parent).toBeNull();
   }
+  world.dispose();
+});
+
+it('keeps the exported cabinet runners engaged on both sides throughout chart drawer travel', async () => {
+  const bytes = await readFile('public/assets/props/calibration-kit/calibration-kit.glb');
+  const { scene } = await nodeGeometryLoader().parseAsync(
+    bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
+    '',
+  );
+  const seed = 'MAPTEST2';
+  const world = buildFloorWorld(playableFloorPlan(seed, 6, 1));
+  const cabinet = CalibrationCabinet.mount(
+    world,
+    scene,
+    kit(['winding_key']),
+    seed,
+    [],
+    () => ({ object: new THREE.Group(), width: 0.17, height: 0.23, dispose() {} }),
+    false,
+  );
+  const fixed = cabinet.object.getObjectByName('ChartCabinet_Visual');
+  const guides = cabinet.object.getObjectByName('ChartDrawerSlides');
+  const tray = cabinet.drawer.getObjectByName('ChartDrawer_Visual');
+  if (!fixed || !guides || !tray) throw Error('Missing drawer housing, guides or tray');
+  cabinet.object.removeFromParent();
+  cabinet.object.position.set(0, 0, 0);
+  cabinet.object.rotation.set(0, 0, 0);
+  cabinet.sync({ ...readCalibration({ seed }), solved: true });
+  const z0 = cabinet.drawer.position.z;
+  const ray = new THREE.Raycaster();
+  const down = new THREE.Vector3(0, -1, 0);
+  for (let i = 0; i <= 20; i++) {
+    cabinet.object.updateMatrixWorld(true);
+    const travel = cabinet.drawer.position.z - z0;
+    expect(guides.position.z).toBeCloseTo(travel / 2);
+    for (const side of [-1, 1]) {
+      ray.set(new THREE.Vector3(side * 0.222, -0.235, 0.15), down);
+      expect(ray.intersectObject(fixed)[0]?.point.y).toBeCloseTo(-0.2425, 3);
+      expect(ray.intersectObject(guides)[0]?.point.y).toBeCloseTo(-0.252, 3);
+      ray.set(new THREE.Vector3(side * 0.215, -0.215, 0.06 + travel), down);
+      expect(ray.intersectObject(tray)[0]?.point.y).toBeCloseTo(-0.2285, 2);
+      expect(ray.intersectObject(guides)[0]?.point.y).toBeCloseTo(-0.252, 2);
+    }
+    cabinet.update(1 / 36);
+  }
+  expect(cabinet.drawer.position.z - z0).toBeCloseTo(0.18);
+  cabinet.dispose();
   world.dispose();
 });

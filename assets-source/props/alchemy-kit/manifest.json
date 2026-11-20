@@ -1,7 +1,12 @@
 {
-  "glb_sha256": "63aac285d3bc3421e7ed0ab8a4b7b5119b07dfd059ddfb958487527914679ec2",
+  "glb_sha256": "ce8220aedb857aacf47020c644b859e86b813045d15a331d76f6b39d306e6e3d",
   "roots": [
     "AlchemyCauldron",
+    "CauldronSwirl",
+    "CauldronBubble1",
+    "CauldronBubble2",
+    "CauldronBubble3",
+    "CauldronBubble4",
     "IngredientMooncap",
     "IngredientStarThistle",
     "IngredientEmberSalt",
@@ -21,14 +26,15 @@
     "GrandfatherClock",
     "ClockHourHand",
     "ClockMinuteHand",
+    "ClockHandHub",
     "ClockPendulum",
     "ClockCompartment",
     "ClockClueDial",
     "ClockClueHand",
     "ClockIngredientSocket"
   ],
-  "triangles": 49832,
-  "generator_sha256": "8bcd4959dccb6739eb7a0470b13b499ac50bf251ddfa12c414c82e86fe4d0acd",
-  "source_blend_sha256": "db289e4fe429b8b8f8d3b0ab19d697a0ae376bec602d9dff0f1c572e29002a62",
+  "triangles": 48904,
+  "generator_sha256": "1c57d27b484593bc826b924d26343a77a230c665f1c60718a4c6fffeb10a609d",
+  "source_blend_sha256": "af63bd6d70d1504b16bd73c3138a7095bfedc7d65e043512c8f445091bc00742",
   "visual_approval": "pending"
 }

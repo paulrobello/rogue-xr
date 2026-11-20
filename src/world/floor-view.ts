@@ -15,6 +15,7 @@ import { buildTableGreybox, disposeTable, TABLE_NODES } from '../combat/table-gr
 import { type RoomTemplate, templateById } from '../content/rooms.ts';
 import { isValidSeed, normalizeSeed, randomSeed, Stream } from '../core/rng.ts';
 import { BreakApart } from '../enemies/break-apart.ts';
+import { makeOwlPerch } from '../enemies/conservatory-actors.ts';
 import type { EnemyActor, EnemyAsset } from '../enemies/enemy-asset.ts';
 import { type PatrolClips, PatrolVisual } from '../enemies/patrol-visual.ts';
 import { conservatoryPlan } from '../floor/conservatory.ts';
@@ -471,6 +472,7 @@ export function mountFloorView(
     turnVignette = DEFAULT_VIGNETTE.maxStrength;
   };
   const actors = new Map<THREE.Object3D, EnemyActor>();
+  const owlPerches = new Map<EnemyActor, ReturnType<typeof makeOwlPerch>>();
   /** Per actor: its turn among shell-room steps and the seconds not yet stepped. */
   const paces = new Map<EnemyActor, { slot: number; pending: number }>();
   let slots = 0;
@@ -501,6 +503,13 @@ export function mountFloorView(
         if (world.replaceEnemy(room, body, actor.object)) {
           actors.set(actor.object, actor);
           paces.set(actor, { slot: slots++, pending: 0 });
+          if (kind === 'clockwork-owl') {
+            const perch = makeOwlPerch();
+            perch.object.position.copy(actor.object.position);
+            perch.object.rotation.y = actor.object.rotation.y;
+            world.roomGroups[room].add(perch.object);
+            owlPerches.set(actor, perch);
+          }
           // Poses the idle clip now, so a hidden room's actor never shows its bind pose.
           actor.update(0);
         } else actor.dispose();
@@ -538,6 +547,8 @@ export function mountFloorView(
   const disposeActor = (actor: EnemyActor): void => {
     actors.delete(actor.object);
     paces.delete(actor);
+    owlPerches.get(actor)?.dispose();
+    owlPerches.delete(actor);
     actor.dispose();
   };
   let toast: LootToast | null = null;
@@ -931,6 +942,8 @@ export function mountFloorView(
       dressEnemies();
     },
     useRoomAsset(templateId, instantiate, rigidNodes = [], roomStyleKit) {
+      if (floorNumber === 3 && roomStyleKit)
+        world.dressEncounterDoor(roomStyleKit.EncounterDoorLeaf);
       let dressed = 0;
       world.plan.rooms.forEach((room, index) => {
         if (room.templateId !== templateId) return;
@@ -1118,6 +1131,13 @@ export function mountFloorView(
       }
       const previousPhase = encounter.phase;
       encounter.update(dt);
+      if (previousPhase !== 'idle' && encounter.phase === 'idle') {
+        for (const [actor, perch] of owlPerches) {
+          if (!actor.object.parent) continue;
+          perch.object.position.copy(actor.object.position);
+          perch.object.rotation.y = actor.object.rotation.y;
+        }
+      }
       if (
         patrolSeatTurn &&
         encounter.activePatrol &&

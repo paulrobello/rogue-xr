@@ -28,6 +28,7 @@ const PIECES = [
   'TimberBay',
   'TimberCarvedBay',
   'TimberDoor',
+  'EncounterDoorLeaf',
 ] as const;
 
 function kit(): RoomStyleKit {

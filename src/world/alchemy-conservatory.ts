@@ -16,6 +16,12 @@ export type AlchemyPick = (
   | { action: 'apply' }
 ) & { distance: number };
 type Input = { action: 'collect' | 'add'; ingredient: Ingredient } | { action: 'apply' };
+interface Cradle {
+  node: THREE.Object3D;
+  home: THREE.Vector3;
+  available: boolean;
+  flight: number | null;
+}
 
 export class AlchemyConservatory {
   readonly cauldron: THREE.Object3D;
@@ -25,6 +31,12 @@ export class AlchemyConservatory {
   readonly cauldronRoom: number;
   readonly tabletRoom: number;
   private readonly leaves: THREE.Object3D[] = [];
+  private readonly cradles: Cradle[] = [];
+  private readonly swirl: THREE.Object3D;
+  private readonly bubbles: THREE.Object3D[];
+  private simmer = 0;
+  private splash = 0;
+  private potionReady = false;
   private readonly targets: { node: THREE.Object3D; room: number; input: Input }[] = [];
   private readonly fixtures: THREE.Object3D[] = [];
   private readonly boxes: (() => void)[] = [];
@@ -70,6 +82,8 @@ export class AlchemyConservatory {
     const lab = this.bay(this.cauldronRoom, 'brew-bench', 1.15);
     this.cauldron = this.clone('AlchemyCauldron');
     this.cauldron.position.set(0, 0, 0.54);
+    this.swirl = kitPart(this.cauldron, 'CauldronSwirl');
+    this.bubbles = [1, 2, 3, 4].map((i) => kitPart(this.cauldron, `CauldronBubble${i}`));
     lab.add(this.cauldron);
     const keyLight = new THREE.PointLight(0xffcd93, 4.0, 3.4, 2);
     keyLight.position.set(-0.72, 1.6, 1.03);
@@ -81,6 +95,12 @@ export class AlchemyConservatory {
       const ingredient = this.clone('Ingredient' + INGREDIENT_ROOTS[id]);
       ingredient.name = 'IngredientCradle' + INGREDIENT_ROOTS[id];
       ingredient.position.set((id - 1) * 0.34, 0.58, 1.04);
+      this.cradles.push({
+        node: ingredient,
+        home: ingredient.position.clone(),
+        available: false,
+        flight: null,
+      });
       lab.add(ingredient);
       this.targets.push({
         node: ingredient,
@@ -221,6 +241,7 @@ export class AlchemyConservatory {
     let nearest: AlchemyPick | null = null;
     for (const { node, room, input } of this.targets) {
       if (room !== this.world.current || !node.visible) continue;
+      if (input.action === 'add' && this.cradles[input.ingredient].flight !== null) continue;
       node.updateWorldMatrix(true, true);
       const hit = this.ray.intersectObject(node, true)[0];
       if (!hit || (nearest && hit.distance >= nearest.distance)) continue;
@@ -240,6 +261,7 @@ export class AlchemyConservatory {
   near(point: THREE.Vector3, reach: number): AlchemyPick | null {
     for (const { node, room, input } of this.targets) {
       if (room !== this.world.current || !node.visible) continue;
+      if (input.action === 'add' && this.cradles[input.ingredient].flight !== null) continue;
       node.updateWorldMatrix(true, true);
       const d = this.cube.setFromObject(node).distanceToPoint(point);
       if (d <= reach) return { ...input, distance: d };
@@ -251,18 +273,23 @@ export class AlchemyConservatory {
     const active = second ?? state;
     if (this.windDial) this.windDial.visible = !!second && !second.brewed;
     this.opened = state.opened;
-    for (const { node, input } of this.targets)
-      node.visible =
-        input.action === 'collect'
-          ? !state.found.includes(input.ingredient)
-          : input.action === 'add'
-            ? state.found.includes(input.ingredient) &&
-              !active.added.includes(input.ingredient) &&
-              !active.brewed
-            : !state.opened;
-    this.potion.visible = second
-      ? second.brewed && !second.revealed
-      : state.brewed && !state.opened;
+    if (immediate) this.splash = 0;
+    for (const { node, input } of this.targets) {
+      if (input.action === 'add') {
+        const cradle = this.cradles[input.ingredient];
+        cradle.available =
+          state.found.includes(input.ingredient) &&
+          !active.added.includes(input.ingredient) &&
+          !active.brewed;
+        if (immediate) this.finishDrop(cradle);
+        node.visible = cradle.available || cradle.flight !== null;
+      } else {
+        node.visible =
+          input.action === 'collect' ? !state.found.includes(input.ingredient) : !state.opened;
+      }
+    }
+    this.potionReady = second ? second.brewed && !second.revealed : state.brewed && !state.opened;
+    this.updatePotion();
     if (immediate || this.reducedMotion) {
       this.progress = Number(this.opened);
       this.poseWard();
@@ -271,6 +298,64 @@ export class AlchemyConservatory {
   private poseWard() {
     this.leaves[0].rotation.y = (this.progress * Math.PI) / 2;
     this.leaves[1].rotation.y = (-this.progress * Math.PI) / 2;
+  }
+  animateIngredient(ingredient: Ingredient): void {
+    const cradle = this.cradles[ingredient];
+    cradle.flight = 0;
+    cradle.node.visible = true;
+    this.poseDrop(cradle, 0);
+    this.updatePotion();
+  }
+  private poseDrop({ node, home }: Cradle, t: number): void {
+    const surface = this.cauldron.position.y + this.swirl.position.y;
+    if (this.reducedMotion) {
+      node.position.set(home.x * 0.12, surface + 0.02 - 0.06 * t, this.cauldron.position.z);
+      node.scale.setScalar(1 - 0.55 * t);
+      return;
+    }
+    const travel = THREE.MathUtils.smoothstep(t, 0, 1);
+    node.position.set(
+      THREE.MathUtils.lerp(home.x, home.x * 0.1, travel),
+      THREE.MathUtils.lerp(home.y, surface - 0.12, travel) + 1.85 * t * (1 - t),
+      THREE.MathUtils.lerp(home.z, this.cauldron.position.z, travel),
+    );
+    node.rotation.z = (home.x > 0 ? 1 : -1) * 0.75 * travel;
+    node.scale.setScalar(1 - 0.72 * THREE.MathUtils.smoothstep(t, 0.72, 1));
+  }
+  private finishDrop(cradle: Cradle): void {
+    cradle.flight = null;
+    cradle.node.position.copy(cradle.home);
+    cradle.node.rotation.z = 0;
+    cradle.node.scale.setScalar(1);
+    cradle.node.visible = cradle.available;
+  }
+  private updatePotion(): void {
+    this.potion.visible =
+      this.potionReady && this.cradles.every((cradle) => cradle.flight === null);
+  }
+  private updateBrew(dt: number): void {
+    for (const cradle of this.cradles) {
+      if (cradle.flight === null) continue;
+      cradle.flight += dt / (this.reducedMotion ? 0.4 : 0.86);
+      if (cradle.flight >= 1 || this.world.current !== this.cauldronRoom) {
+        this.finishDrop(cradle);
+        this.updatePotion();
+        this.splash = Number(this.world.current === this.cauldronRoom);
+      } else this.poseDrop(cradle, cradle.flight);
+    }
+    if (this.reducedMotion || !this.world.roomGroups[this.cauldronRoom].visible) return;
+    this.simmer += dt;
+    this.splash = Math.max(0, this.splash - dt * 1.5);
+    this.swirl.rotation.y += dt * (0.9 + 1.65 * this.splash);
+    for (const [i, bubble] of this.bubbles.entries()) {
+      const phase = (this.simmer / (1.45 + i * 0.22) + i * 0.37) % 1;
+      const rise = phase * phase;
+      bubble.position.y = this.swirl.position.y - 0.014 + (0.1 + 0.05 * this.splash) * rise;
+      const size =
+        THREE.MathUtils.smoothstep(phase, 0, 0.23) *
+        (1 - THREE.MathUtils.smoothstep(phase, 0.82, 1));
+      bubble.scale.set(size, size * (0.66 + 0.52 * phase), size);
+    }
   }
   update(dt: number, dialHours?: number): void {
     if (dialHours !== undefined && this.windNeedle) {
@@ -281,6 +366,7 @@ export class AlchemyConservatory {
       this.progress = Math.min(1, this.progress + dt * 1.35);
       this.poseWard();
     }
+    if (dt > 0) this.updateBrew(dt);
   }
   dispose(): void {
     for (const remove of this.boxes) remove();

@@ -101,16 +101,32 @@ r=root('AlchemyCauldron')
 lathe(r,[(.15,.13),(.30,.16),(.43,.24),(.48,.39),(.46,.55),(.39,.68),(.36,.72),(.33,.72),(.37,.65),(.41,.53),(.42,.40),(.37,.27),(.24,.21),(.02,.20)],black)
 torus(r,(0,0,.69),.374,.036,copper); torus(r,(0,0,.686),.376,.009,verdigris)
 cyl(r,(0,0,.647),.354,.015,liquid,32)
-# Shallow asymmetrical swirls and small bubbles give the brew a raised surface.
-for radius,x,y in [(.23,-.025,.02),(.145,.035,-.018),(.075,-.03,.018)]:
-    torus(r,(x,y,.658),radius,.004,verdigris)
-for x,y,sz in [(-.22,.08,.035),(.15,.10,.026),(.09,-.18,.022),(-.08,-.10,.019),(.01,.03,.03)]:
-    uvball(r,(x,y,.661),(sz,sz,sz*.30),glimmer,12,6)
+swirl=root('CauldronSwirl'); swirl.parent=r; swirl.location.z=.657
+def swirl_ribbon(angle, sweep, start, end, width, height, material):
+    vertices=[]; faces=[]
+    for i in range(49):
+        t=i/48; a=angle+sweep*t
+        radius=start+(end-start)*t
+        half_width=width*(.04+.96*math.sin(math.pi*t)**.72)
+        for offset in (-half_width,half_width):
+            vertices.append(((radius+offset)*math.cos(a),(radius+offset)*math.sin(a),height))
+        if i: faces.append((2*i-2,2*i-1,2*i+1,2*i))
+    mesh=bpy.data.meshes.new('ribbon of current'); mesh.from_pydata(vertices,[],faces); mesh.update()
+    o=bpy.data.objects.new('ribbon of current',mesh); bpy.context.scene.collection.objects.link(o)
+    attach(o,swirl,material)
+swirl_ribbon(.45,math.tau*1.03,.026,.294,.012,0,verdigris)
+swirl_ribbon(2.80,4.3,.14,.327,.008,0,verdigris)
+swirl_ribbon(4.50,1.70,.205,.270,.004,.0008,glimmer)
+swirl_ribbon(2.00,1.25,.094,.145,.003,.0008,glimmer)
+for i,(x,y,z,size) in enumerate([(-.19,.08,.666,.029),(.14,.13,.692,.024),
+                                  (.08,-.18,.657,.035),(-.06,-.07,.731,.017)]):
+    bubble=root('CauldronBubble'+str(i+1)); bubble.parent=r; bubble.location=(x,y,z)
+    uvball(bubble,(0,0,0),(size,size,size*.93),vial,16,8)
+    uvball(bubble,(-size*.32,-size*.57,size*.56),(size*.25,size*.13,size*.15),glimmer,10,6)
 torus(r,(0,0,.30),.458,.007,copper); torus(r,(0,0,.53),.465,.005,verdigris)
 for i in range(3):
     a=i*2*math.pi/3+.3; x,y=.28*math.cos(a),.28*math.sin(a)
     line(r,(x,y,.19),(x*1.22,y*1.22,.045),.043,black,12); uvball(r,(x*1.22,y*1.22,.045),(.095,.071,.045),copper)
-for x,y,z,s in [(-.16,.05,.72,.025),(.12,-.12,.73,.018),(.08,.14,.70,.013),(-.03,-.03,.78,.012)]: uvball(r,(x,y,z),(s,s,s),glimmer,12,6)
 for side in (-1,1):
     torus(r,(side*.465,0,.53),.075,.012,copper,(math.pi/2,0,0))
 
@@ -257,13 +273,22 @@ for i,label in enumerate(('XII','I','II','III','IV','V','VI','VII','VIII','IX','
 # Diamond marquetry at the foot and face spandrels.
 for z in (.27,1.58):
     torus(r,(0,-.205,z),.04,.005,gold,(math.pi/2,0,0))
-# Centered hands. At zero they point to twelve (+Y in glTF).
-for name,length,width in [('ClockHourHand',.100,.016),('ClockMinuteHand',.158,.006)]:
-    h=root(name); h.parent=r; h.location=(0,-.218,1.84)
-    line(h,(0,-.006,-.025),(0,-.006,length),width,black,8)
-    cone(h,(0,-.006,length-.025),(0,-.006,length+.015),width*1.4,black)
-    if name=='ClockHourHand': uvball(h,(0,-.018,.065),(.027,.007,.031),black,12,6)
-    uvball(h,(0,0,0),(.017,.008,.017),gold,12,6)
+# Both hands turn on one spindle. The fixed brass cap covers their stacked bases.
+def clock_pointer(name, depth, profile):
+    hand=root(name); hand.parent=r; hand.location=(0,depth,1.84)
+    outline=[(w,z) for z,w in profile]+[(-w,z) for z,w in reversed(profile) if w]
+    n=len(outline)
+    verts=[(x,y,z) for y in (-.0015,.0015) for x,z in outline]
+    faces=[tuple(range(n)),tuple(reversed(range(n,2*n)))]
+    faces.extend((i,i+n,(i+1)%n+n,(i+1)%n) for i in range(n))
+    mesh=bpy.data.meshes.new(name+' blade'); mesh.from_pydata(verts,[],faces); mesh.update()
+    blade=bpy.data.objects.new(name+' blade',mesh); bpy.context.scene.collection.objects.link(blade)
+    attach(blade,hand,black)
+    for face in mesh.polygons: face.use_smooth=False
+clock_pointer('ClockHourHand',-.208,[(-.007,.006),(.030,.005),(.064,.012),(.110,0)])
+clock_pointer('ClockMinuteHand',-.213,[(-.007,.004),(.110,.0038),(.135,.0055),(.166,0)])
+hub=root('ClockHandHub'); hub.parent=r; hub.location=(0,-.219,1.84)
+uvball(hub,(0,0,0),(.014,.007,.014),gold,24,10)
 pend=root('ClockPendulum'); pend.parent=r; pend.location=(0,-.16,1.47)
 line(pend,(0,-.008,0),(0,-.008,-.68),.013,gold,10)
 line(pend,(0,-.020,0),(0,-.020,-.68),.003,glimmer,8)

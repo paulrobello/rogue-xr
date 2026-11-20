@@ -1,5 +1,131 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { EnemyAsset, type EnemyClip, type EnemyManifest } from './enemy-asset.ts';
+
+const OWL_REST_HEIGHT = 0.98;
+
+/** Independent room scenery so combat movement and break-apart never carry the roost with the owl. */
+export function makeOwlPerch(): { object: THREE.Group; dispose(): void } {
+  const object = new THREE.Group();
+  object.name = 'clockwork-owl-perch';
+  const turned = (profile: readonly [number, number][], segments = 20) =>
+    new THREE.LatheGeometry(
+      profile.map(([r, y]) => new THREE.Vector2(r, y)),
+      segments,
+    );
+  const bronze = new THREE.MeshStandardMaterial({
+    color: 0xb28844,
+    metalness: 0.62,
+    roughness: 0.4,
+  });
+  const enamel = new THREE.MeshStandardMaterial({
+    color: 0x34554e,
+    metalness: 0.36,
+    roughness: 0.43,
+  });
+  const walnut = new THREE.MeshStandardMaterial({
+    color: 0x633c28,
+    metalness: 0.06,
+    roughness: 0.65,
+  });
+  const pedestal = turned([
+    [0, 0],
+    [0.221, 0],
+    [0.236, 0.012],
+    [0.236, 0.038],
+    [0.223, 0.051],
+    [0.195, 0.055],
+    [0.177, 0.077],
+    [0.122, 0.091],
+    [0.093, 0.13],
+    [0.076, 0.172],
+    [0.066, 0.18],
+    [0.06, 0.21],
+    [0.044, 0.36],
+    [0.035, 0.59],
+    [0.043, 0.67],
+    [0.06, 0.705],
+    [0.057, 0.744],
+    [0, 0.75],
+  ]);
+  object.add(new THREE.Mesh(pedestal, enamel));
+
+  // The authored claws curve across -Z, starting 7 cm above the bird origin at the ankles.
+  const barY = OWL_REST_HEIGHT - 0.025;
+  const barZ = -0.058;
+  const crossbar = turned([
+    [0, -0.315],
+    [0.048, -0.315],
+    [0.058, -0.297],
+    [0.058, 0.297],
+    [0.048, 0.315],
+    [0, 0.315],
+  ])
+    .rotateZ(-Math.PI / 2)
+    .translate(0, barY, barZ);
+  object.add(new THREE.Mesh(crossbar, walnut));
+  const fittings: THREE.BufferGeometry[] = [
+    turned([
+      [0.231, 0.018],
+      [0.239, 0.022],
+      [0.239, 0.032],
+      [0.231, 0.036],
+    ]),
+    turned([
+      [0.066, 0.172],
+      [0.079, 0.178],
+      [0.08, 0.19],
+      [0.071, 0.201],
+      [0.062, 0.204],
+    ]),
+    turned([
+      [0.056, 0.7],
+      [0.066, 0.708],
+      [0.066, 0.724],
+      [0.058, 0.733],
+    ]),
+  ];
+  for (const side of [-1, 1]) {
+    const sweep = new THREE.CubicBezierCurve3(
+      new THREE.Vector3(0, 0.733, 0),
+      new THREE.Vector3(side * 0.032, 0.816, 0),
+      new THREE.Vector3(side * 0.232, 0.823, barZ),
+      new THREE.Vector3(side * 0.232, barY, barZ),
+    );
+    fittings.push(
+      new THREE.TubeGeometry(sweep, 12, 0.017, 8, false),
+      turned([
+        [0.055, -0.016],
+        [0.061, -0.014],
+        [0.061, 0.014],
+        [0.055, 0.016],
+      ])
+        .rotateZ(-Math.PI / 2)
+        .translate(side * 0.232, barY, barZ),
+      turned([
+        [0, -0.016],
+        [0.045, -0.016],
+        [0.051, -0.01],
+        [0.051, 0.01],
+        [0.044, 0.016],
+        [0, 0.016],
+      ])
+        .rotateZ(-Math.PI / 2)
+        .translate(side * 0.311, barY, barZ),
+    );
+  }
+  const hardware = mergeGeometries(fittings);
+  for (const part of fittings) part.dispose();
+  object.add(new THREE.Mesh(hardware, bronze));
+  return {
+    object,
+    dispose() {
+      object.removeFromParent();
+      for (const geometry of [pedestal, crossbar, hardware]) geometry.dispose();
+      for (const material of [enamel, walnut, bronze]) material.dispose();
+    },
+  };
+}
 
 /** The owl has rigid articulated parts and uses the same combat animation mixer as the other enemies. */
 export function makeClockworkOwlAsset(art: THREE.Object3D): EnemyAsset {
@@ -11,8 +137,7 @@ export function makeClockworkOwlAsset(art: THREE.Object3D): EnemyAsset {
   facing.add(bird);
   const flight = new THREE.Group();
   flight.name = 'OwlFlight';
-  const hoverHeight = 0.98;
-  flight.position.y = hoverHeight;
+  flight.position.y = OWL_REST_HEIGHT;
   flight.add(facing);
   root.add(flight);
   const socketPositions = {
@@ -42,9 +167,9 @@ export function makeClockworkOwlAsset(art: THREE.Object3D): EnemyAsset {
       name,
       new THREE.AnimationClip(name, duration, [
         new THREE.NumberKeyframeTrack('OwlFlight.position[y]', times, [
-          hoverHeight,
-          hoverHeight + (name === 'attack' ? 0.09 : name === 'idle' ? 0.035 : 0),
-          name === 'death' ? 0.08 : hoverHeight,
+          OWL_REST_HEIGHT,
+          OWL_REST_HEIGHT + (name === 'attack' ? 0.09 : 0),
+          name === 'death' ? 0.08 : OWL_REST_HEIGHT,
         ]),
         pose('OwlHead.rotation[y]', head),
         pose('OwlWingL.rotation[z]', wing),
@@ -81,7 +206,7 @@ export function makeClockworkOwlAsset(art: THREE.Object3D): EnemyAsset {
     sockets: Object.fromEntries(
       Object.entries(socketPositions).map(([name, pos]) => [
         name,
-        { bone: name, parent: flight.name, position: [pos[0], pos[1] + hoverHeight, pos[2]] },
+        { bone: name, parent: flight.name, position: [pos[0], pos[1] + OWL_REST_HEIGHT, pos[2]] },
       ]),
     ),
     emissive: { material: 'Magical glimmer', color: '#f1bc68', intensity: 1, nodes: [] },
