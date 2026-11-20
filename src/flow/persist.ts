@@ -41,7 +41,9 @@ export function bindFlowPersistence(
       event.type === 'hearth' ||
       event.type === 'pressure' ||
       event.type === 'book-secret' ||
-      event.type === 'bell-chimes'
+      event.type === 'bell-chimes' ||
+      event.type === 'counterweight' ||
+      event.type === 'alchemy'
     ) {
       const snapshot = flow.snapshot(Date.now(), roomIndex());
       if (snapshot) enqueue(() => saveRunSnapshot(db, snapshot));

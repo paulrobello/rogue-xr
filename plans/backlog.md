@@ -80,3 +80,7 @@ Cards live on the kanban board (project `rogue-xr`); each card's notes name its 
 | P6-T2 | `01a1e164b09271659d7cb4ff22695e83` |
 | P6-T3 | `01a1e164b3eb773fa0969aab08c3a5e5` |
 | P6-T4 | `01a1e164b730762d92dfb4e0784dc4bf` |
+
+## Return routes and the Alchemical Conservatory
+
+Track the counterweight shortcut, pressure-operated supply door, seeded clue locations, cauldron and potion obstacles, striking-hour clock, watching wizard portraits, clockwork owl and broom caretakers in the [floor roadmap and potion recipe book](../docs/conservatory-and-return-routes.md). The first brew opens the thorn ward. The ink, stillwind and looking-glass brews are subsequent encounters.

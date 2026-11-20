@@ -1515,6 +1515,13 @@ export class FlowUi {
         .join(' · ');
       rows.unshift({ id: 'bell-score', label: `Bell score · ${phrase}` });
     }
+    if (run?.alchemy?.brewed && !run.alchemy.opened)
+      rows.unshift({ id: 'thornwake-draught', label: 'Thornwake draught' });
+    else if (run?.alchemy && !run.alchemy.brewed) {
+      const names = ['Mooncap', 'Star-thistle', 'Ember salt'];
+      for (const id of run.alchemy.found.filter((id) => !run.alchemy?.added.includes(id)))
+        rows.unshift({ id: 'ingredient-' + id, label: names[id] });
+    }
     const keys = run?.bookSecretKeyRooms ?? [];
     const unlocked = new Set(run?.bookSecretCabinetRooms ?? []);
     const carriedKeys = keys.filter((room) => !unlocked.has(room)).length;

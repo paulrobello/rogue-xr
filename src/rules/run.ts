@@ -1,6 +1,12 @@
 import { hashString, normalizeSeed, RunRng, type RunRngState, Stream } from '../core/rng.ts';
 import { type Difficulty, isDifficulty } from './difficulty.ts';
-import { RulesError, type StoredBellChimesState, type StoredPressureState } from './types.ts';
+import {
+  RulesError,
+  type StoredAlchemyState,
+  type StoredBellChimesState,
+  type StoredCounterweightState,
+  type StoredPressureState,
+} from './types.ts';
 
 /**
  * Run-level state that outlives a single combat: the run's RNG snapshot, the deck as a list of card
@@ -33,6 +39,9 @@ export interface RunState {
   readonly difficulty?: Difficulty;
   /** The pressure regulator state. Absent in saves made before the regulator existed. */
   readonly pressure?: StoredPressureState;
+  /** Upper Works counterweight lock progress. */
+  readonly counterweight?: StoredCounterweightState;
+  readonly alchemy?: StoredAlchemyState;
   /** Cross-floor bell puzzle progress. Absent in older saves and treated as idle. */
   readonly bellChimes?: StoredBellChimesState;
   /** Rooms whose marked book caches have paid out. */

@@ -1,12 +1,14 @@
 import { ENCOUNTER_CONTENT_VERSION } from '../combat/encounter-choice.ts';
 import { PERMANENT_CARD_IDS } from '../content/rewards.ts';
 import { normalizeSeed, STREAMS, type StreamState } from '../core/rng.ts';
+import { alchemyRecipe, type Ingredient, type StoredAlchemyState } from '../rules/alchemy.ts';
 import {
   BELL_PHRASE_LENGTH,
   type BellNote,
   bellMelody,
   type StoredBellChimesState,
 } from '../rules/bell-chimes.ts';
+import { counterweightTarget, type StoredCounterweightState } from '../rules/counterweight.ts';
 import { isDifficulty } from '../rules/difficulty.ts';
 import {
   isPressureNoteId,
@@ -168,7 +170,7 @@ function pendingLoot(v: unknown, path: string): PendingLoot[] {
   });
 }
 
-function pressure(v: unknown, path: string, seed: string): StoredPressureState {
+function pressure(v: unknown, path: string, seed: string, version: number): StoredPressureState {
   const r = rec(v, path);
   if (!Array.isArray(r.dials) || r.dials.length !== 3)
     fail(`${path}.dials`, 'expected three dial values');
@@ -176,9 +178,8 @@ function pressure(v: unknown, path: string, seed: string): StoredPressureState {
     int(dial, `${path}.dials[${i}]`, 1, 3),
   ) as unknown as PressureDials;
   if (typeof r.solved !== 'boolean') fail(`${path}.solved`, 'expected a boolean');
-  const target = pressureTarget(seed);
-  const matchesTarget = dials.every((dial, i) => dial === target[i]);
-  if (r.solved === true && !matchesTarget)
+  const target = pressureTarget(seed, version);
+  if (r.solved && !dials.every((d, i) => d === target[i]))
     fail(`${path}.solved`, 'does not match the seeded target');
   const notes = r.notes === undefined ? [] : r.notes;
   if (!Array.isArray(notes) || notes.some((note) => !isPressureNoteId(note))) {
@@ -194,6 +195,42 @@ function pressure(v: unknown, path: string, seed: string): StoredPressureState {
   if (!drawerOpen && rewardClaimed)
     fail(`${path}.rewardClaimed`, 'cannot be claimed before opening drawer');
   return { dials, solved: r.solved, notes: [...notes], drawerOpen, rewardClaimed };
+}
+
+function counterweight(v: unknown, path: string, seed: string): StoredCounterweightState {
+  const r = rec(v, path);
+  if (r.selected !== undefined && r.selected !== 0 && r.selected !== 1)
+    fail(`${path}.selected`, 'expected 0 or 1');
+  if (typeof r.solved !== 'boolean') fail(`${path}.solved`, 'expected a boolean');
+  if (r.solved && r.selected !== counterweightTarget(seed))
+    fail(path, 'wrong weight for completed counterweight');
+  return {
+    solved: r.solved,
+    ...(r.selected === undefined ? {} : { selected: r.selected as 0 | 1 }),
+  };
+}
+
+function alchemy(v: unknown, path: string, seed: string): StoredAlchemyState {
+  const r = rec(v, path);
+  const list = (value: unknown, name: string): Ingredient[] => {
+    if (
+      !Array.isArray(value) ||
+      value.some((n) => ![0, 1, 2].includes(n as number)) ||
+      new Set(value).size !== value.length
+    )
+      fail(`${path}.${name}`, 'expected unique ingredient ids');
+    return [...value] as Ingredient[];
+  };
+  const found = list(r.found, 'found');
+  const added = list(r.added, 'added');
+  const recipe = alchemyRecipe(seed);
+  if (added.some((id, i) => id !== recipe[i])) fail(path, 'mixture does not match its recipe');
+  if (added.some((n) => !found.includes(n))) fail(`${path}.added`, 'ingredient was not found');
+  if (added.length > 2 || typeof r.brewed !== 'boolean' || typeof r.opened !== 'boolean')
+    fail(path, 'invalid brew state');
+  if (r.brewed !== (added.length === 2)) fail(`${path}.brewed`, 'must match two added ingredients');
+  if (r.opened && !r.brewed) fail(`${path}.opened`, 'cannot open before brewing');
+  return { found, added, brewed: r.brewed, opened: r.opened };
 }
 
 function streamState(v: unknown, path: string): StreamState {
@@ -245,7 +282,12 @@ function roomIds(value: unknown, path: string): number[] | undefined {
   return [...value];
 }
 
-function validateRunState(raw: unknown, path: string, pressureSeed?: string): RunState {
+function validateRunState(
+  raw: unknown,
+  path: string,
+  version: number,
+  pressureSeed?: string,
+): RunState {
   const r = rec(raw, path);
   let seed: string;
   try {
@@ -275,7 +317,13 @@ function validateRunState(raw: unknown, path: string, pressureSeed?: string): Ru
   const pressureState =
     r.pressure === undefined
       ? undefined
-      : pressure(r.pressure, `${path}.pressure`, activeFloorSeed);
+      : pressure(r.pressure, `${path}.pressure`, activeFloorSeed, version);
+  const counterweightState =
+    r.counterweight === undefined
+      ? undefined
+      : counterweight(r.counterweight, `${path}.counterweight`, seed);
+  const alchemyState =
+    r.alchemy === undefined ? undefined : alchemy(r.alchemy, `${path}.alchemy`, seed);
   const bellChimesState =
     r.bellChimes === undefined ? undefined : bellChimes(r.bellChimes, `${path}.bellChimes`, seed);
   const bookSecretOpenedRooms = roomIds(r.bookSecretOpenedRooms, `${path}.bookSecretOpenedRooms`);
@@ -304,6 +352,8 @@ function validateRunState(raw: unknown, path: string, pressureSeed?: string): Ru
     ...(pending.length === 0 ? {} : { pendingLoot: pending }),
     ...(difficulty === undefined ? {} : { difficulty }),
     ...(pressureState === undefined ? {} : { pressure: pressureState }),
+    ...(counterweightState === undefined ? {} : { counterweight: counterweightState }),
+    ...(alchemyState === undefined ? {} : { alchemy: alchemyState }),
     ...(bellChimesState === undefined ? {} : { bellChimes: bellChimesState }),
     ...(bookSecretOpenedRooms === undefined ? {} : { bookSecretOpenedRooms }),
     ...(bookSecretKeyRooms === undefined ? {} : { bookSecretKeyRooms }),
@@ -333,11 +383,15 @@ export function validateSnapshot(raw: unknown): RunSnapshot {
   if (typeof r.floorSeed !== 'string' || r.floorSeed === '') {
     fail('snapshot.floorSeed', 'expected a non-empty string');
   }
+  const version = int(r.contentVersion ?? 1, 'snapshot.contentVersion', 1);
   const floorNumber =
-    r.floorNumber === undefined ? 1 : int(r.floorNumber, 'snapshot.floorNumber', 1, 2);
+    r.floorNumber === undefined
+      ? 1
+      : int(r.floorNumber, 'snapshot.floorNumber', 1, version >= 5 ? 3 : 2);
   const activeRun = validateRunState(
     r.run,
     'snapshot.run',
+    version,
     r.floorNumber === undefined ? undefined : r.floorSeed,
   );
   const expectedSeed = floorSeedFor(activeRun.seed, floorNumber);
@@ -378,17 +432,22 @@ export function validateSnapshot(raw: unknown): RunSnapshot {
       : { reachedRooms: roomIds(r.reachedRooms, 'snapshot.reachedRooms') }),
     ...(r.floors === undefined
       ? {}
-      : { floors: validateFloors(r.floors, activeRun.seed, floorNumber) }),
+      : { floors: validateFloors(r.floors, activeRun.seed, floorNumber, version) }),
   };
 }
 
-function validateFloors(raw: unknown, runSeed: string, active: number): FloorSnapshot[] {
+function validateFloors(
+  raw: unknown,
+  runSeed: string,
+  active: number,
+  version: number,
+): FloorSnapshot[] {
   if (!Array.isArray(raw)) fail('snapshot.floors', 'expected an array');
   const seen = new Set<number>([active]);
   return raw.map((value, i) => {
     const path = `snapshot.floors[${i}]`;
     const r = rec(value, path);
-    const floorNumber = int(r.floorNumber, `${path}.floorNumber`, 1, 2);
+    const floorNumber = int(r.floorNumber, `${path}.floorNumber`, 1, version >= 5 ? 3 : 2);
     if (seen.has(floorNumber)) fail(`${path}.floorNumber`, 'duplicate floor');
     seen.add(floorNumber);
     const floorSeed =
@@ -416,7 +475,7 @@ function validateFloors(raw: unknown, runSeed: string, active: number): FloorSna
         : { usedHearths: strings(r.usedHearths, `${path}.usedHearths`) }),
       ...(r.pressure === undefined
         ? {}
-        : { pressure: pressure(r.pressure, `${path}.pressure`, floorSeed) }),
+        : { pressure: pressure(r.pressure, `${path}.pressure`, floorSeed, version) }),
       ...(r.bookSecretOpenedRooms === undefined
         ? {}
         : {

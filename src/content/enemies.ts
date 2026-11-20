@@ -18,7 +18,8 @@ export type EnemyKind =
   | 'grand-escapement'
   | 'glasswing-scrivener'
   | 'furnace-mite'
-  | 'null-crown-auditor';
+  | 'null-crown-auditor'
+  | 'clockwork-owl';
 
 export type EncounterTier = 'regular' | 'elite' | 'guardian';
 
@@ -155,6 +156,16 @@ export const ENEMIES: Readonly<Record<EnemyKind, EnemySetup>> = {
       move('levy', 'attack', 0, [hit(18)], 'exposed'),
     ],
   },
+  'clockwork-owl': {
+    id: 'clockwork-owl',
+    name: 'Clockwork Owl',
+    hp: 44,
+    moves: [
+      move('talon-sweep', 'attack', 3, [hit(7, 2)]),
+      move('watchful-tilt', 'defend', 2, [block(10)]),
+      move('feather-dart', 'attack-debuff', 2, [hit(6), onPlayer('vulnerable', 2)]),
+    ],
+  },
 };
 
 /** Threat cost of one enemy against a floor budget. */
@@ -167,6 +178,7 @@ export const ENEMY_THREAT: Readonly<Record<EnemyKind, number>> = {
   'glasswing-scrivener': 3,
   'furnace-mite': 2,
   'null-crown-auditor': 8,
+  'clockwork-owl': 3,
 };
 
 export interface Encounter {
@@ -183,6 +195,8 @@ const encounter = (id: string, tier: EncounterTier, enemies: EnemyKind[]): Encou
   enemies,
   threat: enemies.reduce((sum, kind) => sum + ENEMY_THREAT[kind], 0),
 });
+
+export const CONSERVATORY_OWL = encounter('conservatory-owl', 'regular', ['clockwork-owl']);
 
 export const ENCOUNTERS: Readonly<Record<EncounterTier, readonly Encounter[]>> = {
   regular: [

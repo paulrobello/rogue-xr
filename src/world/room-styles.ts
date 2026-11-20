@@ -37,10 +37,11 @@ export function roomStyleKitFromScene(scene: THREE.Object3D): RoomStyleKit {
 export function roomStyleFor(
   plan: FloorPlan,
   room: number,
-  floorNumber: 1 | 2 = 1,
+  floorNumber: 1 | 2 | 3 = 1,
 ): RoomStyle | null {
   if (plan.pressureWing?.pumpRoom === room) return 'boiler';
   const templateId = plan.rooms[room]?.templateId;
+  if (floorNumber === 3 && templateId === 'hall') return 'timber';
   if (floorNumber === 2 && (templateId === 'hall' || templateId === 'study')) return 'boiler';
   if (templateId !== 'study') return null;
   if (plan.seed === 'MAPTEST2') return room === 2 ? 'timber' : null;

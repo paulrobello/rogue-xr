@@ -312,6 +312,7 @@ export interface CombatSessionDeps {
   room: number;
   tier: EncounterTier;
   contentVersion?: number;
+  floorNumber?: number;
   tablePose: TablePose;
   /** Player-to-table-centre distance the table was placed at, metres. Default STATUS_FACE_SEAT. */
   seatDistance?: number;
@@ -639,6 +640,7 @@ export class CombatSession {
       deps.tier,
       ordered.length,
       deps.contentVersion,
+      deps.floorNumber,
     );
     const { difficulty, ...controllerOptions } = deps.options ?? {};
     this.controller = new CombatController({
@@ -2992,6 +2994,7 @@ function sharedDiceModels(): Promise<DiceAsset | null> {
 export interface CombatHookFloor {
   seed: string;
   contentVersion?: number;
+  floorNumber?: number;
   encounter: Pick<EncounterDirector, 'phase' | 'activeRoom' | 'tablePose' | 'end'> & {
     readonly seatDistance?: number | null;
   };
@@ -3106,6 +3109,7 @@ export class CombatHook {
         room,
         tier,
         ...(floor.contentVersion === undefined ? {} : { contentVersion: floor.contentVersion }),
+        ...(floor.floorNumber === undefined ? {} : { floorNumber: floor.floorNumber }),
         tablePose: pose,
         ...(seat == null ? {} : { seatDistance: seat }),
         bodies,

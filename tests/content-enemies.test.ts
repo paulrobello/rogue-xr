@@ -67,7 +67,7 @@ function intentSequence(enemy: EnemySetup, seed: string, rounds = 12): string[] 
 }
 
 describe('roster', () => {
-  it('has three regulars, one elite and one guardian, all distinct', () => {
+  it('contains each named automaton, including the Conservatory owl', () => {
     expect(ROSTER.map((e) => e.name)).toEqual([
       'Cog Sentry',
       'Spring Hound',
@@ -77,6 +77,7 @@ describe('roster', () => {
       'Glasswing Scrivener',
       'Twin Furnace Mite',
       'Null-Crown Auditor',
+      'Clockwork Owl',
     ]);
     for (const [kind, setup] of Object.entries(ENEMIES)) expect(setup.id).toBe(kind);
   });

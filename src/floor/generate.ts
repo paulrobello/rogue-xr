@@ -41,6 +41,10 @@ export interface SealedDoor extends DoorRef {
   style: SealStyle;
 }
 
+export type PuzzleGate = 'counterweight' | 'pressure' | 'thorn';
+
+export type FloorConnection = readonly [DoorRef, DoorRef] & { puzzleGate?: PuzzleGate };
+
 /** Chance that a floor boards up one of its dead-end doors; every other one is plain wall. */
 export const BOARDED_DOOR_CHANCE = 0.5;
 const GUARDED_CHEST_CHANCE = 0.45;
@@ -49,7 +53,7 @@ const GUARDED_DOOR_CHANCE = 0.65;
 export interface FloorPlan {
   seed: string;
   rooms: readonly PlacedRoom[];
-  connections: readonly (readonly [DoorRef, DoorRef])[];
+  connections: readonly FloorConnection[];
   /** Doors that lead nowhere; the world closes each with a wall or a boarded door. */
   sealed: readonly SealedDoor[];
   guardianRoom: number;
@@ -388,12 +392,17 @@ function entryLandingFits(rooms: readonly WorldRoom[], sealed: readonly SealedDo
 /** Picks at most one lock on an outward edge from a combat room. Every room keeps its entry open. */
 export function guardedConnection(plan: FloorPlan): readonly [DoorRef, DoorRef] | null {
   const stream = Stream.fromKey(`${plan.seed}:guarded-connections`);
-  const candidates = plan.connections.filter(
-    ([from, to]) =>
+  const candidates = plan.connections.filter((connection) => {
+    const [from, to] = connection;
+    return (
+      !connection.puzzleGate &&
+      to.room <= (plan.pressureWing?.pumpRoom ?? Infinity) &&
       plan.rooms[from.room]?.encounter != null &&
       (plan.rooms[to.room]?.depth ?? 0) > (plan.rooms[from.room]?.depth ?? 0) &&
-      to.room !== plan.pressureWing?.gallery,
-  );
+      to.room !== plan.pressureWing?.gallery &&
+      to.room !== plan.pressureWing?.pumpRoom
+    );
+  });
   return candidates.length > 0 && stream.next() < GUARDED_DOOR_CHANCE
     ? stream.pick(candidates)
     : null;
@@ -436,6 +445,7 @@ interface PressureWingFit {
 export function attachPressureWing(
   plan: FloorPlan,
   templates: readonly RoomTemplate[] = GREYBOX_TEMPLATES,
+  alternative = 0,
 ): FloorPlan {
   if (plan.pressureWing) return plan;
   const corridor = templates.find((t) => t.id === 'corridor');
@@ -529,7 +539,9 @@ export function attachPressureWing(
   const nearest = candidates.filter(
     (fit) => (plan.rooms[fit.source.room]?.depth ?? Infinity) === nearestDepth,
   );
-  const fit = stream.pick(nearest);
+  const fit = alternative
+    ? fits[(fits.indexOf(stream.pick(nearest)) + alternative) % fits.length]
+    : stream.pick(nearest);
   const gallery = plan.rooms.length;
   const pumpRoom = gallery + 1;
   const host = plan.rooms[fit.source.room] as PlacedRoom;
@@ -563,8 +575,8 @@ export function attachPressureWing(
   const galleryDoor: DoorRef = { room: gallery, door: fit.corridorDoor };
   const galleryExit: DoorRef = { room: gallery, door: fit.corridorExitDoor };
   const studyDoor: DoorRef = { room: pumpRoom, door: fit.studyDoor };
-  const connections = [
-    ...plan.connections.map(([a, b]) => [{ ...a }, { ...b }] as const),
+  const connections: FloorConnection[] = [
+    ...plan.connections,
     [{ room: fit.source.room, door: fit.source.door }, galleryDoor] as const,
     [galleryExit, studyDoor] as const,
   ];

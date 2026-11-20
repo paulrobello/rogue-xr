@@ -120,6 +120,27 @@ def glb_stats(path: Path) -> dict:
     }
 
 
+def check_alchemy(errors: list[str]) -> None:
+    source = ROOT / "assets-source/props/alchemy-kit"
+    runtime = ROOT / "public/assets/props/alchemy-kit/alchemy-kit.glb"
+    manifest = json.loads((source / "manifest.json").read_text())
+    for path, key in [(runtime, "glb_sha256"), (source / "alchemy-kit.blend", "source_blend_sha256"),
+                      (ROOT / "scripts/assets/build-alchemy-kit.py", "generator_sha256")]:
+        if sha256(path) != manifest[key]:
+            errors.append(f"Conservatory asset hash mismatch: {path.name}")
+    glb = glb_json(runtime)
+    missing = set(manifest["roots"]) - {n.get("name") for n in glb["nodes"]}
+    if missing:
+        errors.append(f"Conservatory GLB missing parts: {sorted(missing)}")
+    if any("normalTexture" not in m or "baseColorTexture" not in m.get("pbrMetallicRoughness", {})
+           for m in glb["materials"]):
+        errors.append("Conservatory material is missing authored albedo or surface relief")
+    for portrait in json.loads((source / "portraits/manifest.json").read_text())["assets"]:
+        if sha256(source / "portraits" / portrait["source"]) != portrait["sourceSha256"] or \
+                sha256(ROOT / portrait["runtime"]) != portrait["runtimeSha256"]:
+            errors.append(f"Conservatory portrait hash mismatch: {portrait['name']}")
+
+
 def check_stairwell(errors: list[str]) -> None:
     source = ROOT / "assets-source/props/stairwell"
     path = ROOT / "public/assets/props/stairwell/stairwell.glb"
@@ -1178,6 +1199,7 @@ def main() -> int:
         sizes = ", ".join(f"{k} {v['width']}px" for k, v in s.get("maps", {}).items())
         print(f"asset-check props/table-decor: tris {s.get('perKind')}, {len(s.get('glb', {}).get('materials', []))} material; {sizes}")
     check_stairwell(errors)
+    check_alchemy(errors)
     architectural = check_architectural_finishes(errors)
     if architectural:
         print(f"asset-check props/architectural-finishes: {architectural.get('triangles')} tris, {architectural.get('materials')} materials, {architectural.get('embeddedImages')} embedded images, {architectural.get('roots')} roots")

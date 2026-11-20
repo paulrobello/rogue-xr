@@ -1,4 +1,5 @@
 import {
+  CONSERVATORY_OWL,
   ENCOUNTERS,
   type Encounter,
   type EncounterTier,
@@ -12,7 +13,9 @@ export const FOUNDRY_VERSION = 2;
 export const PRESSURE_WORKS_VERSION = 3;
 /** Fresh runs use the distinct Upper Works floor; older snapshots retain their v3 layouts. */
 export const UPPER_WORKS_VERSION = 4;
-export const ENCOUNTER_CONTENT_VERSION = UPPER_WORKS_VERSION;
+/** Return-passages puzzle content. Older snapshots keep their original clue locations. */
+export const RETURN_PASSAGES_VERSION = 5;
+export const ENCOUNTER_CONTENT_VERSION = RETURN_PASSAGES_VERSION;
 const LEGACY_ENCOUNTER_IDS = new Set([
   'sentry',
   'hound',
@@ -31,7 +34,9 @@ export function chooseEncounter(
   tier: EncounterTier,
   count: number,
   contentVersion = ENCOUNTER_CONTENT_VERSION,
+  floor = 1,
 ): Encounter {
+  if (floor === 3 && count === 1 && tier === 'regular') return CONSERVATORY_OWL;
   const pool =
     contentVersion < FOUNDRY_VERSION
       ? ENCOUNTERS[tier].filter((e) => LEGACY_ENCOUNTER_IDS.has(e.id))

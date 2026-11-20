@@ -1,0 +1,49 @@
+{
+  "generator": "scripts/assets/build-alchemy-kit.py",
+  "authoring": "Original procedural Blender model, project brief; no external assets",
+  "blender": "5.2.2 LTS",
+  "license": "MIT, project-authored",
+  "axes": "glTF Y up; +Z front; metres",
+  "triangles": 49832,
+  "roots": [
+    "AlchemyCauldron",
+    "IngredientMooncap",
+    "IngredientStarThistle",
+    "IngredientEmberSalt",
+    "PotionVial",
+    "RecipeTileMooncap",
+    "RecipeTileStarThistle",
+    "RecipeTileEmberSalt",
+    "ThornWardLeft",
+    "ThornWardRight",
+    "AstralLiftMedallion",
+    "ClockworkOwl",
+    "OwlHead",
+    "OwlWingL",
+    "OwlWingR",
+    "MechanicalBroom",
+    "BroomHead",
+    "GrandfatherClock",
+    "ClockHourHand",
+    "ClockMinuteHand",
+    "ClockPendulum",
+    "ClockCompartment",
+    "ClockClueDial",
+    "ClockClueHand",
+    "ClockIngredientSocket"
+  ],
+  "material_count": 17,
+  "sha256": {
+    "generator": "8bcd4959dccb6739eb7a0470b13b499ac50bf251ddfa12c414c82e86fe4d0acd",
+    "blend": "db289e4fe429b8b8f8d3b0ab19d697a0ae376bec602d9dff0f1c572e29002a62",
+    "glb": "63aac285d3bc3421e7ed0ab8a4b7b5119b07dfd059ddfb958487527914679ec2",
+    "review": "7f4c8adcc34bb84bcf7e0c6a77870e96067c124ac0a06b4db44bcf9e13dca149"
+  },
+  "validation": "Blender GLB reimport, names and triangle budget checked",
+  "visual_approval": "pending owner and independent review",
+  "limitations": [
+    "Procedurally painted UV maps rather than high-to-low baked maps",
+    "No authored LODs or collision meshes",
+    "Runtime and play-distance review pending"
+  ]
+}

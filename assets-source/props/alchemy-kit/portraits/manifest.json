@@ -1,0 +1,42 @@
+{
+  "origin": "Original images generated with OpenAI ImageGen for Clockwork Spire. Portrait subjects and staging were invented for this project.",
+  "derivation": "ImageMagick resize to fit 768 x 960 without enlargement; WebP quality 88, method 6. Foreground alpha preserved.",
+  "assets": [
+    {
+      "name": "moon-warden",
+      "source": "moon-warden.png",
+      "sourceSize": [
+        1086,
+        1448
+      ],
+      "sourceSha256": "41fef0998b8cd8050488023719dd241683ccce9f95343ce99b5b1ee7cdb11e0d",
+      "alpha": true,
+      "runtime": "public/assets/props/alchemy-kit/moon-warden.webp",
+      "runtimeSha256": "b46f6ce5baf1b3b9db8aeed540217529f3d8a9af155cbffffab162a40474588e"
+    },
+    {
+      "name": "ember-keeper",
+      "source": "ember-keeper.png",
+      "sourceSize": [
+        1164,
+        1351
+      ],
+      "sourceSha256": "fb741bde5af5ed92ecfa54537bc2ea85e9a917a746f7abe28d087c8d41e4ee37",
+      "alpha": true,
+      "runtime": "public/assets/props/alchemy-kit/ember-keeper.webp",
+      "runtimeSha256": "1d86df3f09088b6794f4ff8e00bcc219079b876a511601d1bceb27c0acd07180"
+    },
+    {
+      "name": "observatory",
+      "source": "observatory.png",
+      "sourceSize": [
+        1122,
+        1402
+      ],
+      "sourceSha256": "4298acbb95ab57a36f36c2b57c5e61938c2f384a155728bce63f0e5a92ff7231",
+      "alpha": false,
+      "runtime": "public/assets/props/alchemy-kit/observatory.webp",
+      "runtimeSha256": "d1c48c88b750dd55e9c0eac28b035066a33e3f29f818dea069bcce02810b45c0"
+    }
+  ]
+}

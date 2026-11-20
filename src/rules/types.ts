@@ -305,3 +305,17 @@ export interface StoredPressureState extends PressureState {
   readonly drawerOpen?: boolean;
   readonly rewardClaimed?: boolean;
 }
+
+/** Progress for the seeded Upper Works counterweight lock. */
+export interface StoredCounterweightState {
+  readonly selected?: 0 | 1;
+  readonly solved: boolean;
+}
+
+export type Ingredient = 0 | 1 | 2;
+export interface StoredAlchemyState {
+  readonly found: readonly Ingredient[];
+  readonly added: readonly Ingredient[];
+  readonly brewed: boolean;
+  readonly opened: boolean;
+}

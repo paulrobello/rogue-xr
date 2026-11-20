@@ -85,7 +85,8 @@ export interface InteriorFurnishingsOptions {
   readonly reducedMotion?: boolean;
   readonly paintings?: readonly THREE.Texture[];
   readonly preservedBookRooms?: readonly number[];
-  readonly floorNumber?: 1 | 2;
+  readonly floorNumber?: 1 | 2 | 3;
+  readonly seededClues?: boolean;
 }
 
 interface Candidate {
@@ -593,7 +594,10 @@ export class InteriorFurnishings {
     const secretRoom = preserved.size
       ? paired.find((p) => preserved.has(p.room))?.room
       : showcase || secrets.int(0, 2) === 0
-        ? paired[0]?.room
+        ? (options.seededClues && paired.length && !showcase
+            ? Stream.fromKey(world.plan.seed + ':portrait-room').pick(paired)
+            : paired[0]
+          )?.room
         : undefined;
     const activeBooks = new Set(preserved);
     if (secretRoom !== undefined) activeBooks.add(secretRoom);

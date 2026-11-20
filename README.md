@@ -10,7 +10,7 @@ Click the right thumbstick to open the radial menu. Tilt it toward **Settings**,
 
 ## Room layout showcase
 
-[Walk the enemy-free room showcase](https://spire.pardev.net/?seed=MAPTEST2). The link uses a separate save slot. Floor 1 has ten rooms. Its entry hall opens onto the stairs to the enemy-free Upper Works. On a new run, Floor 2 opens in a furnace shaft with turning gears. Steel-lined halls and workshops lead away from the landing. Pressure Works branches off Floor 1. A save made inside its former upstairs wing resumes at the Upper Works stair landing. Walk with the left thumbstick (WASD on desktop), or aim the right controller at a tread, push the right stick forward, and release it to teleport there. Point at the door handle and pull either trigger, or click the handle on desktop. The door swings open and the view fades to the other floor, where you arrive on level ground. Open the radial menu to see your room number, template, and dimensions.
+[Walk the room showcase](https://spire.pardev.net/?seed=MAPTEST2). The link uses a separate save slot. Floor 1 includes two puzzle-operated return passages. Its entry hall opens onto the stairs to the enemy-free Upper Works. On a new run, Floor 2 opens in a furnace shaft with turning gears. Steel-lined halls and workshops lead away from the landing. Pressure Works branches off Floor 1. A save made inside its former upstairs wing resumes at the Upper Works stair landing. Walk with the left thumbstick (WASD on desktop), or aim the right controller at a tread, push the right stick forward, and release it to teleport there. Point at the door handle and pull either trigger, or click the handle on desktop. The door swings open and the view fades to the other floor, where you arrive on level ground. Open the radial menu to see your room number, template, and dimensions.
 
 | Route from room 0 | What to inspect |
 | --- | --- |
@@ -22,7 +22,13 @@ When reporting a layout issue, include `MAPTEST2`, the room number or route, and
 
 ## Cross-floor bell puzzle
 
-Wind the Watchmaker’s Music Box in the lower entry hall. Watch the numbered lamps or listen to its four notes. Upstairs in the Upper Works, repeat the phrase on the three bells and take the released cog seal for 12 cogs. Use either controller’s trigger or click on desktop. The cog seal flies toward you when collected. **Items** keeps the score. The showcase adds walkthrough plaques to the music box, bells and pressure controls.
+Find and wind the Watchmaker’s Music Box on Floor 1. Watch the numbered lamps or listen to its four notes. Upstairs in the Upper Works, repeat the phrase on the three bells and take the released cog seal for 12 cogs. Use either controller’s trigger or click on desktop. The cog seal flies toward you when collected. **Items** keeps the score. The showcase adds walkthrough plaques to the music box, bells and pressure controls.
+
+## Return routes and the Conservatory
+
+The Upper Works balance raises a grille downstairs. Restoring Pressure Works also unlocks a separate supply room. Use the engraved astral lift in the Upper Works to reach Floor 3. The Conservatory contains two watching wizard portraits, a clockwork owl, broom caretakers and an alchemy bench. The pictured ingredients and striking hour vary with the seed. Ingredients and the finished potion appear in **Items**.
+
+The [floor roadmap and potion recipe book](docs/conservatory-and-return-routes.md) records the puzzle dependencies, clues, return trips, seed rules and future brews.
 
 ## CI and deploy
 

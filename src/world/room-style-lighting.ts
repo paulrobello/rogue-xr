@@ -208,8 +208,14 @@ export function lightRoomStyle(room: THREE.Group, placements: readonly InteriorP
         const base = (face === 5 ? 0.65 : face === 4 ? 0.78 : 0.74) * (timber ? 0.46 : 0.65);
         const k = 4 * (((Math.floor(face / 3) * TILE + j) * 3 + (face % 3)) * TILE + i);
         pixels[k] = Math.min(255, 128 * ao * (base + glow));
-        pixels[k + 1] = Math.min(255, 128 * ao * (base + glow * 0.63));
-        pixels[k + 2] = Math.min(255, 128 * ao * (base + glow * 0.36));
+        pixels[k + 1] = Math.min(
+          255,
+          128 * ao * (base + glow * (room.userData.conservatory ? 0.85 : 0.63)),
+        );
+        pixels[k + 2] = Math.min(
+          255,
+          128 * ao * (base + glow * (room.userData.conservatory ? 1.1 : 0.36)),
+        );
         pixels[k + 3] = 255;
       }
   }
@@ -235,12 +241,21 @@ export function lightRoomStyle(room: THREE.Group, placements: readonly InteriorP
     const bake = m.onBeforeCompile;
     m.onBeforeCompile = (shader, renderer) => {
       bake.call(m, shader, renderer);
+      if (room.userData.conservatory) {
+        shader.fragmentShader = shader.fragmentShader.replace(
+          '#include <map_fragment>',
+          `#include <map_fragment>
+          float grain = dot(diffuseColor.rgb, vec3(.42,.46,.12));
+          diffuseColor.rgb = mix(vec3(.012,.028,.054), vec3(.24,.52,.49), sqrt(clamp(grain,0.,1.))) *
+            (.62 + grain*1.7);`,
+        );
+      }
       shader.vertexShader = shader.vertexShader.replace(
         '#include <begin_vertex>',
         `#include <begin_vertex>\n${atlasVertex(edge)}`,
       );
     };
-    m.customProgramCacheKey = () => `room-finish-lighting-${edge}`;
+    m.customProgramCacheKey = () => `room-finish-lighting-${edge}-${!!room.userData.conservatory}`;
     materials.set(source, m);
     return m;
   };

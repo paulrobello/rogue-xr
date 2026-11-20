@@ -84,3 +84,7 @@ The furnishings and instruments are node libraries. A room places selected roots
 | Gallery artwork | Two original clockmaker paintings share a composition. The sitter’s gaze, hand and key shift toward the red book on a return visit. [Source pair](../assets-source/props/paintings/clockmaker-diptych.png) |
 
 Seed `N0TE0032` exercises a bench pickup, a coffer find, an enemy drop and the two-stage reward. The paper reader saves each note immediately. The physical controller supports grip pickup at hand range or a trigger ray from the seat. The opened drawer can be looted after a reload. [Note and drawer in play](verification/field-notes-and-drawer.jpg) · [Painting on first visit and return](verification/clockmaker-revisit.jpg)
+
+## Cross-floor mechanisms and potion recipes
+
+The [Conservatory recipe book and floor roadmap](conservatory-and-return-routes.md) records the return passages, three Conservatory ingredients, clock clue, first brew and three follow-up recipes. Answers and clue sites are seeded independently so a familiar mechanism can lead the player on a different search.

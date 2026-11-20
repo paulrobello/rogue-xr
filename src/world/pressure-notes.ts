@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { ENCOUNTER_CONTENT_VERSION, RETURN_PASSAGES_VERSION } from '../combat/encounter-choice.ts';
 import { templateById } from '../content/rooms.ts';
 import { Stream } from '../core/rng.ts';
 import {
@@ -176,7 +177,10 @@ export class PressureNotes {
   private readonly localNormal = new THREE.Vector3();
   private readonly toLocalNormal = new THREE.Matrix3();
 
-  constructor(private readonly world: FloorWorld) {
+  constructor(
+    private readonly world: FloorWorld,
+    contentVersion = ENCOUNTER_CONTENT_VERSION,
+  ) {
     const seed = world.plan.seed;
     world.group.updateMatrixWorld(true);
     const stream = Stream.fromKey(`${seed}:pressure-notes`);
@@ -185,9 +189,11 @@ export class PressureNotes {
       seed,
       world.plan.rooms.map((r) => r.templateId),
     );
+    // Return passages can be locked until all three readings have been recovered.
+    const lastRoom = world.plan.pressureWing?.pumpRoom ?? world.plan.rooms.length - 1;
     const candidates: Candidate[] = [];
     for (const coffer of world.coffers) {
-      if (coffer.room === world.plan.guardianRoom) continue;
+      if (coffer.room > lastRoom || coffer.room === world.plan.guardianRoom) continue;
       const local = new THREE.Vector3(0.085, 0.37, 0.025);
       candidates.push({
         room: coffer.room,
@@ -198,7 +204,7 @@ export class PressureNotes {
       });
     }
     for (const [room, enemies] of world.enemies) {
-      if (room === world.plan.guardianRoom || enemies.length === 0) continue;
+      if (room > lastRoom || room === world.plan.guardianRoom || enemies.length === 0) continue;
       const body = enemies[0];
       candidates.push({
         room,
@@ -206,7 +212,7 @@ export class PressureNotes {
         local: new THREE.Vector3(body.position.x, 0.08, body.position.z),
       });
     }
-    for (let room = 1; room < world.plan.rooms.length; room++) {
+    for (let room = 1; room <= lastRoom; room++) {
       if (room === world.plan.guardianRoom || room === world.plan.pressureWing?.pumpRoom) continue;
       candidates.push(...furniture(world, room, decor));
       const floor = floorCandidate(world, room);
@@ -239,7 +245,7 @@ export class PressureNotes {
     if (chosen.length < 3) throw new Error('pressure notes need three reachable rooms');
     const result: PressureNotePlacement[] = [];
     const circuitIds = stream.shuffle(['A', 'B', 'C'] as const);
-    const readings = pressureTarget(seed);
+    const readings = pressureTarget(seed, contentVersion);
     circuitIds.forEach((id, i) => {
       const candidate = chosen[i] as Candidate;
       const value = readings['ABC'.indexOf(id)];
@@ -288,7 +294,10 @@ export class PressureNotes {
       const object = built.group;
       object.name = 'pressure-note-dispatch';
       object.userData.noteId = 'dispatch';
-      const candidate = furniture(world, 0, decor)[0] ??
+      const desks = furniture(world, 0, decor);
+      const candidate = (desks.length && contentVersion >= RETURN_PASSAGES_VERSION
+        ? Stream.fromKey(seed + ':dispatch').pick(desks)
+        : desks[0]) ??
         floorCandidate(world, 0) ?? {
           room: 0,
           source: 'loose' as const,

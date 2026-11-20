@@ -10,6 +10,7 @@ import {
 import {
   type FloorPlan,
   guardedConnection,
+  type PuzzleGate,
   type WorldRoom,
   worldRooms,
 } from '../floor/generate.ts';
@@ -31,6 +32,7 @@ import { buildGreyboxRoom, createGreyboxMaterials, type GreyboxMaterials } from 
 import { type Hearth, HearthKit, type HearthMaterials, hearthSocket } from './hearth.ts';
 import { type Coffer, CofferKit, type LootMaterials, surfaceHeightAt } from './loot.ts';
 import { pressureColliders } from './pressure-works.ts';
+import { PuzzleGateVisual } from './puzzle-gates.ts';
 import { disposeTableDecor } from './table-decor.ts';
 
 export { nearSet, neighbours, shellSet, visibleSet } from '../floor/visibility.ts';
@@ -73,7 +75,13 @@ export interface FloorWorld {
   update(x: number, z: number): boolean;
   /** Opens the forward door held by a defeated encounter. */
   releaseGuardedDoor(room: number, immediate?: boolean): THREE.Vector3 | null;
-  /** Advances a released doorway's hinge animation. */
+  setPuzzleGateOpen(kind: PuzzleGate, open: boolean, immediate?: boolean): void;
+  pickPuzzleGate(
+    origin: THREE.Vector3,
+    direction: THREE.Vector3,
+  ): { kind: PuzzleGate; distance: number } | null;
+  rattlePuzzleGate(kind: PuzzleGate): THREE.Vector3 | undefined;
+  /** Advances moving door leaves and gate hardware. */
   updateAnimations(dt: number): void;
   spawnPoint(): THREE.Vector3;
   /**
@@ -431,6 +439,27 @@ export function buildFloorWorld(
     for (const side of passage) colliders[side.room]?.push(barrier);
   }
 
+  const puzzleGates = plan.connections.flatMap((edge) => {
+    const kind = edge.puzzleGate;
+    if (!kind) return [];
+    const [from, to] = edge;
+    const door = rooms[from.room].doors.find((d) => d.id === from.door);
+    if (!door) throw Error(`Missing ${kind} gate doorway`);
+    const visual = kind === 'thorn' ? null : new PuzzleGateVisual(kind);
+    if (visual) {
+      visual.object.position.set(door.world[0], 0, door.world[1]);
+      visual.object.rotation.y = INTO_ROOM_YAW[door.facing];
+      roomGroups[from.room].attach(visual.object);
+    }
+    const barrier = doorwayCollider(door);
+    const sides = [from.room, to.room];
+    for (const side of sides) colliders[side].push(barrier);
+    return [{ kind, sides, visual, barrier, open: false }];
+  });
+  const gateRay = new THREE.Raycaster();
+  const gateBox = new THREE.Box3();
+  const gateCrossing = new THREE.Vector3();
+
   const world: FloorWorld = {
     group,
     plan,
@@ -558,7 +587,51 @@ export function buildFloorWorld(
       if (doorHinge) doorHinge.rotation.y = doorAngle;
       return new THREE.Vector3(door.world[0], 1.1, door.world[1]);
     },
+    setPuzzleGateOpen(kind, open, immediate = false) {
+      const gate = puzzleGates.find((g) => g.kind === kind);
+      if (!gate || gate.open === open) return;
+      gate.open = open;
+      for (const side of gate.sides) {
+        const boxes = colliders[side];
+        if (open) {
+          const index = boxes.indexOf(gate.barrier);
+          if (index >= 0) boxes.splice(index, 1);
+        } else boxes.push(gate.barrier);
+      }
+      gate.visual?.setOpen(open, immediate || reducedMotion);
+    },
+    pickPuzzleGate(origin, direction) {
+      gateRay.set(origin, direction);
+      gateRay.ray.direction.normalize();
+      gateRay.far = 4;
+      let nearest: { kind: PuzzleGate; distance: number } | null = null;
+      for (const gate of puzzleGates) {
+        if (!gate.visual || gate.open || !gate.sides.includes(world.current)) continue;
+        gate.visual.object.updateWorldMatrix(true, true);
+        const hit = gateRay.intersectObject(gate.visual.handle, true)[0];
+        if (!hit || (nearest && hit.distance >= nearest.distance)) continue;
+        const blocked = colliders[world.current].some((box) => {
+          if (box === gate.barrier) return false;
+          gateBox.min.fromArray(box.min);
+          gateBox.max.fromArray(box.max);
+          return (
+            gateRay.ray.intersectBox(gateBox, gateCrossing) !== null &&
+            gateCrossing.distanceTo(origin) < hit.distance - 0.025
+          );
+        });
+        if (!blocked) nearest = { kind: gate.kind, distance: hit.distance };
+      }
+      return nearest;
+    },
+    rattlePuzzleGate(kind) {
+      const gate = puzzleGates.find((g) => g.kind === kind && !g.open);
+      if (!gate?.visual) return;
+      if (!reducedMotion) gate.visual.rattle();
+      return gate.visual.handle.getWorldPosition(new THREE.Vector3());
+    },
     updateAnimations(dt) {
+      for (const gate of puzzleGates)
+        if (gate.visual?.object.parent?.visible) gate.visual.update(dt);
       if (!doorOpening || !lockedDoor?.parent || reducedMotion) return;
       doorAngle = Math.min(Math.PI / 2, doorAngle + Math.max(0, dt) * 2.8);
       if (doorHinge) doorHinge.rotation.y = doorAngle;
@@ -633,6 +706,7 @@ export function buildFloorWorld(
       g.add(model);
     },
     dispose() {
+      for (const gate of puzzleGates) gate.visual?.dispose();
       disposeTableDecor(group);
       group.removeFromParent();
       for (const m of [

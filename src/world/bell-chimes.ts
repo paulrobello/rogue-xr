@@ -1,102 +1,17 @@
 import * as THREE from 'three';
 import { CanvasLabel } from '../combat-view/canvas-label.ts';
-import { type Box, templateById } from '../content/rooms.ts';
+import type { Box } from '../content/rooms.ts';
 import { CARD_FLIGHT_SECONDS, flightGoal, flightPose, flightScale } from '../flow/card-flight.ts';
 import { BELL_CLUE_HINT, type BellNote, type StoredBellChimesState } from '../rules/bell-chimes.ts';
 import type { FloorWorld } from './floor-world.ts';
 import type { InteriorPlacement } from './interior-furnishings.ts';
 
+import { findPuzzleMount, type PuzzleMount } from './puzzle-placement.ts';
+
 type Action = { action: 'listen' | 'claim' } | { action: 'strike'; note: BellNote };
 export type BellPick = Action & { distance: number };
-interface Mount {
-  room: number;
-  center: THREE.Vector3;
-  yaw: number;
-}
 const COLORS = [0xf2b24c, 0x55c6b1, 0xa89bff] as const;
 const NOTES = [0, 1, 2] as const;
-const HALF_WIDTH = 0.66;
-
-/** All wall scans use the unrotated template; fixture colliders arrive in world space. */
-function mountingPoint(
-  world: FloorWorld,
-  room: number,
-  props: readonly InteriorPlacement[],
-): Mount | null {
-  const template = templateById(world.plan.rooms[room].templateId);
-  const { min, max } = template.footprint;
-  const parent = world.roomGroups[room];
-  parent.updateWorldMatrix(true, true);
-  const inverse = parent.matrixWorld.clone().invert();
-  const obstacles = world.colliders[room].map((b) =>
-    new THREE.Box3(new THREE.Vector3(...b.min), new THREE.Vector3(...b.max)).applyMatrix4(inverse),
-  );
-  const furnishingBounds = props
-    .filter((p) => p.room === room)
-    .map((p) => new THREE.Box3().setFromObject(p.object).applyMatrix4(inverse));
-  // Authored sconces and shelf trim can project through a plaque without a physics collider.
-  const surfaces: THREE.Object3D[] = [];
-  for (const child of parent.children)
-    child.traverseVisible((node) => {
-      if (node instanceof THREE.Mesh && !node.material?.transparent) surfaces.push(node);
-    });
-  const probe = new THREE.Raycaster();
-  const rayPoint = new THREE.Vector3();
-  for (const wall of ['S', 'E', 'W', 'N'] as const) {
-    const ns = wall === 'N' || wall === 'S';
-    const lo = ns ? min[0] : min[1],
-      hi = ns ? max[0] : max[1];
-    const edge = wall === 'N' ? min[1] : wall === 'S' ? max[1] : wall === 'W' ? min[0] : max[0];
-    const yaw = { S: Math.PI, E: -Math.PI / 2, W: Math.PI / 2, N: 0 }[wall];
-    const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
-    const inward = new THREE.Vector3(0, 0, 1).applyQuaternion(q);
-    const sockets = template.doors.filter((d) => d.facing === wall);
-    const slots = Array.from(
-      { length: Math.floor((hi - lo - 2) / 0.5) + 1 },
-      (_, i) => lo + 1 + i * 0.5,
-    );
-    for (const along of slots.sort((a, b) => Math.abs(a) - Math.abs(b))) {
-      if (
-        sockets.some(
-          (d) => Math.abs(along - d.position[ns ? 0 : 2]) < d.width / 2 + HALF_WIDTH + 0.2,
-        )
-      )
-        continue;
-      if (
-        wall === 'N' &&
-        ((template.id === 'hall' && Math.abs(along - 2.6) < 1.5) ||
-          (template.id === 'study' && Math.abs(along) < 1.5))
-      )
-        continue;
-      const center = new THREE.Vector3(ns ? along : edge, 1.48, ns ? edge : along).addScaledVector(
-        inward,
-        0.13,
-      );
-      const space = new THREE.Box3(
-        new THREE.Vector3(-HALF_WIDTH, -0.75, 0.07),
-        new THREE.Vector3(HALF_WIDTH, 0.65, 1.4),
-      ).applyMatrix4(new THREE.Matrix4().compose(center, q, new THREE.Vector3(1, 1, 1)));
-      if (obstacles.some((b) => space.intersectsBox(b))) continue;
-      const back = new THREE.Box3(
-        new THREE.Vector3(-HALF_WIDTH - 0.08, -0.49, -0.18),
-        new THREE.Vector3(HALF_WIDTH + 0.08, 0.49, 1.4),
-      ).applyMatrix4(new THREE.Matrix4().compose(center, q, new THREE.Vector3(1, 1, 1)));
-      if (furnishingBounds.some((b) => back.intersectsBox(b))) continue;
-      const direction = inward.clone().negate().transformDirection(parent.matrixWorld);
-      probe.far = 0.93;
-      const clear = [-0.6, -0.3, 0, 0.3, 0.6].every((x) =>
-        [-0.34, 0, 0.34].every((y) => {
-          rayPoint.set(x, y, 0.63).applyQuaternion(q).add(center).applyMatrix4(parent.matrixWorld);
-          probe.set(rayPoint, direction);
-          const hit = probe.intersectObjects(surfaces, false)[0];
-          return hit !== undefined && hit.distance >= 0.625;
-        }),
-      );
-      if (clear) return { room, center, yaw };
-    }
-  }
-  return null;
-}
 
 export class BellChimes {
   readonly object = new THREE.Group();
@@ -141,6 +56,7 @@ export class BellChimes {
     art: THREE.Object3D,
     props: readonly InteriorPlacement[] = [],
     showInstructions = false,
+    seededLocations = false,
   ): BellChimes | null {
     if (!world.stairEntry) return null;
     const preferred = floor === 1 ? 0 : world.stairEntry.room;
@@ -153,21 +69,19 @@ export class BellChimes {
             r.role !== 'guardian' &&
             !r.encounter &&
             r.index !== world.plan.pressureWing?.pumpRoom &&
-            r.index !== world.plan.pressureWing?.gallery,
+            r.index !== world.plan.pressureWing?.gallery &&
+            r.index <= (world.plan.pressureWing?.pumpRoom ?? Infinity),
         )
         .map((r) => r.index),
     ];
-    for (const room of rooms) {
-      const mount = mountingPoint(world, room, props);
-      if (mount) return new BellChimes(world, floor, mount, art, showInstructions);
-    }
-    return null;
+    const mount = findPuzzleMount(world, rooms, props, seededLocations ? 'chimes' : undefined);
+    return mount ? new BellChimes(world, floor, mount, art, showInstructions) : null;
   }
 
   private constructor(
     private readonly world: FloorWorld,
     readonly floorNumber: 1 | 2,
-    mount: Mount,
+    mount: PuzzleMount,
     art: THREE.Object3D,
     private readonly showInstructions: boolean,
   ) {

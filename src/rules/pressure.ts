@@ -45,8 +45,20 @@ export function isPressureNoteId(value: unknown): value is PressureNoteId {
   return typeof value === 'string' && (NOTE_IDS as readonly string[]).includes(value);
 }
 
-/** The station setting is a seeded permutation, so it is never the untouched default. */
-export function pressureTarget(seed: string): PressureDials {
+/** The untouched 111 is excluded from the 27 three-valve combinations. */
+export function pressureTarget(seed: string, contentVersion?: number): PressureDials {
+  if (contentVersion !== undefined && contentVersion < 5) return legacyPressureTarget(seed);
+  const stream = Stream.fromKey(`${normalizeSeed(seed)}:pressure-target-v2`);
+  const value = stream.int(1, 26);
+  return [
+    Math.floor(value / 9) + 1,
+    (Math.floor(value / 3) % 3) + 1,
+    (value % 3) + 1,
+  ] as PressureDials;
+}
+
+/** Target used by pre-v2 pressure saves. Exported for strict save compatibility checks. */
+export function legacyPressureTarget(seed: string): PressureDials {
   const stream = Stream.fromKey(`${normalizeSeed(seed)}:pressure-target`);
   const [a, b, c] = stream.shuffle([1, 2, 3] as const);
   return [a, b, c];
@@ -102,11 +114,11 @@ export function turnPressureValve(run: RunState, valve: 0 | 1 | 2): PressureActi
   return result({ ...run, pressure: state }, state, 0);
 }
 
-export function primePressure(run: RunState): PressureActionResult | null {
+export function primePressure(run: RunState, contentVersion?: number): PressureActionResult | null {
   const current = readPressure(run);
   if (current.solved || !(['A', 'B', 'C'] as const).every((id) => current.notes.includes(id)))
     return null;
-  const target = pressureTarget(run.floorSeed ?? run.seed);
+  const target = pressureTarget(run.floorSeed ?? run.seed, contentVersion);
   if (!current.dials.every((dial, index) => dial === target[index])) return null;
   const state: NormalizedPressureState = { ...current, solved: true };
   return result({ ...run, pressure: state }, state, 0);

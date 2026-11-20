@@ -4,6 +4,7 @@ import {
   chooseEncounter,
   ENCOUNTER_CONTENT_VERSION,
   PRESSURE_WORKS_VERSION,
+  RETURN_PASSAGES_VERSION,
   UPPER_WORKS_VERSION,
 } from '../combat/encounter-choice.ts';
 import { combatRoom, rigTurnAboutHead } from '../combat/placement.ts';
@@ -12,6 +13,7 @@ import { type RoomTemplate, templateById } from '../content/rooms.ts';
 import { isValidSeed, normalizeSeed, randomSeed, Stream } from '../core/rng.ts';
 import { BreakApart } from '../enemies/break-apart.ts';
 import type { EnemyActor, EnemyAsset } from '../enemies/enemy-asset.ts';
+import { conservatoryPlan } from '../floor/conservatory.ts';
 import {
   attachPressureWing,
   generateFloor,
@@ -19,6 +21,7 @@ import {
   isShowcaseFloor,
   SHOWCASE_UPPER_SEED,
 } from '../floor/generate.ts';
+import { attachFloorOneTopology } from '../floor/return-passages.ts';
 import { placeStairEntry } from '../floor/stairs.ts';
 import { nearSet, shellSet } from '../floor/visibility.ts';
 import { PALETTE } from '../palette.ts';
@@ -32,8 +35,12 @@ import {
   vignetteStep,
   yawFromMatrix,
 } from '../xr/locomotion.ts';
+import { AlchemyConservatory } from './alchemy-conservatory.ts';
+import { AstralLift } from './astral-lift.ts';
 import { BellChimes } from './bell-chimes.ts';
 import { BookSecret } from './book-secret.ts';
+import { ConservatoryGallery } from './conservatory-gallery.ts';
+import { CounterweightStation } from './counterweight-station.ts';
 import { animateFires, CANDLE_NODE, FIRE_NODE } from './fireplace.ts';
 import { buildFloorWorld, type FloorWorld } from './floor-world.ts';
 import {
@@ -64,9 +71,11 @@ import {
   roomStyleFor,
 } from './room-styles.ts';
 import { Stairwell } from './stairwell.ts';
+import { StrikingClock } from './striking-clock.ts';
 import { type RigidNode, rigidAngle } from './study-room.ts';
 
 export interface FloorAudio {
+  playChime?(note: 0 | 1 | 2, at: THREE.Vector3): boolean;
   playSfx(id: 'door-open' | 'gear-clank', at?: { x: number; y: number; z: number }): boolean;
 }
 
@@ -129,9 +138,19 @@ export interface FloorHearths {
 
 export interface FloorView {
   world: FloorWorld;
-  readonly floorNumber: 1 | 2;
+  readonly floorNumber: 1 | 2 | 3;
   readonly stairs: Stairwell | null;
   readonly chimes: BellChimes | null;
+  readonly alchemy: AlchemyConservatory | null;
+  readonly clock: StrikingClock | null;
+  readonly lift: AstralLift | null;
+  dressConservatory(
+    art: THREE.Object3D,
+    textures: readonly THREE.Texture[],
+    runSeed: string,
+    reducedMotion: boolean,
+  ): void;
+  readonly counterweight: CounterweightStation | null;
   dressChimes(art: THREE.Object3D): void;
   dressStairs(model: THREE.Object3D): void;
   readonly styledRooms: readonly THREE.Group[];
@@ -223,11 +242,23 @@ export interface FloorView {
 }
 
 /** The enemy kind each body will play, in socket order, from the room's seeded encounter. */
-function tagEnemyKinds(world: FloorWorld, seed: string, contentVersion: number): void {
+function tagEnemyKinds(
+  world: FloorWorld,
+  seed: string,
+  contentVersion: number,
+  floorNumber: number,
+): void {
   for (const [room, bodies] of world.enemies) {
     const tier = world.plan.rooms[room]?.encounter?.tier;
     if (!tier || bodies.length === 0) continue;
-    const { enemies } = chooseEncounter(seed, room, tier, bodies.length, contentVersion);
+    const { enemies } = chooseEncounter(
+      seed,
+      room,
+      tier,
+      bodies.length,
+      contentVersion,
+      floorNumber,
+    );
     bodies.forEach((body, i) => {
       const kind = enemies[i];
       if (kind) body.userData.enemyKind = kind;
@@ -236,7 +267,7 @@ function tagEnemyKinds(world: FloorWorld, seed: string, contentVersion: number):
 }
 
 export interface FloorViewOptions {
-  floorNumber?: 1 | 2;
+  floorNumber?: 1 | 2 | 3;
   /** The reserved room-showcase launch enables walkthrough plaques. */
   guidedShowcase?: boolean;
   preservedBookRooms?: readonly number[];
@@ -246,7 +277,12 @@ export interface FloorViewOptions {
   contentVersion?: number;
 }
 
-export function playableFloorPlan(seed: string, contentVersion: number, floorNumber: 1 | 2 = 1) {
+export function playableFloorPlan(
+  seed: string,
+  contentVersion: number,
+  floorNumber: 1 | 2 | 3 = 1,
+) {
+  if (floorNumber === 3) return conservatoryPlan(seed);
   const upperWorks = floorNumber === 2 && contentVersion >= UPPER_WORKS_VERSION;
   const generated = upperWorks ? generateUpperFloor(seed) : generateFloor(seed);
   const base =
@@ -254,7 +290,8 @@ export function playableFloorPlan(seed: string, contentVersion: number, floorNum
       ? { ...generated, rooms: generated.rooms.map((r) => ({ ...r, encounter: null })) }
       : generated;
   if (contentVersion < PRESSURE_WORKS_VERSION || floorNumber !== 1) return base;
-  return attachPressureWing(base);
+  if (contentVersion < RETURN_PASSAGES_VERSION) return attachPressureWing(base);
+  return attachFloorOneTopology(base);
 }
 
 /** The former upper pressure wing occupied the two appended room indices. */
@@ -299,17 +336,29 @@ export function mountFloorView(
   const plan = playableFloorPlan(seed, contentVersion, options.floorNumber);
   let stairs: Stairwell | null = null;
   let chimes: BellChimes | null = null;
+  let alchemy: AlchemyConservatory | null = null,
+    clockwork: StrikingClock | null = null,
+    lift: AstralLift | null = null,
+    gallery: ConservatoryGallery | null = null;
+  let counterweight: CounterweightStation | null = null;
   const floorNumber = options.floorNumber ?? 1;
   const world = buildFloorWorld(plan, options.templates);
-  const notes = plan.pressureWing ? new PressureNotes(world) : null;
-  const guided = options.guidedShowcase === true && isShowcaseFloor(plan.seed, floorNumber);
+  const notes = plan.pressureWing ? new PressureNotes(world, contentVersion) : null;
+  const guided =
+    options.guidedShowcase === true && floorNumber !== 3 && isShowcaseFloor(plan.seed, floorNumber);
   const pressure = plan.pressureWing ? new PressureWorks(world, plan.pressureWing, guided) : null;
-  tagEnemyKinds(world, seed, contentVersion);
+  tagEnemyKinds(world, seed, contentVersion, floorNumber);
   scene.add(world.group);
   // Greybox lighting is two global lights; per-room sockets get real lights with the lightmaps (P4-T7).
   const sun = new THREE.DirectionalLight(PALETTE.candle, 1.4);
   sun.position.set(6, 12, 4);
   const sky = new THREE.HemisphereLight(PALETTE.candle, PALETTE.void, 0.8);
+  if (floorNumber === 3) {
+    sun.color.set(0xc3d4ff);
+    sky.color.set(0xdbe6ff);
+    sky.groundColor.set(0x564357);
+    sky.intensity = 1.25;
+  }
   scene.add(sun, sky);
   // x/z only: in XR the rig's y holds the seated-height lift, and floors rebuild mid-session.
   const spawn = world.spawnPoint();
@@ -531,14 +580,61 @@ export function mountFloorView(
       return stairs;
     },
     dressChimes(art) {
-      if (!chimes && stairs)
-        chimes = BellChimes.mount(world, floorNumber, art, furnishings?.placements, guided);
+      if (!stairs || floorNumber === 3) return;
+      chimes ??= BellChimes.mount(
+        world,
+        floorNumber,
+        art,
+        furnishings?.placements,
+        guided,
+        contentVersion >= RETURN_PASSAGES_VERSION,
+      );
+      if (floorNumber === 2 && contentVersion >= RETURN_PASSAGES_VERSION && !counterweight) {
+        const safe = plan.rooms
+          .filter((r) => !r.encounter && r.role !== 'guardian')
+          .map((r) => r.index);
+        const mount = (rooms: number[]) =>
+          CounterweightStation.mount(world, art, { rooms, props: furnishings?.placements ?? [] });
+        counterweight =
+          mount(safe.filter((room) => room !== chimes?.room)) ??
+          mount(safe) ??
+          mount(plan.rooms.filter((r) => r.role !== 'guardian').map((r) => r.index));
+        if (!counterweight) throw Error('Missing accessible counterweight station');
+      }
+    },
+    get alchemy() {
+      return alchemy;
+    },
+    get clock() {
+      return clockwork;
+    },
+    get lift() {
+      return lift;
+    },
+    dressConservatory(art, textures, runSeed, reducedMotion) {
+      if (floorNumber === 1 || lift) return;
+      lift = AstralLift.mount(world, art, floorNumber === 2 ? 3 : 2, furnishings?.placements);
+      if (floorNumber === 2) return;
+      alchemy = new AlchemyConservatory(world, art, runSeed, reducedMotion);
+      clockwork = StrikingClock.mount(world, art, runSeed, reducedMotion, furnishings?.placements);
+      gallery = ConservatoryGallery.mount(
+        world,
+        art,
+        textures,
+        reducedMotion,
+        [0, 1, 2, 3, 4],
+        furnishings?.placements,
+      );
+      if (!clockwork || !gallery) throw Error('Missing a Conservatory wall bay');
+    },
+    get counterweight() {
+      return counterweight;
     },
     get chimes() {
       return chimes;
     },
     dressStairs(model) {
-      if (stairs) return;
+      if (stairs || floorNumber === 3) return;
       const landing = world.openStairEntry(floorNumber);
       if (landing) {
         stairs = new Stairwell(landing, floorNumber === 1 ? 2 : 1, world, model);
@@ -563,6 +659,7 @@ export function mountFloorView(
       if (!furnishings) {
         furnishings = new InteriorFurnishings(world, asset, {
           paintings,
+          seededClues: contentVersion >= RETURN_PASSAGES_VERSION,
           reducedMotion,
           floorNumber,
           preservedBookRooms: options.preservedBookRooms,
@@ -654,6 +751,7 @@ export function mountFloorView(
           if (templateId === 'hall') copyHallBenches(model, styled);
           else if (keepDesk) copyStudyDesk(model, styled);
           world.removeRoomFixtureColliders(index, templateId === 'hall' || keepDesk);
+          styled.userData.conservatory = floorNumber === 3;
           styledRooms.push(styled);
           world.dressRoom(index, styled);
           dressed++;
@@ -686,6 +784,11 @@ export function mountFloorView(
       return spinners.length;
     },
     dispose() {
+      gallery?.dispose();
+      clockwork?.dispose();
+      alchemy?.dispose();
+      lift?.dispose();
+      counterweight?.dispose();
       chimes?.dispose();
       stairs?.dispose();
       for (const room of styledRooms) disposeRoomStyle(room);
@@ -775,6 +878,14 @@ export function mountFloorView(
     update(head, dt, cameras = []) {
       notes?.update(head);
       pressure?.update(dt);
+      if (!suspended && !locked) {
+        clockwork?.setWitness(world.current);
+        if (clockwork?.update(dt))
+          floorAudio?.playChime?.(1, clockwork.object.getWorldPosition(at));
+      }
+      if (gallery) gallery.update(dt, head.getWorldPosition(at));
+      alchemy?.update(dt);
+      counterweight?.update(dt);
       chimes?.update(dt);
       world.updateAnimations(dt);
       turnVignette = vignetteStep(turnVignette, 0, dt, DEFAULT_VIGNETTE);

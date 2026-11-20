@@ -162,7 +162,7 @@ Use seed `N0TE0032` for a wing branching from the starting hall and a mix of cof
 - **Locked side wings** branch off the main path (E1).
 - **Hidden doors** are loose wall panels. The Scrying Lens reveals them, or the player can knock on panels and listen for a hollow sound.
 - **Elite detour:** the elite room becomes optional, with a Vault Key as its reward.
-- **Shortcut doors** open from the far side only, so a long backtrack becomes one step. This needs the floor generator to make loops where doors line up (work item W5).
+- **Shortcut doors** connect otherwise distant locations. The Floor 1 grille opens when the Upper Works balance lifts its counterweight. Other shortcuts can use far-side latches.
 
 ### E4. Tasks (commissions)
 
@@ -182,7 +182,7 @@ Optionally, one patrolling automaton per floor walks between rooms. Touching it 
 
 ### E6. Stairs between floors
 
-Runs now have two seeded floors. A player can take the marked staircase to Floor 2 and return to Floor 1. New runs enter the Upper Works through a gear shaft, with longer wings, steel-lined halls and workshops. A save in the former upstairs pressure wing returns to its stair landing. The other rooms keep their progress. Both landings show the direction and destination floor. Walk or teleport onto individual treads. Pull the trigger while pointing at the door handle, or click the handle on desktop. The door opens into darkness and the view fades out. It fades back in on level ground facing into the destination room.
+New runs have three floors. The astral lift connects Floor 2 to the [Alchemical Conservatory](conservatory-and-return-routes.md). A player can take the marked staircase to Floor 2 and return to Floor 1. New runs enter the Upper Works through a gear shaft, with longer wings, steel-lined halls and workshops. A save in the former upstairs pressure wing returns to its stair landing. The other rooms keep their progress. Both landings show the direction and destination floor. Walk or teleport onto individual treads. Pull the trigger while pointing at the door handle, or click the handle on desktop. The door opens into darkness and the view fades out. It fades back in on level ground facing into the destination room.
 
 Keep the deck, HP and cog purse with the run. Keep each floor’s layout, opened chests, cleared encounters and unlocked doors with that floor. A return trip resumes exploration at the matching landing. Repeated crossings and save/resume must preserve those changes without paying a reward twice.
 

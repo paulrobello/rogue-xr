@@ -1,4 +1,20 @@
 export {
+  addIngredient,
+  alchemyRecipe,
+  applyPotion,
+  collectIngredient,
+  type Ingredient,
+  readAlchemy,
+} from './alchemy.ts';
+export {
+  type CounterweightPuzzle,
+  type CounterweightResult,
+  counterweightPuzzle,
+  counterweightTarget,
+  hangCounterweight,
+  readCounterweight,
+} from './counterweight.ts';
+export {
   type DiceRoll,
   type DiceRollResult,
   type DieDef,

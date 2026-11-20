@@ -25,3 +25,7 @@ assets-source/**/staging/build.log
 assets-source/cards/*/**/*.png
 !assets-source/cards/foundry/guards.png
 !assets-source/cards/foundry/strikes.png
+# Reproducible alchemy-kit intermediates. The packed source and selected review renders are tracked.
+assets-source/props/alchemy-kit/staging/*.glb
+assets-source/props/alchemy-kit/staging/*.png
+!assets-source/props/alchemy-kit/staging/review*.png

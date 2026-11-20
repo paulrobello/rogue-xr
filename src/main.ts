@@ -3,6 +3,8 @@ import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { configureTextBuilder } from 'troika-three-text';
+import { glb_sha256 as alchemyRevision } from '../assets-source/props/alchemy-kit/manifest.json';
+import { assets as portraitAssets } from '../assets-source/props/alchemy-kit/portraits/manifest.json';
 import { sha256 as architecturalFinishRevision } from '../assets-source/props/architectural-finishes/report.json';
 import { hashes as instrumentHashes } from '../assets-source/props/puzzle-instruments/manifest.json';
 import { sha256 as stairwellRevision } from '../assets-source/props/stairwell/report.json';
@@ -11,7 +13,7 @@ import { AudioDirector } from './audio/index.ts';
 import { requestCardFaceArt } from './cards/card-face-material.ts';
 import { mountCardProof } from './cards/card-proof.ts';
 import { CombatHook, type CombatPick, type XrHands } from './combat/combat-session.ts';
-import { ENCOUNTER_CONTENT_VERSION } from './combat/encounter-choice.ts';
+import { ENCOUNTER_CONTENT_VERSION, RETURN_PASSAGES_VERSION } from './combat/encounter-choice.ts';
 import {
   type CombatTableAsset,
   loadCombatTable,
@@ -35,6 +37,7 @@ import { fitCombatFraming } from './desktop/combat-framing.ts';
 import { combatPitch, createDesktopControls } from './desktop/controls.ts';
 import { Walker } from './desktop/walker.ts';
 import { DiceWorld } from './dice/world.ts';
+import { makeClockworkOwlAsset } from './enemies/conservatory-actors.ts';
 import { type EnemyActor, type EnemyAsset, tryLoadEnemyAsset } from './enemies/enemy-asset.ts';
 import { isShowcaseFloor, SHOWCASE_SEED } from './floor/generate.ts';
 import { placeStairEntry, type StairEntry } from './floor/stairs.ts';
@@ -55,7 +58,9 @@ import {
   saveSettings,
 } from './persist/db.ts';
 import { loadRunSnapshot, loadWorkshop, type RunSnapshot } from './persist/saves.ts';
+import { alchemyRecipe } from './rules/alchemy.ts';
 import { type BellNote, bellMelody } from './rules/bell-chimes.ts';
+import { counterweightTarget } from './rules/counterweight.ts';
 import {
   DEFAULT_DIFFICULTY,
   type Difficulty,
@@ -214,7 +219,7 @@ const mountFloor = (
   seed: string,
   contentVersion?: number,
   preservedBookRooms?: readonly number[],
-  floorNumber: 1 | 2 = 1,
+  floorNumber: 1 | 2 | 3 = 1,
 ): FloorView => {
   const view = mountFloorView(scene, rig, seed, {
     templates: worldTemplates,
@@ -532,10 +537,12 @@ const tableDecor: Promise<TableDecor | null> = heroSet
 const enemyMaterials = heroSet?.then(({ set }) => set).catch(() => null) ?? null;
 const enemyAssets = new Map<string, Promise<EnemyAsset | null>>(
   enemyMaterials
-    ? Object.keys(ENEMIES).map((kind) => [
-        kind,
-        enemyMaterials.then((set) => (set ? tryLoadEnemyAsset(kind, { materials: set }) : null)),
-      ])
+    ? Object.keys(ENEMIES)
+        .filter((kind) => kind !== 'clockwork-owl')
+        .map((kind) => [
+          kind,
+          enemyMaterials.then((set) => (set ? tryLoadEnemyAsset(kind, { materials: set }) : null)),
+        ])
     : [],
 );
 const loadedEnemies = async (): Promise<EnemyAsset[]> =>
@@ -592,6 +599,48 @@ function puzzleInstruments() {
       throw error;
     });
   return instruments;
+}
+let alchemyKit: Promise<THREE.Object3D> | undefined;
+let portraitTextures: Promise<THREE.Texture[]> | undefined;
+function conservatoryKit(): Promise<THREE.Object3D> {
+  alchemyKit ??= new GLTFLoader()
+    .loadAsync(`/assets/props/alchemy-kit/alchemy-kit.glb?v=${alchemyRevision}`)
+    .then(({ scene }) => {
+      reflect(scene, 0.58);
+      return scene;
+    })
+    .catch((error) => {
+      alchemyKit = undefined;
+      throw error;
+    });
+  return alchemyKit;
+}
+function wizardPaintings(): Promise<THREE.Texture[]> {
+  portraitTextures ??= Promise.all(
+    portraitAssets.map(async ({ name, runtimeSha256 }) => {
+      const texture = await new THREE.TextureLoader().loadAsync(
+        `/assets/props/alchemy-kit/${name}.webp?v=${runtimeSha256}`,
+      );
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.anisotropy = 4;
+      return texture;
+    }),
+  ).catch((error) => {
+    portraitTextures = undefined;
+    throw error;
+  });
+  return portraitTextures;
+}
+function syncPuzzles(target: FloorView, immediate = false): void {
+  const run = flow.run;
+  if (!run) return;
+  const state = flow.counterweight;
+  target.counterweight?.sync(state.selected, counterweightTarget(run.seed), state.solved);
+  target.world.setPuzzleGateOpen('counterweight', state.solved, immediate);
+  target.world.setPuzzleGateOpen('pressure', flow.pressure.solved, immediate);
+  target.world.setPuzzleGateOpen('thorn', flow.alchemy.opened, immediate);
+  target.alchemy?.sync(flow.alchemy, immediate);
+  target.clock?.sync(flow.alchemy.found.includes(alchemyRecipe(run.seed)[1]));
 }
 let pressureArt: Promise<PressureArt> | undefined;
 let interiors:
@@ -655,8 +704,8 @@ const dressFloor = async (target: FloorView): Promise<void> => {
     )
       ? architecturalFinishes()
       : undefined,
-    target.world.stairEntry ? stairModels() : undefined,
-    target.world.stairEntry
+    target.floorNumber !== 3 && target.world.stairEntry ? stairModels() : undefined,
+    target.floorNumber !== 3 && target.world.stairEntry
       ? puzzleInstruments().catch((error: unknown) => {
           console.warn('Chime instruments unavailable', error);
           return undefined;
@@ -670,7 +719,7 @@ const dressFloor = async (target: FloorView): Promise<void> => {
       (placed) => !rooms.some((room) => room.manifest.template.id === placed.templateId),
     );
     if (missing) throw new Error(`Couldn't load the ${missing.templateId} room`);
-    const stair = stairs?.get(target.floorNumber);
+    const stair = target.floorNumber === 3 ? undefined : stairs?.get(target.floorNumber);
     if (stair) {
       target.dressStairs(stair);
     }
@@ -690,6 +739,19 @@ const dressFloor = async (target: FloorView): Promise<void> => {
       target.dressChimes(chimeArt);
       target.chimes?.sync(flow.run?.bellChimes);
     }
+    if (target.floorNumber > 1 && target.contentVersion >= RETURN_PASSAGES_VERSION) {
+      const [kit, portraits] = await Promise.all([
+        conservatoryKit(),
+        target.floorNumber === 3 ? wizardPaintings() : Promise.resolve([]),
+      ]);
+      if (target !== floor) return;
+      target.dressConservatory(kit, portraits, flow.run?.seed ?? target.seed, hitFx.reducedMotion);
+      if (target.floorNumber === 3) {
+        const owl = makeClockworkOwlAsset(kit.getObjectByName('ClockworkOwl')!);
+        target.useEnemyAssets(new Map([[owl.id, owl]]), prepareEnemy);
+      }
+    }
+    syncPuzzles(target, true);
     for (const room of target.styledRooms)
       lightRoomStyle(room, target.furnishings?.placements ?? []);
     if (door) target.world.dressSealedDoors(door.material, door.tileMeters);
@@ -763,7 +825,19 @@ async function prepareFloor(target: FloorView, boot = false): Promise<void> {
         decorSample?.geometry.dispose();
       }
     }
-    if (floor === target) readyFloor = target;
+    if (floor === target) {
+      if (liftArrival === target && target.lift) {
+        const eye = camera.getWorldPosition(new THREE.Vector3());
+        const at = target.lift.object.localToWorld(new THREE.Vector3(0, 0, 1.5));
+        rig.position.x += at.x - eye.x;
+        rig.position.z += at.z - eye.z;
+        rig.updateMatrixWorld(true);
+        target.world.update(at.x, at.z);
+        flow.enterRoom(target.world.current);
+        liftArrival = null;
+      }
+      readyFloor = target;
+    }
   } catch (error) {
     if (floor === target) {
       loadingFailed = true;
@@ -829,6 +903,11 @@ flow.onChange((event) => {
     }
     return;
   }
+  if (event.type === 'counterweight' || event.type === 'alchemy') {
+    if (floor) syncPuzzles(floor);
+    storedSnapshot = flow.snapshot(Date.now(), floor?.world.current ?? flow.room);
+    return;
+  }
   if (event.type === 'bell-chimes') {
     floor?.chimes?.sync(flow.run?.bellChimes, event.feedback === 'claimed' ? camera : undefined);
     storedSnapshot = flow.snapshot(Date.now(), floor?.world.current ?? flow.room);
@@ -836,6 +915,7 @@ flow.onChange((event) => {
   }
   if (event.type === 'pressure') {
     storedSnapshot = flow.snapshot(Date.now(), event.room);
+    if (event.action === 'prime') floor?.world.setPuzzleGateOpen('pressure', event.solved);
     if (event.action === 'note') {
       if (event.note) ui?.readNote(event.note, camera);
     } else {
@@ -916,7 +996,7 @@ const freshFloor = (
   seed: string,
   contentVersion?: number,
   preservedBookRooms?: readonly number[],
-  floorNumber: 1 | 2 = 1,
+  floorNumber: 1 | 2 | 3 = 1,
 ): FloorView => {
   if (
     floor &&
@@ -958,7 +1038,7 @@ const savedFloor = (snap: RunSnapshot): FloorView => {
     snap.floorSeed,
     snap.contentVersion ?? 1,
     preservedBookRooms,
-    snap.floorNumber === 2 ? 2 : 1,
+    snap.floorNumber === 3 ? 3 : snap.floorNumber === 2 ? 2 : 1,
   );
   for (const room of snap.clearedEncounters) target.markCleared(Number(room), true);
   for (const key of snap.run.openedLoot ?? []) {
@@ -997,37 +1077,45 @@ function arriveAtLanding(target: FloorView, entry: StairEntry): void {
   target.world.update(x, z);
 }
 
-function travelStairs(): boolean {
+let liftArrival: FloorView | null = null;
+function travelStairs(byLift = false): boolean {
   const source = floor;
   const stairs = source?.stairs;
-  if (!source || !stairs || busy() || flow.phase !== 'explore' || source.locked || !flow.run)
+  const transport = byLift ? source?.lift : stairs;
+  if (!source || !transport || busy() || flow.phase !== 'explore' || source.locked || !flow.run)
     return false;
-  const destination = stairs.destination;
+  const destination = transport.destination;
   const nextSeed = floorSeedFor(flow.run.seed, destination);
-  const next = placeStairEntry(
-    playableFloorPlan(nextSeed, source.contentVersion, destination),
-    worldTemplates,
+  const next = byLift
+    ? null
+    : placeStairEntry(
+        playableFloorPlan(nextSeed, source.contentVersion, destination),
+        worldTemplates,
+      );
+  if (!next && !byLift) return false;
+  const pull = (byLift ? source.lift!.target : stairs!.handle).getWorldPosition(
+    new THREE.Vector3(),
   );
-  if (!next) return false;
-  const pull = stairs.handle.getWorldPosition(new THREE.Vector3());
   let sounded = false;
   const started = stairTransit.start({
     swing(fraction) {
-      stairs.open(fraction);
+      if (!byLift) stairs?.open(fraction);
       if (!sounded && fraction > 0.04) {
         sounded = true;
         audio?.playSfx('door-open', pull);
       }
     },
     cross() {
-      if (floor !== source || !flow.travelToFloor(destination, next.room)) {
-        stairs.open(0);
+      if (floor !== source || !flow.travelToFloor(destination, next?.room ?? 0)) {
+        if (!byLift) stairs?.open(0);
         return;
       }
-      const snap = flow.snapshot(Date.now(), next.room);
+      const snap = flow.snapshot(Date.now(), next?.room ?? 0);
       if (!snap) throw Error('No exploration state after crossing the staircase');
       const target = savedFloor(snap);
-      arriveAtLanding(target, next);
+      if (next) arriveAtLanding(target, next);
+      else liftArrival = target;
+      syncPuzzles(target, true);
       target.pressure?.sync(flow.pressure);
       syncNotes(target);
       storedSnapshot = snap;
@@ -1048,6 +1136,7 @@ const continueRun = (): void => {
   if (snap.floorNumber && target.world.stairEntry?.room === snap.roomIndex)
     arriveAtLanding(target, target.world.stairEntry);
   flow.continueRun(snap);
+  syncPuzzles(target, true);
   target.pressure?.sync(flow.pressure);
   syncNotes(target);
 };
@@ -1056,6 +1145,7 @@ const ui = floor
       flow,
       locationLabel: () => {
         if (!floor) return null;
+        if (floor.floorNumber === 3) return 'Floor 3 · Alchemical Conservatory';
         const name = floor.floorNumber === 2 ? 'Floor 2 · Upper Works' : 'Floor 1';
         if (!isShowcaseFloor(floor.seed, floor.floorNumber)) return name;
         const index = floor.world.current;
@@ -1292,6 +1382,29 @@ function advanceMusicBox(dt: number): void {
   else playback.delay += BEAT_SECONDS;
 }
 
+function operateWeight(
+  hit: NonNullable<ReturnType<NonNullable<FloorView['counterweight']>['pick']>>,
+): boolean {
+  const station = floor?.counterweight;
+  if (!station || station.room !== floor?.world.current) return false;
+  const result =
+    hit.action === 'weigh' ? flow.weighCounterweight(hit.weight) : flow.hangCounterweight();
+  if (result === 'mistake') station.miss();
+  if (result) audio?.playSfx('gear-clank', station.object.getWorldPosition(chimePosition));
+  return !!result;
+}
+function operateAlchemy(
+  hit: NonNullable<ReturnType<NonNullable<FloorView['alchemy']>['pick']>>,
+): boolean {
+  if (hit.action === 'apply') return flow.applyPotion();
+  if (hit.ingredient === undefined) return false;
+  const result =
+    hit.action === 'collect'
+      ? flow.collectIngredient(hit.ingredient)
+      : flow.addIngredient(hit.ingredient);
+  if (result) audio?.playSfx(hit.action === 'collect' ? 'card-draw' : 'steam-vent');
+  return !!result;
+}
 function fieldHit(origin: THREE.Vector3, direction: THREE.Vector3) {
   if (!floor) return null;
   const stair = floor.stairs?.pick(floor.world.current, origin, direction);
@@ -1301,7 +1414,20 @@ function fieldHit(origin: THREE.Vector3, direction: THREE.Vector3) {
   const hearth = floor.hearth.pick(origin, direction);
   const book = floor.book.pick(origin, direction);
   const chime = floor.chimes?.pick(origin, direction);
+  const weight =
+    floor.counterweight?.room === floor.world.current
+      ? floor.counterweight.pick(origin, direction)
+      : null;
+  const gate = floor.world.pickPuzzleGate(origin, direction);
+  const lift = floor.lift?.pick(origin, direction);
+  const brew = floor.alchemy?.pick(origin, direction);
+  const clock = floor.clock?.pick(origin, direction);
   const hits = [
+    ...(weight ? [{ kind: 'counterweight' as const, hit: weight }] : []),
+    ...(gate ? [{ kind: 'gate' as const, hit: gate }] : []),
+    ...(lift ? [{ kind: 'lift' as const, hit: lift }] : []),
+    ...(brew ? [{ kind: 'alchemy' as const, hit: brew }] : []),
+    ...(clock ? [{ kind: 'clock' as const, hit: clock }] : []),
     ...(chime ? [{ kind: 'chime' as const, hit: chime }] : []),
     ...(stair ? [{ kind: 'stairs' as const, hit: stair }] : []),
     ...(note ? [{ kind: 'note' as const, hit: note }] : []),
@@ -1321,6 +1447,19 @@ const activatePickup = (
   const pick = fieldHit(origin, direction);
   if (!pick) return false;
   switch (pick.kind) {
+    case 'counterweight':
+      return operateWeight(pick.hit);
+    case 'clock':
+      return flow.collectIngredient(pick.hit.ingredient);
+    case 'alchemy':
+      return operateAlchemy(pick.hit);
+    case 'lift':
+      return travelStairs(true);
+    case 'gate': {
+      const at = floor?.world.rattlePuzzleGate(pick.hit.kind);
+      if (at) audio?.playSfx('gear-clank', at);
+      return !!at;
+    }
     case 'chime':
       return operateChimes(pick.hit);
     case 'stairs':
@@ -1527,6 +1666,15 @@ for (const index of [0, 1]) {
       flow.collectPressureNote(note.room, note.id);
       return;
     }
+    const clock = floor.clock?.near(position, GRAB_REACH);
+    if (clock && flow.collectIngredient(clock.ingredient)) return;
+    const brew = floor.alchemy?.near(position, GRAB_REACH);
+    if (brew && operateAlchemy(brew)) return;
+    const weight =
+      floor.counterweight?.room === floor.world.current
+        ? floor.counterweight.near(position, GRAB_REACH)
+        : null;
+    if (weight && operateWeight(weight)) return;
     const chime = floor.chimes?.near(position, GRAB_REACH);
     if (chime && operateChimes(chime)) return;
     const book = floor.book.near(position, GRAB_REACH);

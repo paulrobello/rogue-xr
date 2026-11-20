@@ -267,7 +267,7 @@ describe('continue from a snapshot', () => {
     expect(resumed.snapshot()?.contentVersion).toBe(1);
     expect(resumed.abandonRun()).toBe(true);
     expect(resumed.newRun('SPIRE002')).toBe(true);
-    expect(resumed.snapshot()?.contentVersion).toBe(4);
+    expect(resumed.snapshot()?.contentVersion).toBe(5);
   });
 
   it('restores the same run and offer, and continues identically', () => {
@@ -437,7 +437,8 @@ describe('pressure regulator', () => {
     const raw = source.snapshot(1, 0) as NonNullable<ReturnType<RunFlow['snapshot']>>;
     const legacy = structuredClone(raw) as unknown as Record<string, unknown>;
     const run = legacy.run as Record<string, unknown>;
-    run.pressure = { dials: pressureTarget(SEED), solved: true };
+    legacy.contentVersion = 3;
+    run.pressure = { dials: pressureTarget(SEED, 3), solved: true };
     const validated = validateSnapshot(legacy);
     expect(validated.run.pressure).toMatchObject({
       solved: true,

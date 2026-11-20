@@ -2,10 +2,19 @@ import {
   ENCOUNTER_CONTENT_VERSION,
   FOUNDRY_VERSION,
   PRESSURE_WORKS_VERSION,
+  RETURN_PASSAGES_VERSION,
 } from '../combat/encounter-choice.ts';
 import { LEGACY_REWARD_POOL, PERMANENT_CARD_IDS } from '../content/rewards.ts';
 import type { FloorSnapshot, RunSnapshot } from '../persist/saves.ts';
 import { snapshotRun } from '../persist/saves.ts';
+import {
+  addIngredient,
+  alchemyRecipe,
+  applyPotion,
+  collectIngredient,
+  type Ingredient,
+  readAlchemy,
+} from '../rules/alchemy.ts';
 import {
   type BellFeedback,
   type BellNote,
@@ -13,6 +22,11 @@ import {
   listenToChimes,
   strikeChime,
 } from '../rules/bell-chimes.ts';
+import {
+  counterweightPuzzle,
+  hangCounterweight,
+  readCounterweight,
+} from '../rules/counterweight.ts';
 import {
   DEFAULT_DIFFICULTY,
   type Difficulty,
@@ -145,6 +159,22 @@ export interface PressureTurnResultView {
   readonly reward: 0 | 20;
 }
 
+export interface CounterweightResultView {
+  readonly type: 'counterweight';
+  readonly room: number;
+  readonly weight: 0 | 1 | null;
+  readonly solved: boolean;
+  readonly correct: boolean;
+}
+export interface AlchemyEvent {
+  readonly type: 'alchemy';
+  readonly action: 'collect' | 'add' | 'apply';
+  readonly ingredient?: Ingredient;
+  readonly correct?: boolean;
+  readonly brewed: boolean;
+  readonly opened: boolean;
+}
+
 export interface BellChimeEvent {
   readonly type: 'bell-chimes';
   readonly feedback: BellFeedback;
@@ -170,6 +200,8 @@ export type FlowEvent =
       readonly inscription: string;
     }
   | PressureTurnResultView
+  | CounterweightResultView
+  | AlchemyEvent
   | BellChimeEvent;
 
 export interface FlowOptions {
@@ -241,6 +273,109 @@ export class RunFlow {
   }
   get pressure(): ReturnType<typeof readPressure> {
     return readPressure(this.runValue ?? { pressure: undefined });
+  }
+
+  get counterweight(): Omit<ReturnType<typeof readCounterweight>, 'selected'> & {
+    readonly selected: 0 | 1 | null;
+  } {
+    const state = readCounterweight(this.runValue ?? { counterweight: undefined });
+    return { ...state, selected: state.selected ?? null };
+  }
+
+  get counterweightPuzzle(): ReturnType<typeof counterweightPuzzle> {
+    return counterweightPuzzle(this.runValue?.seed ?? '00000000');
+  }
+
+  get alchemy(): ReturnType<typeof readAlchemy> {
+    return readAlchemy(this.runValue ?? { alchemy: undefined });
+  }
+  get alchemyRecipe(): readonly [Ingredient, Ingredient] {
+    return alchemyRecipe(this.runValue?.seed ?? '00000000');
+  }
+  collectIngredient(ingredient: Ingredient): boolean {
+    const run = this.runValue;
+    if (this.phaseValue !== 'explore' || !run || this.floorNumberValue !== 3) return false;
+    const next = collectIngredient(run, ingredient);
+    if (!next) return false;
+    this.runValue = next;
+    this.emit({
+      type: 'alchemy',
+      action: 'collect',
+      ingredient,
+      brewed: this.alchemy.brewed,
+      opened: this.alchemy.opened,
+    });
+    return true;
+  }
+  addIngredient(ingredient: Ingredient): 'correct' | 'mistake' | null {
+    const run = this.runValue;
+    if (this.phaseValue !== 'explore' || !run || this.floorNumberValue !== 3) return null;
+    const result = addIngredient(run, ingredient);
+    if (!result) return null;
+    this.runValue = result.run;
+    this.emit({
+      type: 'alchemy',
+      action: 'add',
+      ingredient,
+      correct: result.correct,
+      brewed: this.alchemy.brewed,
+      opened: this.alchemy.opened,
+    });
+    return result.correct ? 'correct' : 'mistake';
+  }
+  applyPotion(): boolean {
+    const run = this.runValue;
+    if (this.phaseValue !== 'explore' || !run || this.floorNumberValue !== 3) return false;
+    const next = applyPotion(run);
+    if (!next) return false;
+    this.runValue = next;
+    this.emit({ type: 'alchemy', action: 'apply', brewed: true, opened: true });
+    return true;
+  }
+
+  weighCounterweight(weight: 0 | 1): boolean {
+    const run = this.runValue;
+    if (
+      this.phaseValue !== 'explore' ||
+      !run ||
+      this.contentVersionValue < RETURN_PASSAGES_VERSION ||
+      this.floorNumberValue !== 2 ||
+      run.counterweight?.solved
+    )
+      return false;
+    this.runValue = { ...run, counterweight: { ...readCounterweight(run), selected: weight } };
+    this.emit({
+      type: 'counterweight',
+      room: this.roomValue,
+      weight,
+      solved: false,
+      correct: false,
+    });
+    return true;
+  }
+
+  hangCounterweight(room = this.roomValue): 'solved' | 'mistake' | null {
+    const run = this.runValue;
+    if (this.phaseValue !== 'explore' || !run || this.floorNumberValue !== 2) return null;
+    const selected = readCounterweight(run).selected;
+    if (selected === undefined) return null;
+    const result = hangCounterweight(run, selected);
+    if (!result) return null;
+    this.enterRoom(room);
+    this.runValue = result.run;
+    const event: CounterweightResultView = {
+      type: 'counterweight',
+      room,
+      weight: selected,
+      solved: result.solved,
+      correct: result.correct,
+    };
+    this.emit(event);
+    return result.solved ? 'solved' : 'mistake';
+  }
+
+  canEnterPuzzleGate(gate: 'pressure' | 'counterweight'): boolean {
+    return gate === 'pressure' ? this.pressure.solved : this.counterweight.solved;
   }
 
   listenToChimes(): boolean {
@@ -322,7 +457,7 @@ export class RunFlow {
       room < 0
     )
       return null;
-    const result = primePressure(run);
+    const result = primePressure(run, this.contentVersionValue);
     if (!result) return null;
     return this.applyPressureResult(room, result, 'prime');
   }
@@ -384,7 +519,7 @@ export class RunFlow {
   }
 
   /** Changes floors only at an exploration boundary, preserving global deck, HP, purse and RNG. */
-  travelToFloor(destination: 1 | 2, destinationRoom: number): boolean {
+  travelToFloor(destination: 1 | 2 | 3, destinationRoom: number): boolean {
     const run = this.runValue;
     if (
       this.phaseValue !== 'explore' ||
@@ -393,7 +528,12 @@ export class RunFlow {
       destinationRoom < 0
     )
       return false;
-    if ((destination !== 1 && destination !== 2) || destination === this.floorNumberValue)
+    if (
+      this.contentVersionValue < RETURN_PASSAGES_VERSION &&
+      (destination === 3 || this.floorNumberValue === 3)
+    )
+      return false;
+    if (![1, 2, 3].includes(destination) || Math.abs(destination - this.floorNumberValue) !== 1)
       return false;
     this.floorStates.set(this.floorNumberValue, this.archiveFloor());
     this.lootValue = null;
@@ -628,9 +768,8 @@ export class RunFlow {
     if (this.phaseValue !== 'explore' || !run || !Number.isInteger(room) || room < 0) return false;
     const keys = run.bookSecretKeyRooms ?? [];
     if (keys.includes(room) || (run.bookSecretOpenedRooms ?? []).includes(room)) return false;
-    const { pressure: _stalePressure, ...runWithoutPressure } = run;
     this.runValue = {
-      ...runWithoutPressure,
+      ...run,
       bookSecretKeyRooms: [...keys, room],
     };
     this.emit({
@@ -669,9 +808,8 @@ export class RunFlow {
     if (!(run.bookSecretCabinetRooms ?? []).includes(room) || openedRooms.includes(room))
       return false;
     const cogs = 10;
-    const { pressure: _stalePressure, ...runWithoutPressure } = run;
     this.runValue = {
-      ...runWithoutPressure,
+      ...run,
       cogs: run.cogs + cogs,
       bookSecretOpenedRooms: [...openedRooms, room],
     };
