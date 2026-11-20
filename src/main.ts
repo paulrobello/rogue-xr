@@ -73,6 +73,7 @@ import {
   type FloorView,
   mountFloorView,
   playableFloorPlan,
+  restoreUpperRoomLocations,
   seedFromQuery,
 } from './world/floor-view.ts';
 import type { HearthPick } from './world/hearth.ts';
@@ -217,6 +218,7 @@ const mountFloor = (
 ): FloorView => {
   const view = mountFloorView(scene, rig, seed, {
     templates: worldTemplates,
+    guidedShowcase: showcaseLink,
     floorNumber,
     contentVersion,
     preservedBookRooms,
@@ -828,7 +830,7 @@ flow.onChange((event) => {
     return;
   }
   if (event.type === 'bell-chimes') {
-    floor?.chimes?.sync(flow.run?.bellChimes);
+    floor?.chimes?.sync(flow.run?.bellChimes, event.feedback === 'claimed' ? camera : undefined);
     storedSnapshot = flow.snapshot(Date.now(), floor?.world.current ?? flow.room);
     return;
   }
@@ -1036,8 +1038,8 @@ function travelStairs(): boolean {
 }
 
 const continueRun = (): void => {
-  const snap = storedSnapshot;
-  if (!snap || flow.phase !== 'title') return;
+  if (!storedSnapshot || flow.phase !== 'title') return;
+  const snap = restoreUpperRoomLocations(storedSnapshot, worldTemplates);
   const target = savedFloor(snap);
   const at = target.standPoint(snap.roomIndex) ?? target.world.spawnPoint();
   rig.position.set(at.x, rig.position.y, at.z);

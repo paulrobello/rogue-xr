@@ -194,7 +194,7 @@ def build(kind, direction):
     box(kind + " recess back", (0, landing + 1.07, 6.12), (1.25, 2.14, 0.04), recess, rootob, 0)
     for x in (-0.615, 0.615):
         box(kind + " recess side", (x, landing + 1.06, 5.4725), (0.04, 2.14, 1.315), recess, rootob, 0)
-    box(kind + " recess floor", (0, landing - 0.019, 5.44), (1.25, 0.04, 1.38), recess, rootob, 0)
+    box(kind + " recess floor", (0, landing - 0.019, 5.5325), (1.25, 0.04, 1.195), recess, rootob, 0)
     box(kind + " recess cap", (0, landing + 2.145, 5.4725), (1.25, 0.05, 1.315), recess, rootob, 0)
     box(kind + " ceiling", (0, 4.04, 2.55), (2.86, 0.12, 4.85), walnut, rootob)
     for z in (1.2, 2.2, 3.2, 4.2):

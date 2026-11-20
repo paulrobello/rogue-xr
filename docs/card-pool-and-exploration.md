@@ -151,7 +151,7 @@ At most 2 puzzles per floor, each about 30 to 90 seconds to solve. Each puzzle h
 | Sigil door | Trace an unfamiliar glyph that is not in your deck | A torn page shows the glyph |
 | Bell chimes (playable) | In the Upper Works, ring the three numbered bells in the order played downstairs | The Floor 1 music box plays four notes and lights the matching numbers and colors. Items keeps the score. |
 
-**Playable Pressure Works wing.** The Pipe Gallery sends you looking for three circuit readings. A runner’s dispatch points toward a real find. Pick up each service slip to read it; **Items** in the pause menu keeps it for the run. Slips can lie on a desk, bench or floor, appear inside an opened coffer, or drop after an encounter. Uncollected slips remain available on return.
+**Playable Floor 1 Pressure Works wing.** The Pipe Gallery sends you looking for three circuit readings. A runner’s dispatch points toward a real find. Pick up each service slip to read it; **Items** in the pause menu keeps it for the run. Slips can lie on a desk, bench or floor, appear inside an opened coffer, or drop after an encounter. Uncollected slips remain available on return.
 
 Read all three circuits, set the wheels, and pull the primer. Steam vents and the gear drive starts. Pull the toothed maker’s mark to open the drawer, then take the cogs. The machine pays 20 run cogs only on collection. Prior runs that already received the automatic payout stay paid.
 
@@ -182,7 +182,7 @@ Optionally, one patrolling automaton per floor walks between rooms. Touching it 
 
 ### E6. Stairs between floors
 
-Runs now have two seeded floors. A player can take the marked staircase to Floor 2 and return to Floor 1. New runs enter the Upper Works through a gear shaft, with longer wings, steel-lined halls and workshops. Existing runs retain their original room layout and progress. Both landings show the direction and destination floor. Walk or teleport onto individual treads. Pull the trigger while pointing at the door handle, or click the handle on desktop. The door opens into darkness and the view fades out. It fades back in on level ground facing into the destination room.
+Runs now have two seeded floors. A player can take the marked staircase to Floor 2 and return to Floor 1. New runs enter the Upper Works through a gear shaft, with longer wings, steel-lined halls and workshops. A save in the former upstairs pressure wing returns to its stair landing. The other rooms keep their progress. Both landings show the direction and destination floor. Walk or teleport onto individual treads. Pull the trigger while pointing at the door handle, or click the handle on desktop. The door opens into darkness and the view fades out. It fades back in on level ground facing into the destination room.
 
 Keep the deck, HP and cog purse with the run. Keep each floor’s layout, opened chests, cleared encounters and unlocked doors with that floor. A return trip resumes exploration at the matching landing. Repeated crossings and save/resume must preserve those changes without paying a reward twice.
 

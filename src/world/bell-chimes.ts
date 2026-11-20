@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { CanvasLabel } from '../combat-view/canvas-label.ts';
 import { type Box, templateById } from '../content/rooms.ts';
+import { CARD_FLIGHT_SECONDS, flightGoal, flightPose, flightScale } from '../flow/card-flight.ts';
 import { BELL_CLUE_HINT, type BellNote, type StoredBellChimesState } from '../rules/bell-chimes.ts';
 import type { FloorWorld } from './floor-world.ts';
 import type { InteriorPlacement } from './interior-furnishings.ts';
@@ -118,6 +119,13 @@ export class BellChimes {
   private drum?: THREE.Object3D;
   private key?: THREE.Object3D;
   private prize?: THREE.Mesh;
+  private flight: {
+    cog: THREE.Object3D;
+    target: THREE.Object3D;
+    from: THREE.Vector3;
+    scale: THREE.Vector3;
+    t: number;
+  } | null = null;
   private heard = false;
   private solved = false;
   private claimed = false;
@@ -132,6 +140,7 @@ export class BellChimes {
     floor: 1 | 2,
     art: THREE.Object3D,
     props: readonly InteriorPlacement[] = [],
+    showInstructions = false,
   ): BellChimes | null {
     if (!world.stairEntry) return null;
     const preferred = floor === 1 ? 0 : world.stairEntry.room;
@@ -150,7 +159,7 @@ export class BellChimes {
     ];
     for (const room of rooms) {
       const mount = mountingPoint(world, room, props);
-      if (mount) return new BellChimes(world, floor, mount, art);
+      if (mount) return new BellChimes(world, floor, mount, art, showInstructions);
     }
     return null;
   }
@@ -160,6 +169,7 @@ export class BellChimes {
     readonly floorNumber: 1 | 2,
     mount: Mount,
     art: THREE.Object3D,
+    private readonly showInstructions: boolean,
   ) {
     this.room = mount.room;
     this.object.name = `bell-chimes-floor-${floorNumber}`;
@@ -220,10 +230,13 @@ export class BellChimes {
       z: number,
       m: THREE.Material,
     ) => this.mesh(new THREE.BoxGeometry(w, h, d), m, x, y, z);
-    const base = box(1.24, 0.85, 0.1, 0, 0, -0.025, wood);
+    const bottom = this.showInstructions ? -0.425 : this.floorNumber === 1 ? -0.2 : -0.3;
+    const height = 0.425 - bottom;
+    const center = (0.425 + bottom) / 2;
+    const base = box(1.24, height, 0.1, 0, center, -0.025, wood);
     base.name = this.floorNumber === 1 ? 'music-box-body' : 'bell-bank-bracket';
-    box(1.2, 0.81, 0.018, 0, 0, 0.032, gold);
-    box(1.185, 0.795, 0.012, 0, 0, 0.046, enamel);
+    box(1.2, height - 0.04, 0.018, 0, center, 0.032, gold);
+    box(1.185, height - 0.055, 0.012, 0, center, 0.046, enamel);
     const header = this.plate(0.326, 1.1, 110);
     header?.draw((ctx, w, h) => {
       ctx.fillStyle = '#163936';
@@ -239,7 +252,10 @@ export class BellChimes {
         w - 14,
       );
     });
-    this.status = this.plate(-0.32, 1.12, 105);
+    if (this.showInstructions) {
+      this.status = this.plate(-0.32, 1.12, 105);
+      if (this.status) this.status.mesh.name = 'bell-instruction-plaque';
+    }
     const numbers = this.plate(0.194, 1.08, 70);
     numbers?.draw((ctx, w, h) => {
       ctx.fillStyle = '#163936';
@@ -294,7 +310,10 @@ export class BellChimes {
     }
     for (const i of NOTES) {
       const x = (i - 1) * 0.36;
-      const lamp = new THREE.MeshBasicMaterial({ color: COLORS[i], toneMapped: false });
+      const lamp = new THREE.MeshBasicMaterial({
+        color: COLORS[i],
+        toneMapped: false,
+      });
       this.materials.push(lamp);
       this.lamps.push(lamp);
       const jewel = this.mesh(new THREE.SphereGeometry(0.029, 14, 10), lamp, x, 0.138, 0.21);
@@ -354,7 +373,10 @@ export class BellChimes {
     }
     if (this.floorNumber === 2) {
       for (let i = 0; i < 4; i++) {
-        const lamp = new THREE.MeshBasicMaterial({ color: 0x555447, toneMapped: false });
+        const lamp = new THREE.MeshBasicMaterial({
+          color: 0x555447,
+          toneMapped: false,
+        });
         this.materials.push(lamp);
         this.pins.push(lamp);
         box(0.092, 0.024, 0.025, (i - 1.5) * 0.119, -0.208, 0.068, lamp).name =
@@ -371,7 +393,20 @@ export class BellChimes {
     }
   }
 
-  sync(state?: StoredBellChimesState) {
+  sync(state?: StoredBellChimesState, collector?: THREE.Object3D) {
+    if (collector && this.prize && this.solved && !this.claimed && state?.rewardClaimed) {
+      const cog = this.prize.children[0].clone(true);
+      this.prize.add(cog);
+      this.world.group.attach(cog);
+      cog.name = 'bell-reward-flight';
+      this.flight = {
+        cog,
+        target: collector,
+        from: cog.position.clone(),
+        scale: cog.scale.clone(),
+        t: 0,
+      };
+    }
     this.heard = state?.clueHeard ?? false;
     this.progress = state?.progress.length ?? 0;
     this.solved = state?.solved ?? false;
@@ -385,15 +420,16 @@ export class BellChimes {
       this.lamps[i].color.setHex(COLORS[i]).multiplyScalar(this.sounding === i ? 1 : 0.18);
     for (const [i, pin] of this.pins.entries())
       pin.color.setHex(this.errorTime > 0 ? 0xef6752 : i < this.progress ? 0xf5ce78 : 0x555447);
+    if (!this.status) return;
     let text: string;
-    if (this.floorNumber === 1)
+    if (this.floorNumber === 1) {
       text =
         this.sounding !== null
           ? `♪   ${this.sounding + 1}   ·   ${['Low', 'Mid', 'High'][this.sounding]}`
           : this.heard
             ? 'Wind to replay   ·   Score in Items'
             : 'Wind the box. Repeat its tune on Floor 2.';
-    else
+    } else {
       text = this.claimed
         ? '12 cogs collected'
         : this.solved
@@ -403,6 +439,7 @@ export class BellChimes {
             : this.heard
               ? 'Ring the four notes in order.'
               : BELL_CLUE_HINT;
+    }
     if (text === this.statusLine) return;
     this.statusLine = text;
     this.status?.draw((ctx, w, h) => {
@@ -428,6 +465,21 @@ export class BellChimes {
     this.refresh();
   }
   update(dt: number) {
+    const f = this.flight;
+    if (f && dt > 0) {
+      f.t = Math.min(1, f.t + dt / CARD_FLIGHT_SECONDS);
+      this.world.group.worldToLocal(f.target.getWorldPosition(this.point));
+      flightGoal(f.from, this.point, 0.23, this.point);
+      const k = flightPose(f.from, this.point, f.t, f.cog.position);
+      const lift = Math.min(0.18, f.from.distanceTo(this.point) * 0.15);
+      f.cog.position.y += Math.sin(k * Math.PI) * lift;
+      f.cog.scale.copy(f.scale).multiplyScalar(flightScale(k * k));
+      f.cog.rotateY(dt * 6);
+      if (f.t === 1) {
+        f.cog.removeFromParent();
+        this.flight = null;
+      }
+    }
     if (dt <= 0 || (!this.flash && !this.errorTime)) return;
     if (this.sounding !== null) {
       const t = Math.min(dt, this.flash);
@@ -498,6 +550,8 @@ export class BellChimes {
   }
   private readonly fixture: Box;
   dispose() {
+    this.flight?.cog.removeFromParent();
+    this.flight = null;
     this.dislodge();
     this.object.removeFromParent();
     for (const label of this.labels) label.dispose();

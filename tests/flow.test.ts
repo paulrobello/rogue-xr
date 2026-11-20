@@ -42,6 +42,18 @@ function winRegular(flow: RunFlow, room: number, pick: 'first' | 'skip' = 'first
 }
 
 describe('flow transitions', () => {
+  it('rejects pressure actions on the upper floor', () => {
+    const flow = flowWith();
+    expect(flow.newRun(SEED)).toBe(true);
+    expect(flow.travelToFloor(2, 0)).toBe(true);
+    expect(flow.collectPressureNote(0, 'A')).toBeNull();
+    expect(flow.turnPressureValve(0, 0)).toBeNull();
+    expect(flow.primePressure(0)).toBeNull();
+    expect(flow.openPressureDrawer(0)).toBeNull();
+    expect(flow.claimPressureReward(0)).toBeNull();
+    expect(flow.run?.pressure).toBeUndefined();
+  });
+
   it('walks title, workshop and settings and back', () => {
     const flow = flowWith();
     const seen = phases(flow);

@@ -16,11 +16,13 @@ import {
   attachPressureWing,
   generateFloor,
   generateUpperFloor,
+  isShowcaseFloor,
   SHOWCASE_UPPER_SEED,
 } from '../floor/generate.ts';
 import { placeStairEntry } from '../floor/stairs.ts';
 import { nearSet, shellSet } from '../floor/visibility.ts';
 import { PALETTE } from '../palette.ts';
+import type { RunSnapshot } from '../persist/saves.ts';
 import type { TreasureLoot } from '../rules/run.ts';
 import {
   DEFAULT_VIGNETTE,
@@ -235,6 +237,8 @@ function tagEnemyKinds(world: FloorWorld, seed: string, contentVersion: number):
 
 export interface FloorViewOptions {
   floorNumber?: 1 | 2;
+  /** The reserved room-showcase launch enables walkthrough plaques. */
+  guidedShowcase?: boolean;
   preservedBookRooms?: readonly number[];
   /** Templates the world is built from (the floor plan always uses the greybox set). */
   templates?: readonly RoomTemplate[];
@@ -249,9 +253,39 @@ export function playableFloorPlan(seed: string, contentVersion: number, floorNum
     floorNumber === 2 && seed === SHOWCASE_UPPER_SEED
       ? { ...generated, rooms: generated.rooms.map((r) => ({ ...r, encounter: null })) }
       : generated;
-  if (contentVersion < PRESSURE_WORKS_VERSION) return base;
-  const reservedStair = upperWorks ? placeStairEntry(base)?.alcove : undefined;
-  return attachPressureWing(base, undefined, reservedStair);
+  if (contentVersion < PRESSURE_WORKS_VERSION || floorNumber !== 1) return base;
+  return attachPressureWing(base);
+}
+
+/** The former upper pressure wing occupied the two appended room indices. */
+export function restoreUpperRoomLocations(
+  snapshot: RunSnapshot,
+  templates?: readonly RoomTemplate[],
+): RunSnapshot {
+  const upstairs = snapshot.floorNumber === 2;
+  const archived = snapshot.floors?.find((f) => f.floorNumber === 2);
+  const upperSeed = upstairs ? snapshot.floorSeed : archived?.floorSeed;
+  if (!upperSeed) return snapshot;
+  const plan = playableFloorPlan(upperSeed, snapshot.contentVersion ?? 1, 2);
+  const available = (index: number) => index >= 0 && index < plan.rooms.length;
+  if (upstairs) {
+    const visits = snapshot.reachedRooms;
+    if (available(snapshot.roomIndex) && !visits?.some((i) => !available(i))) return snapshot;
+    return {
+      ...snapshot,
+      roomIndex: available(snapshot.roomIndex)
+        ? snapshot.roomIndex
+        : (placeStairEntry(plan, templates)?.room ?? 0),
+      ...(visits && { reachedRooms: visits.filter(available) }),
+    };
+  }
+  if (!archived?.reachedRooms.some((i) => !available(i))) return snapshot;
+  return {
+    ...snapshot,
+    floors: snapshot.floors?.map((f) =>
+      f === archived ? { ...f, reachedRooms: f.reachedRooms.filter(available) } : f,
+    ),
+  };
 }
 
 /** Greybox exploration view: the generated floor, flat greybox lighting, the rig at the entry. */
@@ -268,7 +302,8 @@ export function mountFloorView(
   const floorNumber = options.floorNumber ?? 1;
   const world = buildFloorWorld(plan, options.templates);
   const notes = plan.pressureWing ? new PressureNotes(world) : null;
-  const pressure = plan.pressureWing ? new PressureWorks(world, plan.pressureWing) : null;
+  const guided = options.guidedShowcase === true && isShowcaseFloor(plan.seed, floorNumber);
+  const pressure = plan.pressureWing ? new PressureWorks(world, plan.pressureWing, guided) : null;
   tagEnemyKinds(world, seed, contentVersion);
   scene.add(world.group);
   // Greybox lighting is two global lights; per-room sockets get real lights with the lightmaps (P4-T7).
@@ -497,7 +532,7 @@ export function mountFloorView(
     },
     dressChimes(art) {
       if (!chimes && stairs)
-        chimes = BellChimes.mount(world, floorNumber, art, furnishings?.placements);
+        chimes = BellChimes.mount(world, floorNumber, art, furnishings?.placements, guided);
     },
     get chimes() {
       return chimes;

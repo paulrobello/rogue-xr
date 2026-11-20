@@ -55,11 +55,17 @@ it.each([1, 2] as const)(
         const through = stair.root.localToWorld(new THREE.Vector3(0.35, rise + y, 4.79));
         const ray = new THREE.Raycaster(from, through.sub(from).normalize());
         stair.root.updateWorldMatrix(true, true);
-        const firstHit = ray.intersectObject(stair.root)[0]?.object;
+        const contact = ray.intersectObject(stair.root)[0];
+        const firstHit = contact?.object;
         expect(firstHit).toBeInstanceOf(THREE.Mesh);
-        const material = (firstHit as THREE.Mesh).material;
-        expect(material).toBeInstanceOf(THREE.MeshBasicMaterial);
-        expect((material as THREE.MeshBasicMaterial).color.getHex()).toBe(0);
+        const material = (firstHit as THREE.Mesh<THREE.BufferGeometry, THREE.Material>).material;
+        if (y === 0.08) {
+          expect(material.name).toBe('Stairwell walnut');
+          expect(stair.root.worldToLocal(contact.point.clone()).y).toBeCloseTo(rise, 3);
+        } else {
+          expect(material).toBeInstanceOf(THREE.MeshBasicMaterial);
+          expect((material as THREE.MeshBasicMaterial).color.getHex()).toBe(0);
+        }
       }
     }
     const opened = stair.root.worldToLocal(stair.handle.getWorldPosition(new THREE.Vector3()));
@@ -100,3 +106,26 @@ it.each(['StairUp', 'StairDown'])('keeps the black liner behind the wooden faces
     }
   }
 });
+
+it.each(['StairUp', 'StairDown'])(
+  'continues the walnut floor under the closed leaf on %s',
+  (name) => {
+    const model = scene.getObjectByName(name);
+    if (!model) throw Error('missing staircase');
+    const level = name === 'StairUp' ? 1.62 : -1.62;
+    model.updateWorldMatrix(true, true);
+    for (const x of [-0.3, 0, 0.3])
+      for (const z of [4.74, 4.76, 4.81, 4.92, 4.93, 5.0]) {
+        // Exclude the leaf itself to inspect the surface as it swings clear.
+        const shell = model.children.filter((o) => !o.name.endsWith('_DoorPivot'));
+        const hit = new THREE.Raycaster(
+          new THREE.Vector3(x, level + 0.06, z),
+          new THREE.Vector3(0, -1, 0),
+        ).intersectObjects(shell, true)[0];
+        expect(hit?.point.y).toBeCloseTo(level, 2);
+        expect((hit.object as THREE.Mesh<THREE.BufferGeometry, THREE.Material>).material.name).toBe(
+          z < 4.935 ? 'Stairwell walnut' : 'Stairwell dark recess',
+        );
+      }
+  },
+);

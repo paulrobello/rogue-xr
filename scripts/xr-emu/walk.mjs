@@ -391,6 +391,9 @@ try {
       () =>
         window.__combat.floor.floorNumber === 2 &&
         window.__combat.floor.chimes &&
+        !window.__combat.floor.pressure &&
+        !window.__combat.floor.notes &&
+        !window.__combat.floor.world.plan.pressureWing &&
         window.__combat.stairTransition.phase === 'idle',
       undefined,
       20000,
@@ -399,8 +402,19 @@ try {
       floor: window.__combat.floor.floorNumber,
       room: window.__combat.floor.chimes?.room,
       hasBank: !!window.__combat.floor.chimes?.object.getObjectByName('bell-1-target'),
+      pressureAbsent: !window.__combat.floor.pressure,
+      notesAbsent: !window.__combat.floor.notes,
+      pressureWingAbsent: !window.__combat.floor.world.plan.pressureWing,
     }));
-    record('chimes-upstairs-station', floor2.floor === 2 && floor2.hasBank, floor2);
+    record(
+      'chimes-upstairs-station',
+      floor2.floor === 2 &&
+        floor2.hasBank &&
+        floor2.pressureAbsent &&
+        floor2.notesAbsent &&
+        floor2.pressureWingAbsent,
+      floor2,
+    );
     await placeNear('bell-1-target');
     const wrong = (melody[0] + 1) % 3;
     record(
@@ -446,16 +460,109 @@ try {
     const before = solved.cogs;
     await placeNear('bell-payout-cog');
     await aim(MAIN, await ev(() => window.__xrEmu.worldOf('bell-payout-cog')));
-    await pullTrigger(MAIN);
+    const payoutStart = await ev(() => {
+      const f = window.__combat.floor;
+      const cog = f.chimes.object.getObjectByName('bell-payout-cog');
+      cog?.updateWorldMatrix(true, false);
+      return cog?.getWorldPosition(cog.position.clone()).toArray() ?? null;
+    });
+    await ev(() => {
+      const xr = window.__xrEmu.session.session;
+      const samples = [];
+      window.__bellFlightSamples = samples;
+      const sample = () => {
+        const c = window.__combat;
+        const cog = c.floor.world.group.getObjectByName('bell-reward-flight');
+        const camera = c.camera;
+        camera.updateWorldMatrix(true, false);
+        const e = camera.matrixWorld.elements;
+        const head = { x: e[12], y: e[13], z: e[14] };
+        if (cog) {
+          cog.updateWorldMatrix(true, false);
+          const p = cog.getWorldPosition(cog.position.clone());
+          samples.push({
+            t: performance.now(),
+            position: p.toArray(),
+            distance: Math.hypot(p.x - head.x, p.y - head.y, p.z - head.z),
+          });
+        } else samples.push({ t: performance.now(), position: null, distance: null });
+        if (samples.length < 90) xr.requestAnimationFrame(sample);
+      };
+      xr.requestAnimationFrame(sample);
+    });
+    await ev((h) => window.__xrEmu.device.controllers[h].updateButtonValue('trigger', 1), MAIN);
+    await settle(150);
+    await ev((h) => window.__xrEmu.device.controllers[h].updateButtonValue('trigger', 0), MAIN);
+    // A duplicate pull during the 0.4 s flight must not bank another reward.
+    await ev((h) => window.__xrEmu.device.controllers[h].updateButtonValue('trigger', 1), MAIN);
+    await settle(50);
+    await ev((h) => window.__xrEmu.device.controllers[h].updateButtonValue('trigger', 0), MAIN);
+    await settle(300);
     await waitFor(
       'chimes-payout-claimed',
       () => window.__flow.flow.run.bellChimes.rewardClaimed === true,
     );
-    const paid = await ev(() => ({
-      cogs: window.__flow.flow.run.cogs,
-      claimed: window.__flow.flow.run.bellChimes.rewardClaimed,
-    }));
+    await waitFor(
+      'chimes-reward-flight-complete',
+      () => {
+        const samples = window.__bellFlightSamples ?? [];
+        const firstVisible = samples.findIndex((sample) => sample.position !== null);
+        return (
+          firstVisible >= 0 &&
+          samples.length > firstVisible + 1 &&
+          samples.at(-1)?.position === null
+        );
+      },
+      undefined,
+      2000,
+    );
+    const paid = await ev(
+      (start) => ({
+        cogs: window.__flow.flow.run.cogs,
+        claimed: window.__flow.flow.run.bellChimes.rewardClaimed,
+        flight: window.__bellFlightSamples,
+        payoutStart: start,
+      }),
+      payoutStart,
+    );
     record('chimes-single-payout', paid.claimed && paid.cogs === before + 12, { before, ...paid });
+    const flight = paid.flight ?? [];
+    const visibleFlight = flight.filter((sample) => sample.position !== null);
+    const firstFlight = visibleFlight[0];
+    const lastFlight = visibleFlight.at(-1);
+    const flightDistance =
+      firstFlight && lastFlight ? firstFlight.distance - lastFlight.distance : Number.NaN;
+    const visibleDuration = firstFlight && lastFlight ? lastFlight.t - firstFlight.t : Number.NaN;
+    const firstStartDistance =
+      firstFlight && paid.payoutStart
+        ? Math.hypot(
+            firstFlight.position[0] - paid.payoutStart[0],
+            firstFlight.position[1] - paid.payoutStart[1],
+            firstFlight.position[2] - paid.payoutStart[2],
+          )
+        : Number.NaN;
+    record(
+      'chimes-reward-flight',
+      Array.isArray(paid.payoutStart) &&
+        visibleFlight.length >= 2 &&
+        firstStartDistance < 0.15 &&
+        firstFlight.distance < 2.5 &&
+        flightDistance > 0.05 &&
+        visibleDuration >= 300 &&
+        visibleFlight.some((sample) => sample.distance < 0.35) &&
+        flight.at(-1)?.position === null,
+      {
+        start: paid.payoutStart,
+        frames: flight.length,
+        visibleFrames: visibleFlight.length,
+        firstDistance: firstFlight?.distance,
+        lastDistance: lastFlight?.distance,
+        visibleDuration,
+        firstStartDistance,
+        flightDistance,
+        final: flight.at(-1),
+      },
+    );
     await pullTrigger(MAIN);
     const duplicate = await ev(() => window.__flow.flow.run.cogs);
     record('chimes-no-double-payout', duplicate === paid.cogs, { cogs: duplicate });

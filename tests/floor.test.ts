@@ -127,16 +127,17 @@ describe('Upper Works floor generation', () => {
     const seed = 'MAPTEST3';
     const legacy = playableFloorPlan(seed, 3, 2);
     expect(legacy.rooms.map((room) => ({ ...room, encounter: null }))).toEqual(
-      attachPressureWing(generateFloor(seed)).rooms.map((room) => ({ ...room, encounter: null })),
+      generateFloor(seed).rooms.map((room) => ({ ...room, encounter: null })),
     );
+    expect(legacy.pressureWing).toBeUndefined();
     expect(playableFloorPlan(seed, 4, 2).rooms[0]?.templateId).toBe('gear-shaft');
     expect(playableFloorPlan(seed, 4, 2).rooms.length).toBeGreaterThanOrEqual(8);
   });
 
-  it('keeps the down stairs clear when placing the pressure wing beside the shaft', () => {
+  it('keeps the down stairs clear on the industrial shaft', () => {
     const seed = 'PZPDHHP0';
     expect(placeStairEntry(playableFloorPlan(seed, 4, 2))?.room).toBe(0);
-    expect(playableFloorPlan(seed, 3, 2)).toEqual(attachPressureWing(generateFloor(seed)));
+    expect(playableFloorPlan(seed, 3, 2).pressureWing).toBeUndefined();
   });
 
   it('keeps a clear stair landing for 1,000 deterministic upper seeds', () => {

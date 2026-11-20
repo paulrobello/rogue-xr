@@ -436,7 +436,6 @@ interface PressureWingFit {
 export function attachPressureWing(
   plan: FloorPlan,
   templates: readonly RoomTemplate[] = GREYBOX_TEMPLATES,
-  reservedStair?: Rect,
 ): FloorPlan {
   if (plan.pressureWing) return plan;
   const corridor = templates.find((t) => t.id === 'corridor');
@@ -488,7 +487,6 @@ export function attachPressureWing(
         ] as const;
         const corridorWorld = worldRoom(corridor, corridorTurns, corridorPosition);
         if (world.some((room) => rectsOverlap(room.footprint, corridorWorld.footprint))) continue;
-        if (reservedStair && rectsOverlap(corridorWorld.footprint, reservedStair)) continue;
         const corridorExit = rotatedCorridor.doors.find((d) => d.id !== corridorEntry.id);
         if (!corridorExit) continue;
         for (const studyTurns of study.rotations) {
@@ -502,8 +500,7 @@ export function attachPressureWing(
             const studyWorld = worldRoom(study, studyTurns, studyPosition);
             if (
               world.some((room) => rectsOverlap(room.footprint, studyWorld.footprint)) ||
-              rectsOverlap(corridorWorld.footprint, studyWorld.footprint) ||
-              (reservedStair && rectsOverlap(studyWorld.footprint, reservedStair))
+              rectsOverlap(corridorWorld.footprint, studyWorld.footprint)
             )
               continue;
             fits.push({

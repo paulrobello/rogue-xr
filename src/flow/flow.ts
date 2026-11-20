@@ -281,6 +281,7 @@ export class RunFlow {
       this.phaseValue !== 'explore' ||
       this.contentVersionValue < PRESSURE_WORKS_VERSION ||
       !run ||
+      this.floorNumberValue !== 1 ||
       !Number.isInteger(room) ||
       room < 0 ||
       !isPressureNoteId(note)
@@ -298,6 +299,7 @@ export class RunFlow {
       this.phaseValue !== 'explore' ||
       this.contentVersionValue < PRESSURE_WORKS_VERSION ||
       !run ||
+      this.floorNumberValue !== 1 ||
       !Number.isInteger(room) ||
       room < 0 ||
       ![0, 1, 2].includes(valve)
@@ -315,6 +317,7 @@ export class RunFlow {
       this.phaseValue !== 'explore' ||
       this.contentVersionValue < PRESSURE_WORKS_VERSION ||
       !run ||
+      this.floorNumberValue !== 1 ||
       !Number.isInteger(room) ||
       room < 0
     )
@@ -331,6 +334,7 @@ export class RunFlow {
       this.phaseValue !== 'explore' ||
       this.contentVersionValue < PRESSURE_WORKS_VERSION ||
       !run ||
+      this.floorNumberValue !== 1 ||
       !Number.isInteger(room) ||
       room < 0
     )
@@ -347,6 +351,7 @@ export class RunFlow {
       this.phaseValue !== 'explore' ||
       this.contentVersionValue < PRESSURE_WORKS_VERSION ||
       !run ||
+      this.floorNumberValue !== 1 ||
       !Number.isInteger(room) ||
       room < 0
     )
@@ -501,7 +506,19 @@ export class RunFlow {
     this.contentVersionValue = snapshot.contentVersion ?? 1;
     this.floorNumberValue = snapshot.floorNumber ?? 1;
     this.floorStates.clear();
-    for (const floor of snapshot.floors ?? []) this.floorStates.set(floor.floorNumber, floor);
+    for (const floor of snapshot.floors ?? []) {
+      if (floor.floorNumber === 2) {
+        const { pressure: _pressure, ...upper } = floor;
+        this.floorStates.set(floor.floorNumber, upper);
+      } else {
+        this.floorStates.set(floor.floorNumber, floor);
+      }
+    }
+    // Older saves can contain a regulator from the retired upper wing.
+    if (this.floorNumberValue !== 1) {
+      const { pressure: _pressure, ...runWithoutPressure } = this.runValue;
+      this.runValue = runWithoutPressure;
+    }
     this.resetRunBookkeeping(snapshot.roomIndex, cleared);
     for (const room of snapshot.reachedRooms ?? []) this.reached.add(room);
     this.offerValue = snapshot.phase === 'reward' ? snapshot.pendingReward : null;
@@ -611,8 +628,9 @@ export class RunFlow {
     if (this.phaseValue !== 'explore' || !run || !Number.isInteger(room) || room < 0) return false;
     const keys = run.bookSecretKeyRooms ?? [];
     if (keys.includes(room) || (run.bookSecretOpenedRooms ?? []).includes(room)) return false;
+    const { pressure: _stalePressure, ...runWithoutPressure } = run;
     this.runValue = {
-      ...run,
+      ...runWithoutPressure,
       bookSecretKeyRooms: [...keys, room],
     };
     this.emit({
@@ -651,8 +669,9 @@ export class RunFlow {
     if (!(run.bookSecretCabinetRooms ?? []).includes(room) || openedRooms.includes(room))
       return false;
     const cogs = 10;
+    const { pressure: _stalePressure, ...runWithoutPressure } = run;
     this.runValue = {
-      ...run,
+      ...runWithoutPressure,
       cogs: run.cogs + cogs,
       bookSecretOpenedRooms: [...openedRooms, room],
     };
@@ -818,13 +837,16 @@ export class RunFlow {
     this.roomValue = destinationRoom;
     this.offerValue = null;
     this.guardianDefeatedValue = floor.guardianDefeated === true;
+    const { pressure: _stalePressure, ...runWithoutPressure } = run;
     this.runValue = {
-      ...run,
+      ...runWithoutPressure,
       floorSeed: floor.floorSeed,
       openedLoot: floor.openedLoot,
       pendingLoot: floor.pendingLoot,
       usedHearths: floor.usedHearths,
-      pressure: floor.pressure,
+      ...(this.floorNumberValue === 1 && floor.pressure !== undefined
+        ? { pressure: floor.pressure }
+        : {}),
       bookSecretOpenedRooms: floor.bookSecretOpenedRooms,
       bookSecretKeyRooms: floor.bookSecretKeyRooms,
       bookSecretCabinetRooms: floor.bookSecretCabinetRooms,

@@ -35,7 +35,12 @@ const PUMP_Z = -3.0;
 const PIPE_X = -0.898;
 const BANK_X = [-2.2, 2.2] as const;
 const BANK_Z = -3.5;
-const FACING_IN: Record<Facing, number> = { N: 0, S: Math.PI, W: Math.PI / 2, E: -Math.PI / 2 };
+const FACING_IN: Record<Facing, number> = {
+  N: 0,
+  S: Math.PI,
+  W: Math.PI / 2,
+  E: -Math.PI / 2,
+};
 const NORMAL = new THREE.Vector3(0, 0, 1);
 const PRESSURE_GLBS = new Map(
   Object.entries({ ...provenance.sha256, ...compartmentProvenance.inputs })
@@ -72,7 +77,10 @@ export function pressureColliders(plan: FloorPlan, index: number): Box[] {
   const [x, z] = placed.position;
   const box = (x0: number, z0: number, x1: number, z1: number, top: number): Box => {
     const r = rotateRect({ min: [x0, z0], max: [x1, z1] }, placed.turns);
-    return { min: [x + r.min[0], 0, z + r.min[1]], max: [x + r.max[0], top, z + r.max[1]] };
+    return {
+      min: [x + r.min[0], 0, z + r.min[1]],
+      max: [x + r.max[0], top, z + r.max[1]],
+    };
   };
   if (index === wing.gallery) return [box(-1, -1.66, PIPE_X + 0.18, 1.66, 2.22)];
   return [
@@ -143,6 +151,7 @@ export class PressureWorks {
   constructor(
     private readonly world: FloorWorld,
     private readonly wing: NonNullable<FloorPlan['pressureWing']>,
+    private readonly showInstructions = false,
   ) {
     const { gallery, pumpRoom, source } = this.wing;
     const housing = pressureColliders(world.plan, pumpRoom)[0];
@@ -228,8 +237,8 @@ export class PressureWorks {
     this.paint(
       this.sign(this.gallery, 'pressure-calibration-record', 1.5, 0.55, 0, 1.68, plateDepth),
       'Pipe Gallery',
-      'Recover the three service slips',
-      'Calibration records missing',
+      showInstructions ? 'Recover the three service slips' : '',
+      showInstructions ? 'Calibration records missing' : '',
     );
     const inscription = this.sign(
       this.compartment,
@@ -247,9 +256,19 @@ export class PressureWorks {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = '#1c1411';
-      ctx.fillText('Pull the maker’s mark', w / 2 + 2, h / 2 + 3, w * 0.96);
+      ctx.fillText(
+        this.showInstructions ? 'Pull the maker’s mark' : 'Maker’s mark',
+        w / 2 + 2,
+        h / 2 + 3,
+        w * 0.96,
+      );
       ctx.fillStyle = '#ddc8a0';
-      ctx.fillText('Pull the maker’s mark', w / 2, h / 2, w * 0.96);
+      ctx.fillText(
+        this.showInstructions ? 'Pull the maker’s mark' : 'Maker’s mark',
+        w / 2,
+        h / 2,
+        w * 0.96,
+      );
     });
     for (const plate of [this.heading, ...this.values]) {
       if (!plate) continue;
@@ -526,7 +545,11 @@ export class PressureWorks {
     for (const i of VALVES) {
       const node = this.parts.manifold.getObjectByName(`valve-${i}`);
       if (node)
-        this.wheels[i] = { node, rest: node.quaternion.clone(), goal: node.quaternion.clone() };
+        this.wheels[i] = {
+          node,
+          rest: node.quaternion.clone(),
+          goal: node.quaternion.clone(),
+        };
     }
   }
 
@@ -546,12 +569,16 @@ export class PressureWorks {
       this.state.rewardClaimed
         ? `${PRESSURE_REWARD} run cogs collected`
         : this.state.drawerOpen
-          ? 'Take the cogs from the drawer'
+          ? this.showInstructions
+            ? 'Take the cogs from the drawer'
+            : 'Compartment open'
           : this.state.solved
             ? 'The maker’s mark is unlocked'
             : notes < 3
-              ? `Service slips: ${notes} of 3 · Review them in Items`
-              : 'Set A, B and C, then pull the primer',
+              ? `Service slips: ${notes} of 3${this.showInstructions ? ' · Review them in Items' : ''}`
+              : this.showInstructions
+                ? 'Set A, B and C, then pull the primer'
+                : 'Pressure controls active',
     );
     for (const i of VALVES) {
       const val = this.state.dials[i];
@@ -660,7 +687,10 @@ export class PressureWorks {
     const i = this.targets.indexOf(object as THREE.Mesh);
     if (i >= 0) return { action: 'turn', valve: i as Valve, distance };
     const index = this.compartmentTargets.indexOf(object);
-    return { action: index === 0 ? 'prime' : index === 1 ? 'open' : 'claim', distance };
+    return {
+      action: index === 0 ? 'prime' : index === 1 ? 'open' : 'claim',
+      distance,
+    };
   }
   near(point: THREE.Vector3, reach = 0.25): PressureAction | null {
     if (this.world.current !== this.wing.pumpRoom) return null;
@@ -682,7 +712,11 @@ export class PressureWorks {
   }
   primeMiss(animate = true): void {
     if (animate) this.instruments.primerStroke();
-    this.paint(this.heading, 'Primer held', primeMiss(this.state));
+    this.paint(
+      this.heading,
+      'Primer held',
+      this.showInstructions ? primeMiss(this.state) : 'No pressure change',
+    );
   }
 
   dispose(): void {

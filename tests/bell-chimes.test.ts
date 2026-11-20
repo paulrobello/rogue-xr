@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
-import { beforeAll, expect, it } from 'vitest';
+import { beforeAll, expect, it, vi } from 'vitest';
 import { BellChimes } from '../src/world/bell-chimes.ts';
 import { playableFloorPlan } from '../src/world/floor-view.ts';
 import { buildFloorWorld } from '../src/world/floor-world.ts';
@@ -62,3 +62,59 @@ it.each([1, 2] as const)(
     world.dispose();
   },
 );
+
+it('flies the claimed seal from a rotated station toward the moving player, once', () => {
+  const world = buildFloorWorld(playableFloorPlan('MAPTEST3', 4, 2));
+  const station = BellChimes.mount(world, 2, art);
+  if (!station) throw Error('Missing station');
+  const target = station.object.getObjectByName('bell-payout-cog');
+  if (!target) throw Error('Missing reward');
+  const solved = {
+    clueHeard: true,
+    progress: [0, 1, 2, 0] as const,
+    solved: true,
+    rewardClaimed: false,
+  };
+  station.sync(solved);
+  const start = target.getWorldPosition(new THREE.Vector3());
+  const eye = new THREE.Object3D();
+  eye.position.copy(station.object.localToWorld(new THREE.Vector3(0, 0.15, 2)));
+  const claimed = { ...solved, rewardClaimed: true };
+  station.sync(claimed, eye);
+  const cog = world.group.getObjectByName('bell-reward-flight');
+  if (!cog) throw Error('Missing flying seal');
+  expect(cog.getWorldPosition(new THREE.Vector3()).distanceTo(start)).toBeLessThan(0.0001);
+  expect(target.visible).toBe(false);
+  station.sync(claimed, eye);
+  expect(world.group.getObjectsByProperty('name', 'bell-reward-flight')).toHaveLength(1);
+  const originalScale = cog.scale.x;
+  station.update(0.2);
+  expect(cog.getWorldPosition(new THREE.Vector3()).distanceTo(start)).toBeGreaterThan(0.4);
+  expect(cog.scale.x).toBeLessThan(originalScale);
+  eye.position.x += 0.45;
+  station.update(0.19);
+  expect(cog.getWorldPosition(new THREE.Vector3()).distanceTo(eye.position)).toBeLessThan(0.4);
+  station.update(0.02);
+  expect(cog.parent).toBeNull();
+  station.sync(claimed);
+  expect(world.group.getObjectByName('bell-reward-flight')).toBeUndefined();
+  station.dispose();
+  world.dispose();
+});
+
+it.each([false, true])('renders the bell instruction plaque only in guided mode (%s)', (guided) => {
+  const context = new Proxy({}, { get: () => () => {} });
+  const world = buildFloorWorld(playableFloorPlan('MAPTEST2', 4, 1));
+  vi.stubGlobal('document', { createElement: () => ({ getContext: () => context }) });
+  try {
+    const station = BellChimes.mount(world, 1, art, [], guided);
+    if (!station) throw Error('Missing music box');
+    expect(Boolean(station.object.getObjectByName('bell-instruction-plaque'))).toBe(guided);
+    station.cue(1);
+    expect(station.object.getObjectByName('music-box-note-2')).toBeDefined();
+    station.dispose();
+  } finally {
+    vi.unstubAllGlobals();
+    world.dispose();
+  }
+});

@@ -132,7 +132,7 @@ for name in ("StairUp", "StairDown"):
                 assert min(black) - min(wood) > 0.04, (name, x, y, dx, dz, depths)
             frame_checks += 1
     report[name]["frame_liner_ray_samples"] = frame_checks
-    # With the leaf open, the lower aperture and sill must remain opaque black.
+    # With the leaf open, the aperture remains black beyond the wooden sill.
     def first_material(origin, direction):
         hits = []
         for mesh in fixed_meshes:
@@ -149,9 +149,11 @@ for name in ("StairUp", "StairDown"):
     for x in (-0.3, 0.3):
         for height in (0.01, 0.08, 0.25):
             assert first_material(Vector((x, -4.74, landing_height + height)), Vector((0, -1, 0))) == "Stairwell dark recess"
-        for z in (4.80, 4.90):
+        for z in (4.76, 4.80, 4.82, 4.90, 4.92, 4.93):
+            assert first_material(Vector((x, -z, landing_height + 0.10)), Vector((0, 0, -1))) == "Stairwell walnut", (name, x, z, "landing")
+        for z in (4.94, 5.0, 5.5):
             assert first_material(Vector((x, -z, landing_height + 0.10)), Vector((0, 0, -1))) == "Stairwell dark recess"
-    report[name]["open_aperture_and_sill_samples"] = 10
+    report[name]["open_aperture_and_sill_samples"] = 24
     coverage = 0
     for x in (-0.55, 0, 0.55):
         for height in (0.01, 0.10, 1.0, 2.10, 2.115, 2.12, 2.13, 2.14, 2.15):

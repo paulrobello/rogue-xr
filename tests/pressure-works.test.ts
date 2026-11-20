@@ -1,6 +1,7 @@
 // @vitest-environment node
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
+import { SHOWCASE_UPPER_SEED } from '../src/floor/generate.ts';
 import { mountFloorView } from '../src/world/floor-view.ts';
 
 describe('Pressure Works on a playable floor', () => {
@@ -11,6 +12,17 @@ describe('Pressure Works on a playable floor', () => {
       });
       expect(Boolean(floor.pressure)).toBe(contentVersion === 3);
       expect(Boolean(floor.world.plan.pressureWing)).toBe(contentVersion === 3);
+      floor.dispose();
+    }
+  });
+  it('does not attach the pressure wing to Upper Works, including showcase layouts', () => {
+    for (const seed of ['P1PE0028', SHOWCASE_UPPER_SEED]) {
+      const floor = mountFloorView(new THREE.Scene(), new THREE.Group(), seed, {
+        floorNumber: 2,
+        contentVersion: 4,
+      });
+      expect(floor.world.plan.pressureWing).toBeUndefined();
+      expect(floor.pressure).toBeNull();
       floor.dispose();
     }
   });

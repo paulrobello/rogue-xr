@@ -4,7 +4,7 @@ Build an encounter by choosing a clue, a place to find it, something to manipula
 
 ## Pressure Works
 
-A loose maintenance dispatch directs the player toward one of the missing service slips. Three slips in different rooms record one reading apiece for circuits A, B, and C. A slip can lie on furniture or the floor, turn up inside a coffer, or drop after a fight. Picking it up opens it for reading and files it in the run’s **Items** page. An opened chest or cleared room keeps its uncollected slip available on return.
+On Floor 1, a loose maintenance dispatch directs the player toward one of the missing service slips. Three slips in different rooms record one reading apiece for circuits A, B, and C. A slip can lie on furniture or the floor, turn up inside a coffer, or drop after a fight. Picking it up opens it for reading and files it in the run’s **Items** page. An opened chest or cleared room keeps its uncollected slip available on return.
 
 Set the three valves, then operate the primer. The machinery stirs, vents steam, and releases the catch on the maker’s mark. A scratched hint points to the mark. Pull it to open the built-in drawer, then take the cogs. This separates solving, discovering the compartment, and claiming the reward. The gallery no longer prints the combination.
 
@@ -12,7 +12,7 @@ Set the three valves, then operate the primer. The machinery stirs, vents steam,
 
 On Floor 1, aim at the music box and pull the trigger, or click it on desktop. Its winding key turns and the pinned drum plays a four-note phrase. The three lamps and the numbered display show each beat. Wind it again to replay it, or read the bell score in **Items** on either floor.
 
-In the Upper Works, strike the low, middle and high bells in the same order. Each correct note lights another indicator. A wrong note resets the four indicators and lets you try again. Completing the phrase releases a brass cog seal. Take it to collect 12 run cogs. The score, partial phrase and reward stay with the run through stair travel and Continue. [Quest 3 room views and saved score](verification/quest-bell-chimes.jpg)
+In the Upper Works, strike the low, middle and high bells in the same order. Each correct note lights another indicator. A wrong note resets the four indicators and lets you try again. Completing the phrase releases a brass cog seal. When collected, the seal flies from the lock toward the player and awards 12 run cogs. The showcase adds instructional plaques; in a normal run the numbered lamps, tones and lock indicators provide the clues. The score, partial phrase and reward stay with the run through stair travel and Continue. [Quest 3 room views and saved score](verification/quest-bell-chimes.jpg)
 
 ## Ingredients for future puzzles
 

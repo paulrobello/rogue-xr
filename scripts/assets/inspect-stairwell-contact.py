@@ -112,6 +112,11 @@ for n in ["StairUp", "StairDown"]:
     cap = bounds(bpy.data.objects[n + " recess cap"])
     assert len(jambs) == len(liners) == 2
     leaf_bounds = bounds(bpy.data.objects[n + " access door"])
+    recess_floor = bounds(bpy.data.objects[n + " recess floor"])
+    # Blender's negative Y points toward increasing runtime Z.
+    assert recess_floor[1][1] < leaf_bounds[1][0], (n, "black floor before leaf back")
+    assert recess_floor[1][1] > lb[1][0], (n, "recess floor misses landing")
+    assert abs(leaf_bounds[2][0] - lb[2][1]) < 1e-5, (n, "door foot above landing")
     head_reveal = lintel[2][0] - leaf_bounds[2][1]
     assert 0.0049 <= head_reveal <= 0.0051, (n, "head reveal", head_reveal)
     for jamb in jambs:
@@ -135,6 +140,8 @@ for n in ["StairUp", "StairDown"]:
         "riser_vertical_face_count": 9,
         "door_clear_travel_degrees": 75,
         "door_closed_contact_checked": True,
+        "black_floor_behind_leaf_m": leaf_bounds[1][0] - recess_floor[1][1],
+        "black_floor_landing_overlap_m": recess_floor[1][1] - lb[1][0],
         "frame_liner_front_clearance_m_min": 0.065,
         "posts": len(posts),
         "post_axis_penetration_m_min": min(penetrations),
