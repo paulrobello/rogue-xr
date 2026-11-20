@@ -7,6 +7,7 @@ import { glb_sha256 as alchemyRevision } from '../assets-source/props/alchemy-ki
 import { assets as portraitAssets } from '../assets-source/props/alchemy-kit/portraits/manifest.json';
 import { sha256 as architecturalFinishRevision } from '../assets-source/props/architectural-finishes/report.json';
 import { glb_sha256 as archiveRevision } from '../assets-source/props/archive-kit/manifest.json';
+import { glb_sha256 as calibrationRevision } from '../assets-source/props/calibration-kit/manifest.json';
 import { glb_sha256 as commissionRevision } from '../assets-source/props/commission-kit/manifest.json';
 import { hashes as instrumentHashes } from '../assets-source/props/puzzle-instruments/manifest.json';
 import { sha256 as stairwellRevision } from '../assets-source/props/stairwell/report.json';
@@ -30,7 +31,7 @@ import {
   viewTan,
 } from './combat-view/hit-feedback.ts';
 import { mountCombatDebugView } from './combat-view/index.ts';
-import { STARTER_DECK } from './content/cards.ts';
+import { CARDS, STARTER_DECK } from './content/cards.ts';
 import { ENEMIES } from './content/enemies.ts';
 import { REWARD_POOL } from './content/rewards.ts';
 import { ActionBus } from './core/actions.ts';
@@ -62,6 +63,7 @@ import {
 import { loadRunSnapshot, loadWorkshop, type RunSnapshot } from './persist/saves.ts';
 import { alchemyRecipe, type FormulaClue, formulaObservation } from './rules/alchemy.ts';
 import { type BellNote, bellMelody } from './rules/bell-chimes.ts';
+import { BEARINGS, calibrationPlan, GEAR_TEETH } from './rules/calibration.ts';
 import {
   COMMISSION_ORDERS,
   COMMISSION_PAYOUT,
@@ -82,6 +84,8 @@ import { loadIconSheet } from './ui/icon-sheet.ts';
 import { failLoading, revealGame, showLoading } from './ui/loading-screen.ts';
 import { mountUpdateNotice } from './update/index.ts';
 import type { BellChimes, BellPick } from './world/bell-chimes.ts';
+import type { CalibrationAction } from './world/calibration-bench.ts';
+import type { FolioPick } from './world/calibration-cabinet.ts';
 import type { CommissionAction } from './world/commission-office.ts';
 import {
   type FloorView,
@@ -653,6 +657,20 @@ function commissionKit(): Promise<THREE.Object3D> {
     });
   return commissionArt;
 }
+let calibrationArt: Promise<THREE.Object3D> | undefined;
+function calibrationKit(): Promise<THREE.Object3D> {
+  calibrationArt ??= new GLTFLoader()
+    .loadAsync(`/assets/props/calibration-kit/calibration-kit.glb?v=${calibrationRevision}`)
+    .then(({ scene }) => {
+      reflect(scene, 0.55);
+      return scene;
+    })
+    .catch((error) => {
+      calibrationArt = undefined;
+      throw error;
+    });
+  return calibrationArt;
+}
 function wizardPaintings(): Promise<THREE.Texture[]> {
   portraitTextures ??= Promise.all(
     portraitAssets.map(async ({ name, runtimeSha256 }) => {
@@ -672,7 +690,11 @@ function wizardPaintings(): Promise<THREE.Texture[]> {
 function syncPuzzles(target: FloorView, immediate = false): void {
   const run = flow.run;
   if (!run) return;
-  if (immediate) target.office?.sync(flow.commission);
+  if (immediate) {
+    target.office?.sync(flow.commission);
+    target.calibrationBench?.sync(flow.calibration, true);
+    target.chartCabinet?.sync(flow.calibration, true);
+  }
   const state = flow.counterweight;
   target.counterweight?.sync(state.selected, counterweightTarget(run.seed), state.solved);
   target.world.setPuzzleGateOpen('counterweight', state.solved, immediate);
@@ -809,6 +831,17 @@ const dressFloor = async (target: FloorView): Promise<void> => {
         if (target !== floor) return;
         target.dressCommission(art, kind, hitFx.reducedMotion);
       }
+    }
+    if (chimeArt && target.contentVersion >= RETURN_PASSAGES_VERSION && target.floorNumber !== 3) {
+      const art = await calibrationKit();
+      if (target !== floor) return;
+      target.dressCalibration(
+        art,
+        chimeArt,
+        target.floorNumber === 1 ? target.seed : (flow.run?.seed ?? target.seed),
+        chestCardFace,
+        hitFx.reducedMotion,
+      );
     }
     syncPuzzles(target, true);
     for (const room of target.styledRooms)
@@ -964,6 +997,16 @@ flow.onChange((event) => {
   }
   if (event.type === 'commission') {
     floor?.office?.sync(flow.commission, event.action === 'claim' ? camera : undefined);
+    storedSnapshot = flow.snapshot(Date.now(), floor?.world.current ?? flow.room);
+    return;
+  }
+  if (event.type === 'calibration') {
+    floor?.chartCabinet?.sync(
+      flow.calibration,
+      false,
+      event.action === 'claim' ? camera : undefined,
+    );
+    floor?.calibrationBench?.sync(flow.calibration);
     storedSnapshot = flow.snapshot(Date.now(), floor?.world.current ?? flow.room);
     return;
   }
@@ -1503,6 +1546,61 @@ function operateCommission(input: CommissionAction): boolean {
   audio?.playSfx('cog-pickup');
   return true;
 }
+function readFolio(input: FolioPick): boolean {
+  if (!floor || !flow.run) return false;
+  const plan = calibrationPlan(flow.run.seed);
+  if (input.action === 'card') {
+    const card = flow.claimCalibrationCard();
+    if (!card) return false;
+    audio?.playSfx('card-draw');
+    floor.showBookSecret(
+      { text: 'Card added to deck', caption: CARDS.find((c) => c.id === card)?.name ?? card },
+      camera,
+    );
+    return true;
+  }
+  const acquired = flow.takeCalibrationChart();
+  floor.showBookSecret(
+    {
+      text: acquired
+        ? 'Winding key and chart'
+        : plan.kind === 'gears'
+          ? 'Service diagram'
+          : 'Celestial table',
+      caption:
+        plan.kind === 'gears'
+          ? plan.gearOrder.map((id) => GEAR_TEETH[id]).join(' · ') + ' teeth'
+          : plan.detents.map((d) => BEARINGS[d]).join(' · '),
+    },
+    camera,
+  );
+  audio?.playSfx(acquired ? 'gear-clank' : 'card-draw');
+  return true;
+}
+function operateCalibration(hit: CalibrationAction): boolean {
+  const bench = floor?.calibrationBench;
+  if (!bench) return false;
+  if (hit.action === 'wind') {
+    const outcome = flow.windCalibration();
+    if (outcome) {
+      bench.drive(outcome);
+      audio?.playSfx(outcome === 'solved' ? 'door-open' : 'gear-clank');
+    } else if (!flow.calibration.chart)
+      floor?.showBookSecret(
+        { text: 'Empty winding arbor', caption: 'A square key fits this spindle.' },
+        camera,
+      );
+    return true;
+  }
+  const changed =
+    hit.action === 'gear'
+      ? flow.selectCalibrationGear(hit.id)
+      : hit.action === 'seat'
+        ? flow.seatCalibrationGear(hit.id)
+        : flow.turnCalibrationRing(hit.id);
+  if (changed) audio?.playSfx('gear-clank', undefined, 0.48);
+  return changed;
+}
 function inspectFormula(clue: FormulaClue): boolean {
   if (!floor || !flow.run) return false;
   flow.learnFormulaClue(clue);
@@ -1563,8 +1661,12 @@ function fieldHit(origin: THREE.Vector3, direction: THREE.Vector3) {
   const archive = floor.archive?.pick(origin, direction);
   const evidence = floor.formulaEvidence?.pick(origin, direction);
   const office = floor.office?.pick(origin, direction);
+  const calibration = floor.calibrationBench?.pick(origin, direction),
+    folio = floor.chartCabinet?.pick(origin, direction);
   const hits = [
     ...(office ? [{ kind: 'commission' as const, hit: office }] : []),
+    ...(calibration ? [{ kind: 'calibration' as const, hit: calibration }] : []),
+    ...(folio ? [{ kind: 'folio' as const, hit: folio }] : []),
     ...(archive ? [{ kind: 'archive' as const, hit: archive }] : []),
     ...(evidence ? [{ kind: 'formula-clue' as const, hit: evidence }] : []),
     ...(weight ? [{ kind: 'counterweight' as const, hit: weight }] : []),
@@ -1593,6 +1695,10 @@ const activatePickup = (
   switch (pick.kind) {
     case 'commission':
       return operateCommission(pick.hit);
+    case 'calibration':
+      return operateCalibration(pick.hit);
+    case 'folio':
+      return readFolio(pick.hit);
     case 'archive':
       return operateArchive(pick.hit.action);
     case 'formula-clue':
@@ -1818,6 +1924,10 @@ for (const index of [0, 1]) {
     }
     const office = floor.office?.near(position, GRAB_REACH);
     if (office && operateCommission(office)) return;
+    const cal = floor.calibrationBench?.near(position, GRAB_REACH);
+    if (cal && operateCalibration(cal)) return;
+    const folio = floor.chartCabinet?.near(position, GRAB_REACH);
+    if (folio && readFolio(folio)) return;
     const archive = floor.archive?.near(position, GRAB_REACH);
     if (archive && operateArchive(archive.action)) return;
     const evidence = floor.formulaEvidence?.near(position, GRAB_REACH);

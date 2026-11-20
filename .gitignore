@@ -38,3 +38,8 @@ assets-source/props/archive-kit/staging/*.png
 assets-source/props/commission-kit/staging/*.glb
 assets-source/props/commission-kit/staging/*.png
 !assets-source/props/commission-kit/staging/review*.png
+
+# Original calibration maps and the intermediate GLB are reproduced by the Blender generator.
+assets-source/props/calibration-kit/staging/*.glb
+assets-source/props/calibration-kit/staging/*.png
+!assets-source/props/calibration-kit/staging/review*.png

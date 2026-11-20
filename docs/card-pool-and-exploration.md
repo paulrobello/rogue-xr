@@ -145,9 +145,9 @@ At most 2 puzzles per floor, each about 30 to 90 seconds to solve. Each puzzle h
 
 | Puzzle | Verb | Clue elsewhere |
 | --- | --- | --- |
-| Gear train | Grab gears and seat them on a wall board so the driver turns the lock | A blueprint plate shows the tooth counts |
+| Gear train (playable) | Seat and swap three wheels in the Upper Works and wind the driver | A service diagram and winding key wait inside the Floor 1 pressure supply room. |
 | Pressure valves | Turn 3 valves until the gauge reads the target | A gauge plate gives the reading |
-| Orrery alignment | Turn rings until the planets match a star chart | The chart lies on a study desk |
+| Orrery alignment (playable) | Turn three distinct planets to their charted bearings in the Upper Works | The calibration cabinet has the chart and key. Its drawer releases a real card after a correct wind. |
 | Sigil door | Trace an unfamiliar glyph that is not in your deck | A torn page shows the glyph |
 | Bell chimes (playable) | In the Upper Works, ring the three numbered bells in the order played downstairs | The Floor 1 music box plays four notes and lights the matching numbers and colors. Items keeps the score. |
 
@@ -206,7 +206,7 @@ Keep the deck, HP and cog purse with the run. Keep each floor’s layout, opened
 | W6 | Commission board and 3 task types | W1 |
 | W7 | Wave B combat cards with M3, M8, M9, M10, the crystal d12 and the eye glyph | W3 |
 | W8 | Remaining field cards (Scrying Lens, Recall Spiral, Oil Can, Tuning Fork, Forge Ember, Polishing Kit, Smoke Flask, Spare Valve) | W1, W4, W5 |
-| W9 | Remaining puzzle types (gear train and orrery) and the wandering automaton | W4 |
+| W9 | Gear train and orrery are playable alternate instruments; the wandering automaton remains planned | W4 |
 | W10 | Wave C combat cards, Junk cards, and the act 2 enemies that add Junk | W7, PRD Q1 (acts) |
 | W11 | Paired up/down stairs and per-floor saves are playable. Each floor keeps its opened chests and cleared encounters. Pressure Works is on Floor 1. The astral lift links the Upper Works and Conservatory. | Three seeded floors |
 

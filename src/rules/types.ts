@@ -337,3 +337,14 @@ export interface StoredAlchemyState {
   readonly brewed: boolean;
   readonly opened: boolean;
 }
+export type CalibrationKind = 'gears' | 'orrery';
+export type GearId = 0 | 1 | 2;
+export interface StoredCalibrationState {
+  readonly kind: CalibrationKind;
+  readonly chart: boolean;
+  readonly selected: GearId | null;
+  readonly slots: readonly (GearId | null)[];
+  readonly detents: readonly number[];
+  readonly solved: boolean;
+  readonly claimed: boolean;
+}

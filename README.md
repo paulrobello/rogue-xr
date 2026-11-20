@@ -33,6 +33,9 @@ The [floor roadmap and potion recipe book](docs/conservatory-and-return-routes.m
 ## Keeper’s commissions
 
 The wax-sealed ledger on Floor 1 offers a seed-specific job. Point and pull the trigger, grip the letter or click to read it. Use the stamp to accept. Recovery asks for three marked springs on Floors 1 and 2. Restoration and delve orders recognize the existing pressure repair or opened Conservatory archive. Return to the ledger and collect the purse. [Order list and payments](docs/card-pool-and-exploration.md#e4-tasks-commissions)
+## Clockmaker’s instruments
+
+Once the pressure supply door opens, inspect the cabinet’s chart and take its winding key. The seed chooses a gear train or an orrery in the Upper Works. Restoring it releases a bonus card at the cabinet downstairs. **Items** retains the diagram, and installed parts and ring bearings survive Continue. [Instrument mechanics](docs/puzzle-recipe-book.md#the-clockmakers-calibration-order)
 
 ## CI and deploy
 

@@ -15,6 +15,12 @@ import {
   type StoredBellChimesState,
 } from '../rules/bell-chimes.ts';
 import {
+  calibrated,
+  calibrationPlan,
+  type GearId,
+  type StoredCalibrationState,
+} from '../rules/calibration.ts';
+import {
   COMMISSION_PAYOUT,
   commissionPlan,
   type StoredCommissionState,
@@ -312,6 +318,45 @@ function commission(v: unknown, path: string, seed: string): StoredCommissionSta
   };
 }
 
+function validateCalibration(value: unknown, path: string, seed: string): StoredCalibrationState {
+  const r = rec(value, path),
+    plan = calibrationPlan(seed);
+  if (
+    r.kind !== plan.kind ||
+    typeof r.chart !== 'boolean' ||
+    typeof r.solved !== 'boolean' ||
+    typeof r.claimed !== 'boolean'
+  )
+    fail(path, 'invalid calibration state');
+  const gear = (v: unknown): v is GearId | null => v === null || v === 0 || v === 1 || v === 2;
+  if (!gear(r.selected) || !Array.isArray(r.slots) || r.slots.length !== 3 || !r.slots.every(gear))
+    fail(path, 'invalid gear layout');
+  const occupied = r.slots.filter((id) => id !== null);
+  if (new Set(occupied).size !== occupied.length) fail(path, 'gear installed twice');
+  if (
+    !Array.isArray(r.detents) ||
+    r.detents.length !== 3 ||
+    r.detents.some((d) => !Number.isInteger(d) || d < 0 || d > 3)
+  )
+    fail(path, 'invalid ring detents');
+  const state: StoredCalibrationState = {
+    kind: plan.kind,
+    chart: r.chart,
+    selected: r.selected,
+    slots: [...r.slots],
+    detents: [...r.detents],
+    solved: r.solved,
+    claimed: r.claimed,
+  };
+  if (
+    (state.claimed && !state.solved) ||
+    (state.solved && (!state.chart || !calibrated(state, plan))) ||
+    (state.kind === 'orrery' && (occupied.length || state.selected !== null)) ||
+    (state.kind === 'gears' && state.detents.some((d) => d !== 0))
+  )
+    fail(path, 'inconsistent calibration progress');
+  return state;
+}
 function streamState(v: unknown, path: string): StreamState {
   if (!Array.isArray(v) || v.length !== 4) fail(path, 'expected four 32-bit words');
   // sfc32 words can be negative: `a = b ^ (b >>> 9)` leaves a signed int32 in the state.
@@ -415,6 +460,10 @@ function validateRunState(
     (!alchemyState?.opened || formulaState.added.some((id) => !alchemyState.found.includes(id)))
   )
     fail(path, 'archive brew requires an open thorn ward and recovered ingredients');
+  const calibrationState =
+    r.calibration === undefined
+      ? undefined
+      : validateCalibration(r.calibration, path + '.calibration', seed);
   const bellChimesState =
     r.bellChimes === undefined ? undefined : bellChimes(r.bellChimes, `${path}.bellChimes`, seed);
   const bookSecretOpenedRooms = roomIds(r.bookSecretOpenedRooms, `${path}.bookSecretOpenedRooms`);
@@ -448,6 +497,7 @@ function validateRunState(
     ...(formulaState === undefined ? {} : { conservatoryFormula: formulaState }),
     ...(commissionState === undefined ? {} : { commission: commissionState }),
     ...(bellChimesState === undefined ? {} : { bellChimes: bellChimesState }),
+    ...(calibrationState && { calibration: calibrationState }),
     ...(bookSecretOpenedRooms === undefined ? {} : { bookSecretOpenedRooms }),
     ...(bookSecretKeyRooms === undefined ? {} : { bookSecretKeyRooms }),
     ...(bookSecretCabinetRooms === undefined ? {} : { bookSecretCabinetRooms }),
@@ -523,6 +573,19 @@ export function validateSnapshot(raw: unknown): RunSnapshot {
       (payment.kind === 'delve' && !activeRun.conservatoryFormula?.opened)
     )
       fail('snapshot.run.commission.claimed', 'payment has no completed work order');
+  }
+  if (activeRun.calibration?.chart) {
+    const repaired =
+      floorNumber === 1
+        ? activeRun.pressure?.solved
+        : floors?.find((f) => f.floorNumber === 1)?.pressure?.solved;
+    if (!repaired)
+      fail('snapshot.run.calibration.chart', 'the cabinet is behind the pressure lock');
+    if (
+      activeRun.calibration.claimed &&
+      !activeRun.deck.includes(calibrationPlan(activeRun.seed).rewardCard)
+    )
+      fail('snapshot.run.calibration.claimed', 'collected card is missing from the deck');
   }
   return {
     version: SNAPSHOT_VERSION,

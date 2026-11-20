@@ -1,0 +1,24 @@
+{
+  "glb_sha256": "b0ff7b2929c7d2fbf111f855d4849a37d788fb89b4bf1d08df9d2344fa16fb89",
+  "generator_sha256": "01a3d72a5b6f3a79fb0e8276f171d1db11cc714bb3bded58f66a87321d9e5ba0",
+  "source_blend_sha256": "8569e9802f9c07ceb9771216d992898dd872253637226a8eeeb8083ec2675e40",
+  "axes": "glTF +Y up, +Z front; metres",
+  "root_nodes": [
+    "CalibrationFrame",
+    "OrreryInner",
+    "OrreryMiddle",
+    "OrreryOuter",
+    "ChartCabinet",
+    "ChartDrawer"
+  ],
+  "socket_nodes": [
+    "CardRest"
+  ],
+  "triangles": 10124,
+  "blender": "5.2.3 LTS",
+  "visual_approval": "pending independent and owner review",
+  "limitations": [
+    "No authored LOD or collider",
+    "Runtime play-distance and interaction review pending"
+  ]
+}

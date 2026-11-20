@@ -29,6 +29,7 @@ import { FOVEATION_CHOICES, type FoveationChoice, type Settings } from '../persi
 import type { RunSnapshot } from '../persist/saves.ts';
 import { brewNames, formulaObservation, ingredientNames } from '../rules/alchemy.ts';
 import { bellMelody } from '../rules/bell-chimes.ts';
+import { BEARINGS, calibrationPlan, GEAR_TEETH, PLANET_NAMES } from '../rules/calibration.ts';
 import { COMMISSION_TITLES } from '../rules/commissions.ts';
 import {
   DIFFICULTIES,
@@ -1525,6 +1526,19 @@ export class FlowUi {
           ? 'Payment ready'
           : `${job.progress}/${job.total}`;
       rows.push({ id: 'keeper-order', label: COMMISSION_TITLES[job.kind] + ' · ' + status });
+    }
+    if (run?.calibration?.chart) {
+      const plan = calibrationPlan(run.seed);
+      rows.push({
+        id: 'instrument-diagram',
+        label:
+          plan.kind === 'gears'
+            ? 'Gear train · ' + plan.gearOrder.map((id) => GEAR_TEETH[id]).join(' / ')
+            : 'Star chart · ' +
+              plan.detents.map((d, i) => PLANET_NAMES[i] + ' ' + BEARINGS[d][0]).join(' / '),
+      });
+      if (run.calibration.solved && !run.calibration.claimed)
+        rows.push({ id: 'instrument-prize', label: 'Supply cabinet · released' });
     }
     const formula = run?.conservatoryFormula;
     if (run && formula) {

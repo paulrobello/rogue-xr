@@ -29,6 +29,16 @@ import {
   strikeChime,
 } from '../rules/bell-chimes.ts';
 import {
+  claimCalibrationCard,
+  type GearId,
+  readCalibration,
+  seatCalibrationGear,
+  selectCalibrationGear,
+  takeCalibrationChart,
+  turnCalibrationRing,
+  windCalibration,
+} from '../rules/calibration.ts';
+import {
   acceptCommission,
   claimCommission,
   collectSpring,
@@ -216,6 +226,7 @@ export type FlowEvent =
       readonly cogs: number;
       readonly inscription: string;
     }
+  | { readonly type: 'calibration'; readonly action: 'chart' | 'adjust' | 'solve' | 'claim' }
   | PressureTurnResultView
   | CommissionEvent
   | CounterweightResultView
@@ -347,6 +358,58 @@ export class RunFlow {
     return true;
   }
 
+  get calibration(): ReturnType<typeof readCalibration> {
+    return readCalibration(this.runValue ?? { seed: '00000000' });
+  }
+  private calibrationRun(floor: number): RunState | null {
+    return this.phaseValue === 'explore' &&
+      this.floorNumberValue === floor &&
+      this.contentVersionValue >= RETURN_PASSAGES_VERSION
+      ? this.runValue
+      : null;
+  }
+  private applyCalibration(
+    next: RunState | null,
+    action: 'chart' | 'adjust' | 'solve' | 'claim',
+  ): boolean {
+    if (!next) return false;
+    this.runValue = next;
+    this.emit({ type: 'calibration', action });
+    return true;
+  }
+  takeCalibrationChart(): boolean {
+    const r = this.calibrationRun(1);
+    return !!r && this.pressure.solved && this.applyCalibration(takeCalibrationChart(r), 'chart');
+  }
+  selectCalibrationGear(id: GearId): boolean {
+    const r = this.calibrationRun(2);
+    return !!r && this.applyCalibration(selectCalibrationGear(r, id), 'adjust');
+  }
+  seatCalibrationGear(slot: GearId): boolean {
+    const r = this.calibrationRun(2);
+    return !!r && this.applyCalibration(seatCalibrationGear(r, slot), 'adjust');
+  }
+  turnCalibrationRing(id: GearId): boolean {
+    const r = this.calibrationRun(2);
+    return !!r && this.applyCalibration(turnCalibrationRing(r, id), 'adjust');
+  }
+  windCalibration(): 'solved' | 'stalled' | null {
+    const r = this.calibrationRun(2);
+    if (!r) return null;
+    const next = windCalibration(r);
+    if (!next) return null;
+    if (next === r) return 'stalled';
+    this.applyCalibration(next, 'solve');
+    return 'solved';
+  }
+  claimCalibrationCard(): string | null {
+    const r = this.calibrationRun(1);
+    if (!r || !this.pressure.solved) return null;
+    const result = claimCalibrationCard(r);
+    if (!result) return null;
+    this.applyCalibration(result.run, 'claim');
+    return result.card;
+  }
   get counterweight(): Omit<ReturnType<typeof readCounterweight>, 'selected'> & {
     readonly selected: 0 | 1 | null;
   } {

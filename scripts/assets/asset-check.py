@@ -1219,6 +1219,7 @@ def main() -> int:
     check_alchemy(errors)
     check_mechanism_kit(errors, "archive-kit")
     check_mechanism_kit(errors, "commission-kit")
+    check_mechanism_kit(errors, "calibration-kit")
     architectural = check_architectural_finishes(errors)
     if architectural:
         print(f"asset-check props/architectural-finishes: {architectural.get('triangles')} tris, {architectural.get('materials')} materials, {architectural.get('embeddedImages')} embedded images, {architectural.get('roots')} roots")

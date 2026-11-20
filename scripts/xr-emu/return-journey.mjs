@@ -4,9 +4,10 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { chromium } from 'playwright';
+import { exerciseCalibration } from './calibration-journey.mjs';
 
 const {
-  values: { base, seed, out, cdp, formula, commission },
+  values: { base, seed, out, cdp, formula, commission, calibration },
 } = parseArgs({
   options: {
     base: { type: 'string', default: 'http://localhost:4266' },
@@ -15,6 +16,7 @@ const {
     cdp: { type: 'string' },
     formula: { type: 'boolean', default: false },
     commission: { type: 'boolean', default: false },
+    calibration: { type: 'boolean', default: false },
   },
 });
 await mkdir(out, { recursive: true });
@@ -643,6 +645,22 @@ async function exerciseReturnJourney() {
 }
 try {
   if (commission) await exerciseCommission();
+  else if (calibration)
+    await exerciseCalibration({
+      page,
+      base,
+      seed,
+      out,
+      ev,
+      ready,
+      stair,
+      approach,
+      click,
+      resumeAt,
+      crossing,
+      shot,
+      errors,
+    });
   else if (formula) await exerciseFormula();
   else await exerciseReturnJourney();
 } catch (error) {

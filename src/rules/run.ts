@@ -4,6 +4,7 @@ import {
   RulesError,
   type StoredAlchemyState,
   type StoredBellChimesState,
+  type StoredCalibrationState,
   type StoredCommissionState,
   type StoredConservatoryFormula,
   type StoredCounterweightState,
@@ -46,6 +47,7 @@ export interface RunState {
   readonly alchemy?: StoredAlchemyState;
   readonly conservatoryFormula?: StoredConservatoryFormula;
   readonly commission?: StoredCommissionState;
+  readonly calibration?: StoredCalibrationState;
   /** Cross-floor bell puzzle progress. Absent in older saves and treated as idle. */
   readonly bellChimes?: StoredBellChimesState;
   /** Rooms whose marked book caches have paid out. */

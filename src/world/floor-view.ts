@@ -41,6 +41,8 @@ import { AlchemyConservatory } from './alchemy-conservatory.ts';
 import { AstralLift } from './astral-lift.ts';
 import { BellChimes } from './bell-chimes.ts';
 import { BookSecret } from './book-secret.ts';
+import { CalibrationBench } from './calibration-bench.ts';
+import { CalibrationCabinet } from './calibration-cabinet.ts';
 import { CommissionOffice } from './commission-office.ts';
 import { ConservatoryArchive } from './conservatory-archive.ts';
 import { ConservatoryGallery } from './conservatory-gallery.ts';
@@ -56,6 +58,7 @@ import {
   pickHearth,
 } from './hearth.ts';
 import { InteriorFurnishings, type InteriorFurnishingsAsset } from './interior-furnishings.ts';
+import type { CofferCardFace } from './loot.ts';
 import {
   type Coffer,
   type LootMaterials,
@@ -160,6 +163,15 @@ export interface FloorView {
   ): void;
   readonly office: CommissionOffice | null;
   dressCommission(art: THREE.Object3D, kind: CommissionKind, reducedMotion: boolean): void;
+  readonly calibrationBench: CalibrationBench | null;
+  readonly chartCabinet: CalibrationCabinet | null;
+  dressCalibration(
+    art: THREE.Object3D,
+    tools: THREE.Object3D,
+    seed: string,
+    face: (id: string) => CofferCardFace,
+    reduced: boolean,
+  ): void;
   readonly counterweight: CounterweightStation | null;
   dressChimes(art: THREE.Object3D): void;
   dressStairs(model: THREE.Object3D): void;
@@ -353,6 +365,8 @@ export function mountFloorView(
   let formulaEvidence: FormulaEvidence | null = null,
     archive: ConservatoryArchive | null = null;
   let office: CommissionOffice | null = null;
+  let calibrationBench: CalibrationBench | null = null,
+    chartCabinet: CalibrationCabinet | null = null;
   let counterweight: CounterweightStation | null = null;
   const floorNumber = options.floorNumber ?? 1;
   const world = buildFloorWorld(plan, options.templates);
@@ -677,6 +691,19 @@ export function mountFloorView(
           reducedMotion,
         );
     },
+    get calibrationBench() {
+      return calibrationBench;
+    },
+    get chartCabinet() {
+      return chartCabinet;
+    },
+    dressCalibration(art, tools, runSeed, face, reduced) {
+      const props = furnishings?.placements ?? [];
+      if (floorNumber === 1 && !chartCabinet)
+        chartCabinet = CalibrationCabinet.mount(world, art, tools, runSeed, props, face, reduced);
+      if (floorNumber === 2 && !calibrationBench)
+        calibrationBench = CalibrationBench.mount(world, art, tools, runSeed, props, reduced);
+    },
     get counterweight() {
       return counterweight;
     },
@@ -841,6 +868,8 @@ export function mountFloorView(
       alchemy?.dispose();
       lift?.dispose();
       office?.dispose();
+      calibrationBench?.dispose();
+      chartCabinet?.dispose();
       counterweight?.dispose();
       chimes?.dispose();
       stairs?.dispose();
@@ -940,6 +969,8 @@ export function mountFloorView(
       archive?.update(dt);
       alchemy?.update(dt, clockwork?.dialHours);
       office?.update(dt);
+      calibrationBench?.update(dt);
+      chartCabinet?.update(dt);
       counterweight?.update(dt);
       chimes?.update(dt);
       world.updateAnimations(dt);
