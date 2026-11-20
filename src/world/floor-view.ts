@@ -26,6 +26,7 @@ import { placeStairEntry } from '../floor/stairs.ts';
 import { nearSet, shellSet } from '../floor/visibility.ts';
 import { PALETTE } from '../palette.ts';
 import type { RunSnapshot } from '../persist/saves.ts';
+import { conservatoryFormula } from '../rules/alchemy.ts';
 import type { TreasureLoot } from '../rules/run.ts';
 import {
   DEFAULT_VIGNETTE,
@@ -39,10 +40,12 @@ import { AlchemyConservatory } from './alchemy-conservatory.ts';
 import { AstralLift } from './astral-lift.ts';
 import { BellChimes } from './bell-chimes.ts';
 import { BookSecret } from './book-secret.ts';
+import { ConservatoryArchive } from './conservatory-archive.ts';
 import { ConservatoryGallery } from './conservatory-gallery.ts';
 import { CounterweightStation } from './counterweight-station.ts';
 import { animateFires, CANDLE_NODE, FIRE_NODE } from './fireplace.ts';
 import { buildFloorWorld, type FloorWorld } from './floor-world.ts';
+import { FormulaEvidence } from './formula-clue.ts';
 import {
   type Hearth,
   type HearthMaterials,
@@ -143,9 +146,12 @@ export interface FloorView {
   readonly chimes: BellChimes | null;
   readonly alchemy: AlchemyConservatory | null;
   readonly clock: StrikingClock | null;
+  readonly formulaEvidence: FormulaEvidence | null;
+  readonly archive: ConservatoryArchive | null;
   readonly lift: AstralLift | null;
   dressConservatory(
     art: THREE.Object3D,
+    archiveKit: THREE.Object3D,
     textures: readonly THREE.Texture[],
     runSeed: string,
     reducedMotion: boolean,
@@ -340,6 +346,8 @@ export function mountFloorView(
     clockwork: StrikingClock | null = null,
     lift: AstralLift | null = null,
     gallery: ConservatoryGallery | null = null;
+  let formulaEvidence: FormulaEvidence | null = null,
+    archive: ConservatoryArchive | null = null;
   let counterweight: CounterweightStation | null = null;
   const floorNumber = options.floorNumber ?? 1;
   const world = buildFloorWorld(plan, options.templates);
@@ -611,10 +619,26 @@ export function mountFloorView(
     get lift() {
       return lift;
     },
-    dressConservatory(art, textures, runSeed, reducedMotion) {
+    get formulaEvidence() {
+      return formulaEvidence;
+    },
+    get archive() {
+      return archive;
+    },
+    dressConservatory(art, archiveKit, textures, runSeed, reducedMotion) {
       if (floorNumber === 1 || lift) return;
       lift = AstralLift.mount(world, art, floorNumber === 2 ? 3 : 2, furnishings?.placements);
-      if (floorNumber === 2) return;
+      if (floorNumber === 2) {
+        formulaEvidence = FormulaEvidence.mount(
+          world,
+          art,
+          archiveKit,
+          runSeed,
+          null,
+          furnishings?.placements,
+        );
+        return;
+      }
       alchemy = new AlchemyConservatory(world, art, runSeed, reducedMotion);
       clockwork = StrikingClock.mount(world, art, runSeed, reducedMotion, furnishings?.placements);
       gallery = ConservatoryGallery.mount(
@@ -626,6 +650,13 @@ export function mountFloorView(
         furnishings?.placements,
       );
       if (!clockwork || !gallery) throw Error('Missing a Conservatory wall bay');
+      formulaEvidence = FormulaEvidence.mount(world, art, archiveKit, runSeed, gallery);
+      archive = ConservatoryArchive.mount(
+        world,
+        archiveKit,
+        conservatoryFormula(runSeed).recipe,
+        reducedMotion,
+      );
     },
     get counterweight() {
       return counterweight;
@@ -784,6 +815,8 @@ export function mountFloorView(
       return spinners.length;
     },
     dispose() {
+      formulaEvidence?.dispose();
+      archive?.dispose();
       gallery?.dispose();
       clockwork?.dispose();
       alchemy?.dispose();
@@ -884,7 +917,8 @@ export function mountFloorView(
           floorAudio?.playChime?.(1, clockwork.object.getWorldPosition(at));
       }
       if (gallery) gallery.update(dt, head.getWorldPosition(at));
-      alchemy?.update(dt);
+      archive?.update(dt);
+      alchemy?.update(dt, clockwork?.dialHours);
       counterweight?.update(dt);
       chimes?.update(dt);
       world.updateAnimations(dt);

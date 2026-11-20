@@ -26,7 +26,7 @@ Find and wind the Watchmaker’s Music Box on Floor 1. Watch the numbered lamps 
 
 ## Return routes and the Conservatory
 
-The Upper Works balance raises a grille downstairs. Restoring Pressure Works also unlocks a separate supply room. Use the engraved astral lift in the Upper Works to reach Floor 3. The Conservatory contains two watching wizard portraits, a clockwork owl, broom caretakers and an alchemy bench. The pictured ingredients and striking hour vary with the seed. Ingredients and the finished potion appear in **Items**.
+The Upper Works balance raises a grille downstairs. Restoring Pressure Works also unlocks a separate supply room. Use the engraved astral lift in the Upper Works to reach Floor 3. The Conservatory contains two watching wizard portraits, a clockwork owl, broom caretakers and an alchemy bench. The pictured ingredients and striking hour vary with the seed. Ingredients and the finished potion appear in **Items**. A second brew opens the Conservatory archive. Its two clues are split between a wizard portrait and an object in the Upper Works, and both are recorded in **Items**.
 
 The [floor roadmap and potion recipe book](docs/conservatory-and-return-routes.md) records the puzzle dependencies, clues, return trips, seed rules and future brews.
 

@@ -6,6 +6,7 @@ import { configureTextBuilder } from 'troika-three-text';
 import { glb_sha256 as alchemyRevision } from '../assets-source/props/alchemy-kit/manifest.json';
 import { assets as portraitAssets } from '../assets-source/props/alchemy-kit/portraits/manifest.json';
 import { sha256 as architecturalFinishRevision } from '../assets-source/props/architectural-finishes/report.json';
+import { glb_sha256 as archiveRevision } from '../assets-source/props/archive-kit/manifest.json';
 import { hashes as instrumentHashes } from '../assets-source/props/puzzle-instruments/manifest.json';
 import { sha256 as stairwellRevision } from '../assets-source/props/stairwell/report.json';
 import { audioStateForFlow } from './audio/cues.ts';
@@ -58,7 +59,7 @@ import {
   saveSettings,
 } from './persist/db.ts';
 import { loadRunSnapshot, loadWorkshop, type RunSnapshot } from './persist/saves.ts';
-import { alchemyRecipe } from './rules/alchemy.ts';
+import { alchemyRecipe, type FormulaClue, formulaObservation } from './rules/alchemy.ts';
 import { type BellNote, bellMelody } from './rules/bell-chimes.ts';
 import { counterweightTarget } from './rules/counterweight.ts';
 import {
@@ -81,6 +82,7 @@ import {
   restoreUpperRoomLocations,
   seedFromQuery,
 } from './world/floor-view.ts';
+import { RECORD_TITLES } from './world/formula-clue.ts';
 import type { HearthPick } from './world/hearth.ts';
 import { dressHeroRooms, fetchHeroRooms, loadHeroAssets } from './world/hero-rooms.ts';
 import {
@@ -615,6 +617,20 @@ function conservatoryKit(): Promise<THREE.Object3D> {
     });
   return alchemyKit;
 }
+let archiveArt: Promise<THREE.Object3D> | undefined;
+function archiveKit(): Promise<THREE.Object3D> {
+  archiveArt ??= new GLTFLoader()
+    .loadAsync(`/assets/props/archive-kit/archive-kit.glb?v=${archiveRevision}`)
+    .then(({ scene }) => {
+      reflect(scene, 0.54);
+      return scene;
+    })
+    .catch((error) => {
+      archiveArt = undefined;
+      throw error;
+    });
+  return archiveArt;
+}
 function wizardPaintings(): Promise<THREE.Texture[]> {
   portraitTextures ??= Promise.all(
     portraitAssets.map(async ({ name, runtimeSha256 }) => {
@@ -639,7 +655,10 @@ function syncPuzzles(target: FloorView, immediate = false): void {
   target.world.setPuzzleGateOpen('counterweight', state.solved, immediate);
   target.world.setPuzzleGateOpen('pressure', flow.pressure.solved, immediate);
   target.world.setPuzzleGateOpen('thorn', flow.alchemy.opened, immediate);
-  target.alchemy?.sync(flow.alchemy, immediate);
+  const formula = flow.conservatoryFormula;
+  target.alchemy?.sync(flow.alchemy, immediate, formula);
+  target.archive?.sync(formula, immediate);
+  target.world.setPuzzleGateOpen('archive', formula.opened, immediate);
   target.clock?.sync(flow.alchemy.found.includes(alchemyRecipe(run.seed)[1]));
 }
 let pressureArt: Promise<PressureArt> | undefined;
@@ -740,12 +759,19 @@ const dressFloor = async (target: FloorView): Promise<void> => {
       target.chimes?.sync(flow.run?.bellChimes);
     }
     if (target.floorNumber > 1 && target.contentVersion >= RETURN_PASSAGES_VERSION) {
-      const [kit, portraits] = await Promise.all([
+      const [kit, secrets, portraits] = await Promise.all([
         conservatoryKit(),
+        archiveKit(),
         target.floorNumber === 3 ? wizardPaintings() : Promise.resolve([]),
       ]);
       if (target !== floor) return;
-      target.dressConservatory(kit, portraits, flow.run?.seed ?? target.seed, hitFx.reducedMotion);
+      target.dressConservatory(
+        kit,
+        secrets,
+        portraits,
+        flow.run?.seed ?? target.seed,
+        hitFx.reducedMotion,
+      );
       if (target.floorNumber === 3) {
         const owl = makeClockworkOwlAsset(kit.getObjectByName('ClockworkOwl')!);
         target.useEnemyAssets(new Map([[owl.id, owl]]), prepareEnemy);
@@ -903,7 +929,7 @@ flow.onChange((event) => {
     }
     return;
   }
-  if (event.type === 'counterweight' || event.type === 'alchemy') {
+  if (event.type === 'counterweight' || event.type === 'alchemy' || event.type === 'formula') {
     if (floor) syncPuzzles(floor);
     storedSnapshot = flow.snapshot(Date.now(), floor?.world.current ?? flow.room);
     return;
@@ -1393,6 +1419,26 @@ function operateWeight(
   if (result) audio?.playSfx('gear-clank', station.object.getWorldPosition(chimePosition));
   return !!result;
 }
+function inspectFormula(clue: FormulaClue): boolean {
+  if (!floor || !flow.run) return false;
+  flow.learnFormulaClue(clue);
+  const recipe = flow.conservatoryFormula.recipe;
+  floor.showBookSecret(
+    {
+      text: clue === 'portrait' ? 'The painted seal' : RECORD_TITLES[recipe],
+      caption: formulaObservation(flow.run.seed, clue),
+    },
+    camera,
+  );
+  audio?.playSfx('card-draw');
+  return true;
+}
+function operateArchive(action: 'pour' | 'unlatch'): boolean {
+  const success = flow.useFormula(action);
+  if (!success) return false;
+  audio?.playSfx(action === 'unlatch' ? 'door-open' : 'steam-vent');
+  return true;
+}
 function operateAlchemy(
   hit: NonNullable<ReturnType<NonNullable<FloorView['alchemy']>['pick']>>,
 ): boolean {
@@ -1401,8 +1447,16 @@ function operateAlchemy(
   const result =
     hit.action === 'collect'
       ? flow.collectIngredient(hit.ingredient)
-      : flow.addIngredient(hit.ingredient);
-  if (result) audio?.playSfx(hit.action === 'collect' ? 'card-draw' : 'steam-vent');
+      : flow.alchemy.opened
+        ? flow.addFormulaIngredient(hit.ingredient, floor?.alchemy?.inStillInterval ?? false)
+        : flow.addIngredient(hit.ingredient);
+  if (result === 'waiting')
+    floor?.showBookSecret(
+      { text: 'The draft stirs the mixture', caption: 'The chart marks the still interval.' },
+      camera,
+    );
+  if (result && result !== 'waiting')
+    audio?.playSfx(hit.action === 'collect' ? 'card-draw' : 'steam-vent');
   return !!result;
 }
 function fieldHit(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -1422,7 +1476,11 @@ function fieldHit(origin: THREE.Vector3, direction: THREE.Vector3) {
   const lift = floor.lift?.pick(origin, direction);
   const brew = floor.alchemy?.pick(origin, direction);
   const clock = floor.clock?.pick(origin, direction);
+  const archive = floor.archive?.pick(origin, direction);
+  const evidence = floor.formulaEvidence?.pick(origin, direction);
   const hits = [
+    ...(archive ? [{ kind: 'archive' as const, hit: archive }] : []),
+    ...(evidence ? [{ kind: 'formula-clue' as const, hit: evidence }] : []),
     ...(weight ? [{ kind: 'counterweight' as const, hit: weight }] : []),
     ...(gate ? [{ kind: 'gate' as const, hit: gate }] : []),
     ...(lift ? [{ kind: 'lift' as const, hit: lift }] : []),
@@ -1447,6 +1505,10 @@ const activatePickup = (
   const pick = fieldHit(origin, direction);
   if (!pick) return false;
   switch (pick.kind) {
+    case 'archive':
+      return operateArchive(pick.hit.action);
+    case 'formula-clue':
+      return inspectFormula(pick.hit.clue);
     case 'counterweight':
       return operateWeight(pick.hit);
     case 'clock':
@@ -1666,6 +1728,10 @@ for (const index of [0, 1]) {
       flow.collectPressureNote(note.room, note.id);
       return;
     }
+    const archive = floor.archive?.near(position, GRAB_REACH);
+    if (archive && operateArchive(archive.action)) return;
+    const evidence = floor.formulaEvidence?.near(position, GRAB_REACH);
+    if (evidence && inspectFormula(evidence.clue)) return;
     const clock = floor.clock?.near(position, GRAB_REACH);
     if (clock && flow.collectIngredient(clock.ingredient)) return;
     const brew = floor.alchemy?.near(position, GRAB_REACH);

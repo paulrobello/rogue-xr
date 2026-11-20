@@ -1,7 +1,13 @@
 import { ENCOUNTER_CONTENT_VERSION } from '../combat/encounter-choice.ts';
 import { PERMANENT_CARD_IDS } from '../content/rewards.ts';
 import { normalizeSeed, STREAMS, type StreamState } from '../core/rng.ts';
-import { alchemyRecipe, type Ingredient, type StoredAlchemyState } from '../rules/alchemy.ts';
+import {
+  alchemyRecipe,
+  conservatoryFormula,
+  type Ingredient,
+  type StoredAlchemyState,
+  type StoredConservatoryFormula,
+} from '../rules/alchemy.ts';
 import {
   BELL_PHRASE_LENGTH,
   type BellNote,
@@ -233,6 +239,43 @@ function alchemy(v: unknown, path: string, seed: string): StoredAlchemyState {
   return { found, added, brewed: r.brewed, opened: r.opened };
 }
 
+function formula(v: unknown, path: string, seed: string): StoredConservatoryFormula {
+  const r = rec(v, path);
+  const plan = conservatoryFormula(seed);
+  if (r.recipe !== plan.recipe) fail(`${path}.recipe`, 'does not match seeded recipe');
+  if (!Array.isArray(r.clues) || r.clues.some((c) => c !== 'portrait' && c !== 'record'))
+    fail(`${path}.clues`, 'invalid clues');
+  if (
+    !Array.isArray(r.added) ||
+    r.added.some((n) => ![0, 1, 2].includes(n as number)) ||
+    r.added.some((n, i) => n !== plan.ingredients[i])
+  )
+    fail(`${path}.added`, 'invalid seeded order');
+  if (
+    typeof r.brewed !== 'boolean' ||
+    r.brewed !== (r.added.length === 2) ||
+    typeof r.revealed !== 'boolean' ||
+    typeof r.opened !== 'boolean'
+  )
+    fail(path, 'invalid formula state');
+  if (
+    new Set(r.clues).size !== r.clues.length ||
+    (r.added.length && r.clues.length !== 2) ||
+    (r.revealed && !r.brewed) ||
+    (r.revealed && r.recipe !== 'lantern-ink' && !r.opened)
+  )
+    fail(path, 'inconsistent archive progression');
+  if (r.opened && !r.revealed) fail(`${path}.opened`, 'cannot open before reveal');
+  return {
+    recipe: plan.recipe,
+    clues: [...r.clues],
+    added: [...r.added] as Ingredient[],
+    brewed: r.brewed,
+    revealed: r.revealed,
+    opened: r.opened,
+  };
+}
+
 function streamState(v: unknown, path: string): StreamState {
   if (!Array.isArray(v) || v.length !== 4) fail(path, 'expected four 32-bit words');
   // sfc32 words can be negative: `a = b ^ (b >>> 9)` leaves a signed int32 in the state.
@@ -324,6 +367,16 @@ function validateRunState(
       : counterweight(r.counterweight, `${path}.counterweight`, seed);
   const alchemyState =
     r.alchemy === undefined ? undefined : alchemy(r.alchemy, `${path}.alchemy`, seed);
+  const formulaState =
+    r.conservatoryFormula === undefined
+      ? undefined
+      : formula(r.conservatoryFormula, `${path}.conservatoryFormula`, seed);
+  if (
+    formulaState &&
+    (formulaState.added.length || formulaState.brewed) &&
+    (!alchemyState?.opened || formulaState.added.some((id) => !alchemyState.found.includes(id)))
+  )
+    fail(path, 'archive brew requires an open thorn ward and recovered ingredients');
   const bellChimesState =
     r.bellChimes === undefined ? undefined : bellChimes(r.bellChimes, `${path}.bellChimes`, seed);
   const bookSecretOpenedRooms = roomIds(r.bookSecretOpenedRooms, `${path}.bookSecretOpenedRooms`);
@@ -354,6 +407,7 @@ function validateRunState(
     ...(pressureState === undefined ? {} : { pressure: pressureState }),
     ...(counterweightState === undefined ? {} : { counterweight: counterweightState }),
     ...(alchemyState === undefined ? {} : { alchemy: alchemyState }),
+    ...(formulaState === undefined ? {} : { conservatoryFormula: formulaState }),
     ...(bellChimesState === undefined ? {} : { bellChimes: bellChimesState }),
     ...(bookSecretOpenedRooms === undefined ? {} : { bookSecretOpenedRooms }),
     ...(bookSecretKeyRooms === undefined ? {} : { bookSecretKeyRooms }),

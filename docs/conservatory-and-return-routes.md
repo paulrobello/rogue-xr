@@ -18,12 +18,14 @@ Choose clue sites the player can reach before solving that puzzle. Keep stairs, 
 
 ## Potion recipe book
 
+After Thornwake, a second recipe leads to a seventh room, the Conservatory archive. The seed chooses the obstacle, ingredient order, record location, and which wizard portrait carries its seal. Inspect the seal on Floor 3 and the matching study object in the Upper Works. Either can be found first. Both observations remain in **Items** across floor travel and Continue. One ingredient is always the specimen the Thornwake recipe left unused.
+
 | Recipe | Clue and ingredients | Brewing and obstacle |
 | --- | --- | --- |
 | **Thornwake Draught**, first playable brew | Mooncap has a crescent cap, star-thistle has a pointed bloom, and ember salt is a faceted crystal. Two engraved ingredient symbols give a seed-specific order. A separate dial clue identifies when to watch the clock for the second ingredient. | Find the ingredients, add them to the cauldron in the indicated order, then take the resulting draught to the thorn lattice. The thorns withdraw. A mistaken mix leaves the ingredients available. |
-| **Lantern Ink**, planned | A wizard’s portrait shows a star reflected in a dark pool. A silver rubbing in another room shows the reflection underneath the crescent. Find star-thistle and mooncap at their seeded sites. | Brew the ink and brush it onto a blank stone arch. Luminous outlines trace a hidden door and expose its latch. |
-| **Stillwind Tincture**, planned | A torn wind chart marks the quiet interval between two strokes of a clock. Its border sketches ember salt sinking below a thistle bloom. | Steep the salt during that interval and finish with the bloom. Pour the tincture into the draft engine to still a wind barrier and cross the bridge. |
-| **Looking-glass Elixir**, planned | A painted apothecary holds a vial in the opposite hand from the figure in a mirror. Read two ingredient carvings in reflection to establish their order. | Brew the elixir, return to the clouded mirror and pour it into its frame. The glass clears to reveal a walk-through passage. |
+| **Lantern Ink** | The wizard’s seal gives the first ingredient. A silver rubbing of a star and crescent in the Upper Works gives the second. | Brew the ink at the cauldron and apply it to the plain masonry. A luminous arch and sapphire latch appear. Pull the latch to walk into the archive. The outlined doorway survives a return visit before it is opened. |
+| **Stillwind Tincture** | The portrait identifies the first ingredient. An Upper Works wind chart records the second and shows the start of the still interval. A synchronized clock at the cauldron shows the local time. | Add the first ingredient during the two-hour interval on the dial (ten seconds of exploration). Add the second at any time. Pour the tincture into the draft engine to slow the fan, lift it into its housing and open the grilles. |
+| **Looking-glass Elixir** | The apothecary’s handheld mirror in the Upper Works gives the first mark. Its counterpart on a Conservatory portrait gives the second. | Brew the elixir, return to the tarnished mirror and apply it. The silver surface clears and both halves of the botanical frame swing away from the passage. |
 
 ## Asset and playtest standard
 
@@ -35,3 +37,5 @@ Model, texture and light every asset for the distance at which a seated player e
 The independent art review accepted the textured kit for playtesting. The production-build journey on desktop Metal and Quest Browser (Adreno 740) checked the locked and unlocked floor crossings, clock pickup, ingredient order, brew, ward, and a cold Continue. The desktop-input journey positions the tester near fixtures and stages the recovered Steamworks slips through the run flow. The clock ingredient is collected only after witnessing the chime. [Quest Browser capture](verification/quest-conservatory.jpg)
 
 An emulated Quest controller also tested weighing and hanging the counterweight, riding the astral lift, collecting a Conservatory ingredient, and starting the owl fight. [Clockwork Owl in combat](verification/conservatory-owl-xr.jpg)
+
+The separate archive walkthrough starts from an ordinary post-Thornwake save fixture. It reads the journal after inspecting both clues, finds the extra ingredient, operates the cauldron and archive, walks through, collects the treasure and reloads. `N0TE0032` exercises ink, `MAPTEST2` stillwind and `BREW0001` the mirror. [Three archive doorways in the game](verification/archive-doorways.jpg)

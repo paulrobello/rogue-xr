@@ -112,6 +112,9 @@ export class StrikingClock {
       this.target.visible = false;
     }
   }
+  get dialHours(): number {
+    return ((this.elapsed * 12) / CLOCK_CYCLE) % 12;
+  }
   private pose() {
     const hours = (this.elapsed * 12) / CLOCK_CYCLE;
     this.hourHand.rotation.z = (-(hours % 12) * Math.PI) / 6;

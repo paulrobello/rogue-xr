@@ -29,3 +29,8 @@ assets-source/cards/*/**/*.png
 assets-source/props/alchemy-kit/staging/*.glb
 assets-source/props/alchemy-kit/staging/*.png
 !assets-source/props/alchemy-kit/staging/review*.png
+
+# Embedded archive PBR maps and the intermediate export are reproduced by the Blender generator.
+assets-source/props/archive-kit/staging/*.glb
+assets-source/props/archive-kit/staging/*.png
+!assets-source/props/archive-kit/staging/review*.png

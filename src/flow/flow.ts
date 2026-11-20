@@ -8,12 +8,18 @@ import { LEGACY_REWARD_POOL, PERMANENT_CARD_IDS } from '../content/rewards.ts';
 import type { FloorSnapshot, RunSnapshot } from '../persist/saves.ts';
 import { snapshotRun } from '../persist/saves.ts';
 import {
+  addFormulaIngredient,
   addIngredient,
   alchemyRecipe,
   applyPotion,
   collectIngredient,
+  type FormulaClue,
   type Ingredient,
+  learnFormulaClue,
   readAlchemy,
+  readConservatoryFormula,
+  revealFormula,
+  unlatchArchive,
 } from '../rules/alchemy.ts';
 import {
   type BellFeedback,
@@ -202,6 +208,7 @@ export type FlowEvent =
   | PressureTurnResultView
   | CounterweightResultView
   | AlchemyEvent
+  | { readonly type: 'formula' }
   | BellChimeEvent;
 
 export interface FlowOptions {
@@ -291,6 +298,43 @@ export class RunFlow {
   }
   get alchemyRecipe(): readonly [Ingredient, Ingredient] {
     return alchemyRecipe(this.runValue?.seed ?? '00000000');
+  }
+  get conservatoryFormula(): ReturnType<typeof readConservatoryFormula> {
+    return readConservatoryFormula(this.runValue ?? { seed: '00000000' });
+  }
+  learnFormulaClue(clue: FormulaClue): boolean {
+    const run = this.runValue;
+    if (
+      !run ||
+      this.phaseValue !== 'explore' ||
+      this.floorNumberValue !== (clue === 'portrait' ? 3 : 2)
+    )
+      return false;
+    return this.applyFormula(learnFormulaClue(run, clue));
+  }
+  addFormulaIngredient(
+    ingredient: Ingredient,
+    inStillInterval: boolean,
+  ): 'correct' | 'mistake' | 'waiting' | null {
+    if (!this.runValue || this.phaseValue !== 'explore' || this.floorNumberValue !== 3) return null;
+    const result = addFormulaIngredient(this.runValue, ingredient, inStillInterval);
+    if (!result) return null;
+    if (result.waiting) return 'waiting';
+    this.applyFormula(result.run);
+    return result.correct ? 'correct' : 'mistake';
+  }
+  useFormula(action: 'pour' | 'unlatch'): boolean {
+    if (!this.runValue || this.phaseValue !== 'explore' || this.floorNumberValue !== 3)
+      return false;
+    return this.applyFormula(
+      action === 'pour' ? revealFormula(this.runValue) : unlatchArchive(this.runValue),
+    );
+  }
+  private applyFormula(next: RunState | null): boolean {
+    if (!next) return false;
+    this.runValue = next;
+    this.emit({ type: 'formula' });
+    return true;
   }
   collectIngredient(ingredient: Ingredient): boolean {
     const run = this.runValue;

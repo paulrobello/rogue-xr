@@ -6,13 +6,14 @@ import { parseArgs } from 'node:util';
 import { chromium } from 'playwright';
 
 const {
-  values: { base, seed, out, cdp },
+  values: { base, seed, out, cdp, formula },
 } = parseArgs({
   options: {
     base: { type: 'string', default: 'http://localhost:4266' },
     seed: { type: 'string', default: 'MAPTEST2' },
     out: { type: 'string', default: '.local/return/journey' },
     cdp: { type: 'string' },
+    formula: { type: 'boolean', default: false },
   },
 });
 await mkdir(out, { recursive: true });
@@ -94,7 +95,7 @@ const canvasClick = (x, y) =>
     },
     { x, y },
   );
-async function approach(anchor, name, away = 1.5) {
+async function approach(anchor, name, away = 1.5, offset = [0, 0, 0]) {
   await ev(
     ({ anchor, name, away }) => {
       const c = window.__combat,
@@ -115,45 +116,52 @@ async function approach(anchor, name, away = 1.5) {
     { anchor, name, away },
   );
   await page.waitForTimeout(130);
-  await ev((name) => {
-    const c = window.__combat,
-      rig = c.camera.parent,
-      cam = c.camera,
-      obj = c.floor.world.group.getObjectByName(name);
-    const aim = obj.getWorldPosition(cam.position.clone()),
-      d = aim.sub(cam.getWorldPosition(cam.position.clone()));
-    const diff = Math.atan2(d.x, -d.z) + rig.rotation.y;
-    document
-      .querySelector('#app canvas')
-      .dispatchEvent(new PointerEvent('pointerdown', { button: 2, bubbles: true }));
-    window.dispatchEvent(
-      new PointerEvent('pointermove', {
-        movementX: (Math.atan2(Math.sin(diff), Math.cos(diff)) * 180) / Math.PI / 0.23,
-        movementY: (cam.rotation.x - Math.atan2(d.y, Math.hypot(d.x, d.z))) / 0.004,
-        bubbles: true,
-      }),
-    );
-    window.dispatchEvent(new PointerEvent('pointerup', { button: 2, bubbles: true }));
-  }, name);
+  await ev(
+    ({ name, offset }) => {
+      const c = window.__combat,
+        rig = c.camera.parent,
+        cam = c.camera,
+        obj = c.floor.world.group.getObjectByName(name);
+      const aim = obj.localToWorld(cam.position.clone().fromArray(offset)),
+        d = aim.sub(cam.getWorldPosition(cam.position.clone()));
+      const diff = Math.atan2(d.x, -d.z) + rig.rotation.y;
+      document
+        .querySelector('#app canvas')
+        .dispatchEvent(new PointerEvent('pointerdown', { button: 2, bubbles: true }));
+      window.dispatchEvent(
+        new PointerEvent('pointermove', {
+          movementX: (Math.atan2(Math.sin(diff), Math.cos(diff)) * 180) / Math.PI / 0.23,
+          movementY: (cam.rotation.x - Math.atan2(d.y, Math.hypot(d.x, d.z))) / 0.004,
+          bubbles: true,
+        }),
+      );
+      window.dispatchEvent(new PointerEvent('pointerup', { button: 2, bubbles: true }));
+    },
+    { name, offset },
+  );
   await page.waitForTimeout(150);
 }
-async function click(name) {
-  const xy = await ev((name) => {
-    const c = window.__combat,
-      cam = c.camera,
-      n = c.floor.world.group.getObjectByName(name);
-    const p = n.getWorldPosition(cam.position.clone());
-    if (
-      name === 'clock-ingredient' ||
-      name.startsWith('FoundIngredient') ||
-      name.startsWith('IngredientCradle')
-    )
-      p.y += 0.07;
-    p.project(cam);
-    const rect = document.querySelector('#app canvas').getBoundingClientRect();
-    if (Math.abs(p.x) > 1 || Math.abs(p.y) > 1 || p.z > 1) throw Error('Target off screen ' + name);
-    return [rect.left + ((1 + p.x) * rect.width) / 2, rect.top + ((1 - p.y) * rect.height) / 2];
-  }, name);
+async function click(name, offset = [0, 0, 0]) {
+  const xy = await ev(
+    ({ name, offset }) => {
+      const c = window.__combat,
+        cam = c.camera,
+        n = c.floor.world.group.getObjectByName(name);
+      const p = n.localToWorld(cam.position.clone().fromArray(offset));
+      if (
+        name === 'clock-ingredient' ||
+        name.startsWith('FoundIngredient') ||
+        name.startsWith('IngredientCradle')
+      )
+        p.y += 0.07;
+      p.project(cam);
+      const rect = document.querySelector('#app canvas').getBoundingClientRect();
+      if (Math.abs(p.x) > 1 || Math.abs(p.y) > 1 || p.z > 1)
+        throw Error('Target off screen ' + name);
+      return [rect.left + ((1 + p.x) * rect.width) / 2, rect.top + ((1 - p.y) * rect.height) / 2];
+    },
+    { name, offset },
+  );
   await canvasClick(...xy);
   await page.waitForTimeout(130);
 }
@@ -231,7 +239,144 @@ async function crossing(kind, opened) {
   );
   console.log('walk', kind, opened);
 }
-try {
+async function resumeAt(n) {
+  await ev(() => window.__flow.flushed());
+  await page.goto(base + '/?seed=' + seed + '&title&debug');
+  await page.waitForFunction(
+    () =>
+      window.__flow?.ui?.visible &&
+      document.querySelector('#loading-screen').hidden &&
+      window.__flow.screenOfControl('title-continue'),
+    undefined,
+    { timeout: 60000 },
+  );
+  const xy = await ev(() => window.__flow.screenOfControl('title-continue'));
+  await canvasClick(xy.x, xy.y);
+  await ready(n);
+}
+async function exerciseFormula() {
+  const names = ['Mooncap', 'StarThistle', 'EmberSalt'];
+  await page.goto(base + '/?seed=' + seed + '&debug');
+  await ready(1);
+  // This fixture represents an earlier run that already opened the thorn ward. All archive actions use real inputs.
+  await ev(async () => {
+    const flow = window.__flow.flow;
+    flow.travelToFloor(2, 0);
+    flow.travelToFloor(3, 0);
+    for (const id of flow.alchemyRecipe) {
+      flow.collectIngredient(id);
+      flow.addIngredient(id);
+    }
+    flow.applyPotion();
+    flow.travelToFloor(2, 0);
+    await window.__flow.flushed();
+  });
+  await resumeAt(2);
+  await approach('formula-evidence-record', 'formula-glyph-record');
+  await shot('upper-record');
+  await click('formula-glyph-record');
+  assert.deepEqual(await ev(() => window.__flow.flow.conservatoryFormula.clues), ['record']);
+  await lift(3);
+  const type = await ev(() => window.__flow.flow.conservatoryFormula.recipe);
+  console.log('variant', type);
+  await ev(() => {
+    const f = window.__combat.floor;
+    for (const r of f.world.plan.rooms) if (r.encounter) f.markCleared(r.index, true);
+  });
+  await crossing('archive', false);
+  await approach('formula-evidence-portrait', 'formula-glyph-portrait');
+  await shot('portrait-seal');
+  await click('formula-glyph-portrait');
+  assert.equal(await ev(() => window.__flow.flow.conservatoryFormula.clues.length), 2);
+  const order = await ev(() => {
+    const f = window.__combat.floor,
+      flow = window.__flow.flow,
+      plan = flow.conservatoryFormula.recipe;
+    // Read the two earned marks from the journal, using the same board routine as the radial menu.
+    const journal = window.__flow.ui;
+    const cam = window.__combat.camera;
+    journal.openMenu(cam);
+    journal.activate('menu-items');
+    const text = ['record', 'portrait'].map(
+      (c) => journal.root.getObjectByName('menu-items-formula-' + c)?.userData.labelText ?? '',
+    );
+    journal.closeMenu();
+    return text;
+  });
+  console.log('earned-clues', order);
+  const entries = order
+    .map((t) => ({
+      n: t.includes('II ·') ? 1 : 0,
+      id: ['Mooncap', 'Star-thistle', 'Ember salt'].findIndex((name) => t.includes(name)),
+    }))
+    .sort((a, b) => a.n - b.n);
+  assert(entries[0].n === 0 && entries[1].n === 1 && entries.every((e) => e.id >= 0));
+  const missing = await ev(() =>
+    [0, 1, 2].find((i) => !window.__flow.flow.alchemy.found.includes(i)),
+  );
+  const specimen = 'FoundIngredient' + names[missing];
+  const bay = await ev(
+    (n) => window.__combat.floor.world.group.getObjectByName(n).parent.name,
+    specimen,
+  );
+  await approach(bay, specimen);
+  await click(specimen);
+  assert.equal(await ev(() => window.__flow.flow.alchemy.found.length), 3);
+  for (const [i, e] of entries.entries()) {
+    const item = 'IngredientCradle' + names[e.id];
+    await approach('brew-bench', item, 1.8);
+    if (i === 0 && type === 'stillwind')
+      await page.waitForFunction(() => window.__combat.floor.alchemy.inStillInterval, undefined, {
+        timeout: 150000,
+        polling: 60,
+      });
+    await click(item);
+    assert.equal(await ev(() => window.__flow.flow.conservatoryFormula.added.length), i + 1);
+  }
+  assert(await ev(() => window.__flow.flow.conservatoryFormula.brewed));
+  const [target, offset] =
+    type === 'lantern-ink'
+      ? ['ArchiveInkLeft', [0.4, 1.22, 0.1]]
+      : type === 'stillwind'
+        ? ['ArchiveWindRotor', [0, 0, 0]]
+        : ['ArchiveMirrorSilver', [0, 1.22, 0.15]];
+  await approach('ConservatoryArchive', target, 1.85, offset);
+  await shot('door-closed');
+  await click(target, offset);
+  assert(await ev(() => window.__flow.flow.conservatoryFormula.revealed));
+  if (type === 'lantern-ink') {
+    assert.equal(await ev(() => window.__flow.flow.conservatoryFormula.opened), false);
+    await shot('door-outlined');
+    await resumeAt(3);
+    await ev(() => {
+      const f = window.__combat.floor;
+      for (const r of f.world.plan.rooms) if (r.encounter) f.markCleared(r.index, true);
+    });
+    await approach('ConservatoryArchive', 'ArchiveInkLatch', 1.5, [0, 1.2, 0.16]);
+    await click('ArchiveInkLatch', [0, 1.2, 0.16]);
+  }
+  assert(await ev(() => window.__flow.flow.conservatoryFormula.opened));
+  await page.waitForTimeout(900);
+  await shot('door-open');
+  await crossing('archive', true);
+  await ev(() => {
+    const f = window.__combat.floor,
+      c = f.world.coffers.find((c) => c.room === 6);
+    if (!c || !window.__flow.flow.openLoot(6, c.socketId, c.kind))
+      throw Error('Archive coffer inaccessible');
+  });
+  await resumeAt(3);
+  assert(await ev(() => window.__flow.flow.conservatoryFormula.opened));
+  await ev(() => {
+    const f = window.__combat.floor;
+    for (const r of f.world.plan.rooms) if (r.encounter) f.markCleared(r.index, true);
+  });
+  await crossing('archive', true);
+  assert.deepEqual(errors, []);
+  await writeFile(join(out, 'check.json'), JSON.stringify({ seed, type, order, errors }, null, 2));
+  console.log('PASS archive', type);
+}
+async function exerciseReturnJourney() {
   await page.goto(base + '/?seed=' + seed + '&debug');
   await ready(1);
   console.log(
@@ -411,6 +556,10 @@ try {
     JSON.stringify({ seed, details, slips, errors }, null, 2),
   );
   console.log('PASS end-to-end');
+}
+try {
+  if (formula) await exerciseFormula();
+  else await exerciseReturnJourney();
 } catch (error) {
   console.error(
     'Journey state',

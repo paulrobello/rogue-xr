@@ -41,7 +41,7 @@ export interface SealedDoor extends DoorRef {
   style: SealStyle;
 }
 
-export type PuzzleGate = 'counterweight' | 'pressure' | 'thorn';
+export type PuzzleGate = 'counterweight' | 'pressure' | 'thorn' | 'archive';
 
 export type FloorConnection = readonly [DoorRef, DoorRef] & { puzzleGate?: PuzzleGate };
 

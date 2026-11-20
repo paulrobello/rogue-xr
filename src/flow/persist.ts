@@ -43,6 +43,7 @@ export function bindFlowPersistence(
       event.type === 'book-secret' ||
       event.type === 'bell-chimes' ||
       event.type === 'counterweight' ||
+      event.type === 'formula' ||
       event.type === 'alchemy'
     ) {
       const snapshot = flow.snapshot(Date.now(), roomIndex());

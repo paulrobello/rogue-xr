@@ -4,17 +4,20 @@ import type { FloorPlan, PlacedRoom } from './generate.ts';
 import { worldRoom } from './generate.ts';
 import { joinDoors } from './return-passages.ts';
 
-/** Six halls with coincident door sockets; only the collection beyond the thorn gate is optional. */
+/** Six halls and a seeded side archive with matching, offset door sockets. */
 export function conservatoryPlan(seed: string): FloorPlan {
   const kit = templateById('hall');
   const rotation = Stream.fromKey(seed + ':conservatory-plan').int(0, 3) as QuarterTurns;
-  const cells = [
+  const sourceRoom = Stream.fromKey(seed + ':archive-room').pick([2, 3, 4] as const);
+  const archiveCell = ({ 2: [-1, 1], 3: [1, 2], 4: [3, 1] } as const)[sourceRoom];
+  const cells: readonly (readonly [number, number])[] = [
     [0, 0],
     [1, 0],
     [0, 1],
     [1, 1],
     [2, 1],
     [2, 0],
+    archiveCell,
   ];
   const owlRoom = Stream.fromKey(seed + ':owl-roost').pick([1, 2, 4]);
   const rooms: PlacedRoom[] = cells.map(([x, z], index) => {
@@ -29,7 +32,7 @@ export function conservatoryPlan(seed: string): FloorPlan {
       role:
         index === 0
           ? 'entry'
-          : index === 5
+          : index === 5 || index === 6
             ? 'treasure'
             : index === owlRoom
               ? 'combat'
@@ -38,7 +41,7 @@ export function conservatoryPlan(seed: string): FloorPlan {
       depth: [0, 1, 1, 2, 3, 2][index],
       encounter:
         index === owlRoom ? { tier: 'regular', socketIds: [kit.enemySockets[0].id] } : null,
-      loot: index === 5 ? [{ socketId: 'chest', kind: 'card' }] : [],
+      loot: index === 5 || index === 6 ? [{ socketId: 'chest', kind: 'card' }] : [],
     };
   });
   const sites = rooms.map((r) => worldRoom(kit, r.turns, r.position).doors);
@@ -71,5 +74,22 @@ export function conservatoryPlan(seed: string): FloorPlan {
       b === 5 ? 'thorn' : undefined,
     );
   }
-  return plan;
+  // The archive branches from a seeded spare doorway in rooms 2-4. The original
+  // six rooms and their connections remain unchanged, while joinDoors removes
+  // both wall plugs at this aligned, full-sized doorway.
+  const pair = sites[sourceRoom].flatMap((sourceDoor) =>
+    sites[6]
+      .filter(
+        (archiveDoor) =>
+          archiveDoor.world[0] === sourceDoor.world[0] &&
+          archiveDoor.world[1] === sourceDoor.world[1],
+      )
+      .map((archiveDoor) => [sourceDoor, archiveDoor] as const),
+  )[0];
+  const source =
+    pair && plan.sealed.find((sealed) => sealed.room === sourceRoom && sealed.door === pair[0].id);
+  const archiveDoor = pair?.[1];
+  if (!source) throw Error('Conservatory archive has no spare doorway');
+  if (!archiveDoor) throw Error('Conservatory archive doorway is not aligned');
+  return joinDoors(plan, source, { room: 6, door: archiveDoor.id }, 'archive');
 }

@@ -141,6 +141,23 @@ def check_alchemy(errors: list[str]) -> None:
             errors.append(f"Conservatory portrait hash mismatch: {portrait['name']}")
 
 
+def check_archive(errors: list[str]) -> None:
+    source = ROOT / "assets-source/props/archive-kit"
+    runtime = ROOT / "public/assets/props/archive-kit/archive-kit.glb"
+    manifest = json.loads((source / "manifest.json").read_text())
+    for path, key in [(runtime, "glb_sha256"), (source / "archive-kit.blend", "source_blend_sha256"),
+                      (ROOT / "scripts/assets/build-archive-kit.py", "generator_sha256")]:
+        if sha256(path) != manifest[key]:
+            errors.append(f"Archive asset hash mismatch: {path.name}")
+    glb = glb_json(runtime)
+    names = {n.get("name") for n in glb["nodes"]}
+    if set(manifest["root_nodes"] + manifest["socket_nodes"]) - names:
+        errors.append("Archive GLB is missing an authored root or evidence socket")
+    if any("normalTexture" not in material or "metallicRoughnessTexture" not in material["pbrMetallicRoughness"]
+           or "baseColorTexture" not in material["pbrMetallicRoughness"] for material in glb["materials"]):
+        errors.append("Archive materials require embedded color, roughness and normal textures")
+
+
 def check_stairwell(errors: list[str]) -> None:
     source = ROOT / "assets-source/props/stairwell"
     path = ROOT / "public/assets/props/stairwell/stairwell.glb"
@@ -1200,6 +1217,7 @@ def main() -> int:
         print(f"asset-check props/table-decor: tris {s.get('perKind')}, {len(s.get('glb', {}).get('materials', []))} material; {sizes}")
     check_stairwell(errors)
     check_alchemy(errors)
+    check_archive(errors)
     architectural = check_architectural_finishes(errors)
     if architectural:
         print(f"asset-check props/architectural-finishes: {architectural.get('triangles')} tris, {architectural.get('materials')} materials, {architectural.get('embeddedImages')} embedded images, {architectural.get('roots')} roots")

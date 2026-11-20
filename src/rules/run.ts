@@ -4,6 +4,7 @@ import {
   RulesError,
   type StoredAlchemyState,
   type StoredBellChimesState,
+  type StoredConservatoryFormula,
   type StoredCounterweightState,
   type StoredPressureState,
 } from './types.ts';
@@ -42,6 +43,7 @@ export interface RunState {
   /** Upper Works counterweight lock progress. */
   readonly counterweight?: StoredCounterweightState;
   readonly alchemy?: StoredAlchemyState;
+  readonly conservatoryFormula?: StoredConservatoryFormula;
   /** Cross-floor bell puzzle progress. Absent in older saves and treated as idle. */
   readonly bellChimes?: StoredBellChimesState;
   /** Rooms whose marked book caches have paid out. */

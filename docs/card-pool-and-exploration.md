@@ -200,7 +200,7 @@ Keep the deck, HP and cog purse with the run. Keep each floor’s layout, opened
 | W8 | Remaining field cards (Scrying Lens, Recall Spiral, Oil Can, Tuning Fork, Forge Ember, Polishing Kit, Smoke Flask, Spare Valve) | W1, W4, W5 |
 | W9 | Remaining puzzle types (gear train and orrery) and the wandering automaton | W4 |
 | W10 | Wave C combat cards, Junk cards, and the act 2 enemies that add Junk | W7, PRD Q1 (acts) |
-| W11 | Paired up/down stairs and per-floor saves are playable. Both floors keep their own opened chests, pressure works and cleared rooms. | Two seeded floors |
+| W11 | Paired up/down stairs and per-floor saves are playable. Each floor keeps its opened chests and cleared encounters. Pressure Works is on Floor 1. The astral lift links the Upper Works and Conservatory. | Three seeded floors |
 
 Assets per wave go through the art bible (D8) and the asset table:
 - **Wave A:** 15 illustrations, the iron d4 model and faces, the anchor glyph.

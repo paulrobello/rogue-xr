@@ -1,10 +1,15 @@
 export {
+  addFormulaIngredient,
   addIngredient,
   alchemyRecipe,
   applyPotion,
   collectIngredient,
+  conservatoryFormula,
   type Ingredient,
+  learnFormulaClue,
   readAlchemy,
+  readConservatoryFormula,
+  revealFormula,
 } from './alchemy.ts';
 export {
   type CounterweightPuzzle,

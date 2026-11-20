@@ -27,6 +27,7 @@ import { HOLO_CARD_ASPECT } from '../hand/fan-layout.ts';
 import { PALETTE } from '../palette.ts';
 import { FOVEATION_CHOICES, type FoveationChoice, type Settings } from '../persist/db.ts';
 import type { RunSnapshot } from '../persist/saves.ts';
+import { brewNames, formulaObservation, ingredientNames } from '../rules/alchemy.ts';
 import { bellMelody } from '../rules/bell-chimes.ts';
 import {
   DIFFICULTIES,
@@ -1515,12 +1516,25 @@ export class FlowUi {
         .join(' · ');
       rows.unshift({ id: 'bell-score', label: `Bell score · ${phrase}` });
     }
+    const formula = run?.conservatoryFormula;
+    if (run && formula) {
+      if (formula.brewed && !formula.revealed)
+        rows.unshift({ id: 'archive-potion', label: brewNames[formula.recipe] });
+      for (const clue of formula.clues)
+        rows.push({
+          id: 'formula-' + clue,
+          label:
+            (clue === 'portrait' ? 'Portrait' : 'Upper Works') +
+            ' · ' +
+            formulaObservation(run.seed, clue),
+        });
+    }
     if (run?.alchemy?.brewed && !run.alchemy.opened)
       rows.unshift({ id: 'thornwake-draught', label: 'Thornwake draught' });
-    else if (run?.alchemy && !run.alchemy.brewed) {
-      const names = ['Mooncap', 'Star-thistle', 'Ember salt'];
-      for (const id of run.alchemy.found.filter((id) => !run.alchemy?.added.includes(id)))
-        rows.unshift({ id: 'ingredient-' + id, label: names[id] });
+    else if (run?.alchemy && (!run.alchemy.brewed || (run.alchemy.opened && !formula?.brewed))) {
+      const added = run.alchemy.opened ? formula?.added : run.alchemy.added;
+      for (const id of run.alchemy.found.filter((id) => !added?.includes(id)))
+        rows.unshift({ id: 'ingredient-' + id, label: ingredientNames[id] });
     }
     const keys = run?.bookSecretKeyRooms ?? [];
     const unlocked = new Set(run?.bookSecretCabinetRooms ?? []);

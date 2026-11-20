@@ -445,7 +445,8 @@ export function buildFloorWorld(
     const [from, to] = edge;
     const door = rooms[from.room].doors.find((d) => d.id === from.door);
     if (!door) throw Error(`Missing ${kind} gate doorway`);
-    const visual = kind === 'thorn' ? null : new PuzzleGateVisual(kind);
+    const visual =
+      kind === 'counterweight' || kind === 'pressure' ? new PuzzleGateVisual(kind) : null;
     if (visual) {
       visual.object.position.set(door.world[0], 0, door.world[1]);
       visual.object.rotation.y = INTO_ROOM_YAW[door.facing];

@@ -1,6 +1,12 @@
 import * as THREE from 'three';
 import { Stream } from '../core/rng.ts';
-import { alchemyRecipe, type Ingredient, type StoredAlchemyState } from '../rules/alchemy.ts';
+import {
+  alchemyRecipe,
+  conservatoryFormula,
+  type Ingredient,
+  type StoredAlchemyState,
+  type StoredConservatoryFormula,
+} from '../rules/alchemy.ts';
 import type { FloorWorld } from './floor-world.ts';
 import { findPuzzleMount, kitPart } from './puzzle-placement.ts';
 
@@ -28,6 +34,13 @@ export class AlchemyConservatory {
   private readonly owned = new Set<THREE.BufferGeometry>();
   private opened = false;
   private progress = 0;
+  private windDial: THREE.Object3D | null = null;
+  private windNeedle: THREE.Object3D | null = null;
+  private readonly quietHour: number;
+  private still = false;
+  get inStillInterval(): boolean {
+    return this.still;
+  }
   private readonly bronze: THREE.Material;
   private readonly wood: THREE.Material;
 
@@ -49,6 +62,8 @@ export class AlchemyConservatory {
     this.wood = source('Clock case walnut') ?? this.firstMaterial('GrandfatherClock');
     const shuffled = Stream.fromKey(seed + ':alchemy-bays').shuffle([0, 1, 2, 3, 4]);
     const recipe = alchemyRecipe(seed);
+    const followup = conservatoryFormula(seed);
+    this.quietHour = followup.quietHour;
     const decoy = ([0, 1, 2] as const).find((id) => !recipe.includes(id))!;
     this.cauldronRoom = shuffled[0];
     this.tabletRoom = shuffled[1];
@@ -77,6 +92,15 @@ export class AlchemyConservatory {
     this.potion.name = 'PocketedPotion';
     this.potion.position.set(0, 0.58, 1.04);
     lab.add(this.potion);
+    if (followup.recipe === 'stillwind') {
+      this.windDial = this.clone('ClockClueDial');
+      this.windDial.name = 'stillwind-lab-dial';
+      this.windDial.scale.setScalar(0.62);
+      this.windDial.position.set(-0.46, 0.97, 0.48);
+      this.windNeedle = kitPart(this.windDial, 'ClockClueHand');
+      this.windDial.visible = false;
+      lab.add(this.windDial);
+    }
     this.registerBox(this.cauldronRoom, lab);
     this.tablet = this.bay(this.tabletRoom, 'recipe-tablet', 0.42);
     this.tablet.name = 'RecipeTablet';
@@ -222,7 +246,10 @@ export class AlchemyConservatory {
     }
     return null;
   }
-  sync(state: StoredAlchemyState, immediate = false): void {
+  sync(state: StoredAlchemyState, immediate = false, formula?: StoredConservatoryFormula): void {
+    const second = state.opened && formula?.clues.length === 2 ? formula : null;
+    const active = second ?? state;
+    if (this.windDial) this.windDial.visible = !!second && !second.brewed;
     this.opened = state.opened;
     for (const { node, input } of this.targets)
       node.visible =
@@ -230,10 +257,12 @@ export class AlchemyConservatory {
           ? !state.found.includes(input.ingredient)
           : input.action === 'add'
             ? state.found.includes(input.ingredient) &&
-              !state.added.includes(input.ingredient) &&
-              !state.brewed
+              !active.added.includes(input.ingredient) &&
+              !active.brewed
             : !state.opened;
-    this.potion.visible = state.brewed && !state.opened;
+    this.potion.visible = second
+      ? second.brewed && !second.revealed
+      : state.brewed && !state.opened;
     if (immediate || this.reducedMotion) {
       this.progress = Number(this.opened);
       this.poseWard();
@@ -243,7 +272,11 @@ export class AlchemyConservatory {
     this.leaves[0].rotation.y = (this.progress * Math.PI) / 2;
     this.leaves[1].rotation.y = (-this.progress * Math.PI) / 2;
   }
-  update(dt: number): void {
+  update(dt: number, dialHours?: number): void {
+    if (dialHours !== undefined && this.windNeedle) {
+      this.still = (dialHours - this.quietHour + 12) % 12 < 2;
+      this.windNeedle.rotation.z = (-dialHours * Math.PI) / 6;
+    }
     if (this.opened && this.progress < 1) {
       this.progress = Math.min(1, this.progress + dt * 1.35);
       this.poseWard();

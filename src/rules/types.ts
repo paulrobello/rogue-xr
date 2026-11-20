@@ -299,6 +299,16 @@ export interface StoredBellChimesState {
   readonly rewardClaimed: boolean;
 }
 
+export type FollowupRecipe = 'lantern-ink' | 'stillwind' | 'looking-glass';
+export interface StoredConservatoryFormula {
+  readonly recipe: FollowupRecipe;
+  readonly clues: readonly ('portrait' | 'record')[];
+  readonly added: readonly Ingredient[];
+  readonly brewed: boolean;
+  readonly revealed: boolean;
+  readonly opened: boolean;
+}
+
 /** Stored pressure state. The two fields added after v3 remain optional for old saves. */
 export interface StoredPressureState extends PressureState {
   readonly notes?: readonly PressureNoteId[];

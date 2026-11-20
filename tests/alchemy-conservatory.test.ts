@@ -11,6 +11,7 @@ function art(): THREE.Group {
     'AlchemyCauldron',
     'PotionVial',
     'GrandfatherClock',
+    'ClockClueDial',
     'ThornWardLeft',
     'ThornWardRight',
     ...INGREDIENT_ROOTS.map((n) => `Ingredient${n}`),
@@ -25,6 +26,11 @@ function art(): THREE.Group {
         new THREE.MeshStandardMaterial({ color: 0x886644 }),
       ),
     );
+    if (name === 'ClockClueDial') {
+      const hand = new THREE.Group();
+      hand.name = 'ClockClueHand';
+      node.add(hand);
+    }
     root.add(node);
   }
   return root;

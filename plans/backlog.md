@@ -83,4 +83,4 @@ Cards live on the kanban board (project `rogue-xr`); each card's notes name its 
 
 ## Return routes and the Alchemical Conservatory
 
-Track the counterweight shortcut, pressure-operated supply door, seeded clue locations, cauldron and potion obstacles, striking-hour clock, watching wizard portraits, clockwork owl and broom caretakers in the [floor roadmap and potion recipe book](../docs/conservatory-and-return-routes.md). The first brew opens the thorn ward. The ink, stillwind and looking-glass brews are subsequent encounters.
+Track the counterweight shortcut, pressure-operated supply door, seeded clue locations, cauldron and potion obstacles, striking-hour clock, watching wizard portraits, clockwork owl and broom caretakers in the [floor roadmap and potion recipe book](../docs/conservatory-and-return-routes.md). Thornwake opens the thorn ward. One additional archive recipe per seed links an Upper Works clue to a Conservatory portrait and unlocks a second walk-through treasure room.

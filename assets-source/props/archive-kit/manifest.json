@@ -1,0 +1,37 @@
+{
+  "glb_sha256": "a8da92c89a92ff8bd001ef275e902c8d7dabf13860473ed3599e96ce4f28bb90",
+  "generator_sha256": "57bb5b7275b2af72f10e1dc86108fb62fa9fe74bf22d296e989e6b7d8a7d9099",
+  "source_blend_sha256": "535e6b1e851c410e9f22de8ad49db52e20a645e2d1e9785466c7774db5796a9d",
+  "axes": "glTF +Y up, +Z front, metres",
+  "root_nodes": [
+    "ArchiveInkLeft",
+    "ArchiveInkRight",
+    "ArchiveInkTrace",
+    "ArchiveInkLatch",
+    "ArchiveWindLeft",
+    "ArchiveWindRight",
+    "ArchiveWindRotor",
+    "ArchiveMirrorLeft",
+    "ArchiveMirrorRight",
+    "ArchiveMirrorSilver",
+    "InkRubbing",
+    "WindChart",
+    "HandMirror"
+  ],
+  "socket_nodes": [
+    "InkRubbingSocket1",
+    "InkRubbingSocket2",
+    "WindChartSocket1",
+    "WindChartSocket2",
+    "HandMirrorSocket1",
+    "HandMirrorSocket2"
+  ],
+  "triangles": 28097,
+  "blender": "5.2.2 LTS",
+  "visual_approval": "pending independent and owner review",
+  "limitations": [
+    "No authored collision or LODs",
+    "Mirror is tarnished PBR metal, not a real-time reflection",
+    "Runtime integration and play-distance review pending"
+  ]
+}
