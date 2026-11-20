@@ -1,0 +1,30 @@
+{
+  "glb_sha256": "f351ca649ba737252cf9d13211d6267f3955d821c88b7bc534c6503f45aee52b",
+  "generator_sha256": "9fec20558dcc6cef3161de535e03831162af802f2092c4a51b9c38e423021ada",
+  "source_blend_sha256": "eba46b3f0c5ab49a0594b0707953728d39ecd2e214b8ff7799b4389bcd908151",
+  "axes": "glTF +Y up, +Z front; metres",
+  "root_nodes": [
+    "BrassCacheKey",
+    "BrassKeyRack",
+    "BrassWardsBadge"
+  ],
+  "socket_nodes": [
+    "BrassKeySocket"
+  ],
+  "socket": {
+    "name": "BrassKeySocket",
+    "parent": "BrassKeyRack",
+    "translation_gltf": [
+      0,
+      -0.052,
+      0.063
+    ]
+  },
+  "triangles": 13212,
+  "blender": "5.2.3 LTS",
+  "visual_approval": "See review.md for the review of this GLB hash",
+  "limitations": [
+    "No authored LOD or collider",
+    "Runtime play-distance and interaction review pending"
+  ]
+}

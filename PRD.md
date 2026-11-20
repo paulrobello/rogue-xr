@@ -235,7 +235,7 @@ The full spire (number of floors and acts), hand tracking, custom mage gloves, a
 
 Locks and consumables (Paul, 2026-11-17): some doors and chests are locked and open only with a key or an unlock spell. The player carries an inventory of single-use items and cards, separate from the deck. Keys are found or won and are spent on use. A lock-pick spell needs its sigil drawn on the lock and is gone once cast. The goal is to make backtracking worth doing.
 
-New runs include the Foundry cards, cross-floor bells, counterweight return passage, Pressure Works supply door, and the Alchemical Conservatory. Its cauldron, timed clock, paintings and enemies are described in the [floor roadmap and potion recipe book](docs/conservatory-and-return-routes.md). The remaining card pool and tasks are planned in [docs/card-pool-and-exploration.md](docs/card-pool-and-exploration.md), with decisions CP1 to CP9 awaiting Paul. Draft, 2026-11-17.
+New runs include the Foundry cards, cross-floor bells, counterweight return passage, Pressure Works supply door and Alchemical Conservatory. The keeper’s commissions, seeded calibration instruments, knock-open Upper Works recess, and single-use brass coffer key add optional return trips. Its cauldron, timed clock, paintings and enemies are described in the [floor roadmap and potion recipe book](docs/conservatory-and-return-routes.md). The remaining card pool and tasks are planned in [docs/card-pool-and-exploration.md](docs/card-pool-and-exploration.md), with decisions CP1 to CP9 awaiting Paul. Draft, 2026-11-17.
 
 ## Risks
 

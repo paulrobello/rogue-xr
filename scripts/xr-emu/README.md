@@ -44,6 +44,14 @@ Screenshots land in `docs/verification/xr-emu-*.jpg` with a JSON report
 `xr-sigil-stage` failed intermittently until the walk waited for XR frames after pose writes, see `docs/playtesting.md`) and `--notice` last passed its 5 on 2026-11-15; XO1 to XO4 in `docs/playtesting.md` record the fixes. The two console 404s in the
 notice run are the music tracks that are not produced yet.
 
+## Return visits and exploration fixtures
+
+`return-journey.mjs` loads a real game build, places the tester at named fixtures, and goes through the title screen for a cold Continue. Select `--commission`, `--calibration`, `--panels`, `--formula` or `--brass`. The optional `--controller` switch uses a seated IWER controller on the associated physical targets. The native Quest Browser path uses `--cdp` with an isolated test origin.
+
+```sh
+node scripts/xr-emu/return-journey.mjs --brass --seed SPIRE001 --controller --base http://localhost:4262
+```
+
 ## How it works
 
 - `page-hooks.js` runs before any app script, right after IWER's UMD build. It installs the

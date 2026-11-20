@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { EncounterDirector } from '../combat/encounter.ts';
 import {
+  BRASS_CACHE_VERSION,
   chooseEncounter,
   ENCOUNTER_CONTENT_VERSION,
   HIDDEN_PANEL_VERSION,
@@ -23,7 +24,7 @@ import {
   SHOWCASE_UPPER_SEED,
 } from '../floor/generate.ts';
 import { attachHiddenPassage } from '../floor/hidden-passage.ts';
-import { attachFloorOneTopology } from '../floor/return-passages.ts';
+import { attachFloorOneTopology, withBrassCache } from '../floor/return-passages.ts';
 import { placeStairEntry } from '../floor/stairs.ts';
 import { nearSet, shellSet } from '../floor/visibility.ts';
 import { PALETTE } from '../palette.ts';
@@ -43,6 +44,7 @@ import { AlchemyConservatory } from './alchemy-conservatory.ts';
 import { AstralLift } from './astral-lift.ts';
 import { BellChimes } from './bell-chimes.ts';
 import { BookSecret } from './book-secret.ts';
+import { BrassKeyStand } from './brass-key.ts';
 import { CalibrationBench } from './calibration-bench.ts';
 import { CalibrationCabinet } from './calibration-cabinet.ts';
 import { CommissionOffice } from './commission-office.ts';
@@ -128,6 +130,8 @@ export interface FloorLoot {
   readonly toast: { readonly text: string; readonly canvas: HTMLCanvasElement } | null;
   /** A floor point `distance` m from the coffer toward its room's centre, for scripted approaches. */
   approachPoint(room: number, socketId: string, distance?: number): THREE.Vector3 | null;
+  syncBrassLock(spent: boolean, immediate?: boolean): void;
+  nearBrassLock(point: THREE.Vector3, reach: number): { room: number; socketId: string } | null;
 }
 
 /** The rest-room hearths of a floor: picking, using and the hp panel. */
@@ -182,6 +186,8 @@ export interface FloorView {
   dressStairs(model: THREE.Object3D): void;
   readonly styledRooms: readonly THREE.Group[];
   loot: FloorLoot;
+  readonly brassKeyStand: BrassKeyStand | null;
+  dressBrassKey(art: THREE.Object3D): void;
   hearth: FloorHearths;
   book: BookSecret;
   showBookSecret(lines: ToastLines, head: THREE.Object3D): void;
@@ -319,7 +325,8 @@ export function playableFloorPlan(
   if (floorNumber === 2 && contentVersion >= HIDDEN_PANEL_VERSION) return attachHiddenPassage(base);
   if (contentVersion < PRESSURE_WORKS_VERSION || floorNumber !== 1) return base;
   if (contentVersion < RETURN_PASSAGES_VERSION) return attachPressureWing(base);
-  return attachFloorOneTopology(base);
+  const lower = attachFloorOneTopology(base);
+  return contentVersion >= BRASS_CACHE_VERSION ? withBrassCache(lower) : lower;
 }
 
 /** The former upper pressure wing occupied the two appended room indices. */
@@ -377,6 +384,8 @@ export function mountFloorView(
   let counterweight: CounterweightStation | null = null;
   const floorNumber = options.floorNumber ?? 1;
   const world = buildFloorWorld(plan, options.templates);
+  const brassCache = plan.brassCache;
+  let brassKeyStand: BrassKeyStand | null = null;
   const notes = plan.pressureWing ? new PressureNotes(world, contentVersion) : null;
   const guided =
     options.guidedShowcase === true && floorNumber !== 3 && isShowcaseFloor(plan.seed, floorNumber);
@@ -420,7 +429,7 @@ export function mountFloorView(
       const doorAt = world.releaseGuardedDoor(room, suppressUnlockAudio);
       if (doorAt && !suppressUnlockAudio) floorAudio?.playSfx('door-open', doorAt);
       for (const coffer of world.coffers) {
-        if (coffer.room !== room) continue;
+        if (coffer.room !== room || !plan.rooms[room]?.encounter) continue;
         if (!coffer.unlock(suppressUnlockAudio || reducedUnlockMotion)) continue;
         const at = coffer.object.getWorldPosition(new THREE.Vector3());
         if (!suppressUnlockAudio) floorAudio?.playSfx('gear-clank', at);
@@ -512,6 +521,7 @@ export function mountFloorView(
     world.coffers.find((c) => c.room === room && c.socketId === socketId);
   const lootLocked = (room: number): boolean =>
     world.plan.rooms[room]?.encounter != null && !encounter.isCleared(room);
+  const lockPosition = new THREE.Vector3();
   const loot: FloorLoot = {
     coffers: world.coffers,
     pick(origin, direction, maxDistance = LOOT_REACH) {
@@ -565,6 +575,18 @@ export function mountFloorView(
       if (toCentre.lengthSq() < 1e-6) toCentre.set(0, 0, 1);
       return new THREE.Vector3(base.x, 0, base.z).addScaledVector(toCentre.normalize(), distance);
     },
+    syncBrassLock(spent, immediate = false) {
+      if (!brassCache) return;
+      cofferOf(brassCache.room, brassCache.socketId)?.syncKeyLock(spent, immediate);
+    },
+    nearBrassLock(point, reach) {
+      if (!brassCache || brassCache.room !== world.current) return null;
+      const lock = cofferOf(brassCache.room, brassCache.socketId)?.object.getObjectByName(
+        'coffer-padlock',
+      );
+      if (!lock?.visible) return null;
+      return lock.getWorldPosition(lockPosition).distanceTo(point) <= reach ? brassCache : null;
+    },
   };
   const hearthOf = (room: number, socketId: string): Hearth | undefined =>
     world.hearths.find((h) => h.room === room && h.socketId === socketId);
@@ -610,6 +632,25 @@ export function mountFloorView(
   return {
     world,
     floorNumber,
+    get brassKeyStand() {
+      return brassKeyStand;
+    },
+    dressBrassKey(art) {
+      if (floorNumber === 2 && !brassKeyStand) {
+        brassKeyStand = BrassKeyStand.mount(world, art, furnishings?.placements ?? []);
+      } else if (floorNumber === 1 && brassCache) {
+        const lock = cofferOf(brassCache.room, brassCache.socketId)?.object.getObjectByName(
+          'coffer-padlock',
+        );
+        if (!lock || lock.getObjectByName('brass-wards-badge')) return;
+        const badge = art.getObjectByName('BrassWardsBadge')?.clone(true);
+        if (!badge) return;
+        badge.name = 'brass-wards-badge';
+        badge.position.set(0.043, -0.014, -0.002);
+        badge.rotation.y = Math.PI;
+        lock.add(badge);
+      }
+    },
     get stairs() {
       return stairs;
     },
@@ -894,6 +935,7 @@ export function mountFloorView(
       furnishings?.dispose();
       notes?.dispose();
       pressure?.dispose();
+      brassKeyStand?.dispose();
       dropToast();
       spinners.length = 0;
       fires.length = 0;

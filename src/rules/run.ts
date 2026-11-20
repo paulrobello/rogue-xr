@@ -1,6 +1,7 @@
 import { hashString, normalizeSeed, RunRng, type RunRngState, Stream } from '../core/rng.ts';
 import { type Difficulty, isDifficulty } from './difficulty.ts';
 import {
+  type BrassKeyState,
   RulesError,
   type StoredAlchemyState,
   type StoredBellChimesState,
@@ -58,6 +59,9 @@ export interface RunState {
   readonly bookSecretKeyRooms?: readonly number[];
   /** Rooms whose cache cabinet was unlocked with its key. */
   readonly bookSecretCabinetRooms?: readonly number[];
+  /** Cross-floor portable brass key. Absent in pre-v7 saves and treated as missing. */
+  readonly brassKey?: BrassKeyState;
+  readonly brassCacheSeen?: boolean;
 }
 
 /** Mirrors `EncounterTier` in `floor/generate.ts`; rules may not import from `floor/`. */

@@ -57,6 +57,7 @@ export interface FloorPlan {
   /** Doors that lead nowhere; the world closes each with a wall or a boarded door. */
   sealed: readonly SealedDoor[];
   guardianRoom: number;
+  brassCache?: { room: number; socketId: string };
   hiddenPassage?: { source: DoorRef; decoys: readonly DoorRef[]; treasureRoom: number };
   pressureWing?: { gallery: number; pumpRoom: number; source: DoorRef };
 }

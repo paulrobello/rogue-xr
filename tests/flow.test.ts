@@ -16,7 +16,7 @@ import {
 import { pressureTarget, readPressure } from '../src/rules/pressure.ts';
 import { REWARD_COGS, SKIP_REWARD } from '../src/rules/run.ts';
 import { createWorkshop, type WorkshopState } from '../src/rules/workshop.ts';
-import { mountFloorView } from '../src/world/floor-view.ts';
+import { mountFloorView, playableFloorPlan } from '../src/world/floor-view.ts';
 
 const SEED = 'SPIRE001';
 
@@ -42,6 +42,55 @@ function winRegular(flow: RunFlow, room: number, pick: 'first' | 'skip' = 'first
 }
 
 describe('flow transitions', () => {
+  it('locks the same optional coffer in the rules and the first-floor world for each seed', () => {
+    const sites = new Set<string>();
+    for (const seed of [SEED, 'MAPTEST2', 'WIND0000', 'KEEP0010', 'N0TE0032', 'BREW0001']) {
+      const flow = flowWith();
+      flow.newRun(seed);
+      const cache = flow.brassCache;
+      expect(playableFloorPlan(seed, 7, 1).brassCache).toEqual(cache);
+      expect(playableFloorPlan(seed, 6, 1)).not.toHaveProperty('brassCache');
+      expect(playableFloorPlan(seed, 7, 2)).not.toHaveProperty('brassCache');
+      if (cache) sites.add(JSON.stringify(cache));
+    }
+    expect(sites.size).toBeGreaterThan(1);
+  });
+
+  it('carries the key through Continue and spends it once before opening the lower coffer', () => {
+    let flow = flowWith();
+    flow.newRun(SEED);
+    const target = flow.brassCache;
+    if (!target) throw Error('Seed requires an optional coffer');
+    const { room, socketId } = target;
+    expect(flow.takeBrassKey()).toBe(false);
+    expect(flow.run?.brassCacheSeen).toBeUndefined();
+    expect(flow.inspectBrassLock(room, socketId)).toBe(true);
+    expect(flow.run?.brassCacheSeen).toBe(true);
+    expect(flow.brassKey).toBe('missing');
+    expect(flow.openLoot(room, socketId, 'card')).toBeNull();
+    expect(flow.travelToFloor(2, 0)).toBe(true);
+    expect(flow.takeBrassKey()).toBe(true);
+    expect(flow.takeBrassKey()).toBe(false);
+    expect(flow.inspectBrassLock(room, socketId)).toBe(false);
+    const upstairs = validateSnapshot(flow.snapshot());
+    flow = flowWith();
+    expect(flow.continueRun(upstairs)).toBe(true);
+    expect(flow.brassKey).toBe('held');
+    expect(flow.run?.brassCacheSeen).toBe(true);
+    expect(flow.travelToFloor(1, 0)).toBe(true);
+    expect(flow.inspectBrassLock(room, 'unrelated-socket')).toBe(false);
+    expect(flow.openLoot(room, socketId, 'card')).toBeNull();
+    expect(flow.inspectBrassLock(room, socketId)).toBe(true);
+    expect(flow.isLootOpened(room, socketId)).toBe(false);
+    const paid = validateSnapshot(flow.snapshot());
+    flow = flowWith();
+    flow.continueRun(paid);
+    expect(flow.brassKey).toBe('spent');
+    expect(flow.inspectBrassLock(room, socketId)).toBe(false);
+    expect(flow.openLoot(room, socketId, 'card')).not.toBeNull();
+    expect(flow.openLoot(room, socketId, 'card')).toBeNull();
+  });
+
   it('rejects pressure actions on the upper floor', () => {
     const flow = flowWith();
     expect(flow.newRun(SEED)).toBe(true);
@@ -267,7 +316,7 @@ describe('continue from a snapshot', () => {
     expect(resumed.snapshot()?.contentVersion).toBe(1);
     expect(resumed.abandonRun()).toBe(true);
     expect(resumed.newRun('SPIRE002')).toBe(true);
-    expect(resumed.snapshot()?.contentVersion).toBe(6);
+    expect(resumed.snapshot()?.contentVersion).toBe(7);
   });
 
   it('restores the same run and offer, and continues identically', () => {

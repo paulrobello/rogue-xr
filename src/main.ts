@@ -7,6 +7,7 @@ import { glb_sha256 as alchemyRevision } from '../assets-source/props/alchemy-ki
 import { assets as portraitAssets } from '../assets-source/props/alchemy-kit/portraits/manifest.json';
 import { sha256 as architecturalFinishRevision } from '../assets-source/props/architectural-finishes/report.json';
 import { glb_sha256 as archiveRevision } from '../assets-source/props/archive-kit/manifest.json';
+import { glb_sha256 as brassKeyRevision } from '../assets-source/props/brass-key-kit/manifest.json';
 import { glb_sha256 as calibrationRevision } from '../assets-source/props/calibration-kit/manifest.json';
 import { glb_sha256 as commissionRevision } from '../assets-source/props/commission-kit/manifest.json';
 import { glb_sha256 as panelRevision } from '../assets-source/props/panel-kit/manifest.json';
@@ -17,7 +18,11 @@ import { AudioDirector } from './audio/index.ts';
 import { requestCardFaceArt } from './cards/card-face-material.ts';
 import { mountCardProof } from './cards/card-proof.ts';
 import { CombatHook, type CombatPick, type XrHands } from './combat/combat-session.ts';
-import { ENCOUNTER_CONTENT_VERSION, RETURN_PASSAGES_VERSION } from './combat/encounter-choice.ts';
+import {
+  BRASS_CACHE_VERSION,
+  ENCOUNTER_CONTENT_VERSION,
+  RETURN_PASSAGES_VERSION,
+} from './combat/encounter-choice.ts';
 import {
   type CombatTableAsset,
   loadCombatTable,
@@ -673,6 +678,7 @@ function calibrationKit(): Promise<THREE.Object3D> {
     });
   return calibrationArt;
 }
+let brassKeyArt: Promise<THREE.Object3D> | undefined;
 let panelArt: Promise<THREE.Object3D> | undefined;
 function panelKit(): Promise<THREE.Object3D> {
   panelArt ??= new GLTFLoader()
@@ -710,6 +716,8 @@ function syncPuzzles(target: FloorView, immediate = false): void {
     target.panels?.sync(flow.hiddenPanel, true);
     target.world.setPuzzleGateOpen('panel', flow.hiddenPanel.opened, true);
     target.office?.sync(flow.commission);
+    target.loot.syncBrassLock(flow.brassKey === 'spent', true);
+    target.brassKeyStand?.sync(flow.brassKey !== 'missing');
     target.calibrationBench?.sync(flow.calibration, true);
     target.chartCabinet?.sync(flow.calibration, true);
   }
@@ -860,6 +868,24 @@ const dressFloor = async (target: FloorView): Promise<void> => {
         chestCardFace,
         hitFx.reducedMotion,
       );
+    }
+    if (
+      target.contentVersion >= BRASS_CACHE_VERSION &&
+      (target.world.plan.brassCache || (target.floorNumber === 2 && flow.brassCache))
+    ) {
+      brassKeyArt ??= new GLTFLoader()
+        .loadAsync(`/assets/props/brass-key-kit/brass-key-kit.glb?v=${brassKeyRevision}`)
+        .then(({ scene }) => {
+          reflect(scene, 0.56);
+          return scene;
+        })
+        .catch((error) => {
+          brassKeyArt = undefined;
+          throw error;
+        });
+      const art = await brassKeyArt;
+      if (target !== floor) return;
+      target.dressBrassKey(art);
     }
     if (target.world.plan.hiddenPassage) {
       const art = await panelKit();
@@ -1016,6 +1042,12 @@ flow.onChange((event) => {
       audio?.playSfx('gear-clank', at);
       audio?.playSfx('cog-pickup', at);
     }
+    return;
+  }
+  if (event.type === 'brass-key') {
+    floor?.brassKeyStand?.sync(flow.brassKey !== 'missing');
+    floor?.loot.syncBrassLock(flow.brassKey === 'spent', false);
+    storedSnapshot = flow.snapshot(Date.now(), floor?.world.current ?? flow.room);
     return;
   }
   if (event.type === 'commission') {
@@ -1418,9 +1450,40 @@ const canOpenLoot = (): boolean =>
   flow.phase === 'explore' &&
   floor.encounter.phase === 'idle' &&
   !ui?.visible;
+function takeBrassKey(): boolean {
+  const stand = floor?.brassKeyStand;
+  if (!stand || !flow.takeBrassKey()) return false;
+  audio?.playSfx('cog-pickup', stand.key.getWorldPosition(chimePosition), 0.55);
+  floor?.showBookSecret(
+    { text: 'Brass key', caption: 'Stamped for a lower-floor coffer.' },
+    camera,
+  );
+  return true;
+}
+function tryBrassLock(room: number, socketId: string): boolean {
+  const cache = floor?.world.plan.brassCache;
+  if (!cache || room !== cache.room || socketId !== cache.socketId || flow.brassKey === 'spent')
+    return false;
+  if (!flow.inspectBrassLock(room, socketId)) return false;
+  const opened = flow.run?.brassKey === 'spent';
+  const coffer = floor?.loot.coffers.find((c) => c.room === room && c.socketId === socketId);
+  audio?.playSfx(
+    'gear-clank',
+    coffer?.object.getWorldPosition(chimePosition),
+    opened ? 0.65 : 0.25,
+  );
+  floor?.showBookSecret(
+    opened
+      ? { text: 'Lock released', caption: 'The brass key turns in the ward.' }
+      : { text: 'Brass lock', caption: 'Its brass plate bears the Upper Works stamp.' },
+    camera,
+  );
+  return true;
+}
 /** Opens the shut coffer, or claims the card waiting over an open one, that a pick found. */
 const openCoffer = (pick: LootPick | null): boolean => {
   if (!pick || !canOpenLoot()) return false;
+  if (tryBrassLock(pick.room, pick.socketId)) return true;
   if (floor?.loot.showLock(pick.room, pick.socketId)) return true;
   if (!pick.claim) return flow.openLoot(pick.room, pick.socketId, pick.kind) !== null;
   claimHand = null;
@@ -1714,8 +1777,10 @@ function fieldHit(origin: THREE.Vector3, direction: THREE.Vector3) {
   const office = floor.office?.pick(origin, direction);
   const calibration = floor.calibrationBench?.pick(origin, direction),
     folio = floor.chartCabinet?.pick(origin, direction);
+  const key = floor.brassKeyStand?.pick(origin, direction);
   const panel = floor.panels?.pick(origin, direction);
   const hits = [
+    ...(key ? [{ kind: 'brass-key' as const, hit: key }] : []),
     ...(office ? [{ kind: 'commission' as const, hit: office }] : []),
     ...(calibration ? [{ kind: 'calibration' as const, hit: calibration }] : []),
     ...(folio ? [{ kind: 'folio' as const, hit: folio }] : []),
@@ -1746,6 +1811,8 @@ const activatePickup = (
   const pick = fieldHit(origin, direction);
   if (!pick) return false;
   switch (pick.kind) {
+    case 'brass-key':
+      return takeBrassKey();
     case 'commission':
       return operateCommission(pick.hit);
     case 'calibration':
@@ -1977,6 +2044,9 @@ for (const index of [0, 1]) {
       flow.collectPressureNote(note.room, note.id);
       return;
     }
+    if (floor.brassKeyStand?.near(position, GRAB_REACH) && takeBrassKey()) return;
+    const brassLock = floor.loot.nearBrassLock(position, GRAB_REACH);
+    if (brassLock && tryBrassLock(brassLock.room, brassLock.socketId)) return;
     const office = floor.office?.near(position, GRAB_REACH);
     if (office && operateCommission(office)) return;
     const cal = floor.calibrationBench?.near(position, GRAB_REACH);

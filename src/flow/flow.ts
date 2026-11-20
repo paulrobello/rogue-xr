@@ -1,4 +1,5 @@
 import {
+  BRASS_CACHE_VERSION,
   ENCOUNTER_CONTENT_VERSION,
   FOUNDRY_VERSION,
   HIDDEN_PANEL_VERSION,
@@ -6,6 +7,7 @@ import {
   RETURN_PASSAGES_VERSION,
 } from '../combat/encounter-choice.ts';
 import { LEGACY_REWARD_POOL, PERMANENT_CARD_IDS } from '../content/rewards.ts';
+import { brassCacheForPlayableFloor } from '../floor/return-passages.ts';
 import type { FloorSnapshot, RunSnapshot } from '../persist/saves.ts';
 import { snapshotRun } from '../persist/saves.ts';
 import {
@@ -235,7 +237,8 @@ export type FlowEvent =
   | AlchemyEvent
   | { readonly type: 'formula' }
   | HiddenPanelEvent
-  | BellChimeEvent;
+  | BellChimeEvent
+  | { readonly type: 'brass-key'; readonly action: 'inspect' | 'take' | 'unlock' };
 export interface HiddenPanelEvent {
   readonly type: 'hidden-panel';
   readonly action: 'discover' | 'open';
@@ -270,6 +273,7 @@ export class RunFlow {
   private readonly listeners = new Set<(event: FlowEvent) => void>();
   private readonly opts: FlowOptions;
   private contentVersionValue = ENCOUNTER_CONTENT_VERSION;
+  private brassCacheLookup?: { seed: string; target?: { room: number; socketId: string } };
 
   constructor(opts: FlowOptions) {
     this.opts = opts;
@@ -726,6 +730,54 @@ export class RunFlow {
   get floorSeed(): string {
     return this.runValue ? floorSeedFor(this.runValue.seed, this.floorNumberValue) : '';
   }
+  get brassKey(): 'missing' | 'held' | 'spent' {
+    return this.runValue?.brassKey ?? 'missing';
+  }
+  /** Deterministic first-floor coffer target, if this run has v7 brass-cache content. */
+  get brassCache(): { room: number; socketId: string } | undefined {
+    if (!this.runValue || this.contentVersionValue < BRASS_CACHE_VERSION) return undefined;
+    const seed = floorSeedFor(this.runValue.seed, 1);
+    if (this.brassCacheLookup?.seed !== seed)
+      this.brassCacheLookup = {
+        seed,
+        target: brassCacheForPlayableFloor(seed),
+      };
+    return this.brassCacheLookup.target;
+  }
+  takeBrassKey(): boolean {
+    if (
+      !this.runValue ||
+      this.phaseValue !== 'explore' ||
+      this.floorNumberValue !== 2 ||
+      this.contentVersionValue < BRASS_CACHE_VERSION ||
+      !this.brassCache ||
+      this.brassKey !== 'missing'
+    )
+      return false;
+    this.runValue = { ...this.runValue, brassKey: 'held' };
+    this.emit({ type: 'brass-key', action: 'take' });
+    return true;
+  }
+  inspectBrassLock(room: number, socketId: string): boolean {
+    const run = this.runValue;
+    if (!run || this.floorNumberValue !== 1 || this.phaseValue !== 'explore') return false;
+    const target = this.brassCache;
+    if (
+      !target ||
+      target.room !== room ||
+      target.socketId !== socketId ||
+      this.brassKey === 'spent'
+    )
+      return false;
+    if (this.brassKey === 'held') {
+      this.runValue = { ...run, brassKey: 'spent', brassCacheSeen: true };
+      this.emit({ type: 'brass-key', action: 'unlock' });
+    } else if (!run.brassCacheSeen) {
+      this.runValue = { ...run, brassCacheSeen: true };
+      this.emit({ type: 'brass-key', action: 'inspect' });
+    }
+    return true;
+  }
 
   /** Changes floors only at an exploration boundary, preserving global deck, HP, purse and RNG. */
   travelToFloor(destination: 1 | 2 | 3, destinationRoom: number): boolean {
@@ -839,6 +891,7 @@ export class RunFlow {
       maxHp: difficultyMaxHp(base.maxHp, difficulty),
       difficulty,
     });
+    this.runValue = { ...this.runValue, brassKey: 'missing' };
     this.resetRunBookkeeping(0, []);
     this.floorNumberValue = 1;
     this.floorStates.clear();
@@ -930,6 +983,9 @@ export class RunFlow {
   openLoot(room: number, socketId: string, kind: TreasureKind): TreasureLoot | null {
     const run = this.runValue;
     if (this.phaseValue !== 'explore' || !run) return null;
+    const target =
+      this.floorNumberValue === 1 && this.brassKey !== 'spent' ? this.brassCache : undefined;
+    if (target?.room === room && target.socketId === socketId) return null;
     const pool =
       this.contentVersionValue < FOUNDRY_VERSION ? LEGACY_REWARD_POOL : this.opts.rewardPool;
     const result = openTreasure(run, lootKey(room, socketId), kind, pool);

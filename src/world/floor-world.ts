@@ -164,6 +164,7 @@ function buildRoom(
   enemyMaterial: THREE.Material,
   kit: CofferKit,
   hearthKit: HearthKit,
+  brassKey?: { room: number; socketId: string },
 ) {
   const placed = plan.rooms[index];
   if (!placed) throw new Error(`room ${index} missing`);
@@ -195,28 +196,29 @@ function buildRoom(
   }
   // The guardian vault's reward is paid by the win itself.
   const coffers: Coffer[] = [];
-  if (placed.role === 'treasure' || placed.role === 'combat') {
-    for (const pickup of placed.loot) {
-      const s = t.lootSockets.find((socket) => socket.id === pickup.socketId);
-      if (!s) continue;
-      const surface = surfaceHeightAt(t.colliders, s.position[0], s.position[2]);
-      // The study collider includes the candle rack, 0.29 m above the usable desk top.
-      const onDesk = t.id === 'study' && s.id === 'desk-drawer' && surface > 0;
-      const socket = onDesk
-        ? { ...s, position: [2.322, 0, 2.322] as [number, number, number], yaw: 315 }
-        : s;
-      const coffer = kit.build(
-        index,
-        socket,
-        pickup.kind,
-        onDesk ? 0.78 : surface,
-        placed.encounter !== null,
-      );
-      if (onDesk) coffer.object.scale.set(0.85, 1.1, 0.85);
-      group.add(coffer.object);
-      group.getObjectByName(`socket-${s.id}`)?.removeFromParent();
-      coffers.push(coffer);
-    }
+  for (const pickup of placed.loot) {
+    const keyed = brassKey?.room === index && brassKey.socketId === pickup.socketId;
+    if (!keyed && placed.role !== 'treasure' && placed.role !== 'combat') continue;
+    const s = t.lootSockets.find((socket) => socket.id === pickup.socketId);
+    if (!s) continue;
+    const surface = surfaceHeightAt(t.colliders, s.position[0], s.position[2]);
+    // The study collider includes the candle rack, 0.29 m above the usable desk top.
+    const onDesk = t.id === 'study' && s.id === 'desk-drawer' && surface > 0;
+    const socket = onDesk
+      ? { ...s, position: [2.322, 0, 2.322] as [number, number, number], yaw: 315 }
+      : s;
+    const coffer = kit.build(
+      index,
+      socket,
+      pickup.kind,
+      onDesk ? 0.78 : surface,
+      placed.encounter !== null,
+      keyed,
+    );
+    if (onDesk) coffer.object.scale.set(0.85, 1.1, 0.85);
+    group.add(coffer.object);
+    group.getObjectByName(`socket-${s.id}`)?.removeFromParent();
+    coffers.push(coffer);
   }
   // A rest room stands one hearth at its socket; the greybox marker there gives way to it.
   const hearths: Hearth[] = [];
@@ -268,6 +270,7 @@ export function buildFloorWorld(
       enemyMaterial,
       kit,
       hearthKit,
+      plan.brassCache,
     );
     coffers.push(...built.coffers);
     hearths.push(...built.hearths);

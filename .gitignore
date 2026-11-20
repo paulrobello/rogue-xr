@@ -47,3 +47,8 @@ assets-source/props/calibration-kit/staging/*.png
 assets-source/props/panel-kit/staging/*.glb
 assets-source/props/panel-kit/staging/*.png
 !assets-source/props/panel-kit/staging/review*.png
+# Reproducible packed brass-key texture maps and intermediate export.
+assets-source/props/brass-key-kit/staging/*-base.png
+assets-source/props/brass-key-kit/staging/*-normal.png
+assets-source/props/brass-key-kit/staging/*-orm.png
+assets-source/props/brass-key-kit/staging/*.glb

@@ -242,3 +242,53 @@ export function attachFloorOneTopology(base: FloorPlan): FloorPlan {
   }
   throw Error(`Could not fit return passages on ${base.seed}`);
 }
+
+/** Selects the v7 cache only from the final playable Floor1 topology. */
+export function withBrassCache(plan: FloorPlan): FloorPlan {
+  const reachable = new Set([0]);
+  const passages = plan.connections.filter((edge) => !edge.puzzleGate);
+  for (const room of reachable) {
+    for (const [a, b] of passages) {
+      if (a.room === room) reachable.add(b.room);
+      if (b.room === room) reachable.add(a.room);
+    }
+  }
+  const eligible = plan.rooms.filter(
+    (room) =>
+      reachable.has(room.index) &&
+      !room.encounter &&
+      room.index !== plan.guardianRoom &&
+      room.index !== plan.pressureWing?.pumpRoom &&
+      room.index !== plan.pressureWing?.gallery,
+  );
+  const candidates = eligible.flatMap((room) =>
+    room.loot.map((loot) => ({ room: room.index, socketId: loot.socketId })),
+  );
+  const stream = Stream.fromKey(plan.seed + ':brass-cache');
+  if (candidates.length) return { ...plan, brassCache: stream.pick(candidates) };
+  // Some layouts have no unguarded treasure chest. Use an authored loot socket in a quiet room.
+  const free = eligible.flatMap((room) =>
+    templateById(room.templateId).lootSockets.map((socket) => ({
+      room: room.index,
+      socketId: socket.id,
+    })),
+  );
+  if (!free.length) return plan;
+  const brassCache = stream.pick(free);
+  return {
+    ...plan,
+    brassCache,
+    rooms: plan.rooms.map((room) =>
+      room.index === brassCache.room
+        ? {
+            ...room,
+            loot: [...room.loot, { socketId: brassCache.socketId, kind: 'cogs' as const }],
+          }
+        : room,
+    ),
+  };
+}
+
+export function brassCacheForPlayableFloor(seed: string): FloorPlan['brassCache'] {
+  return withBrassCache(attachFloorOneTopology(generateFloor(seed))).brassCache;
+}

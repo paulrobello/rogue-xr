@@ -98,6 +98,8 @@ export interface Coffer {
   readonly hit: THREE.Mesh;
   readonly opened: boolean;
   unlock(immediate?: boolean): boolean;
+  /** Shows or hides the dedicated brass-key lock without changing encounter locking. */
+  syncKeyLock(spent: boolean, immediate?: boolean): void;
   /** The card rising or hovering over the open coffer, waiting to be claimed; null once it flies off. */
   readonly card: string | null;
   /** The invisible quad a ray tests to claim the card once it hovers (not while it rises), else null. */
@@ -492,7 +494,14 @@ export class CofferKit {
   }
 
   /** Builds the coffer for `socket` of `room`, standing `surface` metres above the room floor. */
-  build(room: number, socket: Socket, kind: LootKind, surface: number, locked = false): Coffer {
+  build(
+    room: number,
+    socket: Socket,
+    kind: LootKind,
+    surface: number,
+    locked = false,
+    keyLocked = false,
+  ): Coffer {
     const object = new THREE.Group();
     object.name = `coffer-${room}-${socket.id}`;
     object.position.set(socket.position[0], socket.position[1] + surface, socket.position[2]);
@@ -523,7 +532,8 @@ export class CofferKit {
     gem.name = 'coffer-gem';
     gem.position.set(0, BODY_HEIGHT - 0.03, -DEPTH / 2 - 0.04);
     object.add(gem);
-    const padlock = locked ? this.part(this.lock, 'brass', object, 'coffer-padlock') : null;
+    const padlock =
+      locked || keyLocked ? this.part(this.lock, 'brass', object, 'coffer-padlock') : null;
     if (padlock) {
       padlock.position.set(0, BODY_HEIGHT - 0.068, -DEPTH / 2 - 0.061);
       gem.visible = false;
@@ -543,7 +553,7 @@ export class CofferKit {
     let target = 0;
     let unlockProgress = padlock ? 0 : 1;
     let unlocking = false;
-    let secured = locked;
+    let secured = locked || keyLocked;
     let clock = 0;
     const cogs = this.cogSlot(object, () => angle >= RISE_ANGLE);
     const card = this.cardSlot(object, () => angle >= RISE_ANGLE && cogs.done());
@@ -572,6 +582,9 @@ export class CofferKit {
           unlocking = true;
         }
         return true;
+      },
+      syncKeyLock(spent, immediate = false) {
+        if (keyLocked && spent) this.unlock(immediate);
       },
       get card() {
         return card.waiting();

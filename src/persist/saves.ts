@@ -35,7 +35,7 @@ import {
 } from '../rules/pressure.ts';
 import type { PendingLoot, RewardOffer, RewardTier, RunState } from '../rules/run.ts';
 import { floorSeedFor } from '../rules/run.ts';
-import type { StoredHiddenPanelState } from '../rules/types.ts';
+import type { BrassKeyState, StoredHiddenPanelState } from '../rules/types.ts';
 import {
   createWorkshop,
   maxTier,
@@ -486,6 +486,14 @@ function validateRunState(
     r.bookSecretCabinetRooms,
     `${path}.bookSecretCabinetRooms`,
   );
+  if (r.brassCacheSeen !== undefined && typeof r.brassCacheSeen !== 'boolean')
+    fail(`${path}.brassCacheSeen`, 'expected a boolean');
+  const brassKey =
+    r.brassKey === undefined
+      ? undefined
+      : r.brassKey === 'missing' || r.brassKey === 'held' || r.brassKey === 'spent'
+        ? (r.brassKey as BrassKeyState)
+        : fail(`${path}.brassKey`, 'unknown key state');
   // Also added after version 1: an older save names no level and resumes as `DEFAULT_DIFFICULTY`.
   if (r.difficulty !== undefined && !isDifficulty(r.difficulty)) {
     fail(`${path}.difficulty`, 'unknown difficulty');
@@ -516,6 +524,8 @@ function validateRunState(
     ...(bookSecretOpenedRooms === undefined ? {} : { bookSecretOpenedRooms }),
     ...(bookSecretKeyRooms === undefined ? {} : { bookSecretKeyRooms }),
     ...(bookSecretCabinetRooms === undefined ? {} : { bookSecretCabinetRooms }),
+    ...(brassKey === undefined ? {} : { brassKey }),
+    ...(r.brassCacheSeen === true && { brassCacheSeen: true }),
   };
 }
 

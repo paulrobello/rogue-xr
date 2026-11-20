@@ -16,7 +16,9 @@ export const UPPER_WORKS_VERSION = 4;
 /** Return-passages puzzle content. Older snapshots keep their original clue locations. */
 export const RETURN_PASSAGES_VERSION = 5;
 export const HIDDEN_PANEL_VERSION = 6;
-export const ENCOUNTER_CONTENT_VERSION = HIDDEN_PANEL_VERSION;
+/** Portable brass key and its deterministic first-floor cache. */
+export const BRASS_CACHE_VERSION = 7;
+export const ENCOUNTER_CONTENT_VERSION = BRASS_CACHE_VERSION;
 const LEGACY_ENCOUNTER_IDS = new Set([
   'sentry',
   'hound',

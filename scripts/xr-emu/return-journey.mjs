@@ -4,10 +4,12 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { chromium } from 'playwright';
+import { exerciseBrassCache } from './brass-journey.mjs';
 import { exerciseCalibration } from './calibration-journey.mjs';
+import { installFieldControllers, useFieldController } from './field-controller.mjs';
 
 const {
-  values: { base, seed, out, cdp, formula, commission, calibration, panels },
+  values: { base, seed, out, cdp, formula, commission, calibration, panels, brass, controller },
 } = parseArgs({
   options: {
     base: { type: 'string', default: 'http://localhost:4266' },
@@ -18,8 +20,11 @@ const {
     commission: { type: 'boolean', default: false },
     calibration: { type: 'boolean', default: false },
     panels: { type: 'boolean', default: false },
+    brass: { type: 'boolean', default: false },
+    controller: { type: 'boolean', default: false },
   },
 });
+if (controller && cdp) throw Error('Controller emulation requires desktop Chromium');
 await mkdir(out, { recursive: true });
 const browser = cdp
   ? await chromium.connectOverCDP(cdp)
@@ -31,6 +36,7 @@ const browser = cdp
 const context = cdp
   ? browser.contexts()[0]
   : await browser.newContext({ viewport: { width: 1280, height: 820 } });
+if (controller) await installFieldControllers(context);
 let page;
 if (cdp) {
   const session = await browser.newBrowserCDPSession();
@@ -145,7 +151,15 @@ async function approach(anchor, name, away = 1.5, offset = [0, 0, 0]) {
   );
   await page.waitForTimeout(150);
 }
-async function click(name, offset = [0, 0, 0]) {
+async function click(name, offset = [0, 0, 0], button) {
+  const fixture =
+    /^(Commission|ReturnSpring|instrument-chart|calibration-|orrery-|service-leaf-|service-catch-|brass-cache-key|coffer-)/;
+  if (controller && fixture.test(name)) {
+    const mode = await useFieldController(page, name, offset, button);
+    assert.equal(mode, 'immersive-vr');
+    console.log('Controller', button ?? 'trigger', name);
+    return;
+  }
   const xy = await ev(
     ({ name, offset }) => {
       const c = window.__combat,
@@ -700,7 +714,22 @@ async function exerciseReturnJourney() {
   console.log('PASS end-to-end');
 }
 try {
-  if (commission) await exerciseCommission();
+  if (brass)
+    await exerciseBrassCache({
+      page,
+      base,
+      seed,
+      out,
+      ev,
+      ready,
+      stair,
+      approach,
+      click,
+      resumeAt,
+      shot,
+      errors,
+    });
+  else if (commission) await exerciseCommission();
   else if (calibration)
     await exerciseCalibration({
       page,

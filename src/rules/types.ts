@@ -352,3 +352,5 @@ export interface StoredHiddenPanelState {
   readonly discovered: boolean;
   readonly opened: boolean;
 }
+
+export type BrassKeyState = 'missing' | 'held' | 'spent';

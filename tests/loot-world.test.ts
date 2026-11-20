@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getCard } from '../src/content/cards.ts';
 import { GREYBOX_TEMPLATES, type RoomTemplate } from '../src/content/rooms.ts';
 import { generateFloor, guardedConnection, worldRooms } from '../src/floor/generate.ts';
+import { withBrassCache } from '../src/floor/return-passages.ts';
 import { mountFloorView } from '../src/world/floor-view.ts';
 import { buildFloorWorld } from '../src/world/floor-world.ts';
 import { LootToast, lootLines, surfaceHeightAt } from '../src/world/loot.ts';
@@ -19,6 +20,24 @@ const STUDY_WITH_DESK: readonly RoomTemplate[] = GREYBOX_TEMPLATES.map((t) =>
 const SEEDS = ['SPIRE001', 'SPIRE002', 'SPIRE003', 'SPIRE005', 'SPIRE034', 'SPIRE004', 'SPIRE010'];
 
 describe('coffers in the floor world', () => {
+  it('instantiates the brass coffer when its only reachable socket is in a quiet room', () => {
+    const base = generateFloor('SPIRE002');
+    const study = base.rooms.find((r) => r.templateId === 'study');
+    if (!study) throw Error('Fixture needs a study drawer');
+    const plan = withBrassCache({
+      ...base,
+      rooms: [{ ...study, index: 0, role: 'entry', encounter: null, loot: [] }],
+      guardianRoom: -1,
+      connections: [],
+      sealed: [],
+    });
+    expect(plan.brassCache).toEqual({ room: 0, socketId: 'desk-drawer' });
+    const world = buildFloorWorld(plan, STUDY_WITH_DESK);
+    expect(world.coffers.map((c) => c.socketId)).toEqual(['desk-drawer']);
+    expect(world.coffers[0]?.object.getObjectByName('coffer-padlock')?.visible).toBe(true);
+    world.dispose();
+  });
+
   it('builds the planned treasure and combat coffers and pays the vault reward separately', () => {
     for (const seed of SEEDS) {
       const plan = generateFloor(seed);

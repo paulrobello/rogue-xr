@@ -159,7 +159,7 @@ Use seed `N0TE0032` for a wing branching from the starting hall and a mix of cof
 
 ### E3. Optional paths
 
-- **Locked side wings** branch off the main path (E1).
+- **Locked side wings** branch off the main path (E1). A brass key on a seeded Upper Works hook fits a marked optional coffer downstairs. A trigger pull or nearby grip collects the key. The key turns once in the lock, and a second interaction opens the released lid. Existing runs keep their original coffers.
 - **Hidden doors** can occur in the Upper Works on new runs. Knock on the steel service panels and listen to the response. Solid plates give a short tap. The hollow plate resonates, visibly shifts and raises a brass catch. Pull the catch to walk into the service recess and open its coffer. A discovered latch or opened door stays that way on return. The Scrying Lens is a future field-card alternative.
 - **Elite detour:** the elite room becomes optional, with a Vault Key as its reward.
 - **Shortcut doors** connect otherwise distant locations. The Floor 1 grille opens when the Upper Works balance lifts its counterweight. Other shortcuts can use far-side latches.
@@ -202,8 +202,8 @@ Keep the deck, HP and cog purse with the run. Keep each floor’s layout, opened
 | W2 | Locks: brass and iron lock panels, the lock-pick plate on a lock, key items, lock placement on optional branches from a named stream | W1, the panel slot card |
 | W3 | Wave A combat cards with M1, M2, M5, M6, M7, the iron d4 and the anchor glyph, plus the glyph-distinctness test | none |
 | W4 | Pressure valves, separate collectible field notes and a reward compartment are playable. The sigil door is planned. | W2 for the sigil door |
-| W5 | Floor generator loops: shortcut doors and hidden doors | the panel slot card |
-| W6 | Commission board and 3 task types | W1 |
+| W5 | The downstairs counterweight loop and knock-open Upper Works service passage are playable. | the panel slot card |
+| W6 | The keeper’s ledger offers recovery, restoration and delve commissions with a physical return payment. | W1 |
 | W7 | Wave B combat cards with M3, M8, M9, M10, the crystal d12 and the eye glyph | W3 |
 | W8 | Remaining field cards (Scrying Lens, Recall Spiral, Oil Can, Tuning Fork, Forge Ember, Polishing Kit, Smoke Flask, Spare Valve) | W1, W4, W5 |
 | W9 | Gear train and orrery are playable alternate instruments; the wandering automaton remains planned | W4 |

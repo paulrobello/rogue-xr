@@ -1527,6 +1527,15 @@ export class FlowUi {
           : `${job.progress}/${job.total}`;
       rows.push({ id: 'keeper-order', label: COMMISSION_TITLES[job.kind] + ' · ' + status });
     }
+    if (run?.brassCacheSeen && this.deps.flow.brassKey !== 'spent') {
+      const place =
+        this.deps.flow.brassCache?.socketId === 'desk-drawer' ? 'Study drawer' : 'Treasure chest';
+      rows.push({ id: 'brass-stamp', label: place + ' · Upper Works stamp' });
+    }
+    if (this.deps.flow.brassKey === 'held')
+      rows.push({ id: 'brass-coffer-key', label: 'Brass key · lower-floor coffer' });
+    if (this.deps.flow.brassKey === 'spent')
+      rows.push({ id: 'brass-coffer-open', label: 'Lower-floor coffer · unlocked' });
     if (run?.calibration?.chart) {
       const plan = calibrationPlan(run.seed);
       rows.push({

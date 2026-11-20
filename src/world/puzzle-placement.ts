@@ -7,6 +7,7 @@ import type { InteriorPlacement } from './interior-furnishings.ts';
 export interface PuzzleMount {
   room: number;
   center: THREE.Vector3;
+  wallSurface: THREE.Vector3;
   yaw: number;
 }
 /** All wall scans use the unrotated template; fixture colliders arrive in world space. */
@@ -80,15 +81,17 @@ function mountingPoint(
       if (furnishingBounds.some((b) => back.intersectsBox(b))) continue;
       const direction = inward.clone().negate().transformDirection(parent.matrixWorld);
       probe.far = 0.93;
+      const wallSurface = center.clone();
       const clear = [-0.6, -0.3, 0, 0.3, 0.6].every((x) =>
         [-0.34, 0, 0.34].every((y) => {
           rayPoint.set(x, y, 0.63).applyQuaternion(q).add(center).applyMatrix4(parent.matrixWorld);
           probe.set(rayPoint, direction);
           const hit = probe.intersectObjects(surfaces, false)[0];
+          if (hit && x === 0 && y === 0) wallSurface.copy(hit.point).applyMatrix4(inverse);
           return hit !== undefined && hit.distance >= 0.625;
         }),
       );
-      if (clear) return { room, center, yaw };
+      if (clear) return { room, center, wallSurface, yaw };
     }
   }
   return null;
