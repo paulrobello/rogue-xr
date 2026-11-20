@@ -167,7 +167,7 @@ async function approach(anchor, name, away = 1.5, offset = [0, 0, 0]) {
 }
 async function click(name, offset = [0, 0, 0], button) {
   const fixture =
-    /^(Commission|ReturnSpring|instrument-chart|calibration-|orrery-|service-leaf-|service-catch-|brass-cache-key|coffer-)/;
+    /^(Commission|ReturnSpring|instrument-chart|calibration-|orrery-|service-leaf-|service-catch-|service-knock-target|brass-cache-key|coffer-)/;
   if (controller && fixture.test(name)) {
     const mode = await useFieldController(page, name, offset, button);
     assert.equal(mode, 'immersive-vr');
@@ -507,18 +507,36 @@ async function exercisePanels() {
       return original(id, ...args);
     };
   });
-  for (const [ref, hollow] of [
-    [layout.decoys[0], false],
-    [layout.source, true],
-  ]) {
-    const root = hollow ? 'hollow-service-panel' : 'solid-service-panel-' + ref.room,
-      leaf = 'service-leaf-' + ref.room;
+  for (const ref of layout.decoys) {
+    const root = 'solid-service-panel-' + ref.room;
+    const leaf = 'service-leaf-' + ref.room;
+    assert(
+      await ev((root) => {
+        const panel = window.__combat.floor.world.group.getObjectByName(root);
+        return (
+          !!panel.getObjectByName('service-fixed-cover-label') &&
+          !panel.getObjectByName('service-knock-target')
+        );
+      }, root),
+    );
     await approach(root, leaf, 1.6, [0.76, 1.29, 0.035]);
+    await shot('fixed-cover-' + ref.room);
     await click(leaf, [0.76, 1.29, 0.035]);
-    assert.equal(await ev(() => window.__flow.flow.hiddenPanel.discovered), hollow);
+    assert.equal(await ev(() => window.__flow.flow.hiddenPanel.discovered), false);
   }
-  assert.deepEqual(await ev(() => window.knocks), ['panel-solid', 'panel-hollow']);
+  const leaf = 'service-leaf-' + layout.source.room;
   const catchName = 'service-catch-' + layout.source.room;
+  await approach('hollow-service-panel', 'service-knock-target', 1.6);
+  await shot('knock-circle');
+  await click(leaf, [0.55, 1.24, 0.04]);
+  await click(catchName);
+  assert.deepEqual(await ev(() => window.knocks), []);
+  for (let knock = 1; knock <= 3; knock++) {
+    await click('service-knock-target');
+    assert.equal(await ev(() => window.__flow.flow.hiddenPanel.discovered), knock === 3);
+    await shot('knock-' + knock);
+  }
+  assert.deepEqual(await ev(() => window.knocks), ['panel-hollow', 'panel-hollow', 'panel-hollow']);
   await shot('sprung-catch');
   await resumeAt(2);
   assert(await ev(() => window.__flow.flow.hiddenPanel.discovered));

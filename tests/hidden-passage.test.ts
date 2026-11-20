@@ -61,7 +61,7 @@ it('restores the sprung latch and the open passage without repeating discovery',
     }),
   ).toThrow();
 });
-it('exposes the specific catch on discovery and stows the opened leaf past the hinge', async () => {
+it('accepts three knocks inside the circle and stows the opened leaf past the hinge', async () => {
   const plan = playableFloorPlan('MAPTEST3', 6, 2),
     world = buildFloorWorld(plan);
   const bytes = await readFile('public/assets/props/panel-kit/panel-kit.glb');
@@ -71,32 +71,57 @@ it('exposes the specific catch on discovery and stows the opened leaf past the h
   );
   const panels = new ServicePanels(world, scene, true),
     p = panels.panels[0];
-  const aim = (panel: (typeof panels.panels)[number]) => {
+  const circle = p.leaf.getObjectByName('service-knock-target');
+  const latch = p.leaf.getObjectByName('service-catch-' + p.room);
+  if (!circle || !latch) throw Error('Missing the service door controls');
+  const aim = (panel: (typeof panels.panels)[number], target: THREE.Vector3) => {
     world.current = panel.room;
-    const target = panel.catch.getWorldPosition(new THREE.Vector3());
     const inward = panel.root.getWorldDirection(new THREE.Vector3());
-    return panels.pick(target.addScaledVector(inward, 1.6), inward.negate());
+    return panels.pick(target.clone().addScaledVector(inward, 1.6), inward.negate());
   };
-  for (const panel of panels.panels) expect(aim(panel)?.action).toBe('knock');
-  world.current = p.room;
-  expect(panels.near(p.catch.getWorldPosition(new THREE.Vector3()), 0.04)?.action).toBe('knock');
-  const hinge = new THREE.Vector3(0, 0.053, 0);
-  const hingeBefore = p.catch.localToWorld(hinge.clone());
-  const lipBefore = p.catch.localToWorld(new THREE.Vector3(0, -0.05, 0));
-  panels.sync({ discovered: true, opened: false }, true);
-  expect(p.catch.localToWorld(hinge.clone()).distanceTo(hingeBefore)).toBeLessThan(0.001);
-  expect(
-    p.catch.localToWorld(new THREE.Vector3(0, -0.05, 0)).distanceTo(lipBefore),
-  ).toBeGreaterThan(0.085);
   for (const decoy of panels.panels.slice(1)) {
-    expect(decoy.catch.rotation.x).toBe(0);
-    expect(aim(decoy)?.action).toBe('knock');
+    const point = decoy.leaf.localToWorld(new THREE.Vector3(0.8, 1.24, 0.08));
+    expect(aim(decoy, point)).toBeNull();
+    expect(panels.near(point, 0.04)).toBeNull();
+    expect(decoy.leaf.getObjectByName('service-catch-' + decoy.room)).toBeUndefined();
   }
-  expect(aim(p)?.action).toBe('unlatch');
-  expect(panels.near(p.catch.getWorldPosition(new THREE.Vector3()), 0.04)?.action).toBe('unlatch');
+  world.current = p.room;
+  const center = circle.getWorldPosition(new THREE.Vector3());
+  const outside = circle.localToWorld(new THREE.Vector3(0.12, 0.02, 0.12));
+  expect(aim(p, outside)).toBeNull();
+  expect(panels.near(outside, 0.04)).toBeNull();
+  expect(panels.near(center, 0.04)?.action).toBe('knock');
+  expect(aim(p, latch.getWorldPosition(new THREE.Vector3()))).toBeNull();
+  const hinge = new THREE.Vector3(0, 0.053, 0);
+  const hingeBefore = latch.localToWorld(hinge.clone());
+  const lipBefore = latch.localToWorld(new THREE.Vector3(0, -0.05, 0));
+  const flow = new RunFlow({
+    workshop: createWorkshop(),
+    starterDeck: ['strike'],
+    rewardPool: ['strike'],
+  });
+  flow.newRun('MAPTEST2');
+  flow.travelToFloor(2, p.room);
+  for (let count = 1; count <= 3; count++) {
+    expect(aim(p, center)?.action).toBe('knock');
+    const struck = panels.knock();
+    expect(struck?.count).toBe(count);
+    if (struck?.count === 3) flow.discoverHiddenPanel();
+    panels.sync(flow.hiddenPanel, true);
+    expect(flow.hiddenPanel.discovered).toBe(count === 3);
+    const handle = aim(p, latch.getWorldPosition(new THREE.Vector3()));
+    expect(handle?.action ?? null).toBe(count === 3 ? 'unlatch' : null);
+  }
+  expect(panels.knock()).toBeNull();
+  expect(aim(p, center)).toBeNull();
+  expect(latch.localToWorld(hinge.clone()).distanceTo(hingeBefore)).toBeLessThan(0.001);
+  expect(latch.localToWorld(new THREE.Vector3(0, -0.05, 0)).distanceTo(lipBefore)).toBeGreaterThan(
+    0.085,
+  );
+  expect(panels.near(latch.getWorldPosition(new THREE.Vector3()), 0.04)?.action).toBe('unlatch');
   panels.sync({ discovered: true, opened: true }, true);
   expect(p.leaf.rotation.y).toBeGreaterThan(Math.PI / 2);
-  expect(panels.near(p.catch.getWorldPosition(new THREE.Vector3()), 0.2)).toBeNull();
+  expect(panels.near(latch.getWorldPosition(new THREE.Vector3()), 0.2)).toBeNull();
   panels.dispose();
   world.dispose();
 });

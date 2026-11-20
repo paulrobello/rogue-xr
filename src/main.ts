@@ -127,7 +127,7 @@ import { dressPumpMaterials } from './world/pump-materials.ts';
 import { mountRoomAssetProof } from './world/room-asset-proof.ts';
 import { lightRoomStyle } from './world/room-style-lighting.ts';
 import { type RoomStyleKit, roomStyleFor, roomStyleKitFromScene } from './world/room-styles.ts';
-import type { PanelHit } from './world/service-panels.ts';
+import { type PanelHit, SERVICE_KNOCKS } from './world/service-panels.ts';
 import { StairFade, StairTransit } from './world/stair-transit.ts';
 import { loadBookBindings } from './world/study-books.ts';
 import {
@@ -1786,28 +1786,24 @@ function operateCalibration(hit: CalibrationAction): boolean {
 }
 function operatePanel(hit: PanelHit, side?: XRHandedness): boolean {
   if (!floor?.panels || !canOpenLoot()) return false;
-  const at = floor.panels.strike(hit.index);
+  const panels = floor.panels;
+  let strong = hit.action === 'unlatch';
   if (hit.action === 'unlatch') {
+    const at = panels.handlePosition();
     if (!flow.openHiddenPanel()) return false;
     audio?.playSfx('door-open', at);
   } else {
-    audio?.playSfx(hit.hollow ? 'panel-hollow' : 'panel-solid', at);
-    if (!hit.hollow)
-      floor.showBookSecret(
-        { text: 'Solid service panel', caption: 'A dull knock. This cover is fixed.' },
-        camera,
-      );
-    else if (flow.discoverHiddenPanel())
-      floor.showBookSecret(
-        { text: 'Hollow service panel', caption: 'Select the raised brass handle to open it.' },
-        camera,
-      );
+    const knock = panels.knock();
+    if (!knock) return false;
+    strong = knock.count === SERVICE_KNOCKS;
+    audio?.playSfx('panel-hollow', knock.at, strong ? 1 : 0.7);
+    if (strong && flow.discoverHiddenPanel()) audio?.playSfx('gear-clank', knock.at, 0.5);
   }
   if (side) {
     const inputs = Array.from(renderer.xr.getSession()?.inputSources ?? []).filter(
       (s) => s.handedness === side,
     );
-    pulseHaptics(inputs, hit.hollow ? 0.29 : 0.15, hit.hollow ? 110 : 35);
+    pulseHaptics(inputs, strong ? 0.29 : 0.15, strong ? 110 : 35);
   }
   return true;
 }

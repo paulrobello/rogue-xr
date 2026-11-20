@@ -17,7 +17,7 @@ Beyond the keeper’s ledger, two routes give the player a reason to remember so
 - A service chart waits inside the repaired pressure supply room. The gear train’s key is beside its chart. For an orrery, take the spare coupling there and find the winding key in the Upper Works, in a different room from the instrument. Install both parts, then use the chart to complete the instrument. Return to the downstairs cabinet for the raised card. [Calibration diagrams](puzzle-recipe-book.md#the-clockmakers-calibration-order)
 - A three-tooth brass key hangs on a seeded Upper Works wall. Its enamel badge matches the padlock on an optional Floor 1 coffer. Inspecting the lock files its stamp in **Items**. Unlocking spends the key. The released coffer keeps its own loot and opens separately. A held key, a released lock and collected treasure each survive Continue.
 
-A hollow Upper Works service panel is another optional discovery. Listen for its longer ring or watch the catch move, then pull the catch to enter the service recess. A solid cover answers with a short knock and stays shut. A hollow panel releases a handle that you can select to open the passage.
+The Upper Works service door has a brass knock circle. Knock inside the circle three times, then select the raised handle to enter the service recess. Solid service covers are labeled **Fixed cover**.
 
 ## Seed and save contract
 
@@ -49,6 +49,6 @@ An emulated Quest controller also tested weighing and hanging the counterweight,
 
 The separate archive walkthrough starts from an ordinary post-Thornwake save fixture. It reads the journal after inspecting both clues, finds the extra ingredient, operates the cauldron and archive, walks through, collects the treasure and reloads. `N0TE0032` exercises ink, `MAPTEST2` stillwind and `BREW0001` the mirror. [Three archive doorways in the game](verification/archive-doorways.jpg)
 
-The keeper offers recovery on `KEEP0000`, restoration on `KEEP0010`, and the archive delve on `KEEP0005`. The upper workshop alternates between the gear train on `WIND0000` and the orrery on `WIND0001`. The hidden-panel playtest on `MAPTEST2` distinguishes the solid and hollow knocks, pulls the raised catch and crosses the open passage after Continue. [Upper Works playtest views](verification/upper-works-puzzles.jpg)
+The keeper offers recovery on `KEEP0000`, restoration on `KEEP0010`, and the archive delve on `KEEP0005`. The upper workshop alternates between the gear train on `WIND0000` and the orrery on `WIND0001`. The hidden-panel playtest on `MAPTEST2` checks the fixed cover, three knocks in the circle, and the passage after Continue. [Upper Works playtest views](verification/upper-works-puzzles.jpg)
 
 On Quest 3, `SPIRE001` and `CASE0042` placed the brass key in different Upper Works rooms and the marked coffer in different lower-floor rooms. Both trials first inspected the locked coffer, collected the key upstairs, continued from a save, returned with the key and unlocked the coffer. It stayed open after another Continue. [Key and coffer in Quest Browser](verification/brass-cache-quest.jpg)
