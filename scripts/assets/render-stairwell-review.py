@@ -30,7 +30,7 @@ for name, height in (("StairUp", 1.62), ("StairDown", -1.62)):
         child.hide_render = True
     bpy.data.objects[name + "_DoorPivot"].rotation_euler.z = -math.radians(55)
     for label, x in (("", 0), ("-oblique", 0.8)):
-        cam.location = (x, -3.35, height + 1.35)
+        cam.location = (x, -2.5, height + 1.35)
         cam.rotation_euler = (Vector((0, -5.0, height + 1.05)) - cam.location).to_track_quat("-Z", "Y").to_euler()
         scene.render.filepath = str(out / (name + label + ".png"))
         bpy.ops.render.render(write_still=True)

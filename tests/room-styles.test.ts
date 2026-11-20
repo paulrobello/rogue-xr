@@ -5,16 +5,20 @@ import * as THREE from 'three';
 import { describe, expect, it, vi } from 'vitest';
 import { GREYBOX_TEMPLATES, parseRoomTemplate } from '../src/content/rooms.ts';
 import { attachPressureWing, generateFloor, generateUpperFloor } from '../src/floor/generate.ts';
+import { placeTableDecor } from '../src/floor/table-decor.ts';
+import { playableFloorPlan } from '../src/world/floor-view.ts';
 import { buildFloorWorld } from '../src/world/floor-world.ts';
 import {
   applyRoomStyle,
   applyUpperShaftFinish,
+  copyHallBenches,
   copyStudyDesk,
   disposeRoomStyle,
   type RoomStyleKit,
   roomStyleFor,
   roomStyleKitFromScene,
 } from '../src/world/room-styles.ts';
+import { nodeGeometryLoader } from './helpers/gltf-node.ts';
 
 const PIECES = [
   'BoilerBay',
@@ -206,6 +210,57 @@ describe('room styles', () => {
     expect(retained.name).toContain('timber-writing-desk');
     expect(retained.geometry.userData.roomStyleOwned).toBe(true);
     expect(new THREE.Box3().setFromObject(retained).max.y).toBeGreaterThan(1.4);
+  });
+
+  it('retains the baked hall benches under both showcase arrangements and their rotated colliders', async () => {
+    const bytes = await readFile('public/assets/rooms/hall/hall.glb');
+    const { scene } = await nodeGeometryLoader().parseAsync(
+      bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
+      '',
+    );
+    const hall = parseRoomTemplate(
+      JSON.parse(await readFile('public/assets/rooms/hall/hall.manifest.json', 'utf8')),
+    );
+    const plan = playableFloorPlan('MAPTEST3', 4, 2);
+    const templates = GREYBOX_TEMPLATES.map((t) => (t.id === 'hall' ? hall : t));
+    const world = buildFloorWorld(plan, templates);
+    const decor = placeTableDecor(
+      plan.seed,
+      plan.rooms.map((r) => r.templateId),
+    );
+    const down = new THREE.Vector3(0, -1, 0);
+    for (const [index, id, kinds] of [
+      [2, 'bench-w', ['books', 'vase']],
+      [3, 'bench-e', ['books', 'candle']],
+    ] as const) {
+      const group = world.roomGroups[index];
+      const styled = new THREE.Group();
+      copyHallBenches(scene, styled);
+      world.removeRoomFixtureColliders(index, true);
+      world.dressRoom(index, styled);
+      group.updateWorldMatrix(true, true);
+      const items = decor.filter((p) => p.room === index && p.table === id);
+      expect(items.map((p) => p.kind).sort()).toEqual([...kinds]);
+      expect(styled.getObjectByName('hall-benches-hall_brass-aged')).toBeDefined();
+      for (const item of items) {
+        const at = group.localToWorld(new THREE.Vector3(item.x, item.y + 0.02, item.z));
+        const hit = new THREE.Raycaster(at, down, 0, 0.03).intersectObject(styled)[0];
+        expect(hit?.object.name).toBe('hall-benches-hall_walnut');
+        expect(hit?.point.y).toBeCloseTo(item.y, 3);
+        expect(
+          world.colliders[index].some(
+            (b) =>
+              Math.abs(b.max[1] - item.y) < 0.001 &&
+              at.x >= b.min[0] &&
+              at.x <= b.max[0] &&
+              at.z >= b.min[2] &&
+              at.z <= b.max[2],
+          ),
+        ).toBe(true);
+      }
+      disposeRoomStyle(styled);
+    }
+    world.dispose();
   });
 
   it('disposes owned surfaces but not kit geometry or materials', () => {

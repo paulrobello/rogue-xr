@@ -106,7 +106,21 @@ for n in ["StairUp", "StairDown"]:
     leaves = [o for o in pivot.children if o.type == "MESH"]
     obstacles = [o for o in objs if any(s in o.name for s in
                  ("back wall", "recess side", "recess back", "door jamb", "door lintel"))]
-    for angle in range(5, 76, 5):
+    lintel = bounds(bpy.data.objects[n + " door lintel"])
+    jambs = [o for o in objs if o.name.startswith(n + " door jamb")]
+    liners = [o for o in objs if o.name.startswith(n + " recess side")]
+    cap = bounds(bpy.data.objects[n + " recess cap"])
+    assert len(jambs) == len(liners) == 2
+    leaf_bounds = bounds(bpy.data.objects[n + " access door"])
+    head_reveal = lintel[2][0] - leaf_bounds[2][1]
+    assert 0.0049 <= head_reveal <= 0.0051, (n, "head reveal", head_reveal)
+    for jamb in jambs:
+        jb = bounds(jamb)
+        assert jb[2][1] <= lintel[2][0] + 1e-6, (n, "jamb lintel overlap", jb, lintel)
+        for liner in liners:
+            assert bounds(liner)[1][1] < jb[1][1] - 0.04, (n, "liner frame clearance")
+    assert cap[1][1] < lintel[1][1] - 0.04, (n, "liner lintel clearance")
+    for angle in range(0, 76, 5):
         pivot.rotation_euler.z = -math.radians(angle)
         bpy.context.view_layer.update()
         depsgraph = bpy.context.evaluated_depsgraph_get()
@@ -120,6 +134,8 @@ for n in ["StairUp", "StairDown"]:
     r[n] = {
         "riser_vertical_face_count": 9,
         "door_clear_travel_degrees": 75,
+        "door_closed_contact_checked": True,
+        "frame_liner_front_clearance_m_min": 0.065,
         "posts": len(posts),
         "post_axis_penetration_m_min": min(penetrations),
         "landing_anchors": len(feet) + len(anchors),

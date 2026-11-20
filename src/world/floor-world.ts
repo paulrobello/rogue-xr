@@ -66,7 +66,7 @@ export interface FloorWorld {
   /** Adds a world-space collider for a removable room furnishing. */
   addFixtureCollider(room: number, box: Box): () => void;
   /** Removes authored furniture colliders for a room whose baked furniture is being replaced. */
-  removeRoomFixtureColliders(room: number, keepDesk: boolean): void;
+  removeRoomFixtureColliders(room: number, keepFurniture: boolean): void;
   /** World-space walkable rects of the current room and its neighbours (teleport landings). */
   nearbyWalkable(): readonly Rect[];
   /** Re-evaluates the current room from a world-space floor point; returns true when it changed. */
@@ -473,10 +473,14 @@ export function buildFloorWorld(
         if (index >= 0) boxes.splice(index, 1);
       };
     },
-    removeRoomFixtureColliders(room, keepDesk) {
-      const r = rooms[room],
-        [ox, oz] = plan.rooms[room].position;
-      const desk = r.template.dressingSockets.find((s) => s.id === 'desk');
+    removeRoomFixtureColliders(room, keepFurniture) {
+      const r = rooms[room];
+      const [ox, oz] = plan.rooms[room].position;
+      const retained = keepFurniture
+        ? r.template.dressingSockets.filter((s) =>
+            r.template.id === 'hall' ? s.id === 'bench-w' || s.id === 'bench-e' : s.id === 'desk',
+          )
+        : [];
       const boxes = colliders[room];
       for (const c of r.template.colliders) {
         const fp = r.template.footprint;
@@ -488,12 +492,10 @@ export function buildFloorWorld(
         )
           continue;
         if (
-          keepDesk &&
-          desk &&
-          desk.position[0] >= c.min[0] &&
-          desk.position[0] <= c.max[0] &&
-          desk.position[2] >= c.min[2] &&
-          desk.position[2] <= c.max[2]
+          retained.some(
+            ({ position: [x, , z] }) =>
+              x >= c.min[0] && x <= c.max[0] && z >= c.min[2] && z <= c.max[2],
+          )
         )
           continue;
         const i = boxes.findIndex(

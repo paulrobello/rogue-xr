@@ -54,6 +54,7 @@ import { PressureWorks } from './pressure-works.ts';
 import {
   applyRoomStyle,
   applyUpperShaftFinish,
+  copyHallBenches,
   copyStudyDesk,
   disposeRoomStyle,
   type RoomStyleKit,
@@ -602,8 +603,9 @@ export function mountFloorView(
           const edge = templateById(templateId).footprint.max[0];
           applyRoomStyle(styled, style, roomStyleKit, doors, edge);
           const keepDesk = style === 'timber' || (templateId === 'study' && room.loot.length > 0);
-          if (keepDesk) copyStudyDesk(model, styled);
-          world.removeRoomFixtureColliders(index, keepDesk);
+          if (templateId === 'hall') copyHallBenches(model, styled);
+          else if (keepDesk) copyStudyDesk(model, styled);
+          world.removeRoomFixtureColliders(index, templateId === 'hall' || keepDesk);
           styledRooms.push(styled);
           world.dressRoom(index, styled);
           dressed++;

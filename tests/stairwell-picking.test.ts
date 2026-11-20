@@ -72,3 +72,31 @@ it.each([1, 2] as const)(
     stair.dispose();
   },
 );
+
+it.each(['StairUp', 'StairDown'])('keeps the black liner behind the wooden faces of %s', (name) => {
+  const flight = scene.getObjectByName(name);
+  if (!flight) throw Error('missing staircase');
+  flight.updateWorldMatrix(true, true);
+  const floor = name === 'StairUp' ? 1.62 : -1.62;
+  for (const [x, h] of [
+    [-0.615, 1],
+    [0.615, 1],
+    [0, 2.158],
+  ]) {
+    const target = new THREE.Vector3(x, floor + h, 4.75);
+    for (const dx of [-0.4, 0, 0.4]) {
+      const eye = target.clone().add(new THREE.Vector3(dx, 0, -1));
+      const direction = target.clone().sub(eye).normalize();
+      const hits = new THREE.Raycaster(eye, direction).intersectObject(flight);
+      const face = hits[0];
+      expect(face?.point.z).toBeCloseTo(4.75, 2);
+      // Coplanar wood and black can return in either order from the renderer.
+      const atFace = hits.filter((hit) => hit.distance - face.distance < 0.004);
+      for (const hit of atFace) {
+        expect((hit.object as THREE.Mesh<THREE.BufferGeometry, THREE.Material>).material.name).toBe(
+          'Stairwell walnut',
+        );
+      }
+    }
+  }
+});

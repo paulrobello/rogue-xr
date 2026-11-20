@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { Facing } from '../content/rooms.ts';
 import { Stream } from '../core/rng.ts';
 import type { FloorPlan } from '../floor/generate.ts';
+import { DECOR_TABLES } from '../floor/table-decor.ts';
 import { releaseDiningLighting } from './room-style-lighting.ts';
 import { createRoomSurfaces } from './room-style-surfaces.ts';
 
@@ -114,39 +115,57 @@ export function applyRoomStyle(
 /** The original study packs its desk, letter rack and shelves into material batches. Retain the
  * desk triangles and their original UV/lightmap coordinates for the coffer and service slip. */
 export function copyStudyDesk(model: THREE.Object3D, into: THREE.Group): void {
+  copyFurnitureBounds(
+    model,
+    into,
+    [new THREE.Box3(new THREE.Vector3(1.64, -0.001, 1.64), new THREE.Vector3(3.16, 1.57, 3.16))],
+    'timber-writing-desk',
+    ['study_walnut', 'study_brass-aged', 'study_brass-polished', 'study_wax', 'study_flame'],
+  );
+}
+
+export function copyHallBenches(model: THREE.Object3D, into: THREE.Group): void {
+  const bounds = DECOR_TABLES.hall.map(({ x, z, halfX, halfZ, top }) =>
+    new THREE.Box3(
+      new THREE.Vector3(x - halfX, 0, z - halfZ),
+      new THREE.Vector3(x + halfX, top, z + halfZ),
+    ).expandByScalar(0.001),
+  );
+  copyFurnitureBounds(model, into, bounds, 'hall-benches', ['hall_walnut', 'hall_brass-aged']);
+}
+
+function copyFurnitureBounds(
+  model: THREE.Object3D,
+  into: THREE.Group,
+  bounds: readonly THREE.Box3[],
+  prefix: string,
+  allowedMaterials: readonly string[],
+): void {
   model.updateWorldMatrix(true, true);
   const inverse = model.matrixWorld.clone().invert();
-  const bounds = new THREE.Box3(
-    new THREE.Vector3(1.64, -0.001, 1.64),
-    new THREE.Vector3(3.16, 1.57, 3.16),
-  );
   const point = new THREE.Vector3();
   model.traverse((mesh) => {
     if (
       !(mesh instanceof THREE.Mesh) ||
       Array.isArray(mesh.material) ||
-      ![
-        'study_walnut',
-        'study_brass-aged',
-        'study_brass-polished',
-        'study_wax',
-        'study_flame',
-      ].includes(mesh.material.name)
+      !allowedMaterials.includes(mesh.material.name)
     )
       return;
     const source = mesh.geometry;
     const pos = source.getAttribute('position');
     const index = source.index;
     const toRoom = new THREE.Matrix4().multiplyMatrices(inverse, mesh.matrixWorld);
-    const inside = Array.from({ length: pos.count }, (_, i) =>
-      bounds.containsPoint(point.fromBufferAttribute(pos, i).applyMatrix4(toRoom)),
-    );
+    const region = Array.from({ length: pos.count }, (_, i) => {
+      point.fromBufferAttribute(pos, i).applyMatrix4(toRoom);
+      return bounds.findIndex((box) => box.containsPoint(point));
+    });
     const kept: number[] = [];
     for (let t = 0; t < (index?.count ?? pos.count); t += 3) {
       const a = index ? index.getX(t) : t,
         b = index ? index.getX(t + 1) : t + 1,
         c = index ? index.getX(t + 2) : t + 2;
-      if (inside[a] && inside[b] && inside[c]) kept.push(a, b, c);
+      if (region[a] !== -1 && region[a] === region[b] && region[b] === region[c])
+        kept.push(a, b, c);
     }
     if (!kept.length) return;
     const geometry = new THREE.BufferGeometry();
@@ -165,7 +184,7 @@ export function copyStudyDesk(model: THREE.Object3D, into: THREE.Group): void {
     geometry.applyMatrix4(toRoom);
     geometry.userData.roomStyleOwned = true;
     const retained = new THREE.Mesh(geometry, mesh.material);
-    retained.name = `timber-writing-desk-${mesh.material.name}`;
+    retained.name = `${prefix}-${mesh.material.name}`;
     into.add(retained);
   });
 }

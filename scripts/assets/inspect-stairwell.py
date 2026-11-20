@@ -101,6 +101,82 @@ for name in ("StairUp", "StairDown"):
             assert depths, (name, i, y)
             assert all(b - a > 0.0005 for a, b in zip(depths, depths[1:])), (name, i, y, depths)
             vertical_checks += 1
+    # Inspect actual exported triangles, including the liner behind the frame.
+    # A ray can hit the frame bevel before its flat front, so compare ray depths.
+    fixed_meshes = [o for o in root.children if o.type == "MESH"]
+    frame_samples = [(-0.615, 0.7), (0.615, 0.7), (-0.615, 1.7), (0.615, 1.7), (0.2, 2.157)]
+    frame_checks = 0
+    for x, y in frame_samples:
+        target = Vector((x, -4.75, landing_height + y))
+        for dx, dz in ((0, 0), (0.12, 0.04), (-0.12, -0.04)):
+            direction = Vector((dx, -1, dz)).normalized()
+            origin = target - direction * 0.5
+            depths = {"Stairwell walnut": [], "Stairwell dark recess": []}
+            for mesh in fixed_meshes:
+                mesh.data.calc_loop_triangles()
+                for tri in mesh.data.loop_triangles:
+                    mat = mesh.data.materials[mesh.data.polygons[tri.polygon_index].material_index]
+                    if mat.name not in depths:
+                        continue
+                    points = [mesh.matrix_world @ mesh.data.vertices[j].co for j in tri.vertices]
+                    hit = intersect_ray_tri(*points, direction, origin, True)
+                    if hit is not None:
+                        depth = (hit - origin).dot(direction)
+                        if depth >= 0:
+                            depths[mat.name].append(depth)
+            wood, black = depths["Stairwell walnut"], depths["Stairwell dark recess"]
+            assert wood, (name, x, y, dx, dz, "missing frame")
+            if dx == 0:
+                assert black, (name, x, y, "missing liner")
+            if black:
+                assert min(black) - min(wood) > 0.04, (name, x, y, dx, dz, depths)
+            frame_checks += 1
+    report[name]["frame_liner_ray_samples"] = frame_checks
+    # With the leaf open, the lower aperture and sill must remain opaque black.
+    def first_material(origin, direction):
+        hits = []
+        for mesh in fixed_meshes:
+            for tri in mesh.data.loop_triangles:
+                points = [mesh.matrix_world @ mesh.data.vertices[j].co for j in tri.vertices]
+                hit = intersect_ray_tri(*points, direction, origin, True)
+                if hit is not None:
+                    depth = (hit - origin).dot(direction)
+                    if depth >= 0:
+                        mat = mesh.data.materials[mesh.data.polygons[tri.polygon_index].material_index]
+                        hits.append((depth, mat.name))
+        assert hits, (name, origin, direction)
+        return min(hits)[1]
+    for x in (-0.3, 0.3):
+        for height in (0.01, 0.08, 0.25):
+            assert first_material(Vector((x, -4.74, landing_height + height)), Vector((0, -1, 0))) == "Stairwell dark recess"
+        for z in (4.80, 4.90):
+            assert first_material(Vector((x, -z, landing_height + 0.10)), Vector((0, 0, -1))) == "Stairwell dark recess"
+    report[name]["open_aperture_and_sill_samples"] = 10
+    coverage = 0
+    for x in (-0.55, 0, 0.55):
+        for height in (0.01, 0.10, 1.0, 2.10, 2.115, 2.12, 2.13, 2.14, 2.15):
+            origin = Vector((x, -4.74, landing_height + height))
+            expected_material = "Stairwell walnut" if height >= 2.125 else "Stairwell dark recess"
+            assert first_material(origin, Vector((0, -1, 0))) == expected_material, (name, x, height)
+            if height >= 2.125:
+                behind_frame = Vector((x, -4.86, landing_height + height))
+                assert first_material(behind_frame, Vector((0, -1, 0))) == "Stairwell dark recess", (name, x, height)
+            coverage += 1
+        for dx, dz in ((0, 0.25), (0.12 if x >= 0 else -0.12, 0.08)):
+            origin = Vector((x, -4.74, landing_height + 2.115))
+            direction = Vector((dx, -1, dz)).normalized()
+            assert first_material(origin, direction) in {"Stairwell dark recess", "Stairwell walnut"}, (name, x, dx, dz)
+            behind_frame = Vector((x, -4.86, landing_height + 2.115))
+            assert first_material(behind_frame, direction) == "Stairwell dark recess", (name, x, dx, dz)
+            coverage += 1
+    report[name]["aperture_edge_coverage_samples"] = coverage
+    wall_samples = 0
+    for x in (-0.64, -0.63, 0.63, 0.64):
+        for height in (-0.21, 2.24, 2.30):
+            origin = Vector((x, -4.74, landing_height + height))
+            assert first_material(origin, Vector((0, -1, 0))) == "Stairwell stone", (name, x, height)
+            wall_samples += 1
+    report[name]["wall_infill_samples"] = wall_samples
     report[name]["vertical_face_samples"] = vertical_checks
     report[name]["riser_overlap_surface_samples"] = 9
     report[name]["landing_surface_samples"] = 6

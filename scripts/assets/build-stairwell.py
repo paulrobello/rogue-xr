@@ -182,17 +182,20 @@ def build(kind, direction):
             )
     # The doorway is a true aperture, with a dark recess deep enough for the leaf.
     landing = direction * 1.62
-    for x in (-1.025, 1.025):
-        box(kind + " back wall side", (x, 1.12, 4.92), (0.80, 6, 0.16), stone, rootob)
+    opening_half_width = 0.645
+    wall_outer_edge = 1.425
+    for x in (-1, 1):
+        width = wall_outer_edge - opening_half_width
+        box(kind + " back wall side", (x * (opening_half_width + width / 2), 1.12, 4.92), (width, 6, 0.16), stone, rootob)
     bottom, top = -1.88, 4.12
-    for lo, hi in ((bottom, landing - 0.02), (landing + 2.14, top)):
+    for lo, hi in ((bottom, landing - 0.02), (landing + 2.17, top)):
         if hi > lo:
-            box(kind + " back wall infill", (0, (lo + hi) / 2, 4.92), (1.25, hi - lo, 0.16), stone, rootob, 0)
-    box(kind + " recess back", (0, landing + 1.06, 6.12), (1.25, 2.12, 0.04), recess, rootob, 0)
+            box(kind + " back wall infill", (0, (lo + hi) / 2, 4.92), (2 * opening_half_width, hi - lo, 0.16), stone, rootob, 0)
+    box(kind + " recess back", (0, landing + 1.07, 6.12), (1.25, 2.14, 0.04), recess, rootob, 0)
     for x in (-0.615, 0.615):
-        box(kind + " recess side", (x, landing + 1.06, 5.44), (0.04, 2.14, 1.38), recess, rootob, 0)
+        box(kind + " recess side", (x, landing + 1.06, 5.4725), (0.04, 2.14, 1.315), recess, rootob, 0)
     box(kind + " recess floor", (0, landing - 0.019, 5.44), (1.25, 0.04, 1.38), recess, rootob, 0)
-    box(kind + " recess cap", (0, landing + 2.145, 5.44), (1.25, 0.04, 1.38), recess, rootob, 0)
+    box(kind + " recess cap", (0, landing + 2.145, 5.4725), (1.25, 0.05, 1.315), recess, rootob, 0)
     box(kind + " ceiling", (0, 4.04, 2.55), (2.86, 0.12, 4.85), walnut, rootob)
     for z in (1.2, 2.2, 3.2, 4.2):
         box(kind + " ceiling beam", (0, 3.94, z), (2.72, 0.15, 0.14), walnut, rootob)
@@ -326,7 +329,7 @@ def build(kind, direction):
     box(
         kind + " access door",
         (0, landing + 1.06, 4.87),
-        (1.18, 2.12, 0.09),
+        (1.176, 2.12, 0.09),
         walnut,
         rootob,
         0.012,
@@ -334,15 +337,15 @@ def build(kind, direction):
     for x in (-0.64, 0.64):
         box(
             kind + " door jamb",
-            (x, landing + 1.12, 4.80),
-            (0.10, 2.24, 0.10),
+            (x, landing + 1.0625, 4.80),
+            (0.10, 2.125, 0.10),
             walnut,
             rootob,
             0.01,
         )
     box(
         kind + " door lintel",
-        (0, landing + 2.20, 4.80),
+        (0, landing + 2.175, 4.80),
         (1.38, 0.10, 0.10),
         walnut,
         rootob,
