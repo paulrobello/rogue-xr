@@ -30,6 +30,7 @@ import {
   vignetteStep,
   yawFromMatrix,
 } from '../xr/locomotion.ts';
+import { BellChimes } from './bell-chimes.ts';
 import { BookSecret } from './book-secret.ts';
 import { animateFires, CANDLE_NODE, FIRE_NODE } from './fireplace.ts';
 import { buildFloorWorld, type FloorWorld } from './floor-world.ts';
@@ -128,6 +129,8 @@ export interface FloorView {
   world: FloorWorld;
   readonly floorNumber: 1 | 2;
   readonly stairs: Stairwell | null;
+  readonly chimes: BellChimes | null;
+  dressChimes(art: THREE.Object3D): void;
   dressStairs(model: THREE.Object3D): void;
   readonly styledRooms: readonly THREE.Group[];
   loot: FloorLoot;
@@ -261,6 +264,7 @@ export function mountFloorView(
   const contentVersion = options.contentVersion ?? ENCOUNTER_CONTENT_VERSION;
   const plan = playableFloorPlan(seed, contentVersion, options.floorNumber);
   let stairs: Stairwell | null = null;
+  let chimes: BellChimes | null = null;
   const floorNumber = options.floorNumber ?? 1;
   const world = buildFloorWorld(plan, options.templates);
   const notes = plan.pressureWing ? new PressureNotes(world) : null;
@@ -491,10 +495,19 @@ export function mountFloorView(
     get stairs() {
       return stairs;
     },
+    dressChimes(art) {
+      if (!chimes && stairs)
+        chimes = BellChimes.mount(world, floorNumber, art, furnishings?.placements);
+    },
+    get chimes() {
+      return chimes;
+    },
     dressStairs(model) {
       if (stairs) return;
       const landing = world.openStairEntry(floorNumber);
-      if (landing) stairs = new Stairwell(landing, floorNumber === 1 ? 2 : 1, world, model);
+      if (landing) {
+        stairs = new Stairwell(landing, floorNumber === 1 ? 2 : 1, world, model);
+      }
     },
     styledRooms,
     loot,
@@ -638,6 +651,7 @@ export function mountFloorView(
       return spinners.length;
     },
     dispose() {
+      chimes?.dispose();
       stairs?.dispose();
       for (const room of styledRooms) disposeRoomStyle(room);
       for (const material of shaftFinishes) material.dispose();
@@ -726,6 +740,7 @@ export function mountFloorView(
     update(head, dt, cameras = []) {
       notes?.update(head);
       pressure?.update(dt);
+      chimes?.update(dt);
       world.updateAnimations(dt);
       turnVignette = vignetteStep(turnVignette, 0, dt, DEFAULT_VIGNETTE);
       spin(dt, cameras);

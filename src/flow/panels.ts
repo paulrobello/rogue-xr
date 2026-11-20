@@ -27,6 +27,7 @@ import { HOLO_CARD_ASPECT } from '../hand/fan-layout.ts';
 import { PALETTE } from '../palette.ts';
 import { FOVEATION_CHOICES, type FoveationChoice, type Settings } from '../persist/db.ts';
 import type { RunSnapshot } from '../persist/saves.ts';
+import { bellMelody } from '../rules/bell-chimes.ts';
 import {
   DIFFICULTIES,
   DIFFICULTY_LABEL,
@@ -1508,6 +1509,12 @@ export class FlowUi {
       };
     });
     const run = this.deps.flow.run;
+    if (run?.bellChimes?.clueHeard) {
+      const phrase = bellMelody(run.seed)
+        .map((note) => note + 1)
+        .join(' · ');
+      rows.unshift({ id: 'bell-score', label: `Bell score · ${phrase}` });
+    }
     const keys = run?.bookSecretKeyRooms ?? [];
     const unlocked = new Set(run?.bookSecretCabinetRooms ?? []);
     const carriedKeys = keys.filter((room) => !unlocked.has(room)).length;

@@ -289,6 +289,16 @@ export interface NormalizedPressureState extends PressureState {
   readonly rewardClaimed: boolean;
 }
 
+export type BellNote = 0 | 1 | 2;
+
+/** Shared by the music box downstairs and the reward lock upstairs. */
+export interface StoredBellChimesState {
+  readonly clueHeard: boolean;
+  readonly progress: readonly BellNote[];
+  readonly solved: boolean;
+  readonly rewardClaimed: boolean;
+}
+
 /** Stored pressure state. The two fields added after v3 remain optional for old saves. */
 export interface StoredPressureState extends PressureState {
   readonly notes?: readonly PressureNoteId[];

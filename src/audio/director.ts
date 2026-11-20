@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { EncounterPhase } from '../combat/encounter.ts';
 import type { GamePhase } from '../core/state.ts';
+import type { BellNote } from '../rules/bell-chimes.ts';
 import type { CombatEvent } from '../rules/types.ts';
 import {
   AUDIO_DIR,
@@ -159,6 +160,12 @@ const UNLOCK_EVENTS = ['pointerdown', 'pointerup', 'keydown', 'touchend', 'click
 /** XRSession controller events: window pointer and key events do not fire inside immersive mode. */
 const XR_INPUT_EVENTS = ['selectstart', 'select', 'squeezestart', 'squeeze'] as const;
 const UNLOCK_LOG_SIZE = 16;
+
+const CHIME_SFX: Readonly<Record<BellNote, SfxId>> = {
+  0: 'clockwork-chime-low',
+  1: 'clockwork-chime-mid',
+  2: 'clockwork-chime-high',
+};
 
 function errorName(error: unknown): string {
   if (typeof error === 'object' && error !== null && 'name' in error) return String(error.name);
@@ -384,6 +391,11 @@ export class AudioDirector {
     voice.setVolume(def.gain * this.sfxVolume * volume);
     voice.play();
     return true;
+  }
+
+  /** Plays one of the three positional clockwork bell notes at its recorded pitch. */
+  playChime(note: BellNote, at: Vec3Like, volume = 1): boolean {
+    return this.playSfx(CHIME_SFX[note], at, volume);
   }
 
   /** Plays the SFX for a rules event, from `at` when it has a location. Returns the cue played, or null. */

@@ -7,6 +7,13 @@ import { LEGACY_REWARD_POOL, PERMANENT_CARD_IDS } from '../content/rewards.ts';
 import type { FloorSnapshot, RunSnapshot } from '../persist/saves.ts';
 import { snapshotRun } from '../persist/saves.ts';
 import {
+  type BellFeedback,
+  type BellNote,
+  claimChimeReward,
+  listenToChimes,
+  strikeChime,
+} from '../rules/bell-chimes.ts';
+import {
   DEFAULT_DIFFICULTY,
   type Difficulty,
   difficultyMaxHp,
@@ -138,6 +145,11 @@ export interface PressureTurnResultView {
   readonly reward: 0 | 20;
 }
 
+export interface BellChimeEvent {
+  readonly type: 'bell-chimes';
+  readonly feedback: BellFeedback;
+}
+
 /**
  * `'opened'`: a coffer was opened (`openLoot`). `'claimed'`: its pending card went into the deck
  * (`claimLoot`); `loot` is that card. Both are `'loot'` events, so the run is saved after either.
@@ -157,7 +169,8 @@ export type FlowEvent =
       readonly cogs: number;
       readonly inscription: string;
     }
-  | PressureTurnResultView;
+  | PressureTurnResultView
+  | BellChimeEvent;
 
 export interface FlowOptions {
   workshop: WorkshopState;
@@ -228,6 +241,37 @@ export class RunFlow {
   }
   get pressure(): ReturnType<typeof readPressure> {
     return readPressure(this.runValue ?? { pressure: undefined });
+  }
+
+  listenToChimes(): boolean {
+    const run = this.runValue;
+    if (this.phaseValue !== 'explore' || !run || this.floorNumberValue !== 1) return false;
+    const next = listenToChimes(run);
+    if (next !== run) {
+      this.runValue = next;
+      this.emit({ type: 'bell-chimes', feedback: 'clue' });
+    }
+    return true;
+  }
+
+  strikeChime(note: BellNote): BellFeedback | null {
+    const run = this.runValue;
+    if (this.phaseValue !== 'explore' || !run || this.floorNumberValue !== 2) return null;
+    const result = strikeChime(run, note);
+    if (!result) return null;
+    this.runValue = result.run;
+    if (result.run !== run) this.emit({ type: 'bell-chimes', feedback: result.feedback });
+    return result.feedback;
+  }
+
+  claimChimeReward(): boolean {
+    if (this.phaseValue !== 'explore' || !this.runValue || this.floorNumberValue !== 2)
+      return false;
+    const next = claimChimeReward(this.runValue);
+    if (!next) return false;
+    this.runValue = next;
+    this.emit({ type: 'bell-chimes', feedback: 'claimed' });
+    return true;
   }
 
   /** Records a pressure-room note once while exploring. */

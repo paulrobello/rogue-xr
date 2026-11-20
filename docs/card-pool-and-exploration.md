@@ -1,6 +1,6 @@
 # Card pool and exploration plan
 
-Status: draft for Paul's review, 2026-11-17. The Foundry combat batch, the pressure-valve puzzle and the first paired staircases are playable. Other entries below are design proposals. Numbers are first-pass values, tuned in playtests. Paul asked for this in chat on 2026-11-17: plan the full card pool, including the lock pick and the other non-combat cards the roadmap needs, and make the game interesting between combat with puzzles, backtracking, optional paths and tasks.
+Status: draft for Paul's review, 2026-11-17. The Foundry combat batch, Pressure Works, the cross-floor bell puzzle and the paired staircases are playable. Other entries below are design proposals. Numbers are first-pass values, tuned in playtests. Paul asked for this in chat on 2026-11-17: plan the full card pool, including the lock pick and the other non-combat cards the roadmap needs, and make the game interesting between combat with puzzles, backtracking, optional paths and tasks.
 
 The slice reference points every new card is measured against: 3 steam per turn, a hand of 5, Piston Strike (1 steam, 6 damage) and Brass Guard (1 steam, 5 block).
 
@@ -149,7 +149,7 @@ At most 2 puzzles per floor, each about 30 to 90 seconds to solve. Each puzzle h
 | Pressure valves | Turn 3 valves until the gauge reads the target | A gauge plate gives the reading |
 | Orrery alignment | Turn rings until the planets match a star chart | The chart lies on a study desk |
 | Sigil door | Trace an unfamiliar glyph that is not in your deck | A torn page shows the glyph |
-| Bell chimes | Strike bells in order | A music box plays the order (each tone also has a colour, for players who cannot hear it) |
+| Bell chimes (playable) | In the Upper Works, ring the three numbered bells in the order played downstairs | The Floor 1 music box plays four notes and lights the matching numbers and colors. Items keeps the score. |
 
 **Playable Pressure Works wing.** The Pipe Gallery sends you looking for three circuit readings. A runner’s dispatch points toward a real find. Pick up each service slip to read it; **Items** in the pause menu keeps it for the run. Slips can lie on a desk, bench or floor, appear inside an opened coffer, or drop after an encounter. Uncollected slips remain available on return.
 
@@ -198,7 +198,7 @@ Keep the deck, HP and cog purse with the run. Keep each floor’s layout, opened
 | W6 | Commission board and 3 task types | W1 |
 | W7 | Wave B combat cards with M3, M8, M9, M10, the crystal d12 and the eye glyph | W3 |
 | W8 | Remaining field cards (Scrying Lens, Recall Spiral, Oil Can, Tuning Fork, Forge Ember, Polishing Kit, Smoke Flask, Spare Valve) | W1, W4, W5 |
-| W9 | Remaining puzzle types (gear train, orrery, bell chimes) and the wandering automaton | W4 |
+| W9 | Remaining puzzle types (gear train and orrery) and the wandering automaton | W4 |
 | W10 | Wave C combat cards, Junk cards, and the act 2 enemies that add Junk | W7, PRD Q1 (acts) |
 | W11 | Paired up/down stairs and per-floor saves are playable. Both floors keep their own opened chests, pressure works and cleared rooms. | Two seeded floors |
 

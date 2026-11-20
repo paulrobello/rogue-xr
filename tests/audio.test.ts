@@ -495,6 +495,25 @@ describe('AudioDirector', () => {
     expect(h.voices.filter((v) => v.plays > 0)).toHaveLength(1);
   });
 
+  it('plays the three clockwork chime notes at the source with distinct sample buffers', async () => {
+    const h = harness([], 1);
+    await h.director.load();
+    const at = { x: 2, y: 3, z: -4 };
+    expect(h.director.playChime(0, at)).toBe(true);
+    const voice = h.voices.find((v) => v.plays > 0);
+    expect(voice?.position.set).toHaveBeenCalledWith(2, 3, -4);
+    const lowBuffer = voice?.buffer;
+    expect(lowBuffer).not.toBeNull();
+    voice?.stop();
+    expect(h.director.playChime(2, at)).toBe(true);
+    const highBuffer = voice?.buffer;
+    expect(highBuffer).not.toBeNull();
+    expect(highBuffer).not.toBe(lowBuffer);
+    expect(h.director.playChime(1, at)).toBe(true);
+    expect(h.voices.reduce((total, v) => total + v.plays, 0)).toBe(3);
+    expect(h.flat.filter((v) => v.plays > 0)).toHaveLength(0);
+  });
+
   it('drops a retrigger inside the minimum gap', async () => {
     const h = harness();
     await h.director.load();

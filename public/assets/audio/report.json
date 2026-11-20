@@ -1142,6 +1142,186 @@
         "channels": 1,
         "duration_s": 0.837
       }
+    },
+    "clockwork-chime-low": {
+      "intermediate_wav": "assets-source/audio/derived/clockwork-chime-low.wav",
+      "intermediate_sha256": "43d464f216e60ead180214875cf3af80a12d68dccefc38d54b70a6a07ee56000",
+      "pre_gain": {
+        "integrated_lufs": -26.7,
+        "true_peak_dbtp": -10.9,
+        "momentary_max_lufs": -21.8
+      },
+      "gain_db": 9.55,
+      "encode_attempts": 2,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -17.1,
+        "true_peak_dbtp": -1.1,
+        "momentary_max_lufs": -12.2
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -1.1,
+      "loudness_status": "deviation",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": true,
+      "decoded_frames": 39360,
+      "decoded_duration_s": 0.82,
+      "decoded_pcm_sha256": "ac8f69183a96c45fdd1d092a3c3a7b72387949bf28b0c5515d45271e77ad4f36",
+      "id": "clockwork-chime-low",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/clockwork-chime-low.wav",
+      "source_sha256": "8625b12e96d827f6a036ef183a76d95b6deb874a4428ca414e78a490940ff9e2",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.82
+      },
+      "trim": {
+        "trimmed_head_ms": 0.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/clockwork-chime-low.ogg",
+      "runtime_sha256": "107a31efc7be7fdeb454bf24071aac0d02751d6d3dfa104c509b23c608f25f77",
+      "runtime_bytes": 6820,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.8265
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "duration_seconds": 0.82,
+          "fundamental_hz": 220.0
+        }
+      }
+    },
+    "clockwork-chime-mid": {
+      "intermediate_wav": "assets-source/audio/derived/clockwork-chime-mid.wav",
+      "intermediate_sha256": "5ad870fa023d608c96da9a1012bf8623d199d779a9ce0d2d2f54e825929e93e0",
+      "pre_gain": {
+        "integrated_lufs": -26.6,
+        "true_peak_dbtp": -10.8,
+        "momentary_max_lufs": -21.7
+      },
+      "gain_db": 9.8,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -16.8,
+        "true_peak_dbtp": -1.0,
+        "momentary_max_lufs": -11.9
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -0.8,
+      "loudness_status": "met",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": true,
+      "decoded_frames": 39360,
+      "decoded_duration_s": 0.82,
+      "decoded_pcm_sha256": "0206401bbd8aec8cf931ee6c9a2a5361f24733fd8e779d880a800873337f5807",
+      "id": "clockwork-chime-mid",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/clockwork-chime-mid.wav",
+      "source_sha256": "1b97e49cf00b4ea4438ce0665374f03c1ef34a92c8af8664cd3a614f1a0eba8e",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.82
+      },
+      "trim": {
+        "trimmed_head_ms": 0.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/clockwork-chime-mid.ogg",
+      "runtime_sha256": "a6dc01c895072cb546628c80c8c31e5cdf49bfa1c722fcb398e00a2a47b3d10f",
+      "runtime_bytes": 7299,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.8265
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "duration_seconds": 0.82,
+          "fundamental_hz": 277.1826
+        }
+      }
+    },
+    "clockwork-chime-high": {
+      "intermediate_wav": "assets-source/audio/derived/clockwork-chime-high.wav",
+      "intermediate_sha256": "cb5eb8de0c1bc6710d941360f7b5eb96cd538d7baeb4a7c3c9f4a69b713d859a",
+      "pre_gain": {
+        "integrated_lufs": -26.6,
+        "true_peak_dbtp": -10.6,
+        "momentary_max_lufs": -21.7
+      },
+      "gain_db": 9.6,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -17.0,
+        "true_peak_dbtp": -1.0,
+        "momentary_max_lufs": -12.1
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -1.0,
+      "loudness_status": "met",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": true,
+      "decoded_frames": 39360,
+      "decoded_duration_s": 0.82,
+      "decoded_pcm_sha256": "fbb63727b7c647db396ba93fd79c6bfc8e0ad2919be41479279f54a965b7916d",
+      "id": "clockwork-chime-high",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/clockwork-chime-high.wav",
+      "source_sha256": "9f14af69bf9e91a78ce006b92eb597d14276548aef75ffede107dfbdc087aab3",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.82
+      },
+      "trim": {
+        "trimmed_head_ms": 0.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/clockwork-chime-high.ogg",
+      "runtime_sha256": "999f70a95644080a4ed3fc37a0bdb303d6be800f360c976132a6d1ac4dc3974b",
+      "runtime_bytes": 7642,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.8265
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "duration_seconds": 0.82,
+          "fundamental_hz": 329.6276
+        }
+      }
     }
   },
   "music": {

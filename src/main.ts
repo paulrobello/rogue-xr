@@ -4,6 +4,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { configureTextBuilder } from 'troika-three-text';
 import { sha256 as architecturalFinishRevision } from '../assets-source/props/architectural-finishes/report.json';
+import { hashes as instrumentHashes } from '../assets-source/props/puzzle-instruments/manifest.json';
 import { sha256 as stairwellRevision } from '../assets-source/props/stairwell/report.json';
 import { audioStateForFlow } from './audio/cues.ts';
 import { AudioDirector } from './audio/index.ts';
@@ -54,6 +55,7 @@ import {
   saveSettings,
 } from './persist/db.ts';
 import { loadRunSnapshot, loadWorkshop, type RunSnapshot } from './persist/saves.ts';
+import { type BellNote, bellMelody } from './rules/bell-chimes.ts';
 import {
   DEFAULT_DIFFICULTY,
   type Difficulty,
@@ -66,6 +68,7 @@ import { sharedKtx2Loader } from './ui/first-render.ts';
 import { loadIconSheet } from './ui/icon-sheet.ts';
 import { failLoading, revealGame, showLoading } from './ui/loading-screen.ts';
 import { mountUpdateNotice } from './update/index.ts';
+import type { BellChimes, BellPick } from './world/bell-chimes.ts';
 import {
   type FloorView,
   mountFloorView,
@@ -572,6 +575,22 @@ function architecturalFinishes(): Promise<RoomStyleKit> {
     });
   return styleKit;
 }
+let instruments: Promise<THREE.Object3D> | undefined;
+function puzzleInstruments() {
+  instruments ??= new GLTFLoader()
+    .loadAsync(
+      `/assets/props/puzzle-instruments/puzzle-instruments.glb?v=${instrumentHashes['puzzle-instruments.glb']}`,
+    )
+    .then(({ scene }) => {
+      reflect(scene, 0.5);
+      return scene;
+    })
+    .catch((error: unknown) => {
+      instruments = undefined;
+      throw error;
+    });
+  return instruments;
+}
 let pressureArt: Promise<PressureArt> | undefined;
 let interiors:
   | Promise<[Awaited<ReturnType<typeof loadInteriorFurnishings>>, THREE.Texture[]]>
@@ -618,7 +637,7 @@ const dressFloor = async (target: FloorView): Promise<void> => {
       ),
     ]);
   }
-  const [rooms, door, coffers, decor, furnishings, styles, stairs] = await Promise.all([
+  const [rooms, door, coffers, decor, furnishings, styles, stairs, chimeArt] = await Promise.all([
     roomAssets,
     sealedDoorMaterial,
     lootMaterials,
@@ -635,6 +654,12 @@ const dressFloor = async (target: FloorView): Promise<void> => {
       ? architecturalFinishes()
       : undefined,
     target.world.stairEntry ? stairModels() : undefined,
+    target.world.stairEntry
+      ? puzzleInstruments().catch((error: unknown) => {
+          console.warn('Chime instruments unavailable', error);
+          return undefined;
+        })
+      : undefined,
     fitTable(target),
     ...dressed,
   ]);
@@ -644,7 +669,9 @@ const dressFloor = async (target: FloorView): Promise<void> => {
     );
     if (missing) throw new Error(`Couldn't load the ${missing.templateId} room`);
     const stair = stairs?.get(target.floorNumber);
-    if (stair) target.dressStairs(stair);
+    if (stair) {
+      target.dressStairs(stair);
+    }
     dressHeroRooms(target, rooms, decor, styles);
     const candles = new Set<THREE.MeshStandardMaterial>();
     for (const group of target.world.roomGroups)
@@ -657,6 +684,10 @@ const dressFloor = async (target: FloorView): Promise<void> => {
     if (decor) candles.add(decor.material);
     target.setCandleMaterials([...candles], hitFx.reducedMotion);
     if (furnishings) target.setFurnishings(furnishings[0], furnishings[1], hitFx.reducedMotion);
+    if (chimeArt) {
+      target.dressChimes(chimeArt);
+      target.chimes?.sync(flow.run?.bellChimes);
+    }
     for (const room of target.styledRooms)
       lightRoomStyle(room, target.furnishings?.placements ?? []);
     if (door) target.world.dressSealedDoors(door.material, door.tileMeters);
@@ -794,6 +825,11 @@ flow.onChange((event) => {
       audio?.playSfx('gear-clank', at);
       audio?.playSfx('cog-pickup', at);
     }
+    return;
+  }
+  if (event.type === 'bell-chimes') {
+    floor?.chimes?.sync(flow.run?.bellChimes);
+    storedSnapshot = flow.snapshot(Date.now(), floor?.world.current ?? flow.room);
     return;
   }
   if (event.type === 'pressure') {
@@ -937,6 +973,7 @@ const savedFloor = (snap: RunSnapshot): FloorView => {
     if (used) target.hearth.markUsed(used.room, used.socketId);
   }
   target.book.restore(snap.run);
+  target.chimes?.sync(snap.run.bellChimes);
   return target;
 };
 
@@ -1203,6 +1240,56 @@ function operateMachine(hit: PressureAction, hand?: XRHandedness): boolean {
   return true;
 }
 
+const BEAT_SECONDS = 0.7;
+let playback: { box: BellChimes; notes: readonly BellNote[]; next: number; delay: number } | null =
+  null;
+const chimePosition = new THREE.Vector3();
+
+function ringNote(box: BellChimes, note: BellNote): void {
+  box.cue(note);
+  audio?.playChime(note, box.object.getWorldPosition(chimePosition));
+}
+
+function operateChimes(pick: BellPick): boolean {
+  const box = floor?.chimes;
+  if (!box || !canOpenLoot()) return false;
+  if (pick.action === 'listen') {
+    if (!flow.run || !flow.listenToChimes()) return false;
+    const notes = bellMelody(flow.run.seed);
+    ringNote(box, notes[0]);
+    playback = { box, notes, next: 1, delay: BEAT_SECONDS };
+    return true;
+  }
+  if (pick.action === 'strike' && pick.note !== undefined) {
+    const result = flow.strikeChime(pick.note);
+    if (!result) return false;
+    ringNote(box, pick.note);
+    if (result === 'mistake') box.miss();
+    if (result === 'solved')
+      audio?.playSfx('gear-clank', box.object.getWorldPosition(chimePosition));
+    return true;
+  }
+  if (pick.action === 'claim' && flow.claimChimeReward()) {
+    audio?.playSfx('cog-pickup', box.object.getWorldPosition(chimePosition));
+    return true;
+  }
+  return false;
+}
+
+function advanceMusicBox(dt: number): void {
+  if (!playback) return;
+  const { box, notes } = playback;
+  if (floor?.chimes !== box || floor.world.current !== box.room || !canOpenLoot()) {
+    playback = null;
+    return;
+  }
+  playback.delay -= dt;
+  if (playback.delay > 0) return;
+  ringNote(box, notes[playback.next++]);
+  if (playback.next === notes.length) playback = null;
+  else playback.delay += BEAT_SECONDS;
+}
+
 function fieldHit(origin: THREE.Vector3, direction: THREE.Vector3) {
   if (!floor) return null;
   const stair = floor.stairs?.pick(floor.world.current, origin, direction);
@@ -1211,7 +1298,9 @@ function fieldHit(origin: THREE.Vector3, direction: THREE.Vector3) {
   const coffer = floor.loot.pick(origin, direction);
   const hearth = floor.hearth.pick(origin, direction);
   const book = floor.book.pick(origin, direction);
+  const chime = floor.chimes?.pick(origin, direction);
   const hits = [
+    ...(chime ? [{ kind: 'chime' as const, hit: chime }] : []),
     ...(stair ? [{ kind: 'stairs' as const, hit: stair }] : []),
     ...(note ? [{ kind: 'note' as const, hit: note }] : []),
     ...(machine ? [{ kind: 'machine' as const, hit: machine }] : []),
@@ -1230,6 +1319,8 @@ const activatePickup = (
   const pick = fieldHit(origin, direction);
   if (!pick) return false;
   switch (pick.kind) {
+    case 'chime':
+      return operateChimes(pick.hit);
     case 'stairs':
       return travelStairs();
     case 'note':
@@ -1434,6 +1525,8 @@ for (const index of [0, 1]) {
       flow.collectPressureNote(note.room, note.id);
       return;
     }
+    const chime = floor.chimes?.near(position, GRAB_REACH);
+    if (chime && operateChimes(chime)) return;
     const book = floor.book.near(position, GRAB_REACH);
     if (book) {
       openBook(book);
@@ -1934,6 +2027,7 @@ renderer.setAnimationLoop((time, frame) => {
   // The in-run menu pauses the floor and the fight: no triggers, no encounter clock, no session.
   if (xr.presenting) renderer.xr.updateCamera(camera);
   else camera.updateWorldMatrix(true, false);
+  advanceMusicBox(deltaSeconds);
   const paused = stairTransit.phase !== 'idle' || (ui?.menuOpen ?? false);
   if (floor) floor.suspendTriggers = flow.phase !== 'explore' || paused;
   floor?.update(

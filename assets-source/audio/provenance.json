@@ -968,6 +968,63 @@
         "fold to mono 0.5*L+0.5*R (positional cue)"
       ],
       "approval": "New edit of the existing card-draw recording. Runtime verification is separate from owner listening approval."
+    },
+    "clockwork-chime-low": {
+      "source_file": "assets-source/audio/sfx/procedural/clockwork-chime-low.wav",
+      "source_sha256": "8625b12e96d827f6a036ef183a76d95b6deb874a4428ca414e78a490940ff9e2",
+      "runtime_file": "public/assets/audio/sfx/clockwork-chime-low.ogg",
+      "runtime_sha256": "107a31efc7be7fdeb454bf24071aac0d02751d6d3dfa104c509b23c608f25f77",
+      "runtime_bytes": 6820,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "duration_seconds": 0.82,
+          "fundamental_hz": 220.0
+        }
+      }
+    },
+    "clockwork-chime-mid": {
+      "source_file": "assets-source/audio/sfx/procedural/clockwork-chime-mid.wav",
+      "source_sha256": "1b97e49cf00b4ea4438ce0665374f03c1ef34a92c8af8664cd3a614f1a0eba8e",
+      "runtime_file": "public/assets/audio/sfx/clockwork-chime-mid.ogg",
+      "runtime_sha256": "a6dc01c895072cb546628c80c8c31e5cdf49bfa1c722fcb398e00a2a47b3d10f",
+      "runtime_bytes": 7299,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "duration_seconds": 0.82,
+          "fundamental_hz": 277.1826
+        }
+      }
+    },
+    "clockwork-chime-high": {
+      "source_file": "assets-source/audio/sfx/procedural/clockwork-chime-high.wav",
+      "source_sha256": "9f14af69bf9e91a78ce006b92eb597d14276548aef75ffede107dfbdc087aab3",
+      "runtime_file": "public/assets/audio/sfx/clockwork-chime-high.ogg",
+      "runtime_sha256": "999f70a95644080a4ed3fc37a0bdb303d6be800f360c976132a6d1ac4dc3974b",
+      "runtime_bytes": 7642,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "duration_seconds": 0.82,
+          "fundamental_hz": 329.6276
+        }
+      }
     }
   },
   "music": {

@@ -20,6 +20,10 @@ Click the right thumbstick to open the radial menu. Tilt it toward **Settings**,
 
 When reporting a layout issue, include `MAPTEST2`, the room number or route, and the fixture you were facing.
 
+## Cross-floor bell puzzle
+
+Wind the Watchmaker’s Music Box in the lower entry hall. Watch the numbered lamps or listen to its four notes. Upstairs in the Upper Works, repeat the phrase on the three bells and take the released cog seal for 12 cogs. Use either controller’s trigger or click on desktop. The **Items** menu keeps the score if you need it again.
+
 ## CI and deploy
 
 `.github/workflows/ci.yml` runs `make checkall-ci` on every push to `main` and every pull request. It checks out this repo and `paulrobello/mux-xr` side by side, because `@par/xr-workspace` is a `file:` dependency on the sibling. The mux-xr commit is pinned in one place, [toolkit-release.json](toolkit-release.json): to take a newer toolkit, change its `sha` to a full commit, run the gate locally against that checkout, and push.

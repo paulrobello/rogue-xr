@@ -1,6 +1,12 @@
 import { ENCOUNTER_CONTENT_VERSION } from '../combat/encounter-choice.ts';
 import { PERMANENT_CARD_IDS } from '../content/rewards.ts';
 import { normalizeSeed, STREAMS, type StreamState } from '../core/rng.ts';
+import {
+  BELL_PHRASE_LENGTH,
+  type BellNote,
+  bellMelody,
+  type StoredBellChimesState,
+} from '../rules/bell-chimes.ts';
 import { isDifficulty } from '../rules/difficulty.ts';
 import {
   isPressureNoteId,
@@ -123,6 +129,34 @@ function strings(v: unknown, path: string): string[] {
   return [...v] as string[];
 }
 
+function bellChimes(v: unknown, path: string, seed: string): StoredBellChimesState {
+  const r = rec(v, path);
+  if (typeof r.clueHeard !== 'boolean') fail(`${path}.clueHeard`, 'expected a boolean');
+  if (typeof r.solved !== 'boolean') fail(`${path}.solved`, 'expected a boolean');
+  if (typeof r.rewardClaimed !== 'boolean') fail(`${path}.rewardClaimed`, 'expected a boolean');
+  if (
+    !Array.isArray(r.progress) ||
+    r.progress.length > BELL_PHRASE_LENGTH ||
+    r.progress.some((n) => ![0, 1, 2].includes(n as number))
+  ) {
+    fail(`${path}.progress`, 'expected up to four bell notes');
+  }
+  if (!r.clueHeard && (r.progress.length > 0 || r.solved || r.rewardClaimed))
+    fail(path, 'cannot progress before hearing the clue');
+  if (!r.solved && r.rewardClaimed) fail(`${path}.rewardClaimed`, 'cannot claim before solving');
+  if (r.solved !== (r.progress.length === BELL_PHRASE_LENGTH))
+    fail(`${path}.progress`, 'a complete phrase must be solved');
+  const melody = bellMelody(seed);
+  if (r.progress.some((note, i) => note !== melody[i]))
+    fail(`${path}.progress`, 'does not match the seeded melody prefix');
+  return {
+    clueHeard: r.clueHeard,
+    progress: [...r.progress] as BellNote[],
+    solved: r.solved,
+    rewardClaimed: r.rewardClaimed,
+  };
+}
+
 function pendingLoot(v: unknown, path: string): PendingLoot[] {
   if (!Array.isArray(v)) fail(path, 'expected an array');
   return v.map((entry, i) => {
@@ -242,6 +276,8 @@ function validateRunState(raw: unknown, path: string, pressureSeed?: string): Ru
     r.pressure === undefined
       ? undefined
       : pressure(r.pressure, `${path}.pressure`, activeFloorSeed);
+  const bellChimesState =
+    r.bellChimes === undefined ? undefined : bellChimes(r.bellChimes, `${path}.bellChimes`, seed);
   const bookSecretOpenedRooms = roomIds(r.bookSecretOpenedRooms, `${path}.bookSecretOpenedRooms`);
   const bookSecretKeyRooms = roomIds(r.bookSecretKeyRooms, `${path}.bookSecretKeyRooms`);
   const bookSecretCabinetRooms = roomIds(
@@ -268,6 +304,7 @@ function validateRunState(raw: unknown, path: string, pressureSeed?: string): Ru
     ...(pending.length === 0 ? {} : { pendingLoot: pending }),
     ...(difficulty === undefined ? {} : { difficulty }),
     ...(pressureState === undefined ? {} : { pressure: pressureState }),
+    ...(bellChimesState === undefined ? {} : { bellChimes: bellChimesState }),
     ...(bookSecretOpenedRooms === undefined ? {} : { bookSecretOpenedRooms }),
     ...(bookSecretKeyRooms === undefined ? {} : { bookSecretKeyRooms }),
     ...(bookSecretCabinetRooms === undefined ? {} : { bookSecretCabinetRooms }),

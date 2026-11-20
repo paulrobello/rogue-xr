@@ -123,6 +123,19 @@ def write_wav_f32(path: Path, data: np.ndarray) -> None:
         raise SystemExit(f"wav write failed: {proc.stderr.decode()}")
 
 
+def procedural_clockwork_chime(cue: dict, path: Path) -> None:
+    """Write a reproducible struck-bell source with a fundamental and two decaying partials."""
+    settings = cue["procedural"]
+    t = np.arange(round(float(settings["duration_seconds"]) * SR), dtype=np.float64) / SR
+    envelope = np.minimum(1.0, t / 0.004) * np.exp(-4.8 * t)
+    fundamental = float(settings["fundamental_hz"])
+    signal = envelope * sum(
+        amplitude * np.sin(2 * np.pi * fundamental * ratio * t)
+        for ratio, amplitude in ((1.0, 0.8), (2.01, 0.28), (3.03, 0.12))
+    ) * 0.42
+    write_wav_f32(path, signal.astype(np.float32)[:, None])
+
+
 def encode_opus(src_wav: Path, dest: Path, kbps: int) -> None:
     dest.parent.mkdir(parents=True, exist_ok=True)
     proc = run([FFMPEG, "-nostdin", "-v", "error", "-y", "-i", str(src_wav), "-c:a", "libopus",
@@ -328,7 +341,11 @@ def build_sfx(spec: dict, only: set[str], derived: Path, out: Path) -> dict[str,
         if only and cid not in only:
             continue
         source_id = "card-draw" if cid == "paper-unfold" else cid
-        src = AUDIO_SRC / "sfx" / "raw" / f"{source_id}.mp3"
+        if "procedural" in cue:
+            src = AUDIO_SRC / "sfx" / "procedural" / f"{cid}.wav"
+            procedural_clockwork_chime(cue, src)
+        else:
+            src = AUDIO_SRC / "sfx" / "raw" / f"{source_id}.mp3"
         steps: list[str] = []
         clip = decode(src, 2)
         if cid == "paper-unfold":
@@ -382,6 +399,11 @@ def build_sfx(spec: dict, only: set[str], derived: Path, out: Path) -> dict[str,
             "runtime_bytes": dest.stat().st_size,
             "runtime_probe": probe(dest),
         })
+        if "procedural" in cue:
+            result["generation"] = {
+                "method": "deterministic additive synthesis",
+                "settings": cue["procedural"],
+            }
         results[cid] = result
         print(f"sfx {cid}: {result['measured']['integrated_lufs']} LUFS, "
               f"{result['measured']['true_peak_dbtp']} dBTP ({result['loudness_status']})")
@@ -518,6 +540,9 @@ def main() -> None:
                       for k, v in music.items()},
             "music_note": "Suno is owner-generated; see assets-source/audio/music/SUNO-HANDOFF.md",
         }
+        for cue_id, cue_result in sfx.items():
+            if "generation" in cue_result:
+                provenance["sfx"][cue_id]["generation"] = cue_result["generation"]
         music_log = Path(args.music_src) / "generation-log.json"
         if "paper-unfold" in provenance["sfx"]:
             provenance["sfx"]["paper-unfold"]["approval"] = "New edit of the existing card-draw recording. Runtime verification is separate from owner listening approval."

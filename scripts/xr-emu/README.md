@@ -25,6 +25,7 @@ node scripts/xr-emu/walk.mjs --turns          # a two-automaton fight (SPIRE002)
 node scripts/xr-emu/walk.mjs --recenter       # Enter VR facing away from the title: only the board re-placement check (XO5)
 node scripts/xr-emu/walk.mjs --treasure       # SPIRE001: open the treasure room's coffer with the main-hand ray and trigger
 node scripts/xr-emu/walk.mjs --rest           # SPIRE007: lose hp in a real fight, then use the rest room's hearth with the main-hand ray and trigger
+node scripts/xr-emu/walk.mjs --chimes         # MAPTEST2: listen to the Floor 1 music box, use the stair handle, solve the upstairs bell phrase, and claim one cog payout
 node scripts/xr-emu/walk.mjs --guardian       # SPIRE004: the Grand Escapement's phase 1 (case closed, four moves) and phase 2 (hp hook, real card, clip, six moves, music)
 node scripts/xr-emu/walk.mjs --loco           # Settings comfort toggles, New Run, then smooth move, snap turn, the comfort vignette and teleport
 ```

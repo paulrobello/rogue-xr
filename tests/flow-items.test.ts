@@ -5,6 +5,7 @@ import { REWARD_POOL } from '../src/content/rewards.ts';
 import { RunFlow } from '../src/flow/flow.ts';
 import { FlowUi } from '../src/flow/panels.ts';
 import { DEFAULT_SETTINGS } from '../src/persist/db.ts';
+import { bellMelody } from '../src/rules/bell-chimes.ts';
 import type { PressureNoteId } from '../src/rules/pressure.ts';
 import { createWorkshop } from '../src/rules/workshop.ts';
 
@@ -76,6 +77,22 @@ describe('FlowUi pressure Items', () => {
     expect(ui.activate('menu-items')).toBe(true);
     expect(ui.root.getObjectByName('menu-items-empty')?.userData.labelText).toBe(
       'No items collected yet',
+    );
+    ui.dispose();
+  });
+
+  it('keeps the four learned bell numbers readable upstairs', () => {
+    const { flow, ui, head } = setup();
+    flow.newRun('MAPTEST2');
+    flow.listenToChimes();
+    flow.travelToFloor(2, 0);
+    ui.openMenu(head);
+    ui.activate('menu-items');
+    const score = ui.root.getObjectByName('menu-items-bell-score')?.userData.labelText;
+    expect(score).toBe(
+      `Bell score · ${bellMelody('MAPTEST2')
+        .map((note) => note + 1)
+        .join(' · ')}`,
     );
     ui.dispose();
   });

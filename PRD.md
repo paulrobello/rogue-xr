@@ -235,7 +235,7 @@ The full spire (number of floors and acts), hand tracking, custom mage gloves, a
 
 Locks and consumables (Paul, 2026-11-17): some doors and chests are locked and open only with a key or an unlock spell. The player carries an inventory of single-use items and cards, separate from the deck. Keys are found or won and are spent on use. A lock-pick spell needs its sigil drawn on the lock and is gone once cast. The goal is to make backtracking worth doing.
 
-The Foundry card batch and the optional Pressure Works gallery and pump-room puzzle are playable. The remaining card pool, shortcuts and tasks are planned in [docs/card-pool-and-exploration.md](docs/card-pool-and-exploration.md), with decisions CP1 to CP9 awaiting Paul. Draft, 2026-11-17.
+The Foundry card batch, the optional Pressure Works puzzle and the cross-floor music box and bell lock are playable. The remaining card pool, shortcuts and tasks are planned in [docs/card-pool-and-exploration.md](docs/card-pool-and-exploration.md), with decisions CP1 to CP9 awaiting Paul. Draft, 2026-11-17.
 
 ## Risks
 

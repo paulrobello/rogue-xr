@@ -28,6 +28,7 @@ const { values: opts } = parseArgs({
     foundry: { type: 'boolean', default: false },
     deck: { type: 'boolean', default: false },
     stairs: { type: 'boolean', default: false },
+    chimes: { type: 'boolean', default: false },
     pressure: { type: 'boolean', default: false },
     // Only the enemy-phase checks: one two-automaton fight on TURN_SEED.
     turns: { type: 'boolean', default: false },
@@ -300,6 +301,164 @@ try {
       cogs: window.__flow.flow.run.cogs,
     }));
     record('pressure-payout', result.state.rewardClaimed && result.cogs === before + 20, result);
+  } else if (opts.chimes) {
+    await page.goto(`${opts.base}/?seed=MAPTEST2&debug`);
+    await waitFor(
+      'chimes-model-ready',
+      () => window.__combat?.floor?.chimes && document.getElementById('loading-screen')?.hidden,
+      undefined,
+      45000,
+    );
+    await enterVr();
+    const placeNear = async (targetId) => {
+      await ev((id) => {
+        const c = window.__combat,
+          q = window.__xrEmu,
+          f = c.floor,
+          rig = q.ctx().rig;
+        const stair = id === 'stair-door-handle-target';
+        const g = stair ? f.stairs.root : f.chimes.object;
+        const at = stair
+          ? f.stairs.handle.getWorldPosition(c.camera.position.clone())
+          : g.getWorldPosition(c.camera.position.clone());
+        const stand = g.localToWorld(c.camera.position.clone().set(0, 0, stair ? 2.4 : 1.75));
+        const eye = rig.localToWorld(c.camera.position.clone().copy(q.device.position));
+        rig.position.x += stand.x - eye.x;
+        rig.position.z += stand.z - eye.z;
+        rig.rotation.y = Math.atan2(stand.x - at.x, stand.z - at.z);
+        rig.updateMatrixWorld(true);
+      }, targetId);
+      await ev(() => window.__xrEmu.frames(5));
+    };
+    const f = await ev(() => ({
+      room: window.__combat.floor.chimes.room,
+      center: window.__combat.floor.chimes.object
+        .getWorldPosition(window.__combat.floor.chimes.object.position.clone())
+        .toArray(),
+      floor: window.__combat.floor.floorNumber,
+    }));
+    record(
+      'chimes-floor1-station',
+      f.floor === 1 && Number.isInteger(f.room) && f.center.length === 3,
+      f,
+    );
+    await placeNear('music-box-target');
+    await aim(MAIN, await ev(() => window.__xrEmu.worldOf('music-box-target')));
+    // Read the lower station's visible lamp sequence with the effects bus muted.
+    await ev(() => {
+      const c = window.__combat,
+        bank = c.floor.chimes.object,
+        xr = window.__xrEmu.session.session;
+      c.audio.setVolumes({ sfx: 0 });
+      const notes = [],
+        start = performance.now();
+      window.__bellScore = notes;
+      const lamps = [1, 2, 3].map(
+        (n) => bank.getObjectByName(`music-box-note-${n}`).material.color,
+      );
+      const idle = lamps.map((c) => Math.max(c.r, c.g, c.b));
+      let last = -1;
+      const sample = () => {
+        const lit = lamps.findIndex((c, i) => Math.max(c.r, c.g, c.b) > 2 * idle[i]);
+        if (lit >= 0 && lit !== last) notes.push(lit);
+        last = lit;
+        if (notes.length < 4 && performance.now() - start < 8000) xr.requestAnimationFrame(sample);
+      };
+      xr.requestAnimationFrame(sample);
+    });
+    await pullTrigger(MAIN);
+    await waitFor(
+      'chimes-clue-heard',
+      () => window.__flow.flow.run?.bellChimes?.clueHeard === true,
+    );
+    const clue = await ev(() => ({ clueHeard: window.__flow.flow.run.bellChimes.clueHeard }));
+    record('chimes-music-box-clue', clue.clueHeard, clue);
+    if (
+      !(await waitFor(
+        'four-visible-notes',
+        () => window.__bellScore?.length === 4,
+        undefined,
+        8000,
+      ))
+    )
+      throw new Error('music box did not light four beats');
+    const melody = await ev(() => window.__bellScore);
+    await placeNear('stair-door-handle-target');
+    await aim(MAIN, await ev(() => window.__xrEmu.worldOf('stair-door-handle-target')));
+    await pullTrigger(MAIN);
+    await waitFor(
+      'chimes-floor2',
+      () =>
+        window.__combat.floor.floorNumber === 2 &&
+        window.__combat.floor.chimes &&
+        window.__combat.stairTransition.phase === 'idle',
+      undefined,
+      20000,
+    );
+    const floor2 = await ev(() => ({
+      floor: window.__combat.floor.floorNumber,
+      room: window.__combat.floor.chimes?.room,
+      hasBank: !!window.__combat.floor.chimes?.object.getObjectByName('bell-1-target'),
+    }));
+    record('chimes-upstairs-station', floor2.floor === 2 && floor2.hasBank, floor2);
+    await placeNear('bell-1-target');
+    const wrong = (melody[0] + 1) % 3;
+    record(
+      'chimes-four-cue-codes',
+      melody.length === 4 && melody.every((note) => note === 0 || note === 1 || note === 2),
+      { melody },
+    );
+    await aim(MAIN, await ev((n) => window.__xrEmu.worldOf(`bell-${n + 1}-target`), wrong));
+    await pullTrigger(MAIN);
+    await waitFor(
+      'chimes-mistake-reset',
+      () => window.__flow.flow.run.bellChimes.progress.length === 0,
+    );
+    await ev(() => window.__xrEmu.frames(4));
+    await shot('chimes-wrong-note-reset');
+    const resetVisual = await ev(() => ({
+      firstProgressColor: window.__combat.floor.chimes.object
+        .getObjectByName('bell-progress-1')
+        ?.material.color.getHex(),
+      payoutVisible:
+        window.__combat.floor.chimes.object.getObjectByName('bell-payout-cog')?.visible ?? false,
+      progressEmpty: window.__flow.flow.run.bellChimes.progress.length === 0,
+    }));
+    record(
+      'chimes-wrong-note-reset',
+      resetVisual.progressEmpty &&
+        !resetVisual.payoutVisible &&
+        resetVisual.firstProgressColor === 0xef6752,
+      { wrong, melody, ...resetVisual },
+    );
+    record('chimes-claim-blocked-before-solve', !resetVisual.payoutVisible, resetVisual);
+    for (const note of melody) {
+      await aim(MAIN, await ev((n) => window.__xrEmu.worldOf(`bell-${n + 1}-target`), note));
+      await pullTrigger(MAIN);
+    }
+    await waitFor('chimes-solved', () => window.__flow.flow.run.bellChimes.solved === true);
+    const solved = await ev(() => ({
+      solved: window.__flow.flow.run.bellChimes.solved,
+      progress: window.__flow.flow.run.bellChimes.progress,
+      cogs: window.__flow.flow.run.cogs,
+    }));
+    record('chimes-phrase-solved', solved.solved && solved.progress.length === 4, solved);
+    const before = solved.cogs;
+    await placeNear('bell-payout-cog');
+    await aim(MAIN, await ev(() => window.__xrEmu.worldOf('bell-payout-cog')));
+    await pullTrigger(MAIN);
+    await waitFor(
+      'chimes-payout-claimed',
+      () => window.__flow.flow.run.bellChimes.rewardClaimed === true,
+    );
+    const paid = await ev(() => ({
+      cogs: window.__flow.flow.run.cogs,
+      claimed: window.__flow.flow.run.bellChimes.rewardClaimed,
+    }));
+    record('chimes-single-payout', paid.claimed && paid.cogs === before + 12, { before, ...paid });
+    await pullTrigger(MAIN);
+    const duplicate = await ev(() => window.__flow.flow.run.cogs);
+    record('chimes-no-double-payout', duplicate === paid.cogs, { cogs: duplicate });
   } else if (opts.stairs) {
     await page.goto(`${opts.base}/?seed=MAPTEST2&debug`);
     await waitFor(

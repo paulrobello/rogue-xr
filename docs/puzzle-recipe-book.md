@@ -8,6 +8,12 @@ A loose maintenance dispatch directs the player toward one of the missing servic
 
 Set the three valves, then operate the primer. The machinery stirs, vents steam, and releases the catch on the maker’s mark. A scratched hint points to the mark. Pull it to open the built-in drawer, then take the cogs. This separates solving, discovering the compartment, and claiming the reward. The gallery no longer prints the combination.
 
+## The Watchmaker’s Music Box
+
+On Floor 1, aim at the music box and pull the trigger, or click it on desktop. Its winding key turns and the pinned drum plays a four-note phrase. The three lamps and the numbered display show each beat. Wind it again to replay it, or read the bell score in **Items** on either floor.
+
+In the Upper Works, strike the low, middle and high bells in the same order. Each correct note lights another indicator. A wrong note resets the four indicators and lets you try again. Completing the phrase releases a brass cog seal. Take it to collect 12 run cogs. The score, partial phrase and reward stay with the run through stair travel and Continue. [Quest 3 room views and saved score](verification/quest-bell-chimes.jpg)
+
 ## Ingredients for future puzzles
 
 | Ingredient | What the player can do or notice | A possible payoff |
