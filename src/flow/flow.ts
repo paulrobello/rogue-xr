@@ -29,6 +29,12 @@ import {
   strikeChime,
 } from '../rules/bell-chimes.ts';
 import {
+  acceptCommission,
+  claimCommission,
+  collectSpring,
+  commissionSummary,
+} from '../rules/commissions.ts';
+import {
   counterweightPuzzle,
   hangCounterweight,
   readCounterweight,
@@ -164,6 +170,11 @@ export interface PressureTurnResultView {
   readonly rewardClaimed: boolean;
   readonly reward: 0 | 20;
 }
+export interface CommissionEvent {
+  readonly type: 'commission';
+  readonly action: 'accept' | 'spring' | 'claim';
+  readonly id?: 0 | 1 | 2;
+}
 
 export interface CounterweightResultView {
   readonly type: 'counterweight';
@@ -206,6 +217,7 @@ export type FlowEvent =
       readonly inscription: string;
     }
   | PressureTurnResultView
+  | CommissionEvent
   | CounterweightResultView
   | AlchemyEvent
   | { readonly type: 'formula' }
@@ -280,6 +292,59 @@ export class RunFlow {
   }
   get pressure(): ReturnType<typeof readPressure> {
     return readPressure(this.runValue ?? { pressure: undefined });
+  }
+  get commission(): ReturnType<typeof commissionSummary> {
+    const powered =
+      this.floorNumberValue === 1
+        ? this.pressure.solved
+        : this.floorStates.get(1)?.pressure?.solved === true;
+    return commissionSummary(this.runValue ?? { seed: '00000000' }, powered);
+  }
+  acceptCommission(): boolean {
+    if (
+      !this.runValue ||
+      this.phaseValue !== 'explore' ||
+      this.floorNumberValue !== 1 ||
+      this.contentVersionValue < RETURN_PASSAGES_VERSION
+    )
+      return false;
+    return this.applyCommission(acceptCommission(this.runValue), {
+      type: 'commission',
+      action: 'accept',
+    });
+  }
+  collectSpring(id: 0 | 1 | 2): boolean {
+    if (
+      !this.runValue ||
+      this.phaseValue !== 'explore' ||
+      this.contentVersionValue < RETURN_PASSAGES_VERSION ||
+      this.floorNumberValue !== (id === 2 ? 2 : 1)
+    )
+      return false;
+    return this.applyCommission(collectSpring(this.runValue, id), {
+      type: 'commission',
+      action: 'spring',
+      id,
+    });
+  }
+  claimCommission(): boolean {
+    if (
+      !this.runValue ||
+      this.phaseValue !== 'explore' ||
+      this.floorNumberValue !== 1 ||
+      this.contentVersionValue < RETURN_PASSAGES_VERSION
+    )
+      return false;
+    return this.applyCommission(claimCommission(this.runValue, this.pressure.solved), {
+      type: 'commission',
+      action: 'claim',
+    });
+  }
+  private applyCommission(next: RunState | null, event: CommissionEvent): boolean {
+    if (!next) return false;
+    this.runValue = next;
+    this.emit(event);
+    return true;
   }
 
   get counterweight(): Omit<ReturnType<typeof readCounterweight>, 'selected'> & {

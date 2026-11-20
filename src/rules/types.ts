@@ -308,6 +308,14 @@ export interface StoredConservatoryFormula {
   readonly revealed: boolean;
   readonly opened: boolean;
 }
+export type CommissionKind = 'recovery' | 'restoration' | 'delve';
+export interface StoredCommissionState {
+  readonly kind: CommissionKind;
+  readonly accepted: boolean;
+  readonly claimed: boolean;
+  readonly recovered: readonly (0 | 1 | 2)[];
+  readonly payout: number;
+}
 
 /** Stored pressure state. The two fields added after v3 remain optional for old saves. */
 export interface StoredPressureState extends PressureState {

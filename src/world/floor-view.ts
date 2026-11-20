@@ -27,6 +27,7 @@ import { nearSet, shellSet } from '../floor/visibility.ts';
 import { PALETTE } from '../palette.ts';
 import type { RunSnapshot } from '../persist/saves.ts';
 import { conservatoryFormula } from '../rules/alchemy.ts';
+import type { CommissionKind } from '../rules/commissions.ts';
 import type { TreasureLoot } from '../rules/run.ts';
 import {
   DEFAULT_VIGNETTE,
@@ -40,6 +41,7 @@ import { AlchemyConservatory } from './alchemy-conservatory.ts';
 import { AstralLift } from './astral-lift.ts';
 import { BellChimes } from './bell-chimes.ts';
 import { BookSecret } from './book-secret.ts';
+import { CommissionOffice } from './commission-office.ts';
 import { ConservatoryArchive } from './conservatory-archive.ts';
 import { ConservatoryGallery } from './conservatory-gallery.ts';
 import { CounterweightStation } from './counterweight-station.ts';
@@ -156,6 +158,8 @@ export interface FloorView {
     runSeed: string,
     reducedMotion: boolean,
   ): void;
+  readonly office: CommissionOffice | null;
+  dressCommission(art: THREE.Object3D, kind: CommissionKind, reducedMotion: boolean): void;
   readonly counterweight: CounterweightStation | null;
   dressChimes(art: THREE.Object3D): void;
   dressStairs(model: THREE.Object3D): void;
@@ -348,6 +352,7 @@ export function mountFloorView(
     gallery: ConservatoryGallery | null = null;
   let formulaEvidence: FormulaEvidence | null = null,
     archive: ConservatoryArchive | null = null;
+  let office: CommissionOffice | null = null;
   let counterweight: CounterweightStation | null = null;
   const floorNumber = options.floorNumber ?? 1;
   const world = buildFloorWorld(plan, options.templates);
@@ -658,6 +663,20 @@ export function mountFloorView(
         reducedMotion,
       );
     },
+    get office() {
+      return office;
+    },
+    dressCommission(art, kind, reducedMotion) {
+      if (!office && floorNumber !== 3)
+        office = CommissionOffice.mount(
+          world,
+          art,
+          floorNumber,
+          kind,
+          furnishings?.placements,
+          reducedMotion,
+        );
+    },
     get counterweight() {
       return counterweight;
     },
@@ -821,6 +840,7 @@ export function mountFloorView(
       clockwork?.dispose();
       alchemy?.dispose();
       lift?.dispose();
+      office?.dispose();
       counterweight?.dispose();
       chimes?.dispose();
       stairs?.dispose();
@@ -919,6 +939,7 @@ export function mountFloorView(
       if (gallery) gallery.update(dt, head.getWorldPosition(at));
       archive?.update(dt);
       alchemy?.update(dt, clockwork?.dialHours);
+      office?.update(dt);
       counterweight?.update(dt);
       chimes?.update(dt);
       world.updateAnimations(dt);

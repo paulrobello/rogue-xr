@@ -10,6 +10,8 @@
 | The striking hour | A clue in a different room depicts a particular clock time. Find the ornate grandfather clock, watch its hands and swinging pendulum, and be present when it strikes that hour. | Its compartment briefly exposes an ingredient the cauldron needs. A missed chime repeats within a short in-game cycle. The seed selects one of twelve hours. A full clock cycle takes 60 seconds of exploration, and the compartment stays open for eight seconds if the player stays in the room. |
 | The living gallery | Two original wizard portraits have the layered depth of the cards. Their frames stay fastened to the wall while the painted figures subtly turn to watch the visitor. | Portraits serve as visible landmarks from both directions. The animated broom caretakers and the mechanical owl encounter distinguish these rooms from the Upper Works. |
 
+The [keeper’s commission ledger](card-pool-and-exploration.md#e4-tasks-commissions) adds a separate reason to return to the entrance. A recovery order tracks marked springs across both lower floors. The other orders recognize a repaired service line or a breached Conservatory archive, even when found before the order is signed.
+
 ## Seed and save contract
 
 Give each puzzle its own named random streams for answers and locations. Replaying a seed must reproduce the answer and each clue’s room and position, including the clock’s striking hour. Two runs containing the same puzzles should send the player looking in different places. A fixed showcase seed remains reproducible. Preserve the readings, discoveries, opened doors and rewards of an existing save.

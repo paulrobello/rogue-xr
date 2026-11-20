@@ -166,7 +166,15 @@ Use seed `N0TE0032` for a wing branching from the starting hall and a mix of cof
 
 ### E4. Tasks (commissions)
 
-A commission board in the entry room offers 1 or 2 tasks per floor, picked from a named stream. Rewards are cogs, field cards, or progress toward a workshop unlock.
+The keeper posts one optional order per run on the Floor 1 wall ledger. It prefers the entrance hall and moves to a clear nearby room if necessary. Read the letter, then sign it with the wax stamp. **Items** records progress. A purse appears at the ledger after the signed work is complete. Collecting it pays once, including after Continue.
+
+| Shipped order | Work credited | Payment |
+| --- | --- | --- |
+| Missing escapements | Bring back the flat spiral and spool from separate Floor 1 rooms, and the bowed spring from the Upper Works. Parts found before signing count. | 15 cogs |
+| Cold return line | Restore Pressure Works on Floor 1. A repair completed before signing counts. | 10 cogs |
+| The sealed collection | Open the optional Conservatory archive on Floor 3. Reaching the thorn collection alone does not complete this order. | 18 cogs |
+
+Additional commission ideas include the following.
 
 | Task | Example |
 | --- | --- |

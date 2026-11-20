@@ -34,3 +34,7 @@ assets-source/props/alchemy-kit/staging/*.png
 assets-source/props/archive-kit/staging/*.glb
 assets-source/props/archive-kit/staging/*.png
 !assets-source/props/archive-kit/staging/review*.png
+# Commission maps and staging export are packed in the editable Blender source.
+assets-source/props/commission-kit/staging/*.glb
+assets-source/props/commission-kit/staging/*.png
+!assets-source/props/commission-kit/staging/review*.png

@@ -7,6 +7,7 @@ import { glb_sha256 as alchemyRevision } from '../assets-source/props/alchemy-ki
 import { assets as portraitAssets } from '../assets-source/props/alchemy-kit/portraits/manifest.json';
 import { sha256 as architecturalFinishRevision } from '../assets-source/props/architectural-finishes/report.json';
 import { glb_sha256 as archiveRevision } from '../assets-source/props/archive-kit/manifest.json';
+import { glb_sha256 as commissionRevision } from '../assets-source/props/commission-kit/manifest.json';
 import { hashes as instrumentHashes } from '../assets-source/props/puzzle-instruments/manifest.json';
 import { sha256 as stairwellRevision } from '../assets-source/props/stairwell/report.json';
 import { audioStateForFlow } from './audio/cues.ts';
@@ -61,6 +62,12 @@ import {
 import { loadRunSnapshot, loadWorkshop, type RunSnapshot } from './persist/saves.ts';
 import { alchemyRecipe, type FormulaClue, formulaObservation } from './rules/alchemy.ts';
 import { type BellNote, bellMelody } from './rules/bell-chimes.ts';
+import {
+  COMMISSION_ORDERS,
+  COMMISSION_PAYOUT,
+  COMMISSION_TITLES,
+  commissionPlan,
+} from './rules/commissions.ts';
 import { counterweightTarget } from './rules/counterweight.ts';
 import {
   DEFAULT_DIFFICULTY,
@@ -75,6 +82,7 @@ import { loadIconSheet } from './ui/icon-sheet.ts';
 import { failLoading, revealGame, showLoading } from './ui/loading-screen.ts';
 import { mountUpdateNotice } from './update/index.ts';
 import type { BellChimes, BellPick } from './world/bell-chimes.ts';
+import type { CommissionAction } from './world/commission-office.ts';
 import {
   type FloorView,
   mountFloorView,
@@ -631,6 +639,20 @@ function archiveKit(): Promise<THREE.Object3D> {
     });
   return archiveArt;
 }
+let commissionArt: Promise<THREE.Object3D> | undefined;
+function commissionKit(): Promise<THREE.Object3D> {
+  commissionArt ??= new GLTFLoader()
+    .loadAsync(`/assets/props/commission-kit/commission-kit.glb?v=${commissionRevision}`)
+    .then(({ scene }) => {
+      reflect(scene, 0.54);
+      return scene;
+    })
+    .catch((error) => {
+      commissionArt = undefined;
+      throw error;
+    });
+  return commissionArt;
+}
 function wizardPaintings(): Promise<THREE.Texture[]> {
   portraitTextures ??= Promise.all(
     portraitAssets.map(async ({ name, runtimeSha256 }) => {
@@ -650,6 +672,7 @@ function wizardPaintings(): Promise<THREE.Texture[]> {
 function syncPuzzles(target: FloorView, immediate = false): void {
   const run = flow.run;
   if (!run) return;
+  if (immediate) target.office?.sync(flow.commission);
   const state = flow.counterweight;
   target.counterweight?.sync(state.selected, counterweightTarget(run.seed), state.solved);
   target.world.setPuzzleGateOpen('counterweight', state.solved, immediate);
@@ -775,6 +798,16 @@ const dressFloor = async (target: FloorView): Promise<void> => {
       if (target.floorNumber === 3) {
         const owl = makeClockworkOwlAsset(kit.getObjectByName('ClockworkOwl')!);
         target.useEnemyAssets(new Map([[owl.id, owl]]), prepareEnemy);
+      }
+    }
+    if (target.contentVersion >= RETURN_PASSAGES_VERSION && target.floorNumber !== 3) {
+      const kind = commissionPlan(
+        target.floorNumber === 1 ? target.seed : (flow.run?.seed ?? target.seed),
+      );
+      if (target.floorNumber === 1 || kind === 'recovery') {
+        const art = await commissionKit();
+        if (target !== floor) return;
+        target.dressCommission(art, kind, hitFx.reducedMotion);
       }
     }
     syncPuzzles(target, true);
@@ -929,7 +962,13 @@ flow.onChange((event) => {
     }
     return;
   }
+  if (event.type === 'commission') {
+    floor?.office?.sync(flow.commission, event.action === 'claim' ? camera : undefined);
+    storedSnapshot = flow.snapshot(Date.now(), floor?.world.current ?? flow.room);
+    return;
+  }
   if (event.type === 'counterweight' || event.type === 'alchemy' || event.type === 'formula') {
+    if (event.type === 'formula') floor?.office?.sync(flow.commission);
     if (floor) syncPuzzles(floor);
     storedSnapshot = flow.snapshot(Date.now(), floor?.world.current ?? flow.room);
     return;
@@ -941,7 +980,10 @@ flow.onChange((event) => {
   }
   if (event.type === 'pressure') {
     storedSnapshot = flow.snapshot(Date.now(), event.room);
-    if (event.action === 'prime') floor?.world.setPuzzleGateOpen('pressure', event.solved);
+    if (event.action === 'prime') {
+      floor?.world.setPuzzleGateOpen('pressure', event.solved);
+      floor?.office?.sync(flow.commission);
+    }
     if (event.action === 'note') {
       if (event.note) ui?.readNote(event.note, camera);
     } else {
@@ -1419,6 +1461,48 @@ function operateWeight(
   if (result) audio?.playSfx('gear-clank', station.object.getWorldPosition(chimePosition));
   return !!result;
 }
+function operateCommission(input: CommissionAction): boolean {
+  if (!floor?.office || !canOpenLoot()) return false;
+  const job = flow.commission;
+  if (input.action === 'spring') {
+    if (!flow.collectSpring(input.spring)) return false;
+    floor.showBookSecret(
+      { text: 'Marked escapement', caption: `${flow.commission.progress} of 3 recovered` },
+      camera,
+    );
+    audio?.playSfx('gear-clank');
+    return true;
+  }
+  if (input.action === 'read') {
+    floor.office.read();
+    floor.showBookSecret(
+      {
+        text: COMMISSION_TITLES[job.kind],
+        caption: job.claimed
+          ? 'Paid in full.'
+          : job.accepted && job.progress === job.total
+            ? 'The keeper has left your payment.'
+            : COMMISSION_ORDERS[job.kind],
+      },
+      camera,
+    );
+    audio?.playSfx('card-draw');
+    return true;
+  }
+  if (input.action === 'accept') {
+    if (!flow.acceptCommission()) return false;
+    floor.showBookSecret({ text: 'Order filed', caption: COMMISSION_TITLES[job.kind] }, camera);
+    audio?.playSfx('gear-clank');
+    return true;
+  }
+  if (!flow.claimCommission()) return false;
+  floor.showBookSecret(
+    { text: `+${COMMISSION_PAYOUT[job.kind]} cogs`, caption: 'Commission settled' },
+    camera,
+  );
+  audio?.playSfx('cog-pickup');
+  return true;
+}
 function inspectFormula(clue: FormulaClue): boolean {
   if (!floor || !flow.run) return false;
   flow.learnFormulaClue(clue);
@@ -1478,7 +1562,9 @@ function fieldHit(origin: THREE.Vector3, direction: THREE.Vector3) {
   const clock = floor.clock?.pick(origin, direction);
   const archive = floor.archive?.pick(origin, direction);
   const evidence = floor.formulaEvidence?.pick(origin, direction);
+  const office = floor.office?.pick(origin, direction);
   const hits = [
+    ...(office ? [{ kind: 'commission' as const, hit: office }] : []),
     ...(archive ? [{ kind: 'archive' as const, hit: archive }] : []),
     ...(evidence ? [{ kind: 'formula-clue' as const, hit: evidence }] : []),
     ...(weight ? [{ kind: 'counterweight' as const, hit: weight }] : []),
@@ -1505,6 +1591,8 @@ const activatePickup = (
   const pick = fieldHit(origin, direction);
   if (!pick) return false;
   switch (pick.kind) {
+    case 'commission':
+      return operateCommission(pick.hit);
     case 'archive':
       return operateArchive(pick.hit.action);
     case 'formula-clue':
@@ -1728,6 +1816,8 @@ for (const index of [0, 1]) {
       flow.collectPressureNote(note.room, note.id);
       return;
     }
+    const office = floor.office?.near(position, GRAB_REACH);
+    if (office && operateCommission(office)) return;
     const archive = floor.archive?.near(position, GRAB_REACH);
     if (archive && operateArchive(archive.action)) return;
     const evidence = floor.formulaEvidence?.near(position, GRAB_REACH);

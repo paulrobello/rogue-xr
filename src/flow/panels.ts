@@ -29,6 +29,7 @@ import { FOVEATION_CHOICES, type FoveationChoice, type Settings } from '../persi
 import type { RunSnapshot } from '../persist/saves.ts';
 import { brewNames, formulaObservation, ingredientNames } from '../rules/alchemy.ts';
 import { bellMelody } from '../rules/bell-chimes.ts';
+import { COMMISSION_TITLES } from '../rules/commissions.ts';
 import {
   DIFFICULTIES,
   DIFFICULTY_LABEL,
@@ -1515,6 +1516,15 @@ export class FlowUi {
         .map((note) => note + 1)
         .join(' · ');
       rows.unshift({ id: 'bell-score', label: `Bell score · ${phrase}` });
+    }
+    if (run?.commission && (run.commission.accepted || run.commission.recovered.length)) {
+      const job = this.deps.flow.commission;
+      const status = job.claimed
+        ? 'Paid'
+        : job.progress === job.total && job.accepted
+          ? 'Payment ready'
+          : `${job.progress}/${job.total}`;
+      rows.push({ id: 'keeper-order', label: COMMISSION_TITLES[job.kind] + ' · ' + status });
     }
     const formula = run?.conservatoryFormula;
     if (run && formula) {

@@ -12,6 +12,15 @@ export {
   revealFormula,
 } from './alchemy.ts';
 export {
+  acceptCommission,
+  COMMISSION_PAYOUT,
+  type CommissionKind,
+  claimCommission,
+  collectSpring,
+  commissionPlan,
+  readCommission,
+} from './commissions.ts';
+export {
   type CounterweightPuzzle,
   type CounterweightResult,
   counterweightPuzzle,

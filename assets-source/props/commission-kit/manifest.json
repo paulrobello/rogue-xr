@@ -1,0 +1,22 @@
+{
+  "glb_sha256": "fb6dc89e802a9bbbb857aab7a6c51374bd2c39207920bc0cdf36ea02471d6de1",
+  "generator_sha256": "85f4f68ad8b4242f00c5d40c2b88ba481b48c3806b627611a9fdf26ecda86916",
+  "source_blend_sha256": "444b4e9d737ec3d718bb239f105bf185bd075381a7d5cb1c2e8d1897c79c2907",
+  "axes": "glTF +Y up, +Z front; metres",
+  "root_nodes": [
+    "CommissionLedger",
+    "CommissionPaperPivot",
+    "CommissionStamp",
+    "CommissionPurse",
+    "ReturnSpring1",
+    "ReturnSpring2",
+    "ReturnSpring3"
+  ],
+  "triangles": 26953,
+  "blender": "5.2.3 LTS",
+  "visual_approval": "pending independent and owner review",
+  "limitations": [
+    "No authored LOD or collider",
+    "Runtime play-distance and interaction review pending"
+  ]
+}

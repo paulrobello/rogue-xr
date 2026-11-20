@@ -14,6 +14,11 @@ import {
   bellMelody,
   type StoredBellChimesState,
 } from '../rules/bell-chimes.ts';
+import {
+  COMMISSION_PAYOUT,
+  commissionPlan,
+  type StoredCommissionState,
+} from '../rules/commissions.ts';
 import { counterweightTarget, type StoredCounterweightState } from '../rules/counterweight.ts';
 import { isDifficulty } from '../rules/difficulty.ts';
 import {
@@ -276,6 +281,37 @@ function formula(v: unknown, path: string, seed: string): StoredConservatoryForm
   };
 }
 
+function commission(v: unknown, path: string, seed: string): StoredCommissionState {
+  const r = rec(v, path);
+  const kind = commissionPlan(seed);
+  if (
+    r.kind !== kind ||
+    typeof r.accepted !== 'boolean' ||
+    typeof r.claimed !== 'boolean' ||
+    typeof r.payout !== 'number' ||
+    r.payout !== COMMISSION_PAYOUT[kind]
+  )
+    fail(path, 'invalid seeded commission');
+  if (
+    !Array.isArray(r.recovered) ||
+    r.recovered.some((n) => ![0, 1, 2].includes(n as number)) ||
+    new Set(r.recovered).size !== r.recovered.length
+  )
+    fail(`${path}.recovered`, 'invalid spring ids');
+  if (
+    (kind !== 'recovery' && r.recovered.length !== 0) ||
+    (r.claimed && (!r.accepted || (kind === 'recovery' && r.recovered.length !== 3)))
+  )
+    fail(path, 'commission payment or recovery is inconsistent');
+  return {
+    kind,
+    accepted: r.accepted,
+    claimed: r.claimed,
+    recovered: [...r.recovered] as (0 | 1 | 2)[],
+    payout: r.payout,
+  };
+}
+
 function streamState(v: unknown, path: string): StreamState {
   if (!Array.isArray(v) || v.length !== 4) fail(path, 'expected four 32-bit words');
   // sfc32 words can be negative: `a = b ^ (b >>> 9)` leaves a signed int32 in the state.
@@ -371,6 +407,8 @@ function validateRunState(
     r.conservatoryFormula === undefined
       ? undefined
       : formula(r.conservatoryFormula, `${path}.conservatoryFormula`, seed);
+  const commissionState =
+    r.commission === undefined ? undefined : commission(r.commission, `${path}.commission`, seed);
   if (
     formulaState &&
     (formulaState.added.length || formulaState.brewed) &&
@@ -408,6 +446,7 @@ function validateRunState(
     ...(counterweightState === undefined ? {} : { counterweight: counterweightState }),
     ...(alchemyState === undefined ? {} : { alchemy: alchemyState }),
     ...(formulaState === undefined ? {} : { conservatoryFormula: formulaState }),
+    ...(commissionState === undefined ? {} : { commission: commissionState }),
     ...(bellChimesState === undefined ? {} : { bellChimes: bellChimesState }),
     ...(bookSecretOpenedRooms === undefined ? {} : { bookSecretOpenedRooms }),
     ...(bookSecretKeyRooms === undefined ? {} : { bookSecretKeyRooms }),
@@ -469,6 +508,22 @@ export function validateSnapshot(raw: unknown): RunSnapshot {
   ) {
     fail('snapshot.contentVersion', 'expected a positive integer');
   }
+  const floors =
+    r.floors === undefined
+      ? undefined
+      : validateFloors(r.floors, activeRun.seed, floorNumber, version);
+  const payment = activeRun.commission;
+  if (payment?.claimed) {
+    const powered =
+      floorNumber === 1
+        ? activeRun.pressure?.solved
+        : floors?.find((f) => f.floorNumber === 1)?.pressure?.solved;
+    if (
+      (payment.kind === 'restoration' && !powered) ||
+      (payment.kind === 'delve' && !activeRun.conservatoryFormula?.opened)
+    )
+      fail('snapshot.run.commission.claimed', 'payment has no completed work order');
+  }
   return {
     version: SNAPSHOT_VERSION,
     savedAt: int(r.savedAt, 'snapshot.savedAt', 0),
@@ -484,9 +539,7 @@ export function validateSnapshot(raw: unknown): RunSnapshot {
     ...(r.reachedRooms === undefined
       ? {}
       : { reachedRooms: roomIds(r.reachedRooms, 'snapshot.reachedRooms') }),
-    ...(r.floors === undefined
-      ? {}
-      : { floors: validateFloors(r.floors, activeRun.seed, floorNumber, version) }),
+    ...(floors === undefined ? {} : { floors }),
   };
 }
 

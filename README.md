@@ -30,6 +30,10 @@ The Upper Works balance raises a grille downstairs. Restoring Pressure Works als
 
 The [floor roadmap and potion recipe book](docs/conservatory-and-return-routes.md) records the puzzle dependencies, clues, return trips, seed rules and future brews.
 
+## Keeper’s commissions
+
+The wax-sealed ledger on Floor 1 offers a seed-specific job. Point and pull the trigger, grip the letter or click to read it. Use the stamp to accept. Recovery asks for three marked springs on Floors 1 and 2. Restoration and delve orders recognize the existing pressure repair or opened Conservatory archive. Return to the ledger and collect the purse. [Order list and payments](docs/card-pool-and-exploration.md#e4-tasks-commissions)
+
 ## CI and deploy
 
 `.github/workflows/ci.yml` runs `make checkall-ci` on every push to `main` and every pull request. It checks out this repo and `paulrobello/mux-xr` side by side, because `@par/xr-workspace` is a `file:` dependency on the sibling. The mux-xr commit is pinned in one place, [toolkit-release.json](toolkit-release.json): to take a newer toolkit, change its `sha` to a full commit, run the gate locally against that checkout, and push.

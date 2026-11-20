@@ -6,7 +6,7 @@ import { parseArgs } from 'node:util';
 import { chromium } from 'playwright';
 
 const {
-  values: { base, seed, out, cdp, formula },
+  values: { base, seed, out, cdp, formula, commission },
 } = parseArgs({
   options: {
     base: { type: 'string', default: 'http://localhost:4266' },
@@ -14,6 +14,7 @@ const {
     out: { type: 'string', default: '.local/return/journey' },
     cdp: { type: 'string' },
     formula: { type: 'boolean', default: false },
+    commission: { type: 'boolean', default: false },
   },
 });
 await mkdir(out, { recursive: true });
@@ -376,6 +377,89 @@ async function exerciseFormula() {
   await writeFile(join(out, 'check.json'), JSON.stringify({ seed, type, order, errors }, null, 2));
   console.log('PASS archive', type);
 }
+async function exerciseCommission() {
+  await page.goto(base + '/?seed=' + seed + '&debug');
+  await ready(1);
+  const kind = await ev(() => window.__flow.flow.commission.kind);
+  console.log('order', kind);
+  async function spring(id) {
+    const name = 'ReturnSpring' + (id + 1);
+    await approach('spring-perch-' + id, name, 1.2);
+    await shot('spring-' + id);
+    await click(name, [0, 0.055, 0]);
+    assert(await ev((id) => window.__flow.flow.commission.recovered.includes(id), id));
+  }
+  if (kind === 'recovery') await spring(0);
+  await approach('keeper-commission-office', 'CommissionLedger', 1.15);
+  await click('CommissionPaperPivot', [0.22, 0, 0.04]);
+  await page.waitForTimeout(600);
+  await shot('opened-letter');
+  assert.equal(await ev(() => window.__flow.flow.commission.accepted), false);
+  await click('CommissionStamp', [0, 0, 0.025]);
+  assert(await ev(() => window.__flow.flow.commission.accepted));
+  const before = await ev(() => window.__flow.flow.run.cogs);
+  if (kind === 'recovery') {
+    await spring(1);
+    await stair(2);
+    await resumeAt(2);
+    await spring(2);
+    await stair(1);
+  } else if (kind === 'restoration') {
+    // Commission verification uses the existing regulator's normal run actions.
+    await ev(() => {
+      const f = window.__combat.floor,
+        flow = window.__flow.flow,
+        room = f.world.plan.pressureWing.pumpRoom;
+      for (const slip of f.notes.placements.filter((x) => x.id !== 'dispatch')) {
+        flow.collectPressureNote(slip.room, slip.id);
+        const i = 'ABC'.indexOf(slip.id),
+          wanted = Number(slip.body.match(/(\d)\./)[1]);
+        for (let t = 0; flow.pressure.dials[i] !== wanted && t < 3; t++)
+          flow.turnPressureValve(room, i);
+      }
+      if (!flow.primePressure(room)) throw Error('Could not prime');
+      window.__flow.ui.closeMenu();
+    });
+  } else {
+    // Use an already-qualified delve fixture to exercise retroactive progress on a different floor.
+    await ev(async () => {
+      const flow = window.__flow.flow;
+      flow.travelToFloor(2, 0);
+      flow.learnFormulaClue('record');
+      flow.travelToFloor(3, 0);
+      flow.learnFormulaClue('portrait');
+      for (const id of [0, 1, 2]) flow.collectIngredient(id);
+      for (const id of flow.alchemyRecipe) flow.addIngredient(id);
+      flow.applyPotion();
+      for (let a = 0; a < 3 && !flow.conservatoryFormula.brewed; a++)
+        for (let b = 0; b < 3 && !flow.conservatoryFormula.brewed; b++) {
+          if (a === b) continue;
+          if (flow.addFormulaIngredient(a, true) === 'correct') flow.addFormulaIngredient(b, true);
+        }
+      flow.useFormula('pour');
+      if (!flow.conservatoryFormula.opened) flow.useFormula('unlatch');
+      flow.travelToFloor(2, 0);
+      flow.travelToFloor(1, 0);
+      await window.__flow.flushed();
+    });
+    await resumeAt(1);
+  }
+  const job = await ev(() => window.__flow.flow.commission);
+  assert.equal(job.total, job.progress);
+  await approach('keeper-commission-office', 'CommissionPurse', 1.1);
+  await shot('payment');
+  await click('CommissionPurse', [0, 0.08, 0]);
+  assert(await ev(() => window.__flow.flow.commission.claimed));
+  assert.equal(await ev(() => window.__flow.flow.run.cogs), before + job.payout);
+  await resumeAt(1);
+  assert.equal(await ev(() => window.__combat.floor.office.purse.visible), false);
+  assert.deepEqual(errors, []);
+  await writeFile(
+    join(out, 'check.json'),
+    JSON.stringify({ seed, kind, payout: job.payout, errors }, null, 2),
+  );
+  console.log('PASS commission', kind);
+}
 async function exerciseReturnJourney() {
   await page.goto(base + '/?seed=' + seed + '&debug');
   await ready(1);
@@ -558,7 +642,8 @@ async function exerciseReturnJourney() {
   console.log('PASS end-to-end');
 }
 try {
-  if (formula) await exerciseFormula();
+  if (commission) await exerciseCommission();
+  else if (formula) await exerciseFormula();
   else await exerciseReturnJourney();
 } catch (error) {
   console.error(
