@@ -75,6 +75,8 @@ describe('pressure notes', () => {
     const picked = notes.pick(origin, placement.location.clone().sub(origin));
     expect(picked?.id).toBe(placement.id);
     expect(picked?.distance).toBeLessThan(4);
+    const beside = origin.clone().add(new THREE.Vector3(0.4, 0, 0));
+    expect(notes.pick(beside, new THREE.Vector3(0, -1, 0))?.id).not.toBe(placement.id);
     notes.sync(
       [placement.id],
       () => true,

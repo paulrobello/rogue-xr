@@ -83,7 +83,9 @@ function paper(): {
   const lineMaterial = new THREE.LineBasicMaterial({ color: 0x68513b });
   geometry.push(lines);
   materials.push(lineMaterial);
-  group.add(new THREE.LineSegments(lines, lineMaterial));
+  const writing = new THREE.LineSegments(lines, lineMaterial);
+  writing.raycast = () => {};
+  group.add(writing);
   fold.name = 'folded-corner';
   fold.userData.noteSurface = true;
   group.add(fold);
