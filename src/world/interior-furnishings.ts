@@ -85,6 +85,7 @@ export interface InteriorFurnishingsOptions {
   readonly reducedMotion?: boolean;
   readonly paintings?: readonly THREE.Texture[];
   readonly preservedBookRooms?: readonly number[];
+  readonly floorNumber?: 1 | 2;
 }
 
 interface Candidate {
@@ -518,6 +519,7 @@ export class InteriorFurnishings {
     const planned: { room: number; theme: InteriorTheme; candidates: Candidate[] }[] = [];
     const made: InteriorPlacement[] = [];
     const themes = new Map<number, InteriorTheme>();
+    const upperIndustrial = options.floorNumber === 2;
     for (let room = 0; room < world.plan.rooms.length; room++) {
       if (
         world.plan.pressureWing &&
@@ -526,9 +528,22 @@ export class InteriorFurnishings {
         continue;
       if (room === world.plan.guardianRoom) continue;
       if (world.plan.rooms[room]?.templateId === 'corridor') continue;
-      const theme = (['library', 'dining', 'gallery', 'workshop'] as const)[stream.int(0, 3)];
-      const candidates =
-        world.plan.rooms[room]?.role === 'combat'
+      const style = roomStyleFor(world.plan, room, options.floorNumber ?? 1);
+      const upperIndustrialRoom = upperIndustrial && (style === 'boiler' || room === 0);
+      const theme = upperIndustrialRoom
+        ? 'workshop'
+        : (['library', 'dining', 'gallery', 'workshop'] as const)[stream.int(0, 3)];
+      const candidates = upperIndustrialRoom
+        ? candidatesFor(
+            world,
+            room,
+            'workshop',
+            stream,
+            rootBounds,
+            [],
+            ['ClockworkArmor', 'Bookcase'],
+          )
+        : world.plan.rooms[room]?.role === 'combat'
           ? candidatesFor(world, room, 'gallery', stream, rootBounds)
           : candidatesFor(world, room, theme, stream, rootBounds);
       planned.push({ room, theme, candidates });
@@ -627,6 +642,7 @@ export class InteriorFurnishings {
     }
     for (const { room, theme, candidates } of planned) {
       for (const c of candidates) {
+        if (c.root === 'Curtain' && upperIndustrial && roomStyleFor(world.plan, room, 2)) continue;
         const box = boxFor(c, rootBounds);
         const object = asset.roots[c.root].clone(true);
         object.name = `interior-${c.root}-${room}`;

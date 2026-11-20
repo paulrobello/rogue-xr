@@ -4,10 +4,11 @@ import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { describe, expect, it, vi } from 'vitest';
 import { GREYBOX_TEMPLATES, parseRoomTemplate } from '../src/content/rooms.ts';
-import { attachPressureWing, generateFloor } from '../src/floor/generate.ts';
+import { attachPressureWing, generateFloor, generateUpperFloor } from '../src/floor/generate.ts';
 import { buildFloorWorld } from '../src/world/floor-world.ts';
 import {
   applyRoomStyle,
+  applyUpperShaftFinish,
   copyStudyDesk,
   disposeRoomStyle,
   type RoomStyleKit,
@@ -91,6 +92,23 @@ describe('room styles', () => {
     expect(roomStyleFor(plan, 2)).toBe('timber');
   });
 
+  it('fits industrial wall bays to upper halls and studies', () => {
+    const plan = generateUpperFloor('SPIRE001');
+    expect(plan.rooms[0]?.templateId).toBe('gear-shaft');
+    plan.rooms.forEach((room, index) => {
+      const style = roomStyleFor(plan, index, 2);
+      if (room.templateId === 'study' || room.templateId === 'hall') expect(style).toBe('boiler');
+      else expect(style).toBeNull();
+    });
+  });
+
+  it('styles a legacy upper hall arrival while leaving floor one unchanged', () => {
+    const plan = generateFloor('SPIRE001');
+    expect(plan.rooms[0]?.templateId).toBe('hall');
+    expect(roomStyleFor(plan, 0)).toBeNull();
+    expect(roomStyleFor(plan, 0, 2)).toBe('boiler');
+  });
+
   it('keeps regular seed styling deterministic and non-study library rooms unchanged', () => {
     for (const seed of ['SPIRE001', 'SPIRE002', 'SPIRE003']) {
       const first = generateFloor(seed);
@@ -129,6 +147,35 @@ describe('room styles', () => {
         [4, -1],
       ]),
     );
+  });
+
+  it('fits five boiler bays per wall on the ten metre upper hall', () => {
+    const model = new THREE.Group();
+    const hall = GREYBOX_TEMPLATES.find((template) => template.id === 'hall');
+    if (!hall) throw new Error('hall template missing');
+    expect(
+      applyRoomStyle(
+        model,
+        'boiler',
+        kit(),
+        hall.doors.map((door) => ({ facing: door.facing, position: door.position })),
+        5,
+      ),
+    ).toBe(24);
+    const doors = instanced(model, 'BoilerDoor')[0];
+    if (!doors) throw new Error('missing upper hall door bays');
+    const m = new THREE.Matrix4();
+    const positions = Array.from({ length: doors.count }, (_, i) => {
+      doors.getMatrixAt(i, m);
+      return [m.elements[12], m.elements[14]];
+    });
+    expect(positions.sort()).toEqual(hall.doors.map((d) => [d.position[0], d.position[2]]).sort());
+
+    expect(model.getObjectByName('room-style-boiler-surfaces')).toBeDefined();
+    const surfaces = model.getObjectByName('room-style-boiler-surfaces');
+    const bounds = new THREE.Box3().setFromObject(surfaces ?? new THREE.Group());
+    expect(bounds.max.x).toBeGreaterThan(4.9);
+    expect(bounds.max.z).toBeGreaterThan(4.9);
   });
 
   it('creates owned floor and ceiling surfaces without legacy study shell nodes', () => {
@@ -177,5 +224,24 @@ describe('room styles', () => {
     expect(materialDispose).toHaveBeenCalled();
     expect(kitGeometryDispose).not.toHaveBeenCalled();
     expect(kitMaterialDispose).not.toHaveBeenCalled();
+  });
+
+  it('clones only upper shaft wallpaper and walnut materials', () => {
+    const model = new THREE.Group();
+    const source = new THREE.MeshStandardMaterial({ name: 'gear-shaft_wallpaper' });
+    const gear = new THREE.Object3D();
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(), source);
+    gear.name = 'gear-shaft_gear_ring';
+    gear.add(mesh);
+    model.add(gear);
+    const changed = applyUpperShaftFinish(model);
+    const variant = mesh.material as THREE.MeshStandardMaterial;
+    expect(changed).toEqual([variant]);
+    expect(variant).not.toBe(source);
+    expect(variant.map).toBeNull();
+    expect(variant.onBeforeCompile).toBe(source.onBeforeCompile);
+    expect(variant.name).toContain('upper-works-');
+    expect(gear.name).toBe('gear-shaft_gear_ring');
+    expect(mesh.geometry).toBeDefined();
   });
 });

@@ -33,16 +33,21 @@ export function roomStyleKitFromScene(scene: THREE.Object3D): RoomStyleKit {
   return kit;
 }
 
-export function roomStyleFor(plan: FloorPlan, room: number): RoomStyle | null {
+export function roomStyleFor(
+  plan: FloorPlan,
+  room: number,
+  floorNumber: 1 | 2 = 1,
+): RoomStyle | null {
   if (plan.pressureWing?.pumpRoom === room) return 'boiler';
-  if (plan.rooms[room]?.templateId !== 'study') return null;
+  const templateId = plan.rooms[room]?.templateId;
+  if (floorNumber === 2 && (templateId === 'hall' || templateId === 'study')) return 'boiler';
+  if (templateId !== 'study') return null;
   if (plan.seed === 'MAPTEST2') return room === 2 ? 'timber' : null;
   return Stream.fromKey(`${plan.seed}:study-finish:${room}`).int(0, 2) === 0 ? 'timber' : null;
 }
 
 const YAW: Record<Facing, number> = { N: 0, E: -Math.PI / 2, S: Math.PI, W: Math.PI / 2 };
 const UP = new THREE.Vector3(0, 1, 0);
-const BAY_CENTERS = [-3, -1, 1, 3] as const;
 
 /** The source template is unrotated. Its parent room group applies the floor plan's quarter-turn. */
 export function applyRoomStyle(
@@ -50,12 +55,15 @@ export function applyRoomStyle(
   style: RoomStyle,
   kit: RoomStyleKit,
   doors: readonly RoomStyleDoor[],
+  edge = 4,
 ): number {
   const bays = new Map<RoomStylePiece, THREE.Matrix4[]>();
+  const bayCenters = edge === 5 ? [-4.5, -3, -1, 1, 3, 4.5] : [-3, -1, 1, 3];
   for (const wall of ['N', 'E', 'S', 'W'] as const) {
     const ns = wall === 'N' || wall === 'S';
-    const fixed = wall === 'N' || wall === 'W' ? -4 : 4;
-    for (const along of BAY_CENTERS) {
+    const fixed = wall === 'N' || wall === 'W' ? -edge : edge;
+    for (const along of bayCenters) {
+      const endBay = edge === 5 && Math.abs(along) === 4.5;
       const door = doors.find(
         (d) => d.facing === wall && Math.abs(d.position[ns ? 0 : 2] - along) < 0.001 && !d.closed,
       );
@@ -71,11 +79,11 @@ export function applyRoomStyle(
       }
       const poses = bays.get(piece) ?? [];
       if (!bays.has(piece)) bays.set(piece, poses);
-      poses.push(
-        new THREE.Matrix4()
-          .makeRotationAxis(UP, YAW[wall])
-          .setPosition(ns ? along : fixed, 0, ns ? fixed : along),
-      );
+      const pose = new THREE.Matrix4()
+        .makeRotationAxis(UP, YAW[wall])
+        .setPosition(ns ? along : fixed, 0, ns ? fixed : along);
+      if (endBay) pose.scale(new THREE.Vector3(0.5, 1, 1));
+      poses.push(pose);
     }
   }
   for (const [piece, poses] of bays) {
@@ -95,9 +103,12 @@ export function applyRoomStyle(
       model.add(instances);
     });
   }
-  model.add(createRoomSurfaces(style, kit));
+  const surfaces = createRoomSurfaces(style, kit);
+  if (edge !== 4) surfaces.scale.set(edge / 4, 1, edge / 4);
+  model.add(surfaces);
   model.userData.roomStyle = style;
-  return BAY_CENTERS.length * 4;
+  model.userData.finishEdge = edge;
+  return bayCenters.length * 4;
 }
 
 /** The original study packs its desk, letter rack and shelves into material batches. Retain the
@@ -157,6 +168,41 @@ export function copyStudyDesk(model: THREE.Object3D, into: THREE.Group): void {
     retained.name = `timber-writing-desk-${mesh.material.name}`;
     into.add(retained);
   });
+}
+
+/** The shaft keeps its baked shadows and animated drive, with painted iron around the furnace. */
+export function applyUpperShaftFinish(model: THREE.Object3D): THREE.MeshStandardMaterial[] {
+  const finishes = new Map<THREE.MeshStandardMaterial, THREE.MeshStandardMaterial>();
+  let metal: THREE.MeshStandardMaterial | undefined;
+  model.traverse((node) => {
+    if (node instanceof THREE.Mesh && node.material?.name === 'gear-shaft_brass-aged')
+      metal = node.material;
+  });
+  model.traverse((node) => {
+    if (!(node instanceof THREE.Mesh)) return;
+    const source = node.material;
+    if (!(source instanceof THREE.MeshStandardMaterial)) return;
+    const panel = source.name === 'gear-shaft_wallpaper';
+    if (!panel && source.name !== 'gear-shaft_walnut') return;
+    let finish = finishes.get(source);
+    if (!finish) {
+      finish = source.clone();
+      finish.name = panel ? 'upper-works-painted-panels' : 'upper-works-iron-trim';
+      finish.color.setHex(panel ? 0x6f9099 : 0x50656c);
+      finish.map = null;
+      finish.normalMap = metal?.normalMap ?? null;
+      finish.roughnessMap = metal?.roughnessMap ?? null;
+      finish.aoMap = null;
+      finish.metalnessMap = null;
+      finish.metalness = panel ? 0.34 : 0.65;
+      finish.roughness = 0.66;
+      finish.onBeforeCompile = source.onBeforeCompile;
+      finish.customProgramCacheKey = source.customProgramCacheKey;
+      finishes.set(source, finish);
+    }
+    node.material = finish;
+  });
+  return [...finishes.values()];
 }
 
 export function disposeRoomStyle(model: THREE.Group): void {

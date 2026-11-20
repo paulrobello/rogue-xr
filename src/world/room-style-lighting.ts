@@ -16,14 +16,14 @@ type Shadow = {
 };
 
 // Each wall, the deck and the ceiling has a chart. Half-texel insets keep the neighbouring chart out of the filter.
-const atlasVertex = `
+const atlasVertex = (edge: number) => `
 vec3 finishP = position;
 float finishFace;
 #ifdef USE_INSTANCING
   finishP = (instanceMatrix * vec4(position, 1.)).xyz;
   vec2 centre = instanceMatrix[3].xz;
   finishFace = abs(centre.x) > abs(centre.y) ? (centre.x > 0. ? 1. : 3.) : (centre.y > 0. ? 2. : 0.);
-  vec2 finishUv = vec2((mod(finishFace, 2.) < .5 ? finishP.x : finishP.z) / 8. + .5, finishP.y / 4.);
+  vec2 finishUv = vec2((mod(finishFace, 2.) < .5 ? finishP.x : finishP.z) / ${(2 * edge).toFixed(1)} + .5, finishP.y / 4.);
 #else
   finishFace = finishP.y < 2. ? 4. : 5.;
   vec2 finishUv = finishP.xz / 8. + .5;
@@ -185,17 +185,18 @@ export function lightRoomStyle(room: THREE.Group, placements: readonly InteriorP
           0.67,
         );
   }
+  const edge: number = room.userData.finishEdge ?? 4;
   const timber = room.userData.roomStyle === 'timber';
   if (timber) lightDiningSet(room, placements);
   const pixels = new Uint8Array(TILE * TILE * FACES * 4);
   for (let face = 0; face < FACES; face++) {
     for (let j = 0; j < TILE; j++)
       for (let i = 0; i < TILE; i++) {
-        const u = (8 * i) / (TILE - 1) - 4,
+        const u = (2 * edge * i) / (TILE - 1) - edge,
           v = j / (TILE - 1);
-        const x = face === 1 ? 4 : face === 3 ? -4 : u;
+        const x = face === 1 ? edge : face === 3 ? -edge : u;
         const y = face === 4 ? 0 : face === 5 ? 4 : 4 * v;
-        const z = face === 0 ? -4 : face === 2 ? 4 : face < 4 ? u : 8 * v - 4;
+        const z = face === 0 ? -edge : face === 2 ? edge : face < 4 ? u : (2 * v - 1) * edge;
         let glow = 0;
         for (const l of lamps) {
           const dx = x - l.x,
@@ -236,10 +237,10 @@ export function lightRoomStyle(room: THREE.Group, placements: readonly InteriorP
       bake.call(m, shader, renderer);
       shader.vertexShader = shader.vertexShader.replace(
         '#include <begin_vertex>',
-        `#include <begin_vertex>\n${atlasVertex}`,
+        `#include <begin_vertex>\n${atlasVertex(edge)}`,
       );
     };
-    m.customProgramCacheKey = () => 'room-finish-lighting-v1';
+    m.customProgramCacheKey = () => `room-finish-lighting-${edge}`;
     materials.set(source, m);
     return m;
   };

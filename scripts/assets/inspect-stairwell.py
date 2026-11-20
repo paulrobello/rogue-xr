@@ -2,6 +2,7 @@
 
 import json
 import math
+import struct
 import sys
 from pathlib import Path
 
@@ -10,6 +11,14 @@ from mathutils import Vector
 from mathutils.geometry import intersect_ray_tri
 
 p = Path(sys.argv[sys.argv.index("--") + 1])
+data = p.read_bytes()
+assert data[:4] == b"glTF"
+length, chunk_type = struct.unpack_from("<II", data, 12)
+assert chunk_type == 0x4E4F534A
+gltf = json.loads(data[20 : 20 + length])
+recess = next(m for m in gltf["materials"] if m["name"] == "Stairwell dark recess")
+assert "KHR_materials_unlit" in recess.get("extensions", {})
+assert recess.get("pbrMetallicRoughness", {}).get("baseColorFactor") == [0, 0, 0, 1]
 bpy.ops.object.select_all(action="SELECT")
 bpy.ops.object.delete(use_global=False)
 bpy.ops.import_scene.gltf(filepath=str(p))

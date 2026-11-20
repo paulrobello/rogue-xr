@@ -51,17 +51,17 @@
   "tread_count": 9,
   "landing": "z=3.97..4.95; final tread ends at z=3.97",
   "texture_source": "Existing project 1024 px tileable PBR maps, deterministically resized to 512 px and packed in the source blend and GLB; base color sRGB, normal and ORM linear",
-  "reimport": "Blender 5.2.3 GLB importer checks roots, sockets, bounds, triangle/material budgets, one horizontal face at each of nine former riser overlaps and six landing locations, and 36 vertical-face samples per flight. The previous GLB fails the vertical test due to coincident surfaces.",
+  "reimport": "Blender 5.2.3 GLB importer checks roots, sockets, bounds, triangle and material budgets, stair contact samples, and explicit KHR_materials_unlit with opaque black base color.",
   "colliders": "Runtime owned",
   "illumination": "Visual sconces only; runtime owns lighting",
   "lods": "None",
   "bakes": "Existing tileable PBR maps, no high-to-low bake or lightmap",
-  "approval": "Geometry inspection, independent visual review and Quest Browser render checks passed. Owner headset playtest pending.",
+  "approval": "Blender geometry, unlit material export, door clearance and Quest 3 Browser render checks passed. Owner headset playtest pending.",
   "files_sha256": {
-    "scripts/assets/build-stairwell.py": "4c0661180be175303aa2bf03b87c3122a31662db8a1df7cbdaecd00a9ff0ff2c",
-    "scripts/assets/inspect-stairwell.py": "398586696d4f6d342246f5cf8255c71db221cc99b5c2a4145d0e7f69d8efbba7",
-    "assets-source/props/stairwell/stairwell.blend": "061dc6b30575e226dce1fb234e8713ecee01899ce6253ec6eb145c196f04a2dc",
-    "public/assets/props/stairwell/stairwell.glb": "90838163ecab8a0d8d4ce2555b981adc2f6017588c212f887bd9acb3a868b0cc",
+    "scripts/assets/build-stairwell.py": "f76cd4e4cea5ce01ef9984514ef4183d6e1ff317bcc4d4ead6ba580e23d1d5c9",
+    "scripts/assets/inspect-stairwell.py": "9b792106f096bb092ccf3e98e83ec4b353077021749b1d8edab69ee0a412b9c2",
+    "assets-source/props/stairwell/stairwell.blend": "ee007c91b25efc3b502305bc0609b43e5b20cdf3ef4fd54d37fbc73dc738dc03",
+    "public/assets/props/stairwell/stairwell.glb": "6b8c36f1604791933d9566e5735dcac62aff0a6cfc9184ddfd6a80b54fec4661",
     "public/assets/materials/stone-floor/stone-floor.basecolor.png": "9ff95890f076e9d6886715be934eb0b640d203942a2ec6b9f8562e65758732fd",
     "public/assets/materials/stone-floor/stone-floor.normal.png": "47adde7526f66f09f17705c6f3a802345b50bbd9d1d505f10fbe228004aefa7a",
     "public/assets/materials/stone-floor/stone-floor.orm.png": "09a537be8f1a15fc993513d08d8feb34e76559d878c383ed356c08ebc07aff48",
@@ -72,27 +72,19 @@
     "public/assets/materials/brass-aged/brass-aged.normal.png": "752f6211fca91fa4e2beb4e43c11ba097d2da7139268fdf33fb5b2ee26bfbe3a",
     "public/assets/materials/brass-aged/brass-aged.orm.png": "dab4896ed62310c39b975954f70cddf116f86518842eb7d84b0fde14dc7adbeb",
     "scripts/assets/inspect-stairwell-contact.py": "64650d8ecc7d2679dd7db46c7233a49b08a2eaee6860938163a9b0d85bef71c0",
-    "assets-source/props/stairwell/staging/StairUp.png": "5676f7e914dc9d8acc740b8af77f31ef1014e743e039af63871039a636a46b70",
-    "assets-source/props/stairwell/staging/StairDown.png": "4cd71d4e7484ceea8ff29603c9ddcc47df3a241ab675654be821f02119d320b0",
-    "docs/verification/quest-stair-door-transit.jpg": "1b65c3ff7b5d4fb666cf46b48bb3bf5b588defb67c74b1833e06c347ea338b8a"
+    "assets-source/props/stairwell/staging/StairUp.png": "959db888b5b3f5173742853fd3520e7dc51702242c1bb45b687796628c0c2ddd",
+    "assets-source/props/stairwell/staging/StairDown.png": "a56ff6d7ea164cf3ef01f29b51fd937ff2e6fec9f58879139dd9f160bc9dfc18",
+    "scripts/assets/render-stairwell-review.py": "6e325fed1796dc4ccb9def4b870b8874f95bc8252f11fff9f0167ca2782d9bb0",
+    "assets-source/props/stairwell/staging/StairUp-oblique.png": "e91eea9d1244a40aeb819911ad20b56dc0415cac3018dbe7649e48ebfcef095e",
+    "assets-source/props/stairwell/staging/StairDown-oblique.png": "1b5bab7b37fdf8894811ed43b9248ca5c20ed64d917ec2058a9fdf4b2fb78973",
+    "docs/verification/quest-upper-works.jpg": "14132418f246845f44071e1068af51586ac1e85594e4bef2a495a0f7e7b8ce88"
   },
-  "sha256": "90838163ecab8a0d8d4ce2555b981adc2f6017588c212f887bd9acb3a868b0cc",
-  "bytes": 5355652,
-  "visual_review": "Solid and textured renders distinguished repeated walnut marks from overlapping riser faces. Final geometry passed independent review. Quest Browser rendered this GLB on Quest 3 and crossed both flights. Two camera positions show the corrected descending threshold. Both door swings exposed the dark recess and both blackout captures contained only black pixels.",
+  "sha256": "6b8c36f1604791933d9566e5735dcac62aff0a6cfc9184ddfd6a80b54fec4661",
+  "bytes": 5355700,
+  "visual_review": "Current Quest 3 Browser captures show both opening doors and their destination rooms. Before the screen fade, all 18 sampled pixels through each doorway read RGB (0, 0, 0) around the lit wooden leaf.",
   "rail_contact": "Per flight, 18 posts penetrate stringer axes by at least 0.039999 m; six landing feet and anchors overlap landing by at least 0.019999 m.",
-  "rear_door": "Hinged leaf, pull and sign move with named DoorPivot. Pivot x=-0.59, z=4.915 at landing height; negative runtime Y yaw opens into the dark recess. HandleSocket is at x=0.44, z=4.775, landing+0.88.",
+  "rear_door": "Hinged leaf, pull and sign move with named DoorPivot. Pivot x=-0.59, z=4.915 at landing height; negative runtime Y yaw opens into the dark recess. HandleSocket is at x=0.44, z=4.775, landing+0.88. Recess liner begins at z=4.75 and covers the landing edge, with black unlit sides, floor, cap and back.",
   "door_clearance": "Blender evaluated world-space BVH checks of all moving leaf meshes against the jambs, rear wall, lintel and recess at 5-degree increments from 5 through 75 degrees.",
   "surface_contact": "Each riser is a vertical face 3 mm behind its tread boundary (z=0.913+0.34i) without horizontal caps. Ascending supports begin 6 mm behind the boundary. Threshold ends z=0.91, treads span z=0.91+0.34i to 1.25+0.34i, and landing begins z=3.97.",
-  "preview_provenance": "Blender 5.3.0 EEVEE, rendering the final packed stairwell.blend with both pivots rotated -55 degrees in memory. Preview-only camera and lights were added in memory; runtime supplies dynamic sign text and lighting.",
-  "geometry_uv_fingerprints": {
-    "method": "Blender 5.2.3 reimport, meshes ordered by object name, SHA-256 over little-endian float32 world-space vertices and loop UVs respectively",
-    "StairUp": {
-      "vertices": "fbd781ec34cd78dd99675bdeb0b54593ef9e96b1aeec46cd2c609058fed946c4",
-      "uv": "6af99bb74bbebb22fab1d4c61f0d5d41351bf0cfe8768182470ace0783560c92"
-    },
-    "StairDown": {
-      "vertices": "3ff9c7486aa4c0ce2c7fb4b08f91f466050277350df72d17372c611ef4f71abf",
-      "uv": "630b86f966d16e9839d0a88293b24251a537b668851f3a71f599526e0c49ade0"
-    }
-  }
+  "preview_provenance": "Blender 5.3.0 EEVEE, scripts/assets/render-stairwell-review.py renders the packed blend with both pivots rotated -55 degrees in memory, with preview-only camera and lights. Runtime supplies dynamic sign text and lighting."
 }

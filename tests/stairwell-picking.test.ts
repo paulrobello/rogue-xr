@@ -49,6 +49,19 @@ it.each([1, 2] as const)(
     expect(pick([0, 1.3, -1], handle, 1)).toBeNull();
     const closed = stair.handle.getWorldPosition(new THREE.Vector3());
     stair.open(1);
+    for (const side of [-0.35, 0.35]) {
+      const from = stair.root.localToWorld(new THREE.Vector3(side, rise + 1.32, 3.7));
+      for (const y of [0.08, 0.65, 1.8]) {
+        const through = stair.root.localToWorld(new THREE.Vector3(0.35, rise + y, 4.79));
+        const ray = new THREE.Raycaster(from, through.sub(from).normalize());
+        stair.root.updateWorldMatrix(true, true);
+        const firstHit = ray.intersectObject(stair.root)[0]?.object;
+        expect(firstHit).toBeInstanceOf(THREE.Mesh);
+        const material = (firstHit as THREE.Mesh).material;
+        expect(material).toBeInstanceOf(THREE.MeshBasicMaterial);
+        expect((material as THREE.MeshBasicMaterial).color.getHex()).toBe(0);
+      }
+    }
     const opened = stair.root.worldToLocal(stair.handle.getWorldPosition(new THREE.Vector3()));
     expect(opened.z).toBeGreaterThan(5.7);
     expect(stair.hinge.rotation.y).toBeCloseTo((-Math.PI * 75) / 180);

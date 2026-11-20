@@ -10,6 +10,8 @@ import {
   rectsOverlap,
   worldRooms,
 } from '../src/floor/generate.ts';
+import { placeStairEntry } from '../src/floor/stairs.ts';
+import { playableFloorPlan } from '../src/world/floor-view.ts';
 
 const CROCKFORD = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 
@@ -117,6 +119,34 @@ describe('determinism', () => {
       JSON.stringify(generateFloor('spire-001')),
     );
     expect(generateFloor('SPIRE001')).not.toEqual(generateFloor('SPIRE002'));
+  });
+});
+
+describe('Upper Works floor generation', () => {
+  it('keeps v3 floor-two layouts while v4 starts at the industrial shaft', () => {
+    const seed = 'MAPTEST3';
+    const legacy = playableFloorPlan(seed, 3, 2);
+    expect(legacy.rooms.map((room) => ({ ...room, encounter: null }))).toEqual(
+      attachPressureWing(generateFloor(seed)).rooms.map((room) => ({ ...room, encounter: null })),
+    );
+    expect(playableFloorPlan(seed, 4, 2).rooms[0]?.templateId).toBe('gear-shaft');
+    expect(playableFloorPlan(seed, 4, 2).rooms.length).toBeGreaterThanOrEqual(8);
+  });
+
+  it('keeps the down stairs clear when placing the pressure wing beside the shaft', () => {
+    const seed = 'PZPDHHP0';
+    expect(placeStairEntry(playableFloorPlan(seed, 4, 2))?.room).toBe(0);
+    expect(playableFloorPlan(seed, 3, 2)).toEqual(attachPressureWing(generateFloor(seed)));
+  });
+
+  it('keeps a clear stair landing for 1,000 deterministic upper seeds', () => {
+    const stream = Stream.fromKey('upper-floor-stair-regression');
+    for (let i = 0; i < 1_000; i++) {
+      const seed = Array.from({ length: 8 }, () => CROCKFORD[stream.int(0, 31)]).join('');
+      const plan = playableFloorPlan(seed, 4, 2);
+      expect(plan.rooms[0]?.templateId).toBe('gear-shaft');
+      expect(placeStairEntry(plan), seed).toMatchObject({ room: 0 });
+    }
   });
 });
 

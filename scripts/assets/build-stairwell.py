@@ -81,7 +81,15 @@ iron = material(
 edge_brass = material(
     "Stairwell bright brass", color=(0.78, 0.52, 0.19, 1), metal=0.65, rough=0.32
 )
-recess = material("Stairwell dark recess", color=(0.012, 0.012, 0.014, 1), rough=1)
+recess = bpy.data.materials.new("Stairwell dark recess")
+recess.diffuse_color = (0, 0, 0, 1)
+recess.use_nodes = True
+nodes = recess.node_tree.nodes
+nodes.clear()
+black = nodes.new("ShaderNodeRGB")
+black.outputs["Color"].default_value = (0, 0, 0, 1)
+output = nodes.new("ShaderNodeOutputMaterial")
+recess.node_tree.links.new(black.outputs["Color"], output.inputs["Surface"])
 glow = material("Stairwell warm opal", color=(0.9, 0.57, 0.22, 1), rough=0.4)
 bs = glow.node_tree.nodes.get("Principled BSDF")
 bs.inputs["Emission Color"].default_value = (1, 0.38, 0.07, 1)
@@ -181,10 +189,10 @@ def build(kind, direction):
         if hi > lo:
             box(kind + " back wall infill", (0, (lo + hi) / 2, 4.92), (1.25, hi - lo, 0.16), stone, rootob, 0)
     box(kind + " recess back", (0, landing + 1.06, 6.12), (1.25, 2.12, 0.04), recess, rootob, 0)
-    for x in (-0.625, 0.625):
-        box(kind + " recess side", (x, landing + 1.06, 5.55), (0.04, 2.12, 1.14), recess, rootob, 0)
-    for y in (landing - 0.04, landing + 2.16):
-        box(kind + " recess cap", (0, y, 5.55), (1.25, 0.04, 1.14), recess, rootob, 0)
+    for x in (-0.615, 0.615):
+        box(kind + " recess side", (x, landing + 1.06, 5.44), (0.04, 2.14, 1.38), recess, rootob, 0)
+    box(kind + " recess floor", (0, landing - 0.019, 5.44), (1.25, 0.04, 1.38), recess, rootob, 0)
+    box(kind + " recess cap", (0, landing + 2.145, 5.44), (1.25, 0.04, 1.38), recess, rootob, 0)
     box(kind + " ceiling", (0, 4.04, 2.55), (2.86, 0.12, 4.85), walnut, rootob)
     for z in (1.2, 2.2, 3.2, 4.2):
         box(kind + " ceiling beam", (0, 3.94, z), (2.72, 0.15, 0.14), walnut, rootob)

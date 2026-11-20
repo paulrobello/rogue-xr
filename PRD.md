@@ -5,7 +5,7 @@
 | Product | Clockwork Spire, a seated WebXR roguelike deckbuilder |
 | Repo | `~/Repos/rogue-xr` (deploys to `spire.pardev.net`) |
 | Owner | Paul Robello |
-| Status | Planning — no implementation yet |
+| Status | Playable prototype in development |
 | Date | 2026-11-15 |
 
 ## Overview

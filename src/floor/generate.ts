@@ -9,6 +9,7 @@ import {
   rotateTemplate,
 } from '../content/rooms.ts';
 import { RunRng, Stream } from '../core/rng.ts';
+import { stairFootprint } from './stair-footprint.ts';
 
 export type EncounterTier = 'regular' | 'elite' | 'guardian';
 export type LootKind = 'cogs' | 'card';
@@ -61,6 +62,8 @@ export interface FloorParams {
   minWings: number;
   maxWings: number;
   templates: readonly RoomTemplate[];
+  /** Optional fixed entry template used by authored alternate floors. */
+  entryTemplateId?: string;
 }
 
 /** Reserved walk-through of all five baked room templates. */
@@ -75,6 +78,16 @@ export const DEFAULT_FLOOR_PARAMS: FloorParams = {
   minWings: 2,
   maxWings: 3,
   templates: GREYBOX_TEMPLATES,
+};
+
+/** Upper Works uses the industrial shaft as its fixed entry and a longer, narrower branch profile. */
+export const UPPER_FLOOR_PARAMS: FloorParams = {
+  minRooms: 8,
+  maxRooms: 10,
+  minWings: 1,
+  maxWings: 2,
+  templates: GREYBOX_TEMPLATES,
+  entryTemplateId: 'gear-shaft',
 };
 
 const MAX_ATTEMPTS = 50;
@@ -202,7 +215,10 @@ function attempt(rng: RunRng, params: FloorParams): FloorPlan | null {
   if (entries.length === 0 || vaults.length === 0)
     throw new Error('floor templates need an entry and a guardian room');
 
-  const entryTemplate = floor.pick(entries);
+  const entryTemplate = params.entryTemplateId
+    ? params.templates.find((template) => template.id === params.entryTemplateId)
+    : floor.pick(entries);
+  if (!entryTemplate) throw new Error(`unknown entry template ${params.entryTemplateId}`);
   const entryTurns = floor.pick(entryTemplate.rotations);
   const rooms: Draft[] = [
     {
@@ -331,7 +347,21 @@ function attempt(rng: RunRng, params: FloorParams): FloorPlan | null {
     for (const d of openDoors(r)) sealed.push({ room: index, door: d, style: 'wall' });
   });
   boardUpOne(sealed, rng.seed);
-  return { seed: rng.seed, rooms: placed, connections, sealed, guardianRoom };
+  if (
+    params.entryTemplateId &&
+    !entryLandingFits(
+      rooms.map((room) => room.world),
+      sealed,
+    )
+  )
+    return null;
+  return {
+    seed: rng.seed,
+    rooms: placed,
+    connections,
+    sealed,
+    guardianRoom,
+  };
 }
 
 /**
@@ -343,6 +373,16 @@ function boardUpOne(sealed: SealedDoor[], seed: string): void {
   const candidates = sealed.filter((s) => s.room !== 0);
   if (candidates.length === 0 || doors.next() >= BOARDED_DOOR_CHANCE) return;
   doors.pick(candidates).style = 'boarded';
+}
+
+function entryLandingFits(rooms: readonly WorldRoom[], sealed: readonly SealedDoor[]): boolean {
+  return (
+    rooms[0]?.doors.some((door) => {
+      if (!sealed.some((s) => s.room === 0 && s.door === door.id)) return false;
+      const alcove = stairFootprint(door);
+      return rooms.every((room) => !rectsOverlap(room.footprint, alcove));
+    }) ?? false
+  );
 }
 
 /** Picks at most one lock on an outward edge from a combat room. Every room keeps its entry open. */
@@ -373,6 +413,11 @@ export function generateFloor(seed: string, params: FloorParams = DEFAULT_FLOOR_
   throw new Error(`no valid floor for seed ${seed} after ${MAX_ATTEMPTS} attempts`);
 }
 
+/** Generates the distinct industrial Upper Works floor without changing floor-one generation. */
+export function generateUpperFloor(seed: string): FloorPlan {
+  return generateFloor(seed, UPPER_FLOOR_PARAMS);
+}
+
 interface PressureWingFit {
   source: SealedDoor;
   corridorTurns: QuarterTurns;
@@ -391,6 +436,7 @@ interface PressureWingFit {
 export function attachPressureWing(
   plan: FloorPlan,
   templates: readonly RoomTemplate[] = GREYBOX_TEMPLATES,
+  reservedStair?: Rect,
 ): FloorPlan {
   if (plan.pressureWing) return plan;
   const corridor = templates.find((t) => t.id === 'corridor');
@@ -442,6 +488,7 @@ export function attachPressureWing(
         ] as const;
         const corridorWorld = worldRoom(corridor, corridorTurns, corridorPosition);
         if (world.some((room) => rectsOverlap(room.footprint, corridorWorld.footprint))) continue;
+        if (reservedStair && rectsOverlap(corridorWorld.footprint, reservedStair)) continue;
         const corridorExit = rotatedCorridor.doors.find((d) => d.id !== corridorEntry.id);
         if (!corridorExit) continue;
         for (const studyTurns of study.rotations) {
@@ -455,7 +502,8 @@ export function attachPressureWing(
             const studyWorld = worldRoom(study, studyTurns, studyPosition);
             if (
               world.some((room) => rectsOverlap(room.footprint, studyWorld.footprint)) ||
-              rectsOverlap(corridorWorld.footprint, studyWorld.footprint)
+              rectsOverlap(corridorWorld.footprint, studyWorld.footprint) ||
+              (reservedStair && rectsOverlap(studyWorld.footprint, reservedStair))
             )
               continue;
             fits.push({
@@ -531,13 +579,19 @@ export function attachPressureWing(
       .doors.filter((door) => door.id !== fit.studyDoor)
       .map((door) => ({ room: pumpRoom, door: door.id, style: 'wall' as const })),
   ];
-  return {
+  const result: FloorPlan = {
     ...plan,
     rooms: newRooms,
     connections,
     sealed,
     pressureWing: { gallery, pumpRoom, source: { room: fit.source.room, door: fit.source.door } },
   };
+  if (
+    plan.rooms[0]?.templateId === 'gear-shaft' &&
+    !entryLandingFits(worldRooms(result, templates), result.sealed)
+  )
+    return plan;
+  return result;
 }
 
 /** Every room's world-space template, for the world builder and for tests. */

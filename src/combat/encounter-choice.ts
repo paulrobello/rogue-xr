@@ -10,7 +10,9 @@ const CROCKFORD = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 /** Existing snapshots keep their encounter pool and floor layout across content releases. */
 export const FOUNDRY_VERSION = 2;
 export const PRESSURE_WORKS_VERSION = 3;
-export const ENCOUNTER_CONTENT_VERSION = PRESSURE_WORKS_VERSION;
+/** Fresh runs use the distinct Upper Works floor; older snapshots retain their v3 layouts. */
+export const UPPER_WORKS_VERSION = 4;
+export const ENCOUNTER_CONTENT_VERSION = UPPER_WORKS_VERSION;
 const LEGACY_ENCOUNTER_IDS = new Set([
   'sentry',
   'hound',

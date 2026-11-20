@@ -4,6 +4,7 @@ import {
   chooseEncounter,
   ENCOUNTER_CONTENT_VERSION,
   PRESSURE_WORKS_VERSION,
+  UPPER_WORKS_VERSION,
 } from '../combat/encounter-choice.ts';
 import { combatRoom, rigTurnAboutHead } from '../combat/placement.ts';
 import { buildTableGreybox, disposeTable, TABLE_NODES } from '../combat/table-greybox.ts';
@@ -11,7 +12,13 @@ import { type RoomTemplate, templateById } from '../content/rooms.ts';
 import { isValidSeed, normalizeSeed, randomSeed, Stream } from '../core/rng.ts';
 import { BreakApart } from '../enemies/break-apart.ts';
 import type { EnemyActor, EnemyAsset } from '../enemies/enemy-asset.ts';
-import { attachPressureWing, generateFloor, SHOWCASE_UPPER_SEED } from '../floor/generate.ts';
+import {
+  attachPressureWing,
+  generateFloor,
+  generateUpperFloor,
+  SHOWCASE_UPPER_SEED,
+} from '../floor/generate.ts';
+import { placeStairEntry } from '../floor/stairs.ts';
 import { nearSet, shellSet } from '../floor/visibility.ts';
 import { PALETTE } from '../palette.ts';
 import type { TreasureLoot } from '../rules/run.ts';
@@ -46,6 +53,7 @@ import { PressureNotes } from './pressure-notes.ts';
 import { PressureWorks } from './pressure-works.ts';
 import {
   applyRoomStyle,
+  applyUpperShaftFinish,
   copyStudyDesk,
   disposeRoomStyle,
   type RoomStyleKit,
@@ -231,12 +239,15 @@ export interface FloorViewOptions {
 }
 
 export function playableFloorPlan(seed: string, contentVersion: number, floorNumber: 1 | 2 = 1) {
-  const generated = generateFloor(seed);
+  const upperWorks = floorNumber === 2 && contentVersion >= UPPER_WORKS_VERSION;
+  const generated = upperWorks ? generateUpperFloor(seed) : generateFloor(seed);
   const base =
     floorNumber === 2 && seed === SHOWCASE_UPPER_SEED
       ? { ...generated, rooms: generated.rooms.map((r) => ({ ...r, encounter: null })) }
       : generated;
-  return contentVersion >= PRESSURE_WORKS_VERSION ? attachPressureWing(base) : base;
+  if (contentVersion < PRESSURE_WORKS_VERSION) return base;
+  const reservedStair = upperWorks ? placeStairEntry(base)?.alcove : undefined;
+  return attachPressureWing(base, undefined, reservedStair);
 }
 
 /** Greybox exploration view: the generated floor, flat greybox lighting, the rig at the entry. */
@@ -341,6 +352,7 @@ export function mountFloorView(
     room: THREE.Object3D;
   }
   const styledRooms: THREE.Group[] = [];
+  const shaftFinishes: THREE.Material[] = [];
   const spinners: Spinner[] = [];
   /** Live fireplace fires (the hall's); instances of one template share the material and its clock. */
   const fires: { material: THREE.ShaderMaterial; room: THREE.Object3D }[] = [];
@@ -503,6 +515,7 @@ export function mountFloorView(
         furnishings = new InteriorFurnishings(world, asset, {
           paintings,
           reducedMotion,
+          floorNumber,
           preservedBookRooms: options.preservedBookRooms,
         });
         book.mount(furnishings);
@@ -572,7 +585,7 @@ export function mountFloorView(
       world.plan.rooms.forEach((room, index) => {
         if (room.templateId !== templateId) return;
         const model = instantiate();
-        const style = roomStyleKit && roomStyleFor(world.plan, index);
+        const style = roomStyleKit && roomStyleFor(world.plan, index, floorNumber);
         if (style && roomStyleKit) {
           const styled = new THREE.Group();
           const doors = templateById(room.templateId).doors.map((door) => ({
@@ -586,14 +599,18 @@ export function mountFloorView(
                 !(stairs?.entry.room === index && stairs.entry.door === door.id),
             ),
           }));
-          applyRoomStyle(styled, style, roomStyleKit, doors);
-          if (style === 'timber') copyStudyDesk(model, styled);
-          world.removeRoomFixtureColliders(index, style === 'timber');
+          const edge = templateById(templateId).footprint.max[0];
+          applyRoomStyle(styled, style, roomStyleKit, doors, edge);
+          const keepDesk = style === 'timber' || (templateId === 'study' && room.loot.length > 0);
+          if (keepDesk) copyStudyDesk(model, styled);
+          world.removeRoomFixtureColliders(index, keepDesk);
           styledRooms.push(styled);
           world.dressRoom(index, styled);
           dressed++;
           return;
         }
+        if (floorNumber === 2 && templateId === 'gear-shaft')
+          shaftFinishes.push(...applyUpperShaftFinish(model));
         world.dressRoom(index, model);
         const group = world.roomGroups[index];
         for (const rigid of rigidNodes) {
@@ -621,6 +638,7 @@ export function mountFloorView(
     dispose() {
       stairs?.dispose();
       for (const room of styledRooms) disposeRoomStyle(room);
+      for (const material of shaftFinishes) material.dispose();
       book.dispose();
       furnishings?.dispose();
       notes?.dispose();

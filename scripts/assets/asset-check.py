@@ -150,6 +150,10 @@ def check_stairwell(errors: list[str]) -> None:
         pivot = next((n for n in descendants if n["name"] == root["name"] + "_DoorPivot"), {})
         if root["name"] + "_HandleSocket" not in [nodes[i]["name"] for i in pivot.get("children", [])]:
             errors.append(f"stairwell: missing hinged door handle in {root['name']}")
+    reveal = next((m for m in gltf["materials"] if m.get("name") == "Stairwell dark recess"), {})
+    if ("KHR_materials_unlit" not in reveal.get("extensions", {})
+            or reveal.get("pbrMetallicRoughness", {}).get("baseColorFactor") != [0, 0, 0, 1]):
+        errors.append("stairwell: door reveal must export as opaque, unlit black")
     if len(gltf["materials"]) != 7 or any("bufferView" not in image for image in gltf["images"]):
         errors.append("stairwell: expected seven materials and embedded texture maps")
     print(f"asset-check props/stairwell: {len(roots)} directional flights, {path.stat().st_size} bytes")

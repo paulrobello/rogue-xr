@@ -1,5 +1,7 @@
-import { type Facing, GREYBOX_TEMPLATES, type Rect, type RoomTemplate } from '../content/rooms.ts';
+import { GREYBOX_TEMPLATES, type Rect, type RoomTemplate } from '../content/rooms.ts';
 import { type FloorPlan, rectsOverlap, type WorldRoom, worldRooms } from './generate.ts';
+
+import { STAIR_OUTWARD, STAIR_WIDTH, stairFootprint } from './stair-footprint.ts';
 
 export interface StairEntry {
   /** Reachable host room containing the open doorway. */
@@ -24,7 +26,7 @@ export const STAIR_TREAD_RISE = 0.18;
 export const STAIR_TOTAL_RISE = STAIR_TREAD_COUNT * STAIR_TREAD_RISE;
 export const STAIR_FLIGHT_END = STAIR_THRESHOLD_DEPTH + STAIR_TREAD_COUNT * STAIR_TREAD_PITCH;
 export const STAIR_LANDING_END = 4.95;
-export const STAIR_WIDTH = 3;
+export { STAIR_WIDTH } from './stair-footprint.ts';
 export const STAIR_HALF_WIDTH = 0.98;
 /** Keep the seated player's controller on the near side of the pull at full forward travel. */
 export const STAIR_DOOR_BARRIER = 4.54;
@@ -91,35 +93,16 @@ export function stairGroundHeight(
   return stairHeightAtDepth(point.depth, direction);
 }
 
-const ALCOVE_DEPTH = 6.14;
-const OUTWARD: Record<Facing, readonly [number, number]> = {
-  N: [0, -1],
-  S: [0, 1],
-  E: [1, 0],
-  W: [-1, 0],
-};
-
 function alcoveFor(room: number, door: WorldRoom['doors'][number]): StairEntry {
-  const outward = OUTWARD[door.facing];
+  const outward = STAIR_OUTWARD[door.facing];
   const [x, z] = door.world;
-  const half = STAIR_WIDTH / 2;
-  const alcove: Rect =
-    door.facing === 'N' || door.facing === 'S'
-      ? {
-          min: [x - half, outward[1] < 0 ? z - ALCOVE_DEPTH : z],
-          max: [x + half, outward[1] < 0 ? z : z + ALCOVE_DEPTH],
-        }
-      : {
-          min: [outward[0] < 0 ? x - ALCOVE_DEPTH : x, z - half],
-          max: [outward[0] < 0 ? x : x + ALCOVE_DEPTH, z + half],
-        };
   return {
     room,
     door: door.id,
     world: [x, z],
     facing: outward,
     approach: [x - outward[0] * 0.8, z - outward[1] * 0.8],
-    alcove,
+    alcove: stairFootprint(door),
   };
 }
 

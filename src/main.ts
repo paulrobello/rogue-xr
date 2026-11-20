@@ -599,6 +599,9 @@ const dressFloor = async (target: FloorView): Promise<void> => {
         })
         .catch((error: unknown) => console.warn('Pressure Works dressing unavailable', error)),
     );
+  }
+  const furnish = Boolean(target.pressure) || target.floorNumber === 2;
+  if (furnish) {
     interiors ??= Promise.all([
       Promise.all([loadInteriorFurnishings(), libraryBindings]).then(([asset, atlas]) => {
         if (atlas) bindBookcaseAtlas(asset, atlas);
@@ -620,13 +623,15 @@ const dressFloor = async (target: FloorView): Promise<void> => {
     sealedDoorMaterial,
     lootMaterials,
     tableDecor,
-    target.pressure
+    furnish
       ? interiors?.catch((error: unknown) => {
           console.warn('Interior furnishing kit unavailable', error);
           return null;
         })
       : null,
-    target.world.plan.rooms.some((_, index) => roomStyleFor(target.world.plan, index))
+    target.world.plan.rooms.some((_, index) =>
+      roomStyleFor(target.world.plan, index, target.floorNumber),
+    )
       ? architecturalFinishes()
       : undefined,
     target.world.stairEntry ? stairModels() : undefined,
@@ -1012,12 +1017,13 @@ const ui = floor
       flow,
       locationLabel: () => {
         if (!floor) return null;
-        if (!isShowcaseFloor(floor.seed, floor.floorNumber)) return `Floor ${floor.floorNumber}`;
+        const name = floor.floorNumber === 2 ? 'Floor 2 · Upper Works' : 'Floor 1';
+        if (!isShowcaseFloor(floor.seed, floor.floorNumber)) return name;
         const index = floor.world.current;
         const { template, footprint } = floor.world.rooms[index];
         const width = footprint.max[0] - footprint.min[0],
           depth = footprint.max[1] - footprint.min[1];
-        return `Floor ${floor.floorNumber} · Room ${index} · ${template.id.replaceAll('-', ' ')} · ${width} × ${depth} m`;
+        return `${name} · Room ${index} · ${template.id.replaceAll('-', ' ')} · ${width} × ${depth} m`;
       },
       onNoteOpened: (at) => audio?.playSfx('paper-unfold', at),
       noteRecord: (id) => floor?.notes?.record(id) ?? null,
