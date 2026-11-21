@@ -9,12 +9,9 @@ import { intentChips } from '../src/combat-view/index.ts';
 import { getCard } from '../src/content/cards.ts';
 import { GREYBOX_TEMPLATES, templateById } from '../src/content/rooms.ts';
 import { ActionBus } from '../src/core/actions.ts';
-import {
-  type EnemyAsset,
-  parseEnemyAsset,
-  parseEnemyManifest,
-} from '../src/enemies/enemy-asset.ts';
+import { EnemyAsset, parseEnemyAsset, parseEnemyManifest } from '../src/enemies/enemy-asset.ts';
 import type { EnemyState } from '../src/rules/index.ts';
+import { floorSeedFor } from '../src/rules/run.ts';
 import { type FloorView, mountFloorView } from '../src/world/floor-view.ts';
 import { heroTemplates, parseStudyManifest } from '../src/world/study-room.ts';
 
@@ -264,6 +261,60 @@ function killAll(session: CombatSession, rig: HookRig): void {
     rig.step(DT);
   }
 }
+
+it('plays a custom defensive action through its impact and the end of the clip', async () => {
+  const base = await loadTestSentry();
+  const template = base.clips.get('attack');
+  if (!template) throw new Error('missing sentry animation fixture');
+  const impact = 0.24;
+  const model = new EnemyAsset(
+    {
+      ...base.manifest,
+      id: 'mortar-scarab',
+      intentClips: { 'shell-seal': 'intent-shell-seal' },
+      actionClips: { 'shell-seal': 'action-shell-seal' },
+      actionTimings: { 'shell-seal': { duration: template.duration, impact } },
+    },
+    base.template,
+    base.clips,
+    { materials: [], geometries: [] },
+    null,
+    new Map([
+      ['intent-shell-seal', template.clone()],
+      ['action-shell-seal', template.clone()],
+    ]),
+  );
+  const view = mountFloorView(new THREE.Scene(), new THREE.Group(), floorSeedFor('CRYPT001', 2), {
+    floorNumber: 2,
+  });
+  view.useEnemyAssets(only(model));
+  const room = view.actors.find((actor) => actor.kind === model.id)?.object.userData.room;
+  if (room === undefined) throw new Error('missing dungeon encounter');
+  const rig = openHook(view, room);
+  try {
+    rig.step(1.2);
+    const session = await rig.hook.ready();
+    if (!session) throw new Error('missing dungeon combat session');
+    expect(session.view.enemies[0]?.intent?.id).toBe('shell-seal');
+    session.controller.endTurn();
+    rig.step(0.12);
+    const trace = session.turnTrace[0];
+    if (!trace) throw new Error('missing action trace');
+    expect(trace).toMatchObject({ moveId: 'shell-seal', motion: 'clip', impact: null, end: null });
+    expect(session.view.enemies[0]?.block).toBe(0);
+    rig.step(0.18);
+    expect((trace.impact ?? 0) - trace.start).toBeCloseTo(impact, 1);
+    expect(session.view.enemies[0]?.block).toBe(9);
+    expect(trace.end).toBeNull();
+    rig.step(template.duration + 0.5);
+    expect((trace.end ?? 0) - trace.start).toBeGreaterThanOrEqual(template.duration - DT);
+  } finally {
+    rig.hook.dispose();
+    view.dispose();
+    model.dispose();
+    base.dispose();
+  }
+});
 
 describe('Cog Sentry on the floor', () => {
   it('keeps the capsules when the sentry never loads', () => {

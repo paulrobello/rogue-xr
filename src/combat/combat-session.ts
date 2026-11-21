@@ -2343,7 +2343,7 @@ export class CombatSession {
     const motion: EnemyMotion =
       seg.act.length === 0 || !alive
         ? 'none'
-        : seg.attacks && actor && !actor.dead
+        : actor && !actor.dead && (seg.attacks || actor.hasAction(seg.moveId))
           ? 'clip'
           : seg.attacks
             ? 'lunge'
@@ -2361,9 +2361,9 @@ export class CombatSession {
     let impactAt = 0;
     let endAt = seg.lead.length > 0 ? LEAD_ONLY_SECONDS : 0;
     if (motion === 'clip' && actor) {
-      const spec = actor.asset.manifest.clips.attack;
+      const spec = actor.timingForMove(seg.moveId);
       actor.attack(seg.moveId ?? undefined);
-      impactAt = (spec.events.impact ?? spec.duration / 2) + IMPACT_GRACE_SECONDS;
+      impactAt = spec.impact + IMPACT_GRACE_SECONDS;
       endAt = spec.duration + CLIP_GRACE_SECONDS;
     } else if (motion === 'lunge') {
       impactAt = LUNGE_SECONDS / 2;
@@ -2425,7 +2425,7 @@ export class CombatSession {
   private beatDone(b: BeatRun): boolean {
     if (!b.impacted) return false;
     if (b.trace.motion === 'clip' && b.actor) {
-      return b.actor.dead || b.actor.state !== 'attack' || b.t >= b.endAt;
+      return b.actor.dead || b.actor.state !== b.actor.clipForMove(b.seg.moveId) || b.t >= b.endAt;
     }
     return b.t >= b.endAt;
   }
