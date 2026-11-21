@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { SteamPuffs } from '../combat-view/steam-puffs.ts';
 import type { PbrSet } from './materials.ts';
 
 type Kind = 'counterweight' | 'pressure';
@@ -89,6 +90,7 @@ class Castings {
 export class PuzzleGateVisual {
   readonly object = new THREE.Group();
   readonly handle = new THREE.Group();
+  readonly pickTarget: THREE.Object3D;
   private readonly leaf = new THREE.Group();
   private readonly finishes = {
     steel: new THREE.MeshStandardMaterial({
@@ -107,10 +109,14 @@ export class PuzzleGateVisual {
   private readonly travel: number;
   private goal = 0;
   private rattling = 0;
+  private readonly steam?: SteamPuffs;
+  private steamTime = 0;
+  private reducedSteam = false;
 
   constructor(kind: Kind, width: number, height: number) {
     this.object.name = `puzzle-gate-${kind}`;
     this.leaf.name = kind === 'pressure' ? 'pressure-door-panel' : 'counterweight-grille';
+    this.pickTarget = kind === 'pressure' ? this.leaf : this.handle;
     this.travel = height + 0.055;
     const half = width / 2;
     const frame = new Castings(),
@@ -176,10 +182,18 @@ export class PuzzleGateVisual {
           handle.part('brass', spoke, 0.075 * Math.cos(a), 0.075 * Math.sin(a), side * 0.112);
         }
         handle.part('brass', new THREE.TorusGeometry(0.14, 0.016, 8, 32), 0, 0, side * 0.112);
+        handle.disk('brass', 0.099, 0.099, side * 0.127, 0.026, 0.035, 6);
+        handle.disk('steel', 0.099, 0.099, side * 0.146, 0.013, 0.004);
       }
       handle.disk('brass', 0, 0, side * 0.103, 0.044, 0.032, 8);
     }
     handle.install(this.handle, this.finishes);
+    if (kind === 'pressure') {
+      this.steam = new SteamPuffs(6, new THREE.Color(0xe1eeed));
+      this.steam.name = 'pressure-gate-steam';
+      this.steam.position.copy(this.handle.position);
+      this.object.add(this.steam);
+    }
     this.leaf.add(this.handle);
     this.object.add(this.leaf);
   }
@@ -208,6 +222,7 @@ export class PuzzleGateVisual {
 
   setOpen(open: boolean, immediate = false): void {
     this.goal = open ? -this.travel : 0;
+    if ((open || immediate) && this.steam) this.steam.visible = false;
     if (immediate) {
       this.leaf.position.set(0, this.goal, 0);
       this.leaf.visible = !open;
@@ -215,8 +230,44 @@ export class PuzzleGateVisual {
     } else this.leaf.visible = true;
   }
 
-  rattle(): void {
-    if (this.goal === 0) this.rattling = 0.22;
+  rattle(reducedMotion = false): void {
+    if (this.goal !== 0) return;
+    if (!reducedMotion) this.rattling = 0.22;
+    if (this.steam) {
+      this.steamTime = 0;
+      this.reducedSteam = reducedMotion;
+      this.steam.visible = true;
+      this.updateSteam(0);
+    }
+  }
+
+  private updateSteam(dt: number): void {
+    const steam = this.steam;
+    if (!steam?.visible) return;
+    steam.position.x = this.leaf.position.x;
+    this.steamTime += dt;
+    let visible = false;
+    for (let i = 0; i < 6; i++) {
+      const lobe = Math.floor(i / 2);
+      const age = (this.steamTime - (this.reducedSteam ? 0 : lobe * 0.11)) / 0.58;
+      if (age < 0 || age >= 1) {
+        steam.hide(i);
+        continue;
+      }
+      const rise = this.reducedSteam ? 0.12 + lobe * 0.23 : age;
+      const side = i % 2 ? -1 : 1;
+      steam.puff(
+        i,
+        0.099 + 0.16 * rise + 0.023 * Math.sin(lobe * 2.4 + rise * 3),
+        0.099 + 0.25 * rise * rise,
+        side * (0.154 + 0.21 * rise),
+        0.078 + 0.18 * rise,
+        0.86 * (1 - age),
+        lobe * 1.8 + rise * 0.35,
+      );
+      visible = true;
+    }
+    steam.commit(visible);
   }
 
   update(dt: number): void {
@@ -224,9 +275,12 @@ export class PuzzleGateVisual {
     this.leaf.visible = this.leaf.position.y > -this.travel + 0.002;
     this.rattling = Math.max(0, this.rattling - dt);
     this.leaf.position.x = Math.sin(this.rattling * 72) * this.rattling * 0.038;
+    this.updateSteam(dt);
   }
 
   dispose(): void {
+    this.steam?.removeFromParent();
+    this.steam?.dispose();
     this.object.removeFromParent();
     this.object.traverse((node) => {
       if (node instanceof THREE.Mesh) node.geometry.dispose();

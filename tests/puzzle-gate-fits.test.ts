@@ -2,10 +2,12 @@
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { expect, it } from 'vitest';
+import { SteamPuffs } from '../src/combat-view/steam-puffs.ts';
 import { templateById } from '../src/content/rooms.ts';
 import { generateFloor } from '../src/floor/generate.ts';
 import { playableFloorPlan } from '../src/world/floor-view.ts';
 import { buildFloorWorld } from '../src/world/floor-world.ts';
+import { PuzzleGateVisual } from '../src/world/puzzle-gates.ts';
 import { ServicePanels } from '../src/world/service-panels.ts';
 import { nodeGeometryLoader } from './helpers/gltf-node.ts';
 
@@ -110,6 +112,65 @@ it.each(['pressure', 'counterweight'] as const)(
     world.dispose();
   },
 );
+
+it('vents a short burst from both faces when the locked pressure door panel is clicked', () => {
+  const world = buildFloorWorld(playableFloorPlan('MAPTEST2', 6, 1));
+  const gate = world.group.getObjectByName('puzzle-gate-pressure');
+  const edge = world.plan.connections.find((c) => c.puzzleGate === 'pressure');
+  const steam = gate?.getObjectByName('pressure-gate-steam');
+  if (!gate || !edge || !(steam instanceof SteamPuffs))
+    throw Error('Missing pressure door or steam');
+  expect(steam.visible).toBe(false);
+  expect(
+    world.group.getObjectByName('puzzle-gate-counterweight')?.getObjectByName(steam.name),
+  ).toBeUndefined();
+  for (const [side, room] of [
+    [1, edge[0].room],
+    [-1, edge[1].room],
+  ]) {
+    const { min, max } = world.rooms[room].footprint;
+    world.update((min[0] + max[0]) / 2, (min[1] + max[1]) / 2);
+    const at = gate.localToWorld(new THREE.Vector3(0.4, 1.42, side));
+    const direction = new THREE.Vector3(0, 0, -side).transformDirection(gate.matrixWorld);
+    const hit = world.pickPuzzleGate(at, direction);
+    expect(hit?.kind).toBe('pressure');
+    if (!hit) throw Error('Missing pressure door hit');
+    world.rattlePuzzleGate(hit.kind);
+    expect(steam.visible).toBe(true);
+    const firstSize = steam.puffData[3];
+    world.updateAnimations(0.28);
+    for (let i = 0; i < 6; i++) {
+      expect(steam.lookData[i * 2]).toBeGreaterThan(0);
+      expect(steam.puffData[i * 4 + 2] * (i % 2 ? -1 : 1)).toBeGreaterThan(0.15);
+    }
+    expect(steam.puffData[3]).toBeGreaterThan(firstSize);
+    world.updateAnimations(0.6);
+    expect(steam.visible).toBe(false);
+  }
+  world.rattlePuzzleGate('pressure');
+  world.setPuzzleGateOpen('pressure', true);
+  expect(steam.visible).toBe(false);
+  expect(world.rattlePuzzleGate('pressure')).toBeUndefined();
+  expect(steam.visible).toBe(false);
+  world.dispose();
+});
+
+it('keeps the reduced-motion steam hint still while it fades', () => {
+  const door = new PuzzleGateVisual('pressure', 1.6, 2.4);
+  const steam = door.object.getObjectByName('pressure-gate-steam');
+  if (!(steam instanceof SteamPuffs)) throw Error('Missing pressure steam');
+  door.rattle(true);
+  const pose = steam.puffData.slice();
+  const alpha = steam.lookData[0];
+  door.update(0.25);
+  expect(door.pickTarget.position.x).toBe(0);
+  expect(steam.puffData).toEqual(pose);
+  expect(steam.lookData[0]).toBeLessThan(alpha);
+  expect(steam.visible).toBe(true);
+  door.update(0.4);
+  expect(steam.visible).toBe(false);
+  door.dispose();
+});
 
 it.each(['hall', 'corridor', 'study', 'guardian-vault', 'gear-shaft'])(
   'draws a single surface on every baked %s jamb and lintel',

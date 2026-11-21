@@ -33,12 +33,7 @@ export class AstralLift {
       roughness: 0.42,
       toneMapped: false,
     }),
-    cabin: new THREE.MeshBasicMaterial({
-      vertexColors: true,
-      side: THREE.DoubleSide,
-      toneMapped: false,
-    }),
-    lit: new THREE.MeshBasicMaterial({ color: 0xb3f0d1 }),
+    interior: new THREE.MeshBasicMaterial({ color: 0x000000, fog: false, toneMapped: false }),
   };
   private readonly geometries = new Set<THREE.BufferGeometry>();
   private readonly leaves: THREE.Group[] = [];
@@ -113,7 +108,11 @@ export class AstralLift {
       [1.86, 0.025, 0.066, 0, 2.326, 0.264],
       [1.84, 0.013, 0.039, 0, 0.033, 0.278],
     ]);
-    this.buildCabin();
+    // The backing sits in front of the chair rail and behind the closed leaves.
+    const interior = this.boxes(this.object, this.materials.interior, [
+      [1.21, 2.11, 0.006, 0, 1.053, 0.125],
+    ]);
+    interior.name = 'astral-lift-interior';
 
     for (const side of [-1, 1]) {
       const leaf = new THREE.Group();
@@ -136,58 +135,6 @@ export class AstralLift {
       this.object.add(leaf);
       this.leaves.push(leaf);
     }
-  }
-
-  private buildCabin(): void {
-    // The rear must clear the Conservatory's 107 mm chair rail, and the closed leaves start at 141 mm.
-    const rearZ = 0.12;
-    const rim = [
-      [-0.505, 0.044, 0.136],
-      [0.505, 0.044, 0.136],
-      [0.505, 2.059, 0.136],
-      [-0.505, 2.059, 0.136],
-    ];
-    const rear = [
-      [-0.299, 0.306, rearZ],
-      [0.299, 0.306, rearZ],
-      [0.299, 1.865, rearZ],
-      [-0.299, 1.865, rearZ],
-    ];
-    const positions: number[] = [];
-    const colors: number[] = [];
-    const quad = (corners: number[][], shades: number[]): void => {
-      for (const i of [0, 1, 2, 0, 2, 3]) {
-        positions.push(...corners[i]);
-        colors.push(...new THREE.Color(shades[i]).toArray());
-      }
-    };
-    quad(rear, [0x4a5854, 0x53645c, 0x8c9a85, 0x82947f]);
-    // Floor, right wall, ceiling, left wall. The upper fixture lights the rear of the car.
-    const faces = [
-      [0x373531, 0x6f6151],
-      [0x344341, 0x617064],
-      [0x695e48, 0xb6aa82],
-      [0x3b4b47, 0x708173],
-    ];
-    for (const [i, [near, far]] of faces.entries()) {
-      const j = (i + 1) % 4;
-      quad([rim[i], rim[j], rear[j], rear[i]], [near, near, far, far]);
-    }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-    this.geometries.add(geo);
-    const cabin = new THREE.Mesh(geo, this.materials.cabin);
-    cabin.name = 'astral-lift-interior';
-    this.object.add(cabin);
-    this.boxes(this.object, this.materials.lit, [[0.22, 0.041, 0.005, 0, 1.756, rearZ + 0.006]]);
-    this.boxes(this.object, this.materials.brass, [
-      [0.51, 0.018, 0.01, 0, 0.955, rearZ + 0.013],
-      [0.019, 0.059, 0.009, -0.2, 0.936, rearZ + 0.006],
-      [0.019, 0.059, 0.009, 0.2, 0.936, rearZ + 0.006],
-      [0.24, 0.008, 0.009, 0, 1.785, rearZ + 0.006],
-      [0.24, 0.008, 0.009, 0, 1.728, rearZ + 0.006],
-    ]);
   }
 
   private boxes(

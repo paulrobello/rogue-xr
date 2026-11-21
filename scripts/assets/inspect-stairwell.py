@@ -8,6 +8,7 @@ from pathlib import Path
 
 import bpy
 from mathutils import Vector
+from mathutils.bvhtree import BVHTree
 from mathutils.geometry import intersect_ray_tri
 
 p = Path(sys.argv[sys.argv.index("--") + 1])
@@ -22,6 +23,51 @@ assert recess.get("pbrMetallicRoughness", {}).get("baseColorFactor") == [0, 0, 0
 bpy.ops.object.select_all(action="SELECT")
 bpy.ops.object.delete(use_global=False)
 bpy.ops.import_scene.gltf(filepath=str(p))
+
+
+def material_tree(meshes: list, material_name: str) -> BVHTree:
+    vertices, faces = [], []
+    for obj in meshes:
+        mesh = obj.data
+        offset = len(vertices)
+        vertices.extend(obj.matrix_world @ v.co for v in mesh.vertices)
+        faces.extend(
+            tuple(offset + i for i in poly.vertices)
+            for poly in mesh.polygons
+            if mesh.materials[poly.material_index].name == material_name
+        )
+    return BVHTree.FromPolygons(vertices, faces)
+
+
+def check_rail_clearance(root, sign: int) -> dict:
+    fixed = [o for o in root.children if o.type == "MESH"]
+    wood = material_tree(fixed, "Stairwell walnut")
+    stone = material_tree(fixed, "Stairwell stone")
+    iron = [obj.matrix_world @ vertex.co for obj in fixed if obj.data.materials[0].name == "Stairwell dark iron"
+            for vertex in obj.data.vertices]
+    stations = [(1.08 + j * 0.34, sign * (j + 1) * 0.18) for j in range(9)]
+    stations.extend((z, sign * 1.62) for z in (4.0, 4.65))
+    gaps, cap_samples, exposed = [], 0, []
+    for side in (-1, 1):
+        center = side * 1.04
+        for z, floor in stations:
+            cap = {tuple(round(c, 6) for c in v) for v in iron if abs(v.x - center) < 0.04
+                   and abs(v.y + z) < 0.04 and abs(v.z - floor - 0.84) < 1e-4}
+            assert len(cap) == 8, (root.name, side, z, "iron post cap", cap)
+            hit, _, _, _ = stone.ray_cast(Vector((side * 0.99, -z, -0.1)), Vector((side, 0, 0)))
+            assert hit is not None, (root.name, z, "missing side masonry")
+            gaps.append(side * hit.x - max(side * v[0] for v in cap))
+            for vertex in cap:
+                for dx in (-1, 1):
+                    direction = Vector((dx, 0, 0))
+                    hit, normal, _, _ = wood.ray_cast(Vector(vertex), direction, 0.09)
+                    if hit is None or direction.dot(normal) <= 0:
+                        exposed.append((vertex, dx))
+                    cap_samples += 1
+    assert min(gaps) >= 0.077 and not exposed, (root.name, "post to masonry gap", min(gaps), "exposed post cap", exposed)
+    return {"rail_post_masonry_clearance_m_min": min(gaps), "rail_post_cap_wood_rays": cap_samples}
+
+
 report = {}
 for name in ("StairUp", "StairDown"):
     root = bpy.data.objects.get(name)
@@ -38,6 +84,7 @@ for name in ("StairUp", "StairDown"):
         ],
         "materials": sorted({m.name for o in meshes for m in o.data.materials if m}),
     }
+    report[name].update(check_rail_clearance(root, 1 if name == "StairUp" else -1))
     assert (
         len(meshes) >= 7
         and 0 < report[name]["triangles"] < 15000

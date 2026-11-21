@@ -19,6 +19,7 @@ function mountingPoint(
   halfWidth: number,
   depth: number,
   fullHeight: number | undefined,
+  localObstacles: readonly THREE.Box3[],
 ): PuzzleMount | null {
   const template = templateById(world.plan.rooms[room].templateId);
   const { min, max } = template.footprint;
@@ -28,6 +29,7 @@ function mountingPoint(
   const obstacles = world.colliders[room].map((b) =>
     new THREE.Box3(new THREE.Vector3(...b.min), new THREE.Vector3(...b.max)).applyMatrix4(inverse),
   );
+  obstacles.push(...localObstacles);
   const furnishingBounds = props
     .filter((p) => p.room === room)
     .map((p) => new THREE.Box3().setFromObject(p.object).applyMatrix4(inverse));
@@ -112,6 +114,7 @@ export function findPuzzleMount(
   halfWidth = 0.66,
   depth = 1.4,
   fullHeight?: number,
+  localObstacles: readonly THREE.Box3[] = [],
 ): PuzzleMount | null {
   const stream = placementKey
     ? Stream.fromKey(`${world.plan.seed}:mount:${placementKey}`)
@@ -120,7 +123,16 @@ export function findPuzzleMount(
     ? rooms.filter((room) => room !== world.plan.hiddenPassage?.treasureRoom)
     : rooms;
   for (const room of stream?.shuffle(offered) ?? offered) {
-    const mount = mountingPoint(world, room, props, stream, halfWidth, depth, fullHeight);
+    const mount = mountingPoint(
+      world,
+      room,
+      props,
+      stream,
+      halfWidth,
+      depth,
+      fullHeight,
+      localObstacles,
+    );
     if (mount) return mount;
   }
   return null;

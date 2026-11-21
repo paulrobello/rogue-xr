@@ -14,7 +14,7 @@ scene.render.engine = "BLENDER_EEVEE"
 scene.world.color = (0.16, 0.16, 0.16)
 scene.render.resolution_x, scene.render.resolution_y = 1000, 700
 scene.render.resolution_percentage = 100
-for location, power in [((0, -3.4, 3.6), 400), ((0, -4.0, 2.0), 450)]:
+for location, power in [((0, -3.4, 3.6), 400), ((0, -4.0, 2.0), 450), ((0, 0.9, 2.7), 240)]:
     bpy.ops.object.light_add(type="AREA", location=location)
     lamp = bpy.context.object
     lamp.data.energy, lamp.data.size = power, 2
@@ -29,9 +29,12 @@ for name, height in (("StairUp", 1.62), ("StairDown", -1.62)):
     for child in other.children_recursive:
         child.hide_render = True
     bpy.data.objects[name + "_DoorPivot"].rotation_euler.z = -math.radians(55)
-    for label, x in (("", 0), ("-oblique", 0.8)):
-        cam.location = (x, -2.5, height + 1.35)
-        cam.rotation_euler = (Vector((0, -5.0, height + 1.05)) - cam.location).to_track_quat("-Z", "Y").to_euler()
+    for label, eye, target in (
+        ("", (0, -2.5, height + 1.35), (0, -5.0, height + 1.05)),
+        ("-oblique", (0.32, 0.45, 1.38), (-0.22, -2.8, height * 0.5 + 0.64)),
+    ):
+        cam.location = eye
+        cam.rotation_euler = (Vector(target) - cam.location).to_track_quat("-Z", "Y").to_euler()
         scene.render.filepath = str(out / (name + label + ".png"))
         bpy.ops.render.render(write_still=True)
     for child in other.children_recursive:

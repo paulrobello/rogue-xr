@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { Stream } from '../core/rng.ts';
+import { DECOR_TABLES } from '../floor/table-decor.ts';
+import { flightGoal, flightPose, flightScale } from '../flow/card-flight.ts';
 import {
   alchemyRecipe,
   conservatoryFormula,
@@ -7,10 +9,19 @@ import {
   type StoredAlchemyState,
   type StoredConservatoryFormula,
 } from '../rules/alchemy.ts';
+import { ClockInscription } from './clock-inscription.ts';
 import type { FloorWorld } from './floor-world.ts';
+import type { InteriorPlacement } from './interior-furnishings.ts';
 import { findPuzzleMount, kitPart } from './puzzle-placement.ts';
 
 export const INGREDIENT_ROOTS = ['Mooncap', 'StarThistle', 'EmberSalt'] as const;
+const HALL_BENCHES = DECOR_TABLES.hall.map(
+  ({ x, z, halfX, halfZ, top }) =>
+    new THREE.Box3(
+      new THREE.Vector3(x - halfX, 0, z - halfZ),
+      new THREE.Vector3(x + halfX, top, z + halfZ),
+    ),
+);
 export type AlchemyPick = (
   | { action: 'collect' | 'add'; ingredient: Ingredient }
   | { action: 'apply' }
@@ -22,6 +33,14 @@ interface Cradle {
   available: boolean;
   flight: number | null;
 }
+interface PickupFlight {
+  node: THREE.Object3D;
+  collector: THREE.Object3D;
+  start: THREE.Vector3;
+  scale: THREE.Vector3;
+  room: number;
+  time: number;
+}
 
 export class AlchemyConservatory {
   readonly cauldron: THREE.Object3D;
@@ -32,6 +51,7 @@ export class AlchemyConservatory {
   readonly tabletRoom: number;
   private readonly leaves: THREE.Object3D[] = [];
   private readonly cradles: Cradle[] = [];
+  private readonly pickups = new Set<PickupFlight>();
   private readonly swirl: THREE.Object3D;
   private readonly bubbles: THREE.Object3D[];
   private simmer = 0;
@@ -46,7 +66,7 @@ export class AlchemyConservatory {
   private readonly owned = new Set<THREE.BufferGeometry>();
   private opened = false;
   private progress = 0;
-  private windDial: THREE.Object3D | null = null;
+  private windInscription?: ClockInscription;
   private windNeedle: THREE.Object3D | null = null;
   private readonly quietHour: number;
   private still = false;
@@ -61,6 +81,7 @@ export class AlchemyConservatory {
     private readonly art: THREE.Object3D,
     seed: string,
     private readonly reducedMotion: boolean,
+    private readonly placements: readonly InteriorPlacement[] = [],
   ) {
     const source = (name: string) => {
       let mat: THREE.Material | undefined;
@@ -79,7 +100,7 @@ export class AlchemyConservatory {
     const decoy = ([0, 1, 2] as const).find((id) => !recipe.includes(id))!;
     this.cauldronRoom = shuffled[0];
     this.tabletRoom = shuffled[1];
-    const lab = this.bay(this.cauldronRoom, 'brew-bench', 1.15);
+    const lab = this.bay(this.cauldronRoom, 'brew-bench', 0.95, 1.55);
     this.cauldron = this.clone('AlchemyCauldron');
     this.cauldron.position.set(0, 0, 0.54);
     this.swirl = kitPart(this.cauldron, 'CauldronSwirl');
@@ -113,13 +134,22 @@ export class AlchemyConservatory {
     this.potion.position.set(0, 0.58, 1.04);
     lab.add(this.potion);
     if (followup.recipe === 'stillwind') {
-      this.windDial = this.clone('ClockClueDial');
-      this.windDial.name = 'stillwind-lab-dial';
-      this.windDial.scale.setScalar(0.62);
-      this.windDial.position.set(-0.46, 0.97, 0.48);
-      this.windNeedle = kitPart(this.windDial, 'ClockClueHand');
-      this.windDial.visible = false;
-      lab.add(this.windDial);
+      const dial = this.clone('ClockClueDial');
+      dial.name = 'stillwind-lab-dial';
+      dial.position.set(-0.55, 1.28, 0.42);
+      this.windNeedle = kitPart(dial, 'ClockClueHand');
+      this.block(lab, 0.07, 1.28, 0.065, -0.55, 0.64, 0.32, this.wood);
+      this.block(lab, 0.23, 0.045, 0.22, -0.55, 0.0225, 0.32, this.bronze);
+      lab.add(dial);
+      this.windInscription = new ClockInscription(
+        'stillwind-dial-inscription',
+        0.65,
+        'Stillwind Tincture',
+        'Read the wind chart',
+        'for the starting hour.',
+      );
+      this.windInscription.object.position.set(-0.55, 0.96, 0.36);
+      lab.add(this.windInscription.object);
     }
     this.registerBox(this.cauldronRoom, lab);
     this.tablet = this.bay(this.tabletRoom, 'recipe-tablet', 0.42);
@@ -199,8 +229,17 @@ export class AlchemyConservatory {
     if (!result) throw Error('Missing alchemy surface ' + root);
     return result;
   }
-  private bay(room: number, key: string, width: number): THREE.Group {
-    const m = findPuzzleMount(this.world, [room], [], key, width, 1.5);
+  private bay(room: number, key: string, width: number, fullHeight?: number): THREE.Group {
+    const m = findPuzzleMount(
+      this.world,
+      [room],
+      this.placements,
+      key,
+      width,
+      1.5,
+      fullHeight,
+      fullHeight ? HALL_BENCHES : [],
+    );
     if (!m) throw Error('No clear alchemy site for ' + key);
     const group = new THREE.Group();
     group.name = key;
@@ -271,9 +310,11 @@ export class AlchemyConservatory {
   sync(state: StoredAlchemyState, immediate = false, formula?: StoredConservatoryFormula): void {
     const second = state.opened && formula?.clues.length === 2 ? formula : null;
     const active = second ?? state;
-    if (this.windDial) this.windDial.visible = !!second && !second.brewed;
     this.opened = state.opened;
-    if (immediate) this.splash = 0;
+    if (immediate) {
+      this.splash = 0;
+      this.clearPickups();
+    }
     for (const { node, input } of this.targets) {
       if (input.action === 'add') {
         const cradle = this.cradles[input.ingredient];
@@ -299,6 +340,56 @@ export class AlchemyConservatory {
     this.leaves[0].rotation.y = (this.progress * Math.PI) / 2;
     this.leaves[1].rotation.y = (-this.progress * Math.PI) / 2;
   }
+  animatePickup(ingredient: Ingredient, collector: THREE.Object3D, source?: THREE.Object3D): void {
+    const specimen =
+      source ??
+      this.targets.find(
+        ({ input }) => input.action === 'collect' && input.ingredient === ingredient,
+      )?.node;
+    if (!specimen?.parent) return;
+    const node = specimen.clone(true);
+    node.name = 'alchemy-pickup-' + INGREDIENT_ROOTS[ingredient];
+    node.visible = true;
+    specimen.parent.add(node);
+    this.world.group.attach(node);
+    this.pickups.add({
+      node,
+      collector,
+      start: node.position.clone(),
+      scale: node.scale.clone(),
+      room: this.world.current,
+      time: 0,
+    });
+  }
+  private updatePickups(dt: number): void {
+    for (const f of this.pickups) {
+      f.time += dt / (this.reducedMotion ? 0.2 : 0.62);
+      if (f.time >= 1 || this.world.current !== f.room) {
+        f.node.removeFromParent();
+        this.pickups.delete(f);
+        continue;
+      }
+      if (this.reducedMotion) {
+        f.node.scale.copy(f.scale).multiplyScalar(flightScale(f.time));
+        continue;
+      }
+      this.world.group.worldToLocal(f.collector.getWorldPosition(this.point));
+      flightGoal(
+        f.start,
+        this.point,
+        f.collector instanceof THREE.Camera ? 0.35 : 0.04,
+        this.point,
+      );
+      const k = flightPose(f.start, this.point, f.time, f.node.position);
+      const lift = Math.min(0.22, f.start.distanceTo(this.point) * 0.18);
+      f.node.position.y += Math.sin(k * Math.PI) * lift;
+      f.node.scale.copy(f.scale).multiplyScalar(flightScale(k * k));
+    }
+  }
+  private clearPickups(): void {
+    for (const { node } of this.pickups) node.removeFromParent();
+    this.pickups.clear();
+  }
   animateIngredient(ingredient: Ingredient): void {
     const cradle = this.cradles[ingredient];
     cradle.flight = 0;
@@ -313,10 +404,10 @@ export class AlchemyConservatory {
       node.scale.setScalar(1 - 0.55 * t);
       return;
     }
-    const travel = THREE.MathUtils.smoothstep(t, 0, 1);
+    const travel = THREE.MathUtils.smootherstep(t, 0.12, 0.76);
     node.position.set(
       THREE.MathUtils.lerp(home.x, home.x * 0.1, travel),
-      THREE.MathUtils.lerp(home.y, surface - 0.12, travel) + 1.85 * t * (1 - t),
+      THREE.MathUtils.lerp(home.y, surface - 0.12, travel) + 3.1 * t * (1 - t),
       THREE.MathUtils.lerp(home.z, this.cauldron.position.z, travel),
     );
     node.rotation.z = (home.x > 0 ? 1 : -1) * 0.75 * travel;
@@ -366,9 +457,14 @@ export class AlchemyConservatory {
       this.progress = Math.min(1, this.progress + dt * 1.35);
       this.poseWard();
     }
-    if (dt > 0) this.updateBrew(dt);
+    if (dt > 0) {
+      this.updatePickups(dt);
+      this.updateBrew(dt);
+    }
   }
   dispose(): void {
+    this.clearPickups();
+    this.windInscription?.dispose();
     for (const remove of this.boxes) remove();
     for (const root of this.fixtures) root.removeFromParent();
     for (const g of this.owned) g.dispose();

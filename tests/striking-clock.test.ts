@@ -53,6 +53,44 @@ function nextStrike(clock: StrikingClock): boolean {
 }
 
 describe('striking clock', () => {
+  it('ticks at each pendulum crossing only within earshot in the clock room', () => {
+    const clock = new StrikingClock(world() as never, 0, 1, artKit(), 'MAPTEST2');
+    clock.object.position.set(2, 0, -3);
+    const pivot = kitPart(clock.object, 'ClockPendulum');
+    pivot.position.y = 1.47;
+    const origin = pivot.getWorldPosition(new THREE.Vector3());
+    const ticks: { time: number; volume: number }[] = [];
+    let time = 0;
+    const listen = (room: number, distance: number, seconds: number) => {
+      clock.setWitness(room);
+      const listener = origin.clone().add(new THREE.Vector3(0, 0, distance));
+      for (let frame = 0; frame < Math.round(seconds * 100); frame++) {
+        time += 0.01;
+        clock.update(0.01, listener, (at, volume) => {
+          expect(at).toEqual(origin);
+          ticks.push({ time, volume });
+        });
+      }
+    };
+    listen(1, 1, 2);
+    listen(0, 3, 2);
+    expect(ticks).toHaveLength(0);
+    listen(0, 1, 2.4);
+    expect(ticks.length).toBeGreaterThanOrEqual(3);
+    for (let i = 1; i < ticks.length; i++)
+      expect(Math.abs(ticks[i].time - ticks[i - 1].time - 1 / 1.3)).toBeLessThan(0.011);
+    const near = ticks.at(-1)?.volume ?? 0;
+    listen(0, 2.25, 1);
+    const farther = ticks.at(-1)?.volume ?? 0;
+    expect(farther).toBeGreaterThan(0);
+    expect(farther).toBeLessThan(near);
+    expect(
+      clock.update(0, origin, () => {
+        throw Error('Paused clocks are silent');
+      }),
+    ).toBe(false);
+    clock.dispose();
+  });
   it('keeps the exported brass pin in front of both pointers at every angle', async () => {
     const bytes = await readFile('public/assets/props/alchemy-kit/alchemy-kit.glb');
     const art = (

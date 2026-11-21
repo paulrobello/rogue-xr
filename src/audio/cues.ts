@@ -50,6 +50,7 @@ export const SFX = {
   'automaton-death': sfx('automaton-death', 'positional', 0.2),
   'table-unfold': sfx('table-unfold', 'positional', 0.2),
   'reward-chime': sfx('reward-chime', 'ui', 0.2),
+  'pendulum-tick': sfx('pendulum-tick', 'positional', 0.2),
   'clockwork-chime-low': sfx('clockwork-chime-low', 'positional', 0.08),
   'clockwork-chime-mid': sfx('clockwork-chime-mid', 'positional', 0.08),
   'clockwork-chime-high': sfx('clockwork-chime-high', 'positional', 0.08),

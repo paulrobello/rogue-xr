@@ -1,9 +1,10 @@
 """Original Clockwork Spire alchemy kit. Run in isolated Blender background.
 Blender (x,y,z) maps to glTF (x,z,-y), metres. Each named empty is a reusable root.
 """
-import bpy, math, json, hashlib
+import bpy, math, json, hashlib, sys
 from pathlib import Path
-from mathutils import Vector
+from mathutils import Matrix, Vector
+from mathutils.bvhtree import BVHTree
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / 'assets-source/props/alchemy-kit'
@@ -131,11 +132,12 @@ for side in (-1,1):
     torus(r,(side*.465,0,.53),.075,.012,copper,(math.pi/2,0,0))
 
 r=root('IngredientMooncap')
-# Crescent crescent: arc of overlapping bulbs with a separate stem.
 for i in range(9):
     a=math.radians(28+i*15.5); x=.082*math.cos(a); z=.10+.082*math.sin(a)
     uvball(r,(x,0,z),(.026,.032,.025),blue,12,6)
-line(r,(0,0,.02),(0,0,.12),.014,cream,10); uvball(r,(0,0,.02),(.028,.024,.018),cream,12,6)
+lathe(r,[(.014,.017),(.016,.035),(.014,.078),(.0135,.123),(.016,.145),
+         (.023,.157),(.027,.164),(.021,.171),(0,.177)],cream,16)
+uvball(r,(0,0,.02),(.028,.024,.018),cream,12,6)
 for a in (50,95,140):
     t=math.radians(a); uvball(r,(.082*math.cos(t),-.028,.10+.082*math.sin(t)),(.007,.006,.007),glimmer,8,4)
 
@@ -162,8 +164,14 @@ for name, symbol in [('RecipeTileMooncap',blue),('RecipeTileStarThistle',purple)
     for x in (-.074,.074): box(r,(x,0,.026),(.006,.15,.003),gold)
     for y in (-.074,.074): box(r,(0,y,.026),(.15,.006,.003),gold)
     if name.endswith('Mooncap'):
-        for i in range(7):
-            a=math.radians(35+i*18); uvball(r,(.038*math.cos(a),.038*math.sin(a),.031),(.008,.008,.004),symbol,8,4)
+        # The relief is the ingredient's front silhouette, half sunk into the slate.
+        relief = (Matrix.Translation((0,-.055,.0255))
+                  @ Matrix.Diagonal((.54,.54,.16,1))
+                  @ Matrix.Rotation(-math.pi/2,4,'X'))
+        for part in roots['IngredientMooncap'].children:
+            glyph=part.copy(); glyph.data=part.data.copy(); glyph.parent=r
+            bpy.context.scene.collection.objects.link(glyph)
+            glyph.matrix_basis=relief @ part.matrix_basis
     elif name.endswith('StarThistle'): star(r,(0,0,.031),.055,.021,.007,symbol)
     else:
         o=box(r,(0,0,.032),(.055,.055,.009),symbol); o.rotation_euler.z=math.pi/4
@@ -399,38 +407,66 @@ missing=sorted(set(roots)-set(bpy.data.objects.keys()))
 if missing: raise RuntimeError('Missing roots after import: '+str(missing))
 triangles=sum(sum(len(p.vertices)-2 for p in o.data.polygons) for o in bpy.context.scene.objects if o.type=='MESH')
 if triangles>55000: raise RuntimeError('Triangle budget exceeded: '+str(triangles))
-# Generate a single review arrangement, keeping export untouched.
-pos={'AlchemyCauldron':(-1.5,0,0),'IngredientMooncap':(-.5,-.3,0),'IngredientStarThistle':(-.2,-.3,0),'IngredientEmberSalt':(.1,-.3,0),'PotionVial':(.4,-.3,0),'RecipeTileMooncap':(-.45,-.65,0),'RecipeTileStarThistle':(-.20,-.65,0),'RecipeTileEmberSalt':(.05,-.65,0),'ThornWardLeft':(.9,.35,0),'ThornWardRight':(2.5,.35,0),'AstralLiftMedallion':(-.15,.8,0),'ClockworkOwl':(-2.35,.30,0),'MechanicalBroom':(2.9,0,0),'GrandfatherClock':(-3.5,.25,0),'ClockClueDial':(-3.5,.3,2.65)}
-for name,p in pos.items(): bpy.data.objects[name].location=p
-world=bpy.context.scene.world; world.color=(.18,.18,.18)
-bpy.ops.object.light_add(type='AREA',location=(-3,-4,5)); bpy.context.object.data.energy=1300; bpy.context.object.data.color=(1,.73,.48); bpy.context.object.data.shape='DISK'; bpy.context.object.data.size=5
-bpy.ops.object.light_add(type='AREA',location=(4,-1,4)); bpy.context.object.data.energy=850; bpy.context.object.data.color=(.43,.65,1); bpy.context.object.data.size=5
-bpy.ops.object.light_add(type='AREA',location=(-2,3,4)); bpy.context.object.data.energy=1000; bpy.context.object.data.color=(1,.54,.24); bpy.context.object.data.size=3
-bpy.data.objects['ClockHourHand'].rotation_mode='XYZ'
-bpy.data.objects['ClockMinuteHand'].rotation_mode='XYZ'
-bpy.data.objects['ClockHourHand'].rotation_euler.y=math.radians(-55)
-bpy.data.objects['ClockMinuteHand'].rotation_euler.y=math.radians(60)
-bpy.ops.object.camera_add(location=(4,-7,5)); cam=bpy.context.object; cam.rotation_euler=(Vector((.25,0,.65))-cam.location).to_track_quat('-Z','Y').to_euler(); cam.data.type='ORTHO'; cam.data.ortho_scale=9.0
-scene=bpy.context.scene; scene.camera=cam; scene.render.engine='BLENDER_EEVEE'; scene.render.resolution_x=1500; scene.render.resolution_y=950; scene.render.resolution_percentage=100; scene.render.filepath=str(OUT/'review.png'); bpy.ops.render.render(write_still=True)
-# A second angle and close detail provide readable visual evidence for the small objects.
-cam.location=(-3,-5,3.6); cam.rotation_euler=(Vector((.15,0,.6))-cam.location).to_track_quat('-Z','Y').to_euler(); cam.data.ortho_scale=7.0
-scene.render.filepath=str(OUT/'review-reverse.png'); bpy.ops.render.render(write_still=True)
-cam.location=(-1.7,-3,2.2); cam.rotation_euler=(Vector((-.65,-.15,.3))-cam.location).to_track_quat('-Z','Y').to_euler(); cam.data.ortho_scale=2.6
-scene.render.filepath=str(OUT/'review-detail.png'); bpy.ops.render.render(write_still=True)
-cam.location=(-4,-3,2.0); cam.rotation_euler=(Vector((-2.35,.3,.5))-cam.location).to_track_quat('-Z','Y').to_euler(); cam.data.ortho_scale=1.4
-scene.render.filepath=str(OUT/'review-owl.png'); bpy.ops.render.render(write_still=True)
-cam.location=(4.3,-2.5,1.6); cam.rotation_euler=(Vector((2.9,0,.45))-cam.location).to_track_quat('-Z','Y').to_euler(); cam.data.ortho_scale=1.5
-scene.render.filepath=str(OUT/'review-broom.png'); bpy.ops.render.render(write_still=True)
-cam.location=(-5.4,-3.0,2.1); cam.rotation_euler=(Vector((-3.5,.25,1.25))-cam.location).to_track_quat('-Z','Y').to_euler(); cam.data.ortho_scale=4.1
-scene.render.filepath=str(OUT/'review-clock.png'); bpy.ops.render.render(write_still=True)
-cam.location=(-3.5,-3,1.84); cam.rotation_euler=(Vector((-3.5,.25,1.84))-cam.location).to_track_quat('-Z','Y').to_euler(); cam.data.ortho_scale=.95
-scene.render.filepath=str(OUT/'review-clock-face-1010.png'); bpy.ops.render.render(write_still=True)
-cam.location=(1.8,-4,2.1); cam.rotation_euler=(Vector((1.7,.35,1.2))-cam.location).to_track_quat('-Z','Y').to_euler(); cam.data.ortho_scale=4.1
-scene.render.filepath=str(OUT/'review-ward.png'); bpy.ops.render.render(write_still=True)
+
+def mooncap_contact(name, axis, plane, extent):
+    visual=next(o for o in bpy.data.objects[name].children if o.type=='MESH')
+    verts=[visual.matrix_world @ v.co for v in visual.data.vertices]
+    surfaces={}
+    for label in ('Mooncap blue','Mooncap ivory'):
+        faces=[tuple(p.vertices) for p in visual.data.polygons
+               if visual.material_slots[p.material_index].material.name.split('.')[0]==label]
+        surfaces[label]=BVHTree.FromPolygons(verts,faces)
+    depths=[]
+    for x in (-extent,extent):
+        origin=Vector((x,0,0)); origin[3-axis]=plane
+        above=origin.copy(); above[axis]=.25
+        below=origin.copy(); below[axis]=-.25
+        up=Vector((0,0,0)); up[axis]=1
+        cap=surfaces['Mooncap blue'].ray_cast(below,up)[0]
+        stem=surfaces['Mooncap ivory'].ray_cast(above,-up)[0]
+        if cap is None or stem is None: raise RuntimeError(name+' lacks a Mooncap contact section')
+        depths.append(stem[axis]-cap[axis])
+    overlap=min(depths)
+    if overlap < .005: raise RuntimeError(name+' has insufficient stem and cap overlap: '+str(overlap))
+    return round(overlap,5)
+
+contact={'ingredient':mooncap_contact('IngredientMooncap',2,0,.008),
+         'recipe_relief':mooncap_contact('RecipeTileMooncap',1,.027,.004)}
+print('MOONCAP_OVERLAP_METRES',json.dumps(contact))
+render_review='--export-only' not in sys.argv
+if render_review:
+    pos={'AlchemyCauldron':(-1.5,0,0),'IngredientMooncap':(-.5,-.3,0),'IngredientStarThistle':(-.2,-.3,0),'IngredientEmberSalt':(.1,-.3,0),'PotionVial':(.4,-.3,0),'RecipeTileMooncap':(-.45,-.65,0),'RecipeTileStarThistle':(-.20,-.65,0),'RecipeTileEmberSalt':(.05,-.65,0),'ThornWardLeft':(.9,.35,0),'ThornWardRight':(2.5,.35,0),'AstralLiftMedallion':(-.15,.8,0),'ClockworkOwl':(-2.35,.30,0),'MechanicalBroom':(2.9,0,0),'GrandfatherClock':(-3.5,.25,0),'ClockClueDial':(-3.5,.3,2.65)}
+    for name,p in pos.items(): bpy.data.objects[name].location=p
+    world=bpy.context.scene.world; world.color=(.18,.18,.18)
+    bpy.ops.object.light_add(type='AREA',location=(-3,-4,5)); bpy.context.object.data.energy=1300; bpy.context.object.data.color=(1,.73,.48); bpy.context.object.data.shape='DISK'; bpy.context.object.data.size=5
+    bpy.ops.object.light_add(type='AREA',location=(4,-1,4)); bpy.context.object.data.energy=850; bpy.context.object.data.color=(.43,.65,1); bpy.context.object.data.size=5
+    bpy.ops.object.light_add(type='AREA',location=(-2,3,4)); bpy.context.object.data.energy=1000; bpy.context.object.data.color=(1,.54,.24); bpy.context.object.data.size=3
+    bpy.data.objects['ClockHourHand'].rotation_mode='XYZ'
+    bpy.data.objects['ClockMinuteHand'].rotation_mode='XYZ'
+    bpy.data.objects['ClockHourHand'].rotation_euler.y=math.radians(-55)
+    bpy.data.objects['ClockMinuteHand'].rotation_euler.y=math.radians(60)
+    bpy.ops.object.camera_add(location=(4,-7,5)); cam=bpy.context.object; cam.rotation_euler=(Vector((.25,0,.65))-cam.location).to_track_quat('-Z','Y').to_euler(); cam.data.type='ORTHO'; cam.data.ortho_scale=9.0
+    scene=bpy.context.scene; scene.camera=cam; scene.render.engine='BLENDER_EEVEE'; scene.render.resolution_x=1500; scene.render.resolution_y=950; scene.render.resolution_percentage=100; scene.render.filepath=str(OUT/'review.png'); bpy.ops.render.render(write_still=True)
+    # A second angle and close detail provide readable visual evidence for the small objects.
+    cam.location=(-3,-5,3.6); cam.rotation_euler=(Vector((.15,0,.6))-cam.location).to_track_quat('-Z','Y').to_euler(); cam.data.ortho_scale=7.0
+    scene.render.filepath=str(OUT/'review-reverse.png'); bpy.ops.render.render(write_still=True)
+    cam.location=(-1.7,-3,2.2); cam.rotation_euler=(Vector((-.65,-.15,.3))-cam.location).to_track_quat('-Z','Y').to_euler(); cam.data.ortho_scale=2.6
+    scene.render.filepath=str(OUT/'review-detail.png'); bpy.ops.render.render(write_still=True)
+    cam.location=(-4,-3,2.0); cam.rotation_euler=(Vector((-2.35,.3,.5))-cam.location).to_track_quat('-Z','Y').to_euler(); cam.data.ortho_scale=1.4
+    scene.render.filepath=str(OUT/'review-owl.png'); bpy.ops.render.render(write_still=True)
+    cam.location=(4.3,-2.5,1.6); cam.rotation_euler=(Vector((2.9,0,.45))-cam.location).to_track_quat('-Z','Y').to_euler(); cam.data.ortho_scale=1.5
+    scene.render.filepath=str(OUT/'review-broom.png'); bpy.ops.render.render(write_still=True)
+    cam.location=(-5.4,-3.0,2.1); cam.rotation_euler=(Vector((-3.5,.25,1.25))-cam.location).to_track_quat('-Z','Y').to_euler(); cam.data.ortho_scale=4.1
+    scene.render.filepath=str(OUT/'review-clock.png'); bpy.ops.render.render(write_still=True)
+    cam.location=(-3.5,-3,1.84); cam.rotation_euler=(Vector((-3.5,.25,1.84))-cam.location).to_track_quat('-Z','Y').to_euler(); cam.data.ortho_scale=.95
+    scene.render.filepath=str(OUT/'review-clock-face-1010.png'); bpy.ops.render.render(write_still=True)
+    cam.location=(1.8,-4,2.1); cam.rotation_euler=(Vector((1.7,.35,1.2))-cam.location).to_track_quat('-Z','Y').to_euler(); cam.data.ortho_scale=4.1
+    scene.render.filepath=str(OUT/'review-ward.png'); bpy.ops.render.render(write_still=True)
 import shutil
 shutil.copy2(OUT/'alchemy-kit.glb',RUNTIME/'alchemy-kit.glb')
 def digest(p): return hashlib.sha256(p.read_bytes()).hexdigest()
-report={'generator':'scripts/assets/build-alchemy-kit.py','authoring':'Original procedural Blender model, project brief; no external assets','blender':bpy.app.version_string,'license':'MIT, project-authored','axes':'glTF Y up; +Z front; metres','triangles':triangles,'roots':list(roots)+['ClockIngredientSocket'],'material_count':len({slot.material.name for o in scene.objects if o.type=='MESH' for slot in o.material_slots if slot.material}),'sha256':{'generator':digest(Path(__file__)),'blend':digest(SRC/'alchemy-kit.blend'),'glb':digest(RUNTIME/'alchemy-kit.glb'),'review':digest(OUT/'review.png')},'validation':'Blender GLB reimport, names and triangle budget checked','visual_approval':'pending owner and independent review','limitations':['Procedurally painted UV maps rather than high-to-low baked maps','No authored LODs or collision meshes','Runtime and play-distance review pending']}
+report={'generator':'scripts/assets/build-alchemy-kit.py','authoring':'Original procedural Blender model, project brief; no external assets','blender':bpy.app.version_string,'license':'MIT, project-authored','axes':'glTF Y up; +Z front; metres','triangles':triangles,'roots':list(roots)+['ClockIngredientSocket'],'material_count':len({slot.material.name for o in bpy.context.scene.objects if o.type=='MESH' for slot in o.material_slots if slot.material}),'sha256':{'generator':digest(Path(__file__)),'blend':digest(SRC/'alchemy-kit.blend'),'glb':digest(RUNTIME/'alchemy-kit.glb')},'validation':'Blender GLB reimport, names, triangle budget and Mooncap stem contact checked','mooncap_overlap_metres':contact,'visual_approval':'pending owner and independent review','limitations':['Procedurally painted UV maps rather than high-to-low baked maps','No authored LODs or collision meshes','Runtime and play-distance review pending']}
+if render_review: report['sha256']['review']=digest(OUT/'review.png')
 (OUT/'report.json').write_text(json.dumps(report,indent=2)+'\n')
 (SRC/'manifest.json').write_text(json.dumps({'glb_sha256':digest(RUNTIME/'alchemy-kit.glb'),'roots':list(roots)+['ClockIngredientSocket'],'triangles':triangles,'generator_sha256':digest(Path(__file__)),'source_blend_sha256':digest(SRC/'alchemy-kit.blend'),'visual_approval':'pending'},indent=2)+'\n')
 print(json.dumps(report,indent=2))

@@ -8,6 +8,8 @@ import type { InteriorPlacement } from './interior-furnishings.ts';
 import { findPuzzleMount, kitPart } from './puzzle-placement.ts';
 
 export const CLOCK_CYCLE = 60;
+const PENDULUM_BEATS_PER_SECOND = 1.3;
+const TICK_RANGE = 2.8;
 export const strikingHour = (seed: string): number =>
   Stream.fromKey(seed + ':striking-clock-hour').int(1, 12);
 export type ClockPick = { ingredient: Ingredient; distance: number } | null;
@@ -24,6 +26,7 @@ export class StrikingClock {
   private readonly inscription: ClockInscription;
   private readonly closedZ: number;
   private readonly ray = new THREE.Raycaster();
+  private readonly tickPosition = new THREE.Vector3();
   private elapsed: number;
   private remaining = 0;
   private taken = false;
@@ -168,13 +171,32 @@ export class StrikingClock {
     this.hourHand.rotation.z = (-(hours % 12) * Math.PI) / 6;
     this.minuteHand.rotation.z = -(hours % 1) * Math.PI * 2;
     if (!this.reducedMotion)
-      this.pendulum.rotation.z = 0.18 * Math.sin(this.elapsed * Math.PI * 1.3);
+      this.pendulum.rotation.z =
+        0.18 * Math.sin(this.elapsed * Math.PI * PENDULUM_BEATS_PER_SECOND);
   }
-  update(dt: number): boolean {
+  update(
+    dt: number,
+    listener?: THREE.Vector3,
+    tick?: (at: THREE.Vector3, volume: number) => void,
+  ): boolean {
     if (dt <= 0) return false;
     const offset = ((this.hour % 12) * CLOCK_CYCLE) / 12;
     const before = Math.floor((this.elapsed - offset) / CLOCK_CYCLE);
+    const beat = Math.floor(this.elapsed * PENDULUM_BEATS_PER_SECOND);
     this.elapsed += dt;
+    if (
+      listener &&
+      tick &&
+      this.witnessed &&
+      Math.floor(this.elapsed * PENDULUM_BEATS_PER_SECOND) > beat
+    ) {
+      const at = this.pendulum.getWorldPosition(this.tickPosition);
+      const distance = at.distanceTo(listener);
+      if (distance < TICK_RANGE) {
+        const volume = 0.44 * (1 - THREE.MathUtils.smoothstep(distance, 1.15, TICK_RANGE));
+        tick(at, volume);
+      }
+    }
     const struck = Math.floor((this.elapsed - offset) / CLOCK_CYCLE) > before && this.witnessed;
     this.remaining = struck && !this.taken ? 8 : Math.max(0, this.remaining - dt);
     if (!this.witnessed) this.remaining = 0;

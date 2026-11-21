@@ -1,5 +1,6 @@
 """Build the paired Clockwork Spire stairwell alcoves. Run with Blender --background."""
 
+import math
 import sys
 import os
 from pathlib import Path
@@ -156,6 +157,44 @@ def rod(name, a, b, r, mat, parent, vertices=8):
     return ob
 
 
+def handrail(name: str, x: float, direction: int, parent) -> None:
+    radius, sides = 0.046, 12
+    pitch = math.atan(direction * 0.18 / 0.34)
+    tip_z, elbow_z, end_z = 0.995, 3.8, 4.76
+    level = direction * 1.62 + 0.84
+    tip_y = level - (elbow_z - tip_z) * math.tan(pitch)
+    # A shared miter ring keeps the two lengths closed around the elbow post.
+    rings = [(tip_y, tip_z, pitch, 1), (level, elbow_z, pitch / 2, 1 / math.cos(pitch / 2)), (level, end_z, 0, 1)]
+    vertices, faces, face_uvs = [], [], []
+    distances = [0, (elbow_z - tip_z) / math.cos(pitch)]
+    distances.append(distances[-1] + end_z - elbow_z)
+    for i, (y, z, angle, stretch) in enumerate(rings):
+        for j in range(sides):
+            theta = math.tau * j / sides
+            offset = radius * math.sin(theta) * stretch
+            vertices.append(p(x + radius * math.cos(theta), y + offset * math.cos(angle), z - offset * math.sin(angle)))
+            if i:
+                a, b = (i - 1) * sides + j, (i - 1) * sides + (j + 1) % sides
+                faces.append((a, b, b + sides, a + sides))
+                face_uvs.append([(distances[i - 1], j / sides), (distances[i - 1], (j + 1) / sides),
+                                 (distances[i], (j + 1) / sides), (distances[i], j / sides)])
+    for cap in (tuple(reversed(range(sides))), tuple(range(2 * sides, 3 * sides))):
+        faces.append(cap)
+        face_uvs.append([(0.5 + 0.5 * math.cos(math.tau * j / sides),
+                          0.5 + 0.5 * math.sin(math.tau * j / sides)) for j in cap])
+    mesh = bpy.data.meshes.new(name)
+    mesh.from_pydata(vertices, [], faces)
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    bpy.context.collection.objects.link(obj)
+    obj.parent = parent
+    mesh.materials.append(walnut)
+    uv = mesh.uv_layers.new(name="UVMap")
+    for poly, coords in zip(mesh.polygons, face_uvs, strict=True):
+        for index, coord in zip(poly.loop_indices, coords, strict=True):
+            uv.data[index].uv = coord
+
+
 def build(kind, direction):
     rootob = bpy.data.objects.new(kind, None)
     bpy.context.collection.objects.link(rootob)
@@ -201,8 +240,8 @@ def build(kind, direction):
         box(kind + " ceiling beam", (0, 3.94, z), (2.72, 0.15, 0.14), walnut, rootob)
     # Floor strips frame an actual open stairwell on descent.
     box(kind + " threshold", (0, -0.10, 0.455), (2.84, 0.20, 0.91), stone, rootob)
-    for x in (-1.22, 1.22):
-        box(kind + " side floor", (x, -0.10, 2.96), (0.42, 0.20, 3.98), stone, rootob)
+    for x in (-1.29, 1.29):
+        box(kind + " side floor", (x, -0.10, 2.96), (0.28, 0.20, 3.98), stone, rootob)
     # Nine broad treads, each linked to a riser and brass nosing.
     for i in range(9):
         z = 1.08 + i * 0.34
@@ -242,7 +281,14 @@ def build(kind, direction):
         kind + " landing", (0, landing - 0.10, 4.46), (2.00, 0.20, 0.98), walnut, rootob
     )
     for x in (-1.04, 1.04):
-        # Continuous raked rails and balusters start after threshold, keeping the aperture clear.
+        box(
+            kind + " threshold stringer anchor",
+            (x, -0.12, 0.945),
+            (0.116, 0.15, 0.18),
+            iron,
+            rootob,
+            0.006,
+        )
         rod(
             kind + " stringer",
             (x, -0.12, 1.0),
@@ -251,25 +297,14 @@ def build(kind, direction):
             iron,
             rootob,
         )
-        rod(
-            kind + " handrail",
-            (x, 0.84 + direction * 0.18, 1.08),
-            (x, 0.84 + landing, 3.8),
-            0.046,
-            walnut,
-            rootob,
-            12,
-        )
+        handrail(kind + " handrail", x, direction, rootob)
         for i in range(9):
             z = 1.08 + i * 0.34
             h = direction * (i + 1) * 0.18
             stringer_y = -0.12 + landing * (z - 1.0) / 2.9
-            post_bottom = min(h, stringer_y) - 0.04
-            assert post_bottom <= stringer_y - 0.04 + 1e-8
-            assert h + 0.84 > stringer_y
             rod(
                 kind + " baluster",
-                (x, post_bottom, z),
+                (x, stringer_y, z),
                 (x, h + 0.84, z),
                 0.024,
                 iron,
@@ -283,15 +318,6 @@ def build(kind, direction):
                 rootob,
                 0.006,
             )
-        rod(
-            kind + " landing rail",
-            (x, landing + 0.84, 3.8),
-            (x, landing + 0.84, 4.76),
-            0.046,
-            walnut,
-            rootob,
-            12,
-        )
         box(
             kind + " stringer landing anchor",
             (x, landing - 0.11, 3.88),

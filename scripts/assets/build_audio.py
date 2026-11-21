@@ -137,6 +137,18 @@ def procedural_clockwork_chime(cue: dict, path: Path) -> None:
     write_wav_f32(path, signal.astype(np.float32)[:, None])
 
 
+def procedural_pendulum_tick(cue: dict, path: Path) -> None:
+    """A short wooden knock with the brighter contact of the brass escapement."""
+    settings = cue["procedural"]
+    t = np.arange(round(settings["duration_seconds"] * SR), dtype=np.float64) / SR
+    attack = np.minimum(1.0, t / 0.0015)
+    signal = sum(
+        level * np.sin(2 * np.pi * frequency * t) * np.exp(-t / decay)
+        for frequency, decay, level in settings["partials"]
+    )
+    write_wav_f32(path, (attack * signal).astype(np.float32)[:, None])
+
+
 def encode_opus(src_wav: Path, dest: Path, kbps: int) -> None:
     dest.parent.mkdir(parents=True, exist_ok=True)
     proc = run([FFMPEG, "-nostdin", "-v", "error", "-y", "-i", str(src_wav), "-c:a", "libopus",
@@ -357,7 +369,10 @@ def build_sfx(spec: dict, only: set[str], derived: Path, out: Path) -> dict[str,
         source_id = "card-draw" if cid == "paper-unfold" else cid
         if "procedural" in cue:
             src = AUDIO_SRC / "sfx" / "procedural" / f"{cid}.wav"
-            procedural_clockwork_chime(cue, src)
+            if cid == "pendulum-tick":
+                procedural_pendulum_tick(cue, src)
+            else:
+                procedural_clockwork_chime(cue, src)
         else:
             src = AUDIO_SRC / "sfx" / "raw" / f"{source_id}.mp3"
         steps: list[str] = []
@@ -560,6 +575,8 @@ def main() -> None:
         music_log = Path(args.music_src) / "generation-log.json"
         if "paper-unfold" in provenance["sfx"]:
             provenance["sfx"]["paper-unfold"]["approval"] = "New edit of the existing card-draw recording. Runtime verification is separate from owner listening approval."
+        if "pendulum-tick" in provenance["sfx"]:
+            provenance["sfx"]["pendulum-tick"]["approval"] = "Original project synthesis. Owner listening review pending."
         if music and music_log.exists():
             provenance["music_source"] = json.loads(music_log.read_text())["source"]
             provenance["music_generation_log"] = rel(music_log)

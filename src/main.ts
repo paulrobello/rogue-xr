@@ -69,7 +69,12 @@ import {
   saveSettings,
 } from './persist/db.ts';
 import { loadRunSnapshot, loadWorkshop, type RunSnapshot } from './persist/saves.ts';
-import { alchemyRecipe, type FormulaClue, formulaObservation } from './rules/alchemy.ts';
+import {
+  alchemyRecipe,
+  type FormulaClue,
+  formulaObservation,
+  type Ingredient,
+} from './rules/alchemy.ts';
 import { type BellNote, bellMelody } from './rules/bell-chimes.ts';
 import { BEARINGS, calibrationPlan, GEAR_TEETH } from './rules/calibration.ts';
 import {
@@ -1832,17 +1837,26 @@ function operateArchive(action: 'pour' | 'unlatch'): boolean {
   audio?.playSfx(action === 'unlatch' ? 'door-open' : 'steam-vent');
   return true;
 }
+function collectAlchemy(
+  ingredient: Ingredient,
+  hand?: XRHandedness,
+  source?: THREE.Object3D,
+): boolean {
+  if (!flow.collectIngredient(ingredient)) return false;
+  const collector = hand === 'left' || hand === 'right' ? (xr.grips()[hand] ?? camera) : camera;
+  floor?.alchemy?.animatePickup(ingredient, collector, source);
+  audio?.playSfx('card-draw');
+  return true;
+}
 function operateAlchemy(
   hit: NonNullable<ReturnType<NonNullable<FloorView['alchemy']>['pick']>>,
+  hand?: XRHandedness,
 ): boolean {
   if (hit.action === 'apply') return flow.applyPotion();
-  if (hit.ingredient === undefined) return false;
-  const result =
-    hit.action === 'collect'
-      ? flow.collectIngredient(hit.ingredient)
-      : flow.alchemy.opened
-        ? flow.addFormulaIngredient(hit.ingredient, floor?.alchemy?.inStillInterval ?? false)
-        : flow.addIngredient(hit.ingredient);
+  if (hit.action === 'collect') return collectAlchemy(hit.ingredient, hand);
+  const result = flow.alchemy.opened
+    ? flow.addFormulaIngredient(hit.ingredient, floor?.alchemy?.inStillInterval ?? false)
+    : flow.addIngredient(hit.ingredient);
   if (result === 'waiting')
     floor?.showBookSecret(
       {
@@ -1851,10 +1865,10 @@ function operateAlchemy(
       },
       camera,
     );
-  if (hit.action === 'add' && (result === 'correct' || result === 'mistake'))
+  if (result === 'correct' || result === 'mistake') {
     floor?.alchemy?.animateIngredient(hit.ingredient);
-  if (result && result !== 'waiting')
-    audio?.playSfx(hit.action === 'collect' ? 'card-draw' : 'steam-vent');
+    audio?.playSfx('steam-vent');
+  }
   return !!result;
 }
 function fieldHit(origin: THREE.Vector3, direction: THREE.Vector3) {
@@ -1931,9 +1945,9 @@ const activatePickup = (
     case 'counterweight':
       return operateWeight(pick.hit);
     case 'clock':
-      return flow.collectIngredient(pick.hit.ingredient);
+      return collectAlchemy(pick.hit.ingredient, hand, floor?.clock?.target);
     case 'alchemy':
-      return operateAlchemy(pick.hit);
+      return operateAlchemy(pick.hit, hand);
     case 'lift':
       return travelStairs(true);
     case 'gate': {
@@ -2165,9 +2179,9 @@ for (const index of [0, 1]) {
     const evidence = floor.formulaEvidence?.near(position, GRAB_REACH);
     if (evidence && inspectFormula(evidence.clue)) return;
     const clock = floor.clock?.near(position, GRAB_REACH);
-    if (clock && flow.collectIngredient(clock.ingredient)) return;
+    if (clock && collectAlchemy(clock.ingredient, side, floor.clock?.target)) return;
     const brew = floor.alchemy?.near(position, GRAB_REACH);
-    if (brew && operateAlchemy(brew)) return;
+    if (brew && operateAlchemy(brew, side)) return;
     const weight =
       floor.counterweight?.room === floor.world.current
         ? floor.counterweight.near(position, GRAB_REACH)

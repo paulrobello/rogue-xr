@@ -94,7 +94,11 @@ import { WallVentSteam } from './wall-vent-steam.ts';
 
 export interface FloorAudio {
   playChime?(note: 0 | 1 | 2, at: THREE.Vector3): boolean;
-  playSfx(id: 'door-open' | 'gear-clank', at?: { x: number; y: number; z: number }): boolean;
+  playSfx(
+    id: 'door-open' | 'gear-clank' | 'pendulum-tick',
+    at?: { x: number; y: number; z: number },
+    volume?: number,
+  ): boolean;
 }
 
 /** The run seed from `?seed=`, or a fresh random one when it is missing or malformed. */
@@ -421,6 +425,8 @@ export function mountFloorView(
 
   let locked = false;
   let floorAudio: FloorAudio | null = null;
+  const tickClock = (at: THREE.Vector3, volume: number) =>
+    floorAudio?.playSfx('pendulum-tick', at, volume);
   let suppressUnlockAudio = false;
   const reducedUnlockMotion =
     typeof globalThis.matchMedia === 'function' &&
@@ -747,7 +753,13 @@ export function mountFloorView(
         );
         return;
       }
-      alchemy = new AlchemyConservatory(world, art, runSeed, reducedMotion);
+      alchemy = new AlchemyConservatory(
+        world,
+        art,
+        runSeed,
+        reducedMotion,
+        furnishings?.placements,
+      );
       clockwork = StrikingClock.mount(world, art, runSeed, reducedMotion, furnishings?.placements);
       gallery = ConservatoryGallery.mount(
         world,
@@ -1104,9 +1116,9 @@ export function mountFloorView(
     update(head, dt, cameras = []) {
       notes?.update(head);
       pressure?.update(dt);
-      if (!suspended && !locked) {
-        clockwork?.setWitness(world.current);
-        if (clockwork?.update(dt))
+      if (!suspended && !locked && clockwork) {
+        clockwork.setWitness(world.current);
+        if (clockwork.update(dt, head.getWorldPosition(at), tickClock))
           floorAudio?.playChime?.(1, clockwork.object.getWorldPosition(at));
       }
       if (gallery) gallery.update(dt, head.getWorldPosition(at));

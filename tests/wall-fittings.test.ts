@@ -40,9 +40,23 @@ it.each([
     lift.open(1);
     lift.object.updateWorldMatrix(true, true);
     expect(right.position.x - left.position.x).toBeGreaterThan(before + 0.8);
-    const ray = new THREE.Raycaster(point(-0.382, 1.3, 1.65), inward.negate());
-    expect(ray.intersectObject(lift.object, true)[0]?.object.name).toBe('astral-lift-interior');
-    expect(lift.pick(ray.ray.origin, ray.ray.direction)).toBeNull();
+    for (const x of [-0.33, 0, 0.33]) {
+      for (const y of [0.2, 1.3, 1.9]) {
+        const origin = point(x + 0.42, y, 1.65);
+        const direction = point(x, y, 0.13).sub(origin).normalize();
+        const ray = new THREE.Raycaster(origin, direction);
+        const surface = ray.intersectObject(lift.object, true)[0]?.object;
+        expect(surface?.name).toBe('astral-lift-interior');
+        if (
+          !(surface instanceof THREE.Mesh) ||
+          !(surface.material instanceof THREE.MeshBasicMaterial)
+        )
+          throw Error('Missing the dark aperture backing');
+        expect(surface.material.color.getHex()).toBe(0);
+        expect(surface.material.fog).toBe(false);
+        expect(lift.pick(origin, direction)).toBeNull();
+      }
+    }
     lift.dispose();
     expect(lift.object.parent).toBeNull();
     plate.geometry.dispose();

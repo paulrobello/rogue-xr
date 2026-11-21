@@ -45,18 +45,31 @@ for n in ["StairUp", "StairDown"]:
     ]
     feet = [o for o in objs if o.name.startswith(n + " landing post foot")]
     anchors = [o for o in objs if o.name.startswith(n + " stringer landing anchor")]
-    assert (len(stringers), len(posts), len(feet), len(anchors)) == (2, 18, 4, 2)
-    penetrations = []
+    threshold_anchors = [o for o in objs if o.name.startswith(n + " threshold stringer anchor")]
+    side_floors = [o for o in objs if o.name.startswith(n + " side floor")]
+    rail_members = [o for o in objs if any(o.name.startswith(n + " " + role) for role in
+                    ("stringer", "handrail", "baluster", "landing rail", "landing post", "threshold stringer anchor"))]
+    clearances = []
+    for member in rail_members:
+        span = bounds(member)[0]
+        floor = min(side_floors, key=lambda o: abs(o.location.x - sum(span) / 2))
+        inner_stone = min(abs(x) for x in bounds(floor)[0])
+        clearance = inner_stone - max(abs(x) for x in span)
+        assert clearance >= 0.0199, (member.name, "side masonry clearance", clearance)
+        clearances.append(clearance)
+    assert (len(stringers), len(posts), len(feet), len(anchors), len(threshold_anchors)) == (2, 18, 4, 2, 2)
+    post_seats = []
+    depsgraph = bpy.context.evaluated_depsgraph_get()
     for post in posts:
-        a, b = axis(post)
-        midpoint = (a + b) / 2
-        sa, sb = axis(min(stringers, key=lambda s: abs(s.location.x - post.location.x)))
-        t = (midpoint.y - sa.y) / (sb.y - sa.y)
-        assert 0 < t < 1
-        y = sa.z + t * (sb.z - sa.z)
-        low, high = sorted((a.z, b.z))
-        assert low < y < high
-        penetrations.append(y - low)
+        stringer = min(stringers, key=lambda s: abs(s.location.x - post.location.x))
+        tree = world_tree(stringer, depsgraph)
+        vertices = [post.matrix_world @ v.co for v in post.data.vertices]
+        bottom = min(v.z for v in vertices)
+        for vertex in (v for v in vertices if v.z < bottom + 1e-5):
+            nearest, normal, _, _ = tree.find_nearest(vertex)
+            seat = (nearest - vertex).dot(normal)
+            assert seat > 0.015, (post.name, "foot outside stringer", seat)
+            post_seats.append(seat)
     threshold = bounds(bpy.data.objects[n + " threshold"])
     first_tread = bounds(bpy.data.objects[n + " tread 00"])
     first_riser = bounds(bpy.data.objects[n + " riser 00"])
@@ -89,13 +102,14 @@ for n in ["StairUp", "StairDown"]:
         overlap = [min(fb[i][1], lb[i][1]) - max(fb[i][0], lb[i][0]) for i in range(3)]
         assert all(x > 0 for x in overlap), (foot.name, overlap)
         overlaps.append(overlap)
-    side_floors = [o for o in objs if o.name.startswith(n + " side floor")]
-    assert len(side_floors) == 2
+    for anchor in threshold_anchors:
+        ab = bounds(anchor)
+        assert all(min(hi, ahi) - max(lo, alo) > 0.04 for (lo, hi), (alo, ahi) in zip(threshold, ab))
     for stringer in stringers:
         start, end = sorted(axis(stringer), key=lambda v: -v.y)
-        floor = min(side_floors, key=lambda o: abs(o.location.x - stringer.location.x))
+        entry = min(threshold_anchors, key=lambda o: abs(o.location.x - stringer.location.x))
         anchor = min(anchors, key=lambda o: abs(o.location.x - stringer.location.x))
-        for point, support in ((start, floor), (end, anchor)):
+        for point, support in ((start, entry), (end, anchor)):
             limits = bounds(support)
             assert all(limits[i][0] < point[i] < limits[i][1] for i in range(3))
     assert bpy.data.objects.get(n + " access door")
@@ -144,7 +158,9 @@ for n in ["StairUp", "StairDown"]:
         "black_floor_landing_overlap_m": recess_floor[1][1] - lb[1][0],
         "frame_liner_front_clearance_m_min": 0.065,
         "posts": len(posts),
-        "post_axis_penetration_m_min": min(penetrations),
+        "post_lower_cap_stringer_inset_m_min": min(post_seats),
+        "rail_masonry_clearance_m_min": min(clearances),
+        "threshold_anchors": len(threshold_anchors),
         "landing_anchors": len(feet) + len(anchors),
         "landing_overlap_m_min": min(min(x) for x in overlaps),
     }

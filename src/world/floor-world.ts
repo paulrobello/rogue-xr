@@ -670,7 +670,7 @@ export function buildFloorWorld(
       for (const gate of puzzleGates) {
         if (!gate.visual || gate.open || !gate.sides.includes(world.current)) continue;
         gate.visual.object.updateWorldMatrix(true, true);
-        const hit = gateRay.intersectObject(gate.visual.handle, true)[0];
+        const hit = gateRay.intersectObject(gate.visual.pickTarget, true)[0];
         if (!hit || (nearest && hit.distance >= nearest.distance)) continue;
         const blocked = colliders[world.current].some((box) => {
           if (box === gate.barrier) return false;
@@ -688,7 +688,7 @@ export function buildFloorWorld(
     rattlePuzzleGate(kind) {
       const gate = puzzleGates.find((g) => g.kind === kind && !g.open);
       if (!gate?.visual) return;
-      if (!reducedMotion) gate.visual.rattle();
+      gate.visual.rattle(reducedMotion);
       return gate.visual.handle.getWorldPosition(new THREE.Vector3());
     },
     updateAnimations(dt) {

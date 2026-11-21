@@ -1,10 +1,16 @@
+// @vitest-environment node
+import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { conservatoryPlan } from '../src/floor/conservatory.ts';
-import { alchemyRecipe } from '../src/rules/alchemy.ts';
+import { DECOR_TABLES } from '../src/floor/table-decor.ts';
+import { alchemyRecipe, conservatoryFormula } from '../src/rules/alchemy.ts';
 import { AlchemyConservatory, INGREDIENT_ROOTS } from '../src/world/alchemy-conservatory.ts';
+import { mountFloorView } from '../src/world/floor-view.ts';
 import { buildFloorWorld } from '../src/world/floor-world.ts';
 import { kitPart } from '../src/world/puzzle-placement.ts';
+import { roomStyleKitFromScene } from '../src/world/room-styles.ts';
+import { nodeGeometryLoader } from './helpers/gltf-node.ts';
 
 function art(): THREE.Group {
   const root = new THREE.Group();
@@ -65,6 +71,7 @@ describe('alchemy conservatory authored puzzle', () => {
     ).toBeTruthy();
     for (const name of INGREDIENT_ROOTS)
       expect(a.world.group.getObjectByName(`IngredientCradle${name}`)).toBeTruthy();
+    expect(a.world.group.getObjectByName('stillwind-lab-dial')).toBeUndefined();
     a.puzzle.dispose();
     a.world.dispose();
     b.puzzle.dispose();
@@ -87,6 +94,114 @@ describe('alchemy conservatory authored puzzle', () => {
     puzzle.dispose();
     world.dispose();
   });
+  it('mounts the working Stillwind dial above the pot on the first visit and keeps the dressed lab clear of retained benches', async () => {
+    const seed = '00000007';
+    const load = async (path: string) => {
+      const bytes = Uint8Array.from(await readFile(path));
+      return (await nodeGeometryLoader().parseAsync(bytes.buffer, '')).scene;
+    };
+    const [hall, finishes, alchemy] = await Promise.all([
+      load('public/assets/rooms/hall/hall.glb'),
+      load('public/assets/props/architectural-finishes/architectural-finishes.glb'),
+      load('public/assets/props/alchemy-kit/alchemy-kit.glb'),
+    ]);
+    const view = mountFloorView(new THREE.Scene(), new THREE.Group(), seed, { floorNumber: 3 });
+    view.useRoomAsset('hall', () => hall.clone(true), [], roomStyleKitFromScene(finishes));
+    const { world } = view;
+    const puzzle = new AlchemyConservatory(world, alchemy, seed, false);
+    const lab = kitPart(world.group, 'brew-bench');
+    const room = world.roomGroups[puzzle.cauldronRoom];
+    const labBounds = new THREE.Box3().setFromObject(lab);
+    for (const { x, z, halfX, halfZ, top } of DECOR_TABLES.hall) {
+      const bench = new THREE.Box3(
+        new THREE.Vector3(x - halfX, 0, z - halfZ),
+        new THREE.Vector3(x + halfX, top, z + halfZ),
+      ).applyMatrix4(room.matrixWorld);
+      expect(labBounds.intersectsBox(bench)).toBe(false);
+    }
+    const dial = kitPart(lab, 'stillwind-lab-dial');
+    const needle = kitPart(dial, 'ClockClueHand');
+    expect(dial.visible).toBe(true);
+    expect(kitPart(lab, 'stillwind-dial-inscription').userData.labelText).toContain('Stillwind');
+    expect(new THREE.Box3().setFromObject(dial).min.y).toBeGreaterThan(
+      new THREE.Box3().setFromObject(puzzle.cauldron).max.y,
+    );
+    const face = needle.getWorldPosition(new THREE.Vector3());
+    const outward = dial.getWorldDirection(new THREE.Vector3());
+    const ray = new THREE.Raycaster(
+      face.clone().addScaledVector(outward, 1.1),
+      outward.clone().negate(),
+      0,
+      1.35,
+    );
+    const front = ray.intersectObject(dial, true)[0];
+    const roomHit = ray.intersectObject(room, true)[0];
+    expect(front).toBeDefined();
+    expect(roomHit?.object).toBe(front.object);
+    const quiet = conservatoryFormula(seed).quietHour;
+    puzzle.update(0, quiet + 0.5);
+    expect(needle.rotation.z).toBeCloseTo((-(quiet + 0.5) * Math.PI) / 6);
+    expect(puzzle.inStillInterval).toBe(true);
+    puzzle.update(0, quiet + 2);
+    expect(puzzle.inStillInterval).toBe(false);
+    puzzle.dispose();
+    view.dispose();
+  });
+  it('flies the claimed field specimen to a moving camera, outside reach of the eyes and without another hit', () => {
+    const seed = 'ALCH3MY1';
+    const { world, puzzle } = make(seed, false);
+    const id = alchemyRecipe(seed)[0];
+    const name = `FoundIngredient${INGREDIENT_ROOTS[id]}`;
+    world.current = world.roomGroups.findIndex((group) => group.getObjectByName(name));
+    const source = kitPart(world.roomGroups[world.current], name);
+    const start = source.getWorldPosition(new THREE.Vector3());
+    const camera = new THREE.PerspectiveCamera();
+    camera.position.copy(start).add(new THREE.Vector3(0, 0.55, 2));
+    puzzle.sync({ found: [id], added: [], brewed: false, opened: false });
+    puzzle.animatePickup(id, camera);
+    const flight = kitPart(world.group, `alchemy-pickup-${INGREDIENT_ROOTS[id]}`);
+    expect(flight.visible).toBe(true);
+    expect(flight.position.distanceTo(start)).toBeLessThan(0.001);
+    expect(puzzle.near(start, 0.1)).toBeNull();
+    puzzle.update(0.29);
+    expect(flight.position.distanceTo(start)).toBeGreaterThan(0.55);
+    expect(puzzle.near(flight.position, 0.1)).toBeNull();
+    camera.position.x += 0.5;
+    puzzle.update(0.3);
+    expect(flight.position.x - start.x).toBeGreaterThan(0.3);
+    expect(flight.position.distanceTo(camera.position)).toBeGreaterThan(0.3);
+    puzzle.update(0.04);
+    expect(flight.parent).toBeNull();
+    expect(source.visible).toBe(false);
+    puzzle.dispose();
+    world.dispose();
+  });
+  it('starts the clock pickup at the scaled drawer socket and keeps reduced-motion feedback in place', () => {
+    const { world, puzzle } = make('ALCH3MY1');
+    const hand = new THREE.Group();
+    hand.position.set(-1, 1.1, 2);
+    const drawer = new THREE.Group();
+    drawer.position.set(0.28, 0.8, -0.3);
+    drawer.rotation.y = 0.4;
+    world.roomGroups[world.current].add(drawer);
+    const source = kitPart(art(), 'IngredientMooncap');
+    source.position.z = 0.08;
+    source.scale.setScalar(0.75);
+    source.visible = false;
+    drawer.add(source);
+    puzzle.animatePickup(0, hand, source);
+    const flight = kitPart(world.group, 'alchemy-pickup-Mooncap');
+    const start = source.getWorldPosition(new THREE.Vector3());
+    expect(flight.getWorldPosition(new THREE.Vector3()).distanceTo(start)).toBeLessThan(0.001);
+    expect(flight.scale.x).toBeCloseTo(0.75);
+    puzzle.update(0.1);
+    expect(flight.position.distanceTo(start)).toBeLessThan(0.001);
+    expect(flight.scale.x).toBeLessThan(0.6);
+    puzzle.sync({ found: [0], added: [], brewed: false, opened: false }, true);
+    expect(flight.parent).toBeNull();
+    puzzle.dispose();
+    world.dispose();
+  });
   it('simmers with independent bubbles and carries both ingredients from tray to liquid before showing the potion', () => {
     const { world, puzzle } = make('ALCH3MY1', false);
     world.current = puzzle.cauldronRoom;
@@ -105,13 +220,14 @@ describe('alchemy conservatory authored puzzle', () => {
     puzzle.update(0.35);
     expect(swirl.rotation.y).toBeGreaterThan(0.2);
     expect(new Set(bubbles.map((b) => b.position.y)).size).toBe(4);
-    expect(ingredients[0].position.y - home[0].y).toBeGreaterThan(0.3);
+    expect(ingredients[0].position.y - swirl.position.y).toBeGreaterThan(0.55);
     expect(ingredients[0].position.z).toBeLessThan(home[0].z - 0.1);
     expect(puzzle.near(ingredients[0].getWorldPosition(new THREE.Vector3()), 0.02)).toBeNull();
     puzzle.sync({ ...state, added: [...recipe], brewed: true });
     puzzle.animateIngredient(recipe[1]);
     puzzle.update(0.45);
     expect(ingredients.every((n) => n.visible)).toBe(true);
+    expect(ingredients[1].position.y - swirl.position.y).toBeGreaterThan(0.55);
     expect(Math.abs(ingredients[0].position.z - puzzle.cauldron.position.z)).toBeLessThan(0.02);
     expect(puzzle.potion.visible).toBe(false);
     puzzle.update(0.5);

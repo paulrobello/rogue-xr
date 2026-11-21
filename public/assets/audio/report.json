@@ -1376,6 +1376,93 @@
       "generation": {
         "method": "original deterministic modal synthesis"
       }
+    },
+    "pendulum-tick": {
+      "intermediate_wav": "assets-source/audio/derived/pendulum-tick.wav",
+      "intermediate_sha256": "9308db2af17e683b0fb5a3f05d57b791d64f2789a9342a6a1f5803b9d0a4d48f",
+      "pre_gain": {
+        "integrated_lufs": -31.1,
+        "true_peak_dbtp": -6.3,
+        "momentary_max_lufs": -31.1
+      },
+      "gain_db": 5.3,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -25.8,
+        "true_peak_dbtp": -1.1,
+        "momentary_max_lufs": -25.8
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -9.8,
+      "loudness_status": "deviation",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": true,
+      "decoded_frames": 3914,
+      "decoded_duration_s": 0.0815,
+      "decoded_pcm_sha256": "57d4b1f9a3c5f8f9dcc00f1d2df50b03a219b191b4d263e4e77cff973f5c070b",
+      "id": "pendulum-tick",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/pendulum-tick.wav",
+      "source_sha256": "6fdfc7f800a542ac7f8ea304d978c65cc3d9595cde8d2fed9be18339003e0ded",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.1
+      },
+      "trim": {
+        "trimmed_head_ms": 0.0,
+        "trimmed_tail_ms": 18.5
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 8 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/pendulum-tick.ogg",
+      "runtime_sha256": "caabefdd51ff85f2fe102a0f1001c4ab5de975cb3274976cb1218fc55cf63df4",
+      "runtime_bytes": 1735,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.088
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "duration_seconds": 0.1,
+          "partials": [
+            [
+              710,
+              0.014,
+              0.38
+            ],
+            [
+              1810,
+              0.009,
+              0.28
+            ],
+            [
+              2930,
+              0.005,
+              0.15
+            ],
+            [
+              4090,
+              0.003,
+              0.07
+            ]
+          ]
+        },
+        "tools": {
+          "ffmpeg": "ffmpeg version 9.0.2 Copyright (c) 2000-2026 the FFmpeg developers",
+          "libopus_encoder": true,
+          "numpy": "2.5.5",
+          "python": "3.14.3"
+        }
+      }
     }
   },
   "music": {

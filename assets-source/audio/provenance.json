@@ -1025,6 +1025,53 @@
           "fundamental_hz": 329.6276
         }
       }
+    },
+    "pendulum-tick": {
+      "source_file": "assets-source/audio/sfx/procedural/pendulum-tick.wav",
+      "source_sha256": "6fdfc7f800a542ac7f8ea304d978c65cc3d9595cde8d2fed9be18339003e0ded",
+      "runtime_file": "public/assets/audio/sfx/pendulum-tick.ogg",
+      "runtime_sha256": "caabefdd51ff85f2fe102a0f1001c4ab5de975cb3274976cb1218fc55cf63df4",
+      "runtime_bytes": 1735,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 8 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "duration_seconds": 0.1,
+          "partials": [
+            [
+              710,
+              0.014,
+              0.38
+            ],
+            [
+              1810,
+              0.009,
+              0.28
+            ],
+            [
+              2930,
+              0.005,
+              0.15
+            ],
+            [
+              4090,
+              0.003,
+              0.07
+            ]
+          ]
+        },
+        "tools": {
+          "ffmpeg": "ffmpeg version 9.0.2 Copyright (c) 2000-2026 the FFmpeg developers",
+          "libopus_encoder": true,
+          "numpy": "2.5.5",
+          "python": "3.14.3"
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
     }
   },
   "music": {
