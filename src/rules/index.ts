@@ -145,6 +145,12 @@ export {
   scaleEffects,
 } from './sigil.ts';
 export {
+  type PipeChannel,
+  pipeTarget,
+  readSpeakingPipes,
+  type SpeakingPipesState,
+} from './speaking-pipes.ts';
+export {
   absorb,
   attackDamage,
   DECAYS_AT_TURN_END,

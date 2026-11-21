@@ -11,6 +11,7 @@ import {
   PRESSURE_WORKS_VERSION,
   PRISM_ANNEX_VERSION,
   RETURN_PASSAGES_VERSION,
+  SPEAKING_PIPES_VERSION,
   UPPER_WORKS_VERSION,
 } from '../combat/encounter-choice.ts';
 import { combatRoom, rigTurnAboutHead } from '../combat/placement.ts';
@@ -34,6 +35,7 @@ import { attachHiddenPassage } from '../floor/hidden-passage.ts';
 import { type PatrolRoute, patrolPeriod, planPatrol, samplePatrol } from '../floor/patrol.ts';
 import { attachPrismAnnex } from '../floor/prism-annex.ts';
 import { attachFloorOneTopology, withBrassCache } from '../floor/return-passages.ts';
+import { attachSpeakingPipes } from '../floor/speaking-pipes.ts';
 import { placeStairEntry } from '../floor/stairs.ts';
 import { type StoneRoom, stoneRoomsFor } from '../floor/stone-rooms.ts';
 import { nearSet, shellSet } from '../floor/visibility.ts';
@@ -95,6 +97,7 @@ import {
   roomStyleFor,
 } from './room-styles.ts';
 import { ServicePanels } from './service-panels.ts';
+import { SpeakingPipes } from './speaking-pipes.ts';
 import { Stairwell } from './stairwell.ts';
 import { applyStoneRoom, furnishStoneRoom, type StoneRoomKit } from './stone-rooms.ts';
 import { StrikingClock } from './striking-clock.ts';
@@ -207,6 +210,12 @@ export interface FloorView {
   dressPanels(art: THREE.Object3D, reducedMotion: boolean): void;
   readonly dispatchRoom: DispatchRoom | null;
   dressDispatch(art: THREE.Object3D, runSeed: string, reducedMotion: boolean): void;
+  readonly speakingPipes: SpeakingPipes | null;
+  dressSpeakingPipes(
+    art: THREE.Object3D | undefined,
+    runSeed: string,
+    reducedMotion: boolean,
+  ): void;
   readonly counterweight: CounterweightStation | null;
   dressChimes(art: THREE.Object3D): void;
   dressStairs(model: THREE.Object3D): void;
@@ -364,7 +373,8 @@ export function playableFloorPlan(
       : generated;
   if (floorNumber === 2 && contentVersion >= HIDDEN_PANEL_VERSION) {
     const upper = attachHiddenPassage(base);
-    return contentVersion >= DISPATCH_ROOM_VERSION ? attachDispatchRoom(upper) : upper;
+    const dispatch = contentVersion >= DISPATCH_ROOM_VERSION ? attachDispatchRoom(upper) : upper;
+    return contentVersion >= SPEAKING_PIPES_VERSION ? attachSpeakingPipes(dispatch) : dispatch;
   }
   if (contentVersion < PRESSURE_WORKS_VERSION || floorNumber !== 1) return base;
   if (contentVersion < RETURN_PASSAGES_VERSION) return attachPressureWing(base);
@@ -427,6 +437,7 @@ export function mountFloorView(
     calibrationKey: CalibrationKeyStand | null = null;
   let panels: ServicePanels | null = null;
   let dispatchRoom: DispatchRoom | null = null;
+  let speakingPipes: SpeakingPipes | null = null;
   let counterweight: CounterweightStation | null = null;
   const floorNumber = options.floorNumber ?? 1;
   const stoneRooms: ReadonlyMap<number, StoneRoom> =
@@ -735,6 +746,18 @@ export function mountFloorView(
     },
     dressDispatch(art, runSeed, reducedMotion) {
       dispatchRoom ??= DispatchRoom.mount(
+        world,
+        art,
+        runSeed,
+        reducedMotion,
+        furnishings?.placements,
+      );
+    },
+    get speakingPipes() {
+      return speakingPipes;
+    },
+    dressSpeakingPipes(art, runSeed, reducedMotion) {
+      speakingPipes ??= SpeakingPipes.mount(
         world,
         art,
         runSeed,
@@ -1136,6 +1159,7 @@ export function mountFloorView(
       calibrationKey?.dispose();
       panels?.dispose();
       dispatchRoom?.dispose();
+      speakingPipes?.dispose();
       counterweight?.dispose();
       chimes?.dispose();
       windowCache?.dispose();
@@ -1245,6 +1269,7 @@ export function mountFloorView(
       chartCabinet?.update(dt);
       panels?.update(dt);
       dispatchRoom?.update(dt);
+      speakingPipes?.update(dt);
       counterweight?.update(dt);
       chimes?.update(dt);
       world.updateAnimations(dt);

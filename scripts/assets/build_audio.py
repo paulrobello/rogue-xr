@@ -315,6 +315,61 @@ def procedural_puzzle_door(cue: dict, path: Path) -> None:
     write_wav_f32(path, (y / peak * 0.72).astype(np.float32)[:, None])
 
 
+def procedural_cistern(cue: dict, path: Path) -> None:
+    """Create the Speaking Pipes' dry send and damp cast-iron grille cues."""
+    settings = cue["procedural"]
+    rng = np.random.default_rng(int(settings["seed"]))
+    n = round(float(settings["duration_seconds"]) * SR)
+    t = np.arange(n, dtype=np.float64) / SR
+    y = np.zeros(n, dtype=np.float64)
+
+    def noise(at: float, length: float, level: float, decay: float, smooth: int = 1) -> None:
+        start = round(at * SR)
+        count = min(round(length * SR), n - start)
+        if count <= 0:
+            return
+        raw = rng.standard_normal(count)
+        if smooth > 1:
+            raw = np.convolve(raw, np.ones(smooth) / smooth, mode="same")
+        local = np.arange(count, dtype=np.float64) / SR
+        env = np.minimum(1.0, local / 0.002) * np.exp(-local / max(decay, 1e-4))
+        y[start:start + count] += raw * env * level
+
+    def partial(at: float, length: float, hz: float, level: float, decay: float) -> None:
+        start = round(at * SR)
+        count = min(round(length * SR), n - start)
+        if count <= 0:
+            return
+        local = np.arange(count, dtype=np.float64) / SR
+        env = np.minimum(1.0, local / 0.001) * np.exp(-local / max(decay, 1e-4))
+        y[start:start + count] += np.sin(2 * np.pi * hz * local) * env * level
+
+    kind = settings["kind"]
+    if kind == "pipe-send":
+        # Broad, inharmonic contact transient. No sustained oscillator or pitched reply tone.
+        noise(0.018, 0.045, 0.36, 0.012, 3)
+        noise(0.090, 0.72, 0.13, 0.32, 9)
+        noise(0.095, 0.58, 0.07, 0.20, 25)
+        for at, hz, level, decay in ((0.018, 1270, 0.12, 0.018), (0.024, 2030, 0.08, 0.012),
+                                     (0.050, 870, 0.05, 0.024)):
+            partial(at, 0.10, hz, level, decay)
+    elif kind == "grille":
+        # Wet masonry reflection, abrasive stone travel, then a heavy iron catch.
+        noise(0.035, 0.42, 0.12, 0.21, 17)
+        partial(0.055, 0.68, 118, 0.20, 0.32)
+        partial(0.075, 0.48, 241, 0.09, 0.19)
+        noise(0.18, 0.72, 0.16, 0.34, 5)
+        noise(0.82, 0.42, 0.19, 0.18, 3)
+        partial(0.84, 0.48, 92, 0.38, 0.20)
+        partial(0.86, 0.32, 176, 0.16, 0.11)
+        noise(1.19, 0.24, 0.12, 0.08, 2)
+        partial(1.22, 0.24, 64, 0.28, 0.09)
+    else:
+        raise ValueError(f"unknown cistern cue kind: {kind}")
+    peak = max(np.max(np.abs(y)), 1e-9)
+    write_wav_f32(path, (y / peak * 0.72).astype(np.float32)[:, None])
+
+
 def encode_opus(src_wav: Path, dest: Path, kbps: int) -> None:
     dest.parent.mkdir(parents=True, exist_ok=True)
     proc = run([FFMPEG, "-nostdin", "-v", "error", "-y", "-i", str(src_wav), "-c:a", "libopus",
@@ -537,6 +592,8 @@ def build_sfx(spec: dict, only: set[str], derived: Path, out: Path) -> dict[str,
             src = AUDIO_SRC / "sfx" / "procedural" / f"{cid}.wav"
             if cid == "pendulum-tick":
                 procedural_pendulum_tick(cue, src)
+            elif cue["procedural"].get("kind") in {"pipe-send", "grille"}:
+                procedural_cistern(cue, src)
             elif cue["procedural"].get("kind", "").startswith(("torch-", "chain-", "scarab-")):
                 procedural_dungeon(cue, src)
             elif cue["procedural"].get("kind"):
@@ -754,7 +811,8 @@ def main() -> None:
             provenance["sfx"]["paper-unfold"]["approval"] = "New edit of the existing card-draw recording. Runtime verification is separate from owner listening approval."
         if "pendulum-tick" in provenance["sfx"]:
             provenance["sfx"]["pendulum-tick"]["approval"] = "Original project synthesis. Owner listening review pending."
-        for cue_id in ("dungeon-torch-crackle", "dungeon-chain-wind", "dungeon-scarab-scrape"):
+        for cue_id in ("dungeon-torch-crackle", "dungeon-chain-wind", "dungeon-scarab-scrape",
+                       "cistern-pipe-send", "cistern-grille-open"):
             if cue_id in provenance["sfx"]:
                 provenance["sfx"][cue_id]["approval"] = "Original project synthesis. Owner listening review pending."
         if music and music_log.exists():

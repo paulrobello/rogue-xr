@@ -1334,6 +1334,48 @@
         }
       },
       "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "cistern-pipe-send": {
+      "source_file": "assets-source/audio/sfx/procedural/cistern-pipe-send.wav",
+      "source_sha256": "be93a630f61c1eb0545574e1259edbfb7b711888a6be6fcb2ee431fd2b5b6b6a",
+      "runtime_file": "public/assets/audio/sfx/cistern-pipe-send.ogg",
+      "runtime_sha256": "4cb5fdb455a4a001d13e46b2c7a6f2f0915ac764922253181818adfce38318a2",
+      "runtime_bytes": 6748,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "pipe-send",
+          "seed": 5201,
+          "duration_seconds": 1.1
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "cistern-grille-open": {
+      "source_file": "assets-source/audio/sfx/procedural/cistern-grille-open.wav",
+      "source_sha256": "1a1ea88d487be00eb91629901920320e11b10e9ccf0fb9fff4f5e2932421c2a7",
+      "runtime_file": "public/assets/audio/sfx/cistern-grille-open.ogg",
+      "runtime_sha256": "3c1597c7d18c366b92d4849a497b1cc54bdf867f31c2c6587ed40163371276a4",
+      "runtime_bytes": 12187,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "grille",
+          "seed": 5202,
+          "duration_seconds": 1.5
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
     }
   },
   "music": {

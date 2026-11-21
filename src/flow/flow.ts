@@ -9,6 +9,7 @@ import {
   PRESSURE_WORKS_VERSION,
   PRISM_ANNEX_VERSION,
   RETURN_PASSAGES_VERSION,
+  SPEAKING_PIPES_VERSION,
 } from '../combat/encounter-choice.ts';
 import { DUNGEON_REWARD_IDS, LEGACY_REWARD_POOL, PERMANENT_CARD_IDS } from '../content/rewards.ts';
 import { brassCacheForPlayableFloor } from '../floor/return-passages.ts';
@@ -110,7 +111,13 @@ import {
   type TreasureLoot,
   useHearth,
 } from '../rules/run.ts';
-import type { StoredHiddenPanelState } from '../rules/types.ts';
+import {
+  type PipeChannel,
+  primeSpeakingPipes as primePipeState,
+  readSpeakingPipes,
+  selectSpeakingPipe,
+} from '../rules/speaking-pipes.ts';
+import type { SpeakingPipesState, StoredHiddenPanelState } from '../rules/types.ts';
 import {
   bankRunCogs,
   buyPermanentCard,
@@ -247,6 +254,11 @@ export interface DispatchEvent {
   readonly result?: 'misrouted' | 'sent';
   readonly state: StoredDispatchState;
 }
+export interface SpeakingPipesEvent {
+  readonly type: 'speaking-pipes';
+  readonly action: 'prime' | 'open';
+  readonly state: SpeakingPipesState;
+}
 
 /**
  * `'opened'`: a coffer was opened (`openLoot`). `'claimed'`: its pending card went into the deck
@@ -288,6 +300,7 @@ export type FlowEvent =
   | BellChimeEvent
   | PrismSignalEvent
   | DispatchEvent
+  | SpeakingPipesEvent
   | { readonly type: 'brass-key'; readonly action: 'inspect' | 'take' | 'unlock' }
   | {
       readonly type: 'window-cache';
@@ -409,6 +422,40 @@ export class RunFlow {
   }
   get dispatch(): StoredDispatchState {
     return readDispatch(this.runValue ?? { dispatch: undefined });
+  }
+  get speakingPipes(): SpeakingPipesState {
+    return readSpeakingPipes(this.runValue ?? { speakingPipes: undefined });
+  }
+  primeSpeakingPipes(): boolean {
+    if (
+      !this.runValue ||
+      this.phaseValue !== 'explore' ||
+      this.floorNumberValue !== 2 ||
+      this.contentVersionValue < SPEAKING_PIPES_VERSION
+    )
+      return false;
+    const before = this.speakingPipes;
+    const next = primePipeState(this.runValue);
+    if (!next) return false;
+    this.runValue = next;
+    if (before === 'idle')
+      this.emit({ type: 'speaking-pipes', action: 'prime', state: this.speakingPipes });
+    return true;
+  }
+  selectSpeakingPipe(channel: PipeChannel): 'ignored' | 'wrong' | 'opened' {
+    if (
+      !this.runValue ||
+      this.phaseValue !== 'explore' ||
+      this.floorNumberValue !== 2 ||
+      this.contentVersionValue < SPEAKING_PIPES_VERSION
+    )
+      return 'ignored';
+    const result = selectSpeakingPipe(this.runValue, channel);
+    if (!result) return 'ignored';
+    this.runValue = result.run;
+    if (result.result === 'opened')
+      this.emit({ type: 'speaking-pipes', action: 'open', state: this.speakingPipes });
+    return result.result;
   }
   turnDispatch(): boolean {
     if (
@@ -1407,6 +1454,7 @@ export class RunFlow {
       usedHearths: run.usedHearths,
       pressure: run.pressure,
       dispatch: this.floorNumberValue === 2 ? run.dispatch : undefined,
+      speakingPipes: this.floorNumberValue === 2 ? run.speakingPipes : undefined,
       bookSecretOpenedRooms: run.bookSecretOpenedRooms,
       bookSecretKeyRooms: run.bookSecretKeyRooms,
       bookSecretCabinetRooms: run.bookSecretCabinetRooms,
@@ -1428,9 +1476,13 @@ export class RunFlow {
     this.roomValue = destinationRoom;
     this.offerValue = null;
     this.guardianDefeatedValue = floor.guardianDefeated === true;
-    const { pressure: _stalePressure, ...runWithoutPressure } = run;
+    const {
+      pressure: _stalePressure,
+      speakingPipes: _staleSpeakingPipes,
+      ...runWithoutFloorPuzzles
+    } = run;
     this.runValue = {
-      ...runWithoutPressure,
+      ...runWithoutFloorPuzzles,
       floorSeed: floor.floorSeed,
       openedLoot: floor.openedLoot,
       pendingLoot: floor.pendingLoot,
@@ -1440,6 +1492,9 @@ export class RunFlow {
         : {}),
       ...(this.floorNumberValue === 2 && floor.dispatch !== undefined
         ? { dispatch: floor.dispatch }
+        : {}),
+      ...(this.floorNumberValue === 2 && floor.speakingPipes !== undefined
+        ? { speakingPipes: floor.speakingPipes }
         : {}),
       bookSecretOpenedRooms: floor.bookSecretOpenedRooms,
       bookSecretKeyRooms: floor.bookSecretKeyRooms,

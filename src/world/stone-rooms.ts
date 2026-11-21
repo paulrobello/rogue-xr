@@ -106,7 +106,7 @@ export function applyStoneRoom(
       add(skylight ? 'StoneSkylight' : 'StoneCeiling', tile.setPosition(x, 4, z));
     }
   for (const [part, poses] of matrices) instancePart(room, part, kit[part], poses);
-  room.userData.roomStyle = theme === 'cloister' ? 'stone-cloister' : 'stone-dungeon';
+  room.userData.roomStyle = `stone-${theme}`;
   room.userData.finishEdge = edge;
   if (theme === 'cloister') {
     room.userData.stoneSkylight = SKY_TILE;

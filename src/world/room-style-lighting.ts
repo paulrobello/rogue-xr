@@ -143,7 +143,9 @@ export function lightRoomStyle(room: THREE.Group, placements: readonly InteriorP
   const matrix = new THREE.Matrix4(),
     centre = new THREE.Vector3();
   const stone =
-    room.userData.roomStyle === 'stone-dungeon' || room.userData.roomStyle === 'stone-cloister';
+    room.userData.roomStyle === 'stone-dungeon' ||
+    room.userData.roomStyle === 'stone-cloister' ||
+    room.userData.roomStyle === 'stone-cistern';
   const skylight = room.userData.stoneSkylight as readonly [number, number, number] | undefined;
   const torchSockets: readonly THREE.Object3D[] = room.userData.stoneTorchSockets ?? [];
   for (const socket of torchSockets) {

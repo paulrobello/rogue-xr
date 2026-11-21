@@ -2,8 +2,8 @@
   "tools": {
     "ffmpeg": "ffmpeg version 9.0.2 Copyright (c) 2000-2026 the FFmpeg developers",
     "libopus_encoder": true,
-    "numpy": "2.4.4",
-    "python": "3.14.10"
+    "numpy": "2.5.5",
+    "python": "3.14.3"
   },
   "targets": {
     "sfx_lufs": -16.0,
@@ -2273,6 +2273,128 @@
           "duration_seconds": 1.05
         }
       }
+    },
+    "cistern-pipe-send": {
+      "intermediate_wav": "assets-source/audio/derived/cistern-pipe-send.wav",
+      "intermediate_sha256": "d3c8f8ea85e33285bbf325b95ab42813f8b14c390079e17678543ed0c67a59da",
+      "pre_gain": {
+        "integrated_lufs": -32.7,
+        "true_peak_dbtp": -5.7,
+        "momentary_max_lufs": -27.5
+      },
+      "gain_db": 4.55,
+      "encode_attempts": 2,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -28.3,
+        "true_peak_dbtp": -1.0,
+        "momentary_max_lufs": -23.1
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -12.3,
+      "loudness_status": "deviation",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": true,
+      "decoded_frames": 38727,
+      "decoded_duration_s": 0.8068,
+      "decoded_pcm_sha256": "deef9099892b638a6db26d382b1cd2ecfbe16b4f6f146671ea522e10fe0afe6d",
+      "id": "cistern-pipe-send",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/cistern-pipe-send.wav",
+      "source_sha256": "be93a630f61c1eb0545574e1259edbfb7b711888a6be6fcb2ee431fd2b5b6b6a",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.1
+      },
+      "trim": {
+        "trimmed_head_ms": 13.0,
+        "trimmed_tail_ms": 280.1
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/cistern-pipe-send.ogg",
+      "runtime_sha256": "4cb5fdb455a4a001d13e46b2c7a6f2f0915ac764922253181818adfce38318a2",
+      "runtime_bytes": 6748,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.8133
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "pipe-send",
+          "seed": 5201,
+          "duration_seconds": 1.1
+        }
+      }
+    },
+    "cistern-grille-open": {
+      "intermediate_wav": "assets-source/audio/derived/cistern-grille-open.wav",
+      "intermediate_sha256": "280a9202125b3ce96303f7a4bb840f4aa4b5e0788166d55a07639b77dcfe8113",
+      "pre_gain": {
+        "integrated_lufs": -23.0,
+        "true_peak_dbtp": -5.6,
+        "momentary_max_lufs": -20.0
+      },
+      "gain_db": 4.35,
+      "encode_attempts": 2,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -18.7,
+        "true_peak_dbtp": -1.0,
+        "momentary_max_lufs": -15.8
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -2.7,
+      "loudness_status": "deviation",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 69110,
+      "decoded_duration_s": 1.4398,
+      "decoded_pcm_sha256": "a8929fb15d9fe5e01ac747aba241d2cf6a64c291530364b02f2fc5be55f71173",
+      "id": "cistern-grille-open",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/cistern-grille-open.wav",
+      "source_sha256": "1a1ea88d487be00eb91629901920320e11b10e9ccf0fb9fff4f5e2932421c2a7",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.5
+      },
+      "trim": {
+        "trimmed_head_ms": 30.2,
+        "trimmed_tail_ms": 30.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/cistern-grille-open.ogg",
+      "runtime_sha256": "3c1597c7d18c366b92d4849a497b1cc54bdf867f31c2c6587ed40163371276a4",
+      "runtime_bytes": 12187,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.4463
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "grille",
+          "seed": 5202,
+          "duration_seconds": 1.5
+        }
+      }
     }
   },
   "music": {
@@ -2982,10 +3104,5 @@
     }
   },
   "music_status": "absent: runtime plays silence",
-  "external_checks": {
-    "check-audio-loops": {
-      "exit": 0,
-      "stdout": "public/assets/audio/sfx/dungeon-torch-crackle.ogg wrap   2025 / p99.9   3849   head  -14.2 dB   tail  -14.4 dB   min  -14.9 dB   ok\n\nPASS: 1 file(s) wrap cleanly with no interior dropout"
-    }
-  }
+  "external_checks": {}
 }

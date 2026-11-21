@@ -1,7 +1,7 @@
 import { Stream } from '../core/rng.ts';
 import type { FloorPlan } from './generate.ts';
 
-export type StoneRoom = 'dungeon' | 'cloister';
+export type StoneRoom = 'dungeon' | 'cloister' | 'cistern';
 
 export function stoneRoomsFor(plan: FloorPlan, floor: 1 | 2 | 3): ReadonlyMap<number, StoneRoom> {
   const rooms = new Map<number, StoneRoom>();
@@ -12,6 +12,7 @@ export function stoneRoomsFor(plan: FloorPlan, floor: 1 | 2 | 3): ReadonlyMap<nu
   }
 
   if (plan.dispatchRoom) rooms.set(plan.dispatchRoom.vaultRoom, 'dungeon');
+  if (plan.speakingPipes) rooms.set(plan.speakingPipes.cisternRoom, 'cistern');
   const halls = plan.rooms.filter(
     (room) =>
       room.templateId === 'hall' &&

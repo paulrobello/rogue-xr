@@ -13,6 +13,7 @@ import {
   type StoredHiddenPanelState,
   type StoredPressureState,
   type StoredPrismState,
+  type StoredSpeakingPipesState,
 } from './types.ts';
 
 /**
@@ -70,6 +71,7 @@ export interface RunState {
   readonly patrolDefeated?: true;
   /** Floor-three Prism Annex receiver progress. */
   readonly prismSignal?: StoredPrismState;
+  readonly speakingPipes?: StoredSpeakingPipesState;
 }
 
 /** Mirrors `EncounterTier` in `floor/generate.ts`; rules may not import from `floor/`. */

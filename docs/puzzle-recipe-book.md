@@ -30,6 +30,12 @@ In a new run, look for the pneumatic dispatcher in the Upper Works. The return h
 
 When the slip’s route is selected, collect the brass reply at the return hatch. It releases the steel shutter into the dispatch vault, where a treasure coffer waits. The reply, shutter, and coffer retain their state after Continue.
 
+## Speaking Pipes
+
+Sound the transmitter in the Upper Works, then find the Pipe Receiver in a different reachable room. It plays the seeded low, middle, or high note and raises a marker above the matching handle. The triangle, square, and round handles sit directly below their marks. Replay repeats the same note and moves the same marker.
+
+A wrong handle flashes its indicator and leaves the clue in place. The matching handle releases the cast-iron grille by the transmitter. The cistern behind it has a separate basin, copper supply pipes, shelf, and treasure coffer. Continue restores the primed receiver or opened grille and keeps any collected treasure.
+
 ## Ingredients for future puzzles
 
 | Ingredient | What the player can do or notice | A possible payoff |
@@ -70,7 +76,7 @@ These are design ingredients. The component kits supply physical starting pieces
 | 3 | Cancelled inscription | Rotate a polarizing lens over two superimposed engravings. One layer fades until a legible shelf mark remains. |
 | 4 | Prism signal (playable) | Turn a prism to direct light to three receivers. A notch, a star and a ring distinguish the channels as well as their colors. |
 | 5 | Misrouted post (playable) | Read the return station’s routing slip, select its line, and send a brass capsule. Collect the reply to open the vault. |
-| 6 | Speaking pipes | Sound one pipe and listen at the outlets. A vibrating gauge identifies the same outlet visually. Follow the matching line behind the wall. |
+| 6 | Speaking pipes (playable) | Sound the sender, then identify the reply by pitch or raised marker in a separate room. Select the matching handle and return to the cistern grille. |
 | 7 | Float elevator | Admit water to a sight tube. A brass float raises a sealed item to one of several access hatches; stop it at the reachable one. |
 | 8 | Steam leak | Find the hissing joint, seat a recovered gasket, and repressurize the line. The repaired branch powers the next device. |
 | 9 | Counterfeit counterweight | Two weights have the same crest but different mass. Compare them on a balance, then install the genuine one to lift a grille. |

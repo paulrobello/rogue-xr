@@ -37,7 +37,12 @@ import {
 import type { StoredPrismState } from '../rules/prism-signal.ts';
 import type { PendingLoot, RewardOffer, RewardTier, RunState } from '../rules/run.ts';
 import { floorSeedFor } from '../rules/run.ts';
-import type { BrassKeyState, StoredDispatchState, StoredHiddenPanelState } from '../rules/types.ts';
+import type {
+  BrassKeyState,
+  StoredDispatchState,
+  StoredHiddenPanelState,
+  StoredSpeakingPipesState,
+} from '../rules/types.ts';
 import {
   createWorkshop,
   maxTier,
@@ -102,6 +107,7 @@ export interface FloorSnapshot {
   readonly usedHearths?: readonly string[];
   readonly pressure?: StoredPressureState;
   readonly dispatch?: StoredDispatchState;
+  readonly speakingPipes?: StoredSpeakingPipesState;
   readonly bookSecretOpenedRooms?: readonly number[];
   readonly bookSecretKeyRooms?: readonly number[];
   readonly bookSecretCabinetRooms?: readonly number[];
@@ -228,6 +234,11 @@ function dispatch(v: unknown, path: string, seed: string): StoredDispatchState {
     fail(`${path}.route`, 'wrong dispatch route');
   if (value.opened && !value.sent) fail(`${path}.opened`, 'cannot open before sending');
   return { route, sent: value.sent, opened: value.opened };
+}
+
+function speakingPipes(v: unknown, path: string): StoredSpeakingPipesState {
+  if (v !== 'idle' && v !== 'primed' && v !== 'open') fail(path, 'unknown speaking-pipes state');
+  return v;
 }
 
 function counterweight(v: unknown, path: string, seed: string): StoredCounterweightState {
@@ -487,6 +498,10 @@ function validateRunState(
       : pressure(r.pressure, `${path}.pressure`, activeFloorSeed, version);
   const dispatchState =
     r.dispatch === undefined ? undefined : dispatch(r.dispatch, `${path}.dispatch`, seed);
+  const speakingPipesState =
+    r.speakingPipes === undefined
+      ? undefined
+      : speakingPipes(r.speakingPipes, `${path}.speakingPipes`);
   const counterweightState =
     r.counterweight === undefined
       ? undefined
@@ -572,6 +587,7 @@ function validateRunState(
     ...(difficulty === undefined ? {} : { difficulty }),
     ...(pressureState === undefined ? {} : { pressure: pressureState }),
     ...(dispatchState === undefined ? {} : { dispatch: dispatchState }),
+    ...(speakingPipesState === undefined ? {} : { speakingPipes: speakingPipesState }),
     ...(counterweightState === undefined ? {} : { counterweight: counterweightState }),
     ...(alchemyState === undefined ? {} : { alchemy: alchemyState }),
     ...(formulaState === undefined ? {} : { conservatoryFormula: formulaState }),
@@ -734,6 +750,9 @@ function validateFloors(
       ...(r.dispatch === undefined
         ? {}
         : { dispatch: dispatch(r.dispatch, `${path}.dispatch`, runSeed) }),
+      ...(r.speakingPipes === undefined
+        ? {}
+        : { speakingPipes: speakingPipes(r.speakingPipes, `${path}.speakingPipes`) }),
       ...(r.bookSecretOpenedRooms === undefined
         ? {}
         : {

@@ -122,7 +122,9 @@ export function findPuzzleMount(
   const offered = rooms.filter(
     (room) =>
       room !== world.plan.hiddenPassage?.treasureRoom &&
-      (room !== world.plan.dispatchRoom?.vaultRoom || rooms.length === 1),
+      (rooms.length === 1 ||
+        (room !== world.plan.dispatchRoom?.vaultRoom &&
+          room !== world.plan.speakingPipes?.cisternRoom)),
   );
   for (const room of stream?.shuffle(offered) ?? offered) {
     const mount = mountingPoint(

@@ -41,6 +41,7 @@ export function bindFlowPersistence(
       event.type === 'hearth' ||
       event.type === 'pressure' ||
       event.type === 'dispatch' ||
+      event.type === 'speaking-pipes' ||
       event.type === 'book-secret' ||
       event.type === 'bell-chimes' ||
       event.type === 'counterweight' ||

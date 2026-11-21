@@ -100,6 +100,7 @@ import {
   runDifficulty,
 } from './rules/difficulty.ts';
 import { floorSeedFor, parseLootKey, type RewardTier } from './rules/run.ts';
+import { pipeTarget } from './rules/speaking-pipes.ts';
 import { createWorkshop } from './rules/workshop.ts';
 import { sharedKtx2Loader } from './ui/first-render.ts';
 import { loadIconSheet } from './ui/icon-sheet.ts';
@@ -144,6 +145,7 @@ import { mountRoomAssetProof } from './world/room-asset-proof.ts';
 import { lightRoomStyle } from './world/room-style-lighting.ts';
 import { type RoomStyleKit, roomStyleFor, roomStyleKitFromScene } from './world/room-styles.ts';
 import { type PanelHit, SERVICE_KNOCKS } from './world/service-panels.ts';
+import type { SpeakingPipes, SpeakingPipesPick } from './world/speaking-pipes.ts';
 import { StairFade, StairTransit } from './world/stair-transit.ts';
 import { type StoneRoomKit, stoneRoomKitFromScene } from './world/stone-rooms.ts';
 import { loadBookBindings } from './world/study-books.ts';
@@ -805,6 +807,8 @@ function syncPuzzles(target: FloorView, immediate = false): void {
   target.clock?.sync(flow.alchemy.found.includes(alchemyRecipe(run.seed)[1]));
   target.dispatchRoom?.sync(flow.dispatch, immediate);
   target.world.setPuzzleGateOpen('dispatch', flow.dispatch.opened, immediate);
+  target.speakingPipes?.sync(flow.speakingPipes, immediate);
+  target.world.setPuzzleGateOpen('cistern', flow.speakingPipes === 'open', immediate);
 }
 let pressureArt: Promise<PressureArt> | undefined;
 let interiors:
@@ -961,6 +965,9 @@ const dressFloor = async (target: FloorView): Promise<void> => {
     }
     if (chimeArt && target.world.plan.dispatchRoom) {
       target.dressDispatch(chimeArt, flow.run?.seed ?? target.seed, hitFx.reducedMotion);
+    }
+    if (target.world.plan.speakingPipes) {
+      target.dressSpeakingPipes(chimeArt, flow.run?.seed ?? target.seed, hitFx.reducedMotion);
     }
     if (
       target.floorNumber === 2 &&
@@ -1187,7 +1194,8 @@ flow.onChange((event) => {
     event.type === 'alchemy' ||
     event.type === 'formula' ||
     event.type === 'prism-signal' ||
-    event.type === 'dispatch'
+    event.type === 'dispatch' ||
+    event.type === 'speaking-pipes'
   ) {
     if (event.type === 'formula') floor?.office?.sync(flow.commission);
     if (floor) syncPuzzles(floor);
@@ -2007,6 +2015,40 @@ function operateDispatch(hit: DispatchPick): boolean {
   audio?.playSfx(result === 'misrouted' ? 'gear-clank' : 'steam-vent', at);
   return true;
 }
+
+let soundedPipeReceiver: SpeakingPipes | undefined;
+
+function playPipeReply(pipes: SpeakingPipes): void {
+  if (!flow.run) return;
+  pipes.pulse();
+  audio?.playChime(pipeTarget(flow.run.seed), pipes.signalPosition(chimePosition));
+}
+
+function operateSpeakingPipes(hit: SpeakingPipesPick): boolean {
+  const pipes = floor?.speakingPipes;
+  if (!pipes) return false;
+  if (hit.action === 'send') {
+    if (!flow.primeSpeakingPipes()) return false;
+    audio?.playSfx('cistern-pipe-send', pipes.senderPosition(chimePosition));
+    return true;
+  }
+  if (hit.action === 'replay') {
+    if (flow.speakingPipes !== 'primed') return false;
+    playPipeReply(pipes);
+    return true;
+  }
+  if (hit.action !== 'select') return false;
+  const result = flow.selectSpeakingPipe(hit.channel);
+  if (result === 'ignored') return false;
+  if (result === 'opened') {
+    audio?.playSfx(PUZZLE_GATE_OPEN_SFX.cistern, pipes.openingPosition(chimePosition));
+  } else {
+    pipes.reject(hit.channel);
+    audio?.playSfx('gear-clank', pipes.signalPosition(chimePosition), 0.5);
+  }
+  return true;
+}
+
 function fieldHit(origin: THREE.Vector3, direction: THREE.Vector3) {
   if (!floor) return null;
   const stair = floor.stairs?.pick(floor.world.current, origin, direction);
@@ -2035,7 +2077,9 @@ function fieldHit(origin: THREE.Vector3, direction: THREE.Vector3) {
   const panel = floor.panels?.pick(origin, direction);
   const windowCache = floor.windowCache?.pick(origin, direction);
   const dispatch = floor.dispatchRoom?.pick(origin, direction);
+  const pipes = floor.speakingPipes?.pick(origin, direction);
   const hits = [
+    ...(pipes ? [{ kind: 'speaking-pipes' as const, hit: pipes }] : []),
     ...(dispatch ? [{ kind: 'dispatch' as const, hit: dispatch }] : []),
     ...(windowCache ? [{ kind: 'window-cache' as const, hit: windowCache }] : []),
     ...(key ? [{ kind: 'brass-key' as const, hit: key }] : []),
@@ -2070,6 +2114,8 @@ const activatePickup = (
   const pick = fieldHit(origin, direction);
   if (!pick) return false;
   switch (pick.kind) {
+    case 'speaking-pipes':
+      return operateSpeakingPipes(pick.hit);
     case 'dispatch':
       return operateDispatch(pick.hit);
     case 'window-cache':
@@ -2330,6 +2376,8 @@ for (const index of [0, 1]) {
     if (evidence && inspectFormula(evidence.clue)) return;
     const dispatch = floor.dispatchRoom?.near(position, GRAB_REACH);
     if (dispatch && operateDispatch(dispatch)) return;
+    const pipes = floor.speakingPipes?.near(position, GRAB_REACH);
+    if (pipes && operateSpeakingPipes(pipes)) return;
     const clock = floor.clock?.near(position, GRAB_REACH);
     if (clock && collectAlchemy(clock.ingredient, side, floor.clock?.target)) return;
     const brew = floor.alchemy?.near(position, GRAB_REACH);
@@ -2936,6 +2984,17 @@ renderer.setAnimationLoop((time, frame) => {
     }
   }
   if (floor && audio) {
+    const pipeReceiver =
+      flow.phase === 'explore' &&
+      flow.speakingPipes === 'primed' &&
+      floor.world.current === floor.world.plan.speakingPipes?.receiverRoom
+        ? (floor.speakingPipes ?? undefined)
+        : undefined;
+    if (!pipeReceiver) soundedPipeReceiver = undefined;
+    else if (pipeReceiver !== soundedPipeReceiver && audio.contextState === 'running') {
+      soundedPipeReceiver = pipeReceiver;
+      playPipeReply(pipeReceiver);
+    }
     const fighting = floor.encounter.phase !== 'idle';
     audio.setState(
       audioStateForFlow(flow.phase, floor.encounter.phase, {

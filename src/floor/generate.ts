@@ -48,7 +48,8 @@ export type PuzzleGate =
   | 'archive'
   | 'panel'
   | 'prism'
-  | 'dispatch';
+  | 'dispatch'
+  | 'cistern';
 
 export type FloorConnection = readonly [DoorRef, DoorRef] & { puzzleGate?: PuzzleGate };
 
@@ -69,6 +70,7 @@ export interface FloorPlan {
   pressureWing?: { gallery: number; pumpRoom: number; source: DoorRef };
   prismAnnex?: { source: DoorRef; clueRoom: number; annexRoom: number };
   dispatchRoom?: { source: DoorRef; replyRoom: number; vaultRoom: number };
+  speakingPipes?: { source: DoorRef; receiverRoom: number; cisternRoom: number };
 }
 
 export interface FloorParams {

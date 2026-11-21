@@ -3014,7 +3014,7 @@ export interface CombatHookFloor {
   seed: string;
   contentVersion?: number;
   floorNumber?: number;
-  stoneRooms?: ReadonlyMap<number, 'dungeon' | 'cloister'>;
+  stoneRooms?: ReadonlyMap<number, 'dungeon' | 'cloister' | 'cistern'>;
   encounter: Pick<EncounterDirector, 'phase' | 'activeRoom' | 'tablePose' | 'end'> & {
     readonly seatDistance?: number | null;
     readonly activePatrol?: THREE.Object3D | null;
