@@ -1,0 +1,76 @@
+{
+  "pieceId": "hall",
+  "variant": "hall-closed",
+  "route": "scripted",
+  "blender": "5.2.3 LTS",
+  "generator": {
+    "path": "scripts/assets/build-hall-closed.py",
+    "sha256": "d5eacaddbe692e6dae0659477022fe62dfda95c34433e29fff225f77b7f7204c"
+  },
+  "generatorDeps": [
+    {
+      "path": "scripts/assets/build-room-kit.py",
+      "sha256": "a3f860297e22cf66621956a9cc0d427e5973c8d4b9fff34d19261adc05cd0882"
+    },
+    {
+      "path": "scripts/assets/room_kit.py",
+      "sha256": "0137f356fb955d8d6637abeafc7cc27d356f955aeee835269e1c0018636aae03"
+    },
+    {
+      "path": "scripts/assets/build-room-study.py",
+      "sha256": "809c9db70529905825f5af345950c5a1ef78b8abb239504a8824e5afcd656685"
+    },
+    {
+      "path": "scripts/assets/lightmap_helpers.py",
+      "sha256": "c74c968a3d3ed95bae831262af3c5ab1bacedfa0e2e131b95d5d7bf4e59d66ad"
+    },
+    {
+      "path": "scripts/assets/room_panels.py",
+      "sha256": "ccc2606c6def41eb9b69e6524ee0c4ac2475ed54f6ee365e0fb5c1761138afa9"
+    },
+    {
+      "path": "scripts/assets/build-cog-sentry.py",
+      "sha256": "8f80d1ae8d10adeab5123ba9497e9d00a8ea4c6e5c0855c902cf65274f25bacc"
+    }
+  ],
+  "derivedFiles": [
+    {
+      "path": "public/assets/rooms/hall-closed/hall.glb",
+      "sha256": "25a418f9d57a77717bf1a0b88e7dd5090841b8ae47bec87ee4217e5895c0dae9"
+    },
+    {
+      "path": "public/assets/rooms/hall-closed/hall.manifest.json",
+      "sha256": "20afd33fd6c05265fba5ca8b5be8da7838f2ceb3fdad5ee727d9dc3ecf7ecb76"
+    },
+    {
+      "path": "public/assets/rooms/hall-closed/hall.lightmap.ktx2",
+      "sha256": "9b7fac026207cfa95e5c7eabe73cc44021c3395090fd113594f1260ff9eed262"
+    }
+  ],
+  "validation": {
+    "pass": true
+  },
+  "blendFiles": {
+    "hall_high.blend": {
+      "sha256": "6e2f1b70324789548c2c885bd5353e672b8ca0a135daf37b676fb4539e162576",
+      "bytes": 1016529
+    },
+    "hall_low.blend": {
+      "sha256": "c85a6fa5446f601bf92fa8f5236e87a38d4dd46b2aa53657178ff08c2836f086",
+      "bytes": 347136
+    }
+  },
+  "bake": {
+    "size": 2048,
+    "samples": 256,
+    "device": "CPU",
+    "ktx2": {
+      "tool": "ktx version: v4.4.2",
+      "encodes": {
+        "hall.lightmap.ktx2": "create --format R8G8B8_SRGB --assign-tf srgb --encode uastc --uastc-quality 2 --zstd 18 --generate-mipmap"
+      }
+    }
+  },
+  "geometry": "North lancet cutout and frame omitted; fireplace breast opening retained.",
+  "lighting": "Hall sun and window sky removed before baking; fireplace and other hall lights retained."
+}

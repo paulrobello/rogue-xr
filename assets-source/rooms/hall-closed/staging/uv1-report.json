@@ -1,0 +1,11 @@
+{
+  "glb": "hall.glb",
+  "glb_sha256": "25a418f9d57a77717bf1a0b88e7dd5090841b8ae47bec87ee4217e5895c0dae9",
+  "size": 2048,
+  "islands": 1592,
+  "coverage": 0.3217,
+  "overlap_px": 0,
+  "texels_claimed_twice": 0,
+  "claims_per_covered_texel": 1.0,
+  "min_gap_px": 19
+}

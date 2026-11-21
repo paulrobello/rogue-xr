@@ -1,0 +1,535 @@
+{
+  "piece": "hall",
+  "blender": "5.2.3 LTS",
+  "gltf_exporter": "Blender 5.2.3 LTS bundled io_scene_gltf2 5.2.41",
+  "host_load_start": 2.58,
+  "lightmap_size": 2048,
+  "samples": 256,
+  "generator": "scripts/assets/build-hall-closed.py (wraps scripts/assets/build-room-kit.py)",
+  "helper": "scripts/assets/room_kit.py (reuses build-room-study.py functions)",
+  "lengthwise_grain_high": 322,
+  "high": {
+    "triangles": 41304,
+    "slots": 7
+  },
+  "lengthwise_grain_low": 322,
+  "low": {
+    "triangles": 6668,
+    "vertices": 4924,
+    "materials": 7,
+    "lightmap_density": {
+      "mean_px_per_m": 52.62,
+      "min_px_per_m": 44.48,
+      "max_px_per_m": 52.89
+    },
+    "lightmap_density_by_slot": {
+      "brass-aged": {
+        "area_m2": 9.95,
+        "median_px_per_m": 52.9,
+        "min_px_per_m": 44.5
+      },
+      "brass-polished": {
+        "area_m2": 2.13,
+        "median_px_per_m": 52.0,
+        "min_px_per_m": 44.5
+      },
+      "flame": {
+        "area_m2": 0.32,
+        "median_px_per_m": 52.9,
+        "min_px_per_m": 52.9
+      },
+      "stone-floor": {
+        "area_m2": 104.45,
+        "median_px_per_m": 52.9,
+        "min_px_per_m": 52.9
+      },
+      "wallpaper": {
+        "area_m2": 106.91,
+        "median_px_per_m": 52.9,
+        "min_px_per_m": 52.9
+      },
+      "walnut": {
+        "area_m2": 238.37,
+        "median_px_per_m": 52.9,
+        "min_px_per_m": 46.3
+      },
+      "wax": {
+        "area_m2": 0.37,
+        "median_px_per_m": 50.8,
+        "min_px_per_m": 50.8
+      }
+    },
+    "panels": {
+      "door-frame-e": {
+        "triangles": 30,
+        "lightmap_density": {
+          "mean_px_per_m": 52.88,
+          "min_px_per_m": 52.88,
+          "max_px_per_m": 52.89
+        }
+      },
+      "door-frame-n": {
+        "triangles": 30,
+        "lightmap_density": {
+          "mean_px_per_m": 52.88,
+          "min_px_per_m": 52.88,
+          "max_px_per_m": 52.89
+        }
+      },
+      "door-frame-s": {
+        "triangles": 30,
+        "lightmap_density": {
+          "mean_px_per_m": 52.88,
+          "min_px_per_m": 52.88,
+          "max_px_per_m": 52.89
+        }
+      },
+      "door-frame-w": {
+        "triangles": 30,
+        "lightmap_density": {
+          "mean_px_per_m": 52.88,
+          "min_px_per_m": 52.88,
+          "max_px_per_m": 52.89
+        }
+      },
+      "door-plug-e": {
+        "triangles": 20,
+        "lightmap_density": {
+          "mean_px_per_m": 52.88,
+          "min_px_per_m": 52.88,
+          "max_px_per_m": 52.89
+        }
+      },
+      "door-plug-n": {
+        "triangles": 20,
+        "lightmap_density": {
+          "mean_px_per_m": 52.88,
+          "min_px_per_m": 52.88,
+          "max_px_per_m": 52.89
+        }
+      },
+      "door-plug-s": {
+        "triangles": 20,
+        "lightmap_density": {
+          "mean_px_per_m": 52.88,
+          "min_px_per_m": 52.88,
+          "max_px_per_m": 52.89
+        }
+      },
+      "door-plug-w": {
+        "triangles": 20,
+        "lightmap_density": {
+          "mean_px_per_m": 52.88,
+          "min_px_per_m": 52.88,
+          "max_px_per_m": 52.89
+        }
+      }
+    }
+  },
+  "canonicalized_primitives": 19,
+  "glb_bytes": 478940,
+  "device": "CPU",
+  "lightmap_bake": {
+    "seconds": 863.42,
+    "pass_seconds": [
+      813.42,
+      50.0
+    ],
+    "host_load": [
+      2.6,
+      3.84
+    ],
+    "timing_valid": true,
+    "diffuse_bounces": 4,
+    "margin_px": 8,
+    "island_pad_px": 10,
+    "panels": "pass 1: shell, rigid nodes and door frames, every door frame and plug invisible to shadow, diffuse, glossy, transmission and volume rays; pass 2: door plugs only into the same image, plugs fully visible, frames hidden from render (room_panels.bake_with_panels)"
+  },
+  "denoise": "compositor OIDN, HDR, accurate prefilter, high quality",
+  "lightmap": {
+    "coverage": 0.6461,
+    "scale": 5.293816,
+    "clipped_fraction": 0.01,
+    "mean_irradiance": 0.457313,
+    "p05_irradiance": 0.0,
+    "percentile": 99.0,
+    "encoded_p05_255": 0,
+    "encoded_median_255": 41
+  },
+  "ktx2": {
+    "tool": "ktx version: v4.4.2",
+    "encodes": {
+      "hall.lightmap.ktx2": "create --format R8G8B8_SRGB --assign-tf srgb --encode uastc --uastc-quality 2 --zstd 18 --generate-mipmap"
+    }
+  },
+  "blend": {
+    "hall_high.blend": {
+      "sha256": "6e2f1b70324789548c2c885bd5353e672b8ca0a135daf37b676fb4539e162576",
+      "bytes": 1016529
+    },
+    "hall_low.blend": {
+      "sha256": "c85a6fa5446f601bf92fa8f5236e87a38d4dd46b2aa53657178ff08c2836f086",
+      "bytes": 347136
+    }
+  },
+  "colliders_added": [
+    {
+      "min": [
+        -4.77,
+        0,
+        -4.77
+      ],
+      "max": [
+        -4.43,
+        2.025,
+        -4.43
+      ]
+    },
+    {
+      "min": [
+        4.43,
+        0,
+        4.43
+      ],
+      "max": [
+        4.77,
+        2.025,
+        4.77
+      ]
+    },
+    {
+      "min": [
+        4.43,
+        0,
+        -4.77
+      ],
+      "max": [
+        4.77,
+        2.025,
+        -4.43
+      ]
+    },
+    {
+      "min": [
+        -4.77,
+        0,
+        4.43
+      ],
+      "max": [
+        -4.43,
+        2.025,
+        4.77
+      ]
+    },
+    {
+      "min": [
+        -4.215,
+        0,
+        1.545
+      ],
+      "max": [
+        -3.785,
+        0.47,
+        2.455
+      ]
+    },
+    {
+      "min": [
+        3.785,
+        0,
+        -2.455
+      ],
+      "max": [
+        4.215,
+        0.47,
+        -1.545
+      ]
+    },
+    {
+      "min": [
+        -4.43,
+        0,
+        -5.0
+      ],
+      "max": [
+        -2.67,
+        4.0,
+        -4.15
+      ]
+    }
+  ],
+  "bake_lights": [
+    {
+      "name": "chandelier_0",
+      "blender": [
+        0.5405,
+        0.2239,
+        3.055
+      ],
+      "watts": 12.0
+    },
+    {
+      "name": "chandelier_1",
+      "blender": [
+        0.2239,
+        0.5405,
+        3.055
+      ],
+      "watts": 12.0
+    },
+    {
+      "name": "chandelier_2",
+      "blender": [
+        -0.2239,
+        0.5405,
+        3.055
+      ],
+      "watts": 12.0
+    },
+    {
+      "name": "chandelier_3",
+      "blender": [
+        -0.5405,
+        0.2239,
+        3.055
+      ],
+      "watts": 12.0
+    },
+    {
+      "name": "chandelier_4",
+      "blender": [
+        -0.5405,
+        -0.2239,
+        3.055
+      ],
+      "watts": 12.0
+    },
+    {
+      "name": "chandelier_5",
+      "blender": [
+        -0.2239,
+        -0.5405,
+        3.055
+      ],
+      "watts": 12.0
+    },
+    {
+      "name": "chandelier_6",
+      "blender": [
+        0.2239,
+        -0.5405,
+        3.055
+      ],
+      "watts": 12.0
+    },
+    {
+      "name": "chandelier_7",
+      "blender": [
+        0.5405,
+        -0.2239,
+        3.055
+      ],
+      "watts": 12.0
+    },
+    {
+      "name": "torchere_0_0",
+      "blender": [
+        -4.4586,
+        4.4586,
+        2.2
+      ],
+      "watts": 15.0
+    },
+    {
+      "name": "torchere_0_1",
+      "blender": [
+        -4.5482,
+        4.7932,
+        2.2
+      ],
+      "watts": 15.0
+    },
+    {
+      "name": "torchere_0_2",
+      "blender": [
+        -4.7932,
+        4.5482,
+        2.2
+      ],
+      "watts": 15.0
+    },
+    {
+      "name": "torchere_1_0",
+      "blender": [
+        4.4586,
+        -4.4586,
+        2.2
+      ],
+      "watts": 15.0
+    },
+    {
+      "name": "torchere_1_1",
+      "blender": [
+        4.5482,
+        -4.7932,
+        2.2
+      ],
+      "watts": 15.0
+    },
+    {
+      "name": "torchere_1_2",
+      "blender": [
+        4.7932,
+        -4.5482,
+        2.2
+      ],
+      "watts": 15.0
+    },
+    {
+      "name": "torchere_2_0",
+      "blender": [
+        4.4586,
+        4.4586,
+        2.2
+      ],
+      "watts": 15.0
+    },
+    {
+      "name": "torchere_2_1",
+      "blender": [
+        4.7932,
+        4.5482,
+        2.2
+      ],
+      "watts": 15.0
+    },
+    {
+      "name": "torchere_2_2",
+      "blender": [
+        4.5482,
+        4.7932,
+        2.2
+      ],
+      "watts": 15.0
+    },
+    {
+      "name": "torchere_3_0",
+      "blender": [
+        -4.4586,
+        -4.4586,
+        2.2
+      ],
+      "watts": 15.0
+    },
+    {
+      "name": "torchere_3_1",
+      "blender": [
+        -4.7932,
+        -4.5482,
+        2.2
+      ],
+      "watts": 15.0
+    },
+    {
+      "name": "torchere_3_2",
+      "blender": [
+        -4.5482,
+        -4.7932,
+        2.2
+      ],
+      "watts": 15.0
+    },
+    {
+      "name": "hearth_fire",
+      "blender": [
+        -3.5,
+        4.66,
+        0.32
+      ],
+      "watts": 25.0
+    },
+    {
+      "name": "hearth_glow",
+      "blender": [
+        -3.55,
+        4.4,
+        0.45
+      ],
+      "watts": 12.0
+    },
+    {
+      "name": "niche_N",
+      "blender": [
+        0.9,
+        4.88,
+        1.715
+      ],
+      "watts": 5.0
+    },
+    {
+      "name": "niche_E",
+      "blender": [
+        4.88,
+        3.75,
+        1.715
+      ],
+      "watts": 5.0
+    },
+    {
+      "name": "niche_S",
+      "blender": [
+        3.75,
+        -4.88,
+        1.715
+      ],
+      "watts": 5.0
+    },
+    {
+      "name": "niche_W",
+      "blender": [
+        -4.88,
+        -3.75,
+        1.715
+      ],
+      "watts": 5.0
+    }
+  ],
+  "cameras_runtime": {
+    "hero": {
+      "eye": [
+        1.0,
+        1.6,
+        4.2
+      ],
+      "look": [
+        -0.4,
+        1.9,
+        -5.0
+      ],
+      "vfov": 70.0
+    },
+    "bench": {
+      "eye": [
+        3.6,
+        1.6,
+        -3.4
+      ],
+      "look": [
+        -4.2,
+        0.8,
+        1.5
+      ],
+      "vfov": 70.0
+    }
+  },
+  "host_load_end": 3.68,
+  "files": {
+    "hall.glb": "25a418f9d57a77717bf1a0b88e7dd5090841b8ae47bec87ee4217e5895c0dae9",
+    "hall.lightmap.ktx2": "9b7fac026207cfa95e5c7eabe73cc44021c3395090fd113594f1260ff9eed262",
+    "hall.lightmap.png": "7f42e342a7912ea67ee9735777d5e56f734dc116a2035e2c74b72507656b4645",
+    "hall.manifest.json": "20afd33fd6c05265fba5ca8b5be8da7838f2ceb3fdad5ee727d9dc3ecf7ecb76",
+    "uv1-report.json": "f6888a39d1b88e2d3f3715ad9e0920f5b76f148ad07b1cfc931d9c8035c924c8"
+  },
+  "variant": "hall-closed",
+  "window": "north lancet opening and frame omitted; hall sun and window sky removed"
+}

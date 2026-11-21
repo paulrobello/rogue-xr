@@ -5,9 +5,13 @@ import { expect, it } from 'vitest';
 import { mountFloorView } from '../src/world/floor-view.ts';
 import { nodeGeometryLoader } from './helpers/gltf-node.ts';
 
+async function loadHall(directory: 'hall' | 'hall-closed'): Promise<THREE.Group> {
+  const bytes = Uint8Array.from(await readFile(`public/assets/rooms/${directory}/hall.glb`));
+  return (await nodeGeometryLoader().parseAsync(bytes.buffer, '')).scene;
+}
+
 it('mounts the shipped glass in exterior bays and points the MAPTEST2 projection at an accessible tile', async () => {
-  const bytes = Uint8Array.from(await readFile('public/assets/rooms/hall/hall.glb'));
-  const art = (await nodeGeometryLoader().parseAsync(bytes.buffer, '')).scene;
+  const art = await loadHall('hall');
   const view = mountFloorView(new THREE.Scene(), new THREE.Group(), 'MAPTEST2');
   view.useRoomAsset('hall', () => art.clone(true));
   const entry = view.world.roomGroups[0];
@@ -47,5 +51,39 @@ it('mounts the shipped glass in exterior bays and points the MAPTEST2 projection
   expect(cache.pick(rayOrigin, aim)?.distance).toBeGreaterThan(1);
   cache.sync(true);
   expect(cache.pick(rayOrigin, aim)).toBeNull();
+  view.dispose();
+});
+
+it('selects the continuous, separately baked hall at blocked bays and keeps the original exterior clue', async () => {
+  const [open, closed] = await Promise.all([loadHall('hall'), loadHall('hall-closed')]);
+  closed.updateWorldMatrix(true, true);
+  const ray = new THREE.Raycaster();
+  for (const x of [2.17, 2.6, 3.03]) {
+    for (const y of [1.52, 2.4, 3.45]) {
+      ray.set(new THREE.Vector3(x, y, -4.7), new THREE.Vector3(0, 0, -1));
+      const hit = ray.intersectObject(closed, true)[0];
+      expect(hit?.distance).toBeCloseTo(0.3, 3);
+      const surface = hit?.object;
+      if (!(surface instanceof THREE.Mesh) || Array.isArray(surface.material))
+        throw Error('The closed bay must have a continuous wallpaper surface');
+      expect(surface.material.name).toBe('hall_wallpaper');
+    }
+  }
+  const view = mountFloorView(new THREE.Scene(), new THREE.Group(), 'MAPTEST2');
+  view.useRoomAsset(
+    'hall',
+    () => open.clone(true),
+    [],
+    undefined,
+    () => {
+      const model = closed.clone(true);
+      model.name = 'test-closed-hall';
+      return model;
+    },
+  );
+  expect(view.world.roomGroups[0].getObjectByName('test-closed-hall')).toBeDefined();
+  expect(view.world.roomGroups[0].getObjectByName('shared-window-wall')).toBeUndefined();
+  expect(view.world.roomGroups[12].getObjectByName('test-closed-hall')).toBeUndefined();
+  expect(view.world.roomGroups[12].getObjectByName('window-key-projection')).toBeDefined();
   view.dispose();
 });

@@ -64,6 +64,7 @@ export function dressHeroRooms(
   assets: readonly StudyAsset[],
   decor: TableDecor | null = null,
   roomStyleKit?: RoomStyleKit,
+  closedHall?: StudyAsset | null,
 ): number {
   let dressed = 0;
   for (const asset of assets) {
@@ -72,6 +73,7 @@ export function dressHeroRooms(
       asset.instantiate,
       asset.manifest.rigidNodes,
       roomStyleKit,
+      asset.manifest.template.id === 'hall' ? closedHall?.instantiate : undefined,
     );
   }
   if (decor) dressTableDecor(view.world, decor, new Set(assets.map((a) => a.manifest.template.id)));

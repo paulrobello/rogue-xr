@@ -336,10 +336,11 @@ def ktx2_header(path: Path) -> dict:
     return {"vkFormat": vk_format, "width": width, "height": height, "levels": levels, "supercompression": scheme, "transfer": transfer}
 
 
-def check_room(template: str, errors: list[str], warnings: list[str]) -> dict:
-    rt = RUNTIME / template
-    src = SOURCES / template
-    err = lambda msg: errors.append(f"{template}: {msg}")  # noqa: E731
+def check_room(template: str, errors: list[str], warnings: list[str], variant: str | None = None) -> dict:
+    directory = variant or template
+    rt = RUNTIME / directory
+    src = SOURCES / directory
+    err = lambda msg: errors.append(f"{directory}: {msg}")  # noqa: E731
     summary: dict = {"template": template}
 
     manifest_path = rt / f"{template}.manifest.json"
@@ -348,7 +349,12 @@ def check_room(template: str, errors: list[str], warnings: list[str]) -> dict:
         return summary
     m = json.loads(manifest_path.read_text())
     if m.get("template") != template or m.get("id") != template:
-        err("manifest template/id does not match its directory")
+        err(f"manifest template/id must be {template}")
+    if variant == "hall-closed":
+        open_hall = json.loads((RUNTIME / "hall" / "hall.manifest.json").read_text())
+        for key in ("footprint", "doors", "rotations", "enemySockets", "lootSockets", "walkable", "colliders"):
+            if m.get(key) != open_hall.get(key):
+                err(f"{key} differs from the hall layout")
     if m.get("glb") != f"{template}.glb":
         err(f"manifest glb must be {template}.glb")
     lmspec = m.get("lightmap") or {}
@@ -372,7 +378,7 @@ def check_room(template: str, errors: list[str], warnings: list[str]) -> dict:
     extra = sorted(p.name for p in rt.iterdir() if p.name not in files)
     if extra:
         err(f"unlisted runtime files {extra}")
-    if errors and any(e.startswith(f"{template}: missing") for e in errors):
+    if errors and any(e.startswith(f"{directory}: missing") for e in errors):
         return summary
 
     # GLB budgets and structure.
@@ -386,6 +392,8 @@ def check_room(template: str, errors: list[str], warnings: list[str]) -> dict:
         err("GLB must be image-free (maps ship as KTX2 beside it)")
     if glb["missing_uv1"]:
         err(f"primitives without TEXCOORD_1: {glb['missing_uv1']}")
+    if variant == "hall-closed" and "hall_stained-glass" in glb["materials"]:
+        err("the closed hall still has stained-glass geometry")
     unknown = [n for n in glb["materials"] if n not in m.get("materials", {})]
     if unknown:
         err(f"GLB material slots missing from the manifest: {unknown}")
@@ -482,7 +490,7 @@ def check_room(template: str, errors: list[str], warnings: list[str]) -> dict:
         err("provenance validation.pass is not true")
     recorded = {d["path"]: d["sha256"] for d in prov.get("derivedFiles", [])}
     for name in sorted(files):
-        rel = f"public/assets/rooms/{template}/{name}"
+        rel = f"public/assets/rooms/{directory}/{name}"
         if rel not in recorded:
             err(f"{rel} not recorded in provenance")
         elif recorded[rel] != sha256(rt / name):
@@ -492,7 +500,7 @@ def check_room(template: str, errors: list[str], warnings: list[str]) -> dict:
         if not path.exists():
             err(f"generator file {dep.get('path')} missing")
         elif sha256(path) != dep.get("sha256"):
-            warnings.append(f"{template}: {dep['path']} changed since the build (stale; rebuild before re-review)")
+            warnings.append(f"{directory}: {dep['path']} changed since the build (stale; rebuild before re-review)")
     for ref in prov.get("references", []):
         path = ROOT / ref["path"]
         if not path.exists() or sha256(path) != ref["sha256"]:
@@ -1219,7 +1227,7 @@ def main() -> int:
     if not rooms:
         print("asset-check: no runtime rooms")
     for room in rooms:
-        s = check_room(room, errors, warnings)
+        s = check_room("hall", errors, warnings, room) if room == "hall-closed" else check_room(room, errors, warnings)
         glb = s.get("glb", {})
         sizes = ", ".join(f"{k} {v['width']}px" for k, v in s.get("maps", {}).items())
         print(f"asset-check {room}: {glb.get('triangles')} tris, {len(glb.get('materials', []))} materials; {sizes}")

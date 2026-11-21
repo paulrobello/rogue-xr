@@ -1,0 +1,108 @@
+{
+  "glb": "hall.glb",
+  "glb_sha256": "25a418f9d57a77717bf1a0b88e7dd5090841b8ae47bec87ee4217e5895c0dae9",
+  "blender": "5.2.3 LTS",
+  "meshes": [
+    "door-frame-e",
+    "door-frame-n",
+    "door-frame-s",
+    "door-frame-w",
+    "door-plug-e",
+    "door-plug-n",
+    "door-plug-s",
+    "door-plug-w",
+    "hall"
+  ],
+  "triangles": 6668,
+  "materials": [
+    "hall_brass-aged",
+    "hall_brass-polished",
+    "hall_flame",
+    "hall_stone-floor",
+    "hall_wallpaper",
+    "hall_walnut",
+    "hall_wax"
+  ],
+  "material_count": 7,
+  "uv_layers": [
+    [
+      "UVMap",
+      "UVMap.001"
+    ]
+  ],
+  "embedded_images": 0,
+  "bounds_blender": {
+    "min": [
+      -5.0,
+      -5.0,
+      0.0
+    ],
+    "max": [
+      5.0,
+      5.0,
+      4.0
+    ]
+  },
+  "texture_px": {
+    "hall.lightmap.ktx2": {
+      "width": 2048,
+      "height": 2048
+    }
+  },
+  "checks": {
+    "triangles_le_100k": true,
+    "materials_le_16": true,
+    "materials_are_manifest_slots": true,
+    "textures_le_2048": true,
+    "two_uv_layers_every_mesh": true,
+    "no_embedded_images": true,
+    "floor_at_zero": true,
+    "inside_ceiling": true,
+    "footprint_x": true,
+    "footprint_y": true,
+    "inside_footprint": true,
+    "panel_door-frame-e": true,
+    "panel_door-plug-e": true,
+    "panel_door-frame-n": true,
+    "panel_door-plug-n": true,
+    "panel_door-frame-s": true,
+    "panel_door-plug-s": true,
+    "panel_door-frame-w": true,
+    "panel_door-plug-w": true
+  },
+  "panels": {
+    "door-frame-e": {
+      "found": true,
+      "triangles": 30
+    },
+    "door-plug-e": {
+      "found": true,
+      "triangles": 20
+    },
+    "door-frame-n": {
+      "found": true,
+      "triangles": 30
+    },
+    "door-plug-n": {
+      "found": true,
+      "triangles": 20
+    },
+    "door-frame-s": {
+      "found": true,
+      "triangles": 30
+    },
+    "door-plug-s": {
+      "found": true,
+      "triangles": 20
+    },
+    "door-frame-w": {
+      "found": true,
+      "triangles": 30
+    },
+    "door-plug-w": {
+      "found": true,
+      "triangles": 20
+    }
+  },
+  "pass": true
+}

@@ -45,9 +45,10 @@ def accessor(gltf: dict, binary: bytes, index: int) -> np.ndarray:
     return arr.reshape(acc["count"], width) if width > 1 else arr
 
 
-def main(template: str) -> int:
-    glb = ROOT / f"public/assets/rooms/{template}/{template}.glb"
-    manifest = json.loads((ROOT / f"public/assets/rooms/{template}/{template}.manifest.json").read_text())
+def main(directory: str) -> int:
+    template = "hall" if directory == "hall-closed" else directory
+    glb = ROOT / f"public/assets/rooms/{directory}/{template}.glb"
+    manifest = json.loads((ROOT / f"public/assets/rooms/{directory}/{template}.manifest.json").read_text())
     size = 2048 if "2048" in str(manifest.get("budget", {}).get("texturePx")) else 1024
     gltf, binary = read_glb(glb)
     tris_uv, tris_key = [], []
@@ -139,7 +140,7 @@ def main(template: str) -> int:
         "claims_per_covered_texel": round(fold_ratio, 4),
         "min_gap_px": min_gap if min_gap is not None else f">{MAX_RADIUS - 1}",
     }
-    out = ROOT / f"assets-source/rooms/{template}/staging/uv1-report.json"
+    out = ROOT / f"assets-source/rooms/{directory}/staging/uv1-report.json"
     out.write_text(json.dumps(report, indent=2) + "\n")
     print(json.dumps(report, indent=2))
     return 0

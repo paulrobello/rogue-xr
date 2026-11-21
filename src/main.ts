@@ -523,6 +523,23 @@ const roomAssets: Promise<StudyAsset[]> = heroSet
         return [];
       })
   : Promise.resolve([]);
+const closedHallAsset = heroSet
+  ?.then(async ({ ktx2, set }) => {
+    const base = '/assets/rooms/hall-closed';
+    const study = await fetchStudyManifest('hall', base);
+    return loadStudyAsset({
+      study,
+      base,
+      set,
+      ktx2,
+      envMap: heroEnv,
+      reducedMotion: hitFx.reducedMotion,
+    });
+  })
+  .catch((error: unknown) => {
+    console.warn('Closed hall lighting unavailable', error);
+    return null;
+  });
 // Sealed doorways close with a walnut leaf from the same set, reflecting like the room surfaces.
 const sealedDoorMaterial: Promise<{ material: THREE.Material; tileMeters: number } | null> = heroSet
   ? heroSet
@@ -836,6 +853,7 @@ const dressFloor = async (target: FloorView): Promise<void> => {
     fitTable(target),
     ...dressed,
   ]);
+  const closedHall = target.floorNumber === 1 ? await closedHallAsset : undefined;
   if (target === floor) {
     const missing = target.world.plan.rooms.find(
       (placed) => !rooms.some((room) => room.manifest.template.id === placed.templateId),
@@ -845,7 +863,7 @@ const dressFloor = async (target: FloorView): Promise<void> => {
     if (stair) {
       target.dressStairs(stair);
     }
-    dressHeroRooms(target, rooms, decor, styles);
+    dressHeroRooms(target, rooms, decor, styles, closedHall);
     const candles = new Set<THREE.MeshStandardMaterial>();
     for (const group of target.world.roomGroups)
       group.traverse((node) => {

@@ -254,6 +254,7 @@ export interface FloorView {
     instantiate: () => THREE.Object3D,
     rigidNodes?: readonly RigidNode[],
     roomStyleKit?: RoomStyleKit,
+    instantiateClosedHall?: () => THREE.Object3D,
   ): number;
   /** Rigid nodes (the gear-shaft crown gear) this floor turns each frame. */
   readonly spinnerCount: number;
@@ -975,14 +976,18 @@ export function mountFloorView(
       undressed = true;
       dressEnemies();
     },
-    useRoomAsset(templateId, instantiate, rigidNodes = [], roomStyleKit) {
+    useRoomAsset(templateId, instantiate, rigidNodes = [], roomStyleKit, instantiateClosedHall) {
       if (floorNumber === 3 && roomStyleKit)
         world.dressEncounterDoor(roomStyleKit.EncounterDoorLeaf);
       let dressed = 0;
       world.plan.rooms.forEach((room, index) => {
         if (room.templateId !== templateId) return;
-        const model = instantiate();
         const style = roomStyleKit && roomStyleFor(world.plan, index, floorNumber);
+        const closedHall =
+          templateId === 'hall' && !style && !windowBays.some((bay) => bay.room === index)
+            ? instantiateClosedHall
+            : undefined;
+        const model = (closedHall ?? instantiate)();
         if (style && roomStyleKit) {
           const styled = new THREE.Group();
           const doors = templateById(room.templateId).doors.map((door) => ({
@@ -1008,7 +1013,7 @@ export function mountFloorView(
         if (floorNumber === 2 && templateId === 'gear-shaft')
           shaftFinishes.push(...applyUpperShaftFinish(model));
         windowDressing.get(index)?.();
-        const releases = [dressWindowBays(model, plan, index, floorNumber)];
+        const releases = closedHall ? [] : [dressWindowBays(model, plan, index, floorNumber)];
         for (const bay of windowBays) {
           if (bay.room === index) releases.push(mountWindowCast(model, bay, bay === cacheBay));
         }
