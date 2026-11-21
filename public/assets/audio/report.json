@@ -2,8 +2,8 @@
   "tools": {
     "ffmpeg": "ffmpeg version 9.0.2 Copyright (c) 2000-2026 the FFmpeg developers",
     "libopus_encoder": true,
-    "numpy": "2.4.4",
-    "python": "3.14.10"
+    "numpy": "2.5.5",
+    "python": "3.14.3"
   },
   "targets": {
     "sfx_lufs": -16.0,
@@ -1463,6 +1463,494 @@
           "python": "3.14.3"
         }
       }
+    },
+    "pressure-gate-open": {
+      "intermediate_wav": "assets-source/audio/derived/pressure-gate-open.wav",
+      "intermediate_sha256": "3e3d6e92dd7db3496d5defbb7fcef1ff4bfa34059d8452e3c9156e489c1af1ed",
+      "pre_gain": {
+        "integrated_lufs": -24.6,
+        "true_peak_dbtp": -5.9,
+        "momentary_max_lufs": -18.7
+      },
+      "gain_db": 4.9,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -20.3,
+        "true_peak_dbtp": -1.5,
+        "momentary_max_lufs": -14.5
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -4.3,
+      "loudness_status": "deviation",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 83278,
+      "decoded_duration_s": 1.735,
+      "decoded_pcm_sha256": "a3abe580aaee8eca8973e80ff7b8ad906f7d1cbe930301547506ba70bac22b25",
+      "id": "pressure-gate-open",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/pressure-gate-open.wav",
+      "source_sha256": "d56ae74b8e2bb6c55d4a09dcf365dc27a4cbf3d59300c2bde9fbbb8c78f9c686",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.8
+      },
+      "trim": {
+        "trimmed_head_ms": 15.0,
+        "trimmed_tail_ms": 50.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/pressure-gate-open.ogg",
+      "runtime_sha256": "8f4e0b21a0554f5c87652e8981fa1c161d64404382057ff4fca5ad0870a202bc",
+      "runtime_bytes": 12343,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.7415
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "pressure",
+          "seed": 3101,
+          "duration_seconds": 1.8
+        }
+      }
+    },
+    "counterweight-grille-open": {
+      "intermediate_wav": "assets-source/audio/derived/counterweight-grille-open.wav",
+      "intermediate_sha256": "6b2d92330e2db68f31452a929c447878e159a03bbd927ecde693553ee04c509f",
+      "pre_gain": {
+        "integrated_lufs": -21.5,
+        "true_peak_dbtp": -5.0,
+        "momentary_max_lufs": -17.0
+      },
+      "gain_db": 4.0,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -17.9,
+        "true_peak_dbtp": -2.2,
+        "momentary_max_lufs": -13.6
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -1.9,
+      "loudness_status": "deviation",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 94313,
+      "decoded_duration_s": 1.9649,
+      "decoded_pcm_sha256": "dd13e867e0e29b8886f0232c7789b5d73221b2abf2a31faeb8389b1ad157d32c",
+      "id": "counterweight-grille-open",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/counterweight-grille-open.wav",
+      "source_sha256": "da68b6d54c20258b625189af9915adaea971eba34c84cfe13fa4a28535912541",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 2.1
+      },
+      "trim": {
+        "trimmed_head_ms": 75.1,
+        "trimmed_tail_ms": 60.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/counterweight-grille-open.ogg",
+      "runtime_sha256": "e28da4668154f04d300d088703958df8527c5b31d2bbaa31df98f46665c54d47",
+      "runtime_bytes": 19308,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.9714
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "counterweight",
+          "seed": 3102,
+          "duration_seconds": 2.1
+        }
+      }
+    },
+    "service-panel-open": {
+      "intermediate_wav": "assets-source/audio/derived/service-panel-open.wav",
+      "intermediate_sha256": "97f1703592d03395efcd6e2d8ddc9c9b66c4cca95f4c6449176e54cd679820f1",
+      "pre_gain": {
+        "integrated_lufs": -20.8,
+        "true_peak_dbtp": -5.9,
+        "momentary_max_lufs": -18.8
+      },
+      "gain_db": 4.8,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -16.0,
+        "true_peak_dbtp": -1.1,
+        "momentary_max_lufs": -14.0
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": 0.0,
+      "loudness_status": "met",
+      "limited_by_true_peak": false,
+      "short_clip_lufs_unreliable": true,
+      "decoded_frames": 41038,
+      "decoded_duration_s": 0.855,
+      "decoded_pcm_sha256": "a1ca5af7df63fd95478240a2066f03690dd875682c8a8b95b1fa4d059aae7e4b",
+      "id": "service-panel-open",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/service-panel-open.wav",
+      "source_sha256": "06dbdd23120839d2c56dd8144d2c76ebcd35a39725756d2d1338bb9b3a93367f",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.9
+      },
+      "trim": {
+        "trimmed_head_ms": 25.0,
+        "trimmed_tail_ms": 20.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/service-panel-open.ogg",
+      "runtime_sha256": "0b6de8ff6e8583eb300b0bca0534384cb9687e61272b5b64304e65957cfb1a7e",
+      "runtime_bytes": 9185,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.8615
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "service",
+          "seed": 3103,
+          "duration_seconds": 0.9
+        }
+      }
+    },
+    "thorn-ward-open": {
+      "intermediate_wav": "assets-source/audio/derived/thorn-ward-open.wav",
+      "intermediate_sha256": "e51871542b8caa171499a5c0f85759640f8e6e1a3d88ec78c3ee5edc174adee3",
+      "pre_gain": {
+        "integrated_lufs": -22.1,
+        "true_peak_dbtp": -5.9,
+        "momentary_max_lufs": -19.6
+      },
+      "gain_db": 4.55,
+      "encode_attempts": 2,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -17.6,
+        "true_peak_dbtp": -1.1,
+        "momentary_max_lufs": -15.1
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -1.6,
+      "loudness_status": "deviation",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 57359,
+      "decoded_duration_s": 1.195,
+      "decoded_pcm_sha256": "f179d0daa513492bceede900fd05e8631bac4a2ef90955bdb931d66106f09898",
+      "id": "thorn-ward-open",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/thorn-ward-open.wav",
+      "source_sha256": "ee23d2d1d11f0e9e80cbfd6ab5feb82dacf315d3fe65595b69c752a79e3aece0",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.3
+      },
+      "trim": {
+        "trimmed_head_ms": 15.0,
+        "trimmed_tail_ms": 90.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/thorn-ward-open.ogg",
+      "runtime_sha256": "012d5f049dbbdd89fbc1021c177cdfb394481afc678edbe9e99a8d28a0083055",
+      "runtime_bytes": 10723,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.2015
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "thorn",
+          "seed": 3104,
+          "duration_seconds": 1.3
+        }
+      }
+    },
+    "archive-ink-open": {
+      "intermediate_wav": "assets-source/audio/derived/archive-ink-open.wav",
+      "intermediate_sha256": "bded28f563c253a1d2a338f25c086a703e837d084f93034240fccc78ebaed904",
+      "pre_gain": {
+        "integrated_lufs": -20.9,
+        "true_peak_dbtp": -5.9,
+        "momentary_max_lufs": -17.4
+      },
+      "gain_db": 4.9,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -16.0,
+        "true_peak_dbtp": -1.2,
+        "momentary_max_lufs": -12.5
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": 0.0,
+      "loudness_status": "met",
+      "limited_by_true_peak": false,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 70794,
+      "decoded_duration_s": 1.4749,
+      "decoded_pcm_sha256": "a1d01d997492d946dc44ba7579a795d70efbf6006c8e8da84c27d5524c4c2af5",
+      "id": "archive-ink-open",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/archive-ink-open.wav",
+      "source_sha256": "9a0779463701be311ae19f938611ede9f12de36c22bb9468e8109a18805f75da",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.6
+      },
+      "trim": {
+        "trimmed_head_ms": 75.1,
+        "trimmed_tail_ms": 50.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/archive-ink-open.ogg",
+      "runtime_sha256": "5fc209aa2a09350b19ced172f0b35c2a16fc36ec08ae8854adc61e896c1536eb",
+      "runtime_bytes": 13219,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.4814
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "ink",
+          "seed": 3105,
+          "duration_seconds": 1.6
+        }
+      }
+    },
+    "archive-stillwind-open": {
+      "intermediate_wav": "assets-source/audio/derived/archive-stillwind-open.wav",
+      "intermediate_sha256": "9d82cff144311b2058e5e88735f5a7b3649313ad6bfe3aaa432a7b88c12a8ce8",
+      "pre_gain": {
+        "integrated_lufs": -20.1,
+        "true_peak_dbtp": -5.8,
+        "momentary_max_lufs": -16.0
+      },
+      "gain_db": 4.1,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -16.5,
+        "true_peak_dbtp": -1.5,
+        "momentary_max_lufs": -12.7
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -0.5,
+      "loudness_status": "met",
+      "limited_by_true_peak": false,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 98636,
+      "decoded_duration_s": 2.0549,
+      "decoded_pcm_sha256": "01e0792a0747b38f9992c11988633020e1312b953fb853e4ba8c77d3b891698d",
+      "id": "archive-stillwind-open",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/archive-stillwind-open.wav",
+      "source_sha256": "a6c769682bbea97950f6f6c4bd53e6c1a1701f73dbac740695ab17d5f8412694",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 2.1
+      },
+      "trim": {
+        "trimmed_head_ms": 15.0,
+        "trimmed_tail_ms": 30.1
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/archive-stillwind-open.ogg",
+      "runtime_sha256": "85367b9b7d41b1dddc5940f07a128e74371419f99c78224fd04aa3e1f7b61537",
+      "runtime_bytes": 16047,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 2.0614
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "stillwind",
+          "seed": 3106,
+          "duration_seconds": 2.1
+        }
+      }
+    },
+    "archive-mirror-open": {
+      "intermediate_wav": "assets-source/audio/derived/archive-mirror-open.wav",
+      "intermediate_sha256": "c26c36113c06707b756df6cc01d52f5185e7bdb266cefd743751088ea9c532d8",
+      "pre_gain": {
+        "integrated_lufs": -19.3,
+        "true_peak_dbtp": -5.9,
+        "momentary_max_lufs": -15.3
+      },
+      "gain_db": 3.3,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -16.0,
+        "true_peak_dbtp": -2.6,
+        "momentary_max_lufs": -12.0
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": 0.0,
+      "loudness_status": "met",
+      "limited_by_true_peak": false,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 76556,
+      "decoded_duration_s": 1.5949,
+      "decoded_pcm_sha256": "2cecc7ddf0a3775c801c7384c16c6a1f06117c15efaef2480930d59d7b32773d",
+      "id": "archive-mirror-open",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/archive-mirror-open.wav",
+      "source_sha256": "1defe60e8e7e8318d8840b3fa4cb860c0b3f6badf97338442bf0903c731bc01e",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.7
+      },
+      "trim": {
+        "trimmed_head_ms": 35.1,
+        "trimmed_tail_ms": 70.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/archive-mirror-open.ogg",
+      "runtime_sha256": "042af5c62364912d0b4d27a3ee693e4670c80ae5cd91a6c84d2d8805ceb25824",
+      "runtime_bytes": 15922,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.6014
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "mirror",
+          "seed": 3107,
+          "duration_seconds": 1.7
+        }
+      }
+    },
+    "astral-lift-open": {
+      "intermediate_wav": "assets-source/audio/derived/astral-lift-open.wav",
+      "intermediate_sha256": "4a540794373fa5169b93abf9d933f6c17a679d282c4cbd7b6d47e312ccbf45ac",
+      "pre_gain": {
+        "integrated_lufs": -22.6,
+        "true_peak_dbtp": -5.7,
+        "momentary_max_lufs": -17.6
+      },
+      "gain_db": 4.7,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -18.2,
+        "true_peak_dbtp": -1.7,
+        "momentary_max_lufs": -13.2
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -2.2,
+      "loudness_status": "deviation",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 93834,
+      "decoded_duration_s": 1.9549,
+      "decoded_pcm_sha256": "88539a404c682c30c27fe7b2864ed90a6d6b9ed5c8a544462826c42da77fd9e6",
+      "id": "astral-lift-open",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/astral-lift-open.wav",
+      "source_sha256": "3bc075c690e0f8c7cfa1491115bb3abc3aba772c722dded2995d84ac8d9ebd8a",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 2.0
+      },
+      "trim": {
+        "trimmed_head_ms": 35.1,
+        "trimmed_tail_ms": 10.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/astral-lift-open.ogg",
+      "runtime_sha256": "db7c5b6633f0fd1d1f9175190cb76a464965e0329702af5809fa5c2c02da8eac",
+      "runtime_bytes": 17617,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.9614
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "astral",
+          "seed": 3108,
+          "duration_seconds": 2.0
+        }
+      }
     }
   },
   "music": {
@@ -2171,15 +2659,6 @@
       }
     }
   },
-  "music_status": "present",
-  "external_checks": {
-    "check-audio-loops": {
-      "exit": 1,
-      "stdout": "public/assets/audio/sfx/sigil-trace.ogg wrap    521 / p99.9    620   head  -13.7 dB   tail  -14.0 dB   min  -26.0 dB   ok\npublic/assets/audio/music/title.ogg wrap     97 / p99.9   1174   head  -24.9 dB   tail  -22.7 dB   min  -63.1 dB   FAIL\npublic/assets/audio/music/explore.ogg wrap     36 / p99.9   2477   head  -28.2 dB   tail  -24.9 dB   min  -59.2 dB   FAIL\npublic/assets/audio/music/combat.ogg wrap    214 / p99.9   2786   head  -22.1 dB   tail  -24.3 dB   min  -41.8 dB   FAIL\npublic/assets/audio/music/reward.ogg wrap    223 / p99.9   2643   head  -17.8 dB   tail  -19.4 dB   min  -43.0 dB   FAIL\npublic/assets/audio/music/rest.ogg wrap     21 / p99.9   2676   head  -19.2 dB   tail  -22.3 dB   min  -47.6 dB   FAIL\npublic/assets/audio/music/elite.ogg wrap    278 / p99.9   1655   head  -22.5 dB   tail  -24.1 dB   min  -53.6 dB   FAIL\npublic/assets/audio/music/workshop.ogg wrap    136 / p99.9   1461   head  -17.2 dB   tail  -16.9 dB   min  -57.0 dB   FAIL\npublic/assets/audio/music/guardian-1.ogg wrap      4 / p99.9   3057   head  -19.8 dB   tail  -20.5 dB   min  -45.4 dB   FAIL\npublic/assets/audio/music/guardian-2.ogg wrap    183 / p99.9   2213   head  -19.2 dB   tail  -19.5 dB   min  -38.1 dB   ok\n\nFAIL (8):\n  - public/assets/audio/music/title.ogg: interior dropout more than 24 dB below peak: 1.9s at -39.7 dB, 2.0s at -44.7 dB, 2.1s at -47.8 dB, 2.2s at -48.4 dB (+49 more)\n  - public/assets/audio/music/explore.ogg: interior dropout more than 24 dB below peak: 0.5s at -39.0 dB, 0.6s at -41.3 dB, 0.7s at -43.0 dB, 1.9s at -36.3 dB (+67 more)\n  - public/assets/audio/music/combat.ogg: interior dropout more than 24 dB below peak: 1.3s at -37.0 dB, 1.8s at -41.8 dB, 2.0s at -37.0 dB, 2.3s at -41.1 dB (+21 more)\n  - public/assets/audio/music/reward.ogg: interior dropout more than 24 dB below peak: 2.9s at -39.9 dB, 3.0s at -41.0 dB, 3.1s at -41.2 dB, 3.2s at -41.6 dB (+6 more)\n  - public/assets/audio/music/rest.ogg: interior dropout more than 24 dB below peak: 1.7s at -41.6 dB, 1.8s at -44.4 dB, 1.9s at -46.5 dB, 2.0s at -47.2 dB (+19 more)\n  - public/assets/audio/music/elite.ogg: interior dropout more than 24 dB below peak: 1.6s at -37.3 dB, 1.7s at -46.2 dB, 1.8s at -48.8 dB, 1.9s at -49.6 dB (+44 more)\n  - public/assets/audio/music/workshop.ogg: interior dropout more than 24 dB below peak: 4.1s at -40.8 dB, 4.2s at -42.6 dB, 6.8s at -40.8 dB, 6.9s at -42.7 dB (+18 more)\n  - public/assets/audio/music/guardian-1.ogg: interior dropout more than 24 dB below peak: 15.8s at -38.7 dB, 15.9s at -42.1 dB, 18.3s at -39.3 dB, 18.4s at -40.2 dB (+12 more)"
-    },
-    "check-mono-compatibility": {
-      "exit": 0,
-      "stdout": "self-test: identical-channel control -0.01 dB, mono control +0.00 dB (ok)\n\nCUE                                       stereo      fold  cancellation\nui-tick.ogg                             -19.6 LU  -22.6 LU       -0.0 dB  ok\nreward-chime.ogg                        -16.0 LU  -19.0 LU       -0.0 dB  ok\ndefeat-sting.ogg                        -16.0 LU  -19.0 LU       -0.0 dB  ok\nvictory-sting.ogg                       -16.0 LU  -20.4 LU        1.4 dB  ok\n\nCancellation at or above 2.0 dB means the cue thins out on a single speaker."
-    }
-  }
+  "music_status": "absent: runtime plays silence",
+  "external_checks": {}
 }

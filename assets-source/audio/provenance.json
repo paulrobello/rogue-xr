@@ -1072,6 +1072,166 @@
         }
       },
       "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "pressure-gate-open": {
+      "source_file": "assets-source/audio/sfx/procedural/pressure-gate-open.wav",
+      "source_sha256": "d56ae74b8e2bb6c55d4a09dcf365dc27a4cbf3d59300c2bde9fbbb8c78f9c686",
+      "runtime_file": "public/assets/audio/sfx/pressure-gate-open.ogg",
+      "runtime_sha256": "8f4e0b21a0554f5c87652e8981fa1c161d64404382057ff4fca5ad0870a202bc",
+      "runtime_bytes": 12343,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "pressure",
+          "seed": 3101,
+          "duration_seconds": 1.8
+        }
+      }
+    },
+    "counterweight-grille-open": {
+      "source_file": "assets-source/audio/sfx/procedural/counterweight-grille-open.wav",
+      "source_sha256": "da68b6d54c20258b625189af9915adaea971eba34c84cfe13fa4a28535912541",
+      "runtime_file": "public/assets/audio/sfx/counterweight-grille-open.ogg",
+      "runtime_sha256": "e28da4668154f04d300d088703958df8527c5b31d2bbaa31df98f46665c54d47",
+      "runtime_bytes": 19308,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "counterweight",
+          "seed": 3102,
+          "duration_seconds": 2.1
+        }
+      }
+    },
+    "service-panel-open": {
+      "source_file": "assets-source/audio/sfx/procedural/service-panel-open.wav",
+      "source_sha256": "06dbdd23120839d2c56dd8144d2c76ebcd35a39725756d2d1338bb9b3a93367f",
+      "runtime_file": "public/assets/audio/sfx/service-panel-open.ogg",
+      "runtime_sha256": "0b6de8ff6e8583eb300b0bca0534384cb9687e61272b5b64304e65957cfb1a7e",
+      "runtime_bytes": 9185,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "service",
+          "seed": 3103,
+          "duration_seconds": 0.9
+        }
+      }
+    },
+    "thorn-ward-open": {
+      "source_file": "assets-source/audio/sfx/procedural/thorn-ward-open.wav",
+      "source_sha256": "ee23d2d1d11f0e9e80cbfd6ab5feb82dacf315d3fe65595b69c752a79e3aece0",
+      "runtime_file": "public/assets/audio/sfx/thorn-ward-open.ogg",
+      "runtime_sha256": "012d5f049dbbdd89fbc1021c177cdfb394481afc678edbe9e99a8d28a0083055",
+      "runtime_bytes": 10723,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "thorn",
+          "seed": 3104,
+          "duration_seconds": 1.3
+        }
+      }
+    },
+    "archive-ink-open": {
+      "source_file": "assets-source/audio/sfx/procedural/archive-ink-open.wav",
+      "source_sha256": "9a0779463701be311ae19f938611ede9f12de36c22bb9468e8109a18805f75da",
+      "runtime_file": "public/assets/audio/sfx/archive-ink-open.ogg",
+      "runtime_sha256": "5fc209aa2a09350b19ced172f0b35c2a16fc36ec08ae8854adc61e896c1536eb",
+      "runtime_bytes": 13219,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "ink",
+          "seed": 3105,
+          "duration_seconds": 1.6
+        }
+      }
+    },
+    "archive-stillwind-open": {
+      "source_file": "assets-source/audio/sfx/procedural/archive-stillwind-open.wav",
+      "source_sha256": "a6c769682bbea97950f6f6c4bd53e6c1a1701f73dbac740695ab17d5f8412694",
+      "runtime_file": "public/assets/audio/sfx/archive-stillwind-open.ogg",
+      "runtime_sha256": "85367b9b7d41b1dddc5940f07a128e74371419f99c78224fd04aa3e1f7b61537",
+      "runtime_bytes": 16047,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "stillwind",
+          "seed": 3106,
+          "duration_seconds": 2.1
+        }
+      }
+    },
+    "archive-mirror-open": {
+      "source_file": "assets-source/audio/sfx/procedural/archive-mirror-open.wav",
+      "source_sha256": "1defe60e8e7e8318d8840b3fa4cb860c0b3f6badf97338442bf0903c731bc01e",
+      "runtime_file": "public/assets/audio/sfx/archive-mirror-open.ogg",
+      "runtime_sha256": "042af5c62364912d0b4d27a3ee693e4670c80ae5cd91a6c84d2d8805ceb25824",
+      "runtime_bytes": 15922,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "mirror",
+          "seed": 3107,
+          "duration_seconds": 1.7
+        }
+      }
+    },
+    "astral-lift-open": {
+      "source_file": "assets-source/audio/sfx/procedural/astral-lift-open.wav",
+      "source_sha256": "3bc075c690e0f8c7cfa1491115bb3abc3aba772c722dded2995d84ac8d9ebd8a",
+      "runtime_file": "public/assets/audio/sfx/astral-lift-open.ogg",
+      "runtime_sha256": "db7c5b6633f0fd1d1f9175190cb76a464965e0329702af5809fa5c2c02da8eac",
+      "runtime_bytes": 17617,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "astral",
+          "seed": 3108,
+          "duration_seconds": 2.0
+        }
+      }
     }
   },
   "music": {
@@ -1186,15 +1346,5 @@
       ]
     }
   },
-  "music_note": "Suno is owner-generated; see assets-source/audio/music/SUNO-HANDOFF.md",
-  "music_source": {
-    "kind": "placeholder until the owner-generated Suno cues land (Suno downloads exhausted until 2026-11-25)",
-    "provider": "Stable Audio 3 medium, local MLX inference (stabilityai/stable-audio-3-optimized) via ~/Repos/stable-audio-3-lab",
-    "license": "Stability AI Community License (free commercial use below USD 1M annual revenue) plus Gemma terms for the T5Gemma encoder",
-    "request": "Paul, 2026-11-16, in the rogue-xr session: \"use local audio gen to create placeholder music\"",
-    "rights": "pending: owner to confirm the Community License revenue threshold applies",
-    "prompts": "assets-source/audio/music/cues.json (the Suno prompts, first 1000 chars; Exclude styles as the negative prompt)",
-    "approval": "Paul, 2026-11-16, in the rogue-xr session: \"all audio auditions approved\" (creative and owner, as placeholder music; rights still pending)"
-  },
-  "music_generation_log": "assets-source/audio/music/placeholder/generation-log.json"
+  "music_note": "Suno is owner-generated; see assets-source/audio/music/SUNO-HANDOFF.md"
 }

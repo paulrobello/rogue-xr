@@ -13,7 +13,7 @@ import { glb_sha256 as commissionRevision } from '../assets-source/props/commiss
 import { glb_sha256 as panelRevision } from '../assets-source/props/panel-kit/manifest.json';
 import { hashes as instrumentHashes } from '../assets-source/props/puzzle-instruments/manifest.json';
 import { sha256 as stairwellRevision } from '../assets-source/props/stairwell/report.json';
-import { audioStateForFlow } from './audio/cues.ts';
+import { ARCHIVE_GATE_OPEN_SFX, audioStateForFlow, PUZZLE_GATE_OPEN_SFX } from './audio/cues.ts';
 import { AudioDirector } from './audio/index.ts';
 import { requestCardFaceArt } from './cards/card-face-material.ts';
 import { mountCardProof } from './cards/card-proof.ts';
@@ -1167,8 +1167,13 @@ flow.onChange((event) => {
     } else {
       floor?.pressure?.sync(event, !hitFx.reducedMotion, event.action);
       const at = floor?.pressure?.pump.getWorldPosition(new THREE.Vector3());
-      audio?.playSfx(event.action === 'claim' ? 'cog-pickup' : 'gear-clank', at);
-      if (event.action === 'prime') audio?.playSfx('steam-vent', at);
+      const cue =
+        event.action === 'prime'
+          ? PUZZLE_GATE_OPEN_SFX.pressure
+          : event.action === 'claim'
+            ? 'cog-pickup'
+            : 'gear-clank';
+      audio?.playSfx(cue, at);
     }
     return;
   }
@@ -1348,7 +1353,7 @@ function travelStairs(byLift = false): boolean {
       transport.open(fraction);
       if (!sounded && fraction > 0.04) {
         sounded = true;
-        audio?.playSfx('door-open', pull);
+        audio?.playSfx(byLift ? 'astral-lift-open' : 'door-open', pull);
       }
     },
     cross() {
@@ -1667,7 +1672,11 @@ function operateWeight(
   const result =
     hit.action === 'weigh' ? flow.weighCounterweight(hit.weight) : flow.hangCounterweight();
   if (result === 'mistake') station.miss();
-  if (result) audio?.playSfx('gear-clank', station.object.getWorldPosition(chimePosition));
+  if (result)
+    audio?.playSfx(
+      result === 'solved' ? PUZZLE_GATE_OPEN_SFX.counterweight : 'gear-clank',
+      station.object.getWorldPosition(chimePosition),
+    );
   return !!result;
 }
 function operateCommission(input: CommissionAction): boolean {
@@ -1799,7 +1808,7 @@ function operateCalibration(hit: CalibrationAction): boolean {
     const outcome = flow.windCalibration();
     if (outcome) {
       bench.drive(outcome);
-      audio?.playSfx(outcome === 'solved' ? 'door-open' : 'gear-clank');
+      audio?.playSfx('gear-clank');
     } else if (!flow.calibration.chart)
       floor?.showBookSecret(
         flow.calibration.kind === 'orrery'
@@ -1833,7 +1842,7 @@ function operatePanel(hit: PanelHit, side?: XRHandedness): boolean {
   if (hit.action === 'unlatch') {
     const at = panels.handlePosition();
     if (!flow.openHiddenPanel()) return false;
-    audio?.playSfx('door-open', at);
+    audio?.playSfx(PUZZLE_GATE_OPEN_SFX.panel, at);
   } else {
     const knock = panels.knock();
     if (!knock) return false;
@@ -1869,9 +1878,13 @@ function inspectFormula(clue: FormulaClue): boolean {
   return true;
 }
 function operateArchive(action: 'pour' | 'unlatch'): boolean {
-  const success = flow.useFormula(action);
-  if (!success) return false;
-  audio?.playSfx(action === 'unlatch' ? 'door-open' : 'steam-vent');
+  const archive = floor?.archive;
+  if (!archive || !flow.useFormula(action)) return false;
+  const formula = flow.conservatoryFormula;
+  audio?.playSfx(
+    formula.opened ? ARCHIVE_GATE_OPEN_SFX[formula.recipe] : 'sigil-cast',
+    (archive.latch ?? archive.object).getWorldPosition(chimePosition),
+  );
   return true;
 }
 function collectAlchemy(
@@ -1889,7 +1902,12 @@ function operateAlchemy(
   hit: NonNullable<ReturnType<NonNullable<FloorView['alchemy']>['pick']>>,
   hand?: XRHandedness,
 ): boolean {
-  if (hit.action === 'apply') return flow.applyPotion();
+  if (hit.action === 'apply') {
+    const ward = floor?.alchemy?.ward;
+    if (!ward || !flow.applyPotion()) return false;
+    audio?.playSfx(PUZZLE_GATE_OPEN_SFX.thorn, ward.getWorldPosition(chimePosition));
+    return true;
+  }
   if (hit.action === 'collect') return collectAlchemy(hit.ingredient, hand);
   const result = flow.alchemy.opened
     ? flow.addFormulaIngredient(hit.ingredient, floor?.alchemy?.inStillInterval ?? false)
@@ -1993,7 +2011,7 @@ const activatePickup = (
       return travelStairs(true);
     case 'gate': {
       const at = floor?.world.rattlePuzzleGate(pick.hit.kind);
-      if (at) audio?.playSfx('gear-clank', at);
+      if (at) audio?.playSfx(pick.hit.kind === 'pressure' ? 'steam-vent' : 'gear-clank', at);
       return !!at;
     }
     case 'chime':

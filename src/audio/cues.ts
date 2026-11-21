@@ -6,7 +6,9 @@
 import type { EncounterPhase } from '../combat/encounter.ts';
 import type { RoomKind } from '../content/rooms.ts';
 import type { GamePhase } from '../core/state.ts';
+import type { PuzzleGate } from '../floor/generate.ts';
 import type { FlowPhase } from '../flow/flow.ts';
+import type { FollowupRecipe } from '../rules/alchemy.ts';
 import type { RewardTier } from '../rules/run.ts';
 import { type CombatEvent, PLAYER_ID } from '../rules/types.ts';
 
@@ -44,6 +46,14 @@ export const SFX = {
   'steam-vent': sfx('steam-vent', 'positional', 0.1),
   'gear-clank': sfx('gear-clank', 'positional', 0.05),
   'door-open': sfx('door-open', 'positional', 0.2),
+  'pressure-gate-open': sfx('pressure-gate-open', 'positional', 0.2),
+  'counterweight-grille-open': sfx('counterweight-grille-open', 'positional', 0.2),
+  'service-panel-open': sfx('service-panel-open', 'positional', 0.2),
+  'thorn-ward-open': sfx('thorn-ward-open', 'positional', 0.2),
+  'archive-ink-open': sfx('archive-ink-open', 'positional', 0.2),
+  'archive-stillwind-open': sfx('archive-stillwind-open', 'positional', 0.2),
+  'archive-mirror-open': sfx('archive-mirror-open', 'positional', 0.2),
+  'astral-lift-open': sfx('astral-lift-open', 'positional', 0.2),
   'paper-unfold': sfx('paper-unfold', 'positional', 0.2),
   'ui-tick': sfx('ui-tick', 'ui', 0.03),
   'automaton-hit': sfx('automaton-hit', 'positional', 0.05),
@@ -64,6 +74,19 @@ export const SFX = {
 
 export type SfxId = keyof typeof SFX;
 export const SFX_IDS = Object.keys(SFX) as SfxId[];
+
+export const PUZZLE_GATE_OPEN_SFX = {
+  pressure: 'pressure-gate-open',
+  counterweight: 'counterweight-grille-open',
+  panel: 'service-panel-open',
+  thorn: 'thorn-ward-open',
+} as const satisfies Record<Exclude<PuzzleGate, 'archive'>, SfxId>;
+
+export const ARCHIVE_GATE_OPEN_SFX = {
+  'lantern-ink': 'archive-ink-open',
+  stillwind: 'archive-stillwind-open',
+  'looking-glass': 'archive-mirror-open',
+} as const satisfies Record<FollowupRecipe, SfxId>;
 
 /**
  * Run-outcome stingers, grouped by outcome. A fight's own stinger (the combat session) and the
@@ -314,7 +337,7 @@ export function sfxForCombatEvent(event: CombatEvent): SfxId | null {
     case 'steam-changed':
       return event.to < event.from ? 'steam-vent' : null;
     case 'enemy-phase':
-      return 'door-open';
+      return 'gear-clank';
     case 'enemy-died':
       return 'automaton-death';
     default:

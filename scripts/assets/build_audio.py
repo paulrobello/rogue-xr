@@ -149,6 +149,87 @@ def procedural_pendulum_tick(cue: dict, path: Path) -> None:
     write_wav_f32(path, (attack * signal).astype(np.float32)[:, None])
 
 
+def procedural_puzzle_door(cue: dict, path: Path) -> None:
+    """Deterministic one-shot door cues built from seeded noise, impacts, and resonators."""
+    settings = cue["procedural"]
+    rng = np.random.default_rng(int(settings["seed"]))
+    n = round(float(settings["duration_seconds"]) * SR)
+    t = np.arange(n, dtype=np.float64) / SR
+    y = np.zeros(n, dtype=np.float64)
+
+    def noise(at: float, length: float, level: float, decay: float, color: float = 0.0) -> None:
+        start, count = round(at * SR), min(round(length * SR), n - round(at * SR))
+        if count <= 0:
+            return
+        raw = rng.standard_normal(count)
+        if color:
+            raw = np.cumsum(raw)
+            raw -= raw.mean()
+            raw /= max(np.max(np.abs(raw)), 1e-9)
+        env = np.exp(-np.arange(count) / max(decay * SR, 1.0))
+        y[start:start + count] += raw * env * level
+
+    def tone(at: float, length: float, hz: float, level: float, decay: float = 0.5,
+             bend: float = 0.0) -> None:
+        start, count = round(at * SR), min(round(length * SR), n - round(at * SR))
+        if count <= 0:
+            return
+        local = np.arange(count) / SR
+        env = np.minimum(1.0, local / 0.002) * np.exp(-local / decay)
+        phase = 2 * np.pi * (hz * local + bend * local * local / max(length, 1e-6))
+        y[start:start + count] += np.sin(phase) * env * level
+
+    kind = settings["kind"]
+    if kind == "pressure":
+        noise(0.02, 1.55, 0.22, 0.34, 0.0)
+        tone(0.10, 1.20, 92, 0.18, 0.55, -18)
+        tone(0.04, 0.12, 740, 0.34, 0.035)
+        tone(1.42, 0.32, 64, 0.50, 0.10)
+    elif kind == "counterweight":
+        for at, hz in ((0.08, 185), (0.22, 240), (0.37, 305), (0.54, 370)):
+            tone(at, 0.13, hz, 0.25, 0.05)
+        noise(0.58, 1.0, 0.20, 0.30, 0.0)
+        tone(0.68, 1.0, 72, 0.32, 0.42, 14)
+        tone(1.73, 0.30, 58, 0.48, 0.12)
+    elif kind == "service":
+        tone(0.03, 0.08, 980, 0.46, 0.025)
+        tone(0.15, 0.72, 210, 0.22, 0.30, -22)
+        tone(0.63, 0.18, 120, 0.34, 0.08)
+    elif kind == "thorn":
+        noise(0.02, 1.15, 0.14, 0.17, 0.75)
+        for at, hz in ((0.11, 430), (0.24, 610), (0.42, 520), (0.65, 690)):
+            noise(at, 0.14, 0.16, 0.045, 0.65)
+            tone(at, 0.12, hz, 0.14, 0.045, 20)
+        tone(0.90, 0.30, 260, 0.22, 0.13)
+    elif kind == "ink":
+        tone(0.08, 1.25, 180, 0.18, 0.62, 14)
+        tone(0.10, 1.10, 270, 0.13, 0.55, 12)
+        tone(0.18, 0.75, 620, 0.12, 0.30, 38)
+        noise(0.24, 0.95, 0.06, 0.22, 0.9)
+        tone(1.24, 0.30, 92, 0.42, 0.11)
+    elif kind == "stillwind":
+        noise(0.02, 1.92, 0.14, 0.95, 0.0)
+        tone(0.02, 1.95, 74, 0.13, 1.5, -34)
+        for at in (0.48, 0.86, 1.22, 1.53):
+            tone(at, 0.22, 430, 0.15, 0.18, -80)
+        tone(1.76, 0.30, 120, 0.34, 0.12)
+    elif kind == "mirror":
+        tone(0.04, 1.55, 360, 0.19, 0.72, 35)
+        tone(0.04, 1.35, 710, 0.13, 0.58, 42)
+        tone(0.17, 0.45, 1420, 0.10, 0.25, 80)
+        tone(1.32, 0.30, 160, 0.34, 0.13)
+    elif kind == "astral":
+        tone(0.04, 1.65, 105, 0.22, 0.80, 22)
+        tone(0.04, 1.55, 210, 0.15, 0.75, 26)
+        noise(0.12, 1.45, 0.11, 0.55, 0.0)
+        tone(0.22, 0.16, 520, 0.18, 0.06)
+        tone(1.68, 0.30, 68, 0.42, 0.13)
+    else:
+        raise ValueError(f"unknown puzzle-door cue kind: {kind}")
+    peak = max(np.max(np.abs(y)), 1e-9)
+    write_wav_f32(path, (y / peak * 0.72).astype(np.float32)[:, None])
+
+
 def encode_opus(src_wav: Path, dest: Path, kbps: int) -> None:
     dest.parent.mkdir(parents=True, exist_ok=True)
     proc = run([FFMPEG, "-nostdin", "-v", "error", "-y", "-i", str(src_wav), "-c:a", "libopus",
@@ -371,6 +452,8 @@ def build_sfx(spec: dict, only: set[str], derived: Path, out: Path) -> dict[str,
             src = AUDIO_SRC / "sfx" / "procedural" / f"{cid}.wav"
             if cid == "pendulum-tick":
                 procedural_pendulum_tick(cue, src)
+            elif cue["procedural"].get("kind"):
+                procedural_puzzle_door(cue, src)
             else:
                 procedural_clockwork_chime(cue, src)
         else:
@@ -544,7 +627,14 @@ def main() -> None:
         "music_status": "present" if music else "absent: runtime plays silence",
         "external_checks": external_checks(sorted(set(loops + stereo)), loops, stereo),
     }
-    (out / "report.json").write_text(json.dumps(report, indent=2) + "\n")
+    report_path = out / "report.json"
+    if only and report_path.exists():
+        previous_report = json.loads(report_path.read_text())
+        for section in ("sfx", "music"):
+            preserved = previous_report.get(section, {})
+            preserved.update(report.get(section, {}))
+            report[section] = preserved
+    report_path.write_text(json.dumps(report, indent=2) + "\n")
     if not args.no_provenance:
         log_path = AUDIO_SRC / "sfx" / "generation-log.json"
         generations = json.loads(log_path.read_text())["generations"] if log_path.exists() else []
@@ -580,6 +670,12 @@ def main() -> None:
         if music and music_log.exists():
             provenance["music_source"] = json.loads(music_log.read_text())["source"]
             provenance["music_generation_log"] = rel(music_log)
+        if only and (AUDIO_SRC / "provenance.json").exists():
+            previous = json.loads((AUDIO_SRC / "provenance.json").read_text())
+            for section in ("sfx", "music"):
+                preserved = previous.get(section, {})
+                preserved.update(provenance.get(section, {}))
+                provenance[section] = preserved
         (AUDIO_SRC / "provenance.json").write_text(json.dumps(provenance, indent=2) + "\n")
     print(f"wrote {out / 'report.json'}")
 

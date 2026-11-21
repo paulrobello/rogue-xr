@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import * as THREE from 'three';
 import { describe, expect, it, vi } from 'vitest';
 import {
+  ARCHIVE_GATE_OPEN_SFX,
   AUDIO_DIR,
   type AudioDeps,
   AudioDirector,
@@ -22,6 +23,7 @@ import {
   musicChain,
   musicCueFor,
   musicKeepSet,
+  PUZZLE_GATE_OPEN_SFX,
   resolveMusic,
   SFX,
   SFX_IDS,
@@ -808,6 +810,16 @@ describe('registry against the files on disk', () => {
     for (const id of SFX_IDS) expect(SFX[id].file).toBe(`sfx/${id}.ogg`);
     expect(new Set(SFX_IDS).size).toBe(SFX_IDS.length);
     for (const id of MUSIC_IDS) expect(MUSIC_FILES[id]).toBe(`music/${id}.ogg`);
+  });
+
+  it('uses distinct positional one-shots for puzzle openings and the sliding lift', () => {
+    const openings = [
+      ...Object.values(PUZZLE_GATE_OPEN_SFX),
+      ...Object.values(ARCHIVE_GATE_OPEN_SFX),
+      'astral-lift-open',
+    ] as const;
+    expect(new Set(openings).size).toBe(openings.length);
+    for (const cue of openings) expect(SFX[cue]).toMatchObject({ kind: 'positional', loop: false });
   });
 
   it.skipIf(!present)('has a runtime file for every SFX id and no unregistered SFX file', () => {
