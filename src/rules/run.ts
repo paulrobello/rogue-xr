@@ -72,6 +72,8 @@ export interface RunState {
   /** Floor-three Prism Annex receiver progress. */
   readonly prismSignal?: StoredPrismState;
   readonly speakingPipes?: StoredSpeakingPipesState;
+  /** Upper Works rubbing and seal state, retained in the journal across floor travel. */
+  readonly reliquarySeal?: 'hidden' | 'known' | 'open';
 }
 
 /** Mirrors `EncounterTier` in `floor/generate.ts`; rules may not import from `floor/`. */

@@ -38,6 +38,7 @@ import {
   runDifficulty,
 } from '../rules/difficulty.ts';
 import type { PressureNoteId } from '../rules/pressure.ts';
+import { reliquaryGlyph } from '../rules/reliquary.ts';
 import {
   maxTier,
   nextCost,
@@ -118,6 +119,8 @@ export interface FlyTarget {
 export type MenuView = 'closed' | 'main' | 'settings' | 'deck' | 'confirm' | 'items' | 'note';
 /** Phases the in-run menu opens over. */
 const MENU_PHASES: readonly FlowPhase[] = ['explore', 'combat'];
+const RUBBING_NOTE = 'reliquary-rubbing';
+type FieldNoteId = PressureNoteId | typeof RUBBING_NOTE;
 
 /** Card family colours (art bible): the jewel tone fills the frame field. */
 const FAMILY: Readonly<Record<string, string>> = {
@@ -372,7 +375,7 @@ export class FlowUi {
   private seedDraft = '';
   private shownFor: FlowPhase | null = null;
   private menu: MenuView = 'closed';
-  private noteId: PressureNoteId | null = null;
+  private noteId: FieldNoteId | null = null;
   private notePhysical = false;
   private menuHead: THREE.Object3D | null = null;
   private radialMenu: RadialMenu<RunMenuAction> | null = null;
@@ -481,6 +484,15 @@ export class FlowUi {
   /** Opens an acquired note, from a physical pickup or from Items. */
   readNote(id: PressureNoteId, head: THREE.Object3D, physical = true): boolean {
     if (!this.deps.noteRecord?.(id) || !this.deps.flow.pressure.notes.includes(id)) return false;
+    return this.openFieldNote(id, head, physical);
+  }
+
+  readReliquaryRubbing(head: THREE.Object3D, physical = true): boolean {
+    if (this.deps.flow.reliquarySeal === 'hidden') return false;
+    return this.openFieldNote(RUBBING_NOTE, head, physical);
+  }
+
+  private openFieldNote(id: FieldNoteId, head: THREE.Object3D, physical: boolean): boolean {
     if (this.menu === 'note' && this.noteId === id) return false;
     this.noteId = id;
     this.notePhysical = physical;
@@ -1588,6 +1600,14 @@ export class FlowUi {
         id: 'clockmakers-key',
         label: carriedKeys === 1 ? 'Clockmaker’s key' : `Clockmaker’s keys ×${carriedKeys}`,
       });
+    if (this.deps.flow.reliquarySeal !== 'hidden')
+      rows.push({
+        id: RUBBING_NOTE,
+        label: 'Keeper’s rubbing · Stone Reliquary',
+        onSelect: () => {
+          if (this.menuHead) this.readReliquaryRubbing(this.menuHead, false);
+        },
+      });
     if (!rows.length) rows.push({ id: 'empty', label: 'No items collected yet' });
     rows.push({ id: 'back', label: 'Back', onSelect: () => this.setMenu('main') });
     this.board(
@@ -1600,7 +1620,18 @@ export class FlowUi {
 
   private buildNote(): void {
     const id = this.noteId;
-    const record = id ? this.deps.noteRecord?.(id) : null;
+    const seed = this.deps.flow.run?.seed;
+    const glyph = id === RUBBING_NOTE && seed ? reliquaryGlyph(seed) : null;
+    const record = glyph
+      ? {
+          title: 'Keeper’s rubbing',
+          body: 'Copy this mark in one continuous stroke.',
+          source: 'Upper Works',
+          origin: 'Stone Reliquary · seal plate',
+        }
+      : id && id !== RUBBING_NOTE
+        ? this.deps.noteRecord?.(id)
+        : null;
     if (!record) {
       this.setMenu('items');
       return;
@@ -1635,7 +1666,7 @@ export class FlowUi {
       ctx.strokeRect(26, 26, 1148, 708);
       ctx.fillStyle = '#624429';
       ctx.font = '600 32px system-ui, sans-serif';
-      ctx.fillText('PRESSURE WORKS', 76, 104);
+      ctx.fillText(glyph ? 'UPPER WORKS' : 'PRESSURE WORKS', 76, 104);
       ctx.fillStyle = '#2e2118';
       ctx.font = 'bold 66px Georgia, serif';
       ctx.fillText(record.title, 72, 213, 1050);
@@ -1645,6 +1676,20 @@ export class FlowUi {
       for (const line of wrapText(ctx, record.body, 1028)) {
         ctx.fillText(line, 76, y);
         y += 62;
+      }
+      if (glyph) {
+        ctx.beginPath();
+        glyph.points.forEach(({ x, y }, i) => {
+          const px = 600 + x * 238;
+          const py = 500 - y * 238;
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        });
+        ctx.lineWidth = 14;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = '#453123';
+        ctx.stroke();
       }
       ctx.fillStyle = '#5b422b';
       ctx.font = 'italic 32px Georgia, serif';

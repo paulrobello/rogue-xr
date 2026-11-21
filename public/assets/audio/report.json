@@ -2395,6 +2395,67 @@
           "duration_seconds": 1.5
         }
       }
+    },
+    "reliquary-stone-open": {
+      "intermediate_wav": "assets-source/audio/derived/reliquary-stone-open.wav",
+      "intermediate_sha256": "31288c70d138b61d68ef31a7084be1814c9c1bf9997b7641d27f648498c1b9bd",
+      "pre_gain": {
+        "integrated_lufs": -21.4,
+        "true_peak_dbtp": -5.9,
+        "momentary_max_lufs": -18.2
+      },
+      "gain_db": 4.9,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -16.6,
+        "true_peak_dbtp": -1.1,
+        "momentary_max_lufs": -13.4
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -0.6,
+      "loudness_status": "met",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 72718,
+      "decoded_duration_s": 1.515,
+      "decoded_pcm_sha256": "9bd04dcd8f9c5f81204d58041531156f132993d0fd92a1e2ec746248a001c551",
+      "id": "reliquary-stone-open",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/reliquary-stone-open.wav",
+      "source_sha256": "f9a12b0fecc7bbe714c47b1134738c67b18a68a992ec9123da5b7f51b7857bb5",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.6
+      },
+      "trim": {
+        "trimmed_head_ms": 35.0,
+        "trimmed_tail_ms": 50.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/reliquary-stone-open.ogg",
+      "runtime_sha256": "f2780ed6006d083805ba33ec0dbbdd62664bc2326e3a43fd7b00f0f81411e73e",
+      "runtime_bytes": 13958,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.5215
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "reliquary",
+          "seed": 6201,
+          "duration_seconds": 1.6
+        }
+      }
     }
   },
   "music": {

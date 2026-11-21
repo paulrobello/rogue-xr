@@ -315,8 +315,8 @@ def procedural_puzzle_door(cue: dict, path: Path) -> None:
     write_wav_f32(path, (y / peak * 0.72).astype(np.float32)[:, None])
 
 
-def procedural_cistern(cue: dict, path: Path) -> None:
-    """Create the Speaking Pipes' dry send and damp cast-iron grille cues."""
+def procedural_heavy_fixtures(cue: dict, path: Path) -> None:
+    """Create short one-shots for pumps, grilles and heavy mechanical doors."""
     settings = cue["procedural"]
     rng = np.random.default_rng(int(settings["seed"]))
     n = round(float(settings["duration_seconds"]) * SR)
@@ -364,8 +364,22 @@ def procedural_cistern(cue: dict, path: Path) -> None:
         partial(0.86, 0.32, 176, 0.16, 0.11)
         noise(1.19, 0.24, 0.12, 0.08, 2)
         partial(1.22, 0.24, 64, 0.28, 0.09)
+    elif kind == "reliquary":
+        # Dry stone lock: a short brass bolt release, granular slab travel, then a low seat.
+        partial(0.04, 0.075, 1540, 0.28, 0.018)
+        partial(0.045, 0.11, 2380, 0.12, 0.022)
+        noise(0.18, 1.02, 0.26, 0.55, 5)
+        noise(0.24, 0.72, 0.14, 0.46, 13)
+        partial(0.18, 0.98, 76, 0.15, 0.46)
+        partial(0.21, 0.82, 143, 0.08, 0.31)
+        for at, hz, level in ((0.31, 520, 0.10), (0.53, 430, 0.08), (0.76, 610, 0.07), (0.98, 360, 0.06)):
+            noise(at, 0.12, level, 0.045, 3)
+            partial(at, 0.14, hz, level * 0.38, 0.055)
+        noise(1.20, 0.20, 0.10, 0.075, 2)
+        partial(1.24, 0.30, 58, 0.36, 0.12)
+        partial(1.25, 0.22, 116, 0.16, 0.08)
     else:
-        raise ValueError(f"unknown cistern cue kind: {kind}")
+        raise ValueError(f"unknown heavy fixture cue kind: {kind}")
     peak = max(np.max(np.abs(y)), 1e-9)
     write_wav_f32(path, (y / peak * 0.72).astype(np.float32)[:, None])
 
@@ -592,8 +606,8 @@ def build_sfx(spec: dict, only: set[str], derived: Path, out: Path) -> dict[str,
             src = AUDIO_SRC / "sfx" / "procedural" / f"{cid}.wav"
             if cid == "pendulum-tick":
                 procedural_pendulum_tick(cue, src)
-            elif cue["procedural"].get("kind") in {"pipe-send", "grille"}:
-                procedural_cistern(cue, src)
+            elif cue["procedural"].get("kind") in {"pipe-send", "grille", "reliquary"}:
+                procedural_heavy_fixtures(cue, src)
             elif cue["procedural"].get("kind", "").startswith(("torch-", "chain-", "scarab-")):
                 procedural_dungeon(cue, src)
             elif cue["procedural"].get("kind"):
@@ -812,7 +826,7 @@ def main() -> None:
         if "pendulum-tick" in provenance["sfx"]:
             provenance["sfx"]["pendulum-tick"]["approval"] = "Original project synthesis. Owner listening review pending."
         for cue_id in ("dungeon-torch-crackle", "dungeon-chain-wind", "dungeon-scarab-scrape",
-                       "cistern-pipe-send", "cistern-grille-open"):
+                       "cistern-pipe-send", "cistern-grille-open", "reliquary-stone-open"):
             if cue_id in provenance["sfx"]:
                 provenance["sfx"][cue_id]["approval"] = "Original project synthesis. Owner listening review pending."
         if music and music_log.exists():

@@ -58,6 +58,7 @@ export const SFX = {
   'dispatch-room-open': sfx('dispatch-room-open', 'positional', 0.2),
   'cistern-pipe-send': sfx('cistern-pipe-send', 'positional', 0.2),
   'cistern-grille-open': sfx('cistern-grille-open', 'positional', 0.2),
+  'reliquary-stone-open': sfx('reliquary-stone-open', 'positional', 0.2),
   'dungeon-torch-crackle': { ...sfx('dungeon-torch-crackle', 'positional', 0, true), gain: 0.22 },
   'dungeon-chain-wind': sfx('dungeon-chain-wind', 'positional', 0.22),
   'dungeon-scarab-scrape': sfx('dungeon-scarab-scrape', 'positional', 0.22),
@@ -90,6 +91,7 @@ export const PUZZLE_GATE_OPEN_SFX = {
   prism: 'prism-annex-open',
   dispatch: 'dispatch-room-open',
   cistern: 'cistern-grille-open',
+  reliquary: 'reliquary-stone-open',
 } as const satisfies Record<Exclude<PuzzleGate, 'archive'>, SfxId>;
 
 export const ARCHIVE_GATE_OPEN_SFX = {

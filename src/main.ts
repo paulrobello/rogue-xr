@@ -147,6 +147,7 @@ import { type RoomStyleKit, roomStyleFor, roomStyleKitFromScene } from './world/
 import { type PanelHit, SERVICE_KNOCKS } from './world/service-panels.ts';
 import type { SpeakingPipes, SpeakingPipesPick } from './world/speaking-pipes.ts';
 import { StairFade, StairTransit } from './world/stair-transit.ts';
+import type { StoneReliquary } from './world/stone-reliquary.ts';
 import { type StoneRoomKit, stoneRoomKitFromScene } from './world/stone-rooms.ts';
 import { loadBookBindings } from './world/study-books.ts';
 import {
@@ -809,6 +810,7 @@ function syncPuzzles(target: FloorView, immediate = false): void {
   target.world.setPuzzleGateOpen('dispatch', flow.dispatch.opened, immediate);
   target.speakingPipes?.sync(flow.speakingPipes, immediate);
   target.world.setPuzzleGateOpen('cistern', flow.speakingPipes === 'open', immediate);
+  target.reliquary?.sync(flow.reliquarySeal, immediate);
 }
 let pressureArt: Promise<PressureArt> | undefined;
 let interiors:
@@ -968,6 +970,14 @@ const dressFloor = async (target: FloorView): Promise<void> => {
     }
     if (target.world.plan.speakingPipes) {
       target.dressSpeakingPipes(chimeArt, flow.run?.seed ?? target.seed, hitFx.reducedMotion);
+    }
+    if (target.world.plan.reliquary) {
+      target.dressReliquary(flow.run?.seed ?? target.seed, hitFx.reducedMotion);
+      if (target.reliquary) {
+        reflect(target.reliquary.gate, 0.52);
+        reflect(target.reliquary.plate, 0.52);
+        reflect(target.reliquary.rubbing, 0.52);
+      }
     }
     if (
       target.floorNumber === 2 &&
@@ -1195,7 +1205,8 @@ flow.onChange((event) => {
     event.type === 'formula' ||
     event.type === 'prism-signal' ||
     event.type === 'dispatch' ||
-    event.type === 'speaking-pipes'
+    event.type === 'speaking-pipes' ||
+    event.type === 'reliquary'
   ) {
     if (event.type === 'formula') floor?.office?.sync(flow.commission);
     if (floor) syncPuzzles(floor);
@@ -2078,7 +2089,9 @@ function fieldHit(origin: THREE.Vector3, direction: THREE.Vector3) {
   const windowCache = floor.windowCache?.pick(origin, direction);
   const dispatch = floor.dispatchRoom?.pick(origin, direction);
   const pipes = floor.speakingPipes?.pick(origin, direction);
+  const reliquary = floor.reliquary?.pick(origin, direction);
   const hits = [
+    ...(reliquary ? [{ kind: 'reliquary' as const, hit: reliquary }] : []),
     ...(pipes ? [{ kind: 'speaking-pipes' as const, hit: pipes }] : []),
     ...(dispatch ? [{ kind: 'dispatch' as const, hit: dispatch }] : []),
     ...(windowCache ? [{ kind: 'window-cache' as const, hit: windowCache }] : []),
@@ -2114,6 +2127,10 @@ const activatePickup = (
   const pick = fieldHit(origin, direction);
   if (!pick) return false;
   switch (pick.kind) {
+    case 'reliquary':
+      if (pick.hit.action === 'trace') return true;
+      flow.rememberReliquaryRubbing();
+      return ui?.readReliquaryRubbing(camera) ?? false;
     case 'speaking-pipes':
       return operateSpeakingPipes(pick.hit);
     case 'dispatch':
@@ -2177,17 +2194,70 @@ const controllerRay = (
     direction: new THREE.Vector3(0, 0, -1).transformDirection(controller.matrixWorld),
   };
 };
+type ReliquaryInput = {
+  station: StoneReliquary;
+  source: { pointer: number } | { controller: THREE.Object3D };
+};
+let reliquaryInput: ReliquaryInput | null = null;
+const reliquarySelects = new WeakSet<THREE.Object3D>();
+function traceAvailable(input: ReliquaryInput): boolean {
+  return (
+    canOpenLoot() &&
+    floor?.reliquary === input.station &&
+    floor.world.current === floor.world.plan.reliquary?.source.room
+  );
+}
+function beginReliquaryTrace(
+  source: ReliquaryInput['source'],
+  origin: THREE.Vector3,
+  direction: THREE.Vector3,
+): boolean {
+  const station = floor?.reliquary;
+  if (!station || reliquaryInput || flow.reliquarySeal !== 'known') return false;
+  const pick = fieldHit(origin, direction);
+  if (pick?.kind !== 'reliquary' || !station.begin(origin, direction)) return false;
+  reliquaryInput = { station, source };
+  return true;
+}
+function endReliquaryTrace(submit: boolean): void {
+  const input = reliquaryInput;
+  if (!input) return;
+  reliquaryInput = null;
+  const { station } = input;
+  if (!submit || !traceAvailable(input)) {
+    station.cancel();
+    return;
+  }
+  const result = flow.submitReliquaryTrace(station.finish());
+  if (result === 'opened') {
+    audio?.playSfx(PUZZLE_GATE_OPEN_SFX.reliquary, station.openingPosition(chimePosition));
+  } else if (result === 'wrong') {
+    station.reject();
+    audio?.playSfx('sigil-fizzle', station.plate.getWorldPosition(chimePosition));
+  } else station.cancel();
+}
 window.addEventListener(
   'pointerdown',
   (event) => {
     if (xr.presenting || event.button !== 0 || event.target !== renderer.domElement) return;
     if (!floor || !canOpenLoot()) return;
     const { origin, direction } = mouseRay(event);
-    if (activatePickup(origin, direction)) event.stopImmediatePropagation();
+    if (
+      beginReliquaryTrace({ pointer: event.pointerId }, origin, direction) ||
+      activatePickup(origin, direction)
+    )
+      event.stopImmediatePropagation();
   },
   { capture: true },
 );
 window.addEventListener('pointermove', (event) => {
+  const input = reliquaryInput;
+  if (input && 'pointer' in input.source && input.source.pointer === event.pointerId) {
+    const { origin, direction } = mouseRay(event);
+    if (traceAvailable(input)) input.station.sample(origin, direction);
+    else endReliquaryTrace(false);
+    return;
+  }
   if (xr.presenting || event.target !== renderer.domElement) return;
   let over = false;
   if (floor && canOpenLoot()) {
@@ -2196,6 +2266,22 @@ window.addEventListener('pointermove', (event) => {
   }
   renderer.domElement.style.cursor = over ? 'pointer' : '';
 });
+window.addEventListener('pointerup', (event) => {
+  const input = reliquaryInput;
+  if (!input || !('pointer' in input.source) || input.source.pointer !== event.pointerId) return;
+  if (traceAvailable(input)) {
+    const { origin, direction } = mouseRay(event);
+    input.station.sample(origin, direction);
+  }
+  endReliquaryTrace(true);
+});
+window.addEventListener('pointercancel', (event) => {
+  const input = reliquaryInput;
+  if (input && 'pointer' in input.source && input.source.pointer === event.pointerId)
+    endReliquaryTrace(false);
+});
+window.addEventListener('blur', () => endReliquaryTrace(false));
+renderer.xr.addEventListener('sessionend', () => endReliquaryTrace(false));
 // Keyboard on the boards: type a seed, arrows move focus, Enter activates, Escape backs out.
 let focusIndex = -1;
 window.addEventListener('keydown', (event) => {
@@ -2314,8 +2400,25 @@ for (const index of [0, 1]) {
       });
     });
   };
+  controller.addEventListener('selectstart', () => {
+    reliquarySelects.delete(controller);
+    if (!xr.presenting || !canOpenLoot()) return;
+    const { origin, direction } = controllerRay(controller);
+    if (beginReliquaryTrace({ controller }, origin, direction)) reliquarySelects.add(controller);
+  });
+  controller.addEventListener('selectend', () => {
+    const input = reliquaryInput;
+    if (input && 'controller' in input.source && input.source.controller === controller)
+      endReliquaryTrace(true);
+  });
+  controller.addEventListener('disconnected', () => {
+    reliquarySelects.delete(controller);
+    const input = reliquaryInput;
+    if (input && 'controller' in input.source && input.source.controller === controller)
+      endReliquaryTrace(false);
+  });
   controller.addEventListener('select', (event) => {
-    if (busy()) return;
+    if (reliquarySelects.delete(controller) || busy()) return;
     if (!ui?.visible) {
       if (floor && canOpenLoot() && xr.presenting) {
         const { origin, direction } = controllerRay(controller);
@@ -2954,6 +3057,14 @@ renderer.setAnimationLoop((time, frame) => {
         pullMark = null;
         operateMachine({ action: 'open', distance: 0 }, hand);
       }
+    }
+  }
+  if (reliquaryInput) {
+    const { source, station } = reliquaryInput;
+    if (!traceAvailable(reliquaryInput)) endReliquaryTrace(false);
+    else if ('controller' in source) {
+      const { origin, direction } = controllerRay(source.controller);
+      station.sample(origin, direction);
     }
   }
   if (floor && xr.presenting && canOpenLoot()) {

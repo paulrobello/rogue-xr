@@ -24,7 +24,9 @@ export const PRISM_ANNEX_VERSION = 9;
 export const DISPATCH_ROOM_VERSION = 10;
 export const DUNGEON_CONTENT_VERSION = 11;
 export const SPEAKING_PIPES_VERSION = 12;
-export const ENCOUNTER_CONTENT_VERSION = SPEAKING_PIPES_VERSION;
+/** Stone Reliquary coffer and trace gate. */
+export const RELIQUARY_VERSION = 13;
+export const ENCOUNTER_CONTENT_VERSION = RELIQUARY_VERSION;
 const LEGACY_ENCOUNTER_IDS = new Set([
   'sentry',
   'hound',

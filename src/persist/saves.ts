@@ -502,6 +502,12 @@ function validateRunState(
     r.speakingPipes === undefined
       ? undefined
       : speakingPipes(r.speakingPipes, `${path}.speakingPipes`);
+  const reliquarySeal =
+    r.reliquarySeal === undefined
+      ? undefined
+      : r.reliquarySeal === 'hidden' || r.reliquarySeal === 'known' || r.reliquarySeal === 'open'
+        ? r.reliquarySeal
+        : fail(`${path}.reliquarySeal`, 'unknown reliquary seal state');
   const counterweightState =
     r.counterweight === undefined
       ? undefined
@@ -588,6 +594,7 @@ function validateRunState(
     ...(pressureState === undefined ? {} : { pressure: pressureState }),
     ...(dispatchState === undefined ? {} : { dispatch: dispatchState }),
     ...(speakingPipesState === undefined ? {} : { speakingPipes: speakingPipesState }),
+    ...(reliquarySeal === undefined ? {} : { reliquarySeal }),
     ...(counterweightState === undefined ? {} : { counterweight: counterweightState }),
     ...(alchemyState === undefined ? {} : { alchemy: alchemyState }),
     ...(formulaState === undefined ? {} : { conservatoryFormula: formulaState }),

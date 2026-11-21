@@ -1376,6 +1376,27 @@
         }
       },
       "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "reliquary-stone-open": {
+      "source_file": "assets-source/audio/sfx/procedural/reliquary-stone-open.wav",
+      "source_sha256": "f9a12b0fecc7bbe714c47b1134738c67b18a68a992ec9123da5b7f51b7857bb5",
+      "runtime_file": "public/assets/audio/sfx/reliquary-stone-open.ogg",
+      "runtime_sha256": "f2780ed6006d083805ba33ec0dbbdd62664bc2326e3a43fd7b00f0f81411e73e",
+      "runtime_bytes": 13958,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "reliquary",
+          "seed": 6201,
+          "duration_seconds": 1.6
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
     }
   },
   "music": {

@@ -36,6 +36,12 @@ Sound the transmitter in the Upper Works, then find the Pipe Receiver in a diffe
 
 A wrong handle flashes its indicator and leaves the clue in place. The matching handle releases the cast-iron grille by the transmitter. The cistern behind it has a separate basin, copper supply pipes, shelf, and treasure coffer. Continue restores the primed receiver or opened grille and keeps any collected treasure.
 
+## Stone Reliquary
+
+In eligible Upper Works layouts, a keeper’s rubbing hangs in a different room from the stone seal plate. Select the rubbing to read it and file a copy in **Items**. Return to the plate and hold the trigger while tracing the mark with the controller ray, or hold the left mouse button and drag on desktop. Draw in one continuous stroke. A rejected trace turns red and leaves the rubbing available for another attempt.
+
+A matching trace releases the brass bolt, lowers the stone leaf into the threshold, and opens an optional treasure room. The leaf stays physically blocking until it clears. The room uses the same interchangeable floor, wall, doorway and ceiling pieces as the dungeon, with separately mounted torches, shelving, pottery and plants. The clue, passage and claimed treasure survive Continue. In the `MAPTEST2` showcase, the rubbing is in Upper Works room 3 and the seal plate is in room 2.
+
 ## Ingredients for future puzzles
 
 | Ingredient | What the player can do or notice | A possible payoff |

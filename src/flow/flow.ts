@@ -8,6 +8,7 @@ import {
   PATROL_VERSION,
   PRESSURE_WORKS_VERSION,
   PRISM_ANNEX_VERSION,
+  RELIQUARY_VERSION,
   RETURN_PASSAGES_VERSION,
   SPEAKING_PIPES_VERSION,
 } from '../combat/encounter-choice.ts';
@@ -94,6 +95,13 @@ import {
   turnPrism,
 } from '../rules/prism-signal.ts';
 import {
+  type ReliquarySeal,
+  readReliquary,
+  reliquaryGlyph,
+  rememberReliquary,
+  submitReliquaryTrace,
+} from '../rules/reliquary.ts';
+import {
   chooseReward,
   claimTreasure,
   claimWindowCache,
@@ -128,6 +136,7 @@ import {
   type UpgradeId,
   type WorkshopState,
 } from '../rules/workshop.ts';
+import { matchesReliquaryGlyph } from '../sigil/reliquary-trace.ts';
 
 /**
  * Screens of the whole game loop. `title`, `workshop` and `settings` sit between runs; `explore`,
@@ -259,6 +268,10 @@ export interface SpeakingPipesEvent {
   readonly action: 'prime' | 'open';
   readonly state: SpeakingPipesState;
 }
+export interface ReliquaryEvent {
+  readonly type: 'reliquary';
+  readonly action: 'remember' | 'open';
+}
 
 /**
  * `'opened'`: a coffer was opened (`openLoot`). `'claimed'`: its pending card went into the deck
@@ -301,6 +314,7 @@ export type FlowEvent =
   | PrismSignalEvent
   | DispatchEvent
   | SpeakingPipesEvent
+  | ReliquaryEvent
   | { readonly type: 'brass-key'; readonly action: 'inspect' | 'take' | 'unlock' }
   | {
       readonly type: 'window-cache';
@@ -425,6 +439,41 @@ export class RunFlow {
   }
   get speakingPipes(): SpeakingPipesState {
     return readSpeakingPipes(this.runValue ?? { speakingPipes: undefined });
+  }
+  get reliquarySeal(): ReliquarySeal {
+    return readReliquary(this.runValue ?? { reliquarySeal: undefined });
+  }
+  rememberReliquaryRubbing(): boolean {
+    if (
+      !this.runValue ||
+      this.phaseValue !== 'explore' ||
+      this.floorNumberValue !== 2 ||
+      this.contentVersionValue < RELIQUARY_VERSION
+    )
+      return false;
+    const next = rememberReliquary(this.runValue);
+    if (!next) return false;
+    this.runValue = next;
+    this.emit({ type: 'reliquary', action: 'remember' });
+    return true;
+  }
+  submitReliquaryTrace(
+    points: readonly { readonly x: number; readonly y: number }[],
+  ): 'ignored' | 'wrong' | 'opened' {
+    if (
+      !this.runValue ||
+      this.phaseValue !== 'explore' ||
+      this.floorNumberValue !== 2 ||
+      this.contentVersionValue < RELIQUARY_VERSION
+    )
+      return 'ignored';
+    if (this.reliquarySeal !== 'known') return 'ignored';
+    const glyph = reliquaryGlyph(this.runValue.seed);
+    const result = submitReliquaryTrace(this.runValue, matchesReliquaryGlyph(points, glyph.points));
+    if (!result) return 'ignored';
+    this.runValue = result.run;
+    if (result.result === 'opened') this.emit({ type: 'reliquary', action: 'open' });
+    return result.result;
   }
   primeSpeakingPipes(): boolean {
     if (

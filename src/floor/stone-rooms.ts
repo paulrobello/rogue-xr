@@ -13,6 +13,7 @@ export function stoneRoomsFor(plan: FloorPlan, floor: 1 | 2 | 3): ReadonlyMap<nu
 
   if (plan.dispatchRoom) rooms.set(plan.dispatchRoom.vaultRoom, 'dungeon');
   if (plan.speakingPipes) rooms.set(plan.speakingPipes.cisternRoom, 'cistern');
+  if (plan.reliquary) rooms.set(plan.reliquary.reliquaryRoom, 'dungeon');
   const halls = plan.rooms.filter(
     (room) =>
       room.templateId === 'hall' &&

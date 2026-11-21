@@ -10,6 +10,7 @@ import {
   PATROL_VERSION,
   PRESSURE_WORKS_VERSION,
   PRISM_ANNEX_VERSION,
+  RELIQUARY_VERSION,
   RETURN_PASSAGES_VERSION,
   SPEAKING_PIPES_VERSION,
   UPPER_WORKS_VERSION,
@@ -34,6 +35,7 @@ import {
 import { attachHiddenPassage } from '../floor/hidden-passage.ts';
 import { type PatrolRoute, patrolPeriod, planPatrol, samplePatrol } from '../floor/patrol.ts';
 import { attachPrismAnnex } from '../floor/prism-annex.ts';
+import { attachReliquary } from '../floor/reliquary.ts';
 import { attachFloorOneTopology, withBrassCache } from '../floor/return-passages.ts';
 import { attachSpeakingPipes } from '../floor/speaking-pipes.ts';
 import { placeStairEntry } from '../floor/stairs.ts';
@@ -99,6 +101,7 @@ import {
 import { ServicePanels } from './service-panels.ts';
 import { SpeakingPipes } from './speaking-pipes.ts';
 import { Stairwell } from './stairwell.ts';
+import { StoneReliquary } from './stone-reliquary.ts';
 import { applyStoneRoom, furnishStoneRoom, type StoneRoomKit } from './stone-rooms.ts';
 import { StrikingClock } from './striking-clock.ts';
 import { type RigidNode, rigidAngle } from './study-room.ts';
@@ -216,6 +219,8 @@ export interface FloorView {
     runSeed: string,
     reducedMotion: boolean,
   ): void;
+  readonly reliquary: StoneReliquary | null;
+  dressReliquary(runSeed: string, reducedMotion: boolean): void;
   readonly counterweight: CounterweightStation | null;
   dressChimes(art: THREE.Object3D): void;
   dressStairs(model: THREE.Object3D): void;
@@ -374,7 +379,9 @@ export function playableFloorPlan(
   if (floorNumber === 2 && contentVersion >= HIDDEN_PANEL_VERSION) {
     const upper = attachHiddenPassage(base);
     const dispatch = contentVersion >= DISPATCH_ROOM_VERSION ? attachDispatchRoom(upper) : upper;
-    return contentVersion >= SPEAKING_PIPES_VERSION ? attachSpeakingPipes(dispatch) : dispatch;
+    const pipes =
+      contentVersion >= SPEAKING_PIPES_VERSION ? attachSpeakingPipes(dispatch) : dispatch;
+    return contentVersion >= RELIQUARY_VERSION ? attachReliquary(pipes) : pipes;
   }
   if (contentVersion < PRESSURE_WORKS_VERSION || floorNumber !== 1) return base;
   if (contentVersion < RETURN_PASSAGES_VERSION) return attachPressureWing(base);
@@ -438,6 +445,7 @@ export function mountFloorView(
   let panels: ServicePanels | null = null;
   let dispatchRoom: DispatchRoom | null = null;
   let speakingPipes: SpeakingPipes | null = null;
+  let reliquary: StoneReliquary | null = null;
   let counterweight: CounterweightStation | null = null;
   const floorNumber = options.floorNumber ?? 1;
   const stoneRooms: ReadonlyMap<number, StoneRoom> =
@@ -764,6 +772,12 @@ export function mountFloorView(
         reducedMotion,
         furnishings?.placements,
       );
+    },
+    get reliquary() {
+      return reliquary;
+    },
+    dressReliquary(runSeed, reducedMotion) {
+      reliquary ??= StoneReliquary.mount(world, runSeed, reducedMotion, furnishings?.placements);
     },
     get brassKeyStand() {
       return brassKeyStand;
@@ -1160,6 +1174,7 @@ export function mountFloorView(
       panels?.dispose();
       dispatchRoom?.dispose();
       speakingPipes?.dispose();
+      reliquary?.dispose();
       counterweight?.dispose();
       chimes?.dispose();
       windowCache?.dispose();
@@ -1270,6 +1285,7 @@ export function mountFloorView(
       panels?.update(dt);
       dispatchRoom?.update(dt);
       speakingPipes?.update(dt);
+      reliquary?.update(dt);
       counterweight?.update(dt);
       chimes?.update(dt);
       world.updateAnimations(dt);
