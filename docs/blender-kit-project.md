@@ -51,7 +51,7 @@ A checked-in generator under `scripts/assets/`, staged outputs under `assets-sou
 
 ## 10. Gate table
 
-Not pinned yet. P4-T4 adds `make asset-check`.
+`make asset-check` validates the asset chain, manifests, and format and budget requirements. `make checkall-ci` includes it alongside the runtime checks and secret scanner.
 
 ## 11. Runtime loader
 
