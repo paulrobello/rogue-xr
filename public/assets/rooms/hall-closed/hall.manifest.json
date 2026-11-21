@@ -1,391 +1,198 @@
 {
-  "template": "hall",
-  "glb": "hall.glb",
-  "lightmap": {
-    "file": "hall.lightmap.ktx2",
-    "uv": 1,
-    "encoding": "srgb-scaled",
-    "scale": 5.293815612792969,
-    "intensity": 16.631012
-  },
-  "id": "hall",
-  "kinds": [
-    "entry",
-    "combat",
-    "rest"
-  ],
-  "footprint": {
-    "min": [
-      -5,
-      -5
-    ],
-    "max": [
-      5,
-      5
-    ]
-  },
-  "doors": [
-    {
-      "id": "n",
-      "facing": "N",
-      "position": [
-        -1,
-        0,
-        -5
-      ],
-      "width": 1.6
-    },
-    {
-      "id": "e",
-      "facing": "E",
-      "position": [
-        5,
-        0,
-        1
-      ],
-      "width": 1.6
-    },
-    {
-      "id": "s",
-      "facing": "S",
-      "position": [
-        1,
-        0,
-        5
-      ],
-      "width": 1.6
-    },
-    {
-      "id": "w",
-      "facing": "W",
-      "position": [
-        -5,
-        0,
-        -1
-      ],
-      "width": 1.6
-    }
-  ],
-  "rotations": [
-    0,
-    1,
-    2,
-    3
-  ],
-  "enemySockets": [
-    {
-      "id": "enemy-a",
-      "position": [
-        0,
-        0,
-        -2.5
-      ],
-      "yaw": 180
-    },
-    {
-      "id": "enemy-b",
-      "position": [
-        2,
-        0,
-        -2
-      ],
-      "yaw": 200
-    }
-  ],
-  "lootSockets": [
-    {
-      "id": "chest",
-      "position": [
-        -3.5,
-        0,
-        3.5
-      ],
-      "yaw": 45
-    }
-  ],
-  "dressingSockets": [
-    {
-      "id": "bench-w",
-      "position": [
-        -4,
-        0,
-        2
-      ],
-      "yaw": 90
-    },
-    {
-      "id": "bench-e",
-      "position": [
-        4,
-        0,
-        -2
-      ],
-      "yaw": 270
-    },
-    {
-      "id": "rug",
-      "position": [
-        0,
-        0,
-        0
-      ],
-      "yaw": 0
-    }
-  ],
-  "lightSockets": [
-    {
-      "id": "sconce-nw",
-      "position": [
-        -4.6,
-        2.2,
-        -4.6
-      ],
-      "yaw": 0
-    },
-    {
-      "id": "sconce-se",
-      "position": [
-        4.6,
-        2.2,
-        4.6
-      ],
-      "yaw": 0
-    }
-  ],
-  "probe": [
-    0,
-    1.6,
-    0
-  ],
-  "walkable": [
-    {
-      "min": [
-        -4.6,
-        -4.6
-      ],
-      "max": [
-        4.6,
-        4.6
-      ]
-    }
-  ],
-  "colliders": [
-    {
-      "min": [
-        -5,
-        0,
-        -5.1
-      ],
-      "max": [
-        -1.8,
-        4,
-        -4.9
-      ]
-    },
-    {
-      "min": [
-        -0.19999999999999996,
-        0,
-        -5.1
-      ],
-      "max": [
-        5,
-        4,
-        -4.9
-      ]
-    },
-    {
-      "min": [
-        -5,
-        0,
-        4.9
-      ],
-      "max": [
-        0.19999999999999996,
-        4,
-        5.1
-      ]
-    },
-    {
-      "min": [
-        1.8,
-        0,
-        4.9
-      ],
-      "max": [
-        5,
-        4,
-        5.1
-      ]
-    },
-    {
-      "min": [
-        -5.1,
-        0,
-        -5
-      ],
-      "max": [
-        -4.9,
-        4,
-        -1.8
-      ]
-    },
-    {
-      "min": [
-        -5.1,
-        0,
-        -0.19999999999999996
-      ],
-      "max": [
-        -4.9,
-        4,
-        5
-      ]
-    },
-    {
-      "min": [
-        4.9,
-        0,
-        -5
-      ],
-      "max": [
-        5.1,
-        4,
-        0.19999999999999996
-      ]
-    },
-    {
-      "min": [
-        4.9,
-        0,
-        1.8
-      ],
-      "max": [
-        5.1,
-        4,
-        5
-      ]
-    },
-    {
-      "min": [
-        -4.77,
-        0,
-        -4.77
-      ],
-      "max": [
-        -4.43,
-        2.025,
-        -4.43
-      ]
-    },
-    {
-      "min": [
-        4.43,
-        0,
-        4.43
-      ],
-      "max": [
-        4.77,
-        2.025,
-        4.77
-      ]
-    },
-    {
-      "min": [
-        4.43,
-        0,
-        -4.77
-      ],
-      "max": [
-        4.77,
-        2.025,
-        -4.43
-      ]
-    },
-    {
-      "min": [
-        -4.77,
-        0,
-        4.43
-      ],
-      "max": [
-        -4.43,
-        2.025,
-        4.77
-      ]
-    },
-    {
-      "min": [
-        -4.215,
-        0,
-        1.545
-      ],
-      "max": [
-        -3.785,
-        0.47,
-        2.455
-      ]
-    },
-    {
-      "min": [
-        3.785,
-        0,
-        -2.455
-      ],
-      "max": [
-        4.215,
-        0.47,
-        -1.545
-      ]
-    },
-    {
-      "min": [
-        -4.43,
-        0,
-        -5.0
-      ],
-      "max": [
-        -2.67,
-        4.0,
-        -4.15
-      ]
-    }
-  ],
-  "budget": {
-    "tris": 6668,
-    "materials": 7,
-    "texturePx": 2048
-  },
-  "materials": {
-    "hall_stone-floor": {
-      "pbr": "stone-floor",
-      "tileMeters": 1.5
-    },
-    "hall_wallpaper": {
-      "pbr": "wallpaper",
-      "tileMeters": 0.75
-    },
-    "hall_walnut": {
-      "pbr": "walnut",
-      "tileMeters": 0.5
-    },
-    "hall_brass-aged": {
-      "pbr": "brass-aged",
-      "tileMeters": 0.5
-    },
-    "hall_brass-polished": {
-      "pbr": "brass-polished",
-      "tileMeters": 0.5
-    },
-    "hall_wax": {
-      "color": "#e7d7b8",
-      "roughness": 0.55
-    },
-    "hall_flame": {
-      "color": "#ffce81",
-      "emissive": "#ffce81",
-      "emissiveIntensity": 3.0
-    }
-  },
-  "glassEmissiveIntensity": 0.8
+	"template": "hall",
+	"glb": "hall.glb",
+	"lightmap": {
+		"file": "hall.lightmap.ktx2",
+		"uv": 1,
+		"encoding": "srgb-scaled",
+		"scale": 5.598337650299072,
+		"intensity": 17.587696
+	},
+	"id": "hall",
+	"kinds": ["entry", "combat", "rest"],
+	"footprint": {
+		"min": [-5, -5],
+		"max": [5, 5]
+	},
+	"doors": [
+		{
+			"id": "n",
+			"facing": "N",
+			"position": [-1, 0, -5],
+			"width": 1.6
+		},
+		{
+			"id": "e",
+			"facing": "E",
+			"position": [5, 0, 1],
+			"width": 1.6
+		},
+		{
+			"id": "s",
+			"facing": "S",
+			"position": [1, 0, 5],
+			"width": 1.6
+		},
+		{
+			"id": "w",
+			"facing": "W",
+			"position": [-5, 0, -1],
+			"width": 1.6
+		}
+	],
+	"rotations": [0, 1, 2, 3],
+	"enemySockets": [
+		{
+			"id": "enemy-a",
+			"position": [0, 0, -2.5],
+			"yaw": 180
+		},
+		{
+			"id": "enemy-b",
+			"position": [2, 0, -2],
+			"yaw": 200
+		}
+	],
+	"lootSockets": [
+		{
+			"id": "chest",
+			"position": [-3.5, 0, 3.5],
+			"yaw": 45
+		}
+	],
+	"dressingSockets": [
+		{
+			"id": "bench-w",
+			"position": [-4, 0, 2],
+			"yaw": 90
+		},
+		{
+			"id": "bench-e",
+			"position": [4, 0, -2],
+			"yaw": 270
+		},
+		{
+			"id": "rug",
+			"position": [0, 0, 0],
+			"yaw": 0
+		}
+	],
+	"lightSockets": [
+		{
+			"id": "sconce-nw",
+			"position": [-4.6, 2.2, -4.6],
+			"yaw": 0
+		},
+		{
+			"id": "sconce-se",
+			"position": [4.6, 2.2, 4.6],
+			"yaw": 0
+		}
+	],
+	"probe": [0, 1.6, 0],
+	"walkable": [
+		{
+			"min": [-4.6, -4.6],
+			"max": [4.6, 4.6]
+		}
+	],
+	"colliders": [
+		{
+			"min": [-5, 0, -5.1],
+			"max": [-1.8, 4, -4.9]
+		},
+		{
+			"min": [-0.19999999999999996, 0, -5.1],
+			"max": [5, 4, -4.9]
+		},
+		{
+			"min": [-5, 0, 4.9],
+			"max": [0.19999999999999996, 4, 5.1]
+		},
+		{
+			"min": [1.8, 0, 4.9],
+			"max": [5, 4, 5.1]
+		},
+		{
+			"min": [-5.1, 0, -5],
+			"max": [-4.9, 4, -1.8]
+		},
+		{
+			"min": [-5.1, 0, -0.19999999999999996],
+			"max": [-4.9, 4, 5]
+		},
+		{
+			"min": [4.9, 0, -5],
+			"max": [5.1, 4, 0.19999999999999996]
+		},
+		{
+			"min": [4.9, 0, 1.8],
+			"max": [5.1, 4, 5]
+		},
+		{
+			"min": [-4.77, 0, -4.77],
+			"max": [-4.43, 2.025, -4.43]
+		},
+		{
+			"min": [4.43, 0, 4.43],
+			"max": [4.77, 2.025, 4.77]
+		},
+		{
+			"min": [4.43, 0, -4.77],
+			"max": [4.77, 2.025, -4.43]
+		},
+		{
+			"min": [-4.77, 0, 4.43],
+			"max": [-4.43, 2.025, 4.77]
+		},
+		{
+			"min": [-4.215, 0, 1.545],
+			"max": [-3.785, 0.47, 2.455]
+		},
+		{
+			"min": [3.785, 0, -2.455],
+			"max": [4.215, 0.47, -1.545]
+		},
+		{
+			"min": [-4.43, 0, -5.0],
+			"max": [-2.67, 4.0, -4.15]
+		}
+	],
+	"budget": {
+		"tris": 6658,
+		"materials": 7,
+		"texturePx": 2048
+	},
+	"materials": {
+		"hall_stone-floor": {
+			"pbr": "stone-floor",
+			"tileMeters": 1.5
+		},
+		"hall_wallpaper": {
+			"pbr": "wallpaper",
+			"tileMeters": 0.75
+		},
+		"hall_walnut": {
+			"pbr": "walnut",
+			"tileMeters": 0.5
+		},
+		"hall_brass-aged": {
+			"pbr": "brass-aged",
+			"tileMeters": 0.5
+		},
+		"hall_brass-polished": {
+			"pbr": "brass-polished",
+			"tileMeters": 0.5
+		},
+		"hall_wax": {
+			"color": "#e7d7b8",
+			"roughness": 0.55
+		},
+		"hall_flame": {
+			"color": "#ffce81",
+			"emissive": "#ffce81",
+			"emissiveIntensity": 3.0
+		}
+	},
+	"glassEmissiveIntensity": 0.8
 }

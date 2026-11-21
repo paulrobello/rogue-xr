@@ -2,10 +2,10 @@
   "pieceId": "hall",
   "variant": "hall-closed",
   "route": "scripted",
-  "blender": "5.2.3 LTS",
+  "blender": "5.3.0",
   "generator": {
     "path": "scripts/assets/build-hall-closed.py",
-    "sha256": "d5eacaddbe692e6dae0659477022fe62dfda95c34433e29fff225f77b7f7204c"
+    "sha256": "21cd98e78ed882f7779ee67f9812210288ef53c5d93881357dccb858870ffcb8"
   },
   "generatorDeps": [
     {
@@ -36,15 +36,15 @@
   "derivedFiles": [
     {
       "path": "public/assets/rooms/hall-closed/hall.glb",
-      "sha256": "25a418f9d57a77717bf1a0b88e7dd5090841b8ae47bec87ee4217e5895c0dae9"
+      "sha256": "a114d6ff1e4c2635b0a4d30fcebce7ea89c0b6274d7dffef836d8aa5b0d374c4"
     },
     {
       "path": "public/assets/rooms/hall-closed/hall.manifest.json",
-      "sha256": "20afd33fd6c05265fba5ca8b5be8da7838f2ceb3fdad5ee727d9dc3ecf7ecb76"
+      "sha256": "b64970dc815bcde254bb1aded665bf8e43e38cafc5b21cbfbb2b327a903d6f1a"
     },
     {
       "path": "public/assets/rooms/hall-closed/hall.lightmap.ktx2",
-      "sha256": "9b7fac026207cfa95e5c7eabe73cc44021c3395090fd113594f1260ff9eed262"
+      "sha256": "42e0d39f1712566ad5668a1686aeaa475e07540111c808efb39c9f60ed71721a"
     }
   ],
   "validation": {
@@ -52,18 +52,18 @@
   },
   "blendFiles": {
     "hall_high.blend": {
-      "sha256": "6e2f1b70324789548c2c885bd5353e672b8ca0a135daf37b676fb4539e162576",
-      "bytes": 1016529
+      "sha256": "c32cbc59f02b0d95152f4dfd10c1645c89d4fab02bdd95ab5f58137929a12cbe",
+      "bytes": 1011603
     },
     "hall_low.blend": {
-      "sha256": "c85a6fa5446f601bf92fa8f5236e87a38d4dd46b2aa53657178ff08c2836f086",
-      "bytes": 347136
+      "sha256": "7981a0e53a491e99269f1fafc5559e2a4be3340aeb7f35f3b4f48bbe1904e42c",
+      "bytes": 342553
     }
   },
   "bake": {
     "size": 2048,
     "samples": 256,
-    "device": "CPU",
+    "device": "GPU:METAL (Apple M4 (GPU - 10 cores))",
     "ktx2": {
       "tool": "ktx version: v4.4.2",
       "encodes": {
@@ -71,6 +71,6 @@
       }
     }
   },
-  "geometry": "North lancet cutout and frame omitted; fireplace breast opening retained.",
+  "geometry": "North lancet cutout and frame omitted; frieze continuous across former lancet; fireplace breast opening and chimney gap retained.",
   "lighting": "Hall sun and window sky removed before baking; fireplace and other hall lights retained."
 }

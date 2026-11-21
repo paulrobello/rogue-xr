@@ -59,7 +59,7 @@ it('selects the continuous, separately baked hall at blocked bays and keeps the 
   closed.updateWorldMatrix(true, true);
   const ray = new THREE.Raycaster();
   for (const x of [2.17, 2.6, 3.03]) {
-    for (const y of [1.52, 2.4, 3.45]) {
+    for (const y of [1.52, 2.4, 3.36]) {
       ray.set(new THREE.Vector3(x, y, -4.7), new THREE.Vector3(0, 0, -1));
       const hit = ray.intersectObject(closed, true)[0];
       expect(hit?.distance).toBeCloseTo(0.3, 3);
@@ -68,6 +68,20 @@ it('selects the continuous, separately baked hall at blocked bays and keeps the 
         throw Error('The closed bay must have a continuous wallpaper surface');
       expect(surface.material.name).toBe('hall_wallpaper');
     }
+  }
+  open.updateWorldMatrix(true, true);
+  const northFriezeAt = (model: THREE.Group, x: number): string | undefined => {
+    ray.set(new THREE.Vector3(x, 3.55, -4.55), new THREE.Vector3(0, 0, -1));
+    const hit = ray.intersectObject(model, true)[0]?.object;
+    return hit instanceof THREE.Mesh && !Array.isArray(hit.material)
+      ? hit.material.name
+      : undefined;
+  };
+  for (const x of [1.86, 2.2, 2.6, 3, 3.34]) expect(northFriezeAt(closed, x)).toBe('hall_walnut');
+  for (const x of [-4.3, -3.55, -2.8]) {
+    const openChimney = northFriezeAt(open, x);
+    expect(openChimney).not.toBe('hall_walnut');
+    expect(northFriezeAt(closed, x)).toBe(openChimney);
   }
   const view = mountFloorView(new THREE.Scene(), new THREE.Group(), 'MAPTEST2');
   view.useRoomAsset(

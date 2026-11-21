@@ -29,6 +29,8 @@ if "--room" not in args or args[args.index("--room") + 1] != "hall":
     raise ValueError("This variant only supports --room hall")
 
 roomkit.ROOMS["hall"]["slots"].remove("stained-glass")
+frieze = roomkit.HALL["frieze"]["N"]
+roomkit.HALL["frieze"]["N"] = [frieze[0], (frieze[1][0], frieze[2][1])]
 configure = kit.configure
 
 def configure_closed(room, slots, tile, const, cameras):
@@ -92,7 +94,7 @@ if not any(flag in args for flag in ("--glb-out", "--skip-bake", "--reimport")):
         "validation": {"pass": True},
         "blendFiles": report["blend"], "bake": {"size": report["lightmap_size"], "samples": report["samples"],
                                                   "device": report["device"], "ktx2": report["ktx2"]},
-        "geometry": "North lancet cutout and frame omitted; fireplace breast opening retained.",
+        "geometry": "North lancet cutout and frame omitted; frieze continuous across former lancet; fireplace breast opening and chimney gap retained.",
         "lighting": "Hall sun and window sky removed before baking; fireplace and other hall lights retained.",
     }
     (S.SRC / "provenance.json").write_text(json.dumps(provenance, indent=2) + "\n")

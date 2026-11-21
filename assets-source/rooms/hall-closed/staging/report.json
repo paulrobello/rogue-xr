@@ -1,143 +1,143 @@
 {
   "piece": "hall",
-  "blender": "5.2.3 LTS",
-  "gltf_exporter": "Blender 5.2.3 LTS bundled io_scene_gltf2 5.2.41",
-  "host_load_start": 2.58,
+  "blender": "5.3.0",
+  "gltf_exporter": "Blender 5.3.0 bundled io_scene_gltf2 5.3.43",
+  "host_load_start": 1.55,
   "lightmap_size": 2048,
   "samples": 256,
   "generator": "scripts/assets/build-hall-closed.py (wraps scripts/assets/build-room-kit.py)",
   "helper": "scripts/assets/room_kit.py (reuses build-room-study.py functions)",
-  "lengthwise_grain_high": 322,
+  "lengthwise_grain_high": 316,
   "high": {
-    "triangles": 41304,
+    "triangles": 41227,
     "slots": 7
   },
-  "lengthwise_grain_low": 322,
+  "lengthwise_grain_low": 316,
   "low": {
-    "triangles": 6668,
-    "vertices": 4924,
+    "triangles": 6658,
+    "vertices": 4916,
     "materials": 7,
     "lightmap_density": {
-      "mean_px_per_m": 52.62,
-      "min_px_per_m": 44.48,
-      "max_px_per_m": 52.89
+      "mean_px_per_m": 53.3,
+      "min_px_per_m": 45.06,
+      "max_px_per_m": 53.59
     },
     "lightmap_density_by_slot": {
       "brass-aged": {
         "area_m2": 9.95,
-        "median_px_per_m": 52.9,
-        "min_px_per_m": 44.5
+        "median_px_per_m": 53.6,
+        "min_px_per_m": 45.1
       },
       "brass-polished": {
         "area_m2": 2.13,
-        "median_px_per_m": 52.0,
-        "min_px_per_m": 44.5
+        "median_px_per_m": 52.7,
+        "min_px_per_m": 45.1
       },
       "flame": {
         "area_m2": 0.32,
-        "median_px_per_m": 52.9,
-        "min_px_per_m": 52.9
+        "median_px_per_m": 53.6,
+        "min_px_per_m": 53.6
       },
       "stone-floor": {
         "area_m2": 104.45,
-        "median_px_per_m": 52.9,
-        "min_px_per_m": 52.9
+        "median_px_per_m": 53.6,
+        "min_px_per_m": 53.6
       },
       "wallpaper": {
         "area_m2": 106.91,
-        "median_px_per_m": 52.9,
-        "min_px_per_m": 52.9
+        "median_px_per_m": 53.6,
+        "min_px_per_m": 53.6
       },
       "walnut": {
-        "area_m2": 238.37,
-        "median_px_per_m": 52.9,
-        "min_px_per_m": 46.3
+        "area_m2": 238.83,
+        "median_px_per_m": 53.6,
+        "min_px_per_m": 46.9
       },
       "wax": {
         "area_m2": 0.37,
-        "median_px_per_m": 50.8,
-        "min_px_per_m": 50.8
+        "median_px_per_m": 51.5,
+        "min_px_per_m": 51.5
       }
     },
     "panels": {
       "door-frame-e": {
         "triangles": 30,
         "lightmap_density": {
-          "mean_px_per_m": 52.88,
-          "min_px_per_m": 52.88,
-          "max_px_per_m": 52.89
+          "mean_px_per_m": 53.57,
+          "min_px_per_m": 53.57,
+          "max_px_per_m": 53.57
         }
       },
       "door-frame-n": {
         "triangles": 30,
         "lightmap_density": {
-          "mean_px_per_m": 52.88,
-          "min_px_per_m": 52.88,
-          "max_px_per_m": 52.89
+          "mean_px_per_m": 53.57,
+          "min_px_per_m": 53.57,
+          "max_px_per_m": 53.57
         }
       },
       "door-frame-s": {
         "triangles": 30,
         "lightmap_density": {
-          "mean_px_per_m": 52.88,
-          "min_px_per_m": 52.88,
-          "max_px_per_m": 52.89
+          "mean_px_per_m": 53.57,
+          "min_px_per_m": 53.57,
+          "max_px_per_m": 53.58
         }
       },
       "door-frame-w": {
         "triangles": 30,
         "lightmap_density": {
-          "mean_px_per_m": 52.88,
-          "min_px_per_m": 52.88,
-          "max_px_per_m": 52.89
+          "mean_px_per_m": 53.57,
+          "min_px_per_m": 53.57,
+          "max_px_per_m": 53.58
         }
       },
       "door-plug-e": {
         "triangles": 20,
         "lightmap_density": {
-          "mean_px_per_m": 52.88,
-          "min_px_per_m": 52.88,
-          "max_px_per_m": 52.89
+          "mean_px_per_m": 53.57,
+          "min_px_per_m": 53.57,
+          "max_px_per_m": 53.57
         }
       },
       "door-plug-n": {
         "triangles": 20,
         "lightmap_density": {
-          "mean_px_per_m": 52.88,
-          "min_px_per_m": 52.88,
-          "max_px_per_m": 52.89
+          "mean_px_per_m": 53.57,
+          "min_px_per_m": 53.57,
+          "max_px_per_m": 53.57
         }
       },
       "door-plug-s": {
         "triangles": 20,
         "lightmap_density": {
-          "mean_px_per_m": 52.88,
-          "min_px_per_m": 52.88,
-          "max_px_per_m": 52.89
+          "mean_px_per_m": 53.57,
+          "min_px_per_m": 53.57,
+          "max_px_per_m": 53.57
         }
       },
       "door-plug-w": {
         "triangles": 20,
         "lightmap_density": {
-          "mean_px_per_m": 52.88,
-          "min_px_per_m": 52.88,
-          "max_px_per_m": 52.89
+          "mean_px_per_m": 53.57,
+          "min_px_per_m": 53.57,
+          "max_px_per_m": 53.57
         }
       }
     }
   },
   "canonicalized_primitives": 19,
-  "glb_bytes": 478940,
-  "device": "CPU",
+  "glb_bytes": 478080,
+  "device": "GPU:METAL (Apple M4 (GPU - 10 cores))",
   "lightmap_bake": {
-    "seconds": 863.42,
+    "seconds": 53.96,
     "pass_seconds": [
-      813.42,
-      50.0
+      47.06,
+      6.9
     ],
     "host_load": [
-      2.6,
-      3.84
+      1.55,
+      2.81
     ],
     "timing_valid": true,
     "diffuse_bounces": 4,
@@ -147,14 +147,14 @@
   },
   "denoise": "compositor OIDN, HDR, accurate prefilter, high quality",
   "lightmap": {
-    "coverage": 0.6461,
-    "scale": 5.293816,
-    "clipped_fraction": 0.01,
-    "mean_irradiance": 0.457313,
+    "coverage": 0.7047,
+    "scale": 5.598338,
+    "clipped_fraction": 0.00995,
+    "mean_irradiance": 0.437592,
     "p05_irradiance": 0.0,
     "percentile": 99.0,
     "encoded_p05_255": 0,
-    "encoded_median_255": 41
+    "encoded_median_255": 40
   },
   "ktx2": {
     "tool": "ktx version: v4.4.2",
@@ -164,12 +164,12 @@
   },
   "blend": {
     "hall_high.blend": {
-      "sha256": "6e2f1b70324789548c2c885bd5353e672b8ca0a135daf37b676fb4539e162576",
-      "bytes": 1016529
+      "sha256": "c32cbc59f02b0d95152f4dfd10c1645c89d4fab02bdd95ab5f58137929a12cbe",
+      "bytes": 1011603
     },
     "hall_low.blend": {
-      "sha256": "c85a6fa5446f601bf92fa8f5236e87a38d4dd46b2aa53657178ff08c2836f086",
-      "bytes": 347136
+      "sha256": "7981a0e53a491e99269f1fafc5559e2a4be3340aeb7f35f3b4f48bbe1904e42c",
+      "bytes": 342553
     }
   },
   "colliders_added": [
@@ -522,13 +522,12 @@
       "vfov": 70.0
     }
   },
-  "host_load_end": 3.68,
+  "host_load_end": 2.66,
   "files": {
-    "hall.glb": "25a418f9d57a77717bf1a0b88e7dd5090841b8ae47bec87ee4217e5895c0dae9",
-    "hall.lightmap.ktx2": "9b7fac026207cfa95e5c7eabe73cc44021c3395090fd113594f1260ff9eed262",
-    "hall.lightmap.png": "7f42e342a7912ea67ee9735777d5e56f734dc116a2035e2c74b72507656b4645",
-    "hall.manifest.json": "20afd33fd6c05265fba5ca8b5be8da7838f2ceb3fdad5ee727d9dc3ecf7ecb76",
-    "uv1-report.json": "f6888a39d1b88e2d3f3715ad9e0920f5b76f148ad07b1cfc931d9c8035c924c8"
+    "hall.glb": "a114d6ff1e4c2635b0a4d30fcebce7ea89c0b6274d7dffef836d8aa5b0d374c4",
+    "hall.lightmap.ktx2": "42e0d39f1712566ad5668a1686aeaa475e07540111c808efb39c9f60ed71721a",
+    "hall.lightmap.png": "8993bc8fe83791bde4994efed4100afc8c9cfee331df9cce43fca3acb9eda640",
+    "hall.manifest.json": "b64970dc815bcde254bb1aded665bf8e43e38cafc5b21cbfbb2b327a903d6f1a"
   },
   "variant": "hall-closed",
   "window": "north lancet opening and frame omitted; hall sun and window sky removed"
