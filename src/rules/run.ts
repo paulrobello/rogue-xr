@@ -14,6 +14,7 @@ import {
   type StoredPressureState,
   type StoredPrismState,
   type StoredSpeakingPipesState,
+  type ValvehouseState,
 } from './types.ts';
 
 /**
@@ -74,6 +75,7 @@ export interface RunState {
   readonly speakingPipes?: StoredSpeakingPipesState;
   /** Upper Works rubbing and seal state, retained in the journal across floor travel. */
   readonly reliquarySeal?: 'hidden' | 'known' | 'open';
+  readonly valvehouse?: ValvehouseState;
 }
 
 /** Mirrors `EncounterTier` in `floor/generate.ts`; rules may not import from `floor/`. */

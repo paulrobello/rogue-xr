@@ -39,6 +39,7 @@ import {
 } from '../rules/difficulty.ts';
 import type { PressureNoteId } from '../rules/pressure.ts';
 import { reliquaryGlyph } from '../rules/reliquary.ts';
+import { gasketFor } from '../rules/valvehouse.ts';
 import {
   maxTier,
   nextCost,
@@ -1600,6 +1601,12 @@ export class FlowUi {
         id: 'clockmakers-key',
         label: carriedKeys === 1 ? 'Clockmaker’s key' : `Clockmaker’s keys ×${carriedKeys}`,
       });
+    if (run && this.deps.flow.valvehouse === 'held') {
+      rows.push({
+        id: 'valvehouse-gasket',
+        label: `Valvehouse · ${gasketFor(run.seed)} gasket`,
+      });
+    }
     if (this.deps.flow.reliquarySeal !== 'hidden')
       rows.push({
         id: RUBBING_NOTE,

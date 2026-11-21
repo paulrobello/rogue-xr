@@ -43,6 +43,7 @@ import type {
   StoredHiddenPanelState,
   StoredSpeakingPipesState,
 } from '../rules/types.ts';
+import type { ValvehouseState } from '../rules/valvehouse.ts';
 import {
   createWorkshop,
   maxTier,
@@ -508,6 +509,15 @@ function validateRunState(
       : r.reliquarySeal === 'hidden' || r.reliquarySeal === 'known' || r.reliquarySeal === 'open'
         ? r.reliquarySeal
         : fail(`${path}.reliquarySeal`, 'unknown reliquary seal state');
+  const valvehouse =
+    r.valvehouse === undefined
+      ? undefined
+      : r.valvehouse === 'missing' ||
+          r.valvehouse === 'held' ||
+          r.valvehouse === 'seated' ||
+          r.valvehouse === 'open'
+        ? (r.valvehouse as ValvehouseState)
+        : fail(`${path}.valvehouse`, 'unknown valvehouse state');
   const counterweightState =
     r.counterweight === undefined
       ? undefined
@@ -610,6 +620,7 @@ function validateRunState(
     ...(r.brassCacheSeen === true && { brassCacheSeen: true }),
     ...(r.windowCacheOpened === true && { windowCacheOpened: true }),
     ...(prismSignal === undefined ? {} : { prismSignal }),
+    ...(valvehouse === undefined ? {} : { valvehouse }),
   };
 }
 

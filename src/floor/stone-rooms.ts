@@ -1,11 +1,14 @@
 import { Stream } from '../core/rng.ts';
 import type { FloorPlan } from './generate.ts';
 
-export type StoneRoom = 'dungeon' | 'cloister' | 'cistern';
+export type StoneRoom = 'dungeon' | 'cloister' | 'cistern' | 'valvehouse';
 
 export function stoneRoomsFor(plan: FloorPlan, floor: 1 | 2 | 3): ReadonlyMap<number, StoneRoom> {
   const rooms = new Map<number, StoneRoom>();
-  if (floor === 1) return rooms;
+  if (floor === 1) {
+    if (plan.valvehouse) rooms.set(plan.valvehouse.valvehouseRoom, 'valvehouse');
+    return rooms;
+  }
   if (floor === 3) {
     if (plan.prismAnnex) rooms.set(plan.prismAnnex.annexRoom, 'cloister');
     return rooms;

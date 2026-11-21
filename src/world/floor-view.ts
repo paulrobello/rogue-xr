@@ -14,6 +14,7 @@ import {
   RETURN_PASSAGES_VERSION,
   SPEAKING_PIPES_VERSION,
   UPPER_WORKS_VERSION,
+  VALVEHOUSE_VERSION,
 } from '../combat/encounter-choice.ts';
 import { combatRoom, rigTurnAboutHead } from '../combat/placement.ts';
 import { buildTableGreybox, disposeTable, TABLE_NODES } from '../combat/table-greybox.ts';
@@ -40,6 +41,7 @@ import { attachFloorOneTopology, withBrassCache } from '../floor/return-passages
 import { attachSpeakingPipes } from '../floor/speaking-pipes.ts';
 import { placeStairEntry } from '../floor/stairs.ts';
 import { type StoneRoom, stoneRoomsFor } from '../floor/stone-rooms.ts';
+import { attachValvehouse } from '../floor/valvehouse.ts';
 import { nearSet, shellSet } from '../floor/visibility.ts';
 import { PALETTE } from '../palette.ts';
 import type { RunSnapshot } from '../persist/saves.ts';
@@ -105,6 +107,7 @@ import { StoneReliquary } from './stone-reliquary.ts';
 import { applyStoneRoom, furnishStoneRoom, type StoneRoomKit } from './stone-rooms.ts';
 import { StrikingClock } from './striking-clock.ts';
 import { type RigidNode, rigidAngle } from './study-room.ts';
+import { Valvehouse } from './valvehouse.ts';
 import { WallVentSteam } from './wall-vent-steam.ts';
 import { dressWindowBays, exposedWindowBays } from './window-bays.ts';
 import { mountWindowCast, WindowKeyCache, windowCacheBay } from './window-light.ts';
@@ -219,6 +222,8 @@ export interface FloorView {
     runSeed: string,
     reducedMotion: boolean,
   ): void;
+  readonly valvehouse: Valvehouse | null;
+  dressValvehouse(runSeed: string, reducedMotion: boolean): void;
   readonly reliquary: StoneReliquary | null;
   dressReliquary(runSeed: string, reducedMotion: boolean): void;
   readonly counterweight: CounterweightStation | null;
@@ -386,7 +391,8 @@ export function playableFloorPlan(
   if (contentVersion < PRESSURE_WORKS_VERSION || floorNumber !== 1) return base;
   if (contentVersion < RETURN_PASSAGES_VERSION) return attachPressureWing(base);
   const lower = attachFloorOneTopology(base);
-  return contentVersion >= BRASS_CACHE_VERSION ? withBrassCache(lower) : lower;
+  const brass = contentVersion >= BRASS_CACHE_VERSION ? withBrassCache(lower) : lower;
+  return contentVersion >= VALVEHOUSE_VERSION ? attachValvehouse(brass) : brass;
 }
 
 /** The former upper pressure wing occupied the two appended room indices. */
@@ -446,6 +452,7 @@ export function mountFloorView(
   let dispatchRoom: DispatchRoom | null = null;
   let speakingPipes: SpeakingPipes | null = null;
   let reliquary: StoneReliquary | null = null;
+  let valvehouse: Valvehouse | null = null;
   let counterweight: CounterweightStation | null = null;
   const floorNumber = options.floorNumber ?? 1;
   const stoneRooms: ReadonlyMap<number, StoneRoom> =
@@ -772,6 +779,12 @@ export function mountFloorView(
         reducedMotion,
         furnishings?.placements,
       );
+    },
+    get valvehouse() {
+      return valvehouse;
+    },
+    dressValvehouse(runSeed, reducedMotion) {
+      valvehouse ??= Valvehouse.mount(world, runSeed, reducedMotion, furnishings?.placements);
     },
     get reliquary() {
       return reliquary;
@@ -1175,6 +1188,7 @@ export function mountFloorView(
       dispatchRoom?.dispose();
       speakingPipes?.dispose();
       reliquary?.dispose();
+      valvehouse?.dispose();
       counterweight?.dispose();
       chimes?.dispose();
       windowCache?.dispose();
@@ -1286,6 +1300,7 @@ export function mountFloorView(
       dispatchRoom?.update(dt);
       speakingPipes?.update(dt);
       reliquary?.update(dt);
+      valvehouse?.update(dt);
       counterweight?.update(dt);
       chimes?.update(dt);
       world.updateAnimations(dt);

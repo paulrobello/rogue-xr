@@ -28,7 +28,8 @@ export const SPEAKING_PIPES_VERSION = 12;
 export const RELIQUARY_VERSION = 13;
 /** Wave A repair cards. Older snapshots retain the v13 reward pool. */
 export const WAVE_A_REPAIR_VERSION = 14;
-export const ENCOUNTER_CONTENT_VERSION = WAVE_A_REPAIR_VERSION;
+export const VALVEHOUSE_VERSION = 15;
+export const ENCOUNTER_CONTENT_VERSION = VALVEHOUSE_VERSION;
 const LEGACY_ENCOUNTER_IDS = new Set([
   'sentry',
   'hound',

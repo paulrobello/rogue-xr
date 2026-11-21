@@ -50,7 +50,8 @@ export type PuzzleGate =
   | 'prism'
   | 'dispatch'
   | 'cistern'
-  | 'reliquary';
+  | 'reliquary'
+  | 'valvehouse';
 
 export type FloorConnection = readonly [DoorRef, DoorRef] & { puzzleGate?: PuzzleGate };
 
@@ -73,6 +74,7 @@ export interface FloorPlan {
   dispatchRoom?: { source: DoorRef; replyRoom: number; vaultRoom: number };
   speakingPipes?: { source: DoorRef; receiverRoom: number; cisternRoom: number };
   reliquary?: { source: DoorRef; clueRoom: number; reliquaryRoom: number };
+  valvehouse?: { source: DoorRef; supplyRoom: number; valvehouseRoom: number };
 }
 
 export interface FloorParams {

@@ -42,6 +42,12 @@ In eligible Upper Works layouts, a keeper’s rubbing hangs in a different room 
 
 A matching trace releases the brass bolt, lowers the stone leaf into the threshold, and opens an optional treasure room. The leaf stays physically blocking until it clears. The room uses the same interchangeable floor, wall, doorway and ceiling pieces as the dungeon, with separately mounted torches, shelving, pottery and plants. The clue, passage and claimed treasure survive Continue. In the `MAPTEST2` showcase, the rubbing is in Upper Works room 3 and the seal plate is in room 2.
 
+## Valvehouse
+
+The Lower Works Valvehouse is an optional maintenance room. The leaking joint hisses and blows visible steam. A pressure test before repair vents and leaves the gate shut. Recover the matching gasket from a rack in another accessible room. Carry it in **Items** and select the leaking joint to fit it. Then pull the separate test lever. The gauge rises and the gate lifts with a rush of steam and a clank at the top.
+
+The optional branch uses interchangeable stone bays and separate pipework, shelf, dishes, plants and torch. The gasket, repair, passage and treasure persist across floor travel and Continue. In the `MAPTEST2` showcase, the gasket is in Lower Works room 11 and the controls are in room 5.
+
 ## Ingredients for future puzzles
 
 | Ingredient | What the player can do or notice | A possible payoff |
@@ -84,7 +90,7 @@ These are design ingredients. The component kits supply physical starting pieces
 | 5 | Misrouted post (playable) | Read the return station’s routing slip, select its line, and send a brass capsule. Collect the reply to open the vault. |
 | 6 | Speaking pipes (playable) | Sound the sender, then identify the reply by pitch or raised marker in a separate room. Select the matching handle and return to the cistern grille. |
 | 7 | Float elevator | Admit water to a sight tube. A brass float raises a sealed item to one of several access hatches; stop it at the reachable one. |
-| 8 | Steam leak | Find the hissing joint, seat a recovered gasket, and repressurize the line. The repaired branch powers the next device. |
+| 8 | Steam leak (playable) | Find the hissing joint, seat a recovered gasket, and repressurize the line. The repaired branch powers the next device. |
 | 9 | Counterfeit counterweight | Two weights have the same crest but different mass. Compare them on a balance, then install the genuine one to lift a grille. |
 | 10 | Pendulum rendezvous | Adjust the effective length of one pendulum until two pointers cross together. A mechanical catch engages on the shared beat. |
 | 11 | Spring tension window | Wind a key until a gauge enters an engraved interval, then release the clutch. Too little tension only lifts the latch partway. |

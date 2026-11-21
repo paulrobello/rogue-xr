@@ -67,6 +67,7 @@ import type { DieKind } from '../dice/faces.ts';
 import { DicePresenter, type PresentedRoll } from '../dice/presenter.ts';
 import { AUTHORED_TRAY_HALF, type DiceWorldOptions } from '../dice/world.ts';
 import type { SentryActor } from '../enemies/sentry-asset.ts';
+import type { StoneRoom } from '../floor/stone-rooms.ts';
 import type { AimRay } from '../hand/aim.ts';
 import { CardFan } from '../hand/card-fan.ts';
 import { DEFAULT_FAN, GRIP_FAN_ORIGIN } from '../hand/fan-layout.ts';
@@ -3034,7 +3035,7 @@ export interface CombatHookFloor {
   seed: string;
   contentVersion?: number;
   floorNumber?: number;
-  stoneRooms?: ReadonlyMap<number, 'dungeon' | 'cloister' | 'cistern'>;
+  stoneRooms?: ReadonlyMap<number, StoneRoom>;
   encounter: Pick<EncounterDirector, 'phase' | 'activeRoom' | 'tablePose' | 'end'> & {
     readonly seatDistance?: number | null;
     readonly activePatrol?: THREE.Object3D | null;

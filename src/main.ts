@@ -157,6 +157,7 @@ import {
   type StudyAsset,
 } from './world/study-room.ts';
 import { loadTableDecor, type TableDecor } from './world/table-decor.ts';
+import type { ValvehousePick } from './world/valvehouse.ts';
 import { runVeil } from './world/veil.ts';
 import { ComfortVignette } from './xr/comfort-vignette.ts';
 import { Locomotion, locomotionSettingsFrom } from './xr/locomotion.ts';
@@ -215,6 +216,9 @@ let floor: FloorView | undefined;
 let torchSound: THREE.Object3D | undefined;
 let torchLoopPlaying = false;
 const torchSoundPosition = new THREE.Vector3();
+let leakingJoint: THREE.Object3D | undefined;
+let leakLoopPlaying = false;
+const leakSoundPosition = new THREE.Vector3();
 if (view === 'lightmap-proof') {
   await mountLightmapProof(scene, rig, camera, renderer);
 } else if (view === 'material-proof') {
@@ -811,6 +815,7 @@ function syncPuzzles(target: FloorView, immediate = false): void {
   target.speakingPipes?.sync(flow.speakingPipes, immediate);
   target.world.setPuzzleGateOpen('cistern', flow.speakingPipes === 'open', immediate);
   target.reliquary?.sync(flow.reliquarySeal, immediate);
+  target.valvehouse?.sync(flow.valvehouse, immediate);
 }
 let pressureArt: Promise<PressureArt> | undefined;
 let interiors:
@@ -971,6 +976,14 @@ const dressFloor = async (target: FloorView): Promise<void> => {
     if (target.world.plan.speakingPipes) {
       target.dressSpeakingPipes(chimeArt, flow.run?.seed ?? target.seed, hitFx.reducedMotion);
     }
+    if (target.world.plan.valvehouse) {
+      target.dressValvehouse(flow.run?.seed ?? target.seed, hitFx.reducedMotion);
+      const fixtures = target.valvehouse;
+      if (fixtures) {
+        for (const node of [fixtures.supply, fixtures.controls, fixtures.gate, fixtures.chamber])
+          reflect(node, 0.52);
+      }
+    }
     if (target.world.plan.reliquary) {
       target.dressReliquary(flow.run?.seed ?? target.seed, hitFx.reducedMotion);
       if (target.reliquary) {
@@ -1012,7 +1025,10 @@ const dressFloor = async (target: FloorView): Promise<void> => {
     if (door) target.world.dressSealedDoors(door.material, door.tileMeters);
     const heroMaterials = await heroSet?.catch(() => null);
     if (target !== floor) return;
-    if (heroMaterials) target.world.dressPuzzleGates(heroMaterials.set, heroEnv);
+    if (heroMaterials) {
+      target.world.dressPuzzleGates(heroMaterials.set, heroEnv);
+      target.valvehouse?.dress(heroMaterials.set);
+    }
     target.dressVentSteam(hitFx.reducedMotion);
     if (coffers) {
       target.loot.dress(coffers);
@@ -1206,7 +1222,8 @@ flow.onChange((event) => {
     event.type === 'prism-signal' ||
     event.type === 'dispatch' ||
     event.type === 'speaking-pipes' ||
-    event.type === 'reliquary'
+    event.type === 'reliquary' ||
+    event.type === 'valvehouse'
   ) {
     if (event.type === 'formula') floor?.office?.sync(flow.commission);
     if (floor) syncPuzzles(floor);
@@ -2060,6 +2077,37 @@ function operateSpeakingPipes(hit: SpeakingPipesPick): boolean {
   return true;
 }
 
+function operateValvehouse(hit: ValvehousePick): boolean {
+  const station = floor?.valvehouse;
+  if (!station) return false;
+  if (hit.action === 'collect') {
+    if (!flow.collectValvehouseGasket()) return false;
+    audio?.playSfx('cog-pickup', station.supply.getWorldPosition(chimePosition));
+    floor?.showBookSecret(
+      { text: 'Spare gasket', caption: 'Fit it to the leaking Valvehouse joint.' },
+      camera,
+    );
+    return true;
+  }
+  if (hit.action === 'seat') {
+    if (flow.seatValvehouseGasket())
+      audio?.playSfx('gear-clank', station.joint.getWorldPosition(chimePosition), 0.55);
+    return true;
+  }
+  const tested = flow.testValvehousePressure();
+  if (tested === 'leak') {
+    station.vent();
+    audio?.playSfx('steam-vent', station.joint.getWorldPosition(chimePosition));
+    floor?.showBookSecret(
+      { text: 'Pressure lost', caption: 'Fit the gasket at the leaking joint.' },
+      camera,
+    );
+  }
+  if (tested === 'opened')
+    audio?.playSfx(PUZZLE_GATE_OPEN_SFX.valvehouse, station.openingPosition(chimePosition));
+  return tested !== 'ignored';
+}
+
 function fieldHit(origin: THREE.Vector3, direction: THREE.Vector3) {
   if (!floor) return null;
   const stair = floor.stairs?.pick(floor.world.current, origin, direction);
@@ -2090,7 +2138,9 @@ function fieldHit(origin: THREE.Vector3, direction: THREE.Vector3) {
   const dispatch = floor.dispatchRoom?.pick(origin, direction);
   const pipes = floor.speakingPipes?.pick(origin, direction);
   const reliquary = floor.reliquary?.pick(origin, direction);
+  const valvehouse = floor.valvehouse?.pick(origin, direction);
   const hits = [
+    ...(valvehouse ? [{ kind: 'valvehouse' as const, hit: valvehouse }] : []),
     ...(reliquary ? [{ kind: 'reliquary' as const, hit: reliquary }] : []),
     ...(pipes ? [{ kind: 'speaking-pipes' as const, hit: pipes }] : []),
     ...(dispatch ? [{ kind: 'dispatch' as const, hit: dispatch }] : []),
@@ -2127,6 +2177,8 @@ const activatePickup = (
   const pick = fieldHit(origin, direction);
   if (!pick) return false;
   switch (pick.kind) {
+    case 'valvehouse':
+      return operateValvehouse(pick.hit);
     case 'reliquary':
       if (pick.hit.action === 'trace') return true;
       flow.rememberReliquaryRubbing();
@@ -2481,6 +2533,8 @@ for (const index of [0, 1]) {
     if (dispatch && operateDispatch(dispatch)) return;
     const pipes = floor.speakingPipes?.near(position, GRAB_REACH);
     if (pipes && operateSpeakingPipes(pipes)) return;
+    const valvehouse = floor.valvehouse?.near(position, GRAB_REACH);
+    if (valvehouse && operateValvehouse(valvehouse)) return;
     const clock = floor.clock?.near(position, GRAB_REACH);
     if (clock && collectAlchemy(clock.ingredient, side, floor.clock?.target)) return;
     const brew = floor.alchemy?.near(position, GRAB_REACH);
@@ -3093,6 +3147,26 @@ renderer.setAnimationLoop((time, frame) => {
         torch.getWorldPosition(torchSoundPosition),
       );
     }
+  }
+  if (audio) {
+    const leak =
+      floor &&
+      flow.phase === 'explore' &&
+      !ui?.menuOpen &&
+      floor.valvehouse?.leaking &&
+      floor.world.current === floor.world.plan.valvehouse?.source.room
+        ? floor.valvehouse.joint
+        : undefined;
+    if (leak !== leakingJoint) {
+      audio.stopLoop('valvehouse-leak');
+      leakingJoint = leak;
+      leakLoopPlaying = false;
+    }
+    if (leak && !leakLoopPlaying)
+      leakLoopPlaying = audio.startLoop(
+        'valvehouse-leak',
+        leak.getWorldPosition(leakSoundPosition),
+      );
   }
   if (floor && audio) {
     const pipeReceiver =

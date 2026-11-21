@@ -2456,6 +2456,145 @@
           "duration_seconds": 1.6
         }
       }
+    },
+    "valvehouse-leak": {
+      "intermediate_wav": "assets-source/audio/derived/valvehouse-leak.wav",
+      "intermediate_sha256": "74ef81c79c880d2108ba1a34c336d9addb05687e091c786dcc4541edd9ac223c",
+      "pre_gain": {
+        "integrated_lufs": -19.3,
+        "true_peak_dbtp": -5.5,
+        "momentary_max_lufs": -17.5
+      },
+      "gain_db": 3.3,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -16.4,
+        "true_peak_dbtp": -2.4,
+        "momentary_max_lufs": -14.7
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -0.4,
+      "loudness_status": "met",
+      "limited_by_true_peak": false,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 432000,
+      "decoded_duration_s": 9.0,
+      "decoded_pcm_sha256": "ce5dee4922fcde263b42d34ff1b6bcba3081a0296a3f0a0acdb77362fbdfe55f",
+      "loop": {
+        "source": {
+          "wrap_step": 0.154954,
+          "p999_step": 0.294174,
+          "seam_ratio": 0.527,
+          "head_tail_level_diff_db": 0.84,
+          "interior_dropout_windows": 0,
+          "pass": true
+        },
+        "runtime": {
+          "wrap_step": 0.209432,
+          "p999_step": 0.360743,
+          "seam_ratio": 0.581,
+          "head_tail_level_diff_db": 0.76,
+          "interior_dropout_windows": 0,
+          "pass": true
+        }
+      },
+      "id": "valvehouse-leak",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/valvehouse-leak.wav",
+      "source_sha256": "0734cd0f4043a92173271f870ddc2804418cb7539bec8953621c1c8d57cc2390",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 9.0
+      },
+      "trim": {
+        "trimmed_head_ms": 0.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "loop kept native: source wrap passed",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/valvehouse-leak.ogg",
+      "runtime_sha256": "5df9d54582260c4a129cd681f82dbd9395e484f03351fbf35b35992fa9631ad5",
+      "runtime_bytes": 67812,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 9.0065
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "valvehouse-leak",
+          "seed": 7301,
+          "duration_seconds": 9.0
+        }
+      }
+    },
+    "valvehouse-gate-open": {
+      "intermediate_wav": "assets-source/audio/derived/valvehouse-gate-open.wav",
+      "intermediate_sha256": "c8334924b69aff631114abbc630284c1ee2aa66872c7bd6483abc9ab236335d4",
+      "pre_gain": {
+        "integrated_lufs": -21.5,
+        "true_peak_dbtp": -5.9,
+        "momentary_max_lufs": -18.5
+      },
+      "gain_db": 4.9,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -16.6,
+        "true_peak_dbtp": -1.1,
+        "momentary_max_lufs": -13.7
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -0.6,
+      "loudness_status": "met",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 70560,
+      "decoded_duration_s": 1.47,
+      "decoded_pcm_sha256": "8c50efc5e829f6d6e3b74aae7264a4bc813dd72c3fddef779f47ed0578d1a6d4",
+      "id": "valvehouse-gate-open",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/valvehouse-gate-open.wav",
+      "source_sha256": "c2fac7b82f82640b97033163e1e34ed1928d00d1f340237ba557702fc285394a",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.5
+      },
+      "trim": {
+        "trimmed_head_ms": 0.0,
+        "trimmed_tail_ms": 30.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/valvehouse-gate-open.ogg",
+      "runtime_sha256": "93a68b1cbf686119bf1a43a42be795678b34f9ea52251d70b8c1cd2e3f88d228",
+      "runtime_bytes": 13091,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.4765
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "valvehouse-gate",
+          "seed": 7302,
+          "duration_seconds": 1.5
+        }
+      }
     }
   },
   "music": {

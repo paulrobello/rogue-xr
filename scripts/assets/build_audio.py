@@ -209,6 +209,15 @@ def procedural_dungeon(cue: dict, path: Path) -> None:
             tone(at, 0.075, hz, 0.22, 0.026)
             tone(at, 0.10, hz * 0.53, 0.09, 0.035)
         tone(0.98, 0.20, 280, 0.18, 0.08)
+    elif kind == "valvehouse-leak":
+        # Continuous dry hiss with a periodic control envelope; integer-period modulation keeps
+        # the 9-second endpoints identical enough for a native loop without a crossfade.
+        control = 0.72 + 0.18 * np.sin(2 * np.pi * 2 * t / float(settings["duration_seconds"]))
+        raw = rng.standard_normal(n)
+        smooth = np.convolve(raw, np.ones(31) / 31, mode="same")
+        y += (raw * 0.020 + smooth * 0.12) * control
+        y += 0.018 * np.sin(2 * np.pi * 141 * t) * control
+        y *= 0.78
     else:
         raise ValueError(f"unknown dungeon cue kind: {kind}")
     peak = max(np.max(np.abs(y)), 1e-9)
@@ -378,6 +387,17 @@ def procedural_heavy_fixtures(cue: dict, path: Path) -> None:
         noise(1.20, 0.20, 0.10, 0.075, 2)
         partial(1.24, 0.30, 58, 0.36, 0.12)
         partial(1.25, 0.22, 116, 0.16, 0.08)
+    elif kind == "valvehouse-gate":
+        # Air escapes at release, the rail bumps as the grille climbs, then the top stop seats.
+        noise(0.0, 1.07, 0.36, 0.70, 6)
+        partial(0.014, 0.87, 92, 0.15, 0.4)
+        for at, hz in ((0.18, 410), (0.36, 470), (0.54, 530), (0.72, 590), (0.90, 650)):
+            noise(at, 0.14, 0.17, 0.08, 4)
+            partial(at, 0.18, hz, 0.12, 0.09)
+        noise(1.105, 0.18, 0.15, 0.055, 3)
+        partial(1.12, 0.34, 77, 0.37, 0.13)
+        partial(1.12, 0.24, 161, 0.22, 0.08)
+        partial(1.12, 0.16, 616, 0.115, 0.05)
     else:
         raise ValueError(f"unknown heavy fixture cue kind: {kind}")
     peak = max(np.max(np.abs(y)), 1e-9)
@@ -606,9 +626,9 @@ def build_sfx(spec: dict, only: set[str], derived: Path, out: Path) -> dict[str,
             src = AUDIO_SRC / "sfx" / "procedural" / f"{cid}.wav"
             if cid == "pendulum-tick":
                 procedural_pendulum_tick(cue, src)
-            elif cue["procedural"].get("kind") in {"pipe-send", "grille", "reliquary"}:
+            elif cue["procedural"].get("kind") in {"pipe-send", "grille", "reliquary", "valvehouse-gate"}:
                 procedural_heavy_fixtures(cue, src)
-            elif cue["procedural"].get("kind", "").startswith(("torch-", "chain-", "scarab-")):
+            elif cue["procedural"].get("kind", "").startswith(("torch-", "chain-", "scarab-", "valvehouse-leak")):
                 procedural_dungeon(cue, src)
             elif cue["procedural"].get("kind"):
                 procedural_puzzle_door(cue, src)
@@ -826,7 +846,8 @@ def main() -> None:
         if "pendulum-tick" in provenance["sfx"]:
             provenance["sfx"]["pendulum-tick"]["approval"] = "Original project synthesis. Owner listening review pending."
         for cue_id in ("dungeon-torch-crackle", "dungeon-chain-wind", "dungeon-scarab-scrape",
-                       "cistern-pipe-send", "cistern-grille-open", "reliquary-stone-open"):
+                       "cistern-pipe-send", "cistern-grille-open", "reliquary-stone-open",
+                       "valvehouse-leak", "valvehouse-gate-open"):
             if cue_id in provenance["sfx"]:
                 provenance["sfx"][cue_id]["approval"] = "Original project synthesis. Owner listening review pending."
         if music and music_log.exists():

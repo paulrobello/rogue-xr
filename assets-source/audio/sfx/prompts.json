@@ -110,6 +110,12 @@
      "text": "Original deterministic one-shot gameplay tell for a Lantern Bailiff: a taut iron chain drawn tight in the first 0.6 seconds, three small dry ratchet teeth during the pull, then a short distinctive ratchet seat at about 0.9 seconds and a restrained metal settle. No loop, speech, music, reverb, or explosive impact."},
     {"id": "dungeon-scarab-scrape", "class": "positional", "duration_seconds": 1.05, "loop": false,
      "procedural": {"kind": "scarab-scrape", "seed": 4203, "duration_seconds": 1.05},
-     "text": "Original deterministic one-shot gameplay cue for a Mortar Scarab: a rough limestone shell scraping across stone for the first half second, followed by three distinct small metallic leg taps and a brief dry body settle. No loop, speech, music, reverb, or large impact."}
+     "text": "Original deterministic one-shot gameplay cue for a Mortar Scarab: a rough limestone shell scraping across stone for the first half second, followed by three distinct small metallic leg taps and a brief dry body settle. No loop, speech, music, reverb, or large impact."},
+    {"id": "valvehouse-leak", "class": "positional", "duration_seconds": 9.0, "loop": true,
+     "procedural": {"kind": "valvehouse-leak", "seed": 7301, "duration_seconds": 9.0},
+     "text": "Original deterministic dry close steam leak loop for the Valvehouse: a restrained continuous pressurised hiss with subtle breath modulation, no voice, music, pitch movement, room reverb, or sharp transients. Seamless 9-second loop."},
+    {"id": "valvehouse-gate-open", "class": "positional", "duration_seconds": 1.5, "loop": false,
+     "procedural": {"kind": "valvehouse-gate", "seed": 7302, "duration_seconds": 1.5},
+     "text": "Original deterministic Valvehouse gate opening one-shot: dry steam pressure rush begins immediately, followed by clearly distinctive iron rail motion, then a solid metal clank at 1.12 seconds when the gate reaches the top. No voice, music, or reverb."}
   ]
 }

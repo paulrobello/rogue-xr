@@ -1397,6 +1397,47 @@
         }
       },
       "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "valvehouse-leak": {
+      "source_file": "assets-source/audio/sfx/procedural/valvehouse-leak.wav",
+      "source_sha256": "0734cd0f4043a92173271f870ddc2804418cb7539bec8953621c1c8d57cc2390",
+      "runtime_file": "public/assets/audio/sfx/valvehouse-leak.ogg",
+      "runtime_sha256": "5df9d54582260c4a129cd681f82dbd9395e484f03351fbf35b35992fa9631ad5",
+      "runtime_bytes": 67812,
+      "steps": [
+        "loop kept native: source wrap passed",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "valvehouse-leak",
+          "seed": 7301,
+          "duration_seconds": 9.0
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "valvehouse-gate-open": {
+      "source_file": "assets-source/audio/sfx/procedural/valvehouse-gate-open.wav",
+      "source_sha256": "c2fac7b82f82640b97033163e1e34ed1928d00d1f340237ba557702fc285394a",
+      "runtime_file": "public/assets/audio/sfx/valvehouse-gate-open.ogg",
+      "runtime_sha256": "93a68b1cbf686119bf1a43a42be795678b34f9ea52251d70b8c1cd2e3f88d228",
+      "runtime_bytes": 13091,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "valvehouse-gate",
+          "seed": 7302,
+          "duration_seconds": 1.5
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
     }
   },
   "music": {

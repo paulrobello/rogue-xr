@@ -11,6 +11,7 @@ import {
   RELIQUARY_VERSION,
   RETURN_PASSAGES_VERSION,
   SPEAKING_PIPES_VERSION,
+  VALVEHOUSE_VERSION,
   WAVE_A_REPAIR_VERSION,
 } from '../combat/encounter-choice.ts';
 import {
@@ -132,6 +133,13 @@ import {
   selectSpeakingPipe,
 } from '../rules/speaking-pipes.ts';
 import type { SpeakingPipesState, StoredHiddenPanelState } from '../rules/types.ts';
+import {
+  collectValvehouse,
+  readValvehouse,
+  seatValvehouse,
+  testValvehouse,
+  type ValvehouseState,
+} from '../rules/valvehouse.ts';
 import {
   bankRunCogs,
   buyPermanentCard,
@@ -323,6 +331,11 @@ export type FlowEvent =
   | ReliquaryEvent
   | { readonly type: 'brass-key'; readonly action: 'inspect' | 'take' | 'unlock' }
   | {
+      readonly type: 'valvehouse';
+      readonly action: 'collect' | 'seat' | 'test';
+      readonly result: 'held' | 'seated' | 'leak' | 'opened';
+    }
+  | {
       readonly type: 'window-cache';
       readonly cogs: number;
       readonly from: 'explore';
@@ -448,6 +461,53 @@ export class RunFlow {
   }
   get reliquarySeal(): ReliquarySeal {
     return readReliquary(this.runValue ?? { reliquarySeal: undefined });
+  }
+  get valvehouse(): ValvehouseState {
+    return readValvehouse(this.runValue ?? {});
+  }
+  collectValvehouseGasket(): boolean {
+    if (
+      !this.runValue ||
+      this.phaseValue !== 'explore' ||
+      this.floorNumberValue !== 1 ||
+      this.contentVersionValue < VALVEHOUSE_VERSION
+    )
+      return false;
+    const next = collectValvehouse(this.runValue);
+    if (!next) return false;
+    this.runValue = { ...this.runValue, valvehouse: next };
+    this.emit({ type: 'valvehouse', action: 'collect', result: 'held' });
+    return true;
+  }
+  seatValvehouseGasket(): boolean {
+    if (
+      !this.runValue ||
+      this.phaseValue !== 'explore' ||
+      this.floorNumberValue !== 1 ||
+      this.contentVersionValue < VALVEHOUSE_VERSION
+    )
+      return false;
+    const next = seatValvehouse(this.runValue);
+    if (!next) return false;
+    this.runValue = { ...this.runValue, valvehouse: next };
+    this.emit({ type: 'valvehouse', action: 'seat', result: 'seated' });
+    return true;
+  }
+  testValvehousePressure(): 'ignored' | 'leak' | 'opened' {
+    if (
+      !this.runValue ||
+      this.phaseValue !== 'explore' ||
+      this.floorNumberValue !== 1 ||
+      this.contentVersionValue < VALVEHOUSE_VERSION
+    )
+      return 'ignored';
+    const next = testValvehouse(this.runValue);
+    if (!next) {
+      return this.valvehouse === 'open' ? 'ignored' : 'leak';
+    }
+    this.runValue = { ...this.runValue, valvehouse: next };
+    this.emit({ type: 'valvehouse', action: 'test', result: 'opened' });
+    return 'opened';
   }
   rememberReliquaryRubbing(): boolean {
     if (

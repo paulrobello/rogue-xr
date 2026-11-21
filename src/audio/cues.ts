@@ -62,6 +62,8 @@ export const SFX = {
   'dungeon-torch-crackle': { ...sfx('dungeon-torch-crackle', 'positional', 0, true), gain: 0.22 },
   'dungeon-chain-wind': sfx('dungeon-chain-wind', 'positional', 0.22),
   'dungeon-scarab-scrape': sfx('dungeon-scarab-scrape', 'positional', 0.22),
+  'valvehouse-leak': { ...sfx('valvehouse-leak', 'positional', 0, true), gain: 0.26 },
+  'valvehouse-gate-open': sfx('valvehouse-gate-open', 'positional', 0.2),
   'paper-unfold': sfx('paper-unfold', 'positional', 0.2),
   'ui-tick': sfx('ui-tick', 'ui', 0.03),
   'automaton-hit': sfx('automaton-hit', 'positional', 0.05),
@@ -92,6 +94,7 @@ export const PUZZLE_GATE_OPEN_SFX = {
   dispatch: 'dispatch-room-open',
   cistern: 'cistern-grille-open',
   reliquary: 'reliquary-stone-open',
+  valvehouse: 'valvehouse-gate-open',
 } as const satisfies Record<Exclude<PuzzleGate, 'archive'>, SfxId>;
 
 export const ARCHIVE_GATE_OPEN_SFX = {
