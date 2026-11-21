@@ -1,5 +1,5 @@
 {
-  "glb_sha256": "6604f67af8deb60a69d938529d92edc53aa9e650c54ceaed5a0057834894e9a3",
+  "glb_sha256": "467e242f013b5d9481774839dc70f92ec2f6a91561a1d303cf113e5d6cf5814c",
   "roots": [
     "AlchemyCauldron",
     "CauldronSwirl",
@@ -34,7 +34,7 @@
     "ClockIngredientSocket"
   ],
   "triangles": 50388,
-  "generator_sha256": "ae03b815e991dd88b33c01907f90c4efa1968d7a381af29fedd2e76838fd64be",
-  "source_blend_sha256": "804d27035ed97b92a06ff76648f60ee1cf0fb0644f348841509f1c4f4e434e53",
+  "generator_sha256": "2bd2a63e052f4988a4e18602987d5bf0dc178031216c447707e70be95e4a5464",
+  "source_blend_sha256": "f0ae97f8372628807e5d4c3ec5ebf31a026400a2141ebaaa241cb97a911028cf",
   "visual_approval": "pending"
 }

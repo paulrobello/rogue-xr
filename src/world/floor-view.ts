@@ -15,7 +15,7 @@ import { buildTableGreybox, disposeTable, TABLE_NODES } from '../combat/table-gr
 import { type RoomTemplate, templateById } from '../content/rooms.ts';
 import { isValidSeed, normalizeSeed, randomSeed, Stream } from '../core/rng.ts';
 import { BreakApart } from '../enemies/break-apart.ts';
-import { makeOwlPerch } from '../enemies/conservatory-actors.ts';
+import { ClockworkOwlFlight, makeOwlPerch } from '../enemies/conservatory-actors.ts';
 import type { EnemyActor, EnemyAsset } from '../enemies/enemy-asset.ts';
 import { type PatrolClips, PatrolVisual } from '../enemies/patrol-visual.ts';
 import { conservatoryPlan } from '../floor/conservatory.ts';
@@ -478,7 +478,10 @@ export function mountFloorView(
     turnVignette = DEFAULT_VIGNETTE.maxStrength;
   };
   const actors = new Map<THREE.Object3D, EnemyActor>();
-  const owlPerches = new Map<EnemyActor, ReturnType<typeof makeOwlPerch>>();
+  const owls = new Map<
+    EnemyActor,
+    { perch: ReturnType<typeof makeOwlPerch>; flight: ClockworkOwlFlight }
+  >();
   /** Per actor: its turn among shell-room steps and the seconds not yet stepped. */
   const paces = new Map<EnemyActor, { slot: number; pending: number }>();
   let slots = 0;
@@ -514,7 +517,7 @@ export function mountFloorView(
             perch.object.position.copy(actor.object.position);
             perch.object.rotation.y = actor.object.rotation.y;
             world.roomGroups[room].add(perch.object);
-            owlPerches.set(actor, perch);
+            owls.set(actor, { perch, flight: new ClockworkOwlFlight(actor.object) });
           }
           // Poses the idle clip now, so a hidden room's actor never shows its bind pose.
           actor.update(0);
@@ -553,9 +556,18 @@ export function mountFloorView(
   const disposeActor = (actor: EnemyActor): void => {
     actors.delete(actor.object);
     paces.delete(actor);
-    owlPerches.get(actor)?.dispose();
-    owlPerches.delete(actor);
+    owls.get(actor)?.perch.dispose();
+    owls.delete(actor);
     actor.dispose();
+  };
+  const stepActor = (actor: EnemyActor, dt: number, gaze: THREE.Vector3 | null): void => {
+    actor.update(dt, gaze);
+    const owl = owls.get(actor);
+    if (owl) {
+      const fighting =
+        encounter.activeRoom === actor.object.userData.room && !encounter.activePatrol;
+      owl.flight.update(dt, fighting && !actor.dead);
+    }
   };
   let toast: LootToast | null = null;
   let toastRoom = world.current;
@@ -1144,7 +1156,7 @@ export function mountFloorView(
       const previousPhase = encounter.phase;
       encounter.update(dt);
       if (previousPhase !== 'idle' && encounter.phase === 'idle') {
-        for (const [actor, perch] of owlPerches) {
+        for (const [actor, { perch }] of owls) {
           if (!actor.object.parent) continue;
           perch.object.position.copy(actor.object.position);
           perch.object.rotation.y = actor.object.rotation.y;
@@ -1198,12 +1210,12 @@ export function mountFloorView(
         const room = actor.object.userData.room as number;
         const pace = paces.get(actor);
         if (!pace || near.has(room) || room === encounter.activeRoom) {
-          actor.update(dt + (pace?.pending ?? 0), at);
+          stepActor(actor, dt + (pace?.pending ?? 0), at);
           if (pace) pace.pending = 0;
         } else if (shell.has(room)) {
           pace.pending += dt;
           if ((frame + pace.slot) % SHELL_ACTOR_EVERY === 0) {
-            actor.update(pace.pending, null);
+            stepActor(actor, pace.pending, null);
             pace.pending = 0;
           }
         }

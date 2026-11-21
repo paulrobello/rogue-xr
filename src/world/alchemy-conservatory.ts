@@ -109,13 +109,14 @@ export class AlchemyConservatory {
     const keyLight = new THREE.PointLight(0xffcd93, 4.0, 3.4, 2);
     keyLight.position.set(-0.72, 1.6, 1.03);
     lab.add(keyLight);
-    const tray = this.block(lab, 1.05, 0.06, 0.27, 0, 0.52, 1.04, this.wood);
-    this.block(lab, 1.08, 0.025, 0.3, 0, 0.56, 1.04, this.bronze);
-    for (const x of [-0.44, 0.44]) this.block(lab, 0.05, 0.51, 0.06, x, 0.255, 1.04, this.bronze);
+    const trayZ = 1.22;
+    const tray = this.block(lab, 1.05, 0.06, 0.27, 0, 0.52, trayZ, this.wood);
+    this.block(lab, 1.08, 0.025, 0.3, 0, 0.56, trayZ, this.bronze).name = 'alchemy-tray-top';
+    for (const x of [-0.44, 0.44]) this.block(lab, 0.05, 0.51, 0.06, x, 0.255, trayZ, this.bronze);
     for (const id of [0, 1, 2] as const) {
       const ingredient = this.clone('Ingredient' + INGREDIENT_ROOTS[id]);
       ingredient.name = 'IngredientCradle' + INGREDIENT_ROOTS[id];
-      ingredient.position.set((id - 1) * 0.34, 0.58, 1.04);
+      ingredient.position.set((id - 1) * 0.34, 0.58, trayZ);
       this.cradles.push({
         node: ingredient,
         home: ingredient.position.clone(),
@@ -131,7 +132,7 @@ export class AlchemyConservatory {
     }
     this.potion = this.clone('PotionVial');
     this.potion.name = 'PocketedPotion';
-    this.potion.position.set(0, 0.58, 1.04);
+    this.potion.position.set(0, 0.58, trayZ);
     lab.add(this.potion);
     if (followup.recipe === 'stillwind') {
       const dial = this.clone('ClockClueDial');

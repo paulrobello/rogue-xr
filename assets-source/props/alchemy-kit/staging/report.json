@@ -40,19 +40,23 @@
   ],
   "material_count": 17,
   "sha256": {
-    "generator": "ae03b815e991dd88b33c01907f90c4efa1968d7a381af29fedd2e76838fd64be",
-    "blend": "804d27035ed97b92a06ff76648f60ee1cf0fb0644f348841509f1c4f4e434e53",
-    "glb": "6604f67af8deb60a69d938529d92edc53aa9e650c54ceaed5a0057834894e9a3"
+    "generator": "2bd2a63e052f4988a4e18602987d5bf0dc178031216c447707e70be95e4a5464",
+    "blend": "f0ae97f8372628807e5d4c3ec5ebf31a026400a2141ebaaa241cb97a911028cf",
+    "glb": "467e242f013b5d9481774839dc70f92ec2f6a91561a1d303cf113e5d6cf5814c"
   },
-  "validation": "Blender GLB reimport, names, triangle budget and Mooncap stem contact checked",
+  "validation": "Blender GLB reimport, names, triangle budget, Mooncap stem contact and clock post contact checked",
   "mooncap_overlap_metres": {
     "ingredient": 0.01647,
     "recipe_relief": 0.0074
   },
-  "visual_approval": "Metal browser visual review passed. Physical Quest owner review pending.",
+  "clock_post_plinth_overlap_metres": {
+    "left": 0.01,
+    "right": 0.01
+  },
+  "visual_approval": "pending owner and independent review",
   "limitations": [
     "Procedurally painted UV maps rather than high-to-low baked maps",
     "No authored LODs or collision meshes",
-    "Physical Quest immersion and comfort review pending"
+    "Runtime and play-distance review pending"
   ]
 }

@@ -1,8 +1,39 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { kitPart } from '../world/puzzle-placement.ts';
 import { EnemyAsset, type EnemyClip, type EnemyManifest } from './enemy-asset.ts';
 
 const OWL_REST_HEIGHT = 0.98;
+
+export class ClockworkOwlFlight {
+  private readonly flight: THREE.Object3D;
+  private readonly left: THREE.Object3D;
+  private readonly right: THREE.Object3D;
+  private blend = 0;
+  private cycle = 0;
+
+  constructor(object: THREE.Object3D) {
+    this.flight = kitPart(object, 'OwlFlight');
+    this.left = kitPart(object, 'OwlWingL');
+    this.right = kitPart(object, 'OwlWingR');
+  }
+
+  /** Apply to the fresh mixer pose so wingbeats continue through the encounter's frozen idle. */
+  update(dt: number, airborne: boolean): void {
+    this.blend = THREE.MathUtils.clamp(this.blend + (airborne ? dt : -dt) / 0.28, 0, 1);
+    if (this.blend === 0) {
+      this.cycle = 0;
+      return;
+    }
+    this.cycle = (this.cycle + dt * 2.8) % 1;
+    const phase = this.cycle * Math.PI * 2;
+    const weight = THREE.MathUtils.smoothstep(this.blend, 0, 1);
+    const wing = 1.1 + Math.sin(phase) * 0.58;
+    this.left.rotation.z = THREE.MathUtils.lerp(this.left.rotation.z, -wing, weight);
+    this.right.rotation.z = THREE.MathUtils.lerp(this.right.rotation.z, wing, weight);
+    this.flight.position.y += weight * (0.21 + 0.033 * Math.cos(phase));
+  }
+}
 
 /** Independent room scenery so combat movement and break-apart never carry the roost with the owl. */
 export function makeOwlPerch(): { object: THREE.Group; dispose(): void } {

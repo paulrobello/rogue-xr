@@ -254,7 +254,7 @@ box(r,(0,.08,1.09),(.62,.24,2.08),walnut)
 # A dark inset keeps the moving pendulum silhouetted, framed by carved uprights.
 box(r,(0,-.065,1.03),(.44,.05,.94),stone)
 for x in (-.26,.26):
-    box(r,(x,-.095,1.05),(.085,.15,1.35),walnut)
+    box(r,(x,-.095,.96),(.085,.15,1.53),walnut)
     for dx in (-.021,0,.021): line(r,(x+dx,-.173,.47),(x+dx,-.173,1.58),.005,gold,8)
     uvball(r,(x,-.17,1.48),(.035,.018,.035),gold,12,6)
 for z,w,d,h in [(.07,.72,.43,.14),(.17,.65,.37,.07),(1.57,.68,.40,.09),(2.13,.70,.41,.11)]:
@@ -433,6 +433,40 @@ def mooncap_contact(name, axis, plane, extent):
 contact={'ingredient':mooncap_contact('IngredientMooncap',2,0,.008),
          'recipe_relief':mooncap_contact('RecipeTileMooncap',1,.027,.004)}
 print('MOONCAP_OVERLAP_METRES',json.dumps(contact))
+
+def clock_post_contacts():
+    visual=next(o for o in bpy.data.objects['GrandfatherClock'].children if o.type=='MESH')
+    verts=[visual.matrix_world @ v.co for v in visual.data.vertices]
+    faces=[tuple(p.vertices) for p in visual.data.polygons
+           if visual.material_slots[p.material_index].material.name.split('.')[0]=='Carved dark walnut']
+    wood_surface=BVHTree.FromPolygons(verts,faces)
+    # Probe ahead of the cabinet so its solid rear cannot hide a gap in either post.
+    probe_y=-.14
+    rear=wood_surface.ray_cast(Vector((0,-.3,.4)),Vector((0,1,0)))[0]
+    if rear is None or rear.y <= probe_y:
+        raise RuntimeError('Clock contact probes are not in front of the rear cabinet')
+    def crossings(x):
+        origin=Vector((x,probe_y,.1)); up=Vector((0,0,1)); heights=[]
+        for _ in range(12):
+            hit=wood_surface.ray_cast(origin,up)[0]
+            if hit is None: break
+            heights.append(hit.z); origin.z=hit.z+.00001
+        return heights
+    plinth=[z for z in crossings(0) if z < .6]
+    if len(plinth)<2: raise RuntimeError('Clock plinth probe did not find both surfaces: '+str(plinth))
+    top=max(plinth)
+    overlaps={}
+    for label,x in (('left',-.26),('right',.26)):
+        heights=crossings(x)
+        post=[z for z in heights if z < .6 and all(abs(z-edge)>.0001 for edge in plinth)]
+        if len(post)!=1: raise RuntimeError('Clock '+label+' post probe did not find its bottom: '+str(heights))
+        overlap=top-min(post)
+        if overlap < .005: raise RuntimeError('Clock '+label+' post has insufficient plinth overlap: '+str(overlap))
+        overlaps[label]=round(overlap,5)
+    return overlaps
+
+clock_contacts=clock_post_contacts()
+print('CLOCK_POST_PLINTH_OVERLAP_METRES',json.dumps(clock_contacts))
 render_review='--export-only' not in sys.argv
 if render_review:
     pos={'AlchemyCauldron':(-1.5,0,0),'IngredientMooncap':(-.5,-.3,0),'IngredientStarThistle':(-.2,-.3,0),'IngredientEmberSalt':(.1,-.3,0),'PotionVial':(.4,-.3,0),'RecipeTileMooncap':(-.45,-.65,0),'RecipeTileStarThistle':(-.20,-.65,0),'RecipeTileEmberSalt':(.05,-.65,0),'ThornWardLeft':(.9,.35,0),'ThornWardRight':(2.5,.35,0),'AstralLiftMedallion':(-.15,.8,0),'ClockworkOwl':(-2.35,.30,0),'MechanicalBroom':(2.9,0,0),'GrandfatherClock':(-3.5,.25,0),'ClockClueDial':(-3.5,.3,2.65)}
@@ -465,7 +499,7 @@ if render_review:
 import shutil
 shutil.copy2(OUT/'alchemy-kit.glb',RUNTIME/'alchemy-kit.glb')
 def digest(p): return hashlib.sha256(p.read_bytes()).hexdigest()
-report={'generator':'scripts/assets/build-alchemy-kit.py','authoring':'Original procedural Blender model, project brief; no external assets','blender':bpy.app.version_string,'license':'MIT, project-authored','axes':'glTF Y up; +Z front; metres','triangles':triangles,'roots':list(roots)+['ClockIngredientSocket'],'material_count':len({slot.material.name for o in bpy.context.scene.objects if o.type=='MESH' for slot in o.material_slots if slot.material}),'sha256':{'generator':digest(Path(__file__)),'blend':digest(SRC/'alchemy-kit.blend'),'glb':digest(RUNTIME/'alchemy-kit.glb')},'validation':'Blender GLB reimport, names, triangle budget and Mooncap stem contact checked','mooncap_overlap_metres':contact,'visual_approval':'pending owner and independent review','limitations':['Procedurally painted UV maps rather than high-to-low baked maps','No authored LODs or collision meshes','Runtime and play-distance review pending']}
+report={'generator':'scripts/assets/build-alchemy-kit.py','authoring':'Original procedural Blender model, project brief; no external assets','blender':bpy.app.version_string,'license':'MIT, project-authored','axes':'glTF Y up; +Z front; metres','triangles':triangles,'roots':list(roots)+['ClockIngredientSocket'],'material_count':len({slot.material.name for o in bpy.context.scene.objects if o.type=='MESH' for slot in o.material_slots if slot.material}),'sha256':{'generator':digest(Path(__file__)),'blend':digest(SRC/'alchemy-kit.blend'),'glb':digest(RUNTIME/'alchemy-kit.glb')},'validation':'Blender GLB reimport, names, triangle budget, Mooncap stem contact and clock post contact checked','mooncap_overlap_metres':contact,'clock_post_plinth_overlap_metres':clock_contacts,'visual_approval':'pending owner and independent review','limitations':['Procedurally painted UV maps rather than high-to-low baked maps','No authored LODs or collision meshes','Runtime and play-distance review pending']}
 if render_review: report['sha256']['review']=digest(OUT/'review.png')
 (OUT/'report.json').write_text(json.dumps(report,indent=2)+'\n')
 (SRC/'manifest.json').write_text(json.dumps({'glb_sha256':digest(RUNTIME/'alchemy-kit.glb'),'roots':list(roots)+['ClockIngredientSocket'],'triangles':triangles,'generator_sha256':digest(Path(__file__)),'source_blend_sha256':digest(SRC/'alchemy-kit.blend'),'visual_approval':'pending'},indent=2)+'\n')

@@ -94,8 +94,7 @@ describe('alchemy conservatory authored puzzle', () => {
     puzzle.dispose();
     world.dispose();
   });
-  it('mounts the working Stillwind dial above the pot on the first visit and keeps the dressed lab clear of retained benches', async () => {
-    const seed = '00000007';
+  it.each(['00000007', 'MAPTEST2'])('fits the dressed Stillwind lab on %s', async (seed) => {
     const load = async (path: string) => {
       const bytes = Uint8Array.from(await readFile(path));
       return (await nodeGeometryLoader().parseAsync(bytes.buffer, '')).scene;
@@ -112,6 +111,24 @@ describe('alchemy conservatory authored puzzle', () => {
     const lab = kitPart(world.group, 'brew-bench');
     const room = world.roomGroups[puzzle.cauldronRoom];
     const labBounds = new THREE.Box3().setFromObject(lab);
+    const toLab = lab.matrixWorld.clone().invert();
+    const cauldronBounds = new THREE.Box3().setFromObject(puzzle.cauldron).applyMatrix4(toLab);
+    const trayBounds = new THREE.Box3()
+      .setFromObject(kitPart(lab, 'alchemy-tray-top'))
+      .applyMatrix4(toLab);
+    expect(trayBounds.min.z - cauldronBounds.max.z).toBeGreaterThan(0.04);
+    world.current = puzzle.cauldronRoom;
+    const ingredient = alchemyRecipe(seed)[0];
+    puzzle.sync({ found: [ingredient], added: [], brewed: false, opened: false }, true);
+    const cradle = kitPart(lab, `IngredientCradle${INGREDIENT_ROOTS[ingredient]}`);
+    const target = new THREE.Box3().setFromObject(cradle).getCenter(new THREE.Vector3());
+    const rayOrigin = target
+      .clone()
+      .addScaledVector(lab.getWorldDirection(new THREE.Vector3()), 0.8);
+    expect(puzzle.pick(rayOrigin, target.sub(rayOrigin).normalize())).toMatchObject({
+      action: 'add',
+      ingredient,
+    });
     for (const { x, z, halfX, halfZ, top } of DECOR_TABLES.hall) {
       const bench = new THREE.Box3(
         new THREE.Vector3(x - halfX, 0, z - halfZ),

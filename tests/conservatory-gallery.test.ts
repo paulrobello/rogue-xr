@@ -2,10 +2,12 @@
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { expect, it } from 'vitest';
+import { headingTo } from '../src/combat/placement.ts';
 import { templateById } from '../src/content/rooms.ts';
 import { makeClockworkOwlAsset, makeOwlPerch } from '../src/enemies/conservatory-actors.ts';
 import { conservatoryPlan } from '../src/floor/conservatory.ts';
 import { ConservatoryGallery } from '../src/world/conservatory-gallery.ts';
+import { mountFloorView } from '../src/world/floor-view.ts';
 import { buildFloorWorld } from '../src/world/floor-world.ts';
 import { kitPart } from '../src/world/puzzle-placement.ts';
 import { nodeGeometryLoader } from './helpers/gltf-node.ts';
@@ -123,4 +125,64 @@ it('rests both shipped owl talons on the floor-mounted perch throughout idle and
   actor.dispose();
   owl.dispose();
   perch.dispose();
+});
+
+it('flaps in flight during approach, the fight, and attack recovery before folding its wings on the perch', async () => {
+  const kit = await loadPropScene('alchemy-kit');
+  const owl = makeClockworkOwlAsset(kitPart(kit, 'ClockworkOwl'));
+  const view = mountFloorView(new THREE.Scene(), new THREE.Group(), 'MAPTEST2', {
+    floorNumber: 3,
+  });
+  view.useEnemyAssets(new Map([[owl.id, owl]]));
+  const actor = view.actors.find((enemy) => enemy.kind === owl.id);
+  if (!actor) throw Error('Missing the spawned owl');
+  const room = actor.object.userData.room as number;
+  const { min, max } = view.world.rooms[room].footprint;
+  const x = (min[0] + max[0]) / 2;
+  const z = (min[1] + max[1]) / 2;
+  const origin = actor.object.getWorldPosition(new THREE.Vector3());
+  const head = new THREE.Object3D();
+  head.position.set(x, 1.5, z);
+  view.world.current = room;
+  const flight = kitPart(actor.object, 'OwlFlight');
+  const left = kitPart(actor.object, 'OwlWingL');
+  const right = kitPart(actor.object, 'OwlWingR');
+  const perch = kitPart(view.world.roomGroups[room], 'clockwork-owl-perch');
+  const rest = flight.position.y;
+  const perchHome = perch.position.clone();
+  const advance = (frames: number): number[] =>
+    Array.from({ length: frames }, () => {
+      view.update(head, 1 / 72);
+      return left.rotation.z;
+    });
+  const expectFlapping = (angles: number[]): void => {
+    expect(Math.max(...angles) - Math.min(...angles)).toBeGreaterThan(0.75);
+    expect(Math.min(...angles)).toBeLessThan(-1.4);
+    expect(right.rotation.z).toBeCloseTo(-left.rotation.z, 5);
+  };
+
+  expect(
+    view.encounter.begin(room, { x, z, yaw: headingTo([x, z], [origin.x, origin.z]) }).ok,
+  ).toBe(true);
+  advance(12);
+  expect(view.encounter.phase).toBe('unfolding');
+  expect(flight.position.y).toBeGreaterThan(rest + 0.07);
+  expect(perch.position.equals(perchHome)).toBe(true);
+  expectFlapping(advance(30));
+  advance(110);
+  expect(view.encounter.phase).toBe('active');
+  expect(actor.frozen).toBe(true);
+  expectFlapping(advance(30));
+  actor.attack();
+  expectFlapping(advance(30));
+  advance(50);
+  expect(actor.frozen).toBe(true);
+  expectFlapping(advance(30));
+  view.encounter.end('flee');
+  advance(100);
+  expect(view.encounter.phase).toBe('idle');
+  expect(flight.position.y).toBeCloseTo(rest, 6);
+  expect(Math.abs(left.rotation.z)).toBeLessThanOrEqual(0.045);
+  view.dispose();
+  owl.dispose();
 });
