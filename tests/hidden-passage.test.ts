@@ -13,8 +13,7 @@ import { ServicePanels } from '../src/world/service-panels.ts';
 import { nodeGeometryLoader } from './helpers/gltf-node.ts';
 
 it('reserves the original staircase, with an optional seeded, connected and stocked recess', () => {
-  let count = 0,
-    decoys = 0;
+  let count = 0;
   for (let i = 0; i < 140; i++) {
     const seed = 'H' + String(i).padStart(7, '0'),
       base = generateUpperFloor(seed),
@@ -23,7 +22,6 @@ it('reserves the original staircase, with an optional seeded, connected and stoc
     expect(placeStairEntry(next)).toEqual(placeStairEntry(base));
     if (!next.hiddenPassage) continue;
     count++;
-    if (next.hiddenPassage.decoys.length) decoys++;
     const edge = next.connections.find((e) => e.puzzleGate === 'panel')!;
     const r = worldRooms(next);
     const door = (i: 0 | 1) => r[edge[i].room].doors.find((d) => d.id === edge[i].door)!;
@@ -33,7 +31,6 @@ it('reserves the original staircase, with an optional seeded, connected and stoc
   }
   expect(count).toBeGreaterThan(20);
   expect(count).toBeLessThan(140);
-  expect(decoys).toBeGreaterThan(10);
   expect(playableFloorPlan('MAPTEST3', 5, 2).hiddenPassage).toBeUndefined();
 });
 it('restores the sprung latch and the open passage without repeating discovery', () => {
@@ -70,28 +67,21 @@ it('accepts three knocks inside the circle and stows the opened leaf past the hi
     '',
   );
   const panels = new ServicePanels(world, scene, true),
-    p = panels.panels[0];
+    p = panels.panel;
   const circle = p.leaf.getObjectByName('service-knock-target');
   const latch = p.leaf.getObjectByName('service-catch-' + p.room);
   if (!circle || !latch) throw Error('Missing the service door controls');
-  const aim = (panel: (typeof panels.panels)[number], target: THREE.Vector3) => {
-    world.current = panel.room;
-    const inward = panel.root.getWorldDirection(new THREE.Vector3());
+  const aim = (target: THREE.Vector3) => {
+    const inward = p.root.getWorldDirection(new THREE.Vector3());
     return panels.pick(target.clone().addScaledVector(inward, 1.6), inward.negate());
   };
-  for (const decoy of panels.panels.slice(1)) {
-    const point = decoy.leaf.localToWorld(new THREE.Vector3(0.8, 1.24, 0.08));
-    expect(aim(decoy, point)).toBeNull();
-    expect(panels.near(point, 0.04)).toBeNull();
-    expect(decoy.leaf.getObjectByName('service-catch-' + decoy.room)).toBeUndefined();
-  }
   world.current = p.room;
   const center = circle.getWorldPosition(new THREE.Vector3());
   const outside = circle.localToWorld(new THREE.Vector3(0.12, 0.02, 0.12));
-  expect(aim(p, outside)).toBeNull();
+  expect(aim(outside)).toBeNull();
   expect(panels.near(outside, 0.04)).toBeNull();
   expect(panels.near(center, 0.04)?.action).toBe('knock');
-  expect(aim(p, latch.getWorldPosition(new THREE.Vector3()))).toBeNull();
+  expect(aim(latch.getWorldPosition(new THREE.Vector3()))).toBeNull();
   const hinge = new THREE.Vector3(0, 0.053, 0);
   const hingeBefore = latch.localToWorld(hinge.clone());
   const lipBefore = latch.localToWorld(new THREE.Vector3(0, -0.05, 0));
@@ -103,17 +93,17 @@ it('accepts three knocks inside the circle and stows the opened leaf past the hi
   flow.newRun('MAPTEST2');
   flow.travelToFloor(2, p.room);
   for (let count = 1; count <= 3; count++) {
-    expect(aim(p, center)?.action).toBe('knock');
+    expect(aim(center)?.action).toBe('knock');
     const struck = panels.knock();
     expect(struck?.count).toBe(count);
     if (struck?.count === 3) flow.discoverHiddenPanel();
     panels.sync(flow.hiddenPanel, true);
     expect(flow.hiddenPanel.discovered).toBe(count === 3);
-    const handle = aim(p, latch.getWorldPosition(new THREE.Vector3()));
+    const handle = aim(latch.getWorldPosition(new THREE.Vector3()));
     expect(handle?.action ?? null).toBe(count === 3 ? 'unlatch' : null);
   }
   expect(panels.knock()).toBeNull();
-  expect(aim(p, center)).toBeNull();
+  expect(aim(center)).toBeNull();
   expect(latch.localToWorld(hinge.clone()).distanceTo(hingeBefore)).toBeLessThan(0.001);
   expect(latch.localToWorld(new THREE.Vector3(0, -0.05, 0)).distanceTo(lipBefore)).toBeGreaterThan(
     0.085,

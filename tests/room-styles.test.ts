@@ -183,28 +183,30 @@ describe('room styles', () => {
     expect(bounds.max.z).toBeGreaterThan(4.9);
   });
 
-  it('frames the solid MAPTEST3 inspection panel without dressing it in fixed heat exchanger pipes', () => {
+  it('fills the former MAPTEST3 inspection cover with the standard closed wall bay', () => {
     const view = mountFloorView(new THREE.Scene(), new THREE.Group(), 'MAPTEST3', {
       floorNumber: 2,
     });
     const world = view.world;
     const ref = { room: 2, door: 'w' };
-    expect(world.plan.hiddenPassage?.decoys).toContainEqual(ref);
     expect(world.plan.sealed).toContainEqual({ ...ref, style: 'wall' });
     view.useRoomAsset('hall', () => new THREE.Group(), [], kit());
     const model = world.roomGroups[ref.room].children.find(
       (g) => g.userData.roomStyle === 'boiler',
     );
     if (!(model instanceof THREE.Group)) throw Error('Missing dressed hall');
-    expect(instanced(model, 'BoilerExchangerBay')).toHaveLength(0);
-    const doors = instanced(model, 'BoilerDoor')[0];
+    const exchanger = instanced(model, 'BoilerExchangerBay')[0];
+    if (!exchanger) throw Error('Missing finished wall at the former cover');
     const matrix = new THREE.Matrix4();
-    expect(
-      Array.from({ length: doors.count }, (_, i) => {
+    exchanger.getMatrixAt(0, matrix);
+    expect([matrix.elements[12], matrix.elements[14]]).toEqual([-5, -1]);
+    for (const doors of instanced(model, 'BoilerDoor')) {
+      const positions = Array.from({ length: doors.count }, (_, i) => {
         doors.getMatrixAt(i, matrix);
         return [matrix.elements[12], matrix.elements[14]];
-      }),
-    ).toContainEqual([-5, -1]);
+      });
+      expect(positions).not.toContainEqual([-5, -1]);
+    }
     view.dispose();
   });
 

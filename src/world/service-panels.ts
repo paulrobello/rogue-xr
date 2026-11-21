@@ -41,14 +41,13 @@ function servicePaddle(): THREE.ExtrudeGeometry {
 }
 
 export class ServicePanels {
-  readonly panels: Panel[] = [];
+  readonly panel: Panel;
   private readonly ray = new THREE.Raycaster();
   private readonly box = new THREE.Box3();
   private readonly contact = new THREE.Vector3();
   private readonly paddle = servicePaddle();
   private readonly disc = new THREE.CylinderGeometry(KNOCK_RADIUS, KNOCK_RADIUS, 0.024, 32);
   private readonly rim = new THREE.TorusGeometry(0.134, 0.009, 8, 32);
-  private readonly cover = new THREE.BoxGeometry(0.16, 0.19, 0.024);
   private readonly brass = new THREE.MeshStandardMaterial({
     color: 0xb38b57,
     emissive: 0x835525,
@@ -63,16 +62,10 @@ export class ServicePanels {
     metalness: 0.36,
     roughness: 0.58,
   });
-  private readonly steel = new THREE.MeshStandardMaterial({
-    color: 0x3f4848,
-    metalness: 0.52,
-    roughness: 0.56,
-  });
   private readonly knockTarget = new THREE.Mesh(this.disc, this.strikeFace);
   private readonly latch = new THREE.Mesh(this.paddle, this.brass);
   private readonly rest: THREE.Vector3;
   private readonly prompt: CanvasLabel | null;
-  private readonly fixed: CanvasLabel | null;
   private state: StoredHiddenPanelState = { discovered: false, opened: false };
   private count = 0;
   private vibration = 0;
@@ -84,7 +77,8 @@ export class ServicePanels {
   ) {
     const plan = world.plan.hiddenPassage;
     if (!plan) throw Error('No service-panel passage on this floor');
-    const source = this.mount(art, plan.source, 'hollow-service-panel');
+    const source = this.mount(art, plan.source);
+    this.panel = source;
     const socket = kitPart(source.leaf, 'PanelCatch');
     this.latch.position.copy(socket.position);
     this.latch.position.z += 0.044;
@@ -103,17 +97,6 @@ export class ServicePanels {
     this.prompt = this.stencil('service-knock-instructions', 1.03);
     if (this.prompt) source.leaf.add(this.prompt.mesh);
     this.drawPrompt();
-    this.fixed = this.stencil('service-fixed-cover-label', 1.23);
-    this.draw(this.fixed, 'FIXED COVER', '#c9c8bd');
-    for (const ref of plan.decoys) {
-      const panel = this.mount(art, ref, 'solid-service-panel-' + ref.room);
-      const recess = kitPart(panel.leaf, 'PanelCatch');
-      const blank = new THREE.Mesh(this.cover, this.steel);
-      blank.position.set(recess.position.x, recess.position.y, 0.066);
-      recess.removeFromParent();
-      panel.leaf.add(blank);
-      if (this.fixed) panel.leaf.add(this.fixed.mesh.clone());
-    }
   }
 
   private stencil(name: string, y: number): CanvasLabel | null {
@@ -144,11 +127,11 @@ export class ServicePanels {
     this.draw(this.prompt, text, '#dfceaa');
   }
 
-  private mount(art: THREE.Object3D, ref: DoorRef, name: string): Panel {
+  private mount(art: THREE.Object3D, ref: DoorRef): Panel {
     const door = this.world.rooms[ref.room].doors.find((d) => d.id === ref.door);
     if (!door) throw Error('Missing service doorway');
     const root = new THREE.Group();
-    root.name = name;
+    root.name = 'hollow-service-panel';
     const frame = kitPart(art, 'PanelFrame').clone(true),
       leaf = kitPart(art, 'PanelLeaf').clone(true);
     // A 10 mm stop overlaps the leaf edges and steps the service reveal inside the boiler jamb.
@@ -161,13 +144,11 @@ export class ServicePanels {
     root.rotation.y = { N: 0, S: Math.PI, W: Math.PI / 2, E: -Math.PI / 2 }[door.facing];
     root.translateZ(0.13);
     this.world.roomGroups[ref.room].attach(root);
-    const panel = { root, leaf, room: ref.room };
-    this.panels.push(panel);
-    return panel;
+    return { root, leaf, room: ref.room };
   }
 
   pick(origin: THREE.Vector3, direction: THREE.Vector3): PanelHit | null {
-    const p = this.panels[0];
+    const p = this.panel;
     if (this.world.current !== p.room || this.state.opened) return null;
     p.root.updateWorldMatrix(true, true);
     if (p.root.worldToLocal(this.contact.copy(origin)).z < 0) return null;
@@ -194,7 +175,7 @@ export class ServicePanels {
   }
 
   near(point: THREE.Vector3, reach: number): PanelHit | null {
-    const p = this.panels[0];
+    const p = this.panel;
     if (this.world.current !== p.room || this.state.opened) return null;
     p.root.updateWorldMatrix(true, true);
     if (p.root.worldToLocal(this.contact.copy(point)).z < 0) return null;
@@ -229,7 +210,7 @@ export class ServicePanels {
   }
 
   private pose(blend: number) {
-    const { leaf } = this.panels[0];
+    const { leaf } = this.panel;
     const { opened, discovered } = this.state;
     this.latch.rotation.x = THREE.MathUtils.lerp(
       this.latch.rotation.x,
@@ -251,21 +232,18 @@ export class ServicePanels {
   update(dt: number) {
     this.pose(this.reduced ? 1 : 1 - Math.exp(-8 * dt));
     this.vibration = Math.max(0, this.vibration - dt);
-    this.panels[0].leaf.position.z = this.reduced
+    this.panel.leaf.position.z = this.reduced
       ? 0
       : -0.045 * this.vibration * Math.abs(Math.sin(this.vibration * 39));
   }
 
   dispose() {
-    for (const p of this.panels) p.root.removeFromParent();
+    this.panel.root.removeFromParent();
     this.paddle.dispose();
     this.disc.dispose();
     this.rim.dispose();
-    this.cover.dispose();
     this.brass.dispose();
     this.strikeFace.dispose();
-    this.steel.dispose();
     this.prompt?.dispose();
-    this.fixed?.dispose();
   }
 }

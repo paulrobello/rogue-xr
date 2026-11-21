@@ -217,7 +217,7 @@ it('seats the service-panel frame inside the architectural opening with a distin
   const panels = new ServicePanels(world, await loadArt('props/panel-kit/panel-kit'), true);
   const architecture = await loadArt('props/architectural-finishes/architectural-finishes');
   const boiler = architecture.getObjectByName('BoilerDoor');
-  const { root } = panels.panels[0],
+  const { root } = panels.panel,
     frame = root.getObjectByName('PanelFrame');
   if (!frame || !boiler) throw Error('Missing service or architectural frame');
   for (const side of [-1, 0, 1]) {

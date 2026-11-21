@@ -24,17 +24,10 @@ export function attachHiddenPassage(base: FloorPlan): FloorPlan {
     for (const turns of stream.shuffle([0, 1, 2, 3] as const)) {
       const extended = attachRoom(base, source, turns, 'treasure', 'panel', stair, 'study');
       if (!extended) continue;
-      const decoys: DoorRef[] = [];
-      for (const other of candidates) {
-        if (other.room === source.room || decoys.some((d) => d.room === other.room)) continue;
-        decoys.push({ room: other.room, door: other.door });
-        if (decoys.length === 2) break;
-      }
       return {
         ...extended,
         hiddenPassage: {
           source: { room: source.room, door: source.door },
-          decoys,
           treasureRoom: base.rooms.length,
         },
       };

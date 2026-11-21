@@ -58,7 +58,7 @@ export interface FloorPlan {
   sealed: readonly SealedDoor[];
   guardianRoom: number;
   brassCache?: { room: number; socketId: string };
-  hiddenPassage?: { source: DoorRef; decoys: readonly DoorRef[]; treasureRoom: number };
+  hiddenPassage?: { source: DoorRef; treasureRoom: number };
   pressureWing?: { gallery: number; pumpRoom: number; source: DoorRef };
 }
 

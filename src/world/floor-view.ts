@@ -981,9 +981,7 @@ export function mountFloorView(
             closed:
               world.plan.sealed.some(
                 (d) => d.room === index && d.door === door.id && d.style === 'wall',
-              ) &&
-              !(stairs?.entry.room === index && stairs.entry.door === door.id) &&
-              !world.plan.hiddenPassage?.decoys.some((d) => d.room === index && d.door === door.id),
+              ) && !(stairs?.entry.room === index && stairs.entry.door === door.id),
           }));
           const edge = templateById(templateId).footprint.max[0];
           applyRoomStyle(styled, style, roomStyleKit, doors, edge);

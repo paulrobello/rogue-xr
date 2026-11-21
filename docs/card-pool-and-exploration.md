@@ -160,7 +160,7 @@ Use seed `N0TE0032` for a wing branching from the starting hall and a mix of cof
 ### E3. Optional paths
 
 - **Locked side wings** branch off the main path (E1). A brass key on a seeded Upper Works hook fits a marked optional coffer downstairs. A trigger pull or nearby grip collects the key. The key turns once in the lock, and a second interaction opens the released lid. Existing runs keep their original coffers.
-- **Hidden doors** can occur in the Upper Works on new runs. Knock three times inside the marked brass circle to raise the service door’s catch. Solid plates are labeled **Fixed cover**. Pull the catch to walk into the service recess and open its coffer. A released latch or opened door stays that way on return. The Scrying Lens is a future field-card alternative.
+- **Hidden doors** can occur in the Upper Works on new runs. Knock three times inside the marked brass circle to raise the service door’s catch. Pull the catch to walk into the service recess and open its coffer. A released latch or opened door stays that way on return. The Scrying Lens is a future field-card alternative.
 - **Elite detour:** the elite room becomes optional, with a Vault Key as its reward.
 - **Shortcut doors** connect otherwise distant locations. The Floor 1 grille opens when the Upper Works balance lifts its counterweight. Other shortcuts can use far-side latches.
 

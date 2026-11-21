@@ -496,7 +496,7 @@ async function exercisePanels() {
   await ready(1);
   await stair(2);
   const layout = await ev(() => window.__combat.floor.world.plan.hiddenPassage);
-  assert(layout && layout.decoys.length, 'fixture needs a true and a solid panel');
+  assert(layout, 'fixture needs a working service panel');
   await crossing('panel', false);
   await ev(() => {
     const a = window.__combat.audio,
@@ -507,23 +507,16 @@ async function exercisePanels() {
       return original(id, ...args);
     };
   });
-  for (const ref of layout.decoys) {
-    const root = 'solid-service-panel-' + ref.room;
-    const leaf = 'service-leaf-' + ref.room;
-    assert(
-      await ev((root) => {
-        const panel = window.__combat.floor.world.group.getObjectByName(root);
-        return (
-          !!panel.getObjectByName('service-fixed-cover-label') &&
-          !panel.getObjectByName('service-knock-target')
-        );
-      }, root),
-    );
-    await approach(root, leaf, 1.6, [0.76, 1.29, 0.035]);
-    await shot('fixed-cover-' + ref.room);
-    await click(leaf, [0.76, 1.29, 0.035]);
-    assert.equal(await ev(() => window.__flow.flow.hiddenPanel.discovered), false);
-  }
+  assert.deepEqual(
+    await ev(() => {
+      const leaves = [];
+      window.__combat.floor.world.group.traverse((node) => {
+        if (node.name.startsWith('service-leaf-')) leaves.push(node.name);
+      });
+      return leaves;
+    }),
+    ['service-leaf-' + layout.source.room],
+  );
   const leaf = 'service-leaf-' + layout.source.room;
   const catchName = 'service-catch-' + layout.source.room;
   await approach('hollow-service-panel', 'service-knock-target', 1.6);
