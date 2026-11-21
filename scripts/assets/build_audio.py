@@ -149,6 +149,72 @@ def procedural_pendulum_tick(cue: dict, path: Path) -> None:
     write_wav_f32(path, (attack * signal).astype(np.float32)[:, None])
 
 
+def procedural_dungeon(cue: dict, path: Path) -> None:
+    """Create the original deterministic dungeon loop and creature one-shots."""
+    settings = cue["procedural"]
+    kind = settings["kind"]
+    rng = np.random.default_rng(int(settings["seed"]))
+    n = round(float(settings["duration_seconds"]) * SR)
+    t = np.arange(n, dtype=np.float64) / SR
+    y = np.zeros(n, dtype=np.float64)
+
+    def tone(at: float, length: float, hz: float, level: float, decay: float,
+             bend: float = 0.0) -> None:
+        start = round(at * SR)
+        count = min(round(length * SR), n - start)
+        if count <= 0:
+            return
+        local = np.arange(count, dtype=np.float64) / SR
+        env = np.minimum(1.0, local / 0.0015) * np.exp(-local / decay)
+        phase = 2 * np.pi * (hz * local + bend * local * local / max(length, 1e-6))
+        y[start:start + count] += np.sin(phase) * env * level
+
+    def texture(at: float, length: float, level: float, decay: float, smooth: int) -> None:
+        start = round(at * SR)
+        count = min(round(length * SR), n - start)
+        if count <= 0:
+            return
+        raw = rng.standard_normal(count)
+        if smooth > 1:
+            raw = np.convolve(raw, np.ones(smooth) / smooth, mode="same")
+        env = np.minimum(1.0, np.arange(count) / max(1, round(0.002 * SR)))
+        env *= np.exp(-np.arange(count) / max(1.0, decay * SR))
+        y[start:start + count] += raw * env * level
+
+    if kind == "torch-crackle":
+        # Integer-cycle bed and no event within 0.7 s of either edge keep the source natively loopable.
+        bed = 0.012 * np.sin(2 * np.pi * 73 * t) + 0.008 * np.sin(2 * np.pi * 113 * t)
+        control_t = np.linspace(0.0, float(settings["duration_seconds"]), 241, endpoint=False)
+        control = np.interp(t, control_t, rng.normal(0.0, 1.0, len(control_t)))
+        y += bed + control * 0.004
+        for at, hz, level in ((0.82, 1850, 0.035), (2.14, 2360, 0.028), (3.73, 1620, 0.032),
+                               (5.31, 2780, 0.026), (6.92, 2050, 0.031), (8.44, 2490, 0.027)):
+            tone(at, 0.055, hz, level, 0.014)
+            texture(at, 0.045, level * 0.42, 0.012, 5)
+        y *= 0.85
+    elif kind == "chain-wind":
+        texture(0.03, 0.62, 0.20, 0.24, 7)
+        tone(0.04, 0.64, 92, 0.18, 0.28, -22)
+        for at, hz in ((0.17, 620), (0.31, 760), (0.47, 910)):
+            tone(at, 0.085, hz, 0.20, 0.035)
+            tone(at, 0.10, hz * 1.87, 0.07, 0.028)
+        texture(0.64, 0.22, 0.12, 0.08, 3)
+        tone(0.86, 0.20, 1180, 0.26, 0.055)
+        tone(1.02, 0.30, 154, 0.38, 0.12)
+    elif kind == "scarab-scrape":
+        texture(0.025, 0.48, 0.22, 0.24, 13)
+        tone(0.03, 0.52, 138, 0.19, 0.30, 18)
+        tone(0.09, 0.34, 312, 0.10, 0.16, 28)
+        for at, hz in ((0.57, 1810), (0.70, 2240), (0.84, 1950)):
+            tone(at, 0.075, hz, 0.22, 0.026)
+            tone(at, 0.10, hz * 0.53, 0.09, 0.035)
+        tone(0.98, 0.20, 280, 0.18, 0.08)
+    else:
+        raise ValueError(f"unknown dungeon cue kind: {kind}")
+    peak = max(np.max(np.abs(y)), 1e-9)
+    write_wav_f32(path, (y / peak * 0.72).astype(np.float32)[:, None])
+
+
 def procedural_puzzle_door(cue: dict, path: Path) -> None:
     """Deterministic one-shot door cues built from seeded noise, impacts, and resonators."""
     settings = cue["procedural"]
@@ -471,6 +537,8 @@ def build_sfx(spec: dict, only: set[str], derived: Path, out: Path) -> dict[str,
             src = AUDIO_SRC / "sfx" / "procedural" / f"{cid}.wav"
             if cid == "pendulum-tick":
                 procedural_pendulum_tick(cue, src)
+            elif cue["procedural"].get("kind", "").startswith(("torch-", "chain-", "scarab-")):
+                procedural_dungeon(cue, src)
             elif cue["procedural"].get("kind"):
                 procedural_puzzle_door(cue, src)
             else:
@@ -686,6 +754,9 @@ def main() -> None:
             provenance["sfx"]["paper-unfold"]["approval"] = "New edit of the existing card-draw recording. Runtime verification is separate from owner listening approval."
         if "pendulum-tick" in provenance["sfx"]:
             provenance["sfx"]["pendulum-tick"]["approval"] = "Original project synthesis. Owner listening review pending."
+        for cue_id in ("dungeon-torch-crackle", "dungeon-chain-wind", "dungeon-scarab-scrape"):
+            if cue_id in provenance["sfx"]:
+                provenance["sfx"][cue_id]["approval"] = "Original project synthesis. Owner listening review pending."
         if music and music_log.exists():
             provenance["music_source"] = json.loads(music_log.read_text())["source"]
             provenance["music_generation_log"] = rel(music_log)

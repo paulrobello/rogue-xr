@@ -52,8 +52,7 @@ describe('card atlas parsing', () => {
     ).toThrow(/frame/);
   });
 
-  it('gives each of the 23 cards three layer rects on one art page, and its type frame', () => {
-    expect(baseCards).toHaveLength(23);
+  it('gives each base card three layer rects on one art page and its type frame', () => {
     for (const card of baseCards) {
       const { card: entry, frame } = cardArt(atlas, card.id);
       expect(entry.frame).toBe(card.type);

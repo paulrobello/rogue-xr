@@ -1,0 +1,27 @@
+{
+  "generator": "OpenAI ImageGen",
+  "provider": "OpenAI Media Service",
+  "model": "OpenAI ImageGen (model not exposed by tool)",
+  "file": "dungeon-enemies-sheet.png",
+  "references": [
+    {
+      "path": "assets-source/style/locked/L-automaton.png",
+      "sha256": "48553d5f490b528b84774ad63a705bf0609ef47360b6a35ef4025b6431adb505"
+    },
+    {
+      "path": "assets-source/style/locked/L-board-1.png",
+      "sha256": "d3fffc8eb300cc6f40236c28930401ef1bd06be0e27be76999839e3bfeacc018"
+    }
+  ],
+  "prompt": "Create one original wide 16:9 3D-modeler design reference sheet for Clockwork Spire, matching the supplied L-automaton and L-board-1 references: painterly semi-realism, visible oil-paint brushwork, warm neutral studio background, readable brass and dark gunmetal construction, candle-amber highlights, worn edges, brown-violet shading, no teal. Two clearly separated enemy designs with no overlap, each shown as a large full-body 3/4 view plus a smaller clean side view, arranged left and right with generous spacing and consistent ground contact. No text, labels, lettering, numbers, callouts, watermark, UI, scenery, smoke or fire. LEFT ENEMY — Mortar Scarab: knee-high six-legged clockwork shell, squat low profile, thick charcoal-gray limestone lamellae closing over a bright amber core, exactly six separately readable dark-metal legs with brass joint caps, clear mechanical pivots and seams, brown-violet shadowing, compact armored silhouette, absolutely no wings. RIGHT ENEMY — Lantern Bailiff: waist-to-head armored clockwork gaoler, tall biped approximately 1.6–1.75 meters, squat riveted iron and aged-brass shoulder armor, visibly isolated arms and head, clear pivot joints, a cage of bright amber glow on the sternum, plus a second small swinging flail lantern on a short chain hanging from one hand, chain and lantern clearly legible, no fire and no smoke. Make both designs original and production-useful as modeling references, with enough visible construction detail for mesh, joints, armor plates, and proportions.",
+  "settings": {
+    "aspect": "wide 16:9",
+    "transparent_background": false,
+    "retries": 0,
+    "paid_requests": 1,
+    "cost": null,
+    "cost_note": "ImageGen tool did not expose the request cost."
+  },
+  "sha256": "8a033049435dfccaff0b0b8d7ceb5a649afd0a149ff51003bceda331791d6808",
+  "rights": "Original generated artwork. No external asset reuse. Creative owner approval pending."
+}

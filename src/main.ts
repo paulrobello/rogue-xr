@@ -145,6 +145,7 @@ import { lightRoomStyle } from './world/room-style-lighting.ts';
 import { type RoomStyleKit, roomStyleFor, roomStyleKitFromScene } from './world/room-styles.ts';
 import { type PanelHit, SERVICE_KNOCKS } from './world/service-panels.ts';
 import { StairFade, StairTransit } from './world/stair-transit.ts';
+import { type StoneRoomKit, stoneRoomKitFromScene } from './world/stone-rooms.ts';
 import { loadBookBindings } from './world/study-books.ts';
 import {
   fetchStudyManifest,
@@ -208,6 +209,9 @@ scene.add(rig);
 
 let cardProof: Awaited<ReturnType<typeof mountCardProof>> | undefined;
 let floor: FloorView | undefined;
+let torchSound: THREE.Object3D | undefined;
+let torchLoopPlaying = false;
+const torchSoundPosition = new THREE.Vector3();
 if (view === 'lightmap-proof') {
   await mountLightmapProof(scene, rig, camera, renderer);
 } else if (view === 'material-proof') {
@@ -648,6 +652,21 @@ function architecturalFinishes(): Promise<RoomStyleKit> {
     });
   return styleKit;
 }
+let stoneArt: Promise<StoneRoomKit | undefined> | undefined;
+function dungeonKit(): Promise<StoneRoomKit | undefined> {
+  stoneArt ??= new GLTFLoader()
+    .loadAsync('/assets/props/stone-dungeon-kit/stone-dungeon-kit.glb')
+    .then(({ scene }) => {
+      reflect(scene, 0.34);
+      return stoneRoomKitFromScene(scene);
+    })
+    .catch((error: unknown) => {
+      stoneArt = undefined;
+      console.warn('Stone dungeon kit unavailable, original room finishes kept', error);
+      return undefined;
+    });
+  return stoneArt;
+}
 let instruments: Promise<THREE.Object3D> | undefined;
 function puzzleInstruments() {
   instruments ??= new GLTFLoader()
@@ -833,32 +852,34 @@ const dressFloor = async (target: FloorView): Promise<void> => {
       ),
     ]);
   }
-  const [rooms, door, coffers, decor, furnishings, styles, stairs, chimeArt] = await Promise.all([
-    roomAssets,
-    sealedDoorMaterial,
-    lootMaterials,
-    tableDecor,
-    furnish
-      ? interiors?.catch((error: unknown) => {
-          console.warn('Interior furnishing kit unavailable', error);
-          return null;
-        })
-      : null,
-    target.world.plan.rooms.some((_, index) =>
-      roomStyleFor(target.world.plan, index, target.floorNumber),
-    )
-      ? architecturalFinishes()
-      : undefined,
-    target.floorNumber !== 3 && target.world.stairEntry ? stairModels() : undefined,
-    (target.floorNumber !== 3 && target.world.stairEntry) || target.world.plan.prismAnnex
-      ? puzzleInstruments().catch((error: unknown) => {
-          console.warn('Puzzle instruments unavailable', error);
-          return undefined;
-        })
-      : undefined,
-    fitTable(target),
-    ...dressed,
-  ]);
+  const [rooms, door, coffers, decor, furnishings, styles, stairs, chimeArt, stone] =
+    await Promise.all([
+      roomAssets,
+      sealedDoorMaterial,
+      lootMaterials,
+      tableDecor,
+      furnish
+        ? interiors?.catch((error: unknown) => {
+            console.warn('Interior furnishing kit unavailable', error);
+            return null;
+          })
+        : null,
+      target.world.plan.rooms.some((_, index) =>
+        roomStyleFor(target.world.plan, index, target.floorNumber),
+      )
+        ? architecturalFinishes()
+        : undefined,
+      target.floorNumber !== 3 && target.world.stairEntry ? stairModels() : undefined,
+      (target.floorNumber !== 3 && target.world.stairEntry) || target.world.plan.prismAnnex
+        ? puzzleInstruments().catch((error: unknown) => {
+            console.warn('Puzzle instruments unavailable', error);
+            return undefined;
+          })
+        : undefined,
+      target.stoneRooms.size ? dungeonKit() : undefined,
+      fitTable(target),
+      ...dressed,
+    ]);
   const closedHall = target.floorNumber === 1 ? await closedHallAsset : undefined;
   if (target === floor) {
     const missing = target.world.plan.rooms.find(
@@ -869,17 +890,7 @@ const dressFloor = async (target: FloorView): Promise<void> => {
     if (stair) {
       target.dressStairs(stair);
     }
-    dressHeroRooms(target, rooms, decor, styles, closedHall);
-    const candles = new Set<THREE.MeshStandardMaterial>();
-    for (const group of target.world.roomGroups)
-      group.traverse((node) => {
-        if (!(node instanceof THREE.Mesh)) return;
-        for (const m of Array.isArray(node.material) ? node.material : [node.material]) {
-          if (m instanceof THREE.MeshStandardMaterial && m.name.endsWith('_flame')) candles.add(m);
-        }
-      });
-    if (decor) candles.add(decor.material);
-    target.setCandleMaterials([...candles], hitFx.reducedMotion);
+    dressHeroRooms(target, rooms, decor, styles, closedHall, stone);
     if (furnishings) target.setFurnishings(furnishings[0], furnishings[1], hitFx.reducedMotion);
     if (chimeArt) {
       target.dressChimes(chimeArt);
@@ -963,6 +974,21 @@ const dressFloor = async (target: FloorView): Promise<void> => {
     }
     if (chimeArt && target.world.plan.prismAnnex)
       target.dressPrism(chimeArt, flow.run?.seed ?? target.seed, hitFx.reducedMotion);
+    if (stone) target.dressStoneFurnishings(stone);
+    const candles = new Set<THREE.MeshStandardMaterial>();
+    for (const group of target.world.roomGroups)
+      group.traverse((node) => {
+        if (!(node instanceof THREE.Mesh)) return;
+        for (const m of Array.isArray(node.material) ? node.material : [node.material]) {
+          if (
+            m instanceof THREE.MeshStandardMaterial &&
+            (m.name.endsWith('_flame') || m.name === 'Stone flame')
+          )
+            candles.add(m);
+        }
+      });
+    if (decor) candles.add(decor.material);
+    target.setCandleMaterials([...candles], hitFx.reducedMotion);
     syncPuzzles(target, true);
     for (const room of target.styledRooms)
       lightRoomStyle(room, target.furnishings?.placements ?? []);
@@ -2892,6 +2918,21 @@ renderer.setAnimationLoop((time, frame) => {
       if (distance !== null)
         laserHits[side] =
           laserHits[side] === null ? distance : Math.min(laserHits[side] as number, distance);
+    }
+  }
+  if (audio) {
+    const torch =
+      floor && flow.phase === 'explore' ? floor.stoneTorches.get(floor.world.current) : undefined;
+    if (torchSound !== torch) {
+      audio.stopLoop('dungeon-torch-crackle');
+      torchSound = torch;
+      torchLoopPlaying = false;
+    }
+    if (torch && !torchLoopPlaying) {
+      torchLoopPlaying = audio.startLoop(
+        'dungeon-torch-crackle',
+        torch.getWorldPosition(torchSoundPosition),
+      );
     }
   }
   if (floor && audio) {

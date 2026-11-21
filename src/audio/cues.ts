@@ -56,6 +56,9 @@ export const SFX = {
   'prism-annex-open': sfx('prism-annex-open', 'positional', 0.2),
   'astral-lift-open': sfx('astral-lift-open', 'positional', 0.2),
   'dispatch-room-open': sfx('dispatch-room-open', 'positional', 0.2),
+  'dungeon-torch-crackle': { ...sfx('dungeon-torch-crackle', 'positional', 0, true), gain: 0.22 },
+  'dungeon-chain-wind': sfx('dungeon-chain-wind', 'positional', 0.22),
+  'dungeon-scarab-scrape': sfx('dungeon-scarab-scrape', 'positional', 0.22),
   'paper-unfold': sfx('paper-unfold', 'positional', 0.2),
   'ui-tick': sfx('ui-tick', 'ui', 0.03),
   'automaton-hit': sfx('automaton-hit', 'positional', 0.05),
@@ -342,6 +345,10 @@ export function sfxForCombatEvent(event: CombatEvent): SfxId | null {
       return event.to < event.from ? 'steam-vent' : null;
     case 'enemy-phase':
       return 'gear-clank';
+    case 'enemy-intent':
+      if (event.moveId === 'draw-chain') return 'dungeon-chain-wind';
+      if (event.moveId === 'mortar-rake') return 'dungeon-scarab-scrape';
+      return null;
     case 'enemy-died':
       return 'automaton-death';
     default:

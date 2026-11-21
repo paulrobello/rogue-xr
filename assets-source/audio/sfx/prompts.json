@@ -92,6 +92,15 @@
      "text": "A sliding glass-and-brass prism gate opening: three quiet crystalline contacts resolve in sequence, followed by a brass guide slide and a precise seating tick. Dry, one-shot."},
     {"id": "dispatch-room-open", "class": "positional", "duration_seconds": 1.8, "loop": false,
      "procedural": {"kind": "dispatch", "seed": 3111, "duration_seconds": 1.8},
-     "text": "A pneumatic dispatch room opening: a short hollow capsule clatter and tick, followed by an air piston release, a ribbed iron shutter sliding, and two lugs seating. Dry, one-shot."}
+     "text": "A pneumatic dispatch room opening: a short hollow capsule clatter and tick, followed by an air piston release, a ribbed iron shutter sliding, and two lugs seating. Dry, one-shot."},
+    {"id": "dungeon-torch-crackle", "class": "positional", "duration_seconds": 10.0, "loop": true,
+     "procedural": {"kind": "torch-crackle", "seed": 4201, "duration_seconds": 10.0},
+     "text": "Original deterministic dungeon ambience: a low-key seamless 10-second torch loop with a quiet warm fire bed and six sparse gentle dry resin ticks. No speech, music, wind, large pops, close clipping, or dramatic flare-ups. The first and last samples must meet cleanly for indefinite repetition."},
+    {"id": "dungeon-chain-wind", "class": "positional", "duration_seconds": 1.3, "loop": false,
+     "procedural": {"kind": "chain-wind", "seed": 4202, "duration_seconds": 1.3},
+     "text": "Original deterministic one-shot gameplay tell for a Lantern Bailiff: a taut iron chain drawn tight in the first 0.6 seconds, three small dry ratchet teeth during the pull, then a short distinctive ratchet seat at about 0.9 seconds and a restrained metal settle. No loop, speech, music, reverb, or explosive impact."},
+    {"id": "dungeon-scarab-scrape", "class": "positional", "duration_seconds": 1.05, "loop": false,
+     "procedural": {"kind": "scarab-scrape", "seed": 4203, "duration_seconds": 1.05},
+     "text": "Original deterministic one-shot gameplay cue for a Mortar Scarab: a rough limestone shell scraping across stone for the first half second, followed by three distinct small metallic leg taps and a brief dry body settle. No loop, speech, music, reverb, or large impact."}
   ]
 }

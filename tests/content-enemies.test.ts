@@ -78,6 +78,8 @@ describe('roster', () => {
       'Twin Furnace Mite',
       'Null-Crown Auditor',
       'Clockwork Owl',
+      'Mortar Scarab',
+      'Lantern Bailiff',
     ]);
     for (const [kind, setup] of Object.entries(ENEMIES)) expect(setup.id).toBe(kind);
   });
@@ -183,6 +185,8 @@ describe('encounters', () => {
           'bellows-golem',
           'glasswing-scrivener',
           'furnace-mite',
+          'mortar-scarab',
+          'lantern-bailiff',
         ]).toContain(kind);
       }
     }

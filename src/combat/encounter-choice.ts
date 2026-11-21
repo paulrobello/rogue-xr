@@ -1,5 +1,6 @@
 import {
   CONSERVATORY_OWL,
+  DUNGEON_ENCOUNTERS,
   ENCOUNTERS,
   type Encounter,
   type EncounterTier,
@@ -21,7 +22,8 @@ export const BRASS_CACHE_VERSION = 7;
 export const PATROL_VERSION = 8;
 export const PRISM_ANNEX_VERSION = 9;
 export const DISPATCH_ROOM_VERSION = 10;
-export const ENCOUNTER_CONTENT_VERSION = DISPATCH_ROOM_VERSION;
+export const DUNGEON_CONTENT_VERSION = 11;
+export const ENCOUNTER_CONTENT_VERSION = DUNGEON_CONTENT_VERSION;
 const LEGACY_ENCOUNTER_IDS = new Set([
   'sentry',
   'hound',
@@ -41,8 +43,17 @@ export function chooseEncounter(
   count: number,
   contentVersion = ENCOUNTER_CONTENT_VERSION,
   floor = 1,
+  stoneDungeon = false,
 ): Encounter {
   if (floor === 3 && count === 1 && tier === 'regular') return CONSERVATORY_OWL;
+  if (
+    stoneDungeon &&
+    floor === 2 &&
+    tier === 'regular' &&
+    count === 1 &&
+    contentVersion >= DUNGEON_CONTENT_VERSION
+  )
+    return Stream.fromKey(`${seed}:room-${room}:dungeon-encounter`).pick(DUNGEON_ENCOUNTERS);
   const pool =
     contentVersion < FOUNDRY_VERSION
       ? ENCOUNTERS[tier].filter((e) => LEGACY_ENCOUNTER_IDS.has(e.id))

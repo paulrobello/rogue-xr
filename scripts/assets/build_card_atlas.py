@@ -319,6 +319,12 @@ FOUNDRY_ART = [
     ("anchor-glyph", "sigil", "strikes", 2), ("quench-seal", "sigil", "strikes", 3),
 ]
 
+DUNGEON_ART = [
+    ("torque-wrench", "attack", "dungeon", 0),
+    ("counterweight", "skill", "dungeon", 1),
+    ("tension-coil", "skill", "dungeon", 2),
+]
+
 
 def add_foundry_page(index: dict, ktx: Path, skip_ktx: bool) -> None:
     filename = "foundry.png"
@@ -370,11 +376,63 @@ def add_foundry_page(index: dict, ktx: Path, skip_ktx: bool) -> None:
         index["pages"][page_id] = entry
 
 
+def add_dungeon_page(index: dict, ktx: Path, skip_ktx: bool) -> None:
+    """Pack Wave A dungeon foregrounds into the unused slots on the Foundry page."""
+    filename = "foundry.png"
+    page_id = next((i for i, p in enumerate(index["pages"]) if p["png"] == filename), -1)
+    if page_id < 0:
+        raise ValueError("Foundry page must be built before dungeon art")
+    with Image.open(OUT / filename) as existing:
+        page = np.array(existing.convert("RGBA"))
+    size = CELL - 2 * CELL_INSET
+
+    def put(slot: int, cell: np.ndarray, source: str) -> dict:
+        row, col = divmod(slot, PAGE // CELL)
+        x, y = col * CELL, row * CELL
+        page[y:y + CELL, x:x + CELL] = cell
+        x, y = x + CELL_INSET, y + CELL_INSET
+        return {"page": page_id, "rect": [x, y, size, size], "uv": uv(x, y, size, size, PAGE, PAGE), "source": source}
+
+    backdrops = {
+        "attack": {layer: index["cards"]["shear-pin"]["layers"][layer] for layer in ("back", "mid")},
+        "skill": {layer: index["cards"]["rivet-plate"]["layers"][layer] for layer in ("back", "mid")},
+    }
+
+    source_path = SRC / "dungeon" / "dungeon.png"
+    with Image.open(source_path) as img:
+        w, h = img.size
+        for slot, (card, family, _, quadrant) in enumerate(DUNGEON_ART, start=12):
+            row, col = divmod(quadrant, 2)
+            subject = img.convert("RGBA").crop((col * w // 2, row * h // 2, (col + 1) * w // 2, (row + 1) * h // 2))
+            bounds = subject.getchannel("A").point(lambda a: 255 if a >= 16 else 0).getbbox()
+            if not bounds:
+                raise ValueError(f"Missing foreground for {card}")
+            subject = subject.crop(bounds)
+            subject.thumbnail((int(size * .82), int(size * .82)), Image.Resampling.LANCZOS)
+            centred = Image.new("RGBA", (size, size))
+            centred.paste(subject, ((size - subject.width) // 2, (size - subject.height) // 2))
+            front = put(slot, extrude(bleed(np.array(centred)), CELL_INSET, CELL_INSET), str(source_path.relative_to(ROOT)))
+            index["cards"][card] = {"type": family, "frame": family, "glow": GLOW[family],
+                                    "layers": {**backdrops[family], "front": front}, "stack": LAYER_DEFAULTS}
+
+    png = OUT / filename
+    save_png(page, png)
+    entry = {"png": filename, "pngSha256": sha256(png), "pngBytes": png.stat().st_size, "width": PAGE, "height": PAGE}
+    if not skip_ktx:
+        compressed = encode_ktx2(ktx, png)
+        entry.update(ktx2=compressed.name, ktx2Sha256=sha256(compressed), ktx2Bytes=compressed.stat().st_size)
+    if page_id == len(index["pages"]):
+        index["pages"].append(entry)
+    else:
+        index["pages"][page_id] = entry
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--ktx", type=Path, default=DEFAULT_KTX)
     ap.add_argument("--skip-ktx", action="store_true")
     ap.add_argument("--foundry-only", action="store_true", help="extend the checked-in slice atlas using the Foundry source sheets")
+    ap.add_argument("--dungeon-only", action="store_true", help="extend the checked-in atlas using the dungeon source sheet")
     args = ap.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
 
@@ -382,6 +440,11 @@ def main() -> None:
     if args.foundry_only:
         index = json.loads(manifest.read_text())
         add_foundry_page(index,args.ktx,args.skip_ktx)
+        manifest.write_text(dumps(index) + "\n")
+        return
+    if args.dungeon_only:
+        index = json.loads(manifest.read_text())
+        add_dungeon_page(index,args.ktx,args.skip_ktx)
         manifest.write_text(dumps(index) + "\n")
         return
 
@@ -455,6 +518,7 @@ def main() -> None:
         "cards": cards,
     }
     add_foundry_page(index,args.ktx,args.skip_ktx)
+    add_dungeon_page(index,args.ktx,args.skip_ktx)
     manifest.write_text(dumps(index) + "\n")
     print(f"card-atlas.json: {len(cards)} cards, {len(frames)} frames, {len(page_entries)} pages")
 

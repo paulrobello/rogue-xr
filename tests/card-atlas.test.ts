@@ -59,8 +59,7 @@ function expectInside(region: Region): void {
 describe('card atlas index', () => {
   const baseCards = CARDS.filter((c) => !c.upgraded);
 
-  it('covers every slice card and its type', () => {
-    expect(baseCards).toHaveLength(23);
+  it('covers every base card and its type', () => {
     expect(Object.keys(atlas.cards).sort()).toEqual(baseCards.map((c) => c.id).sort());
     for (const card of baseCards) {
       const entry = atlas.cards[card.id];
@@ -90,6 +89,8 @@ describe('card atlas index', () => {
   });
 
   it('ships every page as PNG and KTX2 at the declared size, at most 2048 px', () => {
+    const framePages = new Set(Object.values(atlas.frames).map((frame) => frame.page));
+    expect(atlas.pages.filter((_, page) => !framePages.has(page)).length).toBeLessThanOrEqual(4);
     for (const page of atlas.pages) {
       expect(page.width).toBeLessThanOrEqual(2048);
       expect(page.height).toBeLessThanOrEqual(2048);

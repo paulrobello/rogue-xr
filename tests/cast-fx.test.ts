@@ -140,6 +140,9 @@ describe('effect to FX mapping', () => {
       'anchor-glyph': ['shield', 'motes'],
       counterstroke: ['bolt'],
       'quench-seal': ['shield'],
+      'torque-wrench': ['bolt', 'motes'],
+      counterweight: ['shield'],
+      'tension-coil': ['shield', 'motes'],
     };
     for (const card of CARDS) {
       expect(expected[card.id], card.id).toBeDefined();

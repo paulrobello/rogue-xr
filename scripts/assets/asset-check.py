@@ -219,6 +219,47 @@ def check_hidden_panel(errors: list[str]) -> None:
             errors.append(f"Service-panel sound hash mismatch: {clip['id']}")
 
 
+def check_stone_dungeon(errors: list[str]) -> None:
+    source = ROOT / "assets-source/props/stone-dungeon-kit"
+    runtime = ROOT / "public/assets/props/stone-dungeon-kit/stone-dungeon-kit.glb"
+    try:
+        report = json.loads((source / "staging/report.json").read_text())
+        glb = glb_json(runtime)
+        for path, key in (
+            (runtime, "staged_glb"),
+            (source / "stone-dungeon-kit.blend", "blend"),
+            (ROOT / "scripts/assets/build-stone-dungeon.py", "generator"),
+        ):
+            if sha256(path) != report["sha256"][key]:
+                errors.append(f"Stone dungeon {key} hash mismatch")
+        roots = {glb["nodes"][index]["name"] for index in glb["scenes"][glb.get("scene", 0)]["nodes"]}
+        expected = {
+            "StoneBay", "StoneDoor", "StoneNicheBay", "StoneFloor", "StoneCeiling",
+            "StoneSkylight", "StoneShelf", "StoneTorch", "StonePlanter", "StoneDishes",
+        }
+        if roots != expected or roots != set(report["roots"]):
+            errors.append(f"Stone dungeon roots differ from the modular contract: {sorted(roots)}")
+        nodes = {node.get("name") for node in glb["nodes"]}
+        sockets = {"SocketShelfDish", "SocketShelfPlant", "SocketTorchLight"}
+        if not sockets | {"StoneTorchFlame"} <= nodes or sockets != set(report["sockets"]):
+            errors.append("Stone dungeon is missing an authored prop socket or the flame root")
+        counts = []
+        for mesh in glb["meshes"]:
+            for primitive in mesh["primitives"]:
+                attrs = primitive["attributes"]
+                if primitive.get("mode", 4) != 4 or not {"POSITION", "NORMAL", "TEXCOORD_0"} <= attrs.keys():
+                    errors.append("Stone dungeon mesh is missing triangle topology or required attributes")
+                counts.append(glb["accessors"][primitive.get("indices", attrs["POSITION"])]["count"] // 3)
+        total = sum(counts)
+        if total > 28000 or total != report["triangles"] or runtime.stat().st_size > 3 * 1024 * 1024:
+            errors.append(f"Stone dungeon exceeds its transfer or triangle contract ({total} triangles)")
+        if not glb["images"] or any("bufferView" not in image or "uri" in image for image in glb["images"]):
+            errors.append("Stone dungeon requires self-contained embedded material maps")
+        print(f"asset-check props/stone-dungeon-kit: {len(roots)} modules, {total} tris, {runtime.stat().st_size} bytes")
+    except (OSError, ValueError, KeyError, IndexError, TypeError) as exc:
+        errors.append(f"Stone dungeon kit is invalid: {exc}")
+
+
 def check_architectural_finishes(errors: list[str]) -> dict:
     """Check the reusable boiler/timber finish kit and its source chain."""
     err = lambda msg: errors.append(f"props/architectural-finishes: {msg}")  # noqa: E731
@@ -1258,6 +1299,7 @@ def main() -> int:
     architectural = check_architectural_finishes(errors)
     if architectural:
         print(f"asset-check props/architectural-finishes: {architectural.get('triangles')} tris, {architectural.get('materials')} materials, {architectural.get('embeddedImages')} embedded images, {architectural.get('roots')} roots")
+    check_stone_dungeon(errors)
     runpy.run_path(str(ROOT / "scripts/assets/pressure_works_check.py"))["check_pressure"](errors)
     for w in warnings:
         print(f"WARN {w}")

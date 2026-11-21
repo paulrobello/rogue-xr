@@ -142,6 +142,12 @@ const EXPECTED: Readonly<Record<string, Outcome>> = {
   'shear-pin+': { hp: [51, 60], steam: 2 },
   'rust-spray': { hp: [60, 60], steam: 2, enemyStatuses: [{ rust: 2 }, { rust: 2 }] },
   'rust-spray+': { hp: [60, 60], steam: 2, enemyStatuses: [{ rust: 3 }, { rust: 3 }] },
+  'torque-wrench': { hp: [54, 60], steam: 2, enemyStatuses: [{ rust: 1 }, {}] },
+  'torque-wrench+': { hp: [51, 60], steam: 2, enemyStatuses: [{ rust: 2 }, {}] },
+  counterweight: { hp: [60, 60], block: 12, steam: 1 },
+  'counterweight+': { hp: [60, 60], block: 16, steam: 1 },
+  'tension-coil': { hp: [60, 60], block: 4, steam: 2, playerStatuses: { 'wound-up': 1 } },
+  'tension-coil+': { hp: [60, 60], block: 6, steam: 2, playerStatuses: { 'wound-up': 1 } },
 };
 
 describe('card effects through the engine', () => {
@@ -286,11 +292,11 @@ function rulesText(def: SliceCard): string {
 
 describe('card schema', () => {
   it('has the complete card roster with unique ids', () => {
-    expect(CARDS).toHaveLength(23);
+    expect(CARDS).toHaveLength(26);
     expect(new Set(CARDS.map((c) => c.id)).size).toBe(CARDS.length);
     expect(CARDS_BY_ID.size).toBe(CARDS.length);
-    expect(CARDS.filter((c) => c.type === 'attack')).toHaveLength(8);
-    expect(CARDS.filter((c) => c.type === 'skill')).toHaveLength(8);
+    expect(CARDS.filter((c) => c.type === 'attack')).toHaveLength(9);
+    expect(CARDS.filter((c) => c.type === 'skill')).toHaveLength(10);
     expect(CARDS.filter((c) => c.type === 'sigil')).toHaveLength(7);
   });
 

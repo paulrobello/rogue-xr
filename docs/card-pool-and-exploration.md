@@ -4,6 +4,8 @@ Status: draft for Paul's review, 2026-11-17. The Foundry combat batch, Pressure 
 
 The slice reference points every new card is measured against: 3 steam per turn, a hand of 5, Piston Strike (1 steam, 6 damage) and Brass Guard (1 steam, 5 block).
 
+The dungeon preview continues Wave A with Torque Wrench, Counterweight, and Tension Coil. New runs can roll the cards in rewards and treasure and purchase them in the Workshop. Upper Works seeds `CRYPT001` and `CRYPT004` exercise the Mortar Scarab and Lantern Bailiff rules, respectively. Their concept sheet is ready for visual review, with the 3D actors and animation still to come. [Dungeon enemy concepts](../assets-source/concepts/dungeon/dungeon-enemies-sheet.png)
+
 ## 1. Two kinds of card
 
 | Kind | Where it lives | How it is used | Lasts |

@@ -4,6 +4,7 @@ import {
   BRASS_CACHE_VERSION,
   chooseEncounter,
   DISPATCH_ROOM_VERSION,
+  DUNGEON_CONTENT_VERSION,
   ENCOUNTER_CONTENT_VERSION,
   HIDDEN_PANEL_VERSION,
   PATROL_VERSION,
@@ -34,6 +35,7 @@ import { type PatrolRoute, patrolPeriod, planPatrol, samplePatrol } from '../flo
 import { attachPrismAnnex } from '../floor/prism-annex.ts';
 import { attachFloorOneTopology, withBrassCache } from '../floor/return-passages.ts';
 import { placeStairEntry } from '../floor/stairs.ts';
+import { type StoneRoom, stoneRoomsFor } from '../floor/stone-rooms.ts';
 import { nearSet, shellSet } from '../floor/visibility.ts';
 import { PALETTE } from '../palette.ts';
 import type { RunSnapshot } from '../persist/saves.ts';
@@ -94,6 +96,7 @@ import {
 } from './room-styles.ts';
 import { ServicePanels } from './service-panels.ts';
 import { Stairwell } from './stairwell.ts';
+import { applyStoneRoom, furnishStoneRoom, type StoneRoomKit } from './stone-rooms.ts';
 import { StrikingClock } from './striking-clock.ts';
 import { type RigidNode, rigidAngle } from './study-room.ts';
 import { WallVentSteam } from './wall-vent-steam.ts';
@@ -208,6 +211,9 @@ export interface FloorView {
   dressChimes(art: THREE.Object3D): void;
   dressStairs(model: THREE.Object3D): void;
   readonly styledRooms: readonly THREE.Group[];
+  readonly stoneRooms: ReadonlyMap<number, StoneRoom>;
+  readonly stoneTorches: ReadonlyMap<number, THREE.Object3D>;
+  dressStoneFurnishings(kit: StoneRoomKit): void;
   loot: FloorLoot;
   readonly brassKeyStand: BrassKeyStand | null;
   dressBrassKey(art: THREE.Object3D): void;
@@ -265,6 +271,7 @@ export interface FloorView {
     rigidNodes?: readonly RigidNode[],
     roomStyleKit?: RoomStyleKit,
     instantiateClosedHall?: () => THREE.Object3D,
+    stoneKit?: StoneRoomKit,
   ): number;
   /** Rigid nodes (the gear-shaft crown gear) this floor turns each frame. */
   readonly spinnerCount: number;
@@ -308,6 +315,7 @@ function tagEnemyKinds(
   seed: string,
   contentVersion: number,
   floorNumber: number,
+  stoneRooms: ReadonlyMap<number, StoneRoom>,
 ): void {
   for (const [room, bodies] of world.enemies) {
     const tier = world.plan.rooms[room]?.encounter?.tier;
@@ -319,6 +327,7 @@ function tagEnemyKinds(
       bodies.length,
       contentVersion,
       floorNumber,
+      stoneRooms.get(room) === 'dungeon',
     );
     bodies.forEach((body, i) => {
       const kind = enemies[i];
@@ -420,6 +429,8 @@ export function mountFloorView(
   let dispatchRoom: DispatchRoom | null = null;
   let counterweight: CounterweightStation | null = null;
   const floorNumber = options.floorNumber ?? 1;
+  const stoneRooms: ReadonlyMap<number, StoneRoom> =
+    contentVersion >= DUNGEON_CONTENT_VERSION ? stoneRoomsFor(plan, floorNumber) : new Map();
   const world = buildFloorWorld(plan, options.templates);
   const windowBays = exposedWindowBays(plan, floorNumber);
   const cacheBay = floorNumber === 1 ? windowCacheBay(world, windowBays, seed) : undefined;
@@ -432,7 +443,7 @@ export function mountFloorView(
   const guided =
     options.guidedShowcase === true && floorNumber !== 3 && isShowcaseFloor(plan.seed, floorNumber);
   const pressure = plan.pressureWing ? new PressureWorks(world, plan.pressureWing, guided) : null;
-  tagEnemyKinds(world, seed, contentVersion, floorNumber);
+  tagEnemyKinds(world, seed, contentVersion, floorNumber, stoneRooms);
   scene.add(world.group);
   // Greybox lighting is two global lights; per-room sockets get real lights with the lightmaps (P4-T7).
   const sun = new THREE.DirectionalLight(PALETTE.candle, 1.4);
@@ -558,6 +569,8 @@ export function mountFloorView(
     room: THREE.Object3D;
   }
   const styledRooms: THREE.Group[] = [];
+  const stoneFixtureReleases: (() => void)[] = [];
+  const stoneTorches = new Map<number, THREE.Object3D>();
   const shaftFinishes: THREE.Material[] = [];
   const spinners: Spinner[] = [];
   /** Live fireplace fires (the hall's); instances of one template share the material and its clock. */
@@ -893,6 +906,19 @@ export function mountFloorView(
       }
     },
     styledRooms,
+    stoneRooms,
+    stoneTorches,
+    dressStoneFurnishings(kit) {
+      for (const room of styledRooms) {
+        if (!stoneRooms.has(room.userData.room) || !room.userData.roomStyle?.startsWith('stone-'))
+          continue;
+        stoneFixtureReleases.push(
+          ...furnishStoneRoom(world, room.userData.room, room, kit, furnishings?.placements ?? []),
+        );
+        const torch = room.getObjectByName('SocketTorchLight');
+        if (torch) stoneTorches.set(room.userData.room, torch);
+      }
+    },
     loot,
     hearth,
     book,
@@ -1013,19 +1039,27 @@ export function mountFloorView(
       undressed = true;
       dressEnemies();
     },
-    useRoomAsset(templateId, instantiate, rigidNodes = [], roomStyleKit, instantiateClosedHall) {
+    useRoomAsset(
+      templateId,
+      instantiate,
+      rigidNodes = [],
+      roomStyleKit,
+      instantiateClosedHall,
+      stoneKit,
+    ) {
       if (floorNumber === 3 && roomStyleKit)
         world.dressEncounterDoor(roomStyleKit.EncounterDoorLeaf);
       let dressed = 0;
       world.plan.rooms.forEach((room, index) => {
         if (room.templateId !== templateId) return;
         const style = roomStyleKit && roomStyleFor(world.plan, index, floorNumber);
+        const stone = stoneKit && stoneRooms.get(index);
         const closedHall =
-          templateId === 'hall' && !style && !windowBays.some((bay) => bay.room === index)
+          templateId === 'hall' && !style && !stone && !windowBays.some((bay) => bay.room === index)
             ? instantiateClosedHall
             : undefined;
         const model = (closedHall ?? instantiate)();
-        if (style && roomStyleKit) {
+        if ((style && roomStyleKit) || (stone && stoneKit)) {
           const styled = new THREE.Group();
           const doors = templateById(room.templateId).doors.map((door) => ({
             facing: door.facing,
@@ -1036,12 +1070,13 @@ export function mountFloorView(
               ) && !(stairs?.entry.room === index && stairs.entry.door === door.id),
           }));
           const edge = templateById(templateId).footprint.max[0];
-          applyRoomStyle(styled, style, roomStyleKit, doors, edge);
+          if (stone && stoneKit) applyStoneRoom(styled, stone, stoneKit, doors, edge);
+          else if (style && roomStyleKit) applyRoomStyle(styled, style, roomStyleKit, doors, edge);
           const keepDesk = style === 'timber' || (templateId === 'study' && room.loot.length > 0);
           if (templateId === 'hall') copyHallBenches(model, styled);
           else if (keepDesk) copyStudyDesk(model, styled);
           world.removeRoomFixtureColliders(index, templateId === 'hall' || keepDesk);
-          styled.userData.conservatory = floorNumber === 3;
+          styled.userData.conservatory = floorNumber === 3 && !stone;
           styledRooms.push(styled);
           world.dressRoom(index, styled);
           dressed++;
@@ -1107,6 +1142,7 @@ export function mountFloorView(
       for (const release of windowDressing.values()) release();
       windowDressing.clear();
       stairs?.dispose();
+      for (const release of stoneFixtureReleases) release();
       for (const room of styledRooms) disposeRoomStyle(room);
       for (const material of shaftFinishes) material.dispose();
       book.dispose();

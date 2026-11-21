@@ -16,14 +16,20 @@ type Shadow = {
 };
 
 // Each wall, the deck and the ceiling has a chart. Half-texel insets keep the neighbouring chart out of the filter.
-const atlasVertex = (edge: number) => `
+const atlasVertex = (edge: number, horizontalTile: boolean) => `
 vec3 finishP = position;
 float finishFace;
 #ifdef USE_INSTANCING
   finishP = (instanceMatrix * vec4(position, 1.)).xyz;
+  ${
+    horizontalTile
+      ? `finishFace = finishP.y < 2. ? 4. : 5.;
+  vec2 finishUv = finishP.xz / ${(2 * edge).toFixed(1)} + .5;`
+      : `
   vec2 centre = instanceMatrix[3].xz;
   finishFace = abs(centre.x) > abs(centre.y) ? (centre.x > 0. ? 1. : 3.) : (centre.y > 0. ? 2. : 0.);
-  vec2 finishUv = vec2((mod(finishFace, 2.) < .5 ? finishP.x : finishP.z) / ${(2 * edge).toFixed(1)} + .5, finishP.y / 4.);
+  vec2 finishUv = vec2((mod(finishFace, 2.) < .5 ? finishP.x : finishP.z) / ${(2 * edge).toFixed(1)} + .5, finishP.y / 4.);`
+  }
 #else
   finishFace = finishP.y < 2. ? 4. : 5.;
   vec2 finishUv = finishP.xz / 8. + .5;
@@ -136,6 +142,27 @@ export function lightRoomStyle(room: THREE.Group, placements: readonly InteriorP
     shadows: Shadow[] = [];
   const matrix = new THREE.Matrix4(),
     centre = new THREE.Vector3();
+  const stone =
+    room.userData.roomStyle === 'stone-dungeon' || room.userData.roomStyle === 'stone-cloister';
+  const skylight = room.userData.stoneSkylight as readonly [number, number, number] | undefined;
+  const torchSockets: readonly THREE.Object3D[] = room.userData.stoneTorchSockets ?? [];
+  for (const socket of torchSockets) {
+    room.worldToLocal(socket.getWorldPosition(centre));
+    lamps.push({ x: centre.x, y: centre.y, z: centre.z, power: 1.8 });
+  }
+  const stoneShelf = room.getObjectByName('StoneShelf');
+  if (stoneShelf)
+    footprint(
+      shadows,
+      stoneShelf.position.x,
+      stoneShelf.position.z,
+      stoneShelf.rotation.y,
+      0,
+      0,
+      0.7,
+      0.31,
+      0.56,
+    );
   room.traverse((node) => {
     if (!(node instanceof THREE.Mesh)) return;
     const material = node.material;
@@ -211,16 +238,26 @@ export function lightRoomStyle(room: THREE.Group, placements: readonly InteriorP
           glow += l.power / (0.82 + dx * dx + dy * dy * 0.78 + dz * dz);
         }
         const ao = face === 4 ? contact(shadows, x, z) : 1;
-        const base = (face === 5 ? 0.65 : face === 4 ? 0.78 : 0.74) * (timber ? 0.46 : 0.65);
+        const base =
+          (face === 5 ? 0.65 : face === 4 ? 0.78 : 0.74) *
+          (stone ? (skylight ? 0.57 : 0.39) : timber ? 0.46 : 0.65);
+        let daylight = 0;
+        if (skylight) {
+          const drop = skylight[1] - y;
+          const dx = x - skylight[0] - 0.4 * drop,
+            dz = z - skylight[2] + 0.19 * drop;
+          const width = 0.57 + drop * 0.11;
+          daylight = 0.76 * Math.exp(-(dx * dx + dz * dz) / (width * width));
+        }
         const k = 4 * (((Math.floor(face / 3) * TILE + j) * 3 + (face % 3)) * TILE + i);
-        pixels[k] = Math.min(255, 128 * ao * (base + glow));
+        pixels[k] = Math.min(255, 128 * ao * (base + glow + daylight));
         pixels[k + 1] = Math.min(
           255,
-          128 * ao * (base + glow * (room.userData.conservatory ? 0.85 : 0.63)),
+          128 * ao * (base + glow * (room.userData.conservatory ? 0.85 : 0.63) + daylight * 0.94),
         );
         pixels[k + 2] = Math.min(
           255,
-          128 * ao * (base + glow * (room.userData.conservatory ? 1.1 : 0.36)),
+          128 * ao * (base + glow * (room.userData.conservatory ? 1.1 : 0.36) + daylight * 0.79),
         );
         pixels[k + 3] = 255;
       }
@@ -230,13 +267,17 @@ export function lightRoomStyle(room: THREE.Group, placements: readonly InteriorP
   texture.magFilter = texture.minFilter = THREE.LinearFilter;
   texture.needsUpdate = true;
   room.userData.finishLightMap = texture;
-  const materials = new Map<THREE.Material, THREE.Material>();
-  const shade = (source: THREE.Material): THREE.Material => {
+  const wallMaterials = new Map<THREE.Material, THREE.Material>();
+  const surfaceMaterials = new Map<THREE.Material, THREE.Material>();
+  const shade = (source: THREE.Material, mesh: THREE.Mesh): THREE.Material => {
+    const stoneShell = mesh.userData.stoneShell === true;
+    const horizontalTile = mesh.userData.stoneSurface === true;
     if (
       !(source instanceof THREE.MeshStandardMaterial) ||
-      !['BoilerFinish', 'TimberFinish'].includes(source.name)
+      (!stoneShell && !['BoilerFinish', 'TimberFinish'].includes(source.name))
     )
       return source;
+    const materials = horizontalTile ? surfaceMaterials : wallMaterials;
     const existing = materials.get(source);
     if (existing) return existing;
     const m = bakedRoomMaterial(source.userData.roomStyleOwned ? source : source.clone());
@@ -258,17 +299,18 @@ export function lightRoomStyle(room: THREE.Group, placements: readonly InteriorP
       }
       shader.vertexShader = shader.vertexShader.replace(
         '#include <begin_vertex>',
-        `#include <begin_vertex>\n${atlasVertex(edge)}`,
+        `#include <begin_vertex>\n${atlasVertex(edge, horizontalTile)}`,
       );
     };
-    m.customProgramCacheKey = () => `room-finish-lighting-${edge}-${!!room.userData.conservatory}`;
+    m.customProgramCacheKey = () =>
+      `room-finish-lighting-${edge}-${!!room.userData.conservatory}-${horizontalTile}`;
     materials.set(source, m);
     return m;
   };
   room.traverse((node) => {
     if (node instanceof THREE.Mesh)
       node.material = Array.isArray(node.material)
-        ? node.material.map(shade)
-        : shade(node.material);
+        ? node.material.map((material) => shade(material, node))
+        : shade(node.material, node);
   });
 }

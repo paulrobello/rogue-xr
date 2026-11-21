@@ -1272,6 +1272,68 @@
           "duration_seconds": 1.8
         }
       }
+    },
+    "dungeon-torch-crackle": {
+      "source_file": "assets-source/audio/sfx/procedural/dungeon-torch-crackle.wav",
+      "source_sha256": "2999c09f90f9680405e9cb5196be8f749990ce591def82c4a5704a09c945a97d",
+      "runtime_file": "public/assets/audio/sfx/dungeon-torch-crackle.ogg",
+      "runtime_sha256": "3ec974836a6dca59187d06c091df8cdb04c16f4c57fd3ded1d768c57974c9214",
+      "runtime_bytes": 88626,
+      "steps": [
+        "loop kept native: source wrap passed",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "torch-crackle",
+          "seed": 4201,
+          "duration_seconds": 10.0
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "dungeon-chain-wind": {
+      "source_file": "assets-source/audio/sfx/procedural/dungeon-chain-wind.wav",
+      "source_sha256": "c3050aa51f47036b154409ab08a6a1ec1b8b4fa41e67a77eff79be50697195d1",
+      "runtime_file": "public/assets/audio/sfx/dungeon-chain-wind.ogg",
+      "runtime_sha256": "6865e794c54de9eecff3af3015bafda2d9a11eb79798b3bf61da137af94cdcd1",
+      "runtime_bytes": 11426,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "chain-wind",
+          "seed": 4202,
+          "duration_seconds": 1.3
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "dungeon-scarab-scrape": {
+      "source_file": "assets-source/audio/sfx/procedural/dungeon-scarab-scrape.wav",
+      "source_sha256": "804e437794cfc5d2d503e44e498206355bb2c782a357d6c4d51b520cfd4f930f",
+      "runtime_file": "public/assets/audio/sfx/dungeon-scarab-scrape.ogg",
+      "runtime_sha256": "8c2b0539834613d2202e793653296845c8555af809920d5131f0f39e26bac96d",
+      "runtime_bytes": 11464,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "scarab-scrape",
+          "seed": 4203,
+          "duration_seconds": 1.05
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
     }
   },
   "music": {

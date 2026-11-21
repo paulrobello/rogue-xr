@@ -1,6 +1,7 @@
 import {
   BRASS_CACHE_VERSION,
   DISPATCH_ROOM_VERSION,
+  DUNGEON_CONTENT_VERSION,
   ENCOUNTER_CONTENT_VERSION,
   FOUNDRY_VERSION,
   HIDDEN_PANEL_VERSION,
@@ -9,7 +10,7 @@ import {
   PRISM_ANNEX_VERSION,
   RETURN_PASSAGES_VERSION,
 } from '../combat/encounter-choice.ts';
-import { LEGACY_REWARD_POOL, PERMANENT_CARD_IDS } from '../content/rewards.ts';
+import { DUNGEON_REWARD_IDS, LEGACY_REWARD_POOL, PERMANENT_CARD_IDS } from '../content/rewards.ts';
 import { brassCacheForPlayableFloor } from '../floor/return-passages.ts';
 import type { FloorSnapshot, RunSnapshot } from '../persist/saves.ts';
 import { snapshotRun } from '../persist/saves.ts';
@@ -1145,8 +1146,7 @@ export class RunFlow {
     if (!result.patrol && !this.clearedRooms.includes(result.room))
       this.clearedRooms.push(result.room);
     const healed = this.withHp(run, result.playerHp);
-    const pool =
-      this.contentVersionValue < FOUNDRY_VERSION ? LEGACY_REWARD_POOL : this.opts.rewardPool;
+    const pool = this.rewardPoolForContentVersion();
     const rolled = rewardOffer(healed, result.tier, pool);
     if (result.tier === 'guardian') this.guardianDefeatedValue = true;
     this.runValue = result.patrol ? { ...rolled.run, patrolDefeated: true } : rolled.run;
@@ -1166,8 +1166,7 @@ export class RunFlow {
     const target =
       this.floorNumberValue === 1 && this.brassKey !== 'spent' ? this.brassCache : undefined;
     if (target?.room === room && target.socketId === socketId) return null;
-    const pool =
-      this.contentVersionValue < FOUNDRY_VERSION ? LEGACY_REWARD_POOL : this.opts.rewardPool;
+    const pool = this.rewardPoolForContentVersion();
     const result = openTreasure(run, lootKey(room, socketId), kind, pool);
     if (!result) return null;
     this.runValue = result.run;
@@ -1340,6 +1339,13 @@ export class RunFlow {
   private withHp(run: RunState, hp: number | undefined): RunState {
     if (hp === undefined) return run;
     return { ...run, hp: Math.max(0, Math.min(run.maxHp, Math.round(hp))) };
+  }
+
+  private rewardPoolForContentVersion(): readonly string[] {
+    if (this.contentVersionValue < FOUNDRY_VERSION) return LEGACY_REWARD_POOL;
+    if (this.contentVersionValue < DUNGEON_CONTENT_VERSION)
+      return this.opts.rewardPool.filter((id) => !DUNGEON_REWARD_IDS.has(id));
+    return this.opts.rewardPool;
   }
 
   private applyPressureResult(

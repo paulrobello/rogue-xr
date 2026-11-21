@@ -473,8 +473,8 @@ describe('AudioDirector', () => {
     const h = harness();
     await h.director.load();
     const created = h.voices.length + h.flat.length;
-    // 8 spatial pool voices plus one dedicated loop voice, 4 flat voices plus 3 music layers.
-    expect(h.voices).toHaveLength(9);
+    // 8 spatial pool voices plus the dedicated loop voices, 4 flat voices plus 3 music layers.
+    expect(h.voices).toHaveLength(8 + SFX_IDS.filter((id) => SFX[id].loop).length);
     expect(h.flat).toHaveLength(7);
     for (let i = 0; i < 50; i++) {
       h.clock.t += 1;
@@ -798,7 +798,7 @@ describe('AudioDirector', () => {
       setMasterVolume: () => undefined,
     };
     const director = new AudioDirector({ deps, baseUrl: '/' });
-    expect(director.root.children.length).toBe(9);
+    expect(director.root.children).toHaveLength(8 + SFX_IDS.filter((id) => SFX[id].loop).length);
   });
 });
 

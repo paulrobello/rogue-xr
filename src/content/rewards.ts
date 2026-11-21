@@ -12,6 +12,13 @@ export const REWARD_POOL: readonly string[] = CARDS.filter((card) => !BASICS.has
   (card) => card.id,
 );
 
+/** Added rewards that existing runs skip when they roll new offers. */
+export const DUNGEON_REWARD_IDS: ReadonlySet<string> = new Set([
+  'torque-wrench',
+  'counterweight',
+  'tension-coil',
+]);
+
 /** Reward pool used before the Foundry expansion. Existing saves keep this boundary for new rolls. */
 export const LEGACY_REWARD_POOL: readonly string[] = [
   'cog-toss',

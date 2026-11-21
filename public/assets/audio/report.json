@@ -2,8 +2,8 @@
   "tools": {
     "ffmpeg": "ffmpeg version 9.0.2 Copyright (c) 2000-2026 the FFmpeg developers",
     "libopus_encoder": true,
-    "numpy": "2.5.5",
-    "python": "3.14.3"
+    "numpy": "2.4.4",
+    "python": "3.14.10"
   },
   "targets": {
     "sfx_lufs": -16.0,
@@ -2073,6 +2073,206 @@
           "duration_seconds": 1.8
         }
       }
+    },
+    "dungeon-torch-crackle": {
+      "intermediate_wav": "assets-source/audio/derived/dungeon-torch-crackle.wav",
+      "intermediate_sha256": "ddfabaf01d55aa4b54874aa7621b2e2fbc00c5830683671b8facb50f6e811e00",
+      "pre_gain": {
+        "integrated_lufs": -21.5,
+        "true_peak_dbtp": -5.8,
+        "momentary_max_lufs": -20.7
+      },
+      "gain_db": 4.55,
+      "encode_attempts": 2,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -17.0,
+        "true_peak_dbtp": -1.1,
+        "momentary_max_lufs": -16.1
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -1.0,
+      "loudness_status": "met",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 480000,
+      "decoded_duration_s": 10.0,
+      "decoded_pcm_sha256": "97797a90edaeb2ce0462e4afa6e5d0744cf77d3c4f7fd54d7d4f0b9e4e330695",
+      "loop": {
+        "source": {
+          "wrap_step": 0.054467,
+          "p999_step": 0.066191,
+          "seam_ratio": 0.823,
+          "head_tail_level_diff_db": 0.21,
+          "interior_dropout_windows": 0,
+          "pass": true
+        },
+        "runtime": {
+          "wrap_step": 0.058841,
+          "p999_step": 0.108741,
+          "seam_ratio": 0.541,
+          "head_tail_level_diff_db": 0.19,
+          "interior_dropout_windows": 0,
+          "pass": true
+        }
+      },
+      "id": "dungeon-torch-crackle",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/dungeon-torch-crackle.wav",
+      "source_sha256": "2999c09f90f9680405e9cb5196be8f749990ce591def82c4a5704a09c945a97d",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 10.0
+      },
+      "trim": {
+        "trimmed_head_ms": 0.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "loop kept native: source wrap passed",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/dungeon-torch-crackle.ogg",
+      "runtime_sha256": "3ec974836a6dca59187d06c091df8cdb04c16f4c57fd3ded1d768c57974c9214",
+      "runtime_bytes": 88626,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 10.0065
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "torch-crackle",
+          "seed": 4201,
+          "duration_seconds": 10.0
+        }
+      }
+    },
+    "dungeon-chain-wind": {
+      "intermediate_wav": "assets-source/audio/derived/dungeon-chain-wind.wav",
+      "intermediate_sha256": "367a067ec257d228b010a55f180813c34190886cfde66fe9e41aeb8a04ef657b",
+      "pre_gain": {
+        "integrated_lufs": -20.4,
+        "true_peak_dbtp": -5.8,
+        "momentary_max_lufs": -17.4
+      },
+      "gain_db": 4.4,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -16.0,
+        "true_peak_dbtp": -1.7,
+        "momentary_max_lufs": -13.0
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": 0.0,
+      "loudness_status": "met",
+      "limited_by_true_peak": false,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 61196,
+      "decoded_duration_s": 1.2749,
+      "decoded_pcm_sha256": "892d003fa0a29e6555d51facabf4b5e597ededd8fe79be845c3039383ae10698",
+      "id": "dungeon-chain-wind",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/dungeon-chain-wind.wav",
+      "source_sha256": "c3050aa51f47036b154409ab08a6a1ec1b8b4fa41e67a77eff79be50697195d1",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.3
+      },
+      "trim": {
+        "trimmed_head_ms": 25.1,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/dungeon-chain-wind.ogg",
+      "runtime_sha256": "6865e794c54de9eecff3af3015bafda2d9a11eb79798b3bf61da137af94cdcd1",
+      "runtime_bytes": 11426,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.2814
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "chain-wind",
+          "seed": 4202,
+          "duration_seconds": 1.3
+        }
+      }
+    },
+    "dungeon-scarab-scrape": {
+      "intermediate_wav": "assets-source/audio/derived/dungeon-scarab-scrape.wav",
+      "intermediate_sha256": "a187bd50c2807bc5fed037435a5f99fa5fb9fc27172670c2cc5d8ebe935376e9",
+      "pre_gain": {
+        "integrated_lufs": -21.2,
+        "true_peak_dbtp": -5.8,
+        "momentary_max_lufs": -18.5
+      },
+      "gain_db": 4.8,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -16.4,
+        "true_peak_dbtp": -1.1,
+        "momentary_max_lufs": -13.7
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -0.4,
+      "loudness_status": "met",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 49436,
+      "decoded_duration_s": 1.0299,
+      "decoded_pcm_sha256": "6bd06c2db844ec67c0980b8faa085b511bd058f71f3b21513b49a08127d2e099",
+      "id": "dungeon-scarab-scrape",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/dungeon-scarab-scrape.wav",
+      "source_sha256": "804e437794cfc5d2d503e44e498206355bb2c782a357d6c4d51b520cfd4f930f",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.05
+      },
+      "trim": {
+        "trimmed_head_ms": 20.1,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/dungeon-scarab-scrape.ogg",
+      "runtime_sha256": "8c2b0539834613d2202e793653296845c8555af809920d5131f0f39e26bac96d",
+      "runtime_bytes": 11464,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.0364
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "scarab-scrape",
+          "seed": 4203,
+          "duration_seconds": 1.05
+        }
+      }
     }
   },
   "music": {
@@ -2782,5 +2982,10 @@
     }
   },
   "music_status": "absent: runtime plays silence",
-  "external_checks": {}
+  "external_checks": {
+    "check-audio-loops": {
+      "exit": 0,
+      "stdout": "public/assets/audio/sfx/dungeon-torch-crackle.ogg wrap   2025 / p99.9   3849   head  -14.2 dB   tail  -14.4 dB   min  -14.9 dB   ok\n\nPASS: 1 file(s) wrap cleanly with no interior dropout"
+    }
+  }
 }

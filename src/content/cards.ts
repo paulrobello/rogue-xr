@@ -426,6 +426,58 @@ export const CARDS: readonly SliceCard[] = [
       description: 'Trace Quench. Remove up to 4 enemy Overheat. Gain 5 Block + 2 per stack spent.',
     },
   },
+  {
+    id: 'torque-wrench',
+    name: 'Torque Wrench',
+    type: 'attack',
+    cost: 1,
+    target: 'enemy',
+    effects: [
+      { type: 'damage', amount: 6, target: 'target' },
+      { type: 'apply-status', status: 'rust', stacks: 1, target: 'target' },
+    ],
+    description: 'Deal 6 damage. Apply 1 Rust.',
+    upgrade: {
+      effects: [
+        { type: 'damage', amount: 9, target: 'target' },
+        { type: 'apply-status', status: 'rust', stacks: 2, target: 'target' },
+      ],
+      description: 'Deal 9 damage. Apply 2 Rust.',
+    },
+  },
+  {
+    id: 'counterweight',
+    name: 'Counterweight',
+    type: 'skill',
+    cost: 2,
+    target: 'none',
+    pinned: true,
+    effects: [{ type: 'block', amount: 12 }],
+    description: 'Gain 12 Block. Pinned.',
+    upgrade: {
+      effects: [{ type: 'block', amount: 16 }],
+      description: 'Gain 16 Block. Pinned.',
+    },
+  },
+  {
+    id: 'tension-coil',
+    name: 'Tension Coil',
+    type: 'skill',
+    cost: 1,
+    target: 'none',
+    effects: [
+      { type: 'block', amount: 4 },
+      { type: 'apply-status', status: 'wound-up', stacks: 1, target: 'self' },
+    ],
+    description: 'Gain 4 Block. Gain 1 Wound-up.',
+    upgrade: {
+      effects: [
+        { type: 'block', amount: 6 },
+        { type: 'apply-status', status: 'wound-up', stacks: 1, target: 'self' },
+      ],
+      description: 'Gain 6 Block. Gain 1 Wound-up.',
+    },
+  },
 ];
 
 export const CARDS_BY_ID: ReadonlyMap<string, SliceCard> = new Map(CARDS.map((c) => [c.id, c]));

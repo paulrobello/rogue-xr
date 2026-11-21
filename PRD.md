@@ -229,13 +229,15 @@ Acceptance:
 - G1 to G6 each verified, with per-criterion evidence in `docs/verification.md`.
 - Physical: Paul plays two seeded runs on Quest 3 and accepts the slice.
 
-### Post-slice (not yet planned)
+### Post-slice expansion
 
 The full spire (number of floors and acts), hand tracking, custom mage gloves, a larger card and dice pool, more room templates, a Playwright/IWER e2e gate, and possibly a daily seed. See Open Questions.
 
 Locks and consumables (Paul, 2026-11-17): some doors and chests are locked and open only with a key or an unlock spell. The player carries an inventory of single-use items and cards, separate from the deck. Keys are found or won and are spent on use. A Lock Pick attempt on an optional lock uses the tracing difficulty for the current play mode. Spend the pick when the lock opens. The satchel holds three consumable tools and can be upgraded to five. Puzzle keys and ingredients have their own inventory. The goal is to make backtracking worth doing.
 
 New runs include the Foundry cards, cross-floor bells, counterweight return passage, Pressure Works supply door and Alchemical Conservatory. The keeper’s commissions, seeded calibration instruments, knock-open Upper Works recess, and single-use brass coffer key add optional return trips. Its cauldron, timed clock, paintings and enemies are described in the [floor roadmap and potion recipe book](docs/conservatory-and-return-routes.md). The remaining card pool and tasks are planned in [docs/card-pool-and-exploration.md](docs/card-pool-and-exploration.md). The Upper Works now has an optional roaming patrol. The approved Lock Pick retry and satchel rules are recorded as CP2 and CP3.
+
+The next expansion introduces interchangeable stone dungeon walls, doorways and ceiling tiles. The same pieces serve a torchlit Upper Works vault and a planted Conservatory cloister lit from above. Shelves, dishes, plants and torches remain separate assets. The expansion pairs the dungeon with two clockwork enemy designs and continues the Wave A card pool. Paul approved art and sound-effect spending for this expansion.
 
 ## Risks
 

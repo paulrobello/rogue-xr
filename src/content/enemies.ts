@@ -19,7 +19,9 @@ export type EnemyKind =
   | 'glasswing-scrivener'
   | 'furnace-mite'
   | 'null-crown-auditor'
-  | 'clockwork-owl';
+  | 'clockwork-owl'
+  | 'mortar-scarab'
+  | 'lantern-bailiff';
 
 export type EncounterTier = 'regular' | 'elite' | 'guardian';
 
@@ -166,6 +168,30 @@ export const ENEMIES: Readonly<Record<EnemyKind, EnemySetup>> = {
       move('feather-dart', 'attack-debuff', 2, [hit(6), onPlayer('vulnerable', 2)]),
     ],
   },
+  'mortar-scarab': {
+    id: 'mortar-scarab',
+    name: 'Mortar Scarab',
+    hp: 31,
+    moves: [
+      { ...move('shell-seal', 'defend', 2, [block(9)], 'guarded'), followUp: 'mortar-rake' },
+      move('mortar-rake', 'attack', 0, [hit(4, 2)], 'exposed'),
+      move('grind', 'attack-debuff', 2, [hit(6), onPlayer('weak', 2)]),
+    ],
+  },
+  'lantern-bailiff': {
+    id: 'lantern-bailiff',
+    name: 'Lantern Bailiff',
+    hp: 42,
+    moves: [
+      {
+        ...move('draw-chain', 'buff', 2, [windUp(1), block(7)], 'guarded'),
+        followUp: 'lantern-sweep',
+      },
+      move('lantern-sweep', 'attack', 0, [hit(12)], 'exposed'),
+      move('cinder-glance', 'attack-debuff', 2, [hit(5), onPlayer('overheat', 1)]),
+      move('lantern-parry', 'defend', 1, [block(8)], 'guarded'),
+    ],
+  },
 };
 
 /** Threat cost of one enemy against a floor budget. */
@@ -179,6 +205,8 @@ export const ENEMY_THREAT: Readonly<Record<EnemyKind, number>> = {
   'furnace-mite': 2,
   'null-crown-auditor': 8,
   'clockwork-owl': 3,
+  'mortar-scarab': 3,
+  'lantern-bailiff': 4,
 };
 
 export interface Encounter {
@@ -199,6 +227,12 @@ const encounter = (id: string, tier: EncounterTier, enemies: EnemyKind[]): Encou
 export const ROAMING_SENTRY = encounter('roaming-sentry', 'regular', ['cog-sentry']);
 
 export const CONSERVATORY_OWL = encounter('conservatory-owl', 'regular', ['clockwork-owl']);
+
+/** Regular solo encounters reserved for the stone dungeon rooms. */
+export const DUNGEON_ENCOUNTERS: readonly Encounter[] = [
+  encounter('mortar-scarab', 'regular', ['mortar-scarab']),
+  encounter('lantern-bailiff', 'regular', ['lantern-bailiff']),
+];
 
 export const ENCOUNTERS: Readonly<Record<EncounterTier, readonly Encounter[]>> = {
   regular: [

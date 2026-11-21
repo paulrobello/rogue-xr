@@ -320,6 +320,7 @@ export interface CombatSessionDeps {
   patrol?: boolean;
   contentVersion?: number;
   floorNumber?: number;
+  stoneDungeon?: boolean;
   tablePose: TablePose;
   /** Player-to-table-centre distance the table was placed at, metres. Default STATUS_FACE_SEAT. */
   seatDistance?: number;
@@ -650,6 +651,7 @@ export class CombatSession {
           ordered.length,
           deps.contentVersion,
           deps.floorNumber,
+          deps.stoneDungeon,
         );
     const { difficulty, ...controllerOptions } = deps.options ?? {};
     this.controller = new CombatController({
@@ -3012,6 +3014,7 @@ export interface CombatHookFloor {
   seed: string;
   contentVersion?: number;
   floorNumber?: number;
+  stoneRooms?: ReadonlyMap<number, 'dungeon' | 'cloister'>;
   encounter: Pick<EncounterDirector, 'phase' | 'activeRoom' | 'tablePose' | 'end'> & {
     readonly seatDistance?: number | null;
     readonly activePatrol?: THREE.Object3D | null;
@@ -3131,6 +3134,7 @@ export class CombatHook {
         tier,
         ...(floor.contentVersion === undefined ? {} : { contentVersion: floor.contentVersion }),
         ...(floor.floorNumber === undefined ? {} : { floorNumber: floor.floorNumber }),
+        stoneDungeon: floor.stoneRooms?.get(room) === 'dungeon',
         ...(patrol ? { patrol: true } : {}),
         tablePose: pose,
         ...(seat == null ? {} : { seatDistance: seat }),
