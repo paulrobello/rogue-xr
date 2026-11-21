@@ -6,6 +6,12 @@ export const STEAM_PER_TURN = 3;
 export const DRAW_PER_TURN = 5;
 export const MAX_HAND = 10;
 
+export type PrismChannel = 0 | 1 | 2;
+export interface StoredPrismState {
+  readonly orientation: PrismChannel;
+  readonly progress: 0 | 1 | 2 | 3;
+}
+
 /** `'player'` or an enemy id. Enemy ids must never be `'player'`. */
 export type ActorId = string;
 export const PLAYER_ID = 'player';

@@ -224,6 +224,14 @@ def procedural_puzzle_door(cue: dict, path: Path) -> None:
         noise(0.12, 1.45, 0.11, 0.55, 0.0)
         tone(0.22, 0.16, 520, 0.18, 0.06)
         tone(1.68, 0.30, 68, 0.42, 0.13)
+    elif kind == "prism":
+        # Three quiet crystalline contacts, then a restrained brass guide slide and seat.
+        for at, hz in ((0.06, 1760), (0.23, 1980), (0.41, 2210)):
+            tone(at, 0.20, hz, 0.22, 0.12, 90)
+            tone(at, 0.26, hz * 1.51, 0.08, 0.10, 120)
+        tone(0.58, 0.86, 148, 0.17, 0.62, -24)
+        noise(0.58, 0.82, 0.055, 0.48, 0.0)
+        tone(1.31, 0.28, 82, 0.40, 0.12)
     else:
         raise ValueError(f"unknown puzzle-door cue kind: {kind}")
     peak = max(np.max(np.abs(y)), 1e-9)

@@ -53,6 +53,7 @@ export const SFX = {
   'archive-ink-open': sfx('archive-ink-open', 'positional', 0.2),
   'archive-stillwind-open': sfx('archive-stillwind-open', 'positional', 0.2),
   'archive-mirror-open': sfx('archive-mirror-open', 'positional', 0.2),
+  'prism-annex-open': sfx('prism-annex-open', 'positional', 0.2),
   'astral-lift-open': sfx('astral-lift-open', 'positional', 0.2),
   'paper-unfold': sfx('paper-unfold', 'positional', 0.2),
   'ui-tick': sfx('ui-tick', 'ui', 0.03),
@@ -80,6 +81,7 @@ export const PUZZLE_GATE_OPEN_SFX = {
   counterweight: 'counterweight-grille-open',
   panel: 'service-panel-open',
   thorn: 'thorn-ward-open',
+  prism: 'prism-annex-open',
 } as const satisfies Record<Exclude<PuzzleGate, 'archive'>, SfxId>;
 
 export const ARCHIVE_GATE_OPEN_SFX = {

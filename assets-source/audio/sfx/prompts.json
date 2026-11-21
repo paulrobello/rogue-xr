@@ -86,6 +86,9 @@
      "text": "An archive mirror door opening: glass resonates with a clear crystalline ring while a hinged metal frame swings free and settles against its stop. Dry, one-shot."},
     {"id": "astral-lift-open", "class": "positional", "duration_seconds": 2.0, "loop": false,
      "procedural": {"kind": "astral", "seed": 3108, "duration_seconds": 2.0},
-     "text": "An astral lift opening: a pair of heavy sliding metal doors part together with a deep rail rumble, then meet their stops with a matched double clank. Dry, one-shot."}
+     "text": "An astral lift opening: a pair of heavy sliding metal doors part together with a deep rail rumble, then meet their stops with a matched double clank. Dry, one-shot."},
+    {"id": "prism-annex-open", "class": "positional", "duration_seconds": 1.6, "loop": false,
+     "procedural": {"kind": "prism", "seed": 3110, "duration_seconds": 1.6},
+     "text": "A sliding glass-and-brass prism gate opening: three quiet crystalline contacts resolve in sequence, followed by a brass guide slide and a precise seating tick. Dry, one-shot."}
   ]
 }

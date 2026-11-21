@@ -137,6 +137,7 @@ import { mountMaterialProof } from './world/material-proof.ts';
 import { loadPbrSet } from './world/materials.ts';
 import type { PressureAction } from './world/pressure-compartment.ts';
 import { loadPressureArt, type PressureArt } from './world/pressure-works.ts';
+import type { PrismPick } from './world/prism-annex.ts';
 import { dressPumpMaterials } from './world/pump-materials.ts';
 import { mountRoomAssetProof } from './world/room-asset-proof.ts';
 import { lightRoomStyle } from './world/room-style-lighting.ts';
@@ -779,6 +780,8 @@ function syncPuzzles(target: FloorView, immediate = false): void {
   target.alchemy?.sync(flow.alchemy, immediate, formula);
   target.archive?.sync(formula, immediate);
   target.world.setPuzzleGateOpen('archive', formula.opened, immediate);
+  target.prismAnnex?.sync(flow.prismSignal, immediate);
+  target.world.setPuzzleGateOpen('prism', flow.prismSignal.progress === 3, immediate);
   target.clock?.sync(flow.alchemy.found.includes(alchemyRecipe(run.seed)[1]));
 }
 let pressureArt: Promise<PressureArt> | undefined;
@@ -844,9 +847,9 @@ const dressFloor = async (target: FloorView): Promise<void> => {
       ? architecturalFinishes()
       : undefined,
     target.floorNumber !== 3 && target.world.stairEntry ? stairModels() : undefined,
-    target.floorNumber !== 3 && target.world.stairEntry
+    (target.floorNumber !== 3 && target.world.stairEntry) || target.world.plan.prismAnnex
       ? puzzleInstruments().catch((error: unknown) => {
-          console.warn('Chime instruments unavailable', error);
+          console.warn('Puzzle instruments unavailable', error);
           return undefined;
         })
       : undefined,
@@ -952,6 +955,8 @@ const dressFloor = async (target: FloorView): Promise<void> => {
       if (target !== floor) return;
       if (asset && clips) target.dressPatrol(asset, clips, prepareEnemy);
     }
+    if (chimeArt && target.world.plan.prismAnnex)
+      target.dressPrism(chimeArt, flow.run?.seed ?? target.seed, hitFx.reducedMotion);
     syncPuzzles(target, true);
     for (const room of target.styledRooms)
       lightRoomStyle(room, target.furnishings?.placements ?? []);
@@ -1145,7 +1150,12 @@ flow.onChange((event) => {
     floor?.showBookSecret({ text: `+${event.cogs} cogs`, caption: '' }, camera);
     return;
   }
-  if (event.type === 'counterweight' || event.type === 'alchemy' || event.type === 'formula') {
+  if (
+    event.type === 'counterweight' ||
+    event.type === 'alchemy' ||
+    event.type === 'formula' ||
+    event.type === 'prism-signal'
+  ) {
     if (event.type === 'formula') floor?.office?.sync(flow.commission);
     if (floor) syncPuzzles(floor);
     storedSnapshot = flow.snapshot(Date.now(), floor?.world.current ?? flow.room);
@@ -1926,6 +1936,24 @@ function operateAlchemy(
   }
   return !!result;
 }
+function operatePrism(hit: NonNullable<PrismPick>): boolean {
+  const prism = floor?.prismAnnex;
+  if (!prism) return false;
+  const at = prism.object.getWorldPosition(chimePosition);
+  if (hit.action === 'turn') {
+    if (!flow.turnPrism()) return false;
+    audio?.playSfx('gear-clank', at, 0.55);
+    return true;
+  }
+  const result = flow.latchPrismReceiver(hit.channel);
+  if (!result) return false;
+  if (result === 'solved') {
+    audio?.playSfx(PUZZLE_GATE_OPEN_SFX.prism, prism.openingPosition(chimePosition));
+  } else {
+    audio?.playSfx(result === 'mistake' ? 'sigil-fizzle' : 'block-ward', at);
+  }
+  return true;
+}
 function fieldHit(origin: THREE.Vector3, direction: THREE.Vector3) {
   if (!floor) return null;
   const stair = floor.stairs?.pick(floor.world.current, origin, direction);
@@ -1944,6 +1972,7 @@ function fieldHit(origin: THREE.Vector3, direction: THREE.Vector3) {
   const brew = floor.alchemy?.pick(origin, direction);
   const clock = floor.clock?.pick(origin, direction);
   const archive = floor.archive?.pick(origin, direction);
+  const prism = floor.prismAnnex?.pick(origin, direction);
   const evidence = floor.formulaEvidence?.pick(origin, direction);
   const office = floor.office?.pick(origin, direction);
   const calibration = floor.calibrationBench?.pick(origin, direction),
@@ -1960,6 +1989,7 @@ function fieldHit(origin: THREE.Vector3, direction: THREE.Vector3) {
     ...(folio ? [{ kind: 'folio' as const, hit: folio }] : []),
     ...(panel ? [{ kind: 'hidden-panel' as const, hit: panel }] : []),
     ...(archive ? [{ kind: 'archive' as const, hit: archive }] : []),
+    ...(prism ? [{ kind: 'prism' as const, hit: prism }] : []),
     ...(evidence ? [{ kind: 'formula-clue' as const, hit: evidence }] : []),
     ...(weight ? [{ kind: 'counterweight' as const, hit: weight }] : []),
     ...(gate ? [{ kind: 'gate' as const, hit: gate }] : []),
@@ -1999,6 +2029,8 @@ const activatePickup = (
       return operatePanel(pick.hit, hand);
     case 'archive':
       return operateArchive(pick.hit.action);
+    case 'prism':
+      return operatePrism(pick.hit);
     case 'formula-clue':
       return inspectFormula(pick.hit.clue);
     case 'counterweight':
@@ -2235,6 +2267,8 @@ for (const index of [0, 1]) {
     if (panel && operatePanel(panel, side)) return;
     const archive = floor.archive?.near(position, GRAB_REACH);
     if (archive && operateArchive(archive.action)) return;
+    const prism = floor.prismAnnex?.near(position, GRAB_REACH);
+    if (prism && operatePrism(prism)) return;
     const evidence = floor.formulaEvidence?.near(position, GRAB_REACH);
     if (evidence && inspectFormula(evidence.clue)) return;
     const clock = floor.clock?.near(position, GRAB_REACH);

@@ -1232,6 +1232,26 @@
           "duration_seconds": 2.0
         }
       }
+    },
+    "prism-annex-open": {
+      "source_file": "assets-source/audio/sfx/procedural/prism-annex-open.wav",
+      "source_sha256": "baa3bf6805ac19cf6188a7afc64a5fb3f102efb320f9c545ebc4575762a18d51",
+      "runtime_file": "public/assets/audio/sfx/prism-annex-open.ogg",
+      "runtime_sha256": "fdd974824184c1ab090eee95a3e13fc0c36db58c41356b8741f9d7a202f28f1e",
+      "runtime_bytes": 13427,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "prism",
+          "seed": 3110,
+          "duration_seconds": 1.6
+        }
+      }
     }
   },
   "music": {

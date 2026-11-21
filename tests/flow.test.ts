@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
+import { ENCOUNTER_CONTENT_VERSION } from '../src/combat/encounter-choice.ts';
 import { STARTER_DECK } from '../src/content/cards.ts';
 import { REWARD_POOL } from '../src/content/rewards.ts';
 import { normalizeSeed } from '../src/core/rng.ts';
@@ -334,7 +335,7 @@ describe('continue from a snapshot', () => {
     expect(resumed.snapshot()?.contentVersion).toBe(1);
     expect(resumed.abandonRun()).toBe(true);
     expect(resumed.newRun('SPIRE002')).toBe(true);
-    expect(resumed.snapshot()?.contentVersion).toBe(8);
+    expect(resumed.snapshot()?.contentVersion).toBe(ENCOUNTER_CONTENT_VERSION);
   });
 
   it('restores the same run and offer, and continues identically', () => {

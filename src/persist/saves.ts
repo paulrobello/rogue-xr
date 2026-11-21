@@ -33,6 +33,7 @@ import {
   pressureTarget,
   type StoredPressureState,
 } from '../rules/pressure.ts';
+import type { StoredPrismState } from '../rules/prism-signal.ts';
 import type { PendingLoot, RewardOffer, RewardTier, RunState } from '../rules/run.ts';
 import { floorSeedFor } from '../rules/run.ts';
 import type { BrassKeyState, StoredHiddenPanelState } from '../rules/types.ts';
@@ -102,6 +103,7 @@ export interface FloorSnapshot {
   readonly bookSecretOpenedRooms?: readonly number[];
   readonly bookSecretKeyRooms?: readonly number[];
   readonly bookSecretCabinetRooms?: readonly number[];
+  readonly prismSignal?: StoredPrismState;
 }
 
 export interface RunSnapshot extends SnapshotWorld {
@@ -525,6 +527,15 @@ function validateRunState(
       : r.brassKey === 'missing' || r.brassKey === 'held' || r.brassKey === 'spent'
         ? (r.brassKey as BrassKeyState)
         : fail(`${path}.brassKey`, 'unknown key state');
+  const prismSignal =
+    r.prismSignal === undefined
+      ? undefined
+      : (() => {
+          const p = rec(r.prismSignal, `${path}.prismSignal`);
+          const orientation = int(p.orientation, `${path}.prismSignal.orientation`, 0, 2);
+          const progress = int(p.progress, `${path}.prismSignal.progress`, 0, 3);
+          return { orientation: orientation as 0 | 1 | 2, progress: progress as 0 | 1 | 2 | 3 };
+        })();
   // Also added after version 1: an older save names no level and resumes as `DEFAULT_DIFFICULTY`.
   if (r.difficulty !== undefined && !isDifficulty(r.difficulty)) {
     fail(`${path}.difficulty`, 'unknown difficulty');
@@ -559,6 +570,7 @@ function validateRunState(
     ...(r.patrolDefeated === true && { patrolDefeated: true }),
     ...(r.brassCacheSeen === true && { brassCacheSeen: true }),
     ...(r.windowCacheOpened === true && { windowCacheOpened: true }),
+    ...(prismSignal === undefined ? {} : { prismSignal }),
   };
 }
 
@@ -721,6 +733,20 @@ function validateFloors(
               r.bookSecretCabinetRooms,
               `${path}.bookSecretCabinetRooms`,
             ),
+          }),
+      ...(r.prismSignal === undefined
+        ? {}
+        : {
+            prismSignal: (() => {
+              const p = rec(r.prismSignal, `${path}.prismSignal`);
+              return {
+                orientation: int(p.orientation, `${path}.prismSignal.orientation`, 0, 2) as
+                  | 0
+                  | 1
+                  | 2,
+                progress: int(p.progress, `${path}.prismSignal.progress`, 0, 3) as 0 | 1 | 2 | 3,
+              };
+            })(),
           }),
     };
     return result;

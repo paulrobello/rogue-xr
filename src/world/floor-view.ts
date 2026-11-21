@@ -7,6 +7,7 @@ import {
   HIDDEN_PANEL_VERSION,
   PATROL_VERSION,
   PRESSURE_WORKS_VERSION,
+  PRISM_ANNEX_VERSION,
   RETURN_PASSAGES_VERSION,
   UPPER_WORKS_VERSION,
 } from '../combat/encounter-choice.ts';
@@ -28,6 +29,7 @@ import {
 } from '../floor/generate.ts';
 import { attachHiddenPassage } from '../floor/hidden-passage.ts';
 import { type PatrolRoute, patrolPeriod, planPatrol, samplePatrol } from '../floor/patrol.ts';
+import { attachPrismAnnex } from '../floor/prism-annex.ts';
 import { attachFloorOneTopology, withBrassCache } from '../floor/return-passages.ts';
 import { placeStairEntry } from '../floor/stairs.ts';
 import { nearSet, shellSet } from '../floor/visibility.ts';
@@ -77,6 +79,7 @@ import {
 } from './loot.ts';
 import { PressureNotes } from './pressure-notes.ts';
 import { PressureWorks } from './pressure-works.ts';
+import { PrismAnnex } from './prism-annex.ts';
 import {
   applyRoomStyle,
   applyUpperShaftFinish,
@@ -172,6 +175,8 @@ export interface FloorView {
   readonly clock: StrikingClock | null;
   readonly formulaEvidence: FormulaEvidence | null;
   readonly archive: ConservatoryArchive | null;
+  readonly prismAnnex: PrismAnnex | null;
+  dressPrism(art: THREE.Object3D, runSeed: string, reducedMotion: boolean): void;
   readonly lift: AstralLift | null;
   dressConservatory(
     art: THREE.Object3D,
@@ -333,7 +338,10 @@ export function playableFloorPlan(
   contentVersion: number,
   floorNumber: 1 | 2 | 3 = 1,
 ) {
-  if (floorNumber === 3) return conservatoryPlan(seed);
+  if (floorNumber === 3) {
+    const plan = conservatoryPlan(seed);
+    return contentVersion >= PRISM_ANNEX_VERSION ? attachPrismAnnex(plan) : plan;
+  }
   const upperWorks = floorNumber === 2 && contentVersion >= UPPER_WORKS_VERSION;
   const generated = upperWorks ? generateUpperFloor(seed) : generateFloor(seed);
   const base =
@@ -395,6 +403,7 @@ export function mountFloorView(
     gallery: ConservatoryGallery | null = null;
   let formulaEvidence: FormulaEvidence | null = null,
     archive: ConservatoryArchive | null = null;
+  let prismAnnex: PrismAnnex | null = null;
   let office: CommissionOffice | null = null;
   let calibrationBench: CalibrationBench | null = null,
     chartCabinet: CalibrationCabinet | null = null,
@@ -759,6 +768,13 @@ export function mountFloorView(
     get archive() {
       return archive;
     },
+    get prismAnnex() {
+      return prismAnnex;
+    },
+    dressPrism(art, runSeed, reducedMotion) {
+      if (plan.prismAnnex && !prismAnnex)
+        prismAnnex = PrismAnnex.mount(world, art, runSeed, reducedMotion, furnishings?.placements);
+    },
     dressConservatory(art, archiveKit, textures, runSeed, reducedMotion) {
       if (floorNumber === 1 || lift) return;
       lift = AstralLift.mount(world, art, floorNumber === 2 ? 3 : 2, furnishings?.placements);
@@ -1053,6 +1069,7 @@ export function mountFloorView(
       ventSteam = null;
       formulaEvidence?.dispose();
       archive?.dispose();
+      prismAnnex?.dispose();
       gallery?.dispose();
       clockwork?.dispose();
       alchemy?.dispose();
@@ -1163,6 +1180,7 @@ export function mountFloorView(
       }
       if (gallery) gallery.update(dt, head.getWorldPosition(at));
       archive?.update(dt);
+      prismAnnex?.update(dt);
       alchemy?.update(dt, clockwork?.dialHours);
       office?.update(dt);
       calibrationBench?.update(dt);

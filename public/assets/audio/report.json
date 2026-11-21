@@ -1951,6 +1951,67 @@
           "duration_seconds": 2.0
         }
       }
+    },
+    "prism-annex-open": {
+      "intermediate_wav": "assets-source/audio/derived/prism-annex-open.wav",
+      "intermediate_sha256": "8e2a2c3e2a634ee1211748bef77cdeeddb4e789d261291ff52076acf3e585cf0",
+      "pre_gain": {
+        "integrated_lufs": -18.7,
+        "true_peak_dbtp": -5.9,
+        "momentary_max_lufs": -16.2
+      },
+      "gain_db": 2.7,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -16.1,
+        "true_peak_dbtp": -3.9,
+        "momentary_max_lufs": -13.5
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -0.1,
+      "loudness_status": "met",
+      "limited_by_true_peak": false,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 74158,
+      "decoded_duration_s": 1.545,
+      "decoded_pcm_sha256": "0b8390a5cb2715a24b479b2a3d31c3ff3c0b97cfd4cc50e81d9c87eea61dc736",
+      "id": "prism-annex-open",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/prism-annex-open.wav",
+      "source_sha256": "baa3bf6805ac19cf6188a7afc64a5fb3f102efb320f9c545ebc4575762a18d51",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.6
+      },
+      "trim": {
+        "trimmed_head_ms": 55.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/prism-annex-open.ogg",
+      "runtime_sha256": "fdd974824184c1ab090eee95a3e13fc0c36db58c41356b8741f9d7a202f28f1e",
+      "runtime_bytes": 13427,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.5515
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "prism",
+          "seed": 3110,
+          "duration_seconds": 1.6
+        }
+      }
     }
   },
   "music": {

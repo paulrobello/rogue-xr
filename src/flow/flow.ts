@@ -5,6 +5,7 @@ import {
   HIDDEN_PANEL_VERSION,
   PATROL_VERSION,
   PRESSURE_WORKS_VERSION,
+  PRISM_ANNEX_VERSION,
   RETURN_PASSAGES_VERSION,
 } from '../combat/encounter-choice.ts';
 import { LEGACY_REWARD_POOL, PERMANENT_CARD_IDS } from '../content/rewards.ts';
@@ -75,6 +76,13 @@ import {
   readPressure,
   turnPressureValve,
 } from '../rules/pressure.ts';
+import {
+  latchPrismReceiver,
+  type PrismChannel,
+  readPrismSignal,
+  type StoredPrismState,
+  turnPrism,
+} from '../rules/prism-signal.ts';
 import {
   chooseReward,
   claimTreasure,
@@ -217,6 +225,12 @@ export interface BellChimeEvent {
   readonly type: 'bell-chimes';
   readonly feedback: BellFeedback;
 }
+export interface PrismSignalEvent {
+  readonly type: 'prism-signal';
+  readonly result: 'turn' | 'matched' | 'mistake' | 'solved';
+  readonly channel?: PrismChannel;
+  readonly state: StoredPrismState;
+}
 
 /**
  * `'opened'`: a coffer was opened (`openLoot`). `'claimed'`: its pending card went into the deck
@@ -256,6 +270,7 @@ export type FlowEvent =
   | { readonly type: 'formula' }
   | HiddenPanelEvent
   | BellChimeEvent
+  | PrismSignalEvent
   | { readonly type: 'brass-key'; readonly action: 'inspect' | 'take' | 'unlock' }
   | {
       readonly type: 'window-cache';
@@ -338,6 +353,42 @@ export class RunFlow {
   }
   get pressure(): ReturnType<typeof readPressure> {
     return readPressure(this.runValue ?? { pressure: undefined });
+  }
+  get prismSignal(): StoredPrismState {
+    return readPrismSignal(this.runValue ?? { prismSignal: undefined });
+  }
+  turnPrism(): boolean {
+    if (
+      !this.runValue ||
+      this.phaseValue !== 'explore' ||
+      this.floorNumberValue !== 3 ||
+      this.contentVersionValue < PRISM_ANNEX_VERSION
+    )
+      return false;
+    const next = turnPrism(this.prismSignal);
+    if (next === this.prismSignal) return false;
+    this.runValue = { ...this.runValue, prismSignal: next };
+    this.emit({ type: 'prism-signal', result: 'turn', state: next });
+    return true;
+  }
+  latchPrismReceiver(channel: PrismChannel): 'matched' | 'mistake' | 'solved' | null {
+    if (
+      !this.runValue ||
+      this.phaseValue !== 'explore' ||
+      this.floorNumberValue !== 3 ||
+      this.contentVersionValue < PRISM_ANNEX_VERSION
+    )
+      return null;
+    const result = latchPrismReceiver(this.runValue, channel);
+    if (!result) return null;
+    this.runValue = result.run;
+    this.emit({
+      type: 'prism-signal',
+      result: result.result,
+      channel,
+      state: result.run.prismSignal ?? this.prismSignal,
+    });
+    return result.result;
   }
   get commission(): ReturnType<typeof commissionSummary> {
     const powered =
@@ -1291,6 +1342,7 @@ export class RunFlow {
       bookSecretOpenedRooms: run.bookSecretOpenedRooms,
       bookSecretKeyRooms: run.bookSecretKeyRooms,
       bookSecretCabinetRooms: run.bookSecretCabinetRooms,
+      prismSignal: this.floorNumberValue === 3 ? run.prismSignal : undefined,
     };
   }
 
@@ -1321,6 +1373,7 @@ export class RunFlow {
       bookSecretOpenedRooms: floor.bookSecretOpenedRooms,
       bookSecretKeyRooms: floor.bookSecretKeyRooms,
       bookSecretCabinetRooms: floor.bookSecretCabinetRooms,
+      prismSignal: this.floorNumberValue === 3 ? floor.prismSignal : undefined,
     };
   }
 

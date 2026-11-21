@@ -18,6 +18,12 @@ In the Upper Works, strike the low, middle and high bells in the same order. Eac
 
 In the Lower Works, look for a stained-glass projection whose bright shapes form a bow, a shaft, and three teeth. Follow the tip to the brass tile and select it to open the cache and collect 12 run cogs. The tile remains open after Continue. The seed chooses the site from exposed, accessible window bays.
 
+## Prism Signal
+
+New runs can find the Prism Annex off the Conservatory. A plate in a separate reachable room gives the order of the notch, star and ring. Rotate the prism to light one receiver, then select the lit mark. A correct latch keeps its mark illuminated. Latching the wrong lit mark clears the sequence so it can be tried again.
+
+Latching all three in order lowers the glass gate. The annex holds optical instruments and a treasure coffer. The gate and coffer stay open after Continue.
+
 ## Ingredients for future puzzles
 
 | Ingredient | What the player can do or notice | A possible payoff |
@@ -56,7 +62,7 @@ These are design ingredients. The component kits supply physical starting pieces
 | 1 | Shadow stencil | Slide a pierced shutter across a lantern. When its shadow sits inside a carved frame, the projected pattern identifies a floor tile. |
 | 2 | Borrowed light | Tilt a brass mirror to send light around a blind corner. A distant receiver opens where the beam lands. |
 | 3 | Cancelled inscription | Rotate a polarizing lens over two superimposed engravings. One layer fades until a legible shelf mark remains. |
-| 4 | Prism signal | Turn a prism to split a source across three receivers. A notch, a star, and a ring distinguish the channels as well as their colors. |
+| 4 | Prism signal (playable) | Turn a prism to direct light to three receivers. A notch, a star and a ring distinguish the channels as well as their colors. |
 | 5 | Misrouted post | Set a pneumatic selector and send a brass capsule. Retrieve its reply at the named station, or follow its rattle to find a crossed connection. |
 | 6 | Speaking pipes | Sound one pipe and listen at the outlets. A vibrating gauge identifies the same outlet visually. Follow the matching line behind the wall. |
 | 7 | Float elevator | Admit water to a sight tube. A brass float raises a sealed item to one of several access hatches; stop it at the reachable one. |

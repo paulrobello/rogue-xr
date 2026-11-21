@@ -88,6 +88,15 @@ export {
   turnPressureValve,
 } from './pressure.ts';
 export {
+  latchPrismReceiver,
+  type PrismChannel,
+  type PrismLatchResult,
+  prismOrder,
+  readPrismSignal,
+  type StoredPrismState,
+  turnPrism,
+} from './prism-signal.ts';
+export {
   type ClaimResult,
   type CogRange,
   chooseReward,

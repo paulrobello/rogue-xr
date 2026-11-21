@@ -19,7 +19,8 @@ export const HIDDEN_PANEL_VERSION = 6;
 /** Portable brass key and its deterministic first-floor cache. */
 export const BRASS_CACHE_VERSION = 7;
 export const PATROL_VERSION = 8;
-export const ENCOUNTER_CONTENT_VERSION = PATROL_VERSION;
+export const PRISM_ANNEX_VERSION = 9;
+export const ENCOUNTER_CONTENT_VERSION = PRISM_ANNEX_VERSION;
 const LEGACY_ENCOUNTER_IDS = new Set([
   'sentry',
   'hound',

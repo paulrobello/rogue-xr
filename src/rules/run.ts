@@ -11,6 +11,7 @@ import {
   type StoredCounterweightState,
   type StoredHiddenPanelState,
   type StoredPressureState,
+  type StoredPrismState,
 } from './types.ts';
 
 /**
@@ -65,6 +66,8 @@ export interface RunState {
   /** Whether the one-shot floor-one Light window cache has paid its key reward. */
   readonly windowCacheOpened?: boolean;
   readonly patrolDefeated?: true;
+  /** Floor-three Prism Annex receiver progress. */
+  readonly prismSignal?: StoredPrismState;
 }
 
 /** Mirrors `EncounterTier` in `floor/generate.ts`; rules may not import from `floor/`. */
