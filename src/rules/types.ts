@@ -12,6 +12,13 @@ export interface StoredPrismState {
   readonly progress: 0 | 1 | 2 | 3;
 }
 
+export type DispatchRoute = 0 | 1 | 2;
+export interface StoredDispatchState {
+  readonly route: DispatchRoute;
+  readonly sent: boolean;
+  readonly opened: boolean;
+}
+
 /** `'player'` or an enemy id. Enemy ids must never be `'player'`. */
 export type ActorId = string;
 export const PLAYER_ID = 'player';

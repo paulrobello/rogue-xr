@@ -232,6 +232,17 @@ def procedural_puzzle_door(cue: dict, path: Path) -> None:
         tone(0.58, 0.86, 148, 0.17, 0.62, -24)
         noise(0.58, 0.82, 0.055, 0.48, 0.0)
         tone(1.31, 0.28, 82, 0.40, 0.12)
+    elif kind == "dispatch":
+        # Hollow capsule clatter, pneumatic release, then ribbed shutter and two lugs.
+        for at, hz in ((0.05, 620), (0.18, 760), (0.31, 540)):
+            tone(at, 0.12, hz, 0.25, 0.045)
+            tone(at, 0.16, hz * 1.93, 0.09, 0.035)
+        noise(0.40, 0.74, 0.18, 0.22, 0.0)
+        tone(0.40, 0.92, 96, 0.18, 0.46, -10)
+        for at, hz in ((0.86, 180), (1.00, 210), (1.14, 240), (1.28, 270)):
+            tone(at, 0.18, hz, 0.17, 0.09)
+        tone(1.42, 0.25, 118, 0.36, 0.10)
+        tone(1.58, 0.18, 145, 0.30, 0.07)
     else:
         raise ValueError(f"unknown puzzle-door cue kind: {kind}")
     peak = max(np.max(np.abs(y)), 1e-9)

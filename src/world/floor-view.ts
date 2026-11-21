@@ -3,6 +3,7 @@ import { EncounterDirector } from '../combat/encounter.ts';
 import {
   BRASS_CACHE_VERSION,
   chooseEncounter,
+  DISPATCH_ROOM_VERSION,
   ENCOUNTER_CONTENT_VERSION,
   HIDDEN_PANEL_VERSION,
   PATROL_VERSION,
@@ -20,6 +21,7 @@ import { ClockworkOwlFlight, makeOwlPerch } from '../enemies/conservatory-actors
 import type { EnemyActor, EnemyAsset } from '../enemies/enemy-asset.ts';
 import { type PatrolClips, PatrolVisual } from '../enemies/patrol-visual.ts';
 import { conservatoryPlan } from '../floor/conservatory.ts';
+import { attachDispatchRoom } from '../floor/dispatch-room.ts';
 import {
   attachPressureWing,
   generateFloor,
@@ -57,6 +59,7 @@ import { CommissionOffice } from './commission-office.ts';
 import { ConservatoryArchive } from './conservatory-archive.ts';
 import { ConservatoryGallery } from './conservatory-gallery.ts';
 import { CounterweightStation } from './counterweight-station.ts';
+import { DispatchRoom } from './dispatch-room.ts';
 import { animateFires, CANDLE_NODE, FIRE_NODE } from './fireplace.ts';
 import { buildFloorWorld, type FloorWorld } from './floor-world.ts';
 import { FormulaEvidence } from './formula-clue.ts';
@@ -199,6 +202,8 @@ export interface FloorView {
   ): void;
   readonly panels: ServicePanels | null;
   dressPanels(art: THREE.Object3D, reducedMotion: boolean): void;
+  readonly dispatchRoom: DispatchRoom | null;
+  dressDispatch(art: THREE.Object3D, runSeed: string, reducedMotion: boolean): void;
   readonly counterweight: CounterweightStation | null;
   dressChimes(art: THREE.Object3D): void;
   dressStairs(model: THREE.Object3D): void;
@@ -348,7 +353,10 @@ export function playableFloorPlan(
     floorNumber === 2 && seed === SHOWCASE_UPPER_SEED
       ? { ...generated, rooms: generated.rooms.map((r) => ({ ...r, encounter: null })) }
       : generated;
-  if (floorNumber === 2 && contentVersion >= HIDDEN_PANEL_VERSION) return attachHiddenPassage(base);
+  if (floorNumber === 2 && contentVersion >= HIDDEN_PANEL_VERSION) {
+    const upper = attachHiddenPassage(base);
+    return contentVersion >= DISPATCH_ROOM_VERSION ? attachDispatchRoom(upper) : upper;
+  }
   if (contentVersion < PRESSURE_WORKS_VERSION || floorNumber !== 1) return base;
   if (contentVersion < RETURN_PASSAGES_VERSION) return attachPressureWing(base);
   const lower = attachFloorOneTopology(base);
@@ -409,6 +417,7 @@ export function mountFloorView(
     chartCabinet: CalibrationCabinet | null = null,
     calibrationKey: CalibrationKeyStand | null = null;
   let panels: ServicePanels | null = null;
+  let dispatchRoom: DispatchRoom | null = null;
   let counterweight: CounterweightStation | null = null;
   const floorNumber = options.floorNumber ?? 1;
   const world = buildFloorWorld(plan, options.templates);
@@ -708,6 +717,18 @@ export function mountFloorView(
   return {
     world,
     floorNumber,
+    get dispatchRoom() {
+      return dispatchRoom;
+    },
+    dressDispatch(art, runSeed, reducedMotion) {
+      dispatchRoom ??= DispatchRoom.mount(
+        world,
+        art,
+        runSeed,
+        reducedMotion,
+        furnishings?.placements,
+      );
+    },
     get brassKeyStand() {
       return brassKeyStand;
     },
@@ -1079,6 +1100,7 @@ export function mountFloorView(
       chartCabinet?.dispose();
       calibrationKey?.dispose();
       panels?.dispose();
+      dispatchRoom?.dispose();
       counterweight?.dispose();
       chimes?.dispose();
       windowCache?.dispose();
@@ -1186,6 +1208,7 @@ export function mountFloorView(
       calibrationBench?.update(dt);
       chartCabinet?.update(dt);
       panels?.update(dt);
+      dispatchRoom?.update(dt);
       counterweight?.update(dt);
       chimes?.update(dt);
       world.updateAnimations(dt);

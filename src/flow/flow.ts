@@ -1,5 +1,6 @@
 import {
   BRASS_CACHE_VERSION,
+  DISPATCH_ROOM_VERSION,
   ENCOUNTER_CONTENT_VERSION,
   FOUNDRY_VERSION,
   HIDDEN_PANEL_VERSION,
@@ -64,6 +65,13 @@ import {
   difficultyMaxHp,
   runDifficulty,
 } from '../rules/difficulty.ts';
+import {
+  openDispatch,
+  readDispatch,
+  type StoredDispatchState,
+  sendDispatch,
+  turnDispatch,
+} from '../rules/dispatch.ts';
 import { canFlee } from '../rules/flee.ts';
 import {
   claimPressureReward,
@@ -232,6 +240,13 @@ export interface PrismSignalEvent {
   readonly state: StoredPrismState;
 }
 
+export interface DispatchEvent {
+  readonly type: 'dispatch';
+  readonly action: 'turn' | 'send' | 'open';
+  readonly result?: 'misrouted' | 'sent';
+  readonly state: StoredDispatchState;
+}
+
 /**
  * `'opened'`: a coffer was opened (`openLoot`). `'claimed'`: its pending card went into the deck
  * (`claimLoot`); `loot` is that card. Both are `'loot'` events, so the run is saved after either.
@@ -271,6 +286,7 @@ export type FlowEvent =
   | HiddenPanelEvent
   | BellChimeEvent
   | PrismSignalEvent
+  | DispatchEvent
   | { readonly type: 'brass-key'; readonly action: 'inspect' | 'take' | 'unlock' }
   | {
       readonly type: 'window-cache';
@@ -389,6 +405,51 @@ export class RunFlow {
       state: result.run.prismSignal ?? this.prismSignal,
     });
     return result.result;
+  }
+  get dispatch(): StoredDispatchState {
+    return readDispatch(this.runValue ?? { dispatch: undefined });
+  }
+  turnDispatch(): boolean {
+    if (
+      !this.runValue ||
+      this.phaseValue !== 'explore' ||
+      this.floorNumberValue !== 2 ||
+      this.contentVersionValue < DISPATCH_ROOM_VERSION
+    )
+      return false;
+    const next = turnDispatch(this.dispatch);
+    if (next === this.dispatch) return false;
+    this.runValue = { ...this.runValue, dispatch: next };
+    this.emit({ type: 'dispatch', action: 'turn', state: next });
+    return true;
+  }
+  sendDispatch(): 'misrouted' | 'sent' | null {
+    if (
+      !this.runValue ||
+      this.phaseValue !== 'explore' ||
+      this.floorNumberValue !== 2 ||
+      this.contentVersionValue < DISPATCH_ROOM_VERSION
+    )
+      return null;
+    const result = sendDispatch(this.runValue);
+    if (!result) return null;
+    this.runValue = result.run;
+    this.emit({ type: 'dispatch', action: 'send', result: result.result, state: this.dispatch });
+    return result.result;
+  }
+  openDispatch(): boolean {
+    if (
+      !this.runValue ||
+      this.phaseValue !== 'explore' ||
+      this.floorNumberValue !== 2 ||
+      this.contentVersionValue < DISPATCH_ROOM_VERSION
+    )
+      return false;
+    const next = openDispatch(this.runValue);
+    if (!next) return false;
+    this.runValue = next;
+    this.emit({ type: 'dispatch', action: 'open', state: this.dispatch });
+    return true;
   }
   get commission(): ReturnType<typeof commissionSummary> {
     const powered =
@@ -1339,6 +1400,7 @@ export class RunFlow {
       pendingLoot: run.pendingLoot,
       usedHearths: run.usedHearths,
       pressure: run.pressure,
+      dispatch: this.floorNumberValue === 2 ? run.dispatch : undefined,
       bookSecretOpenedRooms: run.bookSecretOpenedRooms,
       bookSecretKeyRooms: run.bookSecretKeyRooms,
       bookSecretCabinetRooms: run.bookSecretCabinetRooms,
@@ -1369,6 +1431,9 @@ export class RunFlow {
       usedHearths: floor.usedHearths,
       ...(this.floorNumberValue === 1 && floor.pressure !== undefined
         ? { pressure: floor.pressure }
+        : {}),
+      ...(this.floorNumberValue === 2 && floor.dispatch !== undefined
+        ? { dispatch: floor.dispatch }
         : {}),
       bookSecretOpenedRooms: floor.bookSecretOpenedRooms,
       bookSecretKeyRooms: floor.bookSecretKeyRooms,

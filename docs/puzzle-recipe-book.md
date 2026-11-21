@@ -24,6 +24,12 @@ New runs can find the Prism Annex off the Conservatory. A plate in a separate re
 
 Latching all three in order lowers the glass gate. The annex holds optical instruments and a treasure coffer. The gate and coffer stay open after Continue.
 
+## Misrouted Post
+
+In a new run, look for the pneumatic dispatcher in the Upper Works. The return hatch in another room carries a numbered routing slip. Set the selector at the dispatcher to the number on the slip and press Send. A mismatched route returns the capsule for another try.
+
+When the slip’s route is selected, collect the brass reply at the return hatch. It releases the steel shutter into the dispatch vault, where a treasure coffer waits. The reply, shutter, and coffer retain their state after Continue.
+
 ## Ingredients for future puzzles
 
 | Ingredient | What the player can do or notice | A possible payoff |
@@ -63,7 +69,7 @@ These are design ingredients. The component kits supply physical starting pieces
 | 2 | Borrowed light | Tilt a brass mirror to send light around a blind corner. A distant receiver opens where the beam lands. |
 | 3 | Cancelled inscription | Rotate a polarizing lens over two superimposed engravings. One layer fades until a legible shelf mark remains. |
 | 4 | Prism signal (playable) | Turn a prism to direct light to three receivers. A notch, a star and a ring distinguish the channels as well as their colors. |
-| 5 | Misrouted post | Set a pneumatic selector and send a brass capsule. Retrieve its reply at the named station, or follow its rattle to find a crossed connection. |
+| 5 | Misrouted post (playable) | Read the return station’s routing slip, select its line, and send a brass capsule. Collect the reply to open the vault. |
 | 6 | Speaking pipes | Sound one pipe and listen at the outlets. A vibrating gauge identifies the same outlet visually. Follow the matching line behind the wall. |
 | 7 | Float elevator | Admit water to a sight tube. A brass float raises a sealed item to one of several access hatches; stop it at the reachable one. |
 | 8 | Steam leak | Find the hissing joint, seat a recovered gasket, and repressurize the line. The repaired branch powers the next device. |

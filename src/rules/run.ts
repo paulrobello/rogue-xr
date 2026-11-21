@@ -9,6 +9,7 @@ import {
   type StoredCommissionState,
   type StoredConservatoryFormula,
   type StoredCounterweightState,
+  type StoredDispatchState,
   type StoredHiddenPanelState,
   type StoredPressureState,
   type StoredPrismState,
@@ -45,6 +46,7 @@ export interface RunState {
   readonly difficulty?: Difficulty;
   /** The pressure regulator state. Absent in saves made before the regulator existed. */
   readonly pressure?: StoredPressureState;
+  readonly dispatch?: StoredDispatchState;
   /** Upper Works counterweight lock progress. */
   readonly counterweight?: StoredCounterweightState;
   readonly alchemy?: StoredAlchemyState;

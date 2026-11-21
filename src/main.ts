@@ -109,6 +109,7 @@ import type { BellChimes, BellPick } from './world/bell-chimes.ts';
 import type { CalibrationAction } from './world/calibration-bench.ts';
 import type { FolioPick } from './world/calibration-cabinet.ts';
 import type { CommissionAction } from './world/commission-office.ts';
+import type { DispatchPick } from './world/dispatch-room.ts';
 import {
   type FloorView,
   mountFloorView,
@@ -783,6 +784,8 @@ function syncPuzzles(target: FloorView, immediate = false): void {
   target.prismAnnex?.sync(flow.prismSignal, immediate);
   target.world.setPuzzleGateOpen('prism', flow.prismSignal.progress === 3, immediate);
   target.clock?.sync(flow.alchemy.found.includes(alchemyRecipe(run.seed)[1]));
+  target.dispatchRoom?.sync(flow.dispatch, immediate);
+  target.world.setPuzzleGateOpen('dispatch', flow.dispatch.opened, immediate);
 }
 let pressureArt: Promise<PressureArt> | undefined;
 let interiors:
@@ -944,6 +947,9 @@ const dressFloor = async (target: FloorView): Promise<void> => {
       const art = await panelKit();
       if (target !== floor) return;
       target.dressPanels(art, hitFx.reducedMotion);
+    }
+    if (chimeArt && target.world.plan.dispatchRoom) {
+      target.dressDispatch(chimeArt, flow.run?.seed ?? target.seed, hitFx.reducedMotion);
     }
     if (
       target.floorNumber === 2 &&
@@ -1154,7 +1160,8 @@ flow.onChange((event) => {
     event.type === 'counterweight' ||
     event.type === 'alchemy' ||
     event.type === 'formula' ||
-    event.type === 'prism-signal'
+    event.type === 'prism-signal' ||
+    event.type === 'dispatch'
   ) {
     if (event.type === 'formula') floor?.office?.sync(flow.commission);
     if (floor) syncPuzzles(floor);
@@ -1954,6 +1961,26 @@ function operatePrism(hit: NonNullable<PrismPick>): boolean {
   }
   return true;
 }
+function operateDispatch(hit: DispatchPick): boolean {
+  const station = floor?.dispatchRoom;
+  if (!station) return false;
+  if (hit.action === 'open') {
+    if (!flow.openDispatch()) return false;
+    audio?.playSfx(PUZZLE_GATE_OPEN_SFX.dispatch, station.openingPosition(chimePosition));
+    return true;
+  }
+  const at = station.object.getWorldPosition(chimePosition);
+  if (hit.action === 'turn') {
+    if (!flow.turnDispatch()) return false;
+    audio?.playSfx('gear-clank', at, 0.6);
+    return true;
+  }
+  const result = flow.sendDispatch();
+  if (!result) return false;
+  station.sendFeedback(result === 'misrouted');
+  audio?.playSfx(result === 'misrouted' ? 'gear-clank' : 'steam-vent', at);
+  return true;
+}
 function fieldHit(origin: THREE.Vector3, direction: THREE.Vector3) {
   if (!floor) return null;
   const stair = floor.stairs?.pick(floor.world.current, origin, direction);
@@ -1981,7 +2008,9 @@ function fieldHit(origin: THREE.Vector3, direction: THREE.Vector3) {
   const key = floor.brassKeyStand?.pick(origin, direction);
   const panel = floor.panels?.pick(origin, direction);
   const windowCache = floor.windowCache?.pick(origin, direction);
+  const dispatch = floor.dispatchRoom?.pick(origin, direction);
   const hits = [
+    ...(dispatch ? [{ kind: 'dispatch' as const, hit: dispatch }] : []),
     ...(windowCache ? [{ kind: 'window-cache' as const, hit: windowCache }] : []),
     ...(key ? [{ kind: 'brass-key' as const, hit: key }] : []),
     ...(office ? [{ kind: 'commission' as const, hit: office }] : []),
@@ -2015,6 +2044,8 @@ const activatePickup = (
   const pick = fieldHit(origin, direction);
   if (!pick) return false;
   switch (pick.kind) {
+    case 'dispatch':
+      return operateDispatch(pick.hit);
     case 'window-cache':
       return flow.openWindowCache();
     case 'brass-key':
@@ -2271,6 +2302,8 @@ for (const index of [0, 1]) {
     if (prism && operatePrism(prism)) return;
     const evidence = floor.formulaEvidence?.near(position, GRAB_REACH);
     if (evidence && inspectFormula(evidence.clue)) return;
+    const dispatch = floor.dispatchRoom?.near(position, GRAB_REACH);
+    if (dispatch && operateDispatch(dispatch)) return;
     const clock = floor.clock?.near(position, GRAB_REACH);
     if (clock && collectAlchemy(clock.ingredient, side, floor.clock?.target)) return;
     const brew = floor.alchemy?.near(position, GRAB_REACH);

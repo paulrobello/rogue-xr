@@ -41,7 +41,14 @@ export interface SealedDoor extends DoorRef {
   style: SealStyle;
 }
 
-export type PuzzleGate = 'counterweight' | 'pressure' | 'thorn' | 'archive' | 'panel' | 'prism';
+export type PuzzleGate =
+  | 'counterweight'
+  | 'pressure'
+  | 'thorn'
+  | 'archive'
+  | 'panel'
+  | 'prism'
+  | 'dispatch';
 
 export type FloorConnection = readonly [DoorRef, DoorRef] & { puzzleGate?: PuzzleGate };
 
@@ -61,6 +68,7 @@ export interface FloorPlan {
   hiddenPassage?: { source: DoorRef; treasureRoom: number };
   pressureWing?: { gallery: number; pumpRoom: number; source: DoorRef };
   prismAnnex?: { source: DoorRef; clueRoom: number; annexRoom: number };
+  dispatchRoom?: { source: DoorRef; replyRoom: number; vaultRoom: number };
 }
 
 export interface FloorParams {

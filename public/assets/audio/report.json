@@ -2012,6 +2012,67 @@
           "duration_seconds": 1.6
         }
       }
+    },
+    "dispatch-room-open": {
+      "intermediate_wav": "assets-source/audio/derived/dispatch-room-open.wav",
+      "intermediate_sha256": "3d434d20b1cd2e56224166bd293d0debf0320266bdfe2a7f4a82dd21c669a483",
+      "pre_gain": {
+        "integrated_lufs": -23.6,
+        "true_peak_dbtp": -5.5,
+        "momentary_max_lufs": -20.3
+      },
+      "gain_db": 4.5,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -19.5,
+        "true_peak_dbtp": -2.1,
+        "momentary_max_lufs": -16.5
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -3.5,
+      "loudness_status": "deviation",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 82797,
+      "decoded_duration_s": 1.7249,
+      "decoded_pcm_sha256": "4c315df42783d507bb72e9962367bd0d31a56935b07b4779987f2108f9a13bb9",
+      "id": "dispatch-room-open",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/dispatch-room-open.wav",
+      "source_sha256": "5cb69e065c1dea213cc39a504a07d2db9ffdcc903c541851fe8cad7eccceb1a1",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.8
+      },
+      "trim": {
+        "trimmed_head_ms": 45.1,
+        "trimmed_tail_ms": 30.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/dispatch-room-open.ogg",
+      "runtime_sha256": "291eefa069cebd914d67a5388e36c928c980ec08c03c8792a789a3d3d082b7a0",
+      "runtime_bytes": 16791,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.7314
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "dispatch",
+          "seed": 3111,
+          "duration_seconds": 1.8
+        }
+      }
     }
   },
   "music": {

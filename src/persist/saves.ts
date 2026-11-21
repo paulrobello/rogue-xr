@@ -27,6 +27,7 @@ import {
 } from '../rules/commissions.ts';
 import { counterweightTarget, type StoredCounterweightState } from '../rules/counterweight.ts';
 import { isDifficulty } from '../rules/difficulty.ts';
+import { type DispatchRoute, dispatchDestination } from '../rules/dispatch.ts';
 import {
   isPressureNoteId,
   type PressureDials,
@@ -36,7 +37,7 @@ import {
 import type { StoredPrismState } from '../rules/prism-signal.ts';
 import type { PendingLoot, RewardOffer, RewardTier, RunState } from '../rules/run.ts';
 import { floorSeedFor } from '../rules/run.ts';
-import type { BrassKeyState, StoredHiddenPanelState } from '../rules/types.ts';
+import type { BrassKeyState, StoredDispatchState, StoredHiddenPanelState } from '../rules/types.ts';
 import {
   createWorkshop,
   maxTier,
@@ -100,6 +101,7 @@ export interface FloorSnapshot {
   readonly pendingLoot?: readonly PendingLoot[];
   readonly usedHearths?: readonly string[];
   readonly pressure?: StoredPressureState;
+  readonly dispatch?: StoredDispatchState;
   readonly bookSecretOpenedRooms?: readonly number[];
   readonly bookSecretKeyRooms?: readonly number[];
   readonly bookSecretCabinetRooms?: readonly number[];
@@ -215,6 +217,17 @@ function pressure(v: unknown, path: string, seed: string, version: number): Stor
   if (!drawerOpen && rewardClaimed)
     fail(`${path}.rewardClaimed`, 'cannot be claimed before opening drawer');
   return { dials, solved: r.solved, notes: [...notes], drawerOpen, rewardClaimed };
+}
+
+function dispatch(v: unknown, path: string, seed: string): StoredDispatchState {
+  const value = rec(v, path);
+  const route = int(value.route, `${path}.route`, 0, 2) as DispatchRoute;
+  if (typeof value.sent !== 'boolean') fail(`${path}.sent`, 'expected a boolean');
+  if (typeof value.opened !== 'boolean') fail(`${path}.opened`, 'expected a boolean');
+  if (value.sent && route !== dispatchDestination(seed))
+    fail(`${path}.route`, 'wrong dispatch route');
+  if (value.opened && !value.sent) fail(`${path}.opened`, 'cannot open before sending');
+  return { route, sent: value.sent, opened: value.opened };
 }
 
 function counterweight(v: unknown, path: string, seed: string): StoredCounterweightState {
@@ -472,6 +485,8 @@ function validateRunState(
     r.pressure === undefined
       ? undefined
       : pressure(r.pressure, `${path}.pressure`, activeFloorSeed, version);
+  const dispatchState =
+    r.dispatch === undefined ? undefined : dispatch(r.dispatch, `${path}.dispatch`, seed);
   const counterweightState =
     r.counterweight === undefined
       ? undefined
@@ -556,6 +571,7 @@ function validateRunState(
     ...(pending.length === 0 ? {} : { pendingLoot: pending }),
     ...(difficulty === undefined ? {} : { difficulty }),
     ...(pressureState === undefined ? {} : { pressure: pressureState }),
+    ...(dispatchState === undefined ? {} : { dispatch: dispatchState }),
     ...(counterweightState === undefined ? {} : { counterweight: counterweightState }),
     ...(alchemyState === undefined ? {} : { alchemy: alchemyState }),
     ...(formulaState === undefined ? {} : { conservatoryFormula: formulaState }),
@@ -715,6 +731,9 @@ function validateFloors(
       ...(r.pressure === undefined
         ? {}
         : { pressure: pressure(r.pressure, `${path}.pressure`, floorSeed, version) }),
+      ...(r.dispatch === undefined
+        ? {}
+        : { dispatch: dispatch(r.dispatch, `${path}.dispatch`, runSeed) }),
       ...(r.bookSecretOpenedRooms === undefined
         ? {}
         : {

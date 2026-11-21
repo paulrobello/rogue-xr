@@ -1252,6 +1252,26 @@
           "duration_seconds": 1.6
         }
       }
+    },
+    "dispatch-room-open": {
+      "source_file": "assets-source/audio/sfx/procedural/dispatch-room-open.wav",
+      "source_sha256": "5cb69e065c1dea213cc39a504a07d2db9ffdcc903c541851fe8cad7eccceb1a1",
+      "runtime_file": "public/assets/audio/sfx/dispatch-room-open.ogg",
+      "runtime_sha256": "291eefa069cebd914d67a5388e36c928c980ec08c03c8792a789a3d3d082b7a0",
+      "runtime_bytes": 16791,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "dispatch",
+          "seed": 3111,
+          "duration_seconds": 1.8
+        }
+      }
     }
   },
   "music": {

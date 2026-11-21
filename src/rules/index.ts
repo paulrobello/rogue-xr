@@ -61,6 +61,15 @@ export {
   scaleEnemySetup,
 } from './difficulty.ts';
 export {
+  type DispatchRoute,
+  dispatchDestination,
+  openDispatch,
+  readDispatch,
+  type StoredDispatchState,
+  sendDispatch,
+  turnDispatch,
+} from './dispatch.ts';
+export {
   apply,
   createIdleState,
   intentDamage,
