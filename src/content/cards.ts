@@ -478,6 +478,50 @@ export const CARDS: readonly SliceCard[] = [
       description: 'Gain 6 Block. Gain 1 Wound-up.',
     },
   },
+  {
+    id: 'spare-parts',
+    name: 'Spare Parts',
+    type: 'skill',
+    cost: 1,
+    target: 'none',
+    effects: [{ type: 'draw', amount: 2 }],
+    description: 'Draw 2 cards.',
+    upgrade: {
+      effects: [{ type: 'draw', amount: 3 }],
+      description: 'Draw 3 cards.',
+    },
+  },
+  {
+    id: 'flywheel-swing',
+    name: 'Flywheel Swing',
+    type: 'attack',
+    cost: 2,
+    target: 'enemy',
+    effects: [
+      { type: 'damage', amount: 12, target: 'target', bonusIfSelfBlock: { min: 1, amount: 4 } },
+    ],
+    description: 'Deal 12 damage. If you have Block, deal 4 more damage.',
+    upgrade: {
+      effects: [
+        { type: 'damage', amount: 15, target: 'target', bonusIfSelfBlock: { min: 1, amount: 5 } },
+      ],
+      description: 'Deal 15 damage. If you have Block, deal 5 more damage.',
+    },
+  },
+  {
+    id: 'patch-kit',
+    name: 'Patch Kit',
+    type: 'skill',
+    cost: 1,
+    target: 'none',
+    exhaust: true,
+    effects: [{ type: 'heal', amount: 4, target: 'self' }],
+    description: 'Heal 4 HP. Exhaust.',
+    upgrade: {
+      effects: [{ type: 'heal', amount: 6, target: 'self' }],
+      description: 'Heal 6 HP. Exhaust.',
+    },
+  },
 ];
 
 export const CARDS_BY_ID: ReadonlyMap<string, SliceCard> = new Map(CARDS.map((c) => [c.id, c]));

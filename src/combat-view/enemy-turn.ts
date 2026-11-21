@@ -42,6 +42,7 @@ export function eventOwner(event: CombatEvent): string | null {
     case 'enemy-phase':
     case 'enemy-died':
       return event.enemyId;
+    case 'healed':
     case 'block-gained':
     case 'block-cleared':
     case 'status-applied':
@@ -153,6 +154,9 @@ export function foldEvents(state: CombatState, events: readonly CombatEvent[]): 
           hp: Math.max(0, f.hp - event.hpLost),
           block: Math.max(0, f.block - event.blocked),
         }));
+        break;
+      case 'healed':
+        patch(event.target, (f) => ({ hp: Math.min(f.maxHp, f.hp + event.amount) }));
         break;
       case 'block-gained':
         patch(event.target, (f) => ({ block: f.block + event.amount }));

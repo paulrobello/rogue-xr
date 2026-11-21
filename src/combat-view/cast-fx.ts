@@ -6,6 +6,7 @@ import type { LinearRgb } from '../sigil-plate/spark-pool.ts';
 import { discTexture, linearRgb, SPARK_AMBER, usePointScale } from '../sigil-plate/sparks.ts';
 import {
   DRAW_SECONDS,
+  HEAL_SECONDS,
   MOTE_SECONDS,
   newShieldFrame,
   puffLevel,
@@ -52,6 +53,7 @@ const STREAM_LINGER = 0.18;
 const STEP_MAX = 1 / 30;
 
 const BRASS = linearRgb(PALETTE.brass);
+const REPAIR = linearRgb('#8bf1a1');
 /** Steam: a grey-white with the faintest warmth, alpha blended over the scene. */
 const STEAM = mixRgb(linearRgb(PALETTE.parchment), [0.72, 0.72, 0.72], 0.8);
 const STATUS_RGB: Record<StatusId, LinearRgb> = {
@@ -249,6 +251,10 @@ export class CastFx extends THREE.Group {
   /** A brass shimmer from `from` to the hand at `to`, `delay` seconds from now. */
   draw(from: Point3, to: Point3, delay = 0): void {
     this.startStream(from, to, BRASS, true, delay, DRAW_SECONDS);
+  }
+
+  heal(from: Point3, to: Point3, delay = 0): void {
+    this.startStream(from, to, REPAIR, true, delay, HEAL_SECONDS);
   }
 
   update(dt: number): void {

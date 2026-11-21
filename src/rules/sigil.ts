@@ -38,7 +38,7 @@ export function scaleAmount(amount: number, multiplier: number): number {
 /**
  * Returns a new effect list scaled by a sigil multiplier (the sigil recogniser maps its score to it).
  *
- * - Scaled: `damage` amount (per hit; `hits` is unchanged), `block` amount, `apply-status` stacks.
+ * - Scaled: damage per hit and its conditional bonus, Block, healing, and applied status stacks.
  * - Not scaled: `gain-steam`, `lose-steam`, `draw`. They are turn economy, and accuracy may not mint
  *   steam or cards.
  * - Rounding: every scaled amount goes through `scaleAmount` (round half up, never below 0).
@@ -55,9 +55,16 @@ export function scaleEffects(
   const scale = (amount: Amount): number => scaleAmount(resolveScaled(amount, dice), m);
   return effects.map((effect): Effect => {
     switch (effect.type) {
-      case 'damage':
-        return { ...effect, amount: scale(effect.amount) };
+      case 'damage': {
+        const bonus = effect.bonusIfSelfBlock;
+        return {
+          ...effect,
+          amount: scale(effect.amount),
+          ...(bonus ? { bonusIfSelfBlock: { ...bonus, amount: scale(bonus.amount) } } : {}),
+        };
+      }
       case 'block':
+      case 'heal':
         return { ...effect, amount: scale(effect.amount) };
       case 'apply-status':
         return { ...effect, stacks: scale(effect.stacks) };

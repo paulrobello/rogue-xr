@@ -16,6 +16,7 @@ export type CardKeyword =
   | 'block'
   | 'steam'
   | 'draw'
+  | 'heal'
   | 'exhaust'
   | 'dice'
   | 'sigil'
@@ -29,6 +30,7 @@ const MECHANIC_NAME: Readonly<Record<Exclude<CardKeyword, StatusId>, string>> = 
   block: 'Block',
   steam: 'Steam',
   draw: 'Draw',
+  heal: 'Heal',
   exhaust: 'Exhaust',
   dice: 'Roll',
   sigil: 'Sigil',
@@ -42,6 +44,7 @@ const MECHANIC_TEXT: Readonly<Record<Exclude<CardKeyword, StatusId | 'dice'>, st
   block: 'Absorbs incoming damage until the start of your next turn.',
   steam: `Pays for cards. Refills to ${STEAM_PER_TURN} at the start of your turn.`,
   draw: 'Takes cards from your draw pile into your hand.',
+  heal: 'Restores missing HP, up to your maximum.',
   exhaust: 'Removed from this fight once played, instead of going to the discard pile.',
   sigil: 'Trace its glyph on the sigil plate to cast it; a cleaner trace casts it stronger.',
   pinned: 'Stays in your hand when you end your turn. Playing it still discards it normally.',
@@ -68,9 +71,11 @@ export function cardKeywords(card: SliceCard): CardKeyword[] {
   if (card.id.replace(/\+$/, '') === 'counterstroke') add('counterstroke');
   if (card.id.replace(/\+$/, '') === 'quench-seal') add('quench');
   for (const effect of card.effects) {
-    if (effect.type === 'block') add('block');
+    if (effect.type === 'block' || (effect.type === 'damage' && effect.bonusIfSelfBlock))
+      add('block');
     else if (effect.type === 'gain-steam' || effect.type === 'lose-steam') add('steam');
     else if (effect.type === 'draw') add('draw');
+    else if (effect.type === 'heal') add('heal');
     else if (effect.type === 'apply-status') add(effect.status);
     else if (effect.type === 'block-from-status') {
       add('quench');

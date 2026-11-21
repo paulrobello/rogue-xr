@@ -6,6 +6,8 @@ The slice reference points every new card is measured against: 3 steam per turn,
 
 The dungeon preview continues Wave A with Torque Wrench, Counterweight, and Tension Coil. New runs can roll the cards in rewards and treasure and purchase them in the Workshop. Upper Works seeds `CRYPT001` and `CRYPT004` exercise the Mortar Scarab and Lantern Bailiff rules, respectively. Their concept sheet is ready for visual review, with the 3D actors and animation still to come. [Dungeon enemy concepts](../assets-source/concepts/dungeon/dungeon-enemies-sheet.png)
 
+The next Wave A preview adds Spare Parts, Flywheel Swing and Patch Kit. Flywheel Swing's Block bonus is part of one hit and does not spend the Block. Patch Kit restores only missing HP and exhausts when played, including at full health. Older saves keep their original reward pools.
+
 ## 1. Two kinds of card
 
 | Kind | Where it lives | How it is used | Lasts |

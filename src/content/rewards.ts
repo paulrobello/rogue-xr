@@ -19,6 +19,13 @@ export const DUNGEON_REWARD_IDS: ReadonlySet<string> = new Set([
   'tension-coil',
 ]);
 
+/** Cards added by Wave A, excluded from offers for pre-v14 snapshots. */
+export const WAVE_A_REPAIR_IDS: ReadonlySet<string> = new Set([
+  'spare-parts',
+  'flywheel-swing',
+  'patch-kit',
+]);
+
 /** Reward pool used before the Foundry expansion. Existing saves keep this boundary for new rolls. */
 export const LEGACY_REWARD_POOL: readonly string[] = [
   'cog-toss',

@@ -101,6 +101,22 @@ describe('scaleEffects', () => {
     ]);
   });
 
+  it('scales damage added by Block and healing amounts', () => {
+    const bonus = { min: 1, amount: 4 };
+    expect(
+      scaleEffects(
+        [
+          { type: 'damage', amount: 12, target: 'target', bonusIfSelfBlock: bonus },
+          { type: 'heal', amount: 6, target: 'self' },
+        ],
+        0.5,
+      ),
+    ).toEqual([
+      { type: 'damage', amount: 6, target: 'target', bonusIfSelfBlock: { min: 1, amount: 2 } },
+      { type: 'heal', amount: 3, target: 'self' },
+    ]);
+  });
+
   it('returns a new list and never mutates its input', () => {
     const frozen = deepFreeze(structuredClone(effects));
     const out = scaleEffects(frozen, 1);

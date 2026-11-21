@@ -16,10 +16,11 @@ export const HIT_NUMBER_SLOTS = 6;
 export const HIT_NUMBER_WIDTH = 0.4;
 const CANVAS = { w: 384, h: 192 } as const;
 
-/** What one number shows: hit points lost (red) and damage blocked (brass). */
+/** What one number shows: lost health, blocked damage, or restored health. */
 export interface HitAmount {
   readonly hpLost: number;
   readonly blocked: number;
+  readonly healed?: number;
 }
 
 /** One pooled number, for checks: its slot, what it shows, where it started and its age. */
@@ -57,7 +58,8 @@ export function drawHitAmount(
     ctx.fillStyle = color;
     ctx.fillText(text, w / 2, y);
   };
-  if (amount.hpLost === 0) line(`Blocked ${amount.blocked}`, PALETTE.brass, h / 2, 64);
+  if (amount.healed) line(`+${amount.healed}`, '#8bf1a1', h / 2, 110);
+  else if (amount.hpLost === 0) line(`Blocked ${amount.blocked}`, PALETTE.brass, h / 2, 64);
   else if (amount.blocked === 0) line(`-${amount.hpLost}`, HIT_RED, h / 2, 110);
   else {
     line(`-${amount.hpLost}`, HIT_RED, h * 0.36, 96);
@@ -112,7 +114,7 @@ export class HitNumbers extends THREE.Group {
    * a free slot, else the oldest. Nothing shows for an amount of zero.
    */
   spawn(at: THREE.Vector3, amount: HitAmount, scale = 1): HitNumberSlot | null {
-    if (amount.hpLost <= 0 && amount.blocked <= 0) return null;
+    if (amount.hpLost <= 0 && amount.blocked <= 0 && !amount.healed) return null;
     let slot = this.slots.find((s) => !s.active);
     if (!slot) {
       slot = this.slots[0] as HitNumberSlot;
@@ -120,7 +122,11 @@ export class HitNumbers extends THREE.Group {
     }
     slot.active = true;
     slot.age = 0;
-    slot.amount = { hpLost: amount.hpLost, blocked: amount.blocked };
+    slot.amount = {
+      hpLost: amount.hpLost,
+      blocked: amount.blocked,
+      ...(amount.healed ? { healed: amount.healed } : {}),
+    };
     slot.start.copy(at);
     slot.scale = scale;
     this.labels[slot.index]?.draw((ctx, w, h) => drawHitAmount(ctx, w, h, amount));

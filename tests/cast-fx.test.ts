@@ -16,6 +16,7 @@ import {
   castFxSteps,
   castLandSeconds,
   FX_STAGGER_SECONDS,
+  HEAL_SECONDS,
   MOTE_SECONDS,
   newRevealFrame,
   newShieldFrame,
@@ -45,7 +46,7 @@ const PLATE_DONE_SECONDS = 1.6;
 const kinds = (id: string, upgraded = false): CastFxKind[] => {
   const card = CARDS.find((c) => c.id === id);
   if (!card) throw new Error(id);
-  return castFxSteps(upgraded ? upgradedCard(card) : card).map((s) => s.kind);
+  return castFxSteps(upgraded ? upgradedCard(card) : card, 0, 3).map((s) => s.kind);
 };
 
 describe('cast reveal timeline', () => {
@@ -143,6 +144,9 @@ describe('effect to FX mapping', () => {
       'torque-wrench': ['bolt', 'motes'],
       counterweight: ['shield'],
       'tension-coil': ['shield', 'motes'],
+      'spare-parts': ['draw'],
+      'flywheel-swing': ['bolt'],
+      'patch-kit': ['heal'],
     };
     for (const card of CARDS) {
       expect(expected[card.id], card.id).toBeDefined();
@@ -151,6 +155,15 @@ describe('effect to FX mapping', () => {
       for (const step of castFxSteps(card)) expect(step.amount).toBeGreaterThan(0);
     }
     expect(Object.keys(expected).sort()).toEqual(CARDS.map((c) => c.id).sort());
+  });
+
+  it('shows only the health actually restored and waits for the repair to land', () => {
+    const patch = CARDS.find((card) => card.id === 'patch-kit');
+    if (!patch) throw Error('Missing Patch Kit');
+    expect(castFxSteps(patch)).toEqual([]);
+    const shown = castFxSteps(patch, 0, 2);
+    expect(shown).toEqual([{ kind: 'heal', amount: 2, at: 0 }]);
+    expect(castLandSeconds(shown)).toBe(HEAL_SECONDS);
   });
 
   it('rides enemy motes with the bolt, staggers the rest, and sends self statuses to the player', () => {

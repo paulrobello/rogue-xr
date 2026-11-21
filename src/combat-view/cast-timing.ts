@@ -19,8 +19,8 @@ export const REVEAL_EFFECT_AT = REVEAL_IN_SECONDS + REVEAL_HOLD_SECONDS;
 /** Size the card grows from, as a fraction of its full size (full size under reduced motion). */
 export const REVEAL_START_SCALE = 0.55;
 
-/** Effect FX kinds: the bolt to enemies, the ward shield, a steam puff, status motes, draw shimmer. */
-export type CastFxKind = 'bolt' | 'shield' | 'steam' | 'motes' | 'draw';
+/** Effect FX kinds for attack, defense, steam, status, draw, and healing. */
+export type CastFxKind = 'bolt' | 'shield' | 'steam' | 'motes' | 'draw' | 'heal';
 
 /** One FX of a cast, `at` seconds after the effect starts. */
 export interface CastFxStep {
@@ -60,12 +60,17 @@ export const STEAM_RISE = 0.34;
 export const MOTE_SECONDS = 0.38;
 /** The draw shimmer travels to the hand over this long. */
 export const DRAW_SECONDS = 0.34;
+export const HEAL_SECONDS = 0.32;
 
 const clamp01 = (x: number): number => (x < 0 ? 0 : x > 1 ? 1 : x);
 const amountOf = (a: Amount): number => (typeof a === 'number' ? a : (a.base ?? 0) + a.dice);
 
 /** The FX step for one effect, without its start time; null for an effect with no FX. */
-function stepOf(effect: Effect, gainedBlock: number): Omit<CastFxStep, 'at'> | null {
+function stepOf(
+  effect: Effect,
+  gainedBlock: number,
+  healed: number,
+): Omit<CastFxStep, 'at'> | null {
   switch (effect.type) {
     case 'damage':
       return { kind: 'bolt', amount: amountOf(effect.amount) * (effect.hits ?? 1) };
@@ -85,6 +90,8 @@ function stepOf(effect: Effect, gainedBlock: number): Omit<CastFxStep, 'at'> | n
       };
     case 'draw':
       return { kind: 'draw', amount: amountOf(effect.amount) };
+    case 'heal':
+      return healed > 0 ? { kind: 'heal', amount: healed } : null;
     case 'block-from-status':
       return { kind: 'shield', amount: effect.base + effect.perStack * effect.maxStacks };
     case 'conditional-block':
@@ -101,12 +108,16 @@ function stepOf(effect: Effect, gainedBlock: number): Omit<CastFxStep, 'at'> | n
  * after the previous non-bolt one, except enemy motes on a card that also strikes, which ride with
  * the bolt (so the damage never waits for them).
  */
-export function castFxSteps(card: Pick<CardDef, 'effects'>, gainedBlock = 0): CastFxStep[] {
+export function castFxSteps(
+  card: Pick<CardDef, 'effects'>,
+  gainedBlock = 0,
+  healed = 0,
+): CastFxStep[] {
   const strikes = card.effects.some((e) => e.type === 'damage');
   const steps: CastFxStep[] = [];
   let next = 0;
   for (const effect of card.effects) {
-    const step = stepOf(effect, gainedBlock);
+    const step = stepOf(effect, gainedBlock, healed);
     if (!step) continue;
     if (step.kind === 'bolt' || (strikes && step.kind === 'motes' && step.toward === 'enemy')) {
       steps.push({ ...step, at: 0 });
@@ -129,6 +140,8 @@ export function fxLandSeconds(kind: Exclude<CastFxKind, 'bolt'>): number {
       return MOTE_SECONDS;
     case 'draw':
       return DRAW_SECONDS;
+    case 'heal':
+      return HEAL_SECONDS;
   }
 }
 

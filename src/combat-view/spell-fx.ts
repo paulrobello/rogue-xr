@@ -63,6 +63,7 @@ export function attackVisualKind(cardId: string | null | undefined): AttackVisua
     case 'strike':
       return 'physical';
     case 'cog-toss':
+    case 'flywheel-swing':
       return 'cog';
     case 'ratchet-flurry':
       return 'flurry';

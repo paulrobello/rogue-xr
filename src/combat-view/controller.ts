@@ -163,6 +163,8 @@ export function describeEvent(event: CombatEvent, state: CombatState): string | 
       return `${name(event.source)} hit ${name(event.target)} for ${event.hpLost}${
         event.blocked > 0 ? ` (${event.blocked} blocked)` : ''
       }${event.kind === 'overheat' ? ' (overheat)' : ''}`;
+    case 'healed':
+      return `${name(event.target)} restored ${event.amount} HP`;
     case 'block-gained':
       return `${name(event.target)} gained ${event.amount} block`;
     case 'status-applied':

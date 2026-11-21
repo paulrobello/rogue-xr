@@ -80,6 +80,18 @@ export function resolveAmount(amount: Amount, dice: number | null): number {
   return Math.max(0, Math.floor((amount.base ?? 0) + amount.dice * dice));
 }
 
+function hitAmount(
+  effect: Extract<Effect, { type: 'damage' }>,
+  block: number,
+  dice: number | null,
+): number {
+  const bonus = effect.bonusIfSelfBlock;
+  return (
+    resolveAmount(effect.amount, dice) +
+    (bonus && block >= bonus.min ? resolveAmount(bonus.amount, null) : 0)
+  );
+}
+
 export function usesDice(effects: readonly Effect[]): boolean {
   return effects.some((effect) => {
     const amount =
@@ -109,7 +121,7 @@ export function intentDamage(state: CombatState, enemyId: string): readonly numb
   if (!enemy?.intent) return [];
   return enemy.intent.effects.flatMap((effect) =>
     effect.type === 'damage'
-      ? [attackDamage(resolveAmount(effect.amount, null), enemy, state.player)]
+      ? [attackDamage(hitAmount(effect, enemy.block, null), enemy, state.player)]
       : [],
   );
 }
@@ -480,6 +492,14 @@ function dealHit(w: Work, source: ActorId, target: ActorId, base: number): void 
   checkDeath(w, target);
 }
 
+function heal(w: Work, target: ActorId, raw: number): void {
+  const fighterState = fighter(w, target);
+  const amount = Math.min(Math.max(0, raw), fighterState.maxHp - fighterState.hp);
+  if (amount <= 0) return;
+  update(w, target, { hp: fighterState.hp + amount });
+  w.events.push({ type: 'healed', target, amount });
+}
+
 /**
  * Resolves effects in order from `actor`'s point of view. `chosen` is the card's target (or the player
  * for an enemy move). Stops as soon as the combat is decided; effects aimed at a dead fighter do nothing.
@@ -496,7 +516,7 @@ function resolveEffects(
     if (isOver(w) || !isAlive(fighter(w, actor))) return;
     switch (effect.type) {
       case 'damage': {
-        const base = resolveAmount(effect.amount, dice);
+        const base = hitAmount(effect, fighter(w, actor).block, dice);
         for (let hit = 0; hit < (effect.hits ?? 1) && !isOver(w); hit++) {
           for (const target of targetsOf(w, actor, effect.target, chosen)) {
             if (!isOver(w)) dealHit(w, actor, target, base);
@@ -504,6 +524,9 @@ function resolveEffects(
         }
         break;
       }
+      case 'heal':
+        heal(w, actor, resolveAmount(effect.amount, dice));
+        break;
       case 'block': {
         gainBlock(w, actor, resolveAmount(effect.amount, dice));
         break;

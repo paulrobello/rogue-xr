@@ -2449,6 +2449,16 @@ export class CombatSession {
     const deaths = new Set<SentryActor>();
     const phases = new Set<SentryActor>();
     for (const event of events) {
+      if (event.type === 'healed' && event.target === PLAYER_ID) {
+        const at = this.playerNumberPosition();
+        this.numbers.spawn(
+          at,
+          { hpLost: 0, blocked: 0, healed: event.amount },
+          PLAYER_NUMBER_SCALE,
+        );
+        this.sfx('paper-unfold', at);
+        continue;
+      }
       if (event.type === 'damage-dealt' && event.target === PLAYER_ID) {
         // A fully blocked blow rings the ward (in showPlayerHit) instead of the clank.
         if (event.hpLost > 0) this.deps.audio?.playCombatEvent(event);
@@ -2504,7 +2514,11 @@ export class CombatSession {
       (total, e) => total + (e.type === 'block-gained' && e.target === PLAYER_ID ? e.amount : 0),
       0,
     );
-    const steps = card && launch ? castFxSteps(card, gainedBlock) : [];
+    const healed = events.reduce(
+      (total, e) => total + (e.type === 'healed' && e.target === PLAYER_ID ? e.amount : 0),
+      0,
+    );
+    const steps = card && launch ? castFxSteps(card, gainedBlock, healed) : [];
     const from = launch?.from ?? this.fan.root.getWorldPosition(new THREE.Vector3());
     const targets = ids.flatMap((id) => {
       const at = this.aimOfId(id);
@@ -2610,6 +2624,8 @@ export class CombatSession {
         this.effectFx.steam(from, step.amount, at);
       } else if (step.kind === 'draw') {
         this.effectFx.draw(from, this.fan.root.getWorldPosition(new THREE.Vector3()), at);
+      } else if (step.kind === 'heal') {
+        this.effectFx.heal(from, this.playerNumberPosition(), at);
       } else if (step.kind === 'motes' && step.status) {
         if (cardId === 'rust-spray' || cardId === 'rivet-plate') continue;
         if (step.toward === 'player') {
@@ -2716,6 +2732,11 @@ export class CombatSession {
     if (this.hitLog.length > TRACE_CAP) this.hitLog.shift();
     if (hit.blocked > 0) this.sfx('block-ward');
     if (hit.hpLost > 0) this.hpPulse = 1;
+    this.numbers.spawn(this.playerNumberPosition(), hit, PLAYER_NUMBER_SCALE);
+    this.deps.onPlayerHit?.(hit);
+  }
+
+  private playerNumberPosition(): THREE.Vector3 {
     // The player's number rises from the top of the status panel, wherever the desktop fit put it;
     // without a panel, from just below the line of sight.
     const at = this.numberAt;
@@ -2727,8 +2748,7 @@ export class CombatSession {
       this.deps.camera.updateWorldMatrix(true, false);
       this.deps.camera.localToWorld(at.set(0, -0.15, -0.7));
     }
-    this.numbers.spawn(at, hit, PLAYER_NUMBER_SCALE);
-    this.deps.onPlayerHit?.(hit);
+    return at;
   }
 
   /**

@@ -47,6 +47,8 @@ export type Effect =
   | {
       readonly type: 'damage';
       readonly amount: Amount;
+      /** Additional damage when the acting player has at least this much Block. */
+      readonly bonusIfSelfBlock?: { readonly min: number; readonly amount: number };
       /** Repeat the hit this many times (default 1). Each hit is modified and blocked separately. */
       readonly hits?: number;
       readonly target: 'target' | 'all-opponents';
@@ -77,7 +79,8 @@ export type Effect =
       readonly target: 'self';
       readonly minTargetHits: number;
     }
-  | { readonly type: 'draw'; readonly amount: Amount };
+  | { readonly type: 'draw'; readonly amount: Amount }
+  | { readonly type: 'heal'; readonly amount: Amount; readonly target: 'self' };
 
 /** How a card picks its target: an enemy, or nothing (dropped on the table, D5). */
 export type CardTargetRule = 'enemy' | 'none';
@@ -251,6 +254,7 @@ export type CombatEvent =
       readonly blocked: number;
       readonly hpLost: number;
     }
+  | { readonly type: 'healed'; readonly target: ActorId; readonly amount: number }
   | { readonly type: 'block-gained'; readonly target: ActorId; readonly amount: number }
   | { readonly type: 'block-cleared'; readonly target: ActorId; readonly amount: number }
   | {

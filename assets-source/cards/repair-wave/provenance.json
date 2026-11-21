@@ -1,0 +1,54 @@
+{
+  "provider": "OpenAI Media Service",
+  "generator": "Built-in OpenAI ImageGen",
+  "model": "Not exposed by the tool",
+  "file": "repair-wave.png",
+  "sha256": "bb3d832120e5dc07c5372b8176a67daa22056379a848b14725c41a1ec72fa641",
+  "reference": [
+    {
+      "path": "assets-source/style/locked/L-board-1.png",
+      "sha256": "d3fffc8eb300cc6f40236c28930401ef1bd06be0e27be76999839e3bfeacc018"
+    },
+    {
+      "path": "assets-source/style/locked/L-cards.png",
+      "sha256": "207a60d3465942c8d16ddb5eee674db576a4a19e3b7070579313f844050b2c52"
+    },
+    {
+      "path": "assets-source/cards/dungeon/dungeon.png",
+      "sha256": "cbc81cef093381265009cad41d3f09fe90bf6a32bbb1326866b77506c77cec1b"
+    }
+  ],
+  "prompt": "Generate one original production transparent PNG foreground illustration sheet for Clockwork Spire, a Victorian clockwork fantasy deckbuilder. The supplied images are style references, not assets to paste. Match their painterly Gilded Lamplight art direction: readable semi-realistic objects, tactile oil-brush shading, worn amber brass and gunmetal, sapphire blue for skills and ruby red for attacks, warm edge highlights and firm silhouettes against near-black card scenery. Exact 2-by-2 equal grid on a square canvas. Each subject sits centered in its quadrant with at least 12% entirely transparent margin around all edges. Upper left: Spare Parts, a slightly open squat octagonal sapphire enamel parts tin with a brass rim, three large spare gears and two clearly readable rivets above it, short grouped silhouette, subtle blue insets. Upper right: Flywheel Swing, a wide heavy antique brass spoked flywheel with one ruby enamel crescent on its rim, gunmetal axle and a single short copper motion arc held close to the rim, dynamic clear quarter-turn angle. Lower left: Patch Kit, a compact worn walnut repair case with brass corners, sapphire side panels and an open lid revealing a rolled pale repair wrap and spool of brass wire, a single small cold-blue glass ampoule; a readable repair-kit silhouette. Lower right is completely empty clear alpha. Give each a broad identifiable silhouette at tiny card size and clearly distinct profile. Real straight RGBA transparency. No card, frame, rectangles behind objects, border, backdrop, room, floor, drop shadow, smoky haze, rune, text, lettering, UI icons, health cross or watermark. Keep all edges crisp, painted with texture inside the subject, no rays crossing a quadrant boundary.",
+  "settings": {
+    "transparentBackground": true,
+    "layout": "2 by 2 equal grid",
+    "size": [
+      1254,
+      1254
+    ]
+  },
+  "alphaBoundsByQuadrantAt16": {
+    "spare-parts": [
+      67,
+      71,
+      564,
+      599
+    ],
+    "flywheel-swing": [
+      64,
+      65,
+      564,
+      604
+    ],
+    "patch-kit": [
+      64,
+      46,
+      581,
+      584
+    ],
+    "unused": null
+  },
+  "alphaNotes": "Original output kept byte-for-byte. Unused quadrant peaks at 1/255 alpha and is excluded from packing.",
+  "runtimeDerivation": "scripts/assets/build_card_atlas.py --repair-wave-only crops nontransparent subjects, scales and centers them in the existing open cells, extrudes color gutters, and encodes the affected pages.",
+  "rights": "Original generated foregrounds with project-owned references. Release and owner review pending."
+}

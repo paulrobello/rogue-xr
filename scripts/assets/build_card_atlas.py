@@ -325,6 +325,12 @@ DUNGEON_ART = [
     ("tension-coil", "skill", "dungeon", 2),
 ]
 
+REPAIR_WAVE_ART = [
+    ("spare-parts", "skill", "defend", 0),
+    ("flywheel-swing", "attack", "strike", 1),
+    ("patch-kit", "skill", "rivet-plate", 2),
+]
+
 
 def add_foundry_page(index: dict, ktx: Path, skip_ktx: bool) -> None:
     filename = "foundry.png"
@@ -427,12 +433,73 @@ def add_dungeon_page(index: dict, ktx: Path, skip_ktx: bool) -> None:
         index["pages"][page_id] = entry
 
 
+def add_repair_wave(index: dict, ktx: Path, skip_ktx: bool) -> None:
+    """Add the three Wave A foregrounds to the reserved slot 15 on each art page."""
+    source_path = SRC / "repair-wave" / "repair-wave.png"
+    if not source_path.is_file():
+        raise FileNotFoundError(f"Missing repair-wave source: {source_path}")
+    size = CELL - 2 * CELL_INSET
+    with Image.open(source_path) as source:
+        source = source.convert("RGBA")
+        if source.width % 2 or source.height % 2:
+            raise ValueError(f"repair-wave source must be a 2x2 sheet: {source.size}")
+        quad_w, quad_h = source.width // 2, source.height // 2
+        prepared = []
+        slot_x, slot_y = CELL * 3, CELL * 3
+        for card, family, backdrop, quadrant in REPAIR_WAVE_ART:
+            page_id = index["cards"].get(backdrop, {}).get("layers", {}).get("back", {}).get("page")
+            if page_id is None:
+                raise ValueError(f"Missing backdrop card {backdrop} for {card}")
+            page_path = OUT / index["pages"][page_id]["png"]
+            if not page_path.is_file():
+                raise FileNotFoundError(f"Missing atlas page for {card}: {page_path}")
+            page = np.array(Image.open(page_path).convert("RGBA"))
+            existing = page[slot_y:slot_y + CELL, slot_x:slot_x + CELL]
+            prior = next((entry for entry in index["cards"].values()
+                          if entry.get("layers", {}).get("front", {}).get("page") == page_id
+                          and entry.get("layers", {}).get("front", {}).get("rect") ==
+                          [slot_x + CELL_INSET, slot_y + CELL_INSET, size, size]), None)
+            if existing[..., 3].any() and not (card in index["cards"] and prior is index["cards"].get(card)):
+                raise ValueError(f"Repair-wave slot 15 collision on page {page_id} for {card}")
+            row, col = divmod(quadrant, 2)
+            subject = source.crop((col * quad_w, row * quad_h, (col + 1) * quad_w, (row + 1) * quad_h))
+            bounds = subject.getchannel("A").point(lambda alpha: 255 if alpha >= 16 else 0).getbbox()
+            if not bounds:
+                raise ValueError(f"Missing foreground for {card} in {source_path}")
+            prepared.append((card, family, backdrop, page_id, page_path, subject.crop(bounds)))
+
+        for card, family, backdrop, page_id, page_path, subject in prepared:
+            page = np.array(Image.open(page_path).convert("RGBA"))
+            subject.thumbnail((int(size * .82), int(size * .82)), Image.Resampling.LANCZOS)
+            centred = Image.new("RGBA", (size, size))
+            centred.paste(subject, ((size - subject.width) // 2, (size - subject.height) // 2))
+            cell = extrude(bleed(np.array(centred)), CELL_INSET, CELL_INSET)
+            page[slot_y:slot_y + CELL, slot_x:slot_x + CELL] = cell
+            save_png(page, page_path)
+            front = {"page": page_id, "rect": [slot_x + CELL_INSET, slot_y + CELL_INSET, size, size],
+                     "uv": uv(slot_x + CELL_INSET, slot_y + CELL_INSET, size, size, PAGE, PAGE),
+                     "source": str(source_path.relative_to(ROOT))}
+            backdrop_entry = index["cards"][backdrop]["layers"]
+            index["cards"][card] = {
+                "type": family, "frame": family, "glow": GLOW[family],
+                "layers": {"back": backdrop_entry["back"], "mid": backdrop_entry["mid"], "front": front},
+                "stack": LAYER_DEFAULTS,
+            }
+            page_entry = index["pages"][page_id]
+            page_entry["pngSha256"] = sha256(page_path)
+            page_entry["pngBytes"] = page_path.stat().st_size
+            if not skip_ktx:
+                compressed = encode_ktx2(ktx, page_path)
+                page_entry.update(ktx2=compressed.name, ktx2Sha256=sha256(compressed), ktx2Bytes=compressed.stat().st_size)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--ktx", type=Path, default=DEFAULT_KTX)
     ap.add_argument("--skip-ktx", action="store_true")
     ap.add_argument("--foundry-only", action="store_true", help="extend the checked-in slice atlas using the Foundry source sheets")
     ap.add_argument("--dungeon-only", action="store_true", help="extend the checked-in atlas using the dungeon source sheet")
+    ap.add_argument("--repair-wave-only", action="store_true", help="extend the checked-in atlas using the Wave A repair sheet")
     args = ap.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
 
@@ -445,6 +512,11 @@ def main() -> None:
     if args.dungeon_only:
         index = json.loads(manifest.read_text())
         add_dungeon_page(index,args.ktx,args.skip_ktx)
+        manifest.write_text(dumps(index) + "\n")
+        return
+    if args.repair_wave_only:
+        index = json.loads(manifest.read_text())
+        add_repair_wave(index, args.ktx, args.skip_ktx)
         manifest.write_text(dumps(index) + "\n")
         return
 
@@ -519,6 +591,7 @@ def main() -> None:
     }
     add_foundry_page(index,args.ktx,args.skip_ktx)
     add_dungeon_page(index,args.ktx,args.skip_ktx)
+    add_repair_wave(index,args.ktx,args.skip_ktx)
     manifest.write_text(dumps(index) + "\n")
     print(f"card-atlas.json: {len(cards)} cards, {len(frames)} frames, {len(page_entries)} pages")
 

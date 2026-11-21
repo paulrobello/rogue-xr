@@ -26,7 +26,9 @@ export const DUNGEON_CONTENT_VERSION = 11;
 export const SPEAKING_PIPES_VERSION = 12;
 /** Stone Reliquary coffer and trace gate. */
 export const RELIQUARY_VERSION = 13;
-export const ENCOUNTER_CONTENT_VERSION = RELIQUARY_VERSION;
+/** Wave A repair cards. Older snapshots retain the v13 reward pool. */
+export const WAVE_A_REPAIR_VERSION = 14;
+export const ENCOUNTER_CONTENT_VERSION = WAVE_A_REPAIR_VERSION;
 const LEGACY_ENCOUNTER_IDS = new Set([
   'sentry',
   'hound',

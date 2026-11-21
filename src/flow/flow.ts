@@ -11,8 +11,14 @@ import {
   RELIQUARY_VERSION,
   RETURN_PASSAGES_VERSION,
   SPEAKING_PIPES_VERSION,
+  WAVE_A_REPAIR_VERSION,
 } from '../combat/encounter-choice.ts';
-import { DUNGEON_REWARD_IDS, LEGACY_REWARD_POOL, PERMANENT_CARD_IDS } from '../content/rewards.ts';
+import {
+  DUNGEON_REWARD_IDS,
+  LEGACY_REWARD_POOL,
+  PERMANENT_CARD_IDS,
+  WAVE_A_REPAIR_IDS,
+} from '../content/rewards.ts';
 import { brassCacheForPlayableFloor } from '../floor/return-passages.ts';
 import type { FloorSnapshot, RunSnapshot } from '../persist/saves.ts';
 import { snapshotRun } from '../persist/saves.ts';
@@ -1439,9 +1445,11 @@ export class RunFlow {
 
   private rewardPoolForContentVersion(): readonly string[] {
     if (this.contentVersionValue < FOUNDRY_VERSION) return LEGACY_REWARD_POOL;
-    if (this.contentVersionValue < DUNGEON_CONTENT_VERSION)
-      return this.opts.rewardPool.filter((id) => !DUNGEON_REWARD_IDS.has(id));
-    return this.opts.rewardPool;
+    if (this.contentVersionValue >= WAVE_A_REPAIR_VERSION) return this.opts.rewardPool;
+    const dungeon = this.contentVersionValue >= DUNGEON_CONTENT_VERSION;
+    return this.opts.rewardPool.filter(
+      (id) => !WAVE_A_REPAIR_IDS.has(id) && (dungeon || !DUNGEON_REWARD_IDS.has(id)),
+    );
   }
 
   private applyPressureResult(

@@ -6,6 +6,7 @@ import { CARDS } from '../src/content/cards.ts';
 const dir = new URL('../public/assets/cards/atlas/', import.meta.url);
 
 interface Region {
+  source?: string;
   page: number;
   rect: [number, number, number, number];
   uv: [number, number, number, number];
@@ -60,12 +61,36 @@ describe('card atlas index', () => {
   const baseCards = CARDS.filter((c) => !c.upgraded);
 
   it('covers every base card and its type', () => {
-    expect(Object.keys(atlas.cards).sort()).toEqual(baseCards.map((c) => c.id).sort());
+    expect(
+      Object.keys(atlas.cards)
+        .filter((id) => baseCards.some((card) => card.id === id))
+        .sort(),
+    ).toEqual(baseCards.map((c) => c.id).sort());
     for (const card of baseCards) {
       const entry = atlas.cards[card.id];
       expect(entry?.type).toBe(card.type);
       expect(entry?.frame).toBe(card.type);
       expect(Object.keys(entry?.layers ?? {}).sort()).toEqual(['back', 'front', 'mid']);
+    }
+  });
+
+  it('keeps Wave A repair foregrounds in reserved slot 15 with shared backdrops', () => {
+    const expected = [
+      ['spare-parts', 'defend', 1],
+      ['flywheel-swing', 'strike', 0],
+      ['patch-kit', 'rivet-plate', 4],
+    ] as const;
+    for (const [id, backdrop, page] of expected) {
+      const entry = atlas.cards[id];
+      const base = atlas.cards[backdrop];
+      expect(entry).toBeDefined();
+      expect(base).toBeDefined();
+      if (!entry || !base) continue;
+      expect(entry.layers.front.page).toBe(page);
+      expect(entry.layers.front.rect).toEqual([1552, 1552, 480, 480]);
+      expect(entry.layers.back).toEqual(base.layers.back);
+      expect(entry.layers.mid).toEqual(base.layers.mid);
+      expect(entry.layers.front.source).toBe('assets-source/cards/repair-wave/repair-wave.png');
     }
   });
 

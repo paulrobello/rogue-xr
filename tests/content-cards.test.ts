@@ -20,6 +20,7 @@ import {
   type CombatState,
   type Effect,
   type EnemySetup,
+  PLAYER_ID,
   STEAM_PER_TURN,
   type Statuses,
   type StatusId,
@@ -148,6 +149,12 @@ const EXPECTED: Readonly<Record<string, Outcome>> = {
   'counterweight+': { hp: [60, 60], block: 16, steam: 1 },
   'tension-coil': { hp: [60, 60], block: 4, steam: 2, playerStatuses: { 'wound-up': 1 } },
   'tension-coil+': { hp: [60, 60], block: 6, steam: 2, playerStatuses: { 'wound-up': 1 } },
+  'spare-parts': { hp: [60, 60], steam: 2, drawn: 2 },
+  'spare-parts+': { hp: [60, 60], steam: 2, drawn: 3 },
+  'flywheel-swing': { hp: [48, 60], steam: 1 },
+  'flywheel-swing+': { hp: [45, 60], steam: 1 },
+  'patch-kit': { hp: [60, 60], steam: 2, pile: 'exhaust' },
+  'patch-kit+': { hp: [60, 60], steam: 2, pile: 'exhaust' },
 };
 
 describe('card effects through the engine', () => {
@@ -177,6 +184,56 @@ describe('card effects through the engine', () => {
       target: def.target === 'enemy' ? 'a' : null,
       dice: rollFor(def) ?? null,
     });
+  });
+
+  it.each([
+    ['flywheel-swing', 16],
+    ['flywheel-swing+', 20],
+  ])('%s spends two steam and adds to one hit when the player has Block', (id, damage) => {
+    const def = getCard(id);
+    const before = begin(def);
+    const result = apply({ ...before, player: { ...before.player, block: 1 } }, playAction(def));
+    const hits = result.events.filter((event) => event.type === 'damage-dealt');
+    expect(hits).toHaveLength(1);
+    expect(hits[0]).toMatchObject({ amount: damage, hpLost: damage });
+    expect(result.state.player.block).toBe(1);
+    expect(result.state.player.steam).toBe(1);
+  });
+
+  it.each([
+    ['patch-kit', 4],
+    ['patch-kit+', 6],
+  ])('%s restores only missing HP and exhausts at full health too', (id, maxHeal) => {
+    const def = getCard(id);
+    for (const hp of [25, 38, 40]) {
+      const before = begin(def);
+      const result = apply({ ...before, player: { ...before.player, hp } }, playAction(def));
+      const amount = Math.min(40 - hp, maxHeal);
+      expect(result.state.player.hp).toBe(hp + amount);
+      expect(result.events.filter((event) => event.type === 'healed')).toEqual(
+        amount > 0 ? [{ type: 'healed', amount, target: PLAYER_ID }] : [],
+      );
+      expect(result.state.piles.exhaust).toHaveLength(1);
+      expect(result.state.piles.discard).toHaveLength(0);
+    }
+  });
+
+  it('Spare Parts can draw through a reshuffle and never draws itself or creates a card', () => {
+    const def = getCard('spare-parts+');
+    const before = begin(def);
+    const [last, spare] = before.piles.draw;
+    const played = apply(
+      {
+        ...before,
+        piles: { ...before.piles, draw: [last], discard: [spare] },
+      },
+      playAction(def),
+    );
+    expect(
+      played.events.filter((event) => event.type === 'card-drawn').map((event) => event.uid),
+    ).toEqual([last.uid, spare.uid]);
+    expect(played.state.piles.discard.map((card) => card.uid)).toEqual([0]);
+    expect(played.state.piles.draw).toEqual([]);
   });
 
   it('Furnace Brand overheat burns the enemy at the start of its turn', () => {
@@ -254,7 +311,10 @@ function effectText(effect: Effect): string {
     case 'damage': {
       const all = effect.target === 'all-opponents' ? ' to all enemies' : '';
       const hits = (effect.hits ?? 1) > 1 ? ` ${effect.hits} times` : '';
-      return `Deal ${amountText(effect.amount)} damage${all}${hits}.`;
+      const bonus = effect.bonusIfSelfBlock
+        ? ` If you have Block, deal ${amountText(effect.bonusIfSelfBlock.amount)} more damage.`
+        : '';
+      return `Deal ${amountText(effect.amount)} damage${all}${hits}.${bonus}`;
     }
     case 'block':
       return `Gain ${amountText(effect.amount)} Block.`;
@@ -272,6 +332,8 @@ function effectText(effect: Effect): string {
     }
     case 'conditional-block':
       return `If its intent hits twice or more, gain ${amountText(effect.amount)} Block.`;
+    case 'heal':
+      return `Heal ${amountText(effect.amount)} HP.`;
     case 'block-from-status':
       return `Trace Quench. Remove up to ${effect.maxStacks} enemy Overheat. Gain ${effect.base} Block + ${effect.perStack} per stack spent.`;
   }
@@ -292,11 +354,11 @@ function rulesText(def: SliceCard): string {
 
 describe('card schema', () => {
   it('has the complete card roster with unique ids', () => {
-    expect(CARDS).toHaveLength(26);
+    expect(CARDS).toHaveLength(29);
     expect(new Set(CARDS.map((c) => c.id)).size).toBe(CARDS.length);
     expect(CARDS_BY_ID.size).toBe(CARDS.length);
-    expect(CARDS.filter((c) => c.type === 'attack')).toHaveLength(9);
-    expect(CARDS.filter((c) => c.type === 'skill')).toHaveLength(10);
+    expect(CARDS.filter((c) => c.type === 'attack')).toHaveLength(10);
+    expect(CARDS.filter((c) => c.type === 'skill')).toHaveLength(12);
     expect(CARDS.filter((c) => c.type === 'sigil')).toHaveLength(7);
   });
 
