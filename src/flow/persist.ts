@@ -48,6 +48,7 @@ export function bindFlowPersistence(
       event.type === 'calibration' ||
       event.type === 'alchemy' ||
       event.type === 'hidden-panel' ||
+      event.type === 'window-cache' ||
       event.type === 'brass-key'
     ) {
       const snapshot = flow.snapshot(Date.now(), roomIndex());

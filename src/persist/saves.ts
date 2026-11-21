@@ -517,6 +517,8 @@ function validateRunState(
     fail(`${path}.patrolDefeated`, 'expected true or absent');
   if (r.brassCacheSeen !== undefined && typeof r.brassCacheSeen !== 'boolean')
     fail(`${path}.brassCacheSeen`, 'expected a boolean');
+  if (r.windowCacheOpened !== undefined && typeof r.windowCacheOpened !== 'boolean')
+    fail(`${path}.windowCacheOpened`, 'expected a boolean');
   const brassKey =
     r.brassKey === undefined
       ? undefined
@@ -556,6 +558,7 @@ function validateRunState(
     ...(brassKey === undefined ? {} : { brassKey }),
     ...(r.patrolDefeated === true && { patrolDefeated: true }),
     ...(r.brassCacheSeen === true && { brassCacheSeen: true }),
+    ...(r.windowCacheOpened === true && { windowCacheOpened: true }),
   };
 }
 

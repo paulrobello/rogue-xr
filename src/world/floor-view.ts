@@ -91,6 +91,8 @@ import { Stairwell } from './stairwell.ts';
 import { StrikingClock } from './striking-clock.ts';
 import { type RigidNode, rigidAngle } from './study-room.ts';
 import { WallVentSteam } from './wall-vent-steam.ts';
+import { dressWindowBays, exposedWindowBays } from './window-bays.ts';
+import { mountWindowCast, WindowKeyCache, windowCacheBay } from './window-light.ts';
 
 export interface FloorAudio {
   playChime?(note: 0 | 1 | 2, at: THREE.Vector3): boolean;
@@ -165,6 +167,7 @@ export interface FloorView {
   readonly floorNumber: 1 | 2 | 3;
   readonly stairs: Stairwell | null;
   readonly chimes: BellChimes | null;
+  readonly windowCache: WindowKeyCache | null;
   readonly alchemy: AlchemyConservatory | null;
   readonly clock: StrikingClock | null;
   readonly formulaEvidence: FormulaEvidence | null;
@@ -399,6 +402,10 @@ export function mountFloorView(
   let counterweight: CounterweightStation | null = null;
   const floorNumber = options.floorNumber ?? 1;
   const world = buildFloorWorld(plan, options.templates);
+  const windowBays = exposedWindowBays(plan, floorNumber);
+  const cacheBay = floorNumber === 1 ? windowCacheBay(world, windowBays, seed) : undefined;
+  const windowDressing = new Map<number, () => void>();
+  let windowCache: WindowKeyCache | null = null;
   const brassCache = plan.brassCache;
   let ventSteam: WallVentSteam | null = null;
   let brassKeyStand: BrassKeyStand | null = null;
@@ -837,6 +844,9 @@ export function mountFloorView(
     get chimes() {
       return chimes;
     },
+    get windowCache() {
+      return windowCache;
+    },
     dressStairs(model) {
       if (stairs || floorNumber === 3) return;
       const landing = world.openStairEntry(floorNumber);
@@ -997,6 +1007,18 @@ export function mountFloorView(
         }
         if (floorNumber === 2 && templateId === 'gear-shaft')
           shaftFinishes.push(...applyUpperShaftFinish(model));
+        windowDressing.get(index)?.();
+        const releases = [dressWindowBays(model, plan, index, floorNumber)];
+        for (const bay of windowBays) {
+          if (bay.room === index) releases.push(mountWindowCast(model, bay, bay === cacheBay));
+        }
+        if (cacheBay?.room === index) {
+          windowCache?.dispose();
+          windowCache = new WindowKeyCache(world, cacheBay);
+        }
+        windowDressing.set(index, () => {
+          for (const release of releases) release();
+        });
         world.dressRoom(index, model);
         const group = world.roomGroups[index];
         for (const rigid of rigidNodes) {
@@ -1037,6 +1059,9 @@ export function mountFloorView(
       panels?.dispose();
       counterweight?.dispose();
       chimes?.dispose();
+      windowCache?.dispose();
+      for (const release of windowDressing.values()) release();
+      windowDressing.clear();
       stairs?.dispose();
       for (const room of styledRooms) disposeRoomStyle(room);
       for (const material of shaftFinishes) material.dispose();

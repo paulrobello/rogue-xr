@@ -12,6 +12,12 @@ import {
   readStoredWindows,
 } from './recorder.ts';
 import {
+  createQuestPerfProfiler,
+  questPerfEnabledFromSearch,
+  questPerfLog,
+  setActiveQuestPerf,
+} from './stages.ts';
+import {
   applySessionScale,
   assertFoveation,
   loadXrScale,
@@ -24,6 +30,7 @@ import {
 export * from './frame-stats.ts';
 export * from './marks.ts';
 export * from './recorder.ts';
+export * from './stages.ts';
 export * from './xr-perf.ts';
 
 /** A frame interval this long is a pause (hidden tab, system menu), not a slow frame. */
@@ -45,6 +52,8 @@ export interface MountPerfOptions {
   foveation?: number;
   /** Where the frame recorder keeps its windows. Default: localStorage, or none when unavailable. */
   perfStorage?: PerfStorage | null;
+  /** Storage for the opt-in Quest stage capture. */
+  questPerfStorage?: PerfStorage | null;
 }
 
 export interface PerfHandle {
@@ -115,6 +124,7 @@ export function mountPerf(
   const search = options.search ?? globalThis.location?.search ?? '';
   const enabled = options.enabled ?? perfEnabledFromSearch(search);
   const recorderFlag = enabled || perfRecorderFromSearch(search);
+  const questEnabled = questPerfEnabledFromSearch(search);
   const perfStorage =
     options.perfStorage === undefined ? defaultPerfStorage() : options.perfStorage;
   const storage = options.storage;
@@ -128,12 +138,23 @@ export function mountPerf(
   let gauge: PerfGauge | null = null;
   let panel: DebugPanel | null = null;
   let recorder: PerfRecorder | null = null;
+  const questProfiler = questEnabled
+    ? createQuestPerfProfiler(
+        options.questPerfStorage === undefined ? perfStorage : options.questPerfStorage,
+      )
+    : null;
+  setActiveQuestPerf(questProfiler);
 
   const mountGauge = (): PerfGauge =>
     mountPerfGauge(renderer, rig, { targetHz: options.targetHz ?? DEFAULT_TARGET_HZ });
   const onSessionStart = (): void => perfMark('xr-start');
-  const onSessionEnd = (): void => perfMark('xr-end');
+  const onSessionEnd = (): void => {
+    perfMark('xr-end');
+    questProfiler?.persist();
+  };
   const onPageHide = (): void => perfMark('pagehide');
+  const saveQuestCapture = (): void => questProfiler?.persist();
+  if (questProfiler) globalThis.addEventListener?.('pagehide', saveQuestCapture);
 
   function startRecorder(): void {
     recorder = createPerfRecorder({
@@ -170,12 +191,16 @@ export function mountPerf(
 
   const target = globalThis as PerfGlobals;
   target.__spirePerfMark = (label) => perfMark(label || 'mark');
-  target.__spirePerfClear = () => recorder?.clear();
+  target.__spirePerfClear = () => {
+    recorder?.clear();
+    questProfiler?.clear();
+  };
   registerDiag('perf', () => ({
     recording: recorder !== null,
     windows: recorder ? recorder.windows() : readStoredWindows(perfStorage),
     hitches: recorder ? recorder.hitches() : readStoredHitches(perfStorage),
     current: recorder ? recorder.current() : null,
+    quest: questPerfLog(),
   }));
 
   if (enabled) {
@@ -193,7 +218,7 @@ export function mountPerf(
           : 'Applies at the next Enter VR (not saved).';
       },
       onDownload() {
-        return JSON.stringify(currentLog(), null, 2);
+        return JSON.stringify({ ...currentLog(), quest: questPerfLog() }, null, 2);
       },
     });
   }
@@ -250,6 +275,11 @@ export function mountPerf(
       panel?.dispose();
       gauge = null;
       if (recorder) stopRecorder();
+      if (questProfiler) {
+        questProfiler.persist();
+        globalThis.removeEventListener?.('pagehide', saveQuestCapture);
+        setActiveQuestPerf(null);
+      }
     },
   };
 }

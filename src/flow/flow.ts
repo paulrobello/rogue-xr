@@ -78,6 +78,7 @@ import {
 import {
   chooseReward,
   claimTreasure,
+  claimWindowCache,
   createRun,
   floorSeedFor,
   lootKey,
@@ -255,7 +256,13 @@ export type FlowEvent =
   | { readonly type: 'formula' }
   | HiddenPanelEvent
   | BellChimeEvent
-  | { readonly type: 'brass-key'; readonly action: 'inspect' | 'take' | 'unlock' };
+  | { readonly type: 'brass-key'; readonly action: 'inspect' | 'take' | 'unlock' }
+  | {
+      readonly type: 'window-cache';
+      readonly cogs: number;
+      readonly from: 'explore';
+      readonly to: 'explore';
+    };
 export interface HiddenPanelEvent {
   readonly type: 'hidden-panel';
   readonly action: 'discover' | 'open';
@@ -765,6 +772,19 @@ export class RunFlow {
   }
   get brassKey(): 'missing' | 'held' | 'spent' {
     return this.runValue?.brassKey ?? 'missing';
+  }
+  get windowCacheOpened(): boolean {
+    return this.runValue?.windowCacheOpened === true;
+  }
+  /** Claims the one-shot Light window cache reward on floor one. */
+  openWindowCache(): boolean {
+    const run = this.runValue;
+    if (!run || this.phaseValue !== 'explore' || this.floorNumberValue !== 1) return false;
+    const next = claimWindowCache(run);
+    if (!next) return false;
+    this.runValue = next;
+    this.emit({ type: 'window-cache', cogs: next.cogs - run.cogs, from: 'explore', to: 'explore' });
+    return true;
   }
   /** Deterministic first-floor coffer target, if this run has v7 brass-cache content. */
   get brassCache(): { room: number; socketId: string } | undefined {

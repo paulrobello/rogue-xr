@@ -74,6 +74,12 @@ import { FlingController, type FlingTargetSite, rayFromObject } from '../hand/fl
 import { PALETTE } from '../palette.ts';
 import { perfMark, perfWindow } from '../perf/marks.ts';
 import {
+  questPerfFightEnd,
+  questPerfFightStart,
+  questPerfStageEnd,
+  questPerfStageStart,
+} from '../perf/stages.ts';
+import {
   type CombatEvent,
   type CombatState,
   canFlee,
@@ -1497,6 +1503,7 @@ export class CombatSession {
     this.setXr(xr);
     if (this.xr) this.faceControlsToEye();
     // Before sync, so the frame the enemy phase ends also deals the new hand.
+    const uiStage = questPerfStageStart('combat.ui');
     this.advance(dt);
     if (this.dirty) this.sync();
     if (this.takeDie) {
@@ -1534,13 +1541,18 @@ export class CombatSession {
     this.syncCastControl();
     this.fling.update(dt);
     this.fan.update(dt);
+    questPerfStageEnd(uiStage);
+    const diceStage = questPerfStageStart('combat.dice');
     this.dice.update(dt);
+    questPerfStageEnd(diceStage);
     this.stepHeld(dt);
     // Bolts step before the flight check, so a bolt reaches its target on the frame it lands.
+    const effectsStage = questPerfStageStart('combat.effects');
     this.fx.update(dt);
     this.effectFx.update(dt);
     this.foundryFx.update(dt);
     this.revealCard.update(dt);
+    questPerfStageEnd(effectsStage);
     this.stepFlight();
     this.stepKnocks(dt);
     this.plate.update(dt);
@@ -1814,7 +1826,9 @@ export class CombatSession {
     this.pendingThrow = null;
     this.holdingDie = false;
     if (this.held) this.held.waiting = 0;
+    const lookAheadStage = questPerfStageStart('combat.dice.throw-lookahead');
     this.dice.throwMany(pending);
+    questPerfStageEnd(lookAheadStage);
     this.settlingDice = pending.length;
     perfMark('dice-throw');
     this.sfx('dice-roll', this.dice.root.position);
@@ -3158,6 +3172,7 @@ export class CombatHook {
           return;
         }
         this.session = session;
+        questPerfFightStart(`floor-${floor.floorNumber ?? 1}/room-${room}`);
         this.deps.onSession?.(session);
       },
       (error: unknown) => {
@@ -3169,6 +3184,7 @@ export class CombatHook {
 
   private close(): void {
     if (!this.session) return;
+    questPerfFightEnd();
     this.session.dispose();
     this.session = null;
     this.deps.onSession?.(null);

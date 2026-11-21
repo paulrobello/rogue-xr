@@ -6,6 +6,7 @@ import { Stream } from '../core/rng.ts';
 import { candleMaterial } from './candle-flame.ts';
 import type { FloorWorld } from './floor-world.ts';
 import { roomStyleFor } from './room-styles.ts';
+import { exposedWindowBays } from './window-bays.ts';
 
 export const INTERIOR_FURNISHINGS_BASE = '/assets/props/interior-furnishings';
 export const INTERIOR_PAINTINGS = [
@@ -527,6 +528,9 @@ export class InteriorFurnishings {
     const made: InteriorPlacement[] = [];
     const themes = new Map<number, InteriorTheme>();
     const upperIndustrial = options.floorNumber === 2;
+    const curtainRooms = new Set(
+      exposedWindowBays(world.plan, options.floorNumber ?? 1).map((bay) => bay.room),
+    );
     for (let room = 0; room < world.plan.rooms.length; room++) {
       if (
         world.plan.pressureWing &&
@@ -654,7 +658,7 @@ export class InteriorFurnishings {
       for (const c of candidates) {
         // Wall-clock candidates still consume their original layout rolls for saved seeds.
         if (c.root === 'WallClock') continue;
-        if (c.root === 'Curtain' && upperIndustrial && roomStyleFor(world.plan, room, 2)) continue;
+        if (c.root === 'Curtain' && !curtainRooms.has(room)) continue;
         const box = boxFor(c, rootBounds);
         const object = asset.roots[c.root].clone(true);
         object.name = `interior-${c.root}-${room}`;

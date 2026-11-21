@@ -62,6 +62,8 @@ export interface RunState {
   /** Cross-floor portable brass key. Absent in pre-v7 saves and treated as missing. */
   readonly brassKey?: BrassKeyState;
   readonly brassCacheSeen?: boolean;
+  /** Whether the one-shot floor-one Light window cache has paid its key reward. */
+  readonly windowCacheOpened?: boolean;
   readonly patrolDefeated?: true;
 }
 
@@ -84,6 +86,8 @@ export const REWARD_COGS: Readonly<Record<RewardTier, CogRange>> = {
 };
 /** Cogs found in a `cogs` treasure room. */
 export const TREASURE_COGS: CogRange = { min: 15, max: 25 };
+/** Cogs awarded by the one-shot floor-one Light window cache. */
+export const WINDOW_CACHE_COGS = 12;
 /** Cards offered after a fight. */
 export const REWARD_CHOICES = 3;
 export const SKIP_REWARD = 'skip';
@@ -328,6 +332,12 @@ export function claimTreasure(run: RunState, key: string): ClaimResult | null {
     },
     card: found.card,
   };
+}
+
+/** Claims the floor-one Light window cache once. No random draw. */
+export function claimWindowCache(run: RunState): RunState | null {
+  if (run.windowCacheOpened === true) return null;
+  return { ...run, cogs: run.cogs + WINDOW_CACHE_COGS, windowCacheOpened: true };
 }
 
 /**

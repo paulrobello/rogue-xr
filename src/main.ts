@@ -60,7 +60,16 @@ import { RewardCardFaces } from './flow/reward-cards.ts';
 import { HOLO_CARD_ASPECT } from './hand/fan-layout.ts';
 import { flingTraceLog } from './hand/fling-trace.ts';
 import { PALETTE } from './palette.ts';
-import { foveationValue, mountPerf, perfMark, perfRoom } from './perf/index.ts';
+import {
+  foveationValue,
+  mountPerf,
+  perfMark,
+  perfRoom,
+  questPerfFrame,
+  questPerfSetMode,
+  questPerfStageEnd,
+  questPerfStageStart,
+} from './perf/index.ts';
 import {
   DEFAULT_SETTINGS,
   loadSettings,
@@ -727,6 +736,7 @@ function wizardPaintings(): Promise<THREE.Texture[]> {
 function syncPuzzles(target: FloorView, immediate = false): void {
   const run = flow.run;
   if (!run) return;
+  target.windowCache?.sync(flow.windowCacheOpened);
   if (run.patrolDefeated) target.clearPatrol();
   if (immediate) {
     target.panels?.sync(flow.hiddenPanel, true);
@@ -1106,6 +1116,15 @@ flow.onChange((event) => {
     floor?.panels?.sync(flow.hiddenPanel);
     floor?.world.setPuzzleGateOpen('panel', flow.hiddenPanel.opened);
     storedSnapshot = flow.snapshot(Date.now(), floor?.world.current ?? flow.room);
+    return;
+  }
+  if (event.type === 'window-cache') {
+    floor?.windowCache?.sync(true);
+    storedSnapshot = flow.snapshot(Date.now(), floor?.world.current ?? flow.room);
+    const at = floor?.windowCache?.object.getWorldPosition(new THREE.Vector3());
+    audio?.playSfx('gear-clank', at);
+    audio?.playSfx('cog-pickup', at);
+    floor?.showBookSecret({ text: `+${event.cogs} cogs`, caption: '' }, camera);
     return;
   }
   if (event.type === 'counterweight' || event.type === 'alchemy' || event.type === 'formula') {
@@ -1896,7 +1915,9 @@ function fieldHit(origin: THREE.Vector3, direction: THREE.Vector3) {
       floor.chartCabinet?.pick(origin, direction) ?? floor.calibrationKey?.pick(origin, direction);
   const key = floor.brassKeyStand?.pick(origin, direction);
   const panel = floor.panels?.pick(origin, direction);
+  const windowCache = floor.windowCache?.pick(origin, direction);
   const hits = [
+    ...(windowCache ? [{ kind: 'window-cache' as const, hit: windowCache }] : []),
     ...(key ? [{ kind: 'brass-key' as const, hit: key }] : []),
     ...(office ? [{ kind: 'commission' as const, hit: office }] : []),
     ...(calibration ? [{ kind: 'calibration' as const, hit: calibration }] : []),
@@ -1928,6 +1949,8 @@ const activatePickup = (
   const pick = fieldHit(origin, direction);
   if (!pick) return false;
   switch (pick.kind) {
+    case 'window-cache':
+      return flow.openWindowCache();
     case 'brass-key':
       return takeBrassKey();
     case 'commission':
@@ -2565,6 +2588,8 @@ const timer = new THREE.Timer();
 const desktopEyes = [camera];
 renderer.setAnimationLoop((time, frame) => {
   perf.frame(null, time);
+  questPerfSetMode(xr.presenting ? 'xr' : 'desktop');
+  questPerfFrame(time);
   timer.update(time);
   const deltaSeconds = Math.min(timer.getDelta(), 0.1);
   if (titleReset) {
@@ -2695,11 +2720,13 @@ renderer.setAnimationLoop((time, frame) => {
   advanceMusicBox(deltaSeconds);
   const paused = stairTransit.phase !== 'idle' || (ui?.menuOpen ?? false);
   if (floor) floor.suspendTriggers = flow.phase !== 'explore' || paused;
+  const floorStage = questPerfStageStart('floor.update');
   floor?.update(
     camera,
     paused ? 0 : deltaSeconds,
     xr.presenting ? renderer.xr.getCamera().cameras : desktopEyes,
   );
+  questPerfStageEnd(floorStage);
   if (floor && flow.inRun) {
     flow.enterRoom(floor.world.current);
     perfRoom(floor.world);
@@ -2708,7 +2735,9 @@ renderer.setAnimationLoop((time, frame) => {
     }
   }
   if (combat) combat.paused = paused;
+  const combatStage = questPerfStageStart('combat.update');
   combat?.update(deltaSeconds, xr.presenting ? xrHands() : null);
+  questPerfStageEnd(combatStage);
   // The XR layout is the 3D table's; only the desktop view slides the HUD into frame.
   if (xr.presenting) combat?.session?.resetHud();
   else combat?.session?.fitHudToView(camera);
@@ -2778,7 +2807,9 @@ renderer.setAnimationLoop((time, frame) => {
     preview,
     !!mark && floor?.world.teleportSurfaceHeight(mark[0], mark[2]) != null,
   );
+  const renderStage = questPerfStageStart('render.submit.cpu');
   renderer.render(scene, camera);
+  questPerfStageEnd(renderStage);
   sceneStats.calls = renderer.info.render.calls;
   sceneStats.triangles = renderer.info.render.triangles;
   if (ui?.visible) {

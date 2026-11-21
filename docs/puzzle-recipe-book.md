@@ -14,6 +14,10 @@ On Floor 1, aim at the music box and pull the trigger, or click it on desktop. I
 
 In the Upper Works, strike the low, middle and high bells in the same order. Each correct note lights another indicator. A wrong note resets the four indicators and lets you try again. Completing the phrase releases a brass cog seal. When collected, the seal flies from the lock toward the player and awards 12 run cogs. The showcase adds instructional plaques; in a normal run the numbered lamps, tones and lock indicators provide the clues. The score, partial phrase and reward stay with the run through stair travel and Continue. [Quest 3 room views and saved score](verification/quest-bell-chimes.jpg)
 
+## The key in the light
+
+In the Lower Works, look for a stained-glass projection whose bright shapes form a bow, a shaft, and three teeth. Follow the tip to the brass tile and select it to open the cache and collect 12 run cogs. The tile remains open after Continue. The seed chooses the site from exposed, accessible window bays.
+
 ## Ingredients for future puzzles
 
 | Ingredient | What the player can do or notice | A possible payoff |
@@ -32,7 +36,6 @@ In the Upper Works, strike the low, middle and high bells in the same order. Eac
 
 ## Example combinations
 
-- **The key in the light.** A stained-glass window casts colored shapes across the floor. Three teeth and a bow resolve into a key when seen together. Its tip points to a loose brass tile. Pressing the tile opens a small cache. Make the silhouette readable by brightness as well as color.
 - **The absent door.** A painting of an arched double door points to an ordinary wall. After a return visit one painted leaf is open. A scratch in the corresponding real panel identifies the book that releases it.
 - **The stalled clock.** A coffer holds a wind-up key. An enemy carries the missing gear. The player seats the gear between two differently sized wheels, winds the clock and watches its light reveal a floor inscription at the marked hour.
 - **The curator’s inventory.** A dispatch names three objects without naming their sockets. A second room’s painting shows their order. Placing them makes successive parts of a cabinet move until its reward compartment opens.
