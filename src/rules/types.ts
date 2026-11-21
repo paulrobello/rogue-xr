@@ -22,6 +22,11 @@ export type PipeChannel = 0 | 1 | 2;
 export type SpeakingPipesState = 'idle' | 'primed' | 'open';
 export type StoredSpeakingPipesState = SpeakingPipesState;
 export type ValvehouseState = 'missing' | 'held' | 'seated' | 'open';
+export type PendulumDetent = 0 | 1 | 2;
+export interface PendulumGalleryState {
+  readonly detent: PendulumDetent;
+  readonly open: boolean;
+}
 
 /** `'player'` or an enemy id. Enemy ids must never be `'player'`. */
 export type ActorId = string;

@@ -54,7 +54,8 @@ export function bindFlowPersistence(
       event.type === 'brass-key' ||
       event.type === 'prism-signal' ||
       event.type === 'reliquary' ||
-      event.type === 'valvehouse'
+      event.type === 'valvehouse' ||
+      event.type === 'pendulum-gallery'
     ) {
       const snapshot = flow.snapshot(Date.now(), roomIndex());
       if (snapshot) enqueue(() => saveRunSnapshot(db, snapshot));

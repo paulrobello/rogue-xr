@@ -82,6 +82,17 @@ export {
 } from './engine.ts';
 export { canFlee } from './flee.ts';
 export {
+  advancePendulumDetent,
+  completePendulumTrial,
+  PENDULUM_PERIODS,
+  type PendulumDetent,
+  type PendulumGalleryState,
+  pendulumAngle,
+  pendulumTarget,
+  pendulumTrialSeconds,
+  readPendulumGallery,
+} from './pendulum-gallery.ts';
+export {
   claimPressureReward,
   collectPressureNote,
   isPressureNoteId,

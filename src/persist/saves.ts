@@ -28,6 +28,7 @@ import {
 import { counterweightTarget, type StoredCounterweightState } from '../rules/counterweight.ts';
 import { isDifficulty } from '../rules/difficulty.ts';
 import { type DispatchRoute, dispatchDestination } from '../rules/dispatch.ts';
+import type { PendulumGalleryState } from '../rules/pendulum-gallery.ts';
 import {
   isPressureNoteId,
   type PressureDials,
@@ -113,6 +114,7 @@ export interface FloorSnapshot {
   readonly bookSecretKeyRooms?: readonly number[];
   readonly bookSecretCabinetRooms?: readonly number[];
   readonly prismSignal?: StoredPrismState;
+  readonly pendulumGallery?: PendulumGalleryState;
 }
 
 export interface RunSnapshot extends SnapshotWorld {
@@ -240,6 +242,13 @@ function dispatch(v: unknown, path: string, seed: string): StoredDispatchState {
 function speakingPipes(v: unknown, path: string): StoredSpeakingPipesState {
   if (v !== 'idle' && v !== 'primed' && v !== 'open') fail(path, 'unknown speaking-pipes state');
   return v;
+}
+
+function pendulumGallery(v: unknown, path: string): PendulumGalleryState {
+  const r = rec(v, path);
+  const detent = int(r.detent, `${path}.detent`, 0, 2) as 0 | 1 | 2;
+  if (typeof r.open !== 'boolean') fail(`${path}.open`, 'expected a boolean');
+  return { detent, open: r.open };
 }
 
 function counterweight(v: unknown, path: string, seed: string): StoredCounterweightState {
@@ -582,6 +591,10 @@ function validateRunState(
           const progress = int(p.progress, `${path}.prismSignal.progress`, 0, 3);
           return { orientation: orientation as 0 | 1 | 2, progress: progress as 0 | 1 | 2 | 3 };
         })();
+  const pendulumGalleryState =
+    r.pendulumGallery === undefined
+      ? undefined
+      : pendulumGallery(r.pendulumGallery, `${path}.pendulumGallery`);
   // Also added after version 1: an older save names no level and resumes as `DEFAULT_DIFFICULTY`.
   if (r.difficulty !== undefined && !isDifficulty(r.difficulty)) {
     fail(`${path}.difficulty`, 'unknown difficulty');
@@ -620,6 +633,7 @@ function validateRunState(
     ...(r.brassCacheSeen === true && { brassCacheSeen: true }),
     ...(r.windowCacheOpened === true && { windowCacheOpened: true }),
     ...(prismSignal === undefined ? {} : { prismSignal }),
+    ...(pendulumGalleryState === undefined ? {} : { pendulumGallery: pendulumGalleryState }),
     ...(valvehouse === undefined ? {} : { valvehouse }),
   };
 }
@@ -804,6 +818,9 @@ function validateFloors(
               };
             })(),
           }),
+      ...(r.pendulumGallery === undefined
+        ? {}
+        : { pendulumGallery: pendulumGallery(r.pendulumGallery, `${path}.pendulumGallery`) }),
     };
     return result;
   });

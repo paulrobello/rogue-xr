@@ -2,6 +2,7 @@ import { hashString, normalizeSeed, RunRng, type RunRngState, Stream } from '../
 import { type Difficulty, isDifficulty } from './difficulty.ts';
 import {
   type BrassKeyState,
+  type PendulumGalleryState,
   RulesError,
   type StoredAlchemyState,
   type StoredBellChimesState,
@@ -76,6 +77,7 @@ export interface RunState {
   /** Upper Works rubbing and seal state, retained in the journal across floor travel. */
   readonly reliquarySeal?: 'hidden' | 'known' | 'open';
   readonly valvehouse?: ValvehouseState;
+  readonly pendulumGallery?: PendulumGalleryState;
 }
 
 /** Mirrors `EncounterTier` in `floor/generate.ts`; rules may not import from `floor/`. */
@@ -202,6 +204,10 @@ export function createRun(
     ...(bonusDice === undefined ? {} : { bonusDice }),
     ...(rewardChoices === undefined ? {} : { rewardChoices }),
     ...(difficulty === undefined ? {} : { difficulty }),
+    pendulumGallery: {
+      detent: ((Stream.fromKey(`${rng.seed}:pendulum-gallery`).int(0, 2) + 1) % 3) as 0 | 1 | 2,
+      open: false,
+    },
   };
 }
 

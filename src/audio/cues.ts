@@ -95,6 +95,7 @@ export const PUZZLE_GATE_OPEN_SFX = {
   cistern: 'cistern-grille-open',
   reliquary: 'reliquary-stone-open',
   valvehouse: 'valvehouse-gate-open',
+  pendulum: 'pendulum-tick',
 } as const satisfies Record<Exclude<PuzzleGate, 'archive'>, SfxId>;
 
 export const ARCHIVE_GATE_OPEN_SFX = {

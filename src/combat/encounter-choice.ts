@@ -29,7 +29,8 @@ export const RELIQUARY_VERSION = 13;
 /** Wave A repair cards. Older snapshots retain the v13 reward pool. */
 export const WAVE_A_REPAIR_VERSION = 14;
 export const VALVEHOUSE_VERSION = 15;
-export const ENCOUNTER_CONTENT_VERSION = VALVEHOUSE_VERSION;
+export const PENDULUM_GALLERY_VERSION = 16;
+export const ENCOUNTER_CONTENT_VERSION = PENDULUM_GALLERY_VERSION;
 const LEGACY_ENCOUNTER_IDS = new Set([
   'sentry',
   'hound',

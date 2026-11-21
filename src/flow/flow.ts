@@ -6,6 +6,7 @@ import {
   FOUNDRY_VERSION,
   HIDDEN_PANEL_VERSION,
   PATROL_VERSION,
+  PENDULUM_GALLERY_VERSION,
   PRESSURE_WORKS_VERSION,
   PRISM_ANNEX_VERSION,
   RELIQUARY_VERSION,
@@ -83,6 +84,12 @@ import {
   turnDispatch,
 } from '../rules/dispatch.ts';
 import { canFlee } from '../rules/flee.ts';
+import {
+  advancePendulumDetent,
+  completePendulumTrial,
+  type PendulumGalleryState,
+  readPendulumGallery,
+} from '../rules/pendulum-gallery.ts';
 import {
   claimPressureReward,
   collectPressureNote,
@@ -286,6 +293,12 @@ export interface ReliquaryEvent {
   readonly type: 'reliquary';
   readonly action: 'remember' | 'open';
 }
+export interface PendulumGalleryEvent {
+  readonly type: 'pendulum-gallery';
+  readonly action: 'advance' | 'trial';
+  readonly result?: 'ignored' | 'wrong' | 'opened';
+  readonly state: PendulumGalleryState;
+}
 
 /**
  * `'opened'`: a coffer was opened (`openLoot`). `'claimed'`: its pending card went into the deck
@@ -329,6 +342,7 @@ export type FlowEvent =
   | DispatchEvent
   | SpeakingPipesEvent
   | ReliquaryEvent
+  | PendulumGalleryEvent
   | { readonly type: 'brass-key'; readonly action: 'inspect' | 'take' | 'unlock' }
   | {
       readonly type: 'valvehouse';
@@ -419,6 +433,43 @@ export class RunFlow {
   }
   get prismSignal(): StoredPrismState {
     return readPrismSignal(this.runValue ?? { prismSignal: undefined });
+  }
+  get pendulumGallery(): PendulumGalleryState {
+    return readPendulumGallery(this.runValue ?? { pendulumGallery: undefined });
+  }
+  advancePendulumDetent(): boolean {
+    if (
+      !this.runValue ||
+      this.phaseValue !== 'explore' ||
+      this.floorNumberValue !== 3 ||
+      this.contentVersionValue < PENDULUM_GALLERY_VERSION ||
+      this.pendulumGallery.open
+    )
+      return false;
+    const next = advancePendulumDetent(this.pendulumGallery);
+    this.runValue = { ...this.runValue, pendulumGallery: next };
+    this.emit({ type: 'pendulum-gallery', action: 'advance', state: next });
+    return true;
+  }
+  completePendulumTrial(): 'ignored' | 'wrong' | 'opened' {
+    if (
+      !this.runValue ||
+      this.phaseValue !== 'explore' ||
+      this.floorNumberValue !== 3 ||
+      this.contentVersionValue < PENDULUM_GALLERY_VERSION
+    )
+      return 'ignored';
+    const result = completePendulumTrial(this.runValue);
+    if (result.run !== this.runValue) {
+      this.runValue = result.run;
+      this.emit({
+        type: 'pendulum-gallery',
+        action: 'trial',
+        result: result.result,
+        state: this.pendulumGallery,
+      });
+    }
+    return result.result;
   }
   turnPrism(): boolean {
     if (
@@ -1576,6 +1627,7 @@ export class RunFlow {
       bookSecretKeyRooms: run.bookSecretKeyRooms,
       bookSecretCabinetRooms: run.bookSecretCabinetRooms,
       prismSignal: this.floorNumberValue === 3 ? run.prismSignal : undefined,
+      pendulumGallery: this.floorNumberValue === 3 ? run.pendulumGallery : undefined,
     };
   }
 
@@ -1617,6 +1669,7 @@ export class RunFlow {
       bookSecretKeyRooms: floor.bookSecretKeyRooms,
       bookSecretCabinetRooms: floor.bookSecretCabinetRooms,
       prismSignal: this.floorNumberValue === 3 ? floor.prismSignal : undefined,
+      pendulumGallery: this.floorNumberValue === 3 ? floor.pendulumGallery : undefined,
     };
   }
 
