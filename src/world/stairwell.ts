@@ -1,13 +1,51 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { roots } from '../../assets-source/props/stairwell/report.json';
 import { CanvasLabel } from '../combat-view/canvas-label.ts';
-import type { StairEntry } from '../floor/stairs.ts';
+import {
+  STAIR_FLIGHT_END,
+  STAIR_HALF_WIDTH,
+  STAIR_LANDING_END,
+  STAIR_THRESHOLD_DEPTH,
+  STAIR_TREAD_COUNT,
+  STAIR_TREAD_PITCH,
+  type StairEntry,
+  stairTreadHeightAtDepth,
+} from '../floor/stairs.ts';
 import { PALETTE } from '../palette.ts';
 import type { FloorWorld } from './floor-world.ts';
+
+function stairShoulders(up: boolean, material: THREE.Material): THREE.Mesh {
+  const outerEdge = 1.347;
+  const innerEdge = STAIR_HALF_WIDTH - 0.008;
+  const bottom = -1.86;
+  const segments = Array.from({ length: STAIR_TREAD_COUNT + 1 }, (_, i) => {
+    const landing = i === STAIR_TREAD_COUNT;
+    const start = landing ? STAIR_FLIGHT_END : STAIR_THRESHOLD_DEPTH + i * STAIR_TREAD_PITCH;
+    const end = landing ? STAIR_LANDING_END : start + STAIR_TREAD_PITCH;
+    const top = stairTreadHeightAtDepth((start + end) / 2, up ? 1 : -1) ?? 0;
+    return { start, end, y: top - 0.032 };
+  });
+  const boxes = [-1, 1].flatMap((side) =>
+    segments.map(({ start, end, y }) =>
+      new THREE.BoxGeometry(outerEdge - innerEdge, y - bottom, end - start).translate(
+        (side * (outerEdge + innerEdge)) / 2,
+        (y + bottom) / 2,
+        (start + end) / 2,
+      ),
+    ),
+  );
+  const geometry = mergeGeometries(boxes);
+  for (const box of boxes) box.dispose();
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.name = 'stair-masonry-shoulders';
+  return mesh;
+}
 
 export class Stairwell {
   readonly root = new THREE.Group();
   private readonly label: CanvasLabel | null;
+  private readonly shoulders: THREE.Mesh | null;
   readonly handle: THREE.Object3D;
   readonly hinge: THREE.Object3D;
   private readonly handleBounds = new THREE.Box3(
@@ -38,6 +76,13 @@ export class Stairwell {
     hinge.name = 'stair-door-hinge';
     handle.name = 'stair-door-handle-target';
     this.root.add(copy);
+    let stone: THREE.Material | undefined;
+    copy.traverse((object) => {
+      if (object instanceof THREE.Mesh && object.material.name === 'Stairwell stone')
+        stone = object.material;
+    });
+    this.shoulders = stone ? stairShoulders(up, stone) : null;
+    if (this.shoulders) this.root.add(this.shoulders);
     this.root.position.set(entry.world[0], 0, entry.world[1]);
     this.root.rotation.y = Math.atan2(...entry.facing);
     this.label = typeof document === 'undefined' ? null : new CanvasLabel(640, 256, 0.85, false);
@@ -112,6 +157,7 @@ export class Stairwell {
 
   dispose(): void {
     this.root.removeFromParent();
+    this.shoulders?.geometry.dispose();
     this.label?.dispose();
   }
 }

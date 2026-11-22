@@ -750,7 +750,9 @@ export class CombatSession {
       : null;
     if (this.mechanismRack) {
       const rack = this.mechanismRack.root;
-      rack.position.copy(onTable(0, tray ? 0.27 : -0.25, 0.004));
+      // The authored cog reaches 0.255 m toward the enemy. Keep the rack behind it and inside the rim.
+      rack.position.copy(onTable(0, tray ? 0.317 : -0.25, 0.004));
+      if (tray) rack.scale.z = 0.8;
       rack.rotation.y = yawRad;
       this.group.add(rack);
     }
@@ -930,7 +932,7 @@ export class CombatSession {
     this.group.add(this.fx);
     this.effectFx = new CastFx({ reducedMotion: deps.reducedMotion ?? false });
     this.group.add(this.effectFx);
-    this.foundryFx = new FoundryFx(deps.reducedMotion ?? false);
+    this.foundryFx = new FoundryFx(deps.reducedMotion ?? false, deps.diceEnv ?? null);
     this.group.add(this.foundryFx);
     this.revealCard = new CastReveal({ reducedMotion: deps.reducedMotion ?? false });
     this.group.add(this.revealCard);

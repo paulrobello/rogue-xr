@@ -28,7 +28,7 @@ Desktop frame numbers only rank variants. Only headset measurements close a budg
 | --- | --- | --- |
 | G1 Full seeded run on a Quest 3 | Partially met | The run loop is met on browser evidence. No recorded title-to-death-or-victory run on a physical Quest 3. Seated comfort is unchecked on a headset. The teleport toggle and the drawn comfort vignette are wired and pass the emulator walk, so only their comfort remains open. |
 | G2 Premium, consistent look approved by Paul | Partially met | Direction, style board and the six core materials are approved. The in-engine look of rooms, automatons, cards, UI and dice is not approved, every model has model, rig and animation gates pending, and nothing was viewed at Quest resolution. See [owner-review.md](owner-review.md). |
-| G3 50 fps floor exploring and in combat, 72 Hz target | Open | Quest frame windows recorded below. Worst-view and full-run checks remain. |
+| G3 30 fps floor exploring and in combat, 72 Hz target | Open | Quest frame windows recorded below. Worst-view and full-run checks remain. |
 | G4 The VR verbs are the fun | Partially met | Logic and desktop equivalents are met on browser evidence. Fling, dice and sigil feel on the headset is not met. The fling aim-assist criterion was checked against synthetic traces only. |
 | G5 Reproducible from a visible, shareable seed | Met on browser evidence | None for the seed logic. The title and end-of-run boards show the seed and `?seed=` starts that run. There is no copy or share control, and during a run the seed shows only in the desktop debug readout. |
 | G6 Fully playable on desktop with mouse and keyboard | Met on browser evidence | Verified in Chromium only. The debug readout shows on every desktop load (Q-FR3 in [playtesting.md](playtesting.md)). |
@@ -115,12 +115,12 @@ Status: partially met. Gap: no owner approval of the in-engine look, four automa
 
 ## G3: frame pacing, measured on the headset
 
-Requires: a 50 FPS floor on Quest in exploration and seated combat, targeting 72 Hz. Budgets in the PRD: 13.9 ms target, 20 ms floor, at most 350k visible triangles per eye in the worst combat view, at most 200 draw calls, at most 4 dynamic lights per room plus the lantern.
+The November 22 acceptance floor is 30 FPS on Quest in exploration and seated combat, targeting 72 Hz. Budgets in the PRD include a 13.9 ms target, 33.3 ms maximum frame time at the floor, at most 350k visible triangles per eye in the worst combat view, at most 200 draw calls, at most 4 dynamic lights per room plus the lantern.
 
 | Criterion | Closed by | Status |
 | --- | --- | --- |
-| G3.1 Exploration holds at least 50 fps on Quest 3 | Physical | Not met |
-| G3.2 Combat at 50 fps or above in the worst view (table, automaton, fanned hand, rolling dice) | Physical | Not met |
+| G3.1 Exploration holds at least 30 fps on Quest 3 | Physical | Not met |
+| G3.2 Combat at 30 fps or above in the worst view (table, automaton, fanned hand, rolling dice) | Physical | Not met |
 | G3.3 Visible triangles and draw calls in the worst combat view | Physical | Not met |
 | G3.4 Asset budgets by count (PRD Quest 3 table) | Browser (counts, not timing) | Met by count. Does not close G3. |
 | G3.5 Dynamic-light and precompile discipline | Browser | Met as design checks only |
@@ -160,7 +160,7 @@ On November 18 at 11:50 AM PST, the Bellows Golem capture at 1.2 showed 60 FPS a
 | Combat, 11:49:22 AM | 60.0 s | 53.4 | 22.5 ms | 185.4 ms |
 | Study exploration, 11:51:38 AM | 19.9 s | 78.8 | 15.4 ms | 20.9 ms |
 
-Paul set a 50 FPS floor and prioritized legibility. The 1.2 default meets that floor on average in these exploration and combat windows, with individual frames above 20 ms. The two original images are in the local headset archive under `quest-20261118-115154/`.
+At the time of this recording, Paul had set a 50 FPS floor and prioritized legibility. The 1.2 default meets that floor on average in these exploration and combat windows, with individual frames above 20 ms. The two original images are in the local headset archive under `quest-20261118-115154/`.
 
 Status: full-run and worst-view headset verification remain open. The averages above do not establish a continuous 50 FPS floor.
 
@@ -272,7 +272,7 @@ None of these are recorded anywhere. They are the cards that carry the physical 
 | --- | --- | --- |
 | P0-T6 | Open `https://spire.pardev.net` in Quest Browser, press Enter VR, confirm brass hands and the title board | G1.7 |
 | P1-T7 | Walk a seeded floor seated: comfort, snap turn, locomotion, with the teleport toggle on (Settings, Teleport) and off and the comfort vignette. Judge the vignette strength and the arc | G1.6b |
-| P3-T8 | Fight seated with controllers: fan feel, fling, dice readability, sigil drawing, correction visibility, 50 fps floor | G4.7, G4.8, G4.2, G3.2 |
+| P3-T8 | Fight seated with controllers: fan feel, fling, dice readability, sigil drawing, correction visibility, 30 fps floor | G4.7, G4.8, G4.2, G3.2 |
 | P4-T10 | Measure exploring in the study and the worst combat view with `?perf=1`, tune scale, approve the look | G3.1, G3.2, G3.3, G2.6, G2.8 |
 | P5-T13 | Full seeded run on Quest 3, title to workshop, budgets held, numbers recorded | G1.5, G3 |
 | P6-T1 | Before and after headset numbers in `docs/performance/` | G3 |

@@ -14,6 +14,7 @@ import {
   type Firebox,
   fireboxBounds,
   fireboxMatrix,
+  removeHallCandleNiches,
   stripBakedFire,
 } from '../src/world/fireplace.ts';
 import { mountFloorView } from '../src/world/floor-view.ts';
@@ -179,6 +180,19 @@ describe('the flame material', () => {
 });
 
 describe('replacing the hall fire', () => {
+  it('removes the four niche flames and preserves candles from the chandelier and stands', () => {
+    const model = new THREE.Group();
+    model.add(
+      new THREE.Mesh(hallFlameGeometry(), new THREE.MeshStandardMaterial({ name: 'hall_flame' })),
+    );
+    expect(removeHallCandleNiches(model)).toBe(8);
+    const fire = dressFireplace('hall', model, flameSlot);
+    const candles = dressCandleFlames(model, flameSlot);
+    expect(candles?.geometry.getAttribute('params').count).toBe(20 * 4);
+    fire?.dispose();
+    candles?.geometry.dispose();
+    candles?.material.dispose();
+  });
   it('replaces the real hall candle triangles with one animated wick batch', () => {
     const model = new THREE.Group();
     const baked = new THREE.Mesh(

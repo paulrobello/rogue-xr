@@ -229,18 +229,18 @@ it('shows a map before saving any clues and starts on the current floor', () => 
   ui.dispose();
 });
 
-it('charts only reached footprints and their mutual doorways', () => {
+it('charts only reached footprints while showing ordinary exits from visited rooms', () => {
   const plan = playableFloorPlan('MAPTEST2', ENCOUNTER_CONTENT_VERSION);
   const world = worldRooms(plan);
   const pair = plan.connections[0];
   const position: readonly [number, number] = [0.1, -0.2];
   const onlyEntry = chartFloor(1, plan, world, [pair[0].room], { room: pair[0].room, position });
   expect(onlyEntry.rooms.map(({ id }) => id)).toEqual([pair[0].room]);
-  expect(onlyEntry.doors).toHaveLength(0);
+  expect(onlyEntry.doors.length).toBeGreaterThan(0);
   expect(onlyEntry.player?.position).toEqual(position);
   const both = chartFloor(1, plan, world, [pair[0].room, pair[1].room]);
   expect(both.rooms.map(({ id }) => id).sort()).toEqual([pair[0].room, pair[1].room].sort());
-  expect(both.doors).toHaveLength(1);
+  expect(both.doors.length).toBeGreaterThan(0);
   expect(both.player).toBeUndefined();
 });
 
@@ -259,6 +259,42 @@ it('clamps a zoomed floor to its chart and keeps the scroll anchor stable', () =
   expect(panned.y).toBe(213);
   expect(moveMapView(map, panned, 0, 0, 0.1)).toEqual(FIT_MAP_VIEW);
   expect(moveMapView(map, zoom, 0, 0, 100).zoom).toBe(6);
+});
+
+it('shows a visible locked exit from one explored room and keeps an undiscovered service panel off the map', () => {
+  const plan = playableFloorPlan('MAPTEST2', ENCOUNTER_CONTENT_VERSION, 1);
+  const [pair] = plan.connections;
+  const world = worldRooms(plan);
+  const reached = [pair[0].room];
+  const locked = Object.assign([pair[0], pair[1]] as const, { puzzleGate: 'valvehouse' as const });
+  const concealed = Object.assign([pair[0], pair[1]] as const, { puzzleGate: 'panel' as const });
+  expect(chartFloor(1, { ...plan, connections: [locked] }, world, reached).doors).toHaveLength(1);
+  expect(chartFloor(1, { ...plan, connections: [concealed] }, world, reached).doors).toHaveLength(
+    0,
+  );
+  expect(
+    chartFloor(1, { ...plan, connections: [concealed] }, world, [pair[0].room, pair[1].room]).doors,
+  ).toHaveLength(1);
+});
+
+it('records a clicked world inscription exactly once and round-trips its text on Continue', () => {
+  const { flow, ui } = setup();
+  flow.newRun('MAPTEST2');
+  const clue = {
+    id: 'plaque-drum-gallery',
+    title: 'Drum Gallery Service Score',
+    body: 'MID · LOW · HIGH · LOW\nPlace the four notes in this order.',
+    origin: 'Drum Gallery Service Score',
+  } as const;
+  expect(flow.logbookEntries).toHaveLength(0);
+  expect(flow.saveLogbookEntry(clue)).toBe(true);
+  expect(flow.saveLogbookEntry(clue)).toBe(true);
+  expect(flow.logbookEntries).toEqual([clue]);
+  const resumed = setup();
+  expect(resumed.flow.continueRun(validateSnapshot(flow.snapshot()))).toBe(true);
+  expect(resumed.flow.logbookEntries).toEqual([clue]);
+  resumed.ui.dispose();
+  ui.dispose();
 });
 
 it('retains each map view across floors and keeps the run menu available', () => {
@@ -285,7 +321,7 @@ it('retains each map view across floors and keeps the run menu available', () =>
   ui.activate('menu-logbook-previous');
   ui.update(1);
   expect(view().zoom).toBe(Math.SQRT2);
-  ui.activate('menu-logbook-finds');
+  expect(ui.controlIds()).not.toContain('menu-logbook-finds');
   ui.update(1);
   expect(ui.root.getObjectByName('logbook-right-page')?.userData.showFinds).toBe(true);
   ui.activate('menu-logbook-fit');

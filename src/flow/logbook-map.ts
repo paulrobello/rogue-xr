@@ -109,8 +109,11 @@ export function chartFloor(
     const room = worldRooms[index];
     return room && reached.has(index) ? [{ id: index, bounds: room.footprint }] : [];
   });
-  const doors = plan.connections.flatMap(([a, b]) => {
-    if (!reached.has(a.room) || !reached.has(b.room)) return [];
+  const doors = plan.connections.flatMap((connection) => {
+    const [a, b] = connection;
+    if (!reached.has(a.room) && !reached.has(b.room)) return [];
+    if (connection.puzzleGate === 'panel' && !(reached.has(a.room) && reached.has(b.room)))
+      return [];
     const door = worldRooms[a.room]?.doors.find(({ id }) => id === a.door);
     return door
       ? [
@@ -256,7 +259,11 @@ export function paintMapPage(
   }
 
   context.font = '32px Georgia, serif';
-  context.fillText(`${map.rooms.length} / ${map.totalRooms} rooms explored`, 77, 105);
+  const exploredPercent =
+    map.totalRooms > 0 && map.rooms.length === map.totalRooms
+      ? 100
+      : Math.floor((map.rooms.length / Math.max(1, map.totalRooms)) * 100);
+  context.fillText(`${exploredPercent}% of rooms explored`, 77, 105);
   context.font = 'bold 34px Georgia, serif';
   context.textAlign = 'center';
   context.fillText('N', 604, 101);

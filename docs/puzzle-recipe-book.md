@@ -102,7 +102,7 @@ These are design ingredients. The component kits supply physical starting pieces
 | 11 | Spring tension window (playable) | Wind a key until a gauge enters an engraved interval, then release the clutch. Too little tension only lifts the latch partway. |
 | 12 | Ratchet handoff | Alternate two ratchets so one pawl holds while the other advances a rack. Both controls can be worked with one seated hand. |
 | 13 | Mirror-type press | Turn a plate face-down in a press and stamp a scrap of paper. A previously reversed message becomes a readable inventory note. |
-| 14 | Missing drum pin (playable) | Wind the drum to find the silent beat. Use the service score to seat the spare pin in the right beat and pitch, then wind again. |
+| 14 | Drum Gallery (playable) | Find the service score in another room. Fit a pin for each of the four beats, then wind the cylinder to test the sequence. |
 | 15 | Key behind the grille | Move a magnet across the outside of a grille to drag a loose key around steel obstructions to a retrieval slot. |
 | 16 | Dark circuit (playable) | Seat two brass bridges so the marked lamps glow and the third stays dark. |
 | 17 | Wax rubbing | Lay paper over a worn relief plate and rub it. The new inventory item preserves a crest too shallow to read in room light. |
@@ -127,9 +127,9 @@ The matching pair releases the toothed grille with a relay clack and the sound o
 
 ## Drum Gallery
 
-The Conservatory's optional Drum Gallery uses the stone bays and a skylight. Its shelf, pottery, plant, and pinned cylinder mount independently. Wind the key to play the four beats. A marker advances on every beat, and the silent beat has no reed tone. The service score lists the intended notes in order.
+The Conservatory's optional Drum Gallery uses the stone bays and a skylight. The service score is mounted in another reachable room. Select its plaque to add the four pitches to the Logbook. Left X opens the map, which shows explored-room percentage, public doors in visited rooms, and discovered finds.
 
-Select or grip an empty socket to move the spare pin. Select the fitted socket again to remove it. A wrong pin can sound an extra note or leave the gap unfilled. Wind the drum with the correct pin to complete the phrase. The grille starts its lift after the last beat and blocks passage until the leaf clears. The pin, grille, and claimed coffer survive Continue. Seed `DR0M0000` places the gallery in Conservatory room 11.
+Select or grip a socket to set that beat's pitch. Select a different socket in the same column to replace it, or select the fitted socket to remove it. Wind the key to hear the four beats and check the phrase. The grille starts its lift after the last beat of the correct score and blocks passage until the leaf clears. Fitted pins, the service score, and the unlocked grille survive Continue. Seed `DR0M0000` places the gallery in Conservatory room 11.
 
 ## Shadow Stencil
 

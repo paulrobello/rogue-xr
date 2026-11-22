@@ -41,7 +41,7 @@ Every asset task starts by invoking its owning workflow skill (PRD asset routing
 
 ### P4-T8 — Performance instrumentation
 - Depends on: P0-T2.
-- Work: `createPerfGaugeWidget` on the wrist (dev toggle), frame-time logger (p50/p95/worst over 2 s windows, exported as JSON), framebuffer scale setting applied at session start, foveation 0.5 re-asserted each frame, a debug panel to pick scale.
+- Work: `createPerfGaugeWidget` initially on the wrist, repositioned by pointing and holding grip, frame-time logger (p50/p95/worst over 2 s windows, exported as JSON), framebuffer scale setting applied at session start, foveation 0.5 re-asserted each frame, a debug panel to pick scale.
 - Verify: Vitest for the frame-stat aggregator; gauge visible in XR on desktop preview.
 
 ### P4-T9 — Integrate hero assets
@@ -52,4 +52,4 @@ Every asset task starts by invoking its owning workflow skill (PRD asset routing
 ### P4-T10 — Physical: Quest measurement and owner look approval
 - Depends on: P4-T8, P4-T9.
 - Work: on Quest 3, measure exploration in the hero room and the worst combat view (table unfolded, Cog Sentry attacking, full fanned hand, two dice rolling, sigil plate up). Tune framebuffer scale and budgets. Record numbers in `docs/performance/`.
-- Verify: exploration 72 Hz held, combat at 45 fps or above, numbers recorded with load and device state; Paul approves the look. Physical evidence only.
+- Verify: exploration and combat both at or above 30 fps, targeting 72 Hz, numbers recorded with load and device state; Paul approves the look. Physical evidence only.

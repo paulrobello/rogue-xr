@@ -1469,6 +1469,40 @@ describe('enemy phase, one enemy at a time', () => {
   }, 60_000);
 });
 
+it('seats the rack inside the authored rim beyond the cog', async () => {
+  const rig = await openFight(
+    'SPIRE002',
+    { deck: ['clockwork-turret'] },
+    {},
+    {
+      tableAsset: tableAssetStandIn(),
+    },
+  );
+  try {
+    const { session } = rig;
+    const rack = session.mechanismRack?.root;
+    const base = rack?.children.find((child): child is THREE.Mesh => child instanceof THREE.Mesh);
+    const pose = rig.view.encounter.tablePose;
+    if (!base || !pose) throw new Error('Missing authored table or mechanism rack');
+    base.updateWorldMatrix(true, false);
+    base.geometry.computeBoundingBox();
+    const tableToWorld = new THREE.Matrix4()
+      .makeRotationY((-pose.yaw * Math.PI) / 180)
+      .setPosition(pose.x, pose.height, pose.z);
+    const box = base.geometry.boundingBox
+      ?.clone()
+      .applyMatrix4(tableToWorld.invert().multiply(base.matrixWorld));
+    if (!box) throw new Error('Missing mechanism rack base bounds');
+    expect(box.max.z).toBeLessThan(-0.15 - 0.105);
+    const right = Math.max(-box.min.x, box.max.x);
+    const forward = -box.min.z;
+    expect((right / 0.73) ** 3 + (forward / 0.38) ** 3).toBeLessThan(1);
+  } finally {
+    rig.hook.dispose();
+    rig.view.dispose();
+  }
+});
+
 it('shows a turret hit before the enemy acts and removes its table rack with the session', async () => {
   const rig = await openFight('SPIRE002', {
     deck: ['clockwork-turret+', 'strike', 'strike', 'defend', 'defend'],

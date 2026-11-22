@@ -1,6 +1,6 @@
 import { bellMelody } from '../rules/bell-chimes.ts';
 import { BEARINGS, calibrationPlan, GEAR_TEETH, PLANET_NAMES } from '../rules/calibration.ts';
-import type { PressureNoteId } from '../rules/pressure.ts';
+import { isPressureNoteId, type PressureNoteId } from '../rules/pressure.ts';
 import { reliquaryGlyph } from '../rules/reliquary.ts';
 import type { RunFlow } from './flow.ts';
 
@@ -53,7 +53,7 @@ export function activePuzzlePages(
 
   const pressureIds = new Set(flow.explorationOnFloor(1)?.pressure?.notes ?? flow.pressure.notes);
   for (const entry of run.logbook ?? []) {
-    if (entry.id !== 'reliquary-rubbing' && pressureIds.has(entry.id)) {
+    if (isPressureNoteId(entry.id) && pressureIds.has(entry.id)) {
       pages.push({
         puzzle: 'Pressure Regulator',
         title: entry.title,

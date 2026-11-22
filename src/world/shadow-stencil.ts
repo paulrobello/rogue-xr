@@ -120,6 +120,9 @@ export class ShadowStencil {
   private readonly stone = this.keep(
     new THREE.MeshStandardMaterial({ color: 0x736956, roughness: 0.93 }),
   );
+  private readonly wood = this.keep(
+    new THREE.MeshStandardMaterial({ color: 0x4b3022, metalness: 0.08, roughness: 0.7 }),
+  );
   private readonly bright = this.keep(
     new THREE.MeshBasicMaterial({ color: 0xffdf9a, toneMapped: false }),
   );
@@ -248,6 +251,21 @@ export class ShadowStencil {
     this.block('stencil-plinth-foot', station, [1.16, 0.11, 0.39], [0, 0.055, 0.219], this.stone);
     this.block('stencil-plinth', station, [0.86, 1.06, 0.34], [0, 0.61, 0.207], this.stone);
     this.block('stencil-lantern-shelf', station, [1.16, 0.14, 0.47], [0, 1.15, 0.264], this.stone);
+    this.block(
+      'stencil-lantern-wood-back',
+      station,
+      [0.86, 0.96, 0.06],
+      [0, 0.66, 0.39],
+      this.wood,
+    );
+    for (const x of [-0.45, 0.45])
+      this.block(
+        'stencil-lantern-wood-post',
+        station,
+        [0.065, 1.02, 0.08],
+        [x, 0.66, 0.43],
+        this.wood,
+      );
     // A stepped brass chassis makes the optical instrument read as a machine, not a stack of boxes.
     for (const x of [-0.49, 0.49]) {
       this.block(
@@ -361,8 +379,14 @@ export class ShadowStencil {
       this.targets.set(button, { kind: 'pitch', pitch });
     }
     if (typeof document !== 'undefined') {
-      const label = this.keep(new CanvasLabel(880, 300, 1.16, false));
+      const label = this.keep(new CanvasLabel(920, 300, 1.28, false));
       label.mesh.name = 'shadow-stencil-instructions';
+      const instructions = [
+        'Set shutter and lamp pitch.',
+        'Fit the shadow inside the frame.',
+        'Select the matching tile.',
+      ] as const;
+      label.mesh.userData.labelText = ['Shadow Stencil', ...instructions].join('\n');
       label.mesh.position.set(0, 1.866, 0.18);
       label.draw((ctx, width, height) => {
         ctx.fillStyle = '#222924';
@@ -372,11 +396,11 @@ export class ShadowStencil {
         ctx.strokeRect(4, 4, width - 8, height - 8);
         ctx.textAlign = 'center';
         ctx.fillStyle = '#f4d99d';
-        ctx.font = 'bold 76px Georgia';
-        ctx.fillText('Shadow Stencil', width / 2, 92);
-        ctx.font = '49px system-ui';
-        ctx.fillText('Set shutter and lamp pitch until the shadow', width / 2, 161);
-        ctx.fillText('fits the frame. Select the matching tile.', width / 2, 226);
+        ctx.font = 'bold 66px Georgia';
+        ctx.fillText('SHADOW STENCIL', width / 2, 70, width - 54);
+        ctx.font = '42px system-ui';
+        for (const [index, line] of instructions.entries())
+          ctx.fillText(line, width / 2, 134 + 53 * index, width - 54);
       });
       station.add(label.mesh);
     }

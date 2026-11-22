@@ -12,6 +12,7 @@ import {
   EMPTY_DRUM_GALLERY,
 } from '../rules/drum-gallery.ts';
 import type { BellNote } from '../rules/types.ts';
+import { ClockInscription } from './clock-inscription.ts';
 import { DOOR_HEIGHT, type FloorWorld } from './floor-world.ts';
 import type { InteriorPlacement } from './interior-furnishings.ts';
 import { findPuzzleMount } from './puzzle-placement.ts';
@@ -20,7 +21,7 @@ const FACING_IN: Record<Facing, number> = { N: 0, E: -Math.PI / 2, S: Math.PI, W
 const BEATS: readonly DrumBeat[] = [0, 1, 2, 3];
 const NOTES: readonly BellNote[] = [0, 1, 2];
 const NOTE_LABELS = ['LOW', 'MID', 'HIGH'];
-const BEAT_X = [-0.49, -0.19, 0.11, 0.41];
+const BEAT_X = [-0.445, -0.158, 0.129, 0.416];
 const NOTE_Y = [-0.025, -0.17, -0.315];
 const BOARD_WIDTH = 1.69;
 const BOARD_HEIGHT = 1.24;
@@ -38,22 +39,25 @@ export class DrumGallery {
   readonly object = new THREE.Group();
   readonly gate = new THREE.Group();
   readonly leaf = new THREE.Group();
+  readonly clueObject: THREE.Object3D;
+  readonly clueRoom: number;
   private readonly board = new THREE.Group();
   private readonly drum = new THREE.Group();
   private readonly markers: THREE.MeshBasicMaterial[] = [];
   private readonly hits = new Map<THREE.Mesh, DrumControl>();
   private readonly sockets = new Map<string, THREE.Mesh>();
+  private readonly seatedCaps = new Map<string, THREE.Mesh>();
   private readonly geometries = new Set<THREE.BufferGeometry>();
   private readonly materials = new Set<THREE.Material>();
   private readonly ray = new THREE.Raycaster();
   private readonly box = new THREE.Box3();
   private readonly point = new THREE.Vector3();
   private readonly pattern: ReturnType<typeof drumPattern>;
-  private readonly spare = new THREE.Group();
-  private readonly drumSpare: THREE.Mesh;
-  private readonly spareGoal = new THREE.Vector3();
+  private readonly reservePins: THREE.Mesh[] = [];
+  private readonly drumPins: THREE.Mesh[];
   private readonly key = new THREE.Group();
   private readonly label: CanvasLabel | null;
+  private readonly scoreClue: ClockInscription;
   private readonly removeCollider: () => void;
   private state: DrumGalleryState = EMPTY_DRUM_GALLERY;
   private phrase: readonly (readonly BellNote[])[] = [];
@@ -78,7 +82,6 @@ export class DrumGallery {
     this.drum.name = 'drum-gallery-cylinder';
     this.gate.name = 'drum-gallery-grille';
     this.leaf.name = 'drum-gallery-grille-leaf';
-    this.spare.name = 'drum-gallery-spare-pin';
     this.locate(furnishings);
 
     const casework = this.standard(0x39494d, 0.34);
@@ -101,6 +104,8 @@ export class DrumGallery {
     this.boxPart(this.board, walnut, [1.45, 0.042, 0.31], [-0.05, 0.19, 0.19]);
 
     this.label = this.markings();
+    [this.scoreClue, this.clueRoom] = this.mountScoreClue(furnishings);
+    this.clueObject = this.scoreClue.object;
     const socket = new THREE.CylinderGeometry(0.045, 0.045, 0.027, 14).rotateX(Math.PI / 2);
     const cap = new THREE.CylinderGeometry(0.026, 0.031, 0.05, 12).rotateX(Math.PI / 2);
     const recessed = this.standard(0x171b1b, 0.16);
@@ -113,24 +118,24 @@ export class DrumGallery {
       this.boxPart(this.board, marker, [0.183, 0.016, 0.015], [BEAT_X[beat], 0.07, 0.102]).name =
         `drum-gallery-beat-${beat}`;
       for (const note of NOTES) {
-        const fixed = beat !== this.pattern.gap && this.pattern.notes[beat] === note;
         const x = BEAT_X[beat],
           y = NOTE_Y[note];
-        this.mesh(this.board, socket, fixed ? brass : recessed, [x, y, 0.092]);
-        if (fixed) this.mesh(this.board, cap, brass, [x, y, 0.117]);
-        else {
-          const hit = this.mesh(this.board, target, invisible, [x, y, 0.118]);
-          hit.name = `drum-gallery-pin-${beat}-${note}`;
-          this.sockets.set(`${beat}:${note}`, hit);
-          this.hits.set(hit, { kind: 'pin', pin: { beat, note } });
-        }
+        this.mesh(this.board, socket, recessed, [x, y, 0.092]);
+        const hit = this.mesh(this.board, target, invisible, [x, y, 0.118]);
+        hit.name = `drum-gallery-pin-${beat}-${note}`;
+        this.sockets.set(`${beat}:${note}`, hit);
+        this.hits.set(hit, { kind: 'pin', pin: { beat, note } });
+        const seated = this.mesh(this.board, cap, brass, [x, y, 0.117]);
+        this.seatedCaps.set(`${beat}:${note}`, seated);
       }
     }
-    this.boxPart(this.board, recessed, [0.167, 0.078, 0.035], [0.63, -0.315, 0.098]);
-    this.board.add(this.spare);
-    this.mesh(this.spare, cap, jewelled, [0, 0, 0]);
-    this.boxPart(this.spare, jewelled, [0.083, 0.02, 0.032], [0, 0, 0.025]);
-    this.drumSpare = this.mountDrum(art, walnut, brass, jewelled);
+    this.boxPart(this.board, recessed, [0.101, 0.374, 0.032], [0.619, -0.204, 0.098]);
+    for (const beat of BEATS) {
+      const pin = this.mesh(this.board, cap, jewelled, [0.62, -0.079 - 0.083 * beat, 0.123]);
+      pin.name = `drum-gallery-reserve-${beat}`;
+      this.reservePins.push(pin);
+    }
+    this.drumPins = this.mountDrum(art, walnut, brass);
     this.mountKey(art, brass, invisible);
     this.mountGate(casework, brass);
 
@@ -225,27 +230,54 @@ export class DrumGallery {
       ctx.fillText('DRUM GALLERY', x(0), y(0.511));
       ctx.font = 'bold 32px system-ui, sans-serif';
       ctx.fillText('WIND', x(0.65), y(0.479));
-      ctx.fillText('SPARE', x(0.64), y(-0.402));
+      ctx.fillText('PINS', x(0.62), y(-0.429));
       for (const beat of BEATS) ctx.fillText(String(beat + 1), x(BEAT_X[beat]), y(0.128));
       ctx.font = 'bold 30px system-ui, sans-serif';
-      for (const note of NOTES) ctx.fillText(NOTE_LABELS[note], x(-0.674), y(NOTE_Y[note]));
-      ctx.fillStyle = '#664a2c';
-      ctx.fillRect(x(-0.734), y(-0.455), width * 0.914, 76);
-      ctx.fillStyle = '#fdeabc';
-      ctx.font = 'bold 35px system-ui, sans-serif';
-      const score = this.pattern.notes.map((note) => NOTE_LABELS[note]).join('  ·  ');
-      ctx.fillText(`SERVICE SCORE   ${score}`, x(0), y(-0.512), width * 0.875);
+      // Keep the note legend inside the brass trim. The service order is shown on
+      // a separate plaque so the puzzle face only communicates its sockets.
+      for (const note of NOTES) ctx.fillText(NOTE_LABELS[note], x(-0.585), y(NOTE_Y[note]));
+      ctx.fillText('Fit four pins. Wind to test.', x(0), y(-0.508));
     });
     this.board.add(label.mesh);
     return label;
+  }
+
+  private mountScoreClue(furnishings: readonly InteriorPlacement[]): [ClockInscription, number] {
+    const clue = new ClockInscription(
+      'drum-gallery-score-clue',
+      0.82,
+      'Drum Gallery Service Score',
+      this.pattern.notes.map((note) => NOTE_LABELS[note]).join('  ·  '),
+      'Place the four notes in this order.',
+    );
+    const reachable = new Set<number>([0]);
+    for (const room of reachable)
+      for (const edge of this.world.plan.connections) {
+        if (edge.puzzleGate) continue;
+        if (edge[0].room === room) reachable.add(edge[1].room);
+        if (edge[1].room === room) reachable.add(edge[0].room);
+      }
+    const rooms = [...reachable].filter((room) => room !== this.layout.gallery);
+    const mount = findPuzzleMount(this.world, rooms, furnishings, 'drum-gallery-clue', 0.46, 0.74);
+    const room = mount?.room ?? 0;
+    if (mount) {
+      clue.object.position.copy(mount.wallSurface).setY(1.49);
+      clue.object.rotation.y = mount.yaw;
+      clue.object.translateZ(0.035);
+    } else {
+      const footprint = templateById(this.world.plan.rooms[room].templateId).footprint;
+      clue.object.position.set(footprint.min[0] + 1.15, 1.53, footprint.max[1] - 0.3);
+      clue.object.rotation.y = Math.PI;
+    }
+    this.world.roomGroups[room].add(clue.object);
+    return [clue, room];
   }
 
   private mountDrum(
     art: THREE.Object3D | undefined,
     wood: THREE.Material,
     brass: THREE.Material,
-    spare: THREE.Material,
-  ): THREE.Mesh {
+  ): THREE.Mesh[] {
     const axle = new THREE.Group();
     axle.position.set(-0.09, 0.335, 0.226);
     axle.rotation.z = -Math.PI / 2;
@@ -268,12 +300,7 @@ export class DrumGallery {
         0,
       ]);
     const pinShape = new THREE.BoxGeometry(0.026, 0.035, 0.028);
-    for (const beat of BEATS) {
-      if (beat === this.pattern.gap) continue;
-      const pin = this.mesh(this.drum, pinShape, brass, [0, 0, 0]);
-      this.positionDrumPin(pin, beat, this.pattern.notes[beat]);
-    }
-    return this.mesh(this.drum, pinShape, spare, [0, 0, 0]);
+    return BEATS.map(() => this.mesh(this.drum, pinShape, brass, [0, 0, 0]));
   }
 
   private positionDrumPin(mesh: THREE.Mesh, beat: DrumBeat, note: BellNote): void {
@@ -329,11 +356,18 @@ export class DrumGallery {
 
   sync(state: DrumGalleryState, immediate = false): void {
     this.state = state;
-    const pin = state.pin;
-    this.spareGoal.set(pin ? BEAT_X[pin.beat] : 0.63, pin ? NOTE_Y[pin.note] : -0.315, 0.14);
-    if (immediate || this.reducedMotion) this.spare.position.copy(this.spareGoal);
-    this.drumSpare.visible = pin !== null;
-    if (pin) this.positionDrumPin(this.drumSpare, pin.beat, pin.note);
+    const seats = drumPlayback(this.pattern, state.pin, state.pins);
+    for (const [key, cap] of this.seatedCaps) {
+      const [beat, note] = key.split(':').map(Number);
+      cap.visible = seats[beat]?.includes(note as BellNote) ?? false;
+    }
+    const fitted = seats.filter((notes) => notes.length > 0).length;
+    for (const beat of BEATS) {
+      this.reservePins[beat].visible = beat < BEATS.length - fitted;
+      const note = seats[beat]?.[0];
+      this.drumPins[beat].visible = note !== undefined;
+      if (note !== undefined) this.positionDrumPin(this.drumPins[beat], beat, note);
+    }
     if (immediate) {
       this.beat = -1;
       this.beatAge = 0;
@@ -346,7 +380,7 @@ export class DrumGallery {
 
   play(): void {
     if (this.playing) return;
-    this.phrase = drumPlayback(this.pattern, this.state.pin);
+    this.phrase = drumPlayback(this.pattern, this.state.pin, this.state.pins);
     this.beat = 0;
     this.beatAge = 0;
     this.drawBeat();
@@ -355,7 +389,6 @@ export class DrumGallery {
 
   update(dt: number): void {
     const delta = Math.max(0, dt);
-    this.spare.position.lerp(this.spareGoal, 1 - Math.exp(-14 * delta));
     if (this.opening) {
       this.gateAge = Math.min(DRUM_GATE_SECONDS, this.gateAge + delta);
       this.drawGate();
@@ -446,7 +479,7 @@ export class DrumGallery {
     const source =
       action.kind === 'wind'
         ? this.key
-        : (this.sockets.get(`${action.pin.beat}:${action.pin.note}`) ?? this.spare);
+        : (this.sockets.get(`${action.pin.beat}:${action.pin.note}`) ?? this.board);
     return source.getWorldPosition(new THREE.Vector3());
   }
 
@@ -455,6 +488,8 @@ export class DrumGallery {
     this.object.removeFromParent();
     this.gate.removeFromParent();
     this.label?.dispose();
+    this.clueObject.removeFromParent();
+    this.scoreClue.dispose();
     for (const geometry of this.geometries) geometry.dispose();
     for (const material of this.materials) material.dispose();
   }

@@ -607,11 +607,13 @@ try {
             floor: c.floor.floorNumber,
             phase: c.stairTransition.phase,
             view: window.__flow.ui.menuView,
+            solidShoulders: Boolean(g.getObjectByName('stair-masonry-shoulders')),
             ringY: ring.visible ? ring.getWorldPosition(head.clone()).y : null,
             preview: c.locomotion.teleportPreview,
           };
         });
       const first = await readStairs();
+      record(`stairs-${destination}-side-infill-mounted`, first.solidShoulders);
       const headCalibration = first.headY - first.groundY;
       const sign = destination === 2 ? 1 : -1;
       await ev(() => {
@@ -876,16 +878,26 @@ try {
     await page.goto(`${opts.base}/?seed=${opts.seed}&debug`);
     await waitFor('logbook-run-ready', () => window.__flow?.flow.phase === 'explore');
     await enterVr();
-    await ev(() => window.__xrEmu.device.controllers.left.updateButtonValue('y-button', 1));
-    await waitFor('logbook-menu-open', () => window.__flow.ui.menuView === 'main');
-    await ev(() => window.__xrEmu.device.controllers.left.updateButtonValue('y-button', 0));
-    await waitFor('logbook-wheel-interactive', () => window.__flow.ui.radialInteractive);
-    await press('menu-logbook');
-    await press('menu-logbook-map');
+    await ev(() => window.__xrEmu.device.controllers.left.updateButtonValue('x-button', 1));
+    record(
+      'left-x-opens-map-directly',
+      await waitFor('logbook-map-open', () =>
+        Boolean(window.__flow.ui.root.getObjectByName('logbook-right-page')?.userData.map),
+      ),
+    );
+    await ev(() => window.__xrEmu.device.controllers.left.updateButtonValue('x-button', 0));
     const chart = await ev(
       () => window.__flow.ui.root.getObjectByName('logbook-right-page')?.userData.map,
     );
     record('logbook-reports-fraction-explored', chart?.rooms.length < chart?.totalRooms, chart);
+    record(
+      'map-shows-public-untraversed-exits',
+      chart?.rooms.length === 1 && chart.doors.length > 0,
+    );
+    record(
+      'map-finds-toggle-removed',
+      await ev(() => window.__flow.ui.controlIds().every((id) => !id.includes('finds'))),
+    );
     await shot('logbook-map');
     await press('menu-logbook-cards');
     const row = await ev(() =>

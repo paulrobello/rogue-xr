@@ -4,7 +4,12 @@ import { describe, expect, it } from 'vitest';
 import { DRUM_GALLERY_VERSION } from '../src/combat/encounter-choice.ts';
 import { rectsOverlap, worldRooms } from '../src/floor/generate.ts';
 import { stoneRoomsFor } from '../src/floor/stone-rooms.ts';
-import { drumPattern, EMPTY_DRUM_GALLERY, windDrum } from '../src/rules/drum-gallery.ts';
+import {
+  type DrumBeat,
+  drumPattern,
+  EMPTY_DRUM_GALLERY,
+  windDrum,
+} from '../src/rules/drum-gallery.ts';
 import { floorSeedFor } from '../src/rules/run.ts';
 import type { BellNote } from '../src/rules/types.ts';
 import { DRUM_BEAT_SECONDS, DRUM_GATE_SECONDS } from '../src/world/drum-gallery.ts';
@@ -93,6 +98,8 @@ describe('Drum Gallery in the Conservatory', () => {
           expect(station.object.getObjectByName(original.name)?.visible).toBe(false);
         }
         const { gallery, recess } = station.layout;
+        expect(station.clueRoom).not.toBe(gallery);
+        expect(station.clueObject.parent).toBe(view.world.roomGroups[station.clueRoom]);
         view.world.current = gallery;
         const colliders = () => [gallery, recess].map((room) => view.world.colliders[room].length);
         const closed = colliders();
@@ -110,11 +117,12 @@ describe('Drum Gallery in the Conservatory', () => {
         station.play();
         for (let i = 0; i < 4; i++) station.update(DRUM_BEAT_SECONDS);
         expect(station.playing).toBe(false);
-        expect(heard).toEqual(pattern.notes.map((note, i) => (i === pin.beat ? [] : [note])));
+        expect(heard).toEqual([[], [], [], []]);
         expect(colliders()).toEqual(closed);
         expect(releases).toBe(0);
 
-        const repaired = windDrum(pattern, { ...EMPTY_DRUM_GALLERY, pin });
+        const pins = pattern.notes.map((note, beat) => ({ beat: beat as DrumBeat, note }));
+        const repaired = windDrum(pattern, { ...EMPTY_DRUM_GALLERY, pin, pins });
         station.sync(repaired);
         station.play();
         for (let i = 0; i < 3; i++) station.update(DRUM_BEAT_SECONDS);

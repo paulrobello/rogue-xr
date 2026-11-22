@@ -71,6 +71,9 @@ export interface PerfHandle {
    * recorder with it unless `?perf` keeps the recorder on. Off, the per-frame cost is a null check.
    */
   setFpsCounter(on: boolean): void;
+  gaugeHitDistance(source: THREE.Object3D): number | null;
+  grabGauge(source: THREE.Object3D, grip: THREE.Object3D): boolean;
+  releaseGauge(grip: THREE.Object3D): void;
   /** True while the FPS counter is shown. */
   readonly fpsCounter: boolean;
   dispose(): void;
@@ -267,6 +270,9 @@ export function mountPerf(
       }
       syncRecorder();
     },
+    gaugeHitDistance: (source) => gauge?.hitDistance(source) ?? null,
+    grabGauge: (source, grip) => gauge?.beginGrab(source, grip) ?? false,
+    releaseGauge: (grip) => gauge?.endGrab(grip),
     get fpsCounter() {
       return gauge !== null;
     },

@@ -407,7 +407,7 @@ export class FlowUi {
   private logbookCardFace: RewardCardFaces | null = null;
   private bookSection: 'clues' | 'map' | 'puzzles' | 'cards' | 'stats' = 'clues';
   private readonly logbookMapViews = new Map<number, MapView>();
-  private showMapFinds = false;
+  private showMapFinds = true;
   private menuHead: THREE.Object3D | null = null;
   private radialMenu: RadialMenu<RunMenuAction> | null = null;
   private releaseDial: (() => void) | null = null;
@@ -510,6 +510,14 @@ export class FlowUi {
   /** Opens the in-run menu, or closes it when it is open. Returns whether anything changed. */
   toggleMenu(head: THREE.Object3D): boolean {
     return this.menuOpen ? this.closeMenu() : this.openMenu(head);
+  }
+
+  /** Opens the in-run logbook directly on its map, for the left controller's X button. */
+  openMap(head: THREE.Object3D): boolean {
+    if (this.menu === 'logbook' && this.bookSection === 'map') return true;
+    if (!this.menuOpen && !this.openMenu(head)) return false;
+    this.openLogbook(undefined, 'map');
+    return true;
   }
 
   /** Opens an acquired note, from a physical pickup or from Items. */
@@ -1629,9 +1637,9 @@ export class FlowUi {
     this.setMenu('items');
   }
 
-  private openLogbook(entry?: LogbookEntry): void {
+  private openLogbook(entry?: LogbookEntry, section: typeof this.bookSection = 'clues'): void {
     if (entry && !this.deps.flow.saveLogbookClue(entry)) return;
-    this.bookSection = 'clues';
+    this.bookSection = section;
     this.logbookCard = null;
     this.logbookCardPage = 0;
     this.logbookMapViews.clear();
@@ -1770,15 +1778,6 @@ export class FlowUi {
           id: 'zoom-in',
           label: 'Zoom in',
           onSelect: () => this.adjustLogbookMap(0, 0, Math.SQRT2),
-        },
-        {
-          id: 'finds',
-          label: this.showMapFinds ? 'Hide finds' : 'Show finds',
-          onSelect: () => {
-            if (!this.logbook?.setMapFinds(!this.showMapFinds)) return;
-            this.showMapFinds = !this.showMapFinds;
-            board.panel.setLabel('finds', this.showMapFinds ? 'Hide finds' : 'Show finds');
-          },
         },
       );
     const board = this.board(

@@ -33,32 +33,32 @@ describe('Drum Gallery rules', () => {
     expect(gaps).toEqual(new Set([0, 1, 2, 3]));
   });
 
-  it('lets the spare be tried in any empty socket but releases only on the correct wind', () => {
+  it('lets any socket be tried, keeps one pin per beat, and releases only for a complete score', () => {
     const pattern = drumPattern('DR0M0001');
-    const required = pattern.notes[pattern.gap];
+    expect(drumPlayback(pattern, null, EMPTY_DRUM_GALLERY.pins)).toEqual([[], [], [], []]);
     for (const beat of [0, 1, 2, 3] as const satisfies readonly DrumBeat[]) {
       for (const note of [0, 1, 2] as const satisfies readonly BellNote[]) {
         const pin = { beat, note };
         const seated = setDrumPin(pattern, EMPTY_DRUM_GALLERY, pin);
-        if (beat !== pattern.gap && note === pattern.notes[beat]) {
-          expect(seated).toBe(EMPTY_DRUM_GALLERY);
-          continue;
-        }
-        expect(seated).toEqual({ pin, open: false });
+        expect(seated).toEqual({ pin, pins: [pin], open: false });
         expect(setDrumPin(pattern, seated, pin)).toEqual(EMPTY_DRUM_GALLERY);
-        const played = drumPlayback(pattern, pin);
-        expect(played[beat]).toEqual(beat === pattern.gap ? [note] : [pattern.notes[beat], note]);
-        const tested = windDrum(pattern, seated);
-        if (beat !== pattern.gap || note !== required) {
-          expect(tested).toBe(seated);
-          continue;
-        }
-        expect(tested).toEqual({ pin, open: true });
-        expect(drumPlayback(pattern, tested.pin)).toEqual(pattern.notes.map((pitch) => [pitch]));
-        expect(windDrum(pattern, tested)).toBe(tested);
-        expect(setDrumPin(pattern, tested, pin)).toBe(tested);
+        expect(drumPlayback(pattern, pin, seated.pins)[beat]).toEqual([note]);
+        expect(windDrum(pattern, seated)).toBe(seated);
+        const replacement = { beat, note: ((note + 1) % 3) as BellNote };
+        expect(setDrumPin(pattern, seated, replacement).pins).toEqual([replacement]);
       }
     }
+    const complete = pattern.notes.reduce(
+      (state, note, beat) => setDrumPin(pattern, state, { beat: beat as DrumBeat, note }),
+      EMPTY_DRUM_GALLERY,
+    );
+    const wrong = setDrumPin(pattern, complete, {
+      beat: 0,
+      note: ((pattern.notes[0] + 1) % 3) as BellNote,
+    });
+    expect(wrong.pins).toHaveLength(4);
+    expect(windDrum(pattern, wrong)).toBe(wrong);
+    expect(windDrum(pattern, complete).open).toBe(true);
   });
 
   it('restores a seated pin on Continue and a solved latch after revisiting the Conservatory', () => {
@@ -84,22 +84,34 @@ describe('Drum Gallery rules', () => {
     off();
 
     const draft = validateSnapshot(flow.snapshot(16));
-    expect(draft.run.drumGallery).toEqual({ pin, open: false });
+    expect(draft.run.drumGallery).toEqual({ pin, pins: [pin], open: false });
     const continued = fresh();
     expect(continued.continueRun(draft)).toBe(true);
     expect(continued.operateDrumGallery(wind)).toBe(true);
-    expect(continued.drumGallery).toEqual({ pin, open: true });
+    expect(continued.drumGallery.open).toBe(false);
+    pattern.notes.forEach((note, beat) => {
+      if (beat !== pin.beat)
+        continued.operateDrumGallery({ kind: 'pin', pin: { beat: beat as DrumBeat, note } });
+    });
+    expect(continued.operateDrumGallery(wind)).toBe(true);
+    const solved = continued.drumGallery;
+    expect(solved.open).toBe(true);
+    expect(solved.pins).toHaveLength(4);
     expect(continued.travelToFloor(2, 0)).toBe(true);
     expect(continued.drumGallery).toBe(EMPTY_DRUM_GALLERY);
     const restored = fresh();
     expect(restored.continueRun(validateSnapshot(continued.snapshot(24)))).toBe(true);
     expect(restored.travelToFloor(3, 0)).toBe(true);
-    expect(restored.drumGallery).toEqual({ pin, open: true });
+    expect(restored.drumGallery).toEqual(solved);
     expect(restored.operateDrumGallery(fit)).toBe(false);
 
     const legacy = fresh();
     expect(legacy.continueRun({ ...draft, contentVersion: DRUM_GALLERY_VERSION - 1 })).toBe(true);
     expect(legacy.operateDrumGallery(wind)).toBe(false);
+    expect(
+      validateSnapshot({ ...draft, run: { ...draft.run, drumGallery: { pin, open: true } } }).run
+        .drumGallery,
+    ).toEqual({ pin, open: true });
   });
 
   it('rejects an imported open grille whose pin plays the wrong note', () => {

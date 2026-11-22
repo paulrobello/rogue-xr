@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import type { LogbookEntry } from '../rules/logbook.ts';
 import { type PrismChannel, prismOrder, type StoredPrismState } from '../rules/prism-signal.ts';
 import { ClockInscription } from './clock-inscription.ts';
 import type { FloorWorld } from './floor-world.ts';
@@ -9,6 +10,7 @@ import { findPuzzleMount } from './puzzle-placement.ts';
 type PrismAction =
   | { action: 'turn' }
   | { action: 'exhibit' }
+  | { action: 'clue' }
   | { action: 'receiver'; channel: PrismChannel };
 type Control = { node: THREE.Object3D; action: PrismAction };
 export type PrismPick = (PrismAction & { distance: number }) | null;
@@ -50,6 +52,14 @@ export class PrismAnnex {
   readonly room: number;
   readonly clueRoom: number;
   readonly annexRoom: number;
+  clueEntry(): LogbookEntry {
+    return {
+      id: 'prism-annex',
+      title: 'Prism Annex',
+      body: `${this.order.map((channel) => SIGILS[channel]).join('  ·  ')}\nTurn the prism. Latch each lit mark.`,
+      origin: 'Prism Annex · wall inscription',
+    };
+  }
   private readonly gate = new THREE.Group();
   private readonly display = new THREE.Group();
   private displayControl?: THREE.Object3D;
@@ -331,6 +341,26 @@ export class PrismAnnex {
   }
 
   pick(origin: THREE.Vector3, direction: THREE.Vector3): PrismPick {
+    if (this.clue && this.world.current === this.clueRoom) {
+      this.clue.object.updateWorldMatrix(true, true);
+      this.ray.set(origin, direction);
+      const hit = this.ray.intersectObject(this.clue.object, true)[0];
+      if (hit) {
+        let blocked = false;
+        for (const box of this.world.colliders[this.clueRoom]) {
+          this.box.min.fromArray(box.min);
+          this.box.max.fromArray(box.max);
+          if (
+            !this.box.containsPoint(hit.point) &&
+            this.ray.ray.intersectBox(this.box, this.point) &&
+            this.point.distanceTo(origin) < hit.distance - 0.035
+          )
+            blocked = true;
+          if (blocked) break;
+        }
+        if (!blocked) return { action: 'clue', distance: hit.distance };
+      }
+    }
     if (this.world.current === this.annexRoom && this.displayControl) {
       this.display.updateWorldMatrix(true, true);
       this.ray.set(origin, direction);
@@ -363,6 +393,12 @@ export class PrismAnnex {
   }
 
   near(point: THREE.Vector3, reach: number): PrismPick {
+    if (
+      this.world.current === this.clueRoom &&
+      this.clue &&
+      this.box.setFromObject(this.clue.object).distanceToPoint(point) <= reach
+    )
+      return { action: 'clue', distance: this.box.distanceToPoint(point) };
     if (this.world.current === this.annexRoom && this.displayControl) {
       const distance = this.box.setFromObject(this.displayControl).distanceToPoint(point);
       return distance <= reach ? { action: 'exhibit', distance } : null;

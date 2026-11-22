@@ -65,4 +65,4 @@ PRD: [P5](../PRD.md#p5--slice-content). Gate: `make checkall` + `make asset-chec
 ### P5-T13 — Physical: full run on Quest 3
 - Depends on: P5-T8, P5-T9, P5-T10, P5-T11, P5-T12.
 - Work: full seeded run on Quest 3 from title to workshop.
-- Verify: budgets held (72 Hz exploring, 45 fps or above in combat) with numbers recorded; physical evidence only.
+- Verify: budgets held (30 fps floor in exploration and combat, 72 Hz target) with numbers recorded; physical evidence only.

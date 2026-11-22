@@ -70,7 +70,10 @@ export interface DrumPin {
   readonly note: BellNote;
 }
 export interface DrumGalleryState {
+  /** Legacy single-spare representation. New saves use `pins`. */
   readonly pin: DrumPin | null;
+  /** Pins seated in the four beat sockets. Absent on legacy saves. */
+  readonly pins?: readonly DrumPin[];
   readonly open: boolean;
 }
 
@@ -418,7 +421,20 @@ export type PressureDials = readonly [PressureDial, PressureDial, PressureDial];
 
 export type PressureNoteId = 'dispatch' | 'A' | 'B' | 'C';
 
-export type LogbookClueId = PressureNoteId | 'reliquary-rubbing';
+export const WORLD_LOGBOOK_CLUES = [
+  'prism-annex',
+  'plaque-dispatch',
+  'plaque-dispatch-return',
+  'plaque-speaking-pipes',
+  'plaque-speaking-pipes-receiver',
+  'plaque-valvehouse',
+  'plaque-valvehouse-supply',
+  'plaque-shadow-stencil',
+  'plaque-drum-gallery',
+] as const;
+
+export type WorldLogbookClueId = (typeof WORLD_LOGBOOK_CLUES)[number];
+export type LogbookClueId = PressureNoteId | 'reliquary-rubbing' | WorldLogbookClueId;
 
 export interface LogbookEntry {
   readonly id: LogbookClueId;

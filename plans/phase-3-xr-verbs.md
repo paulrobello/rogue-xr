@@ -40,4 +40,4 @@ PRD: [P3](../PRD.md#p3--xr-combat-verbs). Gate: `make checkall`. Depends on [Pha
 ### P3-T8 — Physical: combat verbs on Quest 3
 - Depends on: P3-T3, P3-T4, P3-T6.
 - Work: full greybox fight seated with controllers.
-- Verify: Paul's check of fling feel, dice readability and sigil drawability; combat measured at 45 fps or above; recorded as physical evidence.
+- Verify: Paul's check of fling feel, dice readability and sigil drawability; combat measured at 30 fps or above, targeting 72 Hz; recorded as physical evidence.

@@ -3,7 +3,12 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { derivedFiles as corridorFiles } from '../../assets-source/rooms/corridor/provenance.json';
 import { derivedFiles as vaultFiles } from '../../assets-source/rooms/guardian-vault/provenance.json';
 import { GREYBOX_TEMPLATES, parseRoomTemplate, type RoomTemplate } from '../content/rooms.ts';
-import { dressCandleFlames, dressFireplace } from './fireplace.ts';
+import {
+  dressCandleFlames,
+  dressFireplace,
+  HALL_CANDLE_NICHES,
+  removeHallCandleNiches,
+} from './fireplace.ts';
 import { closeLanternRoofs } from './lantern-roofs.ts';
 import {
   configureLightmapTexture,
@@ -244,11 +249,10 @@ export interface StudyAsset {
  */
 /** Seat boundary wall faces on their own side of a shared room plane. Keep floor and ceiling edges. */
 function seatBakedWalls(scene: THREE.Object3D, template: RoomTemplate): void {
-  const shell = scene.getObjectByName(template.id);
   const { min, max } = template.footprint;
   const inset = 0.003;
   const exact = 0.0001;
-  shell?.traverse((node) => {
+  const seatWall = (node: THREE.Object3D) => {
     if (!(node instanceof THREE.Mesh)) return;
     const position = node.geometry.getAttribute('position');
     const normal = node.geometry.getAttribute('normal');
@@ -265,7 +269,82 @@ function seatBakedWalls(scene: THREE.Object3D, template: RoomTemplate): void {
       }
     }
     position.needsUpdate = true;
+  };
+  scene.getObjectByName(template.id)?.traverse(seatWall);
+  for (const door of template.doors)
+    scene.getObjectByName(`door-plug-${door.id}`)?.traverse(seatWall);
+}
+
+/** Baked wallpaper underneath a removed niche retains its enclosure shadow in UV1. */
+function repairHallNicheIrradiance(scene: THREE.Object3D, material: THREE.MeshStandardMaterial) {
+  const wallpaper: THREE.Mesh[] = [];
+  scene.getObjectByName('hall')?.traverse((node) => {
+    if (node instanceof THREE.Mesh && node.material === material) wallpaper.push(node);
   });
+  scene.updateMatrixWorld(true);
+  const ray = new THREE.Raycaster();
+  const number = (value: number) => value.toFixed(6);
+  const patches = HALL_CANDLE_NICHES.flatMap(([x, z]) => {
+    const northSouth = Math.abs(z) === 5;
+    const inward = new THREE.Vector3(
+      northSouth ? 0 : -Math.sign(x),
+      0,
+      northSouth ? -Math.sign(z) : 0,
+    );
+    const along = northSouth ? x : z;
+    const fixed = northSouth ? z : x;
+    const sample = (offset: number, y: number) => {
+      const start = new THREE.Vector3(northSouth ? x + offset : x, y, northSouth ? z : z + offset);
+      ray.set(start.add(inward), inward.clone().negate());
+      return ray.intersectObjects(wallpaper, false)[0]?.uv1;
+    };
+    const corners = [
+      sample(-0.66, 1.32),
+      sample(-0.66, 2.6),
+      sample(0.66, 1.32),
+      sample(0.66, 2.6),
+    ];
+    if (!corners.every((uv) => uv !== undefined)) return [];
+    const [leftLow, leftHigh, rightLow, rightHigh] = corners.map(
+      (uv) => `vec2(${number(uv.x)}, ${number(uv.y)})`,
+    );
+    const horizontal = northSouth ? 'x' : 'z';
+    const depth = northSouth ? 'z' : 'x';
+    return [
+      `{
+      float along = vNichePosition.${horizontal} - (${number(along)});
+      float edge = abs(vNichePosition.${depth} - (${number(fixed)}));
+      float y = vNichePosition.y;
+      float blend = (1.0 - smoothstep(0.39, 0.53, abs(along)))
+        * smoothstep(1.32, 1.43, y) * (1.0 - smoothstep(2.45, 2.6, y));
+      if (edge < 0.01 && blend > 0.0) {
+        float height = clamp((y - 1.32) / 1.28, 0.0, 1.0);
+        vec3 leftLight = texture2D(lightMap, mix(${leftLow}, ${leftHigh}, height)).rgb;
+        vec3 rightLight = texture2D(lightMap, mix(${rightLow}, ${rightHigh}, height)).rgb;
+        vec3 wallLight = mix(leftLight, rightLight, clamp((along + 0.66) / 1.32, 0.0, 1.0));
+        lightMapIrradiance = mix(lightMapIrradiance, wallLight * lightMapIntensity, blend);
+      }
+    }`,
+    ];
+  });
+  if (!patches.length) return;
+  const baked = material.onBeforeCompile;
+  material.customProgramCacheKey = () => `baked-hall-niche:${patches.join('')}`;
+  material.onBeforeCompile = (shader, renderer) => {
+    baked(shader, renderer);
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vNichePosition;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvNichePosition = position;');
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vNichePosition;')
+      .replace(
+        '#include <lights_fragment_maps>',
+        THREE.ShaderChunk.lights_fragment_maps.replace(
+          'irradiance += lightMapIrradiance;',
+          `${patches.join('\n')}\nirradiance += lightMapIrradiance;`,
+        ),
+      );
+  };
 }
 
 export async function loadStudyAsset(options: {
@@ -344,7 +423,27 @@ export async function loadStudyAsset(options: {
     if (options.envMap) material.envMap = options.envMap;
     material.envMapIntensity = slot.reflectsProbe ? STUDY_ENV_INTENSITY : 0;
   }
+  const frameMaterials = new Map<THREE.MeshStandardMaterial, THREE.MeshStandardMaterial>();
+  for (const door of study.template.doors) {
+    gltf.scene.getObjectByName(`door-frame-${door.id}`)?.traverse((node) => {
+      if (!(node instanceof THREE.Mesh) || !(node.material instanceof THREE.MeshStandardMaterial))
+        return;
+      const source = node.material;
+      let twoSided = frameMaterials.get(source);
+      if (!twoSided) {
+        twoSided = bakedRoomMaterial(source.clone());
+        twoSided.side = THREE.DoubleSide;
+        frameMaterials.set(source, twoSided);
+      }
+      node.material = twoSided;
+    });
+  }
   // After the lightmap binding, which wants uv1 on every mesh: the fire is unlit.
+  if (id === 'hall') {
+    removeHallCandleNiches(gltf.scene);
+    const wallpaper = slots.get('hall_wallpaper');
+    if (wallpaper) repairHallNicheIrradiance(gltf.scene, wallpaper);
+  }
   const fire = dressFireplace(id, gltf.scene, flameSlot, options.reducedMotion ?? false);
   const candles =
     id === 'hall' ? dressCandleFlames(gltf.scene, flameSlot, options.reducedMotion ?? false) : null;
@@ -371,6 +470,7 @@ export async function loadStudyAsset(options: {
         if ((node as THREE.Mesh).isMesh) (node as THREE.Mesh).geometry.dispose();
       });
       for (const material of slots.values()) material.dispose();
+      for (const material of frameMaterials.values()) material.dispose();
       fire?.dispose();
       candles?.material.dispose();
       for (const texture of owned) texture.dispose();

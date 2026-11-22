@@ -4,6 +4,8 @@
  * 2026-11-10 (`../mux-xr/src/xr/scene.ts`, FACE_BUTTONS), and nothing in this game reads X or Y.
  */
 export const MENU_BUTTON = { side: 'left', index: 5 } as const;
+/** The left controller's X face button opens the exploration map directly. */
+export const MAP_BUTTON = { side: 'left', index: 4 } as const;
 
 /**
  * Turns a polled button state into presses: `step` is true only on the frame the button goes down.

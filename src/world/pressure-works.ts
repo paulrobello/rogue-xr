@@ -128,6 +128,11 @@ export class PressureWorks {
   private drawerModel?: THREE.Object3D;
   private leverModel?: THREE.Object3D;
   private goldModel?: THREE.Object3D;
+  private readonly drawerRunners: {
+    mesh: THREE.Mesh;
+    start: number;
+    closedLength: number;
+  }[] = [];
   private drawerRest = 0.34;
   private readonly enabledTargets: THREE.Object3D[] = [];
   private readonly housing: Box | undefined;
@@ -307,6 +312,7 @@ export class PressureWorks {
     this.fallbackGeometries.push(drawerBody.geometry);
     drawerBody.position.set(0, 0.23, 0.34);
     this.drawer.add(drawerBody);
+    this.fitDrawerRunners(this.fallbackVisuals, metal, 0.34, 0.094, 0.13, 0.38);
     for (let i = 0; i < 3; i++) {
       const cog = new THREE.Mesh(new THREE.TorusGeometry(0.09 + i * 0.012, 0.022, 6, 12), metal);
       this.fallbackGeometries.push(cog.geometry);
@@ -518,6 +524,13 @@ export class PressureWorks {
         this.leverModel = clone.getObjectByName('primer-lever');
         this.goldModel = clone.getObjectByName('reward-cogs');
         this.drawerRest = this.drawerModel?.position.z ?? 0.34;
+        const alloy = new THREE.MeshStandardMaterial({
+          color: PALETTE.brass,
+          metalness: 0.7,
+          roughness: 0.42,
+        });
+        this.fallbackMaterials.push(alloy);
+        this.fitDrawerRunners(clone, alloy, 0.46, 0.224, 0.32, 0.29);
         this.fallbackVisuals.visible = false;
         continue;
       }
@@ -647,8 +660,33 @@ export class PressureWorks {
     this.steamMaterial.uniforms.uOpacity.value = opacity * (this.motionEnabled ? 1 : 0.5);
   }
 
+  private fitDrawerRunners(
+    parent: THREE.Object3D,
+    material: THREE.Material,
+    halfSpan: number,
+    y: number,
+    start: number,
+    closedLength: number,
+  ): void {
+    const geometry = new THREE.BoxGeometry(0.06, 0.045, 1);
+    this.fallbackGeometries.push(geometry);
+    for (const x of [-halfSpan, halfSpan]) {
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.name = 'pressure-drawer-runner';
+      mesh.position.set(x, y, start + closedLength / 2);
+      mesh.scale.z = closedLength;
+      parent.add(mesh);
+      this.drawerRunners.push({ mesh, start, closedLength });
+    }
+  }
+
   private applyMechanismPose(): void {
     if (this.drawerModel) this.drawerModel.position.z = this.drawerRest + this.drawer.position.z;
+    for (const { mesh, start, closedLength } of this.drawerRunners) {
+      const length = closedLength + this.drawer.position.z;
+      mesh.scale.z = length;
+      mesh.position.z = start + length / 2;
+    }
     if (this.leverModel) this.leverModel.rotation.x = this.primer.rotation.x;
     this.compartmentTargets[2].position.z = 0.53 + this.drawer.position.z;
   }

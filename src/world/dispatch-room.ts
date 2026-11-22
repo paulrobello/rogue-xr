@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { dispatchDestination, type StoredDispatchState } from '../rules/dispatch.ts';
 import { ClockInscription } from './clock-inscription.ts';
 import type { FloorWorld } from './floor-world.ts';
+import { DOOR_HEIGHT } from './floor-world.ts';
 import type { InteriorPlacement } from './interior-furnishings.ts';
 import type { PbrSet } from './materials.ts';
 import { findPuzzleMount, type PuzzleMount } from './puzzle-placement.ts';
@@ -12,14 +13,18 @@ export interface DispatchPick {
   readonly distance: number;
 }
 
-const CLOSED_Y = 1.1;
-const OPEN_Y = -1.15;
+const CLOSED_Y = DOOR_HEIGHT / 2;
+const OPEN_Y = -DOOR_HEIGHT / 2 - 0.05;
 const ROUTE_X = [-0.34, 0, 0.34] as const;
 const TRAVEL_SECONDS = 0.65;
+const SENDER_REST = 0.34;
+const SENDER_BULKHEAD = -0.48;
+const RECEIVER_BULKHEAD = -0.28;
+const RECEIVER_REST = 0.31;
 
 export class DispatchRoom {
   readonly object = new THREE.Group();
-  private readonly reply = new THREE.Group();
+  readonly reply = new THREE.Group();
   private readonly storage = new THREE.Group();
   private readonly gate = new THREE.Group();
   private readonly selectorNeedle = new THREE.Group();
@@ -43,6 +48,7 @@ export class DispatchRoom {
     metalness: 0.58,
     roughness: 0.42,
   });
+  private readonly conduit = this.copper.clone();
   private readonly wood = new THREE.MeshStandardMaterial({ color: 0xb9957f, roughness: 0.61 });
   private readonly signal = new THREE.MeshBasicMaterial({ color: 0x246f7a });
   private readonly button = new THREE.MeshStandardMaterial({
@@ -52,6 +58,7 @@ export class DispatchRoom {
   });
   private state: StoredDispatchState = { route: 0, sent: false, opened: false };
   private travel = 0;
+  private replyTravel = 0;
   private returned = false;
 
   static mount(
@@ -114,7 +121,8 @@ export class DispatchRoom {
     private readonly layout: NonNullable<FloorWorld['plan']['dispatchRoom']>,
     private readonly reducedMotion: boolean,
   ) {
-    this.resources.push(this.iron, this.copper, this.wood, this.signal, this.button);
+    this.conduit.side = THREE.DoubleSide;
+    this.resources.push(this.iron, this.copper, this.conduit, this.wood, this.signal, this.button);
   }
 
   private block(
@@ -192,10 +200,54 @@ export class DispatchRoom {
     this.controls.push({ node: this.sendButton, action: 'send' });
     this.block(this.object, [0.32, 0.12, 0.25], [0.02, 0.93, 0.18], this.iron);
     this.travelCapsule.add(capsule.clone(true));
-    this.travelCapsule.position.set(0.02, 1.05, 0.22);
-    this.travelCapsule.rotation.z = -Math.PI / 2;
+    this.travelCapsule.position.set(0.02, 1.05, SENDER_REST);
+    this.travelCapsule.rotation.x = Math.PI / 2;
     this.travelCapsule.scale.setScalar(0.72);
     this.object.add(this.travelCapsule);
+    this.fitCarrierTube(this.object, 'dispatch-intake', 0.02, -0.36, 0.22);
+  }
+
+  private fitCarrierTube(
+    parent: THREE.Group,
+    name: string,
+    x: number,
+    back: number,
+    front: number,
+  ): void {
+    const y = 1.05;
+    const radius = 0.12;
+    const trough = new THREE.CylinderGeometry(
+      radius,
+      radius,
+      front - back,
+      24,
+      1,
+      true,
+      -Math.PI / 2 - 0.18,
+      Math.PI + 0.36,
+    ).rotateX(Math.PI / 2);
+    const tube = new THREE.Mesh(trough, this.conduit);
+    tube.name = name;
+    tube.position.set(x, y, (back + front) / 2);
+    parent.add(tube);
+    this.resources.push(trough);
+
+    const cuffGeometry = new THREE.CylinderGeometry(radius, radius, 0.085, 24, 1, true).rotateX(
+      Math.PI / 2,
+    );
+    const cuff = new THREE.Mesh(cuffGeometry, this.conduit);
+    cuff.position.set(x, y, back + 0.045);
+    parent.add(cuff);
+    this.resources.push(cuffGeometry);
+    const collarGeometry = new THREE.TorusGeometry(radius, 0.016, 8, 24);
+    for (const z of [back + 0.084, front - 0.035]) {
+      const ring = new THREE.Mesh(collarGeometry, this.copper);
+      ring.position.set(x, y, z);
+      parent.add(ring);
+    }
+    this.resources.push(collarGeometry);
+    for (const z of [back + 0.12, front - 0.09])
+      this.block(parent, [0.31, 0.034, 0.053], [x, y - radius - 0.012, z], this.iron);
   }
 
   private buildReturn(capsule: THREE.Object3D, route: number): void {
@@ -222,9 +274,12 @@ export class DispatchRoom {
     );
     this.replyCapsule.name = 'dispatch-capsule';
     this.replyCapsule.add(capsule.clone(true));
-    this.replyCapsule.position.set(0, 0.96, 0.14);
+    this.replyCapsule.position.set(0, 1.05, RECEIVER_REST);
+    this.replyCapsule.rotation.x = Math.PI / 2;
+    this.replyCapsule.scale.setScalar(0.72);
     this.replyCapsule.visible = false;
     this.reply.add(this.replyCapsule);
+    this.fitCarrierTube(this.reply, 'dispatch-delivery', 0, -0.36, 0.38);
     this.controls.push({ node: this.replyCapsule, action: 'open' });
   }
 
@@ -272,13 +327,14 @@ export class DispatchRoom {
     this.gate.name = 'dispatch-vault-shutter';
     this.gate.position.set(door.world[0], CLOSED_Y, door.world[1]);
     this.gate.rotation.y = { N: 0, E: -Math.PI / 2, S: Math.PI, W: Math.PI / 2 }[door.facing];
-    this.block(this.gate, [door.width - 0.036, 2.2, 0.085], [0, 0, 0], this.iron);
+    this.block(this.gate, [door.width - 0.036, DOOR_HEIGHT, 0.085], [0, 0, 0], this.iron);
     for (const side of [-1, 1]) {
-      this.block(this.gate, [0.1, 2.2, 0.13], [side * (door.width / 2 - 0.075), 0, 0], this.copper);
-      this.block(this.gate, [door.width - 0.08, 0.08, 0.11], [0, side * 1.04, 0], this.copper);
-    }
-    for (let rib = -3; rib <= 3; rib++) {
-      this.block(this.gate, [door.width - 0.17, 0.054, 0.13], [0, rib * 0.27, 0], this.iron);
+      this.block(
+        this.gate,
+        [0.1, DOOR_HEIGHT, 0.13],
+        [side * (door.width / 2 - 0.075), 0, 0],
+        this.copper,
+      );
     }
     this.world.roomGroups[this.layout.source.room].attach(this.gate);
   }
@@ -288,6 +344,7 @@ export class DispatchRoom {
       [this.wood, 'walnut'],
       [this.iron, 'brass-aged'],
       [this.copper, 'brass-polished'],
+      [this.conduit, 'brass-polished'],
       [this.button, 'brass-aged'],
     ] as const) {
       const source = set.materials.get(slot);
@@ -304,7 +361,10 @@ export class DispatchRoom {
 
   private availableControl(action: DispatchAction): boolean {
     return action === 'open'
-      ? this.world.current === this.layout.replyRoom && this.state.sent && !this.state.opened
+      ? this.world.current === this.layout.replyRoom &&
+          this.state.sent &&
+          !this.state.opened &&
+          this.replyTravel === 0
       : this.world.current === this.layout.source.room && !this.state.sent;
   }
 
@@ -351,6 +411,11 @@ export class DispatchRoom {
   sendFeedback(returned: boolean): void {
     this.returned = returned;
     this.travel = TRAVEL_SECONDS;
+    if (!returned && !this.reducedMotion) {
+      this.replyCapsule.visible = false;
+      this.replyCapsule.position.z = RECEIVER_BULKHEAD;
+      this.replyTravel = TRAVEL_SECONDS * 2;
+    }
     this.signal.color.setHex(returned ? 0xc14636 : 0x8adbe5);
   }
 
@@ -387,19 +452,34 @@ export class DispatchRoom {
       );
       if (this.state.opened && this.gate.visible) {
         this.gate.position.y = THREE.MathUtils.damp(this.gate.position.y, OPEN_Y, 9, dt);
-        if (this.gate.position.y < -1.09) this.gate.visible = false;
+        if (this.gate.position.y <= -DOOR_HEIGHT / 2) this.gate.visible = false;
       }
     }
-    if (this.travel <= 0) return;
-    this.travel = Math.max(0, this.travel - dt);
-    if (!this.reducedMotion) {
-      const fraction = 1 - this.travel / TRAVEL_SECONDS;
-      this.sendButton.position.z = -0.075 - 0.055 * Math.sin(Math.PI * Math.min(fraction * 2, 1));
-      this.travelCapsule.visible = this.returned || this.travel > 0;
-      const distance = this.returned ? Math.sin(fraction * Math.PI) : fraction;
-      this.travelCapsule.position.set(0.02, 1.05 + distance * 0.1, 0.22 - distance * 0.4);
+    if (this.travel > 0) {
+      this.travel = Math.max(0, this.travel - dt);
+      if (!this.reducedMotion) {
+        const fraction = 1 - this.travel / TRAVEL_SECONDS;
+        this.sendButton.position.z = -0.075 - 0.055 * Math.sin(Math.PI * Math.min(fraction * 2, 1));
+        const distance = this.returned ? Math.sin(fraction * Math.PI) : fraction;
+        this.travelCapsule.position.z = THREE.MathUtils.lerp(
+          SENDER_REST,
+          SENDER_BULKHEAD,
+          distance,
+        );
+        this.travelCapsule.visible = this.travel > 0 || this.returned;
+      }
+      if (this.travel === 0) this.signal.color.setHex(this.state.sent ? 0x55968d : 0x246f7a);
     }
-    if (this.travel === 0) this.signal.color.setHex(this.state.sent ? 0x55968d : 0x246f7a);
+    if (this.replyTravel > 0) {
+      this.replyTravel = Math.max(0, this.replyTravel - dt);
+      const fraction = 1 - Math.min(this.replyTravel / TRAVEL_SECONDS, 1);
+      this.replyCapsule.visible = fraction > 0 && this.state.sent && !this.state.opened;
+      this.replyCapsule.position.z = THREE.MathUtils.lerp(
+        RECEIVER_BULKHEAD,
+        RECEIVER_REST,
+        fraction,
+      );
+    }
   }
 
   dispose(): void {

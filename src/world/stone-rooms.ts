@@ -202,7 +202,11 @@ export function furnishStoneRoom(
       torchSockets.push(kitPart(torch, 'SocketTorchLight'));
     }
   }
-  for (const key of armoryDisplay ? [] : ['stone-torch-left', 'stone-torch-right']) {
+  const litDesk = room.getObjectByName('timber-writing-desk-study_wax') !== undefined;
+  const roomLights = room.userData.stoneSkylight
+    ? ['stone-torch-left']
+    : ['stone-torch-left', 'stone-torch-right'];
+  for (const key of armoryDisplay || litDesk ? [] : roomLights) {
     const mount = findPuzzleMount(
       world,
       [index],

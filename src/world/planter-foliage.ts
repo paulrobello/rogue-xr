@@ -1,18 +1,101 @@
 import * as THREE from 'three';
 
+function planterVessel(): THREE.Mesh {
+  const profile = [
+    [0, 0.008],
+    [0.112, 0.008],
+    [0.125, 0.017],
+    [0.135, 0.039],
+    [0.142, 0.052],
+    [0.163, 0.147],
+    [0.179, 0.239],
+    [0.181, 0.25],
+    [0.179, 0.257],
+    [0.182, 0.265],
+    [0.194, 0.276],
+    [0.198, 0.291],
+    [0.193, 0.306],
+    [0.183, 0.311],
+    [0.17, 0.304],
+    [0.164, 0.285],
+    [0.149, 0.11],
+    [0, 0.1],
+  ].map(([radius, height]) => new THREE.Vector2(radius, height));
+  const geometry = new THREE.LatheGeometry(profile, 36);
+  const colors: number[] = [];
+  const color = new THREE.Color();
+  for (let i = 0; i < geometry.getAttribute('position').count; i++) {
+    const row = i % profile.length;
+    const column = Math.floor(i / profile.length) % 36;
+    const worn = Math.sin(column * 1.57 + row * 2.23) * 0.025;
+    const shade = row >= 9 && row <= 14 ? 0.88 : row === 7 || row === 8 ? 0.51 : 0.72;
+    color.setRGB(shade + worn, shade * 0.81 + worn, shade * 0.66 + worn);
+    colors.push(color.r, color.g, color.b);
+  }
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  const material = new THREE.MeshStandardMaterial({
+    name: 'Stone ceramic',
+    color: 0xbc7651,
+    vertexColors: true,
+    roughness: 0.69,
+  });
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.name = 'planter-rolled-clay-pot';
+  return mesh;
+}
+
+function planterSoil(): THREE.Mesh {
+  const vertices: number[] = [0, 0.314, 0];
+  const dirt = new THREE.Color(0x382415);
+  const colors = dirt.toArray();
+  const indices: number[] = [];
+  const segments = 36;
+  const rings = 8;
+  const fleck = new THREE.Color(0x8b6b49);
+  const color = new THREE.Color();
+  for (let ring = 1; ring <= rings; ring++) {
+    const t = ring / rings;
+    for (let spoke = 0; spoke < segments; spoke++) {
+      const angle = (spoke * Math.PI * 2) / segments;
+      const radius = 0.174 * t;
+      const grain = (Math.sin(spoke * 76.17 + ring * 19.61) + 1) / 2;
+      const y = 0.314 - t * 0.028 + (grain - 0.5) * 0.017 * Math.sin(t * Math.PI);
+      vertices.push(radius * Math.cos(angle), y, radius * Math.sin(angle));
+      color.copy(dirt).lerp(fleck, grain ** 5 * 0.68);
+      colors.push(color.r, color.g, color.b);
+      const here = 1 + (ring - 1) * segments + spoke;
+      const next = 1 + (ring - 1) * segments + ((spoke + 1) % segments);
+      if (ring === 1) indices.push(0, next, here);
+      else indices.push(here - segments, next, here, here - segments, next - segments, next);
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  const mesh = new THREE.Mesh(
+    geometry,
+    new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 }),
+  );
+  mesh.name = 'planter-granular-soil';
+  return mesh;
+}
+
 /** Fits curved foliage inside the existing stone-kit planter and keeps it batched as one mesh. */
 export function dressPlanterFoliage(planter: THREE.Object3D): void {
   const placeholders: THREE.Mesh[] = [];
+  const vesselParts: THREE.Mesh[] = [];
   planter.traverse((object) => {
-    if (
-      object instanceof THREE.Mesh &&
-      !Array.isArray(object.material) &&
-      /^Stone (young )?leaves$/.test(object.material.name)
-    )
-      placeholders.push(object);
+    if (!(object instanceof THREE.Mesh) || Array.isArray(object.material)) return;
+    const name = object.material.name;
+    if (/^Stone (young )?leaves$/.test(name)) placeholders.push(object);
+    if (/^Stone (ceramic|soil|worn edges)$/.test(name)) vesselParts.push(object);
   });
   if (!placeholders.length) return;
   for (const object of placeholders) object.removeFromParent();
+  for (const object of vesselParts) object.removeFromParent();
+  planter.add(planterVessel(), planterSoil());
 
   const positions: number[] = [];
   const colors: number[] = [];

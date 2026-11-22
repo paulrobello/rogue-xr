@@ -20,6 +20,7 @@ type Pick = { readonly action: BorrowedLightControl; readonly distance: number }
 type Resource = { dispose(): void };
 type Mirror = {
   readonly glass: THREE.Group;
+  readonly label: THREE.Object3D;
   readonly from: THREE.Quaternion;
   readonly to: THREE.Quaternion;
   readonly index: THREE.Mesh;
@@ -118,6 +119,7 @@ export class BorrowedLight {
   ] as const;
   private readonly mirrors: readonly [Mirror, Mirror, Mirror];
   private readonly looseReflector: THREE.Mesh;
+  private readonly installLabel: THREE.Mesh;
   private readonly beams: THREE.Mesh[];
   private readonly tipLight: THREE.Mesh;
   private readonly projected: THREE.Mesh;
@@ -146,6 +148,7 @@ export class BorrowedLight {
     this.buildScreen();
     this.mirrors = [this.buildMirror(0, art), this.buildMirror(1, art), this.buildMirror(2, art)];
     this.mirrors[2].glass.visible = false;
+    this.mirrors[2].label.visible = false;
     const pedestal = this.inscription(
       'borrowed-light-reflector-pedestal',
       0.62,
@@ -172,19 +175,19 @@ export class BorrowedLight {
     );
     this.controls.push(pedestal, this.looseReflector);
     this.controlActions.push('take-reflector', 'take-reflector');
-    const install = this.inscription(
+    this.installLabel = this.inscription(
       'borrowed-light-install',
       0.55,
       'Reflector socket',
       'Select to install',
       'Then aim I, II, III',
     );
-    install.position.set(
+    this.installLabel.position.set(
       BORROWED_REFLECTOR[0],
       BORROWED_REFLECTOR[1] - 0.48,
       BORROWED_REFLECTOR[2] + 0.288,
     );
-    this.controls.push(install);
+    this.controls.push(this.installLabel);
     this.controlActions.push('install');
     this.buildReceiver();
     const reset = this.inscription(
@@ -401,12 +404,12 @@ export class BorrowedLight {
     );
     const pick = this.inscription(
       `borrowed-light-turn-${id}`,
-      0.47,
+      id === 2 ? 0.58 : 0.47,
       id === 0 ? 'Mirror I' : id === 1 ? 'Mirror II' : 'Mirror III',
       id === 0 ? 'Turn toward II' : id === 1 ? 'Turn toward III' : 'Aim at seal',
       id === 0 ? 'Follow the beam' : 'Select to turn',
     );
-    pick.position.set(x, y - 0.48, z + 0.288);
+    pick.position.set(x, y - (id === 2 ? 0.52 : 0.48), z + 0.288);
     this.controls.push(face, rim, pick);
     this.controlActions.push(id, id, id);
     this.box(
@@ -424,7 +427,13 @@ export class BorrowedLight {
       this.brass,
     );
     this.collider({ min: [x - 0.285, 0, z - 0.285], max: [x + 0.285, y + 0.235, z + 0.285] });
-    return { glass, from: new THREE.Quaternion(), to: new THREE.Quaternion(), index: pointer };
+    return {
+      glass,
+      label: pick,
+      from: new THREE.Quaternion(),
+      to: new THREE.Quaternion(),
+      index: pointer,
+    };
   }
 
   private buildReceiver(): void {
@@ -488,6 +497,8 @@ export class BorrowedLight {
       return;
     this.state = state;
     this.mirrors[2].glass.visible = state.reflector === true;
+    this.mirrors[2].label.visible = state.reflector === true;
+    this.installLabel.visible = state.reflector !== true;
     this.looseReflector.visible = !state.reflectorFound;
     const trace = traceBorrowedLight(this.seed, state.detents);
     this.aimAge = immediate || this.reducedMotion ? TURN_SECONDS : 0;

@@ -23,7 +23,7 @@ const FACING = { N: 0, E: -Math.PI / 2, S: Math.PI, W: Math.PI / 2 } as const;
 
 export class SpeakingPipes {
   readonly object = new THREE.Group();
-  private readonly receiver = new THREE.Group();
+  readonly receiver = new THREE.Group();
   private readonly cistern = new THREE.Group();
   private readonly gate = new THREE.Group();
   private readonly controls: { node: THREE.Object3D; pick: PipeAction; room: number }[] = [];
@@ -251,6 +251,7 @@ export class SpeakingPipes {
       this.button,
       'speaking-pipes-send',
     );
+    this.addPushButton(this.object, send, 'SEND');
     this.controls.push({ node: send, pick: { action: 'send' }, room: mount.room });
     this.place(this.object, mount, 0.34);
   }
@@ -355,8 +356,43 @@ export class SpeakingPipes {
       this.button,
       'speaking-pipes-replay',
     );
+    this.addPushButton(this.receiver, replay, 'REPLAY');
     this.controls.push({ node: replay, pick: { action: 'replay' }, room: mount.room });
     this.place(this.receiver, mount, 0.34);
+  }
+
+  private addPushButton(parent: THREE.Object3D, housing: THREE.Mesh, label: string): void {
+    housing.material = this.iron;
+    housing.scale.set(0.67, 0.7, 0.78);
+    const collar = this.mesh(
+      housing,
+      new THREE.TorusGeometry(0.068, 0.011, 8, 20),
+      this.copper,
+      `speaking-pipes-${label.toLowerCase()}-rim`,
+    );
+    collar.position.z = 0.077;
+    const plunger = this.mesh(
+      housing,
+      new THREE.CylinderGeometry(0.055, 0.062, 0.045, 12),
+      this.button,
+      `speaking-pipes-${label.toLowerCase()}-plunger`,
+    );
+    plunger.rotation.x = Math.PI / 2;
+    plunger.position.z = 0.087;
+    const caption = new ClockInscription(
+      `speaking-pipes-button-label-${label.toLowerCase()}`,
+      0.28,
+      label,
+      '',
+      '',
+    );
+    caption.object.position.set(
+      housing.position.x,
+      housing.position.y + 0.16,
+      housing.position.z + 0.057,
+    );
+    parent.add(caption.object);
+    this.resources.push(caption);
   }
 
   private buildWallLine(parent: THREE.Object3D, name: string): void {

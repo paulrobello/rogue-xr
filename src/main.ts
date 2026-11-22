@@ -107,6 +107,7 @@ import {
 } from './rules/difficulty.ts';
 import type { DrumControl } from './rules/drum-gallery.ts';
 import type { FloatElevatorControl } from './rules/float-elevator.ts';
+import type { LogbookEntry } from './rules/logbook.ts';
 import { floorSeedFor, parseLootKey, type RewardTier } from './rules/run.ts';
 import type { ShadowStencilControl } from './rules/shadow-stencil.ts';
 import { pipeTarget } from './rules/speaking-pipes.ts';
@@ -178,7 +179,7 @@ import { runVeil } from './world/veil.ts';
 import { ComfortVignette } from './xr/comfort-vignette.ts';
 import { Locomotion, locomotionSettingsFrom } from './xr/locomotion.ts';
 import { LocomotionDrive } from './xr/locomotion-drive.ts';
-import { ButtonEdge, MENU_BUTTON } from './xr/menu-button.ts';
+import { ButtonEdge, MAP_BUTTON, MENU_BUTTON } from './xr/menu-button.ts';
 import { createXrRig } from './xr/session.ts';
 import { TeleportView } from './xr/teleport-view.ts';
 
@@ -1790,6 +1791,7 @@ const toggleMenu = (): boolean => {
   return ui.toggleMenu(camera);
 };
 const menuEdge = new ButtonEdge();
+const mapEdge = new ButtonEdge();
 const menuStick = createStickRadialNavigation<(typeof RUN_MENU_ITEMS)[number]['id'], 'right'>({
   menu: {
     get isOpen() {
@@ -2342,6 +2344,9 @@ function operateAlchemy(
   return !!result;
 }
 function operatePrism(hit: NonNullable<PrismPick>): boolean {
+  if (hit.action === 'clue') {
+    return Boolean(floor?.prismAnnex && flow.saveLogbookEntry(floor.prismAnnex.clueEntry()));
+  }
   const prism = floor?.prismAnnex;
   if (!prism) return false;
   if (hit.action === 'exhibit') {
@@ -2595,6 +2600,7 @@ function operateArmory(): boolean {
 
 function fieldHit(origin: THREE.Vector3, direction: THREE.Vector3) {
   if (!floor) return null;
+  const plaque = inspectInstructionalPlaque(origin, direction);
   const stair = floor.stairs?.pick(floor.world.current, origin, direction);
   const note = floor.notes?.pick(origin, direction);
   const machine = floor.pressure?.pick(origin, direction);
@@ -2633,6 +2639,7 @@ function fieldHit(origin: THREE.Vector3, direction: THREE.Vector3) {
   const drumGallery = floor.drumGallery?.pick(origin, direction);
   const armory = floor.armoryAlcove?.pick(origin, direction);
   const hits = [
+    ...(plaque ? [{ kind: 'logbook-plaque' as const, hit: plaque }] : []),
     ...(pendulum ? [{ kind: 'pendulum' as const, hit: pendulum }] : []),
     ...(borrowedLight ? [{ kind: 'borrowed-light' as const, hit: borrowedLight }] : []),
     ...(floatElevator ? [{ kind: 'float-elevator' as const, hit: floatElevator }] : []),
@@ -2669,6 +2676,95 @@ function fieldHit(origin: THREE.Vector3, direction: THREE.Vector3) {
   ];
   return hits.sort((a, b) => a.hit.distance - b.hit.distance)[0] ?? null;
 }
+
+const plaqueRay = new THREE.Raycaster();
+const plaqueBounds = new THREE.Box3();
+const plaqueContact = new THREE.Vector3();
+
+function inspectInstructionalPlaque(
+  origin: THREE.Vector3,
+  direction: THREE.Vector3,
+): (LogbookEntry & { readonly distance: number }) | null {
+  if (!floor) return null;
+  const { current, plan, colliders } = floor.world;
+  const candidates = [
+    [
+      'plaque-dispatch',
+      floor.dispatchRoom?.object,
+      plan.dispatchRoom?.source.room,
+      /^dispatch-route-scale$/,
+    ],
+    [
+      'plaque-dispatch-return',
+      floor.dispatchRoom?.reply,
+      plan.dispatchRoom?.replyRoom,
+      /^dispatch-routing-slip$/,
+    ],
+    [
+      'plaque-speaking-pipes',
+      floor.speakingPipes?.object,
+      plan.speakingPipes?.source.room,
+      /^speaking-pipes-transmitter-label$/,
+    ],
+    [
+      'plaque-speaking-pipes-receiver',
+      floor.speakingPipes?.receiver,
+      plan.speakingPipes?.receiverRoom,
+      /^speaking-pipes-(receiver|released)-label$/,
+    ],
+    [
+      'plaque-valvehouse',
+      floor.valvehouse?.controls,
+      plan.valvehouse?.source.room,
+      /^valvehouse-controls-sign$/,
+    ],
+    [
+      'plaque-valvehouse-supply',
+      floor.valvehouse?.supply,
+      plan.valvehouse?.supplyRoom,
+      /^valvehouse-supply-sign$/,
+    ],
+    [
+      'plaque-shadow-stencil',
+      floor.shadowStencil?.object,
+      plan.shadowStencil?.room,
+      /^shadow-stencil-instructions$/,
+    ],
+    [
+      'plaque-drum-gallery',
+      floor.drumGallery?.clueObject,
+      floor.drumGallery?.clueRoom,
+      /^drum-gallery-score-clue$/,
+    ],
+  ] as const;
+  plaqueRay.set(origin, direction);
+  plaqueRay.far = 4;
+  let best: (LogbookEntry & { readonly distance: number }) | null = null;
+  for (const [id, object, room, name] of candidates) {
+    if (!object || room !== current) continue;
+    const signs: THREE.Object3D[] = [];
+    object.updateWorldMatrix(true, true);
+    object.traverseVisible((node) => {
+      if (name.test(node.name) && typeof node.userData.labelText === 'string') signs.push(node);
+    });
+    const hit = plaqueRay.intersectObjects(signs, false)[0];
+    if (!hit || (best && best.distance <= hit.distance)) continue;
+    const blocked = colliders[current].some(({ min, max }) => {
+      plaqueBounds.min.fromArray(min);
+      plaqueBounds.max.fromArray(max);
+      return (
+        !plaqueBounds.containsPoint(hit.point) &&
+        plaqueRay.ray.intersectBox(plaqueBounds, plaqueContact) !== null &&
+        origin.distanceTo(plaqueContact) < hit.distance - 0.04
+      );
+    });
+    if (blocked) continue;
+    const [title, ...lines] = (hit.object.userData.labelText as string).split('\n');
+    const body = lines.filter(Boolean).join('\n');
+    if (body) best = { id, title, body, origin: title, distance: hit.distance };
+  }
+  return best;
+}
 const activatePickup = (
   origin: THREE.Vector3,
   direction: THREE.Vector3,
@@ -2678,6 +2774,8 @@ const activatePickup = (
   const pick = fieldHit(origin, direction);
   if (!pick) return false;
   switch (pick.kind) {
+    case 'logbook-plaque':
+      return flow.saveLogbookEntry(pick.hit);
     case 'pendulum':
       return operatePendulum(pick.hit);
     case 'borrowed-light':
@@ -2952,13 +3050,14 @@ const MAIN_HAND = 'right' as const;
 const OFF_HAND = 'left' as const;
 for (const index of [0, 1]) {
   const controller = renderer.xr.getController(index);
+  let gaugeGrip: THREE.Object3D | null = null;
   const bind = (
     type: 'squeezestart' | 'squeezeend' | 'selectstart' | 'selectend',
     control: 'squeeze' | 'trigger',
     pressed: boolean,
   ): void => {
     controller.addEventListener(type, (event) => {
-      if (busy()) return;
+      if (gaugeGrip || busy()) return;
       const side = (event as unknown as { data?: XRInputSource }).data?.handedness;
       if (side !== 'left' && side !== 'right') return;
       actions.emit({
@@ -2971,7 +3070,7 @@ for (const index of [0, 1]) {
   };
   controller.addEventListener('selectstart', () => {
     reliquarySelects.delete(controller);
-    if (!xr.presenting || !canOpenLoot()) return;
+    if (gaugeGrip || !xr.presenting || !canOpenLoot()) return;
     const { origin, direction } = controllerRay(controller);
     if (beginReliquaryTrace({ controller }, origin, direction)) reliquarySelects.add(controller);
   });
@@ -2981,13 +3080,15 @@ for (const index of [0, 1]) {
       endReliquaryTrace(true);
   });
   controller.addEventListener('disconnected', () => {
+    if (gaugeGrip) perf.releaseGauge(gaugeGrip);
+    gaugeGrip = null;
     reliquarySelects.delete(controller);
     const input = reliquaryInput;
     if (input && 'controller' in input.source && input.source.controller === controller)
       endReliquaryTrace(false);
   });
   controller.addEventListener('select', (event) => {
-    if (reliquarySelects.delete(controller) || busy()) return;
+    if (gaugeGrip || reliquarySelects.delete(controller) || busy()) return;
     if (!ui?.visible) {
       if (floor && canOpenLoot() && xr.presenting) {
         const { origin, direction } = controllerRay(controller);
@@ -3017,10 +3118,16 @@ for (const index of [0, 1]) {
   // Exploring, a squeeze with the hand at the card waiting over an open coffer grabs it.
   controller.addEventListener('squeezestart', (event) => {
     if (busy()) return;
-    const side = (event as unknown as { data?: XRInputSource }).data?.handedness;
-    if (!xr.presenting || (side !== 'left' && side !== 'right') || !canOpenLoot() || !floor) return;
+    const input = (event as unknown as { data?: XRInputSource }).data;
+    const side = input?.handedness;
+    if (!xr.presenting || (side !== 'left' && side !== 'right')) return;
     const hand = xr.grips()[side];
     if (!hand) return;
+    if (!input?.hand && !reliquaryInput && perf.grabGauge(controller, hand)) {
+      gaugeGrip = hand;
+      return;
+    }
+    if (!canOpenLoot() || !floor) return;
     const position = hand.getWorldPosition(new THREE.Vector3());
     const note = floor.notes?.near(position, GRAB_REACH)[0];
     if (note) {
@@ -3104,6 +3211,10 @@ for (const index of [0, 1]) {
       pullMark = null;
   });
   bind('squeezeend', 'squeeze', false);
+  controller.addEventListener('squeezeend', () => {
+    if (gaugeGrip) perf.releaseGauge(gaugeGrip);
+    gaugeGrip = null;
+  });
   bind('selectstart', 'trigger', true);
   bind('selectend', 'trigger', false);
 }
@@ -3513,6 +3624,7 @@ renderer.setAnimationLoop((time, frame) => {
       // behind a player who entered facing elsewhere.
       ui?.recenter(camera);
     }
+    if (mapEdge.step(xr.buttonPressed(MAP_BUTTON.side, MAP_BUTTON.index))) ui?.openMap(camera);
     if (menuEdge.step(xr.buttonPressed(MENU_BUTTON.side, MENU_BUTTON.index))) toggleMenu();
     const { left, right } = xr.sticks();
     // Locomotion reports +Y forward; the shared radial uses WebXR's raw -Y for up.
@@ -3670,6 +3782,14 @@ renderer.setAnimationLoop((time, frame) => {
       if (distance !== null)
         laserHits[side] =
           laserHits[side] === null ? distance : Math.min(laserHits[side] as number, distance);
+    }
+  }
+  if (xr.presenting && perf.fpsCounter) {
+    const rays = xr.rays();
+    for (const side of ['left', 'right'] as const) {
+      const ray = rays[side];
+      const distance = ray && perf.gaugeHitDistance(ray);
+      if (distance !== null) laserHits[side] = Math.min(laserHits[side] ?? Infinity, distance);
     }
   }
   if (audio) {

@@ -1,4 +1,4 @@
-import { createPerfGaugeWidget, type PerfGaugeWidget } from '@par/xr-workspace';
+import { createPerfGaugeWidget, createPointer, type PerfGaugeWidget } from '@par/xr-workspace';
 import * as THREE from 'three';
 import type { RateSample } from './frame-stats.ts';
 
@@ -13,8 +13,11 @@ const WRIST_LIFT = 0.1;
 
 export interface PerfGauge {
   setSample(sample: RateSample): void;
-  /** Positions the gauge: above the left wrist when tracked, else floating in front of the view. */
+  /** Updates the wrist dock or faces a repositioned gauge toward the viewer. */
   update(viewCamera: THREE.Camera): void;
+  hitDistance(source: THREE.Object3D): number | null;
+  beginGrab(source: THREE.Object3D, grip: THREE.Object3D): boolean;
+  endGrab(grip: THREE.Object3D): void;
   setVisible(visible: boolean): void;
   readonly visible: boolean;
   dispose(): void;
@@ -46,6 +49,8 @@ export function mountPerfGauge(
   const side = options.side ?? 'left';
   const targetHz = options.targetHz ?? DEFAULT_TARGET_HZ;
   let visible = true;
+  let heldBy: THREE.Object3D | null = null;
+  let repositioned = false;
   const widget: PerfGaugeWidget = createPerfGaugeWidget(null, {
     onClose: () => {
       visible = false;
@@ -53,6 +58,14 @@ export function mountPerfGauge(
     },
   });
   rig.add(widget.root);
+  const pointer = createPointer({ far: 3 });
+  const targets = [widget.root];
+
+  function hitDistance(source: THREE.Object3D): number | null {
+    if (!visible || !renderer.xr.isPresenting || heldBy) return null;
+    widget.root.updateWorldMatrix(true, true);
+    return pointer.castFrom(source, targets)?.distance ?? null;
+  }
 
   const sources = [0, 1].map((index) => ({
     controller: renderer.xr.getController(index),
@@ -91,6 +104,19 @@ export function mountPerfGauge(
       if (!visible) return;
       widget.update(performance.now());
       viewCamera.getWorldPosition(cameraPosition);
+      if (!renderer.xr.isPresenting && repositioned) {
+        if (heldBy) rig.attach(widget.root);
+        heldBy = null;
+        repositioned = false;
+      }
+      if (repositioned) {
+        widget.root.getWorldPosition(worldPosition);
+        lookMatrix.lookAt(cameraPosition, worldPosition, up);
+        worldQuaternion.setFromRotationMatrix(lookMatrix);
+        (heldBy ?? rig).getWorldQuaternion(parentQuaternion).invert();
+        widget.root.quaternion.copy(parentQuaternion.multiply(worldQuaternion));
+        return;
+      }
       const anchor = renderer.xr.isPresenting ? wristAnchor() : null;
       if (anchor) {
         anchor.getWorldPosition(worldPosition);
@@ -108,6 +134,19 @@ export function mountPerfGauge(
       rig.getWorldQuaternion(parentQuaternion).invert();
       widget.root.quaternion.copy(parentQuaternion.multiply(worldQuaternion));
     },
+    hitDistance,
+    beginGrab(source, grip) {
+      if (hitDistance(source) === null) return false;
+      grip.attach(widget.root);
+      heldBy = grip;
+      repositioned = true;
+      return true;
+    },
+    endGrab(grip) {
+      if (heldBy !== grip) return;
+      rig.attach(widget.root);
+      heldBy = null;
+    },
     setVisible(next) {
       visible = next;
       widget.root.visible = next;
@@ -117,7 +156,7 @@ export function mountPerfGauge(
         source.controller.removeEventListener('connected', connected);
         source.controller.removeEventListener('disconnected', disconnected);
       }
-      rig.remove(widget.root);
+      widget.root.removeFromParent();
       widget.dispose();
     },
   };

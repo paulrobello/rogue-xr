@@ -7,7 +7,7 @@ import { RunFlow } from '../src/flow/flow.ts';
 import { FlowUi, type FlyTarget, tableDistanceCell } from '../src/flow/panels.ts';
 import { DEFAULT_SETTINGS, type Settings } from '../src/persist/db.ts';
 import { createWorkshop } from '../src/rules/workshop.ts';
-import { ButtonEdge, MENU_BUTTON } from '../src/xr/menu-button.ts';
+import { ButtonEdge, MAP_BUTTON, MENU_BUTTON } from '../src/xr/menu-button.ts';
 
 const SEED = 'BRASS042';
 
@@ -196,6 +196,7 @@ describe('in-run menu placement', () => {
 describe('XR menu button', () => {
   it('is the left Y button, and a press toggles once however long it is held', () => {
     expect(MENU_BUTTON).toEqual({ side: 'left', index: 5 });
+    expect(MAP_BUTTON).toEqual({ side: 'left', index: 4 });
     const edge = new ButtonEdge();
     expect([false, true, true, true, false, true].map((p) => edge.step(p))).toEqual([
       false,

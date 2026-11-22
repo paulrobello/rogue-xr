@@ -12,7 +12,11 @@ export interface DrumPattern {
   readonly gap: DrumBeat;
 }
 
-export const EMPTY_DRUM_GALLERY: DrumGalleryState = { pin: null, open: false };
+export const EMPTY_DRUM_GALLERY: DrumGalleryState = { pin: null, pins: [], open: false };
+
+function placedPins(state: DrumGalleryState): readonly DrumPin[] {
+  return state.pins ?? (state.pin ? [state.pin] : []);
+}
 
 export function readDrumGallery(run: Pick<RunState, 'drumGallery'>): DrumGalleryState {
   return run.drumGallery ?? EMPTY_DRUM_GALLERY;
@@ -28,31 +32,51 @@ function samePin(a: DrumPin, b: DrumPin): boolean {
   return a.beat === b.beat && a.note === b.note;
 }
 
-/** Select an empty socket to move the spare, or select the seated spare to lift it. */
+/** Tapping an occupied socket lifts its pin. Selecting another pitch changes that beat. */
 export function setDrumPin(
   pattern: DrumPattern,
   state: DrumGalleryState,
   pin: DrumPin,
 ): DrumGalleryState {
-  if (state.open || (pin.beat !== pattern.gap && pattern.notes[pin.beat] === pin.note))
-    return state;
-  return { pin: state.pin && samePin(state.pin, pin) ? null : { ...pin }, open: false };
+  if (state.open || pin.beat >= pattern.notes.length) return state;
+  const pins = placedPins(state);
+  const next = pins.filter((placed) => placed.beat !== pin.beat);
+  if (!pins.some((placed) => samePin(placed, pin))) next.push({ ...pin });
+  return { pin: next.at(-1) ?? null, pins: next, open: false };
 }
 
-/** Returns the sounding reeds per beat, including both notes if the spare makes a chord. */
+/** Older solved saves retain the three factory pins and the fitted spare. */
 export function drumPlayback(
   pattern: DrumPattern,
   pin: DrumPin | null,
+  pins?: readonly DrumPin[],
 ): readonly (readonly BellNote[])[] {
-  return pattern.notes.map((note, beat) => [
-    ...(beat === pattern.gap ? [] : [note]),
-    ...(pin?.beat === beat ? [pin.note] : []),
-  ]);
+  if (pins === undefined) {
+    return pattern.notes.map((note, beat) => [
+      ...(beat === pattern.gap ? [] : [note]),
+      ...(pin?.beat === beat ? [pin.note] : []),
+    ]);
+  }
+  const seated = pins;
+  return pattern.notes.map((_, beat) => {
+    const placed = seated.find((pin) => pin.beat === beat);
+    return placed ? [placed.note] : [];
+  });
 }
 
-/** The lock tests the fitted pin when the player winds the cylinder. */
+/** The lock tests the complete phrase when the player winds the cylinder. */
 export function windDrum(pattern: DrumPattern, state: DrumGalleryState): DrumGalleryState {
-  const note = pattern.notes[pattern.gap];
-  if (state.open || !state.pin || !samePin(state.pin, { beat: pattern.gap, note })) return state;
-  return { ...state, open: true };
+  if (state.pins === undefined) {
+    const note = pattern.notes[pattern.gap];
+    if (state.open || !state.pin || !samePin(state.pin, { beat: pattern.gap, note })) return state;
+    return { ...state, open: true };
+  }
+  if (state.open) return state;
+  const pins = placedPins(state);
+  if (pins.length !== pattern.notes.length) return state;
+  if (
+    !pattern.notes.every((note, beat) => pins.some((pin) => pin.beat === beat && pin.note === note))
+  )
+    return state;
+  return { ...state, pins, pin: pins.at(-1) ?? null, open: true };
 }

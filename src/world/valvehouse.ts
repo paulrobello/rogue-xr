@@ -387,6 +387,16 @@ export class Valvehouse {
     this.pipe(this.controls, [-0.56, 0.69, 0.11], [-0.22, 0.69, 0.11], 0.061);
     this.pipe(this.controls, [-0.36, 0.67, 0.11], [-0.36, 1.19, 0.11], 0.053);
     this.pipe(this.controls, [0.08, 0.75, 0.11], [0.08, 1.15, 0.11], 0.045);
+    this.boxPart(this.controls, [1.16, 0.06, 0.08], [0, 0.69, 0.04], this.dark);
+    for (const [x, y] of [
+      [-0.56, 0.69],
+      [-0.22, 0.69],
+      [-0.36, 1.19],
+      [0.08, 1.15],
+    ] as const)
+      this.disk(this.controls, 0.085, 0.045, [x, y, 0.14], this.bronze);
+    this.pipe(this.controls, [-0.56, 0.69, 0.11], [-0.56, 0.69, 0.04], 0.045, this.steel);
+    this.pipe(this.controls, [0.08, 1.15, 0.11], [0.08, 1.15, 0.04], 0.04, this.steel);
     this.actions.set('seat', this.joint);
     this.actions.set('test', this.lever);
   }

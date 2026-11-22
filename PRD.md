@@ -18,7 +18,7 @@ The first deliverable is a **vertical slice**: one floor at final visual quality
 
 1. G1 — A complete seeded run of the slice plays from title screen to death or victory on a physical Quest 3, seated, with controllers.
 2. G2 — The look reads as premium: baked-lit brass, walnut and stained-glass rooms, full-scale automatons, painted card art, all in one consistent style approved by Paul.
-3. G3 — Target 72 fps with a 50 fps floor in exploration and seated combat on Quest. Prioritize clear text when choosing framebuffer scale.
+3. G3 — Target 72 fps with a 30 fps floor in exploration and seated combat on Quest. Prioritize clear text when choosing framebuffer scale.
 4. G4 — The VR verbs are the fun: playing cards from the hand, rolling real dice and drawing sigils each feel physical and readable.
 5. G5 — Every run is reproducible from a visible, shareable seed: same seed, same floor, same draws, same dice results.
 6. G6 — The game is fully playable in a desktop browser with mouse and keyboard, running the same actions, for development and tests.
@@ -98,8 +98,8 @@ The house Blender export guide has no lightmap section, so this project defines 
 
 | Item | Budget |
 | --- | --- |
-| Exploration frame | 13.9 ms target (72 Hz), 20 ms floor (50 fps). Reprojected frames do not count |
-| Combat frame | 20 ms floor (50 fps), 72 Hz target |
+| Exploration frame | 13.9 ms target (72 Hz), 33.3 ms maximum frame time (30 fps floor). Reprojected frames do not count |
+| Combat frame | 13.9 ms target (72 Hz), 33.3 ms maximum frame time (30 fps floor) |
 | Framebuffer scale | chosen at session start (1.2 default for legibility, with saved settings and URL overrides); foveation 0.5 re-asserted every frame |
 | Visible triangles | at most 350k per eye, both eyes counted, in the worst combat view |
 | Room template | at most 100k triangles, at most 16 materials, textures up to 2048 px KTX2 |
@@ -172,7 +172,7 @@ Acceptance:
 - Same seed gives the same floor graph and placements (unit test over 1,000 seeds: every room reachable, no overlapping rooms, door pairs consistent).
 - A seeded floor can be walked start to exit on desktop and in XR.
 - Locomotion comfort options persist in IndexedDB.
-- Physical: comfortable seated locomotion on Quest; exploration stays at or above 50 fps in greybox, targeting 72 Hz.
+- Physical: comfortable seated locomotion on Quest; exploration stays at or above 30 fps in greybox, targeting 72 Hz.
 
 ### P2 — Combat rules engine (desktop-playable)
 
@@ -195,7 +195,7 @@ Acceptance:
 - In Rapier unit tests, the seeded-face correction always shows the RNG result, with no visible snap above a 100 ms ease.
 - $P recognizer tests: the reference traces of each of the 5 sigils score ≥ 0.85, and cross-sigil confusion stays below the minimum score.
 - A full fight is playable in XR with controllers and on desktop through the same actions.
-- Physical: card play, dice and sigils feel readable seated; combat stays ≥ 50 fps in greybox.
+- Physical: card play, dice and sigils feel readable seated; combat stays ≥ 30 fps in greybox.
 
 ### P4 — Quest look proof
 
@@ -206,7 +206,7 @@ Asset authoring can start alongside P1 to P3. Integration depends on P1 (world l
 Acceptance:
 - Every asset passes `validate-generated-assets` (provenance, budgets, reimport checks, high vs low comparison).
 - The hero room renders with its baked lightmap in desktop and XR.
-- Physical: measured on Quest 3, exploration in the hero room and the worst combat view (table, automaton, fanned hand, rolling dice) both stay at or above 50 fps. Numbers recorded in `docs/performance/`.
+- Physical: measured on Quest 3, exploration in the hero room and the worst combat view (table, automaton, fanned hand, rolling dice) both stay at or above 30 fps, targeting 72 Hz. Numbers recorded in `docs/performance/`.
 - Paul approves the look (owner gate, not self-recorded). 3D breadth work in P5 (rooms, automatons, dice models) does not start until it passes. 2D art batches need only the approved style board.
 
 ### P5 — Slice content

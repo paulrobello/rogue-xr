@@ -92,6 +92,7 @@ export function stripBakedFire(
   root: THREE.Object3D,
   box: THREE.Box3 | readonly THREE.Box3[],
   isFire: (materialName: string) => boolean,
+  wholeTriangle = false,
 ): number {
   root.updateMatrixWorld(true);
   const toRoot = root.matrixWorld.clone().invert();
@@ -106,6 +107,7 @@ export function stripBakedFire(
   const a = new THREE.Vector3();
   const b = new THREE.Vector3();
   const c = new THREE.Vector3();
+  const centre = new THREE.Vector3();
   for (const mesh of meshes) {
     const geometry = mesh.geometry;
     const position = geometry.getAttribute('position') as THREE.BufferAttribute;
@@ -119,8 +121,15 @@ export function stripBakedFire(
       a.fromBufferAttribute(position, i).applyMatrix4(toLocal);
       b.fromBufferAttribute(position, j).applyMatrix4(toLocal);
       c.fromBufferAttribute(position, k).applyMatrix4(toLocal);
-      const centre = a.add(b).add(c).divideScalar(3);
-      if (boxes.some((bounds) => bounds.containsPoint(centre))) dropped++;
+      centre.copy(a).add(b).add(c).divideScalar(3);
+      if (
+        boxes.some((bounds) =>
+          wholeTriangle
+            ? bounds.containsPoint(a) && bounds.containsPoint(b) && bounds.containsPoint(c)
+            : bounds.containsPoint(centre),
+        )
+      )
+        dropped++;
       else kept.push(i, j, k);
     }
     if (kept.length === source.length) continue;
@@ -133,6 +142,31 @@ export function stripBakedFire(
     if (kept.length === 0) mesh.visible = false;
   }
   return dropped;
+}
+
+/** Hall niches share their material batches with the surrounding moulding and corner lights. */
+export const HALL_CANDLE_NICHES = [
+  [0.9, -5, 0.43, 0.15],
+  [5, -3.75, 0.15, 0.43],
+  [3.75, 5, 0.43, 0.15],
+  [-5, 3.75, 0.15, 0.43],
+] as const;
+
+export function removeHallCandleNiches(model: THREE.Object3D): number {
+  const boxes = HALL_CANDLE_NICHES.map(([x, z, halfX, halfZ]) => {
+    const innerX = Math.abs(x) === 5 ? x - Math.sign(x) * halfX : x;
+    const innerZ = Math.abs(z) === 5 ? z - Math.sign(z) * halfZ : z;
+    return new THREE.Box3(
+      new THREE.Vector3(innerX - halfX - 0.001, 1.405, innerZ - halfZ - 0.001),
+      new THREE.Vector3(innerX + halfX + 0.001, 2.504, innerZ + halfZ + 0.001),
+    );
+  });
+  return stripBakedFire(
+    model,
+    boxes,
+    (name) => /^hall_(walnut|brass-aged|brass-polished|wax|flame)$/.test(name),
+    true,
+  );
 }
 
 /** The live fire for one room model: its mesh and what drives it. */

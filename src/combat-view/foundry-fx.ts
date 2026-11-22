@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { discTexture } from '../sigil-plate/sparks.ts';
 
 const LIFETIME = 0.85;
@@ -52,36 +53,97 @@ function bulwark(): THREE.Group {
   return root;
 }
 
-function plating(): THREE.Group {
+function plating(environment: THREE.Texture | null): THREE.Group {
   const root = new THREE.Group();
-  const shape = new THREE.Shape();
-  shape.moveTo(-0.1, 0.035);
-  shape.lineTo(-0.078, 0.057);
-  shape.quadraticCurveTo(0, 0.035, 0.078, 0.057);
-  shape.lineTo(0.1, 0.035);
-  shape.lineTo(0.087, -0.026);
-  shape.quadraticCurveTo(0, -0.074, -0.087, -0.026);
-  shape.closePath();
-  for (let i = 0; i < 3; i++) {
-    const tile = new THREE.Group();
-    const geom = new THREE.ExtrudeGeometry(shape, {
-      depth: 0.012,
-      bevelEnabled: true,
-      bevelSize: 0.003,
+  const alloy = (
+    color: number,
+    metalness: number,
+    roughness: number,
+    emissive: number,
+  ): THREE.MeshStandardMaterial =>
+    new THREE.MeshStandardMaterial({
+      color,
+      metalness,
+      roughness,
+      emissive,
+      emissiveIntensity: 0.28,
+      envMap: environment,
+      envMapIntensity: 0.62,
+      transparent: true,
+      depthWrite: false,
+    });
+  const brass = alloy(0x95632e, 0.76, 0.43, 0x54331a);
+  const steel = alloy(0x27486a, 0.57, 0.42, 0x172b46);
+  const bolts = alloy(0xd0a55d, 0.68, 0.33, 0x85632c);
+
+  const outline = new THREE.Shape();
+  outline.moveTo(-0.108, 0.031);
+  outline.lineTo(-0.08, 0.057);
+  outline.lineTo(0, 0.047);
+  outline.lineTo(0.08, 0.057);
+  outline.lineTo(0.108, 0.031);
+  outline.lineTo(0.095, -0.022);
+  outline.lineTo(0.06, -0.046);
+  outline.lineTo(0, -0.063);
+  outline.lineTo(-0.06, -0.046);
+  outline.lineTo(-0.095, -0.022);
+  outline.closePath();
+  const rim = new THREE.ExtrudeGeometry(outline, {
+    depth: 0.014,
+    bevelSize: 0.003,
+    bevelThickness: 0.003,
+    bevelSegments: 2,
+  });
+
+  const cheeks = [-1, 1].map((side) => {
+    const cheek = new THREE.Shape();
+    cheek.moveTo(side * 0.0025, 0.038);
+    cheek.lineTo(side * 0.079, 0.047);
+    cheek.lineTo(side * 0.095, 0.028);
+    cheek.lineTo(side * 0.084, -0.014);
+    cheek.lineTo(side * 0.052, -0.037);
+    cheek.lineTo(side * 0.0025, -0.052);
+    cheek.closePath();
+    const geometry = new THREE.ExtrudeGeometry(cheek, {
+      depth: 0.005,
+      bevelSize: 0.002,
       bevelThickness: 0.002,
       bevelSegments: 1,
-      curveSegments: 6,
-    });
-    const rim = mesh(geom, 0xd9ae60);
-    const panel = mesh(geom, i % 2 === 0 ? 0x496fa9 : 0x2d477b);
-    panel.scale.set(0.88, 0.78, 0.5);
-    panel.position.z = 0.01;
-    const stud = mesh(
-      new THREE.CylinderGeometry(0.013, 0.018, 0.012, 9).rotateX(Math.PI / 2),
-      0xffca77,
-    );
-    stud.position.z = 0.019;
-    tile.add(rim, panel, stud);
+    }).translate(0, 0, 0.015);
+    const points = geometry.getAttribute('position');
+    for (let i = 0; i < points.count; i++)
+      points.setZ(i, points.getZ(i) + 0.011 * Math.max(0, 1 - Math.abs(points.getX(i)) / 0.087));
+    geometry.computeVertexNormals();
+    return geometry;
+  });
+  const face = mergeGeometries(cheeks);
+  for (const geometry of cheeks) geometry.dispose();
+
+  const stud = new THREE.CylinderGeometry(0.0078, 0.0105, 0.009, 12).rotateX(Math.PI / 2);
+  const rivet = stud.toNonIndexed();
+  stud.dispose();
+  const fasteners = [
+    [-0.069, 0.028],
+    [0.069, 0.028],
+    [-0.057, -0.025],
+    [0.057, -0.025],
+  ].map(([x, y]) => rivet.clone().translate(x, y, 0.037));
+  const hardware = mergeGeometries(fasteners);
+  for (const geometry of fasteners) geometry.dispose();
+  rivet.dispose();
+  for (let i = 0; i < 3; i++) {
+    const tile = new THREE.Group();
+    const layers = [
+      new THREE.Mesh(rim, brass),
+      new THREE.Mesh(face, steel),
+      new THREE.Mesh(hardware, bolts),
+    ];
+    // The translucent pieces fade as one plate; rivets must draw after the metal beneath them.
+    tile.renderOrder = i;
+    for (const [index, layer] of layers.entries()) {
+      layer.renderOrder = index;
+      tile.add(layer);
+    }
     tile.scale.setScalar(1 - i * 0.1);
     tile.position.set(0, (i - 1) * 0.061, i * 0.023);
     root.add(tile);
@@ -160,7 +222,7 @@ function counterGuard(): THREE.Group {
 
 interface DefensePose {
   root: THREE.Group;
-  materials: THREE.MeshBasicMaterial[];
+  materials: THREE.Material[];
   age: number;
   height: number;
 }
@@ -174,21 +236,24 @@ export class FoundryFx extends THREE.Group {
   private rustAge = LIFETIME;
   private readonly values = new Float32Array(PARTICLES * 3);
 
-  constructor(private readonly reducedMotion = false) {
+  constructor(
+    private readonly reducedMotion = false,
+    environment: THREE.Texture | null = null,
+  ) {
     super();
     this.name = 'foundry-fx';
     const make = (root: THREE.Group, id: Defense): DefensePose => {
       root.name = `fx-${id}`;
       root.visible = false;
       this.add(root);
-      const materials: THREE.MeshBasicMaterial[] = [];
+      const materials = new Set<THREE.Material>();
       root.traverse((o) => {
-        if (o instanceof THREE.Mesh) materials.push(o.material);
+        if (o instanceof THREE.Mesh) materials.add(o.material);
       });
-      return { root, materials, age: LIFETIME, height: 0 };
+      return { root, materials: [...materials], age: LIFETIME, height: 0 };
     };
     this.poses = {
-      'rivet-plate': make(plating(), 'rivet-plate'),
+      'rivet-plate': make(plating(environment), 'rivet-plate'),
       'brass-bulwark': make(bulwark(), 'brass-bulwark'),
       'anchor-glyph': make(anchor(), 'anchor-glyph'),
       'quench-seal': make(quenchWard(), 'quench-seal'),
@@ -290,12 +355,14 @@ export class FoundryFx extends THREE.Group {
 
   dispose(): void {
     const geometries = new Set<THREE.BufferGeometry>();
+    const materials = new Set<THREE.Material>();
     this.traverse((node) => {
       if (node instanceof THREE.Mesh || node instanceof THREE.Points) {
         geometries.add(node.geometry);
-        node.material.dispose();
+        materials.add(node.material);
       }
     });
+    for (const material of materials) material.dispose();
     for (const geometry of geometries) geometry.dispose();
     this.dustMap.dispose();
     this.removeFromParent();

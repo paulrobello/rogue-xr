@@ -697,10 +697,15 @@ export class InteriorFurnishings {
       }
     }
     for (const { room, theme, candidates } of planned) {
+      const plannedRoom = world.plan.rooms[room];
+      const builtInCandles =
+        plannedRoom.templateId === 'hall' ||
+        (plannedRoom.templateId === 'study' && plannedRoom.loot.length > 0);
       for (const c of candidates) {
         // Wall-clock candidates still consume their original layout rolls for saved seeds.
         if (c.root === 'WallClock') continue;
         if (c.root === 'Curtain' && !curtainRooms.has(room)) continue;
+        if (c.root === 'Candelabrum' && !c.y && builtInCandles) continue;
         const box = boxFor(c, rootBounds);
         const object = asset.roots[c.root].clone(true);
         if (c.root === 'Bookcase') settleShelfBooks(object);

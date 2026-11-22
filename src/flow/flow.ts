@@ -130,6 +130,7 @@ import { canFlee } from '../rules/flee.ts';
 import { operateFloatElevator, readFloatElevator } from '../rules/float-elevator.ts';
 import {
   isLogbookClueId,
+  isWorldLogbookClueId,
   type LogbookClueId,
   type LogbookEntry,
   RUBBING_LOGBOOK_CLUE,
@@ -485,12 +486,26 @@ export class RunFlow {
     const discovered =
       id === RUBBING_LOGBOOK_CLUE
         ? run.reliquarySeal !== undefined && run.reliquarySeal !== 'hidden'
-        : this.pressure.notes.includes(id);
-    if (!discovered) return false;
+        : isPressureNoteId(id) && this.pressure.notes.includes(id);
+    return discovered && this.appendLogbookEntry(entry);
+  }
+
+  saveLogbookEntry(entry: LogbookEntry): boolean {
+    return (
+      this.phaseValue === 'explore' &&
+      isWorldLogbookClueId(entry.id) &&
+      this.appendLogbookEntry(entry)
+    );
+  }
+
+  private appendLogbookEntry(entry: LogbookEntry): boolean {
+    const run = this.runValue;
+    if (!run) return false;
     const entries = run.logbook ?? [];
-    if (entries.some((item) => item.id === id)) return true;
-    this.runValue = { ...run, logbook: [...entries, entry] };
-    this.emit({ type: 'logbook', clue: id });
+    if (entries.some((item) => item.id === entry.id)) return true;
+    const { id, title, body, origin } = entry;
+    this.runValue = { ...run, logbook: [...entries, { id, title, body, origin }] };
+    this.emit({ type: 'logbook', clue: entry.id });
     return true;
   }
   private offerValue: RewardOffer | null = null;

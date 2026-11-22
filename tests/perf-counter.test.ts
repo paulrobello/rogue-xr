@@ -5,6 +5,9 @@ interface FakeGauge {
   setSample: ReturnType<typeof vi.fn>;
   update: ReturnType<typeof vi.fn>;
   dispose: ReturnType<typeof vi.fn>;
+  hitDistance: ReturnType<typeof vi.fn>;
+  beginGrab: ReturnType<typeof vi.fn>;
+  endGrab: ReturnType<typeof vi.fn>;
 }
 
 const gauges = vi.hoisted(() => [] as FakeGauge[]);
@@ -12,7 +15,15 @@ const gauges = vi.hoisted(() => [] as FakeGauge[]);
 vi.mock('../src/perf/gauge.ts', () => ({
   DEFAULT_TARGET_HZ: 72,
   mountPerfGauge: vi.fn(() => {
-    const gauge = { setSample: vi.fn(), update: vi.fn(), dispose: vi.fn(), visible: true };
+    const gauge = {
+      setSample: vi.fn(),
+      update: vi.fn(),
+      dispose: vi.fn(),
+      hitDistance: vi.fn(() => 0.7),
+      beginGrab: vi.fn(() => true),
+      endGrab: vi.fn(),
+      visible: true,
+    };
     gauges.push(gauge);
     return gauge;
   }),
@@ -105,6 +116,24 @@ describe('FPS counter toggle', () => {
     perf.setFpsCounter(true);
     expect(gauges).toHaveLength(2);
     expect(perf.fpsCounter).toBe(true);
+    perf.dispose();
+  });
+
+  it('routes aiming, grip and release only to the currently mounted FPS widget', () => {
+    const { perf } = mount();
+    const ray = {} as THREE.Object3D;
+    const grip = {} as THREE.Object3D;
+    expect(perf.gaugeHitDistance(ray)).toBeNull();
+    expect(perf.grabGauge(ray, grip)).toBe(false);
+    perf.setFpsCounter(true);
+    expect(perf.gaugeHitDistance(ray)).toBe(0.7);
+    expect(perf.grabGauge(ray, grip)).toBe(true);
+    expect(gauges[0]?.beginGrab).toHaveBeenCalledWith(ray, grip);
+    perf.releaseGauge(grip);
+    expect(gauges[0]?.endGrab).toHaveBeenCalledWith(grip);
+    perf.setFpsCounter(false);
+    perf.releaseGauge(grip);
+    expect(gauges[0]?.endGrab).toHaveBeenCalledTimes(1);
     perf.dispose();
   });
 

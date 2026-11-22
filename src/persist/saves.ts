@@ -42,12 +42,10 @@ import {
   type DrumGalleryState,
   type DrumPin,
   drumPattern,
-  EMPTY_DRUM_GALLERY,
-  setDrumPin,
   windDrum,
 } from '../rules/drum-gallery.ts';
 import type { FloatElevatorState } from '../rules/float-elevator.ts';
-import { isLogbookClueId, type LogbookEntry } from '../rules/logbook.ts';
+import { isLogbookClueId, isWorldLogbookClueId, type LogbookEntry } from '../rules/logbook.ts';
 import type { PendulumGalleryState } from '../rules/pendulum-gallery.ts';
 import {
   isPressureNoteId,
@@ -232,18 +230,34 @@ function darkCircuit(value: unknown, path: string, seed: string): DarkCircuitSta
 
 function drumGallery(value: unknown, path: string, seed: string): DrumGalleryState {
   const state = rec(value, path);
-  const stored = state.pin === null ? null : rec(state.pin, `${path}.pin`);
-  const pin: DrumPin | null = stored && {
-    beat: int(stored.beat, `${path}.pin.beat`, 0, 3) as DrumPin['beat'],
-    note: int(stored.note, `${path}.pin.note`, 0, 2) as DrumPin['note'],
+  const parsePin = (value: unknown, pinPath: string): DrumPin => {
+    const stored = rec(value, pinPath);
+    return {
+      beat: int(stored.beat, `${pinPath}.beat`, 0, 3) as DrumPin['beat'],
+      note: int(stored.note, `${pinPath}.note`, 0, 2) as DrumPin['note'],
+    };
   };
-  const pattern = drumPattern(seed);
-  if (pin && setDrumPin(pattern, EMPTY_DRUM_GALLERY, pin) === EMPTY_DRUM_GALLERY)
-    fail(`${path}.pin`, 'the socket already has a fixed pin');
+  const legacy = state.pins === undefined;
+  const pins = legacy
+    ? state.pin === null
+      ? []
+      : [parsePin(state.pin, `${path}.pin`)]
+    : Array.isArray(state.pins)
+      ? state.pins.map((pin, i) => parsePin(pin, `${path}.pins[${i}]`))
+      : fail(`${path}.pins`, 'expected an array');
+  if (new Set(pins.map((pin) => pin.beat)).size !== pins.length)
+    fail(`${path}.pins`, 'expected one pin per beat');
   if (typeof state.open !== 'boolean') fail(`${path}.open`, 'expected a boolean');
-  if (state.open && !windDrum(pattern, { pin, open: false }).open)
-    fail(`${path}.open`, 'the fitted pin does not complete the phrase');
-  return { pin, open: state.open };
+  const pattern = drumPattern(seed);
+  const normalized = { pin: pins.at(-1) ?? null, pins, open: false };
+  if (state.open && legacy) {
+    if (!windDrum(pattern, { pin: normalized.pin, open: false }).open)
+      fail(`${path}.open`, 'the fitted pin does not complete the phrase');
+    return { pin: normalized.pin, open: true };
+  }
+  if (state.open && !windDrum(pattern, normalized).open)
+    fail(`${path}.open`, 'all four pins are required to complete the phrase');
+  return { ...normalized, open: state.open };
 }
 
 function borrowedLight(v: unknown, path: string, seed: string): BorrowedLightState {
@@ -904,9 +918,10 @@ export function validateSnapshot(raw: unknown): RunSnapshot {
   ]);
   for (const entry of activeRun.logbook ?? []) {
     const acquired =
-      entry.id === 'reliquary-rubbing'
+      isWorldLogbookClueId(entry.id) ||
+      (entry.id === 'reliquary-rubbing'
         ? activeRun.reliquarySeal !== undefined && activeRun.reliquarySeal !== 'hidden'
-        : pressureNotes.has(entry.id);
+        : isPressureNoteId(entry.id) && pressureNotes.has(entry.id));
     if (!acquired) fail('snapshot.run.logbook', `clue ${entry.id} was not discovered`);
   }
   const payment = activeRun.commission;
