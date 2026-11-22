@@ -3,6 +3,7 @@ import { dispatchDestination, type StoredDispatchState } from '../rules/dispatch
 import { ClockInscription } from './clock-inscription.ts';
 import type { FloorWorld } from './floor-world.ts';
 import type { InteriorPlacement } from './interior-furnishings.ts';
+import type { PbrSet } from './materials.ts';
 import { findPuzzleMount, type PuzzleMount } from './puzzle-placement.ts';
 
 type DispatchAction = 'turn' | 'send' | 'open';
@@ -42,7 +43,7 @@ export class DispatchRoom {
     metalness: 0.58,
     roughness: 0.42,
   });
-  private readonly wood = new THREE.MeshStandardMaterial({ color: 0x382722, roughness: 0.61 });
+  private readonly wood = new THREE.MeshStandardMaterial({ color: 0xb9957f, roughness: 0.61 });
   private readonly signal = new THREE.MeshBasicMaterial({ color: 0x246f7a });
   private readonly button = new THREE.MeshStandardMaterial({
     color: 0xa74336,
@@ -141,6 +142,10 @@ export class DispatchRoom {
     this.block(this.object, [1.42, 0.085, 0.54], [0, 0.83, 0], this.iron);
     this.block(this.object, [1.32, 0.65, 0.085], [0, 1.14, -0.19], this.iron);
     this.block(this.object, [1.32, 0.042, 0.02], [0, 0.9, -0.12], this.copper);
+    this.block(this.object, [1.16, 0.52, 0.035], [0, 0.47, -0.255], this.iron);
+    for (const x of [-0.62, 0.62]) {
+      this.block(this.object, [0.075, 0.7, 0.045], [x, 0.46, -0.25], this.copper);
+    }
     const manifold = selector.clone(true);
     manifold.name = 'dispatch-selector';
     manifold.position.set(-0.22, 1.1, -0.1);
@@ -163,14 +168,25 @@ export class DispatchRoom {
         1.06,
         'Pneumatic dispatch',
         '1                 2                 3',
-        'Set line. Press Send.',
+        'Find the return slip. Set its route, then Send.',
       ),
       1.49,
       -0.12,
     );
     this.sendButton.name = 'dispatch-send';
     this.sendButton.position.set(0.43, 0.99, -0.075);
-    this.block(this.sendButton, [0.19, 0.16, 0.16], [0, 0, -0.005], this.button);
+    const plunger = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.11, 0.12, 16), this.button);
+    plunger.name = 'dispatch-send-plunger';
+    plunger.rotation.x = Math.PI / 2;
+    plunger.position.z = -0.005;
+    this.sendButton.add(plunger);
+    this.resources.push(plunger.geometry);
+    const escutcheon = new THREE.Mesh(new THREE.TorusGeometry(0.115, 0.018, 8, 16), this.copper);
+    escutcheon.name = 'dispatch-send-escutcheon';
+    escutcheon.rotation.x = Math.PI / 2;
+    escutcheon.position.z = 0.06;
+    this.sendButton.add(escutcheon);
+    this.resources.push(escutcheon.geometry);
     this.block(this.sendButton, [0.11, 0.035, 0.012], [0, 0, 0.082], this.copper);
     this.object.add(this.sendButton);
     this.controls.push({ node: this.sendButton, action: 'send' });
@@ -188,6 +204,10 @@ export class DispatchRoom {
     this.block(this.reply, [1.14, 0.08, 0.49], [0, 0.82, 0], this.iron);
     this.block(this.reply, [1.04, 0.67, 0.09], [0, 1.14, -0.18], this.iron);
     this.block(this.reply, [0.57, 0.12, 0.29], [0, 0.9, 0.08], this.copper);
+    this.block(this.reply, [0.88, 0.05, 0.035], [0, 0.22, -0.24], this.copper);
+    for (const x of [-0.47, 0.47]) {
+      this.block(this.reply, [0.07, 0.7, 0.045], [x, 0.46, -0.235], this.copper);
+    }
     this.plate(
       this.reply,
       new ClockInscription(
@@ -195,7 +215,7 @@ export class DispatchRoom {
         1.0,
         'Return Work Order',
         `Route ${route}`,
-        'Take the brass reply here.',
+        'Open the hatch when the capsule returns.',
       ),
       1.31,
       -0.12,
@@ -209,7 +229,7 @@ export class DispatchRoom {
   }
 
   private place(object: THREE.Group, mount: PuzzleMount): void {
-    object.position.copy(mount.center).setY(0);
+    object.position.copy(mount.wallSurface).setY(0);
     object.rotation.y = mount.yaw;
     object.translateZ(0.32);
     this.world.roomGroups[mount.room].add(object);
@@ -261,6 +281,25 @@ export class DispatchRoom {
       this.block(this.gate, [door.width - 0.17, 0.054, 0.13], [0, rib * 0.27, 0], this.iron);
     }
     this.world.roomGroups[this.layout.source.room].attach(this.gate);
+  }
+
+  dress(set: PbrSet, environment: THREE.Texture | null = null): void {
+    for (const [material, slot] of [
+      [this.wood, 'walnut'],
+      [this.iron, 'brass-aged'],
+      [this.copper, 'brass-polished'],
+      [this.button, 'brass-aged'],
+    ] as const) {
+      const source = set.materials.get(slot);
+      if (!source) continue;
+      material.map = source.map;
+      material.normalMap = source.normalMap;
+      material.normalScale.setScalar(0.13);
+      material.roughnessMap = source.roughnessMap;
+      material.envMap = environment;
+      material.envMapIntensity = 0.5;
+      material.needsUpdate = true;
+    }
   }
 
   private availableControl(action: DispatchAction): boolean {

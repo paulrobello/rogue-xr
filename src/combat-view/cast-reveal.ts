@@ -61,8 +61,7 @@ const TYPE_TINT: Record<string, string> = {
  * round art window (the hand card's portal layers from the shared atlas), no frame, name, cost or
  * text (Paul's playtest 2026-11-17). It grows out of the collapsed glyph, holds, and burns away as
  * the spell leaves it. One instance of the card face material, one draw: this material's window
- * uniform is set to `ART_ONLY_WINDOW` and its frame page is a transparent texel of its own, so the
- * shader discards everything outside the circle and draws pure art inside. The shared atlas pages
+ * uniform is set to `ART_ONLY_WINDOW` and the shader draws only the art inside the circle. The shared atlas pages
  * are bound when a reveal starts and are never disposed here. Until the atlas has loaded the disc
  * shows as its family tint. The flash is a white-gold ring around the disc (one additive quad
  * behind it), never a tint over the art.
@@ -73,8 +72,6 @@ export class CastReveal extends THREE.Group {
   private readonly material: THREE.ShaderMaterial;
   /** The material's own 1x1 blank page, bound until the art arrives. */
   private readonly blankPage: THREE.Texture;
-  /** A 1x1 fully transparent frame page: the reveal draws no frame. */
-  private readonly noFrame: THREE.DataTexture;
   private readonly halo: THREE.Mesh<THREE.PlaneGeometry, THREE.ShaderMaterial>;
   private readonly frame = newRevealFrame();
   private readonly tint = new THREE.Color();
@@ -92,8 +89,6 @@ export class CastReveal extends THREE.Group {
     addCardFaceAttributes(geometry, 1);
     this.material = createCardFaceMaterial();
     this.blankPage = this.material.uniforms.uFrame?.value as THREE.Texture;
-    this.noFrame = new THREE.DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1);
-    this.noFrame.needsUpdate = true;
     this.mesh = new THREE.InstancedMesh(geometry, this.material, 1);
     this.mesh.setMatrixAt(0, new THREE.Matrix4());
     this.mesh.name = 'cast-reveal-card';
@@ -147,7 +142,7 @@ export class CastReveal extends THREE.Group {
     const geometry = this.mesh.geometry;
     if (this.art) {
       writeCardFace(geometry, 0, cardFaceInstance(this.art.atlas, cardId));
-      writeFrameSpan(geometry, artWindowTexels(this.art, cardId));
+      this.material.uniforms.uArtOnlyTexels.value = artWindowTexels(this.art, cardId);
     } else
       writeCardTint(geometry, 0, this.tint.set(TYPE_TINT[getCard(cardId).type] ?? PALETTE.brass));
     this.shownId = cardId;
@@ -174,9 +169,8 @@ export class CastReveal extends THREE.Group {
   }
 
   dispose(): void {
-    // The atlas pages are shared with the hand; only the blank and frameless pages are this one's own.
+    // The atlas pages are shared with the hand. This material owns only its placeholder.
     this.blankPage.dispose();
-    this.noFrame.dispose();
     this.mesh.geometry.dispose();
     this.material.dispose();
     this.mesh.dispose();
@@ -190,7 +184,6 @@ export class CastReveal extends THREE.Group {
     applyCardFaceArt(this.material, art);
     const u = this.material.uniforms as Record<string, THREE.IUniform>;
     (u.uWindow as THREE.IUniform<THREE.Vector4>).value.set(...ART_ONLY_WINDOW);
-    (u.uFrame as THREE.IUniform).value = this.noFrame;
   }
 
   private apply(): void {
@@ -213,15 +206,4 @@ export class CastReveal extends THREE.Group {
 export function artWindowTexels(art: CardFaceArt, cardId: string): number {
   const { frame } = cardArt(art.atlas, cardId);
   return 2 * frame.window.radius * frame.rect[2];
-}
-
-/**
- * Points the reveal's frame rect at a `texels`-wide span of its 1x1 transparent frame page: every
- * frame sample is transparent (no frame drawn), and the shader, which sizes its window edge from
- * the rect span times the page size, still sees a window `texels` frame texels across.
- */
-function writeFrameSpan(geometry: THREE.BufferGeometry, texels: number): void {
-  const attribute = geometry.getAttribute('aFrameUv') as THREE.InstancedBufferAttribute;
-  attribute.setXYZW(0, 0, 0, texels, texels);
-  attribute.needsUpdate = true;
 }

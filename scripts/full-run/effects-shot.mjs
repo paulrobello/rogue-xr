@@ -357,7 +357,7 @@ async function openFight(label, rec, cfg) {
         if (!(await g.playerTurn())) return null;
         const s = await g.snap();
         if (s.outcome) return null;
-        const card = pick(s.hand.filter((c) => c.cost <= s.player.steam));
+        const card = pick(s.hand.filter((c) => c.cost === 'X' || c.cost <= s.player.steam));
         if (card) return { card, s };
         if (i === turns) break;
         rec.notes.push(`turn ${s.turn}: no suitable card in hand, ended the turn`);

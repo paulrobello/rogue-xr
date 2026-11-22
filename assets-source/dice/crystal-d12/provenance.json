@@ -1,0 +1,98 @@
+{
+  "pieceId": "crystal-d12",
+  "version": 1,
+  "route": "original scripted Blender geometry, no external assets",
+  "generator": {
+    "path": "scripts/assets/build-crystal-d12.py",
+    "sha256": "d2667a1aecfbdff81a7d210ef6f8bcff5b1f8781d5520e64ff527429853da7b8"
+  },
+  "authoringAgent": {
+    "harness": "codex subagent",
+    "model": "gpt-6.1-terra"
+  },
+  "blender": "5.2.2 LTS",
+  "license": "Original work authored for the project; no third-party asset inputs.",
+  "sourceContract": {
+    "path": "src/dice/crystal-d12.json",
+    "sha256": "15702c7ea3651980c701c51b11976efa52a797f2749e576ac96e774728643e1d"
+  },
+  "derivedFiles": [
+    {
+      "path": "public/assets/dice/crystal-d12/crystal-d12.glb",
+      "sha256": "034130e084c872c06e220487ba0a14133faac6f3e3f8e566e694b8d117dfc2f9",
+      "bytes": 21920
+    },
+    {
+      "path": "public/assets/dice/crystal-d12/crystal-d12.manifest.json",
+      "sha256": "a997f04c09ccdd8f49fb6346bc59d801d0b84c8b15bc8d71e6e13430d799b96c",
+      "bytes": 2732
+    },
+    {
+      "path": "assets-source/dice/crystal-d12/blend/crystal-d12.low.blend",
+      "sha256": "b8598a9e16197723baaa3272e3b7b63fd6c3bd5427cec3df225f6543d19e7c43",
+      "bytes": 102770
+    },
+    {
+      "path": "assets-source/dice/crystal-d12/staging/report.json",
+      "sha256": "83d41eaecb50e64b6c1a9d44cfd0c6757a6f5f44ec5dc9285fe920555ad2bc9d",
+      "bytes": 887
+    },
+    {
+      "path": "assets-source/dice/crystal-d12/staging/reimport.json",
+      "sha256": "156860a415bd89d6d7cb5e91c3d7e036b2947d96d2664065a58926a07eb8985f",
+      "bytes": 569
+    },
+    {
+      "path": "assets-source/dice/crystal-d12/staging/crystal-d12.preview.png",
+      "sha256": "4e5a96be28e29b2cfd0ceaa655d0e64e324dc0cacfe77cbe2c63d947f0ae073f",
+      "bytes": 915265
+    }
+  ],
+  "budgets": {
+    "tris": 274,
+    "materials": 2,
+    "texturesProduced": 0,
+    "texturesSampled": []
+  },
+  "validation": {
+    "pass": true,
+    "scope": "Blender structural checks and reimport, plus desktop and controller-emulated XR tabletop inspection.",
+    "determinism": "Two independent Blender exports produced identical GLB and manifest bytes."
+  },
+  "approvals": [
+    {
+      "gate": "technical",
+      "status": "pending"
+    },
+    {
+      "gate": "creative",
+      "status": "pending"
+    },
+    {
+      "gate": "rights",
+      "status": "pending"
+    },
+    {
+      "gate": "owner",
+      "status": "pending"
+    },
+    {
+      "gate": "independent visual score",
+      "status": "passed",
+      "score": 85,
+      "threshold": 80,
+      "scorer": "independent reviewer (gpt-6.2-astra)",
+      "notes": "The floating values and ring make all results readable at the sampled table distance. Foreshortened face numerals can still be difficult to read. Physical Quest and owner review are pending.",
+      "glbSha256": "034130e084c872c06e220487ba0a14133faac6f3e3f8e566e694b8d117dfc2f9",
+      "desktopEvidenceSha256": "44c5d25e98c0d8768158e561d74ab0e60a362c7dda44688c6cd428150afbe570",
+      "xrEvidenceSha256": "434a1af9dc051c46377991ad0e0e8d0b877ae32b41672564972a8adf6b172fe9"
+    }
+  ],
+  "reviewEvidence": [
+    {
+      "path": "assets-source/dice/crystal-d12/staging/crystal-d12.preview.png",
+      "sha256": "4e5a96be28e29b2cfd0ceaa655d0e64e324dc0cacfe77cbe2c63d947f0ae073f",
+      "bytes": 915265
+    }
+  ]
+}

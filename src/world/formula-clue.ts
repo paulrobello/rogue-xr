@@ -51,8 +51,9 @@ export class FormulaEvidence {
     seed: string,
     gallery: ConservatoryGallery | null,
     props: readonly InteriorPlacement[] = [],
+    contentVersion = 1,
   ): FormulaEvidence {
-    const plan = conservatoryFormula(seed);
+    const plan = conservatoryFormula(seed, contentVersion);
     const source = gallery ? 'portrait' : 'record';
     const order = formulaClueOrder(plan.recipe, source);
     const ingredient = plan.ingredients[order];

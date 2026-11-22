@@ -1,0 +1,34 @@
+{
+  "asset": "trellis-keeper",
+  "stage": "concept",
+  "provider": "Higgsfield",
+  "model": "gpt_image_2",
+  "source": {
+    "path": "assets-source/concepts/trellis-keeper/trellis-keeper.png",
+    "sha256": "85776601e055218254313a3dbf85a243d41bacb1a7fced5cd7fdb4479d87458f",
+    "bytes": 4406969
+  },
+  "references": [
+    {
+      "path": "assets-source/style/locked/L-automaton.png",
+      "sha256": "48553d5f490b528b84774ad63a705bf0609ef47360b6a35ef4025b6431adb505",
+      "bytes": 5272590
+    }
+  ],
+  "prompt": "Create one original production turnaround concept for the Trellis Keeper, a brass greenhouse automaton from the Gilded Lamplight fantasy game Clockwork Spire. Use the supplied project-owned automaton sheet as material and rendering reference only. Three aligned full-body orthographic views, front, right side, back, of exactly the same 1.75 meter figure; neutral symmetrical A-pose with the feet planted, arms separated visibly from the silhouette and both shears closed in the rest pose. Plain warm parchment background, no frames, no text or labels. The signature silhouette is a tall narrow four-sided arched brass trellis torso with two small pierced slats, a seed-pod shaped amber lamp suspended visibly inside its cage, a slim visor head above, independent elbow and wrist hinges, and two short blunt curved pruning jaws mounted at the forearms. Tall slender dark gunmetal limbs with brass joint caps, a few small emerald porcelain inlays, wide understated feet. Modular assembly with distinct readable plates, joints and attachment seams. Both arms must be easy to distinguish and balance from the intended seated viewing distance. Limit vine decoration to one subtle stamped botanical emblem so mechanisms stay readable. Hand-painted semi-realistic brass, dark walnut, amber and emerald, worn edges catching soft warm light. Keep the whole head and both feet visible in each view, use consistent dimensions across panels, no supporting stand, humans, background greenhouse, weapon accessories or UI.",
+  "settings": {
+    "aspectRatio": "3:2",
+    "resolution": "2k",
+    "pixels": [
+      2048,
+      1360
+    ]
+  },
+  "approvals": {
+    "concept": "pending owner review",
+    "model": "pending",
+    "rig": "pending",
+    "animation": "pending"
+  },
+  "rights": "Original generated concept with a project-owned style reference. Release rights and owner review pending."
+}

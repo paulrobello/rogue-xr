@@ -71,16 +71,29 @@ export {
 } from './dispatch.ts';
 export {
   apply,
+  cardSteamCost,
   createIdleState,
   intentDamage,
   isAlive,
   livingEnemies,
+  playTarget,
   resolveAmount,
   startCombat,
   usesDice,
   validate,
 } from './engine.ts';
 export { canFlee } from './flee.ts';
+export {
+  advancePendulumDetent,
+  completePendulumTrial,
+  PENDULUM_PERIODS,
+  type PendulumDetent,
+  type PendulumGalleryState,
+  pendulumAngle,
+  pendulumTarget,
+  pendulumTrialSeconds,
+  readPendulumGallery,
+} from './pendulum-gallery.ts';
 export {
   claimPressureReward,
   collectPressureNote,
@@ -144,6 +157,12 @@ export {
   scaleAmount,
   scaleEffects,
 } from './sigil.ts';
+export {
+  type PipeChannel,
+  pipeTarget,
+  readSpeakingPipes,
+  type SpeakingPipesState,
+} from './speaking-pipes.ts';
 export {
   absorb,
   attackDamage,

@@ -20,6 +20,7 @@ export const STATUS_IDS: readonly StatusId[] = [
   'wound-up',
   'plating',
   'rust',
+  'charge',
 ];
 
 /** Statuses that lose one stack at the end of their owner's turn. */
@@ -28,6 +29,7 @@ export const DECAYS_AT_TURN_END: readonly StatusId[] = ['weak', 'vulnerable', 'r
 export const WEAK_MULTIPLIER = 0.75;
 export const VULNERABLE_MULTIPLIER = 1.5;
 export const RUST_MULTIPLIER = 0.5;
+export const SIGIL_CHARGE_PER_STACK = 0.1;
 
 export function stacks(statuses: Statuses, id: StatusId): number {
   return statuses[id] ?? 0;

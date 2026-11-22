@@ -251,7 +251,7 @@ export class FlingController {
       samples,
       origin: [p.x, p.y, p.z],
       cardId: released.card.id,
-      cardTarget: released.card.target,
+      cardTarget: this.combat.cardTarget(released.uid) ?? released.card.target,
       targets: this.targetsOf().map((s) => ({
         id: s.id,
         position: [s.position[0], s.position[1], s.position[2]] as Vec3,
@@ -279,7 +279,7 @@ export class FlingController {
       return this.record(held, 'sprung-back', via, targetId, speed, null, reason);
     };
 
-    if (released.card.target === 'enemy') {
+    if (this.combat.cardTarget(released.uid) === 'enemy') {
       let via: FlingVia = 'flick';
       let angleDeg: number | null = null;
       let id: string | null = null;
@@ -331,7 +331,8 @@ export class FlingController {
     let targetId: string | null = null;
     let angleDeg: number | null = null;
     let site: FlingTargetSite | undefined;
-    if (held.card.target === 'enemy') {
+    const aimed = this.combat.cardTarget(held.uid) === 'enemy';
+    if (aimed) {
       const sites = this.targetsOf();
       const alive = new Set(livingEnemies(this.combat.state).map((e) => e.id));
       const targets: AimTarget[] = sites.map((s) => ({ ...s, valid: alive.has(s.id) }));
@@ -367,7 +368,7 @@ export class FlingController {
     this.fan.release();
     return this.settle(
       held,
-      held.card.target === 'enemy' ? 'aim' : 'press',
+      aimed ? 'aim' : 'press',
       targetId,
       0,
       angleDeg,

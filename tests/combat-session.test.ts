@@ -19,6 +19,7 @@ import {
   CARD_LAUNCH_DELAY,
   FLIGHT_MAX_SECONDS,
   FLIGHT_MIN_SECONDS,
+  flightSeconds,
 } from '../src/combat-view/impact-timing.ts';
 import { getCard } from '../src/content/cards.ts';
 import { dieById } from '../src/content/dice.ts';
@@ -27,6 +28,7 @@ import { ActionBus } from '../src/core/actions.ts';
 import { Stream } from '../src/core/rng.ts';
 import { fitCombatFraming } from '../src/desktop/combat-framing.ts';
 import { DicePresenter } from '../src/dice/presenter.ts';
+import { cardSteamCost } from '../src/rules/index.ts';
 import { SIGIL_TEMPLATES } from '../src/sigil/index.ts';
 import { GLYPH_LAUNCH_SECONDS } from '../src/sigil-plate/index.ts';
 import { type FloorView, mountFloorView } from '../src/world/floor-view.ts';
@@ -303,7 +305,9 @@ async function playFight(rig: Rig & { session: CombatSession }): Promise<FightLo
       continue;
     }
     const state = session.controller.state;
-    const affordable = state.piles.hand.filter((c) => getCard(c.def.id).cost <= state.player.steam);
+    const affordable = state.piles.hand.filter(
+      (c) => cardSteamCost(c.def.cost, state.player.steam) <= state.player.steam,
+    );
     // Attack first, then the rest, so the scripted fight ends.
     const playable = affordable.find((c) => getCard(c.def.id).type === 'attack') ?? affordable[0];
     if (!playable) {
@@ -1382,7 +1386,9 @@ describe('enemy phase, one enemy at a time', () => {
         for (const c of [session.controller, twin]) {
           for (let i = 0; i < 3; i++) {
             const card = c.state.piles.hand.find(
-              (h) => h.def.id === 'defend' && getCard(h.def.id).cost <= c.state.player.steam,
+              (h) =>
+                h.def.id === 'defend' &&
+                cardSteamCost(h.def.cost, c.state.player.steam) <= c.state.player.steam,
             );
             if (!card) break;
             c.select(card.uid);
@@ -1461,4 +1467,84 @@ describe('enemy phase, one enemy at a time', () => {
     });
     rig.hook.dispose();
   }, 60_000);
+});
+
+it('shows a turret hit before the enemy acts and removes its table rack with the session', async () => {
+  const rig = await openFight('SPIRE002', {
+    deck: ['clockwork-turret+', 'strike', 'strike', 'defend', 'defend'],
+  });
+  const { session } = rig;
+  const rack = session.mechanismRack?.root;
+  const base = rack?.children.find((child): child is THREE.Mesh => child instanceof THREE.Mesh);
+  if (!rack || !base) throw new Error('Missing mechanism rack');
+  const release = vi.spyOn(base.geometry, 'dispose');
+  const { controller } = session;
+  try {
+    const card = controller.state.piles.hand.find((entry) => entry.def.id === 'clockwork-turret+');
+    if (!card) throw new Error('Missing turret card');
+    expect(controller.select(card.uid).ok).toBe(true);
+    expect(controller.table().ok).toBe(true);
+    rig.step();
+    expect(rack.getObjectByName('mechanism-slot-0')?.userData.cardId).toBe('clockwork-turret+');
+    const weakest = session.view.enemies.reduce((a, b) => (b.hp < a.hp ? b : a));
+    const hp = weakest.hp;
+    const targetHp = () => session.view.enemies.find((enemy) => enemy.id === weakest.id)?.hp;
+    rig.actions.emit({ type: 'end-turn' });
+    rig.step();
+    expect(targetHp()).toBe(hp);
+    expect(session.turnTrace).toHaveLength(0);
+    for (let i = 0; i < 90 && targetHp() === hp; i++) rig.step();
+    expect(targetHp()).toBe(hp - 5);
+    expect(session.log.some((line) => line.includes('Clockwork Turret+ activates'))).toBe(true);
+    expect(session.turnTrace).toHaveLength(0);
+    for (let i = 0; i < 120 && session.turnTrace.length === 0; i++) rig.step();
+    expect(session.turnTrace).toHaveLength(1);
+  } finally {
+    rig.hook.dispose();
+    rig.view.dispose();
+  }
+  expect(rack.parent).toBeNull();
+  expect(release).toHaveBeenCalledOnce();
+});
+
+it('sends Arc Chain from the plate to its aimed enemy before branching to the others', async () => {
+  const rig = await openFight('SPIRE002', { deck: Array(5).fill('arc-chain+') });
+  const { session } = rig;
+  const launch = vi.spyOn(session.spellFx, 'launch');
+  const impact = vi.spyOn(session.spellFx, 'impact');
+  try {
+    const before = session.view.enemies.map((enemy) => enemy.hp);
+    expect(before.length).toBeGreaterThan(1);
+    const foe = session.view.enemies.at(-1);
+    const entry = session.controller.state.piles.hand[0];
+    if (!foe || !entry) throw new Error('Missing Arc Chain test target');
+    playCard(rig, session, entry.uid, at(session, 'enemy', foe.id));
+    expect(session.controller.selectedTarget).toBe(foe.id);
+    drawSigil(rig, session);
+    expect(session.attackInFlight).toBe(true);
+    expect(session.view.enemies.map((enemy) => enemy.hp)).toEqual(before);
+    for (let i = 0; i < 120 && !launch.mock.calls.length; i++) rig.step();
+    expect(launch.mock.calls).toHaveLength(1);
+    const first = launch.mock.calls[0]?.[1];
+    expect(first).toBeDefined();
+    for (let i = 0; i < 120 && launch.mock.calls.length < before.length; i++) rig.step();
+    expect(launch.mock.calls).toHaveLength(before.length);
+    expect(impact.mock.calls).toHaveLength(1);
+    for (const [from, to, duration] of launch.mock.calls.slice(1)) {
+      expect(from).toEqual(first);
+      expect(duration).toBeCloseTo(
+        flightSeconds(Math.hypot(to.x - from.x, to.y - from.y, to.z - from.z)),
+      );
+    }
+    expect(session.view.enemies.map((enemy) => enemy.hp)).toEqual(before);
+    for (let i = 0; i < 120 && session.attackInFlight; i++) rig.step();
+    expect(session.attackInFlight).toBe(false);
+    expect(impact.mock.calls).toHaveLength(before.length);
+    expect(session.view.enemies.map((enemy) => enemy.hp)).toEqual(
+      session.controller.state.enemies.map((enemy) => enemy.hp),
+    );
+  } finally {
+    rig.hook.dispose();
+    rig.view.dispose();
+  }
 });

@@ -1,6 +1,6 @@
 """Builds the P5-T6 UI runtime assets from the immutable sources in assets-source/ui/.
 
-Usage: python3 -I scripts/assets/build_ui_atlas.py [--ktx <path to ktx>] [--no-ktx]
+Usage: python3 -I scripts/assets/build_ui_atlas.py [--ktx <path to ktx>] [--no-ktx] [--icons-only]
 
 Deterministic: the same sources produce byte-identical PNG/JPG outputs. Writes
   public/assets/ui/icons.png          16 icons, 128 px slots (112 px medallion + 8 px padding), 512x512
@@ -9,7 +9,7 @@ Deterministic: the same sources produce byte-identical PNG/JPG outputs. Writes
   public/assets/ui/dice-d6-glow.png   emissive masks for the d6 page: amber pips on black, same slots
   public/assets/ui/dice-d8-glow.png   emissive masks for the d8 page: amber numerals on black, same slots
   (the dice pages are displayed through toneMapped false: their colours are the displayed colours)
-  public/assets/ui/glyphs.png         14 sigil glyphs drawn from src/sigil/templates.ts, 256 px slots, 1024x1024
+  public/assets/ui/glyphs.png         Sigils drawn from src/sigil/templates.ts, 256 px slots, 1024x1024
   public/assets/ui/title-2048.jpg     title key art backdrop 2048x1152, and title-1024.jpg 1024x576
   public/assets/ui/*.ktx2             UASTC + Zstandard, mipmapped, bottom-left origin (when ktx exists)
   public/assets/ui/ui-atlas.json      manifest read by src/ui/icon-atlas.ts
@@ -122,7 +122,7 @@ D4_VALUES = [1, 2, 3, 4]
 # Outward CCW vertex order for each face opposite vertex 0..3. The atlas corners are
 # apex, left, right, matching this order in the runtime geometry.
 D4_FACE_VERTICES = ((3, 2, 1), (0, 2, 3), (3, 1, 0), (0, 1, 2))
-SIGIL_IDS = ["gear", "flame", "ward", "bolt", "spiral", "anchor", "quench", "gear-plus", "flame-plus", "ward-plus", "bolt-plus", "spiral-plus", "anchor-plus", "quench-plus"]
+SIGIL_IDS = ["gear", "flame", "ward", "bolt", "spiral", "anchor", "quench", "gear-plus", "flame-plus", "ward-plus", "bolt-plus", "spiral-plus", "anchor-plus", "quench-plus", "eye"]
 
 
 def sha256(path: Path) -> str:
@@ -209,8 +209,7 @@ def build_icons() -> tuple[Image.Image, dict, list[dict]]:
     for i, icon_id in enumerate(ids):
         px, py = (i % page_cols) * ICON_SLOT, (i // page_cols) * ICON_SLOT
         if i >= len(spec["cells"]):
-            # These two status marks are authored locally because the historical raw sheet predates
-            # Foundry. Keep them deterministic and distinct from the legacy sprite aliases.
+            # Later status marks are drawn into the atlas without changing the source sheet.
             tile = Image.new("RGBA", (inner, inner), (0, 0, 0, 0))
             d = ImageDraw.Draw(tile)
             c = inner // 2
@@ -248,7 +247,25 @@ def build_icons() -> tuple[Image.Image, dict, list[dict]]:
         page[py + ICON_PAD : py + ICON_PAD + inner, px + ICON_PAD : px + ICON_PAD + inner] = arr
         icons[icon_id] = entry("icons", px, py, ICON_SLOT, ICON_SLOT, page_w, page_h)
         crops.append({"id": icon_id, "sourceRect": {"x": int(sx0), "y": int(sy0), "w": side, "h": side}})
-    return Image.fromarray(dilate_rgb(page), "RGBA"), icons, crops
+    atlas = Image.fromarray(dilate_rgb(page), "RGBA")
+    # Dilate the new badge in its own cell to retain all historical padding pixels.
+    slot = len(ids)
+    if slot >= page_cols * (page_h // ICON_SLOT):
+        raise ValueError("No existing slot for the Charge badge")
+    x, y = (slot % page_cols) * ICON_SLOT, (slot // page_cols) * ICON_SLOT
+    tile = Image.new("RGBA", (ICON_SLOT * 3, ICON_SLOT * 3), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(tile)
+    def px(value: int) -> int:
+        return (ICON_PAD + value) * 3
+    draw.ellipse(tuple(px(v) for v in (15, 15, inner - 15, inner - 15)), fill=(29, 76, 107, 250),
+                 outline=(95, 211, 248, 255), width=15)
+    draw.polygon([(px(x), px(y)) for x, y in [(58, 23), (35, 61), (53, 61), (47, 88),
+                 (78, 48), (58, 48), (66, 23)]], fill=(207, 246, 255, 255))
+    tile = tile.resize((ICON_SLOT, ICON_SLOT), Image.Resampling.LANCZOS)
+    atlas.paste(Image.fromarray(dilate_rgb(np.asarray(tile)), "RGBA"), (x, y))
+    icons["status-charge"] = entry("icons", x, y, ICON_SLOT, ICON_SLOT, page_w, page_h)
+    crops.append({"id": "status-charge", "sourceRect": None})
+    return atlas, icons, crops
 
 
 # ----------------------------------------------------------------------------------------------- dice
@@ -676,15 +693,85 @@ def review_sheet(icons_page: Image.Image, d6: Image.Image, d8: Image.Image, glyp
 # ----------------------------------------------------------------------------------------------- main
 
 
+def write_icons_only(ktx: Path, no_ktx: bool, page: Image.Image, icons: dict, crops: list[dict]) -> None:
+    manifest_path = OUT / "ui-atlas.json"
+    manifest = json.loads(manifest_path.read_text())
+    before = manifest["pages"]["icons"]
+    if page.size != (before["width"], before["height"]):
+        raise ValueError("Icon-only rebuild must preserve the page size")
+    if any(icons.get(key) != region for key, region in manifest["icons"].items()):
+        raise ValueError("Icon-only rebuild must preserve existing icon rects")
+    png = OUT / before["png"]
+    save_png(page, png)
+    packed = encode_ktx2(ktx, png) if not no_ktx else None
+    if not no_ktx and (not packed or packed.name != before["ktx2"]):
+        raise ValueError("Icon-only rebuild must preserve the compressed page path")
+    if no_ktx:
+        before["ktx2"] = None
+    manifest["icons"] = icons
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
+
+    prov_path = SRC / "provenance.json"
+    prov = json.loads(prov_path.read_text())
+    prov["procedural"]["chargeIcon"] = "Original lightning medallion drawn by scripts/assets/build_ui_atlas.py."
+    prov["derivatives"]["iconCrops"] = crops
+    changed = {path for path in (png, packed, manifest_path) if path}
+    prov["derivatives"]["files"] = [
+        {"file": rel(path), "bytes": path.stat().st_size, "sha256": sha256(path)}
+        if (path := ROOT / item["file"]) in changed else item
+        for item in prov["derivatives"]["files"]
+    ]
+    prov_path.write_text(json.dumps(prov, indent=2) + "\n")
+
+
+def write_glyph_only(glyph: str, ktx: Path, no_ktx: bool) -> None:
+    manifest_path = OUT / "ui-atlas.json"
+    manifest = json.loads(manifest_path.read_text())
+    page = manifest["pages"]["glyphs"]
+    rendered, glyphs = build_glyphs()
+    if rendered.size != (page["width"], page["height"]):
+        raise ValueError("Glyph rebuild must preserve the page size")
+    if any(glyphs[key] != region for key, region in manifest["glyphs"].items()):
+        raise ValueError("Glyph rebuild must preserve existing glyph rects")
+    png = OUT / page["png"]
+    image = Image.open(png).convert("RGBA")
+    slot = glyphs[glyph]["px"]
+    x, y, w, h = (slot[key] for key in ("x", "y", "w", "h"))
+    image.paste(rendered.crop((x, y, x + w, y + h)), (x, y))
+    save_png(image, png)
+    packed = encode_ktx2(ktx, png) if not no_ktx else None
+    page["ktx2"] = packed.name if packed else None
+    manifest["glyphs"][glyph] = glyphs[glyph]
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
+
+    prov_path = SRC / "provenance.json"
+    prov = json.loads(prov_path.read_text())
+    files = {item["file"]: item for item in prov["derivatives"]["files"]}
+    for path in (png, packed, manifest_path):
+        if path:
+            files[rel(path)] = {"file": rel(path), "bytes": path.stat().st_size, "sha256": sha256(path)}
+    prov["derivatives"]["files"] = list(files.values())
+    prov_path.write_text(json.dumps(prov, indent=2) + "\n")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--ktx", type=Path, default=DEFAULT_KTX)
     parser.add_argument("--no-ktx", action="store_true")
+    targets = parser.add_mutually_exclusive_group()
+    targets.add_argument("--icons-only", action="store_true")
+    targets.add_argument("--glyph-only", choices=SIGIL_IDS)
     args = parser.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
     DOCS.mkdir(parents=True, exist_ok=True)
 
+    if args.glyph_only:
+        write_glyph_only(args.glyph_only, args.ktx, args.no_ktx)
+        return
     icons_page, icons, crops = build_icons()
+    if args.icons_only:
+        write_icons_only(args.ktx, args.no_ktx, icons_page, icons, crops)
+        return
     d6_page, d8_page, d4_page, d6_glow, d8_glow, d4_glow, dice, dice_src = build_dice()
     glyph_page, glyphs = build_glyphs()
     key_variants = build_key_art()
@@ -729,6 +816,7 @@ def main() -> None:
     outputs = sorted(p for p in OUT.iterdir() if p.is_file())
     prov_path = SRC / "provenance.json"
     prov = json.loads(prov_path.read_text())
+    prov["procedural"]["chargeIcon"] = "Original lightning medallion drawn by scripts/assets/build_ui_atlas.py."
     prov["derivatives"] = {
         "script": "scripts/assets/build_ui_atlas.py",
         "ktx": str(args.ktx.name) + " 4.4.2" if ktx_available else None,

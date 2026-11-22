@@ -1,0 +1,27 @@
+{
+  "generator": "OpenAI ImageGen",
+  "provider": "OpenAI Media Service",
+  "model": "OpenAI ImageGen (model not exposed by tool)",
+  "file": "dungeon.png",
+  "rawGeneratedFile": "dungeon.generated.png",
+  "reference": [
+    {
+      "path": "assets-source/style/locked/L-board-1.png",
+      "sha256": "d3fffc8eb300cc6f40236c28930401ef1bd06be0e27be76999839e3bfeacc018"
+    },
+    {
+      "path": "assets-source/style/locked/L-cards.png",
+      "sha256": "207a60d3465942c8d16ddb5eee674db576a4a19e3b7070579313f844050b2c52"
+    }
+  ],
+  "prompt": "Create one original transparent PNG foreground illustration sheet for the Clockwork Spire VR card game, matching the supplied references exactly in painterly Gilded Lamplight style: oil-paint brushwork, semi-realistic readable silhouettes, polished worn brass, dark gunmetal, oiled walnut accents, candle amber highlights, ruby and sapphire jewel tones only, no teal, warm dark edge shading. Exact 2 by 2 equal grid, 1:1 sheet, each occupied cell self-contained and centered with at least 10% completely transparent safety margin on every side, no overlap. Real alpha transparency, not checkerboard. No card, no frame, no border, no parchment, no room, no background, no ground plane, no shadows outside the subjects, no text, labels, lettering, numbers, runes, watermark, or asset reuse. Leave the lower-right quadrant completely empty and fully transparent. Upper-left: TORQUE-WRENCH, ruby attack foreground: an antique brass torque wrench with an unmistakable angular open jaw gripping and twisting one visibly rusted iron bolt, a small warm ruby enamel accent on the handle, diagonal heroic silhouette, crisp readable wrench and bolt, restrained orange rust. Upper-right: COUNTERWEIGHT, sapphire skill foreground: a heavy square brass counterweight with beveled corners and sapphire enamel inset, visibly hung from a taut blue-steel pulley chain with a small brass pulley, chain tension and hanging weight clearly legible, diagonal suspended composition. Lower-left: TENSION-COIL, sapphire skill foreground: a wound brass spring coil seated in an exposed copper cradle, one clearly visible brass ratchet and pawl beside it, mechanical spring tension readable, compact strong silhouette with a subtle sapphire enamel accent. Keep all three objects distinct, large, and iconic at small card size. Do not put any object in the lower-right empty cell.",
+  "settings": {
+    "transparent_background": true,
+    "layout": "2x2 equal grid",
+    "size": "1254x1254",
+    "staging": "Each occupied quadrant was alpha-bounded, reduced to 78% of its cell, centered with a transparent safety margin, and the lower-right quadrant was cleared before atlas packing."
+  },
+  "rights": "Original generated artwork. No external asset reuse. Creative owner approval pending.",
+  "generatedSha256": "0bbd8eed6fb39465bd1e4affba2297e04edc5e9e15e8562df461762e21f5d966",
+  "sha256": "cbc81cef093381265009cad41d3f09fe90bf6a32bbb1326866b77506c77cec1b"
+}

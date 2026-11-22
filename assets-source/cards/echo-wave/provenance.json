@@ -1,0 +1,50 @@
+{
+  "provider": "Higgsfield",
+  "model": "gpt_image_2",
+  "source": {
+    "path": "assets-source/cards/echo-wave/echo-wave.source.png",
+    "sha256": "b89e468548677b2f0e26827ee78309bf788ab1599d9d5e0cd17190844aeb53e8",
+    "bytes": 1268264
+  },
+  "references": [
+    {
+      "path": "assets-source/style/locked/L-cards.png",
+      "sha256": "207a60d3465942c8d16ddb5eee674db576a4a19e3b7070579313f844050b2c52",
+      "bytes": 8304904
+    }
+  ],
+  "prompt": "One original foreground illustration for the Clockwork Spire Gilded Lamplight card catalog. Match the supplied project-owned painted style references for brushwork, rich amber edge light, engraved brass and emerald jewel accents. Depict a compact old brass spell resonator: a thick open spiral of gilded brass with one luminous emerald inlay, and a second smaller ghost of the same spiral offset directly behind it like an audible echo made visible. Clear bold silhouette, two spiral profiles remain distinguishable when reduced to a small circular card window. Semi-realistic Victorian clockwork fantasy oil-painted metal, gentle amber glow limited to the object. A square isolated cutout on a perfectly even untextured flat pure magenta studio matte (#FF00FF), filling about 76 percent of the canvas width and height and centered. The magenta is an extraction backdrop and must never contaminate the subject. No broad haze, particles, base, ground shadow, landscape, card frame, border, hands, figures, lettering, logos, numbers or other objects. Project reference is style only, do not reproduce its card frames or subjects.",
+  "settings": {
+    "width": 1024,
+    "height": 1024,
+    "matte": "#FF00FF",
+    "aspectRatio": "1:1"
+  },
+  "runtimeDerivation": "scripts/assets/build_card_atlas.py --echo-wave-only derives the magenta chroma matte, despills edges, bleeds transparent RGB, and packs page 3.",
+  "runtime": {
+    "frontRect": [
+      704,
+      1056,
+      288,
+      288
+    ],
+    "page": 3,
+    "alphaBoundsAt16": [
+      14,
+      29,
+      273,
+      258
+    ],
+    "pagePng": {
+      "path": "public/assets/cards/atlas/card-atlas-3.png",
+      "sha256": "4dfc48bc5d8c3f38b8b4ccf324462d5cfff35865b5fbc982d09050a71b28dabd",
+      "bytes": 4733251
+    },
+    "pageKtx2": {
+      "path": "public/assets/cards/atlas/card-atlas-3.ktx2",
+      "sha256": "df2e2752d66f568a0dff08aa0e3fc3212eec9069cc68e83d211b74a424ea554b",
+      "bytes": 2487368
+    }
+  },
+  "rights": "Original generated foreground, with the original project card sheet as visual reference. Owner and release review pending."
+}

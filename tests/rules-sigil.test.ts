@@ -101,6 +101,22 @@ describe('scaleEffects', () => {
     ]);
   });
 
+  it('scales damage added by Block and healing amounts', () => {
+    const bonus = { min: 1, amount: 4 };
+    expect(
+      scaleEffects(
+        [
+          { type: 'damage', amount: 12, target: 'target', bonusIfSelfBlock: bonus },
+          { type: 'heal', amount: 6, target: 'self' },
+        ],
+        0.5,
+      ),
+    ).toEqual([
+      { type: 'damage', amount: 6, target: 'target', bonusIfSelfBlock: { min: 1, amount: 2 } },
+      { type: 'heal', amount: 3, target: 'self' },
+    ]);
+  });
+
   it('returns a new list and never mutates its input', () => {
     const frozen = deepFreeze(structuredClone(effects));
     const out = scaleEffects(frozen, 1);
@@ -169,6 +185,37 @@ describe('playCardWithSigil through the real engine', () => {
     );
     expect(events.find((e) => e.type === 'damage-dealt')).toMatchObject({ amount: damage });
     expect(after.enemies[0]?.hp).toBe(99 - damage);
+  });
+
+  it('spends all stored Charge before applying the boosted effects above the trace cap', () => {
+    const base = combat([sigilBolt]);
+    const player = { ...base.player, statuses: { charge: 4, 'wound-up': 1 } };
+    const charged = deepFreeze({ ...base, player });
+    const result = playCardWithSigil(charged, { type: 'play-card', uid: 0, target: 'dummy' }, 4);
+    expect(result.multiplier).toBeCloseTo(1.65);
+    expect(result.state.player.statuses).toEqual({ 'wound-up': 1 });
+    expect(result.events.filter((event) => event.type === 'status-ticked')).toEqual([
+      { type: 'status-ticked', target: 'player', status: 'charge', from: 4, to: 0 },
+    ]);
+    expect(result.events.find((e) => e.type === 'damage-dealt')).toMatchObject({ amount: 18 });
+    expect(charged.player.statuses.charge).toBe(4);
+    expect(() =>
+      playCardWithSigil(charged, { type: 'play-card', uid: 0, target: 'missing' }, 1),
+    ).toThrow(RulesError);
+    expect(charged.player.statuses.charge).toBe(4);
+  });
+
+  it('scales the resolved die damage on a charged sigil and preserves Charge on a Fizzle', () => {
+    const before = combat([diceBolt]);
+    const state = { ...before, player: { ...before.player, statuses: { charge: 3 } } };
+    const action = { type: 'play-card', uid: 0, target: 'dummy', dice: 6 } as const;
+    const boosted = playCardWithSigil(state, action, 1.25);
+    expect(boosted.multiplier).toBeCloseTo(1.55);
+    expect(boosted.state.enemies[0]?.hp).toBe(88);
+    const fizzled = playCardWithSigil(state, action, 0.5, true);
+    expect(fizzled.multiplier).toBe(0.5);
+    expect(fizzled.state.enemies[0]?.hp).toBe(95);
+    expect(fizzled.state.player.statuses).toEqual({ charge: 3 });
   });
 
   it('puts the original, unscaled card into the discard pile', () => {

@@ -1,0 +1,123 @@
+{
+  "piece": "conservatory-specimens",
+  "blender": "5.2.2 LTS",
+  "authoringAgent": "Codex Blender authoring worker",
+  "license": "Original project-authored geometry and textures under the repository's MIT license.",
+  "source_reference": "Approved Clockwork Spire art bible and alchemy kit staging/review-detail.png",
+  "units": "metres, glTF Y up; tiles relief +Y, design top -Z",
+  "reimport": "Blender glTF importer; top-level identity pivots, bounds, draw calls, UVs, maps, budgets checked",
+  "textures": {
+    "size_px": [
+      192,
+      144
+    ],
+    "embedded_png": [
+      "sRGB albedo",
+      "tangent normal",
+      "roughness G / metallic B"
+    ]
+  },
+  "roots": {
+    "IngredientBellcap": {
+      "triangles": 1240,
+      "vertices_after_reimport": 1286,
+      "draw_calls": 1,
+      "bounds_gltf_m": {
+        "min": [
+          -0.088375,
+          0.0,
+          -0.073038
+        ],
+        "max": [
+          0.088375,
+          0.18334,
+          0.073038
+        ]
+      },
+      "material": "Conservatory painted atlas",
+      "materials": 1
+    },
+    "IngredientSilverleaf": {
+      "triangles": 412,
+      "vertices_after_reimport": 988,
+      "draw_calls": 1,
+      "bounds_gltf_m": {
+        "min": [
+          -0.084677,
+          0.0,
+          -0.040347
+        ],
+        "max": [
+          0.084677,
+          0.22401,
+          0.040347
+        ]
+      },
+      "material": "Conservatory painted atlas",
+      "materials": 1
+    },
+    "RecipeTileBellcap": {
+      "triangles": 332,
+      "vertices_after_reimport": 582,
+      "draw_calls": 1,
+      "bounds_gltf_m": {
+        "min": [
+          -0.09,
+          0.0,
+          -0.09
+        ],
+        "max": [
+          0.09,
+          0.022,
+          0.09
+        ]
+      },
+      "material": "Conservatory painted atlas",
+      "materials": 1
+    },
+    "RecipeTileSilverleaf": {
+      "triangles": 248,
+      "vertices_after_reimport": 474,
+      "draw_calls": 1,
+      "bounds_gltf_m": {
+        "min": [
+          -0.09,
+          0.0,
+          -0.09
+        ],
+        "max": [
+          0.09,
+          0.021,
+          0.09
+        ]
+      },
+      "material": "Conservatory painted atlas",
+      "materials": 1
+    }
+  },
+  "glb_bytes": 273896,
+  "hashes": {
+    "glb_sha256": "b2a459d5e8726fe0b0bebf6f89d15e42bbefcf36eb07e0df15d0bddd35d305f4",
+    "source_blend_sha256": "c0662a5f218f1a3392c8a7f329078f6f6759b55cae4e5ac3d30665a477b453a1",
+    "generator_sha256": "c29f2e7a912f2f00468280f607ac856ed2692ce7994e6629370ac99815836b06",
+    "roots": [
+      "IngredientBellcap",
+      "IngredientSilverleaf",
+      "RecipeTileBellcap",
+      "RecipeTileSilverleaf"
+    ],
+    "root_nodes": [
+      "IngredientBellcap",
+      "IngredientSilverleaf",
+      "RecipeTileBellcap",
+      "RecipeTileSilverleaf"
+    ],
+    "triangles": 2232,
+    "visual_approval": "pending"
+  },
+  "review_sha256": "fce1359d4d0d67bde6fe86a37829dc8644f1894c4ee2012067465e9510396d55",
+  "limitations": [
+    "Original painted atlas with analytical tangent normals, single detailed mesh per root.",
+    "Target headset readability and owner visual approval are pending."
+  ]
+}

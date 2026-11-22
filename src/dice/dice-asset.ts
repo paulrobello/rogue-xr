@@ -4,7 +4,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { DieId } from '../content/dice.ts';
 import type { UvRect } from '../ui/icon-atlas.ts';
 import type { PbrSet } from '../world/materials.ts';
-import type { DieKind } from './faces.ts';
+import { type DieKind, faceNormals } from './faces.ts';
 import type { Vec3 } from './quat.ts';
 
 /**
@@ -16,7 +16,12 @@ import type { Vec3 } from './quat.ts';
  * `bindFaceMaps`, and the asset never disposes them.
  */
 export const DICE_ASSET_BASE = '/assets/dice';
-export const DICE_ASSET_IDS = { d6: 'brass-d6', d8: 'glass-d8', d4: 'iron-d4' } as const;
+export const DICE_ASSET_IDS = {
+  d6: 'brass-d6',
+  d8: 'glass-d8',
+  d4: 'iron-d4',
+  d12: 'crystal-d12',
+} as const;
 // d4 is the procedural tetrahedron in DicePresenter. There is intentionally no d4 GLB request.
 const KINDS: readonly DieKind[] = ['d6', 'd8'];
 /**
@@ -33,13 +38,14 @@ const FACE_FALLBACK: Readonly<Record<DieKind, string>> = {
   d6: '#583c26',
   d8: '#2d4a93',
   d4: '#34373b',
+  d12: '#fff1bb',
 };
 
 export interface DiceFace {
   index: number;
   value: number;
   normal: [number, number, number];
-  atlas: { page: string; uv: UvRect };
+  atlas?: { page: string; uv: UvRect };
 }
 
 export interface DiceMaterialSlot {
@@ -94,19 +100,31 @@ function isVec(v: unknown): v is [number, number, number] {
 export function parseDiceManifest(raw: unknown): DiceManifest {
   const m = raw as Partial<DiceManifest>;
   if (typeof m !== 'object' || m === null) throw new Error('dice manifest: expected an object');
-  if (m.kind !== 'd6' && m.kind !== 'd8' && m.kind !== 'd4')
-    throw new Error('dice manifest: kind must be d4, d6 or d8');
+  if (m.kind !== 'd6' && m.kind !== 'd8' && m.kind !== 'd4' && m.kind !== 'd12')
+    throw new Error('dice manifest: expected d4, d6, d8 or d12');
   if (m.id !== DICE_ASSET_IDS[m.kind])
     throw new Error(`dice manifest: id ${m.id} is not a ${m.kind}`);
   if (typeof m.glb !== 'string' || typeof m.node !== 'string')
     throw new Error('dice manifest: glb or node missing');
   if (m.frame?.up !== '+Y') throw new Error('dice manifest: frame must be +Y up');
-  const count = m.kind === 'd6' ? 6 : m.kind === 'd8' ? 8 : 4;
+  const normals = faceNormals(m.kind);
+  const count = normals.length;
   if (!Array.isArray(m.faces) || m.faces.length !== count)
     throw new Error(`dice manifest: expected ${count} faces`);
   m.faces.forEach((face, i) => {
-    if (face.index !== i || !Number.isInteger(face.value) || !isVec(face.normal) || !face.atlas?.uv)
+    if (
+      face.index !== i ||
+      !Number.isInteger(face.value) ||
+      !isVec(face.normal) ||
+      (m.kind !== 'd12' && !face.atlas?.uv)
+    )
       throw new Error(`dice manifest: face ${i} invalid`);
+    if (m.kind === 'd12') {
+      const { x, y, z } = normals[i];
+      const [nx, ny, nz] = face.normal;
+      if (face.value !== i + 1 || Math.hypot(x - nx, y - ny, z - nz) > 1e-9)
+        throw new Error(`dice manifest: crystal face ${i} differs from the physics hull`);
+    }
   });
   const slots = Object.values(m.materialSlots ?? {});
   if (slots.filter((s) => s.role === 'face').length !== 1 || slots.length > 2)
@@ -173,6 +191,10 @@ export class DiceAsset {
   private disposed = false;
 
   constructor(private readonly dice: ReadonlyMap<DieKind, DieResources>) {}
+
+  has(kind: DieKind): boolean {
+    return !this.disposed && this.dice.has(kind);
+  }
 
   private die(kind: DieKind): DieResources {
     if (this.disposed) throw new Error('dice asset disposed');
@@ -304,8 +326,11 @@ async function parseDie(
     if (!slot) throw new Error(`${manifest.id} glb: material ${source.name} not in the manifest`);
     envScales.push(slot.envMapScale ?? 1);
     if (slot.role === 'face') {
-      source.dispose();
-      const face = faceMaterial(manifest.kind, source.name, slot);
+      let face = source;
+      if (manifest.kind !== 'd12') {
+        source.dispose();
+        face = faceMaterial(manifest.kind, source.name, slot);
+      } else face.side = THREE.FrontSide;
       faces.push(face);
       faceSlot = slot;
       return face;
@@ -332,6 +357,7 @@ export async function parseDice(
   glbs: Readonly<Partial<Record<DieKind, ArrayBuffer>>>,
   manifests: Readonly<Partial<Record<DieKind, DiceManifest>>>,
   set: PbrSet | null = null,
+  onCrystalUnavailable?: (error: unknown) => void,
 ): Promise<DiceAsset> {
   const dice = new Map<DieKind, DieResources>();
   try {
@@ -341,6 +367,18 @@ export async function parseDice(
       if (manifest.kind !== kind)
         throw new Error(`dice manifest for ${kind} is a ${manifest.kind}`);
       dice.set(kind, await parseDie(glbs[kind] as ArrayBuffer, manifest, set));
+    }
+    const crystal = manifests.d12;
+    const crystalGlb = glbs.d12;
+    if (crystal || crystalGlb) {
+      try {
+        if (crystal?.kind !== 'd12' || !crystalGlb)
+          throw new Error('dice asset: missing crystal d12 data');
+        dice.set('d12', await parseDie(crystalGlb, crystal, set));
+      } catch (error) {
+        if (!onCrystalUnavailable) throw error;
+        onCrystalUnavailable(error);
+      }
     }
   } catch (error) {
     new DiceAsset(dice).dispose();
@@ -363,21 +401,31 @@ export async function loadDice(
     if (!response.ok) throw new Error(`dice asset ${url}: HTTP ${response.status}`);
     return response;
   };
-  const entries = await Promise.all(
-    KINDS.map(async (kind) => {
-      const id = DICE_ASSET_IDS[kind];
-      const manifest = parseDiceManifest(
-        await (await get(`${base}/${id}/${id}.manifest.json`)).json(),
-      );
-      const glb = await (await get(`${base}/${id}/${manifest.glb}`)).arrayBuffer();
-      return { kind, manifest, glb };
+  const loadKind = async (kind: DieKind) => {
+    const id = DICE_ASSET_IDS[kind];
+    const manifest = parseDiceManifest(
+      await (await get(`${base}/${id}/${id}.manifest.json`)).json(),
+    );
+    const glb = await (await get(`${base}/${id}/${manifest.glb}`)).arrayBuffer();
+    return { kind, manifest, glb };
+  };
+  const crystalUnavailable = (error: unknown): void =>
+    console.warn('Crystal d12 model unavailable, numbered fallback kept', error);
+  const entries = await Promise.all([
+    ...KINDS.map(loadKind),
+    loadKind('d12').catch((error: unknown) => {
+      crystalUnavailable(error);
+      return null;
     }),
-  );
-  const pick = <T>(f: (e: (typeof entries)[number]) => T) =>
-    Object.fromEntries(entries.map((e) => [e.kind, f(e)])) as Record<DieKind, T>;
+  ]);
+  const pick = <T>(f: (e: NonNullable<(typeof entries)[number]>) => T) =>
+    Object.fromEntries(entries.flatMap((e) => (e ? [[e.kind, f(e)]] : []))) as Partial<
+      Record<DieKind, T>
+    >;
   return parseDice(
     pick((e) => e.glb),
     pick((e) => e.manifest),
     options.materials ?? null,
+    crystalUnavailable,
   );
 }

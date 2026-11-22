@@ -19,7 +19,11 @@ export type EnemyKind =
   | 'glasswing-scrivener'
   | 'furnace-mite'
   | 'null-crown-auditor'
-  | 'clockwork-owl';
+  | 'clockwork-owl'
+  | 'mortar-scarab'
+  | 'lantern-bailiff'
+  | 'waking-armor'
+  | 'trellis-keeper';
 
 export type EncounterTier = 'regular' | 'elite' | 'guardian';
 
@@ -166,6 +170,53 @@ export const ENEMIES: Readonly<Record<EnemyKind, EnemySetup>> = {
       move('feather-dart', 'attack-debuff', 2, [hit(6), onPlayer('vulnerable', 2)]),
     ],
   },
+  'mortar-scarab': {
+    id: 'mortar-scarab',
+    name: 'Mortar Scarab',
+    hp: 31,
+    moves: [
+      { ...move('shell-seal', 'defend', 2, [block(9)], 'guarded'), followUp: 'mortar-rake' },
+      move('mortar-rake', 'attack', 0, [hit(4, 2)], 'exposed'),
+      move('grind', 'attack-debuff', 2, [hit(6), onPlayer('weak', 2)]),
+    ],
+  },
+  'lantern-bailiff': {
+    id: 'lantern-bailiff',
+    name: 'Lantern Bailiff',
+    hp: 42,
+    moves: [
+      {
+        ...move('draw-chain', 'buff', 2, [windUp(1), block(7)], 'guarded'),
+        followUp: 'lantern-sweep',
+      },
+      move('lantern-sweep', 'attack', 0, [hit(12)], 'exposed'),
+      move('cinder-glance', 'attack-debuff', 2, [hit(5), onPlayer('overheat', 1)]),
+      move('lantern-parry', 'defend', 1, [block(8)], 'guarded'),
+    ],
+  },
+  'waking-armor': {
+    id: 'waking-armor',
+    name: 'Waking Armor',
+    hp: 46,
+    moves: [
+      move('heel-check', 'attack-debuff', 3, [hit(7), onPlayer('weak', 2)]),
+      {
+        ...move('lock-plates', 'defend', 2, [block(12)], 'guarded'),
+        followUp: 'open-gauntlets',
+      },
+      move('open-gauntlets', 'attack', 0, [hit(7, 2)], 'exposed'),
+    ],
+  },
+  'trellis-keeper': {
+    id: 'trellis-keeper',
+    name: 'Trellis Keeper',
+    hp: 38,
+    moves: [
+      { ...move('trellis-brace', 'defend', 2, [block(10)], 'guarded'), followUp: 'double-cut' },
+      { ...move('double-cut', 'attack', 0, [hit(5, 2)], 'exposed'), label: 'Double Cut' },
+      move('hook-jab', 'attack', 3, [hit(6)]),
+    ],
+  },
 };
 
 /** Threat cost of one enemy against a floor budget. */
@@ -179,6 +230,10 @@ export const ENEMY_THREAT: Readonly<Record<EnemyKind, number>> = {
   'furnace-mite': 2,
   'null-crown-auditor': 8,
   'clockwork-owl': 3,
+  'mortar-scarab': 3,
+  'lantern-bailiff': 4,
+  'waking-armor': 4,
+  'trellis-keeper': 3,
 };
 
 export interface Encounter {
@@ -198,7 +253,17 @@ const encounter = (id: string, tier: EncounterTier, enemies: EnemyKind[]): Encou
 
 export const ROAMING_SENTRY = encounter('roaming-sentry', 'regular', ['cog-sentry']);
 
+export const ARMORY_ENCOUNTER = encounter('waking-armor', 'regular', ['waking-armor']);
+
 export const CONSERVATORY_OWL = encounter('conservatory-owl', 'regular', ['clockwork-owl']);
+
+export const TRELLIS_KEEPER = encounter('trellis-keeper', 'regular', ['trellis-keeper']);
+
+/** Regular solo encounters reserved for the stone dungeon rooms. */
+export const DUNGEON_ENCOUNTERS: readonly Encounter[] = [
+  encounter('mortar-scarab', 'regular', ['mortar-scarab']),
+  encounter('lantern-bailiff', 'regular', ['lantern-bailiff']),
+];
 
 export const ENCOUNTERS: Readonly<Record<EncounterTier, readonly Encounter[]>> = {
   regular: [

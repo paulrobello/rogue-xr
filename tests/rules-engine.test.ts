@@ -248,6 +248,24 @@ describe('turn loop', () => {
 });
 
 describe('play-card', () => {
+  it('sets Loaded and Reroll dice flags with their turn lifetimes', () => {
+    const dieCards: CardDef[] = [
+      { id: 'loaded', cost: 0, target: 'none', effects: [{ type: 'load-die' }] },
+      { id: 'reroll', cost: 0, target: 'none', effects: [{ type: 'allow-reroll' }] },
+    ];
+    let state = begin(dieCards);
+    state = apply(state, { type: 'start-turn' }).state;
+    state = toHand(state, 0);
+    state = toHand(state, 1);
+    state = apply(state, { type: 'play-card', uid: 0 }).state;
+    state = apply(state, { type: 'play-card', uid: 1 }).state;
+    expect(state.loadedDie).toBe(true);
+    expect(state.rerollDie).toBe(true);
+    state = apply(state, { type: 'end-turn' }).state;
+    expect(state.loadedDie).toBeUndefined();
+    expect(state.rerollDie).toBe(true);
+  });
+
   it('pays steam, resolves effects and discards the card', () => {
     let state = apply(begin(), { type: 'start-turn' }).state;
     const card = state.piles.hand.find((c) => c.def.id.startsWith('strike'));

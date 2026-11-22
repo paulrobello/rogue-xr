@@ -1,3 +1,4 @@
+import crystalD12 from './crystal-d12.json';
 import {
   type Pose,
   QUAT_IDENTITY,
@@ -11,8 +12,8 @@ import {
   type Vec3,
 } from './quat.ts';
 
-/** The brass cube, glass octahedron and iron tetrahedron. */
-export type DieKind = 'd6' | 'd8' | 'd4';
+/** The iron tetrahedron, brass cube, glass octahedron and crystal dodecahedron. */
+export type DieKind = 'd4' | 'd6' | 'd8' | 'd12';
 
 /** Metres. The cube's half edge and the octahedron's centre-to-vertex distance. */
 export const D6_HALF_EXTENT = 0.02;
@@ -71,14 +72,31 @@ const D4_VERTICES: readonly Vec3[] = D4_NORMALS.map((n) => ({
   y: -n.y * D4_CIRCUMRADIUS,
   z: -n.z * D4_CIRCUMRADIUS,
 }));
+const D12_VERTICES: readonly Vec3[] = crystalD12.vertices.map(([x, y, z]) => ({ x, y, z }));
+const D12_NORMALS: readonly Vec3[] = crystalD12.faces.map(({ normal: [x, y, z] }) => ({ x, y, z }));
+export const D12_FACE_VERTICES: readonly (readonly number[])[] = crystalD12.faces.map(
+  (face) => face.vertices,
+);
 
 export function faceNormals(kind: DieKind): readonly Vec3[] {
-  return kind === 'd6' ? D6_NORMALS : kind === 'd8' ? D8_NORMALS : D4_NORMALS;
+  return kind === 'd6'
+    ? D6_NORMALS
+    : kind === 'd8'
+      ? D8_NORMALS
+      : kind === 'd12'
+        ? D12_NORMALS
+        : D4_NORMALS;
 }
 
 /** Convex hull vertices of the die in local space. */
 export function dieVertices(kind: DieKind): readonly Vec3[] {
-  return kind === 'd6' ? D6_VERTICES : kind === 'd8' ? D8_VERTICES : D4_VERTICES;
+  return kind === 'd6'
+    ? D6_VERTICES
+    : kind === 'd8'
+      ? D8_VERTICES
+      : kind === 'd12'
+        ? D12_VERTICES
+        : D4_VERTICES;
 }
 
 /** Radius of the sphere around the die's centre that holds every vertex, whatever its orientation. */
@@ -149,6 +167,37 @@ export const SOLID_ROTATIONS: readonly Quat[] = (() => {
     .map((entry) => entry.q);
 })();
 
+function d12Basis(face: number, corner: number): readonly (readonly number[])[] {
+  const n = D12_NORMALS[face];
+  const p = D12_VERTICES[D12_FACE_VERTICES[face][corner]];
+  const depth = n.x * p.x + n.y * p.y + n.z * p.z;
+  const x = p.x - n.x * depth;
+  const y = p.y - n.y * depth;
+  const z = p.z - n.z * depth;
+  const length = Math.hypot(x, y, z);
+  const u = { x: x / length, y: y / length, z: z / length };
+  const v = { x: n.y * u.z - n.z * u.y, y: n.z * u.x - n.x * u.z, z: n.x * u.y - n.y * u.x };
+  return [
+    [u.x, v.x, n.x],
+    [u.y, v.y, n.y],
+    [u.z, v.z, n.z],
+  ];
+}
+
+/** Mapping one face and one corner determines a proper dodecahedral rotation. */
+const D12_ROTATIONS: readonly Quat[] = (() => {
+  const source = d12Basis(0, 0);
+  return D12_FACE_VERTICES.flatMap((corners, face) =>
+    corners.map((_, corner) => {
+      const dest = d12Basis(face, corner);
+      const matrix = dest.map((row) =>
+        source.map((other) => row[0] * other[0] + row[1] * other[1] + row[2] * other[2]),
+      );
+      return quatFromMatrix(matrix);
+    }),
+  ).sort((a, b) => quatAngle(QUAT_IDENTITY, a) - quatAngle(QUAT_IDENTITY, b));
+})();
+
 /**
  * The die's numbering offset: the solid rotation `S` that puts `targetFace`'s label on body face
  * `landingFace` (`S * n[targetFace] = n[landingFace]`). The rendered orientation is `body * S`, so a
@@ -171,7 +220,7 @@ export function numberingOffset(kind: DieKind, targetFace: number, landingFace: 
         z: -to.z,
       },
     );
-  for (const rotation of SOLID_ROTATIONS) {
+  for (const rotation of kind === 'd12' ? D12_ROTATIONS : SOLID_ROTATIONS) {
     const n = rotateVec(rotation, from);
     if (n.x * to.x + n.y * to.y + n.z * to.z > 0.999) return rotation;
   }

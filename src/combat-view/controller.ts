@@ -19,10 +19,12 @@ import {
   livingEnemies,
   PLAYER_ID,
   playCardWithSigil,
+  playTarget,
   rollDice,
   startCombat,
   validate,
 } from '../rules/index.ts';
+import { previewSigilPower } from '../rules/sigil.ts';
 import type { SigilId, Stroke } from '../sigil/index.ts';
 import { type SigilQuality, scoreTrace } from '../sigil-plate/index.ts';
 
@@ -68,7 +70,7 @@ export interface CombatOptions {
 }
 
 /** What the view can ask the controller to do next: `target` an enemy, `table` click, or draw a `sigil`. */
-export type Stage = 'idle' | 'target' | 'table' | 'sigil' | 'over';
+export type Stage = 'idle' | 'target' | 'table' | 'sigil' | 'scry' | 'over';
 
 export type { SigilQuality };
 
@@ -78,6 +80,7 @@ export interface SigilResult {
   readonly score: number;
   readonly multiplier: number;
   readonly quality: SigilQuality;
+  readonly echoedCardId?: string;
   /** The sigil the trace resembles most (may differ from `sigil` on a wrong trace). */
   readonly recognizedAs: SigilId;
 }
@@ -90,14 +93,24 @@ export interface DiceReadout {
   readonly value: number;
   /** Every physical roll, in order. The final entry is not necessarily the kept winner. */
   readonly rolls: readonly number[];
+  /** Final contribution from each logical die, present only for multi-die cards. */
+  readonly keptRolls?: readonly number[];
+  readonly rerolledFrom?: number;
 }
+
+type DicePlay = {
+  readonly state: CombatState;
+  readonly action: Extract<Action, { type: 'play-card' }>;
+  readonly sigil: SigilResult | null;
+};
 
 export type InvalidSubject =
   | { readonly kind: 'card'; readonly uid: number }
   | { readonly kind: 'enemy'; readonly id: string }
   | { readonly kind: 'table' }
   | { readonly kind: 'plate' }
-  | { readonly kind: 'end-turn' };
+  | { readonly kind: 'end-turn' }
+  | { readonly kind: 'scry' };
 
 export type ViewUpdate =
   | { readonly type: 'changed' }
@@ -155,16 +168,31 @@ export function describeEvent(event: CombatEvent, state: CombatState): string | 
     case 'turn-started':
       return `-- Turn ${event.turn} --`;
     case 'card-played': {
-      const dice = event.dice === null ? '' : ` [rolled ${event.dice}]`;
+      const dice =
+        event.dice === null ? '' : ` [${event.echoedCardId ? 'kept' : 'rolled'} ${event.dice}]`;
       const target = event.target === null ? '' : ` on ${name(event.target)}`;
-      return `Played ${getCard(event.cardId).name}${target}${dice}`;
+      const spent = event.steamSpent === undefined ? '' : ` [spent ${event.steamSpent} Steam]`;
+      const echo = event.echoedCardId ? `, echoing ${getCard(event.echoedCardId).name}` : '';
+      return `Played ${getCard(event.cardId).name}${echo}${target}${dice}${spent}`;
     }
+    case 'mechanism-installed': {
+      const card = getCard(event.cardId).name;
+      return event.replacedUid === undefined
+        ? `${card} installed`
+        : `${card} replaced the oldest mechanism`;
+    }
+    case 'mechanism-triggered':
+      return `${getCard(event.cardId).name} activates${event.target ? ` on ${name(event.target)}` : ''}`;
     case 'damage-dealt':
       return `${name(event.source)} hit ${name(event.target)} for ${event.hpLost}${
         event.blocked > 0 ? ` (${event.blocked} blocked)` : ''
       }${event.kind === 'overheat' ? ' (overheat)' : ''}`;
+    case 'healed':
+      return `${name(event.target)} restored ${event.amount} HP`;
     case 'block-gained':
       return `${name(event.target)} gained ${event.amount} block`;
+    case 'status-ticked':
+      return event.status === 'charge' ? `Spent ${event.from} Charge` : null;
     case 'status-applied':
       return `${name(event.target)}: +${event.stacks} ${event.status} (${event.total})`;
     case 'enemy-acted':
@@ -173,6 +201,10 @@ export function describeEvent(event: CombatEvent, state: CombatState): string | 
       return `${name(event.enemyId)} opens its case: phase ${event.phase}`;
     case 'enemy-died':
       return `${name(event.enemyId)} is destroyed`;
+    case 'scry-ready':
+      return `Scry: revealed ${event.count} cards`;
+    case 'scry-finished':
+      return `Scry: discarded ${event.discarded}`;
     case 'reshuffled':
       return `Reshuffled ${event.count} cards`;
     case 'combat-won':
@@ -200,6 +232,7 @@ export class CombatController {
   lastDice: DiceReadout | null = null;
   lastSigil: SigilResult | null = null;
   private pending: { uid: number; target?: string } | null = null;
+  private dicePlay: DicePlay | null = null;
   /** Rules events since the last `drainEvents`, for presenters that react to them (audio, effects). */
   private readonly recentEvents: CombatEvent[] = [];
   private readonly listeners = new Set<Listener>();
@@ -248,11 +281,18 @@ export class CombatController {
     return this.pending?.target ?? null;
   }
 
+  cardTarget(uid: number): 'enemy' | 'none' | undefined {
+    const card = this.state.piles.hand.find((entry) => entry.uid === uid);
+    return card && playTarget(this.state, card.def);
+  }
+
   get stage(): Stage {
     if (this.state.outcome !== null) return 'over';
+    if (this.state.scry) return 'scry';
     if (this.pending === null) return 'idle';
     const info = this.pendingCard();
-    if (info.target === 'enemy' && this.pending.target === undefined) return 'target';
+    if (playTarget(this.state, info) === 'enemy' && this.pending.target === undefined)
+      return 'target';
     return info.sigil === undefined ? 'table' : 'sigil';
   }
 
@@ -263,6 +303,7 @@ export class CombatController {
 
   /** Clicks a card: picks it up, or puts it down when it is already selected. */
   select(uid: number): PlayResult {
+    if (this.dicePlay) return this.invalid('Resolve the current roll first', { kind: 'card', uid });
     if (this.state.outcome !== null)
       return this.invalid('The fight is over', { kind: 'card', uid });
     if (this.pending?.uid === uid) {
@@ -324,9 +365,21 @@ export class CombatController {
     return this.play(this.pending.uid, this.pending.target, result);
   }
 
+  confirmScry(discard: readonly number[]): PlayResult {
+    const action = { type: 'resolve-scry', discard } as const;
+    const invalid = validate(this.state, action);
+    if (invalid !== null) return this.invalid(invalid, { kind: 'scry' });
+    this.step(action);
+    this.changed();
+    return { ok: true };
+  }
+
   /** Ends the player turn, lets the enemies act, and starts the next turn unless the fight ended. */
   endTurn(): PlayResult {
+    if (this.dicePlay) return this.invalid('Resolve the current roll first', { kind: 'end-turn' });
     if (this.state.outcome !== null) return this.invalid('The fight is over', { kind: 'end-turn' });
+    if (this.state.scry)
+      return this.invalid('Confirm your Scry choices first', { kind: 'end-turn' });
     this.pending = null;
     this.step({ type: 'end-turn' });
     if (this.state.phase === 'enemy') this.step({ type: 'enemy-act' });
@@ -350,8 +403,7 @@ export class CombatController {
 
   /** A target to probe with: the first living enemy for a targeted card, else none. */
   private probeTarget(uid: number): string | undefined {
-    const card = this.state.piles.hand.find((c) => c.uid === uid);
-    return card?.def.target === 'enemy' ? livingEnemies(this.state)[0]?.id : undefined;
+    return this.cardTarget(uid) === 'enemy' ? livingEnemies(this.state)[0]?.id : undefined;
   }
 
   /** The rules' reason a play is illegal, or `null`. A placeholder dice value lets dice cards validate. */
@@ -376,23 +428,31 @@ export class CombatController {
     let dice: number | undefined;
     if (info.dice !== undefined) {
       const die = dieById(info.dice);
-      let best = Number.NEGATIVE_INFINITY;
       const rolls: number[] = [];
-      for (let n = 0; n <= this.bonusDice; n++) {
-        const rolled = rollDice(current, die);
-        current = rolled.state;
-        best = Math.max(best, rolled.roll.value);
-        rolls.push(rolled.roll.value);
+      const logicalDice = info.diceCount ?? 1;
+      const keptRolls: number[] = [];
+      for (let dieIndex = 0; dieIndex < logicalDice; dieIndex++) {
+        const count = dieIndex === 0 ? 1 + this.bonusDice + Number(current.loadedDie === true) : 1;
+        let kept = Number.NEGATIVE_INFINITY;
+        for (let n = 0; n < count; n++) {
+          const rolled = rollDice(current, die);
+          current = rolled.state;
+          kept = Math.max(kept, rolled.roll.value);
+          rolls.push(rolled.roll.value);
+        }
+        keptRolls.push(kept);
       }
-      dice = best;
+      dice = keptRolls.reduce((sum, value) => sum + value, 0);
       this.lastDice = {
         cardId: info.id,
         cardName: info.name,
         dieName: die.name,
         faces: die.faces.length,
-        value: best,
+        value: dice,
         rolls,
+        ...(logicalDice > 1 ? { keptRolls } : {}),
       };
+      if (current.loadedDie) current = { ...current, loadedDie: false };
     }
     const action = {
       type: 'play-card' as const,
@@ -400,16 +460,70 @@ export class CombatController {
       ...(target === undefined ? {} : { target }),
       ...(dice === undefined ? {} : { dice }),
     };
-    const result =
-      sigil === null
-        ? apply(current, action)
-        : playCardWithSigil(current, action, sigil.multiplier);
-    if (sigil !== null) this.lastSigil = sigil;
     this.pending = null;
+    if (dice !== undefined && current.rerollDie) {
+      this.dicePlay = { state: { ...current, rerollDie: false }, action, sigil };
+      if (sigil) {
+        const { power } = previewSigilPower(current, sigil.multiplier, sigil.quality === 'Fizzle');
+        this.lastSigil = { ...sigil, multiplier: power };
+      }
+      this.changed();
+      return { ok: true };
+    }
+    this.commitPlay({ state: current, action, sigil });
+    return { ok: true };
+  }
+
+  get canReroll(): boolean {
+    return this.dicePlay !== null && this.lastDice?.rerolledFrom === undefined;
+  }
+
+  rerollDice(): boolean {
+    const play = this.dicePlay;
+    const readout = this.lastDice;
+    if (!play || !readout || readout.rerolledFrom !== undefined) return false;
+    const dieId = getCard(readout.cardId).dice;
+    if (dieId === undefined) return false;
+    const { state, roll } = rollDice(play.state, dieById(dieId));
+    const keptRolls = readout.keptRolls ? [roll.value, ...readout.keptRolls.slice(1)] : undefined;
+    const value = keptRolls
+      ? keptRolls.reduce((sum, contribution) => sum + contribution, 0)
+      : roll.value;
+    this.dicePlay = { ...play, state, action: { ...play.action, dice: value } };
+    this.lastDice = {
+      ...readout,
+      rolls: [...readout.rolls, roll.value],
+      value,
+      ...(keptRolls ? { keptRolls } : {}),
+      rerolledFrom: readout.keptRolls?.[0] ?? readout.value,
+    };
+    this.changed();
+    return true;
+  }
+
+  confirmDice(): boolean {
+    const play = this.dicePlay;
+    if (!play) return false;
+    this.dicePlay = null;
+    this.commitPlay(play);
+    return true;
+  }
+
+  private commitPlay({ state, action, sigil }: DicePlay): void {
+    const cast =
+      sigil && playCardWithSigil(state, action, sigil.multiplier, sigil.quality === 'Fizzle');
+    const result = cast ?? apply(state, action);
+    if (sigil && cast) {
+      const played = cast.events.find((event) => event.type === 'card-played');
+      this.lastSigil = {
+        ...sigil,
+        multiplier: cast.multiplier,
+        ...(played?.echoedCardId && { echoedCardId: played.echoedCardId }),
+      };
+    }
     this.state = result.state;
     this.record(result);
     this.changed();
-    return { ok: true };
   }
 
   private step(action: Action): void {

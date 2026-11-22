@@ -10,6 +10,7 @@ import { glb_sha256 as archiveRevision } from '../assets-source/props/archive-ki
 import { glb_sha256 as brassKeyRevision } from '../assets-source/props/brass-key-kit/manifest.json';
 import { glb_sha256 as calibrationRevision } from '../assets-source/props/calibration-kit/manifest.json';
 import { glb_sha256 as commissionRevision } from '../assets-source/props/commission-kit/manifest.json';
+import { glb_sha256 as specimensRevision } from '../assets-source/props/conservatory-specimens/manifest.json';
 import { glb_sha256 as panelRevision } from '../assets-source/props/panel-kit/manifest.json';
 import { hashes as instrumentHashes } from '../assets-source/props/puzzle-instruments/manifest.json';
 import { sha256 as stairwellRevision } from '../assets-source/props/stairwell/report.json';
@@ -20,9 +21,11 @@ import { mountCardProof } from './cards/card-proof.ts';
 import { CombatHook, type CombatPick, type XrHands } from './combat/combat-session.ts';
 import {
   BRASS_CACHE_VERSION,
+  CONSERVATORY_SPECIMENS_VERSION,
   ENCOUNTER_CONTENT_VERSION,
   PATROL_VERSION,
   RETURN_PASSAGES_VERSION,
+  THEMED_FURNISHINGS_VERSION,
 } from './combat/encounter-choice.ts';
 import {
   type CombatTableAsset,
@@ -50,10 +53,12 @@ import { DiceWorld } from './dice/world.ts';
 import { makeClockworkOwlAsset } from './enemies/conservatory-actors.ts';
 import { type EnemyActor, type EnemyAsset, tryLoadEnemyAsset } from './enemies/enemy-asset.ts';
 import { loadPatrolClips } from './enemies/patrol-visual.ts';
-import { isShowcaseFloor, SHOWCASE_SEED } from './floor/generate.ts';
+import { isShowcaseFloor, SHOWCASE_SEED, worldRooms } from './floor/generate.ts';
 import { placeStairEntry, type StairEntry } from './floor/stairs.ts';
 import { encounterStartsFight, fleeStandPoint } from './flow/flee.ts';
 import { RunFlow } from './flow/flow.ts';
+import { logbookDiscoveries } from './flow/logbook-discoveries.ts';
+import { chartFloor, type MapPoint } from './flow/logbook-map.ts';
 import { FlowUi, RUN_MENU_ITEMS, rewardCardTexture } from './flow/panels.ts';
 import { bindFlowPersistence } from './flow/persist.ts';
 import { RewardCardFaces } from './flow/reward-cards.ts';
@@ -78,13 +83,9 @@ import {
   saveSettings,
 } from './persist/db.ts';
 import { loadRunSnapshot, loadWorkshop, type RunSnapshot } from './persist/saves.ts';
-import {
-  alchemyRecipe,
-  type FormulaClue,
-  formulaObservation,
-  type Ingredient,
-} from './rules/alchemy.ts';
+import { alchemyRecipe, brewNames, type FormulaClue, type Ingredient } from './rules/alchemy.ts';
 import { type BellNote, bellMelody } from './rules/bell-chimes.ts';
+import type { BorrowedLightControl } from './rules/borrowed-light.ts';
 import { BEARINGS, calibrationPlan, GEAR_TEETH } from './rules/calibration.ts';
 import {
   COMMISSION_ORDERS,
@@ -93,13 +94,19 @@ import {
   commissionPlan,
 } from './rules/commissions.ts';
 import { counterweightTarget } from './rules/counterweight.ts';
+import type { CircuitSocket } from './rules/dark-circuit.ts';
 import {
   DEFAULT_DIFFICULTY,
   type Difficulty,
   isDifficulty,
   runDifficulty,
 } from './rules/difficulty.ts';
+import type { DrumControl } from './rules/drum-gallery.ts';
+import type { FloatElevatorControl } from './rules/float-elevator.ts';
 import { floorSeedFor, parseLootKey, type RewardTier } from './rules/run.ts';
+import type { ShadowStencilControl } from './rules/shadow-stencil.ts';
+import { pipeTarget } from './rules/speaking-pipes.ts';
+import type { SpringTensionControl } from './rules/spring-tension.ts';
 import { createWorkshop } from './rules/workshop.ts';
 import { sharedKtx2Loader } from './ui/first-render.ts';
 import { loadIconSheet } from './ui/icon-sheet.ts';
@@ -117,11 +124,13 @@ import {
   restoreUpperRoomLocations,
   seedFromQuery,
 } from './world/floor-view.ts';
+import { buildFloorWorld } from './world/floor-world.ts';
 import { RECORD_TITLES } from './world/formula-clue.ts';
 import type { HearthPick } from './world/hearth.ts';
 import { dressHeroRooms, fetchHeroRooms, loadHeroAssets } from './world/hero-rooms.ts';
 import {
   bindBookcaseAtlas,
+  dressBookcaseWood,
   INTERIOR_PAINTINGS,
   loadInteriorFurnishings,
 } from './world/interior-furnishings.ts';
@@ -136,7 +145,9 @@ import {
 } from './world/loot.ts';
 import { mountMaterialProof } from './world/material-proof.ts';
 import { loadPbrSet } from './world/materials.ts';
+import type { PendulumPick } from './world/pendulum-gallery.ts';
 import type { PressureAction } from './world/pressure-compartment.ts';
+import { type PressureNoteRecord, PressureNotes } from './world/pressure-notes.ts';
 import { loadPressureArt, type PressureArt } from './world/pressure-works.ts';
 import type { PrismPick } from './world/prism-annex.ts';
 import { dressPumpMaterials } from './world/pump-materials.ts';
@@ -144,7 +155,10 @@ import { mountRoomAssetProof } from './world/room-asset-proof.ts';
 import { lightRoomStyle } from './world/room-style-lighting.ts';
 import { type RoomStyleKit, roomStyleFor, roomStyleKitFromScene } from './world/room-styles.ts';
 import { type PanelHit, SERVICE_KNOCKS } from './world/service-panels.ts';
+import type { SpeakingPipes, SpeakingPipesPick } from './world/speaking-pipes.ts';
 import { StairFade, StairTransit } from './world/stair-transit.ts';
+import type { StoneReliquary } from './world/stone-reliquary.ts';
+import { type StoneRoomKit, stoneRoomKitFromScene } from './world/stone-rooms.ts';
 import { loadBookBindings } from './world/study-books.ts';
 import {
   fetchStudyManifest,
@@ -153,6 +167,7 @@ import {
   type StudyAsset,
 } from './world/study-room.ts';
 import { loadTableDecor, type TableDecor } from './world/table-decor.ts';
+import type { ValvehousePick } from './world/valvehouse.ts';
 import { runVeil } from './world/veil.ts';
 import { ComfortVignette } from './xr/comfort-vignette.ts';
 import { Locomotion, locomotionSettingsFrom } from './xr/locomotion.ts';
@@ -208,6 +223,12 @@ scene.add(rig);
 
 let cardProof: Awaited<ReturnType<typeof mountCardProof>> | undefined;
 let floor: FloorView | undefined;
+let torchSound: THREE.Object3D | undefined;
+let torchLoopPlaying = false;
+const torchSoundPosition = new THREE.Vector3();
+let leakingJoint: THREE.Object3D | undefined;
+let leakLoopPlaying = false;
+const leakSoundPosition = new THREE.Vector3();
 if (view === 'lightmap-proof') {
   await mountLightmapProof(scene, rig, camera, renderer);
 } else if (view === 'material-proof') {
@@ -229,10 +250,12 @@ const querySeed = params.get('seed');
 const showcaseLink =
   querySeed !== null && isValidSeed(querySeed) && normalizeSeed(querySeed) === SHOWCASE_SEED;
 const settingsDb = playMode ? await openDb() : null;
-const db =
-  playMode && showcaseLink
-    ? await openDb(undefined, { name: 'rogue-xr-room-showcase' })
-    : settingsDb;
+const runDatabase = params.has('playtest')
+  ? 'rogue-xr-playtest'
+  : showcaseLink
+    ? 'rogue-xr-room-showcase'
+    : null;
+const db = playMode && runDatabase ? await openDb(undefined, { name: runDatabase }) : settingsDb;
 const workshop = db ? await loadWorkshop(db).catch(() => createWorkshop()) : createWorkshop();
 let storedSnapshot: RunSnapshot | null = db ? await loadRunSnapshot(db).catch(() => null) : null;
 let settings: Settings | null = settingsDb ? await loadSettings(settingsDb) : null;
@@ -342,8 +365,12 @@ let recenterPending = false;
 actions.on('recenter', () => {
   recenterPending = true;
 });
+const perfSearch = new URLSearchParams(params);
+if (perfSearch.has('playtest') && !perfSearch.has('perf') && !perfSearch.has('questperf'))
+  perfSearch.set('perf', 'quest');
 const perf = mountPerf(renderer, scene, rig, {
   camera,
+  search: perfSearch.toString(),
   foveation: foveationValue((settings ?? DEFAULT_SETTINGS).foveation),
 });
 perf.setFpsCounter((settings ?? DEFAULT_SETTINGS).fpsCounter);
@@ -602,7 +629,7 @@ const enemyMaterials = heroSet?.then(({ set }) => set).catch(() => null) ?? null
 const enemyAssets = new Map<string, Promise<EnemyAsset | null>>(
   enemyMaterials
     ? Object.keys(ENEMIES)
-        .filter((kind) => kind !== 'clockwork-owl')
+        .filter((kind) => kind !== 'clockwork-owl' && kind !== 'waking-armor')
         .map((kind) => [
           kind,
           enemyMaterials.then((set) => (set ? tryLoadEnemyAsset(kind, { materials: set }) : null)),
@@ -648,6 +675,21 @@ function architecturalFinishes(): Promise<RoomStyleKit> {
     });
   return styleKit;
 }
+let stoneArt: Promise<StoneRoomKit | undefined> | undefined;
+function dungeonKit(): Promise<StoneRoomKit | undefined> {
+  stoneArt ??= new GLTFLoader()
+    .loadAsync('/assets/props/stone-dungeon-kit/stone-dungeon-kit.glb')
+    .then(({ scene }) => {
+      reflect(scene, 0.34);
+      return stoneRoomKitFromScene(scene);
+    })
+    .catch((error: unknown) => {
+      stoneArt = undefined;
+      console.warn('Stone dungeon kit unavailable, original room finishes kept', error);
+      return undefined;
+    });
+  return stoneArt;
+}
 let instruments: Promise<THREE.Object3D> | undefined;
 function puzzleInstruments() {
   instruments ??= new GLTFLoader()
@@ -678,6 +720,49 @@ function conservatoryKit(): Promise<THREE.Object3D> {
       throw error;
     });
   return alchemyKit;
+}
+let expandedAlchemyKit: Promise<THREE.Object3D> | undefined;
+function conservatorySpecimenKit(): Promise<THREE.Object3D> {
+  expandedAlchemyKit ??= conservatoryKit()
+    .then(async (base) => {
+      const combined = new THREE.Group();
+      combined.add(base.clone(true));
+      try {
+        const { scene } = await new GLTFLoader().loadAsync(
+          `/assets/props/conservatory-specimens/conservatory-specimens.glb?v=${specimensRevision}`,
+        );
+        for (const name of [
+          'IngredientBellcap',
+          'IngredientSilverleaf',
+          'RecipeTileBellcap',
+          'RecipeTileSilverleaf',
+        ])
+          if (!scene.getObjectByName(name))
+            throw new Error(`Missing Conservatory specimen root ${name}`);
+        reflect(scene, 0.58);
+        combined.add(scene);
+      } catch (error) {
+        expandedAlchemyKit = undefined;
+        console.warn('Conservatory specimens unavailable, using alchemy kit stand-ins', error);
+        for (const [name, original] of [
+          ['Bellcap', 'Mooncap'],
+          ['Silverleaf', 'StarThistle'],
+        ]) {
+          for (const prefix of ['Ingredient', 'RecipeTile']) {
+            const standIn = base.getObjectByName(prefix + original)?.clone(true);
+            if (!standIn) throw error;
+            standIn.name = prefix + name;
+            combined.add(standIn);
+          }
+        }
+      }
+      return combined;
+    })
+    .catch((error: unknown) => {
+      expandedAlchemyKit = undefined;
+      throw error;
+    });
+  return expandedAlchemyKit;
 }
 let archiveArt: Promise<THREE.Object3D> | undefined;
 function archiveKit(): Promise<THREE.Object3D> {
@@ -757,6 +842,11 @@ function syncPuzzles(target: FloorView, immediate = false): void {
   if (!run) return;
   target.windowCache?.sync(flow.windowCacheOpened);
   if (run.patrolDefeated) target.clearPatrol();
+  if (target.armoryAlcove)
+    target.armoryAlcove.sync(
+      run.armoryAwakened === true,
+      target.encounter.isCleared(target.armoryAlcove.room),
+    );
   if (immediate) {
     target.panels?.sync(flow.hiddenPanel, true);
     target.world.setPuzzleGateOpen('panel', flow.hiddenPanel.opened, true);
@@ -786,6 +876,17 @@ function syncPuzzles(target: FloorView, immediate = false): void {
   target.clock?.sync(flow.alchemy.found.includes(alchemyRecipe(run.seed)[1]));
   target.dispatchRoom?.sync(flow.dispatch, immediate);
   target.world.setPuzzleGateOpen('dispatch', flow.dispatch.opened, immediate);
+  target.speakingPipes?.sync(flow.speakingPipes, immediate);
+  target.world.setPuzzleGateOpen('cistern', flow.speakingPipes === 'open', immediate);
+  target.reliquary?.sync(flow.reliquarySeal, immediate);
+  target.valvehouse?.sync(flow.valvehouse, immediate);
+  target.pendulumGallery?.sync(flow.pendulumGallery, immediate);
+  target.borrowedLight?.sync(flow.borrowedLight, immediate);
+  target.floatElevator?.sync(flow.floatElevator, immediate);
+  target.shadowStencil?.sync(flow.shadowStencil, immediate);
+  target.springTension?.sync(flow.springTension, immediate);
+  target.darkCircuit?.sync(flow.darkCircuit, immediate);
+  target.drumGallery?.sync(flow.drumGallery, immediate);
 }
 let pressureArt: Promise<PressureArt> | undefined;
 let interiors:
@@ -818,11 +919,15 @@ const dressFloor = async (target: FloorView): Promise<void> => {
   const furnish = Boolean(target.pressure) || target.floorNumber === 2;
   if (furnish) {
     interiors ??= Promise.all([
-      Promise.all([loadInteriorFurnishings(), libraryBindings]).then(([asset, atlas]) => {
-        if (atlas) bindBookcaseAtlas(asset, atlas);
-        reflect(asset.scene, 0.34);
-        return asset;
-      }),
+      Promise.all([loadInteriorFurnishings(), libraryBindings, heroSet?.catch(() => null)]).then(
+        ([asset, atlas, resources]) => {
+          if (atlas) bindBookcaseAtlas(asset, atlas);
+          const walnut = resources?.set.materials.get('walnut');
+          if (walnut) dressBookcaseWood(asset, walnut);
+          reflect(asset.scene, 0.34);
+          return asset;
+        },
+      ),
       Promise.all(
         INTERIOR_PAINTINGS.map(async (url) => {
           const tex = await new THREE.TextureLoader().loadAsync(url);
@@ -833,32 +938,43 @@ const dressFloor = async (target: FloorView): Promise<void> => {
       ),
     ]);
   }
-  const [rooms, door, coffers, decor, furnishings, styles, stairs, chimeArt] = await Promise.all([
-    roomAssets,
-    sealedDoorMaterial,
-    lootMaterials,
-    tableDecor,
-    furnish
-      ? interiors?.catch((error: unknown) => {
-          console.warn('Interior furnishing kit unavailable', error);
-          return null;
-        })
-      : null,
-    target.world.plan.rooms.some((_, index) =>
-      roomStyleFor(target.world.plan, index, target.floorNumber),
-    )
-      ? architecturalFinishes()
-      : undefined,
-    target.floorNumber !== 3 && target.world.stairEntry ? stairModels() : undefined,
-    (target.floorNumber !== 3 && target.world.stairEntry) || target.world.plan.prismAnnex
-      ? puzzleInstruments().catch((error: unknown) => {
-          console.warn('Puzzle instruments unavailable', error);
-          return undefined;
-        })
-      : undefined,
-    fitTable(target),
-    ...dressed,
-  ]);
+  const [rooms, door, coffers, decor, furnishings, styles, stairs, chimeArt, stone] =
+    await Promise.all([
+      roomAssets,
+      sealedDoorMaterial,
+      lootMaterials,
+      tableDecor,
+      furnish
+        ? interiors?.catch((error: unknown) => {
+            console.warn('Interior furnishing kit unavailable', error);
+            return null;
+          })
+        : null,
+      target.world.plan.rooms.some((_, index) =>
+        roomStyleFor(target.world.plan, index, target.floorNumber),
+      )
+        ? architecturalFinishes()
+        : undefined,
+      target.floorNumber !== 3 && target.world.stairEntry ? stairModels() : undefined,
+      (target.floorNumber !== 3 && target.world.stairEntry) ||
+      target.world.plan.prismAnnex ||
+      target.world.plan.pendulumGallery ||
+      target.world.plan.borrowedLight ||
+      target.world.plan.drumGallery ||
+      target.world.plan.floatElevator ||
+      target.world.plan.shadowStencil ||
+      target.world.plan.springTension
+        ? puzzleInstruments().catch((error: unknown) => {
+            console.warn('Puzzle instruments unavailable', error);
+            return undefined;
+          })
+        : undefined,
+      target.stoneRooms.size || target.contentVersion >= THEMED_FURNISHINGS_VERSION
+        ? dungeonKit()
+        : undefined,
+      fitTable(target),
+      ...dressed,
+    ]);
   const closedHall = target.floorNumber === 1 ? await closedHallAsset : undefined;
   if (target === floor) {
     const missing = target.world.plan.rooms.find(
@@ -869,17 +985,7 @@ const dressFloor = async (target: FloorView): Promise<void> => {
     if (stair) {
       target.dressStairs(stair);
     }
-    dressHeroRooms(target, rooms, decor, styles, closedHall);
-    const candles = new Set<THREE.MeshStandardMaterial>();
-    for (const group of target.world.roomGroups)
-      group.traverse((node) => {
-        if (!(node instanceof THREE.Mesh)) return;
-        for (const m of Array.isArray(node.material) ? node.material : [node.material]) {
-          if (m instanceof THREE.MeshStandardMaterial && m.name.endsWith('_flame')) candles.add(m);
-        }
-      });
-    if (decor) candles.add(decor.material);
-    target.setCandleMaterials([...candles], hitFx.reducedMotion);
+    dressHeroRooms(target, rooms, decor, styles, closedHall, stone);
     if (furnishings) target.setFurnishings(furnishings[0], furnishings[1], hitFx.reducedMotion);
     if (chimeArt) {
       target.dressChimes(chimeArt);
@@ -887,7 +993,9 @@ const dressFloor = async (target: FloorView): Promise<void> => {
     }
     if (target.floorNumber > 1 && target.contentVersion >= RETURN_PASSAGES_VERSION) {
       const [kit, secrets, portraits] = await Promise.all([
-        conservatoryKit(),
+        target.contentVersion >= CONSERVATORY_SPECIMENS_VERSION
+          ? conservatorySpecimenKit()
+          : conservatoryKit(),
         archiveKit(),
         target.floorNumber === 3 ? wizardPaintings() : Promise.resolve([]),
       ]);
@@ -951,6 +1059,25 @@ const dressFloor = async (target: FloorView): Promise<void> => {
     if (chimeArt && target.world.plan.dispatchRoom) {
       target.dressDispatch(chimeArt, flow.run?.seed ?? target.seed, hitFx.reducedMotion);
     }
+    if (target.world.plan.speakingPipes) {
+      target.dressSpeakingPipes(chimeArt, flow.run?.seed ?? target.seed, hitFx.reducedMotion);
+    }
+    if (target.world.plan.valvehouse) {
+      target.dressValvehouse(flow.run?.seed ?? target.seed, hitFx.reducedMotion);
+      const fixtures = target.valvehouse;
+      if (fixtures) {
+        for (const node of [fixtures.supply, fixtures.controls, fixtures.gate, fixtures.chamber])
+          reflect(node, 0.52);
+      }
+    }
+    if (target.world.plan.reliquary) {
+      target.dressReliquary(flow.run?.seed ?? target.seed, hitFx.reducedMotion);
+      if (target.reliquary) {
+        reflect(target.reliquary.gate, 0.52);
+        reflect(target.reliquary.plate, 0.52);
+        reflect(target.reliquary.rubbing, 0.52);
+      }
+    }
     if (
       target.floorNumber === 2 &&
       target.contentVersion >= PATROL_VERSION &&
@@ -963,13 +1090,99 @@ const dressFloor = async (target: FloorView): Promise<void> => {
     }
     if (chimeArt && target.world.plan.prismAnnex)
       target.dressPrism(chimeArt, flow.run?.seed ?? target.seed, hitFx.reducedMotion);
+    if (target.world.plan.pendulumGallery) {
+      target.dressPendulumGallery(
+        chimeArt,
+        flow.run?.seed ?? target.seed,
+        hitFx.reducedMotion,
+        () => {
+          if (target !== floor || !canOpenLoot()) return 'ignored';
+          const result = flow.completePendulumTrial();
+          if (result === 'opened' && target.pendulumGallery) {
+            audio?.playSfx(
+              PUZZLE_GATE_OPEN_SFX.pendulum,
+              target.pendulumGallery.openingPosition(chimePosition),
+            );
+          }
+          return result;
+        },
+        (at) => {
+          audio?.playSfx('pendulum-tick', at, 0.58);
+        },
+      );
+    }
+    if (target.world.plan.borrowedLight)
+      target.dressBorrowedLight(
+        chimeArt,
+        flow.run?.seed ?? target.seed,
+        hitFx.reducedMotion,
+        heroEnv,
+      );
+    if (target.world.plan.floatElevator)
+      target.dressFloatElevator(
+        chimeArt,
+        flow.run?.seed ?? target.seed,
+        hitFx.reducedMotion,
+        heroEnv,
+      );
+    if (target.world.plan.shadowStencil)
+      target.dressShadowStencil(
+        chimeArt,
+        flow.run?.seed ?? target.seed,
+        hitFx.reducedMotion,
+        heroEnv,
+      );
+    if (target.world.plan.springTension)
+      target.dressSpringTension(
+        chimeArt,
+        flow.run?.seed ?? target.seed,
+        hitFx.reducedMotion,
+        heroEnv,
+      );
+    if (target.world.plan.darkCircuit)
+      target.dressDarkCircuit(flow.run?.seed ?? target.seed, hitFx.reducedMotion, heroEnv ?? null);
+    if (target.world.plan.drumGallery) {
+      const reeds = ['drum-reed-low', 'drum-reed-mid', 'drum-reed-high'] as const;
+      target.dressDrumGallery(
+        chimeArt,
+        flow.run?.seed ?? target.seed,
+        hitFx.reducedMotion,
+        heroEnv,
+        (notes, at) => {
+          audio?.playSfx('drum-index', at);
+          for (const note of notes) audio?.playSfx(reeds[note], at, notes.length > 1 ? 0.7 : 1);
+        },
+        (at) => audio?.playSfx(PUZZLE_GATE_OPEN_SFX['drum-gallery'], at),
+      );
+    }
+    if (stone) target.dressStoneFurnishings(stone);
+    if (stone) target.dressThemedFurnishings(stone);
+    if (stone) target.dressRoomTorches(hitFx.reducedMotion);
+    const candles = new Set<THREE.MeshStandardMaterial>();
+    for (const group of target.world.roomGroups)
+      group.traverse((node) => {
+        if (!(node instanceof THREE.Mesh)) return;
+        for (const m of Array.isArray(node.material) ? node.material : [node.material]) {
+          if (m instanceof THREE.MeshStandardMaterial && m.name.endsWith('_flame')) candles.add(m);
+        }
+      });
+    if (decor) candles.add(decor.material);
+    target.setCandleMaterials([...candles], hitFx.reducedMotion);
     syncPuzzles(target, true);
     for (const room of target.styledRooms)
       lightRoomStyle(room, target.furnishings?.placements ?? []);
     if (door) target.world.dressSealedDoors(door.material, door.tileMeters);
     const heroMaterials = await heroSet?.catch(() => null);
     if (target !== floor) return;
-    if (heroMaterials) target.world.dressPuzzleGates(heroMaterials.set, heroEnv);
+    if (heroMaterials) {
+      target.world.dressPuzzleGates(heroMaterials.set, heroEnv);
+      target.valvehouse?.dress(heroMaterials.set);
+      target.pendulumGallery?.dress(heroMaterials.set, heroEnv);
+      target.speakingPipes?.dress(heroMaterials.set, heroEnv);
+      target.dispatchRoom?.dress(heroMaterials.set, heroEnv);
+      target.prismAnnex?.dress(heroMaterials.set, heroEnv);
+      target.borrowedLight?.dress(heroMaterials.set, heroEnv);
+    }
     target.dressVentSteam(hitFx.reducedMotion);
     if (coffers) {
       target.loot.dress(coffers);
@@ -1161,7 +1374,18 @@ flow.onChange((event) => {
     event.type === 'alchemy' ||
     event.type === 'formula' ||
     event.type === 'prism-signal' ||
-    event.type === 'dispatch'
+    event.type === 'dispatch' ||
+    event.type === 'speaking-pipes' ||
+    event.type === 'reliquary' ||
+    event.type === 'valvehouse' ||
+    event.type === 'pendulum-gallery' ||
+    event.type === 'borrowed-light' ||
+    event.type === 'float-elevator' ||
+    event.type === 'shadow-stencil' ||
+    event.type === 'spring-tension' ||
+    event.type === 'dark-circuit' ||
+    event.type === 'drum-gallery' ||
+    event.type === 'armory-awakened'
   ) {
     if (event.type === 'formula') floor?.office?.sync(flow.commission);
     if (floor) syncPuzzles(floor);
@@ -1408,6 +1632,40 @@ const continueRun = (): void => {
   target.pressure?.sync(flow.pressure);
   syncNotes(target);
 };
+type BookPressureNote = PressureNoteRecord & { readonly room: number; readonly position: MapPoint };
+let pressureBookCache:
+  | { readonly layout: string; readonly notes: readonly BookPressureNote[] }
+  | undefined;
+
+function readBookPressureNotes(active: FloorView): readonly BookPressureNote[] {
+  const lower = flow.explorationOnFloor(1);
+  const acquired = lower?.pressure?.notes;
+  if (!lower || !acquired?.length) return [];
+  const layout = `${lower.floorSeed}:${active.contentVersion}`;
+  const capture = (notes: PressureNotes): readonly BookPressureNote[] =>
+    notes.placements.flatMap(({ id, room, location }) => {
+      const record = notes.record(id);
+      return record ? [{ ...record, room, position: [location.x, location.z] }] : [];
+    });
+  if (pressureBookCache?.layout !== layout) {
+    if (active.floorNumber === 1 && active.notes) {
+      pressureBookCache = { layout, notes: capture(active.notes) };
+    } else {
+      const plan = playableFloorPlan(lower.floorSeed, active.contentVersion, 1);
+      if (!plan.pressureWing) return [];
+      const world = buildFloorWorld(plan, worldTemplates);
+      const notes = new PressureNotes(world, active.contentVersion);
+      try {
+        pressureBookCache = { layout, notes: capture(notes) };
+      } finally {
+        notes.dispose();
+        world.dispose();
+      }
+    }
+  }
+  return pressureBookCache.notes.filter(({ id }) => acquired.includes(id));
+}
+
 const ui = floor
   ? new FlowUi({
       flow,
@@ -1423,6 +1681,42 @@ const ui = floor
         return `${name} · Room ${index} · ${template.id.replaceAll('-', ' ')} · ${width} × ${depth} m`;
       },
       onNoteOpened: (at) => audio?.playSfx('paper-unfold', at),
+      reducedMotion,
+      logbookMaps: () => {
+        const current = floor;
+        if (!current) return [];
+        const eye = camera.getWorldPosition(new THREE.Vector3());
+        const notes = readBookPressureNotes(current);
+        return ([1, 2, 3] as const).flatMap((number) => {
+          const explored = flow.explorationOnFloor(number);
+          if (!explored) return [];
+          const live = number === current.floorNumber;
+          const plan = live
+            ? current.world.plan
+            : playableFloorPlan(explored.floorSeed, current.contentVersion, number);
+          const rooms = live ? current.world.rooms : worldRooms(plan, worldTemplates);
+          const player = live
+            ? { room: current.world.current, position: [eye.x, eye.z] as const }
+            : undefined;
+          const chart = chartFloor(number, plan, rooms, explored.reachedRooms, player);
+          const discoveries = logbookDiscoveries({
+            plan,
+            worldRooms: rooms,
+            explored: explored.reachedRooms,
+            openedLoot: explored.openedLoot,
+            knownNotes: number === 1 ? notes : undefined,
+            knownRubbingRoom:
+              number === 2 && flow.reliquarySeal !== 'hidden'
+                ? plan.reliquary?.clueRoom
+                : undefined,
+          });
+          return [{ ...chart, discoveries }];
+        });
+      },
+      puzzlePressureNotes: () =>
+        Object.fromEntries(
+          (floor ? readBookPressureNotes(floor) : []).map((note) => [note.id, note]),
+        ),
       noteRecord: (id) => floor?.notes?.record(id) ?? null,
       keyArt: { url: '/assets/ui/title-2048.jpg', titleSafe: { x: 0.03, y: 0.3, w: 0.27, h: 0.4 } },
       seed: bootSeed,
@@ -1509,7 +1803,7 @@ const pickUi = (origin: THREE.Vector3, direction: THREE.Vector3): string | null 
   const hit = uiPointer.cast(origin, direction, ui.targets());
   return hit ? ui.controlAt(hit.object) : null;
 };
-const mouseRay = (event: PointerEvent): THREE.Ray => {
+const mouseRay = (event: Pick<MouseEvent, 'clientX' | 'clientY'>): THREE.Ray => {
   const rect = renderer.domElement.getBoundingClientRect();
   const ndc = new THREE.Vector2(
     ((event.clientX - rect.left) / rect.width) * 2 - 1,
@@ -1520,6 +1814,29 @@ const mouseRay = (event: PointerEvent): THREE.Ray => {
   caster.setFromCamera(ndc, camera);
   return caster.ray;
 };
+let mapDrag: { readonly pointer: number; last: MapPoint } | null = null;
+const endMapDrag = ({ pointerId }: PointerEvent): void => {
+  if (mapDrag?.pointer !== pointerId) return;
+  mapDrag = null;
+  if (renderer.domElement.hasPointerCapture(pointerId))
+    renderer.domElement.releasePointerCapture(pointerId);
+};
+renderer.domElement.addEventListener('lostpointercapture', endMapDrag);
+window.addEventListener('pointerup', endMapDrag);
+window.addEventListener('pointercancel', endMapDrag);
+renderer.domElement.addEventListener(
+  'wheel',
+  (event) => {
+    if (!ui || xr.presenting || event.deltaY === 0) return;
+    const point = ui.logbookMapPoint(mouseRay(event));
+    if (!point) return;
+    event.preventDefault();
+    const units = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? 120 : 1;
+    const delta = Math.max(-500, Math.min(500, event.deltaY * units));
+    ui.adjustLogbookMap(0, 0, Math.exp(-delta * 0.0025), point);
+  },
+  { passive: false },
+);
 // Board presses are claimed in the capture phase, so they never start drag-to-look.
 window.addEventListener(
   'pointerdown',
@@ -1527,13 +1844,29 @@ window.addEventListener(
     if (!ui?.visible || xr.presenting || event.button !== 0) return;
     if (event.target !== renderer.domElement) return;
     const ray = mouseRay(event);
-    const id = pickUi(ray.origin, ray.direction);
     event.stopImmediatePropagation();
+    const point = ui.logbookMapPoint(ray);
+    if (point && !mapDrag) {
+      mapDrag = { pointer: event.pointerId, last: point };
+      renderer.domElement.setPointerCapture(event.pointerId);
+      return;
+    }
+    const id = pickUi(ray.origin, ray.direction);
     if (id) actions.emit({ type: 'select', controlId: id });
   },
   { capture: true },
 );
 window.addEventListener('pointermove', (event) => {
+  if (mapDrag?.pointer === event.pointerId) {
+    const point = ui?.logbookMapPoint(mouseRay(event), false);
+    if (!point) {
+      endMapDrag(event);
+      return;
+    }
+    ui?.adjustLogbookMap(point[0] - mapDrag.last[0], point[1] - mapDrag.last[1]);
+    mapDrag.last = point;
+    return;
+  }
   if (!ui?.visible || xr.presenting || event.target !== renderer.domElement) return;
   const ray = mouseRay(event);
   ui.hover(pickUi(ray.origin, ray.direction));
@@ -1887,7 +2220,7 @@ function inspectFormula(clue: FormulaClue): boolean {
           : recipe === 'stillwind'
             ? 'Stillwind · Conservatory cauldron'
             : RECORD_TITLES[recipe],
-      caption: formulaObservation(flow.run.seed, clue),
+      caption: flow.describeFormulaClue(clue),
     },
     camera,
   );
@@ -1896,7 +2229,16 @@ function inspectFormula(clue: FormulaClue): boolean {
 }
 function operateArchive(action: 'pour' | 'unlatch'): boolean {
   const archive = floor?.archive;
-  if (!archive || !flow.useFormula(action)) return false;
+  if (!archive) return false;
+  if (!flow.useFormula(action)) {
+    const formula = flow.conservatoryFormula;
+    if (action !== 'pour' || !formula.brewed || formula.revealed) return false;
+    floor?.showBookSecret(
+      { text: brewNames[formula.recipe], caption: 'Collect the vial from the brew bench.' },
+      camera,
+    );
+    return true;
+  }
   const formula = flow.conservatoryFormula;
   audio?.playSfx(
     formula.opened ? ARCHIVE_GATE_OPEN_SFX[formula.recipe] : 'sigil-cast',
@@ -1904,14 +2246,16 @@ function operateArchive(action: 'pour' | 'unlatch'): boolean {
   );
   return true;
 }
+function alchemyCollector(hand?: XRHandedness): THREE.Object3D {
+  return hand === 'left' || hand === 'right' ? (xr.grips()[hand] ?? camera) : camera;
+}
 function collectAlchemy(
   ingredient: Ingredient,
   hand?: XRHandedness,
   source?: THREE.Object3D,
 ): boolean {
   if (!flow.collectIngredient(ingredient)) return false;
-  const collector = hand === 'left' || hand === 'right' ? (xr.grips()[hand] ?? camera) : camera;
-  floor?.alchemy?.animatePickup(ingredient, collector, source);
+  floor?.alchemy?.animatePickup(ingredient, alchemyCollector(hand), source);
   audio?.playSfx('card-draw');
   return true;
 }
@@ -1919,9 +2263,33 @@ function operateAlchemy(
   hit: NonNullable<ReturnType<NonNullable<FloorView['alchemy']>['pick']>>,
   hand?: XRHandedness,
 ): boolean {
+  if (hit.action === 'take-potion') {
+    if (!flow.takePotion()) return false;
+    floor?.alchemy?.animatePotionPickup(alchemyCollector(hand));
+    const archive = flow.alchemy.opened;
+    floor?.showBookSecret(
+      {
+        text: archive ? brewNames[flow.conservatoryFormula.recipe] : 'Thornwake Draught',
+        caption: archive
+          ? 'Use the vial on the Conservatory archive.'
+          : 'Use the vial on the thorn ward.',
+      },
+      camera,
+    );
+    audio?.playSfx('card-draw');
+    return true;
+  }
   if (hit.action === 'apply') {
     const ward = floor?.alchemy?.ward;
-    if (!ward || !flow.applyPotion()) return false;
+    if (!ward) return false;
+    if (!flow.applyPotion()) {
+      if (!flow.alchemy.brewed) return false;
+      floor?.showBookSecret(
+        { text: 'Thornwake Draught', caption: 'Collect the vial from the brew bench.' },
+        camera,
+      );
+      return true;
+    }
     audio?.playSfx(PUZZLE_GATE_OPEN_SFX.thorn, ward.getWorldPosition(chimePosition));
     return true;
   }
@@ -1981,6 +2349,210 @@ function operateDispatch(hit: DispatchPick): boolean {
   audio?.playSfx(result === 'misrouted' ? 'gear-clank' : 'steam-vent', at);
   return true;
 }
+
+let soundedPipeReceiver: SpeakingPipes | undefined;
+
+function playPipeReply(pipes: SpeakingPipes): void {
+  if (!flow.run) return;
+  pipes.pulse();
+  audio?.playChime(pipeTarget(flow.run.seed), pipes.signalPosition(chimePosition));
+}
+
+function operateSpeakingPipes(hit: SpeakingPipesPick): boolean {
+  const pipes = floor?.speakingPipes;
+  if (!pipes) return false;
+  if (hit.action === 'send') {
+    if (!flow.primeSpeakingPipes()) return false;
+    audio?.playSfx('cistern-pipe-send', pipes.senderPosition(chimePosition));
+    return true;
+  }
+  if (hit.action === 'replay') {
+    if (flow.speakingPipes !== 'primed') return false;
+    playPipeReply(pipes);
+    return true;
+  }
+  if (hit.action !== 'select') return false;
+  const result = flow.selectSpeakingPipe(hit.channel);
+  if (result === 'ignored') return false;
+  if (result === 'opened') {
+    audio?.playSfx(PUZZLE_GATE_OPEN_SFX.cistern, pipes.openingPosition(chimePosition));
+  } else {
+    pipes.reject(hit.channel);
+    audio?.playSfx('gear-clank', pipes.signalPosition(chimePosition), 0.5);
+  }
+  return true;
+}
+
+function operateValvehouse(hit: ValvehousePick): boolean {
+  const station = floor?.valvehouse;
+  if (!station) return false;
+  if (hit.action === 'collect') {
+    if (!flow.collectValvehouseGasket()) return false;
+    audio?.playSfx('cog-pickup', station.supply.getWorldPosition(chimePosition));
+    floor?.showBookSecret(
+      { text: 'Spare gasket', caption: 'Fit it to the leaking Valvehouse joint.' },
+      camera,
+    );
+    return true;
+  }
+  if (hit.action === 'seat') {
+    if (flow.seatValvehouseGasket())
+      audio?.playSfx('gear-clank', station.joint.getWorldPosition(chimePosition), 0.55);
+    return true;
+  }
+  const tested = flow.testValvehousePressure();
+  if (tested === 'leak') {
+    station.vent();
+    audio?.playSfx('steam-vent', station.joint.getWorldPosition(chimePosition));
+    floor?.showBookSecret(
+      { text: 'Pressure lost', caption: 'Fit the gasket at the leaking joint.' },
+      camera,
+    );
+  }
+  if (tested === 'opened')
+    audio?.playSfx(PUZZLE_GATE_OPEN_SFX.valvehouse, station.openingPosition(chimePosition));
+  return tested !== 'ignored';
+}
+
+function operateFloatElevator(action: FloatElevatorControl): boolean {
+  const station = floor?.floatElevator;
+  if (!station || (action === 'take' && !station.fittingReachable)) return false;
+  const result = flow.operateFloatElevator(action);
+  if (result === 'ignored') return false;
+  const cue =
+    action === 'take'
+      ? 'reservoir-release'
+      : action === 'fill'
+        ? 'reservoir-fill'
+        : 'reservoir-drain';
+  audio?.playSfx(cue, station.soundPosition(action, chimePosition));
+  return true;
+}
+
+function operateShadowStencil(action: ShadowStencilControl): boolean {
+  const station = floor?.shadowStencil;
+  if (!floor || !station) return false;
+  if (action.kind === 'tile' && !station.aligned) {
+    floor.showBookSecret(
+      { text: 'Shadow out of line', caption: 'Slide the stencil to fit the frame.' },
+      camera,
+    );
+    return true;
+  }
+  const result = flow.operateShadowStencil(action);
+  if (result === 'ignored') {
+    if (action.kind !== 'tile') return false;
+    floor.showBookSecret(
+      { text: 'Different crest', caption: 'Match the shape inside the lit frame.' },
+      camera,
+    );
+    return true;
+  }
+  audio?.playSfx(
+    result === 'released' ? 'stencil-release' : 'stencil-slide',
+    station.soundPosition(action, chimePosition),
+  );
+  return true;
+}
+
+function operateSpringTension(action: SpringTensionControl): boolean {
+  const station = floor?.springTension;
+  if (!floor || !station) return false;
+  if (action === 'release' && station.winding) {
+    floor.showBookSecret(
+      { text: 'Wait for the needle', caption: 'Test the clutch once the gauge settles.' },
+      camera,
+    );
+    return true;
+  }
+  const result = flow.operateSpringTension(action);
+  if (result === 'ignored') return false;
+  floor.dismissPuzzleToast();
+  if (action === 'release') station.testCatch(result === 'partial');
+  if (result === 'partial')
+    floor.showBookSecret(
+      { text: 'The catch slipped back', caption: 'Wind to the engraved interval.' },
+      camera,
+    );
+  else if (result === 'slipped')
+    floor.showBookSecret(
+      { text: 'The spring unwound', caption: 'Stop inside the engraved interval.' },
+      camera,
+    );
+  const cue =
+    result === 'opened'
+      ? PUZZLE_GATE_OPEN_SFX['spring-tension']
+      : result === 'partial'
+        ? 'spring-catch'
+        : result === 'wound'
+          ? 'spring-wind'
+          : 'spring-slip';
+  const atGate = result === 'opened' || result === 'partial';
+  audio?.playSfx(cue, station.soundPosition(action, atGate, chimePosition));
+  return true;
+}
+
+function operateBorrowedLight(action: BorrowedLightControl): boolean {
+  const station = floor?.borrowedLight;
+  if (!station) return false;
+  const result = flow.operateBorrowedLight(action);
+  if (result === 'opened') {
+    audio?.playSfx('borrowed-light-receiver', station.receiverPosition(chimePosition));
+    audio?.playSfx(PUZZLE_GATE_OPEN_SFX['borrowed-light'], station.gatePosition(chimePosition));
+  } else if (result === 'adjusted') audio?.playSfx('ui-tick');
+  return result !== 'ignored';
+}
+
+function operateDarkCircuit(socket: CircuitSocket): boolean {
+  const station = floor?.darkCircuit;
+  if (!floor || !station) return false;
+  const result = flow.toggleCircuitBridge(socket);
+  if (result === 'ignored') return false;
+  if (result === 'no-bridge') {
+    floor.showBookSecret(
+      { text: 'Both bridges are seated', caption: 'Lift one to try another socket.' },
+      camera,
+    );
+    return true;
+  }
+  floor.dismissPuzzleToast();
+  audio?.playSfx('circuit-bridge', station.soundPoint(socket));
+  if (result === 'opened')
+    audio?.playSfx(PUZZLE_GATE_OPEN_SFX['dark-circuit'], station.soundPoint('release'));
+  return true;
+}
+
+function operateDrumGallery(action: DrumControl): boolean {
+  const station = floor?.drumGallery;
+  if (!floor || !station || station.playing || !flow.operateDrumGallery(action)) return false;
+  floor.dismissPuzzleToast();
+  if (action.kind === 'wind') station.play();
+  else audio?.playSfx('drum-pin', station.soundPoint(action));
+  return true;
+}
+
+function operatePendulum(hit: PendulumPick): boolean {
+  const gallery = floor?.pendulumGallery;
+  if (!gallery) return false;
+  if (hit.action === 'release') return gallery.start();
+  if (!flow.advancePendulumDetent()) return false;
+  audio?.playSfx('ui-tick');
+  return true;
+}
+
+function operateArmory(): boolean {
+  const station = floor?.armoryAlcove;
+  if (!floor || !station) return false;
+  if (station.canChallenge) {
+    floor.challengeArmor(camera);
+    return true;
+  }
+  if (!flow.awakenArmory()) return false;
+  station.wind();
+  audio?.playSfx('armory-awaken', station.windPosition(new THREE.Vector3()));
+  return true;
+}
+
 function fieldHit(origin: THREE.Vector3, direction: THREE.Vector3) {
   if (!floor) return null;
   const stair = floor.stairs?.pick(floor.world.current, origin, direction);
@@ -2009,7 +2581,29 @@ function fieldHit(origin: THREE.Vector3, direction: THREE.Vector3) {
   const panel = floor.panels?.pick(origin, direction);
   const windowCache = floor.windowCache?.pick(origin, direction);
   const dispatch = floor.dispatchRoom?.pick(origin, direction);
+  const pipes = floor.speakingPipes?.pick(origin, direction);
+  const reliquary = floor.reliquary?.pick(origin, direction);
+  const valvehouse = floor.valvehouse?.pick(origin, direction);
+  const pendulum = floor.pendulumGallery?.pick(origin, direction);
+  const borrowedLight = floor.borrowedLight?.pick(origin, direction);
+  const floatElevator = floor.floatElevator?.pick(origin, direction);
+  const shadowStencil = floor.shadowStencil?.pick(origin, direction);
+  const springTension = floor.springTension?.pick(origin, direction);
+  const darkCircuit = floor.darkCircuit?.pick(origin, direction);
+  const drumGallery = floor.drumGallery?.pick(origin, direction);
+  const armory = floor.armoryAlcove?.pick(origin, direction);
   const hits = [
+    ...(pendulum ? [{ kind: 'pendulum' as const, hit: pendulum }] : []),
+    ...(borrowedLight ? [{ kind: 'borrowed-light' as const, hit: borrowedLight }] : []),
+    ...(floatElevator ? [{ kind: 'float-elevator' as const, hit: floatElevator }] : []),
+    ...(shadowStencil ? [{ kind: 'shadow-stencil' as const, hit: shadowStencil }] : []),
+    ...(springTension ? [{ kind: 'spring-tension' as const, hit: springTension }] : []),
+    ...(darkCircuit ? [{ kind: 'dark-circuit' as const, hit: darkCircuit }] : []),
+    ...(drumGallery ? [{ kind: 'drum-gallery' as const, hit: drumGallery }] : []),
+    ...(armory ? [{ kind: 'armory' as const, hit: armory }] : []),
+    ...(valvehouse ? [{ kind: 'valvehouse' as const, hit: valvehouse }] : []),
+    ...(reliquary ? [{ kind: 'reliquary' as const, hit: reliquary }] : []),
+    ...(pipes ? [{ kind: 'speaking-pipes' as const, hit: pipes }] : []),
     ...(dispatch ? [{ kind: 'dispatch' as const, hit: dispatch }] : []),
     ...(windowCache ? [{ kind: 'window-cache' as const, hit: windowCache }] : []),
     ...(key ? [{ kind: 'brass-key' as const, hit: key }] : []),
@@ -2044,6 +2638,30 @@ const activatePickup = (
   const pick = fieldHit(origin, direction);
   if (!pick) return false;
   switch (pick.kind) {
+    case 'pendulum':
+      return operatePendulum(pick.hit);
+    case 'borrowed-light':
+      return operateBorrowedLight(pick.hit.action);
+    case 'float-elevator':
+      return operateFloatElevator(pick.hit.action);
+    case 'shadow-stencil':
+      return operateShadowStencil(pick.hit.action);
+    case 'spring-tension':
+      return operateSpringTension(pick.hit.action);
+    case 'dark-circuit':
+      return operateDarkCircuit(pick.hit.action);
+    case 'drum-gallery':
+      return operateDrumGallery(pick.hit.action);
+    case 'armory':
+      return operateArmory();
+    case 'valvehouse':
+      return operateValvehouse(pick.hit);
+    case 'reliquary':
+      if (pick.hit.action === 'trace') return true;
+      flow.rememberReliquaryRubbing();
+      return ui?.readReliquaryRubbing(camera) ?? false;
+    case 'speaking-pipes':
+      return operateSpeakingPipes(pick.hit);
     case 'dispatch':
       return operateDispatch(pick.hit);
     case 'window-cache':
@@ -2105,17 +2723,70 @@ const controllerRay = (
     direction: new THREE.Vector3(0, 0, -1).transformDirection(controller.matrixWorld),
   };
 };
+type ReliquaryInput = {
+  station: StoneReliquary;
+  source: { pointer: number } | { controller: THREE.Object3D };
+};
+let reliquaryInput: ReliquaryInput | null = null;
+const reliquarySelects = new WeakSet<THREE.Object3D>();
+function traceAvailable(input: ReliquaryInput): boolean {
+  return (
+    canOpenLoot() &&
+    floor?.reliquary === input.station &&
+    floor.world.current === floor.world.plan.reliquary?.source.room
+  );
+}
+function beginReliquaryTrace(
+  source: ReliquaryInput['source'],
+  origin: THREE.Vector3,
+  direction: THREE.Vector3,
+): boolean {
+  const station = floor?.reliquary;
+  if (!station || reliquaryInput || flow.reliquarySeal !== 'known') return false;
+  const pick = fieldHit(origin, direction);
+  if (pick?.kind !== 'reliquary' || !station.begin(origin, direction)) return false;
+  reliquaryInput = { station, source };
+  return true;
+}
+function endReliquaryTrace(submit: boolean): void {
+  const input = reliquaryInput;
+  if (!input) return;
+  reliquaryInput = null;
+  const { station } = input;
+  if (!submit || !traceAvailable(input)) {
+    station.cancel();
+    return;
+  }
+  const result = flow.submitReliquaryTrace(station.finish());
+  if (result === 'opened') {
+    audio?.playSfx(PUZZLE_GATE_OPEN_SFX.reliquary, station.openingPosition(chimePosition));
+  } else if (result === 'wrong') {
+    station.reject();
+    audio?.playSfx('sigil-fizzle', station.plate.getWorldPosition(chimePosition));
+  } else station.cancel();
+}
 window.addEventListener(
   'pointerdown',
   (event) => {
     if (xr.presenting || event.button !== 0 || event.target !== renderer.domElement) return;
     if (!floor || !canOpenLoot()) return;
     const { origin, direction } = mouseRay(event);
-    if (activatePickup(origin, direction)) event.stopImmediatePropagation();
+    if (
+      beginReliquaryTrace({ pointer: event.pointerId }, origin, direction) ||
+      activatePickup(origin, direction)
+    )
+      event.stopImmediatePropagation();
   },
   { capture: true },
 );
 window.addEventListener('pointermove', (event) => {
+  const input = reliquaryInput;
+  if (input && 'pointer' in input.source && input.source.pointer === event.pointerId) {
+    const { origin, direction } = mouseRay(event);
+    if (traceAvailable(input)) input.station.sample(origin, direction);
+    else endReliquaryTrace(false);
+    return;
+  }
   if (xr.presenting || event.target !== renderer.domElement) return;
   let over = false;
   if (floor && canOpenLoot()) {
@@ -2124,6 +2795,22 @@ window.addEventListener('pointermove', (event) => {
   }
   renderer.domElement.style.cursor = over ? 'pointer' : '';
 });
+window.addEventListener('pointerup', (event) => {
+  const input = reliquaryInput;
+  if (!input || !('pointer' in input.source) || input.source.pointer !== event.pointerId) return;
+  if (traceAvailable(input)) {
+    const { origin, direction } = mouseRay(event);
+    input.station.sample(origin, direction);
+  }
+  endReliquaryTrace(true);
+});
+window.addEventListener('pointercancel', (event) => {
+  const input = reliquaryInput;
+  if (input && 'pointer' in input.source && input.source.pointer === event.pointerId)
+    endReliquaryTrace(false);
+});
+window.addEventListener('blur', () => endReliquaryTrace(false));
+renderer.xr.addEventListener('sessionend', () => endReliquaryTrace(false));
 // Keyboard on the boards: type a seed, arrows move focus, Enter activates, Escape backs out.
 let focusIndex = -1;
 window.addEventListener('keydown', (event) => {
@@ -2242,8 +2929,25 @@ for (const index of [0, 1]) {
       });
     });
   };
+  controller.addEventListener('selectstart', () => {
+    reliquarySelects.delete(controller);
+    if (!xr.presenting || !canOpenLoot()) return;
+    const { origin, direction } = controllerRay(controller);
+    if (beginReliquaryTrace({ controller }, origin, direction)) reliquarySelects.add(controller);
+  });
+  controller.addEventListener('selectend', () => {
+    const input = reliquaryInput;
+    if (input && 'controller' in input.source && input.source.controller === controller)
+      endReliquaryTrace(true);
+  });
+  controller.addEventListener('disconnected', () => {
+    reliquarySelects.delete(controller);
+    const input = reliquaryInput;
+    if (input && 'controller' in input.source && input.source.controller === controller)
+      endReliquaryTrace(false);
+  });
   controller.addEventListener('select', (event) => {
-    if (busy()) return;
+    if (reliquarySelects.delete(controller) || busy()) return;
     if (!ui?.visible) {
       if (floor && canOpenLoot() && xr.presenting) {
         const { origin, direction } = controllerRay(controller);
@@ -2304,6 +3008,25 @@ for (const index of [0, 1]) {
     if (evidence && inspectFormula(evidence.clue)) return;
     const dispatch = floor.dispatchRoom?.near(position, GRAB_REACH);
     if (dispatch && operateDispatch(dispatch)) return;
+    const pipes = floor.speakingPipes?.near(position, GRAB_REACH);
+    if (pipes && operateSpeakingPipes(pipes)) return;
+    const valvehouse = floor.valvehouse?.near(position, GRAB_REACH);
+    if (valvehouse && operateValvehouse(valvehouse)) return;
+    const pendulum = floor.pendulumGallery?.near(position, GRAB_REACH);
+    if (pendulum && operatePendulum(pendulum)) return;
+    const borrowedLight = floor.borrowedLight?.near(position, GRAB_REACH);
+    if (borrowedLight && operateBorrowedLight(borrowedLight.action)) return;
+    const floatElevator = floor.floatElevator?.near(position, GRAB_REACH);
+    if (floatElevator && operateFloatElevator(floatElevator.action)) return;
+    const shadowStencil = floor.shadowStencil?.near(position, GRAB_REACH);
+    if (shadowStencil && operateShadowStencil(shadowStencil.action)) return;
+    const springTension = floor.springTension?.near(position, GRAB_REACH);
+    if (springTension && operateSpringTension(springTension.action)) return;
+    const darkCircuit = floor.darkCircuit?.near(position, GRAB_REACH);
+    if (darkCircuit && operateDarkCircuit(darkCircuit.action)) return;
+    const drumGallery = floor.drumGallery?.near(position, GRAB_REACH);
+    if (drumGallery && operateDrumGallery(drumGallery.action)) return;
+    if (floor.armoryAlcove?.near(position, GRAB_REACH) && operateArmory()) return;
     const clock = floor.clock?.near(position, GRAB_REACH);
     if (clock && collectAlchemy(clock.ingredient, side, floor.clock?.target)) return;
     const brew = floor.alchemy?.near(position, GRAB_REACH);
@@ -2570,6 +3293,7 @@ if (floor && params.has('debug')) {
           'menu-settings': 'radial-menu-settings',
           'menu-deck': 'radial-menu-deck',
           'menu-items': 'radial-menu-items',
+          'menu-logbook': 'radial-menu-logbook',
           'menu-cancel': 'radial-menu-cancel',
           'menu-resume': 'radial-menu-cancel',
         };
@@ -2753,7 +3477,8 @@ renderer.setAnimationLoop((time, frame) => {
     const { left, right } = xr.sticks();
     // Locomotion reports +Y forward; the shared radial uses WebXR's raw -Y for up.
     menuStick.update('right', { x: right[0], y: -right[1], pressed: xr.buttonPressed('right', 3) });
-    if (menuStick.active) releaseMenuStick = true;
+    const panningMap = ui?.panLogbookStick(right[0], right[1], deltaSeconds);
+    if (menuStick.active || panningMap) releaseMenuStick = true;
     else if (Math.hypot(...right) < 0.2) releaseMenuStick = false;
     const aimSource = xr.rays().right;
     const aimRay = aimSource ? controllerRay(aimSource) : null;
@@ -2882,6 +3607,14 @@ renderer.setAnimationLoop((time, frame) => {
       }
     }
   }
+  if (reliquaryInput) {
+    const { source, station } = reliquaryInput;
+    if (!traceAvailable(reliquaryInput)) endReliquaryTrace(false);
+    else if ('controller' in source) {
+      const { origin, direction } = controllerRay(source.controller);
+      station.sample(origin, direction);
+    }
+  }
   if (floor && xr.presenting && canOpenLoot()) {
     // The beam ends on a coffer it can open.
     for (const side of ['left', 'right'] as const) {
@@ -2894,7 +3627,53 @@ renderer.setAnimationLoop((time, frame) => {
           laserHits[side] === null ? distance : Math.min(laserHits[side] as number, distance);
     }
   }
+  if (audio) {
+    const torch =
+      floor && flow.phase === 'explore' ? floor.stoneTorches.get(floor.world.current) : undefined;
+    if (torchSound !== torch) {
+      audio.stopLoop('dungeon-torch-crackle');
+      torchSound = torch;
+      torchLoopPlaying = false;
+    }
+    if (torch && !torchLoopPlaying) {
+      torchLoopPlaying = audio.startLoop(
+        'dungeon-torch-crackle',
+        torch.getWorldPosition(torchSoundPosition),
+      );
+    }
+  }
+  if (audio) {
+    const leak =
+      floor &&
+      flow.phase === 'explore' &&
+      !ui?.menuOpen &&
+      floor.valvehouse?.leaking &&
+      floor.world.current === floor.world.plan.valvehouse?.source.room
+        ? floor.valvehouse.joint
+        : undefined;
+    if (leak !== leakingJoint) {
+      audio.stopLoop('valvehouse-leak');
+      leakingJoint = leak;
+      leakLoopPlaying = false;
+    }
+    if (leak && !leakLoopPlaying)
+      leakLoopPlaying = audio.startLoop(
+        'valvehouse-leak',
+        leak.getWorldPosition(leakSoundPosition),
+      );
+  }
   if (floor && audio) {
+    const pipeReceiver =
+      flow.phase === 'explore' &&
+      flow.speakingPipes === 'primed' &&
+      floor.world.current === floor.world.plan.speakingPipes?.receiverRoom
+        ? (floor.speakingPipes ?? undefined)
+        : undefined;
+    if (!pipeReceiver) soundedPipeReceiver = undefined;
+    else if (pipeReceiver !== soundedPipeReceiver && audio.contextState === 'running') {
+      soundedPipeReceiver = pipeReceiver;
+      playPipeReply(pipeReceiver);
+    }
     const fighting = floor.encounter.phase !== 'idle';
     audio.setState(
       audioStateForFlow(flow.phase, floor.encounter.phase, {

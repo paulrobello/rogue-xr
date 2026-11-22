@@ -1,0 +1,54 @@
+{
+  "provider": "OpenAI Media Service",
+  "generator": "Built-in OpenAI ImageGen",
+  "model": "Not exposed by the tool",
+  "file": "complete-wave.png",
+  "sha256": "ab55970b7e61c37109fb558751c648722a9d9c44dcfe9473ef83f6b6a004c886",
+  "reference": [
+    {
+      "path": "assets-source/style/locked/L-board-1.png",
+      "sha256": "d3fffc8eb300cc6f40236c28930401ef1bd06be0e27be76999839e3bfeacc018"
+    },
+    {
+      "path": "assets-source/style/locked/L-cards.png",
+      "sha256": "207a60d3465942c8d16ddb5eee674db576a4a19e3b7070579313f844050b2c52"
+    },
+    {
+      "path": "assets-source/cards/repair-wave/repair-wave.png",
+      "sha256": "bb3d832120e5dc07c5372b8176a67daa22056379a848b14725c41a1ec72fa641"
+    }
+  ],
+  "prompt": "Create a single transparent foreground illustration sheet for the Clockwork Spire steampunk fantasy deckbuilder. The attached images are this project's style references, never objects to paste or reuse. Original painterly Gilded Lamplight, semi-realistic antique brass instruments, worn iron and smooth old walnut with warm lamplight, copper rim glints, on real alpha transparency. Exact 2-by-2 equal grid on a square sheet, lower-right quadrant entirely empty, centered subjects with at least 12% fully transparent margins on all sides of each quadrant, no overlap. Upper left, GREASE GUN, sapphire skill: a short clearly recognizable Victorian workshop grease applicator, a squat brass cylinder threaded to a bent thin precision spout, pressure plunger and textured sapphire-enamel grip, one tiny oil droplet near tip, unmistakably an industrial lubricant tool rather than any firearm. Upper right, ESCAPEMENT BREAK, ruby attack: a heavy antique clock escapement split into two big tooth segments around a broken anchor pawl, strong readable silhouette, a few short sparks compact at the break, ruby enamel stripe. Lower left, LUCKY STRIKE, ruby attack: an ornate brass six-sided pipped die at a dynamic tilted angle with a ruby inset edge, one small copper strike flare on contact, a broad iconic die silhouette with no text or numbers. Real straight RGBA, clean painted edges, no drop shadow, wall, frame, card, typography, letters, numerals, parchment, room background, or checkerboard. Keep all three silhouettes distinctive and large at thumbnail size.",
+  "settings": {
+    "transparentBackground": true,
+    "layout": "2 by 2 equal grid",
+    "size": [
+      1254,
+      1254
+    ]
+  },
+  "alphaBoundsByQuadrantAt16": {
+    "grease-gun": [
+      35,
+      82,
+      597,
+      576
+    ],
+    "escapement-break": [
+      26,
+      77,
+      588,
+      574
+    ],
+    "lucky-strike": [
+      110,
+      73,
+      543,
+      541
+    ],
+    "unused": null
+  },
+  "alphaNotes": "Original output kept byte-for-byte. Unused quadrant peaks at 1/255 alpha and is excluded from packing.",
+  "runtimeDerivation": "scripts/assets/build_card_atlas.py --complete-wave-only packs the foregrounds with two existing backdrop pairs into the lower half of the card frame page.",
+  "rights": "Original generated foregrounds with project-owned references. Release and owner review pending."
+}

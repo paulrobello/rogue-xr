@@ -86,8 +86,9 @@ function hitDamage(base, attacker, defender) {
   return Math.max(0, d);
 }
 
-function amountOf(a, card) {
+function amountOf(a, card, steamSpent) {
   if (typeof a === 'number') return a;
+  if ('perSteam' in a) return a.perSteam * steamSpent;
   const mean = DIE_MEAN[card.dice] ?? 3.5;
   return (a.base ?? 0) + a.dice * mean;
 }
@@ -110,14 +111,16 @@ function cloneModel(m) {
 
 /** Plays `card` at `target` (enemy id or null) into model `m`, in place. */
 function applyCard(m, card, target) {
-  m.steam -= card.cost;
+  const spent = card.cost === 'X' ? m.steam : card.cost;
+  m.steam -= spent;
   const gainBlock = (amount) => {
     // Rust halves newly gained block, matching the rules engine's visible status behavior.
     m.block += stackOf(m.pst, 'rust') > 0 ? Math.floor(amount / 2) : amount;
   };
   for (const e of card.effects) {
     if (e.type === 'damage') {
-      const base = scaled(amountOf(e.amount, card), card);
+      const base = scaled(amountOf(e.amount, card, spent), card);
+      if (base === 0 && typeof e.amount === 'object' && 'perSteam' in e.amount) continue;
       const targets =
         e.target === 'all-opponents'
           ? m.enemies.filter((x) => x.hp > 0)
@@ -134,14 +137,14 @@ function applyCard(m, card, target) {
         }
       }
     } else if (e.type === 'block') {
-      gainBlock(scaled(amountOf(e.amount, card), card));
+      gainBlock(scaled(amountOf(e.amount, card, spent), card));
     } else if (e.type === 'gain-steam') {
-      m.steam += amountOf(e.amount, card);
+      m.steam += amountOf(e.amount, card, spent);
       m.bonus += 0.5;
     } else if (e.type === 'draw') {
-      m.bonus += 2.5 * amountOf(e.amount, card);
+      m.bonus += 2.5 * amountOf(e.amount, card, spent);
     } else if (e.type === 'apply-status') {
-      const n = scaled(amountOf(e.stacks, card), card);
+      const n = scaled(amountOf(e.stacks, card, spent), card);
       if (e.target === 'self') {
         m.pst[e.status] = stackOf(m.pst, e.status) + n;
         if (e.status === 'wound-up') m.bonus += POLICY.woundValue * n * m.woundScale;
@@ -165,7 +168,7 @@ function applyCard(m, card, target) {
         enemy?.intent?.effects
           .filter((f) => f.type === 'damage')
           .reduce((sum, f) => sum + (f.hits ?? 1), 0) ?? 0;
-      if (hits >= e.minTargetHits) gainBlock(scaled(amountOf(e.amount, card), card));
+      if (hits >= e.minTargetHits) gainBlock(scaled(amountOf(e.amount, card, spent), card));
     } else if (e.type === 'block-from-status') {
       const source = e.removeFrom === 'target' ? m.enemies.find((x) => x.id === target) : null;
       const statuses = source ? source.st : m.pst;
@@ -255,7 +258,7 @@ function choose(s, failed = new Set()) {
     const seen = new Set();
     for (let i = 0; i < cards.length; i++) {
       const card = cards[i];
-      if (card.cost > m.steam) continue;
+      if (card.cost !== 'X' && card.cost > m.steam) continue;
       const targets =
         card.target === 'enemy' ? m.enemies.filter((e) => e.hp > 0).map((e) => e.id) : [null];
       for (const target of targets) {

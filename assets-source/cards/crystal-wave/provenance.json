@@ -1,0 +1,34 @@
+{
+  "provider": "OpenAI Media Service",
+  "generator": "Built-in OpenAI ImageGen",
+  "model": "Not exposed by the tool",
+  "file": "crystal-wave.png",
+  "sha256": "c17760ac4eb4d729d2ece51ef1ceac7bf20f2b3a452b279e35d7562ab22c6b03",
+  "reference": [
+    {
+      "path": "assets-source/cards/dice-wave/dice-wave.png",
+      "sha256": "4412dcdd8c0f3850871c2a2143aca3a3217e82bf9f5aa48826a4bcb554135b3e"
+    },
+    {
+      "path": "assets-source/style/locked/L-cards.png",
+      "sha256": "207a60d3465942c8d16ddb5eee674db576a4a19e3b7070579313f844050b2c52"
+    }
+  ],
+  "prompt": "Create one original, production-ready isolated transparent foreground illustration for the tabletop card Crystal Gambit in the Victorian clockwork fantasy game Clockwork Spire. The attached project-owned card illustrations are style references only. Show exactly two dark teal translucent dodecahedral crystal dice with clearly pentagonal facets, sharp carved golden lattice rims and bright ivory engraved numbers. Place one higher on the left tilted to show its pentagonal face, with the lower right die leaning at a different angle slightly in front. The two silhouettes read as distinct objects at small card scale. Warm brass highlights, deep ocean teal and pale cyan internal crystal reflections in the same painted Gilded Lamplight style as the supplied original assets. Compose on a square transparent RGBA canvas with generous clear margin all around. Both dice fully within the canvas. True transparent alpha, clean painted edges. No surfaces, backdrop, drop shadows, sparks beyond the dice, text other than simple die face numerals, card frame, watermark, people, or extra objects.",
+  "settings": {
+    "transparentBackground": true,
+    "size": [
+      1254,
+      1254
+    ]
+  },
+  "alphaBoundsAt16": [
+    66,
+    74,
+    1163,
+    1137
+  ],
+  "alphaNotes": "Original RGBA output retained unchanged; only packed runtime art is cropped and scaled.",
+  "runtimeDerivation": "scripts/assets/build_card_atlas.py places the foreground in the bound frame-page atlas.",
+  "rights": "Original generated foreground with project-owned references. Release and owner review pending."
+}

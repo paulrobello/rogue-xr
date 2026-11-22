@@ -1,0 +1,19 @@
+{
+  "glb_sha256": "b2a459d5e8726fe0b0bebf6f89d15e42bbefcf36eb07e0df15d0bddd35d305f4",
+  "source_blend_sha256": "c0662a5f218f1a3392c8a7f329078f6f6759b55cae4e5ac3d30665a477b453a1",
+  "generator_sha256": "c29f2e7a912f2f00468280f607ac856ed2692ce7994e6629370ac99815836b06",
+  "roots": [
+    "IngredientBellcap",
+    "IngredientSilverleaf",
+    "RecipeTileBellcap",
+    "RecipeTileSilverleaf"
+  ],
+  "root_nodes": [
+    "IngredientBellcap",
+    "IngredientSilverleaf",
+    "RecipeTileBellcap",
+    "RecipeTileSilverleaf"
+  ],
+  "triangles": 2232,
+  "visual_approval": "pending"
+}

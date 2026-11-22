@@ -16,7 +16,9 @@ import {
   XR_DICE_HINT,
   XR_HELD_DICE_HINT,
 } from '../src/combat/combat-session.ts';
+import { dieById } from '../src/content/dice.ts';
 import { ActionBus } from '../src/core/actions.ts';
+import { rollDie } from '../src/rules/dice.ts';
 import { mountFloorView } from '../src/world/floor-view.ts';
 
 const DT = 1 / 60;
@@ -397,3 +399,75 @@ it('renders and settles both Spare Die rolls before releasing effects', async ()
   expect(readout?.value).toBe(Math.max(...(readout?.rolls ?? [])));
   rig.hook.dispose();
 }, 60_000);
+
+it.each(['keep', 'reroll'] as const)(
+  'resolves a loaded throw with Spare Die exactly once after choosing to %s',
+  async (choice) => {
+    const rig = await openFight({
+      deck: ['loaded-die', 'reroll-lever', 'cog-toss', 'defend', 'defend'],
+      bonusDice: 1,
+    });
+    const { session, actions, hook } = rig;
+    const { controller } = session;
+    try {
+      const select = (id: string) => {
+        const card = controller.state.piles.hand.find((card) => card.def.id === id);
+        if (!card) throw new Error(`Missing ${id}`);
+        expect(controller.select(card.uid).ok).toBe(true);
+      };
+      for (const id of ['loaded-die', 'reroll-lever']) {
+        select(id);
+        expect(controller.table().ok).toBe(true);
+      }
+      rig.step();
+      const before = controller.state;
+      const foe = before.enemies[0];
+      const die = dieById('brass-d6');
+      const first = rollDie(before.rng, die);
+      const second = rollDie(first.rng, die);
+      const third = rollDie(second.rng, die);
+      const fourth = rollDie(third.rng, die);
+      const initial = [first.roll.value, second.roll.value, third.roll.value];
+      const kept = Math.max(...initial);
+      const expected = choice === 'reroll' ? fourth : third;
+      const value = choice === 'reroll' ? fourth.roll.value : kept;
+      select('cog-toss');
+      expect(controller.target(foe.id).ok).toBe(true);
+      rig.step();
+      expect(session.awaitingThrow).toBe(true);
+      expect(controller.state).toBe(before);
+      expect(controller.lastDice?.rolls).toEqual(initial);
+      actions.emit({ type: 'throw-dice' });
+      for (let i = 0; i < 600 && !session.hint.includes('Keep Roll'); i++) rig.step();
+      expect(session.hint).toContain('Keep Roll');
+      expect(session.awaitingDice).toBe(true);
+      expect(controller.state).toBe(before);
+      expect(session.rolls.map((roll) => roll.value).sort()).toEqual([...initial].sort());
+      expect(session.log.filter((line) => line.startsWith('Played Cog Toss'))).toHaveLength(0);
+      if (choice === 'reroll') {
+        pointerAt(rig, at(session, 'dice'), 'down');
+        expect(controller.state).toBe(before);
+        actions.emit({ type: 'throw-dice' });
+      } else pointerAt(rig, at(session, 'end-turn'), 'down');
+      for (let i = 0; i < 600 && session.awaitingDice; i++) rig.step();
+      expect(session.awaitingDice).toBe(false);
+      expect(controller.state.rng.dice).toEqual(expected.rng.dice);
+      expect(controller.state.enemies[0]?.hp).toBe(foe.hp - 2 - value);
+      expect(controller.state.turn).toBe(before.turn);
+      expect(controller.canReroll).toBe(false);
+      expect(controller.state.loadedDie).toBeFalsy();
+      expect(controller.state.rerollDie).toBeFalsy();
+      expect(controller.log.filter((line) => line.startsWith('Played Cog Toss'))).toHaveLength(1);
+      if (choice === 'reroll') {
+        expect(session.rolls.at(-1)?.value).toBe(value);
+        expect(controller.lastDice?.rerolledFrom).toBe(kept);
+        expect(controller.lastDice?.rolls).toEqual([...initial, value]);
+        expect(session.rolls).toHaveLength(4);
+      }
+    } finally {
+      hook.dispose();
+      rig.view.dispose();
+    }
+  },
+  60_000,
+);

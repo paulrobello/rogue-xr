@@ -63,12 +63,17 @@ export function attackVisualKind(cardId: string | null | undefined): AttackVisua
     case 'strike':
       return 'physical';
     case 'cog-toss':
+    case 'flywheel-swing':
+    case 'lucky-strike':
       return 'cog';
     case 'ratchet-flurry':
+    case 'gear-grinder':
       return 'flurry';
     case 'rivet-volley':
       return 'volley';
     case 'escapement-hammer':
+    case 'overdrive-piston':
+    case 'escapement-break':
       return 'hammer';
     case 'cogstorm':
       return 'storm';
@@ -80,7 +85,9 @@ export function attackVisualKind(cardId: string | null | undefined): AttackVisua
       return 'knuckle';
     case 'counterstroke':
       return 'counterstroke';
+    case 'copper-coil':
     case 'arc-bolt':
+    case 'arc-chain':
       return 'lightning';
     default:
       return 'lightning';

@@ -22,7 +22,8 @@
   },
   "procedural": {
     "sigilGlyphs": "Rendered by scripts/assets/build_ui_atlas.py from assets-source/ui/sigil-strokes.json, dumped from src/sigil/templates.ts with bun; no generation.",
-    "dicePipsAndNumerals": "Rendered by the build script onto the generated blank face plates."
+    "dicePipsAndNumerals": "Rendered by the build script onto the generated blank face plates.",
+    "chargeIcon": "Original lightning medallion drawn by scripts/assets/build_ui_atlas.py."
   },
   "sources": [
     {
@@ -278,6 +279,10 @@
       {
         "id": "status-rust",
         "sourceRect": null
+      },
+      {
+        "id": "status-charge",
+        "sourceRect": null
       }
     ],
     "dicePlateRects": {
@@ -377,23 +382,23 @@
       },
       {
         "file": "public/assets/ui/glyphs.ktx2",
-        "bytes": 201867,
-        "sha256": "c05c2eadcdbfff00bf1628d88d61724789c3c56e428ccaf0c1b319412c83bb02"
+        "bytes": 213776,
+        "sha256": "8369768ed76c7ed7dc6f30ae2723664c329c1374a0f07bc0a42ec8fa7b1bc1b0"
       },
       {
         "file": "public/assets/ui/glyphs.png",
-        "bytes": 307024,
-        "sha256": "6dd13bc02e420ca9d4481ab59f8db1293a04b70325b4656c9ae3e438d22f49d7"
+        "bytes": 326053,
+        "sha256": "d405b3a6fca9379fa03edc5a8f9866705600293a525f2ffc3e93ae3a981736d1"
       },
       {
         "file": "public/assets/ui/icons.ktx2",
-        "bytes": 215985,
-        "sha256": "e39e6a3c457222e030342e6ed3e307c27167b44c3722397c141a98c2352cc2e5"
+        "bytes": 226144,
+        "sha256": "962a2b74d7499e447d0ce1ab944bfc0a41aeeedcc5574b8f6c11179122d2453b"
       },
       {
         "file": "public/assets/ui/icons.png",
-        "bytes": 450304,
-        "sha256": "b67f0448649b5de136515046293c2807ac9317e20892be0e616a3f7b4b5edafe"
+        "bytes": 463664,
+        "sha256": "c0b98de5ee1e3e8510c077297f710e6d0d575380fdbfa94d0eacb8f51570d2d0"
       },
       {
         "file": "public/assets/ui/title-1024.jpg",
@@ -407,8 +412,8 @@
       },
       {
         "file": "public/assets/ui/ui-atlas.json",
-        "bytes": 16383,
-        "sha256": "20da84bbe54d6e8aa36300052f9975dd6b49a037b8127c09f174a6c2266d45fb"
+        "bytes": 16881,
+        "sha256": "35974b4c4f24888b43514c2b6470c80462ac3b765d6e527df638b3b4e512c645"
       }
     ]
   }

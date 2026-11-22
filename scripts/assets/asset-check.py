@@ -219,6 +219,47 @@ def check_hidden_panel(errors: list[str]) -> None:
             errors.append(f"Service-panel sound hash mismatch: {clip['id']}")
 
 
+def check_stone_dungeon(errors: list[str]) -> None:
+    source = ROOT / "assets-source/props/stone-dungeon-kit"
+    runtime = ROOT / "public/assets/props/stone-dungeon-kit/stone-dungeon-kit.glb"
+    try:
+        report = json.loads((source / "staging/report.json").read_text())
+        glb = glb_json(runtime)
+        for path, key in (
+            (runtime, "staged_glb"),
+            (source / "stone-dungeon-kit.blend", "blend"),
+            (ROOT / "scripts/assets/build-stone-dungeon.py", "generator"),
+        ):
+            if sha256(path) != report["sha256"][key]:
+                errors.append(f"Stone dungeon {key} hash mismatch")
+        roots = {glb["nodes"][index]["name"] for index in glb["scenes"][glb.get("scene", 0)]["nodes"]}
+        expected = {
+            "StoneBay", "StoneDoor", "StoneNicheBay", "StoneFloor", "StoneCeiling",
+            "StoneSkylight", "StoneShelf", "StoneTorch", "StonePlanter", "StoneDishes",
+        }
+        if roots != expected or roots != set(report["roots"]):
+            errors.append(f"Stone dungeon roots differ from the modular contract: {sorted(roots)}")
+        nodes = {node.get("name") for node in glb["nodes"]}
+        sockets = {"SocketShelfDish", "SocketShelfPlant", "SocketTorchLight"}
+        if not sockets | {"StoneTorchFlame"} <= nodes or sockets != set(report["sockets"]):
+            errors.append("Stone dungeon is missing an authored prop socket or the flame root")
+        counts = []
+        for mesh in glb["meshes"]:
+            for primitive in mesh["primitives"]:
+                attrs = primitive["attributes"]
+                if primitive.get("mode", 4) != 4 or not {"POSITION", "NORMAL", "TEXCOORD_0"} <= attrs.keys():
+                    errors.append("Stone dungeon mesh is missing triangle topology or required attributes")
+                counts.append(glb["accessors"][primitive.get("indices", attrs["POSITION"])]["count"] // 3)
+        total = sum(counts)
+        if total > 28000 or total != report["triangles"] or runtime.stat().st_size > 3 * 1024 * 1024:
+            errors.append(f"Stone dungeon exceeds its transfer or triangle contract ({total} triangles)")
+        if not glb["images"] or any("bufferView" not in image or "uri" in image for image in glb["images"]):
+            errors.append("Stone dungeon requires self-contained embedded material maps")
+        print(f"asset-check props/stone-dungeon-kit: {len(roots)} modules, {total} tris, {runtime.stat().st_size} bytes")
+    except (OSError, ValueError, KeyError, IndexError, TypeError) as exc:
+        errors.append(f"Stone dungeon kit is invalid: {exc}")
+
+
 def check_architectural_finishes(errors: list[str]) -> dict:
     """Check the reusable boiler/timber finish kit and its source chain."""
     err = lambda msg: errors.append(f"props/architectural-finishes: {msg}")  # noqa: E731
@@ -535,12 +576,19 @@ ENEMY_RUNTIME = ROOT / "public/assets/enemies"
 ENEMY_SOURCES = ROOT / "assets-source/enemies"
 ENEMY_LIMITS = {"tris": 25_000, "materials": 4, "bones": 40, "influences": 4}
 ENEMY_CLIPS = {"idle", "attack", "hit", "death", "frozen"}
-# The floor guardian (P5-T4) gets a larger budget and a one-shot `phase-change` clip on top of the five.
-FOUNDRY_INTENTS = {
+# Move-specific poses and actions required for each authored enemy.
+DUNGEON_MOVES = {
+    "mortar-scarab": ("shell-seal", "mortar-rake", "grind"),
+    "lantern-bailiff": ("draw-chain", "lantern-sweep", "cinder-glance", "lantern-parry"),
+}
+ENEMY_INTENTS = {
     "glasswing-scrivener": ("inscribe", "cross-out", "proof"),
     "furnace-mite": ("double-spark", "stoke", "clink"),
     "null-crown-auditor": ("tally", "reconcile", "levy"),
+    **DUNGEON_MOVES,
 }
+ENEMY_ACTIONS = {"null-crown-auditor": ("levy",), **DUNGEON_MOVES}
+# The floor guardian (P5-T4) gets a larger budget and a one-shot `phase-change` clip on top of the five.
 GUARDIAN = "grand-escapement"
 GUARDIAN_LIMITS = {**ENEMY_LIMITS, "tris": 40_000, "bones": 60}
 ENEMY_GENERATORS = {"cog-sentry": "scripts/assets/build-cog-sentry.py", "spring-hound": "scripts/assets/build-spring-hound.py",
@@ -588,6 +636,65 @@ def enemy_limits(enemy: str) -> tuple[dict, set[str]]:
     return (GUARDIAN_LIMITS, ENEMY_CLIPS | {"phase-change"}) if enemy == GUARDIAN else (ENEMY_LIMITS, ENEMY_CLIPS)
 
 
+def check_dungeon_base(enemy: str, errors: list[str]) -> None:
+    base = ENEMY_SOURCES / enemy / "staging/base"
+    if not base.is_dir():
+        return
+    try:
+        report = json.loads((base / "reimport-report.json").read_text())
+        glb = base / f"{enemy}-base.glb"
+        files = {
+            "glb": glb,
+            "blend": base / f"{enemy}-base.blend",
+            "generator": ROOT / f"scripts/assets/build-{enemy}-base.py",
+            "concept": ROOT / "assets-source/concepts/dungeon/dungeon-enemies-sheet.png",
+        }
+        for angle in ("three-quarter", "side", "raised"):
+            files[f"review-{angle}"] = base / f"review-{angle}.png"
+        for key, path in files.items():
+            expected = report["sha256"].get(key) or report["sha256"].get(path.relative_to(ROOT).as_posix())
+            if sha256(path) != expected:
+                errors.append(f"enemies/{enemy} base: {key} hash differs from the reimport report")
+        data = glb_json(glb)
+        stats = glb_stats(glb)
+        if data.get("skins") or data.get("animations"):
+            errors.append(f"enemies/{enemy} base: unexpected skin or animation in static draft")
+        sockets = {"socket-eye", "socket-hit", "socket-weapon"}
+        if not sockets <= {node.get("name") for node in data["nodes"]}:
+            errors.append(f"enemies/{enemy} base: missing planned attachment sockets")
+        tris = stats["triangles"]
+        if not 0 < tris <= ENEMY_LIMITS["tris"] or tris != report["triangle_count"]:
+            errors.append(f"enemies/{enemy} base: triangle count {tris} differs from the report or budget")
+        if not 0 < len(stats["materials"]) <= ENEMY_LIMITS["materials"] or stats["images"]:
+            errors.append(f"enemies/{enemy} base: exceeds the image-free material budget")
+        footprint = report["bounds_blender_m"]
+        lower, upper = (0.55, 0.64) if enemy == "mortar-scarab" else (1.6, 1.75)
+        if abs(footprint["min"][2]) > 0.002 or not lower <= footprint["max"][2] <= upper:
+            errors.append(f"enemies/{enemy} base: reimport ground contact or stature out of bounds")
+        print(f"asset-check enemies/{enemy} base draft: {tris} tris, {len(stats['materials'])} materials")
+    except (OSError, ValueError, KeyError, IndexError, TypeError, struct.error) as exc:
+        errors.append(f"enemies/{enemy} base: {exc}")
+
+
+def check_dungeon_action_timings(enemy: str, manifest: dict, glb: dict, errors: list[str]) -> None:
+    timings = manifest.get("actionTimings", {})
+    if not isinstance(timings, dict) or set(timings) != set(DUNGEON_MOVES[enemy]):
+        errors.append(f"enemies/{enemy}: actionTimings must cover each authored move")
+        return
+    animations = {clip["name"]: clip for clip in glb.get("animations", [])}
+    for move, timing in timings.items():
+        duration = timing.get("duration") if isinstance(timing, dict) else None
+        impact = timing.get("impact") if isinstance(timing, dict) else None
+        if any(type(value) not in (int, float) or not math.isfinite(value) for value in (duration, impact)) or not 0 < impact < duration:
+            errors.append(f"enemies/{enemy}: {move} must place one impact inside its action clip")
+            continue
+        clip = animations.get(f"action-{move}", {})
+        accessors = glb.get("accessors", [])
+        ends = [accessors[s["input"]].get("max", [0])[0] for s in clip.get("samplers", [])]
+        if not ends or not math.isclose(duration, max(ends), abs_tol=1 / 30):
+            errors.append(f"enemies/{enemy}: {move} action duration differs from its GLB")
+
+
 def check_enemy(enemy: str, errors: list[str], warnings: list[str]) -> dict:
     rt = ENEMY_RUNTIME / enemy
     src = ENEMY_SOURCES / enemy
@@ -623,14 +730,16 @@ def check_enemy(enemy: str, errors: list[str], warnings: list[str]) -> dict:
         err("GLB must be image-free (brass slots bind the shared P4-T3 sets by name)")
     if any("JOINTS_0" not in a or "WEIGHTS_0" not in a for a in attrs) or any("WEIGHTS_1" in a for a in attrs):
         err("every primitive needs exactly one JOINTS_0/WEIGHTS_0 set (<= 4 influences)")
-    intents = {name: "intent-" + name for name in FOUNDRY_INTENTS.get(enemy, ())}
+    intents = {name: "intent-" + name for name in ENEMY_INTENTS.get(enemy, ())}
     if m.get("intentClips", {}) != intents:
         err(f"intent clip map differs from the authored moves {intents}")
-    actions = {"levy": "action-levy"} if enemy == "null-crown-auditor" else {}
+    actions = {name: "action-" + name for name in ENEMY_ACTIONS.get(enemy, ())}
     if m.get("actionClips", {}) != actions:
         err(f"action clip map differs from the authored moves {actions}")
     if clips != want_clips | set(intents.values()) | set(actions.values()) or set(m.get("clips", {})) != want_clips:
         err(f"clips {sorted(clips)} / manifest {sorted(m.get('clips', {}))} != {sorted(want_clips)}")
+    if enemy in DUNGEON_MOVES:
+        check_dungeon_action_timings(enemy, m, g, errors)
     budget = m.get("budget", {})
     if budget.get("tris") != glb["triangles"] or budget.get("bones") != bones or budget.get("materials") != len(glb["materials"]):
         err(f"manifest budget {budget} != measured tris {glb['triangles']}, bones {bones}, materials {len(glb['materials'])}")
@@ -761,11 +870,14 @@ DICE_GENERATOR = "scripts/assets/build-dice.py"
 DICE_GENERATOR_DEPS = ["scripts/assets/build-cog-sentry.py"]
 # faces.ts face order: d6 normals by index, d8 sign bits (i & 4 -> x, i & 2 -> y, i & 1 -> z).
 _S3 = 1 / math.sqrt(3)
+D12_GEOMETRY = json.loads((ROOT / "src/dice/crystal-d12.json").read_text())
 DICE_FACES = {
     "brass-d6": {"kind": "d6", "half": 0.02, "values": list(range(1, 7)),
                  "normals": [(0, 1, 0), (1, 0, 0), (0, 0, 1), (0, 0, -1), (-1, 0, 0), (0, -1, 0)]},
     "glass-d8": {"kind": "d8", "half": 0.026, "values": list(range(1, 9)),
                  "normals": [((-1 if i & 4 else 1) * _S3, (-1 if i & 2 else 1) * _S3, (-1 if i & 1 else 1) * _S3) for i in range(8)]},
+    "crystal-d12": {"kind": "d12", "half": max(abs(v) for point in D12_GEOMETRY["vertices"] for v in point),
+                    "values": list(range(1, 13)), "normals": [face["normal"] for face in D12_GEOMETRY["faces"]]},
 }
 
 
@@ -1239,6 +1351,8 @@ def main() -> int:
         s = check_enemy(enemy, errors, warnings)
         glb = s.get("glb", {})
         print(f"asset-check enemies/{enemy}: {glb.get('triangles')} tris, {len(glb.get('materials', []))} materials, {s.get('bones')} bones, clips {s.get('clips')}")
+    for enemy in DUNGEON_MOVES:
+        check_dungeon_base(enemy, errors)
     dice = sorted(p.name for p in DICE_RUNTIME.iterdir() if p.is_dir()) if DICE_RUNTIME.exists() else []
     for die in dice:
         s = check_dice(die, errors, warnings)
@@ -1252,12 +1366,14 @@ def main() -> int:
     check_hidden_panel(errors)
     check_alchemy(errors)
     check_mechanism_kit(errors, "archive-kit")
+    check_mechanism_kit(errors, "conservatory-specimens")
     check_mechanism_kit(errors, "commission-kit")
     check_mechanism_kit(errors, "calibration-kit")
     check_mechanism_kit(errors, "brass-key-kit")
     architectural = check_architectural_finishes(errors)
     if architectural:
         print(f"asset-check props/architectural-finishes: {architectural.get('triangles')} tris, {architectural.get('materials')} materials, {architectural.get('embeddedImages')} embedded images, {architectural.get('roots')} roots")
+    check_stone_dungeon(errors)
     runpy.run_path(str(ROOT / "scripts/assets/pressure_works_check.py"))["check_pressure"](errors)
     for w in warnings:
         print(f"WARN {w}")

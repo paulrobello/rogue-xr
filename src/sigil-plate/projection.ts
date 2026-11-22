@@ -371,7 +371,7 @@ export interface TraceResult {
   readonly sigilId: SigilId;
   /** Match against the card's own sigil, 0..1. */
   readonly score: number;
-  /** Power multiplier from `scoreToMultiplier`, 0.5..1.25. */
+  /** Trace power from `scoreToMultiplier` (0.5..1.25), or committed power after a plate cast. */
   readonly multiplier: number;
   readonly quality: SigilQuality;
   /** The best-matching authored sigil, for "you drew X" feedback. */

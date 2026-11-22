@@ -73,6 +73,32 @@ export function bindBookcaseAtlas(asset: InteriorFurnishingsAsset, atlas: THREE.
   });
 }
 
+/** Borrows the shared walnut PBR maps for the case frame without touching the book atlas. */
+export function dressBookcaseWood(
+  asset: InteriorFurnishingsAsset,
+  walnut: THREE.MeshStandardMaterial,
+): void {
+  const finishes = new Map<THREE.MeshStandardMaterial, THREE.MeshStandardMaterial>();
+  asset.roots.Bookcase.traverse((node) => {
+    if (!(node instanceof THREE.Mesh) || !(node.material instanceof THREE.MeshStandardMaterial))
+      return;
+    const source = node.material;
+    if (source.name !== 'Walnut' && source.name !== 'WalnutHighlight') return;
+    let finish = finishes.get(source);
+    if (!finish) {
+      finish = source.clone();
+      finish.map = walnut.map;
+      finish.normalMap = walnut.normalMap;
+      finish.roughnessMap = walnut.roughnessMap;
+      finish.aoMap = walnut.aoMap;
+      finish.metalnessMap = walnut.metalnessMap;
+      finish.color.set(source.name === 'WalnutHighlight' ? 0xffffff : 0xead9cb);
+      finishes.set(source, finish);
+    }
+    node.material = finish;
+  });
+}
+
 export interface InteriorPlacement {
   readonly room: number;
   readonly theme: InteriorTheme;
@@ -537,7 +563,7 @@ export class InteriorFurnishings {
         [world.plan.pressureWing.gallery, world.plan.pressureWing.pumpRoom].includes(room)
       )
         continue;
-      if (room === world.plan.guardianRoom) continue;
+      if (room === world.plan.guardianRoom || room === world.plan.armoryAlcove?.room) continue;
       if (world.plan.rooms[room]?.templateId === 'corridor') continue;
       const style = roomStyleFor(world.plan, room, options.floorNumber ?? 1);
       const upperIndustrialRoom = upperIndustrial && (style === 'boiler' || room === 0);

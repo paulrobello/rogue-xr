@@ -16,6 +16,11 @@ const BOWL_FOOT = 0.2;
 const BOWL_HEIGHT = 0.24;
 const RIM_Y = 0.86;
 const LEG_BASE_RADIUS = 0.3;
+const LEG_TOP_RADIUS = 0.17;
+const FOOT_RADIUS = 0.04;
+const LEG_TOP_Y = RIM_Y - BOWL_HEIGHT + 0.045;
+const LEG_LENGTH = Math.hypot(LEG_TOP_Y - FOOT_RADIUS, LEG_BASE_RADIUS - LEG_TOP_RADIUS);
+const BRACE_Y = 0.3;
 const LEG_COUNT = 3;
 /** Seconds the coals take to fade from glowing to ash once the hearth is used. */
 const DIM_SECONDS = 1.4;
@@ -78,10 +83,19 @@ export class HearthKit {
   );
   private readonly rim = this.geometry(new THREE.TorusGeometry(BOWL_RADIUS, 0.022, 8, 24));
   private readonly ring = this.geometry(
-    new THREE.TorusGeometry(LEG_BASE_RADIUS * 0.6, 0.016, 6, 18),
+    new THREE.TorusGeometry(
+      THREE.MathUtils.lerp(
+        LEG_BASE_RADIUS,
+        LEG_TOP_RADIUS,
+        (BRACE_Y - FOOT_RADIUS) / (LEG_TOP_Y - FOOT_RADIUS),
+      ),
+      0.014,
+      6,
+      24,
+    ),
   );
-  private readonly leg = this.geometry(new THREE.CylinderGeometry(0.02, 0.028, RIM_Y, 6));
-  private readonly foot = this.geometry(new THREE.SphereGeometry(0.04, 8, 6));
+  private readonly leg = this.geometry(new THREE.CylinderGeometry(0.02, 0.028, LEG_LENGTH, 10));
+  private readonly foot = this.geometry(new THREE.SphereGeometry(FOOT_RADIUS, 12, 8));
   private readonly coals = this.geometry(coalBedGeometry(BOWL_RADIUS - 0.02));
   private readonly hitBox = this.geometry(new THREE.BoxGeometry(0.8, 1.1, 0.8));
   private dressing: HearthMaterials | null = null;
@@ -122,24 +136,18 @@ export class HearthKit {
     rim.position.y = RIM_Y;
     const ring = this.part(this.ring, object, 'hearth-ring');
     ring.rotation.x = Math.PI / 2;
-    ring.position.y = 0.3;
+    ring.position.y = BRACE_Y;
+    const up = new THREE.Vector3(0, 1, 0);
     for (let i = 0; i < LEG_COUNT; i++) {
       const angle = (i / LEG_COUNT) * Math.PI * 2 + Math.PI / 6;
-      const spread = 0.16;
-      const leg = this.part(this.leg, object, 'hearth-leg');
-      // Legs run from a wide foot on the floor up to the bowl's underside, leaning inward.
-      leg.position.set(
-        Math.cos(angle) * (LEG_BASE_RADIUS - spread / 2),
-        RIM_Y / 2,
-        Math.sin(angle) * (LEG_BASE_RADIUS - spread / 2),
-      );
-      leg.rotation.set(
-        Math.sin(angle) * Math.atan2(spread, RIM_Y),
-        0,
-        -Math.cos(angle) * Math.atan2(spread, RIM_Y),
-      );
+      const x = Math.cos(angle);
+      const z = Math.sin(angle);
       const foot = this.part(this.foot, object, 'hearth-foot');
-      foot.position.set(Math.cos(angle) * LEG_BASE_RADIUS, 0.03, Math.sin(angle) * LEG_BASE_RADIUS);
+      foot.position.set(x * LEG_BASE_RADIUS, FOOT_RADIUS, z * LEG_BASE_RADIUS);
+      const top = new THREE.Vector3(x * LEG_TOP_RADIUS, LEG_TOP_Y, z * LEG_TOP_RADIUS);
+      const leg = this.part(this.leg, object, 'hearth-leg');
+      leg.position.copy(foot.position).lerp(top, 0.5);
+      leg.quaternion.setFromUnitVectors(up, top.sub(foot.position).normalize());
     }
     // The bed carries the coals' state colour (scripts read `hearth-coals` material.color); the
     // lumps heaped on it and the flames over them follow it.

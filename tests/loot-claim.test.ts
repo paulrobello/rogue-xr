@@ -1,7 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { STARTER_DECK } from '../src/content/cards.ts';
-import { REWARD_POOL } from '../src/content/rewards.ts';
 import { STREAMS } from '../src/core/rng.ts';
 import { type FlowEvent, RunFlow } from '../src/flow/flow.ts';
 import { bindFlowPersistence } from '../src/flow/persist.ts';
@@ -21,6 +20,29 @@ const SEED = 'SPIRE001';
 const ROOM = 3;
 const SOCKET = 'desk-drawer';
 const KEY = lootKey(ROOM, SOCKET);
+const CLAIM_FIXTURE_POOL = [
+  'cog-toss',
+  'ratchet-flurry',
+  'rivet-volley',
+  'escapement-hammer',
+  'lucky-rivets',
+  'release-valve',
+  'overwind',
+  'spanner-jam',
+  'cogstorm',
+  'furnace-brand',
+  'warding-glyph',
+  'arc-bolt',
+  'time-spiral',
+  'rivet-plate',
+  'shear-pin',
+  'rust-spray',
+  'iron-knuckle',
+  'brass-bulwark',
+  'anchor-glyph',
+  'counterstroke',
+  'quench-seal',
+] as const;
 /**
  * The card each seed rolled before cards waited to be claimed (captured from the previous
  * `openTreasure`, which added it to the deck on open), with the `loot` stream after the draw.
@@ -37,12 +59,12 @@ function newFlow(): RunFlow {
   return new RunFlow({
     workshop: createWorkshop(),
     starterDeck: STARTER_DECK,
-    rewardPool: REWARD_POOL,
+    rewardPool: CLAIM_FIXTURE_POOL,
   });
 }
 
 function opened(seed = SEED): RunState {
-  const result = openTreasure(newRun(seed), KEY, 'card', REWARD_POOL);
+  const result = openTreasure(newRun(seed), KEY, 'card', CLAIM_FIXTURE_POOL);
   if (!result) throw new Error('open refused');
   return result.run;
 }
@@ -50,7 +72,7 @@ function opened(seed = SEED): RunState {
 describe('openTreasure then claimTreasure', () => {
   it('rolls the same card on the same loot draw as before claiming existed', () => {
     for (const [seed, want] of Object.entries(ROLLED)) {
-      const result = openTreasure(newRun(seed), KEY, 'card', REWARD_POOL);
+      const result = openTreasure(newRun(seed), KEY, 'card', CLAIM_FIXTURE_POOL);
       expect(result?.loot).toMatchObject({ kind: 'card', card: want.card });
       expect(result?.run.rng.loot).toEqual(want.loot);
       expect(result?.run.pendingLoot).toEqual([{ key: KEY, card: want.card }]);
@@ -80,14 +102,14 @@ describe('openTreasure then claimTreasure', () => {
     const run = opened();
     expect(claimTreasure(run, lootKey(9, SOCKET))).toBeNull();
     expect(claimTreasure(newRun(), KEY)).toBeNull();
-    const cogs = openTreasure(newRun(), KEY, 'cogs', REWARD_POOL)?.run as RunState;
+    const cogs = openTreasure(newRun(), KEY, 'cogs', CLAIM_FIXTURE_POOL)?.run as RunState;
     expect(cogs.pendingLoot).toBeUndefined();
     expect(claimTreasure(cogs, KEY)).toBeNull();
   });
 
   it('keeps other pending cards when one is claimed', () => {
     const other = lootKey(5, SOCKET);
-    const both = openTreasure(opened(), other, 'card', REWARD_POOL)?.run as RunState;
+    const both = openTreasure(opened(), other, 'card', CLAIM_FIXTURE_POOL)?.run as RunState;
     expect(both.pendingLoot?.map((p) => p.key)).toEqual([KEY, other]);
     const claimed = claimTreasure(both, other)?.run;
     expect(claimed?.pendingLoot?.map((p) => p.key)).toEqual([KEY]);

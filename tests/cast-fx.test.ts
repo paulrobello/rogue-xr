@@ -16,6 +16,7 @@ import {
   castFxSteps,
   castLandSeconds,
   FX_STAGGER_SECONDS,
+  HEAL_SECONDS,
   MOTE_SECONDS,
   newRevealFrame,
   newShieldFrame,
@@ -45,7 +46,7 @@ const PLATE_DONE_SECONDS = 1.6;
 const kinds = (id: string, upgraded = false): CastFxKind[] => {
   const card = CARDS.find((c) => c.id === id);
   if (!card) throw new Error(id);
-  return castFxSteps(upgraded ? upgradedCard(card) : card).map((s) => s.kind);
+  return castFxSteps(upgraded ? upgradedCard(card) : card, 0, 3).map((s) => s.kind);
 };
 
 describe('cast reveal timeline', () => {
@@ -132,6 +133,8 @@ describe('effect to FX mapping', () => {
       'warding-glyph': ['shield'],
       'arc-bolt': ['bolt'],
       'time-spiral': ['draw', 'motes'],
+      'echo-glyph': [],
+      'lens-focus': ['motes'],
       'rivet-plate': ['motes'],
       'shear-pin': ['bolt'],
       'rust-spray': ['motes'],
@@ -140,14 +143,64 @@ describe('effect to FX mapping', () => {
       'anchor-glyph': ['shield', 'motes'],
       counterstroke: ['bolt'],
       'quench-seal': ['shield'],
+      'torque-wrench': ['bolt', 'motes'],
+      counterweight: ['shield'],
+      'tension-coil': ['shield', 'motes'],
+      'spare-parts': ['draw'],
+      'flywheel-swing': ['bolt'],
+      'patch-kit': ['heal'],
+      'grease-gun': [],
+      'escapement-break': ['bolt'],
+      'lucky-strike': ['bolt'],
+      capacitor: ['motes', 'draw'],
+      'copper-coil': ['bolt', 'motes'],
+      'flash-boiler': [],
+      'overdrive-piston': [],
+      'loaded-die': ['draw'],
+      'reroll-lever': [],
+      'gyro-stabilizer': [],
+      'pressure-gauge': [],
+      'clockwork-turret': [],
+      'furnace-heart': [],
+      'arc-chain': ['bolt', 'bolt'],
+      'gear-grinder': ['bolt'],
+      'pendulum-ward': ['shield', 'motes'],
+      'crystal-gambit': ['bolt'],
+    };
+    const upgradeEffects: Partial<Record<string, CastFxKind[]>> = {
+      'escapement-break': ['shield', 'bolt'],
+      'reroll-lever': ['draw'],
     };
     for (const card of CARDS) {
       expect(expected[card.id], card.id).toBeDefined();
       expect(kinds(card.id), card.id).toEqual(expected[card.id]);
-      expect(kinds(card.id, true), `${card.id}+`).toEqual(expected[card.id]);
+      const upgraded = upgradeEffects[card.id] ?? expected[card.id];
+      expect(kinds(card.id, true), `${card.id}+`).toEqual(upgraded);
       for (const step of castFxSteps(card)) expect(step.amount).toBeGreaterThan(0);
     }
     expect(Object.keys(expected).sort()).toEqual(CARDS.map((c) => c.id).sort());
+  });
+
+  it('uses the committed Steam for a bolt and the resolved Block after modifiers', () => {
+    const boiler = CARDS.find((c) => c.id === 'flash-boiler');
+    const piston = CARDS.find((c) => c.id === 'overdrive-piston');
+    if (!piston || !boiler) throw Error('Missing Overdrive cards');
+    expect(castFxSteps(boiler, 0, 0, 0)).toEqual([]);
+    expect(castFxSteps(piston, 0, 0, 0)).toEqual([]);
+    // Two Steam with Rust grants 4 Block after halving the base 8.
+    expect(castFxSteps(boiler, 4, 0, 2)).toEqual([{ kind: 'shield', amount: 4, at: 0 }]);
+    expect(castFxSteps(upgradedCard(piston), 0, 0, 2)).toEqual([
+      { kind: 'bolt', amount: 18, at: 0 },
+    ]);
+  });
+
+  it('shows only the health actually restored and waits for the repair to land', () => {
+    const patch = CARDS.find((card) => card.id === 'patch-kit');
+    if (!patch) throw Error('Missing Patch Kit');
+    expect(castFxSteps(patch)).toEqual([]);
+    const shown = castFxSteps(patch, 0, 2);
+    expect(shown).toEqual([{ kind: 'heal', amount: 2, at: 0 }]);
+    expect(castLandSeconds(shown)).toBe(HEAL_SECONDS);
   });
 
   it('rides enemy motes with the bolt, staggers the rest, and sends self statuses to the player', () => {
@@ -415,25 +468,14 @@ describe('CastReveal', () => {
     // A square quad the disc's diameter across, not a card-shaped one.
     expect(mesh.scale.x).toBeCloseTo(0.12);
     expect(mesh.scale.y).toBeCloseTo(mesh.scale.x);
-    // The window fills the quad, and the frame page is fully transparent: the shader discards
-    // everything outside the circle and draws only art inside it.
+    // Frameless reveals retain the atlas page binding so it can also serve illustration layers.
     const win = material.uniforms.uWindow?.value as THREE.Vector4;
     expect(win.toArray()).toEqual([...ART_ONLY_WINDOW]);
-    const frame = material.uniforms.uFrame?.value as THREE.DataTexture;
-    expect(pages).not.toContain(frame);
-    expect(frame.image.width * frame.image.height).toBe(1);
-    expect([...(frame.image.data as Uint8Array)]).toEqual([0, 0, 0, 0]);
-    // The frame rect spans the window's own texel size, so the shader's edge width is unchanged.
-    const geometry = mesh.geometry;
-    const frameUv = geometry.getAttribute('aFrameUv');
+    expect(material.uniforms.uFrame?.value).toBe(pages[atlas.frames.sigil.page]);
     const texels = artWindowTexels({ atlas, pages }, 'warding-glyph');
     expect(texels).toBeGreaterThan(400);
-    expect([frameUv.getX(0), frameUv.getY(0), frameUv.getZ(0), frameUv.getW(0)]).toEqual([
-      0,
-      0,
-      Math.fround(texels),
-      Math.fround(texels),
-    ]);
+    expect(material.uniforms.uArtOnlyTexels?.value).toBe(texels);
+    const geometry = mesh.geometry;
     // The art layers are the hand card's own atlas rects.
     const face = cardFaceInstance(atlas, 'warding-glyph');
     const back = geometry.getAttribute('aBackUv');

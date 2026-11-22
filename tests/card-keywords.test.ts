@@ -16,14 +16,17 @@ const TEXT_WORDS: Record<string, RegExp> = {
   block: /\bBlock\b/,
   steam: /\bSteam\b/,
   draw: /\bDraw\b/,
+  scry: /\bScry\b/,
+  heal: /\bHeal\b/,
   exhaust: /\bExhaust\b/,
-  dice: /\bRoll (?:a d(6|8)|an iron d4)\b/,
+  dice: /\bRoll (?:a d[68]|an iron d4|two d12s)\b/,
   weak: /\bWeak\b/,
   vulnerable: /\bVulnerable\b/,
   overheat: /\bOverheat\b/,
   'wound-up': /\bWound-up\b/,
   plating: /\bPlating\b/,
   rust: /\bRust\b/,
+  charge: /\bCharge\b/,
 };
 
 describe('card keywords', () => {
@@ -43,7 +46,7 @@ describe('card keywords', () => {
       const keywords = cardKeywords(card);
       for (const [k, word] of Object.entries(TEXT_WORDS)) {
         expect(keywords.includes(k as never), `${card.id}: "${card.description}" ${k}`).toBe(
-          word.test(card.description),
+          word.test(card.description) && (k !== 'steam' || card.cost !== 'X'),
         );
       }
       // Sigil spells are traced, which their text does not say.
@@ -53,7 +56,15 @@ describe('card keywords', () => {
 
   it('covers every status the catalogue applies, with the badge tooltip wording', () => {
     const seen = new Set(ALL.flatMap((c) => cardKeywords(c)));
-    for (const id of ['weak', 'vulnerable', 'overheat', 'wound-up', 'plating', 'rust'] as const) {
+    for (const id of [
+      'weak',
+      'vulnerable',
+      'overheat',
+      'wound-up',
+      'plating',
+      'rust',
+      'charge',
+    ] as const) {
       expect(seen.has(id), id).toBe(true);
       expect(id in STATUS_NAME).toBe(true);
     }
@@ -65,6 +76,15 @@ describe('card keywords', () => {
     expect(keywordExplanation('wound-up', getCard('overwind'))).toBe(
       statusExplanation('wound-up', null, 'you'),
     );
+  });
+
+  it('forecasts the base Overdrive effect at the current Steam only in combat', () => {
+    const boiler = getCard('flash-boiler');
+    const piston = getCard('overdrive-piston+');
+    expect(cardTip(boiler).map((entry) => entry.title)).toEqual(['Overdrive', 'Block']);
+    expect(cardTip(boiler, 2)[0].text).toContain('At 2 Steam, the base effect is 8 Block.');
+    expect(cardTip(piston, 3)[0].text).toContain('At 3 Steam, the base effect is 27 damage.');
+    expect(cardTip(piston, 0)[0].text).toContain('At 0 Steam, the base effect is 0 damage.');
   });
 
   it('shows a sample card its keywords, in order, with their text', () => {

@@ -11,6 +11,7 @@ import {
   UI_ATLAS_BASE,
   type UiAtlasManifest,
 } from '../ui/icon-atlas.ts';
+import { buildCrystalFallback } from './crystal-fallback.ts';
 import { DICE_GLOW_INTENSITY, type DiceAsset } from './dice-asset.ts';
 import {
   D6_HALF_EXTENT,
@@ -213,7 +214,11 @@ export function d4FaceUvs(set: DieFaceSet, positions: ArrayLike<number>): Float3
 }
 
 /** The face index of `kind` that `faces.ts` maps to `value`, and its atlas entry. */
-export function atlasFaceFor(manifest: UiAtlasManifest, kind: DieKind, faceIndex: number) {
+export function atlasFaceFor(
+  manifest: UiAtlasManifest,
+  kind: keyof typeof DIE_ATLAS_ID,
+  faceIndex: number,
+) {
   return dieFace(manifest, DIE_ATLAS_ID[kind], faceIndex);
 }
 
@@ -409,6 +414,7 @@ export class DicePresenter {
   private readonly d8Geometry: THREE.BufferGeometry;
   private readonly d4Geometry: THREE.BufferGeometry;
   private readonly d4Texture: THREE.CanvasTexture | null;
+  private crystalFallback: ReturnType<typeof buildCrystalFallback> | null = null;
   private readonly offSettled: () => void;
   private readonly halo: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>;
   private waitingDie: Waiting | null = null;
@@ -566,6 +572,32 @@ export class DicePresenter {
     this.stepWaiting(0);
   }
 
+  /** Lifts a thrown die into the hand, reusing its mesh and releasing its physics body. */
+  pickUp(id: string): boolean {
+    const entry = this.dice.get(id);
+    if (!entry) return false;
+    const { mesh, kind } = entry;
+    const held = mesh.position.clone();
+    this.clear();
+    mesh.name = 'die-waiting';
+    this.root.add(mesh);
+    this.waitingDie = { mesh, kind, age: 0, held };
+    this.halo.visible = true;
+    this.stepWaiting(0);
+    return true;
+  }
+
+  /** Identifies the first logical die when two settled contributions are in the tray. */
+  markReroll(id: string | null): void {
+    const mesh = id ? this.dice.get(id)?.mesh : undefined;
+    this.halo.visible = Boolean(mesh);
+    this.halo.material.opacity = mesh ? 0.72 : 0;
+    if (mesh) {
+      this.halo.position.x = mesh.position.x;
+      this.halo.position.z = mesh.position.z;
+    }
+  }
+
   /**
    * Holds the waiting die at tray-local `point` (the main hand), or back in the tray for null. A
    * throw then starts from where the hand let go.
@@ -579,6 +611,7 @@ export class DicePresenter {
 
   /** Clears the tray of previous dice and any waiting die. */
   clear(): void {
+    this.markReroll(null);
     if (this.waitingDie) {
       this.waitingDie.mesh.removeFromParent();
       this.waitingDie = null;
@@ -717,15 +750,25 @@ export class DicePresenter {
   }
 
   private spawnMesh(kind: DieKind, name: string): THREE.Mesh {
-    const authored = kind === 'd4' ? null : this.options.models?.spawn(kind);
+    const authored = this.options.models?.has(kind) ? this.options.models.spawn(kind) : null;
+    if (!authored && kind === 'd12' && !this.crystalFallback) {
+      const crystal = buildCrystalFallback(this.options.envMap);
+      this.crystalFallback = crystal;
+      this.geometries.push(crystal.geometry);
+      this.materials.push(crystal.material);
+      if (crystal.texture) this.textures.push(crystal.texture);
+    }
     const mesh =
       authored ??
       (kind === 'd6'
         ? new THREE.Mesh(this.d6Geometry, this.d6Material)
         : kind === 'd8'
           ? new THREE.Mesh(this.d8Geometry, this.d8Material)
-          : new THREE.Mesh(this.d4Geometry, this.d4Material));
+          : kind === 'd12' && this.crystalFallback
+            ? new THREE.Mesh(this.crystalFallback.geometry, this.crystalFallback.material)
+            : new THREE.Mesh(this.d4Geometry, this.d4Material));
     mesh.name = name;
+    if (kind === 'd12') mesh.userData.authored = authored !== null;
     if (!this.facesRequested) {
       onFirstRender(mesh, (renderer) => {
         if (this.facesRequested || this.disposed) return;

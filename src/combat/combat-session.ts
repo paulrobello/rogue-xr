@@ -19,6 +19,7 @@ import {
 import {
   type EnemyBeat,
   foldEvents,
+  type MechanismBeat,
   type PlayerHit,
   playerHit,
   segmentEvents,
@@ -41,6 +42,7 @@ import {
 } from '../combat-view/impact-timing.ts';
 import { crownBounds, intentChips, READOUT_MARGIN, readoutCentreY } from '../combat-view/index.ts';
 import { readoutHeightsClear } from '../combat-view/panel-layout.ts';
+import { ScryPanel } from '../combat-view/scry-panel.ts';
 import {
   type AttackVisualKind,
   attackVisualKind,
@@ -59,7 +61,12 @@ import {
 import { dropToFitView, fitsView } from '../combat-view/view-fit.ts';
 import { getCard, type SliceCard } from '../content/cards.ts';
 import { dieById } from '../content/dice.ts';
-import { type EncounterTier, encounterSetups, ROAMING_SENTRY } from '../content/enemies.ts';
+import {
+  ARMORY_ENCOUNTER,
+  type EncounterTier,
+  encounterSetups,
+  ROAMING_SENTRY,
+} from '../content/enemies.ts';
 import type { ActionBus, GameAction } from '../core/actions.ts';
 import { Stream } from '../core/rng.ts';
 import { type DiceAsset, loadDice } from '../dice/dice-asset.ts';
@@ -67,6 +74,7 @@ import type { DieKind } from '../dice/faces.ts';
 import { DicePresenter, type PresentedRoll } from '../dice/presenter.ts';
 import { AUTHORED_TRAY_HALF, type DiceWorldOptions } from '../dice/world.ts';
 import type { SentryActor } from '../enemies/sentry-asset.ts';
+import type { StoneRoom } from '../floor/stone-rooms.ts';
 import type { AimRay } from '../hand/aim.ts';
 import { CardFan } from '../hand/card-fan.ts';
 import { DEFAULT_FAN, GRIP_FAN_ORIGIN } from '../hand/fan-layout.ts';
@@ -108,6 +116,7 @@ import {
 } from '../ui/icon-sheet.ts';
 import type { EncounterDirector } from './encounter.ts';
 import { chooseEncounter, enemyKindOf, fightSeed } from './encounter-choice.ts';
+import { MechanismRack } from './mechanism-rack.ts';
 import { DEFAULT_TABLE_DISTANCE, type TablePose, WAIST_DROP } from './placement.ts';
 
 export { HIT_NUMBER_SECONDS } from '../combat-view/hit-numbers.ts';
@@ -166,6 +175,7 @@ const CARD_TIP_WIDTH = 0.3;
 const CARD_TIP_LIFT = 0.08;
 const CARD_TIP_TOWARD = 0.03;
 const HINT_LIFT = 0.17;
+const MULTI_DICE_REROLL_HINT_CLEARANCE = 0.1;
 const TRAY_HALF_X = AUTHORED_TRAY_HALF.halfX;
 const TRAY_HALF_Z = AUTHORED_TRAY_HALF.halfZ;
 const ENEMY_RADIUS = 0.5;
@@ -204,6 +214,13 @@ export const DEATH_WAIT_SECONDS = 3;
 export const DICE_AUTO_THROW_SECONDS = 30;
 /** A thrown die that has not settled after this long releases its card's effects anyway. */
 export const DICE_SETTLE_FALLBACK_SECONDS = 6;
+const MECHANISM_BEAT_SECONDS = 0.32;
+const MECHANISM_CUES: Readonly<Record<string, SfxId>> = {
+  'gyro-stabilizer': 'pendulum-tick',
+  'pressure-gauge': 'clockwork-chime-low',
+  'clockwork-turret': 'gear-clank',
+  'furnace-heart': 'steam-vent',
+};
 /** Seconds between one enemy's turn resolving and the next one starting. */
 export const ENEMY_GAP_SECONDS = 0.35;
 /** A capsule's lunge at the player; its blow lands at the peak. */
@@ -320,6 +337,8 @@ export interface CombatSessionDeps {
   patrol?: boolean;
   contentVersion?: number;
   floorNumber?: number;
+  stoneDungeon?: boolean;
+  armory?: boolean;
   tablePose: TablePose;
   /** Player-to-table-centre distance the table was placed at, metres. Default STATUS_FACE_SEAT. */
   seatDistance?: number;
@@ -395,6 +414,13 @@ interface BeatRun {
   cue: boolean;
 }
 
+interface MechanismBeatRun {
+  readonly segment: MechanismBeat;
+  readonly from: THREE.Vector3 | null;
+  readonly target: THREE.Vector3 | null;
+  left: number;
+}
+
 /** Where the next attack's bolt leaves from, set by the verb that played it. */
 interface Launch {
   readonly from: THREE.Vector3;
@@ -421,6 +447,11 @@ interface Flight {
   readonly kind: BoltKind;
   readonly visual: AttackVisualKind;
   readonly targets: { readonly id: string; readonly at: THREE.Vector3 }[];
+  readonly chain: {
+    readonly primary: { readonly id: string; readonly at: THREE.Vector3 };
+    readonly links: { readonly at: THREE.Vector3; readonly seconds: number }[];
+    launched: boolean;
+  } | null;
   /** Seconds from the play until the bolt leaves, the bolt's flight time, and the contact time. */
   readonly delay: number;
   readonly seconds: number;
@@ -451,6 +482,8 @@ export type CombatPick =
   | 'dice'
   | 'plate'
   | 'sigil-cast'
+  | 'scry-card'
+  | 'scry-confirm'
   | 'table';
 
 /**
@@ -467,6 +500,7 @@ export class CombatSession {
   readonly fling: FlingController;
   readonly dice: DicePresenter;
   readonly plate = new SigilPlate();
+  readonly mechanismRack: MechanismRack | null;
   /** Parent of the desktop hand strip; a child of the camera. */
   readonly handAnchor = new THREE.Group();
   /** The desktop virtual grip a dragged card follows: the mouse ray on the drag plane. */
@@ -550,10 +584,13 @@ export class CombatSession {
   cardTipShown: { id: string; titles: string[] } | null = null;
   private readonly eye = new THREE.Vector3();
   private platePose: PlatePose;
+  private scryPanel: ScryPanel | null = null;
   private handKey = '';
   private lastDice: CombatController['lastDice'] = null;
   private pendingThrow: { kind: DieKind; face: number; value: number }[] | null = null;
   private settlingDice = 0;
+  private keptDieId: string | null = null;
+  private rerollChoice = false;
   private keptDiceHint = '';
   private lastResolvedRoll: number | null = null;
   /**
@@ -600,6 +637,7 @@ export class CombatSession {
   /** Segments waiting to be shown, in rules order. */
   private readonly queue: TurnSegment[] = [];
   private beat: BeatRun | null = null;
+  private mechanismBeat: MechanismBeatRun | null = null;
   private gap = 0;
   private clock = 0;
   /** Floating damage numbers over enemies and the player's status panel, pooled. */
@@ -643,14 +681,17 @@ export class CombatSession {
     const ordered = [...deps.bodies].sort((a, b) => lateral(a) - lateral(b));
     const encounter = deps.patrol
       ? ROAMING_SENTRY
-      : chooseEncounter(
-          deps.seed,
-          deps.room,
-          deps.tier,
-          ordered.length,
-          deps.contentVersion,
-          deps.floorNumber,
-        );
+      : deps.armory
+        ? ARMORY_ENCOUNTER
+        : chooseEncounter(
+            deps.seed,
+            deps.room,
+            deps.tier,
+            ordered.length,
+            deps.contentVersion,
+            deps.floorNumber,
+            deps.stoneDungeon,
+          );
     const { difficulty, ...controllerOptions } = deps.options ?? {};
     this.controller = new CombatController({
       ...controllerOptions,
@@ -700,6 +741,19 @@ export class CombatSession {
 
     // Dice tray: the table's socket, or the greybox tray spot.
     const tray = deps.sockets.diceTray;
+    this.mechanismRack = deps.options?.deck?.some((id) => getCard(id).mechanism)
+      ? new MechanismRack(
+          deps.reducedMotion ?? false,
+          deps.diceEnv ?? null,
+          deps.syncLabels ?? true,
+        )
+      : null;
+    if (this.mechanismRack) {
+      const rack = this.mechanismRack.root;
+      rack.position.copy(onTable(0, tray ? 0.27 : -0.25, 0.004));
+      rack.rotation.y = yawRad;
+      this.group.add(rack);
+    }
     if (tray) {
       tray.updateWorldMatrix(true, false);
       dice.root.position.setFromMatrixPosition(tray.matrixWorld);
@@ -1093,6 +1147,10 @@ export class CombatSession {
         this.fan.root.updateWorldMatrix(true, false);
         return this.fan.root.localToWorld(new THREE.Vector3(...slot.position));
       }
+      case 'scry-card':
+        return typeof key === 'number' ? (this.scryPanel?.worldPoint(key) ?? null) : null;
+      case 'scry-confirm':
+        return this.scryPanel?.worldPoint('confirm') ?? null;
       case 'enemy': {
         const enemy = this.enemies.find((e) => e.id === key);
         return enemy ? this.aimOf(enemy.id, enemy.body) : null;
@@ -1104,7 +1162,9 @@ export class CombatSession {
       case 'flee':
         return this.fleeButton?.getWorldPosition(new THREE.Vector3()) ?? null;
       case 'dice':
-        return (this.dice.waiting ?? this.trayHit).getWorldPosition(new THREE.Vector3());
+        return (
+          (this.rerollChoice ? this.rerollTarget() : this.dice.waiting) ?? this.trayHit
+        ).getWorldPosition(new THREE.Vector3());
       case 'plate': {
         const p = this.platePose;
         const x = (u - 0.5) * 2 * p.halfWidth;
@@ -1464,6 +1524,7 @@ export class CombatSession {
 
   rayDistance(ray: THREE.Ray): number | null {
     if (this.disposed || this.pausedValue) return null;
+    if (this.controller.state.scry) return this.scryPanel?.pick(ray)?.distance ?? null;
     return this.controlHit(ray)?.distance ?? null;
   }
 
@@ -1493,6 +1554,7 @@ export class CombatSession {
     // A held card's use click lands anywhere the mouse aims, an enemy body included.
     if (this.holding === 'mouse') return true;
     const ray = new THREE.Ray(new THREE.Vector3(...origin), new THREE.Vector3(...direction));
+    if (this.controller.state.scry) return Boolean(this.scryPanel?.pick(ray));
     return this.hitAt(ray) !== null;
   }
 
@@ -1521,12 +1583,16 @@ export class CombatSession {
     if (this.xr && this.holding === null && this.xr.mainRay) {
       const r = rayFromObject(this.xr.mainRay);
       const ray = new THREE.Ray(new THREE.Vector3(...r.origin), new THREE.Vector3(...r.direction));
-      this.fan.pointerHover(ray);
-      this.setCastHover(ray);
-      this.pointStatus(this.drawing || this.holdingDie ? null : ray);
+      if (this.scryPanel) this.scryPanel.hover(this.scryPanel.pick(ray)?.choice);
+      else {
+        this.fan.pointerHover(ray);
+        this.setCastHover(ray);
+        this.pointStatus(this.drawing || this.holdingDie ? null : ray);
+      }
     } else if (this.xr) this.pointStatus(null);
     this.plate.setHint(this.xr ? XR_SIGIL_HINT : 'Drag to trace · Click Cast when ready');
     this.stepHeldDie();
+    this.mechanismRack?.update(dt);
     this.showHint(this.tableHint());
     this.showCardTip();
     if (this.drawing === 'xr' && this.xr?.main) {
@@ -1554,6 +1620,7 @@ export class CombatSession {
     this.revealCard.update(dt);
     questPerfStageEnd(effectsStage);
     this.stepFlight();
+    this.syncScry();
     this.stepKnocks(dt);
     this.plate.update(dt);
     if (this.plate.phase === 'done') {
@@ -1597,6 +1664,7 @@ export class CombatSession {
     }
     if (this.beat?.body && this.beat.home) this.beat.body.position.copy(this.beat.home);
     this.beat = null;
+    this.mechanismBeat = null;
     this.queue.length = 0;
     this.shown = null;
     this.held = null;
@@ -1607,7 +1675,9 @@ export class CombatSession {
     this.effectFx.dispose();
     this.foundryFx.dispose();
     this.revealCard.dispose();
+    this.scryPanel?.dispose();
     this.numbers.dispose();
+    this.mechanismRack?.dispose();
     for (const off of this.disposers.splice(0)) off();
     this.fan.dispose();
     this.fan.detach();
@@ -1649,6 +1719,11 @@ export class CombatSession {
       new THREE.Vector3(...action.origin),
       new THREE.Vector3(...action.direction).normalize(),
     );
+    if (this.controller.state.scry) {
+      if (action.phase === 'move') this.scryPanel?.hover(this.scryPanel.pick(ray)?.choice);
+      else if (action.phase === 'down') this.chooseScry(ray);
+      return;
+    }
     if (action.phase === 'move') {
       if (this.drawing === 'mouse') this.feedMouse(ray);
       else if (this.holding === 'mouse') this.placeMouseGrip(ray);
@@ -1689,9 +1764,26 @@ export class CombatSession {
     const xr = this.xr;
     if (action.hand === 'main' && action.control === 'squeeze') this.mainSqueezed = action.pressed;
     if (!xr || action.hand !== 'main' || this.disposed || this.pausedValue) return;
+    if (this.controller.state.scry) {
+      if (action.pressed && action.control === 'trigger' && xr.mainRay) {
+        const ray = rayFromObject(xr.mainRay);
+        this.chooseScry(
+          new THREE.Ray(new THREE.Vector3(...ray.origin), new THREE.Vector3(...ray.direction)),
+        );
+      }
+      return;
+    }
     if (action.pressed && this.busy()) return;
     if (action.control === 'squeeze') {
       if (action.pressed) this.disarmFlee();
+      if (action.pressed && this.rerollChoice) {
+        const id = this.keptDieId;
+        if (id && this.pointsAtReroll() && this.dice.pickUp(id)) {
+          this.holdingDie = true;
+          this.stepHeldDie();
+        } else if (this.dice.waiting && this.pointsAtReroll()) this.holdingDie = true;
+        return;
+      }
       if (action.pressed && this.plateLive() && this.drawing === null) {
         this.finishSigil();
         return;
@@ -1807,6 +1899,15 @@ export class CombatSession {
     this.disarmFlee();
     if (this.disposed || this.pausedValue || this.controller.outcome !== null || this.busy())
       return;
+    if (this.rerollChoice) {
+      this.holdingDie = false;
+      this.rerollChoice = false;
+      if (this.dice.waiting) this.dice.clear();
+      else this.dice.markReroll(null);
+      perfMark('dice-reroll-kept');
+      this.releaseHeld(false);
+      return;
+    }
     if (this.diceFirst()) return;
     this.fling.abortStaged();
     this.plate.hide();
@@ -1818,7 +1919,13 @@ export class CombatSession {
   private throwDice(): void {
     this.disarmFlee();
     if (this.disposed || this.pausedValue || this.busy()) return;
-    const pending = this.pendingThrow;
+    let pending = this.pendingThrow;
+    if (this.rerollChoice && this.controller.rerollDice()) {
+      this.rerollChoice = false;
+      this.lastDice = this.controller.lastDice;
+      pending = this.lastDice && this.diceSpecs(this.lastDice);
+      perfMark('dice-rerolled');
+    }
     if (!pending) {
       this.message = 'No dice to throw';
       return;
@@ -1827,7 +1934,9 @@ export class CombatSession {
     this.holdingDie = false;
     if (this.held) this.held.waiting = 0;
     const lookAheadStage = questPerfStageStart('combat.dice.throw-lookahead');
-    this.dice.throwMany(pending);
+    const thrown = this.dice.throwMany(pending);
+    const best = this.lastDice?.keptRolls?.[0] ?? Math.max(...pending.map((roll) => roll.value));
+    this.keptDieId = thrown[pending.findIndex((roll) => roll.value === best)] ?? null;
     questPerfStageEnd(lookAheadStage);
     this.settlingDice = pending.length;
     perfMark('dice-throw');
@@ -1914,15 +2023,17 @@ export class CombatSession {
       card = this.handCard(this.fan.hovered);
       at = uid === undefined ? null : this.worldOf('card', uid);
     }
-    const entries = card ? cardTip(card) : [];
+    const steam = this.controller.state.player.steam;
+    const entries = card ? cardTip(card, steam) : [];
     if (!card || !at || entries.length === 0) {
       this.cardTipShown = null;
       this.cardTipKey = '';
       label.mesh.visible = false;
       return;
     }
-    if (card.id !== this.cardTipKey) {
-      this.cardTipKey = card.id;
+    const key = card.cost === 'X' ? `${card.id}:${steam}` : card.id;
+    if (key !== this.cardTipKey) {
+      this.cardTipKey = key;
       label.draw((ctx, w, h) => drawTip(ctx, w, h, entries, true));
     }
     this.cardTipShown = { id: card.id, titles: entries.map((e) => e.title) };
@@ -1941,7 +2052,7 @@ export class CombatSession {
   private stepHeldDie(): void {
     if (!this.holdingDie) return;
     const main = this.xr?.main;
-    if (!this.pendingThrow || !main) {
+    if ((!this.pendingThrow && !this.rerollChoice) || !main) {
       this.holdingDie = false;
       this.dice.holdWaiting(null);
       return;
@@ -1949,6 +2060,27 @@ export class CombatSession {
     main.updateWorldMatrix(true, false);
     this.dice.root.updateWorldMatrix(true, false);
     this.dice.holdWaiting(this.dice.root.worldToLocal(main.getWorldPosition(this.handPoint)));
+  }
+
+  private rerollTarget(): THREE.Object3D | null {
+    return this.dice.waiting ?? (this.keptDieId ? (this.dice.mesh(this.keptDieId) ?? null) : null);
+  }
+
+  private pointsAtReroll(): boolean {
+    const xr = this.xr;
+    const die = this.rerollTarget();
+    if (!xr || !die) return false;
+    if (
+      xr.main &&
+      die.getWorldPosition(this.eye).distanceTo(xr.main.getWorldPosition(this.handPoint)) < 0.24
+    )
+      return true;
+    if (!xr.mainRay) return false;
+    const { origin, direction } = rayFromObject(xr.mainRay);
+    return (
+      this.hitAt(new THREE.Ray(new THREE.Vector3(...origin), new THREE.Vector3(...direction))) ===
+      'tray'
+    );
   }
 
   /** The card definition at fan slot `index` (the fan shows the hand in order). */
@@ -1962,19 +2094,57 @@ export class CombatSession {
    * held (or, in XR, pointed at in the fan), or ''.
    */
   private tableHint(): string {
+    if (this.mechanismBeat)
+      return `${getCard(this.mechanismBeat.segment.trigger.cardId).name} activates`;
+    if (this.rerollChoice) {
+      if (this.holdingDie) return XR_HELD_DICE_HINT;
+      const roll = this.controller.lastDice;
+      const result = roll?.keptRolls
+        ? `${roll.keptRolls.join(' + ')} = ${roll.value}`
+        : `Rolled ${roll?.value}`;
+      if (roll?.keptRolls)
+        return this.xr
+          ? `${result} · Grip lit die or Keep Roll`
+          : `${result} · Reroll first (T) or Keep (E)`;
+      return this.xr
+        ? `${result} · Grip the die again or press Keep Roll`
+        : `${result} · Click the die to reroll (T) or Keep Roll (E)`;
+    }
     if (this.pendingThrow) {
       if (!this.xr) return DESKTOP_DICE_HINT;
       return this.holdingDie ? XR_HELD_DICE_HINT : XR_DICE_HINT;
     }
-    const held = this.holding ? this.fling.holding?.card : undefined;
-    if (held?.target === 'none') return untargetedHint(held.name, this.xr ? 'held-xr' : 'held');
-    if (held) return targetedHint(held.name, this.xr ? 'held-xr' : 'held');
+    const held = this.holding ? this.fling.holding : null;
+    if (held?.card.mechanism) {
+      const devices = this.controller.state.mechanisms;
+      return devices?.length === 3
+        ? `Install to replace ${getCard(devices[0].def.id).name}`
+        : 'Set the mechanism on the table';
+    }
+    if (held) {
+      const target = this.controller.cardTarget(held.uid);
+      const remembered = this.controller.state.lastSuccessfulSigil;
+      if (held.card.echoSigil && remembered) {
+        const name = getCard(remembered.cardId).name;
+        return target === 'enemy' ? `Aim to echo ${name}` : `Use to echo ${name}`;
+      }
+      return target === 'enemy'
+        ? targetedHint(held.card.name, this.xr ? 'held-xr' : 'held')
+        : untargetedHint(held.card.name, this.xr ? 'held-xr' : 'held');
+    }
     if (this.xr && this.holding === null && this.controller.stage === 'idle') {
       const hovered = this.fan.hovered;
       const card = hovered === null ? null : this.handCard(hovered);
-      if (card?.target === 'none') return untargetedHint(card.name, 'pointed-xr');
+      if (card?.echoSigil && !this.controller.state.lastSuccessfulSigil)
+        return 'Cast a sigil first';
+      const entry = hovered === null ? undefined : this.controller.state.piles.hand[hovered];
+      if (card && entry && this.controller.cardTarget(entry.uid) === 'none')
+        return untargetedHint(card.name, 'pointed-xr');
     }
-    return this.keptDiceHint;
+    const { loadedDie, rerollDie } = this.controller.state;
+    if (loadedDie && rerollDie) return 'Next die: Loaded · Reroll available';
+    if (loadedDie) return 'Next die: Loaded';
+    return rerollDie ? 'Next die: Reroll available' : this.keptDiceHint;
   }
 
   /** Shows `text` on the table hint label (hidden for ''), redrawing only when it changes. */
@@ -1985,6 +2155,11 @@ export class CombatSession {
     if (!label) return;
     label.mesh.visible = text !== '';
     if (text === '') return;
+    const multiDiceReroll = this.rerollChoice && this.controller.lastDice?.keptRolls !== undefined;
+    label.mesh.position.y =
+      this.dice.root.position.y +
+      HINT_LIFT +
+      (multiDiceReroll ? MULTI_DICE_REROLL_HINT_CLEARANCE : 0);
     label.draw((ctx, w, h) => {
       ctx.fillStyle = 'rgba(18,12,7,0.82)';
       roundRect(ctx, 4, 4, w - 8, h - 8, 18);
@@ -2015,7 +2190,7 @@ export class CombatSession {
   /** Steps a held dice card: throws for an idle player, or releases a die that never settles. */
   private stepHeld(dt: number): void {
     const held = this.held;
-    if (!held) return;
+    if (!held || this.rerollChoice) return;
     held.waiting += dt;
     if (this.pendingThrow) {
       if (held.waiting >= DICE_AUTO_THROW_SECONDS) this.throwDice();
@@ -2023,16 +2198,29 @@ export class CombatSession {
   }
 
   /** Shows a dice card's held effects once its die has settled. */
-  private releaseHeld(): void {
+  private releaseHeld(offerReroll = true): void {
     const held = this.held;
-    if (!held || this.pendingThrow) return;
-    this.held = null;
+    if (!held || this.pendingThrow || this.rerollChoice) return;
     this.settlingDice = 0;
+    if (offerReroll && this.controller.canReroll) {
+      this.rerollChoice = true;
+      if (this.controller.lastDice?.keptRolls) this.dice.markReroll(this.keptDieId);
+      perfMark('dice-reroll-offered');
+      this.paint();
+      return;
+    }
+    if (this.controller.confirmDice()) held.events.push(...this.controller.drainEvents());
+    this.held = null;
     const readout = this.controller.lastDice;
     if (readout) {
       this.lastResolvedRoll = readout.value;
-      this.keptDiceHint =
-        readout.rolls.length > 1 ? `${readout.rolls.join(' and ')} · Kept ${readout.value}` : '';
+      this.keptDiceHint = readout.keptRolls
+        ? `${readout.keptRolls.join(' + ')} = ${readout.value}`
+        : readout.rerolledFrom !== undefined
+          ? `Rerolled ${readout.rerolledFrom} → ${readout.value}`
+          : readout.rolls.length > 1
+            ? `${readout.rolls.join(' and ')} · Kept ${readout.value}`
+            : '';
       this.message = this.keptDiceHint || `Rolled ${readout.value}`;
     }
     // A dice attack flies once its die settles: from the plate for a sigil, else from the tray.
@@ -2074,6 +2262,7 @@ export class CombatSession {
 
   /** True (with a HUD prompt) while the enemy phase plays: every player verb waits for it. */
   private busy(): boolean {
+    if (this.controller.state.scry) return true;
     if (!this.shown) return false;
     this.message = 'Enemies are acting';
     return true;
@@ -2104,9 +2293,19 @@ export class CombatSession {
       this.message = 'Draw a longer trace before casting';
       return;
     }
-    const result = this.plate.finish();
+    let castAttempted = false;
+    const result = this.plate.finish((strokes) => {
+      castAttempted = true;
+      const played = this.controller.submitSigil(strokes);
+      const cast = this.controller.lastSigil;
+      if (!played.ok || !cast) return null;
+      return cast.echoedCardId
+        ? { multiplier: cast.multiplier, caption: `Echoed ${getCard(cast.echoedCardId).name}` }
+        : cast.multiplier;
+    });
     if (!result) {
-      this.message = 'Trace too short, draw the glyph';
+      if (!castAttempted) this.message = 'Trace too short, draw the glyph';
+      else this.sfx('sigil-fizzle', this.platePose.center);
       return;
     }
     // The card's art blooms from the plate centre as the cast glyph collapses into it, and the
@@ -2119,12 +2318,8 @@ export class CombatSession {
       kind: 'sigil',
       reveal: true,
     };
-    const played = this.controller.submitSigil(this.plate.strokes);
     this.plateDone = 0;
-    this.sfx(
-      played.ok && result.quality !== 'Fizzle' ? 'sigil-cast' : 'sigil-fizzle',
-      this.platePose.center,
-    );
+    this.sfx(result.quality !== 'Fizzle' ? 'sigil-cast' : 'sigil-fizzle', this.platePose.center);
   }
 
   private feedMouse(ray: THREE.Ray): void {
@@ -2156,8 +2351,8 @@ export class CombatSession {
   ): 'tray' | 'plate' | 'sigil-cast' | 'end-turn' | 'flee' | number | null {
     this.raycaster.ray.copy(ray);
     this.group.updateWorldMatrix(true, true);
-    if (this.pendingThrow) {
-      const die = this.dice.waiting;
+    if (this.pendingThrow || this.rerollChoice) {
+      const die = this.rerollChoice ? this.rerollTarget() : this.dice.waiting;
       if (die && this.raycaster.intersectObject(die, true).length > 0) return 'tray';
       if (this.raycaster.intersectObject(this.trayHit, false).length > 0) return 'tray';
     }
@@ -2204,16 +2399,67 @@ export class CombatSession {
     this.syncCastControl();
   }
 
+  private chooseScry(ray: THREE.Ray): void {
+    const panel = this.scryPanel;
+    if (!panel) return;
+    const hit = panel.pick(ray);
+    if (!hit) return;
+    if (hit.choice === 'confirm') this.controller.confirmScry(panel.discarded());
+    else panel.toggle(hit.choice);
+    this.sfx('ui-tick');
+  }
+
+  private syncScry(): void {
+    const state = this.view;
+    if (state.scry && !this.scryPanel) {
+      const panel = new ScryPanel(state.piles.draw.slice(0, state.scry.count));
+      const at = this.platePose.center;
+      panel.object.position.set(at.x, this.pose.height + 0.29, at.z);
+      this.group.add(panel.object);
+      panel.object.lookAt(this.deps.camera.getWorldPosition(this.eye));
+      this.fan.hover(null);
+      this.fan.root.visible = false;
+      this.endButton.visible = false;
+      this.pointStatus(null);
+      this.scryPanel = panel;
+    } else if (!state.scry && this.scryPanel) {
+      this.scryPanel.dispose();
+      this.scryPanel = null;
+      this.fan.root.visible = true;
+      this.endButton.visible = true;
+    }
+  }
+
   // ---- state to visuals ------------------------------------------------------------------------
+
+  private diceSpecs(
+    roll: NonNullable<CombatController['lastDice']>,
+  ): NonNullable<CombatSession['pendingThrow']> {
+    const dieId = getCard(roll.cardId).dice;
+    if (dieId === undefined) throw new Error('A die result needs a dice card');
+    const die = dieById(dieId);
+    const kind =
+      dieId === 'crystal-d12'
+        ? 'd12'
+        : die.faces.length === 6
+          ? 'd6'
+          : die.faces.length === 8
+            ? 'd8'
+            : 'd4';
+    const values = roll.rerolledFrom === undefined ? roll.rolls : roll.rolls.slice(-1);
+    return values.map((value) => ({ kind, face: die.faces.indexOf(value), value }));
+  }
 
   private sync(): void {
     this.dirty = false;
     const events = this.controller.drainEvents();
+    const installed = this.controller.state.mechanisms ?? [];
+    this.mechanismRack?.sync(installed, true);
     // Anything new lands the bolt in flight first, so its effects keep their rules order.
     if (this.flight && events.length > 0) this.landFlight();
     const segments = segmentEvents(events);
     const rolled = this.controller.lastDice !== this.lastDice ? this.controller.lastDice : null;
-    if (this.shown || segments.some((seg) => seg.kind === 'enemy')) {
+    if (this.shown || segments.some((seg) => seg.kind !== 'instant')) {
       // The enemy phase plays one enemy at a time from the state the view last showed.
       if (!this.shown) {
         this.shown = this.lastShown;
@@ -2261,20 +2507,14 @@ export class CombatSession {
     if (this.controller.lastDice !== this.lastDice) {
       this.lastDice = this.controller.lastDice;
       const roll = this.lastDice;
-      const dieId = roll ? getCard(roll.cardId).dice : undefined;
-      if (roll && dieId) {
-        const die = dieById(dieId);
+      if (roll) {
         this.keptDiceHint = '';
-        this.pendingThrow = roll.rolls.map((value) => ({
-          kind: die.faces.length === 6 ? 'd6' : die.faces.length === 8 ? 'd8' : 'd4',
-          face: die.faces.indexOf(value),
-          value,
-        }));
+        this.pendingThrow = this.diceSpecs(roll);
         this.dice.showWaiting(this.pendingThrow[0]?.kind ?? 'd6');
         this.message =
           roll.rolls.length > 1
-            ? `Throw ${roll.rolls.length} × ${die.name}`
-            : `Throw the ${die.name}`;
+            ? `Throw ${roll.rolls.length} × ${roll.dieName}`
+            : `Throw the ${roll.dieName}`;
       }
     }
     const awaited = this.controller.awaitedSigil;
@@ -2303,6 +2543,17 @@ export class CombatSession {
    */
   private advance(dt: number): void {
     if (!this.shown) return;
+    if (this.mechanismBeat) {
+      this.mechanismBeat.left -= dt;
+      if (this.mechanismBeat.left > 0) return;
+      const { segment, target, from } = this.mechanismBeat;
+      this.mechanismBeat = null;
+      if (target && from)
+        this.fx.impact(target, from, CARD_POWER, attackVisualKind(segment.trigger.cardId));
+      this.present(segment.events);
+      this.paint();
+      return;
+    }
     if (this.beat) {
       this.stepBeat(this.beat, dt);
       if (!this.beatDone(this.beat)) return;
@@ -2322,6 +2573,10 @@ export class CombatSession {
         this.present(next.events);
         continue;
       }
+      if (next.kind === 'mechanism') {
+        this.startMechanismBeat(next);
+        return;
+      }
       this.beat = this.startBeat(next);
       this.stepBeat(this.beat, 0);
       return;
@@ -2329,6 +2584,44 @@ export class CombatSession {
     this.shown = null;
     this.lastShown = this.controller.state;
     this.dirty = true;
+  }
+
+  private startMechanismBeat(segment: MechanismBeat): void {
+    const { trigger } = segment;
+    const origin = this.mechanismRack?.fire(trigger.uid) ?? null;
+    const from = origin?.clone() ?? null;
+    const target = trigger.target ? this.aimOfId(trigger.target) : null;
+    const duration = this.deps.reducedMotion ? 0.15 : MECHANISM_BEAT_SECONDS;
+    this.mechanismBeat = { segment, from, target, left: duration };
+    perfMark(`mechanism-${trigger.timing}`);
+    if (!from) return;
+    const cue = MECHANISM_CUES[trigger.cardId.replace(/\+$/, '')];
+    if (cue) this.sfx(cue, from);
+    if (target)
+      this.fx.launch(
+        from,
+        target,
+        duration,
+        CARD_POWER,
+        'card',
+        0,
+        attackVisualKind(trigger.cardId),
+      );
+    for (const event of segment.events) {
+      if (event.type === 'block-gained' && event.target === PLAYER_ID) {
+        const ward = this.playerNumberPosition();
+        this.effectFx.shield(
+          ward,
+          this.deps.camera.getWorldPosition(this.eye).sub(ward),
+          event.amount,
+          0,
+        );
+      } else if (event.type === 'status-applied') {
+        const at =
+          event.target === PLAYER_ID ? this.playerNumberPosition() : this.aimOfId(event.target);
+        if (at) this.effectFx.motes(from, at, event.status, 0, duration);
+      }
+    }
   }
 
   private startBeat(seg: EnemyBeat): BeatRun {
@@ -2341,7 +2634,7 @@ export class CombatSession {
     const motion: EnemyMotion =
       seg.act.length === 0 || !alive
         ? 'none'
-        : seg.attacks && actor && !actor.dead
+        : actor && !actor.dead && (seg.attacks || actor.hasAction(seg.moveId))
           ? 'clip'
           : seg.attacks
             ? 'lunge'
@@ -2359,9 +2652,9 @@ export class CombatSession {
     let impactAt = 0;
     let endAt = seg.lead.length > 0 ? LEAD_ONLY_SECONDS : 0;
     if (motion === 'clip' && actor) {
-      const spec = actor.asset.manifest.clips.attack;
+      const spec = actor.timingForMove(seg.moveId);
       actor.attack(seg.moveId ?? undefined);
-      impactAt = (spec.events.impact ?? spec.duration / 2) + IMPACT_GRACE_SECONDS;
+      impactAt = spec.impact + IMPACT_GRACE_SECONDS;
       endAt = spec.duration + CLIP_GRACE_SECONDS;
     } else if (motion === 'lunge') {
       impactAt = LUNGE_SECONDS / 2;
@@ -2423,7 +2716,7 @@ export class CombatSession {
   private beatDone(b: BeatRun): boolean {
     if (!b.impacted) return false;
     if (b.trace.motion === 'clip' && b.actor) {
-      return b.actor.dead || b.actor.state !== 'attack' || b.t >= b.endAt;
+      return b.actor.dead || b.actor.state !== b.actor.clipForMove(b.seg.moveId) || b.t >= b.endAt;
     }
     return b.t >= b.endAt;
   }
@@ -2447,6 +2740,16 @@ export class CombatSession {
     const deaths = new Set<SentryActor>();
     const phases = new Set<SentryActor>();
     for (const event of events) {
+      if (event.type === 'healed' && event.target === PLAYER_ID) {
+        const at = this.playerNumberPosition();
+        this.numbers.spawn(
+          at,
+          { hpLost: 0, blocked: 0, healed: event.amount },
+          PLAYER_NUMBER_SCALE,
+        );
+        this.sfx('paper-unfold', at);
+        continue;
+      }
       if (event.type === 'damage-dealt' && event.target === PLAYER_ID) {
         // A fully blocked blow rings the ward (in showPlayerHit) instead of the clank.
         if (event.hpLost > 0) this.deps.audio?.playCombatEvent(event);
@@ -2497,21 +2800,48 @@ export class CombatSession {
     const launch = this.launch;
     const played = events.find((e) => e.type === 'card-played');
     const card = played?.type === 'card-played' ? getCard(played.cardId) : null;
+    const source = played?.echoedCardId ? getCard(played.echoedCardId) : card;
     // Only a play the player made (with a launch point) gets effect FX besides the bolt.
     const gainedBlock = events.reduce(
       (total, e) => total + (e.type === 'block-gained' && e.target === PLAYER_ID ? e.amount : 0),
       0,
     );
-    const steps = card && launch ? castFxSteps(card, gainedBlock) : [];
+    const healed = events.reduce(
+      (total, e) => total + (e.type === 'healed' && e.target === PLAYER_ID ? e.amount : 0),
+      0,
+    );
+    const steps =
+      source && launch ? castFxSteps(source, gainedBlock, healed, played?.steamSpent) : [];
     const from = launch?.from ?? this.fan.root.getWorldPosition(new THREE.Vector3());
     const targets = ids.flatMap((id) => {
       const at = this.aimOfId(id);
       return at ? [{ id, at }] : [];
     });
+    const primary =
+      source &&
+      (source.id === 'arc-chain' || source.id === 'arc-chain+') &&
+      targets.length > 1 &&
+      played?.type === 'card-played'
+        ? targets.find((target) => target.id === played.target)
+        : undefined;
+    const chain = primary
+      ? {
+          primary,
+          links: targets
+            .filter((target) => target.id !== primary.id)
+            .map(({ at }) => ({
+              at,
+              seconds: flightSeconds(at.distanceTo(primary.at)),
+            })),
+          launched: false,
+        }
+      : null;
+    const lastLink = chain ? Math.max(...chain.links.map((link) => link.seconds)) : 0;
     const land = castLandSeconds(steps);
     if (targets.length === 0 && land <= 0) return false;
     let seconds = 0;
-    for (const t of targets) seconds = Math.max(seconds, flightSeconds(t.at.distanceTo(from)));
+    for (const t of primary ? [primary] : targets)
+      seconds = Math.max(seconds, flightSeconds(t.at.distanceTo(from)));
     const delay = launch ? Math.max(0, launch.at - this.clock) : 0;
     if (launch?.reveal && card) this.showReveal(card.id, Math.max(0, delay - REVEAL_EFFECT_AT));
     this.playEffectFx(steps, events, from, targets, delay, seconds, played);
@@ -2526,11 +2856,12 @@ export class CombatSession {
       from,
       power: launch?.power ?? CARD_POWER,
       kind: launch?.kind ?? 'card',
-      visual: attackVisualKind(card?.id),
+      visual: attackVisualKind(source?.id),
       targets,
+      chain,
       delay,
       seconds,
-      contact: delay + (targets.length > 0 ? seconds : land),
+      contact: delay + (targets.length > 0 ? seconds : land) + lastLink,
       start: this.clock,
       launched: false,
     };
@@ -2608,6 +2939,8 @@ export class CombatSession {
         this.effectFx.steam(from, step.amount, at);
       } else if (step.kind === 'draw') {
         this.effectFx.draw(from, this.fan.root.getWorldPosition(new THREE.Vector3()), at);
+      } else if (step.kind === 'heal') {
+        this.effectFx.heal(from, this.playerNumberPosition(), at);
       } else if (step.kind === 'motes' && step.status) {
         if (cardId === 'rust-spray' || cardId === 'rivet-plate') continue;
         if (step.toward === 'player') {
@@ -2639,8 +2972,16 @@ export class CombatSession {
     const t = this.clock - f.start;
     if (!f.launched && t >= f.delay - 1e-9) {
       f.launched = true;
-      for (const target of f.targets)
+      for (const target of f.chain ? [f.chain.primary] : f.targets)
         this.fx.launch(f.from, target.at, f.seconds, f.power, f.kind, t - f.delay, f.visual);
+    }
+    const branchAt = f.delay + f.seconds;
+    if (f.chain && !f.chain.launched && t >= branchAt - 1e-9) {
+      f.chain.launched = true;
+      const primary = f.chain.primary;
+      this.fx.impact(primary.at, f.from, f.power, f.visual);
+      for (const link of f.chain.links)
+        this.fx.launch(primary.at, link.at, link.seconds, f.power, f.kind, t - branchAt, f.visual);
     }
     if (t >= f.contact - 1e-9) {
       this.landFlight();
@@ -2655,8 +2996,10 @@ export class CombatSession {
     this.flight = null;
     this.lastShown = f.after;
     for (const target of f.targets) {
-      this.fx.impact(target.at, f.from, f.power, f.visual);
-      this.knock(target.id, f.from, f.power);
+      const sideHit = f.chain && target.id !== f.chain.primary.id;
+      const from = sideHit ? f.chain.primary.at : f.from;
+      if (sideHit || !f.chain?.launched) this.fx.impact(target.at, from, f.power, f.visual);
+      this.knock(target.id, from, f.power);
     }
     this.present(f.events);
   }
@@ -2714,6 +3057,11 @@ export class CombatSession {
     if (this.hitLog.length > TRACE_CAP) this.hitLog.shift();
     if (hit.blocked > 0) this.sfx('block-ward');
     if (hit.hpLost > 0) this.hpPulse = 1;
+    this.numbers.spawn(this.playerNumberPosition(), hit, PLAYER_NUMBER_SCALE);
+    this.deps.onPlayerHit?.(hit);
+  }
+
+  private playerNumberPosition(): THREE.Vector3 {
     // The player's number rises from the top of the status panel, wherever the desktop fit put it;
     // without a panel, from just below the line of sight.
     const at = this.numberAt;
@@ -2725,8 +3073,7 @@ export class CombatSession {
       this.deps.camera.updateWorldMatrix(true, false);
       this.deps.camera.localToWorld(at.set(0, -0.15, -0.7));
     }
-    this.numbers.spawn(at, hit, PLAYER_NUMBER_SCALE);
-    this.deps.onPlayerHit?.(hit);
+    return at;
   }
 
   /**
@@ -2817,12 +3164,15 @@ export class CombatSession {
           drawIconRow(ctx, icons, intent, w / 2, 200, 92, 'center');
         } else {
           drawIconRow(ctx, icons, intent, w / 2, 172, 62, 'center');
-          const { label: description } = stanceReadout(stance);
+          const { label: stanceLabel } = stanceReadout(stance);
+          const next = enemy.intent?.followUp;
+          const followUp = next && enemy.moves.find((move) => move.id === next)?.label;
+          const description = followUp ? `${stanceLabel} · Then ${followUp}` : stanceLabel;
           ctx.font = 'bold 32px system-ui, sans-serif';
           ctx.fillStyle = stance === 'guarded' ? '#d9f2ff' : '#ffe0a6';
           ctx.textAlign = 'center';
-          ctx.fillText(description, w / 2, 229);
-          const half = ctx.measureText(description).width / 2 + 12;
+          ctx.fillText(description, w / 2, 229, w - 28);
+          const half = Math.min(w - 28, ctx.measureText(description).width) / 2 + 12;
           regions.push({
             id: stance,
             stacks: null,
@@ -2876,7 +3226,7 @@ export class CombatSession {
       waiting ? PALETTE.void : PALETTE.warmBlack,
     );
     this.paintFlee();
-    const endText = waiting ? 'ENEMY TURN' : 'END TURN';
+    const endText = this.rerollChoice ? 'KEEP ROLL' : waiting ? 'ENEMY TURN' : 'END TURN';
     if (this.endLabel && endText !== this.endText) {
       this.endText = endText;
       drawButtonText(this.endLabel, endText, waiting ? PALETTE.brassDark : PALETTE.parchment);
@@ -3012,12 +3362,16 @@ export interface CombatHookFloor {
   seed: string;
   contentVersion?: number;
   floorNumber?: number;
+  stoneRooms?: ReadonlyMap<number, StoneRoom>;
   encounter: Pick<EncounterDirector, 'phase' | 'activeRoom' | 'tablePose' | 'end'> & {
     readonly seatDistance?: number | null;
     readonly activePatrol?: THREE.Object3D | null;
   };
   world: {
-    plan: { rooms: readonly ({ encounter: { tier: EncounterTier } | null } | undefined)[] };
+    plan: {
+      armoryAlcove?: { room: number };
+      rooms: readonly ({ encounter: { tier: EncounterTier } | null } | undefined)[];
+    };
     enemies: ReadonlyMap<number, readonly THREE.Object3D[]>;
     group: THREE.Object3D;
   };
@@ -3131,6 +3485,8 @@ export class CombatHook {
         tier,
         ...(floor.contentVersion === undefined ? {} : { contentVersion: floor.contentVersion }),
         ...(floor.floorNumber === undefined ? {} : { floorNumber: floor.floorNumber }),
+        stoneDungeon: floor.stoneRooms?.get(room) === 'dungeon',
+        armory: floor.world.plan.armoryAlcove?.room === room,
         ...(patrol ? { patrol: true } : {}),
         tablePose: pose,
         ...(seat == null ? {} : { seatDistance: seat }),

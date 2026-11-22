@@ -1,15 +1,51 @@
 import {
+  ARMORY_ALCOVE_VERSION,
+  BORROWED_LIGHT_VERSION,
   BRASS_CACHE_VERSION,
+  CHARGE_CONTENT_VERSION,
+  CRYSTAL_GAMBIT_VERSION,
+  DARK_CIRCUIT_VERSION,
   DISPATCH_ROOM_VERSION,
+  DRUM_GALLERY_VERSION,
+  DUNGEON_CONTENT_VERSION,
+  ECHO_GLYPH_VERSION,
   ENCOUNTER_CONTENT_VERSION,
+  FLOAT_ELEVATOR_VERSION,
   FOUNDRY_VERSION,
   HIDDEN_PANEL_VERSION,
+  LENS_FOCUS_VERSION,
+  MECHANISM_CONTENT_VERSION,
+  OVERDRIVE_CONTENT_VERSION,
   PATROL_VERSION,
+  PENDULUM_GALLERY_VERSION,
   PRESSURE_WORKS_VERSION,
   PRISM_ANNEX_VERSION,
+  RELIQUARY_VERSION,
   RETURN_PASSAGES_VERSION,
+  SHADOW_STENCIL_VERSION,
+  SPEAKING_PIPES_VERSION,
+  SPRING_TENSION_VERSION,
+  VALVEHOUSE_VERSION,
+  WAVE_A_COMPLETE_VERSION,
+  WAVE_A_REPAIR_VERSION,
+  WAVE_B_CHAIN_VERSION,
+  WAVE_B_DICE_VERSION,
 } from '../combat/encounter-choice.ts';
-import { LEGACY_REWARD_POOL, PERMANENT_CARD_IDS } from '../content/rewards.ts';
+import {
+  CRYSTAL_GAMBIT_IDS,
+  DUNGEON_REWARD_IDS,
+  ECHO_GLYPH_IDS,
+  LEGACY_REWARD_POOL,
+  LENS_FOCUS_IDS,
+  PERMANENT_CARD_IDS,
+  WAVE_A_COMPLETE_IDS,
+  WAVE_A_REPAIR_IDS,
+  WAVE_B_CHAIN_IDS,
+  WAVE_B_CHARGE_IDS,
+  WAVE_B_DICE_IDS,
+  WAVE_B_MECHANISM_IDS,
+  WAVE_B_OVERDRIVE_IDS,
+} from '../content/rewards.ts';
 import { brassCacheForPlayableFloor } from '../floor/return-passages.ts';
 import type { FloorSnapshot, RunSnapshot } from '../persist/saves.ts';
 import { snapshotRun } from '../persist/saves.ts';
@@ -20,11 +56,13 @@ import {
   applyPotion,
   collectIngredient,
   type FormulaClue,
+  formulaObservation,
   type Ingredient,
   learnFormulaClue,
   readAlchemy,
   readConservatoryFormula,
   revealFormula,
+  takePotion,
   unlatchArchive,
 } from '../rules/alchemy.ts';
 import {
@@ -34,6 +72,7 @@ import {
   listenToChimes,
   strikeChime,
 } from '../rules/bell-chimes.ts';
+import { operateBorrowedLight, readBorrowedLight } from '../rules/borrowed-light.ts';
 import {
   claimCalibrationCard,
   type GearId,
@@ -60,6 +99,13 @@ import {
   readCounterweight,
 } from '../rules/counterweight.ts';
 import {
+  type CircuitSocket,
+  type DarkCircuitOutcome,
+  type DarkCircuitState,
+  readDarkCircuit,
+  toggleCircuitBridge,
+} from '../rules/dark-circuit.ts';
+import {
   DEFAULT_DIFFICULTY,
   type Difficulty,
   difficultyMaxHp,
@@ -72,7 +118,28 @@ import {
   sendDispatch,
   turnDispatch,
 } from '../rules/dispatch.ts';
+import {
+  type DrumControl,
+  type DrumGalleryState,
+  drumPattern,
+  readDrumGallery,
+  setDrumPin,
+  windDrum,
+} from '../rules/drum-gallery.ts';
 import { canFlee } from '../rules/flee.ts';
+import { operateFloatElevator, readFloatElevator } from '../rules/float-elevator.ts';
+import {
+  isLogbookClueId,
+  type LogbookClueId,
+  type LogbookEntry,
+  RUBBING_LOGBOOK_CLUE,
+} from '../rules/logbook.ts';
+import {
+  advancePendulumDetent,
+  completePendulumTrial,
+  type PendulumGalleryState,
+  readPendulumGallery,
+} from '../rules/pendulum-gallery.ts';
 import {
   claimPressureReward,
   collectPressureNote,
@@ -92,6 +159,13 @@ import {
   turnPrism,
 } from '../rules/prism-signal.ts';
 import {
+  type ReliquarySeal,
+  readReliquary,
+  reliquaryGlyph,
+  rememberReliquary,
+  submitReliquaryTrace,
+} from '../rules/reliquary.ts';
+import {
   chooseReward,
   claimTreasure,
   claimWindowCache,
@@ -109,7 +183,38 @@ import {
   type TreasureLoot,
   useHearth,
 } from '../rules/run.ts';
-import type { StoredHiddenPanelState } from '../rules/types.ts';
+import {
+  operateShadowStencil,
+  readShadowStencil,
+  type ShadowStencilControl,
+  type ShadowStencilState,
+} from '../rules/shadow-stencil.ts';
+import {
+  type PipeChannel,
+  primeSpeakingPipes as primePipeState,
+  readSpeakingPipes,
+  selectSpeakingPipe,
+} from '../rules/speaking-pipes.ts';
+import {
+  operateSpringTension,
+  readSpringTension,
+  type SpringTensionOutcome,
+} from '../rules/spring-tension.ts';
+import type {
+  FloatElevatorControl,
+  FloatElevatorState,
+  SpeakingPipesState,
+  SpringTensionControl,
+  SpringTensionState,
+  StoredHiddenPanelState,
+} from '../rules/types.ts';
+import {
+  collectValvehouse,
+  readValvehouse,
+  seatValvehouse,
+  testValvehouse,
+  type ValvehouseState,
+} from '../rules/valvehouse.ts';
 import {
   bankRunCogs,
   buyPermanentCard,
@@ -120,6 +225,7 @@ import {
   type UpgradeId,
   type WorkshopState,
 } from '../rules/workshop.ts';
+import { matchesReliquaryGlyph } from '../sigil/reliquary-trace.ts';
 
 /**
  * Screens of the whole game loop. `title`, `workshop` and `settings` sit between runs; `explore`,
@@ -222,7 +328,7 @@ export interface CounterweightResultView {
 }
 export interface AlchemyEvent {
   readonly type: 'alchemy';
-  readonly action: 'collect' | 'add' | 'apply';
+  readonly action: 'collect' | 'add' | 'take-potion' | 'apply';
   readonly ingredient?: Ingredient;
   readonly correct?: boolean;
   readonly brewed: boolean;
@@ -246,6 +352,41 @@ export interface DispatchEvent {
   readonly result?: 'misrouted' | 'sent';
   readonly state: StoredDispatchState;
 }
+export interface SpeakingPipesEvent {
+  readonly type: 'speaking-pipes';
+  readonly action: 'prime' | 'open';
+  readonly state: SpeakingPipesState;
+}
+export interface ReliquaryEvent {
+  readonly type: 'reliquary';
+  readonly action: 'remember' | 'open';
+}
+export interface PendulumGalleryEvent {
+  readonly type: 'pendulum-gallery';
+  readonly action: 'advance' | 'trial';
+  readonly result?: 'ignored' | 'wrong' | 'opened';
+  readonly state: PendulumGalleryState;
+}
+export interface BorrowedLightEvent {
+  readonly type: 'borrowed-light';
+  readonly result: 'ignored' | 'adjusted' | 'opened';
+}
+export interface FloatElevatorEvent {
+  readonly type: 'float-elevator';
+  readonly result: 'ignored' | 'adjusted' | 'released';
+  readonly state: FloatElevatorState;
+}
+export interface ShadowStencilEvent {
+  readonly type: 'shadow-stencil';
+  readonly result: 'moved' | 'released' | 'ignored';
+  readonly state: ShadowStencilState;
+}
+export interface SpringTensionEvent {
+  readonly type: 'spring-tension';
+  readonly action: SpringTensionControl;
+  readonly outcome: SpringTensionOutcome;
+  readonly state: SpringTensionState;
+}
 
 /**
  * `'opened'`: a coffer was opened (`openLoot`). `'claimed'`: its pending card went into the deck
@@ -254,10 +395,19 @@ export interface DispatchEvent {
 export type LootStage = 'opened' | 'claimed';
 
 export type FlowEvent =
+  | { readonly type: 'logbook'; readonly clue: LogbookClueId }
   | { readonly type: 'phase'; readonly from: FlowPhase; readonly to: FlowPhase }
   | { readonly type: 'floor-travel'; readonly room: number }
+  | { readonly type: 'room-entered'; readonly room: number }
   | { readonly type: 'workshop' }
+  | { readonly type: 'armory-awakened' }
   | ({ readonly type: 'loot'; readonly stage: LootStage } & OpenedLoot)
+  | BorrowedLightEvent
+  | FloatElevatorEvent
+  | ShadowStencilEvent
+  | SpringTensionEvent
+  | { readonly type: 'dark-circuit' }
+  | { readonly type: 'drum-gallery' }
   | ({ readonly type: 'hearth' } & UsedHearth)
   | {
       readonly type: 'book-secret';
@@ -287,7 +437,15 @@ export type FlowEvent =
   | BellChimeEvent
   | PrismSignalEvent
   | DispatchEvent
+  | SpeakingPipesEvent
+  | ReliquaryEvent
+  | PendulumGalleryEvent
   | { readonly type: 'brass-key'; readonly action: 'inspect' | 'take' | 'unlock' }
+  | {
+      readonly type: 'valvehouse';
+      readonly action: 'collect' | 'seat' | 'test';
+      readonly result: 'held' | 'seated' | 'leak' | 'opened';
+    }
   | {
       readonly type: 'window-cache';
       readonly cogs: number;
@@ -315,6 +473,26 @@ export class RunFlow {
   private phaseValue: FlowPhase = 'title';
   private workshopValue: WorkshopState;
   private runValue: RunState | null = null;
+
+  get logbookEntries(): readonly LogbookEntry[] {
+    return this.runValue?.logbook ?? [];
+  }
+
+  saveLogbookClue(entry: LogbookEntry): boolean {
+    const id = entry.id;
+    const run = this.runValue;
+    if (!run || !isLogbookClueId(id)) return false;
+    const discovered =
+      id === RUBBING_LOGBOOK_CLUE
+        ? run.reliquarySeal !== undefined && run.reliquarySeal !== 'hidden'
+        : this.pressure.notes.includes(id);
+    if (!discovered) return false;
+    const entries = run.logbook ?? [];
+    if (entries.some((item) => item.id === id)) return true;
+    this.runValue = { ...run, logbook: [...entries, entry] };
+    this.emit({ type: 'logbook', clue: id });
+    return true;
+  }
   private offerValue: RewardOffer | null = null;
   private guardianDefeatedValue = false;
   private summaryValue: RunSummary | null = null;
@@ -373,6 +551,163 @@ export class RunFlow {
   get prismSignal(): StoredPrismState {
     return readPrismSignal(this.runValue ?? { prismSignal: undefined });
   }
+  get pendulumGallery(): PendulumGalleryState {
+    return readPendulumGallery(this.runValue ?? { pendulumGallery: undefined });
+  }
+  get borrowedLight() {
+    return readBorrowedLight(this.runValue ?? { seed: '', borrowedLight: undefined });
+  }
+  get floatElevator(): FloatElevatorState {
+    return readFloatElevator(this.runValue ?? {});
+  }
+  get shadowStencil(): ShadowStencilState {
+    return readShadowStencil(this.runValue ?? {});
+  }
+  get springTension(): SpringTensionState {
+    return readSpringTension(this.runValue ?? {});
+  }
+  get darkCircuit(): DarkCircuitState {
+    return readDarkCircuit(this.runValue ?? {});
+  }
+  get drumGallery(): DrumGalleryState {
+    return readDrumGallery(this.runValue ?? {});
+  }
+  operateDrumGallery(action: DrumControl): boolean {
+    const run = this.runValue;
+    if (
+      !run ||
+      this.phaseValue !== 'explore' ||
+      this.floorNumberValue !== 3 ||
+      this.contentVersionValue < DRUM_GALLERY_VERSION
+    )
+      return false;
+    const state = this.drumGallery;
+    const pattern = drumPattern(run.seed);
+    const next =
+      action.kind === 'wind' ? windDrum(pattern, state) : setDrumPin(pattern, state, action.pin);
+    if (next !== state) {
+      this.runValue = { ...run, drumGallery: next };
+      this.emit({ type: 'drum-gallery' });
+    }
+    return action.kind === 'wind' || next !== state;
+  }
+  toggleCircuitBridge(socket: CircuitSocket): DarkCircuitOutcome {
+    const run = this.runValue;
+    if (
+      !run ||
+      this.phaseValue !== 'explore' ||
+      this.floorNumberValue !== 2 ||
+      this.contentVersionValue < DARK_CIRCUIT_VERSION
+    )
+      return 'ignored';
+    const state = this.darkCircuit;
+    const result = toggleCircuitBridge(run.seed, state, socket);
+    if (result.state !== state) {
+      this.runValue = { ...run, darkCircuit: result.state };
+      this.emit({ type: 'dark-circuit' });
+    }
+    return result.outcome;
+  }
+  operateSpringTension(action: SpringTensionControl): SpringTensionOutcome {
+    if (
+      !this.runValue ||
+      this.phaseValue !== 'explore' ||
+      this.floorNumberValue !== 2 ||
+      this.contentVersionValue < SPRING_TENSION_VERSION
+    )
+      return 'ignored';
+    const result = operateSpringTension(this.runValue.seed, this.springTension, action);
+    if (result.outcome !== 'ignored') {
+      this.runValue = { ...this.runValue, springTension: result.state };
+      this.emit({ type: 'spring-tension', action, outcome: result.outcome, state: result.state });
+    }
+    return result.outcome;
+  }
+  operateShadowStencil(control: ShadowStencilControl): 'moved' | 'released' | 'ignored' {
+    if (
+      !this.runValue ||
+      this.phaseValue !== 'explore' ||
+      this.floorNumberValue !== 1 ||
+      this.contentVersionValue < SHADOW_STENCIL_VERSION
+    )
+      return 'ignored';
+    const state = this.shadowStencil;
+    const next = operateShadowStencil(this.runValue.seed, state, control);
+    if (next === state) return 'ignored';
+    this.runValue = { ...this.runValue, shadowStencil: next };
+    const result = next.opened && !state.opened ? 'released' : 'moved';
+    this.emit({ type: 'shadow-stencil', result, state: next });
+    return result;
+  }
+  operateFloatElevator(control: FloatElevatorControl): 'ignored' | 'adjusted' | 'released' {
+    if (
+      !this.runValue ||
+      this.phaseValue !== 'explore' ||
+      this.floorNumberValue !== 1 ||
+      this.contentVersionValue < FLOAT_ELEVATOR_VERSION
+    )
+      return 'ignored';
+    const state = this.floatElevator;
+    const next = operateFloatElevator(this.runValue.seed, state, control);
+    if (next === state) return 'ignored';
+    this.runValue = { ...this.runValue, floatElevator: next };
+    this.emit({
+      type: 'float-elevator',
+      result: control === 'take' ? 'released' : 'adjusted',
+      state: next,
+    });
+    return control === 'take' ? 'released' : 'adjusted';
+  }
+  operateBorrowedLight(control: 0 | 1 | 'reset'): 'ignored' | 'adjusted' | 'opened' {
+    if (
+      !this.runValue ||
+      this.phaseValue !== 'explore' ||
+      this.floorNumberValue !== 3 ||
+      this.contentVersionValue < BORROWED_LIGHT_VERSION
+    )
+      return 'ignored';
+    const state = this.borrowedLight;
+    const next = operateBorrowedLight(this.runValue.seed, state, control);
+    if (next === state) return 'ignored';
+    this.runValue = { ...this.runValue, borrowedLight: next };
+    const result = next.open && !state.open ? 'opened' : 'adjusted';
+    this.emit({ type: 'borrowed-light', result });
+    return result;
+  }
+  advancePendulumDetent(): boolean {
+    if (
+      !this.runValue ||
+      this.phaseValue !== 'explore' ||
+      this.floorNumberValue !== 3 ||
+      this.contentVersionValue < PENDULUM_GALLERY_VERSION ||
+      this.pendulumGallery.open
+    )
+      return false;
+    const next = advancePendulumDetent(this.pendulumGallery);
+    this.runValue = { ...this.runValue, pendulumGallery: next };
+    this.emit({ type: 'pendulum-gallery', action: 'advance', state: next });
+    return true;
+  }
+  completePendulumTrial(): 'ignored' | 'wrong' | 'opened' {
+    if (
+      !this.runValue ||
+      this.phaseValue !== 'explore' ||
+      this.floorNumberValue !== 3 ||
+      this.contentVersionValue < PENDULUM_GALLERY_VERSION
+    )
+      return 'ignored';
+    const result = completePendulumTrial(this.runValue);
+    if (result.run !== this.runValue) {
+      this.runValue = result.run;
+      this.emit({
+        type: 'pendulum-gallery',
+        action: 'trial',
+        result: result.result,
+        state: this.pendulumGallery,
+      });
+    }
+    return result.result;
+  }
   turnPrism(): boolean {
     if (
       !this.runValue ||
@@ -408,6 +743,122 @@ export class RunFlow {
   }
   get dispatch(): StoredDispatchState {
     return readDispatch(this.runValue ?? { dispatch: undefined });
+  }
+  get speakingPipes(): SpeakingPipesState {
+    return readSpeakingPipes(this.runValue ?? { speakingPipes: undefined });
+  }
+  get reliquarySeal(): ReliquarySeal {
+    return readReliquary(this.runValue ?? { reliquarySeal: undefined });
+  }
+  get valvehouse(): ValvehouseState {
+    return readValvehouse(this.runValue ?? {});
+  }
+  collectValvehouseGasket(): boolean {
+    if (
+      !this.runValue ||
+      this.phaseValue !== 'explore' ||
+      this.floorNumberValue !== 1 ||
+      this.contentVersionValue < VALVEHOUSE_VERSION
+    )
+      return false;
+    const next = collectValvehouse(this.runValue);
+    if (!next) return false;
+    this.runValue = { ...this.runValue, valvehouse: next };
+    this.emit({ type: 'valvehouse', action: 'collect', result: 'held' });
+    return true;
+  }
+  seatValvehouseGasket(): boolean {
+    if (
+      !this.runValue ||
+      this.phaseValue !== 'explore' ||
+      this.floorNumberValue !== 1 ||
+      this.contentVersionValue < VALVEHOUSE_VERSION
+    )
+      return false;
+    const next = seatValvehouse(this.runValue);
+    if (!next) return false;
+    this.runValue = { ...this.runValue, valvehouse: next };
+    this.emit({ type: 'valvehouse', action: 'seat', result: 'seated' });
+    return true;
+  }
+  testValvehousePressure(): 'ignored' | 'leak' | 'opened' {
+    if (
+      !this.runValue ||
+      this.phaseValue !== 'explore' ||
+      this.floorNumberValue !== 1 ||
+      this.contentVersionValue < VALVEHOUSE_VERSION
+    )
+      return 'ignored';
+    const next = testValvehouse(this.runValue);
+    if (!next) {
+      return this.valvehouse === 'open' ? 'ignored' : 'leak';
+    }
+    this.runValue = { ...this.runValue, valvehouse: next };
+    this.emit({ type: 'valvehouse', action: 'test', result: 'opened' });
+    return 'opened';
+  }
+  rememberReliquaryRubbing(): boolean {
+    if (
+      !this.runValue ||
+      this.phaseValue !== 'explore' ||
+      this.floorNumberValue !== 2 ||
+      this.contentVersionValue < RELIQUARY_VERSION
+    )
+      return false;
+    const next = rememberReliquary(this.runValue);
+    if (!next) return false;
+    this.runValue = next;
+    this.emit({ type: 'reliquary', action: 'remember' });
+    return true;
+  }
+  submitReliquaryTrace(
+    points: readonly { readonly x: number; readonly y: number }[],
+  ): 'ignored' | 'wrong' | 'opened' {
+    if (
+      !this.runValue ||
+      this.phaseValue !== 'explore' ||
+      this.floorNumberValue !== 2 ||
+      this.contentVersionValue < RELIQUARY_VERSION
+    )
+      return 'ignored';
+    if (this.reliquarySeal !== 'known') return 'ignored';
+    const glyph = reliquaryGlyph(this.runValue.seed);
+    const result = submitReliquaryTrace(this.runValue, matchesReliquaryGlyph(points, glyph.points));
+    if (!result) return 'ignored';
+    this.runValue = result.run;
+    if (result.result === 'opened') this.emit({ type: 'reliquary', action: 'open' });
+    return result.result;
+  }
+  primeSpeakingPipes(): boolean {
+    if (
+      !this.runValue ||
+      this.phaseValue !== 'explore' ||
+      this.floorNumberValue !== 2 ||
+      this.contentVersionValue < SPEAKING_PIPES_VERSION
+    )
+      return false;
+    const before = this.speakingPipes;
+    const next = primePipeState(this.runValue);
+    if (!next) return false;
+    this.runValue = next;
+    if (before === 'idle')
+      this.emit({ type: 'speaking-pipes', action: 'prime', state: this.speakingPipes });
+    return true;
+  }
+  selectSpeakingPipe(channel: PipeChannel): 'ignored' | 'wrong' | 'opened' {
+    if (
+      !this.runValue ||
+      this.phaseValue !== 'explore' ||
+      this.floorNumberValue !== 2 ||
+      this.contentVersionValue < SPEAKING_PIPES_VERSION
+    )
+      return 'ignored';
+    const result = selectSpeakingPipe(this.runValue, channel);
+    if (!result) return 'ignored';
+    this.runValue = result.run;
+    if (result.result === 'opened')
+      this.emit({ type: 'speaking-pipes', action: 'open', state: this.speakingPipes });
+    return result.result;
   }
   turnDispatch(): boolean {
     if (
@@ -623,6 +1074,9 @@ export class RunFlow {
   get conservatoryFormula(): ReturnType<typeof readConservatoryFormula> {
     return readConservatoryFormula(this.runValue ?? { seed: '00000000' });
   }
+  describeFormulaClue(clue: FormulaClue): string {
+    return formulaObservation(this.runValue?.seed ?? '00000000', clue, this.contentVersionValue);
+  }
   learnFormulaClue(clue: FormulaClue): boolean {
     const run = this.runValue;
     if (
@@ -638,7 +1092,12 @@ export class RunFlow {
     inStillInterval: boolean,
   ): 'correct' | 'mistake' | 'waiting' | null {
     if (!this.runValue || this.phaseValue !== 'explore' || this.floorNumberValue !== 3) return null;
-    const result = addFormulaIngredient(this.runValue, ingredient, inStillInterval);
+    const result = addFormulaIngredient(
+      this.runValue,
+      ingredient,
+      inStillInterval,
+      this.contentVersionValue,
+    );
     if (!result) return null;
     if (result.waiting) return 'waiting';
     this.applyFormula(result.run);
@@ -660,7 +1119,7 @@ export class RunFlow {
   collectIngredient(ingredient: Ingredient): boolean {
     const run = this.runValue;
     if (this.phaseValue !== 'explore' || !run || this.floorNumberValue !== 3) return false;
-    const next = collectIngredient(run, ingredient);
+    const next = collectIngredient(run, ingredient, this.contentVersionValue);
     if (!next) return false;
     this.runValue = next;
     this.emit({
@@ -687,6 +1146,16 @@ export class RunFlow {
       opened: this.alchemy.opened,
     });
     return result.correct ? 'correct' : 'mistake';
+  }
+  takePotion(): boolean {
+    const run = this.runValue;
+    if (this.phaseValue !== 'explore' || !run || this.floorNumberValue !== 3) return false;
+    const next = takePotion(run);
+    if (!next) return false;
+    this.runValue = next;
+    const { brewed, opened } = this.alchemy;
+    this.emit({ type: 'alchemy', action: 'take-potion', brewed, opened });
+    return true;
   }
   applyPotion(): boolean {
     const run = this.runValue;
@@ -881,6 +1350,26 @@ export class RunFlow {
   }
   get floorSeed(): string {
     return this.runValue ? floorSeedFor(this.runValue.seed, this.floorNumberValue) : '';
+  }
+
+  explorationOnFloor(
+    floor: number,
+  ):
+    | Pick<
+        FloorSnapshot,
+        'floorSeed' | 'reachedRooms' | 'clearedEncounters' | 'openedLoot' | 'pressure'
+      >
+    | undefined {
+    if (!this.runValue) return undefined;
+    if (floor === this.floorNumberValue)
+      return {
+        floorSeed: this.floorSeed,
+        reachedRooms: [...this.reached],
+        clearedEncounters: this.clearedRooms.map(String),
+        openedLoot: this.runValue.openedLoot,
+        pressure: this.runValue.pressure,
+      };
+    return this.floorStates.get(floor);
   }
   get brassKey(): 'missing' | 'held' | 'spent' {
     return this.runValue?.brassKey ?? 'missing';
@@ -1098,9 +1587,26 @@ export class RunFlow {
 
   /** Records the room the player stands in. */
   enterRoom(room: number): void {
-    if (!this.inRun) return;
+    if (!this.inRun || this.roomValue === room) return;
     this.roomValue = room;
     this.reached.add(room);
+    this.emit({ type: 'room-entered', room });
+  }
+
+  /** Records the armory's irreversible activation at the exploration save boundary. */
+  awakenArmory(): boolean {
+    const run = this.runValue;
+    if (
+      this.phaseValue !== 'explore' ||
+      this.floorNumberValue !== 2 ||
+      this.contentVersionValue < ARMORY_ALCOVE_VERSION ||
+      !run ||
+      run.armoryAwakened
+    )
+      return false;
+    this.runValue = { ...run, armoryAwakened: true };
+    this.emit({ type: 'armory-awakened' });
+    return true;
   }
 
   /** Exploration hands over to a fight. Ignored outside `explore`, so a dead run never fights again. */
@@ -1145,8 +1651,7 @@ export class RunFlow {
     if (!result.patrol && !this.clearedRooms.includes(result.room))
       this.clearedRooms.push(result.room);
     const healed = this.withHp(run, result.playerHp);
-    const pool =
-      this.contentVersionValue < FOUNDRY_VERSION ? LEGACY_REWARD_POOL : this.opts.rewardPool;
+    const pool = this.rewardPoolForContentVersion();
     const rolled = rewardOffer(healed, result.tier, pool);
     if (result.tier === 'guardian') this.guardianDefeatedValue = true;
     this.runValue = result.patrol ? { ...rolled.run, patrolDefeated: true } : rolled.run;
@@ -1166,8 +1671,7 @@ export class RunFlow {
     const target =
       this.floorNumberValue === 1 && this.brassKey !== 'spent' ? this.brassCache : undefined;
     if (target?.room === room && target.socketId === socketId) return null;
-    const pool =
-      this.contentVersionValue < FOUNDRY_VERSION ? LEGACY_REWARD_POOL : this.opts.rewardPool;
+    const pool = this.rewardPoolForContentVersion();
     const result = openTreasure(run, lootKey(room, socketId), kind, pool);
     if (!result) return null;
     this.runValue = result.run;
@@ -1342,6 +1846,35 @@ export class RunFlow {
     return { ...run, hp: Math.max(0, Math.min(run.maxHp, Math.round(hp))) };
   }
 
+  private rewardPoolForContentVersion(): readonly string[] {
+    if (this.contentVersionValue < FOUNDRY_VERSION) return LEGACY_REWARD_POOL;
+    const dice = this.contentVersionValue >= WAVE_B_DICE_VERSION;
+    const mechanisms = this.contentVersionValue >= MECHANISM_CONTENT_VERSION;
+    const chain = this.contentVersionValue >= WAVE_B_CHAIN_VERSION;
+    const crystalGambit = this.contentVersionValue >= CRYSTAL_GAMBIT_VERSION;
+    const echoGlyph = this.contentVersionValue >= ECHO_GLYPH_VERSION;
+    const lensFocus = this.contentVersionValue >= LENS_FOCUS_VERSION;
+    const overdrive = this.contentVersionValue >= OVERDRIVE_CONTENT_VERSION;
+    const charge = this.contentVersionValue >= CHARGE_CONTENT_VERSION;
+    const complete = this.contentVersionValue >= WAVE_A_COMPLETE_VERSION;
+    const dungeon = this.contentVersionValue >= DUNGEON_CONTENT_VERSION;
+    const repairs = this.contentVersionValue >= WAVE_A_REPAIR_VERSION;
+    return this.opts.rewardPool.filter(
+      (id) =>
+        (overdrive || !WAVE_B_OVERDRIVE_IDS.has(id)) &&
+        (charge || !WAVE_B_CHARGE_IDS.has(id)) &&
+        (dice || !WAVE_B_DICE_IDS.has(id)) &&
+        (mechanisms || !WAVE_B_MECHANISM_IDS.has(id)) &&
+        (chain || !WAVE_B_CHAIN_IDS.has(id)) &&
+        (crystalGambit || !CRYSTAL_GAMBIT_IDS.has(id)) &&
+        (echoGlyph || !ECHO_GLYPH_IDS.has(id)) &&
+        (lensFocus || !LENS_FOCUS_IDS.has(id)) &&
+        (complete || !WAVE_A_COMPLETE_IDS.has(id)) &&
+        (repairs || !WAVE_A_REPAIR_IDS.has(id)) &&
+        (dungeon || !DUNGEON_REWARD_IDS.has(id)),
+    );
+  }
+
   private applyPressureResult(
     room: number,
     result: {
@@ -1401,10 +1934,17 @@ export class RunFlow {
       usedHearths: run.usedHearths,
       pressure: run.pressure,
       dispatch: this.floorNumberValue === 2 ? run.dispatch : undefined,
+      speakingPipes: this.floorNumberValue === 2 ? run.speakingPipes : undefined,
       bookSecretOpenedRooms: run.bookSecretOpenedRooms,
       bookSecretKeyRooms: run.bookSecretKeyRooms,
       bookSecretCabinetRooms: run.bookSecretCabinetRooms,
       prismSignal: this.floorNumberValue === 3 ? run.prismSignal : undefined,
+      pendulumGallery: this.floorNumberValue === 3 ? run.pendulumGallery : undefined,
+      floatElevator: this.floorNumberValue === 1 ? run.floatElevator : undefined,
+      shadowStencil: this.floorNumberValue === 1 ? run.shadowStencil : undefined,
+      springTension: this.floorNumberValue === 2 ? run.springTension : undefined,
+      darkCircuit: this.floorNumberValue === 2 ? run.darkCircuit : undefined,
+      drumGallery: this.floorNumberValue === 3 ? run.drumGallery : undefined,
     };
   }
 
@@ -1422,9 +1962,13 @@ export class RunFlow {
     this.roomValue = destinationRoom;
     this.offerValue = null;
     this.guardianDefeatedValue = floor.guardianDefeated === true;
-    const { pressure: _stalePressure, ...runWithoutPressure } = run;
+    const {
+      pressure: _stalePressure,
+      speakingPipes: _staleSpeakingPipes,
+      ...runWithoutFloorPuzzles
+    } = run;
     this.runValue = {
-      ...runWithoutPressure,
+      ...runWithoutFloorPuzzles,
       floorSeed: floor.floorSeed,
       openedLoot: floor.openedLoot,
       pendingLoot: floor.pendingLoot,
@@ -1435,10 +1979,19 @@ export class RunFlow {
       ...(this.floorNumberValue === 2 && floor.dispatch !== undefined
         ? { dispatch: floor.dispatch }
         : {}),
+      ...(this.floorNumberValue === 2 && floor.speakingPipes !== undefined
+        ? { speakingPipes: floor.speakingPipes }
+        : {}),
       bookSecretOpenedRooms: floor.bookSecretOpenedRooms,
       bookSecretKeyRooms: floor.bookSecretKeyRooms,
       bookSecretCabinetRooms: floor.bookSecretCabinetRooms,
       prismSignal: this.floorNumberValue === 3 ? floor.prismSignal : undefined,
+      pendulumGallery: this.floorNumberValue === 3 ? floor.pendulumGallery : undefined,
+      floatElevator: this.floorNumberValue === 1 ? floor.floatElevator : undefined,
+      shadowStencil: this.floorNumberValue === 1 ? floor.shadowStencil : undefined,
+      springTension: this.floorNumberValue === 2 ? floor.springTension : undefined,
+      darkCircuit: this.floorNumberValue === 2 ? floor.darkCircuit : undefined,
+      drumGallery: this.floorNumberValue === 3 ? floor.drumGallery : undefined,
     };
   }
 

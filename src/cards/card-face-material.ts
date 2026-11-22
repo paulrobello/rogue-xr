@@ -3,6 +3,7 @@ import type { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
 import { GLOW_HOT } from '../enemies/glow.ts';
 import { PALETTE } from '../palette.ts';
 import {
+  CARD_LAYER_IDS,
   type CardAtlas,
   type CardAtlasCard,
   cardArt,
@@ -18,8 +19,7 @@ import {
  * everywhere else. The window is a portal: each layer is sampled where the view ray meets its plane
  * at the atlas depth behind the face (the holo card's depths, offset per eye, no extra texture
  * taps), deeper layers sink into a warm haze, and the window lip shades the art nearest the eye.
- * The three art pages and the frame page are four sampler uniforms; a card's layers always share
- * one page, so the shader branches once.
+ * Each art layer selects a page. The frame sampler also serves illustrations packed on its page.
  *
  * `aBurn` drives the played-card burn (`card-burn.ts`): an amber flare, then a noise-broken burn
  * front that eats the card from its edges inward with a hot rim. It is zero on hand cards.
@@ -53,7 +53,8 @@ varying vec4 vBackUv;
 varying vec4 vMidUv;
 varying vec4 vFrontUv;
 varying vec4 vOffsets;
-varying vec4 vGlowPage;
+varying vec3 vGlow;
+varying vec3 vLayerPages;
 varying vec4 vBurn;
 varying vec3 vTint;
 // Card-local vector from the surface toward the eye (x right, y up, z out of the face), metres.
@@ -65,7 +66,14 @@ void main() {
   vMidUv = aMidUv;
   vFrontUv = aFrontUv;
   vOffsets = aOffsets;
-  vGlowPage = aGlowPage;
+  vGlow = aGlowPage.rgb;
+  float slots = aGlowPage.w;
+  if (slots >= 6.0) {
+    float code = slots - 6.0;
+    vLayerPages = vec3(floor(code / 36.0), floor(mod(code, 36.0) / 6.0), mod(code, 6.0));
+  } else {
+    vLayerPages = vec3(slots);
+  }
   vBurn = aBurn;
   vTint = aTint;
 #ifdef USE_INSTANCING
@@ -105,7 +113,9 @@ uniform sampler2D uPage0;
 uniform sampler2D uPage1;
 uniform sampler2D uPage2;
 uniform sampler2D uPage3;
+uniform sampler2D uPage4;
 uniform float uHasArt;
+uniform float uArtOnlyTexels;
 // Window centre (u from left, v from top), radius as a fraction of width; card height over width.
 uniform vec4 uWindow;
 // Layer plane sizes in window diameters: back, mid, glow, front.
@@ -123,7 +133,8 @@ varying vec4 vBackUv;
 varying vec4 vMidUv;
 varying vec4 vFrontUv;
 varying vec4 vOffsets;
-varying vec4 vGlowPage;
+varying vec3 vGlow;
+varying vec3 vLayerPages;
 varying vec4 vBurn;
 varying vec3 vTint;
 varying vec3 vEye;
@@ -145,7 +156,9 @@ vec4 pageSample(float page, vec2 uv, vec2 gx, vec2 gy) {
   if (page < 0.5) return textureGrad(uPage0, uv, gx, gy);
   if (page < 1.5) return textureGrad(uPage1, uv, gx, gy);
   if (page < 2.5) return textureGrad(uPage2, uv, gx, gy);
-  return textureGrad(uPage3, uv, gx, gy);
+  if (page < 3.5) return textureGrad(uPage3, uv, gx, gy);
+  if (page < 4.5) return textureGrad(uFrame, uv, gx, gy);
+  return textureGrad(uPage4, uv, gx, gy);
 }
 
 // 1 inside the layer square, 0 outside, so a layer never samples its neighbouring atlas cell.
@@ -206,12 +219,13 @@ void main() {
     vec2 fy = dFdy(frameUv);
     // One frame texel in card widths (the units of w), and a screen pixel in frame texels.
     vec2 frameTexels = abs(vFrameUv.zw - vFrameUv.xy) * vec2(textureSize(uFrame, 0));
-    float texel = 1.0 / frameTexels.x;
+    bool artOnly = uArtOnlyTexels > 0.0;
+    float texel = 1.0 / (artOnly ? uArtOnlyTexels : frameTexels.x);
     float footprint = max(1.0, fwidth(dist) / texel);
     float edge = min(EDGE_TEXELS + EDGE_FOOTPRINTS * footprint, EDGE_MAX_TEXELS) * texel;
     // The art runs under the frame out to the opaque brass, so nothing on the edge is discarded.
     bool inWindow = dist < uWindow.z + edge;
-    vec4 frame = texture2D(uFrame, frameUv);
+    vec4 frame = artOnly ? vec4(0.0) : texture2D(uFrame, frameUv);
     if (!inWindow && frame.a < 0.5) discard;
     color = frame.rgb;
 
@@ -221,23 +235,22 @@ void main() {
       vec2 slope = vec2(eye.x, -eye.y) / max(eye.z, 0.2);
       float steep = length(slope);
       if (steep > MAX_SLOPE) slope *= MAX_SLOPE / steep;
-      float page = vGlowPage.w;
       vec2 backL = clamp((q - slope * uDepths.x) / uSizes.x + 0.5, 0.0, 1.0);
       vec2 midL = (q - slope * uDepths.y) / uSizes.y + 0.5;
       vec2 frontL = (q - slope * uDepths.w - vOffsets.xy) / uSizes.w + 0.5;
       vec2 backSpan = vBackUv.zw - vBackUv.xy;
       vec2 midSpan = vMidUv.zw - vMidUv.xy;
       vec2 frontSpan = vFrontUv.zw - vFrontUv.xy;
-      vec3 art = pageSample(page, vBackUv.xy + backL * backSpan, qx / uSizes.x * backSpan, qy / uSizes.x * backSpan).rgb;
+      vec3 art = pageSample(vLayerPages.x, vBackUv.xy + backL * backSpan, qx / uSizes.x * backSpan, qy / uSizes.x * backSpan).rgb;
       art = mix(art, uFog.rgb, 1.0 - exp(-uDepths.x * uFog.w));
-      vec4 mid = pageSample(page, vMidUv.xy + clamp(midL, 0.0, 1.0) * midSpan, qx / uSizes.y * midSpan, qy / uSizes.y * midSpan);
+      vec4 mid = pageSample(vLayerPages.y, vMidUv.xy + clamp(midL, 0.0, 1.0) * midSpan, qx / uSizes.y * midSpan, qy / uSizes.y * midSpan);
       vec3 midRgb = mix(mid.rgb, uFog.rgb, 1.0 - exp(-uDepths.y * uFog.w));
       art = mix(art, midRgb, mid.a * inside(midL));
       // The holo card's radial glow texture: 1 at the centre, 0.45 at 35%, 0 at the edge.
       float r = length(q - slope * uDepths.z - vOffsets.zw) / (0.5 * uSizes.z);
       float glow = r < 0.35 ? mix(1.0, 0.45, r / 0.35) : mix(0.45, 0.0, clamp((r - 0.35) / 0.65, 0.0, 1.0));
-      art += vGlowPage.rgb * glow * 0.9;
-      vec4 front = pageSample(page, vFrontUv.xy + clamp(frontL, 0.0, 1.0) * frontSpan, qx / uSizes.w * frontSpan, qy / uSizes.w * frontSpan);
+      art += vGlow * glow * 0.9;
+      vec4 front = pageSample(vLayerPages.z, vFrontUv.xy + clamp(frontL, 0.0, 1.0) * frontSpan, qx / uSizes.w * frontSpan, qy / uSizes.w * frontSpan);
       art = mix(art, front.rgb, front.a * inside(frontL));
       // The window's inner lip: a soft ring of shade, deeper on the side nearer the eye.
       float lip = length(q + slope * WALL) * 2.0;
@@ -261,7 +274,7 @@ void main() {
 
 export interface CardFaceArt {
   readonly atlas: CardAtlas;
-  /** Atlas pages in manifest order; the frames live on one page, card layers on the others. */
+  /** Atlas pages in manifest order. The frame page may also carry card illustration layers. */
   readonly pages: readonly THREE.Texture[];
 }
 
@@ -290,7 +303,9 @@ export function createCardFaceMaterial(): THREE.ShaderMaterial {
       uPage1: { value: blank },
       uPage2: { value: blank },
       uPage3: { value: blank },
+      uPage4: { value: blank },
       uHasArt: { value: 0 },
+      uArtOnlyTexels: { value: 0 },
       uWindow: { value: new THREE.Vector4(0.5, 0.37, 0.41, 1.5) },
       uSizes: { value: new THREE.Vector4(2.6, 0.95, 0.7, 1.05) },
       uDepths: { value: new THREE.Vector4(0.57, 0.3, 0.13, 0.1) },
@@ -302,6 +317,17 @@ export function createCardFaceMaterial(): THREE.ShaderMaterial {
     // Painted card art shows its authored colours; scene tone mapping would desaturate it.
     toneMapped: false,
   });
+}
+
+function dedicatedArtPages(atlas: CardAtlas): number[] {
+  const framePage = atlas.frames.attack.page;
+  const pages = new Set(
+    Object.values(atlas.cards).flatMap((card) =>
+      CARD_LAYER_IDS.map((layer) => card.layers[layer].page),
+    ),
+  );
+  pages.delete(framePage);
+  return [...pages].sort((a, b) => a - b);
 }
 
 /**
@@ -318,12 +344,10 @@ export function applyCardFaceArt(
   const { atlas, pages } = art;
   const frame = atlas.frames.attack;
   const sample = Object.values(atlas.cards)[0] as CardAtlasCard;
-  const artPages = [...new Set(Object.values(atlas.cards).map((c) => c.layers.back.page))].sort(
-    (a, b) => a - b,
-  );
+  const artPages = dedicatedArtPages(atlas);
   const u = material.uniforms as Record<string, THREE.IUniform>;
   (u.uFrame as THREE.IUniform).value = pages[frame.page];
-  if (artPages.length > 4) throw new Error('Card atlas exceeds the four art samplers');
+  if (artPages.length > 5) throw new Error('Card atlas exceeds the five art samplers');
   artPages.forEach((page, i) => {
     (u[`uPage${i}`] as THREE.IUniform).value = pages[page];
   });
@@ -356,17 +380,24 @@ export interface CardFaceInstance {
   frontUv: Rect4;
   /** Front offset xy, glow offset xy, in window diameters. */
   offsets: Rect4;
-  /** Glow colour rgb (linear) and the shader page slot of the card's layers. */
+  /** Linear RGB glow and either one shared slot (0–5) or the three packed slots. */
   glowPage: Rect4;
 }
 
 /** The per-instance data for one card; `id` may be an upgraded id (`strike+`). */
 export function cardFaceInstance(atlas: CardAtlas, id: string): CardFaceInstance {
   const { card, frame } = cardArt(atlas, id);
-  const artPages = [...new Set(Object.values(atlas.cards).map((c) => c.layers.back.page))].sort(
-    (a, b) => a - b,
-  );
-  const slot = artPages.indexOf(card.layers.back.page);
+  const artPages = dedicatedArtPages(atlas);
+  const layerSlots = CARD_LAYER_IDS.map((layer) => {
+    const page = card.layers[layer].page;
+    if (page === atlas.frames.attack.page) return 4;
+    const dedicated = artPages.indexOf(page);
+    // Slot 4 is reserved for the frame page. The fifth dedicated page therefore uses slot 5.
+    return dedicated >= 4 ? dedicated + 1 : dedicated;
+  });
+  const slot = layerSlots.every((value) => value === layerSlots[0])
+    ? layerSlots[0]
+    : 6 + layerSlots[0] * 36 + layerSlots[1] * 6 + layerSlots[2];
   const glow = new THREE.Color(card.glow);
   const front = card.stack.front.offset ?? [0, 0];
   const glowAt = card.stack.glow.offset ?? [0, 0];

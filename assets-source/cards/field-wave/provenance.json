@@ -1,0 +1,56 @@
+{
+  "provider": "OpenAI Media Service",
+  "generator": "Built-in OpenAI ImageGen",
+  "model": "Not exposed by the tool",
+  "file": "field-wave.png",
+  "sha256": "9017d645a2413cc68afec16c7ca11afbdc777ea9b1ab6e4fc57606e1b0ad8619",
+  "reference": [
+    {
+      "path": "assets-source/style/locked/L-cards.png",
+      "sha256": "207a60d3465942c8d16ddb5eee674db576a4a19e3b7070579313f844050b2c52"
+    },
+    {
+      "path": "assets-source/cards/mechanism-wave/mechanism-wave.png",
+      "sha256": "056d5bac3d71c7d6ef4c66a52d45209e41c9b9c5e613b9e17923e6dee23b6ab1"
+    }
+  ],
+  "prompt": "One original transparent production foreground sheet for the Victorian clockwork fantasy tabletop card game Clockwork Spire. The supplied project-owned images are style reference only. Match their painted Gilded Lamplight metal and enamel objects, controlled amber highlights, and strong clear silhouettes at small card size. Square transparent RGBA, exact equally divided 2 by 2 grid. Top left, ARC CHAIN: three brass and glass insulator terminals in a compact asymmetric triangle, linked by two sharp branching pale cyan electrical arcs; one large anchor electrode and two smaller receiver electrodes read clearly, as a single isolated object. No broad electrical haze. Top right, GEAR GRINDER: two interlocking chunky cutting gears and a stub of their gearbox drawn in a low oblique angle, with rusted dark iron teeth, gilded outer bearing and oxide-red enamel guard; flat aggressive diagonal silhouette. Bottom left, PENDULUM WARD: a single swinging brass pendulum bob suspended below an arched shield frame, with a vivid smooth emerald enamel field and forehead cabochon, a tall clear protective silhouette with the pendulum visibly separated from the frame. Bottom right entirely empty transparent. Keep at least 11 percent clear alpha inside every quadrant edge, true alpha through gear and shield gaps, and crisp painted edges. No card frame, words, labels, numerals, figures, landscapes, broad particles, ground shadows, or backplates outside the requested objects.",
+  "settings": {
+    "transparentBackground": true,
+    "layout": "2 by 2 equal grid",
+    "size": [
+      1254,
+      1254
+    ]
+  },
+  "alphaBoundsByQuadrantAt16": {
+    "arc-chain": [
+      60,
+      77,
+      552,
+      585
+    ],
+    "gear-grinder": [
+      44,
+      97,
+      579,
+      573
+    ],
+    "pendulum-ward": [
+      81,
+      26,
+      546,
+      596
+    ],
+    "unused": null
+  },
+  "alphaPeakByQuadrant": {
+    "arc-chain": 255,
+    "gear-grinder": 255,
+    "pendulum-ward": 255,
+    "unused": 1
+  },
+  "alphaNotes": "Original RGBA output kept byte-for-byte. Bottom-right quadrant excluded from packing.",
+  "runtimeDerivation": "scripts/assets/build_card_atlas.py packs each foreground into an existing runtime page alongside shared layers.",
+  "rights": "Original generated foregrounds with project-owned references. Release and owner review pending."
+}

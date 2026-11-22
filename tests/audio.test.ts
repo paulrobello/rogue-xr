@@ -328,6 +328,17 @@ describe('state to music cue mapping', () => {
     expect(sfxForCombatEvent({ type: 'steam-changed', from: 3, to: 1 })).toBe('steam-vent');
     expect(sfxForCombatEvent({ type: 'steam-changed', from: 1, to: 3 })).toBeNull();
     expect(sfxForCombatEvent({ type: 'enemy-died', enemyId: 'sentry' })).toBe('automaton-death');
+    expect(
+      sfxForCombatEvent({
+        type: 'enemy-intent',
+        enemyId: 'trellis-keeper',
+        moveId: 'trellis-brace',
+        intent: 'defend',
+      }),
+    ).toBe('trellis-brace');
+    expect(
+      sfxForCombatEvent({ type: 'enemy-acted', enemyId: 'trellis-keeper', moveId: 'double-cut' }),
+    ).toBe('trellis-double-cut');
     expect(sfxForCombatEvent({ type: 'combat-won' })).toBeNull();
     expect(sfxForCombatEvent({ type: 'combat-lost' })).toBeNull();
   });
@@ -473,8 +484,8 @@ describe('AudioDirector', () => {
     const h = harness();
     await h.director.load();
     const created = h.voices.length + h.flat.length;
-    // 8 spatial pool voices plus one dedicated loop voice, 4 flat voices plus 3 music layers.
-    expect(h.voices).toHaveLength(9);
+    // 8 spatial pool voices plus the dedicated loop voices, 4 flat voices plus 3 music layers.
+    expect(h.voices).toHaveLength(8 + SFX_IDS.filter((id) => SFX[id].loop).length);
     expect(h.flat).toHaveLength(7);
     for (let i = 0; i < 50; i++) {
       h.clock.t += 1;
@@ -798,7 +809,7 @@ describe('AudioDirector', () => {
       setMasterVolume: () => undefined,
     };
     const director = new AudioDirector({ deps, baseUrl: '/' });
-    expect(director.root.children.length).toBe(9);
+    expect(director.root.children).toHaveLength(8 + SFX_IDS.filter((id) => SFX[id].loop).length);
   });
 });
 

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { ENCOUNTER_CONTENT_VERSION } from '../src/combat/encounter-choice.ts';
 import { RunFlow } from '../src/flow/flow.ts';
 import { validateSnapshot } from '../src/persist/saves.ts';
-import { conservatoryFormula } from '../src/rules/alchemy.ts';
+import { conservatoryFormula, ingredientsFor } from '../src/rules/alchemy.ts';
 import { type CommissionKind, commissionPlan } from '../src/rules/commissions.ts';
 import { pressureTarget } from '../src/rules/pressure.ts';
 import { createWorkshop } from '../src/rules/workshop.ts';
@@ -74,12 +75,14 @@ describe('keeper commissions', () => {
     flow.learnFormulaClue('record');
     flow.travelToFloor(3, 0);
     flow.learnFormulaClue('portrait');
-    for (const i of [0, 1, 2] as const) flow.collectIngredient(i);
+    for (const i of ingredientsFor(ENCOUNTER_CONTENT_VERSION)) flow.collectIngredient(i);
     for (const i of flow.alchemyRecipe) flow.addIngredient(i);
+    flow.takePotion();
     flow.applyPotion();
     expect(flow.commission.progress).toBe(0);
-    for (const i of conservatoryFormula(flow.run!.seed).ingredients)
+    for (const i of conservatoryFormula(flow.run!.seed, ENCOUNTER_CONTENT_VERSION).ingredients)
       flow.addFormulaIngredient(i, true);
+    flow.takePotion();
     flow.useFormula('pour');
     if (!flow.conservatoryFormula.opened) flow.useFormula('unlatch');
     flow = reload(flow);

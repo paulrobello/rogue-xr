@@ -48,7 +48,15 @@ export type PuzzleGate =
   | 'archive'
   | 'panel'
   | 'prism'
-  | 'dispatch';
+  | 'dispatch'
+  | 'cistern'
+  | 'reliquary'
+  | 'valvehouse'
+  | 'pendulum'
+  | 'borrowed-light'
+  | 'spring-tension'
+  | 'dark-circuit'
+  | 'drum-gallery';
 
 export type FloorConnection = readonly [DoorRef, DoorRef] & { puzzleGate?: PuzzleGate };
 
@@ -69,6 +77,17 @@ export interface FloorPlan {
   pressureWing?: { gallery: number; pumpRoom: number; source: DoorRef };
   prismAnnex?: { source: DoorRef; clueRoom: number; annexRoom: number };
   dispatchRoom?: { source: DoorRef; replyRoom: number; vaultRoom: number };
+  speakingPipes?: { source: DoorRef; receiverRoom: number; cisternRoom: number };
+  reliquary?: { source: DoorRef; clueRoom: number; reliquaryRoom: number };
+  valvehouse?: { source: DoorRef; supplyRoom: number; valvehouseRoom: number };
+  pendulumGallery?: { source: DoorRef; galleryRoom: number };
+  armoryAlcove?: { room: number };
+  borrowedLight?: { opticsRoom: number; recessRoom: number; gate: DoorRef };
+  drumGallery?: { gallery: number; recess: number; gate: DoorRef };
+  springTension?: { workshop: number; recess: number; gate: DoorRef };
+  darkCircuit?: { switchboard: number; recess: number; gate: DoorRef };
+  floatElevator?: { room: number };
+  shadowStencil?: { room: number };
 }
 
 export interface FloorParams {

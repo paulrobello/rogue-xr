@@ -56,6 +56,14 @@ export const SFX = {
   'prism-annex-open': sfx('prism-annex-open', 'positional', 0.2),
   'astral-lift-open': sfx('astral-lift-open', 'positional', 0.2),
   'dispatch-room-open': sfx('dispatch-room-open', 'positional', 0.2),
+  'cistern-pipe-send': sfx('cistern-pipe-send', 'positional', 0.2),
+  'cistern-grille-open': sfx('cistern-grille-open', 'positional', 0.2),
+  'reliquary-stone-open': sfx('reliquary-stone-open', 'positional', 0.2),
+  'dungeon-torch-crackle': { ...sfx('dungeon-torch-crackle', 'positional', 0, true), gain: 0.22 },
+  'dungeon-chain-wind': sfx('dungeon-chain-wind', 'positional', 0.22),
+  'dungeon-scarab-scrape': sfx('dungeon-scarab-scrape', 'positional', 0.22),
+  'valvehouse-leak': { ...sfx('valvehouse-leak', 'positional', 0, true), gain: 0.26 },
+  'valvehouse-gate-open': sfx('valvehouse-gate-open', 'positional', 0.2),
   'paper-unfold': sfx('paper-unfold', 'positional', 0.2),
   'ui-tick': sfx('ui-tick', 'ui', 0.03),
   'automaton-hit': sfx('automaton-hit', 'positional', 0.05),
@@ -63,6 +71,7 @@ export const SFX = {
   'table-unfold': sfx('table-unfold', 'positional', 0.2),
   'reward-chime': sfx('reward-chime', 'ui', 0.2),
   'pendulum-tick': sfx('pendulum-tick', 'positional', 0.2),
+  'pendulum-gallery-open': sfx('pendulum-gallery-open', 'positional', 0.2),
   'clockwork-chime-low': sfx('clockwork-chime-low', 'positional', 0.08),
   'clockwork-chime-mid': sfx('clockwork-chime-mid', 'positional', 0.08),
   'clockwork-chime-high': sfx('clockwork-chime-high', 'positional', 0.08),
@@ -72,6 +81,28 @@ export const SFX = {
   'block-ward': sfx('block-ward', 'positional', 0.1),
   'panel-solid': sfx('panel-solid', 'positional', 0.08),
   'panel-hollow': sfx('panel-hollow', 'positional', 0.08),
+  'armory-awaken': sfx('armory-awaken', 'positional', 0.2),
+  'borrowed-light-receiver': sfx('borrowed-light-receiver', 'positional', 0.08),
+  'borrowed-light-open': sfx('borrowed-light-open', 'positional', 0.2),
+  'reservoir-fill': sfx('reservoir-fill', 'positional', 0.2),
+  'reservoir-drain': sfx('reservoir-drain', 'positional', 0.2),
+  'reservoir-release': sfx('reservoir-release', 'positional', 0.2),
+  'stencil-slide': sfx('stencil-slide', 'positional', 0.12),
+  'stencil-release': sfx('stencil-release', 'positional', 0.2),
+  'spring-wind': sfx('spring-wind', 'positional', 0.08),
+  'spring-catch': sfx('spring-catch', 'positional', 0.12),
+  'spring-slip': sfx('spring-slip', 'positional', 0.12),
+  'spring-release': sfx('spring-release', 'positional', 0.2),
+  'circuit-bridge': sfx('circuit-bridge', 'positional', 0.12),
+  'circuit-grille-open': sfx('circuit-grille-open', 'positional', 0.2),
+  'drum-reed-low': sfx('drum-reed-low', 'positional', 0.08),
+  'drum-reed-mid': sfx('drum-reed-mid', 'positional', 0.08),
+  'drum-reed-high': sfx('drum-reed-high', 'positional', 0.08),
+  'drum-index': sfx('drum-index', 'positional', 0.04),
+  'drum-pin': sfx('drum-pin', 'positional', 0.12),
+  'drum-grille-open': sfx('drum-grille-open', 'positional', 0.2),
+  'trellis-brace': sfx('trellis-brace', 'positional', 0.12),
+  'trellis-double-cut': sfx('trellis-double-cut', 'positional', 0.12),
 } as const satisfies Record<string, SfxDef>;
 
 export type SfxId = keyof typeof SFX;
@@ -84,6 +115,14 @@ export const PUZZLE_GATE_OPEN_SFX = {
   thorn: 'thorn-ward-open',
   prism: 'prism-annex-open',
   dispatch: 'dispatch-room-open',
+  cistern: 'cistern-grille-open',
+  reliquary: 'reliquary-stone-open',
+  valvehouse: 'valvehouse-gate-open',
+  pendulum: 'pendulum-gallery-open',
+  'borrowed-light': 'borrowed-light-open',
+  'spring-tension': 'spring-release',
+  'dark-circuit': 'circuit-grille-open',
+  'drum-gallery': 'drum-grille-open',
 } as const satisfies Record<Exclude<PuzzleGate, 'archive'>, SfxId>;
 
 export const ARCHIVE_GATE_OPEN_SFX = {
@@ -342,6 +381,14 @@ export function sfxForCombatEvent(event: CombatEvent): SfxId | null {
       return event.to < event.from ? 'steam-vent' : null;
     case 'enemy-phase':
       return 'gear-clank';
+    case 'enemy-intent':
+      if (event.moveId === 'draw-chain') return 'dungeon-chain-wind';
+      if (event.moveId === 'mortar-rake') return 'dungeon-scarab-scrape';
+      if (event.moveId === 'trellis-brace') return 'trellis-brace';
+      return null;
+    case 'enemy-acted':
+      if (event.moveId === 'double-cut') return 'trellis-double-cut';
+      return null;
     case 'enemy-died':
       return 'automaton-death';
     default:

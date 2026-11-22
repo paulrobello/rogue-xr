@@ -7,7 +7,16 @@ import { nodeGeometryLoader } from './helpers/gltf-node.ts';
 
 async function loadHall(directory: 'hall' | 'hall-closed'): Promise<THREE.Group> {
   const bytes = Uint8Array.from(await readFile(`public/assets/rooms/${directory}/hall.glb`));
-  return (await nodeGeometryLoader().parseAsync(bytes.buffer, '')).scene;
+  const scene = (await nodeGeometryLoader().parseAsync(bytes.buffer, '')).scene;
+  scene.traverse((node) => {
+    if (
+      node instanceof THREE.Mesh &&
+      node.material instanceof THREE.MeshStandardMaterial &&
+      node.material.name === 'hall_stone-floor'
+    )
+      node.material.lightMap = new THREE.Texture();
+  });
+  return scene;
 }
 
 it('mounts the shipped glass in exterior bays and points the MAPTEST2 projection at an accessible tile', async () => {
@@ -28,18 +37,32 @@ it('mounts the shipped glass in exterior bays and points the MAPTEST2 projection
 
   const cache = view.windowCache;
   const room = view.world.roomGroups[12];
-  const key = room.getObjectByName('window-key-projection');
   const window = room.getObjectByName('window-bay-0');
   const tile = room.getObjectByName('window-cache-tile');
-  if (!cache || !key || !window || !tile) throw new Error('Missing the MAPTEST2 cache scene');
+  if (!cache || !window || !(tile instanceof THREE.Mesh))
+    throw new Error('Missing the MAPTEST2 cache scene');
   expect(window.userData.windowBay.exposed).toBe(true);
   expect(
     window.children.some(
       (node) => node instanceof THREE.Mesh && node.material.name.includes('stained-glass'),
     ),
   ).toBe(true);
-  expect(key.position.x).toBeCloseTo(cache.object.position.x);
-  expect(cache.object.position.z - key.position.z).toBeCloseTo(2.58);
+  expect(room.getObjectByName('window-colored-light')).toBeUndefined();
+  expect(room.getObjectByName('window-key-projection')).toBeUndefined();
+  let floor: THREE.MeshStandardMaterial | undefined;
+  room.traverse((node) => {
+    if (node instanceof THREE.Mesh && node.material.name === 'hall_stone-floor')
+      floor = node.material;
+  });
+  expect(floor?.customProgramCacheKey()).toContain('lancetKey(2.6000, -5.0000)');
+  expect(tile.material.lightMap).toBe(floor?.lightMap);
+  expect(tile.geometry.getAttribute('uv1').array.some((coordinate: number) => coordinate > 0)).toBe(
+    true,
+  );
+  const { x, z } = window.userData.windowBay;
+  const travel = cache.object.position.z - z;
+  expect(travel).toBeGreaterThan(3.3);
+  expect(cache.object.position.x - x).toBeCloseTo(travel * (0.12 / 0.75));
 
   const target = tile.getWorldPosition(new THREE.Vector3());
   const rayOrigin = room.localToWorld(
@@ -98,6 +121,6 @@ it('selects the continuous, separately baked hall at blocked bays and keeps the 
   expect(view.world.roomGroups[0].getObjectByName('test-closed-hall')).toBeDefined();
   expect(view.world.roomGroups[0].getObjectByName('shared-window-wall')).toBeUndefined();
   expect(view.world.roomGroups[12].getObjectByName('test-closed-hall')).toBeUndefined();
-  expect(view.world.roomGroups[12].getObjectByName('window-key-projection')).toBeDefined();
+  expect(view.world.roomGroups[12].getObjectByName('window-cache-tile')).toBeDefined();
   view.dispose();
 });

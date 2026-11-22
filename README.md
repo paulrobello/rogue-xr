@@ -10,6 +10,8 @@ Click the right thumbstick to open the radial menu. Tilt it toward **Settings**,
 
 ## Room layout showcase
 
+Open **Test seeds** on the title board, choose a named preset, then select **New Run**. Add `?playtest` to the title URL for a separate save slot and workshop.
+
 [Walk the room showcase](https://spire.pardev.net/?seed=MAPTEST2). The link uses a separate save slot. Floor 1 includes two puzzle-operated return passages. Its entry hall opens onto the stairs to the enemy-free Upper Works. On a new run, Floor 2 opens in a furnace shaft with turning gears. Steel-lined halls and workshops lead away from the landing. Pressure Works branches off Floor 1. A save made inside its former upstairs wing resumes at the Upper Works stair landing. Walk with the left thumbstick (WASD on desktop), or aim the right controller at a tread, push the right stick forward, and release it to teleport there. Point at the door handle and pull either trigger, or click the handle on desktop. The door swings open and the view fades to the other floor, where you arrive on level ground. Open the radial menu to see your room number, template, and dimensions.
 
 | Route from room 0 | What to inspect |

@@ -1,0 +1,13 @@
+{
+  "glbSha256": "702c062e17e5165890b44293a14a0eb567829b0eceb47dbc42cd124d3de825a1",
+  "reviewer": "gpt-6.2-astra",
+  "stage": "static base model",
+  "score": 84,
+  "threshold": 80,
+  "ownerApproval": "pending",
+  "notes": [
+    "The wrist, grip and chain are visibly connected to the pendant, which clears the thigh in the seated three-quarter view.",
+    "The eye socket stays parented to the torso and reimports at 1.57 m.",
+    "Gauntlet edges, block-shaped boots, and flat amber lighting limit the fidelity to the concept."
+  ]
+}

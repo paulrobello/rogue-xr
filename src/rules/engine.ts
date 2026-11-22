@@ -12,6 +12,7 @@ import {
   type ActorId,
   type Amount,
   type ApplyResult,
+  type CardCost,
   type CardDef,
   type CombatCard,
   type CombatEvent,
@@ -25,12 +26,14 @@ import {
   type EnemyState,
   type Fighter,
   MAX_HAND,
+  type PendingScry,
   PLAYER_ID,
   type PlayerState,
   RulesError,
   STEAM_PER_TURN,
   type Statuses,
   type StatusId,
+  type SuccessfulSigil,
 } from './types.ts';
 
 type StartCombat = Extract<Action, { type: 'start-combat' }>;
@@ -47,6 +50,11 @@ interface Work {
   hand: CombatCard[];
   discard: CombatCard[];
   exhaust: CombatCard[];
+  mechanisms: CombatCard[];
+  scry?: PendingScry;
+  loadedDie?: boolean;
+  rerollDie?: boolean;
+  lastSuccessfulSigil?: SuccessfulSigil;
   rng: RunRngState;
   deck: Stream;
   ai: Stream;
@@ -74,22 +82,46 @@ export function startCombat(setup: Omit<StartCombat, 'type'>): ApplyResult {
 }
 
 /** `base + dice × roll`, floored and never below 0. Throws if a dice amount has no roll. */
-export function resolveAmount(amount: Amount, dice: number | null): number {
+export function resolveAmount(amount: Amount, dice: number | null, steamSpent = 0): number {
   if (typeof amount === 'number') return Math.max(0, Math.floor(amount));
+  if ('perSteam' in amount) return Math.max(0, Math.floor(amount.perSteam * steamSpent));
   if (dice === null) throw new RulesError('A dice amount needs a dice result');
+  if ('atLeast' in amount)
+    return Math.max(0, Math.floor(dice >= amount.atLeast ? amount.high : amount.low));
   return Math.max(0, Math.floor((amount.base ?? 0) + amount.dice * dice));
+}
+
+function hitAmount(
+  effect: Extract<Effect, { type: 'damage' }>,
+  block: number,
+  dice: number | null,
+  steamSpent = 0,
+): number {
+  const bonus = effect.bonusIfSelfBlock;
+  return (
+    resolveAmount(effect.amount, dice, steamSpent) +
+    (bonus && block >= bonus.min ? resolveAmount(bonus.amount, null, steamSpent) : 0)
+  );
+}
+
+function effectAmount(effect: Effect): Amount | undefined {
+  if (effect.type === 'apply-status') return effect.stacks;
+  return 'amount' in effect ? effect.amount : undefined;
 }
 
 export function usesDice(effects: readonly Effect[]): boolean {
   return effects.some((effect) => {
-    const amount =
-      effect.type === 'apply-status'
-        ? effect.stacks
-        : 'amount' in effect
-          ? effect.amount
-          : undefined;
-    return amount !== undefined && typeof amount !== 'number';
+    const amount = effectAmount(effect);
+    return amount !== undefined && typeof amount !== 'number' && !('perSteam' in amount);
   });
+}
+
+export function cardSteamCost(cost: CardCost, availableSteam: number): number {
+  return cost === 'X' ? Math.max(0, availableSteam) : cost;
+}
+
+export function playTarget(state: CombatState, card: CardDef): CardDef['target'] {
+  return (card.echoSigil ? state.lastSuccessfulSigil?.target : undefined) ?? card.target;
 }
 
 export function isAlive(fighter: Fighter): boolean {
@@ -109,7 +141,7 @@ export function intentDamage(state: CombatState, enemyId: string): readonly numb
   if (!enemy?.intent) return [];
   return enemy.intent.effects.flatMap((effect) =>
     effect.type === 'damage'
-      ? [attackDamage(resolveAmount(effect.amount, null), enemy, state.player)]
+      ? [attackDamage(hitAmount(effect, enemy.block, null), enemy, state.player)]
       : [],
   );
 }
@@ -129,6 +161,14 @@ export function validate(state: CombatState, action: Action): string | null {
       return state.phase === 'enemy' ? null : `enemy-act is illegal in phase ${state.phase}`;
     case 'play-card':
       return validatePlay(state, action);
+    case 'resolve-scry': {
+      if (state.phase !== 'scry' || !state.scry) return 'No Scry choice is open';
+      const visible = state.piles.draw.slice(0, state.scry.count);
+      const valid =
+        new Set(action.discard).size === action.discard.length &&
+        action.discard.every((uid) => visible.some((card) => card.uid === uid));
+      return valid ? null : 'Discard choices must name distinct revealed cards';
+    }
   }
 }
 
@@ -146,6 +186,9 @@ export function apply(state: CombatState, action: Action): ApplyResult {
     case 'play-card':
       playCard(w, action);
       break;
+    case 'resolve-scry':
+      resolveScry(w, action.discard);
+      break;
     case 'end-turn':
       endTurn(w);
       break;
@@ -157,8 +200,60 @@ export function apply(state: CombatState, action: Action): ApplyResult {
 }
 
 function validateCard(def: CardDef): string | null {
-  if (!Number.isInteger(def.cost) || def.cost < 0) return `Card ${def.id} has an invalid cost`;
-  const aimed = def.effects.some((e) => 'target' in e && e.target === 'target');
+  if (def.cost !== 'X' && (!Number.isInteger(def.cost) || def.cost < 0))
+    return `Card ${def.id} has an invalid cost`;
+  if (def.echoSigil && (def.target !== 'none' || def.effects.length > 0 || def.mechanism))
+    return `Echo card ${def.id} must use only its remembered spell`;
+  const mechanism = def.mechanism;
+  if (mechanism) {
+    if (def.target !== 'none' || def.effects.length > 0)
+      return `Mechanism ${def.id} must install without an immediate effect or target`;
+    if (usesDice(mechanism.effects)) return `Mechanism ${def.id} cannot require a die result`;
+    for (const effect of mechanism.effects) {
+      const amount = effectAmount(effect);
+      if (effect.type === 'scry' || (typeof amount === 'object' && 'perSteam' in amount))
+        return `Mechanism ${def.id} cannot require a player choice or spent Steam`;
+      const aimed =
+        ('target' in effect &&
+          (effect.target === 'target' || effect.target === 'other-opponents')) ||
+        (effect.type === 'block-from-status' && effect.removeFrom === 'target');
+      if (aimed && !mechanism.target)
+        return `Mechanism ${def.id} aims an effect but targets nothing`;
+    }
+  }
+  for (const effect of def.effects) {
+    if (
+      effect.type === 'damage' &&
+      effect.extraHitsIfTargetRust !== undefined &&
+      (effect.target !== 'target' ||
+        !Number.isInteger(effect.extraHitsIfTargetRust) ||
+        effect.extraHitsIfTargetRust < 0)
+    )
+      return `Card ${def.id} has invalid Rust hit bonus`;
+    const amount = effectAmount(effect);
+    if (amount === undefined || typeof amount === 'number' || !('perSteam' in amount)) continue;
+    if (!Number.isFinite(amount.perSteam) || amount.perSteam <= 0)
+      return `Card ${def.id} has an invalid perSteam amount`;
+    if (def.cost !== 'X') return `Card ${def.id} uses perSteam without an X cost`;
+  }
+  const scryAt = def.effects.findIndex((effect) => effect.type === 'scry');
+  if (scryAt !== -1) {
+    const scry = def.effects[scryAt];
+    if (scry.type !== 'scry' || scryAt !== def.effects.length - 1)
+      return `Card ${def.id} must end with its only Scry effect`;
+    const after = scry.drawAfter ?? 0;
+    if (
+      !Number.isInteger(scry.count) ||
+      scry.count < 1 ||
+      scry.count > 4 ||
+      !Number.isInteger(after) ||
+      after < 0
+    )
+      return `Card ${def.id} has invalid Scry values`;
+  }
+  const aimed = def.effects.some(
+    (e) => 'target' in e && (e.target === 'target' || e.target === 'other-opponents'),
+  );
   if (aimed && def.target !== 'enemy') return `Card ${def.id} aims an effect but targets nothing`;
   return null;
 }
@@ -168,7 +263,21 @@ function validateMove(enemyId: string, move: EnemyMove): string | null {
   if (!Number.isInteger(weight) || weight < 0)
     return `Move ${move.id} needs a non-negative integer weight`;
   if (usesDice(move.effects)) return `Move ${move.id} of ${enemyId} may not use dice amounts`;
-  const playerOnly = move.effects.find((e) => e.type === 'draw' || e.type.endsWith('-steam'));
+  if (
+    move.effects.some((effect) => {
+      const amount = effectAmount(effect);
+      return amount !== undefined && typeof amount !== 'number' && 'perSteam' in amount;
+    })
+  )
+    return `Move ${move.id} of ${enemyId} may not use perSteam amounts`;
+  const playerOnly = move.effects.find(
+    (e) =>
+      e.type === 'draw' ||
+      e.type === 'scry' ||
+      e.type === 'damage-from-block' ||
+      ('target' in e && e.target === 'other-opponents') ||
+      e.type.endsWith('-steam'),
+  );
   if (playerOnly) return `Move ${move.id} of ${enemyId} uses player-only effect ${playerOnly.type}`;
   return null;
 }
@@ -212,8 +321,10 @@ function validatePlay(state: CombatState, action: PlayCard): string | null {
   const card = state.piles.hand.find((c) => c.uid === action.uid);
   if (!card) return `Card ${action.uid} is not in hand`;
   const { def } = card;
-  if (def.cost > state.player.steam) return `Card ${def.id} costs ${def.cost} steam`;
-  if (def.target === 'enemy') {
+  const cost = cardSteamCost(def.cost, state.player.steam);
+  if (cost > state.player.steam) return `Card ${def.id} costs ${def.cost} steam`;
+  if (def.echoSigil && !state.lastSuccessfulSigil) return 'Cast a sigil successfully before Echo';
+  if (playTarget(state, def) === 'enemy') {
     const target = state.enemies.find((e) => e.id === action.target);
     if (!target || !isAlive(target)) return `Card ${def.id} needs a living enemy target`;
   } else if (action.target !== undefined) {
@@ -260,6 +371,7 @@ function setupWork(action: StartCombat): Work {
     hand: [],
     discard: [],
     exhaust: [],
+    mechanisms: [],
     rng: action.rng,
     deck: new Stream(action.rng.deck),
     ai: new Stream(action.rng.ai),
@@ -286,6 +398,11 @@ function openWork(state: CombatState): Work {
     hand: [...state.piles.hand],
     discard: [...state.piles.discard],
     exhaust: [...state.piles.exhaust],
+    mechanisms: [...(state.mechanisms ?? [])],
+    scry: state.scry,
+    loadedDie: state.loadedDie,
+    rerollDie: state.rerollDie,
+    lastSuccessfulSigil: state.lastSuccessfulSigil,
     rng: state.rng,
     deck: new Stream(state.rng.deck),
     ai: new Stream(state.rng.ai),
@@ -301,6 +418,11 @@ function closeWork(w: Work): CombatState {
     player: w.player,
     enemies: w.enemies,
     piles: { draw: w.draw, hand: w.hand, discard: w.discard, exhaust: w.exhaust },
+    ...(w.mechanisms.length > 0 ? { mechanisms: w.mechanisms } : {}),
+    ...(w.scry ? { scry: w.scry } : {}),
+    ...(w.loadedDie ? { loadedDie: true } : {}),
+    ...(w.rerollDie ? { rerollDie: true } : {}),
+    ...(w.lastSuccessfulSigil ? { lastSuccessfulSigil: w.lastSuccessfulSigil } : {}),
     rng: { ...w.rng, deck: w.deck.snapshot(), ai: w.ai.snapshot() },
   };
 }
@@ -458,6 +580,7 @@ function targetsOf(
 ): ActorId[] {
   if (target === 'self') return [actor];
   if (target === 'all-opponents') return opponents(w, actor);
+  if (target === 'other-opponents') return opponents(w, actor).filter((id) => id !== chosen);
   return chosen === null ? [] : [chosen];
 }
 
@@ -480,6 +603,14 @@ function dealHit(w: Work, source: ActorId, target: ActorId, base: number): void 
   checkDeath(w, target);
 }
 
+function heal(w: Work, target: ActorId, raw: number): void {
+  const fighterState = fighter(w, target);
+  const amount = Math.min(Math.max(0, raw), fighterState.maxHp - fighterState.hp);
+  if (amount <= 0) return;
+  update(w, target, { hp: fighterState.hp + amount });
+  w.events.push({ type: 'healed', target, amount });
+}
+
 /**
  * Resolves effects in order from `actor`'s point of view. `chosen` is the card's target (or the player
  * for an enemy move). Stops as soon as the combat is decided; effects aimed at a dead fighter do nothing.
@@ -490,32 +621,44 @@ function resolveEffects(
   effects: readonly Effect[],
   chosen: ActorId | null,
   dice: number | null,
+  steamSpent = 0,
 ): void {
   const aimedIntent = w.enemies.find((enemy) => enemy.id === chosen)?.intent;
   for (const effect of effects) {
     if (isOver(w) || !isAlive(fighter(w, actor))) return;
     switch (effect.type) {
       case 'damage': {
-        const base = resolveAmount(effect.amount, dice);
-        for (let hit = 0; hit < (effect.hits ?? 1) && !isOver(w); hit++) {
+        const base = hitAmount(effect, fighter(w, actor).block, dice, steamSpent);
+        if (base === 0 && typeof effect.amount !== 'number' && 'perSteam' in effect.amount) break;
+        const targetRust =
+          effect.extraHitsIfTargetRust && chosen !== null
+            ? stacks(fighter(w, chosen).statuses, 'rust') > 0
+            : false;
+        const hits = (effect.hits ?? 1) + (targetRust ? (effect.extraHitsIfTargetRust ?? 0) : 0);
+        for (let hit = 0; hit < hits && !isOver(w); hit++) {
           for (const target of targetsOf(w, actor, effect.target, chosen)) {
             if (!isOver(w)) dealHit(w, actor, target, base);
           }
         }
         break;
       }
+      case 'heal':
+        heal(w, actor, resolveAmount(effect.amount, dice, steamSpent));
+        break;
       case 'block': {
-        gainBlock(w, actor, resolveAmount(effect.amount, dice));
+        const amount = resolveAmount(effect.amount, dice, steamSpent);
+        if (amount === 0 && typeof effect.amount !== 'number' && 'perSteam' in effect.amount) break;
+        gainBlock(w, actor, amount);
         break;
       }
       case 'gain-steam':
-        setSteam(w, w.player.steam + resolveAmount(effect.amount, dice));
+        setSteam(w, w.player.steam + resolveAmount(effect.amount, dice, steamSpent));
         break;
       case 'lose-steam':
-        setSteam(w, Math.max(0, w.player.steam - resolveAmount(effect.amount, dice)));
+        setSteam(w, Math.max(0, w.player.steam - resolveAmount(effect.amount, dice, steamSpent)));
         break;
       case 'apply-status': {
-        const count = resolveAmount(effect.stacks, dice);
+        const count = resolveAmount(effect.stacks, dice, steamSpent);
         if (count === 0) break;
         for (const target of targetsOf(w, actor, effect.target, chosen)) {
           const current = fighter(w, target);
@@ -561,11 +704,23 @@ function resolveEffects(
           aimedIntent?.effects.reduce((n, e) => n + (e.type === 'damage' ? (e.hits ?? 1) : 0), 0) ??
           0;
         if (hits < effect.minTargetHits) break;
-        gainBlock(w, actor, resolveAmount(effect.amount, dice));
+        gainBlock(w, actor, resolveAmount(effect.amount, dice, steamSpent));
         break;
       }
+      case 'damage-from-block':
+        if (chosen && fighter(w, actor).block > 0)
+          dealHit(w, actor, chosen, fighter(w, actor).block);
+        break;
       case 'draw':
-        drawCards(w, resolveAmount(effect.amount, dice));
+        drawCards(w, resolveAmount(effect.amount, dice, steamSpent));
+        break;
+      case 'scry':
+        throw new RulesError('Scry must finish a player card');
+      case 'load-die':
+        w.loadedDie = true;
+        break;
+      case 'allow-reroll':
+        w.rerollDie = true;
         break;
     }
   }
@@ -584,6 +739,8 @@ function startTurn(w: Work): void {
     tickStatus(w, PLAYER_ID, 'plating');
   }
   setSteam(w, STEAM_PER_TURN);
+  triggerMechanisms(w, 'start-turn');
+  if (isOver(w)) return;
   drawCards(w, DRAW_PER_TURN);
 }
 
@@ -591,11 +748,57 @@ function playCard(w: Work, action: PlayCard): void {
   const index = w.hand.findIndex((c) => c.uid === action.uid);
   const [card] = w.hand.splice(index, 1) as [CombatCard];
   const { def } = card;
-  const dice = action.dice ?? null;
+  const echo = def.echoSigil ? w.lastSuccessfulSigil : undefined;
+  const effects = echo?.effects ?? def.effects;
+  const dice = (echo ? echo.dice : action.dice) ?? null;
   const target = action.target ?? null;
-  if (def.cost > 0) setSteam(w, w.player.steam - def.cost);
-  w.events.push({ type: 'card-played', uid: card.uid, cardId: def.id, target, dice });
-  resolveEffects(w, PLAYER_ID, def.effects, target, dice);
+  const steamSpent = cardSteamCost(def.cost, w.player.steam);
+  if (steamSpent > 0) setSteam(w, w.player.steam - steamSpent);
+  w.events.push({
+    type: 'card-played',
+    uid: card.uid,
+    cardId: def.id,
+    target,
+    dice,
+    ...(echo && { echoedCardId: echo.cardId }),
+    ...(def.cost === 'X' ? { steamSpent } : {}),
+  });
+  if (def.mechanism) {
+    const replaced = w.mechanisms.length >= 3 ? w.mechanisms[0] : undefined;
+    if (replaced) {
+      w.mechanisms = w.mechanisms.slice(1);
+      w.exhaust.push(replaced);
+      w.events.push({ type: 'card-exhausted', uid: replaced.uid, cardId: replaced.def.id });
+    }
+    w.mechanisms.push(card);
+    w.events.push({
+      type: 'mechanism-installed',
+      uid: card.uid,
+      cardId: def.id,
+      ...(replaced ? { replacedUid: replaced.uid } : {}),
+    });
+    return;
+  }
+  const last = effects.at(-1);
+  if (last?.type === 'scry') {
+    resolveEffects(w, PLAYER_ID, effects.slice(0, -1), target, dice, steamSpent);
+    if (!isOver(w)) {
+      const count = Math.min(last.count, w.draw.length);
+      const drawAfter = last.drawAfter ?? 0;
+      if (count > 0) {
+        w.scry = { count, drawAfter, card };
+        w.phase = 'scry';
+        w.events.push({ type: 'scry-ready', count });
+        return;
+      }
+      drawCards(w, drawAfter);
+    }
+  } else resolveEffects(w, PLAYER_ID, effects, target, dice, steamSpent);
+  settlePlayedCard(w, card);
+}
+
+function settlePlayedCard(w: Work, card: CombatCard): void {
+  const { def } = card;
   if (def.exhaust) {
     w.exhaust.push(card);
     w.events.push({ type: 'card-exhausted', uid: card.uid, cardId: def.id });
@@ -603,6 +806,24 @@ function playCard(w: Work, action: PlayCard): void {
     w.discard.push(card);
     w.events.push({ type: 'card-discarded', uid: card.uid, cardId: def.id });
   }
+}
+
+function resolveScry(w: Work, discard: readonly number[]): void {
+  const pending = w.scry;
+  if (!pending) throw new RulesError('No Scry choice is open');
+  const chosen = new Set(discard);
+  const revealed = w.draw.splice(0, pending.count);
+  w.draw.unshift(...revealed.filter((card) => !chosen.has(card.uid)));
+  for (const card of revealed) {
+    if (!chosen.has(card.uid)) continue;
+    w.discard.push(card);
+    w.events.push({ type: 'card-discarded', uid: card.uid, cardId: card.def.id });
+  }
+  w.scry = undefined;
+  w.phase = 'player';
+  w.events.push({ type: 'scry-finished', discarded: chosen.size });
+  drawCards(w, pending.drawAfter);
+  settlePlayedCard(w, pending.card);
 }
 
 function endTurn(w: Work): void {
@@ -613,8 +834,37 @@ function endTurn(w: Work): void {
   }
   w.hand = w.hand.filter((card) => card.def.pinned);
   decayAtTurnEnd(w, PLAYER_ID);
+  w.loadedDie = false;
+  triggerMechanisms(w, 'end-turn');
+  if (isOver(w)) return;
   w.events.push({ type: 'turn-ended', turn: w.turn });
   w.phase = 'enemy';
+}
+
+function triggerMechanisms(w: Work, timing: 'start-turn' | 'end-turn'): void {
+  for (const card of w.mechanisms) {
+    const mechanism = card.def.mechanism;
+    if (!mechanism || mechanism.timing !== timing || isOver(w)) continue;
+    const target = mechanism.target === 'least-hp' ? leastHpEnemy(w) : null;
+    w.events.push({
+      type: 'mechanism-triggered',
+      uid: card.uid,
+      cardId: card.def.id,
+      timing,
+      target,
+    });
+    resolveEffects(w, PLAYER_ID, mechanism.effects, target, null);
+    w.events.push({ type: 'mechanism-finished', uid: card.uid });
+  }
+}
+
+function leastHpEnemy(w: Work): string | null {
+  let selected: EnemyState | undefined;
+  for (const enemy of w.enemies) {
+    if (!isAlive(enemy) || (selected && enemy.hp >= selected.hp)) continue;
+    selected = enemy;
+  }
+  return selected?.id ?? null;
 }
 
 /** Each living enemy in order: clear block, Overheat tick, act on its intent, decay, pick next intent. */

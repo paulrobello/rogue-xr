@@ -7,7 +7,13 @@ import { RunRng, Stream } from '../../src/core/rng.ts';
 import { generateFloor, type PlacedRoom } from '../../src/floor/generate.ts';
 import { rollDice } from '../../src/rules/dice.ts';
 import { type Difficulty, difficultyMaxHp } from '../../src/rules/difficulty.ts';
-import { apply, intentDamage, isAlive, startCombat } from '../../src/rules/engine.ts';
+import {
+  apply,
+  cardSteamCost,
+  intentDamage,
+  isAlive,
+  startCombat,
+} from '../../src/rules/engine.ts';
 import {
   chooseReward,
   createRun,
@@ -170,15 +176,26 @@ function playOn(
     ...(dice === undefined ? {} : { dice }),
   };
   const info = getCard(play.card.def.id);
-  return info.sigil === undefined
-    ? apply(state, action).state
-    : playCardWithSigil(state, action, multiplier).state;
+  const played =
+    info.sigil === undefined
+      ? apply(state, action).state
+      : playCardWithSigil(state, action, multiplier).state;
+  // The simulator has no hidden-information discard heuristic. Keep every revealed card on top of
+  // the draw pile so planning and real play both resume the player phase deterministically.
+  return played.scry === undefined
+    ? played
+    : apply(played, { type: 'resolve-scry', discard: [] }).state;
 }
 
 function candidates(state: CombatState, skipped: ReadonlySet<number>): Play[] {
   const living = state.enemies.filter(isAlive).map((e) => e.id);
   return state.piles.hand.flatMap((card): Play[] => {
-    if (skipped.has(card.uid) || card.def.cost > state.player.steam) return [];
+    if (
+      skipped.has(card.uid) ||
+      (card.def.echoSigil && !state.lastSuccessfulSigil) ||
+      cardSteamCost(card.def.cost, state.player.steam) > state.player.steam
+    )
+      return [];
     return card.def.target === 'enemy'
       ? living.map((target) => ({ card, target }))
       : [{ card, target: undefined }];

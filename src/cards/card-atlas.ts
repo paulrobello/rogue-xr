@@ -87,7 +87,7 @@ export function parseCardAtlas(raw: unknown): CardAtlas {
   if (!Array.isArray(atlas.pages) || !atlas.frames || !atlas.cards) {
     throw new Error('card atlas: pages, frames and cards are required');
   }
-  for (const type of ['attack', 'skill', 'sigil'] as const) {
+  for (const type of ['attack', 'skill', 'sigil', 'mechanism'] as const) {
     if (!atlas.frames[type]) throw new Error(`card atlas: missing ${type} frame`);
   }
   for (const [id, card] of Object.entries(atlas.cards)) {
@@ -101,11 +101,19 @@ export function parseCardAtlas(raw: unknown): CardAtlas {
   return atlas as CardAtlas;
 }
 
+function assetRevision(): string {
+  const build =
+    typeof document === 'undefined'
+      ? null
+      : document.querySelector('meta[name="app-build"]')?.getAttribute('content');
+  return build ? `?v=${encodeURIComponent(build)}` : '';
+}
+
 export async function loadCardAtlas(
   url: string = CARD_ATLAS_MANIFEST,
   fetchFn: typeof fetch = fetch,
 ): Promise<CardAtlas> {
-  const response = await fetchFn(url);
+  const response = await fetchFn(url === CARD_ATLAS_MANIFEST ? `${url}${assetRevision()}` : url);
   if (!response.ok) throw new Error(`card atlas ${url}: HTTP ${response.status}`);
   return parseCardAtlas(await response.json());
 }
@@ -154,11 +162,12 @@ export async function loadCardPages(
   base: string = CARD_ATLAS_BASE,
 ): Promise<THREE.Texture[]> {
   const png = new THREE.TextureLoader();
+  const revision = assetRevision();
   return Promise.all(
     atlas.pages.map(async (page) => {
       const texture = ktx2
-        ? await ktx2.loadAsync(`${base}/${page.ktx2}`)
-        : await png.loadAsync(`${base}/${page.png}`);
+        ? await ktx2.loadAsync(`${base}/${page.ktx2}${revision}`)
+        : await png.loadAsync(`${base}/${page.png}${revision}`);
       return configureAtlasPage(texture);
     }),
   );

@@ -1,29 +1,49 @@
 import * as THREE from 'three';
 import { EncounterDirector } from '../combat/encounter.ts';
 import {
+  ARMORY_ALCOVE_VERSION,
+  BORROWED_LIGHT_VERSION,
   BRASS_CACHE_VERSION,
   chooseEncounter,
+  DARK_CIRCUIT_VERSION,
   DISPATCH_ROOM_VERSION,
+  DRUM_GALLERY_VERSION,
+  DUNGEON_CONTENT_VERSION,
   ENCOUNTER_CONTENT_VERSION,
+  FLOAT_ELEVATOR_VERSION,
   HIDDEN_PANEL_VERSION,
   PATROL_VERSION,
+  PENDULUM_GALLERY_VERSION,
   PRESSURE_WORKS_VERSION,
   PRISM_ANNEX_VERSION,
+  RELIQUARY_VERSION,
   RETURN_PASSAGES_VERSION,
+  SHADOW_STENCIL_VERSION,
+  SPEAKING_PIPES_VERSION,
+  SPRING_TENSION_VERSION,
+  THEMED_FURNISHINGS_VERSION,
   UPPER_WORKS_VERSION,
+  VALVEHOUSE_VERSION,
 } from '../combat/encounter-choice.ts';
 import { combatRoom, rigTurnAboutHead } from '../combat/placement.ts';
 import { buildTableGreybox, disposeTable, TABLE_NODES } from '../combat/table-greybox.ts';
+import { ARMORY_ENCOUNTER } from '../content/enemies.ts';
 import { type RoomTemplate, templateById } from '../content/rooms.ts';
 import { isValidSeed, normalizeSeed, randomSeed, Stream } from '../core/rng.ts';
 import { BreakApart } from '../enemies/break-apart.ts';
 import { ClockworkOwlFlight, makeOwlPerch } from '../enemies/conservatory-actors.ts';
 import type { EnemyActor, EnemyAsset } from '../enemies/enemy-asset.ts';
 import { type PatrolClips, PatrolVisual } from '../enemies/patrol-visual.ts';
+import { attachArmoryAlcove } from '../floor/armory-alcove.ts';
+import { attachBorrowedLight } from '../floor/borrowed-light.ts';
 import { conservatoryPlan } from '../floor/conservatory.ts';
+import { attachDarkCircuit } from '../floor/dark-circuit.ts';
 import { attachDispatchRoom } from '../floor/dispatch-room.ts';
+import { attachDrumGallery } from '../floor/drum-gallery.ts';
+import { attachFloatElevator } from '../floor/float-elevator.ts';
 import {
   attachPressureWing,
+  type FloorPlan,
   generateFloor,
   generateUpperFloor,
   isShowcaseFloor,
@@ -31,15 +51,24 @@ import {
 } from '../floor/generate.ts';
 import { attachHiddenPassage } from '../floor/hidden-passage.ts';
 import { type PatrolRoute, patrolPeriod, planPatrol, samplePatrol } from '../floor/patrol.ts';
+import { attachPendulumGallery } from '../floor/pendulum-gallery.ts';
 import { attachPrismAnnex } from '../floor/prism-annex.ts';
+import { attachReliquary } from '../floor/reliquary.ts';
 import { attachFloorOneTopology, withBrassCache } from '../floor/return-passages.ts';
+import { attachShadowStencil } from '../floor/shadow-stencil.ts';
+import { attachSpeakingPipes } from '../floor/speaking-pipes.ts';
+import { attachSpringTension } from '../floor/spring-tension.ts';
 import { placeStairEntry } from '../floor/stairs.ts';
+import { type StoneRoom, stoneRoomsFor } from '../floor/stone-rooms.ts';
+import { attachValvehouse } from '../floor/valvehouse.ts';
 import { nearSet, shellSet } from '../floor/visibility.ts';
+import { wallSpanIsExposed } from '../floor/wall-exposure.ts';
 import { PALETTE } from '../palette.ts';
 import type { RunSnapshot } from '../persist/saves.ts';
 import { conservatoryFormula } from '../rules/alchemy.ts';
 import type { CommissionKind } from '../rules/commissions.ts';
 import type { TreasureLoot } from '../rules/run.ts';
+import type { BellNote } from '../rules/types.ts';
 import {
   DEFAULT_VIGNETTE,
   moveWithCollision,
@@ -49,9 +78,11 @@ import {
   yawFromMatrix,
 } from '../xr/locomotion.ts';
 import { AlchemyConservatory } from './alchemy-conservatory.ts';
+import { ArmoryAlcove } from './armory-alcove.ts';
 import { AstralLift } from './astral-lift.ts';
 import { BellChimes } from './bell-chimes.ts';
 import { BookSecret } from './book-secret.ts';
+import { BorrowedLight } from './borrowed-light.ts';
 import { BrassKeyStand } from './brass-key.ts';
 import { CalibrationBench } from './calibration-bench.ts';
 import { CalibrationCabinet, CalibrationKeyStand } from './calibration-cabinet.ts';
@@ -59,8 +90,11 @@ import { CommissionOffice } from './commission-office.ts';
 import { ConservatoryArchive } from './conservatory-archive.ts';
 import { ConservatoryGallery } from './conservatory-gallery.ts';
 import { CounterweightStation } from './counterweight-station.ts';
+import { DarkCircuit } from './dark-circuit.ts';
 import { DispatchRoom } from './dispatch-room.ts';
-import { animateFires, CANDLE_NODE, FIRE_NODE } from './fireplace.ts';
+import { DrumGallery } from './drum-gallery.ts';
+import { animateFires, CANDLE_NODE, dressTorchFlames, FIRE_NODE } from './fireplace.ts';
+import { FloatElevator } from './float-elevator.ts';
 import { buildFloorWorld, type FloorWorld } from './floor-world.ts';
 import { FormulaEvidence } from './formula-clue.ts';
 import {
@@ -80,6 +114,7 @@ import {
   pickCoffer,
   type ToastLines,
 } from './loot.ts';
+import { PendulumGallery } from './pendulum-gallery.ts';
 import { PressureNotes } from './pressure-notes.ts';
 import { PressureWorks } from './pressure-works.ts';
 import { PrismAnnex } from './prism-annex.ts';
@@ -93,12 +128,19 @@ import {
   roomStyleFor,
 } from './room-styles.ts';
 import { ServicePanels } from './service-panels.ts';
+import { ShadowStencil } from './shadow-stencil.ts';
+import { SpeakingPipes } from './speaking-pipes.ts';
+import { SpringTension } from './spring-tension.ts';
 import { Stairwell } from './stairwell.ts';
+import { StoneReliquary } from './stone-reliquary.ts';
+import { applyStoneRoom, furnishStoneRoom, type StoneRoomKit } from './stone-rooms.ts';
 import { StrikingClock } from './striking-clock.ts';
 import { type RigidNode, rigidAngle } from './study-room.ts';
+import { furnishThemedRoom } from './themed-furnishings.ts';
+import { Valvehouse } from './valvehouse.ts';
 import { WallVentSteam } from './wall-vent-steam.ts';
 import { dressWindowBays, exposedWindowBays } from './window-bays.ts';
-import { mountWindowCast, WindowKeyCache, windowCacheBay } from './window-light.ts';
+import { WindowKeyCache, windowCacheBay } from './window-light.ts';
 
 export interface FloorAudio {
   playChime?(note: 0 | 1 | 2, at: THREE.Vector3): boolean;
@@ -204,16 +246,85 @@ export interface FloorView {
   dressPanels(art: THREE.Object3D, reducedMotion: boolean): void;
   readonly dispatchRoom: DispatchRoom | null;
   dressDispatch(art: THREE.Object3D, runSeed: string, reducedMotion: boolean): void;
+  readonly speakingPipes: SpeakingPipes | null;
+  dressSpeakingPipes(
+    art: THREE.Object3D | undefined,
+    runSeed: string,
+    reducedMotion: boolean,
+  ): void;
+  readonly floatElevator: FloatElevator | null;
+  dressFloatElevator(
+    art: THREE.Object3D | undefined,
+    seed: string,
+    reduced: boolean,
+    environment: THREE.Texture | null,
+  ): void;
+  readonly shadowStencil: ShadowStencil | null;
+  dressShadowStencil(
+    art: THREE.Object3D | undefined,
+    seed: string,
+    reduced: boolean,
+    environment: THREE.Texture | null,
+  ): void;
+  readonly springTension: SpringTension | null;
+  readonly darkCircuit: DarkCircuit | null;
+  readonly drumGallery: DrumGallery | null;
+  dressDrumGallery(
+    art: THREE.Object3D | undefined,
+    seed: string,
+    reduced: boolean,
+    environment: THREE.Texture | null,
+    onBeat: (notes: readonly BellNote[], at: THREE.Vector3) => void,
+    onRelease: (at: THREE.Vector3) => void,
+  ): void;
+  dressDarkCircuit(
+    runSeed: string,
+    reducedMotion: boolean,
+    environment: THREE.Texture | null,
+  ): void;
+  dressSpringTension(
+    art: THREE.Object3D | undefined,
+    seed: string,
+    reduced: boolean,
+    environment: THREE.Texture | null,
+  ): void;
+  readonly borrowedLight: BorrowedLight | null;
+  dressBorrowedLight(
+    art: THREE.Object3D | undefined,
+    seed: string,
+    reduced: boolean,
+    environment: THREE.Texture | null,
+  ): void;
+  readonly pendulumGallery: PendulumGallery | null;
+  dressPendulumGallery(
+    art: THREE.Object3D | undefined,
+    seed: string,
+    reduced: boolean,
+    finish: () => 'ignored' | 'wrong' | 'opened',
+    tick: (at: THREE.Vector3) => void,
+  ): void;
+  readonly armoryAlcove: ArmoryAlcove | null;
+  challengeArmor(head: THREE.Object3D): boolean;
+  readonly valvehouse: Valvehouse | null;
+  dressValvehouse(runSeed: string, reducedMotion: boolean): void;
+  readonly reliquary: StoneReliquary | null;
+  dressReliquary(runSeed: string, reducedMotion: boolean): void;
   readonly counterweight: CounterweightStation | null;
   dressChimes(art: THREE.Object3D): void;
   dressStairs(model: THREE.Object3D): void;
   readonly styledRooms: readonly THREE.Group[];
+  readonly stoneRooms: ReadonlyMap<number, StoneRoom>;
+  readonly stoneTorches: ReadonlyMap<number, THREE.Object3D>;
+  dressStoneFurnishings(kit: StoneRoomKit): void;
+  dressThemedFurnishings(kit: StoneRoomKit): void;
+  dressRoomTorches(reducedMotion: boolean): void;
   loot: FloorLoot;
   readonly brassKeyStand: BrassKeyStand | null;
   dressBrassKey(art: THREE.Object3D): void;
   hearth: FloorHearths;
   book: BookSecret;
   showBookSecret(lines: ToastLines, head: THREE.Object3D): void;
+  dismissPuzzleToast(): void;
   pressure: PressureWorks | null;
   notes: PressureNotes | null;
   readonly furnishings: InteriorFurnishings | null;
@@ -265,6 +376,7 @@ export interface FloorView {
     rigidNodes?: readonly RigidNode[],
     roomStyleKit?: RoomStyleKit,
     instantiateClosedHall?: () => THREE.Object3D,
+    stoneKit?: StoneRoomKit,
   ): number;
   /** Rigid nodes (the gear-shaft crown gear) this floor turns each frame. */
   readonly spinnerCount: number;
@@ -308,18 +420,23 @@ function tagEnemyKinds(
   seed: string,
   contentVersion: number,
   floorNumber: number,
+  stoneRooms: ReadonlyMap<number, StoneRoom>,
 ): void {
   for (const [room, bodies] of world.enemies) {
     const tier = world.plan.rooms[room]?.encounter?.tier;
     if (!tier || bodies.length === 0) continue;
-    const { enemies } = chooseEncounter(
-      seed,
-      room,
-      tier,
-      bodies.length,
-      contentVersion,
-      floorNumber,
-    );
+    const { enemies } =
+      world.plan.armoryAlcove?.room === room
+        ? ARMORY_ENCOUNTER
+        : chooseEncounter(
+            seed,
+            room,
+            tier,
+            bodies.length,
+            contentVersion,
+            floorNumber,
+            stoneRooms.get(room) === 'dungeon',
+          );
     bodies.forEach((body, i) => {
       const kind = enemies[i];
       if (kind) body.userData.enemyKind = kind;
@@ -345,7 +462,19 @@ export function playableFloorPlan(
 ) {
   if (floorNumber === 3) {
     const plan = conservatoryPlan(seed);
-    return contentVersion >= PRISM_ANNEX_VERSION ? attachPrismAnnex(plan) : plan;
+    const prism = contentVersion >= PRISM_ANNEX_VERSION ? attachPrismAnnex(plan) : plan;
+    const gallery =
+      contentVersion >= PENDULUM_GALLERY_VERSION ? attachPendulumGallery(prism) : prism;
+    const optics =
+      contentVersion >= BORROWED_LIGHT_VERSION ? attachBorrowedLight(gallery) : gallery;
+    if (contentVersion < DRUM_GALLERY_VERSION) return optics;
+    const windows = exposedWindowBays(optics, 3);
+    return attachDrumGallery(optics, (candidate) => {
+      const retained = exposedWindowBays(candidate, 3);
+      return windows.every((old) =>
+        retained.some((bay) => bay.room === old.room && bay.x === old.x && bay.z === old.z),
+      );
+    });
   }
   const upperWorks = floorNumber === 2 && contentVersion >= UPPER_WORKS_VERSION;
   const generated = upperWorks ? generateUpperFloor(seed) : generateFloor(seed);
@@ -355,12 +484,47 @@ export function playableFloorPlan(
       : generated;
   if (floorNumber === 2 && contentVersion >= HIDDEN_PANEL_VERSION) {
     const upper = attachHiddenPassage(base);
-    return contentVersion >= DISPATCH_ROOM_VERSION ? attachDispatchRoom(upper) : upper;
+    const dispatch = contentVersion >= DISPATCH_ROOM_VERSION ? attachDispatchRoom(upper) : upper;
+    const pipes =
+      contentVersion >= SPEAKING_PIPES_VERSION ? attachSpeakingPipes(dispatch) : dispatch;
+    const reliquary = contentVersion >= RELIQUARY_VERSION ? attachReliquary(pipes) : pipes;
+    const armory =
+      contentVersion >= ARMORY_ALCOVE_VERSION ? attachArmoryAlcove(reliquary) : reliquary;
+    if (contentVersion < SPRING_TENSION_VERSION) return armory;
+    const preserveAccess = (original: FloorPlan) => {
+      const landing = placeStairEntry(original);
+      const windows = exposedWindowBays(original, 2);
+      return (candidate: FloorPlan) => {
+        const entry = placeStairEntry(candidate);
+        if (entry?.room !== landing?.room || entry?.door !== landing?.door) return false;
+        const remaining = exposedWindowBays(candidate, 2);
+        return windows.every((window) =>
+          remaining.some((bay) => bay.room === window.room && bay.x === window.x),
+        );
+      };
+    };
+    const workshop = attachSpringTension(armory, preserveAccess(armory));
+    return contentVersion >= DARK_CIRCUIT_VERSION
+      ? attachDarkCircuit(workshop, preserveAccess(workshop))
+      : workshop;
   }
   if (contentVersion < PRESSURE_WORKS_VERSION || floorNumber !== 1) return base;
   if (contentVersion < RETURN_PASSAGES_VERSION) return attachPressureWing(base);
   const lower = attachFloorOneTopology(base);
-  return contentVersion >= BRASS_CACHE_VERSION ? withBrassCache(lower) : lower;
+  const brass = contentVersion >= BRASS_CACHE_VERSION ? withBrassCache(lower) : lower;
+  const valves = contentVersion >= VALVEHOUSE_VERSION ? attachValvehouse(brass) : brass;
+  if (contentVersion < FLOAT_ELEVATOR_VERSION) return valves;
+  const windows = exposedWindowBays(valves, 1);
+  const preservesWindows = (candidate: typeof valves): boolean => {
+    const remaining = exposedWindowBays(candidate, 1);
+    return windows.every((window) =>
+      remaining.some((bay) => bay.room === window.room && bay.x === window.x),
+    );
+  };
+  const reservoir = attachFloatElevator(valves, preservesWindows);
+  return contentVersion >= SHADOW_STENCIL_VERSION
+    ? attachShadowStencil(reservoir, preservesWindows)
+    : reservoir;
 }
 
 /** The former upper pressure wing occupied the two appended room indices. */
@@ -418,8 +582,20 @@ export function mountFloorView(
     calibrationKey: CalibrationKeyStand | null = null;
   let panels: ServicePanels | null = null;
   let dispatchRoom: DispatchRoom | null = null;
+  let speakingPipes: SpeakingPipes | null = null;
+  let reliquary: StoneReliquary | null = null;
+  let valvehouse: Valvehouse | null = null;
+  let pendulumGallery: PendulumGallery | null = null;
+  let borrowedLight: BorrowedLight | null = null;
+  let floatElevator: FloatElevator | null = null;
+  let shadowStencil: ShadowStencil | null = null;
+  let springTension: SpringTension | null = null;
+  let darkCircuit: DarkCircuit | null = null;
+  let drumGallery: DrumGallery | null = null;
   let counterweight: CounterweightStation | null = null;
   const floorNumber = options.floorNumber ?? 1;
+  const stoneRooms: ReadonlyMap<number, StoneRoom> =
+    contentVersion >= DUNGEON_CONTENT_VERSION ? stoneRoomsFor(plan, floorNumber) : new Map();
   const world = buildFloorWorld(plan, options.templates);
   const windowBays = exposedWindowBays(plan, floorNumber);
   const cacheBay = floorNumber === 1 ? windowCacheBay(world, windowBays, seed) : undefined;
@@ -432,7 +608,7 @@ export function mountFloorView(
   const guided =
     options.guidedShowcase === true && floorNumber !== 3 && isShowcaseFloor(plan.seed, floorNumber);
   const pressure = plan.pressureWing ? new PressureWorks(world, plan.pressureWing, guided) : null;
-  tagEnemyKinds(world, seed, contentVersion, floorNumber);
+  tagEnemyKinds(world, seed, contentVersion, floorNumber, stoneRooms);
   scene.add(world.group);
   // Greybox lighting is two global lights; per-room sockets get real lights with the lightmaps (P4-T7).
   const sun = new THREE.DirectionalLight(PALETTE.candle, 1.4);
@@ -457,6 +633,9 @@ export function mountFloorView(
   const reducedUnlockMotion =
     typeof globalThis.matchMedia === 'function' &&
     globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const armory = plan.armoryAlcove
+    ? new ArmoryAlcove(world, plan.armoryAlcove.room, reducedUnlockMotion)
+    : null;
   let suspended = false;
   let turnVignette = 0;
   let patrolSeatTurn = 0;
@@ -480,6 +659,7 @@ export function mountFloorView(
     world,
     table: tableHost,
     onCleared: (room) => {
+      if (room === armory?.room) armory.sync(true, true);
       const doorAt = world.releaseGuardedDoor(room, suppressUnlockAudio);
       if (doorAt && !suppressUnlockAudio) floorAudio?.playSfx('door-open', doorAt);
       for (const coffer of world.coffers) {
@@ -558,6 +738,9 @@ export function mountFloorView(
     room: THREE.Object3D;
   }
   const styledRooms: THREE.Group[] = [];
+  const stoneFixtureReleases: (() => void)[] = [];
+  let themedFurnishingsDressed = false;
+  const stoneTorches = new Map<number, THREE.Object3D>();
   const shaftFinishes: THREE.Material[] = [];
   const spinners: Spinner[] = [];
   /** Live fireplace fires (the hall's); instances of one template share the material and its clock. */
@@ -605,7 +788,12 @@ export function mountFloorView(
   const cofferOf = (room: number, socketId: string): Coffer | undefined =>
     world.coffers.find((c) => c.room === room && c.socketId === socketId);
   const lootLocked = (room: number): boolean =>
-    world.plan.rooms[room]?.encounter != null && !encounter.isCleared(room);
+    (world.plan.floatElevator?.room === room && !floatElevator?.released) ||
+    (world.plan.shadowStencil?.room === room && !shadowStencil?.released) ||
+    (world.plan.springTension?.recess === room && !springTension?.released) ||
+    (world.plan.darkCircuit?.recess === room && !darkCircuit?.released) ||
+    (world.plan.drumGallery?.recess === room && !drumGallery?.released) ||
+    (world.plan.rooms[room]?.encounter != null && !encounter.isCleared(room));
   const lockPosition = new THREE.Vector3();
   const loot: FloorLoot = {
     coffers: world.coffers,
@@ -630,7 +818,23 @@ export function mountFloorView(
       dropToast();
       const at = coffer.object.getWorldPosition(new THREE.Vector3());
       toast = new LootToast(
-        { text: 'Locked', caption: 'Defeat this room’s automatons' },
+        {
+          text: 'Locked',
+          caption:
+            plan.floatElevator?.room === room
+              ? floatElevator?.opening
+                ? 'Wait for the shutter'
+                : 'Recover the fitting from the open hatch'
+              : plan.shadowStencil?.room === room
+                ? 'Follow the lantern’s floor symbol'
+                : plan.springTension?.recess === room
+                  ? 'Release the spring at the marked tension'
+                  : plan.darkCircuit?.recess === room
+                    ? 'Power the marked lamps to release the grille'
+                    : plan.drumGallery?.recess === room
+                      ? 'Repair and play the drum to release the grille'
+                      : 'Defeat this room’s automatons',
+        },
         at.setY(at.y + TOAST_LIFT),
       );
       world.group.add(toast.root);
@@ -729,6 +933,151 @@ export function mountFloorView(
         furnishings?.placements,
       );
     },
+    get speakingPipes() {
+      return speakingPipes;
+    },
+    dressSpeakingPipes(art, runSeed, reducedMotion) {
+      speakingPipes ??= SpeakingPipes.mount(
+        world,
+        art,
+        runSeed,
+        reducedMotion,
+        furnishings?.placements,
+      );
+    },
+    get floatElevator() {
+      return floatElevator;
+    },
+    dressFloatElevator(art, runSeed, reducedMotion, environment) {
+      floatElevator ??= FloatElevator.mount(
+        world,
+        runSeed,
+        reducedMotion,
+        art,
+        environment,
+        furnishings?.placements,
+      );
+    },
+    get shadowStencil() {
+      return shadowStencil;
+    },
+    dressShadowStencil(art, runSeed, reducedMotion, environment) {
+      shadowStencil ??= ShadowStencil.mount(
+        world,
+        runSeed,
+        reducedMotion,
+        art,
+        environment,
+        furnishings?.placements,
+      );
+    },
+    get springTension() {
+      return springTension;
+    },
+    get darkCircuit() {
+      return darkCircuit;
+    },
+    get drumGallery() {
+      return drumGallery;
+    },
+    dressDrumGallery(art, seed, reduced, environment, onBeat, onRelease) {
+      if (plan.drumGallery)
+        drumGallery ??= new DrumGallery(
+          world,
+          plan.drumGallery,
+          seed,
+          reduced,
+          art,
+          environment,
+          furnishings?.placements ?? [],
+          { onBeat, onRelease },
+        );
+    },
+    dressDarkCircuit(runSeed, reducedMotion, environment) {
+      if (plan.darkCircuit)
+        darkCircuit ??= new DarkCircuit(
+          world,
+          plan.darkCircuit,
+          runSeed,
+          reducedMotion,
+          environment,
+          furnishings?.placements ?? [],
+        );
+    },
+    dressSpringTension(art, runSeed, reducedMotion, environment) {
+      if (plan.springTension)
+        springTension ??= new SpringTension(
+          world,
+          plan.springTension,
+          runSeed,
+          reducedMotion,
+          art,
+          environment,
+          furnishings?.placements,
+        );
+    },
+    get borrowedLight() {
+      return borrowedLight;
+    },
+    dressBorrowedLight(art, runSeed, reducedMotion, environment) {
+      if (plan.borrowedLight)
+        borrowedLight ??= new BorrowedLight(
+          world,
+          plan.borrowedLight,
+          runSeed,
+          reducedMotion,
+          art,
+          environment,
+        );
+    },
+    get pendulumGallery() {
+      return pendulumGallery;
+    },
+    dressPendulumGallery(art, runSeed, reducedMotion, finish, tick) {
+      pendulumGallery ??= PendulumGallery.mount(
+        world,
+        art,
+        runSeed,
+        reducedMotion,
+        finish,
+        tick,
+        furnishings?.placements,
+      );
+    },
+    armoryAlcove: armory,
+    challengeArmor(head) {
+      if (!armory?.canChallenge || suspended || encounter.phase !== 'idle') return false;
+      head.getWorldPosition(at);
+      const began = encounter.begin(armory.room, {
+        x: at.x,
+        z: at.z,
+        yaw: yawFromMatrix(head.matrixWorld.elements),
+        eyeHeight: at.y,
+      });
+      if (!began.ok) {
+        this.showBookSecret(
+          { text: 'Make room for the table', caption: 'Step back and face the armor' },
+          head,
+        );
+        return false;
+      }
+      armory.showFight(true);
+      if (fit) fit.scale.set(1, began.table.pose.height / authoredTop, 1);
+      alignSeat(began.table.offsetDeg, at);
+      return true;
+    },
+    get valvehouse() {
+      return valvehouse;
+    },
+    dressValvehouse(runSeed, reducedMotion) {
+      valvehouse ??= Valvehouse.mount(world, runSeed, reducedMotion, furnishings?.placements);
+    },
+    get reliquary() {
+      return reliquary;
+    },
+    dressReliquary(runSeed, reducedMotion) {
+      reliquary ??= StoneReliquary.mount(world, runSeed, reducedMotion, furnishings?.placements);
+    },
     get brassKeyStand() {
       return brassKeyStand;
     },
@@ -807,6 +1156,7 @@ export function mountFloorView(
           runSeed,
           null,
           furnishings?.placements,
+          contentVersion,
         );
         return;
       }
@@ -816,6 +1166,7 @@ export function mountFloorView(
         runSeed,
         reducedMotion,
         furnishings?.placements,
+        contentVersion,
       );
       clockwork = StrikingClock.mount(world, art, runSeed, reducedMotion, furnishings?.placements);
       gallery = ConservatoryGallery.mount(
@@ -827,7 +1178,15 @@ export function mountFloorView(
         furnishings?.placements,
       );
       if (!clockwork || !gallery) throw Error('Missing a Conservatory wall bay');
-      formulaEvidence = FormulaEvidence.mount(world, art, archiveKit, runSeed, gallery);
+      formulaEvidence = FormulaEvidence.mount(
+        world,
+        art,
+        archiveKit,
+        runSeed,
+        gallery,
+        [],
+        contentVersion,
+      );
       archive = ConservatoryArchive.mount(
         world,
         archiveKit,
@@ -893,11 +1252,58 @@ export function mountFloorView(
       }
     },
     styledRooms,
+    stoneRooms,
+    stoneTorches,
+    dressStoneFurnishings(kit) {
+      for (const room of styledRooms) {
+        if (!stoneRooms.has(room.userData.room) || !room.userData.roomStyle?.startsWith('stone-'))
+          continue;
+        stoneFixtureReleases.push(
+          ...furnishStoneRoom(
+            world,
+            room.userData.room,
+            room,
+            kit,
+            furnishings?.placements ?? [],
+            armory?.room === room.userData.room ? armory?.object : undefined,
+          ),
+        );
+        const torch = room.getObjectByName('SocketTorchLight');
+        if (torch) stoneTorches.set(room.userData.room, torch);
+      }
+    },
+    dressThemedFurnishings(kit) {
+      if (contentVersion < THEMED_FURNISHINGS_VERSION || themedFurnishingsDressed) return;
+      themedFurnishingsDressed = true;
+      const styled = new Map(styledRooms.map((room) => [room.userData.room, room]));
+      for (const [index, parent] of world.roomGroups.entries()) {
+        if (stoneRooms.has(index) || cacheBay?.room === index) continue;
+        stoneFixtureReleases.push(
+          ...furnishThemedRoom(
+            world,
+            index,
+            styled.get(index) ?? parent,
+            kit,
+            furnishings?.placements ?? [],
+            floorNumber,
+          ),
+        );
+      }
+    },
+    dressRoomTorches(reducedMotion) {
+      for (const room of world.roomGroups) {
+        const fire = dressTorchFlames(room, reducedMotion);
+        if (!fire) continue;
+        fires.push({ material: fire.material, room });
+        stoneFixtureReleases.push(() => fire.dispose());
+      }
+    },
     loot,
     hearth,
     book,
     pressure,
     notes,
+    dismissPuzzleToast: dropToast,
     showBookSecret(lines, head) {
       dropToast();
       const anchor = head.localToWorld(new THREE.Vector3(0, 0.32, -1.65));
@@ -917,6 +1323,12 @@ export function mountFloorView(
           preservedBookRooms: options.preservedBookRooms,
         });
         book.mount(furnishings);
+        const assetForFight = armory?.dress(asset.roots.ClockworkArmor);
+        if (assetForFight) {
+          models.set(assetForFight.id, { asset: assetForFight });
+          undressed = true;
+          dressEnemies();
+        }
       }
     },
     setCandleMaterials(materials, reducedMotion) {
@@ -1013,19 +1425,27 @@ export function mountFloorView(
       undressed = true;
       dressEnemies();
     },
-    useRoomAsset(templateId, instantiate, rigidNodes = [], roomStyleKit, instantiateClosedHall) {
+    useRoomAsset(
+      templateId,
+      instantiate,
+      rigidNodes = [],
+      roomStyleKit,
+      instantiateClosedHall,
+      stoneKit,
+    ) {
       if (floorNumber === 3 && roomStyleKit)
         world.dressEncounterDoor(roomStyleKit.EncounterDoorLeaf);
       let dressed = 0;
       world.plan.rooms.forEach((room, index) => {
         if (room.templateId !== templateId) return;
         const style = roomStyleKit && roomStyleFor(world.plan, index, floorNumber);
+        const stone = stoneKit && stoneRooms.get(index);
         const closedHall =
-          templateId === 'hall' && !style && !windowBays.some((bay) => bay.room === index)
+          templateId === 'hall' && !style && !stone && !windowBays.some((bay) => bay.room === index)
             ? instantiateClosedHall
             : undefined;
         const model = (closedHall ?? instantiate)();
-        if (style && roomStyleKit) {
+        if ((style && roomStyleKit) || (stone && stoneKit)) {
           const styled = new THREE.Group();
           const doors = templateById(room.templateId).doors.map((door) => ({
             facing: door.facing,
@@ -1036,12 +1456,16 @@ export function mountFloorView(
               ) && !(stairs?.entry.room === index && stairs.entry.door === door.id),
           }));
           const edge = templateById(templateId).footprint.max[0];
-          applyRoomStyle(styled, style, roomStyleKit, doors, edge);
+          if (stone && stoneKit)
+            applyStoneRoom(styled, stone, stoneKit, doors, edge, (wall, along, width) =>
+              wallSpanIsExposed(plan, room, wall, along, width),
+            );
+          else if (style && roomStyleKit) applyRoomStyle(styled, style, roomStyleKit, doors, edge);
           const keepDesk = style === 'timber' || (templateId === 'study' && room.loot.length > 0);
           if (templateId === 'hall') copyHallBenches(model, styled);
           else if (keepDesk) copyStudyDesk(model, styled);
           world.removeRoomFixtureColliders(index, templateId === 'hall' || keepDesk);
-          styled.userData.conservatory = floorNumber === 3;
+          styled.userData.conservatory = floorNumber === 3 && !stone;
           styledRooms.push(styled);
           world.dressRoom(index, styled);
           dressed++;
@@ -1050,17 +1474,15 @@ export function mountFloorView(
         if (floorNumber === 2 && templateId === 'gear-shaft')
           shaftFinishes.push(...applyUpperShaftFinish(model));
         windowDressing.get(index)?.();
-        const releases = closedHall ? [] : [dressWindowBays(model, plan, index, floorNumber)];
-        for (const bay of windowBays) {
-          if (bay.room === index) releases.push(mountWindowCast(model, bay, bay === cacheBay));
-        }
+        const releaseWindows = closedHall
+          ? undefined
+          : dressWindowBays(model, plan, index, floorNumber, cacheBay);
         if (cacheBay?.room === index) {
           windowCache?.dispose();
-          windowCache = new WindowKeyCache(world, cacheBay);
+          windowCache = new WindowKeyCache(world, cacheBay, model);
         }
-        windowDressing.set(index, () => {
-          for (const release of releases) release();
-        });
+        if (releaseWindows) windowDressing.set(index, releaseWindows);
+        else windowDressing.delete(index);
         world.dressRoom(index, model);
         const group = world.roomGroups[index];
         for (const rigid of rigidNodes) {
@@ -1101,12 +1523,24 @@ export function mountFloorView(
       calibrationKey?.dispose();
       panels?.dispose();
       dispatchRoom?.dispose();
+      speakingPipes?.dispose();
+      reliquary?.dispose();
+      valvehouse?.dispose();
+      armory?.dispose();
+      pendulumGallery?.dispose();
+      borrowedLight?.dispose();
+      floatElevator?.dispose();
+      shadowStencil?.dispose();
+      springTension?.dispose();
+      darkCircuit?.dispose();
+      drumGallery?.dispose();
       counterweight?.dispose();
       chimes?.dispose();
       windowCache?.dispose();
       for (const release of windowDressing.values()) release();
       windowDressing.clear();
       stairs?.dispose();
+      for (const release of stoneFixtureReleases) release();
       for (const room of styledRooms) disposeRoomStyle(room);
       for (const material of shaftFinishes) material.dispose();
       book.dispose();
@@ -1209,6 +1643,19 @@ export function mountFloorView(
       chartCabinet?.update(dt);
       panels?.update(dt);
       dispatchRoom?.update(dt);
+      speakingPipes?.update(dt);
+      reliquary?.update(dt);
+      valvehouse?.update(dt);
+      armory?.update(suspended ? 0 : dt);
+      pendulumGallery?.update(dt, suspended || locked);
+      if (!suspended && !locked) {
+        borrowedLight?.update(dt);
+        floatElevator?.update(dt);
+        shadowStencil?.update(dt);
+        springTension?.update(dt);
+        darkCircuit?.update(dt);
+        drumGallery?.update(dt);
+      }
       counterweight?.update(dt);
       chimes?.update(dt);
       world.updateAnimations(dt);
@@ -1225,6 +1672,7 @@ export function mountFloorView(
       const previousPhase = encounter.phase;
       encounter.update(dt);
       if (previousPhase !== 'idle' && encounter.phase === 'idle') {
+        armory?.showFight(false);
         for (const [actor, { perch }] of owls) {
           if (!actor.object.parent) continue;
           perch.object.position.copy(actor.object.position);

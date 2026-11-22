@@ -16,7 +16,7 @@ In the Upper Works, strike the low, middle and high bells in the same order. Eac
 
 ## The key in the light
 
-In the Lower Works, look for a stained-glass projection whose bright shapes form a bow, a shaft, and three teeth. Follow the tip to the brass tile and select it to open the cache and collect 12 run cogs. The tile remains open after Continue. The seed chooses the site from exposed, accessible window bays.
+In the Lower Works, look for a faint key shape within the colored light of a stained-glass window. Follow its shaft past the edge of the light and look for a thin seam around a floor tile. Select the tile to open the cache and collect 12 run cogs. The tile remains open after Continue. The seed chooses the site from exposed, accessible window bays.
 
 ## Prism Signal
 
@@ -26,9 +26,33 @@ Latching all three in order lowers the glass gate. The annex holds optical instr
 
 ## Misrouted Post
 
-In a new run, look for the pneumatic dispatcher in the Upper Works. The return hatch in another room carries a numbered routing slip. Set the selector at the dispatcher to the number on the slip and press Send. A mismatched route returns the capsule for another try.
+In a new run, look for the wall-mounted pneumatic dispatcher in the Upper Works. The return hatch in another reachable room carries a numbered routing slip. Set the selector at the dispatcher to the number on the slip and press Send. A mismatched route returns the capsule for another try, with the red return lamp making the retry state clear.
 
 When the slip’s route is selected, collect the brass reply at the return hatch. It releases the steel shutter into the dispatch vault, where a treasure coffer waits. The reply, shutter, and coffer retain their state after Continue.
+
+## Speaking Pipes
+
+Sound the wall-mounted transmitter in the Upper Works, then follow the tone to the Pipe Receiver in a different reachable room. It plays the seeded low, middle, or high note and raises a marker above the matching handle. The triangle, square, and round handles sit directly below their marks. Replay repeats the same note and moves the same marker.
+
+A wrong handle flashes its indicator and leaves the clue in place. The matching handle releases the cast-iron grille by the transmitter. The labeled service cistern behind it makes the reward path explicit without revealing the answer: its basin and copper supply pipes sit behind the grille, with a shelf and treasure coffer beyond. Continue restores the primed receiver or opened grille and keeps any collected treasure.
+
+## Stone Reliquary
+
+In eligible Upper Works layouts, a keeper’s rubbing hangs in a different room from the stone seal plate. Select the rubbing to read it. Choose **Save to logbook** to keep the glyph and its instructions across floors and after Continue. Open the logbook from the in-run radial menu to review the saved clues. Its **Map** spread charts the rooms you have visited. Turn to another reached floor to see its rooms, or look for the red **You are here** marker on your current floor. Drag and scroll the map on desktop. In VR, pan with the right stick and select the zoom buttons. **Fit map** restores the overview. **Show finds** marks opened chests and found clues. The **Puzzles** pages show discovered clues, including the rubbing, without requiring a saved copy. **Cards** contains the current deck and permanent collection, and **Stats** summarizes the expedition. Return to the plate and hold the trigger while tracing the mark with the controller ray, or hold the left mouse button and drag on desktop. Draw in one continuous stroke. A rejected trace turns red and leaves the rubbing available for another attempt.
+
+A matching trace releases the brass bolt, lowers the stone leaf into the threshold, and opens an optional treasure room. The leaf stays physically blocking until it clears. The room uses the same interchangeable floor, wall, doorway and ceiling pieces as the dungeon, with separately mounted torches, shelving, pottery and plants. The clue, passage and claimed treasure survive Continue. In the `MAPTEST2` showcase, the rubbing is in Upper Works room 3 and the seal plate is in room 2.
+
+## Valvehouse
+
+The Lower Works Valvehouse is an optional maintenance room. The leaking joint hisses and blows visible steam. A pressure test before repair vents and leaves the gate shut. Recover the matching gasket from a rack in another accessible room. Carry it in **Items** and select the leaking joint to fit it. Then pull the separate test lever. The gauge rises and the gate lifts with a rush of steam and a clank at the top.
+
+The optional branch uses interchangeable stone bays and separate pipework, shelf, dishes, plants and torch. The gasket, repair, passage and treasure persist across floor travel and Continue. In the `MAPTEST2` showcase, the gasket is in Lower Works room 11 and the controls are in room 5.
+
+## Pendulum Rendezvous
+
+A reference pendulum and an adjustable pendulum sit beside the gate to an optional Conservatory gallery. Turn the adjustment dial to change the second pendulum’s length. Pull the release lever to start both from the same position. If the centre crossings drift apart, change the setting and try again. When both cross together on the matching setting, the mechanical catch releases the bronze doors automatically.
+
+The skylit gallery reuses the stone bays and separate furnishings. The selected setting, opened passage and collected treasure survive Continue.
 
 ## Ingredients for future puzzles
 
@@ -65,31 +89,77 @@ These are design ingredients. The component kits supply physical starting pieces
 
 | No. | Recipe | Player action and visible result |
 | ---: | --- | --- |
-| 1 | Shadow stencil | Slide a pierced shutter across a lantern. When its shadow sits inside a carved frame, the projected pattern identifies a floor tile. |
-| 2 | Borrowed light | Tilt a brass mirror to send light around a blind corner. A distant receiver opens where the beam lands. |
+| 1 | Shadow stencil (playable) | Slide a pierced shutter across a lantern. When its shadow sits inside a carved frame, the projected pattern identifies a floor tile. |
+| 2 | Borrowed light (playable) | Tilt a brass mirror to send light around a blind corner. A distant receiver opens where the beam lands. |
 | 3 | Cancelled inscription | Rotate a polarizing lens over two superimposed engravings. One layer fades until a legible shelf mark remains. |
 | 4 | Prism signal (playable) | Turn a prism to direct light to three receivers. A notch, a star and a ring distinguish the channels as well as their colors. |
 | 5 | Misrouted post (playable) | Read the return station’s routing slip, select its line, and send a brass capsule. Collect the reply to open the vault. |
-| 6 | Speaking pipes | Sound one pipe and listen at the outlets. A vibrating gauge identifies the same outlet visually. Follow the matching line behind the wall. |
-| 7 | Float elevator | Admit water to a sight tube. A brass float raises a sealed item to one of several access hatches; stop it at the reachable one. |
-| 8 | Steam leak | Find the hissing joint, seat a recovered gasket, and repressurize the line. The repaired branch powers the next device. |
+| 6 | Speaking pipes (playable) | Sound the sender, then identify the reply by pitch or raised marker in a separate room. Select the matching handle and return to the cistern grille. |
+| 7 | Float elevator (playable) | Admit water to a sight tube. A brass float raises a sealed item to one of several access hatches; stop it at the reachable one. |
+| 8 | Steam leak (playable) | Find the hissing joint, seat a recovered gasket, and repressurize the line. The repaired branch powers the next device. |
 | 9 | Counterfeit counterweight | Two weights have the same crest but different mass. Compare them on a balance, then install the genuine one to lift a grille. |
-| 10 | Pendulum rendezvous | Adjust the effective length of one pendulum until two pointers cross together. A mechanical catch engages on the shared beat. |
-| 11 | Spring tension window | Wind a key until a gauge enters an engraved interval, then release the clutch. Too little tension only lifts the latch partway. |
+| 10 | Pendulum rendezvous (playable) | Adjust the effective length of one pendulum until two pointers cross together. A mechanical catch engages on the shared beat. |
+| 11 | Spring tension window (playable) | Wind a key until a gauge enters an engraved interval, then release the clutch. Too little tension only lifts the latch partway. |
 | 12 | Ratchet handoff | Alternate two ratchets so one pawl holds while the other advances a rack. Both controls can be worked with one seated hand. |
 | 13 | Mirror-type press | Turn a plate face-down in a press and stamp a scrap of paper. A previously reversed message becomes a readable inventory note. |
-| 14 | Missing drum pin | A pinned cylinder plays a repeating pattern with a gap. Move a spare pin into the silent position and wind it again. |
+| 14 | Missing drum pin (playable) | Wind the drum to find the silent beat. Use the service score to seat the spare pin in the right beat and pitch, then wind again. |
 | 15 | Key behind the grille | Move a magnet across the outside of a grille to drag a loose key around steel obstructions to a retrieval slot. |
-| 16 | Dark circuit | Lay conductor bridges so two lamps glow while the third stays dark. Raised symbols show the intended state without relying on color. |
+| 16 | Dark circuit (playable) | Seat two brass bridges so the marked lamps glow and the third stays dark. |
 | 17 | Wax rubbing | Lay paper over a worn relief plate and rub it. The new inventory item preserves a crest too shallow to read in room light. |
 | 18 | Model and building | Move a tiny gate on a tabletop model of the Spire. A matching full-sized gate moves one room away, visible through a sightline. |
 | 19 | Wrong-floor delivery | Load a dumbwaiter, select the landing, then follow a different passage to meet it. A marked cargo seal identifies the correct basket. |
 | 20 | Breath on glass | Open a steam vent beneath a cold mirror. Condensation reveals a traced direction, then fades; the player can recreate and record it. |
 
 
+
+
+## Spring Tension Workshop
+
+In eligible Upper Works layouts, an open stone workshop leads to a barred reward recess. Select or grip the brass winding key one mark at a time. The two heavy marks and the arc between them show the safe interval. When the needle settles inside that interval, pull the clutch to raise the portcullis. Too little tension lifts it partway before it drops. Too much tension unwinds the spring to zero. The reset button also unwinds it.
+
+The assembled stone room holds a separate stone cabinet, gauge, winding assembly, clutch, portcullis, shelves, and torches. Continue restores tension, gate position, and the claimed reward. Find the workshop off Upper Works room 4 on `SPIRE002`.
+
+## Dark Circuit
+
+The Upper Works switchboard uses two brass bridges and four sockets. The engraved marks above each socket show which lamps it powers. Select or grip a socket to seat a bridge, and select it again to lift the bridge. The plate names the two lamps to light and the one to leave dark.
+
+The matching pair releases the toothed grille with a relay clack and the sound of the rack lifting. The grille blocks passage until the leaf clears the doorway. The stone room uses independent switchboard, gate, shelf, dishes, plant and torch modules. Continue restores the bridges, grille and claimed treasure. Seed `C1RC0000` reaches the switchboard in Upper Works room 17.
+
+## Drum Gallery
+
+The Conservatory's optional Drum Gallery uses the stone bays and a skylight. Its shelf, pottery, plant, and pinned cylinder mount independently. Wind the key to play the four beats. A marker advances on every beat, and the silent beat has no reed tone. The service score lists the intended notes in order.
+
+Select or grip an empty socket to move the spare pin. Select the fitted socket again to remove it. A wrong pin can sound an extra note or leave the gap unfilled. Wind the drum with the correct pin to complete the phrase. The grille starts its lift after the last beat and blocks passage until the leaf clears. The pin, grille, and claimed coffer survive Continue. Seed `DR0M0000` places the gallery in Conservatory room 11.
+
+## Shadow Stencil
+
+An optional Lower Works hall has a caged lantern, a pierced shutter and three floor tiles. Select or grip a detent on the lantern rail to slide the shutter. When the projection fits inside the brass frame, it shows a triangle, square, or circle. Select the floor tile embossed with that shape. The tile depresses and the coffer’s locking bar swings up with a latch and scrape. The room uses the modular stone shell, independent shelf, plants, dishes, and torches.
+
+The selected detent and released coffer survive Continue. The `MAPTEST2` showcase has the room off Lower Works room 9.
+
+## Reservoir
+
+The Lower Works Reservoir uses modular stone walls, floor, shelving, pottery, plants, and torch sockets. Its sight glass, fill and drain valves, and shuttered coffer mount independently.
+
+Fill or drain one graduation at a time. The numbered hatch shows where to stop. When the water settles at that mark, select or grab the brass fitting. A latch releases the coffer shutter, and the coffer can be opened once the shutter finishes lowering. Continue restores the water level and the fitting, including a released shutter and a claimed reward. The `MAPTEST2` showcase includes the Reservoir on Floor 1.
+
+## Borrowed Light
+
+A Conservatory side room puts two brass mirrors between a modular skylight and a floor seal. Light follows the mirrors around a stone screen. Turn Mirror I to reach Mirror II, then turn Mirror II until the floor seal lights up and reads **THE WAY IS OPEN**. The light and the message show where the beam lands, even without color.
+
+The receiver rings and the stone leaf lowers into its threshold. The doorway stays blocked until the leaf clears. The instruction plaque resets the mirrors. A released recess stays open, and Continue restores the last mirror settings. The `MAPTEST2` showcase includes the room on Floor 3.
+
+## Armory Alcove
+
+The Upper Works can have an open side room assembled from the stone bay, arch, ceiling, and floor kit. The shelf, maintenance oil vessel, dishes, gear rack, torch pair, and armor stand each mount separately. Two torch sockets illuminate the display wall.
+
+The seed determines what the harness does. A parade display stays still. A dormant harness has a winding control. Select it to raise the visor and hear the ratchet and plates seat. Then select **Challenge** to start an optional fight. The armor locks its plates to guard, then opens both gauntlets for a two-hit attack that leaves it exposed. Awakening persists after leaving or choosing Continue. Fleeing leaves the challenge available. A win clears the armor and leaves the stand.
+
+Run seed `ARM0R005` reaches the challenge variant on Floor 2. Run seed `ARM0R003` reaches the parade display.
+
 ## Asset shelf
 
-The furnishings and instruments are node libraries. A room places selected roots and reuses their geometry and materials. Dining and library furniture, gallery paintings, clocks, armor as dressing, and lit candelabras can be selected by the runtime. A new floor can have one secret bookcase and one ordinary cabinet. Many floors have no secret. In a puzzle room, the clockmaker first appears in his original pose. After the player has seen him and left the room, the portrait changes when the entire frame is out of view in both eyes. Other paintings stay the same. [Curtains and gallery frames in Quest Browser](verification/clockwork-interiors-quest.jpg) The clockmaker looks toward a red book in the same room. Pull the red book with a nearby grip, a trigger ray, or a desktop click to receive the Clockmaker’s key in Items. Use the key on the lock below the shelves. Grab the exposed cogs or point and select them to collect the pile. The cogs fly toward the player and add 10 to the purse. [Gallery and cabinet in Quest Browser](verification/quest-gallery-corrections.jpg) Key, cabinet, and claimed-cog progress survives Continue and save import, and legacy saves whose `bookSecretOpenedRooms` already contains a room remain paid. Both the built-in study shelves and the freestanding case use individually drawn bindings and paper edges. [Study books in Quest Browser](verification/quest-study-book-bindings.jpg) A separate Upper Works service panel now opens onto a walk-through secret room. Waking armor remains a proposed encounter.
+The furnishings and instruments are node libraries. A room places selected roots and reuses their geometry and materials. Dining and library furniture, gallery paintings, clocks, armor as dressing, and lit candelabras can be selected by the runtime. A new floor can have one secret bookcase and one ordinary cabinet. Many floors have no secret. In a puzzle room, the clockmaker first appears in his original pose. After the player has seen him and left the room, the portrait changes when the entire frame is out of view in both eyes. Other paintings stay the same. [Curtains and gallery frames in Quest Browser](verification/clockwork-interiors-quest.jpg) The clockmaker looks toward a red book in the same room. Pull the red book with a nearby grip, a trigger ray, or a desktop click to receive the Clockmaker’s key in Items. Use the key on the lock below the shelves. Grab the exposed cogs or point and select them to collect the pile. The cogs fly toward the player and add 10 to the purse. [Gallery and cabinet in Quest Browser](verification/quest-gallery-corrections.jpg) Key, cabinet, and claimed-cog progress survives Continue and save import, and legacy saves whose `bookSecretOpenedRooms` already contains a room remain paid. Both the built-in study shelves and the freestanding case use individually drawn bindings and paper edges. [Study books in Quest Browser](verification/quest-study-book-bindings.jpg) A separate Upper Works service panel now opens onto a walk-through secret room.
 
 | Kit | Available now |
 | --- | --- |
@@ -102,7 +172,7 @@ Seed `N0TE0032` exercises a bench pickup, a coffer find, an enemy drop and the t
 
 ## Cross-floor mechanisms and potion recipes
 
-The [Conservatory recipe book and floor roadmap](conservatory-and-return-routes.md) records the return passages, three Conservatory ingredients, clock clue, first brew and three follow-up recipes. Answers and clue sites are seeded independently so a familiar mechanism can lead the player on a different search.
+The [Conservatory recipe book and floor roadmap](conservatory-and-return-routes.md) records the return passages, the five Conservatory ingredients, clock clue, vial pickup and four brewing recipes. Answers and clue sites are seeded independently so a familiar mechanism can lead the player on a different search.
 
 ## The clockmaker’s calibration order
 

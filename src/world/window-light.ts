@@ -3,28 +3,38 @@ import { Stream } from '../core/rng.ts';
 import type { FloorWorld } from './floor-world.ts';
 import type { WindowBay } from './window-bays.ts';
 
-const CAST_START = 0.72;
-const TILE_OFFSET = 3.3;
 const TILE_HALF_X = 0.15;
 const TILE_HALF_Z = 0.19;
+const BAKE_X_SLOPE = 0.12 / 0.75;
+
+export interface WindowKeySite extends WindowBay {
+  readonly tileOffset: number;
+}
+
+function keyTileX(site: WindowKeySite): number {
+  return site.x + site.tileOffset * BAKE_X_SLOPE;
+}
 
 export function windowCacheBay(
   world: FloorWorld,
   windows: readonly WindowBay[],
   seed: string,
-): WindowBay | undefined {
-  return Stream.fromKey(`${seed}:window-cache`)
-    .shuffle([...windows])
-    .find((bay) => {
-      if (world.plan.rooms[bay.room].role === 'guardian') return false;
-      const parent = world.roomGroups[bay.room];
-      parent.updateWorldMatrix(true, false);
+): WindowKeySite | undefined {
+  const candidates = Stream.fromKey(`${seed}:window-cache`).shuffle([...windows]);
+  for (const bay of candidates) {
+    if (world.plan.rooms[bay.room].role === 'guardian') continue;
+    const parent = world.roomGroups[bay.room];
+    parent.updateWorldMatrix(true, false);
+    const { min, max } = world.rooms[bay.room].footprint;
+    for (const tileOffset of [4.55, 4.15, 3.8]) {
+      const site = { ...bay, tileOffset };
+      const tileX = keyTileX(site);
+      const tileZ = bay.z + tileOffset;
       const target = new THREE.Box3(
-        new THREE.Vector3(bay.x - 0.49, 0.025, bay.z + CAST_START),
-        new THREE.Vector3(bay.x + 0.49, 0.48, bay.z + TILE_OFFSET + 0.34),
+        new THREE.Vector3(tileX - 0.38, 0.025, tileZ - 0.38),
+        new THREE.Vector3(tileX + 0.38, 0.48, tileZ + 0.38),
       ).applyMatrix4(parent.matrixWorld);
-      const { min, max } = world.rooms[bay.room].footprint;
-      return (
+      if (
         target.min.x > min[0] + 0.16 &&
         target.max.x < max[0] - 0.16 &&
         target.min.z > min[1] + 0.16 &&
@@ -38,116 +48,52 @@ export function windowCacheBay(
             b.min[2] < target.max.z &&
             b.max[2] > target.min.z,
         )
-      );
-    });
+      )
+        return site;
+    }
+  }
+  return undefined;
 }
 
-/** Projected color is a single floor mesh per window, so it needs neither shadow maps nor extra lights. */
-export function mountWindowCast(parent: THREE.Object3D, bay: WindowBay, key: boolean): () => void {
-  const vertices: number[] = [];
-  const colors: number[] = [];
-  const patch = (tint: number, points: readonly (readonly [number, number])[]): void => {
-    const color = new THREE.Color(tint);
-    for (let i = 1; i < points.length - 1; i++) {
-      for (const [x, z] of [points[0], points[i], points[i + 1]]) {
-        vertices.push(x, 0, z);
-        colors.push(color.r, color.g, color.b);
-      }
-    }
-  };
-  if (key) {
-    const ring = (angle: number, radius: number): [number, number] => [
-      radius * Math.cos(angle),
-      0.48 + radius * Math.sin(angle),
-    ];
-    const enamel = [0xf48c68, 0x7bcce5, 0xfacd79, 0x72d5ac];
-    for (let i = 0; i < 32; i++) {
-      const a = (i * Math.PI * 2) / 32;
-      const b = ((i + 1) * Math.PI * 2) / 32;
-      patch(enamel[Math.floor(i / 8)], [
-        ring(a, 0.35),
-        ring(b, 0.35),
-        ring(b, 0.21),
-        ring(a, 0.21),
-      ]);
-    }
-    patch(0xfacb7b, [
-      [-0.09, 0.8],
-      [0.09, 0.8],
-      [0.09, 2.12],
-      [-0.09, 2.12],
-    ]);
-    for (const [i, tint] of enamel.slice(0, 3).entries()) {
-      const z = 1.2 + i * 0.28;
-      patch(tint, [
-        [0.09, z],
-        [0.31, z + 0.05],
-        [0.31, z + 0.17],
-        [0.09, z + 0.19],
-      ]);
-    }
-    patch(0xffd08b, [
-      [-0.16, 2.11],
-      [0.16, 2.11],
-      [0, 2.39],
-    ]);
-  } else {
-    patch(0x9c516a, [
-      [-0.62, 0],
-      [-0.21, 0],
-      [-0.1, 1.57],
-      [-0.47, 1.21],
-    ]);
-    patch(0x8275b9, [
-      [-0.18, 0],
-      [0.17, 0],
-      [0.1, 1.57],
-      [0, 1.79],
-      [-0.07, 1.6],
-    ]);
-    patch(0x3c968d, [
-      [0.2, 0],
-      [0.62, 0],
-      [0.48, 1.17],
-      [0.13, 1.53],
-    ]);
+/** Sample the same base texture and lightmap charts as the masonry below each corner of the lid. */
+function matchFloorLid(
+  geometry: THREE.PlaneGeometry,
+  floor: THREE.Mesh,
+  x: number,
+  z: number,
+): number {
+  floor.updateWorldMatrix(true, false);
+  const ray = new THREE.Raycaster();
+  const down = new THREE.Vector3(0, -1, 0);
+  const origin = new THREE.Vector3();
+  const positions = geometry.getAttribute('position');
+  const baseUv = geometry.getAttribute('uv');
+  const lightUv = new THREE.Float32BufferAttribute(new Float32Array(positions.count * 2), 2);
+  let height = 0;
+  for (let i = 0; i < positions.count; i++) {
+    origin.set(x + positions.getX(i), 0.3, z + positions.getZ(i));
+    ray.set(origin, down);
+    const hit = ray.intersectObject(floor, false)[0];
+    if (!hit) continue;
+    height = Math.max(height, hit.point.y);
+    if (hit.uv) baseUv.setXY(i, hit.uv.x, hit.uv.y);
+    if (hit.uv1) lightUv.setXY(i, hit.uv1.x, hit.uv1.y);
   }
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-  const material = new THREE.MeshBasicMaterial({
-    vertexColors: true,
-    transparent: true,
-    opacity: key ? 0.8 : 0.24,
-    side: THREE.DoubleSide,
-    forceSinglePass: true,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
-  });
-  const cast = new THREE.Mesh(geometry, material);
-  cast.name = key ? 'window-key-projection' : 'window-colored-light';
-  cast.position.set(bay.x, 0.009, bay.z + CAST_START);
-  parent.add(cast);
-  return () => {
-    cast.removeFromParent();
-    geometry.dispose();
-    material.dispose();
-  };
+  geometry.setAttribute('uv1', lightUv);
+  return height;
 }
 
 export class WindowKeyCache {
   readonly object = new THREE.Group();
   private readonly hinge = new THREE.Group();
-  private readonly plateGeometry = new THREE.BoxGeometry(TILE_HALF_X * 2, 0.024, TILE_HALF_Z * 2);
-  private readonly edgeGeometry = new THREE.BoxGeometry(0.34, 0.026, 0.42);
-  private readonly pullGeometry = new THREE.BoxGeometry(0.1, 0.018, 0.026);
-  private readonly brass = new THREE.MeshStandardMaterial({
-    color: 0xbb8544,
-    metalness: 0.66,
-    roughness: 0.37,
-  });
-  private readonly pocket = new THREE.MeshStandardMaterial({ color: 0x29221a, roughness: 0.84 });
-  private readonly plate = new THREE.Mesh(this.plateGeometry, this.brass);
+  private readonly plateGeometry = new THREE.PlaneGeometry(
+    TILE_HALF_X * 2,
+    TILE_HALF_Z * 2,
+  ).rotateX(-Math.PI / 2);
+  private readonly edgeGeometry = new THREE.BoxGeometry(0.308, 0.01, 0.388);
+  private readonly stone = new THREE.MeshStandardMaterial({ color: 0x86725e, roughness: 0.93 });
+  private readonly pocket = new THREE.MeshStandardMaterial({ color: 0x34281f, roughness: 0.9 });
+  private readonly plate: THREE.Mesh;
   private readonly ray = new THREE.Raycaster();
   private readonly bound = new THREE.Box3();
   private readonly contact = new THREE.Vector3();
@@ -155,18 +101,37 @@ export class WindowKeyCache {
 
   constructor(
     private readonly world: FloorWorld,
-    private readonly bay: WindowBay,
+    private readonly bay: WindowKeySite,
+    model: THREE.Object3D,
   ) {
-    this.object.name = 'window-key-cache';
-    this.object.position.set(bay.x, 0.017, bay.z + TILE_OFFSET);
-    const base = new THREE.Mesh(this.edgeGeometry, this.pocket);
-    base.position.y = 0.003;
-    this.hinge.position.z = -TILE_HALF_Z;
+    const x = keyTileX(bay);
+    const z = bay.z + bay.tileOffset;
+    model.updateWorldMatrix(true, true);
+    let floor: THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial> | undefined;
+    model.traverse((node) => {
+      if (
+        node instanceof THREE.Mesh &&
+        node.material instanceof THREE.MeshStandardMaterial &&
+        node.material.name.endsWith('_stone-floor')
+      )
+        floor = node;
+    });
+    const height = floor ? matchFloorLid(this.plateGeometry, floor, x, z) : 0;
+    if (floor) {
+      this.stone.copy(floor.material);
+      this.stone.color.multiplyScalar(0.95);
+      this.stone.onBeforeCompile = floor.material.onBeforeCompile;
+      this.stone.customProgramCacheKey = floor.material.customProgramCacheKey;
+    }
+    this.stone.side = THREE.DoubleSide;
+    this.plate = new THREE.Mesh(this.plateGeometry, this.stone);
     this.plate.name = 'window-cache-tile';
-    this.plate.position.set(0, 0.024, TILE_HALF_Z);
-    const pull = new THREE.Mesh(this.pullGeometry, this.pocket);
-    pull.position.set(0, 0.012, 0.128);
-    this.plate.add(pull);
+    this.object.name = 'window-key-cache';
+    this.object.position.set(x, height + 0.003, z);
+    const base = new THREE.Mesh(this.edgeGeometry, this.pocket);
+    base.name = 'window-cache-seam';
+    this.hinge.position.z = -TILE_HALF_Z;
+    this.plate.position.set(0, 0.009, TILE_HALF_Z);
     this.hinge.add(this.plate);
     this.object.add(base, this.hinge);
     world.roomGroups[bay.room].add(this.object);
@@ -199,8 +164,7 @@ export class WindowKeyCache {
     this.object.removeFromParent();
     this.plateGeometry.dispose();
     this.edgeGeometry.dispose();
-    this.pullGeometry.dispose();
-    this.brass.dispose();
+    this.stone.dispose();
     this.pocket.dispose();
   }
 }

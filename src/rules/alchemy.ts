@@ -14,9 +14,19 @@ export type {
   StoredConservatoryFormula,
 } from './types.ts';
 
+export const CONSERVATORY_SPECIMENS_VERSION = 35;
+
+const THORNWAKE_INGREDIENTS = [0, 1, 2] as const;
+export const NEW_SPECIMENS = [3, 4] as const;
+const ALL_INGREDIENTS = [...THORNWAKE_INGREDIENTS, ...NEW_SPECIMENS] as const;
+
+export function ingredientsFor(contentVersion: number): readonly Ingredient[] {
+  return contentVersion >= CONSERVATORY_SPECIMENS_VERSION ? ALL_INGREDIENTS : THORNWAKE_INGREDIENTS;
+}
+
 export function alchemyRecipe(seed: string): readonly [Ingredient, Ingredient] {
   const stream = Stream.fromKey(`${normalizeSeed(seed)}:alchemy-recipe-v1`);
-  const order = stream.shuffle<Ingredient>([0, 1, 2]);
+  const order = stream.shuffle<Ingredient>(THORNWAKE_INGREDIENTS);
   return [order[0] as Ingredient, order[1] as Ingredient];
 }
 
@@ -24,9 +34,14 @@ export function readAlchemy(run: Pick<RunState, 'alchemy'>): StoredAlchemyState 
   return run.alchemy ?? { found: [], added: [], brewed: false, opened: false };
 }
 
-export function collectIngredient(run: RunState, ingredient: Ingredient): RunState | null {
+export function collectIngredient(
+  run: RunState,
+  ingredient: Ingredient,
+  contentVersion: number,
+): RunState | null {
   const state = readAlchemy(run);
-  if (![0, 1, 2].includes(ingredient) || state.found.includes(ingredient)) return null;
+  if (!ingredientsFor(contentVersion).includes(ingredient) || state.found.includes(ingredient))
+    return null;
   return { ...run, alchemy: { ...state, found: [...state.found, ingredient] } };
 }
 
@@ -48,28 +63,51 @@ export function addIngredient(
   };
 }
 
+export function takePotion(run: RunState): RunState | null {
+  const state = readAlchemy(run);
+  if (state.opened) {
+    const formula = readConservatoryFormula(run);
+    if (!formula.brewed || formula.carried || formula.revealed) return null;
+    return { ...run, conservatoryFormula: { ...formula, carried: true } };
+  }
+  if (!state.brewed || state.carried) return null;
+  return { ...run, alchemy: { ...state, carried: true } };
+}
+
 export function applyPotion(run: RunState): RunState | null {
   const state = readAlchemy(run);
-  if (!state.brewed || state.opened) return null;
-  return { ...run, alchemy: { ...state, opened: true } };
+  if (!state.carried || state.opened) return null;
+  const { carried: _, ...spent } = state;
+  return { ...run, alchemy: { ...spent, opened: true } };
 }
 
 export type FormulaClue = 'portrait' | 'record';
-export const ingredientNames = ['Mooncap', 'Star-thistle', 'Ember salt'] as const;
+export const ingredientNames = [
+  'Mooncap',
+  'Star-thistle',
+  'Ember salt',
+  'Bellcap',
+  'Silverleaf',
+] as const;
 export const brewNames: Readonly<Record<FollowupRecipe, string>> = {
   'lantern-ink': 'Lantern Ink',
   stillwind: 'Stillwind Tincture',
   'looking-glass': 'Looking-glass Elixir',
 };
 
-export function conservatoryFormula(seed: string) {
-  const stream = Stream.fromKey(normalizeSeed(seed) + ':conservatory-followup-v1');
+export function conservatoryFormula(seed: string, contentVersion = 1) {
+  const normalized = normalizeSeed(seed);
+  const stream = Stream.fromKey(`${normalized}:conservatory-followup-v1`);
   const recipe = stream.pick<FollowupRecipe>(['lantern-ink', 'stillwind', 'looking-glass']);
   const primary = alchemyRecipe(seed);
   const unused = (3 - primary[0] - primary[1]) as Ingredient;
   const reused = stream.pick(primary);
+  const reagent =
+    contentVersion >= CONSERVATORY_SPECIMENS_VERSION
+      ? Stream.fromKey(`${normalized}:conservatory-specimen`).pick(NEW_SPECIMENS)
+      : reused;
   const ingredients: readonly [Ingredient, Ingredient] =
-    stream.next() < 0.5 ? [unused, reused] : [reused, unused];
+    stream.next() < 0.5 ? [unused, reagent] : [reagent, unused];
   return { recipe, ingredients, quietHour: stream.int(1, 12) };
 }
 
@@ -77,8 +115,12 @@ export function formulaClueOrder(recipe: FollowupRecipe, clue: FormulaClue): 0 |
   return (clue === 'portrait') === (recipe !== 'looking-glass') ? 0 : 1;
 }
 
-export function formulaObservation(seed: string, clue: FormulaClue): string {
-  const plan = conservatoryFormula(seed),
+export function formulaObservation(
+  seed: string,
+  clue: FormulaClue,
+  contentVersion: number,
+): string {
+  const plan = conservatoryFormula(seed, contentVersion),
     i = formulaClueOrder(plan.recipe, clue);
   const order = i === 0 ? 'I' : 'II';
   const line = `${order} · ${ingredientNames[plan.ingredients[i]]}`;
@@ -112,6 +154,7 @@ export function addFormulaIngredient(
   run: RunState,
   ingredient: Ingredient,
   inStillInterval: boolean,
+  contentVersion: number,
 ): { run: RunState; correct: boolean; waiting?: boolean } | null {
   const state = readConservatoryFormula(run);
   if (
@@ -123,7 +166,8 @@ export function addFormulaIngredient(
     return null;
   if (state.recipe === 'stillwind' && !state.added.length && !inStillInterval)
     return { run, correct: false, waiting: true };
-  const correct = conservatoryFormula(run.seed).ingredients[state.added.length] === ingredient;
+  const correct =
+    conservatoryFormula(run.seed, contentVersion).ingredients[state.added.length] === ingredient;
   const added = correct ? [...state.added, ingredient] : [];
   return {
     run: { ...run, conservatoryFormula: { ...state, added, brewed: added.length === 2 } },
@@ -133,10 +177,11 @@ export function addFormulaIngredient(
 
 export function revealFormula(run: RunState): RunState | null {
   const state = readConservatoryFormula(run);
-  if (!state.brewed || state.revealed) return null;
+  if (!run.alchemy?.opened || !state.carried || state.revealed) return null;
+  const { carried: _, ...spent } = state;
   return {
     ...run,
-    conservatoryFormula: { ...state, revealed: true, opened: state.recipe !== 'lantern-ink' },
+    conservatoryFormula: { ...spent, revealed: true, opened: state.recipe !== 'lantern-ink' },
   };
 }
 

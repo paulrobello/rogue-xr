@@ -662,3 +662,27 @@ describe('floor triggers after a defeat', () => {
     view.dispose();
   });
 });
+
+it('checkpoints unassisted exploration and restores the room history of all reached floors', async () => {
+  const db = await openDb(undefined, { name: 'logbook-map-discovery' });
+  const source = flowWith();
+  const persistence = bindFlowPersistence(source, db);
+  source.newRun(SEED);
+  source.enterRoom(1);
+  source.enterRoom(3);
+  source.travelToFloor(2, 0);
+  source.enterRoom(2);
+  source.travelToFloor(3, 0);
+  source.enterRoom(1);
+  await persistence.flushed();
+  const stored = await loadRunSnapshot(db);
+  if (!stored) throw Error('Missing exploration checkpoint');
+  const restored = flowWith();
+  expect(restored.continueRun(stored)).toBe(true);
+  expect(restored.floorNumber).toBe(3);
+  expect(restored.room).toBe(1);
+  expect(restored.explorationOnFloor(1)?.reachedRooms).toEqual([0, 1, 3]);
+  expect(restored.explorationOnFloor(2)?.reachedRooms).toEqual([0, 2]);
+  expect(restored.explorationOnFloor(3)?.reachedRooms).toEqual([1, 0]);
+  persistence.dispose();
+});

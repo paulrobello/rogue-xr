@@ -23,6 +23,7 @@ export const SIGIL_IDS = [
   'spiral-plus',
   'anchor-plus',
   'quench-plus',
+  'eye',
 ] as const;
 export type SigilId = (typeof SIGIL_IDS)[number];
 

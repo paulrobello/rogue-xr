@@ -2,8 +2,10 @@ import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { STARTER_DECK } from '../src/content/cards.ts';
 import { PERMANENT_CARD_IDS, REWARD_POOL } from '../src/content/rewards.ts';
+import { normalizeSeed } from '../src/core/rng.ts';
 import { RunFlow } from '../src/flow/flow.ts';
 import { FlowUi, splitControlId, tableDistanceCell } from '../src/flow/panels.ts';
+import { TEST_SEEDS } from '../src/flow/test-seeds.ts';
 import { DEFAULT_SETTINGS } from '../src/persist/db.ts';
 import { createWorkshop } from '../src/rules/workshop.ts';
 
@@ -27,6 +29,71 @@ describe('splitControlId', () => {
 
   it('returns null for an id no board owns', () => {
     expect(splitControlId(boards, 'title-new-run')).toBeNull();
+  });
+});
+
+describe('FlowUi test seeds', () => {
+  it('lists each canonical preset once and updates only the seed for New Run', () => {
+    const flow = new RunFlow({
+      workshop: createWorkshop(),
+      starterDeck: STARTER_DECK,
+      rewardPool: REWARD_POOL,
+    });
+    flow.newRun('BRASS042');
+    const snapshot = flow.snapshot();
+    flow.abandonRun();
+    let continued = false;
+    const ui = new FlowUi({
+      flow,
+      keyArt: { url: '', titleSafe: { x: 0, y: 0, w: 0.3, h: 0.4 } },
+      seed: 'R1VET000',
+      snapshot: () => snapshot,
+      settings: () => ({ ...DEFAULT_SETTINGS, difficulty: 'hard' }),
+      onNewRun: (seed, difficulty) => flow.newRun(seed, difficulty),
+      onContinue: () => {
+        continued = true;
+      },
+      onSettings: () => {},
+    });
+    ui.sync(new THREE.Object3D());
+    try {
+      const seeds = TEST_SEEDS.map(({ seed }) => seed);
+      expect(seeds.map(normalizeSeed)).toEqual(seeds);
+      expect(new Set(seeds).size).toBe(seeds.length);
+      expect(ui.activate('title-test-seeds')).toBe(true);
+      expect(ui.activate('test-seeds-previous')).toBe(false);
+      const shown: string[] = [];
+      for (let page = 0; page < seeds.length; page += 1) {
+        shown.push(
+          ...ui.controlIds().flatMap((id) => {
+            const seed = id.slice('test-seeds-'.length);
+            return seeds.some((preset) => seed === preset) ? [seed] : [];
+          }),
+        );
+        if (!ui.activate('test-seeds-next')) break;
+      }
+      expect(shown).toEqual(seeds);
+      expect(ui.activate('test-seeds-BASHB200')).toBe(true);
+      expect(ui.seed).toBe('BASHB200');
+      expect(flow.phase).toBe('title');
+      expect(ui.activate('title-continue')).toBe(true);
+      expect(continued).toBe(true);
+      expect(ui.activate('title-test-seeds')).toBe(true);
+      expect(ui.controlIds()).toContain('test-seeds-BASHB200');
+      expect(ui.typeKey('Escape')).toBe(true);
+      expect(ui.seed).toBe('BASHB200');
+      expect(ui.activate('title-enter-seed')).toBe(true);
+      for (const char of 'TEST1234') expect(ui.typeKey(char)).toBe(true);
+      expect(ui.typeKey('Enter')).toBe(true);
+      expect(ui.seed).toBe('TEST1234');
+      expect(ui.activate('title-test-seeds')).toBe(true);
+      expect(ui.activate('test-seeds-1ENS0006')).toBe(true);
+      expect(ui.activate('title-new-run')).toBe(true);
+      expect(flow.run?.seed).toBe('1ENS0006');
+      expect(flow.run?.difficulty).toBe('hard');
+    } finally {
+      ui.dispose();
+    }
   });
 });
 

@@ -149,6 +149,81 @@ def procedural_pendulum_tick(cue: dict, path: Path) -> None:
     write_wav_f32(path, (attack * signal).astype(np.float32)[:, None])
 
 
+def procedural_dungeon(cue: dict, path: Path) -> None:
+    """Create the original deterministic dungeon loop and creature one-shots."""
+    settings = cue["procedural"]
+    kind = settings["kind"]
+    rng = np.random.default_rng(int(settings["seed"]))
+    n = round(float(settings["duration_seconds"]) * SR)
+    t = np.arange(n, dtype=np.float64) / SR
+    y = np.zeros(n, dtype=np.float64)
+
+    def tone(at: float, length: float, hz: float, level: float, decay: float,
+             bend: float = 0.0) -> None:
+        start = round(at * SR)
+        count = min(round(length * SR), n - start)
+        if count <= 0:
+            return
+        local = np.arange(count, dtype=np.float64) / SR
+        env = np.minimum(1.0, local / 0.0015) * np.exp(-local / decay)
+        phase = 2 * np.pi * (hz * local + bend * local * local / max(length, 1e-6))
+        y[start:start + count] += np.sin(phase) * env * level
+
+    def texture(at: float, length: float, level: float, decay: float, smooth: int) -> None:
+        start = round(at * SR)
+        count = min(round(length * SR), n - start)
+        if count <= 0:
+            return
+        raw = rng.standard_normal(count)
+        if smooth > 1:
+            raw = np.convolve(raw, np.ones(smooth) / smooth, mode="same")
+        env = np.minimum(1.0, np.arange(count) / max(1, round(0.002 * SR)))
+        env *= np.exp(-np.arange(count) / max(1.0, decay * SR))
+        y[start:start + count] += raw * env * level
+
+    if kind == "torch-crackle":
+        # Integer-cycle bed and no event within 0.7 s of either edge keep the source natively loopable.
+        bed = 0.012 * np.sin(2 * np.pi * 73 * t) + 0.008 * np.sin(2 * np.pi * 113 * t)
+        control_t = np.linspace(0.0, float(settings["duration_seconds"]), 241, endpoint=False)
+        control = np.interp(t, control_t, rng.normal(0.0, 1.0, len(control_t)))
+        y += bed + control * 0.004
+        for at, hz, level in ((0.82, 1850, 0.035), (2.14, 2360, 0.028), (3.73, 1620, 0.032),
+                               (5.31, 2780, 0.026), (6.92, 2050, 0.031), (8.44, 2490, 0.027)):
+            tone(at, 0.055, hz, level, 0.014)
+            texture(at, 0.045, level * 0.42, 0.012, 5)
+        y *= 0.85
+    elif kind == "chain-wind":
+        texture(0.03, 0.62, 0.20, 0.24, 7)
+        tone(0.04, 0.64, 92, 0.18, 0.28, -22)
+        for at, hz in ((0.17, 620), (0.31, 760), (0.47, 910)):
+            tone(at, 0.085, hz, 0.20, 0.035)
+            tone(at, 0.10, hz * 1.87, 0.07, 0.028)
+        texture(0.64, 0.22, 0.12, 0.08, 3)
+        tone(0.86, 0.20, 1180, 0.26, 0.055)
+        tone(1.02, 0.30, 154, 0.38, 0.12)
+    elif kind == "scarab-scrape":
+        texture(0.025, 0.48, 0.22, 0.24, 13)
+        tone(0.03, 0.52, 138, 0.19, 0.30, 18)
+        tone(0.09, 0.34, 312, 0.10, 0.16, 28)
+        for at, hz in ((0.57, 1810), (0.70, 2240), (0.84, 1950)):
+            tone(at, 0.075, hz, 0.22, 0.026)
+            tone(at, 0.10, hz * 0.53, 0.09, 0.035)
+        tone(0.98, 0.20, 280, 0.18, 0.08)
+    elif kind == "valvehouse-leak":
+        # Continuous dry hiss with a periodic control envelope; integer-period modulation keeps
+        # the 9-second endpoints identical enough for a native loop without a crossfade.
+        control = 0.72 + 0.18 * np.sin(2 * np.pi * 2 * t / float(settings["duration_seconds"]))
+        raw = rng.standard_normal(n)
+        smooth = np.convolve(raw, np.ones(31) / 31, mode="same")
+        y += (raw * 0.020 + smooth * 0.12) * control
+        y += 0.018 * np.sin(2 * np.pi * 141 * t) * control
+        y *= 0.78
+    else:
+        raise ValueError(f"unknown dungeon cue kind: {kind}")
+    peak = max(np.max(np.abs(y)), 1e-9)
+    write_wav_f32(path, (y / peak * 0.72).astype(np.float32)[:, None])
+
+
 def procedural_puzzle_door(cue: dict, path: Path) -> None:
     """Deterministic one-shot door cues built from seeded noise, impacts, and resonators."""
     settings = cue["procedural"]
@@ -245,6 +320,501 @@ def procedural_puzzle_door(cue: dict, path: Path) -> None:
         tone(1.58, 0.18, 145, 0.30, 0.07)
     else:
         raise ValueError(f"unknown puzzle-door cue kind: {kind}")
+    peak = max(np.max(np.abs(y)), 1e-9)
+    write_wav_f32(path, (y / peak * 0.72).astype(np.float32)[:, None])
+
+
+def procedural_heavy_fixtures(cue: dict, path: Path) -> None:
+    """Create short one-shots for pumps, grilles and heavy mechanical doors."""
+    settings = cue["procedural"]
+    rng = np.random.default_rng(int(settings["seed"]))
+    n = round(float(settings["duration_seconds"]) * SR)
+    t = np.arange(n, dtype=np.float64) / SR
+    y = np.zeros(n, dtype=np.float64)
+
+    def noise(at: float, length: float, level: float, decay: float, smooth: int = 1) -> None:
+        start = round(at * SR)
+        count = min(round(length * SR), n - start)
+        if count <= 0:
+            return
+        raw = rng.standard_normal(count)
+        if smooth > 1:
+            raw = np.convolve(raw, np.ones(smooth) / smooth, mode="same")
+        local = np.arange(count, dtype=np.float64) / SR
+        env = np.minimum(1.0, local / 0.002) * np.exp(-local / max(decay, 1e-4))
+        y[start:start + count] += raw * env * level
+
+    def partial(at: float, length: float, hz: float, level: float, decay: float, bend: float = 0.0) -> None:
+        start = round(at * SR)
+        count = min(round(length * SR), n - start)
+        if count <= 0:
+            return
+        local = np.arange(count, dtype=np.float64) / SR
+        env = np.minimum(1.0, local / 0.001) * np.exp(-local / max(decay, 1e-4))
+        phase = 2 * np.pi * (hz * local + bend * local * local / max(length, 1e-6))
+        y[start:start + count] += np.sin(phase) * env * level
+
+    kind = settings["kind"]
+    if kind == "borrowed-light-receiver":
+        # Bright optical proof: two glass resonances resolve into a dry brass snap.
+        partial(0.025, 0.24, 1320, 0.34, 0.16)
+        partial(0.105, 0.25, 1760, 0.31, 0.14)
+        partial(0.025, 0.34, 2640, 0.14, 0.11)
+        partial(0.105, 0.30, 3520, 0.12, 0.095)
+        noise(0.285, 0.045, 0.18, 0.014, 3)
+        partial(0.285, 0.16, 940, 0.23, 0.045)
+        partial(0.288, 0.12, 1880, 0.09, 0.032)
+        partial(0.32, 0.30, 510, 0.08, 0.12)
+    elif kind == "borrowed-light-open":
+        # A counterweighted stone leaf slides free, with ratchet teeth and a final footfall.
+        for at, hz in ((0.055, 2140), (0.12, 2320), (0.185, 2490), (0.25, 2660)):
+            noise(at, 0.042, 0.16, 0.014, 3)
+            partial(at, 0.075, hz, 0.10, 0.025)
+        noise(0.16, 0.70, 0.30, 0.42, 19)
+        partial(0.16, 0.72, 118, 0.24, 0.42)
+        partial(0.19, 0.64, 188, 0.13, 0.32)
+        for at, hz in ((0.38, 760), (0.53, 710), (0.68, 650)):
+            noise(at, 0.055, 0.13, 0.018, 3)
+            partial(at, 0.10, hz, 0.085, 0.038)
+        noise(0.84, 0.16, 0.13, 0.045, 2)
+        partial(0.85, 0.25, 68, 0.25, 0.11)
+        partial(0.852, 0.18, 136, 0.11, 0.075)
+    elif kind == "pipe-send":
+        # Broad, inharmonic contact transient. No sustained oscillator or pitched reply tone.
+        noise(0.018, 0.045, 0.36, 0.012, 3)
+        noise(0.090, 0.72, 0.13, 0.32, 9)
+        noise(0.095, 0.58, 0.07, 0.20, 25)
+        for at, hz, level, decay in ((0.018, 1270, 0.12, 0.018), (0.024, 2030, 0.08, 0.012),
+                                     (0.050, 870, 0.05, 0.024)):
+            partial(at, 0.10, hz, level, decay)
+    elif kind == "grille":
+        # Wet masonry reflection, abrasive stone travel, then a heavy iron catch.
+        noise(0.035, 0.42, 0.12, 0.21, 17)
+        partial(0.055, 0.68, 118, 0.20, 0.32)
+        partial(0.075, 0.48, 241, 0.09, 0.19)
+        noise(0.18, 0.72, 0.16, 0.34, 5)
+        noise(0.82, 0.42, 0.19, 0.18, 3)
+        partial(0.84, 0.48, 92, 0.38, 0.20)
+        partial(0.86, 0.32, 176, 0.16, 0.11)
+        noise(1.19, 0.24, 0.12, 0.08, 2)
+        partial(1.22, 0.24, 64, 0.28, 0.09)
+    elif kind == "reliquary":
+        # Dry stone lock: a short brass bolt release, granular slab travel, then a low seat.
+        partial(0.04, 0.075, 1540, 0.28, 0.018)
+        partial(0.045, 0.11, 2380, 0.12, 0.022)
+        noise(0.18, 1.02, 0.26, 0.55, 5)
+        noise(0.24, 0.72, 0.14, 0.46, 13)
+        partial(0.18, 0.98, 76, 0.15, 0.46)
+        partial(0.21, 0.82, 143, 0.08, 0.31)
+        for at, hz, level in ((0.31, 520, 0.10), (0.53, 430, 0.08), (0.76, 610, 0.07), (0.98, 360, 0.06)):
+            noise(at, 0.12, level, 0.045, 3)
+            partial(at, 0.14, hz, level * 0.38, 0.055)
+        noise(1.20, 0.20, 0.10, 0.075, 2)
+        partial(1.24, 0.30, 58, 0.36, 0.12)
+        partial(1.25, 0.22, 116, 0.16, 0.08)
+    elif kind == "valvehouse-gate":
+        # Air escapes at release, the rail bumps as the grille climbs, then the top stop seats.
+        noise(0.0, 1.07, 0.36, 0.70, 6)
+        partial(0.014, 0.87, 92, 0.15, 0.4)
+        for at, hz in ((0.18, 410), (0.36, 470), (0.54, 530), (0.72, 590), (0.90, 650)):
+            noise(at, 0.14, 0.17, 0.08, 4)
+            partial(at, 0.18, hz, 0.12, 0.09)
+        noise(1.105, 0.18, 0.15, 0.055, 3)
+        partial(1.12, 0.34, 77, 0.37, 0.13)
+        partial(1.12, 0.24, 161, 0.22, 0.08)
+        partial(1.12, 0.16, 616, 0.115, 0.05)
+    elif kind == "pendulum-gallery":
+        # Two aligned pendulums catch together, then their light bronze hinges travel and seat.
+        noise(0.045, 0.045, 0.21, 0.012, 3)
+        partial(0.045, 0.10, 1880, 0.13, 0.022)
+        partial(0.052, 0.095, 2360, 0.095, 0.020)
+        for at, length, level, smooth in ((0.16, 0.76, 0.118, 17), (0.22, 0.78, 0.110, 23)):
+            noise(at, length, level, 0.56, smooth)
+            partial(at, length, 186, 0.104, 0.53)
+            partial(at + 0.018, length * 0.96, 278, 0.050, 0.32)
+            partial(at + 0.030, length * 0.90, 412, 0.025, 0.21)
+        noise(1.075, 0.12, 0.13, 0.040, 3)
+        partial(1.080, 0.19, 2460, 0.15, 0.045)
+        partial(1.086, 0.22, 1810, 0.12, 0.055)
+        noise(1.135, 0.11, 0.115, 0.038, 3)
+        partial(1.140, 0.19, 2220, 0.14, 0.042)
+        partial(1.146, 0.22, 1640, 0.11, 0.050)
+        partial(1.145, 0.40, 350, 0.028, 0.22)
+    elif kind == "reservoir-fill":
+        # A narrow brass inlet fills: focused pipe resonance rises under small water bubbles.
+        noise(0.035, 0.58, 0.24, 0.24, 9)
+        for at, hz, level in ((0.06, 420, 0.10), (0.18, 560, 0.12), (0.31, 720, 0.14),
+                              (0.44, 910, 0.16), (0.54, 1080, 0.14)):
+            noise(at, 0.028, level, 0.012, 3)
+            partial(at, 0.085, hz, level * 0.72, 0.035)
+        partial(0.02, 0.60, 168, 0.28, 0.34)
+        partial(0.10, 0.50, 336, 0.095, 0.26)
+    elif kind == "reservoir-drain":
+        # The water level drops through a thin outlet: hollow gurgles descend into suction.
+        noise(0.035, 0.52, 0.26, 0.22, 11)
+        for at, hz, level in ((0.06, 980, 0.15), (0.17, 760, 0.14), (0.29, 580, 0.13),
+                              (0.41, 410, 0.12), (0.51, 285, 0.10)):
+            noise(at, 0.035, level, 0.014, 3)
+            partial(at, 0.095, hz, level * 0.65, 0.040)
+        partial(0.03, 0.58, 118, 0.50, 0.31, -62)
+        partial(0.18, 0.46, 236, 0.16, 0.22, -95)
+        noise(0.53, 0.10, 0.10, 0.045, 3)
+        partial(0.535, 0.16, 82, 0.34, 0.08)
+    elif kind == "reservoir-release":
+        # Brass fitting snaps first, then the stone shutter scrapes sideways and seats on its stop.
+        noise(0.025, 0.040, 0.32, 0.010, 3)
+        partial(0.025, 0.095, 1760, 0.27, 0.020)
+        partial(0.029, 0.105, 2920, 0.13, 0.018)
+        noise(0.11, 0.50, 0.38, 0.30, 13)
+        partial(0.11, 0.55, 104, 0.34, 0.31, 18)
+        partial(0.13, 0.48, 208, 0.12, 0.22, 26)
+        for at, hz in ((0.18, 190), (0.29, 225), (0.40, 260), (0.49, 300)):
+            noise(at, 0.050, 0.10, 0.018, 3)
+            partial(at, 0.095, hz, 0.06, 0.035)
+        noise(0.64, 0.13, 0.15, 0.050, 3)
+        partial(0.645, 0.22, 72, 0.32, 0.10)
+        partial(0.647, 0.17, 144, 0.13, 0.070)
+    else:
+        raise ValueError(f"unknown heavy fixture cue kind: {kind}")
+    peak = max(np.max(np.abs(y)), 1e-9)
+    write_wav_f32(path, (y / peak * 0.72).astype(np.float32)[:, None])
+
+
+def procedural_dark_circuit(cue: dict, path: Path) -> None:
+    """Create the Dark Circuit's dry electrical bridge and toothed lift cues."""
+    settings = cue["procedural"]
+    rng = np.random.default_rng(int(settings["seed"]))
+    n = round(float(settings["duration_seconds"]) * SR)
+    y = np.zeros(n, dtype=np.float64)
+
+    def noise(at: float, length: float, level: float, decay: float, smooth: int = 1) -> None:
+        start = round(at * SR)
+        count = min(round(length * SR), n - start)
+        if count <= 0:
+            return
+        raw = rng.standard_normal(count)
+        if smooth > 1:
+            raw = np.convolve(raw, np.ones(smooth) / smooth, mode="same")
+        local = np.arange(count, dtype=np.float64) / SR
+        env = np.minimum(1.0, local / 0.0008) * np.exp(-local / max(decay, 1e-4))
+        y[start:start + count] += raw * env * level
+
+    def tone(at: float, length: float, hz: float, level: float, decay: float, bend: float = 0.0) -> None:
+        start = round(at * SR)
+        count = min(round(length * SR), n - start)
+        if count <= 0:
+            return
+        local = np.arange(count, dtype=np.float64) / SR
+        env = np.minimum(1.0, local / 0.0008) * np.exp(-local / max(decay, 1e-4))
+        phase = 2 * np.pi * (hz * local + bend * local * local / max(length, 1e-6))
+        y[start:start + count] += np.sin(phase) * env * level
+
+    kind = settings["kind"]
+    if kind == "bridge":
+        tone(0.018, 0.10, 1260, 0.34, 0.024)
+        tone(0.020, 0.08, 2180, 0.16, 0.015)
+        noise(0.072, 0.060, 0.23, 0.012, 3)
+        tone(0.074, 0.10, 3120, 0.14, 0.026, 160)
+        tone(0.17, 0.30, 510, 0.10, 0.12)
+    elif kind == "grille-circuit":
+        noise(0.018, 0.045, 0.38, 0.010, 3)
+        tone(0.020, 0.10, 1760, 0.20, 0.024)
+        noise(0.08, 0.70, 0.16, 0.36, 9)
+        tone(0.08, 0.73, 96, 0.20, 0.42, -8)
+        for at, hz in ((0.13, 420), (0.25, 500), (0.37, 580), (0.49, 660), (0.61, 740)):
+            noise(at, 0.050, 0.16, 0.014, 3)
+            tone(at, 0.11, hz, 0.12, 0.050)
+        noise(0.86, 0.10, 0.20, 0.035, 2)
+        tone(0.865, 0.25, 78, 0.38, 0.11)
+        tone(0.868, 0.18, 155, 0.18, 0.070)
+    else:
+        raise ValueError(f"unknown dark circuit cue kind: {kind}")
+    peak = max(np.max(np.abs(y)), 1e-9)
+    write_wav_f32(path, (y / peak * 0.72).astype(np.float32)[:, None])
+
+
+def procedural_drum_gallery(cue: dict, path: Path) -> None:
+    """Create dry, deterministic reed, index, pin, and grille mechanisms for the Drum Gallery."""
+    settings = cue["procedural"]
+    rng = np.random.default_rng(int(settings["seed"]))
+    n = round(float(settings["duration_seconds"]) * SR)
+    y = np.zeros(n, dtype=np.float64)
+
+    def partial(at: float, length: float, hz: float, level: float, decay: float, bend: float = 0.0) -> None:
+        start = round(at * SR)
+        count = min(round(length * SR), n - start)
+        if count <= 0:
+            return
+        local = np.arange(count, dtype=np.float64) / SR
+        env = np.minimum(1.0, local / 0.0007) * np.exp(-local / max(decay, 1e-4))
+        phase = 2 * np.pi * (hz * local + bend * local * local / max(length, 1e-6))
+        y[start:start + count] += np.sin(phase) * env * level
+
+    def grit(at: float, length: float, level: float, decay: float, smooth: int = 1) -> None:
+        start = round(at * SR)
+        count = min(round(length * SR), n - start)
+        if count <= 0:
+            return
+        raw = rng.standard_normal(count)
+        if smooth > 1:
+            raw = np.convolve(raw, np.ones(smooth) / smooth, mode="same")
+        local = np.arange(count, dtype=np.float64) / SR
+        env = np.minimum(1.0, local / 0.0008) * np.exp(-local / max(decay, 1e-4))
+        y[start:start + count] += raw * env * level
+
+    kind = settings["kind"]
+    if kind.startswith("reed-"):
+        # Each reed is a single dry mechanical stab with a different inharmonic brass body.
+        base = {"reed-low": 182.0, "reed-mid": 326.0, "reed-high": 574.0}[kind]
+        partial(0.012, 0.30, base, 0.48, 0.075, -18.0)
+        partial(0.012, 0.24, base * 2.73, 0.22, 0.042, 22.0)
+        partial(0.014, 0.18, base * 5.11, 0.10, 0.025, 34.0)
+        grit(0.010, 0.030, 0.16, 0.009, 3)
+        partial(0.018, 0.12, base * 0.51, 0.11, 0.028)
+    elif kind == "index":
+        # The quiet wood/brass tick is deliberately shorter and lower than the reeds.
+        grit(0.006, 0.028, 0.12, 0.007, 3)
+        partial(0.007, 0.060, 980.0, 0.16, 0.014)
+        partial(0.007, 0.043, 2040.0, 0.07, 0.010)
+        partial(0.010, 0.080, 248.0, 0.13, 0.026)
+    elif kind == "pin":
+        grit(0.010, 0.040, 0.19, 0.012, 3)
+        partial(0.012, 0.20, 680.0, 0.27, 0.034, -30.0)
+        partial(0.012, 0.14, 1430.0, 0.12, 0.022)
+        partial(0.155, 0.14, 308.0, 0.34, 0.048)
+        grit(0.158, 0.055, 0.14, 0.018, 2)
+    elif kind == "grille-open":
+        # A compact low drum undertone, five ratchet teeth, then two clearly separated latch chunks.
+        partial(0.018, 0.72, 88.0, 0.34, 0.28, -10.0)
+        partial(0.020, 0.58, 176.0, 0.12, 0.20, -6.0)
+        for at, hz in ((0.080, 1380.0), (0.155, 1490.0), (0.230, 1600.0), (0.305, 1710.0), (0.380, 1820.0)):
+            grit(at, 0.030, 0.15, 0.010, 3)
+            partial(at, 0.065, hz, 0.11, 0.018)
+        grit(0.505, 0.055, 0.27, 0.016, 3)
+        partial(0.510, 0.20, 312.0, 0.47, 0.060, -14.0)
+        partial(0.514, 0.14, 624.0, 0.17, 0.040)
+        grit(0.700, 0.060, 0.24, 0.018, 2)
+        partial(0.705, 0.24, 248.0, 0.40, 0.075, -10.0)
+        partial(0.710, 0.18, 496.0, 0.14, 0.052)
+    else:
+        raise ValueError(f"unknown Drum Gallery cue kind: {kind}")
+    y = 0.70 * np.tanh(y / 0.70)
+    peak = max(np.max(np.abs(y)), 1e-9)
+    write_wav_f32(path, (y / peak * 0.72).astype(np.float32)[:, None])
+
+
+def procedural_armory_awaken(cue: dict, path: Path) -> None:
+    """Create a short clockwork ratchet run ending in two seated steel plates."""
+    settings = cue["procedural"]
+    rng = np.random.default_rng(int(settings["seed"]))
+    n = round(float(settings["duration_seconds"]) * SR)
+    y = np.zeros(n, dtype=np.float64)
+
+    def hit(at: float, length: float, hz: float, level: float, decay: float, noise_level: float = 0.0) -> None:
+        start = round(at * SR)
+        count = min(round(length * SR), n - start)
+        if count <= 0:
+            return
+        local = np.arange(count, dtype=np.float64) / SR
+        env = np.minimum(1.0, local / 0.0008) * np.exp(-local / decay)
+        y[start:start + count] += np.sin(2 * np.pi * hz * local) * env * level
+        if noise_level:
+            y[start:start + count] += rng.standard_normal(count) * env * noise_level
+
+    # Six dry brass teeth accelerate toward the activation, with no sustained motor bed.
+    for at, hz, level in ((0.035, 2360, 0.22), (0.115, 2520, 0.24), (0.190, 2670, 0.26),
+                          (0.260, 2820, 0.28), (0.322, 2970, 0.30), (0.378, 3120, 0.32)):
+        hit(at, 0.045, hz, level, 0.014, 0.018)
+        hit(at + 0.003, 0.032, hz * 0.53, level * 0.30, 0.018)
+    # Two distinct steel plate contacts and a light, short room tail.
+    hit(0.470, 0.115, 410, 0.52, 0.055, 0.055)
+    hit(0.570, 0.135, 335, 0.58, 0.070, 0.050)
+    hit(0.585, 0.170, 820, 0.12, 0.100, 0.012)
+    hit(0.620, 0.140, 176, 0.10, 0.110, 0.006)
+    peak = max(np.max(np.abs(y)), 1e-9)
+    write_wav_f32(path, (y / peak * 0.72).astype(np.float32)[:, None])
+
+
+def procedural_trellis_keeper(cue: dict, path: Path) -> None:
+    """Create dry, deterministic metal leaf and shear contacts for the Trellis Keeper."""
+    settings = cue["procedural"]
+    rng = np.random.default_rng(int(settings["seed"]))
+    n = round(float(settings["duration_seconds"]) * SR)
+    y = np.zeros(n, dtype=np.float64)
+
+    def contact(at: float, hz: float, level: float, decay: float, noise_level: float = 0.0) -> None:
+        start = round(at * SR)
+        count = min(round(0.12 * SR), n - start)
+        if count <= 0:
+            return
+        local = np.arange(count, dtype=np.float64) / SR
+        env = np.minimum(1.0, local / 0.0008) * np.exp(-local / decay)
+        tone = np.sin(2 * np.pi * hz * local) + 0.28 * np.sin(2 * np.pi * hz * 1.91 * local)
+        y[start:start + count] += env * tone * level
+        if noise_level:
+            y[start:start + count] += rng.standard_normal(count) * env * noise_level
+
+    kind = settings["kind"]
+    if kind == "trellis-brace":
+        contact(0.025, 2350, 0.18, 0.012, 0.018)
+        contact(0.095, 2850, 0.14, 0.010, 0.012)
+        contact(0.17, 410, 0.42, 0.075, 0.008)
+        contact(0.18, 760, 0.22, 0.045)
+    elif kind == "trellis-double-cut":
+        contact(0.045, 3200, 0.32, 0.010, 0.018)
+        contact(0.205, 1850, 0.39, 0.016, 0.022)
+        contact(0.207, 510, 0.16, 0.050)
+    else:
+        raise ValueError(f"unknown Trellis Keeper cue kind: {kind}")
+    write_wav_f32(path, (y / max(np.max(np.abs(y)), 1e-9) * 0.72).astype(np.float32)[:, None])
+
+
+def procedural_spring_workshop(cue: dict, path: Path) -> None:
+    """Create dry, original spring-and-iron workshop one-shots with fixed seeded texture."""
+    settings = cue["procedural"]
+    rng = np.random.default_rng(int(settings["seed"]))
+    n = round(float(settings["duration_seconds"]) * SR)
+    t = np.arange(n, dtype=np.float64) / SR
+    y = np.zeros(n, dtype=np.float64)
+
+    def noise(at: float, length: float, level: float, decay: float, smooth: int = 1) -> None:
+        start = round(at * SR)
+        count = min(round(length * SR), n - start)
+        if count <= 0:
+            return
+        raw = rng.standard_normal(count)
+        if smooth > 1:
+            raw = np.convolve(raw, np.ones(smooth) / smooth, mode="same")
+        local = np.arange(count, dtype=np.float64) / SR
+        env = np.minimum(1.0, local / 0.001) * np.exp(-local / max(decay, 1e-4))
+        y[start:start + count] += raw * env * level
+
+    def partial(at: float, length: float, hz: float, level: float, decay: float, bend: float = 0.0) -> None:
+        start = round(at * SR)
+        count = min(round(length * SR), n - start)
+        if count <= 0:
+            return
+        local = np.arange(count, dtype=np.float64) / SR
+        env = np.minimum(1.0, local / 0.0008) * np.exp(-local / max(decay, 1e-4))
+        phase = 2 * np.pi * (hz * local + bend * local * local / max(length, 1e-6))
+        y[start:start + count] += np.sin(phase) * env * level
+
+    kind = settings["kind"]
+    if kind == "spring-wind":
+        noise(0.015, 0.23, 0.15, 0.16, 9)
+        partial(0.02, 0.24, 880, 0.16, 0.12, 180)
+        for at in (0.07, 0.14, 0.21):
+            noise(at, 0.025, 0.18, 0.012, 3)
+            partial(at, 0.04, 1680, 0.12, 0.018)
+    elif kind == "spring-catch":
+        noise(0.01, 0.30, 0.15, 0.20, 11)
+        partial(0.02, 0.31, 112, 0.20, 0.22, -22)
+        for at, hz in ((0.14, 520), (0.25, 690)):
+            noise(at, 0.035, 0.18, 0.014, 3)
+            partial(at, 0.08, hz, 0.13, 0.035)
+        noise(0.39, 0.08, 0.20, 0.035, 2)
+        partial(0.40, 0.15, 86, 0.34, 0.09)
+    elif kind == "spring-slip":
+        noise(0.012, 0.45, 0.25, 0.22, 5)
+        partial(0.02, 0.47, 150, 0.15, 0.24, 32)
+        for at, hz in ((0.05, 760), (0.13, 980), (0.20, 1210), (0.28, 1440), (0.36, 1680)):
+            noise(at, 0.04, 0.16, 0.014, 3)
+            partial(at, 0.07, hz, 0.12, 0.024)
+        noise(0.52, 0.10, 0.18, 0.04, 2)
+        partial(0.53, 0.18, 108, 0.28, 0.10)
+    elif kind == "spring-release":
+        noise(0.015, 0.27, 0.18, 0.18, 7)
+        partial(0.02, 0.28, 128, 0.16, 0.19, -18)
+        for at, hz in ((0.06, 610), (0.13, 760), (0.20, 910)):
+            noise(at, 0.035, 0.16, 0.012, 3)
+            partial(at, 0.07, hz, 0.11, 0.025)
+        noise(0.29, 0.62, 0.23, 0.40, 17)
+        partial(0.29, 0.66, 74, 0.22, 0.39)
+        partial(0.31, 0.55, 147, 0.11, 0.29)
+        for at, hz in ((0.48, 330), (0.64, 390), (0.80, 450)):
+            noise(at, 0.10, 0.12, 0.035, 4)
+            partial(at, 0.13, hz, 0.09, 0.05)
+        noise(0.94, 0.12, 0.20, 0.05, 2)
+        partial(0.96, 0.28, 61, 0.40, 0.12)
+        partial(0.96, 0.20, 122, 0.18, 0.08)
+    else:
+        raise ValueError(f"unknown spring cue kind: {kind}")
+    # Keep the metal contacts distinct while rounding their crest so short cues can reach the
+    # shared loudness target without a hard limiter. The low-level bed is mechanical resonance,
+    # not ambience, and stays below the pawl/rail transients.
+    if kind == "spring-wind":
+        y += 0.30 * np.sin(2 * np.pi * 420 * t) * np.exp(-t / 0.24)
+    elif kind == "spring-catch":
+        y += 0.09 * np.sin(2 * np.pi * 118 * t) * np.exp(-t / 0.42)
+    elif kind == "spring-slip":
+        y += 0.07 * np.sin(2 * np.pi * 185 * t) * np.exp(-t / 0.48)
+    elif kind == "spring-release":
+        y += 0.11 * np.sin(2 * np.pi * 92 * t) * np.exp(-t / 0.82)
+    y = 0.64 * np.tanh(y / 0.64)
+    peak = max(np.max(np.abs(y)), 1e-9)
+    write_wav_f32(path, (y / peak * 0.72).astype(np.float32)[:, None])
+
+
+def procedural_stencil(cue: dict, path: Path) -> None:
+    """Create the Shadow Stencil's thin slide and heavy tile release cues."""
+    settings = cue["procedural"]
+    rng = np.random.default_rng(int(settings["seed"]))
+    n = round(float(settings["duration_seconds"]) * SR)
+    y = np.zeros(n, dtype=np.float64)
+
+    def noise(at: float, length: float, level: float, decay: float, smooth: int = 1) -> None:
+        start = round(at * SR)
+        count = min(round(length * SR), n - start)
+        if count <= 0:
+            return
+        raw = rng.standard_normal(count)
+        if smooth > 1:
+            raw = np.convolve(raw, np.ones(smooth) / smooth, mode="same")
+        local = np.arange(count, dtype=np.float64) / SR
+        env = np.minimum(1.0, local / 0.0015) * np.exp(-local / max(decay, 1e-4))
+        y[start:start + count] += raw * env * level
+
+    def partial(at: float, length: float, hz: float, level: float, decay: float, bend: float = 0.0) -> None:
+        start = round(at * SR)
+        count = min(round(length * SR), n - start)
+        if count <= 0:
+            return
+        local = np.arange(count, dtype=np.float64) / SR
+        env = np.minimum(1.0, local / 0.0008) * np.exp(-local / max(decay, 1e-4))
+        phase = 2 * np.pi * (hz * local + bend * local * local / max(length, 1e-6))
+        y[start:start + count] += np.sin(phase) * env * level
+
+    if settings["kind"] == "stencil-slide":
+        noise(0.025, 0.26, 0.39, 0.21, 9)
+        partial(0.025, 0.25, 1850, 0.18, 0.12, 260)
+        partial(0.05, 0.19, 2920, 0.09, 0.08, 180)
+        partial(0.025, 0.34, 410, 0.42, 0.31, 30)
+        partial(0.03, 0.28, 820, 0.14, 0.18, 45)
+        for at, hz in ((0.105, 2480), (0.19, 2700), (0.275, 2960)):
+            noise(at, 0.024, 0.10, 0.012, 2)
+            partial(at, 0.052, hz, 0.07, 0.021)
+        noise(0.338, 0.042, 0.13, 0.014, 2)
+        partial(0.34, 0.13, 1320, 0.15, 0.036)
+        partial(0.342, 0.11, 2640, 0.06, 0.025)
+        y = 0.64 * np.tanh(y / 0.64)
+    elif settings["kind"] == "stencil-release":
+        partial(0.035, 0.10, 1620, 0.22, 0.026)
+        partial(0.038, 0.12, 2460, 0.10, 0.022)
+        noise(0.12, 0.42, 0.25, 0.27, 17)
+        partial(0.12, 0.48, 94, 0.38, 0.30, 14)
+        partial(0.14, 0.43, 188, 0.13, 0.22, 20)
+        noise(0.20, 0.30, 0.11, 0.22, 5)
+        for at, hz in ((0.28, 510), (0.39, 560), (0.50, 620)):
+            noise(at, 0.042, 0.085, 0.016, 3)
+            partial(at, 0.095, hz, 0.055, 0.038)
+        noise(0.62, 0.05, 0.22, 0.012, 2)
+        partial(0.622, 0.16, 2050, 0.17, 0.042)
+        partial(0.625, 0.14, 3130, 0.08, 0.030)
+        noise(0.69, 0.16, 0.20, 0.060, 3)
+        partial(0.695, 0.30, 70, 0.42, 0.13)
+        partial(0.698, 0.23, 140, 0.16, 0.085)
+    else:
+        raise ValueError(f"unknown stencil cue kind: {settings['kind']}")
     peak = max(np.max(np.abs(y)), 1e-9)
     write_wav_f32(path, (y / peak * 0.72).astype(np.float32)[:, None])
 
@@ -471,6 +1041,22 @@ def build_sfx(spec: dict, only: set[str], derived: Path, out: Path) -> dict[str,
             src = AUDIO_SRC / "sfx" / "procedural" / f"{cid}.wav"
             if cid == "pendulum-tick":
                 procedural_pendulum_tick(cue, src)
+            elif cue["procedural"].get("kind") in {"borrowed-light-receiver", "borrowed-light-open", "pipe-send", "grille", "reliquary", "valvehouse-gate", "pendulum-gallery", "reservoir-fill", "reservoir-drain", "reservoir-release"}:
+                procedural_heavy_fixtures(cue, src)
+            elif cue["procedural"].get("kind") in {"bridge", "grille-circuit"}:
+                procedural_dark_circuit(cue, src)
+            elif cue["procedural"].get("kind") in {"reed-low", "reed-mid", "reed-high", "index", "pin", "grille-open"}:
+                procedural_drum_gallery(cue, src)
+            elif cue["procedural"].get("kind", "").startswith("trellis-"):
+                procedural_trellis_keeper(cue, src)
+            elif cue["procedural"].get("kind") == "armory-awaken":
+                procedural_armory_awaken(cue, src)
+            elif cue["procedural"].get("kind", "").startswith("spring-"):
+                procedural_spring_workshop(cue, src)
+            elif cue["procedural"].get("kind", "").startswith("stencil-"):
+                procedural_stencil(cue, src)
+            elif cue["procedural"].get("kind", "").startswith(("torch-", "chain-", "scarab-", "valvehouse-leak")):
+                procedural_dungeon(cue, src)
             elif cue["procedural"].get("kind"):
                 procedural_puzzle_door(cue, src)
             else:
@@ -686,6 +1272,17 @@ def main() -> None:
             provenance["sfx"]["paper-unfold"]["approval"] = "New edit of the existing card-draw recording. Runtime verification is separate from owner listening approval."
         if "pendulum-tick" in provenance["sfx"]:
             provenance["sfx"]["pendulum-tick"]["approval"] = "Original project synthesis. Owner listening review pending."
+        for cue_id in ("dungeon-torch-crackle", "dungeon-chain-wind", "dungeon-scarab-scrape",
+                       "cistern-pipe-send", "cistern-grille-open", "reliquary-stone-open",
+                       "valvehouse-leak", "valvehouse-gate-open", "pendulum-gallery-open",
+                       "armory-awaken", "borrowed-light-receiver", "borrowed-light-open",
+                       "reservoir-fill", "reservoir-drain", "reservoir-release",
+                       "stencil-slide", "stencil-release", "spring-wind", "spring-catch",
+                       "spring-slip", "spring-release", "circuit-bridge", "circuit-grille-open",
+                       "drum-reed-low", "drum-reed-mid", "drum-reed-high", "drum-index",
+                       "drum-pin", "drum-grille-open", "trellis-brace", "trellis-double-cut"):
+            if cue_id in provenance["sfx"]:
+                provenance["sfx"][cue_id]["approval"] = "Original project synthesis. Owner listening review pending."
         if music and music_log.exists():
             provenance["music_source"] = json.loads(music_log.read_text())["source"]
             provenance["music_generation_log"] = rel(music_log)

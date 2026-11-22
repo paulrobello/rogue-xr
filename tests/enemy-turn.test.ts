@@ -18,7 +18,7 @@ import {
 } from '../src/combat-view/hit-feedback.ts';
 import { getCard } from '../src/content/cards.ts';
 import { ENCOUNTERS, encounterSetups } from '../src/content/enemies.ts';
-import type { CombatEvent, CombatState } from '../src/rules/index.ts';
+import { type CombatEvent, type CombatState, cardSteamCost } from '../src/rules/index.ts';
 
 const fighters = (s: CombatState) => ({
   turn: s.turn,
@@ -38,7 +38,11 @@ function playTurn(c: CombatController): void {
   const state = c.state;
   const plain = state.piles.hand.filter((card) => {
     const info = getCard(card.def.id);
-    return info.dice === undefined && info.sigil === undefined && info.cost <= state.player.steam;
+    return (
+      info.dice === undefined &&
+      info.sigil === undefined &&
+      cardSteamCost(info.cost, state.player.steam) <= state.player.steam
+    );
   });
   const card = plain.find((p) => getCard(p.def.id).type === 'attack') ?? plain[0];
   if (card) {
@@ -111,7 +115,7 @@ describe('enemy turn segmentation', () => {
 });
 
 function eventsOf(seg: TurnSegment): readonly CombatEvent[] {
-  return seg.kind === 'instant' ? seg.events : [...seg.lead, ...seg.act];
+  return seg.kind === 'enemy' ? [...seg.lead, ...seg.act] : seg.events;
 }
 
 describe('player hit classification', () => {

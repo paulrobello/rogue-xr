@@ -5,7 +5,10 @@ import { flightGoal, flightPose, flightScale } from '../flow/card-flight.ts';
 import {
   alchemyRecipe,
   conservatoryFormula,
+  type FollowupRecipe,
   type Ingredient,
+  ingredientsFor,
+  NEW_SPECIMENS,
   type StoredAlchemyState,
   type StoredConservatoryFormula,
 } from '../rules/alchemy.ts';
@@ -14,7 +17,30 @@ import type { FloorWorld } from './floor-world.ts';
 import type { InteriorPlacement } from './interior-furnishings.ts';
 import { findPuzzleMount, kitPart } from './puzzle-placement.ts';
 
-export const INGREDIENT_ROOTS = ['Mooncap', 'StarThistle', 'EmberSalt'] as const;
+export const INGREDIENT_ROOTS = [
+  'Mooncap',
+  'StarThistle',
+  'EmberSalt',
+  'Bellcap',
+  'Silverleaf',
+] as const;
+const POTION_COLORS: Readonly<Record<'thornwake' | FollowupRecipe, number>> = {
+  thornwake: 0x73bb49,
+  'lantern-ink': 0x4d84ea,
+  stillwind: 0xf48624,
+  'looking-glass': 0xd566da,
+};
+
+function tintVial(source: THREE.MeshStandardMaterial, color: number): THREE.MeshStandardMaterial {
+  const material = source.clone();
+  material.emissive.setHex(color);
+  material.emissiveIntensity = 0.24;
+  // Undo the pigment in the GLB's base-color map while keeping its painted bands and grain.
+  const { r, g, b } = material.emissive;
+  material.color.setRGB(r / 0.16, g / 0.55, b / 0.48);
+  return material;
+}
+
 const HALL_BENCHES = DECOR_TABLES.hall.map(
   ({ x, z, halfX, halfZ, top }) =>
     new THREE.Box3(
@@ -22,11 +48,11 @@ const HALL_BENCHES = DECOR_TABLES.hall.map(
       new THREE.Vector3(x + halfX, top, z + halfZ),
     ),
 );
-export type AlchemyPick = (
+type Input =
   | { action: 'collect' | 'add'; ingredient: Ingredient }
   | { action: 'apply' }
-) & { distance: number };
-type Input = { action: 'collect' | 'add'; ingredient: Ingredient } | { action: 'apply' };
+  | { action: 'take-potion' };
+export type AlchemyPick = Input & { distance: number };
 interface Cradle {
   node: THREE.Object3D;
   home: THREE.Vector3;
@@ -57,12 +83,18 @@ export class AlchemyConservatory {
   private simmer = 0;
   private splash = 0;
   private potionReady = false;
+  private readonly vialGlass: {
+    mesh: THREE.Mesh;
+    thornwake: THREE.MeshStandardMaterial;
+    archive: THREE.MeshStandardMaterial;
+  }[] = [];
   private readonly targets: { node: THREE.Object3D; room: number; input: Input }[] = [];
   private readonly fixtures: THREE.Object3D[] = [];
   private readonly boxes: (() => void)[] = [];
   private readonly ray = new THREE.Raycaster();
   private readonly cube = new THREE.Box3();
   private readonly point = new THREE.Vector3();
+  private readonly smallTargetHit = new THREE.Vector3();
   private readonly owned = new Set<THREE.BufferGeometry>();
   private opened = false;
   private progress = 0;
@@ -82,6 +114,7 @@ export class AlchemyConservatory {
     seed: string,
     private readonly reducedMotion: boolean,
     private readonly placements: readonly InteriorPlacement[] = [],
+    contentVersion = 1,
   ) {
     const source = (name: string) => {
       let mat: THREE.Material | undefined;
@@ -95,7 +128,9 @@ export class AlchemyConservatory {
     this.wood = source('Clock case walnut') ?? this.firstMaterial('GrandfatherClock');
     const shuffled = Stream.fromKey(seed + ':alchemy-bays').shuffle([0, 1, 2, 3, 4]);
     const recipe = alchemyRecipe(seed);
-    const followup = conservatoryFormula(seed);
+    const followup = conservatoryFormula(seed, contentVersion);
+    const ingredients = ingredientsFor(contentVersion);
+    const expanded = ingredients.length > 3;
     this.quietHour = followup.quietHour;
     const decoy = ([0, 1, 2] as const).find((id) => !recipe.includes(id))!;
     this.cauldronRoom = shuffled[0];
@@ -110,13 +145,20 @@ export class AlchemyConservatory {
     keyLight.position.set(-0.72, 1.6, 1.03);
     lab.add(keyLight);
     const trayZ = 1.22;
-    const tray = this.block(lab, 1.05, 0.06, 0.27, 0, 0.52, trayZ, this.wood);
-    this.block(lab, 1.08, 0.025, 0.3, 0, 0.56, trayZ, this.bronze).name = 'alchemy-tray-top';
-    for (const x of [-0.44, 0.44]) this.block(lab, 0.05, 0.51, 0.06, x, 0.255, trayZ, this.bronze);
-    for (const id of [0, 1, 2] as const) {
+    const trayWidth = expanded ? 1.23 : 1.05;
+    const tray = this.block(lab, trayWidth, 0.06, 0.27, 0, 0.52, trayZ, this.wood);
+    this.block(lab, trayWidth + 0.03, 0.025, 0.3, 0, 0.56, trayZ, this.bronze).name =
+      'alchemy-tray-top';
+    const leg = trayWidth / 2 - 0.085;
+    for (const x of [-leg, leg]) this.block(lab, 0.05, 0.51, 0.06, x, 0.255, trayZ, this.bronze);
+    for (const id of ingredients) {
       const ingredient = this.clone('Ingredient' + INGREDIENT_ROOTS[id]);
       ingredient.name = 'IngredientCradle' + INGREDIENT_ROOTS[id];
-      ingredient.position.set((id - 1) * 0.34, 0.58, trayZ);
+      ingredient.position.set(
+        expanded ? (id - 2) * 0.245 : (id - 1) * 0.34,
+        id >= NEW_SPECIMENS[0] ? 0.5725 : 0.58,
+        trayZ,
+      );
       this.cradles.push({
         node: ingredient,
         home: ingredient.position.clone(),
@@ -131,9 +173,27 @@ export class AlchemyConservatory {
       });
     }
     this.potion = this.clone('PotionVial');
-    this.potion.name = 'PocketedPotion';
-    this.potion.position.set(0, 0.58, trayZ);
+    this.potion.name = 'BrewedPotion';
+    this.potion.traverse((mesh) => {
+      if (
+        !(mesh instanceof THREE.Mesh) ||
+        !(mesh.material instanceof THREE.MeshStandardMaterial) ||
+        mesh.material.name !== 'Potion glass'
+      )
+        return;
+      this.vialGlass.push({
+        mesh,
+        thornwake: tintVial(mesh.material, POTION_COLORS.thornwake),
+        archive: tintVial(mesh.material, POTION_COLORS[followup.recipe]),
+      });
+    });
+    this.potion.position.set(0, 0.558, trayZ);
     lab.add(this.potion);
+    this.targets.push({
+      node: this.potion,
+      room: this.cauldronRoom,
+      input: { action: 'take-potion' },
+    });
     if (followup.recipe === 'stillwind') {
       const dial = this.clone('ClockClueDial');
       dial.name = 'stillwind-lab-dial';
@@ -177,19 +237,9 @@ export class AlchemyConservatory {
           this.bronze,
         );
     });
-    [recipe[0], decoy].forEach((id, i) => {
-      const room = shuffled[i + 2],
-        stand = this.bay(room, 'specimen-' + id, 0.33);
-      this.block(stand, 0.52, 0.07, 0.43, 0, 0.9, 0.33, this.wood);
-      this.block(stand, 0.54, 0.018, 0.45, 0, 0.949, 0.33, this.bronze);
-      for (const x of [-0.2, 0.2]) this.block(stand, 0.045, 0.88, 0.25, x, 0.44, 0.32, this.wood);
-      const plant = this.clone('Ingredient' + INGREDIENT_ROOTS[id]);
-      plant.name = 'FoundIngredient' + INGREDIENT_ROOTS[id];
-      plant.position.set(0, 0.96, 0.34);
-      stand.add(plant);
-      this.targets.push({ node: plant, room, input: { action: 'collect', ingredient: id } });
-      this.registerBox(room, stand);
-    });
+    this.placeSpecimens(shuffled[2], 'specimen-' + recipe[0], [recipe[0]]);
+    this.placeSpecimens(shuffled[3], 'specimen-' + decoy, [decoy]);
+    if (expanded) this.placeSpecimens(shuffled[4], 'conservatory-specimen-stand', NEW_SPECIMENS);
     const edge = world.plan.connections.find((c) => c.puzzleGate === 'thorn')!;
     const endpoint = edge[0],
       door = world.rooms[endpoint.room].doors.find((d) => d.id === endpoint.door)!;
@@ -217,6 +267,21 @@ export class AlchemyConservatory {
     this.targets.push({ node: seal, room: endpoint.room, input: { action: 'apply' } });
     this.sync({ found: [], added: [], brewed: false, opened: false }, true);
     tray.name = 'alchemy-mixing-tray';
+  }
+  private placeSpecimens(room: number, key: string, specimens: readonly Ingredient[]): void {
+    const width = specimens.length > 1 ? 0.6 : 0.52;
+    const stand = this.bay(room, key, width / 2 + 0.07);
+    this.block(stand, width, 0.07, 0.43, 0, 0.9, 0.33, this.wood);
+    this.block(stand, width + 0.02, 0.018, 0.45, 0, 0.949, 0.33, this.bronze);
+    for (const x of [-0.2, 0.2]) this.block(stand, 0.045, 0.88, 0.25, x, 0.44, 0.32, this.wood);
+    for (const [index, id] of specimens.entries()) {
+      const specimen = this.clone('Ingredient' + INGREDIENT_ROOTS[id]);
+      specimen.name = 'FoundIngredient' + INGREDIENT_ROOTS[id];
+      specimen.position.set((index - (specimens.length - 1) / 2) * 0.27, 0.96, 0.34);
+      stand.add(specimen);
+      this.targets.push({ node: specimen, room, input: { action: 'collect', ingredient: id } });
+    }
+    this.registerBox(room, stand);
   }
   private clone(name: string): THREE.Object3D {
     return kitPart(this.art, name).clone(true);
@@ -283,18 +348,29 @@ export class AlchemyConservatory {
       if (room !== this.world.current || !node.visible) continue;
       if (input.action === 'add' && this.cradles[input.ingredient].flight !== null) continue;
       node.updateWorldMatrix(true, true);
-      const hit = this.ray.intersectObject(node, true)[0];
-      if (!hit || (nearest && hit.distance >= nearest.distance)) continue;
+      let hit: THREE.Vector3 | undefined = this.ray.intersectObject(node, true)[0]?.point;
+      if (
+        !hit &&
+        (input.action === 'take-potion' ||
+          ('ingredient' in input && input.ingredient >= NEW_SPECIMENS[0]))
+      ) {
+        // Thin leaves and stems need a continuous pick surface at seated distance.
+        this.cube.setFromObject(node).expandByScalar(0.015);
+        hit = this.ray.ray.intersectBox(this.cube, this.smallTargetHit) ?? undefined;
+      }
+      if (!hit) continue;
+      const distance = origin.distanceTo(hit);
+      if (distance > this.ray.far || (nearest && distance >= nearest.distance)) continue;
       const blocked = this.world.colliders[room].some((b) => {
         this.cube.min.fromArray(b.min);
         this.cube.max.fromArray(b.max);
         return (
-          !this.cube.containsPoint(hit.point) &&
+          !this.cube.containsPoint(hit) &&
           this.ray.ray.intersectBox(this.cube, this.point) !== null &&
-          this.point.distanceTo(origin) < hit.distance - 0.035
+          this.point.distanceTo(origin) < distance - 0.035
         );
       });
-      if (!blocked) nearest = { ...input, distance: hit.distance };
+      if (!blocked) nearest = { ...input, distance };
     }
     return nearest;
   }
@@ -312,6 +388,8 @@ export class AlchemyConservatory {
     const second = state.opened && formula?.clues.length === 2 ? formula : null;
     const active = second ?? state;
     this.opened = state.opened;
+    for (const { mesh, thornwake, archive } of this.vialGlass)
+      mesh.material = second ? archive : thornwake;
     if (immediate) {
       this.splash = 0;
       this.clearPickups();
@@ -321,16 +399,20 @@ export class AlchemyConservatory {
         const cradle = this.cradles[input.ingredient];
         cradle.available =
           state.found.includes(input.ingredient) &&
+          (input.ingredient < NEW_SPECIMENS[0] || second !== null) &&
           !active.added.includes(input.ingredient) &&
           !active.brewed;
         if (immediate) this.finishDrop(cradle);
         node.visible = cradle.available || cradle.flight !== null;
-      } else {
-        node.visible =
-          input.action === 'collect' ? !state.found.includes(input.ingredient) : !state.opened;
+      } else if (input.action === 'collect') {
+        node.visible = !state.found.includes(input.ingredient);
+      } else if (input.action === 'apply') {
+        node.visible = !state.opened;
       }
     }
-    this.potionReady = second ? second.brewed && !second.revealed : state.brewed && !state.opened;
+    this.potionReady = second
+      ? second.brewed && !second.carried && !second.revealed
+      : state.brewed && !state.carried && !state.opened;
     this.updatePotion();
     if (immediate || this.reducedMotion) {
       this.progress = Number(this.opened);
@@ -347,9 +429,15 @@ export class AlchemyConservatory {
       this.targets.find(
         ({ input }) => input.action === 'collect' && input.ingredient === ingredient,
       )?.node;
-    if (!specimen?.parent) return;
+    if (specimen) this.flyPickup(specimen, collector, INGREDIENT_ROOTS[ingredient]);
+  }
+  animatePotionPickup(collector: THREE.Object3D): void {
+    this.flyPickup(this.potion, collector, 'potion');
+  }
+  private flyPickup(specimen: THREE.Object3D, collector: THREE.Object3D, name: string): void {
+    if (!specimen.parent) return;
     const node = specimen.clone(true);
-    node.name = 'alchemy-pickup-' + INGREDIENT_ROOTS[ingredient];
+    node.name = 'alchemy-pickup-' + name;
     node.visible = true;
     specimen.parent.add(node);
     this.world.group.attach(node);
@@ -469,5 +557,9 @@ export class AlchemyConservatory {
     for (const remove of this.boxes) remove();
     for (const root of this.fixtures) root.removeFromParent();
     for (const g of this.owned) g.dispose();
+    for (const { thornwake, archive } of this.vialGlass) {
+      thornwake.dispose();
+      archive.dispose();
+    }
   }
 }

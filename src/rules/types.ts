@@ -18,12 +18,68 @@ export interface StoredDispatchState {
   readonly sent: boolean;
   readonly opened: boolean;
 }
+export type PipeChannel = 0 | 1 | 2;
+export type SpeakingPipesState = 'idle' | 'primed' | 'open';
+export type StoredSpeakingPipesState = SpeakingPipesState;
+export type ValvehouseState = 'missing' | 'held' | 'seated' | 'open';
+export type PendulumDetent = 0 | 1 | 2;
+export interface PendulumGalleryState {
+  readonly detent: PendulumDetent;
+  readonly open: boolean;
+}
+
+export type BorrowedLightDetent = 0 | 1 | 2 | 3;
+export type BorrowedLightControl = 0 | 1 | 'reset';
+export interface BorrowedLightState {
+  readonly detents: readonly [BorrowedLightDetent, BorrowedLightDetent];
+  readonly open: boolean;
+}
+
+export type FloatElevatorLevel = 0 | 1 | 2 | 3 | 4;
+export type FloatElevatorControl = 'fill' | 'drain' | 'take';
+export interface FloatElevatorState {
+  readonly level: FloatElevatorLevel;
+  readonly collected: boolean;
+}
+export type ShadowStencilDetent = 0 | 1 | 2 | 3 | 4;
+export type ShadowStencilTile = 0 | 1 | 2;
+export interface ShadowStencilState {
+  readonly detent: ShadowStencilDetent;
+  readonly opened: boolean;
+}
+export interface SpringTensionState {
+  readonly tension: number;
+  readonly open: boolean;
+}
+export type SpringTensionControl = 'wind' | 'release' | 'reset';
+export type CircuitSocket = 0 | 1 | 2 | 3;
+export interface DarkCircuitState {
+  readonly sockets: readonly CircuitSocket[];
+  readonly open: boolean;
+}
+
+export type DrumBeat = 0 | 1 | 2 | 3;
+export interface DrumPin {
+  readonly beat: DrumBeat;
+  readonly note: BellNote;
+}
+export interface DrumGalleryState {
+  readonly pin: DrumPin | null;
+  readonly open: boolean;
+}
 
 /** `'player'` or an enemy id. Enemy ids must never be `'player'`. */
 export type ActorId = string;
 export const PLAYER_ID = 'player';
 
-export type StatusId = 'weak' | 'vulnerable' | 'overheat' | 'wound-up' | 'plating' | 'rust';
+export type StatusId =
+  | 'weak'
+  | 'vulnerable'
+  | 'overheat'
+  | 'wound-up'
+  | 'plating'
+  | 'rust'
+  | 'charge';
 /** Stack counts by status. A status with zero stacks is absent. */
 export type Statuses = Readonly<Partial<Record<StatusId, number>>>;
 
@@ -31,22 +87,32 @@ export type Statuses = Readonly<Partial<Record<StatusId, number>>>;
  * A number, or `base + dice × <caller-supplied dice result>`. Enemy moves may only use plain numbers;
  * a card using a dice amount must be played with a `dice` value.
  */
-export type Amount = number | { readonly base?: number; readonly dice: number };
+export type Amount =
+  | number
+  | { readonly base?: number; readonly dice: number }
+  | { readonly perSteam: number }
+  | { readonly atLeast: number; readonly low: number; readonly high: number };
+
+export type CardCost = number | 'X';
 
 /**
  * Who an effect lands on, relative to the actor resolving it: `'self'` is the actor, `'target'` is the
  * card's chosen enemy (for an enemy move, the player), `'all-opponents'` is every living enemy (for an
  * enemy move, the player).
  */
-export type EffectTarget = 'self' | 'target' | 'all-opponents';
+export type EffectTarget = 'self' | 'target' | 'all-opponents' | 'other-opponents';
 
 export type Effect =
   | {
       readonly type: 'damage';
       readonly amount: Amount;
+      /** Additional damage when the acting player has at least this much Block. */
+      readonly bonusIfSelfBlock?: { readonly min: number; readonly amount: number };
       /** Repeat the hit this many times (default 1). Each hit is modified and blocked separately. */
       readonly hits?: number;
-      readonly target: 'target' | 'all-opponents';
+      readonly target: 'target' | 'all-opponents' | 'other-opponents';
+      /** Add this many hits when the chosen target already has Rust, evaluated once before hits. */
+      readonly extraHitsIfTargetRust?: number;
     }
   | { readonly type: 'block'; readonly amount: Amount }
   | { readonly type: 'gain-steam'; readonly amount: Amount }
@@ -74,7 +140,12 @@ export type Effect =
       readonly target: 'self';
       readonly minTargetHits: number;
     }
-  | { readonly type: 'draw'; readonly amount: Amount };
+  | { readonly type: 'damage-from-block'; readonly target: 'target' }
+  | { readonly type: 'scry'; readonly count: number; readonly drawAfter?: number }
+  | { readonly type: 'draw'; readonly amount: Amount }
+  | { readonly type: 'heal'; readonly amount: Amount; readonly target: 'self' }
+  | { readonly type: 'load-die' }
+  | { readonly type: 'allow-reroll' };
 
 /** How a card picks its target: an enemy, or nothing (dropped on the table, D5). */
 export type CardTargetRule = 'enemy' | 'none';
@@ -85,9 +156,15 @@ export type CardTargetRule = 'enemy' | 'none';
  */
 export interface CardDef {
   readonly id: string;
-  readonly cost: number;
+  readonly cost: CardCost;
   readonly target: CardTargetRule;
   readonly effects: readonly Effect[];
+  readonly echoSigil?: true;
+  readonly mechanism?: {
+    readonly timing: 'start-turn' | 'end-turn';
+    readonly effects: readonly Effect[];
+    readonly target?: 'least-hp';
+  };
   /** Goes to the exhaust pile instead of discard after it is played. */
   readonly exhaust?: boolean;
   /** Keeps this card in hand when the player ends the turn. */
@@ -106,6 +183,8 @@ export type FoundryStance = 'guarded' | 'exposed';
 /** One enemy move. Its effects resolve from the enemy's point of view (see `EffectTarget`). */
 export interface EnemyMove {
   readonly id: string;
+  /** Player-facing name when the move needs to appear in a forecast. */
+  readonly label?: string;
   readonly intent: IntentKind;
   readonly effects: readonly Effect[];
   /** Optional visible Foundry pose modifier. Legacy moves remain neutral. */
@@ -162,8 +241,22 @@ export interface Piles {
  * `idle` before start-combat; `awaiting-turn` when start-turn is next; `player` while cards may be
  * played; `enemy` when enemy-act is next; `over` once the combat is won or lost.
  */
-export type CombatPhase = 'idle' | 'awaiting-turn' | 'player' | 'enemy' | 'over';
+export type CombatPhase = 'idle' | 'awaiting-turn' | 'player' | 'scry' | 'enemy' | 'over';
+
+export interface PendingScry {
+  readonly count: number;
+  readonly card: CombatCard;
+  readonly drawAfter: number;
+}
 export type CombatOutcome = 'won' | 'lost' | null;
+
+export interface SuccessfulSigil {
+  readonly cardId: string;
+  readonly target: CardDef['target'];
+  readonly effects: readonly Effect[];
+  readonly power: number;
+  readonly dice?: number;
+}
 
 /** Plain, JSON-serializable combat state. Never mutated by `apply`. */
 export interface CombatState {
@@ -174,6 +267,14 @@ export interface CombatState {
   readonly player: PlayerState;
   readonly enemies: readonly EnemyState[];
   readonly piles: Piles;
+  /** Mechanisms installed during this fight, oldest first. Omitted in prior snapshots. */
+  readonly mechanisms?: readonly CombatCard[];
+  /** Dice modifiers set by cards. Loaded lasts through the current turn; reroll is consumed by the controller. */
+  readonly loadedDie?: boolean;
+  readonly rerollDie?: boolean;
+  readonly lastSuccessfulSigil?: SuccessfulSigil;
+  /** The active selection owns the played card until confirmation completes the play. */
+  readonly scry?: PendingScry;
   /** Run RNG snapshot. The engine draws from `deck` (shuffles) and `ai` (intents) only. */
   readonly rng: RunRngState;
 }
@@ -212,6 +313,7 @@ export type Action =
       /** Dice result resolved by the caller from the `dice` stream before presentation (D1). */
       readonly dice?: number;
     }
+  | { readonly type: 'resolve-scry'; readonly discard: readonly number[] }
   | { readonly type: 'end-turn' }
   | { readonly type: 'enemy-act' };
 
@@ -229,15 +331,33 @@ export type CombatEvent =
   | { readonly type: 'steam-changed'; readonly from: number; readonly to: number }
   | { readonly type: 'card-drawn'; readonly uid: number; readonly cardId: string }
   | { readonly type: 'reshuffled'; readonly count: number }
+  | { readonly type: 'scry-ready'; readonly count: number }
+  | { readonly type: 'scry-finished'; readonly discarded: number }
   | {
       readonly type: 'card-played';
       readonly uid: number;
       readonly cardId: string;
       readonly target: string | null;
       readonly dice: number | null;
+      readonly steamSpent?: number;
+      readonly echoedCardId?: string;
     }
   | { readonly type: 'card-discarded'; readonly uid: number; readonly cardId: string }
   | { readonly type: 'card-exhausted'; readonly uid: number; readonly cardId: string }
+  | {
+      readonly type: 'mechanism-installed';
+      readonly uid: number;
+      readonly cardId: string;
+      readonly replacedUid?: number;
+    }
+  | {
+      readonly type: 'mechanism-triggered';
+      readonly uid: number;
+      readonly cardId: string;
+      readonly timing: 'start-turn' | 'end-turn';
+      readonly target: string | null;
+    }
+  | { readonly type: 'mechanism-finished'; readonly uid: number }
   | {
       readonly type: 'damage-dealt';
       readonly source: ActorId | null;
@@ -248,6 +368,7 @@ export type CombatEvent =
       readonly blocked: number;
       readonly hpLost: number;
     }
+  | { readonly type: 'healed'; readonly target: ActorId; readonly amount: number }
   | { readonly type: 'block-gained'; readonly target: ActorId; readonly amount: number }
   | { readonly type: 'block-cleared'; readonly target: ActorId; readonly amount: number }
   | {
@@ -291,6 +412,15 @@ export type PressureDials = readonly [PressureDial, PressureDial, PressureDial];
 
 export type PressureNoteId = 'dispatch' | 'A' | 'B' | 'C';
 
+export type LogbookClueId = PressureNoteId | 'reliquary-rubbing';
+
+export interface LogbookEntry {
+  readonly id: LogbookClueId;
+  readonly title: string;
+  readonly body: string;
+  readonly origin: string;
+}
+
 export interface PressureState {
   readonly dials: PressureDials;
   readonly solved: boolean;
@@ -320,6 +450,7 @@ export interface StoredConservatoryFormula {
   readonly brewed: boolean;
   readonly revealed: boolean;
   readonly opened: boolean;
+  readonly carried?: true;
 }
 export type CommissionKind = 'recovery' | 'restoration' | 'delve';
 export interface StoredCommissionState {
@@ -343,12 +474,13 @@ export interface StoredCounterweightState {
   readonly solved: boolean;
 }
 
-export type Ingredient = 0 | 1 | 2;
+export type Ingredient = 0 | 1 | 2 | 3 | 4;
 export interface StoredAlchemyState {
   readonly found: readonly Ingredient[];
   readonly added: readonly Ingredient[];
   readonly brewed: boolean;
   readonly opened: boolean;
+  readonly carried?: true;
 }
 export type CalibrationKind = 'gears' | 'orrery';
 export type GearId = 0 | 1 | 2;

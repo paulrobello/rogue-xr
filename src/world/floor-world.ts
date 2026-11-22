@@ -253,7 +253,7 @@ function buildRoom(
       socket,
       pickup.kind,
       onDesk ? 0.78 : surface,
-      placed.encounter !== null,
+      placed.encounter !== null || plan.shadowStencil?.room === index,
       keyed,
     );
     if (onDesk) coffer.object.scale.set(0.85, 1.1, 0.85);
@@ -447,6 +447,9 @@ export function buildFloorWorld(
   });
   const guardGeometry = new THREE.BoxGeometry(DOOR_WIDTH - 0.02, DOOR_HEIGHT - 0.03, 0.064);
   guardGeometry.translate(0, DOOR_HEIGHT / 2, 0);
+  // The moving leaf's relief ends short of the jambs. Behind it, a thin rebate closes the sightline.
+  const guardRebate = new THREE.BoxGeometry(DOOR_WIDTH + 0.002, DOOR_HEIGHT, 0.018);
+  guardRebate.translate(0, DOOR_HEIGHT / 2, 0);
   const lockGeometry = new THREE.BoxGeometry(0.14, 0.14, 0.068)
     .rotateZ(Math.PI / 4)
     .translate(0, 1.15, 0);
@@ -643,7 +646,9 @@ export function buildFloorWorld(
     },
     dressEncounterDoor(model) {
       if (!guardLeaf || guardSource === model) return;
-      guardLeaf.clear().add(model.clone(true));
+      const rebate = new THREE.Mesh(guardRebate, guardMaterial);
+      rebate.name = 'encounter-lock-rebate';
+      guardLeaf.clear().add(model.clone(true), rebate);
       guardSource = model;
     },
     dressPuzzleGates(set, environment) {
@@ -780,6 +785,7 @@ export function buildFloorWorld(
       fillGeometry.dispose();
       wallFillGeometry.dispose();
       guardGeometry.dispose();
+      guardRebate.dispose();
       lockGeometry.dispose();
       lockMaterial.dispose();
       kit.dispose();

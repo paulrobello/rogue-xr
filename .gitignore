@@ -52,3 +52,6 @@ assets-source/props/brass-key-kit/staging/*-base.png
 assets-source/props/brass-key-kit/staging/*-normal.png
 assets-source/props/brass-key-kit/staging/*-orm.png
 assets-source/props/brass-key-kit/staging/*.glb
+
+# The specimen kit runtime keeps the single tracked copy of its verified GLB.
+assets-source/props/conservatory-specimens/staging/*.glb

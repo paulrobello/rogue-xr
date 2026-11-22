@@ -6,32 +6,36 @@ import { EnemyAsset, type EnemyClip, type EnemyManifest } from './enemy-asset.ts
 const OWL_REST_HEIGHT = 0.98;
 
 export class ClockworkOwlFlight {
-  private readonly flight: THREE.Object3D;
+  private readonly hover: THREE.Object3D;
   private readonly left: THREE.Object3D;
   private readonly right: THREE.Object3D;
+  private readonly leftFlap: THREE.Object3D;
+  private readonly rightFlap: THREE.Object3D;
   private blend = 0;
   private cycle = 0;
 
   constructor(object: THREE.Object3D) {
-    this.flight = kitPart(object, 'OwlFlight');
+    this.hover = kitPart(object, 'OwlHover');
     this.left = kitPart(object, 'OwlWingL');
     this.right = kitPart(object, 'OwlWingR');
+    this.leftFlap = kitPart(object, 'OwlWingLFlap');
+    this.rightFlap = kitPart(object, 'OwlWingRFlap');
   }
 
-  /** Apply to the fresh mixer pose so wingbeats continue through the encounter's frozen idle. */
+  /** Own only the offsets. The mixer can leave an unchanged keyframe untouched for many frames. */
   update(dt: number, airborne: boolean): void {
     this.blend = THREE.MathUtils.clamp(this.blend + (airborne ? dt : -dt) / 0.28, 0, 1);
     if (this.blend === 0) {
       this.cycle = 0;
-      return;
+    } else {
+      this.cycle = (this.cycle + dt * 2.8) % 1;
     }
-    this.cycle = (this.cycle + dt * 2.8) % 1;
     const phase = this.cycle * Math.PI * 2;
     const weight = THREE.MathUtils.smoothstep(this.blend, 0, 1);
     const wing = 1.1 + Math.sin(phase) * 0.58;
-    this.left.rotation.z = THREE.MathUtils.lerp(this.left.rotation.z, -wing, weight);
-    this.right.rotation.z = THREE.MathUtils.lerp(this.right.rotation.z, wing, weight);
-    this.flight.position.y += weight * (0.21 + 0.033 * Math.cos(phase));
+    this.leftFlap.rotation.z = (-wing - this.left.rotation.z) * weight;
+    this.rightFlap.rotation.z = (wing - this.right.rotation.z) * weight;
+    this.hover.position.y = weight * (0.21 + 0.033 * Math.cos(phase));
   }
 }
 
@@ -163,13 +167,25 @@ export function makeClockworkOwlAsset(art: THREE.Object3D): EnemyAsset {
   const root = new THREE.Group();
   const bird = art.clone(true);
   bird.name = 'ClockworkOwl';
+  for (const name of ['OwlWingL', 'OwlWingR']) {
+    const wing = kitPart(bird, name);
+    const pivot = new THREE.Group();
+    pivot.name = `${name}Flap`;
+    pivot.position.copy(wing.position);
+    wing.parent?.add(pivot);
+    wing.position.set(0, 0, 0);
+    pivot.add(wing);
+  }
   const facing = new THREE.Group();
   facing.rotation.y = Math.PI;
   facing.add(bird);
   const flight = new THREE.Group();
   flight.name = 'OwlFlight';
   flight.position.y = OWL_REST_HEIGHT;
-  flight.add(facing);
+  const hover = new THREE.Group();
+  hover.name = 'OwlHover';
+  hover.add(facing);
+  flight.add(hover);
   root.add(flight);
   const socketPositions = {
     'socket-hit': [0, 0.54, -0.04],
@@ -180,7 +196,7 @@ export function makeClockworkOwlAsset(art: THREE.Object3D): EnemyAsset {
     const marker = new THREE.Object3D();
     marker.name = name;
     marker.position.set(position[0], position[1], position[2]);
-    flight.add(marker);
+    hover.add(marker);
   }
   const clips = new Map<EnemyClip, THREE.AnimationClip>();
   const spec = {} as EnemyManifest['clips'];
@@ -237,7 +253,7 @@ export function makeClockworkOwlAsset(art: THREE.Object3D): EnemyAsset {
     sockets: Object.fromEntries(
       Object.entries(socketPositions).map(([name, pos]) => [
         name,
-        { bone: name, parent: flight.name, position: [pos[0], pos[1] + OWL_REST_HEIGHT, pos[2]] },
+        { bone: name, parent: hover.name, position: [pos[0], pos[1] + OWL_REST_HEIGHT, pos[2]] },
       ]),
     ),
     emissive: { material: 'Magical glimmer', color: '#f1bc68', intensity: 1, nodes: [] },

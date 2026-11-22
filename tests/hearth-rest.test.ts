@@ -310,6 +310,26 @@ describe('hearths in the floor world', () => {
     world.dispose();
   });
 
+  it('joins each tripod leg to its foot on the floor', () => {
+    const world = buildFloorWorld(generateFloor(REST_SEED));
+    const hearth = world.hearths[0];
+    try {
+      const legs = hearth.object.children.filter((part) => part.name === 'hearth-leg');
+      const feet = hearth.object.children.filter((part) => part.name === 'hearth-foot');
+      expect(feet).toHaveLength(3);
+      expect(legs).toHaveLength(3);
+      for (const [i, foot] of feet.entries()) {
+        const leg = legs[i] as THREE.Mesh<THREE.CylinderGeometry>;
+        const seat = new THREE.Vector3(0, -leg.geometry.parameters.height / 2, 0);
+        const bottom = leg.localToWorld(seat);
+        expect(new THREE.Box3().setFromObject(foot).min.y).toBeCloseTo(0, 5);
+        expect(bottom.distanceTo(foot.getWorldPosition(new THREE.Vector3()))).toBeLessThan(1e-6);
+      }
+    } finally {
+      world.dispose();
+    }
+  });
+
   it('frees its geometry and placeholder materials with the floor', () => {
     const world = buildFloorWorld(generateFloor(REST_SEED));
     const mesh = world.hearths[0]?.object.getObjectByName('hearth-bowl') as THREE.Mesh;

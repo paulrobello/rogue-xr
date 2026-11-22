@@ -2073,6 +2073,1931 @@
           "duration_seconds": 1.8
         }
       }
+    },
+    "dungeon-torch-crackle": {
+      "intermediate_wav": "assets-source/audio/derived/dungeon-torch-crackle.wav",
+      "intermediate_sha256": "ddfabaf01d55aa4b54874aa7621b2e2fbc00c5830683671b8facb50f6e811e00",
+      "pre_gain": {
+        "integrated_lufs": -21.5,
+        "true_peak_dbtp": -5.8,
+        "momentary_max_lufs": -20.7
+      },
+      "gain_db": 4.55,
+      "encode_attempts": 2,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -17.0,
+        "true_peak_dbtp": -1.1,
+        "momentary_max_lufs": -16.1
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -1.0,
+      "loudness_status": "met",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 480000,
+      "decoded_duration_s": 10.0,
+      "decoded_pcm_sha256": "97797a90edaeb2ce0462e4afa6e5d0744cf77d3c4f7fd54d7d4f0b9e4e330695",
+      "loop": {
+        "source": {
+          "wrap_step": 0.054467,
+          "p999_step": 0.066191,
+          "seam_ratio": 0.823,
+          "head_tail_level_diff_db": 0.21,
+          "interior_dropout_windows": 0,
+          "pass": true
+        },
+        "runtime": {
+          "wrap_step": 0.058841,
+          "p999_step": 0.108741,
+          "seam_ratio": 0.541,
+          "head_tail_level_diff_db": 0.19,
+          "interior_dropout_windows": 0,
+          "pass": true
+        }
+      },
+      "id": "dungeon-torch-crackle",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/dungeon-torch-crackle.wav",
+      "source_sha256": "2999c09f90f9680405e9cb5196be8f749990ce591def82c4a5704a09c945a97d",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 10.0
+      },
+      "trim": {
+        "trimmed_head_ms": 0.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "loop kept native: source wrap passed",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/dungeon-torch-crackle.ogg",
+      "runtime_sha256": "3ec974836a6dca59187d06c091df8cdb04c16f4c57fd3ded1d768c57974c9214",
+      "runtime_bytes": 88626,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 10.0065
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "torch-crackle",
+          "seed": 4201,
+          "duration_seconds": 10.0
+        }
+      }
+    },
+    "dungeon-chain-wind": {
+      "intermediate_wav": "assets-source/audio/derived/dungeon-chain-wind.wav",
+      "intermediate_sha256": "367a067ec257d228b010a55f180813c34190886cfde66fe9e41aeb8a04ef657b",
+      "pre_gain": {
+        "integrated_lufs": -20.4,
+        "true_peak_dbtp": -5.8,
+        "momentary_max_lufs": -17.4
+      },
+      "gain_db": 4.4,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -16.0,
+        "true_peak_dbtp": -1.7,
+        "momentary_max_lufs": -13.0
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": 0.0,
+      "loudness_status": "met",
+      "limited_by_true_peak": false,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 61196,
+      "decoded_duration_s": 1.2749,
+      "decoded_pcm_sha256": "892d003fa0a29e6555d51facabf4b5e597ededd8fe79be845c3039383ae10698",
+      "id": "dungeon-chain-wind",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/dungeon-chain-wind.wav",
+      "source_sha256": "c3050aa51f47036b154409ab08a6a1ec1b8b4fa41e67a77eff79be50697195d1",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.3
+      },
+      "trim": {
+        "trimmed_head_ms": 25.1,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/dungeon-chain-wind.ogg",
+      "runtime_sha256": "6865e794c54de9eecff3af3015bafda2d9a11eb79798b3bf61da137af94cdcd1",
+      "runtime_bytes": 11426,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.2814
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "chain-wind",
+          "seed": 4202,
+          "duration_seconds": 1.3
+        }
+      }
+    },
+    "dungeon-scarab-scrape": {
+      "intermediate_wav": "assets-source/audio/derived/dungeon-scarab-scrape.wav",
+      "intermediate_sha256": "a187bd50c2807bc5fed037435a5f99fa5fb9fc27172670c2cc5d8ebe935376e9",
+      "pre_gain": {
+        "integrated_lufs": -21.2,
+        "true_peak_dbtp": -5.8,
+        "momentary_max_lufs": -18.5
+      },
+      "gain_db": 4.8,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -16.4,
+        "true_peak_dbtp": -1.1,
+        "momentary_max_lufs": -13.7
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -0.4,
+      "loudness_status": "met",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 49436,
+      "decoded_duration_s": 1.0299,
+      "decoded_pcm_sha256": "6bd06c2db844ec67c0980b8faa085b511bd058f71f3b21513b49a08127d2e099",
+      "id": "dungeon-scarab-scrape",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/dungeon-scarab-scrape.wav",
+      "source_sha256": "804e437794cfc5d2d503e44e498206355bb2c782a357d6c4d51b520cfd4f930f",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.05
+      },
+      "trim": {
+        "trimmed_head_ms": 20.1,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/dungeon-scarab-scrape.ogg",
+      "runtime_sha256": "8c2b0539834613d2202e793653296845c8555af809920d5131f0f39e26bac96d",
+      "runtime_bytes": 11464,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.0364
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "scarab-scrape",
+          "seed": 4203,
+          "duration_seconds": 1.05
+        }
+      }
+    },
+    "cistern-pipe-send": {
+      "intermediate_wav": "assets-source/audio/derived/cistern-pipe-send.wav",
+      "intermediate_sha256": "d3c8f8ea85e33285bbf325b95ab42813f8b14c390079e17678543ed0c67a59da",
+      "pre_gain": {
+        "integrated_lufs": -32.7,
+        "true_peak_dbtp": -5.7,
+        "momentary_max_lufs": -27.5
+      },
+      "gain_db": 4.55,
+      "encode_attempts": 2,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -28.3,
+        "true_peak_dbtp": -1.0,
+        "momentary_max_lufs": -23.1
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -12.3,
+      "loudness_status": "deviation",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": true,
+      "decoded_frames": 38727,
+      "decoded_duration_s": 0.8068,
+      "decoded_pcm_sha256": "deef9099892b638a6db26d382b1cd2ecfbe16b4f6f146671ea522e10fe0afe6d",
+      "id": "cistern-pipe-send",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/cistern-pipe-send.wav",
+      "source_sha256": "be93a630f61c1eb0545574e1259edbfb7b711888a6be6fcb2ee431fd2b5b6b6a",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.1
+      },
+      "trim": {
+        "trimmed_head_ms": 13.0,
+        "trimmed_tail_ms": 280.1
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/cistern-pipe-send.ogg",
+      "runtime_sha256": "4cb5fdb455a4a001d13e46b2c7a6f2f0915ac764922253181818adfce38318a2",
+      "runtime_bytes": 6748,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.8133
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "pipe-send",
+          "seed": 5201,
+          "duration_seconds": 1.1
+        }
+      }
+    },
+    "cistern-grille-open": {
+      "intermediate_wav": "assets-source/audio/derived/cistern-grille-open.wav",
+      "intermediate_sha256": "280a9202125b3ce96303f7a4bb840f4aa4b5e0788166d55a07639b77dcfe8113",
+      "pre_gain": {
+        "integrated_lufs": -23.0,
+        "true_peak_dbtp": -5.6,
+        "momentary_max_lufs": -20.0
+      },
+      "gain_db": 4.35,
+      "encode_attempts": 2,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -18.7,
+        "true_peak_dbtp": -1.0,
+        "momentary_max_lufs": -15.8
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -2.7,
+      "loudness_status": "deviation",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 69110,
+      "decoded_duration_s": 1.4398,
+      "decoded_pcm_sha256": "a8929fb15d9fe5e01ac747aba241d2cf6a64c291530364b02f2fc5be55f71173",
+      "id": "cistern-grille-open",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/cistern-grille-open.wav",
+      "source_sha256": "1a1ea88d487be00eb91629901920320e11b10e9ccf0fb9fff4f5e2932421c2a7",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.5
+      },
+      "trim": {
+        "trimmed_head_ms": 30.2,
+        "trimmed_tail_ms": 30.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/cistern-grille-open.ogg",
+      "runtime_sha256": "3c1597c7d18c366b92d4849a497b1cc54bdf867f31c2c6587ed40163371276a4",
+      "runtime_bytes": 12187,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.4463
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "grille",
+          "seed": 5202,
+          "duration_seconds": 1.5
+        }
+      }
+    },
+    "reliquary-stone-open": {
+      "intermediate_wav": "assets-source/audio/derived/reliquary-stone-open.wav",
+      "intermediate_sha256": "31288c70d138b61d68ef31a7084be1814c9c1bf9997b7641d27f648498c1b9bd",
+      "pre_gain": {
+        "integrated_lufs": -21.4,
+        "true_peak_dbtp": -5.9,
+        "momentary_max_lufs": -18.2
+      },
+      "gain_db": 4.9,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -16.6,
+        "true_peak_dbtp": -1.1,
+        "momentary_max_lufs": -13.4
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -0.6,
+      "loudness_status": "met",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 72718,
+      "decoded_duration_s": 1.515,
+      "decoded_pcm_sha256": "9bd04dcd8f9c5f81204d58041531156f132993d0fd92a1e2ec746248a001c551",
+      "id": "reliquary-stone-open",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/reliquary-stone-open.wav",
+      "source_sha256": "f9a12b0fecc7bbe714c47b1134738c67b18a68a992ec9123da5b7f51b7857bb5",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.6
+      },
+      "trim": {
+        "trimmed_head_ms": 35.0,
+        "trimmed_tail_ms": 50.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/reliquary-stone-open.ogg",
+      "runtime_sha256": "f2780ed6006d083805ba33ec0dbbdd62664bc2326e3a43fd7b00f0f81411e73e",
+      "runtime_bytes": 13958,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.5215
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "reliquary",
+          "seed": 6201,
+          "duration_seconds": 1.6
+        }
+      }
+    },
+    "valvehouse-leak": {
+      "intermediate_wav": "assets-source/audio/derived/valvehouse-leak.wav",
+      "intermediate_sha256": "74ef81c79c880d2108ba1a34c336d9addb05687e091c786dcc4541edd9ac223c",
+      "pre_gain": {
+        "integrated_lufs": -19.3,
+        "true_peak_dbtp": -5.5,
+        "momentary_max_lufs": -17.5
+      },
+      "gain_db": 3.3,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -16.4,
+        "true_peak_dbtp": -2.4,
+        "momentary_max_lufs": -14.7
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -0.4,
+      "loudness_status": "met",
+      "limited_by_true_peak": false,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 432000,
+      "decoded_duration_s": 9.0,
+      "decoded_pcm_sha256": "ce5dee4922fcde263b42d34ff1b6bcba3081a0296a3f0a0acdb77362fbdfe55f",
+      "loop": {
+        "source": {
+          "wrap_step": 0.154954,
+          "p999_step": 0.294174,
+          "seam_ratio": 0.527,
+          "head_tail_level_diff_db": 0.84,
+          "interior_dropout_windows": 0,
+          "pass": true
+        },
+        "runtime": {
+          "wrap_step": 0.209432,
+          "p999_step": 0.360743,
+          "seam_ratio": 0.581,
+          "head_tail_level_diff_db": 0.76,
+          "interior_dropout_windows": 0,
+          "pass": true
+        }
+      },
+      "id": "valvehouse-leak",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/valvehouse-leak.wav",
+      "source_sha256": "0734cd0f4043a92173271f870ddc2804418cb7539bec8953621c1c8d57cc2390",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 9.0
+      },
+      "trim": {
+        "trimmed_head_ms": 0.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "loop kept native: source wrap passed",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/valvehouse-leak.ogg",
+      "runtime_sha256": "5df9d54582260c4a129cd681f82dbd9395e484f03351fbf35b35992fa9631ad5",
+      "runtime_bytes": 67812,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 9.0065
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "valvehouse-leak",
+          "seed": 7301,
+          "duration_seconds": 9.0
+        }
+      }
+    },
+    "valvehouse-gate-open": {
+      "intermediate_wav": "assets-source/audio/derived/valvehouse-gate-open.wav",
+      "intermediate_sha256": "c8334924b69aff631114abbc630284c1ee2aa66872c7bd6483abc9ab236335d4",
+      "pre_gain": {
+        "integrated_lufs": -21.5,
+        "true_peak_dbtp": -5.9,
+        "momentary_max_lufs": -18.5
+      },
+      "gain_db": 4.9,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -16.6,
+        "true_peak_dbtp": -1.1,
+        "momentary_max_lufs": -13.7
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -0.6,
+      "loudness_status": "met",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 70560,
+      "decoded_duration_s": 1.47,
+      "decoded_pcm_sha256": "8c50efc5e829f6d6e3b74aae7264a4bc813dd72c3fddef779f47ed0578d1a6d4",
+      "id": "valvehouse-gate-open",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/valvehouse-gate-open.wav",
+      "source_sha256": "c2fac7b82f82640b97033163e1e34ed1928d00d1f340237ba557702fc285394a",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.5
+      },
+      "trim": {
+        "trimmed_head_ms": 0.0,
+        "trimmed_tail_ms": 30.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/valvehouse-gate-open.ogg",
+      "runtime_sha256": "93a68b1cbf686119bf1a43a42be795678b34f9ea52251d70b8c1cd2e3f88d228",
+      "runtime_bytes": 13091,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.4765
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "valvehouse-gate",
+          "seed": 7302,
+          "duration_seconds": 1.5
+        }
+      }
+    },
+    "pendulum-gallery-open": {
+      "intermediate_wav": "assets-source/audio/derived/pendulum-gallery-open.wav",
+      "intermediate_sha256": "2a6a07743f178cb838805bf19b06ef70887c65100027fdfd8787111383228f70",
+      "pre_gain": {
+        "integrated_lufs": -19.8,
+        "true_peak_dbtp": -5.4,
+        "momentary_max_lufs": -17.3
+      },
+      "gain_db": 3.8,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -16.0,
+        "true_peak_dbtp": -1.4,
+        "momentary_max_lufs": -13.5
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": 0.0,
+      "loudness_status": "met",
+      "limited_by_true_peak": false,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 72478,
+      "decoded_duration_s": 1.51,
+      "decoded_pcm_sha256": "6857717c6cb8b8d4ac2b91314fffb3488d39ee1c3821e0250becfe9704ba1dec",
+      "id": "pendulum-gallery-open",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/pendulum-gallery-open.wav",
+      "source_sha256": "a2e2aed4305580678a8206a50ef1015f2c750fe88d8124461d6819832c709108",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.55
+      },
+      "trim": {
+        "trimmed_head_ms": 40.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/pendulum-gallery-open.ogg",
+      "runtime_sha256": "1e9c5ace10b33514c24d43633569a14baebd60375aedb91cb9a5f1fca336bccb",
+      "runtime_bytes": 14439,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.5165
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "pendulum-gallery",
+          "seed": 7401,
+          "duration_seconds": 1.55
+        }
+      }
+    },
+    "armory-awaken": {
+      "intermediate_wav": "assets-source/audio/derived/armory-awaken.wav",
+      "intermediate_sha256": "6f4d39fb6dfda16099972aa5b55740b3582d792a0292eef1f2d52c1afecd8483",
+      "pre_gain": {
+        "integrated_lufs": -20.5,
+        "true_peak_dbtp": -5.7,
+        "momentary_max_lufs": -18.6
+      },
+      "gain_db": 4.5,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -16.0,
+        "true_peak_dbtp": -1.1,
+        "momentary_max_lufs": -14.1
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": 0.0,
+      "loudness_status": "met",
+      "limited_by_true_peak": false,
+      "short_clip_lufs_unreliable": true,
+      "decoded_frames": 35038,
+      "decoded_duration_s": 0.73,
+      "decoded_pcm_sha256": "1070de5c4969b6c812b953b6755ead42187e2770a071539f73d7b71c5dc4ea35",
+      "id": "armory-awaken",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/armory-awaken.wav",
+      "source_sha256": "c9a0c57442fc656110a45a71cf24c8465dcf7747d6aeb5c9efbea8923aa7072c",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.76
+      },
+      "trim": {
+        "trimmed_head_ms": 30.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/armory-awaken.ogg",
+      "runtime_sha256": "985d55d65bc20f0edd31226b0545fea294eb0d7e7ae15f49db7223d759dc15c5",
+      "runtime_bytes": 8729,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.7365
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "armory-awaken",
+          "seed": 8601,
+          "duration_seconds": 0.76
+        }
+      }
+    },
+    "borrowed-light-receiver": {
+      "intermediate_wav": "assets-source/audio/derived/borrowed-light-receiver.wav",
+      "intermediate_sha256": "f4fd0d621f8879a126a797d3093179c3763825762b8afb77f673d2289d8ff3f6",
+      "pre_gain": {
+        "integrated_lufs": -18.6,
+        "true_peak_dbtp": -5.9,
+        "momentary_max_lufs": -16.2
+      },
+      "gain_db": 2.6,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -16.0,
+        "true_peak_dbtp": -3.3,
+        "momentary_max_lufs": -13.6
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": 0.0,
+      "loudness_status": "met",
+      "limited_by_true_peak": false,
+      "short_clip_lufs_unreliable": true,
+      "decoded_frames": 22079,
+      "decoded_duration_s": 0.46,
+      "decoded_pcm_sha256": "bd42a35b05a6ade4b20375a9638a7a2aa3818c99b561502c22686fc3d2001c68",
+      "id": "borrowed-light-receiver",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/borrowed-light-receiver.wav",
+      "source_sha256": "a650740f3455282b70168a19c1a9ab9decaec617936924c2dbb88d621bf1fb38",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.48
+      },
+      "trim": {
+        "trimmed_head_ms": 20.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/borrowed-light-receiver.ogg",
+      "runtime_sha256": "53164bca947caa5bd5c4caadd665e887d702eb2c09e5fa591da8e3747fac8acb",
+      "runtime_bytes": 6202,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.4665
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "borrowed-light-receiver",
+          "seed": 8801,
+          "duration_seconds": 0.48
+        }
+      }
+    },
+    "borrowed-light-open": {
+      "intermediate_wav": "assets-source/audio/derived/borrowed-light-open.wav",
+      "intermediate_sha256": "baee3fb7c3c284a34a304cdae9ae61465fdd54105cbcd9fb57734de03e2c2848",
+      "pre_gain": {
+        "integrated_lufs": -21.6,
+        "true_peak_dbtp": -5.9,
+        "momentary_max_lufs": -18.5
+      },
+      "gain_db": 4.9,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -16.7,
+        "true_peak_dbtp": -1.1,
+        "momentary_max_lufs": -13.6
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -0.7,
+      "loudness_status": "met",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 50399,
+      "decoded_duration_s": 1.05,
+      "decoded_pcm_sha256": "d89e9705be68e9a94d93588f23accd33395fdc635ad2f6ec6b3596260426feba",
+      "id": "borrowed-light-open",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/borrowed-light-open.wav",
+      "source_sha256": "2196eb766b4c430b3a3056b37d7772fa60f5d7b1df2cdb406c5b9d81dad2df06",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.1
+      },
+      "trim": {
+        "trimmed_head_ms": 50.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/borrowed-light-open.ogg",
+      "runtime_sha256": "935cf372e17494e41f74f4eed390d322c26dc40ffcf462e6d9765eb74bffdef7",
+      "runtime_bytes": 9413,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.0565
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "borrowed-light-open",
+          "seed": 8802,
+          "duration_seconds": 1.1
+        }
+      }
+    },
+    "reservoir-fill": {
+      "intermediate_wav": "assets-source/audio/derived/reservoir-fill.wav",
+      "intermediate_sha256": "7ea82b1888c2ebfae02a83c2fcfa7a7050923bcbe5e7353c641fc0ec910e6b1e",
+      "pre_gain": {
+        "integrated_lufs": -21.5,
+        "true_peak_dbtp": -5.8,
+        "momentary_max_lufs": -17.5
+      },
+      "gain_db": 4.8,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -16.8,
+        "true_peak_dbtp": -1.1,
+        "momentary_max_lufs": -12.7
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -0.8,
+      "loudness_status": "met",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": true,
+      "decoded_frames": 29756,
+      "decoded_duration_s": 0.6199,
+      "decoded_pcm_sha256": "d78f6264773241d92d51691349ac112bc7b0775d3e3cd43b22a3227322637536",
+      "id": "reservoir-fill",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/reservoir-fill.wav",
+      "source_sha256": "4286de765bbf59f9c60fa9d30de1a7a1c63cbf28b5ca47908be7687f00040991",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.65
+      },
+      "trim": {
+        "trimmed_head_ms": 15.1,
+        "trimmed_tail_ms": 15.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/reservoir-fill.ogg",
+      "runtime_sha256": "22e8bfc091e7709e646d212c3927d4b4ec6260c18f1803bfeb42a5f2b82cf31a",
+      "runtime_bytes": 6392,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.6264
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "reservoir-fill",
+          "seed": 9101,
+          "duration_seconds": 0.65
+        }
+      }
+    },
+    "reservoir-drain": {
+      "intermediate_wav": "assets-source/audio/derived/reservoir-drain.wav",
+      "intermediate_sha256": "b0bf758df4249a97f2d61a80f772c623e276729b7a38dc6fc58aa82a048b2390",
+      "pre_gain": {
+        "integrated_lufs": -21.4,
+        "true_peak_dbtp": -5.7,
+        "momentary_max_lufs": -17.1
+      },
+      "gain_db": 4.7,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -16.7,
+        "true_peak_dbtp": -1.2,
+        "momentary_max_lufs": -12.5
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -0.7,
+      "loudness_status": "met",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": true,
+      "decoded_frames": 29996,
+      "decoded_duration_s": 0.6249,
+      "decoded_pcm_sha256": "925f44e9ecd655b92bbfea70eef22675cc54ec39ea1c5332dcbf6edea04198d8",
+      "id": "reservoir-drain",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/reservoir-drain.wav",
+      "source_sha256": "fad412cc6fd2aafddc62eb41dbd14f24c5b530e8380aa1bdfd46c25bed1095a7",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.65
+      },
+      "trim": {
+        "trimmed_head_ms": 25.1,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/reservoir-drain.ogg",
+      "runtime_sha256": "9f2e7ccd1414aa3a8ad66870cf1e1be13bf1b922deb980c73d7ec3101d5dda7e",
+      "runtime_bytes": 5889,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.6314
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "reservoir-drain",
+          "seed": 9102,
+          "duration_seconds": 0.65
+        }
+      }
+    },
+    "reservoir-release": {
+      "intermediate_wav": "assets-source/audio/derived/reservoir-release.wav",
+      "intermediate_sha256": "3d7b5f12ec22ab332001ff9575697f800d91b4096adfeca810fda0fb4063b34e",
+      "pre_gain": {
+        "integrated_lufs": -21.5,
+        "true_peak_dbtp": -5.7,
+        "momentary_max_lufs": -18.7
+      },
+      "gain_db": 4.7,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -16.8,
+        "true_peak_dbtp": -1.3,
+        "momentary_max_lufs": -14.0
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -0.8,
+      "loudness_status": "met",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": true,
+      "decoded_frames": 39838,
+      "decoded_duration_s": 0.83,
+      "decoded_pcm_sha256": "bf8c7efc82acf6152318a40465ed65f484d4c1f3d726708097bb8b65c4d7a308",
+      "id": "reservoir-release",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/reservoir-release.wav",
+      "source_sha256": "4203cbb07ed90c838802ddd3090796fe2e22e9485aa8fe2b8dbcae4c50364867",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.85
+      },
+      "trim": {
+        "trimmed_head_ms": 20.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/reservoir-release.ogg",
+      "runtime_sha256": "4f20c768fe464485c1efd3803d7159f57581ff0acf37856e17f9cd5662b73f2d",
+      "runtime_bytes": 7896,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.8365
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "reservoir-release",
+          "seed": 9103,
+          "duration_seconds": 0.85
+        }
+      }
+    },
+    "stencil-slide": {
+      "intermediate_wav": "assets-source/audio/derived/stencil-slide.wav",
+      "intermediate_sha256": "c1825416c2d0abc9e91859f1db443bf263cb631158e0b487bd3b8e0f840b1018",
+      "pre_gain": {
+        "integrated_lufs": -19.0,
+        "true_peak_dbtp": -5.8,
+        "momentary_max_lufs": -15.4
+      },
+      "gain_db": 3.0,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -16.0,
+        "true_peak_dbtp": -2.7,
+        "momentary_max_lufs": -12.4
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": 0.0,
+      "loudness_status": "met",
+      "limited_by_true_peak": false,
+      "short_clip_lufs_unreliable": true,
+      "decoded_frames": 21118,
+      "decoded_duration_s": 0.44,
+      "decoded_pcm_sha256": "05f002b07a18cc830571034ccc122964266c2373d8e5c54c5cd3ae66da1e220d",
+      "id": "stencil-slide",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/stencil-slide.wav",
+      "source_sha256": "087a46c6a896239aaff1ee0c24889246edd2fa1390d234731670150a8936f370",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.46
+      },
+      "trim": {
+        "trimmed_head_ms": 20.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/stencil-slide.ogg",
+      "runtime_sha256": "0787707462c49371e1a254a47acc5e88bc8e91b9492a71eac55b144d4eaff5af",
+      "runtime_bytes": 5196,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.4465
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "stencil-slide",
+          "seed": 9401,
+          "duration_seconds": 0.46
+        }
+      }
+    },
+    "stencil-release": {
+      "intermediate_wav": "assets-source/audio/derived/stencil-release.wav",
+      "intermediate_sha256": "af002b37b011763faf145625386e662633467f054158ad527f72a038dc9ce924",
+      "pre_gain": {
+        "integrated_lufs": -21.3,
+        "true_peak_dbtp": -5.8,
+        "momentary_max_lufs": -19.3
+      },
+      "gain_db": 4.8,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -16.5,
+        "true_peak_dbtp": -1.3,
+        "momentary_max_lufs": -14.6
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -0.5,
+      "loudness_status": "met",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": true,
+      "decoded_frames": 42718,
+      "decoded_duration_s": 0.89,
+      "decoded_pcm_sha256": "f34b823c97921b8bafa7754ff1269f6d1854f99ee4268d92b03648602351e8ac",
+      "id": "stencil-release",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/stencil-release.wav",
+      "source_sha256": "a94c477460b415a05f16300878ae53b658a630fa862ec03fbc1155d5087b5efb",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.92
+      },
+      "trim": {
+        "trimmed_head_ms": 30.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/stencil-release.ogg",
+      "runtime_sha256": "60e52c632e7529a46fc2780c66604fb042f194d79ca37e04de43605e27f173b9",
+      "runtime_bytes": 9114,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.8965
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "stencil-release",
+          "seed": 9402,
+          "duration_seconds": 0.92
+        }
+      }
+    },
+    "spring-wind": {
+      "intermediate_wav": "assets-source/audio/derived/spring-wind.wav",
+      "intermediate_sha256": "661c464dd44bdb87ade5f1042c980226b03401612e7baff809ef868f739fafe4",
+      "pre_gain": {
+        "integrated_lufs": -21.2,
+        "true_peak_dbtp": -5.8,
+        "momentary_max_lufs": -18.3
+      },
+      "gain_db": 4.8,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -16.4,
+        "true_peak_dbtp": -1.4,
+        "momentary_max_lufs": -13.6
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -0.4,
+      "loudness_status": "met",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": true,
+      "decoded_frames": 15360,
+      "decoded_duration_s": 0.32,
+      "decoded_pcm_sha256": "6fefebd54309709967aa7b8cf8b05d4950f577e486607f608ac98b4227a421a9",
+      "id": "spring-wind",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/spring-wind.wav",
+      "source_sha256": "25a5570f3a7a3eba5f721f236389365736b9d02ed97dc061d35323462c3c4604",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.32
+      },
+      "trim": {
+        "trimmed_head_ms": 0.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/spring-wind.ogg",
+      "runtime_sha256": "8bc16791d5e7fd69e256105994f777db4143b5f3267d5a89c66476de1d44f885",
+      "runtime_bytes": 4181,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.3265
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "spring-wind",
+          "seed": 9701,
+          "duration_seconds": 0.32
+        }
+      }
+    },
+    "spring-catch": {
+      "intermediate_wav": "assets-source/audio/derived/spring-catch.wav",
+      "intermediate_sha256": "c51fbc5a29865ca1003003ac712cc2a3e09ea9f48c47e852befafabc92766621",
+      "pre_gain": {
+        "integrated_lufs": -20.9,
+        "true_peak_dbtp": -5.7,
+        "momentary_max_lufs": -19.5
+      },
+      "gain_db": 4.05,
+      "encode_attempts": 2,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -16.9,
+        "true_peak_dbtp": -1.0,
+        "momentary_max_lufs": -15.5
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -0.9,
+      "loudness_status": "met",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": true,
+      "decoded_frames": 24960,
+      "decoded_duration_s": 0.52,
+      "decoded_pcm_sha256": "52fdbc3149b19d9c89bda0f4672797c9902e866336bbe835704d0806d411394e",
+      "id": "spring-catch",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/spring-catch.wav",
+      "source_sha256": "6bae2cae4edddc73c7a8679d186dab661a0292ec884f26c7ea0d1be2c7c471ad",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.52
+      },
+      "trim": {
+        "trimmed_head_ms": 0.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/spring-catch.ogg",
+      "runtime_sha256": "4981f59166b592231faf0940e5e42466a490aef5e544001f64fca757bbfeb84d",
+      "runtime_bytes": 5512,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.5265
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "spring-catch",
+          "seed": 9702,
+          "duration_seconds": 0.52
+        }
+      }
+    },
+    "spring-slip": {
+      "intermediate_wav": "assets-source/audio/derived/spring-slip.wav",
+      "intermediate_sha256": "aa04bd38f65e897f5ee219fa8bfe1cb2fc790669a13f3546186f0013a44b8caa",
+      "pre_gain": {
+        "integrated_lufs": -21.0,
+        "true_peak_dbtp": -5.8,
+        "momentary_max_lufs": -18.1
+      },
+      "gain_db": 4.8,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -16.3,
+        "true_peak_dbtp": -1.6,
+        "momentary_max_lufs": -13.4
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -0.3,
+      "loudness_status": "met",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": true,
+      "decoded_frames": 32640,
+      "decoded_duration_s": 0.68,
+      "decoded_pcm_sha256": "5848ab62c5710a4519c16d85aef72b4ebc49818e04cf427504ec1a216ce1792a",
+      "id": "spring-slip",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/spring-slip.wav",
+      "source_sha256": "960458a78888261c0410989cc2ad83617a1f9010fa3c6bb7fa4d93ddd0c67900",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.68
+      },
+      "trim": {
+        "trimmed_head_ms": 0.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/spring-slip.ogg",
+      "runtime_sha256": "b56be11e1b300d1597cbacd9ce31b0669806f734c44fde4004be5c5856cee892",
+      "runtime_bytes": 6816,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.6865
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "spring-slip",
+          "seed": 9703,
+          "duration_seconds": 0.68
+        }
+      }
+    },
+    "spring-release": {
+      "intermediate_wav": "assets-source/audio/derived/spring-release.wav",
+      "intermediate_sha256": "187badbce2ca8f36a947cf3410950a3d4c7f2949c04e1ff626dece60bf99bd51",
+      "pre_gain": {
+        "integrated_lufs": -20.8,
+        "true_peak_dbtp": -5.9,
+        "momentary_max_lufs": -19.7
+      },
+      "gain_db": 4.65,
+      "encode_attempts": 2,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -16.1,
+        "true_peak_dbtp": -1.2,
+        "momentary_max_lufs": -15.0
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -0.1,
+      "loudness_status": "met",
+      "limited_by_true_peak": false,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 52800,
+      "decoded_duration_s": 1.1,
+      "decoded_pcm_sha256": "4e09cf9aa52ad527c5ea65e90971b75c7b069dbd87de61dabdf1d7ec303252d3",
+      "id": "spring-release",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/spring-release.wav",
+      "source_sha256": "1fc232491e9bed37aafd36f2c0496eab3bfeaa614a4cdfa512757dd047f0b59f",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.1
+      },
+      "trim": {
+        "trimmed_head_ms": 0.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/spring-release.ogg",
+      "runtime_sha256": "fda0c8b6720175df3550f18320519a2e6da8865a532ee7c1bc948a081b0acac1",
+      "runtime_bytes": 10203,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.1065
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "spring-release",
+          "seed": 9704,
+          "duration_seconds": 1.1
+        }
+      }
+    },
+    "circuit-bridge": {
+      "intermediate_wav": "assets-source/audio/derived/circuit-bridge.wav",
+      "intermediate_sha256": "86238a676a1e4e608123b40c90bd15ab88ca57816b297e7eb289eff8ac9e2e67",
+      "pre_gain": {
+        "integrated_lufs": -26.0,
+        "true_peak_dbtp": -5.8,
+        "momentary_max_lufs": -22.2
+      },
+      "gain_db": 4.8,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -21.2,
+        "true_peak_dbtp": -1.0,
+        "momentary_max_lufs": -17.4
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -5.2,
+      "loudness_status": "deviation",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": true,
+      "decoded_frames": 22413,
+      "decoded_duration_s": 0.4669,
+      "decoded_pcm_sha256": "07b155339fb0c7fc2bb19fa9dd68dbdc832afac9e23f54337d166bc87751648e",
+      "id": "circuit-bridge",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/circuit-bridge.wav",
+      "source_sha256": "ee3f834150e5f72ac7b9338ea186b87a753b0d5102ade433e6798d64919bef27",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.62
+      },
+      "trim": {
+        "trimmed_head_ms": 13.0,
+        "trimmed_tail_ms": 140.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/circuit-bridge.ogg",
+      "runtime_sha256": "72ef1786fba1c5fc283e171e5c5ee8eedabaafbbaafd24fa5551bbf79bbe54de",
+      "runtime_bytes": 5086,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.4734
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "bridge",
+          "seed": 10101,
+          "duration_seconds": 0.62
+        }
+      }
+    },
+    "circuit-grille-open": {
+      "intermediate_wav": "assets-source/audio/derived/circuit-grille-open.wav",
+      "intermediate_sha256": "6dec80ff8a7aa22b4b1dbe58665be1e20501687a70be718995b8ca5a34ee1d8d",
+      "pre_gain": {
+        "integrated_lufs": -23.8,
+        "true_peak_dbtp": -5.6,
+        "momentary_max_lufs": -22.1
+      },
+      "gain_db": 4.25,
+      "encode_attempts": 2,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -19.6,
+        "true_peak_dbtp": -1.2,
+        "momentary_max_lufs": -17.8
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -3.6,
+      "loudness_status": "deviation",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": true,
+      "decoded_frames": 47375,
+      "decoded_duration_s": 0.987,
+      "decoded_pcm_sha256": "d763ff216b0e0b2c9e2d4e0f8941b6ee9621c9bdb0282e8d2dd0bdb53526d1df",
+      "id": "circuit-grille-open",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/circuit-grille-open.wav",
+      "source_sha256": "8e4320203d02b9bbcc64b2dfab00096796eade66c78466b1d299c7e61cf76661",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.0
+      },
+      "trim": {
+        "trimmed_head_ms": 13.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/circuit-grille-open.ogg",
+      "runtime_sha256": "981adea54320aa41dd173358ee0b5e1fe83fa73fc155bc37e39e97a617686363",
+      "runtime_bytes": 9699,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.9935
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "grille-circuit",
+          "seed": 10102,
+          "duration_seconds": 1.0
+        }
+      }
+    },
+    "drum-reed-low": {
+      "intermediate_wav": "assets-source/audio/derived/drum-reed-low.wav",
+      "intermediate_sha256": "6543ebad0dbd2dec9919269c32a6f163d449202c4d2f98090b4bbdb9e8e45674",
+      "pre_gain": {
+        "integrated_lufs": -24.3,
+        "true_peak_dbtp": -5.9,
+        "momentary_max_lufs": -21.6
+      },
+      "gain_db": 4.65,
+      "encode_attempts": 2,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -19.6,
+        "true_peak_dbtp": -1.1,
+        "momentary_max_lufs": -16.9
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -3.6,
+      "loudness_status": "deviation",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": true,
+      "decoded_frames": 14157,
+      "decoded_duration_s": 0.2949,
+      "decoded_pcm_sha256": "c9be5f5b049e15f447069cf95203277aabf6be0127493e71f955eafa2375176c",
+      "id": "drum-reed-low",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/drum-reed-low.wav",
+      "source_sha256": "2e5aab3ad62fa61c3e9dcc6b932157c13f7e5a96697bb3935e0bbd49cafc22ae",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.3
+      },
+      "trim": {
+        "trimmed_head_ms": 5.1,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 29 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/drum-reed-low.ogg",
+      "runtime_sha256": "6d0cb9cfd16e3affac109e5bf08b880b57448ce6fc77f3495e09ecbea6e42237",
+      "runtime_bytes": 3331,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.3014
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "reed-low",
+          "seed": 11201,
+          "duration_seconds": 0.3
+        }
+      }
+    },
+    "drum-reed-mid": {
+      "intermediate_wav": "assets-source/audio/derived/drum-reed-mid.wav",
+      "intermediate_sha256": "c52981ba027024d6243c4b0d67dc2a7ceca71ed439f10415c7397651de04c93b",
+      "pre_gain": {
+        "integrated_lufs": -24.1,
+        "true_peak_dbtp": -5.8,
+        "momentary_max_lufs": -21.4
+      },
+      "gain_db": 4.65,
+      "encode_attempts": 2,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -19.4,
+        "true_peak_dbtp": -1.1,
+        "momentary_max_lufs": -16.7
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -3.4,
+      "loudness_status": "deviation",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": true,
+      "decoded_frames": 12718,
+      "decoded_duration_s": 0.265,
+      "decoded_pcm_sha256": "1b46f4f549549d264a383b171ec5007204decf77d661721d30e5df7b1b5b769a",
+      "id": "drum-reed-mid",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/drum-reed-mid.wav",
+      "source_sha256": "398b5bb080d02673ce05d8f565cca246e769ed529d31ae0328fc69bef7fbaa96",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.27
+      },
+      "trim": {
+        "trimmed_head_ms": 5.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 26 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/drum-reed-mid.ogg",
+      "runtime_sha256": "c902cc283ea5d213ce7bb332235b4ccf07bfb7009ccedd375d62ab218da86eb1",
+      "runtime_bytes": 3259,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.2715
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "reed-mid",
+          "seed": 11202,
+          "duration_seconds": 0.27
+        }
+      }
+    },
+    "drum-reed-high": {
+      "intermediate_wav": "assets-source/audio/derived/drum-reed-high.wav",
+      "intermediate_sha256": "89dafe472b56a9c5442b71c9dd07aab8700ac8cee00223c8cbcdae105be6777d",
+      "pre_gain": {
+        "integrated_lufs": -23.9,
+        "true_peak_dbtp": -5.9,
+        "momentary_max_lufs": -21.2
+      },
+      "gain_db": 4.65,
+      "encode_attempts": 2,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -19.2,
+        "true_peak_dbtp": -1.0,
+        "momentary_max_lufs": -16.5
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -3.2,
+      "loudness_status": "deviation",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": true,
+      "decoded_frames": 11278,
+      "decoded_duration_s": 0.235,
+      "decoded_pcm_sha256": "5a7414bebbf3640b700b8b4d256199a2c693ae2566c7a7335db8b62b8c02dbf0",
+      "id": "drum-reed-high",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/drum-reed-high.wav",
+      "source_sha256": "b3f2d30c08695f30acb640e58b5904ccfac3b81f08517c50562377acb3fa734f",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.24
+      },
+      "trim": {
+        "trimmed_head_ms": 5.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 23 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/drum-reed-high.ogg",
+      "runtime_sha256": "c158237a51cce136cdefd0e09b8575b64b5934226697e010172c1a9b492806eb",
+      "runtime_bytes": 3421,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.2415
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "reed-high",
+          "seed": 11203,
+          "duration_seconds": 0.24
+        }
+      }
+    },
+    "drum-index": {
+      "intermediate_wav": "assets-source/audio/derived/drum-index.wav",
+      "intermediate_sha256": "ae6999db690c286112e843b7358efbe4bb78b7085c619c82fb405505045e75cc",
+      "pre_gain": {
+        "integrated_lufs": -27.9,
+        "true_peak_dbtp": -5.9,
+        "momentary_max_lufs": -27.9
+      },
+      "gain_db": 4.9,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -23.1,
+        "true_peak_dbtp": -1.1,
+        "momentary_max_lufs": -23.1
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -7.1,
+      "loudness_status": "deviation",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": true,
+      "decoded_frames": 4750,
+      "decoded_duration_s": 0.099,
+      "decoded_pcm_sha256": "2abd6890ccfa0017b13ae806069375abf681713b9f9e6bd4a9db87d25b8f1f26",
+      "id": "drum-index",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/drum-index.wav",
+      "source_sha256": "b5a3dc4bb72ff5c4e53321220ff600c31a181eb74242b28213c7adf9a76f1daa",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.1
+      },
+      "trim": {
+        "trimmed_head_ms": 1.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 10 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/drum-index.ogg",
+      "runtime_sha256": "94580ca983eea3f0259bb1bbb61c65dd69a71148e40831a27e603331a30dfbe5",
+      "runtime_bytes": 2015,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.1055
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "index",
+          "seed": 11204,
+          "duration_seconds": 0.1
+        }
+      }
+    },
+    "drum-pin": {
+      "intermediate_wav": "assets-source/audio/derived/drum-pin.wav",
+      "intermediate_sha256": "553863b6bcdd9fb74ad05618bb9d18857092106116bf0740447b116d85f368b1",
+      "pre_gain": {
+        "integrated_lufs": -23.9,
+        "true_peak_dbtp": -5.7,
+        "momentary_max_lufs": -21.4
+      },
+      "gain_db": 4.7,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -19.1,
+        "true_peak_dbtp": -1.3,
+        "momentary_max_lufs": -16.7
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -3.1,
+      "loudness_status": "deviation",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": true,
+      "decoded_frames": 13198,
+      "decoded_duration_s": 0.275,
+      "decoded_pcm_sha256": "c2d85d92683d7e7ef1e10ec6d43156616bef230bb500a7b60e98d9975213657f",
+      "id": "drum-pin",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/drum-pin.wav",
+      "source_sha256": "cb2daf8da0d1d8faadaf6e2edd21c0fb5df0761cc6665150c1efd12120be8f44",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.28
+      },
+      "trim": {
+        "trimmed_head_ms": 5.0,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 27 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/drum-pin.ogg",
+      "runtime_sha256": "316c69a74b740fd4cbba3258611f343ed065c485ae3129cfe1bc51ce660692f9",
+      "runtime_bytes": 3656,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.2815
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "pin",
+          "seed": 11205,
+          "duration_seconds": 0.28
+        }
+      }
+    },
+    "drum-grille-open": {
+      "intermediate_wav": "assets-source/audio/derived/drum-grille-open.wav",
+      "intermediate_sha256": "a600ac97c77293115580b9535f49196b99d97a992e9d29ba9c09caa1fcb3b88b",
+      "pre_gain": {
+        "integrated_lufs": -20.4,
+        "true_peak_dbtp": -5.8,
+        "momentary_max_lufs": -19.0
+      },
+      "gain_db": 4.4,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -16.0,
+        "true_peak_dbtp": -1.3,
+        "momentary_max_lufs": -14.5
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": 0.0,
+      "loudness_status": "met",
+      "limited_by_true_peak": false,
+      "short_clip_lufs_unreliable": true,
+      "decoded_frames": 44972,
+      "decoded_duration_s": 0.9369,
+      "decoded_pcm_sha256": "f8ce33271554725e34cccc588ff6fa1a1295c531e68f9fa164478c5ee28ba582",
+      "id": "drum-grille-open",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/drum-grille-open.wav",
+      "source_sha256": "e7255871b7f72c946a596b8f433bac3d9286da412e212283419a631bcecce3ff",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.95
+      },
+      "trim": {
+        "trimmed_head_ms": 13.1,
+        "trimmed_tail_ms": 0.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/drum-grille-open.ogg",
+      "runtime_sha256": "3385ae97861fd4a7ded68aa43a4959fa2481dafba99f07c3edfc8ea62fcfe0bb",
+      "runtime_bytes": 11783,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.9434
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "grille-open",
+          "seed": 11206,
+          "duration_seconds": 0.95
+        }
+      }
+    },
+    "trellis-brace": {
+      "intermediate_wav": "assets-source/audio/derived/trellis-brace.wav",
+      "intermediate_sha256": "410c3f9c3185a507f62c82bc20b607ff1f8fb12189dea2ecf89868b5594c36ee",
+      "pre_gain": {
+        "integrated_lufs": -24.0,
+        "true_peak_dbtp": -5.8,
+        "momentary_max_lufs": -22.6
+      },
+      "gain_db": 4.8,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -19.2,
+        "true_peak_dbtp": -1.2,
+        "momentary_max_lufs": -17.7
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -3.2,
+      "loudness_status": "deviation",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": true,
+      "decoded_frames": 13918,
+      "decoded_duration_s": 0.29,
+      "decoded_pcm_sha256": "47ecca5645794f9abbd0c2491618185165609e4a30a5561cadfa21015246dcb7",
+      "id": "trellis-brace",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/trellis-brace.wav",
+      "source_sha256": "e4f0107ca3eca99372e421e3273b50437d55de33c4667a8b448c332b51b74ccf",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.42
+      },
+      "trim": {
+        "trimmed_head_ms": 20.0,
+        "trimmed_tail_ms": 110.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 29 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/trellis-brace.ogg",
+      "runtime_sha256": "8eee77bbc2d8f689f640b1f8e6ed2477df4503cd69e02b15b737d5dc406b4b41",
+      "runtime_bytes": 3854,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.2965
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "trellis-brace",
+          "seed": 12101,
+          "duration_seconds": 0.42
+        }
+      }
+    },
+    "trellis-double-cut": {
+      "intermediate_wav": "assets-source/audio/derived/trellis-double-cut.wav",
+      "intermediate_sha256": "22f46e52c5e4de90a2a442eeca345d11ef239425cdd5c408a1b8dd57a7deed2c",
+      "pre_gain": {
+        "integrated_lufs": -24.6,
+        "true_peak_dbtp": -5.8,
+        "momentary_max_lufs": -23.9
+      },
+      "gain_db": 4.8,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -19.8,
+        "true_peak_dbtp": -1.1,
+        "momentary_max_lufs": -19.1
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": -3.8,
+      "loudness_status": "deviation",
+      "limited_by_true_peak": true,
+      "short_clip_lufs_unreliable": true,
+      "decoded_frames": 14255,
+      "decoded_duration_s": 0.297,
+      "decoded_pcm_sha256": "456ea44066355c4b6074cb0d7dd89f761bea2f2b4e7a7ac63b5e6c0f52c394f4",
+      "id": "trellis-double-cut",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/procedural/trellis-double-cut.wav",
+      "source_sha256": "bba65e21ea2d59d8eb0bec6180057aa82e406b26542550e8bf1974d61e179077",
+      "source_probe": {
+        "codec": "pcm_f32le",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.38
+      },
+      "trim": {
+        "trimmed_head_ms": 40.0,
+        "trimmed_tail_ms": 43.0
+      },
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/trellis-double-cut.ogg",
+      "runtime_sha256": "e5799b3bf7f326613b76d65d91db3cf0c2ea7d174ccf2db3c66ff838b10870fb",
+      "runtime_bytes": 4578,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 0.3035
+      },
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "trellis-double-cut",
+          "seed": 12102,
+          "duration_seconds": 0.38
+        }
+      }
     }
   },
   "music": {

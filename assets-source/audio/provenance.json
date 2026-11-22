@@ -1272,6 +1272,655 @@
           "duration_seconds": 1.8
         }
       }
+    },
+    "dungeon-torch-crackle": {
+      "source_file": "assets-source/audio/sfx/procedural/dungeon-torch-crackle.wav",
+      "source_sha256": "2999c09f90f9680405e9cb5196be8f749990ce591def82c4a5704a09c945a97d",
+      "runtime_file": "public/assets/audio/sfx/dungeon-torch-crackle.ogg",
+      "runtime_sha256": "3ec974836a6dca59187d06c091df8cdb04c16f4c57fd3ded1d768c57974c9214",
+      "runtime_bytes": 88626,
+      "steps": [
+        "loop kept native: source wrap passed",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "torch-crackle",
+          "seed": 4201,
+          "duration_seconds": 10.0
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "dungeon-chain-wind": {
+      "source_file": "assets-source/audio/sfx/procedural/dungeon-chain-wind.wav",
+      "source_sha256": "c3050aa51f47036b154409ab08a6a1ec1b8b4fa41e67a77eff79be50697195d1",
+      "runtime_file": "public/assets/audio/sfx/dungeon-chain-wind.ogg",
+      "runtime_sha256": "6865e794c54de9eecff3af3015bafda2d9a11eb79798b3bf61da137af94cdcd1",
+      "runtime_bytes": 11426,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "chain-wind",
+          "seed": 4202,
+          "duration_seconds": 1.3
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "dungeon-scarab-scrape": {
+      "source_file": "assets-source/audio/sfx/procedural/dungeon-scarab-scrape.wav",
+      "source_sha256": "804e437794cfc5d2d503e44e498206355bb2c782a357d6c4d51b520cfd4f930f",
+      "runtime_file": "public/assets/audio/sfx/dungeon-scarab-scrape.ogg",
+      "runtime_sha256": "8c2b0539834613d2202e793653296845c8555af809920d5131f0f39e26bac96d",
+      "runtime_bytes": 11464,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "scarab-scrape",
+          "seed": 4203,
+          "duration_seconds": 1.05
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "cistern-pipe-send": {
+      "source_file": "assets-source/audio/sfx/procedural/cistern-pipe-send.wav",
+      "source_sha256": "be93a630f61c1eb0545574e1259edbfb7b711888a6be6fcb2ee431fd2b5b6b6a",
+      "runtime_file": "public/assets/audio/sfx/cistern-pipe-send.ogg",
+      "runtime_sha256": "4cb5fdb455a4a001d13e46b2c7a6f2f0915ac764922253181818adfce38318a2",
+      "runtime_bytes": 6748,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "pipe-send",
+          "seed": 5201,
+          "duration_seconds": 1.1
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "cistern-grille-open": {
+      "source_file": "assets-source/audio/sfx/procedural/cistern-grille-open.wav",
+      "source_sha256": "1a1ea88d487be00eb91629901920320e11b10e9ccf0fb9fff4f5e2932421c2a7",
+      "runtime_file": "public/assets/audio/sfx/cistern-grille-open.ogg",
+      "runtime_sha256": "3c1597c7d18c366b92d4849a497b1cc54bdf867f31c2c6587ed40163371276a4",
+      "runtime_bytes": 12187,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "grille",
+          "seed": 5202,
+          "duration_seconds": 1.5
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "reliquary-stone-open": {
+      "source_file": "assets-source/audio/sfx/procedural/reliquary-stone-open.wav",
+      "source_sha256": "f9a12b0fecc7bbe714c47b1134738c67b18a68a992ec9123da5b7f51b7857bb5",
+      "runtime_file": "public/assets/audio/sfx/reliquary-stone-open.ogg",
+      "runtime_sha256": "f2780ed6006d083805ba33ec0dbbdd62664bc2326e3a43fd7b00f0f81411e73e",
+      "runtime_bytes": 13958,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "reliquary",
+          "seed": 6201,
+          "duration_seconds": 1.6
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "valvehouse-leak": {
+      "source_file": "assets-source/audio/sfx/procedural/valvehouse-leak.wav",
+      "source_sha256": "0734cd0f4043a92173271f870ddc2804418cb7539bec8953621c1c8d57cc2390",
+      "runtime_file": "public/assets/audio/sfx/valvehouse-leak.ogg",
+      "runtime_sha256": "5df9d54582260c4a129cd681f82dbd9395e484f03351fbf35b35992fa9631ad5",
+      "runtime_bytes": 67812,
+      "steps": [
+        "loop kept native: source wrap passed",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "valvehouse-leak",
+          "seed": 7301,
+          "duration_seconds": 9.0
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "valvehouse-gate-open": {
+      "source_file": "assets-source/audio/sfx/procedural/valvehouse-gate-open.wav",
+      "source_sha256": "c2fac7b82f82640b97033163e1e34ed1928d00d1f340237ba557702fc285394a",
+      "runtime_file": "public/assets/audio/sfx/valvehouse-gate-open.ogg",
+      "runtime_sha256": "93a68b1cbf686119bf1a43a42be795678b34f9ea52251d70b8c1cd2e3f88d228",
+      "runtime_bytes": 13091,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "valvehouse-gate",
+          "seed": 7302,
+          "duration_seconds": 1.5
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "pendulum-gallery-open": {
+      "source_file": "assets-source/audio/sfx/procedural/pendulum-gallery-open.wav",
+      "source_sha256": "a2e2aed4305580678a8206a50ef1015f2c750fe88d8124461d6819832c709108",
+      "runtime_file": "public/assets/audio/sfx/pendulum-gallery-open.ogg",
+      "runtime_sha256": "1e9c5ace10b33514c24d43633569a14baebd60375aedb91cb9a5f1fca336bccb",
+      "runtime_bytes": 14439,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "pendulum-gallery",
+          "seed": 7401,
+          "duration_seconds": 1.55
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "armory-awaken": {
+      "source_file": "assets-source/audio/sfx/procedural/armory-awaken.wav",
+      "source_sha256": "c9a0c57442fc656110a45a71cf24c8465dcf7747d6aeb5c9efbea8923aa7072c",
+      "runtime_file": "public/assets/audio/sfx/armory-awaken.ogg",
+      "runtime_sha256": "985d55d65bc20f0edd31226b0545fea294eb0d7e7ae15f49db7223d759dc15c5",
+      "runtime_bytes": 8729,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "armory-awaken",
+          "seed": 8601,
+          "duration_seconds": 0.76
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "borrowed-light-receiver": {
+      "source_file": "assets-source/audio/sfx/procedural/borrowed-light-receiver.wav",
+      "source_sha256": "a650740f3455282b70168a19c1a9ab9decaec617936924c2dbb88d621bf1fb38",
+      "runtime_file": "public/assets/audio/sfx/borrowed-light-receiver.ogg",
+      "runtime_sha256": "53164bca947caa5bd5c4caadd665e887d702eb2c09e5fa591da8e3747fac8acb",
+      "runtime_bytes": 6202,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "borrowed-light-receiver",
+          "seed": 8801,
+          "duration_seconds": 0.48
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "borrowed-light-open": {
+      "source_file": "assets-source/audio/sfx/procedural/borrowed-light-open.wav",
+      "source_sha256": "2196eb766b4c430b3a3056b37d7772fa60f5d7b1df2cdb406c5b9d81dad2df06",
+      "runtime_file": "public/assets/audio/sfx/borrowed-light-open.ogg",
+      "runtime_sha256": "935cf372e17494e41f74f4eed390d322c26dc40ffcf462e6d9765eb74bffdef7",
+      "runtime_bytes": 9413,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "borrowed-light-open",
+          "seed": 8802,
+          "duration_seconds": 1.1
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "reservoir-fill": {
+      "source_file": "assets-source/audio/sfx/procedural/reservoir-fill.wav",
+      "source_sha256": "4286de765bbf59f9c60fa9d30de1a7a1c63cbf28b5ca47908be7687f00040991",
+      "runtime_file": "public/assets/audio/sfx/reservoir-fill.ogg",
+      "runtime_sha256": "22e8bfc091e7709e646d212c3927d4b4ec6260c18f1803bfeb42a5f2b82cf31a",
+      "runtime_bytes": 6392,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "reservoir-fill",
+          "seed": 9101,
+          "duration_seconds": 0.65
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "reservoir-drain": {
+      "source_file": "assets-source/audio/sfx/procedural/reservoir-drain.wav",
+      "source_sha256": "fad412cc6fd2aafddc62eb41dbd14f24c5b530e8380aa1bdfd46c25bed1095a7",
+      "runtime_file": "public/assets/audio/sfx/reservoir-drain.ogg",
+      "runtime_sha256": "9f2e7ccd1414aa3a8ad66870cf1e1be13bf1b922deb980c73d7ec3101d5dda7e",
+      "runtime_bytes": 5889,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "reservoir-drain",
+          "seed": 9102,
+          "duration_seconds": 0.65
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "reservoir-release": {
+      "source_file": "assets-source/audio/sfx/procedural/reservoir-release.wav",
+      "source_sha256": "4203cbb07ed90c838802ddd3090796fe2e22e9485aa8fe2b8dbcae4c50364867",
+      "runtime_file": "public/assets/audio/sfx/reservoir-release.ogg",
+      "runtime_sha256": "4f20c768fe464485c1efd3803d7159f57581ff0acf37856e17f9cd5662b73f2d",
+      "runtime_bytes": 7896,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "reservoir-release",
+          "seed": 9103,
+          "duration_seconds": 0.85
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "stencil-slide": {
+      "source_file": "assets-source/audio/sfx/procedural/stencil-slide.wav",
+      "source_sha256": "087a46c6a896239aaff1ee0c24889246edd2fa1390d234731670150a8936f370",
+      "runtime_file": "public/assets/audio/sfx/stencil-slide.ogg",
+      "runtime_sha256": "0787707462c49371e1a254a47acc5e88bc8e91b9492a71eac55b144d4eaff5af",
+      "runtime_bytes": 5196,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "stencil-slide",
+          "seed": 9401,
+          "duration_seconds": 0.46
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "stencil-release": {
+      "source_file": "assets-source/audio/sfx/procedural/stencil-release.wav",
+      "source_sha256": "a94c477460b415a05f16300878ae53b658a630fa862ec03fbc1155d5087b5efb",
+      "runtime_file": "public/assets/audio/sfx/stencil-release.ogg",
+      "runtime_sha256": "60e52c632e7529a46fc2780c66604fb042f194d79ca37e04de43605e27f173b9",
+      "runtime_bytes": 9114,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "stencil-release",
+          "seed": 9402,
+          "duration_seconds": 0.92
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "spring-wind": {
+      "source_file": "assets-source/audio/sfx/procedural/spring-wind.wav",
+      "source_sha256": "25a5570f3a7a3eba5f721f236389365736b9d02ed97dc061d35323462c3c4604",
+      "runtime_file": "public/assets/audio/sfx/spring-wind.ogg",
+      "runtime_sha256": "8bc16791d5e7fd69e256105994f777db4143b5f3267d5a89c66476de1d44f885",
+      "runtime_bytes": 4181,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "spring-wind",
+          "seed": 9701,
+          "duration_seconds": 0.32
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "spring-catch": {
+      "source_file": "assets-source/audio/sfx/procedural/spring-catch.wav",
+      "source_sha256": "6bae2cae4edddc73c7a8679d186dab661a0292ec884f26c7ea0d1be2c7c471ad",
+      "runtime_file": "public/assets/audio/sfx/spring-catch.ogg",
+      "runtime_sha256": "4981f59166b592231faf0940e5e42466a490aef5e544001f64fca757bbfeb84d",
+      "runtime_bytes": 5512,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "spring-catch",
+          "seed": 9702,
+          "duration_seconds": 0.52
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "spring-slip": {
+      "source_file": "assets-source/audio/sfx/procedural/spring-slip.wav",
+      "source_sha256": "960458a78888261c0410989cc2ad83617a1f9010fa3c6bb7fa4d93ddd0c67900",
+      "runtime_file": "public/assets/audio/sfx/spring-slip.ogg",
+      "runtime_sha256": "b56be11e1b300d1597cbacd9ce31b0669806f734c44fde4004be5c5856cee892",
+      "runtime_bytes": 6816,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "spring-slip",
+          "seed": 9703,
+          "duration_seconds": 0.68
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "spring-release": {
+      "source_file": "assets-source/audio/sfx/procedural/spring-release.wav",
+      "source_sha256": "1fc232491e9bed37aafd36f2c0496eab3bfeaa614a4cdfa512757dd047f0b59f",
+      "runtime_file": "public/assets/audio/sfx/spring-release.ogg",
+      "runtime_sha256": "fda0c8b6720175df3550f18320519a2e6da8865a532ee7c1bc948a081b0acac1",
+      "runtime_bytes": 10203,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "spring-release",
+          "seed": 9704,
+          "duration_seconds": 1.1
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "circuit-bridge": {
+      "source_file": "assets-source/audio/sfx/procedural/circuit-bridge.wav",
+      "source_sha256": "ee3f834150e5f72ac7b9338ea186b87a753b0d5102ade433e6798d64919bef27",
+      "runtime_file": "public/assets/audio/sfx/circuit-bridge.ogg",
+      "runtime_sha256": "72ef1786fba1c5fc283e171e5c5ee8eedabaafbbaafd24fa5551bbf79bbe54de",
+      "runtime_bytes": 5086,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "bridge",
+          "seed": 10101,
+          "duration_seconds": 0.62
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "circuit-grille-open": {
+      "source_file": "assets-source/audio/sfx/procedural/circuit-grille-open.wav",
+      "source_sha256": "8e4320203d02b9bbcc64b2dfab00096796eade66c78466b1d299c7e61cf76661",
+      "runtime_file": "public/assets/audio/sfx/circuit-grille-open.ogg",
+      "runtime_sha256": "981adea54320aa41dd173358ee0b5e1fe83fa73fc155bc37e39e97a617686363",
+      "runtime_bytes": 9699,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "grille-circuit",
+          "seed": 10102,
+          "duration_seconds": 1.0
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "drum-reed-low": {
+      "source_file": "assets-source/audio/sfx/procedural/drum-reed-low.wav",
+      "source_sha256": "2e5aab3ad62fa61c3e9dcc6b932157c13f7e5a96697bb3935e0bbd49cafc22ae",
+      "runtime_file": "public/assets/audio/sfx/drum-reed-low.ogg",
+      "runtime_sha256": "6d0cb9cfd16e3affac109e5bf08b880b57448ce6fc77f3495e09ecbea6e42237",
+      "runtime_bytes": 3331,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 29 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "reed-low",
+          "seed": 11201,
+          "duration_seconds": 0.3
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "drum-reed-mid": {
+      "source_file": "assets-source/audio/sfx/procedural/drum-reed-mid.wav",
+      "source_sha256": "398b5bb080d02673ce05d8f565cca246e769ed529d31ae0328fc69bef7fbaa96",
+      "runtime_file": "public/assets/audio/sfx/drum-reed-mid.ogg",
+      "runtime_sha256": "c902cc283ea5d213ce7bb332235b4ccf07bfb7009ccedd375d62ab218da86eb1",
+      "runtime_bytes": 3259,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 26 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "reed-mid",
+          "seed": 11202,
+          "duration_seconds": 0.27
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "drum-reed-high": {
+      "source_file": "assets-source/audio/sfx/procedural/drum-reed-high.wav",
+      "source_sha256": "b3f2d30c08695f30acb640e58b5904ccfac3b81f08517c50562377acb3fa734f",
+      "runtime_file": "public/assets/audio/sfx/drum-reed-high.ogg",
+      "runtime_sha256": "c158237a51cce136cdefd0e09b8575b64b5934226697e010172c1a9b492806eb",
+      "runtime_bytes": 3421,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 23 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "reed-high",
+          "seed": 11203,
+          "duration_seconds": 0.24
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "drum-index": {
+      "source_file": "assets-source/audio/sfx/procedural/drum-index.wav",
+      "source_sha256": "b5a3dc4bb72ff5c4e53321220ff600c31a181eb74242b28213c7adf9a76f1daa",
+      "runtime_file": "public/assets/audio/sfx/drum-index.ogg",
+      "runtime_sha256": "94580ca983eea3f0259bb1bbb61c65dd69a71148e40831a27e603331a30dfbe5",
+      "runtime_bytes": 2015,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 10 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "index",
+          "seed": 11204,
+          "duration_seconds": 0.1
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "drum-pin": {
+      "source_file": "assets-source/audio/sfx/procedural/drum-pin.wav",
+      "source_sha256": "cb2daf8da0d1d8faadaf6e2edd21c0fb5df0761cc6665150c1efd12120be8f44",
+      "runtime_file": "public/assets/audio/sfx/drum-pin.ogg",
+      "runtime_sha256": "316c69a74b740fd4cbba3258611f343ed065c485ae3129cfe1bc51ce660692f9",
+      "runtime_bytes": 3656,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 27 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "pin",
+          "seed": 11205,
+          "duration_seconds": 0.28
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "drum-grille-open": {
+      "source_file": "assets-source/audio/sfx/procedural/drum-grille-open.wav",
+      "source_sha256": "e7255871b7f72c946a596b8f433bac3d9286da412e212283419a631bcecce3ff",
+      "runtime_file": "public/assets/audio/sfx/drum-grille-open.ogg",
+      "runtime_sha256": "3385ae97861fd4a7ded68aa43a4959fa2481dafba99f07c3edfc8ea62fcfe0bb",
+      "runtime_bytes": 11783,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "grille-open",
+          "seed": 11206,
+          "duration_seconds": 0.95
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "trellis-brace": {
+      "source_file": "assets-source/audio/sfx/procedural/trellis-brace.wav",
+      "source_sha256": "e4f0107ca3eca99372e421e3273b50437d55de33c4667a8b448c332b51b74ccf",
+      "runtime_file": "public/assets/audio/sfx/trellis-brace.ogg",
+      "runtime_sha256": "8eee77bbc2d8f689f640b1f8e6ed2477df4503cd69e02b15b737d5dc406b4b41",
+      "runtime_bytes": 3854,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 29 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "trellis-brace",
+          "seed": 12101,
+          "duration_seconds": 0.42
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
+    },
+    "trellis-double-cut": {
+      "source_file": "assets-source/audio/sfx/procedural/trellis-double-cut.wav",
+      "source_sha256": "bba65e21ea2d59d8eb0bec6180057aa82e406b26542550e8bf1974d61e179077",
+      "runtime_file": "public/assets/audio/sfx/trellis-double-cut.ogg",
+      "runtime_sha256": "e5799b3bf7f326613b76d65d91db3cf0c2ea7d174ccf2db3c66ff838b10870fb",
+      "runtime_bytes": 4578,
+      "steps": [
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "generation": {
+        "method": "deterministic additive synthesis",
+        "settings": {
+          "kind": "trellis-double-cut",
+          "seed": 12102,
+          "duration_seconds": 0.38
+        }
+      },
+      "approval": "Original project synthesis. Owner listening review pending."
     }
   },
   "music": {

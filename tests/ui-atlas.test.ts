@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { BRASS_D6, DIE_IDS, GLASS_D8, IRON_D4 } from '../src/content/dice.ts';
+import { BRASS_D6, GLASS_D8 } from '../src/content/dice.ts';
 import { faceNormals } from '../src/dice/faces.ts';
 import { STATUS_IDS } from '../src/rules/statuses.ts';
 import { SIGIL_TEMPLATES } from '../src/sigil/templates.ts';
@@ -87,10 +87,10 @@ describe('UI atlas manifest', () => {
     }
   });
 
-  it('numbers dice faces in src/dice/faces.ts order with opposite faces summing to N + 1', () => {
-    expect(Object.keys(manifest.dice).sort()).toEqual([...DIE_IDS].sort());
+  it('numbers atlas dice faces in src/dice/faces.ts order with opposite faces summing to N + 1', () => {
+    expect(Object.keys(manifest.dice).sort()).toEqual(['brass-d6', 'glass-d8', 'iron-d4']);
     for (const def of [BRASS_D6, GLASS_D8]) {
-      const set = manifest.dice[def.id as (typeof DIE_IDS)[number]];
+      const set = manifest.dice[def.id === 'brass-d6' ? 'brass-d6' : 'glass-d8'];
       const n = def.faces.length;
       const normals = faceNormals(set.kind);
       expect(normals).toHaveLength(n);

@@ -1,0 +1,51 @@
+{
+  "provider": "OpenAI Media Service",
+  "generator": "Built-in OpenAI ImageGen",
+  "model": "Not exposed by the tool",
+  "file": "dice-wave.png",
+  "sha256": "4412dcdd8c0f3850871c2a2143aca3a3217e82bf9f5aa48826a4bcb554135b3e",
+  "reference": [
+    {
+      "path": "assets-source/style/locked/L-cards.png",
+      "sha256": "207a60d3465942c8d16ddb5eee674db576a4a19e3b7070579313f844050b2c52"
+    },
+    {
+      "path": "assets-source/cards/overdrive-wave/overdrive-wave.png",
+      "sha256": "f517d28faa8b5c7ae18a2984003e284f780da1255b24658b29e7bf4fbc3abe0e"
+    }
+  ],
+  "prompt": "Create one original transparent foreground illustration sheet for Clockwork Spire, a Victorian clockwork fantasy deckbuilder. The attached project-owned images are style references only. Match their painterly Gilded Lamplight look with worn brass, refined metal highlights, jewel enamel, and strong object silhouettes that read at small card size. Use an exact equal two-by-two grid on a square RGBA canvas. TOP LEFT, LOADED DIE: one chunky ornate ivory six-sided cube tilted into a clear three-quarter view, with clearly inset dark round pips, inset warm brass corners and a narrow emerald enamel band. The die should immediately read as a single six-sided die, compact and cubic. TOP RIGHT, REROLL LEVER: one angled bench-mounted clockwork lever with a crimson bakelite ball grip, a curved brass slot and a small steel spring and cog. Build a clear diagonal silhouette with a real curved lever, readable at thumbnail size. Leave both bottom quadrants entirely transparent and keep at least 12 percent fully transparent margin from every quadrant border. Preserve true clear alpha around each crisp painted object and through its cutouts. No card frames, letters, numbers, captions, human figures, backgrounds, ground planes, smoke, drop shadows, or additional objects.",
+  "settings": {
+    "transparentBackground": true,
+    "layout": "2 by 2 equal grid",
+    "size": [
+      1254,
+      1254
+    ]
+  },
+  "alphaBoundsByQuadrantAt16": {
+    "loaded-die": [
+      146,
+      132,
+      531,
+      549
+    ],
+    "reroll-lever": [
+      60,
+      74,
+      551,
+      594
+    ],
+    "unused-left": null,
+    "unused-right": null
+  },
+  "alphaPeakByQuadrant": {
+    "loaded-die": 255,
+    "reroll-lever": 255,
+    "unused-left": 1,
+    "unused-right": 1
+  },
+  "alphaNotes": "Original RGBA output kept byte-for-byte. Bottom quadrants excluded from packing.",
+  "runtimeDerivation": "scripts/assets/build_card_atlas.py --overdrive-only packs the two foregrounds on the bottom row of the shared 1024 by 1024 overdrive-wave page.",
+  "rights": "Original generated foregrounds with project-owned references. Release and owner review pending."
+}

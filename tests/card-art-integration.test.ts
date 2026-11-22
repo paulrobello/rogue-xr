@@ -52,29 +52,37 @@ describe('card atlas parsing', () => {
     ).toThrow(/frame/);
   });
 
-  it('gives each of the 23 cards three layer rects on one art page, and its type frame', () => {
-    expect(baseCards).toHaveLength(23);
+  it("resolves each card's layer slots and its type frame", () => {
+    const bindings = [0, 1, 2, 4, atlas.frames.attack.page, 5];
     for (const card of baseCards) {
       const { card: entry, frame } = cardArt(atlas, card.id);
       expect(entry.frame).toBe(card.type);
       expect(frame).toBe(atlas.frames[card.type]);
-      const page = entry.layers.back.page;
       for (const layer of CARD_LAYER_IDS) {
-        const [u0, v0, u1, v1] = entry.layers[layer].uv;
-        expect(entry.layers[layer].page).toBe(page);
-        expect(u1 - u0).toBeCloseTo(480 / 2048, 4);
-        expect(v1 - v0).toBeCloseTo(480 / 2048, 4);
+        const region = entry.layers[layer];
+        const [u0, v0, u1, v1] = region.uv;
+        const [x, y, width, height] = region.rect;
+        const page = atlas.pages[region.page];
+        expect(u0).toBeCloseTo(x / page.width, 4);
+        expect(v1).toBeCloseTo(1 - y / page.height, 4);
+        expect(u1 - u0).toBeCloseTo(width / page.width, 4);
+        expect(v1 - v0).toBeCloseTo(height / page.height, 4);
       }
       const face = cardFaceInstance(atlas, card.id);
       expect(face.backUv).toEqual(entry.layers.back.uv);
       expect(face.midUv).toEqual(entry.layers.mid.uv);
       expect(face.frontUv).toEqual(entry.layers.front.uv);
       expect(face.frameUv).toEqual(frame.uv);
-      expect([0, 1, 2, 3]).toContain(face.glowPage[3]);
+      const encoded = face.glowPage[3];
+      const code = encoded - 6;
+      const slots =
+        encoded < 6
+          ? [encoded, encoded, encoded]
+          : [Math.floor(code / 36), Math.floor((code % 36) / 6), code % 6];
+      expect(slots.map((slot) => bindings[slot])).toEqual(
+        CARD_LAYER_IDS.map((layer) => entry.layers[layer].page),
+      );
     }
-    // The three original family pages and the Foundry page are all bound.
-    const slots = new Set(baseCards.map((c) => cardFaceInstance(atlas, c.id).glowPage[3]));
-    expect(slots.size).toBe(4);
   });
 
   it('shares upgraded cards with their base art', () => {
@@ -87,9 +95,15 @@ describe('card atlas parsing', () => {
     expect(() => cardArt(atlas, 'no-such-card')).toThrow(RangeError);
   });
 
-  it('has three frames sharing one window, aspect and text layout the fan and shader assume', () => {
+  it('packs mixed layer pages without changing the shared-page slot encoding', () => {
+    expect(cardFaceInstance(atlas, 'capacitor').glowPage[3]).toBe(50);
+    expect(cardFaceInstance(atlas, 'copper-coil').glowPage[3]).toBe(11);
+    expect(cardFaceInstance(atlas, 'strike').glowPage[3]).toBe(0);
+  });
+
+  it('has four frames sharing one window, aspect and text layout the fan and shader assume', () => {
     const frames = Object.values(atlas.frames);
-    expect(frames).toHaveLength(3);
+    expect(frames).toHaveLength(4);
     for (const frame of frames) {
       expect(frame.page).toBe(atlas.frames.attack.page);
       expect(frame.window).toEqual(atlas.frames.attack.window);

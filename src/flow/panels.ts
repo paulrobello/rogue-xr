@@ -21,13 +21,13 @@ import { cardTip } from '../combat-view/card-keywords.ts';
 import { drawTip } from '../combat-view/status-info.ts';
 import { getCard } from '../content/cards.ts';
 import { PERMANENT_CARD_IDS } from '../content/rewards.ts';
-import { formatSeed } from '../core/rng.ts';
+import { formatSeed, normalizeSeed } from '../core/rng.ts';
 import { appendSeedChar, SEED_ALPHABET, SEED_LENGTH } from '../desktop/seed-title.ts';
 import { HOLO_CARD_ASPECT } from '../hand/fan-layout.ts';
 import { PALETTE } from '../palette.ts';
 import { FOVEATION_CHOICES, type FoveationChoice, type Settings } from '../persist/db.ts';
 import type { RunSnapshot } from '../persist/saves.ts';
-import { brewNames, formulaObservation, ingredientNames } from '../rules/alchemy.ts';
+import { brewNames, ingredientNames } from '../rules/alchemy.ts';
 import { bellMelody } from '../rules/bell-chimes.ts';
 import { BEARINGS, calibrationPlan, GEAR_TEETH, PLANET_NAMES } from '../rules/calibration.ts';
 import { COMMISSION_TITLES } from '../rules/commissions.ts';
@@ -37,7 +37,10 @@ import {
   type Difficulty,
   runDifficulty,
 } from '../rules/difficulty.ts';
+import { type LogbookEntry, RUBBING_LOGBOOK_CLUE as RUBBING_NOTE } from '../rules/logbook.ts';
 import type { PressureNoteId } from '../rules/pressure.ts';
+import { reliquaryGlyph } from '../rules/reliquary.ts';
+import { gasketFor } from '../rules/valvehouse.ts';
 import {
   maxTier,
   nextCost,
@@ -51,11 +54,16 @@ import { CARD_FLIGHT_SECONDS, flightGoal, flightPose, flightScale } from './card
 import { dressClockworkDial } from './clockwork-dial.ts';
 import { DECK_SORTS, type DeckSort, deckStacks } from './deck-view.ts';
 import type { FlowPhase, RunFlow } from './flow.ts';
+import { type BookPagePainter, Logbook, puzzlePage } from './logbook.ts';
+import type { LogbookMap, MapPoint, MapView } from './logbook-map.ts';
+import { type ActivePuzzlePageDeps, activePuzzlePages } from './logbook-puzzles.ts';
+import { runCardPages, runStatsPages } from './logbook-run-pages.ts';
 import {
   RewardCardFaces,
   type RewardCardFacesOptions,
   type RewardCardSlot,
 } from './reward-cards.ts';
+import { TEST_SEEDS } from './test-seeds.ts';
 
 /**
  * The card keyword tip on the reward board and the deck viewer: canvas height (fits a three-keyword
@@ -96,6 +104,9 @@ export interface FlowUiDeps {
   /** A newer deployed build: the title offers the reload while one is available. */
   update?: TitleUpdate;
   onNoteOpened?: (position: THREE.Vector3) => void;
+  reducedMotion?: boolean;
+  logbookMaps?: () => readonly LogbookMap[];
+  puzzlePressureNotes?: () => ActivePuzzlePageDeps['pressureNotes'];
   locationLabel?: () => string | null;
   noteRecord?: (id: PressureNoteId) => PressureNoteRecord | null;
 }
@@ -115,15 +126,25 @@ export interface FlyTarget {
 }
 
 /** The in-run menu: closed, its main board, the deck viewer, or the abandon confirmation. */
-export type MenuView = 'closed' | 'main' | 'settings' | 'deck' | 'confirm' | 'items' | 'note';
+export type MenuView =
+  | 'closed'
+  | 'main'
+  | 'settings'
+  | 'deck'
+  | 'confirm'
+  | 'items'
+  | 'logbook'
+  | 'note';
 /** Phases the in-run menu opens over. */
 const MENU_PHASES: readonly FlowPhase[] = ['explore', 'combat'];
+type FieldNoteId = PressureNoteId | typeof RUBBING_NOTE;
 
 /** Card family colours (art bible): the jewel tone fills the frame field. */
 const FAMILY: Readonly<Record<string, string>> = {
   attack: PALETTE.ruby,
   skill: PALETTE.sapphire,
   sigil: PALETTE.emerald,
+  mechanism: PALETTE.brassDark,
 };
 
 /** What the title says about each level, under its buttons. */
@@ -162,13 +183,15 @@ const DECK_SORT_LABEL: Record<DeckSort, string> = {
 };
 const ART_WIDTH = 3.4;
 const PERMANENT_CARD_PAGE_SIZE = 3;
+const TEST_SEED_PAGE_SIZE = 6;
 
-type Subview = 'main' | 'seed';
+type Subview = 'main' | 'seed' | 'test-seeds';
 type WorkshopSubview = 'main' | 'permanent-cards';
 export const RUN_MENU_ITEMS = [
   { id: 'settings', label: 'Settings' },
   { id: 'deck', label: 'Deck' },
   { id: 'items', label: 'Items' },
+  { id: 'logbook', label: 'Logbook' },
 ] as const;
 type RunMenuAction = (typeof RUN_MENU_ITEMS)[number]['id'];
 
@@ -278,8 +301,9 @@ export function rewardCardTexture(id: string, hovered: boolean): THREE.CanvasTex
     });
     ctx.font = '500 22px system-ui, sans-serif';
     ctx.fillStyle = 'rgba(242,223,184,0.8)';
-    const kind =
-      card.type === 'sigil' ? 'Sigil spell' : card.type === 'attack' ? 'Attack' : 'Skill';
+    const kind = { sigil: 'Sigil spell', attack: 'Attack', skill: 'Skill', mechanism: 'Mechanism' }[
+      card.type
+    ];
     ctx.fillText(
       card.dice ? `${kind} · rolls a die` : kind,
       w / 2,
@@ -370,10 +394,16 @@ export class FlowUi {
   private tableDistanceMessage = '';
   private seedValue: string;
   private seedDraft = '';
+  private testSeedPage = 0;
   private shownFor: FlowPhase | null = null;
   private menu: MenuView = 'closed';
-  private noteId: PressureNoteId | null = null;
+  private noteId: FieldNoteId | null = null;
   private notePhysical = false;
+  private logbook: Logbook | null = null;
+  private logbookStart = 0;
+  private bookSection: 'clues' | 'map' | 'puzzles' | 'cards' | 'stats' = 'clues';
+  private readonly logbookMapViews = new Map<number, MapView>();
+  private showMapFinds = false;
   private menuHead: THREE.Object3D | null = null;
   private radialMenu: RadialMenu<RunMenuAction> | null = null;
   private releaseDial: (() => void) | null = null;
@@ -481,6 +511,15 @@ export class FlowUi {
   /** Opens an acquired note, from a physical pickup or from Items. */
   readNote(id: PressureNoteId, head: THREE.Object3D, physical = true): boolean {
     if (!this.deps.noteRecord?.(id) || !this.deps.flow.pressure.notes.includes(id)) return false;
+    return this.openFieldNote(id, head, physical);
+  }
+
+  readReliquaryRubbing(head: THREE.Object3D, physical = true): boolean {
+    if (this.deps.flow.reliquarySeal === 'hidden') return false;
+    return this.openFieldNote(RUBBING_NOTE, head, physical);
+  }
+
+  private openFieldNote(id: FieldNoteId, head: THREE.Object3D, physical: boolean): boolean {
     if (this.menu === 'note' && this.noteId === id) return false;
     this.noteId = id;
     this.notePhysical = physical;
@@ -498,6 +537,7 @@ export class FlowUi {
    */
   update(dt: number): void {
     this.radialMenu?.update(dt);
+    this.logbook?.update(dt);
     const flight = this.flight;
     if (!flight) return;
     this.rewardFaces?.update(dt);
@@ -522,7 +562,7 @@ export class FlowUi {
     const ids: string[] = [];
     if (this.menu !== 'closed') ids.push('menu-resume');
     if (this.menu === 'main' && this.radialMenu)
-      ids.push('menu-settings', 'menu-deck', 'menu-items', 'menu-cancel');
+      ids.push('menu-settings', 'menu-deck', 'menu-items', 'menu-logbook', 'menu-cancel');
     for (const board of this.boards) {
       for (const child of board.panel.root.children) {
         const cell = board.panel.cellAt(child);
@@ -595,6 +635,10 @@ export class FlowUi {
       this.openItems();
       return true;
     }
+    if (controlId === 'menu-logbook') {
+      this.openLogbook();
+      return true;
+    }
     const target = this.boardOf(controlId);
     return target ? target.board.panel.activate(target.cell) : false;
   }
@@ -606,7 +650,11 @@ export class FlowUi {
     if (this.radialMenu && this.menu === 'main') {
       const action = controlId?.startsWith('menu-') ? controlId.slice('menu-'.length) : null;
       this.radialMenu.setHovered(
-        action === 'cancel' || action === 'settings' || action === 'deck' || action === 'items'
+        action === 'cancel' ||
+          action === 'settings' ||
+          action === 'deck' ||
+          action === 'items' ||
+          action === 'logbook'
           ? action
           : null,
       );
@@ -687,10 +735,13 @@ export class FlowUi {
 
   /** Desktop typing into the seed field. Returns whether the key was used. */
   typeKey(key: string): boolean {
+    if (key === 'Escape' && this.subview !== 'main') {
+      this.setSubview('main');
+      return true;
+    }
     if (this.subview !== 'seed') return false;
     if (key === 'Backspace') this.seedDraft = this.seedDraft.slice(0, -1);
     else if (key === 'Enter') return this.commitSeed();
-    else if (key === 'Escape') this.setSubview('main');
     else {
       const next = appendSeedChar(this.seedDraft, key);
       if (next === null) return false;
@@ -762,6 +813,8 @@ export class FlowUi {
   }
 
   private clear(): void {
+    this.logbook?.dispose();
+    this.logbook = null;
     this.stopAbove?.();
     this.stopAbove = null;
     this.releaseDial?.();
@@ -826,7 +879,11 @@ export class FlowUi {
     this.clear();
     const phase = this.deps.flow.phase;
     const builders: Partial<Record<FlowPhase, () => void>> = {
-      title: () => (this.subview === 'seed' ? this.buildSeedPad() : this.buildTitle()),
+      title: () => {
+        if (this.subview === 'seed') this.buildSeedPad();
+        else if (this.subview === 'test-seeds') this.buildTestSeeds();
+        else this.buildTitle();
+      },
       workshop: () => this.buildWorkshop(),
       settings: () => this.buildSettings(),
       reward: () => this.buildReward(),
@@ -1009,11 +1066,11 @@ export class FlowUi {
     rows.push(
       {
         id: 'new-run',
-        label: 'New Run',
+        label: `New Run · Seed ${formatSeed(this.seedValue)}`,
         onSelect: () => this.deps.onNewRun(this.seedValue, this.deps.settings().difficulty),
       },
       [
-        { id: 'seed', label: `Seed ${formatSeed(this.seedValue)}`, weight: 2 },
+        { id: 'test-seeds', label: 'Test seeds ▾', onSelect: () => this.openTestSeeds() },
         { id: 'enter-seed', label: 'Enter seed', onSelect: () => this.setSubview('seed') },
       ],
       DIFFICULTIES.map((d) => ({
@@ -1051,6 +1108,57 @@ export class FlowUi {
   private chooseDifficulty(level: Difficulty): void {
     if (this.deps.settings().difficulty === level) return;
     this.deps.onSettings({ ...this.deps.settings(), difficulty: level });
+    this.refresh();
+  }
+
+  private openTestSeeds(): void {
+    const selected = normalizeSeed(this.seedValue);
+    const index = TEST_SEEDS.findIndex(({ seed }) => seed === selected);
+    this.testSeedPage = Math.floor(Math.max(0, index) / TEST_SEED_PAGE_SIZE);
+    this.setSubview('test-seeds');
+  }
+
+  private buildTestSeeds(): void {
+    const pages = Math.ceil(TEST_SEEDS.length / TEST_SEED_PAGE_SIZE);
+    const start = this.testSeedPage * TEST_SEED_PAGE_SIZE;
+    const rows: MenuRow[] = TEST_SEEDS.slice(start, start + TEST_SEED_PAGE_SIZE).map(
+      ({ seed, label }) => ({
+        id: seed,
+        label: `${label} · ${seed}`,
+        onSelect: () => {
+          this.seedValue = seed;
+          this.setSubview('main');
+        },
+      }),
+    );
+    rows.push([
+      {
+        id: 'previous',
+        label: 'Previous',
+        onSelect: this.testSeedPage > 0 ? () => this.moveTestSeedPage(-1) : undefined,
+      },
+      { id: 'page', label: `${this.testSeedPage + 1} / ${pages}` },
+      {
+        id: 'next',
+        label: 'Next',
+        onSelect: this.testSeedPage + 1 < pages ? () => this.moveTestSeedPage(1) : undefined,
+      },
+      { id: 'back', label: 'Cancel', onSelect: () => this.setSubview('main') },
+    ]);
+    this.board(
+      'test-seeds',
+      rows,
+      { x: 0, y: 0.28, z: -BOARD_DISTANCE },
+      {
+        width: 0.74,
+        heading: 'Test seeds',
+        selected: [normalizeSeed(this.seedValue)],
+      },
+    );
+  }
+
+  private moveTestSeedPage(delta: number): void {
+    this.testSeedPage += delta;
     this.refresh();
   }
 
@@ -1416,6 +1524,10 @@ export class FlowUi {
       this.buildItems();
       return;
     }
+    if (this.menu === 'logbook') {
+      this.buildLogbook();
+      return;
+    }
     if (this.menu === 'note') {
       this.buildNote();
       return;
@@ -1498,6 +1610,151 @@ export class FlowUi {
     this.setMenu('items');
   }
 
+  private openLogbook(entry?: LogbookEntry): void {
+    if (entry && !this.deps.flow.saveLogbookClue(entry)) return;
+    this.bookSection = 'clues';
+    this.logbookMapViews.clear();
+    this.logbookStart = entry
+      ? Math.max(
+          0,
+          this.deps.flow.logbookEntries.findIndex(({ id }) => id === entry.id),
+        )
+      : 0;
+    this.setMenu('logbook');
+    if (this.logbook)
+      this.deps.onNoteOpened?.(this.logbook.root.getWorldPosition(new THREE.Vector3()));
+  }
+
+  private turnLogbook(offset: -1 | 1): void {
+    const book = this.logbook;
+    if (book?.turn(offset, this.deps.reducedMotion ?? false))
+      this.deps.onNoteOpened?.(book.root.getWorldPosition(new THREE.Vector3()));
+  }
+
+  logbookMapPoint(ray: THREE.Ray, inside = true): MapPoint | null {
+    return this.logbook?.mapPoint(ray, inside) ?? null;
+  }
+
+  adjustLogbookMap(dx: number, dy: number, multiplier = 1, anchor?: MapPoint): void {
+    this.logbook?.adjustMap(dx, dy, multiplier, anchor);
+  }
+
+  panLogbookStick(x: number, forward: number, dt: number): boolean {
+    if (this.bookSection !== 'map' || this.menu !== 'logbook') return false;
+    const strength = Math.hypot(x, forward);
+    if (strength < 0.18) return false;
+    const distance = (760 * Math.min(dt, 0.05) * (strength - 0.18)) / (0.82 * strength);
+    this.adjustLogbookMap(-x * distance, forward * distance);
+    return true;
+  }
+
+  private selectBookSection(section: typeof this.bookSection): void {
+    if (this.bookSection === section) return;
+    this.bookSection = section;
+    this.refresh();
+    if (this.logbook)
+      this.deps.onNoteOpened?.(this.logbook.root.getWorldPosition(new THREE.Vector3()));
+  }
+
+  private bookPages(): readonly BookPagePainter[] | undefined {
+    const flow = this.deps.flow;
+    switch (this.bookSection) {
+      case 'cards':
+        return runCardPages(flow);
+      case 'stats':
+        return runStatsPages(flow);
+      case 'puzzles': {
+        const clues = activePuzzlePages(flow, { pressureNotes: this.deps.puzzlePressureNotes?.() });
+        if (clues.length) return clues.map(puzzlePage);
+        return [
+          puzzlePage({
+            puzzle: 'Puzzles',
+            title: 'No clues found yet',
+            text: 'Read a clue in the Spire to find it here.',
+          }),
+        ];
+      }
+      default:
+        return undefined;
+    }
+  }
+
+  private buildLogbook(): void {
+    const sections = [
+      { id: 'clues', label: 'Clues' },
+      { id: 'map', label: 'Map' },
+      { id: 'puzzles', label: 'Puzzles' },
+      { id: 'cards', label: 'Cards' },
+      { id: 'stats', label: 'Stats' },
+    ] as const;
+    const tabs: MenuCell[] = sections
+      .filter(({ id }) => id !== 'map' || this.deps.logbookMaps)
+      .map(({ id, label }) => ({ id, label, onSelect: () => this.selectBookSection(id) }));
+    tabs.push({ id: 'close', label: 'Close book', onSelect: () => this.closeMenu() });
+    const maps = this.bookSection === 'map' ? this.deps.logbookMaps?.() : undefined;
+    const pages = this.bookPages();
+    const entries = this.bookSection === 'clues' ? this.deps.flow.logbookEntries : [];
+    const hasTurns = maps ? maps.length > 1 : (pages?.length ?? entries.length) > 2;
+    const controls: MenuCell[] = [];
+    if (hasTurns)
+      controls.push(
+        {
+          id: 'previous',
+          label: maps ? 'Lower floor' : 'Back a page',
+          onSelect: () => this.turnLogbook(-1),
+        },
+        {
+          id: 'next',
+          label: maps ? 'Higher floor' : 'Next page',
+          onSelect: () => this.turnLogbook(1),
+        },
+      );
+    if (maps)
+      controls.push(
+        {
+          id: 'zoom-out',
+          label: 'Zoom out',
+          onSelect: () => this.adjustLogbookMap(0, 0, 1 / Math.SQRT2),
+        },
+        { id: 'fit', label: 'Fit map', onSelect: () => this.logbook?.fitMap() },
+        {
+          id: 'zoom-in',
+          label: 'Zoom in',
+          onSelect: () => this.adjustLogbookMap(0, 0, Math.SQRT2),
+        },
+        {
+          id: 'finds',
+          label: this.showMapFinds ? 'Hide finds' : 'Show finds',
+          onSelect: () => {
+            if (!this.logbook?.setMapFinds(!this.showMapFinds)) return;
+            this.showMapFinds = !this.showMapFinds;
+            board.panel.setLabel('finds', this.showMapFinds ? 'Hide finds' : 'Show finds');
+          },
+        },
+      );
+    const board = this.board(
+      'menu-logbook',
+      controls.length ? [tabs, controls] : [tabs],
+      { x: 0, y: -0.36, z: -BOARD_DISTANCE },
+      { width: 1.13, selected: [this.bookSection] },
+    );
+    const activeMap = maps?.findIndex(({ floor }) => floor === this.deps.flow.floorNumber) ?? 0;
+    const openedAt = maps
+      ? 2 * Math.max(0, activeMap)
+      : this.bookSection === 'clues'
+        ? this.logbookStart
+        : 0;
+    this.logbook = new Logbook(entries, this.deps.flow.run?.seed ?? '', openedAt, {
+      maps,
+      pages,
+      mapViews: this.logbookMapViews,
+      showFinds: this.showMapFinds,
+    });
+    this.logbook.root.userData.section = this.bookSection;
+    this.logbook.root.position.y = 0.406;
+    board.group.add(this.logbook.root);
+  }
+
   private buildItems(): void {
     const ids = this.deps.flow.pressure.notes;
     const rows: MenuRow[] = ids.map((id) => {
@@ -1562,19 +1819,18 @@ export class FlowUi {
       });
     const formula = run?.conservatoryFormula;
     if (run && formula) {
-      if (formula.brewed && !formula.revealed)
-        rows.unshift({ id: 'archive-potion', label: brewNames[formula.recipe] });
+      if (formula.carried) rows.unshift({ id: 'archive-potion', label: brewNames[formula.recipe] });
       for (const clue of formula.clues)
         rows.push({
           id: 'formula-' + clue,
           label:
             (clue === 'portrait' ? 'Portrait' : 'Upper Works') +
             ' · ' +
-            formulaObservation(run.seed, clue),
+            this.deps.flow.describeFormulaClue(clue),
         });
     }
-    if (run?.alchemy?.brewed && !run.alchemy.opened)
-      rows.unshift({ id: 'thornwake-draught', label: 'Thornwake draught' });
+    if (run?.alchemy?.carried)
+      rows.unshift({ id: 'thornwake-draught', label: 'Thornwake Draught' });
     else if (run?.alchemy && (!run.alchemy.brewed || (run.alchemy.opened && !formula?.brewed))) {
       const added = run.alchemy.opened ? formula?.added : run.alchemy.added;
       for (const id of run.alchemy.found.filter((id) => !added?.includes(id)))
@@ -1588,6 +1844,20 @@ export class FlowUi {
         id: 'clockmakers-key',
         label: carriedKeys === 1 ? 'Clockmaker’s key' : `Clockmaker’s keys ×${carriedKeys}`,
       });
+    if (run && this.deps.flow.valvehouse === 'held') {
+      rows.push({
+        id: 'valvehouse-gasket',
+        label: `Valvehouse · ${gasketFor(run.seed)} gasket`,
+      });
+    }
+    if (this.deps.flow.reliquarySeal !== 'hidden')
+      rows.push({
+        id: RUBBING_NOTE,
+        label: 'Keeper’s rubbing · Stone Reliquary',
+        onSelect: () => {
+          if (this.menuHead) this.readReliquaryRubbing(this.menuHead, false);
+        },
+      });
     if (!rows.length) rows.push({ id: 'empty', label: 'No items collected yet' });
     rows.push({ id: 'back', label: 'Back', onSelect: () => this.setMenu('main') });
     this.board(
@@ -1600,18 +1870,40 @@ export class FlowUi {
 
   private buildNote(): void {
     const id = this.noteId;
-    const record = id ? this.deps.noteRecord?.(id) : null;
-    if (!record) {
+    const seed = this.deps.flow.run?.seed;
+    const glyph = id === RUBBING_NOTE && seed ? reliquaryGlyph(seed) : null;
+    const record = glyph
+      ? {
+          title: 'Keeper’s rubbing',
+          body: 'Copy this mark in one continuous stroke.',
+          source: 'Upper Works',
+          origin: 'Stone Reliquary · seal plate',
+        }
+      : id && id !== RUBBING_NOTE
+        ? this.deps.noteRecord?.(id)
+        : null;
+    if (!id || !record) {
       this.setMenu('items');
       return;
     }
+    const origin = record.origin ?? `Found on the ${record.source}`;
     const controls: MenuRow = [
+      {
+        id: 'save-logbook',
+        label: this.deps.flow.logbookEntries.some((entry) => entry.id === id)
+          ? 'Open in logbook'
+          : 'Save to logbook',
+        onSelect: () => this.openLogbook({ id, title: record.title, body: record.body, origin }),
+      },
       ...(this.notePhysical
-        ? [{ id: 'put-away', label: 'Put away', onSelect: () => this.setMenu('closed') }]
-        : [{ id: 'back', label: 'Back', onSelect: () => this.setMenu('items') }]),
-      ...(this.notePhysical
-        ? [{ id: 'items', label: 'Items', onSelect: () => this.setMenu('items') }]
-        : [{ id: 'resume', label: 'Resume', onSelect: () => this.setMenu('closed') }]),
+        ? [
+            { id: 'put-away', label: 'Put away', onSelect: () => this.setMenu('closed') },
+            { id: 'items', label: 'Items', onSelect: () => this.setMenu('items') },
+          ]
+        : [
+            { id: 'back', label: 'Back', onSelect: () => this.setMenu('items') },
+            { id: 'resume', label: 'Resume', onSelect: () => this.setMenu('closed') },
+          ]),
     ];
     const board = this.board(
       'menu-note',
@@ -1635,7 +1927,7 @@ export class FlowUi {
       ctx.strokeRect(26, 26, 1148, 708);
       ctx.fillStyle = '#624429';
       ctx.font = '600 32px system-ui, sans-serif';
-      ctx.fillText('PRESSURE WORKS', 76, 104);
+      ctx.fillText(glyph ? 'UPPER WORKS' : 'PRESSURE WORKS', 76, 104);
       ctx.fillStyle = '#2e2118';
       ctx.font = 'bold 66px Georgia, serif';
       ctx.fillText(record.title, 72, 213, 1050);
@@ -1646,9 +1938,23 @@ export class FlowUi {
         ctx.fillText(line, 76, y);
         y += 62;
       }
+      if (glyph) {
+        ctx.beginPath();
+        glyph.points.forEach(({ x, y }, i) => {
+          const px = 600 + x * 238;
+          const py = 500 - y * 238;
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        });
+        ctx.lineWidth = 14;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = '#453123';
+        ctx.stroke();
+      }
       ctx.fillStyle = '#5b422b';
       ctx.font = 'italic 32px Georgia, serif';
-      ctx.fillText(record.origin ?? `Found on the ${record.source}`, 76, 678, 1042);
+      ctx.fillText(origin, 76, 678, 1042);
     }
     const texture = new THREE.CanvasTexture(paper);
     configureTextTexture(texture);

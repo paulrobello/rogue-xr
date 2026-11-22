@@ -72,7 +72,7 @@ const texel = (x: number, y: number): [number, number, number, number] => {
 };
 
 /** Every texel a bilinear tap at `d` texels from the window radius, at `angles` bearings, can read. */
-function ringTexels(type: 'attack' | 'skill' | 'sigil', d: number, angles = 720) {
+function ringTexels(type: keyof typeof atlas.frames, d: number, angles = 720) {
   const frame = atlas.frames[type];
   const [x0, y0, w, h] = frame.rect;
   const cx = x0 + frame.window.u * w;
@@ -112,7 +112,7 @@ describe('card frame window edge (playtest card F)', () => {
     const nearest = FRAME_EDGE_TEXELS + FRAME_EDGE_FOOTPRINTS * 1;
     expect(nearest).toBeGreaterThanOrEqual(2.5);
     expect(FRAME_EDGE_MAX_TEXELS).toBeGreaterThanOrEqual(nearest);
-    for (const type of ['attack', 'skill', 'sigil'] as const) {
+    for (const type of ['attack', 'skill', 'sigil', 'mechanism'] as const) {
       // A bilinear tap reads one texel either side; a minified one up to the capped push.
       for (let d = nearest - 1; d <= FRAME_EDGE_MAX_TEXELS + 1; d += 0.5) {
         const texels = ringTexels(type, d);

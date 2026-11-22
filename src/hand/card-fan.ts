@@ -177,6 +177,7 @@ const TYPE_COLOR: Record<SliceCard['type'], string> = {
   attack: PALETTE.ruby,
   skill: PALETTE.emerald,
   sigil: PALETTE.sapphire,
+  mechanism: PALETTE.brass,
 };
 
 const easeOutBack = (u: number): number => {

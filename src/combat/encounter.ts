@@ -306,7 +306,12 @@ export class EncounterDirector {
   checkTrigger(player: { x: number; z: number }): EncounterTrigger | null {
     if (this.phaseValue !== 'idle' || this.cooldown > 0) return null;
     const room = this.world.current;
-    if (this.cleared.has(room) || !this.world.plan.rooms[room]?.encounter) return null;
+    if (
+      this.cleared.has(room) ||
+      !this.world.plan.rooms[room]?.encounter ||
+      this.world.plan.armoryAlcove?.room === room
+    )
+      return null;
     const footprint = this.world.rooms[room]?.footprint;
     if (!footprint) return null;
     const { min, max } = footprint;
@@ -341,7 +346,8 @@ export class EncounterDirector {
     const guardian = enemies.some((e) => e.userData.tier === 'guardian');
     const space = combatRoom(worldRoom);
     const origin = patrol?.getWorldPosition(new THREE.Vector3());
-    const loadedColliders = patrol ? this.world.colliders?.[room] : undefined;
+    const armory = this.world.plan.armoryAlcove?.room === room;
+    const loadedColliders = patrol || armory ? this.world.colliders?.[room] : undefined;
     const blockers = loadedColliders ?? space.colliders;
     const clearApproach = origin
       ? (x: number, z: number) => {
@@ -379,7 +385,7 @@ export class EncounterDirector {
               ],
             })),
           }
-        : space,
+        : { ...space, colliders: blockers },
       {
         table: {
           distance: this.tableDistance,

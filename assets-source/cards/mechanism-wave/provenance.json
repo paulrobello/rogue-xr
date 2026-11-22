@@ -1,0 +1,55 @@
+{
+  "provider": "OpenAI Media Service",
+  "generator": "Built-in OpenAI ImageGen",
+  "model": "Not exposed by the tool",
+  "file": "mechanism-wave.png",
+  "sha256": "056d5bac3d71c7d6ef4c66a52d45209e41c9b9c5e613b9e17923e6dee23b6ab1",
+  "reference": [
+    {
+      "path": "assets-source/style/locked/L-cards.png",
+      "sha256": "207a60d3465942c8d16ddb5eee674db576a4a19e3b7070579313f844050b2c52"
+    },
+    {
+      "path": "assets-source/cards/dice-wave/dice-wave.png",
+      "sha256": "4412dcdd8c0f3850871c2a2143aca3a3217e82bf9f5aa48826a4bcb554135b3e"
+    }
+  ],
+  "prompt": "Create one original production game asset: 4 isolated painted foreground objects in an exact equal 2\u00d72 grid on a square transparent RGBA sheet for the tabletop card art of Clockwork Spire. The supplied project-owned images are style and placement references only. Follow the same Victorian clockwork fantasy setting, carefully painted bronze highlights, darkened copper, steel, jewel enamel, and an instantly readable silhouette at small hand-card size. Top left: GYRO STABILIZER, an antique brass gyroscope with two distinct nested tilted gimbal rings, large teal enamel central weight, three short stabilizing feet. Top right: PRESSURE GAUGE, an upright round ivory dial in a square brass steam manifold with a broad burgundy needle, a curved dark feed tube and a small red safety knob. No text and no numerals on the dial. Bottom left: CLOCKWORK TURRET, a fantastical small tripod assembly with a short wide brass emitter cone, blue enamel gear plates and a winding clockwork key. Mechanical fantasy machine, toy-like proportions, distinct right-facing horizontal shape. Bottom right: FURNACE HEART, a strong heart-shaped copper combustion vessel with red glass glow visible through a narrow vent, thick arched supply pipes and a cast iron mount, distinctly vertical. Each full silhouette fits inside its quadrant with at least 12% fully transparent margin on every side. Keep true clear alpha through ring and pipe cutouts. Nothing outside the four distinct objects. No cards, frames, labels, glyphs, ground, large smoke, lettering, individuals, checkerboard, or cast shadows.",
+  "settings": {
+    "transparentBackground": true,
+    "layout": "2 by 2 equal grid",
+    "size": [
+      1254,
+      1254
+    ]
+  },
+  "alphaBoundsByQuadrantAt16": {
+    "gyro-stabilizer": [
+      136,
+      39,
+      561,
+      603
+    ],
+    "pressure-gauge": [
+      77,
+      76,
+      495,
+      578
+    ],
+    "clockwork-turret": [
+      86,
+      99,
+      578,
+      551
+    ],
+    "furnace-heart": [
+      108,
+      13,
+      516,
+      548
+    ]
+  },
+  "alphaNotes": "Original RGBA output kept byte-for-byte and trimmed only in the runtime atlas derivative.",
+  "runtimeDerivation": "scripts/assets/build_card_atlas.py packs the four Mechanism foregrounds onto the shared expansion page.",
+  "rights": "Original generated foregrounds with project-owned references. Release and owner review pending."
+}

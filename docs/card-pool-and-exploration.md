@@ -4,6 +4,16 @@ Status: draft for Paul's review, 2026-11-17. The Foundry combat batch, Pressure 
 
 The slice reference points every new card is measured against: 3 steam per turn, a hand of 5, Piston Strike (1 steam, 6 damage) and Brass Guard (1 steam, 5 block).
 
+The dungeon preview continues Wave A with Torque Wrench, Counterweight, and Tension Coil. New runs can roll the cards in rewards and treasure and purchase them in the Workshop. Upper Works seeds `CRYPT001` and `CRYPT004` exercise the Mortar Scarab and Lantern Bailiff rules, respectively. Their concept sheet is ready for visual review, with the 3D actors and animation still to come. [Dungeon enemy concepts](../assets-source/concepts/dungeon/dungeon-enemies-sheet.png)
+
+The next Wave A preview adds Spare Parts, Flywheel Swing and Patch Kit. Flywheel Swing's Block bonus is part of one hit and does not spend the Block. Patch Kit restores only missing HP and exhausts when played, including at full health. Older saves keep their original reward pools.
+
+Wave A finishes with Grease Gun, Escapement Break, and Lucky Strike. Grease Gun opens a tabletop Scry choice. Select any revealed card to discard it, then confirm to keep the rest in draw order. Its upgrade draws once after confirmation. Escapement Break uses current Block without spending it. Lucky Strike uses a brass d6 and deals the higher damage on a 5 or 6. These cards enter combat rewards on new runs and are available in the Workshop.
+
+Capacitor and Copper Coil introduce Charge in Wave B. Charge persists across turns. Each stack adds 0.1 to the next successful sigil multiplier, including above 1.25. The cast spends all Charge. A rejected trace or a half-power Fizzle keeps it.
+
+Flash Boiler and Overdrive Piston introduce X-cost plays. Each spends all remaining Steam when played and scales its base effect by the amount spent. A zero-Steam play consumes the card. The hand tooltip forecasts the effect at the current Steam count, and the combat log records the spend.
+
 ## 1. Two kinds of card
 
 | Kind | Where it lives | How it is used | Lasts |
@@ -29,8 +39,8 @@ Each one is engine work in `rules/` (pure and unit-tested), introduced in the wa
 | M6 | **Scry N** (effect) | Look at the top N cards of your draw pile and discard any of them. The cards show on the table. |
 | M7 | **Heal N** (effect) | Restore up to N HP, never above your maximum. It is rare in combat. |
 | M8 | **Overdrive** (an X cost) | Spend all your steam. The effect scales with the amount spent. |
-| M9 | **Mechanism** (card type) | It is set on the table and works every turn for the rest of the fight. At most 3 are on the table at once. A fourth replaces the oldest. |
-| M10 | **Loaded** and **Reroll** (dice) | Loaded: the next die rolls twice from the `dice` stream and keeps the higher roll, so it stays seeded (D1). Reroll: pick a thrown die back up and throw it once more. The new result comes from the `dice` stream. |
+| M9 | **Mechanism** (card type) | Play it onto the table. The three installed slots show the devices from oldest to newest. A fourth retires the oldest card for the rest of this fight. Start-turn devices fire after the player resets Block and Steam, before the hand is drawn. Turn-end devices fire before enemies act. Devices that fire together resolve in installation order. |
+| M10 | **Loaded** and **Reroll** (dice) | Loaded adds one roll to your next dice card this turn. Keep the highest initial result, including any Workshop Spare Die roll. Reroll offers a choice once the tray settles. Click the die or press T on desktop, or grip and release it in XR. Keep Roll accepts the initial result. A rethrow uses the next result in the `dice` stream and replaces the initial result before the card resolves. |
 | M11 | **Twin sigil** (card) | Trace two glyphs, one after the other. Each is scored separately, and each half of the effect uses its own multiplier. |
 | M12 | **Junk** (cards enemies add) | Unplayable, and removed at the end of the fight. Some punish you while they sit in your hand. |
 | M13 | **New dice** | Iron d4 (1 to 4, steady), crystal d12 (1 to 12, swingy, used by rare cards). Each needs a model and face set built in Blender. |
@@ -82,6 +92,12 @@ The slice's 15 stay as they are: Piston Strike, Cog Toss, Ratchet Flurry, Rivet 
 | Echo Glyph | sigil (spiral) | 2 | rare | Recast the last sigil you cast this fight at its score | Costs 1 |
 | Furnace Heart | mechanism | 3 | rare | Each turn, 2 Overheat on all enemies | 3 Overheat |
 
+Arc Chain sends its first bolt to the aimed enemy and branches from there to the other living enemies. Gear Grinder checks Rust before the first strike and shows a separate number for each hit. Pendulum Ward forms a shield and applies Plating when the ward spell lands.
+
+Crystal Gambit throws two numbered crystal d12s in the tray and displays the two kept values and their sum. Loaded and the Workshop Spare Die add rolls to the first die’s group. Reroll Lever lets the player rethrow that first contribution while keeping the second. The upgrade adds four damage to the sum once.
+
+Echo Glyph is the version 30 rare spiral sigil. It costs 2 Steam, or 1 Steam upgraded. Draw a spiral to repeat the last successful sigil at its recorded strength and with its original dice result. Aim Echo at a living enemy if the remembered spell needs a target. Echo keeps the remembered spell available for another copy. A fizzle spends the card and its Steam, and the player needs a successful sigil before they can pick up Echo.
+
 ### Wave C: act 2 (mechanics M4, M11, M12, glyph hourglass)
 
 | Card | Type | Cost | Rarity | Effect | Upgrade |
@@ -101,6 +117,8 @@ The slice's 15 stay as they are: Piston Strike, Cog Toss, Ratchet Flurry, Rivet 
 | Governor | mechanism | 2 | rare | Statuses you apply last 1 turn longer | Costs 1 |
 | Grand Design | mechanism | 3 | rare | Each turn, draw 1 more card | Costs 2 |
 | Clock Spring Reset | skill | 1 | rare | Shuffle your discard pile into your draw pile, draw 2. Exhaust | Draw 3 |
+
+Lens Focus costs 1 Steam. Aim at an enemy and trace the Eye’s outline and angled pupil. A 1× cast applies 3 Vulnerable, or 4 with the upgrade, then shows the top two draw-pile cards. Select any to discard and confirm. The kept cards stay in order, and trace strength scales the Vulnerable without changing the number of cards shown.
 
 ### Junk (added to your deck by act 2 enemies)
 

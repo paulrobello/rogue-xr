@@ -145,20 +145,27 @@ it('flaps in flight during approach, the fight, and attack recovery before foldi
   head.position.set(x, 1.5, z);
   view.world.current = room;
   const flight = kitPart(actor.object, 'OwlFlight');
+  const hover = kitPart(actor.object, 'OwlHover');
   const left = kitPart(actor.object, 'OwlWingL');
   const right = kitPart(actor.object, 'OwlWingR');
+  const leftFlap = kitPart(actor.object, 'OwlWingLFlap');
+  const rightFlap = kitPart(actor.object, 'OwlWingRFlap');
   const perch = kitPart(view.world.roomGroups[room], 'clockwork-owl-perch');
   const rest = flight.position.y;
   const perchHome = perch.position.clone();
   const advance = (frames: number): number[] =>
     Array.from({ length: frames }, () => {
       view.update(head, 1 / 72);
-      return left.rotation.z;
+      expect(flight.position.y + hover.position.y).toBeLessThan(rest + 0.36);
+      return left.rotation.z + leftFlap.rotation.z;
     });
   const expectFlapping = (angles: number[]): void => {
     expect(Math.max(...angles) - Math.min(...angles)).toBeGreaterThan(0.75);
     expect(Math.min(...angles)).toBeLessThan(-1.4);
-    expect(right.rotation.z).toBeCloseTo(-left.rotation.z, 5);
+    expect(right.rotation.z + rightFlap.rotation.z).toBeCloseTo(
+      -(left.rotation.z + leftFlap.rotation.z),
+      5,
+    );
   };
 
   expect(
@@ -166,9 +173,9 @@ it('flaps in flight during approach, the fight, and attack recovery before foldi
   ).toBe(true);
   advance(12);
   expect(view.encounter.phase).toBe('unfolding');
-  expect(flight.position.y).toBeGreaterThan(rest + 0.07);
+  expect(flight.position.y + hover.position.y).toBeGreaterThan(rest + 0.07);
   expect(perch.position.equals(perchHome)).toBe(true);
-  expectFlapping(advance(30));
+  expectFlapping(advance(720));
   advance(110);
   expect(view.encounter.phase).toBe('active');
   expect(actor.frozen).toBe(true);
@@ -182,7 +189,8 @@ it('flaps in flight during approach, the fight, and attack recovery before foldi
   advance(100);
   expect(view.encounter.phase).toBe('idle');
   expect(flight.position.y).toBeCloseTo(rest, 6);
-  expect(Math.abs(left.rotation.z)).toBeLessThanOrEqual(0.045);
+  expect(hover.position.y).toBe(0);
+  expect(Math.abs(left.rotation.z + leftFlap.rotation.z)).toBeLessThanOrEqual(0.045);
   view.dispose();
   owl.dispose();
 });

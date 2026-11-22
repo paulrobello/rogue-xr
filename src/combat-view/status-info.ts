@@ -1,6 +1,7 @@
 import { PALETTE } from '../palette.ts';
 import {
   DECAYS_AT_TURN_END,
+  SIGIL_CHARGE_PER_STACK,
   STANCE_MULTIPLIER,
   VULNERABLE_MULTIPLIER,
   WEAK_MULTIPLIER,
@@ -18,6 +19,7 @@ export const STATUS_NAME: Readonly<Record<StatusId, string>> = {
   'wound-up': 'Wound-up',
   plating: 'Plating',
   rust: 'Rust',
+  charge: 'Charge',
 };
 
 const percent = (multiplier: number): number => Math.round(Math.abs(1 - multiplier) * 100);
@@ -37,12 +39,17 @@ export function statusExplanation(
   const their = you ? 'your' : 'its';
   const hp = stacks === null ? '1 HP per stack' : `${stacks} HP`;
   const more = stacks === null ? '1 more damage per stack' : `${stacks} more damage`;
+  const chargePower =
+    stacks === null
+      ? `${Math.round(SIGIL_CHARGE_PER_STACK * 100)} percentage points per stack`
+      : `${Math.round(stacks * SIGIL_CHARGE_PER_STACK * 100)} percentage points`;
   const what: Record<StatusId, string> = {
     weak: `${you ? 'Your' : 'Its'} attacks deal ${percent(WEAK_MULTIPLIER)}% less damage.`,
     vulnerable: `Attacks against ${you ? 'you' : 'it'} deal ${percent(VULNERABLE_MULTIPLIER)}% more damage.`,
     overheat: `${you ? 'You lose' : 'It loses'} ${hp} at the start of ${their} turn, ignoring block, then 1 stack.`,
     'wound-up': `Each of ${their} attack hits deals ${more}.`,
     plating: `${you ? 'Your' : 'Its'} Plating grants Block at the start of ${their} turn, then loses 1 stack.`,
+    charge: `Adds ${chargePower} to ${their} next successful sigil. That cast spends all Charge.`,
     rust: `New Block gained by ${you ? 'you' : 'it'} is halved, rounded down. Loses 1 stack at the end of ${their} turn.`,
   };
   const wears = DECAYS_AT_TURN_END.includes(id)

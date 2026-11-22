@@ -44,6 +44,7 @@ it('mounts the original instruments and allows picking the reply only after disp
   };
   const route = dispatchDestination(seed);
   expect(get('dispatch-routing-slip').userData.labelText).toContain(`Route ${route + 1}`);
+  expect(get('dispatch-route-scale').userData.labelText).toContain('Find the return slip');
   const gate = get('dispatch-vault-shutter');
   expect(gate.visible).toBe(true);
   floor.world.current = spec.source.room;

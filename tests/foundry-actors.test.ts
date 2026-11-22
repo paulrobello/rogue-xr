@@ -14,6 +14,14 @@ async function load(id: EnemyKind) {
   return parseEnemyAsset(Uint8Array.from(readFileSync(base + '.glb')).buffer, manifest);
 }
 
+async function loadWithManifest(id: EnemyKind, edit: (raw: Record<string, unknown>) => void) {
+  const base = `public/assets/enemies/${id}/${id}`;
+  const raw = JSON.parse(readFileSync(base + '.manifest.json', 'utf8')) as Record<string, unknown>;
+  edit(raw);
+  const manifest = parseEnemyManifest(raw, id);
+  return parseEnemyAsset(Uint8Array.from(readFileSync(base + '.glb')).buffer, manifest);
+}
+
 describe('Foundry actor lifecycle', () => {
   it.each(['furnace-mite', 'glasswing-scrivener', 'null-crown-auditor'] as const)(
     'holds each %s tell and returns to it after a hit',
@@ -90,6 +98,43 @@ describe('Foundry actor lifecycle', () => {
       actor.showIntent('tally');
       actor.update(0.5);
       expect(actor.state).toBe('intent-tally');
+    } finally {
+      actor.dispose();
+      asset.dispose();
+    }
+  });
+
+  it('keeps legacy damaging moves on the authored attack clip', async () => {
+    const asset = await load('cog-sentry');
+    const actor = asset.spawn();
+    try {
+      actor.attack();
+      expect(actor.state).toBe('attack');
+    } finally {
+      actor.dispose();
+      asset.dispose();
+    }
+  });
+
+  it('uses authored action timing for a custom action and falls back for untimed actions', async () => {
+    const baseline = await load('null-crown-auditor');
+    const duration = baseline.moveClips.get('action-levy')?.duration ?? 0;
+    baseline.dispose();
+    const asset = await loadWithManifest('null-crown-auditor', (raw) => {
+      raw.actionTimings = { levy: { duration, impact: 0.25 } };
+    });
+    const actor = asset.spawn();
+    try {
+      expect(actor.timingForMove('reconcile').duration).toBe(1);
+      const cues: string[] = [];
+      actor.showIntent('levy');
+      actor.onEvent = (event) => cues.push(event);
+      actor.attack('levy');
+      actor.update(0.3);
+      expect(actor.state).toBe('action-levy');
+      expect(cues).toContain('impact');
+      actor.update(duration);
+      expect(actor.state).toBe('intent-levy');
     } finally {
       actor.dispose();
       asset.dispose();

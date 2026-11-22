@@ -107,6 +107,7 @@ const TYPE_COLOR: Record<SliceCard['type'], string> = {
   attack: PALETTE.ruby,
   skill: PALETTE.emerald,
   sigil: PALETTE.sapphire,
+  mechanism: PALETTE.brass,
 };
 
 const tmpMatrix = new THREE.Matrix4();
@@ -329,14 +330,15 @@ export class RewardCardFaces {
 
   hover(id: string, on: boolean): void {
     const index = this.slots.findIndex((s) => s.id === id);
-    if (index < 0 || this.leaving) return;
-    if (on) {
-      if (this.hoveredIndex !== null && this.hoveredIndex !== index)
-        this.paintFallback(this.hoveredIndex, false);
-      this.hoveredIndex = index;
-    } else if (this.hoveredIndex === index) this.hoveredIndex = null;
-    else return;
-    this.paintFallback(index, on);
+    if (index < 0 || (!on && this.hoveredIndex !== index)) return;
+    this.hoverAt(on ? index : null);
+  }
+
+  hoverAt(index: number | null): void {
+    if (this.leaving || this.hoveredIndex === index) return;
+    if (this.hoveredIndex !== null) this.paintFallback(this.hoveredIndex, false);
+    this.hoveredIndex = index;
+    if (index !== null) this.paintFallback(index, true);
     this.write();
   }
 

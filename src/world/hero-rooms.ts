@@ -1,6 +1,7 @@
 import { GREYBOX_TEMPLATES, type RoomTemplate } from '../content/rooms.ts';
 import type { FloorView } from './floor-view.ts';
 import type { RoomStyleKit } from './room-styles.ts';
+import type { StoneRoomKit } from './stone-rooms.ts';
 import { heroRoomTemplates, type StudyAsset, type StudyManifest } from './study-room.ts';
 import { dressTableDecor, type TableDecor } from './table-decor.ts';
 
@@ -65,6 +66,7 @@ export function dressHeroRooms(
   decor: TableDecor | null = null,
   roomStyleKit?: RoomStyleKit,
   closedHall?: StudyAsset | null,
+  stoneKit?: StoneRoomKit,
 ): number {
   let dressed = 0;
   for (const asset of assets) {
@@ -74,6 +76,7 @@ export function dressHeroRooms(
       asset.manifest.rigidNodes,
       roomStyleKit,
       asset.manifest.template.id === 'hall' ? closedHall?.instantiate : undefined,
+      stoneKit,
     );
   }
   if (decor) dressTableDecor(view.world, decor, new Set(assets.map((a) => a.manifest.template.id)));

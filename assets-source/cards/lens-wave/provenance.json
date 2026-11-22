@@ -1,0 +1,56 @@
+{
+  "asset": "lens-focus",
+  "provider": "Higgsfield",
+  "model": "gpt_image_2",
+  "jobId": "ea8d1c32-90fc-43e4-a262-2b986ee8af53",
+  "source": {
+    "path": "assets-source/cards/lens-wave/lens-wave.source.png",
+    "bytes": 1027203,
+    "sha256": "f96b4e1f48b1dcd36905de2c7853ea86167f9689715ba7d68e1520fe21112dd2"
+  },
+  "references": [
+    {
+      "path": "assets-source/style/locked/L-cards.png",
+      "bytes": 8304904,
+      "sha256": "207a60d3465942c8d16ddb5eee674db576a4a19e3b7070579313f844050b2c52"
+    }
+  ],
+  "prompt": "One original isolated foreground for Lens Focus, a spell card in the Victorian clockwork fantasy game Clockwork Spire. The supplied project-owned card sheet is a style reference only. Match its Gilded Lamplight painted amber brass and emerald glass. A compact, eye-shaped brass inspection lens seen nearly face-on at a gentle three-quarter angle, with a single bold emerald magnifying glass in an almond bezel and three short, well-separated polished adjustment tabs. A pale gold focal glint within the lens makes its purpose clear. The lens and brass housing are one easily readable silhouette in the small circular card window. Worn edges and painterly highlights, restrained warm light. Square composition on a perfectly uniform untextured solid pure magenta matte (#FF00FF), with at least 14 percent margin on each side. Magenta is the extraction backdrop and should be absent from the subject. No table, human, gears outside the housing, broad haze, baseless reflections, numbers, letters, logo, border, ground shadow, or card template.",
+  "runtimeDerivation": "Packed by scripts/assets/build_card_atlas.py --lens-wave-only.",
+  "ownerReview": "pending",
+  "backgroundRemoval": {
+    "provider": "Higgsfield",
+    "model": "image_background_remover",
+    "file": "assets-source/cards/lens-wave/lens-wave.cutout.png",
+    "sha256": "61a0d6b5de43a44b8dd3965138ca1dabbe74dd39903c0c01e113da99ad68b8fd",
+    "nativeSize": [
+      1024,
+      1024
+    ],
+    "alphaBoundsAt16": [
+      146,
+      157,
+      854,
+      796
+    ]
+  },
+  "atlas": {
+    "page": 3,
+    "rect": [
+      704,
+      1376,
+      288,
+      288
+    ],
+    "files": [
+      {
+        "path": "public/assets/cards/atlas/card-atlas-3.png",
+        "sha256": "5234fda0cfe986a875f2f7721bb1dcabdbddf53d169925834b188da3e8d19908"
+      },
+      {
+        "path": "public/assets/cards/atlas/card-atlas-3.ktx2",
+        "sha256": "31fb43a2cd18f92cb50489996baaec6ea8a8c8a91b383168d5e919eb48283957"
+      }
+    ]
+  }
+}

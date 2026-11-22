@@ -26,6 +26,7 @@ export const STATUS_ICON_IDS = [
   'status-wound-up',
   'status-plating',
   'status-rust',
+  'status-charge',
 ] as const;
 export const ICON_IDS = [...RESOURCE_ICON_IDS, ...INTENT_ICON_IDS, ...STATUS_ICON_IDS] as const;
 export type IconId = (typeof ICON_IDS)[number];
@@ -48,6 +49,7 @@ export const STATUS_ICON: Readonly<Record<StatusId, IconId>> = {
   'wound-up': 'status-wound-up',
   plating: 'status-plating',
   rust: 'status-rust',
+  charge: 'status-charge',
 };
 
 export interface PxRect {
@@ -85,6 +87,8 @@ export interface DieFaceEntry extends AtlasEntry {
   readonly corners?: readonly [number, number, number];
 }
 
+type AtlasDieId = Exclude<DieId, 'crystal-d12'>;
+
 export interface DieFaceSet {
   readonly kind: 'd4' | 'd6' | 'd8';
   readonly shape: 'square' | 'triangle';
@@ -106,7 +110,7 @@ export interface UiAtlasManifest {
   readonly uvOrigin: 'bottom-left';
   readonly pages: Readonly<Record<string, AtlasPage>>;
   readonly icons: Readonly<Record<IconId, AtlasEntry>>;
-  readonly dice: Readonly<Record<DieId, DieFaceSet>>;
+  readonly dice: Readonly<Record<AtlasDieId, DieFaceSet>>;
   readonly glyphs: Readonly<Record<SigilId, AtlasEntry>>;
   readonly keyArt: {
     readonly variants: readonly KeyArtVariant[];
@@ -136,7 +140,7 @@ export function glyphUv(manifest: UiAtlasManifest, id: SigilId): UvRect {
 }
 
 /** The face texture for model face `index` of `die` (face order of `src/dice/faces.ts`). */
-export function dieFace(manifest: UiAtlasManifest, die: DieId, index: number): DieFaceEntry {
+export function dieFace(manifest: UiAtlasManifest, die: AtlasDieId, index: number): DieFaceEntry {
   const face = manifest.dice[die]?.faces.find((f) => f.index === index);
   if (face === undefined) throw new RangeError(`UI atlas has no face ${index} for ${die}`);
   return face;

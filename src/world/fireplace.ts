@@ -7,6 +7,7 @@ import {
   fireboxFlameGeometry,
   flameMaterial,
   flameQuadGeometry,
+  flameReach,
 } from './hearth-coals.ts';
 
 /** A baked room's open fireplace: where its firebox stands in the template's frame. */
@@ -61,6 +62,7 @@ const REDUCED_MOTION = 0.3;
 /** The fire mesh's name inside a room model. */
 export const FIRE_NODE = 'fireplace-fire';
 export const CANDLE_NODE = 'room-candle-flames';
+export const TORCH_FLAME_NODE = 'room-torch-flames';
 
 /** The template-local box of `firebox`'s opening, floor to lintel and back lining to opening. */
 export function fireboxBounds(firebox: Firebox): THREE.Box3 {
@@ -259,6 +261,55 @@ export function dressCandleFlames(
   mesh.raycast = () => undefined;
   model.add(mesh);
   return mesh;
+}
+
+/** Replaces each mounted stone-kit torch flame with the room's animated flame shader. */
+export function dressTorchFlames(
+  room: THREE.Object3D,
+  reducedMotion: boolean,
+): FireplaceFire | null {
+  room.updateWorldMatrix(true, true);
+  const inverse = room.matrixWorld.clone().invert();
+  const quads: FlameQuad[] = [];
+  room.traverse((node) => {
+    if (node.name !== 'StoneTorchFlame' || !node.visible) return;
+    const base = new THREE.Vector3().setFromMatrixPosition(node.matrixWorld).applyMatrix4(inverse);
+    node.visible = false;
+    const seed = quads.length * 2.39996;
+    for (const [x, height] of [
+      [-0.027, 0.17],
+      [0.027, 0.23],
+    ] as const) {
+      quads.push({
+        x: base.x + x,
+        y: base.y,
+        z: base.z,
+        width: 0.115,
+        height,
+        seed: seed + x * 36,
+        kind: FLAME_KIND.billboard,
+      });
+    }
+  });
+  if (!quads.length) return null;
+  const geometry = flameQuadGeometry(quads);
+  geometry.boundingSphere = flameReach(quads).getBoundingSphere(new THREE.Sphere());
+  const material = flameMaterial({ ...WOOD_FIRE, motion: reducedMotion ? REDUCED_MOTION : 1 });
+  material.name = TORCH_FLAME_NODE;
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.name = TORCH_FLAME_NODE;
+  mesh.renderOrder = 1;
+  mesh.raycast = () => undefined;
+  room.add(mesh);
+  return {
+    mesh,
+    material,
+    dispose() {
+      mesh.removeFromParent();
+      geometry.dispose();
+      material.dispose();
+    },
+  };
 }
 
 /** Sets every room fire's clock to `seconds` while its room shows. */

@@ -1,0 +1,14 @@
+{
+  "stagedGlbSha256": "0ec20084dced9cad4aca2961832b4f650e80e32483bcd2138d6e53d0a65af241",
+  "independentReview": {
+    "reviewer": "gpt-6.2-astra",
+    "score": 84,
+    "requiredScore": 80,
+    "evidence": [
+      "Nine rays at the repaired door backing hit both faces of the exported mesh.",
+      "Nine samples inside the 1.6 by 2.4 metre passage remained clear.",
+      "The arch, skylight, shelf, and dishes read clearly in the reimported renders. Masonry courses remain regular and wear is subtle."
+    ]
+  },
+  "ownerApproval": "pending"
+}

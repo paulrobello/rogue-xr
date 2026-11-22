@@ -67,7 +67,7 @@ function intentSequence(enemy: EnemySetup, seed: string, rounds = 12): string[] 
 }
 
 describe('roster', () => {
-  it('contains each named automaton, including the Conservatory owl', () => {
+  it('contains each named automaton, including both Conservatory opponents', () => {
     expect(ROSTER.map((e) => e.name)).toEqual([
       'Cog Sentry',
       'Spring Hound',
@@ -78,6 +78,10 @@ describe('roster', () => {
       'Twin Furnace Mite',
       'Null-Crown Auditor',
       'Clockwork Owl',
+      'Mortar Scarab',
+      'Lantern Bailiff',
+      'Waking Armor',
+      'Trellis Keeper',
     ]);
     for (const [kind, setup] of Object.entries(ENEMIES)) expect(setup.id).toBe(kind);
   });
@@ -183,6 +187,8 @@ describe('encounters', () => {
           'bellows-golem',
           'glasswing-scrivener',
           'furnace-mite',
+          'mortar-scarab',
+          'lantern-bailiff',
         ]).toContain(kind);
       }
     }

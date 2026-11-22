@@ -55,6 +55,11 @@ export interface EnemyClipSpec {
   endsOnFloor?: boolean;
 }
 
+export interface EnemyActionTiming {
+  duration: number;
+  impact: number;
+}
+
 export interface EnemyMaterialSlot {
   set: string | null;
   factorOnly?: boolean;
@@ -82,6 +87,7 @@ export interface EnemyManifest {
   clips: Record<EnemyClip, EnemyClipSpec>;
   intentClips?: Readonly<Record<string, IntentClip>>;
   actionClips?: Readonly<Record<string, MoveActionClip>>;
+  actionTimings?: Readonly<Record<string, EnemyActionTiming>>;
   sockets: Partial<
     Record<EnemySocket, { bone: string; parent: string | null; position: number[] }>
   >;
@@ -116,6 +122,24 @@ export function parseEnemyManifest(raw: unknown, id?: string): EnemyManifest {
   for (const [move, name] of Object.entries(m.actionClips ?? {})) {
     if (name !== `action-${move}` || !m.intentClips?.[move])
       throw new Error(`${who} manifest: invalid action clip ${name}`);
+  }
+  if (
+    m.actionTimings !== undefined &&
+    (typeof m.actionTimings !== 'object' ||
+      m.actionTimings === null ||
+      Array.isArray(m.actionTimings))
+  )
+    throw new Error(`${who} manifest: actionTimings must be a record`);
+  for (const [move, timing] of Object.entries(m.actionTimings ?? {})) {
+    if (!m.actionClips?.[move])
+      throw new Error(`${who} manifest: action timing ${move} has no action clip`);
+    if (
+      !Number.isFinite(timing?.duration) ||
+      !Number.isFinite(timing?.impact) ||
+      !(timing.duration > 0) ||
+      !(timing.impact > 0 && timing.impact < timing.duration)
+    )
+      throw new Error(`${who} manifest: invalid action timing ${move}`);
   }
   for (const socket of ENEMY_SOCKETS) {
     const entry = m.sockets?.[socket];
@@ -316,6 +340,11 @@ export async function parseEnemyAsset(
     const clip = gltf.animations.find((a) => a.name === name);
     if (!clip) throw new Error(`${who} glb: intent clip ${name} missing`);
     moveClips.set(name, clip);
+  }
+  for (const [move, timing] of Object.entries(manifest.actionTimings ?? {})) {
+    const clip = moveClips.get(manifest.actionClips?.[move] as MoveActionClip);
+    if (clip && Math.abs(clip.duration - timing.duration) > 1 / 30)
+      throw new Error(`${who} glb: action clip ${move} duration differs from manifest timing`);
   }
   return new EnemyAsset(
     manifest,
@@ -624,8 +653,22 @@ export class EnemyActor {
     if (this.deadFlag) return;
     // The case finishes opening first; the swing follows it.
     if (this.casePhase === 'changing') this.deferredAttack = true;
-    else
-      this.play((moveId && this.asset.manifest.actionClips?.[moveId]) || 'attack', { fade: 0.15 });
+    else this.play(this.clipForMove(moveId ?? null), { fade: 0.15 });
+  }
+
+  hasAction(moveId: string | null): boolean {
+    return moveId !== null && this.asset.manifest.actionClips?.[moveId] !== undefined;
+  }
+
+  clipForMove(moveId: string | null): ActorClip {
+    return (moveId && this.asset.manifest.actionClips?.[moveId]) || 'attack';
+  }
+
+  timingForMove(moveId: string | null): EnemyActionTiming {
+    const authored = moveId ? this.asset.manifest.actionTimings?.[moveId] : undefined;
+    if (authored) return authored;
+    const attack = this.asset.manifest.clips.attack;
+    return { duration: attack.duration, impact: attack.events.impact ?? attack.duration / 2 };
   }
 
   /** Hit reaction: interrupts anything but death, flashes the emissive core. The case opening is never cut short. */
@@ -755,7 +798,11 @@ export class EnemyActor {
   }
 
   private eventsOf(clip: ActorClip): Record<string, number> {
-    if (clip.startsWith('action-')) return this.asset.manifest.clips.attack.events;
+    if (clip.startsWith('action-')) {
+      const move = clip.slice('action-'.length);
+      const timing = this.asset.manifest.actionTimings?.[move];
+      return timing ? { impact: timing.impact } : this.asset.manifest.clips.attack.events;
+    }
     const specs = this.asset.manifest.clips as Partial<Record<ActorClip, EnemyClipSpec>>;
     return specs[clip]?.events ?? {};
   }

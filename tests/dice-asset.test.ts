@@ -99,7 +99,7 @@ describe('dice asset metadata', () => {
         expect(face.normal[2]).toBeCloseTo(n.z, 12);
         expect(manifest.faces[i]?.normal).toEqual(face.normal);
         expect(manifest.faces[i]?.value).toBe(face.value);
-        expect(manifest.faces[i]?.atlas.uv).toEqual(dieFace(atlas, id, i).uv);
+        expect(manifest.faces[i]?.atlas?.uv).toEqual(dieFace(atlas, id, i).uv);
       });
     });
 

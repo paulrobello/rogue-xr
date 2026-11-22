@@ -232,7 +232,7 @@
   "atlasInputs": [
     {
       "path": "public/assets/ui/ui-atlas.json",
-      "sha256": "20da84bbe54d6e8aa36300052f9975dd6b49a037b8127c09f174a6c2266d45fb"
+      "sha256": "35974b4c4f24888b43514c2b6470c80462ac3b765d6e527df638b3b4e512c645"
     },
     {
       "path": "public/assets/ui/dice-d8.png",

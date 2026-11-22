@@ -98,6 +98,14 @@ Seven interchangeable two-metre bays share the study's doorway width, threshold 
 
 The architectural asset check verifies the seven wall bays, the double-sided encounter door, the physical envelope, triangle limits, embedded material maps and source hashes. The assembled rooms were inspected from inside and across their doorways on Quest 3. Independent visual review scored the final in-game captures 8/10. Owner review is pending.
 
+New runs from content version 34 dress suitable halls and studies with walnut serving shelves, low steel sorting racks, or glazed propagation stands. Walnut keeps visible grain, the Upper Works use steel and brass, and the Conservatory uses sage-painted panelling above a warm wood deck. Shelf footprints sit outside door and fixture clearance. Contact shadows are part of the styled room lightmap or sit beneath the shelf on a baked template. [Seated desktop review views](verification/themed-furnishings-seated.jpg)
+
+## Stone dungeon kit
+
+The stone set shares three two-metre wall bays, two-metre floor and ceiling tiles, and an interchangeable overhead grille. The arched doorway preserves the 1.6 m by 2.4 m clear opening. Shelves, torches, planters and dishes have separate roots. The shelf carries independent plant and dish sockets, and the torch has its own flame and light socket.
+
+The Upper Works Dispatch Vault uses the covered ceiling and torchlight. The Conservatory Prism Annex uses the open grille with a warm daylight patch. Both use the existing door and movement collision layout. The showcase seed `MAPTEST2` reaches both rooms through their normal puzzles. The staged Blender export scored 84/100 for the geometry and fixed renders. Owner review is pending. [Stone kit review](../assets-source/props/stone-dungeon-kit/review.json)
+
 ## Runtime palette
 
 `src/palette.ts` follows the palette table. Change both together.

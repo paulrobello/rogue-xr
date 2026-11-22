@@ -167,7 +167,7 @@ async function approach(anchor, name, away = 1.5, offset = [0, 0, 0]) {
 }
 async function click(name, offset = [0, 0, 0], button) {
   const fixture =
-    /^(Commission|ReturnSpring|instrument-chart|calibration-|orrery-|service-leaf-|service-catch-|service-knock-target|brass-cache-key|coffer-)/;
+    /^(Commission|ReturnSpring|instrument-chart|calibration-|orrery-|service-leaf-|service-catch-|service-knock-target|brass-cache-key|coffer-|BrewedPotion|ThornWardSeal|ArchiveInk(?:Left|Latch)|ArchiveWindRotor|ArchiveMirrorSilver)/;
   if (controller && fixture.test(name)) {
     const mode = await useFieldController(page, name, offset, button);
     assert.equal(mode, 'immersive-vr');
@@ -286,10 +286,25 @@ async function resumeAt(n) {
   await canvasClick(xy.x, xy.y);
   await ready(n);
 }
+async function takeBrewedPotion() {
+  const offset = [0, 0.13, 0];
+  await approach('brew-bench', 'BrewedPotion', 1.7, offset);
+  await page.waitForFunction(() => window.__combat.floor.alchemy.potion.visible);
+  await shot('brewed-vial');
+  await click('BrewedPotion', offset);
+  assert.equal(await ev(() => window.__combat.floor.alchemy.potion.visible), false);
+}
 async function exerciseFormula() {
-  const names = ['Mooncap', 'StarThistle', 'EmberSalt'];
+  const names = ['Mooncap', 'StarThistle', 'EmberSalt', 'Bellcap', 'Silverleaf'];
+  const labels = ['Mooncap', 'Star-thistle', 'Ember salt', 'Bellcap', 'Silverleaf'];
   await page.goto(base + '/?seed=' + seed + '&debug');
   await ready(1);
+  const gpu = await ev(() => {
+    const gl = document.querySelector('#app canvas').getContext('webgl2');
+    const info = gl?.getExtension('WEBGL_debug_renderer_info');
+    return info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : null;
+  });
+  if (!cdp) assert.match(gpu ?? '', /Apple|Metal/i);
   // This fixture represents an earlier run that already opened the thorn ward. All archive actions use real inputs.
   await ev(async () => {
     const flow = window.__flow.flow;
@@ -299,6 +314,7 @@ async function exerciseFormula() {
       flow.collectIngredient(id);
       flow.addIngredient(id);
     }
+    if (!flow.takePotion()) throw Error('Could not collect Thornwake fixture');
     flow.applyPotion();
     flow.travelToFloor(2, 0);
     await window.__flow.flushed();
@@ -339,21 +355,24 @@ async function exerciseFormula() {
   const entries = order
     .map((t) => ({
       n: t.includes('II ·') ? 1 : 0,
-      id: ['Mooncap', 'Star-thistle', 'Ember salt'].findIndex((name) => t.includes(name)),
+      id: labels.findIndex((name) => t.includes(name)),
     }))
     .sort((a, b) => a.n - b.n);
   assert(entries[0].n === 0 && entries[1].n === 1 && entries.every((e) => e.id >= 0));
-  const missing = await ev(() =>
-    [0, 1, 2].find((i) => !window.__flow.flow.alchemy.found.includes(i)),
-  );
-  const specimen = 'FoundIngredient' + names[missing];
-  const bay = await ev(
-    (n) => window.__combat.floor.world.group.getObjectByName(n).parent.name,
-    specimen,
-  );
-  await approach(bay, specimen);
-  await click(specimen);
-  assert.equal(await ev(() => window.__flow.flow.alchemy.found.length), 3);
+  await approach('conservatory-specimen-stand', 'FoundIngredientBellcap', 1.7, [0.12, 0.11, 0]);
+  await shot('specimen-stand');
+  for (const id of new Set([...entries.map((e) => e.id), 3, 4])) {
+    if (await ev((id) => window.__flow.flow.alchemy.found.includes(id), id)) continue;
+    const specimen = 'FoundIngredient' + names[id];
+    const bay = await ev(
+      (n) => window.__combat.floor.world.group.getObjectByName(n).parent.name,
+      specimen,
+    );
+    await approach(bay, specimen);
+    await click(specimen);
+    assert((await ev(() => window.__flow.flow.alchemy.found)).includes(id), specimen);
+  }
+  assert.equal(await ev(() => window.__flow.flow.alchemy.found.length), 5);
   for (const [i, e] of entries.entries()) {
     const item = 'IngredientCradle' + names[e.id];
     await approach('brew-bench', item, 1.8);
@@ -375,7 +394,20 @@ async function exerciseFormula() {
   await approach('ConservatoryArchive', target, 1.85, offset);
   await shot('door-closed');
   await click(target, offset);
+  assert.equal(await ev(() => window.__flow.flow.conservatoryFormula.revealed), false);
+  await takeBrewedPotion();
+  await lift(2);
+  await resumeAt(2);
+  assert(await ev(() => window.__flow.flow.conservatoryFormula.carried));
+  await lift(3);
+  await ev(() => {
+    const f = window.__combat.floor;
+    for (const r of f.world.plan.rooms) if (r.encounter) f.markCleared(r.index, true);
+  });
+  await approach('ConservatoryArchive', target, 1.85, offset);
+  await click(target, offset);
   assert(await ev(() => window.__flow.flow.conservatoryFormula.revealed));
+  assert.equal(await ev(() => window.__flow.flow.conservatoryFormula.carried), undefined);
   if (type === 'lantern-ink') {
     assert.equal(await ev(() => window.__flow.flow.conservatoryFormula.opened), false);
     await shot('door-outlined');
@@ -405,7 +437,10 @@ async function exerciseFormula() {
   });
   await crossing('archive', true);
   assert.deepEqual(errors, []);
-  await writeFile(join(out, 'check.json'), JSON.stringify({ seed, type, order, errors }, null, 2));
+  await writeFile(
+    join(out, 'check.json'),
+    JSON.stringify({ seed, type, order, gpu, controller, errors }, null, 2),
+  );
   console.log('PASS archive', type);
 }
 async function exerciseCommission() {
@@ -459,14 +494,16 @@ async function exerciseCommission() {
       flow.learnFormulaClue('record');
       flow.travelToFloor(3, 0);
       flow.learnFormulaClue('portrait');
-      for (const id of [0, 1, 2]) flow.collectIngredient(id);
+      for (const id of [0, 1, 2, 3, 4]) flow.collectIngredient(id);
       for (const id of flow.alchemyRecipe) flow.addIngredient(id);
+      flow.takePotion();
       flow.applyPotion();
-      for (let a = 0; a < 3 && !flow.conservatoryFormula.brewed; a++)
-        for (let b = 0; b < 3 && !flow.conservatoryFormula.brewed; b++) {
+      for (let a = 0; a < 5 && !flow.conservatoryFormula.brewed; a++)
+        for (let b = 0; b < 5 && !flow.conservatoryFormula.brewed; b++) {
           if (a === b) continue;
           if (flow.addFormulaIngredient(a, true) === 'correct') flow.addFormulaIngredient(b, true);
         }
+      flow.takePotion();
       flow.useFormula('pour');
       if (!flow.conservatoryFormula.opened) flow.useFormula('unlatch');
       flow.travelToFloor(2, 0);
@@ -676,7 +713,13 @@ async function exerciseReturnJourney() {
   await crossing('thorn', false);
   await approach('ThornWard', 'ThornWardSeal', 1.45);
   await click('ThornWardSeal');
+  assert.equal(await ev(() => window.__flow.flow.alchemy.opened), false);
+  await takeBrewedPotion();
+  assert(await ev(() => window.__flow.flow.alchemy.carried));
+  await approach('ThornWard', 'ThornWardSeal', 1.45);
+  await click('ThornWardSeal');
   assert(await ev(() => window.__flow.flow.alchemy.opened));
+  assert.equal(await ev(() => window.__flow.flow.alchemy.carried), undefined);
   await crossing('thorn', true);
   // Taking the new vault's reward also creates a save at the end of the unlocked passage.
   await ev(() => {

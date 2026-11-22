@@ -1,0 +1,49 @@
+{
+  "provider": "OpenAI Media Service",
+  "generator": "Built-in OpenAI ImageGen",
+  "model": "Not exposed by the tool",
+  "file": "overdrive-wave.png",
+  "sha256": "f517d28faa8b5c7ae18a2984003e284f780da1255b24658b29e7bf4fbc3abe0e",
+  "reference": [
+    {
+      "path": "assets-source/style/locked/L-board-1.png",
+      "sha256": "d3fffc8eb300cc6f40236c28930401ef1bd06be0e27be76999839e3bfeacc018"
+    },
+    {
+      "path": "assets-source/style/locked/L-cards.png",
+      "sha256": "207a60d3465942c8d16ddb5eee674db576a4a19e3b7070579313f844050b2c52"
+    },
+    {
+      "path": "assets-source/cards/charge-wave/charge-wave.png",
+      "sha256": "c55a5df3f11ad10e7682fd79c6063489a9deaebf532c1ecc83edf8ed63a901a5"
+    }
+  ],
+  "prompt": "Create one original transparent foreground illustration sheet for Clockwork Spire, a Victorian clockwork fantasy deckbuilder. The attached project-owned images are look references only. Match their Gilded Lamplight paintings with richly worn metal, fine controlled highlights, warm brass, colored enamel and strong silhouettes at tiny card size. Exact equal 2 by 2 grid on a square RGBA canvas. Top left, FLASH BOILER: a compact round riveted brass flash boiler tank tilted in clear three-quarter view, with a sapphire enamel pressure jacket, broad strapped copper cap, two small pipes and one tightly contained puff of pale blue steam visibly venting from its top. Stocky, vertical silhouette with simple masses. Top right, OVERDRIVE PISTON: a heavy diagonal clockwork piston and connecting rod, with a large polished dark iron ram, ruby enamel cylinder collar, serrated brass yoke, and pale amber heat at the sliding edge. Long horizontal silhouette distinct from the boiler. Entirely clear alpha in both bottom quadrants. Contain each subject within its own quadrant, with at least 12 percent fully transparent margin from each of its borders. Clear alpha outside crisp painted edges and through any open spaces. No card frame, text, numbers, watermark, backplate, backdrop, ground plane, broad smoke, cast shadow, border, human, or other subject.",
+  "settings": {
+    "transparentBackground": true,
+    "layout": "2 by 2 equal grid",
+    "size": [
+      1254,
+      1254
+    ]
+  },
+  "alphaBoundsByQuadrantAt16": {
+    "flash-boiler": [
+      130,
+      38,
+      518,
+      565
+    ],
+    "overdrive-piston": [
+      36,
+      121,
+      568,
+      548
+    ],
+    "unused-left": null,
+    "unused-right": null
+  },
+  "alphaNotes": "Original RGBA output kept byte-for-byte. Raw margins at alpha 16/255 (L,T,R,B) are {'flash-boiler': [130, 38, 109, 62], 'overdrive-piston': [36, 121, 59, 79]}. Bottom quadrants peak at 1/255 alpha and are excluded from packing.",
+  "runtimeDerivation": "scripts/assets/build_card_atlas.py --overdrive-only keeps both foregrounds in the original top-row cells of the shared 1024 by 1024 overdrive-wave page and retains the previous background pages.",
+  "rights": "Original generated foregrounds with project-owned references. Release and owner review pending."
+}

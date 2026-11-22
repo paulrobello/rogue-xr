@@ -212,6 +212,38 @@ describe('CombatController input', () => {
     expect(cast('hard')).toBeLessThan(cast());
   });
 
+  it('previews a Charged sigil while its die is being decided and spends the Charge once', () => {
+    const combat = new CombatController({
+      seed: 'TEST0001',
+      deck: ['arc-bolt', 'reroll-lever', 'capacitor', 'strike', 'defend'],
+    });
+    const select = (id: string) => {
+      const card = combat.state.piles.hand.find((item) => item.def.id === id);
+      if (!card) throw Error(`Missing ${id}`);
+      expect(combat.select(card.uid).ok).toBe(true);
+    };
+    for (const id of ['reroll-lever', 'capacitor']) {
+      select(id);
+      expect(combat.table().ok).toBe(true);
+    }
+    const before = combat.state;
+    expect(before.player.statuses.charge).toBe(2);
+    select('arc-bolt');
+    expect(combat.target('cog-sentry').ok).toBe(true);
+    expect(combat.submitSigil(SIGIL_TEMPLATES.bolt.strokes).ok).toBe(true);
+    const trace = combat.lastSigil;
+    expect(trace?.multiplier).toBeGreaterThan(1.25);
+    expect(combat.state).toBe(before);
+    expect(combat.rerollDice()).toBe(true);
+    expect(combat.rerollDice()).toBe(false);
+    expect(combat.state).toBe(before);
+    expect(combat.confirmDice()).toBe(true);
+    expect(combat.confirmDice()).toBe(false);
+    expect(combat.lastSigil).toEqual(trace);
+    expect(combat.state.player.statuses.charge).toBeUndefined();
+    expect(combat.log.filter((line) => line.startsWith('Played Arc Bolt'))).toHaveLength(1);
+  });
+
   it('fizzles a wrong trace to half power but still plays the card', () => {
     const c = new CombatController({ seed: 'TEST0001', deck: Array(5).fill('warding-glyph') });
     c.select((c.state.piles.hand[0] as { uid: number }).uid);
@@ -220,6 +252,38 @@ describe('CombatController input', () => {
     expect(c.lastSigil).toMatchObject({ sigil: 'ward', recognizedAs: 'bolt', quality: 'Fizzle' });
     expect(c.lastSigil?.multiplier).toBe(0.5);
     expect(c.state.player.block).toBe(4);
+  });
+
+  it('retains Charge through a short trace, a Fizzle and a turn, then spends it on a successful sigil', () => {
+    const c = new CombatController({
+      seed: 'TEST0001',
+      deck: ['capacitor+', 'copper-coil', 'warding-glyph', 'warding-glyph', 'warding-glyph'],
+    });
+    const pick = (id: string) => {
+      const card = c.state.piles.hand.find((entry) => entry.def.id === id);
+      if (!card) throw Error(`Missing ${id}`);
+      expect(c.select(card.uid).ok).toBe(true);
+    };
+    pick('capacitor+');
+    expect(c.table().ok).toBe(true);
+    pick('copper-coil');
+    expect(c.target('cog-sentry').ok).toBe(true);
+    expect(c.state.player.statuses.charge).toBe(4);
+    pick('warding-glyph');
+    expect(c.submitSigil([[{ x: 0.5, y: 0.5 }]]).ok).toBe(false);
+    expect(c.state.player.statuses.charge).toBe(4);
+    expect(c.submitSigil(SIGIL_TEMPLATES.bolt.strokes).ok).toBe(true);
+    expect(c.lastSigil?.quality).toBe('Fizzle');
+    expect(c.lastSigil?.multiplier).toBe(0.5);
+    expect(c.state.player.statuses.charge).toBe(4);
+    expect(c.endTurn().ok).toBe(true);
+    expect(c.state.player.statuses.charge).toBe(4);
+    pick('warding-glyph');
+    expect(c.submitSigil(SIGIL_TEMPLATES.ward.strokes).ok).toBe(true);
+    expect(c.lastSigil?.multiplier).toBeCloseTo(1.65);
+    expect(c.state.player.block).toBe(13);
+    expect(c.state.player.statuses.charge).toBeUndefined();
+    expect(c.log.filter((line) => line === 'Spent 4 Charge')).toHaveLength(1);
   });
 
   it('scores through the shared scoreTrace path, rejecting traces under MIN_CAST_POINTS', () => {

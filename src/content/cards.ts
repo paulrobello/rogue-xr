@@ -1,20 +1,22 @@
-import type { CardDef, Effect } from '../rules/index.ts';
+import type { CardCost, CardDef, Effect } from '../rules/index.ts';
 import type { SigilId } from '../sigil/types.ts';
 import type { DieId } from './dice.ts';
 
 export { SIGIL_IDS, type SigilId } from '../sigil/types.ts';
 export { DIE_IDS, type DieId } from './dice.ts';
 
-export type CardType = 'attack' | 'skill' | 'sigil';
+export type CardType = 'attack' | 'skill' | 'sigil' | 'mechanism';
 
 /** Fields an upgrade replaces. Everything it leaves out is kept from the base card. */
 export interface CardUpgrade {
   readonly name?: string;
-  readonly cost?: number;
+  readonly cost?: CardCost;
   readonly effects?: readonly Effect[];
   readonly exhaust?: boolean;
   readonly dice?: DieId;
+  readonly diceCount?: number;
   readonly sigil?: SigilId;
+  readonly mechanism?: CardDef['mechanism'];
   readonly description: string;
 }
 
@@ -28,6 +30,7 @@ export interface SliceCard extends CardDef {
   readonly type: CardType;
   readonly description: string;
   readonly dice?: DieId;
+  readonly diceCount?: number;
   readonly sigil?: SigilId;
   /** The upgraded variant. Absent on an already upgraded card. */
   readonly upgrade?: CardUpgrade;
@@ -288,6 +291,42 @@ export const CARDS: readonly SliceCard[] = [
     },
   },
   {
+    id: 'echo-glyph',
+    name: 'Echo Glyph',
+    type: 'sigil',
+    sigil: 'spiral',
+    echoSigil: true,
+    cost: 2,
+    target: 'none',
+    effects: [],
+    description: 'Replay the last successful sigil at its strength.',
+    upgrade: {
+      cost: 1,
+      description: 'Replay the last successful sigil at its strength.',
+    },
+  },
+  {
+    id: 'lens-focus',
+    name: 'Lens Focus',
+    type: 'sigil',
+    sigil: 'eye',
+    cost: 1,
+    target: 'enemy',
+    effects: [
+      { type: 'apply-status', status: 'vulnerable', stacks: 3, target: 'target' },
+      { type: 'scry', count: 2 },
+    ],
+    description: 'Apply 3 Vulnerable. Scry 2.',
+    upgrade: {
+      effects: [
+        { type: 'apply-status', status: 'vulnerable', stacks: 4, target: 'target' },
+        { type: 'scry', count: 2 },
+      ],
+      sigil: 'eye',
+      description: 'Apply 4 Vulnerable. Scry 2.',
+    },
+  },
+  {
     id: 'rivet-plate',
     name: 'Rivet Plate',
     type: 'skill',
@@ -424,6 +463,384 @@ export const CARDS: readonly SliceCard[] = [
       ],
       sigil: 'quench-plus',
       description: 'Trace Quench. Remove up to 4 enemy Overheat. Gain 5 Block + 2 per stack spent.',
+    },
+  },
+  {
+    id: 'torque-wrench',
+    name: 'Torque Wrench',
+    type: 'attack',
+    cost: 1,
+    target: 'enemy',
+    effects: [
+      { type: 'damage', amount: 6, target: 'target' },
+      { type: 'apply-status', status: 'rust', stacks: 1, target: 'target' },
+    ],
+    description: 'Deal 6 damage. Apply 1 Rust.',
+    upgrade: {
+      effects: [
+        { type: 'damage', amount: 9, target: 'target' },
+        { type: 'apply-status', status: 'rust', stacks: 2, target: 'target' },
+      ],
+      description: 'Deal 9 damage. Apply 2 Rust.',
+    },
+  },
+  {
+    id: 'counterweight',
+    name: 'Counterweight',
+    type: 'skill',
+    cost: 2,
+    target: 'none',
+    pinned: true,
+    effects: [{ type: 'block', amount: 12 }],
+    description: 'Gain 12 Block. Pinned.',
+    upgrade: {
+      effects: [{ type: 'block', amount: 16 }],
+      description: 'Gain 16 Block. Pinned.',
+    },
+  },
+  {
+    id: 'tension-coil',
+    name: 'Tension Coil',
+    type: 'skill',
+    cost: 1,
+    target: 'none',
+    effects: [
+      { type: 'block', amount: 4 },
+      { type: 'apply-status', status: 'wound-up', stacks: 1, target: 'self' },
+    ],
+    description: 'Gain 4 Block. Gain 1 Wound-up.',
+    upgrade: {
+      effects: [
+        { type: 'block', amount: 6 },
+        { type: 'apply-status', status: 'wound-up', stacks: 1, target: 'self' },
+      ],
+      description: 'Gain 6 Block. Gain 1 Wound-up.',
+    },
+  },
+  {
+    id: 'spare-parts',
+    name: 'Spare Parts',
+    type: 'skill',
+    cost: 1,
+    target: 'none',
+    effects: [{ type: 'draw', amount: 2 }],
+    description: 'Draw 2 cards.',
+    upgrade: {
+      effects: [{ type: 'draw', amount: 3 }],
+      description: 'Draw 3 cards.',
+    },
+  },
+  {
+    id: 'flywheel-swing',
+    name: 'Flywheel Swing',
+    type: 'attack',
+    cost: 2,
+    target: 'enemy',
+    effects: [
+      { type: 'damage', amount: 12, target: 'target', bonusIfSelfBlock: { min: 1, amount: 4 } },
+    ],
+    description: 'Deal 12 damage. If you have Block, deal 4 more damage.',
+    upgrade: {
+      effects: [
+        { type: 'damage', amount: 15, target: 'target', bonusIfSelfBlock: { min: 1, amount: 5 } },
+      ],
+      description: 'Deal 15 damage. If you have Block, deal 5 more damage.',
+    },
+  },
+  {
+    id: 'patch-kit',
+    name: 'Patch Kit',
+    type: 'skill',
+    cost: 1,
+    target: 'none',
+    exhaust: true,
+    effects: [{ type: 'heal', amount: 4, target: 'self' }],
+    description: 'Heal 4 HP. Exhaust.',
+    upgrade: {
+      effects: [{ type: 'heal', amount: 6, target: 'self' }],
+      description: 'Heal 6 HP. Exhaust.',
+    },
+  },
+  {
+    id: 'grease-gun',
+    name: 'Grease Gun',
+    type: 'skill',
+    cost: 0,
+    target: 'none',
+    effects: [{ type: 'scry', count: 3 }],
+    description: 'Scry 3.',
+    upgrade: {
+      effects: [{ type: 'scry', count: 4, drawAfter: 1 }],
+      description: 'Scry 4. Draw 1 card.',
+    },
+  },
+  {
+    id: 'escapement-break',
+    name: 'Escapement Break',
+    type: 'attack',
+    cost: 1,
+    target: 'enemy',
+    effects: [{ type: 'damage-from-block', target: 'target' }],
+    description: 'Deal damage equal to your Block.',
+    upgrade: {
+      effects: [
+        { type: 'block', amount: 3 },
+        { type: 'damage-from-block', target: 'target' },
+      ],
+      description: 'Gain 3 Block. Deal damage equal to your Block.',
+    },
+  },
+  {
+    id: 'lucky-strike',
+    name: 'Lucky Strike',
+    type: 'attack',
+    cost: 1,
+    target: 'enemy',
+    dice: 'brass-d6',
+    effects: [{ type: 'damage', amount: { atLeast: 5, low: 6, high: 18 }, target: 'target' }],
+    description: 'Roll a d6. Deal 18 damage on a 5 or 6, otherwise 6.',
+    upgrade: {
+      effects: [{ type: 'damage', amount: { atLeast: 5, low: 8, high: 20 }, target: 'target' }],
+      description: 'Roll a d6. Deal 20 damage on a 5 or 6, otherwise 8.',
+    },
+  },
+  {
+    id: 'capacitor',
+    name: 'Capacitor',
+    type: 'skill',
+    cost: 1,
+    target: 'none',
+    effects: [
+      { type: 'apply-status', status: 'charge', stacks: 2, target: 'self' },
+      { type: 'draw', amount: 1 },
+    ],
+    description: 'Gain 2 Charge. Draw 1 card.',
+    upgrade: {
+      effects: [
+        { type: 'apply-status', status: 'charge', stacks: 3, target: 'self' },
+        { type: 'draw', amount: 1 },
+      ],
+      description: 'Gain 3 Charge. Draw 1 card.',
+    },
+  },
+  {
+    id: 'copper-coil',
+    name: 'Copper Coil',
+    type: 'attack',
+    cost: 1,
+    target: 'enemy',
+    effects: [
+      { type: 'damage', amount: 5, target: 'target' },
+      { type: 'apply-status', status: 'charge', stacks: 1, target: 'self' },
+    ],
+    description: 'Deal 5 damage. Gain 1 Charge.',
+    upgrade: {
+      effects: [
+        { type: 'damage', amount: 7, target: 'target' },
+        { type: 'apply-status', status: 'charge', stacks: 1, target: 'self' },
+      ],
+      description: 'Deal 7 damage. Gain 1 Charge.',
+    },
+  },
+  {
+    id: 'flash-boiler',
+    name: 'Flash Boiler',
+    type: 'skill',
+    cost: 'X',
+    target: 'none',
+    effects: [{ type: 'block', amount: { perSteam: 4 } }],
+    description: 'Gain 4 Block per Steam spent.',
+    upgrade: {
+      effects: [{ type: 'block', amount: { perSteam: 5 } }],
+      description: 'Gain 5 Block per Steam spent.',
+    },
+  },
+  {
+    id: 'overdrive-piston',
+    name: 'Overdrive Piston',
+    type: 'attack',
+    cost: 'X',
+    target: 'enemy',
+    effects: [{ type: 'damage', amount: { perSteam: 7 }, target: 'target' }],
+    description: 'Deal 7 damage per Steam spent.',
+    upgrade: {
+      effects: [{ type: 'damage', amount: { perSteam: 9 }, target: 'target' }],
+      description: 'Deal 9 damage per Steam spent.',
+    },
+  },
+  {
+    id: 'reroll-lever',
+    name: 'Reroll Lever',
+    type: 'skill',
+    cost: 0,
+    target: 'none',
+    pinned: true,
+    effects: [{ type: 'allow-reroll' }],
+    description: 'You may reroll your next throw once. Pinned.',
+    upgrade: {
+      effects: [{ type: 'allow-reroll' }, { type: 'draw', amount: 1 }],
+      description: 'You may reroll your next throw once. Draw 1 card. Pinned.',
+    },
+  },
+  {
+    id: 'loaded-die',
+    name: 'Loaded Die',
+    type: 'skill',
+    cost: 0,
+    target: 'none',
+    exhaust: true,
+    effects: [{ type: 'load-die' }, { type: 'draw', amount: 1 }],
+    description: 'Your next die this turn is Loaded. Draw 1 card. Exhaust.',
+    upgrade: {
+      exhaust: false,
+      effects: [{ type: 'load-die' }, { type: 'draw', amount: 1 }],
+      description: 'Your next die this turn is Loaded. Draw 1 card.',
+    },
+  },
+  {
+    id: 'crystal-gambit',
+    name: 'Crystal Gambit',
+    type: 'attack',
+    cost: 2,
+    target: 'enemy',
+    dice: 'crystal-d12',
+    diceCount: 2,
+    effects: [{ type: 'damage', amount: { dice: 1 }, target: 'target' }],
+    description: 'Roll two d12s. Deal their sum as damage.',
+    upgrade: {
+      effects: [{ type: 'damage', amount: { base: 4, dice: 1 }, target: 'target' }],
+      description: 'Roll two d12s. Deal their sum + 4 damage.',
+    },
+  },
+  {
+    id: 'gyro-stabilizer',
+    name: 'Gyro Stabilizer',
+    type: 'mechanism',
+    cost: 2,
+    target: 'none',
+    effects: [],
+    mechanism: {
+      timing: 'start-turn',
+      effects: [{ type: 'block', amount: 3 }],
+    },
+    description: 'At turn start, gain 3 Block.',
+    upgrade: {
+      mechanism: { timing: 'start-turn', effects: [{ type: 'block', amount: 5 }] },
+      description: 'At turn start, gain 5 Block.',
+    },
+  },
+  {
+    id: 'pressure-gauge',
+    name: 'Pressure Gauge',
+    type: 'mechanism',
+    cost: 1,
+    target: 'none',
+    effects: [],
+    mechanism: {
+      timing: 'start-turn',
+      effects: [{ type: 'apply-status', status: 'charge', stacks: 1, target: 'self' }],
+    },
+    description: 'At turn start, gain 1 Charge.',
+    upgrade: {
+      cost: 0,
+      description: 'At turn start, gain 1 Charge.',
+    },
+  },
+  {
+    id: 'clockwork-turret',
+    name: 'Clockwork Turret',
+    type: 'mechanism',
+    cost: 2,
+    target: 'none',
+    effects: [],
+    mechanism: {
+      timing: 'end-turn',
+      target: 'least-hp',
+      effects: [{ type: 'damage', amount: 3, target: 'target' }],
+    },
+    description: 'At turn end, deal 3 damage to the enemy with the least HP.',
+    upgrade: {
+      mechanism: {
+        timing: 'end-turn',
+        target: 'least-hp',
+        effects: [{ type: 'damage', amount: 5, target: 'target' }],
+      },
+      description: 'At turn end, deal 5 damage to the enemy with the least HP.',
+    },
+  },
+  {
+    id: 'furnace-heart',
+    name: 'Furnace Heart',
+    type: 'mechanism',
+    cost: 3,
+    target: 'none',
+    effects: [],
+    mechanism: {
+      timing: 'start-turn',
+      effects: [{ type: 'apply-status', status: 'overheat', stacks: 2, target: 'all-opponents' }],
+    },
+    description: 'At turn start, apply 2 Overheat to all enemies.',
+    upgrade: {
+      mechanism: {
+        timing: 'start-turn',
+        effects: [{ type: 'apply-status', status: 'overheat', stacks: 3, target: 'all-opponents' }],
+      },
+      description: 'At turn start, apply 3 Overheat to all enemies.',
+    },
+  },
+  {
+    id: 'arc-chain',
+    name: 'Arc Chain',
+    type: 'sigil',
+    sigil: 'bolt',
+    cost: 1,
+    target: 'enemy',
+    effects: [
+      { type: 'damage', amount: 5, target: 'target' },
+      { type: 'damage', amount: 3, target: 'other-opponents' },
+    ],
+    description: 'Deal 5 damage. Deal 3 damage to each other enemy.',
+    upgrade: {
+      effects: [
+        { type: 'damage', amount: 7, target: 'target' },
+        { type: 'damage', amount: 4, target: 'other-opponents' },
+      ],
+      sigil: 'bolt-plus',
+      description: 'Deal 7 damage. Deal 4 damage to each other enemy.',
+    },
+  },
+  {
+    id: 'gear-grinder',
+    name: 'Gear Grinder',
+    type: 'attack',
+    cost: 1,
+    target: 'enemy',
+    effects: [{ type: 'damage', amount: 4, hits: 2, extraHitsIfTargetRust: 1, target: 'target' }],
+    description: 'Deal 4 damage 2 times. Hit once more if the target has Rust.',
+    upgrade: {
+      effects: [{ type: 'damage', amount: 5, hits: 2, extraHitsIfTargetRust: 1, target: 'target' }],
+      description: 'Deal 5 damage 2 times. Hit once more if the target has Rust.',
+    },
+  },
+  {
+    id: 'pendulum-ward',
+    name: 'Pendulum Ward',
+    type: 'sigil',
+    sigil: 'ward',
+    cost: 2,
+    target: 'none',
+    effects: [
+      { type: 'block', amount: 10 },
+      { type: 'apply-status', status: 'plating', stacks: 2, target: 'self' },
+    ],
+    description: 'Gain 10 Block. Gain 2 Plating.',
+    upgrade: {
+      effects: [
+        { type: 'block', amount: 14 },
+        { type: 'apply-status', status: 'plating', stacks: 3, target: 'self' },
+      ],
+      sigil: 'ward-plus',
+      description: 'Gain 14 Block. Gain 3 Plating.',
     },
   },
 ];

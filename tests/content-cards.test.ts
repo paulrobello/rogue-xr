@@ -20,6 +20,8 @@ import {
   type CombatState,
   type Effect,
   type EnemySetup,
+  PLAYER_ID,
+  playCardWithSigil,
   STEAM_PER_TURN,
   type Statuses,
   type StatusId,
@@ -51,6 +53,7 @@ function rollFor(def: SliceCard): number | undefined {
   if (def.dice === 'brass-d6') return D6_ROLL;
   if (def.dice === 'glass-d8') return D8_ROLL;
   if (def.dice === 'iron-d4') return 4;
+  if (def.dice === 'crystal-d12') return 14;
   return undefined;
 }
 
@@ -91,7 +94,7 @@ interface Outcome {
   readonly steam: number;
   readonly playerStatuses?: Statuses;
   readonly drawn?: number;
-  readonly pile?: 'discard' | 'exhaust';
+  readonly pile?: 'discard' | 'exhaust' | 'mechanisms';
 }
 
 /** Hand-computed results of playing each card once with a d6 roll of 4 or a d8 roll of 7. */
@@ -126,6 +129,10 @@ const EXPECTED: Readonly<Record<string, Outcome>> = {
   'arc-bolt+': { hp: [48, 60], steam: 2 },
   'time-spiral': { hp: [60, 60], enemyStatuses: [{ weak: 1 }, { weak: 1 }], steam: 2, drawn: 2 },
   'time-spiral+': { hp: [60, 60], enemyStatuses: [{ weak: 2 }, { weak: 2 }], steam: 2, drawn: 3 },
+  'echo-glyph': { hp: [60, 60], steam: 1 },
+  'echo-glyph+': { hp: [60, 60], steam: 2 },
+  'lens-focus': { hp: [60, 60], enemyStatuses: [{ vulnerable: 3 }, {}], steam: 2 },
+  'lens-focus+': { hp: [60, 60], enemyStatuses: [{ vulnerable: 4 }, {}], steam: 2 },
   counterstroke: { hp: [50, 60], block: 0, steam: 1 },
   'counterstroke+': { hp: [47, 60], block: 0, steam: 1 },
   'quench-seal': { hp: [60, 60], block: 4, steam: 2 },
@@ -142,6 +149,52 @@ const EXPECTED: Readonly<Record<string, Outcome>> = {
   'shear-pin+': { hp: [51, 60], steam: 2 },
   'rust-spray': { hp: [60, 60], steam: 2, enemyStatuses: [{ rust: 2 }, { rust: 2 }] },
   'rust-spray+': { hp: [60, 60], steam: 2, enemyStatuses: [{ rust: 3 }, { rust: 3 }] },
+  'torque-wrench': { hp: [54, 60], steam: 2, enemyStatuses: [{ rust: 1 }, {}] },
+  'torque-wrench+': { hp: [51, 60], steam: 2, enemyStatuses: [{ rust: 2 }, {}] },
+  counterweight: { hp: [60, 60], block: 12, steam: 1 },
+  'counterweight+': { hp: [60, 60], block: 16, steam: 1 },
+  'tension-coil': { hp: [60, 60], block: 4, steam: 2, playerStatuses: { 'wound-up': 1 } },
+  'tension-coil+': { hp: [60, 60], block: 6, steam: 2, playerStatuses: { 'wound-up': 1 } },
+  'spare-parts': { hp: [60, 60], steam: 2, drawn: 2 },
+  'spare-parts+': { hp: [60, 60], steam: 2, drawn: 3 },
+  'flywheel-swing': { hp: [48, 60], steam: 1 },
+  'flywheel-swing+': { hp: [45, 60], steam: 1 },
+  'patch-kit': { hp: [60, 60], steam: 2, pile: 'exhaust' },
+  'patch-kit+': { hp: [60, 60], steam: 2, pile: 'exhaust' },
+  'grease-gun': { hp: [60, 60], steam: 3 },
+  'grease-gun+': { hp: [60, 60], steam: 3, drawn: 1 },
+  'escapement-break': { hp: [60, 60], steam: 2 },
+  'escapement-break+': { hp: [57, 60], block: 3, steam: 2 },
+  'lucky-strike': { hp: [54, 60], steam: 2 },
+  'lucky-strike+': { hp: [52, 60], steam: 2 },
+  capacitor: { hp: [60, 60], steam: 2, drawn: 1, playerStatuses: { charge: 2 } },
+  'capacitor+': { hp: [60, 60], steam: 2, drawn: 1, playerStatuses: { charge: 3 } },
+  'copper-coil': { hp: [55, 60], steam: 2, playerStatuses: { charge: 1 } },
+  'copper-coil+': { hp: [53, 60], steam: 2, playerStatuses: { charge: 1 } },
+  'flash-boiler': { hp: [60, 60], steam: 0, block: 12 },
+  'flash-boiler+': { hp: [60, 60], steam: 0, block: 15 },
+  'overdrive-piston': { hp: [39, 60], steam: 0 },
+  'overdrive-piston+': { hp: [33, 60], steam: 0 },
+  'reroll-lever': { hp: [60, 60], steam: 3 },
+  'reroll-lever+': { hp: [60, 60], steam: 3, drawn: 1 },
+  'loaded-die': { hp: [60, 60], steam: 3, drawn: 1, pile: 'exhaust' },
+  'loaded-die+': { hp: [60, 60], steam: 3, drawn: 1 },
+  'crystal-gambit': { hp: [46, 60], steam: 1 },
+  'crystal-gambit+': { hp: [42, 60], steam: 1 },
+  'gyro-stabilizer': { hp: [60, 60], steam: 1, pile: 'mechanisms' },
+  'gyro-stabilizer+': { hp: [60, 60], steam: 1, pile: 'mechanisms' },
+  'pressure-gauge': { hp: [60, 60], steam: 2, pile: 'mechanisms' },
+  'pressure-gauge+': { hp: [60, 60], steam: 3, pile: 'mechanisms' },
+  'clockwork-turret': { hp: [60, 60], steam: 1, pile: 'mechanisms' },
+  'clockwork-turret+': { hp: [60, 60], steam: 1, pile: 'mechanisms' },
+  'furnace-heart': { hp: [60, 60], steam: 0, pile: 'mechanisms' },
+  'furnace-heart+': { hp: [60, 60], steam: 0, pile: 'mechanisms' },
+  'arc-chain': { hp: [55, 57], steam: 2 },
+  'arc-chain+': { hp: [53, 56], steam: 2 },
+  'gear-grinder': { hp: [52, 60], steam: 2 },
+  'gear-grinder+': { hp: [50, 60], steam: 2 },
+  'pendulum-ward': { hp: [60, 60], steam: 1, block: 10, playerStatuses: { plating: 2 } },
+  'pendulum-ward+': { hp: [60, 60], steam: 1, block: 14, playerStatuses: { plating: 3 } },
 };
 
 describe('card effects through the engine', () => {
@@ -154,7 +207,16 @@ describe('card effects through the engine', () => {
     if (!expected) throw new Error(`No expectation for ${def.id}`);
     const before = begin(def);
     expect(before.player.steam).toBe(STEAM_PER_TURN);
-    const { state, events } = apply(before, playAction(def));
+    if (def.echoSigil) {
+      expect(() => apply(before, playAction(def))).toThrow('Cast a sigil successfully before Echo');
+      return;
+    }
+    const played = apply(before, playAction(def));
+    const settled = played.state.scry
+      ? apply(played.state, { type: 'resolve-scry', discard: [] })
+      : null;
+    const state = settled?.state ?? played.state;
+    const events = [...played.events, ...(settled?.events ?? [])];
 
     expect(state.enemies.map((e) => e.hp)).toEqual(expected.hp);
     expect(state.enemies.map((e) => e.statuses)).toEqual(expected.enemyStatuses ?? [{}, {}]);
@@ -163,14 +225,66 @@ describe('card effects through the engine', () => {
     expect(state.player.statuses).toEqual(expected.playerStatuses ?? {});
     expect(state.piles.hand).toHaveLength(before.piles.hand.length - 1 + (expected.drawn ?? 0));
     const pile = expected.pile ?? 'discard';
-    expect(state.piles[pile].map((c) => c.uid)).toContain(0);
+    const cards = pile === 'mechanisms' ? (state.mechanisms ?? []) : state.piles[pile];
+    expect(cards.map((c) => c.uid)).toContain(0);
     expect(events).toContainEqual<CombatEvent>({
       type: 'card-played',
       uid: 0,
       cardId: def.id,
       target: def.target === 'enemy' ? 'a' : null,
       dice: rollFor(def) ?? null,
+      ...(def.cost === 'X' ? { steamSpent: STEAM_PER_TURN } : {}),
     });
+  });
+
+  it.each([
+    ['flywheel-swing', 16],
+    ['flywheel-swing+', 20],
+  ])('%s spends two steam and adds to one hit when the player has Block', (id, damage) => {
+    const def = getCard(id);
+    const before = begin(def);
+    const result = apply({ ...before, player: { ...before.player, block: 1 } }, playAction(def));
+    const hits = result.events.filter((event) => event.type === 'damage-dealt');
+    expect(hits).toHaveLength(1);
+    expect(hits[0]).toMatchObject({ amount: damage, hpLost: damage });
+    expect(result.state.player.block).toBe(1);
+    expect(result.state.player.steam).toBe(1);
+  });
+
+  it.each([
+    ['patch-kit', 4],
+    ['patch-kit+', 6],
+  ])('%s restores only missing HP and exhausts at full health too', (id, maxHeal) => {
+    const def = getCard(id);
+    for (const hp of [25, 38, 40]) {
+      const before = begin(def);
+      const result = apply({ ...before, player: { ...before.player, hp } }, playAction(def));
+      const amount = Math.min(40 - hp, maxHeal);
+      expect(result.state.player.hp).toBe(hp + amount);
+      expect(result.events.filter((event) => event.type === 'healed')).toEqual(
+        amount > 0 ? [{ type: 'healed', amount, target: PLAYER_ID }] : [],
+      );
+      expect(result.state.piles.exhaust).toHaveLength(1);
+      expect(result.state.piles.discard).toHaveLength(0);
+    }
+  });
+
+  it('Spare Parts can draw through a reshuffle and never draws itself or creates a card', () => {
+    const def = getCard('spare-parts+');
+    const before = begin(def);
+    const [last, spare] = before.piles.draw;
+    const played = apply(
+      {
+        ...before,
+        piles: { ...before.piles, draw: [last], discard: [spare] },
+      },
+      playAction(def),
+    );
+    expect(
+      played.events.filter((event) => event.type === 'card-drawn').map((event) => event.uid),
+    ).toEqual([last.uid, spare.uid]);
+    expect(played.state.piles.discard.map((card) => card.uid)).toEqual([0]);
+    expect(played.state.piles.draw).toEqual([]);
   });
 
   it('Furnace Brand overheat burns the enemy at the start of its turn', () => {
@@ -228,6 +342,152 @@ describe('card effects through the engine', () => {
   });
 });
 
+describe('Overdrive', () => {
+  it.each([0, 1, 6])(
+    'spends the committed %i Steam and does no damage at zero despite Wound-up',
+    (steam) => {
+      const before = begin(getCard('overdrive-piston+'));
+      const charged = {
+        ...before,
+        player: { ...before.player, steam, statuses: { 'wound-up': 2 } },
+      };
+      const { state, events } = apply(charged, { type: 'play-card', uid: 0, target: 'a' });
+      expect(state.player.steam).toBe(0);
+      expect(state.enemies[0].hp).toBe(ENEMY_HP - (steam === 0 ? 0 : steam * 9 + 2));
+      expect(events.filter((e) => e.type === 'steam-changed')).toHaveLength(steam === 0 ? 0 : 1);
+      expect(events.filter((e) => e.type === 'damage-dealt')).toHaveLength(steam === 0 ? 0 : 1);
+      expect(events).toContainEqual({
+        type: 'card-played',
+        uid: 0,
+        cardId: 'overdrive-piston+',
+        target: 'a',
+        dice: null,
+        steamSpent: steam,
+      });
+      expect(state.piles.discard.some((c) => c.uid === 0)).toBe(true);
+    },
+  );
+
+  it('scales later effects with the Steam spent before the card grants new Steam', () => {
+    const before = begin({
+      id: 'test-overdrive',
+      cost: 'X',
+      target: 'none',
+      effects: [
+        { type: 'gain-steam', amount: 1 },
+        { type: 'block', amount: { perSteam: 4 } },
+      ],
+    });
+    const { state } = apply(before, { type: 'play-card', uid: 0 });
+    expect(state.player.steam).toBe(1);
+    expect(state.player.block).toBe(12);
+    const { events: empty } = apply(
+      { ...before, player: { ...before.player, steam: 0 } },
+      { type: 'play-card', uid: 0 },
+    );
+    expect(empty.some((event) => event.type === 'block-gained')).toBe(false);
+  });
+
+  it('rejects a per-Steam effect on a fixed-cost card', () => {
+    expect(() =>
+      begin({
+        id: 'fixed-overdrive',
+        cost: 1,
+        target: 'none',
+        effects: [{ type: 'block', amount: { perSteam: 4 } }],
+      }),
+    ).toThrow(/perSteam.*X cost/);
+  });
+});
+
+describe('Wave A deck control', () => {
+  it('Lens Focus scales its Eye cast, targets the enemy, then settles after Scry', () => {
+    const before = begin(getCard('lens-focus+'));
+    const first = before.piles.draw[0];
+    const second = before.piles.draw[1];
+    if (!first || !second) throw new Error('Lens Focus test needs two draw cards');
+    const played = playCardWithSigil(before, { type: 'play-card', uid: 0, target: 'a' }, 1.25);
+    expect(played.state.phase).toBe('scry');
+    expect(played.state.enemies[0]?.statuses).toEqual({ vulnerable: 5 });
+    expect(played.state.player.steam).toBe(2);
+    expect(played.state.scry?.count).toBe(2);
+    const settled = apply(played.state, { type: 'resolve-scry', discard: [first.uid] });
+    expect(settled.state.piles.discard.map((card) => card.uid)).toEqual([first.uid, 0]);
+    expect(settled.state.piles.draw[0]?.uid).toBe(second.uid);
+    expect(settled.state.scry).toBeUndefined();
+  });
+
+  it('pauses combat, preserves reveal order and draws only after the discard choice', () => {
+    const before = begin(getCard('grease-gun+'));
+    const { state, events } = apply(before, { type: 'play-card', uid: 0 });
+    expect(state.phase).toBe('scry');
+    expect(state.scry).toMatchObject({ count: 4, drawAfter: 1 });
+    expect(events).toContainEqual({ type: 'scry-ready', count: 4 });
+    expect(state.piles.draw).toEqual(before.piles.draw);
+    expect(state.piles.discard).toEqual([]);
+    expect(validate(state, { type: 'end-turn' })).not.toBeNull();
+    expect(validate(state, { type: 'play-card', uid: state.piles.hand[0].uid })).not.toBeNull();
+    const [first, second, third, fourth, ...rest] = state.piles.draw;
+    expect(
+      validate(state, { type: 'resolve-scry', discard: [first.uid, first.uid] }),
+    ).not.toBeNull();
+    expect(validate(state, { type: 'resolve-scry', discard: [0] })).not.toBeNull();
+
+    const done = apply(state, { type: 'resolve-scry', discard: [third.uid, first.uid] });
+    expect(done.state.phase).toBe('player');
+    expect(done.state.scry).toBeUndefined();
+    expect(done.state.piles.draw).toEqual([fourth, ...rest]);
+    expect(done.state.piles.hand.at(-1)).toEqual(second);
+    expect(done.state.piles.discard.map(({ uid }) => uid)).toEqual([first.uid, third.uid, 0]);
+    expect(done.events).toContainEqual({ type: 'scry-finished', discarded: 2 });
+  });
+
+  it('skips an empty Scry and shuffles the discard only to draw the upgrade card', () => {
+    const before = begin(getCard('grease-gun+'));
+    const { draw, ...piles } = before.piles;
+    const { state, events } = apply(
+      { ...before, piles: { ...piles, draw: [], discard: draw } },
+      { type: 'play-card', uid: 0 },
+    );
+    expect(state.phase).toBe('player');
+    expect(state.piles.hand.at(-1)?.uid).not.toBe(0);
+    expect(state.piles.hand).toHaveLength(before.piles.hand.length);
+    expect(state.piles.discard.map(({ uid }) => uid)).toEqual([0]);
+    expect(events).not.toContainEqual(expect.objectContaining({ type: 'scry-ready' }));
+  });
+
+  it('uses current Block for one hit after the upgrade grants Block', () => {
+    for (const [id, damage] of [
+      ['escapement-break', 8],
+      ['escapement-break+', 11],
+    ] as const) {
+      const before = begin(getCard(id));
+      const { state, events } = apply(
+        { ...before, player: { ...before.player, block: 8 } },
+        { type: 'play-card', uid: 0, target: 'a' },
+      );
+      expect(state.player.block).toBe(damage);
+      expect(state.enemies[0].hp).toBe(ENEMY_HP - damage);
+      expect(events.filter((e) => e.type === 'damage-dealt')).toHaveLength(1);
+    }
+  });
+
+  it.each([1, 4, 5, 6])('Lucky Strike resolves the threshold on a roll of %i', (dice) => {
+    for (const [card, damage] of [
+      ['lucky-strike', dice >= 5 ? 18 : 6],
+      ['lucky-strike+', dice >= 5 ? 20 : 8],
+    ] as const) {
+      const { state } = apply(begin(getCard(card)), {
+        type: 'play-card',
+        uid: 0,
+        target: 'a',
+        dice,
+      });
+      expect(state.enemies[0].hp).toBe(ENEMY_HP - damage);
+    }
+  });
+});
+
 const STATUS_NAMES: Readonly<Record<StatusId, string>> = {
   weak: 'Weak',
   vulnerable: 'Vulnerable',
@@ -235,10 +495,13 @@ const STATUS_NAMES: Readonly<Record<StatusId, string>> = {
   'wound-up': 'Wound-up',
   plating: 'Plating',
   rust: 'Rust',
+  charge: 'Charge',
 };
 
 function amountText(amount: Amount): string {
   if (typeof amount === 'number') return String(amount);
+  if ('atLeast' in amount || 'perSteam' in amount)
+    throw new Error('Variable damage has its own wording');
   const roll = amount.dice === 1 ? 'roll' : `${amount.dice} × roll`;
   return amount.base ? `${amount.base} + ${roll}` : roll;
 }
@@ -246,11 +509,37 @@ function amountText(amount: Amount): string {
 function effectText(effect: Effect): string {
   switch (effect.type) {
     case 'damage': {
-      const all = effect.target === 'all-opponents' ? ' to all enemies' : '';
+      if (typeof effect.amount === 'object' && 'perSteam' in effect.amount)
+        return `Deal ${effect.amount.perSteam} damage per Steam spent.`;
+      if (typeof effect.amount === 'object' && 'atLeast' in effect.amount) {
+        const { atLeast, high, low } = effect.amount;
+        return `Deal ${high} damage on a ${atLeast} or 6, otherwise ${low}.`;
+      }
+      const all =
+        effect.target === 'all-opponents'
+          ? ' to all enemies'
+          : effect.target === 'other-opponents'
+            ? ' to each other enemy'
+            : '';
       const hits = (effect.hits ?? 1) > 1 ? ` ${effect.hits} times` : '';
-      return `Deal ${amountText(effect.amount)} damage${all}${hits}.`;
+      const bonus = effect.bonusIfSelfBlock
+        ? ` If you have Block, deal ${amountText(effect.bonusIfSelfBlock.amount)} more damage.`
+        : '';
+      const rust =
+        effect.extraHitsIfTargetRust === 1 ? ' Hit once more if the target has Rust.' : '';
+      return `Deal ${amountText(effect.amount)} damage${all}${hits}.${bonus}${rust}`;
     }
+    case 'damage-from-block':
+      return 'Deal damage equal to your Block.';
+    case 'scry':
+      return `Scry ${effect.count}.${effect.drawAfter ? ` Draw ${effect.drawAfter} card${effect.drawAfter === 1 ? '' : 's'}.` : ''}`;
+    case 'load-die':
+      return 'Your next die this turn is Loaded.';
+    case 'allow-reroll':
+      return 'You may reroll your next throw once.';
     case 'block':
+      if (typeof effect.amount === 'object' && 'perSteam' in effect.amount)
+        return `Gain ${effect.amount.perSteam} Block per Steam spent.`;
       return `Gain ${amountText(effect.amount)} Block.`;
     case 'gain-steam':
       return `Gain ${amountText(effect.amount)} Steam.`;
@@ -266,6 +555,8 @@ function effectText(effect: Effect): string {
     }
     case 'conditional-block':
       return `If its intent hits twice or more, gain ${amountText(effect.amount)} Block.`;
+    case 'heal':
+      return `Heal ${amountText(effect.amount)} HP.`;
     case 'block-from-status':
       return `Trace Quench. Remove up to ${effect.maxStacks} enemy Overheat. Gain ${effect.base} Block + ${effect.perStack} per stack spent.`;
   }
@@ -273,6 +564,31 @@ function effectText(effect: Effect): string {
 
 /** Canonical rules text; every card's hand-written description must equal it. */
 function rulesText(def: SliceCard): string {
+  if (def.echoSigil) return def.description;
+  if (def.diceCount === 2) {
+    const effect = def.effects[0];
+    if (
+      effect?.type !== 'damage' ||
+      typeof effect.amount !== 'object' ||
+      !('dice' in effect.amount)
+    )
+      throw Error(`Missing sum damage for ${def.id}`);
+    return effect.amount.base
+      ? `Roll two d12s. Deal their sum + ${effect.amount.base} damage.`
+      : 'Roll two d12s. Deal their sum as damage.';
+  }
+  if (def.mechanism) {
+    const { timing, effects, target } = def.mechanism;
+    const phase = timing === 'start-turn' ? 'start' : 'end';
+    const text = effects
+      .map((effect) => {
+        if (effect.type === 'damage' && target === 'least-hp')
+          return `Deal ${amountText(effect.amount)} damage to the enemy with the least HP.`;
+        return effectText(effect);
+      })
+      .join(' ');
+    return `At turn ${phase}, ${text[0].toLowerCase()}${text.slice(1)}`;
+  }
   const parts: string[] = [];
   if (def.dice)
     parts.push(
@@ -286,12 +602,13 @@ function rulesText(def: SliceCard): string {
 
 describe('card schema', () => {
   it('has the complete card roster with unique ids', () => {
-    expect(CARDS).toHaveLength(23);
+    expect(CARDS).toHaveLength(48);
     expect(new Set(CARDS.map((c) => c.id)).size).toBe(CARDS.length);
     expect(CARDS_BY_ID.size).toBe(CARDS.length);
-    expect(CARDS.filter((c) => c.type === 'attack')).toHaveLength(8);
-    expect(CARDS.filter((c) => c.type === 'skill')).toHaveLength(8);
-    expect(CARDS.filter((c) => c.type === 'sigil')).toHaveLength(7);
+    expect(CARDS.filter((c) => c.type === 'attack')).toHaveLength(16);
+    expect(CARDS.filter((c) => c.type === 'skill')).toHaveLength(17);
+    expect(CARDS.filter((c) => c.type === 'sigil')).toHaveLength(11);
+    expect(CARDS.filter((c) => c.type === 'mechanism')).toHaveLength(4);
   });
 
   it('has at least 4 dice cards, and the dice hook is set exactly when an effect uses a roll', () => {
@@ -320,8 +637,8 @@ describe('card schema', () => {
       `${card.id}+`,
     ]);
     const sigils = ids.map((id) => getCard(id).sigil);
-    expect(ids).toHaveLength(14);
-    expect(new Set(sigils).size).toBe(14);
+    expect(ids).toHaveLength(22);
+    expect(new Set(sigils).size).toBe(15);
     expect(new Set(sigils).size).toBe(SIGIL_IDS.length);
   });
 
@@ -341,7 +658,8 @@ describe('card schema', () => {
       const changed =
         up.cost !== card.cost ||
         up.exhaust !== card.exhaust ||
-        JSON.stringify(up.effects) !== JSON.stringify(card.effects);
+        JSON.stringify(up.effects) !== JSON.stringify(card.effects) ||
+        JSON.stringify(up.mechanism) !== JSON.stringify(card.mechanism);
       expect(changed, card.id).toBe(true);
       expect(() => upgradedCard(up)).toThrow();
     }

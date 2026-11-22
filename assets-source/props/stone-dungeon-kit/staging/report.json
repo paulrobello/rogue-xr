@@ -1,0 +1,73 @@
+{
+  "completed": false,
+  "authoringAgent": "gpt-6.1-terra",
+  "workflow": "Original scripted Blender geometry and generated procedural PBR maps",
+  "reference": "docs/art-bible.md, approved 2026-11-15",
+  "license": "Original project-authored asset",
+  "blender": "5.2.2 LTS",
+  "axes": "metres; glTF +Y up, +Z into room",
+  "roots": [
+    "StoneBay",
+    "StoneDoor",
+    "StoneNicheBay",
+    "StoneFloor",
+    "StoneCeiling",
+    "StoneSkylight",
+    "StoneShelf",
+    "StoneTorch",
+    "StonePlanter",
+    "StoneDishes"
+  ],
+  "sockets": [
+    "SocketShelfDish",
+    "SocketShelfPlant",
+    "SocketTorchLight"
+  ],
+  "triangles": 8498,
+  "sha256": {
+    "generator": "6b14ef8457cbc52c58600ee07c44058f6f00d3cecf802aa2e05f147c9f184799",
+    "blend": "456c6e8c9781812c084309d122deafe78e6706b01d47bd65ba25cef87a0542d5",
+    "staged_glb": "334e0a863a9334359ae502e4127a353388f6701ba70c9fc7164ccb8ddffe17d8"
+  },
+  "iterations": [
+    {
+      "attempt": 1,
+      "result": "reimport passed; floor and ceiling z-fighting identified"
+    },
+    {
+      "attempt": 2,
+      "result": "z-fighting fixed; visual direction requested refinement"
+    },
+    {
+      "attempt": 3,
+      "staged_glb_sha256": "a73243a0ec0fd459fbbf691c56a2a2606d3a25ab6ecb3bf9746d6451b1a02443",
+      "result": "independent review 72/100; coplanar lattice, arch relief, staining, dish and silhouettes require correction"
+    },
+    {
+      "attempt": 4,
+      "staged_glb_sha256": "372eebbbefe5a18d378ba2282922d205cf34fbffc5948df059680788225715c4",
+      "checks": [
+        "GLB reimport",
+        "named nodes",
+        "triangle budget"
+      ],
+      "result": "independent review 78/100; nine rays passed through an upper rear-backing seam"
+    },
+    {
+      "attempt": 5,
+      "checks": [
+        "GLB reimport",
+        "named nodes",
+        "triangle budget",
+        "nine seam rays"
+      ],
+      "result": "extended rear tympanum backing to overlap the masonry above; independent review pending"
+    }
+  ],
+  "remaining_issues": [
+    "Independent visual scoring and owner approval pending",
+    "Runtime integration, collision, room lighting and Quest acceptance pending",
+    "LOD and high/low bake not authored; procedural embedded maps used"
+  ],
+  "visual_approval": "pending independent and owner review"
+}

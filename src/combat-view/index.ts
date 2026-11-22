@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { getCard, type SliceCard } from '../content/cards.ts';
 import { ENEMIES, type EnemyKind } from '../content/enemies.ts';
 import { PALETTE } from '../palette.ts';
-import { type Effect, type EnemyState, intentDamage } from '../rules/index.ts';
+import { cardSteamCost, type Effect, type EnemyState, intentDamage } from '../rules/index.ts';
 import { type Point, SIGIL_TEMPLATES, type SigilId } from '../sigil/index.ts';
 import { mouseToPlate, type PlatePose, TraceBuilder, type Vec3 } from '../sigil-plate/index.ts';
 import { INTENT_ICON, STATUS_ICON } from '../ui/icon-atlas.ts';
@@ -16,6 +16,7 @@ import {
   type Stage,
   type ViewUpdate,
 } from './controller.ts';
+import { ScryPanel } from './scry-panel.ts';
 
 export { CombatController, parseCombatQuery } from './controller.ts';
 
@@ -105,7 +106,7 @@ export function crownBounds(
   return { min: [hx, y0, hz], max: [hx, y1, hz] };
 }
 
-type PickKind = 'card' | 'enemy' | 'end-turn' | 'plate' | 'table';
+type PickKind = 'card' | 'enemy' | 'end-turn' | 'plate' | 'table' | 'reroll';
 interface PickData {
   readonly kind: PickKind;
   readonly uid?: number;
@@ -142,7 +143,12 @@ const PLATE_GUIDE_PAD = 0.15;
 const FLASH_MS = 450;
 const LOG_LINES = 12;
 
-const TYPE_COLORS = { attack: PALETTE.ruby, skill: PALETTE.sapphire, sigil: PALETTE.emerald };
+const TYPE_COLORS = {
+  attack: PALETTE.ruby,
+  skill: PALETTE.sapphire,
+  sigil: PALETTE.emerald,
+  mechanism: PALETTE.brass,
+};
 const ENEMY_COLORS: Readonly<Record<string, string>> = {
   'cog-sentry': '#b08a3c',
   'spring-hound': '#9a5a2c',
@@ -320,6 +326,7 @@ function drawEnemyLabel(
 }
 
 function stageHint(controller: CombatController, stage: Stage): string {
+  if (controller.canReroll) return 'Click the die to reroll or Keep Roll to accept';
   const uid = controller.selectedUid;
   const card = controller.state.piles.hand.find((c) => c.uid === uid);
   const name = card ? getCard(card.def.id).name : '';
@@ -332,6 +339,8 @@ function stageHint(controller: CombatController, stage: Stage): string {
       return `Click the table to play ${name}`;
     case 'sigil':
       return `Draw the ${controller.awaitedSigil?.toUpperCase()} sigil on the plate`;
+    case 'scry':
+      return 'Choose any cards to discard, then confirm';
     case 'over':
       return controller.outcome === 'won' ? 'Victory' : 'Defeat';
   }
@@ -356,6 +365,7 @@ export function mountCombatDebugView(
   };
   let controller = new CombatController(startOptions);
   let unsubscribe: (() => void) | null = null;
+  let scryPanel: ScryPanel | null = null;
 
   const canvas = renderer.domElement;
   const host = canvas.parentElement ?? document.body;
@@ -410,6 +420,7 @@ export function mountCombatDebugView(
 
   // Dice readout (center of the table).
   const diceLabel = new CanvasLabel(512, 192, 0.4);
+  diceLabel.mesh.userData = { kind: 'reroll' } satisfies PickData;
   diceLabel.mesh.position.set(0.4, 1.02, TABLE_Z - 0.25);
   root.add(diceLabel.mesh);
   faceEye(diceLabel.mesh);
@@ -583,7 +594,8 @@ export function mountCombatDebugView(
       const info = getCard(combatCard.def.id);
       const offset = index - (hand.length - 1) / 2;
       const angle = offset * step;
-      const affordable = combatCard.def.cost <= controller.state.player.steam;
+      const steam = controller.state.player.steam;
+      const affordable = cardSteamCost(combatCard.def.cost, steam) <= steam;
       const label = new CanvasLabel(256, 360, CARD_W, false);
       label.draw((ctx, w, h) => drawCard(ctx, w, h, info, affordable));
       const outer = new THREE.Group();
@@ -726,7 +738,7 @@ export function mountCombatDebugView(
       ctx.textAlign = 'left';
       ctx.fillStyle = PALETTE.brass;
       ctx.font = '700 28px system-ui, sans-serif';
-      ctx.fillText('DICE', 24, 46);
+      ctx.fillText(controller.canReroll ? 'REROLL' : 'DICE', 24, 46);
       if (!dice) {
         ctx.fillStyle = PALETTE.parchment;
         ctx.font = '500 30px system-ui, sans-serif';
@@ -820,7 +832,7 @@ export function mountCombatDebugView(
       ctx.fillStyle = PALETTE.void;
       ctx.font = '700 44px system-ui, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('END TURN', w / 2, h / 2 + 15);
+      ctx.fillText(controller.canReroll ? 'KEEP ROLL' : 'END TURN', w / 2, h / 2 + 15);
     });
   };
 
@@ -852,6 +864,16 @@ export function mountCombatDebugView(
     refreshPlate();
     refreshEndTurn();
     refreshDom();
+    const { scry, piles } = controller.state;
+    if (scry && !scryPanel) {
+      scryPanel = new ScryPanel(piles.draw.slice(0, scry.count));
+      scryPanel.object.position.set(0, TABLE_Y + 0.32, TABLE_Z);
+      root.add(scryPanel.object);
+      scryPanel.object.lookAt(camera.getWorldPosition(new THREE.Vector3()));
+    } else if (!scry && scryPanel) {
+      scryPanel.dispose();
+      scryPanel = null;
+    }
   };
 
   const onUpdate = (update: ViewUpdate): void => {
@@ -900,6 +922,7 @@ export function mountCombatDebugView(
     ...enemies.flatMap((e) => [e.body, e.label.mesh]),
     endLabel.mesh,
     endBase,
+    ...(controller.canReroll ? [diceLabel.mesh] : []),
     plateLabel.mesh,
     table,
   ];
@@ -938,6 +961,14 @@ export function mountCombatDebugView(
 
   canvas.addEventListener('pointerdown', (event) => {
     if (event.button !== 0) return;
+    if (scryPanel) {
+      aim(event);
+      const hit = scryPanel.pick(raycaster.ray);
+      if (hit) event.stopImmediatePropagation();
+      if (hit?.choice === 'confirm') controller.confirmScry(scryPanel.discarded());
+      else if (hit) scryPanel.toggle(hit.choice);
+      return;
+    }
     const hit = pick(event);
     if (!hit) return;
     // Anything we use must not also start the desktop drag-to-look (registered later on this canvas).
@@ -953,7 +984,11 @@ export function mountCombatDebugView(
         break;
       case 'end-turn':
         claim();
-        controller.endTurn();
+        if (!controller.confirmDice()) controller.endTurn();
+        break;
+      case 'reroll':
+        claim();
+        if (controller.rerollDice()) controller.confirmDice();
         break;
       case 'table':
         if (controller.selectedUid === null) return;
@@ -978,6 +1013,11 @@ export function mountCombatDebugView(
   });
 
   window.addEventListener('pointermove', (event) => {
+    if (scryPanel) {
+      aim(event);
+      scryPanel.hover(scryPanel.pick(raycaster.ray)?.choice);
+      return;
+    }
     if (drawing) {
       if (addPoint(event)) refreshPlate();
       return;
@@ -1005,7 +1045,9 @@ export function mountCombatDebugView(
 
   const onKey = (event: KeyboardEvent): void => {
     if (event.repeat) return;
-    if (event.code === 'KeyE') controller.endTurn();
+    if (event.code === 'KeyE') {
+      if (!controller.confirmDice()) controller.endTurn();
+    } else if (event.code === 'KeyT' && controller.rerollDice()) controller.confirmDice();
     else if (event.code === 'Escape') controller.cancel();
     else if (event.code === 'KeyR') view.restart();
     else if (event.code === 'KeyN') view.nextEnemy();
@@ -1073,6 +1115,7 @@ export function mountCombatDebugView(
     },
     dispose() {
       unsubscribe?.();
+      scryPanel?.dispose();
       scene.onBeforeRender = previousBeforeRender;
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('pointerup', finishDrawing);
@@ -1093,6 +1136,7 @@ export function mountCombatDebugView(
     if (kind === 'card') object = cards.find((c) => c.uid === key)?.face;
     else if (kind === 'enemy') object = enemies.find((e) => e.id === key)?.body;
     else if (kind === 'end-turn') object = endLabel.mesh;
+    else if (kind === 'reroll') object = diceLabel.mesh;
     else if (kind === 'plate') object = plateLabel.mesh;
     else object = table;
     if (!object) return null;

@@ -117,6 +117,14 @@ it('keeps the two finished faces and pull of the open Conservatory lock outside 
   const geometry = leaf.geometry;
   const pos = geometry.getAttribute('position');
   const ray = new THREE.Raycaster();
+  const closingFace = mount.getObjectByName('encounter-lock-leaf');
+  expect(closingFace?.getObjectByName('encounter-lock-rebate')).toBeDefined();
+  if (!closingFace) throw Error('Missing door closing face');
+  closingFace.updateWorldMatrix(true, true);
+  const nearEdge = closingFace.localToWorld(new THREE.Vector3(0.795, 1.2, 0.4));
+  const oppositeEdge = closingFace.localToWorld(new THREE.Vector3(0.795, 1.2, -0.4));
+  ray.set(nearEdge, oppositeEdge.sub(nearEdge).normalize());
+  expect(ray.intersectObject(closingFace)[0]?.object.name).toBe('encounter-lock-rebate');
   for (const side of [-1, 1]) {
     ray.set(new THREE.Vector3(0.3, 1.554, side * 0.2), new THREE.Vector3(0, 0, -side));
     const hit = ray.intersectObject(kit.EncounterDoorLeaf)[0];

@@ -1,0 +1,13 @@
+{
+  "glbSha256": "11f8762059e1608c660844a5bc307c76ae2b7a0b9b2a6000ca3e1db7b4f79b66",
+  "reviewer": "gpt-6.2-astra",
+  "stage": "static base model",
+  "score": 82,
+  "threshold": 80,
+  "ownerApproval": "pending",
+  "notes": [
+    "The raised view distinguishes six grounded feet; the far rear foot remains occluded in the lower three-quarter view.",
+    "Three overlapping tiers read in profile. The shell lips are thinner and smoother than the chipped limestone in the concept.",
+    "The amber vent is inset behind a grille, and the reimported joint silhouettes have clean edges."
+  ]
+}

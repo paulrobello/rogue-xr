@@ -32,7 +32,13 @@ export interface InstantSegment {
   readonly events: readonly CombatEvent[];
 }
 
-export type TurnSegment = InstantSegment | EnemyBeat;
+export interface MechanismBeat {
+  readonly kind: 'mechanism';
+  readonly trigger: Extract<CombatEvent, { type: 'mechanism-triggered' }>;
+  readonly events: readonly CombatEvent[];
+}
+
+export type TurnSegment = InstantSegment | EnemyBeat | MechanismBeat;
 
 /** The enemy an event belongs to, or null for player and turn bookkeeping events. */
 export function eventOwner(event: CombatEvent): string | null {
@@ -42,6 +48,7 @@ export function eventOwner(event: CombatEvent): string | null {
     case 'enemy-phase':
     case 'enemy-died':
       return event.enemyId;
+    case 'healed':
     case 'block-gained':
     case 'block-cleared':
     case 'status-applied':
@@ -71,6 +78,7 @@ interface BeatDraft {
 export function segmentEvents(events: readonly CombatEvent[]): TurnSegment[] {
   const out: TurnSegment[] = [];
   let instant: CombatEvent[] = [];
+  let mechanism: (Omit<MechanismBeat, 'events'> & { events: CombatEvent[] }) | null = null;
   // A holder, so the flush helper's reset is visible to the loop's narrowing.
   const open: { beat: BeatDraft | null } = { beat: null };
   let enemyPhase = false;
@@ -83,6 +91,20 @@ export function segmentEvents(events: readonly CombatEvent[]): TurnSegment[] {
     open.beat = null;
   };
   for (const event of events) {
+    if (mechanism) {
+      mechanism.events.push(event);
+      if (event.type === 'mechanism-finished' && event.uid === mechanism.trigger.uid) {
+        out.push(mechanism);
+        mechanism = null;
+      }
+      continue;
+    }
+    if (event.type === 'mechanism-triggered') {
+      flushBeat();
+      flushInstant();
+      mechanism = { kind: 'mechanism', trigger: event, events: [event] };
+      continue;
+    }
     if (event.type === 'turn-started') {
       flushBeat();
       enemyPhase = false;
@@ -119,6 +141,7 @@ export function segmentEvents(events: readonly CombatEvent[]): TurnSegment[] {
   }
   flushBeat();
   flushInstant();
+  if (mechanism) out.push(mechanism);
   return out;
 }
 
@@ -153,6 +176,9 @@ export function foldEvents(state: CombatState, events: readonly CombatEvent[]): 
           hp: Math.max(0, f.hp - event.hpLost),
           block: Math.max(0, f.block - event.blocked),
         }));
+        break;
+      case 'healed':
+        patch(event.target, (f) => ({ hp: Math.min(f.maxHp, f.hp + event.amount) }));
         break;
       case 'block-gained':
         patch(event.target, (f) => ({ block: f.block + event.amount }));

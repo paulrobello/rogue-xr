@@ -8,6 +8,7 @@ import {
   SIGIL_TEMPLATES,
   type SigilId,
   type SigilLevel,
+  type Stroke,
 } from '../sigil/index.ts';
 import { CastGlyph } from './cast-glyph.ts';
 import { castPower } from './glyph-timing.ts';
@@ -401,10 +402,12 @@ export class SigilPlate extends THREE.Group {
   }
 
   /**
-   * Scores the trace and shows the multiplier and quality word. Returns null (and shows "Too short")
-   * for a stray tap, leaving the plate ready for another attempt; the caller should not cast then.
+   * Scores the trace and shows the quality and final multiplier. The optional cast callback
+   * supplies committed power, or null if the play was refused. Stray taps leave the plate ready.
    */
-  finish(): TraceResult | null {
+  finish(
+    cast?: (strokes: readonly Stroke[]) => number | { multiplier: number; caption: string } | null,
+  ): TraceResult | null {
     if (this.currentPhase !== 'ready' && this.currentPhase !== 'drawing') return null;
     const sigilId = this.plateSigil as SigilId;
     this.builder.endStroke();
@@ -416,21 +419,26 @@ export class SigilPlate extends THREE.Group {
       this.currentPhase = 'ready';
       return null;
     }
-    this.showLabel(
-      formatMultiplier(result.multiplier),
-      result.quality,
-      QUALITY_COLOR[result.quality],
-    );
+    const committed = cast ? cast(this.builder.strokes) : result.multiplier;
+    if (committed === null) {
+      this.resetTrail();
+      this.showLabel('', 'Cannot cast', QUALITY_COLOR.Rough);
+      this.currentPhase = 'ready';
+      return null;
+    }
+    const multiplier = typeof committed === 'number' ? committed : committed.multiplier;
+    const caption = typeof committed === 'number' ? result.quality : committed.caption;
+    this.showLabel(formatMultiplier(multiplier), caption, QUALITY_COLOR[result.quality]);
     // The raw stroke gives way to the clean glyph of the sigil; the strokes stay for the caller.
     const pose = this.platePose as PlatePose;
     this.glyph.start(
       sigilId,
       Math.min(pose.halfWidth, pose.halfHeight) * 2 * GLYPH_FILL,
-      castPower(result.multiplier),
+      castPower(multiplier),
       this.reducedMotion,
     );
     this.currentPhase = 'done';
-    return result;
+    return { ...result, multiplier };
   }
 
   /** Advances the appear animation, glow pulse and label fade. Call once per frame. */
@@ -600,7 +608,7 @@ export class SigilPlate extends THREE.Group {
       ctx.font = 'bold 64px serif';
       ctx.fillText(top, width / 2, height * 0.38);
       ctx.font = 'bold 36px serif';
-      ctx.fillText(bottom, width / 2, height * 0.8);
+      ctx.fillText(bottom, width / 2, height * 0.8, width - 14);
     } else {
       ctx.font = 'bold 44px serif';
       ctx.fillText(bottom, width / 2, height / 2);

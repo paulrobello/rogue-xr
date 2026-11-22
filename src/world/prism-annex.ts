@@ -3,6 +3,7 @@ import { type PrismChannel, prismOrder, type StoredPrismState } from '../rules/p
 import { ClockInscription } from './clock-inscription.ts';
 import type { FloorWorld } from './floor-world.ts';
 import type { InteriorPlacement } from './interior-furnishings.ts';
+import type { PbrSet } from './materials.ts';
 import { findPuzzleMount } from './puzzle-placement.ts';
 
 type PrismAction = { action: 'turn' } | { action: 'receiver'; channel: PrismChannel };
@@ -50,7 +51,7 @@ export class PrismAnnex {
   private readonly display = new THREE.Group();
   private readonly controls: Control[] = [];
   private readonly faces: THREE.MeshBasicMaterial[] = [];
-  private readonly owned: (THREE.BufferGeometry | THREE.Material)[] = [];
+  private readonly owned: { dispose(): void }[] = [];
   private readonly releases: (() => void)[] = [];
   private readonly ray = new THREE.Raycaster();
   private readonly box = new THREE.Box3();
@@ -63,6 +64,22 @@ export class PrismAnnex {
     roughness: 0.44,
   });
   private readonly walnut = new THREE.MeshStandardMaterial({ color: 0x493127, roughness: 0.63 });
+  private readonly felt = new THREE.MeshStandardMaterial({
+    color: 0x163f46,
+    roughness: 0.82,
+    metalness: 0.08,
+  });
+  private readonly glass = new THREE.MeshStandardMaterial({
+    color: 0x8bd7df,
+    emissive: 0x1d6974,
+    emissiveIntensity: 0.42,
+    roughness: 0.18,
+    metalness: 0.2,
+    transparent: true,
+    opacity: 0.65,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  });
   private readonly beamMaterial = new THREE.MeshBasicMaterial({
     color: COLORS[0],
     transparent: true,
@@ -134,7 +151,14 @@ export class PrismAnnex {
     this.clueRoom = plan.clueRoom;
     this.annexRoom = plan.annexRoom;
     this.order = prismOrder(seed);
-    this.owned.push(this.brass, this.walnut, this.beamMaterial, this.beam.geometry);
+    this.owned.push(
+      this.brass,
+      this.walnut,
+      this.felt,
+      this.glass,
+      this.beamMaterial,
+      this.beam.geometry,
+    );
   }
 
   private block(
@@ -152,9 +176,25 @@ export class PrismAnnex {
 
   private makeStation(art: THREE.Object3D): void {
     this.block(this.object, [1.61, 0.1, 0.73], [0, 0.8, 0], this.walnut);
+    this.block(this.object, [1.5, 0.025, 0.64], [0, 0.86, 0], this.felt);
     this.block(this.object, [1.53, 0.055, 0.11], [0, 0.76, 0.26]);
-    for (const side of [-1, 1])
-      this.block(this.object, [0.12, 0.76, 0.64], [side * 0.68, 0.38, 0], this.walnut);
+    this.block(this.object, [1.54, 0.035, 0.035], [0, 0.91, 0.32]);
+    for (const x of [-0.69, 0.69])
+      for (const z of [-0.28, 0.28]) {
+        this.block(this.object, [0.095, 0.76, 0.095], [x, 0.38, z], this.walnut);
+        this.block(this.object, [0.109, 0.07, 0.109], [x, 0.037, z]);
+      }
+    this.block(this.object, [1.38, 0.065, 0.056], [0, 0.26, -0.28], this.walnut);
+    const guide = new ClockInscription(
+      'prism-station-guide',
+      1.28,
+      'Prism Signal',
+      'The order plate is in another room.',
+      'Rotate, then press each lit mark to open the annex.',
+    );
+    guide.object.position.set(0, 1.55, -0.3);
+    this.object.add(guide.object);
+    this.owned.push(guide);
     this.prism.name = 'prism-turn';
     this.prism.position.set(0, 0.87, 0.08);
     this.block(this.prism, [0.31, 0.06, 0.27], [0, 0, 0]);
@@ -168,7 +208,7 @@ export class PrismAnnex {
     this.controls.push({ node: this.prism, action: { action: 'turn' } });
     for (const channel of CHANNELS) {
       const root = new THREE.Group();
-      root.name = 'prism-receiver-' + channel;
+      root.name = `prism-receiver-${channel}`;
       root.position.set((channel - 1) * 0.48, 1.19, -0.32);
       this.block(this.object, [0.065, 0.33, 0.07], [root.position.x, 0.995, -0.37]);
       const body = new THREE.Mesh(new THREE.CylinderGeometry(0.165, 0.165, 0.055, 24), this.brass);
@@ -179,33 +219,47 @@ export class PrismAnnex {
         opacity: 0.3,
       });
       const mark = new THREE.Mesh(sigilGeometry(channel), face);
+      const halo = new THREE.Mesh(
+        new THREE.TorusGeometry(0.13, 0.012, 6, 24),
+        new THREE.MeshBasicMaterial({ color: COLORS[channel], transparent: true, opacity: 0.72 }),
+      );
+      halo.rotation.x = Math.PI / 2;
+      halo.position.z = 0.035;
       mark.position.z = 0.03;
-      root.add(body, mark);
+      root.add(body, halo, mark);
       this.object.add(root);
       this.faces.push(face);
-      this.owned.push(body.geometry, mark.geometry, face);
+      this.owned.push(body.geometry, halo.geometry, mark.geometry, face, halo.material);
       this.controls.push({ node: root, action: { action: 'receiver', channel } });
     }
     this.beam.name = 'prism-light-path';
     this.object.add(this.beam);
   }
 
+  dress(set: PbrSet, environment: THREE.Texture | null): void {
+    for (const [material, slot] of [
+      [this.walnut, 'walnut'],
+      [this.brass, 'brass-polished'],
+      [this.felt, 'stone-floor'],
+      [this.glass, 'stained-glass'],
+    ] as const) {
+      const source = set.materials.get(slot);
+      if (!source) continue;
+      material.map = source.map;
+      material.normalMap = source.normalMap;
+      material.normalScale.setScalar(0.12);
+      material.roughnessMap = source.roughnessMap;
+      material.envMap = environment;
+      material.envMapIntensity = material === this.brass ? 0.5 : 0.2;
+      material.needsUpdate = true;
+    }
+  }
+
   private makeGate(door: FloorWorld['rooms'][number]['doors'][number]): void {
     this.gate.name = 'prism-annex-gate';
     this.gate.position.set(door.world[0], CLOSED_HEIGHT, door.world[1]);
     this.gate.rotation.y = { N: 0, E: -Math.PI / 2, S: Math.PI, W: Math.PI / 2 }[door.facing];
-    const glass = new THREE.MeshStandardMaterial({
-      color: 0x538e99,
-      emissive: 0x35636d,
-      emissiveIntensity: 0.65,
-      roughness: 0.23,
-      transparent: true,
-      opacity: 0.65,
-      depthWrite: false,
-      side: THREE.DoubleSide,
-    });
-    this.owned.push(glass);
-    this.block(this.gate, [door.width - 0.14, 2.15, 0.036], [0, 0, 0], glass);
+    this.block(this.gate, [door.width - 0.14, 2.15, 0.036], [0, 0, 0], this.glass);
     for (const side of [-1, 1]) {
       this.block(this.gate, [0.065, 2.23, 0.075], [side * (door.width / 2 - 0.05), 0, 0]);
       this.block(this.gate, [door.width - 0.1, 0.07, 0.075], [0, side * 1.08, 0]);

@@ -289,6 +289,25 @@ const quenchPlus: readonly Stroke[] = [
     12,
   ),
 ];
+/** Eye: an almond-shaped outline and a short angled pupil. */
+const eye: readonly Stroke[] = [
+  sampleCurve(64, (t) => {
+    const angle = TAU * t;
+    const y = Math.sin(angle);
+    return {
+      x: 0.5 - 0.48 * Math.cos(angle),
+      y: 0.5 + 0.274 * y * (0.72 + 0.28 * Math.abs(y)),
+    };
+  }),
+  polyline(
+    [
+      { x: 0.425, y: 0.65 },
+      { x: 0.575, y: 0.35 },
+    ],
+    14,
+  ),
+];
+
 export const SIGIL_TEMPLATES: Readonly<Record<SigilId, SigilTemplate>> = {
   gear: { id: 'gear', strokes: gear },
   flame: { id: 'flame', strokes: flame },
@@ -304,4 +323,5 @@ export const SIGIL_TEMPLATES: Readonly<Record<SigilId, SigilTemplate>> = {
   'spiral-plus': { id: 'spiral-plus', strokes: spiralPlus },
   'anchor-plus': { id: 'anchor-plus', strokes: anchorPlus },
   'quench-plus': { id: 'quench-plus', strokes: quenchPlus },
+  eye: { id: 'eye', strokes: eye },
 };

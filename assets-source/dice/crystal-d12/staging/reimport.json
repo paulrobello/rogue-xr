@@ -1,0 +1,32 @@
+{
+  "glb_sha256": "034130e084c872c06e220487ba0a14133faac6f3e3f8e566e694b8d117dfc2f9",
+  "glb_bytes": 21920,
+  "triangles": 274,
+  "materials": [
+    "crystal-body",
+    "crystal-marks"
+  ],
+  "bounds": {
+    "min": [
+      -0.028025170769,
+      -0.028025170769,
+      -0.028025170769
+    ],
+    "max": [
+      0.028025170769,
+      0.028025170769,
+      0.028025170769
+    ]
+  },
+  "errors": [],
+  "pass": true,
+  "blender_reimport": {
+    "objects": 1,
+    "meshes": 1,
+    "triangles": 274,
+    "materials": [
+      "crystal-body",
+      "crystal-marks"
+    ]
+  }
+}

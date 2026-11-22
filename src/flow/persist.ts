@@ -26,7 +26,7 @@ export function bindFlowPersistence(
     queue = queue.then(write).catch((error: unknown) => console.error('save failed', error));
   };
   const off = flow.onChange((event) => {
-    if (event.type === 'floor-travel') {
+    if (event.type === 'floor-travel' || event.type === 'room-entered') {
       const snapshot = flow.snapshot(Date.now(), event.room);
       if (snapshot) enqueue(() => saveRunSnapshot(db, snapshot));
       return;
@@ -41,6 +41,7 @@ export function bindFlowPersistence(
       event.type === 'hearth' ||
       event.type === 'pressure' ||
       event.type === 'dispatch' ||
+      event.type === 'speaking-pipes' ||
       event.type === 'book-secret' ||
       event.type === 'bell-chimes' ||
       event.type === 'counterweight' ||
@@ -51,7 +52,18 @@ export function bindFlowPersistence(
       event.type === 'hidden-panel' ||
       event.type === 'window-cache' ||
       event.type === 'brass-key' ||
-      event.type === 'prism-signal'
+      event.type === 'prism-signal' ||
+      event.type === 'reliquary' ||
+      event.type === 'valvehouse' ||
+      event.type === 'pendulum-gallery' ||
+      event.type === 'armory-awakened' ||
+      event.type === 'borrowed-light' ||
+      event.type === 'float-elevator' ||
+      event.type === 'shadow-stencil' ||
+      event.type === 'spring-tension' ||
+      event.type === 'dark-circuit' ||
+      event.type === 'drum-gallery' ||
+      event.type === 'logbook'
     ) {
       const snapshot = flow.snapshot(Date.now(), roomIndex());
       if (snapshot) enqueue(() => saveRunSnapshot(db, snapshot));

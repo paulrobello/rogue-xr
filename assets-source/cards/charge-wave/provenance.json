@@ -1,0 +1,49 @@
+{
+  "provider": "OpenAI Media Service",
+  "generator": "Built-in OpenAI ImageGen",
+  "model": "Not exposed by the tool",
+  "file": "charge-wave.png",
+  "sha256": "c55a5df3f11ad10e7682fd79c6063489a9deaebf532c1ecc83edf8ed63a901a5",
+  "reference": [
+    {
+      "path": "assets-source/style/locked/L-board-1.png",
+      "sha256": "d3fffc8eb300cc6f40236c28930401ef1bd06be0e27be76999839e3bfeacc018"
+    },
+    {
+      "path": "assets-source/style/locked/L-cards.png",
+      "sha256": "207a60d3465942c8d16ddb5eee674db576a4a19e3b7070579313f844050b2c52"
+    },
+    {
+      "path": "assets-source/cards/complete-wave/complete-wave.png",
+      "sha256": "ab55970b7e61c37109fb558751c648722a9d9c44dcfe9473ef83f6b6a004c886"
+    }
+  ],
+  "prompt": "Original two-subject transparent foreground sheet for Clockwork Spire, a Victorian clockwork fantasy deckbuilder. The project-owned images are style references only. Match its Gilded Lamplight illustration palette and tactile painted metallic finish: warm brass highlights, visibly machined worn copper, sapphire or ruby accents, strong readable silhouettes that will be viewed at tiny card size. Use an equal 2 by 2 grid on a square RGBA canvas. Top left is CAPACITOR: a squat blue glass and enamel cylindrical energy cell in two heavy ribbed brass bands, on its side at a clear diagonal three-quarter angle, with two distinct aged brass electrical terminals and a small pale blue captured spark clearly inside the glass; a simple bulky silhouette. Top right is COPPER COIL: a wide dynamic quarter-view of a thick reddish copper winding wound tightly around a dark iron U-shaped core, set at a strong diagonal, with ruby enamel insulators and one tiny warm spark at the points, a striking shape distinct from the cylindrical blue Capacitor. Both bottom quadrants completely empty transparent alpha. Every subject has at least 12 percent entirely transparent margins inside all edges of its own quadrant. Transparent outside each crisp silhouette, including the open loop areas. Keep the rendered illustration wholly contained in the subject; no frame, card, rectangle behind objects, background, ground plane, drop shadow, lettering, numbers, watermark, border, smoky haze, or other object.",
+  "settings": {
+    "transparentBackground": true,
+    "layout": "2 by 2 equal grid",
+    "size": [
+      1254,
+      1254
+    ]
+  },
+  "alphaBoundsByQuadrantAt16": {
+    "capacitor": [
+      116,
+      86,
+      558,
+      577
+    ],
+    "copper-coil": [
+      49,
+      90,
+      554,
+      574
+    ],
+    "unused-left": null,
+    "unused-right": null
+  },
+  "alphaNotes": "Original RGBA output kept byte-for-byte. Raw margins at alpha 16/255 (L,T,R,B) are {'capacitor': [116, 86, 69, 50], 'copper-coil': [49, 90, 73, 53]}. Bottom quadrants peak at 1/255 alpha and are excluded from packing.",
+  "runtimeDerivation": "scripts/assets/build_card_atlas.py --charge-wave-only packs the foregrounds into cell 15 of pages 2 and 3. Preserve established backdrop pairs and frame placements.",
+  "rights": "Original generated foregrounds with project-owned references. Release and owner review pending."
+}

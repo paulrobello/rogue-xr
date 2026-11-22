@@ -8,6 +8,7 @@ import {
   buildFireplaceFire,
   dressCandleFlames,
   dressFireplace,
+  dressTorchFlames,
   FIRE_NODE,
   FIREBOXES,
   type Firebox,
@@ -28,6 +29,23 @@ import { flameSlot } from '../src/world/study-room.ts';
 
 const HALL = FIREBOXES.hall as Firebox;
 const EPS = 1e-6;
+
+it('replaces static stone torch triangles with one animated fire mesh per room', () => {
+  const room = new THREE.Group();
+  const torch = new THREE.Group();
+  torch.name = 'StoneTorchFlame';
+  torch.position.set(1.7, 1.9, -2.6);
+  room.add(torch);
+  const fire = dressTorchFlames(room, true);
+  expect(fire).toBeTruthy();
+  expect(torch.visible).toBe(false);
+  expect(fire?.mesh.parent).toBe(room);
+  expect(fire?.mesh.geometry.getAttribute('position').count).toBe(8);
+  expect(fire?.material.uniforms.uMotion.value).toBeLessThan(1);
+  expect(dressTorchFlames(room, true)).toBeNull();
+  fire?.dispose();
+  expect(fire?.mesh.parent).toBeNull();
+});
 
 /** Positions and index of the hall GLB's `hall_flame` primitive, read straight from the file. */
 function hallFlameGeometry(): THREE.BufferGeometry {

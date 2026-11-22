@@ -2,6 +2,7 @@
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
+import { CONSERVATORY_SPECIMENS_VERSION } from '../src/combat/encounter-choice.ts';
 import { conservatoryPlan } from '../src/floor/conservatory.ts';
 import { DECOR_TABLES } from '../src/floor/table-decor.ts';
 import { alchemyRecipe, conservatoryFormula } from '../src/rules/alchemy.ts';
@@ -69,13 +70,40 @@ describe('alchemy conservatory authored puzzle', () => {
     expect(
       a.puzzle.tablet.getObjectByName(`RecipeTile${INGREDIENT_ROOTS[recipe[1]]}Order2`),
     ).toBeTruthy();
-    for (const name of INGREDIENT_ROOTS)
+    for (const name of INGREDIENT_ROOTS.slice(0, 3))
       expect(a.world.group.getObjectByName(`IngredientCradle${name}`)).toBeTruthy();
     expect(a.world.group.getObjectByName('stillwind-lab-dial')).toBeUndefined();
     a.puzzle.dispose();
     a.world.dispose();
     b.puzzle.dispose();
     b.world.dispose();
+  });
+  it('dresses both new specimens only on versions that can collect them', async () => {
+    const bytes = Uint8Array.from(
+      await readFile('public/assets/props/conservatory-specimens/conservatory-specimens.glb'),
+    );
+    const specimens = (await nodeGeometryLoader().parseAsync(bytes.buffer, '')).scene;
+    const withSpecimens = art();
+    for (const name of INGREDIENT_ROOTS.slice(3)) {
+      for (const prefix of ['Ingredient', 'RecipeTile']) {
+        withSpecimens.getObjectByName(prefix + name)?.removeFromParent();
+      }
+    }
+    withSpecimens.add(specimens);
+    for (const version of [CONSERVATORY_SPECIMENS_VERSION - 1, CONSERVATORY_SPECIMENS_VERSION]) {
+      const seed = 'MAPTEST2';
+      const world = buildFloorWorld(conservatoryPlan(seed));
+      const puzzle = new AlchemyConservatory(world, withSpecimens, seed, true, [], version);
+      const expanded = version === CONSERVATORY_SPECIMENS_VERSION;
+      expect(Boolean(world.group.getObjectByName('conservatory-specimen-stand'))).toBe(expanded);
+      for (const name of INGREDIENT_ROOTS.slice(3)) {
+        expect(Boolean(world.group.getObjectByName('FoundIngredient' + name))).toBe(expanded);
+        expect(Boolean(world.group.getObjectByName('IngredientCradle' + name))).toBe(expanded);
+        expect(specimens.getObjectByName('RecipeTile' + name)).toBeDefined();
+      }
+      puzzle.dispose();
+      world.dispose();
+    }
   });
   it('hides collected ingredients and keeps both ward leaves present', () => {
     const { world, puzzle } = make('ALCH3MY2');
@@ -250,9 +278,66 @@ describe('alchemy conservatory authored puzzle', () => {
     puzzle.update(0.5);
     expect(ingredients.every((n) => !n.visible)).toBe(true);
     expect(puzzle.potion.visible).toBe(true);
+    const vialCenter = puzzle.potion.getWorldPosition(new THREE.Vector3());
+    expect(puzzle.near(vialCenter, 0.02)?.action).toBe('take-potion');
+    puzzle.sync({ ...state, added: [...recipe], brewed: true, carried: true }, true);
+    expect(puzzle.potion.visible).toBe(false);
+    expect(puzzle.near(vialCenter, 0.02)).toBeNull();
+    puzzle.animatePotionPickup(new THREE.PerspectiveCamera());
+    expect(world.group.getObjectByName('alchemy-pickup-potion')).toBeDefined();
+    puzzle.update(1);
+    expect(world.group.getObjectByName('alchemy-pickup-potion')).toBeUndefined();
     puzzle.dispose();
     world.dispose();
   });
+  it('keeps recipe-specific vial colors through Continue and pickup without tinting the shared kit', async () => {
+    const bytes = Uint8Array.from(
+      await readFile('public/assets/props/alchemy-kit/alchemy-kit.glb'),
+    );
+    const kit = (await nodeGeometryLoader().parseAsync(bytes.buffer, '')).scene;
+    const glass = (vial: THREE.Object3D): THREE.MeshStandardMaterial => {
+      for (const node of vial.getObjectsByProperty('isMesh', true)) {
+        const material = (node as THREE.Mesh).material;
+        if (material instanceof THREE.MeshStandardMaterial && material.name === 'Potion glass')
+          return material;
+      }
+      throw Error('Missing vial glass');
+    };
+    const source = glass(kitPart(kit, 'PotionVial'));
+    const originalColor = source.emissive.getHex();
+    const tints = new Set<number>();
+    for (const seed of ['N0TE0032', 'MAPTEST2', 'BREW0001']) {
+      const world = buildFloorWorld(conservatoryPlan(seed));
+      const puzzle = new AlchemyConservatory(world, kit, seed, true);
+      const plan = conservatoryFormula(seed);
+      const recipe = alchemyRecipe(seed);
+      const brewed = { found: [...recipe], added: [...recipe], brewed: true, opened: false };
+      puzzle.sync(brewed, true);
+      const primary = glass(puzzle.potion);
+      tints.add(primary.emissive.getHex());
+      expect(primary).not.toBe(source);
+
+      puzzle.animatePotionPickup(new THREE.PerspectiveCamera());
+      const pickup = kitPart(world.group, 'alchemy-pickup-potion');
+      puzzle.sync({ ...brewed, opened: true }, false, {
+        recipe: plan.recipe,
+        clues: ['portrait', 'record'],
+        added: plan.ingredients,
+        brewed: true,
+        revealed: false,
+        opened: false,
+      });
+      const archive = glass(puzzle.potion);
+      expect(archive).not.toBe(primary);
+      tints.add(archive.emissive.getHex());
+      expect(glass(pickup)).toBe(primary);
+      expect(source.emissive.getHex()).toBe(originalColor);
+      puzzle.dispose();
+      world.dispose();
+    }
+    expect(tints.size).toBe(4);
+  });
+
   it('settles mistaken ingredients back on the tray and never replays a saved addition', () => {
     const { world, puzzle } = make('ALCH3MY1');
     world.current = puzzle.cauldronRoom;

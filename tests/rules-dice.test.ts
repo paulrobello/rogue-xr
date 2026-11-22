@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { BRASS_D6, DICE, DIE_IDS, dieById, GLASS_D8, IRON_D4 } from '../src/content/dice.ts';
+import {
+  BRASS_D6,
+  CRYSTAL_D12,
+  DICE,
+  DIE_IDS,
+  dieById,
+  GLASS_D8,
+  IRON_D4,
+} from '../src/content/dice.ts';
 import { RunRng } from '../src/core/rng.ts';
 import {
   apply,
@@ -49,11 +57,12 @@ function combat(seed = SEED): CombatState {
 }
 
 describe('content dice', () => {
-  it('defines brass d6, glass d8, and iron d4 with their face values', () => {
-    expect(DIE_IDS).toEqual(['brass-d6', 'glass-d8', 'iron-d4']);
+  it('defines each die with its face values', () => {
+    expect(DIE_IDS).toEqual(['brass-d6', 'glass-d8', 'iron-d4', 'crystal-d12']);
     expect(BRASS_D6.faces).toEqual([1, 2, 3, 4, 5, 6]);
     expect(GLASS_D8.faces).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
     expect(IRON_D4.faces).toEqual([1, 2, 3, 4]);
+    expect(CRYSTAL_D12.faces).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
     for (const id of DIE_IDS) {
       expect(dieById(id).id).toBe(id);
       expect(DICE[id]).toBe(dieById(id));
@@ -64,7 +73,7 @@ describe('content dice', () => {
 
 describe('rollDie', () => {
   it('draws once per roll from the dice stream: int(0, faces - 1) picks the face', () => {
-    for (const die of [BRASS_D6, GLASS_D8]) {
+    for (const die of Object.values(DICE)) {
       const reference = new RunRng(SEED).stream('dice');
       let rng = new RunRng(SEED).snapshot();
       for (let i = 0; i < 20; i++) {
@@ -90,8 +99,8 @@ describe('rollDie', () => {
     expect(sequence(SEED)).not.toEqual(sequence('DEADBEEF'));
   });
 
-  it('lands every face of both dice and only their face values', () => {
-    for (const die of [BRASS_D6, GLASS_D8]) {
+  it('lands every face of each die and only their face values', () => {
+    for (const die of Object.values(DICE)) {
       let rng = new RunRng(SEED).snapshot();
       const seen = new Set<number>();
       for (let i = 0; i < 400; i++) {
@@ -143,7 +152,7 @@ describe('rollDice on a combat state', () => {
 
   it('the value the presenter receives is exactly the value the engine applies', () => {
     for (const seed of [SEED, 'DEADBEEF', '7Q2M9KX4']) {
-      for (const die of [BRASS_D6, GLASS_D8]) {
+      for (const die of Object.values(DICE)) {
         const { state, roll } = rollDice(combat(seed), die);
         const presented = roll.value;
         const { state: after, events } = apply(state, {

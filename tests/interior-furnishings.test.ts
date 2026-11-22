@@ -7,6 +7,7 @@ import { parseRoomTemplate, templateById } from '../src/content/rooms.ts';
 import { generateFloor } from '../src/floor/generate.ts';
 import { buildFloorWorld } from '../src/world/floor-world.ts';
 import {
+  dressBookcaseWood,
   InteriorFurnishings,
   type InteriorFurnishingsAsset,
 } from '../src/world/interior-furnishings.ts';
@@ -145,6 +146,36 @@ describe('interior furnishings', () => {
       expect(material?.normalMap).toBeTruthy();
       expect(material?.roughnessMap).toBeTruthy();
     }
+  });
+
+  it('dresses only the bookcase frame materials with borrowed walnut maps', () => {
+    const furniture = asset();
+    const map = new THREE.Texture(),
+      normalMap = new THREE.Texture(),
+      roughnessMap = new THREE.Texture();
+    const walnut = new THREE.MeshStandardMaterial({ map, normalMap, roughnessMap });
+    const frame = new THREE.Mesh(
+      new THREE.BoxGeometry(),
+      new THREE.MeshStandardMaterial({ name: 'Walnut' }),
+    );
+    const highlight = new THREE.Mesh(
+      new THREE.BoxGeometry(),
+      new THREE.MeshStandardMaterial({ name: 'WalnutHighlight' }),
+    );
+    const atlas = new THREE.Texture();
+    const book = new THREE.Mesh(
+      new THREE.BoxGeometry(),
+      new THREE.MeshStandardMaterial({ name: 'LibraryBindingAtlas', map: atlas }),
+    );
+    furniture.roots.Bookcase.add(frame, highlight, book);
+    const other = new THREE.Mesh(frame.geometry, frame.material);
+    furniture.roots.DiningTable.add(other);
+    dressBookcaseWood(furniture, walnut);
+    expect(frame.material).toMatchObject({ map, normalMap, roughnessMap });
+    expect(highlight.material).toMatchObject({ map, normalMap, roughnessMap });
+    expect(book.material).toMatchObject({ map: atlas });
+    expect(other.material).not.toBe(frame.material);
+    expect(other.material.map).toBeNull();
   });
 
   it('uses a dedicated seed stream and keeps repeated floors identical', () => {

@@ -21,4 +21,4 @@ Clockwork Spire (`rogue-xr`) is a seated WebXR roguelike deckbuilder for Quest 3
 - `rules/`, `floor/` and `sigil/` stay pure: no three.js imports, fully unit-tested.
 - Every random choice comes from a named stream of the run seed (`core/rng.ts`), so runs replay exactly.
 - Quest 3 budgets and the lightmap contract are in the PRD. Desktop frame numbers only rank variants; only headset measurements close a budget criterion.
-- Asset work goes through the owning workflow skill named in the PRD asset table, and every asset finishes with `validate-generated-assets`. Paid generation stays inside the PRD's slice asset list.
+- Asset work goes through the owning workflow skill named in the PRD asset table, and every asset finishes with `validate-generated-assets`. Paid generation follows the slice asset list and any explicit post-slice approvals recorded in the PRD.

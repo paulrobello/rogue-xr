@@ -1359,7 +1359,8 @@ try {
     const killed = await ev(() => {
       const c = window.__combat.session.controller;
       const card = c.state.piles.hand.find(
-        (h) => h.def.target === 'enemy' && h.def.cost <= c.state.player.steam,
+        (h) =>
+          h.def.target === 'enemy' && (h.def.cost === 'X' || h.def.cost <= c.state.player.steam),
       );
       const enemy = c.state.enemies.find((e) => e.hp > 0);
       if (!card || !enemy) return { ok: false, reason: 'no attack card or target' };

@@ -435,7 +435,12 @@ export class AudioDirector {
   /** Master, music-bus and SFX-bus volumes, 0..1. Omitted fields are unchanged. */
   setVolumes(volumes: { master?: number; music?: number; sfx?: number }): void {
     if (volumes.master !== undefined) this.deps.setMasterVolume(volumes.master);
-    if (volumes.sfx !== undefined) this.sfxVolume = volumes.sfx;
+    if (volumes.sfx !== undefined) {
+      this.sfxVolume = volumes.sfx;
+      for (const [id, voice] of this.loops) {
+        if (voice.isPlaying) voice.setVolume(SFX[id].gain * this.sfxVolume);
+      }
+    }
     if (volumes.music !== undefined) {
       this.musicVolume = volumes.music;
       this.mixer.refresh();

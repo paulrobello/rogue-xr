@@ -1,7 +1,9 @@
 import * as THREE from 'three';
-import { rotatePoint, rotateTemplate, templateById } from '../content/rooms.ts';
 import type { FloorPlan, PlacedRoom } from '../floor/generate.ts';
+import { stoneRoomsFor } from '../floor/stone-rooms.ts';
+import { wallSpanIsExposed } from '../floor/wall-exposure.ts';
 import { roomStyleFor } from './room-styles.ts';
+import type { WindowKeySite } from './window-light.ts';
 
 export interface WindowBay {
   readonly room: number;
@@ -39,37 +41,13 @@ function bays(room: PlacedRoom): Bay[] {
 }
 
 function isExposed(plan: FloorPlan, placed: PlacedRoom, bay: Bay): boolean {
-  const [ax, , az] = rotatePoint([bay.x - bay.halfWidth, 0, bay.z], placed.turns);
-  const [bx, , bz] = rotatePoint([bay.x + bay.halfWidth, 0, bay.z], placed.turns);
-  const x0 = Math.min(ax, bx) + placed.position[0];
-  const x1 = Math.max(ax, bx) + placed.position[0];
-  const z0 = Math.min(az, bz) + placed.position[1];
-  const z1 = Math.max(az, bz) + placed.position[1];
-  const eps = 1e-5;
-  return !plan.rooms.some((other) => {
-    if (other.index === placed.index) return false;
-    const footprint = rotateTemplate(templateById(other.templateId), other.turns).footprint;
-    const minX = footprint.min[0] + other.position[0];
-    const maxX = footprint.max[0] + other.position[0];
-    const minZ = footprint.min[1] + other.position[1];
-    const maxZ = footprint.max[1] + other.position[1];
-    switch (placed.turns) {
-      case 0:
-        return Math.abs(maxZ - z0) < eps && Math.min(x1, maxX) - Math.max(x0, minX) > eps;
-      case 1:
-        return Math.abs(minX - x0) < eps && Math.min(z1, maxZ) - Math.max(z0, minZ) > eps;
-      case 2:
-        return Math.abs(minZ - z0) < eps && Math.min(x1, maxX) - Math.max(x0, minX) > eps;
-      case 3:
-        return Math.abs(maxX - x0) < eps && Math.min(z1, maxZ) - Math.max(z0, minZ) > eps;
-    }
-    return false;
-  });
+  return wallSpanIsExposed(plan, placed, 'N', bay.x, bay.halfWidth);
 }
 
 export function exposedWindowBays(plan: FloorPlan, floorNumber: 1 | 2 | 3): WindowBay[] {
+  const stoneRooms = stoneRoomsFor(plan, floorNumber);
   return plan.rooms.flatMap((room) =>
-    roomStyleFor(plan, room.index, floorNumber)
+    stoneRooms.has(room.index) || roomStyleFor(plan, room.index, floorNumber)
       ? []
       : bays(room)
           .filter((bay) => isExposed(plan, room, bay))
@@ -77,11 +55,12 @@ export function exposedWindowBays(plan: FloorPlan, floorNumber: 1 | 2 | 3): Wind
   );
 }
 
-/** Suppress the direct colored footprint in legacy lightmaps where a former lancet is opaque. */
-function shadeClosedWindowFloor(
+/** Edit the existing irradiance where a lancet is closed or its glass projects the key. */
+function shadeWindowFloor(
   source: THREE.MeshStandardMaterial,
   local: THREE.Matrix4,
   bays: readonly Bay[],
+  key: WindowKeySite | undefined,
 ): THREE.MeshStandardMaterial {
   const material = source.clone();
   const number = (value: number): string => value.toFixed(4);
@@ -92,8 +71,11 @@ function shadeClosedWindowFloor(
     (body, aperture) => `${body}\n  closedCast = max(closedCast, formerLancet(${aperture}));`,
     'float closedCast = 0.0;',
   );
+  const keyMask = key
+    ? `lightMapIrradiance *= 1.0 + 0.61 * lancetKey(${number(key.x)}, ${number(key.z)});`
+    : '';
   material.customProgramCacheKey = () =>
-    `${source.customProgramCacheKey()}:opaque-window:${apertures}`;
+    `${source.customProgramCacheKey()}:lancet:${apertures}:${keyMask}`;
   material.onBeforeCompile = (shader, renderer) => {
     source.onBeforeCompile(shader, renderer);
     shader.uniforms.roomWindowToLocal = { value: local };
@@ -121,6 +103,23 @@ float formerLancet(float x, float z, float halfWidth, float sill, float spring, 
   return (1.0 - smoothstep(halfArch - 0.05, halfArch + 0.18, offset))
     * smoothstep(sill - 0.20, sill - 0.01, height)
     * (1.0 - smoothstep(apex, apex + 0.18, height));
+}
+${
+  key
+    ? `
+float lancetKey(float x, float z) {
+  float travel = vRoomWindowPoint.z - z;
+  float across = vRoomWindowPoint.x - x - travel * (0.12 / 0.75);
+  float bow = length(vec2(across, (travel - 2.28) * 0.8));
+  float loop = (1.0 - smoothstep(0.275, 0.303, bow)) * smoothstep(0.15, 0.175, bow);
+  float shaft = (1.0 - smoothstep(0.065, 0.088, abs(across)))
+    * smoothstep(2.58, 2.62, travel) * (1.0 - smoothstep(3.37, 3.42, travel));
+  float toothEdge = (1.0 - smoothstep(0.16, 0.19, across)) * smoothstep(0.02, 0.05, across);
+  float teeth = toothEdge * (1.0 - smoothstep(0.055, 0.082,
+    min(abs(travel - 2.90), abs(travel - 3.33))));
+  return max(loop, max(shaft, teeth));
+}`
+    : ''
 }`,
       )
       .replace(
@@ -132,6 +131,7 @@ float formerLancet(float x, float z, float halfWidth, float sill, float spring, 
         vec3 neutral = lightMapIrradiance / candleTint;
         float fill = min(neutral.r, min(neutral.g, neutral.b));
         lightMapIrradiance = mix(lightMapIrradiance, candleTint * fill, closedCast);
+        ${keyMask}
         irradiance += lightMapIrradiance;`,
         ),
       );
@@ -145,6 +145,7 @@ export function dressWindowBays(
   plan: FloorPlan,
   room: number,
   floorNumber: 1 | 2 | 3,
+  cache: WindowKeySite | undefined = undefined,
 ): () => void {
   const placed = plan.rooms[room];
   if (!placed || roomStyleFor(plan, room, floorNumber)) return () => {};
@@ -152,6 +153,7 @@ export function dressWindowBays(
   if (!allBays.length) return () => {};
   const blocked = allBays.map((bay) => !isExposed(plan, placed, bay));
   const closedBays = allBays.filter((_, i) => blocked[i]);
+  const key = cache?.room === room ? cache : undefined;
   const modules = allBays.map((bay, i) => {
     const group = new THREE.Group();
     group.name = `window-bay-${i}`;
@@ -181,14 +183,14 @@ export function dressWindowBays(
     )
       wallpaper = node.material;
     if (
-      closedBays.length &&
+      (closedBays.length || key) &&
       node.material instanceof THREE.MeshStandardMaterial &&
       node.material.lightMap &&
       node.material.name.endsWith('_stone-floor')
     ) {
       const original = node.material;
       const local = new THREE.Matrix4().multiplyMatrices(inverse, node.matrixWorld);
-      const replacement = shadeClosedWindowFloor(original, local, closedBays);
+      const replacement = shadeWindowFloor(original, local, closedBays, key);
       node.material = replacement;
       maskedFloors.push({ mesh: node, original, replacement });
     }

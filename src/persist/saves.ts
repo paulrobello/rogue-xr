@@ -5,6 +5,7 @@ import {
   alchemyRecipe,
   conservatoryFormula,
   type Ingredient,
+  ingredientsFor,
   type StoredAlchemyState,
   type StoredConservatoryFormula,
 } from '../rules/alchemy.ts';
@@ -14,6 +15,7 @@ import {
   bellMelody,
   type StoredBellChimesState,
 } from '../rules/bell-chimes.ts';
+import type { BorrowedLightState } from '../rules/borrowed-light.ts';
 import {
   calibrated,
   calibrationPlan,
@@ -26,8 +28,27 @@ import {
   type StoredCommissionState,
 } from '../rules/commissions.ts';
 import { counterweightTarget, type StoredCounterweightState } from '../rules/counterweight.ts';
+import {
+  CIRCUIT_BRIDGES,
+  CIRCUIT_SOCKET_MASKS,
+  type CircuitSocket,
+  circuitLampMask,
+  type DarkCircuitState,
+  darkCircuitTarget,
+} from '../rules/dark-circuit.ts';
 import { isDifficulty } from '../rules/difficulty.ts';
 import { type DispatchRoute, dispatchDestination } from '../rules/dispatch.ts';
+import {
+  type DrumGalleryState,
+  type DrumPin,
+  drumPattern,
+  EMPTY_DRUM_GALLERY,
+  setDrumPin,
+  windDrum,
+} from '../rules/drum-gallery.ts';
+import type { FloatElevatorState } from '../rules/float-elevator.ts';
+import { isLogbookClueId, type LogbookEntry } from '../rules/logbook.ts';
+import type { PendulumGalleryState } from '../rules/pendulum-gallery.ts';
 import {
   isPressureNoteId,
   type PressureDials,
@@ -37,7 +58,16 @@ import {
 import type { StoredPrismState } from '../rules/prism-signal.ts';
 import type { PendingLoot, RewardOffer, RewardTier, RunState } from '../rules/run.ts';
 import { floorSeedFor } from '../rules/run.ts';
-import type { BrassKeyState, StoredDispatchState, StoredHiddenPanelState } from '../rules/types.ts';
+import type { ShadowStencilState } from '../rules/shadow-stencil.ts';
+import { MAX_SPRING_TENSION } from '../rules/spring-tension.ts';
+import type {
+  BrassKeyState,
+  SpringTensionState,
+  StoredDispatchState,
+  StoredHiddenPanelState,
+  StoredSpeakingPipesState,
+} from '../rules/types.ts';
+import type { ValvehouseState } from '../rules/valvehouse.ts';
 import {
   createWorkshop,
   maxTier,
@@ -102,10 +132,17 @@ export interface FloorSnapshot {
   readonly usedHearths?: readonly string[];
   readonly pressure?: StoredPressureState;
   readonly dispatch?: StoredDispatchState;
+  readonly speakingPipes?: StoredSpeakingPipesState;
   readonly bookSecretOpenedRooms?: readonly number[];
   readonly bookSecretKeyRooms?: readonly number[];
   readonly bookSecretCabinetRooms?: readonly number[];
   readonly prismSignal?: StoredPrismState;
+  readonly pendulumGallery?: PendulumGalleryState;
+  readonly floatElevator?: FloatElevatorState;
+  readonly shadowStencil?: ShadowStencilState;
+  readonly springTension?: SpringTensionState;
+  readonly darkCircuit?: DarkCircuitState;
+  readonly drumGallery?: DrumGalleryState;
 }
 
 export interface RunSnapshot extends SnapshotWorld {
@@ -144,6 +181,71 @@ function int(v: unknown, path: string, min: number, max = Number.MAX_SAFE_INTEGE
 function rec(v: unknown, path: string): Rec {
   if (!isRecord(v)) fail(path, 'expected an object');
   return v;
+}
+
+function floatElevator(value: unknown, path: string): FloatElevatorState {
+  const f = rec(value, path);
+  const level = int(f.level, `${path}.level`, 0, 4) as FloatElevatorState['level'];
+  if (typeof f.collected !== 'boolean') fail(`${path}.collected`, 'expected a boolean');
+  return { level, collected: f.collected };
+}
+
+function shadowStencil(value: unknown, path: string): ShadowStencilState {
+  const r = rec(value, path);
+  const detent = int(r.detent, `${path}.detent`, 0, 4) as ShadowStencilState['detent'];
+  if (typeof r.opened !== 'boolean') fail(`${path}.opened`, 'expected a boolean');
+  return { detent, opened: r.opened };
+}
+
+function springTension(value: unknown, path: string): SpringTensionState {
+  const state = rec(value, path);
+  const tension = int(state.tension, `${path}.tension`, 0, MAX_SPRING_TENSION);
+  if (typeof state.open !== 'boolean') fail(`${path}.open`, 'expected a boolean');
+  return { tension, open: state.open };
+}
+
+function darkCircuit(value: unknown, path: string, seed: string): DarkCircuitState {
+  const state = rec(value, path);
+  if (!Array.isArray(state.sockets) || state.sockets.length > CIRCUIT_BRIDGES)
+    fail(`${path}.sockets`, 'expected up to two bridge sockets');
+  const sockets = state.sockets.map(
+    (socket, i) =>
+      int(socket, `${path}.sockets[${i}]`, 0, CIRCUIT_SOCKET_MASKS.length - 1) as CircuitSocket,
+  );
+  if (new Set(sockets).size !== sockets.length)
+    fail(`${path}.sockets`, 'expected distinct bridge sockets');
+  const open =
+    sockets.length === CIRCUIT_BRIDGES && circuitLampMask(sockets) === darkCircuitTarget(seed);
+  if (state.open !== open) fail(`${path}.open`, 'does not match the seated bridges');
+  return { sockets, open };
+}
+
+function drumGallery(value: unknown, path: string, seed: string): DrumGalleryState {
+  const state = rec(value, path);
+  const stored = state.pin === null ? null : rec(state.pin, `${path}.pin`);
+  const pin: DrumPin | null = stored && {
+    beat: int(stored.beat, `${path}.pin.beat`, 0, 3) as DrumPin['beat'],
+    note: int(stored.note, `${path}.pin.note`, 0, 2) as DrumPin['note'],
+  };
+  const pattern = drumPattern(seed);
+  if (pin && setDrumPin(pattern, EMPTY_DRUM_GALLERY, pin) === EMPTY_DRUM_GALLERY)
+    fail(`${path}.pin`, 'the socket already has a fixed pin');
+  if (typeof state.open !== 'boolean') fail(`${path}.open`, 'expected a boolean');
+  if (state.open && !windDrum(pattern, { pin, open: false }).open)
+    fail(`${path}.open`, 'the fitted pin does not complete the phrase');
+  return { pin, open: state.open };
+}
+
+function borrowedLight(v: unknown, path: string): BorrowedLightState {
+  const r = rec(v, path);
+  if (
+    !Array.isArray(r.detents) ||
+    r.detents.length !== 2 ||
+    r.detents.some((n) => ![0, 1, 2, 3].includes(n as number))
+  )
+    fail(`${path}.detents`, 'expected two detents in [0, 3]');
+  if (typeof r.open !== 'boolean') fail(`${path}.open`, 'expected a boolean');
+  return { detents: [r.detents[0], r.detents[1]] as [0 | 1 | 2 | 3, 0 | 1 | 2 | 3], open: r.open };
 }
 
 function strings(v: unknown, path: string): string[] {
@@ -230,6 +332,18 @@ function dispatch(v: unknown, path: string, seed: string): StoredDispatchState {
   return { route, sent: value.sent, opened: value.opened };
 }
 
+function speakingPipes(v: unknown, path: string): StoredSpeakingPipesState {
+  if (v !== 'idle' && v !== 'primed' && v !== 'open') fail(path, 'unknown speaking-pipes state');
+  return v;
+}
+
+function pendulumGallery(v: unknown, path: string): PendulumGalleryState {
+  const r = rec(v, path);
+  const detent = int(r.detent, `${path}.detent`, 0, 2) as 0 | 1 | 2;
+  if (typeof r.open !== 'boolean') fail(`${path}.open`, 'expected a boolean');
+  return { detent, open: r.open };
+}
+
 function counterweight(v: unknown, path: string, seed: string): StoredCounterweightState {
   const r = rec(v, path);
   if (r.selected !== undefined && r.selected !== 0 && r.selected !== 1)
@@ -243,12 +357,18 @@ function counterweight(v: unknown, path: string, seed: string): StoredCounterwei
   };
 }
 
-function alchemy(v: unknown, path: string, seed: string): StoredAlchemyState {
+function potionCarried(value: unknown, path: string, ready: boolean): boolean {
+  if (value === undefined) return false;
+  if (value !== true || !ready) fail(path, 'a carried potion must be brewed and unused');
+  return true;
+}
+
+function alchemy(v: unknown, path: string, seed: string, version: number): StoredAlchemyState {
   const r = rec(v, path);
   const list = (value: unknown, name: string): Ingredient[] => {
     if (
       !Array.isArray(value) ||
-      value.some((n) => ![0, 1, 2].includes(n as number)) ||
+      value.some((n) => !ingredientsFor(version).includes(n as Ingredient)) ||
       new Set(value).size !== value.length
     )
       fail(`${path}.${name}`, 'expected unique ingredient ids');
@@ -263,18 +383,24 @@ function alchemy(v: unknown, path: string, seed: string): StoredAlchemyState {
     fail(path, 'invalid brew state');
   if (r.brewed !== (added.length === 2)) fail(`${path}.brewed`, 'must match two added ingredients');
   if (r.opened && !r.brewed) fail(`${path}.opened`, 'cannot open before brewing');
-  return { found, added, brewed: r.brewed, opened: r.opened };
+  const carried = potionCarried(r.carried, `${path}.carried`, r.brewed && !r.opened);
+  return { found, added, brewed: r.brewed, opened: r.opened, ...(carried && { carried: true }) };
 }
 
-function formula(v: unknown, path: string, seed: string): StoredConservatoryFormula {
+function formula(
+  v: unknown,
+  path: string,
+  seed: string,
+  version: number,
+): StoredConservatoryFormula {
   const r = rec(v, path);
-  const plan = conservatoryFormula(seed);
+  const plan = conservatoryFormula(seed, version);
   if (r.recipe !== plan.recipe) fail(`${path}.recipe`, 'does not match seeded recipe');
   if (!Array.isArray(r.clues) || r.clues.some((c) => c !== 'portrait' && c !== 'record'))
     fail(`${path}.clues`, 'invalid clues');
   if (
     !Array.isArray(r.added) ||
-    r.added.some((n) => ![0, 1, 2].includes(n as number)) ||
+    r.added.length > plan.ingredients.length ||
     r.added.some((n, i) => n !== plan.ingredients[i])
   )
     fail(`${path}.added`, 'invalid seeded order');
@@ -293,6 +419,7 @@ function formula(v: unknown, path: string, seed: string): StoredConservatoryForm
   )
     fail(path, 'inconsistent archive progression');
   if (r.opened && !r.revealed) fail(`${path}.opened`, 'cannot open before reveal');
+  const carried = potionCarried(r.carried, `${path}.carried`, r.brewed && !r.revealed);
   return {
     recipe: plan.recipe,
     clues: [...r.clues],
@@ -300,6 +427,7 @@ function formula(v: unknown, path: string, seed: string): StoredConservatoryForm
     brewed: r.brewed,
     revealed: r.revealed,
     opened: r.opened,
+    ...(carried && { carried: true }),
   };
 }
 
@@ -487,16 +615,35 @@ function validateRunState(
       : pressure(r.pressure, `${path}.pressure`, activeFloorSeed, version);
   const dispatchState =
     r.dispatch === undefined ? undefined : dispatch(r.dispatch, `${path}.dispatch`, seed);
+  const speakingPipesState =
+    r.speakingPipes === undefined
+      ? undefined
+      : speakingPipes(r.speakingPipes, `${path}.speakingPipes`);
+  const reliquarySeal =
+    r.reliquarySeal === undefined
+      ? undefined
+      : r.reliquarySeal === 'hidden' || r.reliquarySeal === 'known' || r.reliquarySeal === 'open'
+        ? r.reliquarySeal
+        : fail(`${path}.reliquarySeal`, 'unknown reliquary seal state');
+  const valvehouse =
+    r.valvehouse === undefined
+      ? undefined
+      : r.valvehouse === 'missing' ||
+          r.valvehouse === 'held' ||
+          r.valvehouse === 'seated' ||
+          r.valvehouse === 'open'
+        ? (r.valvehouse as ValvehouseState)
+        : fail(`${path}.valvehouse`, 'unknown valvehouse state');
   const counterweightState =
     r.counterweight === undefined
       ? undefined
       : counterweight(r.counterweight, `${path}.counterweight`, seed);
   const alchemyState =
-    r.alchemy === undefined ? undefined : alchemy(r.alchemy, `${path}.alchemy`, seed);
+    r.alchemy === undefined ? undefined : alchemy(r.alchemy, `${path}.alchemy`, seed, version);
   const formulaState =
     r.conservatoryFormula === undefined
       ? undefined
-      : formula(r.conservatoryFormula, `${path}.conservatoryFormula`, seed);
+      : formula(r.conservatoryFormula, `${path}.conservatoryFormula`, seed, version);
   const commissionState =
     r.commission === undefined ? undefined : commission(r.commission, `${path}.commission`, seed);
   const hiddenPanelState =
@@ -521,7 +668,7 @@ function validateRunState(
   const calibrationState =
     r.calibration === undefined
       ? undefined
-      : validateCalibration(r.calibration, path + '.calibration', seed);
+      : validateCalibration(r.calibration, `${path}.calibration`, seed);
   const bellChimesState =
     r.bellChimes === undefined ? undefined : bellChimes(r.bellChimes, `${path}.bellChimes`, seed);
   const bookSecretOpenedRooms = roomIds(r.bookSecretOpenedRooms, `${path}.bookSecretOpenedRooms`);
@@ -530,6 +677,8 @@ function validateRunState(
     r.bookSecretCabinetRooms,
     `${path}.bookSecretCabinetRooms`,
   );
+  if (r.armoryAwakened !== undefined && r.armoryAwakened !== true)
+    fail(`${path}.armoryAwakened`, 'expected true or absent');
   if (r.patrolDefeated !== undefined && r.patrolDefeated !== true)
     fail(`${path}.patrolDefeated`, 'expected true or absent');
   if (r.brassCacheSeen !== undefined && typeof r.brassCacheSeen !== 'boolean')
@@ -551,6 +700,46 @@ function validateRunState(
           const progress = int(p.progress, `${path}.prismSignal.progress`, 0, 3);
           return { orientation: orientation as 0 | 1 | 2, progress: progress as 0 | 1 | 2 | 3 };
         })();
+  const pendulumGalleryState =
+    r.pendulumGallery === undefined
+      ? undefined
+      : pendulumGallery(r.pendulumGallery, `${path}.pendulumGallery`);
+  const borrowedLightState =
+    r.borrowedLight === undefined
+      ? undefined
+      : borrowedLight(r.borrowedLight, `${path}.borrowedLight`);
+  const floatElevatorState =
+    r.floatElevator === undefined
+      ? undefined
+      : floatElevator(r.floatElevator, `${path}.floatElevator`);
+  const shadowStencilState =
+    r.shadowStencil === undefined
+      ? undefined
+      : shadowStencil(r.shadowStencil, `${path}.shadowStencil`);
+  const springTensionState =
+    r.springTension === undefined
+      ? undefined
+      : springTension(r.springTension, `${path}.springTension`);
+  const darkCircuitState =
+    r.darkCircuit === undefined
+      ? undefined
+      : darkCircuit(r.darkCircuit, `${path}.darkCircuit`, seed);
+  const drumGalleryState =
+    r.drumGallery === undefined
+      ? undefined
+      : drumGallery(r.drumGallery, `${path}.drumGallery`, seed);
+  const logbook = r.logbook === undefined ? [] : r.logbook;
+  if (!Array.isArray(logbook)) fail(`${path}.logbook`, 'expected an array');
+  const ids = logbook.map((entry, i) => {
+    const value = rec(entry, `${path}.logbook[${i}]`);
+    if (!isLogbookClueId(value.id)) fail(`${path}.logbook[${i}].id`, 'unsupported clue id');
+    for (const key of ['title', 'body', 'origin']) {
+      if (typeof value[key] !== 'string' || value[key].length === 0 || value[key].length > 2000)
+        fail(`${path}.logbook[${i}].${key}`, 'expected non-empty text up to 2000 characters');
+    }
+    return value.id;
+  });
+  if (new Set(ids).size !== ids.length) fail(`${path}.logbook`, 'duplicate clue id');
   // Also added after version 1: an older save names no level and resumes as `DEFAULT_DIFFICULTY`.
   if (r.difficulty !== undefined && !isDifficulty(r.difficulty)) {
     fail(`${path}.difficulty`, 'unknown difficulty');
@@ -572,6 +761,8 @@ function validateRunState(
     ...(difficulty === undefined ? {} : { difficulty }),
     ...(pressureState === undefined ? {} : { pressure: pressureState }),
     ...(dispatchState === undefined ? {} : { dispatch: dispatchState }),
+    ...(speakingPipesState === undefined ? {} : { speakingPipes: speakingPipesState }),
+    ...(reliquarySeal === undefined ? {} : { reliquarySeal }),
     ...(counterweightState === undefined ? {} : { counterweight: counterweightState }),
     ...(alchemyState === undefined ? {} : { alchemy: alchemyState }),
     ...(formulaState === undefined ? {} : { conservatoryFormula: formulaState }),
@@ -584,9 +775,19 @@ function validateRunState(
     ...(bookSecretCabinetRooms === undefined ? {} : { bookSecretCabinetRooms }),
     ...(brassKey === undefined ? {} : { brassKey }),
     ...(r.patrolDefeated === true && { patrolDefeated: true }),
+    ...(r.armoryAwakened === true && { armoryAwakened: true }),
     ...(r.brassCacheSeen === true && { brassCacheSeen: true }),
     ...(r.windowCacheOpened === true && { windowCacheOpened: true }),
     ...(prismSignal === undefined ? {} : { prismSignal }),
+    ...(pendulumGalleryState === undefined ? {} : { pendulumGallery: pendulumGalleryState }),
+    ...(valvehouse === undefined ? {} : { valvehouse }),
+    ...(borrowedLightState === undefined ? {} : { borrowedLight: borrowedLightState }),
+    ...(floatElevatorState === undefined ? {} : { floatElevator: floatElevatorState }),
+    ...(shadowStencilState === undefined ? {} : { shadowStencil: shadowStencilState }),
+    ...(springTensionState === undefined ? {} : { springTension: springTensionState }),
+    ...(darkCircuitState === undefined ? {} : { darkCircuit: darkCircuitState }),
+    ...(drumGalleryState === undefined ? {} : { drumGallery: drumGalleryState }),
+    ...(logbook.length === 0 ? {} : { logbook: [...logbook] as LogbookEntry[] }),
   };
 }
 
@@ -648,6 +849,17 @@ export function validateSnapshot(raw: unknown): RunSnapshot {
     r.floors === undefined
       ? undefined
       : validateFloors(r.floors, activeRun.seed, floorNumber, version);
+  const pressureNotes = new Set([
+    ...(activeRun.pressure?.notes ?? []),
+    ...(floors?.flatMap((floor) => floor.pressure?.notes ?? []) ?? []),
+  ]);
+  for (const entry of activeRun.logbook ?? []) {
+    const acquired =
+      entry.id === 'reliquary-rubbing'
+        ? activeRun.reliquarySeal !== undefined && activeRun.reliquarySeal !== 'hidden'
+        : pressureNotes.has(entry.id);
+    if (!acquired) fail('snapshot.run.logbook', `clue ${entry.id} was not discovered`);
+  }
   const payment = activeRun.commission;
   if (payment?.claimed) {
     const powered =
@@ -734,6 +946,9 @@ function validateFloors(
       ...(r.dispatch === undefined
         ? {}
         : { dispatch: dispatch(r.dispatch, `${path}.dispatch`, runSeed) }),
+      ...(r.speakingPipes === undefined
+        ? {}
+        : { speakingPipes: speakingPipes(r.speakingPipes, `${path}.speakingPipes`) }),
       ...(r.bookSecretOpenedRooms === undefined
         ? {}
         : {
@@ -767,6 +982,24 @@ function validateFloors(
               };
             })(),
           }),
+      ...(r.pendulumGallery === undefined
+        ? {}
+        : { pendulumGallery: pendulumGallery(r.pendulumGallery, `${path}.pendulumGallery`) }),
+      ...(r.floatElevator === undefined
+        ? {}
+        : { floatElevator: floatElevator(r.floatElevator, `${path}.floatElevator`) }),
+      ...(r.shadowStencil === undefined
+        ? {}
+        : { shadowStencil: shadowStencil(r.shadowStencil, `${path}.shadowStencil`) }),
+      ...(r.springTension === undefined
+        ? {}
+        : { springTension: springTension(r.springTension, `${path}.springTension`) }),
+      ...(r.darkCircuit === undefined
+        ? {}
+        : { darkCircuit: darkCircuit(r.darkCircuit, `${path}.darkCircuit`, runSeed) }),
+      ...(r.drumGallery === undefined
+        ? {}
+        : { drumGallery: drumGallery(r.drumGallery, `${path}.drumGallery`, runSeed) }),
     };
     return result;
   });

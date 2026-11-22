@@ -77,7 +77,7 @@ describe('card face portal depth (H8)', () => {
 
   it('declares the uniforms and varyings the shaders read', () => {
     const material = createCardFaceMaterial();
-    for (const name of ['uDepths', 'uFog', 'uEmber', 'uHot']) {
+    for (const name of ['uDepths', 'uFog', 'uEmber', 'uHot', 'uArtOnlyTexels']) {
       expect(material.uniforms[name]).toBeDefined();
       expect(material.fragmentShader).toContain(`uniform`);
       expect(material.fragmentShader).toContain(name);
@@ -88,9 +88,9 @@ describe('card face portal depth (H8)', () => {
       expect(material.fragmentShader).toContain(varying);
     }
     expect(material.vertexShader).toContain('attribute vec4 aBurn;');
-    // The frame plus the three layer samples, as before the portal, and one brass tap that only
-    // runs on the window's edge band (card-frame-edge.test.ts).
-    expect(material.fragmentShader.match(/textureGrad\(/g)).toHaveLength(5);
+    // Each art layer chooses one of the six art/frame samplers. The extra brass tap is edge-only.
+    expect(material.fragmentShader.match(/uniform sampler2D/g)).toHaveLength(6);
+    expect(material.fragmentShader.match(/textureGrad\(/g)).toHaveLength(7);
     expect(material.fragmentShader).toContain('if (frame.a > EDGE_MIN_ALPHA) {');
     expect(material.fragmentShader.match(/texture2D\(/g)).toHaveLength(1);
     material.dispose();
