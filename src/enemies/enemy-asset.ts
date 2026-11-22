@@ -14,6 +14,18 @@ import type { PatrolClipName } from './patrol-visual.ts';
  * toward the heading. Root motion is code-owned: every clip plays in place.
  */
 export const ENEMY_ASSET_ROOT = '/assets/enemies';
+
+/** Dedicated models packaged with the game. Shared-kit actors load through their owning kit. */
+export const SHIPPED_ENEMY_MODELS = [
+  'cog-sentry',
+  'spring-hound',
+  'bellows-golem',
+  'orrery-warden',
+  'grand-escapement',
+  'glasswing-scrivener',
+  'furnace-mite',
+  'null-crown-auditor',
+] as const satisfies readonly EnemyKind[];
 export const ENEMY_CLIPS = ['idle', 'attack', 'hit', 'death', 'frozen'] as const;
 export type EnemyClip = (typeof ENEMY_CLIPS)[number];
 /**

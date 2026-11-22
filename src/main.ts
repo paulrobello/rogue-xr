@@ -42,7 +42,6 @@ import {
 } from './combat-view/hit-feedback.ts';
 import { mountCombatDebugView } from './combat-view/index.ts';
 import { CARDS, STARTER_DECK } from './content/cards.ts';
-import { ENEMIES } from './content/enemies.ts';
 import { REWARD_POOL } from './content/rewards.ts';
 import { ActionBus } from './core/actions.ts';
 import { isValidSeed, normalizeSeed, randomSeed } from './core/rng.ts';
@@ -51,7 +50,12 @@ import { combatPitch, createDesktopControls } from './desktop/controls.ts';
 import { Walker } from './desktop/walker.ts';
 import { DiceWorld } from './dice/world.ts';
 import { makeClockworkOwlAsset } from './enemies/conservatory-actors.ts';
-import { type EnemyActor, type EnemyAsset, tryLoadEnemyAsset } from './enemies/enemy-asset.ts';
+import {
+  type EnemyActor,
+  type EnemyAsset,
+  SHIPPED_ENEMY_MODELS,
+  tryLoadEnemyAsset,
+} from './enemies/enemy-asset.ts';
 import { loadPatrolClips } from './enemies/patrol-visual.ts';
 import { isShowcaseFloor, SHOWCASE_SEED, worldRooms } from './floor/generate.ts';
 import { placeStairEntry, type StairEntry } from './floor/stairs.ts';
@@ -623,17 +627,14 @@ const tableDecor: Promise<TableDecor | null> = heroSet
         return null;
       })
   : Promise.resolve(null);
-// One fetch per enemy kind for the session, whatever the floor count. A kind whose model is not
-// shipped yet resolves null at once (one console.info) and keeps its capsules.
+// Load each packaged model once per session. Encounters with draft-only models use their capsules.
 const enemyMaterials = heroSet?.then(({ set }) => set).catch(() => null) ?? null;
 const enemyAssets = new Map<string, Promise<EnemyAsset | null>>(
   enemyMaterials
-    ? Object.keys(ENEMIES)
-        .filter((kind) => kind !== 'clockwork-owl' && kind !== 'waking-armor')
-        .map((kind) => [
-          kind,
-          enemyMaterials.then((set) => (set ? tryLoadEnemyAsset(kind, { materials: set }) : null)),
-        ])
+    ? SHIPPED_ENEMY_MODELS.map((kind) => [
+        kind,
+        enemyMaterials.then((set) => (set ? tryLoadEnemyAsset(kind, { materials: set }) : null)),
+      ])
     : [],
 );
 const loadedEnemies = async (): Promise<EnemyAsset[]> =>

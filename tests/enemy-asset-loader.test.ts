@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -10,6 +10,7 @@ import {
   parseEnemyAsset,
   parseEnemyManifest,
   rimeColor,
+  SHIPPED_ENEMY_MODELS,
 } from '../src/enemies/enemy-asset.ts';
 import type { PbrSet } from '../src/world/materials.ts';
 
@@ -66,6 +67,13 @@ afterEach(() => {
 const opts = { materials: null };
 
 describe('per-enemy model loader', () => {
+  it('only preloads enemy kinds with a packaged runtime manifest', () => {
+    const root = new URL('../public/assets/enemies/', import.meta.url);
+    const packaged = readdirSync(root).filter((id) =>
+      existsSync(new URL(`${id}/${id}.manifest.json`, root)),
+    );
+    expect([...SHIPPED_ENEMY_MODELS].sort()).toEqual(packaged.sort());
+  });
   it('loads cog-sentry from its own manifest and GLB, unchanged', async () => {
     routes = shipped('cog-sentry');
     const asset = await loadEnemyAsset('cog-sentry', opts);
