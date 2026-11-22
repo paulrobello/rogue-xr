@@ -89,13 +89,20 @@ describe('Pendulum Gallery', () => {
     expect(same.continueRun(snapshot)).toBe(true);
     expect(same.pendulumGallery).toEqual(run.pendulumGallery);
     expect(same.advancePendulumDetent()).toBe(true);
+    expect(same.completePendulumTrial()).toBe('matched');
+    expect(same.advancePendulumDetent()).toBe(true);
     expect(same.completePendulumTrial()).toBe('opened');
     expect(same.completePendulumTrial()).toBe('ignored');
     expect(same.travelToFloor(2, 0)).toBe(true);
     const restored = running();
     expect(restored.continueRun(validateSnapshot(same.snapshot(300, 0)))).toBe(true);
     expect(restored.travelToFloor(3, 0)).toBe(true);
-    expect(restored.pendulumGallery).toEqual({ detent: target, open: true });
+    expect(restored.pendulumGallery).toMatchObject({
+      detent: target,
+      open: true,
+      phaseReady: true,
+      phaseSet: true,
+    });
     expect(restored.advancePendulumDetent()).toBe(false);
     expect(restored.completePendulumTrial()).toBe('ignored');
     expect(() =>

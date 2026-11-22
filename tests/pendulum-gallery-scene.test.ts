@@ -139,7 +139,13 @@ it.each([false, true])(
     gallery.update(finish - 0.01, false);
     expect(results).toEqual(['wrong']);
     gallery.update(0.02, false);
-    expect(results).toEqual(['wrong', 'opened']);
+    expect(results).toEqual(['wrong', 'matched']);
+    expect(game.advancePendulumDetent()).toBe(true);
+    gallery.sync(game.pendulumGallery);
+    expect(gallery.start()).toBe(true);
+    gallery.update(finish - 0.01, false);
+    gallery.update(0.02, false);
+    expect(results).toEqual(['wrong', 'matched', 'opened']);
     expect(gallery.reference.rotation.z).toBeCloseTo(0);
     expect(gallery.adjustable.rotation.z).toBeCloseTo(0);
     const left = gallery.gate.getObjectByName('pendulum-leaf-left');

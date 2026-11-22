@@ -68,6 +68,43 @@ interface PickupFlight {
   time: number;
 }
 
+/** Refinish the cauldron's UV-island seams with continuous color in the vessel's own space. */
+export function finishCauldron(kit: THREE.Object3D): void {
+  const visual = kit.getObjectByName('AlchemyCauldron_Visual');
+  visual?.traverse((node) => {
+    if (!(node instanceof THREE.Mesh) || !(node.material instanceof THREE.MeshStandardMaterial))
+      return;
+    const source = node.material;
+    const finish = {
+      'Aged copper': [0x976445, 0.74, 0.49],
+      'Soot black iron': [0x32383a, 0.62, 0.72],
+    }[source.name];
+    if (!finish) return;
+    const [color, metalness, roughness] = finish;
+    const geometry = node.geometry;
+    const positions = geometry.getAttribute('position');
+    const colors = new Float32Array(positions.count * 3);
+    for (let i = 0; i < positions.count; i++) {
+      const x = positions.getX(i),
+        y = positions.getY(i),
+        z = positions.getZ(i);
+      const variation =
+        0.91 +
+        0.05 * Math.sin(17 * x + 11 * y) * Math.cos(19 * z - 7 * y) +
+        0.04 * Math.sin(29 * z + 17 * y + 11 * x);
+      colors.fill(variation, i * 3, i * 3 + 3);
+    }
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    node.material = new THREE.MeshStandardMaterial({
+      name: source.name,
+      color,
+      roughness,
+      metalness,
+      vertexColors: true,
+    });
+  });
+}
+
 export class AlchemyConservatory {
   readonly cauldron: THREE.Object3D;
   readonly tablet: THREE.Group;

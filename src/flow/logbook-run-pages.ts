@@ -31,6 +31,7 @@ function heading(context: CanvasRenderingContext2D, title: string, subtitle?: st
 }
 
 interface CardLine {
+  readonly id: string;
   readonly name: string;
   readonly count: number;
   readonly type: string;
@@ -69,6 +70,7 @@ function cardLines(ids: readonly string[], section?: string): CardLine[] {
   return deckStacks(ids, 'order').map((stack, index) => {
     const card = getCard(stack.id);
     return {
+      id: stack.id,
       name: card.name,
       count: stack.count,
       type: CATEGORY[card.type],
@@ -87,16 +89,35 @@ function statsRows(context: CanvasRenderingContext2D, rows: readonly string[], y
   }
 }
 
-export function runCardPages(flow: RunFlow): readonly LogbookPage[] {
+export interface LogbookCardRow {
+  readonly id: string;
+  readonly baseline: number;
+}
+
+type LogbookCardPage = LogbookPage & { readonly cardRows?: readonly LogbookCardRow[] };
+
+function cardPage(title: string, subtitle: string, lines: readonly CardLine[]): LogbookCardPage {
+  let baseline = subtitle ? 211 : 181;
+  const cardRows = lines.map(({ id, section }) => {
+    if (section) baseline += 33;
+    const row = { id, baseline };
+    baseline += 59;
+    return row;
+  });
+  return Object.assign(
+    (context: CanvasRenderingContext2D) => drawCardPage(context, title, subtitle, lines),
+    { cardRows },
+  );
+}
+
+export function runCardPages(flow: RunFlow): readonly LogbookCardPage[] {
   const run = flow.run;
   if (!run) return [(context) => drawCardPage(context, 'Card Collection', '', [])];
-  const pages: LogbookPage[] = [];
+  const pages: LogbookCardPage[] = [];
   const lines = cardLines(run.deck);
   for (let i = 0; i < lines.length; i += CARD_LINES_PER_PAGE) {
     const slice = lines.slice(i, i + CARD_LINES_PER_PAGE);
-    pages.push((context) =>
-      drawCardPage(context, 'Run deck', `${run.deck.length} cards carried this run`, slice),
-    );
+    pages.push(cardPage('Run deck', `${run.deck.length} cards carried this run`, slice));
   }
   const owned = [
     ...cardLines(STARTER_DECK, 'Starter cards'),
@@ -104,9 +125,7 @@ export function runCardPages(flow: RunFlow): readonly LogbookPage[] {
   ];
   for (let i = 0; i < owned.length; i += CARD_LINES_PER_PAGE) {
     const slice = owned.slice(i, i + CARD_LINES_PER_PAGE);
-    pages.push((context) =>
-      drawCardPage(context, 'Permanent Collection', 'Cards owned between runs', slice),
-    );
+    pages.push(cardPage('Permanent Collection', 'Cards owned between runs', slice));
   }
   return pages;
 }

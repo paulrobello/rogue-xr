@@ -4,11 +4,18 @@ import type { LogbookDiscovery } from './logbook-discoveries.ts';
 
 export type MapPoint = readonly [x: number, y: number];
 type MapRoom = { readonly id: number; readonly bounds: Rect };
+export type MapTransport = {
+  readonly kind: 'stairs' | 'lift';
+  readonly room: number;
+  readonly position: MapPoint;
+};
 type MapDoor = { readonly center: MapPoint; readonly alongX: boolean; readonly width: number };
 
 export interface LogbookMap {
   readonly floor: 1 | 2 | 3;
   readonly rooms: readonly MapRoom[];
+  readonly totalRooms: number;
+  readonly transport?: readonly MapTransport[];
   readonly doors: readonly MapDoor[];
   readonly discoveries?: readonly LogbookDiscovery[];
   readonly player?: { readonly room: number; readonly label: string; readonly position: MapPoint };
@@ -94,6 +101,7 @@ export function chartFloor(
   worldRooms: readonly WorldRoom[],
   explored: readonly number[],
   player?: { readonly room: number; readonly position: MapPoint },
+  transport: readonly MapTransport[] = [],
 ): LogbookMap {
   const reached = new Set(explored);
   if (player) reached.add(player.room);
@@ -118,25 +126,65 @@ export function chartFloor(
   return {
     floor,
     rooms,
+    totalRooms: plan.rooms.length,
     doors,
+    transport: transport.filter(({ room }) => reached.has(room)),
     ...(here && {
       player: { ...player, label: here.template.id.replaceAll('-', ' ') },
     }),
   };
 }
 
-function locationDot(
+function locationArrow(
   context: CanvasRenderingContext2D,
   x: number,
   y: number,
-  radius: number,
+  heading: number,
 ): void {
+  context.save();
+  context.translate(x, y);
+  context.rotate(heading);
   context.beginPath();
-  context.arc(x, y, radius, 0, Math.PI * 2);
+  context.moveTo(0, -19);
+  context.lineTo(13, 14);
+  context.lineTo(0, 8);
+  context.lineTo(-13, 14);
+  context.closePath();
   context.fillStyle = PLAYER;
   context.fill();
   context.strokeStyle = '#fff0c9';
-  context.lineWidth = 4;
+  context.lineWidth = 3;
+  context.stroke();
+  context.restore();
+}
+
+function transportIcon(
+  context: CanvasRenderingContext2D,
+  kind: MapTransport['kind'],
+  x: number,
+  y: number,
+): void {
+  context.fillStyle = kind === 'stairs' ? '#634b3b' : '#344f4e';
+  context.strokeStyle = '#fff0c9';
+  context.lineWidth = 3;
+  context.fillRect(x - 14, y - 14, 28, 28);
+  context.strokeRect(x - 14, y - 14, 28, 28);
+  context.beginPath();
+  if (kind === 'stairs') {
+    context.moveTo(x - 8, y + 5);
+    context.lineTo(x - 3, y + 5);
+    context.lineTo(x - 3, y);
+    context.lineTo(x + 2, y);
+    context.lineTo(x + 2, y - 5);
+    context.lineTo(x + 8, y - 5);
+  } else {
+    context.moveTo(x - 6, y - 4);
+    context.lineTo(x, y - 9);
+    context.lineTo(x + 6, y - 4);
+    context.moveTo(x - 6, y + 4);
+    context.lineTo(x, y + 9);
+    context.lineTo(x + 6, y + 4);
+  }
   context.stroke();
 }
 
@@ -164,6 +212,7 @@ export function paintMapPage(
   right: boolean,
   view: MapView = FIT_MAP_VIEW,
   showFinds = false,
+  heading = 0,
 ): void {
   context.fillStyle = INK;
   context.textAlign = 'left';
@@ -184,7 +233,7 @@ export function paintMapPage(
     context.font = '34px Georgia, serif';
     context.fillText('Explored room', 131, 521);
     if (map.player) {
-      locationDot(context, 94, 583, 14);
+      locationArrow(context, 94, 583, 0);
       context.fillStyle = INK;
       context.fillText('You are here', 131, 594);
       context.font = 'italic 30px Georgia, serif';
@@ -196,13 +245,18 @@ export function paintMapPage(
     context.font = '28px Georgia, serif';
     context.fillText('Chest', 117, 693);
     context.fillText('Clue', 277, 693);
-    context.fillText('Desktop · Drag and scroll', 79, 770);
-    context.fillText('VR · Pan with the right stick', 79, 811);
+    transportIcon(context, 'stairs', 94, 733);
+    transportIcon(context, 'lift', 254, 733);
+    context.fillStyle = INK;
+    context.fillText('Stairs', 117, 743);
+    context.fillText('Lift', 277, 743);
+    context.fillText('Desktop · Drag and scroll', 79, 812);
+    context.fillText('VR · Pan with the right stick', 79, 851);
     return;
   }
 
   context.font = '32px Georgia, serif';
-  context.fillText(`${Math.round(view.zoom * 100)}%`, 77, 105);
+  context.fillText(`${map.rooms.length} / ${map.totalRooms} rooms explored`, 77, 105);
   context.font = 'bold 34px Georgia, serif';
   context.textAlign = 'center';
   context.fillText('N', 604, 101);
@@ -250,9 +304,15 @@ export function paintMapPage(
       discoveryIcon(context, kind, projectX(x), projectZ(z));
     }
   }
+  for (const {
+    kind,
+    position: [x, z],
+  } of map.transport ?? []) {
+    transportIcon(context, kind, projectX(x), projectZ(z));
+  }
   if (map.player) {
     const [x, z] = map.player.position;
-    locationDot(context, projectX(x), projectZ(z), 15);
+    locationArrow(context, projectX(x), projectZ(z), heading);
   }
   context.restore();
 }

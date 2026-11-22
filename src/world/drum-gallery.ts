@@ -93,6 +93,11 @@ export class DrumGallery {
       this.boxPart(this.board, brass, [1.64, 0.029, 0.044], [0, y, 0.062]);
     for (const x of [-0.81, 0.81])
       this.boxPart(this.board, brass, [0.027, 1.165, 0.044], [x, 0, 0.062]);
+    for (const x of [-0.72, 0.72]) {
+      this.boxPart(this.board, brass, [0.036, 0.98, 0.032], [x, -0.02, 0.084]);
+      for (const y of [-0.48, 0.46])
+        this.mesh(this.board, new THREE.SphereGeometry(0.022, 8, 5), brass, [x, y, 0.108]);
+    }
     this.boxPart(this.board, walnut, [1.45, 0.042, 0.31], [-0.05, 0.19, 0.19]);
 
     this.label = this.markings();

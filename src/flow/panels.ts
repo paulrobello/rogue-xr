@@ -106,6 +106,7 @@ export interface FlowUiDeps {
   onNoteOpened?: (position: THREE.Vector3) => void;
   reducedMotion?: boolean;
   logbookMaps?: () => readonly LogbookMap[];
+  logbookHeading?: () => number;
   puzzlePressureNotes?: () => ActivePuzzlePageDeps['pressureNotes'];
   locationLabel?: () => string | null;
   noteRecord?: (id: PressureNoteId) => PressureNoteRecord | null;
@@ -401,6 +402,9 @@ export class FlowUi {
   private notePhysical = false;
   private logbook: Logbook | null = null;
   private logbookStart = 0;
+  private logbookCard: string | null = null;
+  private logbookCardPage = 0;
+  private logbookCardFace: RewardCardFaces | null = null;
   private bookSection: 'clues' | 'map' | 'puzzles' | 'cards' | 'stats' = 'clues';
   private readonly logbookMapViews = new Map<number, MapView>();
   private showMapFinds = false;
@@ -569,6 +573,7 @@ export class FlowUi {
         if (cell) ids.push(`${board.name}-${cell}`);
       }
     }
+    if (this.logbook) ids.push(...this.logbook.cardTargets.children.map((row) => row.name));
     if (this.workshopHits) ids.push(...this.workshopHits.children.map((hit) => hit.name));
     return ids;
   }
@@ -579,6 +584,7 @@ export class FlowUi {
     const out = this.boards.map((b) => b.panel.root);
     if (this.radialMenu?.root.visible) out.push(this.radialMenu.root);
     if (this.deckHits) out.push(this.deckHits);
+    if (this.logbook?.cardTargets.children.length) out.push(this.logbook.cardTargets);
     if (this.workshopHits) out.push(this.workshopHits);
     return out;
   }
@@ -590,6 +596,7 @@ export class FlowUi {
       if (action === 'cancel') return 'menu-cancel';
       if (action) return `menu-${action}`;
     }
+    if (object.parent && object.parent === this.logbook?.cardTargets) return object.name;
     const deckIndex: unknown = object.userData.deckCard;
     if (typeof deckIndex === 'number' && object.parent === this.deckHits)
       return `${DECK_CARD}${deckIndex}`;
@@ -608,6 +615,14 @@ export class FlowUi {
     if (controlId.startsWith('workshop-card-')) {
       this.hover(controlId);
       return this.workshopPreviewId !== null;
+    }
+    const book = this.logbook;
+    const card = book?.cardFor(controlId);
+    if (book && card) {
+      this.logbookCardPage = book.page;
+      this.logbookCard = card;
+      this.refresh();
+      return true;
     }
     if (controlId === 'menu-cancel' || controlId === 'menu-resume') return this.closeMenu();
     if (controlId === 'menu-abandon') {
@@ -645,6 +660,7 @@ export class FlowUi {
 
   hover(controlId: string | null): void {
     if (controlId === this.hoveredId) return;
+    if (this.hoveredId) this.logbook?.hoverCard(this.hoveredId, false);
     this.paintHover(this.hoveredId, false);
     this.hoveredId = controlId;
     if (this.radialMenu && this.menu === 'main') {
@@ -660,6 +676,7 @@ export class FlowUi {
       );
     }
     this.paintHover(controlId, true);
+    if (controlId) this.logbook?.hoverCard(controlId, true);
     if (controlId?.startsWith('workshop-card-')) {
       this.showWorkshopPreview(controlId.slice('workshop-card-'.length));
     } else {
@@ -815,6 +832,8 @@ export class FlowUi {
   private clear(): void {
     this.logbook?.dispose();
     this.logbook = null;
+    this.logbookCardFace?.dispose();
+    this.logbookCardFace = null;
     this.stopAbove?.();
     this.stopAbove = null;
     this.releaseDial?.();
@@ -1613,6 +1632,8 @@ export class FlowUi {
   private openLogbook(entry?: LogbookEntry): void {
     if (entry && !this.deps.flow.saveLogbookClue(entry)) return;
     this.bookSection = 'clues';
+    this.logbookCard = null;
+    this.logbookCardPage = 0;
     this.logbookMapViews.clear();
     this.logbookStart = entry
       ? Math.max(
@@ -1680,6 +1701,34 @@ export class FlowUi {
   }
 
   private buildLogbook(): void {
+    if (this.logbookCard) {
+      const board = this.board(
+        'logbook-inspection',
+        [
+          [
+            {
+              id: 'back',
+              label: 'Back to cards',
+              onSelect: () => {
+                this.logbookCard = null;
+                this.refresh();
+              },
+            },
+          ],
+        ],
+        { x: 0, y: -0.36, z: -BOARD_DISTANCE },
+        { width: 0.34 },
+      );
+      const width = 0.41;
+      this.logbookCardFace = new RewardCardFaces(
+        [{ id: this.logbookCard, x: 0, y: 0.37, width, height: width * HOLO_CARD_ASPECT }],
+        rewardCardTexture,
+        this.deps.rewardCards,
+      );
+      this.logbookCardFace.root.name = 'logbook-inspected-card';
+      board.group.add(this.logbookCardFace.root);
+      return;
+    }
     const sections = [
       { id: 'clues', label: 'Clues' },
       { id: 'map', label: 'Map' },
@@ -1743,12 +1792,15 @@ export class FlowUi {
       ? 2 * Math.max(0, activeMap)
       : this.bookSection === 'clues'
         ? this.logbookStart
-        : 0;
+        : this.bookSection === 'cards'
+          ? this.logbookCardPage
+          : 0;
     this.logbook = new Logbook(entries, this.deps.flow.run?.seed ?? '', openedAt, {
       maps,
       pages,
       mapViews: this.logbookMapViews,
       showFinds: this.showMapFinds,
+      mapHeading: this.deps.logbookHeading,
     });
     this.logbook.root.userData.section = this.bookSection;
     this.logbook.root.position.y = 0.406;

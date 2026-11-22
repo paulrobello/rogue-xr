@@ -84,7 +84,6 @@ export function applyStoneRoom(
   kit: StoneRoomKit,
   doors: readonly RoomStyleDoor[],
   edge: number,
-  exposed: (wall: Facing, along: number, halfWidth: number) => boolean,
 ): void {
   const skylit = theme === 'cloister' || theme === 'optics' || theme === 'drum';
   const matrices = new Map<StonePart, THREE.Matrix4[]>();
@@ -102,19 +101,14 @@ export function applyStoneRoom(
       const opening = doors.some(
         (d) => d.facing === wall && !d.closed && Math.abs(d.position[ns ? 0 : 2] - along) < 0.001,
       );
-      const niche =
-        theme !== 'reservoir' &&
-        theme !== 'stencil' &&
-        theme !== 'valvehouse' &&
-        !opening &&
-        along === (wall === 'N' || wall === 'E' ? -3 : 3) &&
-        exposed(wall, along, width(along));
+      // The authored niche module is a blank, tall framed recess. Gameplay alcoves and puzzle
+      // mounts own their visible treatment, so an unclaimed exposed span stays a solid bay.
       const pose = new THREE.Matrix4().makeRotationAxis(UP, WALL_YAW[wall]);
       pose
         .scale(new THREE.Vector3(width(along), 1, 1))
         .setPosition(ns ? along : fixed, 0, ns ? fixed : along);
       pose.multiply(WALL_SECTION);
-      add(opening ? 'StoneDoor' : niche ? 'StoneNicheBay' : 'StoneBay', pose);
+      add(opening ? 'StoneDoor' : 'StoneBay', pose);
     }
   }
   for (const x of centers)

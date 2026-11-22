@@ -17,8 +17,8 @@ import { findPuzzleMount } from './puzzle-placement.ts';
 type Layout = NonNullable<FloorWorld['plan']['pendulumGallery']>;
 type Action = 'adjust' | 'release';
 export type PendulumPick = { readonly action: Action; readonly distance: number };
-type TrialResult = 'ignored' | 'wrong' | 'opened';
-type Feedback = 'ready' | 'running' | 'wrong' | 'opened';
+type TrialResult = 'ignored' | 'wrong' | 'matched' | 'opened';
+type Feedback = 'ready' | 'running' | 'wrong' | 'matched' | 'opened';
 interface Arm {
   readonly pivot: THREE.Object3D;
   readonly rod: THREE.Object3D;
@@ -219,6 +219,14 @@ export class PendulumGallery {
         'The gallery doors are released.',
         '',
       ),
+      matched: this.sign(
+        this.station,
+        1.35,
+        1.87,
+        'Phase captured',
+        'Set the phase latch, then test again.',
+        '',
+      ),
     };
     for (const [state, sign] of Object.entries(this.signs)) sign.name = `pendulum-caption-${state}`;
   }
@@ -309,6 +317,28 @@ export class PendulumGallery {
     this.boxPart(this.release, [0.032, 0.137, 0.032], [0, 0.049, 0.059], this.steel);
     this.boxPart(this.release, [0.104, 0.054, 0.069], [0, 0.112, 0.069], this.brass);
     this.station.add(this.release);
+    this.buildTimingRack();
+  }
+
+  private buildTimingRack(): void {
+    const rack = new THREE.Group();
+    rack.name = 'pendulum-timing-rack';
+    rack.position.set(0, 0.48, 0.155);
+    this.boxPart(rack, [0.72, 0.028, 0.024], [0, 0, 0], this.steel);
+    for (const x of [-0.31, -0.155, 0, 0.155, 0.31]) {
+      const tooth = this.boxPart(rack, [0.018, 0.09, 0.026], [x, 0.045, 0], this.brass);
+      tooth.rotation.z = x === 0 ? 0 : Math.sign(x) * 0.18;
+    }
+    for (const x of [-0.22, 0.22]) {
+      const gear = this.mesh(rack, new THREE.TorusGeometry(0.07, 0.012, 6, 16), this.brass, [
+        x,
+        -0.09,
+        0,
+      ]);
+      gear.name = 'pendulum-timing-gear';
+      this.disk(rack, 0.018, 0.028, [x, -0.09, 0.018], this.steel);
+    }
+    this.station.add(rack);
   }
 
   private buildSwingEnvelopes(): void {
@@ -454,7 +484,10 @@ export class PendulumGallery {
       this.show('ready');
     }
     this.state = state;
-    if (!state.open) return;
+    if (!state.open) {
+      this.show(state.phaseReady && !state.phaseSet ? 'matched' : 'ready');
+      return;
+    }
     this.trial = null;
     this.show('opened');
     if (immediate || this.reducedMotion) this.moveGate(DOOR_SECONDS);

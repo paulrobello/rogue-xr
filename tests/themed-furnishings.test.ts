@@ -123,9 +123,10 @@ describe('non-stone modular furnishings', () => {
         const lights = view.world.roomGroups
           .map((room) => room.getObjectByName(`ThemedWallLight-${profile}`))
           .filter((light) => light !== undefined);
-        expect(lights.length).toBeGreaterThan(0);
-        const flame = lights[0].getObjectByName('StoneTorchFlame_Visual') as THREE.Mesh;
-        expect((flame.material as THREE.Material).name).toBe('Stone flame');
+        for (const light of lights) {
+          const flame = light.getObjectByName('StoneTorchFlame_Visual') as THREE.Mesh;
+          expect((flame.material as THREE.Material).name).toBe('Stone flame');
+        }
         if (floorNumber === 3)
           expect(view.world.roomGroups[0].getObjectByName('ThemedShelf-glazed')).toBeUndefined();
       } finally {

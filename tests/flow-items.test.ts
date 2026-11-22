@@ -202,8 +202,14 @@ it('saves only selected clues, persists their contents across floors, and turns 
 
 it('shows a map before saving any clues and starts on the current floor', () => {
   const maps: LogbookMap[] = [
-    { floor: 1, rooms: [], doors: [] },
-    { floor: 2, rooms: [], doors: [], player: { room: 1, label: 'study', position: [1, 2] } },
+    { floor: 1, rooms: [], totalRooms: 0, doors: [] },
+    {
+      floor: 2,
+      rooms: [],
+      totalRooms: 0,
+      doors: [],
+      player: { room: 1, label: 'study', position: [1, 2] },
+    },
   ];
   const { ui, flow, head } = setup(undefined, () => maps);
   flow.newRun('MAPTEST2');
@@ -241,6 +247,7 @@ it('charts only reached footprints and their mutual doorways', () => {
 it('clamps a zoomed floor to its chart and keeps the scroll anchor stable', () => {
   const map: LogbookMap = {
     floor: 1,
+    totalRooms: 1,
     rooms: [{ id: 0, bounds: { min: [-40, -40], max: [40, 40] } }],
     doors: [],
   };
@@ -257,8 +264,8 @@ it('clamps a zoomed floor to its chart and keeps the scroll anchor stable', () =
 it('retains each map view across floors and keeps the run menu available', () => {
   const largeRoom = { id: 0, bounds: { min: [-40, -40], max: [40, 40] } } as const;
   const maps: LogbookMap[] = [
-    { floor: 1, rooms: [largeRoom], doors: [] },
-    { floor: 2, rooms: [largeRoom], doors: [] },
+    { floor: 1, rooms: [largeRoom], totalRooms: 1, doors: [] },
+    { floor: 2, rooms: [largeRoom], totalRooms: 1, doors: [] },
   ];
   const { ui, flow, head } = setup(undefined, () => maps);
   flow.newRun('MAPTEST2');
@@ -284,5 +291,44 @@ it('retains each map view across floors and keeps the run menu available', () =>
   ui.activate('menu-logbook-fit');
   ui.update(1);
   expect(view()).toEqual(FIT_MAP_VIEW);
+  ui.dispose();
+});
+
+it('picks a logbook row with the shared pointer controls and returns to its card spread', () => {
+  const { flow, ui, head } = setup();
+  flow.newRun('MAPTEST2');
+  ui.openMenu(head);
+  ui.activate('menu-logbook');
+  ui.activate('menu-logbook-cards');
+  const id = ui.controlIds().find((name) => name.startsWith('logbook-card-'));
+  if (!id) throw new Error('No selectable card row');
+  const row = ui.root.getObjectByName(id);
+  if (!row) throw new Error('No card row pointer target');
+  ui.root.updateMatrixWorld(true);
+  const eye = head.getWorldPosition(new THREE.Vector3());
+  const direction = row.getWorldPosition(new THREE.Vector3()).sub(eye).normalize();
+  const hits = new THREE.Raycaster(eye, direction).intersectObjects(ui.targets(), true);
+  expect(hits.map(({ object }) => ui.controlAt(object))).toContain(id);
+  expect(ui.activate(id)).toBe(true);
+  expect(ui.root.getObjectByName('logbook-inspected-card')).toBeDefined();
+  expect(ui.activate('logbook-inspection-back')).toBe(true);
+  expect(ui.controlIds()).toContain(id);
+  ui.dispose();
+});
+
+it('persists discovered lift positions across Continue and leaves older saves readable', () => {
+  const { flow, ui } = setup();
+  flow.newRun('MAPTEST2');
+  flow.travelToFloor(2, 0);
+  flow.discoverLift(0, [1.27, -2.8]);
+  flow.travelToFloor(3, 0);
+  const saved = validateSnapshot(flow.snapshot(1));
+  const restored = setup();
+  expect(restored.flow.continueRun(saved)).toBe(true);
+  expect(restored.flow.discoveredLift(2)).toEqual({ floor: 2, room: 0, position: [1.27, -2.8] });
+  const { mapLifts, ...legacy } = saved;
+  expect(mapLifts).toHaveLength(1);
+  expect(validateSnapshot(legacy).mapLifts).toBeUndefined();
+  restored.ui.dispose();
   ui.dispose();
 });

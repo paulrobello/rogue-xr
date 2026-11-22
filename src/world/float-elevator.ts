@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { CanvasLabel } from '../combat-view/canvas-label.ts';
 import type { Box } from '../content/rooms.ts';
 import {
+  FLOAT_SERVICE_READY,
   type FloatElevatorControl,
   type FloatElevatorLevel,
   type FloatElevatorState,
@@ -17,7 +18,7 @@ import { findPuzzleMount } from './puzzle-placement.ts';
 type Pick = { readonly action: FloatElevatorControl; readonly distance: number };
 
 export const FLOAT_TRAVEL_SECONDS = 0.66;
-export const FLOAT_SHUTTER_SECONDS = 0.86;
+export const FLOAT_RELEASE_SECONDS = 0.2;
 const TUBE_BOTTOM = 0.17;
 const TUBE_TOP = 1.76;
 const WATER_LOW = 0.223;
@@ -39,13 +40,11 @@ function glass(
 
 export class FloatElevator {
   readonly object = new THREE.Group();
-  readonly chamber = new THREE.Group();
   readonly room: number;
   readonly target: Exclude<FloatElevatorLevel, 0>;
 
   private readonly resources: { dispose(): void }[] = [];
   private readonly releases: (() => void)[] = [];
-  private releaseShutter: (() => void) | null = null;
   private readonly iron = new THREE.MeshStandardMaterial({
     color: 0x354042,
     metalness: 0.52,
@@ -63,7 +62,6 @@ export class FloatElevator {
   private readonly water: THREE.Group = new THREE.Group();
   private readonly float = new THREE.Group();
   private readonly fitting = new THREE.Group();
-  private readonly shutter = new THREE.Group();
   private readonly valves: readonly [THREE.Group, THREE.Group];
   private readonly valveTargets: readonly [THREE.Mesh, THREE.Mesh];
   private readonly fill: THREE.Mesh;
@@ -78,7 +76,7 @@ export class FloatElevator {
   private age = FLOAT_TRAVEL_SECONDS;
   private from = 0;
   private level = 0;
-  private shutterTime = 0;
+  private releaseAge = 0;
 
   static mount(
     world: FloorWorld,
@@ -99,7 +97,7 @@ export class FloatElevator {
   private constructor(
     private readonly world: FloorWorld,
     room: number,
-    coffer: Coffer,
+    private readonly coffer: Coffer,
     seed: string,
     private readonly reduced: boolean,
     art: THREE.Object3D | undefined,
@@ -109,8 +107,6 @@ export class FloatElevator {
     this.room = room;
     this.target = floatElevatorTarget(seed);
     this.object.name = 'reservoir-station';
-    this.chamber.name = 'reservoir-coffer-recess';
-    this.shutter.name = 'reservoir-recess-shutter';
     this.float.name = 'reservoir-float';
     this.fitting.name = 'reservoir-brass-fitting';
     this.water.name = 'reservoir-water';
@@ -119,10 +115,6 @@ export class FloatElevator {
     this.resources.push(this.iron, this.stone, this.brass);
 
     const parent = world.roomGroups[room];
-    parent.add(this.chamber);
-    this.chamber.position.copy(coffer.object.position);
-    this.chamber.rotation.copy(coffer.object.rotation);
-    this.buildRecess();
     const site = findPuzzleMount(world, [room], furnishings, 'reservoir', 1.14, 1.04, 2.1);
     if (site) {
       this.object.position.copy(site.wallSurface).setY(0);
@@ -140,8 +132,8 @@ export class FloatElevator {
       'reservoir-instructions',
       1.03,
       'Float Elevator',
-      `Raise the fitting to hatch ${this.target}`,
-      'Take it when the float settles',
+      `Raise to hatch ${this.target} to prime the release.`,
+      'Bleed one mark, then refill to lift the fitting.',
     );
     instructions.position.set(0, 1.93, 0.285);
     this.readyLabel = this.sign(
@@ -393,6 +385,32 @@ export class FloatElevator {
       this.brass,
     );
     this.object.add(this.float);
+    this.buildCounterweightRig();
+  }
+
+  private buildCounterweightRig(): void {
+    const rig = new THREE.Group();
+    rig.name = 'reservoir-counterweight-rig';
+    rig.position.set(0.305, 0, 0.19);
+    this.box('reservoir-counterweight-rail', rig, [0.035, 1.48, 0.035], [0, 0.9, 0], this.iron);
+    for (const y of [0.34, 0.72, 1.1, 1.48]) {
+      const weight = this.box(
+        'reservoir-counterweight-mark',
+        rig,
+        [0.13, 0.075, 0.05],
+        [0, y, 0],
+        this.brass,
+      );
+      weight.rotation.z = Math.PI / 4;
+    }
+    const pulley = this.mesh(
+      rig,
+      new THREE.TorusGeometry(0.075, 0.014, 6, 18),
+      this.brass,
+      'reservoir-counterweight-pulley',
+    );
+    pulley.position.set(0, 1.67, 0);
+    this.object.add(rig);
   }
 
   private gauge(): void {
@@ -473,92 +491,12 @@ export class FloatElevator {
     return wheel;
   }
 
-  private buildRecess(): void {
-    const trackZ = -0.405;
-    for (const side of [-1, 1]) {
-      const x = side * 0.515;
-      this.box(
-        'reservoir-shutter-track',
-        this.chamber,
-        [0.09, 1.18, 0.16],
-        [x, 0.59, trackZ],
-        this.iron,
-      );
-      this.box(
-        'reservoir-track-strip',
-        this.chamber,
-        [0.03, 1.05, 0.014],
-        [x, 0.59, trackZ - 0.083],
-        this.brass,
-      );
-      this.box(
-        'reservoir-track-foot',
-        this.chamber,
-        [0.18, 0.09, 0.27],
-        [x, 0.045, trackZ + 0.035],
-        this.stone,
-      );
-      const bearing = this.mesh(
-        this.chamber,
-        new THREE.CylinderGeometry(0.066, 0.066, 0.04, 16),
-        this.brass,
-        'reservoir-track-bearing',
-      );
-      bearing.rotation.x = Math.PI / 2;
-      bearing.position.set(x, 1.15, trackZ - 0.088);
-      this.releases.push(
-        this.collider(this.chamber, {
-          min: [x - 0.09, 0, trackZ - 0.1],
-          max: [x + 0.09, 1.23, trackZ + 0.17],
-        }),
-      );
-    }
-    this.box(
-      'reservoir-hoist-header',
-      this.chamber,
-      [1.04, 0.096, 0.126],
-      [0, 1.228, trackZ],
-      this.brass,
-    );
-    this.box(
-      'reservoir-hoist-inset',
-      this.chamber,
-      [0.74, 0.036, 0.015],
-      [0, 1.229, trackZ - 0.068],
-      this.iron,
-    );
-    this.box(
-      'reservoir-shutter-panel',
-      this.shutter,
-      [0.875, 1.087, 0.078],
-      [0, 0.543, -0.408],
-      this.stone,
-    );
-    for (const y of [0.18, 0.92])
-      this.box(
-        'reservoir-shutter-band',
-        this.shutter,
-        [0.875, 0.076, 0.099],
-        [0, y, -0.412],
-        this.brass,
-      );
-    this.box(
-      'reservoir-shutter-fitting',
-      this.shutter,
-      [0.145, 0.145, 0.109],
-      [0, 0.612, -0.419],
-      this.brass,
-    ).rotation.z = Math.PI / 4;
-    this.chamber.add(this.shutter);
-    this.releaseShutter = this.collider(this.chamber, {
-      min: [-0.437, 0, -0.457],
-      max: [0.437, 1.1, -0.35],
-    });
-  }
-
   get fittingReachable(): boolean {
     return (
-      !this.state.collected && this.age >= FLOAT_TRAVEL_SECONDS && this.state.level === this.target
+      !this.state.collected &&
+      this.age >= FLOAT_TRAVEL_SECONDS &&
+      this.state.level === this.target &&
+      this.state.serviceStep === FLOAT_SERVICE_READY
     );
   }
 
@@ -567,7 +505,7 @@ export class FloatElevator {
   }
 
   get released(): boolean {
-    return this.state.collected && this.shutterTime >= FLOAT_SHUTTER_SECONDS;
+    return this.state.collected && this.releaseAge >= FLOAT_RELEASE_SECONDS;
   }
 
   sync(state: FloatElevatorState, immediate = false): void {
@@ -580,10 +518,10 @@ export class FloatElevator {
     }
     if (immediate || this.reduced) {
       this.age = FLOAT_TRAVEL_SECONDS;
-      if (state.collected) this.shutterTime = FLOAT_SHUTTER_SECONDS;
+      if (state.collected) this.releaseAge = FLOAT_RELEASE_SECONDS;
     }
+    if (state.collected) this.coffer.unlock(immediate || this.reduced);
     this.drawLevel();
-    this.drawShutter();
   }
 
   update(dt: number): void {
@@ -592,8 +530,7 @@ export class FloatElevator {
       this.drawLevel();
     }
     if (this.state.collected && !this.released) {
-      this.shutterTime = Math.min(FLOAT_SHUTTER_SECONDS, this.shutterTime + dt);
-      this.drawShutter();
+      this.releaseAge = Math.min(FLOAT_RELEASE_SECONDS, this.releaseAge + dt);
     }
   }
 
@@ -606,16 +543,6 @@ export class FloatElevator {
     this.fitting.visible = !this.state.collected;
     this.fitting.position.z = this.fittingReachable ? 0.192 : 0;
     this.readyLabel.visible = this.fittingReachable;
-  }
-
-  private drawShutter(): void {
-    this.shutter.position.y =
-      -1.11 * THREE.MathUtils.smoothstep(this.shutterTime, 0, FLOAT_SHUTTER_SECONDS);
-    this.shutter.visible = !this.released;
-    if (this.released) {
-      this.releaseShutter?.();
-      this.releaseShutter = null;
-    }
   }
 
   pick(origin: THREE.Vector3, direction: THREE.Vector3): Pick | null {
@@ -663,14 +590,12 @@ export class FloatElevator {
   }
 
   soundPosition(action: FloatElevatorControl, out: THREE.Vector3): THREE.Vector3 {
-    if (action === 'take') return this.chamber.localToWorld(out.set(0, 0.5, -0.4));
+    if (action === 'take') return this.coffer.object.localToWorld(out.set(0, 0.27, -0.28));
     return this.valves[action === 'fill' ? 0 : 1].getWorldPosition(out);
   }
 
   dispose(): void {
     this.object.removeFromParent();
-    this.chamber.removeFromParent();
-    this.releaseShutter?.();
     for (const remove of this.releases) remove();
     for (const entry of this.resources) entry.dispose();
   }

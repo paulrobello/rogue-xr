@@ -15,7 +15,7 @@ import {
   bellMelody,
   type StoredBellChimesState,
 } from '../rules/bell-chimes.ts';
-import type { BorrowedLightState } from '../rules/borrowed-light.ts';
+import { type BorrowedLightState, borrowedLightTarget } from '../rules/borrowed-light.ts';
 import {
   calibrated,
   calibrationPlan,
@@ -101,6 +101,12 @@ export class SaveError extends Error {
 export type SnapshotPhase = 'explore' | 'reward' | 'guardian-cleared';
 
 /** Where the player stands in the floor. The floor itself regenerates from `floorSeed`. */
+export interface MapLiftDiscovery {
+  readonly floor: 2 | 3;
+  readonly room: number;
+  readonly position: readonly [number, number];
+}
+
 export interface SnapshotWorld {
   readonly phase: SnapshotPhase;
   /** Seed the floor generator was given; the same seed rebuilds the same room graph. */
@@ -117,6 +123,7 @@ export interface SnapshotWorld {
   readonly contentVersion?: number;
   readonly floorNumber?: number;
   readonly reachedRooms?: readonly number[];
+  readonly mapLifts?: readonly MapLiftDiscovery[];
   /** Visited floors other than the active one. */
   readonly floors?: readonly FloorSnapshot[];
 }
@@ -187,14 +194,17 @@ function floatElevator(value: unknown, path: string): FloatElevatorState {
   const f = rec(value, path);
   const level = int(f.level, `${path}.level`, 0, 4) as FloatElevatorState['level'];
   if (typeof f.collected !== 'boolean') fail(`${path}.collected`, 'expected a boolean');
-  return { level, collected: f.collected };
+  const serviceStep =
+    f.serviceStep === undefined ? 0 : int(f.serviceStep, `${path}.serviceStep`, 0, 3);
+  return { level, collected: f.collected, serviceStep };
 }
 
 function shadowStencil(value: unknown, path: string): ShadowStencilState {
   const r = rec(value, path);
   const detent = int(r.detent, `${path}.detent`, 0, 4) as ShadowStencilState['detent'];
+  const pitch = r.pitch === undefined ? 0 : (int(r.pitch, `${path}.pitch`, 0, 3) as 0 | 1 | 2 | 3);
   if (typeof r.opened !== 'boolean') fail(`${path}.opened`, 'expected a boolean');
-  return { detent, opened: r.opened };
+  return { detent, pitch, opened: r.opened };
 }
 
 function springTension(value: unknown, path: string): SpringTensionState {
@@ -236,16 +246,32 @@ function drumGallery(value: unknown, path: string, seed: string): DrumGallerySta
   return { pin, open: state.open };
 }
 
-function borrowedLight(v: unknown, path: string): BorrowedLightState {
+function borrowedLight(v: unknown, path: string, seed: string): BorrowedLightState {
   const r = rec(v, path);
   if (
     !Array.isArray(r.detents) ||
-    r.detents.length !== 2 ||
+    (r.detents.length !== 2 && r.detents.length !== 3) ||
     r.detents.some((n) => ![0, 1, 2, 3].includes(n as number))
   )
-    fail(`${path}.detents`, 'expected two detents in [0, 3]');
+    fail(`${path}.detents`, 'expected two or three detents in [0, 3]');
   if (typeof r.open !== 'boolean') fail(`${path}.open`, 'expected a boolean');
-  return { detents: [r.detents[0], r.detents[1]] as [0 | 1 | 2 | 3, 0 | 1 | 2 | 3], open: r.open };
+  if (r.reflector !== undefined && typeof r.reflector !== 'boolean')
+    fail(`${path}.reflector`, 'expected a boolean');
+  if (r.reflectorFound !== undefined && typeof r.reflectorFound !== 'boolean')
+    fail(`${path}.reflectorFound`, 'expected a boolean');
+  return {
+    detents:
+      r.open && r.detents.length === 2
+        ? borrowedLightTarget(seed)
+        : ([r.detents[0], r.detents[1], r.detents[2] ?? 0] as [
+            0 | 1 | 2 | 3,
+            0 | 1 | 2 | 3,
+            0 | 1 | 2 | 3,
+          ]),
+    reflector: r.reflector ?? r.open,
+    reflectorFound: r.reflectorFound ?? r.reflector ?? r.open,
+    open: r.open,
+  };
 }
 
 function strings(v: unknown, path: string): string[] {
@@ -341,7 +367,11 @@ function pendulumGallery(v: unknown, path: string): PendulumGalleryState {
   const r = rec(v, path);
   const detent = int(r.detent, `${path}.detent`, 0, 2) as 0 | 1 | 2;
   if (typeof r.open !== 'boolean') fail(`${path}.open`, 'expected a boolean');
-  return { detent, open: r.open };
+  if (r.phaseReady !== undefined && typeof r.phaseReady !== 'boolean')
+    fail(`${path}.phaseReady`, 'expected a boolean');
+  if (r.phaseSet !== undefined && typeof r.phaseSet !== 'boolean')
+    fail(`${path}.phaseSet`, 'expected a boolean');
+  return { detent, open: r.open, phaseReady: r.phaseReady ?? false, phaseSet: r.phaseSet ?? false };
 }
 
 function counterweight(v: unknown, path: string, seed: string): StoredCounterweightState {
@@ -707,7 +737,7 @@ function validateRunState(
   const borrowedLightState =
     r.borrowedLight === undefined
       ? undefined
-      : borrowedLight(r.borrowedLight, `${path}.borrowedLight`);
+      : borrowedLight(r.borrowedLight, `${path}.borrowedLight`, seed);
   const floatElevatorState =
     r.floatElevator === undefined
       ? undefined
@@ -804,6 +834,25 @@ function validateReward(raw: unknown, path: string): RewardOffer {
 }
 
 /** Strict structural check of a stored or imported `RunSnapshot`. Throws `SaveError`; never repairs. */
+function validateMapLifts(value: unknown): MapLiftDiscovery[] {
+  const path = 'snapshot.mapLifts';
+  if (!Array.isArray(value) || value.length > 2) fail(path, 'expected up to two discovered lifts');
+  const seen = new Set<number>();
+  return value.map((item, i) => {
+    const entry = rec(item, `${path}[${i}]`);
+    const { floor, position } = entry;
+    if ((floor !== 2 && floor !== 3) || seen.has(floor)) fail(path, 'expected a unique floor');
+    if (!Array.isArray(position) || position.length !== 2 || !position.every(Number.isFinite))
+      fail(path, 'expected a finite lift position');
+    seen.add(floor);
+    return {
+      floor,
+      room: int(entry.room, `${path}[${i}].room`, 0),
+      position: [position[0], position[1]],
+    };
+  });
+}
+
 export function validateSnapshot(raw: unknown): RunSnapshot {
   const r = rec(raw, 'snapshot');
   if (r.version !== SNAPSHOT_VERSION) fail('snapshot.version', `expected ${SNAPSHOT_VERSION}`);
@@ -900,6 +949,7 @@ export function validateSnapshot(raw: unknown): RunSnapshot {
       ? {}
       : { reachedRooms: roomIds(r.reachedRooms, 'snapshot.reachedRooms') }),
     ...(floors === undefined ? {} : { floors }),
+    ...(r.mapLifts === undefined ? {} : { mapLifts: validateMapLifts(r.mapLifts) }),
   };
 }
 

@@ -242,6 +242,32 @@ export interface StudyAsset {
  * share its textures but own their lightmap binding and never touch materials the table, the sentry
  * or another template use. Every instance shares the one lightmap, because it is the template's bake.
  */
+/** Seat boundary wall faces on their own side of a shared room plane. Keep floor and ceiling edges. */
+function seatBakedWalls(scene: THREE.Object3D, template: RoomTemplate): void {
+  const shell = scene.getObjectByName(template.id);
+  const { min, max } = template.footprint;
+  const inset = 0.003;
+  const exact = 0.0001;
+  shell?.traverse((node) => {
+    if (!(node instanceof THREE.Mesh)) return;
+    const position = node.geometry.getAttribute('position');
+    const normal = node.geometry.getAttribute('normal');
+    if (!normal) return;
+    for (let i = 0; i < position.count; i++) {
+      const x = position.getX(i),
+        z = position.getZ(i);
+      if (Math.abs(normal.getX(i)) > 0.999) {
+        if (Math.abs(x - min[0]) < exact) position.setX(i, x + inset);
+        else if (Math.abs(x - max[0]) < exact) position.setX(i, x - inset);
+      } else if (Math.abs(normal.getZ(i)) > 0.999) {
+        if (Math.abs(z - min[1]) < exact) position.setZ(i, z + inset);
+        else if (Math.abs(z - max[1]) < exact) position.setZ(i, z - inset);
+      }
+    }
+    position.needsUpdate = true;
+  });
+}
+
 export async function loadStudyAsset(options: {
   study: StudyManifest;
   bookBindings?: THREE.Texture | null;
@@ -322,6 +348,7 @@ export async function loadStudyAsset(options: {
   const fire = dressFireplace(id, gltf.scene, flameSlot, options.reducedMotion ?? false);
   const candles =
     id === 'hall' ? dressCandleFlames(gltf.scene, flameSlot, options.reducedMotion ?? false) : null;
+  seatBakedWalls(gltf.scene, study.template);
   gltf.scene.name = `${study.manifest.template}-model`;
   const textures = new Set<THREE.Texture>();
   for (const material of slots.values()) {

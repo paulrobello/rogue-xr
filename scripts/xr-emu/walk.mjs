@@ -27,6 +27,7 @@ const { values: opts } = parseArgs({
     workshop: { type: 'boolean', default: false },
     foundry: { type: 'boolean', default: false },
     deck: { type: 'boolean', default: false },
+    logbook: { type: 'boolean', default: false },
     stairs: { type: 'boolean', default: false },
     chimes: { type: 'boolean', default: false },
     pressure: { type: 'boolean', default: false },
@@ -191,6 +192,7 @@ try {
     // The focused branch is dispatched inside walk(); clear any other suite selectors first.
     opts.pressure = false;
     opts.deck = false;
+    opts.logbook = false;
     opts.foundry = false;
     opts.workshop = false;
     opts.controls = false;
@@ -870,6 +872,38 @@ try {
     } else record('defend-count-badge', false, 'missing count');
     await shot('deck-stacks');
     await press('menu-deck-nav-back');
+  } else if (opts.logbook) {
+    await page.goto(`${opts.base}/?seed=${opts.seed}&debug`);
+    await waitFor('logbook-run-ready', () => window.__flow?.flow.phase === 'explore');
+    await enterVr();
+    await ev(() => window.__xrEmu.device.controllers.left.updateButtonValue('y-button', 1));
+    await waitFor('logbook-menu-open', () => window.__flow.ui.menuView === 'main');
+    await ev(() => window.__xrEmu.device.controllers.left.updateButtonValue('y-button', 0));
+    await waitFor('logbook-wheel-interactive', () => window.__flow.ui.radialInteractive);
+    await press('menu-logbook');
+    await press('menu-logbook-map');
+    const chart = await ev(
+      () => window.__flow.ui.root.getObjectByName('logbook-right-page')?.userData.map,
+    );
+    record('logbook-reports-fraction-explored', chart?.rooms.length < chart?.totalRooms, chart);
+    await shot('logbook-map');
+    await press('menu-logbook-cards');
+    const row = await ev(() =>
+      window.__flow.ui.controlIds().find((id) => id.startsWith('logbook-card-')),
+    );
+    if (row) await press(row);
+    const inspected = await ev(() =>
+      Boolean(window.__flow.ui.root.getObjectByName('logbook-inspected-card')),
+    );
+    record('logbook-card-opens-from-controller', inspected, row);
+    if (inspected) {
+      await shot('logbook-card');
+      await press('logbook-inspection-back');
+      record(
+        'logbook-card-returns-to-spread',
+        await ev(() => window.__flow.ui.controlIds().some((id) => id.startsWith('logbook-card-'))),
+      );
+    }
   } else if (opts.foundry) {
     await page.goto(`${opts.base}/?title&debug`);
     await waitFor('foundry-ready', () => window.__flow?.ui?.visible);

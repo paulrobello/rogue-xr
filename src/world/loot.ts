@@ -17,12 +17,12 @@ const LID_RADIUS = DEPTH / 2;
 const WALL = 0.035;
 const LID_SHELL = 0.03;
 /** How far the inner floor sits below the rim. */
-export const COFFER_INNER_DEPTH = 0.075;
+export const COFFER_INNER_DEPTH = 0.235;
 const FLOOR_Y = BODY_HEIGHT - COFFER_INNER_DEPTH;
 const INNER_W = WIDTH - 2 * WALL;
 const INNER_D = DEPTH - 2 * WALL;
 /** Height the glow haze rises above the inner floor. */
-const HAZE_HEIGHT = 0.3;
+const HAZE_HEIGHT = COFFER_INNER_DEPTH + 0.225;
 /** Lid angle when open, radians about the rear hinge: past upright, so its hollow faces the approach. */
 const OPEN_ANGLE = 1.95;
 /** Radians per second the lid swings. */
@@ -31,7 +31,7 @@ const OPEN_RATE = 4;
 const GLOW_ANGLE = 0.35;
 const RISE_ANGLE = 1.2;
 /** The card rises this far over `CARD_RISE_TIME` seconds, growing from `CARD_START_SCALE`. */
-const CARD_RISE = 0.4;
+const CARD_RISE = 0.56;
 const CARD_RISE_TIME = 0.9;
 const CARD_START_SCALE = 0.3;
 /** Card centre height above the inner floor when it starts to rise (it fits under the rim). */
@@ -44,7 +44,7 @@ const CARD_TURN_RATE = 3;
 /** Cog rewards rise one at a time before the card is released. */
 const COG_RISE_TIME = 0.55;
 const COG_STAGGER = 0.12;
-const COG_RISE = 0.38;
+const COG_RISE = 0.54;
 /** Halo size over the card size, and the hit quad's margin around the card. */
 const HALO_SCALE = 2.1;
 const HIT_SCALE = 1.5;
@@ -570,14 +570,10 @@ export class CofferKit {
       unlock(immediate = false) {
         if (!padlock || !secured) return false;
         secured = false;
-        // The spring lifts the lid as the catch releases; taking the contents opens it fully.
-        target = 0.2;
         if (immediate) {
           padlock.visible = false;
           gem.visible = true;
           unlockProgress = 1;
-          angle = target;
-          hinge.rotation.x = angle;
         } else {
           unlocking = true;
         }

@@ -62,7 +62,7 @@ import { placeStairEntry, type StairEntry } from './floor/stairs.ts';
 import { encounterStartsFight, fleeStandPoint } from './flow/flee.ts';
 import { RunFlow } from './flow/flow.ts';
 import { logbookDiscoveries } from './flow/logbook-discoveries.ts';
-import { chartFloor, type MapPoint } from './flow/logbook-map.ts';
+import { chartFloor, type MapPoint, type MapTransport } from './flow/logbook-map.ts';
 import { FlowUi, RUN_MENU_ITEMS, rewardCardTexture } from './flow/panels.ts';
 import { bindFlowPersistence } from './flow/persist.ts';
 import { RewardCardFaces } from './flow/reward-cards.ts';
@@ -116,6 +116,7 @@ import { sharedKtx2Loader } from './ui/first-render.ts';
 import { loadIconSheet } from './ui/icon-sheet.ts';
 import { failLoading, revealGame, showLoading } from './ui/loading-screen.ts';
 import { mountUpdateNotice } from './update/index.ts';
+import { finishCauldron } from './world/alchemy-conservatory.ts';
 import type { BellChimes, BellPick } from './world/bell-chimes.ts';
 import type { CalibrationAction } from './world/calibration-bench.ts';
 import type { FolioPick } from './world/calibration-cabinet.ts';
@@ -150,6 +151,7 @@ import {
 import { mountMaterialProof } from './world/material-proof.ts';
 import { loadPbrSet } from './world/materials.ts';
 import type { PendulumPick } from './world/pendulum-gallery.ts';
+import { dressPlanterFoliage } from './world/planter-foliage.ts';
 import type { PressureAction } from './world/pressure-compartment.ts';
 import { type PressureNoteRecord, PressureNotes } from './world/pressure-notes.ts';
 import { loadPressureArt, type PressureArt } from './world/pressure-works.ts';
@@ -219,6 +221,8 @@ scene.background = new THREE.Color(PALETTE.void);
 // The rig is the player's locomotion root; the camera sits at seated-calibrated eye height.
 const rig = new THREE.Group();
 rig.name = 'player-rig';
+const logbookDirection = new THREE.Vector3();
+const liftPositionOnMap = new THREE.Vector3();
 const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.05, 100);
 camera.position.set(0, 1.6, 0);
 rig.add(camera);
@@ -498,7 +502,14 @@ const reflect = (root: THREE.Object3D, intensity: number): void => {
       const lit = m as THREE.MeshStandardMaterial;
       if (!lit.isMeshStandardMaterial) continue;
       lit.envMap = heroEnv;
-      lit.envMapIntensity = intensity;
+      if (/walnut|\bwood\b/i.test(lit.name)) {
+        lit.roughnessMap = null;
+        lit.metalnessMap = null;
+        lit.roughness = Math.max(lit.roughness, 0.84);
+        lit.metalness = 0;
+        lit.normalScale.set(0.35, 0.35);
+        lit.envMapIntensity = Math.min(intensity, 0.14);
+      } else lit.envMapIntensity = intensity;
     }
   });
 };
@@ -682,7 +693,9 @@ function dungeonKit(): Promise<StoneRoomKit | undefined> {
     .loadAsync('/assets/props/stone-dungeon-kit/stone-dungeon-kit.glb')
     .then(({ scene }) => {
       reflect(scene, 0.34);
-      return stoneRoomKitFromScene(scene);
+      const kit = stoneRoomKitFromScene(scene);
+      dressPlanterFoliage(kit.StonePlanter);
+      return kit;
     })
     .catch((error: unknown) => {
       stoneArt = undefined;
@@ -713,6 +726,7 @@ function conservatoryKit(): Promise<THREE.Object3D> {
   alchemyKit ??= new GLTFLoader()
     .loadAsync(`/assets/props/alchemy-kit/alchemy-kit.glb?v=${alchemyRevision}`)
     .then(({ scene }) => {
+      finishCauldron(scene);
       reflect(scene, 0.58);
       return scene;
     })
@@ -1683,6 +1697,11 @@ const ui = floor
       },
       onNoteOpened: (at) => audio?.playSfx('paper-unfold', at),
       reducedMotion,
+      logbookHeading: () => {
+        const head = xr.presenting ? renderer.xr.getCamera() : camera;
+        head.getWorldDirection(logbookDirection);
+        return Math.atan2(logbookDirection.x, -logbookDirection.z);
+      },
       logbookMaps: () => {
         const current = floor;
         if (!current) return [];
@@ -1699,7 +1718,17 @@ const ui = floor
           const player = live
             ? { room: current.world.current, position: [eye.x, eye.z] as const }
             : undefined;
-          const chart = chartFloor(number, plan, rooms, explored.reachedRooms, player);
+          const transport: MapTransport[] = [];
+          const stair =
+            number === 3
+              ? null
+              : live
+                ? current.world.stairEntry
+                : placeStairEntry(plan, worldTemplates);
+          if (stair) transport.push({ kind: 'stairs', room: stair.room, position: stair.world });
+          const lift = flow.discoveredLift(number);
+          if (lift) transport.push({ kind: 'lift', room: lift.room, position: lift.position });
+          const chart = chartFloor(number, plan, rooms, explored.reachedRooms, player, transport);
           const discoveries = logbookDiscoveries({
             plan,
             worldRooms: rooms,
@@ -2315,6 +2344,13 @@ function operateAlchemy(
 function operatePrism(hit: NonNullable<PrismPick>): boolean {
   const prism = floor?.prismAnnex;
   if (!prism) return false;
+  if (hit.action === 'exhibit') {
+    floor?.showBookSecret(
+      { text: prism.cycleDisplay(), caption: 'The prism separates one mark at a time.' },
+      camera,
+    );
+    return true;
+  }
   const at = prism.object.getWorldPosition(chimePosition);
   if (hit.action === 'turn') {
     if (!flow.turnPrism()) return false;
@@ -2435,7 +2471,10 @@ function operateShadowStencil(action: ShadowStencilControl): boolean {
   if (!floor || !station) return false;
   if (action.kind === 'tile' && !station.aligned) {
     floor.showBookSecret(
-      { text: 'Shadow out of line', caption: 'Slide the stencil to fit the frame.' },
+      {
+        text: 'Shadow out of line',
+        caption: 'Adjust the shutter and lamp pitch to fit the frame.',
+      },
       camera,
     );
     return true;
@@ -3557,6 +3596,11 @@ renderer.setAnimationLoop((time, frame) => {
   );
   questPerfStageEnd(floorStage);
   if (floor && flow.inRun) {
+    const lift = floor.lift;
+    if (lift?.room === floor.world.current && !flow.discoveredLift(floor.floorNumber)) {
+      lift.object.getWorldPosition(liftPositionOnMap);
+      flow.discoverLift(lift.room, [liftPositionOnMap.x, liftPositionOnMap.z]);
+    }
     flow.enterRoom(floor.world.current);
     perfRoom(floor.world);
     if (encounterStartsFight(floor.encounter.phase, flow.phase)) {

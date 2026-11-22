@@ -22,7 +22,7 @@ const fresh = () =>
 
 describe('shadow stencil', () => {
   it('starts closed and derives a stable target', () => {
-    expect(readShadowStencil({})).toEqual({ detent: 0, opened: false });
+    expect(readShadowStencil({})).toEqual({ detent: 0, pitch: 0, opened: false });
     expect(shadowStencilTarget('ALPHA')).toEqual(shadowStencilTarget('ALPHA'));
   });
 
@@ -35,14 +35,18 @@ describe('shadow stencil', () => {
       { kind: 'slide', detent: target.detent },
     );
     expect(moved).toEqual({ detent: target.detent, opened: false });
+    expect(operateShadowStencil(seed, moved, { kind: 'tile', tile: target.tile })).toEqual(moved);
+    const pitched = operateShadowStencil(seed, moved, { kind: 'pitch', pitch: target.pitch });
+    expect(pitched).toEqual({ detent: target.detent, pitch: target.pitch, opened: false });
     expect(
-      operateShadowStencil(seed, moved, {
+      operateShadowStencil(seed, pitched, {
         kind: 'tile',
         tile: ((target.tile + 1) % 3) as 0 | 1 | 2,
       }),
-    ).toBe(moved);
-    expect(operateShadowStencil(seed, moved, { kind: 'tile', tile: target.tile })).toEqual({
+    ).toEqual(pitched);
+    expect(operateShadowStencil(seed, pitched, { kind: 'tile', tile: target.tile })).toEqual({
       detent: target.detent,
+      pitch: target.pitch,
       opened: true,
     });
     expect(
@@ -103,14 +107,19 @@ describe('shadow stencil', () => {
     const draft = validateSnapshot(flow.snapshot(10));
     const continued = fresh();
     expect(continued.continueRun(draft)).toBe(true);
-    expect(continued.shadowStencil).toEqual({ detent: target.detent, opened: false });
+    expect(continued.shadowStencil).toEqual({ detent: target.detent, pitch: 0, opened: false });
+    expect(continued.operateShadowStencil({ kind: 'pitch', pitch: target.pitch })).toBe('moved');
     expect(continued.operateShadowStencil({ kind: 'tile', tile: target.tile })).toBe('released');
     expect(continued.travelToFloor(2, 0)).toBe(true);
     expect(continued.operateShadowStencil({ kind: 'slide', detent: 0 })).toBe('ignored');
     const restored = fresh();
     expect(restored.continueRun(validateSnapshot(continued.snapshot(20)))).toBe(true);
     expect(restored.travelToFloor(1, 0)).toBe(true);
-    expect(restored.shadowStencil).toEqual({ detent: target.detent, opened: true });
+    expect(restored.shadowStencil).toEqual({
+      detent: target.detent,
+      pitch: target.pitch,
+      opened: true,
+    });
     expect(restored.operateShadowStencil({ kind: 'tile', tile: target.tile })).toBe('ignored');
   });
 
@@ -141,7 +150,7 @@ describe('shadow stencil', () => {
       expect(station.aligned).toBe(false);
       const from = slider.position.x;
       const magnification = cast.position.x / from;
-      station.sync({ detent: station.target.detent, opened: false });
+      station.sync({ detent: station.target.detent, pitch: station.target.pitch, opened: false });
       station.update(STENCIL_SLIDE_SECONDS / 2);
       expect(slider.position.x).toBeGreaterThan(from);
       expect(cast.position.x).toBeCloseTo(slider.position.x * magnification);

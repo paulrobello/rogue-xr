@@ -7,10 +7,12 @@ export function floatElevatorTarget(seed: string): 1 | 2 | 3 | 4 {
   return Stream.fromKey(`${seed}:float-elevator-level`).int(1, 4) as 1 | 2 | 3 | 4;
 }
 
+export const FLOAT_SERVICE_READY = 3;
+
 export function readFloatElevator(run: {
   readonly floatElevator?: FloatElevatorState;
 }): FloatElevatorState {
-  return run.floatElevator ?? { level: 0, collected: false };
+  return run.floatElevator ?? { level: 0, collected: false, serviceStep: 0 };
 }
 
 export function operateFloatElevator(
@@ -18,14 +20,20 @@ export function operateFloatElevator(
   state: FloatElevatorState,
   control: FloatElevatorControl,
 ): FloatElevatorState {
-  if (control === 'take') {
-    return state.level === floatElevatorTarget(seed) && !state.collected
+  const target = floatElevatorTarget(seed);
+  const stage = state.serviceStep ?? 0;
+  if (state.collected) return state;
+  if (control === 'take')
+    return state.level === target && stage === FLOAT_SERVICE_READY
       ? { ...state, collected: true }
       : state;
-  }
-  const next = Math.max(
+  const level = Math.max(
     0,
     Math.min(4, state.level + (control === 'fill' ? 1 : -1)),
   ) as FloatElevatorLevel;
-  return next === state.level ? state : { ...state, level: next };
+  if (level === state.level) return state;
+  const primed = control === 'fill' && level === target;
+  const bled = stage === 1 && state.level === target && level === target - 1;
+  const serviceStep = primed ? (stage === 2 ? FLOAT_SERVICE_READY : 1) : bled ? 2 : 0;
+  return { level, collected: false, serviceStep };
 }

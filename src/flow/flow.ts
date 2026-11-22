@@ -47,7 +47,7 @@ import {
   WAVE_B_OVERDRIVE_IDS,
 } from '../content/rewards.ts';
 import { brassCacheForPlayableFloor } from '../floor/return-passages.ts';
-import type { FloorSnapshot, RunSnapshot } from '../persist/saves.ts';
+import type { FloorSnapshot, MapLiftDiscovery, RunSnapshot } from '../persist/saves.ts';
 import { snapshotRun } from '../persist/saves.ts';
 import {
   addFormulaIngredient,
@@ -364,7 +364,7 @@ export interface ReliquaryEvent {
 export interface PendulumGalleryEvent {
   readonly type: 'pendulum-gallery';
   readonly action: 'advance' | 'trial';
-  readonly result?: 'ignored' | 'wrong' | 'opened';
+  readonly result?: 'ignored' | 'wrong' | 'matched' | 'opened';
   readonly state: PendulumGalleryState;
 }
 export interface BorrowedLightEvent {
@@ -502,6 +502,7 @@ export class RunFlow {
   private readonly reached = new Set<number>();
   private roomValue = 0;
   private floorNumberValue = 1;
+  private readonly mapLifts = new Map<number, MapLiftDiscovery>();
   private readonly floorStates = new Map<number, FloorSnapshot>();
   private readonly listeners = new Set<(event: FlowEvent) => void>();
   private readonly opts: FlowOptions;
@@ -658,7 +659,9 @@ export class RunFlow {
     });
     return control === 'take' ? 'released' : 'adjusted';
   }
-  operateBorrowedLight(control: 0 | 1 | 'reset'): 'ignored' | 'adjusted' | 'opened' {
+  operateBorrowedLight(
+    control: 0 | 1 | 2 | 'take-reflector' | 'install' | 'reset',
+  ): 'ignored' | 'adjusted' | 'opened' {
     if (
       !this.runValue ||
       this.phaseValue !== 'explore' ||
@@ -688,7 +691,7 @@ export class RunFlow {
     this.emit({ type: 'pendulum-gallery', action: 'advance', state: next });
     return true;
   }
-  completePendulumTrial(): 'ignored' | 'wrong' | 'opened' {
+  completePendulumTrial(): 'ignored' | 'wrong' | 'matched' | 'opened' {
     if (
       !this.runValue ||
       this.phaseValue !== 'explore' ||
@@ -1352,6 +1355,16 @@ export class RunFlow {
     return this.runValue ? floorSeedFor(this.runValue.seed, this.floorNumberValue) : '';
   }
 
+  discoveredLift(floor: number): MapLiftDiscovery | undefined {
+    return this.mapLifts.get(floor);
+  }
+
+  discoverLift(room: number, position: MapLiftDiscovery['position']): void {
+    const floor = this.floorNumberValue;
+    if (!this.inRun || (floor !== 2 && floor !== 3)) return;
+    this.mapLifts.set(floor, { floor, room, position });
+  }
+
   explorationOnFloor(
     floor: number,
   ):
@@ -1548,6 +1561,7 @@ export class RunFlow {
     this.runValue = { ...this.runValue, brassKey: 'missing' };
     this.resetRunBookkeeping(0, []);
     this.floorNumberValue = 1;
+    this.mapLifts.clear();
     this.floorStates.clear();
     return this.go('explore');
   }
@@ -1561,6 +1575,8 @@ export class RunFlow {
     this.runValue = snapshot.run;
     this.contentVersionValue = snapshot.contentVersion ?? 1;
     this.floorNumberValue = snapshot.floorNumber ?? 1;
+    this.mapLifts.clear();
+    for (const lift of snapshot.mapLifts ?? []) this.mapLifts.set(lift.floor, lift);
     this.floorStates.clear();
     for (const floor of snapshot.floors ?? []) {
       if (floor.floorNumber === 2) {
@@ -1835,6 +1851,7 @@ export class RunFlow {
         contentVersion: this.contentVersionValue,
         floorNumber: this.floorNumberValue,
         reachedRooms: [...this.reached],
+        ...(this.mapLifts.size ? { mapLifts: [...this.mapLifts.values()] } : {}),
         floors: [...this.floorStates.values()],
       },
       now,

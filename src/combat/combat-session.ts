@@ -913,7 +913,14 @@ export class CombatSession {
       : platePoseAboveTable(this.pose);
     this.plate.hide();
     this.castButton = button('sigil-cast', PALETTE.emerald);
-    this.castButton.position.set(0, -this.platePose.halfHeight - 0.075, 0.008);
+    const castDepth = 0.045;
+    const buttonHalfHeight = (CONTROL_HEIGHT + 0.018) / 2;
+    const { center, up, normal, halfHeight } = this.platePose;
+    const tableClearance = this.pose.height + 0.018 + 0.024 * Math.abs(normal.y);
+    const idealY = -halfHeight - buttonHalfHeight - 0.016;
+    const clearY =
+      (tableClearance - center.y - castDepth * normal.y) / Math.max(0.01, up.y) + buttonHalfHeight;
+    this.castButton.position.set(0, Math.max(idealY, clearY), castDepth);
     this.castLabel = buttonLabel(this.castButton, 'CAST');
     this.castButton.visible = false;
     this.plate.add(this.castButton);

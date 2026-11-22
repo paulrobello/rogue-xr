@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {
   BORROWED_MIRRORS,
   BORROWED_RECEIVER,
+  BORROWED_REFLECTOR,
   BORROWED_SCREEN,
   type BorrowedLightControl,
   type BorrowedLightState,
@@ -110,8 +111,13 @@ export class BorrowedLight {
   private readonly low = new THREE.Vector3();
   private readonly high = new THREE.Vector3();
   private readonly delta = new THREE.Vector3();
-  private readonly normals = [new THREE.Vector3(), new THREE.Vector3()] as const;
-  private readonly mirrors: readonly [Mirror, Mirror];
+  private readonly normals = [
+    new THREE.Vector3(),
+    new THREE.Vector3(),
+    new THREE.Vector3(),
+  ] as const;
+  private readonly mirrors: readonly [Mirror, Mirror, Mirror];
+  private readonly looseReflector: THREE.Mesh;
   private readonly beams: THREE.Mesh[];
   private readonly tipLight: THREE.Mesh;
   private readonly projected: THREE.Mesh;
@@ -138,13 +144,54 @@ export class BorrowedLight {
     this.brass.envMapIntensity = 0.36;
     world.roomGroups[layout.opticsRoom].add(this.object);
     this.buildScreen();
-    this.mirrors = [this.buildMirror(0, art), this.buildMirror(1, art)];
+    this.mirrors = [this.buildMirror(0, art), this.buildMirror(1, art), this.buildMirror(2, art)];
+    this.mirrors[2].glass.visible = false;
+    const pedestal = this.inscription(
+      'borrowed-light-reflector-pedestal',
+      0.62,
+      'Loose Reflector',
+      'Take the silver disk',
+      'Then fit it to the socket',
+    );
+    const spareX = BORROWED_REFLECTOR[0] + 0.78;
+    const spareZ = BORROWED_REFLECTOR[2] + 0.08;
+    pedestal.position.set(spareX, 0.7, spareZ + 0.21);
+    const disk = new THREE.CylinderGeometry(0.14, 0.14, 0.045, 24);
+    this.resources.push(disk);
+    this.looseReflector = new THREE.Mesh(disk, this.silver);
+    this.looseReflector.name = 'borrowed-light-loose-disk';
+    this.looseReflector.position.set(spareX, 0.81, spareZ);
+    this.looseReflector.rotation.x = Math.PI / 5;
+    this.object.add(this.looseReflector);
+    this.box(
+      'borrowed-light-reflector-shelf',
+      this.object,
+      [0.43, 0.72, 0.4],
+      [spareX, 0.36, spareZ],
+      this.dark,
+    );
+    this.controls.push(pedestal, this.looseReflector);
+    this.controlActions.push('take-reflector', 'take-reflector');
+    const install = this.inscription(
+      'borrowed-light-install',
+      0.55,
+      'Reflector socket',
+      'Select to install',
+      'Then aim I, II, III',
+    );
+    install.position.set(
+      BORROWED_REFLECTOR[0],
+      BORROWED_REFLECTOR[1] - 0.48,
+      BORROWED_REFLECTOR[2] + 0.288,
+    );
+    this.controls.push(install);
+    this.controlActions.push('install');
     this.buildReceiver();
     const reset = this.inscription(
       'borrowed-light-reset',
       0.75,
       'Borrowed Light',
-      'Aim I, then II at the floor seal',
+      'Aim I and II at the fitted reflector',
       'Select here to reset',
     );
     reset.position.set(0.68, 0.9, 2.455);
@@ -171,7 +218,7 @@ export class BorrowedLight {
     const beam = new THREE.CylinderGeometry(1, 1, 1, 6, 1, true);
     const tip = new THREE.SphereGeometry(0.035, 8, 5);
     this.resources.push(light, beam, tip);
-    this.beams = [0, 1, 2].map((index) => {
+    this.beams = [0, 1, 2, 3].map((index) => {
       const mesh = new THREE.Mesh(beam, light);
       mesh.name = `borrowed-light-beam-${index}`;
       this.object.add(mesh);
@@ -308,8 +355,9 @@ export class BorrowedLight {
     return sign.object;
   }
 
-  private buildMirror(id: 0 | 1, art?: THREE.Object3D): Mirror {
-    const [x, y, z] = BORROWED_MIRRORS[id];
+  private buildMirror(id: 0 | 1 | 2, art?: THREE.Object3D): Mirror {
+    const [x, y, z] =
+      id === 0 ? BORROWED_MIRRORS[0] : id === 1 ? BORROWED_MIRRORS[1] : BORROWED_REFLECTOR;
     const glass = new THREE.Group();
     glass.name = `borrowed-light-mirror-${id}`;
     glass.position.set(x, y, z);
@@ -354,9 +402,9 @@ export class BorrowedLight {
     const pick = this.inscription(
       `borrowed-light-turn-${id}`,
       0.47,
-      id === 0 ? 'Mirror I' : 'Mirror II',
-      'Select to turn',
-      '',
+      id === 0 ? 'Mirror I' : id === 1 ? 'Mirror II' : 'Mirror III',
+      id === 0 ? 'Turn toward II' : id === 1 ? 'Turn toward III' : 'Aim at seal',
+      id === 0 ? 'Follow the beam' : 'Select to turn',
     );
     pick.position.set(x, y - 0.48, z + 0.288);
     this.controls.push(face, rim, pick);
@@ -432,13 +480,18 @@ export class BorrowedLight {
       !immediate &&
       this.state.detents[0] === state.detents[0] &&
       this.state.detents[1] === state.detents[1] &&
+      this.state.detents[2] === state.detents[2] &&
+      this.state.reflector === state.reflector &&
+      this.state.reflectorFound === state.reflectorFound &&
       this.state.open === state.open
     )
       return;
     this.state = state;
+    this.mirrors[2].glass.visible = state.reflector === true;
+    this.looseReflector.visible = !state.reflectorFound;
     const trace = traceBorrowedLight(this.seed, state.detents);
     this.aimAge = immediate || this.reducedMotion ? TURN_SECONDS : 0;
-    for (const id of [0, 1] as const) {
+    for (const id of [0, 1, 2] as const) {
       const mirror = this.mirrors[id];
       mirror.from.copy(mirror.glass.quaternion);
       mirror.to.setFromUnitVectors(FORWARD, this.at.fromArray(trace.normals[id]));
@@ -464,13 +517,16 @@ export class BorrowedLight {
 
   private aim(): void {
     const t = THREE.MathUtils.smoothstep(this.aimAge, 0, TURN_SECONDS);
-    for (const id of [0, 1] as const) {
+    for (const id of [0, 1, 2] as const) {
       const { glass, from, to } = this.mirrors[id];
       glass.quaternion.slerpQuaternions(from, to, t);
       this.normals[id].copy(FORWARD).applyQuaternion(glass.quaternion);
     }
     this.drawBeam(
-      traceBorrowedLightNormals([this.normals[0].toArray(), this.normals[1].toArray()]),
+      traceBorrowedLightNormals(
+        [this.normals[0].toArray(), this.normals[1].toArray(), this.normals[2].toArray()],
+        this.state.reflector === true,
+      ),
     );
   }
 
@@ -487,7 +543,8 @@ export class BorrowedLight {
       beam.position.copy(this.low).lerp(this.high, 0.5);
     }
     this.tipLight.position.fromArray(trace.points[trace.points.length - 1]);
-    this.projected.visible = this.state.open && trace.reachesReceiver;
+    this.projected.visible =
+      this.state.open && this.state.reflector === true && trace.reachesReceiver;
   }
 
   private slideGate(): void {
@@ -501,7 +558,8 @@ export class BorrowedLight {
     this.object.updateWorldMatrix(true, true);
     this.ray.set(origin, direction);
     this.ray.far = 4.1;
-    const [hit] = this.ray.intersectObjects(this.controls, false);
+    const active = this.controls.filter((_, i) => this.canOperate(this.controlActions[i]));
+    const [hit] = this.ray.intersectObjects(active, false);
     if (!hit) return null;
     const blocked = this.world.colliders[this.layout.opticsRoom].some((box) => {
       this.plane.min.fromArray(box.min);
@@ -520,10 +578,18 @@ export class BorrowedLight {
         };
   }
 
+  private canOperate(action: BorrowedLightControl): boolean {
+    if (this.state.open) return false;
+    if (action === 'take-reflector') return !this.state.reflectorFound;
+    if (action === 'install') return this.state.reflectorFound === true && !this.state.reflector;
+    return action !== 2 || this.state.reflector === true;
+  }
+
   near(position: THREE.Vector3, reach: number): Pick | null {
     if (this.world.current !== this.layout.opticsRoom) return null;
     let closest: Pick | null = null;
     this.controls.forEach((control, i) => {
+      if (!this.canOperate(this.controlActions[i])) return;
       const distance = control.getWorldPosition(this.at).distanceTo(position);
       if (distance <= reach && (!closest || distance < closest.distance))
         closest = { action: this.controlActions[i], distance };

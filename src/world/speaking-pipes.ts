@@ -225,6 +225,7 @@ export class SpeakingPipes {
         'speaking-pipes-sender-frame',
       );
     }
+    this.buildWallLine(this.object, 'speaking-pipes-transmitter-line');
     const authored = art?.getObjectByName('pipe_selector')?.clone(true);
     if (authored) {
       authored.name = 'speaking-pipes-selector';
@@ -278,6 +279,7 @@ export class SpeakingPipes {
         'speaking-pipes-receiver-frame',
       );
     }
+    this.buildWallLine(this.receiver, 'speaking-pipes-receiver-line');
     this.block(
       this.receiver,
       [1.15, 0.78, 0.085],
@@ -355,6 +357,31 @@ export class SpeakingPipes {
     );
     this.controls.push({ node: replay, pick: { action: 'replay' }, room: mount.room });
     this.place(this.receiver, mount, 0.34);
+  }
+
+  private buildWallLine(parent: THREE.Object3D, name: string): void {
+    const line = new THREE.Group();
+    line.name = name;
+    const pipe = this.mesh(
+      line,
+      new THREE.CylinderGeometry(0.026, 0.026, 0.64, 12),
+      this.copper,
+      `${name}-pipe`,
+    );
+    pipe.position.set(0, 0.62, -0.255);
+    pipe.rotation.z = Math.PI / 2;
+    for (const x of [-0.31, 0.31]) {
+      this.block(line, [0.075, 0.12, 0.075], [x, 0.62, -0.255], this.iron, `${name}-bracket`);
+      const collar = this.mesh(
+        line,
+        new THREE.CylinderGeometry(0.046, 0.046, 0.045, 12),
+        this.iron,
+        `${name}-collar`,
+      );
+      collar.position.set(x, 0.62, -0.255);
+      collar.rotation.z = Math.PI / 2;
+    }
+    parent.add(line);
   }
 
   private buildCistern(mount: PuzzleMount): void {

@@ -11,6 +11,7 @@ export const BORROWED_MIRRORS: readonly [Vec3, Vec3] = [
   [-1, 1.38, 1],
   [2.45, 1.26, 1],
 ];
+export const BORROWED_REFLECTOR: Vec3 = [2.45, 1.02, -0.55];
 export const BORROWED_RECEIVER: Vec3 = [2.45, 0.012, -1.6];
 export const BORROWED_SCREEN: Box = { min: [-0.26, 0, -0.56], max: [1.44, 1.55, -0.28] };
 export const BORROWED_MIRROR_RADIUS = 0.26;
@@ -35,10 +36,12 @@ function unit(v: Vec3): Vec3 {
 
 const incoming = unit(delta(BORROWED_MIRRORS[0], BORROWED_SKY));
 const crossRoom = unit(delta(BORROWED_MIRRORS[1], BORROWED_MIRRORS[0]));
-const downToSeal = unit(delta(BORROWED_RECEIVER, BORROWED_MIRRORS[1]));
-const alignedNormals: readonly [Vec3, Vec3] = [
+const downToReflector = unit(delta(BORROWED_REFLECTOR, BORROWED_MIRRORS[1]));
+const reflectorToSeal = unit(delta(BORROWED_RECEIVER, BORROWED_REFLECTOR));
+const alignedNormals: readonly [Vec3, Vec3, Vec3] = [
   unit(delta(crossRoom, incoming)),
-  unit(delta(downToSeal, crossRoom)),
+  unit(delta(downToReflector, crossRoom)),
+  unit(delta(reflectorToSeal, downToReflector)),
 ];
 
 function yaw([x, y, z]: Vec3, turns: number): Vec3 {
@@ -84,52 +87,57 @@ function stop(origin: Vec3, direction: Vec3): number {
 
 export function borrowedLightTarget(seed: string): BorrowedLightState['detents'] {
   const random = Stream.fromKey(`${seed}:borrowed-light-detents`);
-  return [random.int(0, 3) as BorrowedLightDetent, random.int(0, 3) as BorrowedLightDetent];
+  return [0, random.int(0, 3) as BorrowedLightDetent, random.int(0, 3) as BorrowedLightDetent];
 }
 
 export interface BorrowedLightTrace {
-  readonly normals: readonly [Vec3, Vec3];
+  readonly normals: readonly [Vec3, Vec3, Vec3];
   readonly points: readonly Vec3[];
   readonly reachesReceiver: boolean;
 }
 
-/** The same two-bounce trace decides the latch and draws the visible beam. */
+/** The same three-bounce trace decides the latch and draws the visible beam. */
 export function traceBorrowedLight(
   seed: string,
   detents: BorrowedLightState['detents'],
 ): BorrowedLightTrace {
   const correct = borrowedLightTarget(seed);
-  const normals: BorrowedLightTrace['normals'] = [
+  return traceBorrowedLightNormals([
     yaw(alignedNormals[0], detents[0] - correct[0]),
     yaw(alignedNormals[1], detents[1] - correct[1]),
-  ];
-  return traceBorrowedLightNormals(normals);
+    yaw(alignedNormals[2], detents[2] - correct[2]),
+  ]);
 }
 
 export function traceBorrowedLightNormals(
   normals: BorrowedLightTrace['normals'],
+  installed = true,
 ): BorrowedLightTrace {
-  const [first, second] = BORROWED_MIRRORS;
-  const fromFirst = reflect(incoming, normals[0]);
-  const reach = stop(first, fromFirst);
-  const cosine = dot(fromFirst, normals[1]);
-  const t = Math.abs(cosine) < EPS ? -1 : dot(delta(second, first), normals[1]) / cosine;
-  if (t > EPS && t < reach) {
-    const bounce = add(first, fromFirst, t);
-    if (length(delta(bounce, second)) <= BORROWED_MIRROR_RADIUS) {
-      const fromSecond = reflect(fromFirst, normals[1]);
-      const end = add(bounce, fromSecond, stop(bounce, fromSecond));
-      return {
-        normals,
-        points: [BORROWED_SKY, first, bounce, end],
-        reachesReceiver: length(delta(end, BORROWED_RECEIVER)) < 0.16,
-      };
+  let origin = BORROWED_MIRRORS[0];
+  let direction = reflect(incoming, normals[0]);
+  const points = [BORROWED_SKY, origin];
+  const nextMirrors = installed ? ([1, 2] as const) : ([1] as const);
+  for (const index of nextMirrors) {
+    const mirror = index === 1 ? BORROWED_MIRRORS[1] : BORROWED_REFLECTOR;
+    const limit = stop(origin, direction);
+    const incidence = dot(direction, normals[index]);
+    const t =
+      Math.abs(incidence) < EPS ? -1 : dot(delta(mirror, origin), normals[index]) / incidence;
+    const bounce = add(origin, direction, t);
+    if (t <= EPS || t >= limit || length(delta(bounce, mirror)) > BORROWED_MIRROR_RADIUS) {
+      points.push(add(origin, direction, limit));
+      return { normals, points, reachesReceiver: false };
     }
+    points.push(bounce);
+    origin = bounce;
+    direction = reflect(direction, normals[index]);
   }
+  const end = add(origin, direction, stop(origin, direction));
+  points.push(end);
   return {
     normals,
-    points: [BORROWED_SKY, first, add(first, fromFirst, reach)],
-    reachesReceiver: false,
+    points,
+    reachesReceiver: installed && length(delta(end, BORROWED_RECEIVER)) < 0.16,
   };
 }
 
@@ -141,14 +149,30 @@ export function readBorrowedLight(run: {
   readonly seed: string;
   readonly borrowedLight?: BorrowedLightState;
 }): BorrowedLightState {
-  if (run.borrowedLight) return run.borrowedLight;
-  const [a, b] = borrowedLightTarget(run.seed);
+  if (run.borrowedLight)
+    return {
+      detents: [
+        run.borrowedLight.detents[0],
+        run.borrowedLight.detents[1],
+        run.borrowedLight.detents[2] ?? 0,
+      ],
+      reflector: run.borrowedLight.reflector ?? run.borrowedLight.open ?? false,
+      reflectorFound:
+        run.borrowedLight.reflectorFound ??
+        run.borrowedLight.reflector ??
+        run.borrowedLight.open ??
+        false,
+      open: run.borrowedLight.open,
+    };
+  const [, b, c] = borrowedLightTarget(run.seed);
   const random = Stream.fromKey(`${run.seed}:borrowed-light-start`);
-  const left = random.int(0, 3) as BorrowedLightDetent;
+  let left = random.int(0, 3) as BorrowedLightDetent;
   const right = random.int(0, 3) as BorrowedLightDetent;
-  const detents: BorrowedLightState['detents'] =
-    left === a && right === b ? [next(left), right] : [left, right];
-  return { detents, open: false };
+  const third = random.int(0, 3) as BorrowedLightDetent;
+  if (left === 0) left = 1;
+  let detents: BorrowedLightState['detents'] = [left, right, third];
+  if (detents[1] === b && detents[2] === c) detents = [left, right, next(third)];
+  return { detents, reflectorFound: false, reflector: false, open: false };
 }
 
 export function operateBorrowedLight(
@@ -156,13 +180,35 @@ export function operateBorrowedLight(
   state: BorrowedLightState,
   control: BorrowedLightControl,
 ): BorrowedLightState {
-  const [a, b] = state.detents;
+  if (state.open) return state;
+  const [a, b, c] = state.detents;
+  if (control === 'reset') {
+    const initial = readBorrowedLight({ seed });
+    return initial.detents.every((value, i) => value === state.detents[i]) &&
+      state.reflector === initial.reflector &&
+      state.reflectorFound === initial.reflectorFound &&
+      state.open === initial.open
+      ? state
+      : initial;
+  }
+  if (control === 'take-reflector')
+    return state.reflectorFound ? state : { ...state, reflectorFound: true };
+  if (control === 'install')
+    return !state.reflectorFound || state.reflector
+      ? state
+      : {
+          ...state,
+          reflector: true,
+          open: traceBorrowedLight(seed, state.detents).reachesReceiver,
+        };
+  if (control === 2 && !state.reflector) return state;
   const detents: BorrowedLightState['detents'] =
-    control === 'reset'
-      ? readBorrowedLight({ seed }).detents
-      : control === 0
-        ? [next(a), b]
-        : [a, next(b)];
-  if (detents[0] === a && detents[1] === b) return state;
-  return { detents, open: state.open || traceBorrowedLight(seed, detents).reachesReceiver };
+    control === 0 ? [next(a), b, c] : control === 1 ? [a, next(b), c] : [a, b, next(c)];
+  if (detents.every((value, i) => value === state.detents[i])) return state;
+  return {
+    ...state,
+    detents,
+    open:
+      state.open || (state.reflector === true && traceBorrowedLight(seed, detents).reachesReceiver),
+  };
 }

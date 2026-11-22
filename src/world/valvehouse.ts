@@ -407,7 +407,7 @@ export class Valvehouse {
       this.disk(this.chamber, 0.135, 0.05, [x, 0.22, 0.011], this.steel);
       this.pipe(this.chamber, [x, 1.44, 0.17], [x, 1.51, 0.17], 0.093, this.bronze);
       for (const y of [0.38, 1.26])
-        this.boxPart(this.chamber, [0.22, 0.12, 0.25], [x, y, 0.09], this.dark);
+        this.boxPart(this.chamber, [0.22, 0.12, 0.33], [x, y, 0.05], this.dark);
     }
     const radius = 0.078;
     const bend = radius * 1.35;

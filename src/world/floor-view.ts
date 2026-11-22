@@ -62,7 +62,6 @@ import { placeStairEntry } from '../floor/stairs.ts';
 import { type StoneRoom, stoneRoomsFor } from '../floor/stone-rooms.ts';
 import { attachValvehouse } from '../floor/valvehouse.ts';
 import { nearSet, shellSet } from '../floor/visibility.ts';
-import { wallSpanIsExposed } from '../floor/wall-exposure.ts';
 import { PALETTE } from '../palette.ts';
 import type { RunSnapshot } from '../persist/saves.ts';
 import { conservatoryFormula } from '../rules/alchemy.ts';
@@ -300,7 +299,7 @@ export interface FloorView {
     art: THREE.Object3D | undefined,
     seed: string,
     reduced: boolean,
-    finish: () => 'ignored' | 'wrong' | 'opened',
+    finish: () => 'ignored' | 'wrong' | 'matched' | 'opened',
     tick: (at: THREE.Vector3) => void,
   ): void;
   readonly armoryAlcove: ArmoryAlcove | null;
@@ -823,7 +822,7 @@ export function mountFloorView(
           caption:
             plan.floatElevator?.room === room
               ? floatElevator?.opening
-                ? 'Wait for the shutter'
+                ? 'Wait for the lock to release'
                 : 'Recover the fitting from the open hatch'
               : plan.shadowStencil?.room === room
                 ? 'Follow the lantern’s floor symbol'
@@ -1456,10 +1455,7 @@ export function mountFloorView(
               ) && !(stairs?.entry.room === index && stairs.entry.door === door.id),
           }));
           const edge = templateById(templateId).footprint.max[0];
-          if (stone && stoneKit)
-            applyStoneRoom(styled, stone, stoneKit, doors, edge, (wall, along, width) =>
-              wallSpanIsExposed(plan, room, wall, along, width),
-            );
+          if (stone && stoneKit) applyStoneRoom(styled, stone, stoneKit, doors, edge);
           else if (style && roomStyleKit) applyRoomStyle(styled, style, roomStyleKit, doors, edge);
           const keepDesk = style === 'timber' || (templateId === 'study' && room.loot.length > 0);
           if (templateId === 'hall') copyHallBenches(model, styled);

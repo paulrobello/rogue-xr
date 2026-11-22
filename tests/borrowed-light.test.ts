@@ -46,13 +46,15 @@ describe('Borrowed Light', () => {
       expect(start.open).toBe(false);
       expect(traceBorrowedLight(seed, start.detents).reachesReceiver).toBe(false);
       const lit = DETENTS.flatMap((a) =>
-        DETENTS.filter((b) => traceBorrowedLight(seed, [a, b]).reachesReceiver).map(
-          (b) => [a, b] as const,
+        DETENTS.flatMap((b) =>
+          DETENTS.filter((c) => traceBorrowedLight(seed, [a, b, c]).reachesReceiver).map(
+            (c) => [a, b, c] as const,
+          ),
         ),
       );
       expect(lit).toEqual([target]);
       const { points } = traceBorrowedLight(seed, target);
-      expect(points).toHaveLength(4);
+      expect(points).toHaveLength(5);
       points.at(-1)?.forEach((value, axis) => {
         expect(value).toBeCloseTo(BORROWED_RECEIVER[axis]);
       });
@@ -91,13 +93,19 @@ describe('Borrowed Light', () => {
       if (event.type === 'borrowed-light') opens.push(event.result);
     });
     const target = borrowedLightTarget(SEED);
-    for (const axis of [0, 1] as const) {
+    expect(restored.operateBorrowedLight('install')).toBe('ignored');
+    expect(restored.operateBorrowedLight('take-reflector')).toBe('adjusted');
+    expect(restored.operateBorrowedLight('install')).toBe('adjusted');
+    for (const axis of [0, 1, 2] as const) {
       const turns = (target[axis] - restored.borrowedLight.detents[axis] + 4) % 4;
       for (let steps = 0; steps < turns; steps++) restored.operateBorrowedLight(axis);
     }
-    expect(restored.borrowedLight).toEqual({ detents: target, open: true });
-    expect(restored.operateBorrowedLight('reset')).toBe('adjusted');
-    expect(restored.borrowedLight).toEqual({ ...readBorrowedLight({ seed: SEED }), open: true });
+    expect(restored.borrowedLight).toEqual({
+      detents: target,
+      reflectorFound: true,
+      reflector: true,
+      open: true,
+    });
     expect(restored.operateBorrowedLight('reset')).toBe('ignored');
     expect(opens.filter((event) => event === 'opened')).toHaveLength(1);
     expect(restored.travelToFloor(2, 1)).toBe(true);
@@ -106,6 +114,29 @@ describe('Borrowed Light', () => {
     expect(continued.continueRun(cleared)).toBe(true);
     expect(continued.travelToFloor(3, layout.recessRoom)).toBe(true);
     expect(continued.borrowedLight).toEqual(restored.borrowedLight);
+  });
+
+  it('restores a released legacy two-mirror save with the new beam path intact', () => {
+    const layout = planFor().borrowedLight;
+    if (!layout) throw Error('Missing Borrowed Light fixture');
+    const flow = fresh();
+    flow.newRun(SEED);
+    flow.travelToFloor(2, 0);
+    flow.travelToFloor(3, layout.opticsRoom);
+    const snapshot = flow.snapshot(30);
+    if (!snapshot) throw Error('Missing run snapshot');
+    const legacy = {
+      ...snapshot,
+      run: { ...snapshot.run, borrowedLight: { detents: [0, 1], open: true } },
+    };
+    const restored = fresh();
+    expect(restored.continueRun(validateSnapshot(legacy))).toBe(true);
+    expect(restored.borrowedLight).toEqual({
+      detents: borrowedLightTarget(SEED),
+      reflectorFound: true,
+      reflector: true,
+      open: true,
+    });
   });
 
   it('runs the floor stencil and the door collider from the same solved state', () => {
@@ -135,7 +166,7 @@ describe('Borrowed Light', () => {
       const front = world.colliders[layout.opticsRoom].length;
       const back = world.colliders[layout.recessRoom].length;
       expect(clue.visible).toBe(false);
-      stage.sync({ detents: borrowedLightTarget(SEED), open: true });
+      stage.sync({ detents: borrowedLightTarget(SEED), reflector: true, open: true });
       stage.update(0.45);
       expect(clue.visible).toBe(true);
       expect(leaf.visible).toBe(true);
@@ -145,10 +176,14 @@ describe('Borrowed Light', () => {
       expect(world.colliders[layout.opticsRoom]).toHaveLength(front - 1);
       expect(world.colliders[layout.recessRoom]).toHaveLength(back - 1);
       stage.sync(
-        operateBorrowedLight(SEED, { detents: borrowedLightTarget(SEED), open: true }, 'reset'),
+        operateBorrowedLight(
+          SEED,
+          { detents: borrowedLightTarget(SEED), reflector: true, open: true },
+          'reset',
+        ),
       );
       stage.update(0.4);
-      expect(clue.visible).toBe(false);
+      expect(clue.visible).toBe(true);
       expect(leaf.visible).toBe(false);
       expect(world.colliders[layout.opticsRoom]).toHaveLength(front - 1);
       expect(readBorrowedLight({ seed: SEED })).toEqual(start);

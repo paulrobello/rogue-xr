@@ -183,7 +183,11 @@ export class ShadowStencil {
   }
 
   get aligned(): boolean {
-    return this.age >= STENCIL_SLIDE_SECONDS && this.state.detent === this.target.detent;
+    return (
+      this.age >= STENCIL_SLIDE_SECONDS &&
+      this.state.detent === this.target.detent &&
+      (this.state.pitch ?? 0) === this.target.pitch
+    );
   }
 
   get released(): boolean {
@@ -244,6 +248,28 @@ export class ShadowStencil {
     this.block('stencil-plinth-foot', station, [1.16, 0.11, 0.39], [0, 0.055, 0.219], this.stone);
     this.block('stencil-plinth', station, [0.86, 1.06, 0.34], [0, 0.61, 0.207], this.stone);
     this.block('stencil-lantern-shelf', station, [1.16, 0.14, 0.47], [0, 1.15, 0.264], this.stone);
+    // A stepped brass chassis makes the optical instrument read as a machine, not a stack of boxes.
+    for (const x of [-0.49, 0.49]) {
+      this.block(
+        'stencil-chassis-upright',
+        station,
+        [0.075, 0.94, 0.055],
+        [x, 0.61, 0.414],
+        this.brass,
+      );
+      for (const y of [0.18, 0.61, 1.04])
+        this.mesh(
+          'stencil-chassis-rivet',
+          station,
+          new THREE.SphereGeometry(0.027, 10, 6),
+          this.bright,
+          [x, y, 0.449],
+        );
+    }
+    this.block('stencil-chassis-bridge', station, [1.08, 0.07, 0.08], [0, 1.11, 0.43], this.brass);
+    const lampGlow = new THREE.PointLight(0xffc86b, 1.4, 1.8, 2);
+    lampGlow.position.set(0, LAMP.y, LAMP.z + 0.08);
+    station.add(lampGlow);
     const lantern = art?.getObjectByName('shutter_lantern')?.clone(true);
     if (lantern) {
       lantern.getObjectByName('shutter')?.removeFromParent();
@@ -324,6 +350,16 @@ export class ShadowStencil {
       this.block('stencil-detent-notch', button, [0.011, 0.04, 0.01], [0, 0, 0.039], this.iron);
       this.targets.set(button, { kind: 'slide', detent });
     }
+    for (const pitch of [0, 1, 2, 3] as const) {
+      const button = this.block(
+        `stencil-pitch-${pitch}`,
+        station,
+        [0.12, 0.05, 0.06],
+        [(pitch - 1.5) * 0.16, 0.93, 0.59],
+        this.iron,
+      );
+      this.targets.set(button, { kind: 'pitch', pitch });
+    }
     if (typeof document !== 'undefined') {
       const label = this.keep(new CanvasLabel(880, 300, 1.16, false));
       label.mesh.name = 'shadow-stencil-instructions';
@@ -339,7 +375,7 @@ export class ShadowStencil {
         ctx.font = 'bold 76px Georgia';
         ctx.fillText('Shadow Stencil', width / 2, 92);
         ctx.font = '49px system-ui';
-        ctx.fillText('Slide the shutter until the shadow', width / 2, 161);
+        ctx.fillText('Set shutter and lamp pitch until the shadow', width / 2, 161);
         ctx.fillText('fits the frame. Select the matching tile.', width / 2, 226);
       });
       station.add(label.mesh);
@@ -457,6 +493,7 @@ export class ShadowStencil {
     );
     const offset = (this.shown - this.target.detent) * DETENT_STEP;
     this.slider.position.x = offset;
+    this.slider.rotation.z = ((this.state.pitch ?? 0) - this.target.pitch) * 0.035;
     this.cast.position.x = offset * PROJECT_SCALE;
     this.crestShadow.visible = this.aligned;
     const motion = THREE.MathUtils.smoothstep(this.releaseAge, 0, STENCIL_RELEASE_SECONDS);

@@ -69,15 +69,15 @@ describe('chest card view', () => {
     }
     const start = heights.findIndex((_, i) => i > 0 && (heights[i] ?? 0) > (heights[0] ?? 0));
     expect(start).toBeGreaterThan(0);
-    // Rises about 0.4 m in about 0.9 s, eased, starting inside the coffer below the rim.
+    // Rises about 0.56 m in about 0.9 s, eased, starting inside the coffer below the rim.
     expect(heights[0]).toBeLessThan(BODY_HEIGHT);
     // Monotonic while rising (the rise takes 0.9 s, 54 frames); the hover bob follows.
     for (let i = start + 1; i < Math.min(heights.length, start + 50); i++)
       expect(heights[i] ?? 0).toBeGreaterThanOrEqual((heights[i - 1] ?? 0) - 1e-9);
     step(coffer, 2);
     const rise = card.position.y - (heights[0] ?? 0);
-    expect(rise).toBeGreaterThan(0.36);
-    expect(rise).toBeLessThan(0.44);
+    expect(rise).toBeGreaterThan(0.52);
+    expect(rise).toBeLessThan(0.6);
     expect(card.scale.x).toBeCloseTo(1, 6);
     expect(card.visible).toBe(true);
     expect(coffer.card).toBe('overwind');
@@ -199,11 +199,11 @@ describe('open chest geometry', () => {
     return ray.intersectObjects(solids, false)[0] ?? null;
   };
 
-  it('has an inner floor 6 to 8 cm below the rim, inside inner walls', () => {
+  it('has a deep inner floor near the base, inside inner walls', () => {
     const { coffer } = standing();
     coffer.open(false);
-    expect(COFFER_INNER_DEPTH).toBeGreaterThanOrEqual(0.06);
-    expect(COFFER_INNER_DEPTH).toBeLessThanOrEqual(0.08);
+    expect(COFFER_INNER_DEPTH).toBeGreaterThanOrEqual(0.22);
+    expect(COFFER_INNER_DEPTH).toBeLessThanOrEqual(0.25);
     for (const [x, z] of [
       [0, 0],
       [0.25, 0.12],

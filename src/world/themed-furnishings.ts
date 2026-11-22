@@ -132,6 +132,25 @@ function eligible(
 }
 
 /** Dresses styled halls and studies after gameplay fixtures have claimed their clearance. */
+function nearBuiltInPractical(room: THREE.Group, wallPosition: THREE.Vector3): boolean {
+  const matrix = new THREE.Matrix4();
+  const center = new THREE.Vector3();
+  room.updateWorldMatrix(true, true);
+  return room.children.some((part) => {
+    if (!(part instanceof THREE.InstancedMesh) || part.material.name !== 'PracticalAmberGlass')
+      return false;
+    part.geometry.computeBoundingBox();
+    const bounds = part.geometry.boundingBox;
+    if (!bounds) return false;
+    for (let i = 0; i < part.count; i++) {
+      part.getMatrixAt(i, matrix);
+      bounds.getCenter(center).applyMatrix4(matrix).applyMatrix4(part.matrixWorld);
+      if (Math.hypot(center.x - wallPosition.x, center.z - wallPosition.z) < 2.1) return true;
+    }
+    return false;
+  });
+}
+
 export function furnishThemedRoom(
   world: FloorWorld,
   index: number,
@@ -225,7 +244,10 @@ export function furnishThemedRoom(
   // The baked shells already have practicals and cannot receive the new lamp's light pool.
   if (!room.userData.roomStyle) return releases;
   const lightMount = findPuzzleMount(world, [index], existing, `themed-light-${index}`, 0.29, 0.45);
-  if (lightMount) {
+  if (
+    lightMount &&
+    !nearBuiltInPractical(room, parent.localToWorld(lightMount.wallSurface.clone()))
+  ) {
     const light = kit.StoneTorch.clone(true);
     light.name = `ThemedWallLight-${profile}`;
     light.position.copy(lightMount.wallSurface).setY(1.54);

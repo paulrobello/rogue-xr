@@ -23,20 +23,28 @@ export function readPendulumGallery(
 ): PendulumGalleryState {
   if (run.pendulumGallery) return run.pendulumGallery;
   const detent = run.seed ? (((pendulumTarget(run.seed) + 1) % 3) as PendulumDetent) : 0;
-  return { detent, open: false };
+  return { detent, open: false, phaseReady: false, phaseSet: false };
 }
 
 export function advancePendulumDetent(state: PendulumGalleryState): PendulumGalleryState {
-  if (state.open) return state;
+  if (state.open || state.phaseSet) return state;
+  if (state.phaseReady) return { ...state, phaseSet: true };
   return { ...state, detent: ((state.detent + 1) % 3) as PendulumDetent };
 }
 
 export function completePendulumTrial(run: RunState): {
   readonly run: RunState;
-  readonly result: 'ignored' | 'wrong' | 'opened';
+  readonly result: 'ignored' | 'wrong' | 'matched' | 'opened';
 } {
   const state = readPendulumGallery(run);
   if (state.open) return { run, result: 'ignored' };
   if (state.detent !== pendulumTarget(run.seed)) return { run, result: 'wrong' };
+  if (!state.phaseReady) {
+    return {
+      run: { ...run, pendulumGallery: { ...state, phaseReady: true, phaseSet: false } },
+      result: 'matched',
+    };
+  }
+  if (!state.phaseSet) return { run, result: 'wrong' };
   return { run: { ...run, pendulumGallery: { ...state, open: true } }, result: 'opened' };
 }

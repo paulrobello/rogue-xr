@@ -38,7 +38,7 @@ A wrong handle flashes its indicator and leaves the clue in place. The matching 
 
 ## Stone Reliquary
 
-In eligible Upper Works layouts, a keeper’s rubbing hangs in a different room from the stone seal plate. Select the rubbing to read it. Choose **Save to logbook** to keep the glyph and its instructions across floors and after Continue. Open the logbook from the in-run radial menu to review the saved clues. Its **Map** spread charts the rooms you have visited. Turn to another reached floor to see its rooms, or look for the red **You are here** marker on your current floor. Drag and scroll the map on desktop. In VR, pan with the right stick and select the zoom buttons. **Fit map** restores the overview. **Show finds** marks opened chests and found clues. The **Puzzles** pages show discovered clues, including the rubbing, without requiring a saved copy. **Cards** contains the current deck and permanent collection, and **Stats** summarizes the expedition. Return to the plate and hold the trigger while tracing the mark with the controller ray, or hold the left mouse button and drag on desktop. Draw in one continuous stroke. A rejected trace turns red and leaves the rubbing available for another attempt.
+In eligible Upper Works layouts, a keeper’s rubbing hangs in a different room from the stone seal plate. Select the rubbing to read it. Choose **Save to logbook** to keep the glyph and its instructions across floors and after Continue. Open the logbook from the in-run radial menu to review the saved clues. Its **Map** spread charts the rooms you have visited. Turn to another reached floor to see its rooms, or follow the red arrow on the current floor. The arrow turns with your heading. The map counts explored rooms and marks discovered stairs and lifts. Drag and scroll the map on desktop. In VR, pan with the right stick and select the zoom buttons. **Fit map** restores the overview. **Show finds** marks opened chests and found clues. The **Puzzles** pages show discovered clues, including the rubbing, without requiring a saved copy. **Cards** contains the current deck and permanent collection. Select a card to inspect its full artwork and rules text. **Stats** summarizes the expedition. Return to the plate and hold the trigger while tracing the mark with the controller ray, or hold the left mouse button and drag on desktop. Draw in one continuous stroke. A rejected trace turns red and leaves the rubbing available for another attempt.
 
 A matching trace releases the brass bolt, lowers the stone leaf into the threshold, and opens an optional treasure room. The leaf stays physically blocking until it clears. The room uses the same interchangeable floor, wall, doorway and ceiling pieces as the dungeon, with separately mounted torches, shelving, pottery and plants. The clue, passage and claimed treasure survive Continue. In the `MAPTEST2` showcase, the rubbing is in Upper Works room 3 and the seal plate is in room 2.
 
@@ -50,7 +50,7 @@ The optional branch uses interchangeable stone bays and separate pipework, shelf
 
 ## Pendulum Rendezvous
 
-A reference pendulum and an adjustable pendulum sit beside the gate to an optional Conservatory gallery. Turn the adjustment dial to change the second pendulum’s length. Pull the release lever to start both from the same position. If the centre crossings drift apart, change the setting and try again. When both cross together on the matching setting, the mechanical catch releases the bronze doors automatically.
+A reference pendulum and an adjustable pendulum sit beside the gate to an optional Conservatory gallery. Turn the adjustment dial to change the second pendulum’s length. Pull the release lever to start both from the same position. If the centre crossings drift apart, change the setting and try again. Once their periods match, use the adjustment dial to set the phase latch. Pull the release lever again to open the bronze doors.
 
 The skylit gallery reuses the stone bays and separate furnishings. The selected setting, opened passage and collected treasure survive Continue.
 
@@ -89,16 +89,16 @@ These are design ingredients. The component kits supply physical starting pieces
 
 | No. | Recipe | Player action and visible result |
 | ---: | --- | --- |
-| 1 | Shadow stencil (playable) | Slide a pierced shutter across a lantern. When its shadow sits inside a carved frame, the projected pattern identifies a floor tile. |
-| 2 | Borrowed light (playable) | Tilt a brass mirror to send light around a blind corner. A distant receiver opens where the beam lands. |
+| 1 | Shadow stencil (playable) | Adjust the lantern pitch and slide a pierced shutter. When its shadow sits inside a carved frame, the projected pattern identifies a floor tile. |
+| 2 | Borrowed light (playable) | Find and mount the third reflector, then send light around the screen with three bounces. A distant receiver opens where the beam lands. |
 | 3 | Cancelled inscription | Rotate a polarizing lens over two superimposed engravings. One layer fades until a legible shelf mark remains. |
 | 4 | Prism signal (playable) | Turn a prism to direct light to three receivers. A notch, a star and a ring distinguish the channels as well as their colors. |
 | 5 | Misrouted post (playable) | Read the return station’s routing slip, select its line, and send a brass capsule. Collect the reply to open the vault. |
 | 6 | Speaking pipes (playable) | Sound the sender, then identify the reply by pitch or raised marker in a separate room. Select the matching handle and return to the cistern grille. |
-| 7 | Float elevator (playable) | Admit water to a sight tube. A brass float raises a sealed item to one of several access hatches; stop it at the reachable one. |
+| 7 | Float elevator (playable) | Admit water to a sight tube. Raise the float to its seeded hatch, bleed one mark, refill, and take the fitting to release the chest lock. |
 | 8 | Steam leak (playable) | Find the hissing joint, seat a recovered gasket, and repressurize the line. The repaired branch powers the next device. |
 | 9 | Counterfeit counterweight | Two weights have the same crest but different mass. Compare them on a balance, then install the genuine one to lift a grille. |
-| 10 | Pendulum rendezvous (playable) | Adjust the effective length of one pendulum until two pointers cross together. A mechanical catch engages on the shared beat. |
+| 10 | Pendulum rendezvous (playable) | Match the two periods on the first trial, set the phase latch, then run a second trial. |
 | 11 | Spring tension window (playable) | Wind a key until a gauge enters an engraved interval, then release the clutch. Too little tension only lifts the latch partway. |
 | 12 | Ratchet handoff | Alternate two ratchets so one pawl holds while the other advances a rack. Both controls can be worked with one seated hand. |
 | 13 | Mirror-type press | Turn a plate face-down in a press and stamp a scrap of paper. A previously reversed message becomes a readable inventory note. |
@@ -133,19 +133,19 @@ Select or grip an empty socket to move the spare pin. Select the fitted socket a
 
 ## Shadow Stencil
 
-An optional Lower Works hall has a caged lantern, a pierced shutter and three floor tiles. Select or grip a detent on the lantern rail to slide the shutter. When the projection fits inside the brass frame, it shows a triangle, square, or circle. Select the floor tile embossed with that shape. The tile depresses and the coffer’s locking bar swings up with a latch and scrape. The room uses the modular stone shell, independent shelf, plants, dishes, and torches.
+An optional Lower Works hall has a caged lantern, a pierced shutter and three floor tiles. Select or grip a detent on the lantern rail to slide the shutter, then adjust the lamp pitch. When the projection fits inside the brass frame, it shows a triangle, square, or circle. Select the floor tile embossed with that shape. The tile depresses and the coffer’s locking bar swings up with a latch and scrape. The room uses the modular stone shell, independent shelf, plants, dishes, and torches.
 
-The selected detent and released coffer survive Continue. The `MAPTEST2` showcase has the room off Lower Works room 9.
+The selected detent, lamp pitch, and released coffer survive Continue. The `MAPTEST2` showcase has the room off Lower Works room 9.
 
 ## Reservoir
 
-The Lower Works Reservoir uses modular stone walls, floor, shelving, pottery, plants, and torch sockets. Its sight glass, fill and drain valves, and shuttered coffer mount independently.
+The Lower Works Reservoir uses modular stone walls, floor, shelving, pottery, plants, and torch sockets. Its sight glass, fill and drain valves, and locked coffer mount independently.
 
-Fill or drain one graduation at a time. The numbered hatch shows where to stop. When the water settles at that mark, select or grab the brass fitting. A latch releases the coffer shutter, and the coffer can be opened once the shutter finishes lowering. Continue restores the water level and the fitting, including a released shutter and a claimed reward. The `MAPTEST2` showcase includes the Reservoir on Floor 1.
+Fill or drain one graduation at a time. Raise the float to the numbered hatch, bleed one graduation, and refill to the hatch. When the fitting settles and the ready plate appears, select or grab it to release the chest lock. Continue restores the water level, service steps, lock, and claimed reward. The `MAPTEST2` showcase includes the Reservoir on Floor 1.
 
 ## Borrowed Light
 
-A Conservatory side room puts two brass mirrors between a modular skylight and a floor seal. Light follows the mirrors around a stone screen. Turn Mirror I to reach Mirror II, then turn Mirror II until the floor seal lights up and reads **THE WAY IS OPEN**. The light and the message show where the beam lands, even without color.
+A Conservatory side room puts two brass mirrors and an empty reflector socket between a modular skylight and a floor seal. Take the loose silver disk from the stand and seat it in the socket. Turn Mirror I toward Mirror II, aim Mirror II at the fitted reflector, then turn the reflector until the floor seal reads **THE WAY IS OPEN**. The light and the message show where the beam lands, even without color.
 
 The receiver rings and the stone leaf lowers into its threshold. The doorway stays blocked until the leaf clears. The instruction plaque resets the mirrors. A released recess stays open, and Continue restores the last mirror settings. The `MAPTEST2` showcase includes the room on Floor 3.
 

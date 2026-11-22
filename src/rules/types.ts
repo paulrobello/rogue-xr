@@ -26,12 +26,16 @@ export type PendulumDetent = 0 | 1 | 2;
 export interface PendulumGalleryState {
   readonly detent: PendulumDetent;
   readonly open: boolean;
+  readonly phaseReady?: boolean;
+  readonly phaseSet?: boolean;
 }
 
 export type BorrowedLightDetent = 0 | 1 | 2 | 3;
-export type BorrowedLightControl = 0 | 1 | 'reset';
+export type BorrowedLightControl = 0 | 1 | 2 | 'take-reflector' | 'install' | 'reset';
 export interface BorrowedLightState {
-  readonly detents: readonly [BorrowedLightDetent, BorrowedLightDetent];
+  readonly detents: readonly [BorrowedLightDetent, BorrowedLightDetent, BorrowedLightDetent];
+  readonly reflector?: boolean;
+  readonly reflectorFound?: boolean;
   readonly open: boolean;
 }
 
@@ -40,11 +44,13 @@ export type FloatElevatorControl = 'fill' | 'drain' | 'take';
 export interface FloatElevatorState {
   readonly level: FloatElevatorLevel;
   readonly collected: boolean;
+  readonly serviceStep?: number;
 }
 export type ShadowStencilDetent = 0 | 1 | 2 | 3 | 4;
 export type ShadowStencilTile = 0 | 1 | 2;
 export interface ShadowStencilState {
   readonly detent: ShadowStencilDetent;
+  readonly pitch?: 0 | 1 | 2 | 3;
   readonly opened: boolean;
 }
 export interface SpringTensionState {

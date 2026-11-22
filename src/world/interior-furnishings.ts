@@ -400,6 +400,22 @@ function fitWallCandidate(candidate: Candidate, bounds: THREE.Box3, fp: Rect): v
   else candidate.x = fp.max[0] - inset;
 }
 
+/** The authored bookcase keeps a small export-safe clearance above each shelf. Remove that visual
+ * float at runtime, while leaving the secret pull-book's authored mechanism transform untouched. */
+function settleShelfBooks(bookcase: THREE.Object3D): void {
+  // The authored cover bottoms are 15 mm above the shelf boards and the pull book is 35 mm high.
+  for (const name of [
+    'Bookcase_LibraryBindingAtlas',
+    'Bookcase_ClockIvory',
+    'Bookcase_AntiqueBrass',
+  ]) {
+    const batch = bookcase.getObjectByName(name);
+    if (batch) batch.position.y -= 0.015;
+  }
+  const marked = bookcase.getObjectByName('Bookcase_PullBook');
+  if (marked) marked.position.y -= 0.035;
+}
+
 type Wall = 'N' | 'S' | 'E' | 'W';
 // Free wallpaper spans in the room kit’s wall frame, increasing to the viewer’s right.
 // The hall uses its molded apertures. The study and shaft spans stop at baked furniture,
@@ -687,6 +703,7 @@ export class InteriorFurnishings {
         if (c.root === 'Curtain' && !curtainRooms.has(room)) continue;
         const box = boxFor(c, rootBounds);
         const object = asset.roots[c.root].clone(true);
+        if (c.root === 'Bookcase') settleShelfBooks(object);
         object.name = `interior-${c.root}-${room}`;
         object.position.set(c.x, c.y ?? 0, c.z);
         object.rotation.y = c.yaw;

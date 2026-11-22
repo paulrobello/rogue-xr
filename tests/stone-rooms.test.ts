@@ -63,7 +63,7 @@ describe('the authored stone kit', () => {
     const left = new THREE.Group();
     const right = new THREE.Group();
     right.position.z = -10;
-    for (const room of [left, right]) applyStoneRoom(room, 'dungeon', kit, [], 5, () => false);
+    for (const room of [left, right]) applyStoneRoom(room, 'dungeon', kit, [], 5);
     const scene = new THREE.Group();
     scene.add(left, right);
     scene.updateMatrixWorld(true);

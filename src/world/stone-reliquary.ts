@@ -204,13 +204,15 @@ export class StoneReliquary {
     this.gate.position.set(door.world[0], 0, door.world[1]);
     this.gate.rotation.y = FACING[door.facing];
     this.gate.add(this.leaf);
-    const width = door.width - 0.05;
+    // Leave only a 5 mm reveal at each jamb. The old 50 mm inset read as a dark vertical gap in
+    // the Quest view, especially against the authored StoneDoor surround.
+    const width = door.width - 0.01;
     const course = DOOR_HEIGHT / 4;
     for (let row = 0; row < 4; row++) {
       const y = course * (row + 0.5);
       this.block(
         this.leaf,
-        [width, course - 0.012, row % 2 ? 0.157 : 0.175],
+        [width, course - 0.006, row % 2 ? 0.157 : 0.175],
         [0, y, 0],
         this.stone,
       );
@@ -218,12 +220,12 @@ export class StoneReliquary {
     for (const side of [-1, 1]) {
       this.block(
         this.leaf,
-        [0.05, DOOR_HEIGHT - 0.018, 0.197],
-        [side * (width / 2 - 0.04), DOOR_HEIGHT / 2, 0],
+        [0.05, DOOR_HEIGHT - 0.01, 0.197],
+        [side * (width / 2 - 0.025), DOOR_HEIGHT / 2, 0],
         this.dark,
       );
     }
-    this.block(this.leaf, [width - 0.06, 0.13, 0.21], [0, 1.11, 0], this.dark);
+    this.block(this.leaf, [width - 0.02, 0.13, 0.21], [0, 1.11, 0], this.dark);
     this.block(this.latch, [width * 0.62, 0.085, 0.044], [width * -0.11, 1.11, 0.116], this.brass);
     this.block(this.latch, [0.12, 0.12, 0.1], [width * -0.37, 1.11, 0.132], this.brass);
     this.block(this.leaf, [0.15, 0.16, 0.08], [width * -0.42, 1.11, 0.113], this.dark);

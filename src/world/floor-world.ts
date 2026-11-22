@@ -183,6 +183,15 @@ function fitBakedDoorFrame(frame: THREE.Object3D): void {
   });
 }
 
+/** Keep opposing architraves off the shared wall plane so their threshold/apron faces cannot tie. */
+function insetBakedDoorFrame(frame: THREE.Object3D, facing: Facing): void {
+  const inset = 0.002;
+  if (facing === 'N') frame.position.z += inset;
+  else if (facing === 'S') frame.position.z -= inset;
+  else if (facing === 'W') frame.position.x += inset;
+  else frame.position.x -= inset;
+}
+
 function doorwayCollider(door: WorldRoom['doors'][number]): Box {
   const [x, z] = door.world;
   const depth = WALL_THICKNESS / 2;
@@ -253,7 +262,9 @@ function buildRoom(
       socket,
       pickup.kind,
       onDesk ? 0.78 : surface,
-      placed.encounter !== null || plan.shadowStencil?.room === index,
+      placed.encounter !== null ||
+        plan.shadowStencil?.room === index ||
+        plan.floatElevator?.room === index,
       keyed,
     );
     if (onDesk) coffer.object.scale.set(0.85, 1.1, 0.85);
@@ -755,6 +766,7 @@ export function buildFloorWorld(
       const walls = new Set(
         plan.sealed.filter((s) => s.room === room && s.style === 'wall').map((s) => s.door),
       );
+      const authored = templates.find(({ id }) => id === plan.rooms[room].templateId);
       for (const door of rooms[room]?.doors ?? []) {
         const plug = model.getObjectByName(`door-plug-${door.id}`);
         const frame = model.getObjectByName(`door-frame-${door.id}`);
@@ -763,6 +775,8 @@ export function buildFloorWorld(
         if (plug) plug.visible = closed;
         if (frame) {
           fitBakedDoorFrame(frame);
+          const facing = authored?.doors.find(({ id }) => id === door.id)?.facing;
+          if (facing) insetBakedDoorFrame(frame, facing);
           frame.visible = !closed;
         }
       }

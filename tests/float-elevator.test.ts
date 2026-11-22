@@ -7,12 +7,13 @@ import { placeStairEntry } from '../src/floor/stairs.ts';
 import { RunFlow } from '../src/flow/flow.ts';
 import { validateSnapshot } from '../src/persist/saves.ts';
 import {
+  FLOAT_SERVICE_READY,
   floatElevatorTarget,
   operateFloatElevator,
   readFloatElevator,
 } from '../src/rules/float-elevator.ts';
 import { createWorkshop } from '../src/rules/workshop.ts';
-import { FLOAT_SHUTTER_SECONDS, FLOAT_TRAVEL_SECONDS } from '../src/world/float-elevator.ts';
+import { FLOAT_RELEASE_SECONDS, FLOAT_TRAVEL_SECONDS } from '../src/world/float-elevator.ts';
 import { mountFloorView, playableFloorPlan } from '../src/world/floor-view.ts';
 import { exposedWindowBays } from '../src/world/window-bays.ts';
 
@@ -61,20 +62,32 @@ describe('Float Elevator', () => {
       found.add(target);
       let state = readFloatElevator({});
       expect(operateFloatElevator(seed, state, 'drain')).toBe(state);
-      for (const level of [0, 1, 2, 3, 4]) {
-        expect(state.level).toBe(level);
-        const take = operateFloatElevator(seed, state, 'take');
-        if (level !== target) expect(take).toBe(state);
-        else {
-          expect(take.collected).toBe(true);
-          expect(operateFloatElevator(seed, take, 'take')).toBe(take);
-          expect(operateFloatElevator(seed, take, 'drain').collected).toBe(true);
-        }
-        state = operateFloatElevator(seed, state, 'fill');
+      for (const control of [
+        ...Array.from({ length: target }, () => 'fill' as const),
+        'drain',
+        'fill',
+      ] as const) {
+        const next = operateFloatElevator(seed, state, control);
+        expect(next).not.toBe(state);
+        state = next;
       }
-      expect(operateFloatElevator(seed, state, 'fill')).toBe(state);
+      expect(state.level).toBe(target);
+      const take = operateFloatElevator(seed, state, 'take');
+      expect(take.collected).toBe(true);
+      expect(operateFloatElevator(seed, take, 'take')).toBe(take);
+      expect(operateFloatElevator(seed, take, 'drain').collected).toBe(true);
+      if (target < 4) expect(operateFloatElevator(seed, state, 'fill').serviceStep).toBe(0);
     }
     expect(found).toEqual(new Set([1, 2, 3, 4]));
+  });
+
+  it('can recover a legacy save at the old target hatch', () => {
+    const level = floatElevatorTarget(SEED);
+    let state = { level, collected: false } as ReturnType<typeof readFloatElevator>;
+    expect(operateFloatElevator(SEED, state, 'take')).toBe(state);
+    for (const control of ['drain', 'fill', 'drain', 'fill', 'take'] as const)
+      state = operateFloatElevator(SEED, state, control);
+    expect(state).toEqual({ level, collected: true, serviceStep: FLOAT_SERVICE_READY });
   });
 
   it('restores the unfinished water level and the released coffer across floor travel', () => {
@@ -82,11 +95,14 @@ describe('Float Elevator', () => {
     flow.newRun(SEED);
     expect(flow.operateFloatElevator('fill')).toBe('adjusted');
     const draft = validateSnapshot(flow.snapshot(11));
-    expect(draft.run.floatElevator).toEqual({ level: 1, collected: false });
+    expect(draft.run.floatElevator).toMatchObject({ level: 1, collected: false, serviceStep: 0 });
     const continued = fresh();
     expect(continued.continueRun(draft)).toBe(true);
     while (continued.floatElevator.level < floatElevatorTarget(SEED))
       expect(continued.operateFloatElevator('fill')).toBe('adjusted');
+    expect(continued.operateFloatElevator('take')).toBe('ignored');
+    expect(continued.operateFloatElevator('drain')).toBe('adjusted');
+    expect(continued.operateFloatElevator('fill')).toBe('adjusted');
     expect(continued.operateFloatElevator('take')).toBe('released');
     expect(continued.operateFloatElevator('take')).toBe('ignored');
     const solved = continued.floatElevator;
@@ -112,25 +128,16 @@ describe('Float Elevator', () => {
       floor.world.current = apparatus.room;
       const water = apparatus.object.getObjectByName('reservoir-water');
       const basket = apparatus.object.getObjectByName('reservoir-float');
-      const shutter = apparatus.chamber.getObjectByName('reservoir-recess-shutter');
       const pick = apparatus.object.getObjectByName('reservoir-take-fitting');
-      if (!water || !basket || !shutter || !pick) throw Error('Missing station parts');
+      if (!water || !basket || !pick) throw Error('Missing station parts');
       const coffer = floor.world.coffers.find(({ room }) => room === apparatus.room);
       const lid = coffer?.object.getObjectByName('coffer-lid');
-      if (!coffer || !lid) throw Error('Missing coffer hinge');
+      const lock = coffer?.object.getObjectByName('coffer-padlock');
+      if (!coffer || !lid || !lock) throw Error('Missing coffer lid or lock');
+      expect(floor.world.group.getObjectByName('reservoir-coffer-recess')).toBeUndefined();
       coffer.open(false);
-      const openAngle = lid.rotation.x;
-      expect(openAngle).toBeGreaterThan(Math.PI / 2);
-      const localLid = lid.clone(true);
-      const enclosure = apparatus.chamber.children
-        .filter((child) => child !== shutter)
-        .map((child) => ({ name: child.name, box: new THREE.Box3().setFromObject(child.clone()) }));
-      for (let sample = 0; sample <= 32; sample++) {
-        localLid.rotation.x = (openAngle * sample) / 32;
-        const sweptLid = new THREE.Box3().setFromObject(localLid, true);
-        const overlap = enclosure.find(({ box }) => box.intersectsBox(sweptLid));
-        expect(overlap?.name, `Lid at ${localLid.rotation.x.toFixed(3)} rad`).toBeUndefined();
-      }
+      expect(coffer.opened).toBe(false);
+      expect(lock.visible).toBe(true);
       const wheel = apparatus.object.getObjectByName('reservoir-fill-wheel-hit');
       if (!wheel) throw Error('Missing valve wheel target');
       const wheelPoint = wheel.getWorldPosition(new THREE.Vector3());
@@ -143,7 +150,11 @@ describe('Float Elevator', () => {
       const eye = apparatus.object.localToWorld(new THREE.Vector3(0, pick.position.y, 1.63));
       const aim = pick.getWorldPosition(new THREE.Vector3()).sub(eye).normalize();
       expect(apparatus.pick(eye, aim)).toBeNull();
-      const closed = { level: apparatus.target, collected: false } as const;
+      const closed = {
+        level: apparatus.target,
+        collected: false,
+        serviceStep: FLOAT_SERVICE_READY,
+      } as const;
       apparatus.sync(closed);
       const start = basket.position.y;
       apparatus.update(FLOAT_TRAVEL_SECONDS / 2);
@@ -155,14 +166,17 @@ describe('Float Elevator', () => {
       const farSide = apparatus.object.localToWorld(new THREE.Vector3(0, pick.position.y, -0.7));
       expect(apparatus.near(farSide, 1.4)).toBeNull();
       apparatus.sync({ ...closed, collected: true });
-      apparatus.update(FLOAT_SHUTTER_SECONDS / 2);
-      expect(shutter.visible).toBe(true);
+      apparatus.update(FLOAT_RELEASE_SECONDS / 2);
       expect(apparatus.opening).toBe(true);
       expect(floor.world.colliders[apparatus.room]).toHaveLength(barriers);
-      apparatus.update(FLOAT_SHUTTER_SECONDS / 2);
-      expect(shutter.visible).toBe(false);
+      apparatus.update(FLOAT_RELEASE_SECONDS / 2);
       expect(apparatus.released).toBe(true);
-      expect(floor.world.colliders[apparatus.room]).toHaveLength(barriers - 1);
+      coffer.update(FLOAT_RELEASE_SECONDS);
+      expect(lock.visible).toBe(false);
+      expect(lid.rotation.x).toBe(0);
+      coffer.open(false);
+      expect(coffer.opened).toBe(true);
+      expect(floor.world.colliders[apparatus.room]).toHaveLength(barriers);
     } finally {
       floor.dispose();
     }

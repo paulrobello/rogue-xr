@@ -12,6 +12,7 @@ import {
   paintMapPage,
 } from './logbook-map.ts';
 import type { ActivePuzzlePage } from './logbook-puzzles.ts';
+import type { LogbookCardRow } from './logbook-run-pages.ts';
 
 const PAGE_WIDTH = 0.435;
 const PAGE_HEIGHT = 0.59;
@@ -62,13 +63,16 @@ function paintParchment(context: CanvasRenderingContext2D, right: boolean): void
   context.strokeRect(42, 35, 620, 872);
 }
 
-export type BookPagePainter = (context: CanvasRenderingContext2D) => void;
+export type BookPagePainter = ((context: CanvasRenderingContext2D) => void) & {
+  readonly cardRows?: readonly LogbookCardRow[];
+};
 
 interface BookSections {
   readonly maps?: readonly LogbookMap[];
   readonly pages?: readonly BookPagePainter[];
   readonly mapViews?: Map<number, MapView>;
   readonly showFinds?: boolean;
+  readonly mapHeading?: () => number;
 }
 
 export function puzzlePage(clue: ActivePuzzlePage): BookPagePainter {
@@ -119,6 +123,7 @@ function paperTexture(
   view: MapView | undefined,
   showFinds: boolean,
   render: BookPagePainter | undefined,
+  heading: number,
 ): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
   canvas.width = PAPER_WIDTH;
@@ -129,7 +134,7 @@ function paperTexture(
     paintParchment(context, right);
     context.fillStyle = '#3d291f';
     context.font = 'bold 46px Georgia, serif';
-    if (map) paintMapPage(context, map, right, view, showFinds);
+    if (map) paintMapPage(context, map, right, view, showFinds, heading);
     else if (render) render(context);
     else if (entry) {
       let y = 131;
@@ -185,6 +190,19 @@ function paperTexture(
 
 export class Logbook {
   readonly root = new THREE.Group();
+  readonly cardTargets = new THREE.Group();
+  private readonly rowGeometry = new THREE.PlaneGeometry(
+    (550 / PAPER_WIDTH) * PAGE_WIDTH,
+    (55 / PAPER_HEIGHT) * PAGE_HEIGHT,
+  );
+  private readonly rowIdle = new THREE.MeshBasicMaterial({ visible: false });
+  private readonly rowHover = new THREE.MeshBasicMaterial({
+    color: 0x926534,
+    transparent: true,
+    opacity: 0.16,
+    depthWrite: false,
+  });
+  private heading = 0;
   private readonly textures = new Map<number, THREE.CanvasTexture>();
   private readonly pages = [this.leaf('logbook-left-page'), this.leaf('logbook-right-page')];
   private readonly faces = [this.leaf('logbook-turn-front'), this.leaf('logbook-turn-back')];
@@ -209,6 +227,8 @@ export class Logbook {
     this.root.name = 'keeper-logbook';
     this.mapViews = sections.mapViews ?? new Map();
     this.showFinds = sections.showFinds ?? false;
+    this.heading = sections.mapHeading?.() ?? 0;
+    this.root.add(this.cardTargets);
     const cover = new THREE.MeshBasicMaterial({ color: 0x472721, toneMapped: false });
     const lining = new THREE.MeshBasicMaterial({ color: 0x754932, toneMapped: false });
     const edges = new THREE.MeshBasicMaterial({ color: 0xb3976e, toneMapped: false });
@@ -269,6 +289,7 @@ export class Logbook {
         this.mapViews.get(Math.floor(index / 2)),
         this.showFinds,
         this.sections.pages?.[index],
+        this.heading,
       );
       this.textures.set(index, texture);
     }
@@ -285,6 +306,35 @@ export class Logbook {
   private showSpread(): void {
     this.print(this.pages[0], this.spread * 2);
     this.print(this.pages[1], this.spread * 2 + 1);
+    this.cardTargets.clear();
+    for (const side of [0, 1]) {
+      const index = this.spread * 2 + side;
+      const rows = this.sections.pages?.[index]?.cardRows ?? [];
+      for (const [row, { id, baseline }] of rows.entries()) {
+        const hit = new THREE.Mesh(this.rowGeometry, this.rowIdle);
+        hit.name = `logbook-card-${index}-${row}`;
+        hit.userData.cardId = id;
+        hit.position.set(
+          (side - 0.5) * PAGE_WIDTH,
+          (0.5 - baseline / PAPER_HEIGHT) * PAGE_HEIGHT,
+          0.014,
+        );
+        this.cardTargets.add(hit);
+      }
+    }
+  }
+
+  get page(): number {
+    return this.spread * 2;
+  }
+
+  cardFor(control: string): string | undefined {
+    return this.cardTargets.getObjectByName(control)?.userData.cardId;
+  }
+
+  hoverCard(control: string, hovered: boolean): void {
+    const row = this.cardTargets.getObjectByName(control);
+    if (row instanceof THREE.Mesh) row.material = hovered ? this.rowHover : this.rowIdle;
   }
 
   mapPoint(ray: THREE.Ray, inside = true): MapPoint | null {
@@ -338,7 +388,7 @@ export class Logbook {
     const context = (texture.image as HTMLCanvasElement).getContext('2d');
     if (context) {
       paintParchment(context, true);
-      paintMapPage(context, map, true, view, this.showFinds);
+      paintMapPage(context, map, true, view, this.showFinds, this.heading);
       texture.needsUpdate = true;
     }
     this.pages[1].userData.mapView = view;
@@ -361,6 +411,7 @@ export class Logbook {
     this.print(this.faces[0], this.spread * 2 + lifted);
     this.print(this.faces[1], next * 2 + (1 - lifted));
     this.print(this.pages[lifted], next * 2 + lifted);
+    this.cardTargets.clear();
     this.turnState = { offset, age: 0 };
     for (const face of this.faces) face.visible = true;
     this.update(0);
@@ -368,6 +419,13 @@ export class Logbook {
   }
 
   update(dt: number): void {
+    if (this.sections.maps?.[this.spread]?.player && this.sections.mapHeading && !this.turnState) {
+      const heading = this.sections.mapHeading();
+      if (Math.abs(Math.sin((heading - this.heading) / 2)) > 0.014) {
+        this.heading = heading;
+        this.mapDirty = true;
+      }
+    }
     if (this.mapDirty) {
       this.mapRedrawAge += Math.max(0, dt);
       if (this.mapRedrawAge >= MAP_REDRAW_SECONDS) this.redrawMap();
@@ -379,6 +437,7 @@ export class Logbook {
       this.spread += turn.offset;
       this.turnState = undefined;
       this.showSpread();
+      this.mapDirty = Boolean(this.sections.maps?.[this.spread]?.player);
       for (const face of this.faces) face.visible = false;
       return;
     }
@@ -392,6 +451,10 @@ export class Logbook {
 
   dispose(): void {
     this.root.removeFromParent();
+    this.cardTargets.clear();
+    this.rowGeometry.dispose();
+    this.rowIdle.dispose();
+    this.rowHover.dispose();
     const materials = new Set<THREE.Material>();
     for (const part of this.root.children) {
       if (!(part instanceof THREE.Mesh)) continue;
