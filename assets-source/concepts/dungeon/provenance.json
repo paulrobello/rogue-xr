@@ -23,5 +23,9 @@
     "cost_note": "ImageGen tool did not expose the request cost."
   },
   "sha256": "8a033049435dfccaff0b0b8d7ceb5a649afd0a149ff51003bceda331791d6808",
-  "rights": "Original generated artwork. No external asset reuse. Creative owner approval pending."
+  "rights": "Original generated artwork. No external asset reuse.",
+  "approvals": {
+    "concept_and_base_models": "Approved by Paul on 2026-11-21 for the serial Blender rig and animation batch.",
+    "rig_and_animation": "Pending combined owner review."
+  }
 }

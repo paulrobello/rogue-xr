@@ -399,6 +399,7 @@ export type ShownHit = PlayerHit & { readonly at: number; readonly enemyId: stri
 
 interface BeatRun {
   readonly seg: EnemyBeat;
+  readonly firstAct: readonly CombatEvent[];
   readonly trace: EnemyTurnTrace;
   readonly actor: SentryActor | null;
   readonly body: THREE.Object3D | null;
@@ -407,6 +408,7 @@ interface BeatRun {
   /** Local-frame displacement of one metre of motion (toward the player, or up). */
   readonly toward: THREE.Vector3 | null;
   readonly impactAt: number;
+  secondHit: { gap: number; events: readonly CombatEvent[] } | null;
   readonly endAt: number;
   t: number;
   impacted: boolean;
@@ -2658,6 +2660,8 @@ export class CombatSession {
     };
     this.turnTrace.push(trace);
     if (this.turnTrace.length > TRACE_CAP) this.turnTrace.shift();
+    let firstAct = seg.act;
+    let secondHit: BeatRun['secondHit'] = null;
     let impactAt = 0;
     let endAt = seg.lead.length > 0 ? LEAD_ONLY_SECONDS : 0;
     if (motion === 'clip' && actor) {
@@ -2665,6 +2669,18 @@ export class CombatSession {
       actor.attack(seg.moveId ?? undefined);
       impactAt = spec.impact + IMPACT_GRACE_SECONDS;
       endAt = spec.duration + CLIP_GRACE_SECONDS;
+      if (spec.secondImpact !== undefined) {
+        const hits = seg.act.flatMap((event, index) =>
+          event.type === 'damage-dealt' && event.target === PLAYER_ID ? [index] : [],
+        );
+        if (hits.length === 2) {
+          firstAct = seg.act.slice(0, hits[1]);
+          secondHit = {
+            gap: spec.secondImpact - spec.impact,
+            events: seg.act.slice(hits[1]),
+          };
+        }
+      }
     } else if (motion === 'lunge') {
       impactAt = LUNGE_SECONDS / 2;
       endAt = LUNGE_SECONDS;
@@ -2692,12 +2708,14 @@ export class CombatSession {
     this.paint();
     return {
       seg,
+      firstAct,
       trace,
       actor,
       body,
       home,
       toward,
       impactAt,
+      secondHit,
       endAt,
       t: 0,
       impacted: false,
@@ -2717,13 +2735,18 @@ export class CombatSession {
     if (!b.impacted && due) {
       b.impacted = true;
       b.trace.impact = this.clock;
-      this.present(b.seg.act);
+      this.present(b.firstAct);
+      this.paint();
+    }
+    if (b.secondHit && b.trace.impact !== null && this.clock >= b.trace.impact + b.secondHit.gap) {
+      this.present(b.secondHit.events);
+      b.secondHit = null;
       this.paint();
     }
   }
 
   private beatDone(b: BeatRun): boolean {
-    if (!b.impacted) return false;
+    if (!b.impacted || b.secondHit !== null) return false;
     if (b.trace.motion === 'clip' && b.actor) {
       return b.actor.dead || b.actor.state !== b.actor.clipForMove(b.seg.moveId) || b.t >= b.endAt;
     }

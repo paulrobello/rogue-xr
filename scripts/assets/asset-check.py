@@ -20,6 +20,7 @@ import math
 import runpy
 import struct
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -576,18 +577,29 @@ ENEMY_RUNTIME = ROOT / "public/assets/enemies"
 ENEMY_SOURCES = ROOT / "assets-source/enemies"
 ENEMY_LIMITS = {"tris": 25_000, "materials": 4, "bones": 40, "influences": 4}
 ENEMY_CLIPS = {"idle", "attack", "hit", "death", "frozen"}
+DUNGEON_CONCEPT = "assets-source/concepts/dungeon/dungeon-enemies-sheet.png"
+ENEMY_BASE_DRAFTS = {
+    "mortar-scarab": (DUNGEON_CONCEPT, (0.55, 0.64)),
+    "lantern-bailiff": (DUNGEON_CONCEPT, (1.60, 1.75)),
+    "trellis-keeper": (
+        "assets-source/concepts/trellis-keeper/trellis-keeper.png",
+        (1.70, 1.80),
+    ),
+}
+
 # Move-specific poses and actions required for each authored enemy.
-DUNGEON_MOVES = {
+ENEMY_MOVES_WITH_TIMING = {
     "mortar-scarab": ("shell-seal", "mortar-rake", "grind"),
     "lantern-bailiff": ("draw-chain", "lantern-sweep", "cinder-glance", "lantern-parry"),
+    "trellis-keeper": ("trellis-brace", "double-cut", "hook-jab"),
 }
 ENEMY_INTENTS = {
     "glasswing-scrivener": ("inscribe", "cross-out", "proof"),
     "furnace-mite": ("double-spark", "stoke", "clink"),
     "null-crown-auditor": ("tally", "reconcile", "levy"),
-    **DUNGEON_MOVES,
+    **ENEMY_MOVES_WITH_TIMING,
 }
-ENEMY_ACTIONS = {"null-crown-auditor": ("levy",), **DUNGEON_MOVES}
+ENEMY_ACTIONS = {"null-crown-auditor": ("levy",), **ENEMY_MOVES_WITH_TIMING}
 # The floor guardian (P5-T4) gets a larger budget and a one-shot `phase-change` clip on top of the five.
 GUARDIAN = "grand-escapement"
 GUARDIAN_LIMITS = {**ENEMY_LIMITS, "tris": 40_000, "bones": 60}
@@ -636,7 +648,9 @@ def enemy_limits(enemy: str) -> tuple[dict, set[str]]:
     return (GUARDIAN_LIMITS, ENEMY_CLIPS | {"phase-change"}) if enemy == GUARDIAN else (ENEMY_LIMITS, ENEMY_CLIPS)
 
 
-def check_dungeon_base(enemy: str, errors: list[str]) -> None:
+def check_enemy_base(
+    enemy: str, concept: str, height: tuple[float, float], errors: list[str]
+) -> None:
     base = ENEMY_SOURCES / enemy / "staging/base"
     if not base.is_dir():
         return
@@ -647,7 +661,7 @@ def check_dungeon_base(enemy: str, errors: list[str]) -> None:
             "glb": glb,
             "blend": base / f"{enemy}-base.blend",
             "generator": ROOT / f"scripts/assets/build-{enemy}-base.py",
-            "concept": ROOT / "assets-source/concepts/dungeon/dungeon-enemies-sheet.png",
+            "concept": ROOT / concept,
         }
         for angle in ("three-quarter", "side", "raised"):
             files[f"review-{angle}"] = base / f"review-{angle}.png"
@@ -668,7 +682,7 @@ def check_dungeon_base(enemy: str, errors: list[str]) -> None:
         if not 0 < len(stats["materials"]) <= ENEMY_LIMITS["materials"] or stats["images"]:
             errors.append(f"enemies/{enemy} base: exceeds the image-free material budget")
         footprint = report["bounds_blender_m"]
-        lower, upper = (0.55, 0.64) if enemy == "mortar-scarab" else (1.6, 1.75)
+        lower, upper = height
         if abs(footprint["min"][2]) > 0.002 or not lower <= footprint["max"][2] <= upper:
             errors.append(f"enemies/{enemy} base: reimport ground contact or stature out of bounds")
         print(f"asset-check enemies/{enemy} base draft: {tris} tris, {len(stats['materials'])} materials")
@@ -676,9 +690,9 @@ def check_dungeon_base(enemy: str, errors: list[str]) -> None:
         errors.append(f"enemies/{enemy} base: {exc}")
 
 
-def check_dungeon_action_timings(enemy: str, manifest: dict, glb: dict, errors: list[str]) -> None:
+def check_enemy_action_timings(enemy: str, manifest: dict, glb: dict, errors: list[str]) -> None:
     timings = manifest.get("actionTimings", {})
-    if not isinstance(timings, dict) or set(timings) != set(DUNGEON_MOVES[enemy]):
+    if not isinstance(timings, dict) or set(timings) != set(ENEMY_MOVES_WITH_TIMING[enemy]):
         errors.append(f"enemies/{enemy}: actionTimings must cover each authored move")
         return
     animations = {clip["name"]: clip for clip in glb.get("animations", [])}
@@ -688,6 +702,12 @@ def check_dungeon_action_timings(enemy: str, manifest: dict, glb: dict, errors: 
         if any(type(value) not in (int, float) or not math.isfinite(value) for value in (duration, impact)) or not 0 < impact < duration:
             errors.append(f"enemies/{enemy}: {move} must place one impact inside its action clip")
             continue
+        second = timing.get("secondImpact")
+        if "secondImpact" in timing and (
+            type(second) not in (int, float) or not math.isfinite(second)
+            or not impact < second < duration
+        ):
+            errors.append(f"enemies/{enemy}: {move} must place its second impact after the first and inside its clip")
         clip = animations.get(f"action-{move}", {})
         accessors = glb.get("accessors", [])
         ends = [accessors[s["input"]].get("max", [0])[0] for s in clip.get("samplers", [])]
@@ -695,9 +715,11 @@ def check_dungeon_action_timings(enemy: str, manifest: dict, glb: dict, errors: 
             errors.append(f"enemies/{enemy}: {move} action duration differs from its GLB")
 
 
-def check_enemy(enemy: str, errors: list[str], warnings: list[str]) -> dict:
-    rt = ENEMY_RUNTIME / enemy
+def check_enemy(
+    enemy: str, errors: list[str], warnings: list[str], *, staged: bool = False
+) -> dict:
     src = ENEMY_SOURCES / enemy
+    rt = src / "staging/runtime" if staged else ENEMY_RUNTIME / enemy
     err = lambda msg: errors.append(f"enemies/{enemy}: {msg}")  # noqa: E731
     summary: dict = {"enemy": enemy}
     limits, want_clips = enemy_limits(enemy)
@@ -705,8 +727,8 @@ def check_enemy(enemy: str, errors: list[str], warnings: list[str]) -> dict:
     for name in sorted(files):
         if not (rt / name).exists():
             err(f"missing runtime file {name}")
-    extra = sorted(p.name for p in rt.iterdir() if p.name not in files)
-    if extra:
+    extra = sorted(p.name for p in rt.iterdir() if p.name not in files) if rt.is_dir() else []
+    if extra and not staged:
         err(f"unlisted runtime files {extra}")
     if any(not (rt / n).exists() for n in files):
         return summary
@@ -738,8 +760,8 @@ def check_enemy(enemy: str, errors: list[str], warnings: list[str]) -> dict:
         err(f"action clip map differs from the authored moves {actions}")
     if clips != want_clips | set(intents.values()) | set(actions.values()) or set(m.get("clips", {})) != want_clips:
         err(f"clips {sorted(clips)} / manifest {sorted(m.get('clips', {}))} != {sorted(want_clips)}")
-    if enemy in DUNGEON_MOVES:
-        check_dungeon_action_timings(enemy, m, g, errors)
+    if enemy in ENEMY_MOVES_WITH_TIMING:
+        check_enemy_action_timings(enemy, m, g, errors)
     budget = m.get("budget", {})
     if budget.get("tris") != glb["triangles"] or budget.get("bones") != bones or budget.get("materials") != len(glb["materials"]):
         err(f"manifest budget {budget} != measured tris {glb['triangles']}, bones {bones}, materials {len(glb['materials'])}")
@@ -753,6 +775,10 @@ def check_enemy(enemy: str, errors: list[str], warnings: list[str]) -> dict:
             err(f"material slot {name} tint must be three numbers in 0..1 (got {tint!r})")
     if abs(m.get("bounds", {}).get("min", [0, 1, 0])[1]) > 1e-3:
         err("rest pose must stand on y = 0")
+
+    if staged:
+        check_enemy_reimport(rt / "reimport-report.json", rt / f"{enemy}.glb", limits, err)
+        return summary
 
     prov_path = src / "provenance.json"
     if not prov_path.exists():
@@ -785,16 +811,19 @@ def check_enemy(enemy: str, errors: list[str], warnings: list[str]) -> dict:
         path = ROOT / ev["path"]
         if not path.exists() or sha256(path) != ev["sha256"]:
             err(f"review evidence {ev['path']} missing or changed since provenance (re-review needed)")
-    reimport = src / "staging/reimport.json"
-    if not reimport.exists():
-        err("staging/reimport.json missing")
-    else:
-        r = json.loads(reimport.read_text())
-        if not r.get("pass") or r.get("glb_sha256") != sha256(rt / f"{enemy}.glb"):
-            err("reimport gate did not pass for the shipped GLB")
-        elif r.get("max_influences", 9) > limits["influences"] or r.get("unweighted_vertices", 1) or r.get("max_weight_sum_error", 1) > 2e-3:
-            err("reimport skin checks failed")
+    check_enemy_reimport(src / "staging/reimport.json", rt / f"{enemy}.glb", limits, err)
     return summary
+
+
+def check_enemy_reimport(report: Path, glb: Path, limits: dict, err: Callable[[str], None]) -> None:
+    if not report.exists():
+        err(f"missing reimport report {report.relative_to(ROOT)}")
+        return
+    data = json.loads(report.read_text())
+    if not data.get("pass") or data.get("glb_sha256") != sha256(glb):
+        err("reimport gate did not pass for this GLB")
+    elif data.get("max_influences", 9) > limits["influences"] or data.get("unweighted_vertices", 1) or data.get("max_weight_sum_error", 1) > 2e-3:
+        err("reimport skin checks failed")
 
 
 def assemble_enemy(enemy: str) -> None:
@@ -1322,6 +1351,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--assemble", metavar="TEMPLATE")
     parser.add_argument("--assemble-enemy", metavar="ENEMY")
+    parser.add_argument("--staged-enemy", choices=ENEMY_MOVES_WITH_TIMING, action="append", default=[])
     parser.add_argument("--assemble-dice", metavar="DIE")
     parser.add_argument("--assemble-decor", action="store_true")
     args = parser.parse_args()
@@ -1351,8 +1381,12 @@ def main() -> int:
         s = check_enemy(enemy, errors, warnings)
         glb = s.get("glb", {})
         print(f"asset-check enemies/{enemy}: {glb.get('triangles')} tris, {len(glb.get('materials', []))} materials, {s.get('bones')} bones, clips {s.get('clips')}")
-    for enemy in DUNGEON_MOVES:
-        check_dungeon_base(enemy, errors)
+    for enemy in args.staged_enemy:
+        s = check_enemy(enemy, errors, warnings, staged=True)
+        glb = s.get("glb", {})
+        print(f"asset-check enemies/{enemy} staged: {glb.get('triangles')} tris, {s.get('bones')} bones, clips {s.get('clips')}")
+    for enemy, (concept, height) in ENEMY_BASE_DRAFTS.items():
+        check_enemy_base(enemy, concept, height, errors)
     dice = sorted(p.name for p in DICE_RUNTIME.iterdir() if p.is_dir()) if DICE_RUNTIME.exists() else []
     for die in dice:
         s = check_dice(die, errors, warnings)

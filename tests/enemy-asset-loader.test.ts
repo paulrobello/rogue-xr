@@ -67,6 +67,18 @@ afterEach(() => {
 const opts = { materials: null };
 
 describe('per-enemy model loader', () => {
+  it('accepts a second action impact only between the first impact and clip end', () => {
+    const raw = JSON.parse(sentryManifest);
+    raw.actionClips = { levy: 'action-levy' };
+    raw.intentClips = { levy: 'intent-levy' };
+    raw.actionTimings = { levy: { duration: 1, impact: 0.25, secondImpact: 0.7 } };
+    expect(parseEnemyManifest(raw, 'cog-sentry').actionTimings?.levy?.secondImpact).toBe(0.7);
+    for (const secondImpact of [0, 0.25, 1, 1.1, Number.NaN]) {
+      raw.actionTimings.levy.secondImpact = secondImpact;
+      expect(() => parseEnemyManifest(raw, 'cog-sentry')).toThrow(/action timing levy/);
+    }
+  });
+
   it('only preloads enemy kinds with a packaged runtime manifest', () => {
     const root = new URL('../public/assets/enemies/', import.meta.url);
     const packaged = readdirSync(root).filter((id) =>

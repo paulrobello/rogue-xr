@@ -1,0 +1,188 @@
+{
+  "id": "mortar-scarab",
+  "version": 1,
+  "glb": "mortar-scarab.glb",
+  "frame": {
+    "units": "m",
+    "up": "+Y",
+    "forward": "-Z",
+    "origin": "floor"
+  },
+  "root": "mortar-scarab",
+  "mesh": "mortar-scarab-body",
+  "bounds": {
+    "min": [
+      -0.671999990940094,
+      1.862645149230957e-09,
+      -0.5049999952316284
+    ],
+    "max": [
+      0.5320000052452087,
+      0.6186798810958862,
+      0.4699999988079071
+    ]
+  },
+  "skeleton": {
+    "root": "root",
+    "bones": 27,
+    "joints": [
+      "root",
+      "chassis",
+      "head",
+      "plate.left.0",
+      "plate.left.1",
+      "plate.left.2",
+      "plate.right.0",
+      "plate.right.1",
+      "plate.right.2",
+      "upper.left.0",
+      "shin.left.0",
+      "foot.left.0",
+      "upper.left.1",
+      "shin.left.1",
+      "foot.left.1",
+      "upper.left.2",
+      "shin.left.2",
+      "foot.left.2",
+      "upper.right.0",
+      "shin.right.0",
+      "foot.right.0",
+      "upper.right.1",
+      "shin.right.1",
+      "foot.right.1",
+      "upper.right.2",
+      "shin.right.2",
+      "foot.right.2"
+    ],
+    "maxInfluences": 1
+  },
+  "rootMotion": "code-owned; root joint fixed",
+  "clips": {
+    "idle": {
+      "duration": 2.0,
+      "loop": "repeat",
+      "events": {}
+    },
+    "attack": {
+      "duration": 1.2,
+      "loop": "once",
+      "events": {
+        "impact": 0.3
+      }
+    },
+    "hit": {
+      "duration": 0.5,
+      "loop": "once",
+      "events": {}
+    },
+    "death": {
+      "duration": 1.4,
+      "loop": "once",
+      "events": {
+        "down": 1.1666666666666667
+      },
+      "endsOnFloor": true
+    },
+    "frozen": {
+      "duration": 1.0,
+      "loop": "repeat",
+      "events": {},
+      "held": true
+    }
+  },
+  "intentClips": {
+    "shell-seal": "intent-shell-seal",
+    "mortar-rake": "intent-mortar-rake",
+    "grind": "intent-grind"
+  },
+  "actionClips": {
+    "shell-seal": "action-shell-seal",
+    "mortar-rake": "action-mortar-rake",
+    "grind": "action-grind"
+  },
+  "actionTimings": {
+    "shell-seal": {
+      "duration": 0.9,
+      "impact": 0.3
+    },
+    "mortar-rake": {
+      "duration": 1.2,
+      "impact": 0.3,
+      "secondImpact": 0.5333333333333333
+    },
+    "grind": {
+      "duration": 1.1,
+      "impact": 0.43333333333333335
+    }
+  },
+  "sockets": {
+    "socket-hit": {
+      "bone": "plate.right.2",
+      "parent": "plate.right.2",
+      "position": [
+        0.11,
+        0.59,
+        -0.19
+      ]
+    },
+    "socket-eye": {
+      "bone": "head",
+      "parent": "head",
+      "position": [
+        0.0,
+        0.32,
+        -0.47
+      ]
+    },
+    "socket-weapon": {
+      "bone": "foot.right.0",
+      "parent": "foot.right.0",
+      "position": [
+        0.47999998927116394,
+        0.01600000262260437,
+        -0.5009999871253967
+      ]
+    }
+  },
+  "emissive": {
+    "material": "amber-core",
+    "color": "#FF9126",
+    "intensity": 1.4,
+    "nodes": [
+      "socket-eye"
+    ]
+  },
+  "materialSlots": {
+    "limestone": {
+      "set": null,
+      "factorOnly": true
+    },
+    "aged-brass": {
+      "set": null,
+      "factorOnly": true
+    },
+    "dark-iron": {
+      "set": null,
+      "factorOnly": true
+    },
+    "amber-core": {
+      "set": null,
+      "factorOnly": true,
+      "emissive": true
+    }
+  },
+  "cull": {
+    "center": [
+      -0.07000026106834412,
+      0.31785763362613295,
+      -0.06955717504024506
+    ],
+    "radius": 0.9003433505665267
+  },
+  "budget": {
+    "tris": 9360,
+    "materials": 4,
+    "bones": 27,
+    "influences": 1
+  }
+}

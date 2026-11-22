@@ -1,0 +1,13 @@
+{
+  "glbSha256": "10abf45b2ec01a79ca6890aec1dd5c8baefa4baf8f24f75bf1f98a5dab3d200c",
+  "reviewer": "gpt-6.2-astra",
+  "stage": "static base model",
+  "score": 84,
+  "threshold": 80,
+  "ownerApproval": "Approved by Paul on 2026-11-21 for the serial Blender rig and animation batch.",
+  "notes": [
+    "The pointed open trellis, suspended seed pod and twin shears read at reduced scale.",
+    "Visible mechanical attachments support the limb pivots. Reimport keeps both soles planted and the hit, eye and weapon sockets attached to the torso, head and right hook.",
+    "The brass looks cleaner than the concept. The seed pod is pale peach, and the shear blades merge in profile."
+  ]
+}

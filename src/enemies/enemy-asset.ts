@@ -70,6 +70,7 @@ export interface EnemyClipSpec {
 export interface EnemyActionTiming {
   duration: number;
   impact: number;
+  secondImpact?: number;
 }
 
 export interface EnemyMaterialSlot {
@@ -150,6 +151,12 @@ export function parseEnemyManifest(raw: unknown, id?: string): EnemyManifest {
       !Number.isFinite(timing?.impact) ||
       !(timing.duration > 0) ||
       !(timing.impact > 0 && timing.impact < timing.duration)
+    )
+      throw new Error(`${who} manifest: invalid action timing ${move}`);
+    if (
+      timing.secondImpact !== undefined &&
+      (!Number.isFinite(timing.secondImpact) ||
+        !(timing.impact < timing.secondImpact && timing.secondImpact < timing.duration))
     )
       throw new Error(`${who} manifest: invalid action timing ${move}`);
   }

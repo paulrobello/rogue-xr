@@ -4,7 +4,7 @@
   "stage": "static base model",
   "score": 84,
   "threshold": 80,
-  "ownerApproval": "pending",
+  "ownerApproval": "Approved by Paul on 2026-11-21 for the serial Blender rig and animation batch.",
   "notes": [
     "The wrist, grip and chain are visibly connected to the pendant, which clears the thigh in the seated three-quarter view.",
     "The eye socket stays parented to the torso and reimports at 1.57 m.",

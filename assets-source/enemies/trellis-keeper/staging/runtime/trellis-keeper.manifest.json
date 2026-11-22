@@ -1,0 +1,184 @@
+{
+  "id": "trellis-keeper",
+  "version": 1,
+  "glb": "trellis-keeper.glb",
+  "frame": {
+    "units": "m",
+    "up": "+Y",
+    "forward": "-Z",
+    "origin": "floor"
+  },
+  "root": "trellis-keeper",
+  "mesh": "trellis-keeper-body",
+  "bounds": {
+    "min": [
+      -0.4638187289237976,
+      -1.4901161193847656e-08,
+      -0.16300000250339508
+    ],
+    "max": [
+      0.4638187289237976,
+      1.75,
+      0.09800000488758087
+    ]
+  },
+  "skeleton": {
+    "root": "root",
+    "bones": 23,
+    "joints": [
+      "root",
+      "hips",
+      "hip-left",
+      "knee-left",
+      "foot-left",
+      "hip-right",
+      "knee-right",
+      "foot-right",
+      "torso-frame",
+      "head",
+      "seed-pod",
+      "shoulder-left",
+      "elbow-left",
+      "forearm-tool-left",
+      "left-blade-hinge",
+      "left-hook-hinge",
+      "shoulder-right",
+      "elbow-right",
+      "forearm-tool-right",
+      "right-blade-hinge",
+      "right-hook-hinge",
+      "trellis-left",
+      "trellis-right"
+    ],
+    "maxInfluences": 1
+  },
+  "rootMotion": "code-owned; root joint fixed",
+  "clips": {
+    "idle": {
+      "duration": 2.0,
+      "loop": "repeat",
+      "events": {}
+    },
+    "attack": {
+      "duration": 1.4666666666666666,
+      "loop": "once",
+      "events": {
+        "impact": 0.4
+      }
+    },
+    "hit": {
+      "duration": 0.5,
+      "loop": "once",
+      "events": {}
+    },
+    "death": {
+      "duration": 1.4,
+      "loop": "once",
+      "events": {
+        "down": 1.2666666666666666
+      },
+      "endsOnFloor": true
+    },
+    "frozen": {
+      "duration": 1.0,
+      "loop": "repeat",
+      "events": {},
+      "held": true
+    }
+  },
+  "intentClips": {
+    "trellis-brace": "intent-trellis-brace",
+    "double-cut": "intent-double-cut",
+    "hook-jab": "intent-hook-jab"
+  },
+  "actionClips": {
+    "trellis-brace": "action-trellis-brace",
+    "double-cut": "action-double-cut",
+    "hook-jab": "action-hook-jab"
+  },
+  "actionTimings": {
+    "trellis-brace": {
+      "duration": 1.0,
+      "impact": 0.3333333333333333
+    },
+    "double-cut": {
+      "duration": 1.4666666666666666,
+      "impact": 0.4,
+      "secondImpact": 0.8666666666666667
+    },
+    "hook-jab": {
+      "duration": 1.0,
+      "impact": 0.3333333333333333
+    }
+  },
+  "sockets": {
+    "socket-hit": {
+      "bone": "torso-frame",
+      "parent": "torso-frame",
+      "position": [
+        0.0,
+        1.4290000200271606,
+        -0.08399999886751175
+      ]
+    },
+    "socket-eye": {
+      "bone": "head",
+      "parent": "head",
+      "position": [
+        0.0,
+        1.6640000343322754,
+        -0.07999999821186066
+      ]
+    },
+    "socket-weapon": {
+      "bone": "right-hook-hinge",
+      "parent": "right-hook-hinge",
+      "position": [
+        0.43799999356269836,
+        0.7630000114440918,
+        -0.12399999797344208
+      ]
+    }
+  },
+  "emissive": {
+    "material": "amber-core",
+    "color": "#FF9126",
+    "intensity": 1.4,
+    "nodes": [
+      "socket-eye"
+    ]
+  },
+  "materialSlots": {
+    "armor-steel": {
+      "set": null,
+      "factorOnly": true
+    },
+    "aged-brass": {
+      "set": null,
+      "factorOnly": true
+    },
+    "emerald-inlay": {
+      "set": null,
+      "factorOnly": true
+    },
+    "amber-core": {
+      "set": null,
+      "factorOnly": true,
+      "emissive": true
+    }
+  },
+  "cull": {
+    "center": [
+      -5.960464477539063e-08,
+      0.8750087972568821,
+      -0.11433376371860504
+    ],
+    "radius": 1.201819671836214
+  },
+  "budget": {
+    "tris": 22588,
+    "materials": 4,
+    "bones": 23,
+    "influences": 1
+  }
+}

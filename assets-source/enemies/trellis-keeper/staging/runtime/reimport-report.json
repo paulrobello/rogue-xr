@@ -1,0 +1,312 @@
+{
+  "base_blend_sha256": "6825c6ac3c3ca23f5e1357d30e55e2534e44009caf85ea6ed4997f4ec7679e18",
+  "base_generator_sha256": "3003b27176e5989a490ca8aa7b6864d98e0f723c388b5cd21c3797774cb1c7fe",
+  "base_glb_sha256": "10abf45b2ec01a79ca6890aec1dd5c8baefa4baf8f24f75bf1f98a5dab3d200c",
+  "blend_sha256": "e95a0641c0d4dd1aa779b5bc73b65af2e7d80184de95547c7f224942f4f74c53",
+  "blender": "5.2.2 LTS",
+  "concept_sha256": "85776601e055218254313a3dbf85a243d41bacb1a7fced5cd7fdb4479d87458f",
+  "generator_sha256": "2f484d854afbc32b6dfad81b6bf9c638229c3ce7c84a037858e83e0d9ac01269",
+  "glb_sha256": "c0aff4bc245b5e3ee59375b6271911aef1f26a64fa350a434a21e7d4d33e18e4",
+  "helper_sha256": "432c7c8a1218564bef7c697dee7ff76225fa2915bdb3e454d4960723ddfad8ba",
+  "holdRangeFrames": [
+    14,
+    20
+  ],
+  "jointCount": 23,
+  "materials": [
+    "armor-steel",
+    "aged-brass",
+    "emerald-inlay",
+    "amber-core"
+  ],
+  "maxApprovedCoreVertexColorError": 7.540215367564385e-06,
+  "maxSocketTrackingErrorM": 3.625712403207039e-07,
+  "max_influences": 1,
+  "max_weight_sum_error": 0.0,
+  "measuredClips": {
+    "action-double-cut": {
+      "contactFrames": {
+        "left": 12,
+        "right": 26
+      },
+      "contactTipPositionGltfM": {
+        "left": [
+          -0.3152740001678467,
+          1.2692534923553467,
+          -0.6256241202354431
+        ],
+        "right": [
+          0.3152739703655243,
+          1.2692534923553467,
+          -0.6256240606307983
+        ]
+      },
+      "duration": 1.4666666666666666,
+      "finalHeadHeightM": 1.75,
+      "forearmIntersectionFrames": {
+        "leftVsFrame": 0,
+        "leftVsRight": 0,
+        "rightVsFrame": 0
+      },
+      "framesChecked": 45,
+      "impactFrame": 12,
+      "jawTipSpacingAtContactM": {
+        "left": -0.016732126474380493,
+        "right": -0.016732126474380493
+      },
+      "maxFootVertexDriftM": 1.808782487655992e-07,
+      "minFloorM": -1.1625301965523249e-07,
+      "minLeftToRightJawGapM": 0.5149474740028381,
+      "minToolToFrameBoundsM": [
+        0.1466880738735199,
+        0.14668799936771393
+      ],
+      "minWeaponToHitSocketM": 0.5441434797169658,
+      "seamErrorM": 1.9332067288948776e-07,
+      "weaponForwardAtImpactM": 0.35229915380477905
+    },
+    "action-hook-jab": {
+      "duration": 1.0,
+      "finalHeadHeightM": 1.75,
+      "forearmIntersectionFrames": {
+        "leftVsFrame": 0,
+        "leftVsRight": 0,
+        "rightVsFrame": 0
+      },
+      "framesChecked": 31,
+      "impactFrame": 10,
+      "maxFootVertexDriftM": 2.787912972269246e-07,
+      "minFloorM": -2.8687966846518975e-07,
+      "minLeftToRightJawGapM": 0.3100177049636841,
+      "minToolToFrameBoundsM": [
+        0.018874704837799072,
+        0.19524334371089935
+      ],
+      "minWeaponToHitSocketM": 0.603367287266444,
+      "seamErrorM": 1.9332067288948776e-07,
+      "weaponForwardAtImpactM": 0.689204216003418
+    },
+    "action-trellis-brace": {
+      "duration": 1.0,
+      "finalHeadHeightM": 1.75,
+      "forearmIntersectionFrames": {
+        "leftVsFrame": 0,
+        "leftVsRight": 0,
+        "rightVsFrame": 0
+      },
+      "framesChecked": 31,
+      "impactFrame": 10,
+      "maxFootVertexDriftM": 2.626858017240472e-07,
+      "minFloorM": -2.39985752159555e-07,
+      "minLeftToRightJawGapM": 0.22813373804092407,
+      "minToolToFrameBoundsM": [
+        0.11730517446994781,
+        0.1173052042722702
+      ],
+      "minWeaponToHitSocketM": 0.38280601398656494,
+      "seamErrorM": 1.9332067288948776e-07,
+      "weaponForwardAtImpactM": 0.3628835082054138
+    },
+    "attack": {
+      "contactFrames": {
+        "left": 12,
+        "right": 26
+      },
+      "contactTipPositionGltfM": {
+        "left": [
+          -0.3152740001678467,
+          1.2692534923553467,
+          -0.6256241202354431
+        ],
+        "right": [
+          0.3152739703655243,
+          1.2692534923553467,
+          -0.6256240606307983
+        ]
+      },
+      "duration": 1.4666666666666666,
+      "finalHeadHeightM": 1.75,
+      "forearmIntersectionFrames": {
+        "leftVsFrame": 0,
+        "leftVsRight": 0,
+        "rightVsFrame": 0
+      },
+      "framesChecked": 45,
+      "jawTipSpacingAtContactM": {
+        "left": -0.016732126474380493,
+        "right": -0.016732126474380493
+      },
+      "maxFootVertexDriftM": 1.808782487655992e-07,
+      "minFloorM": -1.1625301965523249e-07,
+      "minLeftToRightJawGapM": 0.5149474740028381,
+      "minToolToFrameBoundsM": [
+        0.1466880738735199,
+        0.14668799936771393
+      ],
+      "minWeaponToHitSocketM": 0.5441434797169658,
+      "seamErrorM": 0.0
+    },
+    "death": {
+      "duration": 1.4,
+      "finalHeadHeightM": 0.7366575002670288,
+      "forearmIntersectionFrames": {
+        "leftVsFrame": 0,
+        "leftVsRight": 0,
+        "rightVsFrame": 0
+      },
+      "framesChecked": 43,
+      "maxFootVertexDriftM": 7.359752076696812e-07,
+      "minFloorM": -2.670170715646236e-07,
+      "minLeftToRightJawGapM": 0.6779042482376099,
+      "minToolToFrameBoundsM": [
+        0.19524334371089935,
+        0.17891812324523926
+      ],
+      "minWeaponToHitSocketM": 0.7302161611299786,
+      "seamErrorM": 0.0
+    },
+    "frozen": {
+      "duration": 1.0,
+      "finalHeadHeightM": 1.75,
+      "forearmIntersectionFrames": {
+        "leftVsFrame": 0,
+        "leftVsRight": 0,
+        "rightVsFrame": 0
+      },
+      "framesChecked": 31,
+      "maxFootVertexDriftM": 2.9802322387696636e-08,
+      "minFloorM": -1.4901170075631853e-08,
+      "minLeftToRightJawGapM": 0.7060618996620178,
+      "minToolToFrameBoundsM": [
+        0.19524334371089935,
+        0.19524334371089935
+      ],
+      "minWeaponToHitSocketM": 0.7981227856741062,
+      "seamErrorM": 0.0
+    },
+    "hit": {
+      "duration": 0.5,
+      "finalHeadHeightM": 1.75,
+      "forearmIntersectionFrames": {
+        "leftVsFrame": 0,
+        "leftVsRight": 0,
+        "rightVsFrame": 0
+      },
+      "framesChecked": 16,
+      "maxFootVertexDriftM": 2.580895732555064e-07,
+      "minFloorM": -1.5362206795543898e-07,
+      "minLeftToRightJawGapM": 0.7060617804527283,
+      "minToolToFrameBoundsM": [
+        0.19503091275691986,
+        0.19503091275691986
+      ],
+      "minWeaponToHitSocketM": 0.7586385609584922,
+      "seamErrorM": 0.0
+    },
+    "idle": {
+      "duration": 2.0,
+      "finalHeadHeightM": 1.75,
+      "forearmIntersectionFrames": {
+        "leftVsFrame": 0,
+        "leftVsRight": 0,
+        "rightVsFrame": 0
+      },
+      "framesChecked": 61,
+      "maxFootVertexDriftM": 2.7254419772675364e-07,
+      "minFloorM": -2.1214204082298238e-07,
+      "minLeftToRightJawGapM": 0.7060617804527283,
+      "minToolToFrameBoundsM": [
+        0.19510002434253693,
+        0.19510002434253693
+      ],
+      "minWeaponToHitSocketM": 0.7981225501078802,
+      "seamErrorM": 0.0
+    },
+    "intent-double-cut": {
+      "duration": 0.6666666666666666,
+      "finalHeadHeightM": 1.7308714389801025,
+      "forearmIntersectionFrames": {
+        "leftVsFrame": 0,
+        "leftVsRight": 0,
+        "rightVsFrame": 0
+      },
+      "framesChecked": 21,
+      "maxFootVertexDriftM": 2.4087970197688357e-07,
+      "minFloorM": -1.403135030386693e-07,
+      "minLeftToRightJawGapM": 0.6004083156585693,
+      "minToolToFrameBoundsM": [
+        0.15651218593120575,
+        0.15651218593120575
+      ],
+      "minWeaponToHitSocketM": 0.5441439794860102,
+      "seamErrorM": 0.0
+    },
+    "intent-hook-jab": {
+      "duration": 0.6666666666666666,
+      "finalHeadHeightM": 1.7134770154953003,
+      "forearmIntersectionFrames": {
+        "leftVsFrame": 0,
+        "leftVsRight": 0,
+        "rightVsFrame": 0
+      },
+      "framesChecked": 21,
+      "maxFootVertexDriftM": 3.6175648697449064e-07,
+      "minFloorM": -2.634265570122807e-07,
+      "minLeftToRightJawGapM": 0.415576308965683,
+      "minToolToFrameBoundsM": [
+        0.018874943256378174,
+        0.19524334371089935
+      ],
+      "minWeaponToHitSocketM": 0.603367287266444,
+      "seamErrorM": 0.0
+    },
+    "intent-trellis-brace": {
+      "duration": 0.6666666666666666,
+      "finalHeadHeightM": 1.7070789337158203,
+      "forearmIntersectionFrames": {
+        "leftVsFrame": 0,
+        "leftVsRight": 0,
+        "rightVsFrame": 0
+      },
+      "framesChecked": 21,
+      "maxFootVertexDriftM": 2.1078169092136372e-07,
+      "minFloorM": -2.1040543174422055e-07,
+      "minLeftToRightJawGapM": 0.22859269380569458,
+      "minToolToFrameBoundsM": [
+        0.15843546390533447,
+        0.1584354043006897
+      ],
+      "minWeaponToHitSocketM": 0.38280601398656494,
+      "seamErrorM": 0.0
+    }
+  },
+  "measuredContactFrames": {
+    "double-cut": {
+      "left": 12,
+      "right": 26
+    },
+    "hook-jab": 10,
+    "trellis-brace": 10
+  },
+  "neutralBounds": {
+    "max": [
+      0.4638187289237976,
+      1.75,
+      0.09800000488758087
+    ],
+    "min": [
+      -0.4638187289237976,
+      -1.4901161193847656e-08,
+      -0.16300000250339508
+    ]
+  },
+  "ownerRigClipReview": "pending",
+  "pass": true,
+  "reviewEvidence": {
+    "review-contact-sheet.png": "e03225e36014c6afd3ab96f99d1196d0ba3291c346cb674cccd884def4184b9f",
+    "review-moves.mp4": "32500f1a99fb3dd6bd948a384fd3701643e8f3c97b6cdfe80efdfeeea6dedbd8"
+  },
+  "sampleRateHz": 30,
+  "triangleCount": 22588,
+  "unweighted_vertices": 0
+}
