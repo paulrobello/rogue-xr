@@ -2,6 +2,8 @@
 export const QUEST_PERF_STORAGE_NAME = 'rogue-xr.perf.quest.v1';
 export const QUEST_PERF_MAX_SAMPLES = 512;
 export const QUEST_PERF_MAX_FIGHTS = 64;
+export const QUEST_PERF_WINDOW_MS = 10_000;
+export const QUEST_PERF_MAX_WINDOWS = 384;
 export const QUEST_PERF_MIN_SAMPLE_MS = 0.5;
 const CADENCE_PAUSE_MS = 250;
 
@@ -20,11 +22,7 @@ export interface QuestPerfFight {
   readonly wallMs: number;
   readonly endedBy: 'completed' | 'pagehide' | null;
   readonly ms: number;
-  readonly stages: readonly {
-    readonly stage: string;
-    readonly count: number;
-    readonly maxMs: number;
-  }[];
+  readonly stages: readonly QuestPerfStageSummary[];
   readonly cadence: { readonly xr: QuestPerfCadence; readonly desktop: QuestPerfCadence };
 }
 
@@ -34,9 +32,38 @@ export interface QuestPerfCadence {
   readonly fps: number | null;
   readonly maxMs: number | null;
   readonly budgetMisses: number;
+  readonly over33Ms: number;
   readonly p95Ms: number | null;
   readonly systemGaps: number;
   readonly maxSystemGapMs: number | null;
+}
+
+interface QuestPerfStageSummary {
+  readonly stage: string;
+  readonly count: number;
+  readonly totalMs: number;
+  readonly maxMs: number;
+}
+
+export interface QuestPerfContext {
+  readonly seed: string | null;
+  readonly floor: number | null;
+  readonly room: number | null;
+  readonly phase: string;
+  readonly scale: number;
+  readonly foveation: number;
+  readonly buildId: string | null;
+}
+
+export interface QuestPerfWindow {
+  readonly wallMs: number;
+  readonly mode: QuestPerfSample['mode'];
+  readonly targetHz: number;
+  readonly context: QuestPerfContext | null;
+  readonly cadence: QuestPerfCadence;
+  readonly stages: readonly QuestPerfStageSummary[];
+  readonly peakWorldDrawCalls: number;
+  readonly peakWorldTriangles: number;
 }
 
 export interface QuestPerfLog {
@@ -44,6 +71,8 @@ export interface QuestPerfLog {
   readonly samples: readonly QuestPerfSample[];
   readonly fights: readonly QuestPerfFight[];
   readonly currentFight: QuestPerfFight | null;
+  readonly windows: readonly QuestPerfWindow[];
+  readonly currentWindow: QuestPerfWindow | null;
 }
 
 export interface QuestPerfStorage {
@@ -57,7 +86,32 @@ const NO_STAGE = 0;
 
 export function questPerfEnabledFromSearch(search: string): boolean {
   const params = new URLSearchParams(search);
-  return params.get('questperf') === '1' || params.get('perf') === 'quest';
+  const perf = params.get('perf');
+  const quest = params.get('questperf');
+  if (quest === '1' || perf === 'quest') return true;
+  if (quest === '0' || perf === '0') return false;
+  return perf !== null || (quest === null && params.has('playtest'));
+}
+
+export function readStoredQuestPerf(storage: QuestPerfStorage | null): QuestPerfLog | null {
+  if (!storage) return null;
+  try {
+    const data = JSON.parse(
+      storage.getItem(QUEST_PERF_STORAGE_NAME) ?? 'null',
+    ) as QuestPerfLog | null;
+    if (data?.version !== 1 || !Array.isArray(data.samples) || !Array.isArray(data.fights))
+      return null;
+    return {
+      version: 1,
+      samples: data.samples,
+      fights: data.fights,
+      currentFight: data.currentFight ?? null,
+      windows: Array.isArray(data.windows) ? data.windows : [],
+      currentWindow: data.currentWindow ?? null,
+    };
+  } catch {
+    return null;
+  }
 }
 
 export function createQuestPerfProfiler(
@@ -66,21 +120,19 @@ export function createQuestPerfProfiler(
 ): QuestPerfProfiler {
   const samples: QuestPerfSample[] = [];
   const fights: QuestPerfFight[] = [];
-  if (storage) {
-    try {
-      const parsed = JSON.parse(
-        storage.getItem(QUEST_PERF_STORAGE_NAME) ?? '',
-      ) as Partial<QuestPerfLog>;
-      if (parsed.version === 1 && Array.isArray(parsed.samples))
-        samples.push(...parsed.samples.slice(-QUEST_PERF_MAX_SAMPLES));
-      if (parsed.version === 1 && Array.isArray(parsed.fights))
-        fights.push(...parsed.fights.slice(-QUEST_PERF_MAX_FIGHTS));
-      if (parsed.version === 1 && parsed.currentFight?.endedBy === 'pagehide') {
-        fights.push(parsed.currentFight);
-        if (fights.length > QUEST_PERF_MAX_FIGHTS) fights.shift();
-      }
-    } catch {
-      // Missing or malformed captures start empty.
+  const windows: QuestPerfWindow[] = [];
+  const stored = readStoredQuestPerf(storage);
+  if (stored) {
+    samples.push(...stored.samples.slice(-QUEST_PERF_MAX_SAMPLES));
+    fights.push(...stored.fights.slice(-QUEST_PERF_MAX_FIGHTS));
+    windows.push(...stored.windows.slice(-QUEST_PERF_MAX_WINDOWS));
+    if (stored.currentWindow) {
+      windows.push(stored.currentWindow);
+      if (windows.length > QUEST_PERF_MAX_WINDOWS) windows.shift();
+    }
+    if (stored.currentFight?.endedBy === 'pagehide') {
+      fights.push(stored.currentFight);
+      if (fights.length > QUEST_PERF_MAX_FIGHTS) fights.shift();
     }
   }
   const stack: { label: string; start: number; depth: number }[] = [];
@@ -89,6 +141,7 @@ export function createQuestPerfProfiler(
     durationMs: number;
     maxMs: number;
     misses: number;
+    over33Ms: number;
     histogram: number[];
     systemGaps: number;
     maxSystemGapMs: number;
@@ -99,32 +152,97 @@ export function createQuestPerfProfiler(
     durationMs: 0,
     maxMs: 0,
     misses: 0,
+    over33Ms: 0,
     histogram: Array.from({ length: CADENCE_PAUSE_MS + 1 }, () => 0),
     systemGaps: 0,
     maxSystemGapMs: 0,
     last: null,
   });
+  type StageTotals = Map<string, { count: number; totalMs: number; maxMs: number }>;
+  let window: {
+    startedAt: number;
+    wallMs: number;
+    mode: QuestPerfSample['mode'];
+    targetHz: number;
+    context: QuestPerfContext | null;
+    cadence: CadenceState;
+    stages: StageTotals;
+    peakWorldDrawCalls: number;
+    peakWorldTriangles: number;
+  } | null = null;
   let fight: {
     id: string;
     start: number;
     wallMs: number;
-    stages: Map<string, { count: number; maxMs: number }>;
+    stages: StageTotals;
     cadence: { xr: CadenceState; desktop: CadenceState };
   } | null = null;
-  let mode: 'xr' | 'desktop' = 'desktop';
+  let mode: QuestPerfSample['mode'] = 'desktop';
+  let targetHz = 60;
+
+  function aggregateStage(totals: StageTotals, label: string, ms: number): void {
+    const current = totals.get(label) ?? { count: 0, totalMs: 0, maxMs: 0 };
+    current.count += 1;
+    current.totalMs += ms;
+    current.maxMs = Math.max(current.maxMs, ms);
+    totals.set(label, current);
+  }
+
+  function stageLog(totals: StageTotals): QuestPerfStageSummary[] {
+    return [...totals].map(([stage, aggregate]) => ({ stage, ...aggregate }));
+  }
+
+  function recordCadence(state: CadenceState, time: number, hz: number): void {
+    const previous = state.last;
+    state.last = time;
+    if (previous === null) return;
+    const ms = time - previous;
+    if (!(ms > 0)) return;
+    if (ms > CADENCE_PAUSE_MS) {
+      state.systemGaps += 1;
+      state.maxSystemGapMs = Math.max(state.maxSystemGapMs, ms);
+      return;
+    }
+    state.frames += 1;
+    state.durationMs += ms;
+    state.maxMs = Math.max(state.maxMs, ms);
+    state.histogram[Math.min(CADENCE_PAUSE_MS, Math.max(1, Math.round(ms)))] += 1;
+    if (ms > 1000 / hz) state.misses += 1;
+    if (ms > 1000 / 30) state.over33Ms += 1;
+  }
+
+  function sameContext(a: QuestPerfContext | null, b: QuestPerfContext | null): boolean {
+    return (
+      a?.seed === b?.seed &&
+      a?.floor === b?.floor &&
+      a?.room === b?.room &&
+      a?.phase === b?.phase &&
+      a?.scale === b?.scale &&
+      a?.foveation === b?.foveation
+    );
+  }
 
   const persist = (): void => {
     if (!storage) return;
     try {
       storage.setItem(
         QUEST_PERF_STORAGE_NAME,
-        JSON.stringify({ version: 1, samples, fights, currentFight: fightLog('pagehide') }),
+        JSON.stringify({
+          version: 1,
+          samples,
+          fights,
+          currentFight: fightLog('pagehide'),
+          windows,
+          currentWindow: windowLog(),
+        }),
       );
     } catch {
       // The in-memory capture remains useful when storage is unavailable or full.
     }
   };
   const addSample = (label: string, ms: number, depth: number): void => {
+    if (window) aggregateStage(window.stages, label, ms);
+    if (fight) aggregateStage(fight.stages, label, ms);
     if (ms < QUEST_PERF_MIN_SAMPLE_MS) return;
     samples.push({
       stage: label,
@@ -135,12 +253,6 @@ export function createQuestPerfProfiler(
       ms,
       depth,
     });
-    if (fight) {
-      const aggregate = fight.stages.get(label) ?? { count: 0, maxMs: 0 };
-      aggregate.count += 1;
-      aggregate.maxMs = Math.max(aggregate.maxMs, ms);
-      fight.stages.set(label, aggregate);
-    }
     if (samples.length > QUEST_PERF_MAX_SAMPLES)
       samples.splice(0, samples.length - QUEST_PERF_MAX_SAMPLES);
   };
@@ -161,6 +273,7 @@ export function createQuestPerfProfiler(
       fps: state.durationMs > 0 ? (1000 * state.frames) / state.durationMs : null,
       maxMs: state.frames > 0 ? state.maxMs : null,
       budgetMisses: state.misses,
+      over33Ms: state.over33Ms,
       p95Ms,
       systemGaps: state.systemGaps,
       maxSystemGapMs: state.systemGaps > 0 ? state.maxSystemGapMs : null,
@@ -173,14 +286,29 @@ export function createQuestPerfProfiler(
           wallMs: fight.wallMs,
           endedBy,
           ms: Math.max(0, now() - fight.start),
-          stages: [...fight.stages].map(([stage, value]) => ({ stage, ...value })),
+          stages: stageLog(fight.stages),
           cadence: { xr: cadenceLog(fight.cadence.xr), desktop: cadenceLog(fight.cadence.desktop) },
         }
       : null;
+  function windowLog(): QuestPerfWindow | null {
+    if (!window || (!window.cadence.frames && !window.cadence.systemGaps)) return null;
+    return {
+      wallMs: window.wallMs,
+      mode: window.mode,
+      targetHz: window.targetHz,
+      context: window.context,
+      cadence: cadenceLog(window.cadence),
+      stages: stageLog(window.stages),
+      peakWorldDrawCalls: window.peakWorldDrawCalls,
+      peakWorldTriangles: window.peakWorldTriangles,
+    };
+  }
+
   const profiler: QuestPerfProfiler = {
-    setMode(next) {
+    setMode(next, displayHz) {
       if (next !== mode && fight) fight.cadence[next].last = null;
       mode = next;
+      targetHz = mode === 'xr' ? (displayHz ?? 72) : 60;
     },
     start(label) {
       stack.push({ label, start: now(), depth: stack.length });
@@ -210,28 +338,41 @@ export function createQuestPerfProfiler(
       if (fights.length > QUEST_PERF_MAX_FIGHTS)
         fights.splice(0, fights.length - QUEST_PERF_MAX_FIGHTS);
       fight = null;
-      stack.length = 0;
       persist();
     },
-    frame(time) {
-      if (!fight) return;
-      const state = fight.cadence[mode];
-      const previous = state.last;
-      state.last = time;
-      if (previous === null) return;
-      const ms = time - previous;
-      if (!(ms > 0)) return;
-      if (ms > CADENCE_PAUSE_MS) {
-        state.systemGaps += 1;
-        state.maxSystemGapMs = Math.max(state.maxSystemGapMs, ms);
+    frame(time, context = null) {
+      if (fight) recordCadence(fight.cadence[mode], time, targetHz);
+      if (window?.mode === mode) recordCadence(window.cadence, time, window.targetHz);
+      if (
+        window &&
+        window.mode === mode &&
+        window.targetHz === targetHz &&
+        time - window.startedAt < QUEST_PERF_WINDOW_MS &&
+        sameContext(window.context, context)
+      )
         return;
+      const closed = windowLog();
+      if (closed) {
+        windows.push(closed);
+        if (windows.length > QUEST_PERF_MAX_WINDOWS) windows.shift();
       }
-      state.frames += 1;
-      state.durationMs += ms;
-      state.maxMs = Math.max(state.maxMs, ms);
-      state.histogram[Math.min(CADENCE_PAUSE_MS, Math.max(1, Math.round(ms)))] += 1;
-      const budget = mode === 'xr' ? 1000 / 72 : 1000 / 60;
-      if (ms > budget) state.misses += 1;
+      window = {
+        startedAt: time,
+        wallMs: Date.now(),
+        mode,
+        targetHz,
+        context,
+        cadence: newCadence(),
+        stages: new Map(),
+        peakWorldDrawCalls: 0,
+        peakWorldTriangles: 0,
+      };
+      window.cadence.last = time;
+    },
+    worldRender(calls, triangles) {
+      if (!window) return;
+      window.peakWorldDrawCalls = Math.max(window.peakWorldDrawCalls, calls);
+      window.peakWorldTriangles = Math.max(window.peakWorldTriangles, triangles);
     },
     log() {
       return {
@@ -239,11 +380,15 @@ export function createQuestPerfProfiler(
         samples: [...samples],
         fights: [...fights],
         currentFight: fightLog(null),
+        windows: [...windows],
+        currentWindow: windowLog(),
       };
     },
     clear() {
       samples.length = 0;
       fights.length = 0;
+      windows.length = 0;
+      window = null;
       try {
         storage?.setItem(
           QUEST_PERF_STORAGE_NAME,
@@ -259,12 +404,13 @@ export function createQuestPerfProfiler(
 }
 
 export interface QuestPerfProfiler {
-  setMode(mode: 'xr' | 'desktop'): void;
+  setMode(mode: 'xr' | 'desktop', displayHz?: number): void;
   start(label: string): number;
   end(token: number): void;
   beginFight(id: string): void;
   endFight(): void;
-  frame(time: number): void;
+  frame(time: number, context?: QuestPerfContext | null): void;
+  worldRender(calls: number, triangles: number): void;
   log(): QuestPerfLog;
   clear(): void;
   persist(): void;
@@ -278,12 +424,8 @@ export function questPerfStageStart(label: string): number {
   return active?.start(label) ?? NO_STAGE;
 }
 
-export function questPerfSetMode(mode: 'xr' | 'desktop'): void {
-  active?.setMode(mode);
-}
-
-export function questPerfFrame(time: number): void {
-  active?.frame(time);
+export function questPerfWorldRender(calls: number, triangles: number): void {
+  active?.worldRender(calls, triangles);
 }
 
 export function questPerfStageEnd(token: number): void {
@@ -296,8 +438,4 @@ export function questPerfFightStart(id: string): void {
 
 export function questPerfFightEnd(): void {
   active?.endFight();
-}
-
-export function questPerfLog(): QuestPerfLog | null {
-  return active?.log() ?? null;
 }

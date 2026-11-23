@@ -205,7 +205,7 @@ try {
     opts.loco = true;
   }
   if (opts.pressure) {
-    await page.goto(`${opts.base}/?title&debug`);
+    await page.goto(`${opts.base}/?title&debug&playtest&perf=`);
     await waitFor('field-notes-title', () => !!window.__flow?.ui?.visible);
     await ev(async () => {
       const [{ openDb }, { saveRunSnapshot, snapshotRun }, { createRun }] = await Promise.all([
@@ -224,7 +224,7 @@ try {
         },
       };
       await saveRunSnapshot(
-        await openDb(),
+        await openDb(undefined, { name: 'rogue-xr-playtest' }),
         snapshotRun(run, {
           phase: 'explore',
           contentVersion: 3,
@@ -251,9 +251,27 @@ try {
     await ev(() => window.__combat.teleportToNote('C'));
     await target('pressure-note-C');
     await waitFor('read-bench-slip', () => window.__flow.ui.menuView === 'note');
-    await press('menu-note-items');
+    await shot('clue-choices');
+    await press('menu-note-add-close');
+    const savedByClose = await ev(
+      () =>
+        window.__flow.ui.menuView === 'closed' &&
+        window.__flow.flow.logbookEntries.filter(({ id }) => id === 'C').length === 1,
+    );
+    await ev(() => window.__flow.ui.openMenu(window.__combat.camera));
+    await ev(() => window.__flow.ui.activate('menu-items'));
     await press('menu-items-item-C');
-    await press('menu-note-resume');
+    await press('menu-note-add-show');
+    const shown = await ev(
+      () =>
+        window.__flow.ui.menuView === 'logbook' &&
+        window.__flow.ui.root.getObjectByName('logbook-left-page')?.userData.clueId === 'C' &&
+        window.__flow.flow.logbookEntries.filter(({ id }) => id === 'C').length === 1,
+    );
+    record('xr-note-add-and-close', savedByClose);
+    record('xr-note-add-and-show-once', shown);
+    await shot('clue-in-logbook');
+    await press('menu-logbook-close');
     const before = await ev(() => {
       window.__combat.teleportToPressure('pump');
       return window.__flow.flow.run.cogs;
@@ -303,6 +321,54 @@ try {
       cogs: window.__flow.flow.run.cogs,
     }));
     record('pressure-payout', result.state.rewardClaimed && result.cogs === before + 20, result);
+    const backend = await gpu();
+    record('quest-capture-metal', backend.includes('Metal'), backend);
+    const slowdown = await ev(async () => {
+      const previous = window.__spireDiag().perf.quest.currentWindow;
+      const end = performance.now() + 55;
+      while (performance.now() < end) {
+        /* wait until the next frame is late */
+      }
+      await window.__xrEmu.frames(4);
+      const { windows, currentWindow } = window.__spireDiag().perf.quest;
+      const sample = [currentWindow, ...windows].find((item) => item?.wallMs === previous?.wallMs);
+      return { before: previous?.cadence.over33Ms ?? 0, sample };
+    });
+    const sample = slowdown.sample;
+    record(
+      'quest-capture-slow-frame-with-context',
+      sample?.mode === 'xr' &&
+        sample?.context.seed === 'N0TE0032' &&
+        sample?.context.floor === 1 &&
+        Number.isInteger(sample?.context.room) &&
+        sample?.cadence.over33Ms > slowdown.before &&
+        sample?.peakWorldDrawCalls > 0 &&
+        sample?.stages.some(({ stage, totalMs }) => stage === 'frame.cpu' && totalMs > 0),
+      slowdown,
+    );
+    await ev(() => window.__xrEmu.ctx().renderer.xr.getSession().end());
+    await page.goto(`${opts.base}/?title&debug&playtest&perf=0`);
+    await waitFor('pressure-reload', () => !!window.__flow?.ui?.visible);
+    const savedCapture = await ev(() => window.__spireDiag().perf);
+    const checkpoint = [
+      savedCapture.quest?.currentWindow,
+      ...(savedCapture.quest?.windows ?? []),
+    ].find((item) => item?.mode === 'xr' && item.wallMs === sample?.wallMs);
+    record(
+      'quest-capture-recoverable-with-capture-off',
+      !savedCapture.recording &&
+        checkpoint?.wallMs === sample?.wallMs &&
+        checkpoint?.cadence.over33Ms >= sample?.cadence.over33Ms,
+      checkpoint,
+    );
+    await enterVr();
+    await press('title-continue');
+    await waitFor('pressure-continued', () => window.__flow.flow.phase === 'explore');
+    record(
+      'xr-note-cold-continue',
+      (await ev(() => window.__flow.flow.logbookEntries.filter(({ id }) => id === 'C').length)) ===
+        1,
+    );
   } else if (opts.chimes) {
     await page.goto(`${opts.base}/?seed=MAPTEST2&debug`);
     await waitFor(

@@ -381,7 +381,7 @@ function lidBandGeometry(): THREE.BufferGeometry {
 function haloGeometry(): THREE.BufferGeometry {
   return glowing(
     new THREE.PlaneGeometry(1, 1, 8, 8),
-    (x, y) => 0.85 * (1 - 2 * Math.hypot(x, y)) ** 2,
+    (x, y) => 0.85 * Math.max(0, 1 - 2 * Math.hypot(x, y)) ** 2,
   );
 }
 

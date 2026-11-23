@@ -45,6 +45,18 @@ it('mounts the original instruments and allows picking the reply only after disp
   const route = dispatchDestination(seed);
   expect(get('dispatch-routing-slip').userData.labelText).toContain(`Route ${route + 1}`);
   expect(get('dispatch-route-scale').userData.labelText).toContain('Find the return slip');
+  for (const [anchor, tube, x] of [
+    ['dispatch-room', 'dispatch-intake', 0.02],
+    ['dispatch-reply-station', 'dispatch-delivery', 0],
+  ] as const) {
+    const console = get(anchor);
+    const eye = console.localToWorld(new THREE.Vector3(x, 0.955, 0.44));
+    const direction = new THREE.Vector3(0, 0, -1).transformDirection(console.matrixWorld);
+    const ray = new THREE.Raycaster(eye, direction);
+    const castings = console.children.filter((child) => child instanceof THREE.Mesh);
+    expect(ray.intersectObjects(castings, false)[0]?.object.name).toBe(`${tube}-wall-recess`);
+    expect(get(`${tube}-wall-recess`).position.z).toBeGreaterThan(-0.32);
+  }
   const gate = get('dispatch-vault-shutter');
   expect(gate.visible).toBe(true);
   floor.world.current = spec.source.room;

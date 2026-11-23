@@ -122,6 +122,29 @@ function ring(
   return ax === bx && az === bz ? joinDoors(next, a, b, 'counterweight') : null;
 }
 
+/** Lock the chest room before placing mechanisms and supplies that need open routes. */
+export function lockShortcutChest(plan: FloorPlan): FloorPlan {
+  const shortcut = plan.connections.find((edge) => edge.puzzleGate === 'counterweight');
+  const treasure = shortcut?.find(({ room }) => {
+    const target = plan.rooms[room];
+    return target.role === 'treasure' && target.loot.length > 0;
+  });
+  if (!treasure) return plan;
+  const connections = plan.connections.map((edge) => {
+    if (edge.puzzleGate || !edge.some((door) => door.room === treasure.room)) return edge;
+    return Object.assign([edge[0], edge[1]] as const, { puzzleGate: 'counterweight' as const });
+  });
+  return { ...plan, connections };
+}
+
+/** An older save may have used the formerly open chest-room entrance. Resume outside its gates. */
+export function counterweightResumeRoom(plan: FloorPlan, room: number): number {
+  if (plan.rooms[room]?.role !== 'treasure') return room;
+  const exits = plan.connections.filter((edge) => edge.some((door) => door.room === room));
+  if (exits.length < 2 || !exits.every((edge) => edge.puzzleGate === 'counterweight')) return room;
+  return exits[0].find((door) => door.room !== room)?.room ?? room;
+}
+
 function withShortcut(
   plan: FloorPlan,
   reserve: ReturnType<typeof placeStairEntry>,

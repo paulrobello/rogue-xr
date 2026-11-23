@@ -584,9 +584,8 @@ def procedural_drum_gallery(cue: dict, path: Path) -> None:
         partial(0.155, 0.14, 308.0, 0.34, 0.048)
         grit(0.158, 0.055, 0.14, 0.018, 2)
     elif kind == "grille-open":
-        # A compact low drum undertone, five ratchet teeth, then two clearly separated latch chunks.
-        partial(0.018, 0.72, 88.0, 0.34, 0.28, -10.0)
-        partial(0.020, 0.58, 176.0, 0.12, 0.20, -6.0)
+        # Keep the lift dry and mechanical: short ratchet teeth and two separated latch chunks.
+        # A sustained drum undertone made this gate read as a musical hit instead of a grille.
         for at, hz in ((0.080, 1380.0), (0.155, 1490.0), (0.230, 1600.0), (0.305, 1710.0), (0.380, 1820.0)):
             grit(at, 0.030, 0.15, 0.010, 3)
             partial(at, 0.065, hz, 0.11, 0.018)

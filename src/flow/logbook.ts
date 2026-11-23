@@ -175,11 +175,7 @@ function paperTexture(
     } else if (empty && index === 0) {
       context.fillText('Logbook', 77, 148);
       context.font = '37px Georgia, serif';
-      const lines = measuredLines(
-        context,
-        'Use Save to logbook while reading a clue to keep it here.',
-        550,
-      );
+      const lines = measuredLines(context, 'Clues you read in the Spire are kept here.', 550);
       for (const [i, line] of lines.entries()) context.fillText(line, 77, 255 + 49 * i);
     }
   }

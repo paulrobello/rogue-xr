@@ -51,6 +51,24 @@ const step = (coffer: Coffer, seconds: number, dt = 1 / 60): void => {
 };
 
 describe('chest card view', () => {
+  it('fades its halo to zero at every edge of the glow plane', () => {
+    const { kit, coffer, viewer } = standing();
+    coffer.open(false);
+    coffer.showCard('overwind', fakeFace(), false, viewer);
+    const halo = cardOf(coffer)?.getObjectByName('coffer-card-halo');
+    if (!(halo instanceof THREE.Mesh)) throw Error('Missing card halo');
+    const positions = halo.geometry.getAttribute('position');
+    const colors = halo.geometry.getAttribute('color');
+    const red = Array.from({ length: positions.count }, (_, i) => colors.getX(i));
+    expect(Math.max(...red)).toBeGreaterThan(0.5);
+    expect(
+      red
+        .filter((_, i) => Math.hypot(positions.getX(i), positions.getY(i)) >= 0.5)
+        .every((x) => x === 0),
+    ).toBe(true);
+    kit.dispose();
+  });
+
   it('raises the card out of the coffer after the lid opens, then hovers it facing the viewer', () => {
     const { coffer, viewer } = standing();
     const face = fakeFace();

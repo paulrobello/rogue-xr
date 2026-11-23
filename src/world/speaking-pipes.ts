@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { type PipeChannel, pipeTarget, type SpeakingPipesState } from '../rules/speaking-pipes.ts';
 import { ClockInscription } from './clock-inscription.ts';
-import type { FloorWorld } from './floor-world.ts';
+import { DOOR_HEIGHT, type FloorWorld } from './floor-world.ts';
 import type { InteriorPlacement } from './interior-furnishings.ts';
 import type { PbrSet } from './materials.ts';
 import { findPuzzleMount, type PuzzleMount } from './puzzle-placement.ts';
@@ -16,8 +16,8 @@ export type SpeakingPipesPick = PipeAction & { readonly distance: number };
 type Layout = NonNullable<FloorWorld['plan']['speakingPipes']>;
 const CHANNELS = [0, 1, 2] as const;
 const X = [-0.36, 0, 0.36] as const;
-const CLOSED_Y = 1.13;
-const OPEN_Y = -1.23;
+const CLOSED_Y = DOOR_HEIGHT / 2;
+const OPEN_Y = -CLOSED_Y - 0.055;
 const GAUGE_Y = 1.25;
 const FACING = { N: 0, E: -Math.PI / 2, S: Math.PI, W: Math.PI / 2 } as const;
 
@@ -506,18 +506,19 @@ export class SpeakingPipes {
     this.gate.position.set(door.world[0], CLOSED_Y, door.world[1]);
     this.gate.rotation.y = FACING[door.facing];
     const width = door.width - 0.042;
+    const railHeight = 0.075;
     for (const side of [-1, 1]) {
       this.block(
         this.gate,
-        [0.068, 2.27, 0.09],
+        [0.068, DOOR_HEIGHT, 0.09],
         [side * (width / 2 - 0.034), 0, 0],
         this.copper,
         'cistern-gate-jamb',
       );
       this.block(
         this.gate,
-        [width, 0.075, 0.09],
-        [0, side * 1.1, 0],
+        [width, railHeight, 0.09],
+        [0, side * (CLOSED_Y - railHeight / 2), 0],
         this.copper,
         'cistern-gate-rail',
       );
@@ -525,7 +526,7 @@ export class SpeakingPipes {
     for (let i = -3; i <= 3; i++) {
       this.block(
         this.gate,
-        [0.054, 2.16, 0.075],
+        [0.054, DOOR_HEIGHT - 0.12, 0.075],
         [(i * width) / 8, 0, 0],
         this.iron,
         'cistern-gate-bar',
@@ -613,7 +614,7 @@ export class SpeakingPipes {
     }
     if (immediate || this.reducedMotion)
       this.gate.position.y = state === 'open' ? OPEN_Y : CLOSED_Y;
-    this.gate.visible = this.gate.position.y > -1.14;
+    this.gate.visible = this.gate.position.y > -CLOSED_Y;
   }
 
   pulse(): void {
@@ -635,7 +636,7 @@ export class SpeakingPipes {
         9,
         dt,
       );
-      this.gate.visible = this.gate.position.y > -1.14;
+      this.gate.visible = this.gate.position.y > -CLOSED_Y;
       const raised =
         this.pulseTime > 0 ? Math.abs(Math.sin((0.38 - this.pulseTime) * 26)) * 0.028 : 0;
       this.gaugeNeedle.position.y = GAUGE_Y + raised;

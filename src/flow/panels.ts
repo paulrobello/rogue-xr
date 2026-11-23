@@ -25,7 +25,13 @@ import { formatSeed, normalizeSeed } from '../core/rng.ts';
 import { appendSeedChar, SEED_ALPHABET, SEED_LENGTH } from '../desktop/seed-title.ts';
 import { HOLO_CARD_ASPECT } from '../hand/fan-layout.ts';
 import { PALETTE } from '../palette.ts';
-import { FOVEATION_CHOICES, type FoveationChoice, type Settings } from '../persist/db.ts';
+import {
+  FOVEATION_CHOICES,
+  type FoveationChoice,
+  MINIMAP_PLACEMENT_LIMIT,
+  MINIMAP_ZOOMS,
+  type Settings,
+} from '../persist/db.ts';
 import type { RunSnapshot } from '../persist/saves.ts';
 import { brewNames, ingredientNames } from '../rules/alchemy.ts';
 import { bellMelody } from '../rules/bell-chimes.ts';
@@ -131,6 +137,7 @@ export type MenuView =
   | 'closed'
   | 'main'
   | 'settings'
+  | 'minimap'
   | 'deck'
   | 'confirm'
   | 'items'
@@ -211,6 +218,21 @@ interface Board {
   readonly group: THREE.Group;
   /** Palette plate behind each interactive cell, by cell id. */
   readonly plates: Map<string, THREE.Mesh>;
+}
+
+type MinimapPlacementKey = 'minimapHorizontal' | 'minimapVertical';
+type MinimapPlacement = Pick<Settings, MinimapPlacementKey>;
+const minimapPercentage = (value: number): number =>
+  Math.round((value / MINIMAP_PLACEMENT_LIMIT) * 100);
+
+interface MinimapSlider {
+  readonly key: MinimapPlacementKey;
+  readonly panel: MenuPanel;
+  readonly valueId: string;
+  readonly group: THREE.Group;
+  readonly knob: THREE.Mesh;
+  readonly length: number;
+  percentage: number;
 }
 
 /** A brass-edged plate texture: flat fill, 2-step bevel, hairline frame. No rounded pills. */
@@ -398,8 +420,8 @@ export class FlowUi {
   private testSeedPage = 0;
   private shownFor: FlowPhase | null = null;
   private menu: MenuView = 'closed';
+  private settingsMinimap = false;
   private noteId: FieldNoteId | null = null;
-  private notePhysical = false;
   private logbook: Logbook | null = null;
   private logbookStart = 0;
   private logbookCard: string | null = null;
@@ -412,6 +434,13 @@ export class FlowUi {
   private radialMenu: RadialMenu<RunMenuAction> | null = null;
   private releaseDial: (() => void) | null = null;
   private flight: RewardFlight | null = null;
+  private readonly minimapSliders = new Map<string, MinimapSlider>();
+  private minimapSliderId: string | null = null;
+  private minimapSliderDraft: MinimapPlacement | null = null;
+  private readonly minimapSliderRay = new THREE.Ray();
+  private readonly minimapSliderPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+  private readonly minimapSliderHit = new THREE.Vector3();
+  private readonly minimapSliderInverse = new THREE.Matrix4();
   private artTexture: THREE.Texture | null = null;
   private artLoaded = Promise.resolve(true);
 
@@ -470,6 +499,83 @@ export class FlowUi {
     return this.menu !== 'closed';
   }
 
+  /** The uncommitted placement while a minimap slider is captured. */
+  get minimapPlacementPreview(): MinimapPlacement | null {
+    return this.minimapSliderDraft ? { ...this.minimapSliderDraft } : null;
+  }
+
+  startMinimapSlider(controlId: string, ray: THREE.Ray): boolean {
+    const slider = this.minimapSliders.get(controlId);
+    if (!slider || !this.visible || this.minimapSliderDraft) return false;
+    const s = this.deps.settings();
+    this.minimapSliderId = controlId;
+    this.minimapSliderDraft = {
+      minimapHorizontal: s.minimapHorizontal,
+      minimapVertical: s.minimapVertical,
+    };
+    this.dragMinimapSlider(ray);
+    return true;
+  }
+
+  dragMinimapSlider(ray: THREE.Ray): boolean {
+    const id = this.minimapSliderId;
+    const slider = id ? this.minimapSliders.get(id) : undefined;
+    const draft = this.minimapSliderDraft;
+    if (!slider || !draft) return false;
+    slider.group.updateWorldMatrix(true, false);
+    this.minimapSliderRay.copy(ray);
+    this.minimapSliderInverse.copy(slider.group.matrixWorld).invert();
+    this.minimapSliderRay.applyMatrix4(this.minimapSliderInverse);
+    const hit = this.minimapSliderRay.intersectPlane(
+      this.minimapSliderPlane,
+      this.minimapSliderHit,
+    );
+    if (hit) {
+      draft[slider.key] =
+        THREE.MathUtils.clamp((hit.x * 2) / slider.length, -1, 1) * MINIMAP_PLACEMENT_LIMIT;
+      this.paintMinimapSlider(slider, draft[slider.key]);
+    }
+    return true;
+  }
+
+  finishMinimapSlider(commit: boolean): void {
+    const slider = this.minimapSliderId ? this.minimapSliders.get(this.minimapSliderId) : undefined;
+    const draft = this.minimapSliderDraft;
+    this.minimapSliderId = null;
+    this.minimapSliderDraft = null;
+    if (!slider || !draft) return;
+    const s = this.deps.settings();
+    if (!commit) this.paintMinimapSlider(slider, s[slider.key]);
+    else if (draft[slider.key] !== s[slider.key])
+      this.deps.onSettings({ ...s, [slider.key]: draft[slider.key] });
+  }
+
+  nudgeMinimapSlider(id: string | null, key: string): boolean {
+    const slider = id ? this.minimapSliders.get(id) : undefined;
+    if (!slider || this.minimapSliderDraft) return false;
+    const delta =
+      key === 'ArrowRight' || key === 'ArrowUp'
+        ? 0.05
+        : key === 'ArrowLeft' || key === 'ArrowDown'
+          ? -0.05
+          : 0;
+    if (!delta && key !== 'Home' && key !== 'End') return false;
+    const s = this.deps.settings();
+    const value =
+      key === 'Home'
+        ? -MINIMAP_PLACEMENT_LIMIT
+        : key === 'End'
+          ? MINIMAP_PLACEMENT_LIMIT
+          : THREE.MathUtils.clamp(
+              s[slider.key] + delta * MINIMAP_PLACEMENT_LIMIT,
+              -MINIMAP_PLACEMENT_LIMIT,
+              MINIMAP_PLACEMENT_LIMIT,
+            );
+    this.paintMinimapSlider(slider, value);
+    if (value !== s[slider.key]) this.deps.onSettings({ ...s, [slider.key]: value });
+    return true;
+  }
+
   get radialInteractive(): boolean {
     return this.radialMenu?.interactive ?? false;
   }
@@ -502,7 +608,6 @@ export class FlowUi {
     if (this.menu === 'closed') return false;
     this.menu = 'closed';
     this.noteId = null;
-    this.notePhysical = false;
     this.rebuild();
     return true;
   }
@@ -522,19 +627,18 @@ export class FlowUi {
 
   /** Opens an acquired note, from a physical pickup or from Items. */
   readNote(id: PressureNoteId, head: THREE.Object3D, physical = true): boolean {
-    if (!this.deps.noteRecord?.(id) || !this.deps.flow.pressure.notes.includes(id)) return false;
     return this.openFieldNote(id, head, physical);
   }
 
   readReliquaryRubbing(head: THREE.Object3D, physical = true): boolean {
-    if (this.deps.flow.reliquarySeal === 'hidden') return false;
     return this.openFieldNote(RUBBING_NOTE, head, physical);
   }
 
   private openFieldNote(id: FieldNoteId, head: THREE.Object3D, physical: boolean): boolean {
     if (this.menu === 'note' && this.noteId === id) return false;
+    const entry = this.fieldNote(id);
+    if (!entry || !this.deps.flow.saveLogbookClue(entry)) return false;
     this.noteId = id;
-    this.notePhysical = physical;
     this.menuHead = head;
     this.setMenu('note');
     if (physical) this.place(head, true);
@@ -599,6 +703,8 @@ export class FlowUi {
 
   /** Control id under a hit object, or null. A deck viewer card is `deck-card-<index>`. */
   controlAt(object: THREE.Object3D): string | null {
+    const sliderId = object.userData.minimapSlider;
+    if (typeof sliderId === 'string' && this.minimapSliders.has(sliderId)) return sliderId;
     if (this.radialMenu) {
       const action = this.radialMenu.actionAt(object);
       if (action === 'cancel') return 'menu-cancel';
@@ -782,11 +888,11 @@ export class FlowUi {
     if (phase === this.shownFor) return;
     this.shownFor = phase;
     this.tableDistanceMessage = '';
+    this.settingsMinimap = false;
     if (phase !== 'title') this.subview = 'main';
     if (phase !== 'workshop') this.workshopSubview = 'main';
     this.menu = 'closed';
     this.noteId = null;
-    this.notePhysical = false;
     this.endFlight();
     this.rebuild();
     if (this.root.visible) this.place(head);
@@ -838,6 +944,13 @@ export class FlowUi {
   }
 
   private clear(): void {
+    for (const slider of this.minimapSliders.values()) {
+      for (const mesh of slider.group.children) if (mesh instanceof THREE.Mesh) disposeMesh(mesh);
+      slider.group.removeFromParent();
+    }
+    this.minimapSliders.clear();
+    this.minimapSliderId = null;
+    this.minimapSliderDraft = null;
     this.logbook?.dispose();
     this.logbook = null;
     this.logbookCardFace?.dispose();
@@ -912,7 +1025,7 @@ export class FlowUi {
         else this.buildTitle();
       },
       workshop: () => this.buildWorkshop(),
-      settings: () => this.buildSettings(),
+      settings: () => (this.settingsMinimap ? this.buildMinimap(false) : this.buildSettings()),
       reward: () => this.buildReward(),
       'guardian-cleared': () => this.buildGuardianCleared(),
       death: () => this.buildSummary(),
@@ -1463,6 +1576,17 @@ export class FlowUi {
           teleportEnabled: !cur.teleportEnabled,
         })),
         ...this.choiceRows(),
+        {
+          id: 'minimap',
+          label: 'Minimap',
+          onSelect: () => {
+            if (inRun) this.setMenu('minimap');
+            else {
+              this.settingsMinimap = true;
+              this.refresh();
+            }
+          },
+        },
         ...(inRun && !this.deps.flow.guardianDefeated
           ? [{ id: 'abandon', label: 'Abandon run', onSelect: () => this.setMenu('confirm') }]
           : []),
@@ -1484,6 +1608,127 @@ export class FlowUi {
       { x: 0, y: 0.26, z: -BOARD_DISTANCE },
       { width: 0.8, heading: 'Settings', selected: this.choiceSelected() },
     );
+  }
+
+  private buildMinimap(inRun: boolean): void {
+    const s = this.deps.settings();
+    const choose = (change: Partial<Settings>): void => {
+      this.deps.onSettings({ ...this.deps.settings(), ...change });
+      this.refresh();
+    };
+    const board = this.board(
+      'minimap',
+      [
+        [
+          { id: 'enabled-label', label: 'Show overlay', weight: 2 },
+          { id: 'enabled-off', label: 'Off', onSelect: () => choose({ minimapEnabled: false }) },
+          { id: 'enabled-on', label: 'On', onSelect: () => choose({ minimapEnabled: true }) },
+        ],
+        [
+          { id: 'north-up-label', label: 'North up', weight: 2 },
+          { id: 'north-up-off', label: 'Off', onSelect: () => choose({ minimapNorthUp: false }) },
+          { id: 'north-up-on', label: 'On', onSelect: () => choose({ minimapNorthUp: true }) },
+        ],
+        [
+          { id: 'zoom-label', label: 'Zoom', weight: 2 },
+          ...MINIMAP_ZOOMS.map((zoom) => ({
+            id: `zoom-${zoom}`,
+            label: `${zoom === 1 ? '1.0' : zoom}×`,
+            onSelect: () => choose({ minimapZoom: zoom }),
+          })),
+        ],
+        [
+          { id: 'horizontal-label', label: 'Horizontal', weight: 1.25 },
+          { id: 'horizontal', label: '', weight: 3, onSelect: () => {} },
+          { id: 'horizontal-value', label: `${minimapPercentage(s.minimapHorizontal)}%` },
+        ],
+        [
+          { id: 'vertical-label', label: 'Vertical', weight: 1.25 },
+          { id: 'vertical', label: '', weight: 3, onSelect: () => {} },
+          { id: 'vertical-value', label: `${minimapPercentage(s.minimapVertical)}%` },
+        ],
+        {
+          id: 'back',
+          label: 'Back to settings',
+          onSelect: () => {
+            if (inRun) this.setMenu('settings');
+            else {
+              this.settingsMinimap = false;
+              this.refresh();
+            }
+          },
+        },
+      ],
+      { x: 0, y: 0.2, z: -BOARD_DISTANCE },
+      {
+        width: 1.05,
+        heading: 'Minimap',
+        selected: [
+          `enabled-${s.minimapEnabled ? 'on' : 'off'}`,
+          `north-up-${s.minimapNorthUp ? 'on' : 'off'}`,
+          `zoom-${s.minimapZoom}`,
+        ],
+      },
+    );
+    this.addMinimapSlider(board, 'minimap-horizontal', 'minimapHorizontal', 'horizontal');
+    this.addMinimapSlider(board, 'minimap-vertical', 'minimapVertical', 'vertical');
+  }
+
+  private addMinimapSlider(
+    board: Board,
+    id: string,
+    key: MinimapPlacementKey,
+    cellId: string,
+  ): void {
+    const cell = [...board.panel.root.children].find(
+      (child) => board.panel.cellAt(child) === cellId,
+    );
+    if (!cell) return;
+    const mesh = cell as THREE.Mesh;
+    const length =
+      Math.max(0.18, (mesh.geometry as THREE.PlaneGeometry)?.parameters?.width ?? 0.28) * 0.9;
+    const group = new THREE.Group();
+    group.name = id;
+    group.position.set(cell.position.x, cell.position.y, cell.position.z + 0.012);
+    const rail = new THREE.Mesh(
+      new THREE.PlaneGeometry(length, 0.008),
+      new THREE.MeshBasicMaterial({ color: PALETTE.brass }),
+    );
+    rail.name = `${id}-rail`;
+    rail.userData.minimapSlider = id;
+    const knob = new THREE.Mesh(
+      new THREE.CircleGeometry(0.018, 12),
+      new THREE.MeshBasicMaterial({ color: PALETTE.candle }),
+    );
+    knob.name = `${id}-knob`;
+    knob.userData.minimapSlider = id;
+    const center = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.004, 0.022),
+      new THREE.MeshBasicMaterial({ color: PALETTE.brass }),
+    );
+    center.userData.minimapSlider = id;
+    knob.position.z = 0.001;
+    group.add(rail, center, knob);
+    board.panel.root.add(group);
+    const value = this.deps.settings()[key];
+    knob.position.x = (length / 2) * (value / MINIMAP_PLACEMENT_LIMIT);
+    this.minimapSliders.set(id, {
+      key,
+      group,
+      knob,
+      length,
+      panel: board.panel,
+      valueId: `${cellId}-value`,
+      percentage: minimapPercentage(value),
+    });
+  }
+
+  private paintMinimapSlider(slider: MinimapSlider, value: number): void {
+    slider.knob.position.x = (slider.length / 2) * (value / MINIMAP_PLACEMENT_LIMIT);
+    const percentage = minimapPercentage(value);
+    if (slider.percentage === percentage) return;
+    slider.percentage = percentage;
+    slider.panel.setLabel(slider.valueId, `${percentage}%`);
   }
 
   /**
@@ -1563,6 +1808,10 @@ export class FlowUi {
       this.buildRunSettings();
       return;
     }
+    if (this.menu === 'minimap') {
+      this.buildMinimap(true);
+      return;
+    }
     if (this.menu === 'deck') {
       this.buildDeck();
       return;
@@ -1633,20 +1882,21 @@ export class FlowUi {
 
   private openItems(): void {
     this.noteId = null;
-    this.notePhysical = false;
     this.setMenu('items');
   }
 
-  private openLogbook(entry?: LogbookEntry, section: typeof this.bookSection = 'clues'): void {
-    if (entry && !this.deps.flow.saveLogbookClue(entry)) return;
+  private openLogbook(
+    clueId?: LogbookEntry['id'],
+    section: typeof this.bookSection = 'clues',
+  ): void {
     this.bookSection = section;
     this.logbookCard = null;
     this.logbookCardPage = 0;
     this.logbookMapViews.clear();
-    this.logbookStart = entry
+    this.logbookStart = clueId
       ? Math.max(
           0,
-          this.deps.flow.logbookEntries.findIndex(({ id }) => id === entry.id),
+          this.deps.flow.logbookEntries.findIndex(({ id }) => id === clueId),
         )
       : 0;
     this.setMenu('logbook');
@@ -1919,42 +2169,37 @@ export class FlowUi {
     );
   }
 
+  private fieldNote(id: FieldNoteId): LogbookEntry | null {
+    if (id === RUBBING_NOTE) {
+      return {
+        id,
+        title: 'Keeper’s rubbing',
+        body: 'Copy this mark in one continuous stroke.',
+        origin: 'Stone Reliquary · seal plate',
+      };
+    }
+    const record = this.deps.noteRecord?.(id);
+    if (!record) return null;
+    return {
+      id,
+      title: record.title,
+      body: record.body,
+      origin: record.origin ?? `Found on the ${record.source}`,
+    };
+  }
+
   private buildNote(): void {
-    const id = this.noteId;
-    const seed = this.deps.flow.run?.seed;
-    const glyph = id === RUBBING_NOTE && seed ? reliquaryGlyph(seed) : null;
-    const record = glyph
-      ? {
-          title: 'Keeper’s rubbing',
-          body: 'Copy this mark in one continuous stroke.',
-          source: 'Upper Works',
-          origin: 'Stone Reliquary · seal plate',
-        }
-      : id && id !== RUBBING_NOTE
-        ? this.deps.noteRecord?.(id)
-        : null;
-    if (!id || !record) {
+    const entry = this.noteId && this.fieldNote(this.noteId);
+    if (!entry) {
       this.setMenu('items');
       return;
     }
-    const origin = record.origin ?? `Found on the ${record.source}`;
+    const { id, title, body, origin } = entry;
+    const seed = this.deps.flow.run?.seed;
+    const glyph = id === RUBBING_NOTE && seed ? reliquaryGlyph(seed) : null;
     const controls: MenuRow = [
-      {
-        id: 'save-logbook',
-        label: this.deps.flow.logbookEntries.some((entry) => entry.id === id)
-          ? 'Open in logbook'
-          : 'Save to logbook',
-        onSelect: () => this.openLogbook({ id, title: record.title, body: record.body, origin }),
-      },
-      ...(this.notePhysical
-        ? [
-            { id: 'put-away', label: 'Put away', onSelect: () => this.setMenu('closed') },
-            { id: 'items', label: 'Items', onSelect: () => this.setMenu('items') },
-          ]
-        : [
-            { id: 'back', label: 'Back', onSelect: () => this.setMenu('items') },
-            { id: 'resume', label: 'Resume', onSelect: () => this.setMenu('closed') },
-          ]),
+      { id: 'add-show', label: 'Add & show', onSelect: () => this.openLogbook(id) },
+      { id: 'add-close', label: 'Add & close', onSelect: () => this.closeMenu() },
     ];
     const board = this.board(
       'menu-note',
@@ -1981,11 +2226,11 @@ export class FlowUi {
       ctx.fillText(glyph ? 'UPPER WORKS' : 'PRESSURE WORKS', 76, 104);
       ctx.fillStyle = '#2e2118';
       ctx.font = 'bold 66px Georgia, serif';
-      ctx.fillText(record.title, 72, 213, 1050);
+      ctx.fillText(title, 72, 213, 1050);
       ctx.fillRect(76, 253, 1048, 3);
       ctx.font = '43px system-ui, sans-serif';
       let y = 350;
-      for (const line of wrapText(ctx, record.body, 1028)) {
+      for (const line of wrapText(ctx, body, 1028)) {
         ctx.fillText(line, 76, y);
         y += 62;
       }
@@ -2015,8 +2260,8 @@ export class FlowUi {
     );
     sheet.name = 'menu-note-sheet';
     sheet.userData.noteId = id;
-    sheet.userData.title = record.title;
-    sheet.userData.body = record.body;
+    sheet.userData.title = title;
+    sheet.userData.body = body;
     sheet.position.set(0, 0.336, 0.004);
     sheet.raycast = () => undefined;
     board.group.add(sheet);

@@ -5,6 +5,10 @@ export const DB_NAME = 'rogue-xr';
 
 export type TurnMode = 'snap' | 'smooth';
 
+export const MINIMAP_ZOOMS = [0.25, 0.5, 0.75, 1] as const;
+export type MinimapZoom = (typeof MINIMAP_ZOOMS)[number];
+export const MINIMAP_PLACEMENT_LIMIT = 1.8;
+
 /**
  * Fixed-foveation levels the settings offer, lowest first. The names match the toolkit's
  * `FoveationLevel` (`perf/xr-perf.ts` maps them to three.js values); they are listed here so the
@@ -46,6 +50,11 @@ export interface Settings {
   foveation: FoveationChoice;
   /** Shows the frame-rate counter. */
   fpsCounter: boolean;
+  minimapEnabled: boolean;
+  minimapZoom: MinimapZoom;
+  minimapNorthUp: boolean;
+  minimapHorizontal: number;
+  minimapVertical: number;
 }
 
 export const DEFAULT_SETTINGS: Readonly<Settings> = Object.freeze({
@@ -62,6 +71,11 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = Object.freeze({
   tableDistance: DEFAULT_TABLE_DISTANCE,
   foveation: DEFAULT_FOVEATION,
   fpsCounter: false,
+  minimapEnabled: false,
+  minimapZoom: 0.5,
+  minimapNorthUp: false,
+  minimapHorizontal: -1.71,
+  minimapVertical: -1.71,
 });
 
 export const STORE_SETTINGS = 'settings';
@@ -110,6 +124,9 @@ const pickBool = (v: unknown, fallback: boolean): boolean =>
 const pickNum = (v: unknown, fallback: number, min: number, max: number): number =>
   typeof v === 'number' && Number.isFinite(v) && v >= min && v <= max ? v : fallback;
 
+const isMinimapZoom = (value: unknown): value is MinimapZoom =>
+  (MINIMAP_ZOOMS as readonly unknown[]).includes(value);
+
 /**
  * Repairs arbitrary stored data into a complete Settings; never throws. Saves from before a field
  * existed (no `tableDistance`, no `foveation`, no `fpsCounter`) take its default, so no store
@@ -132,7 +149,38 @@ export function validateSettings(raw: unknown): Settings {
     tableDistance: tableDistanceChoice(r.tableDistance) ?? d.tableDistance,
     foveation: isFoveationChoice(r.foveation) ? r.foveation : d.foveation,
     fpsCounter: pickBool(r.fpsCounter, d.fpsCounter),
+    minimapEnabled: pickBool(r.minimapEnabled, d.minimapEnabled),
+    minimapZoom: isMinimapZoom(r.minimapZoom) ? r.minimapZoom : d.minimapZoom,
+    minimapNorthUp: pickBool(r.minimapNorthUp, d.minimapNorthUp),
+    minimapHorizontal: pickNum(
+      r.minimapHorizontal,
+      r.minimapHorizontal === undefined
+        ? oldHorizontal(r.minimapCorner, d.minimapHorizontal)
+        : d.minimapHorizontal,
+      -MINIMAP_PLACEMENT_LIMIT,
+      MINIMAP_PLACEMENT_LIMIT,
+    ),
+    minimapVertical: pickNum(
+      r.minimapVertical,
+      r.minimapVertical === undefined
+        ? oldVertical(r.minimapCorner, d.minimapVertical)
+        : d.minimapVertical,
+      -MINIMAP_PLACEMENT_LIMIT,
+      MINIMAP_PLACEMENT_LIMIT,
+    ),
   };
+}
+
+function oldHorizontal(value: unknown, fallback: number): number {
+  if (value === 'top-left' || value === 'bottom-left') return -1;
+  if (value === 'top-right' || value === 'bottom-right') return 1;
+  return fallback;
+}
+
+function oldVertical(value: unknown, fallback: number): number {
+  if (value === 'bottom-left' || value === 'bottom-right') return -1;
+  if (value === 'top-left' || value === 'top-right') return 1;
+  return fallback;
 }
 
 function fallback(reason: string): PersistDb {

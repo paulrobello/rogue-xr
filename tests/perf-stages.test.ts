@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   createQuestPerfProfiler,
   QUEST_PERF_MAX_SAMPLES,
+  QUEST_PERF_WINDOW_MS,
+  type QuestPerfContext,
   questPerfEnabledFromSearch,
+  readStoredQuestPerf,
 } from '../src/perf/stages.ts';
 
 function storage(initial: string | null = null) {
@@ -16,11 +19,21 @@ function storage(initial: string | null = null) {
 }
 
 describe('Quest stage profiling', () => {
-  it('is opt-in and accepts the combined perf capture spelling', () => {
-    expect(questPerfEnabledFromSearch('')).toBe(false);
-    expect(questPerfEnabledFromSearch('?perf=1')).toBe(false);
-    expect(questPerfEnabledFromSearch('?questperf=1')).toBe(true);
-    expect(questPerfEnabledFromSearch('?perf=quest')).toBe(true);
+  it.each([
+    ['', false],
+    ['?perf', true],
+    ['?perf=', true],
+    ['?perf=1', true],
+    ['?playtest', true],
+    ['?seed=MAPTEST2&playtest=&perf=&title=', true],
+    ['?questperf=1', true],
+    ['?perf=quest', true],
+    ['?playtest&perf=0', false],
+    ['?playtest&questperf=0', false],
+    ['?perf=1&questperf=0', false],
+    ['?perf=0&questperf=1', true],
+  ])('uses the requested Quest logging level for %s', (search, enabled) => {
+    expect(questPerfEnabledFromSearch(search)).toBe(enabled);
   });
 
   it('attributes nested stages to one fight and persists bounded data', () => {
@@ -87,6 +100,53 @@ describe('Quest stage profiling', () => {
       endedBy: 'pagehide',
       cadence: { xr: { frames: 3, fps: 50 } },
     });
+  });
+
+  it('keeps slow intervals and CPU totals across timed and room transitions and checkpoints', () => {
+    let now = 0;
+    const store = storage();
+    const profiler = createQuestPerfProfiler(store, () => now);
+    const first: QuestPerfContext = {
+      seed: 'MAPTEST2',
+      floor: 3,
+      room: 2,
+      phase: 'combat',
+      scale: 1.2,
+      foveation: 0.25,
+      buildId: 'fixture',
+    };
+    profiler.setMode('xr', 90);
+    profiler.frame(0, first);
+    const token = profiler.start('floor.update');
+    now += 0.25;
+    profiler.end(token);
+    profiler.worldRender(390, 100_000);
+    profiler.frame(12, first);
+    profiler.frame(60, first);
+    profiler.frame(QUEST_PERF_WINDOW_MS, first);
+    const next = { ...first, room: 3, phase: 'explore' };
+    profiler.frame(QUEST_PERF_WINDOW_MS + 10, next);
+    profiler.frame(QUEST_PERF_WINDOW_MS + 21, next);
+    const log = profiler.log();
+    expect(log.samples).toEqual([]);
+    expect(log.windows).toMatchObject([
+      {
+        targetHz: 90,
+        context: first,
+        cadence: { frames: 2, budgetMisses: 2, over33Ms: 1, maxMs: 48, systemGaps: 1 },
+        stages: [{ stage: 'floor.update', count: 1, totalMs: 0.25, maxMs: 0.25 }],
+        peakWorldDrawCalls: 390,
+        peakWorldTriangles: 100_000,
+      },
+      { context: first, cadence: { frames: 1, durationMs: 10 } },
+    ]);
+    expect(log.currentWindow).toMatchObject({ context: next, cadence: { frames: 1 } });
+    profiler.persist();
+    expect(readStoredQuestPerf(store)?.currentWindow).toEqual(log.currentWindow);
+    expect(createQuestPerfProfiler(store).log().windows).toEqual([
+      ...log.windows,
+      log.currentWindow,
+    ]);
   });
 
   it('does not write storage on the hot path after the sample ring fills', () => {

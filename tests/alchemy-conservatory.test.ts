@@ -338,6 +338,42 @@ describe('alchemy conservatory authored puzzle', () => {
     expect(tints.size).toBe(4);
   });
 
+  it.each([false, true])(
+    'throws one vial and applies its effect only on impact (reduced motion %s)',
+    (reduced) => {
+      const { world, puzzle } = make('ALCH3MY1', reduced);
+      const thrower = new THREE.Object3D();
+      const target = new THREE.Vector3(3, 1, 0);
+      thrower.position.set(0, 1, 0);
+      let impacts = 0;
+      const impact = () => {
+        impacts++;
+      };
+      puzzle.throwPotion(thrower, target, impact);
+      puzzle.throwPotion(thrower, target, impact);
+      const flight = kitPart(world.group, 'alchemy-thrown-potion');
+      expect(world.group.children.filter(({ name }) => name === flight.name)).toHaveLength(1);
+      puzzle.update(0.09);
+      expect(flight.position.x).toBeGreaterThan(0.2);
+      expect(flight.position.x).toBeLessThan(2.9);
+      expect(flight.position.y).toBeGreaterThanOrEqual(1);
+      expect(impacts).toBe(0);
+      puzzle.update(1);
+      expect(flight.position).toEqual(target);
+      expect(flight.parent).toBeNull();
+      puzzle.update(1);
+      expect(impacts).toBe(1);
+
+      puzzle.throwPotion(thrower, target, impact);
+      world.current = (world.current + 1) % world.rooms.length;
+      puzzle.update(1);
+      expect(world.group.getObjectByName('alchemy-thrown-potion')).toBeUndefined();
+      expect(impacts).toBe(1);
+      puzzle.dispose();
+      world.dispose();
+    },
+  );
+
   it('settles mistaken ingredients back on the tray and never replays a saved addition', () => {
     const { world, puzzle } = make('ALCH3MY1');
     world.current = puzzle.cauldronRoom;

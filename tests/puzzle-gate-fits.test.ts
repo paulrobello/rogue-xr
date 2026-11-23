@@ -45,8 +45,14 @@ it.each(['pressure', 'counterweight'] as const)(
   (kind) => {
     const world = buildFloorWorld(playableFloorPlan('MAPTEST2', 6, 1));
     const edge = world.plan.connections.find((e) => e.puzzleGate === kind);
-    const gate = world.group.getObjectByName(`puzzle-gate-${kind}`);
-    if (!edge || !gate) throw Error('Missing showcase gate');
+    if (!edge) throw Error('Missing showcase gate connection');
+    const door = world.rooms[edge[0].room].doors.find((d) => d.id === edge[0].door);
+    if (!door) throw Error('Missing showcase gate doorway');
+    const gateAt = new THREE.Vector3(door.world[0], 0, door.world[1]);
+    const gate = world.roomGroups[edge[0].room]
+      .getObjectsByProperty('name', `puzzle-gate-${kind}`)
+      .find((object) => object.getWorldPosition(new THREE.Vector3()).distanceTo(gateAt) < 1e-5);
+    if (!gate) throw Error('Missing showcase gate');
     const leaf = gate.getObjectByName(
       kind === 'pressure' ? 'pressure-door-panel' : 'counterweight-grille',
     );

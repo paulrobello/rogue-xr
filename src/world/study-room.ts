@@ -317,7 +317,8 @@ function repairHallNicheIrradiance(scene: THREE.Object3D, material: THREE.MeshSt
       float y = vNichePosition.y;
       float blend = (1.0 - smoothstep(0.39, 0.53, abs(along)))
         * smoothstep(1.32, 1.43, y) * (1.0 - smoothstep(2.45, 2.6, y));
-      if (edge < 0.01 && blend > 0.0) {
+      blend *= 1.0 - smoothstep(0.0, 0.06, edge);
+      if (blend > 0.0) {
         float height = clamp((y - 1.32) / 1.28, 0.0, 1.0);
         vec3 leftLight = texture2D(lightMap, mix(${leftLow}, ${leftHigh}, height)).rgb;
         vec3 rightLight = texture2D(lightMap, mix(${rightLow}, ${rightHigh}, height)).rgb;

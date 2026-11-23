@@ -186,6 +186,19 @@ describe('marks and windows', () => {
     expect(rec.current().presenting).toBe(false);
   });
 
+  it('uses the active XR rate for hitches and retains it when the session ends', () => {
+    let rate: number | null = 90;
+    const rec = make({
+      settleMs: 0,
+      context: (presenting) => ({ targetHz: presenting ? rate : null, foveation: 0, scale: 1 }),
+    });
+    feed(rec, 0, [17, 16], true);
+    expect(rec.hitches().map(({ ms }) => ms)).toEqual([17]);
+    rate = null;
+    rec.mark('xr-end');
+    expect(rec.windows()[0]?.targetHz).toBe(90);
+  });
+
   it('records the wall clock of the first frame and the context', () => {
     const rec = make({ settleMs: 0, now: () => 42 });
     feed(rec, 5, [14]);

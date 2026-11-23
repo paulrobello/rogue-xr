@@ -405,8 +405,21 @@ async function exerciseFormula() {
     for (const r of f.world.plan.rooms) if (r.encounter) f.markCleared(r.index, true);
   });
   await approach('ConservatoryArchive', target, 1.85, offset);
+  await ev(() => {
+    const { alchemy } = window.__combat.floor;
+    const original = alchemy.update.bind(alchemy);
+    alchemy.update = (...args) => {
+      const thrown = window.__combat.floor.world.group.getObjectByName('alchemy-thrown-potion');
+      if (thrown && window.__flow.flow.conservatoryFormula.carried) {
+        window.__potionFlight = (window.__potionFlight ?? 0) + 1;
+      }
+      original(...args);
+    };
+  });
   await click(target, offset);
-  assert(await ev(() => window.__flow.flow.conservatoryFormula.revealed));
+  await page.waitForFunction(() => window.__flow.flow.conservatoryFormula.revealed);
+  const flightFrames = await ev(() => window.__potionFlight ?? 0);
+  assert(flightFrames > 0, 'archive potion was visible in flight before being used');
   assert.equal(await ev(() => window.__flow.flow.conservatoryFormula.carried), undefined);
   if (type === 'lantern-ink') {
     assert.equal(await ev(() => window.__flow.flow.conservatoryFormula.opened), false);
@@ -439,7 +452,7 @@ async function exerciseFormula() {
   assert.deepEqual(errors, []);
   await writeFile(
     join(out, 'check.json'),
-    JSON.stringify({ seed, type, order, gpu, controller, errors }, null, 2),
+    JSON.stringify({ seed, type, order, gpu, controller, flightFrames, errors }, null, 2),
   );
   console.log('PASS archive', type);
 }

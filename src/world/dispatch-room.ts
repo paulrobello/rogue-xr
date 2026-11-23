@@ -18,9 +18,10 @@ const OPEN_Y = -DOOR_HEIGHT / 2 - 0.05;
 const ROUTE_X = [-0.34, 0, 0.34] as const;
 const TRAVEL_SECONDS = 0.65;
 const SENDER_REST = 0.34;
-const SENDER_BULKHEAD = -0.48;
-const RECEIVER_BULKHEAD = -0.28;
+const SENDER_BULKHEAD = -0.52;
+const RECEIVER_BULKHEAD = -0.42;
 const RECEIVER_REST = 0.31;
+const STATION_STANDOFF = 0.32;
 
 export class DispatchRoom {
   readonly object = new THREE.Group();
@@ -49,6 +50,7 @@ export class DispatchRoom {
     roughness: 0.42,
   });
   private readonly conduit = this.copper.clone();
+  private readonly recess = new THREE.MeshBasicMaterial({ color: 0x0d0b08 });
   private readonly wood = new THREE.MeshStandardMaterial({ color: 0xb9957f, roughness: 0.61 });
   private readonly signal = new THREE.MeshBasicMaterial({ color: 0x246f7a });
   private readonly button = new THREE.MeshStandardMaterial({
@@ -122,7 +124,15 @@ export class DispatchRoom {
     private readonly reducedMotion: boolean,
   ) {
     this.conduit.side = THREE.DoubleSide;
-    this.resources.push(this.iron, this.copper, this.conduit, this.wood, this.signal, this.button);
+    this.resources.push(
+      this.iron,
+      this.copper,
+      this.conduit,
+      this.recess,
+      this.wood,
+      this.signal,
+      this.button,
+    );
   }
 
   private block(
@@ -148,7 +158,8 @@ export class DispatchRoom {
     this.object.name = 'dispatch-room';
     this.block(this.object, [1.34, 0.81, 0.46], [0, 0.405, 0], this.wood);
     this.block(this.object, [1.42, 0.085, 0.54], [0, 0.83, 0], this.iron);
-    this.block(this.object, [1.32, 0.65, 0.085], [0, 1.14, -0.19], this.iron);
+    for (const x of [-0.42, 0.42])
+      this.block(this.object, [0.48, 0.65, 0.085], [x, 1.14, -0.19], this.iron);
     this.block(this.object, [1.32, 0.042, 0.02], [0, 0.9, -0.12], this.copper);
     this.block(this.object, [1.16, 0.52, 0.035], [0, 0.47, -0.255], this.iron);
     for (const x of [-0.62, 0.62]) {
@@ -198,22 +209,18 @@ export class DispatchRoom {
     this.block(this.sendButton, [0.11, 0.035, 0.012], [0, 0, 0.082], this.copper);
     this.object.add(this.sendButton);
     this.controls.push({ node: this.sendButton, action: 'send' });
-    this.block(this.object, [0.32, 0.12, 0.25], [0.02, 0.93, 0.18], this.iron);
+    for (const x of [-0.17, 0.21])
+      this.block(this.object, [0.07, 0.12, 0.25], [x, 0.93, 0.18], this.iron);
     this.travelCapsule.add(capsule.clone(true));
     this.travelCapsule.position.set(0.02, 1.05, SENDER_REST);
     this.travelCapsule.rotation.x = Math.PI / 2;
     this.travelCapsule.scale.setScalar(0.72);
     this.object.add(this.travelCapsule);
-    this.fitCarrierTube(this.object, 'dispatch-intake', 0.02, -0.36, 0.22);
+    this.fitCarrierTube(this.object, 'dispatch-intake', 0.02, 0.22);
   }
 
-  private fitCarrierTube(
-    parent: THREE.Group,
-    name: string,
-    x: number,
-    back: number,
-    front: number,
-  ): void {
+  private fitCarrierTube(parent: THREE.Group, name: string, x: number, front: number): void {
+    const back = -STATION_STANDOFF + 0.012;
     const y = 1.05;
     const radius = 0.12;
     const trough = new THREE.CylinderGeometry(
@@ -231,6 +238,24 @@ export class DispatchRoom {
     tube.position.set(x, y, (back + front) / 2);
     parent.add(tube);
     this.resources.push(trough);
+
+    // The carrier route continues into a dark wall socket instead of ending flush in the counter.
+    const socket = new THREE.Mesh(
+      new THREE.CylinderGeometry(radius, radius, 0.018, 24).rotateX(Math.PI / 2),
+      this.recess,
+    );
+    socket.name = `${name}-wall-recess`;
+    socket.position.set(x, y, back - 0.008);
+    parent.add(socket);
+    this.resources.push(socket.geometry);
+    const flange = new THREE.Mesh(
+      new THREE.TorusGeometry(radius * 1.12, 0.018, 8, 24),
+      this.copper,
+    );
+    flange.name = `${name}-wall-flange`;
+    flange.position.set(x, y, back + 0.018);
+    parent.add(flange);
+    this.resources.push(flange.geometry);
 
     const cuffGeometry = new THREE.CylinderGeometry(radius, radius, 0.085, 24, 1, true).rotateX(
       Math.PI / 2,
@@ -254,8 +279,10 @@ export class DispatchRoom {
     this.reply.name = 'dispatch-reply-station';
     this.block(this.reply, [1.04, 0.8, 0.43], [0, 0.4, 0], this.wood);
     this.block(this.reply, [1.14, 0.08, 0.49], [0, 0.82, 0], this.iron);
-    this.block(this.reply, [1.04, 0.67, 0.09], [0, 1.14, -0.18], this.iron);
-    this.block(this.reply, [0.57, 0.12, 0.29], [0, 0.9, 0.08], this.copper);
+    for (const x of [-0.34, 0.34])
+      this.block(this.reply, [0.32, 0.67, 0.09], [x, 1.14, -0.18], this.iron);
+    for (const x of [-0.2, 0.2])
+      this.block(this.reply, [0.16, 0.12, 0.29], [x, 0.9, 0.08], this.copper);
     this.block(this.reply, [0.88, 0.05, 0.035], [0, 0.22, -0.24], this.copper);
     for (const x of [-0.47, 0.47]) {
       this.block(this.reply, [0.07, 0.7, 0.045], [x, 0.46, -0.235], this.copper);
@@ -279,14 +306,14 @@ export class DispatchRoom {
     this.replyCapsule.scale.setScalar(0.72);
     this.replyCapsule.visible = false;
     this.reply.add(this.replyCapsule);
-    this.fitCarrierTube(this.reply, 'dispatch-delivery', 0, -0.36, 0.38);
+    this.fitCarrierTube(this.reply, 'dispatch-delivery', 0, 0.38);
     this.controls.push({ node: this.replyCapsule, action: 'open' });
   }
 
   private place(object: THREE.Group, mount: PuzzleMount): void {
     object.position.copy(mount.wallSurface).setY(0);
     object.rotation.y = mount.yaw;
-    object.translateZ(0.32);
+    object.translateZ(STATION_STANDOFF);
     this.world.roomGroups[mount.room].add(object);
     object.updateWorldMatrix(true, true);
     const bounds = new THREE.Box3().setFromObject(object);

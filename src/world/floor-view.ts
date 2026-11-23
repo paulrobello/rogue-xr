@@ -54,7 +54,11 @@ import { type PatrolRoute, patrolPeriod, planPatrol, samplePatrol } from '../flo
 import { attachPendulumGallery } from '../floor/pendulum-gallery.ts';
 import { attachPrismAnnex } from '../floor/prism-annex.ts';
 import { attachReliquary } from '../floor/reliquary.ts';
-import { attachFloorOneTopology, withBrassCache } from '../floor/return-passages.ts';
+import {
+  attachFloorOneTopology,
+  lockShortcutChest,
+  withBrassCache,
+} from '../floor/return-passages.ts';
 import { attachShadowStencil } from '../floor/shadow-stencil.ts';
 import { attachSpeakingPipes } from '../floor/speaking-pipes.ts';
 import { attachSpringTension } from '../floor/spring-tension.ts';
@@ -511,7 +515,8 @@ export function playableFloorPlan(
   if (contentVersion < RETURN_PASSAGES_VERSION) return attachPressureWing(base);
   const lower = attachFloorOneTopology(base);
   const brass = contentVersion >= BRASS_CACHE_VERSION ? withBrassCache(lower) : lower;
-  const valves = contentVersion >= VALVEHOUSE_VERSION ? attachValvehouse(brass) : brass;
+  const locked = lockShortcutChest(brass);
+  const valves = contentVersion >= VALVEHOUSE_VERSION ? attachValvehouse(locked) : locked;
   if (contentVersion < FLOAT_ELEVATOR_VERSION) return valves;
   const windows = exposedWindowBays(valves, 1);
   const preservesWindows = (candidate: typeof valves): boolean => {

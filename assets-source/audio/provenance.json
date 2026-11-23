@@ -1861,10 +1861,10 @@
     },
     "drum-grille-open": {
       "source_file": "assets-source/audio/sfx/procedural/drum-grille-open.wav",
-      "source_sha256": "e7255871b7f72c946a596b8f433bac3d9286da412e212283419a631bcecce3ff",
+      "source_sha256": "3ec1fbbf8df035346b1094b5d5f7a5bb8581a1d1fac61cdd016e02b2f2312ef8",
       "runtime_file": "public/assets/audio/sfx/drum-grille-open.ogg",
-      "runtime_sha256": "3385ae97861fd4a7ded68aa43a4959fa2481dafba99f07c3edfc8ea62fcfe0bb",
-      "runtime_bytes": 11783,
+      "runtime_sha256": "010a80b101a7ec7c65459429a57f2cd4ea77bdb5108329559b94d931f359f31b",
+      "runtime_bytes": 11031,
       "steps": [
         "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
         "fade in 2 ms, fade out 30 ms (raised cosine)",

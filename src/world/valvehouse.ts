@@ -384,19 +384,26 @@ export class Valvehouse {
     this.boxPart(this.lever, [0.038, 0.197, 0.038], [0, 0.083, 0.062]);
     this.boxPart(this.lever, [0.108, 0.055, 0.075], [0, 0.175, 0.08], this.bronze);
     this.controls.add(this.lever);
-    this.pipe(this.controls, [-0.56, 0.69, 0.11], [-0.22, 0.69, 0.11], 0.061);
-    this.pipe(this.controls, [-0.36, 0.67, 0.11], [-0.36, 1.19, 0.11], 0.053);
-    this.pipe(this.controls, [0.08, 0.75, 0.11], [0.08, 1.15, 0.11], 0.045);
-    this.boxPart(this.controls, [1.16, 0.06, 0.08], [0, 0.69, 0.04], this.dark);
-    for (const [x, y] of [
-      [-0.56, 0.69],
-      [-0.22, 0.69],
-      [-0.36, 1.19],
-      [0.08, 1.15],
-    ] as const)
-      this.disk(this.controls, 0.085, 0.045, [x, y, 0.14], this.bronze);
-    this.pipe(this.controls, [-0.56, 0.69, 0.11], [-0.56, 0.69, 0.04], 0.045, this.steel);
-    this.pipe(this.controls, [0.08, 1.15, 0.11], [0.08, 1.15, 0.04], 0.04, this.steel);
+    const front = 0.21;
+    const base = 0.67;
+    const radius = 0.049;
+    const bend = radius * 1.35;
+    const left = -0.58;
+    const right = -0.17;
+    const back = new THREE.Vector3(0, 0, -1);
+    this.pipe(this.controls, [left + bend, base, front], [right - bend, base, front], radius);
+    this.pipe(this.controls, [-0.36, base, front], [-0.36, 1.22, front], 0.045);
+    this.pipe(this.controls, [0.09, base + bend, front], [0.09, 1.23, front], 0.045);
+    for (const [x, axis] of [
+      [left, new THREE.Vector3(1, 0, 0)],
+      [right, new THREE.Vector3(-1, 0, 0)],
+      [0.09, new THREE.Vector3(0, 1, 0)],
+    ] as const) {
+      this.elbow(this.controls, [x, base, front], axis, back, radius);
+      this.pipe(this.controls, [x, base, front - bend], [x, base, -0.124], radius);
+      // place() offsets the board 0.1 m into the room. Put the flange on the wall itself.
+      this.disk(this.controls, 0.082, 0.032, [x, base, -0.087], this.bronze);
+    }
     this.actions.set('seat', this.joint);
     this.actions.set('test', this.lever);
   }

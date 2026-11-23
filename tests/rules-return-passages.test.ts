@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { RETURN_PASSAGES_VERSION } from '../src/combat/encounter-choice.ts';
+import { counterweightResumeRoom } from '../src/floor/return-passages.ts';
 import { counterweightTarget, hangCounterweight } from '../src/rules/counterweight.ts';
 import { pressureTarget } from '../src/rules/pressure.ts';
 import { createRun } from '../src/rules/run.ts';
+import { playableFloorPlan } from '../src/world/floor-view.ts';
+import { buildFloorWorld } from '../src/world/floor-world.ts';
 
 describe('return passage rules', () => {
   it('supports every non-default three-dial pressure code', () => {
@@ -20,6 +24,47 @@ describe('return passage rules', () => {
     const solved = hangCounterweight(wrong!.run, target);
     expect(solved?.solved).toBe(true);
     expect(hangCounterweight(solved!.run, target)).toBeNull();
+  });
+
+  it('locks both existing entrances to the shortcut chest room', () => {
+    const plan = playableFloorPlan('CW000000', RETURN_PASSAGES_VERSION, 1);
+    const chest = plan.rooms.find((room) => room.index === 11);
+    if (!chest) throw Error('Missing fixture chest room');
+    const entrances = plan.connections.filter((edge) =>
+      edge.some((door) => door.room === chest.index),
+    );
+    expect(entrances).toHaveLength(2);
+    expect(entrances.every((edge) => edge.puzzleGate === 'counterweight')).toBe(true);
+    expect(counterweightResumeRoom(plan, chest.index)).toBe(10);
+    const world = buildFloorWorld(plan);
+    const { min, max } = world.rooms[chest.index].footprint;
+    const x = (min[0] + max[0]) / 2;
+    const z = (min[1] + max[1]) / 2;
+    const approaches = entrances.map((edge) => {
+      const approach = edge.find((door) => door.room !== chest.index);
+      if (!approach) throw Error('Missing shortcut approach');
+      return approach.room;
+    });
+    const canLand = () =>
+      world
+        .nearbyWalkable()
+        .some(
+          (area) => x >= area.min[0] && x <= area.max[0] && z >= area.min[1] && z <= area.max[1],
+        );
+    const closed = approaches.map((room) => world.colliders[room].length);
+    for (const room of approaches) {
+      world.current = room;
+      expect(canLand()).toBe(false);
+    }
+    world.setPuzzleGateOpen('counterweight', true, true);
+    expect(approaches.map((room) => world.colliders[room].length)).toEqual(
+      closed.map((count) => count - 1),
+    );
+    for (const room of approaches) {
+      world.current = room;
+      expect(canLand()).toBe(true);
+    }
+    world.dispose();
   });
 });
 

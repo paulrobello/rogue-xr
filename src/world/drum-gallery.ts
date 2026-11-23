@@ -263,7 +263,8 @@ export class DrumGallery {
     if (mount) {
       clue.object.position.copy(mount.wallSurface).setY(1.49);
       clue.object.rotation.y = mount.yaw;
-      clue.object.translateZ(0.035);
+      // Keep the plaque on the same wall mount, but proud of the baked trim.
+      clue.object.translateZ(0.12);
     } else {
       const footprint = templateById(this.world.plan.rooms[room].templateId).footprint;
       clue.object.position.set(footprint.min[0] + 1.15, 1.53, footprint.max[1] - 0.3);
@@ -347,10 +348,10 @@ export class DrumGallery {
       this.boxPart(
         this.leaf,
         casework,
-        [0.061, DOOR_HEIGHT - 0.045, 0.075],
+        [0.061, DOOR_HEIGHT - 0.012, 0.075],
         [(i * (door.width - 0.15)) / 8, DOOR_HEIGHT / 2, 0],
       );
-    for (const y of [0.29, 1.32, 2.24])
+    for (const y of [0.03, 1.2, DOOR_HEIGHT - 0.03])
       this.boxPart(this.leaf, brass, [door.width - 0.071, 0.076, 0.099], [0, y, 0.013]);
   }
 

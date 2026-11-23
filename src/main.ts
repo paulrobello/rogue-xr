@@ -58,11 +58,17 @@ import {
 } from './enemies/enemy-asset.ts';
 import { loadPatrolClips } from './enemies/patrol-visual.ts';
 import { isShowcaseFloor, SHOWCASE_SEED, worldRooms } from './floor/generate.ts';
+import { counterweightResumeRoom } from './floor/return-passages.ts';
 import { placeStairEntry, type StairEntry } from './floor/stairs.ts';
 import { encounterStartsFight, fleeStandPoint } from './flow/flee.ts';
 import { RunFlow } from './flow/flow.ts';
 import { logbookDiscoveries } from './flow/logbook-discoveries.ts';
-import { chartFloor, type MapPoint, type MapTransport } from './flow/logbook-map.ts';
+import {
+  chartFloor,
+  type LogbookMap,
+  type MapPoint,
+  type MapTransport,
+} from './flow/logbook-map.ts';
 import { FlowUi, RUN_MENU_ITEMS, rewardCardTexture } from './flow/panels.ts';
 import { bindFlowPersistence } from './flow/persist.ts';
 import { RewardCardFaces } from './flow/reward-cards.ts';
@@ -74,10 +80,9 @@ import {
   mountPerf,
   perfMark,
   perfRoom,
-  questPerfFrame,
-  questPerfSetMode,
   questPerfStageEnd,
   questPerfStageStart,
+  questPerfWorldRender,
 } from './perf/index.ts';
 import {
   DEFAULT_SETTINGS,
@@ -180,6 +185,7 @@ import { ComfortVignette } from './xr/comfort-vignette.ts';
 import { Locomotion, locomotionSettingsFrom } from './xr/locomotion.ts';
 import { LocomotionDrive } from './xr/locomotion-drive.ts';
 import { ButtonEdge, MAP_BUTTON, MENU_BUTTON } from './xr/menu-button.ts';
+import { Minimap } from './xr/minimap.ts';
 import { createXrRig } from './xr/session.ts';
 import { TeleportView } from './xr/teleport-view.ts';
 
@@ -374,13 +380,15 @@ let recenterPending = false;
 actions.on('recenter', () => {
   recenterPending = true;
 });
-const perfSearch = new URLSearchParams(params);
-if (perfSearch.has('playtest') && !perfSearch.has('perf') && !perfSearch.has('questperf'))
-  perfSearch.set('perf', 'quest');
 const perf = mountPerf(renderer, scene, rig, {
   camera,
-  search: perfSearch.toString(),
   foveation: foveationValue((settings ?? DEFAULT_SETTINGS).foveation),
+  questContext: () => ({
+    seed: flow.run?.seed ?? null,
+    floor: floor?.floorNumber ?? null,
+    room: floor?.world.current ?? null,
+    phase: floor && floor !== readyFloor ? 'loading' : flow.phase,
+  }),
 });
 perf.setFpsCounter((settings ?? DEFAULT_SETTINGS).fpsCounter);
 // The in-scene notice gets its own pass after the boards, which clear depth and would cover it.
@@ -1635,8 +1643,13 @@ function travelStairs(byLift = false): boolean {
 
 const continueRun = (): void => {
   if (!storedSnapshot || flow.phase !== 'title') return;
-  const snap = restoreUpperRoomLocations(storedSnapshot, worldTemplates);
-  const target = savedFloor(snap);
+  const saved = restoreUpperRoomLocations(storedSnapshot, worldTemplates);
+  const target = savedFloor(saved);
+  const roomIndex =
+    target.floorNumber === 1 && !saved.run.counterweight?.solved
+      ? counterweightResumeRoom(target.world.plan, saved.roomIndex)
+      : saved.roomIndex;
+  const snap = roomIndex === saved.roomIndex ? saved : { ...saved, roomIndex };
   const at = target.standPoint(snap.roomIndex) ?? target.world.spawnPoint();
   rig.position.set(at.x, rig.position.y, at.z);
   target.world.update(at.x, at.z);
@@ -1682,6 +1695,35 @@ function readBookPressureNotes(active: FloorView): readonly BookPressureNote[] {
   return pressureBookCache.notes.filter(({ id }) => acquired.includes(id));
 }
 
+const mapEye = new THREE.Vector3();
+const mapViewer = (): THREE.Camera => (xr.presenting ? renderer.xr.getCamera() : camera);
+function mapTransport(floorNumber: LogbookMap['floor'], stair: StairEntry | null): MapTransport[] {
+  const transport: MapTransport[] = [];
+  if (floorNumber !== 3 && stair)
+    transport.push({ kind: 'stairs', room: stair.room, position: stair.world });
+  const lift = flow.discoveredLift(floorNumber);
+  if (lift) transport.push({ kind: 'lift', room: lift.room, position: lift.position });
+  return transport;
+}
+
+function readMinimap(): LogbookMap | null {
+  const current = floor;
+  if (!current || current.floorNumber !== flow.floorNumber) return null;
+  const explored = flow.explorationOnFloor(current.floorNumber);
+  if (!explored) return null;
+  const { world, floorNumber } = current;
+  const eye = mapEye.setFromMatrixPosition(mapViewer().matrixWorld);
+  return chartFloor(
+    floorNumber,
+    world.plan,
+    world.rooms,
+    explored.reachedRooms,
+    { room: world.current, position: [eye.x, eye.z] },
+    mapTransport(floorNumber, world.stairEntry),
+    world.stairEntry,
+  );
+}
+
 const ui = floor
   ? new FlowUi({
       flow,
@@ -1699,14 +1741,13 @@ const ui = floor
       onNoteOpened: (at) => audio?.playSfx('paper-unfold', at),
       reducedMotion,
       logbookHeading: () => {
-        const head = xr.presenting ? renderer.xr.getCamera() : camera;
-        head.getWorldDirection(logbookDirection);
+        logbookDirection.set(0, 0, -1).transformDirection(mapViewer().matrixWorld);
         return Math.atan2(logbookDirection.x, -logbookDirection.z);
       },
       logbookMaps: () => {
         const current = floor;
         if (!current) return [];
-        const eye = camera.getWorldPosition(new THREE.Vector3());
+        const eye = mapEye.setFromMatrixPosition(mapViewer().matrixWorld);
         const notes = readBookPressureNotes(current);
         return ([1, 2, 3] as const).flatMap((number) => {
           const explored = flow.explorationOnFloor(number);
@@ -1719,17 +1760,21 @@ const ui = floor
           const player = live
             ? { room: current.world.current, position: [eye.x, eye.z] as const }
             : undefined;
-          const transport: MapTransport[] = [];
           const stair =
             number === 3
               ? null
               : live
                 ? current.world.stairEntry
                 : placeStairEntry(plan, worldTemplates);
-          if (stair) transport.push({ kind: 'stairs', room: stair.room, position: stair.world });
-          const lift = flow.discoveredLift(number);
-          if (lift) transport.push({ kind: 'lift', room: lift.room, position: lift.position });
-          const chart = chartFloor(number, plan, rooms, explored.reachedRooms, player, transport);
+          const chart = chartFloor(
+            number,
+            plan,
+            rooms,
+            explored.reachedRooms,
+            player,
+            mapTransport(number, stair),
+            stair,
+          );
           const discoveries = logbookDiscoveries({
             plan,
             worldRooms: rooms,
@@ -1847,6 +1892,19 @@ const mouseRay = (event: Pick<MouseEvent, 'clientX' | 'clientY'>): THREE.Ray => 
   return caster.ray;
 };
 let mapDrag: { readonly pointer: number; last: MapPoint } | null = null;
+let minimapPointer: number | null = null;
+const endMinimapPointer = (event: PointerEvent): void => {
+  if (minimapPointer !== event.pointerId) return;
+  minimapPointer = null;
+  const commit = event.type === 'pointerup';
+  if (commit) ui?.dragMinimapSlider(mouseRay(event));
+  ui?.finishMinimapSlider(commit);
+  if (renderer.domElement.hasPointerCapture(event.pointerId))
+    renderer.domElement.releasePointerCapture(event.pointerId);
+};
+renderer.domElement.addEventListener('lostpointercapture', endMinimapPointer);
+window.addEventListener('pointerup', endMinimapPointer);
+window.addEventListener('pointercancel', endMinimapPointer);
 const endMapDrag = ({ pointerId }: PointerEvent): void => {
   if (mapDrag?.pointer !== pointerId) return;
   mapDrag = null;
@@ -1877,18 +1935,28 @@ window.addEventListener(
     if (event.target !== renderer.domElement) return;
     const ray = mouseRay(event);
     event.stopImmediatePropagation();
+    if (minimapPointer !== null) return;
+    const id = pickUi(ray.origin, ray.direction);
+    if (!busy() && id && ui.startMinimapSlider(id, ray)) {
+      minimapPointer = event.pointerId;
+      renderer.domElement.setPointerCapture(event.pointerId);
+      return;
+    }
     const point = ui.logbookMapPoint(ray);
     if (point && !mapDrag) {
       mapDrag = { pointer: event.pointerId, last: point };
       renderer.domElement.setPointerCapture(event.pointerId);
       return;
     }
-    const id = pickUi(ray.origin, ray.direction);
     if (id) actions.emit({ type: 'select', controlId: id });
   },
   { capture: true },
 );
 window.addEventListener('pointermove', (event) => {
+  if (minimapPointer === event.pointerId) {
+    if (!ui?.dragMinimapSlider(mouseRay(event))) endMinimapPointer(event);
+    return;
+  }
   if (mapDrag?.pointer === event.pointerId) {
     const point = ui?.logbookMapPoint(mouseRay(event), false);
     if (!point) {
@@ -2259,24 +2327,39 @@ function inspectFormula(clue: FormulaClue): boolean {
   audio?.playSfx('card-draw');
   return true;
 }
-function operateArchive(action: 'pour' | 'unlatch'): boolean {
+function operateArchive(
+  action: 'pour' | 'unlatch',
+  hand?: XRHandedness,
+  contact?: THREE.Vector3,
+): boolean {
   const archive = floor?.archive;
+  const alchemy = floor?.alchemy;
   if (!archive) return false;
-  if (!flow.useFormula(action)) {
-    const formula = flow.conservatoryFormula;
-    if (action !== 'pour' || !formula.brewed || formula.revealed) return false;
+  if (action === 'unlatch') {
+    if (!flow.useFormula('unlatch')) return false;
+    audio?.playSfx(
+      ARCHIVE_GATE_OPEN_SFX[flow.conservatoryFormula.recipe],
+      (archive.latch ?? archive.object).getWorldPosition(chimePosition),
+    );
+    return true;
+  }
+  const formula = flow.conservatoryFormula;
+  if (!formula.brewed || formula.revealed) return false;
+  if (!formula.carried) {
     floor?.showBookSecret(
       { text: brewNames[formula.recipe], caption: 'Collect the vial from the brew bench.' },
       camera,
     );
     return true;
   }
-  const formula = flow.conservatoryFormula;
-  audio?.playSfx(
-    formula.opened ? ARCHIVE_GATE_OPEN_SFX[formula.recipe] : 'sigil-cast',
-    (archive.latch ?? archive.object).getWorldPosition(chimePosition),
+  const target = contact ?? archive.object.localToWorld(new THREE.Vector3(0, 1.15, 0));
+  return (
+    alchemy?.throwPotion(alchemyCollector(hand), target, () => {
+      if (!flow.useFormula('pour')) return;
+      const { opened, recipe } = flow.conservatoryFormula;
+      audio?.playSfx(opened ? ARCHIVE_GATE_OPEN_SFX[recipe] : 'sigil-cast', target);
+    }) ?? false
   );
-  return true;
 }
 function alchemyCollector(hand?: XRHandedness): THREE.Object3D {
   return hand === 'left' || hand === 'right' ? (xr.grips()[hand] ?? camera) : camera;
@@ -2294,6 +2377,7 @@ function collectAlchemy(
 function operateAlchemy(
   hit: NonNullable<ReturnType<NonNullable<FloorView['alchemy']>['pick']>>,
   hand?: XRHandedness,
+  contact?: THREE.Vector3,
 ): boolean {
   if (hit.action === 'take-potion') {
     if (!flow.takePotion()) return false;
@@ -2312,18 +2396,19 @@ function operateAlchemy(
     return true;
   }
   if (hit.action === 'apply') {
-    const ward = floor?.alchemy?.ward;
-    if (!ward) return false;
-    if (!flow.applyPotion()) {
-      if (!flow.alchemy.brewed) return false;
+    const alchemy = floor?.alchemy;
+    if (!alchemy || flow.alchemy.opened || !flow.alchemy.brewed) return false;
+    if (!flow.alchemy.carried) {
       floor?.showBookSecret(
         { text: 'Thornwake Draught', caption: 'Collect the vial from the brew bench.' },
         camera,
       );
       return true;
     }
-    audio?.playSfx(PUZZLE_GATE_OPEN_SFX.thorn, ward.getWorldPosition(chimePosition));
-    return true;
+    const target = contact ?? alchemy.wardSeal.getWorldPosition(new THREE.Vector3());
+    return alchemy.throwPotion(alchemyCollector(hand), target, () => {
+      if (flow.applyPotion()) audio?.playSfx(PUZZLE_GATE_OPEN_SFX.thorn, target);
+    });
   }
   if (hit.action === 'collect') return collectAlchemy(hit.ingredient, hand);
   const result = flow.alchemy.opened
@@ -2815,7 +2900,13 @@ const activatePickup = (
     case 'hidden-panel':
       return operatePanel(pick.hit, hand);
     case 'archive':
-      return operateArchive(pick.hit.action);
+      return operateArchive(
+        pick.hit.action,
+        hand,
+        pick.hit.action === 'pour'
+          ? origin.clone().addScaledVector(direction, pick.hit.distance)
+          : undefined,
+      );
     case 'prism':
       return operatePrism(pick.hit);
     case 'formula-clue':
@@ -2825,11 +2916,17 @@ const activatePickup = (
     case 'clock':
       return collectAlchemy(pick.hit.ingredient, hand, floor?.clock?.target);
     case 'alchemy':
-      return operateAlchemy(pick.hit, hand);
+      return operateAlchemy(
+        pick.hit,
+        hand,
+        pick.hit.action === 'apply'
+          ? origin.clone().addScaledVector(direction, pick.hit.distance)
+          : undefined,
+      );
     case 'lift':
       return travelStairs(true);
     case 'gate': {
-      const at = floor?.world.rattlePuzzleGate(pick.hit.kind);
+      const at = floor?.world.rattlePuzzleGate(pick.hit.kind, pick.hit.gateIndex);
       if (at) audio?.playSfx(pick.hit.kind === 'pressure' ? 'steam-vent' : 'gear-clank', at);
       return !!at;
     }
@@ -2960,6 +3057,10 @@ window.addEventListener('keydown', (event) => {
   }
   const ids = ui.controlIds();
   if (ids.length === 0) return;
+  if (ui.nudgeMinimapSlider(ids[focusIndex] ?? null, event.key)) {
+    event.preventDefault();
+    return;
+  }
   if (['ArrowDown', 'ArrowRight', 'Tab'].includes(event.key)) {
     focusIndex = (focusIndex + 1) % ids.length;
   } else if (['ArrowUp', 'ArrowLeft'].includes(event.key)) {
@@ -3048,6 +3149,22 @@ let pullMark: { side: 'left' | 'right'; hand: THREE.Object3D; start: THREE.Vecto
 const pullPoint = new THREE.Vector3();
 const MAIN_HAND = 'right' as const;
 const OFF_HAND = 'left' as const;
+const minimapRay = new THREE.Ray();
+const minimapControllerRay = (controller: THREE.Object3D): THREE.Ray => {
+  controller.updateWorldMatrix(true, false);
+  minimapRay.origin.setFromMatrixPosition(controller.matrixWorld);
+  minimapRay.direction.set(0, 0, -1).transformDirection(controller.matrixWorld);
+  return minimapRay;
+};
+let xrMinimapDrag: THREE.Object3D | null = null;
+const sliderSelects = new WeakSet<THREE.Object3D>();
+function endXrMinimapDrag(commit: boolean): void {
+  if (!xrMinimapDrag) return;
+  if (commit) ui?.dragMinimapSlider(minimapControllerRay(xrMinimapDrag));
+  xrMinimapDrag = null;
+  ui?.finishMinimapSlider(commit);
+}
+renderer.xr.addEventListener('sessionend', () => endXrMinimapDrag(false));
 for (const index of [0, 1]) {
   const controller = renderer.xr.getController(index);
   let gaugeGrip: THREE.Object3D | null = null;
@@ -3057,7 +3174,7 @@ for (const index of [0, 1]) {
     pressed: boolean,
   ): void => {
     controller.addEventListener(type, (event) => {
-      if (gaugeGrip || busy()) return;
+      if (gaugeGrip || busy() || (control === 'trigger' && sliderSelects.has(controller))) return;
       const side = (event as unknown as { data?: XRInputSource }).data?.handedness;
       if (side !== 'left' && side !== 'right') return;
       actions.emit({
@@ -3070,16 +3187,30 @@ for (const index of [0, 1]) {
   };
   controller.addEventListener('selectstart', () => {
     reliquarySelects.delete(controller);
-    if (gaugeGrip || !xr.presenting || !canOpenLoot()) return;
+    sliderSelects.delete(controller);
+    if (gaugeGrip || !xr.presenting || busy()) return;
+    if (ui?.visible && !xrMinimapDrag) {
+      const ray = minimapControllerRay(controller);
+      const id = pickUi(ray.origin, ray.direction);
+      if (id && ui.startMinimapSlider(id, ray)) {
+        xrMinimapDrag = controller;
+        sliderSelects.add(controller);
+        return;
+      }
+    }
+    if (!canOpenLoot()) return;
     const { origin, direction } = controllerRay(controller);
     if (beginReliquaryTrace({ controller }, origin, direction)) reliquarySelects.add(controller);
   });
   controller.addEventListener('selectend', () => {
+    if (xrMinimapDrag === controller) endXrMinimapDrag(true);
     const input = reliquaryInput;
     if (input && 'controller' in input.source && input.source.controller === controller)
       endReliquaryTrace(true);
   });
   controller.addEventListener('disconnected', () => {
+    if (xrMinimapDrag === controller) endXrMinimapDrag(false);
+    sliderSelects.delete(controller);
     if (gaugeGrip) perf.releaseGauge(gaugeGrip);
     gaugeGrip = null;
     reliquarySelects.delete(controller);
@@ -3088,7 +3219,8 @@ for (const index of [0, 1]) {
       endReliquaryTrace(false);
   });
   controller.addEventListener('select', (event) => {
-    if (gaugeGrip || reliquarySelects.delete(controller) || busy()) return;
+    if (gaugeGrip || sliderSelects.has(controller) || reliquarySelects.delete(controller) || busy())
+      return;
     if (!ui?.visible) {
       if (floor && canOpenLoot() && xr.presenting) {
         const { origin, direction } = controllerRay(controller);
@@ -3148,7 +3280,7 @@ for (const index of [0, 1]) {
     const panel = floor.panels?.near(position, GRAB_REACH);
     if (panel && operatePanel(panel, side)) return;
     const archive = floor.archive?.near(position, GRAB_REACH);
-    if (archive && operateArchive(archive.action)) return;
+    if (archive && operateArchive(archive.action, side)) return;
     const prism = floor.prismAnnex?.near(position, GRAB_REACH);
     if (prism && operatePrism(prism)) return;
     const evidence = floor.formulaEvidence?.near(position, GRAB_REACH);
@@ -3557,6 +3689,7 @@ window.addEventListener('resize', () => {
 });
 
 const sceneStats = { calls: 0, triangles: 0 };
+let minimap: Minimap | null = null;
 let framedSession: unknown = null;
 let framedAspect = 0;
 const loadingScene = new THREE.Scene();
@@ -3564,10 +3697,7 @@ loadingScene.background = new THREE.Color(PALETTE.void);
 let loadingLabel: CanvasLabel | undefined;
 const timer = new THREE.Timer();
 const desktopEyes = [camera];
-renderer.setAnimationLoop((time, frame) => {
-  perf.frame(null, time);
-  questPerfSetMode(xr.presenting ? 'xr' : 'desktop');
-  questPerfFrame(time);
+function updateFrame(time: number, frame?: XRFrame): void {
   timer.update(time);
   const deltaSeconds = Math.min(timer.getDelta(), 0.1);
   if (titleReset) {
@@ -3608,6 +3738,7 @@ renderer.setAnimationLoop((time, frame) => {
     }
     return;
   }
+  const inputStage = questPerfStageStart('input.update');
   if (xr.presenting) {
     xr.update(deltaSeconds, frame);
     if (floor)
@@ -3687,6 +3818,7 @@ renderer.setAnimationLoop((time, frame) => {
     walker.enabled = !floor?.locked && !ui?.visible && stairTransit.phase === 'idle';
     walker.update(deltaSeconds, locomotion.standingFloorY);
   }
+  questPerfStageEnd(inputStage);
   camera.getWorldPosition(standingAt);
   locomotion.followGround(
     standingAt.x,
@@ -3728,6 +3860,8 @@ renderer.setAnimationLoop((time, frame) => {
   else combat?.session?.fitHudToView(camera);
   ui?.sync(camera);
   ui?.update(deltaSeconds);
+  if (xrMinimapDrag && !ui?.dragMinimapSlider(minimapControllerRay(xrMinimapDrag)))
+    endXrMinimapDrag(false);
   const laserHits = { left: null as number | null, right: null as number | null };
   if (xr.presenting && combat?.session && !ui?.visible) {
     const rays = xr.rays();
@@ -3859,12 +3993,31 @@ renderer.setAnimationLoop((time, frame) => {
   questPerfStageEnd(renderStage);
   sceneStats.calls = renderer.info.render.calls;
   sceneStats.triangles = renderer.info.render.triangles;
+  questPerfWorldRender(sceneStats.calls, sceneStats.triangles);
+  const overlayStage = questPerfStageStart('render.overlays.cpu');
   if (ui?.visible) {
     renderer.autoClear = false;
     renderer.clearDepth();
     renderer.render(uiScene, camera);
     renderer.autoClear = true;
   }
+  if (!settings?.minimapEnabled) {
+    minimap?.dispose();
+    minimap = null;
+  } else if (
+    (flow.phase === 'explore' || flow.phase === 'combat') &&
+    stairTransit.phase === 'idle' &&
+    (!ui?.visible || ui.menuView === 'minimap')
+  ) {
+    minimap ??= new Minimap();
+    const placement = ui?.minimapPlacementPreview;
+    const options = placement ? { ...settings, ...placement } : settings;
+    if (minimap.update(mapViewer(), deltaSeconds, options, readMinimap)) {
+      renderer.autoClear = false;
+      renderer.render(minimap.scene, camera);
+      renderer.autoClear = true;
+    }
+  } else minimap?.hide();
   // Comfort vignette, then the red hit flash on top of it, so the two stack.
   comfortVignette.update(
     xr.presenting
@@ -3900,6 +4053,7 @@ renderer.setAnimationLoop((time, frame) => {
     renderer.autoClear = true;
   }
   stairFade.render(renderer, camera, stairTransit.opacity);
+  questPerfStageEnd(overlayStage);
   if (floor && showDebugHud && !xr.presenting) {
     const room = floor.world.plan.rooms[floor.world.current];
     const fight = floor.encounter.phase === 'idle' ? '' : ` · encounter ${floor.encounter.phase}`;
@@ -3920,5 +4074,15 @@ renderer.setAnimationLoop((time, frame) => {
     revealGame();
     covered = false;
     enterButton.disabled = !vrSupported;
+  }
+}
+
+renderer.setAnimationLoop((time, frame) => {
+  perf.frame(null, time);
+  const frameStage = questPerfStageStart('frame.cpu');
+  try {
+    updateFrame(time, frame);
+  } finally {
+    questPerfStageEnd(frameStage);
   }
 });

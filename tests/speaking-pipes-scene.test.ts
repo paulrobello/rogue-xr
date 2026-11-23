@@ -5,6 +5,7 @@ import { expect, it } from 'vitest';
 import { floorSeedFor } from '../src/rules/run.ts';
 import { pipeTarget } from '../src/rules/speaking-pipes.ts';
 import { mountFloorView } from '../src/world/floor-view.ts';
+import { DOOR_HEIGHT } from '../src/world/floor-world.ts';
 import { nodeGeometryLoader } from './helpers/gltf-node.ts';
 
 it.each(['authored parts', 'fallback fixtures'])(
@@ -50,6 +51,9 @@ it.each(['authored parts', 'fallback fixtures'])(
     expect(find('cistern-plumbing')).toBeTruthy();
     expect(needle.visible).toBe(false);
     expect(gate.visible).toBe(true);
+    const closed = new THREE.Box3().setFromObject(gate);
+    expect(closed.min.y).toBeCloseTo(0, 6);
+    expect(closed.max.y).toBeCloseTo(DOOR_HEIGHT, 6);
     floor.world.current = layout.source.room;
     expect(pick(sender, send)).toMatchObject({ action: 'send' });
     floor.world.current = layout.receiverRoom;
@@ -77,7 +81,7 @@ it.each(['authored parts', 'fallback fixtures'])(
     expect(pick(receiver, select)).toBeNull();
     for (let i = 0; i < 60; i++) station.update(1 / 60);
     expect(gate.visible).toBe(false);
-    expect(gate.position.y).toBeLessThan(-1.14);
+    expect(new THREE.Box3().setFromObject(gate).max.y).toBeLessThan(0);
     floor.dispose();
   },
 );

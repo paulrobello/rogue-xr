@@ -3818,32 +3818,32 @@
     },
     "drum-grille-open": {
       "intermediate_wav": "assets-source/audio/derived/drum-grille-open.wav",
-      "intermediate_sha256": "a600ac97c77293115580b9535f49196b99d97a992e9d29ba9c09caa1fcb3b88b",
+      "intermediate_sha256": "8983d935d551b6977915b13e18a75ea0fbe5e1465b3714a5227416e46e7a2959",
       "pre_gain": {
-        "integrated_lufs": -20.4,
+        "integrated_lufs": -21.8,
         "true_peak_dbtp": -5.8,
-        "momentary_max_lufs": -19.0
+        "momentary_max_lufs": -19.1
       },
-      "gain_db": 4.4,
+      "gain_db": 4.8,
       "encode_attempts": 1,
       "opus_kbps": 64,
       "measured": {
-        "integrated_lufs": -16.0,
-        "true_peak_dbtp": -1.3,
-        "momentary_max_lufs": -14.5
+        "integrated_lufs": -17.0,
+        "true_peak_dbtp": -1.2,
+        "momentary_max_lufs": -14.3
       },
       "target_lufs": -16.0,
-      "deviation_lu": 0.0,
+      "deviation_lu": -1.0,
       "loudness_status": "met",
-      "limited_by_true_peak": false,
+      "limited_by_true_peak": true,
       "short_clip_lufs_unreliable": true,
-      "decoded_frames": 44972,
-      "decoded_duration_s": 0.9369,
-      "decoded_pcm_sha256": "f8ce33271554725e34cccc588ff6fa1a1295c531e68f9fa164478c5ee28ba582",
+      "decoded_frames": 41998,
+      "decoded_duration_s": 0.875,
+      "decoded_pcm_sha256": "7c653f627012153d015af4ab20f3be3073a80f0a6828183783c2210ca404ae49",
       "id": "drum-grille-open",
       "class": "positional",
       "source_file": "assets-source/audio/sfx/procedural/drum-grille-open.wav",
-      "source_sha256": "e7255871b7f72c946a596b8f433bac3d9286da412e212283419a631bcecce3ff",
+      "source_sha256": "3ec1fbbf8df035346b1094b5d5f7a5bb8581a1d1fac61cdd016e02b2f2312ef8",
       "source_probe": {
         "codec": "pcm_f32le",
         "sample_rate": 48000,
@@ -3851,7 +3851,7 @@
         "duration_s": 0.95
       },
       "trim": {
-        "trimmed_head_ms": 13.1,
+        "trimmed_head_ms": 75.0,
         "trimmed_tail_ms": 0.0
       },
       "steps": [
@@ -3860,13 +3860,13 @@
         "fold to mono 0.5*L+0.5*R (positional cue)"
       ],
       "runtime_file": "public/assets/audio/sfx/drum-grille-open.ogg",
-      "runtime_sha256": "3385ae97861fd4a7ded68aa43a4959fa2481dafba99f07c3edfc8ea62fcfe0bb",
-      "runtime_bytes": 11783,
+      "runtime_sha256": "010a80b101a7ec7c65459429a57f2cd4ea77bdb5108329559b94d931f359f31b",
+      "runtime_bytes": 11031,
       "runtime_probe": {
         "codec": "opus",
         "sample_rate": 48000,
         "channels": 1,
-        "duration_s": 0.9434
+        "duration_s": 0.8815
       },
       "generation": {
         "method": "deterministic additive synthesis",

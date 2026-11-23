@@ -97,6 +97,23 @@ export function dressBookcaseWood(
     }
     node.material = finish;
   });
+  const lining = walnut.clone();
+  const panel = asset.roots.Bookcase.getObjectByName('Bookcase_Slider');
+  panel?.traverse((node) => {
+    if (!(node instanceof THREE.Mesh) || !(node.material instanceof THREE.MeshStandardMaterial))
+      return;
+    const name = node.material.name.toLowerCase();
+    if (name.includes('brass') || name.includes('metal') || name.includes('iron')) return;
+    node.material = lining;
+  });
+  asset.roots.Bookcase.traverse((node) => {
+    if (!(node instanceof THREE.Mesh) || node.parent?.name === 'Bookcase_Slider') return;
+    if (!(node.material instanceof THREE.MeshStandardMaterial)) return;
+    if (node.material.name !== 'BlackIron') return;
+    node.geometry.computeBoundingBox();
+    const size = node.geometry.boundingBox?.getSize(new THREE.Vector3());
+    if (size && size.x > 1 && size.z < 0.6) node.material = lining;
+  });
 }
 
 export interface InteriorPlacement {

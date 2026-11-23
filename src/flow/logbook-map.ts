@@ -1,5 +1,6 @@
 import type { Rect } from '../content/rooms.ts';
 import type { FloorPlan, WorldRoom } from '../floor/generate.ts';
+import type { StairEntry } from '../floor/stairs.ts';
 import type { LogbookDiscovery } from './logbook-discoveries.ts';
 
 export type MapPoint = readonly [x: number, y: number];
@@ -18,6 +19,8 @@ export interface LogbookMap {
   readonly transport?: readonly MapTransport[];
   readonly doors: readonly MapDoor[];
   readonly discoveries?: readonly LogbookDiscovery[];
+  /** The explored staircase enclosure, including its far landing. */
+  readonly stair?: { readonly room: number; readonly bounds: Rect; readonly position: MapPoint };
   readonly player?: { readonly room: number; readonly label: string; readonly position: MapPoint };
 }
 
@@ -49,6 +52,12 @@ function chartLayout(map: LogbookMap) {
     maxX = Math.max(maxX, bounds.max[0]);
     minZ = Math.min(minZ, bounds.min[1]);
     maxZ = Math.max(maxZ, bounds.max[1]);
+  }
+  if (map.stair) {
+    minX = Math.min(minX, map.stair.bounds.min[0]);
+    maxX = Math.max(maxX, map.stair.bounds.max[0]);
+    minZ = Math.min(minZ, map.stair.bounds.min[1]);
+    maxZ = Math.max(maxZ, map.stair.bounds.max[1]);
   }
   return {
     x: (minX + maxX) / 2,
@@ -102,6 +111,7 @@ export function chartFloor(
   explored: readonly number[],
   player?: { readonly room: number; readonly position: MapPoint },
   transport: readonly MapTransport[] = [],
+  stair?: StairEntry | null,
 ): LogbookMap {
   const reached = new Set(explored);
   if (player) reached.add(player.room);
@@ -126,12 +136,20 @@ export function chartFloor(
       : [];
   });
   const here = player && worldRooms[player.room];
+  const exploredStair = stair && reached.has(stair.room) ? stair : undefined;
   return {
     floor,
     rooms,
     totalRooms: plan.rooms.length,
     doors,
     transport: transport.filter(({ room }) => reached.has(room)),
+    ...(exploredStair && {
+      stair: {
+        room: exploredStair.room,
+        bounds: exploredStair.alcove,
+        position: exploredStair.world,
+      },
+    }),
     ...(here && {
       player: { ...player, label: here.template.id.replaceAll('-', ' ') },
     }),
@@ -293,6 +311,19 @@ export function paintMapPage(
     context.strokeStyle = INK;
     context.lineWidth = 3;
     context.fillRect(x, y, w, h);
+    context.strokeRect(x, y, w, h);
+  }
+  if (map.stair) {
+    const x = projectX(map.stair.bounds.min[0]) + 2;
+    const y = projectZ(map.stair.bounds.min[1]) + 2;
+    const w = (map.stair.bounds.max[0] - map.stair.bounds.min[0]) * scale - 4;
+    const h = (map.stair.bounds.max[1] - map.stair.bounds.min[1]) * scale - 4;
+    context.fillStyle = '#8f8068';
+    context.globalAlpha = 0.42;
+    context.fillRect(x, y, w, h);
+    context.globalAlpha = 1;
+    context.strokeStyle = INK;
+    context.lineWidth = 3;
     context.strokeRect(x, y, w, h);
   }
   context.fillStyle = INK;

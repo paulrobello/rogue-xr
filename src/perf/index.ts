@@ -13,8 +13,9 @@ import {
 } from './recorder.ts';
 import {
   createQuestPerfProfiler,
+  type QuestPerfContext,
   questPerfEnabledFromSearch,
-  questPerfLog,
+  readStoredQuestPerf,
   setActiveQuestPerf,
 } from './stages.ts';
 import {
@@ -54,6 +55,7 @@ export interface MountPerfOptions {
   perfStorage?: PerfStorage | null;
   /** Storage for the opt-in Quest stage capture. */
   questPerfStorage?: PerfStorage | null;
+  questContext?: () => Omit<QuestPerfContext, 'scale' | 'foveation' | 'buildId'>;
 }
 
 export interface PerfHandle {
@@ -126,14 +128,14 @@ export function mountPerf(
   const sampler = new RateSampler();
   const search = options.search ?? globalThis.location?.search ?? '';
   const enabled = options.enabled ?? perfEnabledFromSearch(search);
-  const recorderFlag = enabled || perfRecorderFromSearch(search);
   const questEnabled = questPerfEnabledFromSearch(search);
+  const recorderFlag = enabled || questEnabled || perfRecorderFromSearch(search);
   const perfStorage =
     options.perfStorage === undefined ? defaultPerfStorage() : options.perfStorage;
   const storage = options.storage;
   const loadedScale = storage === undefined ? loadXrScale() : loadXrScale(storage);
   const override = scaleOverrideFromSearch(search);
-  const sessionScale = override ?? loadedScale;
+  let sessionScale = override ?? loadedScale;
   if (override === null) applySessionScale(renderer, loadedScale);
   else if (!renderer.xr.isPresenting) renderer.xr.setFramebufferScaleFactor(override);
   let foveation = options.foveation ?? XR_FOVEATION;
@@ -141,11 +143,11 @@ export function mountPerf(
   let gauge: PerfGauge | null = null;
   let panel: DebugPanel | null = null;
   let recorder: PerfRecorder | null = null;
-  const questProfiler = questEnabled
-    ? createQuestPerfProfiler(
-        options.questPerfStorage === undefined ? perfStorage : options.questPerfStorage,
-      )
-    : null;
+  const questStorage =
+    options.questPerfStorage === undefined ? perfStorage : options.questPerfStorage;
+  const questProfiler = questEnabled ? createQuestPerfProfiler(questStorage) : null;
+  const buildId =
+    globalThis.document?.querySelector<HTMLMetaElement>('meta[name="app-build"]')?.content ?? null;
   setActiveQuestPerf(questProfiler);
 
   const mountGauge = (): PerfGauge =>
@@ -157,7 +159,14 @@ export function mountPerf(
   };
   const onPageHide = (): void => perfMark('pagehide');
   const saveQuestCapture = (): void => questProfiler?.persist();
-  if (questProfiler) globalThis.addEventListener?.('pagehide', saveQuestCapture);
+  const saveHiddenCapture = (): void => {
+    if (document.visibilityState === 'hidden') saveQuestCapture();
+  };
+  const checkpoint = questProfiler ? setInterval(saveQuestCapture, 15_000) : null;
+  if (questProfiler) {
+    globalThis.addEventListener?.('pagehide', saveQuestCapture);
+    globalThis.document?.addEventListener('visibilitychange', saveHiddenCapture);
+  }
 
   function startRecorder(): void {
     recorder = createPerfRecorder({
@@ -198,13 +207,14 @@ export function mountPerf(
     recorder?.clear();
     questProfiler?.clear();
   };
-  registerDiag('perf', () => ({
+  const recorderLog = () => ({
     recording: recorder !== null,
     windows: recorder ? recorder.windows() : readStoredWindows(perfStorage),
     hitches: recorder ? recorder.hitches() : readStoredHitches(perfStorage),
     current: recorder ? recorder.current() : null,
-    quest: questPerfLog(),
-  }));
+    quest: questProfiler?.log() ?? readStoredQuestPerf(questStorage),
+  });
+  registerDiag('perf', recorderLog);
 
   if (enabled) {
     gauge = mountGauge();
@@ -216,12 +226,14 @@ export function mountPerf(
         const saved = storage === undefined ? saveXrScale(scale) : saveXrScale(scale, storage);
         if (!applySessionScale(renderer, scale))
           return 'In a session: saved, applies at the next Enter VR.';
+        sessionScale = scale;
         return saved
           ? 'Saved. Applies at the next Enter VR.'
           : 'Applies at the next Enter VR (not saved).';
       },
       onDownload() {
-        return JSON.stringify({ ...currentLog(), quest: questPerfLog() }, null, 2);
+        const { quest, ...recording } = recorderLog();
+        return JSON.stringify({ ...currentLog(), recording, quest }, null, 2);
       },
     });
   }
@@ -244,7 +256,19 @@ export function mountPerf(
       const interval = dtMs ?? (lastNow === null ? null : now - lastNow);
       lastNow = now;
       lastClock = now;
-      recorder?.frame(now, renderer.xr.isPresenting);
+      const presenting = renderer.xr.isPresenting;
+      recorder?.frame(now, presenting);
+      if (questProfiler) {
+        const displayHz = presenting
+          ? (renderer.xr.getSession?.()?.frameRate ?? options.targetHz ?? DEFAULT_TARGET_HZ)
+          : undefined;
+        questProfiler.setMode(presenting ? 'xr' : 'desktop', displayHz);
+        const context = options.questContext?.();
+        questProfiler.frame(
+          now,
+          context ? { ...context, scale: sessionScale, foveation, buildId } : null,
+        );
+      }
       if (interval === null || !(interval > 0) || interval > PERF_PAUSE_MS) {
         gauge?.update(options.camera);
         return;
@@ -284,6 +308,8 @@ export function mountPerf(
       if (questProfiler) {
         questProfiler.persist();
         globalThis.removeEventListener?.('pagehide', saveQuestCapture);
+        globalThis.document?.removeEventListener('visibilitychange', saveHiddenCapture);
+        if (checkpoint !== null) clearInterval(checkpoint);
         setActiveQuestPerf(null);
       }
     },

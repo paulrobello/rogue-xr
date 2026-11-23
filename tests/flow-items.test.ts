@@ -4,6 +4,7 @@ import { ENCOUNTER_CONTENT_VERSION } from '../src/combat/encounter-choice.ts';
 import { STARTER_DECK } from '../src/content/cards.ts';
 import { REWARD_POOL } from '../src/content/rewards.ts';
 import { worldRooms } from '../src/floor/generate.ts';
+import { placeStairEntry } from '../src/floor/stairs.ts';
 import { RunFlow } from '../src/flow/flow.ts';
 import { chartFloor, FIT_MAP_VIEW, type LogbookMap, moveMapView } from '../src/flow/logbook-map.ts';
 import { FlowUi } from '../src/flow/panels.ts';
@@ -115,21 +116,26 @@ describe('FlowUi pressure Items', () => {
     expect(ui.controlIds()).toContain('menu-items-item-A');
     expect(ui.controlIds()).not.toContain('menu-items-item-B');
     expect(ui.activate('menu-items-item-A')).toBe(true);
-    expect(ui.controlIds()).toContain('menu-note-back');
-    expect(ui.controlIds()).toContain('menu-note-resume');
+    expect(ui.controlIds().filter((id) => id.startsWith('menu-note-'))).toEqual([
+      'menu-note-add-show',
+      'menu-note-add-close',
+    ]);
     expect(ui.root.getObjectByName('menu-note-sheet')).toBeDefined();
     expect(ui.root.getObjectByName('menu-note-sheet')?.userData.noteId).toBe('A');
     ui.dispose();
   });
 
-  it('readNote opens a physical sheet with Put away and Items controls', () => {
+  it('files a physical clue when read, and its Close button resumes the run', () => {
     const { flow, ui, head } = setup();
     flow.newRun('BRASS042');
     flow.collectPressureNote(1, 'A');
     expect(ui.readNote('A', head)).toBe(true);
-    expect(ui.controlIds()).toContain('menu-note-put-away');
-    expect(ui.controlIds()).toContain('menu-note-items');
-    expect(ui.activate('menu-note-put-away')).toBe(true);
+    expect(ui.controlIds().filter((id) => id.startsWith('menu-note-'))).toEqual([
+      'menu-note-add-show',
+      'menu-note-add-close',
+    ]);
+    expect(flow.logbookEntries.map(({ id }) => id)).toEqual(['A']);
+    expect(ui.activate('menu-note-add-close')).toBe(true);
     expect(ui.menuView).toBe('closed');
     ui.dispose();
   });
@@ -145,7 +151,9 @@ it('unfolds at the sheet on pickup and on reread, once per opening', () => {
   ui.readNote('A', head);
   ui.refresh();
   expect(positions).toHaveLength(1);
-  ui.activate('menu-note-items');
+  ui.closeMenu();
+  ui.openMenu(head);
+  ui.activate('menu-items');
   ui.activate('menu-items-item-A');
   expect(positions).toHaveLength(2);
   const sheet = ui.root.getObjectByName('menu-note-sheet');
@@ -153,7 +161,7 @@ it('unfolds at the sheet on pickup and on reread, once per opening', () => {
   ui.dispose();
 });
 
-it('saves only selected clues, persists their contents across floors, and turns a leaf through the spine', () => {
+it('files clues through both buttons and menu dismissal, and keeps them across floors', () => {
   const rustles: THREE.Vector3[] = [];
   const { ui, flow, head } = setup((at) => {
     rustles.push(at.clone());
@@ -164,19 +172,20 @@ it('saves only selected clues, persists their contents across floors, and turns 
   flow.collectPressureNote(3, 'C');
   expect(flow.logbookEntries).toHaveLength(0);
   expect(ui.readNote('A', head)).toBe(true);
-  expect(ui.activate('menu-note-save-logbook')).toBe(true);
+  expect(ui.activate('menu-note-add-show')).toBe(true);
   expect(ui.menuView).toBe('logbook');
   expect(ui.root.getObjectByName('logbook-left-page')?.userData.clueId).toBe('A');
   ui.closeMenu();
   ui.readNote('A', head);
-  ui.activate('menu-note-save-logbook');
+  ui.activate('menu-note-add-show');
   expect(flow.logbookEntries).toHaveLength(1);
-  for (const id of ['B', 'C'] as const) {
-    ui.closeMenu();
-    ui.readNote(id, head);
-    ui.activate('menu-note-save-logbook');
-  }
   ui.closeMenu();
+  expect(ui.readNote('B', head)).toBe(true);
+  expect(ui.activate('menu-note-add-close')).toBe(true);
+  expect(ui.menuView).toBe('closed');
+  expect(ui.readNote('C', head)).toBe(true);
+  expect(ui.toggleMenu(head)).toBe(true);
+  expect(ui.menuView).toBe('closed');
   flow.travelToFloor(2, 0);
   const saved = validateSnapshot(flow.snapshot());
   const resumed = setup();
@@ -275,6 +284,17 @@ it('shows a visible locked exit from one explored room and keeps an undiscovered
   expect(
     chartFloor(1, { ...plan, connections: [concealed] }, world, [pair[0].room, pair[1].room]).doors,
   ).toHaveLength(1);
+});
+
+it('charts the explored staircase enclosure without exposing an undiscovered landing', () => {
+  const plan = playableFloorPlan('MAPTEST2', ENCOUNTER_CONTENT_VERSION, 1);
+  const world = worldRooms(plan);
+  const stair = placeStairEntry(plan);
+  if (!stair) throw new Error('showcase floor has no stair entry');
+  expect(chartFloor(1, plan, world, []).stair).toBeUndefined();
+  const map = chartFloor(1, plan, world, [stair.room], undefined, [], stair);
+  expect(map.stair).toEqual({ room: stair.room, bounds: stair.alcove, position: stair.world });
+  expect(map.totalRooms).toBe(plan.rooms.length);
 });
 
 it('records a clicked world inscription exactly once and round-trips its text on Continue', () => {

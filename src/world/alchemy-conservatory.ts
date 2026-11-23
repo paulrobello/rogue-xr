@@ -67,6 +67,16 @@ interface PickupFlight {
   room: number;
   time: number;
 }
+interface PotionThrow {
+  node: THREE.Object3D;
+  start: THREE.Vector3;
+  target: THREE.Vector3;
+  room: number;
+  duration: number;
+  lift: number;
+  impact: () => void;
+  elapsed: number;
+}
 
 /** Refinish the cauldron's UV-island seams with continuous color in the vessel's own space. */
 export function finishCauldron(kit: THREE.Object3D): void {
@@ -110,11 +120,13 @@ export class AlchemyConservatory {
   readonly tablet: THREE.Group;
   readonly potion: THREE.Object3D;
   readonly ward: THREE.Group;
+  readonly wardSeal: THREE.Object3D;
   readonly cauldronRoom: number;
   readonly tabletRoom: number;
   private readonly leaves: THREE.Object3D[] = [];
   private readonly cradles: Cradle[] = [];
   private readonly pickups = new Set<PickupFlight>();
+  private potionThrow: PotionThrow | null = null;
   private readonly swirl: THREE.Object3D;
   private readonly bubbles: THREE.Object3D[];
   private simmer = 0;
@@ -294,6 +306,7 @@ export class AlchemyConservatory {
       this.leaves.push(leaf);
     }
     const seal = this.clone('RecipeTileStarThistle');
+    this.wardSeal = seal;
     seal.name = 'ThornWardSeal';
     seal.rotation.x = Math.PI / 2;
     seal.scale.setScalar(1.65);
@@ -430,6 +443,7 @@ export class AlchemyConservatory {
     if (immediate) {
       this.splash = 0;
       this.clearPickups();
+      this.clearPotionThrow();
     }
     for (const { node, input } of this.targets) {
       if (input.action === 'add') {
@@ -470,6 +484,60 @@ export class AlchemyConservatory {
   }
   animatePotionPickup(collector: THREE.Object3D): void {
     this.flyPickup(this.potion, collector, 'potion');
+  }
+  throwPotion(thrower: THREE.Object3D, contact: THREE.Vector3, impact: () => void): boolean {
+    if (this.potionThrow) return true;
+    const group = this.world.group;
+    const start = group.worldToLocal(thrower.getWorldPosition(new THREE.Vector3()));
+    const target = group.worldToLocal(contact.clone());
+    const direction = new THREE.Vector3().subVectors(target, start);
+    const distance = direction.length();
+    const fromCamera = thrower instanceof THREE.Camera;
+    const offset = fromCamera ? 0.42 : 0.075;
+    start.addScaledVector(direction.normalize(), Math.min(offset, distance * 0.4));
+    if (fromCamera) start.y -= 0.15;
+    for (const pickup of this.pickups) {
+      if (pickup.node.name !== 'alchemy-pickup-potion') continue;
+      pickup.node.removeFromParent();
+      this.pickups.delete(pickup);
+    }
+    const node = this.potion.clone(true);
+    node.name = 'alchemy-thrown-potion';
+    node.visible = true;
+    node.position.copy(start);
+    group.add(node);
+    this.potionThrow = {
+      node,
+      start,
+      target,
+      room: this.world.current,
+      duration: this.reducedMotion ? 0.18 : THREE.MathUtils.clamp(distance * 0.15, 0.3, 0.65),
+      lift: this.reducedMotion ? 0 : Math.min(0.38, distance * 0.13),
+      impact,
+      elapsed: 0,
+    };
+    return true;
+  }
+  private updatePotionThrow(dt: number): void {
+    const flight = this.potionThrow;
+    if (!flight) return;
+    if (this.world.current !== flight.room) {
+      this.clearPotionThrow();
+      return;
+    }
+    flight.elapsed += dt;
+    const t = Math.min(1, flight.elapsed / flight.duration);
+    flight.node.position.lerpVectors(flight.start, flight.target, t);
+    flight.node.position.y += flight.lift * 4 * t * (1 - t);
+    if (!this.reducedMotion) flight.node.rotation.x = -t * Math.PI * 2;
+    if (t === 1) {
+      this.clearPotionThrow();
+      flight.impact();
+    }
+  }
+  private clearPotionThrow(): void {
+    this.potionThrow?.node.removeFromParent();
+    this.potionThrow = null;
   }
   private flyPickup(specimen: THREE.Object3D, collector: THREE.Object3D, name: string): void {
     if (!specimen.parent) return;
@@ -586,10 +654,12 @@ export class AlchemyConservatory {
     if (dt > 0) {
       this.updatePickups(dt);
       this.updateBrew(dt);
+      this.updatePotionThrow(dt);
     }
   }
   dispose(): void {
     this.clearPickups();
+    this.clearPotionThrow();
     this.windInscription?.dispose();
     for (const remove of this.boxes) remove();
     for (const root of this.fixtures) root.removeFromParent();

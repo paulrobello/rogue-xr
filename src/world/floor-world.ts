@@ -82,8 +82,8 @@ export interface FloorWorld {
   pickPuzzleGate(
     origin: THREE.Vector3,
     direction: THREE.Vector3,
-  ): { kind: PuzzleGate; distance: number } | null;
-  rattlePuzzleGate(kind: PuzzleGate): THREE.Vector3 | undefined;
+  ): { kind: PuzzleGate; distance: number; gateIndex: number } | null;
+  rattlePuzzleGate(kind: PuzzleGate, gateIndex?: number): THREE.Vector3 | undefined;
   /** Advances moving door leaves and gate hardware. */
   updateAnimations(dt: number): void;
   spawnPoint(): THREE.Vector3;
@@ -527,6 +527,8 @@ export function buildFloorWorld(
   const gateRay = new THREE.Raycaster();
   const gateBox = new THREE.Box3();
   const gateCrossing = new THREE.Vector3();
+  const blockedByPuzzleGate = (from: number, to: number): boolean =>
+    puzzleGates.some((gate) => !gate.open && gate.sides.includes(from) && gate.sides.includes(to));
 
   const world: FloorWorld = {
     group,
@@ -539,6 +541,7 @@ export function buildFloorWorld(
     nearbyWalkable() {
       const near = nearSet(plan, world.current);
       const walkable = [...near].flatMap((i) => {
+        if (i !== world.current && blockedByPuzzleGate(world.current, i)) return [];
         const [ox, oz] = plan.rooms[i]?.position ?? [0, 0];
         return (rooms[i]?.template.walkable ?? []).map(
           (w): Rect => ({
@@ -666,24 +669,25 @@ export function buildFloorWorld(
       for (const gate of puzzleGates) gate.visual?.dress(set, environment);
     },
     setPuzzleGateOpen(kind, open, immediate = false) {
-      const gate = puzzleGates.find((g) => g.kind === kind);
-      if (!gate || gate.open === open) return;
-      gate.open = open;
-      for (const side of gate.sides) {
-        const boxes = colliders[side];
-        if (open) {
-          const index = boxes.indexOf(gate.barrier);
-          if (index >= 0) boxes.splice(index, 1);
-        } else boxes.push(gate.barrier);
+      const gates = puzzleGates.filter((g) => g.kind === kind && g.open !== open);
+      for (const gate of gates) {
+        gate.open = open;
+        for (const side of gate.sides) {
+          const boxes = colliders[side];
+          if (open) {
+            const index = boxes.indexOf(gate.barrier);
+            if (index >= 0) boxes.splice(index, 1);
+          } else if (!boxes.includes(gate.barrier)) boxes.push(gate.barrier);
+        }
+        gate.visual?.setOpen(open, immediate || reducedMotion);
       }
-      gate.visual?.setOpen(open, immediate || reducedMotion);
     },
     pickPuzzleGate(origin, direction) {
       gateRay.set(origin, direction);
       gateRay.ray.direction.normalize();
       gateRay.far = 4;
-      let nearest: { kind: PuzzleGate; distance: number } | null = null;
-      for (const gate of puzzleGates) {
+      let nearest: ReturnType<FloorWorld['pickPuzzleGate']> = null;
+      for (const [gateIndex, gate] of puzzleGates.entries()) {
         if (!gate.visual || gate.open || !gate.sides.includes(world.current)) continue;
         gate.visual.object.updateWorldMatrix(true, true);
         const hit = gateRay.intersectObject(gate.visual.pickTarget, true)[0];
@@ -697,13 +701,16 @@ export function buildFloorWorld(
             gateCrossing.distanceTo(origin) < hit.distance - 0.025
           );
         });
-        if (!blocked) nearest = { kind: gate.kind, distance: hit.distance };
+        if (!blocked) nearest = { kind: gate.kind, distance: hit.distance, gateIndex };
       }
       return nearest;
     },
-    rattlePuzzleGate(kind) {
-      const gate = puzzleGates.find((g) => g.kind === kind && !g.open);
-      if (!gate?.visual) return;
+    rattlePuzzleGate(kind, gateIndex) {
+      const gate =
+        gateIndex === undefined
+          ? puzzleGates.find((g) => g.kind === kind && !g.open)
+          : puzzleGates[gateIndex];
+      if (!gate?.visual || gate.kind !== kind || gate.open) return;
       gate.visual.rattle(reducedMotion);
       return gate.visual.handle.getWorldPosition(new THREE.Vector3());
     },

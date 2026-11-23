@@ -196,8 +196,9 @@ export function createPerfRecorder(options: PerfRecorderOptions): PerfRecorder {
   const hitches: PerfHitch[] = readStoredHitches(storage).slice(-PERF_MAX_HITCHES);
   /** Frame time of the last mark's first frame, for `sinceMarkMs`. */
   let markTime: number | null = null;
-  /** The hitch threshold, refreshed from the context on each mark. */
-  let hitchMs = hitchThreshold();
+  let frameContext: PerfContext | null = null;
+  let contextPresenting: boolean | null = null;
+  let hitchMs = PERF_HITCH_FACTOR * PERF_DEFAULT_BUDGET_MS;
   /** Hitches recorded since the last write to storage. */
   let unsavedHitches = 0;
 
@@ -213,12 +214,13 @@ export function createPerfRecorder(options: PerfRecorderOptions): PerfRecorder {
   let countFrom = -1;
   let presentingFrames = 0;
 
-  function hitchThreshold(): number {
-    const hz = options.context(false).targetHz;
-    return PERF_HITCH_FACTOR * (hz && hz > 0 ? 1000 / hz : PERF_DEFAULT_BUDGET_MS);
-  }
-
   function frame(timeMs: number, presenting: boolean): void {
+    if (frameContext === null || contextPresenting !== presenting) {
+      frameContext = options.context(presenting);
+      contextPresenting = presenting;
+      const hz = frameContext.targetHz;
+      hitchMs = PERF_HITCH_FACTOR * (hz && hz > 0 ? 1000 / hz : PERF_DEFAULT_BUDGET_MS);
+    }
     const previous = lastTime;
     lastTime = timeMs;
     if (previous !== null && timeMs > previous) {
@@ -256,7 +258,7 @@ export function createPerfRecorder(options: PerfRecorderOptions): PerfRecorder {
     const counted = countFrom < 0 ? 0 : written - countFrom;
     const n = Math.min(counted, ringFrames);
     const presenting = n > 0 && presentingFrames >= counted;
-    const ctx = options.context(presenting);
+    const ctx = frameContext ?? options.context(presenting);
     let sum = 0;
     for (let i = 0; i < n; i += 1) {
       const v = ring[(written - n + i) % ringFrames] ?? 0;
@@ -326,7 +328,7 @@ export function createPerfRecorder(options: PerfRecorderOptions): PerfRecorder {
       }
       label = next;
       markTime = null;
-      hitchMs = hitchThreshold();
+      frameContext = null;
       openTime = null;
       countFrom = -1;
       presentingFrames = 0;

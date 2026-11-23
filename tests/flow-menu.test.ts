@@ -113,6 +113,73 @@ describe('in-run menu (card A)', () => {
     ui.dispose();
   });
 
+  it('opens the minimap page from title and in-run settings, saving and marking choices', () => {
+    const { flow, ui, head, settings } = rig();
+    const selected = () => [...(ui as unknown as { selectedIds: Set<string> }).selectedIds];
+    flow.openSettings();
+    ui.sync(head);
+    expect(ui.controlIds()).toContain('settings-minimap');
+    expect(ui.activate('settings-minimap')).toBe(true);
+    expect(ui.controlIds()).toEqual(
+      expect.arrayContaining([
+        'minimap-enabled-on',
+        'minimap-north-up-off',
+        'minimap-zoom-0.25',
+        'minimap-zoom-0.5',
+        'minimap-zoom-0.75',
+        'minimap-zoom-1',
+        'minimap-horizontal',
+        'minimap-vertical',
+      ]),
+    );
+    expect(ui.activate('minimap-enabled-on')).toBe(true);
+    expect(ui.activate('minimap-north-up-off')).toBe(true);
+    expect(ui.activate('minimap-zoom-0.75')).toBe(true);
+    expect(settings()).toMatchObject({
+      minimapEnabled: true,
+      minimapNorthUp: false,
+      minimapZoom: 0.75,
+    });
+    expect(selected()).toEqual(
+      expect.arrayContaining(['minimap-enabled-on', 'minimap-north-up-off', 'minimap-zoom-0.75']),
+    );
+
+    const board = ui.root.getObjectByName('minimap-board');
+    const horizontal = board?.getObjectByName('minimap-horizontal-rail');
+    expect(horizontal).toBeTruthy();
+    if (!horizontal) throw new Error('horizontal minimap slider rail missing');
+    horizontal?.updateWorldMatrix(true, false);
+    const center = horizontal.getWorldPosition(new THREE.Vector3());
+    const ray = new THREE.Ray(
+      center.clone().add(new THREE.Vector3(0, 0, 1)),
+      new THREE.Vector3(0, 0, -1),
+    );
+    expect(ui.startMinimapSlider('minimap-horizontal', ray)).toBe(true);
+    const moved = ray.clone();
+    moved.origin.x += 0.08;
+    expect(ui.dragMinimapSlider(moved)).toBe(true);
+    expect(ui.minimapPlacementPreview?.minimapHorizontal).toBeGreaterThan(0);
+    const originalHorizontal = settings().minimapHorizontal;
+    ui.finishMinimapSlider(false);
+    expect(settings().minimapHorizontal).toBe(originalHorizontal);
+    expect(ui.startMinimapSlider('minimap-horizontal', ray)).toBe(true);
+    expect(ui.dragMinimapSlider(moved)).toBe(true);
+    ui.finishMinimapSlider(true);
+    expect(settings().minimapHorizontal).toBeGreaterThan(0);
+    expect(ui.activate('minimap-back')).toBe(true);
+    expect(ui.activate('settings-back')).toBe(true);
+
+    expect(flow.newRun(SEED)).toBe(true);
+    ui.sync(head);
+    expect(ui.openMenu(head)).toBe(true);
+    expect(ui.activate('menu-settings')).toBe(true);
+    expect(ui.activate('settings-minimap')).toBe(true);
+    expect(ui.menuView).toBe('minimap');
+    expect(ui.activate('minimap-back')).toBe(true);
+    expect(ui.menuView).toBe('settings');
+    ui.dispose();
+  });
+
   it('abandon asks first: No goes back, Yes ends the run on the title', () => {
     const { flow, ui, head } = rig();
     flow.newRun(SEED);

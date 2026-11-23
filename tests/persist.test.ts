@@ -35,6 +35,25 @@ async function putRaw(handle: PersistDb, value: unknown): Promise<void> {
 }
 
 describe('validateSettings', () => {
+  it('uses the Quest minimap defaults for a fresh settings record', () => {
+    expect(DEFAULT_SETTINGS).toMatchObject({
+      minimapEnabled: false,
+      minimapZoom: 0.5,
+      minimapNorthUp: false,
+      minimapHorizontal: -1.71,
+      minimapVertical: -1.71,
+    });
+    expect(
+      validateSettings({ minimapEnabled: true, minimapZoom: 1, minimapNorthUp: true }),
+    ).toMatchObject({
+      minimapEnabled: true,
+      minimapZoom: 1,
+      minimapNorthUp: true,
+      minimapHorizontal: -1.71,
+      minimapVertical: -1.71,
+    });
+  });
+
   it('returns defaults for non-objects', () => {
     for (const raw of [undefined, null, 42, 'x', [], true]) {
       expect(validateSettings(raw)).toEqual(DEFAULT_SETTINGS);
@@ -58,6 +77,29 @@ describe('validateSettings', () => {
       snapDegrees: 45,
       musicVolume: 0.25,
       teleportEnabled: false,
+    });
+  });
+
+  it('migrates old minimap corners and rejects obsolete zooms', () => {
+    expect(validateSettings({ minimapCorner: 'bottom-left', minimapZoom: 3 })).toMatchObject({
+      minimapHorizontal: -1,
+      minimapVertical: -1,
+      minimapZoom: 0.5,
+    });
+    expect(
+      validateSettings({ minimapHorizontal: 0.25, minimapVertical: -0.5, minimapZoom: 0.75 }),
+    ).toMatchObject({
+      minimapHorizontal: 0.25,
+      minimapVertical: -0.5,
+      minimapZoom: 0.75,
+    });
+    expect(validateSettings({ minimapHorizontal: 1.8, minimapVertical: -1.8 })).toMatchObject({
+      minimapHorizontal: 1.8,
+      minimapVertical: -1.8,
+    });
+    expect(validateSettings({ minimapHorizontal: 2, minimapVertical: Number.NaN })).toMatchObject({
+      minimapHorizontal: -1.71,
+      minimapVertical: -1.71,
     });
   });
 });
