@@ -63,6 +63,7 @@ export class Stairwell {
     readonly destination: 1 | 2,
     world: Pick<FloorWorld, 'roomGroups'>,
     model: THREE.Object3D,
+    destinationLabel?: string,
   ) {
     const up = destination === 2;
     this.root.name = up ? 'staircase-up' : 'staircase-down';
@@ -111,8 +112,15 @@ export class Stairwell {
         ctx.fillStyle = PALETTE.parchment;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.font = 'bold 132px Georgia, serif';
-        ctx.fillText(`Floor ${destination}`, w * 0.61, h * 0.53, w * 0.69);
+        if (destinationLabel) {
+          ctx.font = 'bold 83px Georgia, serif';
+          ctx.fillText(destinationLabel, w * 0.61, h * 0.38, w * 0.69);
+          ctx.font = '55px system-ui, sans-serif';
+          ctx.fillText(`Floor ${destination}`, w * 0.61, h * 0.72, w * 0.69);
+        } else {
+          ctx.font = 'bold 132px Georgia, serif';
+          ctx.fillText(`Floor ${destination}`, w * 0.61, h * 0.53, w * 0.69);
+        }
       });
       this.label.mesh.name = 'stair-destination-sign';
       this.label.mesh.rotation.y = Math.PI;

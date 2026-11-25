@@ -1,4 +1,5 @@
 import { Stream } from '../core/rng.ts';
+import { DUNGEON_SHOWCASE_STONE_HALLS, DUNGEON_SHOWCASE_UPPER_SEED } from './dungeon-showcase.ts';
 import type { FloorPlan } from './generate.ts';
 
 export type StoneRoom =
@@ -58,7 +59,11 @@ export function stoneRoomsFor(plan: FloorPlan, floor: 1 | 2 | 3): ReadonlyMap<nu
       room.index !== plan.dispatchRoom?.replyRoom &&
       room.index !== plan.hiddenPassage?.source.room,
   );
-  if (halls.length) {
+  if (plan.seed === DUNGEON_SHOWCASE_UPPER_SEED) {
+    for (const hall of halls) {
+      if (DUNGEON_SHOWCASE_STONE_HALLS.includes(hall.index)) rooms.set(hall.index, 'dungeon');
+    }
+  } else if (halls.length) {
     const chosen = Stream.fromKey(`${plan.seed}:dungeon-combat-hall`).pick(halls);
     rooms.set(chosen.index, 'dungeon');
   }

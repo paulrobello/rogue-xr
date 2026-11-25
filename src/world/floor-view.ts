@@ -27,6 +27,7 @@ import {
 } from '../combat/encounter-choice.ts';
 import { combatRoom, rigTurnAboutHead } from '../combat/placement.ts';
 import { buildTableGreybox, disposeTable, TABLE_NODES } from '../combat/table-greybox.ts';
+import { CanvasLabel } from '../combat-view/canvas-label.ts';
 import { ARMORY_ENCOUNTER } from '../content/enemies.ts';
 import { type RoomTemplate, templateById } from '../content/rooms.ts';
 import { isValidSeed, normalizeSeed, randomSeed, Stream } from '../core/rng.ts';
@@ -40,6 +41,11 @@ import { conservatoryPlan } from '../floor/conservatory.ts';
 import { attachDarkCircuit } from '../floor/dark-circuit.ts';
 import { attachDispatchRoom } from '../floor/dispatch-room.ts';
 import { attachDrumGallery } from '../floor/drum-gallery.ts';
+import {
+  DUNGEON_SHOWCASE_NICHE_ROOM,
+  DUNGEON_SHOWCASE_SEED,
+  DUNGEON_SHOWCASE_UPPER_SEED,
+} from '../floor/dungeon-showcase.ts';
 import { attachFloatElevator } from '../floor/float-elevator.ts';
 import {
   attachPressureWing,
@@ -193,7 +199,7 @@ export interface FloorLoot {
   /** A floor point `distance` m from the coffer toward its room's centre, for scripted approaches. */
   approachPoint(room: number, socketId: string, distance?: number): THREE.Vector3 | null;
   syncBrassLock(spent: boolean, immediate?: boolean): void;
-  nearBrassLock(point: THREE.Vector3, reach: number): { room: number; socketId: string } | null;
+  flyBrassKey(from: THREE.Vector3, arrive: () => void): boolean;
 }
 
 /** The rest-room hearths of a floor: picking, using and the hp panel. */
@@ -303,7 +309,7 @@ export interface FloorView {
     art: THREE.Object3D | undefined,
     seed: string,
     reduced: boolean,
-    finish: () => 'ignored' | 'wrong' | 'matched' | 'opened',
+    finish: () => 'ignored' | 'wrong' | 'wrong-weight' | 'matched' | 'opened',
     tick: (at: THREE.Vector3) => void,
   ): void;
   readonly armoryAlcove: ArmoryAlcove | null;
@@ -600,7 +606,44 @@ export function mountFloorView(
   const floorNumber = options.floorNumber ?? 1;
   const stoneRooms: ReadonlyMap<number, StoneRoom> =
     contentVersion >= DUNGEON_CONTENT_VERSION ? stoneRoomsFor(plan, floorNumber) : new Map();
-  const world = buildFloorWorld(plan, options.templates);
+  // The Conservatory's connected halls can reveal most of the floor through aligned doors.
+  const maxShellDepth = floorNumber === 3 ? 1 : undefined;
+  const world = buildFloorWorld(plan, options.templates, maxShellDepth);
+  let dungeonRoute: CanvasLabel | null = null;
+  if (
+    floorNumber === 2 &&
+    plan.seed === DUNGEON_SHOWCASE_UPPER_SEED &&
+    typeof document !== 'undefined'
+  ) {
+    const entryLink = plan.connections.find(
+      ([a, b]) => (a.room === 0 && b.room === 1) || (a.room === 1 && b.room === 0),
+    );
+    const entryDoor = entryLink?.find(({ room }) => room === 0)?.door;
+    const door = world.rooms[0]?.doors.find(({ id }) => id === entryDoor);
+    if (door) {
+      dungeonRoute = new CanvasLabel(900, 240, 1.44, false);
+      dungeonRoute.mesh.name = 'dungeon-route-sign';
+      dungeonRoute.draw((ctx, width, height) => {
+        ctx.fillStyle = '#25312e';
+        ctx.fillRect(0, 0, width, height);
+        ctx.strokeStyle = PALETTE.brass;
+        ctx.lineWidth = 6;
+        ctx.strokeRect(8, 8, width - 16, height - 16);
+        ctx.fillStyle = PALETTE.parchment;
+        ctx.textAlign = 'center';
+        ctx.font = 'bold 80px Georgia, serif';
+        ctx.fillText('Stone dungeon', width / 2, 107, width - 32);
+        ctx.font = '47px system-ui, sans-serif';
+        ctx.fillText('Through this corridor · Rooms 3–4', width / 2, 184, width - 32);
+      });
+      dungeonRoute.mesh.position.set(door.world[0], 2.69, door.world[1]);
+      dungeonRoute.mesh.rotation.y = { N: 0, S: Math.PI, E: -Math.PI / 2, W: Math.PI / 2 }[
+        door.facing
+      ];
+      dungeonRoute.mesh.translateZ(0.16);
+      world.roomGroups[0].attach(dungeonRoute.mesh);
+    }
+  }
   const windowBays = exposedWindowBays(plan, floorNumber);
   const cacheBay = floorNumber === 1 ? windowCacheBay(world, windowBays, seed) : undefined;
   const windowDressing = new Map<number, () => void>();
@@ -798,7 +841,7 @@ export function mountFloorView(
     (world.plan.darkCircuit?.recess === room && !darkCircuit?.released) ||
     (world.plan.drumGallery?.recess === room && !drumGallery?.released) ||
     (world.plan.rooms[room]?.encounter != null && !encounter.isCleared(room));
-  const lockPosition = new THREE.Vector3();
+  let brassFlightModel: THREE.Object3D | undefined;
   const loot: FloorLoot = {
     coffers: world.coffers,
     pick(origin, direction, maxDistance = LOOT_REACH) {
@@ -872,13 +915,12 @@ export function mountFloorView(
       if (!brassCache) return;
       cofferOf(brassCache.room, brassCache.socketId)?.syncKeyLock(spent, immediate);
     },
-    nearBrassLock(point, reach) {
-      if (!brassCache || brassCache.room !== world.current) return null;
-      const lock = cofferOf(brassCache.room, brassCache.socketId)?.object.getObjectByName(
-        'coffer-padlock',
+    flyBrassKey(from, arrive) {
+      if (!brassCache || brassCache.room !== world.current || !brassFlightModel) return false;
+      return (
+        cofferOf(brassCache.room, brassCache.socketId)?.flyKey(brassFlightModel, from, arrive) ??
+        false
       );
-      if (!lock?.visible) return null;
-      return lock.getWorldPosition(lockPosition).distanceTo(point) <= reach ? brassCache : null;
     },
   };
   const hearthOf = (room: number, socketId: string): Hearth | undefined =>
@@ -1089,6 +1131,7 @@ export function mountFloorView(
       if (floorNumber === 2 && !brassKeyStand) {
         brassKeyStand = BrassKeyStand.mount(world, art, furnishings?.placements ?? []);
       } else if (floorNumber === 1 && brassCache) {
+        brassFlightModel = art.getObjectByName('BrassCacheKey');
         const lock = cofferOf(brassCache.room, brassCache.socketId)?.object.getObjectByName(
           'coffer-padlock',
         );
@@ -1172,7 +1215,15 @@ export function mountFloorView(
         furnishings?.placements,
         contentVersion,
       );
-      clockwork = StrikingClock.mount(world, art, runSeed, reducedMotion, furnishings?.placements);
+      clockwork = StrikingClock.mount(
+        world,
+        art,
+        runSeed,
+        reducedMotion,
+        furnishings?.placements,
+        alchemy.cauldronRoom,
+        alchemy.cauldron.getWorldPosition(new THREE.Vector3()),
+      );
       gallery = ConservatoryGallery.mount(
         world,
         art,
@@ -1252,7 +1303,13 @@ export function mountFloorView(
       if (stairs || floorNumber === 3) return;
       const landing = world.openStairEntry(floorNumber);
       if (landing) {
-        stairs = new Stairwell(landing, floorNumber === 1 ? 2 : 1, world, model);
+        stairs = new Stairwell(
+          landing,
+          floorNumber === 1 ? 2 : 1,
+          world,
+          model,
+          floorNumber === 1 && plan.seed === DUNGEON_SHOWCASE_SEED ? 'Dungeon' : undefined,
+        );
       }
     },
     styledRooms,
@@ -1460,8 +1517,14 @@ export function mountFloorView(
               ) && !(stairs?.entry.room === index && stairs.entry.door === door.id),
           }));
           const edge = templateById(templateId).footprint.max[0];
-          if (stone && stoneKit) applyStoneRoom(styled, stone, stoneKit, doors, edge);
-          else if (style && roomStyleKit) applyRoomStyle(styled, style, roomStyleKit, doors, edge);
+          if (stone && stoneKit) {
+            const niche =
+              floorNumber === 2 &&
+              plan.seed === DUNGEON_SHOWCASE_UPPER_SEED &&
+              index === DUNGEON_SHOWCASE_NICHE_ROOM;
+            applyStoneRoom(styled, stone, stoneKit, doors, edge, niche);
+          } else if (style && roomStyleKit)
+            applyRoomStyle(styled, style, roomStyleKit, doors, edge);
           const keepDesk = style === 'timber' || (templateId === 'study' && room.loot.length > 0);
           if (templateId === 'hall') copyHallBenches(model, styled);
           else if (keepDesk) copyStudyDesk(model, styled);
@@ -1509,6 +1572,8 @@ export function mountFloorView(
       return spinners.length;
     },
     dispose() {
+      dungeonRoute?.mesh.removeFromParent();
+      dungeonRoute?.dispose();
       ventSteam?.dispose();
       ventSteam = null;
       formulaEvidence?.dispose();
@@ -1628,7 +1693,7 @@ export function mountFloorView(
       return true;
     },
     update(head, dt, cameras = []) {
-      notes?.update(head);
+      notes?.update(head, dt);
       pressure?.update(dt);
       if (!suspended && !locked && clockwork) {
         clockwork.setWitness(world.current);
@@ -1700,7 +1765,7 @@ export function mountFloorView(
       if (tiersFor !== world.current) {
         tiersFor = world.current;
         near = nearSet(world.plan, tiersFor);
-        shell = shellSet(world.plan, tiersFor);
+        shell = shellSet(world.plan, tiersFor, maxShellDepth);
       }
       frame++;
       // Clips run on real seconds; the freeze is a pose, not a slowed clock.
@@ -1740,6 +1805,7 @@ export function mountFloorView(
         if (actor.dead && !shattered.has(actor) && !actor.action('death').isRunning()) {
           shattered.add(actor);
           debris.shatterActor(actor, Stream.fromKey(`${world.plan.seed}:shatter:${shatters++}`));
+          notes?.tossFrom(actor.object);
         }
       }
       debris.update(dt);

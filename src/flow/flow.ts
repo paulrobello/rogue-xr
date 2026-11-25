@@ -10,6 +10,7 @@ import {
   DUNGEON_CONTENT_VERSION,
   ECHO_GLYPH_VERSION,
   ENCOUNTER_CONTENT_VERSION,
+  FIELD_DRESSING_VERSION,
   FLOAT_ELEVATOR_VERSION,
   FOUNDRY_VERSION,
   HIDDEN_PANEL_VERSION,
@@ -22,6 +23,7 @@ import {
   PRISM_ANNEX_VERSION,
   RELIQUARY_VERSION,
   RETURN_PASSAGES_VERSION,
+  RISK_CARDS_VERSION,
   SHADOW_STENCIL_VERSION,
   SPEAKING_PIPES_VERSION,
   SPRING_TENSION_VERSION,
@@ -35,9 +37,11 @@ import {
   CRYSTAL_GAMBIT_IDS,
   DUNGEON_REWARD_IDS,
   ECHO_GLYPH_IDS,
+  FIELD_DRESSING_ID,
   LEGACY_REWARD_POOL,
   LENS_FOCUS_IDS,
   PERMANENT_CARD_IDS,
+  RISK_CARD_IDS,
   WAVE_A_COMPLETE_IDS,
   WAVE_A_REPAIR_IDS,
   WAVE_B_CHAIN_IDS,
@@ -47,7 +51,12 @@ import {
   WAVE_B_OVERDRIVE_IDS,
 } from '../content/rewards.ts';
 import { brassCacheForPlayableFloor } from '../floor/return-passages.ts';
-import type { FloorSnapshot, MapLiftDiscovery, RunSnapshot } from '../persist/saves.ts';
+import type {
+  FloorSnapshot,
+  MapLiftDiscovery,
+  PuzzleLocation,
+  RunSnapshot,
+} from '../persist/saves.ts';
 import { snapshotRun } from '../persist/saves.ts';
 import {
   addFormulaIngredient,
@@ -178,6 +187,7 @@ import {
   type RewardOffer,
   type RewardTier,
   type RunState,
+  revealWindowCache,
   rewardOffer,
   SKIP_REWARD,
   type TreasureKind,
@@ -364,8 +374,8 @@ export interface ReliquaryEvent {
 }
 export interface PendulumGalleryEvent {
   readonly type: 'pendulum-gallery';
-  readonly action: 'advance' | 'trial';
-  readonly result?: 'ignored' | 'wrong' | 'matched' | 'opened';
+  readonly action: 'advance' | 'weight' | 'trial';
+  readonly result?: 'ignored' | 'wrong' | 'wrong-weight' | 'matched' | 'opened';
   readonly state: PendulumGalleryState;
 }
 export interface BorrowedLightEvent {
@@ -397,6 +407,7 @@ export type LootStage = 'opened' | 'claimed';
 
 export type FlowEvent =
   | { readonly type: 'logbook'; readonly clue: LogbookClueId }
+  | { readonly type: 'puzzle-discovered'; readonly id: string }
   | { readonly type: 'phase'; readonly from: FlowPhase; readonly to: FlowPhase }
   | { readonly type: 'floor-travel'; readonly room: number }
   | { readonly type: 'room-entered'; readonly room: number }
@@ -449,6 +460,7 @@ export type FlowEvent =
     }
   | {
       readonly type: 'window-cache';
+      readonly stage: 'open' | 'claim';
       readonly cogs: number;
       readonly from: 'explore';
       readonly to: 'explore';
@@ -519,6 +531,7 @@ export class RunFlow {
   private floorNumberValue = 1;
   private readonly mapLifts = new Map<number, MapLiftDiscovery>();
   private readonly floorStates = new Map<number, FloorSnapshot>();
+  private puzzleLocations: PuzzleLocation[] = [];
   private readonly listeners = new Set<(event: FlowEvent) => void>();
   private readonly opts: FlowOptions;
   private contentVersionValue = ENCOUNTER_CONTENT_VERSION;
@@ -624,7 +637,10 @@ export class RunFlow {
     }
     return result.outcome;
   }
-  operateSpringTension(action: SpringTensionControl): SpringTensionOutcome {
+  operateSpringTension(
+    action: SpringTensionControl,
+    effectiveTension?: number,
+  ): SpringTensionOutcome {
     if (
       !this.runValue ||
       this.phaseValue !== 'explore' ||
@@ -632,7 +648,12 @@ export class RunFlow {
       this.contentVersionValue < SPRING_TENSION_VERSION
     )
       return 'ignored';
-    const result = operateSpringTension(this.runValue.seed, this.springTension, action);
+    const result = operateSpringTension(
+      this.runValue.seed,
+      this.springTension,
+      action,
+      effectiveTension,
+    );
     if (result.outcome !== 'ignored') {
       this.runValue = { ...this.runValue, springTension: result.state };
       this.emit({ type: 'spring-tension', action, outcome: result.outcome, state: result.state });
@@ -706,7 +727,20 @@ export class RunFlow {
     this.emit({ type: 'pendulum-gallery', action: 'advance', state: next });
     return true;
   }
-  completePendulumTrial(): 'ignored' | 'wrong' | 'matched' | 'opened' {
+  setPendulumWeight(weight: 0 | 1 | 2): boolean {
+    if (
+      !this.runValue ||
+      this.phaseValue !== 'explore' ||
+      this.floorNumberValue !== 3 ||
+      this.contentVersionValue < PENDULUM_GALLERY_VERSION ||
+      this.pendulumGallery.open
+    )
+      return false;
+    this.runValue = { ...this.runValue, pendulumGallery: { ...this.pendulumGallery, weight } };
+    this.emit({ type: 'pendulum-gallery', action: 'weight', state: this.pendulumGallery });
+    return true;
+  }
+  completePendulumTrial(): 'ignored' | 'wrong' | 'wrong-weight' | 'matched' | 'opened' {
     if (
       !this.runValue ||
       this.phaseValue !== 'explore' ||
@@ -1385,7 +1419,12 @@ export class RunFlow {
   ):
     | Pick<
         FloorSnapshot,
-        'floorSeed' | 'reachedRooms' | 'clearedEncounters' | 'openedLoot' | 'pressure'
+        | 'floorSeed'
+        | 'reachedRooms'
+        | 'clearedEncounters'
+        | 'openedLoot'
+        | 'pressure'
+        | 'puzzleLocations'
       >
     | undefined {
     if (!this.runValue) return undefined;
@@ -1396,8 +1435,17 @@ export class RunFlow {
         clearedEncounters: this.clearedRooms.map(String),
         openedLoot: this.runValue.openedLoot,
         pressure: this.runValue.pressure,
+        puzzleLocations: this.puzzleLocations,
       };
     return this.floorStates.get(floor);
+  }
+
+  /** Records an explicit fixture interaction for the floor maps. */
+  discoverPuzzle(id: string, room: number): void {
+    if (!this.inRun || !id || !Number.isInteger(room) || room < 0) return;
+    if (this.puzzleLocations.some((location) => location.room === room)) return;
+    this.puzzleLocations = [...this.puzzleLocations, { id, room }];
+    this.emit({ type: 'puzzle-discovered', id });
   }
   get brassKey(): 'missing' | 'held' | 'spent' {
     return this.runValue?.brassKey ?? 'missing';
@@ -1405,14 +1453,39 @@ export class RunFlow {
   get windowCacheOpened(): boolean {
     return this.runValue?.windowCacheOpened === true;
   }
-  /** Claims the one-shot Light window cache reward on floor one. */
+  get windowCacheRevealed(): boolean {
+    return this.runValue?.windowCacheRevealed === true || this.windowCacheOpened;
+  }
+  /** Reveals the one-shot Light window cache on floor one. */
   openWindowCache(): boolean {
     const run = this.runValue;
     if (!run || this.phaseValue !== 'explore' || this.floorNumberValue !== 1) return false;
+    const next = revealWindowCache(run);
+    if (!next) return false;
+    this.runValue = next;
+    this.emit({ stage: 'open', type: 'window-cache', cogs: 0, from: 'explore', to: 'explore' });
+    return true;
+  }
+  /** Claims the one-shot Light window cache reward on floor one. */
+  claimWindowCache(): boolean {
+    const run = this.runValue;
+    if (
+      !run ||
+      this.phaseValue !== 'explore' ||
+      this.floorNumberValue !== 1 ||
+      !this.windowCacheRevealed
+    )
+      return false;
     const next = claimWindowCache(run);
     if (!next) return false;
     this.runValue = next;
-    this.emit({ type: 'window-cache', cogs: next.cogs - run.cogs, from: 'explore', to: 'explore' });
+    this.emit({
+      stage: 'claim',
+      type: 'window-cache',
+      cogs: next.cogs - run.cogs,
+      from: 'explore',
+      to: 'explore',
+    });
     return true;
   }
   /** Deterministic first-floor coffer target, if this run has v7 brass-cache content. */
@@ -1608,6 +1681,7 @@ export class RunFlow {
     }
     this.resetRunBookkeeping(snapshot.roomIndex, cleared);
     for (const room of snapshot.reachedRooms ?? []) this.reached.add(room);
+    this.puzzleLocations = [...(snapshot.puzzleLocations ?? [])];
     this.offerValue = snapshot.phase === 'reward' ? snapshot.pendingReward : null;
     this.guardianDefeatedValue =
       snapshot.guardianDefeated === true ||
@@ -1672,7 +1746,8 @@ export class RunFlow {
       return false;
     if (result.outcome === 'flee') {
       if (!canFlee(result.tier)) return false;
-      this.runValue = this.withHp(run, result.playerHp);
+      // The fight can be retried with a fresh deck after fleeing.
+      this.runValue = this.withHp(run, Math.min(run.hp, result.playerHp ?? run.hp));
       return this.go('explore');
     }
     if (result.outcome === 'defeat') {
@@ -1866,6 +1941,7 @@ export class RunFlow {
         contentVersion: this.contentVersionValue,
         floorNumber: this.floorNumberValue,
         reachedRooms: [...this.reached],
+        puzzleLocations: this.puzzleLocations,
         ...(this.mapLifts.size ? { mapLifts: [...this.mapLifts.values()] } : {}),
         floors: [...this.floorStates.values()],
       },
@@ -1886,6 +1962,8 @@ export class RunFlow {
     const crystalGambit = this.contentVersionValue >= CRYSTAL_GAMBIT_VERSION;
     const echoGlyph = this.contentVersionValue >= ECHO_GLYPH_VERSION;
     const lensFocus = this.contentVersionValue >= LENS_FOCUS_VERSION;
+    const fieldDressing = this.contentVersionValue >= FIELD_DRESSING_VERSION;
+    const riskCards = this.contentVersionValue >= RISK_CARDS_VERSION;
     const overdrive = this.contentVersionValue >= OVERDRIVE_CONTENT_VERSION;
     const charge = this.contentVersionValue >= CHARGE_CONTENT_VERSION;
     const complete = this.contentVersionValue >= WAVE_A_COMPLETE_VERSION;
@@ -1901,6 +1979,8 @@ export class RunFlow {
         (crystalGambit || !CRYSTAL_GAMBIT_IDS.has(id)) &&
         (echoGlyph || !ECHO_GLYPH_IDS.has(id)) &&
         (lensFocus || !LENS_FOCUS_IDS.has(id)) &&
+        (fieldDressing || id !== FIELD_DRESSING_ID) &&
+        (riskCards || !RISK_CARD_IDS.has(id)) &&
         (complete || !WAVE_A_COMPLETE_IDS.has(id)) &&
         (repairs || !WAVE_A_REPAIR_IDS.has(id)) &&
         (dungeon || !DUNGEON_REWARD_IDS.has(id)),
@@ -1948,6 +2028,7 @@ export class RunFlow {
     this.clearedRooms.length = 0;
     this.clearedRooms.push(...cleared);
     this.reached.clear();
+    this.puzzleLocations = [];
     for (const r of [...cleared, room]) this.reached.add(r);
     this.roomValue = room;
   }
@@ -1960,6 +2041,7 @@ export class RunFlow {
       floorSeed: this.floorSeed,
       clearedEncounters: this.clearedRooms.map(String),
       reachedRooms: [...this.reached],
+      puzzleLocations: this.puzzleLocations,
       guardianDefeated: this.guardianDefeatedValue,
       openedLoot: run.openedLoot,
       pendingLoot: run.pendingLoot,
@@ -1990,6 +2072,7 @@ export class RunFlow {
     this.clearedRooms.push(...cleared);
     this.reached.clear();
     for (const room of floor.reachedRooms ?? [destinationRoom]) this.reached.add(room);
+    this.puzzleLocations = [...(floor.puzzleLocations ?? [])];
     this.reached.add(destinationRoom);
     this.roomValue = destinationRoom;
     this.offerValue = null;

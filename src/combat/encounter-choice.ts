@@ -63,7 +63,10 @@ export const TRELLIS_KEEPER_VERSION = 32;
 export const LENS_FOCUS_VERSION = 33;
 /** Themed furnishings change room clearance in newly started runs. */
 export const THEMED_FURNISHINGS_VERSION = 34;
-export const ENCOUNTER_CONTENT_VERSION = CONSERVATORY_SPECIMENS_VERSION;
+/** Field Dressing reward content. Earlier snapshots keep their reward pools. */
+export const FIELD_DRESSING_VERSION = 36;
+export const RISK_CARDS_VERSION = 37;
+export const ENCOUNTER_CONTENT_VERSION = RISK_CARDS_VERSION;
 const LEGACY_ENCOUNTER_IDS = new Set([
   'sentry',
   'hound',

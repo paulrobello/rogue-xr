@@ -57,7 +57,14 @@ import {
   tryLoadEnemyAsset,
 } from './enemies/enemy-asset.ts';
 import { loadPatrolClips } from './enemies/patrol-visual.ts';
-import { isShowcaseFloor, SHOWCASE_SEED, worldRooms } from './floor/generate.ts';
+import { DUNGEON_SHOWCASE_SEED } from './floor/dungeon-showcase.ts';
+import {
+  type FloorPlan,
+  isShowcaseFloor,
+  SHOWCASE_SEED,
+  type WorldRoom,
+  worldRooms,
+} from './floor/generate.ts';
 import { counterweightResumeRoom } from './floor/return-passages.ts';
 import { placeStairEntry, type StairEntry } from './floor/stairs.ts';
 import { encounterStartsFight, fleeStandPoint } from './flow/flee.ts';
@@ -137,7 +144,7 @@ import {
 } from './world/floor-view.ts';
 import { buildFloorWorld } from './world/floor-world.ts';
 import { RECORD_TITLES } from './world/formula-clue.ts';
-import type { HearthPick } from './world/hearth.ts';
+import { type HearthPick, hearthSocket } from './world/hearth.ts';
 import { dressHeroRooms, fetchHeroRooms, loadHeroAssets } from './world/hero-rooms.ts';
 import {
   bindBookcaseAtlas,
@@ -180,7 +187,7 @@ import {
 } from './world/study-room.ts';
 import { loadTableDecor, type TableDecor } from './world/table-decor.ts';
 import type { ValvehousePick } from './world/valvehouse.ts';
-import { runVeil } from './world/veil.ts';
+import { floorTextures, runVeil } from './world/veil.ts';
 import { ComfortVignette } from './xr/comfort-vignette.ts';
 import { Locomotion, locomotionSettingsFrom } from './xr/locomotion.ts';
 import { LocomotionDrive } from './xr/locomotion-drive.ts';
@@ -262,14 +269,17 @@ if (view === 'lightmap-proof') {
 // straight away, so seed links and scripted checks land on the floor; `?title` shows the title instead.
 const playMode = !proofView;
 const querySeed = params.get('seed');
-const showcaseLink =
-  querySeed !== null && isValidSeed(querySeed) && normalizeSeed(querySeed) === SHOWCASE_SEED;
+const routeSeed = querySeed !== null && isValidSeed(querySeed) ? normalizeSeed(querySeed) : null;
+const showcaseLink = routeSeed === SHOWCASE_SEED;
+const dungeonShowcaseLink = routeSeed === DUNGEON_SHOWCASE_SEED;
 const settingsDb = playMode ? await openDb() : null;
-const runDatabase = params.has('playtest')
-  ? 'rogue-xr-playtest'
-  : showcaseLink
-    ? 'rogue-xr-room-showcase'
-    : null;
+const runDatabase = dungeonShowcaseLink
+  ? 'rogue-xr-dungeon-showcase'
+  : params.has('playtest')
+    ? 'rogue-xr-playtest'
+    : showcaseLink
+      ? 'rogue-xr-room-showcase'
+      : null;
 const db = playMode && runDatabase ? await openDb(undefined, { name: runDatabase }) : settingsDb;
 const workshop = db ? await loadWorkshop(db).catch(() => createWorkshop()) : createWorkshop();
 let storedSnapshot: RunSnapshot | null = db ? await loadRunSnapshot(db).catch(() => null) : null;
@@ -864,7 +874,7 @@ function wizardPaintings(): Promise<THREE.Texture[]> {
 function syncPuzzles(target: FloorView, immediate = false): void {
   const run = flow.run;
   if (!run) return;
-  target.windowCache?.sync(flow.windowCacheOpened);
+  target.windowCache?.sync(flow.windowCacheRevealed, flow.windowCacheOpened);
   if (run.patrolDefeated) target.clearPatrol();
   if (target.armoryAlcove)
     target.armoryAlcove.sync(
@@ -1223,6 +1233,15 @@ async function prepareFloor(target: FloorView, boot = false): Promise<void> {
     if (floor !== target) return;
     ui?.sync(camera);
     await ui?.waitForArtwork();
+    if (floor !== target) return;
+    const warmConservatory = target.floorNumber === 3;
+    const roomPointLights: THREE.PointLight[] = [];
+    if (warmConservatory) {
+      target.world.group.traverse((node) => {
+        if (node instanceof THREE.PointLight && node.visible) roomPointLights.push(node);
+      });
+      perfMark('floor 3 warmup');
+    }
     if (boot) {
       showLoading('Preparing the scene…');
 
@@ -1252,6 +1271,7 @@ async function prepareFloor(target: FloorView, boot = false): Promise<void> {
         const textures = new Set([
           ...rooms.flatMap((room) => room.textures),
           ...(decor?.textures ?? []),
+          ...(warmConservatory ? floorTextures(target.world.group) : []),
         ]);
         for (const room of target.styledRooms) {
           variants.push(room);
@@ -1272,13 +1292,22 @@ async function prepareFloor(target: FloorView, boot = false): Promise<void> {
             }
           });
         }
-        await runVeil(renderer, scene, camera, [...textures], { variants, fadeFrames: 0 });
+        await runVeil(renderer, scene, camera, [...textures], {
+          variants,
+          roomPointLights,
+          fadeFrames: 0,
+        });
       } finally {
         for (const actor of actors) actor.dispose();
         decorSample?.geometry.dispose();
       }
+    } else if (warmConservatory) {
+      // Room culling leaves distant lightmaps and material variants cold until first use.
+      const textures = [...floorTextures(target.world.group)];
+      await runVeil(renderer, scene, camera, textures, { roomPointLights, fadeFrames: 0 });
     }
     if (floor === target) {
+      if (warmConservatory) perfMark('floor 3 warmup complete');
       if (liftArrival === target && target.lift) {
         const eye = camera.getWorldPosition(new THREE.Vector3());
         const at = target.lift.object.localToWorld(new THREE.Vector3(0, 0, 1.5));
@@ -1329,6 +1358,9 @@ const syncNotes = (target: FloorView | null | undefined): void => {
     flow.pressure.notes,
     (room) => flow.cleared.includes(room),
     (room, socket) => flow.isLootOpened(room, socket),
+    flow.phase === 'combat' && !target.encounter.activePatrol
+      ? target.encounter.activeRoom
+      : undefined,
   );
 };
 flow.onChange((event) => {
@@ -1337,7 +1369,7 @@ flow.onChange((event) => {
     perfMark(`chest-${event.stage}`);
     storedSnapshot = flow.snapshot(Date.now(), floor?.world.current ?? flow.room);
     const coffer = floor ? cofferAt(floor, event.room, event.socketId) : undefined;
-    const at = coffer?.object.getWorldPosition(new THREE.Vector3());
+    const at = coffer?.object.localToWorld(new THREE.Vector3(0, 0.38, 0));
     if (event.stage === 'claimed') {
       // The card flies to the claimer; the panel over the coffer then names it.
       coffer?.claimCard(claimHand ?? camera, claimHand ? 0 : 0.3);
@@ -1348,10 +1380,10 @@ flow.onChange((event) => {
         coffer.open(true);
         if (event.loot.cogs) coffer.showCogs(event.loot.cogs);
         coffer.showCard(event.loot.card, chestCardFace(event.loot.card), true, camera);
-        audio?.playSfx('gear-clank', at);
+        audio?.playSfx('door-open', at);
       }
     } else if (floor?.loot.open(event.room, event.socketId, event.loot)) {
-      audio?.playSfx('gear-clank', at);
+      audio?.playSfx('door-open', at);
       audio?.playSfx('cog-pickup', at);
     }
     return;
@@ -1385,12 +1417,13 @@ flow.onChange((event) => {
     return;
   }
   if (event.type === 'window-cache') {
-    floor?.windowCache?.sync(true);
+    floor?.windowCache?.sync(flow.windowCacheRevealed, flow.windowCacheOpened);
     storedSnapshot = flow.snapshot(Date.now(), floor?.world.current ?? flow.room);
-    const at = floor?.windowCache?.object.getWorldPosition(new THREE.Vector3());
-    audio?.playSfx('gear-clank', at);
-    audio?.playSfx('cog-pickup', at);
-    floor?.showBookSecret({ text: `+${event.cogs} cogs`, caption: '' }, camera);
+    const at = floor?.windowCache?.object.getWorldPosition(chimePosition);
+    if (event.stage === 'claim') {
+      audio?.playSfx('cog-pickup', at);
+      floor?.showBookSecret({ text: `+${event.cogs} cogs`, caption: '' }, camera);
+    } else audio?.playSfx('gear-clank', at);
     return;
   }
   if (
@@ -1535,6 +1568,14 @@ const freshFloor = (
 };
 const startRun = (seed: string, difficulty: Difficulty): void => {
   if (flow.phase !== 'title') return;
+  if (normalizeSeed(seed) === DUNGEON_SHOWCASE_SEED && !dungeonShowcaseLink) {
+    const url = new URL(location.href);
+    url.searchParams.set('seed', DUNGEON_SHOWCASE_SEED);
+    url.searchParams.set('difficulty', difficulty);
+    url.searchParams.delete('title');
+    location.assign(url);
+    return;
+  }
   const target = freshFloor(seed);
   // x/z only: in XR the rig's y holds the seated-height lift from the recenter.
   const spawn = target.world.spawnPoint();
@@ -1706,6 +1747,42 @@ function mapTransport(floorNumber: LogbookMap['floor'], stair: StairEntry | null
   return transport;
 }
 
+function readMapDiscoveries(
+  current: FloorView,
+  number: LogbookMap['floor'],
+  plan: FloorPlan,
+  rooms: readonly WorldRoom[],
+  explored: NonNullable<ReturnType<RunFlow['explorationOnFloor']>>,
+) {
+  const knownHearths = plan.rooms.flatMap((placed) => {
+    const room = rooms[placed.index];
+    if (placed.role !== 'rest' || !room) return [];
+    const socket = hearthSocket(room.template);
+    if (!socket) return [];
+    return [
+      {
+        id: `${placed.index}/${socket.id}`,
+        room: placed.index,
+        position: [
+          placed.position[0] + socket.position[0],
+          placed.position[1] + socket.position[2],
+        ] as const,
+      },
+    ];
+  });
+  return logbookDiscoveries({
+    plan,
+    worldRooms: rooms,
+    explored: explored.reachedRooms,
+    openedLoot: explored.openedLoot,
+    knownNotes: number === 1 ? readBookPressureNotes(current) : undefined,
+    knownRubbingRoom:
+      number === 2 && flow.reliquarySeal !== 'hidden' ? plan.reliquary?.clueRoom : undefined,
+    knownHearths,
+    knownPuzzles: explored.puzzleLocations,
+  });
+}
+
 function readMinimap(): LogbookMap | null {
   const current = floor;
   if (!current || current.floorNumber !== flow.floorNumber) return null;
@@ -1713,7 +1790,7 @@ function readMinimap(): LogbookMap | null {
   if (!explored) return null;
   const { world, floorNumber } = current;
   const eye = mapEye.setFromMatrixPosition(mapViewer().matrixWorld);
-  return chartFloor(
+  const chart = chartFloor(
     floorNumber,
     world.plan,
     world.rooms,
@@ -1722,6 +1799,10 @@ function readMinimap(): LogbookMap | null {
     mapTransport(floorNumber, world.stairEntry),
     world.stairEntry,
   );
+  return {
+    ...chart,
+    discoveries: readMapDiscoveries(current, floorNumber, world.plan, world.rooms, explored),
+  };
 }
 
 const ui = floor
@@ -1729,9 +1810,15 @@ const ui = floor
       flow,
       locationLabel: () => {
         if (!floor) return null;
-        if (floor.floorNumber === 3) return 'Floor 3 · Alchemical Conservatory';
-        const name = floor.floorNumber === 2 ? 'Floor 2 · Upper Works' : 'Floor 1';
-        if (!isShowcaseFloor(floor.seed, floor.floorNumber)) return name;
+        const name =
+          floor.floorNumber === 3
+            ? 'Floor 3 · Alchemical Conservatory'
+            : floor.floorNumber === 2
+              ? 'Floor 2 · Upper Works'
+              : 'Floor 1';
+        const mapShowcase =
+          floor.floorNumber !== 3 && isShowcaseFloor(floor.seed, floor.floorNumber);
+        if (!mapShowcase && flow.run?.seed !== DUNGEON_SHOWCASE_SEED) return name;
         const index = floor.world.current;
         const { template, footprint } = floor.world.rooms[index];
         const width = footprint.max[0] - footprint.min[0],
@@ -1748,7 +1835,6 @@ const ui = floor
         const current = floor;
         if (!current) return [];
         const eye = mapEye.setFromMatrixPosition(mapViewer().matrixWorld);
-        const notes = readBookPressureNotes(current);
         return ([1, 2, 3] as const).flatMap((number) => {
           const explored = flow.explorationOnFloor(number);
           if (!explored) return [];
@@ -1775,17 +1861,7 @@ const ui = floor
             mapTransport(number, stair),
             stair,
           );
-          const discoveries = logbookDiscoveries({
-            plan,
-            worldRooms: rooms,
-            explored: explored.reachedRooms,
-            openedLoot: explored.openedLoot,
-            knownNotes: number === 1 ? notes : undefined,
-            knownRubbingRoom:
-              number === 2 && flow.reliquarySeal !== 'hidden'
-                ? plan.reliquary?.clueRoom
-                : undefined,
-          });
+          const discoveries = readMapDiscoveries(current, number, plan, rooms, explored);
           return [{ ...chart, discoveries }];
         });
       },
@@ -1989,31 +2065,57 @@ function takeBrassKey(): boolean {
   );
   return true;
 }
-function tryBrassLock(room: number, socketId: string): boolean {
-  const cache = floor?.world.plan.brassCache;
-  if (!cache || room !== cache.room || socketId !== cache.socketId || flow.brassKey === 'spent')
+function tryBrassLock(pick: LootPick, keyStart: THREE.Vector3): boolean {
+  const current = floor;
+  const cache = current?.world.plan.brassCache;
+  const { room, socketId } = pick;
+  if (
+    !current ||
+    !cache ||
+    room !== cache.room ||
+    socketId !== cache.socketId ||
+    flow.brassKey === 'spent'
+  )
     return false;
-  if (!flow.inspectBrassLock(room, socketId)) return false;
-  const opened = flow.run?.brassKey === 'spent';
-  const coffer = floor?.loot.coffers.find((c) => c.room === room && c.socketId === socketId);
-  audio?.playSfx(
-    'gear-clank',
-    coffer?.object.getWorldPosition(chimePosition),
-    opened ? 0.65 : 0.25,
-  );
-  floor?.showBookSecret(
-    opened
-      ? { text: 'Lock released', caption: 'The brass key turns in the ward.' }
-      : { text: 'Brass lock', caption: 'Its brass plate bears the Upper Works stamp.' },
+  const coffer = current.loot.coffers.find((c) => c.room === room && c.socketId === socketId);
+  if (flow.brassKey === 'held' && pick.lock) {
+    const arrive = () => {
+      if (floor !== current || !flow.inspectBrassLock(room, socketId)) return;
+      audio?.playSfx('gear-clank', coffer?.object.getWorldPosition(chimePosition), 0.85);
+      current.showBookSecret(
+        { text: 'Lock released', caption: 'Open the lid to claim what is inside.' },
+        camera,
+      );
+    };
+    if (hitFx.reducedMotion) arrive();
+    else current.loot.flyBrassKey(keyStart, arrive);
+    return true;
+  }
+  if (pick.lock) flow.inspectBrassLock(room, socketId);
+  audio?.playSfx('gear-clank', coffer?.object.getWorldPosition(chimePosition), 0.55);
+  current.showBookSecret(
+    {
+      text: 'Brass lock',
+      caption:
+        flow.brassKey === 'held'
+          ? 'Aim at the padlock to use your key.'
+          : 'Its brass plate bears the Upper Works stamp.',
+    },
     camera,
   );
   return true;
 }
 /** Opens the shut coffer, or claims the card waiting over an open one, that a pick found. */
-const openCoffer = (pick: LootPick | null): boolean => {
-  if (!pick || !canOpenLoot()) return false;
-  if (tryBrassLock(pick.room, pick.socketId)) return true;
-  if (floor?.loot.showLock(pick.room, pick.socketId)) return true;
+const openCoffer = (pick: LootPick, keyStart: THREE.Vector3): boolean => {
+  if (!canOpenLoot()) return false;
+  if (tryBrassLock(pick, keyStart)) return true;
+  if (floor?.loot.showLock(pick.room, pick.socketId)) {
+    const coffer = floor.loot.coffers.find(
+      (c) => c.room === pick.room && c.socketId === pick.socketId,
+    );
+    audio?.playSfx('gear-clank', coffer?.object.getWorldPosition(chimePosition), 0.65);
+    return true;
+  }
   if (!pick.claim) return flow.openLoot(pick.room, pick.socketId, pick.kind) !== null;
   claimHand = null;
   return flow.claimLoot(pick.room, pick.socketId) !== null;
@@ -2490,7 +2592,9 @@ function operateSpeakingPipes(hit: SpeakingPipesPick): boolean {
   if (!pipes) return false;
   if (hit.action === 'send') {
     if (!flow.primeSpeakingPipes()) return false;
-    audio?.playSfx('cistern-pipe-send', pipes.senderPosition(chimePosition));
+    const at = pipes.senderPosition(chimePosition);
+    audio?.playSfx('gear-clank', at, 0.65);
+    audio?.playSfx('cistern-pipe-send', at);
     return true;
   }
   if (hit.action === 'replay') {
@@ -2588,20 +2692,32 @@ function operateShadowStencil(action: ShadowStencilControl): boolean {
 function operateSpringTension(action: SpringTensionControl): boolean {
   const station = floor?.springTension;
   if (!floor || !station) return false;
-  if (action === 'release' && station.winding) {
+  if (action === 'release' && station.sampledTension > 0 && !station.falling) {
     floor.showBookSecret(
-      { text: 'Wait for the needle', caption: 'Test the clutch once the gauge settles.' },
+      {
+        text: 'Wait for the needle to fall',
+        caption: 'Pull the clutch as it enters the marked band.',
+      },
       camera,
     );
     return true;
   }
-  const result = flow.operateSpringTension(action);
+  const result = flow.operateSpringTension(action, station.sampledTension);
   if (result === 'ignored') return false;
   floor.dismissPuzzleToast();
   if (action === 'release') station.testCatch(result === 'partial');
-  if (result === 'partial')
+  if (result === 'opened') {
+    audio?.playSfx('spring-catch', station.soundPosition(action, false, chimePosition));
     floor.showBookSecret(
-      { text: 'The catch slipped back', caption: 'Wind to the engraved interval.' },
+      { text: 'Catch set', caption: 'The gate opens to the spring recess.' },
+      camera,
+    );
+  } else if (result === 'partial')
+    floor.showBookSecret(
+      {
+        text: 'The catch slipped back',
+        caption: 'Wind above the band and try again as the needle falls.',
+      },
       camera,
     );
   else if (result === 'slipped')
@@ -2645,6 +2761,25 @@ function operateDarkCircuit(socket: CircuitSocket): boolean {
     );
     return true;
   }
+  if (result === 'wrong') {
+    floor.showBookSecret(
+      {
+        text: 'The circuit rejects that sequence',
+        caption: 'Both bridges lifted. Read the clue and retry.',
+      },
+      camera,
+    );
+    audio?.playSfx('ui-tick');
+    return true;
+  }
+  if (result === 'primed') {
+    floor.showBookSecret(
+      { text: 'Circuit line powered', caption: 'Read the next target line and build its pair.' },
+      camera,
+    );
+    audio?.playSfx('circuit-bridge', station.soundPoint(socket));
+    return true;
+  }
   floor.dismissPuzzleToast();
   audio?.playSfx('circuit-bridge', station.soundPoint(socket));
   if (result === 'opened')
@@ -2665,6 +2800,12 @@ function operatePendulum(hit: PendulumPick): boolean {
   const gallery = floor?.pendulumGallery;
   if (!gallery) return false;
   if (hit.action === 'release') return gallery.start();
+  if (hit.action.startsWith('weight-')) {
+    const weight = Number(hit.action.slice(-1)) as 0 | 1 | 2;
+    if (!flow.setPendulumWeight(weight)) return false;
+    audio?.playSfx('ui-tick');
+    return true;
+  }
   if (!flow.advancePendulumDetent()) return false;
   audio?.playSfx('ui-tick');
   return true;
@@ -2697,7 +2838,7 @@ function fieldHit(origin: THREE.Vector3, direction: THREE.Vector3) {
     floor.counterweight?.room === floor.world.current
       ? floor.counterweight.pick(origin, direction)
       : null;
-  const gate = floor.world.pickPuzzleGate(origin, direction);
+  const gate = floor.world.pickLockedDoor(origin, direction);
   const lift = floor.lift?.pick(origin, direction);
   const brew = floor.alchemy?.pick(origin, direction);
   const clock = floor.clock?.pick(origin, direction);
@@ -2747,7 +2888,6 @@ function fieldHit(origin: THREE.Vector3, direction: THREE.Vector3) {
     ...(prism ? [{ kind: 'prism' as const, hit: prism }] : []),
     ...(evidence ? [{ kind: 'formula-clue' as const, hit: evidence }] : []),
     ...(weight ? [{ kind: 'counterweight' as const, hit: weight }] : []),
-    ...(gate ? [{ kind: 'gate' as const, hit: gate }] : []),
     ...(lift ? [{ kind: 'lift' as const, hit: lift }] : []),
     ...(brew ? [{ kind: 'alchemy' as const, hit: brew }] : []),
     ...(clock ? [{ kind: 'clock' as const, hit: clock }] : []),
@@ -2758,6 +2898,7 @@ function fieldHit(origin: THREE.Vector3, direction: THREE.Vector3) {
     ...(coffer ? [{ kind: 'coffer' as const, hit: coffer }] : []),
     ...(hearth ? [{ kind: 'hearth' as const, hit: hearth }] : []),
     ...(book ? [{ kind: 'book' as const, hit: book }] : []),
+    ...(gate ? [{ kind: 'gate' as const, hit: gate }] : []),
   ];
   return hits.sort((a, b) => a.hit.distance - b.hit.distance)[0] ?? null;
 }
@@ -2858,94 +2999,124 @@ const activatePickup = (
   if (!canOpenLoot()) return false;
   const pick = fieldHit(origin, direction);
   if (!pick) return false;
-  switch (pick.kind) {
-    case 'logbook-plaque':
-      return flow.saveLogbookEntry(pick.hit);
-    case 'pendulum':
-      return operatePendulum(pick.hit);
-    case 'borrowed-light':
-      return operateBorrowedLight(pick.hit.action);
-    case 'float-elevator':
-      return operateFloatElevator(pick.hit.action);
-    case 'shadow-stencil':
-      return operateShadowStencil(pick.hit.action);
-    case 'spring-tension':
-      return operateSpringTension(pick.hit.action);
-    case 'dark-circuit':
-      return operateDarkCircuit(pick.hit.action);
-    case 'drum-gallery':
-      return operateDrumGallery(pick.hit.action);
-    case 'armory':
-      return operateArmory();
-    case 'valvehouse':
-      return operateValvehouse(pick.hit);
-    case 'reliquary':
-      if (pick.hit.action === 'trace') return true;
-      flow.rememberReliquaryRubbing();
-      return ui?.readReliquaryRubbing(camera) ?? false;
-    case 'speaking-pipes':
-      return operateSpeakingPipes(pick.hit);
-    case 'dispatch':
-      return operateDispatch(pick.hit);
-    case 'window-cache':
-      return flow.openWindowCache();
-    case 'brass-key':
-      return takeBrassKey();
-    case 'commission':
-      return operateCommission(pick.hit);
-    case 'calibration':
-      return operateCalibration(pick.hit);
-    case 'folio':
-      return readFolio(pick.hit);
-    case 'hidden-panel':
-      return operatePanel(pick.hit, hand);
-    case 'archive':
-      return operateArchive(
-        pick.hit.action,
-        hand,
-        pick.hit.action === 'pour'
-          ? origin.clone().addScaledVector(direction, pick.hit.distance)
-          : undefined,
-      );
-    case 'prism':
-      return operatePrism(pick.hit);
-    case 'formula-clue':
-      return inspectFormula(pick.hit.clue);
-    case 'counterweight':
-      return operateWeight(pick.hit);
-    case 'clock':
-      return collectAlchemy(pick.hit.ingredient, hand, floor?.clock?.target);
-    case 'alchemy':
-      return operateAlchemy(
-        pick.hit,
-        hand,
-        pick.hit.action === 'apply'
-          ? origin.clone().addScaledVector(direction, pick.hit.distance)
-          : undefined,
-      );
-    case 'lift':
-      return travelStairs(true);
-    case 'gate': {
-      const at = floor?.world.rattlePuzzleGate(pick.hit.kind, pick.hit.gateIndex);
-      if (at) audio?.playSfx(pick.hit.kind === 'pressure' ? 'steam-vent' : 'gear-clank', at);
-      return !!at;
+  const activated = (() => {
+    switch (pick.kind) {
+      case 'logbook-plaque':
+        return flow.saveLogbookEntry(pick.hit);
+      case 'pendulum':
+        return operatePendulum(pick.hit);
+      case 'borrowed-light':
+        return operateBorrowedLight(pick.hit.action);
+      case 'float-elevator':
+        return operateFloatElevator(pick.hit.action);
+      case 'shadow-stencil':
+        return operateShadowStencil(pick.hit.action);
+      case 'spring-tension':
+        return operateSpringTension(pick.hit.action);
+      case 'dark-circuit':
+        return operateDarkCircuit(pick.hit.action);
+      case 'drum-gallery':
+        return operateDrumGallery(pick.hit.action);
+      case 'armory':
+        return operateArmory();
+      case 'valvehouse':
+        return operateValvehouse(pick.hit);
+      case 'reliquary':
+        if (pick.hit.action === 'trace') return true;
+        flow.rememberReliquaryRubbing();
+        return ui?.readReliquaryRubbing(camera) ?? false;
+      case 'speaking-pipes':
+        return operateSpeakingPipes(pick.hit);
+      case 'dispatch':
+        return operateDispatch(pick.hit);
+      case 'window-cache':
+        return pick.hit.action === 'claim' ? flow.claimWindowCache() : flow.openWindowCache();
+      case 'brass-key':
+        return takeBrassKey();
+      case 'commission':
+        return operateCommission(pick.hit);
+      case 'calibration':
+        return operateCalibration(pick.hit);
+      case 'folio':
+        return readFolio(pick.hit);
+      case 'hidden-panel':
+        return operatePanel(pick.hit, hand);
+      case 'archive':
+        return operateArchive(
+          pick.hit.action,
+          hand,
+          pick.hit.action === 'pour'
+            ? origin.clone().addScaledVector(direction, pick.hit.distance)
+            : undefined,
+        );
+      case 'prism':
+        return operatePrism(pick.hit);
+      case 'formula-clue':
+        return inspectFormula(pick.hit.clue);
+      case 'counterweight':
+        return operateWeight(pick.hit);
+      case 'clock':
+        return collectAlchemy(pick.hit.ingredient, hand, floor?.clock?.target);
+      case 'alchemy':
+        return operateAlchemy(
+          pick.hit,
+          hand,
+          pick.hit.action === 'apply'
+            ? origin.clone().addScaledVector(direction, pick.hit.distance)
+            : undefined,
+        );
+      case 'lift':
+        return travelStairs(true);
+      case 'gate': {
+        const hit = pick.hit;
+        const rattle =
+          hit.kind === 'encounter'
+            ? undefined
+            : floor?.world.rattlePuzzleGate(hit.kind, hit.gateIndex);
+        const at = rattle ?? chimePosition.copy(origin).addScaledVector(direction, hit.distance);
+        audio?.playSfx(hit.kind === 'pressure' ? 'steam-vent' : 'gear-clank', at);
+        return true;
+      }
+      case 'chime':
+        return operateChimes(pick.hit);
+      case 'stairs':
+        return travelStairs();
+      case 'note':
+        return flow.collectPressureNote(pick.hit.room, pick.hit.id) !== null;
+      case 'machine':
+        return operateMachine(pick.hit, hand);
+      case 'coffer':
+        return openCoffer(
+          pick.hit,
+          origin
+            .clone()
+            .addScaledVector(direction, 0.32)
+            .add(new THREE.Vector3(0, -0.12, 0)),
+        );
+      case 'hearth':
+        return useHearth(pick.hit);
+      case 'book':
+        return openBook(pick.hit);
     }
-    case 'chime':
-      return operateChimes(pick.hit);
-    case 'stairs':
-      return travelStairs();
-    case 'note':
-      return flow.collectPressureNote(pick.hit.room, pick.hit.id) !== null;
-    case 'machine':
-      return operateMachine(pick.hit, hand);
-    case 'coffer':
-      return openCoffer(pick.hit);
-    case 'hearth':
-      return useHearth(pick.hit);
-    case 'book':
-      return openBook(pick.hit);
-  }
+  })();
+  if (
+    activated &&
+    floor &&
+    (pick.kind !== 'coffer' || pick.hit.lock === true) &&
+    pick.kind !== 'gate' &&
+    pick.kind !== 'stairs' &&
+    pick.kind !== 'lift' &&
+    pick.kind !== 'note' &&
+    pick.kind !== 'hearth' &&
+    pick.kind !== 'book'
+  )
+    flow.discoverPuzzle(pick.kind, floor.world.current);
+  return activated;
 };
+function recordPuzzleInteraction(id: string, activated: boolean): boolean {
+  if (activated && floor) flow.discoverPuzzle(id, floor.world.current);
+  return activated;
+}
 const pickupDistance = (origin: THREE.Vector3, direction: THREE.Vector3): number | null =>
   fieldHit(origin, direction)?.hit.distance ?? null;
 /** Ray origin and direction of an XR controller (its -Z axis, the beam the laser draws). */
@@ -2981,7 +3152,7 @@ function beginReliquaryTrace(
   const pick = fieldHit(origin, direction);
   if (pick?.kind !== 'reliquary' || !station.begin(origin, direction)) return false;
   reliquaryInput = { station, source };
-  return true;
+  return recordPuzzleInteraction('reliquary', true);
 }
 function endReliquaryTrace(submit: boolean): void {
   const input = reliquaryInput;
@@ -3000,12 +3171,24 @@ function endReliquaryTrace(submit: boolean): void {
     audio?.playSfx('sigil-fizzle', station.plate.getWorldPosition(chimePosition));
   } else station.cancel();
 }
+function closeFpsGauge(origin: THREE.Vector3, direction: THREE.Vector3): boolean {
+  if (!perf.closeGauge(origin, direction)) return false;
+  settings = { ...(settings ?? DEFAULT_SETTINGS), fpsCounter: false };
+  ui?.refresh();
+  if (settingsDb) void saveSettings(settingsDb, settings);
+  return true;
+}
+
 window.addEventListener(
   'pointerdown',
   (event) => {
     if (xr.presenting || event.button !== 0 || event.target !== renderer.domElement) return;
-    if (!floor || !canOpenLoot()) return;
     const { origin, direction } = mouseRay(event);
+    if (closeFpsGauge(origin, direction)) {
+      event.stopImmediatePropagation();
+      return;
+    }
+    if (!floor || !canOpenLoot()) return;
     if (
       beginReliquaryTrace({ pointer: event.pointerId }, origin, direction) ||
       activatePickup(origin, direction)
@@ -3158,6 +3341,7 @@ const minimapControllerRay = (controller: THREE.Object3D): THREE.Ray => {
 };
 let xrMinimapDrag: THREE.Object3D | null = null;
 const sliderSelects = new WeakSet<THREE.Object3D>();
+const gaugeCloseSelects = new WeakSet<THREE.Object3D>();
 function endXrMinimapDrag(commit: boolean): void {
   if (!xrMinimapDrag) return;
   if (commit) ui?.dragMinimapSlider(minimapControllerRay(xrMinimapDrag));
@@ -3174,7 +3358,13 @@ for (const index of [0, 1]) {
     pressed: boolean,
   ): void => {
     controller.addEventListener(type, (event) => {
-      if (gaugeGrip || busy() || (control === 'trigger' && sliderSelects.has(controller))) return;
+      if (
+        gaugeGrip ||
+        busy() ||
+        (control === 'trigger' &&
+          (sliderSelects.has(controller) || gaugeCloseSelects.has(controller)))
+      )
+        return;
       const side = (event as unknown as { data?: XRInputSource }).data?.handedness;
       if (side !== 'left' && side !== 'right') return;
       actions.emit({
@@ -3188,7 +3378,13 @@ for (const index of [0, 1]) {
   controller.addEventListener('selectstart', () => {
     reliquarySelects.delete(controller);
     sliderSelects.delete(controller);
+    gaugeCloseSelects.delete(controller);
     if (gaugeGrip || !xr.presenting || busy()) return;
+    const { origin, direction } = controllerRay(controller);
+    if (closeFpsGauge(origin, direction)) {
+      gaugeCloseSelects.add(controller);
+      return;
+    }
     if (ui?.visible && !xrMinimapDrag) {
       const ray = minimapControllerRay(controller);
       const id = pickUi(ray.origin, ray.direction);
@@ -3199,7 +3395,6 @@ for (const index of [0, 1]) {
       }
     }
     if (!canOpenLoot()) return;
-    const { origin, direction } = controllerRay(controller);
     if (beginReliquaryTrace({ controller }, origin, direction)) reliquarySelects.add(controller);
   });
   controller.addEventListener('selectend', () => {
@@ -3211,6 +3406,7 @@ for (const index of [0, 1]) {
   controller.addEventListener('disconnected', () => {
     if (xrMinimapDrag === controller) endXrMinimapDrag(false);
     sliderSelects.delete(controller);
+    gaugeCloseSelects.delete(controller);
     if (gaugeGrip) perf.releaseGauge(gaugeGrip);
     gaugeGrip = null;
     reliquarySelects.delete(controller);
@@ -3219,7 +3415,13 @@ for (const index of [0, 1]) {
       endReliquaryTrace(false);
   });
   controller.addEventListener('select', (event) => {
-    if (gaugeGrip || sliderSelects.has(controller) || reliquarySelects.delete(controller) || busy())
+    if (
+      gaugeGrip ||
+      gaugeCloseSelects.has(controller) ||
+      sliderSelects.has(controller) ||
+      reliquarySelects.delete(controller) ||
+      busy()
+    )
       return;
     if (!ui?.visible) {
       if (floor && canOpenLoot() && xr.presenting) {
@@ -3266,57 +3468,91 @@ for (const index of [0, 1]) {
       flow.collectPressureNote(note.room, note.id);
       return;
     }
-    if (floor.brassKeyStand?.near(position, GRAB_REACH) && takeBrassKey()) return;
-    const brassLock = floor.loot.nearBrassLock(position, GRAB_REACH);
-    if (brassLock && tryBrassLock(brassLock.room, brassLock.socketId)) return;
+    if (
+      floor.brassKeyStand?.near(position, GRAB_REACH) &&
+      recordPuzzleInteraction('brass-key', takeBrassKey())
+    )
+      return;
     const office = floor.office?.near(position, GRAB_REACH);
-    if (office && operateCommission(office)) return;
+    if (office && recordPuzzleInteraction('commission', operateCommission(office))) return;
     const cal = floor.calibrationBench?.near(position, GRAB_REACH);
-    if (cal && operateCalibration(cal)) return;
+    if (cal && recordPuzzleInteraction('calibration', operateCalibration(cal))) return;
     const folio =
       floor.chartCabinet?.near(position, GRAB_REACH) ??
       floor.calibrationKey?.near(position, GRAB_REACH);
-    if (folio && readFolio(folio)) return;
+    if (folio && recordPuzzleInteraction('folio', readFolio(folio))) return;
     const panel = floor.panels?.near(position, GRAB_REACH);
-    if (panel && operatePanel(panel, side)) return;
+    if (panel && recordPuzzleInteraction('hidden-panel', operatePanel(panel, side))) return;
     const archive = floor.archive?.near(position, GRAB_REACH);
-    if (archive && operateArchive(archive.action, side)) return;
+    if (archive && recordPuzzleInteraction('archive', operateArchive(archive.action, side))) return;
     const prism = floor.prismAnnex?.near(position, GRAB_REACH);
-    if (prism && operatePrism(prism)) return;
+    if (prism && recordPuzzleInteraction('prism', operatePrism(prism))) return;
     const evidence = floor.formulaEvidence?.near(position, GRAB_REACH);
-    if (evidence && inspectFormula(evidence.clue)) return;
+    if (evidence && recordPuzzleInteraction('formula-clue', inspectFormula(evidence.clue))) return;
     const dispatch = floor.dispatchRoom?.near(position, GRAB_REACH);
-    if (dispatch && operateDispatch(dispatch)) return;
+    if (dispatch && recordPuzzleInteraction('dispatch', operateDispatch(dispatch))) return;
     const pipes = floor.speakingPipes?.near(position, GRAB_REACH);
-    if (pipes && operateSpeakingPipes(pipes)) return;
+    if (pipes && recordPuzzleInteraction('speaking-pipes', operateSpeakingPipes(pipes))) return;
     const valvehouse = floor.valvehouse?.near(position, GRAB_REACH);
-    if (valvehouse && operateValvehouse(valvehouse)) return;
+    if (valvehouse && recordPuzzleInteraction('valvehouse', operateValvehouse(valvehouse))) return;
     const pendulum = floor.pendulumGallery?.near(position, GRAB_REACH);
-    if (pendulum && operatePendulum(pendulum)) return;
+    if (pendulum && recordPuzzleInteraction('pendulum', operatePendulum(pendulum))) return;
     const borrowedLight = floor.borrowedLight?.near(position, GRAB_REACH);
-    if (borrowedLight && operateBorrowedLight(borrowedLight.action)) return;
+    if (
+      borrowedLight &&
+      recordPuzzleInteraction('borrowed-light', operateBorrowedLight(borrowedLight.action))
+    )
+      return;
     const floatElevator = floor.floatElevator?.near(position, GRAB_REACH);
-    if (floatElevator && operateFloatElevator(floatElevator.action)) return;
+    if (
+      floatElevator &&
+      recordPuzzleInteraction('float-elevator', operateFloatElevator(floatElevator.action))
+    )
+      return;
     const shadowStencil = floor.shadowStencil?.near(position, GRAB_REACH);
-    if (shadowStencil && operateShadowStencil(shadowStencil.action)) return;
+    if (
+      shadowStencil &&
+      recordPuzzleInteraction('shadow-stencil', operateShadowStencil(shadowStencil.action))
+    )
+      return;
     const springTension = floor.springTension?.near(position, GRAB_REACH);
-    if (springTension && operateSpringTension(springTension.action)) return;
+    if (
+      springTension &&
+      recordPuzzleInteraction('spring-tension', operateSpringTension(springTension.action))
+    )
+      return;
     const darkCircuit = floor.darkCircuit?.near(position, GRAB_REACH);
-    if (darkCircuit && operateDarkCircuit(darkCircuit.action)) return;
+    if (
+      darkCircuit &&
+      recordPuzzleInteraction('dark-circuit', operateDarkCircuit(darkCircuit.action))
+    )
+      return;
     const drumGallery = floor.drumGallery?.near(position, GRAB_REACH);
-    if (drumGallery && operateDrumGallery(drumGallery.action)) return;
-    if (floor.armoryAlcove?.near(position, GRAB_REACH) && operateArmory()) return;
+    if (
+      drumGallery &&
+      recordPuzzleInteraction('drum-gallery', operateDrumGallery(drumGallery.action))
+    )
+      return;
+    if (
+      floor.armoryAlcove?.near(position, GRAB_REACH) &&
+      recordPuzzleInteraction('armory', operateArmory())
+    )
+      return;
     const clock = floor.clock?.near(position, GRAB_REACH);
-    if (clock && collectAlchemy(clock.ingredient, side, floor.clock?.target)) return;
+    if (
+      clock &&
+      recordPuzzleInteraction('clock', collectAlchemy(clock.ingredient, side, floor.clock?.target))
+    )
+      return;
     const brew = floor.alchemy?.near(position, GRAB_REACH);
-    if (brew && operateAlchemy(brew, side)) return;
+    if (brew && recordPuzzleInteraction('alchemy', operateAlchemy(brew, side))) return;
     const weight =
       floor.counterweight?.room === floor.world.current
         ? floor.counterweight.near(position, GRAB_REACH)
         : null;
-    if (weight && operateWeight(weight)) return;
+    if (weight && recordPuzzleInteraction('counterweight', operateWeight(weight))) return;
     const chime = floor.chimes?.near(position, GRAB_REACH);
-    if (chime && operateChimes(chime)) return;
+    if (chime && recordPuzzleInteraction('chime', operateChimes(chime))) return;
     const book = floor.book.near(position, GRAB_REACH);
     if (book) {
       openBook(book);
@@ -3329,7 +3565,7 @@ for (const index of [0, 1]) {
       return;
     }
     if (machine) {
-      operateMachine(machine, side);
+      recordPuzzleInteraction('machine', operateMachine(machine, side));
       return;
     }
     grabLootCard(hand);

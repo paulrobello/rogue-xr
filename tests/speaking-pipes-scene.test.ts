@@ -47,6 +47,8 @@ it.each(['authored parts', 'fallback fixtures'])(
     expect(find('cistern-service-basin')).toBeTruthy();
     expect(find('cistern-service-label').userData.labelText).toContain('Service Cistern');
     expect(find('speaking-pipes-transmitter-label').userData.labelText).toContain('Press Send');
+    expect(find(replay).position.y).toBeCloseTo(0.913);
+    expect(find('speaking-pipes-button-label-replay').position.y).toBeCloseTo(1.04);
     expect(find('cistern-water-sheen')).toBeTruthy();
     expect(find('cistern-plumbing')).toBeTruthy();
     expect(needle.visible).toBe(false);

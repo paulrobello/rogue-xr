@@ -119,6 +119,7 @@ export function cardKeywords(card: SliceCard): CardKeyword[] {
       add('block');
     }
   }
+  if (card.rollRisk) add(card.rollRisk.miss.status);
   if (card.exhaust) add('exhaust');
   return out;
 }
@@ -141,6 +142,9 @@ export function keywordExplanation(keyword: CardKeyword, card: SliceCard, steam?
     }
   }
   if (keyword === 'dice') {
+    if (card.rollRisk) {
+      return `Succeed on a kept roll of ${card.rollRisk.minimum} or higher. A lower roll triggers the penalty.`;
+    }
     const die = card.dice ? dieById(card.dice) : null;
     if (die && card.diceCount === 2)
       return 'Throw two crystal d12s. Add both results. Loaded, Spare Die, and Reroll affect the first die.';
@@ -149,9 +153,11 @@ export function keywordExplanation(keyword: CardKeyword, card: SliceCard, steam?
       : 'Throw a die when you play it; the roll adds to the effect.';
   }
   if (!isStatus(keyword)) return MECHANIC_TEXT[keyword];
-  const self = (card.mechanism?.effects ?? card.effects).some(
-    (e) => e.type === 'apply-status' && e.status === keyword && e.target === 'self',
-  );
+  const self =
+    card.rollRisk?.miss.status === keyword ||
+    (card.mechanism?.effects ?? card.effects).some(
+      (e) => e.type === 'apply-status' && e.status === keyword && e.target === 'self',
+    );
   return statusExplanation(keyword, null, self ? 'you' : 'it');
 }
 

@@ -1,0 +1,367 @@
+{
+  "capturedAt": "2026-11-24T04:28:57.095Z",
+  "reviewer": "Paul Robello",
+  "device": "Quest 3, Clockwork Spire audio audition page",
+  "commit": "9666f75c5b53a963106c6a1a5fcace701bc4d04e",
+  "buildId": "881f47cfeb212ebace64a957479049565e26df08a30dea18ead3bb05c564fd5a",
+  "music": {
+    "title": {
+      "sha256": "541639051887e5ad4e77540ef4d4d893903e93f631ae314d6e894fccc5384a89",
+      "verdict": "approve"
+    },
+    "explore": {
+      "sha256": "1b129fc9fc5d86435c445d081bcc05af815923a0ec9ce8357ce55377908a6567",
+      "verdict": "approve"
+    },
+    "combat": {
+      "sha256": "d09444fdb2e8fa944a7f2acbfa1f190c9171c03ac3d45bfd7e66a678d9c9fa83",
+      "verdict": "approve"
+    },
+    "reward": {
+      "sha256": "73ece40999feb9c11ac5513b21667be8c5c95419670c03f47c08d430d03caa83",
+      "verdict": "approve"
+    },
+    "rest": {
+      "sha256": "2f52609285ef478b81b7295f34ee325c9b5a0e53450064cdfab30a2716a6e453",
+      "verdict": "approve"
+    },
+    "elite": {
+      "sha256": "caea6d5a0dfdca691cf861bb18171f61e33a6c2c98c7a42d8c26da7648b4ab2f",
+      "verdict": "approve"
+    },
+    "defeat": {
+      "sha256": "937ae5897e0a15a3ba003664d9324b894a953666a64a25765de7bb41203ff3ea",
+      "verdict": "approve"
+    },
+    "workshop": {
+      "sha256": "d0a6e75424d0c8eca27a8ac0557240d11d1e00a65c3de1c7fb8b372717dc1449",
+      "verdict": "approve"
+    },
+    "guardian-1": {
+      "sha256": "295cc83ad84a1a74e379addc5d674381c121d19c4ad9d2e3981f01243fc8c456",
+      "verdict": "approve"
+    },
+    "guardian-2": {
+      "sha256": "6f215a58088091d9175aafcbb348a9dc9c7b1b8a75e0c082ef225fe220ca84c2",
+      "verdict": "approve"
+    },
+    "victory": {
+      "sha256": "5c1c882e313493e44ed73fbdcf2529936f2bf2613a504ec678d003d453f8b46a",
+      "verdict": "approve"
+    }
+  },
+  "sfx": {
+    "panel-solid": {
+      "sha256": "58838417cdbd441e5b55b8ea789c3149365c529c9f096526684f04e05c001421",
+      "verdict": "approve"
+    },
+    "panel-hollow": {
+      "sha256": "7840271263cc58761ae176631ffbf4eda33ad21accadcc430d5cc87910655445",
+      "verdict": "approve"
+    },
+    "paper-unfold": {
+      "sha256": "1019ba50f1e499d26a7123e1785c0214466130c9ffe32f1acec76af005f03d1e",
+      "verdict": "approve"
+    },
+    "card-draw": {
+      "sha256": "85cec131ac7592d747fde4be4286d9166d627a465beaa761c6384831bf87c5e5",
+      "verdict": "approve"
+    },
+    "card-fling": {
+      "sha256": "fa1329f523185f8a002373d99155d017239f2426b0757c94b9b5fd6cad769416",
+      "verdict": "approve"
+    },
+    "card-impact": {
+      "sha256": "c9c1d030027a41ad23841f03b220a75673394f650c97ac7bd6dcebf3b8c6d344",
+      "verdict": "approve"
+    },
+    "dice-roll": {
+      "sha256": "7e53b53e2b2b37bc236d79803d26d2820674b191ec1c3fad4d147838e74c392b",
+      "verdict": "approve"
+    },
+    "dice-settle": {
+      "sha256": "8d715eb3d67357166748727b238417c8af2fc8fc0a1180887f9f48bbce8c77b7",
+      "verdict": "approve"
+    },
+    "sigil-trace": {
+      "sha256": "6ae5960f1665dc00744e3d645bc904ebd583e635924465c4fe2e3892cdced00a",
+      "verdict": "approve"
+    },
+    "sigil-cast": {
+      "sha256": "55c42063d4300ef18f4d0395aad0c2c31b64b7203259abe95ab21df5f8aa4cb2",
+      "verdict": "approve",
+      "confirmedBy": "Owner confirmation in chat"
+    },
+    "sigil-fizzle": {
+      "sha256": "81105c89c8ffa3e7af5291013e00a61e7f6deaea2364e7d9ee7ec0e042378ae2",
+      "verdict": "approve",
+      "confirmedBy": "Owner confirmation in chat"
+    },
+    "steam-vent": {
+      "sha256": "f622c761a612d005b2aa07e1f5e1b41a769f48edbbeed2e25a450c65fef6639b",
+      "verdict": "approve",
+      "confirmedBy": "Owner confirmation in chat"
+    },
+    "gear-clank": {
+      "sha256": "6489d1f11206d316f11a969b7d1526df82f91fd9669241fc356fa278aa59a4de",
+      "verdict": "approve"
+    },
+    "door-open": {
+      "sha256": "e53c2ad9fa6ea6c4172f88a036316d749eab482ece406b9afa31607fee9b1e13",
+      "verdict": "approve"
+    },
+    "ui-tick": {
+      "sha256": "cbe00392f30613418a92cd01dbdeacb3c5c6d79648febb64c32de87235aedc12",
+      "verdict": "approve"
+    },
+    "automaton-hit": {
+      "sha256": "ada0feb6eb78ff2f5d1ac44a12cd9cd27a75074bfc9fa2db138552acdfad4428",
+      "verdict": "approve",
+      "confirmedBy": "Owner confirmation in chat"
+    },
+    "automaton-death": {
+      "sha256": "68f7757e3d6abe9e736440ad7a076f656963f10542742eac7de5524869087388",
+      "verdict": "approve",
+      "confirmedBy": "Owner confirmation in chat"
+    },
+    "table-unfold": {
+      "sha256": "c8e2812f644ac9ad434edb6c5df66bf6ee4f697794f0c71af41ac8b109a352f7",
+      "verdict": "approve",
+      "confirmedBy": "Owner confirmation in chat"
+    },
+    "reward-chime": {
+      "sha256": "bb675ee880ee96d71ac7ba8f26d8444e17ebf4d3696b7995bbf490acf49ab137",
+      "verdict": "approve",
+      "confirmedBy": "Owner confirmation in chat"
+    },
+    "pendulum-tick": {
+      "sha256": "caabefdd51ff85f2fe102a0f1001c4ab5de975cb3274976cb1218fc55cf63df4",
+      "verdict": "approve",
+      "confirmedBy": "Owner confirmation in chat"
+    },
+    "clockwork-chime-low": {
+      "sha256": "107a31efc7be7fdeb454bf24071aac0d02751d6d3dfa104c509b23c608f25f77",
+      "verdict": "approve",
+      "confirmedBy": "Owner confirmation in chat"
+    },
+    "clockwork-chime-mid": {
+      "sha256": "a6dc01c895072cb546628c80c8c31e5cdf49bfa1c722fcb398e00a2a47b3d10f",
+      "verdict": "approve",
+      "confirmedBy": "Owner confirmation in chat"
+    },
+    "clockwork-chime-high": {
+      "sha256": "999f70a95644080a4ed3fc37a0bdb303d6be800f360c976132a6d1ac4dc3974b",
+      "verdict": "approve",
+      "confirmedBy": "Owner confirmation in chat"
+    },
+    "defeat-sting": {
+      "sha256": "fc698bfa54de9cd29dd63241c3b69b291055996a3f73635202b30491a9199723",
+      "verdict": "approve"
+    },
+    "victory-sting": {
+      "sha256": "16d0d2b51488e812cfcb6eb1c5ac3ff7a0a561da5ba5209b02b21d45438a4d49",
+      "verdict": "approve"
+    },
+    "cog-pickup": {
+      "sha256": "381e1478b83f3da49aea3fe718db6a66afe62553d1caf366a575e7a031b3aa8c",
+      "verdict": "approve"
+    },
+    "block-ward": {
+      "sha256": "8693ed1d5eb791ec096fb3bcb0a9e57fc2d14abb86e165bedb6167b0ce1f91dc",
+      "verdict": "approve"
+    },
+    "pressure-gate-open": {
+      "sha256": "8f4e0b21a0554f5c87652e8981fa1c161d64404382057ff4fca5ad0870a202bc",
+      "verdict": "approve"
+    },
+    "counterweight-grille-open": {
+      "sha256": "e28da4668154f04d300d088703958df8527c5b31d2bbaa31df98f46665c54d47",
+      "verdict": "approve"
+    },
+    "service-panel-open": {
+      "sha256": "0b6de8ff6e8583eb300b0bca0534384cb9687e61272b5b64304e65957cfb1a7e",
+      "verdict": "approve"
+    },
+    "thorn-ward-open": {
+      "sha256": "012d5f049dbbdd89fbc1021c177cdfb394481afc678edbe9e99a8d28a0083055",
+      "verdict": "approve"
+    },
+    "archive-ink-open": {
+      "sha256": "5fc209aa2a09350b19ced172f0b35c2a16fc36ec08ae8854adc61e896c1536eb",
+      "verdict": "approve"
+    },
+    "archive-stillwind-open": {
+      "sha256": "85367b9b7d41b1dddc5940f07a128e74371419f99c78224fd04aa3e1f7b61537",
+      "verdict": "approve"
+    },
+    "archive-mirror-open": {
+      "sha256": "042af5c62364912d0b4d27a3ee693e4670c80ae5cd91a6c84d2d8805ceb25824",
+      "verdict": "approve"
+    },
+    "astral-lift-open": {
+      "sha256": "db7c5b6633f0fd1d1f9175190cb76a464965e0329702af5809fa5c2c02da8eac",
+      "verdict": "approve",
+      "confirmedBy": "Owner confirmation in chat"
+    },
+    "prism-annex-open": {
+      "sha256": "fdd974824184c1ab090eee95a3e13fc0c36db58c41356b8741f9d7a202f28f1e",
+      "verdict": "reject"
+    },
+    "dispatch-room-open": {
+      "sha256": "291eefa069cebd914d67a5388e36c928c980ec08c03c8792a789a3d3d082b7a0",
+      "verdict": "approve"
+    },
+    "cistern-pipe-send": {
+      "sha256": "4cb5fdb455a4a001d13e46b2c7a6f2f0915ac764922253181818adfce38318a2",
+      "verdict": "approve",
+      "confirmedBy": "Owner confirmation in chat"
+    },
+    "cistern-grille-open": {
+      "sha256": "3c1597c7d18c366b92d4849a497b1cc54bdf867f31c2c6587ed40163371276a4",
+      "verdict": "approve"
+    },
+    "reliquary-stone-open": {
+      "sha256": "f2780ed6006d083805ba33ec0dbbdd62664bc2326e3a43fd7b00f0f81411e73e",
+      "verdict": "approve"
+    },
+    "borrowed-light-receiver": {
+      "sha256": "53164bca947caa5bd5c4caadd665e887d702eb2c09e5fa591da8e3747fac8acb",
+      "verdict": "approve"
+    },
+    "borrowed-light-open": {
+      "sha256": "935cf372e17494e41f74f4eed390d322c26dc40ffcf462e6d9765eb74bffdef7",
+      "verdict": "approve"
+    },
+    "dungeon-torch-crackle": {
+      "sha256": "3ec974836a6dca59187d06c091df8cdb04c16f4c57fd3ded1d768c57974c9214",
+      "verdict": "reject"
+    },
+    "dungeon-chain-wind": {
+      "sha256": "6865e794c54de9eecff3af3015bafda2d9a11eb79798b3bf61da137af94cdcd1",
+      "verdict": "reject"
+    },
+    "dungeon-scarab-scrape": {
+      "sha256": "8c2b0539834613d2202e793653296845c8555af809920d5131f0f39e26bac96d",
+      "verdict": "reject"
+    },
+    "valvehouse-leak": {
+      "sha256": "5df9d54582260c4a129cd681f82dbd9395e484f03351fbf35b35992fa9631ad5",
+      "verdict": "approve"
+    },
+    "valvehouse-gate-open": {
+      "sha256": "93a68b1cbf686119bf1a43a42be795678b34f9ea52251d70b8c1cd2e3f88d228",
+      "verdict": "approve"
+    },
+    "pendulum-gallery-open": {
+      "sha256": "1e9c5ace10b33514c24d43633569a14baebd60375aedb91cb9a5f1fca336bccb",
+      "verdict": "approve"
+    },
+    "armory-awaken": {
+      "sha256": "985d55d65bc20f0edd31226b0545fea294eb0d7e7ae15f49db7223d759dc15c5",
+      "verdict": "reject"
+    },
+    "reservoir-fill": {
+      "sha256": "22e8bfc091e7709e646d212c3927d4b4ec6260c18f1803bfeb42a5f2b82cf31a",
+      "verdict": "approve"
+    },
+    "reservoir-drain": {
+      "sha256": "9f2e7ccd1414aa3a8ad66870cf1e1be13bf1b922deb980c73d7ec3101d5dda7e",
+      "verdict": "approve"
+    },
+    "reservoir-release": {
+      "sha256": "4f20c768fe464485c1efd3803d7159f57581ff0acf37856e17f9cd5662b73f2d",
+      "verdict": "approve"
+    },
+    "stencil-slide": {
+      "sha256": "0787707462c49371e1a254a47acc5e88bc8e91b9492a71eac55b144d4eaff5af",
+      "verdict": "approve"
+    },
+    "stencil-release": {
+      "sha256": "60e52c632e7529a46fc2780c66604fb042f194d79ca37e04de43605e27f173b9",
+      "verdict": "approve"
+    },
+    "spring-wind": {
+      "sha256": "8bc16791d5e7fd69e256105994f777db4143b5f3267d5a89c66476de1d44f885",
+      "verdict": "approve"
+    },
+    "spring-catch": {
+      "sha256": "4981f59166b592231faf0940e5e42466a490aef5e544001f64fca757bbfeb84d",
+      "verdict": "approve"
+    },
+    "spring-slip": {
+      "sha256": "b56be11e1b300d1597cbacd9ce31b0669806f734c44fde4004be5c5856cee892",
+      "verdict": "approve"
+    },
+    "spring-release": {
+      "sha256": "fda0c8b6720175df3550f18320519a2e6da8865a532ee7c1bc948a081b0acac1",
+      "verdict": "approve"
+    },
+    "circuit-bridge": {
+      "sha256": "72ef1786fba1c5fc283e171e5c5ee8eedabaafbbaafd24fa5551bbf79bbe54de",
+      "verdict": "approve"
+    },
+    "circuit-grille-open": {
+      "sha256": "981adea54320aa41dd173358ee0b5e1fe83fa73fc155bc37e39e97a617686363",
+      "verdict": "approve"
+    },
+    "drum-reed-low": {
+      "sha256": "6d0cb9cfd16e3affac109e5bf08b880b57448ce6fc77f3495e09ecbea6e42237",
+      "verdict": "approve"
+    },
+    "drum-reed-mid": {
+      "sha256": "c902cc283ea5d213ce7bb332235b4ccf07bfb7009ccedd375d62ab218da86eb1",
+      "verdict": "approve"
+    },
+    "drum-reed-high": {
+      "sha256": "c158237a51cce136cdefd0e09b8575b64b5934226697e010172c1a9b492806eb",
+      "verdict": "approve"
+    },
+    "drum-index": {
+      "sha256": "94580ca983eea3f0259bb1bbb61c65dd69a71148e40831a27e603331a30dfbe5",
+      "verdict": "approve"
+    },
+    "drum-pin": {
+      "sha256": "316c69a74b740fd4cbba3258611f343ed065c485ae3129cfe1bc51ce660692f9",
+      "verdict": "approve"
+    },
+    "drum-grille-open": {
+      "sha256": "010a80b101a7ec7c65459429a57f2cd4ea77bdb5108329559b94d931f359f31b",
+      "verdict": "approve"
+    },
+    "trellis-brace": {
+      "sha256": "8eee77bbc2d8f689f640b1f8e6ed2477df4503cd69e02b15b737d5dc406b4b41",
+      "verdict": "approve"
+    },
+    "trellis-double-cut": {
+      "sha256": "e5799b3bf7f326613b76d65d91db3cf0c2ea7d174ccf2db3c66ff838b10870fb",
+      "verdict": "approve"
+    }
+  },
+  "replacementReview": {
+    "approvedOn": "2026-11-23",
+    "confirmedBy": "Paul Robello in chat",
+    "assetCommit": "8abf1da984084a75ca7804e2804ae3e8f12aff5e",
+    "sfx": {
+      "prism-annex-open": {
+        "sha256": "31c2bbfa7f435fef8099a010130ed09c8b26106037bd5edeafd53d331a908c2c",
+        "verdict": "approve"
+      },
+      "dungeon-torch-crackle": {
+        "sha256": "c11dea1ddb713bc7652ad664143afa29afcb76fa4e91cb106896e55947220f0d",
+        "verdict": "approve"
+      },
+      "dungeon-chain-wind": {
+        "sha256": "9bac8d17632c13bbff12f1fa11ccfc85715adef3c19a2950434a8c51039b0450",
+        "verdict": "approve"
+      },
+      "dungeon-scarab-scrape": {
+        "sha256": "63e0925cb67e4611a1f1c246187d3cb087c0825da852d7fa0fca9168732852d4",
+        "verdict": "approve"
+      },
+      "armory-awaken": {
+        "sha256": "a637fa4f8b73b44a064d429c348218af18e17fe179cdbbe371cce8509bbc58f3",
+        "verdict": "approve"
+      }
+    }
+  }
+}

@@ -18,7 +18,7 @@ import {
   measuredLines as wrapText,
 } from '../combat-view/canvas-label.ts';
 import { cardTip } from '../combat-view/card-keywords.ts';
-import { drawTip } from '../combat-view/status-info.ts';
+import { drawTip, tipCanvasHeight } from '../combat-view/status-info.ts';
 import { getCard } from '../content/cards.ts';
 import { PERMANENT_CARD_IDS } from '../content/rewards.ts';
 import { formatSeed, normalizeSeed } from '../core/rng.ts';
@@ -72,10 +72,10 @@ import {
 import { TEST_SEEDS } from './test-seeds.ts';
 
 /**
- * The card keyword tip on the reward board and the deck viewer: canvas height (fits a three-keyword
+ * The card keyword tip on the reward board and the deck viewer: canvas height (fits a four-keyword
  * card), width, and how far it stands in front of the card face (clear of the hover lift), metres.
  */
-const CARD_TIP_PX_HEIGHT = 600;
+const CARD_TIP_PX_HEIGHT = Math.max(900, tipCanvasHeight(cardTip(getCard('quench-seal'))));
 const CARD_TIP_WIDTH = 0.3;
 const CARD_TIP_FORWARD = 0.06;
 /** Control id prefix of a deck viewer card: `deck-card-<index on the page>`. */

@@ -276,6 +276,7 @@ export function lightRoomStyle(room: THREE.Group, placements: readonly InteriorP
   room.userData.finishLightMap = texture;
   const wallMaterials = new Map<THREE.Material, THREE.Material>();
   const surfaceMaterials = new Map<THREE.Material, THREE.Material>();
+  const doorMaterials = new Map<THREE.Material, THREE.Material>();
   const shade = (source: THREE.Material, mesh: THREE.Mesh): THREE.Material => {
     const stoneShell = mesh.userData.stoneShell === true;
     const horizontalTile = mesh.userData.stoneSurface === true;
@@ -284,10 +285,18 @@ export function lightRoomStyle(room: THREE.Group, placements: readonly InteriorP
       (!stoneShell && !['BoilerFinish', 'TimberFinish'].includes(source.name))
     )
       return source;
-    const materials = horizontalTile ? surfaceMaterials : wallMaterials;
+    const conservatoryDoor =
+      room.userData.conservatory && mesh.userData.roomStylePiece === 'TimberDoor';
+    const materials = conservatoryDoor
+      ? doorMaterials
+      : horizontalTile
+        ? surfaceMaterials
+        : wallMaterials;
     const existing = materials.get(source);
     if (existing) return existing;
     const m = bakedRoomMaterial(source.userData.roomStyleOwned ? source : source.clone());
+    // The authored trim has an open rear profile where the two room finishes meet.
+    if (conservatoryDoor) m.side = THREE.DoubleSide;
     m.userData.roomStyleOwned = true;
     m.lightMap = texture;
     m.envMapIntensity *= timber ? 0.6 : 0.45;

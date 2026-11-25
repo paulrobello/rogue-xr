@@ -1,0 +1,186 @@
+{
+  "pieceId": "mortar-scarab",
+  "version": 1,
+  "route": "staged authored Blender rig and keyed clips; promoted for local playtest only",
+  "generator": {
+    "path": "scripts/assets/build-mortar-scarab.py",
+    "sha256": "42ca900fc4d50053ac4fa5ad50e918a291e35773db576a15de903930d1843de7",
+    "status": "recorded; re-review required before regeneration"
+  },
+  "authoringAgent": {
+    "status": "not recorded in the staging handoff"
+  },
+  "blendFiles": {
+    "runtime": {
+      "path": "assets-source/enemies/mortar-scarab/staging/runtime/mortar-scarab.blend",
+      "sha256": "f5faa76569e08f27a140b6f0fd0ebd5d4a270ba27fa0a61bb1a5703de043b948",
+      "bytes": 935277
+    },
+    "base": {
+      "path": "assets-source/enemies/mortar-scarab/staging/base/mortar-scarab-base.blend",
+      "sha256": "671bf92b15cce163fe76a6375f704993d49ee308b5b56f71c2713af880b9e0f7",
+      "bytes": 185230
+    }
+  },
+  "budgets": {
+    "triangles": 9360,
+    "materials": 4,
+    "bones": 27,
+    "maxInfluences": 1,
+    "glbBytes": 949884
+  },
+  "skin": {
+    "policy": "rigid: one bone per vertex at weight 1.0",
+    "maxWeightSumError": 0.0,
+    "unweightedVertices": 0
+  },
+  "clips": {
+    "source": "public/assets/enemies/mortar-scarab/mortar-scarab.manifest.json",
+    "measured": "assets-source/enemies/mortar-scarab/staging/runtime/reimport-report.json",
+    "ownerRigClipReview": "pending"
+  },
+  "rootMotion": "code-owned; root joint fixed",
+  "frame": {
+    "units": "m",
+    "up": "+Y",
+    "forward": "-Z",
+    "origin": "floor"
+  },
+  "sockets": {
+    "source": "public/assets/enemies/mortar-scarab/mortar-scarab.manifest.json",
+    "trackingReport": "assets-source/enemies/mortar-scarab/staging/runtime/reimport-report.json"
+  },
+  "derivedFiles": [
+    {
+      "path": "public/assets/enemies/mortar-scarab/mortar-scarab.glb",
+      "sha256": "25cf660e7c86c6845c92f7b282bcd35f70daa8162f711f48655d4e0f3f9708a4",
+      "bytes": 949884
+    },
+    {
+      "path": "public/assets/enemies/mortar-scarab/mortar-scarab.manifest.json",
+      "sha256": "be067b4da5c25836b91d59b239cb9f490b4c4886036b92bb02ca428f26179299",
+      "bytes": 3534
+    }
+  ],
+  "sourceFiles": [
+    {
+      "path": "assets-source/enemies/mortar-scarab/staging/runtime/mortar-scarab.blend",
+      "sha256": "f5faa76569e08f27a140b6f0fd0ebd5d4a270ba27fa0a61bb1a5703de043b948",
+      "bytes": 935277
+    },
+    {
+      "path": "assets-source/enemies/mortar-scarab/staging/runtime/reimport-report.json",
+      "sha256": "db7ef9534aad3674ac8f63bc443a157163d7e0d66388a6befb562eb27b6aaeda",
+      "bytes": 20700
+    },
+    {
+      "path": "assets-source/enemies/mortar-scarab/staging/base/mortar-scarab-base.blend",
+      "sha256": "671bf92b15cce163fe76a6375f704993d49ee308b5b56f71c2713af880b9e0f7",
+      "bytes": 185230
+    },
+    {
+      "path": "assets-source/enemies/mortar-scarab/staging/base/mortar-scarab-base.glb",
+      "sha256": "11f8762059e1608c660844a5bc307c76ae2b7a0b9b2a6000ca3e1db7b4f79b66",
+      "bytes": 328684
+    },
+    {
+      "path": "assets-source/enemies/mortar-scarab/staging/base/reimport-report.json",
+      "sha256": "672927b13fd9d6bce7b229877591d8b777de00765bdb84b65d93d42ffb53b9fc",
+      "bytes": 9698
+    },
+    {
+      "path": "assets-source/enemies/mortar-scarab/staging/base/visual-review.json",
+      "sha256": "970cc3e17ba711c9868347c3306eccfbeb5308e6d3222d2fd1bd38cd02bbe803",
+      "bytes": 659
+    },
+    {
+      "path": "scripts/assets/build-mortar-scarab.py",
+      "sha256": "42ca900fc4d50053ac4fa5ad50e918a291e35773db576a15de903930d1843de7",
+      "bytes": 25978
+    },
+    {
+      "path": "docs/enemy-rig-batch-review.md",
+      "sha256": "431e116bb182d1d0df15d52d2936796a34fe492b1457f203f94cef8c77fe4dfc",
+      "bytes": 3993
+    }
+  ],
+  "reviewEvidence": [
+    {
+      "path": "assets-source/enemies/mortar-scarab/staging/runtime/review-contact-sheet.png",
+      "sha256": "75d31e43012e6eda1bf44cba27f73e6bd4692054b95ec1a662b8c269d2cd4414",
+      "bytes": 1910387
+    },
+    {
+      "path": "assets-source/enemies/mortar-scarab/staging/runtime/review-moves.mp4",
+      "sha256": "6c92439c00141a5307c7e84920263c1703cc7b38294302dde0c65870452dcef8",
+      "bytes": 486027
+    },
+    {
+      "path": "assets-source/enemies/mortar-scarab/staging/base/review-raised.png",
+      "sha256": "bd01b186da9fda995a3c338dd12c9f6aaf7e8a061e3c903cd85f95fb1a750ed9",
+      "bytes": 618164
+    },
+    {
+      "path": "assets-source/enemies/mortar-scarab/staging/base/review-side.png",
+      "sha256": "b680421de7e43c9694975b896389d22cf6667ce75fb9686fdd2c456cef46508e",
+      "bytes": 566023
+    },
+    {
+      "path": "assets-source/enemies/mortar-scarab/staging/base/review-three-quarter.png",
+      "sha256": "9b3d917f90e5641a0558caf8335ca6be55388c0e762ee5696469cbccda9b572b",
+      "bytes": 614860
+    }
+  ],
+  "references": [
+    {
+      "path": "assets-source/concepts/dungeon/dungeon-enemies-sheet.png",
+      "sha256": "8a033049435dfccaff0b0b8d7ceb5a649afd0a149ff51003bceda331791d6808",
+      "provider": "higgsfield",
+      "note": "Dungeon enemy concept sheet"
+    }
+  ],
+  "materialsUsed": "Image-free GLB with limestone, aged-brass, dark-iron and amber-core factor materials.",
+  "license": "Original work generated in Blender from the checked-in generator and staged editable rig; concept reference from Paul's paid Higgsfield plan.",
+  "validation": {
+    "pass": true,
+    "date": "2026-11-23",
+    "checks": [
+      "staged enemy gate passed",
+      "runtime GLB hash matches the reviewed export in docs/enemy-rig-batch-review.md",
+      "runtime manifest and GLB copied byte-for-byte from staging/runtime",
+      "reimport report pass, image-free GLB, budgets, sockets, clips and timing verified"
+    ]
+  },
+  "approvals": [
+    {
+      "gate": "concept",
+      "status": "approved",
+      "notes": "Base concept review is recorded by the staged base visual-review.json."
+    },
+    {
+      "gate": "model",
+      "status": "pending",
+      "notes": "Owner approval of the runtime rigged actor remains open."
+    },
+    {
+      "gate": "rig",
+      "status": "pending",
+      "notes": "Owner rig review remains open."
+    },
+    {
+      "gate": "animation",
+      "status": "pending",
+      "notes": "Owner clip review and physical Quest checks remain open."
+    },
+    {
+      "gate": "independent visual score",
+      "status": "recorded-pending-owner",
+      "notes": "The review document records 82/100. This provenance does not treat that score as owner approval."
+    },
+    {
+      "gate": "playtest",
+      "status": "pending",
+      "notes": "Promoted for Paul's local DNGS80EC playtest only."
+    }
+  ]
+}

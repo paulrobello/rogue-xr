@@ -341,8 +341,20 @@ describe('floor loot view', () => {
     expect(visual?.parent).toBe(view.world.roomGroups[from.room]);
     const leaf = visual?.getObjectByName('encounter-lock-leaf');
     const before = leaf?.getWorldPosition(new THREE.Vector3());
+    const doorClick = (room: number, sign: number) => {
+      enter(view, room);
+      const [x, z] = door.world;
+      const dx = door.facing === 'W' ? sign : door.facing === 'E' ? -sign : 0;
+      const dz = door.facing === 'N' ? sign : door.facing === 'S' ? -sign : 0;
+      return view.world.pickLockedDoor(
+        new THREE.Vector3(x + dx, 1.15, z + dz),
+        new THREE.Vector3(-dx, 0, -dz),
+      );
+    };
     expect(walkThrough(from.room, 1)).toBeGreaterThan(0.25);
     expect(walkThrough(to.room, -1)).toBeGreaterThan(0.25);
+    expect(doorClick(from.room, 1)?.kind).toBe('encounter');
+    expect(doorClick(to.room, -1)?.kind).toBe('encounter');
     view.markCleared(to.room);
     expect(walkThrough(from.room, 1)).toBeGreaterThan(0.25);
     view.markCleared(from.room);
@@ -360,6 +372,8 @@ describe('floor loot view', () => {
     expect(openedDoor?.getObjectByName('encounter-lock-leaf')).toBeDefined();
     expect(walkThrough(from.room, 1)).toBeCloseTo(-0.6);
     expect(walkThrough(to.room, -1)).toBeCloseTo(-0.6);
+    expect(doorClick(from.room, 1)).toBeNull();
+    expect(doorClick(to.room, -1)).toBeNull();
     view.dispose();
   });
 

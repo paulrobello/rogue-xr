@@ -930,7 +930,7 @@ try {
     const visible = await ev(() => window.__flow.ui.deckCards);
     record(
       'deck-defense-first',
-      visible.join(',') === 'defend,warding-glyph,strike,cog-toss',
+      visible.join(',') === 'defend,warding-glyph,strike,patch-kit,cog-toss',
       visible,
     );
     const badge = await ev(() => window.__xrEmu.worldOf('deck-stack-count-defend'));

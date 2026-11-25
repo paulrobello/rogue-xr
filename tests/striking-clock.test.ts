@@ -2,6 +2,7 @@
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
+import { conservatoryPlan } from '../src/floor/conservatory.ts';
 import { generateUpperFloor } from '../src/floor/generate.ts';
 import { alchemyRecipe } from '../src/rules/alchemy.ts';
 import { INGREDIENT_ROOTS } from '../src/world/alchemy-conservatory.ts';
@@ -160,6 +161,17 @@ describe('striking clock', () => {
     expect(plate.position.z + halfDepth).toBeGreaterThan(-0.012);
     expect(plate.position.z - halfDepth).toBeCloseTo(-0.07, 2);
     clock.dispose();
+    floor.dispose();
+  });
+
+  it('prefers the authored cauldron room when one is supplied', () => {
+    const floor = buildFloorWorld(conservatoryPlan('DNGS80EC'));
+    const near = floor.roomGroups[4].localToWorld(new THREE.Vector3(-3, 0, -3));
+    const clock = StrikingClock.mount(floor, artKit(), 'DNGS80EC', false, [], 4, near);
+    expect(clock).not.toBeNull();
+    expect(clock?.room).toBe(4);
+    expect(clock?.object.getWorldPosition(new THREE.Vector3()).distanceTo(near)).toBeLessThan(5);
+    clock?.dispose();
     floor.dispose();
   });
 

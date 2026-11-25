@@ -71,6 +71,27 @@ function setup(
   return { flow, ui, head: new THREE.Object3D() };
 }
 
+it('keeps puzzle rooms private until interaction and restores them across floors and saves', () => {
+  const { flow } = setup();
+  flow.newRun('DNGS80EC');
+  flow.enterRoom(6);
+  expect(flow.explorationOnFloor(1)?.puzzleLocations).toEqual([]);
+  flow.discoverPuzzle('window-cache', 6);
+  flow.discoverPuzzle('chime', 6);
+  expect(flow.travelToFloor(2, 0)).toBe(true);
+  flow.enterRoom(16);
+  flow.discoverPuzzle('dark-circuit', 16);
+  const continued = setup().flow;
+  expect(continued.continueRun(validateSnapshot(flow.snapshot(8)))).toBe(true);
+  expect(continued.explorationOnFloor(2)?.puzzleLocations).toEqual([
+    { id: 'dark-circuit', room: 16 },
+  ]);
+  expect(continued.travelToFloor(1, 6)).toBe(true);
+  expect(continued.explorationOnFloor(1)?.puzzleLocations).toEqual([
+    { id: 'window-cache', room: 6 },
+  ]);
+});
+
 describe('FlowUi pressure Items', () => {
   it('shows an explicit empty state and works while exploring and fighting', () => {
     const { flow, ui, head } = setup();

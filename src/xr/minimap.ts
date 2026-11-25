@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { LogbookMap, MapTransport } from '../flow/logbook-map.ts';
+import { discoveryIcon, type LogbookMap, transportIcon } from '../flow/logbook-map.ts';
 import { MINIMAP_PLACEMENT_LIMIT, type Settings } from '../persist/db.ts';
 
 export type MinimapOptions = Pick<
@@ -31,36 +31,6 @@ function axisOffset(value: number, previousLimit: number, outerLimit: number): n
           (distance - 1) / (MINIMAP_PLACEMENT_LIMIT - 1),
         );
   return Math.sign(value) * offset;
-}
-
-function transportMarker(
-  ctx: CanvasRenderingContext2D,
-  transport: MapTransport,
-  x: number,
-  y: number,
-): void {
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.strokeStyle = INK;
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  if (transport.kind === 'stairs') {
-    ctx.moveTo(-5, 4);
-    ctx.lineTo(-2, 4);
-    ctx.lineTo(-2, 0);
-    ctx.lineTo(1, 0);
-    ctx.lineTo(1, -4);
-    ctx.lineTo(5, -4);
-  } else {
-    ctx.moveTo(-4, -2);
-    ctx.lineTo(0, -5);
-    ctx.lineTo(4, -2);
-    ctx.moveTo(-4, 2);
-    ctx.lineTo(0, 5);
-    ctx.lineTo(4, 2);
-  }
-  ctx.stroke();
-  ctx.restore();
 }
 
 /** A small transparent map rendered in a separate pass after the world. */
@@ -146,7 +116,9 @@ export class Minimap {
         map.rooms.length !== previous.rooms.length ||
         map.rooms.some((room, index) => room.bounds !== previous.rooms[index].bounds) ||
         map.doors.length !== previous.doors.length ||
-        map.transport?.length !== previous.transport?.length
+        map.transport?.length !== previous.transport?.length ||
+        map.discoveries?.length !== previous.discoveries?.length ||
+        map.discoveries?.some((item, index) => item.id !== previous.discoveries?.[index]?.id)
       ) {
         this.paint(map, zoom, northUp, heading);
         this.paintedMap = map;
@@ -269,13 +241,26 @@ export class Minimap {
     }
     for (const transport of map.transport ?? []) {
       const [x, y] = project(transport.position[0], transport.position[1]);
-      transportMarker(ctx, transport, x, y);
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(0.42, 0.42);
+      transportIcon(ctx, transport.kind, 0, 0);
+      ctx.restore();
+    }
+    for (const discovery of map.discoveries ?? []) {
+      const [x, y] = project(discovery.position[0], discovery.position[1]);
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(0.42, 0.42);
+      discoveryIcon(ctx, discovery.kind, 0, 0);
+      ctx.restore();
     }
     ctx.restore();
     const arrowAngle = northUp ? heading : 0;
     ctx.save();
     ctx.translate(128, 128);
     ctx.rotate(arrowAngle);
+    ctx.scale(zoom, zoom);
     ctx.fillStyle = ACTIVE;
     ctx.strokeStyle = '#fff4d0';
     ctx.lineWidth = 1.5;

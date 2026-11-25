@@ -435,7 +435,7 @@ export class DrumGallery {
 
   private drawGate(): void {
     const t = THREE.MathUtils.smoothstep(this.gateAge, 0, DRUM_GATE_SECONDS);
-    this.leaf.position.y = t * (DOOR_HEIGHT + 0.04);
+    this.leaf.position.y = -t * (DOOR_HEIGHT + 0.04);
     this.leaf.visible = !this.released;
     this.world.setPuzzleGateOpen('drum-gallery', this.released, true);
   }

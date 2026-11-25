@@ -976,6 +976,14 @@ def add_repair_wave(index: dict, ktx: Path, skip_ktx: bool) -> None:
                 compressed = encode_ktx2(ktx, page_path)
                 page_entry.update(ktx2=compressed.name, ktx2Sha256=sha256(compressed), ktx2Bytes=compressed.stat().st_size)
 
+    kit = index["cards"]["patch-kit"]
+    guard = index["cards"]["defend"]
+    index["cards"]["field-dressing"] = {
+        **kit,
+        "glow": "#80cfa5",
+        "layers": {**guard["layers"], "front": kit["layers"]["front"]},
+    }
+
 
 def add_complete_wave(index: dict, ktx: Path, skip_ktx: bool) -> None:
     """Use the lower half of the frame texture without allocating another texture sampler."""
@@ -1065,6 +1073,21 @@ def add_complete_wave(index: dict, ktx: Path, skip_ktx: bool) -> None:
     if not skip_ktx:
         compressed = encode_ktx2(ktx, page_path)
         page_entry.update(ktx2=compressed.name, ktx2Sha256=sha256(compressed), ktx2Bytes=compressed.stat().st_size)
+
+
+def add_risk_card_art(index: dict) -> None:
+    """Reuse the piston and boiler foregrounds with different card backdrops."""
+    cards = index["cards"]
+    for card_id, subject_id, backdrop_id in [
+        ("redline-shot", "overdrive-piston", "lucky-strike"),
+        ("boiler-gamble", "flash-boiler", "spare-parts"),
+    ]:
+        subject = cards[subject_id]
+        backdrop = cards[backdrop_id]
+        cards[card_id] = {
+            **subject,
+            "layers": {**backdrop["layers"], "front": subject["layers"]["front"]},
+        }
 
 
 def main() -> None:
@@ -1220,6 +1243,7 @@ def main() -> None:
     add_crystal_wave(index,args.ktx,args.skip_ktx)
     add_echo_wave(index,args.ktx,args.skip_ktx)
     add_lens_wave(index,args.ktx,args.skip_ktx)
+    add_risk_card_art(index)
     manifest.write_text(dumps(index) + "\n")
     print(f"card-atlas.json: {len(index['cards'])} cards, {len(frames)} frames, {len(page_entries)} pages")
 

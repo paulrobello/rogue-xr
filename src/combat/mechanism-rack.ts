@@ -35,7 +35,6 @@ export class MechanismRack {
   private readonly iron: THREE.MeshStandardMaterial;
   private readonly walnut: THREE.MeshStandardMaterial;
   private readonly jade: THREE.MeshStandardMaterial;
-  private readonly cobalt: THREE.MeshStandardMaterial;
   private readonly ivory: THREE.MeshStandardMaterial;
   private readonly copper: THREE.MeshStandardMaterial;
   private readonly ember: THREE.MeshStandardMaterial;
@@ -62,7 +61,6 @@ export class MechanismRack {
     this.iron = alloy(0x293039, 0.58, 0.47);
     this.walnut = alloy(0x392519, 0.1, 0.66);
     this.jade = alloy(0x186c65, 0.34, 0.31);
-    this.cobalt = alloy(0x2a5786, 0.33, 0.34);
     this.copper = alloy(0xaf5033, 0.64, 0.45);
     this.ivory = alloy(0xe6d4a4, 0.1, 0.57);
     this.ember = this.keep(
@@ -175,10 +173,35 @@ export class MechanismRack {
           [0, -0.049],
         ])
           this.box(root, [0.023, 0.053, 0.035], [x, 0.022, z], this.brass).rotation.z = -x * 7;
-        this.box(root, [0.112, 0.067, 0.085], [0, 0.078, 0.016], this.cobalt);
-        drum(0.028, 0.123, [0, 0.088, -0.032], this.iron).rotation.x = Math.PI / 2;
-        ring(0.029, 0.007, [0, 0.088, -0.093], this.brass);
-        ring(0.025, 0.004, [-0.054, 0.082, 0.013], this.brass).rotation.y = Math.PI / 2;
+        // Keep the turret open around its moving shoulder and barrel. The old solid chassis read
+        // as a rectangular backing in the headset and obscured the mechanism's silhouette.
+        const shoulder = this.box(root, [0.086, 0.044, 0.062], [0, 0.128, -0.005], this.brass);
+        shoulder.name = 'turret-brass-shoulder';
+        const barrel = drum(0.022, 0.125, [0, 0.14, -0.054], this.brass);
+        barrel.name = 'turret-cannon-barrel';
+        barrel.rotation.x = Math.PI / 2;
+        const bore = drum(0.012, 0.008, [0, 0.14, -0.119], this.iron);
+        bore.name = 'turret-cannon-bore';
+        bore.rotation.x = Math.PI / 2;
+        const muzzle = ring(0.029, 0.006, [0, 0.14, -0.121], this.brass);
+        muzzle.name = 'turret-muzzle-ring';
+        const rearBand = ring(0.026, 0.004, [0, 0.14, 0.008], this.copper);
+        rearBand.name = 'turret-rear-band';
+        for (const side of [-1, 1] as const) {
+          const pivot = ring(0.027, 0.006, [side * 0.051, 0.128, -0.006], this.brass);
+          pivot.name = `turret-pivot-${side < 0 ? 'left' : 'right'}`;
+          pivot.rotation.y = Math.PI / 2;
+          this.mesh(
+            root,
+            new THREE.CylinderGeometry(0.009, 0.009, 0.014, 10),
+            [side * 0.055, 0.128, -0.006],
+            this.iron,
+          ).rotation.z = Math.PI / 2;
+        }
+        const winding = this.box(root, [0.009, 0.036, 0.009], [0, 0.135, 0.032], this.copper);
+        winding.name = 'turret-winding-key';
+        winding.rotation.z = Math.PI / 2;
+        ring(0.018, 0.004, [0, 0.135, 0.032], this.brass).rotation.x = Math.PI / 2;
         break;
       }
       case 'furnace-heart': {

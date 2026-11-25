@@ -388,7 +388,7 @@ export class SpeakingPipes {
     );
     caption.object.position.set(
       housing.position.x,
-      housing.position.y + 0.16,
+      housing.position.y + (label === 'REPLAY' ? 0.127 : 0.16),
       housing.position.z + 0.057,
     );
     parent.add(caption.object);

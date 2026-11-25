@@ -20,12 +20,14 @@ function mountingPoint(
   depth: number,
   fullHeight: number | undefined,
   localObstacles: readonly THREE.Box3[],
+  near?: THREE.Vector3,
 ): PuzzleMount | null {
   const template = templateById(world.plan.rooms[room].templateId);
   const { min, max } = template.footprint;
   const parent = world.roomGroups[room];
   parent.updateWorldMatrix(true, true);
   const inverse = parent.matrixWorld.clone().invert();
+  const preferred = near?.clone().applyMatrix4(inverse);
   const obstacles = world.colliders[room].map((b) =>
     new THREE.Box3(new THREE.Vector3(...b.min), new THREE.Vector3(...b.max)).applyMatrix4(inverse),
   );
@@ -42,6 +44,8 @@ function mountingPoint(
   const probe = new THREE.Raycaster();
   const rayPoint = new THREE.Vector3();
   const walls = ['S', 'E', 'W', 'N'] as const;
+  let nearest: PuzzleMount | null = null;
+  let nearestDistance = Number.POSITIVE_INFINITY;
   for (const wall of stream?.shuffle(walls) ?? walls) {
     const ns = wall === 'N' || wall === 'S';
     const lo = ns ? min[0] : min[1],
@@ -55,7 +59,12 @@ function mountingPoint(
       { length: Math.floor((hi - lo - 2) / 0.5) + 1 },
       (_, i) => lo + 1 + i * 0.5,
     );
-    for (const along of stream?.shuffle(slots) ?? slots.sort((a, b) => Math.abs(a) - Math.abs(b))) {
+    const byDistance = preferred ? (ns ? preferred.x : preferred.z) : 0;
+    const ordered =
+      preferred || !stream
+        ? slots.sort((a, b) => Math.abs(a - byDistance) - Math.abs(b - byDistance))
+        : stream.shuffle(slots);
+    for (const along of ordered) {
       if (
         sockets.some(
           (d) => Math.abs(along - d.position[ns ? 0 : 2]) < d.width / 2 + halfWidth + 0.2,
@@ -100,10 +109,18 @@ function mountingPoint(
           return hit !== undefined && hit.distance >= 0.625;
         }),
       );
-      if (clear) return { room, center, wallSurface, yaw };
+      if (!clear) continue;
+      const mount = { room, center, wallSurface, yaw };
+      if (!preferred) return mount;
+      const distance = Math.hypot(center.x - preferred.x, center.z - preferred.z);
+      if (distance < nearestDistance) {
+        nearest = mount;
+        nearestDistance = distance;
+      }
+      break;
     }
   }
-  return null;
+  return nearest;
 }
 
 export function findPuzzleMount(
@@ -115,6 +132,7 @@ export function findPuzzleMount(
   depth = 1.4,
   fullHeight?: number,
   localObstacles: readonly THREE.Box3[] = [],
+  near?: THREE.Vector3,
 ): PuzzleMount | null {
   const stream = placementKey
     ? Stream.fromKey(`${world.plan.seed}:mount:${placementKey}`)
@@ -140,6 +158,7 @@ export function findPuzzleMount(
       depth,
       fullHeight,
       localObstacles,
+      near,
     );
     if (mount) return mount;
   }

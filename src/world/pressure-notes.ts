@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { ENCOUNTER_CONTENT_VERSION, RETURN_PASSAGES_VERSION } from '../combat/encounter-choice.ts';
+import { combatRoom } from '../combat/placement.ts';
 import { templateById } from '../content/rooms.ts';
 import { Stream } from '../core/rng.ts';
 import {
@@ -10,6 +11,7 @@ import {
 } from '../floor/table-decor.ts';
 import type { PressureNoteId } from '../rules/pressure.ts';
 import { pressureTarget } from '../rules/pressure.ts';
+import { validateLanding } from '../xr/locomotion.ts';
 import type { FloorWorld } from './floor-world.ts';
 
 export type { PressureNoteId } from '../rules/pressure.ts';
@@ -40,6 +42,17 @@ interface Candidate {
 
 const PAPER = 0.28;
 const MAX_PICK = 4;
+const DROP_HEIGHT = 0.012;
+const DROP_SECONDS = 1.05;
+
+interface NoteDrop {
+  note: PressureNotePlacement;
+  home: THREE.Vector3;
+  from: THREE.Vector3;
+  to: THREE.Vector3;
+  yaw: number;
+  elapsed: number;
+}
 
 function paper(): {
   group: THREE.Group;
@@ -171,6 +184,7 @@ const LINES = {
 export class PressureNotes {
   readonly placements: readonly PressureNotePlacement[];
   private readonly byId = new Map<PressureNoteId, PressureNotePlacement>();
+  private drop: NoteDrop | null = null;
   private readonly parts: { geometry: THREE.BufferGeometry[]; materials: THREE.Material[] }[] = [];
   private readonly wall = new THREE.Box3();
   private readonly crossing = new THREE.Vector3();
@@ -211,7 +225,8 @@ export class PressureNotes {
       candidates.push({
         room,
         source: 'drop',
-        local: new THREE.Vector3(body.position.x, 0.08, body.position.z),
+        local: new THREE.Vector3(body.position.x, DROP_HEIGHT, body.position.z),
+        socketId: body.userData.socketId as string,
       });
     }
     for (let room = 1; room <= lastRoom; room++) {
@@ -336,8 +351,58 @@ export class PressureNotes {
     };
   }
 
-  /** Keeps revealed chest letters turned toward the player's current seated/head-tracked eye. */
-  update(viewer: THREE.Object3D): void {
+  get dropAirborne(): boolean {
+    return this.drop !== null && this.drop.elapsed < DROP_SECONDS;
+  }
+
+  tossFrom(enemy: THREE.Object3D): void {
+    if (this.drop) return;
+    const room = enemy.userData.room as number;
+    const note = this.placements.find(
+      (p) => p.source === 'drop' && p.room === room && p.socketId === enemy.userData.socketId,
+    );
+    const parent = note?.object.parent;
+    if (!note || note.object.visible || !parent) return;
+    const home = note.object.position.clone();
+    const from = enemy.position.clone();
+    from.y += 0.32;
+    const yaw = enemy.rotation.y;
+    const side = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
+    const base = from.clone().setY(DROP_HEIGHT);
+    const forward = base.clone().add(new THREE.Vector3(side.z * 0.85, 0, -side.x * 0.85));
+    if (side.dot(home.clone().sub(base)) < 0) side.negate();
+    const { walkable } = combatRoom(this.world.rooms[room]);
+    const env = { walkable, colliders: this.world.colliders[room] };
+    const isClear = (position: THREE.Vector3): boolean => {
+      const worldPoint = parent.localToWorld(position.clone());
+      return validateLanding([worldPoint.x, worldPoint.z], env, PAPER / 2) === 'ok';
+    };
+    const to =
+      [1.55, -1.55, 0.9, -0.9, 0]
+        .map((distance) => forward.clone().addScaledVector(side, distance))
+        .find(isClear) ?? (isClear(base) ? base : home);
+    this.drop = { note, home, from, to, yaw, elapsed: 0 };
+    note.object.position.copy(from);
+    note.object.visible = true;
+  }
+
+  /** Advances an active drop and turns coffer letters toward the viewer. */
+  update(viewer: THREE.Object3D, dt = 0): void {
+    const drop = this.drop;
+    if (drop && drop.elapsed < DROP_SECONDS) {
+      drop.elapsed = Math.min(DROP_SECONDS, drop.elapsed + dt);
+      const t = drop.elapsed / DROP_SECONDS;
+      const { object, location } = drop.note;
+      object.position.lerpVectors(drop.from, drop.to, t);
+      object.position.y += 4 * 1.3 * t * (1 - t);
+      object.rotation.set(
+        1.25 * Math.sin(Math.PI * t),
+        drop.yaw + 0.55 * Math.sin(2 * Math.PI * t),
+        0.32 * Math.sin(2 * Math.PI * t),
+        'YXZ',
+      );
+      if (t === 1) object.getWorldPosition(location);
+    }
     viewer.getWorldPosition(this.eye);
     for (const placement of this.placements) {
       if (
@@ -360,15 +425,25 @@ export class PressureNotes {
     collected: readonly PressureNoteId[],
     cleared: (room: number) => boolean,
     opened: (room: number, socketId: string) => boolean,
+    activeRoom?: number,
   ): void {
     const got = new Set(collected);
     for (const placement of this.placements) {
       if (got.has(placement.id)) {
         placement.object.visible = false;
+        if (this.drop?.note === placement) this.drop = null;
         continue;
       }
-      if (placement.source === 'drop') placement.object.visible = cleared(placement.room);
-      else if (placement.source === 'chest')
+      if (placement.source === 'drop') {
+        const won = cleared(placement.room);
+        if (this.drop?.note === placement && !won && placement.room !== activeRoom) {
+          placement.object.position.copy(this.drop.home);
+          placement.object.rotation.set(0, 0, 0);
+          placement.object.getWorldPosition(placement.location);
+          this.drop = null;
+        }
+        placement.object.visible = won || this.drop?.note === placement;
+      } else if (placement.source === 'chest')
         placement.object.visible = opened(placement.room, placement.socketId ?? '');
       else placement.object.visible = true;
     }
@@ -386,6 +461,7 @@ export class PressureNotes {
       if (
         !p.object.visible ||
         p.room !== this.world.current ||
+        (this.drop?.note === p && this.drop.elapsed < DROP_SECONDS) ||
         (p.source !== 'chest' && origin.y < p.location.y - 0.05)
       )
         continue;
@@ -414,6 +490,7 @@ export class PressureNotes {
         (p) =>
           p.room === this.world.current &&
           p.object.visible &&
+          !(this.drop?.note === p && this.drop.elapsed < DROP_SECONDS) &&
           p.location.distanceTo(point) <= maxDistance,
       )
       .sort((a, b) => a.location.distanceToSquared(point) - b.location.distanceToSquared(point));

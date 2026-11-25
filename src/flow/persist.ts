@@ -63,7 +63,8 @@ export function bindFlowPersistence(
       event.type === 'spring-tension' ||
       event.type === 'dark-circuit' ||
       event.type === 'drum-gallery' ||
-      event.type === 'logbook'
+      event.type === 'logbook' ||
+      event.type === 'puzzle-discovered'
     ) {
       const snapshot = flow.snapshot(Date.now(), roomIndex());
       if (snapshot) enqueue(() => saveRunSnapshot(db, snapshot));

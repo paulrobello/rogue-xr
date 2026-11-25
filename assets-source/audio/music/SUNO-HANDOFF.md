@@ -1,6 +1,6 @@
 # Suno music handoff (P5-T8, decision D12)
 
-Status: **waiting on Paul, blocked until 2026-11-25**. Until then the game plays placeholder music from Stable Audio 3, generated locally from these prompts (`placeholder/`, see the [audio README](../README.md)). Put the Suno sources in this folder and rebuild without `--music-src` to replace it. On 2026-11-16 Paul said: "we are out of suno downloads, music will not be available until the 11/25". D12, in Paul's words: "generate all needed suno music prompts and settings in order they are needed". Music is owner-generated per `~/.claude/guides/suno.md`: an agent writes the prompts and prepares the files, and Paul generates and picks the recordings and spends the credits. Nothing here has been generated yet. The runtime (`src/audio/`) knows every cue below. A cue whose file is missing falls back to the cue that covered that moment before this list existed, or stays silent when there is none, and the game logs the missing music once. So the cues can arrive one at a time in any order.
+Status: **All eleven owner-selected Suno WAVs arrived on November 23, 2026.** The originals and embedded Suno song IDs are recorded in [generation-log.json](generation-log.json). The runtime candidate uses the mastered Opus cues. Paul approved all eleven mastered cues in Quest Browser on November 23, 2026. The [review record](../owner-review.json) identifies the exact Opus files. The Stable Audio 3 placeholders are retained under [placeholder/](placeholder/) for reproducibility. The planned prompts and settings below remain the reference for these cue roles.
 
 The same data is machine-readable in [`cues.json`](cues.json), which the build script and the audition page read. A test checks that its ids, loop flags and file paths match the runtime registry and that every Style prompt below is identical to the one in `cues.json`. Change both files together.
 
@@ -46,7 +46,7 @@ The first music a player hears. It introduces the tower's main motif, so it is t
 | Plays | Title screen before a run, and the settings screen reached from it |
 | Type and length | Loop. Loop body of about 60 s cut from the middle of a 2:00 take |
 | Tempo and key | 76 BPM, D dorian, 4/4. One bar is 3.158 s |
-| Runtime | Gain 1.0, 2.5 s crossfade in. Until `title.ogg` exists the runtime plays `explore` at 0.6 instead (today's behaviour). |
+| Runtime | Gain 1.0, 2.5 s crossfade in. Until `title.ogg` exists the runtime plays `explore` at 0.6 instead. |
 | Save the WAV as | `assets-source/audio/music/title.wav` |
 | Built to | `public/assets/audio/music/title.ogg` |
 | Pick the take that has | A clear, original, hummable motif inside the first 30 s that returns later; no drums entering; a steady level with no climax; a sustained final chord rather than a fade. |
@@ -163,7 +163,7 @@ The reward screen after a won regular or elite fight, while the player chooses a
 | Plays | Reward screen after a won regular or elite fight, while the player picks a card or skips |
 | Type and length | Loop. Loop body of about 45 s |
 | Tempo and key | 84 BPM, D major, 4/4. One bar is 2.857 s |
-| Runtime | Gain 0.8, 2.0 s crossfade, under the `reward-chime` stinger. Until `reward.ogg` exists the runtime plays `explore` at 0.5 (today's behaviour). |
+| Runtime | Gain 0.8, 2.0 s crossfade, under the `reward-chime` stinger. Until `reward.ogg` exists the runtime plays `explore` at 0.5. |
 | Save the WAV as | `assets-source/audio/music/reward.wav` |
 | Built to | `public/assets/audio/music/reward.ogg` |
 | Pick the take that has | Warm and lightly triumphant without a fanfare, so the chime stays the moment of reward; even phrases that loop cleanly. |
@@ -202,7 +202,7 @@ A safe-haven cue for rest rooms, the dead-end rooms holding a brass hearth that 
 | Plays | Standing in a rest room with a hearth while exploring; crossfades back to exploring on leaving |
 | Type and length | Loop. Loop body of about 60 s |
 | Tempo and key | 60 BPM, D major, 4/4. One bar is 4.000 s |
-| Runtime | Gain 1.0, 3.0 s crossfade. Until `rest.ogg` exists the runtime keeps `explore` at 1.0 (today's behaviour). |
+| Runtime | Gain 1.0, 3.0 s crossfade. Until `rest.ogg` exists the runtime keeps `explore` at 1.0. |
 | Save the WAV as | `assets-source/audio/music/rest.wav` |
 | Built to | `public/assets/audio/music/rest.ogg` |
 | Pick the take that has | The calmest cue in the set, with no percussion beyond a soft tick and no fire crackle or other sound effects baked in, because the hearth has its own SFX. |
@@ -241,7 +241,7 @@ The one elite fight per floor, against the Orrery Warden. It should feel like a 
 | Plays | The elite fight (the Orrery Warden in the deepest combat room of a wing), from the table unfolding until it folds away |
 | Type and length | Loop. Loop body of about 60 s |
 | Tempo and key | 116 BPM, D minor, 4/4. One bar is 2.069 s |
-| Runtime | Gain 1.0, 1.0 s crossfade while the table unfolds. Until `elite.ogg` exists the runtime plays `combat` (today's behaviour). |
+| Runtime | Gain 1.0, 1.0 s crossfade while the table unfolds. Until `elite.ogg` exists the runtime plays `combat`. |
 | Save the WAV as | `assets-source/audio/music/elite.wav` |
 | Built to | `public/assets/audio/music/elite.ogg` |
 | Pick the take that has | Clearly heavier than `combat`; the circling high arpeggios must not mask dice and card SFX; constant energy with no breakdown. |
@@ -280,7 +280,7 @@ The death screen after a lost fight, which shows the run summary until the playe
 | Plays | Death screen after a lost fight, until the player returns to the title |
 | Type and length | One-shot. One-shot of 40 to 60 s, played once and then silence |
 | Tempo and key | 66 BPM slowing at the end, D minor, 4/4. One bar is 3.636 s |
-| Runtime | One-shot (no loop), gain 1.0, fades in over 1.5 s under the `defeat-sting` stinger, then plays to its natural end. Silent until `defeat.ogg` exists (today's behaviour). |
+| Runtime | One-shot (no loop), gain 1.0, fades in over 1.5 s under the `defeat-sting` stinger, then plays to its natural end. Silent until `defeat.ogg` exists. |
 | Save the WAV as | `assets-source/audio/music/defeat.wav` |
 | Built to | `public/assets/audio/music/defeat.ogg` |
 | Pick the take that has | Sad but gentle, never horror; a soft first two seconds so the stinger lands on top; a real ending on a ringing chord, not a fade or an abrupt cut. |
@@ -319,7 +319,7 @@ The workshop hub between runs, where banked cogs buy permanent upgrades. Upgrade
 | Plays | Workshop hub reached from the title between runs, where banked cogs buy permanent upgrades |
 | Type and length | Loop. Loop body of about 60 s |
 | Tempo and key | 88 BPM, G major, 4/4. One bar is 2.727 s |
-| Runtime | Gain 1.0, 2.0 s crossfade. Until `workshop.ogg` exists the runtime plays `explore` at 0.5 (today's behaviour). |
+| Runtime | Gain 1.0, 2.0 s crossfade. Until `workshop.ogg` exists the runtime plays `explore` at 0.5. |
 | Save the WAV as | `assets-source/audio/music/workshop.wav` |
 | Built to | `public/assets/audio/music/workshop.ogg` |
 | Pick the take that has | Busy and hopeful, a little playful but not childish; no big build; the tool-like ticking stays soft. |
@@ -358,7 +358,7 @@ The floor guardian, the Grand Escapement, a giant clock automaton. Phase 1 runs 
 | Plays | The floor guardian fight (the Grand Escapement), from the table unfolding until its case opens at half hit points |
 | Type and length | Loop. Loop body of about 60 s |
 | Tempo and key | 96 BPM, D minor, 4/4. One bar is 2.500 s |
-| Runtime | Gain 1.0, 1.0 s crossfade while the table unfolds. Until `guardian-1.ogg` exists the runtime plays `combat` (today's behaviour). |
+| Runtime | Gain 1.0, 1.0 s crossfade while the table unfolds. Until `guardian-1.ogg` exists the runtime plays `combat`. |
 | Save the WAV as | `assets-source/audio/music/guardian-1.wav` |
 | Built to | `public/assets/audio/music/guardian-1.ogg` |
 | Pick the take that has | A steady pendulum tick on the beat that loops cleanly; restrained compared with phase 2; a four-bar bell pattern, so put the loop points on a multiple of four bars (10 s). |
@@ -436,7 +436,7 @@ The victory screen after the guardian falls, showing the run summary until the p
 | Plays | Victory screen after the guardian falls, until the player returns to the title |
 | Type and length | One-shot. One-shot of 45 to 75 s, played once and then silence |
 | Tempo and key | 92 BPM, D major, 4/4. One bar is 2.609 s |
-| Runtime | One-shot (no loop), gain 1.0, fades in over 2.0 s under the `victory-sting` stinger, then plays to its natural end. Silent until `victory.ogg` exists (today's behaviour). |
+| Runtime | One-shot (no loop), gain 1.0, fades in over 2.0 s under the `victory-sting` stinger, then plays to its natural end. Silent until `victory.ogg` exists. |
 | Save the WAV as | `assets-source/audio/music/victory.wav` |
 | Built to | `public/assets/audio/music/victory.ogg` |
 | Pick the take that has | A soft opening for the stinger, an original fanfare melody rather than a recognisable tune, a calm coda, and a real ending that rings out. |
@@ -482,7 +482,7 @@ You can hand back cues one at a time. Each one replaces its fallback the next ti
 1. Decode to 48 kHz stereo float. The source is never modified.
 2. **Loop cues.** Start the loop at `loop_start_s` from `assets-source/audio/music/loops.json`, or at the first sample above -50 dBFS. End it at `loop_end_s`, or `crossfade_s` before the end of the file. Blend the material after the loop end under the first `crossfade_s` seconds (default 2.0, equal power), so the last sample runs straight into the first and the loop restarts on the retained start position.
 3. **One-shots.** Cut to `start_s` and `end_s` when set, trim silence more than 50 dB under the peak from both ends, and apply a 2 ms fade in and a `fade_out_s` (default 0.25 s) raised-cosine fade out.
-4. One linear gain to -18 LUFS integrated, limited by a -1.0 dBTP ceiling, then Ogg Opus 128 kbps stereo at 48 kHz, written to `public/assets/audio/music/<id>.ogg`.
+4. Set `side_gain` below 1 only for cues that lose too much level when folded to mono. Apply one linear gain to -18 LUFS integrated, limited by a -1.0 dBTP ceiling, then encode Ogg Opus 128 kbps stereo at 48 kHz to `public/assets/audio/music/<id>.ogg`.
 5. Measure the decoded Opus file: LUFS and true peak for every cue, plus the wrap step, the head-to-tail level and interior dropouts for loops. Results land in `public/assets/audio/report.json` and `assets-source/audio/provenance.json`.
 
 Optional `loops.json` shape (bar-aligned examples, to be replaced by points picked from the real takes):
@@ -496,4 +496,4 @@ Optional `loops.json` shape (bar-aligned examples, to be replaced by points pick
 }
 ```
 
-Then audition each loop for several repeats, and each one-shot under its stinger, on the Quest speakers before approving. Source selection, technical preparation, creative acceptance and release rights are separate facts. None of them is recorded as approved here.
+Then audition each loop for several repeats, and each one-shot under its stinger, on the Quest speakers before approving. The owner selected and supplied the source takes. The owner approved the mastered cues on Quest. The [review record](../owner-review.json) contains the cue-level evidence.

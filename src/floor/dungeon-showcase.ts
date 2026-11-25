@@ -1,0 +1,4 @@
+export const DUNGEON_SHOWCASE_SEED = 'DNGS80EC';
+export const DUNGEON_SHOWCASE_UPPER_SEED = 'C3323BCD';
+export const DUNGEON_SHOWCASE_STONE_HALLS: readonly number[] = [3, 4];
+export const DUNGEON_SHOWCASE_NICHE_ROOM = 3;

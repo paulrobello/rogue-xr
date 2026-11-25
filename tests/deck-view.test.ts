@@ -35,22 +35,22 @@ const faces = (ui: FlowUi): THREE.Object3D | undefined =>
   ui.root.getObjectByName('deck-card-faces');
 
 describe('deck viewer in the in-run menu (playtest card E)', () => {
-  it('shows all ten starter cards in four slots, with a count and offset backs only for repeats', () => {
+  it('shows all ten starter cards in five slots, with a count and offset backs only for repeats', () => {
     const { flow, ui, head } = rig();
     flow.newRun(SEED);
     ui.sync(head);
     ui.openMenu(head);
     expect(ui.activate('menu-deck')).toBe(true);
-    expect(ui.deckCards).toEqual(['strike', 'defend', 'cog-toss', 'warding-glyph']);
+    expect(ui.deckCards).toEqual(['strike', 'defend', 'patch-kit', 'cog-toss', 'warding-glyph']);
     expect(faces(ui)?.getObjectByName('deck-stack-count-strike')?.userData.labelText).toBe('×4');
-    expect(faces(ui)?.getObjectByName('deck-stack-count-defend')?.userData.labelText).toBe('×4');
+    expect(faces(ui)?.getObjectByName('deck-stack-count-defend')?.userData.labelText).toBe('×3');
     expect(faces(ui)?.getObjectByName('deck-stack-count-cog-toss')).toBeUndefined();
     const backs = faces(ui)?.getObjectByName('deck-stack-backs') as THREE.InstancedMesh;
     expect(backs.count).toBe(4);
     const bodies = faces(ui)?.getObjectByName('reward-card-bodies') as THREE.InstancedMesh;
-    expect(bodies.count).toBe(4);
+    expect(bodies.count).toBe(5);
     expect(ui.root.getObjectByName('menu-deck-count')?.userData.labelText).toBe(
-      '10 cards · 4 distinct · page 1 of 1',
+      '10 cards · 5 distinct · page 1 of 1',
     );
     expect(ui.controlIds()).not.toContain('menu-deck-nav-next');
     expect(ui.activate('menu-deck-nav-back')).toBe(true);

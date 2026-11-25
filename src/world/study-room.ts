@@ -284,8 +284,16 @@ function repairHallNicheIrradiance(scene: THREE.Object3D, material: THREE.MeshSt
   scene.updateMatrixWorld(true);
   const ray = new THREE.Raycaster();
   const number = (value: number) => value.toFixed(6);
+  // The removed enclosure occluded the adjacent torchere beyond the physical niche bounds.
+  const sampleLow = 1.24;
+  const sampleHigh = 3.48;
   const patches = HALL_CANDLE_NICHES.flatMap(([x, z]) => {
     const northSouth = Math.abs(z) === 5;
+    // The north niche is between the central doorway and stained glass. Wider rays hit
+    // their openings instead of a continuous wallpaper island, dropping the patch.
+    const betweenOpenings = northSouth && z < 0;
+    const sampleSpan = betweenOpenings ? 0.76 : 1.14;
+    const fullBlend = betweenOpenings ? 0.57 : 0.73;
     const inward = new THREE.Vector3(
       northSouth ? 0 : -Math.sign(x),
       0,
@@ -299,10 +307,10 @@ function repairHallNicheIrradiance(scene: THREE.Object3D, material: THREE.MeshSt
       return ray.intersectObjects(wallpaper, false)[0]?.uv1;
     };
     const corners = [
-      sample(-0.66, 1.32),
-      sample(-0.66, 2.6),
-      sample(0.66, 1.32),
-      sample(0.66, 2.6),
+      sample(-sampleSpan, sampleLow),
+      sample(-sampleSpan, sampleHigh),
+      sample(sampleSpan, sampleLow),
+      sample(sampleSpan, sampleHigh),
     ];
     if (!corners.every((uv) => uv !== undefined)) return [];
     const [leftLow, leftHigh, rightLow, rightHigh] = corners.map(
@@ -315,14 +323,14 @@ function repairHallNicheIrradiance(scene: THREE.Object3D, material: THREE.MeshSt
       float along = vNichePosition.${horizontal} - (${number(along)});
       float edge = abs(vNichePosition.${depth} - (${number(fixed)}));
       float y = vNichePosition.y;
-      float blend = (1.0 - smoothstep(0.39, 0.53, abs(along)))
-        * smoothstep(1.32, 1.43, y) * (1.0 - smoothstep(2.45, 2.6, y));
+      float blend = (1.0 - smoothstep(${number(fullBlend)}, ${number(sampleSpan)}, abs(along)))
+        * smoothstep(${number(sampleLow)}, 1.44, y) * (1.0 - smoothstep(3.12, ${number(sampleHigh)}, y));
       blend *= 1.0 - smoothstep(0.0, 0.06, edge);
       if (blend > 0.0) {
-        float height = clamp((y - 1.32) / 1.28, 0.0, 1.0);
+        float height = clamp((y - ${number(sampleLow)}) / ${number(sampleHigh - sampleLow)}, 0.0, 1.0);
         vec3 leftLight = texture2D(lightMap, mix(${leftLow}, ${leftHigh}, height)).rgb;
         vec3 rightLight = texture2D(lightMap, mix(${rightLow}, ${rightHigh}, height)).rgb;
-        vec3 wallLight = mix(leftLight, rightLight, clamp((along + 0.66) / 1.32, 0.0, 1.0));
+        vec3 wallLight = mix(leftLight, rightLight, clamp((along + ${number(sampleSpan)}) / ${number(sampleSpan * 2)}, 0.0, 1.0));
         lightMapIrradiance = mix(lightMapIrradiance, wallLight * lightMapIntensity, blend);
       }
     }`,

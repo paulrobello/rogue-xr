@@ -16,13 +16,12 @@ export function nearSet(plan: FloorPlan, current: number): Set<number> {
 }
 
 /**
- * Rooms outside `nearSet` that the player can see down a corridor. A corridor's two doors face
- * each other on one straight axis, and corridors join door to door, so a chain of corridors is a
- * single sight-line: from the current room, each corridor neighbour shows the room beyond it, and
- * so on while that room is itself a corridor. Rooms seen only this way are drawn with their
- * contents but take no gameplay (colliders, landings) and run their actors at a reduced rate.
+ * Rooms outside `nearSet` that may be seen through corridor-role rooms. Each step adds the rooms
+ * beyond the corridor neighbours, then follows any corridors among those rooms. One shell step
+ * reaches two doors from the current room. Shell rooms have no gameplay colliders or landings,
+ * and run their actors at a reduced rate.
  */
-export function shellSet(plan: FloorPlan, current: number): Set<number> {
+export function shellSet(plan: FloorPlan, current: number, maxShellDepth = Infinity): Set<number> {
   const near = nearSet(plan, current);
   const shell = new Set<number>();
   const seen = new Set([current]);
@@ -31,7 +30,7 @@ export function shellSet(plan: FloorPlan, current: number): Set<number> {
     seen.add(n);
     return through(n);
   });
-  while (frontier.length > 0) {
+  for (let depth = 0; depth < maxShellDepth && frontier.length > 0; depth++) {
     const next: number[] = [];
     for (const corridor of frontier) {
       for (const beyond of neighbours(plan, corridor)) {
@@ -47,6 +46,6 @@ export function shellSet(plan: FloorPlan, current: number): Set<number> {
 }
 
 /** Every room drawn from `current`: the near set at full detail plus the corridor-seen shells. */
-export function visibleSet(plan: FloorPlan, current: number): Set<number> {
-  return new Set([...nearSet(plan, current), ...shellSet(plan, current)]);
+export function visibleSet(plan: FloorPlan, current: number, maxShellDepth?: number): Set<number> {
+  return new Set([...nearSet(plan, current), ...shellSet(plan, current, maxShellDepth)]);
 }

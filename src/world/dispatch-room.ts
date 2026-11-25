@@ -17,11 +17,17 @@ const CLOSED_Y = DOOR_HEIGHT / 2;
 const OPEN_Y = -DOOR_HEIGHT / 2 - 0.05;
 const ROUTE_X = [-0.34, 0, 0.34] as const;
 const TRAVEL_SECONDS = 0.65;
-const SENDER_REST = 0.34;
+// The authored carrier is 0.202 m long along the tube after its X rotation and 0.72 scale.
+// Keep its front edge just inside the intake lip while it is at rest.
+const SENDER_REST = 0.018;
 const SENDER_BULKHEAD = -0.52;
 const RECEIVER_BULKHEAD = -0.42;
-const RECEIVER_REST = 0.31;
+const RECEIVER_REST = 0.018;
 const STATION_STANDOFF = 0.32;
+const TROUGH_HEIGHT = 1.05;
+const TROUGH_RADIUS = 0.12;
+const CAPSULE_SCALE = 0.72;
+const CAPSULE_HEIGHT = TROUGH_HEIGHT - TROUGH_RADIUS + 0.076 * CAPSULE_SCALE;
 
 export class DispatchRoom {
   readonly object = new THREE.Group();
@@ -211,18 +217,19 @@ export class DispatchRoom {
     this.controls.push({ node: this.sendButton, action: 'send' });
     for (const x of [-0.17, 0.21])
       this.block(this.object, [0.07, 0.12, 0.25], [x, 0.93, 0.18], this.iron);
+    this.travelCapsule.name = 'dispatch-travel-capsule';
     this.travelCapsule.add(capsule.clone(true));
-    this.travelCapsule.position.set(0.02, 1.05, SENDER_REST);
+    this.travelCapsule.position.set(0.02, CAPSULE_HEIGHT, SENDER_REST);
     this.travelCapsule.rotation.x = Math.PI / 2;
-    this.travelCapsule.scale.setScalar(0.72);
+    this.travelCapsule.scale.setScalar(CAPSULE_SCALE);
     this.object.add(this.travelCapsule);
     this.fitCarrierTube(this.object, 'dispatch-intake', 0.02, 0.22);
   }
 
   private fitCarrierTube(parent: THREE.Group, name: string, x: number, front: number): void {
     const back = -STATION_STANDOFF + 0.012;
-    const y = 1.05;
-    const radius = 0.12;
+    const y = TROUGH_HEIGHT;
+    const radius = TROUGH_RADIUS;
     const trough = new THREE.CylinderGeometry(
       radius,
       radius,
@@ -272,7 +279,7 @@ export class DispatchRoom {
     }
     this.resources.push(collarGeometry);
     for (const z of [back + 0.12, front - 0.09])
-      this.block(parent, [0.31, 0.034, 0.053], [x, y - radius - 0.012, z], this.iron);
+      this.block(parent, [0.31, 0.034, 0.053], [x, y - radius - 0.018, z], this.iron);
   }
 
   private buildReturn(capsule: THREE.Object3D, route: number): void {
@@ -301,12 +308,12 @@ export class DispatchRoom {
     );
     this.replyCapsule.name = 'dispatch-capsule';
     this.replyCapsule.add(capsule.clone(true));
-    this.replyCapsule.position.set(0, 1.05, RECEIVER_REST);
+    this.replyCapsule.position.set(0, CAPSULE_HEIGHT, RECEIVER_REST);
     this.replyCapsule.rotation.x = Math.PI / 2;
-    this.replyCapsule.scale.setScalar(0.72);
+    this.replyCapsule.scale.setScalar(CAPSULE_SCALE);
     this.replyCapsule.visible = false;
     this.reply.add(this.replyCapsule);
-    this.fitCarrierTube(this.reply, 'dispatch-delivery', 0, 0.38);
+    this.fitCarrierTube(this.reply, 'dispatch-delivery', 0, 0.22);
     this.controls.push({ node: this.replyCapsule, action: 'open' });
   }
 

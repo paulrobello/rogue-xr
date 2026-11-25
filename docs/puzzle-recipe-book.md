@@ -4,7 +4,7 @@ Build an encounter by choosing a clue, a place to find it, something to manipula
 
 ## Pressure Works
 
-On Floor 1, a loose maintenance dispatch directs the player toward one of the missing service slips. Three slips in different rooms record one reading apiece for circuits A, B, and C. A slip can lie on furniture or the floor, turn up inside a coffer, or drop after a fight. Picking it up opens it for reading and files it in the run’s **Items** page. An opened chest or cleared room keeps its uncollected slip available on return.
+On Floor 1, a loose maintenance dispatch directs the player toward one of the missing service slips. Three slips in different rooms record one reading apiece for circuits A, B, and C. A slip can lie on furniture or the floor, turn up inside a coffer, or fly out of the automaton carrying it as it breaks apart. A dropped slip settles on the floor before it can be picked up. Picking it up opens it for reading and files it in the run’s **Items** page. An opened chest or cleared room keeps its uncollected slip available on return.
 
 Set the three valves, then operate the primer. The machinery stirs, vents steam, and releases the catch on the maker’s mark. A scratched hint points to the mark. Pull it to open the built-in drawer, then take the cogs. This separates solving, discovering the compartment, and claiming the reward. The gallery no longer prints the combination.
 
@@ -16,7 +16,7 @@ In the Upper Works, strike the low, middle and high bells in the same order. Eac
 
 ## The key in the light
 
-In the Lower Works, look for a faint key shape within the colored light of a stained-glass window. Follow its shaft past the edge of the light and look for a thin seam around a floor tile. Select the tile to open the cache and collect 12 run cogs. The tile remains open after Continue. The seed chooses the site from exposed, accessible window bays.
+In the Lower Works, look for a faint key shape within the colored light of a stained-glass window. Follow its shaft past the edge of the light and look for a thin seam around a floor tile. Select the tile to open the compartment, then select the cogs inside to collect 12 run cogs. An open cache stays open after Continue, with any unclaimed cogs still inside. The seed chooses the site from exposed, accessible window bays.
 
 ## Prism Signal
 
@@ -32,7 +32,7 @@ When the slip’s route is selected, collect the brass reply at the return hatch
 
 ## Speaking Pipes
 
-Sound the wall-mounted transmitter in the Upper Works, then follow the tone to the Pipe Receiver in a different reachable room. It plays the seeded low, middle, or high note and raises a marker above the matching handle. The triangle, square, and round handles sit directly below their marks. Replay repeats the same note and moves the same marker.
+Press Send on the wall-mounted transmitter in the Upper Works and listen for its clack and pipe sound. Find the Pipe Receiver in a different reachable room. It plays the seeded low, middle, or high note and raises a marker above the matching handle. The triangle, square, and round handles sit directly below their marks. Replay repeats the same note and moves the same marker.
 
 A wrong handle flashes its indicator and leaves the clue in place. The matching handle releases the cast-iron grille by the transmitter. The labeled service cistern behind it makes the reward path explicit without revealing the answer: its basin and copper supply pipes sit behind the grille, with a shelf and treasure coffer beyond. Continue restores the primed receiver or opened grille and keeps any collected treasure.
 
@@ -44,15 +44,15 @@ A matching trace releases the brass bolt, lowers the stone leaf into the thresho
 
 ## Valvehouse
 
-The Lower Works Valvehouse is an optional maintenance room. The leaking joint hisses and blows visible steam. A pressure test before repair vents and leaves the gate shut. Recover the matching gasket from a rack in another accessible room. Carry it in **Items** and select the leaking joint to fit it. Then pull the separate test lever. The gauge rises and the gate lifts with a rush of steam and a clank at the top.
+The Lower Works Valvehouse is an optional maintenance room. The leaking joint hisses and blows visible steam. A pressure test before repair vents and leaves the gate shut. Recover the matching gasket from a rack in another accessible room. Carry it in **Items** and select the leaking joint to fit it. Then pull the separate test lever. The gauge rises and the gate descends into the floor with a rush of steam and a clank at the end.
 
 The optional branch uses interchangeable stone bays and separate pipework, shelf, dishes, plants and torch. The gasket, repair, passage and treasure persist across floor travel and Continue. In the `MAPTEST2` showcase, the gasket is in Lower Works room 11 and the controls are in room 5.
 
 ## Pendulum Rendezvous
 
-A reference pendulum and an adjustable pendulum sit beside the gate to an optional Conservatory gallery. Turn the adjustment dial to change the second pendulum’s length. Pull the release lever to start both from the same position. If the centre crossings drift apart, change the setting and try again. Once their periods match, use the adjustment dial to set the phase latch. Pull the release lever again to open the bronze doors.
+A reference pendulum and an adjustable pendulum sit beside the gate to an optional Conservatory gallery. Choose a bob for the adjustable pendulum from the three weights at the station. Use the reference bob as the clue. Turn the adjustment dial to change the second pendulum’s length. Pull the release lever to test the weight and compare the centre crossings. Once their periods match, use the adjustment dial to set the phase latch. Pull the release lever again to open the bronze doors.
 
-The skylit gallery reuses the stone bays and separate furnishings. The selected setting, opened passage and collected treasure survive Continue.
+The skylit gallery reuses the stone bays and separate furnishings. The selected weight and length, opened passage and collected treasure survive Continue.
 
 ## Ingredients for future puzzles
 
@@ -104,7 +104,7 @@ These are design ingredients. The component kits supply physical starting pieces
 | 13 | Mirror-type press | Turn a plate face-down in a press and stamp a scrap of paper. A previously reversed message becomes a readable inventory note. |
 | 14 | Drum Gallery (playable) | Find the service score in another room. Fit a pin for each of the four beats, then wind the cylinder to test the sequence. |
 | 15 | Key behind the grille | Move a magnet across the outside of a grille to drag a loose key around steel obstructions to a retrieval slot. |
-| 16 | Dark circuit (playable) | Seat two brass bridges so the marked lamps glow and the third stays dark. |
+| 16 | Dark circuit (playable) | Complete three lamp patterns in order. Each uses two brass bridges, and shared lamp marks cancel. |
 | 17 | Wax rubbing | Lay paper over a worn relief plate and rub it. The new inventory item preserves a crest too shallow to read in room light. |
 | 18 | Model and building | Move a tiny gate on a tabletop model of the Spire. A matching full-sized gate moves one room away, visible through a sightline. |
 | 19 | Wrong-floor delivery | Load a dumbwaiter, select the landing, then follow a different passage to meet it. A marked cargo seal identifies the correct basket. |
@@ -115,15 +115,15 @@ These are design ingredients. The component kits supply physical starting pieces
 
 ## Spring Tension Workshop
 
-In eligible Upper Works layouts, an open stone workshop leads to a barred reward recess. Select or grip the brass winding key one mark at a time. The two heavy marks and the arc between them show the safe interval. When the needle settles inside that interval, pull the clutch to raise the portcullis. Too little tension lifts it partway before it drops. Too much tension unwinds the spring to zero. The reset button also unwinds it.
+In eligible Upper Works layouts, an open stone workshop leads to a barred reward recess. Select or grip the brass winding key one mark at a time. Wind above the engraved band, then wait for the needle to fall. Pull the clutch while the falling needle is between the two heavy marks. A catch sound and the **Catch set** marker confirm the release while the portcullis lowers. A late pull lowers the grille partway before it closes again. Pulling too early unwinds the spring to zero. Reset also unwinds it.
 
 The assembled stone room holds a separate stone cabinet, gauge, winding assembly, clutch, portcullis, shelves, and torches. Continue restores tension, gate position, and the claimed reward. Find the workshop off Upper Works room 4 on `SPIRE002`.
 
 ## Dark Circuit
 
-The Upper Works switchboard uses two brass bridges and four sockets. The engraved marks above each socket show which lamps it powers. Select or grip a socket to seat a bridge, and select it again to lift the bridge. The plate names the two lamps to light and the one to leave dark.
+The Upper Works switchboard has three ordered lines, each with a target pair of lit lamps. Seat two bridges in sockets whose engraved marks combine to match the active line. A lamp lights when only one of the two selected sockets bears its mark. Select a seated bridge again to lift it before making the pair.
 
-The matching pair releases the toothed grille with a relay clack and the sound of the rack lifting. The grille blocks passage until the leaf clears the doorway. The stone room uses independent switchboard, gate, shelf, dishes, plant and torch modules. Continue restores the bridges, grille and claimed treasure. Seed `C1RC0000` reaches the switchboard in Upper Works room 17.
+Each correct pair powers a line. An incorrect pair clears the current attempt and leaves completed lines powered. The third correct pair releases the grille with a relay clack and the sound of the rack lifting. Continue restores powered lines, the current bridge, and the claimed treasure. Seed `C1RC0000` reaches the switchboard in Upper Works room 17.
 
 ## Drum Gallery
 

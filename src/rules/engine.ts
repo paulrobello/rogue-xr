@@ -116,6 +116,11 @@ export function usesDice(effects: readonly Effect[]): boolean {
   });
 }
 
+export function cardEffectsForRoll(card: CardDef, dice: number | null): readonly Effect[] {
+  const risk = card.rollRisk;
+  return risk && dice !== null && dice < risk.minimum ? [risk.miss] : card.effects;
+}
+
 export function cardSteamCost(cost: CardCost, availableSteam: number): number {
   return cost === 'X' ? Math.max(0, availableSteam) : cost;
 }
@@ -205,6 +210,18 @@ function validateCard(def: CardDef): string | null {
   if (def.echoSigil && (def.target !== 'none' || def.effects.length > 0 || def.mechanism))
     return `Echo card ${def.id} must use only its remembered spell`;
   const mechanism = def.mechanism;
+  if (def.rollRisk) {
+    const { minimum, miss } = def.rollRisk;
+    if (
+      def.echoSigil ||
+      mechanism ||
+      !Number.isInteger(minimum) ||
+      minimum < 2 ||
+      !Number.isInteger(miss.stacks) ||
+      miss.stacks < 1
+    )
+      return `Card ${def.id} has an invalid roll risk`;
+  }
   if (mechanism) {
     if (def.target !== 'none' || def.effects.length > 0)
       return `Mechanism ${def.id} must install without an immediate effect or target`;
@@ -333,7 +350,7 @@ function validatePlay(state: CombatState, action: PlayCard): string | null {
   if (action.dice !== undefined && (!Number.isInteger(action.dice) || action.dice < 0)) {
     return 'Dice result must be a non-negative integer';
   }
-  if (action.dice === undefined && usesDice(def.effects))
+  if (action.dice === undefined && (def.rollRisk || usesDice(def.effects)))
     return `Card ${def.id} needs a dice result`;
   return null;
 }
@@ -749,8 +766,8 @@ function playCard(w: Work, action: PlayCard): void {
   const [card] = w.hand.splice(index, 1) as [CombatCard];
   const { def } = card;
   const echo = def.echoSigil ? w.lastSuccessfulSigil : undefined;
-  const effects = echo?.effects ?? def.effects;
   const dice = (echo ? echo.dice : action.dice) ?? null;
+  const effects = echo?.effects ?? cardEffectsForRoll(def, dice);
   const target = action.target ?? null;
   const steamSpent = cardSteamCost(def.cost, w.player.steam);
   if (steamSpent > 0) setSteam(w, w.player.steam - steamSpent);

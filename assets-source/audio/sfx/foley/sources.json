@@ -1,0 +1,74 @@
+{
+  "fire": {
+    "file": "fire-707262.mp3",
+    "sha256": "6d9cb4c76483081395ce76829e70bf31f1bb7ad0af27ac4a7658083090641def",
+    "author": "Sadiquecat",
+    "license": "CC0-1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "recordingUrl": "https://freesound.org/people/Sadiquecat/sounds/707262/",
+    "previewUrl": "https://cdn.freesound.org/previews/707/707262_5287430-hq.mp3"
+  },
+  "chain": {
+    "file": "chain-167916.mp3",
+    "sha256": "9694f199e7b7c536512a64cb9b173bbdbc5d0322b8af7d5ce9746ed109c18528",
+    "author": "ani_music",
+    "license": "CC0-1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "recordingUrl": "https://freesound.org/people/ani_music/sounds/167916/",
+    "previewUrl": "https://cdn.freesound.org/previews/167/167916_3008343-hq.mp3"
+  },
+  "stone": {
+    "file": "stone-321488.mp3",
+    "sha256": "61d82d364bf2c88fc9c6a04b24f187c5f59a597942986f61c4951a6c2d9407a7",
+    "author": "dslrguide",
+    "license": "CC0-1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "recordingUrl": "https://freesound.org/people/dslrguide/sounds/321488/",
+    "previewUrl": "https://cdn.freesound.org/previews/321/321488_5485024-hq.mp3"
+  },
+  "ratchet": {
+    "file": "ratchet-530074.mp3",
+    "sha256": "22f433207bb6371a7da163df6c2642d78502b029a64a9150fa04d20def811e8e",
+    "author": "magnuswaker",
+    "license": "CC0-1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "recordingUrl": "https://freesound.org/people/magnuswaker/sounds/530074/",
+    "previewUrl": "https://cdn.freesound.org/previews/530/530074_11537497-hq.mp3"
+  },
+  "ceramic": {
+    "file": "ceramic-745291.mp3",
+    "sha256": "326fb0f3b1cb9db48d3db9c6b6a0b5adbd93f6a0143c262b90f83f223b3a0b65",
+    "author": "SamsterBirdies",
+    "license": "CC0-1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "recordingUrl": "https://freesound.org/people/SamsterBirdies/sounds/745291/",
+    "previewUrl": "https://cdn.freesound.org/previews/745/745291_5487341-hq.mp3"
+  },
+  "rail": {
+    "file": "rail-617603.mp3",
+    "sha256": "19abac27e0c28928204c6731e22f99baec36fce0ac6d58ccbe1df442fd81c8c2",
+    "author": "sweet_niche",
+    "license": "CC0-1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "recordingUrl": "https://freesound.org/people/sweet_niche/sounds/617603/",
+    "previewUrl": "https://cdn.freesound.org/previews/617/617603_5332155-hq.mp3"
+  },
+  "armor": {
+    "file": "armor-467120.mp3",
+    "sha256": "a4660d31f7c5eaacce73540549b9fad61c133f5c1b9d700a7c178117160f2045",
+    "author": "CalGre",
+    "license": "CC0-1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "recordingUrl": "https://freesound.org/people/CalGre/sounds/467120/",
+    "previewUrl": "https://cdn.freesound.org/previews/467/467120_8323375-hq.mp3"
+  },
+  "plate": {
+    "file": "plate-321481.mp3",
+    "sha256": "b07ee6df5f5f11dca6ace41ae98e0d020cbc736599a397485954ae6e54a7c15c",
+    "author": "dslrguide",
+    "license": "CC0-1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "recordingUrl": "https://freesound.org/people/dslrguide/sounds/321481/",
+    "previewUrl": "https://cdn.freesound.org/previews/321/321481_5485024-hq.mp3"
+  }
+}

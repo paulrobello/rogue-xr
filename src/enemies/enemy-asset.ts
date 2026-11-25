@@ -25,6 +25,8 @@ export const SHIPPED_ENEMY_MODELS = [
   'glasswing-scrivener',
   'furnace-mite',
   'null-crown-auditor',
+  'mortar-scarab',
+  'lantern-bailiff',
 ] as const satisfies readonly EnemyKind[];
 export const ENEMY_CLIPS = ['idle', 'attack', 'hit', 'death', 'frozen'] as const;
 export type EnemyClip = (typeof ENEMY_CLIPS)[number];

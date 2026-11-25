@@ -3,7 +3,11 @@ import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { expect, it } from 'vitest';
 import { RunFlow } from '../src/flow/flow.ts';
-import { pendulumTarget, pendulumTrialSeconds } from '../src/rules/pendulum-gallery.ts';
+import {
+  pendulumTarget,
+  pendulumTrialSeconds,
+  pendulumWeightTarget,
+} from '../src/rules/pendulum-gallery.ts';
 import { floorSeedFor } from '../src/rules/run.ts';
 import { createWorkshop } from '../src/rules/workshop.ts';
 import { mountFloorView } from '../src/world/floor-view.ts';
@@ -90,6 +94,9 @@ it.each([false, true])(
     expect(gallery.reference.children.some((n) => n.name === 'bob')).toBe(authored);
 
     floor.world.current = spec.source.room;
+    const weight = pendulumWeightTarget(seed);
+    game.setPendulumWeight(((weight + 1) % 3) as 0 | 1 | 2);
+    gallery.sync(game.pendulumGallery);
     const position = gallery.station.localToWorld(new THREE.Vector3(0, 1.37, 1.38));
     for (const [name, action] of [
       ['pendulum-adjustment', 'adjust'],
@@ -122,30 +129,31 @@ it.each([false, true])(
     gallery.update(0.44, false);
     expect(gallery.reference.rotation.z).not.toBeCloseTo(gallery.adjustable.rotation.z);
     gallery.update(4, false);
-    expect(results).toEqual(['wrong']);
+    expect(results).toEqual(['wrong-weight']);
     expect(game.pendulumGallery.open).toBe(false);
-    expect(gallery.station.getObjectByName('pendulum-caption-wrong')?.visible).toBe(true);
+    expect(gallery.station.getObjectByName('pendulum-caption-wrong-weight')?.visible).toBe(true);
 
     // Leaving the station during a pending trial cancels it without solving.
     expect(gallery.start()).toBe(true);
     floor.world.current = (spec.source.room + 1) % floor.world.rooms.length;
     gallery.update(4, false);
-    expect(results).toEqual(['wrong']);
+    expect(results).toEqual(['wrong-weight']);
     floor.world.current = spec.source.room;
+    game.setPendulumWeight(weight);
     while (game.pendulumGallery.detent !== target) expect(game.advancePendulumDetent()).toBe(true);
     gallery.sync(game.pendulumGallery);
     expect(gallery.start()).toBe(true);
     const finish = pendulumTrialSeconds(target, target);
     gallery.update(finish - 0.01, false);
-    expect(results).toEqual(['wrong']);
+    expect(results).toEqual(['wrong-weight']);
     gallery.update(0.02, false);
-    expect(results).toEqual(['wrong', 'matched']);
+    expect(results).toEqual(['wrong-weight', 'matched']);
     expect(game.advancePendulumDetent()).toBe(true);
     gallery.sync(game.pendulumGallery);
     expect(gallery.start()).toBe(true);
     gallery.update(finish - 0.01, false);
     gallery.update(0.02, false);
-    expect(results).toEqual(['wrong', 'matched', 'opened']);
+    expect(results).toEqual(['wrong-weight', 'matched', 'opened']);
     expect(gallery.reference.rotation.z).toBeCloseTo(0);
     expect(gallery.adjustable.rotation.z).toBeCloseTo(0);
     const left = gallery.gate.getObjectByName('pendulum-leaf-left');

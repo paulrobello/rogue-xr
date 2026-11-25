@@ -21,8 +21,8 @@ export interface CardUpgrade {
 }
 
 /**
- * A slice card. `dice` names the die rolled before the card resolves; it is set exactly when an effect
- * uses a dice `Amount`, and the roll is passed as `play-card.dice`. `sigil` is set exactly on sigil
+ * A slice card. `dice` names the die rolled for a dice amount or a risk threshold, and the result
+ * is passed as `play-card.dice`. `sigil` is set exactly on sigil
  * spells; the sigil hook scales the base effects by the trace's power multiplier.
  */
 export interface SliceCard extends CardDef {
@@ -554,11 +554,11 @@ export const CARDS: readonly SliceCard[] = [
     cost: 1,
     target: 'none',
     exhaust: true,
-    effects: [{ type: 'heal', amount: 4, target: 'self' }],
-    description: 'Heal 4 HP. Exhaust.',
+    effects: [{ type: 'heal', amount: 6, target: 'self' }],
+    description: 'Heal 6 HP. Exhaust.',
     upgrade: {
-      effects: [{ type: 'heal', amount: 6, target: 'self' }],
-      description: 'Heal 6 HP. Exhaust.',
+      effects: [{ type: 'heal', amount: 9, target: 'self' }],
+      description: 'Heal 9 HP. Exhaust.',
     },
   },
   {
@@ -701,7 +701,7 @@ export const CARDS: readonly SliceCard[] = [
     id: 'crystal-gambit',
     name: 'Crystal Gambit',
     type: 'attack',
-    cost: 2,
+    cost: 3,
     target: 'enemy',
     dice: 'crystal-d12',
     diceCount: 2,
@@ -826,7 +826,7 @@ export const CARDS: readonly SliceCard[] = [
     id: 'pendulum-ward',
     name: 'Pendulum Ward',
     type: 'sigil',
-    sigil: 'ward',
+    sigil: 'pendulum-ward',
     cost: 2,
     target: 'none',
     effects: [
@@ -839,8 +839,70 @@ export const CARDS: readonly SliceCard[] = [
         { type: 'block', amount: 14 },
         { type: 'apply-status', status: 'plating', stacks: 3, target: 'self' },
       ],
-      sigil: 'ward-plus',
+      sigil: 'pendulum-ward-plus',
       description: 'Gain 14 Block. Gain 3 Plating.',
+    },
+  },
+  {
+    id: 'field-dressing',
+    name: 'Field Dressing',
+    type: 'skill',
+    cost: 2,
+    target: 'none',
+    exhaust: true,
+    effects: [
+      { type: 'block', amount: 9 },
+      { type: 'heal', amount: 5, target: 'self' },
+    ],
+    description: 'Gain 9 Block. Heal 5 HP. Exhaust.',
+    upgrade: {
+      effects: [
+        { type: 'block', amount: 12 },
+        { type: 'heal', amount: 7, target: 'self' },
+      ],
+      description: 'Gain 12 Block. Heal 7 HP. Exhaust.',
+    },
+  },
+  {
+    id: 'redline-shot',
+    name: 'Redline Shot',
+    type: 'attack',
+    cost: 1,
+    target: 'enemy',
+    dice: 'brass-d6',
+    effects: [{ type: 'damage', amount: 18, target: 'target' }],
+    rollRisk: {
+      minimum: 4,
+      miss: { type: 'apply-status', status: 'overheat', stacks: 3, target: 'self' },
+    },
+    description: 'Roll a d6. On 4+, deal 18 damage. Otherwise gain 3 Overheat.',
+    upgrade: {
+      effects: [{ type: 'damage', amount: 23, target: 'target' }],
+      description: 'Roll a d6. On 4+, deal 23 damage. Otherwise gain 3 Overheat.',
+    },
+  },
+  {
+    id: 'boiler-gamble',
+    name: 'Boiler Gamble',
+    type: 'skill',
+    cost: 1,
+    target: 'none',
+    dice: 'glass-d8',
+    effects: [
+      { type: 'gain-steam', amount: 3 },
+      { type: 'draw', amount: 1 },
+    ],
+    rollRisk: {
+      minimum: 5,
+      miss: { type: 'apply-status', status: 'vulnerable', stacks: 2, target: 'self' },
+    },
+    description: 'Roll a d8. On 5+, gain 3 Steam and Draw 1 card. Otherwise gain 2 Vulnerable.',
+    upgrade: {
+      effects: [
+        { type: 'gain-steam', amount: 3 },
+        { type: 'draw', amount: 2 },
+      ],
+      description: 'Roll a d8. On 5+, gain 3 Steam and Draw 2 cards. Otherwise gain 2 Vulnerable.',
     },
   },
 ];
@@ -856,7 +918,7 @@ export const STARTER_DECK: readonly string[] = [
   'defend',
   'defend',
   'defend',
-  'defend',
+  'patch-kit',
   'cog-toss',
   'warding-glyph',
 ];

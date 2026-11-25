@@ -1500,6 +1500,51 @@
         }
       }
     },
+    "field-dressing": {
+      "type": "skill",
+      "frame": "skill",
+      "glow": "#80cfa5",
+      "layers": {
+        "back": {
+          "page": 1,
+          "rect": [16, 16, 480, 480],
+          "uv": [0.007812, 0.757812, 0.242188, 0.992188],
+          "source": "assets-source/cards/defend/defend-back.png"
+        },
+        "mid": {
+          "page": 1,
+          "rect": [528, 16, 480, 480],
+          "uv": [0.257812, 0.757812, 0.492188, 0.992188],
+          "source": "assets-source/cards/defend/defend-mid-r1.cutout.png"
+        },
+        "front": {
+          "page": 4,
+          "rect": [1552, 1552, 480, 480],
+          "uv": [0.757812, 0.007812, 0.992188, 0.242188],
+          "source": "assets-source/cards/repair-wave/repair-wave.png"
+        }
+      },
+      "stack": {
+        "back": {
+          "depth": 0.03,
+          "size": 2.6,
+          "opaque": true
+        },
+        "mid": {
+          "depth": 0.016,
+          "size": 0.95
+        },
+        "glow": {
+          "depth": 0.007,
+          "size": 0.7,
+          "additive": true
+        },
+        "front": {
+          "depth": 0.005,
+          "size": 1.05
+        }
+      }
+    },
     "grease-gun": {
       "type": "skill",
       "frame": "skill",
@@ -2332,6 +2377,96 @@
           "rect": [704, 1376, 288, 288],
           "uv": [0.34375, 0.1875, 0.484375, 0.328125],
           "source": "assets-source/cards/lens-wave/lens-wave.cutout.png"
+        }
+      },
+      "stack": {
+        "back": {
+          "depth": 0.03,
+          "size": 2.6,
+          "opaque": true
+        },
+        "mid": {
+          "depth": 0.016,
+          "size": 0.95
+        },
+        "glow": {
+          "depth": 0.007,
+          "size": 0.7,
+          "additive": true
+        },
+        "front": {
+          "depth": 0.005,
+          "size": 1.05
+        }
+      }
+    },
+    "redline-shot": {
+      "type": "attack",
+      "frame": "attack",
+      "glow": "#ff6a2a",
+      "layers": {
+        "back": {
+          "page": 5,
+          "rect": [1040, 16, 480, 480],
+          "uv": [0.507812, 0.757812, 0.742188, 0.992188],
+          "source": "assets-source/cards/attack-strike/attack-strike-back.png"
+        },
+        "mid": {
+          "page": 5,
+          "rect": [1552, 16, 480, 480],
+          "uv": [0.757812, 0.757812, 0.992188, 0.992188],
+          "source": "assets-source/cards/attack-strike/attack-strike-mid.cutout.png"
+        },
+        "front": {
+          "page": 5,
+          "rect": [528, 16, 480, 480],
+          "uv": [0.257812, 0.757812, 0.492188, 0.992188],
+          "source": "assets-source/cards/overdrive-wave/overdrive-wave.png"
+        }
+      },
+      "stack": {
+        "back": {
+          "depth": 0.03,
+          "size": 2.6,
+          "opaque": true
+        },
+        "mid": {
+          "depth": 0.016,
+          "size": 0.95
+        },
+        "glow": {
+          "depth": 0.007,
+          "size": 0.7,
+          "additive": true
+        },
+        "front": {
+          "depth": 0.005,
+          "size": 1.05
+        }
+      }
+    },
+    "boiler-gamble": {
+      "type": "skill",
+      "frame": "skill",
+      "glow": "#5a8cff",
+      "layers": {
+        "back": {
+          "page": 1,
+          "rect": [16, 16, 480, 480],
+          "uv": [0.007812, 0.757812, 0.242188, 0.992188],
+          "source": "assets-source/cards/defend/defend-back.png"
+        },
+        "mid": {
+          "page": 1,
+          "rect": [528, 16, 480, 480],
+          "uv": [0.257812, 0.757812, 0.492188, 0.992188],
+          "source": "assets-source/cards/defend/defend-mid-r1.cutout.png"
+        },
+        "front": {
+          "page": 5,
+          "rect": [16, 16, 480, 480],
+          "uv": [0.007812, 0.757812, 0.242188, 0.992188],
+          "source": "assets-source/cards/overdrive-wave/overdrive-wave.png"
         }
       },
       "stack": {

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import type { LogbookEntry } from '../rules/logbook.ts';
 import { type PrismChannel, prismOrder, type StoredPrismState } from '../rules/prism-signal.ts';
 import { ClockInscription } from './clock-inscription.ts';
-import type { FloorWorld } from './floor-world.ts';
+import { DOOR_HEIGHT, type FloorWorld } from './floor-world.ts';
 import type { InteriorPlacement } from './interior-furnishings.ts';
 import type { PbrSet } from './materials.ts';
 import { findPuzzleMount } from './puzzle-placement.ts';
@@ -20,8 +20,8 @@ const COLORS = [0xea614d, 0x52befc, 0xffc850] as const;
 const SIGILS = ['Notch', 'Star', 'Ring'] as const;
 const FORWARD = new THREE.Vector3(0, 0, 1);
 const PRISM_LIGHT = new THREE.Vector3(0, 1.025, 0.08);
-const CLOSED_HEIGHT = 1.16;
-const OPEN_HEIGHT = -1.18;
+const CLOSED_HEIGHT = DOOR_HEIGHT / 2;
+const OPEN_HEIGHT = -DOOR_HEIGHT / 2 - 0.04;
 
 function sigilGeometry(channel: PrismChannel): THREE.BufferGeometry {
   if (channel === 2) return new THREE.RingGeometry(0.061, 0.109, 24);
@@ -275,13 +275,25 @@ export class PrismAnnex {
     this.gate.name = 'prism-annex-gate';
     this.gate.position.set(door.world[0], CLOSED_HEIGHT, door.world[1]);
     this.gate.rotation.y = { N: 0, E: -Math.PI / 2, S: Math.PI, W: Math.PI / 2 }[door.facing];
-    this.block(this.gate, [door.width - 0.14, 2.15, 0.036], [0, 0, 0], this.glass);
+    const width = door.width - 0.016;
+    const stileWidth = 0.065;
+    const railHeight = 0.07;
+    const insideWidth = width - 2 * stileWidth;
+    this.block(this.gate, [width, DOOR_HEIGHT, 0.036], [0, 0, 0], this.glass);
     for (const side of [-1, 1]) {
-      this.block(this.gate, [0.065, 2.23, 0.075], [side * (door.width / 2 - 0.05), 0, 0]);
-      this.block(this.gate, [door.width - 0.1, 0.07, 0.075], [0, side * 1.08, 0]);
-      this.block(this.gate, [door.width - 0.18, 0.03, 0.06], [0, side * 0.36, 0]);
+      this.block(
+        this.gate,
+        [stileWidth, DOOR_HEIGHT, 0.075],
+        [(side * (width - stileWidth)) / 2, 0, 0],
+      );
+      this.block(
+        this.gate,
+        [insideWidth, railHeight, 0.075],
+        [0, (side * (DOOR_HEIGHT - railHeight)) / 2, 0],
+      );
+      this.block(this.gate, [insideWidth, 0.03, 0.06], [0, side * 0.36, 0]);
     }
-    this.block(this.gate, [0.035, 2.17, 0.065], [0, 0, 0]);
+    this.block(this.gate, [0.035, DOOR_HEIGHT - 2 * railHeight, 0.065], [0, 0, 0]);
     this.world.roomGroups[this.room].attach(this.gate);
   }
 
@@ -449,7 +461,7 @@ export class PrismAnnex {
     );
     if (this.solved && this.gate.visible) {
       this.gate.position.y = THREE.MathUtils.damp(this.gate.position.y, OPEN_HEIGHT, 8, dt);
-      if (this.gate.position.y <= -1.11) this.gate.visible = false;
+      if (this.gate.position.y <= -CLOSED_HEIGHT) this.gate.visible = false;
     }
   }
 

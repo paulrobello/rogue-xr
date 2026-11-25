@@ -11,6 +11,7 @@ import {
   MAX_SPRING_TENSION,
   operateSpringTension,
   readSpringTension,
+  springTensionInWindow,
   springTensionWindow,
 } from '../src/rules/spring-tension.ts';
 import { createWorkshop } from '../src/rules/workshop.ts';
@@ -102,6 +103,35 @@ describe('Spring Tension', () => {
     expect(minima).toEqual(new Set([3, 4, 5]));
   });
 
+  it('can rewind an exhausted gauge even when the last saved target was full tension', () => {
+    expect(operateSpringTension(SEED, { tension: 8, open: false }, 'wind', 0)).toEqual({
+      state: { tension: 1, open: false },
+      outcome: 'wound',
+    });
+  });
+
+  it('exposes the marked detent as a pure readiness check', () => {
+    const target = springTensionWindow(SEED);
+    expect(springTensionInWindow(SEED, { tension: target.min, open: false })).toBe(true);
+    expect(springTensionInWindow(SEED, { tension: target.max, open: false })).toBe(true);
+    expect(springTensionInWindow(SEED, { tension: target.min - 1, open: false })).toBe(false);
+    expect(springTensionInWindow(SEED, { tension: target.max + 1, open: false })).toBe(false);
+    expect(springTensionInWindow(SEED, { tension: target.min, open: true })).toBe(false);
+  });
+
+  it('uses a transient sampled reading for a clutch release without changing saved tension', () => {
+    const target = springTensionWindow(SEED);
+    const state = { tension: target.min, open: false };
+    expect(operateSpringTension(SEED, state, 'release', target.min - 0.2)).toEqual({
+      state,
+      outcome: 'partial',
+    });
+    expect(operateSpringTension(SEED, state, 'release', target.min + 0.2)).toEqual({
+      state: { tension: target.min, open: true },
+      outcome: 'opened',
+    });
+  });
+
   it('persists partial tension and the open gate through import and stair travel', () => {
     const flow = fresh();
     flow.newRun(SEED);
@@ -127,7 +157,7 @@ describe('Spring Tension', () => {
     expect(legacy.operateSpringTension('wind')).toBe('ignored');
   });
 
-  it('moves the needle, raises the gate partway while retaining collision, and clears both sides at full lift', () => {
+  it('moves the needle, lowers the gate partway while retaining collision, and clears both sides after full travel', () => {
     const floor = mountFloorView(new THREE.Scene(), new THREE.Group(), UPPER, { floorNumber: 2 });
     try {
       floor.dressSpringTension(undefined, SEED, false, null);
@@ -155,13 +185,15 @@ describe('Spring Tension', () => {
       expect(needle.rotation.z).toBeLessThan(initialAngle);
       station.testCatch(true);
       station.update(0.25);
-      expect(station.leaf.position.y).toBeGreaterThan(0.2);
+      expect(station.leaf.position.y).toBeLessThan(-0.2);
       expect(during()).toEqual(blocked);
       station.update(0.4);
       expect(station.leaf.position.y).toBeCloseTo(0);
+      expect(station.sampledTension).toBeLessThan(1);
       const solved = { tension: station.range.min, open: true };
       station.sync(solved);
       station.update(SPRING_GATE_SECONDS / 2);
+      expect(station.leaf.position.y).toBeLessThan(0);
       expect(station.leaf.visible).toBe(true);
       expect(during()).toEqual(blocked);
       station.update(SPRING_GATE_SECONDS / 2);

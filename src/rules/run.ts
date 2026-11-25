@@ -77,6 +77,8 @@ export interface RunState {
   readonly brassCacheSeen?: boolean;
   /** Whether the one-shot floor-one Light window cache has paid its key reward. */
   readonly windowCacheOpened?: boolean;
+  /** Whether the floor-one Light window cache lid has been opened. */
+  readonly windowCacheRevealed?: boolean;
   readonly patrolDefeated?: true;
   readonly armoryAwakened?: true;
   /** Floor-three Prism Annex receiver progress. */
@@ -363,9 +365,15 @@ export function claimTreasure(run: RunState, key: string): ClaimResult | null {
   };
 }
 
+/** Reveals the floor-one Light window cache without paying its reward. */
+export function revealWindowCache(run: RunState): RunState | null {
+  if (run.windowCacheOpened === true || run.windowCacheRevealed === true) return null;
+  return { ...run, windowCacheRevealed: true };
+}
+
 /** Claims the floor-one Light window cache once. No random draw. */
 export function claimWindowCache(run: RunState): RunState | null {
-  if (run.windowCacheOpened === true) return null;
+  if (run.windowCacheOpened === true || run.windowCacheRevealed !== true) return null;
   return { ...run, cogs: run.cogs + WINDOW_CACHE_COGS, windowCacheOpened: true };
 }
 

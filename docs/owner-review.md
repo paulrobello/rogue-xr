@@ -83,7 +83,7 @@ Modeling of A9 to A12 proceeded under your 2026-11-15 standing approval of spend
 
 ### Audio
 
-Nothing waiting. A17 and the placeholder music were approved on 2026-11-16 (Answered table above).
+The November 23 Quest review and follow-up confirmation approved all 11 Suno cues and 63 sound effects on build `9666f75`. Paul approved the five replacement Foley takes on November 23, bringing the current library to all 11 music cues and 68 sound effects approved. The [audio review record](../assets-source/audio/owner-review.json) lists the original verdicts and exact approved replacement hashes.
 
 ## Decisions waiting on Paul
 

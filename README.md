@@ -24,6 +24,8 @@ Open **Test seeds** on the title board, choose a named preset, then select **New
 
 When reporting a layout issue, include `MAPTEST2`, the room number or route, and the fixture you were facing.
 
+Choose **Dungeon & late fixtures · DNGS80EC** in **Test seeds** for the complementary route. It adds the stone combat halls, late Upper Works mechanisms, and alternate Conservatory encounter and archive. [Dungeon showcase route](docs/dungeon-showcase.md)
+
 ## Cross-floor bell puzzle
 
 Find and wind the Watchmaker’s Music Box on Floor 1. Watch the numbered lamps or listen to its four notes. Upstairs in the Upper Works, repeat the phrase on the three bells and take the released cog seal for 12 cogs. Use either controller’s trigger or click on desktop. The cog seal flies toward you when collected. **Items** keeps the score. The showcase adds walkthrough plaques to the music box, bells and pressure controls.

@@ -6,7 +6,7 @@ The slice reference points every new card is measured against: 3 steam per turn,
 
 The dungeon preview continues Wave A with Torque Wrench, Counterweight, and Tension Coil. New runs can roll the cards in rewards and treasure and purchase them in the Workshop. Upper Works seeds `CRYPT001` and `CRYPT004` exercise the Mortar Scarab and Lantern Bailiff rules, respectively. Their concept sheet is ready for visual review, with the 3D actors and animation still to come. [Dungeon enemy concepts](../assets-source/concepts/dungeon/dungeon-enemies-sheet.png)
 
-The next Wave A preview adds Spare Parts, Flywheel Swing and Patch Kit. Flywheel Swing's Block bonus is part of one hit and does not spend the Block. Patch Kit restores only missing HP and exhausts when played, including at full health. Older saves keep their original reward pools.
+The next Wave A preview adds Spare Parts, Flywheel Swing and Patch Kit. Flywheel Swing's Block bonus is part of one hit and does not spend the Block. In new runs, one Patch Kit replaces one Brass Guard in the starter deck. Field Dressing enters the reward pool in content version 36 and is available in the Workshop. Both healing cards restore only missing HP and exhaust when played, including at full health. Fleeing caps your remaining HP at the amount you entered the fight with. Older saves keep their decks and reward pools.
 
 Wave A finishes with Grease Gun, Escapement Break, and Lucky Strike. Grease Gun opens a tabletop Scry choice. Select any revealed card to discard it, then confirm to keep the rest in draw order. Its upgrade draws once after confirmation. Escapement Break uses current Block without spending it. Lucky Strike uses a brass d6 and deals the higher damage on a 5 or 6. These cards enter combat rewards on new runs and are available in the Workshop.
 
@@ -67,7 +67,8 @@ The slice's 15 stay as they are: Piston Strike, Cog Toss, Ratchet Flurry, Rivet 
 | Counterweight | skill | 2 | uncommon | 12 block. Pinned | 16 block |
 | Flywheel Swing | attack | 2 | uncommon | 12 damage, +4 if you have block | 15 damage, +5 |
 | Tension Coil | skill | 1 | uncommon | 4 block, 1 Wound-up | 6 block, 1 Wound-up |
-| Patch Kit | skill | 1 | uncommon | Heal 4. Exhaust | Heal 6 |
+| Patch Kit | skill | 1 | uncommon | Heal 6. Exhaust | Heal 9 |
+| Field Dressing | skill | 2 | uncommon | 9 Block, heal 5. Exhaust | 12 Block, heal 7 |
 | Anchor Glyph | sigil (anchor) | 1 | uncommon | 8 block, 2 Plating | 11 block, 3 Plating |
 | Escapement Break | attack | 1 | rare | Damage equal to your block | Gain 3 block first |
 | Lucky Strike | attack | 1 | rare | Roll a brass d6: 5 or 6 deals 18, otherwise 6 | 20 or 8 |
@@ -81,20 +82,27 @@ The slice's 15 stay as they are: Piston Strike, Cog Toss, Ratchet Flurry, Rivet 
 | Gear Grinder | attack | 1 | common | 4 damage twice, three times if the target has Rust | 5 per hit |
 | Reroll Lever | skill | 0 | common | Pinned. Your next thrown die may be thrown again | Also draw 1 |
 | Copper Coil | attack | 1 | common | 5 damage, 1 Charge | 7 damage |
-| Pendulum Ward | sigil (ward) | 2 | uncommon | 10 block, 2 Plating | 14 block, 3 Plating |
+| Pendulum Ward | sigil (pendulum ward) | 2 | uncommon | 10 block, 2 Plating | 14 block, 3 Plating |
 | Loaded Die | skill | 0 | uncommon | Your next die this turn is Loaded. Draw 1 | Not exhausted |
 | Flash Boiler | skill | X | uncommon | 4 block per steam spent | 5 per steam |
 | Gyro Stabilizer | mechanism | 2 | uncommon | Each turn, gain 3 block | 5 block |
 | Pressure Gauge | mechanism | 1 | uncommon | Each turn, gain 1 Charge | Costs 0 |
 | Clockwork Turret | mechanism | 2 | uncommon | Each turn end, 3 damage to the enemy with the least HP | 5 damage |
 | Overdrive Piston | attack | X | rare | 7 damage per steam spent | 9 per steam |
-| Crystal Gambit | attack | 2 | rare | Two crystal d12 rolls, added as damage | +4 |
+| Crystal Gambit | attack | 3 | rare | Two crystal d12 rolls, added as damage | +4 |
 | Echo Glyph | sigil (spiral) | 2 | rare | Recast the last sigil you cast this fight at its score | Costs 1 |
 | Furnace Heart | mechanism | 3 | rare | Each turn, 2 Overheat on all enemies | 3 Overheat |
 
 Arc Chain sends its first bolt to the aimed enemy and branches from there to the other living enemies. Gear Grinder checks Rust before the first strike and shows a separate number for each hit. Pendulum Ward forms a shield and applies Plating when the ward spell lands.
 
 Crystal Gambit throws two numbered crystal d12s in the tray and displays the two kept values and their sum. Loaded and the Workshop Spare Die add rolls to the first die’s group. Reroll Lever lets the player rethrow that first contribution while keeping the second. The upgrade adds four damage to the sum once.
+
+Redline Shot and Boiler Gamble enter rewards and the Workshop in content version 37. Both cost 1 Steam and succeed on half of their unmodified die faces. A miss spends the card and Steam as usual and applies only the listed penalty. The kept result after Loaded or Reroll determines the outcome.
+
+| Card | Roll | Success | Backfire | Upgrade |
+| --- | --- | --- | --- | --- |
+| Redline Shot | d6, 4+ succeeds | 18 damage | Gain 3 Overheat | 23 damage |
+| Boiler Gamble | d8, 5+ succeeds | Gain 3 Steam and draw 1 | Gain 2 Vulnerable | Draw 2 on success |
 
 Echo Glyph is the version 30 rare spiral sigil. It costs 2 Steam, or 1 Steam upgraded. Draw a spiral to repeat the last successful sigil at its recorded strength and with its original dice result. Aim Echo at a living enemy if the remembered spell needs a target. Echo keeps the remembered spell available for another copy. A fizzle spends the card and its Steam, and the player needs a successful sigil before they can pick up Echo.
 

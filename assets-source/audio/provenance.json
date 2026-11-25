@@ -1234,24 +1234,98 @@
       }
     },
     "prism-annex-open": {
-      "source_file": "assets-source/audio/sfx/procedural/prism-annex-open.wav",
-      "source_sha256": "baa3bf6805ac19cf6188a7afc64a5fb3f102efb320f9c545ebc4575762a18d51",
+      "source_file": "assets-source/audio/sfx/foley/ceramic-745291.mp3",
+      "source_sha256": "326fb0f3b1cb9db48d3db9c6b6a0b5adbd93f6a0143c262b90f83f223b3a0b65",
       "runtime_file": "public/assets/audio/sfx/prism-annex-open.ogg",
-      "runtime_sha256": "fdd974824184c1ab090eee95a3e13fc0c36db58c41356b8741f9d7a202f28f1e",
-      "runtime_bytes": 13427,
+      "runtime_sha256": "31c2bbfa7f435fef8099a010130ed09c8b26106037bd5edeafd53d331a908c2c",
+      "runtime_bytes": 14892,
       "steps": [
+        "Place and level trimmed recordings with the cue's Foley recipe",
+        "Control isolated peaks in the Foley premix before linear loudness mastering",
         "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
         "fade in 2 ms, fade out 30 ms (raised cosine)",
         "fold to mono 0.5*L+0.5*R (positional cue)"
       ],
       "generation": {
-        "method": "deterministic additive synthesis",
-        "settings": {
-          "kind": "prism",
-          "seed": 3110,
-          "duration_seconds": 1.6
+        "method": "recorded Foley",
+        "sources": {
+          "ceramic": {
+            "file": "assets-source/audio/sfx/foley/ceramic-745291.mp3",
+            "sha256": "326fb0f3b1cb9db48d3db9c6b6a0b5adbd93f6a0143c262b90f83f223b3a0b65",
+            "author": "SamsterBirdies",
+            "license": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "recordingUrl": "https://freesound.org/people/SamsterBirdies/sounds/745291/",
+            "previewUrl": "https://cdn.freesound.org/previews/745/745291_5487341-hq.mp3"
+          },
+          "rail": {
+            "file": "assets-source/audio/sfx/foley/rail-617603.mp3",
+            "sha256": "19abac27e0c28928204c6731e22f99baec36fce0ac6d58ccbe1df442fd81c8c2",
+            "author": "sweet_niche",
+            "license": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "recordingUrl": "https://freesound.org/people/sweet_niche/sounds/617603/",
+            "previewUrl": "https://cdn.freesound.org/previews/617/617603_5332155-hq.mp3"
+          },
+          "ratchet": {
+            "file": "assets-source/audio/sfx/foley/ratchet-530074.mp3",
+            "sha256": "22f433207bb6371a7da163df6c2642d78502b029a64a9150fa04d20def811e8e",
+            "author": "magnuswaker",
+            "license": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "recordingUrl": "https://freesound.org/people/magnuswaker/sounds/530074/",
+            "previewUrl": "https://cdn.freesound.org/previews/530/530074_11537497-hq.mp3"
+          }
+        },
+        "recipe": {
+          "dynamics": {
+            "threshold_dbfs": -31,
+            "ratio": 6
+          },
+          "layers": [
+            {
+              "source": "ceramic",
+              "start_s": 0,
+              "duration_s": 0.13,
+              "at_s": 0.015,
+              "peak_dbfs": -20,
+              "speed": 1.12
+            },
+            {
+              "source": "ceramic",
+              "start_s": 0,
+              "duration_s": 0.13,
+              "at_s": 0.145,
+              "peak_dbfs": -17
+            },
+            {
+              "source": "ceramic",
+              "start_s": 0,
+              "duration_s": 0.15,
+              "at_s": 0.29,
+              "peak_dbfs": -16,
+              "speed": 0.93
+            },
+            {
+              "source": "rail",
+              "start_s": 4.4,
+              "duration_s": 0.79,
+              "at_s": 0.43,
+              "peak_dbfs": -8,
+              "tail_s": 0.1
+            },
+            {
+              "source": "ratchet",
+              "start_s": 1.54,
+              "duration_s": 0.2,
+              "at_s": 1.27,
+              "peak_dbfs": -15,
+              "tail_s": 0.09
+            }
+          ]
         }
-      }
+      },
+      "approval": "CC0 recorded Foley. Owner approved the matching runtime file."
     },
     "dispatch-room-open": {
       "source_file": "assets-source/audio/sfx/procedural/dispatch-room-open.wav",
@@ -1274,66 +1348,219 @@
       }
     },
     "dungeon-torch-crackle": {
-      "source_file": "assets-source/audio/sfx/procedural/dungeon-torch-crackle.wav",
-      "source_sha256": "2999c09f90f9680405e9cb5196be8f749990ce591def82c4a5704a09c945a97d",
+      "source_file": "assets-source/audio/sfx/foley/fire-707262.mp3",
+      "source_sha256": "6d9cb4c76483081395ce76829e70bf31f1bb7ad0af27ac4a7658083090641def",
       "runtime_file": "public/assets/audio/sfx/dungeon-torch-crackle.ogg",
-      "runtime_sha256": "3ec974836a6dca59187d06c091df8cdb04c16f4c57fd3ded1d768c57974c9214",
-      "runtime_bytes": 88626,
+      "runtime_sha256": "c11dea1ddb713bc7652ad664143afa29afcb76fa4e91cb106896e55947220f0d",
+      "runtime_bytes": 96750,
       "steps": [
-        "loop kept native: source wrap passed",
+        "Place and level trimmed recordings with the cue's Foley recipe",
+        "Control isolated peaks in the Foley premix before linear loudness mastering",
+        "0.6 s equal-power tail-over-head crossfade at the loop seam",
         "fold to mono 0.5*L+0.5*R (positional cue)"
       ],
       "generation": {
-        "method": "deterministic additive synthesis",
-        "settings": {
-          "kind": "torch-crackle",
-          "seed": 4201,
-          "duration_seconds": 10.0
+        "method": "recorded Foley",
+        "sources": {
+          "fire": {
+            "file": "assets-source/audio/sfx/foley/fire-707262.mp3",
+            "sha256": "6d9cb4c76483081395ce76829e70bf31f1bb7ad0af27ac4a7658083090641def",
+            "author": "Sadiquecat",
+            "license": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "recordingUrl": "https://freesound.org/people/Sadiquecat/sounds/707262/",
+            "previewUrl": "https://cdn.freesound.org/previews/707/707262_5287430-hq.mp3"
+          }
+        },
+        "recipe": {
+          "dynamics": {
+            "threshold_dbfs": -32,
+            "ratio": 7
+          },
+          "crossfade_s": 0.6,
+          "layers": [
+            {
+              "source": "fire",
+              "start_s": 0.39,
+              "duration_s": 10.6,
+              "at_s": 0,
+              "peak_dbfs": -8,
+              "tail_s": 0
+            }
+          ]
         }
       },
-      "approval": "Original project synthesis. Owner listening review pending."
+      "approval": "CC0 recorded Foley. Owner approved the matching runtime file."
     },
     "dungeon-chain-wind": {
-      "source_file": "assets-source/audio/sfx/procedural/dungeon-chain-wind.wav",
-      "source_sha256": "c3050aa51f47036b154409ab08a6a1ec1b8b4fa41e67a77eff79be50697195d1",
+      "source_file": "assets-source/audio/sfx/foley/chain-167916.mp3",
+      "source_sha256": "9694f199e7b7c536512a64cb9b173bbdbc5d0322b8af7d5ce9746ed109c18528",
       "runtime_file": "public/assets/audio/sfx/dungeon-chain-wind.ogg",
-      "runtime_sha256": "6865e794c54de9eecff3af3015bafda2d9a11eb79798b3bf61da137af94cdcd1",
-      "runtime_bytes": 11426,
+      "runtime_sha256": "9bac8d17632c13bbff12f1fa11ccfc85715adef3c19a2950434a8c51039b0450",
+      "runtime_bytes": 12977,
       "steps": [
+        "Place and level trimmed recordings with the cue's Foley recipe",
+        "Control isolated peaks in the Foley premix before linear loudness mastering",
         "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
         "fade in 2 ms, fade out 30 ms (raised cosine)",
         "fold to mono 0.5*L+0.5*R (positional cue)"
       ],
       "generation": {
-        "method": "deterministic additive synthesis",
-        "settings": {
-          "kind": "chain-wind",
-          "seed": 4202,
-          "duration_seconds": 1.3
+        "method": "recorded Foley",
+        "sources": {
+          "chain": {
+            "file": "assets-source/audio/sfx/foley/chain-167916.mp3",
+            "sha256": "9694f199e7b7c536512a64cb9b173bbdbc5d0322b8af7d5ce9746ed109c18528",
+            "author": "ani_music",
+            "license": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "recordingUrl": "https://freesound.org/people/ani_music/sounds/167916/",
+            "previewUrl": "https://cdn.freesound.org/previews/167/167916_3008343-hq.mp3"
+          },
+          "ratchet": {
+            "file": "assets-source/audio/sfx/foley/ratchet-530074.mp3",
+            "sha256": "22f433207bb6371a7da163df6c2642d78502b029a64a9150fa04d20def811e8e",
+            "author": "magnuswaker",
+            "license": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "recordingUrl": "https://freesound.org/people/magnuswaker/sounds/530074/",
+            "previewUrl": "https://cdn.freesound.org/previews/530/530074_11537497-hq.mp3"
+          },
+          "armor": {
+            "file": "assets-source/audio/sfx/foley/armor-467120.mp3",
+            "sha256": "a4660d31f7c5eaacce73540549b9fad61c133f5c1b9d700a7c178117160f2045",
+            "author": "CalGre",
+            "license": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "recordingUrl": "https://freesound.org/people/CalGre/sounds/467120/",
+            "previewUrl": "https://cdn.freesound.org/previews/467/467120_8323375-hq.mp3"
+          }
+        },
+        "recipe": {
+          "dynamics": {
+            "threshold_dbfs": -20,
+            "ratio": 2.6
+          },
+          "layers": [
+            {
+              "source": "chain",
+              "start_s": 0.07,
+              "duration_s": 0.88,
+              "at_s": 0.01,
+              "peak_dbfs": -6,
+              "tail_s": 0.13,
+              "speed": 1.1
+            },
+            {
+              "source": "ratchet",
+              "start_s": 1.53,
+              "duration_s": 0.19,
+              "at_s": 0.91,
+              "peak_dbfs": -6,
+              "tail_s": 0.08
+            },
+            {
+              "source": "armor",
+              "start_s": 4.16,
+              "duration_s": 0.23,
+              "at_s": 1.05,
+              "peak_dbfs": -16,
+              "tail_s": 0.11
+            }
+          ]
         }
       },
-      "approval": "Original project synthesis. Owner listening review pending."
+      "approval": "CC0 recorded Foley. Owner approved the matching runtime file."
     },
     "dungeon-scarab-scrape": {
-      "source_file": "assets-source/audio/sfx/procedural/dungeon-scarab-scrape.wav",
-      "source_sha256": "804e437794cfc5d2d503e44e498206355bb2c782a357d6c4d51b520cfd4f930f",
+      "source_file": "assets-source/audio/sfx/foley/stone-321488.mp3",
+      "source_sha256": "61d82d364bf2c88fc9c6a04b24f187c5f59a597942986f61c4951a6c2d9407a7",
       "runtime_file": "public/assets/audio/sfx/dungeon-scarab-scrape.ogg",
-      "runtime_sha256": "8c2b0539834613d2202e793653296845c8555af809920d5131f0f39e26bac96d",
-      "runtime_bytes": 11464,
+      "runtime_sha256": "63e0925cb67e4611a1f1c246187d3cb087c0825da852d7fa0fca9168732852d4",
+      "runtime_bytes": 10140,
       "steps": [
+        "Place and level trimmed recordings with the cue's Foley recipe",
+        "Control isolated peaks in the Foley premix before linear loudness mastering",
         "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
         "fade in 2 ms, fade out 30 ms (raised cosine)",
         "fold to mono 0.5*L+0.5*R (positional cue)"
       ],
       "generation": {
-        "method": "deterministic additive synthesis",
-        "settings": {
-          "kind": "scarab-scrape",
-          "seed": 4203,
-          "duration_seconds": 1.05
+        "method": "recorded Foley",
+        "sources": {
+          "stone": {
+            "file": "assets-source/audio/sfx/foley/stone-321488.mp3",
+            "sha256": "61d82d364bf2c88fc9c6a04b24f187c5f59a597942986f61c4951a6c2d9407a7",
+            "author": "dslrguide",
+            "license": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "recordingUrl": "https://freesound.org/people/dslrguide/sounds/321488/",
+            "previewUrl": "https://cdn.freesound.org/previews/321/321488_5485024-hq.mp3"
+          },
+          "plate": {
+            "file": "assets-source/audio/sfx/foley/plate-321481.mp3",
+            "sha256": "b07ee6df5f5f11dca6ace41ae98e0d020cbc736599a397485954ae6e54a7c15c",
+            "author": "dslrguide",
+            "license": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "recordingUrl": "https://freesound.org/people/dslrguide/sounds/321481/",
+            "previewUrl": "https://cdn.freesound.org/previews/321/321481_5485024-hq.mp3"
+          }
+        },
+        "recipe": {
+          "dynamics": {
+            "threshold_dbfs": -20,
+            "ratio": 2.6
+          },
+          "layers": [
+            {
+              "source": "stone",
+              "start_s": 0.015,
+              "duration_s": 0.53,
+              "at_s": 0.01,
+              "peak_dbfs": -6,
+              "tail_s": 0.07
+            },
+            {
+              "source": "plate",
+              "start_s": 0.022,
+              "duration_s": 0.12,
+              "at_s": 0.493,
+              "peak_dbfs": -13,
+              "tail_s": 0.05,
+              "speed": 1.22
+            },
+            {
+              "source": "plate",
+              "start_s": 0.019,
+              "duration_s": 0.11,
+              "at_s": 0.626,
+              "peak_dbfs": -12,
+              "tail_s": 0.05,
+              "speed": 0.96
+            },
+            {
+              "source": "plate",
+              "start_s": 0.024,
+              "duration_s": 0.105,
+              "at_s": 0.732,
+              "peak_dbfs": -14,
+              "tail_s": 0.05,
+              "speed": 1.12
+            },
+            {
+              "source": "stone",
+              "start_s": 1.89,
+              "duration_s": 0.235,
+              "at_s": 0.79,
+              "peak_dbfs": -16,
+              "tail_s": 0.11,
+              "speed": 1.02
+            }
+          ]
         }
       },
-      "approval": "Original project synthesis. Owner listening review pending."
+      "approval": "CC0 recorded Foley. Owner approved the matching runtime file."
     },
     "cistern-pipe-send": {
       "source_file": "assets-source/audio/sfx/procedural/cistern-pipe-send.wav",
@@ -1461,25 +1688,70 @@
       "approval": "Original project synthesis. Owner listening review pending."
     },
     "armory-awaken": {
-      "source_file": "assets-source/audio/sfx/procedural/armory-awaken.wav",
-      "source_sha256": "c9a0c57442fc656110a45a71cf24c8465dcf7747d6aeb5c9efbea8923aa7072c",
+      "source_file": "assets-source/audio/sfx/foley/ratchet-530074.mp3",
+      "source_sha256": "22f433207bb6371a7da163df6c2642d78502b029a64a9150fa04d20def811e8e",
       "runtime_file": "public/assets/audio/sfx/armory-awaken.ogg",
-      "runtime_sha256": "985d55d65bc20f0edd31226b0545fea294eb0d7e7ae15f49db7223d759dc15c5",
-      "runtime_bytes": 8729,
+      "runtime_sha256": "a637fa4f8b73b44a064d429c348218af18e17fe179cdbbe371cce8509bbc58f3",
+      "runtime_bytes": 9325,
       "steps": [
+        "Place and level trimmed recordings with the cue's Foley recipe",
         "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
         "fade in 2 ms, fade out 30 ms (raised cosine)",
         "fold to mono 0.5*L+0.5*R (positional cue)"
       ],
       "generation": {
-        "method": "deterministic additive synthesis",
-        "settings": {
-          "kind": "armory-awaken",
-          "seed": 8601,
-          "duration_seconds": 0.76
+        "method": "recorded Foley",
+        "sources": {
+          "ratchet": {
+            "file": "assets-source/audio/sfx/foley/ratchet-530074.mp3",
+            "sha256": "22f433207bb6371a7da163df6c2642d78502b029a64a9150fa04d20def811e8e",
+            "author": "magnuswaker",
+            "license": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "recordingUrl": "https://freesound.org/people/magnuswaker/sounds/530074/",
+            "previewUrl": "https://cdn.freesound.org/previews/530/530074_11537497-hq.mp3"
+          },
+          "armor": {
+            "file": "assets-source/audio/sfx/foley/armor-467120.mp3",
+            "sha256": "a4660d31f7c5eaacce73540549b9fad61c133f5c1b9d700a7c178117160f2045",
+            "author": "CalGre",
+            "license": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "recordingUrl": "https://freesound.org/people/CalGre/sounds/467120/",
+            "previewUrl": "https://cdn.freesound.org/previews/467/467120_8323375-hq.mp3"
+          }
+        },
+        "recipe": {
+          "layers": [
+            {
+              "source": "ratchet",
+              "start_s": 3.15,
+              "duration_s": 0.31,
+              "at_s": 0.01,
+              "peak_dbfs": -10,
+              "tail_s": 0.035,
+              "speed": 1.08
+            },
+            {
+              "source": "armor",
+              "start_s": 10.63,
+              "duration_s": 0.132,
+              "at_s": 0.323,
+              "peak_dbfs": -6,
+              "tail_s": 0.055
+            },
+            {
+              "source": "armor",
+              "start_s": 10.825,
+              "duration_s": 0.22,
+              "at_s": 0.522,
+              "peak_dbfs": -5,
+              "tail_s": 0.068
+            }
+          ]
         }
       },
-      "approval": "Original project synthesis. Owner listening review pending."
+      "approval": "CC0 recorded Foley. Owner approved the matching runtime file."
     },
     "borrowed-light-receiver": {
       "source_file": "assets-source/audio/sfx/procedural/borrowed-light-receiver.wav",
@@ -1925,115 +2197,129 @@
   },
   "music": {
     "title": {
-      "source_file": "assets-source/audio/music/placeholder/title.mp3",
-      "source_sha256": "7e351b8e8345f087ff90f4951ff05d536b8e06819aeea43e1a2e33e2f014a522",
+      "source_file": "assets-source/audio/music/title.wav",
+      "source_sha256": "c7ca69b4b1cfbe2f2ccf251061adf06a1c53794167a6b9a4d17fda8515a7e665",
       "runtime_file": "public/assets/audio/music/title.ogg",
-      "runtime_sha256": "d091c46ff5de8fe8adaa67790073fb24f5a3472a1e6b80bc0f6f7a82397e6145",
-      "runtime_bytes": 864405,
+      "runtime_sha256": "541639051887e5ad4e77540ef4d4d893903e93f631ae314d6e894fccc5384a89",
+      "runtime_bytes": 1047900,
       "steps": [
-        "loop body from 4.750s, 2.00s equal-power tail-over-head crossfade, start position retained"
+        "loop body from 18.785s, 1.70s equal-power tail-over-head crossfade, start position retained"
       ]
     },
     "explore": {
-      "source_file": "assets-source/audio/music/placeholder/explore.mp3",
-      "source_sha256": "b82efe11f44b659d810d4aaeb201973d4dfe91935b17173d1cea29d60564b6c5",
+      "source_file": "assets-source/audio/music/explore.wav",
+      "source_sha256": "b017bd8ad2d365cc28b4436084d23d4854059ea64d0f1a49ec9bc095355cd72f",
       "runtime_file": "public/assets/audio/music/explore.ogg",
-      "runtime_sha256": "db03fe8207bdd43f26fe09acfb9843108ef1854afb4be79152ac100f1c559151",
-      "runtime_bytes": 1448968,
+      "runtime_sha256": "1b129fc9fc5d86435c445d081bcc05af815923a0ec9ce8357ce55377908a6567",
+      "runtime_bytes": 1562461,
       "steps": [
-        "loop body from 7.500s, 2.00s equal-power tail-over-head crossfade, start position retained"
+        "loop body from 8.395s, 2.00s equal-power tail-over-head crossfade, start position retained",
+        "side channel x0.75 for mono compatibility"
       ]
     },
     "combat": {
-      "source_file": "assets-source/audio/music/placeholder/combat.mp3",
-      "source_sha256": "2e1316e8c4cba6b8d8dc3bc5b892869f1164ab6f8a8a973524675b7dbfcef009",
+      "source_file": "assets-source/audio/music/combat.wav",
+      "source_sha256": "4676d9ef33432cc87fd7fc47c5ad83dec748c6de91675280ce48b897a060fa72",
       "runtime_file": "public/assets/audio/music/combat.ogg",
-      "runtime_sha256": "cb2234b2d19a666ac8dd7b275299f5ebfcc472af980651ce797676a441ccecce",
-      "runtime_bytes": 1323437,
+      "runtime_sha256": "d09444fdb2e8fa944a7f2acbfa1f190c9171c03ac3d45bfd7e66a678d9c9fa83",
+      "runtime_bytes": 1385616,
       "steps": [
-        "loop body from 5.250s, 1.50s equal-power tail-over-head crossfade, start position retained"
+        "loop body from 22.725s, 1.30s equal-power tail-over-head crossfade, start position retained"
       ]
     },
     "reward": {
-      "source_file": "assets-source/audio/music/placeholder/reward.mp3",
-      "source_sha256": "9daf54f3d7d3d6c0ac4fe1f81319dadb05f30c31d5c8095e9d6d9aec97e07582",
+      "source_file": "assets-source/audio/music/reward.wav",
+      "source_sha256": "108b530272d67f35115f7a58603d87841e15c05271d3092a82be8c9647656e16",
       "runtime_file": "public/assets/audio/music/reward.ogg",
-      "runtime_sha256": "3ec98c1adf9b59d9a738e3c4ecef9ece79f6d0866c54874e273baf60334f9fa6",
-      "runtime_bytes": 593075,
+      "runtime_sha256": "73ece40999feb9c11ac5513b21667be8c5c95419670c03f47c08d430d03caa83",
+      "runtime_bytes": 780827,
       "steps": [
-        "loop body from 7.750s, 2.00s equal-power tail-over-head crossfade, start position retained"
+        "loop body from 28.735s, 1.45s equal-power tail-over-head crossfade, start position retained",
+        "side channel x0.68 for mono compatibility"
       ]
     },
     "rest": {
-      "source_file": "assets-source/audio/music/placeholder/rest.mp3",
-      "source_sha256": "27907e8355c946d5f8f716cb1c8b80d87b22be292009b7edf37e26a03f06ae43",
+      "source_file": "assets-source/audio/music/rest.wav",
+      "source_sha256": "20b97fd319fcd8f934a6caafd601501b18404aeb210d2c319ac7c4d287ae1532",
       "runtime_file": "public/assets/audio/music/rest.ogg",
-      "runtime_sha256": "f4755ba40ad2ea0d026d4e655a6e7682242d724801af11b4e91b87c4d15fd340",
-      "runtime_bytes": 961149,
+      "runtime_sha256": "2f52609285ef478b81b7295f34ee325c9b5a0e53450064cdfab30a2716a6e453",
+      "runtime_bytes": 839691,
       "steps": [
-        "loop body from 4.750s, 2.00s equal-power tail-over-head crossfade, start position retained"
+        "loop body from 11.075s, 2.00s equal-power tail-over-head crossfade, start position retained"
       ]
     },
     "elite": {
-      "source_file": "assets-source/audio/music/placeholder/elite.mp3",
-      "source_sha256": "ddc752ec46b6250e5adb56965fddba2c9ebb64812820b62197a6b37d570a8171",
+      "source_file": "assets-source/audio/music/elite.wav",
+      "source_sha256": "48082646f220fd9e71968d94c1c7e3c1c9a7a352c13ef84c7a31a0cd0dc387a2",
       "runtime_file": "public/assets/audio/music/elite.ogg",
-      "runtime_sha256": "d73b26d248d7682aecb7a1521cd4b2b39f3147e2de3f9e595bbe00860ce34b7e",
-      "runtime_bytes": 785875,
+      "runtime_sha256": "caea6d5a0dfdca691cf861bb18171f61e33a6c2c98c7a42d8c26da7648b4ab2f",
+      "runtime_bytes": 905920,
       "steps": [
-        "loop body from 3.750s, 1.50s equal-power tail-over-head crossfade, start position retained"
+        "loop body from 18.535s, 1.05s equal-power tail-over-head crossfade, start position retained"
       ]
     },
     "defeat": {
-      "source_file": "assets-source/audio/music/placeholder/defeat.mp3",
-      "source_sha256": "7c752099d127c778f5edfad603416315d03a14c683fa16619352deb93dd70753",
+      "source_file": "assets-source/audio/music/defeat.wav",
+      "source_sha256": "ad20867c87e4f62d308bb48b8026ae4fd865714df0e3874e671ec4be0a05db7f",
       "runtime_file": "public/assets/audio/music/defeat.ogg",
-      "runtime_sha256": "03ec36b322cb916e9033190632ff1369706d8e1091a8d4b5d07a75d0ae02056a",
-      "runtime_bytes": 847434,
+      "runtime_sha256": "937ae5897e0a15a3ba003664d9324b894a953666a64a25765de7bb41203ff3ea",
+      "runtime_bytes": 1056095,
       "steps": [
-        "one-shot cut 0.000s..45.000s, silence trimmed (head 0.0 ms, tail 992.5 ms), 2 ms fade in, 0.25s raised-cosine fade out"
+        "one-shot cut 0.000s..59.000s, silence trimmed (head 0.0 ms, tail 1982.7 ms), 2 ms fade in, 0.25s raised-cosine fade out"
       ]
     },
     "workshop": {
-      "source_file": "assets-source/audio/music/placeholder/workshop.mp3",
-      "source_sha256": "e0002da781af92e6055a91544fedf2c03b721d79a154972d44b380d04f3b8ce2",
+      "source_file": "assets-source/audio/music/workshop.wav",
+      "source_sha256": "03eb34252ccec5f7526c0133500fb1559fcbf73c01ca85318d748745d3606cb3",
       "runtime_file": "public/assets/audio/music/workshop.ogg",
-      "runtime_sha256": "e5d0672f8bd4400f7cabaef9d8329939feaa8c5be89eb7389eb58511f220e330",
-      "runtime_bytes": 892301,
+      "runtime_sha256": "d0a6e75424d0c8eca27a8ac0557240d11d1e00a65c3de1c7fb8b372717dc1449",
+      "runtime_bytes": 1010334,
       "steps": [
-        "loop body from 6.750s, 2.00s equal-power tail-over-head crossfade, start position retained"
+        "loop body from 15.605s, 1.35s equal-power tail-over-head crossfade, start position retained"
       ]
     },
     "guardian-1": {
-      "source_file": "assets-source/audio/music/placeholder/guardian-1.mp3",
-      "source_sha256": "11f365abee02f8ad39b801090a719647504a68a7a9fad2cbbbd2dcdc964579da",
+      "source_file": "assets-source/audio/music/guardian-1.wav",
+      "source_sha256": "70afe65e629ce1e50b5f9009b0951d3597ad549f93e4a15afccb77664a3b6032",
       "runtime_file": "public/assets/audio/music/guardian-1.ogg",
-      "runtime_sha256": "9715746646dbdd1d63d6f63e81dc040c0c165747cf52cf237c07839bae37a358",
-      "runtime_bytes": 922694,
+      "runtime_sha256": "295cc83ad84a1a74e379addc5d674381c121d19c4ad9d2e3981f01243fc8c456",
+      "runtime_bytes": 996886,
       "steps": [
-        "loop body from 2.750s, 1.50s equal-power tail-over-head crossfade, start position retained"
+        "loop body from 29.165s, 1.25s equal-power tail-over-head crossfade, start position retained",
+        "side channel x0.8 for mono compatibility"
       ]
     },
     "guardian-2": {
-      "source_file": "assets-source/audio/music/placeholder/guardian-2.mp3",
-      "source_sha256": "27672af0a6353437645954a27d798a2079d18c51fcf2363e132515e921c14f91",
+      "source_file": "assets-source/audio/music/guardian-2.wav",
+      "source_sha256": "fa775988a976691588670bf7f2063e5556ba144f0f43ee9dbc1ec13757a84a74",
       "runtime_file": "public/assets/audio/music/guardian-2.ogg",
-      "runtime_sha256": "52999b2e3cf463c64f3f7653d88a67d0081a5e14eb4e1b8abd01147673418c02",
-      "runtime_bytes": 909729,
+      "runtime_sha256": "6f215a58088091d9175aafcbb348a9dc9c7b1b8a75e0c082ef225fe220ca84c2",
+      "runtime_bytes": 888899,
       "steps": [
-        "loop body from 2.000s, 1.50s equal-power tail-over-head crossfade, start position retained"
+        "loop body from 15.635s, 1.25s equal-power tail-over-head crossfade, start position retained"
       ]
     },
     "victory": {
-      "source_file": "assets-source/audio/music/placeholder/victory.mp3",
-      "source_sha256": "c241e4c2fa5e11d5795b75e644222d40263770c8530db7ea6f5e70a953396087",
+      "source_file": "assets-source/audio/music/victory.wav",
+      "source_sha256": "304136f7a523b41d5aee9fa487f636f26aa32c7f6882d68ec13b84094eca7966",
       "runtime_file": "public/assets/audio/music/victory.ogg",
-      "runtime_sha256": "0cb8f77e3b75836bda9924b4b0f807cc4e1b4cc02fe227f7a28debed147843af",
-      "runtime_bytes": 1069386,
+      "runtime_sha256": "5c1c882e313493e44ed73fbdcf2529936f2bf2613a504ec678d003d453f8b46a",
+      "runtime_bytes": 1016336,
       "steps": [
-        "one-shot cut 0.000s..60.000s, silence trimmed (head 0.0 ms, tail 765.3 ms), 2 ms fade in, 0.25s raised-cosine fade out"
+        "one-shot cut 0.000s..59.600s, silence trimmed (head 0.0 ms, tail 0.0 ms), 2 ms fade in, 0.25s raised-cosine fade out"
       ]
     }
   },
-  "music_note": "Suno is owner-generated; see assets-source/audio/music/SUNO-HANDOFF.md"
+  "music_note": "Suno is owner-generated; see assets-source/audio/music/SUNO-HANDOFF.md",
+  "music_source": {
+    "provider": "Suno",
+    "provenance": "Owner-selected Suno WAVs supplied on November 23, 2026.",
+    "promptReference": "assets-source/audio/music/SUNO-HANDOFF.md",
+    "settingsReference": "assets-source/audio/music/cues.json",
+    "settingsUsed": "Exact model, tier at generation, and any edits to the prompt settings were not supplied.",
+    "rightsEvidence": "D13 records Paul\u2019s prior paid-plan commercial-use statement from November 16, 2026.",
+    "runtimeAudition": "All eleven mastered Suno cues approved by Paul in Quest Browser on November 23, 2026.",
+    "ownerReview": "assets-source/audio/owner-review.json"
+  },
+  "music_generation_log": "assets-source/audio/music/generation-log.json"
 }

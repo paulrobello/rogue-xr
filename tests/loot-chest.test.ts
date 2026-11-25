@@ -50,6 +50,47 @@ const step = (coffer: Coffer, seconds: number, dt = 1 / 60): void => {
   coffer.object.updateMatrixWorld(true);
 };
 
+it('picks the key lock separately and releases it only after the key arrives', () => {
+  const kit = new CofferKit();
+  const coffer = kit.build(
+    3,
+    { id: 'desk-drawer', position: [0, 0, 0], yaw: 0 },
+    'card',
+    0,
+    false,
+    true,
+  );
+  const from = new THREE.Vector3(0, 0.68, -2);
+  const lock = coffer.keyLockHit;
+  if (!lock) throw Error('Missing key-lock target');
+  const aim = lock.getWorldPosition(new THREE.Vector3()).sub(from);
+  expect(pickCoffer([coffer], from, aim, 4)?.lock).toBe(true);
+  expect(
+    pickCoffer([coffer], from, new THREE.Vector3(0.25, 0.46, -0.18).sub(from), 4)?.lock,
+  ).toBeUndefined();
+  const behind = new THREE.Vector3(0, 0.68, 2);
+  expect(
+    pickCoffer([coffer], behind, lock.getWorldPosition(new THREE.Vector3()).sub(behind), 4)?.lock,
+  ).toBeUndefined();
+  const model = new THREE.Group();
+  const arrive = vi.fn(() => coffer.syncKeyLock(true));
+  expect(coffer.flyKey(model, from, arrive)).toBe(true);
+  expect(coffer.flyKey(model, from, arrive)).toBe(false);
+  coffer.open(true);
+  expect(coffer.opened).toBe(false);
+  step(coffer, 0.4);
+  expect(coffer.object.getObjectByName('coffer-flying-key')).toBeDefined();
+  expect(arrive).not.toHaveBeenCalled();
+  step(coffer, 0.45);
+  expect(arrive).toHaveBeenCalledTimes(1);
+  expect(coffer.object.getObjectByName('coffer-flying-key')).toBeUndefined();
+  expect(coffer.keyLockHit).toBeNull();
+  expect(coffer.opened).toBe(false);
+  coffer.open(true);
+  expect(coffer.opened).toBe(true);
+  kit.dispose();
+});
+
 describe('chest card view', () => {
   it('fades its halo to zero at every edge of the glow plane', () => {
     const { kit, coffer, viewer } = standing();

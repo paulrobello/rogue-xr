@@ -7,7 +7,7 @@ import { mountFloorView } from '../src/world/floor-view.ts';
 import { stoneRoomKitFromScene } from '../src/world/stone-rooms.ts';
 import { nodeGeometryLoader } from './helpers/gltf-node.ts';
 
-it('mounts the keyed gasket, pressure controls and chamber independently and only clears a raised gate', async () => {
+it('mounts the keyed gasket, pressure controls and chamber independently and only clears a fully lowered gate', async () => {
   const seed = 'MAPTEST2';
   const view = mountFloorView(new THREE.Scene(), new THREE.Group(), seed);
   const spec = view.world.plan.valvehouse;
@@ -79,7 +79,7 @@ it('mounts the keyed gasket, pressure controls and chamber independently and onl
   station.sync('open');
   station.update(0.6);
   expect(leaf.visible).toBe(true);
-  expect(leaf.position.y).toBeGreaterThan(1);
+  expect(leaf.position.y).toBeLessThan(-1);
   expect(view.world.colliders[spec.source.room]).toHaveLength(blocked);
   station.update(0.6);
   expect(leaf.visible).toBe(false);

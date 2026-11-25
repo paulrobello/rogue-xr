@@ -168,12 +168,20 @@ export function describeEvent(event: CombatEvent, state: CombatState): string | 
     case 'turn-started':
       return `-- Turn ${event.turn} --`;
     case 'card-played': {
+      const card = getCard(event.cardId);
       const dice =
         event.dice === null ? '' : ` [${event.echoedCardId ? 'kept' : 'rolled'} ${event.dice}]`;
+      const risk = card.rollRisk;
+      const result =
+        risk && event.dice !== null
+          ? event.dice >= risk.minimum
+            ? ' · Success'
+            : ' · Backfire'
+          : '';
       const target = event.target === null ? '' : ` on ${name(event.target)}`;
       const spent = event.steamSpent === undefined ? '' : ` [spent ${event.steamSpent} Steam]`;
       const echo = event.echoedCardId ? `, echoing ${getCard(event.echoedCardId).name}` : '';
-      return `Played ${getCard(event.cardId).name}${echo}${target}${dice}${spent}`;
+      return `Played ${card.name}${echo}${target}${dice}${spent}${result}`;
     }
     case 'mechanism-installed': {
       const card = getCard(event.cardId).name;

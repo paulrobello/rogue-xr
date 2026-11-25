@@ -179,7 +179,7 @@ function locationArrow(
   context.restore();
 }
 
-function transportIcon(
+export function transportIcon(
   context: CanvasRenderingContext2D,
   kind: MapTransport['kind'],
   x: number,
@@ -209,12 +209,39 @@ function transportIcon(
   context.stroke();
 }
 
-function discoveryIcon(
+export function discoveryIcon(
   context: CanvasRenderingContext2D,
   kind: LogbookDiscovery['kind'],
   x: number,
   y: number,
 ): void {
+  if (kind === 'hearth') {
+    context.save();
+    context.translate(x, y);
+    context.fillStyle = '#b65e32';
+    context.strokeStyle = '#fff0c9';
+    context.lineWidth = 3;
+    context.beginPath();
+    context.moveTo(0, -13);
+    context.bezierCurveTo(12, -3, 8, 9, 0, 12);
+    context.bezierCurveTo(-8, 9, -12, -3, 0, -13);
+    context.fill();
+    context.stroke();
+    context.restore();
+    return;
+  }
+  if (kind === 'puzzle') {
+    context.save();
+    context.translate(x, y);
+    context.fillStyle = '#8e6b3a';
+    context.strokeStyle = '#fff0c9';
+    context.lineWidth = 3;
+    context.rotate(Math.PI / 4);
+    context.fillRect(-10, -10, 20, 20);
+    context.strokeRect(-10, -10, 20, 20);
+    context.restore();
+    return;
+  }
   const chest = kind === 'chest' || kind === 'cache';
   const width = chest ? 25 : 18;
   context.fillStyle = chest ? '#774c27' : '#4d5548';
@@ -266,13 +293,17 @@ export function paintMapPage(
     context.font = '28px Georgia, serif';
     context.fillText('Chest', 117, 693);
     context.fillText('Clue', 277, 693);
-    transportIcon(context, 'stairs', 94, 733);
-    transportIcon(context, 'lift', 254, 733);
+    discoveryIcon(context, 'hearth', 414, 683);
+    context.fillText('Hearth', 437, 693);
+    discoveryIcon(context, 'puzzle', 94, 733);
+    context.fillText('Puzzle', 117, 743);
+    transportIcon(context, 'stairs', 94, 783);
+    transportIcon(context, 'lift', 254, 783);
     context.fillStyle = INK;
-    context.fillText('Stairs', 117, 743);
-    context.fillText('Lift', 277, 743);
-    context.fillText('Desktop · Drag and scroll', 79, 812);
-    context.fillText('VR · Pan with the right stick', 79, 851);
+    context.fillText('Stairs', 117, 793);
+    context.fillText('Lift', 277, 793);
+    context.fillText('Desktop · Drag and scroll', 79, 842);
+    context.fillText('VR · Pan with the right stick', 79, 881);
     return;
   }
 

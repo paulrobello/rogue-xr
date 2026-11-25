@@ -38,16 +38,34 @@ export class StrikingClock {
     seed: string,
     reducedMotion: boolean,
     props: readonly InteriorPlacement[] = [],
+    preferredRoom?: number,
+    near?: THREE.Vector3,
   ): StrikingClock | null {
-    const rooms = [0, 1, 2, 3, 4];
-    const spot = findPuzzleMount(world, rooms, props, 'striking-clock', 0.52, 1.15);
+    const rooms =
+      preferredRoom === undefined
+        ? [0, 1, 2, 3, 4]
+        : [preferredRoom, ...[0, 1, 2, 3, 4].filter((room) => room !== preferredRoom)];
+    const spot =
+      (preferredRoom === undefined
+        ? null
+        : findPuzzleMount(
+            world,
+            [preferredRoom],
+            props,
+            'striking-clock',
+            0.52,
+            1.15,
+            undefined,
+            [],
+            near,
+          )) ?? findPuzzleMount(world, rooms, props, 'striking-clock', 0.52, 1.15);
     if (!spot) return null;
     const clue = findPuzzleMount(
       world,
       rooms.filter((i) => i !== spot.room),
       props,
       'striking-clock-clue',
-      0.38,
+      0.62,
       0.5,
     );
     if (!clue) return null;

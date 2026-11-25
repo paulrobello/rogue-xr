@@ -126,9 +126,20 @@ describe('Crystal Gambit', () => {
       rolls: expected.values,
       value: sum,
     });
-    expect(combat.state.player.steam).toBe(1);
+    expect(combat.state.player.steam).toBe(0);
     expect(combat.state.enemies[0].hp).toBe(90 - sum - bonus);
     expect(combat.state.rng.dice).toEqual(expected.rng.dice);
+  });
+
+  it('cannot start a roll with only two Steam remaining', () => {
+    const combat = fight(['crystal-gambit', 'strike']);
+    select(combat, 'strike');
+    expect(combat.target('dummy').ok).toBe(true);
+    expect(combat.state.player.steam).toBe(2);
+    const next = combat.state.piles.hand.find((entry) => entry.def.id === 'crystal-gambit');
+    if (!next) throw Error('Missing Crystal Gambit');
+    expect(combat.select(next.uid).ok).toBe(false);
+    expect(combat.lastDice).toBeNull();
   });
 
   it('replaces only the first keeper after Loaded and Spare Die and does the full revised sum once', () => {

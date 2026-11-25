@@ -9,6 +9,7 @@ import {
   pendulumAngle,
   pendulumTarget,
   pendulumTrialSeconds,
+  pendulumWeightTarget,
 } from '../src/rules/pendulum-gallery.ts';
 import { floorSeedFor } from '../src/rules/run.ts';
 import { createWorkshop } from '../src/rules/workshop.ts';
@@ -73,6 +74,7 @@ describe('Pendulum Gallery', () => {
     expect(run.travelToFloor(2, 0)).toBe(true);
     expect(run.travelToFloor(3, 0)).toBe(true);
     const target = pendulumTarget(seed);
+    run.setPendulumWeight(pendulumWeightTarget(seed));
     expect(run.pendulumGallery.detent).not.toBe(target);
     expect(run.completePendulumTrial()).toBe('wrong');
     expect(run.pendulumGallery.open).toBe(false);
@@ -100,11 +102,20 @@ describe('Pendulum Gallery', () => {
     expect(restored.pendulumGallery).toMatchObject({
       detent: target,
       open: true,
+      weight: pendulumWeightTarget(seed),
       phaseReady: true,
       phaseSet: true,
     });
     expect(restored.advancePendulumDetent()).toBe(false);
     expect(restored.completePendulumTrial()).toBe('ignored');
+    const legacy = running();
+    const legacySnapshot = validateSnapshot({
+      ...snapshot,
+      run: { ...snapshot.run, pendulumGallery: { detent: target, open: true } },
+    });
+    expect(legacy.continueRun(legacySnapshot)).toBe(true);
+    expect(legacy.pendulumGallery.open).toBe(true);
+    expect(legacy.completePendulumTrial()).toBe('ignored');
     expect(() =>
       validateSnapshot({
         ...snapshot,

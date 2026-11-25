@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { CombatController } from '../src/combat-view/controller.ts';
 import {
   CARDS,
   CARDS_BY_ID,
@@ -10,6 +11,7 @@ import {
   STARTER_DECK,
   upgradedCard,
 } from '../src/content/cards.ts';
+import { dieById } from '../src/content/dice.ts';
 import { RunRng } from '../src/core/rng.ts';
 import {
   type Action,
@@ -161,6 +163,12 @@ const EXPECTED: Readonly<Record<string, Outcome>> = {
   'flywheel-swing+': { hp: [45, 60], steam: 1 },
   'patch-kit': { hp: [60, 60], steam: 2, pile: 'exhaust' },
   'patch-kit+': { hp: [60, 60], steam: 2, pile: 'exhaust' },
+  'field-dressing': { hp: [60, 60], steam: 1, block: 9, pile: 'exhaust' },
+  'field-dressing+': { hp: [60, 60], steam: 1, block: 12, pile: 'exhaust' },
+  'redline-shot': { hp: [42, 60], steam: 2 },
+  'redline-shot+': { hp: [37, 60], steam: 2 },
+  'boiler-gamble': { hp: [60, 60], steam: 5, drawn: 1 },
+  'boiler-gamble+': { hp: [60, 60], steam: 5, drawn: 2 },
   'grease-gun': { hp: [60, 60], steam: 3 },
   'grease-gun+': { hp: [60, 60], steam: 3, drawn: 1 },
   'escapement-break': { hp: [60, 60], steam: 2 },
@@ -179,8 +187,8 @@ const EXPECTED: Readonly<Record<string, Outcome>> = {
   'reroll-lever+': { hp: [60, 60], steam: 3, drawn: 1 },
   'loaded-die': { hp: [60, 60], steam: 3, drawn: 1, pile: 'exhaust' },
   'loaded-die+': { hp: [60, 60], steam: 3, drawn: 1 },
-  'crystal-gambit': { hp: [46, 60], steam: 1 },
-  'crystal-gambit+': { hp: [42, 60], steam: 1 },
+  'crystal-gambit': { hp: [46, 60], steam: 0 },
+  'crystal-gambit+': { hp: [42, 60], steam: 0 },
   'gyro-stabilizer': { hp: [60, 60], steam: 1, pile: 'mechanisms' },
   'gyro-stabilizer+': { hp: [60, 60], steam: 1, pile: 'mechanisms' },
   'pressure-gauge': { hp: [60, 60], steam: 2, pile: 'mechanisms' },
@@ -252,8 +260,10 @@ describe('card effects through the engine', () => {
   });
 
   it.each([
-    ['patch-kit', 4],
-    ['patch-kit+', 6],
+    ['patch-kit', 6],
+    ['patch-kit+', 9],
+    ['field-dressing', 5],
+    ['field-dressing+', 7],
   ])('%s restores only missing HP and exhausts at full health too', (id, maxHeal) => {
     const def = getCard(id);
     for (const hp of [25, 38, 40]) {
@@ -594,19 +604,92 @@ function rulesText(def: SliceCard): string {
     parts.push(
       `Roll ${def.dice === 'iron-d4' ? 'an iron d4' : `a ${def.dice === 'brass-d6' ? 'd6' : 'd8'}`}.`,
     );
-  parts.push(...def.effects.map(effectText));
+  if (def.rollRisk) {
+    const success = def.effects.map((effect) => effectText(effect).slice(0, -1)).join(' and ');
+    const miss = effectText(def.rollRisk.miss);
+    parts.push(
+      `On ${def.rollRisk.minimum}+, ${success[0].toLowerCase()}${success.slice(1)}. Otherwise ${miss[0].toLowerCase()}${miss.slice(1)}`,
+    );
+  } else parts.push(...def.effects.map(effectText));
   if (def.exhaust) parts.push('Exhaust.');
   if (def.pinned) parts.push('Pinned.');
   return parts.join(' ');
 }
 
+describe('risk cards', () => {
+  it.each([
+    ['redline-shot', 3, 'overheat', 3],
+    ['redline-shot+', 1, 'overheat', 3],
+    ['boiler-gamble', 4, 'vulnerable', 2],
+    ['boiler-gamble+', 1, 'vulnerable', 2],
+  ] as const)('%s on %i spends Steam and applies only its penalty', (id, dice, status, stacks) => {
+    const card = getCard(id);
+    const state = begin(card);
+    const action = {
+      type: 'play-card' as const,
+      uid: 0,
+      ...(card.target === 'enemy' ? { target: 'a' } : {}),
+    };
+    expect(validate(state, action)).toContain('needs a dice result');
+    const result = apply(state, { ...action, dice });
+    expect(result.state.player.steam).toBe(2);
+    expect(result.state.player.statuses).toEqual({ [status]: stacks });
+    expect(result.state.enemies).toEqual(state.enemies);
+    expect(result.state.piles.draw).toEqual(state.piles.draw);
+    expect(result.state.piles.discard[0].def.id).toBe(id);
+  });
+
+  it.each([5, 8])('Boiler Gamble succeeds on %i without applying Vulnerable', (dice) => {
+    const state = begin(getCard('boiler-gamble'));
+    const result = apply(state, { type: 'play-card', uid: 0, dice });
+    expect(result.state.player.steam).toBe(5);
+    expect(result.state.player.statuses).toEqual({});
+    expect(result.state.piles.draw).toHaveLength(state.piles.draw.length - 1);
+  });
+
+  it('uses the kept Loaded result and applies a rerolled penalty only after confirmation', () => {
+    const fight = (reroll: boolean) => {
+      const combat = new CombatController({
+        seed: 'R1SK0019',
+        setups: [dummy('a')],
+        deck: ['loaded-die', 'reroll-lever', 'redline-shot', 'strike', 'defend'],
+      });
+      const select = (id: string) => {
+        const card = combat.state.piles.hand.find((entry) => entry.def.id === id);
+        if (!card) throw Error(`Missing ${id}`);
+        expect(combat.select(card.uid).ok).toBe(true);
+      };
+      select('loaded-die');
+      expect(combat.table().ok).toBe(true);
+      if (reroll) {
+        select('reroll-lever');
+        expect(combat.table().ok).toBe(true);
+      }
+      select('redline-shot');
+      expect(combat.target('a').ok).toBe(true);
+      expect(combat.lastDice).toMatchObject({ rolls: [3, 4], value: 4 });
+      return combat;
+    };
+    expect(fight(false).state.enemies[0].hp).toBe(42);
+    const rerolled = fight(true);
+    expect(rerolled.state.enemies[0].hp).toBe(60);
+    expect(rerolled.state.player.statuses).toEqual({});
+    expect(rerolled.rerollDice()).toBe(true);
+    expect(rerolled.lastDice?.value).toBe(2);
+    expect(rerolled.confirmDice()).toBe(true);
+    expect(rerolled.confirmDice()).toBe(false);
+    expect(rerolled.state.enemies[0].hp).toBe(60);
+    expect(rerolled.state.player.statuses.overheat).toBe(3);
+  });
+});
+
 describe('card schema', () => {
   it('has the complete card roster with unique ids', () => {
-    expect(CARDS).toHaveLength(48);
+    expect(CARDS).toHaveLength(51);
     expect(new Set(CARDS.map((c) => c.id)).size).toBe(CARDS.length);
     expect(CARDS_BY_ID.size).toBe(CARDS.length);
-    expect(CARDS.filter((c) => c.type === 'attack')).toHaveLength(16);
-    expect(CARDS.filter((c) => c.type === 'skill')).toHaveLength(17);
+    expect(CARDS.filter((c) => c.type === 'attack')).toHaveLength(17);
+    expect(CARDS.filter((c) => c.type === 'skill')).toHaveLength(19);
     expect(CARDS.filter((c) => c.type === 'sigil')).toHaveLength(11);
     expect(CARDS.filter((c) => c.type === 'mechanism')).toHaveLength(4);
   });
@@ -614,8 +697,13 @@ describe('card schema', () => {
   it('has at least 4 dice cards, and the dice hook is set exactly when an effect uses a roll', () => {
     expect(CARDS.filter((c) => c.dice !== undefined).length).toBeGreaterThanOrEqual(4);
     for (const def of ALL_DEFS) {
-      expect(def.dice !== undefined, def.id).toBe(usesDice(def.effects));
+      expect(def.dice !== undefined, def.id).toBe(Boolean(def.rollRisk) || usesDice(def.effects));
       if (def.dice) expect(DIE_IDS).toContain(def.dice);
+      if (def.dice && def.rollRisk) {
+        const faces = dieById(def.dice).faces;
+        expect(def.rollRisk.minimum).toBeGreaterThan(Math.min(...faces));
+        expect(def.rollRisk.minimum).toBeLessThanOrEqual(Math.max(...faces));
+      }
     }
   });
 
@@ -638,7 +726,7 @@ describe('card schema', () => {
     ]);
     const sigils = ids.map((id) => getCard(id).sigil);
     expect(ids).toHaveLength(22);
-    expect(new Set(sigils).size).toBe(15);
+    expect(new Set(sigils).size).toBe(SIGIL_IDS.length);
     expect(new Set(sigils).size).toBe(SIGIL_IDS.length);
   });
 
@@ -676,7 +764,8 @@ describe('card schema', () => {
     expect(STARTER_DECK).toHaveLength(10);
     for (const id of STARTER_DECK) expect(CARDS_BY_ID.has(id), id).toBe(true);
     const basics = STARTER_DECK.filter((id) => id === 'strike' || id === 'defend');
-    expect(basics.length).toBeGreaterThanOrEqual(8);
+    expect(basics).toHaveLength(7);
+    expect(STARTER_DECK.filter((id) => id === 'patch-kit')).toHaveLength(1);
     const { state } = startCombat({
       player: { hp: 40, maxHp: 40 },
       deck: deckDefs(STARTER_DECK),

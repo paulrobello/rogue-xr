@@ -6,6 +6,7 @@ interface FakeGauge {
   update: ReturnType<typeof vi.fn>;
   dispose: ReturnType<typeof vi.fn>;
   hitDistance: ReturnType<typeof vi.fn>;
+  activateClose: ReturnType<typeof vi.fn>;
   beginGrab: ReturnType<typeof vi.fn>;
   endGrab: ReturnType<typeof vi.fn>;
 }
@@ -20,6 +21,7 @@ vi.mock('../src/perf/gauge.ts', () => ({
       update: vi.fn(),
       dispose: vi.fn(),
       hitDistance: vi.fn(() => 0.7),
+      activateClose: vi.fn(() => false),
       beginGrab: vi.fn(() => true),
       endGrab: vi.fn(),
       visible: true,
@@ -134,6 +136,21 @@ describe('FPS counter toggle', () => {
     perf.setFpsCounter(false);
     perf.releaseGauge(grip);
     expect(gauges[0]?.endGrab).toHaveBeenCalledTimes(1);
+    perf.dispose();
+  });
+
+  it('dismisses only on the widget close hit and keeps explicit playtest recording', () => {
+    const { perf } = mount('?playtest');
+    const origin = {} as THREE.Vector3;
+    const direction = {} as THREE.Vector3;
+    perf.setFpsCounter(true);
+    expect(perf.closeGauge(origin, direction)).toBe(false);
+    expect(perf.fpsCounter).toBe(true);
+    gauges[0]?.activateClose.mockReturnValue(true);
+    expect(perf.closeGauge(origin, direction)).toBe(true);
+    expect(perf.fpsCounter).toBe(false);
+    expect(gauges[0]?.dispose).toHaveBeenCalledTimes(1);
+    expect(perfRecording()).toBe(true);
     perf.dispose();
   });
 

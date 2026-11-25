@@ -79,10 +79,13 @@ export interface FloorWorld {
   dressEncounterDoor(model: THREE.Object3D): void;
   setPuzzleGateOpen(kind: PuzzleGate, open: boolean, immediate?: boolean): void;
   dressPuzzleGates(set: PbrSet, environment: THREE.Texture | null): void;
-  pickPuzzleGate(
+  pickLockedDoor(
     origin: THREE.Vector3,
     direction: THREE.Vector3,
-  ): { kind: PuzzleGate; distance: number; gateIndex: number } | null;
+  ):
+    | { kind: PuzzleGate; distance: number; gateIndex: number }
+    | { kind: 'encounter'; distance: number }
+    | null;
   rattlePuzzleGate(kind: PuzzleGate, gateIndex?: number): THREE.Vector3 | undefined;
   /** Advances moving door leaves and gate hardware. */
   updateAnimations(dt: number): void;
@@ -192,13 +195,16 @@ function insetBakedDoorFrame(frame: THREE.Object3D, facing: Facing): void {
   else frame.position.x -= inset;
 }
 
-function doorwayCollider(door: WorldRoom['doors'][number]): Box {
+function doorwayCollider(
+  door: WorldRoom['doors'][number],
+  height = WALL_HEIGHT,
+  depth = WALL_THICKNESS / 2,
+): Box {
   const [x, z] = door.world;
-  const depth = WALL_THICKNESS / 2;
   const width = door.width / 2;
   const acrossX = door.facing === 'N' || door.facing === 'S';
   const [hx, hz] = acrossX ? [width, depth] : [depth, width];
-  return { min: [x - hx, 0, z - hz], max: [x + hx, WALL_HEIGHT, z + hz] };
+  return { min: [x - hx, 0, z - hz], max: [x + hx, height, z + hz] };
 }
 
 const enemyGeometry = new THREE.CapsuleGeometry(0.35, 1.2, 4, 12);
@@ -290,6 +296,7 @@ function buildRoom(
 export function buildFloorWorld(
   plan: FloorPlan,
   templates: readonly RoomTemplate[] = GREYBOX_TEMPLATES,
+  maxShellDepth?: number,
 ): FloorWorld {
   const materials = createGreyboxMaterials();
   const enemyMaterial = new THREE.MeshStandardMaterial({
@@ -469,6 +476,7 @@ export function buildFloorWorld(
   let guardSource: THREE.Object3D | null = null;
   const lockedDoor = passage && door ? new THREE.Group() : null;
   const barrier = door ? doorwayCollider(door) : null;
+  const guardedPick = door && doorwayCollider(door, DOOR_HEIGHT, 0.03);
   let doorAngle = 0;
   let doorOpening = false;
   let doorHinge: THREE.Group | null = null;
@@ -522,11 +530,30 @@ export function buildFloorWorld(
     const barrier = doorwayCollider(door);
     const sides = [from.room, to.room];
     for (const side of sides) colliders[side].push(barrier);
-    return [{ kind, sides, visual, barrier, open: false }];
+    const pickBounds = doorwayCollider(door, DOOR_HEIGHT, 0.03);
+    return [{ kind, sides, visual, barrier, pickBounds, open: false }];
   });
-  const gateRay = new THREE.Raycaster();
+  const gateRay = new THREE.Ray();
   const gateBox = new THREE.Box3();
   const gateCrossing = new THREE.Vector3();
+  function lockedDoorDistance(bounds: Box, ownBarrier: Box): number | null {
+    gateBox.min.fromArray(bounds.min);
+    gateBox.max.fromArray(bounds.max);
+    if (!gateRay.intersectBox(gateBox, gateCrossing)) return null;
+    const distance = gateCrossing.distanceTo(gateRay.origin);
+    if (distance > 4) return null;
+    for (const collider of colliders[world.current]) {
+      if (collider === ownBarrier) continue;
+      gateBox.min.fromArray(collider.min);
+      gateBox.max.fromArray(collider.max);
+      if (
+        gateRay.intersectBox(gateBox, gateCrossing) &&
+        gateCrossing.distanceTo(gateRay.origin) < distance - 0.025
+      )
+        return null;
+    }
+    return distance;
+  }
   const blockedByPuzzleGate = (from: number, to: number): boolean =>
     puzzleGates.some((gate) => !gate.open && gate.sides.includes(from) && gate.sides.includes(to));
 
@@ -682,26 +709,24 @@ export function buildFloorWorld(
         gate.visual?.setOpen(open, immediate || reducedMotion);
       }
     },
-    pickPuzzleGate(origin, direction) {
+    pickLockedDoor(origin, direction) {
       gateRay.set(origin, direction);
-      gateRay.ray.direction.normalize();
-      gateRay.far = 4;
-      let nearest: ReturnType<FloorWorld['pickPuzzleGate']> = null;
+      gateRay.direction.normalize();
+      let nearest: ReturnType<FloorWorld['pickLockedDoor']> = null;
+      if (
+        guardedPick &&
+        barrier &&
+        !doorReleased &&
+        passage?.some((side) => side.room === world.current)
+      ) {
+        const distance = lockedDoorDistance(guardedPick, barrier);
+        if (distance !== null) nearest = { kind: 'encounter', distance };
+      }
       for (const [gateIndex, gate] of puzzleGates.entries()) {
-        if (!gate.visual || gate.open || !gate.sides.includes(world.current)) continue;
-        gate.visual.object.updateWorldMatrix(true, true);
-        const hit = gateRay.intersectObject(gate.visual.pickTarget, true)[0];
-        if (!hit || (nearest && hit.distance >= nearest.distance)) continue;
-        const blocked = colliders[world.current].some((box) => {
-          if (box === gate.barrier) return false;
-          gateBox.min.fromArray(box.min);
-          gateBox.max.fromArray(box.max);
-          return (
-            gateRay.ray.intersectBox(gateBox, gateCrossing) !== null &&
-            gateCrossing.distanceTo(origin) < hit.distance - 0.025
-          );
-        });
-        if (!blocked) nearest = { kind: gate.kind, distance: hit.distance, gateIndex };
+        if (gate.open || !gate.sides.includes(world.current)) continue;
+        const distance = lockedDoorDistance(gate.pickBounds, gate.barrier);
+        if (distance !== null && (!nearest || distance < nearest.distance))
+          nearest = { kind: gate.kind, distance, gateIndex };
       }
       return nearest;
     },
@@ -815,7 +840,7 @@ export function buildFloorWorld(
   };
   // Only room groups change: a fight's own body hiding is left alone.
   function applyVisibility() {
-    const visible = visibleSet(plan, world.current);
+    const visible = visibleSet(plan, world.current, maxShellDepth);
     roomGroups.forEach((g, i) => {
       g.visible = visible.has(i);
     });

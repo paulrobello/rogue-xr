@@ -122,7 +122,7 @@ D4_VALUES = [1, 2, 3, 4]
 # Outward CCW vertex order for each face opposite vertex 0..3. The atlas corners are
 # apex, left, right, matching this order in the runtime geometry.
 D4_FACE_VERTICES = ((3, 2, 1), (0, 2, 3), (3, 1, 0), (0, 1, 2))
-SIGIL_IDS = ["gear", "flame", "ward", "bolt", "spiral", "anchor", "quench", "gear-plus", "flame-plus", "ward-plus", "bolt-plus", "spiral-plus", "anchor-plus", "quench-plus", "eye"]
+SIGIL_IDS = ["gear", "flame", "ward", "bolt", "spiral", "anchor", "quench", "gear-plus", "flame-plus", "ward-plus", "bolt-plus", "spiral-plus", "anchor-plus", "quench-plus", "eye", "pendulum-ward", "pendulum-ward-plus"]
 
 
 def sha256(path: Path) -> str:
@@ -549,7 +549,7 @@ def build_glyphs() -> tuple[Image.Image, dict]:
     big = GLYPH_SLOT * scale
     margin = 30 * scale
     span = big - 2 * margin
-    page = np.zeros((GLYPH_SLOT * 4, GLYPH_SLOT * 4, 4), np.uint8)
+    page = np.zeros((GLYPH_SLOT * math.ceil(len(SIGIL_IDS) / 4), GLYPH_SLOT * 4, 4), np.uint8)
     glyphs: dict = {}
     for i, sigil_id in enumerate(SIGIL_IDS):
         strokes = templates[sigil_id]["strokes"]
@@ -576,7 +576,7 @@ def build_glyphs() -> tuple[Image.Image, dict]:
         tile[tile[..., 3] < 2] = 0
         px, py = (i % 4) * GLYPH_SLOT, (i // 4) * GLYPH_SLOT
         page[py : py + GLYPH_SLOT, px : px + GLYPH_SLOT] = tile
-        glyphs[sigil_id] = entry("glyphs", px, py, GLYPH_SLOT, GLYPH_SLOT, 1024, 1024)
+        glyphs[sigil_id] = entry("glyphs", px, py, GLYPH_SLOT, GLYPH_SLOT, GLYPH_SLOT * 4, page.shape[0])
     return Image.fromarray(dilate_rgb(page, 40), "RGBA"), glyphs
 
 

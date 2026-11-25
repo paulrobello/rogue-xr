@@ -811,7 +811,12 @@ def check_enemy(
         path = ROOT / ev["path"]
         if not path.exists() or sha256(path) != ev["sha256"]:
             err(f"review evidence {ev['path']} missing or changed since provenance (re-review needed)")
-    check_enemy_reimport(src / "staging/reimport.json", rt / f"{enemy}.glb", limits, err)
+    reimport = src / "staging/reimport.json"
+    # Staged authored actors keep their validated report beside the runtime export.
+    # Use that report when the legacy assembled-source location is absent.
+    if not reimport.exists() and (src / "staging/runtime/reimport-report.json").exists():
+        reimport = src / "staging/runtime/reimport-report.json"
+    check_enemy_reimport(reimport, rt / f"{enemy}.glb", limits, err)
     return summary
 
 

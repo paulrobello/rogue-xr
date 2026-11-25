@@ -74,4 +74,24 @@ describe('logbook discoveries', () => {
       { kind: 'cache', id: 'cache:0', room: 0 },
     ]);
   });
+
+  it('shows hearths only in explored rooms', () => {
+    const world = [worldRoom(template, 0, [0, 0])];
+    const hearth = { id: 'study-hearth', room: 0, position: [2, 3] as const };
+    expect(
+      logbookDiscoveries({ plan, worldRooms: world, explored: [], knownHearths: [hearth] }),
+    ).toEqual([]);
+    expect(
+      logbookDiscoveries({ plan, worldRooms: world, explored: [0], knownHearths: [hearth] }),
+    ).toEqual([{ kind: 'hearth', id: 'hearth:study-hearth', room: 0, position: [2, 3] }]);
+  });
+
+  it('shows interacted puzzles at their explored room centre only', () => {
+    const world = [worldRoom(template, 0, [0, 0])];
+    const knownPuzzles = [{ id: 'clock', room: 0 }];
+    expect(logbookDiscoveries({ plan, worldRooms: world, explored: [], knownPuzzles })).toEqual([]);
+    expect(logbookDiscoveries({ plan, worldRooms: world, explored: [0], knownPuzzles })).toEqual([
+      { kind: 'puzzle', id: 'puzzle:0', room: 0, position: [0, 0] },
+    ]);
+  });
 });

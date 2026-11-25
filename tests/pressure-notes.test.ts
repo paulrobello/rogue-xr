@@ -59,6 +59,70 @@ describe('pressure notes', () => {
     expect(mixes.size).toBeGreaterThan(1);
   });
 
+  it('tosses only the carrier’s slip, then lets the player pick it up from the floor', () => {
+    const world = buildFloorWorld(generateFloor('SPIRE002'));
+    const notes = new PressureNotes(world);
+    const drop = notes.placements.find((p) => p.source === 'drop');
+    const carrier = drop && world.enemies.get(drop.room)?.[0];
+    if (!drop || !carrier) throw new Error('missing automaton and slip');
+
+    const other = new THREE.Object3D();
+    other.userData = { ...carrier.userData, socketId: 'other-socket' };
+    notes.tossFrom(other);
+    expect(drop.object.visible).toBe(false);
+    const home = drop.object.position.clone();
+    const actor = new THREE.Object3D();
+    expect(world.replaceEnemy(drop.room, carrier, actor)).toBe(true);
+    world.update(drop.location.x, drop.location.z);
+    const viewer = new THREE.Object3D();
+    notes.tossFrom(actor);
+    const launched = drop.object.position.clone();
+    expect(drop.object.visible).toBe(true);
+    expect(launched.x).toBeCloseTo(actor.position.x);
+    expect(launched.z).toBeCloseTo(actor.position.z);
+    notes.sync(
+      [],
+      () => false,
+      () => false,
+      drop.room,
+    );
+    notes.update(viewer, 0.4);
+    expect(drop.object.position.y).toBeGreaterThan(launched.y + 0.35);
+    const inAir = drop.object.getWorldPosition(new THREE.Vector3());
+    const eye = inAir.clone().add(new THREE.Vector3(0, 0.5, 0));
+    expect(notes.pick(eye, new THREE.Vector3(0, -1, 0))?.id).not.toBe(drop.id);
+    expect(notes.near(inAir, 1)).not.toContain(drop);
+
+    notes.sync(
+      [],
+      () => false,
+      () => false,
+    );
+    expect(drop.object.visible).toBe(false);
+    expect(drop.object.position.equals(home)).toBe(true);
+    notes.tossFrom(actor);
+    notes.sync(
+      [],
+      (room) => room === drop.room,
+      () => false,
+    );
+    notes.update(viewer, 1.1);
+    expect(drop.location.y).toBeCloseTo(home.y);
+    expect(notes.near(drop.location, 0.05)).toContain(drop);
+    const above = drop.location.clone().add(new THREE.Vector3(0, 1, 0));
+    expect(notes.pick(above, new THREE.Vector3(0, -1, 0))?.id).toBe(drop.id);
+    notes.tossFrom(actor);
+    expect(drop.location.y).toBeCloseTo(home.y);
+    notes.sync(
+      [drop.id],
+      () => true,
+      () => false,
+    );
+    expect(drop.object.visible).toBe(false);
+    notes.dispose();
+    world.dispose();
+  });
+
   it('picks a visible paper within four metres and hides collected notes', () => {
     const world = buildFloorWorld(generateFloor('SPIRE001'));
     world.group.updateMatrixWorld(true);

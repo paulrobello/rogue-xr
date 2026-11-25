@@ -8,6 +8,9 @@ export const PENDULUM_PERIODS = [1.1, 1.5, 1.9] as const;
 export function pendulumTarget(runSeed: string): PendulumDetent {
   return Stream.fromKey(`${runSeed}:pendulum-gallery`).int(0, 2) as PendulumDetent;
 }
+export function pendulumWeightTarget(runSeed: string): 0 | 1 | 2 {
+  return Stream.fromKey(`${runSeed}:pendulum-gallery:weight`).int(0, 2) as 0 | 1 | 2;
+}
 
 export function pendulumTrialSeconds(reference: PendulumDetent, detent: PendulumDetent): number {
   return 1.25 * Math.max(PENDULUM_PERIODS[reference], PENDULUM_PERIODS[detent]);
@@ -34,10 +37,11 @@ export function advancePendulumDetent(state: PendulumGalleryState): PendulumGall
 
 export function completePendulumTrial(run: RunState): {
   readonly run: RunState;
-  readonly result: 'ignored' | 'wrong' | 'matched' | 'opened';
+  readonly result: 'ignored' | 'wrong' | 'wrong-weight' | 'matched' | 'opened';
 } {
   const state = readPendulumGallery(run);
   if (state.open) return { run, result: 'ignored' };
+  if (state.weight !== pendulumWeightTarget(run.seed)) return { run, result: 'wrong-weight' };
   if (state.detent !== pendulumTarget(run.seed)) return { run, result: 'wrong' };
   if (!state.phaseReady) {
     return {

@@ -1016,6 +1016,55 @@ def unfold_paper(source: np.ndarray) -> np.ndarray:
     return mix[:, None]
 
 
+def recorded_foley(cue: dict) -> tuple[np.ndarray, Path, dict]:
+    source_dir = AUDIO_SRC / "sfx" / "foley"
+    manifest = source_dir / "sources.json"
+    sources = json.loads(manifest.read_text())
+    recipe = cue["foley"]
+    frames = round((cue["duration_seconds"] + recipe.get("crossfade_s", 0)) * SR)
+    mix = np.zeros((frames, 2), dtype=np.float32)
+    decoded: dict[str, np.ndarray] = {}
+    inputs: dict[str, dict] = {}
+    for layer in recipe["layers"]:
+        key = layer["source"]
+        source = sources[key]
+        path = source_dir / source["file"]
+        if key not in decoded:
+            if sha256_file(path) != source["sha256"]:
+                raise SystemExit(f"{cue['id']}: recorded source hash changed for {key}")
+            decoded[key] = decode(path)
+            inputs[key] = {**source, "file": rel(path)}
+        samples = decoded[key]
+        length = round(layer["duration_s"] * SR)
+        start = round(layer["start_s"] * SR)
+        at = round(layer["at_s"] * SR)
+        positions = start + np.arange(length) * layer.get("speed", 1)
+        if positions[-1] >= len(samples) or at + length > frames:
+            raise SystemExit(f"{cue['id']}: Foley layer {key} exceeds its source or cue")
+        grid = np.arange(len(samples))
+        clip = np.column_stack([np.interp(positions, grid, channel) for channel in samples.T]).astype(np.float32)
+        clip = fade_edges(clip, 0.002 if at else 0, layer.get("tail_s", 0.04))
+        peak = np.max(np.abs(clip))
+        if peak <= 0:
+            raise SystemExit(f"{cue['id']}: silent Foley layer {key}")
+        mix[at:at + length] += clip * (10 ** (layer["peak_dbfs"] / 20) / peak)
+    if dynamics := recipe.get("dynamics"):
+        threshold = 10 ** (dynamics["threshold_dbfs"] / 20)
+        filter_spec = (
+            f"acompressor=threshold={threshold}:ratio={dynamics['ratio']}"
+            ":attack=0.05:release=26:detection=peak:link=maximum"
+        )
+        compressed = run([FFMPEG, "-nostdin", "-v", "error", "-f", "f32le",
+                          "-ar", str(SR), "-ac", "2", "-i", "pipe:0",
+                          "-af", filter_spec, "-f", "f32le", "pipe:1"],
+                         input=mix.astype("<f4").tobytes())
+        if compressed.returncode:
+            raise SystemExit(f"{cue['id']}: Foley transient control failed: {compressed.stderr.decode()}")
+        mix = np.frombuffer(compressed.stdout, dtype="<f4").reshape(-1, 2).copy()
+    primary = ROOT / next(iter(inputs.values()))["file"]
+    return mix, primary, {"method": "recorded Foley", "sources": inputs, "recipe": recipe}
+
+
 def build_sfx(spec: dict, only: set[str], derived: Path, out: Path) -> dict[str, dict]:
     results: dict[str, dict] = {}
     for cue in spec["cues"]:
@@ -1036,7 +1085,10 @@ def build_sfx(spec: dict, only: set[str], derived: Path, out: Path) -> dict[str,
             }
             continue
         source_id = "card-draw" if cid == "paper-unfold" else cid
-        if "procedural" in cue:
+        foley = cue.get("foley")
+        if foley:
+            clip, src, generation = recorded_foley(cue)
+        elif "procedural" in cue:
             src = AUDIO_SRC / "sfx" / "procedural" / f"{cid}.wav"
             if cid == "pendulum-tick":
                 procedural_pendulum_tick(cue, src)
@@ -1063,7 +1115,12 @@ def build_sfx(spec: dict, only: set[str], derived: Path, out: Path) -> dict[str,
         else:
             src = AUDIO_SRC / "sfx" / "raw" / f"{source_id}.mp3"
         steps: list[str] = []
-        clip = decode(src, 2)
+        if foley:
+            steps.append("Place and level trimmed recordings with the cue's Foley recipe")
+            if "dynamics" in foley:
+                steps.append("Control isolated peaks in the Foley premix before linear loudness mastering")
+        else:
+            clip = decode(src, 2)
         if cid == "paper-unfold":
             clip = unfold_paper(clip)
             steps.append("Layer and stretch six dry paper transients into two opening folds and a settling rustle")
@@ -1071,7 +1128,12 @@ def build_sfx(spec: dict, only: set[str], derived: Path, out: Path) -> dict[str,
         if cue["loop"]:
             native = loop_metrics(clip)
             loop_info = {"source": native}
-            if not native["pass"]:
+            if foley:
+                end = round(cue["duration_seconds"] * SR)
+                xf = round(foley["crossfade_s"] * SR)
+                clip = crossfade_loop(clip, 0, end, xf)
+                steps.append(f"{xf / SR:g} s equal-power tail-over-head crossfade at the loop seam")
+            elif not native["pass"]:
                 xf = int(0.30 * SR)
                 clip = crossfade_loop(clip, 0, None, xf)
                 steps.append("equal-power tail-over-head crossfade 300 ms (source wrap failed)")
@@ -1115,7 +1177,9 @@ def build_sfx(spec: dict, only: set[str], derived: Path, out: Path) -> dict[str,
             "runtime_bytes": dest.stat().st_size,
             "runtime_probe": probe(dest),
         })
-        if "procedural" in cue:
+        if foley:
+            result["generation"] = generation
+        elif "procedural" in cue:
             result["generation"] = {
                 "method": "deterministic additive synthesis",
                 "settings": cue["procedural"],
@@ -1164,6 +1228,12 @@ def build_music(music_src: Path, only: set[str], derived: Path, out: Path) -> di
                 f"(head {trim['trimmed_head_ms']} ms, tail {trim['trimmed_tail_ms']} ms), "
                 f"2 ms fade in, {fade_out_s:.2f}s raised-cosine fade out"
             )
+        side_gain = float(cfg.get("side_gain", 1.0))
+        if not 0.0 <= side_gain <= 1.0:
+            raise SystemExit(f"music {mid}: side_gain must be between 0 and 1")
+        if side_gain != 1.0:
+            clip = narrow_side(clip, side_gain)
+            steps.append(f"side channel x{side_gain:g} for mono compatibility")
         dest = out / "music" / f"{mid}.ogg"
         result = master_and_encode(mid, clip, "music", MUSIC_LUFS, derived, dest)
         decoded = result.pop("decoded")
@@ -1221,6 +1291,7 @@ def main() -> None:
     loops = [out / "sfx" / f"{k}.ogg" for k, v in sfx.items() if "loop" in v]
     loops += [out / "music" / f"{k}.ogg" for k, v in music.items() if "loop" in v]
     stereo = [out / "sfx" / f"{k}.ogg" for k, v in sfx.items() if v["runtime_probe"]["channels"] == 2]
+    stereo += [out / "music" / f"{k}.ogg" for k in music]
     report = {
         "tools": tool_versions(),
         "targets": {"sfx_lufs": SFX_LUFS, "music_lufs": MUSIC_LUFS, "true_peak_dbtp_max": TRUE_PEAK_CEILING,
@@ -1280,13 +1351,28 @@ def main() -> None:
                        "spring-slip", "spring-release", "circuit-bridge", "circuit-grille-open",
                        "drum-reed-low", "drum-reed-mid", "drum-reed-high", "drum-index",
                        "drum-pin", "drum-grille-open", "trellis-brace", "trellis-double-cut"):
-            if cue_id in provenance["sfx"]:
+            if cue_id in provenance["sfx"] and sfx[cue_id].get("generation", {}).get("method") != "recorded Foley":
                 provenance["sfx"][cue_id]["approval"] = "Original project synthesis. Owner listening review pending."
+        review_path = AUDIO_SRC / "owner-review.json"
+        owner_review = json.loads(review_path.read_text()) if review_path.exists() else {}
+        replacement_review = owner_review.get("replacementReview", {}).get("sfx", {})
+        for cue_id, cue_result in sfx.items():
+            if cue_result.get("generation", {}).get("method") == "recorded Foley":
+                verdict = replacement_review.get(cue_id, {})
+                approved = (
+                    verdict.get("verdict") == "approve"
+                    and verdict.get("sha256") == cue_result["runtime_sha256"]
+                )
+                status = "Owner approved the matching runtime file." if approved else "Owner listening review pending."
+                provenance["sfx"][cue_id]["approval"] = f"CC0 recorded Foley. {status}"
         if music and music_log.exists():
             provenance["music_source"] = json.loads(music_log.read_text())["source"]
             provenance["music_generation_log"] = rel(music_log)
         if only and (AUDIO_SRC / "provenance.json").exists():
             previous = json.loads((AUDIO_SRC / "provenance.json").read_text())
+            for key in ("music_source", "music_generation_log"):
+                if key in previous:
+                    provenance.setdefault(key, previous[key])
             for section in ("sfx", "music"):
                 preserved = previous.get(section, {})
                 preserved.update(provenance.get(section, {}))

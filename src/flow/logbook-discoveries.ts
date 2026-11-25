@@ -1,9 +1,10 @@
 import type { FloorPlan, WorldRoom } from '../floor/generate.ts';
+import type { PuzzleLocation } from '../persist/saves.ts';
 import type { MapPoint } from './logbook-map.ts';
 
 /** A symbol that may be drawn over an explored-room map. */
 export interface LogbookDiscovery {
-  readonly kind: 'chest' | 'note' | 'rubbing' | 'cache';
+  readonly kind: 'chest' | 'note' | 'rubbing' | 'cache' | 'hearth' | 'puzzle';
   /** Stable id for the symbol, suitable for a11y labels or hit testing. */
   readonly id: string;
   readonly room: number;
@@ -16,6 +17,13 @@ export interface KnownNoteLocation {
   readonly room: number;
   /** Runtime placement when available. Defaults to the room centre. */
   readonly position?: MapPoint;
+}
+
+export interface KnownHearthLocation {
+  readonly id: string;
+  readonly room: number;
+  /** World-space floor coordinates, [x, z]. */
+  readonly position: MapPoint;
 }
 
 /**
@@ -33,6 +41,9 @@ export interface LogbookDiscoveryInput {
   readonly knownNotes?: readonly KnownNoteLocation[];
   readonly knownRubbingRoom?: number;
   readonly knownCacheRooms?: readonly number[];
+  /** Hearth placements supplied by the floor owner. Only explored rooms are returned. */
+  readonly knownHearths?: readonly KnownHearthLocation[];
+  readonly knownPuzzles?: readonly PuzzleLocation[];
 }
 
 function roomCenter(room: WorldRoom): MapPoint {
@@ -108,6 +119,28 @@ export function logbookDiscoveries(input: LogbookDiscoveryInput): readonly Logbo
       kind: 'cache',
       id: `cache:${roomNumber}`,
       room: roomNumber,
+      position: roomCenter(room),
+    });
+  }
+
+  for (const hearth of input.knownHearths ?? []) {
+    if (explored.has(hearth.room)) {
+      result.push({
+        kind: 'hearth',
+        id: `hearth:${hearth.id}`,
+        room: hearth.room,
+        position: hearth.position,
+      });
+    }
+  }
+
+  for (const puzzle of input.knownPuzzles ?? []) {
+    const room = input.worldRooms[puzzle.room];
+    if (!room || !explored.has(puzzle.room)) continue;
+    result.push({
+      kind: 'puzzle',
+      id: `puzzle:${puzzle.room}`,
+      room: puzzle.room,
       position: roomCenter(room),
     });
   }

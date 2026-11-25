@@ -33,13 +33,19 @@ export const ECHO_GLYPH_IDS: ReadonlySet<string> = new Set(['echo-glyph']);
 /** Lens Focus reward content added in version 33. */
 export const LENS_FOCUS_IDS: ReadonlySet<string> = new Set(['lens-focus']);
 
-/** Starter-only basics: the deck already holds four of each, so they are never offered as rewards. */
+/** Field Dressing reward content added in version 36. */
+export const FIELD_DRESSING_ID = 'field-dressing';
+
+/** Risk cards available from reward content version 37 onward. */
+export const RISK_CARD_IDS: ReadonlySet<string> = new Set(['redline-shot', 'boiler-gamble']);
+
+/** Starter-only basics are never offered as rewards. */
 const BASICS: ReadonlySet<string> = new Set(['strike', 'defend']);
 
 /**
  * Card ids the slice can offer as rewards and treasure: every base card except the starter basics.
- * Base ids only, upgrades come from the workshop. `cog-toss` and `warding-glyph` start in the deck but
- * stay in the pool, so duplicates of them are a real choice.
+ * Base ids only, upgrades come from the workshop. Cog Toss, Warding Glyph and Patch Kit
+ * start in the deck and stay in the pool.
  */
 export const REWARD_POOL: readonly string[] = CARDS.filter((card) => !BASICS.has(card.id)).map(
   (card) => card.id,
@@ -82,7 +88,7 @@ export const LEGACY_REWARD_POOL: readonly string[] = [
   'time-spiral',
 ];
 
-/** Cards available for permanent purchase, excluding cards already in the starter deck. */
+/** Keep Patch Kit purchasable so existing permanent copies stay valid. */
 export const PERMANENT_CARD_IDS: readonly string[] = REWARD_POOL.filter(
-  (id) => !STARTER_DECK.includes(id),
+  (id) => id === 'patch-kit' || !STARTER_DECK.includes(id),
 );

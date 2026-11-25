@@ -1,0 +1,223 @@
+{
+  "source": {
+    "provider": "Suno",
+    "provenance": "Owner-selected Suno WAVs supplied on November 23, 2026.",
+    "promptReference": "assets-source/audio/music/SUNO-HANDOFF.md",
+    "settingsReference": "assets-source/audio/music/cues.json",
+    "settingsUsed": "Exact model, tier at generation, and any edits to the prompt settings were not supplied.",
+    "rightsEvidence": "D13 records Paul’s prior paid-plan commercial-use statement from November 16, 2026.",
+    "runtimeAudition": "All eleven mastered Suno cues approved by Paul in Quest Browser on November 23, 2026.",
+    "ownerReview": "assets-source/audio/owner-review.json"
+  },
+  "generations": [
+    {
+      "cue": "title",
+      "receivedFilename": "title.wav",
+      "originalProviderFilename": null,
+      "sourceFile": "assets-source/audio/music/title.wav",
+      "sha256": "c7ca69b4b1cfbe2f2ccf251061adf06a1c53794167a6b9a4d17fda8515a7e665",
+      "bytes": 22823418,
+      "sunoSongId": "c7fc605d-09aa-4e43-af2b-753953bdc56d",
+      "sunoCreatedAt": "2026-11-24T01:18:39Z",
+      "model": null,
+      "providerComment": "made with suno; created=2026-11-24T01:18:39Z; id=c7fc605d-09aa-4e43-af2b-753953bdc56d",
+      "audio": {
+        "channels": 2,
+        "sampleRate": 48000,
+        "bitsPerSample": 16,
+        "frames": 5702400,
+        "durationSeconds": 118.8
+      }
+    },
+    {
+      "cue": "explore",
+      "receivedFilename": "explore.wav",
+      "originalProviderFilename": null,
+      "sourceFile": "assets-source/audio/music/explore.wav",
+      "sha256": "b017bd8ad2d365cc28b4436084d23d4854059ea64d0f1a49ec9bc095355cd72f",
+      "bytes": 22969338,
+      "sunoSongId": "02921ee0-c74b-4134-8cd4-385d0b43b638",
+      "sunoCreatedAt": "2026-11-24T01:18:46Z",
+      "model": null,
+      "providerComment": "made with suno; created=2026-11-24T01:18:46Z; id=02921ee0-c74b-4134-8cd4-385d0b43b638",
+      "audio": {
+        "channels": 2,
+        "sampleRate": 48000,
+        "bitsPerSample": 16,
+        "frames": 5738880,
+        "durationSeconds": 119.56
+      }
+    },
+    {
+      "cue": "combat",
+      "receivedFilename": "combat.wav",
+      "originalProviderFilename": null,
+      "sourceFile": "assets-source/audio/music/combat.wav",
+      "sha256": "4676d9ef33432cc87fd7fc47c5ad83dec748c6de91675280ce48b897a060fa72",
+      "bytes": 22861818,
+      "sunoSongId": "e72cc9a5-2f22-4cb8-9ff0-4d50ff77e0c9",
+      "sunoCreatedAt": "2026-11-24T01:18:53Z",
+      "model": null,
+      "providerComment": "made with suno; created=2026-11-24T01:18:53Z; id=e72cc9a5-2f22-4cb8-9ff0-4d50ff77e0c9",
+      "audio": {
+        "channels": 2,
+        "sampleRate": 48000,
+        "bitsPerSample": 16,
+        "frames": 5712000,
+        "durationSeconds": 119.0
+      }
+    },
+    {
+      "cue": "reward",
+      "receivedFilename": "reward.wav",
+      "originalProviderFilename": null,
+      "sourceFile": "assets-source/audio/music/reward.wav",
+      "sha256": "108b530272d67f35115f7a58603d87841e15c05271d3092a82be8c9647656e16",
+      "bytes": 17063418,
+      "sunoSongId": "779a6d55-1466-4113-8b71-5ba00aaea3a1",
+      "sunoCreatedAt": "2026-11-24T01:18:30Z",
+      "model": null,
+      "providerComment": "made with suno; created=2026-11-24T01:18:30Z; id=779a6d55-1466-4113-8b71-5ba00aaea3a1",
+      "audio": {
+        "channels": 2,
+        "sampleRate": 48000,
+        "bitsPerSample": 16,
+        "frames": 4262400,
+        "durationSeconds": 88.8
+      }
+    },
+    {
+      "cue": "rest",
+      "receivedFilename": "rest.wav",
+      "originalProviderFilename": null,
+      "sourceFile": "assets-source/audio/music/rest.wav",
+      "sha256": "20b97fd319fcd8f934a6caafd601501b18404aeb210d2c319ac7c4d287ae1532",
+      "bytes": 23046138,
+      "sunoSongId": "c93ffa1b-7c58-47a8-b167-e8ad69db8dfe",
+      "sunoCreatedAt": "2026-11-24T01:18:20Z",
+      "model": null,
+      "providerComment": "made with suno; created=2026-11-24T01:18:20Z; id=c93ffa1b-7c58-47a8-b167-e8ad69db8dfe",
+      "audio": {
+        "channels": 2,
+        "sampleRate": 48000,
+        "bitsPerSample": 16,
+        "frames": 5758080,
+        "durationSeconds": 119.96
+      }
+    },
+    {
+      "cue": "elite",
+      "receivedFilename": "elite.wav",
+      "originalProviderFilename": null,
+      "sourceFile": "assets-source/audio/music/elite.wav",
+      "sha256": "48082646f220fd9e71968d94c1c7e3c1c9a7a352c13ef84c7a31a0cd0dc387a2",
+      "bytes": 22992378,
+      "sunoSongId": "ba98cf06-4451-4970-b327-86225f41cd31",
+      "sunoCreatedAt": "2026-11-24T01:18:14Z",
+      "model": null,
+      "providerComment": "made with suno; created=2026-11-24T01:18:14Z; id=ba98cf06-4451-4970-b327-86225f41cd31",
+      "audio": {
+        "channels": 2,
+        "sampleRate": 48000,
+        "bitsPerSample": 16,
+        "frames": 5744640,
+        "durationSeconds": 119.68
+      }
+    },
+    {
+      "cue": "defeat",
+      "receivedFilename": "defeat.wav",
+      "originalProviderFilename": null,
+      "sourceFile": "assets-source/audio/music/defeat.wav",
+      "sha256": "ad20867c87e4f62d308bb48b8026ae4fd865714df0e3874e671ec4be0a05db7f",
+      "bytes": 11341818,
+      "sunoSongId": "2e04bbdf-249a-4bca-bfed-bbd27eb2e44d",
+      "sunoCreatedAt": "2026-11-24T01:17:34Z",
+      "model": null,
+      "providerComment": "made with suno; created=2026-11-24T01:17:34Z; id=2e04bbdf-249a-4bca-bfed-bbd27eb2e44d",
+      "audio": {
+        "channels": 2,
+        "sampleRate": 48000,
+        "bitsPerSample": 16,
+        "frames": 2832000,
+        "durationSeconds": 59.0
+      }
+    },
+    {
+      "cue": "workshop",
+      "receivedFilename": "workshop.wav",
+      "originalProviderFilename": null,
+      "sourceFile": "assets-source/audio/music/workshop.wav",
+      "sha256": "03eb34252ccec5f7526c0133500fb1559fcbf73c01ca85318d748745d3606cb3",
+      "bytes": 22977018,
+      "sunoSongId": "5376f718-fa60-4224-a9b2-5341500e2633",
+      "sunoCreatedAt": "2026-11-24T01:17:27Z",
+      "model": null,
+      "providerComment": "made with suno; created=2026-11-24T01:17:27Z; id=5376f718-fa60-4224-a9b2-5341500e2633",
+      "audio": {
+        "channels": 2,
+        "sampleRate": 48000,
+        "bitsPerSample": 16,
+        "frames": 5740800,
+        "durationSeconds": 119.6
+      }
+    },
+    {
+      "cue": "guardian-1",
+      "receivedFilename": "guardian-1.wav",
+      "originalProviderFilename": null,
+      "sourceFile": "assets-source/audio/music/guardian-1.wav",
+      "sha256": "70afe65e629ce1e50b5f9009b0951d3597ad549f93e4a15afccb77664a3b6032",
+      "bytes": 22815738,
+      "sunoSongId": "81e15130-3ec4-4f77-b93d-c3aed0ab27e8",
+      "sunoCreatedAt": "2026-11-24T01:17:20Z",
+      "model": null,
+      "providerComment": "made with suno; created=2026-11-24T01:17:20Z; id=81e15130-3ec4-4f77-b93d-c3aed0ab27e8",
+      "audio": {
+        "channels": 2,
+        "sampleRate": 48000,
+        "bitsPerSample": 16,
+        "frames": 5700480,
+        "durationSeconds": 118.76
+      }
+    },
+    {
+      "cue": "guardian-2",
+      "receivedFilename": "guardian-2.wav",
+      "originalProviderFilename": null,
+      "sourceFile": "assets-source/audio/music/guardian-2.wav",
+      "sha256": "fa775988a976691588670bf7f2063e5556ba144f0f43ee9dbc1ec13757a84a74",
+      "bytes": 22977018,
+      "sunoSongId": "86448c16-8052-475c-8392-8e09f0183ab3",
+      "sunoCreatedAt": "2026-11-24T01:17:09Z",
+      "model": null,
+      "providerComment": "made with suno; created=2026-11-24T01:17:09Z; id=86448c16-8052-475c-8392-8e09f0183ab3",
+      "audio": {
+        "channels": 2,
+        "sampleRate": 48000,
+        "bitsPerSample": 16,
+        "frames": 5740800,
+        "durationSeconds": 119.6
+      }
+    },
+    {
+      "cue": "victory",
+      "receivedFilename": "victory.wav",
+      "originalProviderFilename": null,
+      "sourceFile": "assets-source/audio/music/victory.wav",
+      "sha256": "304136f7a523b41d5aee9fa487f636f26aa32c7f6882d68ec13b84094eca7966",
+      "bytes": 11457018,
+      "sunoSongId": "9187c906-bbb4-46fd-a91b-8bd9962221fa",
+      "sunoCreatedAt": "2026-11-24T01:17:01Z",
+      "model": null,
+      "providerComment": "made with suno; created=2026-11-24T01:17:01Z; id=9187c906-bbb4-46fd-a91b-8bd9962221fa",
+      "audio": {
+        "channels": 2,
+        "sampleRate": 48000,
+        "bitsPerSample": 16,
+        "frames": 2860800,
+        "durationSeconds": 59.6
+      }
+    }
+  ]
+}

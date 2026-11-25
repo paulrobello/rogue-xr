@@ -26,6 +26,7 @@ export type PendulumDetent = 0 | 1 | 2;
 export interface PendulumGalleryState {
   readonly detent: PendulumDetent;
   readonly open: boolean;
+  readonly weight?: 0 | 1 | 2;
   readonly phaseReady?: boolean;
   readonly phaseSet?: boolean;
 }
@@ -62,6 +63,7 @@ export type CircuitSocket = 0 | 1 | 2 | 3;
 export interface DarkCircuitState {
   readonly sockets: readonly CircuitSocket[];
   readonly open: boolean;
+  readonly completed?: readonly number[];
 }
 
 export type DrumBeat = 0 | 1 | 2 | 3;
@@ -168,6 +170,14 @@ export interface CardDef {
   readonly cost: CardCost;
   readonly target: CardTargetRule;
   readonly effects: readonly Effect[];
+  /** Use the card's effects at or above the kept roll threshold. A miss applies only this status. */
+  readonly rollRisk?: {
+    readonly minimum: number;
+    readonly miss: Extract<Effect, { type: 'apply-status' }> & {
+      readonly target: 'self';
+      readonly stacks: number;
+    };
+  };
   readonly echoSigil?: true;
   readonly mechanism?: {
     readonly timing: 'start-turn' | 'end-turn';

@@ -6,6 +6,7 @@ import {
   pendulumAngle,
   pendulumTarget,
   pendulumTrialSeconds,
+  pendulumWeightTarget,
   readPendulumGallery,
 } from '../rules/pendulum-gallery.ts';
 import { ClockInscription } from './clock-inscription.ts';
@@ -15,10 +16,10 @@ import type { PbrSet } from './materials.ts';
 import { findPuzzleMount } from './puzzle-placement.ts';
 
 type Layout = NonNullable<FloorWorld['plan']['pendulumGallery']>;
-type Action = 'adjust' | 'release';
+type Action = 'adjust' | 'release' | 'weight-0' | 'weight-1' | 'weight-2';
 export type PendulumPick = { readonly action: Action; readonly distance: number };
-type TrialResult = 'ignored' | 'wrong' | 'matched' | 'opened';
-type Feedback = 'ready' | 'running' | 'wrong' | 'matched' | 'opened';
+type TrialResult = 'ignored' | 'wrong' | 'wrong-weight' | 'matched' | 'opened';
+type Feedback = 'ready' | 'running' | 'wrong' | 'wrong-weight' | 'matched' | 'opened';
 interface Arm {
   readonly pivot: THREE.Object3D;
   readonly rod: THREE.Object3D;
@@ -31,6 +32,7 @@ const RELEASE_POS = [0.53, 0.66, 0.2] as const;
 const ADJUST_POS = [-0.53, 0.66, 0.2] as const;
 const DOOR_SECONDS = 1.12;
 const CATCH_SECONDS = 0.13;
+const BOB_SCALES = [0.76, 1, 1.24] as const;
 
 function setLength(arm: Arm, detent: PendulumDetent): void {
   const length = [0.154, 0.184, 0.222][detent];
@@ -77,6 +79,7 @@ export class PendulumGallery {
     roughness: 0.62,
   });
   private readonly dial = new THREE.Group();
+  private readonly weights = new THREE.Group();
   private readonly dialNeedle = new THREE.Group();
   private readonly release = new THREE.Group();
   private readonly doorLeft = new THREE.Group();
@@ -91,6 +94,7 @@ export class PendulumGallery {
   private readonly blocker = new THREE.Vector3();
   private readonly at = new THREE.Vector3();
   private readonly target: PendulumDetent;
+  private readonly weightTarget: 0 | 1 | 2;
   private state: PendulumGalleryState;
   private removeCollider: (() => void) | undefined;
   private trial: number | null = null;
@@ -143,6 +147,7 @@ export class PendulumGallery {
     private readonly tick: (at: THREE.Vector3) => void,
   ) {
     this.target = pendulumTarget(seed);
+    this.weightTarget = pendulumWeightTarget(seed);
     this.state = readPendulumGallery({ seed });
     this.station.name = 'pendulum-gallery-station';
     this.gate.name = 'pendulum-gallery-gate';
@@ -167,6 +172,8 @@ export class PendulumGallery {
     const right = pair?.getObjectByName('pendulum_right_pivot');
     this.a = this.buildArm(left, -0.105, 0.22);
     this.b = this.buildArm(right, 0.105, 0.15);
+    this.a.bob.scale.setScalar(BOB_SCALES[this.weightTarget]);
+    this.b.bob.visible = false;
     this.reference = this.a.pivot;
     this.reference.name = 'pendulum-reference';
     this.adjustable = this.b.pivot;
@@ -192,8 +199,8 @@ export class PendulumGallery {
         1.35,
         1.87,
         'Pendulum Rendezvous',
-        'Match the swings to open the gallery.',
-        'Set the dial, then pull the test lever.',
+        'Match the adjustable bob to the reference.',
+        'Set the length, then pull the test lever.',
       ),
       running: this.sign(
         this.station,
@@ -209,6 +216,14 @@ export class PendulumGallery {
         1.87,
         'The crossings drifted',
         'Change the dial and test again.',
+        '',
+      ),
+      'wrong-weight': this.sign(
+        this.station,
+        1.35,
+        1.87,
+        'The bob weight is wrong',
+        'Choose another size, then test again.',
         '',
       ),
       opened: this.sign(
@@ -317,6 +332,19 @@ export class PendulumGallery {
     this.boxPart(this.release, [0.032, 0.137, 0.032], [0, 0.049, 0.059], this.steel);
     this.boxPart(this.release, [0.104, 0.054, 0.069], [0, 0.112, 0.069], this.brass);
     this.station.add(this.release);
+    this.weights.position.set(0, 0.27, 0.19);
+    for (const [i, scale] of BOB_SCALES.entries()) {
+      const size = 0.067 * scale;
+      const bob = this.mesh(
+        this.weights,
+        new THREE.CylinderGeometry(size, size, 0.047, 20).rotateX(Math.PI / 2),
+        this.brass,
+        [-0.23 + i * 0.23, 0, 0],
+      );
+      bob.name = `pendulum-weight-${i}`;
+    }
+    this.boxPart(this.weights, [0.72, 0.055, 0.05], [0, 0, -0.046], this.walnut);
+    this.station.add(this.weights);
     this.buildTimingRack();
   }
 
@@ -426,11 +454,14 @@ export class PendulumGallery {
     }
   }
 
-  private controls(): readonly (readonly [Action, THREE.Group])[] {
+  private controls(): readonly (readonly [Action, THREE.Object3D])[] {
     return this.state.open || this.trial !== null || this.world.current !== this.layout.source.room
       ? []
       : [
           ['adjust', this.dial],
+          ['weight-0', this.weights.children[0]],
+          ['weight-1', this.weights.children[1]],
+          ['weight-2', this.weights.children[2]],
           ['release', this.release],
         ];
   }
@@ -484,6 +515,8 @@ export class PendulumGallery {
       this.show('ready');
     }
     this.state = state;
+    this.b.bob.visible = state.weight !== undefined || state.open;
+    this.b.bob.scale.setScalar(BOB_SCALES[state.weight ?? this.weightTarget]);
     if (!state.open) {
       this.show(state.phaseReady && !state.phaseSet ? 'matched' : 'ready');
       return;
@@ -551,6 +584,7 @@ export class PendulumGallery {
     this.release.rotation.z = 0;
     const result = this.finishTrial();
     if (result === 'wrong') this.show('wrong');
+    else if (result === 'wrong-weight') this.show('wrong-weight');
     else if (result === 'ignored') this.show('ready');
   }
 

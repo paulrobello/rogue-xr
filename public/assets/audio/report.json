@@ -1954,62 +1954,135 @@
     },
     "prism-annex-open": {
       "intermediate_wav": "assets-source/audio/derived/prism-annex-open.wav",
-      "intermediate_sha256": "8e2a2c3e2a634ee1211748bef77cdeeddb4e789d261291ff52076acf3e585cf0",
+      "intermediate_sha256": "93c9399a252d79181bc8bcbba8fa82d0a5d42a2f5426116b6b4791e7f5e2b779",
       "pre_gain": {
-        "integrated_lufs": -18.7,
-        "true_peak_dbtp": -5.9,
-        "momentary_max_lufs": -16.2
+        "integrated_lufs": -43.5,
+        "true_peak_dbtp": -26.5,
+        "momentary_max_lufs": -42.4
       },
-      "gain_db": 2.7,
+      "gain_db": 25.5,
       "encode_attempts": 1,
       "opus_kbps": 64,
       "measured": {
-        "integrated_lufs": -16.1,
-        "true_peak_dbtp": -3.9,
-        "momentary_max_lufs": -13.5
+        "integrated_lufs": -18.0,
+        "true_peak_dbtp": -1.1,
+        "momentary_max_lufs": -16.9
       },
       "target_lufs": -16.0,
-      "deviation_lu": -0.1,
-      "loudness_status": "met",
-      "limited_by_true_peak": false,
+      "deviation_lu": -2.0,
+      "loudness_status": "deviation",
+      "limited_by_true_peak": true,
       "short_clip_lufs_unreliable": false,
-      "decoded_frames": 74158,
-      "decoded_duration_s": 1.545,
-      "decoded_pcm_sha256": "0b8390a5cb2715a24b479b2a3d31c3ff3c0b97cfd4cc50e81d9c87eea61dc736",
+      "decoded_frames": 69425,
+      "decoded_duration_s": 1.4464,
+      "decoded_pcm_sha256": "1d330dda62e5e6bd414134c581a00f6f3357c105caee9bccc9f71d304d6a71d5",
       "id": "prism-annex-open",
       "class": "positional",
-      "source_file": "assets-source/audio/sfx/procedural/prism-annex-open.wav",
-      "source_sha256": "baa3bf6805ac19cf6188a7afc64a5fb3f102efb320f9c545ebc4575762a18d51",
+      "source_file": "assets-source/audio/sfx/foley/ceramic-745291.mp3",
+      "source_sha256": "326fb0f3b1cb9db48d3db9c6b6a0b5adbd93f6a0143c262b90f83f223b3a0b65",
       "source_probe": {
-        "codec": "pcm_f32le",
-        "sample_rate": 48000,
-        "channels": 1,
-        "duration_s": 1.6
+        "codec": "mp3",
+        "sample_rate": 44100,
+        "channels": 2,
+        "duration_s": 0.3918
       },
       "trim": {
-        "trimmed_head_ms": 55.0,
-        "trimmed_tail_ms": 0.0
+        "trimmed_head_ms": 11.1,
+        "trimmed_tail_ms": 142.5
       },
       "steps": [
+        "Place and level trimmed recordings with the cue's Foley recipe",
+        "Control isolated peaks in the Foley premix before linear loudness mastering",
         "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
         "fade in 2 ms, fade out 30 ms (raised cosine)",
         "fold to mono 0.5*L+0.5*R (positional cue)"
       ],
       "runtime_file": "public/assets/audio/sfx/prism-annex-open.ogg",
-      "runtime_sha256": "fdd974824184c1ab090eee95a3e13fc0c36db58c41356b8741f9d7a202f28f1e",
-      "runtime_bytes": 13427,
+      "runtime_sha256": "31c2bbfa7f435fef8099a010130ed09c8b26106037bd5edeafd53d331a908c2c",
+      "runtime_bytes": 14892,
       "runtime_probe": {
         "codec": "opus",
         "sample_rate": 48000,
         "channels": 1,
-        "duration_s": 1.5515
+        "duration_s": 1.4529
       },
       "generation": {
-        "method": "deterministic additive synthesis",
-        "settings": {
-          "kind": "prism",
-          "seed": 3110,
-          "duration_seconds": 1.6
+        "method": "recorded Foley",
+        "sources": {
+          "ceramic": {
+            "file": "assets-source/audio/sfx/foley/ceramic-745291.mp3",
+            "sha256": "326fb0f3b1cb9db48d3db9c6b6a0b5adbd93f6a0143c262b90f83f223b3a0b65",
+            "author": "SamsterBirdies",
+            "license": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "recordingUrl": "https://freesound.org/people/SamsterBirdies/sounds/745291/",
+            "previewUrl": "https://cdn.freesound.org/previews/745/745291_5487341-hq.mp3"
+          },
+          "rail": {
+            "file": "assets-source/audio/sfx/foley/rail-617603.mp3",
+            "sha256": "19abac27e0c28928204c6731e22f99baec36fce0ac6d58ccbe1df442fd81c8c2",
+            "author": "sweet_niche",
+            "license": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "recordingUrl": "https://freesound.org/people/sweet_niche/sounds/617603/",
+            "previewUrl": "https://cdn.freesound.org/previews/617/617603_5332155-hq.mp3"
+          },
+          "ratchet": {
+            "file": "assets-source/audio/sfx/foley/ratchet-530074.mp3",
+            "sha256": "22f433207bb6371a7da163df6c2642d78502b029a64a9150fa04d20def811e8e",
+            "author": "magnuswaker",
+            "license": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "recordingUrl": "https://freesound.org/people/magnuswaker/sounds/530074/",
+            "previewUrl": "https://cdn.freesound.org/previews/530/530074_11537497-hq.mp3"
+          }
+        },
+        "recipe": {
+          "dynamics": {
+            "threshold_dbfs": -31,
+            "ratio": 6
+          },
+          "layers": [
+            {
+              "source": "ceramic",
+              "start_s": 0,
+              "duration_s": 0.13,
+              "at_s": 0.015,
+              "peak_dbfs": -20,
+              "speed": 1.12
+            },
+            {
+              "source": "ceramic",
+              "start_s": 0,
+              "duration_s": 0.13,
+              "at_s": 0.145,
+              "peak_dbfs": -17
+            },
+            {
+              "source": "ceramic",
+              "start_s": 0,
+              "duration_s": 0.15,
+              "at_s": 0.29,
+              "peak_dbfs": -16,
+              "speed": 0.93
+            },
+            {
+              "source": "rail",
+              "start_s": 4.4,
+              "duration_s": 0.79,
+              "at_s": 0.43,
+              "peak_dbfs": -8,
+              "tail_s": 0.1
+            },
+            {
+              "source": "ratchet",
+              "start_s": 1.54,
+              "duration_s": 0.2,
+              "at_s": 1.27,
+              "peak_dbfs": -15,
+              "tail_s": 0.09
+            }
+          ]
         }
       }
     },
@@ -2076,67 +2149,69 @@
     },
     "dungeon-torch-crackle": {
       "intermediate_wav": "assets-source/audio/derived/dungeon-torch-crackle.wav",
-      "intermediate_sha256": "ddfabaf01d55aa4b54874aa7621b2e2fbc00c5830683671b8facb50f6e811e00",
+      "intermediate_sha256": "06505ce0659487fc0ea07f948086d5a59dc56383fe268aa36ead0de97203aabb",
       "pre_gain": {
-        "integrated_lufs": -21.5,
-        "true_peak_dbtp": -5.8,
-        "momentary_max_lufs": -20.7
+        "integrated_lufs": -44.9,
+        "true_peak_dbtp": -29.8,
+        "momentary_max_lufs": -42.9
       },
-      "gain_db": 4.55,
+      "gain_db": 28.55,
       "encode_attempts": 2,
       "opus_kbps": 64,
       "measured": {
-        "integrated_lufs": -17.0,
-        "true_peak_dbtp": -1.1,
-        "momentary_max_lufs": -16.1
+        "integrated_lufs": -16.3,
+        "true_peak_dbtp": -1.0,
+        "momentary_max_lufs": -14.4
       },
       "target_lufs": -16.0,
-      "deviation_lu": -1.0,
+      "deviation_lu": -0.3,
       "loudness_status": "met",
       "limited_by_true_peak": true,
       "short_clip_lufs_unreliable": false,
       "decoded_frames": 480000,
       "decoded_duration_s": 10.0,
-      "decoded_pcm_sha256": "97797a90edaeb2ce0462e4afa6e5d0744cf77d3c4f7fd54d7d4f0b9e4e330695",
+      "decoded_pcm_sha256": "93638574d558fb6c96c881b27db97a99a40a846c3e459f60d8581b14e5333849",
       "loop": {
         "source": {
-          "wrap_step": 0.054467,
-          "p999_step": 0.066191,
-          "seam_ratio": 0.823,
-          "head_tail_level_diff_db": 0.21,
+          "wrap_step": 0.000408,
+          "p999_step": 0.013797,
+          "seam_ratio": 0.03,
+          "head_tail_level_diff_db": 2.19,
           "interior_dropout_windows": 0,
           "pass": true
         },
         "runtime": {
-          "wrap_step": 0.058841,
-          "p999_step": 0.108741,
-          "seam_ratio": 0.541,
-          "head_tail_level_diff_db": 0.19,
+          "wrap_step": 0.002703,
+          "p999_step": 0.370106,
+          "seam_ratio": 0.007,
+          "head_tail_level_diff_db": 1.04,
           "interior_dropout_windows": 0,
           "pass": true
         }
       },
       "id": "dungeon-torch-crackle",
       "class": "positional",
-      "source_file": "assets-source/audio/sfx/procedural/dungeon-torch-crackle.wav",
-      "source_sha256": "2999c09f90f9680405e9cb5196be8f749990ce591def82c4a5704a09c945a97d",
+      "source_file": "assets-source/audio/sfx/foley/fire-707262.mp3",
+      "source_sha256": "6d9cb4c76483081395ce76829e70bf31f1bb7ad0af27ac4a7658083090641def",
       "source_probe": {
-        "codec": "pcm_f32le",
+        "codec": "mp3",
         "sample_rate": 48000,
-        "channels": 1,
-        "duration_s": 10.0
+        "channels": 2,
+        "duration_s": 39.4914
       },
       "trim": {
         "trimmed_head_ms": 0.0,
         "trimmed_tail_ms": 0.0
       },
       "steps": [
-        "loop kept native: source wrap passed",
+        "Place and level trimmed recordings with the cue's Foley recipe",
+        "Control isolated peaks in the Foley premix before linear loudness mastering",
+        "0.6 s equal-power tail-over-head crossfade at the loop seam",
         "fold to mono 0.5*L+0.5*R (positional cue)"
       ],
       "runtime_file": "public/assets/audio/sfx/dungeon-torch-crackle.ogg",
-      "runtime_sha256": "3ec974836a6dca59187d06c091df8cdb04c16f4c57fd3ded1d768c57974c9214",
-      "runtime_bytes": 88626,
+      "runtime_sha256": "c11dea1ddb713bc7652ad664143afa29afcb76fa4e91cb106896e55947220f0d",
+      "runtime_bytes": 96750,
       "runtime_probe": {
         "codec": "opus",
         "sample_rate": 48000,
@@ -2144,133 +2219,284 @@
         "duration_s": 10.0065
       },
       "generation": {
-        "method": "deterministic additive synthesis",
-        "settings": {
-          "kind": "torch-crackle",
-          "seed": 4201,
-          "duration_seconds": 10.0
+        "method": "recorded Foley",
+        "sources": {
+          "fire": {
+            "file": "assets-source/audio/sfx/foley/fire-707262.mp3",
+            "sha256": "6d9cb4c76483081395ce76829e70bf31f1bb7ad0af27ac4a7658083090641def",
+            "author": "Sadiquecat",
+            "license": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "recordingUrl": "https://freesound.org/people/Sadiquecat/sounds/707262/",
+            "previewUrl": "https://cdn.freesound.org/previews/707/707262_5287430-hq.mp3"
+          }
+        },
+        "recipe": {
+          "dynamics": {
+            "threshold_dbfs": -32,
+            "ratio": 7
+          },
+          "crossfade_s": 0.6,
+          "layers": [
+            {
+              "source": "fire",
+              "start_s": 0.39,
+              "duration_s": 10.6,
+              "at_s": 0,
+              "peak_dbfs": -8,
+              "tail_s": 0
+            }
+          ]
         }
       }
     },
     "dungeon-chain-wind": {
       "intermediate_wav": "assets-source/audio/derived/dungeon-chain-wind.wav",
-      "intermediate_sha256": "367a067ec257d228b010a55f180813c34190886cfde66fe9e41aeb8a04ef657b",
+      "intermediate_sha256": "700b81ddac29b4a1faeecdac275230d5b43260252173c88bc00bc8c2273735fe",
       "pre_gain": {
-        "integrated_lufs": -20.4,
-        "true_peak_dbtp": -5.8,
-        "momentary_max_lufs": -17.4
+        "integrated_lufs": -29.0,
+        "true_peak_dbtp": -14.5,
+        "momentary_max_lufs": -27.2
       },
-      "gain_db": 4.4,
+      "gain_db": 13.0,
+      "encode_attempts": 1,
+      "opus_kbps": 64,
+      "measured": {
+        "integrated_lufs": -15.9,
+        "true_peak_dbtp": -1.5,
+        "momentary_max_lufs": -14.2
+      },
+      "target_lufs": -16.0,
+      "deviation_lu": 0.1,
+      "loudness_status": "met",
+      "limited_by_true_peak": false,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 61112,
+      "decoded_duration_s": 1.2732,
+      "decoded_pcm_sha256": "2fba6163ecb977aea3ed2ed9fc56ecc93461cad7d2e5c576d8b68327e19da4aa",
+      "id": "dungeon-chain-wind",
+      "class": "positional",
+      "source_file": "assets-source/audio/sfx/foley/chain-167916.mp3",
+      "source_sha256": "9694f199e7b7c536512a64cb9b173bbdbc5d0322b8af7d5ce9746ed109c18528",
+      "source_probe": {
+        "codec": "mp3",
+        "sample_rate": 44100,
+        "channels": 2,
+        "duration_s": 3.8779
+      },
+      "trim": {
+        "trimmed_head_ms": 5.5,
+        "trimmed_tail_ms": 21.3
+      },
+      "steps": [
+        "Place and level trimmed recordings with the cue's Foley recipe",
+        "Control isolated peaks in the Foley premix before linear loudness mastering",
+        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
+        "fade in 2 ms, fade out 30 ms (raised cosine)",
+        "fold to mono 0.5*L+0.5*R (positional cue)"
+      ],
+      "runtime_file": "public/assets/audio/sfx/dungeon-chain-wind.ogg",
+      "runtime_sha256": "9bac8d17632c13bbff12f1fa11ccfc85715adef3c19a2950434a8c51039b0450",
+      "runtime_bytes": 12977,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 1,
+        "duration_s": 1.2797
+      },
+      "generation": {
+        "method": "recorded Foley",
+        "sources": {
+          "chain": {
+            "file": "assets-source/audio/sfx/foley/chain-167916.mp3",
+            "sha256": "9694f199e7b7c536512a64cb9b173bbdbc5d0322b8af7d5ce9746ed109c18528",
+            "author": "ani_music",
+            "license": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "recordingUrl": "https://freesound.org/people/ani_music/sounds/167916/",
+            "previewUrl": "https://cdn.freesound.org/previews/167/167916_3008343-hq.mp3"
+          },
+          "ratchet": {
+            "file": "assets-source/audio/sfx/foley/ratchet-530074.mp3",
+            "sha256": "22f433207bb6371a7da163df6c2642d78502b029a64a9150fa04d20def811e8e",
+            "author": "magnuswaker",
+            "license": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "recordingUrl": "https://freesound.org/people/magnuswaker/sounds/530074/",
+            "previewUrl": "https://cdn.freesound.org/previews/530/530074_11537497-hq.mp3"
+          },
+          "armor": {
+            "file": "assets-source/audio/sfx/foley/armor-467120.mp3",
+            "sha256": "a4660d31f7c5eaacce73540549b9fad61c133f5c1b9d700a7c178117160f2045",
+            "author": "CalGre",
+            "license": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "recordingUrl": "https://freesound.org/people/CalGre/sounds/467120/",
+            "previewUrl": "https://cdn.freesound.org/previews/467/467120_8323375-hq.mp3"
+          }
+        },
+        "recipe": {
+          "dynamics": {
+            "threshold_dbfs": -20,
+            "ratio": 2.6
+          },
+          "layers": [
+            {
+              "source": "chain",
+              "start_s": 0.07,
+              "duration_s": 0.88,
+              "at_s": 0.01,
+              "peak_dbfs": -6,
+              "tail_s": 0.13,
+              "speed": 1.1
+            },
+            {
+              "source": "ratchet",
+              "start_s": 1.53,
+              "duration_s": 0.19,
+              "at_s": 0.91,
+              "peak_dbfs": -6,
+              "tail_s": 0.08
+            },
+            {
+              "source": "armor",
+              "start_s": 4.16,
+              "duration_s": 0.23,
+              "at_s": 1.05,
+              "peak_dbfs": -16,
+              "tail_s": 0.11
+            }
+          ]
+        }
+      }
+    },
+    "dungeon-scarab-scrape": {
+      "intermediate_wav": "assets-source/audio/derived/dungeon-scarab-scrape.wav",
+      "intermediate_sha256": "047e5a2102d6fada945c48ada88870ec3561b4c4fbaf1fe0a1867e93dc93428f",
+      "pre_gain": {
+        "integrated_lufs": -28.3,
+        "true_peak_dbtp": -14.6,
+        "momentary_max_lufs": -26.9
+      },
+      "gain_db": 12.3,
       "encode_attempts": 1,
       "opus_kbps": 64,
       "measured": {
         "integrated_lufs": -16.0,
-        "true_peak_dbtp": -1.7,
-        "momentary_max_lufs": -13.0
+        "true_peak_dbtp": -2.2,
+        "momentary_max_lufs": -14.6
       },
       "target_lufs": -16.0,
       "deviation_lu": 0.0,
       "loudness_status": "met",
       "limited_by_true_peak": false,
       "short_clip_lufs_unreliable": false,
-      "decoded_frames": 61196,
-      "decoded_duration_s": 1.2749,
-      "decoded_pcm_sha256": "892d003fa0a29e6555d51facabf4b5e597ededd8fe79be845c3039383ae10698",
-      "id": "dungeon-chain-wind",
-      "class": "positional",
-      "source_file": "assets-source/audio/sfx/procedural/dungeon-chain-wind.wav",
-      "source_sha256": "c3050aa51f47036b154409ab08a6a1ec1b8b4fa41e67a77eff79be50697195d1",
-      "source_probe": {
-        "codec": "pcm_f32le",
-        "sample_rate": 48000,
-        "channels": 1,
-        "duration_s": 1.3
-      },
-      "trim": {
-        "trimmed_head_ms": 25.1,
-        "trimmed_tail_ms": 0.0
-      },
-      "steps": [
-        "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
-        "fade in 2 ms, fade out 30 ms (raised cosine)",
-        "fold to mono 0.5*L+0.5*R (positional cue)"
-      ],
-      "runtime_file": "public/assets/audio/sfx/dungeon-chain-wind.ogg",
-      "runtime_sha256": "6865e794c54de9eecff3af3015bafda2d9a11eb79798b3bf61da137af94cdcd1",
-      "runtime_bytes": 11426,
-      "runtime_probe": {
-        "codec": "opus",
-        "sample_rate": 48000,
-        "channels": 1,
-        "duration_s": 1.2814
-      },
-      "generation": {
-        "method": "deterministic additive synthesis",
-        "settings": {
-          "kind": "chain-wind",
-          "seed": 4202,
-          "duration_seconds": 1.3
-        }
-      }
-    },
-    "dungeon-scarab-scrape": {
-      "intermediate_wav": "assets-source/audio/derived/dungeon-scarab-scrape.wav",
-      "intermediate_sha256": "a187bd50c2807bc5fed037435a5f99fa5fb9fc27172670c2cc5d8ebe935376e9",
-      "pre_gain": {
-        "integrated_lufs": -21.2,
-        "true_peak_dbtp": -5.8,
-        "momentary_max_lufs": -18.5
-      },
-      "gain_db": 4.8,
-      "encode_attempts": 1,
-      "opus_kbps": 64,
-      "measured": {
-        "integrated_lufs": -16.4,
-        "true_peak_dbtp": -1.1,
-        "momentary_max_lufs": -13.7
-      },
-      "target_lufs": -16.0,
-      "deviation_lu": -0.4,
-      "loudness_status": "met",
-      "limited_by_true_peak": true,
-      "short_clip_lufs_unreliable": false,
-      "decoded_frames": 49436,
-      "decoded_duration_s": 1.0299,
-      "decoded_pcm_sha256": "6bd06c2db844ec67c0980b8faa085b511bd058f71f3b21513b49a08127d2e099",
+      "decoded_frames": 49081,
+      "decoded_duration_s": 1.0225,
+      "decoded_pcm_sha256": "461b34d215f335da7fad0a74fd3199d5890f255424f1b29c5ebff97f93c2feb7",
       "id": "dungeon-scarab-scrape",
       "class": "positional",
-      "source_file": "assets-source/audio/sfx/procedural/dungeon-scarab-scrape.wav",
-      "source_sha256": "804e437794cfc5d2d503e44e498206355bb2c782a357d6c4d51b520cfd4f930f",
+      "source_file": "assets-source/audio/sfx/foley/stone-321488.mp3",
+      "source_sha256": "61d82d364bf2c88fc9c6a04b24f187c5f59a597942986f61c4951a6c2d9407a7",
       "source_probe": {
-        "codec": "pcm_f32le",
+        "codec": "mp3",
         "sample_rate": 48000,
-        "channels": 1,
-        "duration_s": 1.05
+        "channels": 2,
+        "duration_s": 2.5208
       },
       "trim": {
-        "trimmed_head_ms": 20.1,
-        "trimmed_tail_ms": 0.0
+        "trimmed_head_ms": 5.3,
+        "trimmed_tail_ms": 22.2
       },
       "steps": [
+        "Place and level trimmed recordings with the cue's Foley recipe",
+        "Control isolated peaks in the Foley premix before linear loudness mastering",
         "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
         "fade in 2 ms, fade out 30 ms (raised cosine)",
         "fold to mono 0.5*L+0.5*R (positional cue)"
       ],
       "runtime_file": "public/assets/audio/sfx/dungeon-scarab-scrape.ogg",
-      "runtime_sha256": "8c2b0539834613d2202e793653296845c8555af809920d5131f0f39e26bac96d",
-      "runtime_bytes": 11464,
+      "runtime_sha256": "63e0925cb67e4611a1f1c246187d3cb087c0825da852d7fa0fca9168732852d4",
+      "runtime_bytes": 10140,
       "runtime_probe": {
         "codec": "opus",
         "sample_rate": 48000,
         "channels": 1,
-        "duration_s": 1.0364
+        "duration_s": 1.029
       },
       "generation": {
-        "method": "deterministic additive synthesis",
-        "settings": {
-          "kind": "scarab-scrape",
-          "seed": 4203,
-          "duration_seconds": 1.05
+        "method": "recorded Foley",
+        "sources": {
+          "stone": {
+            "file": "assets-source/audio/sfx/foley/stone-321488.mp3",
+            "sha256": "61d82d364bf2c88fc9c6a04b24f187c5f59a597942986f61c4951a6c2d9407a7",
+            "author": "dslrguide",
+            "license": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "recordingUrl": "https://freesound.org/people/dslrguide/sounds/321488/",
+            "previewUrl": "https://cdn.freesound.org/previews/321/321488_5485024-hq.mp3"
+          },
+          "plate": {
+            "file": "assets-source/audio/sfx/foley/plate-321481.mp3",
+            "sha256": "b07ee6df5f5f11dca6ace41ae98e0d020cbc736599a397485954ae6e54a7c15c",
+            "author": "dslrguide",
+            "license": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "recordingUrl": "https://freesound.org/people/dslrguide/sounds/321481/",
+            "previewUrl": "https://cdn.freesound.org/previews/321/321481_5485024-hq.mp3"
+          }
+        },
+        "recipe": {
+          "dynamics": {
+            "threshold_dbfs": -20,
+            "ratio": 2.6
+          },
+          "layers": [
+            {
+              "source": "stone",
+              "start_s": 0.015,
+              "duration_s": 0.53,
+              "at_s": 0.01,
+              "peak_dbfs": -6,
+              "tail_s": 0.07
+            },
+            {
+              "source": "plate",
+              "start_s": 0.022,
+              "duration_s": 0.12,
+              "at_s": 0.493,
+              "peak_dbfs": -13,
+              "tail_s": 0.05,
+              "speed": 1.22
+            },
+            {
+              "source": "plate",
+              "start_s": 0.019,
+              "duration_s": 0.11,
+              "at_s": 0.626,
+              "peak_dbfs": -12,
+              "tail_s": 0.05,
+              "speed": 0.96
+            },
+            {
+              "source": "plate",
+              "start_s": 0.024,
+              "duration_s": 0.105,
+              "at_s": 0.732,
+              "peak_dbfs": -14,
+              "tail_s": 0.05,
+              "speed": 1.12
+            },
+            {
+              "source": "stone",
+              "start_s": 1.89,
+              "duration_s": 0.235,
+              "at_s": 0.79,
+              "peak_dbfs": -16,
+              "tail_s": 0.11,
+              "speed": 1.02
+            }
+          ]
         }
       }
     },
@@ -2659,62 +2885,107 @@
     },
     "armory-awaken": {
       "intermediate_wav": "assets-source/audio/derived/armory-awaken.wav",
-      "intermediate_sha256": "6f4d39fb6dfda16099972aa5b55740b3582d792a0292eef1f2d52c1afecd8483",
+      "intermediate_sha256": "221ef53c6e1d862bc7fe30f557117c96d04c9110e44f52c59aac62d124427217",
       "pre_gain": {
-        "integrated_lufs": -20.5,
-        "true_peak_dbtp": -5.7,
-        "momentary_max_lufs": -18.6
+        "integrated_lufs": -16.8,
+        "true_peak_dbtp": -5.0,
+        "momentary_max_lufs": -14.4
       },
-      "gain_db": 4.5,
+      "gain_db": 0.8,
       "encode_attempts": 1,
       "opus_kbps": 64,
       "measured": {
         "integrated_lufs": -16.0,
-        "true_peak_dbtp": -1.1,
-        "momentary_max_lufs": -14.1
+        "true_peak_dbtp": -3.0,
+        "momentary_max_lufs": -13.6
       },
       "target_lufs": -16.0,
       "deviation_lu": 0.0,
       "loudness_status": "met",
       "limited_by_true_peak": false,
       "short_clip_lufs_unreliable": true,
-      "decoded_frames": 35038,
-      "decoded_duration_s": 0.73,
-      "decoded_pcm_sha256": "1070de5c4969b6c812b953b6755ead42187e2770a071539f73d7b71c5dc4ea35",
+      "decoded_frames": 35445,
+      "decoded_duration_s": 0.7384,
+      "decoded_pcm_sha256": "3c78d8aea3891e321445769a3126ca975ed7776620089e91b318239b0981d3c1",
       "id": "armory-awaken",
       "class": "positional",
-      "source_file": "assets-source/audio/sfx/procedural/armory-awaken.wav",
-      "source_sha256": "c9a0c57442fc656110a45a71cf24c8465dcf7747d6aeb5c9efbea8923aa7072c",
+      "source_file": "assets-source/audio/sfx/foley/ratchet-530074.mp3",
+      "source_sha256": "22f433207bb6371a7da163df6c2642d78502b029a64a9150fa04d20def811e8e",
       "source_probe": {
-        "codec": "pcm_f32le",
+        "codec": "mp3",
         "sample_rate": 48000,
-        "channels": 1,
-        "duration_s": 0.76
+        "channels": 2,
+        "duration_s": 5.9456
       },
       "trim": {
-        "trimmed_head_ms": 30.0,
-        "trimmed_tail_ms": 0.0
+        "trimmed_head_ms": 5.7,
+        "trimmed_tail_ms": 15.9
       },
       "steps": [
+        "Place and level trimmed recordings with the cue's Foley recipe",
         "trim silence more than 50 dB under the clip peak (5 ms head pre-roll, 10 ms tail pad)",
         "fade in 2 ms, fade out 30 ms (raised cosine)",
         "fold to mono 0.5*L+0.5*R (positional cue)"
       ],
       "runtime_file": "public/assets/audio/sfx/armory-awaken.ogg",
-      "runtime_sha256": "985d55d65bc20f0edd31226b0545fea294eb0d7e7ae15f49db7223d759dc15c5",
-      "runtime_bytes": 8729,
+      "runtime_sha256": "a637fa4f8b73b44a064d429c348218af18e17fe179cdbbe371cce8509bbc58f3",
+      "runtime_bytes": 9325,
       "runtime_probe": {
         "codec": "opus",
         "sample_rate": 48000,
         "channels": 1,
-        "duration_s": 0.7365
+        "duration_s": 0.7449
       },
       "generation": {
-        "method": "deterministic additive synthesis",
-        "settings": {
-          "kind": "armory-awaken",
-          "seed": 8601,
-          "duration_seconds": 0.76
+        "method": "recorded Foley",
+        "sources": {
+          "ratchet": {
+            "file": "assets-source/audio/sfx/foley/ratchet-530074.mp3",
+            "sha256": "22f433207bb6371a7da163df6c2642d78502b029a64a9150fa04d20def811e8e",
+            "author": "magnuswaker",
+            "license": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "recordingUrl": "https://freesound.org/people/magnuswaker/sounds/530074/",
+            "previewUrl": "https://cdn.freesound.org/previews/530/530074_11537497-hq.mp3"
+          },
+          "armor": {
+            "file": "assets-source/audio/sfx/foley/armor-467120.mp3",
+            "sha256": "a4660d31f7c5eaacce73540549b9fad61c133f5c1b9d700a7c178117160f2045",
+            "author": "CalGre",
+            "license": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "recordingUrl": "https://freesound.org/people/CalGre/sounds/467120/",
+            "previewUrl": "https://cdn.freesound.org/previews/467/467120_8323375-hq.mp3"
+          }
+        },
+        "recipe": {
+          "layers": [
+            {
+              "source": "ratchet",
+              "start_s": 3.15,
+              "duration_s": 0.31,
+              "at_s": 0.01,
+              "peak_dbfs": -10,
+              "tail_s": 0.035,
+              "speed": 1.08
+            },
+            {
+              "source": "armor",
+              "start_s": 10.63,
+              "duration_s": 0.132,
+              "at_s": 0.323,
+              "peak_dbfs": -6,
+              "tail_s": 0.055
+            },
+            {
+              "source": "armor",
+              "start_s": 10.825,
+              "duration_s": 0.22,
+              "at_s": 0.522,
+              "peak_dbfs": -5,
+              "tail_s": 0.068
+            }
+          ]
         }
       }
     },
@@ -4003,667 +4274,84 @@
   "music": {
     "title": {
       "intermediate_wav": "assets-source/audio/derived/title.wav",
-      "intermediate_sha256": "5d396674ae789ada1bc7048f8d7801c577c8264e1c5b0372f602579cde4a4da5",
+      "intermediate_sha256": "4d85d49a185e80e3d524f266895cd470a7f571ad227be5c1212030601e293c26",
       "pre_gain": {
-        "integrated_lufs": -13.5,
-        "true_peak_dbtp": -0.1,
-        "momentary_max_lufs": -7.1
+        "integrated_lufs": -15.8,
+        "true_peak_dbtp": -4.2,
+        "momentary_max_lufs": -11.6
       },
-      "gain_db": -4.5,
+      "gain_db": -2.2,
       "encode_attempts": 1,
       "opus_kbps": 128,
       "measured": {
         "integrated_lufs": -18.0,
-        "true_peak_dbtp": -4.4,
-        "momentary_max_lufs": -11.6
+        "true_peak_dbtp": -6.3,
+        "momentary_max_lufs": -13.8
       },
       "target_lufs": -18.0,
       "deviation_lu": 0.0,
       "loudness_status": "met",
       "limited_by_true_peak": false,
       "short_clip_lufs_unreliable": false,
-      "decoded_frames": 2244000,
-      "decoded_duration_s": 46.75,
-      "decoded_pcm_sha256": "aa8453f9ac4e6902c66ec3075db2f9d9c82838d342ef9333358112f6d9012c30",
+      "decoded_frames": 2791679,
+      "decoded_duration_s": 58.16,
+      "decoded_pcm_sha256": "b03dccb0f14313a6096fc522cb77bafbaaf50dd5b34ccc44d88d79386fa0b9a3",
       "id": "title",
-      "source_file": "assets-source/audio/music/placeholder/title.mp3",
-      "source_sha256": "7e351b8e8345f087ff90f4951ff05d536b8e06819aeea43e1a2e33e2f014a522",
+      "source_file": "assets-source/audio/music/title.wav",
+      "source_sha256": "c7ca69b4b1cfbe2f2ccf251061adf06a1c53794167a6b9a4d17fda8515a7e665",
       "source_probe": {
-        "codec": "mp3",
-        "sample_rate": 44100,
+        "codec": "pcm_s16le",
+        "sample_rate": 48000,
         "channels": 2,
-        "duration_s": 66.0
+        "duration_s": 118.8
       },
       "loop": {
         "source": {
-          "wrap_step": 0.02081,
-          "p999_step": 0.054427,
-          "seam_ratio": 0.382,
-          "head_tail_level_diff_db": 59.41,
-          "interior_dropout_windows": 108,
+          "wrap_step": 0.005341,
+          "p999_step": 0.024689,
+          "seam_ratio": 0.216,
+          "head_tail_level_diff_db": 47.71,
+          "interior_dropout_windows": 22,
           "pass": false
         },
         "runtime": {
-          "wrap_step": 0.001727,
-          "p999_step": 0.03314,
-          "seam_ratio": 0.052,
-          "head_tail_level_diff_db": 2.21,
-          "interior_dropout_windows": 53,
-          "pass": false
+          "wrap_step": 0.005428,
+          "p999_step": 0.01951,
+          "seam_ratio": 0.278,
+          "head_tail_level_diff_db": 4.45,
+          "interior_dropout_windows": 0,
+          "pass": true
         },
-        "loop_start_s": 4.75,
-        "crossfade_s": 2.0
+        "loop_start_s": 18.785,
+        "crossfade_s": 1.7
       },
       "steps": [
-        "loop body from 4.750s, 2.00s equal-power tail-over-head crossfade, start position retained"
+        "loop body from 18.785s, 1.70s equal-power tail-over-head crossfade, start position retained"
       ],
       "runtime_file": "public/assets/audio/music/title.ogg",
-      "runtime_sha256": "d091c46ff5de8fe8adaa67790073fb24f5a3472a1e6b80bc0f6f7a82397e6145",
-      "runtime_bytes": 864405,
+      "runtime_sha256": "541639051887e5ad4e77540ef4d4d893903e93f631ae314d6e894fccc5384a89",
+      "runtime_bytes": 1047900,
       "runtime_probe": {
         "codec": "opus",
         "sample_rate": 48000,
         "channels": 2,
-        "duration_s": 46.7565
+        "duration_s": 58.1665
       }
     },
     "explore": {
       "intermediate_wav": "assets-source/audio/derived/explore.wav",
-      "intermediate_sha256": "9011b7649a64004cf487ce6c07916e7d26d8f1aa048fdff48dd5ec64aaa533cf",
+      "intermediate_sha256": "ee11258c014f58acef9ead21cd823bd6a76ee37adfac4c288d1164a4c1c1d28e",
       "pre_gain": {
-        "integrated_lufs": -16.6,
-        "true_peak_dbtp": -0.0,
-        "momentary_max_lufs": -7.5
-      },
-      "gain_db": -1.4,
-      "encode_attempts": 1,
-      "opus_kbps": 128,
-      "measured": {
-        "integrated_lufs": -18.0,
-        "true_peak_dbtp": -1.4,
-        "momentary_max_lufs": -8.9
-      },
-      "target_lufs": -18.0,
-      "deviation_lu": 0.0,
-      "loudness_status": "met",
-      "limited_by_true_peak": false,
-      "short_clip_lufs_unreliable": false,
-      "decoded_frames": 3432000,
-      "decoded_duration_s": 71.5,
-      "decoded_pcm_sha256": "3a65e58cc0c555bbc74994f322cbacbadf3b2663a76be9f7037e8e346fe568d2",
-      "id": "explore",
-      "source_file": "assets-source/audio/music/placeholder/explore.mp3",
-      "source_sha256": "b82efe11f44b659d810d4aaeb201973d4dfe91935b17173d1cea29d60564b6c5",
-      "source_probe": {
-        "codec": "mp3",
-        "sample_rate": 44100,
-        "channels": 2,
-        "duration_s": 96.0
-      },
-      "loop": {
-        "source": {
-          "wrap_step": 0.028834,
-          "p999_step": 0.079521,
-          "seam_ratio": 0.363,
-          "head_tail_level_diff_db": 56.78,
-          "interior_dropout_windows": 170,
-          "pass": false
-        },
-        "runtime": {
-          "wrap_step": 0.000158,
-          "p999_step": 0.070185,
-          "seam_ratio": 0.002,
-          "head_tail_level_diff_db": 3.31,
-          "interior_dropout_windows": 71,
-          "pass": false
-        },
-        "loop_start_s": 7.5,
-        "crossfade_s": 2.0
-      },
-      "steps": [
-        "loop body from 7.500s, 2.00s equal-power tail-over-head crossfade, start position retained"
-      ],
-      "runtime_file": "public/assets/audio/music/explore.ogg",
-      "runtime_sha256": "db03fe8207bdd43f26fe09acfb9843108ef1854afb4be79152ac100f1c559151",
-      "runtime_bytes": 1448968,
-      "runtime_probe": {
-        "codec": "opus",
-        "sample_rate": 48000,
-        "channels": 2,
-        "duration_s": 71.5065
-      }
-    },
-    "combat": {
-      "intermediate_wav": "assets-source/audio/derived/combat.wav",
-      "intermediate_sha256": "9d2aa44e317778b8fd6ec2038e5f14652b8702cac02160fd597ff483bf9cb554",
-      "pre_gain": {
-        "integrated_lufs": -16.4,
-        "true_peak_dbtp": 0.1,
-        "momentary_max_lufs": -9.5
-      },
-      "gain_db": -1.6,
-      "encode_attempts": 1,
-      "opus_kbps": 128,
-      "measured": {
-        "integrated_lufs": -17.9,
-        "true_peak_dbtp": -1.1,
-        "momentary_max_lufs": -11.1
-      },
-      "target_lufs": -18.0,
-      "deviation_lu": 0.1,
-      "loudness_status": "met",
-      "limited_by_true_peak": false,
-      "short_clip_lufs_unreliable": false,
-      "decoded_frames": 3996000,
-      "decoded_duration_s": 83.25,
-      "decoded_pcm_sha256": "f7cfb8b879572b91b0cbab2838f1b491e39ee9d9f9e6ddaf5c653d46a80ff5ab",
-      "id": "combat",
-      "source_file": "assets-source/audio/music/placeholder/combat.mp3",
-      "source_sha256": "2e1316e8c4cba6b8d8dc3bc5b892869f1164ab6f8a8a973524675b7dbfcef009",
-      "source_probe": {
-        "codec": "mp3",
-        "sample_rate": 44100,
-        "channels": 2,
-        "duration_s": 96.0
-      },
-      "loop": {
-        "source": {
-          "wrap_step": 0.00038,
-          "p999_step": 0.090577,
-          "seam_ratio": 0.004,
-          "head_tail_level_diff_db": 27.15,
-          "interior_dropout_windows": 47,
-          "pass": false
-        },
-        "runtime": {
-          "wrap_step": 0.005923,
-          "p999_step": 0.079197,
-          "seam_ratio": 0.075,
-          "head_tail_level_diff_db": 2.14,
-          "interior_dropout_windows": 25,
-          "pass": false
-        },
-        "loop_start_s": 5.25,
-        "crossfade_s": 1.5
-      },
-      "steps": [
-        "loop body from 5.250s, 1.50s equal-power tail-over-head crossfade, start position retained"
-      ],
-      "runtime_file": "public/assets/audio/music/combat.ogg",
-      "runtime_sha256": "cb2234b2d19a666ac8dd7b275299f5ebfcc472af980651ce797676a441ccecce",
-      "runtime_bytes": 1323437,
-      "runtime_probe": {
-        "codec": "opus",
-        "sample_rate": 48000,
-        "channels": 2,
-        "duration_s": 83.2565
-      }
-    },
-    "reward": {
-      "intermediate_wav": "assets-source/audio/derived/reward.wav",
-      "intermediate_sha256": "93534b552f0da01cfeb2b56b6124ac6203f261b3dfa289e5d672e1de4e9e686e",
-      "pre_gain": {
-        "integrated_lufs": -17.4,
-        "true_peak_dbtp": -2.8,
-        "momentary_max_lufs": -12.1
-      },
-      "gain_db": -0.6,
-      "encode_attempts": 1,
-      "opus_kbps": 128,
-      "measured": {
-        "integrated_lufs": -18.0,
+        "integrated_lufs": -16.1,
         "true_peak_dbtp": -3.5,
-        "momentary_max_lufs": -12.7
+        "momentary_max_lufs": -10.7
       },
-      "target_lufs": -18.0,
-      "deviation_lu": 0.0,
-      "loudness_status": "met",
-      "limited_by_true_peak": false,
-      "short_clip_lufs_unreliable": false,
-      "decoded_frames": 1344000,
-      "decoded_duration_s": 28.0,
-      "decoded_pcm_sha256": "34f785e4f27eb702df708a248a31397abc982449beee051e9c2df41c153148f5",
-      "id": "reward",
-      "source_file": "assets-source/audio/music/placeholder/reward.mp3",
-      "source_sha256": "9daf54f3d7d3d6c0ac4fe1f81319dadb05f30c31d5c8095e9d6d9aec97e07582",
-      "source_probe": {
-        "codec": "mp3",
-        "sample_rate": 44100,
-        "channels": 2,
-        "duration_s": 51.0
-      },
-      "loop": {
-        "source": {
-          "wrap_step": 0.00417,
-          "p999_step": 0.093463,
-          "seam_ratio": 0.045,
-          "head_tail_level_diff_db": 61.87,
-          "interior_dropout_windows": 57,
-          "pass": false
-        },
-        "runtime": {
-          "wrap_step": 0.005855,
-          "p999_step": 0.075116,
-          "seam_ratio": 0.078,
-          "head_tail_level_diff_db": 1.61,
-          "interior_dropout_windows": 10,
-          "pass": false
-        },
-        "loop_start_s": 7.75,
-        "crossfade_s": 2.0
-      },
-      "steps": [
-        "loop body from 7.750s, 2.00s equal-power tail-over-head crossfade, start position retained"
-      ],
-      "runtime_file": "public/assets/audio/music/reward.ogg",
-      "runtime_sha256": "3ec98c1adf9b59d9a738e3c4ecef9ece79f6d0866c54874e273baf60334f9fa6",
-      "runtime_bytes": 593075,
-      "runtime_probe": {
-        "codec": "opus",
-        "sample_rate": 48000,
-        "channels": 2,
-        "duration_s": 28.0065
-      }
-    },
-    "rest": {
-      "intermediate_wav": "assets-source/audio/derived/rest.wav",
-      "intermediate_sha256": "7b86b8c6748350c627f520dcea6d0720bde3a063df22e56a0277a4f6d4094655",
-      "pre_gain": {
-        "integrated_lufs": -16.2,
-        "true_peak_dbtp": -0.3,
-        "momentary_max_lufs": -8.0
-      },
-      "gain_db": -1.8,
+      "gain_db": -1.9,
       "encode_attempts": 1,
       "opus_kbps": 128,
       "measured": {
         "integrated_lufs": -18.0,
-        "true_peak_dbtp": -2.1,
-        "momentary_max_lufs": -9.8
-      },
-      "target_lufs": -18.0,
-      "deviation_lu": 0.0,
-      "loudness_status": "met",
-      "limited_by_true_peak": false,
-      "short_clip_lufs_unreliable": false,
-      "decoded_frames": 2316000,
-      "decoded_duration_s": 48.25,
-      "decoded_pcm_sha256": "dbf8730b7c7fb74edba717d1eeebc37f81490cbb8730898f27580096a6a23f35",
-      "id": "rest",
-      "source_file": "assets-source/audio/music/placeholder/rest.mp3",
-      "source_sha256": "27907e8355c946d5f8f716cb1c8b80d87b22be292009b7edf37e26a03f06ae43",
-      "source_probe": {
-        "codec": "mp3",
-        "sample_rate": 44100,
-        "channels": 2,
-        "duration_s": 66.0
-      },
-      "loop": {
-        "source": {
-          "wrap_step": 0.00415,
-          "p999_step": 0.094216,
-          "seam_ratio": 0.044,
-          "head_tail_level_diff_db": 83.82,
-          "interior_dropout_windows": 63,
-          "pass": false
-        },
-        "runtime": {
-          "wrap_step": 0.001122,
-          "p999_step": 0.077386,
-          "seam_ratio": 0.014,
-          "head_tail_level_diff_db": 3.11,
-          "interior_dropout_windows": 23,
-          "pass": false
-        },
-        "loop_start_s": 4.75,
-        "crossfade_s": 2.0
-      },
-      "steps": [
-        "loop body from 4.750s, 2.00s equal-power tail-over-head crossfade, start position retained"
-      ],
-      "runtime_file": "public/assets/audio/music/rest.ogg",
-      "runtime_sha256": "f4755ba40ad2ea0d026d4e655a6e7682242d724801af11b4e91b87c4d15fd340",
-      "runtime_bytes": 961149,
-      "runtime_probe": {
-        "codec": "opus",
-        "sample_rate": 48000,
-        "channels": 2,
-        "duration_s": 48.2565
-      }
-    },
-    "elite": {
-      "intermediate_wav": "assets-source/audio/derived/elite.wav",
-      "intermediate_sha256": "2405dab8b07c1faba28733c5cfe5f19098d8b2c2fad3459c3e89d92653e17557",
-      "pre_gain": {
-        "integrated_lufs": -16.8,
-        "true_peak_dbtp": -0.0,
-        "momentary_max_lufs": -9.2
-      },
-      "gain_db": -2.05,
-      "encode_attempts": 2,
-      "opus_kbps": 128,
-      "measured": {
-        "integrated_lufs": -18.9,
-        "true_peak_dbtp": -1.6,
-        "momentary_max_lufs": -11.2
-      },
-      "target_lufs": -18.0,
-      "deviation_lu": -0.9,
-      "loudness_status": "met",
-      "limited_by_true_peak": false,
-      "short_clip_lufs_unreliable": false,
-      "decoded_frames": 2316000,
-      "decoded_duration_s": 48.25,
-      "decoded_pcm_sha256": "1db685df9ddd6e2476ea88825ff5f79c5e5c1de5371469f478e4adedfff34142",
-      "id": "elite",
-      "source_file": "assets-source/audio/music/placeholder/elite.mp3",
-      "source_sha256": "ddc752ec46b6250e5adb56965fddba2c9ebb64812820b62197a6b37d570a8171",
-      "source_probe": {
-        "codec": "mp3",
-        "sample_rate": 44100,
-        "channels": 2,
-        "duration_s": 66.0
-      },
-      "loop": {
-        "source": {
-          "wrap_step": 0.039085,
-          "p999_step": 0.057986,
-          "seam_ratio": 0.674,
-          "head_tail_level_diff_db": 4.62,
-          "interior_dropout_windows": 66,
-          "pass": false
-        },
-        "runtime": {
-          "wrap_step": 0.00573,
-          "p999_step": 0.047052,
-          "seam_ratio": 0.122,
-          "head_tail_level_diff_db": 1.63,
-          "interior_dropout_windows": 48,
-          "pass": false
-        },
-        "loop_start_s": 3.75,
-        "crossfade_s": 1.5
-      },
-      "steps": [
-        "loop body from 3.750s, 1.50s equal-power tail-over-head crossfade, start position retained"
-      ],
-      "runtime_file": "public/assets/audio/music/elite.ogg",
-      "runtime_sha256": "d73b26d248d7682aecb7a1521cd4b2b39f3147e2de3f9e595bbe00860ce34b7e",
-      "runtime_bytes": 785875,
-      "runtime_probe": {
-        "codec": "opus",
-        "sample_rate": 48000,
-        "channels": 2,
-        "duration_s": 48.2565
-      }
-    },
-    "defeat": {
-      "intermediate_wav": "assets-source/audio/derived/defeat.wav",
-      "intermediate_sha256": "85ff715885e92b2fbadde6e3fa656abd2f707933720bdeedd11aa33a7304727f",
-      "pre_gain": {
-        "integrated_lufs": -13.2,
-        "true_peak_dbtp": -2.0,
-        "momentary_max_lufs": -8.8
-      },
-      "gain_db": -4.8,
-      "encode_attempts": 1,
-      "opus_kbps": 128,
-      "measured": {
-        "integrated_lufs": -18.0,
-        "true_peak_dbtp": -7.0,
-        "momentary_max_lufs": -13.6
-      },
-      "target_lufs": -18.0,
-      "deviation_lu": 0.0,
-      "loudness_status": "met",
-      "limited_by_true_peak": false,
-      "short_clip_lufs_unreliable": false,
-      "decoded_frames": 2112360,
-      "decoded_duration_s": 44.0075,
-      "decoded_pcm_sha256": "39ca854be90500983afb787d8bf2a4bc8afd07105e1c6c4f15998463745faff6",
-      "id": "defeat",
-      "source_file": "assets-source/audio/music/placeholder/defeat.mp3",
-      "source_sha256": "7c752099d127c778f5edfad603416315d03a14c683fa16619352deb93dd70753",
-      "source_probe": {
-        "codec": "mp3",
-        "sample_rate": 44100,
-        "channels": 2,
-        "duration_s": 45.0
-      },
-      "one_shot": {
-        "cut_start_s": 0.0,
-        "cut_end_s": 45.0,
-        "trim": {
-          "trimmed_head_ms": 0.0,
-          "trimmed_tail_ms": 992.5
-        },
-        "fade_out_s": 0.25
-      },
-      "steps": [
-        "one-shot cut 0.000s..45.000s, silence trimmed (head 0.0 ms, tail 992.5 ms), 2 ms fade in, 0.25s raised-cosine fade out"
-      ],
-      "runtime_file": "public/assets/audio/music/defeat.ogg",
-      "runtime_sha256": "03ec36b322cb916e9033190632ff1369706d8e1091a8d4b5d07a75d0ae02056a",
-      "runtime_bytes": 847434,
-      "runtime_probe": {
-        "codec": "opus",
-        "sample_rate": 48000,
-        "channels": 2,
-        "duration_s": 44.014
-      }
-    },
-    "workshop": {
-      "intermediate_wav": "assets-source/audio/derived/workshop.wav",
-      "intermediate_sha256": "fb48b0431569c0b030583ca9904a98d6ac88e1a8747d9cf9f72915782853fc32",
-      "pre_gain": {
-        "integrated_lufs": -13.8,
-        "true_peak_dbtp": -0.2,
-        "momentary_max_lufs": -9.0
-      },
-      "gain_db": -4.2,
-      "encode_attempts": 1,
-      "opus_kbps": 128,
-      "measured": {
-        "integrated_lufs": -18.0,
-        "true_peak_dbtp": -4.1,
-        "momentary_max_lufs": -13.2
-      },
-      "target_lufs": -18.0,
-      "deviation_lu": 0.0,
-      "loudness_status": "met",
-      "limited_by_true_peak": false,
-      "short_clip_lufs_unreliable": false,
-      "decoded_frames": 2256000,
-      "decoded_duration_s": 47.0,
-      "decoded_pcm_sha256": "5d01748ce1b923ed65f2937ab3ddc3a4082b3853ac9b41df5b1245d498a26f47",
-      "id": "workshop",
-      "source_file": "assets-source/audio/music/placeholder/workshop.mp3",
-      "source_sha256": "e0002da781af92e6055a91544fedf2c03b721d79a154972d44b380d04f3b8ce2",
-      "source_probe": {
-        "codec": "mp3",
-        "sample_rate": 44100,
-        "channels": 2,
-        "duration_s": 66.0
-      },
-      "loop": {
-        "source": {
-          "wrap_step": 9.8e-05,
-          "p999_step": 0.068878,
-          "seam_ratio": 0.001,
-          "head_tail_level_diff_db": 32.38,
-          "interior_dropout_windows": 28,
-          "pass": false
-        },
-        "runtime": {
-          "wrap_step": 0.01022,
-          "p999_step": 0.041395,
-          "seam_ratio": 0.247,
-          "head_tail_level_diff_db": 0.25,
-          "interior_dropout_windows": 22,
-          "pass": false
-        },
-        "loop_start_s": 6.75,
-        "crossfade_s": 2.0
-      },
-      "steps": [
-        "loop body from 6.750s, 2.00s equal-power tail-over-head crossfade, start position retained"
-      ],
-      "runtime_file": "public/assets/audio/music/workshop.ogg",
-      "runtime_sha256": "e5d0672f8bd4400f7cabaef9d8329939feaa8c5be89eb7389eb58511f220e330",
-      "runtime_bytes": 892301,
-      "runtime_probe": {
-        "codec": "opus",
-        "sample_rate": 48000,
-        "channels": 2,
-        "duration_s": 47.0065
-      }
-    },
-    "guardian-1": {
-      "intermediate_wav": "assets-source/audio/derived/guardian-1.wav",
-      "intermediate_sha256": "00307debab6ebe3a634d139bac30626c4d0eec6fe43784d63767194b6dd059ad",
-      "pre_gain": {
-        "integrated_lufs": -13.2,
-        "true_peak_dbtp": 0.2,
-        "momentary_max_lufs": -9.3
-      },
-      "gain_db": -4.8,
-      "encode_attempts": 1,
-      "opus_kbps": 128,
-      "measured": {
-        "integrated_lufs": -18.0,
-        "true_peak_dbtp": -4.4,
-        "momentary_max_lufs": -14.1
-      },
-      "target_lufs": -18.0,
-      "deviation_lu": 0.0,
-      "loudness_status": "met",
-      "limited_by_true_peak": false,
-      "short_clip_lufs_unreliable": false,
-      "decoded_frames": 2352000,
-      "decoded_duration_s": 49.0,
-      "decoded_pcm_sha256": "f0664e14179a6722c964ce6e6c11ec310a0ada64aa9b309a0e679d2aa529805b",
-      "id": "guardian-1",
-      "source_file": "assets-source/audio/music/placeholder/guardian-1.mp3",
-      "source_sha256": "11f365abee02f8ad39b801090a719647504a68a7a9fad2cbbbd2dcdc964579da",
-      "source_probe": {
-        "codec": "mp3",
-        "sample_rate": 44100,
-        "channels": 2,
-        "duration_s": 66.0
-      },
-      "loop": {
-        "source": {
-          "wrap_step": 0.055068,
-          "p999_step": 0.147378,
-          "seam_ratio": 0.374,
-          "head_tail_level_diff_db": 56.05,
-          "interior_dropout_windows": 51,
-          "pass": false
-        },
-        "runtime": {
-          "wrap_step": 0.002848,
-          "p999_step": 0.087055,
-          "seam_ratio": 0.033,
-          "head_tail_level_diff_db": 0.7,
-          "interior_dropout_windows": 16,
-          "pass": false
-        },
-        "loop_start_s": 2.75,
-        "crossfade_s": 1.5
-      },
-      "steps": [
-        "loop body from 2.750s, 1.50s equal-power tail-over-head crossfade, start position retained"
-      ],
-      "runtime_file": "public/assets/audio/music/guardian-1.ogg",
-      "runtime_sha256": "9715746646dbdd1d63d6f63e81dc040c0c165747cf52cf237c07839bae37a358",
-      "runtime_bytes": 922694,
-      "runtime_probe": {
-        "codec": "opus",
-        "sample_rate": 48000,
-        "channels": 2,
-        "duration_s": 49.0065
-      }
-    },
-    "guardian-2": {
-      "intermediate_wav": "assets-source/audio/derived/guardian-2.wav",
-      "intermediate_sha256": "ebe70c1acf89980aa448b4422c1d498dda86306de49cbcee35045e6a25bbbe2e",
-      "pre_gain": {
-        "integrated_lufs": -13.5,
-        "true_peak_dbtp": 1.8,
-        "momentary_max_lufs": -6.8
-      },
-      "gain_db": -4.5,
-      "encode_attempts": 1,
-      "opus_kbps": 128,
-      "measured": {
-        "integrated_lufs": -18.0,
-        "true_peak_dbtp": -3.0,
-        "momentary_max_lufs": -11.3
-      },
-      "target_lufs": -18.0,
-      "deviation_lu": 0.0,
-      "loudness_status": "met",
-      "limited_by_true_peak": false,
-      "short_clip_lufs_unreliable": false,
-      "decoded_frames": 2280000,
-      "decoded_duration_s": 47.5,
-      "decoded_pcm_sha256": "1720208f4183ece3b354fc52d94359fb871ac6985d732ceda76085d3d1477496",
-      "id": "guardian-2",
-      "source_file": "assets-source/audio/music/placeholder/guardian-2.mp3",
-      "source_sha256": "27672af0a6353437645954a27d798a2079d18c51fcf2363e132515e921c14f91",
-      "source_probe": {
-        "codec": "mp3",
-        "sample_rate": 44100,
-        "channels": 2,
-        "duration_s": 66.0
-      },
-      "loop": {
-        "source": {
-          "wrap_step": 0.222632,
-          "p999_step": 0.103146,
-          "seam_ratio": 2.158,
-          "head_tail_level_diff_db": 89.46,
-          "interior_dropout_windows": 31,
-          "pass": false
-        },
-        "runtime": {
-          "wrap_step": 0.000162,
-          "p999_step": 0.062878,
-          "seam_ratio": 0.003,
-          "head_tail_level_diff_db": 0.33,
-          "interior_dropout_windows": 0,
-          "pass": true
-        },
-        "loop_start_s": 2.0,
-        "crossfade_s": 1.5
-      },
-      "steps": [
-        "loop body from 2.000s, 1.50s equal-power tail-over-head crossfade, start position retained"
-      ],
-      "runtime_file": "public/assets/audio/music/guardian-2.ogg",
-      "runtime_sha256": "52999b2e3cf463c64f3f7653d88a67d0081a5e14eb4e1b8abd01147673418c02",
-      "runtime_bytes": 909729,
-      "runtime_probe": {
-        "codec": "opus",
-        "sample_rate": 48000,
-        "channels": 2,
-        "duration_s": 47.5065
-      }
-    },
-    "victory": {
-      "intermediate_wav": "assets-source/audio/derived/victory.wav",
-      "intermediate_sha256": "57b13ba808dd3970f9f1a5f4af040d7496fb9b255e7ac0c179eb794d9f3154f3",
-      "pre_gain": {
-        "integrated_lufs": -10.5,
-        "true_peak_dbtp": 0.3,
-        "momentary_max_lufs": -5.0
-      },
-      "gain_db": -7.5,
-      "encode_attempts": 1,
-      "opus_kbps": 128,
-      "measured": {
-        "integrated_lufs": -18.0,
-        "true_peak_dbtp": -6.7,
+        "true_peak_dbtp": -4.9,
         "momentary_max_lufs": -12.5
       },
       "target_lufs": -18.0,
@@ -4671,41 +4359,632 @@
       "loudness_status": "met",
       "limited_by_true_peak": false,
       "short_clip_lufs_unreliable": false,
-      "decoded_frames": 2843264,
-      "decoded_duration_s": 59.2347,
-      "decoded_pcm_sha256": "8f8a0f268efdd87728c5e45d4b610a127a1ba003b35e6d9404722392e3f4b469",
-      "id": "victory",
-      "source_file": "assets-source/audio/music/placeholder/victory.mp3",
-      "source_sha256": "c241e4c2fa5e11d5795b75e644222d40263770c8530db7ea6f5e70a953396087",
+      "decoded_frames": 4153440,
+      "decoded_duration_s": 86.53,
+      "decoded_pcm_sha256": "c0af89d0349010e91a3549775739bb8d457ffe738d5b16ff04d7a92e5809519e",
+      "id": "explore",
+      "source_file": "assets-source/audio/music/explore.wav",
+      "source_sha256": "b017bd8ad2d365cc28b4436084d23d4854059ea64d0f1a49ec9bc095355cd72f",
       "source_probe": {
-        "codec": "mp3",
-        "sample_rate": 44100,
+        "codec": "pcm_s16le",
+        "sample_rate": 48000,
         "channels": 2,
-        "duration_s": 60.0
+        "duration_s": 119.56
       },
-      "one_shot": {
-        "cut_start_s": 0.0,
-        "cut_end_s": 60.0,
-        "trim": {
-          "trimmed_head_ms": 0.0,
-          "trimmed_tail_ms": 765.3
+      "loop": {
+        "source": {
+          "wrap_step": 0.004623,
+          "p999_step": 0.023331,
+          "seam_ratio": 0.198,
+          "head_tail_level_diff_db": 67.47,
+          "interior_dropout_windows": 20,
+          "pass": false
         },
-        "fade_out_s": 0.25
+        "runtime": {
+          "wrap_step": 0.006249,
+          "p999_step": 0.018839,
+          "seam_ratio": 0.332,
+          "head_tail_level_diff_db": 0.34,
+          "interior_dropout_windows": 0,
+          "pass": true
+        },
+        "loop_start_s": 8.395,
+        "crossfade_s": 2.0
       },
       "steps": [
-        "one-shot cut 0.000s..60.000s, silence trimmed (head 0.0 ms, tail 765.3 ms), 2 ms fade in, 0.25s raised-cosine fade out"
+        "loop body from 8.395s, 2.00s equal-power tail-over-head crossfade, start position retained",
+        "side channel x0.75 for mono compatibility"
       ],
-      "runtime_file": "public/assets/audio/music/victory.ogg",
-      "runtime_sha256": "0cb8f77e3b75836bda9924b4b0f807cc4e1b4cc02fe227f7a28debed147843af",
-      "runtime_bytes": 1069386,
+      "runtime_file": "public/assets/audio/music/explore.ogg",
+      "runtime_sha256": "1b129fc9fc5d86435c445d081bcc05af815923a0ec9ce8357ce55377908a6567",
+      "runtime_bytes": 1562461,
       "runtime_probe": {
         "codec": "opus",
         "sample_rate": 48000,
         "channels": 2,
-        "duration_s": 59.2412
+        "duration_s": 86.5365
+      }
+    },
+    "combat": {
+      "intermediate_wav": "assets-source/audio/derived/combat.wav",
+      "intermediate_sha256": "27e67f7a5e14ec27ae5ac5fb07e0d43930b389f6d412e03bc598d4cce7da5d65",
+      "pre_gain": {
+        "integrated_lufs": -15.4,
+        "true_peak_dbtp": -2.4,
+        "momentary_max_lufs": -11.1
+      },
+      "gain_db": -2.6,
+      "encode_attempts": 1,
+      "opus_kbps": 128,
+      "measured": {
+        "integrated_lufs": -18.0,
+        "true_peak_dbtp": -4.7,
+        "momentary_max_lufs": -13.7
+      },
+      "target_lufs": -18.0,
+      "deviation_lu": 0.0,
+      "loudness_status": "met",
+      "limited_by_true_peak": false,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 3961440,
+      "decoded_duration_s": 82.53,
+      "decoded_pcm_sha256": "dafb8cf9d1cf7380021b51978ebcdd8922c9f9750ef6a28db96292b840b1a610",
+      "id": "combat",
+      "source_file": "assets-source/audio/music/combat.wav",
+      "source_sha256": "4676d9ef33432cc87fd7fc47c5ad83dec748c6de91675280ce48b897a060fa72",
+      "source_probe": {
+        "codec": "pcm_s16le",
+        "sample_rate": 48000,
+        "channels": 2,
+        "duration_s": 119.0
+      },
+      "loop": {
+        "source": {
+          "wrap_step": 0.007248,
+          "p999_step": 0.09227,
+          "seam_ratio": 0.079,
+          "head_tail_level_diff_db": 31.94,
+          "interior_dropout_windows": 27,
+          "pass": false
+        },
+        "runtime": {
+          "wrap_step": 0.001223,
+          "p999_step": 0.072196,
+          "seam_ratio": 0.017,
+          "head_tail_level_diff_db": 0.54,
+          "interior_dropout_windows": 0,
+          "pass": true
+        },
+        "loop_start_s": 22.725,
+        "crossfade_s": 1.3
+      },
+      "steps": [
+        "loop body from 22.725s, 1.30s equal-power tail-over-head crossfade, start position retained"
+      ],
+      "runtime_file": "public/assets/audio/music/combat.ogg",
+      "runtime_sha256": "d09444fdb2e8fa944a7f2acbfa1f190c9171c03ac3d45bfd7e66a678d9c9fa83",
+      "runtime_bytes": 1385616,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 2,
+        "duration_s": 82.5365
+      }
+    },
+    "reward": {
+      "intermediate_wav": "assets-source/audio/derived/reward.wav",
+      "intermediate_sha256": "a1fb32cbd0b24efcf6f1125d3b906cff13cb0d100b16acdbdfeff5e662a60661",
+      "pre_gain": {
+        "integrated_lufs": -16.3,
+        "true_peak_dbtp": -5.3,
+        "momentary_max_lufs": -12.7
+      },
+      "gain_db": -1.7,
+      "encode_attempts": 1,
+      "opus_kbps": 128,
+      "measured": {
+        "integrated_lufs": -18.0,
+        "true_peak_dbtp": -7.0,
+        "momentary_max_lufs": -14.4
+      },
+      "target_lufs": -18.0,
+      "deviation_lu": 0.0,
+      "loudness_status": "met",
+      "limited_by_true_peak": false,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 2083680,
+      "decoded_duration_s": 43.41,
+      "decoded_pcm_sha256": "694e5e5fd76fecd2bd5f0f78120f1dd0ab96ab7a8f5a773ce41d9a72c6c0bdd3",
+      "id": "reward",
+      "source_file": "assets-source/audio/music/reward.wav",
+      "source_sha256": "108b530272d67f35115f7a58603d87841e15c05271d3092a82be8c9647656e16",
+      "source_probe": {
+        "codec": "pcm_s16le",
+        "sample_rate": 48000,
+        "channels": 2,
+        "duration_s": 88.8
+      },
+      "loop": {
+        "source": {
+          "wrap_step": 0.001129,
+          "p999_step": 0.033936,
+          "seam_ratio": 0.033,
+          "head_tail_level_diff_db": 21.82,
+          "interior_dropout_windows": 13,
+          "pass": false
+        },
+        "runtime": {
+          "wrap_step": 0.007092,
+          "p999_step": 0.02662,
+          "seam_ratio": 0.266,
+          "head_tail_level_diff_db": 0.52,
+          "interior_dropout_windows": 0,
+          "pass": true
+        },
+        "loop_start_s": 28.735,
+        "crossfade_s": 1.45
+      },
+      "steps": [
+        "loop body from 28.735s, 1.45s equal-power tail-over-head crossfade, start position retained",
+        "side channel x0.68 for mono compatibility"
+      ],
+      "runtime_file": "public/assets/audio/music/reward.ogg",
+      "runtime_sha256": "73ece40999feb9c11ac5513b21667be8c5c95419670c03f47c08d430d03caa83",
+      "runtime_bytes": 780827,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 2,
+        "duration_s": 43.4165
+      }
+    },
+    "rest": {
+      "intermediate_wav": "assets-source/audio/derived/rest.wav",
+      "intermediate_sha256": "aeca6ecb7532a415de19f656f07ec66ac1d41408af59f0d11b50b3c0771b62a9",
+      "pre_gain": {
+        "integrated_lufs": -14.3,
+        "true_peak_dbtp": -4.7,
+        "momentary_max_lufs": -11.3
+      },
+      "gain_db": -3.7,
+      "encode_attempts": 1,
+      "opus_kbps": 128,
+      "measured": {
+        "integrated_lufs": -18.0,
+        "true_peak_dbtp": -8.1,
+        "momentary_max_lufs": -15.0
+      },
+      "target_lufs": -18.0,
+      "deviation_lu": 0.0,
+      "loudness_status": "met",
+      "limited_by_true_peak": false,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 2172960,
+      "decoded_duration_s": 45.27,
+      "decoded_pcm_sha256": "5616d1ed95818ca1f6251d60545cd2dc563aecdea7af10287303445c25a2f83f",
+      "id": "rest",
+      "source_file": "assets-source/audio/music/rest.wav",
+      "source_sha256": "20b97fd319fcd8f934a6caafd601501b18404aeb210d2c319ac7c4d287ae1532",
+      "source_probe": {
+        "codec": "pcm_s16le",
+        "sample_rate": 48000,
+        "channels": 2,
+        "duration_s": 119.96
+      },
+      "loop": {
+        "source": {
+          "wrap_step": 0.011505,
+          "p999_step": 0.025986,
+          "seam_ratio": 0.443,
+          "head_tail_level_diff_db": 11.37,
+          "interior_dropout_windows": 12,
+          "pass": false
+        },
+        "runtime": {
+          "wrap_step": 0.00238,
+          "p999_step": 0.016516,
+          "seam_ratio": 0.144,
+          "head_tail_level_diff_db": 1.09,
+          "interior_dropout_windows": 0,
+          "pass": true
+        },
+        "loop_start_s": 11.075,
+        "crossfade_s": 2.0
+      },
+      "steps": [
+        "loop body from 11.075s, 2.00s equal-power tail-over-head crossfade, start position retained"
+      ],
+      "runtime_file": "public/assets/audio/music/rest.ogg",
+      "runtime_sha256": "2f52609285ef478b81b7295f34ee325c9b5a0e53450064cdfab30a2716a6e453",
+      "runtime_bytes": 839691,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 2,
+        "duration_s": 45.2765
+      }
+    },
+    "elite": {
+      "intermediate_wav": "assets-source/audio/derived/elite.wav",
+      "intermediate_sha256": "9a37a2527fc3d43551838f51ac416102b5cf1bb231f59f5aae8c6f9666dcbe04",
+      "pre_gain": {
+        "integrated_lufs": -16.4,
+        "true_peak_dbtp": -5.4,
+        "momentary_max_lufs": -13.5
+      },
+      "gain_db": -1.6,
+      "encode_attempts": 1,
+      "opus_kbps": 128,
+      "measured": {
+        "integrated_lufs": -18.0,
+        "true_peak_dbtp": -6.9,
+        "momentary_max_lufs": -15.1
+      },
+      "target_lufs": -18.0,
+      "deviation_lu": 0.0,
+      "loudness_status": "met",
+      "limited_by_true_peak": false,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 2647679,
+      "decoded_duration_s": 55.16,
+      "decoded_pcm_sha256": "07568d6cd4a46147390a4e4a5ad3979303b5a639e91403fcb3d2320b86450be3",
+      "id": "elite",
+      "source_file": "assets-source/audio/music/elite.wav",
+      "source_sha256": "48082646f220fd9e71968d94c1c7e3c1c9a7a352c13ef84c7a31a0cd0dc387a2",
+      "source_probe": {
+        "codec": "pcm_s16le",
+        "sample_rate": 48000,
+        "channels": 2,
+        "duration_s": 119.68
+      },
+      "loop": {
+        "source": {
+          "wrap_step": 0.003464,
+          "p999_step": 0.058212,
+          "seam_ratio": 0.06,
+          "head_tail_level_diff_db": 68.13,
+          "interior_dropout_windows": 11,
+          "pass": false
+        },
+        "runtime": {
+          "wrap_step": 0.003478,
+          "p999_step": 0.049703,
+          "seam_ratio": 0.07,
+          "head_tail_level_diff_db": 0.88,
+          "interior_dropout_windows": 0,
+          "pass": true
+        },
+        "loop_start_s": 18.535,
+        "crossfade_s": 1.05
+      },
+      "steps": [
+        "loop body from 18.535s, 1.05s equal-power tail-over-head crossfade, start position retained"
+      ],
+      "runtime_file": "public/assets/audio/music/elite.ogg",
+      "runtime_sha256": "caea6d5a0dfdca691cf861bb18171f61e33a6c2c98c7a42d8c26da7648b4ab2f",
+      "runtime_bytes": 905920,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 2,
+        "duration_s": 55.1665
+      }
+    },
+    "defeat": {
+      "intermediate_wav": "assets-source/audio/derived/defeat.wav",
+      "intermediate_sha256": "c14c0dcbaa61d3f469f4ccda7bdb94c4081546abd12c0fa70855aaa48e062d5d",
+      "pre_gain": {
+        "integrated_lufs": -16.9,
+        "true_peak_dbtp": -4.5,
+        "momentary_max_lufs": -12.1
+      },
+      "gain_db": -1.1,
+      "encode_attempts": 1,
+      "opus_kbps": 128,
+      "measured": {
+        "integrated_lufs": -18.0,
+        "true_peak_dbtp": -5.4,
+        "momentary_max_lufs": -13.2
+      },
+      "target_lufs": -18.0,
+      "deviation_lu": 0.0,
+      "loudness_status": "met",
+      "limited_by_true_peak": false,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 2736830,
+      "decoded_duration_s": 57.0173,
+      "decoded_pcm_sha256": "5ede709b2c45ceae7d6040316be61f586d4f93974935c9fe335de5f3aedfa585",
+      "id": "defeat",
+      "source_file": "assets-source/audio/music/defeat.wav",
+      "source_sha256": "ad20867c87e4f62d308bb48b8026ae4fd865714df0e3874e671ec4be0a05db7f",
+      "source_probe": {
+        "codec": "pcm_s16le",
+        "sample_rate": 48000,
+        "channels": 2,
+        "duration_s": 59.0
+      },
+      "one_shot": {
+        "cut_start_s": 0.0,
+        "cut_end_s": 59.0,
+        "trim": {
+          "trimmed_head_ms": 0.0,
+          "trimmed_tail_ms": 1982.7
+        },
+        "fade_out_s": 0.25
+      },
+      "steps": [
+        "one-shot cut 0.000s..59.000s, silence trimmed (head 0.0 ms, tail 1982.7 ms), 2 ms fade in, 0.25s raised-cosine fade out"
+      ],
+      "runtime_file": "public/assets/audio/music/defeat.ogg",
+      "runtime_sha256": "937ae5897e0a15a3ba003664d9324b894a953666a64a25765de7bb41203ff3ea",
+      "runtime_bytes": 1056095,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 2,
+        "duration_s": 57.0238
+      }
+    },
+    "workshop": {
+      "intermediate_wav": "assets-source/audio/derived/workshop.wav",
+      "intermediate_sha256": "4aee6f5ed8828b1e1d50d2aa1b50d889e000caf87401a88ae2e01299f3a5eb44",
+      "pre_gain": {
+        "integrated_lufs": -15.4,
+        "true_peak_dbtp": -3.0,
+        "momentary_max_lufs": -11.8
+      },
+      "gain_db": -2.6,
+      "encode_attempts": 1,
+      "opus_kbps": 128,
+      "measured": {
+        "integrated_lufs": -18.0,
+        "true_peak_dbtp": -5.4,
+        "momentary_max_lufs": -14.4
+      },
+      "target_lufs": -18.0,
+      "deviation_lu": 0.0,
+      "loudness_status": "met",
+      "limited_by_true_peak": false,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 2818080,
+      "decoded_duration_s": 58.71,
+      "decoded_pcm_sha256": "35bcce631ee9761a8c3593ea917336829731bfc34f7a0f8598e0403560f1a6e4",
+      "id": "workshop",
+      "source_file": "assets-source/audio/music/workshop.wav",
+      "source_sha256": "03eb34252ccec5f7526c0133500fb1559fcbf73c01ca85318d748745d3606cb3",
+      "source_probe": {
+        "codec": "pcm_s16le",
+        "sample_rate": 48000,
+        "channels": 2,
+        "duration_s": 119.6
+      },
+      "loop": {
+        "source": {
+          "wrap_step": 0.006195,
+          "p999_step": 0.038959,
+          "seam_ratio": 0.159,
+          "head_tail_level_diff_db": 54.49,
+          "interior_dropout_windows": 18,
+          "pass": false
+        },
+        "runtime": {
+          "wrap_step": 0.000326,
+          "p999_step": 0.031859,
+          "seam_ratio": 0.01,
+          "head_tail_level_diff_db": 1.47,
+          "interior_dropout_windows": 0,
+          "pass": true
+        },
+        "loop_start_s": 15.605,
+        "crossfade_s": 1.35
+      },
+      "steps": [
+        "loop body from 15.605s, 1.35s equal-power tail-over-head crossfade, start position retained"
+      ],
+      "runtime_file": "public/assets/audio/music/workshop.ogg",
+      "runtime_sha256": "d0a6e75424d0c8eca27a8ac0557240d11d1e00a65c3de1c7fb8b372717dc1449",
+      "runtime_bytes": 1010334,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 2,
+        "duration_s": 58.7165
+      }
+    },
+    "guardian-1": {
+      "intermediate_wav": "assets-source/audio/derived/guardian-1.wav",
+      "intermediate_sha256": "c85a52d81e0fff5fb5107998a75666df3a0c975157602abedb20e54655bda93a",
+      "pre_gain": {
+        "integrated_lufs": -16.1,
+        "true_peak_dbtp": -4.2,
+        "momentary_max_lufs": -12.7
+      },
+      "gain_db": -1.9,
+      "encode_attempts": 1,
+      "opus_kbps": 128,
+      "measured": {
+        "integrated_lufs": -18.0,
+        "true_peak_dbtp": -4.8,
+        "momentary_max_lufs": -14.6
+      },
+      "target_lufs": -18.0,
+      "deviation_lu": 0.0,
+      "loudness_status": "met",
+      "limited_by_true_peak": false,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 2851200,
+      "decoded_duration_s": 59.4,
+      "decoded_pcm_sha256": "003952d7ec0eda96f0ddb64f1cb1700d8d52ec8fff1d35edb0e1acf5fae21563",
+      "id": "guardian-1",
+      "source_file": "assets-source/audio/music/guardian-1.wav",
+      "source_sha256": "70afe65e629ce1e50b5f9009b0951d3597ad549f93e4a15afccb77664a3b6032",
+      "source_probe": {
+        "codec": "pcm_s16le",
+        "sample_rate": 48000,
+        "channels": 2,
+        "duration_s": 118.76
+      },
+      "loop": {
+        "source": {
+          "wrap_step": 0.008438,
+          "p999_step": 0.075668,
+          "seam_ratio": 0.112,
+          "head_tail_level_diff_db": 46.41,
+          "interior_dropout_windows": 9,
+          "pass": false
+        },
+        "runtime": {
+          "wrap_step": 0.002586,
+          "p999_step": 0.061116,
+          "seam_ratio": 0.042,
+          "head_tail_level_diff_db": 2.45,
+          "interior_dropout_windows": 0,
+          "pass": true
+        },
+        "loop_start_s": 29.165,
+        "crossfade_s": 1.25
+      },
+      "steps": [
+        "loop body from 29.165s, 1.25s equal-power tail-over-head crossfade, start position retained",
+        "side channel x0.8 for mono compatibility"
+      ],
+      "runtime_file": "public/assets/audio/music/guardian-1.ogg",
+      "runtime_sha256": "295cc83ad84a1a74e379addc5d674381c121d19c4ad9d2e3981f01243fc8c456",
+      "runtime_bytes": 996886,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 2,
+        "duration_s": 59.4065
+      }
+    },
+    "guardian-2": {
+      "intermediate_wav": "assets-source/audio/derived/guardian-2.wav",
+      "intermediate_sha256": "e102fceb0fadf55e79db6bc0b690738fea01dfa70ec1f02f4b4e762a817f4b7f",
+      "pre_gain": {
+        "integrated_lufs": -14.5,
+        "true_peak_dbtp": -3.5,
+        "momentary_max_lufs": -11.4
+      },
+      "gain_db": -3.5,
+      "encode_attempts": 1,
+      "opus_kbps": 128,
+      "measured": {
+        "integrated_lufs": -18.0,
+        "true_peak_dbtp": -6.2,
+        "momentary_max_lufs": -14.8
+      },
+      "target_lufs": -18.0,
+      "deviation_lu": 0.0,
+      "loudness_status": "met",
+      "limited_by_true_peak": false,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 2591520,
+      "decoded_duration_s": 53.99,
+      "decoded_pcm_sha256": "296ea0baad48f46a0d0aff807c473dc88d34f4ab6abb655bc8bbc5cfc24396a0",
+      "id": "guardian-2",
+      "source_file": "assets-source/audio/music/guardian-2.wav",
+      "source_sha256": "fa775988a976691588670bf7f2063e5556ba144f0f43ee9dbc1ec13757a84a74",
+      "source_probe": {
+        "codec": "pcm_s16le",
+        "sample_rate": 48000,
+        "channels": 2,
+        "duration_s": 119.6
+      },
+      "loop": {
+        "source": {
+          "wrap_step": 0.000839,
+          "p999_step": 0.09642,
+          "seam_ratio": 0.009,
+          "head_tail_level_diff_db": 50.29,
+          "interior_dropout_windows": 15,
+          "pass": false
+        },
+        "runtime": {
+          "wrap_step": 0.006887,
+          "p999_step": 0.071718,
+          "seam_ratio": 0.096,
+          "head_tail_level_diff_db": 0.16,
+          "interior_dropout_windows": 0,
+          "pass": true
+        },
+        "loop_start_s": 15.635,
+        "crossfade_s": 1.25
+      },
+      "steps": [
+        "loop body from 15.635s, 1.25s equal-power tail-over-head crossfade, start position retained"
+      ],
+      "runtime_file": "public/assets/audio/music/guardian-2.ogg",
+      "runtime_sha256": "6f215a58088091d9175aafcbb348a9dc9c7b1b8a75e0c082ef225fe220ca84c2",
+      "runtime_bytes": 888899,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 2,
+        "duration_s": 53.9965
+      }
+    },
+    "victory": {
+      "intermediate_wav": "assets-source/audio/derived/victory.wav",
+      "intermediate_sha256": "9089c72d568dda62713b01fbc36e7771a3824d0d23b221a81fe13d134b6161e6",
+      "pre_gain": {
+        "integrated_lufs": -14.7,
+        "true_peak_dbtp": -3.8,
+        "momentary_max_lufs": -11.3
+      },
+      "gain_db": -3.3,
+      "encode_attempts": 1,
+      "opus_kbps": 128,
+      "measured": {
+        "integrated_lufs": -18.0,
+        "true_peak_dbtp": -7.1,
+        "momentary_max_lufs": -14.6
+      },
+      "target_lufs": -18.0,
+      "deviation_lu": 0.0,
+      "loudness_status": "met",
+      "limited_by_true_peak": false,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 2860800,
+      "decoded_duration_s": 59.6,
+      "decoded_pcm_sha256": "4d0f012698f01d334c462e4337cd9864cf15f866d5eb7d270b3bb235631aef6a",
+      "id": "victory",
+      "source_file": "assets-source/audio/music/victory.wav",
+      "source_sha256": "304136f7a523b41d5aee9fa487f636f26aa32c7f6882d68ec13b84094eca7966",
+      "source_probe": {
+        "codec": "pcm_s16le",
+        "sample_rate": 48000,
+        "channels": 2,
+        "duration_s": 59.6
+      },
+      "one_shot": {
+        "cut_start_s": 0.0,
+        "cut_end_s": 59.6,
+        "trim": {
+          "trimmed_head_ms": 0.0,
+          "trimmed_tail_ms": 0.0
+        },
+        "fade_out_s": 0.25
+      },
+      "steps": [
+        "one-shot cut 0.000s..59.600s, silence trimmed (head 0.0 ms, tail 0.0 ms), 2 ms fade in, 0.25s raised-cosine fade out"
+      ],
+      "runtime_file": "public/assets/audio/music/victory.ogg",
+      "runtime_sha256": "5c1c882e313493e44ed73fbdcf2529936f2bf2613a504ec678d003d453f8b46a",
+      "runtime_bytes": 1016336,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 2,
+        "duration_s": 59.6065
       }
     }
   },
   "music_status": "absent: runtime plays silence",
-  "external_checks": {}
+  "external_checks": {
+    "check-audio-loops": {
+      "exit": 0,
+      "stdout": "public/assets/audio/sfx/dungeon-torch-crackle.ogg wrap     34 / p99.9  13017   head  -12.5 dB   tail  -13.6 dB   min  -17.4 dB   ok\n\nPASS: 1 file(s) wrap cleanly with no interior dropout"
+    }
+  }
 }

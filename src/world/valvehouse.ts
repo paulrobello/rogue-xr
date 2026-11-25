@@ -570,7 +570,7 @@ export class Valvehouse {
   private moveGate(seconds: number): void {
     this.gateTime = seconds;
     const progress = Math.min(1, seconds / GATE_TIME);
-    this.leaf.position.y = (DOOR_HEIGHT + 0.05) * progress;
+    this.leaf.position.y = -(DOOR_HEIGHT + 0.05) * progress;
     this.leaf.visible = progress < 1;
     if (progress === 1) this.world.setPuzzleGateOpen('valvehouse', true);
   }

@@ -26,6 +26,15 @@ it('mounts the original instruments and allows picking the reply only after disp
     await readFile('public/assets/props/puzzle-instruments/puzzle-instruments.glb'),
   );
   const { scene } = await nodeGeometryLoader().parseAsync(bytes.buffer, '');
+  const authoredCapsule = scene.getObjectByName('carrier_capsule');
+  if (!authoredCapsule) throw Error('Missing carrier capsule in puzzle instruments');
+  const orientedCapsule = authoredCapsule.clone(true);
+  orientedCapsule.rotation.x = Math.PI / 2;
+  orientedCapsule.scale.setScalar(0.72);
+  orientedCapsule.updateMatrixWorld(true);
+  const orientedBounds = new THREE.Box3().setFromObject(orientedCapsule);
+  expect(orientedBounds.max.z - orientedBounds.min.z).toBeCloseTo(0.2016, 4);
+  expect(0.018 + orientedBounds.max.z - orientedBounds.min.z).toBeLessThan(0.22);
   const floor = mountFloorView(new THREE.Scene(), new THREE.Group(), floorSeed, { floorNumber: 2 });
   floor.dressDispatch(scene, seed, false);
   const station = floor.dispatchRoom;
@@ -57,6 +66,11 @@ it('mounts the original instruments and allows picking the reply only after disp
     expect(ray.intersectObjects(castings, false)[0]?.object.name).toBe(`${tube}-wall-recess`);
     expect(get(`${tube}-wall-recess`).position.z).toBeGreaterThan(-0.32);
   }
+  const carrier = get('dispatch-travel-capsule');
+  expect(carrier.position.z).toBeCloseTo(0.018, 6);
+  expect(carrier.position.y + orientedBounds.min.y).toBeCloseTo(1.05 - 0.12, 3);
+  expect(get('dispatch-delivery').position.z + 0.5 * (0.22 + 0.308)).toBeCloseTo(0.22);
+
   const gate = get('dispatch-vault-shutter');
   expect(gate.visible).toBe(true);
   floor.world.current = spec.source.room;
@@ -66,6 +80,10 @@ it('mounts the original instruments and allows picking the reply only after disp
   expect(pick('dispatch-reply-station', 'dispatch-capsule')).toBeNull();
   station.sync({ route, sent: true, opened: false });
   expect(pick('dispatch-reply-station', 'dispatch-capsule')).toMatchObject({ action: 'open' });
+  expect(get('dispatch-capsule').position.z).toBeCloseTo(0.018, 6);
+  station.sendFeedback(false);
+  for (let i = 0; i < 120; i++) station.update(1 / 60);
+  expect(get('dispatch-capsule').position.z).toBeCloseTo(0.018, 6);
   expect(
     station.near(get('dispatch-capsule').getWorldPosition(new THREE.Vector3()), 0.1),
   ).toMatchObject({ action: 'open' });

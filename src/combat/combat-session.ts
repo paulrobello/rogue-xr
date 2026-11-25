@@ -57,6 +57,7 @@ import {
   stanceReadout,
   statusAtUv,
   statusExplanation,
+  tipCanvasHeight,
 } from '../combat-view/status-info.ts';
 import { dropToFitView, fitsView } from '../combat-view/view-fit.ts';
 import { getCard, type SliceCard } from '../content/cards.ts';
@@ -91,6 +92,7 @@ import {
   type CombatEvent,
   type CombatState,
   canFlee,
+  cardEffectsForRoll,
   type Difficulty,
   foundryStance,
   intentDamage,
@@ -168,9 +170,9 @@ const TIP_HALF_HEIGHT = (TIP_WIDTH * 240) / 640 / 2;
 const STATUS_TIP_OFFSET = { up: 0.14, toward: 0.04 } as const;
 /** Nearer than this, metres, the tooltip keeps its size; farther, it grows in proportion. */
 const STATUS_TIP_NEAR = 0.9;
-/** The card keyword tip: canvas height (fits a three-keyword card), width in metres, and its place
+/** The card keyword tip: canvas height (fits a four-keyword card), width in metres, and its place
  * above the card (metres up from the card's centre, and toward the eye). */
-const CARD_TIP_PX_HEIGHT = 600;
+const CARD_TIP_PX_HEIGHT = Math.max(900, tipCanvasHeight(cardTip(getCard('quench-seal'))));
 const CARD_TIP_WIDTH = 0.3;
 const CARD_TIP_LIFT = 0.08;
 const CARD_TIP_TOWARD = 0.03;
@@ -355,6 +357,8 @@ export interface CombatSessionDeps {
    * (a regular fight only, from their own input window).
    */
   end: (outcome: 'win' | 'defeat' | 'flee') => void;
+  holdWin?: () => boolean;
+  onUnanimatedDeath?: (body: THREE.Object3D) => void;
   audio?: CombatAudio;
   /**
    * The run's deck, hp, max hp and bonus dice, plus debug cheats, passed to the controller, and the
@@ -1653,12 +1657,12 @@ export class CombatSession {
         this.paint();
       }
       this.endTimer -= dt;
-      // A win hands over only once the last automaton lies still, because the room clears on `end`.
+      // A win clears the room and opens the board, which would cover the falling clue.
       for (const actor of this.dying) {
         if (actor.disposed || !actor.action('death').isRunning()) this.dying.delete(actor);
       }
       const deathsDone = outcome !== 'won' || this.dying.size === 0 || this.deathWait <= 1e-6;
-      if (this.endTimer <= 0 && deathsDone) {
+      if (this.endTimer <= 0 && deathsDone && (outcome !== 'won' || !this.deps.holdWin?.())) {
         this.ended = true;
         this.deps.end(outcome === 'won' ? 'win' : 'defeat');
       }
@@ -2791,7 +2795,13 @@ export class CombatSession {
       const enemyId = 'enemyId' in event ? (event.enemyId as string) : target;
       const actor = enemyId ? this.actors.get(enemyId) : undefined;
       if (actor && event.type === 'damage-dealt' && event.amount > 0) hits.add(actor);
-      if (actor && event.type === 'enemy-died') deaths.add(actor);
+      if (event.type === 'enemy-died') {
+        if (actor) deaths.add(actor);
+        else if (this.deps.onUnanimatedDeath) {
+          const body = this.bodies[this.enemyIds.indexOf(event.enemyId)];
+          if (body) this.deps.onUnanimatedDeath(body);
+        }
+      }
       if (actor && event.type === 'enemy-phase') phases.add(actor);
       const at = enemyId && enemyId !== PLAYER_ID ? this.aimOfId(enemyId) : null;
       this.deps.audio?.playCombatEvent(event, at ?? undefined);
@@ -2843,7 +2853,14 @@ export class CombatSession {
       0,
     );
     const steps =
-      source && launch ? castFxSteps(source, gainedBlock, healed, played?.steamSpent) : [];
+      source && launch
+        ? castFxSteps(
+            { effects: cardEffectsForRoll(source, played?.dice ?? null) },
+            gainedBlock,
+            healed,
+            played?.steamSpent,
+          )
+        : [];
     const from = launch?.from ?? this.fan.root.getWorldPosition(new THREE.Vector3());
     const targets = ids.flatMap((id) => {
       const at = this.aimOfId(id);
@@ -3407,6 +3424,7 @@ export interface CombatHookFloor {
     enemies: ReadonlyMap<number, readonly THREE.Object3D[]>;
     group: THREE.Object3D;
   };
+  notes?: { readonly dropAirborne: boolean; tossFrom(body: THREE.Object3D): void } | null;
   tableSockets(): CombatSessionDeps['sockets'];
   /** The animated actor standing in for a body, when the floor has one. */
   actorOf?(body: THREE.Object3D): SentryActor | null;
@@ -3528,6 +3546,12 @@ export class CombatHook {
         sockets: floor.tableSockets(),
         actions: this.deps.actions,
         actorOf: (body) => floor.actorOf?.(body) ?? null,
+        ...(floor.notes && !patrol
+          ? {
+              holdWin: () => floor.notes?.dropAirborne === true,
+              onUnanimatedDeath: (body) => floor.notes?.tossFrom(body),
+            }
+          : {}),
         ...(this.deps.onPlayerHit ? { onPlayerHit: this.deps.onPlayerHit } : {}),
         ...(this.deps.reducedMotion === undefined
           ? {}

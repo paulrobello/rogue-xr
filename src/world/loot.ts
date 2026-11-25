@@ -96,10 +96,12 @@ export interface Coffer {
   readonly key: string;
   /** The invisible box a ray tests. */
   readonly hit: THREE.Mesh;
+  readonly keyLockHit: THREE.Mesh | null;
   readonly opened: boolean;
   unlock(immediate?: boolean): boolean;
   /** Shows or hides the dedicated brass-key lock without changing encounter locking. */
   syncKeyLock(spent: boolean, immediate?: boolean): void;
+  flyKey(model: THREE.Object3D, from: THREE.Vector3, arrive: () => void): boolean;
   /** The card rising or hovering over the open coffer, waiting to be claimed; null once it flies off. */
   readonly card: string | null;
   /** The invisible quad a ray tests to claim the card once it hovers (not while it rises), else null. */
@@ -444,6 +446,7 @@ export class CofferKit {
   private readonly lidBand = this.geometry(lidBandGeometry());
   private readonly latch = this.geometry(new THREE.BoxGeometry(0.1, 0.12, 0.035));
   private readonly lock = this.geometry(padlockGeometry());
+  private readonly lockHitBox = this.geometry(new THREE.BoxGeometry(0.17, 0.24, 0.07));
   private readonly gem = this.geometry(new THREE.SphereGeometry(0.032, 10, 8));
   private readonly glow = this.geometry(glowGeometry());
   private readonly halo = this.geometry(haloGeometry());
@@ -539,6 +542,12 @@ export class CofferKit {
       gem.visible = false;
     }
     const padlockStart = padlock?.position.clone() ?? null;
+    const lockHit = keyLocked && padlock ? new THREE.Mesh(this.lockHitBox, this.invisible) : null;
+    if (lockHit && padlock) {
+      lockHit.name = 'coffer-key-lock-hit';
+      lockHit.position.z = -0.026;
+      padlock.add(lockHit);
+    }
     const glow = new THREE.Mesh(this.glow, this.light);
     glow.name = 'coffer-glow';
     glow.visible = false;
@@ -555,6 +564,13 @@ export class CofferKit {
     let unlocking = false;
     let secured = locked || keyLocked;
     let clock = 0;
+    let keyFlight: {
+      object: THREE.Object3D;
+      from: THREE.Vector3;
+      to: THREE.Vector3;
+      elapsed: number;
+      arrive: () => void;
+    } | null = null;
     const cogs = this.cogSlot(object, () => angle >= RISE_ANGLE);
     const card = this.cardSlot(object, () => angle >= RISE_ANGLE && cogs.done());
     const coffer: Coffer = {
@@ -564,6 +580,9 @@ export class CofferKit {
       kind,
       key: lootKey(room, socket.id),
       hit,
+      get keyLockHit() {
+        return secured ? lockHit : null;
+      },
       get opened() {
         return target === OPEN_ANGLE;
       },
@@ -581,6 +600,23 @@ export class CofferKit {
       },
       syncKeyLock(spent, immediate = false) {
         if (keyLocked && spent) this.unlock(immediate);
+      },
+      flyKey(model, from, arrive) {
+        if (!keyLocked || !secured || keyFlight || !padlockStart) return false;
+        const key = model.clone(true);
+        key.name = 'coffer-flying-key';
+        const start = object.worldToLocal(from.clone());
+        key.position.copy(start);
+        key.rotation.set(0, 0, 0);
+        object.add(key);
+        keyFlight = {
+          object: key,
+          from: start,
+          to: padlockStart.clone().add(new THREE.Vector3(0, 0, -0.096)),
+          elapsed: 0,
+          arrive,
+        };
+        return true;
       },
       get card() {
         return card.waiting();
@@ -608,6 +644,20 @@ export class CofferKit {
       },
       update(dt) {
         clock += dt;
+        if (keyFlight) {
+          const flight = keyFlight;
+          flight.elapsed += dt;
+          const travel = Math.min(1, flight.elapsed / 0.55);
+          const turn = THREE.MathUtils.clamp((flight.elapsed - 0.55) / 0.22, 0, 1);
+          flight.object.position.lerpVectors(flight.from, flight.to, travel);
+          flight.object.position.y += Math.sin(travel * Math.PI) * 0.14;
+          flight.object.rotation.set((-travel * Math.PI) / 2, 0, (turn * Math.PI) / 2, 'ZYX');
+          if (turn === 1) {
+            keyFlight = null;
+            flight.object.removeFromParent();
+            flight.arrive();
+          }
+        }
         if (unlocking && padlock && padlockStart) {
           unlockProgress = Math.min(1, unlockProgress + Math.max(0, dt) * 5);
           padlock.position.y = padlockStart.y - 0.08 * unlockProgress;
@@ -847,6 +897,7 @@ export interface LootPick {
   readonly distance: number;
   /** True when the ray found the card waiting over an open coffer (claim it), false for a shut coffer (open it). */
   readonly claim: boolean;
+  readonly lock?: true;
 }
 
 /**
@@ -865,7 +916,10 @@ export function pickCoffer(
     const target = coffer.opened ? coffer.cardHit : coffer.hit;
     if (!target) continue;
     target.updateWorldMatrix(true, false);
-    const hit = raycaster.intersectObject(target, false)[0];
+    const lock = coffer.keyLockHit;
+    const lockFromFront = lock && lock.worldToLocal(origin.clone()).z < 0;
+    const lockHit = lockFromFront ? raycaster.intersectObject(lock, false)[0] : undefined;
+    const hit = lockHit ?? raycaster.intersectObject(target, false)[0];
     if (hit && (best === null || hit.distance < best.distance)) {
       best = {
         room: coffer.room,
@@ -873,6 +927,7 @@ export function pickCoffer(
         kind: coffer.kind,
         distance: hit.distance,
         claim: coffer.opened,
+        ...(lockHit ? { lock: true } : {}),
       };
     }
   }

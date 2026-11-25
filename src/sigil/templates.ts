@@ -237,6 +237,37 @@ const wardPlus: readonly Stroke[] = [
     8,
   ),
 ];
+
+/** Pendulum Ward keeps the shield silhouette and adds its suspended counterweight. */
+const pendulumWard: readonly Stroke[] = [
+  ...fitStrokes(ward, 0.08, 0.08, 0.84, 0.78),
+  polyline(
+    [
+      { x: 0.5, y: 0.78 },
+      { x: 0.5, y: 0.25 },
+    ],
+    18,
+  ),
+  sampleCurve(32, (t) => {
+    const a = TAU * t;
+    return { x: 0.5 + 0.13 * Math.cos(a), y: 0.2 + 0.13 * Math.sin(a) };
+  }),
+];
+/** The upgraded pendulum ward adds a sparse crown while keeping the shield and counterweight motif. */
+const pendulumWardPlus: readonly Stroke[] = [
+  ...fitStrokes(ward, 0.04, 0.02, 0.92, 0.72),
+  sampleCurve(32, (t) => {
+    const a = TAU * t;
+    return { x: 0.5 + 0.2 * Math.cos(a), y: 0.54 + 0.2 * Math.sin(a) };
+  }),
+  polyline(
+    [
+      { x: 0.2, y: 0.54 },
+      { x: 0.8, y: 0.54 },
+    ],
+    12,
+  ),
+];
 const boltPlus: readonly Stroke[] = [
   ...bolt,
   polyline(
@@ -319,6 +350,8 @@ export const SIGIL_TEMPLATES: Readonly<Record<SigilId, SigilTemplate>> = {
   'gear-plus': { id: 'gear-plus', strokes: gearPlus },
   'flame-plus': { id: 'flame-plus', strokes: flamePlus },
   'ward-plus': { id: 'ward-plus', strokes: wardPlus },
+  'pendulum-ward': { id: 'pendulum-ward', strokes: pendulumWard },
+  'pendulum-ward-plus': { id: 'pendulum-ward-plus', strokes: pendulumWardPlus },
   'bolt-plus': { id: 'bolt-plus', strokes: boltPlus },
   'spiral-plus': { id: 'spiral-plus', strokes: spiralPlus },
   'anchor-plus': { id: 'anchor-plus', strokes: anchorPlus },

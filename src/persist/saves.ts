@@ -32,9 +32,9 @@ import {
   CIRCUIT_BRIDGES,
   CIRCUIT_SOCKET_MASKS,
   type CircuitSocket,
-  circuitLampMask,
   type DarkCircuitState,
   darkCircuitTarget,
+  darkCircuitTargets,
 } from '../rules/dark-circuit.ts';
 import { isDifficulty } from '../rules/difficulty.ts';
 import { type DispatchRoute, dispatchDestination } from '../rules/dispatch.ts';
@@ -105,6 +105,12 @@ export interface MapLiftDiscovery {
   readonly position: readonly [number, number];
 }
 
+/** A puzzle fixture the player has explicitly interacted with on a floor. */
+export interface PuzzleLocation {
+  readonly id: string;
+  readonly room: number;
+}
+
 export interface SnapshotWorld {
   readonly phase: SnapshotPhase;
   /** Seed the floor generator was given; the same seed rebuilds the same room graph. */
@@ -122,6 +128,7 @@ export interface SnapshotWorld {
   readonly floorNumber?: number;
   readonly reachedRooms?: readonly number[];
   readonly mapLifts?: readonly MapLiftDiscovery[];
+  readonly puzzleLocations?: readonly PuzzleLocation[];
   /** Visited floors other than the active one. */
   readonly floors?: readonly FloorSnapshot[];
 }
@@ -131,6 +138,7 @@ export interface FloorSnapshot {
   readonly floorSeed: string;
   readonly clearedEncounters: readonly string[];
   readonly reachedRooms: readonly number[];
+  readonly puzzleLocations?: readonly PuzzleLocation[];
   readonly guardianDefeated?: boolean;
   readonly openedLoot?: readonly string[];
   readonly pendingLoot?: readonly PendingLoot[];
@@ -222,10 +230,25 @@ function darkCircuit(value: unknown, path: string, seed: string): DarkCircuitSta
   );
   if (new Set(sockets).size !== sockets.length)
     fail(`${path}.sockets`, 'expected distinct bridge sockets');
-  const open =
-    sockets.length === CIRCUIT_BRIDGES && circuitLampMask(sockets) === darkCircuitTarget(seed);
-  if (state.open !== open) fail(`${path}.open`, 'does not match the seated bridges');
-  return { sockets, open };
+  if (state.completed === undefined) {
+    // A version written before the three lines could open by combining lamp masks with OR.
+    const mask = sockets.reduce<number>((lit, socket) => lit | CIRCUIT_SOCKET_MASKS[socket], 0);
+    const open = sockets.length === CIRCUIT_BRIDGES && mask === darkCircuitTarget(seed);
+    if (state.open !== open) fail(`${path}.open`, 'does not match the seated bridges');
+    return { sockets, open };
+  }
+  if (!Array.isArray(state.completed)) fail(`${path}.completed`, 'expected an array');
+  const targets = darkCircuitTargets(seed);
+  const completed = targets.slice(0, state.completed.length);
+  if (
+    state.completed.length > targets.length ||
+    state.completed.some((mask, i) => mask !== completed[i])
+  )
+    fail(`${path}.completed`, 'expected completed lines in their seeded order');
+  const open = completed.length === targets.length;
+  if (state.open !== open || sockets.length > (open ? 0 : 1))
+    fail(path, 'does not match the completed lines');
+  return { sockets, open, completed };
 }
 
 function drumGallery(value: unknown, path: string, seed: string): DrumGalleryState {
@@ -293,6 +316,21 @@ function strings(v: unknown, path: string): string[] {
     fail(path, 'expected an array of strings');
   }
   return [...v] as string[];
+}
+
+function puzzleLocations(value: unknown, path: string): PuzzleLocation[] | undefined {
+  if (value === undefined) return undefined;
+  if (!Array.isArray(value)) fail(path, 'expected an array');
+  const seen = new Set<number>();
+  return value.map((item, i) => {
+    const entry = rec(item, `${path}[${i}]`);
+    if (typeof entry.id !== 'string' || entry.id === '')
+      fail(`${path}[${i}].id`, 'expected a name');
+    const room = int(entry.room, `${path}[${i}].room`, 0);
+    if (seen.has(room)) fail(`${path}[${i}].room`, 'expected one discovery per room');
+    seen.add(room);
+    return { id: entry.id, room };
+  });
 }
 
 function bellChimes(v: unknown, path: string, seed: string): StoredBellChimesState {
@@ -385,7 +423,15 @@ function pendulumGallery(v: unknown, path: string): PendulumGalleryState {
     fail(`${path}.phaseReady`, 'expected a boolean');
   if (r.phaseSet !== undefined && typeof r.phaseSet !== 'boolean')
     fail(`${path}.phaseSet`, 'expected a boolean');
-  return { detent, open: r.open, phaseReady: r.phaseReady ?? false, phaseSet: r.phaseSet ?? false };
+  const weight =
+    r.weight === undefined ? undefined : (int(r.weight, `${path}.weight`, 0, 2) as 0 | 1 | 2);
+  return {
+    detent,
+    open: r.open,
+    ...(weight === undefined ? {} : { weight }),
+    phaseReady: r.phaseReady ?? false,
+    phaseSet: r.phaseSet ?? false,
+  };
 }
 
 function counterweight(v: unknown, path: string, seed: string): StoredCounterweightState {
@@ -729,6 +775,8 @@ function validateRunState(
     fail(`${path}.brassCacheSeen`, 'expected a boolean');
   if (r.windowCacheOpened !== undefined && typeof r.windowCacheOpened !== 'boolean')
     fail(`${path}.windowCacheOpened`, 'expected a boolean');
+  if (r.windowCacheRevealed !== undefined && typeof r.windowCacheRevealed !== 'boolean')
+    fail(`${path}.windowCacheRevealed`, 'expected a boolean');
   const brassKey =
     r.brassKey === undefined
       ? undefined
@@ -822,6 +870,7 @@ function validateRunState(
     ...(r.armoryAwakened === true && { armoryAwakened: true }),
     ...(r.brassCacheSeen === true && { brassCacheSeen: true }),
     ...(r.windowCacheOpened === true && { windowCacheOpened: true }),
+    ...(r.windowCacheRevealed === true && { windowCacheRevealed: true }),
     ...(prismSignal === undefined ? {} : { prismSignal }),
     ...(pendulumGalleryState === undefined ? {} : { pendulumGallery: pendulumGalleryState }),
     ...(valvehouse === undefined ? {} : { valvehouse }),
@@ -963,6 +1012,9 @@ export function validateSnapshot(raw: unknown): RunSnapshot {
     ...(r.reachedRooms === undefined
       ? {}
       : { reachedRooms: roomIds(r.reachedRooms, 'snapshot.reachedRooms') }),
+    ...(r.puzzleLocations === undefined
+      ? {}
+      : { puzzleLocations: puzzleLocations(r.puzzleLocations, 'snapshot.puzzleLocations') }),
     ...(floors === undefined ? {} : { floors }),
     ...(r.mapLifts === undefined ? {} : { mapLifts: validateMapLifts(r.mapLifts) }),
   };
@@ -995,6 +1047,9 @@ function validateFloors(
       floorSeed,
       clearedEncounters: strings(r.clearedEncounters, `${path}.clearedEncounters`),
       reachedRooms: roomIds(r.reachedRooms, `${path}.reachedRooms`) ?? [],
+      ...(r.puzzleLocations === undefined
+        ? {}
+        : { puzzleLocations: puzzleLocations(r.puzzleLocations, `${path}.puzzleLocations`) }),
       ...(r.guardianDefeated === undefined ? {} : { guardianDefeated: r.guardianDefeated }),
       ...(r.openedLoot === undefined
         ? {}

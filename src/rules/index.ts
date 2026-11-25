@@ -71,6 +71,7 @@ export {
 } from './dispatch.ts';
 export {
   apply,
+  cardEffectsForRoll,
   cardSteamCost,
   createIdleState,
   intentDamage,

@@ -7,7 +7,7 @@ import {
   type CircuitSocket,
   circuitLampMask,
   type DarkCircuitState,
-  darkCircuitTarget,
+  darkCircuitTargets,
   readDarkCircuit,
 } from '../rules/dark-circuit.ts';
 import { DOOR_HEIGHT, type FloorWorld } from './floor-world.ts';
@@ -24,7 +24,6 @@ const SOCKETS: readonly CircuitSocket[] = [0, 1, 2, 3];
 const SOCKET_X = [-0.45, -0.15, 0.15, 0.45];
 const LAMP_X = [-0.3, 0, 0.3];
 const LAMP_SYMBOLS = ['○', '△', '◇'];
-const LAMP_NAMES = ['circle', 'triangle', 'diamond'];
 export const DARK_CIRCUIT_GATE_SECONDS = 0.95;
 
 /** Independent switchboard and rack-driven grille. */
@@ -39,6 +38,7 @@ export class DarkCircuit {
   readonly leaf = new THREE.Group();
   private readonly bridgeSlots: (CircuitSocket | null)[] = [null, null];
   private readonly labels: CanvasLabel[] = [];
+  private progressLabel?: CanvasLabel;
   private readonly ray = new THREE.Raycaster();
   private readonly hitPoint = new THREE.Vector3();
   private readonly box = new THREE.Box3();
@@ -48,7 +48,7 @@ export class DarkCircuit {
   private state = readDarkCircuit({});
   private readonly reducedMotion: boolean;
   private readonly roomIndex: number;
-  private readonly targetMask: number;
+  private readonly targetMasks: readonly number[];
 
   constructor(
     private readonly world: FloorWorld,
@@ -60,7 +60,7 @@ export class DarkCircuit {
   ) {
     this.reducedMotion = reducedMotion;
     this.roomIndex = layout.switchboard;
-    this.targetMask = darkCircuitTarget(seed);
+    this.targetMasks = darkCircuitTargets(seed);
     this.object.name = 'dark-circuit-switchboard';
     this.board.name = 'dark-circuit-board';
     this.gate.name = 'dark-circuit-toothed-grille';
@@ -198,7 +198,7 @@ export class DarkCircuit {
         ctx.textAlign = 'center';
         ctx.fillText('DARK CIRCUIT', w / 2, 68);
         ctx.font = '42px system-ui, sans-serif';
-        ctx.fillText('SEAT TWO BRIDGES', w / 2, 124);
+        ctx.fillText('PAIR TWO · SHARED MARKS CANCEL', w / 2, 124);
       });
       title.mesh.position.set(0, 0.47, 0.09);
       this.board.add(title.mesh);
@@ -218,22 +218,11 @@ export class DarkCircuit {
       symbols.mesh.position.set(0, 0.014, 0.101);
       this.board.add(symbols.mesh);
       this.labels.push(symbols);
-      const clue = new CanvasLabel(900, 97, 1.26, true);
-      clue.draw((ctx, w, h) => {
-        ctx.fillStyle = '#564126';
-        ctx.fillRect(0, 0, w, h);
-        ctx.fillStyle = '#f7e7b9';
-        ctx.font = 'bold 40px system-ui, sans-serif';
-        ctx.textAlign = 'center';
-        const lit = LAMP_NAMES.filter((_, bit) => this.targetMask & (1 << bit));
-        const dark = LAMP_NAMES.find((_, bit) => (this.targetMask & (1 << bit)) === 0);
-        ctx.fillText(`LIGHT ${lit.join(' + ').toUpperCase()}`, w / 2, 43);
-        ctx.font = '32px system-ui, sans-serif';
-        ctx.fillText(`KEEP ${dark?.toUpperCase()} DARK`, w / 2, 81);
-      });
-      clue.mesh.position.set(0, -0.485, 0.111);
-      this.board.add(clue.mesh);
-      this.labels.push(clue);
+      const progress = new CanvasLabel(900, 146, 1.26, true);
+      progress.mesh.position.set(0, -0.493, 0.112);
+      this.board.add(progress.mesh);
+      this.progressLabel = progress;
+      this.labels.push(progress);
     }
     this.board.updateWorldMatrix(true, false);
     const bounds = new THREE.Box3(
@@ -265,13 +254,14 @@ export class DarkCircuit {
       roughness: 0.38,
     });
     const halfWidth = door.width / 2;
-    for (const x of [-halfWidth, halfWidth])
-      this.gate
-        .add(new THREE.Mesh(new THREE.BoxGeometry(0.08, DOOR_HEIGHT, 0.16), frameMat))
-        .position.set(x, DOOR_HEIGHT / 2, 0);
-    this.gate.add(
-      new THREE.Mesh(new THREE.BoxGeometry(door.width + 0.08, 0.09, 0.16), frameMat),
-    ).position.y = DOOR_HEIGHT;
+    for (const x of [-halfWidth, halfWidth]) {
+      const jamb = new THREE.Mesh(new THREE.BoxGeometry(0.08, DOOR_HEIGHT, 0.16), frameMat);
+      jamb.position.set(x, DOOR_HEIGHT / 2, 0);
+      this.gate.add(jamb);
+    }
+    const lintel = new THREE.Mesh(new THREE.BoxGeometry(door.width + 0.08, 0.09, 0.16), frameMat);
+    lintel.position.y = DOOR_HEIGHT;
+    this.gate.add(lintel);
     for (let i = -5; i <= 5; i++) {
       const bar = new THREE.Mesh(new THREE.BoxGeometry(0.043, DOOR_HEIGHT - 0.08, 0.057), frameMat);
       bar.position.set((i * (door.width - 0.18)) / 10, DOOR_HEIGHT / 2, 0);
@@ -313,10 +303,30 @@ export class DarkCircuit {
       );
       if (snap) bridge.position.copy(this.bridgeGoals[i]);
     }
-    const mask = circuitLampMask(state.sockets);
+    const completed = state.open ? this.targetMasks.length : (state.completed?.length ?? 0);
+    const mask = state.open ? (this.targetMasks.at(-1) ?? 0) : circuitLampMask(state.sockets);
     this.lamps.forEach((lamp, i) => {
       (lamp.material as THREE.MeshStandardMaterial).emissiveIntensity =
         mask & (1 << i) ? 1.75 : 0.055;
+    });
+    this.progressLabel?.draw((ctx, w, h) => {
+      ctx.fillStyle = state.open ? '#173d2a' : '#101818';
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = state.open ? '#d8f3d5' : '#d3e6d4';
+      ctx.font = 'bold 36px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(
+        state.open
+          ? 'CIRCUIT STABLE'
+          : `LINE ${completed + 1} / 3 · ${state.sockets.length} / 2 BRIDGES`,
+        w / 2,
+        49,
+      );
+      this.targetMasks.forEach((target, index) => {
+        const symbols = LAMP_SYMBOLS.filter((_, bit) => target & (1 << bit));
+        ctx.fillStyle = index < completed ? '#a3e8a6' : index === completed ? '#f9d686' : '#e2cab2';
+        ctx.fillText(`${index + 1}  ${symbols.join(' + ')}`, ((index + 0.5) * w) / 3, 113);
+      });
     });
     this.poseGate();
   }
@@ -334,7 +344,7 @@ export class DarkCircuit {
 
   private poseGate(): void {
     const progress = THREE.MathUtils.smoothstep(this.gateAge, 0, DARK_CIRCUIT_GATE_SECONDS);
-    this.leaf.position.y = (DOOR_HEIGHT + 0.05) * progress;
+    this.leaf.position.y = -(DOOR_HEIGHT + 0.05) * progress;
     this.leaf.visible = !this.released;
     this.world.setPuzzleGateOpen('dark-circuit', this.released, true);
   }

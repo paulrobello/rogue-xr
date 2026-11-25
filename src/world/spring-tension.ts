@@ -5,6 +5,7 @@ import {
   readSpringTension,
   type SpringTensionControl,
   type SpringTensionState,
+  springTensionInWindow,
   springTensionWindow,
 } from '../rules/spring-tension.ts';
 import { ClockInscription } from './clock-inscription.ts';
@@ -16,6 +17,8 @@ const GATE_YAW = { N: 0, E: -Math.PI / 2, S: Math.PI, W: Math.PI / 2 };
 const DIAL_RADIUS = 0.248;
 const WIND_SECONDS = 0.26;
 const TEST_SECONDS = 0.57;
+export const SPRING_RELAX_GRACE_SECONDS = 0.45;
+export const SPRING_RELAX_SECONDS_PER_MARK = 1.4;
 export const SPRING_GATE_SECONDS = 1.08;
 const angleFor = (tension: number): number =>
   ((208 - (236 * tension) / MAX_SPRING_TENSION) * Math.PI) / 180;
@@ -37,6 +40,7 @@ export class SpringTension {
   private readonly key = new THREE.Group();
   private readonly needle = new THREE.Group();
   private readonly clutch = new THREE.Group();
+  private readonly completionMarker = new THREE.Group();
   private readonly controlPoints: Record<SpringTensionControl, THREE.Object3D>;
   private readonly brass = this.keep(
     new THREE.MeshStandardMaterial({
@@ -63,12 +67,15 @@ export class SpringTension {
   );
   private readonly hitMaterial = this.keep(new THREE.MeshBasicMaterial({ visible: false }));
   private state: SpringTensionState = readSpringTension({});
+  private readonly rangeSeed: string;
   private shown = 0;
   private from = 0;
   private windAge = WIND_SECONDS;
   private testAge = TEST_SECONDS;
   private shallow = false;
   private gateAge = 0;
+  private relaxAge = 0;
+  private sampled = 0;
 
   constructor(
     private readonly world: FloorWorld,
@@ -79,6 +86,7 @@ export class SpringTension {
     environment?: THREE.Texture | null,
     furnishings: readonly InteriorPlacement[] = [],
   ) {
+    this.rangeSeed = seed;
     this.range = springTensionWindow(seed);
     this.brass.envMap = environment ?? null;
     this.brass.envMapIntensity = 0.67;
@@ -125,6 +133,31 @@ export class SpringTension {
 
   get winding(): boolean {
     return this.windAge < WIND_SECONDS;
+  }
+
+  get falling(): boolean {
+    return !this.winding && this.relaxAge > SPRING_RELAX_GRACE_SECONDS;
+  }
+
+  /** Whether the falling needle is inside the engraved band. */
+  get readyForRelease(): boolean {
+    return (
+      this.falling &&
+      springTensionInWindow(this.rangeSeed, {
+        tension: this.sampled,
+        open: this.state.open,
+      })
+    );
+  }
+
+  /** Current transient gauge reading. It is intentionally not persisted. */
+  get sampledTension(): number {
+    return this.sampled;
+  }
+
+  /** The catch has engaged, before the gate finishes its travel. */
+  get completed(): boolean {
+    return this.state.open;
   }
 
   private keep<T extends { dispose(): void }>(resource: T): T {
@@ -196,9 +229,21 @@ export class SpringTension {
       1.36,
       [0, 1.93, 0.282],
       'Spring Tension',
-      'Wind to the engraved interval.',
-      'Pull the clutch while the needle is inside.',
+      'Wind above the engraved interval.',
+      'Pull the clutch as the needle falls into the band.',
     );
+    const completion = new ClockInscription(
+      'spring-tension-completion',
+      0.48,
+      'CATCH SET',
+      'Gate released.',
+      'Proceed through.',
+    );
+    this.parts.push(completion);
+    completion.object.position.set(0.48, 1.68, 0.29);
+    this.completionMarker.add(completion.object);
+    this.object.add(this.completionMarker);
+    this.completionMarker.visible = false;
   }
 
   private buildGauge(art: THREE.Object3D | undefined): void {
@@ -408,10 +453,17 @@ export class SpringTension {
       this.gateAge = state.open ? SPRING_GATE_SECONDS : 0;
       this.shallow = false;
       this.testAge = TEST_SECONDS;
+      this.sampled = state.tension;
+      this.relaxAge = 0;
     } else {
-      if (state.tension !== this.state.tension) {
+      if (
+        state.tension !== this.state.tension ||
+        (state !== this.state && !state.open && state.tension > this.sampled)
+      ) {
         this.windAge = 0;
         this.from = this.shown;
+        this.sampled = state.tension;
+        this.relaxAge = 0;
       }
       if (!state.open || !this.state.open) this.gateAge = 0;
     }
@@ -429,33 +481,43 @@ export class SpringTension {
     if (
       this.windAge >= WIND_SECONDS &&
       this.testAge >= TEST_SECONDS &&
-      (!this.state.open || this.released)
+      ((this.state.open && this.released) || (!this.state.open && this.sampled <= 0))
     )
       return;
     this.windAge = Math.min(WIND_SECONDS, this.windAge + dt);
     this.testAge = Math.min(TEST_SECONDS, this.testAge + dt);
     if (this.state.open) this.gateAge = Math.min(SPRING_GATE_SECONDS, this.gateAge + dt);
+    if (!this.state.open && this.windAge >= WIND_SECONDS) {
+      this.relaxAge += dt;
+      const elapsed = Math.max(0, this.relaxAge - SPRING_RELAX_GRACE_SECONDS);
+      this.sampled = Math.max(0, this.state.tension - elapsed / SPRING_RELAX_SECONDS_PER_MARK);
+    }
     this.draw();
   }
 
   private draw(): void {
     this.shown = THREE.MathUtils.lerp(
       this.from,
-      this.state.tension,
+      this.sampled,
       THREE.MathUtils.smoothstep(this.windAge, 0, WIND_SECONDS),
     );
     this.needle.rotation.z = angleFor(this.shown) - Math.PI / 2;
     this.key.rotation.z = -this.shown * Math.PI * 0.54;
     const testFraction = this.testAge / TEST_SECONDS;
     const attempt = this.reduced ? Number(testFraction < 1) : Math.sin(testFraction * Math.PI);
-    const lift = this.state.open
-      ? (DOOR_HEIGHT + 0.04) * THREE.MathUtils.smoothstep(this.gateAge, 0, SPRING_GATE_SECONDS)
+    const offset = this.state.open
+      ? -(DOOR_HEIGHT + 0.04) * THREE.MathUtils.smoothstep(this.gateAge, 0, SPRING_GATE_SECONDS)
       : this.shallow
-        ? attempt * 0.33
+        ? -attempt * 0.33
         : 0;
-    this.leaf.position.y = lift;
+    this.leaf.position.y = offset;
     this.leaf.visible = !this.released;
     this.clutch.rotation.x = -0.62 * (this.state.open ? 1 : attempt);
+    this.completionMarker.visible = this.state.open;
+    if (this.state.open && !this.reduced)
+      this.completionMarker.scale.setScalar(
+        0.94 + 0.06 * THREE.MathUtils.smoothstep(this.gateAge, 0, SPRING_GATE_SECONDS),
+      );
     if (this.released) this.world.setPuzzleGateOpen('spring-tension', true, true);
   }
 

@@ -4,9 +4,11 @@ import {
   CRYSTAL_GAMBIT_VERSION,
   DUNGEON_CONTENT_VERSION,
   ECHO_GLYPH_VERSION,
+  FIELD_DRESSING_VERSION,
   LENS_FOCUS_VERSION,
   MECHANISM_CONTENT_VERSION,
   OVERDRIVE_CONTENT_VERSION,
+  RISK_CARDS_VERSION,
   WAVE_A_COMPLETE_VERSION,
   WAVE_A_REPAIR_VERSION,
   WAVE_B_CHAIN_VERSION,
@@ -17,10 +19,12 @@ import {
   CRYSTAL_GAMBIT_IDS,
   DUNGEON_REWARD_IDS,
   ECHO_GLYPH_IDS,
+  FIELD_DRESSING_ID,
   LEGACY_REWARD_POOL,
   LENS_FOCUS_IDS,
   PERMANENT_CARD_IDS,
   REWARD_POOL,
+  RISK_CARD_IDS,
   WAVE_A_COMPLETE_IDS,
   WAVE_A_REPAIR_IDS,
   WAVE_B_CHAIN_IDS,
@@ -38,7 +42,9 @@ const options = {
   starterDeck: STARTER_DECK,
   rewardPool: REWARD_POOL,
 };
-const beforeLensFocus = REWARD_POOL.filter((id) => !LENS_FOCUS_IDS.has(id));
+const beforeRiskCards = REWARD_POOL.filter((id) => !RISK_CARD_IDS.has(id));
+const beforeFieldDressing = beforeRiskCards.filter((id) => id !== FIELD_DRESSING_ID);
+const beforeLensFocus = beforeFieldDressing.filter((id) => !LENS_FOCUS_IDS.has(id));
 const beforeEcho = beforeLensFocus.filter((id) => !ECHO_GLYPH_IDS.has(id));
 const beforeCrystal = beforeEcho.filter((id) => !CRYSTAL_GAMBIT_IDS.has(id));
 const beforeMechanisms = beforeCrystal.filter(
@@ -103,7 +109,10 @@ describe('Combat card availability by content version', () => {
     [ECHO_GLYPH_VERSION - 1, beforeEcho],
     [ECHO_GLYPH_VERSION, beforeLensFocus],
     [LENS_FOCUS_VERSION - 1, beforeLensFocus],
-    [LENS_FOCUS_VERSION, REWARD_POOL],
+    [LENS_FOCUS_VERSION, beforeFieldDressing],
+    [FIELD_DRESSING_VERSION - 1, beforeFieldDressing],
+    [FIELD_DRESSING_VERSION, beforeRiskCards],
+    [RISK_CARDS_VERSION, REWARD_POOL],
   ])('replays the exact combat reward order for content version %i', (version, eligible) => {
     for (let i = 0; i < 24; i++) {
       const fresh = new RunFlow(options);

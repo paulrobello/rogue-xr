@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { beforeAll, expect, it } from 'vitest';
 import { guardedConnection } from '../src/floor/generate.ts';
 import { mountFloorView } from '../src/world/floor-view.ts';
+import { lightRoomStyle } from '../src/world/room-style-lighting.ts';
 import {
   applyRoomStyle,
   disposeRoomStyle,
@@ -140,4 +141,26 @@ it('keeps the two finished faces and pull of the open Conservatory lock outside 
   for (let i = 0; i < pos.count; i++)
     expect(point.fromBufferAttribute(pos, i).applyMatrix4(intoMount).x).toBeLessThan(leftEdge);
   view.dispose();
+});
+
+it('blocks rays from behind the Conservatory timber jambs and lintel while keeping the opening clear', () => {
+  const room = new THREE.Group();
+  applyRoomStyle(room, 'timber', kit, [{ facing: 'N', position: [-1, 0, -4] }]);
+  room.userData.conservatory = true;
+  lightRoomStyle(room, []);
+  room.updateMatrixWorld(true);
+  const frame = room.children.filter((node) => node.userData.roomStylePiece === 'TimberDoor');
+  expect(frame.length).toBeGreaterThan(0);
+  const ray = new THREE.Raycaster();
+  for (const [x, y] of [
+    [-1.834, 1.3],
+    [-0.166, 1.3],
+    [-1, 2.44],
+  ]) {
+    ray.set(new THREE.Vector3(x, y, -4.05), new THREE.Vector3(0, 0, 1));
+    expect(ray.intersectObjects(frame)[0]?.distance).toBeLessThan(0.22);
+  }
+  ray.set(new THREE.Vector3(-1, 1.6, -4.05), new THREE.Vector3(0, 0, 1));
+  expect(ray.intersectObjects(frame)).toEqual([]);
+  disposeRoomStyle(room);
 });

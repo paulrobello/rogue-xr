@@ -12,6 +12,16 @@ export function springTensionWindow(seed: string): { min: number; max: number } 
   return { min, max: min + 1 };
 }
 
+/** Whether the clutch can catch at the current marked tension. */
+export function springTensionInWindow(
+  seed: string,
+  state: Pick<SpringTensionState, 'tension' | 'open'>,
+): boolean {
+  if (state.open) return false;
+  const target = springTensionWindow(seed);
+  return state.tension >= target.min && state.tension <= target.max;
+}
+
 export function readSpringTension(run: Pick<RunState, 'springTension'>): SpringTensionState {
   return run.springTension ?? { tension: 0, open: false };
 }
@@ -20,6 +30,7 @@ export function operateSpringTension(
   seed: string,
   state: SpringTensionState,
   action: SpringTensionControl,
+  effectiveTension = state.tension,
 ): { state: SpringTensionState; outcome: SpringTensionOutcome } {
   if (state.open) return { state, outcome: 'ignored' };
   if (action === 'reset')
@@ -27,11 +38,12 @@ export function operateSpringTension(
       ? { state, outcome: 'ignored' }
       : { state: { tension: 0, open: false }, outcome: 'reset' };
   if (action === 'wind')
-    return state.tension >= MAX_SPRING_TENSION
+    return effectiveTension >= MAX_SPRING_TENSION
       ? { state, outcome: 'ignored' }
-      : { state: { tension: state.tension + 1, open: false }, outcome: 'wound' };
+      : { state: { tension: Math.floor(effectiveTension) + 1, open: false }, outcome: 'wound' };
   const target = springTensionWindow(seed);
-  if (state.tension < target.min) return { state, outcome: 'partial' };
-  if (state.tension > target.max) return { state: { tension: 0, open: false }, outcome: 'slipped' };
+  if (effectiveTension < target.min) return { state, outcome: 'partial' };
+  if (effectiveTension > target.max)
+    return { state: { tension: 0, open: false }, outcome: 'slipped' };
   return { state: { tension: state.tension, open: true }, outcome: 'opened' };
 }

@@ -1,6 +1,21 @@
 import * as THREE from 'three';
 import { PALETTE } from '../palette.ts';
 
+/** The actual dressed floor includes lightmaps and puzzle textures missing from the source kits. */
+export function floorTextures(root: THREE.Object3D): Set<THREE.Texture> {
+  const textures = new Set<THREE.Texture>();
+  root.traverse((object) => {
+    if (!(object instanceof THREE.Mesh)) return;
+    const materials = Array.isArray(object.material) ? object.material : [object.material];
+    for (const material of materials) {
+      for (const value of Object.values(material)) {
+        if (value instanceof THREE.Texture && !value.isRenderTargetTexture) textures.add(value);
+      }
+    }
+  });
+  return textures;
+}
+
 export interface VeilOptions {
   /**
    * Extra objects whose programs must exist before play, such as every room variant that is not
@@ -9,6 +24,8 @@ export interface VeilOptions {
    * different count at runtime links a new program mid-session.
    */
   variants?: readonly THREE.Object3D[];
+  /** Unshadowed point lights whose parent rooms can be culled during play. */
+  roomPointLights?: readonly THREE.PointLight[];
   /** Textures uploaded per frame. A 2048 px texture is several MB, so keep this small. */
   uploadsPerFrame?: number;
   /** Frames the veil takes to fade out once everything is resident. */
@@ -41,16 +58,53 @@ function defaultNextFrame(renderer: THREE.WebGLRenderer): () => Promise<void> {
   return () =>
     new Promise((resolve) => {
       const session = renderer.xr.isPresenting ? renderer.xr.getSession() : null;
-      if (session) session.requestAnimationFrame(() => resolve());
-      else requestAnimationFrame(() => resolve());
+      if (!session) {
+        requestAnimationFrame(() => resolve());
+        return;
+      }
+      const finish = () => {
+        session.removeEventListener('end', finish);
+        resolve();
+      };
+      session.addEventListener('end', finish, { once: true });
+      session.requestAnimationFrame(finish);
     });
 }
 
+async function compileRoomLightVariants(
+  renderer: THREE.WebGLRenderer,
+  scene: THREE.Scene,
+  camera: THREE.Camera,
+  roomLights: readonly THREE.PointLight[],
+): Promise<void> {
+  if (roomLights.length === 0) {
+    await renderer.compileAsync(scene, camera);
+    return;
+  }
+  const previous = roomLights.map((light) => light.visible);
+  const compileLights = new THREE.Group();
+  for (let count = 0; count <= roomLights.length; count++) {
+    // Three.js keys programs by light count. Its scene walk runs synchronously before the link wait.
+    scene.add(compileLights);
+    for (const light of roomLights) light.visible = false;
+    let linking: Promise<THREE.Object3D>;
+    try {
+      linking = renderer.compileAsync(scene, camera);
+    } finally {
+      compileLights.removeFromParent();
+      roomLights.forEach((light, i) => {
+        light.visible = previous[i];
+      });
+    }
+    await linking;
+    if (count < roomLights.length) compileLights.add(new THREE.PointLight(0, 0));
+  }
+}
+
 /**
- * Hides the world behind a veil while it precompiles every shader program
+ * Hides the world behind a veil while it precompiles shader programs
  * (`renderer.compileAsync`), then spreads texture uploads (`renderer.initTexture`) over several
- * frames, then fades out. Nothing is linked or uploaded after this resolves, so play never
- * hitches on a first draw. The veil mesh is added to `scene` and removed again when done.
+ * frames, then fades out. The veil mesh is added to `scene` and removed again when done.
  *
  * `textures` should be decoded already (ImageBitmap-backed or KTX2). Decode with
  * `createImageBitmap` before calling, so the frames spent here are GPU uploads only.
@@ -62,7 +116,13 @@ export async function runVeil(
   textures: readonly THREE.Texture[],
   options: VeilOptions = {},
 ): Promise<void> {
-  const { variants = [], uploadsPerFrame = 2, fadeFrames = 24, onPhase } = options;
+  const {
+    variants = [],
+    roomPointLights = [],
+    uploadsPerFrame = 2,
+    fadeFrames = 24,
+    onPhase,
+  } = options;
   const nextFrame = options.nextFrame ?? defaultNextFrame(renderer);
   const batch = Math.max(1, Math.floor(uploadsPerFrame));
   const veil = createVeilSphere();
@@ -77,7 +137,7 @@ export async function runVeil(
     // One frame so the veil is on screen before the first long task.
     await nextFrame();
 
-    await renderer.compileAsync(scene, camera);
+    await compileRoomLightVariants(renderer, scene, camera, roomPointLights);
     for (const variant of variants) await renderer.compileAsync(variant, camera, scene);
     onPhase?.('compile');
 

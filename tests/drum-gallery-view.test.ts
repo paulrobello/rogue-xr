@@ -133,7 +133,7 @@ describe('Drum Gallery in the Conservatory', () => {
         expect(releases).toBe(1);
         if (!reduced) {
           station.update(DRUM_GATE_SECONDS / 2);
-          expect(station.leaf.position.y).toBeGreaterThan(0);
+          expect(station.leaf.position.y).toBeLessThan(0);
           expect(colliders()).toEqual(closed);
           station.update(DRUM_GATE_SECONDS / 2);
         }

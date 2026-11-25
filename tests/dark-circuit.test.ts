@@ -11,6 +11,7 @@ import {
   type CircuitSocket,
   circuitLampMask,
   darkCircuitTarget,
+  darkCircuitTargets,
   readDarkCircuit,
   toggleCircuitBridge,
 } from '../src/rules/dark-circuit.ts';
@@ -26,8 +27,8 @@ const SEEDS = Array.from({ length: 40 }, (_, i) => `C1RC${String(i).padStart(4, 
 const SOCKETS = [0, 1, 2, 3] as const;
 const fresh = () =>
   new RunFlow({ workshop: createWorkshop(), starterDeck: ['strike'], rewardPool: ['cog-toss'] });
-const solution = (seed: string): CircuitSocket[] =>
-  SOCKETS.slice(0, 3).filter((_, i) => darkCircuitTarget(seed) & (1 << i));
+const pairFor = (mask: number): [CircuitSocket, CircuitSocket] =>
+  mask === 3 ? [0, 1] : mask === 5 ? [0, 2] : [1, 2];
 
 describe('Dark Circuit', () => {
   it('adds a reachable stone switchboard and one gated coffer without displacing older rooms', () => {
@@ -74,23 +75,17 @@ describe('Dark Circuit', () => {
       const target = darkCircuitTarget(seed);
       targets.add(target);
       const empty = readDarkCircuit({});
-      for (const first of SOCKETS) {
-        const seated = toggleCircuitBridge(seed, empty, first);
-        expect(seated).toEqual({ outcome: 'seated', state: { sockets: [first], open: false } });
-        expect(toggleCircuitBridge(seed, seated.state, first).state).toEqual(empty);
-        for (const second of SOCKETS.filter((socket) => socket !== first)) {
-          const next = toggleCircuitBridge(seed, seated.state, second);
-          const matching = circuitLampMask([first, second]) === target;
-          expect(next.state.open).toBe(matching);
-          const spare = SOCKETS.find(
-            (socket) => socket !== first && socket !== second,
-          ) as CircuitSocket;
-          expect(toggleCircuitBridge(seed, next.state, spare).outcome).toBe(
-            matching ? 'ignored' : 'no-bridge',
-          );
-        }
+      let state = empty;
+      for (const [index, mask] of darkCircuitTargets(seed).entries()) {
+        const [first, second] = pairFor(mask);
+        expect(toggleCircuitBridge(seed, state, first).outcome).toBe('seated');
+        const next = toggleCircuitBridge(seed, { ...state, sockets: [first] }, second);
+        expect(next.outcome).toBe(index === 2 ? 'opened' : 'primed');
+        state = next.state;
       }
-      expect(circuitLampMask(solution(seed))).toBe(target);
+      expect(state.open).toBe(true);
+      const wrong = toggleCircuitBridge(seed, toggleCircuitBridge(seed, empty, 3).state, 2);
+      expect(wrong.outcome).toBe('wrong');
     }
     expect(targets).toEqual(new Set([3, 5, 6]));
   });
@@ -98,12 +93,12 @@ describe('Dark Circuit', () => {
   it('validates partial and solved saves and restores the floor-local latch and claimed coffer', () => {
     const flow = fresh();
     flow.newRun(SEED);
-    const [first, second] = solution(SEED);
+    const [first, second] = pairFor(darkCircuitTargets(SEED)[0]);
     expect(flow.toggleCircuitBridge(first)).toBe('ignored');
     expect(flow.travelToFloor(2, 0)).toBe(true);
     expect(flow.toggleCircuitBridge(first)).toBe('seated');
     const partial = validateSnapshot(flow.snapshot(12));
-    expect(partial.run.darkCircuit).toEqual({ sockets: [first], open: false });
+    expect(partial.run.darkCircuit).toEqual({ sockets: [first], open: false, completed: [] });
     expect(() =>
       validateSnapshot({
         ...partial,
@@ -112,7 +107,12 @@ describe('Dark Circuit', () => {
     ).toThrow('distinct bridge sockets');
     const continued = fresh();
     expect(continued.continueRun(partial)).toBe(true);
-    expect(continued.toggleCircuitBridge(second)).toBe('opened');
+    expect(continued.toggleCircuitBridge(second)).toBe('primed');
+    for (const [index, mask] of darkCircuitTargets(SEED).slice(1).entries()) {
+      const [a, b] = pairFor(mask);
+      expect(continued.toggleCircuitBridge(a)).toBe('seated');
+      expect(continued.toggleCircuitBridge(b)).toBe(index === 1 ? 'opened' : 'primed');
+    }
     expect(continued.toggleCircuitBridge(first)).toBe('ignored');
     const annex = playableFloorPlan(UPPER, DARK_CIRCUIT_VERSION, 2).darkCircuit;
     if (!annex) throw Error('Fixture seed is missing its circuit');
@@ -123,7 +123,7 @@ describe('Dark Circuit', () => {
     const restored = fresh();
     expect(restored.continueRun(validateSnapshot(continued.snapshot(22)))).toBe(true);
     expect(restored.travelToFloor(2, 0)).toBe(true);
-    expect(restored.darkCircuit).toEqual({ sockets: [first, second], open: true });
+    expect(restored.darkCircuit?.open).toBe(true);
     expect(restored.openLoot(annex.recess, coffer, 'card')).toBeNull();
   });
 
@@ -136,6 +136,15 @@ describe('Dark Circuit', () => {
         const station = floor.darkCircuit;
         if (!station) throw Error('Fixture seed is missing its switchboard');
         const { switchboard, recess } = station.layout;
+        const door = floor.world.rooms[switchboard].doors.find(
+          ({ id }) => id === station.layout.gate.door,
+        );
+        if (!door) throw Error('Missing grille doorway');
+        const gate = station.gate.getWorldPosition(new THREE.Vector3());
+        expect(gate.y).toBeCloseTo(0);
+        expect(Math.hypot(gate.x - door.world[0], gate.z - door.world[1])).toBeCloseTo(0.14);
+        const jambs = station.gate.children.filter((child) => child.position.x !== 0);
+        expect(jambs).toHaveLength(2);
         floor.world.current = switchboard;
         const blocked = () =>
           [switchboard, recess].map((room) => floor.world.colliders[room].length);
@@ -146,10 +155,10 @@ describe('Dark Circuit', () => {
         const eye = socket.parent.localToWorld(new THREE.Vector3(socket.position.x, 0.04, 1.6));
         expect(station.pick(eye, target.clone().sub(eye).normalize())?.action).toBe(0);
         expect(station.near(target, 0.12)?.action).toBe(0);
-        station.sync({ sockets: solution(SEED), open: true });
+        station.sync({ sockets: [], open: true, completed: [3, 5, 6] });
         if (!reduced) {
           station.update(DARK_CIRCUIT_GATE_SECONDS / 2);
-          expect(station.leaf.position.y).toBeGreaterThan(0);
+          expect(station.leaf.position.y).toBeLessThan(0);
           expect(station.released).toBe(false);
           expect(blocked()).toEqual(before);
           station.update(DARK_CIRCUIT_GATE_SECONDS / 2);

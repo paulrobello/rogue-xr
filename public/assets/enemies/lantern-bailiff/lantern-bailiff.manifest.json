@@ -1,0 +1,191 @@
+{
+  "id": "lantern-bailiff",
+  "version": 1,
+  "glb": "lantern-bailiff.glb",
+  "frame": {
+    "units": "m",
+    "up": "+Y",
+    "forward": "-Z",
+    "origin": "floor"
+  },
+  "root": "lantern-bailiff",
+  "mesh": "lantern-bailiff-body",
+  "bounds": {
+    "min": [
+      -0.5440000295639038,
+      1.4901161193847656e-08,
+      -0.2590000033378601
+    ],
+    "max": [
+      0.4150000214576721,
+      1.6899999380111694,
+      0.1850000023841858
+    ]
+  },
+  "skeleton": {
+    "root": "root",
+    "bones": 25,
+    "joints": [
+      "root",
+      "pelvis",
+      "chest",
+      "cage.lower",
+      "cage.upper",
+      "core",
+      "head",
+      "upper.L",
+      "fore.L",
+      "hand.L",
+      "chain.01",
+      "chain.02",
+      "chain.03",
+      "chain.04",
+      "chain.05",
+      "pendant",
+      "upper.R",
+      "fore.R",
+      "hand.R",
+      "thigh.L",
+      "shin.L",
+      "foot.L",
+      "thigh.R",
+      "shin.R",
+      "foot.R"
+    ],
+    "maxInfluences": 1
+  },
+  "rootMotion": "code-owned; root joint fixed",
+  "clips": {
+    "idle": {
+      "duration": 2.0,
+      "loop": "repeat",
+      "events": {}
+    },
+    "attack": {
+      "duration": 1.2,
+      "loop": "once",
+      "events": {
+        "impact": 0.5
+      }
+    },
+    "hit": {
+      "duration": 0.5,
+      "loop": "once",
+      "events": {}
+    },
+    "death": {
+      "duration": 1.5,
+      "loop": "once",
+      "events": {
+        "down": 1.2666666666666666
+      },
+      "endsOnFloor": true
+    },
+    "frozen": {
+      "duration": 1.0,
+      "loop": "repeat",
+      "events": {},
+      "held": true
+    }
+  },
+  "intentClips": {
+    "draw-chain": "intent-draw-chain",
+    "lantern-sweep": "intent-lantern-sweep",
+    "cinder-glance": "intent-cinder-glance",
+    "lantern-parry": "intent-lantern-parry"
+  },
+  "actionClips": {
+    "draw-chain": "action-draw-chain",
+    "lantern-sweep": "action-lantern-sweep",
+    "cinder-glance": "action-cinder-glance",
+    "lantern-parry": "action-lantern-parry"
+  },
+  "actionTimings": {
+    "draw-chain": {
+      "duration": 1.0,
+      "impact": 0.5333333333333333
+    },
+    "lantern-sweep": {
+      "duration": 1.2,
+      "impact": 0.5
+    },
+    "cinder-glance": {
+      "duration": 0.8,
+      "impact": 0.3333333333333333
+    },
+    "lantern-parry": {
+      "duration": 0.9,
+      "impact": 0.3
+    }
+  },
+  "sockets": {
+    "socket-eye": {
+      "bone": "head",
+      "parent": "head",
+      "position": [
+        0.0,
+        1.57,
+        -0.1
+      ]
+    },
+    "socket-hit": {
+      "bone": "chest",
+      "parent": "chest",
+      "position": [
+        0.0,
+        1.24,
+        -0.17
+      ]
+    },
+    "socket-weapon": {
+      "bone": "pendant",
+      "parent": "pendant",
+      "position": [
+        -0.46,
+        0.63,
+        -0.17
+      ]
+    }
+  },
+  "emissive": {
+    "material": "amber-core",
+    "color": "#FF9126",
+    "intensity": 1.4,
+    "nodes": [
+      "socket-hit"
+    ]
+  },
+  "materialSlots": {
+    "dark-iron": {
+      "set": null,
+      "factorOnly": true
+    },
+    "armor-steel": {
+      "set": null,
+      "factorOnly": true
+    },
+    "aged-brass": {
+      "set": null,
+      "factorOnly": true
+    },
+    "amber-core": {
+      "set": null,
+      "factorOnly": true,
+      "emissive": true
+    }
+  },
+  "cull": {
+    "center": [
+      -0.09741920232772827,
+      0.845971405506134,
+      -0.030895322561264038
+    ],
+    "radius": 1.3598025531731768
+  },
+  "budget": {
+    "tris": 21048,
+    "materials": 4,
+    "bones": 25,
+    "influences": 1
+  }
+}

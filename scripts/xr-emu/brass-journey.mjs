@@ -21,14 +21,18 @@ export async function exerciseBrassCache({
   const cache = await ev(() => window.__combat.floor.world.plan.brassCache);
   assert(cache, 'This seed needs an optional lower-floor cache');
   const coffer = `coffer-${cache.room}-${cache.socketId}`;
-  const face = [0, 0.22, -0.18];
-  async function visitCoffer(button) {
+  const face = [0, 0.43, -0.18];
+  async function visitCoffer() {
     await approach(coffer, coffer, -1.25, face);
-    await click(coffer, face, button);
+    await click(coffer, face);
+  }
+  async function pressLock() {
+    await approach(coffer, 'coffer-key-lock-hit', -1.25);
+    await click('coffer-key-lock-hit');
   }
   const isOpen = () =>
     ev(({ room, socketId }) => window.__flow.flow.isLootOpened(room, socketId), cache);
-  await visitCoffer();
+  await pressLock();
   assert.equal(await isOpen(), false);
   assert(await ev(() => window.__flow.flow.run.brassCacheSeen));
   await shot('brass-lock');
@@ -44,7 +48,10 @@ export async function exerciseBrassCache({
   await resumeAt(2);
   assert.equal(await ev(() => window.__combat.floor.brassKeyStand.key.visible), false);
   await stair(1);
-  await visitCoffer('squeeze');
+  await visitCoffer();
+  assert.equal(await ev(() => window.__flow.flow.brassKey), 'held');
+  await pressLock();
+  await page.waitForFunction(() => window.__flow.flow.brassKey === 'spent');
   assert.equal(await ev(() => window.__flow.flow.brassKey), 'spent');
   assert.equal(await isOpen(), false);
   await resumeAt(1);

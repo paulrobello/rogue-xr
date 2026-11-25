@@ -74,6 +74,7 @@ export interface PerfHandle {
    */
   setFpsCounter(on: boolean): void;
   gaugeHitDistance(source: THREE.Object3D): number | null;
+  closeGauge(origin: THREE.Vector3, direction: THREE.Vector3): boolean;
   grabGauge(source: THREE.Object3D, grip: THREE.Object3D): boolean;
   releaseGauge(grip: THREE.Object3D): void;
   /** True while the FPS counter is shown. */
@@ -243,6 +244,17 @@ export function mountPerf(
   let lastNow: number | null = null;
   let lastClock = 0;
 
+  function setFpsCounter(on: boolean): void {
+    if (on === (gauge !== null)) return;
+    if (on) {
+      gauge = mountGauge();
+    } else {
+      gauge?.dispose();
+      gauge = null;
+    }
+    syncRecorder();
+  }
+
   function currentLog(): FrameLog {
     const log = stats.toJSON();
     const partial = stats.peek(lastClock);
@@ -284,15 +296,11 @@ export function mountPerf(
       if (level !== foveation) perfMark(`foveation ${level}`);
       foveation = level;
     },
-    setFpsCounter(on) {
-      if (on === (gauge !== null)) return;
-      if (on) {
-        gauge = mountGauge();
-      } else {
-        gauge?.dispose();
-        gauge = null;
-      }
-      syncRecorder();
+    setFpsCounter,
+    closeGauge(origin, direction) {
+      if (!gauge?.activateClose(origin, direction)) return false;
+      setFpsCounter(false);
+      return true;
     },
     gaugeHitDistance: (source) => gauge?.hitDistance(source) ?? null,
     grabGauge: (source, grip) => gauge?.beginGrab(source, grip) ?? false,

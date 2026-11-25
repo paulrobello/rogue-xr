@@ -50,6 +50,13 @@ describe('shellSet', () => {
     expect(sorted(shellSet(chain, 0))).toEqual([2, 3]);
   });
 
+  it('with one shell step, draws at most two doors out as the player moves', () => {
+    expect(sorted(visibleSet(chain, 0, 1))).toEqual([0, 1, 2, 4]);
+    expect(sorted(visibleSet(chain, 1, 1))).toEqual([0, 1, 2, 3]);
+    expect(sorted(visibleSet(chain, 3, 1))).toEqual([1, 2, 3, 5]);
+    expect(sorted(nearSet(chain, 0))).toEqual([0, 1, 4]);
+  });
+
   it('from inside a corridor, sees past a corridor neighbour only', () => {
     expect(sorted(nearSet(chain, 1))).toEqual([0, 1, 2]);
     expect(sorted(shellSet(chain, 1))).toEqual([3]);

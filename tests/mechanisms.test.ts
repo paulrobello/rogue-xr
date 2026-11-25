@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
+import { MechanismRack } from '../src/combat/mechanism-rack.ts';
 import { CombatController } from '../src/combat-view/controller.ts';
 import { foldEvents, segmentEvents } from '../src/combat-view/enemy-turn.ts';
 import { getCard } from '../src/content/cards.ts';
@@ -32,6 +33,17 @@ const installed = (combat: CombatController) =>
   (combat.state.mechanisms ?? []).map((c) => c.def.id);
 
 describe('mechanisms', () => {
+  it('keeps the clockwork turret open instead of rendering a solid chassis backing', () => {
+    const rack = new MechanismRack(true, null, false);
+    const combat = duel(['clockwork-turret']);
+    install(combat, 'clockwork-turret');
+    rack.sync(combat.state.mechanisms ?? [], true);
+    expect(rack.root.getObjectByName('turret-chassis')).toBeUndefined();
+    expect(rack.root.getObjectByName('turret-brass-shoulder')).toBeDefined();
+    expect(rack.root.getObjectByName('turret-cannon-barrel')).toBeDefined();
+    rack.dispose();
+  });
+
   it.each<readonly [Effect, string]>([
     [{ type: 'block', amount: { dice: 1 } }, 'require a die result'],
     [{ type: 'scry', count: 1 }, 'require a player choice'],

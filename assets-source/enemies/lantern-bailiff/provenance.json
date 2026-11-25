@@ -1,0 +1,60 @@
+{
+  "pieceId": "lantern-bailiff",
+  "version": 1,
+  "route": "staged authored Blender rig and keyed clips; promoted for local Quest playtest only",
+  "generator": {
+    "path": "scripts/assets/build-lantern-bailiff.py",
+    "sha256": "08b91d22399256270c262bb0733a55ac405b02adc9282b107177d5c8091711d6",
+    "status": "recorded; re-review required before regeneration"
+  },
+  "authoringAgent": {
+    "status": "not recorded in the staging handoff"
+  },
+  "budgets": {
+    "triangles": 21048,
+    "materials": 4,
+    "bones": 25,
+    "maxInfluences": 1,
+    "glbBytes": 1321064
+  },
+  "skin": {
+    "policy": "rigid: one bone per vertex at weight 1.0",
+    "maxWeightSumError": 0.0,
+    "unweightedVertices": 0
+  },
+  "clips": {
+    "source": "public/assets/enemies/lantern-bailiff/lantern-bailiff.manifest.json",
+    "measured": "assets-source/enemies/lantern-bailiff/staging/runtime/reimport-report.json",
+    "ownerRigClipReview": "pending"
+  },
+  "rootMotion": "code-owned; root joint fixed",
+  "frame": {"units": "m", "up": "+Y", "forward": "-Z", "origin": "floor"},
+  "derivedFiles": [
+    {"path": "public/assets/enemies/lantern-bailiff/lantern-bailiff.glb", "sha256": "2363b7e7bb5d7267620f9710396210be670ee90e1f7d183ca022a55123c67754", "bytes": 1321064},
+    {"path": "public/assets/enemies/lantern-bailiff/lantern-bailiff.manifest.json", "sha256": "7a91b2c046f72b2e1323c56aba7a22a044d6cd3b08d9e37ae223372b632c562c", "bytes": 3420}
+  ],
+  "sourceFiles": [
+    {"path": "assets-source/enemies/lantern-bailiff/staging/runtime/lantern-bailiff.blend", "sha256": "41926339e6b08a6da45bd067219852734a2429cab208bc5b884252587b4bccae", "bytes": 686909},
+    {"path": "assets-source/enemies/lantern-bailiff/staging/runtime/reimport-report.json", "sha256": "6281b857b2d46083ebe1b43dbcf25390ad10c12c925b2637599a56108564df13", "bytes": 24444},
+    {"path": "scripts/assets/build-lantern-bailiff.py", "sha256": "08b91d22399256270c262bb0733a55ac405b02adc9282b107177d5c8091711d6", "bytes": 25723}
+  ],
+  "references": [
+    {"path": "assets-source/concepts/dungeon/dungeon-enemies-sheet.png", "sha256": "8a033049435dfccaff0b0b8d7ceb5a649afd0a149ff51003bceda331791d6808", "provider": "higgsfield", "note": "Dungeon enemy concept sheet"}
+  ],
+  "reviewEvidence": [
+    {"path": "assets-source/enemies/lantern-bailiff/staging/runtime/review-contact-sheet.png", "sha256": "3f98084877011cd042575429c747f991a8a1ac0b9c923b0e3592725bb6291b9d"},
+    {"path": "assets-source/enemies/lantern-bailiff/staging/runtime/review-sweep.mp4", "sha256": "ba74e8e7ad9dff7d8efcc2fc9f739024c652d82eda0e35f5be8499f54272c3ac"},
+    {"path": "assets-source/enemies/lantern-bailiff/staging/base/review-raised.png", "sha256": "d8d4e2c16dfb1897fe8e5d55fc91c9c99efe6ec4e5c67445b97ed355ee5ecae0"},
+    {"path": "assets-source/enemies/lantern-bailiff/staging/base/review-side.png", "sha256": "619c177f18b96d3a6c94127e5e0e7be2359290ddcf75efec789bf50dc9d64543"},
+    {"path": "assets-source/enemies/lantern-bailiff/staging/base/review-three-quarter.png", "sha256": "04a75f927da62045f0c0bbaef67885bc8817c8b52661e1c619928741518ef9f4"}
+  ],
+  "license": "Original work generated in Blender from the checked-in generator and staged editable rig; concept reference from Paul's paid Higgsfield plan.",
+  "validation": {"pass": true, "date": "2026-11-24", "checks": ["staged enemy gate passed", "runtime GLB and manifest copied byte-for-byte from staging/runtime", "reimport report pass, image-free GLB, budgets, sockets, clips and timing verified"]},
+  "approvals": [
+    {"gate": "concept", "status": "approved", "notes": "Base concept review is recorded by the staged base visual-review.json."},
+    {"gate": "model", "status": "pending", "notes": "Owner approval of the runtime rigged actor remains open."},
+    {"gate": "rig", "status": "pending", "notes": "Owner rig review remains open."},
+    {"gate": "animation", "status": "pending", "notes": "Owner clip review and physical Quest checks remain open."},
+    {"gate": "playtest", "status": "pending", "notes": "Promoted for Paul's local Quest playtest only."}
+  ]
+}

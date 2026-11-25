@@ -17,6 +17,26 @@ const flowWith = (): RunFlow =>
   new RunFlow({ workshop: createWorkshop(), starterDeck: STARTER_DECK, rewardPool: REWARD_POOL });
 
 describe('fleeing a fight (card B)', () => {
+  it('keeps healing from a win and prevents net healing from repeating a fled fight', () => {
+    const fresh = flowWith();
+    fresh.newRun(SEED);
+    const snapshot = fresh.snapshot(1, 0);
+    if (!snapshot) throw Error('Missing snapshot');
+    const flow = flowWith();
+    expect(flow.continueRun({ ...snapshot, run: { ...snapshot.run, hp: 20 } })).toBe(true);
+    for (let i = 0; i < 2; i++) {
+      expect(flow.fightStarted(3)).toBe(true);
+      expect(flow.fightEnded({ room: 3, outcome: 'flee', tier: 'regular', playerHp: 26 })).toBe(
+        true,
+      );
+      expect(flow.run?.hp).toBe(20);
+    }
+    expect(flow.fightStarted(3)).toBe(true);
+    expect(flow.fightEnded({ room: 3, outcome: 'win', tier: 'regular', playerHp: 26 })).toBe(true);
+    expect(flow.pickReward(SKIP_REWARD)).toBe(true);
+    expect(flow.run?.hp).toBe(26);
+  });
+
   it('a regular fight flees to exploring with hp kept, no reward and the room uncleared', () => {
     const flow = flowWith();
     flow.newRun(SEED);

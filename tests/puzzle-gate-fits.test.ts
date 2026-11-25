@@ -2,9 +2,11 @@
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { expect, it } from 'vitest';
+import { ENCOUNTER_CONTENT_VERSION } from '../src/combat/encounter-choice.ts';
 import { SteamPuffs } from '../src/combat-view/steam-puffs.ts';
 import { templateById } from '../src/content/rooms.ts';
 import { generateFloor } from '../src/floor/generate.ts';
+import { floorSeedFor } from '../src/rules/run.ts';
 import { playableFloorPlan } from '../src/world/floor-view.ts';
 import { buildFloorWorld } from '../src/world/floor-world.ts';
 import { PuzzleGateVisual } from '../src/world/puzzle-gates.ts';
@@ -69,7 +71,7 @@ it.each(['pressure', 'counterweight'] as const)(
           expect(hits(leaf, new THREE.Vector3(x, y, side), axis.clone()).length).toBeGreaterThan(0);
       }
       expect(
-        world.pickPuzzleGate(
+        world.pickLockedDoor(
           gate.localToWorld(new THREE.Vector3(0, 1.05, side)),
           axis.transformDirection(gate.matrixWorld),
         )?.kind,
@@ -138,10 +140,10 @@ it('vents a short burst from both faces when the locked pressure door panel is c
     world.update((min[0] + max[0]) / 2, (min[1] + max[1]) / 2);
     const at = gate.localToWorld(new THREE.Vector3(0.4, 1.42, side));
     const direction = new THREE.Vector3(0, 0, -side).transformDirection(gate.matrixWorld);
-    const hit = world.pickPuzzleGate(at, direction);
+    const hit = world.pickLockedDoor(at, direction);
     expect(hit?.kind).toBe('pressure');
-    if (!hit) throw Error('Missing pressure door hit');
-    world.rattlePuzzleGate(hit.kind);
+    if (hit?.kind !== 'pressure') throw Error('Missing pressure door hit');
+    world.rattlePuzzleGate(hit.kind, hit.gateIndex);
     expect(steam.visible).toBe(true);
     const firstSize = steam.puffData[3];
     world.updateAnimations(0.28);
@@ -158,6 +160,43 @@ it('vents a short burst from both faces when the locked pressure door panel is c
   expect(steam.visible).toBe(false);
   expect(world.rattlePuzzleGate('pressure')).toBeUndefined();
   expect(steam.visible).toBe(false);
+  world.dispose();
+});
+
+it('picks a closed Prism Annex doorway from either side and respects occlusion and opening', () => {
+  const world = buildFloorWorld(
+    playableFloorPlan(floorSeedFor('MAPTEST2', 3), ENCOUNTER_CONTENT_VERSION, 3),
+  );
+  const edge = world.plan.connections.find((connection) => connection.puzzleGate === 'prism');
+  if (!edge) throw Error('Missing Prism Annex gate');
+  for (const { room, door: id } of edge) {
+    world.current = room;
+    const door = world.rooms[room].doors.find(({ id: name }) => name === id);
+    if (!door) throw Error('Missing gate doorway');
+    const [x, z] = door.world;
+    const point = new THREE.Vector3(x, 1.15, z);
+    const side = {
+      N: new THREE.Vector3(0, 0, 1),
+      S: new THREE.Vector3(0, 0, -1),
+      W: new THREE.Vector3(1, 0, 0),
+      E: new THREE.Vector3(-1, 0, 0),
+    }[door.facing];
+    const origin = point.clone().addScaledVector(side, 1.15);
+    const direction = side.clone().negate();
+    expect(world.pickLockedDoor(origin, direction)?.kind).toBe('prism');
+    expect(world.pickLockedDoor(origin.clone().setY(2.6), direction)).toBeNull();
+    const obstruction = point.clone().addScaledVector(side, 0.55);
+    const span = new THREE.Vector3(0.2, 0.2, 0.2);
+    const remove = world.addFixtureCollider(room, {
+      min: obstruction.clone().sub(span).toArray(),
+      max: obstruction.clone().add(span).toArray(),
+    });
+    expect(world.pickLockedDoor(origin, direction)).toBeNull();
+    remove();
+    world.setPuzzleGateOpen('prism', true, true);
+    expect(world.pickLockedDoor(origin, direction)).toBeNull();
+    world.setPuzzleGateOpen('prism', false, true);
+  }
   world.dispose();
 });
 

@@ -16,6 +16,7 @@ export interface PerfGauge {
   /** Updates the wrist dock or faces a repositioned gauge toward the viewer. */
   update(viewCamera: THREE.Camera): void;
   hitDistance(source: THREE.Object3D): number | null;
+  activateClose(origin: THREE.Vector3, direction: THREE.Vector3): boolean;
   beginGrab(source: THREE.Object3D, grip: THREE.Object3D): boolean;
   endGrab(grip: THREE.Object3D): void;
   setVisible(visible: boolean): void;
@@ -135,6 +136,13 @@ export function mountPerfGauge(
       widget.root.quaternion.copy(parentQuaternion.multiply(worldQuaternion));
     },
     hitDistance,
+    activateClose(origin, direction) {
+      if (!visible || heldBy) return false;
+      widget.root.updateWorldMatrix(true, true);
+      const hit = pointer.cast(origin, direction, targets);
+      if (hit) widget.activate?.(hit.object);
+      return !visible;
+    },
     beginGrab(source, grip) {
       if (hitDistance(source) === null) return false;
       grip.attach(widget.root);

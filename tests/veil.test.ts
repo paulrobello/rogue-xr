@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it, vi } from 'vitest';
-import { runVeil } from '../src/world/veil.ts';
+import { floorTextures, runVeil } from '../src/world/veil.ts';
 
 function fakeRenderer(log: string[]) {
   return {
@@ -84,4 +84,57 @@ describe('runVeil', () => {
     ).rejects.toThrow('link failed');
     expect(scene.getObjectByName('load-veil')).toBeUndefined();
   });
+});
+
+it('warms each point-light count and restores the original lights between compile calls', async () => {
+  const renderer = fakeRenderer([]);
+  const scene = new THREE.Scene();
+  const near = new THREE.Group().add(new THREE.PointLight());
+  const distant = new THREE.Group().add(new THREE.PointLight());
+  distant.visible = false;
+  scene.add(near, distant, new THREE.PointLight());
+  const roomPointLights = [near.children[0], distant.children[0]] as THREE.PointLight[];
+  const counts: number[] = [];
+  renderer.compileAsync.mockImplementation(async (root) => {
+    let count = 0;
+    root.traverseVisible((node) => {
+      if (node instanceof THREE.PointLight) count++;
+    });
+    counts.push(count);
+    await Promise.resolve();
+    expect(roomPointLights.every((light) => light.visible)).toBe(true);
+    expect(scene.children).toHaveLength(4); // Original lights, rooms and the veil.
+    return root;
+  });
+  await runVeil(asRenderer(renderer), scene, new THREE.PerspectiveCamera(), [], {
+    roomPointLights,
+    nextFrame: async () => {},
+    fadeFrames: 0,
+  });
+  expect(counts).toEqual([1, 2, 3]);
+  expect(scene.children).toHaveLength(3);
+  expect(distant.visible).toBe(false);
+});
+
+it('collects unique floor textures through culled groups without reinitializing render targets', () => {
+  const texture = new THREE.Texture();
+  const lightMap = new THREE.DataTexture();
+  const renderTarget = new THREE.WebGLRenderTarget();
+  const shared = new THREE.MeshStandardMaterial({ map: texture });
+  const hidden = new THREE.Group();
+  hidden.visible = false;
+  const geometry = new THREE.BoxGeometry();
+  hidden.add(
+    new THREE.Mesh(geometry, [
+      shared,
+      new THREE.MeshStandardMaterial({
+        map: texture,
+        lightMap,
+        envMap: renderTarget.texture,
+      }),
+    ]),
+  );
+  const root = new THREE.Group().add(new THREE.Mesh(geometry, shared), hidden);
+  expect([...floorTextures(root)]).toEqual([texture, lightMap]);
+  renderTarget.dispose();
 });

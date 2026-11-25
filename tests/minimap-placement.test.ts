@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { expect, it, vi } from 'vitest';
 import type { LogbookMap } from '../src/flow/logbook-map.ts';
-import { DEFAULT_SETTINGS, MINIMAP_PLACEMENT_LIMIT } from '../src/persist/db.ts';
+import { DEFAULT_SETTINGS, MINIMAP_PLACEMENT_LIMIT, MINIMAP_ZOOMS } from '../src/persist/db.ts';
 import { Minimap } from '../src/xr/minimap.ts';
 
 it('adds slider travel without moving old placements or clipping either eye', () => {
@@ -108,6 +108,35 @@ it('adds slider travel without moving old placements or clipping either eye', ()
     for (const { x, y } of bounds(desktop)) {
       expect(Math.abs(x)).toBeLessThan(1);
       expect(Math.abs(y)).toBeLessThan(1);
+    }
+  } finally {
+    minimap.dispose();
+    canvas.mockRestore();
+  }
+});
+
+it('scales the player arrow around the map center at each zoom level', () => {
+  const scale = vi.fn();
+  const translate = vi.fn();
+  const context = new Proxy(
+    { scale, translate },
+    { get: (methods, key) => Reflect.get(methods, key) ?? (() => undefined) },
+  ) as unknown as CanvasRenderingContext2D;
+  const canvas = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(context);
+  const minimap = new Minimap();
+  try {
+    const viewer = new THREE.PerspectiveCamera(70, 1, 0.05, 100);
+    const map: LogbookMap = {
+      floor: 1,
+      rooms: [],
+      totalRooms: 1,
+      doors: [],
+      player: { room: 0, label: 'hall', position: [0, 0] },
+    };
+    for (const minimapZoom of MINIMAP_ZOOMS) {
+      minimap.update(viewer, 0.1, { ...DEFAULT_SETTINGS, minimapZoom }, () => map);
+      expect(translate).toHaveBeenLastCalledWith(128, 128);
+      expect(scale).toHaveBeenLastCalledWith(minimapZoom, minimapZoom);
     }
   } finally {
     minimap.dispose();

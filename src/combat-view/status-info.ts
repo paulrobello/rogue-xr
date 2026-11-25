@@ -218,6 +218,21 @@ const TIP_TEXT_FONT = '500 34px system-ui, sans-serif';
 /** Tip layout, canvas pixels: inset, first title centre, title to text, text line, entry gap. */
 const TIP = { inset: 24, top: 44, title: 52, line: 36, gap: 20 } as const;
 
+/** Canvas height needed to keep every fitted tip row inside its plate. */
+export function tipCanvasHeight(entries: readonly TipEntry[], width = 640): number {
+  if (typeof document === 'undefined') return 900;
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  if (!context) return 900;
+  context.font = TIP_TEXT_FONT;
+  const wrapped = entries.map((entry) => wrapLines(context, entry.text, width - 2 * TIP.inset));
+  const used =
+    TIP.top +
+    wrapped.reduce((sum, lines) => sum + TIP.title + lines.length * TIP.line + TIP.gap, 0) -
+    TIP.gap;
+  return Math.ceil(used + 16);
+}
+
 /**
  * Draws an explanation tip on a `w` by `h` canvas: a dark plate with a brass rim, then each entry's
  * title in candle and its text in parchment, wrapped. The status badge tip and the card keyword tip

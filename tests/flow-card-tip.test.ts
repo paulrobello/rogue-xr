@@ -7,6 +7,7 @@ import { createPointer } from '@par/xr-workspace';
 import * as THREE from 'three';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { cardTip } from '../src/combat-view/card-keywords.ts';
+import { tipCanvasHeight } from '../src/combat-view/status-info.ts';
 import { getCard, STARTER_DECK } from '../src/content/cards.ts';
 import { REWARD_POOL } from '../src/content/rewards.ts';
 import { RunFlow } from '../src/flow/flow.ts';
@@ -64,6 +65,9 @@ function pick(ui: FlowUi, head: THREE.Object3D, target: THREE.Object3D): string 
 }
 
 describe('card keyword tip on the reward board and the deck viewer', () => {
+  it('allocates enough canvas height for Quench Seal’s four entries', () => {
+    expect(tipCanvasHeight(cardTip(getCard('quench-seal')))).toBeGreaterThan(500);
+  });
   beforeAll(() => stubCanvas2d());
   afterAll(() => vi.restoreAllMocks());
 

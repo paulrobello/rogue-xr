@@ -1,4 +1,4 @@
-{"header":{"enemy":"spring-hound","seed":"GOLD0002","playerHp":70,"deck":["strike","strike","strike","strike","defend","defend","defend","defend","cog-toss","warding-glyph"],"policy":"Each turn: play the first playable card in hand order, aimed at the living enemy with the lowest hp; dice cards roll their die first; sigil cards cast at multiplier 1; end the turn when no card is playable.","turnCap":30}}
+{"header":{"enemy":"spring-hound","seed":"GOLD0002","playerHp":70,"deck":["strike","strike","strike","strike","defend","defend","defend","patch-kit","cog-toss","warding-glyph"],"policy":"Each turn: play the first playable card in hand order, aimed at the living enemy with the lowest hp; dice cards roll their die first; sigil cards cast at multiplier 1; end the turn when no card is playable.","turnCap":30}}
 {"type":"combat-started","enemies":["spring-hound"],"deckSize":10}
 {"type":"enemy-intent","enemyId":"spring-hound","moveId":"pounce","intent":"attack"}
 {"type":"turn-started","turn":1}
@@ -6,7 +6,7 @@
 {"type":"card-drawn","uid":3,"cardId":"strike"}
 {"type":"card-drawn","uid":2,"cardId":"strike"}
 {"type":"card-drawn","uid":8,"cardId":"cog-toss"}
-{"type":"card-drawn","uid":7,"cardId":"defend"}
+{"type":"card-drawn","uid":7,"cardId":"patch-kit"}
 {"type":"card-drawn","uid":6,"cardId":"defend"}
 {"type":"steam-changed","from":3,"to":2}
 {"type":"card-played","uid":3,"cardId":"strike","target":"spring-hound","dice":null}
@@ -20,7 +20,7 @@
 {"type":"card-played","uid":8,"cardId":"cog-toss","target":"spring-hound","dice":3}
 {"type":"damage-dealt","source":"player","target":"spring-hound","kind":"attack","amount":5,"blocked":0,"hpLost":5}
 {"type":"card-discarded","uid":8,"cardId":"cog-toss"}
-{"type":"card-discarded","uid":7,"cardId":"defend"}
+{"type":"card-discarded","uid":7,"cardId":"patch-kit"}
 {"type":"card-discarded","uid":6,"cardId":"defend"}
 {"type":"turn-ended","turn":1}
 {"type":"enemy-acted","enemyId":"spring-hound","moveId":"pounce"}
@@ -55,15 +55,15 @@
 {"type":"block-cleared","target":"player","amount":9}
 {"type":"steam-changed","from":0,"to":3}
 {"type":"reshuffled","count":10}
-{"type":"card-drawn","uid":7,"cardId":"defend"}
+{"type":"card-drawn","uid":7,"cardId":"patch-kit"}
 {"type":"card-drawn","uid":0,"cardId":"strike"}
 {"type":"card-drawn","uid":5,"cardId":"defend"}
 {"type":"card-drawn","uid":2,"cardId":"strike"}
 {"type":"card-drawn","uid":6,"cardId":"defend"}
 {"type":"steam-changed","from":3,"to":2}
-{"type":"card-played","uid":7,"cardId":"defend","target":null,"dice":null}
-{"type":"block-gained","target":"player","amount":5}
-{"type":"card-discarded","uid":7,"cardId":"defend"}
+{"type":"card-played","uid":7,"cardId":"patch-kit","target":null,"dice":null}
+{"type":"healed","target":"player","amount":6}
+{"type":"card-exhausted","uid":7,"cardId":"patch-kit"}
 {"type":"steam-changed","from":2,"to":1}
 {"type":"card-played","uid":0,"cardId":"strike","target":"spring-hound","dice":null}
 {"type":"damage-dealt","source":"player","target":"spring-hound","kind":"attack","amount":6,"blocked":0,"hpLost":6}
@@ -77,10 +77,9 @@
 {"type":"turn-ended","turn":3}
 {"type":"enemy-acted","enemyId":"spring-hound","moveId":"snap"}
 {"type":"damage-dealt","source":"spring-hound","target":"player","kind":"attack","amount":3,"blocked":3,"hpLost":0}
-{"type":"damage-dealt","source":"spring-hound","target":"player","kind":"attack","amount":3,"blocked":3,"hpLost":0}
+{"type":"damage-dealt","source":"spring-hound","target":"player","kind":"attack","amount":3,"blocked":2,"hpLost":1}
 {"type":"enemy-intent","enemyId":"spring-hound","moveId":"snap","intent":"attack"}
 {"type":"turn-started","turn":4}
-{"type":"block-cleared","target":"player","amount":4}
 {"type":"steam-changed","from":0,"to":3}
 {"type":"card-drawn","uid":9,"cardId":"warding-glyph"}
 {"type":"card-drawn","uid":3,"cardId":"strike"}
@@ -101,4 +100,4 @@
 {"type":"enemy-died","enemyId":"spring-hound"}
 {"type":"combat-won"}
 {"type":"card-discarded","uid":8,"cardId":"cog-toss"}
-{"final":{"outcome":"won","turns":4,"playerHp":61,"enemyHp":{"spring-hound":0},"rng":{"floor":[2096013521,3992123592,4055262807,4233969255],"deck":[-78189207,2348495192,3294392132,2552841768],"dice":[1958458668,4280270852,3860520833,2337966364],"loot":[-789930297,2725648682,3315263689,3528950078],"ai":[-1326298259,4248086967,3745701680,3960718066]}}}
+{"final":{"outcome":"won","turns":4,"playerHp":66,"enemyHp":{"spring-hound":0},"rng":{"floor":[2096013521,3992123592,4055262807,4233969255],"deck":[-78189207,2348495192,3294392132,2552841768],"dice":[1958458668,4280270852,3860520833,2337966364],"loot":[-789930297,2725648682,3315263689,3528950078],"ai":[-1326298259,4248086967,3745701680,3960718066]}}}

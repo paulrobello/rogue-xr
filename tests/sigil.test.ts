@@ -332,6 +332,19 @@ describe('difficulty levels', () => {
       expect(multiplier([], 'gear', level)).toBe(FLOOR);
     }
   });
+
+  it('keeps the premium pendulum wards distinct from the basic shield trace', () => {
+    expect(scoreAgainst(SIGIL_TEMPLATES.ward.strokes, 'pendulum-ward')).toBeLessThan(PERFECT_SCORE);
+    expect(scoreAgainst(SIGIL_TEMPLATES.ward.strokes, 'pendulum-ward-plus')).toBeLessThan(
+      PERFECT_SCORE,
+    );
+    expect(
+      scoreAgainst(SIGIL_TEMPLATES['pendulum-ward'].strokes, 'pendulum-ward'),
+    ).toBeGreaterThanOrEqual(PERFECT_SCORE);
+    expect(
+      scoreAgainst(SIGIL_TEMPLATES['pendulum-ward-plus'].strokes, 'pendulum-ward-plus'),
+    ).toBeGreaterThanOrEqual(PERFECT_SCORE);
+  });
 });
 
 describe('recognize and scoreAgainst edge cases', () => {
