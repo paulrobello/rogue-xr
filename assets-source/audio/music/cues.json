@@ -252,6 +252,25 @@
         "Personalize / My Taste": "Off",
         "Model": "record the model actually selected"
       }
+    },
+    {
+      "order": 12,
+      "id": "astral-lift",
+      "title": "Astral Lift",
+      "when": "While the astral lift is moving, until the arrival fade completes",
+      "loop": true,
+      "sourceFile": "assets-source/audio/music/astral-lift.wav",
+      "runtimeFile": "public/assets/audio/music/astral-lift.ogg",
+      "prompt": "Original instrumental elevator lounge for a brass clockwork wizard tower. Lightly swinging at 96 BPM in D Dorian, with warm felt piano, muted vibraphone, soft upright bass, and brushed snare. Start immediately with a playful two-bar melody that feels complete within five seconds. Repeat it with small variations at a steady, quiet level. Aim for a 20–30 second cue with a clean loop point. Leave space for the lift doors and arrival chime. Exclude: Vocals, spoken word, choir, long intro, big drum fills, risers, dramatic climax, sound effects, fade-out.",
+      "settings": {
+        "Instrumental": "On",
+        "Lyrics": "",
+        "Exclude styles": "vocals, spoken word, choir, long intro, big drum fills, risers, dramatic climax, sound effects, fade-out",
+        "Duration": "20–30 seconds (requested)",
+        "Weirdness": "20% (suggested)",
+        "Style Influence": "80% (suggested)",
+        "Actual provider settings": "Not supplied; filename and prompt do not establish generation settings or release permission"
+      }
     }
   ]
 }

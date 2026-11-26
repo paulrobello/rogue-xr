@@ -17,7 +17,7 @@ const TEXT_WORDS: Record<string, RegExp> = {
   steam: /\bSteam\b/,
   draw: /\bDraw\b/,
   scry: /\bScry\b/,
-  heal: /\bHeal\b/,
+  heal: /\bheal\b/i,
   exhaust: /\bExhaust\b/,
   dice: /\bRoll (?:a d[68]|an iron d4|two d12s)\b/,
   weak: /\bWeak\b/,

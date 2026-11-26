@@ -1,6 +1,6 @@
 # Suno music handoff (P5-T8, decision D12)
 
-Status: **All eleven owner-selected Suno WAVs arrived on November 23, 2026.** The originals and embedded Suno song IDs are recorded in [generation-log.json](generation-log.json). The runtime candidate uses the mastered Opus cues. Paul approved all eleven mastered cues in Quest Browser on November 23, 2026. The [review record](../owner-review.json) identifies the exact Opus files. The Stable Audio 3 placeholders are retained under [placeholder/](placeholder/) for reproducibility. The planned prompts and settings below remain the reference for these cue roles.
+Status: **The eleven owner-selected Suno WAVs arrived on November 23, 2026. Astral Lift arrived on November 25, 2026 and Paul approved it in Quest gameplay the same day.** The originals and embedded Suno song IDs are recorded in [generation-log.json](generation-log.json). The runtime candidate uses the mastered Opus cues. Paul approved the original eleven mastered cues in Quest Browser on November 23, 2026. The [review record](../owner-review.json) identifies the exact Opus files. The Stable Audio 3 placeholders are retained under [placeholder/](placeholder/) for reproducibility. The planned prompts and settings below remain the reference for these cue roles.
 
 The same data is machine-readable in [`cues.json`](cues.json), which the build script and the audition page read. A test checks that its ids, loop flags and file paths match the runtime registry and that every Style prompt below is identical to the one in `cues.json`. Change both files together.
 
@@ -23,6 +23,18 @@ Order follows `src/flow/flow.ts` on a typical first run. A won fight goes from c
 | 9 | `guardian-1` | Guardian, phase 1 | Guardian fight until its case opens | Loop |
 | 10 | `guardian-2` | Guardian, phase 2: the case opens | Guardian fight after its case opens | Loop |
 | 11 | `victory` | Victory | Victory screen after the guardian falls | One-shot |
+| 12 | `astral-lift` | Astral Lift | While the astral lift is moving | Loop |
+
+## 12. `astral-lift`: Astral Lift
+
+Runtime: gain 0.42 with a 0.35 s crossfade. The cue is preloaded before a successful lift trigger and fades back to the normal gameplay state after arrival. Paul approved the mastered cue in the Astral Lift on Quest 3 on November 25, 2026.
+
+Style:
+```text
+Original instrumental elevator lounge for a brass clockwork wizard tower. Lightly swinging at 96 BPM in D Dorian, with warm felt piano, muted vibraphone, soft upright bass, and brushed snare. Start immediately with a playful two-bar melody that feels complete within five seconds. Repeat it with small variations at a steady, quiet level. Aim for a 20–30 second cue with a clean loop point. Leave space for the lift doors and arrival chime. Exclude: Vocals, spoken word, choir, long intro, big drum fills, risers, dramatic climax, sound effects, fade-out.
+```
+
+Exclude styles: `vocals, spoken word, choir, long intro, big drum fills, risers, dramatic climax, sound effects, fade-out`
 
 The settings screen reuses the title theme and gets no cue of its own. The workshop is in the slice (PRD phase 5 scope: "the workshop hub with 3 upgrades"), so it has its own cue.
 

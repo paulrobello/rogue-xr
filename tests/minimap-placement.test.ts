@@ -143,3 +143,69 @@ it('scales the player arrow around the map center at each zoom level', () => {
     canvas.mockRestore();
   }
 });
+
+it('projects personal markers and repaints only when their contents change', () => {
+  const clearRect = vi.fn();
+  const translate = vi.fn();
+  const arc = vi.fn();
+  const scale = vi.fn();
+  const context = new Proxy(
+    { clearRect, translate, arc, scale },
+    { get: (methods, key) => Reflect.get(methods, key) ?? (() => undefined) },
+  ) as unknown as CanvasRenderingContext2D;
+  const canvas = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(context);
+  const minimap = new Minimap();
+  try {
+    const viewer = new THREE.PerspectiveCamera(70, 1, 0.05, 100);
+    const chart: LogbookMap = {
+      floor: 1,
+      rooms: [],
+      totalRooms: 1,
+      doors: [],
+      player: { room: 0, label: 'hall', position: [2, 1] },
+    };
+    const options = { ...DEFAULT_SETTINGS, minimapZoom: 1, minimapNorthUp: false } as const;
+    const getMap = (): LogbookMap => ({
+      ...chart,
+      personalMarkers: [{ icon: 'star', position: [4, 2] }],
+    });
+    minimap.update(viewer, 0.1, options, getMap);
+    expect(translate).toHaveBeenCalledWith(154, 141);
+    expect(arc).toHaveBeenCalledTimes(1);
+    minimap.update(viewer, 0.1, options, getMap);
+    expect(clearRect).toHaveBeenCalledTimes(1);
+
+    viewer.rotation.y = Math.PI / 2;
+    viewer.updateMatrixWorld();
+    minimap.update(viewer, 0.1, options, getMap);
+    expect(translate).toHaveBeenCalledWith(115, 154);
+    expect(clearRect).toHaveBeenCalledTimes(2);
+
+    minimap.update(viewer, 0.1, options, () => ({
+      ...chart,
+      personalMarkers: [{ icon: 'flag', position: [4, 2] }],
+    }));
+    expect(clearRect).toHaveBeenCalledTimes(3);
+    minimap.update(viewer, 0.1, options, () => ({
+      ...chart,
+      personalMarkers: [{ icon: 'flag', position: [3, 2] }],
+    }));
+    expect(translate).toHaveBeenCalledWith(115, 141);
+    expect(clearRect).toHaveBeenCalledTimes(4);
+
+    arc.mockClear();
+    minimap.update(viewer, 0.1, options, () => ({ ...chart, personalMarkers: [] }));
+    expect(clearRect).toHaveBeenCalledTimes(5);
+    expect(arc).not.toHaveBeenCalled();
+
+    for (const minimapZoom of MINIMAP_ZOOMS) {
+      scale.mockClear();
+      minimap.update(viewer, 0.1, { ...options, minimapZoom }, getMap);
+      expect(scale).toHaveBeenNthCalledWith(1, 0.55 * minimapZoom, 0.55 * minimapZoom);
+      expect(scale).toHaveBeenLastCalledWith(minimapZoom, minimapZoom);
+    }
+  } finally {
+    minimap.dispose();
+    canvas.mockRestore();
+  }
+});

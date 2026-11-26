@@ -169,6 +169,12 @@ const EXPECTED: Readonly<Record<string, Outcome>> = {
   'redline-shot+': { hp: [37, 60], steam: 2 },
   'boiler-gamble': { hp: [60, 60], steam: 5, drawn: 1 },
   'boiler-gamble+': { hp: [60, 60], steam: 5, drawn: 2 },
+  'steam-sweep': { hp: [46, 46], steam: 1 },
+  'steam-sweep+': { hp: [42, 42], steam: 1 },
+  'plated-stand': { hp: [60, 60], steam: 2, block: 8, playerStatuses: { plating: 1 } },
+  'plated-stand+': { hp: [60, 60], steam: 2, block: 11, playerStatuses: { plating: 2 } },
+  'last-reserve': { hp: [60, 60], steam: 2, pile: 'exhaust' },
+  'last-reserve+': { hp: [60, 60], steam: 2, pile: 'exhaust' },
   'grease-gun': { hp: [60, 60], steam: 3 },
   'grease-gun+': { hp: [60, 60], steam: 3, drawn: 1 },
   'escapement-break': { hp: [60, 60], steam: 2 },
@@ -264,6 +270,8 @@ describe('card effects through the engine', () => {
     ['patch-kit+', 9],
     ['field-dressing', 5],
     ['field-dressing+', 7],
+    ['last-reserve', 12],
+    ['last-reserve+', 16],
   ])('%s restores only missing HP and exhausts at full health too', (id, maxHeal) => {
     const def = getCard(id);
     for (const hp of [25, 38, 40]) {
@@ -622,6 +630,12 @@ describe('risk cards', () => {
     ['redline-shot+', 1, 'overheat', 3],
     ['boiler-gamble', 4, 'vulnerable', 2],
     ['boiler-gamble+', 1, 'vulnerable', 2],
+    ['steam-sweep', 4, 'rust', 2],
+    ['steam-sweep+', 4, 'rust', 2],
+    ['plated-stand', 3, 'weak', 2],
+    ['plated-stand+', 3, 'weak', 2],
+    ['last-reserve', 5, 'overheat', 2],
+    ['last-reserve+', 5, 'overheat', 2],
   ] as const)('%s on %i spends Steam and applies only its penalty', (id, dice, status, stacks) => {
     const card = getCard(id);
     const state = begin(card);
@@ -632,11 +646,13 @@ describe('risk cards', () => {
     };
     expect(validate(state, action)).toContain('needs a dice result');
     const result = apply(state, { ...action, dice });
-    expect(result.state.player.steam).toBe(2);
+    expect(result.state.player.steam).toBe(card.cost === 2 ? 1 : 2);
     expect(result.state.player.statuses).toEqual({ [status]: stacks });
     expect(result.state.enemies).toEqual(state.enemies);
     expect(result.state.piles.draw).toEqual(state.piles.draw);
-    expect(result.state.piles.discard[0].def.id).toBe(id);
+    expect(
+      (card.exhaust ? result.state.piles.exhaust : result.state.piles.discard)[0]?.def.id,
+    ).toBe(id);
   });
 
   it.each([5, 8])('Boiler Gamble succeeds on %i without applying Vulnerable', (dice) => {
@@ -685,11 +701,11 @@ describe('risk cards', () => {
 
 describe('card schema', () => {
   it('has the complete card roster with unique ids', () => {
-    expect(CARDS).toHaveLength(51);
+    expect(CARDS).toHaveLength(54);
     expect(new Set(CARDS.map((c) => c.id)).size).toBe(CARDS.length);
     expect(CARDS_BY_ID.size).toBe(CARDS.length);
-    expect(CARDS.filter((c) => c.type === 'attack')).toHaveLength(17);
-    expect(CARDS.filter((c) => c.type === 'skill')).toHaveLength(19);
+    expect(CARDS.filter((c) => c.type === 'attack')).toHaveLength(18);
+    expect(CARDS.filter((c) => c.type === 'skill')).toHaveLength(21);
     expect(CARDS.filter((c) => c.type === 'sigil')).toHaveLength(11);
     expect(CARDS.filter((c) => c.type === 'mechanism')).toHaveLength(4);
   });

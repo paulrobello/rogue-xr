@@ -2308,6 +2308,16 @@
       "steps": [
         "one-shot cut 0.000s..59.600s, silence trimmed (head 0.0 ms, tail 0.0 ms), 2 ms fade in, 0.25s raised-cosine fade out"
       ]
+    },
+    "astral-lift": {
+      "source_file": "assets-source/audio/music/astral-lift.wav",
+      "source_sha256": "4590d6fd54f1019bccc69813b38949d5518a7612e862d60bdb6e952c65b30890",
+      "runtime_file": "public/assets/audio/music/astral-lift.ogg",
+      "runtime_sha256": "88bfc6c7b360ec836cc2d14c575403a71366b0ae3193b57ed77ee75204f2de67",
+      "runtime_bytes": 349138,
+      "steps": [
+        "loop body from 0.000s, 1.00s equal-power tail-over-head crossfade, start position retained"
+      ]
     }
   },
   "music_note": "Suno is owner-generated; see assets-source/audio/music/SUNO-HANDOFF.md",

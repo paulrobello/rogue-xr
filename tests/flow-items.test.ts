@@ -241,20 +241,42 @@ it('shows a map before saving any clues and starts on the current floor', () => 
       player: { room: 1, label: 'study', position: [1, 2] },
     },
   ];
-  const { ui, flow, head } = setup(undefined, () => maps);
+  const rustles: THREE.Vector3[] = [];
+  const { ui, flow, head } = setup(
+    (at) => rustles.push(at.clone()),
+    () => maps,
+  );
   flow.newRun('MAPTEST2');
   flow.travelToFloor(2, 1);
   ui.openMenu(head);
   ui.activate('menu-logbook');
   expect(flow.logbookEntries).toHaveLength(0);
-  expect(ui.activate('menu-logbook-map')).toBe(true);
+  expect(ui.root.getObjectByName('keeper-logbook')?.userData.section).toBe('map');
+  expect(ui.controlIds().indexOf('menu-logbook-map')).toBeLessThan(
+    ui.controlIds().indexOf('menu-logbook-clues'),
+  );
   const pageMap = () => ui.root.getObjectByName('logbook-right-page')?.userData.map;
   expect(pageMap()).toBe(maps[1]);
+  const soundsBeforeTurn = rustles.length;
   expect(ui.activate('menu-logbook-previous')).toBe(true);
+  expect(rustles).toHaveLength(soundsBeforeTurn + 1);
   ui.update(1);
   expect(pageMap()).toBe(maps[0]);
   expect(pageMap()).not.toHaveProperty('player');
+  const oldRightPage = ui.root.getObjectByName('logbook-right-page') as THREE.Mesh<
+    THREE.PlaneGeometry,
+    THREE.MeshBasicMaterial
+  >;
+  const oldPaper = oldRightPage.material.map?.source;
   expect(ui.activate('menu-logbook-clues')).toBe(true);
+  const leaf = ui.root.getObjectByName('logbook-turn-front') as typeof oldRightPage;
+  expect(leaf.visible).toBe(true);
+  expect(leaf.material.map?.source).toBe(oldPaper);
+  ui.update(0.27);
+  const coordinates = leaf.geometry.getAttribute('position').array;
+  expect(coordinates.some((z, i) => i % 3 === 2 && z > 0.3)).toBe(true);
+  ui.update(1);
+  expect(leaf.visible).toBe(false);
   expect(pageMap()).toBeUndefined();
   ui.dispose();
 });
@@ -371,12 +393,48 @@ it('retains each map view across floors and keeps the run menu available', () =>
   ui.dispose();
 });
 
+it('picks a stamp from the left page and places and erases it on the chart', () => {
+  const room = { id: 0, bounds: { min: [-40, -40], max: [40, 40] } } as const;
+  const { ui, flow, head } = setup(undefined, () => [
+    { floor: 1, rooms: [room], totalRooms: 1, doors: [] },
+  ]);
+  flow.newRun('MAPTEST2');
+  ui.openMap(head);
+  const rayAt = (right: boolean, x: number, y: number): THREE.Ray => {
+    const page = ui.root.getObjectByName(`logbook-${right ? 'right' : 'left'}-page`);
+    if (!page) throw Error('Missing logbook leaf');
+    const u = right ? x / 704 : 1 - x / 704;
+    const bend = right ? u * 0.026 : Math.PI - u * 0.026;
+    const at = new THREE.Vector3(
+      u * 0.435 * Math.cos(bend),
+      (0.5 - y / 944) * 0.59,
+      u * 0.435 * Math.sin(bend),
+    );
+    const origin = page.localToWorld(at.clone().add(new THREE.Vector3(0, 0, 1)));
+    const target = page.localToWorld(at);
+    return new THREE.Ray(origin, target.sub(origin).normalize());
+  };
+  expect(ui.applyLogbookMarker(rayAt(true, 352, 514))).toBe(false);
+  expect(ui.selectLogbookMarkerTool(rayAt(false, 117, 395))).toBe(true);
+  expect(ui.applyLogbookMarker(rayAt(true, 352, 514))).toBe(true);
+  const [marker] = flow.mapMarkersOnFloor(1);
+  expect(marker.icon).toBe('star');
+  expect(marker.position[0]).toBeCloseTo(0);
+  expect(marker.position[1]).toBeCloseTo(0);
+  expect(ui.applyLogbookMarker(rayAt(true, 352, 514))).toBe(false);
+  expect(ui.selectLogbookMarkerTool(rayAt(false, 572, 395))).toBe(true);
+  expect(ui.applyLogbookMarker(rayAt(true, 352, 514))).toBe(true);
+  expect(flow.mapMarkersOnFloor(1)).toEqual([]);
+  ui.dispose();
+});
+
 it('picks a logbook row with the shared pointer controls and returns to its card spread', () => {
   const { flow, ui, head } = setup();
   flow.newRun('MAPTEST2');
   ui.openMenu(head);
   ui.activate('menu-logbook');
   ui.activate('menu-logbook-cards');
+  ui.update(1);
   const id = ui.controlIds().find((name) => name.startsWith('logbook-card-'));
   if (!id) throw new Error('No selectable card row');
   const row = ui.root.getObjectByName(id);
@@ -390,6 +448,111 @@ it('picks a logbook row with the shared pointer controls and returns to its card
   expect(ui.root.getObjectByName('logbook-inspected-card')).toBeDefined();
   expect(ui.activate('logbook-inspection-back')).toBe(true);
   expect(ui.controlIds()).toContain(id);
+  ui.dispose();
+});
+
+it('turns the logbook from its outer page edges by ray tap or inward hand swipe', () => {
+  const rustles: THREE.Vector3[] = [];
+  const { ui, flow, head } = setup((at) => rustles.push(at.clone()));
+  flow.newRun('MAPTEST2');
+  for (const [room, id] of [
+    [1, 'A'],
+    [2, 'B'],
+    [3, 'C'],
+  ] as const) {
+    flow.collectPressureNote(room, id);
+    flow.saveLogbookClue({ id, title: id, body: id, origin: 'Floor 1' });
+  }
+  ui.openMenu(head);
+  expect(ui.activate('menu-logbook')).toBe(true);
+  const page = ui.root.getObjectByName('logbook-right-page') as THREE.Mesh;
+  const pointOnPage = (x: number): THREE.Vector3 =>
+    page.localToWorld(new THREE.Vector3(x, 0, x * 0.026));
+  const target = pointOnPage(0.43);
+  const origin = target.clone().add(new THREE.Vector3(0, 0, 1));
+  const ray = new THREE.Ray(origin, target.clone().sub(origin).normalize());
+  const soundsBeforeEdgeTap = rustles.length;
+  expect(ui.tapLogbookEdge(ray)).toBe(true);
+  expect(rustles).toHaveLength(soundsBeforeEdgeTap + 1);
+  ui.update(1);
+  expect(ui.root.getObjectByName('logbook-left-page')?.userData.clueId).toBe('C');
+  const nextPage = ui.root.getObjectByName('logbook-left-page') as THREE.Mesh;
+  const at = (x: number): THREE.Vector3 =>
+    nextPage.localToWorld(
+      new THREE.Vector3(-x * Math.cos((x * 0.026) / 0.435), 0, x * Math.sin((x * 0.026) / 0.435)),
+    );
+  const leftEdge = at(0.43);
+  const leftOrigin = leftEdge.clone().add(new THREE.Vector3(0, 0, 1));
+  expect(ui.tapLogbookEdge(new THREE.Ray(leftOrigin, leftEdge.sub(leftOrigin).normalize()))).toBe(
+    true,
+  );
+  expect(rustles).toHaveLength(soundsBeforeEdgeTap + 2);
+  ui.update(1);
+  expect(ui.root.getObjectByName('logbook-left-page')?.userData.clueId).toBe('A');
+  expect(ui.tapLogbookEdge(ray)).toBe(true);
+  ui.update(1);
+  const soundsBeforeSwipe = rustles.length;
+  expect(ui.sampleLogbookHand('right', at(0.42))).toBe(true);
+  expect(rustles).toHaveLength(soundsBeforeSwipe);
+  expect(ui.sampleLogbookHand('right', at(0.31))).toBe(true);
+  expect(rustles).toHaveLength(soundsBeforeSwipe + 1);
+  ui.update(1);
+  expect(ui.root.getObjectByName('logbook-left-page')?.userData.clueId).toBe('A');
+  ui.dispose();
+});
+
+it('continues book turns across sections and places the open menu within tracked-hand reach', () => {
+  const { ui, flow, head } = setup();
+  flow.newRun('MAPTEST2');
+  for (const [room, id] of [
+    [1, 'A'],
+    [2, 'B'],
+    [3, 'C'],
+  ] as const) {
+    flow.collectPressureNote(room, id);
+    flow.saveLogbookClue({ id, title: id, body: id, origin: 'Floor 1' });
+  }
+  ui.openMenu(head);
+  ui.activate('menu-logbook');
+  expect(ui.root.scale.x).toBe(1);
+  ui.setHandTracking(true, head);
+  expect(ui.root.scale.x).toBeCloseTo(0.54 / 1.25);
+  const anchored = ui.root.position.clone();
+  head.position.x += 0.05;
+  ui.setHandTracking(true, head);
+  expect(ui.root.position).toEqual(anchored);
+  expect(ui.activate('menu-logbook-next')).toBe(true);
+  ui.update(1);
+  expect(ui.activate('menu-logbook-next')).toBe(true);
+  expect(ui.root.getObjectByName('keeper-logbook')?.userData.section).toBe('puzzles');
+  expect(ui.root.getObjectByName('logbook-turn-front')?.visible).toBe(true);
+  ui.update(1);
+  expect(ui.activate('menu-logbook-previous')).toBe(true);
+  expect(ui.root.getObjectByName('keeper-logbook')?.userData.section).toBe('clues');
+  expect(ui.root.getObjectByName('logbook-turn-front')?.visible).toBe(true);
+  ui.update(1);
+  expect(ui.root.getObjectByName('logbook-left-page')?.userData.clueId).toBe('C');
+  const tip = (x: number, z = 0.015) =>
+    ui.root.getObjectByName('logbook-right-page')?.localToWorld(new THREE.Vector3(x, 0, z)) ?? null;
+  ui.sampleLogbookHand('right', tip(0.42));
+  ui.sampleLogbookHand('right', tip(0.3));
+  expect(ui.root.getObjectByName('keeper-logbook')?.userData.section).toBe('puzzles');
+  expect(ui.root.getObjectByName('logbook-turn-front')?.visible).toBe(true);
+  ui.update(1);
+  ui.sampleLogbookHand('right', tip(0.42));
+  ui.sampleLogbookHand('right', tip(0.3));
+  expect(ui.root.getObjectByName('keeper-logbook')?.userData.section).toBe('puzzles');
+  ui.sampleLogbookHand('right', tip(0.42, 0.18));
+  ui.sampleLogbookHand('right', tip(0.42));
+  ui.sampleLogbookHand('right', tip(0.3));
+  ui.update(1);
+  expect(ui.root.getObjectByName('keeper-logbook')?.userData.section).toBe('puzzles');
+  ui.sampleLogbookHand('right', tip(0.42, 0.18));
+  ui.sampleLogbookHand('right', tip(0.42));
+  ui.sampleLogbookHand('right', tip(0.3));
+  expect(ui.root.getObjectByName('keeper-logbook')?.userData.section).toBe('cards');
+  ui.setHandTracking(false, head);
+  expect(ui.root.scale.x).toBe(1);
   ui.dispose();
 });
 

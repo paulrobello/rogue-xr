@@ -2,6 +2,11 @@ import { ENCOUNTER_CONTENT_VERSION } from '../combat/encounter-choice.ts';
 import { PERMANENT_CARD_IDS } from '../content/rewards.ts';
 import { normalizeSeed, STREAMS, type StreamState } from '../core/rng.ts';
 import {
+  MAP_MARKER_ICONS,
+  type MapMarkerFloor,
+  type StoredMapMarker,
+} from '../flow/map-markers.ts';
+import {
   alchemyRecipe,
   conservatoryFormula,
   type Ingredient,
@@ -131,6 +136,8 @@ export interface SnapshotWorld {
   readonly puzzleLocations?: readonly PuzzleLocation[];
   /** Visited floors other than the active one. */
   readonly floors?: readonly FloorSnapshot[];
+  /** Personal map markers, shared across the run's reached floors. */
+  readonly mapMarkers?: readonly StoredMapMarker[];
 }
 
 export interface FloorSnapshot {
@@ -916,6 +923,30 @@ function validateMapLifts(value: unknown): MapLiftDiscovery[] {
   });
 }
 
+function validateMapMarkers(value: unknown): StoredMapMarker[] {
+  const path = 'snapshot.mapMarkers';
+  if (!Array.isArray(value)) fail(path, 'expected an array');
+  return value.map((item, i) => {
+    const entry = rec(item, `${path}[${i}]`);
+    const floor = int(entry.floor, `${path}[${i}].floor`, 1, 3) as MapMarkerFloor;
+    if (!MAP_MARKER_ICONS.includes(entry.icon as (typeof MAP_MARKER_ICONS)[number]))
+      fail(`${path}[${i}].icon`, 'unknown marker icon');
+    if (
+      !Array.isArray(entry.position) ||
+      entry.position.length !== 2 ||
+      !entry.position.every(
+        (coordinate) => typeof coordinate === 'number' && Number.isFinite(coordinate),
+      )
+    )
+      fail(`${path}[${i}].position`, 'expected two finite coordinates');
+    return {
+      floor,
+      icon: entry.icon as StoredMapMarker['icon'],
+      position: [entry.position[0], entry.position[1]],
+    };
+  });
+}
+
 export function validateSnapshot(raw: unknown): RunSnapshot {
   const r = rec(raw, 'snapshot');
   if (r.version !== SNAPSHOT_VERSION) fail('snapshot.version', `expected ${SNAPSHOT_VERSION}`);
@@ -961,6 +992,7 @@ export function validateSnapshot(raw: unknown): RunSnapshot {
     r.floors === undefined
       ? undefined
       : validateFloors(r.floors, activeRun.seed, floorNumber, version);
+  const mapMarkers = r.mapMarkers === undefined ? undefined : validateMapMarkers(r.mapMarkers);
   const pressureNotes = new Set([
     ...(activeRun.pressure?.notes ?? []),
     ...(floors?.flatMap((floor) => floor.pressure?.notes ?? []) ?? []),
@@ -1017,6 +1049,7 @@ export function validateSnapshot(raw: unknown): RunSnapshot {
       : { puzzleLocations: puzzleLocations(r.puzzleLocations, 'snapshot.puzzleLocations') }),
     ...(floors === undefined ? {} : { floors }),
     ...(r.mapLifts === undefined ? {} : { mapLifts: validateMapLifts(r.mapLifts) }),
+    ...(mapMarkers === undefined ? {} : { mapMarkers }),
   };
 }
 

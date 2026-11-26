@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { describe, expect, it, vi } from 'vitest';
+import type { FloorPlan } from '../src/floor/generate.ts';
+import { stabilizeConservatoryLights } from '../src/world/conservatory-warmup.ts';
 import { floorTextures, runVeil } from '../src/world/veil.ts';
 
 function fakeRenderer(log: string[]) {
@@ -18,6 +20,28 @@ function fakeRenderer(log: string[]) {
 const asRenderer = (r: ReturnType<typeof fakeRenderer>) => r as unknown as THREE.WebGLRenderer;
 
 describe('runVeil', () => {
+  it('primes linked program bindings under the veil without waiting on unrelated programs', async () => {
+    const log: string[] = [];
+    const renderer = fakeRenderer(log);
+    const ready = { isReady: () => true, getUniforms: () => log.push('bind') };
+    const pending = { isReady: () => false, getUniforms: vi.fn() };
+    const withPrograms = Object.assign(renderer, { info: { programs: [ready, pending] } });
+    const texture = Object.assign(new THREE.Texture(), { name: 'room' });
+    await runVeil(
+      asRenderer(withPrograms),
+      new THREE.Scene(),
+      new THREE.PerspectiveCamera(),
+      [texture],
+      {
+        primeProgramBindings: true,
+        fadeFrames: 0,
+        nextFrame: async () => {},
+      },
+    );
+    expect(log).toEqual(['compile:', 'bind', 'init:room']);
+    expect(pending.getUniforms).not.toHaveBeenCalled();
+  });
+
   it('compiles every program before uploading, and uploads a few textures per frame', async () => {
     const log: string[] = [];
     const renderer = fakeRenderer(log);
@@ -137,4 +161,58 @@ it('collects unique floor textures through culled groups without reinitializing 
   const root = new THREE.Group().add(new THREE.Mesh(geometry, shared), hidden);
   expect([...floorTextures(root)]).toEqual([texture, lightMap]);
   renderTarget.dispose();
+});
+
+it('keeps one bounded room light count through visibility changes', () => {
+  const plan: FloorPlan = {
+    seed: 'TEST',
+    guardianRoom: -1,
+    sealed: [],
+    rooms: [0, 1, 2, 3, 4].map((index) => ({
+      index,
+      templateId: 'hall',
+      turns: 0,
+      position: [0, index * 10],
+      role: index === 0 ? 'entry' : 'corridor',
+      wing: 0,
+      depth: index,
+      encounter: null,
+      loot: [],
+    })),
+    connections: [0, 1, 2, 3].map((room) => [
+      { room, door: 'n' },
+      { room: room + 1, door: 's' },
+    ]),
+  };
+  const groups = plan.rooms.map(({ index }) => {
+    const group = new THREE.Group();
+    group.visible = index <= 2;
+    if (index % 2 === 0) group.add(new THREE.PointLight());
+    const hidden = new THREE.Group();
+    hidden.visible = false;
+    group.add(hidden.add(new THREE.PointLight()));
+    return group;
+  });
+  const root = new THREE.Group().add(...groups);
+  const lighting = stabilizeConservatoryLights(plan, root, groups, 0);
+  if (!lighting) throw new Error('Expected the reachable light count to fit the budget');
+  expect(lighting.count).toBe(3);
+  const visibleLights = () => {
+    const lights: THREE.PointLight[] = [];
+    root.traverseVisible((node) => {
+      if (node instanceof THREE.PointLight) lights.push(node);
+    });
+    return lights;
+  };
+  expect(visibleLights()).toHaveLength(3);
+  expect(visibleLights().filter((light) => light.intensity === 0)).toHaveLength(1);
+  for (const [index, group] of groups.entries()) group.visible = index >= 3;
+  lighting.update();
+  expect(visibleLights()).toHaveLength(3);
+  expect(visibleLights().filter((light) => light.intensity === 0)).toHaveLength(2);
+
+  groups[1].add(new THREE.PointLight(), new THREE.PointLight());
+  const originalChildren = root.children.length;
+  expect(stabilizeConservatoryLights(plan, root, groups, 0)).toBeNull();
+  expect(root.children.length).toBe(originalChildren);
 });

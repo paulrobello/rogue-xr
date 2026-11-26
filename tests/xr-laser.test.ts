@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { createLaser, LASER_IDLE_LENGTH } from '../src/xr/laser.ts';
+import { createLaser, createLaserSurfacePicker, LASER_IDLE_LENGTH } from '../src/xr/laser.ts';
 
 const tipOf = (laser: ReturnType<typeof createLaser>) =>
   new THREE.Vector3().setFromMatrixPosition(laser.tip.matrixWorld);
@@ -55,4 +55,33 @@ describe('controller laser', () => {
     laser.dispose();
     expect(root.children).toHaveLength(0);
   });
+});
+
+it('stops both rays at rendered board surfaces and skips invisible hit regions', () => {
+  const root = new THREE.Group();
+  root.position.z = -1;
+  const plane = new THREE.PlaneGeometry(0.3, 0.5);
+  const board = new THREE.Mesh(plane, new THREE.MeshBasicMaterial());
+  board.position.x = -0.2;
+  board.raycast = () => undefined;
+  const paper = new THREE.Mesh(plane, new THREE.MeshBasicMaterial());
+  paper.position.set(0.2, 0, -0.1);
+  const invisible = new THREE.Mesh(plane, new THREE.MeshBasicMaterial({ visible: false }));
+  invisible.position.set(0.2, 0, 0.3);
+  const hidden = new THREE.Group();
+  hidden.visible = false;
+  const stale = new THREE.Mesh(plane, new THREE.MeshBasicMaterial());
+  stale.position.set(-0.2, 0, 0.3);
+  hidden.add(stale);
+  root.add(board, paper, invisible, hidden);
+  const picker = createLaserSurfacePicker();
+  picker.setRoot(root);
+  const left = new THREE.Object3D();
+  left.position.x = -0.2;
+  const right = new THREE.Object3D();
+  right.position.x = 0.2;
+  expect(picker.distanceFrom(left)).toBeCloseTo(1);
+  expect(picker.distanceFrom(right)).toBeCloseTo(1.1);
+  right.position.x = 1;
+  expect(picker.distanceFrom(right)).toBeNull();
 });

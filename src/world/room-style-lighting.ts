@@ -136,7 +136,11 @@ RE_Direct(candle, geometryPosition, geometryNormal, geometryViewDir, geometryCle
 }
 
 /** Stationary practicals, chairs and desk only need to light the architecture once, at floor dressing. */
-export function lightRoomStyle(room: THREE.Group, placements: readonly InteriorPlacement[]): void {
+export function lightRoomStyle(
+  room: THREE.Group,
+  placements: readonly InteriorPlacement[],
+  lightmapOnly = false,
+): void {
   if (!room.userData.roomStyle || room.userData.finishLightMap) return;
   const lamps: Lamp[] = [],
     shadows: Shadow[] = [];
@@ -294,12 +298,30 @@ export function lightRoomStyle(room: THREE.Group, placements: readonly InteriorP
         : wallMaterials;
     const existing = materials.get(source);
     if (existing) return existing;
-    const m = bakedRoomMaterial(source.userData.roomStyleOwned ? source : source.clone());
+    const diffuse =
+      lightmapOnly &&
+      !conservatoryDoor &&
+      !source.transparent &&
+      (source.name === 'TimberFinish' || (stoneShell && source.metalness === 0));
+    const m = diffuse
+      ? new THREE.MeshBasicMaterial({
+          name: source.name,
+          color: source.color,
+          map: source.map,
+          aoMap: source.aoMap,
+          aoMapIntensity: source.aoMapIntensity,
+          side: source.side,
+          vertexColors: source.vertexColors,
+          toneMapped: source.toneMapped,
+          fog: source.fog,
+        })
+      : bakedRoomMaterial(source.userData.roomStyleOwned ? source : source.clone());
+    if (diffuse && source.userData.roomStyleOwned) source.dispose();
     // The authored trim has an open rear profile where the two room finishes meet.
     if (conservatoryDoor) m.side = THREE.DoubleSide;
     m.userData.roomStyleOwned = true;
     m.lightMap = texture;
-    m.envMapIntensity *= timber ? 0.6 : 0.45;
+    if (m instanceof THREE.MeshStandardMaterial) m.envMapIntensity *= timber ? 0.6 : 0.45;
     m.lightMapIntensity = 1.5 * Math.PI;
     const bake = m.onBeforeCompile;
     m.onBeforeCompile = (shader, renderer) => {
@@ -323,7 +345,7 @@ export function lightRoomStyle(room: THREE.Group, placements: readonly InteriorP
       );
     };
     m.customProgramCacheKey = () =>
-      `room-finish-lighting-${edge}-${!!room.userData.conservatory}-${horizontalTile}`;
+      `room-finish-lighting-${edge}-${!!room.userData.conservatory}-${horizontalTile}-${diffuse}`;
     materials.set(source, m);
     return m;
   };

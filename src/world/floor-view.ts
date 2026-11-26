@@ -71,7 +71,7 @@ import { attachSpringTension } from '../floor/spring-tension.ts';
 import { placeStairEntry } from '../floor/stairs.ts';
 import { type StoneRoom, stoneRoomsFor } from '../floor/stone-rooms.ts';
 import { attachValvehouse } from '../floor/valvehouse.ts';
-import { nearSet, shellSet } from '../floor/visibility.ts';
+import { CONSERVATORY_SHELL_DEPTH, nearSet, shellSet } from '../floor/visibility.ts';
 import { PALETTE } from '../palette.ts';
 import type { RunSnapshot } from '../persist/saves.ts';
 import { conservatoryFormula } from '../rules/alchemy.ts';
@@ -607,8 +607,8 @@ export function mountFloorView(
   const stoneRooms: ReadonlyMap<number, StoneRoom> =
     contentVersion >= DUNGEON_CONTENT_VERSION ? stoneRoomsFor(plan, floorNumber) : new Map();
   // The Conservatory's connected halls can reveal most of the floor through aligned doors.
-  const maxShellDepth = floorNumber === 3 ? 1 : undefined;
-  const world = buildFloorWorld(plan, options.templates, maxShellDepth);
+  const maxShellDepth = floorNumber === 3 ? CONSERVATORY_SHELL_DEPTH : undefined;
+  const world = buildFloorWorld(plan, options.templates, maxShellDepth, stoneRooms);
   let dungeonRoute: CanvasLabel | null = null;
   if (
     floorNumber === 2 &&
@@ -1525,7 +1525,9 @@ export function mountFloorView(
             applyStoneRoom(styled, stone, stoneKit, doors, edge, niche);
           } else if (style && roomStyleKit)
             applyRoomStyle(styled, style, roomStyleKit, doors, edge);
-          const keepDesk = style === 'timber' || (templateId === 'study' && room.loot.length > 0);
+          const keepDesk =
+            stoneRooms.get(index) !== 'dungeon' &&
+            (style === 'timber' || (templateId === 'study' && room.loot.length > 0));
           if (templateId === 'hall') copyHallBenches(model, styled);
           else if (keepDesk) copyStudyDesk(model, styled);
           world.removeRoomFixtureColliders(index, templateId === 'hall' || keepDesk);

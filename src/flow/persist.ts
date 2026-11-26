@@ -1,5 +1,10 @@
 import type { PersistDb } from '../persist/db.ts';
-import { clearRunSnapshot, saveRunSnapshot, saveWorkshop } from '../persist/saves.ts';
+import {
+  clearRunSnapshot,
+  type RunSnapshot,
+  saveRunSnapshot,
+  saveWorkshop,
+} from '../persist/saves.ts';
 import type { RunFlow } from './flow.ts';
 
 export interface FlowPersistence {
@@ -22,13 +27,26 @@ export function bindFlowPersistence(
   roomIndex: () => number = () => flow.room,
 ): FlowPersistence {
   let queue: Promise<void> = Promise.resolve();
+  let checkpoint: RunSnapshot | null = null;
   const enqueue = (write: () => Promise<void>): void => {
     queue = queue.then(write).catch((error: unknown) => console.error('save failed', error));
+  };
+  const save = (snapshot: RunSnapshot): void => {
+    checkpoint = snapshot;
+    enqueue(() => saveRunSnapshot(db, snapshot));
   };
   const off = flow.onChange((event) => {
     if (event.type === 'floor-travel' || event.type === 'room-entered') {
       const snapshot = flow.snapshot(Date.now(), event.room);
-      if (snapshot) enqueue(() => saveRunSnapshot(db, snapshot));
+      if (snapshot) save(snapshot);
+      return;
+    }
+    if (event.type === 'map-marker' && flow.phase === 'combat' && checkpoint) {
+      // Keep the pre-fight checkpoint and apply the edit from the paused book to it.
+      const mapMarkers = ([1, 2, 3] as const).flatMap((floor) =>
+        flow.mapMarkersOnFloor(floor).map((marker) => ({ ...marker, floor })),
+      );
+      save({ ...checkpoint, savedAt: Date.now(), mapMarkers });
       return;
     }
     if (event.type === 'workshop') {
@@ -64,21 +82,23 @@ export function bindFlowPersistence(
       event.type === 'dark-circuit' ||
       event.type === 'drum-gallery' ||
       event.type === 'logbook' ||
-      event.type === 'puzzle-discovered'
+      event.type === 'puzzle-discovered' ||
+      event.type === 'map-marker'
     ) {
       const snapshot = flow.snapshot(Date.now(), roomIndex());
-      if (snapshot) enqueue(() => saveRunSnapshot(db, snapshot));
+      if (snapshot) save(snapshot);
       return;
     }
     if (event.to === 'explore' || event.to === 'reward' || event.to === 'guardian-cleared') {
       const snapshot = flow.snapshot(Date.now(), roomIndex());
-      if (snapshot) enqueue(() => saveRunSnapshot(db, snapshot));
+      if (snapshot) save(snapshot);
     } else if (
       event.to === 'death' ||
       event.to === 'victory' ||
       (event.to === 'title' && (event.from === 'explore' || event.from === 'combat'))
     ) {
       const ws = flow.workshop;
+      checkpoint = null;
       enqueue(() => clearRunSnapshot(db));
       enqueue(() => saveWorkshop(db, ws));
     }

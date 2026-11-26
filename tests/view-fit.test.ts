@@ -1,7 +1,12 @@
 // @vitest-environment node
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { dropToFitView, fitsView, VIEW_TOP_LIMIT } from '../src/combat-view/view-fit.ts';
+import {
+  dropToFitView,
+  fitBillboardToView,
+  fitsView,
+  VIEW_TOP_LIMIT,
+} from '../src/combat-view/view-fit.ts';
 
 /** A seated eye at 1.2 m looking down 33 degrees, as the desktop combat framing does. */
 function seatedCamera(): THREE.PerspectiveCamera {
@@ -45,5 +50,24 @@ describe('view fit', () => {
   it('treats a point behind the camera as fitting', () => {
     const camera = seatedCamera();
     expect(fitsView(new THREE.Vector3(0, 2, 3), 0.2, camera)).toBe(true);
+  });
+
+  it.each([0.3, 1])('fits a tall tooltip near a view edge at depth %i', (depth) => {
+    const camera = seatedCamera();
+    camera.setViewOffset(1600, 900, 100, 0, 1400, 900);
+    const center = camera.localToWorld(new THREE.Vector3(-0.8, 0.65, -depth));
+    const scale = fitBillboardToView(center, 0.3, 0.42, camera);
+    const local = camera.worldToLocal(center.clone());
+    expect(scale < 1).toBe(depth < 1);
+    expect(local.z).toBeCloseTo(-depth);
+    for (const x of [-0.15, 0.15]) {
+      for (const y of [-0.21, 0.21]) {
+        const corner = local.clone().add(new THREE.Vector3(x, y, 0).multiplyScalar(scale));
+        const ndc = camera.localToWorld(corner).project(camera);
+        expect(Math.max(Math.abs(ndc.x), Math.abs(ndc.y))).toBeLessThanOrEqual(
+          VIEW_TOP_LIMIT + 1e-7,
+        );
+      }
+    }
   });
 });

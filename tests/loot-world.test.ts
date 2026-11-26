@@ -1,10 +1,14 @@
 import * as THREE from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { DUNGEON_CONTENT_VERSION } from '../src/combat/encounter-choice.ts';
 import { getCard } from '../src/content/cards.ts';
 import { GREYBOX_TEMPLATES, type RoomTemplate } from '../src/content/rooms.ts';
+import { DUNGEON_SHOWCASE_SEED } from '../src/floor/dungeon-showcase.ts';
 import { generateFloor, guardedConnection, worldRooms } from '../src/floor/generate.ts';
 import { withBrassCache } from '../src/floor/return-passages.ts';
-import { mountFloorView } from '../src/world/floor-view.ts';
+import { stoneRoomsFor } from '../src/floor/stone-rooms.ts';
+import { floorSeedFor } from '../src/rules/run.ts';
+import { mountFloorView, playableFloorPlan } from '../src/world/floor-view.ts';
 import { buildFloorWorld } from '../src/world/floor-world.ts';
 import { LootToast, lootLines, surfaceHeightAt } from '../src/world/loot.ts';
 import { moveWithCollision, type Vec2 } from '../src/xr/locomotion.ts';
@@ -20,6 +24,29 @@ const STUDY_WITH_DESK: readonly RoomTemplate[] = GREYBOX_TEMPLATES.map((t) =>
 const SEEDS = ['SPIRE001', 'SPIRE002', 'SPIRE003', 'SPIRE005', 'SPIRE034', 'SPIRE004', 'SPIRE010'];
 
 describe('coffers in the floor world', () => {
+  it('puts dungeon coffers on the floor with deterministic reliquary and strongbox themes', () => {
+    const witnesses: string[] = [];
+    for (const floorNumber of [2, 3] as const) {
+      const plan = playableFloorPlan(
+        floorSeedFor(DUNGEON_SHOWCASE_SEED, floorNumber),
+        DUNGEON_CONTENT_VERSION,
+        floorNumber,
+      );
+      const stoneRooms = stoneRoomsFor(plan, floorNumber);
+      const world = buildFloorWorld(plan, GREYBOX_TEMPLATES, undefined, stoneRooms);
+      for (const coffer of world.coffers) {
+        if (stoneRooms.get(coffer.room) !== 'dungeon') continue;
+        expect(coffer.object.position.y).toBe(0);
+        witnesses.push(
+          `${floorNumber}:${coffer.room}:${coffer.socketId}:${coffer.object.userData.cofferTheme}`,
+        );
+      }
+      world.dispose();
+    }
+    expect(witnesses.length).toBeGreaterThan(0);
+    expect(new Set(witnesses.map((entry) => entry.split(':').at(-1))).size).toBe(2);
+  });
+
   it('instantiates the brass coffer when its only reachable socket is in a quiet room', () => {
     const base = generateFloor('SPIRE002');
     const study = base.rooms.find((r) => r.templateId === 'study');

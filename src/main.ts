@@ -48,6 +48,7 @@ import { isValidSeed, normalizeSeed, randomSeed } from './core/rng.ts';
 import { fitCombatFraming } from './desktop/combat-framing.ts';
 import { combatPitch, createDesktopControls } from './desktop/controls.ts';
 import { Walker } from './desktop/walker.ts';
+import { registerDiag } from './diag/diag.ts';
 import { DiceWorld } from './dice/world.ts';
 import { makeClockworkOwlAsset } from './enemies/conservatory-actors.ts';
 import {
@@ -91,6 +92,7 @@ import {
   questPerfStageStart,
   questPerfWorldRender,
 } from './perf/index.ts';
+import { traceTransitions } from './perf/transition-trace.ts';
 import {
   DEFAULT_SETTINGS,
   loadSettings,
@@ -134,6 +136,7 @@ import type { BellChimes, BellPick } from './world/bell-chimes.ts';
 import type { CalibrationAction } from './world/calibration-bench.ts';
 import type { FolioPick } from './world/calibration-cabinet.ts';
 import type { CommissionAction } from './world/commission-office.ts';
+import { stabilizeConservatoryLights } from './world/conservatory-warmup.ts';
 import type { DispatchPick } from './world/dispatch-room.ts';
 import {
   type FloorView,
@@ -189,9 +192,12 @@ import { loadTableDecor, type TableDecor } from './world/table-decor.ts';
 import type { ValvehousePick } from './world/valvehouse.ts';
 import { floorTextures, runVeil } from './world/veil.ts';
 import { ComfortVignette } from './xr/comfort-vignette.ts';
+import { createHandMenuGlyph } from './xr/hand-menu-glyph.ts';
+import { createLaserSurfacePicker } from './xr/laser.ts';
 import { Locomotion, locomotionSettingsFrom } from './xr/locomotion.ts';
 import { LocomotionDrive } from './xr/locomotion-drive.ts';
 import { ButtonEdge, MAP_BUTTON, MENU_BUTTON } from './xr/menu-button.ts';
+import { createMenuTouch } from './xr/menu-touch.ts';
 import { Minimap } from './xr/minimap.ts';
 import { createXrRig } from './xr/session.ts';
 import { TeleportView } from './xr/teleport-view.ts';
@@ -204,6 +210,9 @@ const xrText = { sdfGlyphSize: 128, useWorker: false };
 configureTextBuilder(xrText);
 
 const params = new URLSearchParams(location.search);
+const shaderLogs = params.get('shaderLogs');
+const detailedShaderLogs =
+  shaderLogs === '1' || (shaderLogs !== '0' && (import.meta.env.DEV || params.has('debug')));
 const view = params.get('view');
 const proofView =
   view === 'lightmap-proof' ||
@@ -218,6 +227,9 @@ const renderer = new THREE.WebGLRenderer({
   stencil: true,
   preserveDrawingBuffer: proofView,
 });
+const transitionTrace =
+  params.get('transitionPerf') === '1' ? traceTransitions(renderer.getContext()) : null;
+if (transitionTrace) registerDiag('transition', transitionTrace.log);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -320,6 +332,7 @@ const mountFloor = (
 };
 if (!proofView) floor = mountFloor(bootSeed);
 let readyFloor: FloorView | undefined;
+let conservatoryLights: { floor: FloorView; update: () => void } | null = null;
 let loadingFailed = false;
 let covered = true;
 const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
@@ -369,6 +382,8 @@ if (floor) app.append(banner);
 const actions = new ActionBus();
 const xr = createXrRig(renderer, scene, rig, camera, actions, {
   foveation: (settings ?? DEFAULT_SETTINGS).foveation,
+  calibrateHands: params.get('handCal') === '1',
+  handOffset: params.get('handOffset') !== '0',
 });
 const desktop = createDesktopControls(camera, renderer.domElement, actions);
 const walker = new Walker(rig, actions, () => floor?.world.nearbyColliders() ?? []);
@@ -412,6 +427,13 @@ const updateNotice = mountUpdateNotice({
 
 // Audio: one director for the floor, resumed by the first gesture or the XR session start.
 const audio = floor ? new AudioDirector({ camera }) : null;
+if (audio && params.get('handCal') === '1')
+  registerDiag('liftAudio', () => ({
+    state: audio.state,
+    cue: audio.musicCue,
+    requested: audio.musicRequest,
+    decoded: audio.decodedMusic,
+  }));
 const soundReady = audio?.load();
 if (audio) {
   scene.add(audio.root);
@@ -620,8 +642,7 @@ const sealedDoorMaterial: Promise<{ material: THREE.Material; tileMeters: number
       })
       .catch(() => null)
   : Promise.resolve(null);
-// Treasure coffers: walnut and aged brass from the same set, cloned so the rooms' own materials keep
-// their probe intensity. The flat placeholders in `CofferKit` stay on any failure.
+// Coffer finishes share the room textures without changing the room materials' reflections.
 const lootMaterials: Promise<LootMaterials | null> = heroSet
   ? heroSet
       .then(({ set }) => {
@@ -637,9 +658,33 @@ const lootMaterials: Promise<LootMaterials | null> = heroSet
           }
           return material;
         };
+        const classicWood = dress(wood, 'coffer-wood', 0.12);
+        const classicBrass = dress(brass, 'coffer-brass', 0.45);
+        const stone = dress(
+          set.materials.get('stone-floor') ?? wood,
+          'coffer-reliquary-stone',
+          0.06,
+        );
+        stone.map = null;
+        stone.color.set(0x8a7760);
+        stone.roughness = 0.9;
+        stone.metalness = 0;
+        const iron = dress(brass, 'coffer-strongbox-iron', 0.24);
+        iron.map = null;
+        iron.color.set(0x525c62);
+        iron.metalness = 0.74;
+        iron.roughness = 0.56;
+        const steel = iron.clone();
+        steel.name = 'coffer-strongbox-steel';
+        steel.color.set(0xa0aab0);
+        steel.roughness = 0.42;
         return {
-          wood: dress(wood, 'coffer-wood', 0.12),
-          brass: dress(brass, 'coffer-brass', 0.45),
+          wood: classicWood,
+          brass: classicBrass,
+          variants: {
+            reliquary: { wood: stone, brass: classicBrass },
+            strongbox: { wood: iron, brass: steel },
+          },
         };
       })
       .catch(() => null)
@@ -1203,8 +1248,9 @@ const dressFloor = async (target: FloorView): Promise<void> => {
     if (decor) candles.add(decor.material);
     target.setCandleMaterials([...candles], hitFx.reducedMotion);
     syncPuzzles(target, true);
+    const lightmapOnly = target.floorNumber === 3 && params.get('roomShading') === 'lightmap';
     for (const room of target.styledRooms)
-      lightRoomStyle(room, target.furnishings?.placements ?? []);
+      lightRoomStyle(room, target.furnishings?.placements ?? [], lightmapOnly);
     if (door) target.world.dressSealedDoors(door.material, door.tileMeters);
     const heroMaterials = await heroSet?.catch(() => null);
     if (target !== floor) return;
@@ -1225,21 +1271,39 @@ const dressFloor = async (target: FloorView): Promise<void> => {
   }
 };
 async function prepareFloor(target: FloorView, boot = false): Promise<void> {
+  // Reading shader logs at first draw can synchronously stall the Quest Browser renderer.
+  renderer.debug.checkShaderErrors = target.floorNumber !== 3 || detailedShaderLogs;
+  const traceFloor3 = target.floorNumber === 3 ? transitionTrace : null;
+  traceFloor3?.mark('Floor 3 dressing started');
   covered = true;
   loadingFailed = false;
   if (stairTransit.phase !== 'loading') showLoading('Loading the tower…');
   try {
     await dressFloor(target);
     if (floor !== target) return;
+    traceFloor3?.mark('Floor 3 dressing finished');
     ui?.sync(camera);
     await ui?.waitForArtwork();
     if (floor !== target) return;
+    traceFloor3?.mark('Floor 3 artwork ready');
     const warmConservatory = target.floorNumber === 3;
+    const stableLights =
+      warmConservatory && !boot && params.get('liftWarmup') !== 'full'
+        ? stabilizeConservatoryLights(
+            target.world.plan,
+            target.world.group,
+            target.world.roomGroups,
+            target.world.current,
+          )
+        : null;
+    conservatoryLights = stableLights ? { floor: target, update: stableLights.update } : null;
+    if (stableLights) traceFloor3?.mark(`Floor 3 fixed point-light count ${stableLights.count}`);
     const roomPointLights: THREE.PointLight[] = [];
     if (warmConservatory) {
-      target.world.group.traverse((node) => {
-        if (node instanceof THREE.PointLight && node.visible) roomPointLights.push(node);
-      });
+      if (!stableLights)
+        target.world.group.traverse((node) => {
+          if (node instanceof THREE.PointLight && node.visible) roomPointLights.push(node);
+        });
       perfMark('floor 3 warmup');
     }
     if (boot) {
@@ -1292,10 +1356,12 @@ async function prepareFloor(target: FloorView, boot = false): Promise<void> {
             }
           });
         }
+        traceFloor3?.mark('Floor 3 veil started');
         await runVeil(renderer, scene, camera, [...textures], {
           variants,
           roomPointLights,
           fadeFrames: 0,
+          onPhase: (phase) => traceFloor3?.mark(`Floor 3 veil ${phase} finished`),
         });
       } finally {
         for (const actor of actors) actor.dispose();
@@ -1304,7 +1370,13 @@ async function prepareFloor(target: FloorView, boot = false): Promise<void> {
     } else if (warmConservatory) {
       // Room culling leaves distant lightmaps and material variants cold until first use.
       const textures = [...floorTextures(target.world.group)];
-      await runVeil(renderer, scene, camera, textures, { roomPointLights, fadeFrames: 0 });
+      traceFloor3?.mark('Floor 3 veil started');
+      await runVeil(renderer, scene, camera, textures, {
+        roomPointLights,
+        primeProgramBindings: stableLights !== null,
+        fadeFrames: 0,
+        onPhase: (phase) => traceFloor3?.mark(`Floor 3 veil ${phase} finished`),
+      });
     }
     if (floor === target) {
       if (warmConservatory) perfMark('floor 3 warmup complete');
@@ -1319,6 +1391,7 @@ async function prepareFloor(target: FloorView, boot = false): Promise<void> {
         liftArrival = null;
       }
       readyFloor = target;
+      traceFloor3?.mark('Floor 3 ready');
     }
   } catch (error) {
     if (floor === target) {
@@ -1636,12 +1709,15 @@ function arriveAtLanding(target: FloorView, entry: StairEntry): void {
 }
 
 let liftArrival: FloorView | null = null;
+let liftMusicActive = false;
 function travelStairs(byLift = false): boolean {
   const source = floor;
   const transport = byLift ? source?.lift : source?.stairs;
   if (!source || !transport || busy() || flow.phase !== 'explore' || source.locked || !flow.run)
     return false;
   const destination = transport.destination;
+  const traceLift =
+    byLift && source.floorNumber === 2 && destination === 3 ? transitionTrace : null;
   const nextSeed = floorSeedFor(flow.run.seed, destination);
   const next = byLift
     ? null
@@ -1663,13 +1739,16 @@ function travelStairs(byLift = false): boolean {
       }
     },
     cross() {
+      traceLift?.mark('Floor 2 to 3 lift crossing');
       if (floor !== source || !flow.travelToFloor(destination, next?.room ?? 0)) {
         transport.open(0);
         return;
       }
       const snap = flow.snapshot(Date.now(), next?.room ?? 0);
       if (!snap) throw Error('No exploration state after crossing the staircase');
+      traceLift?.mark('Floor 3 mount started');
       const target = savedFloor(snap);
+      traceLift?.mark('Floor 3 mount finished');
       if (next) arriveAtLanding(target, next);
       else liftArrival = target;
       syncPuzzles(target, true);
@@ -1678,6 +1757,11 @@ function travelStairs(byLift = false): boolean {
       storedSnapshot = snap;
     },
   });
+  if (started) traceLift?.mark('Floor 2 to 3 lift activated');
+  if (started && byLift) {
+    liftMusicActive = true;
+    audio?.setState('lift');
+  }
   if (started) audio?.playSfx('gear-clank', pull, 0.5);
   return started;
 }
@@ -1802,6 +1886,7 @@ function readMinimap(): LogbookMap | null {
   return {
     ...chart,
     discoveries: readMapDiscoveries(current, floorNumber, world.plan, world.rooms, explored),
+    personalMarkers: flow.mapMarkersOnFloor(floorNumber),
   };
 }
 
@@ -1951,6 +2036,13 @@ actions.on('select', ({ controlId }) => {
   ui?.activate(controlId);
 });
 const uiPointer = createPointer({ far: 6 });
+const uiLaserSurfaces = createLaserSurfacePicker();
+const handMenu = createHandMenuGlyph();
+const handMenuEye = new THREE.Vector3();
+scene.add(handMenu.root);
+const menuTouch = { left: createMenuTouch(), right: createMenuTouch() };
+const menuFront = new THREE.Vector3();
+const menuControlAt = (object: THREE.Object3D): string | null => ui?.controlAt(object) ?? null;
 const pickUi = (origin: THREE.Vector3, direction: THREE.Vector3): string | null => {
   if (!ui?.visible) return null;
   const hit = uiPointer.cast(origin, direction, ui.targets());
@@ -1967,7 +2059,7 @@ const mouseRay = (event: Pick<MouseEvent, 'clientX' | 'clientY'>): THREE.Ray => 
   caster.setFromCamera(ndc, camera);
   return caster.ray;
 };
-let mapDrag: { readonly pointer: number; last: MapPoint } | null = null;
+let mapDrag: { readonly pointer: number; last: MapPoint; moved: boolean } | null = null;
 let minimapPointer: number | null = null;
 const endMinimapPointer = (event: PointerEvent): void => {
   if (minimapPointer !== event.pointerId) return;
@@ -1981,9 +2073,14 @@ const endMinimapPointer = (event: PointerEvent): void => {
 renderer.domElement.addEventListener('lostpointercapture', endMinimapPointer);
 window.addEventListener('pointerup', endMinimapPointer);
 window.addEventListener('pointercancel', endMinimapPointer);
-const endMapDrag = ({ pointerId }: PointerEvent): void => {
+const endMapDrag = (event: PointerEvent): void => {
+  const { pointerId } = event;
   if (mapDrag?.pointer !== pointerId) return;
+  const tap = event.type === 'pointerup' && !mapDrag.moved;
   mapDrag = null;
+  if (tap && ui?.visible && !xr.presenting && !busy()) {
+    ui.applyLogbookMarker(mouseRay(event));
+  }
   if (renderer.domElement.hasPointerCapture(pointerId))
     renderer.domElement.releasePointerCapture(pointerId);
 };
@@ -2018,9 +2115,11 @@ window.addEventListener(
       renderer.domElement.setPointerCapture(event.pointerId);
       return;
     }
+    if (!id && !busy() && ui.selectLogbookMarkerTool(ray)) return;
+    if (!id && !busy() && ui.tapLogbookEdge(ray)) return;
     const point = ui.logbookMapPoint(ray);
     if (point && !mapDrag) {
-      mapDrag = { pointer: event.pointerId, last: point };
+      mapDrag = { pointer: event.pointerId, last: point, moved: false };
       renderer.domElement.setPointerCapture(event.pointerId);
       return;
     }
@@ -2039,7 +2138,11 @@ window.addEventListener('pointermove', (event) => {
       endMapDrag(event);
       return;
     }
-    ui?.adjustLogbookMap(point[0] - mapDrag.last[0], point[1] - mapDrag.last[1]);
+    const dx = point[0] - mapDrag.last[0];
+    const dy = point[1] - mapDrag.last[1];
+    if (!mapDrag.moved && Math.hypot(dx, dy) < 6) return;
+    mapDrag.moved = true;
+    ui?.adjustLogbookMap(dx, dy);
     mapDrag.last = point;
     return;
   }
@@ -3434,7 +3537,11 @@ for (const index of [0, 1]) {
       }
       return;
     }
-    const side = (event as unknown as { data?: XRInputSource }).data?.handedness;
+    const source = (event as unknown as { data?: XRInputSource }).data;
+    const side = source?.handedness;
+    if (source?.hand && (side === 'left' || side === 'right')) {
+      if (menuTouch[side].held || (side === 'right' && handMenu.held)) return;
+    }
     if (side === 'right' && menuStick.owns(side)) {
       if (ui.radialInteractive) {
         const action = menuStick.confirm() ?? 'cancel';
@@ -3444,7 +3551,13 @@ for (const index of [0, 1]) {
     }
     const hit = uiPointer.castFrom(controller, ui.targets());
     const id = hit ? ui.controlAt(hit.object) : null;
-    if (!id) return;
+    if (!id) {
+      const { origin, direction } = controllerRay(controller);
+      const ray = new THREE.Ray(origin, direction);
+      if (!ui.selectLogbookMarkerTool(ray) && (source?.hand || !ui.tapLogbookEdge(ray)))
+        ui.applyLogbookMarker(ray);
+      return;
+    }
     rewardHand = renderer.xr.getControllerGrip(index);
     actions.emit({ type: 'select', controlId: id });
     rewardHand = null;
@@ -3948,7 +4061,12 @@ function updateFrame(time: number, frame?: XRFrame): void {
     ui?.recenter(camera);
   }
   stairTransit.update(deltaSeconds, floor === readyFloor || loadingFailed);
+  if (liftMusicActive && (stairTransit.phase === 'idle' || loadingFailed)) {
+    liftMusicActive = false;
+    if (loadingFailed) audio?.setState('explore');
+  }
   if (floor && floor !== readyFloor) {
+    if (liftMusicActive || loadingFailed) audio?.update(deltaSeconds);
     if (stairTransit.phase === 'loading' && !loadingFailed) {
       stairFade.render(renderer, camera, 1);
       return;
@@ -4094,7 +4212,37 @@ function updateFrame(time: number, frame?: XRFrame): void {
   // The XR layout is the 3D table's; only the desktop view slides the HUD into frame.
   if (xr.presenting) combat?.session?.resetHud();
   else combat?.session?.fitHudToView(camera);
+  ui?.setHandTracking(xr.presenting && xr.handTrackingActive(), camera);
+  const hands = xr.presenting && !busy() ? xr.indexFingertips() : null;
+  const glyphPalm =
+    hands && (flow.phase === 'explore' || flow.phase === 'combat') ? xr.trackedPalm('left') : null;
+  if (glyphPalm) camera.getWorldPosition(handMenuEye);
+  if (handMenu.update(glyphPalm, hands?.right ?? null, handMenuEye)) toggleMenu();
   ui?.sync(camera);
+  let touchHover: string | null = null;
+  const menuInteractive = xr.presenting && !busy() && ui?.visible;
+  const leftTip = menuInteractive ? (hands?.left ?? null) : null;
+  const rightTip = menuInteractive && !handMenu.held ? (hands?.right ?? null) : null;
+  const touchTargets = (leftTip || rightTip) && ui ? ui.targets() : [];
+  if (touchTargets.length && ui) {
+    ui.root.updateWorldMatrix(true, true);
+    menuFront.set(0, 0, 1).transformDirection(ui.root.matrixWorld);
+  }
+  const leftTouch = menuTouch.left.sample(leftTip, menuFront, touchTargets, menuControlAt);
+  const rightTouch = menuTouch.right.sample(rightTip, menuFront, touchTargets, menuControlAt);
+  const press = rightTouch.pressed ?? leftTouch.pressed;
+  if (press) {
+    const side = rightTouch.pressed ? 'right' : 'left';
+    rewardHand = xr.grips()[side];
+    actions.emit({ type: 'select', controlId: press });
+    rewardHand = null;
+  } else {
+    touchHover = rightTouch.hovered ?? leftTouch.hovered;
+    if (menuInteractive && ui?.menuView === 'logbook') {
+      ui.sampleLogbookHand('left', leftTip);
+      ui.sampleLogbookHand('right', rightTip);
+    }
+  }
   ui?.update(deltaSeconds);
   if (xrMinimapDrag && !ui?.dragMinimapSlider(minimapControllerRay(xrMinimapDrag)))
     endXrMinimapDrag(false);
@@ -4114,11 +4262,18 @@ function updateFrame(time: number, frame?: XRFrame): void {
       laserHits[MAIN_HAND] = Math.min(laserHits[MAIN_HAND] ?? Infinity, status);
   }
   if (ui?.visible && xr.presenting) {
-    const ray = xr.rays()[MAIN_HAND];
-    const hit = ray ? uiPointer.castFrom(ray, ui.targets()) : null;
+    const controllers = xr.controllerRays();
+    if (controllers.left || controllers.right) {
+      uiLaserSurfaces.setRoot(ui.root);
+      for (const side of ['left', 'right'] as const) {
+        const source = controllers[side];
+        if (source) laserHits[side] = uiLaserSurfaces.distanceFrom(source);
+      }
+    }
     if (!menuStick.active) {
-      ui.hover(hit ? ui.controlAt(hit.object) : null);
-      laserHits[MAIN_HAND] = hit ? hit.distance : null;
+      const ray = xr.rays()[MAIN_HAND];
+      const hit = ray ? uiPointer.castFrom(ray, ui.targets()) : null;
+      ui.hover(touchHover ?? (hit ? ui.controlAt(hit.object) : null));
     }
   }
   if (pullMark) {
@@ -4198,6 +4353,7 @@ function updateFrame(time: number, frame?: XRFrame): void {
       );
   }
   if (floor && audio) {
+    audio.preloadLiftMusic(flow.phase === 'explore' && floor.lift?.room === floor.world.current);
     const pipeReceiver =
       flow.phase === 'explore' &&
       flow.speakingPipes === 'primed' &&
@@ -4209,13 +4365,15 @@ function updateFrame(time: number, frame?: XRFrame): void {
       soundedPipeReceiver = pipeReceiver;
       playPipeReply(pipeReceiver);
     }
-    const fighting = floor.encounter.phase !== 'idle';
-    audio.setState(
-      audioStateForFlow(flow.phase, floor.encounter.phase, {
-        tier: fighting ? fightTier(floor, floor.encounter.activeRoom) : null,
-        room: floor.world.plan.rooms[floor.world.current]?.role ?? null,
-      }),
-    );
+    if (!liftMusicActive) {
+      const fighting = floor.encounter.phase !== 'idle';
+      audio.setState(
+        audioStateForFlow(flow.phase, floor.encounter.phase, {
+          tier: fighting ? fightTier(floor, floor.encounter.activeRoom) : null,
+          room: floor.world.plan.rooms[floor.world.current]?.role ?? null,
+        }),
+      );
+    }
     audio.update(deltaSeconds);
   }
   const preview = xr.presenting ? locomotion.teleportPreview : null;
@@ -4224,18 +4382,25 @@ function updateFrame(time: number, frame?: XRFrame): void {
     preview,
     !!mark && floor?.world.teleportSurfaceHeight(mark[0], mark[2]) != null,
   );
+  if (conservatoryLights && conservatoryLights.floor === floor) conservatoryLights.update();
   const renderStage = questPerfStageStart('render.submit.cpu');
+  const renderStart = transitionTrace ? performance.now() : 0;
   renderer.render(scene, camera);
+  transitionTrace?.worldRender(performance.now() - renderStart);
   questPerfStageEnd(renderStage);
   sceneStats.calls = renderer.info.render.calls;
   sceneStats.triangles = renderer.info.render.triangles;
   questPerfWorldRender(sceneStats.calls, sceneStats.triangles);
   const overlayStage = questPerfStageStart('render.overlays.cpu');
   if (ui?.visible) {
+    const autoClear = renderer.autoClear;
     renderer.autoClear = false;
-    renderer.clearDepth();
-    renderer.render(uiScene, camera);
-    renderer.autoClear = true;
+    try {
+      renderer.clearDepth();
+      xr.renderBoards(uiScene);
+    } finally {
+      renderer.autoClear = autoClear;
+    }
   }
   if (!settings?.minimapEnabled) {
     minimap?.dispose();
@@ -4314,11 +4479,20 @@ function updateFrame(time: number, frame?: XRFrame): void {
 }
 
 renderer.setAnimationLoop((time, frame) => {
+  const traceStart = transitionTrace ? performance.now() : 0;
   perf.frame(null, time);
   const frameStage = questPerfStageStart('frame.cpu');
   try {
     updateFrame(time, frame);
   } finally {
     questPerfStageEnd(frameStage);
+    transitionTrace?.frame(time, traceStart, {
+      floor: floor?.floorNumber ?? null,
+      room: floor?.world.current ?? null,
+      phase: stairTransit.phase,
+      covered,
+      black: stairTransit.opacity === 1,
+      xr: renderer.xr.isPresenting,
+    });
   }
 });

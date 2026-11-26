@@ -104,6 +104,14 @@ Redline Shot and Boiler Gamble enter rewards and the Workshop in content version
 | Redline Shot | d6, 4+ succeeds | 18 damage | Gain 3 Overheat | 23 damage |
 | Boiler Gamble | d8, 5+ succeeds | Gain 3 Steam and draw 1 | Gain 2 Vulnerable | Draw 2 on success |
 
+Three more risk cards enter rewards and the Workshop in content version 38. Last Reserve exhausts on every play.
+
+| Card | Steam | Roll | Success | Backfire | Upgrade |
+| --- | --- | --- | --- | --- | --- |
+| Steam Sweep | 2 | d8, 5+ succeeds | Deal 14 damage to all enemies | Gain 2 Rust | 18 damage |
+| Plated Stand | 1 | d6, 4+ succeeds | Gain 8 Block and 1 Plating | Gain 2 Weak | 11 Block and 2 Plating |
+| Last Reserve | 1 | d8, 6+ succeeds | Heal 12 HP | Gain 2 Overheat | Heal 16 HP |
+
 Echo Glyph is the version 30 rare spiral sigil. It costs 2 Steam, or 1 Steam upgraded. Draw a spiral to repeat the last successful sigil at its recorded strength and with its original dice result. Aim Echo at a living enemy if the remembered spell needs a target. Echo keeps the remembered spell available for another copy. A fizzle spends the card and its Steam, and the player needs a successful sigil before they can pick up Echo.
 
 ### Wave C: act 2 (mechanics M4, M11, M12, glyph hourglass)

@@ -23,6 +23,7 @@ import {
   PRISM_ANNEX_VERSION,
   RELIQUARY_VERSION,
   RETURN_PASSAGES_VERSION,
+  RISK_CARD_EXPANSION_VERSION,
   RISK_CARDS_VERSION,
   SHADOW_STENCIL_VERSION,
   SPEAKING_PIPES_VERSION,
@@ -41,6 +42,7 @@ import {
   LEGACY_REWARD_POOL,
   LENS_FOCUS_IDS,
   PERMANENT_CARD_IDS,
+  RISK_CARD_EXPANSION_IDS,
   RISK_CARD_IDS,
   WAVE_A_COMPLETE_IDS,
   WAVE_A_REPAIR_IDS,
@@ -237,6 +239,12 @@ import {
   type WorkshopState,
 } from '../rules/workshop.ts';
 import { matchesReliquaryGlyph } from '../sigil/reliquary-trace.ts';
+import {
+  MAP_MARKER_ICONS,
+  type MapMarker,
+  type MapMarkerFloor,
+  type StoredMapMarker,
+} from './map-markers.ts';
 
 /**
  * Screens of the whole game loop. `title`, `workshop` and `settings` sit between runs; `explore`,
@@ -408,6 +416,11 @@ export type LootStage = 'opened' | 'claimed';
 export type FlowEvent =
   | { readonly type: 'logbook'; readonly clue: LogbookClueId }
   | { readonly type: 'puzzle-discovered'; readonly id: string }
+  | {
+      readonly type: 'map-marker';
+      readonly action: 'add' | 'remove';
+      readonly floor: MapMarkerFloor;
+    }
   | { readonly type: 'phase'; readonly from: FlowPhase; readonly to: FlowPhase }
   | { readonly type: 'floor-travel'; readonly room: number }
   | { readonly type: 'room-entered'; readonly room: number }
@@ -532,6 +545,7 @@ export class RunFlow {
   private readonly mapLifts = new Map<number, MapLiftDiscovery>();
   private readonly floorStates = new Map<number, FloorSnapshot>();
   private puzzleLocations: PuzzleLocation[] = [];
+  private mapMarkersValue: StoredMapMarker[] = [];
   private readonly listeners = new Set<(event: FlowEvent) => void>();
   private readonly opts: FlowOptions;
   private contentVersionValue = ENCOUNTER_CONTENT_VERSION;
@@ -1440,6 +1454,48 @@ export class RunFlow {
     return this.floorStates.get(floor);
   }
 
+  mapMarkersOnFloor(floor: number): readonly MapMarker[] {
+    return this.mapMarkersValue
+      .filter((marker) => marker.floor === floor)
+      .map(({ icon, position }) => ({ icon, position: [position[0], position[1]] }));
+  }
+
+  addMapMarker(floor: number, marker: MapMarker): boolean {
+    if (
+      !this.inRun ||
+      !Number.isInteger(floor) ||
+      ![1, 2, 3].includes(floor) ||
+      !this.hasReachedFloor(floor) ||
+      !MAP_MARKER_ICONS.includes(marker.icon) ||
+      !Array.isArray(marker.position) ||
+      marker.position.length !== 2 ||
+      !marker.position.every((coordinate) => Number.isFinite(coordinate))
+    )
+      return false;
+    const entry: StoredMapMarker = {
+      floor: floor as MapMarkerFloor,
+      icon: marker.icon,
+      position: [marker.position[0], marker.position[1]],
+    };
+    this.mapMarkersValue = [...this.mapMarkersValue, entry];
+    this.emit({ type: 'map-marker', action: 'add', floor: entry.floor });
+    return true;
+  }
+
+  removeMapMarker(floor: number, index: number): boolean {
+    if (!this.inRun || !Number.isInteger(floor) || !this.hasReachedFloor(floor)) return false;
+    const matches = this.mapMarkersValue
+      .map((marker, markerIndex) => ({ marker, markerIndex }))
+      .filter(({ marker }) => marker.floor === floor);
+    const selected = matches[index];
+    if (!selected) return false;
+    this.mapMarkersValue = this.mapMarkersValue.filter(
+      (_marker, markerIndex) => markerIndex !== selected.markerIndex,
+    );
+    this.emit({ type: 'map-marker', action: 'remove', floor: floor as MapMarkerFloor });
+    return true;
+  }
+
   /** Records an explicit fixture interaction for the floor maps. */
   discoverPuzzle(id: string, room: number): void {
     if (!this.inRun || !id || !Number.isInteger(room) || room < 0) return;
@@ -1651,6 +1707,7 @@ export class RunFlow {
     this.floorNumberValue = 1;
     this.mapLifts.clear();
     this.floorStates.clear();
+    this.mapMarkersValue = [];
     return this.go('explore');
   }
 
@@ -1682,6 +1739,11 @@ export class RunFlow {
     this.resetRunBookkeeping(snapshot.roomIndex, cleared);
     for (const room of snapshot.reachedRooms ?? []) this.reached.add(room);
     this.puzzleLocations = [...(snapshot.puzzleLocations ?? [])];
+    this.mapMarkersValue = (snapshot.mapMarkers ?? []).map(({ floor, icon, position }) => ({
+      floor,
+      icon,
+      position: [position[0], position[1]],
+    }));
     this.offerValue = snapshot.phase === 'reward' ? snapshot.pendingReward : null;
     this.guardianDefeatedValue =
       snapshot.guardianDefeated === true ||
@@ -1944,6 +2006,7 @@ export class RunFlow {
         puzzleLocations: this.puzzleLocations,
         ...(this.mapLifts.size ? { mapLifts: [...this.mapLifts.values()] } : {}),
         floors: [...this.floorStates.values()],
+        ...(this.mapMarkersValue.length ? { mapMarkers: this.mapMarkersValue } : {}),
       },
       now,
     );
@@ -1964,6 +2027,7 @@ export class RunFlow {
     const lensFocus = this.contentVersionValue >= LENS_FOCUS_VERSION;
     const fieldDressing = this.contentVersionValue >= FIELD_DRESSING_VERSION;
     const riskCards = this.contentVersionValue >= RISK_CARDS_VERSION;
+    const expandedRiskCards = this.contentVersionValue >= RISK_CARD_EXPANSION_VERSION;
     const overdrive = this.contentVersionValue >= OVERDRIVE_CONTENT_VERSION;
     const charge = this.contentVersionValue >= CHARGE_CONTENT_VERSION;
     const complete = this.contentVersionValue >= WAVE_A_COMPLETE_VERSION;
@@ -1981,6 +2045,7 @@ export class RunFlow {
         (lensFocus || !LENS_FOCUS_IDS.has(id)) &&
         (fieldDressing || id !== FIELD_DRESSING_ID) &&
         (riskCards || !RISK_CARD_IDS.has(id)) &&
+        (expandedRiskCards || !RISK_CARD_EXPANSION_IDS.has(id)) &&
         (complete || !WAVE_A_COMPLETE_IDS.has(id)) &&
         (repairs || !WAVE_A_REPAIR_IDS.has(id)) &&
         (dungeon || !DUNGEON_REWARD_IDS.has(id)),
@@ -2029,6 +2094,7 @@ export class RunFlow {
     this.clearedRooms.push(...cleared);
     this.reached.clear();
     this.puzzleLocations = [];
+    this.mapMarkersValue = [];
     for (const r of [...cleared, room]) this.reached.add(r);
     this.roomValue = room;
   }
@@ -2060,6 +2126,10 @@ export class RunFlow {
       darkCircuit: this.floorNumberValue === 2 ? run.darkCircuit : undefined,
       drumGallery: this.floorNumberValue === 3 ? run.drumGallery : undefined,
     };
+  }
+
+  private hasReachedFloor(floor: number): boolean {
+    return floor === this.floorNumberValue || this.floorStates.has(floor);
   }
 
   private restoreFloor(floor: FloorSnapshot, destinationRoom: number): void {

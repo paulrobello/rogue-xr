@@ -46,5 +46,10 @@
     "loop_start_s": 15.635,
     "loop_end_s": 69.625,
     "crossfade_s": 1.25
+  },
+  "astral-lift": {
+    "loop_start_s": 0.0,
+    "loop_end_s": 20.2,
+    "crossfade_s": 1.0
   }
 }

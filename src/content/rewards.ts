@@ -37,7 +37,19 @@ export const LENS_FOCUS_IDS: ReadonlySet<string> = new Set(['lens-focus']);
 export const FIELD_DRESSING_ID = 'field-dressing';
 
 /** Risk cards available from reward content version 37 onward. */
-export const RISK_CARD_IDS: ReadonlySet<string> = new Set(['redline-shot', 'boiler-gamble']);
+export const RISK_CARD_IDS: ReadonlySet<string> = new Set([
+  'redline-shot',
+  'boiler-gamble',
+  'steam-sweep',
+  'plated-stand',
+  'last-reserve',
+]);
+/** Risk cards added in reward content version 38. */
+export const RISK_CARD_EXPANSION_IDS: ReadonlySet<string> = new Set([
+  'steam-sweep',
+  'plated-stand',
+  'last-reserve',
+]);
 
 /** Starter-only basics are never offered as rewards. */
 const BASICS: ReadonlySet<string> = new Set(['strike', 'defend']);

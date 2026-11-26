@@ -178,6 +178,7 @@ export const MUSIC = {
   'guardian-1': music('guardian-1', true, { cue: 'combat', gain: 1 }),
   'guardian-2': music('guardian-2', true, { cue: 'guardian-1', gain: 1 }),
   victory: music('victory', false),
+  'astral-lift': music('astral-lift', true, { cue: 'explore', gain: 0.6 }),
 } as const satisfies Record<string, MusicDef>;
 
 export type MusicId = keyof typeof MUSIC;
@@ -234,6 +235,7 @@ export const MUSIC_PRELOAD: Readonly<Record<MusicId, readonly MusicId[]>> = {
   elite: ['reward'],
   defeat: ['title'],
   workshop: ['explore'],
+  'astral-lift': ['explore'],
   'guardian-1': ['guardian-2'],
   'guardian-2': ['victory'],
   victory: ['title'],
@@ -263,6 +265,7 @@ export function musicKeepSet(
 export type AudioState =
   | 'title'
   | 'workshop'
+  | 'lift'
   | 'explore'
   | 'rest'
   | 'encounter-unfolding'
@@ -301,6 +304,7 @@ export type MusicDirective =
 const MUSIC_BY_STATE: Readonly<Record<AudioState, MusicDirective>> = {
   title: { kind: 'play', cue: 'title', gain: 1, fadeSeconds: 2.5 },
   workshop: { kind: 'play', cue: 'workshop', gain: 1, fadeSeconds: 2.0 },
+  lift: { kind: 'play', cue: 'astral-lift', gain: 0.42, fadeSeconds: 0.35 },
   explore: { kind: 'play', cue: 'explore', gain: 1, fadeSeconds: 3.0 },
   rest: { kind: 'play', cue: 'rest', gain: 1, fadeSeconds: 3.0 },
   // The table unfolds in 0.6 s, so fight music comes in fast.

@@ -2489,6 +2489,141 @@
           "size": 1.05
         }
       }
+    },
+    "steam-sweep": {
+      "type": "attack",
+      "frame": "attack",
+      "glow": "#ff6a2a",
+      "layers": {
+        "back": {
+          "page": 4,
+          "rect": [1040, 1040, 480, 480],
+          "uv": [0.507812, 0.257812, 0.742188, 0.492188],
+          "source": "assets-source/cards/defend/defend-back.png"
+        },
+        "mid": {
+          "page": 4,
+          "rect": [1552, 1040, 480, 480],
+          "uv": [0.757812, 0.257812, 0.992188, 0.492188],
+          "source": "assets-source/cards/defend/defend-mid-r1.cutout.png"
+        },
+        "front": {
+          "page": 5,
+          "rect": [1552, 528, 480, 480],
+          "uv": [0.757812, 0.507812, 0.992188, 0.742188],
+          "source": "assets-source/cards/field-wave/field-wave.png"
+        }
+      },
+      "stack": {
+        "back": {
+          "depth": 0.03,
+          "size": 2.6,
+          "opaque": true
+        },
+        "mid": {
+          "depth": 0.016,
+          "size": 0.95
+        },
+        "glow": {
+          "depth": 0.007,
+          "size": 0.7,
+          "additive": true
+        },
+        "front": {
+          "depth": 0.005,
+          "size": 1.05
+        }
+      }
+    },
+    "plated-stand": {
+      "type": "skill",
+      "frame": "skill",
+      "glow": "#3fe08a",
+      "layers": {
+        "back": {
+          "page": 4,
+          "rect": [1040, 1040, 480, 480],
+          "uv": [0.507812, 0.257812, 0.742188, 0.492188],
+          "source": "assets-source/cards/defend/defend-back.png"
+        },
+        "mid": {
+          "page": 4,
+          "rect": [1552, 1040, 480, 480],
+          "uv": [0.757812, 0.257812, 0.992188, 0.492188],
+          "source": "assets-source/cards/defend/defend-mid-r1.cutout.png"
+        },
+        "front": {
+          "page": 3,
+          "rect": [1552, 1552, 480, 480],
+          "uv": [0.757812, 0.007812, 0.992188, 0.242188],
+          "source": "assets-source/cards/field-wave/field-wave.png"
+        }
+      },
+      "stack": {
+        "back": {
+          "depth": 0.03,
+          "size": 2.6,
+          "opaque": true
+        },
+        "mid": {
+          "depth": 0.016,
+          "size": 0.95
+        },
+        "glow": {
+          "depth": 0.007,
+          "size": 0.7,
+          "additive": true
+        },
+        "front": {
+          "depth": 0.005,
+          "size": 1.05
+        }
+      }
+    },
+    "last-reserve": {
+      "type": "skill",
+      "frame": "skill",
+      "glow": "#80cfa5",
+      "layers": {
+        "back": {
+          "page": 4,
+          "rect": [1040, 1040, 480, 480],
+          "uv": [0.507812, 0.257812, 0.742188, 0.492188],
+          "source": "assets-source/cards/defend/defend-back.png"
+        },
+        "mid": {
+          "page": 4,
+          "rect": [1552, 1040, 480, 480],
+          "uv": [0.757812, 0.257812, 0.992188, 0.492188],
+          "source": "assets-source/cards/defend/defend-mid-r1.cutout.png"
+        },
+        "front": {
+          "page": 4,
+          "rect": [1552, 1552, 480, 480],
+          "uv": [0.757812, 0.007812, 0.992188, 0.242188],
+          "source": "assets-source/cards/repair-wave/repair-wave.png"
+        }
+      },
+      "stack": {
+        "back": {
+          "depth": 0.03,
+          "size": 2.6,
+          "opaque": true
+        },
+        "mid": {
+          "depth": 0.016,
+          "size": 0.95
+        },
+        "glow": {
+          "depth": 0.007,
+          "size": 0.7,
+          "additive": true
+        },
+        "front": {
+          "depth": 0.005,
+          "size": 1.05
+        }
+      }
     }
   }
 }

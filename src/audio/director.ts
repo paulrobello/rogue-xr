@@ -222,6 +222,7 @@ export class AudioDirector {
   /** The cue the current state asks for, before falling back to what loaded. */
   private musicWant: { cue: MusicId; gain: number; fade: number } | null = null;
   private guardianPhase: GuardianPhase = 1;
+  private liftMusicNearby = false;
   private sfxVolume = 1;
   private musicVolume = 1;
   private disposed = false;
@@ -345,6 +346,20 @@ export class AudioDirector {
       );
     }
     return { loaded, missing };
+  }
+
+  /** Holds the decoded lift cue while the lift is in reach. */
+  preloadLiftMusic(nearby: boolean): void {
+    if (this.disposed || this.liftMusicNearby === nearby) return;
+    this.liftMusicNearby = nearby;
+    if (
+      nearby &&
+      !this.musicBuffers.has('astral-lift') &&
+      !this.musicPending.has('astral-lift') &&
+      !this.musicMissing.has('astral-lift')
+    ) {
+      this.fetchMusic('astral-lift');
+    } else if (!nearby) this.pumpMusic();
   }
 
   /** Moves the music bus to the cue for `state` and plays that state's stinger. Idempotent per state. */
@@ -663,6 +678,7 @@ export class AudioDirector {
       if (cue) playing.push(cue);
     }
     const keep = musicKeepSet(want?.cue ?? null, (id) => this.musicMissing.has(id), playing);
+    if (this.liftMusicNearby) keep.add('astral-lift');
     for (const cue of [...this.musicBuffers.keys()]) {
       if (!keep.has(cue)) this.musicBuffers.delete(cue);
     }

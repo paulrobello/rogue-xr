@@ -66,7 +66,9 @@ export const THEMED_FURNISHINGS_VERSION = 34;
 /** Field Dressing reward content. Earlier snapshots keep their reward pools. */
 export const FIELD_DRESSING_VERSION = 36;
 export const RISK_CARDS_VERSION = 37;
-export const ENCOUNTER_CONTENT_VERSION = RISK_CARDS_VERSION;
+/** Additional risk/reward cards. Earlier snapshots retain the original risk-card pool. */
+export const RISK_CARD_EXPANSION_VERSION = 38;
+export const ENCOUNTER_CONTENT_VERSION = RISK_CARD_EXPANSION_VERSION;
 const LEGACY_ENCOUNTER_IDS = new Set([
   'sentry',
   'hound',

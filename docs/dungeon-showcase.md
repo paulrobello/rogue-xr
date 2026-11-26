@@ -11,6 +11,7 @@ This is a playable combat and puzzle route. Room numbers are visible from the ra
 | 2 | 0 → 14 | Spring Tension workshop and its gated recess in room 15. |
 | 2 | 0 → 1 → 2 → 3 → 4 | Bellows Golem in 2, Mortar Scarab in 3, and Lantern Bailiff in 4. Room 3 shows the recessed stone niche. Both stone halls show the masonry bays, arched thresholds, covered ceiling, and dressing. |
 | 2 | 4 → 5 → 6 → 7 → 13 or 16 | Room 13 has the winding control and Waking Armor challenge. Room 16 is Dark Circuit, with its gated recess in room 17. Room 7 has Orrery Warden. |
+| 2 | 15 or 17 | The Spring Tension and Dark Circuit recesses show the floor-standing stone reliquary and iron strongbox. |
 | 3 | 0 → 2 | Trellis Keeper. The Looking-glass archive is through the puzzle door to room 6. |
 | 3 | 0 → 9 or 0 → 1 → 3 → 4 → 11 | Borrowed Light and Drum Gallery remain available for comparison. The stone skylight uses the same modular kit. |
 

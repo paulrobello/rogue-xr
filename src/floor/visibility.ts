@@ -1,5 +1,7 @@
 import type { FloorPlan } from './generate.ts';
 
+export const CONSERVATORY_SHELL_DEPTH = 1;
+
 /** Rooms joined to `room` by a door. */
 export function neighbours(plan: FloorPlan, room: number): number[] {
   const out: number[] = [];

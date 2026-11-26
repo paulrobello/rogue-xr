@@ -6,6 +6,49 @@ export const LASER_IDLE_LENGTH = 1.5;
 const RADIUS = 0.0018;
 const TIP_RADIUS = 0.006;
 
+/** Ray intersections for visible UI surfaces, including book paper with no click target. */
+export function createLaserSurfacePicker() {
+  const raycaster = new THREE.Raycaster(undefined, undefined, 0.001, 6);
+  const meshes: THREE.Mesh[] = [];
+  const hits: THREE.Intersection<THREE.Mesh>[] = [];
+  const rendered = (material: THREE.Material): boolean =>
+    material.visible && material.colorWrite && material.opacity > 0;
+
+  return {
+    setRoot(root: THREE.Object3D): void {
+      meshes.length = 0;
+      root.updateWorldMatrix(true, true);
+      root.traverseVisible((object) => {
+        if (!(object instanceof THREE.Mesh)) return;
+        const materials = object.material;
+        if (Array.isArray(materials) ? materials.some(rendered) : rendered(materials))
+          meshes.push(object);
+      });
+    },
+    distanceFrom(ray: THREE.Object3D): number | null {
+      ray.updateWorldMatrix(true, false);
+      raycaster.ray.origin.setFromMatrixPosition(ray.matrixWorld);
+      raycaster.ray.direction.set(0, 0, -1).transformDirection(ray.matrixWorld);
+      hits.length = 0;
+      // Menu plates disable interaction raycasts even though their geometry stops the beam.
+      for (const mesh of meshes) {
+        if (!mesh.layers.test(raycaster.layers)) continue;
+        if (mesh.constructor === THREE.Mesh)
+          THREE.Mesh.prototype.raycast.call(mesh, raycaster, hits);
+        else mesh.raycast(raycaster, hits);
+      }
+      let nearest = Infinity;
+      for (const { object, face, distance } of hits) {
+        const material = Array.isArray(object.material)
+          ? object.material[face?.materialIndex ?? 0]
+          : object.material;
+        if (material && rendered(material)) nearest = Math.min(nearest, distance);
+      }
+      return Number.isFinite(nearest) ? nearest : null;
+    },
+  };
+}
+
 export interface Laser {
   readonly beam: THREE.Mesh;
   readonly tip: THREE.Mesh;

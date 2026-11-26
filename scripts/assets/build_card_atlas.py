@@ -1081,11 +1081,16 @@ def add_risk_card_art(index: dict) -> None:
     for card_id, subject_id, backdrop_id in [
         ("redline-shot", "overdrive-piston", "lucky-strike"),
         ("boiler-gamble", "flash-boiler", "spare-parts"),
+        ("steam-sweep", "gear-grinder", "rivet-plate"),
+        ("plated-stand", "pendulum-ward", "counterweight"),
+        ("last-reserve", "field-dressing", "patch-kit"),
     ]:
         subject = cards[subject_id]
         backdrop = cards[backdrop_id]
         cards[card_id] = {
             **subject,
+            "type": "skill" if card_id in {"boiler-gamble", "plated-stand", "last-reserve"} else "attack",
+            "frame": "skill" if card_id in {"boiler-gamble", "plated-stand", "last-reserve"} else "attack",
             "layers": {**backdrop["layers"], "front": subject["layers"]["front"]},
         }
 
@@ -1104,6 +1109,7 @@ def main() -> None:
     ap.add_argument("--crystal-wave-only", action="store_true", help="extend the checked-in atlas using the Crystal Gambit sheet")
     ap.add_argument("--echo-wave-only", action="store_true", help="pack Echo Glyph into the reserved frame-page gap")
     ap.add_argument("--lens-wave-only", action="store_true", help="pack Lens Focus into the second reserved frame-page gap")
+    ap.add_argument("--risk-only", action="store_true", help="register risk-card compositions using existing atlas layers")
     args = ap.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
 
@@ -1157,6 +1163,11 @@ def main() -> None:
     if args.lens_wave_only:
         index = json.loads(manifest.read_text())
         add_lens_wave(index, args.ktx, args.skip_ktx)
+        manifest.write_text(dumps(index) + "\n")
+        return
+    if args.risk_only:
+        index = json.loads(manifest.read_text())
+        add_risk_card_art(index)
         manifest.write_text(dumps(index) + "\n")
         return
 

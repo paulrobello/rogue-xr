@@ -218,6 +218,26 @@
         "frames": 2860800,
         "durationSeconds": 59.6
       }
+    },
+    {
+      "cue": "astral-lift",
+      "receivedFilename": "Astral Lift.wav",
+      "originalProviderFilename": null,
+      "sourceFile": "assets-source/audio/music/astral-lift.wav",
+      "sha256": "4590d6fd54f1019bccc69813b38949d5518a7612e862d60bdb6e952c65b30890",
+      "bytes": 4084218,
+      "sunoSongId": "fd2710ad-484c-4b97-8eb8-50e20c2226ca",
+      "sunoCreatedAt": "2026-11-25T23:10:23Z",
+      "model": null,
+      "providerComment": "made with suno; created=2026-11-25T23:10:23Z; id=fd2710ad-484c-4b97-8eb8-50e20c2226ca",
+      "audio": {
+        "channels": 2,
+        "sampleRate": 48000,
+        "bitsPerSample": 16,
+        "frames": 1017600,
+        "durationSeconds": 21.2
+      },
+      "approval": "Owner approved the Astral Lift runtime cue in Quest 3 gameplay on November 25, 2026. See owner-review.json for the approved SHA-256. Suno model and generation plan were not supplied."
     }
   ]
 }

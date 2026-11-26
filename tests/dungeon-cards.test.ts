@@ -6,6 +6,24 @@ import { RunFlow } from '../src/flow/flow.ts';
 import { createWorkshop } from '../src/rules/workshop.ts';
 
 describe('Wave A dungeon cards', () => {
+  it('publishes the three expanded risk cards with their upgrades', () => {
+    expect(getCard('steam-sweep')).toMatchObject({
+      id: 'steam-sweep',
+      cost: 2,
+      dice: 'glass-d8',
+      description: 'Roll a d8. On 5+, deal 14 damage to all enemies. Otherwise gain 2 Rust.',
+    });
+    expect(getCard('steam-sweep+').description).toContain('18 damage');
+    expect(getCard('plated-stand')).toMatchObject({
+      id: 'plated-stand',
+      cost: 1,
+      dice: 'brass-d6',
+    });
+    expect(getCard('plated-stand+').description).toContain('11 Block and Gain 2 Plating');
+    expect(getCard('last-reserve')).toMatchObject({ id: 'last-reserve', cost: 1, exhaust: true });
+    expect(getCard('last-reserve+').description).toContain('16 HP');
+  });
+
   it('publishes the three first dungeon-era cards with their upgrades', () => {
     expect(getCard('torque-wrench')).toMatchObject({
       id: 'torque-wrench',

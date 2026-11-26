@@ -60,7 +60,7 @@ import { CARD_FLIGHT_SECONDS, flightGoal, flightPose, flightScale } from './card
 import { dressClockworkDial } from './clockwork-dial.ts';
 import { DECK_SORTS, type DeckSort, deckStacks } from './deck-view.ts';
 import type { FlowPhase, RunFlow } from './flow.ts';
-import { type BookPagePainter, Logbook, puzzlePage } from './logbook.ts';
+import { type BookPagePainter, createLogbookHandSwipes, Logbook, puzzlePage } from './logbook.ts';
 import type { LogbookMap, MapPoint, MapView } from './logbook-map.ts';
 import { type ActivePuzzlePageDeps, activePuzzlePages } from './logbook-puzzles.ts';
 import { runCardPages, runStatsPages } from './logbook-run-pages.ts';
@@ -176,6 +176,7 @@ const ROW = 0.07;
 const BOARD_WIDTH = 0.66;
 const BOARD_PAD = 0.045;
 const BOARD_DISTANCE = 1.25;
+const TRACKED_HAND_DISTANCE = 0.54;
 const ART_DISTANCE = 2.7;
 /** The deck viewer: cards per row and rows per page, card width and the gap between cards, metres. */
 const DECK_COLUMNS = 4;
@@ -425,12 +426,14 @@ export class FlowUi {
   private logbook: Logbook | null = null;
   private logbookStart = 0;
   private logbookCard: string | null = null;
-  private logbookCardPage = 0;
   private logbookCardFace: RewardCardFaces | null = null;
   private bookSection: 'clues' | 'map' | 'puzzles' | 'cards' | 'stats' = 'clues';
   private readonly logbookMapViews = new Map<number, MapView>();
+  private readonly logbookPages = new Map<typeof this.bookSection, number>();
+  private logbookHandSwipe = createLogbookHandSwipes();
   private showMapFinds = true;
   private menuHead: THREE.Object3D | null = null;
+  private handTracking = false;
   private radialMenu: RadialMenu<RunMenuAction> | null = null;
   private releaseDial: (() => void) | null = null;
   private flight: RewardFlight | null = null;
@@ -619,9 +622,13 @@ export class FlowUi {
 
   /** Opens the in-run logbook directly on its map, for the left controller's X button. */
   openMap(head: THREE.Object3D): boolean {
-    if (this.menu === 'logbook' && this.bookSection === 'map') return true;
+    const section = this.defaultBookSection();
+    if (this.menu === 'logbook' && this.logbook) {
+      this.selectBookSection(section);
+      return true;
+    }
     if (!this.menuOpen && !this.openMenu(head)) return false;
-    this.openLogbook(undefined, 'map');
+    this.openLogbook(undefined, section);
     return true;
   }
 
@@ -733,7 +740,7 @@ export class FlowUi {
     const book = this.logbook;
     const card = book?.cardFor(controlId);
     if (book && card) {
-      this.logbookCardPage = book.page;
+      this.logbookPages.set(this.bookSection, book.page);
       this.logbookCard = card;
       this.refresh();
       return true;
@@ -906,6 +913,14 @@ export class FlowUi {
     if (this.root.visible) this.place(head);
   }
 
+  /** Keeps boards and the logbook within tracked-hand reach while preserving their angular size. */
+  setHandTracking(active: boolean, head: THREE.Object3D): void {
+    if (this.handTracking === active) return;
+    this.handTracking = active;
+    this.menuHead = head;
+    if (this.root.visible) this.place(head, this.menu !== 'closed');
+  }
+
   /** Rebuilds the current phase's boards in place (after a purchase or a settings change). */
   refresh(): void {
     const { position, quaternion } = this.root;
@@ -941,6 +956,7 @@ export class FlowUi {
     const pitch = tilt ? Math.asin(Math.max(-1, Math.min(1, forward.y))) : 0;
     this.root.position.set(eye.x, eye.y, eye.z);
     this.root.rotation.set(pitch, yaw, 0, 'YXZ');
+    this.root.scale.setScalar(this.handTracking ? TRACKED_HAND_DISTANCE / BOARD_DISTANCE : 1);
   }
 
   private clear(): void {
@@ -1885,14 +1901,12 @@ export class FlowUi {
     this.setMenu('items');
   }
 
-  private openLogbook(
-    clueId?: LogbookEntry['id'],
-    section: typeof this.bookSection = 'clues',
-  ): void {
-    this.bookSection = section;
+  private openLogbook(clueId?: LogbookEntry['id'], section?: typeof this.bookSection): void {
+    this.bookSection = section ?? (clueId ? 'clues' : this.defaultBookSection());
     this.logbookCard = null;
-    this.logbookCardPage = 0;
     this.logbookMapViews.clear();
+    this.logbookPages.clear();
+    this.logbookHandSwipe = createLogbookHandSwipes();
     this.logbookStart = clueId
       ? Math.max(
           0,
@@ -1906,12 +1920,58 @@ export class FlowUi {
 
   private turnLogbook(offset: -1 | 1): void {
     const book = this.logbook;
-    if (book?.turn(offset, this.deps.reducedMotion ?? false))
-      this.deps.onNoteOpened?.(book.root.getWorldPosition(new THREE.Vector3()));
+    if (book?.turn(offset, this.deps.reducedMotion ?? false)) {
+      this.logbookPages.set(
+        this.bookSection,
+        book.page + (this.deps.reducedMotion ? 0 : offset * 2),
+      );
+      return;
+    }
+    if (!book) return;
+    this.crossLogbookBoundary(book);
+  }
+
+  private crossLogbookBoundary(book: Logbook): boolean {
+    const offset = book.takeBoundary();
+    if (offset === null || book.turning) return false;
+    this.logbookPages.set(this.bookSection, book.page);
+    const sections = this.availableBookSections();
+    const current = sections.indexOf(this.bookSection);
+    const next = sections[current + offset];
+    if (!next) return false;
+    this.bookSection = next;
+    const pageCount = this.bookPageCount(next);
+    this.logbookPages.set(next, offset > 0 ? 0 : Math.max(0, pageCount - 1));
+    this.animateBookSection(offset);
+    return true;
+  }
+
+  tapLogbookEdge(ray: THREE.Ray): boolean {
+    if (this.menu !== 'logbook') return false;
+    const book = this.logbook;
+    if (!book) return false;
+    const result = book.tapEdge(ray, this.deps.reducedMotion ?? false);
+    return this.crossLogbookBoundary(book) || result;
+  }
+
+  sampleLogbookHand(side: 'left' | 'right', point: THREE.Vector3 | null): boolean {
+    if (this.menu !== 'logbook') return false;
+    const book = this.logbook;
+    if (!book) return false;
+    const result = book.sampleHand(side, point, this.deps.reducedMotion ?? false);
+    return this.crossLogbookBoundary(book) || result;
   }
 
   logbookMapPoint(ray: THREE.Ray, inside = true): MapPoint | null {
     return this.logbook?.mapPoint(ray, inside) ?? null;
+  }
+
+  selectLogbookMarkerTool(ray: THREE.Ray): boolean {
+    return this.logbook?.selectMarkerTool(ray) ?? false;
+  }
+
+  applyLogbookMarker(ray: THREE.Ray): boolean {
+    return this.logbook?.applyMapMarker(ray) ?? false;
   }
 
   adjustLogbookMap(dx: number, dy: number, multiplier = 1, anchor?: MapPoint): void {
@@ -1928,16 +1988,30 @@ export class FlowUi {
   }
 
   private selectBookSection(section: typeof this.bookSection): void {
-    if (this.bookSection === section) return;
+    if (this.bookSection === section || this.logbook?.turning) return;
+    const sections = this.availableBookSections();
+    const offset = sections.indexOf(section) > sections.indexOf(this.bookSection) ? 1 : -1;
+    if (this.logbook) this.logbookPages.set(this.bookSection, this.logbook.page);
     this.bookSection = section;
+    this.logbookHandSwipe = createLogbookHandSwipes();
+    this.animateBookSection(offset);
+  }
+
+  private animateBookSection(offset: -1 | 1): void {
+    const outgoing = this.deps.reducedMotion ? null : this.logbook?.spreadTextures();
     this.refresh();
+    if (outgoing) this.logbook?.animateBoundary(offset, outgoing);
     if (this.logbook)
       this.deps.onNoteOpened?.(this.logbook.root.getWorldPosition(new THREE.Vector3()));
   }
 
-  private bookPages(): readonly BookPagePainter[] | undefined {
+  private defaultBookSection(): 'map' | 'clues' {
+    return this.deps.logbookMaps?.().length ? 'map' : 'clues';
+  }
+
+  private bookPages(section = this.bookSection): readonly BookPagePainter[] | undefined {
     const flow = this.deps.flow;
-    switch (this.bookSection) {
+    switch (section) {
       case 'cards':
         return runCardPages(flow);
       case 'stats':
@@ -1956,6 +2030,18 @@ export class FlowUi {
       default:
         return undefined;
     }
+  }
+
+  private availableBookSections(): (typeof this.bookSection)[] {
+    return this.defaultBookSection() === 'map'
+      ? ['map', 'clues', 'puzzles', 'cards', 'stats']
+      : ['clues', 'puzzles', 'cards', 'stats'];
+  }
+
+  private bookPageCount(section: typeof this.bookSection): number {
+    if (section === 'clues') return this.deps.flow.logbookEntries.length;
+    if (section === 'map') return (this.deps.logbookMaps?.() ?? []).length * 2;
+    return this.bookPages(section)?.length ?? 0;
   }
 
   private buildLogbook(): void {
@@ -1988,34 +2074,24 @@ export class FlowUi {
       return;
     }
     const sections = [
-      { id: 'clues', label: 'Clues' },
       { id: 'map', label: 'Map' },
+      { id: 'clues', label: 'Clues' },
       { id: 'puzzles', label: 'Puzzles' },
       { id: 'cards', label: 'Cards' },
       { id: 'stats', label: 'Stats' },
     ] as const;
+    const availableMaps = this.deps.logbookMaps?.();
     const tabs: MenuCell[] = sections
-      .filter(({ id }) => id !== 'map' || this.deps.logbookMaps)
+      .filter(({ id }) => id !== 'map' || Boolean(availableMaps?.length))
       .map(({ id, label }) => ({ id, label, onSelect: () => this.selectBookSection(id) }));
     tabs.push({ id: 'close', label: 'Close book', onSelect: () => this.closeMenu() });
-    const maps = this.bookSection === 'map' ? this.deps.logbookMaps?.() : undefined;
+    const maps = this.bookSection === 'map' ? availableMaps : undefined;
     const pages = this.bookPages();
     const entries = this.bookSection === 'clues' ? this.deps.flow.logbookEntries : [];
-    const hasTurns = maps ? maps.length > 1 : (pages?.length ?? entries.length) > 2;
-    const controls: MenuCell[] = [];
-    if (hasTurns)
-      controls.push(
-        {
-          id: 'previous',
-          label: maps ? 'Lower floor' : 'Back a page',
-          onSelect: () => this.turnLogbook(-1),
-        },
-        {
-          id: 'next',
-          label: maps ? 'Higher floor' : 'Next page',
-          onSelect: () => this.turnLogbook(1),
-        },
-      );
+    const controls: MenuCell[] = [
+      { id: 'previous', label: 'Back a page', onSelect: () => this.turnLogbook(-1) },
+      { id: 'next', label: 'Next page', onSelect: () => this.turnLogbook(1) },
+    ];
     if (maps)
       controls.push(
         {
@@ -2032,24 +2108,29 @@ export class FlowUi {
       );
     const board = this.board(
       'menu-logbook',
-      controls.length ? [tabs, controls] : [tabs],
+      [tabs, controls],
       { x: 0, y: -0.36, z: -BOARD_DISTANCE },
       { width: 1.13, selected: [this.bookSection] },
     );
     const activeMap = maps?.findIndex(({ floor }) => floor === this.deps.flow.floorNumber) ?? 0;
-    const openedAt = maps
-      ? 2 * Math.max(0, activeMap)
-      : this.bookSection === 'clues'
-        ? this.logbookStart
-        : this.bookSection === 'cards'
-          ? this.logbookCardPage
-          : 0;
+    const openedAt =
+      this.logbookPages.get(this.bookSection) ??
+      (maps ? 2 * Math.max(0, activeMap) : this.bookSection === 'clues' ? this.logbookStart : 0);
     this.logbook = new Logbook(entries, this.deps.flow.run?.seed ?? '', openedAt, {
       maps,
       pages,
       mapViews: this.logbookMapViews,
       showFinds: this.showMapFinds,
       mapHeading: this.deps.logbookHeading,
+      handSwipe: this.logbookHandSwipe,
+      onTurn: (root) => this.deps.onNoteOpened?.(root.getWorldPosition(new THREE.Vector3())),
+      mapMarkers: maps
+        ? {
+            read: (floor) => this.deps.flow.mapMarkersOnFloor(floor),
+            add: (floor, marker) => this.deps.flow.addMapMarker(floor, marker),
+            remove: (floor, index) => this.deps.flow.removeMapMarker(floor, index),
+          }
+        : undefined,
     });
     this.logbook.root.userData.section = this.bookSection;
     this.logbook.root.position.y = 0.406;

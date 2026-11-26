@@ -8,6 +8,7 @@ import {
   LENS_FOCUS_VERSION,
   MECHANISM_CONTENT_VERSION,
   OVERDRIVE_CONTENT_VERSION,
+  RISK_CARD_EXPANSION_VERSION,
   RISK_CARDS_VERSION,
   WAVE_A_COMPLETE_VERSION,
   WAVE_A_REPAIR_VERSION,
@@ -43,6 +44,7 @@ const options = {
   rewardPool: REWARD_POOL,
 };
 const beforeRiskCards = REWARD_POOL.filter((id) => !RISK_CARD_IDS.has(id));
+const beforeRiskExpansion = beforeRiskCards.concat(['redline-shot', 'boiler-gamble']);
 const beforeFieldDressing = beforeRiskCards.filter((id) => id !== FIELD_DRESSING_ID);
 const beforeLensFocus = beforeFieldDressing.filter((id) => !LENS_FOCUS_IDS.has(id));
 const beforeEcho = beforeLensFocus.filter((id) => !ECHO_GLYPH_IDS.has(id));
@@ -112,7 +114,8 @@ describe('Combat card availability by content version', () => {
     [LENS_FOCUS_VERSION, beforeFieldDressing],
     [FIELD_DRESSING_VERSION - 1, beforeFieldDressing],
     [FIELD_DRESSING_VERSION, beforeRiskCards],
-    [RISK_CARDS_VERSION, REWARD_POOL],
+    [RISK_CARDS_VERSION, beforeRiskExpansion],
+    [RISK_CARD_EXPANSION_VERSION, REWARD_POOL],
   ])('replays the exact combat reward order for content version %i', (version, eligible) => {
     for (let i = 0; i < 24; i++) {
       const fresh = new RunFlow(options);

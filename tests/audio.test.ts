@@ -197,6 +197,7 @@ describe('state to music cue mapping', () => {
     const states: AudioState[] = [
       'title',
       'workshop',
+      'lift',
       'explore',
       'rest',
       'encounter-unfolding',
@@ -887,6 +888,7 @@ describe('music on demand', () => {
   const WALK: readonly AudioState[] = [
     'title',
     'workshop',
+    'lift',
     'explore',
     'rest',
     'encounter-unfolding',
@@ -935,6 +937,22 @@ describe('music on demand', () => {
     h.director.setState('explore');
     expect(musicRequests(h).sort()).toEqual(['music/combat', 'music/explore']);
     expect([...h.director.decodedMusic].sort()).toEqual(['combat', 'explore']);
+  });
+
+  it('preloads the astral lift cue without changing the current state', async () => {
+    const h = harness([], 8, { deferred: true });
+    h.director.setState('explore');
+    h.settle('music/explore');
+    h.settle('music/combat');
+    h.director.preloadLiftMusic(true);
+    h.director.preloadLiftMusic(true);
+    h.settle('music/astral-lift');
+    h.director.update(4);
+    expect(musicRequests(h).filter((cue) => cue === 'music/astral-lift')).toHaveLength(1);
+    expect(h.director.decodedMusic).toContain('astral-lift');
+    expect(h.director.state).toBe('explore');
+    h.director.preloadLiftMusic(false);
+    expect(h.director.decodedMusic).not.toContain('astral-lift');
   });
 
   it('holds only the playing cue, its fallback chain and one preload through every state', async () => {

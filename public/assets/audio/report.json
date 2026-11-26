@@ -1,6 +1,6 @@
 {
   "tools": {
-    "ffmpeg": "ffmpeg version 9.0.2 Copyright (c) 2000-2026 the FFmpeg developers",
+    "ffmpeg": "ffmpeg version 9.1 Copyright (c) 2000-2026 the FFmpeg developers",
     "libopus_encoder": true,
     "numpy": "2.5.5",
     "python": "3.14.3"
@@ -4978,13 +4978,83 @@
         "channels": 2,
         "duration_s": 59.6065
       }
+    },
+    "astral-lift": {
+      "intermediate_wav": "assets-source/audio/derived/astral-lift.wav",
+      "intermediate_sha256": "737f785360bb098cf7409bd15325756187d179e881c649d28ea3b8e13c6e7a9b",
+      "pre_gain": {
+        "integrated_lufs": -14.9,
+        "true_peak_dbtp": -4.6,
+        "momentary_max_lufs": -11.5
+      },
+      "gain_db": -3.1,
+      "encode_attempts": 1,
+      "opus_kbps": 128,
+      "measured": {
+        "integrated_lufs": -18.0,
+        "true_peak_dbtp": -7.4,
+        "momentary_max_lufs": -14.6
+      },
+      "target_lufs": -18.0,
+      "deviation_lu": 0.0,
+      "loudness_status": "met",
+      "limited_by_true_peak": false,
+      "short_clip_lufs_unreliable": false,
+      "decoded_frames": 969600,
+      "decoded_duration_s": 20.2,
+      "decoded_pcm_sha256": "0b331ea7314e0730bd0447d5cb01133c73b63ead7d6ba18a74d38dce2bbdbc96",
+      "id": "astral-lift",
+      "source_file": "assets-source/audio/music/astral-lift.wav",
+      "source_sha256": "4590d6fd54f1019bccc69813b38949d5518a7612e862d60bdb6e952c65b30890",
+      "source_probe": {
+        "codec": "pcm_s16le",
+        "sample_rate": 48000,
+        "channels": 2,
+        "duration_s": 21.2
+      },
+      "loop": {
+        "source": {
+          "wrap_step": 0.005508,
+          "p999_step": 0.041428,
+          "seam_ratio": 0.133,
+          "head_tail_level_diff_db": 26.14,
+          "interior_dropout_windows": 1,
+          "pass": false
+        },
+        "runtime": {
+          "wrap_step": 0.000398,
+          "p999_step": 0.028528,
+          "seam_ratio": 0.014,
+          "head_tail_level_diff_db": 3.05,
+          "interior_dropout_windows": 0,
+          "pass": true
+        },
+        "loop_start_s": 0.0,
+        "crossfade_s": 1.0
+      },
+      "steps": [
+        "loop body from 0.000s, 1.00s equal-power tail-over-head crossfade, start position retained"
+      ],
+      "runtime_file": "public/assets/audio/music/astral-lift.ogg",
+      "runtime_sha256": "88bfc6c7b360ec836cc2d14c575403a71366b0ae3193b57ed77ee75204f2de67",
+      "runtime_bytes": 349138,
+      "runtime_probe": {
+        "codec": "opus",
+        "sample_rate": 48000,
+        "channels": 2,
+        "duration_s": 20.2065
+      }
     }
   },
-  "music_status": "absent: runtime plays silence",
+  "music_status": "present",
   "external_checks": {
     "check-audio-loops": {
       "exit": 0,
-      "stdout": "public/assets/audio/sfx/dungeon-torch-crackle.ogg wrap     34 / p99.9  13017   head  -12.5 dB   tail  -13.6 dB   min  -17.4 dB   ok\n\nPASS: 1 file(s) wrap cleanly with no interior dropout"
+      "stdout": "public/assets/audio/music/astral-lift.ogg wrap     20 / p99.9   1016   head  -23.0 dB   tail  -19.9 dB   min  -35.4 dB   ok\n\nPASS: 1 file(s) wrap cleanly with no interior dropout"
+    },
+    "check-mono-compatibility": {
+      "exit": 0,
+      "stdout": "self-test: identical-channel control -0.01 dB, mono control +0.00 dB (ok)\n\nCUE                                       stereo      fold  cancellation\nastral-lift.ogg                         -18.0 LU  -21.8 LU        0.8 dB  ok\n\nCancellation at or above 2.0 dB means the cue thins out on a single speaker."
     }
   }
 }

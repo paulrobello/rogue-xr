@@ -905,6 +905,67 @@ export const CARDS: readonly SliceCard[] = [
       description: 'Roll a d8. On 5+, gain 3 Steam and Draw 2 cards. Otherwise gain 2 Vulnerable.',
     },
   },
+  {
+    id: 'steam-sweep',
+    name: 'Steam Sweep',
+    type: 'attack',
+    cost: 2,
+    target: 'none',
+    dice: 'glass-d8',
+    effects: [{ type: 'damage', amount: 14, target: 'all-opponents' }],
+    rollRisk: {
+      minimum: 5,
+      miss: { type: 'apply-status', status: 'rust', stacks: 2, target: 'self' },
+    },
+    description: 'Roll a d8. On 5+, deal 14 damage to all enemies. Otherwise gain 2 Rust.',
+    upgrade: {
+      effects: [{ type: 'damage', amount: 18, target: 'all-opponents' }],
+      description: 'Roll a d8. On 5+, deal 18 damage to all enemies. Otherwise gain 2 Rust.',
+    },
+  },
+  {
+    id: 'plated-stand',
+    name: 'Plated Stand',
+    type: 'skill',
+    cost: 1,
+    target: 'none',
+    dice: 'brass-d6',
+    effects: [
+      { type: 'block', amount: 8 },
+      { type: 'apply-status', status: 'plating', stacks: 1, target: 'self' },
+    ],
+    rollRisk: {
+      minimum: 4,
+      miss: { type: 'apply-status', status: 'weak', stacks: 2, target: 'self' },
+    },
+    description: 'Roll a d6. On 4+, gain 8 Block and Gain 1 Plating. Otherwise gain 2 Weak.',
+    upgrade: {
+      effects: [
+        { type: 'block', amount: 11 },
+        { type: 'apply-status', status: 'plating', stacks: 2, target: 'self' },
+      ],
+      description: 'Roll a d6. On 4+, gain 11 Block and Gain 2 Plating. Otherwise gain 2 Weak.',
+    },
+  },
+  {
+    id: 'last-reserve',
+    name: 'Last Reserve',
+    type: 'skill',
+    cost: 1,
+    target: 'none',
+    exhaust: true,
+    dice: 'glass-d8',
+    effects: [{ type: 'heal', amount: 12, target: 'self' }],
+    rollRisk: {
+      minimum: 6,
+      miss: { type: 'apply-status', status: 'overheat', stacks: 2, target: 'self' },
+    },
+    description: 'Roll a d8. On 6+, heal 12 HP. Otherwise gain 2 Overheat. Exhaust.',
+    upgrade: {
+      effects: [{ type: 'heal', amount: 16, target: 'self' }],
+      description: 'Roll a d8. On 6+, heal 16 HP. Otherwise gain 2 Overheat. Exhaust.',
+    },
+  },
 ];
 
 export const CARDS_BY_ID: ReadonlyMap<string, SliceCard> = new Map(CARDS.map((c) => [c.id, c]));

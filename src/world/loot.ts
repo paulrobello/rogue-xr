@@ -53,13 +53,16 @@ const SURFACE_MAX = 1.5;
 const FLOOR_EPS = 0.05;
 
 /** The two materials a coffer is dressed in; `wood` is its body and lid, `brass` the bands and latch. */
+export type CofferTheme = 'classic' | 'reliquary' | 'strongbox';
+
 export interface LootMaterials {
   readonly wood: THREE.Material;
   readonly brass: THREE.Material;
+  readonly variants?: Partial<Record<Exclude<CofferTheme, 'classic'>, LootMaterials>>;
 }
 
 /** `inner` is the darker wood lining the hollow body and lid, derived from `wood` by `dress`. */
-type Slot = keyof LootMaterials | 'inner';
+type Slot = 'wood' | 'brass' | 'inner';
 /** Inner wood brightness relative to the outer wood. */
 const INNER_SHADE = 0.42;
 
@@ -397,7 +400,7 @@ function haloGeometry(): THREE.BufferGeometry {
 export class CofferKit {
   private readonly geometries: THREE.BufferGeometry[] = [];
   private readonly ownedMaterials: THREE.Material[] = [];
-  private readonly slotted: { mesh: THREE.Mesh; slot: Slot }[] = [];
+  private readonly slotted: { mesh: THREE.Mesh; slot: Slot; theme: CofferTheme }[] = [];
   private readonly liveCards = new Set<() => void>();
   private readonly wood = new THREE.MeshStandardMaterial({
     color: PALETTE.walnut,
@@ -444,6 +447,20 @@ export class CofferKit {
   private readonly lidRim = this.geometry(lidRimGeometry());
   private readonly bodyBand = this.geometry(bodyBandGeometry());
   private readonly lidBand = this.geometry(lidBandGeometry());
+  private readonly reliquaryStuds = this.geometry(
+    merged(
+      [-0.29, 0.29].map((x) =>
+        new THREE.SphereGeometry(0.038, 8, 6).translate(x, 0.13, -DEPTH / 2 - 0.018),
+      ),
+    ),
+  );
+  private readonly strongboxStraps = this.geometry(
+    merged(
+      [-0.23, 0.23].map((x) =>
+        new THREE.BoxGeometry(0.05, 0.29, 0.03).translate(x, 0.15, -DEPTH / 2 - 0.018),
+      ),
+    ),
+  );
   private readonly latch = this.geometry(new THREE.BoxGeometry(0.1, 0.12, 0.035));
   private readonly lock = this.geometry(padlockGeometry());
   private readonly lockHitBox = this.geometry(new THREE.BoxGeometry(0.17, 0.24, 0.07));
@@ -463,9 +480,11 @@ export class CofferKit {
     return g;
   }
 
-  private material(slot: Slot): THREE.Material {
+  private material(slot: Slot, theme: CofferTheme = 'classic'): THREE.Material {
     if (slot === 'inner') return this.inner;
-    return this.dressing?.[slot] ?? (slot === 'wood' ? this.wood : this.brass);
+    const dressing =
+      (theme === 'classic' ? undefined : this.dressing?.variants?.[theme]) ?? this.dressing;
+    return dressing?.[slot] ?? (slot === 'wood' ? this.wood : this.brass);
   }
 
   private part(
@@ -473,11 +492,12 @@ export class CofferKit {
     slot: Slot,
     parent: THREE.Object3D,
     name: string,
+    theme: CofferTheme = 'classic',
   ): THREE.Mesh {
-    const mesh = new THREE.Mesh(geometry, this.material(slot));
+    const mesh = new THREE.Mesh(geometry, this.material(slot, theme));
     mesh.name = name;
     parent.add(mesh);
-    this.slotted.push({ mesh, slot });
+    this.slotted.push({ mesh, slot, theme });
     return mesh;
   }
 
@@ -493,7 +513,7 @@ export class CofferKit {
     const tinted = inner as THREE.Material & { color?: THREE.Color };
     tinted.color?.multiplyScalar(INNER_SHADE);
     this.inner = inner;
-    for (const { mesh, slot } of this.slotted) mesh.material = this.material(slot);
+    for (const { mesh, slot, theme } of this.slotted) mesh.material = this.material(slot, theme);
   }
 
   /** Builds the coffer for `socket` of `room`, standing `surface` metres above the room floor. */
@@ -504,39 +524,49 @@ export class CofferKit {
     surface: number,
     locked = false,
     keyLocked = false,
+    theme: CofferTheme = 'classic',
   ): Coffer {
     const object = new THREE.Group();
     object.name = `coffer-${room}-${socket.id}`;
     object.position.set(socket.position[0], socket.position[1] + surface, socket.position[2]);
     object.rotation.y = (-socket.yaw * Math.PI) / 180;
-    this.part(this.body, 'wood', object, 'coffer-body');
-    this.part(this.innerShell, 'inner', object, 'coffer-inner');
-    this.part(this.bodyBand, 'brass', object, 'coffer-band');
+    this.part(this.body, 'wood', object, 'coffer-body', theme);
+    this.part(this.innerShell, 'inner', object, 'coffer-inner', theme);
+    this.part(this.bodyBand, 'brass', object, 'coffer-band', theme);
     const hinge = new THREE.Group();
     hinge.name = 'coffer-lid';
     hinge.position.set(0, BODY_HEIGHT, DEPTH / 2);
     object.add(hinge);
-    this.part(this.lid, 'wood', hinge, 'coffer-lid-top').position.z = -DEPTH / 2;
-    this.part(this.lidInner, 'inner', hinge, 'coffer-lid-inner').position.z = -DEPTH / 2;
+    this.part(this.lid, 'wood', hinge, 'coffer-lid-top', theme).position.z = -DEPTH / 2;
+    this.part(this.lidInner, 'inner', hinge, 'coffer-lid-inner', theme).position.z = -DEPTH / 2;
     for (const [index, side] of [-1, 1].entries()) {
       const end = this.part(
         this.lidInnerEnds[index] as THREE.BufferGeometry,
         'inner',
         hinge,
         `coffer-lid-inner-end-${side}`,
+        theme,
       );
       end.position.set(side * (WIDTH / 2 - LID_SHELL), 0, -DEPTH / 2);
     }
-    this.part(this.lidRim, 'brass', hinge, 'coffer-lid-rim').position.z = -DEPTH / 2;
-    this.part(this.lidBand, 'brass', hinge, 'coffer-lid-band').position.z = -DEPTH / 2;
-    const latch = this.part(this.latch, 'brass', object, 'coffer-latch');
+    this.part(this.lidRim, 'brass', hinge, 'coffer-lid-rim', theme).position.z = -DEPTH / 2;
+    this.part(this.lidBand, 'brass', hinge, 'coffer-lid-band', theme).position.z = -DEPTH / 2;
+    if (theme === 'reliquary') {
+      for (const lidPart of hinge.children) lidPart.scale.y = 0.46;
+    }
+    const latch = this.part(this.latch, 'brass', object, 'coffer-latch', theme);
     latch.position.set(0, BODY_HEIGHT - 0.03, -DEPTH / 2 - 0.012);
+    if (theme === 'reliquary') {
+      this.part(this.reliquaryStuds, 'brass', object, 'coffer-reliquary-studs', theme);
+    } else if (theme === 'strongbox') {
+      this.part(this.strongboxStraps, 'brass', object, 'coffer-strongbox-straps', theme);
+    }
     const gem = new THREE.Mesh(this.gem, this.amber);
     gem.name = 'coffer-gem';
     gem.position.set(0, BODY_HEIGHT - 0.03, -DEPTH / 2 - 0.04);
     object.add(gem);
     const padlock =
-      locked || keyLocked ? this.part(this.lock, 'brass', object, 'coffer-padlock') : null;
+      locked || keyLocked ? this.part(this.lock, 'brass', object, 'coffer-padlock', theme) : null;
     if (padlock) {
       padlock.position.set(0, BODY_HEIGHT - 0.068, -DEPTH / 2 - 0.061);
       gem.visible = false;
@@ -680,6 +710,7 @@ export class CofferKit {
       },
     };
     object.userData.coffer = coffer;
+    object.userData.cofferTheme = theme;
     return coffer;
   }
 

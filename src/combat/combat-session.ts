@@ -59,7 +59,7 @@ import {
   statusExplanation,
   tipCanvasHeight,
 } from '../combat-view/status-info.ts';
-import { dropToFitView, fitsView } from '../combat-view/view-fit.ts';
+import { dropToFitView, fitBillboardToView, fitsView } from '../combat-view/view-fit.ts';
 import { getCard, type SliceCard } from '../content/cards.ts';
 import { dieById } from '../content/dice.ts';
 import {
@@ -586,6 +586,8 @@ export class CombatSession {
   /** The tip listing the keywords of the card the pointer is on, or of the held card. */
   private readonly cardTipLabel: CanvasLabel | null;
   private cardTipKey = '';
+  private cardTipHeight = 0;
+  private readonly cardTipUp = new THREE.Vector3();
   /** The card whose keyword tip shows, by id, or null. For tests and the HUD. */
   cardTipShown: { id: string; titles: string[] } | null = null;
   private readonly eye = new THREE.Vector3();
@@ -2047,19 +2049,31 @@ export class CombatSession {
       return;
     }
     const key = card.cost === 'X' ? `${card.id}:${steam}` : card.id;
+    const mesh = label.mesh;
+    const { width, height } = mesh.geometry.parameters;
     if (key !== this.cardTipKey) {
       this.cardTipKey = key;
+      this.cardTipHeight =
+        height * Math.min(1, tipCanvasHeight(entries, label.pxWidth) / label.pxHeight);
       label.draw((ctx, w, h) => drawTip(ctx, w, h, entries, true));
     }
     this.cardTipShown = { id: card.id, titles: entries.map((e) => e.title) };
     // Its bottom edge (where the fitted plate stands) just above the card, nudged toward the eye
     // and turned to face it.
     const eye = this.deps.camera.getWorldPosition(this.eye);
-    const mesh = label.mesh;
     mesh.position.copy(at);
     mesh.position.addScaledVector(eye.sub(at).normalize(), CARD_TIP_TOWARD);
-    mesh.position.y += CARD_TIP_LIFT + mesh.geometry.parameters.height / 2;
+    mesh.position.y += CARD_TIP_LIFT;
     this.deps.camera.getWorldQuaternion(mesh.quaternion);
+    const up = this.cardTipUp.set(0, 1, 0).applyQuaternion(mesh.quaternion);
+    mesh.position.addScaledVector(up, this.cardTipHeight / 2);
+    const scale =
+      this.deps.camera instanceof THREE.PerspectiveCamera
+        ? fitBillboardToView(mesh.position, width, this.cardTipHeight, this.deps.camera)
+        : 1;
+    // The drawing is bottom-aligned in the canvas, so the painted tip sits below the mesh centre.
+    mesh.position.addScaledVector(up, ((height - this.cardTipHeight) * scale) / 2);
+    mesh.scale.setScalar(scale);
     mesh.visible = true;
   }
 

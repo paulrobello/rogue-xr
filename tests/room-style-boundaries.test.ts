@@ -164,3 +164,44 @@ it('blocks rays from behind the Conservatory timber jambs and lintel while keepi
   expect(ray.intersectObjects(frame)).toEqual([]);
   disposeRoomStyle(room);
 });
+
+it('renders the opt-in Conservatory finish with the same lightmap and intact doorway trim', () => {
+  const doors = [{ facing: 'N', position: [-1, 0, -4] }] as const;
+  const baseline = new THREE.Group();
+  const variant = new THREE.Group();
+  for (const room of [baseline, variant]) {
+    applyRoomStyle(room, 'timber', kit, doors);
+    room.userData.conservatory = true;
+    lightRoomStyle(room, [], room === variant);
+  }
+  try {
+    function finish(room: THREE.Group, piece: string) {
+      for (const node of room.children) {
+        if (
+          node instanceof THREE.Mesh &&
+          node.userData.roomStylePiece === piece &&
+          node.material.name === 'TimberFinish'
+        )
+          return node;
+      }
+      throw new Error(`Missing ${piece} finish`);
+    }
+    const oldWall = finish(baseline, 'TimberBay');
+    const wall = finish(variant, 'TimberBay');
+    const doorway = finish(variant, 'TimberDoor');
+    expect(oldWall.material).toBeInstanceOf(THREE.MeshStandardMaterial);
+    expect(wall.material).toBeInstanceOf(THREE.MeshBasicMaterial);
+    expect(wall.geometry).toBe(oldWall.geometry);
+    expect(wall.material.map).toBe(oldWall.material.map);
+    expect(wall.material.lightMap.image.data).toEqual(oldWall.material.lightMap.image.data);
+    expect(wall.material.lightMapIntensity).toBe(oldWall.material.lightMapIntensity);
+    expect(wall.material.customProgramCacheKey()).not.toBe(
+      oldWall.material.customProgramCacheKey(),
+    );
+    expect(doorway.material).toBeInstanceOf(THREE.MeshStandardMaterial);
+    expect(doorway.material.side).toBe(THREE.DoubleSide);
+  } finally {
+    disposeRoomStyle(baseline);
+    disposeRoomStyle(variant);
+  }
+});

@@ -2,6 +2,7 @@ import type { Rect } from '../content/rooms.ts';
 import type { FloorPlan, WorldRoom } from '../floor/generate.ts';
 import type { StairEntry } from '../floor/stairs.ts';
 import type { LogbookDiscovery } from './logbook-discoveries.ts';
+import { MAP_MARKER_ICONS, type MapMarker, type MapMarkerIcon } from './map-markers.ts';
 
 export type MapPoint = readonly [x: number, y: number];
 type MapRoom = { readonly id: number; readonly bounds: Rect };
@@ -19,6 +20,7 @@ export interface LogbookMap {
   readonly transport?: readonly MapTransport[];
   readonly doors: readonly MapDoor[];
   readonly discoveries?: readonly LogbookDiscovery[];
+  readonly personalMarkers?: readonly MapMarker[];
   /** The explored staircase enclosure, including its far landing. */
   readonly stair?: { readonly room: number; readonly bounds: Rect; readonly position: MapPoint };
   readonly player?: { readonly room: number; readonly label: string; readonly position: MapPoint };
@@ -40,6 +42,31 @@ export const FIT_MAP_VIEW: MapView = { zoom: 1, x: 0, y: 0 };
 export const MAP_VIEWPORT = { x: 64, y: 154, width: 576, height: 720 } as const;
 const CENTER_X = MAP_VIEWPORT.x + MAP_VIEWPORT.width / 2;
 const CENTER_Y = MAP_VIEWPORT.y + MAP_VIEWPORT.height / 2;
+
+export type MapMarkerTool = MapMarkerIcon | 'erase';
+export interface MapMarkerView {
+  readonly markers: readonly MapMarker[];
+  readonly tool: MapMarkerTool | null;
+}
+
+const MARKER_TOOLS = [...MAP_MARKER_ICONS, 'erase'] as const;
+const MARKER_NAMES: Record<MapMarkerTool, string> = {
+  star: 'Star',
+  flag: 'Flag',
+  question: 'Question',
+  danger: 'Danger',
+  check: 'Check',
+  erase: 'Erase',
+};
+const TOOLBAR = { x: 76, y: 373, slot: 91, width: 82, height: 66 };
+
+export function mapMarkerToolAt([x, y]: MapPoint): MapMarkerTool | undefined {
+  if (y < TOOLBAR.y || y > TOOLBAR.y + TOOLBAR.height) return undefined;
+  return MARKER_TOOLS.find((_, index) => {
+    const left = TOOLBAR.x + index * TOOLBAR.slot;
+    return x >= left && x <= left + TOOLBAR.width;
+  });
+}
 
 function chartLayout(map: LogbookMap) {
   if (!map.rooms.length) return undefined;
@@ -77,6 +104,57 @@ export function mapViewportContains([x, y]: MapPoint): boolean {
   return (
     x >= bounds.x && x <= bounds.x + bounds.width && y >= bounds.y && y <= bounds.y + bounds.height
   );
+}
+
+function projectMap(map: LogbookMap, view: MapView) {
+  const layout = chartLayout(map);
+  if (!layout) return undefined;
+  const scale = layout.fit * view.zoom;
+  return {
+    scale,
+    x: (worldX: number) => CENTER_X + view.x + (worldX - layout.x) * scale,
+    y: (worldZ: number) => CENTER_Y + view.y + (worldZ - layout.z) * scale,
+    world: ([x, y]: MapPoint): MapPoint => [
+      layout.x + (x - CENTER_X - view.x) / scale,
+      layout.z + (y - CENTER_Y - view.y) / scale,
+    ],
+  };
+}
+
+export function mapMarkerPosition(
+  map: LogbookMap,
+  view: MapView,
+  point: MapPoint,
+): MapPoint | null {
+  if (!mapViewportContains(point)) return null;
+  const world = projectMap(map, view)?.world(point);
+  if (!world) return null;
+  const [x, z] = world;
+  const contains = ({ min, max }: Rect) => x >= min[0] && x <= max[0] && z >= min[1] && z <= max[1];
+  return map.rooms.some((room) => contains(room.bounds)) ||
+    (map.stair && contains(map.stair.bounds))
+    ? world
+    : null;
+}
+
+export function mapMarkerIndex(
+  map: LogbookMap,
+  view: MapView,
+  markers: readonly MapMarker[],
+  point: MapPoint,
+): number {
+  const projection = projectMap(map, view);
+  if (!projection || !mapViewportContains(point)) return -1;
+  let found = -1;
+  let reach = 21;
+  markers.forEach(({ position: [x, z] }, index) => {
+    const distance = Math.hypot(projection.x(x) - point[0], projection.y(z) - point[1]);
+    if (distance <= reach) {
+      found = index;
+      reach = distance;
+    }
+  });
+  return found;
 }
 
 export function moveMapView(
@@ -254,6 +332,115 @@ export function discoveryIcon(
   else for (const line of [-4, 2]) context.fillRect(x - 5, y + line, 10, 2);
 }
 
+const MARKER_COLOR: Record<MapMarkerTool, string> = {
+  star: '#79521d',
+  flag: '#344d5f',
+  question: '#635073',
+  danger: '#873629',
+  check: '#345640',
+  erase: '#574234',
+};
+
+export function paintMapMarker(
+  ctx: CanvasRenderingContext2D,
+  icon: MapMarkerTool,
+  x: number,
+  y: number,
+): void {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.fillStyle = MARKER_COLOR[icon];
+  ctx.strokeStyle = '#fff0ca';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(0, 0, 15, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = '#fff0ca';
+  ctx.lineWidth = 2.7;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  switch (icon) {
+    case 'star':
+      for (let i = 0; i < 10; i++) {
+        const angle = (i * Math.PI) / 5 - Math.PI / 2;
+        const radius = i % 2 === 0 ? 10 : 4.5;
+        ctx.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+      }
+      ctx.closePath();
+      ctx.fill();
+      break;
+    case 'flag':
+      ctx.moveTo(-5, 9);
+      ctx.lineTo(-5, -9);
+      ctx.lineTo(7, -5);
+      ctx.lineTo(-5, -1);
+      ctx.stroke();
+      break;
+    case 'question':
+      ctx.font = 'bold 24px Georgia, serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('?', 0, 8);
+      break;
+    case 'danger':
+      ctx.moveTo(0, -9);
+      ctx.lineTo(9, 7);
+      ctx.lineTo(-9, 7);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.fillRect(-1, -4, 2, 5);
+      ctx.fillRect(-1, 3, 2, 2);
+      break;
+    case 'check':
+      ctx.moveTo(-7, 0);
+      ctx.lineTo(-2, 5);
+      ctx.lineTo(8, -6);
+      ctx.stroke();
+      break;
+    case 'erase':
+      ctx.moveTo(-6, -6);
+      ctx.lineTo(6, 6);
+      ctx.moveTo(6, -6);
+      ctx.lineTo(-6, 6);
+      ctx.stroke();
+      break;
+  }
+  ctx.restore();
+}
+
+function paintMarkerTools(ctx: CanvasRenderingContext2D, tool: MapMarkerTool | null): void {
+  ctx.fillStyle = INK;
+  ctx.font = 'bold 29px Georgia, serif';
+  ctx.fillText('Personal markers', TOOLBAR.x, 357);
+  for (const [index, icon] of MARKER_TOOLS.entries()) {
+    const x = TOOLBAR.x + index * TOOLBAR.slot;
+    ctx.fillStyle = icon === tool ? '#d5b77e' : '#e9d7b0';
+    ctx.strokeStyle = icon === tool ? INK : '#9b7e55';
+    ctx.lineWidth = icon === tool ? 4 : 1.5;
+    ctx.fillRect(x, TOOLBAR.y, TOOLBAR.width, TOOLBAR.height);
+    ctx.strokeRect(x, TOOLBAR.y, TOOLBAR.width, TOOLBAR.height);
+    const center = x + TOOLBAR.width / 2;
+    paintMapMarker(ctx, icon, center, TOOLBAR.y + 22);
+    ctx.fillStyle = INK;
+    ctx.font = '21px Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(MARKER_NAMES[icon], center, TOOLBAR.y + 58, TOOLBAR.width - 6);
+  }
+  ctx.textAlign = 'left';
+  ctx.font = '25px Georgia, serif';
+  ctx.fillText(
+    tool === 'erase'
+      ? 'Select a marker to erase it.'
+      : tool === null
+        ? 'Choose an icon, then select a spot on the map.'
+        : 'Select a spot in an explored room.',
+    TOOLBAR.x,
+    471,
+    550,
+  );
+}
+
 export function paintMapPage(
   context: CanvasRenderingContext2D,
   map: LogbookMap,
@@ -261,6 +448,7 @@ export function paintMapPage(
   view: MapView = FIT_MAP_VIEW,
   showFinds = false,
   heading = 0,
+  markerView?: MapMarkerView,
 ): void {
   context.fillStyle = INK;
   context.textAlign = 'left';
@@ -272,6 +460,7 @@ export function paintMapPage(
     context.fillText(`Floor ${map.floor}`, 77, 253);
     context.font = 'bold 42px Georgia, serif';
     context.fillText(FLOOR_NAMES[map.floor - 1], 77, 314, 550);
+    if (markerView) paintMarkerTools(context, markerView.tool);
     context.fillStyle = VISITED;
     context.fillRect(79, 497, 30, 25);
     context.strokeStyle = INK;
@@ -323,11 +512,9 @@ export function paintMapPage(
   context.closePath();
   context.fill();
 
-  const layout = chartLayout(map);
-  if (!layout) return;
-  const scale = layout.fit * view.zoom;
-  const projectX = (x: number) => CENTER_X + view.x + (x - layout.x) * scale;
-  const projectZ = (z: number) => CENTER_Y + view.y + (z - layout.z) * scale;
+  const projection = projectMap(map, view);
+  if (!projection) return;
+  const { scale, x: projectX, y: projectZ } = projection;
 
   context.save();
   context.beginPath();
@@ -383,5 +570,10 @@ export function paintMapPage(
     const [x, z] = map.player.position;
     locationArrow(context, projectX(x), projectZ(z), heading);
   }
+  for (const {
+    icon,
+    position: [x, z],
+  } of markerView?.markers ?? [])
+    paintMapMarker(context, icon, projectX(x), projectZ(z));
   context.restore();
 }

@@ -1,5 +1,10 @@
 import * as THREE from 'three';
-import { discoveryIcon, type LogbookMap, transportIcon } from '../flow/logbook-map.ts';
+import {
+  discoveryIcon,
+  type LogbookMap,
+  paintMapMarker,
+  transportIcon,
+} from '../flow/logbook-map.ts';
 import { MINIMAP_PLACEMENT_LIMIT, type Settings } from '../persist/db.ts';
 
 export type MinimapOptions = Pick<
@@ -118,7 +123,12 @@ export class Minimap {
         map.doors.length !== previous.doors.length ||
         map.transport?.length !== previous.transport?.length ||
         map.discoveries?.length !== previous.discoveries?.length ||
-        map.discoveries?.some((item, index) => item.id !== previous.discoveries?.[index]?.id)
+        map.discoveries?.some((item, index) => item.id !== previous.discoveries?.[index]?.id) ||
+        map.personalMarkers?.length !== previous.personalMarkers?.length ||
+        map.personalMarkers?.some(({ icon, position: [x, z] }, index) => {
+          const marker = previous.personalMarkers?.[index];
+          return marker?.icon !== icon || marker.position[0] !== x || marker.position[1] !== z;
+        })
       ) {
         this.paint(map, zoom, northUp, heading);
         this.paintedMap = map;
@@ -253,6 +263,18 @@ export class Minimap {
       ctx.translate(x, y);
       ctx.scale(0.42, 0.42);
       discoveryIcon(ctx, discovery.kind, 0, 0);
+      ctx.restore();
+    }
+    for (const {
+      icon,
+      position: [worldX, worldZ],
+    } of map.personalMarkers ?? []) {
+      const [x, y] = project(worldX, worldZ);
+      ctx.save();
+      ctx.translate(x, y);
+      const markerScale = 0.55 * zoom;
+      ctx.scale(markerScale, markerScale);
+      paintMapMarker(ctx, icon, 0, 0);
       ctx.restore();
     }
     ctx.restore();

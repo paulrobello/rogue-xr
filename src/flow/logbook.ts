@@ -5,14 +5,20 @@ import { reliquaryGlyph } from '../rules/reliquary.ts';
 import {
   FIT_MAP_VIEW,
   type LogbookMap,
+  type MapMarkerTool,
+  type MapMarkerView,
   type MapPoint,
   type MapView,
+  mapMarkerIndex,
+  mapMarkerPosition,
+  mapMarkerToolAt,
   mapViewportContains,
   moveMapView,
   paintMapPage,
 } from './logbook-map.ts';
 import type { ActivePuzzlePage } from './logbook-puzzles.ts';
 import type { LogbookCardRow } from './logbook-run-pages.ts';
+import type { MapMarker } from './map-markers.ts';
 
 const PAGE_WIDTH = 0.435;
 const PAGE_HEIGHT = 0.59;
@@ -47,6 +53,7 @@ function poseLeaf(
     );
   }
   positions.needsUpdate = true;
+  geometry.computeBoundingSphere();
 }
 
 function paintParchment(context: CanvasRenderingContext2D, right: boolean): void {
@@ -67,12 +74,26 @@ export type BookPagePainter = ((context: CanvasRenderingContext2D) => void) & {
   readonly cardRows?: readonly LogbookCardRow[];
 };
 
+export function createLogbookHandSwipes() {
+  return {
+    left: { armed: false, fired: false, startX: 0, pageSide: 0 as 0 | 1 },
+    right: { armed: false, fired: false, startX: 0, pageSide: 0 as 0 | 1 },
+  };
+}
+
 interface BookSections {
   readonly maps?: readonly LogbookMap[];
   readonly pages?: readonly BookPagePainter[];
   readonly mapViews?: Map<number, MapView>;
   readonly showFinds?: boolean;
   readonly mapHeading?: () => number;
+  readonly handSwipe?: ReturnType<typeof createLogbookHandSwipes>;
+  readonly onTurn?: (root: THREE.Group) => void;
+  readonly mapMarkers?: {
+    read: (floor: number) => readonly MapMarker[];
+    add: (floor: number, marker: MapMarker) => boolean;
+    remove: (floor: number, index: number) => boolean;
+  };
 }
 
 export function puzzlePage(clue: ActivePuzzlePage): BookPagePainter {
@@ -124,6 +145,7 @@ function paperTexture(
   showFinds: boolean,
   render: BookPagePainter | undefined,
   heading: number,
+  mark?: MapMarkerView,
 ): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
   canvas.width = PAPER_WIDTH;
@@ -134,7 +156,7 @@ function paperTexture(
     paintParchment(context, right);
     context.fillStyle = '#3d291f';
     context.font = 'bold 46px Georgia, serif';
-    if (map) paintMapPage(context, map, right, view, showFinds, heading);
+    if (map) paintMapPage(context, map, right, view, showFinds, heading, mark);
     else if (render) render(context);
     else if (entry) {
       let y = 131;
@@ -209,9 +231,15 @@ export class Logbook {
   private readonly pageRay = new THREE.Ray();
   private readonly pagePlane = new THREE.Plane(new THREE.Vector3(0, 0, 1));
   private readonly pageHit = new THREE.Vector3();
+  private readonly pagePicker = new THREE.Raycaster();
+  private readonly handSwipe: ReturnType<typeof createLogbookHandSwipes>;
+  private markerTool: MapMarkerTool | null = null;
   private mapDirty = false;
   private mapRedrawAge = MAP_REDRAW_SECONDS;
-  private turnState: { offset: number; age: number } | undefined;
+  private turnState:
+    | { offset: -1 | 1; age: number; next: number; outgoing?: readonly THREE.Texture[] }
+    | undefined;
+  private turnBoundary: -1 | 1 | null = null;
 
   constructor(
     private readonly entries: readonly LogbookEntry[],
@@ -219,6 +247,7 @@ export class Logbook {
     openedAt: number,
     private readonly sections: BookSections = {},
   ) {
+    this.handSwipe = sections.handSwipe ?? createLogbookHandSwipes();
     this.spread = Math.floor(openedAt / 2);
     this.root.name = 'keeper-logbook';
     this.mapViews = sections.mapViews ?? new Map();
@@ -275,17 +304,19 @@ export class Logbook {
 
   private print(page: (typeof this.pages)[number], index: number): void {
     let texture = this.textures.get(index);
+    const map = this.sections.maps?.[Math.floor(index / 2)];
     if (!texture) {
       texture = paperTexture(
         this.entries[index],
         index,
         this.seed,
         !this.entries.length && !this.sections.pages,
-        this.sections.maps?.[Math.floor(index / 2)],
+        map,
         this.mapViews.get(Math.floor(index / 2)),
         this.showFinds,
         this.sections.pages?.[index],
         this.heading,
+        this.markerView(map),
       );
       this.textures.set(index, texture);
     }
@@ -324,6 +355,16 @@ export class Logbook {
     return this.spread * 2;
   }
 
+  get turning(): boolean {
+    return this.turnState !== undefined;
+  }
+
+  takeBoundary(): -1 | 1 | null {
+    const boundary = this.turnBoundary;
+    this.turnBoundary = null;
+    return boundary;
+  }
+
   cardFor(control: string): string | undefined {
     return this.cardTargets.getObjectByName(control)?.userData.cardId;
   }
@@ -345,6 +386,71 @@ export class Logbook {
       (0.5 - this.pageHit.y / PAGE_HEIGHT) * PAPER_HEIGHT,
     ];
     return !inside || mapViewportContains(point) ? point : null;
+  }
+
+  private markerView(map: LogbookMap | undefined): MapMarkerView | undefined {
+    if (!map || !this.sections.mapMarkers) return undefined;
+    return { tool: this.markerTool, markers: this.sections.mapMarkers.read(map.floor) };
+  }
+
+  private clickedPagePoint(ray: THREE.Ray, side: 0 | 1): MapPoint | null {
+    const page = this.pages[side];
+    page.updateWorldMatrix(true, false);
+    this.pagePicker.ray.copy(ray);
+    const uv = this.pagePicker.intersectObject(page, false)[0]?.uv;
+    return uv ? [uv.x * PAPER_WIDTH, (1 - uv.y) * PAPER_HEIGHT] : null;
+  }
+
+  private setMarkerTool(tool: MapMarkerTool | null): void {
+    if (this.markerTool === tool) return;
+    this.markerTool = tool;
+    const map = this.sections.maps?.[this.spread];
+    const texture = this.textures.get(this.spread * 2);
+    if (!map || !texture) return;
+    const context = (texture.image as HTMLCanvasElement).getContext('2d');
+    if (!context) return;
+    paintParchment(context, false);
+    paintMapPage(
+      context,
+      map,
+      false,
+      undefined,
+      this.showFinds,
+      this.heading,
+      this.markerView(map),
+    );
+    texture.needsUpdate = true;
+  }
+
+  selectMarkerTool(ray: THREE.Ray): boolean {
+    if (!this.sections.maps || !this.sections.mapMarkers || this.turnState) return false;
+    const point = this.clickedPagePoint(ray, 0);
+    const tool = point && mapMarkerToolAt(point);
+    if (!tool) return false;
+    this.setMarkerTool(tool === this.markerTool ? null : tool);
+    return true;
+  }
+
+  applyMapMarker(ray: THREE.Ray): boolean {
+    const map = this.sections.maps?.[this.spread];
+    const edits = this.sections.mapMarkers;
+    const tool = this.markerTool;
+    if (!map || !edits || !tool || this.turnState) return false;
+    const point = this.clickedPagePoint(ray, 1);
+    if (!point || !mapViewportContains(point)) return false;
+    const view = this.mapViews.get(this.spread) ?? FIT_MAP_VIEW;
+    let changed: boolean;
+    if (tool === 'erase') {
+      changed = edits.remove(map.floor, mapMarkerIndex(map, view, edits.read(map.floor), point));
+    } else {
+      const position = mapMarkerPosition(map, view, point);
+      changed = position !== null && edits.add(map.floor, { icon: tool, position });
+    }
+    if (changed) {
+      this.setMarkerTool(null);
+      this.mapDirty = true;
+    }
+    return true;
   }
 
   adjustMap(dx: number, dy: number, multiplier = 1, anchor?: MapPoint): void {
@@ -384,7 +490,7 @@ export class Logbook {
     const context = (texture.image as HTMLCanvasElement).getContext('2d');
     if (context) {
       paintParchment(context, true);
-      paintMapPage(context, map, true, view, this.showFinds, this.heading);
+      paintMapPage(context, map, true, view, this.showFinds, this.heading, this.markerView(map));
       texture.needsUpdate = true;
     }
     this.pages[1].userData.mapView = view;
@@ -392,14 +498,21 @@ export class Logbook {
   }
 
   turn(offset: -1 | 1, reduced: boolean): boolean {
+    this.turnBoundary = null;
     const next = this.spread + offset;
     const spreadPages = this.sections.pages?.length ?? this.entries.length;
-    const spreads = this.sections.maps?.length ?? Math.ceil(spreadPages / 2);
-    if (this.turnState || next < 0 || next >= spreads) return false;
+    const spreads = Math.max(1, this.sections.maps?.length ?? Math.ceil(spreadPages / 2));
+    if (this.turnState) return false;
+    if (next < 0 || next >= spreads) {
+      this.turnBoundary = offset;
+      return false;
+    }
+    this.setMarkerTool(null);
     this.redrawMap();
     if (reduced) {
       this.spread = next;
       this.showSpread();
+      this.sections.onTurn?.(this.root);
       return true;
     }
     const forward = offset > 0;
@@ -407,10 +520,99 @@ export class Logbook {
     this.print(this.faces[0], this.spread * 2 + lifted);
     this.print(this.faces[1], next * 2 + (1 - lifted));
     this.print(this.pages[lifted], next * 2 + lifted);
+    this.beginTurn(offset, next);
+    this.sections.onTurn?.(this.root);
+    return true;
+  }
+
+  spreadTextures(): readonly [THREE.Texture, THREE.Texture] | null {
+    this.redrawMap();
+    const [left, right] = this.pages;
+    const leftMap = left.material.map;
+    const rightMap = right.material.map;
+    return leftMap && rightMap ? [leftMap, rightMap] : null;
+  }
+
+  /** Lifts the old section's outer page to expose the destination section beneath it. */
+  animateBoundary(offset: -1 | 1, outgoing: readonly [THREE.Texture, THREE.Texture]): void {
+    const lifted = offset > 0 ? 1 : 0;
+    const still = 1 - lifted;
+    const oldLeaf = outgoing[lifted].clone();
+    const oldRestingLeaf = outgoing[still].clone();
+    this.faces[0].material.map = oldLeaf;
+    this.faces[0].material.needsUpdate = true;
+    this.pages[still].material.map = oldRestingLeaf;
+    this.print(this.faces[1], this.spread * 2 + still);
+    this.beginTurn(offset, this.spread, [oldLeaf, oldRestingLeaf]);
+  }
+
+  private beginTurn(offset: -1 | 1, next: number, outgoing?: readonly THREE.Texture[]): void {
     this.cardTargets.clear();
-    this.turnState = { offset, age: 0 };
+    this.turnState = { offset, next, age: 0, outgoing };
     for (const face of this.faces) face.visible = true;
     this.update(0);
+  }
+
+  /** Turns when a pointer ray lands in the narrow outer margin of a visible page. */
+  tapEdge(ray: THREE.Ray, reduced: boolean): boolean {
+    if (this.turnState) return false;
+    const left = this.clickedPagePoint(ray, 0);
+    if (left && left[0] < PAPER_WIDTH * 0.08) return this.turn(-1, reduced);
+    const right = this.clickedPagePoint(ray, 1);
+    if (right && right[0] > PAPER_WIDTH * 0.92) return this.turn(1, reduced);
+    return false;
+  }
+
+  /** Samples one tracked index fingertip and consumes one deliberate inward edge swipe. */
+  sampleHand(side: 'left' | 'right', point: THREE.Vector3 | null, reduced: boolean): boolean {
+    const state = this.handSwipe[side];
+    if (!point) {
+      state.armed = false;
+      state.fired = false;
+      return false;
+    }
+    if (this.turnState) return state.fired;
+    let pageSide: 0 | 1 | null = null;
+    let distance = 0;
+    for (const candidate of [0, 1] as const) {
+      const page = this.pages[candidate];
+      page.updateWorldMatrix(true, false);
+      const candidateLocal = page.worldToLocal(point.clone());
+      const outward = candidate === 0 ? -candidateLocal.x : candidateLocal.x;
+      if (
+        candidateLocal.y >= -PAGE_HEIGHT * 0.62 &&
+        candidateLocal.y <= PAGE_HEIGHT * 0.62 &&
+        Math.abs(candidateLocal.z) <= 0.075 &&
+        outward >= -PAGE_WIDTH * 0.04 &&
+        outward <= PAGE_WIDTH * 1.04
+      ) {
+        pageSide = candidate;
+        distance = outward;
+        break;
+      }
+    }
+    if (pageSide === null) {
+      state.armed = false;
+      state.fired = false;
+      return false;
+    }
+    if (!state.armed) {
+      if (distance < PAGE_WIDTH * 0.92) return false;
+      state.armed = true;
+      state.fired = false;
+      state.pageSide = pageSide;
+      state.startX = distance;
+      return true;
+    }
+    if (state.fired) return true;
+    if (pageSide !== state.pageSide) {
+      state.armed = false;
+      return false;
+    }
+    const inward = state.startX - distance;
+    if (inward < PAGE_WIDTH * 0.18) return true;
+    state.fired = true;
+    this.turn(state.pageSide === 0 ? -1 : 1, reduced);
     return true;
   }
 
@@ -430,11 +632,15 @@ export class Logbook {
     if (!turn) return;
     turn.age = Math.min(TURN_SECONDS, turn.age + Math.max(0, dt));
     if (turn.age === TURN_SECONDS) {
-      this.spread += turn.offset;
+      this.spread = turn.next;
       this.turnState = undefined;
       this.showSpread();
       this.mapDirty = Boolean(this.sections.maps?.[this.spread]?.player);
       for (const face of this.faces) face.visible = false;
+      if (turn.outgoing) {
+        this.faces[0].material.map = null;
+        for (const texture of turn.outgoing) texture.dispose();
+      }
       return;
     }
     const t = THREE.MathUtils.smoothstep(turn.age, 0, TURN_SECONDS);
@@ -447,6 +653,7 @@ export class Logbook {
 
   dispose(): void {
     this.root.removeFromParent();
+    for (const texture of this.turnState?.outgoing ?? []) texture.dispose();
     this.cardTargets.clear();
     this.rowGeometry.dispose();
     this.rowIdle.dispose();

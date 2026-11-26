@@ -7,6 +7,7 @@ import {
   type Rect,
   type RoomTemplate,
 } from '../content/rooms.ts';
+import { Stream } from '../core/rng.ts';
 import {
   type FloorPlan,
   guardedConnection,
@@ -30,7 +31,13 @@ import { PALETTE } from '../palette.ts';
 import { enemyHeading, enemyLocalRotationY } from './enemy-facing.ts';
 import { buildGreyboxRoom, createGreyboxMaterials, type GreyboxMaterials } from './greybox.ts';
 import { type Hearth, HearthKit, type HearthMaterials, hearthSocket } from './hearth.ts';
-import { type Coffer, CofferKit, type LootMaterials, surfaceHeightAt } from './loot.ts';
+import {
+  type Coffer,
+  CofferKit,
+  type CofferTheme,
+  type LootMaterials,
+  surfaceHeightAt,
+} from './loot.ts';
 import type { PbrSet } from './materials.ts';
 import { pressureColliders } from './pressure-works.ts';
 import { PuzzleGateVisual } from './puzzle-gates.ts';
@@ -221,6 +228,7 @@ function buildRoom(
   kit: CofferKit,
   hearthKit: HearthKit,
   brassKey?: { room: number; socketId: string },
+  stoneRooms?: ReadonlyMap<number, string>,
 ) {
   const placed = plan.rooms[index];
   if (!placed) throw new Error(`room ${index} missing`);
@@ -257,9 +265,10 @@ function buildRoom(
     if (!keyed && placed.role !== 'treasure' && placed.role !== 'combat') continue;
     const s = t.lootSockets.find((socket) => socket.id === pickup.socketId);
     if (!s) continue;
-    const surface = surfaceHeightAt(t.colliders, s.position[0], s.position[2]);
+    const dungeonRoom = stoneRooms?.get(index) === 'dungeon';
+    const surface = dungeonRoom ? 0 : surfaceHeightAt(t.colliders, s.position[0], s.position[2]);
     // The study collider includes the candle rack, 0.29 m above the usable desk top.
-    const onDesk = t.id === 'study' && s.id === 'desk-drawer' && surface > 0;
+    const onDesk = !dungeonRoom && t.id === 'study' && s.id === 'desk-drawer' && surface > 0;
     const socket = onDesk
       ? { ...s, position: [2.322, 0, 2.322] as [number, number, number], yaw: 315 }
       : s;
@@ -272,6 +281,12 @@ function buildRoom(
         plan.shadowStencil?.room === index ||
         plan.floatElevator?.room === index,
       keyed,
+      dungeonRoom
+        ? (Stream.fromKey(`${plan.seed}:coffer-theme:${index}:${s.id}`).pick([
+            'reliquary',
+            'strongbox',
+          ]) as CofferTheme)
+        : 'classic',
     );
     if (onDesk) coffer.object.scale.set(0.85, 1.1, 0.85);
     group.add(coffer.object);
@@ -297,6 +312,7 @@ export function buildFloorWorld(
   plan: FloorPlan,
   templates: readonly RoomTemplate[] = GREYBOX_TEMPLATES,
   maxShellDepth?: number,
+  stoneRooms?: ReadonlyMap<number, string>,
 ): FloorWorld {
   const materials = createGreyboxMaterials();
   const enemyMaterial = new THREE.MeshStandardMaterial({
@@ -330,6 +346,7 @@ export function buildFloorWorld(
       kit,
       hearthKit,
       plan.brassCache,
+      stoneRooms,
     );
     coffers.push(...built.coffers);
     hearths.push(...built.hearths);

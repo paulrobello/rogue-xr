@@ -2,11 +2,17 @@ import {
   createStandardHand,
   createXrSession,
   type FoveationLevel,
+  type StandardHand,
   type XrSessionOptions,
 } from '@par/xr-workspace';
 import * as THREE from 'three';
 import type { ActionBus } from '../core/actions.ts';
+import { registerDiag } from '../diag/diag.ts';
 import { WORKSPACE_COLORS } from '../palette.ts';
+import { createHandCalibration } from './hand-calibration.ts';
+import { createHandDepthPass } from './hand-depth.ts';
+import type { TrackedPalm } from './hand-menu-glyph.ts';
+import { createTrackedHandOffset, HAND_HORIZONTAL_OFFSET } from './hand-offset.ts';
 import { createLaser } from './laser.ts';
 import { readThumbstick, type Vec2 } from './locomotion.ts';
 
@@ -24,6 +30,9 @@ interface TrackedSource {
   hide(): void;
   aim(hit: number | null, visible: boolean): void;
   readonly input: XRInputSource | null;
+  readonly visual: StandardHand;
+  readonly indexFingertip: THREE.Vector3 | null;
+  readonly palm: TrackedPalm | null;
   readonly grip: THREE.Object3D;
   /** The WebXR target-ray space: its -Z axis is where the controller points. */
   readonly ray: THREE.Object3D;
@@ -47,6 +56,7 @@ export interface XrRig {
   enter(): Promise<void>;
   exit(): Promise<void>;
   readonly presenting: boolean;
+  handTrackingActive(): boolean;
   update(deltaSeconds: number, frame?: XRFrame): void;
   sticks(): XrSticks;
   /** Whether gamepad button `index` of the `side` controller is down (false while untracked). */
@@ -55,6 +65,13 @@ export interface XrRig {
   grips(): HandPair<THREE.Object3D>;
   /** Controller target-ray objects (pointing, -Z) by handedness. */
   rays(): HandPair<THREE.Object3D>;
+  /** Ray sources whose beams can be drawn. Tracked hands aim without controller beams. */
+  controllerRays(): HandPair<THREE.Object3D>;
+  /** Tracked index fingertips in world space. A controller has no physical fingertip. */
+  indexFingertips(): HandPair<THREE.Vector3>;
+  trackedPalm(side: Side): TrackedPalm | null;
+  /** Draws in-world boards against nearer hands in the same pass. */
+  renderBoards(boards: THREE.Scene): void;
   /**
    * Aims each controller's pointer beam (hidden for tracked hands and outside XR) and returns the
    * scene holding the beams, for a pass drawn after the menu boards. A hit distance ends that
@@ -69,6 +86,10 @@ export interface XrRig {
 export interface XrRigOptions {
   /** Foveation the session starts with. Default `XR_SESSION_OPTIONS.foveation` (medium). */
   foveation?: FoveationLevel;
+  /** Collect raw joint and rendered fingertip distances for an owner fit check. */
+  calibrateHands?: boolean;
+  /** Applies the fixed inward tracked-hand translation. Enabled by default. */
+  handOffset?: boolean;
 }
 
 /**
@@ -84,8 +105,20 @@ export function createXrRig(
   options: XrRigOptions = {},
 ): XrRig {
   renderer.xr.enabled = true;
+  const calibration = options.calibrateHands ? createHandCalibration(rig) : null;
+  if (calibration) registerDiag('handCalibration', calibration.log);
+  const handOffset = options.handOffset ?? true;
+  registerDiag('handOffset', () => ({
+    enabled: handOffset,
+    offsetMm: handOffset ? HAND_HORIZONTAL_OFFSET * 1000 : 0,
+  }));
+  const handVisuals = new THREE.Group();
+  handVisuals.name = 'player-hand-visuals';
+  scene.add(handVisuals);
+  const handDepth = createHandDepthPass(renderer, scene, handVisuals);
 
   const laserScene = new THREE.Scene();
+  laserScene.name = 'controller-lasers';
   const sources: TrackedSource[] = [0, 1].map((index) => {
     const controller = renderer.xr.getController(index);
     const grip = renderer.xr.getControllerGrip(index);
@@ -112,26 +145,47 @@ export function createXrRig(
       },
     });
     const laser = createLaser(laserScene);
+    const offset = createTrackedHandOffset(rig, visual.root, handOffset);
+    const correctedTip = new THREE.Vector3();
+    let hasSkinnedHand = false;
+    void visual.assetReady.then((ready) => {
+      hasSkinnedHand = ready;
+    });
+    const palm: TrackedPalm = {
+      position: new THREE.Vector3(),
+      forward: visual.palmForward,
+      backNormal: new THREE.Vector3(),
+      get surfaceOffset() {
+        // The cartoon fallback has a thicker palm than the skinned model.
+        return hasSkinnedHand ? 0.017 : 0.028;
+      },
+    };
     let input: XRInputSource | null = null;
     controller.addEventListener('connected', (event) => {
       input = (event as unknown as { data: XRInputSource }).data;
     });
     controller.addEventListener('disconnected', () => {
       input = null;
+      offset.reset();
       visual.hide();
     });
     rig.add(controller, grip, hand);
     visual.hide();
-    scene.add(visual.root);
+    handVisuals.add(visual.root);
     return {
       update(deltaSeconds: number) {
+        offset.reset();
         const side = input?.handedness;
         if (!input || (side !== 'left' && side !== 'right')) {
           visual.hide();
           return;
         }
-        if (input.hand) visual.update(hand, camera, side as Side, deltaSeconds);
-        else visual.updateController(grip, camera, side as Side, input.gamepad, deltaSeconds);
+        if (input.hand) {
+          visual.update(hand, camera, side, deltaSeconds);
+          offset.apply(side);
+        } else {
+          visual.updateController(grip, camera, side, input.gamepad, deltaSeconds);
+        }
       },
       hide() {
         visual.hide();
@@ -143,7 +197,22 @@ export function createXrRig(
       get input() {
         return input;
       },
+      get indexFingertip() {
+        return input?.hand && visual.root.visible && hand.joints['index-finger-tip']?.visible
+          ? correctedTip.copy(visual.indexTip).add(offset.world)
+          : null;
+      },
+      get palm() {
+        const wrist = hand.joints.wrist;
+        if (!input?.hand || !visual.root.visible || !wrist?.visible) return null;
+        // The WebXR wrist's -Y points out of the palm.
+        wrist.updateWorldMatrix(true, false);
+        palm.backNormal.set(0, 1, 0).transformDirection(wrist.matrixWorld);
+        palm.position.copy(visual.palmPosition).add(offset.world);
+        return palm;
+      },
       assetReady: visual.assetReady,
+      visual,
       grip,
       ray: controller,
     };
@@ -168,11 +237,16 @@ export function createXrRig(
     get presenting() {
       return session.presenting;
     },
+    handTrackingActive: () => sources.some((source) => Boolean(source.input?.hand)),
     update(deltaSeconds, frame) {
       if (!session.presenting) return;
       const pose = session.update(frame);
       if (pose) applyViewerPose(camera, pose);
       for (const source of sources) source.update(deltaSeconds);
+      if (calibration && frame) {
+        const reference = renderer.xr.getReferenceSpace();
+        if (reference) calibration.sample(frame, reference, sources);
+      }
     },
     sticks() {
       const out: XrSticks = { left: [0, 0], right: [0, 0] };
@@ -189,6 +263,15 @@ export function createXrRig(
     },
     grips: () => byHand(sources, (source) => source.grip),
     rays: () => byHand(sources, (source) => source.ray),
+    controllerRays: () =>
+      byHand<THREE.Object3D>(sources, (source) => (source.input?.hand ? null : source.ray)),
+    indexFingertips: () => byHand<THREE.Vector3>(sources, (source) => source.indexFingertip),
+    trackedPalm: (side) =>
+      sources.find((source) => source.input?.handedness === side)?.palm ?? null,
+    renderBoards(boards) {
+      if (session.presenting) handDepth.render(boards, camera);
+      else renderer.render(boards, camera);
+    },
     updateLasers(hits) {
       for (const source of sources) {
         const side = source.input?.handedness;
@@ -200,7 +283,10 @@ export function createXrRig(
       return laserScene;
     },
     setFoveation: (level) => session.setFoveation(level),
-    dispose: () => session.dispose(),
+    dispose() {
+      handDepth.dispose();
+      session.dispose();
+    },
   };
 }
 
@@ -221,7 +307,7 @@ export function applyViewerPose(
 
 function byHand<T>(
   sources: readonly TrackedSource[],
-  pick: (source: TrackedSource) => T,
+  pick: (source: TrackedSource) => T | null,
 ): HandPair<T> {
   const out: HandPair<T> = { left: null, right: null };
   for (const source of sources) {

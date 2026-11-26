@@ -48,6 +48,15 @@
     "victory": {
       "sha256": "5c1c882e313493e44ed73fbdcf2529936f2bf2613a504ec678d003d453f8b46a",
       "verdict": "approve"
+    },
+    "astral-lift": {
+      "sha256": "88bfc6c7b360ec836cc2d14c575403a71366b0ae3193b57ed77ee75204f2de67",
+      "verdict": "approve",
+      "capturedAt": "2026-11-25T23:52:05.150Z",
+      "device": "Quest 3, Clockwork Spire Astral Lift playtest",
+      "commit": "2b783a3d164b36dc69645abe649291a80eae3678",
+      "buildId": "b4de4e55738bec35a01e7a66cb94032849b30e8e17f2fd8448fe497aeee67e18",
+      "confirmedBy": "Paul Robello, in chat: \"elevator music approved\""
     }
   },
   "sfx": {
