@@ -28,6 +28,8 @@ export interface VeilOptions {
   roomPointLights?: readonly THREE.PointLight[];
   /** Prepare uniform and attribute bindings for linked programs before their first visible draw. */
   primeProgramBindings?: boolean;
+  /** Opt in to shader diagnostics during the synchronous binding pass. */
+  checkShaderErrors?: boolean;
   /** Textures uploaded per frame. A 2048 px texture is several MB, so keep this small. */
   uploadsPerFrame?: number;
   /** Frames the veil takes to fade out once everything is resident. */
@@ -122,6 +124,7 @@ export async function runVeil(
     variants = [],
     roomPointLights = [],
     primeProgramBindings = false,
+    checkShaderErrors = false,
     uploadsPerFrame = 2,
     fadeFrames = 24,
     onPhase,
@@ -142,12 +145,18 @@ export async function runVeil(
 
     await compileRoomLightVariants(renderer, scene, camera, roomPointLights);
     for (const variant of variants) await renderer.compileAsync(variant, camera, scene);
-    if (primeProgramBindings) {
-      for (const program of renderer.info.programs ?? []) {
-        if ('isReady' in program && typeof program.isReady === 'function' && !program.isReady())
-          continue;
-        // The pinned Three.js initializes both binding tables on the first getUniforms call.
-        program.getUniforms();
+    if (primeProgramBindings || checkShaderErrors) {
+      const previous = renderer.debug.checkShaderErrors;
+      renderer.debug.checkShaderErrors = checkShaderErrors;
+      try {
+        for (const program of renderer.info.programs ?? []) {
+          if ('isReady' in program && typeof program.isReady === 'function' && !program.isReady())
+            continue;
+          // The pinned Three.js initializes both binding tables on the first getUniforms call.
+          program.getUniforms();
+        }
+      } finally {
+        renderer.debug.checkShaderErrors = previous;
       }
     }
     onPhase?.('compile');

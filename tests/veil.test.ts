@@ -7,6 +7,7 @@ import { floorTextures, runVeil } from '../src/world/veil.ts';
 function fakeRenderer(log: string[]) {
   return {
     xr: { isPresenting: false },
+    debug: { checkShaderErrors: false },
     compileAsync: vi.fn(async (target: THREE.Object3D) => {
       log.push(`compile:${target.name}`);
       return target;
@@ -23,7 +24,13 @@ describe('runVeil', () => {
   it('primes linked program bindings under the veil without waiting on unrelated programs', async () => {
     const log: string[] = [];
     const renderer = fakeRenderer(log);
-    const ready = { isReady: () => true, getUniforms: () => log.push('bind') };
+    const ready = {
+      isReady: () => true,
+      getUniforms: () => {
+        expect(renderer.debug.checkShaderErrors).toBe(false);
+        log.push('bind');
+      },
+    };
     const pending = { isReady: () => false, getUniforms: vi.fn() };
     const withPrograms = Object.assign(renderer, { info: { programs: [ready, pending] } });
     const texture = Object.assign(new THREE.Texture(), { name: 'room' });
@@ -40,6 +47,29 @@ describe('runVeil', () => {
     );
     expect(log).toEqual(['compile:', 'bind', 'init:room']);
     expect(pending.getUniforms).not.toHaveBeenCalled();
+  });
+
+  it('enables shader log reads only during explicitly opted-in warmup', async () => {
+    const renderer = fakeRenderer([]);
+    const getUniforms = vi.fn(() => {
+      expect(renderer.debug.checkShaderErrors).toBe(true);
+      throw new Error('binding failed');
+    });
+    const withPrograms = Object.assign(renderer, { info: { programs: [{ getUniforms }] } });
+    renderer.compileAsync.mockImplementation(async (target) => {
+      expect(renderer.debug.checkShaderErrors).toBe(false);
+      return target;
+    });
+    await expect(
+      runVeil(asRenderer(withPrograms), new THREE.Scene(), new THREE.PerspectiveCamera(), [], {
+        nextFrame: async () => {
+          expect(renderer.debug.checkShaderErrors).toBe(false);
+        },
+        checkShaderErrors: true,
+      }),
+    ).rejects.toThrow('binding failed');
+    expect(getUniforms).toHaveBeenCalledOnce();
+    expect(renderer.debug.checkShaderErrors).toBe(false);
   });
 
   it('compiles every program before uploading, and uploads a few textures per frame', async () => {

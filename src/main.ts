@@ -210,9 +210,7 @@ const xrText = { sdfGlyphSize: 128, useWorker: false };
 configureTextBuilder(xrText);
 
 const params = new URLSearchParams(location.search);
-const shaderLogs = params.get('shaderLogs');
-const detailedShaderLogs =
-  shaderLogs === '1' || (shaderLogs !== '0' && (import.meta.env.DEV || params.has('debug')));
+const detailedShaderLogs = params.get('shaderLogs') === '1';
 const view = params.get('view');
 const proofView =
   view === 'lightmap-proof' ||
@@ -227,6 +225,8 @@ const renderer = new THREE.WebGLRenderer({
   stencil: true,
   preserveDrawingBuffer: proofView,
 });
+// Shader log queries can block on the driver and belong in the loading veil.
+renderer.debug.checkShaderErrors = false;
 const transitionTrace =
   params.get('transitionPerf') === '1' ? traceTransitions(renderer.getContext()) : null;
 if (transitionTrace) registerDiag('transition', transitionTrace.log);
@@ -1271,8 +1271,6 @@ const dressFloor = async (target: FloorView): Promise<void> => {
   }
 };
 async function prepareFloor(target: FloorView, boot = false): Promise<void> {
-  // Reading shader logs at first draw can synchronously stall the Quest Browser renderer.
-  renderer.debug.checkShaderErrors = target.floorNumber !== 3 || detailedShaderLogs;
   const traceFloor3 = target.floorNumber === 3 ? transitionTrace : null;
   traceFloor3?.mark('Floor 3 dressing started');
   covered = true;
@@ -1299,13 +1297,11 @@ async function prepareFloor(target: FloorView, boot = false): Promise<void> {
     conservatoryLights = stableLights ? { floor: target, update: stableLights.update } : null;
     if (stableLights) traceFloor3?.mark(`Floor 3 fixed point-light count ${stableLights.count}`);
     const roomPointLights: THREE.PointLight[] = [];
-    if (warmConservatory) {
-      if (!stableLights)
-        target.world.group.traverse((node) => {
-          if (node instanceof THREE.PointLight && node.visible) roomPointLights.push(node);
-        });
-      perfMark('floor 3 warmup');
-    }
+    if (!stableLights)
+      target.world.group.traverse((node) => {
+        if (node instanceof THREE.PointLight && node.visible) roomPointLights.push(node);
+      });
+    if (warmConservatory) perfMark('floor 3 warmup');
     if (boot) {
       showLoading('Preparing the scene…');
 
@@ -1360,6 +1356,8 @@ async function prepareFloor(target: FloorView, boot = false): Promise<void> {
         await runVeil(renderer, scene, camera, [...textures], {
           variants,
           roomPointLights,
+          primeProgramBindings: !warmConservatory,
+          checkShaderErrors: detailedShaderLogs,
           fadeFrames: 0,
           onPhase: (phase) => traceFloor3?.mark(`Floor 3 veil ${phase} finished`),
         });
@@ -1374,8 +1372,17 @@ async function prepareFloor(target: FloorView, boot = false): Promise<void> {
       await runVeil(renderer, scene, camera, textures, {
         roomPointLights,
         primeProgramBindings: stableLights !== null,
+        checkShaderErrors: detailedShaderLogs,
         fadeFrames: 0,
         onPhase: (phase) => traceFloor3?.mark(`Floor 3 veil ${phase} finished`),
+      });
+    } else {
+      // Continue and the stairs can mount a newly dressed floor after the boot veil has gone.
+      await runVeil(renderer, scene, camera, [], {
+        roomPointLights,
+        primeProgramBindings: true,
+        checkShaderErrors: detailedShaderLogs,
+        fadeFrames: 0,
       });
     }
     if (floor === target) {
