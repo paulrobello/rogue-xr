@@ -1331,7 +1331,7 @@ async function prepareFloor(target: FloorView, boot = false): Promise<void> {
         const textures = new Set([
           ...rooms.flatMap((room) => room.textures),
           ...(decor?.textures ?? []),
-          ...(warmConservatory ? floorTextures(target.world.group) : []),
+          ...floorTextures(target.world.group),
         ]);
         for (const room of target.styledRooms) {
           variants.push(room);
@@ -1377,8 +1377,8 @@ async function prepareFloor(target: FloorView, boot = false): Promise<void> {
         onPhase: (phase) => traceFloor3?.mark(`Floor 3 veil ${phase} finished`),
       });
     } else {
-      // Continue and the stairs can mount a newly dressed floor after the boot veil has gone.
-      await runVeil(renderer, scene, camera, [], {
+      // Culled rooms otherwise defer their first texture uploads to the doorway.
+      await runVeil(renderer, scene, camera, [...floorTextures(target.world.group)], {
         roomPointLights,
         primeProgramBindings: true,
         checkShaderErrors: detailedShaderLogs,
